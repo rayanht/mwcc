@@ -26,6 +26,7 @@ Dependencies
 - [unshield](https://github.com/twogood/unshield), to unpack the CodeWarrior Pro 5.3 updater
 
 macOS: `brew install ninja unshield`. Linux: `apt install ninja-build unshield`.
+Windows: `winget install Ninja-build.Ninja`, and unshield through WSL (`wsl sudo apt install unshield`).
 
 [wibo](https://github.com/decompals/wibo) runs the compilers and is downloaded automatically.
 

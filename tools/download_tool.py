@@ -171,10 +171,19 @@ def pro53():
             name = updater[offset + 30:offset + 30 + length].decode()
             begin = offset + 30 + length + extra
             (root / name).write_bytes(zlib.decompress(updater[begin:begin + packed], -15))
+        unshield, path = ["unshield"], str
         if not shutil.which("unshield"):
-            raise SystemExit("unshield is required (brew install unshield / apt install unshield)")
-        subprocess.run(["unshield", "-g", "Win CC++ - FU2", "-j", "-d", str(root / "files"), "x", str(root / "data1.cab"),
-                        "mwcc.exe"], check=True, stdout=subprocess.DEVNULL)
+            # (there is no Windows build of unshield: use the one of WSL, which sees drives under /mnt)
+            if sys.platform != "win32" or not shutil.which("wsl"):
+                raise SystemExit("unshield is required (brew install unshield / apt install unshield)")
+            unshield = ["wsl", "-e", "unshield"]
+            if subprocess.run(["wsl", "-e", "which", "unshield"], capture_output=True).returncode:
+                raise SystemExit("unshield is required in WSL (wsl sudo apt install unshield)")
+
+            def path(p):
+                return subprocess.check_output(["wsl", "-e", "wslpath", "-u", p], text=True).strip()
+        subprocess.run([*unshield, "-g", "Win CC++ - FU2", "-j", "-d", path(str(root / "files")), "x",
+                        path(str(root / "data1.cab")), "mwcc.exe"], check=True, stdout=subprocess.DEVNULL)
         return (root / "files/Win_CC++_-_FU2/mwcc.exe").read_bytes()
 
 
@@ -223,6 +232,9 @@ def lib(output):
 def main():
     tool, output = sys.argv[1], Path(sys.argv[2])
     output.parent.mkdir(parents=True, exist_ok=True)
+    if sys.platform == "win32" and tool in ("pro5", "pro53", "pro6"):
+        # (the compilers check a FlexLM license, which wibo stubs elsewhere: a stub library does here)
+        shutil.copy(Path(__file__).parent / "lmgr_stub/lmgr326b.dll", output.parent)
     if tool in ("compilers", "pro4", "pro5", "pro53", "pro6", "lib") and output.exists():
         # (fixed archives: a restored cache need not be fetched again)
         output.touch()
