@@ -66,7 +66,7 @@ def inventory(version):
             if address > cursor:
                 rows.append(dict(name=f"unknown/{section.name}/{cursor:08x}", address=cursor, size=address - cursor, code=code))
             # (a function without a source is one the decompilation does not have yet)
-            unit = str(Path(f["source"]).with_suffix("")) if "source" in f else "unrecovered"
+            unit = Path(f["source"]).with_suffix("").as_posix() if "source" in f else "unrecovered"
             rows.append(dict(f, address=address, code=True, name=unit + "/" + f["name"],
                              # (C++-mangled names carry no C underscore in COFF)
                              symbol=f["name"] if f["name"].startswith("?") else "_" + f["name"]))
@@ -76,9 +76,11 @@ def inventory(version):
     for row in rows:
         section = pe.section_for_address(row["address"])
         row["bss"] = bool(section.characteristics & 0x80) and section.file_size == 0
-        row["target"] = f"build/{version}/target/{row['name']}.obj"
+        # (Windows file names cannot hold these)
+        file = re.sub(r'[<>:"|?*]', lambda m: f"%{ord(m[0]):02x}", row["name"]) if sys.platform == "win32" else row["name"]
+        row["target"] = f"build/{version}/target/{file}.obj"
         if "source" in row:
-            row["base"] = f"build/{version}/base/{row['name']}.obj"
+            row["base"] = f"build/{version}/base/{file}.obj"
     return config, pe, rows
 
 
