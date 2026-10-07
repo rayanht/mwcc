@@ -322,10 +322,10 @@ static void CPrec_ReadData(SInt32 offset, void *buffer, SInt32 size)
 
 void patch_buffered_token_locations(void)
 {
-    BufferedToken *token;
+    TStreamElement *token;
     SInt32 index;
     UInt32 tokenCount;
-    PFile *currentFile;
+    CPrepFileInfo *currentFile;
     SInt32 currentOffset;
     SInt32 *patchCursor;
     union CPrecInputPointer input;
@@ -347,7 +347,7 @@ void patch_buffered_token_locations(void)
         for (;;) {
             if ((tokenOffset = *patchCursor++) == 0)
                 break;
-            token = (BufferedToken *)(headerBase + tokenOffset);
+            token = (TStreamElement *)(headerBase + tokenOffset);
             tokenCount = (UInt32)*patchCursor++;
             for (index = 0; index < tokenCount; index++) {
                 token->tokenfile = currentFile;
@@ -1651,17 +1651,17 @@ static CPrecWrittenEntry *findentry(void *key)
 /* append data */
 /* CPrec_NamePatch body */
 
-static inline void CPrec_AppendDatum(PRecData *u, SavedPrepToken *bp)
+static inline void CPrec_AppendDatum(TData *u, TStreamElement *bp)
 {
     SInt32 size;
     void *data;
     void *p;
 
-    size = u->size;
-    data = u->data;
+    size = u->tkstring.size;
+    data = u->tkstring.data;
     p = CPrec_AppendAlign();
     CPrec_AppendData(data, size);
-    add_serialized_bucket_entry((SInt32)(&bp->value.data), (SInt32)(p));
+    add_serialized_bucket_entry((SInt32)(&bp->data.tkstring.data), (SInt32)(p));
 }
 
 static void CPrec_MarkSlot(HashNameNode **dst, HashNameNode *src)
@@ -2448,10 +2448,10 @@ UInt32 serialize_cprec_nodes(CPrecNode *info)
         add_serialized_bucket_entry(nodeOffset + 4, write_object(node->obj));
         switch (node->kind) {
             case 0:
-                if (node->u.k0.tokenBuffer.tokens != NULL) {
-                    add_serialized_bucket_entry(
-                        nodeOffset + 0x16,
-                        (SInt32)append_saved_prep_tokens(node->u.k0.tokenBuffer.tokens, node->u.k0.tokenBuffer.count));
+                if (node->u.k0.tokenBuffer.firsttoken != NULL) {
+                    add_serialized_bucket_entry(nodeOffset + 0x16,
+                                                (SInt32)append_saved_prep_tokens(node->u.k0.tokenBuffer.firsttoken,
+                                                                                 node->u.k0.tokenBuffer.tokens));
                 }
                 if (node->u.k0.contextClass != NULL) {
                     add_serialized_bucket_entry(nodeOffset + 0x1a, write_type((Type *)node->u.k0.contextClass));
@@ -3867,10 +3867,10 @@ TemplateFunction *write_template_function(TemplateFunction *function)
         CPrec_NamePatch(&current->name, function->name);
         if (function->params)
             add_serialized_bucket_entry((SInt32)&current->params, serialize_pre_nodes(function->params));
-        if (function->stream.tokens)
+        if (function->stream.firsttoken)
             add_serialized_bucket_entry(
-                (SInt32)&current->stream.tokens,
-                (SInt32)append_saved_prep_tokens(function->stream.tokens, function->stream.count));
+                (SInt32)&current->stream.firsttoken,
+                (SInt32)append_saved_prep_tokens(function->stream.firsttoken, function->stream.tokens));
         add_serialized_bucket_entry((SInt32)&current->tfunc, write_object(function->tfunc));
         if ((object = function->objects)) {
             TemplateSpecializationData *nextObject;
@@ -4022,9 +4022,9 @@ unsigned int write_prec_input_record(TemplateDeclarationData *record)
         reference = serialize_ct_state_elems(record->parsedData);
         add_serialized_bucket_entry(offset + 0x10, reference);
     }
-    if (record->inlineTokenBuffer.tokens != NULL) {
-        SavedPrepToken *entries =
-            append_saved_prep_tokens(record->inlineTokenBuffer.tokens, record->inlineTokenBuffer.count);
+    if (record->inlineTokenBuffer.firsttoken != NULL) {
+        TStreamElement *entries =
+            append_saved_prep_tokens(record->inlineTokenBuffer.firsttoken, record->inlineTokenBuffer.tokens);
         add_serialized_bucket_entry(offset + 0x28, (SInt32)entries);
     }
     return offset;
@@ -4091,7 +4091,7 @@ UInt32 serialize_prec_records(TemplateSourceRecordTyped *record)
     record_offset = prec_position;
     first_offset = record_offset;
     for (;;) {
-        memclrw(&record->sourceInfo.file, offsetof(TemplateSourceRecordTyped, state.count) -
+        memclrw(&record->sourceInfo.file, offsetof(TemplateSourceRecordTyped, state.tokens) -
                                               offsetof(TemplateSourceRecordTyped, sourceInfo.file));
         record->sourceFile = NULL;
         record->sourceLine = NULL;
@@ -4106,9 +4106,10 @@ UInt32 serialize_prec_records(TemplateSourceRecordTyped *record)
         }
         add_serialized_bucket_entry(record_offset + offsetof(TemplateSourceRecordTyped, object),
                                     write_object(record->object));
-        if (record->state.tokens != NULL) {
-            add_serialized_bucket_entry(record_offset + offsetof(TemplateSourceRecordTyped, state.tokens),
-                                        (SInt32)append_saved_prep_tokens(record->state.tokens, record->state.count));
+        if (record->state.firsttoken != NULL) {
+            add_serialized_bucket_entry(
+                record_offset + offsetof(TemplateSourceRecordTyped, state.firsttoken),
+                (SInt32)append_saved_prep_tokens(record->state.firsttoken, record->state.tokens));
         }
         if (record->next == NULL) {
             break;
@@ -4127,41 +4128,41 @@ UInt32 serialize_prec_records(TemplateSourceRecordTyped *record)
     return first_offset;
 }
 
-SavedPrepToken *append_saved_prep_tokens(SavedPrepToken *recs, SInt32 n)
+TStreamElement *append_saved_prep_tokens(TStreamElement *recs, SInt32 n)
 {
-    SavedPrepToken *rp;
-    SavedPrepToken *first;
-    SavedPrepToken *bp;
-    SavedPrepToken tmp;
+    TStreamElement *rp;
+    TStreamElement *first;
+    TStreamElement *bp;
+    TStreamElement tmp;
     SavedPrepTokenList *node;
     HashNameNode *d;
     SInt32 i;
 
     for (i = 0, rp = recs; i < n; i++, rp++) {
         tmp = *rp;
-        memclrw(rp, sizeof(SavedPrepToken));
-        switch (rp->token = tmp.token) {
+        memclrw(rp, sizeof(TStreamElement));
+        switch (rp->tokentype = tmp.tokentype) {
             case -3:
-                rp->value.data = tmp.value.data;
+                rp->data.tkstring.data = tmp.data.tkstring.data;
                 break;
             case -1:
-                rp->value_kind = tmp.value_kind;
-                rp->value = tmp.value;
+                rp->subtype = tmp.subtype;
+                rp->data = tmp.data;
                 break;
             case -2:
-                rp->value_kind = tmp.value_kind;
-                rp->value = tmp.value;
+                rp->subtype = tmp.subtype;
+                rp->data = tmp.data;
                 break;
             case -5:
             case -4:
-                rp->value_kind = tmp.value_kind;
-                rp->value = tmp.value;
+                rp->subtype = tmp.subtype;
+                rp->data = tmp.data;
                 break;
         }
     }
 
     first = bp = CPrec_AppendAlign();
-    CPrec_AppendData(recs, n * sizeof(SavedPrepToken));
+    CPrec_AppendData(recs, n * sizeof(TStreamElement));
     if (data_00581c28) {
         node = CompilerTools_AllocatePool(sizeof(SavedPrepTokenList));
         node->offset = bp;
@@ -4171,22 +4172,22 @@ SavedPrepToken *append_saved_prep_tokens(SavedPrepToken *recs, SInt32 n)
     }
 
     for (rp = recs, i = 0; i < n; i++, rp++, bp++) {
-        switch (rp->token) {
+        switch (rp->tokentype) {
             case -3:
-                d = (HashNameNode *)rp->value.data;
+                d = (HashNameNode *)rp->data.tkstring.data;
                 d->id = 1;
-                patch_object_reference((SInt32)&bp->value.data, d);
+                patch_object_reference((SInt32)&bp->data.tkstring.data, d);
                 break;
             case -5:
             case -4:
-                CPrec_AppendDatum(&rp->value, bp);
+                CPrec_AppendDatum(&rp->data, bp);
                 break;
             case -7:
             case -2:
             case -1:
                 break;
             default:
-                CError_ASSERT(1974, rp->token >= 0);
+                CError_ASSERT(1974, rp->tokentype >= 0);
                 break;
         }
     }

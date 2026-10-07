@@ -36,7 +36,7 @@ struct TypeClassTemplate {
 };
 struct ClassChainEntry {
     struct ClassChainEntry *next;
-    BufferedToken sourcePosition;
+    TStreamElement sourcePosition;
     UInt32 value;
     UInt8 kind;
     UInt8 unknown21[5];
@@ -59,8 +59,8 @@ struct KeyedEntry {
     struct TemplateParameterRecord
         *templateParameters; /* 0x04: parse_template_member_definition stores context after CTemplTool_EqualParams */
     Object *key;             /* 0x08: CTemplateClass_AddTemplateArgumentOverride checks object redefinition */
-    FOI name;                /* 0x0c: CTemplateClass_AddTemplateArgumentOverride copies source file information */
-    PrepTokenBuffer payload; /* 0x16: CTemplateClass_AddTemplateArgumentOverride saves member body tokens */
+    FileOffsetInfo name;     /* 0x0c: CTemplateClass_AddTemplateArgumentOverride copies source file information */
+    TokenStream payload;     /* 0x16: CTemplateClass_AddTemplateArgumentOverride saves member body tokens */
 };
 #pragma options align = reset
 struct MemberVarAlias {
@@ -78,15 +78,15 @@ struct NewFunc {
     unsigned short extraQualifiers;      /* 0x16: CDecl_CopyDeclInfoToNewFunc copies DeclInfo.extraQualifiers */
     unsigned char declarationAttributes; /* 0x18: CDecl_CopyDeclInfoToNewFunc copies DeclInfo.declarationAttributes */
     signed char hasTemplateArguments;    /* 0x19: CDecl_CopyDeclInfoToNewFunc copies DeclInfo.hasTemplateArguments */
-    FOI ot;                     /* 0x1a: CTemplateClass_AddDeferredFunctionDeclaration saves function_fileinfo */
-    PrepTokenBuffer bodyTokens; /* 0x24: CTemplateClass_AddDeferredFunctionDeclaration saves function body tokens */
+    FileOffsetInfo ot;      /* 0x1a: CTemplateClass_AddDeferredFunctionDeclaration saves function_fileinfo */
+    TokenStream bodyTokens; /* 0x24: CTemplateClass_AddDeferredFunctionDeclaration saves function body tokens */
 };
 #pragma options align = reset
 #pragma pack(push, 2)
 struct PendingTemplateInstantiation {
     struct PendingTemplateInstantiation *next; /* 0x00: CTemplateClass_AppendEnumDeclaration appends to declarations */
-    BufferedToken context; /* 0x04: CTemplateClass_AppendEnumDeclaration saves CPrep_GetLastBufferedToken */
-    TypeEnum *enumType;    /* 0x1c: CTemplateClass_AppendEnumDeclaration stores its TypeEnum argument */
+    TStreamElement context; /* 0x04: CTemplateClass_AppendEnumDeclaration saves CPrep_GetLastBufferedToken */
+    TypeEnum *enumType;     /* 0x1c: CTemplateClass_AppendEnumDeclaration stores its TypeEnum argument */
     unsigned char reserved[6];
     unsigned char kind; /* 0x26: CTemplateClass_AppendEnumDeclaration sets declaration kind 1 */
 };
@@ -140,7 +140,7 @@ struct TemplateContext {
 #pragma pack(push, 2)
 struct TemplateExpressionRecord {
     struct TemplateExpressionRecord *next; /* 0x00: CTemplateClass_AppendExpressionRecord links declarations */
-    BufferedToken parserState; /* 0x04: CTemplateClass_AddDeferredFunctionDeclaration saves buffered token */
+    TStreamElement parserState; /* 0x04: CTemplateClass_AddDeferredFunctionDeclaration saves buffered token */
     union {
         Object *object; /* 0x1c: CTemplateClass_AppendExpressionRecord kind 5; AppendEnumConstDeclaration kind 3 */
         struct NewFunc *functionDeclaration; /* 0x1c: CTemplateClass_AddDeferredFunctionDeclaration kind 2 */
@@ -165,7 +165,7 @@ struct TemplateInstantiationMapping {
 #pragma pack(push, 1)
 struct TemplateListRecord {
     struct TemplateListRecord *next;
-    struct BufferedToken state;
+    struct TStreamElement state;
     struct TypeClassTemplate
         *object; /* 0x1c: CTemplateClass_CreateClassTemplateDeclaration stores nested class template */
     unsigned char reserved_20[6];
@@ -175,7 +175,7 @@ struct TemplateListRecord {
 #pragma options align = mac68k
 struct TemplateMemberData {
     struct TemplateMemberData *next;
-    struct BufferedToken sourcePosition;
+    struct TStreamElement sourcePosition;
     struct TypeClassTemplate *record; /* 0x1c: CTemplateClass_ParseClassDeclaration stores nested class template */
     char reserved20[6];
     char kind;
@@ -184,7 +184,7 @@ struct TemplateMemberData {
 #pragma pack(push, 2)
 struct TemplateObjectDeclaration {
     struct TemplateObjectDeclaration *next;
-    BufferedToken data;
+    TStreamElement data;
     Object *argument;
     unsigned char reserved[6];
     unsigned char kind;
@@ -195,7 +195,7 @@ struct TemplateObjectDeclaration {
 #pragma pack(push, 1)
 struct TemplateRecordEntry {
     struct TemplateRecordEntry *next;
-    BufferedToken sourcePosition;
+    TStreamElement sourcePosition;
     Type *value;
     struct ClassList *lastBase;
     unsigned char
@@ -244,7 +244,7 @@ extern void CTemplateClass_ParsePartialSpecialization(TemplateScopeState *scope,
                                                       SInt32 *position);
 extern TypeClassExt800 *CTemplateClass_GetInstance(struct TypeClassTemplate *cls, CTStateElem *key, CTStateElem *flag);
 extern struct KeyedEntry *CTemplateClass_AddTemplateArgumentOverride(struct TypeClassTemplate *owner, Object *key,
-                                                                     FOI *name, struct PrepTokenBuffer *payload);
+                                                                     FileOffsetInfo *name, struct TokenStream *payload);
 extern void CTemplateClass_AppendObjectDeclaration(struct TypeClassTemplate *ctx, Object *obj);
 extern void instantiate_bases(TemplateContext *arg1, TypeClass *arg2, struct TypeClassTemplate *arg3);
 extern void instantiate_ivars(TemplateContext *ctx, TypeClass *dst, struct TypeClassTemplate *src);

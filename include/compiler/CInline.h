@@ -2,6 +2,7 @@
 #define COMPILER_CINLINE_H
 
 #include "compiler/common.h"
+#include "compiler/tokens.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -18,16 +19,6 @@ struct CIBEntry {
 };
 #pragma pack(pop)
 #pragma options align = mac68k
-struct FOI {
-    struct PFile *file; /* 0x00: CPrep_GetFOI copies the token's source file. */
-    SInt32 tokenline;   /* 0x04: CPrep_GetFOI copies the token's source line. */
-    UInt8
-        isInline; /* 0x08: CInline_SaveInfo marks saved inline file info as 1; CPrep_GetFOI sets ordinary locations to 0. */
-    UInt8
-        alignmentPadding; /* 0x09: CPrep_GetFOI writes only through isInline; unused trailing byte preserves FOI's two-byte-aligned size. */
-};
-#pragma options align = reset
-#pragma options align = mac68k
 struct CInlineInfo {
     SInt16 nargs;                 /* 0x00: CInline_SaveInfo counts arguments */
     struct CInlineVar *arginfo;   /* 0x02: CInline_SaveInfo saves argument variables */
@@ -36,11 +27,11 @@ struct CInlineInfo {
     UInt16 nstmts; /* 0x0c: CInline_SaveInfo counts statements; collect_undefined_function_objects iterates them */
     struct IStmtRec *
         stmtinfo; /* 0x0e: CInline_SaveInfo serializes statements; collect_undefined_function_objects searches their operands */
-    FOI fileinfo;       /* 0x12: CInline_SaveInfo saves function_fileinfo; serialize_cprec_rec clears it */
-    UInt32 f1c;         /* 0x1c: CInline_SaveInfo saves data_00587184; serialize_cprec_rec clears it */
-    UInt32 tokenoffset; /* 0x20: CInline_SaveInfo saves function_tokenoffset */
-    UInt32 tokenline;   /* 0x24: CInline_SaveInfo saves function_token_line; CInline_ReconstructFunction restores it */
-    UInt8 kind;         /* 0x28: CInline_SaveInfo sets fn_00511180 result */
+    FileOffsetInfo fileinfo; /* 0x12: CInline_SaveInfo saves function_fileinfo; serialize_cprec_rec clears it */
+    UInt32 f1c;              /* 0x1c: CInline_SaveInfo saves data_00587184; serialize_cprec_rec clears it */
+    UInt32 tokenoffset;      /* 0x20: CInline_SaveInfo saves function_tokenoffset */
+    UInt32 tokenline; /* 0x24: CInline_SaveInfo saves function_token_line; CInline_ReconstructFunction restores it */
+    UInt8 kind;       /* 0x28: CInline_SaveInfo sets fn_00511180 result */
 };
 #pragma options align = reset
 #pragma options align = mac68k
@@ -154,7 +145,8 @@ extern Boolean CInline_0050f120(struct InlineObjectEntry *list);
 extern void collect_undefined_function_objects(struct CInlineInfo *c);
 extern void forward_statement_objrefs(Statement *stmt);
 extern void CInline_AddSpecialization(Object *func, void *a, void *b);
-extern void CInline_AddFunctionPrecNode(Object *func, TypeClass *value, FOI *key, PrepTokenBuffer *pair, Boolean flag);
+extern void CInline_AddFunctionPrecNode(Object *func, TypeClass *value, FileOffsetInfo *key, TokenStream *pair,
+                                        Boolean flag);
 extern CException *CInline_005102f0(Statement *indexMap, Statement *info);
 extern void inline_statement_list(Statement *list);
 extern void CInline_005114e0(ENode *node);

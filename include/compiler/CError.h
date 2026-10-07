@@ -369,7 +369,7 @@ extern void CError_LongJump(void);
 extern void fn_00449d60(void);
 extern void CError_SetWrittenEntry(int *a0);
 extern void CError_SaveAndSetWrittenEntry(CPrecWrittenEntry *entry, int *savedEntry);
-extern void CError_SetBufferedToken(BufferedToken *entry);
+extern void CError_SetBufferedToken(TStreamElement *entry);
 extern void fn_00449dc0(void);
 extern struct IRONode *CError_NewIRONode(void);
 extern int writtenEntry;

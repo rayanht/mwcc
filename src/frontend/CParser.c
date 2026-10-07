@@ -211,7 +211,7 @@ void parse_namespace_declaration(void *declarationData)
     ObjNameSpace *object;
     HashNameNode *name;
     NameSpaceObjectList *found;
-    BufferedToken *location;
+    TStreamElement *location;
 
     tk = CPrepTokenizer_GetNextToken();
     if (tk == TK_IDENTIFIER) {

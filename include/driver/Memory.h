@@ -15,7 +15,7 @@ struct MemBuffer {
 struct StorageHandle {
     union {
         char *data;
-        struct BufferedToken *tokens;
+        struct TStreamElement *tokens;
     };
     MemBuffer buffer;
 };

@@ -168,8 +168,8 @@ union ENodeUnion {
     } explicitconversion; /* EOBJLIST with tag 3: dependent explicit conversion, not a function call */
     struct {
         ENode *expression; /* 0x00: CFunc_DefaultArg stores the dependent default argument expression */
-        struct BufferedToken *sourcePosition; /* 0x04: CFunc_DefaultArg allocates and copies the last buffered token */
-        UInt8 unk08[4];                       /* 0x08: CExpr2_NewENEWEXCEPTIONARRAYNode clears this unused storage */
+        struct TStreamElement *sourcePosition; /* 0x04: CFunc_DefaultArg allocates and copies the last buffered token */
+        UInt8 unk08[4];                        /* 0x08: CExpr2_NewENEWEXCEPTIONARRAYNode clears this unused storage */
         UInt8 tag; /* 0x0c: CFunc_DefaultArg selects EOBJLIST with tag ST_IFGOTO via CExpr2_NewENEWEXCEPTIONARRAYNode */
     } defaultargument; /* EOBJLIST, tag ST_IFGOTO: dependent default argument with diagnostic source position */
     struct {

@@ -288,7 +288,7 @@ void CTemplateNew_CompileObject(TypeClassTemplate *templateClass, TypeClassExt80
     }
     CTemplateTools_PopObjectReferenceEntry(&sa);
     CTemplTool_RemoveTemplateArgumentNameSpace(arguments, context, &scope);
-    CPrep_RemoveBufferedTokens(&source->state.count, &savedState);
+    CPrep_RemoveBufferedTokens(&source->state, &savedState);
     copts.filesyminfo = savedFileSymInfo;
     template_recordbrowseinfo = savedTemplateState;
 }
@@ -304,7 +304,7 @@ Boolean CTemplateNew_InstantiateFunction(TemplateFunction *definition, TemplateS
 
     if (specialization->suppressImplicitInstantiation != 0 && !report)
         return 0;
-    if (definition->stream.count == 0) {
+    if (definition->stream.tokens == 0) {
         if (report) {
             CError_SetBufferedToken(&definition->fileoffset);
             CError_ReportError(ERR_CANNOT_INSTANTIATE, specialization->object);
@@ -345,7 +345,7 @@ Boolean CTemplateNew_InstantiateFunction(TemplateFunction *definition, TemplateS
     CTemplTool_RemoveOuterTemplateArgumentNameSpace(namespace);
     specialization->object->nspace = namespace->parent;
     CTemplateTools_PopObjectReferenceEntry(&parserState);
-    CPrep_RemoveBufferedTokens(&definition->stream.count, &savedStream);
+    CPrep_RemoveBufferedTokens(&definition->stream, &savedStream);
     copts.filesyminfo = savedFileSymbolInfo;
     if (workspace.browseFile->recordbrowseinfo != 0)
         CBrowse_ForwardObjectFileRange(specialization->object, workspace.browseFile, workspace.sourceFile,
@@ -791,7 +791,7 @@ void parse_function_template_declaration(TemplateScopeState *stack, TemplatePara
     Boolean isstatic;
     DeclInfo di;
     DeclInfo destructorDecl;
-    PFile *file;
+    CPrepFileInfo *file;
     SInt32 offset;
     Boolean save;
     TypeClassTemplate *templclass;
@@ -974,7 +974,7 @@ void parse_function_template_declaration(TemplateScopeState *stack, TemplatePara
             (TYPE_FUNC(obj->type)->flags & 0x400)) {
             templ = CTemplTool_GetFuncTempl(obj);
             if (CTemplTool_EqualParams(templ->params, params, 0) && iscpp_typeequal(obj->type, di.dtype)) {
-                if (tk != ';' && templ->stream.count)
+                if (tk != ';' && templ->stream.tokens)
                     CError_ReportError(ERR_TEMPLATE_REDEFINED);
                 if (tk == '{' || tk == ':' || tk == TK_TRY)
                     CError_ASSERT(1227, CTemplTool_EqualParams(templ->params, params, 1));
@@ -1021,9 +1021,9 @@ void parse_template_member_definition(void *context, TypeClass *template_info, D
     struct KeyedEntry *instance;
     char saved_state;
     TemplateFunction *function_info;
-    PrepTokenBuffer parsed_body;
+    TokenStream parsed_body;
     Boolean option;
-    PFile *start;
+    CPrepFileInfo *start;
     SInt32 end;
 
     declaration->dtype = CTemplTool_ResolveMemberSelfRefs(template_info, declaration->dtype, &declaration->qual);
@@ -1076,7 +1076,7 @@ void parse_template_member_definition(void *context, TypeClass *template_info, D
         CE_ASSERT(object->datatype != DDATA, CError_FATAL(869));
         CPrep_BufferTokensThroughSemicolon(&parsed_body, NULL);
     }
-    if (parsed_body.count != 0) {
+    if (parsed_body.tokens != 0) {
         is_saved_function = object->type->type == TYPEFUNC && (((TypeFunc *)object->type)->flags & 1024) != 0;
         if (is_saved_function) {
             if (CTemplTool_EqualParams(object->u.templateFunction->params, context, 0) == 0) {

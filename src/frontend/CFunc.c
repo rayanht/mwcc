@@ -1744,7 +1744,7 @@ void generate_conditional_jump(ENode *expr, CLabel *dest, CLabel *other, Boolean
 ENode *parse_declarations(char mode, int singleDeclaration, char allowEmpty, char stopAfterDeclaration)
 {
     DeclInfo declarationState;
-    BufferedToken snapshot;
+    TStreamElement snapshot;
     Type *baseType;
     UInt32 baseQualifiers;
 
@@ -1827,7 +1827,7 @@ static Statement *allocate_and_append_statement(UInt8 type)
     return stmt;
 }
 
-void declare_local_object(DeclInfo *declaration, BufferedToken *declarationToken, char isParameter,
+void declare_local_object(DeclInfo *declaration, TStreamElement *declarationToken, char isParameter,
                           char forbidInitialization)
 {
     char nameBuffer[64];
@@ -3140,7 +3140,7 @@ unsigned int parse_func_args(int parameter)
 
 ENode *CFunc_DefaultArg(Type *destination, SInt32 flags, FuncArg *value)
 {
-    BufferedToken *record;
+    TStreamElement *record;
     ENode *expr;
     ENode *statement;
 

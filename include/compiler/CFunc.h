@@ -135,7 +135,7 @@ extern void generate_conditional_jump(ENode *expr, CLabel *dest, CLabel *other, 
 extern void setup_function_arguments(Object *function, DeclInfo *body, Statement *state);
 extern void CFunc_00476e70(TypeClass *theclass, struct CtorInit *inits);
 extern void create_local_object_copy(Object *func, TypeIntegral *type, Type *type2, Boolean flag);
-extern void declare_local_object(DeclInfo *declaration, BufferedToken *proto, char flag3, char flag4);
+extern void declare_local_object(DeclInfo *declaration, TStreamElement *proto, char flag3, char flag4);
 extern void rewrite_enode_list_nodes(ENodeList *entry);
 extern void parse_statement(struct StatementContext *context);
 extern void CFunc_ParseFuncDef(Object *func, DeclInfo *definition, TypeClass *scopeObject, Boolean isMember,
@@ -178,7 +178,7 @@ extern void CFunc_SetupLocalVarInfo(Object *object);
 extern unsigned char in_parameter_type_list;
 struct CLabel;
 struct Statement;
-extern FOI function_fileinfo;
+extern FileOffsetInfo function_fileinfo;
 
 /* fn_0047cb60 allocates 0xe bytes with CompilerTools_AllocatePool for this saved-state list node. */
 struct SavedGlobalValues {

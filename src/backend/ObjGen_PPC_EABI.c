@@ -2157,7 +2157,7 @@ void fn_0048b3f0(void)
     data_005870e8 = p;
     data_00587ff8 = p;
     memset(p, 0, 16);
-    data_00587ff8->key = fn_00441850((PFile *)(cprep_cu + 0x92), NULL);
+    data_00587ff8->key = fn_00441850((CPrepFileInfo *)(cprep_cu + 0x92), NULL);
     data_00587ff8->flags = -1;
     data_00580d80 = 0;
     output_buffer_length = object_storage_size = object_data_size = data_00580da4 = 0;

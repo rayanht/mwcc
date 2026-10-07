@@ -103,8 +103,8 @@ struct CPrecNode {
                 specialization; /* 0x0c: CInline_DispatchNextDeferredNode kind == 2 calls CTemplateNew_InstantiateFunction */
         } k2;
         struct {
-            FOI location;                /* 0x08: CInline_AddFunctionPrecNode saves key (kind == 0) */
-            PrepTokenBuffer tokenBuffer; /* 0x12: CInline_AddFunctionPrecNode saves pair (kind == 0) */
+            FileOffsetInfo location; /* 0x08: CInline_AddFunctionPrecNode saves key (kind == 0) */
+            TokenStream tokenBuffer; /* 0x12: CInline_AddFunctionPrecNode saves pair (kind == 0) */
             struct TypeClass *
                 contextClass; /* 0x1a: CInline_AddFunctionPrecNode saves value; CInline_0050ebf0_inline2 traverses class parents (kind == 0) */
         } k0;
@@ -136,13 +136,6 @@ struct ObjectOffsetEntry {
         object; /* 0x04: serialize_membervars stores object and object->next; fn_004da6c0_inline2 looks up the next member variable */
     long offset; /* 0x08: serialize_membervars stores and returns the serialized member-variable offset */
 };
-#pragma options align = mac68k
-struct PRecData {
-    UInt8 *
-        data; /* 0x00: CPrec_AppendDatum appends payload bytes; append_saved_prep_tokens token -3 interprets the address as HashNameNode */
-    SInt32 size; /* 0x04: CPrec_AppendDatum supplies the payload byte count to CPrec_AppendData */
-};
-#pragma options align = reset
 /* An object whose initialisation is deferred (CException_AddPendingBuffer; the list at pending_buffers): a copy of its
    initial bytes and the relocations to apply to them. Saved into precompiled headers by serialize_pending_buffers. */
 struct PendingBuffer {
@@ -159,17 +152,9 @@ struct PrecTypeEntry {
     struct TypeClass *type;
 };
 
-struct SavedPrepToken {
-    SInt16 token;
-    SInt16 value_kind;
-    struct PFile *tokenfile;
-    SInt32 tokenoffset;
-    SInt32 tokenline;
-    PRecData value;
-};
 struct SavedPrepTokenList {
     struct SavedPrepTokenList *next; /* 0x00: append_saved_prep_tokens links saved_prep_tokens */
-    SavedPrepToken *offset; /* 0x04: append_saved_prep_tokens stores bp, the appended SavedPrepToken array position */
+    TStreamElement *offset; /* 0x04: append_saved_prep_tokens stores bp, the appended TStreamElement array position */
     SInt32 count;           /* 0x08: append_saved_prep_tokens stores n, the token count */
 };
 #pragma options align = mac68k
@@ -189,11 +174,12 @@ struct TemplateFunction {
     struct HashNameNode *name;
     struct TemplateParameterRecord *
         params; /* 0x0c: parse_function_template_declaration compares template parameters with CTemplTool_EqualParams */
-    PrepTokenBuffer stream;
-    BufferedToken fileoffset;
+    TokenStream stream;
+    TStreamElement fileoffset;
     struct Object *tfunc;
     struct TemplateSpecializationData *objects;
-    struct PFile *srcfile; /* 0x38: write_template_function_browse_record reads source fileID and recordbrowseinfo */
+    struct CPrepFileInfo
+        *srcfile; /* 0x38: write_template_function_browse_record reads source fileID and recordbrowseinfo */
     SInt32 startoffset;
     SInt32 endoffset;
 };
@@ -272,7 +258,7 @@ extern SInt32 serialize_ct_state_elems(CTStateElem *p);
 extern SInt32 write_objc_parameter_nodes(ObjCParameterNode *p);
 extern ClassList *write_class_list(ClassList *x);
 extern int write_templdep(TypeTemplDep *node);
-extern SavedPrepToken *append_saved_prep_tokens(SavedPrepToken *recs, SInt32 n);
+extern TStreamElement *append_saved_prep_tokens(TStreamElement *recs, SInt32 n);
 extern int write_type(Type *type);
 extern SInt16 serialize_precompiled_data(Boolean writePositions);
 extern void build_global_pointer_entries(void);

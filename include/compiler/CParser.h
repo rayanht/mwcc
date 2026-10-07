@@ -279,7 +279,7 @@ extern struct Object *DAT_005882a4;
 extern unsigned char DAT_0058844a;
 extern unsigned char DAT_0058848a;
 extern unsigned char DAT_0058852e;
-extern struct BufferedToken declaration_token;
+extern struct TStreamElement declaration_token;
 extern FuncArg data_00584748;
 extern struct ObjectReferenceEntry *object_reference_stack;
 extern struct Object *data_0058717c;

@@ -344,14 +344,14 @@ SInt16 CPrepTokenizer_ScanToken(void)
     }
 }
 
-static inline struct BufferedToken *CurrentBufferedToken(void)
+static inline struct TStreamElement *CurrentBufferedToken(void)
 {
     return bufferedTokenPosition;
 }
 
-static inline Float *BufferedTokenFloat(struct BufferedToken *token)
+static inline Float *BufferedTokenFloat(struct TStreamElement *token)
 {
-    return &token->value.floating;
+    return &token->data.tkfloatconst;
 }
 
 short CPrepTokenizer_GetNextToken(void)
@@ -364,24 +364,24 @@ short CPrepTokenizer_GetNextToken(void)
     for (;;) {
         if (remainingBufferedTokenCount <= 0)
             break;
-        if ((token = CurrentBufferedToken()->token) < 0) {
+        if ((token = CurrentBufferedToken()->tokentype) < 0) {
             switch (token) {
                 case -1:
-                    token_integer = CurrentBufferedToken()->value.integer;
-                    token_value_kind_or_string_length = CurrentBufferedToken()->value_kind;
+                    token_integer = CurrentBufferedToken()->data.tkintconst;
+                    token_value_kind_or_string_length = CurrentBufferedToken()->subtype;
                     break;
                 case -2:
-                    token_float = CurrentBufferedToken()->value.floating;
-                    token_value_kind_or_string_length = CurrentBufferedToken()->value_kind;
+                    token_float = CurrentBufferedToken()->data.tkfloatconst;
+                    token_value_kind_or_string_length = CurrentBufferedToken()->subtype;
                     break;
                 case -3:
-                    data_00587fa0 = (struct HashNameNode *)CurrentBufferedToken()->value.words.first;
+                    data_00587fa0 = CurrentBufferedToken()->data.tkidentifier;
                     break;
                 case -4:
                 case -5:
-                    string_token_data = CurrentBufferedToken()->value.string.data;
-                    token_value_kind_or_string_length = CurrentBufferedToken()->value.string.length;
-                    DAT_005882de = CurrentBufferedToken()->value_kind;
+                    string_token_data = CurrentBufferedToken()->data.tkstring.data;
+                    token_value_kind_or_string_length = CurrentBufferedToken()->data.tkstring.size;
+                    DAT_005882de = CurrentBufferedToken()->subtype;
                     break;
                 case -7:
                     data_00588470 = 1;
@@ -418,25 +418,25 @@ short CPrepTokenizer_GetNextToken(void)
             if (scanned_token != 0) {
                 if (bufferedTokenPosition >= buffered_token_buffer_end)
                     CPrep_GrowBufferedTokenBuffer(1024);
-                CurrentBufferedToken()->token = scanned_token;
-                if ((token = CurrentBufferedToken()->token) < 0) {
+                CurrentBufferedToken()->tokentype = scanned_token;
+                if ((token = CurrentBufferedToken()->tokentype) < 0) {
                     switch (token) {
                         case -1:
-                            CurrentBufferedToken()->value.integer = token_integer;
-                            CurrentBufferedToken()->value_kind = token_value_kind_or_string_length;
+                            CurrentBufferedToken()->data.tkintconst = token_integer;
+                            CurrentBufferedToken()->subtype = token_value_kind_or_string_length;
                             break;
                         case -2:
-                            CurrentBufferedToken()->value.floating = token_float;
-                            CurrentBufferedToken()->value_kind = token_value_kind_or_string_length;
+                            CurrentBufferedToken()->data.tkfloatconst = token_float;
+                            CurrentBufferedToken()->subtype = token_value_kind_or_string_length;
                             break;
                         case -3:
-                            CurrentBufferedToken()->value.words.first = (int)data_00587fa0;
+                            CurrentBufferedToken()->data.tkidentifier = data_00587fa0;
                             break;
                         case -4:
                         case -5:
-                            CurrentBufferedToken()->value.string.data = string_token_data;
-                            CurrentBufferedToken()->value.string.length = token_value_kind_or_string_length;
-                            CurrentBufferedToken()->value_kind = DAT_005882de;
+                            CurrentBufferedToken()->data.tkstring.data = string_token_data;
+                            CurrentBufferedToken()->data.tkstring.size = token_value_kind_or_string_length;
+                            CurrentBufferedToken()->subtype = DAT_005882de;
                             if (concatenating_string_tokens == 0) {
                                 bufferedTokenPosition++;
                                 concatenate_string_tokens(token == -5);
@@ -480,7 +480,7 @@ void concatenate_string_tokens(char strip_terminator)
     NamePiece *pieces;
     NamePiece *piece;
     NamePiece *cursor;
-    struct BufferedToken *record;
+    struct TStreamElement *record;
     char *buffer;
     char *original_buffer;
     SInt32 original_length;
@@ -524,9 +524,9 @@ void concatenate_string_tokens(char strip_terminator)
                     }
                 }
                 record = bufferedTokenPosition - 1;
-                record->value.string.data = buffer;
-                record->value.string.length = combined_length;
-                record->value_kind = DAT_005882de;
+                record->data.tkstring.data = buffer;
+                record->data.tkstring.size = combined_length;
+                record->subtype = DAT_005882de;
                 concatenating_string_tokens = 0;
                 return;
             }
@@ -540,7 +540,7 @@ void concatenate_string_tokens(char strip_terminator)
             token = CPrepTokenizer_GetNextToken();
             bufferedTokenPosition--;
             memmove(bufferedTokenPosition, bufferedTokenPosition + 1,
-                    remainingBufferedTokenCount * sizeof(struct BufferedToken));
+                    remainingBufferedTokenCount * sizeof(struct TStreamElement));
         } while (token == -7);
 
         piece = (NamePiece *)CompilerTools_AllocatePool(sizeof(NamePiece));

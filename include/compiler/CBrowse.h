@@ -30,17 +30,17 @@ struct BrowseStreamHeader {
 };
 #pragma options align = reset
 extern void write_template_function_browse_record(TemplateFunction *info);
-extern void CBrowse_RecordClassLocation(struct TypeClass *type, PFile *location, int first_line, int last_line);
-extern void write_identifier_range_record(Macro *source, PFile *info, int first, int last);
-extern void CBrowse_WriteObjectBrowseInfo(Object *object, PFile *metadata, PFile *endMetadata, SInt32 start,
-                                          SInt32 end);
-extern void CBrowse_ForwardObjectFileRange(Object *arg0, PFile *b, PFile *c, SInt32 n, SInt32 m);
+extern void CBrowse_RecordClassLocation(struct TypeClass *type, CPrepFileInfo *location, int first_line, int last_line);
+extern void write_identifier_range_record(Macro *source, CPrepFileInfo *info, int first, int last);
+extern void CBrowse_WriteObjectBrowseInfo(Object *object, CPrepFileInfo *metadata, CPrepFileInfo *endMetadata,
+                                          SInt32 start, SInt32 end);
+extern void CBrowse_ForwardObjectFileRange(Object *arg0, CPrepFileInfo *b, CPrepFileInfo *c, SInt32 n, SInt32 m);
 extern void write_function_browse_record(Object *obj, SInt32 fileNumber, SInt32 scopeNumber, SInt32 startLine,
                                          SInt32 endLine);
-extern void CBrowse_WriteRelatedRecord(NameSpace *nameSpace, HashNameNode *name, PFile *record, PFile *relatedRecord,
-                                       SInt32 first, SInt32 last);
-extern void CBrowse_RecordNameRange(NameSpace *nameSpace, HashNameNode *hn, PFile *startRecord, PFile *endRecord,
-                                    SInt32 start, SInt32 end);
+extern void CBrowse_WriteRelatedRecord(NameSpace *nameSpace, HashNameNode *name, CPrepFileInfo *record,
+                                       CPrepFileInfo *relatedRecord, SInt32 first, SInt32 last);
+extern void CBrowse_RecordNameRange(NameSpace *nameSpace, HashNameNode *hn, CPrepFileInfo *startRecord,
+                                    CPrepFileInfo *endRecord, SInt32 start, SInt32 end);
 extern void CBrowse_WriteStructMember(StructMember *param0, SInt32 param1, SInt32 param2);
 extern void CBrowse_BuildTypeStructBrowseInfo(DeclInfo *obj, TypeStruct *info, GList *out);
 extern void CBrowse_RecordDataObject(Object *obj, SInt32 param2, SInt32 param3);
@@ -51,8 +51,8 @@ extern void write_text_or_name_id(GList *output, char *text, int index);
 extern void CBrowse_FreeLists(struct CPrepCU *cu);
 extern void CBrowse_FlushAndRestoreMemberList(SInt32 value, GList *state);
 extern void CBrowse_RestoreScope(SInt32 statementOffset, GList *savedScope);
-extern void CBrowse_WriteNameLineRange(NameSpace *names, HashNameNode *name, PFile *file, PFile *endFile, int firstLine,
-                                       int lastLine);
+extern void CBrowse_WriteNameLineRange(NameSpace *names, HashNameNode *name, CPrepFileInfo *file,
+                                       CPrepFileInfo *endFile, int firstLine, int lastLine);
 extern void CBrowse_StoreBrowseData(CPrepCU *arguments);
 extern void CBrowse_InitBrowseData(CPrepCU *classes);
 extern UInt8 data_005884f5;

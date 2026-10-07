@@ -12,7 +12,7 @@ extern "C" {
 struct VarInfo {
     struct Object *func;
     SInt32 usage;
-    struct BufferedToken deftoken;
+    struct TStreamElement deftoken;
     SInt16 varnumber;
     UInt8 noregister;
     UInt8 used;

@@ -57,7 +57,7 @@ static SInt32 nextFunctionId;
             s;                                                                                                         \
     } while (0)
 
-static inline PFile *browse_source(TemplateFunction *info)
+static inline CPrepFileInfo *browse_source(TemplateFunction *info)
 {
     return info->srcfile;
 }
@@ -95,7 +95,7 @@ void write_template_function_browse_record(TemplateFunction *info)
     }
 }
 
-void CBrowse_RecordClassLocation(struct TypeClass *type, PFile *location, int first_line, int last_line)
+void CBrowse_RecordClassLocation(struct TypeClass *type, CPrepFileInfo *location, int first_line, int last_line)
 {
     short file_id;
     int file_start;
@@ -123,7 +123,7 @@ void CBrowse_RecordClassLocation(struct TypeClass *type, PFile *location, int fi
     }
 }
 
-void write_identifier_range_record(Macro *source, PFile *info, int first, int last)
+void write_identifier_range_record(Macro *source, CPrepFileInfo *info, int first, int last)
 {
     short identifier;
     int firstIdentifier;
@@ -171,7 +171,8 @@ static inline void browse_write(char *pq, SInt32 id1, char *alt, SInt32 id2, int
     }
 }
 
-void CBrowse_WriteObjectBrowseInfo(Object *object, PFile *metadata, PFile *endMetadata, SInt32 start, SInt32 end)
+void CBrowse_WriteObjectBrowseInfo(Object *object, CPrepFileInfo *metadata, CPrepFileInfo *endMetadata, SInt32 start,
+                                   SInt32 end)
 {
     char *alternateName = NULL;
     Boolean isFunction;
@@ -205,8 +206,8 @@ void CBrowse_WriteObjectBrowseInfo(Object *object, PFile *metadata, PFile *endMe
     }
 }
 
-void CBrowse_ForwardObjectFileRange(Object *object, PFile *browseFile, PFile *sourceFile, SInt32 startOffset,
-                                    SInt32 endOffset)
+void CBrowse_ForwardObjectFileRange(Object *object, CPrepFileInfo *browseFile, CPrepFileInfo *sourceFile,
+                                    SInt32 startOffset, SInt32 endOffset)
 {
     if (browseFile == NULL || browseFile->recordbrowseinfo == 0)
         CError_Internal("CBrowse.c", 0x378);
@@ -332,8 +333,8 @@ void write_function_browse_record(Object *obj, SInt32 fileNumber, SInt32 scopeNu
     AppendGListLong(&data_00581ba8.buffer, functionId);
 }
 
-void CBrowse_WriteRelatedRecord(NameSpace *nameSpace, HashNameNode *name, PFile *record, PFile *relatedRecord,
-                                SInt32 first, SInt32 last)
+void CBrowse_WriteRelatedRecord(NameSpace *nameSpace, HashNameNode *name, CPrepFileInfo *record,
+                                CPrepFileInfo *relatedRecord, SInt32 first, SInt32 last)
 {
     char *qualifiedName;
     SInt32 nameLength;
@@ -363,8 +364,8 @@ void CBrowse_WriteRelatedRecord(NameSpace *nameSpace, HashNameNode *name, PFile 
     }
 }
 
-void CBrowse_RecordNameRange(NameSpace *nameSpace, HashNameNode *hn, PFile *startRecord, PFile *endRecord, SInt32 start,
-                             SInt32 end)
+void CBrowse_RecordNameRange(NameSpace *nameSpace, HashNameNode *hn, CPrepFileInfo *startRecord,
+                             CPrepFileInfo *endRecord, SInt32 start, SInt32 end)
 {
     char *qualifiedName;
     SInt32 nameID;
@@ -411,8 +412,8 @@ static inline void writeBrowseRecordKind(GList *stream, SInt8 kind)
     AppendGListByte(stream, kind);
 }
 
-void CBrowse_WriteNameLineRange(NameSpace *names, HashNameNode *name, PFile *file, PFile *endFile, int firstLine,
-                                int lastLine)
+void CBrowse_WriteNameLineRange(NameSpace *names, HashNameNode *name, CPrepFileInfo *file, CPrepFileInfo *endFile,
+                                int firstLine, int lastLine)
 {
     char *qualifiedName;
     int nameId;

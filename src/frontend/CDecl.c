@@ -89,7 +89,7 @@ void CDecl_ParseClass(DeclInfo *ctx, SInt16 kind, Boolean advanceToken, UInt8 ex
     ClassLayoutInput declarationState;
     CScopeSave scopeSave;
     GList contextSave;
-    FOI nameSave;
+    FileOffsetInfo nameSave;
     memclrw(&declarationState, 14);
     if (tk == TK_UU_DECLSPEC)
         extraFlags |= CDecl_ParseDeclarationAttributeFlags();
@@ -2030,15 +2030,15 @@ TypeMemberFunc *CDecl_NewTypeMemberFunc(TypeFunc *type, TypeClass *theclass, Boo
 
 void scan_inline_definition(Object *object, TypeClass *classType)
 {
-    PrepTokenBuffer declaration;
+    TokenStream declaration;
     int position;
-    PFile *parseResult;
+    CPrepFileInfo *parseResult;
     short token;
 
     object->qual |= Q_INLINE;
     ((TypeFunc *)object->type)->flags |= FUNC_DEFINED;
     CPrep_SaveFunctionBodyTokens(&declaration, NULL, 1);
-    if (declaration.count != 0) {
+    if (declaration.tokens != 0) {
         if (((((TypeFunc *)object->type)->flags & FUNC_METHOD) != 0) &&
             ((((TypeMemberFunc *)object->type)->theclass->flags & CLASS_IS_TEMPL) != 0)) {
             ((TypeFunc *)object->type)->flags |= 0x8000000;
@@ -2658,7 +2658,7 @@ static inline UInt8 CDecl_UseIntEnums(void)
 
 TypeEnum *parse_enum_definition(TypeEnum *decl, HashNameNode *name)
 {
-    PFile *context;
+    CPrepFileInfo *context;
     UInt8 overflow;
     UInt8 dependent;
     AccessType access;
@@ -2666,7 +2666,7 @@ TypeEnum *parse_enum_definition(TypeEnum *decl, HashNameNode *name)
     Type *expressionType;
     CInt64 value;
     CInt64 nextValue;
-    PFile *sourceFile;
+    CPrepFileInfo *sourceFile;
     SInt32 sourcePosition;
     ObjEnumConst *enumerator;
     ObjEnumConst *last;
@@ -2908,9 +2908,9 @@ void *parse_enum_body(TypeEnum *enumType, HashNameNode *name)
     Type *expressionType;
     CInt64 currentValue, maximumValue, minimumValue, nextValue;
     ObjEnumConst *tail;
-    PFile *sourceFile;
+    CPrepFileInfo *sourceFile;
     SInt32 sourceOffset;
-    PFile *browseFile;
+    CPrepFileInfo *browseFile;
     Boolean rangeChanged, overflow, isSigned;
     UInt8 access;
     HashNameNode *enumName;

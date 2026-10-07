@@ -2,6 +2,7 @@
 #define COMPILER_CPREP_H
 
 #include "compiler/common.h"
+#include "compiler/tokens.h"
 #include "driver/Files.h"
 
 #ifdef __cplusplus
@@ -27,25 +28,6 @@ struct BrowseOptions {
     UInt8 padec[0x0a];
 };
 #pragma pack(pop)
-struct BufferedToken {
-    short token;
-    short value_kind;
-    struct PFile *tokenfile;
-    int tokenoffset;
-    int tokenline;
-    union {
-        CInt64 integer; /* 0x10: CPrepTokenizer_GetNextToken saves/restores token_integer when token == -1 */
-        struct {
-            int first;
-            int second;
-        } words; /* 0x10: CPrepTokenizer_GetNextToken, token == -3 (name), -4/-5 (string length) */
-        struct {
-            char *data;
-            int length;
-        } string;       /* 0x10: CPrepTokenizer_GetNextToken, token == -4 or -5 */
-        Float floating; /* 0x10: CPrepTokenizer_GetNextToken, token == -2, saves/restores token_float */
-    } value;
-};
 #pragma options align = mac68k
 struct CNameRef {
     SInt32 a;
@@ -274,7 +256,7 @@ struct CPrepCU {
 #pragma options align = reset
 #pragma options align = mac68k
 struct CPrepRec {
-    struct PFile *file;
+    struct CPrepFileInfo *file;
     SInt32 pos;
     SInt16 state;
 };
@@ -334,17 +316,17 @@ struct OptionEntry {
 };
 #pragma options align = reset
 #pragma options align = mac68k
-struct PFile {
-    CWFileSpec header; /* 0x00: fn_004401b0 copies the resolved file specification */
-    char *textstart;
+struct CPrepFileInfo {
+    CWFileSpec textfile; /* 0x00: fn_004401b0 copies the resolved file specification */
+    char *textbuffer;
     SInt32 textlength;
     SInt32 linenumber;
     SInt32 pos;
     Boolean hasprepline;
-    UInt8 fileIDAlignment; /* 0x57: fn_004401b0 clears whole PFile; unused byte aligns the following SInt16 fileID */
     SInt16 fileID;
     Boolean recordbrowseinfo;
-    UInt8 unusedBytes[3]; /* 0x5b: fn_004401b0 clears these bytes with the whole PFile; no member reads or writes */
+    UInt8 unusedBytes
+        [3]; /* 0x5b: fn_004401b0 clears these bytes with the whole CPrepFileInfo; no member reads or writes */
     Boolean isDefault;
 };
 #pragma options align = reset
@@ -363,17 +345,13 @@ struct PragmaSettings {
 #pragma options align = mac68k
 struct PrepNameCacheEntry {
     struct PrepNameCacheEntry *next;
-    struct PFile *name;
+    struct CPrepFileInfo *name;
     HashNameNode *value;
     SInt32 auxiliaryValue;
 };
 #pragma options align = reset
-struct PrepTokenBuffer {
-    int count;
-    struct SavedPrepToken *tokens;
-};
 extern VarInfo *CPrep_AllocateVarInfo(void);
-extern PFile *CPrep_GetPFile(void);
+extern CPrepFileInfo *CPrep_GetPFile(void);
 extern void parse_elif_directive(void);
 extern void parse_ifndef(void);
 extern void parse_ifdef_directive(void);
@@ -405,17 +383,17 @@ extern Macro *find_expandable_macro(UInt8 *text);
 extern Boolean CPrep_0043ecb0(short ch);
 extern void CPrep_PopMacro(void);
 extern UInt8 CPrep_Compile(CPrepCU *cu);
-extern SInt32 CPrep_UpdateTokenLine(FOI *foi);
+extern SInt32 CPrep_UpdateTokenLine(FileOffsetInfo *foi);
 extern void CPrep_PopFile(void);
-extern BufferedToken *CPrep_GetLastBufferedToken(void);
+extern TStreamElement *CPrep_GetLastBufferedToken(void);
 extern int CPrep_0043f860(char *p);
 extern void CPrep_ResetBufferedTokenPosition(void);
 extern void fn_0043f3b0(short code);
 extern NameSpaceList *CPrep_ReportError(short token);
-extern void CPrep_RemoveBufferedTokens(int *entryCount, SInt32 *firstIndex);
-extern void CPrep_InsertTokenBuffer(PrepTokenBuffer *arg, SInt32 *result);
-extern void CPrep_BufferTokensThroughSemicolon(PrepTokenBuffer *buffer, void (*processToken)(struct BufferedToken *));
-extern void CPrep_SaveFunctionBodyTokens(PrepTokenBuffer *result, void (*tokenCallback)(BufferedToken *), int option);
+extern void CPrep_RemoveBufferedTokens(TokenStream *stream, SInt32 *firstIndex);
+extern void CPrep_InsertTokenBuffer(TokenStream *arg, SInt32 *result);
+extern void CPrep_BufferTokensThroughSemicolon(TokenStream *buffer, void (*processToken)(struct TStreamElement *));
+extern void CPrep_SaveFunctionBodyTokens(TokenStream *result, void (*tokenCallback)(TStreamElement *), int option);
 extern void CPrep_SetPosition(SInt32 *position);
 extern void CPrep_UngetToken(void);
 extern void CPrep_IncrementCountersAndUpdateTextOffset(void);
@@ -427,7 +405,7 @@ extern UInt8 *find_identifier_end_after_optional_paren(UInt8 *text);
 extern Macro *find_macro(void);
 extern void fn_0043f3e0(unsigned int token, char *name);
 extern void fn_004392e0(void);
-extern void fn_0043f1f0(FOI *name);
+extern void fn_0043f1f0(FileOffsetInfo *name);
 extern void CPrep_SaveAndSetOption(unsigned int index, UInt8 value);
 extern void undefine_macro(void);
 extern void fn_0043e8f0(void);
@@ -435,16 +413,16 @@ extern void parse_else_directive(void);
 extern void apply_pragma_object_flags(unsigned int flags);
 extern UInt8 CPrep_ExpandMacro(void);
 extern Macro *lookup_expandable_macro(void);
-extern void CPrep_GetFOI(FOI *location, BufferedToken *record);
-extern void CPrep_GetPosition(PFile **position, SInt32 *offset);
+extern void CPrep_GetFOI(FileOffsetInfo *location, TStreamElement *record);
+extern void CPrep_GetPosition(CPrepFileInfo **position, SInt32 *offset);
 extern UInt8 *expand_macro(Macro *m);
-extern int scan_braced_tokens(void (*callback)(BufferedToken *), int tokenCount);
+extern int scan_braced_tokens(void (*callback)(TStreamElement *), int tokenCount);
 extern struct CNameRef evaluate_binary_expression_value(struct CNameRef *init, SInt16 minprec);
 extern struct CNameRef evaluate_unary_expression_value(void);
-extern void CPrep_GetBrowseFilePosition(PFile **file, SInt32 *ppos);
+extern void CPrep_GetBrowseFilePosition(CPrepFileInfo **file, SInt32 *ppos);
 extern void CPrep_ParseDirective(void);
 extern int parse_endif_directive(void);
-extern PFile *DAT_005875f8;
+extern CPrepFileInfo *DAT_005875f8;
 extern int DAT_00587ef0;
 extern int remainingBufferedTokenCount;
 extern UInt8 DAT_0058850f;
@@ -455,9 +433,9 @@ extern UInt32 intconst_lo;
 extern UInt8 f87_enabled;
 extern struct Macro **macro_buckets;
 extern SInt32 line_count;
-extern struct BufferedToken *bufferedTokenPosition;
+extern struct TStreamElement *bufferedTokenPosition;
 extern UInt8 *token_start;
-extern struct PFile *currentPFile;
+extern struct CPrepFileInfo *currentPFile;
 extern UInt8 *cprep_cu;
 extern char *macro_text_start;
 extern short current_file_index;
@@ -476,7 +454,7 @@ extern void pop_files_and_release_heaps_and_lists(void);
 extern int initialize_preprocessor(void);
 extern UInt8 DAT_00586fd0[256];
 extern UInt8 data_0058702f;
-extern struct BufferedToken *buffered_token_buffer_end;
+extern struct TStreamElement *buffered_token_buffer_end;
 extern UInt8 data_0058852a;
 extern SInt32 __stdcall CPrep_GetTargetSettings(CWPluginPrivateContext *obj, TgtRec *dst);
 extern unsigned int __stdcall CPrep_CallCompilerCallbackWithValue(CWPluginPrivateContext *object_id,
@@ -501,8 +479,8 @@ extern unsigned int __stdcall CPrep_GetResultValues(CWPluginPrivateContext *hand
                                                     UInt32 *second_value);
 extern unsigned int __stdcall CPrep_InvokeCompilerCallback(CWPluginPrivateContext *instance_id,
                                                            struct FileProcessingInfo *argument, const char *value);
-extern HashNameNode *fn_00441850(PFile *a0, SInt32 *a1);
-struct PFile;
+extern HashNameNode *fn_00441850(CPrepFileInfo *a0, SInt32 *a1);
+struct CPrepFileInfo;
 struct ObjectCallbackContext;
 struct ObjectCallbackContext;
 

@@ -70,11 +70,11 @@ struct TemplateSourceRecordTyped {
     struct FuncArg
         *context; /* 0x04: CTemplateNew_CompileObject passes template parameters to CTemplateTools_InsertTemplateArgs */
     struct Object *object;
-    FOI sourceInfo;
-    struct PrepTokenBuffer state;
-    struct PFile *sourceFile;
+    FileOffsetInfo sourceInfo;
+    struct TokenStream state;
+    struct CPrepFileInfo *sourceFile;
     UInt32 sourceLine;
-    struct PFile *
+    struct CPrepFileInfo *
         f26; /* 0x26: serialize_prec_records allocates image storage with prec_position += 0x2a and clears this pointer */
     UInt16 f2a; /* 0x2a: PrecRecord trailing storage outside serialize_prec_records image allocation */
 };

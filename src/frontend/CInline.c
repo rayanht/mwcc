@@ -715,7 +715,7 @@ void parse_inline_definition(struct CPrecNode *inlineInfo)
             }
         }
     }
-    CPrep_RemoveBufferedTokens(&inlineInfo->u.k0.tokenBuffer.count, &inputState);
+    CPrep_RemoveBufferedTokens(&inlineInfo->u.k0.tokenBuffer, &inputState);
 }
 
 static SInt16 CIB_FindIndex(Statement *p, Statement *target)
@@ -1277,7 +1277,7 @@ void CInline_AddSpecialization(Object *func, void *definition, void *specializat
     TYPE_FUNC(func->type)->flags |= 0x800000;
 }
 
-void CInline_AddFunctionPrecNode(Object *func, TypeClass *value, FOI *key, PrepTokenBuffer *pair, Boolean flag)
+void CInline_AddFunctionPrecNode(Object *func, TypeClass *value, FileOffsetInfo *key, TokenStream *pair, Boolean flag)
 {
     CPrecNode *entry = flag ? pendingInlineWork : pending_prec_nodes;
     CPrecNode *node;
@@ -1397,7 +1397,7 @@ void CInline_ReconstructFunction(Object *function, CInlineInfo *rec, Statement *
             CFunc_SetupLocalVarInfo(obj);
         }
         if (rec->fileinfo.file) {
-            obj->u.var.info->deftoken.tokenfile = (struct PFile *)rec->fileinfo.file;
+            obj->u.var.info->deftoken.tokenfile = (struct CPrepFileInfo *)rec->fileinfo.file;
             obj->u.var.info->deftoken.tokenoffset = rec->tokenoffset;
         }
     }
@@ -1442,7 +1442,7 @@ void CInline_ReconstructFunction(Object *function, CInlineInfo *rec, Statement *
             CFunc_SetupLocalVarInfo(obj);
         }
         if (rec->fileinfo.file) {
-            obj->u.var.info->deftoken.tokenfile = (struct PFile *)rec->fileinfo.file;
+            obj->u.var.info->deftoken.tokenfile = (struct CPrepFileInfo *)rec->fileinfo.file;
             obj->u.var.info->deftoken.tokenoffset = rec->tokenoffset;
         }
     }
@@ -1561,7 +1561,7 @@ void CInline_SaveInfo(CInlineInfo *out, Statement *list, Object *function)
     out->kind = fn_00511180(function, list->next);
     if (copts.filesyminfo) {
         out->fileinfo = function_fileinfo;
-        out->fileinfo.isInline = 1;
+        out->fileinfo.is_inline = 1;
         out->f1c = data_00587184;
         out->tokenoffset = function_tokenoffset;
         out->tokenline = function_token_line;

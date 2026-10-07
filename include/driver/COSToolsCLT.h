@@ -31,7 +31,7 @@ extern void CompilerTools_CloseFile(short a0);
 extern void CompilerTools_MakeCWFileSpecFromPString(void *result, unsigned char *name);
 extern void CompilerTools_GetPFileFields(CWFileSpec *record, unsigned short *tag, SInt32 *value, void *data);
 extern void resolve_file_name_to_pascal_string(short category, int recordId, void *inputName);
-extern void CompilerTools_ResolveFileNameToCString(void *destination, PFile *record, SInt32 *result);
+extern void CompilerTools_ResolveFileNameToCString(void *destination, CPrepFileInfo *record, SInt32 *result);
 extern unsigned int CompilerTools_GetTicks(void);
 
 #ifdef __cplusplus

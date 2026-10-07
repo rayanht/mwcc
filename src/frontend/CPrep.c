@@ -219,7 +219,7 @@ static OptionEntry pragma_options[] = {
 #pragma options align = mac68k
 static struct CPrepRec data_0057f6c8[64];
 static SInt16 if_depth;
-static struct PFile *data_0057f94a[32];
+static struct CPrepFileInfo *data_0057f94a[32];
 static struct PrepNameCacheEntry *DAT_0057f9ca;
 static UInt32 next_scaled_ticks;
 static UInt8 data_0057f9d2;
@@ -237,16 +237,16 @@ static struct COpts *data_0057fcea;
 static UInt8 DAT_0057fcee;
 static GList macro_text;
 static struct StorageHandle *buffered_token_storage;
-static struct BufferedToken *buffered_tokens;
+static struct TStreamElement *buffered_tokens;
 static SInt32 buffered_token_capacity;
 static SInt32 data_0057fd0c;
 static unsigned char file_cannot_opened_name[64];
 static unsigned int total_heap_size;
-static struct BufferedToken lastBufferedToken;
+static struct TStreamElement lastBufferedToken;
 static short DAT_0057fd6c;
 #pragma options align = reset
 
-typedef void (*Callback)(BufferedToken *);
+typedef void (*Callback)(TStreamElement *);
 
 typedef enum { CPrep_DidPush, CPrep_DidPop } CPrep_DidFlag;
 
@@ -301,15 +301,15 @@ VarInfo *CPrep_AllocateVarInfo(void)
     return info;
 }
 
-PFile *CPrep_GetPFile(void)
+CPrepFileInfo *CPrep_GetPFile(void)
 {
     return currentPFile;
 }
 
-void CPrep_GetBrowseFilePosition(PFile **file, SInt32 *ppos)
+void CPrep_GetBrowseFilePosition(CPrepFileInfo **file, SInt32 *ppos)
 {
-    PFile *f;
-    PFile *fi;
+    CPrepFileInfo *f;
+    CPrepFileInfo *fi;
 
     if (buffered_tokens < bufferedTokenPosition) {
         f = bufferedTokenPosition[-1].tokenfile;
@@ -317,9 +317,9 @@ void CPrep_GetBrowseFilePosition(PFile **file, SInt32 *ppos)
     } else {
         f = fi = data_0057f94a[current_file_index];
         if (macro_expansion_depth)
-            *ppos = macro_stack[0].pos - fi->textstart;
+            *ppos = macro_stack[0].pos - fi->textbuffer;
         else
-            *ppos = currentTextPosition - (UInt8 *)fi->textstart;
+            *ppos = currentTextPosition - (UInt8 *)fi->textbuffer;
     }
     if (f && f->fileID > 0 && (f->recordbrowseinfo || template_recordbrowseinfo)) {
         *file = f;
@@ -337,9 +337,9 @@ SInt32 CPrep_GetCurrentTextOffset(void)
         return bufferedTokenPosition[-1].tokenoffset + 1;
     }
     if (macro_expansion_depth != 0) {
-        return macro_stack[0].pos - data_0057f94a[current_file_index]->textstart;
+        return macro_stack[0].pos - data_0057f94a[current_file_index]->textbuffer;
     }
-    return currentTextPosition - (unsigned char *)data_0057f94a[current_file_index]->textstart;
+    return currentTextPosition - (unsigned char *)data_0057f94a[current_file_index]->textbuffer;
 }
 
 #pragma sym reset
@@ -488,9 +488,9 @@ static void report_error(SInt16 code)
     CPrep_Error(code);
 }
 
-static SInt32 calc_line(PFile *p)
+static SInt32 calc_line(CPrepFileInfo *p)
 {
-    return (char *)currentTextPosition - p->textstart;
+    return (char *)currentTextPosition - p->textbuffer;
 }
 
 static inline void process_newline(void)
@@ -517,7 +517,7 @@ void skip_inactive_if_blocks(void)
 {
     SInt16 tok;
     SInt16 type;
-    BufferedToken tmp;
+    TStreamElement tmp;
     SInt32 *handle;
     int offset;
 
@@ -1502,7 +1502,7 @@ void parse_pragma(void)
             if (CPrep_ScanMacroExpandedChar() != 0) {
                 CPrep_ParseListingOption();
             } else {
-                CompilerTools_GetPFileFields(&currentPFile->header, NULL, NULL, filename);
+                CompilerTools_GetPFileFields(&currentPFile->textfile, NULL, NULL, filename);
                 isDefault = currentPFile->isDefault;
                 length = (UInt8)filename[0];
                 remaining = length;
@@ -2540,7 +2540,7 @@ UInt8 *expand_macro(Macro *macro)
                                     DAT_00587ef0++;
                                     line_count++;
                                     if (current_file_index <= 0)
-                                        text_offset = currentTextPosition - (UInt8 *)data_0057f94a[0]->textstart;
+                                        text_offset = currentTextPosition - (UInt8 *)data_0057f94a[0]->textbuffer;
                                 }
                                 DAT_00588523 = 1;
                                 continue;
@@ -2755,7 +2755,7 @@ char *expand_builtin_macro(Macro *macro)
 
         case 2:
             cursor = buffer;
-            CompilerTools_GetPFileFields(&data_0057f94a[current_file_index]->header, NULL, NULL, filename);
+            CompilerTools_GetPFileFields(&data_0057f94a[current_file_index]->textfile, NULL, NULL, filename);
             length = filename[0];
             if (cursor == NULL)
                 cursor = galloc(length + 3);
@@ -2855,7 +2855,7 @@ char *CPrep_GetFileName(char *param1, Boolean param2, Boolean param3)
     char *p;
     int i;
 
-    CompilerTools_GetPFileFields(&data_0057f94a[param2 ? 0 : current_file_index]->header, NULL, NULL, buf);
+    CompilerTools_GetPFileFields(&data_0057f94a[param2 ? 0 : current_file_index]->textfile, NULL, NULL, buf);
     len = buf[0];
     if (param1 == NULL)
         param1 = galloc(len + 3);
@@ -3649,7 +3649,7 @@ void skip_line_breaks_and_expand_macros(void)
                     DAT_00587ef0++;
                     line_count++;
                     if (current_file_index <= 0)
-                        text_offset = (char *)currentTextPosition - data_0057f94a[0]->textstart;
+                        text_offset = (char *)currentTextPosition - data_0057f94a[0]->textbuffer;
                 }
                 data_00588470 = 1;
                 data_00588524 = 1;
@@ -3704,7 +3704,7 @@ void fn_0043e8f0(void)
         DAT_00587ef0 += 1U;
         line_count += 1U;
         if (current_file_index <= 0)
-            text_offset = (char *)currentTextPosition - data_0057f94a[0]->textstart;
+            text_offset = (char *)currentTextPosition - data_0057f94a[0]->textbuffer;
     }
     data_00588470 = 1;
     data_00588524 = 1;
@@ -3728,7 +3728,7 @@ void CPrep_IncrementCountersAndUpdateTextOffset(void)
         DAT_00587ef0++;
         line_count++;
         if (current_file_index <= 0)
-            text_offset = (char *)currentTextPosition - data_0057f94a[0]->textstart;
+            text_offset = (char *)currentTextPosition - data_0057f94a[0]->textbuffer;
     }
 }
 
@@ -3933,7 +3933,7 @@ void CPrep_PopMacro(void)
 
 UInt8 CPrep_Compile(CPrepCU *cu)
 {
-    BufferedToken optionData;
+    TStreamElement optionData;
     UInt8 result;
     COpts *optionSnapshot;
     CPrepCU *currentCU;
@@ -4051,7 +4051,7 @@ UInt8 CPrep_Compile(CPrepCU *cu)
 
 #pragma sym reset
 
-void CPrep_GetPosition(PFile **position, SInt32 *offset)
+void CPrep_GetPosition(CPrepFileInfo **position, SInt32 *offset)
 {
     *position = currentPFile;
     if (macro_expansion_depth > 0)
@@ -4060,12 +4060,13 @@ void CPrep_GetPosition(PFile **position, SInt32 *offset)
         *offset = (char *)currentTextPosition - PTR_00587fb0;
 }
 
-SInt32 CPrep_UpdateTokenLine(FOI *foi)
+SInt32 CPrep_UpdateTokenLine(FileOffsetInfo *foi)
 {
     int i;
     SInt32 line;
 
-    if (buffered_tokens < bufferedTokenPosition && bufferedTokenPosition[-1].tokenfile == (struct PFile *)foi->file) {
+    if (buffered_tokens < bufferedTokenPosition &&
+        bufferedTokenPosition[-1].tokenfile == (struct CPrepFileInfo *)foi->file) {
         line = bufferedTokenPosition[-1].tokenline;
         if (line > foi->tokenline)
             foi->tokenline = line;
@@ -4084,34 +4085,34 @@ SInt32 CPrep_UpdateTokenLine(FOI *foi)
     return foi->tokenline;
 }
 
-void CPrep_GetFOI(FOI *location, BufferedToken *record)
+void CPrep_GetFOI(FileOffsetInfo *location, TStreamElement *record)
 {
     if ((record == NULL) || (record->tokenfile == NULL)) {
         if (buffered_tokens < bufferedTokenPosition) {
             location->file = bufferedTokenPosition[-1].tokenfile;
             location->tokenline = bufferedTokenPosition[-1].tokenline;
         } else {
-            location->file = (PFile *)data_0057f94a[current_file_index];
+            location->file = (CPrepFileInfo *)data_0057f94a[current_file_index];
             location->tokenline = DAT_00587ef0;
         }
     } else {
         location->file = record->tokenfile;
         location->tokenline = record->tokenline;
     }
-    location->isInline = 0;
+    location->is_inline = 0;
 }
 
-void fn_0043f1f0(FOI *name)
+void fn_0043f1f0(FileOffsetInfo *name)
 {
     PrepNameCacheEntry *entry;
     PrepNameCacheEntry *newEntry;
     HashNameNode *value;
-    PFile *currentName;
+    CPrepFileInfo *currentName;
 
     if ((currentName = name->file) == NULL) {
         return;
     }
-    if (currentName == (PFile *)data_0057f94a[0]) {
+    if (currentName == (CPrepFileInfo *)data_0057f94a[0]) {
         if (DAT_005875f8 == NULL) {
             return;
         }
@@ -4149,22 +4150,22 @@ void fn_0043f1f0(FOI *name)
 
 void CPrep_PopFile(void)
 {
-    PFile *input;
+    CPrepFileInfo *input;
 
     if (current_file_index < 0)
         return;
 
-    fn_0041b7f0(((struct CPrepCU *)cprep_cu)->context, currentPFile->textstart);
-    currentPFile->textstart = NULL;
+    fn_0041b7f0(((struct CPrepCU *)cprep_cu)->context, currentPFile->textbuffer);
+    currentPFile->textbuffer = NULL;
     --current_file_index;
     if (current_file_index >= 0) {
         input = data_0057f94a[current_file_index];
-        PTR_00587fb0 = (currentPFile = input)->textstart;
-        textend =
-            (UInt8 *)((*(PFile *volatile *)&currentPFile)->textstart + (*(PFile *volatile *)&currentPFile)->textlength);
+        PTR_00587fb0 = (currentPFile = input)->textbuffer;
+        textend = (UInt8 *)((*(CPrepFileInfo *volatile *)&currentPFile)->textbuffer +
+                            (*(CPrepFileInfo *volatile *)&currentPFile)->textlength);
         currentTextPosition = (UInt8 *)(PTR_00587fb0 + input->pos);
-        DAT_00587ef0 = (*(PFile *volatile *)&currentPFile)->linenumber;
-        data_0057f9dd = (*(PFile *volatile *)&currentPFile)->hasprepline;
+        DAT_00587ef0 = (*(CPrepFileInfo *volatile *)&currentPFile)->linenumber;
+        data_0057f9dd = (*(CPrepFileInfo *volatile *)&currentPFile)->hasprepline;
         data_00588524 = 1;
     }
     if (DAT_0058850f != 0 && copts.f8a == 0)
@@ -4213,13 +4214,13 @@ NameSpaceList *CPrep_ReportError(short token)
 
 /* Where an error is: the file and offset of TOKEN (else of the current token or the current position), its line and
    column, the source line around it with the error's column marked, and the text just before it. */
-void CPrep_GetTokenLocation(BufferedToken *token, PFile **file, SInt32 *position, short *column, SInt32 *line,
+void CPrep_GetTokenLocation(TStreamElement *token, CPrepFileInfo **file, SInt32 *position, short *column, SInt32 *line,
                             char *text, short *textpos, short *textcol, char *context, short *contextpos)
 {
     SInt32 lineno;
     SInt32 j;
     SInt32 n;
-    BufferedToken *tok;
+    TStreamElement *tok;
     char *base, *cursor, *start;
     SInt32 offset;
     SInt32 i;
@@ -4229,7 +4230,7 @@ void CPrep_GetTokenLocation(BufferedToken *token, PFile **file, SInt32 *position
     SInt32 auxlong;
     char *loaded;
     unsigned char name[256];
-    PFile *pf;
+    CPrepFileInfo *pf;
     char *end;
 
     if (token && !token->tokenfile)
@@ -4254,10 +4255,10 @@ void CPrep_GetTokenLocation(BufferedToken *token, PFile **file, SInt32 *position
         *file = tok->tokenfile;
         *position = offset = tok->tokenoffset;
     }
-    if (!(base = (pf = *file)->textstart)) {
+    if (!(base = (pf = *file)->textbuffer)) {
         if (CWPluginsPrivate_ValidateAndCallCallback(*(CWPluginPrivateContext **)cprep_cu, (int)pf, (int)&loaded,
                                                      (int)&auxlong, (int)&auxshort)) {
-            CompilerTools_GetPFileFields(&pf->header, NULL, NULL, name);
+            CompilerTools_GetPFileFields(&pf->textfile, NULL, NULL, name);
             c = name[0];
             if (c > 63)
                 c = 63;
@@ -4333,7 +4334,7 @@ void CPrep_GetTokenLocation(BufferedToken *token, PFile **file, SInt32 *position
 
 #pragma sym on
 
-BufferedToken *CPrep_GetLastBufferedToken(void)
+TStreamElement *CPrep_GetLastBufferedToken(void)
 {
     if (buffered_tokens < bufferedTokenPosition)
         return bufferedTokenPosition - 1;
@@ -4448,19 +4449,19 @@ void CPrep_ResetBufferedTokenPosition(void)
 
 #pragma sym on
 
-void CPrep_RemoveBufferedTokens(int *entryCount, SInt32 *firstIndex)
+void CPrep_RemoveBufferedTokens(TokenStream *stream, SInt32 *firstIndex)
 {
     int remainingCount;
     int index;
-    BufferedToken *firstEntry;
+    TStreamElement *firstEntry;
 
     index = *firstIndex;
     remainingCount = bufferedTokenPosition - buffered_tokens;
     firstEntry = buffered_tokens + index;
-    remainingCount = remainingCount - index - *entryCount + remainingBufferedTokenCount;
+    remainingCount = remainingCount - index - stream->tokens + remainingBufferedTokenCount;
     if (remainingCount >= 0) {
         if (remainingCount != 0) {
-            memmove(firstEntry, firstEntry + *entryCount, remainingCount * sizeof(*firstEntry));
+            memmove(firstEntry, firstEntry + stream->tokens, remainingCount * sizeof(*firstEntry));
         }
         bufferedTokenPosition = firstEntry;
         remainingBufferedTokenCount = remainingCount;
@@ -4469,36 +4470,36 @@ void CPrep_RemoveBufferedTokens(int *entryCount, SInt32 *firstIndex)
 
 #pragma sym reset
 
-void CPrep_InsertTokenBuffer(PrepTokenBuffer *arg, SInt32 *result)
+void CPrep_InsertTokenBuffer(TokenStream *arg, SInt32 *result)
 {
     SInt32 index;
     SInt32 count;
     char *tokenData;
 
-    if (remainingBufferedTokenCount + (index = bufferedTokenPosition - buffered_tokens) + (count = arg->count) >=
+    if (remainingBufferedTokenCount + (index = bufferedTokenPosition - buffered_tokens) + (count = arg->tokens) >=
         buffered_token_capacity) {
         fn_004431b0(buffered_token_storage);
-        if (!fn_00443170(buffered_token_storage, (buffered_token_capacity + count) * sizeof(BufferedToken)))
+        if (!fn_00443170(buffered_token_storage, (buffered_token_capacity + count) * sizeof(TStreamElement)))
             CError_LongJump();
         fn_004431a0(buffered_token_storage);
         buffered_token_capacity += count;
         tokenData = buffered_token_storage->data;
-        buffered_tokens = (BufferedToken *)tokenData;
+        buffered_tokens = (TStreamElement *)tokenData;
         buffered_token_buffer_end = buffered_tokens + (buffered_token_capacity - 1);
         bufferedTokenPosition = buffered_tokens + index;
     }
     if (remainingBufferedTokenCount != 0)
-        memmove(bufferedTokenPosition + arg->count, bufferedTokenPosition,
-                remainingBufferedTokenCount * sizeof(BufferedToken));
-    memcpy(bufferedTokenPosition, arg->tokens, arg->count * sizeof(BufferedToken));
-    remainingBufferedTokenCount += arg->count;
+        memmove(bufferedTokenPosition + arg->tokens, bufferedTokenPosition,
+                remainingBufferedTokenCount * sizeof(TStreamElement));
+    memcpy(bufferedTokenPosition, arg->firsttoken, arg->tokens * sizeof(TStreamElement));
+    remainingBufferedTokenCount += arg->tokens;
     *result = bufferedTokenPosition - buffered_tokens;
 }
 
 /* 24-byte token record: the /0x18 in the disassembly is the pointer
  * difference scaling produced by this struct size. */
 
-void CPrep_BufferTokensThroughSemicolon(PrepTokenBuffer *buffer, void (*processToken)(struct BufferedToken *))
+void CPrep_BufferTokensThroughSemicolon(TokenStream *buffer, void (*processToken)(struct TStreamElement *))
 {
     int savedMode;
     SInt32 tokenCount;
@@ -4507,32 +4508,32 @@ void CPrep_BufferTokensThroughSemicolon(PrepTokenBuffer *buffer, void (*processT
     firstToken = (bufferedTokenPosition - buffered_tokens) - 1;
     savedMode = data_0058850d;
     data_0058850d = 1;
-    buffer->count = 0;
-    buffer->tokens = NULL;
+    buffer->tokens = 0;
+    buffer->firsttoken = NULL;
     tokenCount = 1;
     while (tk != 0 && tk != ';') {
         tk = CPrepTokenizer_GetNextToken();
         if (tk == TK_IDENTIFIER && processToken != NULL) {
             processToken(bufferedTokenPosition - 1);
-            tk = bufferedTokenPosition[-1].token;
+            tk = bufferedTokenPosition[-1].tokentype;
         }
         tokenCount++;
     }
-    buffer->count = tokenCount;
-    buffer->tokens = galloc(tokenCount * sizeof(*buffer->tokens));
-    memcpy(buffer->tokens, buffered_tokens + firstToken, tokenCount * sizeof(*buffer->tokens));
+    buffer->tokens = tokenCount;
+    buffer->firsttoken = galloc(tokenCount * sizeof(*buffer->firsttoken));
+    memcpy(buffer->firsttoken, buffered_tokens + firstToken, tokenCount * sizeof(*buffer->firsttoken));
     data_0058850d = savedMode;
 }
 
-void CPrep_SaveFunctionBodyTokens(PrepTokenBuffer *result, void (*tokenCallback)(BufferedToken *), int option)
+void CPrep_SaveFunctionBodyTokens(TokenStream *result, void (*tokenCallback)(TStreamElement *), int option)
 {
-    BufferedToken firstToken;
-    BufferedToken handlerToken;
+    TStreamElement firstToken;
+    TStreamElement handlerToken;
     UInt8 savedMode;
     int tokenCount;
     int bodyStart;
     int firstTokenIndex;
-    SavedPrepToken *tokenBuffer;
+    TStreamElement *tokenBuffer;
     UInt16 nextToken;
     Boolean hasHandlers;
 
@@ -4540,8 +4541,8 @@ void CPrep_SaveFunctionBodyTokens(PrepTokenBuffer *result, void (*tokenCallback)
     tokenCount = 0;
     bodyStart = 0;
     hasHandlers = FALSE;
-    result->count = 0;
-    result->tokens = NULL;
+    result->tokens = 0;
+    result->firsttoken = NULL;
     savedMode = data_0058850d;
     data_0058850d = 1;
     switch (tk) {
@@ -4564,7 +4565,7 @@ void CPrep_SaveFunctionBodyTokens(PrepTokenBuffer *result, void (*tokenCallback)
                             firstToken = bufferedTokenPosition[-1];
                             tokenCallback(&firstToken);
                             bufferedTokenPosition[-1] = firstToken;
-                            tk = firstToken.token;
+                            tk = firstToken.tokentype;
                         }
                     default:
                         ++tokenCount;
@@ -4613,7 +4614,7 @@ void CPrep_SaveFunctionBodyTokens(PrepTokenBuffer *result, void (*tokenCallback)
                                     handlerToken = bufferedTokenPosition[-1];
                                     tokenCallback(&handlerToken);
                                     bufferedTokenPosition[-1] = handlerToken;
-                                    tk = handlerToken.token;
+                                    tk = handlerToken.tokentype;
                                 }
                             default:
                                 tokenCount++;
@@ -4640,19 +4641,19 @@ void CPrep_SaveFunctionBodyTokens(PrepTokenBuffer *result, void (*tokenCallback)
         }
     }
     data_0058850d = savedMode;
-    result->count = tokenCount;
-    tokenBuffer = (SavedPrepToken *)galloc(tokenCount * sizeof(SavedPrepToken));
-    result->tokens = tokenBuffer;
-    memcpy(result->tokens, buffered_tokens + firstTokenIndex, tokenCount * sizeof(SavedPrepToken));
+    result->tokens = tokenCount;
+    tokenBuffer = (TStreamElement *)galloc(tokenCount * sizeof(TStreamElement));
+    result->firsttoken = tokenBuffer;
+    memcpy(result->firsttoken, buffered_tokens + firstTokenIndex, tokenCount * sizeof(TStreamElement));
     return;
 }
 
-int scan_braced_tokens(void (*callback)(BufferedToken *), int tokenCount)
+int scan_braced_tokens(void (*callback)(TStreamElement *), int tokenCount)
 {
     int count = tokenCount + 1;
     int braceDepth = 1;
     short token;
-    BufferedToken record;
+    TStreamElement record;
 
     for (;;) {
         count++;
@@ -4665,7 +4666,7 @@ int scan_braced_tokens(void (*callback)(BufferedToken *), int tokenCount)
                     record = bufferedTokenPosition[-1];
                     callback(&record);
                     bufferedTokenPosition[-1] = record;
-                    tk = (UInt16)record.token;
+                    tk = (UInt16)record.tokentype;
                 }
                 break;
             case '{':
@@ -4723,8 +4724,8 @@ static inline CPrepCU *CPrep_CurrentCompilationUnit(void)
 void CPrep_SetBufferedTokenPosition(SInt32 *count)
 {
     SInt32 value = *count;
-    struct BufferedToken *top = bufferedTokenPosition;
-    struct BufferedToken *next;
+    struct TStreamElement *top = bufferedTokenPosition;
+    struct TStreamElement *next;
     remainingBufferedTokenCount += (top - buffered_tokens) - value;
     value = *count;
     next = buffered_tokens + value;
@@ -4749,14 +4750,14 @@ void CPrep_GrowBufferedTokenBuffer(SInt32 n)
     fn_004431a0(buffered_token_storage);
     buffered_token_capacity += n;
     tokenData = buffered_token_storage->data;
-    buffered_tokens = (struct BufferedToken *)tokenData;
+    buffered_tokens = (struct TStreamElement *)tokenData;
     buffered_token_buffer_end = &buffered_tokens[buffered_token_capacity - 1];
     bufferedTokenPosition = buffered_tokens + count;
 }
 
 unsigned char fn_004401b0(unsigned char *name, unsigned char mode, unsigned char skip)
 {
-    PFile node;
+    CPrepFileInfo node;
     UInt32 type;
     SInt32 offset;
     short id;
@@ -4792,10 +4793,10 @@ unsigned char fn_004401b0(unsigned char *name, unsigned char mode, unsigned char
         }
         if ((skip != 0 || data_0057f9d3 != 0) && input.callbackState != 0)
             return 1;
-        node.header = input.output;
+        node.textfile = input.output;
         if (input.fileReference != NULL) {
             if ((int)input.referenceKind == 1) {
-                node.textstart = (char *)input.fileReference;
+                node.textbuffer = (char *)input.fileReference;
                 node.textlength = input.referenceValue;
                 node.fileID = input.lookupResult;
                 node.recordbrowseinfo = input.lookupFailed;
@@ -4807,12 +4808,12 @@ unsigned char fn_004401b0(unsigned char *name, unsigned char mode, unsigned char
                 return 0;
             }
         } else {
-            CompilerTools_GetPFileFields(&node.header, &volume, &directory, resolvedName);
-            if (fn_00443250(&node.header, &id) != 0) {
+            CompilerTools_GetPFileFields(&node.textfile, &volume, &directory, resolvedName);
+            if (fn_00443250(&node.textfile, &id) != 0) {
                 LogName(name);
                 return 0;
             }
-            if (CompilerTools_GetFileType(&node.header, &type) != 0 || CompilerTools_GetFileSize(id, &offset) != 0) {
+            if (CompilerTools_GetFileType(&node.textfile, &type) != 0 || CompilerTools_GetFileSize(id, &offset) != 0) {
                 CompilerTools_CloseFile(id);
                 LogName(name);
                 return 0;
@@ -4852,8 +4853,8 @@ unsigned char fn_004401b0(unsigned char *name, unsigned char mode, unsigned char
             CError_DispatchAndLongJump();
             return 0;
         }
-        node.header = CPrep_CurrentCompilationUnit()->mainFile;
-        node.textstart = (char *)CPrep_CurrentCompilationUnit()->mainFileOffset;
+        node.textfile = CPrep_CurrentCompilationUnit()->mainFile;
+        node.textbuffer = (char *)CPrep_CurrentCompilationUnit()->mainFileOffset;
         node.textlength = CPrep_CurrentCompilationUnit()->mainFileLength;
         node.fileID = CPrep_CurrentCompilationUnit()->mainFileAttributes;
         node.recordbrowseinfo = CPrep_CurrentCompilationUnit()->compiling;
@@ -4862,16 +4863,16 @@ unsigned char fn_004401b0(unsigned char *name, unsigned char mode, unsigned char
         data_0057f94a[current_file_index]->linenumber = DAT_00587ef0;
         data_0057f94a[current_file_index]->hasprepline = data_0057f9dd;
         data_0057f94a[current_file_index]->pos =
-            currentTextPosition - (UInt8 *)data_0057f94a[current_file_index]->textstart;
+            currentTextPosition - (UInt8 *)data_0057f94a[current_file_index]->textbuffer;
     }
-    currentTextPosition = (UInt8 *)node.textstart;
+    currentTextPosition = (UInt8 *)node.textbuffer;
     DAT_00587ef0 = 1;
     data_00588524 = 1;
     data_0057f94a[++current_file_index] = galloc(sizeof(node));
     *data_0057f94a[current_file_index] = node;
     currentPFile = data_0057f94a[current_file_index];
-    PTR_00587fb0 = currentPFile->textstart;
-    textend = (UInt8 *)currentPFile->textstart + currentPFile->textlength;
+    PTR_00587fb0 = currentPFile->textbuffer;
+    textend = (UInt8 *)currentPFile->textbuffer + currentPFile->textlength;
     if (DAT_0058850f != 0 && copts.f8a == 0)
         CPreprocess_EmitLineDirective();
     return 1;
@@ -5313,7 +5314,7 @@ int CPrep_AppendStringBounded(char *dst, char *src, int size)
     return 0;
 }
 
-HashNameNode *fn_00441850(PFile *file, SInt32 *position)
+HashNameNode *fn_00441850(CPrepFileInfo *file, SInt32 *position)
 {
     char fileName[256];
     CompilerTools_ResolveFileNameToCString(fileName, file, position);

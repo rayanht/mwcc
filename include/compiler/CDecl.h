@@ -64,8 +64,8 @@ struct DeclInfo {
     Boolean allowTemplateArguments;
     Boolean hasTemplateArguments;
     UInt8 hasTypename;
-    struct PFile *browseFile;
-    struct PFile *sourceFile;
+    struct CPrepFileInfo *browseFile;
+    struct CPrepFileInfo *sourceFile;
     SInt32 sourceLine;
 };
 #pragma options align = reset
@@ -94,11 +94,11 @@ struct TemplateDeclarationData {
     struct CTStateElem *
         parsedData; /* 0x10: CDecl_InitDeclInfoFromTemplateDeclarationData copies DeclInfo.parsedData, copied by CTemplateTools_CopyCTStateElemList */
     SInt16 storage; /* 0x14: CDecl_InitDeclInfoFromTemplateDeclarationData */
-    SInt16 extraQualifiers;            /* 0x16: CDecl_InitDeclInfoFromTemplateDeclarationData */
-    SInt8 declarationAttributes;       /* 0x18: CDecl_InitDeclInfoFromTemplateDeclarationData */
-    SInt8 hasTemplateArguments;        /* 0x19: CDecl_InitDeclInfoFromTemplateDeclarationData */
-    FOI inlineLocation;                /* 0x1a: CTemplateClass.c passes to CInline_AddFunctionPrecNode */
-    PrepTokenBuffer inlineTokenBuffer; /* 0x24: CTemplateClass.c passes to CInline_AddFunctionPrecNode */
+    SInt16 extraQualifiers;        /* 0x16: CDecl_InitDeclInfoFromTemplateDeclarationData */
+    SInt8 declarationAttributes;   /* 0x18: CDecl_InitDeclInfoFromTemplateDeclarationData */
+    SInt8 hasTemplateArguments;    /* 0x19: CDecl_InitDeclInfoFromTemplateDeclarationData */
+    FileOffsetInfo inlineLocation; /* 0x1a: CTemplateClass.c passes to CInline_AddFunctionPrecNode */
+    TokenStream inlineTokenBuffer; /* 0x24: CTemplateClass.c passes to CInline_AddFunctionPrecNode */
 };
 #pragma pack(pop)
 extern TypeIntegral stunsignedint;
@@ -145,7 +145,7 @@ extern void parse_resolved_member_function_decl(DeclInfo *di, Boolean define);
 extern void CDecl_ScanStructDeclarator(MemberDecl *p);
 extern struct HashNameNode *unnamed_name;
 extern struct NameSpace *currentNameSpace;
-extern struct FOI member_foi;
+extern struct FileOffsetInfo member_foi;
 extern TypeIntegral stunsignedshort;
 extern TypeIntegral stunsignedchar;
 extern void CDecl_ParseClass(DeclInfo *ctx, SInt16 kind, Boolean advanceToken, UInt8 extraFlags);

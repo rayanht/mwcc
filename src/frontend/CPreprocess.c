@@ -612,7 +612,7 @@ void CPreprocess_EmitLineDirective(void)
             CompilerTools_ResolveFileNameToCString(buffer, currentPFile, &fileValue);
             CompilerTools_AppendGListData(&DAT_00586da8.list, buffer, strlen(buffer));
         } else {
-            CompilerTools_GetPFileFields(&currentPFile->header, &fileTag, &fileValue, &fileName.len);
+            CompilerTools_GetPFileFields(&currentPFile->textfile, &fileTag, &fileValue, &fileName.len);
             CompilerTools_AppendGListData(&DAT_00586da8.list, fileName.name, fileName.len);
         }
 

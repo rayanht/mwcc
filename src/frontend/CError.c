@@ -153,7 +153,7 @@ void fn_00449dc0(void)
     return;
 }
 
-void CError_SetBufferedToken(BufferedToken *entry)
+void CError_SetBufferedToken(TStreamElement *entry)
 {
     if (entry) {
         if (entry->tokenfile) {
@@ -938,7 +938,7 @@ void CError_FormatAndReportDiagnostic(int errorCode, const char *format, char *a
     UInt32 qualifiers;
     char *name;
     HashNameNode *file;
-    PFile *pfile;
+    CPrepFileInfo *pfile;
     const char *fmt;
 
     eb.cursor = buffer;
@@ -984,7 +984,7 @@ void CError_FormatAndReportDiagnostic(int errorCode, const char *format, char *a
                         fmt += 2;
                         continue;
                     case 'f':
-                        pfile = va_arg(args, PFile *);
+                        pfile = va_arg(args, CPrepFileInfo *);
                         file = fn_00441850(pfile, &position);
                         CError_BufferAppendString(&eb, file->name);
                         fmt += 2;

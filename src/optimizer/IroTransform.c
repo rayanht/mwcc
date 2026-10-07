@@ -1706,7 +1706,7 @@ void simplify_diadic_constants(IROLinear *node)
                         case EDIVASS:
                         case EMODASS:
                             if (node->stmt->sourceoffset != 0) {
-                                BufferedToken *errorPos = CPrep_GetLastBufferedToken();
+                                TStreamElement *errorPos = CPrep_GetLastBufferedToken();
                                 errorPos->tokenoffset = node->stmt->sourceoffset;
                                 CError_SetBufferedToken(errorPos);
                             }

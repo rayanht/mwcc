@@ -895,7 +895,7 @@ struct TemplateSpecializationData *find_or_create_template_specialization(Object
         }
         object->sclass = func->sclass;
         instance->object = object;
-        if ((object->qual & Q_INLINE) != 0 && info->stream.count != 0)
+        if ((object->qual & Q_INLINE) != 0 && info->stream.tokens != 0)
             CInline_AddSpecialization(object, info, instance);
     } else {
         instance->object = premade;

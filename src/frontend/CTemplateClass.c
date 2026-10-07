@@ -286,7 +286,7 @@ void instantiate_friend_declaration(TemplateContext *ctx, struct TemplateDeclara
         CScope_RestoreScope((CScopeSave *)&savedScope); /* original stack-slot view */
         if (object != NULL) {
             CDecl_AddFriend(ctx->instance, object, NULL);
-            if (declaration->inlineTokenBuffer.count)
+            if (declaration->inlineTokenBuffer.tokens)
                 CInline_AddFunctionPrecNode(object, ctx->instance, &declaration->inlineLocation,
                                             &declaration->inlineTokenBuffer, 0);
         } else {
@@ -1402,8 +1402,8 @@ void CTemplateClass_ParsePartialSpecialization(TemplateScopeState *scope, struct
 /* Fixed-size hash-name header, without the variable-length name. */
 /* Two-word payload associated with a keyed list entry. */
 
-struct KeyedEntry *CTemplateClass_AddTemplateArgumentOverride(TypeClassTemplate *owner, Object *key, FOI *name,
-                                                              struct PrepTokenBuffer *payload)
+struct KeyedEntry *CTemplateClass_AddTemplateArgumentOverride(TypeClassTemplate *owner, Object *key,
+                                                              FileOffsetInfo *name, struct TokenStream *payload)
 {
     enum { KeyedEntryAllocationSize = 0x2a };
     KeyedEntry *entry;
