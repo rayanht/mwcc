@@ -12,12 +12,12 @@
 extern "C" {
 #endif
 
-struct ClassLayoutInput {
-    struct Object **entries;
-    struct ObjMemberVar *vtableMember;
-    unsigned short count;
-    unsigned short firstVirtualSlot;
-    char hasVirtualFunction;
+struct ClassLayout {
+    ObjBase **objlist;
+    ObjMemberVar *vtable_ivar;
+    UInt16 lex_order_count;
+    UInt16 firstVirtualSlot;
+    Boolean has_vtable;
 };
 /* A declaration's storage class (DeclInfo.storage): the keyword's token. An enumeration: CFunc compares the storage with these
  * enumerators, which compiles differently from a comparison with the numbers. */
@@ -102,25 +102,25 @@ struct TemplateDeclarationData {
 };
 #pragma pack(pop)
 extern TypeIntegral stunsignedint;
-struct ClassLayoutInput;
+struct ClassLayout;
 extern UInt8 CDecl_ParseDeclarationAttributeFlags(void);
 extern TypeClass *CDecl_DefineClass(struct NameSpace *nspace, struct HashNameNode *name, struct TypeClass *type,
                                     short mode, char flag4, char flag5);
-extern void CDecl_CompleteClass(ClassLayoutInput *ctx, TypeClass *cls);
-extern void fill_class_layout_entries(ClassLayoutInput *table, TypeClass *type, Object **entries);
-extern void declare_auto_generated_destructor(ClassLayoutInput *type, TypeClass *cls);
-extern void generate_copy_constructor(ClassLayoutInput *type, TypeClass *cls);
-extern void declare_default_copy_constructor(ClassLayoutInput *decl, TypeClass *type);
+extern void CDecl_CompleteClass(ClassLayout *ctx, TypeClass *cls);
+extern void fill_class_layout_entries(ClassLayout *table, TypeClass *type, ObjBase **entries);
+extern void declare_auto_generated_destructor(ClassLayout *type, TypeClass *cls);
+extern void generate_copy_constructor(ClassLayout *type, TypeClass *cls);
+extern void declare_default_copy_constructor(ClassLayout *decl, TypeClass *type);
 extern TypeMemberFunc *CDecl_MakeDefaultDtorType(TypeClass *theclass, char is_const);
-extern void make_auto_generated_dtor(ClassLayoutInput *context, TypeClass *cls);
+extern void make_auto_generated_dtor(ClassLayout *context, TypeClass *cls);
 extern void make_defarg_function(TypeClass *cls);
-extern void parse_class_bases(struct TypeClassTemplate *classType, short mode, char allowDependent);
+extern void parse_class_bases(struct TemplClass *classType, short mode, char allowDependent);
 extern Boolean CDecl_CheckNewBase(TypeClass *cls, TypeClass *base, Boolean flag);
 extern void CDecl_SetVBaseOffsets(TypeClass *cls);
 extern VClassList *append_unique_vbase(TypeClass *cls, TypeClass *base);
-extern ObjMemberVar *add_member_var(ClassLayoutInput *declaration, TypeClass *cls, Type *type, UInt32 qual,
+extern ObjMemberVar *add_member_var(ClassLayout *declaration, TypeClass *cls, Type *type, UInt32 qual,
                                     HashNameNode *name, AccessType access);
-extern void parse_friend_declaration(struct TypeClassTemplate *cls);
+extern void parse_friend_declaration(struct TemplClass *cls);
 extern void CDecl_AddFriend(TypeClass *typeClass, Object *object, Type *type);
 extern void CDecl_InitDeclInfoFromTemplateDeclarationData(DeclInfo *dst, TemplateDeclarationData *src);
 extern unsigned char CDecl_CopyDeclInfoToNewFunc(NewFunc *destination, DeclInfo *source);
@@ -134,7 +134,7 @@ extern Boolean CDecl_FunctionDeclarator(DeclInfo *decl, NameSpace *mode, Boolean
 extern void compute_struct_layout(Type *str);
 extern TypeEnum *parse_enum_definition(TypeEnum *decl, HashNameNode *name);
 extern void scanstruct(DeclInfo *state, SInt16 spec);
-extern void declare_member_function(ClassLayoutInput *gen, TypeClass *cls, struct DeclInfo *info, UInt8 access,
+extern void declare_member_function(ClassLayout *gen, TypeClass *cls, struct DeclInfo *info, UInt8 access,
                                     UInt8 allowPure, UInt8 specialMember, UInt8 parseBody, UInt8 declarationOnly);
 extern void declare_object(DeclInfo *d, UInt8 b, Boolean c);
 extern void CDecl_ComputeUnderlyingEnumType(TypeEnum *res);
@@ -153,7 +153,7 @@ extern void CheckDefaultArgs(FuncArg *args);
 extern void MergeDefaultArgs(FuncArg *args, FuncArg *otherArgs);
 extern Object *find_or_create_function_object(ObjectList *list, DeclInfo *ref, Boolean *found, UInt8 mode,
                                               Boolean conv);
-extern void parse_class_members(ClassLayoutInput *decle, TypeClass *tclass, SInt16 mode);
+extern void parse_class_members(ClassLayout *decle, TypeClass *tclass, SInt16 mode);
 extern struct HashNameNode *destructor_name;
 extern UInt8 member_access;
 extern void conversion_type_name(DeclInfo *result);

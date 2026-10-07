@@ -185,7 +185,7 @@ void CPrec_LoadPrecompiledHeader(short file, UInt8 *buffer)
     if (!prec_header->classExtensionOffset)
         class_template_list = NULL;
     else
-        class_template_list = (TypeClassTemplate *)(precompiled_header_base + prec_header->classExtensionOffset);
+        class_template_list = (TemplClass *)(precompiled_header_base + prec_header->classExtensionOffset);
 
     if (!prec_header->templateFunctionsOffset)
         templateFunctions = NULL;
@@ -2427,7 +2427,7 @@ UInt32 serialize_cprec_nodes(CPrecNode *info)
     SInt32 result;
     SInt32 specializationOffset;
     SInt32 firstSpecializationOffset;
-    TemplateSpecializationData *specialization;
+    TemplFuncInstance *specialization;
     SInt32 nextOffset;
 
     if (data_00581c28 != 0) {
@@ -2480,7 +2480,7 @@ UInt32 serialize_cprec_nodes(CPrecNode *info)
                     prec_position += sizeof(*specialization);
                     add_serialized_bucket_entry(specializationOffset + 4, write_object(specialization->object));
                     add_serialized_bucket_entry(specializationOffset + 8,
-                                                serialize_ct_state_elems(specialization->templateArguments));
+                                                serialize_ct_state_elems(specialization->args));
                     if (specialization->next == NULL) {
                         break;
                     }
@@ -2857,7 +2857,7 @@ UInt32 write_object(Object *obj)
 
     if ((obj->qual & Q_IS_TEMPLATED) != 0 && obj->datatype != DALIAS) {
         append_data_and_count_size(obj, 0x3a);
-        add_serialized_bucket_entry(offset + 0x36, write_object(((TemplateObjectInstance *)obj)->templateObject));
+        add_serialized_bucket_entry(offset + 0x36, write_object(((ObjectTemplated *)obj)->parent));
     } else
         append_data_and_count_size(obj, 0x36);
 
@@ -3737,49 +3737,43 @@ UInt32 write_typeclass(TypeClass *node)
 
         if ((node->flags & CLASS_IS_TEMPL) != 0) {
             if (data_00581c28 != 0)
-                CompilerTools_AppendGListData(&precompiled_buffer, node, sizeof(TypeClassTemplate));
-            prec_position += sizeof(TypeClassTemplate);
-            if (((TypeClassTemplate *)node)->next != NULL)
+                CompilerTools_AppendGListData(&precompiled_buffer, node, sizeof(TemplClass));
+            prec_position += sizeof(TemplClass);
+            if (((TemplClass *)node)->next != NULL)
                 hasNextClass = 1;
-            if (((TypeClassTemplate *)node)->enclosingTemplate != NULL)
-                add_serialized_bucket_entry(offset + 0x36,
-                                            write_type((Type *)((TypeClassTemplate *)node)->enclosingTemplate));
-            if (((TypeClassTemplate *)node)->relatedClass != NULL)
-                add_serialized_bucket_entry(offset + 0x3a, write_type(((TypeClassTemplate *)node)->relatedClass));
-            if (((TypeClassTemplate *)node)->templateParameters != NULL)
-                add_serialized_bucket_entry(offset + 0x3e,
-                                            serialize_pre_nodes(((TypeClassTemplate *)node)->templateParameters));
-            if (((TypeClassTemplate *)node)->templateArgumentOverrides != NULL)
+            if (((TemplClass *)node)->templ_parent != NULL)
+                add_serialized_bucket_entry(offset + 0x36, write_type((Type *)((TemplClass *)node)->templ_parent));
+            if (((TemplClass *)node)->inst_parent != NULL)
+                add_serialized_bucket_entry(offset + 0x3a, write_type(TYPE(((TemplClass *)node)->inst_parent)));
+            if (((TemplClass *)node)->templ__params != NULL)
+                add_serialized_bucket_entry(offset + 0x3e, serialize_pre_nodes(((TemplClass *)node)->templ__params));
+            if (((TemplClass *)node)->members != NULL)
                 add_serialized_bucket_entry(
-                    offset + 0x42,
-                    serialize_prec_records(
-                        (TemplateSourceRecordTyped *)((TypeClassTemplate *)node)->templateArgumentOverrides));
-            if (((TypeClassTemplate *)node)->instances != NULL)
-                add_serialized_bucket_entry(offset + 0x46, write_type((Type *)((TypeClassTemplate *)node)->instances));
-            if (((TypeClassTemplate *)node)->replacementTemplate != NULL)
-                add_serialized_bucket_entry(offset + 0x4a,
-                                            write_type(((TypeClassTemplate *)node)->replacementTemplate));
-            if (((TypeClassTemplate *)node)->specializations != NULL)
-                add_serialized_bucket_entry(offset + 0x4e,
-                                            serialize_reference_entries(((TypeClassTemplate *)node)->specializations));
-            if (((TypeClassTemplate *)node)->declarations != NULL)
-                add_serialized_bucket_entry(
-                    offset + 0x52, serialize_template_class_declarations(((TypeClassTemplate *)node)->declarations));
+                    offset + 0x42, serialize_prec_records((TemplateSourceRecordTyped *)((TemplClass *)node)->members));
+            if (((TemplClass *)node)->instances != NULL)
+                add_serialized_bucket_entry(offset + 0x46, write_type((Type *)((TemplClass *)node)->instances));
+            if (((TemplClass *)node)->pspec_owner != NULL)
+                add_serialized_bucket_entry(offset + 0x4a, write_type(TYPE(((TemplClass *)node)->pspec_owner)));
+            if (((TemplClass *)node)->pspecs != NULL)
+                add_serialized_bucket_entry(offset + 0x4e, serialize_reference_entries(((TemplClass *)node)->pspecs));
+            if (((TemplClass *)node)->actions != NULL)
+                add_serialized_bucket_entry(offset + 0x52,
+                                            serialize_template_class_declarations(((TemplClass *)node)->actions));
         } else if ((node->flags & CLASS_IS_TEMPL_INST) != 0) {
             if (data_00581c28 != 0)
-                CompilerTools_AppendGListData(&precompiled_buffer, node, sizeof(TypeClassExt800));
-            prec_position += sizeof(TypeClassExt800);
-            if (((TypeClassExt800 *)node)->next != NULL)
+                CompilerTools_AppendGListData(&precompiled_buffer, node, sizeof(TemplClassInst));
+            prec_position += sizeof(TemplClassInst);
+            if (((TemplClassInst *)node)->next != NULL)
                 hasNextOther = 1;
-            if (((TypeClassExt800 *)node)->relatedClass != NULL)
-                add_serialized_bucket_entry(offset + 0x36, write_type(((TypeClassExt800 *)node)->relatedClass));
-            if (((TypeClassExt800 *)node)->classTemplate != NULL)
-                add_serialized_bucket_entry(offset + 0x3a, write_type(((TypeClassExt800 *)node)->classTemplate));
-            if (((TypeClassExt800 *)node)->targs != NULL)
-                add_serialized_bucket_entry(offset + 0x3e, serialize_ct_state_elems(((TypeClassExt800 *)node)->targs));
-            if (((TypeClassExt800 *)node)->templateArgumentOverride != NULL)
-                add_serialized_bucket_entry(
-                    offset + 0x42, serialize_ct_state_elems(((TypeClassExt800 *)node)->templateArgumentOverride));
+            if (((TemplClassInst *)node)->parent != NULL)
+                add_serialized_bucket_entry(offset + 0x36, write_type(TYPE(((TemplClassInst *)node)->parent)));
+            if (((TemplClassInst *)node)->templ != NULL)
+                add_serialized_bucket_entry(offset + 0x3a, write_type(TYPE(((TemplClassInst *)node)->templ)));
+            if (((TemplClassInst *)node)->inst_args != NULL)
+                add_serialized_bucket_entry(offset + 0x3e,
+                                            serialize_ct_state_elems(((TemplClassInst *)node)->inst_args));
+            if (((TemplClassInst *)node)->oargs != NULL)
+                add_serialized_bucket_entry(offset + 0x42, serialize_ct_state_elems(((TemplClassInst *)node)->oargs));
         } else {
             if (data_00581c28 != 0)
                 CompilerTools_AppendGListData(&precompiled_buffer, node, sizeof(*node));
@@ -3809,21 +3803,21 @@ UInt32 write_typeclass(TypeClass *node)
             add_serialized_bucket_entry(offset + 0x26, serialize_objc_info(node->objcinfo));
 
         if (hasNextClass != 0) {
-            existingEntry = entry = findentry(((TypeClassTemplate *)node)->next);
+            existingEntry = entry = findentry(((TemplClass *)node)->next);
             if (existingEntry == NULL) {
                 add_serialized_bucket_entry(offset + 0x32, nextClassOffset = align_counter_with_zero_padding());
                 offset = nextClassOffset;
-                node = (TypeClass *)((TypeClassTemplate *)node)->next;
+                node = (TypeClass *)((TemplClass *)node)->next;
                 continue;
             }
             add_serialized_bucket_entry(offset + 0x32, (SInt32)entry->image_position);
         }
         if (hasNextOther != 0) {
-            existingEntry = entry = findentry(((TypeClassExt800 *)node)->next);
+            existingEntry = entry = findentry(((TemplClassInst *)node)->next);
             if (existingEntry == NULL) {
                 add_serialized_bucket_entry(offset + 0x32, nextOtherOffset = align_counter_with_zero_padding());
                 offset = nextOtherOffset;
-                node = (TypeClass *)((TypeClassExt800 *)node)->next;
+                node = (TypeClass *)((TemplClassInst *)node)->next;
                 continue;
             }
             add_serialized_bucket_entry(offset + 0x32, (SInt32)entry->image_position);
@@ -3844,10 +3838,10 @@ UInt32 write_typeclass(TypeClass *node)
 TemplateFunction *write_template_function(TemplateFunction *function)
 {
     CPrecWrittenEntry *entry;
-    TemplateSpecializationData *firstObject;
+    TemplFuncInstance *firstObject;
     TemplateFunction *nextImage;
-    TemplateSpecializationData *currentObject;
-    TemplateSpecializationData *object;
+    TemplFuncInstance *currentObject;
+    TemplFuncInstance *object;
     TemplateFunction *next;
     TemplateFunction *current;
     TemplateFunction *first;
@@ -3856,7 +3850,7 @@ TemplateFunction *write_template_function(TemplateFunction *function)
         return entry->image_position;
     CPrec_NewAddrPatch(function, first = current = CPrec_AppendAlign());
     while (1) {
-        memclrw(&function->fileoffset, sizeof(function->fileoffset));
+        memclrw(&function->deftoken, sizeof(function->deftoken));
         function->srcfile = NULL;
         function->startoffset = 0;
         function->endoffset = 0;
@@ -3872,21 +3866,20 @@ TemplateFunction *write_template_function(TemplateFunction *function)
                 (SInt32)&current->stream.firsttoken,
                 (SInt32)append_saved_prep_tokens(function->stream.firsttoken, function->stream.tokens));
         add_serialized_bucket_entry((SInt32)&current->tfunc, write_object(function->tfunc));
-        if ((object = function->objects)) {
-            TemplateSpecializationData *nextObject;
+        if ((object = function->instances)) {
+            TemplFuncInstance *nextObject;
             firstObject = currentObject = CPrec_AppendAlign();
             while (1) {
                 CPrec_AppendData(object, sizeof(*object));
                 add_serialized_bucket_entry((SInt32)&currentObject->object, write_object(object->object));
-                add_serialized_bucket_entry((SInt32)&currentObject->templateArguments,
-                                            serialize_ct_state_elems(object->templateArguments));
+                add_serialized_bucket_entry((SInt32)&currentObject->args, serialize_ct_state_elems(object->args));
                 if (!object->next)
                     break;
                 add_serialized_bucket_entry((SInt32)&currentObject->next, (SInt32)(nextObject = CPrec_AppendAlign()));
                 currentObject = nextObject;
                 object = object->next;
             }
-            add_serialized_bucket_entry((SInt32)&current->objects, (SInt32)firstObject);
+            add_serialized_bucket_entry((SInt32)&current->instances, (SInt32)firstObject);
         }
         if (!function->next)
             break;
@@ -4030,7 +4023,7 @@ unsigned int write_prec_input_record(TemplateDeclarationData *record)
     return offset;
 }
 
-unsigned int serialize_reference_entries(ClassTemplateSpecialization *record)
+unsigned int serialize_reference_entries(TemplPartialSpec *record)
 {
     SInt32 startOffset;
     SInt32 targetOffset;
@@ -4049,12 +4042,12 @@ unsigned int serialize_reference_entries(ClassTemplateSpecialization *record)
             CompilerTools_AppendGListData(&precompiled_buffer, record, sizeof(*record));
         }
         prec_position += sizeof(*record);
-        if (record->type != NULL) {
-            targetOffset = write_type((Type *)record->type);
+        if (record->templ != NULL) {
+            targetOffset = write_type((Type *)record->templ);
             add_serialized_bucket_entry(recordOffset + 4, targetOffset);
         }
-        if (record->arguments != NULL) {
-            CTStateElem *args = record->arguments;
+        if (record->args != NULL) {
+            CTStateElem *args = record->args;
             targetOffset = serialize_ct_state_elems(args);
             add_serialized_bucket_entry(recordOffset + 8, targetOffset);
         }

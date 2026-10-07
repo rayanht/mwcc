@@ -895,7 +895,7 @@ static inline void CObjC_PrependMember(TypeClass *cls, MethRec *member)
 void parse_class_interface_or_implementation(void)
 {
     Boolean isComplete;
-    ClassLayoutInput layout;
+    ClassLayout layout;
     MethRec *member;
     TypeClass *objcClass;
     ObjectList *protocol;

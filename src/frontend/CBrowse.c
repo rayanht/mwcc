@@ -618,7 +618,7 @@ void CBrowse_GenerateClassRecord(DeclInfo *record, GList *out)
 {
     HashNameNode *name;
     Type *baseType;
-    TypeClassExt800 *base;
+    TemplClassInst *base;
     SInt32 baseNameID;
     ClassList *baseList;
     char *baseName;
@@ -664,9 +664,9 @@ void CBrowse_GenerateClassRecord(DeclInfo *record, GList *out)
     for (baseList = TYPE_CLASS(record->dtype)->bases; baseList != NULL; baseList = baseList->next) {
         AppendGListByte(&browse_member_list, data_00563340[baseList->access]);
         AppendGListByte(&browse_member_list, baseList->is_virtual);
-        base = (TypeClassExt800 *)baseList->base;
-        if ((base->base.flags & CLASS_IS_TEMPL_INST) && base->suppressImplicitInstantiation == 0)
-            baseType = base->classTemplate;
+        base = (TemplClassInst *)baseList->base;
+        if ((base->theclass.flags & CLASS_IS_TEMPL_INST) && base->is_specialized == 0)
+            baseType = TYPE(base->templ);
         else
             baseType = TYPE(base);
         fn_004c2ac0(baseType, 0);

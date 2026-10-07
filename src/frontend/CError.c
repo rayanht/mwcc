@@ -273,7 +273,7 @@ void append_namespace_qualification(StrBuf *buf, NameSpace *ns)
             if (ns->theclass) {
                 CError_BufferAppendString(buf, ns->theclass->classname->name);
                 if (ns->theclass->flags & CLASS_IS_TEMPL_INST)
-                    append_ctstate_list(buf, ((TypeClassExt800 *)ns->theclass)->targs);
+                    append_ctstate_list(buf, ((TemplClassInst *)ns->theclass)->inst_args);
             } else
                 CError_BufferAppendString(buf, ns->name->name);
             CError_BufferAppendString(buf, "::");
@@ -517,8 +517,8 @@ void append_type(StrBuf *buf, Type *type, UInt32 qualifiers)
             if (TYPE_CLASS(type)->classname != NULL) {
                 CError_BufferAppendString(buf, TYPE_CLASS(type)->classname->name);
                 if ((TYPE_CLASS(type)->flags & CLASS_IS_TEMPL_INST) != 0) {
-                    if ((templateArgs = ((TypeClassExt800 *)type)->templateArgumentOverride) == NULL)
-                        templateArgs = ((TypeClassExt800 *)type)->targs;
+                    if ((templateArgs = ((TemplClassInst *)type)->oargs) == NULL)
+                        templateArgs = ((TemplClassInst *)type)->inst_args;
                     append_ctstate_list(buf, templateArgs);
                 }
             } else {

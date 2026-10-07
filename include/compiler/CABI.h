@@ -44,10 +44,10 @@ extern Statement *assign_vbase_ctor_offsets(Statement *list, TypeClass *cls);
 extern SInt32 CABI_GetCtorOffsetOffset(TypeClass *tclass, TypeClass *baseclass);
 extern BaseOffsetPath *find_shortest_virtual_base_offset_path(TypeClass *tclass, TypeClass *base);
 extern void CABI_MakeDefaultArgConstructor(TypeClass *theclass, Object *function);
-extern int CABI_LayoutClass(struct ClassLayoutInput *members, TypeClass *type);
+extern int CABI_LayoutClass(struct ClassLayout *members, TypeClass *type);
 extern SInt32 CABI_GetVTableOffset(TypeClass *tclass);
 extern void CABI_AddVTable(TypeClass *tclass);
-extern void layout_class_ivars(ClassLayoutInput *member, TypeClass *type);
+extern void layout_class_ivars(ClassLayout *member, TypeClass *type);
 extern void CABI_ReverseBitField(TypeBitfield *tbitfield);
 extern void CABI_GenClassFunction(TypeClass *tclass, Object *function);
 extern Statement *destroy_nonvirtual_bases(Statement *acc, ClassList *list);
@@ -59,7 +59,7 @@ extern ENode *build_vbase_ptr_initializers(ENode *expr, TypeClass *func, TypeCla
 extern Statement *assign_vtable_pointers(Statement *result, Object *obj, TypeClass *cls, TypeClass *base, SInt32 offset,
                                          SInt32 voffset);
 extern void layout_nonvirtual_bases(void *context, TypeClass *theclass);
-extern void layout_vtable(ClassLayoutInput *layout, TypeClass *classArg);
+extern void layout_vtable(ClassLayout *layout, TypeClass *classArg);
 extern Object *CABI_FindZeroVirtualBaseMember(TypeClass *scope, Object *key);
 extern Statement *make_baseclass_and_ivars_copy_statements(Statement *stmt, TypeClass *tclass, TypeClass *baseclass,
                                                            SInt32 offset, Boolean flag);

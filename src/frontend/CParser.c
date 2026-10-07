@@ -433,9 +433,9 @@ static inline Boolean CheckVectorKeyword(void)
 
 static inline Boolean CheckClassAccess(void *node)
 {
-    TypeClassTemplate *templateClass = node;
+    TemplClass *templateClass = node;
     NameSpace *qv;
-    if (templateClass->templateParameters != NULL) {
+    if (templateClass->templ__params != NULL) {
         for (qv = currentNameSpace;; qv = qv->parent) {
             if (qv == NULL) {
                 CError_ReportError(ERR_LESS_EXPECTED);
@@ -1121,8 +1121,8 @@ void CParser_GetDeclSpecs(DeclInfo *state, Boolean allowObject)
 unsigned char CParser_CheckTemplateClassScope(Type *type)
 {
     NameSpace *space;
-    TypeClassTemplate *classType = (TypeClassTemplate *)type;
-    if (classType->templateParameters != NULL) {
+    TemplClass *classType = (TemplClass *)type;
+    if (classType->templ__params != NULL) {
         space = currentNameSpace;
         for (;;) {
             if (space == NULL) {

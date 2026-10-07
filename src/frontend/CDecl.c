@@ -63,11 +63,11 @@
 
 typedef enum { bt_false, bt_true } btype;
 
-static inline void begin_class_instantiation(TypeClassExt800 *instance, const DeclInfo *ctx)
+static inline void begin_class_instantiation(TemplClassInst *instance, const DeclInfo *ctx)
 {
-    instance->instantiating = 1;
+    instance->is_instantiated = 1;
     if (ctx->pendingClass == NULL)
-        instance->suppressImplicitInstantiation = 1;
+        instance->is_specialized = 1;
 }
 
 static inline Boolean class_browse_enabled(const DeclInfo *ctx)
@@ -86,7 +86,7 @@ void CDecl_ParseClass(DeclInfo *ctx, SInt16 kind, Boolean advanceToken, UInt8 ex
     SInt32 textOffset;
     SInt16 nextToken;
     CScopeParseResult spec;
-    ClassLayoutInput declarationState;
+    ClassLayout declarationState;
     CScopeSave scopeSave;
     GList contextSave;
     FileOffsetInfo nameSave;
@@ -175,12 +175,12 @@ void CDecl_ParseClass(DeclInfo *ctx, SInt16 kind, Boolean advanceToken, UInt8 ex
     }
     isTemplate = (obj->flags & CLASS_IS_TEMPL) != 0;
     if ((obj->flags & CLASS_IS_TEMPL_INST) != 0)
-        begin_class_instantiation((TypeClassExt800 *)obj, ctx);
+        begin_class_instantiation((TemplClassInst *)obj, ctx);
     if (copts.structalignment < 0 || copts.structalignment > 0xe)
         CError_FATAL(6245);
     obj->eflags |= ((copts.structalignment + 1) << 4) & CLASS_EFLAGS_F0;
     if (tk == ':')
-        parse_class_bases((TypeClassTemplate *)obj, kind, isTemplate);
+        parse_class_bases((TemplClass *)obj, kind, isTemplate);
     BE_elf_SaveAndSetClassScope(obj, &scopeSave);
     if (tk == '{') {
         tk = CPrepTokenizer_GetNextToken();
@@ -203,7 +203,7 @@ void CDecl_ParseClass(DeclInfo *ctx, SInt16 kind, Boolean advanceToken, UInt8 ex
         CError_ReportError(ERR_LBRACE_EXPECTED);
     }
     if (isTemplate) {
-        TypeClassTemplate *templateClass = (TypeClassTemplate *)obj;
+        TemplClass *templateClass = (TemplClass *)obj;
         CTemplateClass_CompleteClassLayout(templateClass, &declarationState);
     } else
         CDecl_CompleteClass(&declarationState, obj);
@@ -248,7 +248,7 @@ TypeClass *CDecl_DefineClass(struct NameSpace *nspace, struct HashNameNode *name
     struct ObjType *typeObject;
     if (type == NULL && nspace->theclass != NULL && (nspace->theclass->flags & CLASS_IS_TEMPL) != 0) {
         CE_ASSERT(flag4 != 0, CError_FATAL(6004));
-        return &CTemplateClass_CreateClassTemplateDeclaration(nspace->theclass, name, mode)->base;
+        return &CTemplateClass_CreateClassTemplateDeclaration(nspace->theclass, name, mode)->theclass;
     }
     classSpace = CScope_NewListNameSpace(name, 1);
     if (type == NULL) {
@@ -294,16 +294,16 @@ TypeClass *CDecl_DefineClass(struct NameSpace *nspace, struct HashNameNode *name
     return type;
 }
 
-void CDecl_CompleteClass(ClassLayoutInput *ctx, TypeClass *cls)
+void CDecl_CompleteClass(ClassLayout *ctx, TypeClass *cls)
 {
     void fn_004e9ca0(TypeClass *);
-    Object *buf[32];
+    ObjBase *buf[32];
     ClassList *cl;
     TypeClass *base;
 
     for (cl = cls->bases; cl != NULL; cl = cl->next) {
         if ((base = cl->base)->vtable != NULL)
-            ctx->hasVirtualFunction = 1;
+            ctx->has_vtable = 1;
     }
 
     if (cls->sominfo == NULL) {
@@ -316,7 +316,7 @@ void CDecl_CompleteClass(ClassLayoutInput *ctx, TypeClass *cls)
 
     fill_class_layout_entries(ctx, cls, buf);
 
-    if (ctx->hasVirtualFunction)
+    if (ctx->has_vtable)
         CClass_CheckOverrides(cls);
 
     CABI_LayoutClass(ctx, cls);
@@ -324,7 +324,7 @@ void CDecl_CompleteClass(ClassLayoutInput *ctx, TypeClass *cls)
     if (cls->sominfo != NULL)
         CSOM_CompleteClass(cls);
 
-    if ((cls->flags & CLASS_IS_TEMPL_INST) && (((TypeClassExt800 *)cls)->suppressImplicitInstantiation == 0))
+    if ((cls->flags & CLASS_IS_TEMPL_INST) && (((TemplClassInst *)cls)->is_specialized == 0))
         cls->state = 0;
 
     if (cls->state == 0)
@@ -333,7 +333,7 @@ void CDecl_CompleteClass(ClassLayoutInput *ctx, TypeClass *cls)
     fn_004e9ca0(cls);
 }
 
-void fill_class_layout_entries(ClassLayoutInput *table, TypeClass *type, Object **entries)
+void fill_class_layout_entries(ClassLayout *table, TypeClass *type, ObjBase **entries)
 {
     unsigned int bytes;
     Object *member;
@@ -344,14 +344,14 @@ void fill_class_layout_entries(ClassLayoutInput *table, TypeClass *type, Object 
     ScopeSearch scope;
     Object *obj;
 
-    if (table->count > 32) {
-        bytes = table->count * sizeof(*entries);
-        entries = (Object **)CompilerTools_AllocatePool(bytes);
+    if (table->lex_order_count > 32) {
+        bytes = table->lex_order_count * sizeof(*entries);
+        entries = (ObjBase **)CompilerTools_AllocatePool(bytes);
     } else {
         bytes = 32 * sizeof(*entries);
     }
     memclrw(entries, bytes);
-    table->entries = entries;
+    table->objlist = entries;
     CScope_InitScopeSearch(&scope, type->nspace);
     filled = 0;
     for (;;) {
@@ -362,9 +362,9 @@ void fill_class_layout_entries(ClassLayoutInput *table, TypeClass *type, Object 
             obj->datatype != DALIAS) {
             if ((slot = ((TypeMemberFunc *)obj->type)->vtbl_index) > 0) {
                 --slot;
-                if (slot >= table->count || entries[slot] != NULL)
+                if (slot >= table->lex_order_count || entries[slot] != NULL)
                     CError_FATAL(5811);
-                entries[slot] = obj;
+                entries[slot] = OBJ_BASE(obj);
                 ++filled;
                 if (obj->datatype != DVFUNC && !((TypeMemberFunc *)obj->type)->is_static) {
                     if (CClass_OverridesBaseMember(type, obj->name, obj)) {
@@ -376,7 +376,7 @@ void fill_class_layout_entries(ClassLayoutInput *table, TypeClass *type, Object 
                     }
                 }
                 if (obj->datatype == DVFUNC) {
-                    table->hasVirtualFunction = 1;
+                    table->has_vtable = 1;
                     if (type->vtable == NULL) {
                         CABI_AddVTable(type);
                         table->firstVirtualSlot = slot;
@@ -395,8 +395,8 @@ void fill_class_layout_entries(ClassLayoutInput *table, TypeClass *type, Object 
         }
     }
     if (type->state == 0) {
-        for (i = 0; i < table->count; ++i) {
-            if ((member = entries[i]) != NULL && member->datatype == DVFUNC && (member->qual & Q_INLINE) == 0 &&
+        for (i = 0; i < table->lex_order_count; ++i) {
+            if ((member = OBJECT(entries[i])) != NULL && member->datatype == DVFUNC && (member->qual & Q_INLINE) == 0 &&
                 (((TypeFunc *)member->type)->flags & FUNC_PURE) == 0) {
                 type->state = 1;
                 ((TypeFunc *)member->type)->flags |= 4;
@@ -407,11 +407,11 @@ void fill_class_layout_entries(ClassLayoutInput *table, TypeClass *type, Object 
     if (type->sominfo == NULL) {
         i = 0;
         variable = type->ivars;
-        for (; i < table->count; ++i) {
+        for (; i < table->lex_order_count; ++i) {
             if (entries[i] == NULL) {
                 if (variable == NULL)
                     CError_FATAL(5897);
-                entries[i] = (Object *)variable;
+                entries[i] = OBJ_BASE(variable);
                 variable = variable->next;
                 ++filled;
             }
@@ -419,14 +419,14 @@ void fill_class_layout_entries(ClassLayoutInput *table, TypeClass *type, Object 
         if (variable != NULL)
             CError_FATAL(5903);
     }
-    if (filled != table->count)
+    if (filled != table->lex_order_count)
         CError_FATAL(5906);
 }
 
 /* 0x48ff20: new zeroed FuncArg (0x18) */
 /* 0x4ebca0: find class function object */
 
-void declare_auto_generated_destructor(ClassLayoutInput *type, TypeClass *cls)
+void declare_auto_generated_destructor(ClassLayout *type, TypeClass *cls)
 {
     ClassList *base;
     ObjMemberVar *member;
@@ -503,7 +503,7 @@ void declare_auto_generated_destructor(ClassLayoutInput *type, TypeClass *cls)
     }
 }
 
-void generate_copy_constructor(ClassLayoutInput *type, TypeClass *cls)
+void generate_copy_constructor(ClassLayout *type, TypeClass *cls)
 {
     DeclInfo decl;
     Boolean keepconst = 1;
@@ -521,7 +521,7 @@ void generate_copy_constructor(ClassLayoutInput *type, TypeClass *cls)
 
     constructor = CClass_AssignmentOperator(cls);
     if (constructor == NULL) {
-        if ((cls->flags & CLASS_HAS_VBASES) || type->hasVirtualFunction != 0 ||
+        if ((cls->flags & CLASS_HAS_VBASES) || type->has_vtable != 0 ||
             CClass_MemberObject(cls, assignment_operator_name) != NULL)
             generate = 1;
         for (base = cls->bases; base != NULL; base = base->next) {
@@ -592,7 +592,7 @@ void generate_copy_constructor(ClassLayoutInput *type, TypeClass *cls)
     }
 }
 
-void declare_default_copy_constructor(ClassLayoutInput *decl, TypeClass *type)
+void declare_default_copy_constructor(ClassLayout *decl, TypeClass *type)
 {
     UInt8 access;
     ClassList *base;
@@ -619,7 +619,7 @@ void declare_default_copy_constructor(ClassLayoutInput *decl, TypeClass *type)
     if (CClass_Constructor(type) != NULL) {
         needed = 1;
     }
-    if ((type->flags & CLASS_HAS_VBASES) != 0 || decl->hasVirtualFunction != 0) {
+    if ((type->flags & CLASS_HAS_VBASES) != 0 || decl->has_vtable != 0) {
         needed = 1;
     }
     for (base = type->bases; base != NULL; base = base->next) {
@@ -721,7 +721,7 @@ TypeMemberFunc *CDecl_MakeDefaultDtorType(TypeClass *theclass, char is_const)
     return func;
 }
 
-void make_auto_generated_dtor(ClassLayoutInput *context, TypeClass *cls)
+void make_auto_generated_dtor(ClassLayout *context, TypeClass *cls)
 {
     ClassList *base;
     ObjMemberVar *member;
@@ -743,7 +743,7 @@ void make_auto_generated_dtor(ClassLayoutInput *context, TypeClass *cls)
 
     if (cls->flags & CLASS_HAS_VBASES)
         found = 1;
-    if (context->hasVirtualFunction != 0)
+    if (context->has_vtable != 0)
         found = 1;
 
     for (base = cls->bases; base != NULL; base = base->next) {
@@ -871,7 +871,7 @@ void make_defarg_function(TypeClass *cls)
     }
 }
 
-void parse_class_bases(TypeClassTemplate *classType, short mode, char allowDependent)
+void parse_class_bases(TemplClass *classType, short mode, char allowDependent)
 {
     char access;
     TypeClass *baseType;
@@ -934,7 +934,7 @@ void parse_class_bases(TypeClassTemplate *classType, short mode, char allowDepen
                     if (isVirtual == 0) {
                         continue;
                     }
-                    classType->base.flags |= CLASS_HAS_VBASES;
+                    classType->theclass.flags |= CLASS_HAS_VBASES;
                     continue;
                 }
                 if (lookup.type.base->type != TYPECLASS) {
@@ -948,46 +948,46 @@ void parse_class_bases(TypeClassTemplate *classType, short mode, char allowDepen
                     if (isVirtual == 0) {
                         CError_ReportError(ERR_SOM_CLASSES_INHERTIANCE_MUST_VIRTUAL);
                     }
-                    CSOM_InitSOMInfo(&classType->base);
+                    CSOM_InitSOMInfo(&classType->theclass);
                     tk = CPrepTokenizer_GetNextToken();
                     break;
                 }
                 if (memcmp(data_00587fa0->name, "__javaobject", 13) == 0) {
                     tk = CPrepTokenizer_GetNextToken();
-                    classType->base.state = 3;
+                    classType->theclass.state = 3;
                     break;
                 }
                 CError_ReportError(ERR_UNDEFINED_IDENTIFIER, data_00587fa0->name);
                 continue;
             }
-            if (CDecl_CheckNewBase(&classType->base, baseType, isVirtual) != 0) {
+            if (CDecl_CheckNewBase(&classType->theclass, baseType, isVirtual) != 0) {
                 base = galloc(sizeof(ClassList));
                 memclrw(base, sizeof(ClassList));
                 base->base = baseType;
                 base->access = access;
                 base->is_virtual = isVirtual;
-                if (classType->base.bases != NULL) {
-                    tail = classType->base.bases;
+                if (classType->theclass.bases != NULL) {
+                    tail = classType->theclass.bases;
                     while (tail->next != NULL) {
                         tail = tail->next;
                     }
                     tail->next = base;
                 } else {
-                    classType->base.bases = base;
+                    classType->theclass.bases = base;
                 }
             }
         }
     } while ((tk = CPrepTokenizer_GetNextToken()) == 44);
-    if ((classType->base.flags & CLASS_HAS_VBASES) != 0) {
-        CDecl_SetVBaseOffsets(&classType->base);
+    if ((classType->theclass.flags & CLASS_HAS_VBASES) != 0) {
+        CDecl_SetVBaseOffsets(&classType->theclass);
     }
-    if (copts.f82 != 0 && classType->base.bases != NULL && classType->base.bases->next == NULL) {
+    if (copts.f82 != 0 && classType->theclass.bases != NULL && classType->theclass.bases->next == NULL) {
         typeObject = galloc(sizeof(ObjType));
         memclrw(typeObject, sizeof(ObjType));
         typeObject->otype = OT_TYPE;
         typeObject->access = ACCESSPUBLIC;
-        typeObject->type = (Type *)classType->base.bases->base;
-        CScope_AddObject(classType->base.nspace, GetHashNameNode("inherited"), (ObjBase *)typeObject);
+        typeObject->type = (Type *)classType->theclass.bases->base;
+        CScope_AddObject(classType->theclass.nspace, GetHashNameNode("inherited"), (ObjBase *)typeObject);
     }
     return;
 }
@@ -1159,7 +1159,7 @@ static inline Boolean CheckMemberType(Type *type)
     return 1;
 }
 
-void parse_class_members(ClassLayoutInput *decle, TypeClass *tclass, SInt16 mode)
+void parse_class_members(ClassLayout *decle, TypeClass *tclass, SInt16 mode)
 {
     MemberDecl md;
     DeclInfo ds;
@@ -1180,7 +1180,7 @@ void parse_class_members(ClassLayoutInput *decle, TypeClass *tclass, SInt16 mode
     ObjMemberVar *memberVar;
     UInt8 eflags;
 
-    member = (tclass->flags & CLASS_IS_TEMPL) && ((TypeClassTemplate *)tclass)->replacementTemplate;
+    member = (tclass->flags & CLASS_IS_TEMPL) && ((TemplClass *)tclass)->pspec_owner;
     memclrw(&md, sizeof(MemberDecl));
     access = (mode == 2) ? ACCESSPRIVATE : ACCESSPUBLIC;
     member_access = access;
@@ -1288,8 +1288,8 @@ void parse_class_members(ClassLayoutInput *decle, TypeClass *tclass, SInt16 mode
                         CDecl_ParseDeclarator(&md.declarator);
                         if (md.declarator.dtype->type == TYPEFUNC) {
                             if (member)
-                                md.declarator.dtype =
-                                    CTemplTool_ResolveMemberSelfRefs(tclass, md.declarator.dtype, &md.declarator.qual);
+                                md.declarator.dtype = CTemplTool_ResolveMemberSelfRefs(
+                                    (TemplClass *)tclass, md.declarator.dtype, &md.declarator.qual);
                             if (tclass->sominfo) {
                                 if (((TypeFunc *)md.declarator.dtype)->args)
                                     CError_ReportError(ERR_NO_PARAMETERS_ALLOWED_SOM_CLASS_CONSTRUCTORS);
@@ -1430,7 +1430,7 @@ void parse_class_members(ClassLayoutInput *decle, TypeClass *tclass, SInt16 mode
                 continue;
             case TK_FRIEND:
                 tk = CPrepTokenizer_GetNextToken();
-                parse_friend_declaration((TypeClassTemplate *)tclass);
+                parse_friend_declaration((TemplClass *)tclass);
                 continue;
         }
 
@@ -1466,8 +1466,8 @@ void parse_class_members(ClassLayoutInput *decle, TypeClass *tclass, SInt16 mode
             for (;;) {
                 CDecl_ScanStructDeclarator(&md);
                 if (member)
-                    md.declarator.dtype =
-                        CTemplTool_ResolveMemberSelfRefs(tclass, md.declarator.dtype, &md.declarator.qual);
+                    md.declarator.dtype = CTemplTool_ResolveMemberSelfRefs((TemplClass *)tclass, md.declarator.dtype,
+                                                                           &md.declarator.qual);
                 if (md.declarator.nspace)
                     CError_ReportError(ERR_ILLEGAL_ACCESS_USING_DECLARATION);
                 if (md.declarator.operatorToken) {
@@ -1588,7 +1588,7 @@ void parse_class_members(ClassLayoutInput *decle, TypeClass *tclass, SInt16 mode
     }
 }
 
-ObjMemberVar *add_member_var(ClassLayoutInput *declaration, TypeClass *cls, Type *type, UInt32 qual, HashNameNode *name,
+ObjMemberVar *add_member_var(ClassLayout *declaration, TypeClass *cls, Type *type, UInt32 qual, HashNameNode *name,
                              AccessType access)
 {
     NameSpaceObjectList *objects;
@@ -1623,7 +1623,7 @@ ObjMemberVar *add_member_var(ClassLayoutInput *declaration, TypeClass *cls, Type
     member->type = type;
     member->qual = qual;
     if (cls->sominfo == NULL) {
-        declaration->count += 1;
+        declaration->lex_order_count += 1;
     }
     if (cls->ivars != NULL) {
         for (lastMember = cls->ivars; lastMember->next != NULL; lastMember = lastMember->next)
@@ -1635,7 +1635,7 @@ ObjMemberVar *add_member_var(ClassLayoutInput *declaration, TypeClass *cls, Type
     if (name != NULL && name != unnamed_name) {
         CScope_AddObject(cls->nspace, name, (ObjBase *)member);
         if ((cls->flags & CLASS_IS_TEMPL) != 0 && CTemplateTools_IsDependentType(type)) {
-            CTemplateClass_AppendObjectDeclaration((TypeClassTemplate *)cls, (Object *)member);
+            CTemplateClass_AppendObjectDeclaration((TemplClass *)cls, (Object *)member);
         }
         {
             CPrepCU *compilationUnit = (CPrepCU *)cprep_cu;
@@ -1648,7 +1648,7 @@ ObjMemberVar *add_member_var(ClassLayoutInput *declaration, TypeClass *cls, Type
     return member;
 }
 
-void parse_friend_declaration(TypeClassTemplate *cls)
+void parse_friend_declaration(TemplClass *cls)
 {
     DeclInfo decl;
     Boolean isNewFunction;
@@ -1662,7 +1662,7 @@ void parse_friend_declaration(TypeClassTemplate *cls)
     UInt32 baseQualifiers;
     Object *function;
 
-    isTemplateClass = (cls->base.flags & CLASS_IS_TEMPL) != 0;
+    isTemplateClass = (cls->theclass.flags & CLASS_IS_TEMPL) != 0;
     declarationToken = tk;
     isClassDeclaration =
         (isStructOrClass = declarationToken == 0x112 || declarationToken == 0x10f) || declarationToken == 0x110;
@@ -1683,7 +1683,7 @@ void parse_friend_declaration(TypeClassTemplate *cls)
             if ((((TypeClass *)decl.dtype)->flags & CLASS_IS_TEMPL) == 0 ||
                 CParser_CheckTemplateClassScope(decl.dtype) != 0) {
                 if (!isTemplateClass)
-                    CDecl_AddFriend(&cls->base, NULL, decl.dtype);
+                    CDecl_AddFriend(&cls->theclass, NULL, decl.dtype);
                 else
                     CTemplateClass_AddDeferredFunctionDeclaration(cls, &decl);
             }
@@ -1698,7 +1698,7 @@ void parse_friend_declaration(TypeClassTemplate *cls)
             return;
         function = CDecl_GetFunctionObject(&decl, NULL, &isNewFunction, 0);
         if (function != NULL)
-            CDecl_AddFriend(&cls->base, function, NULL);
+            CDecl_AddFriend(&cls->theclass, function, NULL);
         if (tk != ';')
             CError_ReportError(ERR_SEMICOLON_EXPECTED);
         else
@@ -1721,9 +1721,9 @@ void parse_friend_declaration(TypeClassTemplate *cls)
                     function = CDecl_GetFunctionObject(&decl, NULL, &isNewFunction, 0);
                     CScope_RestoreScope(&scopeSave);
                     if (function != NULL) {
-                        CDecl_AddFriend(&cls->base, function, NULL);
+                        CDecl_AddFriend(&cls->theclass, function, NULL);
                         if (decl.nspace == NULL && tk == '{')
-                            scan_inline_definition(function, &cls->base);
+                            scan_inline_definition(function, &cls->theclass);
                         else if (function->sclass == TK_EOF)
                             function->sclass = TK_EXTERN;
                     }
@@ -1876,8 +1876,8 @@ Boolean check_qualified_identifier_or_operator(TypeClass *tclass, AccessType acc
     }
 }
 
-void declare_member_function(ClassLayoutInput *layout, TypeClass *cls, struct DeclInfo *info, UInt8 access,
-                             UInt8 allowPure, UInt8 specialMember, UInt8 parseBody, UInt8 declarationOnly)
+void declare_member_function(ClassLayout *layout, TypeClass *cls, struct DeclInfo *info, UInt8 access, UInt8 allowPure,
+                             UInt8 specialMember, UInt8 parseBody, UInt8 declarationOnly)
 {
     Boolean isNew;
     TypeMemberFunc *memberType;
@@ -1957,16 +1957,16 @@ void declare_member_function(ClassLayoutInput *layout, TypeClass *cls, struct De
         if (member == NULL)
             return;
         if (isNew != 0) {
-            memberType->vtbl_index = ++layout->count;
+            memberType->vtbl_index = ++layout->lex_order_count;
         } else {
             CError_ReportError(ERR_STRUCT_UNION_CLASS_MEMBER_REDEFINED, CError_GetObjectString(member));
         }
     } else {
-        memberType->vtbl_index = ++layout->count;
+        memberType->vtbl_index = ++layout->lex_order_count;
         member = CParser_NewFunctionObject(info);
         if (cls->flags & CLASS_IS_TEMPL) {
             if (CTemplateTools_IsDependentType(info->dtype))
-                CTemplateClass_AppendObjectDeclaration((TypeClassTemplate *)cls, member);
+                CTemplateClass_AppendObjectDeclaration((TemplClass *)cls, member);
         }
         CScope_AddObject(cls->nspace, info->name, (ObjBase *)member);
     }
@@ -1984,7 +1984,7 @@ void declare_member_function(ClassLayoutInput *layout, TypeClass *cls, struct De
         if (cls->mode == 1)
             CError_ReportError(ERR_ILLEGAL_VIRTUAL_FUNCTION_UNION, member);
         member->datatype = DVFUNC;
-        layout->hasVirtualFunction = 1;
+        layout->has_vtable = 1;
     }
     if (allowPure != 0 || wasVirtual) {
         if (parseBody != 0 && tk == '=') {
@@ -2042,8 +2042,8 @@ void scan_inline_definition(Object *object, TypeClass *classType)
         if (((((TypeFunc *)object->type)->flags & FUNC_METHOD) != 0) &&
             ((((TypeMemberFunc *)object->type)->theclass->flags & CLASS_IS_TEMPL) != 0)) {
             ((TypeFunc *)object->type)->flags |= 0x8000000;
-            CTemplateClass_AddTemplateArgumentOverride((TypeClassTemplate *)((TypeMemberFunc *)object->type)->theclass,
-                                                       object, &member_foi, &declaration);
+            CTemplateClass_AddTemplateArgumentOverride((TemplClass *)((TypeMemberFunc *)object->type)->theclass, object,
+                                                       &member_foi, &declaration);
         } else {
             CInline_AddFunctionPrecNode(object, classType, &member_foi, &declaration, '\0');
         }
@@ -2662,7 +2662,7 @@ TypeEnum *parse_enum_definition(TypeEnum *decl, HashNameNode *name)
     UInt8 overflow;
     UInt8 dependent;
     AccessType access;
-    TypeClassTemplate *templateClass;
+    TemplClass *templateClass;
     Type *expressionType;
     CInt64 value;
     CInt64 nextValue;
@@ -2691,7 +2691,7 @@ TypeEnum *parse_enum_definition(TypeEnum *decl, HashNameNode *name)
     }
 
     if (currentNameSpace->theclass != NULL && (currentNameSpace->theclass->flags & CLASS_IS_TEMPL) != 0) {
-        templateClass = (TypeClassTemplate *)currentNameSpace->theclass;
+        templateClass = (TemplClass *)currentNameSpace->theclass;
         CTemplateClass_AppendEnumDeclaration(templateClass, decl);
     } else
         templateClass = NULL;
@@ -2934,7 +2934,7 @@ void *parse_enum_body(TypeEnum *enumType, HashNameNode *name)
     }
 
     if (currentNameSpace->theclass != NULL && (TYPE_CLASS(currentNameSpace->theclass)->flags & Q_VIRTUAL) != 0)
-        CTemplateClass_AppendEnumDeclaration((TypeClassTemplate *)currentNameSpace->theclass, enumType);
+        CTemplateClass_AppendEnumDeclaration((TemplClass *)currentNameSpace->theclass, enumType);
 
     if (currentNameSpace->theclass != NULL)
         access = member_access;
@@ -3321,7 +3321,7 @@ void declare_object(DeclInfo *d, UInt8 b, Boolean c)
     Object *found;
     NameSpace *nspace;
     Type *type;
-    TypeClassTemplate *templateClass;
+    TemplClass *templateClass;
     NameSpaceObjectList *res;
     Boolean ok;
     ENode *p;
@@ -3449,7 +3449,7 @@ void declare_object(DeclInfo *d, UInt8 b, Boolean c)
         CScope_AddObject(nspace, d->name, (ObjBase *)found);
         if (nspace->theclass != NULL && (TYPE_CLASS(nspace->theclass)->flags & CLASS_IS_TEMPL) != 0 &&
             CTemplateTools_IsDependentType(d->dtype))
-            CTemplateClass_AppendObjectDeclaration((TypeClassTemplate *)nspace->theclass, found);
+            CTemplateClass_AppendObjectDeclaration((TemplClass *)nspace->theclass, found);
         if (c != 0 && nspace->theclass != NULL && cprep_cu[0xe6] != 0)
             CBrowse_RecordDataObject(found, member_foi.tokenline + 1, CPrep_GetCurrentTextOffset());
     }
@@ -3473,7 +3473,7 @@ void declare_object(DeclInfo *d, UInt8 b, Boolean c)
         if (found->type->type == TYPETEMPLATE || p->type != EINTCONST) {
             if (nspace->theclass == NULL || (TYPE_CLASS(nspace->theclass)->flags & CLASS_IS_TEMPL) == 0)
                 CError_FATAL(2300);
-            templateClass = (TypeClassTemplate *)nspace->theclass;
+            templateClass = (TemplClass *)nspace->theclass;
             CTemplateClass_AppendExpressionRecord(templateClass, found, p);
         } else if ((found->qual & Q_CONST) != 0 && (found->type->type == TYPEINT || found->type->type == TYPEENUM)) {
             found->u.data.u.intconst = p->data.intval;
@@ -3547,7 +3547,7 @@ void CDecl_TypedefDeclarator(DeclInfo *decl)
         CScope_AddObject(scope, decl->name, (ObjBase *)newType);
         if (scope->theclass != NULL && (scope->theclass->flags & CLASS_IS_TEMPL) != 0 &&
             CTemplateTools_IsDependentType(decl->dtype))
-            CTemplateClass_AppendObjectDeclaration((TypeClassTemplate *)scope->theclass, (Object *)newType);
+            CTemplateClass_AppendObjectDeclaration((TemplClass *)scope->theclass, (Object *)newType);
         if (copts.cplusplus != 0) {
             if (decl->dtype->type == TYPECLASS &&
                 CParser_IsNullOrAtOrDollarPrefixedName(TYPE_CLASS(decl->dtype)->classname)) {
@@ -4062,7 +4062,7 @@ Object *find_or_create_function_object(ObjectList *list, DeclInfo *ref, Boolean 
     CScope_AddObject(currentNameSpace, ref->name, (ObjBase *)result);
     if (currentNameSpace->theclass != NULL && (currentNameSpace->theclass->flags & CLASS_IS_TEMPL) != 0 &&
         CTemplateTools_IsDependentType(ref->dtype))
-        CTemplateClass_AppendObjectDeclaration((TypeClassTemplate *)currentNameSpace->theclass, result);
+        CTemplateClass_AppendObjectDeclaration((TemplClass *)currentNameSpace->theclass, result);
     return result;
 }
 

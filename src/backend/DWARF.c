@@ -307,9 +307,9 @@ void insert_type_nodes_recursive(DWInfo *a, DWInfo *b)
                 if (obj->type == NULL)
                     continue;
                 if (obj->type->type == TYPEFUNC && (TYPE_FUNC(obj->type)->flags & 0x400) != 0) {
-                    if (obj->u.templateFunction->objects == NULL)
+                    if (obj->u.templateFunction->instances == NULL)
                         continue;
-                    e = find_or_create_dwinfo(obj->u.templateFunction->objects->object->type);
+                    e = find_or_create_dwinfo(obj->u.templateFunction->instances->object->type);
                 } else {
                     e = find_or_create_dwinfo(obj->type);
                 }
@@ -2264,9 +2264,9 @@ void emit_class_dwarf(TypeClass *cls)
             break;
         if (entry->datatype == DFUNC || entry->datatype == DVFUNC) {
             if (entry->type->type == TYPEFUNC && (TYPE_FUNC(entry->type)->flags & 0x400) != 0) {
-                if (entry->u.templateFunction->objects == NULL)
+                if (entry->u.templateFunction->instances == NULL)
                     continue;
-                typeInfo = find_or_create_dwinfo(entry->u.templateFunction->objects->object->type);
+                typeInfo = find_or_create_dwinfo(entry->u.templateFunction->instances->object->type);
             } else {
                 typeInfo = find_or_create_dwinfo(entry->type);
             }

@@ -202,11 +202,6 @@ static inline char CABI_0050df20_inline1(TypeClass *a1)
 }
 
 /* Entries and insertion state used while laying out a class vtable. */
-static inline ObjMemberVar *CABI_LayoutMemberEntry(Object *entry)
-{
-    return (ObjMemberVar *)entry;
-}
-
 static inline char use_vtable_size_without_vbases(void)
 {
     return copts.f81;
@@ -322,7 +317,7 @@ void layout_nonvirtual_bases(void *abiContext, TypeClass *derivedClass)
     derivedClass->size = offset;
 }
 
-void layout_class_ivars(ClassLayoutInput *member, TypeClass *type)
+void layout_class_ivars(ClassLayout *member, TypeClass *type)
 {
     SInt32 unionOffset;
     Boolean removeUnnamed;
@@ -392,7 +387,7 @@ void layout_class_ivars(ClassLayoutInput *member, TypeClass *type)
                 maximumSize = offset;
             removeUnnamed = 1;
         }
-        if (member->vtableMember == mem)
+        if (member->vtable_ivar == mem)
             type->vtable->offset = mem->offset;
     }
     if (removeUnnamed) {
@@ -484,7 +479,7 @@ int get_vtable_size_without_vbases(TypeClass *cl)
     return result;
 }
 
-void layout_vtable(ClassLayoutInput *layout, TypeClass *classType)
+void layout_vtable(ClassLayout *layout, TypeClass *classType)
 {
     int size;
     char hasVtableMember;
@@ -504,7 +499,7 @@ void layout_vtable(ClassLayoutInput *layout, TypeClass *classType)
     if (classType->vtable == NULL) {
         classType->vtable = (VTable *)galloc(sizeof(VTable));
         memclrw(classType->vtable, sizeof(VTable));
-        layout->firstVirtualSlot = layout->count - 1;
+        layout->firstVirtualSlot = layout->lex_order_count - 1;
     }
     hasVtableMember = inherit_vtable_member(classType);
     if (hasVtableMember == 0) {
@@ -514,7 +509,7 @@ void layout_vtable(ClassLayoutInput *layout, TypeClass *classType)
         member->access = ACCESSPUBLIC;
         member->name = vtable_name;
         member->type = (Type *)&void_ptr;
-        layout->vtableMember = member;
+        layout->vtable_ivar = member;
         index = layout->firstVirtualSlot;
         for (;;) {
             if (index < 0) {
@@ -522,12 +517,12 @@ void layout_vtable(ClassLayoutInput *layout, TypeClass *classType)
                 classType->ivars = member;
                 break;
             }
-            if (layout->entries[index] == NULL) {
+            if (layout->objlist[index] == NULL) {
                 CError_FATAL(662);
             }
-            if (layout->entries[index]->otype == OT_MEMBERVAR) {
-                member->next = CABI_LayoutMemberEntry(layout->entries[index])->next;
-                CABI_LayoutMemberEntry(layout->entries[index])->next = member;
+            if (layout->objlist[index]->otype == OT_MEMBERVAR) {
+                member->next = OBJ_MEMBER_VAR(layout->objlist[index])->next;
+                OBJ_MEMBER_VAR(layout->objlist[index])->next = member;
                 break;
             }
             --index;
@@ -538,7 +533,7 @@ void layout_vtable(ClassLayoutInput *layout, TypeClass *classType)
             size = 8;
         }
     } else {
-        layout->vtableMember = NULL;
+        layout->vtable_ivar = NULL;
     }
     for (base = classType->bases; base != NULL; base = base->next) {
         if (base->base->vtable != NULL && base->is_virtual == 0) {
@@ -555,8 +550,8 @@ void layout_vtable(ClassLayoutInput *layout, TypeClass *classType)
             }
         }
     }
-    for (methodIndex = 0; methodIndex < layout->count; ++methodIndex) {
-        if ((method = layout->entries[methodIndex]) == NULL) {
+    for (methodIndex = 0; methodIndex < layout->lex_order_count; ++methodIndex) {
+        if ((method = OBJECT(layout->objlist[methodIndex])) == NULL) {
             CError_FATAL(710);
         }
         if (method->otype == OT_OBJECT && method->datatype == DVFUNC) {
@@ -606,7 +601,7 @@ void layout_vtable(ClassLayoutInput *layout, TypeClass *classType)
     classType->vtable->size = size;
 }
 
-int CABI_LayoutClass(struct ClassLayoutInput *members, TypeClass *type)
+int CABI_LayoutClass(struct ClassLayout *members, TypeClass *type)
 {
     int baseSize;
     int size;
@@ -638,7 +633,7 @@ int CABI_LayoutClass(struct ClassLayoutInput *members, TypeClass *type)
             }
             type->size = baseSize;
         }
-        if (members->hasVirtualFunction != 0) {
+        if (members->has_vtable != 0) {
             layout_vtable(members, type);
         }
         layout_class_ivars(members, type);

@@ -224,7 +224,7 @@ Boolean CInline_DispatchNextDeferredNode(void)
     return 0;
 }
 
-static inline TypeClassExt800 *CInline_0050ebf0_inline1(Object *v1)
+static inline TemplClassInst *CInline_0050ebf0_inline1(Object *v1)
 {
     TypeClass *v5s;
     NameSpace *v7;
@@ -233,7 +233,7 @@ static inline TypeClassExt800 *CInline_0050ebf0_inline1(Object *v1)
     if (v5s != NULL) {
         do {
             if ((v5->flags & CLASS_IS_TEMPL_INST) != 0) {
-                return (TypeClassExt800 *)v5;
+                return (TemplClassInst *)v5;
             }
             if (copts.f83 == 0) {
                 break;
@@ -252,14 +252,14 @@ static inline TypeClassExt800 *CInline_0050ebf0_inline1(Object *v1)
     return NULL;
 }
 
-static inline TypeClassExt800 *CInline_0050ebf0_inline2(struct CPrecNode *a0)
+static inline TemplClassInst *CInline_0050ebf0_inline2(struct CPrecNode *a0)
 {
     NameSpace *v12;
     TypeClass *v10;
     v10 = (TypeClass *)a0->u.k0.contextClass;
     while ((int)v10 != 0) {
         if ((v10->flags & CLASS_IS_TEMPL_INST) != 0) {
-            return (TypeClassExt800 *)v10;
+            return (TemplClassInst *)v10;
         }
         if (copts.f83 == 0) {
             break;
@@ -678,8 +678,8 @@ unsigned char fn_0050ebc0(void)
 void parse_inline_definition(struct CPrecNode *inlineInfo)
 {
     Object *object;
-    TypeClassExt800 *methodClass;
-    TypeClassExt800 *contextClass;
+    TemplClassInst *methodClass;
+    TemplClassInst *contextClass;
     DeclInfo parseState;
     SInt32 inputState;
 

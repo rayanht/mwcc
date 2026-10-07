@@ -3475,7 +3475,7 @@ SInt32 match_overloaded_function_pointer(NameSpaceObjectList *list, void *templa
     ENode *result;
     Object *match;
     Object *object;
-    TemplateSpecializationData *specialization;
+    TemplFuncInstance *specialization;
     ENode *node;
     Boolean ambiguous;
     Boolean haveNonTemplateMatch;

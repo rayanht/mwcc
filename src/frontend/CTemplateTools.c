@@ -48,13 +48,13 @@ typedef struct TemplateComparisonEntry TemplateComparisonEntry;
 
 Boolean CTemplateTools_MatchTypeAndCheckBoundSlots(Object *obj, Type *type, void *templateArgs)
 {
-    TemplateMatchState matchState;
+    DeduceInfo matchState;
     SInt32 slotIndex;
 
     if (CTemplTool_InitDeduceInfo(&matchState, CTemplTool_GetFuncTempl(obj)->params, (CTStateElem *)templateArgs, 0)) {
-        if (CTemplateFunc_MatchType(obj->type, 0, type, 0, matchState.slots, 1)) {
-            for (slotIndex = 0; slotIndex < matchState.nslots; slotIndex++) {
-                if (matchState.slots[slotIndex].bound == 0)
+        if (CTemplateFunc_MatchType(obj->type, 0, type, 0, matchState.args, 1)) {
+            for (slotIndex = 0; slotIndex < matchState.maxCount; slotIndex++) {
+                if (matchState.args[slotIndex].bound == 0)
                     return 0;
             }
             return 1;
@@ -65,18 +65,18 @@ Boolean CTemplateTools_MatchTypeAndCheckBoundSlots(Object *obj, Type *type, void
 
 Boolean CTemplateTools_IsTemplDepClassBase(TypeClass *type, TypeTemplDep *templateType)
 {
-    TypeClassTemplate *foundClass;
+    TemplClass *foundClass;
 
     foundClass = CTemplTool_IsTemplate(templateType);
-    return &foundClass->base == type;
+    return &foundClass->theclass == type;
 }
 
-Type *CTemplTool_ResolveMemberSelfRefs(TypeClass *tclass, Type *type, UInt32 *qualifiers)
+Type *CTemplTool_ResolveMemberSelfRefs(TemplClass *tclass, Type *type, UInt32 *qualifiers)
 {
-    TemplateContext state;
+    TypeDeduce state;
     memclrw(&state, sizeof(state));
-    state.templateClass = tclass;
-    state.modes.processingClassTypes = 1;
+    state.tmclass = tclass;
+    state.processingClassTypes = 1;
     if (type->type == TYPEFUNC) {
         TypeFunc *function = (TypeFunc *)type;
         function->functype = CTemplateTools_ResolveType(&state, function->functype, &function->qual);
@@ -89,7 +89,7 @@ Type *CTemplTool_ResolveMemberSelfRefs(TypeClass *tclass, Type *type, UInt32 *qu
     return type;
 }
 
-Type *CTemplateTools_ResolveType(TemplateContext *ctx, Type *type, UInt32 *qual)
+Type *CTemplateTools_ResolveType(TypeDeduce *ctx, Type *type, UInt32 *qual)
 {
     UInt32 functionQual;
     switch ((SInt8)type->type) {
@@ -113,31 +113,30 @@ Type *CTemplateTools_ResolveType(TemplateContext *ctx, Type *type, UInt32 *qual)
         case TYPESTRUCT:
             return type;
         case TYPEENUM: {
-            TypeClassExt800 *theclass;
+            TemplClassInst *theclass;
             if (((TypeEnum *)type)->nspace->theclass != NULL &&
-                (((TypeEnum *)type)->nspace->theclass->flags & Q_VIRTUAL) != 0 &&
-                ctx->modes.processingClassTypes == 0) {
+                (((TypeEnum *)type)->nspace->theclass->flags & Q_VIRTUAL) != 0 && ctx->processingClassTypes == 0) {
                 CError_ASSERT(2103, ((TypeEnum *)type)->enumname);
                 theclass = find_corresponding_instance_class(ctx, ((TypeEnum *)type)->nspace->theclass);
-                CError_ASSERT(2105, theclass != NULL && theclass->base.type == TYPECLASS);
-                type = CScope_GetTagType(theclass->base.nspace, ((TypeEnum *)type)->enumname);
+                CError_ASSERT(2105, theclass != NULL && theclass->theclass.type == TYPECLASS);
+                type = CScope_GetTagType(theclass->theclass.nspace, ((TypeEnum *)type)->enumname);
                 CError_ASSERT(2108, type != NULL);
                 return type;
             }
             return type;
         }
         case TYPECLASS: {
-            if (ctx->modes.processingClassTypes == 0) {
+            if (ctx->processingClassTypes == 0) {
                 if ((((TypeClass *)type)->flags & Q_VIRTUAL) != 0) {
-                    TypeClassExt800 *resolvedClass = find_corresponding_instance_class(ctx, (TypeClass *)type);
+                    TemplClassInst *resolvedClass = find_corresponding_instance_class(ctx, (TypeClass *)type);
                     return (Type *)resolvedClass;
                 }
                 if (((TypeClass *)type)->nspace->theclass != NULL &&
                     (((TypeClass *)type)->nspace->theclass->flags & Q_VIRTUAL) != 0) {
                     Type *result;
-                    CError_ASSERT(2123, ctx->instance);
+                    CError_ASSERT(2123, ctx->inst);
                     CError_ASSERT(2124, ((TypeClass *)type)->classname);
-                    result = CScope_GetTagType(ctx->instance->nspace, ((TypeClass *)type)->classname);
+                    result = CScope_GetTagType(TYPE_CLASS(ctx->inst)->nspace, ((TypeClass *)type)->classname);
                     CError_ASSERT(2127, result != NULL);
                     return result;
                 }
@@ -175,8 +174,8 @@ Type *CTemplateTools_ResolveType(TemplateContext *ctx, Type *type, UInt32 *qual)
             *memberPointer = *original;
             memberPointer->memberType = CTemplateTools_ResolveType(ctx, original->memberType, qual);
             memberPointer->owner.type = CTemplateTools_ResolveType(ctx, original->owner.type, qual);
-            if (memberPointer->owner.type->type != TYPECLASS && ctx->modes.processingClassTypes == 0 &&
-                ctx->modes.processingArgument == 0) {
+            if (memberPointer->owner.type->type != TYPECLASS && ctx->processingClassTypes == 0 &&
+                ctx->processingArgument == 0) {
                 CError_ReportError(ERR_ILLEGAL_TEMPLATE_ARGUMENTS);
                 return memberPointer->memberType;
             }
@@ -239,7 +238,7 @@ static Boolean CTT_IsNeg(CInt64 *v)
     return (v->hi & 0x80000000) != 0;
 }
 
-FuncArg *CTemplateTools_005160b0(TemplateContext *ctx, FuncArg *args)
+FuncArg *CTemplateTools_005160b0(TypeDeduce *ctx, FuncArg *args)
 {
     FuncArg *newlist;
     Boolean isDependentExpression;
@@ -263,7 +262,7 @@ FuncArg *CTemplateTools_005160b0(TemplateContext *ctx, FuncArg *args)
         }
         *tail = *args;
         tail->type = resolve_templ_dep_pointer_target(ctx, tail->type, &tail->qual);
-        if (ctx->modes.processingClassTypes == 0 && (copts.f96 == 0 || ctx->modes.processingArgument == 0)) {
+        if (ctx->processingClassTypes == 0 && (copts.f96 == 0 || ctx->processingArgument == 0)) {
             expression = tail->dexpr;
             if (expression == NULL)
                 isDependentExpression = 0;
@@ -347,7 +346,7 @@ static void CTemplateTools_SetFirstArgName(TypeMemberFunc *f)
     }
 }
 
-Type *resolve_templ_dep_pointer_target(TemplateContext *context, Type *typeArg, UInt32 *qualifiers)
+Type *resolve_templ_dep_pointer_target(TypeDeduce *context, Type *typeArg, UInt32 *qualifiers)
 {
     Type *type = typeArg;
     UInt32 originalQualifiers;
@@ -378,18 +377,18 @@ Type *resolve_templ_dep_pointer_target(TemplateContext *context, Type *typeArg, 
     return resolvedType;
 }
 
-Type *resolve_templ_dep_type(TemplateContext *ctx, TypeTemplDep *arg, UInt32 *out)
+Type *resolve_templ_dep_type(TypeDeduce *ctx, TypeTemplDep *arg, UInt32 *out)
 {
     UInt32 resolutionData = 0;
     Type *type;
     Type *result;
     TypeTemplDep *copy;
     CTStateElem *item;
-    TypeClassTemplate *resolvedClass;
+    TemplClass *resolvedClass;
 
-    if (ctx->modes.processingClassTypes != 0) {
+    if (ctx->processingClassTypes != 0) {
         resolvedClass = CTemplTool_IsTemplate(arg);
-        if (resolvedClass != NULL && &resolvedClass->base == ctx->templateClass)
+        if (resolvedClass != NULL && resolvedClass == ctx->tmclass)
             return (Type *)resolvedClass;
         switch (arg->kind) {
             case 0:
@@ -405,7 +404,7 @@ Type *resolve_templ_dep_type(TemplateContext *ctx, TypeTemplDep *arg, UInt32 *ou
                     copy->u.qual.type = (TypeTemplDep *)type;
                     return (Type *)copy;
                 }
-                CError_ASSERT(1832, type == (Type *)ctx->templateClass);
+                CError_ASSERT(1832, type == (Type *)ctx->tmclass);
                 result = CScope_GetType(TYPE_CLASS(type)->nspace, arg->u.qual.name, out);
                 if (result != NULL)
                     return result;
@@ -437,7 +436,7 @@ Type *resolve_templ_dep_type(TemplateContext *ctx, TypeTemplDep *arg, UInt32 *ou
     } else {
         switch (arg->kind) {
             case 0:
-                if (ctx->modes.processingArgument != 0 && arg->u.pid.nindex == ctx->parameterNIndex)
+                if (ctx->processingArgument != 0 && arg->u.pid.nindex == ctx->nindex)
                     return (Type *)arg;
                 item = find_template_argument(ctx, arg->u.pid);
                 CError_ASSERT(1887, item->pid.type != 0);
@@ -452,7 +451,7 @@ Type *resolve_templ_dep_type(TemplateContext *ctx, TypeTemplDep *arg, UInt32 *ou
                         return result;
                     CError_ReportError(ERR_NOT_STRUCT_UNION_CLASS_MEMBER, arg->u.qual.name->name);
                 } else {
-                    if ((ctx->modes.processingArgument != 0 || ctx->instance == NULL) && type->type == TYPETEMPLATE) {
+                    if ((ctx->processingArgument != 0 || ctx->inst == NULL) && type->type == TYPETEMPLATE) {
                         copy = galloc(sizeof(*copy));
                         *copy = *arg;
                         copy->u.qual.type = (TypeTemplDep *)type;
@@ -489,9 +488,10 @@ Type *resolve_templ_dep_type(TemplateContext *ctx, TypeTemplDep *arg, UInt32 *ou
                 return base;
             }
             case 4:
-                resolvedClass = (TypeClassTemplate *)CTemplateTools_ResolveType(ctx, (Type *)arg->u.qualtempl.type,
-                                                                                &resolutionData);
-                if (resolvedClass->base.type != TYPECLASS || (resolvedClass->base.flags & CLASS_IS_TEMPL) == 0) {
+                resolvedClass =
+                    (TemplClass *)CTemplateTools_ResolveType(ctx, (Type *)arg->u.qualtempl.type, &resolutionData);
+                if (resolvedClass->theclass.type != TYPECLASS ||
+                    (resolvedClass->theclass.flags & CLASS_IS_TEMPL) == 0) {
                     CError_ReportError(ERR_DECLARATION_SYNTAX_ERROR);
                     return (Type *)&stsignedint;
                 }
@@ -505,7 +505,7 @@ Type *resolve_templ_dep_type(TemplateContext *ctx, TypeTemplDep *arg, UInt32 *ou
     return NULL;
 }
 
-Type *make_bitfield_type(TemplateContext *ctx, Type *ty, ENode *node, UInt32 *out)
+Type *make_bitfield_type(TypeDeduce *ctx, Type *ty, ENode *node, UInt32 *out)
 {
     UInt32 n;
     SInt16 bits;
@@ -514,7 +514,7 @@ Type *make_bitfield_type(TemplateContext *ctx, Type *ty, ENode *node, UInt32 *ou
 
     if (CTemplateTools_IsDependentType(ty)) {
         n = 0;
-        ty = CTemplateTools_ResolveType((TemplateContext *)ctx, ty, &n);
+        ty = CTemplateTools_ResolveType((TypeDeduce *)ctx, ty, &n);
     }
     if (ty->type != TYPEINT && ty->type != TYPEENUM) {
         CError_ReportError(ERR_ILLEGAL_BITFIELD_DECLARATION);
@@ -555,40 +555,40 @@ Type *make_bitfield_type(TemplateContext *ctx, Type *ty, ENode *node, UInt32 *ou
     return (Type *)tb;
 }
 
-CTStateElem *find_template_argument(struct TemplateContext *context, struct TemplParamID pid)
+CTStateElem *find_template_argument(struct TypeDeduce *context, struct TemplParamID pid)
 {
     CTStateElem *entry;
-    TypeClassTemplate *currentClass;
-    TypeClassTemplate *originalClass;
+    TemplClass *currentClass;
+    TemplClass *originalClass;
 
-    if ((entry = find((CTStateElem *)context->instanceArgs, pid)))
+    if ((entry = find((CTStateElem *)context->args, pid)))
         return entry;
-    CE_ASSERT((originalClass = (TypeClassTemplate *)context->templateClass) == 0, CError_FATAL(1678));
-    if (!(currentClass = (TypeClassTemplate *)context->instance)) {
-        CE_ASSERT(originalClass->enclosingTemplate == 0 || originalClass->relatedClass == 0, CError_FATAL(1681));
-        originalClass = (TypeClassTemplate *)context->templateClass;
-        currentClass = (TypeClassTemplate *)originalClass->relatedClass;
+    CE_ASSERT((originalClass = (TemplClass *)context->tmclass) == 0, CError_FATAL(1678));
+    if (!(currentClass = (TemplClass *)context->inst)) {
+        CE_ASSERT(originalClass->templ_parent == 0 || originalClass->inst_parent == 0, CError_FATAL(1681));
+        originalClass = (TemplClass *)context->tmclass;
+        currentClass = (TemplClass *)originalClass->inst_parent;
     }
     for (;;) {
-        if ((entry = find((CTStateElem *)currentClass->templateParameters, pid)))
+        if ((entry = find((CTStateElem *)currentClass->templ__params, pid)))
             return entry;
-        if (!(currentClass = currentClass->enclosingTemplate))
+        if (!(currentClass = currentClass->templ_parent))
             CError_FATAL(1692);
     }
 }
 
-void CTemplateTools_00516930(void *context, TypeClassTemplate *function, CTStateElem *arguments)
+void CTemplateTools_00516930(void *context, TemplClass *function, CTStateElem *arguments)
 {
     CTStateElem *source;
     CTStateElem *head;
     CTStateElem *tail;
     TemplateParameterRecord *parameter;
 
-    if (function->enclosingTemplate != NULL)
+    if (function->templ_parent != NULL)
         function = fn_00516b50(context, function);
     source = arguments;
     head = NULL;
-    parameter = (TemplateParameterRecord *)function->templateParameters;
+    parameter = (TemplateParameterRecord *)function->templ__params;
 
     if (source != NULL) {
         do {
@@ -604,8 +604,8 @@ void CTemplateTools_00516930(void *context, TypeClassTemplate *function, CTState
             tail->pid = parameter->pid;
             parameter = parameter->next;
             if (tail->pid.type != 0) {
-                tail->argument.type = CTemplateTools_ResolveType((TemplateContext *)context, tail->argument.type,
-                                                                 (UInt32 *)&tail->qualifiers);
+                tail->argument.type =
+                    CTemplateTools_ResolveType((TypeDeduce *)context, tail->argument.type, (UInt32 *)&tail->qualifiers);
             } else if (tail->argument.expression == NULL) {
                 CError_FATAL(1566);
             } else if (IsTemplDep(tail->argument.expression)) {
@@ -654,32 +654,32 @@ void CTemplateTools_00516930(void *context, TypeClassTemplate *function, CTState
     CTemplateClass_GetInstance(function, head, NULL);
 }
 
-TypeClassTemplate *fn_00516b50(TemplateLookupContext *context, TypeClassTemplate *record)
+TemplClass *fn_00516b50(TemplateLookupContext *context, TemplClass *record)
 {
-    TypeClassTemplate *result;
-    TypeClassTemplate *owner;
-    TypeClassTemplate *scope;
+    TemplClass *result;
+    TemplClass *owner;
+    TemplClass *scope;
 
-    if (record->relatedClass != NULL) {
+    if (record->inst_parent != NULL) {
         return record;
     }
     if (((owner = context->owner) == NULL) || ((scope = context->currentClass) == NULL)) {
         CError_FATAL(1472);
     }
     for (;;) {
-        if ((TypeClassTemplate *)record->enclosingTemplate == owner) {
-            result = (TypeClassTemplate *)CScope_GetTagType(scope->base.nspace, record->base.classname);
-            if ((((result != NULL) && (result->base.type == TYPECLASS)) &&
-                 ((result->base.flags & CLASS_IS_TEMPL) != 0)) &&
-                (result->enclosingTemplate == record->enclosingTemplate)) {
+        if ((TemplClass *)record->templ_parent == owner) {
+            result = (TemplClass *)CScope_GetTagType(scope->theclass.nspace, record->theclass.classname);
+            if ((((result != NULL) && (result->theclass.type == TYPECLASS)) &&
+                 ((result->theclass.flags & CLASS_IS_TEMPL) != 0)) &&
+                (result->templ_parent == record->templ_parent)) {
                 return result;
             }
         }
-        owner = (TypeClassTemplate *)owner->enclosingTemplate;
+        owner = (TemplClass *)owner->templ_parent;
         if (owner == NULL) {
             break;
         }
-        scope = (TypeClassTemplate *)scope->enclosingTemplate;
+        scope = (TemplClass *)scope->templ_parent;
         if (scope == NULL) {
             CError_FATAL(1486);
         }
@@ -690,7 +690,7 @@ TypeClassTemplate *fn_00516b50(TemplateLookupContext *context, TypeClassTemplate
 /* Result storage used by template member lookup and expression conversion. */
 /* Scope lookup entry, linking a name lookup to its object. */
 
-ENode *CTemplTool_DeduceExpr(TemplateContext *ctx, ENode *node)
+ENode *CTemplTool_DeduceExpr(TypeDeduce *ctx, ENode *node)
 {
     ObjectList *entry;
     CTStateElem *outerRecord;
@@ -701,10 +701,10 @@ ENode *CTemplTool_DeduceExpr(TemplateContext *ctx, ENode *node)
     ENodeList *sourceArgument;
     ENode *function;
     CTStateElem *record;
-    TypeClassExt800 *group;
+    TemplClassInst *group;
     Type *type;
     TypeClass *classType;
-    TypeClassExt800 *resolvedObject;
+    TemplClassInst *resolvedObject;
     CScopeParseResult expression;
     int savedScope;
     UInt32 qualifiers;
@@ -725,20 +725,19 @@ ENode *CTemplTool_DeduceExpr(TemplateContext *ctx, ENode *node)
         case EOBJLIST:
             switch (node->data.templatecomparison.tag) {
                 case 0:
-                    if (ctx->modes.processingArgument != 0 &&
-                        node->data.templatecomparison.u.wb.templateLevel == ctx->parameterNIndex) {
+                    if (ctx->processingArgument != 0 &&
+                        node->data.templatecomparison.u.wb.templateLevel == ctx->nindex) {
                         return CloneNode(node);
                     }
-                    for (record = (CTStateElem *)ctx->instanceArgs; record != NULL; record = record->next) {
+                    for (record = (CTStateElem *)ctx->args; record != NULL; record = record->next) {
                         if (record->pid.index == node->data.templatecomparison.u.wb.parameterIndex &&
                             record->pid.nindex == node->data.templatecomparison.u.wb.templateLevel) {
                             CError_ASSERT(1310, record->pid.type == 0 && record->argument.type != NULL);
                             return CloneRecNode(record);
                         }
                     }
-                    for (group = (TypeClassExt800 *)ctx->instance; group != NULL;
-                         group = (TypeClassExt800 *)group->relatedClass) {
-                        for (outerRecord = (CTStateElem *)group->targs; outerRecord != NULL;
+                    for (group = (TemplClassInst *)ctx->inst; group != NULL; group = (TemplClassInst *)group->parent) {
+                        for (outerRecord = (CTStateElem *)group->inst_args; outerRecord != NULL;
                              outerRecord = outerRecord->next) {
                             if (outerRecord->pid.index == node->data.templatecomparison.u.wb.parameterIndex &&
                                 outerRecord->pid.nindex == node->data.templatecomparison.u.wb.templateLevel) {
@@ -782,7 +781,7 @@ ENode *CTemplTool_DeduceExpr(TemplateContext *ctx, ENode *node)
                         CError_ReportError(ERR_NOT_STRUCT_UNION_CLASS_MEMBER,
                                            ((HashNameNode *)NP(node)->data.templatecomparison.p4)->name);
                     } else {
-                        if (type->type == TYPETEMPLATE && ctx->instance == NULL) {
+                        if (type->type == TYPETEMPLATE && ctx->inst == NULL) {
                             result = CloneNode(node);
                             NP(result)->data.templatecomparison.u.p0 = type;
                             return result;
@@ -794,11 +793,12 @@ ENode *CTemplTool_DeduceExpr(TemplateContext *ctx, ENode *node)
                 case 5:
                     resolvedObject = find_corresponding_instance_class(
                         ctx, ((TypeClass *)NP(node)->data.templatecomparison.u.p0)->nspace->theclass);
-                    if (resolvedObject == NULL || resolvedObject->base.type != TYPECLASS) {
+                    if (resolvedObject == NULL || resolvedObject->theclass.type != TYPECLASS) {
                         CError_FATAL(1379);
                     }
                     entry = CScope_FindObjectListInNameSpace(
-                        resolvedObject->base.nspace, ((TypeClass *)NP(node)->data.templatecomparison.u.p0)->classname);
+                        resolvedObject->theclass.nspace,
+                        ((TypeClass *)NP(node)->data.templatecomparison.u.p0)->classname);
                     if (entry == NULL) {
                         CError_FATAL(1382);
                     }
@@ -866,65 +866,65 @@ ENode *CTemplTool_DeduceExpr(TemplateContext *ctx, ENode *node)
     }
 }
 
-TypeClassExt800 *find_corresponding_instance_class(TemplateContext *list, TypeClass *targetClass)
+TemplClassInst *find_corresponding_instance_class(TypeDeduce *list, TypeClass *targetClass)
 {
-    TypeClassExt800 *cur;
-    TypeClassExt800 *curq;
-    TypeClassExt800 *p;
-    TypeClassExt800 *q;
+    TemplClassInst *cur;
+    TemplClassInst *curq;
+    TemplClassInst *p;
+    TemplClassInst *q;
 
-    if ((p = ((TypeClassExt800 *)list->templateClass)) == NULL)
+    if ((p = ((TemplClassInst *)list->tmclass)) == NULL)
         CError_FATAL(1170);
-    if ((q = ((TypeClassExt800 *)list->instance)) == NULL) {
-        if (!(p->relatedClass != NULL && p->classTemplate != NULL))
+    if ((q = ((TemplClassInst *)list->inst)) == NULL) {
+        if (!(p->parent != NULL && p->templ != NULL))
             CError_FATAL(1173);
-        p = (TypeClassExt800 *)p->relatedClass;
-        q = (TypeClassExt800 *)((TypeClassExt800 *)list->templateClass)->classTemplate;
+        p = (TemplClassInst *)p->parent;
+        q = (TemplClassInst *)((TemplClassInst *)list->tmclass)->templ;
     }
     cur = p;
     curq = q;
     while (1) {
-        if (&cur->base == targetClass)
+        if (&cur->theclass == targetClass)
             return curq;
-        cur = (TypeClassExt800 *)cur->relatedClass;
+        cur = (TemplClassInst *)cur->parent;
         if (cur == NULL)
             break;
-        curq = (TypeClassExt800 *)curq->relatedClass;
+        curq = (TemplClassInst *)curq->parent;
         if (!(curq != NULL))
             CError_FATAL(1186);
     }
-    cur = (TypeClassExt800 *)targetClass;
-    if (cur->targs == NULL) {
+    cur = (TemplClassInst *)targetClass;
+    if (cur->inst_args == NULL) {
         for (;;) {
-            if (p->targs != NULL)
+            if (p->inst_args != NULL)
                 break;
-            p = (TypeClassExt800 *)p->relatedClass;
+            p = (TemplClassInst *)p->parent;
             if (!(p != NULL))
                 CError_FATAL(1195);
-            q = (TypeClassExt800 *)q->relatedClass;
+            q = (TemplClassInst *)q->parent;
             if (!(q != NULL))
                 CError_FATAL(1196);
         }
-        cur = (TypeClassExt800 *)targetClass;
-        cur = (TypeClassExt800 *)cur->relatedClass;
+        cur = (TemplClassInst *)targetClass;
+        cur = (TemplClassInst *)cur->parent;
         while (cur != NULL) {
             if (cur == p)
                 return fn_00517270(targetClass, p, q);
-            if (cur->targs != NULL)
+            if (cur->inst_args != NULL)
                 break;
-            cur = (TypeClassExt800 *)cur->relatedClass;
+            cur = (TemplClassInst *)cur->parent;
         }
     }
     CError_FATAL(1225);
     return NULL;
 }
 
-TypeClassExt800 *fn_00517270(TypeClass *current, TypeClassExt800 *limit, TypeClassExt800 *target)
+TemplClassInst *fn_00517270(TypeClass *current, TemplClassInst *limit, TemplClassInst *target)
 {
     int depth;
-    TypeClassExt800 *match;
+    TemplClassInst *match;
     TypeClass *ancestors[32];
-    TypeClassExt800 *record;
+    TemplClassInst *record;
 
     depth = 0;
     ancestors[0] = current;
@@ -932,35 +932,35 @@ TypeClassExt800 *fn_00517270(TypeClass *current, TypeClassExt800 *limit, TypeCla
         if (32 <= depth) {
             CError_FATAL(1134);
         }
-        record = (TypeClassExt800 *)current;
-        current = (TypeClass *)record->relatedClass;
+        record = (TemplClassInst *)current;
+        current = (TypeClass *)record->parent;
         if (current == NULL) {
             CError_FATAL(1135);
         }
-        if (current == &limit->base)
+        if (current == &limit->theclass)
             break;
-        record = (TypeClassExt800 *)current;
-        if (record->targs != NULL) {
+        record = (TemplClassInst *)current;
+        if (record->inst_args != NULL) {
             CError_FATAL(1137);
         }
         depth = depth + 1;
         ancestors[depth] = current;
     }
     do {
-        record = (TypeClassExt800 *)ancestors[depth];
-        match = (TypeClassExt800 *)((TypeClassTemplate *)record)->instances;
+        record = (TemplClassInst *)ancestors[depth];
+        match = (TemplClassInst *)((TemplClass *)record)->instances;
         depth = depth - 1;
         while (1) {
             if (match == NULL) {
                 CError_FATAL(1146);
             }
-            if ((TypeClassExt800 *)match->relatedClass == target)
+            if ((TemplClassInst *)match->parent == target)
                 break;
-            match = (TypeClassExt800 *)match->next;
+            match = (TemplClassInst *)match->next;
         }
         target = match;
-        if ((match->base.flags & (CLASS_COMPLETED | CLASS_IS_TEMPL_INST)) == 0x800) {
-            CTemplateClass_InstantiateClass(&match->base);
+        if ((match->theclass.flags & (CLASS_COMPLETED | CLASS_IS_TEMPL_INST)) == 0x800) {
+            CTemplateClass_InstantiateClass(&match->theclass);
         }
     } while (0 <= depth);
     return match;
@@ -1192,15 +1192,15 @@ Boolean CTemplateTools_00517a40(ENode *left, ENode *right)
     return 0;
 }
 
-Type *CTemplTool_IsDependentTemplate(TypeClassTemplate *templateClass, CTStateElem *arguments)
+Type *CTemplTool_IsDependentTemplate(TemplClass *templateClass, CTStateElem *arguments)
 {
     TypeTemplDep *result;
     TemplateParameterRecord *parameter;
     CTStateElem *argument;
     unsigned char dependent;
-    if (!templateClass->enclosingTemplate || templateClass->relatedClass) {
+    if (!templateClass->templ_parent || templateClass->inst_parent) {
         argument = arguments;
-        parameter = (TemplateParameterRecord *)templateClass->templateParameters;
+        parameter = (TemplateParameterRecord *)templateClass->templ__params;
         for (;;) {
             if (!argument) {
                 if (parameter)
@@ -1225,7 +1225,7 @@ Type *CTemplTool_IsDependentTemplate(TypeClassTemplate *templateClass, CTStateEl
         }
     }
     if (currentNameSpace->theclass == (TypeClass *)templateClass &&
-        CTemplTool_IsSameTemplate(templateClass->templateParameters, arguments))
+        CTemplTool_IsSameTemplate(templateClass->templ__params, arguments))
         return (Type *)templateClass;
     result = CDecl_NewTemplDepType(2);
     result->u.templ.templ = templateClass;
@@ -1240,8 +1240,7 @@ TypeClass *CTemplateTools_GetTemplClass(TypeTemplDep *record)
     } else if (record->kind != 2) {
         return NULL;
     }
-    if (CTemplTool_IsSameTemplate(((TypeClassTemplate *)record->u.templ.templ)->templateParameters,
-                                  record->u.templ.args))
+    if (CTemplTool_IsSameTemplate(((TemplClass *)record->u.templ.templ)->templ__params, record->u.templ.args))
         return (TypeClass *)record->u.templ.templ;
     return NULL;
 }
@@ -1326,10 +1325,10 @@ unsigned char CTemplateTools_IsDependentType(Type *type)
     }
 }
 
-void CTemplTool_RemoveTemplateArgumentNameSpace(NameSpace *args, TypeClassExt800 *func, CScopeSave *scope)
+void CTemplTool_RemoveTemplateArgumentNameSpace(NameSpace *args, TemplClassInst *func, CScopeSave *scope)
 {
     NameSpace *arg;
-    arg = func->base.nspace;
+    arg = func->theclass.nspace;
     while (arg->parent) {
         if (arg->theclass != NULL && (arg->theclass->flags & CLASS_IS_TEMPL_INST) != 0 && arg->parent->is_templ != 0)
             arg->parent = arg->parent->parent;
@@ -1351,36 +1350,36 @@ void CTemplTool_RemoveOuterTemplateArgumentNameSpace(NameSpace *ns)
     }
 }
 
-NameSpace *CTemplateTools_InsertTemplateArgs(FuncArg *context, TypeClassExt800 *function, CScopeSave *scope)
+NameSpace *CTemplateTools_InsertTemplateArgs(FuncArg *context, TemplClassInst *function, CScopeSave *scope)
 {
     NameSpace *args;
     NameSpace *arg;
-    TypeClassExt800 *type;
-    args = CTemplTool_SetupTemplateArgumentNameSpace(context, function->targs, 0);
-    args->parent = function->base.nspace->parent;
-    function->base.nspace->parent = args;
+    TemplClassInst *type;
+    args = CTemplTool_SetupTemplateArgumentNameSpace(context, function->inst_args, 0);
+    args->parent = function->theclass.nspace->parent;
+    function->theclass.nspace->parent = args;
     for (arg = args; arg != NULL; arg = arg->parent) {
-        if ((type = (TypeClassExt800 *)arg->theclass) != NULL && (type->base.flags & 0x800U) != 0U) {
+        if ((type = (TemplClassInst *)arg->theclass) != NULL && (type->theclass.flags & 0x800U) != 0U) {
             NameSpace *expanded = CTemplTool_SetupTemplateArgumentNameSpace(
-                (FuncArg *)((TypeClassTemplate *)type->classTemplate)->templateParameters, type->targs, 0);
+                (FuncArg *)((TemplClass *)type->templ)->templ__params, type->inst_args, 0);
             expanded->parent = arg->parent;
             arg->parent = expanded;
         }
     }
-    BE_elf_SaveAndSetScope(function->base.nspace, scope);
+    BE_elf_SaveAndSetScope(function->theclass.nspace, scope);
     return args;
 }
 
 void CTemplTool_SetupOuterTemplateArgumentNameSpace(NameSpace *nameSpace)
 {
     NameSpace *newNameSpace;
-    TypeClassExt800 *classInfo;
+    TemplClassInst *classInfo;
 
     while (nameSpace != NULL) {
         if (nameSpace->theclass != NULL && (nameSpace->theclass->flags & CLASS_IS_TEMPL_INST) != 0) {
-            classInfo = (TypeClassExt800 *)nameSpace->theclass;
+            classInfo = (TemplClassInst *)nameSpace->theclass;
             newNameSpace = CTemplTool_SetupTemplateArgumentNameSpace(
-                (FuncArg *)((TypeClassTemplate *)classInfo->classTemplate)->templateParameters, classInfo->targs, 0);
+                (FuncArg *)((TemplClass *)classInfo->templ)->templ__params, classInfo->inst_args, 0);
             newNameSpace->parent = nameSpace->parent;
             nameSpace->parent = newNameSpace;
         }
@@ -1544,26 +1543,26 @@ struct TemplateFunction *CTemplTool_GetFuncTempl(Object *obj)
     return p->u.templateFunction;
 }
 
-TypeClassTemplate *CTemplTool_IsTemplate(TypeTemplDep *reference)
+TemplClass *CTemplTool_IsTemplate(TypeTemplDep *reference)
 {
-    TypeClassTemplate *target;
-    TypeClassTemplate *parent;
-    TypeClassTemplate *instance;
-    TypeClassTemplate *nestedParent;
+    TemplClass *target;
+    TemplClass *parent;
+    TemplClass *instance;
+    TemplClass *nestedParent;
     TypeClass *nestedInstance;
-    TypeClassTemplate *nestedClass;
-    TypeClassTemplate *resolved;
+    TemplClass *nestedClass;
+    TemplClass *resolved;
     CTStateElem *arguments;
     CE_ASSERT(reference->type != TYPETEMPLATE, CError_FATAL(242));
     if (reference->kind == 2) {
-        if (CTemplTool_IsIdenticalTemplArgList(
-                reference->u.templ.args, ((TypeClassTemplate *)reference->u.templ.templ)->templateParameters) != 0) {
+        if (CTemplTool_IsIdenticalTemplArgList(reference->u.templ.args,
+                                               ((TemplClass *)reference->u.templ.templ)->templ__params) != 0) {
             return reference->u.templ.templ;
         }
-        if (((target = reference->u.templ.templ))->specializations != NULL) {
+        if (((target = reference->u.templ.templ))->pspecs != NULL) {
             resolved = target;
             if (CTemplateClass_SelectSpecialization(reference->u.templ.args, &resolved, &arguments) != 0 &&
-                CTemplTool_IsIdenticalTemplArgList(arguments, resolved->templateParameters) != 0) {
+                CTemplTool_IsIdenticalTemplArgList(arguments, resolved->templ__params) != 0) {
                 return resolved;
             }
         }
@@ -1572,9 +1571,9 @@ TypeClassTemplate *CTemplTool_IsTemplate(TypeTemplDep *reference)
     if (reference->kind == 1) {
         parent = CTemplTool_IsTemplate(reference->u.qual.type);
         if (parent != NULL) {
-            instance = (TypeClassTemplate *)CScope_GetTagType(parent->base.nspace, reference->u.qual.name);
-            if (instance != NULL && instance->base.type == TYPECLASS && (instance->base.flags & CLASS_IS_TEMPL) != 0 &&
-                instance->templateParameters == NULL) {
+            instance = (TemplClass *)CScope_GetTagType(parent->theclass.nspace, reference->u.qual.name);
+            if (instance != NULL && instance->theclass.type == TYPECLASS &&
+                (instance->theclass.flags & CLASS_IS_TEMPL) != 0 && instance->templ__params == NULL) {
                 return instance;
             }
         }
@@ -1585,12 +1584,11 @@ TypeClassTemplate *CTemplTool_IsTemplate(TypeTemplDep *reference)
         nestedParent = CTemplTool_IsTemplate(reference->u.qualtempl.type->u.qual.type);
         if (nestedParent != NULL) {
             nestedInstance =
-                (TypeClass *)CScope_GetTagType(nestedParent->base.nspace, reference->u.qualtempl.type->u.qual.name);
+                (TypeClass *)CScope_GetTagType(nestedParent->theclass.nspace, reference->u.qualtempl.type->u.qual.name);
             if (nestedInstance != NULL && nestedInstance->type == TYPECLASS &&
                 (nestedInstance->flags & CLASS_IS_TEMPL) != 0) {
-                nestedClass = (TypeClassTemplate *)nestedInstance;
-                if (CTemplTool_IsIdenticalTemplArgList(reference->u.qualtempl.args, nestedClass->templateParameters) !=
-                    0) {
+                nestedClass = (TemplClass *)nestedInstance;
+                if (CTemplTool_IsIdenticalTemplArgList(reference->u.qualtempl.args, nestedClass->templ__params) != 0) {
                     return nestedClass;
                 }
             }
@@ -1628,20 +1626,20 @@ UInt8 CTemplTool_IsIdenticalTemplArgList(CTStateElem *pattern, TemplateParameter
     return argument == NULL;
 }
 
-CTStateElem *CTemplateTools_CopySlotsToList(struct TemplateMatchState *src)
+CTStateElem *CTemplateTools_CopySlotsToList(struct DeduceInfo *src)
 {
     SInt32 i = 0;
     CTStateElem *head;
     CTStateElem *ep;
 
-    for (i = 0; i < src->nslots; i++) {
+    for (i = 0; i < src->maxCount; i++) {
         if (i != 0) {
             ep = ep->next = (CTStateElem *)galloc(0x12);
         } else {
             ep = (CTStateElem *)galloc(0x12);
             head = ep;
         }
-        *ep = src->slots[i];
+        *ep = src->args[i];
     }
     ep->next = NULL;
     return head;
@@ -1666,7 +1664,7 @@ void CTemplTool_InsertTemplateParameter(NameSpace *scope, TemplateParameterRecor
 #ifndef FALSE
 #endif
 
-Boolean CTemplTool_InitDeduceInfo(TemplateMatchState *info, TemplateParameterRecord *params, CTStateElem *args,
+Boolean CTemplTool_InitDeduceInfo(DeduceInfo *info, TemplateParameterRecord *params, CTStateElem *args,
                                   Boolean allowUnnamed)
 {
     SInt32 argumentIndex;
@@ -1677,8 +1675,8 @@ Boolean CTemplTool_InitDeduceInfo(TemplateMatchState *info, TemplateParameterRec
     SInt32 count;
 
     if (params == NULL) {
-        info->slots = info->inline_slots;
-        info->nslots = 0;
+        info->args = info->argBuffer;
+        info->maxCount = 0;
         info->depth = 0xff;
         return TRUE;
     }
@@ -1696,11 +1694,11 @@ Boolean CTemplTool_InitDeduceInfo(TemplateMatchState *info, TemplateParameterRec
         slots = (CTStateElem *)CompilerTools_AllocatePool(count * sizeof(*slots));
         memclrw(slots, count * sizeof(*slots));
     } else {
-        slots = info->inline_slots;
+        slots = info->argBuffer;
     }
 
-    info->slots = slots;
-    info->nslots = count;
+    info->args = slots;
+    info->maxCount = count;
     info->depth = params->depth;
 
     count = 0;
@@ -1727,7 +1725,7 @@ Boolean CTemplTool_InitDeduceInfo(TemplateMatchState *info, TemplateParameterRec
             }
             slots[argumentIndex].next = NULL;
             slots[argumentIndex].bound = TRUE;
-            info->suppliedArgumentCount++;
+            info->count++;
             if (parameter->isTypeParameter == 0) {
                 if (assign_check(slots[argumentIndex].argument.expression, parameter->value, parameter->flags, 0, 0,
                                  0)) {

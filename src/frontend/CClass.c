@@ -61,8 +61,8 @@ static UInt8 *data_00581caa;
 static SInt32 vtable_size;
 static void *rtti_offset_table;
 static void *data_00581cb6;
-static ClassLayout *virtual_base_layout;
-static ClassLayout *root_class_layout;
+static OverrideClass *virtual_base_layout;
+static OverrideClass *root_class_layout;
 static SInt32 data_00581cc2;
 static Boolean data_00581cc6;
 static void *data_00581cc8;
@@ -672,7 +672,7 @@ void fn_004e9ca0(void)
 
 void CClass_CheckOverrides(TypeClass *cls)
 {
-    ClassLayout *layout;
+    OverrideClass *layout;
     Object *object;
     ClassList *base;
     VClassList *vbase;
@@ -737,15 +737,15 @@ void CClass_CheckOverrides(TypeClass *cls)
     }
 }
 
-void check_hidden_inherited_virtual_functions(ClassLayout *layout, ClassLayout *base)
+void check_hidden_inherited_virtual_functions(OverrideClass *layout, OverrideClass *base)
 {
-    ClassLayoutMember *b;
-    ClassLayoutBase *d;
+    OverrideFunc *b;
+    OverrideClassBase *d;
     Object *obj;
     ScopeSearch iter;
 
     if (layout != base) {
-        for (b = (ClassLayoutMember *)base->members; b != NULL; b = b->next) {
+        for (b = (OverrideFunc *)base->members; b != NULL; b = b->next) {
             if (b->selectedClass != layout) {
                 CScope_InitScopeSearch(&iter, layout->theclass->nspace);
                 for (;;) {
@@ -761,18 +761,18 @@ void check_hidden_inherited_virtual_functions(ClassLayout *layout, ClassLayout *
             }
         }
     }
-    for (d = (ClassLayoutBase *)base->children; d != NULL; d = d->next)
+    for (d = (OverrideClassBase *)base->children; d != NULL; d = d->next)
         check_hidden_inherited_virtual_functions(layout, d->layout);
 }
 
-void mark_vbases_has_override(ClassLayout *root, ClassLayout *node, unsigned char mark)
+void mark_vbases_has_override(OverrideClass *root, OverrideClass *node, unsigned char mark)
 {
-    ClassLayoutMember *entry;
-    ClassLayoutBase *link;
+    OverrideFunc *entry;
+    OverrideClassBase *link;
     VClassList *item;
 
     if (mark != 0) {
-        for (entry = (ClassLayoutMember *)node->members; entry != NULL; entry = entry->next) {
+        for (entry = (OverrideFunc *)node->members; entry != NULL; entry = entry->next) {
             if (entry->selected == NULL)
                 continue;
             virtual_base_layout = NULL;
@@ -789,14 +789,14 @@ void mark_vbases_has_override(ClassLayout *root, ClassLayout *node, unsigned cha
             item->has_override = 1;
         }
     }
-    for (link = (ClassLayoutBase *)node->children; link != NULL; link = link->next) {
+    for (link = (OverrideClassBase *)node->children; link != NULL; link = link->next) {
         mark_vbases_has_override(root, link->layout, (mark != 0) || (link->is_virtual != 0));
     }
 }
 
 Object *create_root_class_layout(TypeClass *type)
 {
-    ClassLayout *object;
+    OverrideClass *object;
 
     current_class = type;
     object = create_class_layout(NULL, type, 0, 0);
@@ -807,7 +807,7 @@ Object *create_root_class_layout(TypeClass *type)
 
 void build_class_layout(TypeClass *type)
 {
-    ClassLayout *object;
+    OverrideClass *object;
 
     current_class = type;
     object = create_class_layout(NULL, type, 0, 0);
@@ -817,13 +817,13 @@ void build_class_layout(TypeClass *type)
     build_virtual_function_entries(object);
 }
 
-Object *CClass_004ea020(ClassLayout *record, char report)
+Object *CClass_004ea020(OverrideClass *record, char report)
 {
     Object *result = NULL;
-    ClassLayoutMember *nodeA;
-    ClassLayoutBase *nodeB;
+    OverrideFunc *nodeA;
+    OverrideClassBase *nodeB;
 
-    for (nodeA = (ClassLayoutMember *)record->members; nodeA != NULL; nodeA = nodeA->next) {
+    for (nodeA = (OverrideFunc *)record->members; nodeA != NULL; nodeA = nodeA->next) {
         if (nodeA->conflict != NULL && report != 0) {
             CError_ReportError(ERR_CLASS_MORE_THAN_ONE_FINAL_OVERRIDER, current_class, 0, nodeA->object,
                                nodeA->selected->object, nodeA->conflict->object);
@@ -838,7 +838,7 @@ Object *CClass_004ea020(ClassLayout *record, char report)
                 result = object;
         }
     }
-    for (nodeB = (ClassLayoutBase *)record->children; nodeB != NULL; nodeB = nodeB->next) {
+    for (nodeB = (OverrideClassBase *)record->children; nodeB != NULL; nodeB = nodeB->next) {
         if (result != NULL)
             CClass_004ea020(nodeB->layout, report);
         else
@@ -847,10 +847,10 @@ Object *CClass_004ea020(ClassLayout *record, char report)
     return result;
 }
 
-void build_virtual_function_entries(ClassLayout *ctx)
+void build_virtual_function_entries(OverrideClass *ctx)
 {
-    struct ClassLayoutMember *entry;
-    ClassLayoutBase *child;
+    struct OverrideFunc *entry;
+    OverrideClassBase *child;
     Object *func;
     SInt32 slot;
     SInt32 diff;
@@ -906,7 +906,7 @@ void build_virtual_function_entries(ClassLayout *ctx)
         }
     }
     ctx->done = 1;
-    for (child = (ClassLayoutBase *)ctx->children; child != NULL; child = child->next)
+    for (child = (OverrideClassBase *)ctx->children; child != NULL; child = child->next)
         build_virtual_function_entries(child->layout);
 }
 
@@ -947,20 +947,20 @@ static Object *CClass_FindFuncObject(NameSpace *nspace, HashNameNode *name)
     return NULL;
 }
 
-void select_layout_member_overrides(ClassLayout *node)
+void select_layout_member_overrides(OverrideClass *node)
 {
-    ClassLayoutMember *entry;
-    ClassLayoutBase *child;
-    ClassLayout *childNode;
-    ClassLayoutMember *childEntry;
-    ClassLayoutBase *grandchild;
-    ClassLayoutMember *grandchildEntry;
-    ClassLayout *grandchildNode;
-    ClassLayoutBase *greatGrandchild;
-    ClassLayout *greatGrandchildNode;
-    ClassLayoutMember *greatGrandchildEntry;
-    ClassLayoutBase *descendant;
-    ClassLayout *root;
+    OverrideFunc *entry;
+    OverrideClassBase *child;
+    OverrideClass *childNode;
+    OverrideFunc *childEntry;
+    OverrideClassBase *grandchild;
+    OverrideFunc *grandchildEntry;
+    OverrideClass *grandchildNode;
+    OverrideClassBase *greatGrandchild;
+    OverrideClass *greatGrandchildNode;
+    OverrideFunc *greatGrandchildEntry;
+    OverrideClassBase *descendant;
+    OverrideClass *root;
 
     if (root_class_layout != node) {
         for (entry = node->members; entry != NULL; entry = entry->next) {
@@ -1122,10 +1122,10 @@ CClassNode *collect_override_return_class_types(CClassNode *types, TypeClass *tc
     return types;
 }
 
-void select_member_override(ClassLayout *classRecord, ClassLayout *context, struct ClassLayoutMember *search)
+void select_member_override(OverrideClass *classRecord, OverrideClass *context, struct OverrideFunc *search)
 {
-    ClassLayoutMember *function;
-    ClassLayoutBase *base;
+    OverrideFunc *function;
+    OverrideClassBase *base;
     UInt8 kind;
     Boolean ok;
 
@@ -1156,17 +1156,17 @@ void select_member_override(ClassLayout *classRecord, ClassLayout *context, stru
                 }
             }
         }
-        for (base = (ClassLayoutBase *)classRecord->children; base != NULL; base = base->next) {
+        for (base = (OverrideClassBase *)classRecord->children; base != NULL; base = base->next) {
             select_member_override(base->layout, context, search);
         }
     }
 }
 
 /* Identity values used to match a class search entry. */
-Boolean contains_base_layout(ClassLayout *identity, ClassLayout *sub)
+Boolean contains_base_layout(OverrideClass *identity, OverrideClass *sub)
 {
-    ClassLayoutBase *node;
-    for (node = (ClassLayoutBase *)sub->children; node != NULL; node = node->next) {
+    OverrideClassBase *node;
+    for (node = (OverrideClassBase *)sub->children; node != NULL; node = node->next) {
         if ((node->layout->theclass == identity->theclass && node->layout->offset == identity->offset) ||
             contains_base_layout(identity, node->layout)) {
             if (!virtual_base_layout && node->is_virtual)
@@ -1177,14 +1177,14 @@ Boolean contains_base_layout(ClassLayout *identity, ClassLayout *sub)
     return 0;
 }
 
-ClassLayout *create_class_layout(ClassLayout *root, TypeClass *cls, SInt32 offset, SInt32 voffset)
+OverrideClass *create_class_layout(OverrideClass *root, TypeClass *cls, SInt32 offset, SInt32 voffset)
 {
-    ClassLayout *layout;
+    OverrideClass *layout;
     ClassList *base;
     ScopeSearch scope;
     Object *object;
-    ClassLayoutMember *member;
-    ClassLayoutBase *derived;
+    OverrideFunc *member;
+    OverrideClassBase *derived;
 
     layout = CompilerTools_AllocatePool((sizeof(*layout) + 1) & ~1);
     memclrw(layout, (sizeof(*layout) + 1) & ~1);
@@ -1231,9 +1231,9 @@ ClassLayout *create_class_layout(ClassLayout *root, TypeClass *cls, SInt32 offse
     return layout;
 }
 
-ClassLayout *find_class_layout_by_class_and_offset(ClassLayout *layout, TypeClass *cls, SInt32 offset)
+OverrideClass *find_class_layout_by_class_and_offset(OverrideClass *layout, TypeClass *cls, SInt32 offset)
 {
-    ClassLayoutBase *list;
+    OverrideClassBase *list;
 
     if (layout->theclass == cls && layout->offset == offset)
         return layout;

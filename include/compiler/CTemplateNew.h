@@ -28,9 +28,9 @@ struct ParserPosition {
 };
 #pragma options align = reset
 #pragma options align = mac68k
-struct TemplateObjectInstance {
-    Object base;
-    Object *templateObject;
+struct ObjectTemplated {
+    Object object;
+    Object *parent;
 };
 #pragma options align = reset
 struct TemplateArgumentOverride {
@@ -86,10 +86,10 @@ struct TplSpec {
 };
 #pragma options align = reset
 extern Boolean CTemplateNew_InstantiatePendingTemplates(void);
-extern void CTemplateNew_CompileObject(struct TypeClassTemplate *templateClass, TypeClassExt800 *context,
+extern void CTemplateNew_CompileObject(struct TemplClass *templateClass, TemplClassInst *context,
                                        TemplateSourceRecordTyped *source, Object *object, Boolean reset);
-extern Boolean CTemplateNew_InstantiateFunction(TemplateFunction *definition,
-                                                TemplateSpecializationData *specialization, Boolean report);
+extern Boolean CTemplateNew_InstantiateFunction(TemplateFunction *definition, TemplFuncInstance *specialization,
+                                                Boolean report);
 extern void CTemplateNew_ParseTemplateDeclaration(TypeClass *templateClass);
 extern void parse_explicit_template_specialization(void);
 extern void parse_explicit_template_instantiation(void);
@@ -97,8 +97,8 @@ extern void parse_function_template_declaration(TemplateScopeState *stack, Templ
                                                 TypeClass *tclass, SInt32 *startOffset);
 extern void parse_template_member_definition(void *context, TypeClass *template_info, DeclInfo *declaration,
                                              SInt32 *position);
-extern unsigned char instantiate_members(Type *unused, TypeClassExt800 *state, char force);
-extern void CTemplateNew_ParseFuncDef(Object *object, TypeClassExt800 *context, TplSpec *specialization);
+extern unsigned char instantiate_members(struct TemplClass *templ, TemplClassInst *state, char force);
+extern void CTemplateNew_ParseFuncDef(Object *object, TemplClassInst *context, TplSpec *specialization);
 extern Boolean CTemplateNew_InstantiateInlineTemplateObject(Object *obj);
 extern UInt8 CTemplateNew_LinkTemplateScope(DeclInfo *context, TypeTemplDep *request, NameSpace **destination);
 extern TemplateParameterRecord *parse_template_parameter_list(NameSpace *parserState, unsigned char mode);
@@ -107,12 +107,12 @@ extern TemplateParameterRecord *parse_template_parameter(NameSpace *owner, Templ
 extern void fn_004f0000(void);
 extern void CTemplateNew_Reset(void);
 extern ENode *parse_non_type_template_argument(Type *targetType, unsigned int qualifiers);
-extern Type *CTemplTool_GetSelfRefTemplate(struct TypeClassTemplate *record);
+extern Type *CTemplTool_GetSelfRefTemplate(struct TemplClass *record);
 extern struct CTStateElem *CTemplateNew_ParseTemplateArguments(struct TemplateParameterRecord *arg, char flag);
 extern void skip_balanced_angle_tokens(void);
 extern SInt32 source_line;
 extern char template_recordbrowseinfo;
-extern CTStateElem *parse_template_arguments(struct TypeClassTemplate **classType, CTStateElem **result);
+extern CTStateElem *parse_template_arguments(struct TemplClass **classType, CTStateElem **result);
 
 #ifdef __cplusplus
 }

@@ -46,7 +46,7 @@
 static struct TypeClass *class_path_base;
 static struct HashNameNode *class_member_name;
 static struct TypeClass *found_class;
-static struct Type *data_00580de4;
+static struct TemplClass *data_00580de4;
 static UInt32 class_path_offset;
 static UInt8 data_00580dec;
 static SInt8 data_00580ded;
@@ -1153,9 +1153,9 @@ BClassList *find_class_member_path(CScopeParseResult *result, TypeClass *tclass,
                         ((ObjType *)result->objects->object)->type->type == TYPECLASS &&
                         (((TypeClass *)((ObjType *)list->object)->type)->flags & CLASS_IS_TEMPL_INST) &&
                         (((TypeClass *)((ObjType *)result->objects->object)->type)->flags & CLASS_IS_TEMPL_INST) &&
-                        ((TypeClassExt800 *)((ObjType *)list->object)->type)->classTemplate ==
-                            ((TypeClassExt800 *)((ObjType *)result->objects->object)->type)->classTemplate) {
-                        data_00580de4 = ((TypeClassExt800 *)((ObjType *)result->objects->object)->type)->classTemplate;
+                        ((TemplClassInst *)((ObjType *)list->object)->type)->templ ==
+                            ((TemplClassInst *)((ObjType *)result->objects->object)->type)->templ) {
+                        data_00580de4 = ((TemplClassInst *)((ObjType *)result->objects->object)->type)->templ;
                     } else {
                         if (found_class != tclass) {
                             CScope_AmbigNameError(found_class->nspace, tclass->nspace, class_member_name);
@@ -1773,7 +1773,7 @@ Boolean parse_name_in_namespace(CScopeParseResult *scope, NameSpace *ns)
     Boolean isDestructor;
     HashNameNode *name;
     NameSpaceObjectList *objects;
-    TypeClassTemplate *typeClass;
+    TemplClass *typeClass;
 
     isDestructor = 0;
     for (;;) {
@@ -1831,10 +1831,10 @@ Boolean parse_name_in_namespace(CScopeParseResult *scope, NameSpace *ns)
         }
         if (scope->type.base != NULL && scope->type.base->type == TYPECLASS &&
             CPrepTokenizer_GetNextTokenAndRestorePosition() == 0x3c) {
-            typeClass = (TypeClassTemplate *)scope->type.base;
-            if (typeClass->base.flags & CLASS_IS_TEMPL_INST) {
-                typeClass = (TypeClassTemplate *)((TypeClassExt800 *)typeClass)->classTemplate;
-            } else if ((typeClass->base.flags & CLASS_IS_TEMPL) == 0) {
+            typeClass = (TemplClass *)scope->type.base;
+            if (typeClass->theclass.flags & CLASS_IS_TEMPL_INST) {
+                typeClass = (TemplClass *)((TemplClassInst *)typeClass)->templ;
+            } else if ((typeClass->theclass.flags & CLASS_IS_TEMPL) == 0) {
                 return 1;
             }
             tk = CPrepTokenizer_GetNextToken();
@@ -2174,7 +2174,7 @@ Boolean CScope_ParseDeclName(CScopeParseResult *lookup)
     return 0;
 }
 
-#define TCE(t) ((TypeClassExt800 *)(t))
+#define TCE(t) ((TemplClassInst *)(t))
 
 Boolean CScope_ParseQualifiedScope(CScopeParseResult *result, SInt32 flag)
 {
@@ -2187,7 +2187,7 @@ Boolean CScope_ParseQualifiedScope(CScopeParseResult *result, SInt32 flag)
     NameSpaceObjectList *objects;
     Type *objectType;
     Type *templateType;
-    TypeClassTemplate *templateClass;
+    TemplClass *templateClass;
     Boolean hasNext;
 
     memclrw(result, sizeof(*result));
@@ -2245,18 +2245,18 @@ restart:
                     return 0;
                 }
                 if (token == 0x3c) {
-                    if (TCE(classType)->base.flags & CLASS_IS_TEMPL_INST) {
-                        classType = TCE(classType)->classTemplate;
-                    } else if ((TCE(classType)->base.flags & CLASS_IS_TEMPL) == 0) {
+                    if (TCE(classType)->theclass.flags & CLASS_IS_TEMPL_INST) {
+                        classType = (Type *)TCE(classType)->templ;
+                    } else if ((TCE(classType)->theclass.flags & CLASS_IS_TEMPL) == 0) {
                         result->type.base = classType;
                         return 1;
                     }
                 }
                 tk = CPrepTokenizer_GetNextToken();
                 if (tk == '<') {
-                    if ((TCE(classType)->base.flags & CLASS_IS_TEMPL) == 0)
+                    if ((TCE(classType)->theclass.flags & CLASS_IS_TEMPL) == 0)
                         CError_FATAL(2467);
-                    templateClass = (TypeClassTemplate *)classType;
+                    templateClass = (TemplClass *)classType;
                     templateType = CTemplTool_GetSelfRefTemplate(templateClass);
                     if (templateType->type == TYPETEMPLATE) {
                         if (CPrepTokenizer_GetNextTokenAndRestorePosition() != 0x174) {
@@ -2267,7 +2267,7 @@ restart:
                     }
                     if (templateType->type != TYPECLASS)
                         return 0;
-                    result->nspace = found = TCE(templateType)->base.nspace;
+                    result->nspace = found = TCE(templateType)->theclass.nspace;
                     if (CPrepTokenizer_GetNextTokenAndRestorePosition() != 0x174) {
                         result->type.base = templateType;
                         return 1;
@@ -2277,9 +2277,9 @@ restart:
                 } else {
                     if (tk != TK_COLON_COLON)
                         CError_FATAL(2490);
-                    if ((TCE(classType)->base.flags & CLASS_IS_TEMPL) == 0 ||
+                    if ((TCE(classType)->theclass.flags & CLASS_IS_TEMPL) == 0 ||
                         CParser_CheckTemplateClassScope(classType)) {
-                        result->nspace = found = TCE(classType)->base.nspace;
+                        result->nspace = found = TCE(classType)->theclass.nspace;
                     }
                 }
                 result->is_qualified = 1;
@@ -2306,7 +2306,7 @@ restart:
                     CError_FATAL(2525);
                 if (objectType->size == 0)
                     CDecl_CompleteType(objectType);
-                result->nspace = found = TCE(objectType)->base.nspace;
+                result->nspace = found = TCE(objectType)->theclass.nspace;
                 result->is_qualified = 1;
                 tk = CPrepTokenizer_GetNextToken();
             } else {
@@ -3051,8 +3051,8 @@ void CScope_ParseUsingDeclaration(NameSpace *nspace, AccessType flag, Boolean un
                 record->type = (Type *)info.type.base;
                 CScope_AddObject(nspace, ((TypeTemplDep *)info.type.base)->u.qual.name, (ObjBase *)record);
             } else {
-                CTemplateClass_AppendFuncDeclaration((TypeClassTemplate *)nspace->theclass,
-                                                     ((TypeTemplDep *)info.type.base), flag);
+                CTemplateClass_AppendFuncDeclaration((TemplClass *)nspace->theclass, ((TypeTemplDep *)info.type.base),
+                                                     flag);
             }
             tk = CPrepTokenizer_GetNextToken();
             if (tk != ';')

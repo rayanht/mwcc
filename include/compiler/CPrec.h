@@ -89,9 +89,9 @@ struct CPrecNode {
     struct Object *obj;     /* 0x04: CInline_DispatchNextDeferredNode dispatches the deferred function */
     union {
         struct {
-            struct TypeClassTemplate
+            struct TemplClass
                 *classTemplate; /* 0x08: CInline_DispatchNextDeferredNode kind == 1 calls CTemplateNew_CompileObject */
-            struct TypeClassExt800
+            struct TemplClassInst
                 *context; /* 0x0c: CInline_DispatchNextDeferredNode kind == 1 calls CTemplateNew_CompileObject */
             struct TemplateSourceRecordTyped
                 *source; /* 0x10: CInline_DispatchNextDeferredNode kind == 1 calls CTemplateNew_CompileObject */
@@ -99,7 +99,7 @@ struct CPrecNode {
         struct {
             struct TemplateFunction *
                 definition; /* 0x08: CInline_DispatchNextDeferredNode kind == 2 calls CTemplateNew_InstantiateFunction */
-            struct TemplateSpecializationData *
+            struct TemplFuncInstance *
                 specialization; /* 0x0c: CInline_DispatchNextDeferredNode kind == 2 calls CTemplateNew_InstantiateFunction */
         } k2;
         struct {
@@ -175,9 +175,9 @@ struct TemplateFunction {
     struct TemplateParameterRecord *
         params; /* 0x0c: parse_function_template_declaration compares template parameters with CTemplTool_EqualParams */
     TokenStream stream;
-    TStreamElement fileoffset;
+    TStreamElement deftoken;
     struct Object *tfunc;
-    struct TemplateSpecializationData *objects;
+    struct TemplFuncInstance *instances;
     struct CPrepFileInfo
         *srcfile; /* 0x38: write_template_function_browse_record reads source fileID and recordbrowseinfo */
     SInt32 startoffset;
@@ -243,7 +243,7 @@ extern unsigned int write_csomrefnode_list(struct CSOMRefNode *record);
 extern unsigned int serialize_reference_type_entries(unsigned int *entries, short count);
 extern unsigned int write_precompiled_expression_record(struct InlineSwitchData *record);
 extern unsigned int write_member_func_ref(MemberFuncRef *entry);
-extern unsigned int serialize_reference_entries(struct ClassTemplateSpecialization *record);
+extern unsigned int serialize_reference_entries(struct TemplPartialSpec *record);
 extern unsigned int write_prec_type_entries(struct PrecTypeEntry *entry);
 extern unsigned int serialize_entry_list(struct CFriend *record);
 extern unsigned int write_vclasslist(VClassList *record);

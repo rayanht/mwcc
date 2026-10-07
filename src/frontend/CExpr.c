@@ -4855,7 +4855,7 @@ ENode *make_scope_parse_result_expr(CScopeParseResult *nameResult, ENode *expr, 
                         TemplateClassDeclaration *entry;
                         SInt32 offsetCount = 0;
                         ENode *found = NULL;
-                        for (entry = (TemplateClassDeclaration *)((TypeClassTemplate *)classType)->declarations; entry;
+                        for (entry = (TemplateClassDeclaration *)((TemplClass *)classType)->actions; entry;
                              entry = entry->next) {
                             if (entry->kind != 3)
                                 continue;

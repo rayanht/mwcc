@@ -53,11 +53,11 @@ static char lbl_005824cf[9];
 static inline char CTemplateFunc_MatchesSpecialization(Object *candidate, Type *value, CTStateElem *context)
 {
     int index;
-    TemplateMatchState match;
+    DeduceInfo match;
     if (CTemplTool_InitDeduceInfo(&match, CTemplTool_GetFuncTempl(candidate)->params, context, 0) &&
-        CTemplateFunc_MatchType(candidate->type, 0, value, 0, match.slots, 1)) {
-        for (index = 0; index < match.nslots; index++) {
-            if (!match.slots[index].bound)
+        CTemplateFunc_MatchType(candidate->type, 0, value, 0, match.args, 1)) {
+        for (index = 0; index < match.maxCount; index++) {
+            if (!match.args[index].bound)
                 return 0;
         }
         return 1;
@@ -70,8 +70,8 @@ Object *CTemplateFunc_FindSpecializationObject(DeclInfo *search, ObjectList *can
     Object *candidate;
     Type *value;
     char matched;
-    struct TemplateSpecializationData *specialization;
-    struct TemplateSpecializationData *selected;
+    struct TemplFuncInstance *specialization;
+    struct TemplFuncInstance *selected;
     CTStateElem *context;
     if (search->requireTemplateClassMember != 0 || search->hasTemplateArguments != 0) {
         for (; candidates != NULL; candidates = candidates->next) {
@@ -86,9 +86,9 @@ Object *CTemplateFunc_FindSpecializationObject(DeclInfo *search, ObjectList *can
                                           candidates->object.value, search->dtype, search->parsedData, NULL));
                     if (selected != NULL) {
                         if (search->requireTemplateClassMember != 0) {
-                            if (specialization->internalStorage == 0 && specialization->active != 0)
+                            if (specialization->is_specialized == 0 && specialization->is_instantiated != 0)
                                 CError_ReportError(ERR_ILLEGAL_EXPLICIT_TEMPLATE_SPECIALIZATION);
-                            specialization->internalStorage = 1;
+                            specialization->is_specialized = 1;
                             search->requireTemplateClassMember = 0;
                         }
                         return specialization->object;
@@ -105,8 +105,8 @@ void fn_00514380(ObjectList *list, void *ptype, ENodeList *args, struct ArgMatch
     Object *found = NULL;
     Object *savedObject = ctx->object;
     MemberCallArguments match;
-    TemplateMatchState conversion;
-    TemplateMatchState bestConversion;
+    DeduceInfo conversion;
+    DeduceInfo bestConversion;
     ObjectList one;
 
     while (list != NULL) {
@@ -117,8 +117,8 @@ void fn_00514380(ObjectList *list, void *ptype, ENodeList *args, struct ArgMatch
                 if (CTemplTool_InitDeduceInfo(&conversion, CTemplTool_GetFuncTempl(object)->params, ptype, 0)) {
                     if (match_template_function_args(object, &conversion, match.parameters, match.arguments, ctx)) {
                         bestConversion = conversion;
-                        if (conversion.slots == conversion.inline_slots)
-                            bestConversion.slots = bestConversion.inline_slots;
+                        if (conversion.args == conversion.argBuffer)
+                            bestConversion.args = bestConversion.argBuffer;
                         found = object;
                     }
                 }
@@ -142,7 +142,7 @@ void fn_00514380(ObjectList *list, void *ptype, ENodeList *args, struct ArgMatch
                 if (savedObject != NULL)
                     ctx->object = savedObject;
                 else
-                    ctx->object = find_or_create_template_specialization(found, bestConversion.slots, NULL)->object;
+                    ctx->object = find_or_create_template_specialization(found, bestConversion.args, NULL)->object;
             } else {
                 one.next = NULL;
                 one.object.value = result;
@@ -150,14 +150,13 @@ void fn_00514380(ObjectList *list, void *ptype, ENodeList *args, struct ArgMatch
                 fn_00514380(&one, ptype, args, ctx, flag);
             }
         } else {
-            ctx->object = find_or_create_template_specialization(found, bestConversion.slots, NULL)->object;
+            ctx->object = find_or_create_template_specialization(found, bestConversion.args, NULL)->object;
         }
     } else {
         ctx->object = savedObject;
     }
 }
-Boolean match_template_function_args(Object *obj, TemplateMatchState *state, FuncArg *arg, ENodeList *exprs,
-                                     ArgMatch *ctx)
+Boolean match_template_function_args(Object *obj, DeduceInfo *state, FuncArg *arg, ENodeList *exprs, ArgMatch *ctx)
 {
     UInt32 qual;
     ObjectList *candidate;
@@ -172,7 +171,7 @@ Boolean match_template_function_args(Object *obj, TemplateMatchState *state, Fun
     UInt32 exprQual;
     UInt32 argQual;
     UInt32 resolvedQual;
-    TemplateContext tempArg;
+    TypeDeduce tempArg;
     Type *resolvedType;
 
     memclrw(&counts, 30);
@@ -190,7 +189,7 @@ Boolean match_template_function_args(Object *obj, TemplateMatchState *state, Fun
             return 0;
         }
         template_argument_depth = state->depth;
-        data_005824ca = state->suppliedArgumentCount;
+        data_005824ca = state->count;
         data_005824ce = 1;
         if (CTemplTool_IsTemplateArgumentDependentType(arg->type)) {
             if (!data_005824ce) {
@@ -226,7 +225,7 @@ Boolean match_template_function_args(Object *obj, TemplateMatchState *state, Fun
                         resolvedType = CDecl_NewPointerType(resolvedType);
                 }
                 data_005824c8 = 0;
-                if (!CTemplateFunc_MatchType(targetType, argQual, resolvedType, exprQual, state->slots, 1))
+                if (!CTemplateFunc_MatchType(targetType, argQual, resolvedType, exprQual, state->args, 1))
                     return 0;
                 if (data_005824c8)
                     counts.score3Count += 1;
@@ -238,13 +237,13 @@ Boolean match_template_function_args(Object *obj, TemplateMatchState *state, Fun
                 CTStateElem *entries;
                 Type *resultType;
                 TemplateFunction *nspace;
-                entries = state->slots;
+                entries = state->args;
                 argumentQual = arg->qual;
                 argumentType = arg->type;
                 nspace = CTemplTool_GetFuncTempl(obj);
                 memclrw(&tempArg, sizeof(tempArg));
-                tempArg.templateArgs = nspace->params;
-                tempArg.instanceArgs = entries;
+                tempArg.params = nspace->params;
+                tempArg.args = entries;
                 resolvedQual = argumentQual;
                 resultType = matchType = CTemplateTools_ResolveType(&tempArg, argumentType, &resolvedQual);
                 if (resultType && !CExpr2_UpdateArgMatchScores(matchType, resolvedQual, exprs->node, &counts))
@@ -256,12 +255,12 @@ Boolean match_template_function_args(Object *obj, TemplateMatchState *state, Fun
         exprs = exprs->next;
         arg = arg->next;
     }
-    for (index = 0; index < state->nslots; ++index) {
-        if (!state->slots[index].bound)
+    for (index = 0; index < state->maxCount; ++index) {
+        if (!state->args[index].bound)
             return 0;
-        state->slots[index].next = &state->slots[index + 1];
+        state->args[index].next = &state->args[index + 1];
     }
-    state->slots[state->nslots].next = NULL;
+    state->args[state->maxCount].next = NULL;
     return CExpr_MatchCompare(obj, ctx, &counts);
 }
 
@@ -462,20 +461,19 @@ Boolean match_args(TypeFunc *a, TypeFunc *b, CTStateElem *c, Boolean d)
 #define CB_TRUE 1
 #define CB_FALSE 0
 
-static Boolean CTemplateFunc_MatchClassArgs(TypeClassExt800 *cur, TypeClass *target, CTStateElem *a2, CTStateElem *a4,
+static Boolean CTemplateFunc_MatchClassArgs(TemplClassInst *cur, TypeClass *target, CTStateElem *a2, CTStateElem *a4,
                                             Boolean a5)
 {
     while (cur != NULL) {
-        if (&cur->base == target)
-            return match_state_elem_arguments(
-                a2, cur->templateArgumentOverride ? cur->templateArgumentOverride : cur->targs, a4, a5);
+        if (&cur->theclass == target)
+            return match_state_elem_arguments(a2, cur->oargs ? cur->oargs : cur->inst_args, a4, a5);
         cur = cur->next;
     }
     return CB_FALSE;
 }
 
-Boolean match_class_args_or_bases(TypeClassTemplate *classTemplate, CTStateElem *templateArgs,
-                                  TypeClass *candidateClass, CTStateElem *deducedArgs, Boolean matchBases)
+Boolean match_class_args_or_bases(TemplClass *classTemplate, CTStateElem *templateArgs, TypeClass *candidateClass,
+                                  CTStateElem *deducedArgs, Boolean matchBases)
 {
     ClassList *base;
 
@@ -555,15 +553,14 @@ int CTemplateFunc_GetArgumentParameterIndex(CTStateElem *argument)
     return -1;
 }
 
-static inline struct TemplateSpecializationData *InstantiateAccessibleTemplate(Object *func, TemplateMatchState *frame,
-                                                                               Object *flags)
+static inline struct TemplFuncInstance *InstantiateAccessibleTemplate(Object *func, DeduceInfo *frame, Object *flags)
 {
     SInt32 i = 0;
-    while (i < frame->nslots) {
-        if (frame->slots[i++].bound == 0)
+    while (i < frame->maxCount) {
+        if (frame->args[i++].bound == 0)
             return NULL;
     }
-    return find_or_create_template_specialization(func, frame->slots, flags);
+    return find_or_create_template_specialization(func, frame->args, flags);
 }
 
 Object *select_unique_undominated_match(Object *func, struct MatchLink *funcs, int options)
@@ -659,8 +656,8 @@ unsigned char match_candidate_to_template_args(Object *candidate, Object *templ)
     int argumentCount;
     ArgMatch deductionState;
     MemberCallArguments result;
-    TemplateMatchState bindings;
-    TemplateContext substitution;
+    DeduceInfo bindings;
+    TypeDeduce substitution;
     CTStateElem *bindingList;
     TypeMemberFunc *templateType;
     TypeMemberFunc *candidateFuncType;
@@ -724,11 +721,11 @@ unsigned char match_candidate_to_template_args(Object *candidate, Object *templ)
         if (deductionState.score2Count != 0 || deductionState.score3Count != 0 || deductionState.score4Count != 0)
             return 0;
         CE_ASSERT(templ->type->type != TYPEFUNC, templateFunctionAssertion(356));
-        bindingList = bindings.slots;
+        bindingList = bindings.args;
         templateInfo = CTemplTool_GetFuncTempl(templ);
         memclrw(&substitution, sizeof(substitution));
-        substitution.templateArgs = templateInfo->params;
-        substitution.instanceArgs = bindingList;
+        substitution.params = templateInfo->params;
+        substitution.args = bindingList;
         deducedArg = CTemplateTools_005160b0(&substitution, ((TypeMemberFunc *)templ->type)->args);
         if (((TypeFunc *)templ->type)->flags & FUNC_METHOD) {
             TypeMemberFunc *memberType = (TypeMemberFunc *)templ->type;
@@ -765,45 +762,42 @@ unsigned char match_candidate_to_template_args(Object *candidate, Object *templ)
     return 0;
 }
 
-struct TemplateSpecializationData *instantiate_accessible_template_for_type(Object *func, Type *ftype,
-                                                                            void *templateArguments, Object *flags,
-                                                                            int instantiationMode)
+struct TemplFuncInstance *instantiate_accessible_template_for_type(Object *func, Type *ftype, void *templateArguments,
+                                                                   Object *flags, int instantiationMode)
 {
     TemplateFunction *functionTemplate;
-    TemplateMatchState matchState;
-    struct TemplateSpecializationData *result;
+    DeduceInfo matchState;
+    struct TemplFuncInstance *result;
 
     functionTemplate = CTemplTool_GetFuncTempl(func);
     if (!CTemplTool_InitDeduceInfo(&matchState, functionTemplate->params, templateArguments, 1))
         result = NULL;
-    else if (!CTemplateFunc_MatchType(func->type, 0, ftype, 0, matchState.slots, 1))
+    else if (!CTemplateFunc_MatchType(func->type, 0, ftype, 0, matchState.args, 1))
         result = NULL;
     else
         result = InstantiateAccessibleTemplate(func, &matchState, flags);
     return result;
 }
-struct TemplateSpecializationData *CTemplateFunc_FindOrCreateMatchedSpecialization(Object *func, Type *matchedType,
-                                                                                   void *templateArgs,
-                                                                                   Object *specialization)
+struct TemplFuncInstance *CTemplateFunc_FindOrCreateMatchedSpecialization(Object *func, Type *matchedType,
+                                                                          void *templateArgs, Object *specialization)
 {
     TemplateFunction *functionTemplate;
-    TemplateMatchState match;
+    DeduceInfo match;
     SInt32 slotIndex;
 
     functionTemplate = CTemplTool_GetFuncTempl(func);
     if (!CTemplTool_InitDeduceInfo(&match, functionTemplate->params, templateArgs, 1))
         return NULL;
-    if (!CTemplateFunc_MatchType(func->type, 0, matchedType, 0, match.slots, 1))
+    if (!CTemplateFunc_MatchType(func->type, 0, matchedType, 0, match.args, 1))
         return NULL;
     slotIndex = 0;
-    while (slotIndex < match.nslots) {
-        if (match.slots[slotIndex++].bound == 0)
+    while (slotIndex < match.maxCount) {
+        if (match.args[slotIndex++].bound == 0)
             return NULL;
     }
-    return find_or_create_template_specialization(func, match.slots, specialization);
+    return find_or_create_template_specialization(func, match.args, specialization);
 }
-struct TemplateSpecializationData *find_or_create_template_specialization(Object *func, CTStateElem *args,
-                                                                          Object *premade)
+struct TemplFuncInstance *find_or_create_template_specialization(Object *func, CTStateElem *args, Object *premade)
 {
     TemplateFunction *info;
     SInt16 argumentCount;
@@ -812,12 +806,12 @@ struct TemplateSpecializationData *find_or_create_template_specialization(Object
     CTStateElem *firstArgument;
     CTStateElem *lastArgument;
     SInt16 argumentIndex;
-    struct TemplateSpecializationData *instance;
-    struct TemplateSpecializationData *existing;
+    struct TemplFuncInstance *instance;
+    struct TemplFuncInstance *existing;
     SInt16 linkIndex;
     CTStateElem *instanceArgs;
     Object *object;
-    TemplateContext local;
+    TypeDeduce local;
 
     info = CTemplTool_GetFuncTempl(func);
     argumentCount = 0;
@@ -834,9 +828,9 @@ struct TemplateSpecializationData *find_or_create_template_specialization(Object
     }
     argument->next = NULL;
 
-    existing = info->objects;
+    existing = info->instances;
     while (existing != NULL) {
-        if (CTemplTool_EqualArgs(existing->templateArguments, args)) {
+        if (CTemplTool_EqualArgs(existing->args, args)) {
             if (premade != NULL)
                 existing->object = premade;
             return existing;
@@ -846,8 +840,8 @@ struct TemplateSpecializationData *find_or_create_template_specialization(Object
 
     instance = galloc(sizeof(*instance));
     memclrw(instance, sizeof(*instance));
-    instance->next = info->objects;
-    info->objects = instance;
+    instance->next = info->instances;
+    info->instances = instance;
 
     argumentIndex = 0;
     firstArgument = NULL;
@@ -871,23 +865,23 @@ struct TemplateSpecializationData *find_or_create_template_specialization(Object
             argumentIndex++;
         } while (argumentIndex < argumentCount);
     }
-    instance->templateArguments = firstArgument;
+    instance->args = firstArgument;
 
     if (premade == NULL) {
-        instanceArgs = instance->templateArguments;
+        instanceArgs = instance->args;
         memclrw(&local, sizeof(local));
-        local.templateArgs = (struct TemplateParameterRecord *)info->params;
-        local.instanceArgs = instanceArgs;
+        local.params = (struct TemplateParameterRecord *)info->params;
+        local.args = instanceArgs;
 
         if (func->nspace->theclass != NULL && (func->nspace->theclass->flags & CLASS_IS_TEMPL_INST) != 0) {
-            local.templateClass = (TypeClass *)((TypeClassExt800 *)func->nspace->theclass)->classTemplate;
-            local.instance = func->nspace->theclass;
+            local.tmclass = ((TemplClassInst *)func->nspace->theclass)->templ;
+            local.inst = (TemplClassInst *)func->nspace->theclass;
         }
 
         object = CParser_NewFunctionObject(NULL);
         object->nspace = func->nspace;
         object->qual = func->qual | Q_MANGLE_NAME;
-        object->name = CMangler_TemplateInstanceName(info->name, instance->templateArguments);
+        object->name = CMangler_TemplateInstanceName(info->name, instance->args);
         object->type = CTemplateTools_ResolveType(&local, func->type, &object->qual);
         if (object->type->type == TYPEFUNC) {
             ((TypeFunc *)object->type)->flags &= ~FUNC_DEFINED;
