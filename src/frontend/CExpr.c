@@ -143,7 +143,7 @@ static CInt64 Inner(void)
         }
     }
     CError_ReportError(ERR_ILLEGAL_CONSTANT_EXPRESSION);
-    return qval_zero;
+    return cint64_zero;
 }
 
 CInt64 fn_004f0b30(void)
@@ -634,7 +634,7 @@ CInt64 CExpr_IntegralConstExprType(Type **ptype)
     }
     CError_ReportError(ERR_ILLEGAL_CONSTANT_EXPRESSION);
     *ptype = (Type *)&stchar;
-    return qval_zero;
+    return cint64_zero;
 }
 
 ENode *s_expression(void)
@@ -5908,8 +5908,8 @@ void unify_arithmetic_rtypes(ENode **leftp, ENode **rightp, SInt32 unused)
     } else {
         if (right->type == EINTCONST && left->rtype->size <= right->rtype->size) {
             if (Type_IsUnsigned(left->rtype) == Type_IsUnsigned(right->rtype) || Type_IsUnsigned(left->rtype)) {
-                convertedRight = CMach_CalcIntDiadic(left->rtype, right->data.intval, '+', qval_zero);
-                restoredRight = CMach_CalcIntDiadic(right->rtype, convertedRight, '+', qval_zero);
+                convertedRight = CMach_CalcIntDiadic(left->rtype, right->data.intval, '+', cint64_zero);
+                restoredRight = CMach_CalcIntDiadic(right->rtype, convertedRight, '+', cint64_zero);
                 if (CInt64_Equal(restoredRight, right->data.intval)) {
                     right->rtype = left->rtype;
                     *leftp = left;
@@ -5920,8 +5920,8 @@ void unify_arithmetic_rtypes(ENode **leftp, ENode **rightp, SInt32 unused)
         }
         if (left->type == EINTCONST && left->rtype->size >= right->rtype->size) {
             if (Type_IsUnsigned(left->rtype) == Type_IsUnsigned(right->rtype) || Type_IsUnsigned(right->rtype)) {
-                convertedLeft = CMach_CalcIntDiadic(right->rtype, left->data.intval, '+', qval_zero);
-                restoredLeft = CMach_CalcIntDiadic(left->rtype, convertedLeft, '+', qval_zero);
+                convertedLeft = CMach_CalcIntDiadic(right->rtype, left->data.intval, '+', cint64_zero);
+                restoredLeft = CMach_CalcIntDiadic(left->rtype, convertedLeft, '+', cint64_zero);
                 if (CInt64_Equal(restoredLeft, left->data.intval)) {
                     left->rtype = right->rtype;
                     *leftp = left;
@@ -6019,7 +6019,7 @@ ENode *CExpr_RewriteConst(ENode *enode)
                     if (obj->u.data.u.string != NULL)
                         enode->data.intval = *(CInt64 *)obj->u.data.u.string;
                     else
-                        enode->data.floatval = CMach_CalcFloatConvertFromInt((Type *)&stsignedlong, qval_zero);
+                        enode->data.floatval = CMach_CalcFloatConvertFromInt((Type *)&stsignedlong, cint64_zero);
                     break;
                 default:
                     CError_FATAL(94);

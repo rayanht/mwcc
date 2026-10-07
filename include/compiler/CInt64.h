@@ -7,10 +7,10 @@
 extern "C" {
 #endif
 
-extern CInt64 int64_minus_one;
-extern CInt64 qval_zero;
+extern CInt64 cint64_negone;
+extern CInt64 cint64_zero;
 extern CInt64 cint64_one;
-extern CInt64 int64_max;
+extern CInt64 cint64_max;
 extern CInt64 cint64_min;
 
 extern int CExpr2_FormatCInt64Decimal(char *output, CInt64 num);

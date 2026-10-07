@@ -259,7 +259,7 @@ int IroRangePropagation_PropagateRangeInLinear(struct IROLinear *nd)
                                 *left->range = *var->range;
                             } else {
                                 left->range = NewRange(3);
-                                left->range->upper = int64_max;
+                                left->range->upper = cint64_max;
                                 left->range->lower = cint64_min;
                                 AddVar(obj, left->range);
                             }
@@ -268,7 +268,7 @@ int IroRangePropagation_PropagateRangeInLinear(struct IROLinear *nd)
                     nd->range = left->range;
                 } else {
                     nd->range = NewRange(3);
-                    nd->range->upper = int64_max;
+                    nd->range->upper = cint64_max;
                     nd->range->lower = cint64_min;
                 }
             } else {
@@ -283,20 +283,20 @@ int IroRangePropagation_PropagateRangeInLinear(struct IROLinear *nd)
                 val = nd->u.diadic.right->u.node->data.intval;
                 nd->range = NewRange(1);
                 nd->range->upper = val;
-                nd->range->lower = qval_zero;
+                nd->range->lower = cint64_zero;
                 range = nd->u.diadic.left->range;
                 if (range && range->type != 3 && CInt64_LessEqualU(range->upper, val) &&
                     CInt64_LessEqualU(range->lower, val)) {
                     count = 0;
                     x = range->upper;
-                    while (CInt64_NotEqual(x = CInt64_ShrU(x, cint64_one), qval_zero))
+                    while (CInt64_NotEqual(x = CInt64_ShrU(x, cint64_one), cint64_zero))
                         count++;
-                    if (CInt64_NotEqual(range->upper, qval_zero))
+                    if (CInt64_NotEqual(range->upper, cint64_zero))
                         count++;
                     x.hi = 0;
                     x.lo = count;
                     mask = CInt64_Sub(CInt64_Shl(cint64_one, x), cint64_one);
-                    if ((CInt64_NotEqual(qval_zero, CInt64_And(CFunc_BitwiseNot(val), mask)) ? 0 : 1) &&
+                    if ((CInt64_NotEqual(cint64_zero, CInt64_And(CFunc_BitwiseNot(val), mask)) ? 0 : 1) &&
                         !fn_0044be00(nd->u.diadic.left)) {
                         IroUtil_ClearZeroOperands(nd->u.diadic.right);
                         nd->type = IROLinearNop;
@@ -327,7 +327,7 @@ int IroRangePropagation_PropagateRangeInLinear(struct IROLinear *nd)
         case ELOR:
             nd->range = NewRange(1);
             nd->range->upper = cint64_one;
-            nd->range->lower = qval_zero;
+            nd->range->lower = cint64_zero;
             check_range_for_type(nd->range, nd->rtype);
             break;
         case EBINNOT:
@@ -342,7 +342,7 @@ int IroRangePropagation_PropagateRangeInLinear(struct IROLinear *nd)
         case ECOND:
         case EMFPOINTER:
             nd->range = NewRange(3);
-            nd->range->upper = int64_max;
+            nd->range->upper = cint64_max;
             nd->range->lower = cint64_min;
             break;
         case EASS:
@@ -369,7 +369,7 @@ int IroRangePropagation_PropagateRangeInLinear(struct IROLinear *nd)
                     }
                 } else {
                     nd->range = NewRange(3);
-                    nd->range->upper = int64_max;
+                    nd->range->upper = cint64_max;
                     nd->range->lower = cint64_min;
                 }
             }
@@ -394,7 +394,7 @@ int IroRangePropagation_PropagateRangeInLinear(struct IROLinear *nd)
                     }
                 } else {
                     nd->range = NewRange(3);
-                    nd->range->upper = int64_max;
+                    nd->range->upper = cint64_max;
                     nd->range->lower = cint64_min;
                 }
             }
@@ -419,7 +419,7 @@ int IroRangePropagation_PropagateRangeInLinear(struct IROLinear *nd)
                     }
                 } else {
                     nd->range = NewRange(3);
-                    nd->range->upper = int64_max;
+                    nd->range->upper = cint64_max;
                     nd->range->lower = cint64_min;
                 }
             }
@@ -436,7 +436,7 @@ int IroRangePropagation_PropagateRangeInLinear(struct IROLinear *nd)
                     nd->range->lower = CInt64_Add(nd->u.diadic.left->range->lower, nd->u.diadic.right->range->lower);
                 } else {
                     nd->range = NewRange(3);
-                    nd->range->upper = int64_max;
+                    nd->range->upper = cint64_max;
                     nd->range->lower = cint64_min;
                 }
             }
@@ -453,7 +453,7 @@ int IroRangePropagation_PropagateRangeInLinear(struct IROLinear *nd)
                     nd->range->lower = CInt64_Sub(nd->u.diadic.left->range->lower, nd->u.diadic.right->range->upper);
                 } else {
                     nd->range = NewRange(3);
-                    nd->range->upper = int64_max;
+                    nd->range->upper = cint64_max;
                     nd->range->lower = cint64_min;
                 }
             }
@@ -469,7 +469,7 @@ int IroRangePropagation_PropagateRangeInLinear(struct IROLinear *nd)
                     nd->range->lower = CInt64_Shl(nd->u.diadic.left->range->lower, nd->u.diadic.right->range->lower);
                 } else {
                     nd->range = NewRange(3);
-                    nd->range->upper = int64_max;
+                    nd->range->upper = cint64_max;
                     nd->range->lower = cint64_min;
                 }
             }
@@ -494,7 +494,7 @@ int IroRangePropagation_PropagateRangeInLinear(struct IROLinear *nd)
                     }
                 } else {
                     nd->range = NewRange(3);
-                    nd->range->upper = int64_max;
+                    nd->range->upper = cint64_max;
                     nd->range->lower = cint64_min;
                 }
             }
@@ -510,7 +510,7 @@ int IroRangePropagation_PropagateRangeInLinear(struct IROLinear *nd)
                     range->lower = CInt64_Add(range->lower, cint64_one);
                 } else {
                     nd->range = NewRange(3);
-                    nd->range->upper = int64_max;
+                    nd->range->upper = cint64_max;
                     nd->range->lower = cint64_min;
                 }
             }
@@ -526,7 +526,7 @@ int IroRangePropagation_PropagateRangeInLinear(struct IROLinear *nd)
                     range->lower = CInt64_Sub(range->lower, cint64_one);
                 } else {
                     nd->range = NewRange(3);
-                    nd->range->upper = int64_max;
+                    nd->range->upper = cint64_max;
                     nd->range->lower = cint64_min;
                 }
             }
@@ -541,7 +541,7 @@ int IroRangePropagation_PropagateRangeInLinear(struct IROLinear *nd)
                     nd->range->lower = CInt64_Add(range->lower, cint64_one);
                 } else {
                     nd->range = NewRange(3);
-                    nd->range->upper = int64_max;
+                    nd->range->upper = cint64_max;
                     nd->range->lower = cint64_min;
                 }
             }
@@ -556,7 +556,7 @@ int IroRangePropagation_PropagateRangeInLinear(struct IROLinear *nd)
                     nd->range->lower = CInt64_Sub(range->lower, cint64_one);
                 } else {
                     nd->range = NewRange(3);
-                    nd->range->upper = int64_max;
+                    nd->range->upper = cint64_max;
                     nd->range->lower = cint64_min;
                 }
             }
@@ -564,7 +564,7 @@ int IroRangePropagation_PropagateRangeInLinear(struct IROLinear *nd)
             break;
         case EMONMIN:
             nd->range = NewRange(3);
-            nd->range->upper = int64_max;
+            nd->range->upper = cint64_max;
             nd->range->lower = cint64_min;
             break;
         case EPMODULO:
@@ -574,7 +574,7 @@ int IroRangePropagation_PropagateRangeInLinear(struct IROLinear *nd)
         case EBTST:
         case EBSET:
             nd->range = NewRange(3);
-            nd->range->upper = int64_max;
+            nd->range->upper = cint64_max;
             nd->range->lower = cint64_min;
             break;
         default:

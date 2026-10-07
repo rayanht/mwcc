@@ -1328,7 +1328,7 @@ int scan_numeric_literal(void)
     } else {
         if (integerOverflow) {
             CPrep_ReportError(0x9a);
-            token_integer = qval_zero;
+            token_integer = cint64_zero;
         }
         token = peek();
         token_value_kind_or_string_length = fn_004961c0(token, 0);
@@ -1416,7 +1416,7 @@ unsigned int parse_zero_prefixed_number(SInt16 c)
     }
     if (flag) {
         CPrep_ReportError(0x9a);
-        token_integer = qval_zero;
+        token_integer = cint64_zero;
     }
     cursor = currentTextPosition;
     p = cursor;
@@ -2508,11 +2508,11 @@ short fn_004961c0(short suffix, int radix)
             return integerType;
         }
         CError_ReportError(ERR_NUMBER_OUT_RANGE);
-        token_integer = qval_zero;
+        token_integer = cint64_zero;
     }
     if (high != 0) {
         CError_ReportError(ERR_NUMBER_OUT_RANGE);
-        token_integer = qval_zero;
+        token_integer = cint64_zero;
     }
     low = token_integer.lo;
     if (isLong != 0) {

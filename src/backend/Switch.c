@@ -102,10 +102,10 @@ void generate_switchtable_dispatch(ENode *node, SwitchInfo *cases)
     savedValue = data_005608f8;
     memclrw(&operand, sizeof(operand));
     memclrw(&target, sizeof(target));
-    if (CInt64_Greater(switchtable_base, qval_zero)) {
+    if (CInt64_Greater(switchtable_base, cint64_zero)) {
         if (CInt64_Less(switchtable_base, savedValue)) {
             switchtable_max = CInt64_Add(switchtable_max, switchtable_base);
-            switchtable_base = qval_zero;
+            switchtable_base = cint64_zero;
         }
     }
     obj = create_switchtable();
@@ -117,7 +117,7 @@ void generate_switchtable_dispatch(ENode *node, SwitchInfo *cases)
     if (operand.kind != OpndType_GPR)
         Operands_ForceGPR(&operand, node->rtype, 0);
     indexReg = operand.reg;
-    if (CInt64_NotEqual(switchtable_base, qval_zero)) {
+    if (CInt64_NotEqual(switchtable_base, cint64_zero)) {
         indexReg = gUsedVirtualRegistersGPR++;
         immediate.value = (SInt16)-switchtable_base.lo;
         {
@@ -164,7 +164,7 @@ void generate_switchtable_dispatch(ENode *node, SwitchInfo *cases)
         if (target.reg != baseReg)
             PCodeUtilities_EmitInstruction(PC_MR, baseReg, target.reg);
     }
-    if (CInt64_Equal(switchtable_base, qval_zero)) {
+    if (CInt64_Equal(switchtable_base, cint64_zero)) {
         indexReg = gUsedVirtualRegistersGPR++;
         PCodeUtilities_EmitInstruction(PC_RLWINM, indexReg, operand.reg, 2, 0, 0x1d);
     } else {
@@ -210,7 +210,7 @@ Object *create_switchtable(void)
 
     p = case_ranges;
     dst = obj->u.data.u.switchtable.data;
-    idx = qval_zero;
+    idx = cint64_zero;
     while (CInt64_LessEqual(idx, switchtable_max)) {
         while (CInt64_Greater(CInt64_Add(switchtable_base, idx), CInt64_Add(p->base, p->width)))
             p++;
@@ -260,14 +260,14 @@ void emit_case_range_binary_tree(unsigned int firstCase, int lastCase)
     SInt16 lowReg, highReg, compareHighReg, pivotHighReg;
 
     pivot = &case_ranges[rightFirst];
-    if (CInt64_Equal(case_ranges[rightFirst - 1].width, qval_zero)) {
-        if ((span & 1) == 0 || (CInt64_NotEqual(pivot->width, qval_zero) && span > 1)) {
+    if (CInt64_Equal(case_ranges[rightFirst - 1].width, cint64_zero)) {
+        if ((span & 1) == 0 || (CInt64_NotEqual(pivot->width, cint64_zero) && span > 1)) {
             pivot--;
             rightFirst--;
         }
     }
     leftLast = rightFirst - 1;
-    if (CInt64_Equal(pivot->width, qval_zero) && rightFirst < lastCase) {
+    if (CInt64_Equal(pivot->width, cint64_zero) && rightFirst < lastCase) {
         lowReg = gUsedVirtualRegistersGPR++;
         highReg = gUsedVirtualRegistersGPR++;
         PCodeUtilities_LoadImmediate(lowReg, pivot->base.lo);
@@ -402,8 +402,8 @@ void emit_case_range_binary_search(int a, int b)
     mid = a + (range >> 1) + 1;
     p = case_ranges + mid;
 
-    if (CInt64_Equal(case_ranges[mid - 1].width, qval_zero)) {
-        if ((range & 1) == 0 || (CInt64_NotEqual(p[0].width, qval_zero) && range > 1)) {
+    if (CInt64_Equal(case_ranges[mid - 1].width, cint64_zero)) {
+        if ((range & 1) == 0 || (CInt64_NotEqual(p[0].width, cint64_zero) && range > 1)) {
             --p;
             --mid;
         }
@@ -424,7 +424,7 @@ void emit_case_range_binary_search(int a, int b)
         }
     }
 
-    if (CInt64_Equal(p->width, qval_zero) && mid < b) {
+    if (CInt64_Equal(p->width, cint64_zero) && mid < b) {
         PCodeUtilities_EmitConditionBranch(0, 0x17, 1, p->info);
         ++mid;
     }
@@ -521,7 +521,7 @@ void build_case_ranges(Type *type, SwitchCase *list, CLabel *defaultCase)
             range->base = entry->min;
         } else if (CInt64_Greater(range->base, data_00581160) && entry->label->pclabel == (range - 1)->info) {
             (range - 1)->width = CInt64_Add((range - 1)->width, cint64_one);
-            if (CInt64_Equal(range->width, qval_zero)) {
+            if (CInt64_Equal(range->width, cint64_zero)) {
                 range--;
             } else {
                 range->base = CInt64_Add(range->base, cint64_one);
@@ -529,7 +529,7 @@ void build_case_ranges(Type *type, SwitchCase *list, CLabel *defaultCase)
             }
             continue;
         }
-        range->width = qval_zero;
+        range->width = cint64_zero;
         range->info = entry->label->pclabel;
         if (CInt64_Less(entry->min, data_00581168)) {
             range++;

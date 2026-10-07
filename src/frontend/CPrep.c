@@ -936,7 +936,7 @@ struct CNameRef evaluate_unary_expression_value(void)
     } result;
     if (CPrep_ScanMacroExpandedChar() == 0) {
         CPrep_Error_439930(0x70);
-        result.value.value = qval_zero;
+        result.value.value = cint64_zero;
         result.value.isUnsigned = 0;
     } else {
         switch (CPrepTokenizer_ScanToken()) {
@@ -979,7 +979,7 @@ struct CNameRef evaluate_unary_expression_value(void)
             default:
                 CPrep_Error_439930(0x8d);
             case 0x159:
-                result.value.value = qval_zero;
+                result.value.value = cint64_zero;
                 result.value.isUnsigned = 1;
                 break;
             case -1: {
@@ -990,7 +990,7 @@ struct CNameRef evaluate_unary_expression_value(void)
                 break;
             }
             case -3:
-                result.value.value = qval_zero;
+                result.value.value = cint64_zero;
                 result.value.isUnsigned = 0;
                 if (memcmp("defined", data_00587fa0->name, 8) != 0)
                     break;

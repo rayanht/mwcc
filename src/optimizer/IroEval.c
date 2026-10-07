@@ -829,7 +829,7 @@ void convert_cint64_to_bitfield(CInt64 *val, Type *type, TypeBitfield *type2)
     CInt64 work;
     CInt64 work2;
 
-    work = qval_zero;
+    work = cint64_zero;
     limit = type2->bitlength;
     for (i = 0; i < limit; i++) {
         if (i < 32)
@@ -839,7 +839,7 @@ void convert_cint64_to_bitfield(CInt64 *val, Type *type, TypeBitfield *type2)
     val->hi = 0;
 
     if (!Type_IsUnsigned(type)) {
-        work2 = qval_zero;
+        work2 = cint64_zero;
         for (j = 0; j <= i - 1; j++) {
             if (j == i - 1)
                 work2.lo = work2.lo | (1 << j);

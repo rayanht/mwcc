@@ -2724,7 +2724,7 @@ TypeEnum *parse_enum_definition(TypeEnum *decl, HashNameNode *name)
         access = 0;
 
     last = NULL;
-    value = qval_zero;
+    value = cint64_zero;
     overflow = 0;
     dependent = 0;
     if (CDecl_UseIntEnums())
@@ -2870,7 +2870,7 @@ void CDecl_ComputeUnderlyingEnumType(TypeEnum *res)
         }
         if (n != NULL) {
             CInt64 a, b;
-            b = a = qval_zero;
+            b = a = cint64_zero;
             for (m = res->enumlist; m != NULL; m = m->next) {
                 if (HighIsNegative(m->val.hi) && !Type_IsUnsigned(m->type)) {
                     if (CInt64_Less(m->val, a))
@@ -2897,7 +2897,7 @@ void CDecl_ComputeUnderlyingEnumType(TypeEnum *res)
             }
         } else {
             CInt64 c;
-            c = qval_zero;
+            c = cint64_zero;
             for (m = res->enumlist; m != NULL; m = m->next) {
                 if (CInt64_GreaterU(m->val, c))
                     c = m->val;
@@ -2964,9 +2964,9 @@ void *parse_enum_body(TypeEnum *enumType, HashNameNode *name)
         access = 0;
 
     tail = NULL;
-    currentValue = qval_zero;
-    maximumValue = qval_zero;
-    minimumValue = qval_zero;
+    currentValue = cint64_zero;
+    maximumValue = cint64_zero;
+    minimumValue = cint64_zero;
     overflow = 0;
     if (copts.f63 != 0) {
         underlyingType = &stsignedint;
@@ -4962,7 +4962,7 @@ void scandeclarator(DeclInfo *decl)
     if (tk == '[') {
         tk = CPrepTokenizer_GetNextToken();
         if (tk == ']') {
-            count = qval_zero;
+            count = cint64_zero;
             tk = CPrepTokenizer_GetNextToken();
             unsized = 1;
         } else {

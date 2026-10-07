@@ -1750,7 +1750,7 @@ void lower_expression_to_statements(ENode *node, int valueNeeded, int force)
                 CError_ASSERT(1495, node->rtype->type != TYPEVOID);
             } else {
                 node->type = EINTCONST;
-                node->data.intval = qval_zero;
+                node->data.intval = cint64_zero;
             }
             break;
         }
@@ -1779,7 +1779,7 @@ void lower_expression_to_statements(ENode *node, int valueNeeded, int force)
                 CError_ASSERT(1538, node->rtype->type != TYPEVOID);
             } else {
                 node->type = EINTCONST;
-                node->data.intval = qval_zero;
+                node->data.intval = cint64_zero;
             }
             break;
         }
@@ -1874,7 +1874,7 @@ void fn_004305e0(ENode *e, Object **pp, CLabel **lab)
         CError_FATAL(1286);
 
     c = NewENode(EINTCONST);
-    c->data.intval = qval_zero;
+    c->data.intval = cint64_zero;
     c->rtype = e->rtype;
 
     a = NewIRStat(4);
@@ -2250,7 +2250,7 @@ void create_zero_initialized_temp_object(ENode *expr, Object **out)
     }
 
     zero = IRO_NewNode(EINTCONST);
-    zero->data.intval = qval_zero;
+    zero->data.intval = cint64_zero;
     zero->rtype = expr->rtype;
 
     statement = (Statement *)CompilerTools_AllocatePool(sizeof(*statement));
@@ -2326,7 +2326,7 @@ void extract_right_operand_to_statement(ENode *node, int force)
         statement_insertion_point->next = stmt;
         statement_insertion_point = stmt;
         node->type = EINTCONST;
-        node->data.intval = qval_zero;
+        node->data.intval = cint64_zero;
     }
 }
 

@@ -888,7 +888,7 @@ struct IROLinear *create_loop_iteration_count(struct IROList *context, struct IR
 
     unitBound = 0;
     bound = statement->init->u.diadic.right;
-    if (IroDump_IsType1NodeType50(bound) && CInt64_Equal(bound->u.node->data.intval, qval_zero))
+    if (IroDump_IsType1NodeType50(bound) && CInt64_Equal(bound->u.node->data.intval, cint64_zero))
         unitBound = 1;
     if (!unitBound)
         bound = IroUtil_CopyLinearToList((bound), (context));
@@ -1044,7 +1044,7 @@ void IroLoop_0045c520(IROLoop *loop, CInt64 *iterationCount, int *unrollFactor, 
         return;
     }
     remainder = CInt64_ModU(*iterationCount, factor);
-    if (CInt64_Equal(remainder, qval_zero)) {
+    if (CInt64_Equal(remainder, cint64_zero)) {
         *remainderLoop = 0;
         *exactMultiple = 1;
     }
@@ -1077,13 +1077,13 @@ int compute_positive_addr_record_difference(IROAddrRecord *first, IROAddrRecord 
         return 0;
     }
 
-    secondHash = qval_zero;
+    secondHash = cint64_zero;
     for (node = second->ints; node != NULL; node = node->next) {
         elem = node->element;
         secondHash = CMach_CalcIntDiadic(elem->rtype, secondHash, 0x2b, elem->u.node->data.intval);
     }
 
-    firstHash = qval_zero;
+    firstHash = cint64_zero;
     for (node = first->ints; node != NULL; node = node->next) {
         elem = node->element;
         firstHash = CMach_CalcIntDiadic(elem->rtype, firstHash, 0x2b, elem->u.node->data.intval);
@@ -1150,12 +1150,12 @@ int compute_loop_count(IROLoop *loop, CInt64 *count)
             *count = CInt64_DivU(*count, step);
         else
             *count = CInt64_Div(*count, step);
-        if (CInt64_Equal(*count, qval_zero))
+        if (CInt64_Equal(*count, cint64_zero))
             return 0;
         if (isUnsigned != 0)
-            CError_ASSERT(9775, !CInt64_LessEqualU(*count, qval_zero));
+            CError_ASSERT(9775, !CInt64_LessEqualU(*count, cint64_zero));
         else
-            CError_ASSERT(9784, !CInt64_LessEqual(*count, qval_zero));
+            CError_ASSERT(9784, !CInt64_LessEqual(*count, cint64_zero));
         return 1;
     }
     startTerms = IroVars_CreateAddrRecord(start);
@@ -1250,7 +1250,7 @@ int is_loop_unrollable(IROLoop *loop)
             initializationType->integral == IT_LONGLONG) {
             if (IroDump_IsType1NodeType50(loop->init->u.diadic.right) != 0) {
                 ENode *literal = loop->init->u.diadic.right->u.node;
-                if (!CInt64_GreaterEqual(literal->data.intval, qval_zero)) {
+                if (!CInt64_GreaterEqual(literal->data.intval, cint64_zero)) {
                     IroDump_Print("IsLoopUnrollable:No because initial value of induction is signed but > 0\n");
                     return 0;
                 }
@@ -1831,7 +1831,7 @@ void unroll_loop(int factor, struct IRONode *header)
                                     enode->data.intval = mask;
                                     (void)(factor == 32);
                                     if (nd->type == IROLinearOp2Arg && nd->nodetype == EANDASS &&
-                                        CInt64_Equal(mask, qval_zero)) {
+                                        CInt64_Equal(mask, cint64_zero)) {
                                         copy->nodetype = EASS;
                                     } else if (nd->type == IROLinearOp2Arg && nd->nodetype == EORASS && mask.hi == 0) {
                                         if (nd->rtype->size == 1 && mask.lo == 0xff)
@@ -1932,7 +1932,7 @@ void unroll_loop(int factor, struct IRONode *header)
                     zeroOpnd->index = ++linear_index_counter;
                     enode = IrOptimizer_NewENode(EINTCONST);
                     enode->rtype = lastCond->u.monadic->rtype;
-                    enode->data.intval = qval_zero;
+                    enode->data.intval = cint64_zero;
                     zeroOpnd->u.node = enode;
                     zeroOpnd->rtype = enode->rtype;
                     IroUtil_AppendLinear(zeroOpnd, &list);
@@ -2219,15 +2219,15 @@ void unroll_loop(int factor, struct IRONode *header)
 int combine_nonoverlapping_shifts(CInt64 a, CInt64 b, CInt64 *out)
 {
     CInt64 term;
-    CInt64 result = qval_zero;
+    CInt64 result = cint64_zero;
     CInt64 sum;
-    CInt64 index = qval_zero;
+    CInt64 index = cint64_zero;
 
-    if (CInt64_Less(qval_zero, a)) {
+    if (CInt64_Less(cint64_zero, a)) {
         do {
             term = CInt64_Shl(b, index);
             sum = CInt64_And(term, result);
-            if (CInt64_NotEqual(sum, qval_zero))
+            if (CInt64_NotEqual(sum, cint64_zero))
                 return 0;
             result = CExpr2_BitwiseOrCInt64(term, result);
             index = CInt64_Add(index, cint64_one);
@@ -3036,7 +3036,7 @@ void find_induction_variables(void)
                                         CInt64 value;
                                         value = stmt->u.diadic.right->u.node->data.intval;
                                         if (stmt->type == IROLinearOp2Arg && stmt->nodetype == EADDASS &&
-                                            CInt64_Less(value, qval_zero)) {
+                                            CInt64_Less(value, cint64_zero)) {
                                             stmt->nodetype = ESUBASS;
                                             stmt->u.diadic.right->u.node->data.intval = CInt64_Inv(value);
                                         }

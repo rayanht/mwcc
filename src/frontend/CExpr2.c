@@ -2417,7 +2417,7 @@ Boolean CExpr_GetFuncMatchArgs(Object *obj, ENodeList *arguments, ENode *instanc
         node->cost = 0;
         node->flags = instance->flags;
         node->rtype = CDecl_NewPointerType(instance->rtype);
-        node->data.intval = qval_zero;
+        node->data.intval = cint64_zero;
         result->arguments = (ENodeList *)CompilerTools_AllocatePool(sizeof(ENodeList));
         result->arguments->next = arguments;
         result->arguments->node = node;
@@ -2700,9 +2700,9 @@ ENode *get_address_of_temp_copy(ENode *expr, char materialize)
 static CInt64 ConvertConst(Type *type, Type *other, CInt64 val)
 {
     if (type == (Type *)&stbool)
-        return CMach_CalcIntDiadic(other, val, 0x169, qval_zero);
+        return CMach_CalcIntDiadic(other, val, 0x169, cint64_zero);
     else
-        return CMach_CalcIntDiadic(type, val, 0x2b, qval_zero);
+        return CMach_CalcIntDiadic(type, val, 0x2b, cint64_zero);
 }
 
 void CExpr_CheckArithmConversion(ENode *node, Type *type)
@@ -4809,8 +4809,8 @@ void CExpr_ArithmeticConversion(ENode **left, ENode **right)
 static inline CInt64 convert_integer_constant(Type *type, Type *oldtype, CInt64 value)
 {
     if (type == (Type *)&stbool)
-        return CMach_CalcIntDiadic(oldtype, value, 0x169, qval_zero);
-    return CMach_CalcIntDiadic(type, value, 0x2b, qval_zero);
+        return CMach_CalcIntDiadic(oldtype, value, 0x169, cint64_zero);
+    return CMach_CalcIntDiadic(type, value, 0x2b, cint64_zero);
 }
 
 ENode *CExpr2_00473720(ENode *expr, Type *type)
@@ -4855,8 +4855,8 @@ ENode *CExpr2_00473720(ENode *expr, Type *type)
 CInt64 CExpr_IntConstConvert(Type *type, Type *otherType, CInt64 value)
 {
     if (type == (Type *)&stbool)
-        return CMach_CalcIntDiadic(otherType, value, 0x169, qval_zero);
-    return CMach_CalcIntDiadic(type, value, 0x2b, qval_zero);
+        return CMach_CalcIntDiadic(otherType, value, 0x169, cint64_zero);
+    return CMach_CalcIntDiadic(type, value, 0x2b, cint64_zero);
 }
 
 ENode *forceintegral(ENode *node)

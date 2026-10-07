@@ -1278,7 +1278,7 @@
   "_print_string_line": "0x0042ca02",
   "_push_option_arg": "0x0041ccee",
   "_queued_instruction_count": "0x005dfde4",
-  "_qval_zero": "0x005aea88",
+  "_cint64_zero": "0x005aea88",
   "_read_file_into_buffer": "0x004203e0",
   "_read_resource_file": "0x004069a0",
   "_redirect_standard_handle_to_file": "0x00411ff0",

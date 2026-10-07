@@ -8,10 +8,10 @@ typedef struct {
     float value; /* 0x00: CExpr2.c power-of-two values */
 } PowerOfTwo;
 
-CInt64 int64_minus_one = {0xFFFFFFFF, 0xFFFFFFFF};
-CInt64 qval_zero = {0, 0};
+CInt64 cint64_negone = {0xFFFFFFFF, 0xFFFFFFFF};
+CInt64 cint64_zero = {0, 0};
 CInt64 cint64_one = {0, 1};
-CInt64 int64_max = {0x7FFFFFFF, 0xFFFFFFFF};
+CInt64 cint64_max = {0x7FFFFFFF, 0xFFFFFFFF};
 CInt64 cint64_min = {0x80000000, 0};
 
 #pragma options align = mac68k
