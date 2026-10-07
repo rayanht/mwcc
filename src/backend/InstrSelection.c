@@ -4196,15 +4196,14 @@ void emit_vector128_constant(ENode *node, short requestedRegister, short unused,
     }
     patternIndex = 0;
     value = &node->data.vector128val;
-    word0 = value->longElements[0];
-    word1 = value->longElements[1];
-    word2 = value->longElements[2];
-    word3 = value->longElements[3];
+    word0 = value->ul[0];
+    word1 = value->ul[1];
+    word2 = value->ul[2];
+    word3 = value->ul[3];
     do {
         pattern = (MWVector128 *)(vector128_patterns + patternIndex * sizeof(MWVector128));
         alternatePattern = &alternate_vector_patterns[(unsigned int)patternIndex];
-        if (word0 == pattern->longElements[0] && word1 == pattern->longElements[1] &&
-            word2 == pattern->longElements[2] && word3 == pattern->longElements[3]) {
+        if (word0 == pattern->ul[0] && word1 == pattern->ul[1] && word2 == pattern->ul[2] && word3 == pattern->ul[3]) {
             temporaryRegister = gUsedVirtualRegistersGPR++;
             PCodeUtilities_EmitInstruction(PC_LI, temporaryRegister, patternIndex);
             PCodeUtilities_EmitInstruction(PC_LVSL, registerNumber, 0, temporaryRegister);
@@ -4212,8 +4211,8 @@ void emit_vector128_constant(ENode *node, short requestedRegister, short unused,
             result->reg = registerNumber;
             return;
         }
-        if (word0 == alternatePattern->longElements[0] && word1 == alternatePattern->longElements[1] &&
-            word2 == alternatePattern->longElements[2] && word3 == alternatePattern->longElements[3]) {
+        if (word0 == alternatePattern->ul[0] && word1 == alternatePattern->ul[1] && word2 == alternatePattern->ul[2] &&
+            word3 == alternatePattern->ul[3]) {
             alternateRegister = gUsedVirtualRegistersGPR++;
             PCodeUtilities_EmitInstruction(PC_LI, alternateRegister, patternIndex);
             PCodeUtilities_EmitInstruction(PC_LVSR, registerNumber, 0, alternateRegister);

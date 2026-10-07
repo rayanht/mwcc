@@ -220,8 +220,7 @@ void print_enode_tree(ENode *node, int depth)
                 break;
             case EASSBLK:
                 fprintf(data_005811b0, "[0x%.8lX%.8lX%.8lX%.8lX]", node->data.intval.hi, node->data.intval.lo,
-                        ((ENode *)node)->data.vector128val.longElements[2],
-                        ((ENode *)node)->data.vector128val.longElements[3]);
+                        ((ENode *)node)->data.vector128val.ul[2], ((ENode *)node)->data.vector128val.ul[3]);
                 PrintType(node->rtype);
                 break;
             case ECOND:

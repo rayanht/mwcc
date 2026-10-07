@@ -169,9 +169,9 @@ void dump_linear_node(IROLinear *node)
                         fprintf(iro_dump_output, "%g", operand->data.floatval.data.value);
                         break;
                     case 'J':
-                        fprintf(iro_dump_output, "%.8lX%.8lX%.8lX%.8lX", operand->data.vector128val.longElements[0],
-                                operand->data.vector128val.longElements[1], operand->data.vector128val.longElements[2],
-                                operand->data.vector128val.longElements[3]);
+                        fprintf(iro_dump_output, "%.8lX%.8lX%.8lX%.8lX", operand->data.vector128val.ul[0],
+                                operand->data.vector128val.ul[1], operand->data.vector128val.ul[2],
+                                operand->data.vector128val.ul[3]);
                         break;
                 }
             }

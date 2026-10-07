@@ -2693,10 +2693,10 @@ Boolean IrOptimizer_ConvertToVectorConstant(ENode *expr, union MWVector128 *dst,
     ENode *node;
 
     result = 0;
-    dst->longElements[0] = 0;
-    dst->longElements[1] = 0;
-    dst->longElements[2] = 0;
-    dst->longElements[3] = 0;
+    dst->ul[0] = 0;
+    dst->ul[1] = 0;
+    dst->ul[2] = 0;
+    dst->ul[3] = 0;
     value = 0.0;
     firstValue = 0.0;
 
@@ -2725,13 +2725,13 @@ Boolean IrOptimizer_ConvertToVectorConstant(ENode *expr, union MWVector128 *dst,
                         break;
                     }
                     IrOptimizer_CheckVectorByteConstant(&integerValue, vectorType);
-                    dst->byteElements[elementIndex] = integerValue.lo;
+                    dst->uc[elementIndex] = integerValue.lo;
                     elementIndex--;
                 }
                 if (cursor->type == EINTCONST) {
                     integerValue = cursor->data.intval;
                     IrOptimizer_CheckVectorByteConstant(&integerValue, vectorType);
-                    dst->byteElements[0] = integerValue.lo;
+                    dst->uc[0] = integerValue.lo;
                 } else {
                     PPCError_ReportError(0x70);
                     break;
@@ -2759,12 +2759,12 @@ Boolean IrOptimizer_ConvertToVectorConstant(ENode *expr, union MWVector128 *dst,
                         break;
                     }
                     IrOptimizer_CheckVectorShortConstant(&integerValue, vectorType);
-                    dst->shortElements[elementIndex] = node->data.intval.lo;
+                    dst->us[elementIndex] = node->data.intval.lo;
                 }
                 if (cursor->type == EINTCONST) {
                     integerValue = cursor->data.intval;
                     IrOptimizer_CheckVectorShortConstant(&integerValue, vectorType);
-                    dst->shortElements[0] = integerValue.lo;
+                    dst->us[0] = integerValue.lo;
                 } else {
                     PPCError_ReportError(0x70);
                     break;
@@ -2790,13 +2790,13 @@ Boolean IrOptimizer_ConvertToVectorConstant(ENode *expr, union MWVector128 *dst,
                         break;
                     }
                     IrOptimizer_CheckVectorLongConstant(&integerValue, vectorType);
-                    dst->longElements[elementIndex] = cursor->data.intval.lo;
+                    dst->ul[elementIndex] = cursor->data.intval.lo;
                     elementIndex--;
                 }
                 if (node->type == EINTCONST) {
                     integerValue = node->data.intval;
                     IrOptimizer_CheckVectorLongConstant(&integerValue, vectorType);
-                    dst->longElements[0] = integerValue.lo;
+                    dst->ul[0] = integerValue.lo;
                 } else {
                     PPCError_ReportError(0x70);
                     break;
@@ -2843,7 +2843,7 @@ Boolean IrOptimizer_ConvertToVectorConstant(ENode *expr, union MWVector128 *dst,
                             }
                         }
                     }
-                    dst->floatElements[elementIndex] = value;
+                    dst->f[elementIndex] = value;
                     elementIndex--;
                 }
                 if (cursor->type == EFLOATCONST) {
@@ -2875,7 +2875,7 @@ Boolean IrOptimizer_ConvertToVectorConstant(ENode *expr, union MWVector128 *dst,
                         }
                     }
                 }
-                dst->floatElements[0] = firstValue;
+                dst->f[0] = firstValue;
                 result = 1;
                 break;
         }
@@ -2888,7 +2888,7 @@ Boolean IrOptimizer_ConvertToVectorConstant(ENode *expr, union MWVector128 *dst,
                 integerValue = expr->data.intval;
                 IrOptimizer_CheckVectorByteConstant(&integerValue, vectorType);
                 for (; splatIndex < 16; splatIndex++) {
-                    dst->byteElements[splatIndex] = integerValue.lo;
+                    dst->uc[splatIndex] = integerValue.lo;
                 }
                 result = 1;
                 break;
@@ -2899,7 +2899,7 @@ Boolean IrOptimizer_ConvertToVectorConstant(ENode *expr, union MWVector128 *dst,
                 integerValue = expr->data.intval;
                 IrOptimizer_CheckVectorShortConstant(&integerValue, vectorType);
                 for (; splatIndex < 8; splatIndex++) {
-                    dst->shortElements[splatIndex] = integerValue.lo;
+                    dst->us[splatIndex] = integerValue.lo;
                 }
                 result = 1;
                 break;
@@ -2909,7 +2909,7 @@ Boolean IrOptimizer_ConvertToVectorConstant(ENode *expr, union MWVector128 *dst,
                 integerValue = expr->data.intval;
                 IrOptimizer_CheckVectorLongConstant(&integerValue, vectorType);
                 for (; splatIndex < 4; splatIndex++) {
-                    dst->longElements[splatIndex] = integerValue.lo;
+                    dst->ul[splatIndex] = integerValue.lo;
                 }
                 result = 1;
                 break;
@@ -2921,7 +2921,7 @@ Boolean IrOptimizer_ConvertToVectorConstant(ENode *expr, union MWVector128 *dst,
                 }
                 CInt64_ConvertInt32(&integerValue);
                 for (; splatIndex < 4; splatIndex++) {
-                    dst->floatElements[splatIndex] = (SInt32)integerValue.lo;
+                    dst->f[splatIndex] = (SInt32)integerValue.lo;
                 }
                 result = 1;
                 break;
@@ -2969,7 +2969,7 @@ Boolean IrOptimizer_ConvertToVectorConstant(ENode *expr, union MWVector128 *dst,
                     }
                 }
                 for (; splatIndex < 4; splatIndex++) {
-                    dst->floatElements[splatIndex] = splatValue;
+                    dst->f[splatIndex] = splatValue;
                 }
                 result = 1;
                 break;

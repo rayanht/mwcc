@@ -741,10 +741,10 @@ struct Float {
 #pragma options align = reset
 #pragma options align = mac68k
 union MWVector128 {
-    UInt8 byteElements[16];
-    UInt16 shortElements[8];
-    UInt32 longElements[4];
-    float floatElements[4];
+    UInt8 uc[16];
+    UInt16 us[8];
+    UInt32 ul[4];
+    float f[4];
 };
 #pragma options align = reset
 

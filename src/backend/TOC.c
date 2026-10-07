@@ -898,16 +898,16 @@ unsigned char is_small_splat_or_table_vector(long value, Type *type)
             words_match = word0 == words[j];
         if (words_match && word0 < 16 && word0 > -17)
             return 1;
-        k = 0, word1 = (word0 = (pattern = (MWVector128 *)value)->longElements[0], pattern->longElements[1]),
-        value = pattern->longElements[2], word3 = pattern->longElements[3];
+        k = 0, word1 = (word0 = (pattern = (MWVector128 *)value)->ul[0], pattern->ul[1]), value = pattern->ul[2],
+        word3 = pattern->ul[3];
         do {
             pattern = (MWVector128 *)(vector128_patterns + k * 16);
             alternate = &alternate_vector_patterns[k];
-            if (word0 == pattern->longElements[0] && word1 == pattern->longElements[1] &&
-                value == pattern->longElements[2] && word3 == pattern->longElements[3])
+            if (word0 == pattern->ul[0] && word1 == pattern->ul[1] && value == pattern->ul[2] &&
+                word3 == pattern->ul[3])
                 return 1;
-            if (word0 == alternate->longElements[0] && word1 == alternate->longElements[1] &&
-                value == alternate->longElements[2] && word3 == alternate->longElements[3])
+            if (word0 == alternate->ul[0] && word1 == alternate->ul[1] && value == alternate->ul[2] &&
+                word3 == alternate->ul[3])
                 return 1;
             k++;
         } while (k < 16);

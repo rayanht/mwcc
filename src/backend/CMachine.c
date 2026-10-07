@@ -658,9 +658,9 @@ void CMachine_InitVectorMem(Type *type, MWVector128 val, void *mem)
                 case 6:
                     for (i = 0; i < 16; i++) {
                         if (!copts.littleendian)
-                            uc[i] = val.byteElements[i];
+                            uc[i] = val.uc[i];
                         else
-                            uc[i] = val.byteElements[15 - i];
+                            uc[i] = val.uc[15 - i];
                     }
                     memcpy(mem, uc, 16);
                     break;
@@ -670,9 +670,9 @@ void CMachine_InitVectorMem(Type *type, MWVector128 val, void *mem)
                 case 14:
                     for (i = 0; i < 8; i++) {
                         if (!copts.littleendian)
-                            us[i] = CTool_EndianConvertWord16(val.shortElements[i]);
+                            us[i] = CTool_EndianConvertWord16(val.us[i]);
                         else
-                            us[i] = CTool_EndianConvertWord16(val.shortElements[7 - i]);
+                            us[i] = CTool_EndianConvertWord16(val.us[7 - i]);
                     }
                     memcpy(mem, us, 16);
                     break;
@@ -681,18 +681,18 @@ void CMachine_InitVectorMem(Type *type, MWVector128 val, void *mem)
                 case 12:
                     for (i = 0; i < 4; i++) {
                         if (!copts.littleendian)
-                            ul[i] = CTool_EndianConvertWord32(val.longElements[i]);
+                            ul[i] = CTool_EndianConvertWord32(val.ul[i]);
                         else
-                            ul[i] = CTool_EndianConvertWord32(val.longElements[3 - i]);
+                            ul[i] = CTool_EndianConvertWord32(val.ul[3 - i]);
                     }
                     memcpy(mem, ul, 16);
                     break;
                 case 13:
                     for (i = 0; i < 4; i++) {
                         if (!copts.littleendian)
-                            f[i] = val.floatElements[i];
+                            f[i] = val.f[i];
                         else
-                            f[i] = val.floatElements[3 - i];
+                            f[i] = val.f[3 - i];
                         CTool_EndianConvertMem(&f[i], 4);
                     }
                     memcpy(mem, f, 16);
@@ -779,11 +779,11 @@ unsigned char CMach_CalcVectorDiadicBool(unsigned int context, const union MWVec
 {
     switch ((short)operation) {
         case 360:
-            return left->longElements[0] == right->longElements[0] && left->longElements[1] == right->longElements[1] &&
-                   left->longElements[2] == right->longElements[2] && left->longElements[3] == right->longElements[3];
+            return left->ul[0] == right->ul[0] && left->ul[1] == right->ul[1] && left->ul[2] == right->ul[2] &&
+                   left->ul[3] == right->ul[3];
         case 361:
-            return left->longElements[0] != right->longElements[0] && left->longElements[1] != right->longElements[1] &&
-                   left->longElements[2] != right->longElements[2] && left->longElements[3] != right->longElements[3];
+            return left->ul[0] != right->ul[0] && left->ul[1] != right->ul[1] && left->ul[2] != right->ul[2] &&
+                   left->ul[3] != right->ul[3];
         default:
             CError_Internal("CMachine.c", 653);
             return 0;
