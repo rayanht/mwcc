@@ -50,10 +50,11 @@ extern UInt8 CTemplTool_IsSameTemplate(TemplParam *parameter, TemplArg *argument
 extern TemplArg *CTemplTool_MakeTemplArgList(struct DeduceInfo *src);
 extern NameSpace *CTemplTool_SetupTemplateArgumentNameSpace(TemplParam *arglist, TemplArg *targlist, Boolean flag);
 extern TypeClass *CTemplateTools_GetTemplClass(TypeTemplDep *record);
-extern NameSpace *CTemplTool_InsertTemplateArgumentNameSpace(TemplParam *context, TemplClassInst *function, CScopeSave *scope);
+extern NameSpace *CTemplTool_InsertTemplateArgumentNameSpace(TemplParam *context, TemplClassInst *function,
+                                                             CScopeSave *scope);
 extern FuncArg *CTemplTool_DeduceArgCopy(TypeDeduce *ctx, FuncArg *args);
 extern Type *CTemplTool_DeduceArgDepType(TemplArg *record, TypeTemplDep *key, unsigned int qualifiers,
-                                            unsigned int *resultQualifiers);
+                                         unsigned int *resultQualifiers);
 extern void CTemplTool_MergeDefaultArgs(TemplParam *destination, TemplParam *source);
 extern ENode *CTemplTool_DeduceExpr(TypeDeduce *ctx, ENode *node);
 extern Type *CTemplTool_IsDependentTemplate(struct TemplClass *templateClass, TemplArg *arguments);

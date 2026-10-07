@@ -105,8 +105,7 @@ void CPrec_LoadPrecompiledHeader(short file, UInt8 *buffer)
     if (data_00581c1e == NULL) {
         prec_header = galloc(sizeof(struct CPrecHeader));
         header = prec_header;
-        if (COS_FileSetPos(precompiled_file, 0) != 0 ||
-            COS_FileRead(precompiled_file, header, sizeof(*header)) != 0)
+        if (COS_FileSetPos(precompiled_file, 0) != 0 || COS_FileRead(precompiled_file, header, sizeof(*header)) != 0)
             CError_FatalError(ERR_ILLEGAL_DATA_PRECOMPILED_HEADER);
     } else {
         header = (struct CPrecHeader *)data_00581c1e;
@@ -315,8 +314,7 @@ void restore_macro_lists(void)
 
 static void CPrec_ReadData(SInt32 offset, void *buffer, SInt32 size)
 {
-    if (COS_FileSetPos(precompiled_file, offset) != 0 ||
-        COS_FileRead(precompiled_file, buffer, size) != 0)
+    if (COS_FileSetPos(precompiled_file, offset) != 0 || COS_FileRead(precompiled_file, buffer, size) != 0)
         CError_FatalError(ERR_ILLEGAL_DATA_PRECOMPILED_HEADER);
 }
 
@@ -360,8 +358,7 @@ void patch_buffered_token_locations(void)
 
 static void read_precompiled_header_data_at_offset(SInt32 offset, void *buffer, SInt32 size)
 {
-    if (COS_FileSetPos(precompiled_file, offset) != 0 ||
-        COS_FileRead(precompiled_file, buffer, size) != 0)
+    if (COS_FileSetPos(precompiled_file, offset) != 0 || COS_FileRead(precompiled_file, buffer, size) != 0)
         CError_FatalError(ERR_ILLEGAL_DATA_PRECOMPILED_HEADER);
 }
 
@@ -398,8 +395,7 @@ UInt8 *apply_object_patches(void)
 
 static void read_precompiled_header_data(SInt32 offset, void *buffer, SInt32 size)
 {
-    if (COS_FileSetPos(precompiled_file, offset) != 0 ||
-        COS_FileRead(precompiled_file, buffer, size) != 0)
+    if (COS_FileSetPos(precompiled_file, offset) != 0 || COS_FileRead(precompiled_file, buffer, size) != 0)
         CError_FatalError(ERR_ILLEGAL_DATA_PRECOMPILED_HEADER);
 }
 

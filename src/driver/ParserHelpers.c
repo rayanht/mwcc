@@ -209,8 +209,7 @@ int fn_0040cd55(char *name, char *filter, char *override)
     }
     if (err && (match = OS_MatchPath(path))) {
         do {
-            if (filter &&
-                !match_extension_pattern(filter, OS_NameSpecToString(&match->name, match_path_buffer, 0x104)))
+            if (filter && !match_extension_pattern(filter, OS_NameSpecToString(&match->name, match_path_buffer, 0x104)))
                 Targets_ReportMessage(0x4c, OS_SpecToStringRelative(match, NULL, match_path_buffer, 0x104), filter);
             if (!ToolHelpers_cc_AddProjectEntry(match, data_0054a0b8, data_00587d04, 1, -1)) {
                 data_00587e18++;

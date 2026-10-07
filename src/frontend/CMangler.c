@@ -169,8 +169,7 @@ HashNameNode *CMangler_GetLinkName(Object *obj)
     data_00583548.size = 0;
     if (is_pascal_object(obj) && (nspace == NULL || nspace->theclass == NULL))
         return obj->name;
-    if ((obj->qual & Q_MANGLE_NAME) != 0 &&
-        (memcmp("main", obj->name->name, 5) != 0 || obj->nspace != cscope_root)) {
+    if ((obj->qual & Q_MANGLE_NAME) != 0 && (memcmp("main", obj->name->name, 5) != 0 || obj->nspace != cscope_root)) {
         mangle_function_name(obj->name, nspace, obj->type);
         AppendGListByte(&data_00583548, 0);
     } else {

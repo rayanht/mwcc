@@ -123,8 +123,7 @@ int __stdcall OS_MakeSpec2(char *directory, char *filename, OSSpec *result)
     return OS_MakeSpec(path, output, NULL);
 }
 
-unsigned int __stdcall OS_MakeSpecWithPath(OSPathSpec *basePath, char *path, UInt8 useSpecialPath,
-                                                 OSSpec *destination)
+unsigned int __stdcall OS_MakeSpecWithPath(OSPathSpec *basePath, char *path, UInt8 useSpecialPath, OSSpec *destination)
 {
     int hasSpecialCharacters = 0;
     UInt8 specialCharacters;

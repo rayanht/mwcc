@@ -240,8 +240,8 @@ void CTemplateNew_CompileObject(TemplClass *templateClass, TemplClassInst *conte
     struct TemplStack sa;
 
     CTemplTool_PushInstance(&sa, NULL, object);
-    arguments = CTemplTool_InsertTemplateArgumentNameSpace(source->params ? source->params : templateClass->templ__params,
-                                                  context, &scope);
+    arguments = CTemplTool_InsertTemplateArgumentNameSpace(
+        source->params ? source->params : templateClass->templ__params, context, &scope);
     CPrep_InsertTokenBuffer(&source->stream, &savedState);
     savedTemplateState = template_recordbrowseinfo;
     template_recordbrowseinfo = 1;
@@ -589,7 +589,7 @@ static inline HashNameNode *CTempl_FindConversion(TypeClass *tclass, Type *type,
         if ((di).qual & Q_INLINE)                                                                                      \
             obj->sclass = 0x102;                                                                                       \
         templ->tfunc = obj;                                                                                            \
-        CScope_AddObject(cscope_current, (di).name, (ObjBase *)obj);                                                 \
+        CScope_AddObject(cscope_current, (di).name, (ObjBase *)obj);                                                   \
     } while (0)
 
 static inline void CTempl_PushScope(TemplateScopeState *stack, TypeClass *tclass)
@@ -1190,7 +1190,7 @@ TemplArg *parse_template_arguments(TemplClass **classType, TemplArg **result)
                 argument->data.typeparam.qual = parse.qual;
             } else if (CTemplateTools_IsDependentType(parameter->data.paramdecl.type) != 0) {
                 substituted = CTemplTool_DeduceArgDepType(arguments, (TypeTemplDep *)parameter->data.paramdecl.type,
-                                                             parameter->data.paramdecl.qual, &substitutionInfo);
+                                                          parameter->data.paramdecl.qual, &substitutionInfo);
                 argument->data.paramdecl.expr = parse_non_type_template_argument(substituted, substitutionInfo);
             } else {
                 argument->data.paramdecl.expr =
@@ -1225,7 +1225,7 @@ TemplArg *parse_template_arguments(TemplClass **classType, TemplArg **result)
                 context.args = arguments;
                 argument->data.typeparam.qual = parameter->data.typeparam.qual;
                 argument->data.typeparam.type = CTemplTool_DeduceTypeCopy(&context, argument->data.typeparam.type,
-                                                                           (UInt32 *)&argument->data.typeparam.qual);
+                                                                          (UInt32 *)&argument->data.typeparam.qual);
             }
         } else {
             if (parameter->data.paramdecl.defaultarg == NULL) {

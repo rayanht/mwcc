@@ -3372,8 +3372,7 @@ void initialize_runtime_objects(void)
 
 Boolean CParser_ReInitRuntimeObjects(Boolean flag)
 {
-    if ((runtime_operator_namespace_name =
-             CScope_FindNameSpaceName(cscope_root, CMangler_OperatorName(0x147))) == NULL)
+    if ((runtime_operator_namespace_name = CScope_FindNameSpaceName(cscope_root, CMangler_OperatorName(0x147))) == NULL)
         return 0;
     if ((data_00588008 = CScope_FindNameSpaceName(cscope_root, CMangler_OperatorName(0x182))) == NULL)
         return 0;

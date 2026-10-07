@@ -20,9 +20,9 @@ extern OSSpec *__stdcall OS_MatchPath(char *name);
 extern char *__stdcall OS_GetFileNamePtr(char *path);
 extern int __stdcall OS_MakeSpec2(char *directory, char *filename, OSSpec *result);
 extern unsigned int __stdcall OS_MakeSpecWithPath(OSPathSpec *basePath, char *path, UInt8 useSpecialPath,
-                                                        OSSpec *destination);
+                                                  OSSpec *destination);
 extern unsigned int __stdcall OS_NameSpecChangeExtension(OSNameSpec *file, const char *extensionAddress,
-                                                      unsigned char append);
+                                                         unsigned char append);
 extern unsigned int __stdcall OS_NameSpecSetExtension(OSNameSpec *file, const char *extensionAddress);
 extern char *__stdcall OS_SpecToStringRelative(OSSpec *source, OSPathSpec *base, char *destination, int capacity);
 extern DWORD __stdcall OS_FindFileInPath(char *name, const char *searchPath, OSSpec *result);

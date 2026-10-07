@@ -412,7 +412,7 @@ Type *resolve_templ_dep_type(TypeDeduce *ctx, TypeTemplDep *arg, UInt32 *out)
                 for (item = arg->u.templ.args; item != NULL; item = item->next) {
                     if (item->pid.type > 0)
                         item->data.typeparam.type = CTemplTool_DeduceTypeCopy(ctx, item->data.typeparam.type,
-                                                                               (UInt32 *)&item->data.typeparam.qual);
+                                                                              (UInt32 *)&item->data.typeparam.qual);
                 }
                 return (Type *)arg;
             case 3:
@@ -424,7 +424,7 @@ Type *resolve_templ_dep_type(TypeDeduce *ctx, TypeTemplDep *arg, UInt32 *out)
                 for (item = arg->u.qualtempl.args; item != NULL; item = item->next) {
                     if (item->pid.type > 0)
                         item->data.typeparam.type = CTemplTool_DeduceTypeCopy(ctx, item->data.typeparam.type,
-                                                                               (UInt32 *)&item->data.typeparam.qual);
+                                                                              (UInt32 *)&item->data.typeparam.qual);
                 }
                 return (Type *)arg;
             case 5:
@@ -603,7 +603,7 @@ void CTemplateTools_00516930(void *context, TemplClass *function, TemplArg *argu
             parameter = parameter->next;
             if (tail->pid.type != 0) {
                 tail->data.typeparam.type = CTemplTool_DeduceTypeCopy((TypeDeduce *)context, tail->data.typeparam.type,
-                                                                       (UInt32 *)&tail->data.typeparam.qual);
+                                                                      (UInt32 *)&tail->data.typeparam.qual);
             } else if (tail->data.paramdecl.expr == NULL) {
                 CError_FATAL(1566);
             } else if (IsTemplDep(tail->data.paramdecl.expr)) {
@@ -960,7 +960,7 @@ TemplClassInst *fn_00517270(TypeClass *current, TemplClassInst *limit, TemplClas
 }
 
 Type *CTemplTool_DeduceArgDepType(TemplArg *record, TypeTemplDep *key, unsigned int qualifiers,
-                                     unsigned int *resultQualifiers)
+                                  unsigned int *resultQualifiers)
 {
     UInt16 index;
     *resultQualifiers = qualifiers;

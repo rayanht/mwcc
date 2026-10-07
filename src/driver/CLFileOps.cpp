@@ -454,7 +454,7 @@ int CLFileOps_SetupOutputPath(DropinFileRecord *obj, SInt16 mask)
     if (((obj->outputMask | obj->temporaryOutputMask) & mask) != 0) {
         context = default_target;
         result = OS_MakeSpecWithPath(&context->outputDirectory, outputName, !optsCompiler.relPathInOutputDir,
-                                           &obj->outputPath);
+                                     &obj->outputPath);
         if (result == 0) {
             if (OS_EqualSpec(&obj->inputPath, &obj->outputPath) != 0) {
                 if (hasOutputName) {
@@ -468,7 +468,8 @@ int CLFileOps_SetupOutputPath(DropinFileRecord *obj, SInt16 mask)
             }
         } else {
             context = default_target;
-            CLErrors_ReportOSError(9, result, outputName, OS_PathSpecToString(&context->outputDirectory, data_005880e0, 0x104));
+            CLErrors_ReportOSError(9, result, outputName,
+                                   OS_PathSpecToString(&context->outputDirectory, data_005880e0, 0x104));
         }
         return (result == 0);
     }
@@ -802,7 +803,8 @@ int CLFileOps_CompileProject(void)
             path = CLAccessPaths_GetEntry(&default_target->systemPaths, index);
             if (path == 0)
                 CLIO_ReportAssertionFailure("path != NULL", "CLFileOps.c", 0x3ca);
-            CLErrors_ForwardMessage(0x55, OS_PathSpecToString(path->path, data_005880e0, 0x104), path->children ? " [r]" : "");
+            CLErrors_ForwardMessage(0x55, OS_PathSpecToString(path->path, data_005880e0, 0x104),
+                                    path->children ? " [r]" : "");
             if (path->children != 0) {
                 for (subIndex = 0; subIndex < CLAccessPaths_GetCount(path->children); subIndex++) {
                     struct AccessPathEntry *subPath;
@@ -819,7 +821,8 @@ int CLFileOps_CompileProject(void)
             path = CLAccessPaths_GetEntry(&default_target->userPaths, pathIndex);
             if (path == 0)
                 CLIO_ReportAssertionFailure("path != NULL", "CLFileOps.c", 0x3e0);
-            CLErrors_ForwardMessage(0x55, OS_PathSpecToString(path->path, data_005880e0, 0x104), path->children ? " [r]" : "");
+            CLErrors_ForwardMessage(0x55, OS_PathSpecToString(path->path, data_005880e0, 0x104),
+                                    path->children ? " [r]" : "");
             if (path->children != 0) {
                 for (subIndex = 0; subIndex < CLAccessPaths_GetCount(path->children); subIndex++) {
                     struct AccessPathEntry *subPath;

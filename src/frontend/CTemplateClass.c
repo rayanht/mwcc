@@ -797,7 +797,7 @@ void instantiate_bases(TypeDeduce *context, TypeClass *instance, TemplClass *cla
             newBase = galloc(sizeof(ClassList));
             memclrw(newBase, sizeof(ClassList));
             newBase->base = (TypeClass *)CTemplTool_DeduceTypeCopy(context, declaration->u.base.type,
-                                                                    (UInt32 *)(resolvedQualifiers = &resolvedTypeData));
+                                                                   (UInt32 *)(resolvedQualifiers = &resolvedTypeData));
             newBase->access = declaration->u.base.access;
             newBase->is_virtual = declaration->u.base.is_virtual;
             if (newBase->base->type == TYPECLASS) {
@@ -1056,7 +1056,7 @@ unsigned char match_template_arguments(TemplPartialSpec *arguments, TemplPartial
                 if (argument->data.typeparam.type != NULL) {
                     if (state.args[matchIndex].data.typeparam.type == NULL ||
                         CTemplTool_EqualExprTypes(argument->data.paramdecl.expr,
-                                                state.args[matchIndex].data.paramdecl.expr) == 0)
+                                                  state.args[matchIndex].data.paramdecl.expr) == 0)
                         return 0;
                 } else {
                     if (state.args[matchIndex].data.typeparam.type != NULL ||
@@ -1154,7 +1154,8 @@ TemplArg *match_specialization_arguments(TemplPartialSpec *arguments, TemplArg *
                 if (index < 0)
                     CError_FATAL(749);
                 if (state.args[index].is_deduced != 0) {
-                    if (!CTemplTool_EqualExprTypes(candidate->data.paramdecl.expr, state.args[index].data.paramdecl.expr))
+                    if (!CTemplTool_EqualExprTypes(candidate->data.paramdecl.expr,
+                                                   state.args[index].data.paramdecl.expr))
                         return NULL;
                 } else {
                     state.args[index].data.paramdecl.expr = candidate->data.paramdecl.expr;

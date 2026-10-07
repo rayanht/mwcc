@@ -1999,7 +1999,8 @@ ENode *CExpr_GenericFuncCall(BClassList *scope, ENode *instance, Boolean qualifi
     memclrw(&resolution, sizeof(resolution));
 
     if (function == NULL || (function->type->type == TYPEFUNC && (CExpr_FunctionFlags(function->type) & 0x400) != 0)) {
-        if (instance == NULL && cscope_currentfunc != NULL && cscope_currentclass != NULL && cscope_is_member_func != 0) {
+        if (instance == NULL && cscope_currentfunc != NULL && cscope_currentclass != NULL &&
+            cscope_is_member_func != 0) {
             instance = CClass_CreateThisSelfExpr();
             if (instance != NULL) {
                 ENode *indirect = make_monadic_46eb90(instance);

@@ -282,7 +282,7 @@ unsigned int fn_00426320(OSSpec *destination, DropinFileRecord *record)
     const CWObjectFlags *objectFlags;
     objectFlags = CLPlugins_GetObjectFlags(record->selectedPlugin);
     return OS_NameSpecChangeExtension(&destination->name, objectFlags->pchFileExt ? objectFlags->pchFileExt : ".sbm",
-                                   objectFlags->pchFileExt ? objectFlags->pchFileExt[0] == '.' : 0);
+                                      objectFlags->pchFileExt ? objectFlags->pchFileExt[0] == '.' : 0);
 }
 
 static inline void resetcb(DropinFileCallback *p, char fl, int f6v)
