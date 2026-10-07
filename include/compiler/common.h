@@ -840,8 +840,8 @@ struct CInt64 {
 #pragma options align = reset
 #pragma options align = mac68k
 union FloatStorage {
-    double value;
     int words[2];
+    double value;
 };
 #pragma options align = reset
 #pragma options align = mac68k

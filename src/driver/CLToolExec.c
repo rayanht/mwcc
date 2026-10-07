@@ -18,6 +18,7 @@
 #include "driver/CWParserPluginsPrivate.h"
 #include "driver/CWPluginsPrivate.h"
 #include "driver/Files.h"
+#include "driver/Generic.h"
 #include "driver/MacSpecs.h"
 #include "driver/MemUtils.h"
 #include "driver/MsDos.h"

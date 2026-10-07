@@ -12,6 +12,7 @@
 #include "driver/CWParserPluginsPrivate.h"
 #include "driver/CWPluginsPrivate.h"
 #include "driver/ClientGlue.h"
+#include "driver/Generic.h"
 #include "driver/Help.h"
 #include "driver/Memory.h"
 #include "driver/MsDos.h"

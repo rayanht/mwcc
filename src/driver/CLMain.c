@@ -27,10 +27,12 @@
 #include "driver/CWPluginsPrivate.h"
 #include "driver/ClientGlue.h"
 #include "driver/Files.h"
+#include "driver/Generic.h"
 #include "driver/MemUtils.h"
 #include "driver/Memory.h"
 #include "driver/MsDos.h"
 #include "driver/Resources.h"
+#include "driver/StringExtras.h"
 #include "driver/cc-eabi-ppc-mw.h"
 #include <string.h>
 #include <setjmp.h>

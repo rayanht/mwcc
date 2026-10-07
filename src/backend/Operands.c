@@ -44,6 +44,12 @@
 #include "compiler/ENode.h"
 #include "compiler/Types.h"
 
+/* Target doubles, high word first; ObjGen_PPC_EABI rewrites them in host order. */
+Float float_one = {{0x3ff00000, 0}};
+static Float lbl_0055e9e0 = {{0x3f800000, 0}};
+Float data_0055e9e8 = {{0x43300000, 0x80000000}};
+Float data_0055e9f0 = {{0x43300000, 0}};
+
 enum { kRegOne = 1 };
 
 #define Operands_NewReg(reg, avoid) (((reg) != 0 && (reg) != (avoid)) ? (reg) : gUsedVirtualRegistersGPR++)
@@ -208,8 +214,8 @@ static inline Object *start(Float *blk)
 {
     Type *type = (Type *)&stdouble;
     Object *x = CodeGen_AllocateTemporaryObject(type);
-    blk->data.words[0] = data_0055e9f0[0];
-    blk->data.words[1] = data_0055e9f0[1];
+    blk->data.words[0] = data_0055e9f0.data.words[0];
+    blk->data.words[1] = data_0055e9f0.data.words[1];
     return x;
 }
 
@@ -256,8 +262,8 @@ static inline Object *prelude(Float *p)
 {
     Type *type = (Type *)&stdouble;
     Object *r = CodeGen_AllocateTemporaryObject(type);
-    p->data.words[0] = data_0055e9e8[0];
-    p->data.words[1] = data_0055e9ec;
+    p->data.words[0] = data_0055e9e8.data.words[0];
+    p->data.words[1] = data_0055e9e8.data.words[1];
     return r;
 }
 

@@ -41,6 +41,15 @@
 #include "driver/Files.h"
 #include "compiler/Objects.h"
 
+/* The weight of a use at each loop depth. */
+static UInt16 ir_size_table[4] = {1, 4, 16, 64};
+static char lbl_0054ea30[12] = {0};
+
+static Statement *current_statement;
+static UInt8 data_0057f6b4;
+static UInt8 data_0057f6b5;
+static char lbl_0057f6b6[10];
+
 void fn_0042c920(void)
 {
     return;
@@ -159,10 +168,6 @@ void IRO_ExpressionPropagation(void)
         }
     }
 }
-
-/* Referenced symbols (host binds these names to the original addresses). */
-
-/* "IrOptimizer.c" */
 
 /* TravExprToUpdateFlags. */
 
@@ -413,6 +418,8 @@ void *IRO_Optimizer(Object *function, void *incomingBody)
     CompilerTools_ResetPool();
     return incomingBody;
 }
+
+static char lbl_0054eedc[] = "BitVector.h";
 
 Boolean IrOptimizer_0042d2c0(IROLinear *e)
 {
@@ -684,8 +691,6 @@ void record_object_usage(void)
     IroVars_CheckTimedLongjmp();
 }
 
-/* 0x54ea28: word table {1,4,0x10,0x40} */
-
 static inline void IrOptimizer_RecordUsage(Object *obj, int level)
 {
     int index = level;
@@ -814,8 +819,6 @@ static inline void ClearReferences(void)
 }
 
 /* error printer */
-/* "IrOptimizer.c" */
-/* "Oh, oh, bad expression type in BuildExpr at: %d\n" */
 
 static ENode *NewNode(UInt8 type)
 {

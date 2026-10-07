@@ -137,7 +137,6 @@ extern void generate_type_conversion(ENode *node, short outputReg, short outputR
 extern void get_objaccess_cached_value(ENode *node, UInt32 argument2, UInt32 argument3, Operand *result,
                                        UInt32 argument5);
 extern void (*data_00560648[])(void *, short, short, void *);
-extern Float float_one;
 extern struct FunctionCallFrame *function_call_frames;
 extern short gUsedVirtualRegistersFPR;
 extern SInt16 gUsedVirtualRegistersGPR;
@@ -147,8 +146,6 @@ extern void InstrSelection_EmitSwitchTables(Object *a0);
 extern struct ObjectList *switch_tables;
 struct PCodeLabel;
 struct PCodeLabel;
-extern char vector128_patterns[];
-extern MWVector128 alternate_vector_patterns[];
 extern TypeIntegral stunsignedlonglong;
 
 #ifdef __cplusplus

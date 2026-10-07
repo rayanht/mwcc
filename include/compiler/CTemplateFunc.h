@@ -49,10 +49,6 @@ extern void fn_00514220(void);
 extern void fn_00514380(ObjectList *list, void *ptype, ENodeList *args, struct ArgMatch *ctx, ENode *flag);
 extern Boolean match_template_function_args(Object *obj, TemplateMatchState *state, FuncArg *arg, ENodeList *exprs,
                                             ArgMatch *ctx);
-extern Boolean data_005824c8;
-extern UInt8 template_argument_depth;
-extern SInt32 data_005824ca;
-extern UInt8 data_005824ce;
 extern Object *CTemplateFunc_FindSpecializationObject(DeclInfo *search, ObjectList *candidates);
 
 #ifdef __cplusplus

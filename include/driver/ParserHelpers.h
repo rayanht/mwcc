@@ -18,7 +18,6 @@ extern void report_environment_variable_message(void (*report)(char *msg, va_lis
 extern int ParserHelpers_ParsePathList(char *path, char separator, char alternateSeparator, int mode, char *name,
                                        char option, int flags, unsigned char toggle);
 extern int fn_0040cd55(char *name, char *filter, char *override);
-extern char match_path_buffer[];
 extern int data_00587e14;
 extern int data_00587e18;
 extern Boolean data_00587e20;
@@ -27,7 +26,6 @@ extern int fn_0040cff6(void);
 extern int fn_0040d002(void);
 extern unsigned int fn_0040d012(unsigned int reportError);
 extern SInt16 data_00537766;
-extern Boolean data_0054a0f8;
 extern UInt8 data_00587e1c;
 extern int fn_0040d0eb(void);
 extern UInt16 data_0053776c;

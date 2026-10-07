@@ -4,6 +4,7 @@
 #include "compiler/win32.h"
 #include "driver/CLFileOps.h"
 #include "driver/Files.h"
+#include "driver/Generic.h"
 #include "driver/Memory.h"
 #include "driver/MsDos.h"
 #include "driver/ParserGlue-eabi-ppc-cc.h"

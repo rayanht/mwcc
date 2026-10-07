@@ -36,7 +36,6 @@
 #include "driver/CLPluginRequests.h"
 #include "driver/CLPlugins.h"
 #include "driver/CLPrefs.h"
-#include "driver/CLProj.h"
 #include "driver/CLSegs.h"
 #include "driver/CLTarg.h"
 #include "driver/CLToolExec.h"
@@ -45,6 +44,7 @@
 #include "driver/CWPluginsPrivate.h"
 #include "driver/ClientGlue.h"
 #include "driver/Files.h"
+#include "driver/Generic.h"
 #include "driver/MacSpecs.h"
 #include "driver/Memory.h"
 #include "driver/MsDos.h"
@@ -67,99 +67,6 @@ extern "C" {
 }
 
 extern "C" {
-DWORD __stdcall CLProj_FindFileInSearchPath(char *name, const char *searchPath, OSSpec *result)
-{
-    const char *separator;
-    DWORD status;
-    char directory[260];
-    while (searchPath != NULL && *searchPath != 0) {
-        separator = strchr((char *)searchPath, ';');
-        if (separator == NULL) {
-            separator = strpbrk(searchPath, ";,");
-        }
-        if (separator == NULL) {
-            separator = searchPath + strlen(searchPath);
-        }
-        CLProj_CopyStringBounded(directory, searchPath, separator - searchPath, 0x103);
-        status = CLProj_MakeOSSpecFromDirectoryAndFilename(directory, name, result);
-        if (status == 0) {
-            status = OS_Status(result);
-            if (status == 0) {
-                return 0;
-            }
-        }
-        searchPath = (*separator != 0) ? separator + 1 : NULL;
-    }
-    status = OS_MakeFileSpec(name, result);
-    if (status == 0) {
-        status = OS_Status(result);
-        if (status == 0) {
-            return 0;
-        }
-    }
-    return status;
-}
-
-int __stdcall CLFileOps_FindExecutable(char *name, void *param2)
-{
-    char buf[0x104];
-    char dir[0x104];
-    DWORD r;
-    char *p;
-    OSSpec *output = (OSSpec *)param2;
-
-    strncpy(buf, name, 0x104);
-    buf[0x103] = 0;
-    if ((UInt32)strlen(buf) < 4 || ClientGlue_CompareLowercaseStrings(buf + strlen(buf) - 4, ".exe") != 0)
-        CLProj_AppendString(buf, ".exe", 0x104);
-
-    if (strchr(buf, '\\') == 0) {
-        if (GetSystemDirectoryA(dir, 0x104) != 0) {
-            if (CLProj_MakeOSSpecFromDirectoryAndFilename(dir, buf, output) == 0) {
-                if ((r = OS_Status(output)) == 0)
-                    return r;
-            }
-        }
-        if (GetWindowsDirectoryA(dir, 0x104) != 0) {
-            if (CLProj_MakeOSSpecFromDirectoryAndFilename(dir, buf, output) == 0) {
-                if ((r = OS_Status(output)) == 0)
-                    return r;
-            }
-        }
-        p = getenv("PATH");
-        if (CLProj_FindFileInSearchPath(buf, p, output) == 0)
-            return 0;
-    }
-
-    r = OS_MakeFileSpec(buf, output);
-    if (r == 0)
-        r = OS_Status(output);
-    return r;
-}
-
-unsigned int __stdcall CLFileOps_CopyMemBuffer(MemBuffer *source, MemBuffer *destination)
-{
-    unsigned int err;
-    DWORD size;
-    HGLOBAL sourceData;
-    HGLOBAL destinationData;
-
-    err = OS_GetHandleSize(source, &size);
-    if (err == 0) {
-        err = OS_NewHandle(size, destination);
-        if (err == 0) {
-            sourceData = MsDos_GetValidMemBufferPtr(source);
-            destinationData = MsDos_GetValidMemBufferPtr(destination);
-            memcpy(destinationData, sourceData, size);
-            fn_004129c0(source);
-            fn_004129c0(destination);
-            return 0;
-        }
-    }
-    OS_FreeHandle(destination);
-    return err;
-}
-
 static inline int applyClassTypes(DropinFileRecord *request)
 {
     TypeClassTemplate *classInfo;
@@ -176,30 +83,6 @@ static inline int applyClassTypes(DropinFileRecord *request)
     }
     return dispatch_output_storage_by_mask(request, 4, (SInt32)fallbackType, (SInt32)preferredType);
 }
-
-DWORD __stdcall CLFileOps_AppendMemBuffer(void *handle, const void *source, unsigned int size)
-{
-    DWORD result;
-    char *buffer;
-    DWORD offset;
-
-    result = OS_GetHandleSize((struct MemBuffer *)handle, &offset);
-    if (result == 0) {
-        result = OS_ResizeHandle((struct MemBuffer *)handle, offset + size);
-        if (result == 0) {
-            buffer = (char *)MsDos_GetValidMemBufferPtr((struct MemBuffer *)handle);
-            if (buffer != 0) {
-                memcpy(buffer + offset, source, size);
-                fn_004129c0((struct MemBuffer *)handle);
-                return 0;
-            }
-        }
-    }
-    return result;
-}
-
-/* Data of the original file that none of its linked code uses. */
-static SInt32 lbl_0054BF34 = 0;
 
 int __stdcall add_access_path(NamespaceOperationContext *context, NamespaceOperationState *state)
 {

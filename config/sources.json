@@ -119,8 +119,7 @@
     ],
     "include_dirs": [
       "src/backend"
-    ],
-    "status": "NonMatching"
+    ]
   },
   "src/backend/ELF_Endian.c": {
     "compiler": "pro53",
@@ -402,8 +401,7 @@
     ],
     "include_dirs": [
       "src/backend"
-    ],
-    "status": "NonMatching"
+    ]
   },
   "src/backend/PCode.c": {
     "compiler": "pro53",
@@ -602,8 +600,7 @@
     ],
     "include_dirs": [
       "src/backend"
-    ],
-    "status": "NonMatching"
+    ]
   },
   "src/driver/CLAccessPaths.c": {
     "compiler": "pro53",
@@ -823,6 +820,21 @@
       "src/driver"
     ]
   },
+  "src/driver/StringExtras.c": {
+    "compiler": "pro53",
+    "flags": [
+      "-O4,p",
+      "-sym",
+      "off",
+      "-Cpp_exceptions",
+      "off"
+    ],
+    "include_dirs": [
+      "src/driver",
+      "include",
+      "include/libc"
+    ]
+  },
   "src/driver/CLProj.c": {
     "compiler": "pro53",
     "flags": [
@@ -836,8 +848,22 @@
       "src/driver",
       "include",
       "include/libc"
+    ]
+  },
+  "src/driver/Generic.c": {
+    "compiler": "pro53",
+    "flags": [
+      "-O4,p",
+      "-sym",
+      "off",
+      "-Cpp_exceptions",
+      "off"
     ],
-    "status": "NonMatching"
+    "include_dirs": [
+      "src/driver",
+      "include",
+      "include/libc"
+    ]
   },
   "src/driver/CLSegs.c": {
     "compiler": "pro53",
@@ -1150,8 +1176,7 @@
     ],
     "include_dirs": [
       "src/driver"
-    ],
-    "status": "NonMatching"
+    ]
   },
   "src/driver/ResourceStrings.c": {
     "compiler": "pro53",
@@ -1193,8 +1218,7 @@
     ],
     "include_dirs": [
       "src/driver"
-    ],
-    "status": "NonMatching"
+    ]
   },
   "src/driver/StringUtils.c": {
     "compiler": "pro53",
@@ -1767,8 +1791,7 @@
     ],
     "include_dirs": [
       "src/frontend"
-    ],
-    "status": "NonMatching"
+    ]
   },
   "src/frontend/CTemplateNew.c": {
     "compiler": "pro53",
@@ -2788,8 +2811,7 @@
     ],
     "include_dirs": [
       "src/optimizer"
-    ],
-    "status": "NonMatching"
+    ]
   },
   "src/optimizer/COptimizer.c": {
     "compiler": "pro53",
@@ -2912,8 +2934,7 @@
     ],
     "include_dirs": [
       "src/optimizer"
-    ],
-    "status": "NonMatching"
+    ]
   },
   "src/optimizer/IroBitVect.c": {
     "compiler": "pro53",
@@ -3067,8 +3088,7 @@
       "src/optimizer",
       "include",
       "include/libc"
-    ],
-    "status": "NonMatching"
+    ]
   },
   "src/optimizer/IroUtil.c": {
     "compiler": "pro53",
@@ -3099,8 +3119,7 @@
     "include_dirs": [
       "src/optimizer",
       "include"
-    ],
-    "status": "NonMatching"
+    ]
   },
   "src/optimizer/LoadDeletion.c": {
     "compiler": "pro53",

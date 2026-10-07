@@ -3,9 +3,9 @@
 #include "driver/ParserHelpers.h"
 #include "compiler/win32.h"
 #include "compiler/CPrep.h"
-#include "driver/CLProj.h"
 #include "driver/CWPluginsPrivate.h"
 #include "driver/Files.h"
+#include "driver/Generic.h"
 #include "driver/MacSpecs.h"
 #include "driver/Memory.h"
 #include "driver/MsDos.h"
@@ -20,6 +20,8 @@
 #include <stdlib.h>
 #include <setjmp.h>
 #include "driver/CLDropinCallbacks_V10.h"
+
+short data_0054a0b8 = 0;
 
 #define va_start(ap, parm) ap = (char *)&parm + ((((long)((char *)&parm + 2) - (long)&parm) + 3) / 4 * 4)
 int get_spec_from_signature_callback(const char *path, OSSpec *spec)
@@ -176,6 +178,8 @@ int ParserHelpers_ParsePathList(char *path, char separator, char alternateSepara
     return result;
 }
 
+static char match_path_buffer[0x104];
+
 int fn_0040cd55(char *name, char *filter, char *override)
 {
     OSSpec spec;
@@ -234,6 +238,10 @@ int fn_0040cd55(char *name, char *filter, char *override)
     data_00587d04[0] = 0;
     return 1;
 }
+
+static char lbl_0054a0e0[] = ".lib|.a";
+static char lbl_0054a0e8[] = "lib%s%*.*s";
+static char lbl_0054a0f4[] = "";
 
 void ParserHelpers_AppendText(struct StorageHandle **hp, char *text)
 {
@@ -299,6 +307,8 @@ static inline int shouldReportError(unsigned char reportError)
 {
     return reportError != 0;
 }
+
+static Boolean data_0054a0f8 = 0;
 
 unsigned int fn_0040d012(unsigned int reportError)
 {
@@ -407,6 +417,9 @@ int parse_stage_settings(int unused1, unsigned char *opt, int unused2, int flags
     }
     return 1;
 }
+
+static char lbl_0054a120[] = "wt";
+static int lbl_0054a124 = 0;
 
 int fn_0040d283(int unused, char *first, char *second)
 {

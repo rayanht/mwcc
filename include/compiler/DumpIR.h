@@ -8,9 +8,6 @@ extern "C" {
 #endif
 
 extern void print_enode_tree(ENode *node, int depth);
-extern unsigned int data_00560cb4[];
-extern struct _FILE *data_005811b0;
-extern int enode_tree_depth_index;
 extern void dump_eat_nodes(struct CException *p);
 extern void format_type(Type *type, char *buf);
 extern void fn_004be830(void *arg1, void *arg2);

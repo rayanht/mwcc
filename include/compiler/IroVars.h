@@ -93,7 +93,6 @@ extern void visit_dobjstack_objects(IROLinear *linear);
 extern void IroVars_VisitExceptionOperands(CException *node, void (*visitOperand)(Object *));
 extern IROLinear *IroVars_NopOutWithSideEffectsChecking(IROLinear *node);
 extern IROLinear *fn_0044be00(IROLinear *node);
-extern struct IROLinear *saved_node;
 extern struct VarRecord *var_records;
 extern SInt32 data_00587ef4;
 extern unsigned int iroVarCount;

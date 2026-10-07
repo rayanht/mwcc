@@ -3813,13 +3813,13 @@
     "name": "CLProj_AppendString",
     "address": "0x00418350",
     "size": 67,
-    "source": "src/driver/CLProj.c"
+    "source": "src/driver/StringExtras.c"
   },
   {
     "name": "CLProj_CopyStringBounded",
     "address": "0x004183a0",
     "size": 60,
-    "source": "src/driver/CLProj.c"
+    "source": "src/driver/StringExtras.c"
   },
   {
     "name": "CLProj_InitializeCWD",
@@ -3837,73 +3837,73 @@
     "name": "match_wildcard_pattern",
     "address": "0x00418440",
     "size": 293,
-    "source": "src/driver/CLProj.c"
+    "source": "src/driver/Generic.c"
   },
   {
     "name": "CLProj_FindNextMatchingEntry",
     "address": "0x00418570",
     "size": 291,
-    "source": "src/driver/CLProj.c"
+    "source": "src/driver/Generic.c"
   },
   {
     "name": "CLProj_GetFileName",
     "address": "0x004186a0",
     "size": 28,
-    "source": "src/driver/CLProj.c"
+    "source": "src/driver/Generic.c"
   },
   {
     "name": "CLProj_MakeOSSpecFromDirectoryAndFilename",
     "address": "0x004186c0",
     "size": 185,
-    "source": "src/driver/CLProj.c"
+    "source": "src/driver/Generic.c"
   },
   {
     "name": "CLProj_MakeOSSpecFromPath",
     "address": "0x00418780",
     "size": 349,
-    "source": "src/driver/CLProj.c"
+    "source": "src/driver/Generic.c"
   },
   {
     "name": "CLProj_SetFileExtension",
     "address": "0x004188e0",
     "size": 218,
-    "source": "src/driver/CLProj.c"
+    "source": "src/driver/Generic.c"
   },
   {
     "name": "CLProj_ChangeFileExtension",
     "address": "0x004189c0",
     "size": 252,
-    "source": "src/driver/CLProj.c"
+    "source": "src/driver/Generic.c"
   },
   {
     "name": "CLProj_MakeRelativePath",
     "address": "0x00418ac0",
     "size": 558,
-    "source": "src/driver/CLProj.c"
+    "source": "src/driver/Generic.c"
   },
   {
     "name": "CLProj_FindFileInSearchPath",
     "address": "0x00418cf0",
     "size": 237,
-    "source": "src/driver/CLFileOps.cpp"
+    "source": "src/driver/Generic.c"
   },
   {
     "name": "CLFileOps_FindExecutable",
     "address": "0x00418de0",
     "size": 367,
-    "source": "src/driver/CLFileOps.cpp"
+    "source": "src/driver/Generic.c"
   },
   {
     "name": "CLFileOps_CopyMemBuffer",
     "address": "0x00418f50",
     "size": 117,
-    "source": "src/driver/CLFileOps.cpp"
+    "source": "src/driver/Generic.c"
   },
   {
     "name": "CLFileOps_AppendMemBuffer",
     "address": "0x00418fd0",
     "size": 107,
-    "source": "src/driver/CLFileOps.cpp"
+    "source": "src/driver/Generic.c"
   },
   {
     "name": "add_access_path",

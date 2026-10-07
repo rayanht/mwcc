@@ -36,6 +36,7 @@
 #include "compiler/IroJump.h"
 #include "compiler/IroLoop.h"
 #include "compiler/IroVars.h"
+#include "compiler/Operands.h"
 #include "compiler/PCode.h"
 #include "compiler/PCodeListing.h"
 #include "compiler/PPCError.h"
@@ -2154,12 +2155,13 @@ void fn_0048b3f0(void)
     }
     {
         unsigned long *w;
-        w = data_0055e9e8 - 4;
+        w = (unsigned long *)&float_one;
         w[0] = 0;
         w[1] = 0x3ff00000;
-        *(w = data_0055e9e8) = 0x80000000;
+        w = (unsigned long *)&data_0055e9e8;
+        w[0] = 0x80000000;
         w[1] = 0x43300000;
-        w = data_0055e9e8 + 2;
+        w = (unsigned long *)&data_0055e9f0;
         w[0] = 0;
         w[1] = 0x43300000;
     }

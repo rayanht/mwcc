@@ -4,6 +4,7 @@
 #include "compiler/win32.h"
 #include "compiler/CPrep.h"
 #include "driver/CLFileOps.h"
+#include "driver/Generic.h"
 #include "driver/MsDos.h"
 #include <string.h>
 #include <stdlib.h>

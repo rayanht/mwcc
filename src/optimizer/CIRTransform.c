@@ -35,6 +35,10 @@
 #include "compiler/ENode.h"
 /* Declarations gathered from the merged files. */
 
+static TypeFunc data_005741b0 = {TYPEFUNC, 0, NULL, NULL, TYPE(&stsignedshort), 0, 0};
+static TypeFunc data_005741cc = {TYPEFUNC, 0, NULL, NULL, TYPE(&stunsignedlong), 0, 0};
+static TypeFunc data_005741e8 = {TYPEFUNC, 0, NULL, NULL, TYPE(&void_ptr), 0, 0};
+
 ENode *simplify_unused_enode_values(ENode *e, UInt8 flag)
 {
     switch (e->type) {
@@ -346,19 +350,19 @@ Object *get_or_create_type_name_object(CIRTypeName *entry, Type *ty)
         if (ty) {
             switch (ty->size) {
                 case 2:
-                    obj->type = &data_005741b0;
+                    obj->type = TYPE(&data_005741b0);
                     break;
                 case 4:
-                    obj->type = &data_005741cc;
+                    obj->type = TYPE(&data_005741cc);
                     break;
                 case 8:
-                    obj->type = &data_005741e8;
+                    obj->type = TYPE(&data_005741e8);
                     break;
                 default:
                     CError_FATAL(423);
             }
         } else {
-            obj->type = &data_005741e8;
+            obj->type = TYPE(&data_005741e8);
         }
     }
     return obj;

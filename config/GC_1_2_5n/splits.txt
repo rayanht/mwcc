@@ -323,14 +323,21 @@ src/driver/CLToolExec.c:
 	.text       start:0x00417AB0 end:0x00418350
 	.data       start:0x0054BE38 end:0x0054BEE8
 
+src/driver/StringExtras.c:
+	.text       start:0x00418350 end:0x004183E0
+
 src/driver/CLProj.c:
-	.text       start:0x00418350 end:0x00418CF0
-	.data       start:0x0054BEE8 end:0x0054BF20
+	.text       start:0x004183E0 end:0x00418440
+	.data       start:0x0054BEE8 end:0x0054BF08
+
+src/driver/Generic.c:
+	.text       start:0x00418440 end:0x00419040
+	.data       start:0x0054BF08 end:0x0054BF38
 	.bss        start:0x0057F018 end:0x0057F3B0
 
 src/driver/CLFileOps.cpp:
-	.text       start:0x00418CF0 end:0x0041B140
-	.data       start:0x0054BF20 end:0x0054C120
+	.text       start:0x00419040 end:0x0041B140
+	.data       start:0x0054BF38 end:0x0054C120
 	.bss        start:0x0057F3B0 end:0x0057F3B8
 
 src/driver/CLTarg.c:

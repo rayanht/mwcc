@@ -15,9 +15,6 @@ struct CIRTypeName {
 extern ENode *simplify_unused_enode_values(ENode *e, UInt8 flag);
 extern ENode *expand_compound_assignment(ENode *expr);
 extern Object *get_or_create_type_name_object(CIRTypeName *entry, Type *ty);
-extern Type data_005741b0;
-extern Type data_005741cc;
-extern Type data_005741e8;
 
 #ifdef __cplusplus
 }

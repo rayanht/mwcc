@@ -254,7 +254,6 @@ extern void fn_0048b500(void);
 extern void emit_dwarf_arguments_and_locals(void);
 extern void ObjGen_PPC_EABI_FinalizeOutputBuffers(void);
 extern void fn_0048b3f0(void);
-extern unsigned long data_0055e9e8[2];
 extern SInt32 object_storage_size;
 extern SInt32 data_00580da4;
 struct ObjGenRelocation;

@@ -235,7 +235,13 @@ def resolve_function(symbols, sections, symbol_name, target_address, addresses, 
             following = min((s["value"] for s in symbols.values() if s["section"] == dest["section"]
                              and s["value"] > dest["value"]), default=len(literal))
             text = literal[dest["value"]:following].split(b"\0", 1)[0]
-            own = bool(text) and all(32 <= c < 127 for c in text) and not pe.contains(addresses[dest["name"]], text)
+            if text:
+                own = all(32 <= c < 127 for c in text) and not pe.contains(addresses[dest["name"]], text)
+            else:
+                # (an empty string's only when the bound address does not hold its terminator)
+                own = (not sections[dest["section"] - 1].get("flags", 0) & 0x80
+                       and literal[dest["value"]:dest["value"] + 1] == b"\0"
+                       and not pe.contains(addresses[dest["name"]], b"\0"))
         # (a string can occur more than once: of this object's, the copy the original's own instruction refers to,
         # when the string is there)
         referred = None

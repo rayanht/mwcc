@@ -5,8 +5,8 @@
 #include "compiler/CTemplateNew.h"
 #include "driver/CLAccessPaths.h"
 #include "driver/CLIO.h"
-#include "driver/CLProj.h"
 #include "driver/CLTarg.h"
+#include "driver/Generic.h"
 #include "driver/Memory.h"
 #include <string.h>
 #include <stdio.h>

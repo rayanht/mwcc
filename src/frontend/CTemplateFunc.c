@@ -38,6 +38,14 @@
 
 /* Declarations gathered from the merged files. */
 
+#pragma options align = mac68k
+static Boolean data_005824c8;
+static UInt8 template_argument_depth;
+static SInt32 data_005824ca;
+static UInt8 data_005824ce;
+static char lbl_005824cf[9];
+#pragma options align = reset
+
 #define CE_ASSERT(c, s)                                                                                                \
     do {                                                                                                               \
         if (c)                                                                                                         \
@@ -572,7 +580,6 @@ static inline struct TemplateSpecializationData *InstantiateAccessibleTemplate(O
     }
     return find_or_create_template_specialization(func, frame->slots, flags);
 }
-
 
 Object *select_unique_undominated_match(Object *func, struct MatchLink *funcs, int options)
 {

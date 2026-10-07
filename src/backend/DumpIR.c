@@ -39,6 +39,89 @@
 #include <string.h>
 #include "compiler/ENode.h"
 
+static struct _FILE *data_005811b0;
+static char lbl_005811b4[4];
+static int enode_tree_depth_index;
+
+/* The name of each ENode type. */
+static char *data_00560cb4[75] = {
+    "EPOSTINC",
+    "EPOSTDEC",
+    "EPREINC",
+    "EPREDEC",
+    "EINDIRECT",
+    "EMONMIN",
+    "EBINNOT",
+    "ELOGNOT",
+    "EFORCELOAD",
+    "EMUL",
+    "EMULV",
+    "EDIV",
+    "EMODULO",
+    "EADDV",
+    "ESUBV",
+    "EADD",
+    "ESUB",
+    "ESHL",
+    "ESHR",
+    "ELESS",
+    "EGREATER",
+    "ELESSEQU",
+    "EGREATEREQU",
+    "EEQU",
+    "ENOTEQU",
+    "EAND",
+    "EXOR",
+    "EOR",
+    "ELAND",
+    "ELOR",
+    "EASS",
+    "EMULASS",
+    "EDIVASS",
+    "EMODASS",
+    "EADDASS",
+    "ESUBASS",
+    "ESHLASS",
+    "ESHRASS",
+    "EANDASS",
+    "EXORASS",
+    "EORASS",
+    "ECOMMA",
+    "EPMODULO",
+    "EROTL",
+    "EROTR",
+    "EBCLR",
+    "EBTST",
+    "EBSET",
+    "ETYPCON",
+    "EBITFIELD",
+    "EINTCONST",
+    "EFLOATCONST",
+    "ESTRINGCONST",
+    "ECOND",
+    "EFUNCCALL",
+    "EFUNCCALLP",
+    "EOBJREF",
+    "EMFPOINTER",
+    "ENULLCHECK",
+    "EPRECOMP",
+    "ETEMP",
+    "EARGOBJ",
+    "ELOCOBJ",
+    "ELABEL",
+    "ESETCONST",
+    "ENEWEXCEPTION",
+    "ENEWEXCEPTIONARRAY",
+    "EOBJLIST",
+    "EMEMBER",
+    "ETEMPLDEP",
+    "EINSTRUCTION",
+    "EDEFINE",
+    "EREUSE",
+    "EASSBLK",
+    "EVECTOR128CONST",
+};
+
 void dump_eat_nodes(CException *p)
 {
     char buf[256];
@@ -292,6 +375,9 @@ void format_type(Type *type, char *buf)
             break;
     }
 }
+
+static char lbl_005612f4[] = "\t\t%11s: %s\r\n";
+static char lbl_00561304[] = "\t\t    default: %s\r\n";
 
 static void WriteString(void *file, char *str)
 {

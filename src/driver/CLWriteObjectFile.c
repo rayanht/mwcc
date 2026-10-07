@@ -7,9 +7,9 @@
 #include "driver/CLFileOps.h"
 #include "driver/CLIO.h"
 #include "driver/CLPlugins.h"
-#include "driver/CLProj.h"
 #include "driver/CLTarg.h"
 #include "driver/Files.h"
+#include "driver/Generic.h"
 #include "driver/MacSpecs.h"
 #include "driver/MsDos.h"
 #include <stdlib.h>
