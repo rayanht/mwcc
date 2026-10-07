@@ -147,7 +147,6 @@ typedef struct AccessPaths AccessPaths;
 typedef struct DropinFileRecord DropinFileRecord;
 typedef struct ArgMatch ArgMatch;
 typedef struct ArgumentContext ArgumentContext;
-typedef struct AsmEntry AsmEntry;
 typedef struct AsmOp AsmOp;
 typedef struct AsmOperandPattern AsmOperandPattern;
 typedef struct AsmOut AsmOut;

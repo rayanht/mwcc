@@ -5,10 +5,10 @@
 #include "driver/ClientGlue.h"
 #include "driver/Help.h"
 #include "driver/Parameter.h"
+#include "driver/ParserFace.h"
 #include "driver/ParserGlue-eabi-ppc-cc.h"
+#include "driver/Projects.h"
 #include "driver/Targets.h"
-#include "driver/ToolHelpers-cc.h"
-#include "driver/ToolHelpers.h"
 #include "driver/Utils.h"
 #include <string.h>
 #include <stdio.h>

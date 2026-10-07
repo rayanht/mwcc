@@ -152,24 +152,14 @@ extern void InitExpr_Register(ENode *expr, Object *cls);
 extern ENode *append_cleannode_dtors(ENode *left, struct CleanNode *list);
 extern void CFunc_GenerateSingleExprFunc(Object *func, ENode *expr);
 extern UInt32 statement_sourceoffset;
-extern void *PTR_00580870;
-extern struct SavedGlobalValues *saved_global_values_tail;
 extern struct Statement *PTR_00587644;
 extern struct CLabel *clabels;
 extern struct CException *UINT_00587fc4;
-extern UInt16 data_00580878;
-extern struct Object *localstatic_init_guard;
-extern unsigned char data_00580882;
-extern struct ENode *deferred_expression;
-extern UInt8 data_0058088c;
-extern SInt16 local_name_counter;
-extern struct CleanNode *data_00580890;
 extern SInt32 current_statement_number;
 extern struct HashNameNode *blank_argument_name;
 extern struct CtorInit *ctor_initializers;
 extern struct TypeClass *data_00588040;
 extern Object *data_00588238;
-extern struct CLabel *data_0058087e;
 extern ENode *create_temp_node2(Type *type);
 extern ENode *create_temp_node(Type *type);
 extern Object *create_temp_object(Type *type);
@@ -187,11 +177,20 @@ extern Boolean check_default_argument_reference(int value, Object *object);
 extern void parse_old_style_parameter_names(DeclInfo *scope);
 extern void fn_0047ca70(Type **pt);
 extern void CFunc_SetupLocalVarInfo(Object *object);
-extern struct FuncArg *default_arg;
 extern unsigned char in_parameter_type_list;
 struct CLabel;
 struct Statement;
 extern FOI function_fileinfo;
+
+/* fn_0047cb60 allocates 0xe bytes with CompilerTools_AllocatePool for this saved-state list node. */
+struct SavedGlobalValues {
+    struct SavedGlobalValues *next;
+    struct CException *savedException;
+    struct NameSpace *savedNameSpace;
+    UInt16 index;
+};
+extern void PPCError_RestoreGlobalValues(const struct SavedGlobalValues *values);
+extern struct SavedGlobalValues *fn_0047cb60(void);
 
 #ifdef __cplusplus
 }

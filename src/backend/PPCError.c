@@ -42,35 +42,6 @@ typedef void (*PCodeGenFn)(ENode *node, SInt32 a, SInt32 b, Operand *dst);
 
 /* Declarations gathered from the merged files. */
 typedef char *va_list;
-void PPCError_RestoreGlobalValues(const struct SavedGlobalValues *values)
-{
-    currentNameSpace = (NameSpace *)values->savedNameSpace;
-    UINT_00587fc4 = (struct CException *)values->savedException;
-}
-
-struct SavedGlobalValues *fn_0047cb60(void)
-{
-    SavedGlobalValues *node;
-    SavedGlobalValues *tail;
-    struct NameSpace *obj;
-
-    node = (SavedGlobalValues *)CompilerTools_AllocatePool(0xe);
-    if (PTR_00580870 != NULL) {
-        tail = saved_global_values_tail;
-        tail->next = node;
-        saved_global_values_tail = node;
-    } else {
-        saved_global_values_tail = PTR_00580870 = node;
-    }
-    node->index = data_00580878++;
-    node->savedNameSpace = currentNameSpace;
-    node->savedException = UINT_00587fc4;
-    obj = CScope_NewListNameSpace(NULL, 0);
-    obj->parent = currentNameSpace;
-    currentNameSpace = obj;
-    return node;
-}
-
 void PPCError_FatalError(short diagnostic, ...)
 {
     char buffer[256];

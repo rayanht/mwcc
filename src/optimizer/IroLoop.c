@@ -55,6 +55,7 @@ static char lbl_0058066B[9];
 static signed int data_00580674;
 static struct IRONode *loop_header;
 static struct IROLinear *loop_candidate_last;
+static char lbl_00580680[32];
 
 #define GMARKED(id)                                                                                                    \
     (((id) >> 5) < IRO_LoopScratchVector_005880dc->size &&                                                             \
@@ -2330,6 +2331,22 @@ void IRO_LoopUnroller(void)
 }
 
 /* Analyses the loop whose test ends LOOP. */
+static char lbl_00554480[] = "\nVector StatementNum = %d Int Num= %d Partition = %d";
+static char lbl_005544b8[] = "<ST_OPS_PASS>";
+static char lbl_005544c8[] = "<ST_OPS_FAIL>";
+static char lbl_005544d8[] = "<ST_SELF_DEP>";
+static char lbl_005544e8[] = "<ST_IS_DEP>";
+static char lbl_005544f4[] = "<ST_VEC_PART>";
+static char lbl_00554504[] = "\n";
+static char lbl_00554508[] = "Dependency List:";
+static char lbl_0055451c[] = "%d:";
+static char lbl_00554520[] = "Weak Dependency List:";
+static char lbl_00554538[] = "Store at %d and Load at %d weak dependence\n";
+static char lbl_00554564[] = "Store at %d and Load at %d Cannot Vectorize\n";
+static char lbl_00554594[] = "Store at %d and Load at %d Can Vectorize\n";
+static char lbl_005545c0[] = "Store at %d and Store at %d Cannot Vectorize\n";
+static char lbl_005545f0[] = "Store at %d and Store at %d Can Vectorize\n";
+
 IROLoop *fn_0045faa0(IRONode *loop)
 {
     IROLinear *condition;
@@ -2885,6 +2902,8 @@ void reduce_strength_and_move_loop_invariants(IRONode *func)
     }
 }
 
+static char lbl_00554724[] = "IRO_LoopVectorizer:Found loop with header %d\n";
+
 void find_induction_variables(void)
 {
     IROLinear *rhs;
@@ -3146,6 +3165,8 @@ void fn_00460f70(void)
         }
     }
 }
+
+static char lbl_005547c0[] = "Subable Expression is %d\n";
 
 void IRO_FindLoops(void)
 {

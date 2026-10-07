@@ -2,14 +2,16 @@
 #pragma scheduling off
 #include "compiler/common.h"
 #include "driver/ParserGlue-eabi-ppc-cc.h"
-#include "driver/TargetWarningHelpers-ppc-cc.h"
 #include "driver/Memory.h"
 #include "driver/Option.h"
 #include "driver/ParserHelpers-cc.h"
 #include "driver/ParserHelpers.h"
+#include "driver/Projects.h"
 #include "driver/StringUtils.h"
+#include "driver/TargetWarningHelpers-ppc-cc.h"
 #include "driver/Targets.h"
 #include "driver/ToolHelpers-cc.h"
+#include "driver/ToolHelpers.h"
 unsigned int fn_00405670(void)
 {
     data_00537aa2 = 1U;

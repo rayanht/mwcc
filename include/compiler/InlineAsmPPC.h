@@ -18,19 +18,9 @@ struct PCodeOpcodeDescriptor {
     unsigned char operand_count;
     unsigned char rank; /* 0x09: select_ready_coloring_node compares opcode scheduling ranks at 0x5654b9 */
     unsigned short flags;
-    unsigned int encoding;
+    SInt32 encoding;
 };
 #pragma pack(pop)
-#pragma options align = mac68k
-struct AsmEntry {
-    UInt8 operand_count;  /* 0x00: InlineAsmPPC_GenerateAsmInstruction passes count to create_pcode_asm_instruction */
-    UInt8 rank;           /* 0x01: select_ready_coloring_node compares opcode scheduling ranks */
-    UInt16 flags;         /* 0x02: create_pcode_asm_instruction copies descriptor flags */
-    SInt32 encoding;      /* 0x04: InlineAsmPPC_GenerateAsmInstruction extracts the primary opcode */
-    char *mnemonic;       /* 0x08: InlineAsmPPC_GetOpcodeMnemonic reads mnemonic strings */
-    char *operand_format; /* 0x0c: parse_asm_instruction_operands uses opcode operand formats */
-};
-#pragma options align = reset
 #pragma options align = mac68k
 struct AsmOperand {
     struct HashNameNode *name;

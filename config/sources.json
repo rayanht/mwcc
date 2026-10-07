@@ -194,8 +194,7 @@
     ],
     "include_dirs": [
       "src/backend"
-    ],
-    "status": "NonMatching"
+    ]
   },
   "src/backend/InstrSelection.c": {
     "compiler": "pro53",
@@ -1160,10 +1159,39 @@
     ],
     "include_dirs": [
       "src/driver"
+    ]
+  },
+  "src/driver/ToolHelpers-cc.c": {
+    "compiler": "pro53",
+    "flags": [
+      "-O1",
+      "-opt",
+      "intrinsics",
+      "-sym",
+      "off",
+      "-Cpp_exceptions",
+      "off"
     ],
-    "status": "NonMatching"
+    "include_dirs": [
+      "src/driver"
+    ]
   },
   "src/driver/ParserHelpers.c": {
+    "compiler": "pro53",
+    "flags": [
+      "-O1",
+      "-opt",
+      "intrinsics",
+      "-sym",
+      "off",
+      "-Cpp_exceptions",
+      "off"
+    ],
+    "include_dirs": [
+      "src/driver"
+    ]
+  },
+  "src/driver/ToolHelpers.c": {
     "compiler": "pro53",
     "flags": [
       "-O1",
@@ -1279,7 +1307,7 @@
     ],
     "status": "NonMatching"
   },
-  "src/driver/ToolHelpers-cc.c": {
+  "src/driver/Projects.c": {
     "compiler": "pro53",
     "flags": [
       "-O1",
@@ -1294,7 +1322,7 @@
       "src/driver"
     ]
   },
-  "src/driver/ToolHelpers.c": {
+  "src/driver/ParserFace.c": {
     "compiler": "pro53",
     "flags": [
       "-O1",
@@ -1539,8 +1567,7 @@
     ],
     "include_dirs": [
       "src/frontend"
-    ],
-    "status": "NonMatching"
+    ]
   },
   "src/frontend/CInit.c": {
     "compiler": "pro53",
@@ -1589,8 +1616,7 @@
     ],
     "include_dirs": [
       "src/frontend"
-    ],
-    "status": "NonMatching"
+    ]
   },
   "src/frontend/CMangler.c": {
     "compiler": "pro53",
@@ -1964,8 +1990,7 @@
     ],
     "include_dirs": [
       "src/msl"
-    ],
-    "status": "NonMatching"
+    ]
   },
   "src/msl/arith.c": {
     "compiler": "pro5",
@@ -2887,8 +2912,7 @@
     ],
     "include_dirs": [
       "src/optimizer"
-    ],
-    "status": "NonMatching"
+    ]
   },
   "src/optimizer/GlobalOptimizer.c": {
     "compiler": "pro53",
@@ -3040,8 +3064,7 @@
     "include_dirs": [
       "src/optimizer",
       "include"
-    ],
-    "status": "NonMatching"
+    ]
   },
   "src/optimizer/IroPropagate.c": {
     "compiler": "pro53",

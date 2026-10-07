@@ -24,17 +24,7 @@ extern Boolean data_00587e20;
 extern void ParserHelpers_AppendText(struct StorageHandle **hp, char *text);
 extern int fn_0040cff6(void);
 extern int fn_0040d002(void);
-extern unsigned int fn_0040d012(unsigned int reportError);
-extern SInt16 data_00537766;
-extern UInt8 data_00587e1c;
-extern int fn_0040d0eb(void);
-extern UInt16 data_0053776c;
-extern int parse_stage_settings(int unused1, unsigned char *opt, int unused2, int flags);
-extern short data_00537764;
 extern short data_0054a0b8;
-extern int fn_0040d283(int unused, char *first, char *second);
-extern int append_define_directive(char *name, char *value);
-extern Boolean targets_value_null_or_zero;
 
 #ifdef __cplusplus
 }

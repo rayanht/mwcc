@@ -53,6 +53,20 @@
 
 #include "compiler/Types.h"
 
+#pragma options align = mac68k
+static void *PTR_00580870;
+static struct SavedGlobalValues *saved_global_values_tail;
+static UInt16 data_00580878;
+static struct Object *localstatic_init_guard;
+static struct CLabel *data_0058087e;
+static unsigned char data_00580882;
+static struct ENode *deferred_expression;
+static struct FuncArg *default_arg;
+static UInt8 data_0058088c;
+static SInt16 local_name_counter;
+static struct CleanNode *data_00580890;
+#pragma options align = reset
+
 /* Declarations gathered from the merged files. */
 enum FlagVal { FLAGVAL_FALSE, FLAGVAL_TRUE };
 
@@ -62,7 +76,6 @@ typedef enum { CFUNC_UNUSED_A, CFUNC_UNUSED_B } CFuncUnused;
 
 /* Function label resolution records. */
 
-static void (*const keep_fn)(ENode *) = check_function_result_automatic_variable;
 static void SetLong(CInt64 *pN, long n)
 {
     pN->lo = n;
@@ -1922,7 +1935,8 @@ void declare_local_object(DeclInfo *declaration, BufferedToken *declarationToken
         }
         if (found != NULL) {
             if (iscpp_typeequal(declaration->dtype, found->type) == 0 ||
-                (declaration->qual & (Q_CV | Q_PASCAL | Q_IMPLICIT_WEAK | Q_WEAK | Q_ALIGNED_MASK)) != (found->qual & (Q_CV | Q_PASCAL | Q_IMPLICIT_WEAK | Q_WEAK | Q_ALIGNED_MASK)))
+                (declaration->qual & (Q_CV | Q_PASCAL | Q_IMPLICIT_WEAK | Q_WEAK | Q_ALIGNED_MASK)) !=
+                    (found->qual & (Q_CV | Q_PASCAL | Q_IMPLICIT_WEAK | Q_WEAK | Q_ALIGNED_MASK)))
                 CError_ReportError(ERR_IDENTIFIER_REDECLARED_WAS_DECLARED_AS_NOW, declaration->name->name, found->type,
                                    found->qual, declaration->dtype, declaration->qual);
         } else {
@@ -1952,7 +1966,8 @@ void declare_local_object(DeclInfo *declaration, BufferedToken *declarationToken
                 CError_ReportError(ERR_ILLEGAL_INITIALIZATION);
             if (CDecl_CheckObjectType(declaration->dtype) == 0)
                 break;
-            CError_ReportIllegalFlags(declaration->qual & ~(Q_CV | Q_PASCAL | Q_IMPLICIT_WEAK | Q_WEAK | Q_ALIGNED_MASK));
+            CError_ReportIllegalFlags(declaration->qual &
+                                      ~(Q_CV | Q_PASCAL | Q_IMPLICIT_WEAK | Q_WEAK | Q_ALIGNED_MASK));
             CParser_NewAliasObject(object, 0);
             object->nspace = registration_context;
             object->datatype = DDATA;
@@ -3287,4 +3302,33 @@ void CFunc_SetupLocalVarInfo(Object *object)
     }
     if (object->type != NULL && is_volatile_object(object) != 0U)
         object->u.var.info->noregister = 1;
+}
+
+void PPCError_RestoreGlobalValues(const struct SavedGlobalValues *values)
+{
+    currentNameSpace = (NameSpace *)values->savedNameSpace;
+    UINT_00587fc4 = (struct CException *)values->savedException;
+}
+
+struct SavedGlobalValues *fn_0047cb60(void)
+{
+    SavedGlobalValues *node;
+    SavedGlobalValues *tail;
+    struct NameSpace *obj;
+
+    node = (SavedGlobalValues *)CompilerTools_AllocatePool(0xe);
+    if (PTR_00580870 != NULL) {
+        tail = saved_global_values_tail;
+        tail->next = node;
+        saved_global_values_tail = node;
+    } else {
+        saved_global_values_tail = PTR_00580870 = node;
+    }
+    node->index = data_00580878++;
+    node->savedNameSpace = currentNameSpace;
+    node->savedException = UINT_00587fc4;
+    obj = CScope_NewListNameSpace(NULL, 0);
+    obj->parent = currentNameSpace;
+    currentNameSpace = obj;
+    return node;
 }

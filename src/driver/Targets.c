@@ -17,9 +17,9 @@
 #include "driver/Memory.h"
 #include "driver/MsDos.h"
 #include "driver/Option.h"
+#include "driver/ParserFace.h"
+#include "driver/Projects.h"
 #include "driver/TargetOptimizer-ppc-eabi.h"
-#include "driver/ToolHelpers-cc.h"
-#include "driver/ToolHelpers.h"
 #include <stdio.h>
 #include <setjmp.h>
 #include <stdio.h>

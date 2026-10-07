@@ -3,6 +3,9 @@
 #include "compiler/CInt64.h"
 #include "compiler/IroLoop.h"
 #include "compiler/IroRangePropagation.h"
+
+static float lbl_00555498 = 1.0f;
+
 static CInt64 mask_xor(CInt64 v, CInt64 m)
 {
     v.hi ^= m.hi;

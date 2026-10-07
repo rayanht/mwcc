@@ -203,7 +203,7 @@ src/driver/CLMain.c:
 	.data       start:0x00541B18 end:0x00543380
 	.bss        start:0x0057D920 end:0x0057D938
 
-src/driver/ToolHelpers.c:
+src/driver/ParserFace.c:
 	.text       start:0x0040B6EB end:0x0040BDA0 align:1
 	.data       start:0x00543380 end:0x005434A8
 
@@ -229,17 +229,25 @@ src/msl/file_io.c:
 	.tls        start:0x0057C000 end:0x0057C200 rename:.tls$
 
 src/driver/ParserHelpers.c:
-	.text       start:0x0040C8B0 end:0x0040D360 align:1
-	.data       start:0x0054A0B8 end:0x0054A180
+	.text       start:0x0040C8B0 end:0x0040D012 align:1
+	.data       start:0x0054A0B8 end:0x0054A0F8
 	.bss        start:0x0057DA58 end:0x0057DB60
 
+src/driver/ToolHelpers.c:
+	.text       start:0x0040D012 end:0x0040D283 align:1
+	.data       start:0x0054A0F8 end:0x0054A128
+
 src/driver/ParserHelpers-cc.c:
-	.text       start:0x0040D360 end:0x0040D8C0 align:1
-	.data       start:0x0054A180 end:0x0054A2C8
+	.text       start:0x0040D283 end:0x0040D5BF align:1
+	.data       start:0x0054A128 end:0x0054A288
+
+src/driver/ToolHelpers-cc.c:
+	.text       start:0x0040D5BF end:0x0040D8C0 align:1
+	.data       start:0x0054A288 end:0x0054A2F8
 
 src/driver/OptimizerHelpers.c:
 	.text       start:0x0040D8C0 end:0x0040DE20
-	.data       start:0x0054A2C8 end:0x0054A5B0
+	.data       start:0x0054A2F8 end:0x0054A5B0
 
 src/driver/WarningHelpers.c:
 	.text       start:0x0040DE20 end:0x0040E010
@@ -249,7 +257,7 @@ src/driver/TargetWarningHelpers-ppc-cc.c:
 	.text       start:0x0040E010 end:0x0040E25F
 	.data       start:0x0054A680 end:0x0054A858
 
-src/driver/ToolHelpers-cc.c:
+src/driver/Projects.c:
 	.text       start:0x0040E25F end:0x0040E8A0 align:1
 	.data       start:0x0054A858 end:0x0054AA30
 
@@ -589,15 +597,15 @@ src/frontend/CExpr2.c:
 
 src/frontend/CInt64.c:
 	.text       start:0x00474E30 end:0x00476100
-	.data       start:0x00555498 end:0x005554F8
+	.data       start:0x00555498 end:0x00555500
 
 src/frontend/CFunc.c:
-	.text       start:0x00476100 end:0x0047CB40
-	.data       start:0x005554F8 end:0x005557B8
+	.text       start:0x00476100 end:0x0047CBD0
+	.data       start:0x00555500 end:0x005557B8
 	.bss        start:0x00580870 end:0x00580898
 
 src/backend/PPCError.c:
-	.text       start:0x0047CB40 end:0x0047D000
+	.text       start:0x0047CBD0 end:0x0047D000
 	.data       start:0x005557B8 end:0x005557C8
 
 src/backend/Intrinsics.c:

@@ -32,12 +32,12 @@ struct IntegerSequenceResult {
 };
 #pragma options align = mac68k
 struct PanelEntry {
-    UInt32 type;            /* 0x00: ToolHelpers-cc.c selects compiler, parser and driver tool versions */
-    UInt32 creator;         /* 0x04: ToolHelpers-cc.c matches driverTool creator */
-    UInt32 flags;           /* 0x08: ToolHelpers.c selects linker flags */
-    UInt32 version;         /* 0x0c: ToolHelpers-cc.c passes to format_version */
+    UInt32 type;            /* 0x00: Projects.c selects compiler, parser and driver tool versions */
+    UInt32 creator;         /* 0x04: Projects.c matches driverTool creator */
+    UInt32 flags;           /* 0x08: ParserFace.c selects linker flags */
+    UInt32 version;         /* 0x0c: Projects.c passes to format_version */
     UInt8 enabled;          /* 0x10: initialize_cmdline_environment tests panel availability */
-    UInt8 alignmentPadding; /* 0x11: ToolHelpers.c panel array stride includes unused trailing alignment byte */
+    UInt8 alignmentPadding; /* 0x11: ParserFace.c panel array stride includes unused trailing alignment byte */
 };
 #pragma options align = reset
 struct ValuePairState {

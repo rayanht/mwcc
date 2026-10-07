@@ -9,17 +9,42 @@
 #include "driver/MsDos.h"
 #include "driver/Option.h"
 #include "driver/Parameter.h"
+#include "driver/ParserFace.h"
 #include "driver/ParserGlue-eabi-ppc-cc.h"
 #include "driver/ParserHelpers.h"
+#include "driver/Projects.h"
 #include "driver/Targets.h"
-#include "driver/ToolHelpers-cc.h"
-#include "driver/ToolHelpers.h"
 #include <stdio.h>
 #include <setjmp.h>
 #include <string.h>
 #include "driver/CLDropinCallbacks_V10.h"
 #define OPTION_ASSERT(cond, line) ((cond) ? (void)0 : CLIO_ReportAssertionFailure(#cond, "ParserHelpers-cc.c", line))
 #define PR_UNSET 0
+int fn_0040d283(int unused, char *first, char *second)
+{
+    ParserHelpers_AppendText(&directive_storage, first);
+    if (second != NULL) {
+        ParserHelpers_AppendText(&directive_storage, second);
+    }
+    return 1;
+}
+
+int append_define_directive(char *name, char *value)
+{
+    char buf[0x400];
+    if (driverTool[1] == 0x632b2b20 || driverTool[1] == 0x41736d20)
+        sprintf(buf, "#define %s %s\n", name, value ? value : "1");
+    else if (driverTool[1] == 0x70617363)
+        sprintf(buf, "{$definec %s %s}\n", name, value ? value : "1");
+    else {
+        sprintf(buf, "Option '-D|d' is not supported with this plugin");
+        fn_0040ecb1(0x1c, buf);
+        return 0;
+    }
+    ParserHelpers_AppendText(&directive_storage, buf);
+    return 1;
+}
+
 int append_undef_directive(char *option, int unused, char *symbol)
 {
     char buf[300];
@@ -93,105 +118,4 @@ int ParserHelpers_cc_EmitPragmas(Pragma *pragmas)
         }
     }
     return 1;
-}
-
-int set_output_path(char *name, int unused, char *path)
-{
-    OSSpec spec1;
-    Boolean isdir1;
-    OSSpec spec2;
-    Boolean isdir2;
-    CWFileSpec info;
-    long count;
-    ExportedRecord tinfo;
-    int err;
-    if (!path)
-        path = name;
-    if (DAT_00537762 == 3 || (DAT_00537762 == 0 && driverTool[0] == 0x4c696e6b)) {
-        if (data_0058851d) {
-            fn_0040ecb1(0x29, path);
-            return 0;
-        }
-        data_0058851d = 1U;
-        if (driverTool[0] == 0x436f6d70) {
-            strncpy(&output_path, path, 0x100);
-            return 1;
-        }
-        if ((err = make_osspec_from_path(path, &spec2, &isdir2)) != 0) {
-            Targets_ReportOperatingSystemError(0x40, err, path);
-            return 0;
-        }
-        if (isdir2)
-            MsDos_CopyStringToBuffer(spec2.name, &output_path, 0x104);
-        ToolHelpers_cc_CallFileInfoForDirectory(&spec2);
-        return 1;
-    }
-    if ((err = make_osspec_from_path(path, &spec1, &isdir1)) != 0) {
-        Targets_ReportOperatingSystemError(0x40, err, path);
-        return 0;
-    }
-    if (!err && !isdir1) {
-        if (output_path_set) {
-            fn_0040ecb1(0x3b, path);
-            return 0;
-        }
-        output_path_set = 1;
-        MacSpecs_MakeCWFileSpecFromString((char *)&spec1, &info);
-        if ((err = CWParserPluginsPrivate_CallFileInfo(pluginPrivateContext, &info)) != 0) {
-            DAT_00543380 = "CWParserSetOutputFileDirectory";
-            longjmp(plugin_request_jmp_buf, err);
-        }
-        return 1;
-    } else {
-        if (data_00587d04[0]) {
-            fn_0040ecb1(0x29, path);
-            return 0;
-        }
-        strncpy(data_00587d04, path, 0x100);
-        if (data_00537764 == 8)
-            return 1;
-        if (data_00588530 > 1)
-            return 1;
-        CWPluginsPrivate_GetNumFiles(pluginPrivateContext, &count);
-        while (count-- > 0) {
-            if (!CWPluginsPrivate_InvokeExportedRecordCallback(pluginPrivateContext, count, 0, &tinfo) &&
-                tinfo.fileType == 0x54455854) {
-                data_00588530 = 1;
-                break;
-            }
-        }
-        if (!data_00588530) {
-            data_00588530 = 2;
-            return 1;
-        }
-        ToolHelpers_cc_SetFileOutputName(count, data_0054a0b8, data_00587d04);
-        data_00587d04[0] = 0;
-        return 1;
-    }
-}
-
-int log_linker_option(const char *option)
-{
-    Targets_ForwardVarArgsAndLongjmp("Calling linker option '%s'\n", option);
-    return 0;
-}
-
-void fn_0040d822(void)
-{
-    if (data_00587d04[0]) {
-        int n = ToolHelpers_cc_GetNumFiles();
-        if (data_00537764 == 8)
-            strcpy(data_00537848, data_00587d04);
-        else if (data_00588530 == 2) {
-            if (data_00587e10 > 0 || data_00587e14 > 0)
-                fn_0040ecb1(0x29, data_00587d04);
-            else
-                fn_0040ecb1(0x2a, data_00587d04);
-        } else
-            ToolHelpers_cc_SetFileOutputName(n - 1, data_0054a0b8, data_00587d04);
-        data_00587d04[0] = 0;
-    }
-    if (output_path_set) {
-        data_00537845 = 0;
-    }
 }

@@ -41,6 +41,8 @@
 #include "compiler/StackFrameEABI.h"
 #include "compiler/StructMoves.h"
 #include "compiler/Switch.h"
+
+static SInt32 lbl_00574168 = 8;
 void FunctionCalls_PushObjectReferenceEntry(struct ObjectReferenceEntry *entry, void *value, Object *object)
 {
     if (value) {

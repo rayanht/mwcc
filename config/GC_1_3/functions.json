@@ -1560,13 +1560,13 @@
     "name": "register_option_lists",
     "address": "0x0040ba62",
     "size": 23,
-    "source": "src/driver/ToolHelpers.c"
+    "source": "src/driver/ParserFace.c"
   },
   {
     "name": "run_tool_checks",
     "address": "0x0040ba79",
     "size": 411,
-    "source": "src/driver/ToolHelpers.c"
+    "source": "src/driver/ParserFace.c"
   },
   {
     "name": "fn_0040bc14",
@@ -1577,13 +1577,13 @@
     "name": "fn_0040ba99",
     "address": "0x0040bcad",
     "size": 75,
-    "source": "src/driver/ToolHelpers.c"
+    "source": "src/driver/ParserFace.c"
   },
   {
     "name": "set_enabled_link_parser_entries",
     "address": "0x0040bcf8",
     "size": 344,
-    "source": "src/driver/ToolHelpers.c"
+    "source": "src/driver/ParserFace.c"
   },
   {
     "name": "fn_0040be50",
@@ -1614,19 +1614,19 @@
     "name": "match_tool",
     "address": "0x0040bead",
     "size": 38,
-    "source": "src/driver/ToolHelpers.c"
+    "source": "src/driver/ParserFace.c"
   },
   {
     "name": "store_boolean_result",
     "address": "0x0040bed3",
     "size": 28,
-    "source": "src/driver/ToolHelpers.c"
+    "source": "src/driver/ParserFace.c"
   },
   {
     "name": "dispatch_plugin_request",
     "address": "0x0040beef",
     "size": 200,
-    "source": "src/driver/ToolHelpers.c"
+    "source": "src/driver/ParserFace.c"
   },
   {
     "name": "fn_0040bfc0",
@@ -1969,7 +1969,7 @@
     "name": "fn_0040d012",
     "address": "0x0040d4c5",
     "size": 214,
-    "source": "src/driver/ParserHelpers.c"
+    "source": "src/driver/ToolHelpers.c"
   },
   {
     "name": "fn_0040d59b",
@@ -1980,13 +1980,13 @@
     "name": "parse_stage_settings",
     "address": "0x0040d5c7",
     "size": 352,
-    "source": "src/driver/ParserHelpers.c"
+    "source": "src/driver/ToolHelpers.c"
   },
   {
     "name": "fn_0040d283",
     "address": "0x0040d727",
     "size": 43,
-    "source": "src/driver/ParserHelpers.c"
+    "source": "src/driver/ParserHelpers-cc.c"
   },
   {
     "name": "fn_0040d752",
@@ -2059,7 +2059,7 @@
     "name": "ToolHelpers_cc_CallValuePairCallback",
     "address": "0x0040e607",
     "size": 70,
-    "source": "src/driver/ToolHelpers-cc.c"
+    "source": "src/driver/Projects.c"
   },
   {
     "name": "fn_0040e64d",
@@ -2070,19 +2070,19 @@
     "name": "ToolHelpers_cc_GetNumFiles",
     "address": "0x0040e85d",
     "size": 27,
-    "source": "src/driver/ToolHelpers-cc.c"
+    "source": "src/driver/Projects.c"
   },
   {
     "name": "ToolHelpers_cc_SetFileOutputName",
     "address": "0x0040e878",
     "size": 75,
-    "source": "src/driver/ToolHelpers-cc.c"
+    "source": "src/driver/Projects.c"
   },
   {
     "name": "ToolHelpers_cc_AddProjectEntry",
     "address": "0x0040e8c3",
     "size": 321,
-    "source": "src/driver/ToolHelpers-cc.c"
+    "source": "src/driver/Projects.c"
   },
   {
     "name": "fn_0040ea04",
@@ -2098,7 +2098,7 @@
     "name": "ToolHelpers_cc_PassVirtualFileValuePair",
     "address": "0x0040eb60",
     "size": 93,
-    "source": "src/driver/ToolHelpers-cc.c"
+    "source": "src/driver/Projects.c"
   },
   {
     "name": "fn_0040ebbd",
@@ -14523,7 +14523,7 @@
     "name": "fn_0047cb60",
     "address": "0x004f4af0",
     "size": 109,
-    "source": "src/backend/PPCError.c"
+    "source": "src/frontend/CFunc.c"
   },
   {
     "name": "fn_004f4b60",

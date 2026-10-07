@@ -6,10 +6,10 @@
 #include "compiler/win32.h"
 #include "driver/Memory.h"
 #include "driver/Option.h"
+#include "driver/Projects.h"
 #include "driver/StringUtils.h"
 #include "driver/TargetOptimizer-ppc-eabi.h"
 #include "driver/Targets.h"
-#include "driver/ToolHelpers-cc.h"
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>

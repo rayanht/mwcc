@@ -9,10 +9,10 @@
 #include "driver/MacFileTypes.h"
 #include "driver/MsDos.h"
 #include "driver/Option.h"
+#include "driver/ParserFace.h"
 #include "driver/ParserGlue-eabi-ppc-cc.h"
 #include "driver/StringUtils.h"
 #include "driver/Targets.h"
-#include "driver/ToolHelpers.h"
 #include "driver/Utils.h"
 #include <string.h>
 

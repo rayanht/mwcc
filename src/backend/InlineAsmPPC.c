@@ -400,11 +400,6 @@ const char *InlineAsmPPC_GetOpcodeMnemonic(struct ParsedAsmInstruction *instruct
     return gPCodeOpcodeDescriptors[instruction->opcode].mnemonic;
 }
 
-AsmEntry data_005654b8[] = {{0x01, 0x00, 0xa004, 0x48000000, (char *)0x005671f4, (char *)0x005671f7},
-                            {0x01, 0x00, 0xe020, 0x48000001, (char *)0x005671fb, (char *)0x005671fe},
-                            {0x04, 0x00, 0xa004, 0x40000000, (char *)0x00567206, (char *)0x0056720b},
-                            {0x03, 0x00, 0x2020, 0x4c000020, (char *)0x0056720d, (char *)0x0056720b}};
-
 void InlineAsmPPC_GenerateAsmInstruction(Statement *o)
 {
     UInt32 op;
@@ -413,7 +408,7 @@ void InlineAsmPPC_GenerateAsmInstruction(Statement *o)
     PCodeLabel *found;
     PCodeLabel *r;
 
-    instr = create_pcode_asm_instruction(q, data_005654b8[q->opcode].operand_count, inlineAsmMode);
+    instr = create_pcode_asm_instruction(q, gPCodeOpcodeDescriptors[q->opcode].operand_count, inlineAsmMode);
     PCode_AppendInstruction(gCurrentBlock, instr);
     Operands_AllocateGPR(0x400);
 
@@ -452,7 +447,7 @@ void InlineAsmPPC_GenerateAsmInstruction(Statement *o)
         Operands_AllocateGPR(0x200000);
     }
 
-    op = data_005654b8[instr->opcode].encoding >> 26;
+    op = gPCodeOpcodeDescriptors[instr->opcode].encoding >> 26;
     if (op == 0x10) {
         found = NULL;
         r = PCode_NewLabel();
@@ -1172,6 +1167,12 @@ void InlineAsmPPC_Initialize(void)
     if (copts.altivecModel != 0U)
         data_00587128 |= 0x40000000U;
 }
+
+static char lbl_00554a64[] = "bso";
+static char lbl_00554a68[] = "fcmpo";
+static char lbl_00554a70[] = "eieio";
+static char lbl_00554a78[] = "vslo";
+static char lbl_00554a80[] = "vsro";
 
 static inline int recovery_inline_eval(int arg)
 {

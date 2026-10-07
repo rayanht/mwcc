@@ -3,7 +3,7 @@
 #include "driver/CLMain.h"
 #include "driver/CLPlugins.h"
 #include "driver/ClientGlue.h"
-#include "driver/ToolHelpers.h"
+#include "driver/ParserFace.h"
 
 static void *PTR_fn_005366e8[9] = {
     (void *)dispatch_plugin_request,
