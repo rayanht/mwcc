@@ -150,6 +150,8 @@ def read_object(path):
         flags = struct.unpack_from("<I", data, off + 36)[0]
         sections.append(
             dict(
+                name=data[off:off + 8].rstrip(b"\0").decode("latin-1"),
+                flags=flags,
                 code=bool(flags & 0x20),
                 # (an uninitialized-data section has no contents, whatever its raw data pointer says: Pro 5 points it
                 # at the next section's)
@@ -344,6 +346,7 @@ def resolve_function(symbols, sections, symbol_name, target_address, addresses, 
             dict(
                 offset=local,
                 symbol=dest["name"],
+                index=index,
                 address=address,
                 kind=kind,
                 addend=addend,

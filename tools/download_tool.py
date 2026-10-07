@@ -6,8 +6,11 @@
   compilers     decomp.dev's compiler archive, with the original executables (OUTPUT: a stamp in the extracted tree)
   pro4, pro5, pro53, pro6
                 the CodeWarrior Windows/x86 compilers the sources build with (OUTPUT: mwcc.exe)
+  mwld          the CodeWarrior Windows/x86 linker of the Pro 5.3 updater, which links the executable
+                (OUTPUT: mwld.exe)
   lib           the MSL C library and runtime sources of CodeWarrior Pro 5 and the runtime sources of its 5.3
-                updater, which src/msl and src/runtime build (OUTPUT: lib/ok)
+                updater, which src/msl and src/runtime build, and the Win32 import library the executable links
+                (OUTPUT: lib/ok)
 """
 import io
 import json
@@ -177,10 +180,10 @@ def pro53_updater(root, files=(), flatten=False):
     return root / "files/Win_CC++_-_FU2"
 
 
-def pro53():
-    """mwcc.exe of the Pro 5.3 updater."""
+def pro53(name):
+    """A command line tool of the Pro 5.3 updater."""
     with tempfile.TemporaryDirectory() as temporary:
-        return (pro53_updater(Path(temporary), ["mwcc.exe"], flatten=True) / "mwcc.exe").read_bytes()
+        return (pro53_updater(Path(temporary), [name], flatten=True) / name).read_bytes()
 
 
 # lib/ from the Pro 5 tools archive: (directory, archive directory, files: all when None)
@@ -202,6 +205,7 @@ LIB = [
     ("extra", "MSL/MSL_C/MSL_Win32/Src", ["startup.win32.c", "ThreadLocalData.c", "time.win32.c"]),
     ("extra", "Win32-x86 Support/Libraries/Runtime/(Sources)", ["exchand.cpp"]),
     ("runtime", "Win32-x86 Support/Libraries/Runtime/(Sources)", None),
+    ("win32sdk", "Win32-x86 Support/Libraries/Win32 SDK", ["KERNEL32.LIB"]),
 ]
 # lib/ from the Pro 5.3 updater, whose setupargs.c the compiler's runtime has: (directory, updater directory)
 LIB53 = [
@@ -275,7 +279,7 @@ def lib(output):
 def main():
     tool, output = sys.argv[1], Path(sys.argv[2])
     output.parent.mkdir(parents=True, exist_ok=True)
-    if tool in ("compilers", "pro4", "pro5", "pro53", "pro6", "lib") and output.exists():
+    if tool in ("compilers", "pro4", "pro5", "pro53", "pro6", "mwld", "lib") and output.exists():
         # (fixed archives: a restored cache need not be fetched again)
         output.touch()
         return
@@ -292,7 +296,8 @@ def main():
         "wibo": lambda: fetch(wibo_url()),
         "pro4": lambda: tools_zip_member(PRO4_ISO, False, "CODEWA~1/CODEWA~1.ZIP;1", "Tools/Command Line Tools/mwcc.exe"),
         "pro5": lambda: tools_zip_member(PRO5_BIN, True, "CODEWA~1.ZIP;1", "Tools/Command Line Tools/mwcc.exe"),
-        "pro53": pro53,
+        "pro53": lambda: pro53("mwcc.exe"),
+        "mwld": lambda: pro53("mwld.exe"),
         "pro6": lambda: tools_zip_member(PRO6_ISO, True, "CODEWA~1.ZIP;1", "Other Metrowerks Tools/Command Line Tools/mwcc.exe"),
     }[tool]()
     output.write_bytes(data)

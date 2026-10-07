@@ -43,14 +43,20 @@ The build downloads what it needs but this repository does not contain:
 
 - the original executables, from the [decomp.dev compiler archive](https://files.decomp.dev), checked against
   their published SHA-1 (`build/compilers/GC`)
-- the CodeWarrior Pro 4, 5, 5.3 and 6 Windows/x86 compilers that built them, from the Internet Archive
-  (`build/compilers/pro*`)
+- the CodeWarrior Pro 4, 5, 5.3 and 6 Windows/x86 compilers that built them and the Pro 5.3 linker, from the
+  Internet Archive (`build/compilers/pro*`)
 - the MSL C library and runtime sources of CodeWarrior Pro 5, from the same Internet Archive disc, and the runtime
   sources of its 5.3 updater (`lib/`), with the compiler's own changes to `printf.c`, `time.c`, `time.win32.c`,
-  `startup.win32.c`, `ThreadLocalData.c` and `exchand.cpp` applied (`lib/extra`)
+  `startup.win32.c`, `ThreadLocalData.c` and `exchand.cpp` applied (`lib/extra`), and the Win32 import library the
+  executable links
 
-Each function of the compiled sources is compared with the original's; `ninja` fails when a function of a Matching
-source differs. `python tools/verify.py` builds and checks every version.
+For 1.2.5 and 1.2.5n, as in [decomp-toolkit](https://github.com/encounter/decomp-toolkit) projects, the original is
+split into one object per translation unit, and `ninja` links the executable with the CodeWarrior linker from the
+compiled objects of the Matching sources and the split objects of the others, then checks it against the original's
+SHA-1. A source is Matching when its object, code and data, links into the original. For 1.3, each compiled function
+is compared with the original's; `ninja` fails when a function of a Matching source differs.
+
+`python tools/verify.py` builds and checks every version, and that every function of a source matches.
 
 Diffing
 =======
@@ -63,9 +69,12 @@ Project structure
 - `config/sources.json`: each source's compiler, flags and status (Matching or NonMatching)
 - `config/<version>/config.json`: the original executable and its SHA-1; for 1.3, the compilers that replace Pro 5
   and 5.3 and the sources Matching in that version
+- `config/<version>/symbols.txt`, `splits.txt` (1.2.5, 1.2.5n): the original's symbols and its translation units,
+  in decomp-toolkit's formats
 - `config/<version>/functions.json`: each function's address, size and source (none yet for a function not
   decompiled)
 - `config/<version>/bindings.json`: the addresses of the data and functions the sources reference
+- `config/lmgr326b.def`: the FLEXlm library the compiler imports by ordinal
 - `src/`: the compiler (`driver`, `frontend`, `optimizer`, `backend`) and its statically linked C library and
   runtime (`msl`, `runtime`: one source per object of the original, which builds the library's source of it)
 - `include/`: headers; `include/libc` is the C library as the compiler's sources see it
