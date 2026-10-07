@@ -16,11 +16,23 @@
 #include <string.h>
 #include <ctype.h>
 
+Boolean DAT_0054c3d0 = 1;
+
+#pragma options align = mac68k
+static struct {
+    SInt16 version;
+    const char *helpFile;
+} lbl_0054c3e4 = {1, "CCompiler.hlp"};
+#pragma options align = reset
+
+static struct DriverSettings data_0057f448;
+static char data_0057f486;
+
 void cc_eabi_ppc_ReportCompilingFunction(char *name)
 {
     char buf[96];
     sprintf(buf, "Compiling function:\t%.64s", name);
-    fn_0041b8d0(compiler_plugin_cu.context, buf, &data_0054c408);
+    fn_0041b8d0(compiler_plugin_cu.context, buf, "");
 }
 
 int __stdcall dispatch_compiler_plugin_request(CWPluginPrivateContext *input)
@@ -129,13 +141,12 @@ void initialize_copts(CPrepCU *source)
         extension[extensionLength] = 0;
     }
 
-    if (memcmp(extension, c_extension, 3) == 0 || memcmp(extension, ".h", 3) == 0 ||
-        memcmp(extension, ".pch", 5) == 0) {
+    if (memcmp(extension, ".c", 3) == 0 || memcmp(extension, ".h", 3) == 0 || memcmp(extension, ".pch", 5) == 0) {
         copts.cplusplus = data_0057f448.b[2];
     } else if (memcmp(extension, ".m", 3) == 0) {
         copts.cplusplus = data_0057f448.b[2];
         copts.f5c = 1;
-    } else if (memcmp(extension, mm_extension, 4) == 0 || memcmp(extension, uppercase_m_extension, 3) == 0) {
+    } else if (memcmp(extension, ".mm", 4) == 0 || memcmp(extension, ".M", 3) == 0) {
         copts.cplusplus = 1;
         copts.f5c = 1;
     }
@@ -183,7 +194,8 @@ void initialize_copts(CPrepCU *source)
     copts.fa8 = languageSettings.options[12];
     copts.fa9 = languageSettings.options[13];
 
-    DropInCompilerLinkerPrivate_CallArgumentValue(compiler_plugin_cu.context, data_0054c474, &settingsHandle.symbols);
+    DropInCompilerLinkerPrivate_CallArgumentValue(compiler_plugin_cu.context, "EPPC Global Optimizer",
+                                                  &settingsHandle.symbols);
     symbolSettings = **settingsHandle.symbols;
     copts.deleteDeadInstructions = symbolSettings.deleteDeadInstructions;
     copts.uniformSpillBlockWeight = (symbolSettings.spillBlockWeightMode == 1);

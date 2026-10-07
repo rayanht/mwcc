@@ -21,10 +21,7 @@ struct VectorArrayUse {
 #pragma pack(pop)
 extern void LoadDeletion_BuildLoadLivenessSets(void);
 extern void LoadDeletion_InitializeLoadLivenessRecordCounts(void);
-extern int fn_0052ce10(void);
 extern void LoadDeletion_RecordImmediateLoadLiveness(void);
-extern void fn_0052cf10(struct AggregateRecord *candidates);
-extern unsigned char data_00582c9c;
 extern int *block_record_counts;
 extern struct E *immediateLoadLiveness;
 extern SInt32 *load_liveness_record_start;

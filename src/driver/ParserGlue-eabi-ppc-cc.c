@@ -3,6 +3,7 @@
 #include "compiler/common.h"
 #include "driver/ParserGlue-eabi-ppc-cc.h"
 #include "driver/Memory.h"
+#include "driver/OptimizerHelpers.h"
 #include "driver/Option.h"
 #include "driver/ParserHelpers-cc.h"
 #include "driver/ParserHelpers.h"

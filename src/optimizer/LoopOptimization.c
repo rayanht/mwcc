@@ -1558,27 +1558,6 @@ void mark_registers_used_outside_loop(Loop *state)
     }
 }
 
-void COpt_ConstantPropagation(void)
-{
-    PCodeBlock *block;
-    SInt32 i;
-
-    gConstantPropagationChanged = 0;
-    COpt_SetLoopCodeMotionMode(0);
-    unique_definitions = galloc(gUsedVirtualRegistersGPR * 4);
-    virtual_register_definitions = galloc(gUsedVirtualRegistersVR * 4);
-    do {
-        constantPropagationChanged = 0;
-        for (i = 0; i < gPCodeBlockCount; i++) {
-            if ((block = gPCodeBlockOrder[i]) != NULL) {
-                ConstantPropagation_FindUniqueDefinitions(block);
-                ConstantPropagation_PropagateConstantsInBlock(block);
-            }
-        }
-    } while (constantPropagationChanged != 0);
-    CompilerTools_ResetPool();
-}
-
 static inline void clonefirst(PCodeBlock *v2, PCodeInstruction *v5)
 {
     while (v5 != NULL && (v5->flags & fIsBranch) == 0) {

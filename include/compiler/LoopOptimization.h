@@ -39,7 +39,6 @@ extern void walk_loop_children_postorder(register Loop *loop);
 extern int gArrayToRegisterChanged;
 extern int gArrayToRegisterEnabled;
 extern int gLoopTransformChanged;
-extern void COpt_ConstantPropagation(void);
 struct PCodeBlock;
 
 #ifdef __cplusplus

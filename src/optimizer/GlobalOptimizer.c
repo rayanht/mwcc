@@ -18,6 +18,7 @@
 #include "compiler/PCodeListing.h"
 #include "compiler/StrengthReduction.h"
 #include "compiler/ValueNumbering.h"
+#include "compiler/VectorArraysToRegs.h"
 
 static inline void COptimizer_DumpStage(Object *function, const char *stage)
 {

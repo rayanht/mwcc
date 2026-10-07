@@ -41,13 +41,11 @@ extern unsigned short DAT_00565a3a;
 extern unsigned short DAT_00565a8a;
 extern unsigned short DAT_00565d6a;
 extern unsigned short opcode_flags[][8];
-extern int constantPropagationChanged;
 extern int gConstantPropagationChanged;
-extern struct PCodeInstruction **virtual_register_definitions;
-extern struct PCodeInstruction **unique_definitions;
 extern void COpt_LoadDeletion(void);
 extern int gLoadDeletionChanged;
 extern struct CBlockData *data_00587c98;
+extern void COpt_ConstantPropagation(void);
 
 #ifdef __cplusplus
 }

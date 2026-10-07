@@ -368,12 +368,12 @@ src/driver/Option.c:
 
 src/driver/cc-eabi-ppc.c:
 	.text       start:0x0041E110 end:0x0041E960
-	.data       start:0x0054C3D0 end:0x0054C478
+	.data       start:0x0054C3D0 end:0x0054C490
 	.bss        start:0x0057F448 end:0x0057F488
 
 src/driver/libimp-eabi-ppc.c:
 	.text       start:0x0041E960 end:0x0041F8B0
-	.data       start:0x0054C478 end:0x0054C518
+	.data       start:0x0054C490 end:0x0054C518
 	.bss        start:0x0057F488 end:0x0057F598
 
 src/msl/fcntl.win32.c:
@@ -870,20 +870,21 @@ src/optimizer/StrengthReduction.c:
 	.data       start:0x00574D28 end:0x00574D40
 
 src/optimizer/LoopOptimization.c:
-	.text       start:0x005289B0 end:0x0052B5C0
+	.text       start:0x005289B0 end:0x0052B530
 	.data       start:0x00574D40 end:0x00574D58
 	.bss        start:0x00582C68 end:0x00582C78
 
 src/optimizer/ConstantPropagation.c:
-	.text       start:0x0052B5C0 end:0x0052C870
+	.text       start:0x0052B530 end:0x0052C870
+	.bss        start:0x00582C78 end:0x00582C88
 
 src/optimizer/LoadDeletion.c:
-	.text       start:0x0052C870 end:0x0052D0A0
+	.text       start:0x0052C870 end:0x0052CE10
 
 src/optimizer/VectorArraysToRegs.c:
-	.text       start:0x0052D0A0 end:0x0052DBC0
+	.text       start:0x0052CE10 end:0x0052DBC0
 	.data       start:0x00574D58 end:0x00574D70
-	.bss        start:0x00582C78 end:0x00582CA0
+	.bss        start:0x00582C88 end:0x00582CA0
 
 src/backend/MachineSimulation603.c:
 	.text       start:0x0052DBC0 end:0x0052E0F0

@@ -41,6 +41,31 @@
     ((int)(lo).value.unsigned_value <= (int)(hi).value.unsigned_value ? (LowMask(lo) & ~HighMask(hi))                  \
                                                                       : (LowMask(lo) | ~HighMask(hi)))
 
+static int constantPropagationChanged;
+static struct PCodeInstruction **unique_definitions;
+static struct PCodeInstruction **virtual_register_definitions;
+
+void COpt_ConstantPropagation(void)
+{
+    PCodeBlock *block;
+    SInt32 i;
+
+    gConstantPropagationChanged = 0;
+    COpt_SetLoopCodeMotionMode(0);
+    unique_definitions = galloc(gUsedVirtualRegistersGPR * 4);
+    virtual_register_definitions = galloc(gUsedVirtualRegistersVR * 4);
+    do {
+        constantPropagationChanged = 0;
+        for (i = 0; i < gPCodeBlockCount; i++) {
+            if ((block = gPCodeBlockOrder[i]) != NULL) {
+                ConstantPropagation_FindUniqueDefinitions(block);
+                ConstantPropagation_PropagateConstantsInBlock(block);
+            }
+        }
+    } while (constantPropagationChanged != 0);
+    CompilerTools_ResetPool();
+}
+
 static void SetType(PCodeInstruction *p, short t)
 {
     p->flags = opcode_flags[t][0] | (p->flags & ~opcode_flags[p->opcode][0]);

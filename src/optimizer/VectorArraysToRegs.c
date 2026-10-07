@@ -28,6 +28,7 @@
 #include "compiler/IROUseDef.h"
 #include "compiler/InlineAsmPPC.h"
 #include "compiler/InterferenceGraph.h"
+#include "compiler/Intrinsics.h"
 #include "compiler/IroBitVect.h"
 #include "compiler/IroCSE.h"
 #include "compiler/IroJump.h"
@@ -44,6 +45,163 @@
 #include "compiler/Switch.h"
 /* Removed unused two-operand PCodeInstruction view; VectorArraysToRegs_ReplaceArrayUsesWithVMR uses opcode, flags and operand count at these offsets. */
 /* Vector-array uses and the tables used by this pass. */
+
+static int load_index_count;
+static VectorArrayEntry *load_index_entries;
+static struct CodeMotionBits *codeMotionBits;
+static int *load_index_entry_counts;
+static int *block_entry_start;
+static unsigned char data_00582c9c;
+
+int fn_0052ce10(void)
+{
+    struct AggregateRecord *analysis;
+    CodeMotionBits *bitsets;
+    int index;
+
+    data_00582c9c = 0;
+    analysis = VectorArraysToRegs_BuildAggregateRecords();
+    if (analysis != NULL) {
+        fn_0052d8d0(analysis);
+        if (load_index_count > 0) {
+            COpt_SetLoopCodeMotionMode(0);
+            VectorArraysToRegs_BuildLoadIndexEntries(analysis);
+            codeMotionBits = CompilerTools_AllocatePoolMemory(gPCodeBlockCount * sizeof(CodeMotionBits));
+            bitsets = codeMotionBits;
+            for (index = 0; index < gPCodeBlockCount; ++index) {
+                bitsets->gen = CompilerTools_AllocatePoolMemory(((load_index_count + 31) >> 5) * sizeof(*bitsets->gen));
+                bitsets->kill =
+                    CompilerTools_AllocatePoolMemory(((load_index_count + 31) >> 5) * sizeof(*bitsets->kill));
+                bitsets->in = CompilerTools_AllocatePoolMemory(((load_index_count + 31) >> 5) * sizeof(*bitsets->in));
+                bitsets->out = CompilerTools_AllocatePoolMemory(((load_index_count + 31) >> 5) * sizeof(*bitsets->out));
+                bitsets++;
+            }
+            VectorArraysToRegs_ComputeGenKill(analysis);
+            SpillCode_BuildBlockOrder();
+            VectorArraysToRegs_ComputeInOutBits();
+            fn_0052cf10(analysis);
+        }
+    }
+    CompilerTools_ResetPool();
+    return data_00582c9c;
+}
+
+static struct AggregateRecord *FindCandidate(struct AggregateRecord *list, Object *object)
+{
+    struct AggregateRecord *match;
+    for (match = list; match; match = match->next) {
+        if (match->object == object)
+            return match;
+    }
+    return NULL;
+}
+
+static void CheckUses(long classIndex, VectorArrayUse *entries, PCodeInstruction *classType,
+                      struct AggregateRecord *list)
+{
+    VectorArrayUse *entry;
+    struct AggregateRecord *match;
+    entry = entries;
+    if (entries != NULL) {
+        do {
+            if (entry != NULL && fn_0052d1e0(classIndex, entry->instructionIndex) == 0) {
+                match = FindCandidate(list, classType->operandData.operands[2].object);
+                match->flag = 1;
+                break;
+            }
+            entry = entry->next;
+        } while (entry != NULL);
+    }
+}
+
+void fn_0052cf10(struct AggregateRecord *candidates)
+{
+    long classIndex;
+    int candidateCount;
+    int slotCount;
+    struct AggregateRecord **head;
+    struct AggregateRecord *candidate;
+    int slot;
+    struct AggregateRecord *previous;
+    struct AggregateRecord *smallest;
+    long smallestTotal;
+    struct AggregateRecord *scan;
+    struct AggregateRecord *remaining;
+    long index;
+    struct AggregateRecord *next;
+
+    for (classIndex = 0; classIndex < load_index_count; classIndex++) {
+        CheckUses(classIndex, load_index_entries[classIndex].uses, load_index_entries[classIndex].array, candidates);
+    }
+    candidateCount = 0;
+    slotCount = 0;
+    head = &candidates;
+    candidate = candidates;
+    while (candidate != NULL) {
+        if (candidate->flag != 0) {
+            *head = candidate->next;
+            candidate = *head;
+        } else {
+            candidateCount++;
+            slotCount += candidate->count;
+            for (slot = 0; slot < candidate->count; slot++) {
+                candidate->index += candidate->slots[slot];
+            }
+            candidate = candidate->next;
+        }
+    }
+    if (candidates != NULL) {
+        while (slotCount > 32) {
+            smallestTotal = 0;
+            smallest = NULL;
+            scan = candidates;
+            while (scan != NULL) {
+                if (smallest != NULL) {
+                    if (scan->index < smallestTotal) {
+                        smallestTotal = scan->index;
+                        smallest = scan;
+                    }
+                } else {
+                    smallest = scan;
+                    smallestTotal = scan->index;
+                }
+                scan = scan->next;
+            }
+            if (smallest == NULL) {
+                break;
+            }
+            if (smallest == candidates) {
+                candidates = smallest->next;
+            } else if ((previous = candidates) != NULL) {
+                do {
+                    if ((next = previous->next) == smallest) {
+                        previous->next = smallest->next;
+                        break;
+                    }
+                    previous = next;
+                } while (next != NULL);
+            }
+            candidateCount--;
+            slotCount -= smallest->count;
+        }
+        remaining = candidates;
+        if (remaining == NULL) {
+            return;
+        }
+        while (remaining != NULL) {
+            for (slot = 0; slot < remaining->count; slot++) {
+                remaining->slots[slot] = gUsedVirtualRegistersVR;
+                gUsedVirtualRegistersVR++;
+            }
+            remaining = remaining->next;
+        }
+        if (candidates != NULL) {
+            for (index = 0; index < load_index_count; index++) {
+                VectorArraysToRegs_ReplaceArrayUsesWithVMR(candidates, index);
+            }
+        }
+    }
+}
 
 static inline struct AggregateRecord *VectorArraysToRegs_0052d0a0_inline1(struct AggregateRecord *v1,
                                                                           PCodeInstruction *v3)

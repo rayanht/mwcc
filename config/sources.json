@@ -1090,8 +1090,7 @@
     ],
     "include_dirs": [
       "src/driver"
-    ],
-    "status": "NonMatching"
+    ]
   },
   "src/driver/Option.c": {
     "compiler": "pro53",
@@ -1403,8 +1402,7 @@
     ],
     "include_dirs": [
       "src/driver"
-    ],
-    "status": "NonMatching"
+    ]
   },
   "src/driver/libimp-eabi-ppc.c": {
     "compiler": "pro53",
@@ -2929,8 +2927,7 @@
     ],
     "include_dirs": [
       "src/optimizer"
-    ],
-    "status": "NonMatching"
+    ]
   },
   "src/optimizer/IrOptimizer.c": {
     "compiler": "pro53",
@@ -3231,8 +3228,7 @@
       "on",
       "-Cpp_exceptions",
       "off"
-    ],
-    "status": "NonMatching"
+    ]
   },
   "src/runtime/ExceptionX86.cpp": {
     "compiler": "pro5",

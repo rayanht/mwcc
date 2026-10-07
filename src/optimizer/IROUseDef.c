@@ -36,7 +36,17 @@
 #include "compiler/ObjGen_PPC_EABI.h"
 #include "compiler/PCode.h"
 #include "compiler/Switch.h"
-static void IROUseDef_SetBit(UInt32 bit, BitVector *bv);
+
+static SInt32 def_count;
+static struct IRODef *def_list;
+static struct IRODef *global_def_tail;
+static int data_00580624;
+static struct IROUse *allocated_uses;
+static struct IROUse *global_use_tail;
+static struct BitVector *use_def_in;
+static struct BitVector *used_defs_bitvector;
+static SInt32 data_00580638;
+inline void IROUseDef_SetBit(UInt32 bit, BitVector *bv);
 
 #define CE_ASSERT(c, s)                                                                                                \
     do {                                                                                                               \
@@ -221,7 +231,8 @@ void visit_connected_defs_and_uses(IRODef *p)
     }
 }
 
-static void IROUseDef_SetBit(UInt32 bit, BitVector *bv)
+/* BitVector.h's, placed after its first caller here, which cannot inline it. */
+inline void IROUseDef_SetBit(UInt32 bit, BitVector *bv)
 {
     if ((bit >> 5) < bv->size)
         bv->bits[bit >> 5] |= 1u << bit;

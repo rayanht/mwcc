@@ -19,6 +19,7 @@
 #include "driver/MacSpecs.h"
 #include "driver/Memory.h"
 #include "driver/MsDos.h"
+#include "driver/cc-eabi-ppc.h"
 #include "driver/libimp-eabi-ppc.h"
 #include <string.h>
 #include <ctype.h>

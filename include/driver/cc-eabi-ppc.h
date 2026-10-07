@@ -22,20 +22,16 @@ extern void cc_eabi_ppc_ReportCompilingFunction(char *name);
 extern int __stdcall dispatch_compiler_plugin_request(CWPluginPrivateContext *input);
 extern void initialize_copts(CPrepCU *source);
 extern signed char initialize_compiler_plugin_cu(unsigned int input);
-extern unsigned char data_0054c408[];
-extern struct DriverSettings {
+struct DriverSettings {
     unsigned char b[9];
     char name[32];
     unsigned char options[15];
     SInt16 inlineLimit; /* 0x38: cc-eabi-ppc.c copies this into copts.inlineLimit */
     unsigned char tail[4];
-} data_0057f448;
-extern char data_0057f486;
+};
+extern Boolean DAT_0054c3d0;
 extern int data_00588258;
 extern struct CPrepCU compiler_plugin_cu;
-extern char mm_extension[], c_extension[], uppercase_m_extension[];
-extern char data_0054c464[];
-extern char data_0054c474[], data_0054c464[];
 
 #ifdef __cplusplus
 }

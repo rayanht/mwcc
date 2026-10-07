@@ -20868,7 +20868,7 @@
     "name": "COpt_ConstantPropagation",
     "address": "0x0052b530",
     "size": 136,
-    "source": "src/optimizer/LoopOptimization.c"
+    "source": "src/optimizer/ConstantPropagation.c"
   },
   {
     "name": "ConstantPropagation_PropagateConstantsInBlock",
@@ -20916,13 +20916,13 @@
     "name": "fn_0052ce10",
     "address": "0x0052ce10",
     "size": 251,
-    "source": "src/optimizer/LoadDeletion.c"
+    "source": "src/optimizer/VectorArraysToRegs.c"
   },
   {
     "name": "fn_0052cf10",
     "address": "0x0052cf10",
     "size": 398,
-    "source": "src/optimizer/LoadDeletion.c"
+    "source": "src/optimizer/VectorArraysToRegs.c"
   },
   {
     "name": "VectorArraysToRegs_ReplaceArrayUsesWithVMR",

@@ -108,7 +108,6 @@ extern void CompilerGetCString(short value, char *destination);
 extern void *fn_00443110(SInt32 a0);
 extern void *CompilerTools_AllocateMemoryIfEnabled(SIZE_T size);
 extern UInt32 CompilerTools_GetScaledTicks(void);
-extern Boolean DAT_0054c3d0;
 extern void (*DAT_00587708)(void);
 extern struct Pool galloc_pool;
 extern struct Pool data_0057fd84;
