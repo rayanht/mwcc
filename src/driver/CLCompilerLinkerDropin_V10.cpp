@@ -438,7 +438,7 @@ int __stdcall store_precompiled_unit(void *compilerObject, char *filename, int s
     char name[0x104];
     OSSpec path;
     StorageHandle *unit;
-    MemBuffer state;
+    OSHandle state;
     struct OperationRecord operation;
     unsigned int error;
     DropinFileRecord *sourceFile;

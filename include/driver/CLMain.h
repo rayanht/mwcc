@@ -37,7 +37,7 @@ struct CLState {
     char withholdErrors;
     OSSpec makefileSpec;
     OSPathSpec sbmPathSpec;
-    MemBuffer browseTableHandle;
+    OSHandle browseTableHandle;
 };
 extern CLState clState;
 

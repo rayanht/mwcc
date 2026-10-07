@@ -46,14 +46,14 @@ struct DstRec {
 #pragma options align = reset
 extern unsigned int calculate_lookup_entries_size(CLBrowserLookupEntry *entries, unsigned int count);
 extern int CLBrowser_LookupValue(void *table, char *name, short *value);
-extern int CLBrowser_FindOrAddLookupEntry(MemBuffer *browser, char *name, short *result);
+extern int CLBrowser_FindOrAddLookupEntry(OSHandle *browser, char *name, short *result);
 extern int write_lookup_entries(CLBrowserLookupEntry *src, DstRec *dst, UInt32 count);
-extern unsigned int build_browser_file_buffer(struct StorageHandle *dataHandle, void *indexHandle, MemBuffer *result);
-extern void fn_004287c0(MemBuffer *value, struct CLBrowserLookupEntry **result, unsigned int *shifted_value,
+extern unsigned int build_browser_file_buffer(struct StorageHandle *dataHandle, void *indexHandle, OSHandle *result);
+extern void fn_004287c0(OSHandle *value, struct CLBrowserLookupEntry **result, unsigned int *shifted_value,
                         unsigned int *raw_value);
-extern unsigned int CLBrowser_InitMemBuffer(MemBuffer *a0);
-extern unsigned int free_lookup_entries(MemBuffer *container);
-extern unsigned int CLBrowser_FreeMemBuffer(MemBuffer *value);
+extern unsigned int CLBrowser_InitMemBuffer(OSHandle *a0);
+extern unsigned int free_lookup_entries(OSHandle *container);
+extern unsigned int CLBrowser_FreeMemBuffer(OSHandle *value);
 extern BrowserCacheEntry *allocate_browser_cache_entry(void);
 extern void prepend_browser_cache_entry(struct BrowserCacheEntry *node);
 extern void unlink_browser_cache_entry(BrowserCacheEntry *links);

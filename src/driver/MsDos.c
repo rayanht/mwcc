@@ -993,70 +993,70 @@ void __stdcall OS_GetTime(_FILETIME *fileTime)
     *fileTime = *(_FILETIME *)convertedTime;
 }
 
-DWORD __stdcall OS_NewHandle(SIZE_T size, MemBuffer *block)
+DWORD __stdcall OS_NewHandle(SIZE_T size, OSHandle *block)
 {
-    block->ptr = GlobalAlloc(0, size);
+    block->addr = GlobalAlloc(0, size);
     block->size = size;
-    if (block->ptr == NULL)
+    if (block->addr == NULL)
         return GetLastError();
-    memset(block->ptr, 0, size);
+    memset(block->addr, 0, size);
     return 0;
 }
 
-UInt32 __stdcall OS_ResizeHandle(MemBuffer *buf, UInt32 newsize)
+UInt32 __stdcall OS_ResizeHandle(OSHandle *buf, UInt32 newsize)
 {
     HGLOBAL newHandle;
 
-    newHandle = GlobalReAlloc(buf->ptr, newsize, 2);
+    newHandle = GlobalReAlloc(buf->addr, newsize, 2);
     if (newHandle == NULL) {
-        buf->ptr = NULL;
+        buf->addr = NULL;
         buf->size = 0;
         return GetLastError();
     }
     if (newsize > buf->size) {
         memset((char *)newHandle + buf->size, 0, newsize - buf->size);
     }
-    buf->ptr = newHandle;
+    buf->addr = newHandle;
     buf->size = newsize;
     return 0;
 }
 
-HGLOBAL __stdcall OS_LockHandle(MemBuffer *handle)
+HGLOBAL __stdcall OS_LockHandle(OSHandle *handle)
 {
     UINT flags;
 
-    flags = GlobalFlags(handle->ptr);
+    flags = GlobalFlags(handle->addr);
     if (flags != 0x8000) {
-        return handle->ptr;
+        return handle->addr;
     }
     return NULL;
 }
 
-void __stdcall OS_UnlockHandle(MemBuffer *buffer)
+void __stdcall OS_UnlockHandle(OSHandle *buffer)
 {
     return;
 }
 
-DWORD __stdcall OS_FreeHandle(MemBuffer *handle)
+DWORD __stdcall OS_FreeHandle(OSHandle *handle)
 {
     HGLOBAL remainingHandle;
     DWORD error;
 
-    remainingHandle = GlobalFree(handle->ptr);
+    remainingHandle = GlobalFree(handle->addr);
     if (remainingHandle != NULL) {
         error = GetLastError();
         return error;
     }
-    handle->ptr = NULL;
+    handle->addr = NULL;
     handle->size = 0;
     return 0;
 }
 
-unsigned int __stdcall OS_GetHandleSize(MemBuffer *entry, DWORD *value)
+unsigned int __stdcall OS_GetHandleSize(OSHandle *entry, DWORD *value)
 {
     UINT flags;
 
-    flags = GlobalFlags(entry->ptr);
+    flags = GlobalFlags(entry->addr);
     if (flags != 0x8000) {
         *value = entry->size;
         return 0;
@@ -1065,15 +1065,15 @@ unsigned int __stdcall OS_GetHandleSize(MemBuffer *entry, DWORD *value)
     return 8;
 }
 
-void __stdcall OS_InvalidateHandle(MemBuffer *buffer)
+void __stdcall OS_InvalidateHandle(OSHandle *buffer)
 {
-    buffer->ptr = NULL;
+    buffer->addr = NULL;
     buffer->size = 0;
 }
 
-unsigned char __stdcall OS_ValidHandle(MemBuffer *value)
+unsigned char __stdcall OS_ValidHandle(OSHandle *value)
 {
-    return value != NULL && value->ptr != NULL;
+    return value != NULL && value->addr != NULL;
 }
 
 int __stdcall OS_OSErrorToMacError(int errorCode)

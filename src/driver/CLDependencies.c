@@ -387,7 +387,7 @@ char *escape_spaces(char escapeSpaces, char *destination, char *source)
     return result;
 }
 
-void CLDependencies_WriteDependencies(Deps *ctx, DropinFileRecord *file, MemBuffer *stream)
+void CLDependencies_WriteDependencies(Deps *ctx, DropinFileRecord *file, OSHandle *stream)
 {
     struct Deps *table = ctx;
     struct OSSpec *source;

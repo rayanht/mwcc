@@ -342,7 +342,7 @@ int __stdcall OS_FindProgram(char *name, void *param2)
     return r;
 }
 
-unsigned int __stdcall OS_CopyHandle(MemBuffer *source, MemBuffer *destination)
+unsigned int __stdcall OS_CopyHandle(OSHandle *source, OSHandle *destination)
 {
     unsigned int err;
     DWORD size;
@@ -371,14 +371,14 @@ DWORD __stdcall OS_AppendHandle(void *handle, const void *source, unsigned int s
     char *buffer;
     DWORD offset;
 
-    result = OS_GetHandleSize((struct MemBuffer *)handle, &offset);
+    result = OS_GetHandleSize((struct OSHandle *)handle, &offset);
     if (result == 0) {
-        result = OS_ResizeHandle((struct MemBuffer *)handle, offset + size);
+        result = OS_ResizeHandle((struct OSHandle *)handle, offset + size);
         if (result == 0) {
-            buffer = (char *)OS_LockHandle((struct MemBuffer *)handle);
+            buffer = (char *)OS_LockHandle((struct OSHandle *)handle);
             if (buffer != 0) {
                 memcpy(buffer + offset, source, size);
-                OS_UnlockHandle((struct MemBuffer *)handle);
+                OS_UnlockHandle((struct OSHandle *)handle);
                 return 0;
             }
         }

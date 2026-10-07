@@ -216,7 +216,7 @@ Boolean CLIO_WriteTextFile(OSSpec *fileRef, StorageHandle *text, SInt32 textLeng
     return 1;
 }
 
-unsigned char fn_00415090(OSSpec *fileSpec, unsigned int fileType, unsigned int creator, MemBuffer *buffer)
+unsigned char fn_00415090(OSSpec *fileSpec, unsigned int fileType, unsigned int creator, OSHandle *buffer)
 {
     struct OperationRecord recovery;
     unsigned int result;

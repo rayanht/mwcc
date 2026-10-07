@@ -13,7 +13,7 @@ extern "C" {
 
 struct OperationRecord {
     OSSpec fileSpec;
-    struct MemBuffer buffer;
+    struct OSHandle buffer;
     unsigned char loaded;
     unsigned char dirty;
     unsigned char writeBack;
@@ -21,7 +21,7 @@ struct OperationRecord {
 extern void fn_00420700(void);
 extern unsigned int fn_00420710(OperationRecord *context);
 extern DWORD write_file_buffer(struct OperationRecord *file);
-extern unsigned int __stdcall TargetOptimizer_ppc_eabi_InitOperationRecord(OSSpec *source, MemBuffer *argument,
+extern unsigned int __stdcall TargetOptimizer_ppc_eabi_InitOperationRecord(OSSpec *source, OSHandle *argument,
                                                                            unsigned char flag, OperationRecord *state);
 extern int __stdcall TargetOptimizer_ppc_eabi_GetMemBufferPtrAndSize(unsigned char *state, char **firstResult,
                                                                      int *secondResult);

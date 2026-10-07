@@ -27,7 +27,7 @@ extern unsigned int __stdcall OS_NameSpecSetExtension(OSNameSpec *file, const ch
 extern char *__stdcall OS_SpecToStringRelative(OSSpec *source, OSPathSpec *base, char *destination, int capacity);
 extern DWORD __stdcall OS_FindFileInPath(char *name, const char *searchPath, OSSpec *result);
 extern int __stdcall OS_FindProgram(char *name, void *param2);
-extern unsigned int __stdcall OS_CopyHandle(MemBuffer *a, MemBuffer *b);
+extern unsigned int __stdcall OS_CopyHandle(OSHandle *a, OSHandle *b);
 extern DWORD __stdcall OS_AppendHandle(void *handle, const void *source, unsigned int size);
 
 #ifdef __cplusplus

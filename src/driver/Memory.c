@@ -11,10 +11,10 @@
 #include <stdio.h>
 
 static unsigned short memory_error;
-MemBuffer *Memory_GetSizeAddress(void *allocation)
+OSHandle *Memory_GetSizeAddress(void *allocation)
 {
-    MemBuffer *buffer = (MemBuffer *)allocation;
-    return (MemBuffer *)&buffer->size;
+    OSHandle *buffer = (OSHandle *)allocation;
+    return (OSHandle *)&buffer->size;
 }
 
 unsigned int set_storage_handle_data(StorageHandle *handle, char *data)
@@ -23,7 +23,7 @@ unsigned int set_storage_handle_data(StorageHandle *handle, char *data)
     return (unsigned int)data;
 }
 
-StorageHandle *Memory_CreateStorageHandle(MemBuffer *input)
+StorageHandle *Memory_CreateStorageHandle(OSHandle *input)
 {
     StorageHandle *record;
     record = malloc(sizeof(*record));
@@ -38,20 +38,20 @@ StorageHandle *Memory_CreateStorageHandle(MemBuffer *input)
     return record;
 }
 
-void Memory_ExtractMemBuffer(void *input, MemBuffer *result)
+void Memory_ExtractMemBuffer(void *input, OSHandle *result)
 {
-    MemBuffer *buffer;
+    OSHandle *buffer;
     char *data;
-    MemBuffer *destination;
+    OSHandle *destination;
     StorageHandle *handle;
     StorageHandle *argument;
     handle = input;
     destination = result;
     argument = handle;
     buffer = Memory_GetSizeAddress(argument);
-    data = buffer->ptr;
-    buffer = (MemBuffer *)buffer->size;
-    destination->ptr = data;
+    data = buffer->addr;
+    buffer = (OSHandle *)buffer->size;
+    destination->addr = data;
     destination->size = (UInt32)buffer;
     argument = handle;
     free(argument);
@@ -64,7 +64,7 @@ unsigned short Memory_GetError(void)
 
 unsigned int Memory_NewHandle(unsigned int input)
 {
-    MemBuffer recovery;
+    OSHandle recovery;
     DWORD result = OS_NewHandle(input, &recovery);
     if (result != 0U) {
         memory_error = OS_OSErrorToMacError(result);
@@ -140,7 +140,7 @@ SInt32 __stdcall Memory_GetHandleSize(struct StorageHandle *handle)
 
 void __stdcall Memory_ResizeStorageHandle(StorageHandle *handle, unsigned int size)
 {
-    MemBuffer *buffer;
+    OSHandle *buffer;
     memory_error = OS_OSErrorToMacError(OS_ResizeHandle(buffer = &handle->buffer, size));
     set_storage_handle_data(handle, OS_LockHandle(buffer));
     OS_UnlockHandle(buffer);
@@ -149,7 +149,7 @@ void __stdcall Memory_ResizeStorageHandle(StorageHandle *handle, unsigned int si
 unsigned short __stdcall Memory_AppendStorageHandle(const void *data, StorageHandle *handle, int size)
 {
     int result;
-    MemBuffer *buffer;
+    OSHandle *buffer;
     result = OS_OSErrorToMacError(OS_AppendHandle(buffer = &handle->buffer, data, size));
     set_storage_handle_data(handle, OS_LockHandle(buffer));
     OS_UnlockHandle(buffer);

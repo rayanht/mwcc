@@ -45,7 +45,7 @@ extern Boolean write_text_buffer(struct _FILE *fp, StorageHandle *bufp, SInt32 l
 extern unsigned char CLIO_WriteStorageToStdout(StorageHandle *first, SInt32 second, unsigned int reset);
 extern Boolean CLIO_WriteTextFile(OSSpec *fileRef, StorageHandle *text, SInt32 textLength, SInt32 fileType,
                                   SInt32 creator);
-extern unsigned char fn_00415090(OSSpec *a0, unsigned int a1, unsigned int a2, MemBuffer *a3);
+extern unsigned char fn_00415090(OSSpec *a0, unsigned int a1, unsigned int a2, OSHandle *a3);
 extern unsigned char CLIO_AppendStorageToFile(OSSpec *a0, struct StorageHandle *a1, SInt32 a2, SInt32 a3, SInt32 a4);
 extern void fn_004151c0(void);
 extern void fn_004151d0(int);

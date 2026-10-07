@@ -431,7 +431,7 @@ typedef struct MacroStack MacroStack;
 typedef struct MangleEntry MangleEntry;
 typedef struct HashNameNode HashNameNode;
 typedef struct ObjectList ObjectList;
-typedef struct MemBuffer MemBuffer;
+typedef struct OSHandle OSHandle;
 typedef struct MemberCallArguments MemberCallArguments;
 typedef struct BigDeclInfo BigDeclInfo;
 typedef struct EMemberInfo EMemberInfo;

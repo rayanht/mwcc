@@ -336,7 +336,7 @@ UInt8 CLPlugins_WriteObjectFile(Plugin *plugin, struct CWFileSpec *context, stru
     int validContext;
     UInt8 result;
     short callbackResult;
-    MemBuffer *objectBuffer;
+    OSHandle *objectBuffer;
     struct OSSpec outputSpec;
 
     if (plugin->cl_cb == NULL) {

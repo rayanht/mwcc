@@ -28,7 +28,7 @@ static struct BrowserCacheEntry *browser_cache_free_list;
 static unsigned int cache_free_size;
 int fn_004286d0(DropinFileRecord *input, unsigned int processingMode, unsigned int processingFlags)
 {
-    MemBuffer lookupResult;
+    OSHandle lookupResult;
     OSSpec state;
     const CWObjectFlags *objectFlags;
     const char *extension;
@@ -51,7 +51,7 @@ int fn_004286d0(DropinFileRecord *input, unsigned int processingMode, unsigned i
     return 1;
 }
 
-void fn_004287c0(MemBuffer *value, struct CLBrowserLookupEntry **result, unsigned int *shifted_value,
+void fn_004287c0(OSHandle *value, struct CLBrowserLookupEntry **result, unsigned int *shifted_value,
                  unsigned int *raw_value)
 {
     DWORD extracted_value;
@@ -68,7 +68,7 @@ void fn_004287c0(MemBuffer *value, struct CLBrowserLookupEntry **result, unsigne
     }
 }
 
-unsigned int CLBrowser_InitMemBuffer(MemBuffer *buffer)
+unsigned int CLBrowser_InitMemBuffer(OSHandle *buffer)
 {
     unsigned int error = OS_NewHandle(0U, buffer);
     if (error != 0U) {
@@ -78,7 +78,7 @@ unsigned int CLBrowser_InitMemBuffer(MemBuffer *buffer)
     return 1U;
 }
 
-unsigned int free_lookup_entries(MemBuffer *container)
+unsigned int free_lookup_entries(OSHandle *container)
 {
     struct CLBrowserLookupEntry *entry;
     unsigned int count;
@@ -92,7 +92,7 @@ unsigned int free_lookup_entries(MemBuffer *container)
     return 1;
 }
 
-unsigned int CLBrowser_FreeMemBuffer(MemBuffer *value)
+unsigned int CLBrowser_FreeMemBuffer(OSHandle *value)
 {
     if (!free_lookup_entries(value))
         return 0U;
@@ -139,7 +139,7 @@ int CLBrowser_LookupValue(void *table, char *name, short *value)
     return found;
 }
 
-int CLBrowser_FindOrAddLookupEntry(MemBuffer *browser, char *name, short *result)
+int CLBrowser_FindOrAddLookupEntry(OSHandle *browser, char *name, short *result)
 {
     CLBrowserLookupEntry *entry;
     unsigned int count, offset;
@@ -237,7 +237,7 @@ int write_lookup_entries(CLBrowserLookupEntry *entries, DstRec *output, UInt32 c
     return 1;
 }
 
-unsigned int build_browser_file_buffer(struct StorageHandle *dataHandle, void *indexHandle, MemBuffer *result)
+unsigned int build_browser_file_buffer(struct StorageHandle *dataHandle, void *indexHandle, OSHandle *result)
 {
     int totalSize;
     int indexOffset;
@@ -246,7 +246,7 @@ unsigned int build_browser_file_buffer(struct StorageHandle *dataHandle, void *i
     DstRec *indexBuffer;
     int dataSize;
     unsigned int indexSize;
-    MemBuffer output;
+    OSHandle output;
     struct BrowserFileHeader header;
     CLBrowserLookupEntry *indexData;
     unsigned int itemCount;

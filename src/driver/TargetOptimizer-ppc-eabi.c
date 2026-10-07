@@ -165,7 +165,7 @@ DWORD write_file_buffer(struct OperationRecord *file)
     return error;
 }
 
-unsigned int __stdcall TargetOptimizer_ppc_eabi_InitOperationRecord(OSSpec *source, MemBuffer *argument,
+unsigned int __stdcall TargetOptimizer_ppc_eabi_InitOperationRecord(OSSpec *source, OSHandle *argument,
                                                                     unsigned char flag, OperationRecord *state)
 {
     DWORD result;
@@ -198,15 +198,15 @@ int __stdcall TargetOptimizer_ppc_eabi_GetMemBufferPtrAndSize(unsigned char *sta
                                                               int *secondResult)
 {
     HGLOBAL result;
-    MemBuffer *buffer = (MemBuffer *)(state + 324);
+    OSHandle *buffer = (OSHandle *)(state + 324);
     *secondResult = 0;
     if (!OS_ValidHandle(buffer)) {
         return 8;
     }
-    result = OS_LockHandle((MemBuffer *)(state + 324));
+    result = OS_LockHandle((OSHandle *)(state + 324));
     *firstResult = result;
     {
-        MemBuffer *sizeBuffer = (MemBuffer *)(state + 324);
+        OSHandle *sizeBuffer = (OSHandle *)(state + 324);
         OS_GetHandleSize(sizeBuffer, (DWORD *)secondResult);
     }
     return 0;

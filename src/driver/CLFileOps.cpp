@@ -512,7 +512,7 @@ int setup_preprocessing_output(DropinFileRecord *st)
 
 unsigned int fn_00419c90(DropinFileRecord *state, unsigned int mode)
 {
-    MemBuffer recovery;
+    OSHandle recovery;
     const CWObjectFlags *objectFlags;
     UInt32 type;
     UInt32 creator;

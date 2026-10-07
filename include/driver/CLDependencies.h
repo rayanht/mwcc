@@ -55,7 +55,7 @@ extern unsigned char CLDependencies_FindFile(Deps *dependencies, char *file, cha
 extern SInt32 CLDependencies_SetAccessPath(OSSpec *name, Boolean flag);
 extern Boolean initialize_four_words(DependencyCollection *value, struct Deps *fourth);
 extern char *escape_spaces(char escapeSpaces, char *destination, char *source);
-extern void CLDependencies_WriteDependencies(Deps *ctx, DropinFileRecord *file, MemBuffer *stream);
+extern void CLDependencies_WriteDependencies(Deps *ctx, DropinFileRecord *file, OSHandle *stream);
 extern unsigned char CLDependencies_InitDeps(Deps *state, CLTarget *input);
 extern void CLDependencies_FreeDeps(Deps *block);
 extern unsigned char get_record_flag(struct Deps *table, unsigned int index);
