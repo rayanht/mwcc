@@ -16,11 +16,6 @@ struct ConfigurationBlock116 {
     char flag_05;
     char reserved_06[110];
 };
-struct ConfigurationBlock60 {
-    char reserved_00[44];
-    char flag_2c;
-    char reserved_2d[15];
-};
 struct Elf32Header {
     unsigned char magic[4];
     unsigned char elfClass;

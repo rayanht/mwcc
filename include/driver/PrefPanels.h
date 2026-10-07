@@ -208,7 +208,8 @@ struct PProject {
     short sdatathreshold;
     short sdata2threshold;
     short codemodel;
-    UInt8 unk34[4];
+    UInt8 unk34[3];
+    UInt8 unk37;
     UInt8 strip;
     UInt8 optpartial;
     UInt8 resolvedpartial;

@@ -64,7 +64,7 @@ struct COpts {
     char emitExtraAssemblyData; /* 0x07: PCodeAssembly_ShouldEmitExtraData */
     Boolean f08;
     char
-        debugOptions; /* 0x09: TargetPanels_eabi_ppc_LoadCompilerOptions clears this, then loads CompilerOptions.debugOptions for enabled, non-operand debugging. */
+        debugOptions; /* 0x09: TargetPanels_eabi_ppc_LoadCompilerOptions clears this, then loads the CodeGen panel's fp_contract unless its fpmode is 0 or 1. */
     Boolean ppcUnrollSpeculative;
     UInt8 pad0b[1];
     SInt16 ppcUnrollInstructionsLimit;

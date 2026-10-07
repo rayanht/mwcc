@@ -1,6 +1,7 @@
 #define CERROR_FILE "unknown.c"
 #include "compiler/common.h"
 #include "driver/libimp-eabi-ppc.h"
+#include "driver/PrefPanels.h"
 #include "compiler/CError.h"
 #include "compiler/CPrep.h"
 #include "compiler/CodeGen.h"
@@ -159,9 +160,9 @@ int __stdcall fn_0041ec70(CWPluginPrivateContext *context)
     int result;
     char **status;
     long mode;
-    struct ConfigurationBlock60 block60;
+    PProject block60;
     struct ConfigurationBlock116 block116;
-    struct ConfigurationBlock60 **reference60;
+    PProject **reference60;
     struct ConfigurationBlock116 **reference116;
 
     result = 0;
@@ -181,7 +182,7 @@ int __stdcall fn_0041ec70(CWPluginPrivateContext *context)
             if (reference60 != NULL) {
                 block60 = **reference60;
             }
-            copts.nativeByteOrder = !block60.flag_2c;
+            copts.nativeByteOrder = !block60.bigendian;
             reference116 = NULL;
             DropInCompilerLinkerPrivate_CallArgumentValue(context, "PPC EABI Linker", &reference116);
             if (reference116 != NULL) {
