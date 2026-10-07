@@ -25,6 +25,12 @@
 
 typedef char **Handle;
 
+static struct LibImportCU libimp_cu;
+static UInt8 nonNativeByteOrder;
+
+/* An ELF file's first four bytes. */
+static unsigned int DAT_0054c490 = 0x464C457F;
+
 void format_message_and_longjmp()
 {
     CompilerTools_FormatMessageAndLongjmp(0xd, -0x6c);
@@ -33,14 +39,14 @@ void format_message_and_longjmp()
 #pragma optimization_level 2
 void fn_0041e970(char *name, void *argument)
 {
-    CWPluginsPrivate_InvokeMessageCallback(plugin_context, NULL, name, (char *)argument, 2, 0);
+    CWPluginsPrivate_InvokeMessageCallback(libimp_cu.context, NULL, name, (char *)argument, 2, 0);
 }
 #pragma optimization_level reset
 
 #pragma optimization_level 2
 void fn_0041e990(char *name, void *argument)
 {
-    CWPluginsPrivate_InvokeMessageCallback(plugin_context, NULL, name, argument, 1, 0);
+    CWPluginsPrivate_InvokeMessageCallback(libimp_cu.context, NULL, name, argument, 1, 0);
 }
 #pragma optimization_level reset
 
@@ -117,13 +123,13 @@ char **load_file_data_and_set_archive_signature(CWFileSpec *name, SInt32 *out1, 
 #pragma scheduling off
 char initialize_plugin_context(CWPluginPrivateContext *handle)
 {
-    plugin_context = handle;
-    memset(data_0057f48c, 0, sizeof(unsigned int[12]));
-    if (CPrep_GetFileIndex(handle, &file_index) != 0)
+    libimp_cu.context = handle;
+    memset(&libimp_cu.objectData, 0, sizeof(unsigned int[12]));
+    if (CPrep_GetFileIndex(handle, (unsigned int *)&libimp_cu.mainFileNumber) != 0)
         return 0;
-    if (CPrep_GetContextPayload(handle, (CWFileSpec *)data_0057f51c) != 0)
+    if (CPrep_GetContextPayload(handle, &libimp_cu.mainFile) != 0)
         return 0;
-    if (CPrep_GetSetting(handle, data_0057f56f) != 0)
+    if (CPrep_GetSetting(handle, &libimp_cu.filesyminfo) != 0)
         return 0;
     return 1;
 }
@@ -132,13 +138,14 @@ char initialize_plugin_context(CWPluginPrivateContext *handle)
 #pragma scheduling off
 unsigned int fn_0041ec20(void)
 {
-    unsigned int value = data_0057f4bc;
-    if (value != 0U) {
-        value = fn_0041bcb0(plugin_context, (struct StorageHandle *)value, data_0057f48c);
+    unsigned int value;
+    if ((value = libimp_cu.objectBuffer) != 0U) {
+        value = fn_0041bcb0(libimp_cu.context, (struct StorageHandle *)value, (long *)&libimp_cu.objectData);
         if (value != 0U)
             return value;
     }
-    value = CPrep_CallCompilerCallbackWithValue(plugin_context, file_index, data_0057f48c);
+    value =
+        CPrep_CallCompilerCallbackWithValue(libimp_cu.context, libimp_cu.mainFileNumber, (long *)&libimp_cu.objectData);
     if (value != 0U)
         return value;
     return value;
@@ -183,11 +190,11 @@ int __stdcall fn_0041ec70(CWPluginPrivateContext *context)
             data_00587958 = block116.flag_05;
             data_00588517 = 0;
             initialize_plugin_context(context);
-            data_0057f4c0 = 0;
-            data_0057f4a4 = 0;
-            status = load_file_data_and_set_archive_signature((CWFileSpec *)data_0057f51c, &data_0057f498,
-                                                              &data_0057f49c, &data_0057f4a0);
-            data_0057f4bc = (unsigned int)status;
+            libimp_cu.browseBuffer = 0;
+            libimp_cu.lineCount = 0;
+            status = load_file_data_and_set_archive_signature(&libimp_cu.mainFile, &libimp_cu.codeSize,
+                                                              &libimp_cu.udataSize, &libimp_cu.idataSize);
+            libimp_cu.objectBuffer = (unsigned int)status;
             if (status != NULL) {
                 result = fn_0041ec20();
             } else {
@@ -205,27 +212,32 @@ int __stdcall fn_0041ec70(CWPluginPrivateContext *context)
 
 void fn_0041ede0(char *value)
 {
-    CWPluginsPrivate_CallCallback9(plugin_context, value, NULL, NULL, 0);
+    CWPluginsPrivate_CallCallback9(libimp_cu.context, value, NULL, NULL, 0);
 }
 
 #pragma optimization_level reset
 #pragma optimization_level 2
 void fn_0041ee00(void *argument, short request)
 {
-    CWPluginsPrivate_InvokeMessageCallback((struct DispatchObject_0041b830 *)plugin_context, NULL, argument, NULL, 2,
+    CWPluginsPrivate_InvokeMessageCallback((struct DispatchObject_0041b830 *)libimp_cu.context, NULL, argument, NULL, 2,
                                            request);
 }
 #pragma optimization_level reset
 
+/* The ticks before the importer next lets the IDE break in. */
+static SInt32 data_0054c4d0 = 0;
+
 void check_ticks_and_longjmp(void)
 {
     if (CompilerTools_GetTicks() > data_0054c4d0) {
-        if (fn_0041b910(plugin_context) == 1U)
+        if (fn_0041b910(libimp_cu.context) == 1U)
             longjmp(file_input_jmpbuf, 1U);
         data_0054c4d0 = CompilerTools_GetTicks() + 15U;
     }
 }
 #pragma optimization_level 2
+
+static char data_0054c4d4[] = "mw";
 
 unsigned char classify_file_header(CWFileSpec *input)
 {
@@ -248,7 +260,7 @@ unsigned char classify_file_header(CWFileSpec *input)
         if (strncmp(value.data, "!<arch>\n", 8) == 0) {
             return 1;
         }
-        if (value.word0 == file_header_magic_first_byte && value.word1 == data_0054c4d5) {
+        if (value.word0 == data_0054c4d4[0] && value.word1 == data_0054c4d4[1]) {
             return 0;
         }
     }

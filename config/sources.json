@@ -1441,8 +1441,7 @@
     ],
     "include_dirs": [
       "src/driver"
-    ],
-    "status": "NonMatching"
+    ]
   },
   "src/frontend/CABI.c": {
     "compiler": "pro53",
