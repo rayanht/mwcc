@@ -22,7 +22,7 @@ struct CLTarget {
     UInt32 count08;
     UInt32 count0c;
     struct TgtRec *settings;
-    AccessPathValueTable lookupPaths;
+    Segments lookupPaths;
     Overlays overlays;
     SInt32 linkage;
     struct IndexedListLink files;

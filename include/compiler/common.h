@@ -133,7 +133,7 @@ struct _RTL_CRITICAL_SECTION_DEBUG;
 struct _WIN32_FIND_DATAA;
 struct _struct_519;
 typedef struct AccessPathEntry AccessPathEntry;
-typedef struct AccessPathValueTable AccessPathValueTable;
+typedef struct Segments Segments;
 typedef struct AccessPaths AccessPaths;
 typedef struct DropinFileRecord DropinFileRecord;
 typedef struct ArgMatch ArgMatch;

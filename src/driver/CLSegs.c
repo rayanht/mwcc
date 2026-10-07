@@ -23,7 +23,7 @@ void free_if_not_null(void *ptr)
     }
 }
 
-Boolean CLSegs_InitSegments(AccessPathValueTable *segments)
+Boolean CLSegs_InitSegments(Segments *segments)
 {
     unsigned short segmentIndex;
     struct PayloadWithValue *segment;
@@ -45,7 +45,7 @@ Boolean CLSegs_InitSegments(AccessPathValueTable *segments)
     return 1;
 }
 
-unsigned char CLSegs_FreeValues(AccessPathValueTable *array)
+unsigned char CLSegs_FreeValues(Segments *array)
 {
     unsigned short index;
     if (array == NULL)
@@ -63,7 +63,7 @@ unsigned char CLSegs_FreeValues(AccessPathValueTable *array)
     return 1;
 }
 
-Boolean allocate_access_path_value_index(AccessPathValueTable *table, UInt16 *index)
+Boolean allocate_access_path_value_index(Segments *table, UInt16 *index)
 {
     if (table == NULL) {
         CLIO_ReportAssertionFailure("segs != NULL", "CLSegs.c", 76U);
@@ -85,7 +85,7 @@ Boolean allocate_access_path_value_index(AccessPathValueTable *table, UInt16 *in
     return 1;
 }
 
-Boolean CLSegs_AddValue(AccessPathValueTable *table, struct PayloadWithValue *value, UInt16 *index)
+Boolean CLSegs_AddValue(Segments *table, struct PayloadWithValue *value, UInt16 *index)
 {
     UInt16 allocated_index;
 
@@ -98,7 +98,7 @@ Boolean CLSegs_AddValue(AccessPathValueTable *table, struct PayloadWithValue *va
     return 0;
 }
 
-struct PayloadWithValue *CLSegs_GetValue(struct AccessPathValueTable *table, unsigned int index)
+struct PayloadWithValue *CLSegs_GetValue(struct Segments *table, unsigned int index)
 {
     if (table == NULL) {
         CLIO_ReportAssertionFailure("segs != NULL", "CLSegs.c", 135U);
@@ -110,7 +110,7 @@ struct PayloadWithValue *CLSegs_GetValue(struct AccessPathValueTable *table, uns
     return 0U;
 }
 
-unsigned short CLSegs_GetCount(struct AccessPathValueTable *table)
+unsigned short CLSegs_GetCount(struct Segments *table)
 {
     if (table == NULL) {
         CLIO_ReportAssertionFailure("segs != NULL", "CLSegs.c", 145U);

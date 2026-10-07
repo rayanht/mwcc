@@ -37,8 +37,8 @@ struct PlugAux {
 #pragma options align = reset
 struct Plugin {
     struct PluginDataCallbacks *callbacks;
-    struct PlugAux *targetCallbacks;
-    struct PluginQueryTable *queryCallbacks;
+    struct PlugAux *cl_cb;
+    struct PluginQueryTable *pr_cb;
     struct CWPluginPrivateContext *object;
     struct Plugin *next;
 };

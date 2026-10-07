@@ -112,11 +112,11 @@ TargetInfo *get_target_info(Plugin *entry)
     if (entry == NULL) {
         CLIO_ReportAssertionFailure("pl", "CLPlugins.c", 115);
     }
-    if (((Plugin *)entry)->targetCallbacks == NULL) {
+    if (((Plugin *)entry)->cl_cb == NULL) {
         CLIO_ReportAssertionFailure("pl->cl_cb != NULL", "CLPlugins.c", 116);
     }
-    if (((Plugin *)entry)->targetCallbacks->getTargetInfo != NULL) {
-        status = ((Plugin *)entry)->targetCallbacks->getTargetInfo(&result);
+    if (((Plugin *)entry)->cl_cb->getTargetInfo != NULL) {
+        status = ((Plugin *)entry)->cl_cb->getTargetInfo(&result);
         if (status == 0) {
             return (TargetInfo *)result;
         }
@@ -147,11 +147,11 @@ FileMapInfo *get_file_map(Plugin *context)
     if (context == NULL) {
         CLIO_ReportAssertionFailure("pl", "CLPlugins.c", 0x9e);
     }
-    if (context->targetCallbacks == NULL) {
+    if (context->cl_cb == NULL) {
         CLIO_ReportAssertionFailure("pl->cl_cb != NULL", "CLPlugins.c", 0x9f);
     }
-    if (context->targetCallbacks->getFileMap != NULL) {
-        if ((*context->targetCallbacks->getFileMap)(&result) == 0) {
+    if (context->cl_cb->getFileMap != NULL) {
+        if ((*context->cl_cb->getFileMap)(&result) == 0) {
             return result;
         }
     }
@@ -185,11 +185,11 @@ const CWObjectFlags *CLPlugins_GetObjectFlags(Plugin *plugin)
     if (plugin == NULL) {
         CLIO_ReportAssertionFailure("pl", "CLPlugins.c", 0xbf);
     }
-    if (plugin->targetCallbacks == NULL) {
+    if (plugin->cl_cb == NULL) {
         CLIO_ReportAssertionFailure("pl->cl_cb != NULL", "CLPlugins.c", 0xc0);
     }
-    if (plugin->targetCallbacks->getObjectFlags != NULL) {
-        if (plugin->targetCallbacks->getObjectFlags(&flags) == 0) {
+    if (plugin->cl_cb->getObjectFlags != NULL) {
+        if (plugin->cl_cb->getObjectFlags(&flags) == 0) {
             return flags;
         }
     }
@@ -273,10 +273,10 @@ Boolean call_query_callback(Plugin *p, PluginRequest *a, SInt32 b, SInt32 c)
     CLPluginFunc f;
     Boolean result;
 
-    if (p->queryCallbacks == NULL) {
+    if (p->pr_cb == NULL) {
         CLIO_ReportAssertionFailure("pl->pr_cb != NULL", "CLPlugins.c", 0x143);
     }
-    if ((f = *(CLPluginFunc *)p->queryCallbacks) != NULL) {
+    if ((f = *(CLPluginFunc *)p->pr_cb) != NULL) {
         if (f(a, b, c, &result) == 0) {
             return result;
         }
@@ -289,11 +289,11 @@ UInt8 query_plugin(Plugin *plugin, unsigned int queryArgument, char **queryKind)
     short status;
     UInt8 result;
 
-    if (plugin->queryCallbacks == NULL) {
+    if (plugin->pr_cb == NULL) {
         CLIO_ReportAssertionFailure("pl->pr_cb != NULL", "CLPlugins.c", 0x14f);
     }
-    if (plugin->queryCallbacks->query != NULL) {
-        status = plugin->queryCallbacks->query(queryArgument, queryKind, &result);
+    if (plugin->pr_cb->query != NULL) {
+        status = plugin->pr_cb->query(queryArgument, queryKind, &result);
         if (status == 0) {
             return result;
         }
@@ -339,7 +339,7 @@ UInt8 CLPlugins_WriteObjectFile(Plugin *plugin, struct CWFileSpec *context, stru
     MemBuffer *objectBuffer;
     struct OSSpec outputSpec;
 
-    if (plugin->targetCallbacks == NULL) {
+    if (plugin->cl_cb == NULL) {
         CLIO_ReportAssertionFailure("pl->cl_cb != NULL", "CLPlugins.c", 0x173);
     }
     validInput = 0;
@@ -353,8 +353,8 @@ UInt8 CLPlugins_WriteObjectFile(Plugin *plugin, struct CWFileSpec *context, stru
     if (!validInput) {
         CLIO_ReportAssertionFailure("data != NULL && srcfss != NULL && outfss != NULL", "CLPlugins.c", 0x174);
     }
-    if (plugin->targetCallbacks->writeObjectFile != NULL) {
-        callbackResult = (*plugin->targetCallbacks->writeObjectFile)(context, input, objectFlags, option, objectHandle);
+    if (plugin->cl_cb->writeObjectFile != NULL) {
+        callbackResult = (*plugin->cl_cb->writeObjectFile)(context, input, objectFlags, option, objectHandle);
         return callbackResult == 0;
     }
     MacSpecs_MakeOSSpec(input, &outputSpec);
@@ -430,10 +430,10 @@ Boolean validate_plugin(Plugin *plug, const char **errmsg)
         *errmsg = "The executable tool stub has an entry point";
         return 0;
     }
-    if (plug->targetCallbacks != NULL) {
+    if (plug->cl_cb != NULL) {
         const CWObjectFlags *objectFlags;
 
-        if (plug->targetCallbacks->getObjectFlags == NULL && flags->type == 'Comp') {
+        if (plug->cl_cb->getObjectFlags == NULL && flags->type == 'Comp') {
             *errmsg = "GetObjectFlags callback not found in compiler plugin";
             return 0;
         }
@@ -485,21 +485,21 @@ Plugin *CLPlugins_CreatePluginDataCopy(PluginRequiredInputRecord *record36, Plug
         return NULL;
     *(PluginRequiredInputRecord *)copy->callbacks = *record36;
     if (record24) {
-        copy->targetCallbacks = xmalloc(0U, 24U);
-        if (!copy->targetCallbacks)
+        copy->cl_cb = xmalloc(0U, 24U);
+        if (!copy->cl_cb)
             return NULL;
-        *(PluginOptionalData *)copy->targetCallbacks = *record24;
+        *(PluginOptionalData *)copy->cl_cb = *record24;
     } else {
-        copy->targetCallbacks = NULL;
+        copy->cl_cb = NULL;
     }
     if (source8) {
-        copy->queryCallbacks = xmalloc(0U, 8U);
-        if (!copy->queryCallbacks)
+        copy->pr_cb = xmalloc(0U, 8U);
+        if (!copy->pr_cb)
             return NULL;
-        copy8 = copy->queryCallbacks;
+        copy8 = copy->pr_cb;
         *copy8 = *source8;
     } else {
-        copy->queryCallbacks = NULL;
+        copy->pr_cb = NULL;
     }
     copy->object = 0U;
     copy->next = 0U;
@@ -512,11 +512,11 @@ void free_plugin(Plugin *allocations)
         if (allocations->callbacks != NULL) {
             free(allocations->callbacks);
         }
-        if (allocations->targetCallbacks != NULL) {
-            free(allocations->targetCallbacks);
+        if (allocations->cl_cb != NULL) {
+            free(allocations->cl_cb);
         }
-        if (allocations->queryCallbacks != NULL) {
-            free(allocations->queryCallbacks);
+        if (allocations->pr_cb != NULL) {
+            free(allocations->pr_cb);
         }
         free(allocations);
     }
@@ -603,7 +603,7 @@ int CLPlugins_AddPlugin(void *pluginHandle)
                                    (desc->type & 0xff00) >> 8, desc->type & 0xff, (lang & 0xff000000) >> 24,
                                    (lang & 0xff0000) >> 16, (lang & 0xff00) >> 8, lang & 0xff, desc->api1, desc->api2);
 
-        if (plugin->targetCallbacks != NULL) {
+        if (plugin->cl_cb != NULL) {
             ti = get_target_info(plugin);
             CLIO_FormatAndDispatchText("Target CPUs: ");
             for (i = 0; i < ti->ncpu; i++) {
@@ -712,8 +712,7 @@ Plugin *CLPlugins_FindMatchingTargetPlugin(Plugin *node, SInt32 a, SInt32 b, SIn
     Plugin *result = NULL;
 
     while (obj != NULL) {
-        if (obj->targetCallbacks != NULL && CLPlugins_MatchTarget(obj, a, b, 0) &&
-            matches_plugin_type_lang(obj, c, d, 0)) {
+        if (obj->cl_cb != NULL && CLPlugins_MatchTarget(obj, a, b, 0) && matches_plugin_type_lang(obj, c, d, 0)) {
             result = obj;
             if (CLPlugins_MatchTarget(obj, a, b, 1) && matches_plugin_type_lang(obj, c, d, 1))
                 break;
@@ -734,8 +733,7 @@ Plugin *CLPlugins_FindTargetPluginBySelectorOptionName(Plugin *first, int select
     match = NULL;
     while (candidate != NULL) {
         if ((matches_plugin_type_lang(candidate, selector, selectorValue, '\x01') != '\0') &&
-            (candidate->targetCallbacks != NULL) &&
-            (CLPlugins_MatchTarget(candidate, optionKind, optionValue, '\0') != '\0') &&
+            (candidate->cl_cb != NULL) && (CLPlugins_MatchTarget(candidate, optionKind, optionValue, '\0') != '\0') &&
             ((nameMatch = plugin_file_map_matches(candidate, nameKind, name, '\0')) != 0)) {
             match = candidate;
             if ((CLPlugins_MatchTarget(candidate, optionKind, optionValue, '\x01') != '\0') &&
@@ -981,8 +979,7 @@ int CLPlugins_DispatchArgumentToPlugins(Plugin *node, SInt32 argument, SInt32 fi
         node = data_0057d91c;
     }
     while (node != NULL) {
-        if ((node->targetCallbacks == NULL) ||
-            (CLPlugins_MatchTarget(node, firstIdentifier, secondIdentifier, 0) != 0)) {
+        if ((node->cl_cb == NULL) || (CLPlugins_MatchTarget(node, firstIdentifier, secondIdentifier, 0) != 0)) {
             fn_0040a610(node, argument);
         }
         node = node->next;
