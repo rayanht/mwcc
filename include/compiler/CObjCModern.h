@@ -50,8 +50,6 @@ extern void fn_00509df0(void);
 extern void CObjCModern_ResetGlobals(void);
 extern ENode *CObjCModern_MakeDeallocMessage(TypeClass *type, ENode *object);
 extern HashEntry *CObjCModern_FindMessageArgumentHashEntry(struct MessageArgument *p);
-extern struct ObjCDefinition *category_definitions;
-extern struct NamedObjectCacheEntry *named_object_cache;
 extern struct HashEntry **selector_hash;
 struct HashEntry;
 extern struct PrecTypeEntry *class_type_entries;

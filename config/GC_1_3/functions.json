@@ -19241,7 +19241,7 @@
     "name": "CObjCModern_GetOrCreateFunctionObject",
     "address": "0x00554620",
     "size": 166,
-    "source": "src/frontend/CObjCModern.c"
+    "source": "src/frontend/CObjC.c"
   },
   {
     "name": "fn_005546d0",
@@ -19252,7 +19252,7 @@
     "name": "CObjCModern_RegisterMethodSelector",
     "address": "0x005547c0",
     "size": 383,
-    "source": "src/frontend/CObjCModern.c"
+    "source": "src/frontend/CObjC.c"
   },
   {
     "name": "fn_00554940",
@@ -19263,19 +19263,19 @@
     "name": "CObjCModern_FindMessageArgumentHashEntry",
     "address": "0x00554a50",
     "size": 181,
-    "source": "src/frontend/CObjCModern.c"
+    "source": "src/frontend/CObjC.c"
   },
   {
     "name": "fn_00509c40",
     "address": "0x00554b10",
     "size": 182,
-    "source": "src/frontend/CObjCModern.c"
+    "source": "src/frontend/CObjC.c"
   },
   {
     "name": "CObjCModern_ConcatStrings",
     "address": "0x00554bd0",
     "size": 226,
-    "source": "src/frontend/CObjCModern.c"
+    "source": "src/frontend/CObjC.c"
   },
   {
     "name": "fn_00554cc0",

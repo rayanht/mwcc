@@ -20,6 +20,9 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+/* Data of the original file that none of its linked code uses. */
+static char lbl_0054B8F8[] = "%*.*s";
+
 int get_file_query_info_and_identifiers(OSSpec *path, FileQueryInfo *info, FileIdentifierInfo *identifiers)
 {
     FILETIME firstTimestamp;
@@ -219,6 +222,7 @@ unsigned int __stdcall Files_CreateFile(CWFileSpec *input, unsigned int secondAr
 
 short __stdcall Files_OpenFile(CWFileSpec *file, char mode, short *result)
 {
+    static unsigned char os_open_modes[5] = {2, 0, 1, 2, 2};
     OSSpec path;
     SInt32 handle;
     unsigned int status;
@@ -426,7 +430,7 @@ short __stdcall Files_UpdateRecordQuery(RecordQuery *record)
     if (updatedRecord.flags != -1)
         nameSpace = updatedRecord.name;
     else
-        nameSpace = name_space;
+        nameSpace = (unsigned char *)"";
     result = Files_MakeFileSpecFromPath(updatedRecord.kind, updatedRecord.value, nameSpace, &resolvedFile);
     if ((short)result == 0) {
         if (MacSpecs_MakeOSSpec(&resolvedFile, fileHandle.directory.path) == 0) {
@@ -447,6 +451,8 @@ short __stdcall Files_UpdateRecordQuery(RecordQuery *record)
     memcpy(record, &updatedRecord, sizeof(updatedRecord));
     return result;
 }
+
+static unsigned char lbl_0054B90C[] = {1, 1, 2};
 
 UInt16 __stdcall fn_00414710(RecordQuery *record)
 {

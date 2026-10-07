@@ -15,8 +15,6 @@ extern void CLErrors_ForwardMessageArguments(int value, ...);
 extern void CLErrors_ForwardMessage(short a0, ...);
 extern void CLErrors_ReportOSError(SInt32 code, UInt32 osErr, ...);
 extern void CLErrors_ReportFormattedOSError(SInt32 code, SInt32 osErr, ...);
-extern char DAT_0057d5f8[];
-extern char diagnostic_message_buffer[];
 extern void CLErrors_ReportInternalError(const char *file, int line, const char *fmt, ...);
 extern void CLErrors_FatalError(char *format, ...);
 

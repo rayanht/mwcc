@@ -18962,55 +18962,55 @@
     "name": "CObjCModern_GetOrCreateFunctionObject",
     "address": "0x00509740",
     "size": 166,
-    "source": "src/frontend/CObjCModern.c"
+    "source": "src/frontend/CObjC.c"
   },
   {
     "name": "CObjCModern_GetSelectorReference",
     "address": "0x005097f0",
     "size": 232,
-    "source": "src/frontend/CObjCModern.c"
+    "source": "src/frontend/CObjC.c"
   },
   {
     "name": "CObjCModern_RegisterMethodSelector",
     "address": "0x005098e0",
     "size": 392,
-    "source": "src/frontend/CObjCModern.c"
+    "source": "src/frontend/CObjC.c"
   },
   {
     "name": "CObjCModern_CompareMethRecs",
     "address": "0x00509a70",
     "size": 263,
-    "source": "src/frontend/CObjCModern.c"
+    "source": "src/frontend/CObjC.c"
   },
   {
     "name": "CObjCModern_FindMessageArgumentHashEntry",
     "address": "0x00509b80",
     "size": 189,
-    "source": "src/frontend/CObjCModern.c"
+    "source": "src/frontend/CObjC.c"
   },
   {
     "name": "fn_00509c40",
     "address": "0x00509c40",
     "size": 184,
-    "source": "src/frontend/CObjCModern.c"
+    "source": "src/frontend/CObjC.c"
   },
   {
     "name": "CObjCModern_ConcatStrings",
     "address": "0x00509d00",
     "size": 238,
-    "source": "src/frontend/CObjCModern.c"
+    "source": "src/frontend/CObjC.c"
   },
   {
     "name": "fn_00509df0",
     "address": "0x00509df0",
     "size": 1,
-    "source": "src/frontend/CObjCModern.c"
+    "source": "src/frontend/CObjC.c"
   },
   {
     "name": "CObjCModern_ResetGlobals",
     "address": "0x00509e00",
     "size": 128,
-    "source": "src/frontend/CObjCModern.c"
+    "source": "src/frontend/CObjC.c"
   },
   {
     "name": "CObjCModern_MakeDeallocMessage",

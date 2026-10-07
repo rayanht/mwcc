@@ -7,15 +7,13 @@
 extern "C" {
 #endif
 
-extern struct ResourceRegistration {
+struct ResourceRegistration {
     char *data;
     short resourceId;
     char **value;
-} resourceRegistrations[16];
-extern char resource_string_buffer[];
+};
 extern int ResourceStrings_AddResource(char *resourceData, short resourceId, char **resourceValue);
 extern char *ResourceStrings_GetString(short id, short index);
-extern ResourceRegistration resourceRegistrations[16];
 
 #ifdef __cplusplus
 }

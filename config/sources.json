@@ -689,8 +689,7 @@
     ],
     "include_dirs": [
       "src/driver"
-    ],
-    "status": "NonMatching"
+    ]
   },
   "src/driver/CLFileOps.cpp": {
     "compiler": "pro53",
@@ -786,8 +785,7 @@
     ],
     "include_dirs": [
       "src/driver"
-    ],
-    "status": "NonMatching"
+    ]
   },
   "src/driver/CLPluginRequests.cpp": {
     "compiler": "pro53",
@@ -991,8 +989,7 @@
     ],
     "include_dirs": [
       "src/driver"
-    ],
-    "status": "NonMatching"
+    ]
   },
   "src/driver/Help.c": {
     "compiler": "pro53",
@@ -1172,8 +1169,7 @@
     ],
     "include_dirs": [
       "src/driver"
-    ],
-    "status": "NonMatching"
+    ]
   },
   "src/driver/Resources.c": {
     "compiler": "pro53",
@@ -1609,8 +1605,7 @@
     ],
     "include_dirs": [
       "src/frontend"
-    ],
-    "status": "NonMatching"
+    ]
   },
   "src/frontend/CObjCModern.c": {
     "compiler": "pro53",
@@ -1625,8 +1620,7 @@
     ],
     "include_dirs": [
       "src/frontend"
-    ],
-    "status": "NonMatching"
+    ]
   },
   "src/frontend/CParser.c": {
     "compiler": "pro53",

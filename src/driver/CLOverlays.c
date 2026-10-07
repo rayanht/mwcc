@@ -167,7 +167,7 @@ CLOverlayEntry *CLOverlays_CreateOverlayEntry(const char *name, CLOverlayValues 
         overlay->overlayCount = 0U;
         overlay->next = NULL;
     } else {
-        CLErrors_ReportInternalError("CLOverlays.c", 188, "Could not allocate %s", overlay_group_string);
+        CLErrors_ReportInternalError("CLOverlays.c", 188, "Could not allocate %s", "overlay group");
     }
     return overlay;
 }
@@ -266,7 +266,7 @@ struct OverlayAllocation *CLOverlays_CreateOverlayAllocation(const char *name)
         overlay->valueCount = overlay->word264;
         overlay->next = NULL;
     } else {
-        CLErrors_ReportInternalError("CLOverlays.c", 281, "Could not allocate %s", overlay_string);
+        CLErrors_ReportInternalError("CLOverlays.c", 281, "Could not allocate %s", "overlay");
     }
     return overlay;
 }
