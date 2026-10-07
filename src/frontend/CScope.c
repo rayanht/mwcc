@@ -1,3 +1,4 @@
+#define CERROR_FILE "CScope.c"
 #include "compiler/common.h"
 #include "compiler/CScope.h"
 #include "compiler/enode.h"
@@ -51,19 +52,6 @@ static UInt32 class_path_offset;
 static UInt8 data_00580dec;
 static SInt8 data_00580ded;
 
-#undef CERROR_FILE
-#define CERROR_FILE "CScope.c"
-#undef CError_FATAL
-#undef CError_ASSERT
-#define CError_FATAL(line) CError_Internal("CScope.c", line)
-#define CError_ASSERT(line, cond)                                                                                      \
-    do {                                                                                                               \
-        if (!(cond))                                                                                                   \
-            CError_Internal("CScope.c", line);                                                                         \
-    } while (0)
-
-#undef CERROR_FILE
-
 /* The scope separator. The linker stripped this function; its literal stays in the unit's .data, last, as the unit
    generates its functions in reverse order. */
 static char *CScope_ScopeSeparator(void)
@@ -83,10 +71,6 @@ static inline Boolean CScope_ResolveLookupContext(NameResult *result, Object *de
     }
     return 1;
 }
-
-#undef CERROR_FILE
-
-#define CERROR_FILE "NameSpace.c"
 
 static NameSpaceObjectList *Scope_Find(NameSpace *scope, HashNameNode *name)
 {
@@ -120,8 +104,6 @@ static NameSpaceObjectList *ScopeFindName(NameSpace *nspace, HashNameNode *name)
     }
     return NULL;
 }
-
-#undef CERROR_FILE
 
 static ObjectList *CScope_CopyList(ObjectList *list)
 {
@@ -190,8 +172,6 @@ static NameSpaceObjectList *CScope_NSIteratorFind(CScopeNSIterator *iterator, Ha
     return NULL;
 }
 
-#undef CERROR_FILE
-
 static Boolean NextNameSpace(CScopeNSIterator *ctx)
 {
     if (ctx->lookup != NULL) {
@@ -208,8 +188,6 @@ static Boolean NextNameSpace(CScopeNSIterator *ctx)
     }
     return 0;
 }
-
-#undef CERROR_FILE
 
 static int lookup(struct NameSpace *a1, HashNameNode *a2)
 {
@@ -259,8 +237,6 @@ static ObjectList *Scope_FindList(NameSpace *sc, HashNameNode *nm)
     }
     return NULL;
 }
-
-#undef CERROR_FILE
 
 static NameSpaceObjectList *ListSearch(NameSpace *scope, HashNameNode *key)
 {
@@ -387,8 +363,6 @@ static void CScope_AmbigFoundClassError(NameSpace **nspace1, NameSpace *nspace2,
     else
         CError_ReportError(ERR_AMBIGUOUS_ACCESS_CLASS_STRUCT_UNION_MEMBER);
 }
-
-#undef CERROR_FILE
 
 static inline NameSpaceLookupList *CScope_FindUsingScope(NameSpaceLookupList *scope, NameSpaceList *used)
 {
@@ -576,8 +550,6 @@ UInt8 CScope_IsInLocalNameSpace(NameSpace *scope)
     return 0;
 }
 
-#undef CERROR_FILE
-
 NameSpaceObjectList *CScope_FindName(NameSpace *space, HashNameNode *name)
 {
     NameSpaceName *entry;
@@ -612,8 +584,6 @@ NameSpaceName *CScope_FindNameSpaceName(NameSpace *nameSpace, HashNameNode *name
     }
     return NULL;
 }
-
-#undef CERROR_FILE
 
 NameSpaceObjectList *CScope_InsertNameSpaceName(NameSpace *nspace, HashNameNode *name)
 {
@@ -1011,8 +981,6 @@ done:
     return;
 }
 
-#undef CERROR_FILE
-
 void CScope_AddGlobalObject(Object *object)
 {
     object->nspace = cscope_root;
@@ -1106,8 +1074,6 @@ NameSpaceLookupList *build_usings_scope_list(NameSpace *ns)
     }
     return root.next;
 }
-
-#undef CERROR_FILE
 
 NameSpace *get_object_list_nspace(ObjectList *objects, Boolean *flag)
 {
@@ -1584,8 +1550,6 @@ NameSpace *find_name_nspace(NameResult *result, NameSpace *nspace, HashNameNode 
     return NULL;
 }
 
-#undef CERROR_FILE
-
 NameSpaceObjectList *find_namespace_object(NameResult *state, NameSpace *nspace, HashNameNode *name,
                                            NameSpace **foundSpace)
 {
@@ -1750,8 +1714,6 @@ Type *CScope_FindTagType(NameSpace *nspace, HashNameNode *name)
     } while (NextNameSpace(&ctx));
     return NULL;
 }
-
-#undef CERROR_FILE
 
 Boolean parse_qualified_templdep_type(NameResult *context, Type *qualifier, Boolean allowToken328)
 {
@@ -2054,8 +2016,6 @@ Boolean CScope_ParseExprName(NameResult *scope)
     scope->name = name;
     return 1;
 }
-
-#undef CERROR_FILE
 
 Boolean CScope_ParseDeclName(NameResult *lookup)
 {
@@ -2509,10 +2469,6 @@ Boolean CScope_FindObject(NameSpace *nspace, NameResult *result, HashNameNode *n
     return 0;
 }
 
-#undef CERROR_FILE
-
-#define CERROR_FILE "NameResult.c"
-
 NameSpaceObjectList *CScope_FindObjectList(NameResult *result, HashNameNode *name)
 {
     NameSpace *namespace;
@@ -2555,8 +2511,6 @@ NameSpaceObjectList *CScope_FindObjectList(NameResult *result, HashNameNode *nam
     } while (more);
     return NULL;
 }
-
-#undef CERROR_FILE
 
 Boolean CScope_PossibleTypeName(HashNameNode *name)
 {
@@ -2627,8 +2581,6 @@ Boolean CScope_FindClassMemberObject(TypeClass *tclass, NameResult *result, Hash
     return 0;
 }
 
-#undef CERROR_FILE
-
 int CScope_InitObjectIterator(CScopeObjectIterator *save, NameSpace *obj)
 {
     memclrw(save, sizeof(*save));
@@ -2638,8 +2590,6 @@ int CScope_InitObjectIterator(CScopeObjectIterator *save, NameSpace *obj)
     else
         save->nextname = *obj->data.hash;
 }
-
-#undef CERROR_FILE
 
 Object *CScope_NextObjectIteratorObject(CScopeObjectIterator *s)
 {
@@ -2664,8 +2614,6 @@ Object *CScope_NextObjectIteratorObject(CScopeObjectIterator *s)
         s->nextname = s->nspace->data.hash[s->hashindex];
     }
 }
-
-#undef CERROR_FILE
 
 NameSpaceObjectList *CScope_NextObjectIteratorObjectList(CScopeObjectIterator *state)
 {
@@ -2707,8 +2655,6 @@ Type *CScope_GetTagType(NameSpace *nspace, HashNameNode *name)
     }
     return NULL;
 }
-
-#undef CERROR_FILE
 
 Boolean CScope_FindTypeName(NameSpace *nspace, HashNameNode *name, NameResult *result)
 {
@@ -2804,8 +2750,6 @@ ObjectList *CScope_FindObjectListInNameSpace(NameSpace *nspace, HashNameNode *na
     return NULL;
 }
 
-#undef CERROR_FILE
-
 BClassList *CScope_GetClassAccessPath(BClassList *classes, TypeClass *base)
 {
     BClassList *current;
@@ -2858,8 +2802,6 @@ BClassList *CScope_GetClassAccessPath(BClassList *classes, TypeClass *base)
     }
     return NULL;
 }
-
-#undef CERROR_FILE
 
 Boolean CScope_ParseMemberName(TypeClass *ctx, NameResult *node, Boolean flag)
 {
@@ -3240,4 +3182,3 @@ unsigned int CScope_ParseUsingDirective(NameSpace *container)
     return (unsigned int)entry;
 }
 
-#undef CERROR_FILE
