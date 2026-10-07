@@ -10,7 +10,7 @@ extern "C" {
 #pragma options align = mac68k
 struct InterruptList {
     struct InterruptList *next;
-    struct InterruptGenerationRecord *info; /* 0x04: CodeGen_ParsePragma saves interrupt options on the pragma stack */
+    struct InterruptGenerationRecord *info;
 };
 #pragma options align = reset
 #pragma pack(push, 1)

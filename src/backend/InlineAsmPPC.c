@@ -52,7 +52,6 @@
 #include "driver/Files.h"
 #include "driver/TargetPanels-eabi-ppc.h"
 #include <string.h>
-/* 0x554830: "InlineAsmPPC.c" */
 
 #include "compiler/Types.h"
 #include "compiler/Objects.h"

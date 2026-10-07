@@ -9,11 +9,9 @@ extern "C" {
 #endif
 
 struct DropinCallbackData {
-    const char *name; /* 0x00: create_new_text_document selects stdout or names a project entry */
-    struct StorageHandle
-        *storage; /* 0x04: create_new_text_document; CLDropinCallbacks_V10_SetStorageHandle forwards this handle */
-    char
-        addToProject; /* 0x08: create_new_text_document creates and appends a chain record and calls add_project_entry when set */
+    const char *name;
+    struct StorageHandle *storage;
+    char addToProject;
     UInt8 unk09[19];
     unsigned char payload[12];
     unsigned int kind;
@@ -33,13 +31,13 @@ struct CallbackOverlayRecord {
 struct CallbackPathEntry {
     CWFileSpec file;
     char hasChildren;
-    char alignmentPadding[1]; /* 0x47: count_access_paths_recursive */
+    char alignmentPadding[1];
     int childCount;
     CWFileSpec *childFiles;
 };
 struct CallbackRecord {
-    char name[32];        /* 0x00: lookup_callback_record copies the segment name from CLSegs_GetValue. */
-    unsigned short value; /* 0x20: lookup_callback_record copies found->value from CLSegs_GetValue. */
+    char name[32];
+    unsigned short value;
 };
 struct DiagnosticContext {
     char reserved0[8];
@@ -53,8 +51,8 @@ struct DiagnosticLocation {
     int line;
     short column;
     short length;
-    int selectionOffset;   /* 0x4E: report_message copies to record.selectionOffset */
-    short selectionLength; /* 0x52: report_message copies to record.selectionLength */
+    int selectionOffset;
+    short selectionLength;
 };
 #pragma options align = reset
 #pragma options align = mac68k
@@ -68,10 +66,8 @@ struct DropinFileCallback {
     signed char searchOption;
     long fileKey;
     char suppressFileReferenceLookup;
-    char unusedByte
-        [1]; /* 0x07: lookup_file and lookup_dependency_file leave this byte unused between suppressFileReferenceLookup and fileReference. */
-    char *
-        fileReference; /* 0x08: lookup_file copies file bytes; insert_dependency_from_path sets xstrdup(""); UCBLookUpUnit interprets precompiled bytes when referenceKind == 2. */
+    char unusedByte[1];
+    char *fileReference;
     unsigned int referenceValue;
     short referenceKind;
     short lookupResult;
@@ -113,8 +109,8 @@ struct ExportedRecord {
     char stringEnd;
     short code;
     char flag, optionH;
-    int fileType;    /* 0x7a: ParserHelpers-cc.c reads the file-info callback result and tests 'TEXT'. */
-    int secondValue; /* 0x7e: get_file_info exports the second value. */
+    int fileType;
+    int secondValue;
     char optionI, optionG;
     int finalValue;
 };

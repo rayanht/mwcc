@@ -23,16 +23,11 @@ struct FileMapInfo {
 #pragma options align = reset
 #pragma options align = mac68k
 struct PlugAux {
-    short(__stdcall *getTargetInfo)(
-        unsigned char **); /* 0x00: get_target_info obtains target information through this callback */
-    short(__stdcall *getFileMap)(struct FileMapInfo **); /* 0x04: get_file_map obtains the plugin file map */
-    UInt8 pad[0x08]; /* 0x08: CLPlugins.c does not access these bytes; meaning unknown */
-    SInt16(__stdcall *getObjectFlags)(
-        const CWObjectFlags *
-            *); /* 0x10: CLPlugins_GetObjectFlags calls this with &flags and tests the returned status */
-    short(__stdcall *writeObjectFile)(
-        CWFileSpec *, CWFileSpec *, unsigned int, int,
-        int); /* 0x14: CLPlugins_WriteObjectFile passes context, input, objectFlags, option and objectHandle */
+    short(__stdcall *getTargetInfo)(unsigned char **);
+    short(__stdcall *getFileMap)(struct FileMapInfo **);
+    UInt8 pad[0x08];
+    SInt16(__stdcall *getObjectFlags)(const CWObjectFlags **);
+    short(__stdcall *writeObjectFile)(CWFileSpec *, CWFileSpec *, unsigned int, int, int);
 };
 #pragma options align = reset
 struct Plugin {
@@ -49,26 +44,25 @@ struct PluginDataCallbacks {
     unsigned int unknown08;
     short(__stdcall *getName)(char **);
     unsigned short(__stdcall *getDirectoryList)(struct PluginDirectoryList **);
-    unsigned char unknown14
-        [8]; /* 0x14: CLPlugins.c never reads these eight callback-table bytes; no pointer type is established */
+    unsigned char unknown14[8];
     short(__stdcall *getResult)(void **result);
 };
 #pragma pack(pop)
 #pragma options align = mac68k
 struct PluginDesc {
-    SInt16 descriptorVersion; /* 0x00: validate_plugin indexes DropInFlags sizes by descriptor version minus 3 */
-    UInt32 type;              /* 0x02: validate_plugin checks Comp, Link, Pars and cldr plugin types */
-    UInt16 api1;              /* 0x06: validate_plugin checks earliest compatible API version */
-    UInt32 flags;             /* 0x08: validate_plugin checks executable stub and entry-point flags */
-    SInt32 lang;              /* 0x0c: CLPlugins_AddPlugin prints plugin language */
-    UInt16 api2;              /* 0x10: validate_plugin checks newest compatible API version */
+    SInt16 descriptorVersion;
+    UInt32 type;
+    UInt16 api1;
+    UInt32 flags;
+    SInt32 lang;
+    UInt16 api2;
 };
 #pragma options align = reset
 #pragma pack(push, 1)
 struct PluginDirectoryList {
     unsigned short value;
-    short count;   /* 0x02: CLPlugins.c iterates required preference panels */
-    char **panels; /* 0x04: CLPlugins.c prints required preference panel names */
+    short count;
+    char **panels;
 };
 #pragma pack(pop)
 struct PluginOptionalData {

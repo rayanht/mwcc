@@ -28,12 +28,9 @@ struct BufferUpdate {
 };
 #pragma options align = mac68k
 struct CGList {
-    struct SectionAttributeNode
-        *head; /* 0x00: ObjGen_PPC_EABI_AddSectionAttribute initializes the attribute list head */
-    struct SectionAttributeNode
-        *tail; /* 0x04: ObjGen_PPC_EABI_AddSectionAttribute appends nodes and merges the last object's flags */
-    struct ObjGenSection *
-        sourceSection; /* 0x08: ObjGen_PPC_EABI_AddSectionAttribute stores the object's section; ElfLinkSection reads its ELF index */
+    struct SectionAttributeNode *head;
+    struct SectionAttributeNode *tail;
+    struct ObjGenSection *sourceSection;
 };
 #pragma options align = reset
 struct CNameNode {
@@ -85,26 +82,22 @@ struct ObjGenSection {
     SInt32 info;
     UInt32 maximumSize;
     SInt32 entrySize;
-    struct ObjGenSection *relocations; /* 0x58: BE_elf_AddRelocation writes relocation entries to this section */
+    struct ObjGenSection *relocations;
     struct DwarfFunctionState *debugState;
-    struct ObjGenSection *context; /* 0x60: BE_elf_0049c540 stores the section context; findInitialSection tests it */
+    struct ObjGenSection *context;
     struct BE_SymNode *sym;
     struct ObjGenSection *output;
     union {
-        struct CGList *
-            attributes; /* 0x6c: kind == 9 in ElfLinkSection; ObjGen_PPC_EABI_AddSectionAttribute creates the attribute list */
-        struct SerializedFormatLink
-            *serialized; /* 0x6c: ObjGen_PPC_EABI_EmitSerializedFormat reads the serialized-format output section */
+        struct CGList *attributes;
+        struct SerializedFormatLink *serialized;
     } sectionData;
 };
 #pragma options align = reset
 #pragma pack(push, 1)
 struct ObjGenSymbolLink {
-    struct Object *
-        object; /* 0x00: BE_symbol_GetFunctionSymbolLinkData returns this Object; TOC_HasObjectReferenceWithoutExpression reads it */
-    struct BE_SymNode *symbol; /* 0x04: ObjGen_PPC_EABI.c uses this as the section symbol for relocations */
-    UInt8
-        value; /* 0x08: BE_symbol.c tests and sets this flag; ObjGen_PPC_EABI_ClearSectionSymbolLinkValues clears it */
+    struct Object *object;
+    struct BE_SymNode *symbol;
+    UInt8 value;
 };
 #pragma pack(pop)
 struct OutputBufferState {
@@ -138,17 +131,14 @@ struct SectionSymbolAttributes {
 };
 struct SerializedFormat {
     char reserved0[8];
-    struct SerializedValueList *
-        values; /* 0x08: ObjGen_PPC_EABI_EmitSerializedFormat traverses values for wide output; short output reads them as SerializedValueList. */
-    struct SerializedValueList
-        *last; /* 0x0c: ObjGen_PPC_EABI_AppendOutputEntry appends after the last value and updates the tail. */
-    int count; /* 0x10: ObjGen_PPC_EABI_EmitSerializedFormat writes the serialized entry count. */
-    char kind; /* 0x14: ObjGen_PPC_EABI_EmitSerializedFormat emits only kind == 0. */
+    struct SerializedValueList *values;
+    struct SerializedValueList *last;
+    int count;
+    char kind;
 };
 struct SerializedFormatLink {
     char reserved0[4];
-    struct SerializedFormat *
-        format; /* 0x04: ObjGen_PPC_EABI_EmitSerializedFormat reads the format; ObjGen_PPC_EABI_AppendOutputEntry appends its values. */
+    struct SerializedFormat *format;
 };
 struct SerializedLocation {
     int offset;
@@ -163,9 +153,8 @@ struct SerializedShortHeader {
 };
 
 struct SerializedValueList {
-    struct SerializedValueList
-        *next; /* 0x00: ObjGen_PPC_EABI_EmitSerializedFormat traverses the value list in both output widths. */
-    int value; /* 0x04: ObjGen_PPC_EABI_EmitSerializedFormat emits the value as a long or its low short as a word. */
+    struct SerializedValueList *next;
+    int value;
 };
 struct SerializedWideHeader {
     char kind;

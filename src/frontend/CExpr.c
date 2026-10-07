@@ -3701,9 +3701,6 @@ void *make_memberpointer(ENode *node)
     }
 }
 
-/* 0x584288, byte access */
-/* 0x587fb4, dword access */
-
 ENode *getpointertomemberfunc(ENode *node, Type *targetType, Boolean initialize)
 {
     EMemberInfo *memberRef;
@@ -5529,11 +5526,6 @@ ENode *CExpr_New_EADD_Node(ENode *left, ENode *right)
         left = CExpr2_ReturnNode(left);
     return left;
 }
-
-/* 0x4463d0, CError_Error(code, ...) */
-/* 0x504850, Type* -> complete type */
-/* 0x48f980, (Type*, Type*) -> compat */
-/* 0x50e820, () -> Type* */
 
 ENode *make_pointer_subtraction(ENode *left, ENode *right)
 {

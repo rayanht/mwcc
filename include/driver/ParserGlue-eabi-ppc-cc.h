@@ -10,9 +10,9 @@ extern "C" {
 #endif
 
 struct Pragma {
-    char *value;  /* 0x00: PragmaHasSetting reads the setting byte; ParserHelpers_cc_EmitPragmas checks PR_UNSET */
-    char *pragma; /* 0x04: ParserHelpers_cc_EmitPragmas emits the pragma name and tests the table terminator */
-    int flags;    /* 0x08: ParserHelpers_cc_EmitPragmas selects normal or reversed on/off settings */
+    char *value;
+    char *pragma;
+    int flags;
 };
 extern unsigned int fn_00405670(void);
 extern int fn_004056a0(void);

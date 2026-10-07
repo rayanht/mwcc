@@ -43,7 +43,7 @@ struct RecordData {
 struct RecordQuery {
     UInt8 reserved[0x10];
     SInt16 status;
-    UInt8 *name; /* 0x12: set_record_identifier stores the Pascal filename; Files_MakeFileSpecFromPath reads it */
+    UInt8 *name;
     UInt16 kind;
     UInt16 reserved18;
     UInt16 options;

@@ -14,14 +14,13 @@ extern void queue_instruction(PCodeInstruction *obj);
 extern void reset_pipeline_state(void);
 extern int can_issue_instruction_in_pipeline_slots(PCodeInstruction *node);
 struct OpcodeScheduleInfo {
-    UInt8 kind; /* 0x00: can_issue_instruction_in_pipeline_slots selects the execution slot by opcode kind */
-    UInt8
-        baseLatency; /* 0x01: get_adjusted_opcode_table_value reads DAT_00577661 at opcode * 7 and adds flag and multiple-register adjustments */
-    SInt8 cost;      /* 0x02: queue_instruction initializes the execution slot countdown */
-    UInt8 stage2Latency;    /* 0x03: advance_pipeline / Advance initializes the second pipeline stage countdown */
-    UInt8 stage3Latency;    /* 0x04: advance_pipeline / Advance initializes the third pipeline stage countdown */
-    UInt8 stage4Latency;    /* 0x05: advance_pipeline / Advance initializes the fourth pipeline stage countdown */
-    SInt8 opcodeEntryValue; /* 0x06: lookup_instruction_opcode_entry returns this opcode's signed table entry */
+    UInt8 kind;
+    UInt8 baseLatency;
+    SInt8 cost;
+    UInt8 stage2Latency;
+    UInt8 stage3Latency;
+    UInt8 stage4Latency;
+    SInt8 opcodeEntryValue;
 };
 extern int get_adjusted_opcode_table_value(PCodeInstruction *record);
 

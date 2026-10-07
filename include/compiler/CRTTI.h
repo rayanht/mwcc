@@ -8,33 +8,30 @@ extern "C" {
 #endif
 
 struct DataReference {
-    struct DataReference *next; /* 0x00: get_or_create_type_object links data references */
-    Object *
-        target; /* 0x04: get_or_create_type_object assigns string and class Objects; create_rtti_base_records assigns type Objects */
-    SInt32 offset;  /* 0x08: create_rtti_base_records sets the reference position within buffer */
-    SInt32 value0c; /* 0x0c: get_or_create_type_object and create_rtti_base_records initialize to zero */
+    struct DataReference *next;
+    Object *target;
+    SInt32 offset;
+    SInt32 value0c;
 };
 #pragma options align = mac68k
 struct RTTIBaseRecord {
-    SInt32
-        typeReference; /* 0x00: create_rtti_base_records clears the relocation slot and references the base type Object */
-    SInt32 offset;     /* 0x04: create_rtti_base_records writes the base offset, with the high bit marking a group */
+    SInt32 typeReference;
+    SInt32 offset;
 };
 struct RTTIBaseGroup {
-    RTTIBaseRecord base; /* 0x00: create_rtti_base_records emits the group's base type and offset */
-    SInt32 count;        /* 0x08: create_rtti_base_records writes path->count before the child records */
+    RTTIBaseRecord base;
+    SInt32 count;
 };
 #pragma options align = reset
 struct RData {
     struct RData *next;
     Object *key;
     SInt32 vtableOffset;
-    SInt32 zero; /* 0x0c: build_rtti_offset_table initializes this unused word to zero */
+    SInt32 zero;
 };
 struct RTTIOffsetEntry {
-    SInt32
-        typeReference; /* 0x00: build_rtti_offset_table records key and vtableOffset in RData for the type Object relocation emitted by CClass_GenerateVTable */
-    SInt32 offset;     /* 0x04: build_rtti_offset_table writes and checks the endian-converted negative objectOffset */
+    SInt32 typeReference;
+    SInt32 offset;
 };
 struct RTTIVTableOffsetNode {
     struct RTTIVTableOffsetNode *next;

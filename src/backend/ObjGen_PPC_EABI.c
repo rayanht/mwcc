@@ -915,10 +915,6 @@ Boolean ObjGen_PPC_EABI_0048ac10(Object *obj)
     return 0;
 }
 
-/* 0x404e90, strncmp(a,b,n) */
-/* 0x405850, tolower(c) */
-/* 0x55d5b4, ".abs." */
-
 Boolean ObjGen_PPC_EABI_IsInvalidAbsName(char *name)
 {
     char *p;
@@ -1027,9 +1023,6 @@ void ObjGen_PPC_EABI_BuildSectionHeaderTable(void)
             } while (p);
     }
 }
-
-/* 0x58425e, dword global */
-/* 0x5884a4, word global */
 
 void ObjGen_PPC_EABI_UpdateSectionHeaders(void)
 {

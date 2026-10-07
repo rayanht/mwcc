@@ -16,7 +16,7 @@ struct PCodeOpcodeDescriptor {
     const char *mnemonic;
     const char *operand_format;
     unsigned char operand_count;
-    unsigned char rank; /* 0x09: select_ready_coloring_node compares opcode scheduling ranks at 0x5654b9 */
+    unsigned char rank;
     unsigned short flags;
     SInt32 encoding;
 };
@@ -40,9 +40,8 @@ struct EncodedOperand {
         struct CLabel *label;
     } data;
     union {
-        struct Object *
-            object; /* 0x06: format_inlineasm_instruction and InlineAsmPPC_ReplaceObjectReferenceArguments kinds 2-4 reference an object; ReplaceArg replaces it */
-        struct CLabel *label; /* 0x06: format_inlineasm_instruction kind 6 references the second label */
+        struct Object *object;
+        struct CLabel *label;
     } target;
     union {
         int value;
@@ -71,20 +70,17 @@ struct InlineAsmExpression {
 /* create_function_asm_directive allocates 0x10 for directives; parse_asm_instruction_operands allocates the 0x08 prefix plus operands. */
 struct ParsedAsmInstruction {
     /* create_function_asm_directive: CompilerTools_AllocatePool(0x10) allocation; parse_asm_instruction_operands allocates offsetof(ParsedAsmInstruction, data) + operand_count * sizeof(EncodedOperand). */
-    unsigned int opcode; /* 0x00: parse_asm_instruction_operands opcode; FuncLevelAsmPPC directive kind */
-    unsigned char
-        specialFlags; /* 0x04: create_function_asm_directive sets directive bit 1; create_pcode_asm_instruction tests bit 2 */
-    unsigned char branch_flags; /* 0x05: InlineAsmPPC_GenerateAsmInstruction tests instruction flags */
-    short operand_count;        /* 0x06: parse_asm_instruction_operands counts operands */
+    unsigned int opcode;
+    unsigned char specialFlags;
+    unsigned char branch_flags;
+    short operand_count;
     union {
-        EncodedOperand operands
-            [1]; /* 0x08: CodeGen dispatch with !(specialFlags & 1) calls InlineAsmPPC_GenerateAsmInstruction, create_pcode_asm_instruction */
+        EncodedOperand operands[1];
         struct {
-            struct Object *
-                object; /* 0x08: specialFlags & 1 selects directive; create_function_asm_directive sets object, append_assembly reads it */
-            SInt32 size; /* 0x0c: specialFlags & 1 selects directive; create_function_asm_directive sets byte size */
+            struct Object *object;
+            SInt32 size;
         } directive;
-    } data; /* 0x08: specialFlags & 1 selects directive, otherwise create_pcode_asm_instruction reads operands */
+    } data;
 };
 #pragma pack(pop)
 

@@ -8,11 +8,10 @@ extern "C" {
 #endif
 
 struct BytePair {
-    UInt8 bytes[2]; /* 0x00: is_mask_entry_unchanged loads the two destination bytes for its 16-bit comparison */
+    UInt8 bytes[2];
 };
 struct ByteQuad {
-    UInt8 bytes
-        [4]; /* 0x00: set_file_code copies file-type bytes; is_mask_entry_unchanged loads the four destination bytes for its 32-bit comparison */
+    UInt8 bytes[4];
 };
 /* An option's parameter: its kind, how it is given, its name in help, and the parameter that follows it. */
 enum {

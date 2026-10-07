@@ -358,7 +358,6 @@ static void SetBit_4bfa30(SInt16 *vec, SInt16 bit)
     vec[bit >> 4] |= bit_masks[bit & 0xf];
 }
 
-/* Bit mask table referenced at 0x5614f0 (16 words). */
 static inline short tbit(short *p, int w, int b)
 {
     return bit_masks[b] & p[w];
@@ -510,10 +509,6 @@ void eliminate_unreachable_statements(Statement *items)
         }
     }
 }
-
-/* 0x4ec5e0, signature unknown */
-/* 0x4ec610, signature unknown */
-/* 0x561510, file name string */
 
 void mark_reachable_statements(Statement *input)
 {
@@ -1618,9 +1613,6 @@ ENode *fn_004c07c0(ENode *expr)
     }
     return NULL;
 }
-
-/* 0x581304: last node seen */
-/* 0x581308: count */
 
 void COptimizer_004c0800(ENode *n)
 {

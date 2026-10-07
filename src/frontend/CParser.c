@@ -650,9 +650,6 @@ void fn_0048c220(char processInput)
     } while (repeat);
 }
 
-/* 0x580dc8: linked list whose payload points at a structure holding a
- * list head pointer at +6. */
-
 void CParser_Cleanup(void)
 {
     CParseCacheNode *node;

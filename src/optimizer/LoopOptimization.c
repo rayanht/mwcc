@@ -552,10 +552,6 @@ void unroll_loop_by_factor(Loop *loop)
     loop->iterationCount /= factor;
 }
 
-/* 0x420a10 */ /* 0x441af0 */ /* 0x441fa0 */ /* 0x49cfd0 */ /* 0x49d010 */
-/* 0x49d140 */ /* 0x49d270 */                               /* 0x4a2620 */
-/* 0x5233d0 */                                              /* 0x52ae70 */
-
 void unroll_ctr_loop(Loop *loop)
 {
     PCodeBlock *body;

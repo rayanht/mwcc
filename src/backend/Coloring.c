@@ -434,12 +434,6 @@ void Coloring_CommitAssignments(int reg_class, int register_count)
     }
 }
 
-/* 0x563060: "VR" */
-/* 0x563064: "AFTER CHECKING FOR ALTIVEC FRAME" */
-/* 0x563088: "GPR" */
-/* 0x56308c: "Coloring.c" */
-/* 0x563098: "FPR" */
-
 void Coloring_AllocateRegisters(Object *function)
 {
     unsigned int spill;

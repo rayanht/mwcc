@@ -14,10 +14,9 @@ struct IrNodeList {
 };
 /* A temporary made for an expression (temporary_list lists them): the expression's key and the temporary. */
 struct List12 {
-    ENode *
-        nullCheckExpression; /* 0x00: LookupTemporary compares ENULLCHECK's monadic expression; create_temp_object_assignment records EMFPOINTER's key */
-    Object *temporary;       /* 0x04: create_temp_object_assignment sets the temporary returned by LookupTemporary */
-    struct List12 *next; /* 0x08: create_temp_object_assignment links temporary_list; LookupTemporary traverses it */
+    ENode *nullCheckExpression;
+    Object *temporary;
+    struct List12 *next;
 };
 extern void IRO_ExpressionPropagation(void);
 extern void *IRO_Optimizer(Object *function, void *incomingBody);

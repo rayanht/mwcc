@@ -25,17 +25,16 @@ struct HeapMem {
     SInt32 curfree;
 };
 struct HeapBlock {
-    struct HeapBlock *next; /* 0x00: select_or_allocate_pool_node links pool nodes */
-    struct HeapBlock *
-        *blockhandle; /* 0x04: select_or_allocate_pool_node dereferences the allocation handle; releaseheaps frees it */
-    SInt32 blocksize; /* 0x08: select_or_allocate_pool_node stores allocation size */
-    SInt32 blockfree; /* 0x0c: select_or_allocate_pool_node tracks remaining bytes */
+    struct HeapBlock *next;
+    struct HeapBlock **blockhandle;
+    SInt32 blocksize;
+    SInt32 blockfree;
 };
 typedef struct {
-    unsigned char byte0; /* 0x00: AppendGListLong copies the first native-order value byte */
-    unsigned char byte1; /* 0x01: AppendGListLong copies the second native-order value byte */
-    unsigned char byte2; /* 0x02: AppendGListLong copies the third native-order value byte */
-    unsigned char byte3; /* 0x03: AppendGListLong copies the fourth native-order value byte */
+    unsigned char byte0;
+    unsigned char byte1;
+    unsigned char byte2;
+    unsigned char byte3;
 } NativeLongBytes;
 
 union UInt32ByteSwapStorage {

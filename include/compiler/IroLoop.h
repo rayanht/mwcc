@@ -13,7 +13,7 @@ extern "C" {
 struct IROAddrRecord {
     struct IROLinear *linear;
     UInt8 x4;
-    UInt8 alignmentPadding; /* 0x05: IroVars_CreateAddrRecord leaves this byte unused before numObjRefs */
+    UInt8 alignmentPadding;
     SInt16 numObjRefs;
     IROElmList *objRefs;
     SInt16 numMisc;
@@ -74,34 +74,34 @@ struct IROLinear {
     struct IROExpr *expr;
     struct ERange *range;
     union {
-        struct IROLinear *monadic;  /* 0x1a: ClearReferences Op1Arg, Return and catch kinds */
-        ENode *node;                /* 0x1a: IrOptimizer_0042eb40 Operand */
-        struct CLabel *label;       /* 0x1a: NewLabelLinear IROLinearLabel; convert_linear_to_statements label kinds */
-        struct Statement *asm_stmt; /* 0x1a: build_linear_from_statements kind 16 preserves the asm statement */
+        struct IROLinear *monadic;
+        ENode *node;
+        struct CLabel *label;
+        struct Statement *asm_stmt;
         struct {
-            struct CLabel *label; /* 0x1a: convert_linear_to_statements If/IfNot use target.label */
+            struct CLabel *label;
             struct IROLinear *cond;
         } branch;
         struct {
             struct SwitchInfo *info;
             struct IROLinear *cond;
-        } swtch; /* 0x1a: ClearReferences Switch */
+        } swtch;
         struct {
             struct IROLinear *left;
             struct IROLinear *right;
-        } diadic; /* 0x1a: ClearReferences Op2Arg */
+        } diadic;
         struct {
             struct IROLinear *a;
             struct IROLinear *b;
             struct IROLinear *c;
-        } args3; /* 0x1a: build_linear_from_statements BeginCatch (13) initializes three operands */
+        } args3;
         struct {
             char ispure;
             SInt16 argCount;
             struct IROLinear **args;
             struct IROLinear *callee;
             struct TypeFunc *functype;
-        } funccall; /* 0x1a: ClearReferences Funccall */
+        } funccall;
     } u;
     struct IROLinear *next;
 };

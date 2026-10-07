@@ -99,9 +99,9 @@ struct Type {
 #pragma options align = reset
 #pragma options align = mac68k
 struct TypeIntegral {
-    UInt8 type;     /* 0x00: CMachine.c tests TYPEFLOAT for stshortdouble */
-    SInt32 size;    /* 0x02: SignedIntType selects the integral type by byte size */
-    UInt8 integral; /* 0x06: get_integral_type_code and DumpIR.c decode the IT_* integral or floating-point code */
+    UInt8 type;
+    SInt32 size;
+    UInt8 integral;
 };
 #pragma options align = reset
 #pragma options align = mac68k
@@ -125,12 +125,12 @@ struct StructMember {
 #pragma options align = reset
 #pragma options align = mac68k
 struct TypeStruct {
-    UInt8 type;            /* 0x00: CDecl_NewStructType sets TYPESTRUCT */
-    SInt32 size;           /* 0x02: CDecl_NewStructType sets byte size */
-    HashNameNode *name;    /* 0x06: DWARF_004b0a80 emits name */
-    StructMember *members; /* 0x0a: DWARF_004b0a80 iterates members */
-    SInt8 stype;           /* 0x0e: DWARF_004b0a80 selects structure or union tag */
-    SInt16 align;          /* 0x10: CDecl_NewStructType sets alignment */
+    UInt8 type;
+    SInt32 size;
+    HashNameNode *name;
+    StructMember *members;
+    SInt8 stype;
+    SInt16 align;
 };
 #pragma options align = reset
 #pragma options align = mac68k
@@ -181,7 +181,7 @@ struct TypeClass {
     ClassList *bases;
     VClassList *vbases;
     ObjMemberVar *ivars;
-    struct ClassFriend *friends; /* 0x1a: CClass_CheckStaticAccess traverses the friend list and tests is_class */
+    struct ClassFriend *friends;
     VTable *vtable;
     SOMInfo *sominfo;
     ObjCInfo *objcinfo;
@@ -238,12 +238,12 @@ struct TypeMemberFunc {
 #pragma options align = reset
 #pragma options align = mac68k
 struct TypeBitfield {
-    UInt8 type;             /* 0x00: CDecl_ScanStructDeclarator sets bitfield kind 7 */
-    SInt32 size;            /* 0x02: CDecl_ScanStructDeclarator copies underlying type size */
-    Type *bitfieldtype;     /* 0x06: CDecl_ScanStructDeclarator sets underlying declarator type */
-    char offset;            /* 0x0a: CDecl_ScanStructDeclarator initially clears with memclrw */
-    char bitlength;         /* 0x0b: CDecl_ScanStructDeclarator sets constant bit width */
-    char suppressAlignment; /* 0x0c: CDecl_ScanStructDeclarator sets for unnamed bitfields */
+    UInt8 type;
+    SInt32 size;
+    Type *bitfieldtype;
+    char offset;
+    char bitlength;
+    char suppressAlignment;
 };
 #pragma options align = reset
 #pragma options align = mac68k
@@ -269,9 +269,8 @@ struct TypeTemplDep {
             HashNameNode *name;
         } qual;
         struct {
-            struct TemplClass
-                *templ; /* 0x08: CTemplTool_IsTemplate, kind == 2, reads templateParameters and specializations */
-            struct TemplArg *args; /* 0x0c: write_templdep, kind == 2, serialize_ct_state_elems */
+            struct TemplClass *templ;
+            struct TemplArg *args;
         } templ;
         struct {
             Type *type;

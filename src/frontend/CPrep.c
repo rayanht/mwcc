@@ -2845,9 +2845,6 @@ char *expand_builtin_macro(Macro *macro)
     }
 }
 
-/* 0x588462, word: sign-extended load */
-/* 0x57f94a, 4-byte element table */
-
 char *CPrep_GetFileName(char *param1, Boolean param2, Boolean param3)
 {
     UInt8 buf[256];
@@ -3782,9 +3779,6 @@ Macro *find_macro(void)
     return entry;
 }
 
-/* 0x58719c: bucket table base */
-/* 0x587fa0: current hash key */
-
 Macro *find_macro_for_expansion(UInt8 *p)
 {
     HashNameNode *key = data_00587fa0;
@@ -3808,11 +3802,6 @@ Macro *find_macro_for_expansion(UInt8 *p)
     }
     return NULL;
 }
-
-/* 0x43ecb0, returns a flag in al */
-/* 0x57f9d2, byte flag */
-/* 0x58719c, hash table base */
-/* 0x587fa0, name being looked up */
 
 /* Hash-bucket entry: chained by next, back-pointer to the name at +4,
  * a 16-bit kind at +0xc and a byte flag at +0xf. */

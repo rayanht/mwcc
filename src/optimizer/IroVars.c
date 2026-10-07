@@ -458,8 +458,6 @@ void IroVars_CheckVariablesInitializedBeforeUse(void)
     IroVars_CheckTimedLongjmp();
 }
 
-/* The original asserts against the interned source-file name living at
- * 0x551dc4; reference the symbol so the host binds the same address. */
 #undef CERROR_FILE
 
 /* Inlined from BitVector.h. */
@@ -552,10 +550,6 @@ VarRecord *IroVars_GetOperandVarRecord(IROLinear *node)
         return r;
     return NULL;
 }
-
-/* 0x588510, byte flag */
-/* 0x587ef4, 32-bit counter */
-/* 0x5805f8, saved node pointer */
 
 /* IRO node record as used by IroVars.c: byte kind at 0x00, byte op at 0x01,
  * a long at 0x0a, and two child pointers at 0x1a / 0x1e. */

@@ -848,10 +848,10 @@ struct Float {
 #pragma options align = reset
 #pragma options align = mac68k
 union MWVector128 {
-    UInt8 byteElements[16];  /* 0x00: CMachine_InitVectorMem, TYPESTRUCT stype 4/5/6 */
-    UInt16 shortElements[8]; /* 0x00: CMachine_InitVectorMem, TYPESTRUCT stype 7/8/9/14 */
-    UInt32 longElements[4];  /* 0x00: CMachine_InitVectorMem, TYPESTRUCT stype 10/11/12; also raw constant comparison */
-    float floatElements[4];  /* 0x00: CMachine_InitVectorMem, TYPESTRUCT stype 13 */
+    UInt8 byteElements[16];
+    UInt16 shortElements[8];
+    UInt32 longElements[4];
+    float floatElements[4];
 };
 #pragma options align = reset
 

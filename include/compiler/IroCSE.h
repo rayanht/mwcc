@@ -16,11 +16,9 @@ struct IROExpr {
     struct BitVector *depends;
     struct IROExpr *use;
     UInt8 state;
-    UInt8
-        mayTrap; /* 0x17: fn_0044f230 copies DAT_00587e58 from IroCSE_0044f6a0 (unknown indirection or possibly zero divisor); IroLoop requires mustreach before hoisting */
-    UInt8
-        hasSideEffects; /* 0x18: fn_0044f230 copies DAT_00587630 from IroCSE_0044f6a0 (volatile access, effectful operator or call); IroCSE excludes these candidates */
-    UInt8 alignmentPadding; /* 0x19: fn_0044f230 leaves this byte unused; alignment before factor. */
+    UInt8 mayTrap;
+    UInt8 hasSideEffects;
+    UInt8 alignmentPadding;
     struct IROLinear *factor;
     struct VarRecord *var;
     struct IROLinear *expr;

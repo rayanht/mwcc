@@ -14,11 +14,9 @@ extern "C" {
 
 #pragma pack(push, 1)
 struct CPrecWrittenEntry {
-    struct CPrecWrittenEntry *next; /* 0x00: CPrec_Register and write_pointer_type link hash buckets */
-    void *
-        object; /* 0x04: CPrec_FindAddrPatch uses the original object address as a heterogeneous key; write_pointer_type uses TypePointer */
-    void *
-        image_position; /* 0x08: CPrec_NewAddrPatch records the image address; write_pointer_type stores the serialized position */
+    struct CPrecWrittenEntry *next;
+    void *object;
+    void *image_position;
 };
 #pragma pack(pop)
 union BVWord {
@@ -42,7 +40,7 @@ struct CPrecHeader {
     UInt8 b07;
     UInt8 kind;
     UInt8 flag;
-    UInt8 cplusplus; /* 0x0a: CPrec.c saves copts.cplusplus */
+    UInt8 cplusplus;
     UInt8 pad0b[0x1d];
     UInt32 fileSize;
     UInt32 compressedSize;
@@ -59,18 +57,17 @@ struct CPrecHeader {
     SInt32 classExtensionOffset;
     SInt32 somReferencesOffset;
     SInt32 pendingBuffersOffset;
-    SInt32 uniqueID; /* 0x64: CParser_GetUniqueID; CPrec.c restores via fn_004905c0 */
+    SInt32 uniqueID;
     SInt32 pendingObjectClassesOffset;
-    SInt32 classPointerTypeOffset; /* 0x6c: CPrec.c restores class_pointer_type from precompiled_header_base */
-    SInt32 idTypeOffset;           /* 0x70: CPrec.c restores id_type from precompiled_header_base */
-    SInt32 selTypeOffset;          /* 0x74: CPrec.c restores sel_type from precompiled_header_base */
+    SInt32 classPointerTypeOffset;
+    SInt32 idTypeOffset;
+    SInt32 selTypeOffset;
     SInt32 selectorHashOffset;
     SInt32 classTypeEntriesOffset;
     SInt32 objcRecordsOffset;
-    SInt32 selectorReferenceCount; /* 0x84: CPrec.c saves and restores selector_reference_count */
-    SInt32
-        objcState; /* 0x88: write_precompiled_file saves data_00587f6c, CPrec.c restores it; CObjCModern_ResetGlobals clears this Objective-C state */
-    SInt32 objcStringConstantCount; /* 0x8c: CPrec.c saves and restores objc_string_constant_count */
+    SInt32 selectorReferenceCount;
+    SInt32 objcState;
+    SInt32 objcStringConstantCount;
     SInt32 pendingFunctionsOffset;
     SInt32 pendingInlineWorkOffset;
     SInt32 templateFunctionsOffset;
@@ -86,37 +83,31 @@ union CPrecKey {
 };
 #pragma options align = mac68k
 struct CPrecNode {
-    struct CPrecNode *next; /* 0x00: CInline_DispatchNextDeferredNode pops pending_prec_nodes */
-    struct Object *obj;     /* 0x04: CInline_DispatchNextDeferredNode dispatches the deferred function */
+    struct CPrecNode *next;
+    struct Object *obj;
     union {
         struct {
-            struct TemplClass
-                *classTemplate; /* 0x08: CInline_DispatchNextDeferredNode kind == 1 calls CTemplateNew_CompileObject */
-            struct TemplClassInst
-                *context; /* 0x0c: CInline_DispatchNextDeferredNode kind == 1 calls CTemplateNew_CompileObject */
-            struct TemplateMember
-                *source; /* 0x10: CInline_DispatchNextDeferredNode kind == 1 calls CTemplateNew_CompileObject */
+            struct TemplClass *classTemplate;
+            struct TemplClassInst *context;
+            struct TemplateMember *source;
         } k1;
         struct {
-            struct TemplateFunction *
-                definition; /* 0x08: CInline_DispatchNextDeferredNode kind == 2 calls CTemplateNew_InstantiateFunction */
-            struct TemplFuncInstance *
-                specialization; /* 0x0c: CInline_DispatchNextDeferredNode kind == 2 calls CTemplateNew_InstantiateFunction */
+            struct TemplateFunction *definition;
+            struct TemplFuncInstance *specialization;
         } k2;
         struct {
-            FileOffsetInfo location; /* 0x08: CInline_AddFunctionPrecNode saves key (kind == 0) */
-            TokenStream tokenBuffer; /* 0x12: CInline_AddFunctionPrecNode saves pair (kind == 0) */
-            struct TypeClass *
-                contextClass; /* 0x1a: CInline_AddFunctionPrecNode saves value; CInline_0050ebf0_inline2 traverses class parents (kind == 0) */
+            FileOffsetInfo location;
+            TokenStream tokenBuffer;
+            struct TypeClass *contextClass;
         } k0;
     } u;
-    UInt8 kind; /* 0x1e: CInline_DispatchNextDeferredNode selects the payload variant */
+    UInt8 kind;
     UInt8 pad1f;
 };
 #pragma options align = reset
 #pragma options align = mac68k
 union CPrecPtrU {
-    UInt8 *address; /* 0x00: build_global_pointer_entries records heterogeneous global addresses for relocation */
+    UInt8 *address;
 };
 #pragma options align = reset
 
@@ -132,20 +123,18 @@ union LongBytes {
     UInt8 b[4];
 };
 struct ObjectOffsetEntry {
-    struct ObjectOffsetEntry *next; /* 0x00: serialize_membervars links entries into written_entry_buckets */
-    ObjMemberVar *
-        object; /* 0x04: serialize_membervars stores object and object->next; fn_004da6c0_inline2 looks up the next member variable */
-    long offset; /* 0x08: serialize_membervars stores and returns the serialized member-variable offset */
+    struct ObjectOffsetEntry *next;
+    ObjMemberVar *object;
+    long offset;
 };
 /* An object whose initialisation is deferred (CException_AddPendingBuffer; the list at pending_buffers): a copy of its
    initial bytes and the relocations to apply to them. Saved into precompiled headers by serialize_pending_buffers. */
 struct PendingBuffer {
-    struct PendingBuffer *next; /* 0x00: CException_AddPendingBuffer links pending_buffers */
-    struct Object *owner; /* 0x04: CException_AddPendingBuffer sets owner; serialize_pending_buffers writes object */
-    char *
-        buffer; /* 0x08: CException_AddPendingBuffer copies owner->type->size bytes; serialize_pending_buffers reads char data */
-    struct OLinkList *value; /* 0x0c: CException_AddPendingBuffer copies relocation list */
-    int entryValue;          /* 0x10: CException_AddPendingBuffer sets entryValue; CPrec passes it to fn_004ceab0 */
+    struct PendingBuffer *next;
+    struct Object *owner;
+    char *buffer;
+    struct OLinkList *value;
+    int entryValue;
 };
 
 struct PrecTypeEntry {
@@ -154,9 +143,9 @@ struct PrecTypeEntry {
 };
 
 struct SavedPrepTokenList {
-    struct SavedPrepTokenList *next; /* 0x00: append_saved_prep_tokens links saved_prep_tokens */
-    TStreamElement *offset; /* 0x04: append_saved_prep_tokens stores bp, the appended TStreamElement array position */
-    SInt32 count;           /* 0x08: append_saved_prep_tokens stores n, the token count */
+    struct SavedPrepTokenList *next;
+    TStreamElement *offset;
+    SInt32 count;
 };
 #pragma options align = mac68k
 struct SelectorMethod {

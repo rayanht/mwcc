@@ -25,23 +25,19 @@ enum { STORAGE_AUTO = TK_AUTO, STORAGE_REGISTER = TK_REGISTER, STORAGE_STATIC = 
 
 #pragma options align = mac68k
 struct DeclInfo {
-    Type *
-        thetype; /* 0x00: CParser_GetDeclSpecs supplies the declaration type; CClass_GetQualifiedClass tests TYPECLASS */
+    Type *thetype;
     UInt32 qual;
     struct NameSpace *nspace;
     HashNameNode *name;
-    struct ObjBase *resolvedObject; /* 0x10: parse_resolved_member_function_decl casts the resolved symbol to Object */
-    struct NameSpaceObjectList
-        *resolvedObjects; /* 0x14: parse_resolved_member_function_decl reads the namespace object list's object */
+    struct ObjBase *resolvedObject;
+    struct NameSpaceObjectList *resolvedObjects;
     struct FuncArg *parameterNames;
     struct NameSpace *parameterScope;
     Type *templateType;
     ENode *arrayBound;
     struct TypeClass *pendingClass;
-    struct TemplArg *
-        expltargs; /* 0x2c: CTemplateNew_ParseTemplateArguments supplies the list; CDecl_PackDeclInfo copies it with CTemplTool_MakeGlobalTemplArgCopy */
-    struct TemplParam *
-        templateParameters; /* 0x30: parse_function_template_declaration assigns its TemplParam *params before CDecl_ParseDeclarator */
+    struct TemplArg *expltargs;
+    struct TemplParam *templateParameters;
     struct TemplateScopeState *templateScope;
     SInt16 operator_token;
     SInt16 storageclass;
@@ -56,7 +52,7 @@ struct DeclInfo {
     Boolean parserOption;
     Boolean isConstructor;
     Boolean allowForeignNamespace;
-    Boolean in_friend_decl; /* 0x48: parse_friend_declaration sets this flag before CDecl_ParseDeclarator */
+    Boolean in_friend_decl;
     UInt8 requireMangledName;
     UInt8 isNewTypeId;
     UInt8 requireTemplateClassMember;
@@ -79,10 +75,10 @@ union FunctionTypeBuffer {
 };
 #pragma pack(push, 1)
 struct BigDeclInfo {
-    DeclInfo declinfo;  /* 0x00: CParser_GetDeclSpecs in CDecl.c */
-    DeclInfo declinfo2; /* 0x5c: CDecl_ScanStructDeclarator */
-    UInt8 unused;       /* 0xb8: CDecl.c clears the whole BigDeclInfo; no member reads or writes */
-    Boolean valid;      /* 0xb9: CDecl_ScanStructDeclarator sets declaration validity */
+    DeclInfo declinfo;
+    DeclInfo declinfo2;
+    UInt8 unused;
+    Boolean valid;
 };
 #pragma pack(pop)
 extern TypeIntegral stunsignedint;

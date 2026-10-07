@@ -8,11 +8,10 @@ extern "C" {
 #endif
 
 struct MemberPointerConstant {
-    struct MemberPointerConstant
-        *next;             /* 0x00: replace_vector_constant_with_objectref links member_pointer_constants */
-    struct Object *object; /* 0x04: replace_vector_constant_with_objectref references the shared vector object */
-    int offset;            /* 0x08: TOC_EmitMemberPointerConstants copies the vector at this byte offset */
-    MWVector128 *value;    /* 0x0c: replace_vector_constant_with_objectref interns CMachine_InitVectorMem output */
+    struct MemberPointerConstant *next;
+    struct Object *object;
+    int offset;
+    MWVector128 *value;
 };
 #pragma options align = mac68k
 
@@ -25,9 +24,9 @@ struct TOCEntry {
 };
 #pragma pack(push, 1)
 struct TOCNameEntry {
-    struct TOCNameEntry *next; /* 0x00: get_or_create_label_object links toc_name_entries */
-    struct Object *object;     /* 0x04: get_or_create_label_object caches the label object */
-    struct CLabel *label;      /* 0x08: CodeGen_Generator adds the label as an indirect branch successor */
+    struct TOCNameEntry *next;
+    struct Object *object;
+    struct CLabel *label;
 };
 #pragma pack(pop)
 #pragma pack(push, 1)

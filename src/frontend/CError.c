@@ -84,9 +84,6 @@ static void CErrBuf_Append(StrBuf *b, const char *s)
     b->avail -= n;
 }
 
-/* 0x403c50, sprintf-like */
-/* 0x404c30, memcpy */
-
 static void CError_BufferAppendChar(StrBuf *eb, char ch)
 {
     if (eb) {
@@ -180,9 +177,6 @@ void fn_00449d60(void)
     data_005805ee = 4294967295U;
     return;
 }
-
-/* 0x404c30, memcpy */
-/* 0x441fa0, lalloc */
 
 static void CError_BufferGrow(StrBuf *eb, UInt32 amount)
 {
@@ -887,8 +881,6 @@ void report_diagnostic(int message, char *argument, char force, char mode)
 
 /* memcpy */
 /* lalloc */
-/* 0x5519f4, the 17-byte string */
-/* 0x551a08, the 2-byte string */
 
 void append_instantiation_stack(StrBuf *buf)
 {

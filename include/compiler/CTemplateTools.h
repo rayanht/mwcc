@@ -11,10 +11,10 @@ extern "C" {
 
 #pragma pack(push, 1)
 struct TemplateLookupContext {
-    struct TemplClass *owner; /* 0x00: fn_00516b50 matches record->enclosingTemplate against the original owner chain */
-    struct TemplClass *currentClass;          /* 0x04: fn_00516b50 searches the corresponding current class namespace */
-    void *unk8;                               /* 0x08: no named accesses in CTemplateTools.c; meaning unknown */
-    struct TemplateParameterIDEntry *entries; /* 0x0c: no named accesses in CTemplateTools.c */
+    struct TemplClass *owner;
+    struct TemplClass *currentClass;
+    void *unk8;
+    struct TemplateParameterIDEntry *entries;
 };
 #pragma pack(pop)
 struct TemplateParameterIDEntry {

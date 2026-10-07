@@ -393,7 +393,6 @@ static void CScope_AmbigFoundClassError(NameSpace **nspace1, NameSpace *nspace2,
 
 #undef CERROR_FILE
 
-/* 0x55e480, filename string */
 /* CError_Internal declared in the headers */
 
 static inline NameSpaceLookupList *CScope_FindUsingScope(NameSpaceLookupList *scope, NameSpaceList *used)
@@ -548,9 +547,6 @@ void CScope_RestoreScope(CScopeSave *save)
     cscope_currentfunc = save->currentfunc;
     cscope_is_member_func = save->is_member_func;
 }
-
-/* 0x491250, one pointer arg, Boolean result */
-/* 0x55e480, "NameResult.c" file name */
 
 /* Global describing a hashed namespace / object table. Offsets verified from
  * the disassembly: bucket array pointer at 0x10, is_hash flag byte at 0x18. */
@@ -2068,12 +2064,6 @@ Boolean CScope_ParseExprName(NameResult *scope)
 }
 
 #undef CERROR_FILE
-
-/* 0x490660, returns Boolean in al */
-/* 0x4986e0, returns Boolean in al */
-/* 0x5882d8, word accesses */
-/* 0x58427a, byte accesses */
-/* 0x5884f8, byte accesses */
 
 Boolean CScope_ParseDeclName(NameResult *lookup)
 {

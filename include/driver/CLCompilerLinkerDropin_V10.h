@@ -9,18 +9,16 @@ extern "C" {
 
 #pragma options align = mac68k
 struct DropinConfiguration {
-    struct StorageHandle
-        *primaryReference; /* 0x00: store_object_data exchanges handles through SetStorageHandle and StoreValue */
-    struct StorageHandle
-        *secondaryReference; /* 0x04: store_object_data receives secondaryValue from SetStorageHandle */
-    SInt32 fileType;         /* 0x08: store_object_data copies nonzero fileType to dropin->fileType */
+    struct StorageHandle *primaryReference;
+    struct StorageHandle *secondaryReference;
+    SInt32 fileType;
     UInt32 values[4];
     UInt8 flag;
     UInt8 reserved1;
-    char *path; /* 0x1e: store_object_data reads a path string through OS_MakeSpec */
+    char *path;
     UInt8 reserved2[8];
     UInt16 option;
-    CWFileSpec *outputFileSpec; /* 0x2c: store_object_data passes outputFileSpec to MacSpecs_MakeOSSpec */
+    CWFileSpec *outputFileSpec;
 };
 #pragma options align = reset
 struct DropinContext {

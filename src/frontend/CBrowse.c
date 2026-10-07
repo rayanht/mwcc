@@ -63,7 +63,6 @@ static inline CPrepFileInfo *browse_source(TemplateFunction *info)
 }
 
 /* The assert file name. */
-/* 0x563344, "CBrowse.c" */
 
 static inline void browse_write(char *pq, SInt32 id1, char *alt, SInt32 id2, int n2, int n3, SInt32 a4, SInt32 a5,
                                 Boolean b)

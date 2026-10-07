@@ -862,9 +862,6 @@ static void NopOutBlock(IRONode *node)
     }
 }
 
-/* 0x555420: zero */
-/* 0x555428: one */
-
 struct IROLinear *create_loop_iteration_count(struct IROList *context, struct IROLoop *statement)
 {
     Type *type;
@@ -2208,9 +2205,6 @@ void unroll_loop(int factor, struct IRONode *header)
         IroFlowgraph_ComputeDom();
     }
 }
-
-/* 0x555420: 64-bit zero */
-/* 0x555428: 64-bit one */
 
 int combine_nonoverlapping_shifts(CInt64 a, CInt64 b, CInt64 *out)
 {

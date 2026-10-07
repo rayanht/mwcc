@@ -8,8 +8,6 @@ extern "C" {
 #endif
 
 #define ENODE_IS(_enode, _etype) ((_enode)->type == (_etype))
-/* The expression node kinds, in the order and with the names of the compiler's own table of them (DumpIR's, at
- * 0x55268c: index = kind). */
 typedef enum ENodeType {
     EPOSTINC,
     EPOSTDEC,
@@ -108,8 +106,8 @@ typedef enum TemplDepSubType {
 } TemplDepSubType;
 #pragma options align = mac68k
 struct ENodeList {
-    ENodeList *next; /* 0x00: CExpr_MakeFunctionCall traverses and appends call arguments */
-    ENode *node;     /* 0x04: CExpr_MakeFunctionCall converts each argument expression */
+    ENodeList *next;
+    ENode *node;
 };
 #pragma options align = reset
 #pragma options align = mac68k
@@ -121,13 +119,10 @@ union ENodeUnion {
     SInt32 longval;
     ENode *monadic;
     struct MemberFunctionPointerData *memberFunctionPointer;
-    struct EMemberInfo *
-        emember; /* 0x00: make_memberpointer reads ENEWEXCEPTIONARRAY expression, addressTaken, bcl and list from the same member reference */
+    struct EMemberInfo *emember;
     Object *objref;
-    struct ObjectList *
-        overloadCandidates; /* 0x00: make_static_method_setconst stores ENEWEXCEPTION candidates; match_template_function_args reads this kind */
-    struct CLabel *
-        label; /* 0x00: unary_expression selects ELOCOBJ for TK_LOGICAL_AND (GNU label address), stores findlabel/newlabel */
+    struct ObjectList *overloadCandidates;
+    struct CLabel *label;
     struct {
         char *info;
         UInt8 unk0e[8];
@@ -135,8 +130,7 @@ union ENodeUnion {
     } inlineasm;
     struct {
         struct NameSpaceObjectList *list;
-        struct TemplArg *
-            templargs; /* 0x04: CExpr.c copies objlist.templargs into EMemberInfo.templargs; CExpr_MakeFunctionCall reads template arguments for ENEWEXCEPTION */
+        struct TemplArg *templargs;
         struct HashNameNode *name;
     } objlist;
     struct {
@@ -144,10 +138,9 @@ union ENodeUnion {
         ENode *right;
     } diadic;
     struct {
-        ENode *expression; /* 0x00: get_objaccess_cached_value, type == EINSTRUCTION, selects this expression */
-        struct Operand *
-            cachedValue; /* 0x04: get_objaccess_cached_value, type == EINSTRUCTION, allocates and reuses the selected operand */
-    } objaccess;         /* get_objaccess_cached_value tests EINSTRUCTION before reading this variant */
+        ENode *expression;
+        struct Operand *cachedValue;
+    } objaccess; /* get_objaccess_cached_value tests EINSTRUCTION before reading this variant */
     struct {
         ENode *label;
         ENode *expression;
@@ -233,9 +226,9 @@ struct ENode {
 };
 #pragma options align = reset
 struct MemberFunctionPointerData {
-    UInt8 metadata[4]; /* 0x00: ELOCOBJ consumers CInline_005114e0 and print_enode_tree leave these bytes unused */
-    struct InlineMemberPointerTarget *target; /* 0x04: CInline_005114e0 marks target flags for ELOCOBJ */
-    struct HashNameNode *name; /* 0x08: print_enode_tree prints ELOCOBJ name; inline_member_index compares it */
+    UInt8 metadata[4];
+    struct InlineMemberPointerTarget *target;
+    struct HashNameNode *name;
 };
 
 #ifdef __cplusplus

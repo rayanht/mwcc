@@ -9,13 +9,11 @@ extern "C" {
 
 #pragma options align = mac68k
 struct COptBlockLink {
-    struct COptBlockLink *next; /* 0x00: add_succ and build_opt_blocks link successor/predecessor edges */
+    struct COptBlockLink *next;
     union {
-        struct COptBlock *
-            block; /* 0x04: build_opt_blocks resolution phase installs blocks; propagate_bit_to_preds reads resolved edges */
-        struct Statement *
-            statement; /* 0x04: add_succ and build_opt_blocks construction phase store statements before the final resolution loop */
-    } target; /* 0x04: build_opt_blocks changes statement targets to block targets in its final loop */
+        struct COptBlock *block;
+        struct Statement *statement;
+    } target;
 };
 #pragma options align = reset
 #pragma options align = mac68k
@@ -24,11 +22,9 @@ struct COptBlock {
     COptBlockLink *pred;
     COptBlockLink *succ;
     struct Statement *items;
-    SInt16 *
-        referenceBits; /* 0x10: mark_dlocal_reference_bits marks indirect reads; propagate_bit_to_preds propagates them backward */
-    SInt16 *
-        referenceBarrierBits; /* 0x14: mark_dlocal_reference_bits marks assignments/direct references before reads; propagate_bit_to_preds stops at these bits */
-    SInt32 unused;            /* 0x18: new_block and new_block2 initialize to zero; no other uses */
+    SInt16 *referenceBits;
+    SInt16 *referenceBarrierBits;
+    SInt32 unused;
     SInt16 count;
     UInt8 flag;
 };

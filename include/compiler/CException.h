@@ -35,8 +35,7 @@ struct ExceptionAction {
         struct {
             struct Object *context;
             struct Object *dtor;
-            struct Object *
-                value1; /* 0x0c: Exceptions_CollectRegisterOperands reads kind 12 condition object; other kinds encode offsets */
+            struct Object *value1;
             void *value2;
         } call;
         struct {

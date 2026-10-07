@@ -1174,7 +1174,7 @@ static ObjNameSpace *CPrec_GetObjNameSpacePatch(ObjNameSpace *obj)
     return p;
 }
 
-#define written_entry_buckets ((CPrecWrittenEntry **)written_entry_buckets) /* 0x581bf6 */
+#define written_entry_buckets ((CPrecWrittenEntry **)written_entry_buckets)
 static inline unsigned hash_inner(void *p)
 {
     union {
@@ -5315,14 +5315,6 @@ void patch_hash_name_reference(unsigned int value, HashNameNode *record)
     record->id = 1;
     patch_object_reference((SInt32)(value), record);
 }
-
-/* 0x441fa0, size in the caller's push */
-/* 0x581c28, byte access */
-/* 0x581be2, dword access */
-/* 0x581be6, dword access */
-/* 0x581bf6, dword access */
-/* 0x581bfa, dword access */
-/* 0x581c1a, dword access */
 
 static SInt32 hash_cprec_bytes(SInt32 value)
 {

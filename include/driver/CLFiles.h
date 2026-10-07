@@ -8,10 +8,9 @@ extern "C" {
 #endif
 
 struct ChainRecord {
-    char name[0x20]; /* 0x00: CLFiles_CreateChainRecord copies the name; CLFiles_FindChainRecord compares it. */
-    struct StorageHandle *
-        object; /* 0x20: CLFiles_CreateChainRecord allocates and copies a handle; CLFiles_FreeChainNodes frees it; CLLoadAndCache_CopyStorageHandleData reads it. */
-    struct ChainRecord *next; /* 0x24: CLFiles_AppendChainRecord links nodes; CLFiles_FindChainRecord traverses them. */
+    char name[0x20];
+    struct StorageHandle *object;
+    struct ChainRecord *next;
 };
 struct IndexedListLink {
     struct IndexedListLink *next;

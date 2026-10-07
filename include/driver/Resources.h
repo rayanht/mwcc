@@ -36,24 +36,21 @@ struct RefEntry {
 #pragma pack(pop)
 #pragma pack(push, 2)
 struct ResData {
-    UInt16 preservedPrefix
-        [0x21]; /* 0x00: read_resource_file reads resource-file data before timestamps; write_resource_file preserves it verbatim */
-    UInt8 creationTime[4]; /* 0x42: Resources_SetFileTimes stores big-endian creation time; fn_004083b0 reads it */
-    UInt8 modificationTime
-        [4]; /* 0x46: Resources_SetFileTimes stores big-endian modification time; fn_004083b0 reads it */
-    UInt16 preservedSuffix
-        [0x53]; /* 0x4a: read_resource_file reads resource-file data after timestamps; write_resource_file preserves it verbatim */
+    UInt16 preservedPrefix[0x21];
+    UInt8 creationTime[4];
+    UInt8 modificationTime[4];
+    UInt16 preservedSuffix[0x53];
 };
 #pragma pack(pop)
 struct ResEntry {
-    UInt16 id;                    /* 0x00: find_res_entry matches resource ID */
-    UInt16 resourceTypeAlignment; /* 0x02: insert_res_entry leaves alignment before resourceType uninitialized */
-    UInt32 resourceType;          /* 0x04: read_resource_file passes types[count].type to insert_res_entry */
-    unsigned char *name;          /* 0x08: write_resource_file writes Pascal resource name */
-    UInt8 attrs;                  /* 0x0c: write_resource_file writes reference.attributes */
-    UInt8 handleAlignment[3];     /* 0x0d: insert_res_entry leaves alignment before hand uninitialized */
-    struct StorageHandle *hand;   /* 0x10: free_res_file frees handle; write_resource_file reads handle data and size */
-    struct ResEntry *next;        /* 0x14: count_entries traverses resource entries */
+    UInt16 id;
+    UInt16 resourceTypeAlignment;
+    UInt32 resourceType;
+    unsigned char *name;
+    UInt8 attrs;
+    UInt8 handleAlignment[3];
+    struct StorageHandle *hand;
+    struct ResEntry *next;
 };
 #pragma pack(push, 2)
 struct ResFile {

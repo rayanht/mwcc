@@ -464,10 +464,6 @@ static inline void SaveName(IStmtRec *sp, ENode *name)
 
 #pragma opt_lifetimes off
 
-/* 0x573204, "CInline.c" */
-/* 0x58245e, register record array pointer */
-/* 0x582462, register record array pointer */
-
 /* Map an object reference to its scope slot.  Objects still bound to the
  * argument list come back as negative (0x80000000 | (i+1)) indices. */
 static inline SInt32 MapObj(SInt32 arg)
@@ -527,7 +523,6 @@ done:
 
 #pragma opt_lifetimes reset
 
-/* 0x5824b2 (its -64 preimage is the table at 0x582472) */
 #define CERROR_FILE ("CInline.c")
 
 static Object *CInline_MakeTemp(Type *t)
@@ -583,10 +578,6 @@ static inline void CopyStatementExpression(ExceptionAction *copy, ExceptionActio
     copy->data.slots[0] = CInline_GetObjectByIndex(source->data.operands[0].value, copyExpressions);
     copy->data.slots[1] = source->data.slots[1];
 }
-
-/* 0x582468, 16-bit counter */
-/* 0x584278, 16-bit flag */
-/* 0x5842d6, byte flag */
 
 static inline SInt16 inline_statement_count(const CInlineInfo *info)
 {

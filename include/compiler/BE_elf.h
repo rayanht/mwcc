@@ -41,15 +41,14 @@ struct IndexedEntry {
 #pragma pack(pop)
 #pragma options align = mac68k
 struct SectionRec {
-    UInt8 flags;      /* 0x00: parse_section_pragma tracks supplied options */
-    UInt8 typebits;   /* 0x01: BE_elf_SetEABISections selects default section types */
-    UInt8 far_reloc;  /* 0x02: parse_section_pragma sets data_mode relocation */
-    UInt8 near_reloc; /* 0x03: parse_section_pragma sets code_mode relocation */
-    UInt8 mode;       /* 0x04: parse_section_pragma accumulates R/W/X attributes */
-    UInt8
-        alignmentPadding; /* 0x05: MakeRecA and parse_section_pragma zero this unused byte before the aligned name pointers */
-    char *sectionName;       /* 0x06: BE_elf_CreateSectionWithRelocations creates the section */
-    char *linkedSectionName; /* 0x0a: BE_elf_CreateSectionWithRelocations finds the linked section */
+    UInt8 flags;
+    UInt8 typebits;
+    UInt8 far_reloc;
+    UInt8 near_reloc;
+    UInt8 mode;
+    UInt8 alignmentPadding;
+    char *sectionName;
+    char *linkedSectionName;
 };
 #pragma options align = reset
 #pragma pack(push, 1)

@@ -8,8 +8,8 @@ extern "C" {
 #endif
 
 struct StringListHeader {
-    unsigned char countHigh; /* 0x00: CLIO_GetResourceString reads the high byte of the big-endian STR# string count */
-    unsigned char countLow;  /* 0x01: CLIO_GetResourceString reads the low byte of the STR# string count */
+    unsigned char countHigh;
+    unsigned char countLow;
 };
 extern char *CLIO_ConvertToPascalString(char *string);
 extern char *__stdcall CLIO_ConvertPascalToCString(char *p);

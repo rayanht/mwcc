@@ -152,11 +152,6 @@ static inline HashNameNode *InternCodeGenName(char *text)
     return GetHashNameNode(text);
 }
 
-/* 0x5842f2, byte global */
-/* 0x5842d7, byte global */
-/* 0x584227, byte global */
-/* 0x54f6b4, filename string */
-
 static UInt8 CodeGen_00435040_kind(Type *ftype)
 {
     if (Type_RequiresMemoryReturn(ftype))
@@ -844,9 +839,6 @@ void allocate_registers_and_local_slots(void)
         }
     }
 }
-
-/* 0x584244, byte flag */
-/* 0x588521, byte flag */
 
 void emit_dlocal_initialization(Object *object, SInt16 reg)
 {

@@ -15,13 +15,12 @@ struct CClassNode {
 #pragma pack(pop)
 #pragma options align = mac68k
 struct ClassFriend {
-    struct ClassFriend *next; /* 0x00: CDecl_AddFriend links class friends */
+    struct ClassFriend *next;
     union {
-        struct TypeClass
-            *theclass;      /* 0x04: CDecl_AddFriend sets when is_class != 0; serialize_entry_list writes type */
-        struct Object *obj; /* 0x04: CDecl_AddFriend sets when is_class == 0; serialize_entry_list writes object */
+        struct TypeClass *theclass;
+        struct Object *obj;
     } u;
-    UInt8 isclass; /* 0x08: CDecl_AddFriend selects type or object; check_base_path_access tests it */
+    UInt8 isclass;
 };
 #pragma options align = reset
 #pragma pack(push, 1)
@@ -36,21 +35,18 @@ struct OverrideClass {
 #pragma pack(pop)
 #pragma pack(push, 1)
 struct OverrideClassBase {
-    struct OverrideClassBase *
-        next; /* 0x00: create_class_layout links layout->children; find_class_layout_by_class_and_offset traverses it */
-    struct OverrideClass
-        *layout; /* 0x04: create_class_layout builds the base layout; select_member_override searches it */
-    Boolean
-        is_virtual; /* 0x08: create_class_layout sets from base->is_virtual; contains_base_layout selects the virtual base */
+    struct OverrideClassBase *next;
+    struct OverrideClass *layout;
+    Boolean is_virtual;
 };
 #pragma pack(pop)
 #pragma pack(push, 1)
 struct OverrideFunc {
-    struct OverrideFunc *next;           /* 0x00: create_class_layout links layout->members */
-    struct Object *object;               /* 0x04: create_class_layout stores the DVFUNC object */
-    struct OverrideClass *selectedClass; /* 0x08: select_member_override selects the overriding class */
-    struct OverrideFunc *selected;       /* 0x0c: select_member_override selects the overriding function */
-    struct OverrideFunc *conflict;       /* 0x10: select_member_override records an ambiguous override */
+    struct OverrideFunc *next;
+    struct Object *object;
+    struct OverrideClass *selectedClass;
+    struct OverrideFunc *selected;
+    struct OverrideFunc *conflict;
 };
 #pragma pack(pop)
 struct PendingThunk {

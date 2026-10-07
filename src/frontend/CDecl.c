@@ -5058,9 +5058,6 @@ void generate_copy_constructor(ClassLayout *type, TypeClass *cls)
     }
 }
 
-/* 0x48ff20: new zeroed FuncArg (0x18) */
-/* 0x4ebca0: find class function object */
-
 void declare_auto_generated_destructor(ClassLayout *type, TypeClass *cls)
 {
     ClassList *base;

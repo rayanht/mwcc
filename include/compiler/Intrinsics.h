@@ -27,14 +27,12 @@ struct IntrinsicTripleEntry {
     UInt16 code;
 };
 struct IntrinsicTypeEntry {
-    struct Type *
-        result; /* 0x00: find_unary_intrinsic_code tests the result type as the alternative-table terminator, like find_binary_intrinsic_code. */
-    struct Type *type; /* 0x04: find_unary_intrinsic_code matches this operand type against expression->rtype. */
-    UInt16 code;       /* 0x08: find_unary_intrinsic_code returns the matched instruction code. */
+    struct Type *result;
+    struct Type *type;
+    UInt16 code;
 };
 struct IntrinsicVariant {
-    Type *
-        resultType; /* 0x00: find_matching_op_result returns the result type; generate_unary_vector_intrinsic and Intrinsics_00486db0 test the table terminator */
+    Type *resultType;
     Type *type;
     SInt16 op1;
     SInt16 op2;
@@ -48,8 +46,8 @@ struct MangleEntry {
 };
 #pragma options align = mac68k
 struct OpEntry {
-    struct Type *result;      /* 0x00: find_matching_op_result returns the Intrinsics_MakeAltivecCall call->rtype */
-    struct Type *operandType; /* 0x04: find_matching_op_result compares against the argument node->rtype */
+    struct Type *result;
+    struct Type *operandType;
     void *a;
     void *b;
 };
@@ -93,8 +91,7 @@ union IntrinsicTableEntry {
     struct SimpleEntry *simple;
     struct IntrinsicOperation *operation;
     struct IntrinsicVariant *variant;
-    struct IntrinsicBinaryEntry *
-        binary; /* 0x00: find_binary_intrinsic_code and check_binary_intrinsic_args select binary intrinsic alternatives */
+    struct IntrinsicBinaryEntry *binary;
     struct IntrinsicTypeEntry *unary;
     struct IntrinsicTripleEntry *triple;
     struct OpEntry *op;

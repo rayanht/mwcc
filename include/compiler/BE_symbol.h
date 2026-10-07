@@ -15,7 +15,7 @@ struct BE_SymNode {
     struct {
         struct ObjGenSection *section;
     } sectionData;
-    UInt32 stringOffset; /* 0x08: BE_elf.c string-table builder stores offset; write_sym_nodes emits ELF st_name */
+    UInt32 stringOffset;
     SInt32 offset;
     SInt32 size;
     UInt8 symbolKind;

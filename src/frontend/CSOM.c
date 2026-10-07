@@ -116,9 +116,6 @@ static inline TypeClass *CSOM_004e4a30_inline1(void)
     return v0;
 }
 
-/* 0x441a70, byte-swap 32 (conditional) */
-/* 0x441ab0, byte-swap 16 (conditional) */
-
 static inline Object *MakeKinds(SOMClassBuildState *info)
 {
     SOMEntry *n;

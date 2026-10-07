@@ -4514,9 +4514,6 @@ Boolean CExpr_IsLValue(ENode *expr)
     return 1;
 }
 
-/* 0x4463d0; one int arg */
-/* stbool 0x55f5a8, stsignedlong 0x55f5f0 declared in the headers */
-
 static ENode *make_monadic(ENode *inner, UInt8 ty)
 {
     ENode *n = (ENode *)CompilerTools_AllocatePool(sizeof(ENode));
@@ -5308,9 +5305,6 @@ ENode *replace_expr_tree_nodes(ENode *node)
             return NULL;
     }
 }
-
-/* 0x580748, callback pointer */
-/* 0x5550d8, source file name */
 
 void CExpr_SearchExprTree(ENode *expr, void (*value)(ENode *), SInt32 count, ...)
 {

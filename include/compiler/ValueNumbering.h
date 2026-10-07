@@ -59,13 +59,10 @@ struct ValueRegisterOperand {
 };
 #pragma options align = mac68k
 struct ValueUpdate {
-    struct ValueUpdate
-        *next; /* 0x00: copy_register_value_state and invalidate_register_value link snapshots into data_00582c38 */
-    PCodeOperand descriptor; /* 0x04: copy_register_value_state saves destination; fn_0051fd70 tests its kind */
-    struct ValueDestination
-        *destination; /* 0x10: fn_0051fd70 reads only for PCOp_MEMORY; unused for register snapshots */
-    struct RegisterValueState
-        value; /* 0x14: copy_register_value_state saves destinationRecord for restoration by fn_0051fd70 */
+    struct ValueUpdate *next;
+    PCodeOperand descriptor;
+    struct ValueDestination *destination;
+    struct RegisterValueState value;
 };
 #pragma options align = reset
 extern SInt32 ValueNumbering_0051f790(RegisterValueRecord *a, PCodeInstruction *b);

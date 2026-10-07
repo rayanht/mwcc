@@ -24,12 +24,9 @@ enum PCodeInstructionFlags {
 };
 #pragma options align = mac68k
 struct CBlockData {
-    UInt32 *
-        generatedLoads; /* 0x00: LoadDeletion_BuildLoadLivenessSets sets local immediate loads and clears overwritten ones. */
-    UInt32 *
-        killedLoads; /* 0x04: LoadDeletion_BuildLoadLivenessSets marks other blocks' loads whose registers are overwritten. */
-    UInt32 unusedStorage
-        [2]; /* 0x08: COpt_LoadDeletion allocates a 0x10-byte block entry; neither it nor LoadDeletion_BuildLoadLivenessSets accesses this trailing storage. */
+    UInt32 *generatedLoads;
+    UInt32 *killedLoads;
+    UInt32 unusedStorage[2];
 };
 #pragma options align = reset
 extern void ConstantPropagation_PropagateConstantsInBlock(struct PCodeBlock *block);

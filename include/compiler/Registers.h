@@ -21,8 +21,7 @@ struct VarInfo {
     UInt8 is_fpr;
     UInt8 in_param_area;
     UInt8 is_vector;
-    UInt8
-        alignmentPadding; /* 0x2b: Registers_GetInfo allocates and clears 44 bytes; unused trailing alignment byte after is_vector. */
+    UInt8 alignmentPadding;
 };
 #pragma options align = reset
 extern void Registers_BindVR(Object *obj, short vr);

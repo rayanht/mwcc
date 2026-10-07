@@ -30,9 +30,9 @@ struct PCodeInstruction;
 extern void expand_out_of_range_conditional_branches(void);
 extern UInt32 encode_assembly_instruction(PCodeInstruction *instr, UInt32 offset, WeirdOperand *wop);
 struct PCodeAssemblyEntry {
-    struct PCodeAssemblyEntry *next; /* 0x00: PCodeAssembly_EmitFunction walks the entries */
-    struct Object *object; /* 0x04: PCodeAssembly_EmitFunction passes the object to ObjGen_PPC_EABI_SetSymbolOffset */
-    struct PCodeBlock *block; /* 0x08: PCodeAssembly_EmitFunction reads block->code_offset */
+    struct PCodeAssemblyEntry *next;
+    struct Object *object;
+    struct PCodeBlock *block;
 };
 extern int PCodeAssembly_EmitFunction(Object *object, struct PCodeAssemblyEntry *entries);
 extern int optimize_branches(int arg);

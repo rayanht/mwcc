@@ -15,10 +15,9 @@ struct IRODef {
     VarRecord *var;
     struct IRODef *globalnext;
     struct IRODef *varnext;
-    UInt16 useCount; /* 0x14: IROUseDef.c increments for reaching uses; propagate_inc_dec compares live uses */
+    UInt16 useCount;
     UInt8 global;
-    UInt8
-        noregister; /* 0x17: create_def_record copies var->noregister; IROUseDef.c preserves definitions visible at calls */
+    UInt8 noregister;
     UInt8 definite;
 };
 #pragma options align = reset
@@ -31,10 +30,8 @@ struct IROUse {
     VarRecord *var;
     struct IROUse *globalnext;
     struct IROUse *varnext;
-    struct BitVector
-        *reachingDefs; /* 0x18: IROUseDef.c sets reaching definition indices; propagate_inc_dec tests def->index */
-    UInt16
-        reachingDefCount; /* 0x1c: IROUseDef.c increments for each reaching definition; propagate_inc_dec requires exactly one */
+    struct BitVector *reachingDefs;
+    UInt16 reachingDefCount;
 };
 #pragma options align = reset
 extern void fn_00459420(void);

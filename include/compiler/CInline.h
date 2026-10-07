@@ -20,18 +20,17 @@ struct CIBEntry {
 #pragma pack(pop)
 #pragma options align = mac68k
 struct CInlineInfo {
-    SInt16 nargs;                 /* 0x00: CInline_SaveInfo counts arguments */
-    struct CInlineVar *arginfo;   /* 0x02: CInline_SaveInfo saves argument variables */
-    SInt16 nlocals;               /* 0x06: CInline_SaveInfo counts local variables */
-    struct CInlineVar *localinfo; /* 0x08: CInline_SaveInfo saves local variables */
-    UInt16 nstmts; /* 0x0c: CInline_SaveInfo counts statements; collect_undefined_function_objects iterates them */
-    struct IStmtRec *
-        stmtinfo; /* 0x0e: CInline_SaveInfo serializes statements; collect_undefined_function_objects searches their operands */
-    FileOffsetInfo fileinfo; /* 0x12: CInline_SaveInfo saves function_fileinfo; serialize_cprec_rec clears it */
-    UInt32 f1c;              /* 0x1c: CInline_SaveInfo saves data_00587184; serialize_cprec_rec clears it */
-    UInt32 tokenoffset;      /* 0x20: CInline_SaveInfo saves function_tokenoffset */
-    UInt32 tokenline; /* 0x24: CInline_SaveInfo saves function_token_line; CInline_ReconstructFunction restores it */
-    UInt8 kind;       /* 0x28: CInline_SaveInfo sets fn_00511180 result */
+    SInt16 nargs;
+    struct CInlineVar *arginfo;
+    SInt16 nlocals;
+    struct CInlineVar *localinfo;
+    UInt16 nstmts;
+    struct IStmtRec *stmtinfo;
+    FileOffsetInfo fileinfo;
+    UInt32 f1c;
+    UInt32 tokenoffset;
+    UInt32 tokenline;
+    UInt8 kind;
 };
 #pragma options align = reset
 #pragma options align = mac68k
@@ -42,8 +41,7 @@ struct CInlineVar {
     UInt8 storageFlags;
     UInt8 used;
     UInt8 dirty;
-    UInt8
-        alignmentByte; /* 0x0f: CInline_SaveVars leaves this byte untouched; tail padding for the two-byte-aligned variable record */
+    UInt8 alignmentByte;
 };
 #pragma options align = reset
 #pragma options align = mac68k
@@ -59,30 +57,27 @@ struct ExcBase;
 #pragma options align = reset
 #pragma options align = mac68k
 struct IFixup {
-    struct IFixup *next; /* 0x00: copy_exception_actions links fixup_list */
-    struct CLabel **
-        destination; /* 0x04: copy_exception_actions supplies label slots; CInline_ReconstructFunction resolves them; CInline_00513240 supplies an expression slot */
-    SInt16
-        labelIndex; /* 0x08: copy_exception_actions saves the index; CInline_ReconstructFunction indexes the label table */
+    struct IFixup *next;
+    struct CLabel **destination;
+    SInt16 labelIndex;
 };
 #pragma options align = reset
 #pragma options align = mac68k
 struct IStmtRec {
-    UInt8 type;          /* 0x00: CInline_SaveInfo saves statement kind; write_prec_recs selects payload */
-    UInt8 flags;         /* 0x01: CInline_SaveInfo saves statement flags */
-    UInt16 value;        /* 0x02: CInline_SaveInfo saves statement value */
-    UInt32 sourceoffset; /* 0x04: CInline_SaveInfo saves statement sourceoffset */
-    struct ExceptionAction
-        *exceptionActions; /* 0x08: CInline_005102f0 saves actions; write_prec_recs serializes them */
+    UInt8 type;
+    UInt8 flags;
+    UInt16 value;
+    UInt32 sourceoffset;
+    struct ExceptionAction *exceptionActions;
     union {
-        struct ParsedAsmInstruction *assembly; /* 0x0c: CInline_SaveInfo type 16 copies assembly */
-        struct ENode *operand; /* 0x0c: CInline_SaveInfo types 4, 6, 7, 8, 12, 13, 14, 15 save expressions */
-        struct InlineSwitchData *switchInfo; /* 0x0c: CInline_SaveInfo type 5 saves switch data */
-        SInt16 targetIndex;                  /* 0x0c: CInline_SaveInfo type 3 saves branch index */
+        struct ParsedAsmInstruction *assembly;
+        struct ENode *operand;
+        struct InlineSwitchData *switchInfo;
+        SInt16 targetIndex;
     } data;
     union {
-        UInt32 assemblyData; /* 0x10: CInline_SaveInfo type 16 saves serialized assembly size */
-        SInt16 targetIndex;  /* 0x10: CInline_SaveInfo types 6, 7 save branch index */
+        UInt32 assemblyData;
+        SInt16 targetIndex;
     } secondaryOperand;
 };
 #pragma options align = reset
@@ -98,11 +93,10 @@ struct InlineMemberPointerTarget {
 #pragma pack(pop)
 #pragma options align = mac68k
 struct InlineNode {
-    struct InlineNode *next; /* 0x00: CInline_0050ee60 links deferredInlineNodes */
-    struct Object *func;     /* 0x04: CInline_0050ee60 saves the function for generate_inline_code */
-    struct CInlineInfo
-        *body;    /* 0x08: CInline_0050ee60 saves CInline_SaveInfo output; generate_inline_code reconstructs it */
-    Boolean flag; /* 0x0c: CInline_0050ee60 saves the CodeGen_Generator mode */
+    struct InlineNode *next;
+    struct Object *func;
+    struct CInlineInfo *body;
+    Boolean flag;
 };
 #pragma options align = reset
 struct InlineObjectEntry {
@@ -118,21 +112,18 @@ struct InlineSlot {
 #pragma options align = reset
 #pragma pack(push, 1)
 struct InlineSwitchData {
-    struct ENode *
-        expression; /* 0x00: create_inline_switch_data saves gen_name output; CInline_ReconstructFunction reconstructs it */
-    struct Type *valueType; /* 0x04: create_inline_switch_data saves sizetype; reconstruct_switch_info restores it */
-    SInt16
-        defaultStatementIndex; /* 0x08: create_inline_switch_data indexes the default label; reconstruct_switch_info resolves it */
-    SInt16 caseCount; /* 0x0a: create_inline_switch_data counts cases; reconstruct_switch_info iterates them */
-    CIBEntry entries
-        [1]; /* 0x0c: create_inline_switch_data saves case values and statement indices; reconstruct_switch_info restores cases */
+    struct ENode *expression;
+    struct Type *valueType;
+    SInt16 defaultStatementIndex;
+    SInt16 caseCount;
+    CIBEntry entries[1];
 };
 #pragma pack(pop)
 #pragma options align = mac68k
 struct MemoNode {
-    struct MemoNode *next; /* 0x00: CInline_Memo and MemoFirst link memo_list entries */
-    ENode *key;            /* 0x04: CInline_Memo and MemoFirst store and compare the ENode key */
-    SInt32 val;            /* 0x08: CInline_Memo and MemoFirst cache CParser_GetUniqueID() */
+    struct MemoNode *next;
+    ENode *key;
+    SInt32 val;
 };
 #pragma options align = reset
 extern Boolean anyerrors;

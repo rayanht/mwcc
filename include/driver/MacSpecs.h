@@ -9,17 +9,14 @@ extern "C" {
 #endif
 
 union MacSpecParent {
-    struct MacSpecEntry *
-        entry; /* 0x00: find_or_create_child_entry sets this for index != 2; lookup_spec_and_advance_parent reads it when kind != 2 */
-    struct NameRegistryEntry *
-        registry; /* 0x00: find_or_create_name_registry_entry sets this for root.index == 2; lookup_spec_and_advance_parent handles kind == 2 separately */
+    struct MacSpecEntry *entry;
+    struct NameRegistryEntry *registry;
 };
 
 struct MacSpecEntry {
     char *name;
     unsigned int index;
-    union MacSpecParent
-        parent; /* 0x08: index == 2 selects registry; otherwise find_or_create_child_entry stores the parent entry */
+    union MacSpecParent parent;
     struct MacSpecEntry *children;
     struct MacSpecEntry *next;
 };

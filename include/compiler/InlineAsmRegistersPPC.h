@@ -21,10 +21,10 @@ struct RegistrationHashEntry {
     int extra;
 };
 struct RegistrationTableEntry {
-    const char *name;       /* 0x00: CTemplateNew_InitRegistrationHashTables reads the register name */
-    short value;            /* 0x04: CTemplateNew_InitRegistrationHashTables copies the register value */
-    short alignmentPadding; /* 0x06: registration_table, unused space aligning id to 0x08 */
-    int id;                 /* 0x08: CTemplateNew_InitRegistrationHashTables copies the register id */
+    const char *name;
+    short value;
+    short alignmentPadding;
+    int id;
 };
 struct SecondaryRegistrationEntry {
     int id;
@@ -32,10 +32,10 @@ struct SecondaryRegistrationEntry {
     short value;
 };
 struct InlineAsmRegisterEntry {
-    const char *name;      /* 0x00: fn_004f06d0 clears the numeric register name */
-    short kind;            /* 0x04: fn_004f06d0 sets DCR kind 4; CTemplateNew_LookupInlineAsmRegister sets SPR kind 2 */
-    short number;          /* 0x06: InlineAsmPPC.c reads the DCR register number */
-    struct Object *object; /* 0x08: CTemplateNew_LookupInlineAsmRegister clears object for numeric registers */
+    const char *name;
+    short kind;
+    short number;
+    struct Object *object;
 };
 
 extern struct InlineAsmRegisterEntry *fn_004f06d0(char *name);

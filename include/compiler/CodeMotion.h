@@ -43,12 +43,12 @@ struct CodeMotionObjectNode {
 };
 #pragma options align = mac68k
 struct CMDefInfo {
-    UInt8 kind;        /* 0x00: move_instruction_to_preheader views CodeMotionEntry.kind */
-    UInt8 is_implicit; /* 0x01: move_instruction_to_preheader views CodeMotionEntry.is_implicit */
+    UInt8 kind;
+    UInt8 is_implicit;
     union {
-        SInt16 reg;            /* 0x02: move_instruction_to_preheader, kind 0, 1 or 9 indexes register heads */
-        struct Object *object; /* 0x02: fn_00526950, other kinds pass object to find_object_node */
-    } u;                       /* 0x02: move_instruction_to_preheader selects by definition kind */
+        SInt16 reg;
+        struct Object *object;
+    } u;
 };
 #pragma options align = reset
 extern int COpt_005266e0(int definitionIndex, Loop *ctx);

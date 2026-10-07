@@ -20,25 +20,22 @@ struct CWPluginPrivateContext {
     CWFileSpec sourcefile;
     CWFileSpec targetfile;
     long shellSignature;
-    void *
-        contextSignature; /* 0xa0: store_precompiled_unit checks 'Comp' or 'Link' before reading requestData.fileIndex. */
+    void *contextSignature;
     long numFiles;
     long numOverlayGroups;
     short callbackOSError;
     short value_ae;
     char padB0[4];
-    struct CallbackCache *callbackCache; /* 0xb4: cache_access_path_list allocates and reads the access-path cache. */
+    struct CallbackCache *callbackCache;
     char padB8[0x4c];
     void **callbacks;
     union {
-        struct CommandLineArguments *
-            environment; /* 0x108: CWParserPluginsPrivate_GetEnvironment, after validate_parser_context tests contextSignature == 'Pars'. */
-        int fileIndex; /* 0x108: CLPluginRequests_SetupFileRequest sets request 0 for a file compilation. */
-        struct CommandParseInfo
-            *commandParseInfo; /* 0x108: initialize_plugin_request selects request 1 or 2 for generation. */
+        struct CommandLineArguments *environment;
+        int fileIndex;
+        struct CommandParseInfo *commandParseInfo;
     } requestData;
     union {
-        CWFileSpec payload; /* 0x10c: CLPluginRequests_SetupFileRequest sets request 0 for a file compilation. */
+        CWFileSpec payload;
         struct {
             SInt32 value2;
             SInt32 value3;
@@ -49,9 +46,8 @@ struct CWPluginPrivateContext {
             SInt32 value6;
             char **value7;
             struct ToolArgumentSet *toolArguments;
-            struct ToolArgumentSet
-                *argumentRecord; /* 0x130: CLPluginRequests_ParseCommandLine supplies outgoing per-name arguments. */
-        } generation;            /* 0x10c: initialize_plugin_request selects request 1 or 2 for generation. */
+            struct ToolArgumentSet *argumentRecord;
+        } generation;
         struct {
             int outputFirstValue;
             void *outputSecondValue;
@@ -65,7 +61,7 @@ struct CWPluginPrivateContext {
             unsigned char pad130[4];
             void **parserCallbacks;
             unsigned char pad138[0x1a];
-        } parser; /* 0x10c: validate_parser_context tests contextSignature == 'Pars' before parser reads. */
+        } parser;
     } contextData;
     void *callbackValue;
     unsigned int callbackFlags;
@@ -79,19 +75,18 @@ struct CWPluginPrivateContext {
     struct BrowseOptions dependencyState;
     char dependencyStatusNegative;
     UInt8 pad173[0x31];
-    CWFileSpec firstFile;  /* 0x1a4: CPrep.c copies this legacy target file into TgtHead.firstFile and thirdFile. */
-    CWFileSpec secondFile; /* 0x1ea: CPrep.c copies this legacy target file into TgtHead.secondFile. */
-    UInt16 linkage;        /* 0x230: CPrep.c copies the legacy target linkage into TgtHead.linkage. */
-    UInt8 firstByte;       /* 0x232: CPrep.c copies the legacy target flag into TgtHead.firstByte. */
-    UInt8 secondByte;      /* 0x233: CPrep.c copies the legacy target flag into TgtHead.secondByte. */
+    CWFileSpec firstFile;
+    CWFileSpec secondFile;
+    UInt16 linkage;
+    UInt8 firstByte;
+    UInt8 secondByte;
     UInt16 pad234;
-    UInt32 thirdCode;  /* 0x236: CPrep.c copies the legacy target code into TgtHead.thirdCode. */
-    UInt32 fourthCode; /* 0x23a: CPrep.c copies the legacy target code into TgtHead.fourthCode. */
+    UInt32 thirdCode;
+    UInt32 fourthCode;
     UInt32 pad23e[2];
     struct TgtRec *targetSettings;
     unsigned char pad24a[0x1c];
-    struct ObjectCallbackContext *
-        compilerCallbacks; /* 0x266: CPrep callbacks, including CPrep_InvokeCompilerCallback and call_compiler_callback. */
+    struct ObjectCallbackContext *compilerCallbacks;
 };
 typedef struct CWPluginPrivateContext *CWPluginContext;
 #pragma options align = reset
@@ -104,14 +99,14 @@ struct CachedOpcodeMetadata {
     unsigned char unknown_11;
 };
 struct FileOpenOptions {
-    SInt32 fileIndex;         /* 0x00: add_project_entry selects file insertion index */
-    SInt32 lookupPathIndex;   /* 0x04: add_project_entry sets fileRecord->lookupPathIndex */
-    SInt32 overlayIndex;      /* 0x08: add_project_entry calls CLOverlays_GetGroupByIndex */
-    SInt32 overlayTableIndex; /* 0x0c: add_project_entry calls CLOverlays_GetOverlayAtIndex */
-    SInt32 auxiliaryValue;    /* 0x10: create_new_text_document initializes to zero */
-    UInt8 flag1;              /* 0x14: add_project_entry copies to fileRecord->f4E3 */
-    UInt8 flag2;              /* 0x15: add_project_entry copies to fileRecord->f4E1 */
-    UInt8 flag3;              /* 0x16: add_project_entry copies to fileRecord->f4E2 */
+    SInt32 fileIndex;
+    SInt32 lookupPathIndex;
+    SInt32 overlayIndex;
+    SInt32 overlayTableIndex;
+    SInt32 auxiliaryValue;
+    UInt8 flag1;
+    UInt8 flag2;
+    UInt8 flag3;
 };
 struct FileProcessingInfo {
     CWFileSpec info;

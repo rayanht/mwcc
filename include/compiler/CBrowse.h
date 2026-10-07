@@ -22,8 +22,8 @@ union BrowseObjectBuffer {
 #pragma options align = mac68k
 struct BrowseStreamHeader {
     unsigned int magic;
-    unsigned int version;    /* 0x04: CBrowse_InitBrowseData writes 2 after the browse stream magic */
-    unsigned short language; /* 0x08: CBrowse_InitBrowseData selects 2 for copts.cplusplus, 1 for C */
+    unsigned int version;
+    unsigned short language;
     unsigned short valueA;
     unsigned int valueC;
     unsigned char reserved[60];

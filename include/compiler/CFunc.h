@@ -31,24 +31,22 @@ enum {
 };
 #pragma options align = mac68k
 struct Statement {
-    Statement *next; /* 0x00: CodeGen traverses the statement list */
-    UInt8 type;      /* 0x04: CodeGen selects the statement kind */
-    UInt8 marked;    /* 0x05: COptimizer marks visited statements */
-    UInt8 flags;     /* 0x06: CodeGen tests source-location flags */
+    Statement *next;
+    UInt8 type;
+    UInt8 marked;
+    UInt8 flags;
     UInt8 unk07;
-    SInt16 value; /* 0x08: CodeGen passes this to set_block_line_and_execution_weight */
+    SInt16 value;
     union {
-        ENode *expression; /* 0x0a: CodeGen kinds 4, 6, 7, 8 and 15 evaluate expressions */
-        struct ParsedAsmInstruction
-            *asmInstruction; /* 0x0a: CodeGen kind 16; InlineAsmPPC_00462d70 reads opcode and operands */
+        ENode *expression;
+        struct ParsedAsmInstruction *asmInstruction;
     } expr;
     union {
-        struct CLabel *label; /* 0x0e: CodeGen kinds 2, 3, 6 and 7 use a label */
-        struct SwitchInfo *
-            switchDescriptor; /* 0x0e: parse_statement creates kind 5; mark_reachable_statements kind 5 reads cases and defaultlabel; build_linear_from_statements kind 5 reads this descriptor */
+        struct CLabel *label;
+        struct SwitchInfo *switchDescriptor;
     } target;
-    struct ExceptionAction *dobjstack; /* 0x12: IroFlowgraph_RebuildSuccPred walks active exception scopes */
-    SInt32 sourceoffset;               /* 0x16: CodeGen passes source position to set_block_line_and_execution_weight */
+    struct ExceptionAction *dobjstack;
+    SInt32 sourceoffset;
 };
 #pragma options align = reset
 /* A function queued for code generation after the translation unit has been parsed (list head DAT_005876e8,
@@ -63,10 +61,8 @@ struct PendingFunction {
 struct CLabel {
     struct CLabel *next;
     union {
-        struct Statement
-            *stmt; /* 0x04: frontend statement-label variant, used by COptimizer before IRO_BuildflowGraph */
-        struct IRONode *
-            node; /* 0x04: IRO_BuildflowGraph and IroFlowgraph_RebuildSuccPred select the flowgraph variant for IROLinearLabel; unroll_loop installs basic blocks */
+        struct Statement *stmt;
+        struct IRONode *node;
     } target;
     struct HashNameNode *uniquename;
     struct HashNameNode *name;
@@ -101,10 +97,9 @@ struct StatementContext {
 };
 #pragma options align = mac68k
 struct SwitchInfo {
-    struct SwitchCase *cases; /* 0x00: parse_statement initializes cases; Switch_GenerateSwitch traverses case labels */
-    struct CLabel
-        *defaultlabel; /* 0x04: parse_statement initializes defaultlabel; Switch_GenerateSwitch reads default target */
-    Type *sizetype;    /* 0x08: parse_statement stores expression rtype; CFunc converts case values */
+    struct SwitchCase *cases;
+    struct CLabel *defaultlabel;
+    Type *sizetype;
 };
 #pragma options align = reset
 extern void CFunc_Gen(Statement *context, Object *object, unsigned int options);

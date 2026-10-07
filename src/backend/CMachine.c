@@ -804,9 +804,6 @@ void *CMach_FloatScan(char *text, Float *result, char *flag)
     return end;
 }
 
-/* 0x474a30, signed 64 -> double */
-/* 0x474ab0, unsigned 64 -> double */
-
 Float CMach_CalcFloatConvertFromInt(Type *type, CInt64 value)
 {
     Float f;

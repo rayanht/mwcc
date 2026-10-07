@@ -14,16 +14,12 @@ struct AccessPathEntry {
 };
 #pragma options align = mac68k
 struct DepRecord {
-    SInt32 nameOffset; /* 0x00: append_dep_record stores textused; make_dependency_osspec reads the dependency name */
-    struct AccessPathEntry *
-        searchPath; /* 0x04: CLDependencies_FindFile caches the access path found by find_dependency_access_path_entry through append_dep_record */
-    struct AccessPathEntry
-        *resolvedPath; /* 0x08: append_dep_record resolves the directory; make_dependency_osspec reads its path */
-    struct AccessPathEntry *
-        contextPath; /* 0x0c: append_dep_record saves get_access_path_entry; CLDependencies_FindFile compares data_0054d898 */
-    UInt8 flag; /* 0x10: append_dep_record stores flag; fn_00427ad0 filters cached entries */
-    UInt8 trailingPadding
-        [3]; /* 0x11: append_dep_record leaves these trailing bytes unused; sizeof(DepRecord) sets the record stride */
+    SInt32 nameOffset;
+    struct AccessPathEntry *searchPath;
+    struct AccessPathEntry *resolvedPath;
+    struct AccessPathEntry *contextPath;
+    UInt8 flag;
+    UInt8 trailingPadding[3];
 };
 #pragma options align = reset
 struct DependencyCollection {
@@ -34,17 +30,14 @@ struct DependencyCollection {
 };
 #pragma options align = mac68k
 struct Deps {
-    struct CLTarget
-        *target;       /* 0x00: CLDependencies_InitDeps sets the target; CLDependencies_FindFile searches its paths */
-    SInt32 count;      /* 0x04: fn_00427ad0 bounds the dependency search */
-    SInt32 alloccount; /* 0x08: append_dep_record grows record capacity */
-    struct DepRecord
-        *records;    /* 0x0c: make_dependency_osspec indexes dependencies; get_record_flag reads the flag word */
-    SInt32 textsize; /* 0x10: append_dep_record grows text storage */
-    SInt32 textused; /* 0x14: append_dep_record assigns record text offsets */
-    char *text;      /* 0x18: make_dependency_osspec reads dependency names */
-    struct AccessPaths *
-        scope; /* 0x1c: CLDependencies_InitDeps allocates and initializes AccessPaths; CLDependencies_FreeDeps frees its items */
+    struct CLTarget *target;
+    SInt32 count;
+    SInt32 alloccount;
+    struct DepRecord *records;
+    SInt32 textsize;
+    SInt32 textused;
+    char *text;
+    struct AccessPaths *scope;
 };
 #pragma options align = reset
 extern Boolean find_dependency_access_path_entry(AccessPaths *dependencies, char *a2, AccessPathEntry **a3, char *a4);

@@ -733,9 +733,6 @@ void CObjC_ParseIdentifierList(void)
     return;
 }
 
-/* 0x492070, returns the current token */
-/* 0x5882d8, current token */
-
 static inline CRec *FindRec(HashNameNode *nm)
 {
     CRec *q;
@@ -2036,9 +2033,6 @@ void CObjC_005074f0(Type *type, UInt32 qual, Boolean flag)
     }
 }
 
-/* 0x492070, returns the current token */
-/* 0x5882d8, current token */
-
 static inline void CopyItem(MethRec *n, MethRec *e)
 {
     n->selector = e->selector;
@@ -2657,7 +2651,6 @@ MethRec *fn_00508940(MethRec *methods, MethRec *method, char check_types, char a
 }
 
 /* "id" */
-/* 0x5882d8, token */
 
 static inline Type *find_named_pointer_type(char *name, Boolean required)
 {

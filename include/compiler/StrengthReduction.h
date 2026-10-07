@@ -17,8 +17,7 @@ struct CMNode {
 struct CMRegisterNode {
     struct CMRegisterNode *next;
     struct Loop *loop;
-    struct CodeMotionCandidate *
-        candidates; /* 0x08: add_code_motion_search initializes candidates; rewrite_code_motion_candidates traverses them */
+    struct CodeMotionCandidate *candidates;
     struct CodeMotionRef *refs;
     struct PCodeInstruction *reachingDefinition;
     SInt32 increment;
@@ -37,18 +36,15 @@ struct ClassLookupResult {
 #pragma options align = mac68k
 struct CodeMotionCandidate {
     struct CodeMotionCandidate *next;
-    struct CMRegisterNode *owner; /* 0x04: insert_scaled_increment reads candidate owner */
+    struct CMRegisterNode *owner;
     struct PCodeInstruction *instruction;
-    struct PCodeInstruction *
-        replacement_instruction; /* 0x0c: initialize_candidate_register stores the generated instruction; fn_00527290 inserts before it */
+    struct PCodeInstruction *replacement_instruction;
     struct Loop *lastLoop;
     unsigned int scale;
-    SInt16 base_operand; /* 0x18: initialize_candidate_register indexes the base register operand */
-    SInt16
-        source_operand; /* 0x1a: rewrite_code_motion_candidates and initialize_candidate_register index the source operand */
-    SInt16
-        source_register; /* 0x1c: initialize_candidate_register saves the source register used by rewrite_code_motion_candidates */
-    SInt16 destination_register; /* 0x1e: rewrite_code_motion_candidates allocates the reduced register */
+    SInt16 base_operand;
+    SInt16 source_operand;
+    SInt16 source_register;
+    SInt16 destination_register;
 };
 #pragma options align = reset
 #pragma options align = mac68k

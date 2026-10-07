@@ -968,10 +968,6 @@ ENode *create_call_with_arg_and_default_args(Object *func, TypeClass *cls, ENode
     return call;
 }
 
-/* 0x4463d0, one pushed argument */
-/* 0x492070, returns ax */
-/* 0x473f70, no arguments, EINTCONST node */
-
 ENode *CExcept_ScanThrowExpression(void)
 {
     Object *cls;

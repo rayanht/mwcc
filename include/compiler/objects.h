@@ -34,8 +34,8 @@ struct ObjectList {
 #pragma options align = mac68k
 /* Common prefix: otype selects the concrete object payload. */
 struct ObjBase {
-    UInt8 otype;  /* 0x00: InlineAsm_ResolveOperandName switches on the concrete object kind. */
-    UInt8 access; /* 0x01: CClass_CheckEnumAccess checks accessibility. */
+    UInt8 otype;
+    UInt8 access;
 };
 #pragma options align = reset
 #pragma options align = mac68k
@@ -145,10 +145,8 @@ struct Object {
             HashNameNode *linkname;
         } data;
         struct {
-            struct CInlineInfo *
-                u; /* 0x26: write_object selects inline body when TypeFunc flags & 0x400 is clear and Q_INLINE is set; CInline_0050ee60 stores CInline_SaveInfo output. */
-            struct DefArgCtorInfo *
-                defargdata; /* 0x2a: make_defarg_function stores the constructor and default expression; make_auto_generated_method tests it before CABI_MakeDefaultArgConstructor. */
+            struct CInlineInfo *u;
+            struct DefArgCtorInfo *defargdata;
             HashNameNode *linkname;
         } func;
         struct {
@@ -156,8 +154,7 @@ struct Object {
             SInt32 uid;
         } var;
         struct {
-            UInt8 *
-                data; /* 0x26: write_object selects DINLINEFUNC (datatype 5) and copies size bytes from this inline machine-code buffer through unsigned char *data. */
+            UInt8 *data;
             SInt32 size;
             InlineXRef *xrefs;
         } ifunc;
@@ -166,8 +163,7 @@ struct Object {
             BClassList *member;
             SInt32 offset;
         } alias;
-        struct TemplateFunction *
-            templateFunction; /* 0x26: write_object and instantiate_object_type select this arm when TypeFunc flags & 0x400; parse_function_template_declaration sets that flag and stores templ. */
+        struct TemplateFunction *templateFunction;
         SInt16 intrinsic;
         ENode *expr;
     } u;

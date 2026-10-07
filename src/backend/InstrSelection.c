@@ -1868,10 +1868,6 @@ void select_diadic_left_then_right(ENode *node, SInt32 a, SInt32 b, Operand *ctx
 
 enum TypeSubtypeBound { TypeSubtype_Min = 4, TypeSubtype_Max = 0xe };
 
-/* Compiler options block at 0x584220. The flag is read as a field: IRO
-   CSEs a field access (ADD of a non-zero offset) but not a plain global,
-   so the two tests share one byte register. */
-
 void generate_type_conversion(ENode *node, short outputReg, short outputRegHi, Operand *result)
 {
     ENode *expr = node->data.monadic;
@@ -1976,7 +1972,6 @@ void report_fatal_error(void)
     CError_FATAL(1933);
 }
 
-/* 0x560774, "InstrSelection.c" */
 /* Register-pair or pointer result of instruction selection. */
 
 void make_intval_operand(ENode *node, SInt16 reg1, SInt16 reg2, Operand *op)
@@ -2013,9 +2008,6 @@ void fn_004b6530(void)
 {
     CError_FATAL(1996);
 }
-
-/* 0x58846c, word */
-/* 0x58846e, word */
 
 void generate_conditional_expression(ENode *node, SInt16 outputReg, SInt16 outputRegHi, Operand *output)
 {

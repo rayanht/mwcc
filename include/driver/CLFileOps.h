@@ -35,10 +35,8 @@ struct DropinFileRecord {
     short inputArgumentMask;
     short outputArgumentMask;
     struct StorageHandle *outputStorage;
-    struct StorageHandle *
-        objectData; /* 0x4c4: CLWriteObjectFile_WriteObjectFile asserts file->objectdata; free_allocation_record frees its handle. */
-    struct StorageHandle *
-        secondaryReferenceHandle; /* 0x4c8: store_object_data stores the secondary reference handle; free_allocation_record frees it. */
+    struct StorageHandle *objectData;
+    struct StorageHandle *secondaryReferenceHandle;
     SInt32 codeSize;
     SInt32 bssSize;
     SInt32 dataSize;
@@ -48,9 +46,9 @@ struct DropinFileRecord {
     UInt8 configurationReceivedWithoutCapability;
     char configurationReceivedWithCapability;
     UInt8 requiresLink;
-    UInt8 fileOpenFlag2; /* 0x4e1: add_project_entry copies FileOpenOptions::flag2 */
-    UInt8 fileOpenFlag3; /* 0x4e2: add_project_entry copies FileOpenOptions::flag3 */
-    UInt8 fileOpenFlag1; /* 0x4e3: add_project_entry copies FileOpenOptions::flag1 */
+    UInt8 fileOpenFlag2;
+    UInt8 fileOpenFlag3;
+    UInt8 fileOpenFlag1;
     struct DependencyCollection dependencies;
     UInt8 dependencyStatusNegative;
     UInt8 reserved4f5;

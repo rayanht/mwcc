@@ -20,9 +20,9 @@ struct Scratch {
 #pragma options align = reset
 #pragma options align = mac68k
 struct SwitchCase {
-    struct SwitchCase *next; /* 0x00: reconstruct_switch_info links case nodes */
-    struct CLabel *label;    /* 0x04: Switch_GenerateSwitch emits case labels */
-    CInt64 min;              /* 0x08: reconstruct_switch_info copies caseValue */
+    struct SwitchCase *next;
+    struct CLabel *label;
+    CInt64 min;
 };
 #pragma options align = reset
 extern void Switch_GenerateSwitch(ENode *expression, struct SwitchInfo *cases);

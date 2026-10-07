@@ -11,12 +11,11 @@ extern "C" {
    back by CScope_RestoreScope. */
 #pragma options align = mac68k
 struct CScopeSave {
-    struct NameSpace *current;      /* 0x00: CScope_GetScope saves cscope_current. */
-    struct TypeClass *currentclass; /* 0x04: CScope_GetScope saves cscope_currentclass. */
-    struct Object *currentfunc;     /* 0x08: CScope_GetScope saves cscope_currentfunc. */
-    UInt8 is_member_func;           /* 0x0c: CScope_GetScope saves cscope_is_member_func. */
-    UInt8 trailingPadding
-        [3]; /* 0x0d: no CScopeSave user reads or writes these bytes; CScope_GetScope saves only the four preceding members. */
+    struct NameSpace *current;
+    struct TypeClass *currentclass;
+    struct Object *currentfunc;
+    UInt8 is_member_func;
+    UInt8 trailingPadding[3];
 };
 #pragma options align = reset
 #pragma options align = mac68k

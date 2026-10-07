@@ -23,13 +23,11 @@ struct DwarfFunctionState {
     SInt32 offset;
     SInt32 lineSectionOffset;
     UInt8 lineBaseRelocated;
-    UInt8
-        lineAlignmentPadding; /* 0x2d: DWARF.c uses only lineBaseRelocated at 0x2c; padding aligns pendingReference to mac68k's two-byte boundary. */
+    UInt8 lineAlignmentPadding;
     struct ObjGenRelocation *pendingReference;
     SInt32 pendingPosition;
     UInt8 pending;
-    UInt8
-        entryAlignmentPadding; /* 0x37: DWARF.c takes the pending byte's address; padding aligns offsets to mac68k's two-byte boundary. */
+    UInt8 entryAlignmentPadding;
     SInt32 offsets[50];
     struct ObjGenRelocation *entries[50];
     SInt32 depth;
@@ -72,15 +70,14 @@ struct DwarfSym {
     struct Object *object;
     struct DwarfFixup *fixups;
     SInt32 offset;
-    struct DwarfNode *
-        replacement; /* 0x0c: DWARF_CreateObjectDebugEntry resolves object->dwarfLinks.pendingEntry at node offset 0x1e */
+    struct DwarfNode *replacement;
 };
 #pragma pack(pop)
 #pragma options align = mac68k
 struct DwarfNode {
     struct DwarfNode *next;
     struct DwarfNode *prev;
-    struct DWInfo *type; /* 0x08: create_type_node, DWARF_AddVar */
+    struct DWInfo *type;
     struct DwarfFunctionState *scope;
     UInt16 kind;
     union DwarfNodePayload {
@@ -89,20 +86,20 @@ struct DwarfNode {
             UInt16 reg2;
             SInt16 flags;
             SInt32 offset;
-            struct HashNameNode *name; /* 0x1c: DWARF_AddVar, DWARF_004ad570 */
+            struct HashNameNode *name;
             UInt32 f20;
             UInt16 f24;
-        } var; /* 0x12: DWARF_WriteDebugInfo kinds 5, 0xc; kind 0x13 uses flags */
+        } var;
         struct {
             struct Object *object;
             SInt32 codeSize;
             SInt32 codeOffset;
-            struct DwarfLocationOperand *returnOperand; /* 0x1e: DWARF_CreateBlockNode, emit_function_entry */
+            struct DwarfLocationOperand *returnOperand;
             struct PendingObject *pendingObjects;
-        } block;                   /* 0x12: DWARF_WriteDebugInfo kinds 6, 0x14 */
-        struct DwarfSym sym;       /* 0x12: DWARF_WriteDebugInfo kind 7 */
-        UInt8 regByte;             /* 0x12: DWARF_WriteDebugInfo kind 0x11 */
-        struct DwarfFixup *fixups; /* 0x12: DWARF_WriteDebugInfo kinds 0x15, 0x1f */
+        } block;
+        struct DwarfSym sym;
+        UInt8 regByte;
+        struct DwarfFixup *fixups;
     } u;
 };
 #pragma options align = reset
@@ -123,8 +120,7 @@ struct DWInfo {
     DwarfRef rec;
     struct DWInfo *next;
     UInt8 marked;
-    UInt8
-        typeNodeAlignmentPadding; /* 0x19: DWARF.c uses marked at 0x18 and typeNode at 0x1a; unused byte aligns typeNode to the two-byte boundary. */
+    UInt8 typeNodeAlignmentPadding;
     struct DwarfNode *typeNode;
 };
 #pragma options align = reset

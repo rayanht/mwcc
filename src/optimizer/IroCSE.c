@@ -88,9 +88,6 @@ static void IRO_BitVectorSet_0044ef10(UInt32 bit, BitVector *bv)
         CError_Internal("BitVector.h", 47);
 }
 
-/* 0x552b8c: "BitVector.h" */
-/* 0x552bbc: "IroCSE.c" */
-
 static void IRO_BitVectorSet_0044f3d0(UInt32 bit, BitVector *bv)
 {
     if ((bit >> 5) < bv->size)
@@ -100,8 +97,6 @@ static void IRO_BitVectorSet_0044f3d0(UInt32 bit, BitVector *bv)
 }
 
 #undef BVSET
-/* 0x552b8c: "BitVector.h" */
-/* 0x552bbc: "IroCSE.c" */
 
 static void set_bit_vector_bit(UInt32 bit, BitVector *bv)
 {
@@ -866,10 +861,6 @@ void IroCSE_ReplaceReference(IROLinear *target, Object *object, IROLinear *refer
     }
     IroDump_Print("Oh, oh, did not find reference to replace\n");
 }
-
-/* 0x552bbc, file name string */
-/* 0x552bf0, message string */
-/* 0x587f54, list head pointer (4 bytes) */
 
 /* Makes the node using FROM as an operand use TO instead. */
 void IroCSE_0044e560(IROLinear *from, IROLinear *to)

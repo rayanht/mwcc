@@ -40,13 +40,11 @@ struct Elf32Section {
     unsigned int link, info, alignment, entry_size;
 };
 struct FileInputNode {
-    struct FileInputNode *next; /* 0x00: read_file_into_input_nodes links archive members via last->next */
-    UInt8 kind; /* 0x04: read_file_into_input_nodes sets classify_file_header result or archive kind 1 */
-    UInt8
-        alignmentBytes[3]; /* 0x05: read_file_into_input_nodes zeroes these unused bytes between kind and dataHandle */
-    char **dataHandle;     /* 0x08: read_file_into_input_nodes stores the allocated member contents handle */
-    char *
-        archiveMemberHeader; /* 0x0c: read_file_into_input_nodes reads 60 text bytes and sscanf parses length at 0x30 */
+    struct FileInputNode *next;
+    UInt8 kind;
+    UInt8 alignmentBytes[3];
+    char **dataHandle;
+    char *archiveMemberHeader;
 };
 struct ReadValue {
     union {

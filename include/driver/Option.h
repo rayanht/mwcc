@@ -24,12 +24,10 @@ struct OptionList {
     Option **list;
 };
 struct OStack {
-    char *name; /* 0x00: Option_Push stores context; format_ostack reads name when flags & 4 */
-    char *
-        value; /* 0x04: push_option_arg supplies duplicated argument; format_ostack reads when flags & 2; fn_0041c1ae frees it */
-    short flags; /* 0x08: Option_Push sets stack entry kind and format_ostack tests it */
-    short
-        alignmentPadding; /* 0x0a: Option_Push writes only name, value and flags; unused trailing storage in oStack. */
+    char *name;
+    char *value;
+    short flags;
+    short alignmentPadding;
 };
 struct TokenText {
     short kind;

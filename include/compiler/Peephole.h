@@ -12,10 +12,10 @@ extern "C" {
 #pragma options align = reset
 #pragma options align = mac68k
 struct CmpCtx {
-    struct PCodeInstruction *first;  /* 0x00: fn_004cba60 checks the first instruction */
-    struct PCodeInstruction *second; /* 0x04: fn_004cba60 checks the second instruction */
-    UInt8 unusedBytes[0x0c];         /* 0x08: Peephole.c has no reads or writes of these bytes */
-    UInt16 errorCode;                /* 0x14: fn_004cba60 sets diagnostic 0x18f on failure */
+    struct PCodeInstruction *first;
+    struct PCodeInstruction *second;
+    UInt8 unusedBytes[0x0c];
+    UInt16 errorCode;
 };
 #pragma options align = reset
 #pragma options align = mac68k

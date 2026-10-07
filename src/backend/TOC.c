@@ -307,9 +307,6 @@ void add_exception_initial_objects(ExceptionAction *node)
     }
 }
 
-/* The flag is a field of the option block at 0x584220: its two reads in one
- * condition share a CSE temporary, which a plain global never does. */
-
 static inline int TOC_IsSetjmp(ENode *fr)
 {
     if (fr->type == EOBJREF) {

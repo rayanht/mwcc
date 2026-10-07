@@ -7,18 +7,16 @@
 extern "C" {
 #endif
 struct ObjCProtocolList {
-    struct ObjCProtocolList *next; /* 0x00: create_protocol_list clears the emitted list link with memclrw */
-    unsigned int count;            /* 0x04: create_protocol_list writes the endian-converted protocol count */
-    struct Object
-        *protocols[1]; /* 0x08: create_protocol_list sizes protocol slots and emits CObjC_GetProtocolInfo relocations */
+    struct ObjCProtocolList *next;
+    unsigned int count;
+    struct Object *protocols[1];
 };
 struct CRec {
     struct CRec *next;
     struct HashNameNode *name;
     struct ObjectList *bases;
     struct MethRec *methods;
-    struct Object *
-        info; /* 0x10: CObjC_GetProtocolInfo caches the emitted protocol data object, falls back to fn_00509c40 and returns Object * */
+    struct Object *info;
 };
 #pragma options align = mac68k
 
@@ -48,8 +46,7 @@ struct MethRec {
     UInt8 isvararg;
     UInt8 isinst;
     UInt8 defined;
-    UInt8
-        alignmentPadding; /* 0x1f: CObjC_NewMemberNode clears the 0x20-byte record; no method operation accesses this tail padding */
+    UInt8 alignmentPadding;
 };
 struct ObjCDefinition {
     struct ObjCDefinition *next;
@@ -65,8 +62,7 @@ struct ObjCDefinition {
 struct ObjCInfo {
     struct Object *classobject;
     struct Object *metaclassobject;
-    struct Object *
-        auxiliaryObject; /* 0x08: serialize_objc_info writes auxiliaryObject with write_object and relocates its reference. */
+    struct Object *auxiliaryObject;
     struct MethRec *methods;
     struct ObjectList *protocols;
     struct CRec *vars;
@@ -79,20 +75,20 @@ struct ObjCParameterNode {
     UInt32 qual;
 };
 struct OLinkList {
-    struct OLinkList *next; /* 0x00: CObjC_GetProtocolInfo links relocations */
-    struct Object *obj;     /* 0x04: CObjC_GetProtocolInfo references class, name and method metadata objects */
-    SInt32 offset;          /* 0x08: CObjC_GetProtocolInfo selects offsets 0, 4, 8, 12, 16 in protocol data */
-    SInt32 addend;          /* 0x0c: CObjC_GetProtocolInfo initializes relocation addends to zero */
+    struct OLinkList *next;
+    struct Object *obj;
+    SInt32 offset;
+    SInt32 addend;
 };
 typedef struct ObjCMethodEntry {
-    SInt32 selector;       /* 0x00: create_method_list_object selector relocation */
-    SInt32 encoding;       /* 0x04: create_method_list_object type encoding relocation */
-    SInt32 implementation; /* 0x08: create_method_list_object function relocation */
+    SInt32 selector;
+    SInt32 encoding;
+    SInt32 implementation;
 } ObjCMethodEntry;
 typedef struct ObjCMethodList {
-    SInt32 next;                /* 0x00: create_method_list_object memclrw clears header */
-    UInt32 count;               /* 0x04: create_method_list_object endian-converts method count */
-    ObjCMethodEntry methods[1]; /* 0x08: create_method_list_object iterates emitted entries */
+    SInt32 next;
+    UInt32 count;
+    ObjCMethodEntry methods[1];
 } ObjCMethodList;
 extern ENode *CObjC_ParseStringConstant(void);
 extern ENode *CObjC_ParseEncodeExpression(void);

@@ -619,12 +619,10 @@ unsigned int __stdcall fn_00424660(unsigned int context, unsigned int plugin, un
     return 2U;
 }
 
-/* 0x541b28, word compare */
 /* cdecl, 2 args */
 /* stdcall, 2 args */
 /* stdcall, 1 arg */
 /* stdcall, 2 args */
-/* 0x587c84, pointer */
 /* cdecl, 2 args */
 /* cdecl, 1 arg */
 /* stdcall, 2 args */

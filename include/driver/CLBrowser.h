@@ -36,12 +36,12 @@ struct CLBrowserLookupEntry {
 };
 #pragma options align = mac68k
 struct DstRec {
-    UInt16 id;             /* 0x00: write_lookup_entries stores entries->value */
-    UInt32 zeroFillFirst;  /* 0x02: write_lookup_entries zeroes three UInt32 words following id */
-    UInt32 zeroFillSecond; /* 0x06: write_lookup_entries zeroes three UInt32 words following id */
-    UInt32 zeroFillThird;  /* 0x0a: write_lookup_entries zeroes three UInt32 words following id */
-    UInt16 len;            /* 0x0e: write_lookup_entries stores the name length */
-    char data[1];          /* 0x10: write_lookup_entries writes the eight-byte-padded name */
+    UInt16 id;
+    UInt32 zeroFillFirst;
+    UInt32 zeroFillSecond;
+    UInt32 zeroFillThird;
+    UInt16 len;
+    char data[1];
 };
 #pragma options align = reset
 extern unsigned int calculate_lookup_entries_size(CLBrowserLookupEntry *entries, unsigned int count);

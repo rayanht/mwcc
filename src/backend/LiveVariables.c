@@ -39,7 +39,6 @@
 #include "compiler/Switch.h"
 
 #include <string.h>
-/* 0x5842e1, byte access */
 
 void SpillCode_BuildLocalLiveness(int reg_class)
 {

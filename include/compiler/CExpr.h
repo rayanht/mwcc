@@ -17,14 +17,13 @@ struct BinaryOperatorResult {
 #pragma options align = reset
 #pragma options align = mac68k
 struct EMemberInfo {
-    struct BClassList *path; /* 0x00: CExpr.c copies nameResult->basePath; getpointertomemberfunc reads bases */
-    struct ENode *expr;      /* 0x04: CExpr.c stores the member access expression; getpointertomemberfunc checks it */
-    struct NameSpaceObjectList *list; /* 0x08: make_member_function_esetconst supplies the candidate list */
-    struct TemplArg *
-        templargs; /* 0x0c: make_member_function_esetconst obtains CTemplateNew_ParseTemplateArguments; CExpr.c copies objlist.templargs */
-    Boolean is_qualified; /* 0x10: CExpr.c copies nameResult->is_qualified */
-    UInt8 addressTaken;   /* 0x11: make_memberpointer sets 1; getpointertomemberfunc checks explicit address taking */
-    Boolean isambig;      /* 0x12: CExpr.c copies nameResult->isambig */
+    struct BClassList *path;
+    struct ENode *expr;
+    struct NameSpaceObjectList *list;
+    struct TemplArg *templargs;
+    Boolean is_qualified;
+    UInt8 addressTaken;
+    Boolean isambig;
 };
 #pragma options align = reset
 #pragma pack(push, 1)

@@ -217,10 +217,10 @@ typedef enum SectionFlags {
 } SectionFlags;
 /* Win32 CreateProcess output, passed as &pi by OS_Execute. */
 struct _PROCESS_INFORMATION {
-    HANDLE hProcess;   /* 0x00: MsDos.c: WaitForSingleObject and GetExitCodeProcess read CreateProcessA output */
-    HANDLE hThread;    /* 0x04: MsDos.c: CreateProcessA writes primary thread handle */
-    DWORD dwProcessId; /* 0x08: MsDos.c: CreateProcessA writes process identifier */
-    DWORD dwThreadId;  /* 0x0c: MsDos.c: CreateProcessA writes primary thread identifier */
+    HANDLE hProcess;
+    HANDLE hThread;
+    DWORD dwProcessId;
+    DWORD dwThreadId;
 };
 struct _PROCESS_INFORMATION;
 struct _TIME_ZONE_INFORMATION;

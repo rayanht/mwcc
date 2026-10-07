@@ -45,22 +45,21 @@ struct MachineOpcodeInfo {
 };
 #pragma options align = mac68k
 struct MachineInfo {
-    SInt32 count; /* 0x00: schedule_block limits issue slots */
-    SInt32
-        omitRegisterAntiDependencyLatency; /* 0x04: fn_004cd7c0 tests this flag to suppress register anti-dependency latency */
-    SInt32 (*getLatency)(void *);          /* 0x08: Scheduler.c initializes node height */
-    void (*beginScheduling)(void);         /* 0x0c: schedule_block initializes simulation */
-    SInt32 (*check)(void *);               /* 0x10: select_ready_coloring_node tests issue eligibility */
-    void (*issueInstruction)(void *); /* 0x14: schedule_block issues selected instruction */
-    void (*advanceCycle)(void);       /* 0x18: schedule_block advances simulation */
-    SInt32 (*checkLate)(void *);      /* 0x1c: Scheduler.c tests late instruction eligibility */
+    SInt32 count;
+    SInt32 omitRegisterAntiDependencyLatency;
+    SInt32 (*getLatency)(void *);
+    void (*beginScheduling)(void);
+    SInt32 (*check)(void *);
+    void (*issueInstruction)(void *);
+    void (*advanceCycle)(void);
+    SInt32 (*checkLate)(void *);
 };
 #pragma options align = reset
 #pragma options align = mac68k
 struct DependencyEntry {
-    struct DependencyEntry *next; /* 0x00: fn_004cd7c0 links and traverses register owner lists */
-    struct CColoringNode *owner;  /* 0x04: fn_004cd7c0 adds dependencies on this owner */
-    struct Object *object;        /* 0x08: fn_004cd7c0 initializes register entries to NULL */
+    struct DependencyEntry *next;
+    struct CColoringNode *owner;
+    struct Object *object;
 };
 #pragma options align = reset
 

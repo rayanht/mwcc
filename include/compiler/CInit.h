@@ -12,21 +12,20 @@ struct CInit {
     struct ENode *expr;
     ENode exprbuf;
     UInt8 state;
-    UInt8 usesConstructorSyntax; /* 0x1f: initializer_uses_constructor_syntax */
-    UInt8 parenthesized;         /* 0x20: initializer_is_parenthesized, initializer_set_parenthesized */
+    UInt8 usesConstructorSyntax;
+    UInt8 parenthesized;
 };
 /* The initializer state CInit saves and restores around a nested initializer (cinit_state is the current one):
    the object being initialized, its node list, the output buffer and its use, and the emit callbacks. */
 struct InitInfo {
     struct Object *obj;
     struct OLinkList *list;
-    UInt32 unusedSlot; /* 0x08: CInitPushSave clears the context; CInit.c never accesses this slot */
+    UInt32 unusedSlot;
     SInt32 expr_offset;
     void (*expr_cb)(struct Type *, struct ENode *, Boolean);
-    Boolean expr_cb_called; /* 0x14: CInit_DefaultInit and init_int set it after invoking callback */
-    Boolean
-        hasRuntimeInitialization; /* 0x15: initialize_object_at_offset sets it; CInit_004d0ae0 disables inline data when set */
-    Boolean useEmitCallback; /* 0x16: emit_indirect_assignment selects emit rather than InitExpr_Register */
+    Boolean expr_cb_called;
+    Boolean hasRuntimeInitialization;
+    Boolean useEmitCallback;
     void (*init_expr_register_cb)(struct ENode *);
     struct Object *emitObject;
     void (*insert_expr_cb)(struct ENode *);
@@ -42,13 +41,13 @@ struct CInit_ArgumentList {
 };
 #pragma options align = mac68k
 struct PooledString {
-    struct PooledString *next; /* 0x00: CInit_DeclareString links string_cache */
-    struct Object *obj;        /* 0x04: CInit_DeclareString stores and returns the declared string object */
-    SInt32 offset;             /* 0x08: CInit_DeclareString initializes to zero; meaning unknown */
-    char *data;                /* 0x0c: CInit_DeclareString copies and compares the string bytes */
-    UInt32 size;               /* 0x10: CInit_DeclareString compares the string length */
-    UInt8 ispascal;            /* 0x14: CInit_DeclareString selects stunsignedchar rather than stchar */
-    UInt8 iswide;              /* 0x15: CInit_DeclareString selects CParser_GetWCharType */
+    struct PooledString *next;
+    struct Object *obj;
+    SInt32 offset;
+    char *data;
+    UInt32 size;
+    UInt8 ispascal;
+    UInt8 iswide;
 };
 #pragma options align = reset
 #pragma options align = mac68k

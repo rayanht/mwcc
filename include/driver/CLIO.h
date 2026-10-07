@@ -26,16 +26,14 @@ struct DiagnosticDetails {
 #pragma pack(push, 1)
 struct DiagnosticSourcePosition {
     OSSpec primaryFile;
-    OSSpec
-        file; /* 0x144: format_and_print_message passes the diagnostic file to OS_SpecToStringRelative; CLIO_ReportDiagnostic copies it from record. */
+    OSSpec file;
     char *sourceLine;
-    SInt32 line; /* 0x28c: format_and_print_message prints the source line number after the file path. */
+    SInt32 line;
     int column;
     short length;
     char reserved662[2];
-    int selectionOffset; /* 0x298: report_message copies the diagnostic selection position; print_pipe_delimited_diagnostic emits it after column and length. */
-    short
-        selectionLength; /* 0x29c: report_message copies and clamps the selection extent; print_pipe_delimited_diagnostic emits it after selectionOffset. */
+    int selectionOffset;
+    short selectionLength;
     char reserved670[2];
 };
 #pragma pack(pop)

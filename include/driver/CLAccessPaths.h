@@ -10,10 +10,9 @@ extern "C" {
 
 #pragma pack(push, 1)
 struct AccessPaths {
-    AccessPathEntry *
-        *items; /* 0x00: CLAccessPaths_GetEntry returns entries; CLAccessPaths_FreeItems frees each AccessPathEntry. */
-    UInt16 capacity; /* 0x04: allocate_slot grows the entry allocation by 20 slots. */
-    UInt16 count;    /* 0x06: allocate_slot increments; CLAccessPaths_GetCount returns the entry count. */
+    AccessPathEntry **items;
+    UInt16 capacity;
+    UInt16 count;
 };
 #pragma pack(pop)
 extern void copy_access_paths_to_file_specs_checked(CWFileSpec *path, AccessPaths *value, short result);

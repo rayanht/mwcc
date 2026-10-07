@@ -53,9 +53,6 @@ static struct Type *switch_expr_type;
 static struct PCodeLabel *default_case_label;
 static CInt64 switchtable_max;
 
-/* 0x581178: current virtual register */
-/* 0x555420: key lower bound */
-
 static inline SInt16 NextGPR(void)
 {
     return gUsedVirtualRegistersGPR++;
