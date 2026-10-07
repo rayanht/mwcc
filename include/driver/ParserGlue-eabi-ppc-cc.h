@@ -34,7 +34,6 @@ extern struct PtrList data_005876fc[];
 extern struct StorageHandle *directive_storage;
 extern int fn_00405840(void);
 extern int data_00540bf8;
-extern Pragma data_0054a690;
 
 #ifdef __cplusplus
 }

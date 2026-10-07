@@ -36,6 +36,8 @@
 #include "compiler/TOC.h"
 #include "driver/Files.h"
 #include <string.h>
+
+static struct BE_SymNode *data_0055da80 = NULL;
 /* Declarations gathered from the merged files. */
 
 /* Back-end symbol records and their associated data. */

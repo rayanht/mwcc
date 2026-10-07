@@ -239,8 +239,12 @@ src/driver/OptimizerHelpers.c:
 	.data       start:0x0054A2C8 end:0x0054A5B0
 
 src/driver/WarningHelpers.c:
-	.text       start:0x0040DE20 end:0x0040E25F
-	.data       start:0x0054A5B0 end:0x0054A858
+	.text       start:0x0040DE20 end:0x0040E010
+	.data       start:0x0054A5B0 end:0x0054A680
+
+src/driver/TargetWarningHelpers-ppc-cc.c:
+	.text       start:0x0040E010 end:0x0040E25F
+	.data       start:0x0054A680 end:0x0054A858
 
 src/driver/ToolHelpers-cc.c:
 	.text       start:0x0040E25F end:0x0040E8A0 align:1
@@ -540,11 +544,11 @@ src/optimizer/IroEval.c:
 
 src/optimizer/IroJump.c:
 	.text       start:0x00456590 end:0x00456BA0
-	.data       start:0x005538A8 end:0x005539A0
+	.data       start:0x005538A8 end:0x005539B8
 
 src/optimizer/IroRangePropagation.c:
 	.text       start:0x00456BA0 end:0x00458030
-	.data       start:0x005539A0 end:0x00553C68
+	.data       start:0x005539B8 end:0x00553C68
 
 src/optimizer/IroPropagate.c:
 	.text       start:0x00458030 end:0x00459420

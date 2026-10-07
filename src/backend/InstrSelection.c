@@ -62,6 +62,87 @@ typedef void (*CodeGenFn)(ENode *, int, int, void *);
 typedef int (*SelectionHandler)(struct S1 *, int, int, void *);
 typedef enum TypeTag { TV = 0, TI = 1, TF = 2, TE = 3, TP = 11 } TypeTag;
 
+typedef void (*CodeGenDispatch)(void *, short, short, void *);
+
+/* The code generator of each ENode type. */
+CodeGenDispatch data_00560648[75] = {
+    (CodeGenDispatch)generate_postinc_postdec,
+    (CodeGenDispatch)generate_postinc_postdec,
+    (CodeGenDispatch)fn_004b5ce0,
+    (CodeGenDispatch)fn_004b5ce0,
+    (CodeGenDispatch)select_indirect_operand,
+    (CodeGenDispatch)emit_negation,
+    (CodeGenDispatch)emit_bitwise_not,
+    (CodeGenDispatch)generate_boolean_expression,
+    (CodeGenDispatch)force_monadic_operand_register,
+    (CodeGenDispatch)emit_multiply,
+    (CodeGenDispatch)fn_004b5ce0,
+    (CodeGenDispatch)generate_division,
+    (CodeGenDispatch)generate_modulo,
+    (CodeGenDispatch)fn_004b5ce0,
+    (CodeGenDispatch)fn_004b5ce0,
+    (CodeGenDispatch)emit_add,
+    (CodeGenDispatch)select_subtraction,
+    (CodeGenDispatch)generate_left_shift,
+    (CodeGenDispatch)select_right_shift,
+    (CodeGenDispatch)generate_comparison,
+    (CodeGenDispatch)generate_comparison,
+    (CodeGenDispatch)generate_comparison,
+    (CodeGenDispatch)generate_comparison,
+    (CodeGenDispatch)generate_comparison,
+    (CodeGenDispatch)generate_comparison,
+    (CodeGenDispatch)emit_bitwise_and,
+    (CodeGenDispatch)gen_xor,
+    (CodeGenDispatch)select_or,
+    (CodeGenDispatch)generate_boolean_expression,
+    (CodeGenDispatch)generate_boolean_expression,
+    (CodeGenDispatch)generate_assignment,
+    (CodeGenDispatch)fn_004b5ce0,
+    (CodeGenDispatch)fn_004b5ce0,
+    (CodeGenDispatch)fn_004b5ce0,
+    (CodeGenDispatch)fn_004b5ce0,
+    (CodeGenDispatch)fn_004b5ce0,
+    (CodeGenDispatch)fn_004b5ce0,
+    (CodeGenDispatch)fn_004b5ce0,
+    (CodeGenDispatch)fn_004b5ce0,
+    (CodeGenDispatch)fn_004b5ce0,
+    (CodeGenDispatch)fn_004b5ce0,
+    (CodeGenDispatch)select_diadic_left_then_right,
+    (CodeGenDispatch)fn_004b5ce0,
+    (CodeGenDispatch)fn_004b5ce0,
+    (CodeGenDispatch)fn_004b5ce0,
+    (CodeGenDispatch)fn_004b5ce0,
+    (CodeGenDispatch)fn_004b5ce0,
+    (CodeGenDispatch)fn_004b5ce0,
+    (CodeGenDispatch)generate_type_conversion,
+    (CodeGenDispatch)report_fatal_error,
+    (CodeGenDispatch)make_intval_operand,
+    (CodeGenDispatch)load_float_constant,
+    (CodeGenDispatch)fn_004b6530,
+    (CodeGenDispatch)generate_conditional_expression,
+    (CodeGenDispatch)generate_intrinsic_or_function_call,
+    (CodeGenDispatch)generate_intrinsic_or_function_call,
+    (CodeGenDispatch)make_objref_operand,
+    (CodeGenDispatch)fn_004b5ce0,
+    (CodeGenDispatch)emit_conditional_funccall,
+    (CodeGenDispatch)get_function_type_operand,
+    (CodeGenDispatch)fn_004b5ce0,
+    (CodeGenDispatch)fn_004b5ce0,
+    (CodeGenDispatch)fn_004b5ce0,
+    (CodeGenDispatch)fn_004b5ce0,
+    (CodeGenDispatch)fn_004b5ce0,
+    (CodeGenDispatch)fn_004b5ce0,
+    (CodeGenDispatch)fn_004b5ce0,
+    (CodeGenDispatch)fn_004b5ce0,
+    (CodeGenDispatch)fn_004b5ce0,
+    (CodeGenDispatch)fn_004b5ce0,
+    (CodeGenDispatch)fn_004b5ce0,
+    (CodeGenDispatch)get_dispatch_result,
+    (CodeGenDispatch)get_objaccess_cached_value,
+    (CodeGenDispatch)fn_004b5ce0,
+    (CodeGenDispatch)emit_vector128_constant,
+};
+
 void emit_vector128_constant(ENode *node, short requestedRegister, short unused, Operand *result)
 {
     int index;
@@ -157,7 +238,7 @@ void emit_vector128_constant(ENode *node, short requestedRegister, short unused,
         }
         ++patternIndex;
     } while (patternIndex < 16);
-    CError_Internal(instrSelectionFileName, 5481);
+    CError_FATAL(5481);
 }
 
 /* Instruction-selection operand storage with a register pair. */

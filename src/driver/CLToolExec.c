@@ -228,7 +228,7 @@ int CLToolExec_ExecuteLinker(Plugin *tool, UInt32 flags, DropinFileRecord *argum
                 char *suffix = cursor + 2;
                 memmove(suffix + 3, cursor + 2, strlen(cursor + 2));
                 cursor += 2;
-                memcpy(cursor, &link_string, 4);
+                memcpy(cursor, "Link", 4);
             }
         }
 

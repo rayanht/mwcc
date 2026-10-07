@@ -41,6 +41,8 @@
 
 #include <string.h>
 
+short spill_address_register = 0;
+
 static void EmitSpill(PCodeInstruction *op, InterferenceNode *node, short reg, int opcode)
 {
     PCodeInstruction *t1;

@@ -22,7 +22,6 @@ union RecoveryPathFrame {
 };
 extern jmp_buf plugin_request_jmp_buf;
 extern struct CWPluginPrivateContext *pluginPrivateContext;
-extern void ToolHelpers_cc_PrintCLanguageWarningOptions(void *self);
 extern void ToolHelpers_cc_CallValuePairCallback(char *key, struct StorageHandle *value);
 extern char *format_version(unsigned int version, char *buf);
 extern void ToolHelpers_cc_PrintVersion(char includeValue);
@@ -42,20 +41,6 @@ extern int data_00587e04;
 extern int data_00587e08;
 extern int data_00587e0c;
 extern const char *DAT_00543380;
-extern char data_00540ad7;
-extern char data_00540b16;
-extern char data_00540b17;
-extern char data_00540b18;
-extern char data_00540b19;
-extern char data_00540b1a;
-extern char data_00540b1b;
-extern char data_00540b1c;
-extern char data_00540b1d;
-extern char data_00540b1e;
-extern char data_00540b1f;
-extern char data_00540b20;
-extern char data_00540b21;
-extern char data_00588528;
 
 #ifdef __cplusplus
 }

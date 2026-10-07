@@ -62,7 +62,6 @@ extern void replace_successor(PCodeBlock *block, PCodeBlock *oldSuccessor, PCode
 extern unsigned int fn_00525fc0(PCodeInstruction *node, Loop *arg2, UInt32 *arg3);
 extern SInt32 CodeMotion_00526070(PCodeInstruction *definition, Loop *context);
 extern PCodeBlockLink *collect_single_successor_memberblocks(Loop *cm, PCodeBlock *cur);
-extern struct PCodeInstruction *DAT_00574ce8;
 extern void propagate_use_sets(void);
 extern void solve_definition_sets(void);
 extern void compute_block_definition_and_use_sets(void);

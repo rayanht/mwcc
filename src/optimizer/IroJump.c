@@ -307,10 +307,8 @@ SInt32 chain_label(CLabel **label)
                 p = p->next;
             }
             if (p->type == IROLinearGoto && *label != p->u.label) {
-                char *message = chaining_goto_message;
-                void (*report)(const char *, ...) = IroDump_Print;
                 *label = p->u.label;
-                report(message, p->index);
+                IroDump_Print("Chaining goto at %d\n", p->index);
                 return 1;
             }
             if (saved != NULL && *label != saved)

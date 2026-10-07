@@ -33,7 +33,6 @@ extern SInt32 __stdcall MacFileTypes_GetFileType(OSSpec *path, UInt32 *fileType)
 extern unsigned int __stdcall fn_00421d30(OSSpec *a0, SInt32 a1, SInt32 a2);
 extern unsigned char __stdcall MacFileTypes_MatchBytes(void *bytes, int length, UInt32 *mnemonic);
 extern void __stdcall fn_00421a80(int value, unsigned int *result);
-extern struct MacFileTypeNode **mac_file_types;
 extern int(__stdcall *data_00587e70)();
 
 #ifdef __cplusplus

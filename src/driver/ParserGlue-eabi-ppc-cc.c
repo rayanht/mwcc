@@ -2,6 +2,7 @@
 #pragma scheduling off
 #include "compiler/common.h"
 #include "driver/ParserGlue-eabi-ppc-cc.h"
+#include "driver/TargetWarningHelpers-ppc-cc.h"
 #include "driver/Memory.h"
 #include "driver/Option.h"
 #include "driver/ParserHelpers-cc.h"
@@ -39,7 +40,7 @@ int fn_004056a0(void)
 int fn_00405710(void)
 {
     if (ParserHelpers_cc_EmitPragmas((Pragma *)&data_0054a388) == 0 ||
-        ParserHelpers_cc_EmitPragmas(&data_0054a690) == 0) {
+        ParserHelpers_cc_EmitPragmas(data_0054a690) == 0) {
         return 0;
     }
     if (directive_storage != NULL) {

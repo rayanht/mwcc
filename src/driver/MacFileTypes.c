@@ -13,6 +13,9 @@
 #include <setjmp.h>
 #include <string.h>
 
+static struct MacFileTypeNode *defaultlist = NULL;
+static struct MacFileTypeNode **mac_file_types = &defaultlist;
+
 void __stdcall MacFileTypes_AppendTable(struct MacFileTypeNode **list, SInt32 value)
 {
     struct MacFileTypeNode **pp;

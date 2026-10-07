@@ -138,7 +138,6 @@ extern void get_objaccess_cached_value(ENode *node, UInt32 argument2, UInt32 arg
                                        UInt32 argument5);
 extern void (*data_00560648[])(void *, short, short, void *);
 extern Float float_one;
-extern char instrSelectionFileName[];
 extern struct FunctionCallFrame *function_call_frames;
 extern short gUsedVirtualRegistersFPR;
 extern SInt16 gUsedVirtualRegistersGPR;

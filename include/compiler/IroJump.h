@@ -16,7 +16,6 @@ struct ERange {
 #pragma options align = reset
 extern SInt32 IRO_DoJumpChaining(void);
 extern SInt32 chain_label(CLabel **label);
-extern char chaining_goto_message[];
 extern SInt32 IRO_RangePropagateInFNode(void);
 extern int initialize_linear_range(IROLinear *nd);
 extern int IRO_RemoveLabels(void);

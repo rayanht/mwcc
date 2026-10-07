@@ -29,6 +29,8 @@
 #include "compiler/ENode.h"
 #include "compiler/Types.h"
 
+static struct AccessPathEntry *data_0054d898 = NULL;
+
 /* Declarations gathered from the merged files. */
 
 /* 0x4ec5e0, signature unknown */

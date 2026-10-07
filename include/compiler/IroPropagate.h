@@ -28,7 +28,6 @@ struct ReplacementCandidate {
 extern void IroPropagate_PropagateExpressions(void);
 extern void IRO_CopyAndConstantPropagation(void);
 extern int fn_004592e0(IROLinear *node);
-extern char propagation_dump_message[];
 extern SInt32 propagationIndex;
 extern struct BitVector *data_00588018;
 extern struct BitVector *availableExpressions;

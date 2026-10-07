@@ -48,7 +48,6 @@ extern BE_SymNode *BE_symbol_004918f0(Object *symbol, struct ObjGenSection *valu
 extern struct BE_SymNode *be_symbol_list;
 extern struct BE_SymNode *symbol_tail;
 extern struct ObjGenSection *data_005884aa;
-extern struct BE_SymNode *data_0055da80;
 extern BE_SymNode *BE_symbol_ResetSymbolTail(void);
 
 #ifdef __cplusplus

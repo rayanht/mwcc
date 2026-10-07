@@ -2169,13 +2169,13 @@
     "name": "set_warning_option",
     "address": "0x0040e010",
     "size": 249,
-    "source": "src/driver/WarningHelpers.c"
+    "source": "src/driver/TargetWarningHelpers-ppc-cc.c"
   },
   {
     "name": "ToolHelpers_cc_PrintCLanguageWarningOptions",
     "address": "0x0040e110",
     "size": 335,
-    "source": "src/driver/WarningHelpers.c"
+    "source": "src/driver/TargetWarningHelpers-ppc-cc.c"
   },
   {
     "name": "ToolHelpers_cc_CallValuePairCallback",

@@ -47,12 +47,12 @@
 
 /* The fixed-size value payload copied for a literal replacement. */
 
-static void BVFatal(void)
+static inline void BVFatal(void)
 {
     CError_Internal("BitVector.h", 0x2f);
 }
 
-static void BVSet(BitVector *bv, UInt32 i)
+static inline void BVSet(BitVector *bv, UInt32 i)
 {
     if ((i >> 5) < bv->size)
         bv->bits[i >> 5] |= (UInt32)1 << (i & 31);
@@ -71,7 +71,7 @@ static int NeedProp(IROLinear *instr)
     return 0;
 }
 
-static void setbit(unsigned int bit, BitVector *bv)
+static inline void setbit(unsigned int bit, BitVector *bv)
 {
     if ((bit >> 5) < (unsigned int)bv->size)
         bv->bits[bit >> 5] |= 1 << bit;
@@ -556,7 +556,7 @@ void IRO_CopyAndConstantPropagation(void)
                                    IroUtil_IsTypeSame(instruction->rtype, node->node->rtype) != 0) {
                             instruction->u.monadic->u.node = create_objectrefnode(node->object);
                         }
-                        IroDump_Print(&propagation_dump_message[0], instruction->index, node->node->index);
+                        IroDump_Print("Found propagation at %d from %d\n", instruction->index, node->node->index);
                         break;
                     }
                 }

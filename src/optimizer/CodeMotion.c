@@ -43,6 +43,9 @@
 #include "compiler/Registers.h"
 #include "compiler/StrengthReduction.h"
 #include "compiler/Switch.h"
+
+static struct PCodeInstruction *DAT_00574ce8 = NULL;
+
 #define CM_BIT(set, i) (((UInt32 *)(set))[(i) >> 5] & (1 << (i)))
 
 typedef struct CMOState CMOState;
