@@ -51,6 +51,27 @@
 #include "compiler/Objects.h"
 
 #include <string.h>
+
+#pragma options align = mac68k
+static Boolean data_00580d80;
+static struct ObjGenSection *default_code_section;
+static struct ObjGenSection *defaultDataSection;
+static struct ObjGenSection *default_f32_section;
+static struct ObjGenSection *savedDefaultDataSection;
+static struct ObjGenSection *default_data_section;
+static UInt8 section_table_dirty;
+static SInt32 uid_counter;
+static SInt32 object_storage_size;
+static SInt32 object_data_size;
+static SInt32 data_00580da4;
+static SInt32 data_00580da8;
+static int DAT_00580dac;
+static struct ObjGenSection *DAT_00580db0;
+static SInt32 *data_00580db4;
+static struct BufferUpdate *pending_buffer_updates;
+static struct BufferUpdate *pending_data_tail;
+#pragma options align = reset
+
 void ObjGen_PPC_EABI_EmitSerializedFormat(Object *key, int index)
 {
     struct ObjGenSection *output;

@@ -53,6 +53,28 @@ typedef enum OverrideKind { OVERRIDE_NONE, OVERRIDE_1, OVERRIDE_2 } OverrideKind
 
 typedef enum { OV_NONE, OV_NORMAL, OV_COVARIANT } CovarianceKind;
 
+#pragma options align = mac68k
+static TypeClass *current_class;
+static PendingThunk *pending_thunks;
+static TypeClass *base_path_class;
+static SInt32 base_path_offset;
+static UInt8 base_path_status;
+static UInt8 *data_00581caa;
+static SInt32 vtable_size;
+static void *rtti_offset_table;
+static void *data_00581cb6;
+static ClassLayout *virtual_base_layout;
+static ClassLayout *root_class_layout;
+static SInt32 data_00581cc2;
+static Boolean data_00581cc6;
+static void *data_00581cc8;
+static void *data_00581ccc;
+static void *data_00581cd0;
+static void *data_00581cd4;
+static void *data_00581cd8;
+static void *data_00581cdc;
+#pragma options align = reset
+
 ENode *CClass_AccessMember(ENode *node, Type *type, UInt32 quals, int value)
 {
     Type *savedtype;

@@ -809,10 +809,18 @@ src/frontend/Unmangle.c:
 	.text       start:0x004E71A0 end:0x004E8FC0
 	.data       start:0x005649B8 end:0x005651C0
 
+src/msl/locale.c:
+	.data       start:0x005651C0 end:0x005651F8
+	.bss        start:0x00581C60 end:0x00581C90
+
+src/msl/float.c:
+	.data       start:0x005651F8 end:0x00565260
+	.bss        start:0x00581C90 end:0x00581C98
+
 src/frontend/CClass.c:
 	.text       start:0x004E8FC0 end:0x004EC390
-	.data       start:0x005651C0 end:0x005652F8
-	.bss        start:0x00581C60 end:0x00581CE0
+	.data       start:0x00565260 end:0x005652F8
+	.bss        start:0x00581C98 end:0x00581CE0
 
 src/backend/InlineAsm.c:
 	.text       start:0x004EC390 end:0x004ED690
