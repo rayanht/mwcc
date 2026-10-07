@@ -994,7 +994,7 @@
   "_dispatch_param_by_which": "0x0042bf6a",
   "_dispatch_request_callback@12": "0x0041c7f0",
   "_dominators": "0x005dfc14",
-  "_driverTool": "0x005e6710",
+  "_pTool": "0x005e6710",
   "_dump_flowgraph": "0x00454160",
   "_dwarf_depth_ptr": "0x005cc484",
   "_dwarf_entry_offsets": "0x005cc488",

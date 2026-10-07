@@ -917,7 +917,7 @@
   "_rt_memberpointercompare": "0x00587694",
   "_DAT_00587698": "0x00587698",
   "_DAT_0058769c": "0x0058769c",
-  "_driverTool": "0x005876b0",
+  "_pTool": "0x005876b0",
   "_DAT_005876c0": "0x005876c0",
   "_memberpointercompare_func": "0x005876cc",
   "_dwarf_info_buffer": "0x005876d0",

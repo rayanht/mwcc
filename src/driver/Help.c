@@ -520,7 +520,7 @@ void Help_PrintOptionUsageNotes(void)
         "\tThe symbols ',' %s separate options and parameters unconditionally; to include one of these symbols in a parameter or filename, escape it (e.g., as '\\,' in mwcc file.c\\,v).\b\n",
         s);
     drain_column(&helpTextColumn);
-    if (data_00587e23 && driverTool[0] == 0x436f6d70)
+    if (data_00587e23 && pTool->tool == 'Comp')
         append_formatted_text(
             &helpTextColumn,
             "\tThis tool calls the linker (unless a compiler option such as ~~c prevents it) and understands linker options -- use '~~help tool=other' to see them.  Options marked \"passed to linker\" are used by the compiler and the linker; options marked \"for linker\" are used only by the linker. When using the compiler and linker separately, you must pass the common options to both.\b\n");

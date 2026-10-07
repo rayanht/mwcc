@@ -8,23 +8,24 @@
 extern "C" {
 #endif
 
-struct DriverTool {
-    int cpu;
-    int os;
-    int lang;
-    int type;
-    int argumentCount;
-    char **arguments;
+/* A command-line tool's parser: the tool it parses for, its preference panels, its option lists and its checks
+ * before, between and after the passes over the command line. */
+struct ParserTool {
+    UInt32 tool;
+    UInt32 lang;
+    UInt32 cpu;
+    UInt32 os;
+    int numPrefPanels;
+    char **prefPanels;
     char *toolInfo;
     char *copyright;
-    int optionListCount;
-    struct OptionList *
-        *optionLists; /* 0x24: Targets_RegisterOptionLists passes each list to Option_RegisterOptionList */
-    int resourceCount;
-    struct Resource *resources;
-    Boolean (*precheck)(void);
-    Boolean (*check)(void);
-    Boolean (*postcheck)(void);
+    int numOptionLists;
+    struct OptionList **optionLists;
+    int numPrefDataPanels;
+    struct PrefDataPanel *prefDataPanels;
+    Boolean (*preParse)(void);
+    Boolean (*midParse)(void);
+    Boolean (*postParse)(void);
 };
 struct EnvInfo {
     short f0;
@@ -33,12 +34,13 @@ struct EnvInfo {
     char parserEnvironmentFlag;
     char f7;
 };
-struct Resource {
-    char *name;          /* 0x00: copy_resource_by_name compares the resource name case-insensitively */
-    unsigned char *data; /* 0x04: copy_resource_by_name copies size bytes into the new handle with memcpy */
-    int size;            /* 0x08: copy_resource_by_name allocates the handle and copies this many bytes */
+/* A preference panel's name and its default data. */
+struct PrefDataPanel {
+    char *name;
+    unsigned char *data;
+    int size;
 };
-extern int *driverTool;
+extern ParserTool *pTool;
 extern struct PanelEntry *data_00587cf0;
 extern void *ToolHelpers_ResizeBuffer(const char *what, void *ptr, int size);
 extern int initialize_cmdline_environment(struct CWPluginPrivateContext *context);

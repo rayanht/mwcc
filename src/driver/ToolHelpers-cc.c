@@ -32,13 +32,13 @@ int set_output_path(char *name, int unused, char *path)
     int err;
     if (!path)
         path = name;
-    if (pCmdLine.state == 3 || (pCmdLine.state == 0 && driverTool[0] == 0x4c696e6b)) {
+    if (pCmdLine.state == 3 || (pCmdLine.state == 0 && pTool->tool == 'Link')) {
         if (data_0058851d) {
             fn_0040ecb1(0x29, path);
             return 0;
         }
         data_0058851d = 1U;
-        if (driverTool[0] == 0x436f6d70) {
+        if (pTool->tool == 'Comp') {
             strncpy(&output_path, path, 0x100);
             return 1;
         }

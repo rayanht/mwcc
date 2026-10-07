@@ -95,7 +95,7 @@ int initialize_cmdline_environment(struct CWPluginPrivateContext *context)
 
 int register_option_lists(struct CWPluginPrivateContext *context)
 {
-    if (driverTool == NULL) {
+    if (pTool == NULL) {
         return 2;
     }
     Targets_RegisterOptionLists();
@@ -106,29 +106,22 @@ int run_tool_checks(struct CWPluginPrivateContext *context)
 {
     int r;
     unsigned short result;
-    DriverTool *tool;
     tool_checks_passed = 1;
     data_00587e04 = 1;
     data_00587e0c = data_00587e08 = 0;
     Targets_InitPtrList(data_005876fc);
     Targets_InitPtrList(data_00587688);
     Targets_InitPtrList(&data_00588044);
-    tool = (DriverTool *)driverTool;
-    if (tool->precheck) {
-        DriverTool *calltool = (DriverTool *)driverTool;
-        tool_checks_passed &= calltool->precheck();
-    }
+    if (pTool->preParse)
+        tool_checks_passed &= pTool->preParse();
     Targets_ParseArguments(cmdline_environment->argc, cmdline_environment->argv);
     targets_value_null_or_zero = Targets_IsValueNullOrZero();
     tool_checks_passed &= Option_ParseOptionList(Option_GetOptionList(), 1) && !data_00587e1d;
     fn_0040f960();
     if ((r = fn_0040ba99(context)) != 0)
         return r;
-    tool = (DriverTool *)driverTool;
-    if (tool->check && tool_checks_passed) {
-        DriverTool *calltool = (DriverTool *)driverTool;
-        tool_checks_passed &= calltool->check();
-    }
+    if (pTool->midParse && tool_checks_passed)
+        tool_checks_passed &= pTool->midParse();
     if ((r = fn_0040ba99(context)) != 0)
         return r;
     if (data_00587e1e && tool_checks_passed)
@@ -136,11 +129,8 @@ int run_tool_checks(struct CWPluginPrivateContext *context)
     fn_0040f960();
     if (tool_checks_passed != 0)
         tool_checks_passed &= Option_ParseOptionList(Option_GetOptionList(), 0) && !data_00587e1d;
-    tool = (DriverTool *)driverTool;
-    if (tool->postcheck && tool_checks_passed) {
-        DriverTool *calltool = (DriverTool *)driverTool;
-        tool_checks_passed &= calltool->postcheck();
-    }
+    if (pTool->postParse && tool_checks_passed)
+        tool_checks_passed &= pTool->postParse();
     Targets_FreeTokenText();
     result = (tool_checks_passed && !data_00587e1d) ? 0 : 2;
     return result;
@@ -150,15 +140,13 @@ void **copy_resource_by_name(char *name)
 {
     int index;
     struct StorageHandle *handle;
-    Resource *resources;
-    for (index = 0; index < driverTool[10]; index++) {
-        if (!ClientGlue_CompareLowercaseStrings(name, (resources = (Resource *)driverTool[11])[index].name)) {
-            handle = (struct StorageHandle *)Memory_NewHandle((resources = (Resource *)driverTool[11])[index].size);
+    for (index = 0; index < pTool->numPrefDataPanels; index++) {
+        if (!ClientGlue_CompareLowercaseStrings(name, pTool->prefDataPanels[index].name)) {
+            handle = (struct StorageHandle *)Memory_NewHandle(pTool->prefDataPanels[index].size);
             if (!handle)
                 return NULL;
             fn_00413a00(handle);
-            memcpy(handle->data, (resources = (Resource *)driverTool[11])[index].data,
-                   (resources = (Resource *)driverTool[11])[index].size);
+            memcpy(handle->data, pTool->prefDataPanels[index].data, pTool->prefDataPanels[index].size);
             fn_00413a50((void **)handle);
             return (void **)handle;
         }

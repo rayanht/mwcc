@@ -79,8 +79,8 @@ void ToolHelpers_cc_PrintVersion(char includeValue)
                 compilerVersion = format_version(data_00587cf0[index].version, compilerBuffer);
             } else if (data_00587cf0[index].type == 1348563571) {
                 parserVersion = format_version(data_00587cf0[index].version, parserBuffer);
-            } else if (driverTool[0] == data_00587cf0[index].type) {
-                if (matchingVersion == NULL && driverTool[1] == data_00587cf0[index].creator) {
+            } else if (pTool->tool == data_00587cf0[index].type) {
+                if (matchingVersion == NULL && pTool->lang == data_00587cf0[index].creator) {
                     matchingVersion = format_version(data_00587cf0[index].version, matchingBuffer);
                 } else {
                     alternateVersion = format_version(data_00587cf0[index].version, alternateBuffer);
@@ -94,13 +94,9 @@ void ToolHelpers_cc_PrintVersion(char includeValue)
                 alternateVersion = "???";
             matchingVersion = alternateVersion;
         }
-        {
-            DriverTool *tool;
-            HPrintF(output,
-                    "%s.\nCopyright (c)%s Metrowerks, Inc.\nAll rights reserved.\nVersion %s\nRuntime Built: %s %s\n",
-                    tool->toolInfo, (tool = (DriverTool *)driverTool)->copyright, matchingVersion, parserValue1,
-                    parserValue2);
-        }
+        HPrintF(output,
+                "%s.\nCopyright (c)%s Metrowerks, Inc.\nAll rights reserved.\nVersion %s\nRuntime Built: %s %s\n",
+                pTool->toolInfo, pTool->copyright, matchingVersion, parserValue1, parserValue2);
         HPrintF(output, "\n");
         if (includeValue != 0) {
             HPrintF(output, "Please enter '%s %chelp' for information about options.\n\n",

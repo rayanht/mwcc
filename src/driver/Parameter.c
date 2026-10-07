@@ -1239,7 +1239,7 @@ int parse_parameter_value(PARAM_T *parameter, char **value, UInt32 flags)
         Targets_ForwardVarArgsAndLongjmp("Unknown parameter type");
     }
 
-    if (*driverTool == 0x436f6d70 && (flags & 2) != 0 && *value != NULL) {
+    if (pTool->tool == 'Comp' && (flags & 2) != 0 && *value != NULL) {
         if ((flags & 0x10) == 0) {
             if (alternate)
                 Parameter_EmitValue(value, 4);

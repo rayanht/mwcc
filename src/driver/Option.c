@@ -274,7 +274,7 @@ unsigned int fn_0041c8ba(void)
 {
     unsigned int optionValue;
 
-    if (driverTool[0] == 0x436f6d70) {
+    if (pTool->tool == 'Comp') {
         optionValue = 0x100;
     } else {
         optionValue = 0x40;

@@ -34,9 +34,9 @@ int fn_0040d283(int unused, char *first, char *second)
 int append_define_directive(char *name, char *value)
 {
     char buf[0x400];
-    if (driverTool[1] == 0x632b2b20 || driverTool[1] == 0x41736d20)
+    if (pTool->lang == 'c++ ' || pTool->lang == 'Asm ')
         sprintf(buf, "#define %s %s\n", name, value ? value : "1");
-    else if (driverTool[1] == 0x70617363)
+    else if (pTool->lang == 'pasc')
         sprintf(buf, "{$definec %s %s}\n", name, value ? value : "1");
     else {
         sprintf(buf, "Option '-D|d' is not supported with this plugin");
@@ -50,9 +50,9 @@ int append_define_directive(char *name, char *value)
 int append_undef_directive(char *option, int unused, char *symbol)
 {
     char buf[300];
-    if (driverTool[1] == 0x632b2b20 || driverTool[1] == 0x41736d20)
+    if (pTool->lang == 'c++ ' || pTool->lang == 'Asm ')
         sprintf(buf, "#undef %s\n", symbol);
-    else if (driverTool[1] == 0x70617363)
+    else if (pTool->lang == 'pasc')
         sprintf(buf, "{$undefc %s}\n", symbol);
     else {
         sprintf(buf, "Option -%s is not supported with this plugin", option);
@@ -72,9 +72,9 @@ int append_include_directive(char *option, void *handle, char *filename)
     else
         storage = (struct StorageHandle **)handle;
     if (*filename) {
-        if (driverTool[1] == 0x632b2b20 || driverTool[1] == 0x41736d20)
+        if (pTool->lang == 'c++ ' || pTool->lang == 'Asm ')
             sprintf(buf, "#include \"%s\"\n", filename);
-        else if (driverTool[1] == 0x70617363)
+        else if (pTool->lang == 'pasc')
             sprintf(buf, "{$I+}\n{$I %s}\n{$I-}\n", filename);
         else {
             sprintf(buf, "Option -%s is not supported with this plugin", option);

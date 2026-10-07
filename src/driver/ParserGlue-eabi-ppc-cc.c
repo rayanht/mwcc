@@ -3149,7 +3149,7 @@ static OptionList *optLists[] = {&optlstCmdLine,   &optlstCmdLineCompiler, &optl
                                  &optlstWarnings,  &optlstProject,         &optlstCmdLineLinker,
                                  &optlstLinker,    &optlstLinkerAddresses, &optlstDisassembler};
 
-static Resource stPrefPanels[] = {
+static PrefDataPanel stPrefPanels[] = {
     {"CmdLine Panel", (unsigned char *)&pCmdLine, sizeof(PCmdLine)},
     {"CmdLine Compiler Panel", (unsigned char *)&pCmdLineCompiler, sizeof(PCmdLineCompiler)},
     {"CmdLine Linker Panel", (unsigned char *)&pCmdLineLinker, sizeof(PCmdLineLinker)},
@@ -3234,7 +3234,7 @@ int fn_00405710(void)
 }
 
 #pragma scheduling reset
-static DriverTool parser_tool = {'Comp',
+static ParserTool parser_tool = {'Comp',
                                  'c++ ',
                                  'ePPC',
                                  'EABI',
@@ -3252,5 +3252,5 @@ static DriverTool parser_tool = {'Comp',
 
 int fn_00405840(void)
 {
-    return Targets_SetTool((int *)&parser_tool);
+    return Targets_SetTool(&parser_tool);
 }
