@@ -544,9 +544,9 @@ static inline HashNameNode *CMangler_LinkName(Object *obj)
     }
 }
 
-HashNameNode *CMangler_TemplateInstanceName(HashNameNode *name, CTStateElem *list)
+HashNameNode *CMangler_TemplateInstanceName(HashNameNode *name, TemplArg *list)
 {
-    CTStateElem *argument;
+    TemplArg *argument;
     ENode *expression;
     HashNameNode *link;
     char decimal[32];
@@ -555,7 +555,7 @@ HashNameNode *CMangler_TemplateInstanceName(HashNameNode *name, CTStateElem *lis
 
     for (argument = list; argument != NULL; argument = argument->next) {
         if (argument->pid.type == 0) {
-            if ((expression = argument->argument.expression) == NULL)
+            if ((expression = argument->data.paramdecl.expr) == NULL)
                 CError_FATAL(361);
             if (expression->rtype->type != TYPETEMPLDEPEXPR) {
                 switch (expression->type) {
@@ -577,7 +577,7 @@ HashNameNode *CMangler_TemplateInstanceName(HashNameNode *name, CTStateElem *lis
 
     for (argument = list; argument != NULL; argument = argument->next) {
         if (argument->pid.type == 0) {
-            if ((expression = argument->argument.expression) == NULL)
+            if ((expression = argument->data.paramdecl.expr) == NULL)
                 CError_FATAL(392);
             if (expression->rtype->type != TYPETEMPLDEPEXPR) {
                 switch (expression->type) {
@@ -597,7 +597,7 @@ HashNameNode *CMangler_TemplateInstanceName(HashNameNode *name, CTStateElem *lis
                 AppendGListByte(&data_00583548, 'T');
             }
         } else {
-            mangle_type(argument->argument.type, argument->qualifiers);
+            mangle_type(argument->data.typeparam.type, argument->data.typeparam.qual);
         }
         if (argument->next != NULL)
             AppendGListByte(&data_00583548, ',');

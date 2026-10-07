@@ -1401,11 +1401,6 @@ static inline void CPrec_Float(Object *obj, UInt32 off)
     add_serialized_bucket_entry((SInt32)(off + 0x26), (SInt32)(cur));
 }
 
-static inline BClassList *membervar_alias_bases(ObjMemberVar *member)
-{
-    return ((MemberVarAlias *)member)->bases;
-}
-
 /* writing the image */
 /* image offset */
 /* image buffer handle */
@@ -2460,8 +2455,7 @@ UInt32 serialize_cprec_nodes(CPrecNode *info)
             case 1:
                 add_serialized_bucket_entry(nodeOffset + 8, write_type((Type *)node->u.k1.classTemplate));
                 add_serialized_bucket_entry(nodeOffset + 0xc, write_type((Type *)node->u.k1.context));
-                add_serialized_bucket_entry(nodeOffset + 0x10,
-                                            serialize_prec_records((TemplateSourceRecordTyped *)node->u.k1.source));
+                add_serialized_bucket_entry(nodeOffset + 0x10, serialize_prec_records(node->u.k1.source));
                 break;
             case 2:
                 add_serialized_bucket_entry(nodeOffset + 8, (SInt32)write_template_function(node->u.k2.definition));
@@ -2996,8 +2990,8 @@ SInt32 serialize_membervars(ObjMemberVar *object)
                 CompilerTools_AppendGListData(&precompiled_buffer, object, sizeof(ObjMemberVar) + sizeof(BClassList *));
             }
             prec_position += sizeof(ObjMemberVar) + sizeof(BClassList *);
-            if (membervar_alias_bases(object) != NULL) {
-                add_serialized_bucket_entry(offset + 24, write_bclass_list(membervar_alias_bases(object)));
+            if (((ObjMemberVarPath *)object)->path != NULL) {
+                add_serialized_bucket_entry(offset + 24, write_bclass_list(((ObjMemberVarPath *)object)->path));
             }
         } else {
             if (data_00581c28 != 0) {
@@ -3748,8 +3742,7 @@ UInt32 write_typeclass(TypeClass *node)
             if (((TemplClass *)node)->templ__params != NULL)
                 add_serialized_bucket_entry(offset + 0x3e, serialize_pre_nodes(((TemplClass *)node)->templ__params));
             if (((TemplClass *)node)->members != NULL)
-                add_serialized_bucket_entry(
-                    offset + 0x42, serialize_prec_records((TemplateSourceRecordTyped *)((TemplClass *)node)->members));
+                add_serialized_bucket_entry(offset + 0x42, serialize_prec_records(((TemplClass *)node)->members));
             if (((TemplClass *)node)->instances != NULL)
                 add_serialized_bucket_entry(offset + 0x46, write_type((Type *)((TemplClass *)node)->instances));
             if (((TemplClass *)node)->pspec_owner != NULL)
@@ -3899,9 +3892,9 @@ TemplateFunction *write_template_function(TemplateFunction *function)
     return first;
 }
 
-SInt32 serialize_template_class_declarations(TemplateClassDeclaration *list)
+SInt32 serialize_template_class_declarations(TemplateAction *list)
 {
-    TemplateClassDeclaration *declaration;
+    TemplateAction *declaration;
     SInt32 result;
     SInt32 imageOffset;
     SInt32 nextOffset;
@@ -3916,50 +3909,50 @@ SInt32 serialize_template_class_declarations(TemplateClassDeclaration *list)
     imageOffset = prec_position;
     result = imageOffset;
     for (;;) {
-        memclrw(&declaration->source, sizeof(declaration->source) + sizeof(declaration->sourceTail));
+        memclrw(&declaration->source_ref, sizeof(declaration->source_ref));
         if (data_00581c28)
             CompilerTools_AppendGListData(&precompiled_buffer, declaration, sizeof(*declaration));
         prec_position += sizeof(*declaration);
-        switch (declaration->kind) {
-            case 0:
-                add_serialized_bucket_entry(imageOffset + offsetof(TemplateClassDeclaration, target),
-                                            write_type(declaration->target.type));
+        switch (declaration->type) {
+            case TAT_NESTEDCLASS:
+                add_serialized_bucket_entry(imageOffset + offsetof(TemplateAction, u.tclasstype),
+                                            write_type(TYPE(declaration->u.tclasstype)));
                 break;
-            case 1:
-                add_serialized_bucket_entry(imageOffset + offsetof(TemplateClassDeclaration, target),
-                                            write_type(declaration->target.type));
+            case TAT_ENUMTYPE:
+                add_serialized_bucket_entry(imageOffset + offsetof(TemplateAction, u.enumtype),
+                                            write_type(TYPE(declaration->u.enumtype)));
                 break;
-            case 2:
-                add_serialized_bucket_entry(imageOffset + offsetof(TemplateClassDeclaration, target),
-                                            write_prec_input_record(declaration->target.friendDeclaration));
+            case TAT_FRIEND:
+                add_serialized_bucket_entry(imageOffset + offsetof(TemplateAction, u.tfriend),
+                                            write_prec_input_record(declaration->u.tfriend));
                 break;
-            case 3:
-                add_serialized_bucket_entry(imageOffset + offsetof(TemplateClassDeclaration, target),
-                                            write_enum_const((ObjEnumConst *)declaration->target.object));
-                if (declaration->value.initializer)
-                    add_serialized_bucket_entry(imageOffset + offsetof(TemplateClassDeclaration, value.initializer),
-                                                write_enode(declaration->value.initializer));
+            case TAT_ENUMERATOR:
+                add_serialized_bucket_entry(imageOffset + offsetof(TemplateAction, u.enumerator.objenumconst),
+                                            write_enum_const(declaration->u.enumerator.objenumconst));
+                if (declaration->u.enumerator.initexpr)
+                    add_serialized_bucket_entry(imageOffset + offsetof(TemplateAction, u.enumerator.initexpr),
+                                                write_enode(declaration->u.enumerator.initexpr));
                 break;
-            case 4:
-                add_serialized_bucket_entry(imageOffset + offsetof(TemplateClassDeclaration, target),
-                                            write_type(declaration->target.type));
-                if (declaration->value.bases)
-                    add_serialized_bucket_entry(imageOffset + offsetof(TemplateClassDeclaration, value.bases),
-                                                (SInt32)write_class_list(declaration->value.bases));
+            case TAT_BASE:
+                add_serialized_bucket_entry(imageOffset + offsetof(TemplateAction, u.base.type),
+                                            write_type(declaration->u.base.type));
+                if (declaration->u.base.insert_after)
+                    add_serialized_bucket_entry(imageOffset + offsetof(TemplateAction, u.base.insert_after),
+                                                (SInt32)write_class_list(declaration->u.base.insert_after));
                 break;
-            case 5:
-                add_serialized_bucket_entry(imageOffset + offsetof(TemplateClassDeclaration, target),
-                                            write_object((Object *)declaration->target.object));
-                add_serialized_bucket_entry(imageOffset + offsetof(TemplateClassDeclaration, value.initializer),
-                                            write_enode(declaration->value.initializer));
+            case TAT_OBJECTINIT:
+                add_serialized_bucket_entry(imageOffset + offsetof(TemplateAction, u.objectinit.object),
+                                            write_object(declaration->u.objectinit.object));
+                add_serialized_bucket_entry(imageOffset + offsetof(TemplateAction, u.objectinit.initexpr),
+                                            write_enode(declaration->u.objectinit.initexpr));
                 break;
-            case 6:
-                add_serialized_bucket_entry(imageOffset + offsetof(TemplateClassDeclaration, target),
-                                            write_templdep((TypeTemplDep *)declaration->target.type));
+            case TAT_USINGDECL:
+                add_serialized_bucket_entry(imageOffset + offsetof(TemplateAction, u.usingdecl.type),
+                                            write_templdep(declaration->u.usingdecl.type));
                 break;
-            case 7:
-                add_serialized_bucket_entry(imageOffset + offsetof(TemplateClassDeclaration, target),
-                                            dispatch_obj_by_otype(declaration->target.object));
+            case TAT_OBJECTDEF:
+                add_serialized_bucket_entry(imageOffset + offsetof(TemplateAction, u.refobj),
+                                            dispatch_obj_by_otype(declaration->u.refobj));
                 break;
             default:
                 CError_FATAL(2313);
@@ -3981,12 +3974,12 @@ SInt32 serialize_template_class_declarations(TemplateClassDeclaration *list)
     return result;
 }
 
-unsigned int write_prec_input_record(TemplateDeclarationData *record)
+unsigned int write_prec_input_record(TemplateFriend *record)
 {
     SInt32 offset;
     SInt32 reference;
 
-    memclrw(&record->inlineLocation, sizeof(record->inlineLocation));
+    memclrw(&record->fileoffset, sizeof(record->fileoffset));
     if (data_00581c28 != '\0') {
         while ((prec_position & 3) != 0) {
             AppendGListByte(&precompiled_buffer, 0);
@@ -3998,26 +3991,25 @@ unsigned int write_prec_input_record(TemplateDeclarationData *record)
         CompilerTools_AppendGListData(&precompiled_buffer, record, sizeof(*record));
     }
     prec_position += sizeof(*record);
-    if (record->dtype != NULL) {
-        reference = write_type(record->dtype);
+    if (record->decl.thetype != NULL) {
+        reference = write_type(record->decl.thetype);
         add_serialized_bucket_entry(offset, reference);
     }
-    if (record->nspace != NULL) {
-        SInt32 namespaceReference = get_namespace_patch(record->nspace);
+    if (record->decl.nspace != NULL) {
+        SInt32 namespaceReference = get_namespace_patch(record->decl.nspace);
         add_serialized_bucket_entry(offset + 8, namespaceReference);
     }
-    if (record->name != NULL) {
-        HashNameNode *target = record->name;
+    if (record->decl.name != NULL) {
+        HashNameNode *target = record->decl.name;
         target->id = 1;
         patch_object_reference(offset + 0xc, target);
     }
-    if (record->parsedData != NULL) {
-        reference = serialize_ct_state_elems(record->parsedData);
+    if (record->decl.expltargs != NULL) {
+        reference = serialize_ct_state_elems(record->decl.expltargs);
         add_serialized_bucket_entry(offset + 0x10, reference);
     }
-    if (record->inlineTokenBuffer.firsttoken != NULL) {
-        TStreamElement *entries =
-            append_saved_prep_tokens(record->inlineTokenBuffer.firsttoken, record->inlineTokenBuffer.tokens);
+    if (record->stream.firsttoken != NULL) {
+        TStreamElement *entries = append_saved_prep_tokens(record->stream.firsttoken, record->stream.tokens);
         add_serialized_bucket_entry(offset + 0x28, (SInt32)entries);
     }
     return offset;
@@ -4047,7 +4039,7 @@ unsigned int serialize_reference_entries(TemplPartialSpec *record)
             add_serialized_bucket_entry(recordOffset + 4, targetOffset);
         }
         if (record->args != NULL) {
-            CTStateElem *args = record->args;
+            TemplArg *args = record->args;
             targetOffset = serialize_ct_state_elems(args);
             add_serialized_bucket_entry(recordOffset + 8, targetOffset);
         }
@@ -4069,7 +4061,7 @@ unsigned int serialize_reference_entries(TemplPartialSpec *record)
 
 #include <stddef.h>
 
-UInt32 serialize_prec_records(TemplateSourceRecordTyped *record)
+UInt32 serialize_prec_records(TemplateMember *record)
 {
     SInt32 first_offset;
     SInt32 record_offset;
@@ -4084,25 +4076,24 @@ UInt32 serialize_prec_records(TemplateSourceRecordTyped *record)
     record_offset = prec_position;
     first_offset = record_offset;
     for (;;) {
-        memclrw(&record->sourceInfo.file, offsetof(TemplateSourceRecordTyped, state.tokens) -
-                                              offsetof(TemplateSourceRecordTyped, sourceInfo.file));
-        record->sourceFile = NULL;
-        record->sourceLine = NULL;
-        record->f26 = NULL;
+        memclrw(&record->fileoffset.file,
+                offsetof(TemplateMember, stream.tokens) - offsetof(TemplateMember, fileoffset.file));
+        record->srcfile = NULL;
+        record->startoffset = NULL;
+        record->endoffset = NULL;
         if (data_00581c28 != 0) {
             CompilerTools_AppendGListData(&precompiled_buffer, record, 0x2a);
         }
         prec_position += 0x2a;
-        if (record->context != NULL) {
-            add_serialized_bucket_entry(record_offset + offsetof(TemplateSourceRecordTyped, context),
-                                        serialize_pre_nodes((TemplateParameterRecord *)record->context));
+        if (record->params != NULL) {
+            add_serialized_bucket_entry(record_offset + offsetof(TemplateMember, params),
+                                        serialize_pre_nodes(record->params));
         }
-        add_serialized_bucket_entry(record_offset + offsetof(TemplateSourceRecordTyped, object),
-                                    write_object(record->object));
-        if (record->state.firsttoken != NULL) {
+        add_serialized_bucket_entry(record_offset + offsetof(TemplateMember, object), write_object(record->object));
+        if (record->stream.firsttoken != NULL) {
             add_serialized_bucket_entry(
-                record_offset + offsetof(TemplateSourceRecordTyped, state.firsttoken),
-                (SInt32)append_saved_prep_tokens(record->state.firsttoken, record->state.tokens));
+                record_offset + offsetof(TemplateMember, stream.firsttoken),
+                (SInt32)append_saved_prep_tokens(record->stream.firsttoken, record->stream.tokens));
         }
         if (record->next == NULL) {
             break;
@@ -4188,9 +4179,9 @@ TStreamElement *append_saved_prep_tokens(TStreamElement *recs, SInt32 n)
     return first;
 }
 
-SInt32 serialize_pre_nodes(TemplateParameterRecord *node)
+SInt32 serialize_pre_nodes(TemplParam *node)
 {
-    TemplateParameterRecord *parameter = node;
+    TemplParam *parameter = node;
     SInt32 firstOffset;
     SInt32 nodeOffset;
     SInt32 nextOffset;
@@ -4214,13 +4205,13 @@ SInt32 serialize_pre_nodes(TemplateParameterRecord *node)
             patch_object_reference(nodeOffset + 4, name);
         }
         if (parameter->pid.type != 0) {
-            if (parameter->value != NULL) {
-                add_serialized_bucket_entry(nodeOffset + 12, write_type(parameter->value));
+            if (parameter->data.typeparam.type != NULL) {
+                add_serialized_bucket_entry(nodeOffset + 12, write_type(parameter->data.typeparam.type));
             }
         } else {
-            add_serialized_bucket_entry(nodeOffset + 12, write_type(parameter->value));
-            if (parameter->defaultValue.expression != NULL) {
-                add_serialized_bucket_entry(nodeOffset + 20, write_enode(parameter->defaultValue.expression));
+            add_serialized_bucket_entry(nodeOffset + 12, write_type(parameter->data.paramdecl.type));
+            if (parameter->data.paramdecl.defaultarg != NULL) {
+                add_serialized_bucket_entry(nodeOffset + 20, write_enode(parameter->data.paramdecl.defaultarg));
             }
         }
         if (parameter->next == NULL) {
@@ -4242,7 +4233,7 @@ SInt32 serialize_pre_nodes(TemplateParameterRecord *node)
 
 #include <stddef.h>
 
-SInt32 serialize_ct_state_elems(CTStateElem *element)
+SInt32 serialize_ct_state_elems(TemplArg *element)
 {
     SInt32 base;
     SInt32 pos;
@@ -4263,14 +4254,14 @@ SInt32 serialize_ct_state_elems(CTStateElem *element)
         }
         prec_position += sizeof(*element);
         if (element->pid.type) {
-            if (element->argument.type) {
-                index = write_type(element->argument.type);
-                add_serialized_bucket_entry(pos + offsetof(CTStateElem, argument), index);
+            if (element->data.typeparam.type) {
+                index = write_type(element->data.typeparam.type);
+                add_serialized_bucket_entry(pos + offsetof(TemplArg, data), index);
             }
         } else {
-            if (element->argument.expression) {
-                index = write_enode(element->argument.expression);
-                add_serialized_bucket_entry(pos + offsetof(CTStateElem, argument), index);
+            if (element->data.paramdecl.expr) {
+                index = write_enode(element->data.paramdecl.expr);
+                add_serialized_bucket_entry(pos + offsetof(TemplArg, data), index);
             }
         }
         if (element->next == NULL)
@@ -4884,7 +4875,7 @@ int write_templdep(TypeTemplDep *node)
         case 4:
             reference = write_templdep(node->u.qualtempl.type);
             add_serialized_bucket_entry(position + 8, reference);
-            reference = serialize_ct_state_elems((CTStateElem *)node->u.qualtempl.args);
+            reference = serialize_ct_state_elems(node->u.qualtempl.args);
             add_serialized_bucket_entry(position + 12, reference);
             break;
         case 5:

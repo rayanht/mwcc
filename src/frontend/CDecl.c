@@ -1780,36 +1780,36 @@ void CDecl_AddFriend(TypeClass *typeClass, Object *object, Type *type)
 }
 
 /* Declaration record; intervening storage is cleared but not populated here. */
-void CDecl_InitDeclInfoFromTemplateDeclarationData(DeclInfo *dst, TemplateDeclarationData *src)
+void CDecl_InitDeclInfoFromTemplateDeclarationData(DeclInfo *dst, PackedDeclInfo *src)
 {
     memclrw(dst, sizeof(*dst));
-    dst->dtype = src->dtype;
+    dst->dtype = src->thetype;
     dst->qual = src->qual;
     dst->nspace = src->nspace;
     dst->name = src->name;
-    dst->parsedData = src->parsedData;
-    dst->storage = src->storage;
-    dst->extraQualifiers = src->extraQualifiers;
-    dst->declarationAttributes = src->declarationAttributes;
-    dst->hasTemplateArguments = src->hasTemplateArguments;
+    dst->parsedData = src->expltargs;
+    dst->storage = src->storageclass;
+    dst->extraQualifiers = src->section;
+    dst->declarationAttributes = src->exportflags;
+    dst->hasTemplateArguments = src->has_expltargs;
 }
 
 /* Compact projection of the declaration record's selected values. */
 /* Layout of the input record; reserved regions are not read here. */
 
-unsigned char CDecl_CopyDeclInfoToNewFunc(NewFunc *destination, DeclInfo *source)
+unsigned char CDecl_CopyDeclInfoToNewFunc(PackedDeclInfo *destination, DeclInfo *source)
 {
     unsigned char hasTemplateArguments;
-    destination->dtype = source->dtype;
+    destination->thetype = source->dtype;
     destination->qual = source->qual;
     destination->nspace = source->nspace;
     destination->name = source->name;
-    destination->parsedData = CTemplateTools_CopyCTStateElemList(source->parsedData);
-    destination->storage = source->storage;
-    destination->extraQualifiers = source->extraQualifiers;
-    destination->declarationAttributes = source->declarationAttributes;
+    destination->expltargs = CTemplateTools_CopyCTStateElemList(source->parsedData);
+    destination->storageclass = source->storage;
+    destination->section = source->extraQualifiers;
+    destination->exportflags = source->declarationAttributes;
     hasTemplateArguments = source->hasTemplateArguments;
-    destination->hasTemplateArguments = hasTemplateArguments;
+    destination->has_expltargs = hasTemplateArguments;
     return hasTemplateArguments;
 }
 

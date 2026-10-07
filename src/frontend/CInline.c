@@ -705,7 +705,7 @@ void parse_inline_definition(struct CPrecNode *inlineInfo)
                 memclrw(&parseState, sizeof(parseState));
                 if (inlineInfo->u.k0.contextClass != NULL) {
                     if ((contextClass = CInline_0050ebf0_inline2(inlineInfo)) != NULL) {
-                        CTemplateNew_ParseFuncDef(object, contextClass, (TplSpec *)inlineInfo->u.k0.contextClass);
+                        CTemplateNew_ParseFuncDef(object, contextClass, (TypeClass *)inlineInfo->u.k0.contextClass);
                     } else {
                         CFunc_ParseFuncDef(object, &parseState, inlineInfo->u.k0.contextClass, 0, 0, NULL);
                     }

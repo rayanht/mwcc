@@ -27,7 +27,7 @@ struct CParseSave {
     NameSpace *g24c;
     struct TypeClass *g040;
     Object *g238;
-    struct ObjectReferenceEntry *g134;
+    struct TemplStack *g134;
     SInt32 g7ecc;
     UInt8 g4f8;
 };
@@ -281,7 +281,7 @@ extern unsigned char DAT_0058848a;
 extern unsigned char DAT_0058852e;
 extern struct TStreamElement declaration_token;
 extern FuncArg data_00584748;
-extern struct ObjectReferenceEntry *object_reference_stack;
+extern struct TemplStack *object_reference_stack;
 extern struct Object *data_0058717c;
 extern struct Object *member_function_pointer_call_rtfunc;
 extern struct Object *cast_member_pointer_func;

@@ -175,7 +175,7 @@ ENode *CSOM_CreateMemberAccessExpr(BClassList *classList, ObjMemberVar *request,
         }
         CClass_CheckBaseAccess(classList, request->access);
         if (request->has_path != 0)
-            classList = MemberVarAlias_GetBases(request);
+            classList = ((ObjMemberVarPath *)request)->path;
         while (classList->next != NULL)
             classList = classList->next;
         operand = (ENode *)create_objectrefnode(TYPE_CLASS(classList->type)->sominfo->classDataObject);

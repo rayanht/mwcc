@@ -78,6 +78,19 @@ struct ObjMemberVar {
     UInt32 qual;
     UInt32 offset;
 };
+/* An ObjMemberVar with has_path set: one reached through base classes */
+struct ObjMemberVarPath {
+    UInt8 otype;
+    UInt8 access;
+    Boolean anonunion;
+    Boolean has_path;
+    ObjMemberVar *next;
+    HashNameNode *name;
+    Type *type;
+    UInt32 qual;
+    UInt32 offset;
+    BClassList *path;
+};
 #pragma options align = reset
 /* An inline function's cross-references to one object: numxrefs (offset, varoffset) pairs. */
 #pragma options align = mac68k
@@ -166,9 +179,11 @@ struct Object {
         SInt16 intrinsic;
         ENode *expr;
     } u;
-    struct {
-        SInt32 templateArgumentKey;
-    } templateMember[0];
+};
+/* An object instantiated from a class template's member (Q_IS_TEMPLATED): the member it came from */
+struct ObjectTemplated {
+    Object object;
+    Object *parent;
 };
 #pragma options align = reset
 

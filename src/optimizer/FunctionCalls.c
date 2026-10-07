@@ -43,14 +43,14 @@
 #include "compiler/Switch.h"
 
 static SInt32 lbl_00574168 = 8;
-void FunctionCalls_PushObjectReferenceEntry(struct ObjectReferenceEntry *entry, void *value, Object *object)
+void FunctionCalls_PushObjectReferenceEntry(TemplStack *entry, TypeClass *tmclass, Object *object)
 {
-    if (value) {
-        entry->value = value;
-        entry->kind = 0;
+    if (tmclass) {
+        entry->u.theclass = tmclass;
+        entry->is_func = 0;
     } else {
-        entry->value = (Type *)object;
-        entry->kind = 1;
+        entry->u.func = object;
+        entry->is_func = 1;
     }
     entry->next = object_reference_stack;
     object_reference_stack = entry;

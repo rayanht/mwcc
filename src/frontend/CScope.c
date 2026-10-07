@@ -1833,7 +1833,7 @@ Boolean parse_name_in_namespace(CScopeParseResult *scope, NameSpace *ns)
             CPrepTokenizer_GetNextTokenAndRestorePosition() == 0x3c) {
             typeClass = (TemplClass *)scope->type.base;
             if (typeClass->theclass.flags & CLASS_IS_TEMPL_INST) {
-                typeClass = (TemplClass *)((TemplClassInst *)typeClass)->templ;
+                typeClass = ((TemplClassInst *)typeClass)->templ;
             } else if ((typeClass->theclass.flags & CLASS_IS_TEMPL) == 0) {
                 return 1;
             }
@@ -2935,18 +2935,18 @@ void add_using_declaration(BClassList *bases, NameSpace *scope, ObjBase *def, Ha
 
     if (def->otype == OT_MEMBERVAR) {
         if (scope->theclass != NULL) {
-            MemberVarAlias *copy = galloc(sizeof(MemberVarAlias));
-            copy->member = *(ObjMemberVar *)def;
-            copy->member.access = access;
+            ObjMemberVarPath *copy = galloc(sizeof(ObjMemberVarPath));
+            *OBJ_MEMBER_VAR(copy) = *OBJ_MEMBER_VAR(def);
+            copy->access = access;
             if ((bases = (BClassList *)CScope_GetClassAccessPath(CClass_GetPathCopy(bases, 1), scope->theclass)) !=
                     NULL &&
                 bases->type == (Type *)scope->theclass) {
-                copy->member.has_path = 1;
-                copy->bases = bases;
+                copy->has_path = 1;
+                copy->path = bases;
             } else {
                 CError_ReportError(ERR_ILLEGAL_USE_NON_STATIC_MEMBER);
             }
-            CScope_AddObject(scope, copy->member.name, (ObjBase *)copy);
+            CScope_AddObject(scope, copy->name, (ObjBase *)copy);
         } else {
             CError_ReportError(ERR_ILLEGAL_USE_NON_STATIC_MEMBER);
         }

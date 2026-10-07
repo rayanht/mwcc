@@ -50,14 +50,14 @@ static char lbl_005824cf[9];
             s;                                                                                                         \
     } while (0)
 
-static inline char CTemplateFunc_MatchesSpecialization(Object *candidate, Type *value, CTStateElem *context)
+static inline char CTemplateFunc_MatchesSpecialization(Object *candidate, Type *value, TemplArg *context)
 {
     int index;
     DeduceInfo match;
     if (CTemplTool_InitDeduceInfo(&match, CTemplTool_GetFuncTempl(candidate)->params, context, 0) &&
         CTemplateFunc_MatchType(candidate->type, 0, value, 0, match.args, 1)) {
         for (index = 0; index < match.maxCount; index++) {
-            if (!match.args[index].bound)
+            if (!match.args[index].is_deduced)
                 return 0;
         }
         return 1;
@@ -72,7 +72,7 @@ Object *CTemplateFunc_FindSpecializationObject(DeclInfo *search, ObjectList *can
     char matched;
     struct TemplFuncInstance *specialization;
     struct TemplFuncInstance *selected;
-    CTStateElem *context;
+    TemplArg *context;
     if (search->requireTemplateClassMember != 0 || search->hasTemplateArguments != 0) {
         for (; candidates != NULL; candidates = candidates->next) {
             if (candidates->object.value->otype == OT_OBJECT && candidates->object.value->type->type == TYPEFUNC &&
@@ -234,7 +234,7 @@ Boolean match_template_function_args(Object *obj, DeduceInfo *state, FuncArg *ar
                 if (arg->type->type == TYPEPOINTER)
                     CExpr_MatchCV(resolvedType, exprQual, arg->type, arg->qual, &counts);
             } else {
-                CTStateElem *entries;
+                TemplArg *entries;
                 Type *resultType;
                 TemplateFunction *nspace;
                 entries = state->args;
@@ -256,7 +256,7 @@ Boolean match_template_function_args(Object *obj, DeduceInfo *state, FuncArg *ar
         arg = arg->next;
     }
     for (index = 0; index < state->maxCount; ++index) {
-        if (!state->args[index].bound)
+        if (!state->args[index].is_deduced)
             return 0;
         state->args[index].next = &state->args[index + 1];
     }
@@ -333,8 +333,8 @@ static inline TypeTemplDep *CTemplateFunc_TemplateType(Type *type)
     return (TypeTemplDep *)type;
 }
 
-Boolean CTemplateFunc_MatchType(Type *pattern, UInt32 patternQual, Type *argument, UInt32 argumentQual,
-                                CTStateElem *state, Boolean flag)
+Boolean CTemplateFunc_MatchType(Type *pattern, UInt32 patternQual, Type *argument, UInt32 argumentQual, TemplArg *state,
+                                Boolean flag)
 {
     for (;;) {
         switch ((char)pattern->type) {
@@ -342,23 +342,23 @@ Boolean CTemplateFunc_MatchType(Type *pattern, UInt32 patternQual, Type *argumen
                 switch (CTemplateFunc_TemplateType(pattern)->kind) {
                     case 0: {
                         SInt16 index = CTemplateFunc_TemplateType(pattern)->u.pid.index;
-                        if (state[index].bound) {
-                            if (iscpp_typeequal(argument, state[index].argument.type) == 0)
+                        if (state[index].is_deduced) {
+                            if (iscpp_typeequal(argument, state[index].data.typeparam.type) == 0)
                                 return 0;
-                            patternQual |= state[index].qualifiers;
+                            patternQual |= state[index].data.typeparam.qual;
                             if ((argumentQual & 1) && !(patternQual & 1))
                                 return 0;
                             if ((argumentQual & 2) && !(patternQual & 2))
                                 return 0;
                         } else {
-                            state[index].argument.type = argument;
-                            state[index].qualifiers = 0;
+                            state[index].data.typeparam.type = argument;
+                            state[index].data.typeparam.qual = 0;
                             if ((argumentQual & 1) && !(patternQual & 1))
-                                state[index].qualifiers |= Q_CONST;
+                                state[index].data.typeparam.qual |= Q_CONST;
                             if ((argumentQual & 2) && !(patternQual & 2))
-                                state[index].qualifiers |= Q_VOLATILE;
+                                state[index].data.typeparam.qual |= Q_VOLATILE;
                             state[index].pid.type = 1;
-                            state[index].bound = 1;
+                            state[index].is_deduced = 1;
                         }
                         return 1;
                     }
@@ -372,9 +372,8 @@ Boolean CTemplateFunc_MatchType(Type *pattern, UInt32 patternQual, Type *argumen
                                                              argumentClass, state, flag);
                         }
                         if (argument->type == TYPETEMPLATE) {
-                            CTStateElem *argumentData =
-                                (CTStateElem *)CTemplateFunc_TemplateType(argument)->u.templ.args;
-                            CTStateElem *patternData = (CTStateElem *)CTemplateFunc_TemplateType(pattern)->u.templ.args;
+                            TemplArg *argumentData = CTemplateFunc_TemplateType(argument)->u.templ.args;
+                            TemplArg *patternData = CTemplateFunc_TemplateType(pattern)->u.templ.args;
                             return CTemplateFunc_TemplateType(argument)->u.templ.templ !=
                                            CTemplateFunc_TemplateType(pattern)->u.templ.templ
                                        ? (Boolean)0
@@ -438,7 +437,7 @@ Boolean CTemplateFunc_MatchType(Type *pattern, UInt32 patternQual, Type *argumen
     }
 }
 
-Boolean match_args(TypeFunc *a, TypeFunc *b, CTStateElem *c, Boolean d)
+Boolean match_args(TypeFunc *a, TypeFunc *b, TemplArg *c, Boolean d)
 {
     FuncArg *pa = a->args;
     FuncArg *pb = b->args;
@@ -461,7 +460,7 @@ Boolean match_args(TypeFunc *a, TypeFunc *b, CTStateElem *c, Boolean d)
 #define CB_TRUE 1
 #define CB_FALSE 0
 
-static Boolean CTemplateFunc_MatchClassArgs(TemplClassInst *cur, TypeClass *target, CTStateElem *a2, CTStateElem *a4,
+static Boolean CTemplateFunc_MatchClassArgs(TemplClassInst *cur, TypeClass *target, TemplArg *a2, TemplArg *a4,
                                             Boolean a5)
 {
     while (cur != NULL) {
@@ -472,8 +471,8 @@ static Boolean CTemplateFunc_MatchClassArgs(TemplClassInst *cur, TypeClass *targ
     return CB_FALSE;
 }
 
-Boolean match_class_args_or_bases(TemplClass *classTemplate, CTStateElem *templateArgs, TypeClass *candidateClass,
-                                  CTStateElem *deducedArgs, Boolean matchBases)
+Boolean match_class_args_or_bases(TemplClass *classTemplate, TemplArg *templateArgs, TypeClass *candidateClass,
+                                  TemplArg *deducedArgs, Boolean matchBases)
 {
     ClassList *base;
 
@@ -497,14 +496,14 @@ Boolean match_class_args_or_bases(TemplClass *classTemplate, CTStateElem *templa
     return CB_FALSE;
 }
 
-static SInt32 CTF_GetIndex(CTStateElem *a)
+static SInt32 CTF_GetIndex(TemplArg *a)
 {
-    if (a->argument.expression->type == 'E' && a->argument.expression->data.templatecomparison.tag == 0)
-        return a->argument.expression->data.templatecomparison.u.wb.parameterIndex;
+    if (a->data.paramdecl.expr->type == 'E' && a->data.paramdecl.expr->data.templatecomparison.tag == 0)
+        return a->data.paramdecl.expr->data.templatecomparison.u.wb.parameterIndex;
     return -1;
 }
 
-Boolean match_state_elem_arguments(CTStateElem *a, CTStateElem *b, CTStateElem *r, char flag)
+Boolean match_state_elem_arguments(TemplArg *a, TemplArg *b, TemplArg *r, char flag)
 {
     SInt32 idx;
 
@@ -516,27 +515,28 @@ Boolean match_state_elem_arguments(CTStateElem *a, CTStateElem *b, CTStateElem *
         if (a->pid.type != 0) {
             if (b->pid.type == 0)
                 return 0;
-            if (!CTemplateFunc_MatchType(a->argument.type, a->qualifiers, b->argument.type, b->qualifiers, r, flag))
+            if (!CTemplateFunc_MatchType(a->data.typeparam.type, a->data.typeparam.qual, b->data.typeparam.type,
+                                         b->data.typeparam.qual, r, flag))
                 return 0;
         } else {
             if (b->pid.type != 0)
                 return 0;
-            if (CTemplTool_IsTypeDepExpr(a->argument.expression) != 0) {
-                if (a->argument.expression == NULL)
+            if (CTemplTool_IsTypeDepExpr(a->data.paramdecl.expr) != 0) {
+                if (a->data.paramdecl.expr == NULL)
                     CError_FATAL(515);
                 idx = CTF_GetIndex(a);
                 if (idx < 0)
                     return 0;
-                if (r[idx].bound != 0) {
-                    if (!CTemplateTools_00517a40(b->argument.expression, r[idx].argument.expression))
+                if (r[idx].is_deduced != 0) {
+                    if (!CTemplateTools_00517a40(b->data.paramdecl.expr, r[idx].data.paramdecl.expr))
                         return 0;
                 } else {
-                    r[idx].argument.expression = b->argument.expression;
+                    r[idx].data.paramdecl.expr = b->data.paramdecl.expr;
                     r[idx].pid.type = 0;
-                    r[idx].bound = 1;
+                    r[idx].is_deduced = 1;
                 }
             } else {
-                if (!CTemplateTools_00517a40(b->argument.expression, a->argument.expression))
+                if (!CTemplateTools_00517a40(b->data.paramdecl.expr, a->data.paramdecl.expr))
                     return 0;
             }
         }
@@ -544,12 +544,12 @@ Boolean match_state_elem_arguments(CTStateElem *a, CTStateElem *b, CTStateElem *
         b = b->next;
     }
 }
-int CTemplateFunc_GetArgumentParameterIndex(CTStateElem *argument)
+int CTemplateFunc_GetArgumentParameterIndex(TemplArg *argument)
 {
-    if (argument->argument.expression == NULL)
+    if (argument->data.paramdecl.expr == NULL)
         CError_FATAL(515);
-    if (argument->argument.expression->type == 69U && argument->argument.expression->data.templatecomparison.tag == 0U)
-        return argument->argument.expression->data.templatecomparison.u.wb.parameterIndex;
+    if (argument->data.paramdecl.expr->type == 69U && argument->data.paramdecl.expr->data.templatecomparison.tag == 0U)
+        return argument->data.paramdecl.expr->data.templatecomparison.u.wb.parameterIndex;
     return -1;
 }
 
@@ -557,7 +557,7 @@ static inline struct TemplFuncInstance *InstantiateAccessibleTemplate(Object *fu
 {
     SInt32 i = 0;
     while (i < frame->maxCount) {
-        if (frame->args[i++].bound == 0)
+        if (frame->args[i++].is_deduced == 0)
             return NULL;
     }
     return find_or_create_template_specialization(func, frame->args, flags);
@@ -658,7 +658,7 @@ unsigned char match_candidate_to_template_args(Object *candidate, Object *templ)
     MemberCallArguments result;
     DeduceInfo bindings;
     TypeDeduce substitution;
-    CTStateElem *bindingList;
+    TemplArg *bindingList;
     TypeMemberFunc *templateType;
     TypeMemberFunc *candidateFuncType;
 
@@ -792,24 +792,24 @@ struct TemplFuncInstance *CTemplateFunc_FindOrCreateMatchedSpecialization(Object
         return NULL;
     slotIndex = 0;
     while (slotIndex < match.maxCount) {
-        if (match.args[slotIndex++].bound == 0)
+        if (match.args[slotIndex++].is_deduced == 0)
             return NULL;
     }
     return find_or_create_template_specialization(func, match.args, specialization);
 }
-struct TemplFuncInstance *find_or_create_template_specialization(Object *func, CTStateElem *args, Object *premade)
+struct TemplFuncInstance *find_or_create_template_specialization(Object *func, TemplArg *args, Object *premade)
 {
     TemplateFunction *info;
     SInt16 argumentCount;
-    TemplateParameterRecord *parameter;
-    CTStateElem *argument;
-    CTStateElem *firstArgument;
-    CTStateElem *lastArgument;
+    TemplParam *parameter;
+    TemplArg *argument;
+    TemplArg *firstArgument;
+    TemplArg *lastArgument;
     SInt16 argumentIndex;
     struct TemplFuncInstance *instance;
     struct TemplFuncInstance *existing;
     SInt16 linkIndex;
-    CTStateElem *instanceArgs;
+    TemplArg *instanceArgs;
     Object *object;
     TypeDeduce local;
 
@@ -848,19 +848,19 @@ struct TemplFuncInstance *find_or_create_template_specialization(Object *func, C
     if (argumentCount > 0) {
         do {
             if (firstArgument != NULL) {
-                lastArgument->next = (CTStateElem *)galloc(sizeof(*lastArgument));
+                lastArgument->next = (TemplArg *)galloc(sizeof(*lastArgument));
                 lastArgument = lastArgument->next;
             } else {
-                lastArgument = (CTStateElem *)galloc(sizeof(*lastArgument));
+                lastArgument = (TemplArg *)galloc(sizeof(*lastArgument));
                 firstArgument = lastArgument;
             }
             *lastArgument = *args;
             args++;
             lastArgument->next = NULL;
             if (lastArgument->pid.type == 0) {
-                if (lastArgument->argument.type == NULL)
+                if (lastArgument->data.typeparam.type == NULL)
                     CError_FATAL(106);
-                lastArgument->argument.expression = fn_00513040(lastArgument->argument.expression, 1);
+                lastArgument->data.paramdecl.expr = fn_00513040(lastArgument->data.paramdecl.expr, 1);
             }
             argumentIndex++;
         } while (argumentIndex < argumentCount);
@@ -870,7 +870,7 @@ struct TemplFuncInstance *find_or_create_template_specialization(Object *func, C
     if (premade == NULL) {
         instanceArgs = instance->args;
         memclrw(&local, sizeof(local));
-        local.params = (struct TemplateParameterRecord *)info->params;
+        local.params = info->params;
         local.args = instanceArgs;
 
         if (func->nspace->theclass != NULL && (func->nspace->theclass->flags & CLASS_IS_TEMPL_INST) != 0) {

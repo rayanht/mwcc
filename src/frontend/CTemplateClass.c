@@ -69,7 +69,7 @@ void fn_0051b810(void)
 
 unsigned char CTemplateClass_InstantiateClass(TypeClass *theclass)
 {
-    struct TemplateClassDeclaration *declaration;
+    struct TemplateAction *declaration;
     TemplClass *templateClass;
     Type *instantiatedType;
     struct CParseSave *savedState;
@@ -82,14 +82,14 @@ unsigned char CTemplateClass_InstantiateClass(TypeClass *theclass)
     struct DefAction *baseMapping;
     char savedMode;
     TemplClassInst *classInstance;
-    struct TemplateClassDeclaration *memberDeclaration;
-    struct ObjectReferenceEntry templateSave;
+    struct TemplateAction *memberDeclaration;
+    struct TemplStack templateSave;
     CScopeSave scopeSave;
     TemplClass *resolvedTemplate;
     ClassLayout classInfo;
     TypeDeduce instantiation;
     int sourceSave;
-    CTStateElem *resolvedArgs;
+    TemplArg *resolvedArgs;
     UInt32 typeResult;
     CE_ASSERT((theclass->flags & CLASS_IS_TEMPL_INST) == 0, CError_FATAL(1907));
     if ((theclass->flags & CLASS_COMPLETED) != 0)
@@ -131,29 +131,29 @@ unsigned char CTemplateClass_InstantiateClass(TypeClass *theclass)
     instantiation.hasNewVBases = (classInstance->theclass.flags & CLASS_HAS_VBASES) != 0 &&
                                  (resolvedTemplate->theclass.flags & CLASS_HAS_VBASES) == 0;
     for (declaration = resolvedTemplate->actions; declaration != NULL; declaration = declaration->next) {
-        switch (declaration->kind) {
-            case 0:
+        switch (declaration->type) {
+            case TAT_NESTEDCLASS:
                 fn_00449d60();
-                CError_SaveAndSetWrittenEntry(&declaration->source, &sourceSave);
-                CTemplateClass_0051cec0(&instantiation, (TemplClass *)declaration->target.type);
+                CError_SaveAndSetWrittenEntry(&declaration->source_ref, &sourceSave);
+                CTemplateClass_0051cec0(&instantiation, declaration->u.tclasstype);
                 fn_00449d60();
                 CError_SetWrittenEntry(&sourceSave);
                 break;
-            case 1:
+            case TAT_ENUMTYPE:
                 fn_00449d60();
-                CError_SaveAndSetWrittenEntry(&declaration->source, &sourceSave);
+                CError_SaveAndSetWrittenEntry(&declaration->source_ref, &sourceSave);
                 instantiate_enum(&instantiation, declaration);
                 fn_00449d60();
                 CError_SetWrittenEntry(&sourceSave);
                 break;
             default:
                 CError_FATAL(2005);
-            case 2:
-            case 3:
-            case 4:
-            case 5:
-            case 6:
-            case 7:
+            case TAT_FRIEND:
+            case TAT_ENUMERATOR:
+            case TAT_BASE:
+            case TAT_OBJECTINIT:
+            case TAT_USINGDECL:
+            case TAT_OBJECTDEF:
                 break;
         }
     }
@@ -162,14 +162,14 @@ unsigned char CTemplateClass_InstantiateClass(TypeClass *theclass)
     CE_ASSERT(resolvedTemplate->theclass.friends != 0, CError_FATAL(2016));
     for (memberDeclaration = resolvedTemplate->actions; memberDeclaration != NULL;
          memberDeclaration = memberDeclaration->next) {
-        switch (memberDeclaration->kind) {
-            case 0:
+        switch (memberDeclaration->type) {
+            case TAT_NESTEDCLASS:
                 break;
-            case 1:
+            case TAT_ENUMTYPE:
                 for (typeMapping = instantiation.defActions; typeMapping != NULL; typeMapping = typeMapping->next) {
                     if (typeMapping->action == memberDeclaration) {
                         fn_00449d60();
-                        CError_SaveAndSetWrittenEntry(&memberDeclaration->source, &sourceSave);
+                        CError_SaveAndSetWrittenEntry(&memberDeclaration->source_ref, &sourceSave);
                         initialize_enum_constants(&instantiation, memberDeclaration, typeMapping->enumtype);
                         fn_00449d60();
                         CError_SetWrittenEntry(&sourceSave);
@@ -177,21 +177,21 @@ unsigned char CTemplateClass_InstantiateClass(TypeClass *theclass)
                     }
                 }
                 break;
-            case 2:
+            case TAT_FRIEND:
                 fn_00449d60();
-                CError_SaveAndSetWrittenEntry(&memberDeclaration->source, &sourceSave);
-                instantiate_friend_declaration(&instantiation, memberDeclaration->target.friendDeclaration);
+                CError_SaveAndSetWrittenEntry(&memberDeclaration->source_ref, &sourceSave);
+                instantiate_friend_declaration(&instantiation, memberDeclaration->u.tfriend);
                 fn_00449d60();
                 CError_SetWrittenEntry(&sourceSave);
                 break;
-            case 5:
+            case TAT_OBJECTINIT:
                 for (objectMapping = instantiation.defActions;; objectMapping = objectMapping->next) {
                     CE_ASSERT(objectMapping == 0, CError_FATAL(2047));
                     if (objectMapping->action == memberDeclaration) {
                         fn_00449d60();
-                        CError_SaveAndSetWrittenEntry(&memberDeclaration->source, &sourceSave);
+                        CError_SaveAndSetWrittenEntry(&memberDeclaration->source_ref, &sourceSave);
                         object = (Object *)objectMapping->refobj;
-                        initializer = CTemplTool_DeduceExpr(&instantiation, memberDeclaration->value.initializer);
+                        initializer = CTemplTool_DeduceExpr(&instantiation, memberDeclaration->u.objectinit.initexpr);
                         if (initializer->type == EINTCONST && (object->qual & Q_CONST) != 0 &&
                             (object->type->type == TYPEINT || object->type->type == TYPEENUM)) {
                             object->u.data.u.intconst = initializer->data.intval;
@@ -205,11 +205,11 @@ unsigned char CTemplateClass_InstantiateClass(TypeClass *theclass)
                     }
                 }
                 break;
-            case 6:
+            case TAT_USINGDECL:
                 fn_00449d60();
-                CError_SaveAndSetWrittenEntry(&memberDeclaration->source, &sourceSave);
-                templateType = (TypeTemplDep *)memberDeclaration->target.type;
-                access = memberDeclaration->value.access;
+                CError_SaveAndSetWrittenEntry(&memberDeclaration->source_ref, &sourceSave);
+                templateType = memberDeclaration->u.usingdecl.type;
+                access = memberDeclaration->u.usingdecl.access;
                 typeResult = 0;
                 CE_ASSERT(templateType->type != TYPETEMPLATE || templateType->kind != 1, CError_FATAL(1802));
                 instantiatedType =
@@ -225,12 +225,12 @@ unsigned char CTemplateClass_InstantiateClass(TypeClass *theclass)
                 fn_00449d60();
                 CError_SetWrittenEntry(&sourceSave);
                 break;
-            case 7:
+            case TAT_OBJECTDEF:
                 for (baseMapping = instantiation.defActions;; baseMapping = baseMapping->next) {
                     CE_ASSERT(baseMapping == 0, CError_FATAL(2067));
                     if (baseMapping->action == memberDeclaration) {
                         fn_00449d60();
-                        CError_SaveAndSetWrittenEntry(&memberDeclaration->source, &sourceSave);
+                        CError_SaveAndSetWrittenEntry(&memberDeclaration->source_ref, &sourceSave);
                         instantiate_object_type(&instantiation, memberDeclaration, baseMapping->refobj);
                         fn_00449d60();
                         CError_SetWrittenEntry(&sourceSave);
@@ -252,16 +252,16 @@ unsigned char CTemplateClass_InstantiateClass(TypeClass *theclass)
     return 1;
 }
 
-void instantiate_friend_declaration(TypeDeduce *ctx, struct TemplateDeclarationData *declaration)
+void instantiate_friend_declaration(TypeDeduce *ctx, struct TemplateFriend *declaration)
 {
     DeclInfo instance;
-    CTStateElem *parameter;
+    TemplArg *parameter;
     void *savedScope[3]; /* BE_elf_SaveAndSetScope: retain the original three-word stack slot */
     Boolean result;
     NameSpace *scope;
     Object *object;
 
-    CDecl_InitDeclInfoFromTemplateDeclarationData(&instance, declaration);
+    CDecl_InitDeclInfoFromTemplateDeclarationData(&instance, &declaration->decl);
     if (CTemplateTools_IsDependentType(instance.dtype))
         instance.dtype = CTemplateTools_ResolveType(ctx, instance.dtype, (UInt32 *)&instance.qual);
     if (instance.parsedData != NULL) {
@@ -269,12 +269,12 @@ void instantiate_friend_declaration(TypeDeduce *ctx, struct TemplateDeclarationD
         parameter = instance.parsedData;
         while (parameter != NULL) {
             if (parameter->pid.type) {
-                if (CTemplateTools_IsDependentType(parameter->argument.type))
-                    parameter->argument.type =
-                        CTemplateTools_ResolveType(ctx, parameter->argument.type, (UInt32 *)&parameter->qualifiers);
+                if (CTemplateTools_IsDependentType(parameter->data.typeparam.type))
+                    parameter->data.typeparam.type = CTemplateTools_ResolveType(
+                        ctx, parameter->data.typeparam.type, (UInt32 *)&parameter->data.typeparam.qual);
             } else {
-                if (CTemplTool_IsTypeDepExpr(parameter->argument.expression))
-                    parameter->argument.expression = CTemplTool_DeduceExpr(ctx, parameter->argument.expression);
+                if (CTemplTool_IsTypeDepExpr(parameter->data.paramdecl.expr))
+                    parameter->data.paramdecl.expr = CTemplTool_DeduceExpr(ctx, parameter->data.paramdecl.expr);
             }
             parameter = parameter->next;
         }
@@ -286,9 +286,9 @@ void instantiate_friend_declaration(TypeDeduce *ctx, struct TemplateDeclarationD
         CScope_RestoreScope((CScopeSave *)&savedScope); /* original stack-slot view */
         if (object != NULL) {
             CDecl_AddFriend(TYPE_CLASS(ctx->inst), object, NULL);
-            if (declaration->inlineTokenBuffer.tokens)
-                CInline_AddFunctionPrecNode(object, TYPE_CLASS(ctx->inst), &declaration->inlineLocation,
-                                            &declaration->inlineTokenBuffer, 0);
+            if (declaration->stream.tokens)
+                CInline_AddFunctionPrecNode(object, TYPE_CLASS(ctx->inst), &declaration->fileoffset,
+                                            &declaration->stream, 0);
         } else {
             CError_ReportError(ERR_ILLEGAL_FRIEND_DECLARATION);
         }
@@ -301,7 +301,7 @@ void instantiate_friend_declaration(TypeDeduce *ctx, struct TemplateDeclarationD
 
 void instantiate_namespace_objects(TypeDeduce *map, TypeClass *unused, TypeClass *obj)
 {
-    MemberVarAlias *copy;
+    ObjMemberVarPath *copy;
     ObjType *member;
     Object *templateObject;
     NameSpaceName *entry;
@@ -318,13 +318,13 @@ void instantiate_namespace_objects(TypeDeduce *map, TypeClass *unused, TypeClass
                     break;
                 case 4:
                     if (((ObjMemberVar *)member)->has_path) {
-                        copy = (MemberVarAlias *)galloc(sizeof(MemberVarAlias));
-                        *copy = *(MemberVarAlias *)member;
-                        if (copy->bases != NULL && copy->bases->type == (Type *)map->tmclass) {
-                            copy->bases = CClass_GetPathCopy(copy->bases, 1);
-                            copy->bases->type = (Type *)map->inst;
+                        copy = (ObjMemberVarPath *)galloc(sizeof(ObjMemberVarPath));
+                        *copy = *(ObjMemberVarPath *)member;
+                        if (copy->path != NULL && copy->path->type == (Type *)map->tmclass) {
+                            copy->path = CClass_GetPathCopy(copy->path, 1);
+                            copy->path->type = (Type *)map->inst;
                         }
-                        CScope_AddObject(TYPE_CLASS(map->inst)->nspace, copy->member.name, (ObjBase *)&copy->member);
+                        CScope_AddObject(TYPE_CLASS(map->inst)->nspace, copy->name, (ObjBase *)copy);
                     }
                     break;
                 case 1:
@@ -344,11 +344,11 @@ void instantiate_namespace_objects(TypeDeduce *map, TypeClass *unused, TypeClass
     }
 }
 
-void instantiate_object_type(TypeDeduce *context, TemplateClassDeclaration *function, ObjBase *object)
+void instantiate_object_type(TypeDeduce *context, TemplateAction *function, ObjBase *object)
 {
     if (object->otype == OT_MEMBERVAR) {
-        OBJ_MEMBER_VAR(object)->type = CTemplateTools_ResolveType((TypeDeduce *)context, OBJ_MEMBER_VAR(object)->type,
-                                                                  &OBJ_MEMBER_VAR(object)->qual);
+        OBJ_MEMBER_VAR(object)->type =
+            CTemplateTools_ResolveType(context, OBJ_MEMBER_VAR(object)->type, &OBJ_MEMBER_VAR(object)->qual);
         if (OBJ_MEMBER_VAR(object)->type->size == 0) {
             CDecl_CompleteType(OBJ_MEMBER_VAR(object)->type);
             if (!(copts.f96 != 0 && OBJ_MEMBER_VAR(object)->next == NULL && OBJ_MEMBER_VAR(object)->type->size == 0 &&
@@ -358,29 +358,26 @@ void instantiate_object_type(TypeDeduce *context, TemplateClassDeclaration *func
         return;
     }
     if (object->otype == OT_TYPE) {
-        OBJ_TYPE(object)->type =
-            CTemplateTools_ResolveType((TypeDeduce *)context, OBJ_TYPE(object)->type, &OBJ_TYPE(object)->qual);
+        OBJ_TYPE(object)->type = CTemplateTools_ResolveType(context, OBJ_TYPE(object)->type, &OBJ_TYPE(object)->qual);
         return;
     }
     if (object->otype != OT_OBJECT)
         CError_FATAL(1661);
     {
-        Object *currentFunction = (Object *)function->target.object;
+        Object *currentFunction = (Object *)function->u.refobj;
         if (IS_TYPE_FUNC(currentFunction->type) && (TYPE_FUNC(currentFunction->type)->flags & 0x400)) {
             currentFunction = (Object *)currentFunction->u.templateFunction;
             CError_ASSERT(1671, currentFunction != NULL);
             CError_ASSERT(1672, !context->processingArgument);
             context->processingArgument = 1;
             context->nindex = ((TypeBitfield *)((TemplateFunction *)currentFunction)->params)->offset;
-            OBJECT(object)->type =
-                CTemplateTools_ResolveType((TypeDeduce *)context, OBJECT(object)->type, &OBJECT(object)->qual);
+            OBJECT(object)->type = CTemplateTools_ResolveType(context, OBJECT(object)->type, &OBJECT(object)->qual);
             context->processingArgument = 0;
             CError_ASSERT(1677, IS_TYPE_FUNC(OBJECT(object)->type));
             TYPE_FUNC(OBJECT(object)->type)->flags |= 0x400;
             return;
         }
-        OBJECT(object)->type =
-            CTemplateTools_ResolveType((TypeDeduce *)context, OBJECT(object)->type, &OBJECT(object)->qual);
+        OBJECT(object)->type = CTemplateTools_ResolveType(context, OBJECT(object)->type, &OBJECT(object)->qual);
         OBJECT(object)->qual |= Q_IS_TEMPLATED;
         if (IS_TYPE_FUNC(OBJECT(object)->type))
             TYPE_FUNC(OBJECT(object)->type)->flags &= ~FUNC_DEFINED;
@@ -414,8 +411,8 @@ void instantiate_template_object(TypeDeduce *ctx, Object *templ)
 {
     Boolean needsNewNamespace = 1;
     ObjectTemplated *obj;
-    TemplateClassDeclaration *matchingInstance;
-    TemplateClassDeclaration *instance;
+    TemplateAction *matchingInstance;
+    TemplateAction *instance;
     DefAction *link;
 
     if (templ->nspace != TYPE_CLASS(ctx->tmclass)->nspace) {
@@ -427,9 +424,9 @@ void instantiate_template_object(TypeDeduce *ctx, Object *templ)
         CTemplateClass_0051c680(ctx, templ);
         return;
     }
-    for (matchingInstance = ((TemplClass *)ctx->tmclass)->actions; matchingInstance != NULL;
+    for (matchingInstance = (ctx->tmclass)->actions; matchingInstance != NULL;
          matchingInstance = matchingInstance->next) {
-        if (matchingInstance->kind == 7 && matchingInstance->target.object == (ObjBase *)templ)
+        if (matchingInstance->type == TAT_OBJECTDEF && matchingInstance->u.refobj == (ObjBase *)templ)
             break;
     }
     obj = galloc(sizeof(ObjectTemplated));
@@ -438,7 +435,7 @@ void instantiate_template_object(TypeDeduce *ctx, Object *templ)
         link = CompilerTools_AllocatePool(0x14);
         link->next = ctx->defActions;
         link->action = matchingInstance;
-        ctx->defActions = (struct DefAction *)link;
+        ctx->defActions = link;
         link->refobj = (ObjBase *)obj;
     } else {
         obj->object.type =
@@ -453,12 +450,12 @@ void instantiate_template_object(TypeDeduce *ctx, Object *templ)
     switch (obj->object.datatype) {
         case DDATA:
             obj->object.u.data.linkname = NULL;
-            for (instance = ((TemplClass *)ctx->tmclass)->actions; instance != NULL; instance = instance->next) {
-                if (instance->kind == 5 && instance->target.object == (ObjBase *)templ) {
+            for (instance = (ctx->tmclass)->actions; instance != NULL; instance = instance->next) {
+                if (instance->type == TAT_OBJECTINIT && instance->u.refobj == (ObjBase *)templ) {
                     link = CompilerTools_AllocatePool(0x14);
                     link->next = ctx->defActions;
                     link->action = instance;
-                    ctx->defActions = (struct DefAction *)link;
+                    ctx->defActions = link;
                     link->refobj = (ObjBase *)obj;
                     break;
                 }
@@ -512,7 +509,7 @@ void instantiate_template_object(TypeDeduce *ctx, Object *templ)
 
 void CTemplateClass_0051c680(TypeDeduce *ctx, Object *obj)
 {
-    TemplateClassDeclaration *found;
+    TemplateAction *found;
     Object *newobj;
     TemplateFunction *list;
     TemplateFunction *copy;
@@ -520,15 +517,15 @@ void CTemplateClass_0051c680(TypeDeduce *ctx, Object *obj)
     struct TemplateFunction *copyFunction;
     DefAction *pending;
     FuncArg *arg;
-    TemplateClassDeclaration *head;
+    TemplateAction *head;
 
     CError_ASSERT(1440, (list = obj->u.templateFunction) != NULL && list->params != NULL);
 
-    head = ((TemplClass *)ctx->tmclass)->actions;
+    head = (ctx->tmclass)->actions;
     found = head;
     if (head != NULL) {
         do {
-            if (found->kind == 7 && found->target.object == (ObjBase *)obj)
+            if (found->type == TAT_OBJECTDEF && found->u.refobj == (ObjBase *)obj)
                 break;
             found = found->next;
         } while (found != NULL);
@@ -549,17 +546,16 @@ void CTemplateClass_0051c680(TypeDeduce *ctx, Object *obj)
 
     CError_ASSERT(1465, ctx->processingArgument == 0);
     ctx->processingArgument = 1;
-    ctx->nindex = ((TemplateParameterRecord *)list->params)->depth;
+    ctx->nindex = (list->params)->pid.nindex;
 
     if (found != NULL) {
         pending = CompilerTools_AllocatePool(0x14);
-        pending->next = (DefAction *)ctx->defActions;
+        pending->next = ctx->defActions;
         pending->action = found;
-        ctx->defActions = (struct DefAction *)pending;
+        ctx->defActions = pending;
         pending->refobj = (ObjBase *)newobj;
     } else {
-        newobj->type =
-            (Type *)CTemplateTools_ResolveType((TypeDeduce *)ctx, (Type *)newobj->type, (UInt32 *)&newobj->qual);
+        newobj->type = (Type *)CTemplateTools_ResolveType(ctx, (Type *)newobj->type, (UInt32 *)&newobj->qual);
     }
     ctx->processingArgument = 0;
 
@@ -579,15 +575,15 @@ void CTemplateClass_0051c680(TypeDeduce *ctx, Object *obj)
 
 void instantiate_objtype(TypeDeduce *context, ObjType *type, HashNameNode *name)
 {
-    TemplateClassDeclaration *pendingType;
+    TemplateAction *pendingType;
     ObjType *instantiatedType;
     DefAction *binding;
     NameSpaceObjectList *objects;
     NameSpaceObjectList *extra;
 
-    pendingType = ((TemplClass *)context->tmclass)->actions;
+    pendingType = (context->tmclass)->actions;
     while (pendingType != NULL) {
-        if (pendingType->kind == 7 && pendingType->target.object == (ObjBase *)type)
+        if (pendingType->type == TAT_OBJECTDEF && pendingType->u.refobj == (ObjBase *)type)
             break;
         pendingType = pendingType->next;
     }
@@ -597,13 +593,12 @@ void instantiate_objtype(TypeDeduce *context, ObjType *type, HashNameNode *name)
 
     if (pendingType != NULL) {
         binding = (DefAction *)CompilerTools_AllocatePool(20);
-        binding->next = (DefAction *)context->defActions;
+        binding->next = context->defActions;
         binding->action = pendingType;
-        context->defActions = (struct DefAction *)binding;
+        context->defActions = binding;
         binding->refobj = (ObjBase *)instantiatedType;
     } else {
-        instantiatedType->type =
-            CTemplateTools_ResolveType((TypeDeduce *)context, instantiatedType->type, &instantiatedType->qual);
+        instantiatedType->type = CTemplateTools_ResolveType(context, instantiatedType->type, &instantiatedType->qual);
     }
 
     objects = CScope_FindName(TYPE_CLASS(context->inst)->nspace, name);
@@ -624,7 +619,7 @@ void instantiate_ivars(TypeDeduce *ctx, TypeClass *dst, TemplClass *src)
 {
     ObjMemberVar *p;
     ObjMemberVar *m;
-    struct TemplateClassDeclaration *q;
+    struct TemplateAction *q;
     struct DefAction *r;
     ObjMemberVar **out;
 
@@ -634,8 +629,8 @@ void instantiate_ivars(TypeDeduce *ctx, TypeClass *dst, TemplClass *src)
         CError_ASSERT(1321, !p->has_path);
         m = (ObjMemberVar *)galloc(sizeof(ObjMemberVar));
         *m = *p;
-        for (q = ((TemplClass *)ctx->tmclass)->actions; q != NULL; q = q->next) {
-            if (q->kind == 7 && q->target.object == (ObjBase *)p) {
+        for (q = (ctx->tmclass)->actions; q != NULL; q = q->next) {
+            if (q->type == TAT_OBJECTDEF && q->u.refobj == (ObjBase *)p) {
                 r = (struct DefAction *)CompilerTools_AllocatePool(sizeof(struct DefAction));
                 r->next = ctx->defActions;
                 r->action = q;
@@ -645,7 +640,7 @@ void instantiate_ivars(TypeDeduce *ctx, TypeClass *dst, TemplClass *src)
             }
         }
         if (q == NULL) {
-            m->type = (Type *)CTemplateTools_ResolveType((TypeDeduce *)ctx, m->type, &m->qual);
+            m->type = (Type *)CTemplateTools_ResolveType(ctx, m->type, &m->qual);
             if (TYPE(m->type)->size == 0) {
                 CDecl_CompleteType(m->type);
                 CanAllocObject(m->type);
@@ -659,32 +654,32 @@ void instantiate_ivars(TypeDeduce *ctx, TypeClass *dst, TemplClass *src)
     }
 }
 
-void initialize_enum_constants(TypeDeduce *context, struct TemplateClassDeclaration *object, TypeEnum *scope)
+void initialize_enum_constants(TypeDeduce *context, struct TemplateAction *object, TypeEnum *scope)
 {
     int savedContext;
     Type *enumType;
     TemplClass *templateClass;
     ObjEnumConst *item;
     ObjEnumConst *binding;
-    struct TemplateClassDeclaration *parameter;
+    struct TemplateAction *parameter;
     ENode *expression;
 
-    enumType = object->target.type;
-    templateClass = (TemplClass *)context->tmclass;
+    enumType = TYPE(object->u.enumtype);
+    templateClass = context->tmclass;
     for (parameter = templateClass->actions; parameter != NULL; parameter = parameter->next) {
-        if (parameter->kind != 3)
+        if (parameter->type != TAT_ENUMERATOR)
             continue;
-        if ((item = (ObjEnumConst *)parameter->target.object)->type != enumType)
+        if ((item = parameter->u.enumerator.objenumconst)->type != enumType)
             continue;
         fn_00449d60();
-        CError_SaveAndSetWrittenEntry(&parameter->source, &savedContext);
+        CError_SaveAndSetWrittenEntry(&parameter->source_ref, &savedContext);
         for (binding = scope->enumlist; binding != NULL; binding = binding->next)
             if (binding->name == item->name)
                 break;
         if (binding == NULL)
             CError_FATAL(1256);
-        if (parameter->value.initializer != NULL) {
-            expression = CTemplTool_DeduceExpr(context, parameter->value.initializer);
+        if (parameter->u.enumerator.initexpr != NULL) {
+            expression = CTemplTool_DeduceExpr(context, parameter->u.enumerator.initexpr);
             if (expression->type != EINTCONST) {
                 CError_ReportError(ERR_ILLEGAL_CONSTANT_EXPRESSION);
                 fn_00449d60();
@@ -704,20 +699,20 @@ void initialize_enum_constants(TypeDeduce *context, struct TemplateClassDeclarat
     CDecl_ComputeUnderlyingEnumType(scope);
 }
 
-void instantiate_enum(TypeDeduce *context, struct TemplateClassDeclaration *entry)
+void instantiate_enum(TypeDeduce *context, struct TemplateAction *entry)
 {
     ObjEnumConst **tail;
     ObjEnumConst *item;
-    struct TemplateClassDeclaration *candidate;
+    struct TemplateAction *candidate;
     ObjEnumConst *firstItem;
-    struct TemplateClassDeclaration *firstCandidate;
+    struct TemplateAction *firstCandidate;
     ObjEnumConst *copy;
     struct DefAction *binding;
     TypeEnum *replacement;
     TypeEnum *original;
     ObjEnumConst *reference;
     TemplClass *templateClass;
-    original = (TypeEnum *)entry->target.type;
+    original = entry->u.enumtype;
     replacement = (TypeEnum *)galloc(22);
     memclrw(replacement, 22);
     replacement->type = TYPEENUM;
@@ -743,12 +738,12 @@ void instantiate_enum(TypeDeduce *context, struct TemplateClassDeclaration *entr
             tail = &copy->next;
         } while (item != NULL);
     }
-    templateClass = (TemplClass *)context->tmclass;
+    templateClass = context->tmclass;
     candidate = (firstCandidate = templateClass->actions);
     if (firstCandidate != NULL) {
         do {
-            if (candidate->kind == 3 &&
-                (reference = (ObjEnumConst *)candidate->target.object)->type == (Type *)original) {
+            if (candidate->type == TAT_ENUMERATOR &&
+                (reference = candidate->u.enumerator.objenumconst)->type == (Type *)original) {
                 binding = (struct DefAction *)CompilerTools_AllocatePool(20);
                 binding->next = context->defActions;
                 binding->action = entry;
@@ -768,7 +763,7 @@ void instantiate_bases(TypeDeduce *context, TypeClass *instance, TemplClass *cla
     int savedEntry;
     ClassList *base;
     ClassList *current;
-    struct TemplateClassDeclaration *declaration;
+    struct TemplateAction *declaration;
     ClassList *newBase;
     ClassList *instanceBase;
     ClassList **resolvedQualifiers;
@@ -795,30 +790,30 @@ void instantiate_bases(TypeDeduce *context, TypeClass *instance, TemplClass *cla
         }
     }
 
-    for (declaration = ((TemplClass *)context->tmclass)->actions; declaration; declaration = declaration->next) {
-        if (declaration->kind == 4) {
+    for (declaration = (context->tmclass)->actions; declaration; declaration = declaration->next) {
+        if (declaration->type == TAT_BASE) {
             fn_00449d60();
-            CError_SaveAndSetWrittenEntry(&declaration->source, &savedEntry);
+            CError_SaveAndSetWrittenEntry(&declaration->source_ref, &savedEntry);
             newBase = galloc(sizeof(ClassList));
             memclrw(newBase, sizeof(ClassList));
-            newBase->base = (TypeClass *)CTemplateTools_ResolveType(context, declaration->target.type,
+            newBase->base = (TypeClass *)CTemplateTools_ResolveType(context, declaration->u.base.type,
                                                                     (UInt32 *)(resolvedQualifiers = &resolvedTypeData));
-            newBase->access = declaration->access;
-            newBase->is_virtual = declaration->is_virtual;
+            newBase->access = declaration->u.base.access;
+            newBase->is_virtual = declaration->u.base.is_virtual;
             if (newBase->base->type == TYPECLASS) {
                 if (newBase->base->size == 0) {
                     CDecl_CompleteType((Type *)newBase->base);
                     CanAllocObject((Type *)newBase->base);
                 }
                 if (CDecl_CheckNewBase(instance, newBase->base, newBase->is_virtual)) {
-                    if (declaration->value.bases != NULL) {
+                    if (declaration->u.base.insert_after != NULL) {
                         base = classTemplate->theclass.bases;
                         instanceBase = instance->bases;
                         for (;;) {
                             if (base == NULL || instanceBase == NULL) {
                                 CError_FATAL(1146);
                             }
-                            if (base == declaration->value.bases) {
+                            if (base == declaration->u.base.insert_after) {
                                 newBase->next = instanceBase->next;
                                 instanceBase->next = newBase;
                                 break;
@@ -887,8 +882,8 @@ void CTemplateClass_0051cec0(TypeDeduce *context, TemplClass *templateClass)
 TemplClass *CTemplateClass_CreateClassTemplateDeclaration(TypeClass *owner, HashNameNode *arg1, short arg2)
 {
     TemplClass *object;
-    struct TemplateListRecord *record;
-    struct TemplateListRecord *tail;
+    struct TemplateAction *record;
+    struct TemplateAction *tail;
 
     object = (TemplClass *)galloc(90);
     memclrw(object, 90);
@@ -899,19 +894,19 @@ TemplClass *CTemplateClass_CreateClassTemplateDeclaration(TypeClass *owner, Hash
     CDecl_DefineClass(owner->nspace, arg1, &object->theclass, arg2, 0, 1);
     object->theclass.flags = FUNC_AUTO_GENERATED;
 
-    record = (struct TemplateListRecord *)galloc(40);
+    record = (struct TemplateAction *)galloc(40);
     memclrw(record, 40);
-    record->value_26 = 0;
-    record->object = object;
-    record->state = *CPrep_GetLastBufferedToken();
+    record->type = TAT_NESTEDCLASS;
+    record->u.tclasstype = object;
+    record->source_ref = *CPrep_GetLastBufferedToken();
 
-    if ((tail = (struct TemplateListRecord *)(*(TemplClass *)owner).actions) != NULL) {
+    if ((tail = (*(TemplClass *)owner).actions) != NULL) {
         while (tail->next != NULL) {
             tail = tail->next;
         }
         tail->next = record;
     } else {
-        (*(TemplClass *)owner).actions = (struct TemplateClassDeclaration *)record;
+        (*(TemplClass *)owner).actions = record;
     }
 
     return object;
@@ -920,7 +915,7 @@ TemplClass *CTemplateClass_CreateClassTemplateDeclaration(TypeClass *owner, Hash
 /* Template class record in the candidate chain. */
 /* Temporary list of matching candidates. */
 
-char CTemplateClass_SelectSpecialization(CTStateElem *context, TemplClass **classType, CTStateElem **result)
+char CTemplateClass_SelectSpecialization(TemplArg *context, TemplClass **classType, TemplArg **result)
 {
     TemplPartialSpec *entry;
     TemplateClassMatch *match;
@@ -928,10 +923,9 @@ char CTemplateClass_SelectSpecialization(CTStateElem *context, TemplClass **clas
 
     {
         TemplClassInst *entry;
-        for (entry = (TemplClassInst *)(*classType)->instances; entry != NULL; entry = entry->next) {
-            if (((TemplClassInst *)entry)->is_instantiated != 0 || ((TemplClassInst *)entry)->is_specialized != 0) {
-                CTStateElem *value = ((TemplClassInst *)entry)->oargs ? ((TemplClassInst *)entry)->oargs
-                                                                      : ((TemplClassInst *)entry)->inst_args;
+        for (entry = (*classType)->instances; entry != NULL; entry = entry->next) {
+            if ((entry)->is_instantiated != 0 || (entry)->is_specialized != 0) {
+                TemplArg *value = (entry)->oargs ? (entry)->oargs : (entry)->inst_args;
                 if (CTemplTool_EqualArgs(context, value))
                     return 0;
             }
@@ -1017,8 +1011,8 @@ struct TemplateClassMatch *remove_less_specialized_matches(struct TemplateClassM
 
 unsigned char match_template_arguments(TemplPartialSpec *arguments, TemplPartialSpec *pattern)
 {
-    CTStateElem *argument;
-    CTStateElem *patternArgument;
+    TemplArg *argument;
+    TemplArg *patternArgument;
     int index;
     int matchIndex;
     struct DeduceInfo state;
@@ -1032,7 +1026,7 @@ unsigned char match_template_arguments(TemplPartialSpec *arguments, TemplPartial
                 CError_FATAL(796);
             index = 0;
             while (index < state.maxCount) {
-                if (state.args[index].bound == 0)
+                if (state.args[index].is_deduced == 0)
                     return 0;
                 index = index + 1;
             }
@@ -1043,40 +1037,41 @@ unsigned char match_template_arguments(TemplPartialSpec *arguments, TemplPartial
         if (argument->pid.type != patternArgument->pid.type)
             CError_FATAL(806);
         if (argument->pid.type != 0) {
-            if (qualtest(patternArgument->qualifiers, argument->qualifiers))
+            if (qualtest(patternArgument->data.typeparam.qual, argument->data.typeparam.qual))
                 return 0;
-            if (argument->qualifiers != patternArgument->qualifiers &&
-                patternArgument->argument.type->type != TYPEPOINTER &&
-                (patternArgument->argument.type->type != TYPETEMPLATE ||
-                 ((TypeIntegral *)patternArgument->argument.type)->integral != IT_BOOL))
+            if (argument->data.typeparam.qual != patternArgument->data.typeparam.qual &&
+                patternArgument->data.typeparam.type->type != TYPEPOINTER &&
+                (patternArgument->data.typeparam.type->type != TYPETEMPLATE ||
+                 ((TypeIntegral *)patternArgument->data.typeparam.type)->integral != IT_BOOL))
                 return 0;
-            if (CTemplateFunc_MatchType(patternArgument->argument.type, patternArgument->qualifiers,
-                                        argument->argument.type, argument->qualifiers, state.args, 0) == 0)
+            if (CTemplateFunc_MatchType(patternArgument->data.typeparam.type, patternArgument->data.typeparam.qual,
+                                        argument->data.typeparam.type, argument->data.typeparam.qual, state.args,
+                                        0) == 0)
                 return 0;
-        } else if (CTemplTool_IsTypeDepExpr(patternArgument->argument.expression) != 0) {
+        } else if (CTemplTool_IsTypeDepExpr(patternArgument->data.paramdecl.expr) != 0) {
             matchIndex = CTemplateFunc_GetArgumentParameterIndex(patternArgument);
             if (matchIndex < 0)
                 CError_FATAL(845);
-            if (state.args[matchIndex].bound != 0) {
-                if (argument->argument.type != NULL) {
-                    if (state.args[matchIndex].argument.type == NULL ||
-                        CTemplateTools_00517a40(argument->argument.expression,
-                                                state.args[matchIndex].argument.expression) == 0)
+            if (state.args[matchIndex].is_deduced != 0) {
+                if (argument->data.typeparam.type != NULL) {
+                    if (state.args[matchIndex].data.typeparam.type == NULL ||
+                        CTemplateTools_00517a40(argument->data.paramdecl.expr,
+                                                state.args[matchIndex].data.paramdecl.expr) == 0)
                         return 0;
                 } else {
-                    if (state.args[matchIndex].argument.type != NULL ||
+                    if (state.args[matchIndex].data.typeparam.type != NULL ||
                         argument->pid.index != state.args[matchIndex].pid.index)
                         return 0;
                 }
             } else {
-                state.args[matchIndex].argument.expression = argument->argument.expression;
+                state.args[matchIndex].data.paramdecl.expr = argument->data.paramdecl.expr;
                 state.args[matchIndex].pid.index = argument->pid.index;
                 state.args[matchIndex].pid.type = 0;
-                state.args[matchIndex].bound = 1;
+                state.args[matchIndex].is_deduced = 1;
             }
         } else {
-            if (argument->argument.type == NULL ||
-                CTemplateTools_00517a40(argument->argument.expression, patternArgument->argument.expression) == 0)
+            if (argument->data.typeparam.type == NULL ||
+                CTemplateTools_00517a40(argument->data.paramdecl.expr, patternArgument->data.paramdecl.expr) == 0)
                 return 0;
         }
         argument = argument->next;
@@ -1084,24 +1079,24 @@ unsigned char match_template_arguments(TemplPartialSpec *arguments, TemplPartial
     }
 }
 
-CTStateElem *match_specialization_arguments(TemplPartialSpec *arguments, CTStateElem *actual, char instantiate)
+TemplArg *match_specialization_arguments(TemplPartialSpec *arguments, TemplArg *actual, char instantiate)
 {
-    CTStateElem *pattern;
-    CTStateElem *candidate;
+    TemplArg *pattern;
+    TemplArg *candidate;
     long mask;
     long patternQualifiers;
     long actualQualifiers;
     int missingQualifier;
     long missing;
     int matched;
-    CTStateElem *result;
+    TemplArg *result;
     unsigned long candidateQualifiers;
     int index;
     struct DeduceInfo state;
 
     if (!CTemplTool_InitDeduceInfo(&state, arguments->templ->templ__params, NULL, 1))
         return NULL;
-    pattern = (CTStateElem *)arguments->args;
+    pattern = arguments->args;
     candidate = actual;
     matched = 0;
     for (;;) {
@@ -1110,7 +1105,7 @@ CTStateElem *match_specialization_arguments(TemplPartialSpec *arguments, CTState
                 return NULL;
             patternQualifiers = 0;
             while (patternQualifiers < state.maxCount) {
-                if (!state.args[patternQualifiers].bound)
+                if (!state.args[patternQualifiers].is_deduced)
                     return NULL;
                 patternQualifiers = patternQualifiers + 1;
             }
@@ -1125,9 +1120,9 @@ CTStateElem *match_specialization_arguments(TemplPartialSpec *arguments, CTState
         if (pattern->pid.type != candidate->pid.type)
             return NULL;
         if (pattern->pid.type != 0) {
-            if (CTemplateTools_IsDependentType(pattern->argument.type)) {
-                actualQualifiers = candidateQualifiers = candidate->qualifiers;
-                mask = patternQualifiers = pattern->qualifiers;
+            if (CTemplateTools_IsDependentType(pattern->data.typeparam.type)) {
+                actualQualifiers = candidateQualifiers = candidate->data.typeparam.qual;
+                mask = patternQualifiers = pattern->data.typeparam.qual;
                 missingQualifier = 0;
                 missing = 1;
                 if ((patternQualifiers & 1) != 0 && (actualQualifiers & 1) == 0)
@@ -1141,32 +1136,32 @@ CTStateElem *match_specialization_arguments(TemplPartialSpec *arguments, CTState
                 }
                 if ((char)missing != 0)
                     return NULL;
-                if (patternQualifiers != candidateQualifiers && (pattern->argument.type)->type != TYPEPOINTER &&
-                    ((pattern->argument.type)->type != TYPETEMPLATE ||
-                     ((TypeIntegral *)pattern->argument.type)->integral != IT_BOOL))
+                if (patternQualifiers != candidateQualifiers && (pattern->data.typeparam.type)->type != TYPEPOINTER &&
+                    ((pattern->data.typeparam.type)->type != TYPETEMPLATE ||
+                     ((TypeIntegral *)pattern->data.typeparam.type)->integral != IT_BOOL))
                     return NULL;
-                if (!CTemplateFunc_MatchType(pattern->argument.type, patternQualifiers, candidate->argument.type,
-                                             candidateQualifiers, state.args, 0))
+                if (!CTemplateFunc_MatchType(pattern->data.typeparam.type, patternQualifiers,
+                                             candidate->data.typeparam.type, candidateQualifiers, state.args, 0))
                     return NULL;
             } else {
-                if (!iscpp_typeequal(pattern->argument.type, candidate->argument.type) ||
-                    pattern->qualifiers != candidate->qualifiers)
+                if (!iscpp_typeequal(pattern->data.typeparam.type, candidate->data.typeparam.type) ||
+                    pattern->data.typeparam.qual != candidate->data.typeparam.qual)
                     return NULL;
             }
         } else {
-            if (CTemplTool_IsTypeDepExpr(pattern->argument.expression)) {
+            if (CTemplTool_IsTypeDepExpr(pattern->data.paramdecl.expr)) {
                 index = CTemplateFunc_GetArgumentParameterIndex(pattern);
                 if (index < 0)
                     CError_FATAL(749);
-                if (state.args[index].bound != 0) {
-                    if (!CTemplateTools_00517a40(candidate->argument.expression, state.args[index].argument.expression))
+                if (state.args[index].is_deduced != 0) {
+                    if (!CTemplateTools_00517a40(candidate->data.paramdecl.expr, state.args[index].data.paramdecl.expr))
                         return NULL;
                 } else {
-                    state.args[index].argument.expression = candidate->argument.expression;
+                    state.args[index].data.paramdecl.expr = candidate->data.paramdecl.expr;
                     state.args[index].pid.type = 0;
-                    state.args[index].bound = 1;
+                    state.args[index].is_deduced = 1;
                 }
-            } else if (!CTemplateTools_00517a40(candidate->argument.expression, pattern->argument.expression))
+            } else if (!CTemplateTools_00517a40(candidate->data.paramdecl.expr, pattern->data.paramdecl.expr))
                 return NULL;
         }
         pattern = pattern->next;
@@ -1179,13 +1174,13 @@ struct TemplateComparisonEntry;
 /* Class-template data extending the ordinary class type. */
 /* Deferred member declaration and its source position. */
 
-void CTemplateClass_ParseClassDeclaration(TemplateScopeState *scope, TemplateParameterRecord *parameters, short access,
+void CTemplateClass_ParseClassDeclaration(TemplateScopeState *scope, TemplParam *parameters, short access,
                                           SInt32 *state)
 {
     struct TypeClass *existing;
     TemplClass *record;
-    struct TemplateMemberData *entry;
-    struct TemplateMemberData **tail;
+    struct TemplateAction *entry;
+    struct TemplateAction **tail;
     TemplClass *owner;
     DeclInfo context;
 
@@ -1208,17 +1203,17 @@ void CTemplateClass_ParseClassDeclaration(TemplateScopeState *scope, TemplatePar
             record->templ_parent = (TemplClass *)scope->scope->parent->theclass;
             entry = galloc(sizeof(*entry));
             memclrw(entry, sizeof(*entry));
-            entry->kind = 0;
-            entry->record = record;
+            entry->type = TAT_NESTEDCLASS;
+            entry->u.tclasstype = record;
             owner = record->templ_parent;
-            entry->sourcePosition = *CPrep_GetLastBufferedToken();
-            if ((tail = (struct TemplateMemberData **)owner->actions) != NULL) {
+            entry->source_ref = *CPrep_GetLastBufferedToken();
+            if ((tail = (struct TemplateAction **)owner->actions) != NULL) {
                 while (*tail != NULL) {
                     tail = &(*tail)->next;
                 }
                 *tail = entry;
             } else {
-                owner->actions = (struct TemplateClassDeclaration *)entry;
+                owner->actions = entry;
             }
         }
     } else {
@@ -1270,17 +1265,17 @@ void CTemplateClass_ParseClassDeclaration(TemplateScopeState *scope, TemplatePar
 /* Template-specific data following the class type. */
 /* Parser state for a class declaration. */
 
-void CTemplateClass_ParsePartialSpecialization(TemplateScopeState *scope, struct TemplateParameterRecord *parameters,
-                                               short access, SInt32 *position)
+void CTemplateClass_ParsePartialSpecialization(TemplateScopeState *scope, struct TemplParam *parameters, short access,
+                                               SInt32 *position)
 {
     TypeClass *type;
     TemplClass *templateClass;
-    TemplateParameterRecord *parameter;
+    TemplParam *parameter;
     TemplPartialSpec *specialization;
-    CTStateElem *argument;
-    TemplateParameterRecord *templateParameter;
+    TemplArg *argument;
+    TemplParam *templateParameter;
     TemplClass *instance;
-    CTStateElem *arguments;
+    TemplArg *arguments;
     DeclInfo declaration;
     tk = CPrepTokenizer_GetNextToken();
     if (tk != TK_IDENTIFIER) {
@@ -1301,19 +1296,19 @@ void CTemplateClass_ParsePartialSpecialization(TemplateScopeState *scope, struct
     CE_ASSERT(tk != '<', CError_FATAL(461));
     parameter = parameters;
     for (; parameter != NULL; parameter = parameter->next) {
-        if (parameter->isTypeParameter != 0) {
-            if (parameter->value == NULL) {
+        if (parameter->pid.type != 0) {
+            if (parameter->data.typeparam.type == NULL) {
                 continue;
             }
             CError_ReportError(ERR_ILLEGAL_PARTIAL_SPECIALIZATION);
             break;
         }
-        if (parameter->defaultValue.expression != NULL) {
+        if (parameter->data.paramdecl.defaultarg != NULL) {
             CError_ReportError(ERR_ILLEGAL_PARTIAL_SPECIALIZATION);
             break;
         }
     }
-    arguments = CTemplateNew_ParseTemplateArguments((TemplateParameterRecord *)templateClass->templ__params, 0);
+    arguments = CTemplateNew_ParseTemplateArguments(templateClass->templ__params, 0);
     tk = CPrepTokenizer_GetNextToken();
     argument = arguments;
     templateParameter = templateClass->templ__params;
@@ -1329,7 +1324,7 @@ void CTemplateClass_ParsePartialSpecialization(TemplateScopeState *scope, struct
             CError_ReportError(ERR_ILLEGAL_PARTIAL_SPECIALIZATION);
             return;
         }
-        if (templateParameter->isTypeParameter != (char)argument->pid.type) {
+        if ((char)templateParameter->pid.type != (char)argument->pid.type) {
             CError_ReportError(ERR_ILLEGAL_PARTIAL_SPECIALIZATION);
             return;
         }
@@ -1397,32 +1392,31 @@ void CTemplateClass_ParsePartialSpecialization(TemplateScopeState *scope, struct
 /* Fixed-size hash-name header, without the variable-length name. */
 /* Two-word payload associated with a keyed list entry. */
 
-struct KeyedEntry *CTemplateClass_AddTemplateArgumentOverride(TemplClass *owner, Object *key, FileOffsetInfo *name,
-                                                              struct TokenStream *payload)
+struct TemplateMember *CTemplateClass_AddTemplateArgumentOverride(TemplClass *owner, Object *key, FileOffsetInfo *name,
+                                                                  struct TokenStream *payload)
 {
-    enum { KeyedEntryAllocationSize = 0x2a };
-    KeyedEntry *entry;
+    TemplateMember *entry;
 
     entry = owner->members;
     while (entry != NULL) {
-        if (entry->key == key) {
+        if (entry->object == key) {
             CError_ReportError(ERR_OBJECT_REDEFINED, key);
             return entry;
         }
         entry = entry->next;
     }
-    entry = (KeyedEntry *)galloc(KeyedEntryAllocationSize);
-    memclrw((unsigned char *)entry, KeyedEntryAllocationSize);
+    entry = galloc(sizeof(TemplateMember));
+    memclrw(entry, sizeof(TemplateMember));
     entry->next = owner->members;
     owner->members = entry;
-    entry->templateParameters = NULL;
-    entry->key = key;
-    entry->name = *name;
-    entry->payload = *payload;
+    entry->params = NULL;
+    entry->object = key;
+    entry->fileoffset = *name;
+    entry->stream = *payload;
     return entry;
 }
 
-TemplClassInst *CTemplateClass_GetInstance(TemplClass *cls, CTStateElem *key, CTStateElem *flag)
+TemplClassInst *CTemplateClass_GetInstance(TemplClass *cls, TemplArg *key, TemplArg *flag)
 {
     TemplClassInst *instance = cls->instances;
 
@@ -1453,7 +1447,7 @@ TemplClassInst *create_class_template_instance(TemplClass *definition, void *arg
     definition->instances = instance;
 
     if (definition->templ__params != 0U) {
-        CTStateElem *name_argument = (CTStateElem *)((alternate_argument != NULL) ? alternate_argument : argument);
+        TemplArg *name_argument = (TemplArg *)((alternate_argument != NULL) ? alternate_argument : argument);
         name = CMangler_TemplateInstanceName(definition->theclass.classname, name_argument);
     } else {
         name = definition->theclass.classname;
@@ -1505,62 +1499,62 @@ unsigned char CTemplateClass_CompleteClassLayout(TemplClass *state, ClassLayout 
 
 void CTemplateClass_AppendObjectDeclaration(TemplClass *ctx, Object *obj)
 {
-    struct TemplateObjectDeclaration *record;
+    struct TemplateAction *record;
 
     record = galloc(sizeof(*record));
     memclrw(record, sizeof(*record));
-    record->kind = 7;
-    record->argument = obj;
-    record->data = *CPrep_GetLastBufferedToken();
+    record->type = TAT_OBJECTDEF;
+    record->u.refobj = OBJ_BASE(obj);
+    record->source_ref = *CPrep_GetLastBufferedToken();
 
     if (ctx->actions != NULL) {
-        struct TemplateObjectDeclaration *last = (struct TemplateObjectDeclaration *)ctx->actions;
+        struct TemplateAction *last = ctx->actions;
         while (last->next != NULL)
             last = last->next;
         last->next = record;
     } else {
-        ctx->actions = (struct TemplateClassDeclaration *)record;
+        ctx->actions = record;
     }
 }
 
 void CTemplateClass_AppendExpressionRecord(TemplClass *type, Object *object, ENode *expression)
 {
-    struct TemplateExpressionRecord *record;
+    struct TemplateAction *record;
     record = galloc(40U);
     memclrw(record, 40U);
-    record->kind = 5U;
-    record->declaration.object = object;
-    record->expression = fn_00513040(expression, 1U);
-    record->parserState = *CPrep_GetLastBufferedToken();
+    record->type = TAT_OBJECTINIT;
+    record->u.objectinit.object = object;
+    record->u.objectinit.initexpr = fn_00513040(expression, 1U);
+    record->source_ref = *CPrep_GetLastBufferedToken();
     if (type->actions != NULL) {
-        struct TemplateExpressionRecord *last = (struct TemplateExpressionRecord *)type->actions;
+        struct TemplateAction *last = type->actions;
         while (last->next != NULL)
             last = last->next;
         last->next = record;
     } else {
-        type->actions = (struct TemplateClassDeclaration *)record;
+        type->actions = record;
     }
 }
 
 void CTemplateClass_AppendEnumConstDeclaration(TemplClass *self, ObjEnumConst *a, ENode *str)
 {
-    struct TemplateExpressionRecord *p;
-    struct TemplateExpressionRecord *r;
+    struct TemplateAction *p;
+    struct TemplateAction *r;
 
-    r = galloc(sizeof(struct TemplateExpressionRecord));
-    memclrw(r, sizeof(struct TemplateExpressionRecord));
-    r->kind = 3;
-    r->declaration.object = (Object *)a;
-    r->expression = str ? fn_00513040(str, 1) : NULL;
-    r->parserState = *CPrep_GetLastBufferedToken();
+    r = galloc(sizeof(struct TemplateAction));
+    memclrw(r, sizeof(struct TemplateAction));
+    r->type = TAT_ENUMERATOR;
+    r->u.enumerator.objenumconst = a;
+    r->u.enumerator.initexpr = str ? fn_00513040(str, 1) : NULL;
+    r->source_ref = *CPrep_GetLastBufferedToken();
 
     if (self->actions != NULL) {
-        p = (struct TemplateExpressionRecord *)self->actions;
+        p = self->actions;
         while (p->next != NULL)
             p = p->next;
         p->next = r;
     } else {
-        self->actions = (struct TemplateClassDeclaration *)r;
+        self->actions = r;
     }
 }
 
@@ -1569,20 +1563,20 @@ void CTemplateClass_AppendEnumConstDeclaration(TemplClass *self, ObjEnumConst *a
 
 void CTemplateClass_AppendEnumDeclaration(TemplClass *type, TypeEnum *value)
 {
-    struct PendingTemplateInstantiation *record;
-    struct PendingTemplateInstantiation *tail;
+    struct TemplateAction *record;
+    struct TemplateAction *tail;
     record = galloc(40U);
     memclrw(record, 40U);
-    record->kind = 1;
-    record->enumType = value;
-    record->context = *CPrep_GetLastBufferedToken();
+    record->type = TAT_ENUMTYPE;
+    record->u.enumtype = value;
+    record->source_ref = *CPrep_GetLastBufferedToken();
     if (type->actions != NULL) {
-        tail = (struct PendingTemplateInstantiation *)type->actions;
+        tail = type->actions;
         while (tail->next != NULL)
             tail = tail->next;
         tail->next = record;
     } else {
-        type->actions = (struct TemplateClassDeclaration *)record;
+        type->actions = record;
     }
 }
 
@@ -1591,8 +1585,8 @@ unsigned int CTemplateClass_PrependTemplateRecordEntry(TemplClass *list, Type *v
                                                        unsigned char value25)
 {
     struct ClassList *last;
-    struct TemplateRecordEntry *entry;
-    struct TemplateRecordEntry *oldHead;
+    struct TemplateAction *entry;
+    struct TemplateAction *oldHead;
 
     if ((last = list->theclass.bases) != NULL) {
         while (last->next != NULL) {
@@ -1601,23 +1595,23 @@ unsigned int CTemplateClass_PrependTemplateRecordEntry(TemplClass *list, Type *v
     }
     entry = galloc(sizeof(*entry));
     memclrw(entry, sizeof(*entry));
-    entry->tag = 4;
-    entry->value = value;
-    entry->lastBase = last;
-    entry->access = value24;
-    entry->is_virtual = value25;
-    entry->sourcePosition = *CPrep_GetLastBufferedToken();
-    oldHead = (struct TemplateRecordEntry *)list->actions;
+    entry->type = TAT_BASE;
+    entry->u.base.type = value;
+    entry->u.base.insert_after = last;
+    entry->u.base.access = value24;
+    entry->u.base.is_virtual = value25;
+    entry->source_ref = *CPrep_GetLastBufferedToken();
+    oldHead = list->actions;
     entry->next = oldHead;
-    list->actions = (struct TemplateClassDeclaration *)entry;
+    list->actions = entry;
     return (unsigned int)oldHead;
 }
 
 void CTemplateClass_AddDeferredFunctionDeclaration(TemplClass *classTemplate, DeclInfo *declInfo)
 {
-    NewFunc *function;
-    TemplateExpressionRecord *declaration;
-    TemplateExpressionRecord *tail;
+    TemplateFriend *function;
+    TemplateAction *declaration;
+    TemplateAction *tail;
     TypeFunc *functionType;
 
     function = galloc(sizeof(*function));
@@ -1627,51 +1621,51 @@ void CTemplateClass_AddDeferredFunctionDeclaration(TemplClass *classTemplate, De
         declInfo->qual |= Q_INLINE;
         functionType = (TypeFunc *)declInfo->dtype;
         functionType->flags |= (FUNC_DEFINED | 0x8000000);
-        function->ot = function_fileinfo;
-        CPrep_SaveFunctionBodyTokens(&function->bodyTokens, NULL, 1);
+        function->fileoffset = function_fileinfo;
+        CPrep_SaveFunctionBodyTokens(&function->stream, NULL, 1);
         if (CPrepTokenizer_GetNextTokenAndRestorePosition() == ';')
             tk = CPrepTokenizer_GetNextToken();
         else
             tk = ';';
     }
 
-    CDecl_CopyDeclInfoToNewFunc(function, declInfo);
+    CDecl_CopyDeclInfoToNewFunc(&function->decl, declInfo);
 
     declaration = galloc(sizeof(*declaration));
     memclrw(declaration, sizeof(*declaration));
-    declaration->kind = 2;
-    declaration->declaration.functionDeclaration = function;
-    declaration->parserState = *CPrep_GetLastBufferedToken();
+    declaration->type = TAT_FRIEND;
+    declaration->u.tfriend = function;
+    declaration->source_ref = *CPrep_GetLastBufferedToken();
 
-    if ((tail = (TemplateExpressionRecord *)classTemplate->actions) != NULL) {
+    if ((tail = classTemplate->actions) != NULL) {
         while (tail->next)
             tail = tail->next;
         tail->next = declaration;
     } else {
-        classTemplate->actions = (struct TemplateClassDeclaration *)declaration;
+        classTemplate->actions = declaration;
     }
 }
 
 /* Namespace data copied without its trailing status bytes. */
 /* Record in the class's appended instance chain. */
-/* ClassChainEntry is defined in structs/ClassChainEntry.h. */
+/* TemplateAction is defined in structs/TemplateAction.h. */
 
 void CTemplateClass_AppendFuncDeclaration(TemplClass *owner, TypeTemplDep *value, unsigned char kind)
 {
-    struct ClassChainEntry *entry;
-    struct ClassChainEntry *tail;
+    struct TemplateAction *entry;
+    struct TemplateAction *tail;
     entry = galloc(40U);
     memclrw(entry, 40U);
-    entry->type = TYPEFUNC;
-    entry->value = (UInt32)value;
-    entry->kind = kind;
-    entry->sourcePosition = *CPrep_GetLastBufferedToken();
+    entry->type = TAT_USINGDECL;
+    entry->u.usingdecl.type = value;
+    entry->u.usingdecl.access = kind;
+    entry->source_ref = *CPrep_GetLastBufferedToken();
     if (owner->actions != NULL) {
-        for (tail = (struct ClassChainEntry *)owner->actions; tail->next != NULL; tail = tail->next)
+        for (tail = owner->actions; tail->next != NULL; tail = tail->next)
             ;
         tail->next = entry;
     } else {
-        owner->actions = (struct TemplateClassDeclaration *)entry;
+        owner->actions = entry;
     }
 }
 

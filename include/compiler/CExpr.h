@@ -20,7 +20,7 @@ struct MemberFuncRef {
     struct BClassList *bcl;   /* 0x00: CExpr.c copies nameResult->basePath; getpointertomemberfunc reads bases */
     struct ENode *expression; /* 0x04: CExpr.c stores the member access expression; getpointertomemberfunc checks it */
     struct NameSpaceObjectList *list; /* 0x08: make_member_function_esetconst supplies the candidate list */
-    struct CTStateElem *
+    struct TemplArg *
         templargs; /* 0x0c: make_member_function_esetconst obtains CTemplateNew_ParseTemplateArguments; CExpr.c copies objlist.templargs */
     Boolean is_qualified; /* 0x10: CExpr.c copies nameResult->is_qualified */
     UInt8 addressTaken;   /* 0x11: make_memberpointer sets 1; getpointertomemberfunc checks explicit address taking */

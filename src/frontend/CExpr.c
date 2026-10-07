@@ -4852,20 +4852,19 @@ ENode *make_scope_parse_result_expr(CScopeParseResult *nameResult, ENode *expr, 
                     if ((type = OBJ_ENUM_CONST(nameResult->object)->type)->type == TYPEENUM &&
                         (enumType = TYPE_ENUM(type))->nspace && (classType = enumType->nspace->theclass) &&
                         (classType->flags & CLASS_IS_TEMPL)) {
-                        TemplateClassDeclaration *entry;
+                        TemplateAction *entry;
                         SInt32 offsetCount = 0;
                         ENode *found = NULL;
-                        for (entry = (TemplateClassDeclaration *)((TemplClass *)classType)->actions; entry;
-                             entry = entry->next) {
-                            if (entry->kind != 3)
+                        for (entry = ((TemplClass *)classType)->actions; entry; entry = entry->next) {
+                            if (entry->type != TAT_ENUMERATOR)
                                 continue;
-                            if (entry->value.initializer) {
-                                found = entry->value.initializer;
+                            if (entry->u.enumerator.initexpr) {
+                                found = entry->u.enumerator.initexpr;
                                 offsetCount = 0;
                             } else {
                                 offsetCount++;
                             }
-                            if (entry->target.object != nameResult->object)
+                            if (OBJ_BASE(entry->u.enumerator.objenumconst) != nameResult->object)
                                 continue;
                             if (!found)
                                 CError_FATAL(1398);
@@ -4903,7 +4902,7 @@ ENode *make_scope_parse_result_expr(CScopeParseResult *nameResult, ENode *expr, 
                     } else {
                         BClassList *path = NULL;
                         if (member->has_path)
-                            path = ((MemberVarAlias *)member)->bases;
+                            path = ((ObjMemberVarPath *)member)->path;
                         result = CExpr2_004719c0(baseClass, path, expr, member->access, 1);
                         if (!result)
                             result = nullnode();

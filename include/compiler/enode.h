@@ -128,7 +128,7 @@ union ENodeUnion {
     } inlineasm;
     struct {
         struct NameSpaceObjectList *list;
-        struct CTStateElem *
+        struct TemplArg *
             templargs; /* 0x04: CExpr.c copies objlist.templargs into MemberFuncRef.templargs; CExpr_MakeFunctionCall reads template arguments for ENEWEXCEPTION */
         struct HashNameNode *name;
     } objlist;

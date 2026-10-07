@@ -162,10 +162,10 @@ void CError_SetBufferedToken(TStreamElement *entry)
     }
 }
 
-void CError_SaveAndSetWrittenEntry(CPrecWrittenEntry *entry, int *savedEntry)
+void CError_SaveAndSetWrittenEntry(TStreamElement *entry, int *savedEntry)
 {
     *savedEntry = writtenEntry;
-    if (entry != NULL && entry->object != NULL) {
+    if (entry != NULL && entry->tokenfile != NULL) {
         writtenEntry = (int)entry;
     }
 }
@@ -243,15 +243,15 @@ void append_targ_expr(StrBuf *buf, ENode *node)
     CError_BufferAppendString(buf, "{targ_expr}");
 }
 
-void append_ctstate_argument(StrBuf *context, CTStateElem *record)
+void append_ctstate_argument(StrBuf *context, TemplArg *record)
 {
     if (!record->pid.type)
-        append_targ_expr(context, record->argument.expression);
+        append_targ_expr(context, record->data.paramdecl.expr);
     else
-        append_type(context, record->argument.type, record->qualifiers);
+        append_type(context, record->data.typeparam.type, record->data.typeparam.qual);
 }
 
-void append_ctstate_list(StrBuf *buf, CTStateElem *node)
+void append_ctstate_list(StrBuf *buf, TemplArg *node)
 {
     if (node == NULL)
         return;
@@ -393,7 +393,7 @@ void append_function_args(StrBuf *buf, TypeMemberFunc *type, char skip)
 
 void append_type(StrBuf *buf, Type *type, UInt32 qualifiers)
 {
-    CTStateElem *templateArgs;
+    TemplArg *templateArgs;
     Type *arrayType;
     Type *baseType;
     TypeMemberFunc *funcType;
@@ -894,10 +894,10 @@ void append_instantiation_stack(StrBuf *buf)
 {
     SInt32 j;
     SInt32 count;
-    struct ObjectReferenceEntry *stack[64];
+    struct TemplStack *stack[64];
 
     {
-        struct ObjectReferenceEntry *p = object_reference_stack;
+        struct TemplStack *p = object_reference_stack;
         count = 0;
         while (p != NULL && count < 64) {
             stack[count] = p;
@@ -913,10 +913,10 @@ void append_instantiation_stack(StrBuf *buf)
             for (j = i; j < count; j++)
                 CError_BufferAppendChar(buf, ' ');
             CError_BufferAppendString(buf, "(instantiating: '");
-            if (stack[i]->kind)
-                append_object_name(buf, (Object *)stack[i]->value);
+            if (stack[i]->is_func)
+                append_object_name(buf, stack[i]->u.func);
             else
-                append_type(buf, stack[i]->value, 0);
+                append_type(buf, TYPE(stack[i]->u.theclass), 0);
             CError_BufferAppendString(buf, "')");
         }
     }

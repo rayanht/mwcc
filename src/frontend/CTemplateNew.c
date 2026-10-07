@@ -67,7 +67,7 @@ Boolean CTemplateNew_InstantiateInlineTemplateObject(Object *obj)
     ObjectTemplated *node;
     TemplClassInst *theclass;
     Object *func;
-    TemplateSourceRecordTyped *entry;
+    TemplateMember *entry;
 
     CError_ASSERT(1981, obj->type->type == TYPEFUNC && (obj->qual & Q_IS_TEMPLATED));
     if (!(TYPE_FUNC(obj->type)->flags & FUNC_DEFINED)) {
@@ -76,13 +76,12 @@ Boolean CTemplateNew_InstantiateInlineTemplateObject(Object *obj)
             node = (ObjectTemplated *)obj;
             func = node->parent;
             if (func->qual & Q_INLINE) {
-                entry = (TemplateSourceRecordTyped *)CTemplateClass_ResolveRelatedClass((TemplClass *)theclass->templ)
-                            ->members;
+                entry = CTemplateClass_ResolveRelatedClass(theclass->templ)->members;
                 for (; entry != NULL; entry = entry->next) {
                     obj->qual |= Q_INLINE;
                     if (entry->object == func) {
                         CTemplTool_MergeArgNames(entry->object->type, obj->type);
-                        CInline_AddFunctionPrecNode(obj, &theclass->theclass, &entry->sourceInfo, &entry->state, 0);
+                        CInline_AddFunctionPrecNode(obj, &theclass->theclass, &entry->fileoffset, &entry->stream, 0);
                         return 1;
                     }
                 }
@@ -108,14 +107,13 @@ Boolean CTemplateNew_InstantiatePendingTemplates(void)
     node = class_template_list;
     if (node != NULL) {
         do {
-            for (classEntry = (TemplClassInst *)node->instances; classEntry != NULL; classEntry = classEntry->next) {
+            for (classEntry = node->instances; classEntry != NULL; classEntry = classEntry->next) {
                 if ((classEntry->theclass.flags & CLASS_IS_TEMPL_INST) != 0 && classEntry->is_specialized == 0 &&
                     (classTemplate = classEntry->templ, instantiate_members(classTemplate, classEntry, 0)))
                     result = 1;
             }
             for (pair = node->pspecs; pair != NULL; pair = pair->next) {
-                for (nestedClass = (TemplClassInst *)pair->templ->instances; nestedClass != NULL;
-                     nestedClass = nestedClass->next) {
+                for (nestedClass = pair->templ->instances; nestedClass != NULL; nestedClass = nestedClass->next) {
                     if ((nestedClass->theclass.flags & CLASS_IS_TEMPL_INST) != 0 && nestedClass->is_specialized == 0 &&
                         instantiate_members(pair->templ, nestedClass, 0))
                         result = 1;
@@ -126,7 +124,7 @@ Boolean CTemplateNew_InstantiatePendingTemplates(void)
     }
 
     for (nspace = templateFunctions; nspace != NULL; nspace = nspace->next) {
-        for (entry = (TemplFuncInstance *)nspace->instances; entry != NULL; entry = entry->next) {
+        for (entry = nspace->instances; entry != NULL; entry = entry->next) {
             if (entry->is_instantiated == 0 && entry->is_specialized == 0) {
                 found = CScope_FindName(entry->object->nspace, entry->object->name);
                 while (found != NULL) {
@@ -149,20 +147,15 @@ Boolean CTemplateNew_InstantiatePendingTemplates(void)
     return result;
 }
 
-static inline Object *TemplateObjectInstance_Source(Object *object)
-{
-    return ((ObjectTemplated *)object)->parent;
-}
-
 static inline char CTemplateNew_004ed8e0_inline1(TemplClassInst *a1, Object *v1, char a2)
 {
     Object *v3;
     TemplClass *t1;
-    TemplateSourceRecordTyped *v5;
+    TemplateMember *v5;
     char v6;
-    t1 = (TemplClass *)a1->templ;
-    v3 = TemplateObjectInstance_Source(v1);
-    v5 = (TemplateSourceRecordTyped *)CTemplateClass_ResolveRelatedClass(t1)->members;
+    t1 = a1->templ;
+    v3 = ((ObjectTemplated *)v1)->parent;
+    v5 = CTemplateClass_ResolveRelatedClass(t1)->members;
     while ((int)v5 != 0) {
         if (v5->object == v3) {
             CTemplateNew_CompileObject(t1, a1, v5, v1, a2);
@@ -181,11 +174,11 @@ static inline char CTemplateNew_004ed8e0_inline2(TemplClassInst *a1, Object *v1,
 {
     TemplClass *t2;
     Object *v7;
-    TemplateSourceRecordTyped *v9;
+    TemplateMember *v9;
     char v10;
-    t2 = (TemplClass *)a1->templ;
-    v7 = TemplateObjectInstance_Source(v1);
-    v9 = (TemplateSourceRecordTyped *)CTemplateClass_ResolveRelatedClass(t2)->members;
+    t2 = a1->templ;
+    v7 = ((ObjectTemplated *)v1)->parent;
+    v9 = CTemplateClass_ResolveRelatedClass(t2)->members;
     while ((int)v9 != 0) {
         if (v9->object == v7) {
             CTemplateNew_CompileObject(t2, a1, v9, v1, a2);
@@ -235,7 +228,7 @@ unsigned char instantiate_members(TemplClass *templ, TemplClassInst *state, char
 /* Source record used by template instantiation. */
 /* Working record passed to fn_004763e0. */
 
-void CTemplateNew_CompileObject(TemplClass *templateClass, TemplClassInst *context, TemplateSourceRecordTyped *source,
+void CTemplateNew_CompileObject(TemplClass *templateClass, TemplClassInst *context, TemplateMember *source,
                                 Object *object, Boolean reset)
 {
     CScopeSave scope;
@@ -244,15 +237,15 @@ void CTemplateNew_CompileObject(TemplClass *templateClass, TemplClassInst *conte
     NameSpace *arguments;
     UInt8 savedFileSymInfo;
     UInt8 savedTemplateState;
-    struct ObjectReferenceEntry sa;
+    struct TemplStack sa;
 
     FunctionCalls_PushObjectReferenceEntry(&sa, NULL, object);
-    arguments = CTemplateTools_InsertTemplateArgs(
-        source->context ? source->context : (FuncArg *)templateClass->templ__params, context, &scope);
-    CPrep_InsertTokenBuffer(&source->state, &savedState);
+    arguments = CTemplateTools_InsertTemplateArgs(source->params ? source->params : templateClass->templ__params,
+                                                  context, &scope);
+    CPrep_InsertTokenBuffer(&source->stream, &savedState);
     savedTemplateState = template_recordbrowseinfo;
     template_recordbrowseinfo = 1;
-    source_line = source->sourceLine;
+    source_line = source->startoffset;
     tk = CPrepTokenizer_GetNextToken();
     declaration_token = *CPrep_GetLastBufferedToken();
     savedFileSymInfo = copts.filesyminfo;
@@ -267,9 +260,9 @@ void CTemplateNew_CompileObject(TemplClass *templateClass, TemplClassInst *conte
             object->qual |= Q_WEAK;
     }
     memclrw(&compilation, sizeof(compilation));
-    compilation.sourceFile = source->sourceFile;
+    compilation.sourceFile = source->srcfile;
     compilation.browseFile = CPrep_GetPFile();
-    compilation.sourceLine = source->sourceLine;
+    compilation.sourceLine = source->startoffset;
     switch (object->datatype) {
         case DFUNC:
         case DVFUNC:
@@ -285,7 +278,7 @@ void CTemplateNew_CompileObject(TemplClass *templateClass, TemplClassInst *conte
     }
     CTemplateTools_PopObjectReferenceEntry(&sa);
     CTemplTool_RemoveTemplateArgumentNameSpace(arguments, context, &scope);
-    CPrep_RemoveBufferedTokens(&source->state, &savedState);
+    CPrep_RemoveBufferedTokens(&source->stream, &savedState);
     copts.filesyminfo = savedFileSymInfo;
     template_recordbrowseinfo = savedTemplateState;
 }
@@ -296,7 +289,7 @@ Boolean CTemplateNew_InstantiateFunction(TemplateFunction *definition, TemplFunc
     UInt8 savedFileSymbolInfo;
     SInt32 savedStream;
     DeclInfo workspace;
-    struct ObjectReferenceEntry parserState;
+    struct TemplStack parserState;
     NameSpace *namespace;
 
     if (specialization->is_extern != 0 && !report)
@@ -333,7 +326,7 @@ Boolean CTemplateNew_InstantiateFunction(TemplateFunction *definition, TemplFunc
     workspace.sourceLine = definition->startoffset;
     FunctionCalls_PushObjectReferenceEntry(&parserState, NULL, specialization->object);
     CTemplTool_MergeArgNames(definition->tfunc->type, specialization->object->type);
-    namespace = CTemplTool_SetupTemplateArgumentNameSpace((FuncArg *)definition->params, specialization->args, 0);
+    namespace = CTemplTool_SetupTemplateArgumentNameSpace(definition->params, specialization->args, 0);
     namespace->parent = specialization->object->nspace;
     specialization->object->nspace = namespace;
     CTemplTool_SetupOuterTemplateArgumentNameSpace(namespace);
@@ -349,27 +342,27 @@ Boolean CTemplateNew_InstantiateFunction(TemplateFunction *definition, TemplFunc
     return 1;
 }
 
-void CTemplateNew_ParseFuncDef(Object *object, TemplClassInst *context, TplSpec *specialization)
+void CTemplateNew_ParseFuncDef(Object *object, TemplClassInst *context, TypeClass *tclass)
 {
     DeclInfo declInfo;
     CScopeSave contextSave;
-    struct ObjectReferenceEntry objectSave;
-    FuncArg *templateParameters;
+    TemplStack objectSave;
+    TemplParam *templateParameters;
     NameSpace *arguments;
-    TemplateArgumentOverride *node;
-    SInt32 key;
+    TemplateMember *node;
+    Object *parent;
     TemplClass *templateClass;
 
-    templateClass = (TemplClass *)context->templ;
-    templateParameters = (FuncArg *)templateClass->templ__params;
+    templateClass = context->templ;
+    templateParameters = templateClass->templ__params;
     if ((object->qual & Q_IS_TEMPLATED) != 0) {
-        templateClass = (TemplClass *)context->templ;
-        node = (TemplateArgumentOverride *)CTemplateClass_ResolveRelatedClass(templateClass)->members;
-        key = object->templateMember[0].templateArgumentKey;
+        templateClass = context->templ;
+        node = CTemplateClass_ResolveRelatedClass(templateClass)->members;
+        parent = ((ObjectTemplated *)object)->parent;
         while (node != NULL) {
-            if (node->templateArgumentKey == key) {
-                if (node->templateParameters != NULL)
-                    templateParameters = node->templateParameters;
+            if (node->object == parent) {
+                if (node->params != NULL)
+                    templateParameters = node->params;
                 break;
             }
             node = node->next;
@@ -377,10 +370,10 @@ void CTemplateNew_ParseFuncDef(Object *object, TemplClassInst *context, TplSpec 
     }
     FunctionCalls_PushObjectReferenceEntry(&objectSave, NULL, object);
     arguments = CTemplateTools_InsertTemplateArgs(templateParameters, context, &contextSave);
-    if (specialization != NULL)
-        currentNameSpace = (NameSpace *)specialization->val;
+    if (tclass != NULL)
+        currentNameSpace = tclass->nspace;
     memclrw(&declInfo, sizeof(declInfo));
-    CFunc_ParseFuncDef(object, &declInfo, NULL, 0, 0, specialization != NULL ? currentNameSpace : NULL);
+    CFunc_ParseFuncDef(object, &declInfo, NULL, 0, 0, tclass != NULL ? currentNameSpace : NULL);
     CTemplTool_RemoveTemplateArgumentNameSpace(arguments, context, &contextSave);
     CTemplateTools_PopObjectReferenceEntry(&objectSave);
 }
@@ -393,7 +386,7 @@ void CTemplateNew_ParseTemplateDeclaration(TypeClass *templateClass)
     char templateDepth;
     char emptyParameters;
     NameSpace *scope;
-    TemplateParameterRecord *parameters;
+    TemplParam *parameters;
     NameSpace *linkedNamespace;
     char isSpecialization;
     short classKind;
@@ -609,10 +602,10 @@ static inline void CTempl_PushScope(TemplateScopeState *stack, TypeClass *tclass
 
 #pragma opt_propagation reset
 
-static void *FindInst(TemplClass **p8c, CTStateElem **p88)
+static void *FindInst(TemplClass **p8c, TemplArg **p88)
 {
     Type *p;
-    CTStateElem *t2;
+    TemplArg *t2;
 
     t2 = parse_template_arguments(p8c, p88);
     if (t2 == NULL)
@@ -630,12 +623,12 @@ void parse_explicit_template_instantiation(void)
     CScopeParseResult lookupResult;
     DeclInfo declaration;
     TemplClass *templateClass;
-    CTStateElem *arguments;
+    TemplArg *arguments;
     NameSpaceObjectList *objects;
     UInt8 declarationFlags;
     UInt8 hasQualifiedName;
     UInt8 instantiate;
-    CTStateElem *instanceData;
+    TemplArg *instanceData;
     TemplClass *templateData;
     TemplClassInst *instance;
     HashNameNode *name;
@@ -679,7 +672,7 @@ void parse_explicit_template_instantiation(void)
                 }
                 templateData = (TemplClass *)(TypeClass *)templateClass;
                 if (templateData->pspec_owner)
-                    templateData = (TemplClass *)templateData->pspec_owner;
+                    templateData = templateData->pspec_owner;
                 declaration.dtype = FindInst(&templateData, &instanceData);
                 tk = CPrepTokenizer_GetNextToken();
                 if (tk == ';') {
@@ -689,11 +682,11 @@ void parse_explicit_template_instantiation(void)
                         CTemplateClass_InstantiateClass(&instantiated->theclass);
                         if ((((TemplClassInst *)declaration.dtype)->theclass.flags & CLASS_COMPLETED) != 0) {
                             if ((declarationFlags & 2) == 0) {
-                                instance = (TemplClassInst *)((TemplClass *)templateClass)->instances;
+                                instance = (templateClass)->instances;
                                 while (instance) {
                                     if (instance == (TemplClassInst *)declaration.dtype) {
                                         if (instantiate)
-                                            instantiate_members((TemplClass *)templateClass, instance, 1);
+                                            instantiate_members(templateClass, instance, 1);
                                         else
                                             instance->is_extern = 1;
                                         break;
@@ -781,7 +774,7 @@ void parse_explicit_template_instantiation(void)
 
 #pragma opt_propagation reset
 
-void parse_function_template_declaration(TemplateScopeState *stack, TemplateParameterRecord *params, TypeClass *tclass,
+void parse_function_template_declaration(TemplateScopeState *stack, TemplParam *params, TypeClass *tclass,
                                          SInt32 *startOffset)
 {
     Boolean isstatic;
@@ -1014,7 +1007,7 @@ void parse_template_member_definition(void *context, TypeClass *template_info, D
     Object *object;
     ObjectList *entry;
     int is_saved_function;
-    struct KeyedEntry *instance;
+    struct TemplateMember *instance;
     char saved_state;
     TemplateFunction *function_info;
     TokenStream parsed_body;
@@ -1088,7 +1081,7 @@ void parse_template_member_definition(void *context, TypeClass *template_info, D
                 if (CTemplTool_EqualParams(((TemplClass *)template_info)->templ__params, context, 0) == 0) {
                     CError_ReportError(ERR_TEMPLATE_PARAMETER_MISMATCH);
                 } else {
-                    instance->templateParameters = context;
+                    instance->params = context;
                 }
             }
         }
@@ -1126,11 +1119,11 @@ UInt8 CTemplateNew_LinkTemplateScope(DeclInfo *context, TypeTemplDep *request, N
 
 Type *CTemplTool_GetSelfRefTemplate(TemplClass *record)
 {
-    CTStateElem *key;
+    TemplArg *key;
     Type *result;
     TemplClass *underlying;
     TemplClass *selected;
-    CTStateElem *lookupContext;
+    TemplArg *lookupContext;
     underlying = (selected = record)->pspec_owner;
     if (underlying != NULL) {
         selected = underlying;
@@ -1146,20 +1139,20 @@ Type *CTemplTool_GetSelfRefTemplate(TemplClass *record)
     return (Type *)CTemplateClass_GetInstance(selected, key, lookupContext);
 }
 
-CTStateElem *parse_template_arguments(TemplClass **classType, CTStateElem **result)
+TemplArg *parse_template_arguments(TemplClass **classType, TemplArg **result)
 {
-    CTStateElem *argument;
-    TemplateParameterRecord *parameter;
-    CTStateElem **tail;
+    TemplArg *argument;
+    TemplParam *parameter;
+    TemplArg **tail;
     Type *substituted;
     short token;
-    TemplateParameterRecord *parameters;
-    CTStateElem *arguments;
+    TemplParam *parameters;
+    TemplArg *arguments;
     DeclInfo parse;
     unsigned int substitutionInfo;
     TypeDeduce context;
     TypeDeduce defaultContext;
-    parameters = (TemplateParameterRecord *)(*classType)->templ__params;
+    parameters = (*classType)->templ__params;
     *result = NULL;
     if (tk != '<') {
         CError_ReportError(ERR_LESS_EXPECTED);
@@ -1171,7 +1164,7 @@ CTStateElem *parse_template_arguments(TemplClass **classType, CTStateElem **resu
     parameter = parameters;
     tail = &arguments;
     for (; parameter != NULL; parameter = parameter->next) {
-        argument = (CTStateElem *)galloc(sizeof(*argument));
+        argument = (TemplArg *)galloc(sizeof(*argument));
         memclrw(argument, sizeof(*argument));
         *tail = argument;
         tail = &argument->next;
@@ -1192,14 +1185,15 @@ CTStateElem *parse_template_arguments(TemplClass **classType, CTStateElem **resu
                     CError_ReportError(ERR_DECLARATION_SYNTAX_ERROR);
                 }
                 CTemplTool_CheckTemplArgType(parse.dtype);
-                argument->argument.type = parse.dtype;
-                argument->qualifiers = parse.qual;
-            } else if (CTemplateTools_IsDependentType(parameter->value) != 0) {
-                substituted = CTemplateTools_GetArgumentType(arguments, (TypeTemplDep *)parameter->value,
-                                                             parameter->flags, &substitutionInfo);
-                argument->argument.expression = parse_non_type_template_argument(substituted, substitutionInfo);
+                argument->data.typeparam.type = parse.dtype;
+                argument->data.typeparam.qual = parse.qual;
+            } else if (CTemplateTools_IsDependentType(parameter->data.paramdecl.type) != 0) {
+                substituted = CTemplateTools_GetArgumentType(arguments, (TypeTemplDep *)parameter->data.paramdecl.type,
+                                                             parameter->data.paramdecl.qual, &substitutionInfo);
+                argument->data.paramdecl.expr = parse_non_type_template_argument(substituted, substitutionInfo);
             } else {
-                argument->argument.expression = parse_non_type_template_argument(parameter->value, parameter->flags);
+                argument->data.paramdecl.expr =
+                    parse_non_type_template_argument(parameter->data.paramdecl.type, parameter->data.paramdecl.qual);
             }
             if (tk == '>') {
                 continue;
@@ -1216,37 +1210,37 @@ CTStateElem *parse_template_arguments(TemplClass **classType, CTStateElem **resu
             return NULL;
         }
         if (argument->pid.type != 0) {
-            if (parameter->value == NULL) {
+            if (parameter->data.typeparam.type == NULL) {
                 CError_ReportError(ERR_ILLEGAL_TEMPLATE_ARGUMENTS);
                 return NULL;
             }
-            argument->argument.type = parameter->value;
-            argument->qualifiers = parameter->flags;
-            if (parameter->defaultValue.isTypeDependent != 0) {
+            argument->data.typeparam.type = parameter->data.typeparam.type;
+            argument->data.typeparam.qual = parameter->data.typeparam.qual;
+            if (parameter->data.typeparam.isTypeDependent != 0) {
                 memclrw(&context, sizeof(context));
                 context.tmclass = *classType;
                 context.params = parameters;
                 context.inst = NULL;
                 context.args = arguments;
-                argument->qualifiers = parameter->flags;
-                argument->argument.type =
-                    CTemplateTools_ResolveType(&context, argument->argument.type, (UInt32 *)&argument->qualifiers);
+                argument->data.typeparam.qual = parameter->data.typeparam.qual;
+                argument->data.typeparam.type = CTemplateTools_ResolveType(&context, argument->data.typeparam.type,
+                                                                           (UInt32 *)&argument->data.typeparam.qual);
             }
         } else {
-            if (parameter->defaultValue.expression == NULL) {
+            if (parameter->data.paramdecl.defaultarg == NULL) {
                 CError_ReportError(ERR_ILLEGAL_TEMPLATE_ARGUMENTS);
                 return NULL;
             }
-            if (parameter->defaultValue.expression->rtype->type == TYPETEMPLDEPEXPR) {
+            if (parameter->data.paramdecl.defaultarg->rtype->type == TYPETEMPLDEPEXPR) {
                 memclrw(&defaultContext, sizeof(defaultContext));
                 defaultContext.tmclass = *classType;
                 defaultContext.params = parameters;
                 defaultContext.inst = NULL;
                 defaultContext.args = arguments;
-                argument->argument.expression =
-                    fn_00513040(CTemplTool_DeduceExpr(&defaultContext, parameter->defaultValue.expression), 1);
+                argument->data.paramdecl.expr =
+                    fn_00513040(CTemplTool_DeduceExpr(&defaultContext, parameter->data.paramdecl.defaultarg), 1);
             } else {
-                argument->argument.expression = parameter->defaultValue.expression;
+                argument->data.paramdecl.expr = parameter->data.paramdecl.defaultarg;
             }
         }
     }
@@ -1260,10 +1254,10 @@ CTStateElem *parse_template_arguments(TemplClass **classType, CTStateElem **resu
     return arguments;
 }
 
-CTStateElem *CTemplateNew_ParseTemplateArguments(TemplateParameterRecord *parameter, char useGlobalAllocator)
+TemplArg *CTemplateNew_ParseTemplateArguments(TemplParam *parameter, char useGlobalAllocator)
 {
-    CTStateElem *head;
-    CTStateElem *tail;
+    TemplArg *head;
+    TemplArg *tail;
     SInt16 index;
     char argumentKind;
     DeclInfo declaration;
@@ -1316,10 +1310,10 @@ CTStateElem *CTemplateNew_ParseTemplateArguments(TemplateParameterRecord *parame
             if (declaration.name != NULL)
                 CError_ReportError(ERR_DECLARATION_SYNTAX_ERROR);
             CTemplTool_CheckTemplArgType(declaration.dtype);
-            tail->argument.type = declaration.dtype;
-            tail->qualifiers = declaration.qual;
+            tail->data.typeparam.type = declaration.dtype;
+            tail->data.typeparam.qual = declaration.qual;
         } else {
-            tail->argument.expression = parse_non_type_template_argument(NULL, 0);
+            tail->data.paramdecl.expr = parse_non_type_template_argument(NULL, 0);
         }
         if (tk == '>')
             return head;
@@ -1332,13 +1326,13 @@ CTStateElem *CTemplateNew_ParseTemplateArguments(TemplateParameterRecord *parame
     } while (1);
 }
 
-TemplateParameterRecord *parse_template_parameter_list(NameSpace *parserState, unsigned char mode)
+TemplParam *parse_template_parameter_list(NameSpace *parserState, unsigned char mode)
 {
-    TemplateParameterRecord **tail;
-    TemplateParameterRecord *argument;
-    TemplateParameterRecord *previous;
+    TemplParam **tail;
+    TemplParam *argument;
+    TemplParam *previous;
     short index;
-    TemplateParameterRecord *arguments;
+    TemplParam *arguments;
 
     arguments = NULL;
     index = 0;
@@ -1367,17 +1361,16 @@ TemplateParameterRecord *parse_template_parameter_list(NameSpace *parserState, u
     return arguments;
 }
 
-TemplateParameterRecord *parse_template_parameter(NameSpace *owner, TemplateParameterRecord *value, short memberValue,
-                                                  char memberByte)
+TemplParam *parse_template_parameter(NameSpace *owner, TemplParam *value, short memberValue, char memberByte)
 {
-    TemplateParameterRecord *declaration;
+    TemplParam *declaration;
     DeclInfo parsed;
     DeclInfo initializerState;
 
-    declaration = (TemplateParameterRecord *)galloc(sizeof(TemplateParameterRecord));
+    declaration = (TemplParam *)galloc(sizeof(TemplParam));
     memclrw(declaration, sizeof(*declaration));
-    declaration->index = memberValue;
-    switch (declaration->depth = memberByte, tk) {
+    declaration->pid.index = memberValue;
+    switch (declaration->pid.nindex = memberByte, tk) {
         case 0x112:
         case 0x120:
             tk = CPrepTokenizer_GetNextToken();
@@ -1397,11 +1390,11 @@ TemplateParameterRecord *parse_template_parameter(NameSpace *owner, TemplatePara
                 }
                 CError_ReportIllegalFlags(initializerState.qual & ~(Q_CV | Q_PASCAL | Q_REFERENCE | Q_ALIGNED_MASK));
                 CDecl_ParseDeclarator(&initializerState);
-                declaration->value = initializerState.dtype;
-                declaration->flags = initializerState.qual,
-                declaration->defaultValue.isTypeDependent = CTemplateTools_IsDependentType(initializerState.dtype);
+                declaration->data.typeparam.type = initializerState.dtype;
+                declaration->data.typeparam.qual = initializerState.qual,
+                declaration->data.typeparam.isTypeDependent = CTemplateTools_IsDependentType(initializerState.dtype);
             }
-            declaration->isTypeParameter = 1;
+            declaration->pid.type = 1;
             break;
         case 0x14c:
             CError_ReportError(ERR_UNIMPLEMENTED_C_FEATURE);
@@ -1430,10 +1423,11 @@ TemplateParameterRecord *parse_template_parameter(NameSpace *owner, TemplatePara
                     parsed.dtype = (Type *)(&stsignedint);
                     break;
             }
-            declaration->name = parsed.name, declaration->value = parsed.dtype, declaration->flags = parsed.qual;
+            declaration->name = parsed.name, declaration->data.paramdecl.type = parsed.dtype,
+            declaration->data.paramdecl.qual = parsed.qual;
             if (tk == '=') {
                 tk = CPrepTokenizer_GetNextToken();
-                declaration->defaultValue.expression = parse_non_type_template_argument(parsed.dtype, parsed.qual);
+                declaration->data.paramdecl.defaultarg = parse_non_type_template_argument(parsed.dtype, parsed.qual);
             }
             break;
     }

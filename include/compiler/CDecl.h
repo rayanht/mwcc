@@ -38,10 +38,10 @@ struct DeclInfo {
     Type *templateType;
     ENode *arrayBound;
     struct TypeClass *pendingClass;
-    struct CTStateElem *
+    struct TemplArg *
         parsedData; /* 0x2c: CTemplateNew_ParseTemplateArguments supplies the list; CDecl_CopyDeclInfoToNewFunc copies it with CTemplateTools_CopyCTStateElemList */
-    struct TemplateParameterRecord *
-        templateParameters; /* 0x30: parse_function_template_declaration assigns its TemplateParameterRecord *params before CDecl_ParseDeclarator */
+    struct TemplParam *
+        templateParameters; /* 0x30: parse_function_template_declaration assigns its TemplParam *params before CDecl_ParseDeclarator */
     struct TemplateScopeState *templateScope;
     SInt16 operatorToken;
     SInt16 storage;
@@ -85,22 +85,6 @@ struct MemberDecl {
     Boolean valid;                  /* 0xb9: CDecl_ScanStructDeclarator sets declaration validity */
 };
 #pragma pack(pop)
-#pragma pack(push, 1)
-struct TemplateDeclarationData {
-    Type *dtype;              /* 0x00: CDecl_InitDeclInfoFromTemplateDeclarationData copies DeclInfo.dtype */
-    UInt32 qual;              /* 0x04: CDecl_InitDeclInfoFromTemplateDeclarationData copies DeclInfo.qual */
-    struct NameSpace *nspace; /* 0x08: CDecl_InitDeclInfoFromTemplateDeclarationData copies DeclInfo.nspace */
-    HashNameNode *name;       /* 0x0c: CDecl_InitDeclInfoFromTemplateDeclarationData copies DeclInfo.name */
-    struct CTStateElem *
-        parsedData; /* 0x10: CDecl_InitDeclInfoFromTemplateDeclarationData copies DeclInfo.parsedData, copied by CTemplateTools_CopyCTStateElemList */
-    SInt16 storage; /* 0x14: CDecl_InitDeclInfoFromTemplateDeclarationData */
-    SInt16 extraQualifiers;        /* 0x16: CDecl_InitDeclInfoFromTemplateDeclarationData */
-    SInt8 declarationAttributes;   /* 0x18: CDecl_InitDeclInfoFromTemplateDeclarationData */
-    SInt8 hasTemplateArguments;    /* 0x19: CDecl_InitDeclInfoFromTemplateDeclarationData */
-    FileOffsetInfo inlineLocation; /* 0x1a: CTemplateClass.c passes to CInline_AddFunctionPrecNode */
-    TokenStream inlineTokenBuffer; /* 0x24: CTemplateClass.c passes to CInline_AddFunctionPrecNode */
-};
-#pragma pack(pop)
 extern TypeIntegral stunsignedint;
 struct ClassLayout;
 extern UInt8 CDecl_ParseDeclarationAttributeFlags(void);
@@ -122,8 +106,8 @@ extern ObjMemberVar *add_member_var(ClassLayout *declaration, TypeClass *cls, Ty
                                     HashNameNode *name, AccessType access);
 extern void parse_friend_declaration(struct TemplClass *cls);
 extern void CDecl_AddFriend(TypeClass *typeClass, Object *object, Type *type);
-extern void CDecl_InitDeclInfoFromTemplateDeclarationData(DeclInfo *dst, TemplateDeclarationData *src);
-extern unsigned char CDecl_CopyDeclInfoToNewFunc(NewFunc *destination, DeclInfo *source);
+extern void CDecl_InitDeclInfoFromTemplateDeclarationData(DeclInfo *dst, PackedDeclInfo *src);
+extern unsigned char CDecl_CopyDeclInfoToNewFunc(PackedDeclInfo *destination, DeclInfo *source);
 extern Boolean check_qualified_identifier_or_operator(TypeClass *tclass, AccessType access);
 extern TypeMemberFunc *CDecl_NewTypeMemberFunc(TypeFunc *type, TypeClass *theclass, Boolean is_static, Boolean arg);
 extern void scan_inline_definition(Object *object, TypeClass *classType);

@@ -51,10 +51,10 @@ Boolean CTemplateTools_MatchTypeAndCheckBoundSlots(Object *obj, Type *type, void
     DeduceInfo matchState;
     SInt32 slotIndex;
 
-    if (CTemplTool_InitDeduceInfo(&matchState, CTemplTool_GetFuncTempl(obj)->params, (CTStateElem *)templateArgs, 0)) {
+    if (CTemplTool_InitDeduceInfo(&matchState, CTemplTool_GetFuncTempl(obj)->params, (TemplArg *)templateArgs, 0)) {
         if (CTemplateFunc_MatchType(obj->type, 0, type, 0, matchState.args, 1)) {
             for (slotIndex = 0; slotIndex < matchState.maxCount; slotIndex++) {
-                if (matchState.args[slotIndex].bound == 0)
+                if (matchState.args[slotIndex].is_deduced == 0)
                     return 0;
             }
             return 1;
@@ -292,7 +292,7 @@ static Boolean IsTemplDep(ENode *e)
             s;                                                                                                         \
     } while (0)
 
-static inline CTStateElem *find(CTStateElem *e, TemplParamID pid)
+static inline TemplArg *find(TemplArg *e, TemplParamID pid)
 {
     for (; e; e = e->next) {
         if (e->pid.index == pid.index && e->pid.nindex == pid.nindex) {
@@ -313,10 +313,10 @@ static ENode *CloneNode(ENode *src)
     return n;
 }
 
-static ENode *CloneRecNode(CTStateElem *r)
+static ENode *CloneRecNode(TemplArg *r)
 {
     ENode *n = (ENode *)CompilerTools_AllocatePool(sizeof(ENode));
-    *n = *r->argument.expression;
+    *n = *r->data.paramdecl.expr;
     return n;
 }
 
@@ -383,7 +383,7 @@ Type *resolve_templ_dep_type(TypeDeduce *ctx, TypeTemplDep *arg, UInt32 *out)
     Type *type;
     Type *result;
     TypeTemplDep *copy;
-    CTStateElem *item;
+    TemplArg *item;
     TemplClass *resolvedClass;
 
     if (ctx->processingClassTypes != 0) {
@@ -413,8 +413,8 @@ Type *resolve_templ_dep_type(TypeDeduce *ctx, TypeTemplDep *arg, UInt32 *out)
             case 2:
                 for (item = arg->u.templ.args; item != NULL; item = item->next) {
                     if (item->pid.type > 0)
-                        item->argument.type =
-                            CTemplateTools_ResolveType(ctx, item->argument.type, (UInt32 *)&item->qualifiers);
+                        item->data.typeparam.type = CTemplateTools_ResolveType(ctx, item->data.typeparam.type,
+                                                                               (UInt32 *)&item->data.typeparam.qual);
                 }
                 return (Type *)arg;
             case 3:
@@ -425,8 +425,8 @@ Type *resolve_templ_dep_type(TypeDeduce *ctx, TypeTemplDep *arg, UInt32 *out)
                     (TypeTemplDep *)resolve_templ_dep_type(ctx, arg->u.qualtempl.type, &resolutionData);
                 for (item = arg->u.qualtempl.args; item != NULL; item = item->next) {
                     if (item->pid.type > 0)
-                        item->argument.type =
-                            CTemplateTools_ResolveType(ctx, item->argument.type, (UInt32 *)&item->qualifiers);
+                        item->data.typeparam.type = CTemplateTools_ResolveType(ctx, item->data.typeparam.type,
+                                                                               (UInt32 *)&item->data.typeparam.qual);
                 }
                 return (Type *)arg;
             case 5:
@@ -440,8 +440,8 @@ Type *resolve_templ_dep_type(TypeDeduce *ctx, TypeTemplDep *arg, UInt32 *out)
                     return (Type *)arg;
                 item = find_template_argument(ctx, arg->u.pid);
                 CError_ASSERT(1887, item->pid.type != 0);
-                *out = item->qualifiers;
-                return item->argument.type;
+                *out = item->data.typeparam.qual;
+                return item->data.typeparam.type;
             case 1:
                 type = CTemplateTools_ResolveType(ctx, (Type *)arg->u.qual.type, &resolutionData);
                 if (type->type == TYPECLASS) {
@@ -514,7 +514,7 @@ Type *make_bitfield_type(TypeDeduce *ctx, Type *ty, ENode *node, UInt32 *out)
 
     if (CTemplateTools_IsDependentType(ty)) {
         n = 0;
-        ty = CTemplateTools_ResolveType((TypeDeduce *)ctx, ty, &n);
+        ty = CTemplateTools_ResolveType(ctx, ty, &n);
     }
     if (ty->type != TYPEINT && ty->type != TYPEENUM) {
         CError_ReportError(ERR_ILLEGAL_BITFIELD_DECLARATION);
@@ -555,48 +555,48 @@ Type *make_bitfield_type(TypeDeduce *ctx, Type *ty, ENode *node, UInt32 *out)
     return (Type *)tb;
 }
 
-CTStateElem *find_template_argument(struct TypeDeduce *context, struct TemplParamID pid)
+TemplArg *find_template_argument(struct TypeDeduce *context, struct TemplParamID pid)
 {
-    CTStateElem *entry;
+    TemplArg *entry;
     TemplClass *currentClass;
     TemplClass *originalClass;
 
-    if ((entry = find((CTStateElem *)context->args, pid)))
+    if ((entry = find(context->args, pid)))
         return entry;
-    CE_ASSERT((originalClass = (TemplClass *)context->tmclass) == 0, CError_FATAL(1678));
+    CE_ASSERT((originalClass = context->tmclass) == 0, CError_FATAL(1678));
     if (!(currentClass = (TemplClass *)context->inst)) {
         CE_ASSERT(originalClass->templ_parent == 0 || originalClass->inst_parent == 0, CError_FATAL(1681));
-        originalClass = (TemplClass *)context->tmclass;
+        originalClass = context->tmclass;
         currentClass = (TemplClass *)originalClass->inst_parent;
     }
     for (;;) {
-        if ((entry = find((CTStateElem *)currentClass->templ__params, pid)))
+        if ((entry = find((TemplArg *)currentClass->templ__params, pid)))
             return entry;
         if (!(currentClass = currentClass->templ_parent))
             CError_FATAL(1692);
     }
 }
 
-void CTemplateTools_00516930(void *context, TemplClass *function, CTStateElem *arguments)
+void CTemplateTools_00516930(void *context, TemplClass *function, TemplArg *arguments)
 {
-    CTStateElem *source;
-    CTStateElem *head;
-    CTStateElem *tail;
-    TemplateParameterRecord *parameter;
+    TemplArg *source;
+    TemplArg *head;
+    TemplArg *tail;
+    TemplParam *parameter;
 
     if (function->templ_parent != NULL)
         function = fn_00516b50(context, function);
     source = arguments;
     head = NULL;
-    parameter = (TemplateParameterRecord *)function->templ__params;
+    parameter = function->templ__params;
 
     if (source != NULL) {
         do {
             if (head != NULL) {
-                tail->next = (CTStateElem *)galloc(sizeof(CTStateElem));
+                tail->next = (TemplArg *)galloc(sizeof(TemplArg));
                 tail = tail->next;
             } else {
-                tail = (CTStateElem *)galloc(sizeof(CTStateElem));
+                tail = (TemplArg *)galloc(sizeof(TemplArg));
                 head = tail;
             }
             *tail = *source;
@@ -604,31 +604,31 @@ void CTemplateTools_00516930(void *context, TemplClass *function, CTStateElem *a
             tail->pid = parameter->pid;
             parameter = parameter->next;
             if (tail->pid.type != 0) {
-                tail->argument.type =
-                    CTemplateTools_ResolveType((TypeDeduce *)context, tail->argument.type, (UInt32 *)&tail->qualifiers);
-            } else if (tail->argument.expression == NULL) {
+                tail->data.typeparam.type = CTemplateTools_ResolveType((TypeDeduce *)context, tail->data.typeparam.type,
+                                                                       (UInt32 *)&tail->data.typeparam.qual);
+            } else if (tail->data.paramdecl.expr == NULL) {
                 CError_FATAL(1566);
-            } else if (IsTemplDep(tail->argument.expression)) {
-                tail->argument.expression =
-                    CExpr_GeneratePointerAndRewriteConst(CTemplTool_DeduceExpr(context, tail->argument.expression));
-                tail->argument.expression = fn_00513040(tail->argument.expression, 1);
+            } else if (IsTemplDep(tail->data.paramdecl.expr)) {
+                tail->data.paramdecl.expr =
+                    CExpr_GeneratePointerAndRewriteConst(CTemplTool_DeduceExpr(context, tail->data.paramdecl.expr));
+                tail->data.paramdecl.expr = fn_00513040(tail->data.paramdecl.expr, 1);
             }
             source = source->next;
         } while (source != NULL);
     }
 
     {
-        CTStateElem *argument = head;
+        TemplArg *argument = head;
         while (argument != NULL) {
             if (argument->pid.type != 0) {
-                if (CTemplateTools_IsDependentType(argument->argument.type))
+                if (CTemplateTools_IsDependentType(argument->data.typeparam.type))
                     break;
             } else {
-                if (IsTemplDep(argument->argument.expression))
+                if (IsTemplDep(argument->data.paramdecl.expr))
                     break;
-                switch (argument->argument.expression->type) {
+                switch (argument->data.paramdecl.expr->type) {
                     case EOBJREF:
-                        if (CParser_HasInternalLinkage(argument->argument.expression->data.objref))
+                        if (CParser_HasInternalLinkage(argument->data.paramdecl.expr->data.objref))
                             CError_ReportError(ERR_TEMPLATE_NON_TYPE_ARGUMENT_OBJECTS_SHALL);
                         break;
                     case EINTCONST:
@@ -636,7 +636,7 @@ void CTemplateTools_00516930(void *context, TemplClass *function, CTStateElem *a
                         break;
                     default:
                         CError_ReportError(ERR_ILLEGAL_NON_TYPE_TEMPLATE_ARGUMENT);
-                        argument->argument.expression = nullnode();
+                        argument->data.paramdecl.expr = nullnode();
                 }
             }
             argument = argument->next;
@@ -667,7 +667,7 @@ TemplClass *fn_00516b50(TemplateLookupContext *context, TemplClass *record)
         CError_FATAL(1472);
     }
     for (;;) {
-        if ((TemplClass *)record->templ_parent == owner) {
+        if (record->templ_parent == owner) {
             result = (TemplClass *)CScope_GetTagType(scope->theclass.nspace, record->theclass.classname);
             if ((((result != NULL) && (result->theclass.type == TYPECLASS)) &&
                  ((result->theclass.flags & CLASS_IS_TEMPL) != 0)) &&
@@ -675,11 +675,11 @@ TemplClass *fn_00516b50(TemplateLookupContext *context, TemplClass *record)
                 return result;
             }
         }
-        owner = (TemplClass *)owner->templ_parent;
+        owner = owner->templ_parent;
         if (owner == NULL) {
             break;
         }
-        scope = (TemplClass *)scope->templ_parent;
+        scope = scope->templ_parent;
         if (scope == NULL) {
             CError_FATAL(1486);
         }
@@ -693,14 +693,14 @@ TemplClass *fn_00516b50(TemplateLookupContext *context, TemplClass *record)
 ENode *CTemplTool_DeduceExpr(TypeDeduce *ctx, ENode *node)
 {
     ObjectList *entry;
-    CTStateElem *outerRecord;
+    TemplArg *outerRecord;
     ENodeList *argument;
     ENode *result;
     Boolean dependent;
     ENodeList *arguments;
     ENodeList *sourceArgument;
     ENode *function;
-    CTStateElem *record;
+    TemplArg *record;
     TemplClassInst *group;
     Type *type;
     TypeClass *classType;
@@ -729,19 +729,19 @@ ENode *CTemplTool_DeduceExpr(TypeDeduce *ctx, ENode *node)
                         node->data.templatecomparison.u.wb.templateLevel == ctx->nindex) {
                         return CloneNode(node);
                     }
-                    for (record = (CTStateElem *)ctx->args; record != NULL; record = record->next) {
+                    for (record = ctx->args; record != NULL; record = record->next) {
                         if (record->pid.index == node->data.templatecomparison.u.wb.parameterIndex &&
                             record->pid.nindex == node->data.templatecomparison.u.wb.templateLevel) {
-                            CError_ASSERT(1310, record->pid.type == 0 && record->argument.type != NULL);
+                            CError_ASSERT(1310, record->pid.type == 0 && record->data.typeparam.type != NULL);
                             return CloneRecNode(record);
                         }
                     }
-                    for (group = (TemplClassInst *)ctx->inst; group != NULL; group = (TemplClassInst *)group->parent) {
-                        for (outerRecord = (CTStateElem *)group->inst_args; outerRecord != NULL;
-                             outerRecord = outerRecord->next) {
+                    for (group = ctx->inst; group != NULL; group = group->parent) {
+                        for (outerRecord = group->inst_args; outerRecord != NULL; outerRecord = outerRecord->next) {
                             if (outerRecord->pid.index == node->data.templatecomparison.u.wb.parameterIndex &&
                                 outerRecord->pid.nindex == node->data.templatecomparison.u.wb.templateLevel) {
-                                CError_ASSERT(1323, outerRecord->pid.type == 0 && outerRecord->argument.type != NULL);
+                                CError_ASSERT(1323,
+                                              outerRecord->pid.type == 0 && outerRecord->data.typeparam.type != NULL);
                                 return CloneRecNode(outerRecord);
                             }
                         }
@@ -806,8 +806,7 @@ ENode *CTemplTool_DeduceExpr(TypeDeduce *ctx, ENode *node)
                     expression.object = (ObjBase *)entry->object.value;
                     return CExpr_GeneratePointerAndRewriteConst(CExpr_MakeNameLookupResultExpr(&expression));
                 case 6:
-                    CError_SaveAndSetWrittenEntry((CPrecWrittenEntry *)NP(node)->data.templatecomparison.p4,
-                                                  &savedScope);
+                    CError_SaveAndSetWrittenEntry((TStreamElement *)NP(node)->data.templatecomparison.p4, &savedScope);
                     result = CTemplTool_DeduceExpr(ctx, (ENode *)NP(node)->data.templatecomparison.u.p0);
                     CError_SetWrittenEntry(&savedScope);
                     return result;
@@ -875,10 +874,10 @@ TemplClassInst *find_corresponding_instance_class(TypeDeduce *list, TypeClass *t
 
     if ((p = ((TemplClassInst *)list->tmclass)) == NULL)
         CError_FATAL(1170);
-    if ((q = ((TemplClassInst *)list->inst)) == NULL) {
+    if ((q = (list->inst)) == NULL) {
         if (!(p->parent != NULL && p->templ != NULL))
             CError_FATAL(1173);
-        p = (TemplClassInst *)p->parent;
+        p = p->parent;
         q = (TemplClassInst *)((TemplClassInst *)list->tmclass)->templ;
     }
     cur = p;
@@ -886,10 +885,10 @@ TemplClassInst *find_corresponding_instance_class(TypeDeduce *list, TypeClass *t
     while (1) {
         if (&cur->theclass == targetClass)
             return curq;
-        cur = (TemplClassInst *)cur->parent;
+        cur = cur->parent;
         if (cur == NULL)
             break;
-        curq = (TemplClassInst *)curq->parent;
+        curq = curq->parent;
         if (!(curq != NULL))
             CError_FATAL(1186);
     }
@@ -898,21 +897,21 @@ TemplClassInst *find_corresponding_instance_class(TypeDeduce *list, TypeClass *t
         for (;;) {
             if (p->inst_args != NULL)
                 break;
-            p = (TemplClassInst *)p->parent;
+            p = p->parent;
             if (!(p != NULL))
                 CError_FATAL(1195);
-            q = (TemplClassInst *)q->parent;
+            q = q->parent;
             if (!(q != NULL))
                 CError_FATAL(1196);
         }
         cur = (TemplClassInst *)targetClass;
-        cur = (TemplClassInst *)cur->parent;
+        cur = cur->parent;
         while (cur != NULL) {
             if (cur == p)
                 return fn_00517270(targetClass, p, q);
             if (cur->inst_args != NULL)
                 break;
-            cur = (TemplClassInst *)cur->parent;
+            cur = cur->parent;
         }
     }
     CError_FATAL(1225);
@@ -948,15 +947,15 @@ TemplClassInst *fn_00517270(TypeClass *current, TemplClassInst *limit, TemplClas
     }
     do {
         record = (TemplClassInst *)ancestors[depth];
-        match = (TemplClassInst *)((TemplClass *)record)->instances;
+        match = ((TemplClass *)record)->instances;
         depth = depth - 1;
         while (1) {
             if (match == NULL) {
                 CError_FATAL(1146);
             }
-            if ((TemplClassInst *)match->parent == target)
+            if (match->parent == target)
                 break;
-            match = (TemplClassInst *)match->next;
+            match = match->next;
         }
         target = match;
         if ((match->theclass.flags & (CLASS_COMPLETED | CLASS_IS_TEMPL_INST)) == 0x800) {
@@ -966,7 +965,7 @@ TemplClassInst *fn_00517270(TypeClass *current, TemplClassInst *limit, TemplClas
     return match;
 }
 
-Type *CTemplateTools_GetArgumentType(CTStateElem *record, TypeTemplDep *key, unsigned int qualifiers,
+Type *CTemplateTools_GetArgumentType(TemplArg *record, TypeTemplDep *key, unsigned int qualifiers,
                                      unsigned int *resultQualifiers)
 {
     UInt16 index;
@@ -981,8 +980,8 @@ Type *CTemplateTools_GetArgumentType(CTStateElem *record, TypeTemplDep *key, uns
         if (record->pid.type == 0) {
             CError_FATAL(1107);
         }
-        *resultQualifiers |= record->qualifiers;
-        return record->argument.type;
+        *resultQualifiers |= record->data.typeparam.qual;
+        return record->data.typeparam.type;
     }
     CError_ReportError(190U);
     return (Type *)&stsignedint;
@@ -1016,27 +1015,27 @@ Boolean CTemplTool_TemplDepTypeCompare(TypeTemplDep *a, TypeTemplDep *b)
     }
 }
 
-CTStateElem *CTemplateTools_CopyCTStateElemList(CTStateElem *p)
+TemplArg *CTemplateTools_CopyCTStateElemList(TemplArg *p)
 {
-    CTStateElem *res = NULL;
-    CTStateElem *cur;
+    TemplArg *res = NULL;
+    TemplArg *cur;
 
     while (p != NULL) {
         if (res != NULL) {
-            cur->next = (CTStateElem *)galloc(sizeof(CTStateElem));
+            cur->next = (TemplArg *)galloc(sizeof(TemplArg));
             cur = cur->next;
         } else {
-            res = cur = (CTStateElem *)galloc(sizeof(CTStateElem));
+            res = cur = (TemplArg *)galloc(sizeof(TemplArg));
         }
         *cur = *p;
-        if (cur->pid.type == 0 && cur->argument.expression != NULL)
-            cur->argument.expression = fn_00513040(cur->argument.expression, 1);
+        if (cur->pid.type == 0 && cur->data.paramdecl.expr != NULL)
+            cur->data.paramdecl.expr = fn_00513040(cur->data.paramdecl.expr, 1);
         p = p->next;
     }
     return res;
 }
 
-UInt8 CTemplTool_EqualArgs(CTStateElem *left, CTStateElem *right)
+UInt8 CTemplTool_EqualArgs(TemplArg *left, TemplArg *right)
 {
     SInt16 namesEqual;
     UInt8 argumentsEqual;
@@ -1047,13 +1046,14 @@ UInt8 CTemplTool_EqualArgs(CTStateElem *left, CTStateElem *right)
             }
             if (left->pid.type != '\0') {
                 if ((right->pid.type == '\0') ||
-                    (namesEqual = iscpp_typeequal(left->argument.type, right->argument.type), namesEqual == 0) ||
-                    (left->qualifiers != right->qualifiers)) {
+                    (namesEqual = iscpp_typeequal(left->data.typeparam.type, right->data.typeparam.type),
+                     namesEqual == 0) ||
+                    (left->data.typeparam.qual != right->data.typeparam.qual)) {
                     return '\0';
                 }
             } else {
                 if ((right->pid.type != '\0') ||
-                    (argumentsEqual = CTemplateTools_00517a40(left->argument.expression, right->argument.expression),
+                    (argumentsEqual = CTemplateTools_00517a40(left->data.paramdecl.expr, right->data.paramdecl.expr),
                      argumentsEqual == '\0')) {
                     return '\0';
                 }
@@ -1192,27 +1192,27 @@ Boolean CTemplateTools_00517a40(ENode *left, ENode *right)
     return 0;
 }
 
-Type *CTemplTool_IsDependentTemplate(TemplClass *templateClass, CTStateElem *arguments)
+Type *CTemplTool_IsDependentTemplate(TemplClass *templateClass, TemplArg *arguments)
 {
     TypeTemplDep *result;
-    TemplateParameterRecord *parameter;
-    CTStateElem *argument;
+    TemplParam *parameter;
+    TemplArg *argument;
     unsigned char dependent;
     if (!templateClass->templ_parent || templateClass->inst_parent) {
         argument = arguments;
-        parameter = (TemplateParameterRecord *)templateClass->templ__params;
+        parameter = templateClass->templ__params;
         for (;;) {
             if (!argument) {
                 if (parameter)
                     CError_FATAL(806);
                 return NULL;
             }
-            if (!parameter || (unsigned char)argument->pid.type != (unsigned char)parameter->isTypeParameter)
+            if (!parameter || (unsigned char)argument->pid.type != (unsigned char)parameter->pid.type)
                 CError_FATAL(809);
             if (argument->pid.type) {
-                dependent = CTemplateTools_IsDependentType(argument->argument.type);
+                dependent = CTemplateTools_IsDependentType(argument->data.typeparam.type);
             } else {
-                TypePointer *type = (TypePointer *)argument->argument.type;
+                TypePointer *type = (TypePointer *)argument->data.typeparam.type;
                 if (!type)
                     dependent = 0;
                 else
@@ -1240,12 +1240,12 @@ TypeClass *CTemplateTools_GetTemplClass(TypeTemplDep *record)
     } else if (record->kind != 2) {
         return NULL;
     }
-    if (CTemplTool_IsSameTemplate(((TemplClass *)record->u.templ.templ)->templ__params, record->u.templ.args))
+    if (CTemplTool_IsSameTemplate((record->u.templ.templ)->templ__params, record->u.templ.args))
         return (TypeClass *)record->u.templ.templ;
     return NULL;
 }
 
-UInt8 CTemplTool_IsSameTemplate(TemplateParameterRecord *parameter, CTStateElem *argument)
+UInt8 CTemplTool_IsSameTemplate(TemplParam *parameter, TemplArg *argument)
 {
     for (;;) {
         if (argument == NULL) {
@@ -1257,16 +1257,17 @@ UInt8 CTemplTool_IsSameTemplate(TemplateParameterRecord *parameter, CTStateElem 
             CError_FATAL(684);
 
         if (argument->pid.type) {
-            if (argument->argument.type->type != TYPETEMPLATE || ((TypeTemplDep *)argument->argument.type)->kind != 0 ||
-                ((TypeTemplDep *)argument->argument.type)->u.pid.nindex != parameter->pid.nindex ||
-                ((TypeTemplDep *)argument->argument.type)->u.pid.index != parameter->pid.index ||
-                argument->qualifiers != 0)
+            if (argument->data.typeparam.type->type != TYPETEMPLATE ||
+                ((TypeTemplDep *)argument->data.typeparam.type)->kind != 0 ||
+                ((TypeTemplDep *)argument->data.typeparam.type)->u.pid.nindex != parameter->pid.nindex ||
+                ((TypeTemplDep *)argument->data.typeparam.type)->u.pid.index != parameter->pid.index ||
+                argument->data.typeparam.qual != 0)
                 return 0;
         } else {
-            if (argument->argument.expression->type != EOBJLIST ||
-                argument->argument.expression->data.templatecomparison.tag != 0 ||
-                argument->argument.expression->data.templatecomparison.u.wb.templateLevel != parameter->pid.nindex ||
-                argument->argument.expression->data.templatecomparison.u.wb.parameterIndex != parameter->pid.index)
+            if (argument->data.paramdecl.expr->type != EOBJLIST ||
+                argument->data.paramdecl.expr->data.templatecomparison.tag != 0 ||
+                argument->data.paramdecl.expr->data.templatecomparison.u.wb.templateLevel != parameter->pid.nindex ||
+                argument->data.paramdecl.expr->data.templatecomparison.u.wb.parameterIndex != parameter->pid.index)
                 return 0;
         }
         argument = argument->next;
@@ -1350,7 +1351,7 @@ void CTemplTool_RemoveOuterTemplateArgumentNameSpace(NameSpace *ns)
     }
 }
 
-NameSpace *CTemplateTools_InsertTemplateArgs(FuncArg *context, TemplClassInst *function, CScopeSave *scope)
+NameSpace *CTemplateTools_InsertTemplateArgs(TemplParam *context, TemplClassInst *function, CScopeSave *scope)
 {
     NameSpace *args;
     NameSpace *arg;
@@ -1360,8 +1361,8 @@ NameSpace *CTemplateTools_InsertTemplateArgs(FuncArg *context, TemplClassInst *f
     function->theclass.nspace->parent = args;
     for (arg = args; arg != NULL; arg = arg->parent) {
         if ((type = (TemplClassInst *)arg->theclass) != NULL && (type->theclass.flags & 0x800U) != 0U) {
-            NameSpace *expanded = CTemplTool_SetupTemplateArgumentNameSpace(
-                (FuncArg *)((TemplClass *)type->templ)->templ__params, type->inst_args, 0);
+            NameSpace *expanded =
+                CTemplTool_SetupTemplateArgumentNameSpace((type->templ)->templ__params, type->inst_args, 0);
             expanded->parent = arg->parent;
             arg->parent = expanded;
         }
@@ -1378,8 +1379,8 @@ void CTemplTool_SetupOuterTemplateArgumentNameSpace(NameSpace *nameSpace)
     while (nameSpace != NULL) {
         if (nameSpace->theclass != NULL && (nameSpace->theclass->flags & CLASS_IS_TEMPL_INST) != 0) {
             classInfo = (TemplClassInst *)nameSpace->theclass;
-            newNameSpace = CTemplTool_SetupTemplateArgumentNameSpace(
-                (FuncArg *)((TemplClass *)classInfo->templ)->templ__params, classInfo->inst_args, 0);
+            newNameSpace =
+                CTemplTool_SetupTemplateArgumentNameSpace((classInfo->templ)->templ__params, classInfo->inst_args, 0);
             newNameSpace->parent = nameSpace->parent;
             nameSpace->parent = newNameSpace;
         }
@@ -1387,7 +1388,7 @@ void CTemplTool_SetupOuterTemplateArgumentNameSpace(NameSpace *nameSpace)
     }
 }
 
-NameSpace *CTemplTool_SetupTemplateArgumentNameSpace(FuncArg *arglist, CTStateElem *targlist, Boolean flag)
+NameSpace *CTemplTool_SetupTemplateArgumentNameSpace(TemplParam *arglist, TemplArg *targlist, Boolean flag)
 {
     Boolean copy;
     NameSpace *ns;
@@ -1418,10 +1419,10 @@ NameSpace *CTemplTool_SetupTemplateArgumentNameSpace(FuncArg *arglist, CTStateEl
                 obj->access = ACCESSPUBLIC;
                 obj->nspace = ns;
                 obj->name = arglist->name;
-                obj->type = targlist->argument.expression->rtype;
-                obj->qual = targlist->argument.expression->flags & ENODE_FLAG_QUALS;
+                obj->type = targlist->data.paramdecl.expr->rtype;
+                obj->qual = targlist->data.paramdecl.expr->flags & ENODE_FLAG_QUALS;
                 obj->datatype = DEXPR;
-                obj->u.expr = targlist->argument.expression;
+                obj->u.expr = targlist->data.paramdecl.expr;
                 if (flag)
                     obj->u.expr = fn_00513040(obj->u.expr, 1);
             } else {
@@ -1435,8 +1436,8 @@ NameSpace *CTemplTool_SetupTemplateArgumentNameSpace(FuncArg *arglist, CTStateEl
                 }
                 typeObject->otype = OT_TYPE;
                 typeObject->access = ACCESSPUBLIC;
-                typeObject->type = (Type *)targlist->argument.expression;
-                typeObject->qual = targlist->qualifiers;
+                typeObject->type = targlist->data.typeparam.type;
+                typeObject->qual = targlist->data.typeparam.qual;
                 obj = (Object *)typeObject;
             }
             CScope_AddObject(ns, arglist->name, (ObjBase *)obj);
@@ -1449,7 +1450,7 @@ NameSpace *CTemplTool_SetupTemplateArgumentNameSpace(FuncArg *arglist, CTStateEl
     return ns;
 }
 
-UInt8 CTemplTool_EqualParams(TemplateParameterRecord *left, TemplateParameterRecord *right, char copyValue)
+UInt8 CTemplTool_EqualParams(TemplParam *left, TemplParam *right, char copyValue)
 {
     SInt16 stringsMatch;
 
@@ -1460,15 +1461,15 @@ UInt8 CTemplTool_EqualParams(TemplateParameterRecord *left, TemplateParameterRec
         if (right == NULL) {
             return '\0';
         }
-        if (left->isTypeParameter != right->isTypeParameter) {
+        if (left->pid.type != right->pid.type) {
             return '\0';
         }
         if (copyValue != '\0') {
             left->name = right->name;
         }
-        if (left->isTypeParameter == '\0') {
-            stringsMatch = iscpp_typeequal(left->value, right->value);
-            if ((stringsMatch == 0) || (left->flags != right->flags)) {
+        if (left->pid.type == '\0') {
+            stringsMatch = iscpp_typeequal(left->data.paramdecl.type, right->data.paramdecl.type);
+            if ((stringsMatch == 0) || (left->data.paramdecl.qual != right->data.paramdecl.qual)) {
                 return '\0';
             }
         }
@@ -1502,7 +1503,7 @@ void CTemplTool_MergeArgNames(Type *sourceFunc, Type *destinationFunc)
     CTemplateTools_SetFirstArgName((TypeMemberFunc *)destinationFunc);
 }
 
-void CTemplTool_MergeDefaultArgs(TemplateParameterRecord *destination, TemplateParameterRecord *source)
+void CTemplTool_MergeDefaultArgs(TemplParam *destination, TemplParam *source)
 {
     do {
         if (destination == NULL) {
@@ -1514,16 +1515,16 @@ void CTemplTool_MergeDefaultArgs(TemplateParameterRecord *destination, TemplateP
         if (source == NULL) {
             CError_FATAL(342);
         }
-        if (destination->isTypeParameter != source->isTypeParameter) {
+        if (destination->pid.type != source->pid.type) {
             CError_FATAL(343);
         }
-        if (destination->isTypeParameter != 0) {
-            if (destination->value == NULL && source->value != NULL) {
-                memcpy(&destination->value, &source->value, 12);
+        if (destination->pid.type != 0) {
+            if (destination->data.typeparam.type == NULL && source->data.typeparam.type != NULL) {
+                memcpy(&destination->data, &source->data, 12);
             }
         } else {
-            if (destination->defaultValue.expression == NULL && source->defaultValue.expression != NULL) {
-                memcpy(&destination->value, &source->value, 12);
+            if (destination->data.paramdecl.defaultarg == NULL && source->data.paramdecl.defaultarg != NULL) {
+                memcpy(&destination->data, &source->data, 12);
             }
         }
         destination = destination->next;
@@ -1552,11 +1553,11 @@ TemplClass *CTemplTool_IsTemplate(TypeTemplDep *reference)
     TypeClass *nestedInstance;
     TemplClass *nestedClass;
     TemplClass *resolved;
-    CTStateElem *arguments;
+    TemplArg *arguments;
     CE_ASSERT(reference->type != TYPETEMPLATE, CError_FATAL(242));
     if (reference->kind == 2) {
-        if (CTemplTool_IsIdenticalTemplArgList(reference->u.templ.args,
-                                               ((TemplClass *)reference->u.templ.templ)->templ__params) != 0) {
+        if (CTemplTool_IsIdenticalTemplArgList(reference->u.templ.args, (reference->u.templ.templ)->templ__params) !=
+            0) {
             return reference->u.templ.templ;
         }
         if (((target = reference->u.templ.templ))->pspecs != NULL) {
@@ -1600,7 +1601,7 @@ TemplClass *CTemplTool_IsTemplate(TypeTemplDep *reference)
 /* Records used by the template argument comparison. */
 /* The two layouts referenced by a pattern's value. */
 
-UInt8 CTemplTool_IsIdenticalTemplArgList(CTStateElem *pattern, TemplateParameterRecord *argument)
+UInt8 CTemplTool_IsIdenticalTemplArgList(TemplArg *pattern, TemplParam *argument)
 {
     TypeTemplDep *type;
     while (pattern != NULL) {
@@ -1609,15 +1610,15 @@ UInt8 CTemplTool_IsIdenticalTemplArgList(CTStateElem *pattern, TemplateParameter
         if (argument->pid.type != pattern->pid.type)
             CError_FATAL(207);
         if (pattern->pid.type) {
-            if (pattern->argument.type->type != TYPETEMPLATE ||
-                (type = (TypeTemplDep *)pattern->argument.type)->kind != 0 ||
-                type->u.pid.index != argument->pid.index || type->u.pid.nindex != argument->depth)
+            if (pattern->data.typeparam.type->type != TYPETEMPLATE ||
+                (type = (TypeTemplDep *)pattern->data.typeparam.type)->kind != 0 ||
+                type->u.pid.index != argument->pid.index || type->u.pid.nindex != argument->pid.nindex)
                 return 0;
         } else {
-            if (pattern->argument.expression->type != EOBJLIST ||
-                pattern->argument.expression->data.templatecomparison.tag != 0 ||
-                pattern->argument.expression->data.templatecomparison.u.wb.parameterIndex != argument->pid.index ||
-                pattern->argument.expression->data.templatecomparison.u.wb.templateLevel != argument->depth)
+            if (pattern->data.paramdecl.expr->type != EOBJLIST ||
+                pattern->data.paramdecl.expr->data.templatecomparison.tag != 0 ||
+                pattern->data.paramdecl.expr->data.templatecomparison.u.wb.parameterIndex != argument->pid.index ||
+                pattern->data.paramdecl.expr->data.templatecomparison.u.wb.templateLevel != argument->pid.nindex)
                 return 0;
         }
         pattern = pattern->next;
@@ -1626,17 +1627,17 @@ UInt8 CTemplTool_IsIdenticalTemplArgList(CTStateElem *pattern, TemplateParameter
     return argument == NULL;
 }
 
-CTStateElem *CTemplateTools_CopySlotsToList(struct DeduceInfo *src)
+TemplArg *CTemplateTools_CopySlotsToList(struct DeduceInfo *src)
 {
     SInt32 i = 0;
-    CTStateElem *head;
-    CTStateElem *ep;
+    TemplArg *head;
+    TemplArg *ep;
 
     for (i = 0; i < src->maxCount; i++) {
         if (i != 0) {
-            ep = ep->next = (CTStateElem *)galloc(0x12);
+            ep = ep->next = (TemplArg *)galloc(0x12);
         } else {
-            ep = (CTStateElem *)galloc(0x12);
+            ep = (TemplArg *)galloc(0x12);
             head = ep;
         }
         *ep = src->args[i];
@@ -1645,7 +1646,7 @@ CTStateElem *CTemplateTools_CopySlotsToList(struct DeduceInfo *src)
     return head;
 }
 
-void CTemplTool_InsertTemplateParameter(NameSpace *scope, TemplateParameterRecord *source)
+void CTemplTool_InsertTemplateParameter(NameSpace *scope, TemplParam *source)
 {
     TypeTemplDep *nspace;
     ObjType *object;
@@ -1664,14 +1665,13 @@ void CTemplTool_InsertTemplateParameter(NameSpace *scope, TemplateParameterRecor
 #ifndef FALSE
 #endif
 
-Boolean CTemplTool_InitDeduceInfo(DeduceInfo *info, TemplateParameterRecord *params, CTStateElem *args,
-                                  Boolean allowUnnamed)
+Boolean CTemplTool_InitDeduceInfo(DeduceInfo *info, TemplParam *params, TemplArg *args, Boolean allowUnnamed)
 {
     SInt32 argumentIndex;
     SInt32 parameterIndex;
-    CTStateElem *slots;
-    CTStateElem *nextSlot;
-    TemplateParameterRecord *parameter;
+    TemplArg *slots;
+    TemplArg *nextSlot;
+    TemplParam *parameter;
     SInt32 count;
 
     if (params == NULL) {
@@ -1691,7 +1691,7 @@ Boolean CTemplTool_InitDeduceInfo(DeduceInfo *info, TemplateParameterRecord *par
     }
 
     if (count > 16) {
-        slots = (CTStateElem *)CompilerTools_AllocatePool(count * sizeof(*slots));
+        slots = (TemplArg *)CompilerTools_AllocatePool(count * sizeof(*slots));
         memclrw(slots, count * sizeof(*slots));
     } else {
         slots = info->argBuffer;
@@ -1699,7 +1699,7 @@ Boolean CTemplTool_InitDeduceInfo(DeduceInfo *info, TemplateParameterRecord *par
 
     info->args = slots;
     info->maxCount = count;
-    info->depth = params->depth;
+    info->depth = params->pid.nindex;
 
     count = 0;
     parameter = params;
@@ -1714,23 +1714,24 @@ Boolean CTemplTool_InitDeduceInfo(DeduceInfo *info, TemplateParameterRecord *par
     if (args != NULL) {
         nextSlot = slots;
         do {
-            TemplateSlot *argument;
+            TemplArg *argument;
             if (parameter == NULL || parameter->pid.type != args->pid.type) {
                 return FALSE;
             }
-            argument = (TemplateSlot *)args;
-            ((TemplateSlot *)slots)[argumentIndex].types = argument->types;
+            argument = args;
+            (slots)[argumentIndex].data = argument->data;
             if (argumentIndex > 0) {
                 slots[argumentIndex - 1].next = nextSlot;
             }
             slots[argumentIndex].next = NULL;
-            slots[argumentIndex].bound = TRUE;
+            slots[argumentIndex].is_deduced = TRUE;
             info->count++;
-            if (parameter->isTypeParameter == 0) {
-                if (assign_check(slots[argumentIndex].argument.expression, parameter->value, parameter->flags, 0, 0,
-                                 0)) {
-                    slots[argumentIndex].argument.expression = oldassignmentpromotion(
-                        slots[argumentIndex].argument.expression, parameter->value, parameter->flags, 0);
+            if (parameter->pid.type == 0) {
+                if (assign_check(slots[argumentIndex].data.paramdecl.expr, parameter->data.paramdecl.type,
+                                 parameter->data.paramdecl.qual, 0, 0, 0)) {
+                    slots[argumentIndex].data.paramdecl.expr =
+                        oldassignmentpromotion(slots[argumentIndex].data.paramdecl.expr, parameter->data.paramdecl.type,
+                                               parameter->data.paramdecl.qual, 0);
                 } else {
                     return FALSE;
                 }
@@ -1746,13 +1747,13 @@ Boolean CTemplTool_InitDeduceInfo(DeduceInfo *info, TemplateParameterRecord *par
         parameter = params;
         parameterIndex = 0;
         while (parameter != NULL) {
-            if (slots[parameterIndex].bound == 0 && parameter->name == NULL) {
+            if (slots[parameterIndex].is_deduced == 0 && parameter->name == NULL) {
                 if (args->pid.type != 0) {
-                    slots[parameterIndex].argument.type = &stvoid;
+                    slots[parameterIndex].data.typeparam.type = &stvoid;
                 } else {
-                    slots[parameterIndex].argument.expression = nullnode();
+                    slots[parameterIndex].data.paramdecl.expr = nullnode();
                 }
-                slots[parameterIndex].bound = TRUE;
+                slots[parameterIndex].is_deduced = TRUE;
             }
             parameter = parameter->next;
             parameterIndex++;
@@ -1762,9 +1763,9 @@ Boolean CTemplTool_InitDeduceInfo(DeduceInfo *info, TemplateParameterRecord *par
     return TRUE;
 }
 
-struct ObjectReferenceEntry *CTemplateTools_PopObjectReferenceEntry(struct ObjectReferenceEntry *entry)
+struct TemplStack *CTemplateTools_PopObjectReferenceEntry(struct TemplStack *entry)
 {
-    struct ObjectReferenceEntry *next;
+    struct TemplStack *next;
     if (object_reference_stack != entry)
         CError_FATAL(53);
     next = entry->next;

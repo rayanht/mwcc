@@ -2,6 +2,7 @@
 #define COMPILER_CPREC_H
 
 #include "compiler/common.h"
+#include "compiler/templates.h"
 #include "compiler/CInline.h"
 #include "compiler/CPrep.h"
 #include "compiler/InlineAsm.h"
@@ -93,7 +94,7 @@ struct CPrecNode {
                 *classTemplate; /* 0x08: CInline_DispatchNextDeferredNode kind == 1 calls CTemplateNew_CompileObject */
             struct TemplClassInst
                 *context; /* 0x0c: CInline_DispatchNextDeferredNode kind == 1 calls CTemplateNew_CompileObject */
-            struct TemplateSourceRecordTyped
+            struct TemplateMember
                 *source; /* 0x10: CInline_DispatchNextDeferredNode kind == 1 calls CTemplateNew_CompileObject */
         } k1;
         struct {
@@ -123,7 +124,7 @@ union CPrecPtrU {
 struct CPrecSub {
     struct CPrecSub *next;
     struct Object *object;
-    struct CTStateElem *templateArguments;
+    struct TemplArg *templateArguments;
 };
 #pragma options align = reset
 union LongBytes {
@@ -167,23 +168,6 @@ struct SerializedBucketEntry {
     struct SerializedBucketEntry *next;
     unsigned int offset;
 };
-#pragma options align = mac68k
-struct TemplateFunction {
-    struct TemplateFunction *next;
-    struct TemplateFunction *original;
-    struct HashNameNode *name;
-    struct TemplateParameterRecord *
-        params; /* 0x0c: parse_function_template_declaration compares template parameters with CTemplTool_EqualParams */
-    TokenStream stream;
-    TStreamElement deftoken;
-    struct Object *tfunc;
-    struct TemplFuncInstance *instances;
-    struct CPrepFileInfo
-        *srcfile; /* 0x38: write_template_function_browse_record reads source fileID and recordbrowseinfo */
-    SInt32 startoffset;
-    SInt32 endoffset;
-};
-#pragma options align = reset
 struct SelectorMethod;
 struct SelectorMethod;
 extern void CPrec_LoadPrecompiledHeader(short file, UInt8 *buffer);
@@ -211,9 +195,9 @@ extern SInt32 write_enode(ENode *node);
 extern SInt32 serialize_cpsi_list(struct CException *x);
 extern UInt32 write_typeclass(TypeClass *node);
 extern TemplateFunction *write_template_function(struct TemplateFunction *x);
-extern unsigned int write_prec_input_record(struct TemplateDeclarationData *record);
-extern UInt32 serialize_prec_records(struct TemplateSourceRecordTyped *node);
-extern SInt32 serialize_pre_nodes(struct TemplateParameterRecord *node);
+extern unsigned int write_prec_input_record(struct TemplateFriend *record);
+extern UInt32 serialize_prec_records(struct TemplateMember *node);
+extern SInt32 serialize_pre_nodes(struct TemplParam *node);
 extern unsigned int serialize_objc_info(struct ObjCInfo *record);
 extern CRec *write_crec_list(CRec *x);
 extern ObjectList *write_object_list(ObjectList *x);
@@ -251,10 +235,10 @@ extern unsigned int write_except_spec_list(ExceptSpecList *record);
 extern UInt32 write_object(Object *obj);
 extern int patch_object_reference(SInt32 location, HashNameNode *object);
 extern int add_serialized_bucket_entry(SInt32 offset, SInt32 listIndex);
-extern SInt32 serialize_template_class_declarations(TemplateClassDeclaration *list);
+extern SInt32 serialize_template_class_declarations(TemplateAction *list);
 extern SInt32 serialize_cprec_rec(struct CInlineInfo *p);
 extern SInt32 write_namespace_object_list(NameSpaceObjectList *x);
-extern SInt32 serialize_ct_state_elems(CTStateElem *p);
+extern SInt32 serialize_ct_state_elems(TemplArg *p);
 extern SInt32 write_objc_parameter_nodes(ObjCParameterNode *p);
 extern ClassList *write_class_list(ClassList *x);
 extern int write_templdep(TypeTemplDep *node);

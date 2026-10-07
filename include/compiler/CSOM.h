@@ -183,11 +183,6 @@ extern struct CSOMRefNode *somReferences;
 extern void fn_004e67a0(void);
 extern void CSOM_NoOp(void);
 struct SOMEntry;
-/* CSOM_CreateMemberAccessExpr: access the extension only after testing ObjMemberVar::has_path. */
-static inline struct BClassList *MemberVarAlias_GetBases(ObjMemberVar *member)
-{
-    return ((MemberVarAlias *)member)->bases;
-}
 
 #ifdef __cplusplus
 }
