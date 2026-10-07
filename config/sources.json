@@ -1239,8 +1239,7 @@
     ],
     "include_dirs": [
       "src/driver"
-    ],
-    "status": "NonMatching"
+    ]
   },
   "src/driver/Targets.c": {
     "compiler": "pro53",
@@ -1585,8 +1584,7 @@
     ],
     "include_dirs": [
       "src/frontend"
-    ],
-    "status": "NonMatching"
+    ]
   },
   "src/frontend/CObjC.c": {
     "compiler": "pro53",
@@ -1711,8 +1709,7 @@
     "include_dirs": [
       "src/frontend",
       "include"
-    ],
-    "status": "NonMatching"
+    ]
   },
   "src/frontend/CSOM.c": {
     "compiler": "pro53",
@@ -2964,8 +2961,7 @@
     ],
     "include_dirs": [
       "src/optimizer"
-    ],
-    "status": "NonMatching"
+    ]
   },
   "src/optimizer/IroEval.c": {
     "compiler": "pro53",

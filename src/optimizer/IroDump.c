@@ -30,6 +30,88 @@
 #include "compiler/Switch.h"
 #include "driver/Files.h"
 #include <stdio.h>
+
+static struct _FILE *iro_dump_output;
+
+/* The name of each ENode type. */
+static char *enode_type_names[] = {
+    "EPOSTINC",
+    "EPOSTDEC",
+    "EPREINC",
+    "EPREDEC",
+    "EINDIRECT",
+    "EMONMIN",
+    "EBINNOT",
+    "ELOGNOT",
+    "EFORCELOAD",
+    "EMUL",
+    "EMULV",
+    "EDIV",
+    "EMODULO",
+    "EADDV",
+    "ESUBV",
+    "EADD",
+    "ESUB",
+    "ESHL",
+    "ESHR",
+    "ELESS",
+    "EGREATER",
+    "ELESSEQU",
+    "EGREATEREQU",
+    "EEQU",
+    "ENOTEQU",
+    "EAND",
+    "EXOR",
+    "EOR",
+    "ELAND",
+    "ELOR",
+    "EASS",
+    "EMULASS",
+    "EDIVASS",
+    "EMODASS",
+    "EADDASS",
+    "ESUBASS",
+    "ESHLASS",
+    "ESHRASS",
+    "EANDASS",
+    "EXORASS",
+    "EORASS",
+    "ECOMMA",
+    "EPMODULO",
+    "EROTL",
+    "EROTR",
+    "EBCLR",
+    "EBTST",
+    "EBSET",
+    "ETYPCON",
+    "EBITFIELD",
+    "EINTCONST",
+    "EFLOATCONST",
+    "ESTRINGCONST",
+    "ECOND",
+    "EFUNCCALL",
+    "EFUNCCALLP",
+    "EOBJREF",
+    "EQUALNAME",
+    "EMFPOINTER",
+    "ENULLCHECK",
+    "EPRECOMP",
+    "ETEMP",
+    "EARGOBJ",
+    "ELOCOBJ",
+    "ETEMPX",
+    "ELABEL",
+    "ESETCONST",
+    "ENEWEXCEPTION",
+    "ENEWEXCEPTIONARRAY",
+    "EOBJLIST",
+    "EMEMBER",
+    "EINSTRUCTION",
+    "EDEFINE",
+    "EREUSE",
+    "EASSBLK",
+    "EVECTOR128CONST",
+};
 unsigned int IroDump_IsType1NodeType50(IROLinear *linear)
 {
     if (linear->type == IROLinearOperand && linear->u.node->type == 50U)
@@ -104,6 +186,34 @@ static inline void *dump_output_handle(void)
     return iro_dump_output;
 }
 
+void IroDump_DumpAddress(IROLinear *address, IROLinear *baseTerm, IROLinear *varTerm, IROLinear *constTerm)
+{
+    if (INT_005882b8 == 0)
+        return;
+    fprintf(iro_dump_output, "\n");
+    fprintf(iro_dump_output, "Address  :\n");
+    dump_linear_node(address);
+    fprintf(iro_dump_output, "\n");
+    fprintf(iro_dump_output, "BaseTerms:\n");
+    dump_linear_node(baseTerm);
+    fprintf(iro_dump_output, "\n");
+    fprintf(iro_dump_output, "VarTerms:\n");
+    dump_linear_node(varTerm);
+    fprintf(iro_dump_output, "\n");
+    fprintf(iro_dump_output, "ConstTerms:\n");
+    dump_linear_node(constTerm);
+    fprintf(iro_dump_output, "\n");
+}
+
+void IroDump_OpenLog(char *name)
+{
+    char path[256];
+
+    strcpy(path, name);
+    strcat(path, ".log");
+    iro_dump_output = fopen(path, "wt");
+}
+
 void IroDump_DumpExpressions(void)
 {
     IROExpr *entry;
@@ -119,6 +229,82 @@ void IroDump_DumpExpressions(void)
         dump_separator();
     }
     dump_separator();
+}
+
+void IroDump_DumpDataFlow(void)
+{
+    IRONode *node;
+
+    if (INT_005882b8 == 0)
+        return;
+    for (node = iro_flowgraph_head; node != NULL; node = node->nextnode) {
+        fprintf(iro_dump_output, "Node %d\n", node->index);
+        IroDump_PrintBitSet("In:   ", node->in);
+        IroDump_PrintBitSet("Gen:  ", node->gen);
+        IroDump_PrintBitSet("Kill: ", node->kill);
+        IroDump_PrintBitSet("Out:  ", node->out);
+        IroDump_PrintBitSet("AA:   ", node->copyOut);
+    }
+}
+
+void IroDump_DumpVariables(void)
+{
+    VarRecord *var;
+
+    if (INT_005882b8 == 0)
+        return;
+    fprintf(iro_dump_output, "\nVariables\n");
+    for (var = var_records; var != NULL; var = var->next)
+        fprintf(iro_dump_output, "%5d %s %s\n", var->index, var->object->name->name,
+                var->noregister ? "<addressed>" : "");
+}
+
+void IroDump_DumpAssignments(void)
+{
+    IRONode *node;
+    IROLinear *linear;
+
+    if (INT_005882b8 == 0)
+        return;
+    fprintf(iro_dump_output, "\nAssignments\n\n");
+    for (node = iro_flowgraph_head; node != NULL; node = node->nextnode) {
+        for (linear = node->first; linear != NULL; linear = linear->next) {
+            if (linear->flags & IROLF_Assigned) {
+                fprintf(iro_dump_output, "%5d ", linear->index);
+                dump_linear_node(linear);
+            }
+            if (linear == node->last)
+                break;
+        }
+    }
+}
+
+void IroDump_DumpNode(IRONode *node)
+{
+    SInt32 i;
+    IROLinear *p;
+
+    if (INT_005882b8 == 0)
+        return;
+    fprintf(iro_dump_output, "Flowgraph node %d  First=%d, Last=%d\n", node->index, node->first->index,
+            node->last->index);
+    fprintf(iro_dump_output, "Succ = ");
+    for (i = 0; i < node->numsucc; i++)
+        fprintf(iro_dump_output, "%d ", node->succ[i]);
+    fprintf(iro_dump_output, "\n");
+    fprintf(iro_dump_output, "Pred = ");
+    for (i = 0; i < node->numpred; i++)
+        fprintf(iro_dump_output, "%d ", node->pred[i]);
+    fprintf(iro_dump_output, "\n");
+    fprintf(iro_dump_output, "MustReach = %d\n", node->mustreach);
+    fprintf(iro_dump_output, "LoopDepth = %d\n", node->loopdepth);
+    IroDump_PrintBitSet("Dom: ", node->dom);
+    for (p = node->first; p != NULL; p = p->next) {
+        dump_linear_node(p);
+        if (p == node->last)
+            break;
+    }
+    fprintf(iro_dump_output, "\n\n");
 }
 
 void dump_flowgraph(void)
@@ -231,7 +417,7 @@ void IroDump_PrintBitSet(char *prefix, BitVector *bitset)
     }
     if (inRange && bitIndex != rangeStart + 1)
         printBitIndex("-%d", bitIndex - 1);
-    printBitSetText("\n");
+    fprintf(iro_dump_output, "\n");
 }
 
 void dump_linear_node(IROLinear *node)
@@ -277,11 +463,11 @@ void dump_linear_node(IROLinear *node)
             }
             break;
         case IROLinearOp1Arg:
-            fprintf(iro_dump_output, "%s %d", PTR_s_EPOSTINC_0055268c[node->nodetype],
+            fprintf(iro_dump_output, "%s %d", enode_type_names[node->nodetype],
                     ((IROLinear *)node->u.diadic.left)->index);
             break;
         case IROLinearOp2Arg:
-            fprintf(iro_dump_output, "%s %d %d", PTR_s_EPOSTINC_0055268c[node->nodetype],
+            fprintf(iro_dump_output, "%s %d %d", enode_type_names[node->nodetype],
                     ((IROLinear *)node->u.diadic.left)->index, node->u.diadic.right->index);
             break;
         case IROLinearGoto:

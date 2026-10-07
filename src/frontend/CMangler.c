@@ -92,12 +92,12 @@ HashNameNode *get_object_link_name(Object *object)
     if (!scope)
         return object->name;
 
-    CompilerTools_AppendGListData(&data_00583548, data_00561a60, 0);
+    CompilerTools_AppendGListData(&data_00583548, "", 0);
     appendObjectName(object->name->name);
     while (scope && !scope->name)
         scope = scope->parent;
     if (scope && (object->qual & Q_MANGLE_NAME)) {
-        appendObjectName("__");
+        CompilerTools_AppendGListString(&data_00583548, "__");
         mangle_qualified_name(scope->parent, scope->name->name);
     }
     AppendGListByte(&data_00583548, 0);
@@ -927,6 +927,31 @@ char *CMangler_GetOperator(HashNameNode *name)
         return "operator[]";
     }
     return (char *)0;
+}
+
+HashNameNode *CMangler_DeleteDtorName(void)
+{
+    return GetHashNameNode("__dt");
+}
+
+HashNameNode *CMangler_SDeleteDtorName(void)
+{
+    return GetHashNameNode("__dts");
+}
+
+HashNameNode *CMangler_ArrayDtorName(void)
+{
+    return GetHashNameNode("__dta");
+}
+
+HashNameNode *CMangler_VBaseDtorName(void)
+{
+    return GetHashNameNode("__dtv");
+}
+
+HashNameNode *CMangler_BasicDtorName(void)
+{
+    return GetHashNameNode("__dtb");
 }
 
 void CMangler_Setup(void)

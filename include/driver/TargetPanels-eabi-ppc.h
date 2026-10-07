@@ -53,7 +53,6 @@ struct CompilerOptions {
     unsigned int unk18;
 };
 extern void TargetPanels_eabi_ppc_LoadCompilerOptions(void);
-extern SInt16 data_0057f6a8;
 extern void fn_0042c0c0(void);
 extern void fn_0042c910(void);
 

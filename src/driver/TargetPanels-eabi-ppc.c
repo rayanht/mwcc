@@ -7,6 +7,8 @@
 #include "driver/cc-eabi-ppc.h"
 #include <string.h>
 
+static SInt16 data_0057f6a8;
+
 void fn_0042c0c0(void)
 {
     return;

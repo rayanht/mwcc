@@ -21,11 +21,15 @@ extern HashNameNode *CMangler_TemplateInstanceName(HashNameNode *name, CTStateEl
 extern HashNameNode *CMangler_ThunkName(Object *input, int offset, int adjustment, int index);
 extern HashNameNode *CMangler_RTTIObjectName(Type *type, unsigned int flags);
 extern HashNameNode *CMangler_VTableName(TypeClass *entry);
-extern unsigned char data_00561a60[];
 extern GList data_00583548;
 extern HashNameNode *CMangler_OperatorName(short token);
 extern char *CMangler_GetOperator(HashNameNode *name);
 extern struct HashNameNode *assignment_operator_name;
+extern HashNameNode *CMangler_DeleteDtorName(void);
+extern HashNameNode *CMangler_SDeleteDtorName(void);
+extern HashNameNode *CMangler_ArrayDtorName(void);
+extern HashNameNode *CMangler_VBaseDtorName(void);
+extern HashNameNode *CMangler_BasicDtorName(void);
 extern void CMangler_Setup(void);
 
 #ifdef __cplusplus

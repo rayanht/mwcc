@@ -44,6 +44,9 @@
 #include "compiler/ENode.h"
 #include "compiler/Types.h"
 #include <string.h>
+
+static struct RTTIVTableOffsetNode *rtti_vtable_offset_list;
+static struct RData *rtti_offset_table_head;
 ENode *CRTTI_ParseConstCast(void)
 {
     UInt32 pre;

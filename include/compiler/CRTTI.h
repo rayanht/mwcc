@@ -75,8 +75,6 @@ extern ENode *CRTTI_ParseDynamicCast(void);
 extern ENode *parse_cast_type_and_expression(DeclInfo *typeSpec);
 extern void *create_rtti_base_records(TypeClass *param);
 extern void CRTTI_IntersectBitVectors(UInt32 *dst, UInt32 *src, SInt32 nbits);
-extern struct RData *rtti_offset_table_head;
-extern struct RTTIVTableOffsetNode *rtti_vtable_offset_list;
 
 #ifdef __cplusplus
 }
