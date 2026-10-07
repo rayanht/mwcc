@@ -1625,7 +1625,7 @@ void CSOM_004e4390(Object *obj)
         obj->type = CDecl_NewPointerType((Type *)type);
         TYPE_POINTER(obj->type)->qual = Q_REFERENCE;
         node = CFunc_AppendStatement(EINDIRECT);
-        node->expr.expression = makediadicnode(CExpr_New_EINDIRECT_Node(obj), CSOM_BuildNewObjectInstance(type), EASS);
+        node->expr = makediadicnode(CExpr_New_EINDIRECT_Node(obj), CSOM_BuildNewObjectInstance(type), EASS);
         CExcept_RegisterDeleteObject(node, obj, method);
     }
 }
@@ -1740,7 +1740,7 @@ void CSOM_GenerateSomselfAssignment(TypeClass *tclass, Statement *stmt)
             CError_ASSERT(1761, call->type == EFUNCCALL);
             call->data.funccall.funcref = expr;
             s = CFunc_InsertAfterStatement(4, stmt);
-            s->expr.expression = makediadicnode(create_objectnode(ivar->object), call, EASS);
+            s->expr = makediadicnode(create_objectnode(ivar->object), call, EASS);
             break;
         }
     }

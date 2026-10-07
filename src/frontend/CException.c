@@ -62,7 +62,7 @@ static inline Boolean CException_HasThrow(Statement *s)
     for (; s != NULL; s = s->next) {
         switch (s->type) {
             case ST_RETURN:
-                if (s->expr.expression == NULL)
+                if (s->expr == NULL)
                     break;
                 /* fallthrough */
             case ST_EXPRESSION:
@@ -73,7 +73,7 @@ static inline Boolean CException_HasThrow(Statement *s)
             case ST_ENDCATCH:
             case ST_ENDCATCHDTOR:
             case ST_GOTOEXPR:
-                CExpr_SearchExprTree(s->expr.expression, fn_004e0b20, 2, 0x36, 0x37);
+                CExpr_SearchExprTree(s->expr, fn_004e0b20, 2, 0x36, 0x37);
                 if (data_00581c30 != 0)
                     return 1;
                 break;
@@ -178,15 +178,15 @@ static Statement *InsertPrevStatement(int type)
 static inline SInt32 object_statement(Object *o)
 {
     Statement *n = CFunc_AppendStatement(0xc);
-    n->expr.expression = create_objectrefnode(o);
+    n->expr = create_objectrefnode(o);
     return (SInt32)n;
 }
 
 static inline void finish_label(CLabel *p)
 {
     Statement *n = CFunc_AppendStatement(2);
-    n->target.label = p;
-    p->target.stmt = (Statement *)n; /* exception statement view */
+    n->label = p;
+    p->stmt = (Statement *)n; /* exception statement view */
 }
 
 static Boolean CException_IsClassType(Type *ty)
@@ -222,7 +222,7 @@ static inline Statement *CException_004e2c40_inline2(Statement *p0, ENode *p1)
 {
     Statement *t3;
     t3 = CFunc_InsertAfterStatement(4, p0);
-    t3->expr.expression = p1;
+    t3->expr = p1;
     return t3;
 }
 
@@ -654,8 +654,7 @@ Statement *CExcept_ActionCleanup(ExceptionAction *cleanup, Statement *statement)
             deleteFunc = cleanup->data.local.dtor;
             deleteObject = cleanup->data.local.object;
             statement = CFunc_InsertAfterStatement(4, statement);
-            statement->expr.expression =
-                funccallexpr(deleteFunc, CExpr_New_EINDIRECT_Node(deleteObject), NULL, NULL, NULL);
+            statement->expr = funccallexpr(deleteFunc, CExpr_New_EINDIRECT_Node(deleteObject), NULL, NULL, NULL);
             statement->dobjstack = cleanup->next;
             break;
         case 5:
@@ -669,14 +668,14 @@ Statement *CExcept_ActionCleanup(ExceptionAction *cleanup, Statement *statement)
             } else {
                 dtorExpression = nullnode();
             }
-            statement->expr.expression = funccallexpr(data_0058717c, create_objectrefnode(context), dtorExpression,
-                                                      intconstnode((Type *)&stunsignedlong, value2),
-                                                      intconstnode((Type *)&stunsignedlong, value1));
+            statement->expr = funccallexpr(data_0058717c, create_objectrefnode(context), dtorExpression,
+                                           intconstnode((Type *)&stunsignedlong, value2),
+                                           intconstnode((Type *)&stunsignedlong, value1));
             statement->dobjstack = cleanup->next;
             break;
         case 14:
             statement = CFunc_InsertAfterStatement(14, statement);
-            statement->expr.expression = create_objectrefnode(cleanup->data.active_catch.info);
+            statement->expr = create_objectrefnode(cleanup->data.active_catch.info);
             statement->dobjstack = cleanup->next;
             if (cleanup->data.active_catch.call_dtor == 0) {
                 statement->type = ST_ENDCATCH;
@@ -1038,7 +1037,7 @@ void CException_004e1fb0(Statement *firstScope, Statement *insertionScope, State
                 firstEntry = entry;
             entry->kind = 0xd;
             entry->data.catch_block.object = (Object *)entries->catchObject;
-            entry->data.catch_block.label = entries->handlerEntry->target.label;
+            entry->data.catch_block.label = entries->handlerEntry->label;
             if (entries->exceptionType != NULL) {
                 stringNode = create_type_stringconst(entries->exceptionType, entries->declarationData, 0);
                 CError_ASSERT(1009, stringNode->type == ESTRINGCONST);
@@ -1158,8 +1157,8 @@ void CExcept_ScanTryBlock(void *context, char rethrow)
     entry = CFunc_AppendStatement(2);
     entry->flags = 1;
     handlerLabel = newlabel();
-    entry->target.label = handlerLabel;
-    entry->target.label->target.stmt = entry;
+    entry->label = handlerLabel;
+    entry->label->stmt = entry;
 
     tryBody = (Statement *)object_statement(exceptionObject);
 
@@ -1174,8 +1173,8 @@ void CExcept_ScanTryBlock(void *context, char rethrow)
     }
 
     handlerStart = CFunc_AppendStatement(3);
-    handlerStart->target.label = newlabel();
-    handlerLabel = handlerStart->target.label;
+    handlerStart->label = newlabel();
+    handlerLabel = handlerStart->label;
 
     endLabel = newlabel();
     previous = NULL;
@@ -1185,9 +1184,9 @@ void CExcept_ScanTryBlock(void *context, char rethrow)
 
         lastStatement = CFunc_AppendStatement(2);
         lastStatement->flags = 1;
-        lastStatement->target.label = newlabel();
+        lastStatement->label = newlabel();
         cleanup = NULL;
-        lastStatement->target.label->target.stmt = lastStatement;
+        lastStatement->label->stmt = lastStatement;
 
         handler = (ExceptionHandlerRecord *)CompilerTools_AllocatePool(sizeof(*handler));
         memclrw(handler, sizeof(*handler));
@@ -1227,7 +1226,7 @@ void CExcept_ScanTryBlock(void *context, char rethrow)
                 cleanup = fn_0047cb60();
                 initializer = create_catch_object_init(&declaration, handler);
                 lastStatement = CFunc_AppendStatement(4);
-                lastStatement->expr.expression = initializer;
+                lastStatement->expr = initializer;
             }
         }
 
@@ -1243,7 +1242,7 @@ void CExcept_ScanTryBlock(void *context, char rethrow)
         CFunc_ParseScopedStatement(context);
         if (rethrow != 0) {
             lastStatement = CFunc_AppendStatement(4);
-            lastStatement->expr.expression = funccallexpr(throw_func, nullnode(), nullnode(), nullnode(), NULL);
+            lastStatement->expr = funccallexpr(throw_func, nullnode(), nullnode(), nullnode(), NULL);
         }
         handler->handlerEnd = lastStatement;
         if (cleanup != NULL)
@@ -1252,14 +1251,14 @@ void CExcept_ScanTryBlock(void *context, char rethrow)
             break;
         {
             Statement *branch = CFunc_AppendStatement(3);
-            branch->target.label = endLabel;
+            branch->label = endLabel;
         }
     }
 
     {
         Statement *end = CFunc_AppendStatement(2);
-        end->target.label = endLabel;
-        endLabel->target.stmt = end;
+        end->label = endLabel;
+        endLabel->stmt = end;
         CException_004e1fb0(tryBody, handlerStart, end, handler);
     }
     finish_label(handlerLabel);
@@ -1329,8 +1328,7 @@ void lower_newexception(ENode *node, Boolean useExpression)
         node->data.newexception.tryexpr = rewrite_expr_temporaries(node->data.newexception.tryexpr);
         cleanupFlag = create_temp_object((Type *)&stchar);
         initialStatement = InsertPrevStatement(ST_EXPRESSION);
-        initialStatement->expr.expression =
-            makediadicnode(create_objectnode(cleanupFlag), intconstnode((Type *)&stchar, 0), EASS);
+        initialStatement->expr = makediadicnode(create_objectnode(cleanupFlag), intconstnode((Type *)&stchar, 0), EASS);
         data_00581c36 = initialStatement;
         cleanup = (ExceptionAction *)CompilerTools_AllocatePool(sizeof(ExceptionAction));
         cleanup->next = currentDobjstack;
@@ -1361,15 +1359,15 @@ void lower_newexception(ENode *node, Boolean useExpression)
         node->data.newexception.tryexpr = fn_004e1050(node->data.newexception.tryexpr);
         if (isArgumentObject) {
             statement = InsertPrevStatement(ST_EXPRESSION);
-            statement->expr.expression = node->data.newexception.initexpr;
+            statement->expr = node->data.newexception.initexpr;
         } else {
             statement = InsertPrevStatement(ST_IFNGOTO);
-            statement->expr.expression = node->data.newexception.initexpr;
+            statement->expr = node->data.newexception.initexpr;
             label = newlabel();
-            statement->target.label = label;
+            statement->label = label;
         }
         statement = CFunc_InsertAfterStatement(ST_EXPRESSION, statement);
-        statement->expr.expression = node->data.newexception.tryexpr;
+        statement->expr = node->data.newexception.tryexpr;
         cleanup = (ExceptionAction *)CompilerTools_AllocatePool(sizeof(ExceptionAction));
         cleanup->next = currentDobjstack;
         cleanup->kind = 0xa;
@@ -1378,8 +1376,8 @@ void lower_newexception(ENode *node, Boolean useExpression)
         statement->dobjstack = cleanup;
         if (!isArgumentObject) {
             statement = CFunc_InsertAfterStatement(ST_LABEL, statement);
-            statement->target.label = label;
-            label->target.stmt = statement;
+            statement->label = label;
+            label->stmt = statement;
             statement->dobjstack = currentDobjstack;
         }
         data_00581c36 = statement;
@@ -1472,8 +1470,8 @@ ENode *rewrite_funccall_temporaries(ENode *node, Boolean reverse)
             result = makediadicnode(node, create_objectrefnode(temporary->object), ECOMMA);
             result->rtype = resultType;
             statement = NewTemporaryStatement();
-            statement->expr.expression = makediadicnode(create_objectnode(temporary->initializationFlag),
-                                                        intconstnode((Type *)&stchar, 0), EASS);
+            statement->expr = makediadicnode(create_objectnode(temporary->initializationFlag),
+                                             intconstnode((Type *)&stchar, 0), EASS);
             data_00581c36 = statement;
             cleanup = CompilerTools_AllocatePool(sizeof(ExceptionAction));
             cleanup->next = currentDobjstack;
@@ -1488,7 +1486,7 @@ ENode *rewrite_funccall_temporaries(ENode *node, Boolean reverse)
             current_dobjstack = cleanupCopy;
         } else {
             statement = NewTemporaryStatement();
-            statement->expr.expression = node;
+            statement->expr = node;
             data_00581c36 = statement;
             cleanup = CompilerTools_AllocatePool(sizeof(ExceptionAction));
             cleanup->next = currentDobjstack;
@@ -1501,7 +1499,7 @@ ENode *rewrite_funccall_temporaries(ENode *node, Boolean reverse)
             cleanupCopy->next = current_dobjstack;
             current_dobjstack = cleanupCopy;
             result = CompilerTools_AllocatePool(sizeof(ENode));
-            *result = *statement->expr.expression;
+            *result = *statement->expr;
             result->type = EOBJREF;
             result->data.objref = temporaryArg->node->data.objref;
         }
@@ -1721,18 +1719,18 @@ Statement *generate_temporary_object_destruction(Statement *arg)
             CError_FATAL(2151);
         if (p->initializationFlag != NULL) {
             stmt = CFunc_InsertAfterStatement(ST_IFNGOTO, stmt);
-            stmt->expr.expression = create_objectnode(p->initializationFlag);
+            stmt->expr = create_objectnode(p->initializationFlag);
             stmt->dobjstack = current_dobjstack;
-            stmt->target.label = newlabel();
-            label = stmt->target.label;
+            stmt->label = newlabel();
+            label = stmt->label;
         }
         stmt = CFunc_InsertAfterStatement(ST_EXPRESSION, stmt);
-        stmt->expr.expression = CABI_DestroyObject(p->classObject, create_objectrefnode(p->object), 1, 1, 0);
+        stmt->expr = CABI_DestroyObject(p->classObject, create_objectrefnode(p->object), 1, 1, 0);
         stmt->dobjstack = current_dobjstack;
         if (p->initializationFlag != NULL) {
             stmt = CFunc_InsertAfterStatement(ST_LABEL, stmt);
-            stmt->target.label = label;
-            label->target.stmt = stmt;
+            stmt->label = label;
+            label->stmt = stmt;
         }
         p = p->next;
     }
@@ -1749,25 +1747,25 @@ void insert_temporary_object_destruction(Statement *statement, char flag1, char 
         unsigned int words[7]; /* Raw statement storage, including unknown bytes. */
     } saved;
     temporary_object_list = NULL;
-    statement->expr.expression = fn_004e1050(statement->expr.expression);
+    statement->expr = fn_004e1050(statement->expr);
     if (temporary_object_list != NULL) {
         if (flag1 == 0) {
             if (flag2 != 0) {
-                expr = statement->expr.expression;
-                CError_ASSERT(2194, !(statement->expr.expression->rtype->type == TYPECLASS &&
+                expr = statement->expr;
+                CError_ASSERT(2194, !(statement->expr->rtype->type == TYPECLASS &&
                                       CClass_Destructor((TypeClass *)expr->rtype) != 0));
                 object = create_temp_object(expr->rtype);
-                statement->expr.expression = makediadicnode(create_objectnode(object), expr, 30);
+                statement->expr = makediadicnode(create_objectnode(object), expr, 30);
             }
             saved.statement = *statement;
             statement->type = ST_EXPRESSION;
             statement = generate_temporary_object_destruction(statement);
             result = CFunc_InsertAfterStatement(saved.words[1], statement);
-            result->target.label = saved.statement.target.label;
+            result->label = saved.statement.label;
             if (flag2 != 0)
-                result->expr.expression = create_objectnode(object);
+                result->expr = create_objectnode(object);
             else
-                result->expr.expression = nullnode();
+                result->expr = nullnode();
         } else {
             generate_temporary_object_destruction(statement);
         }
@@ -1787,7 +1785,7 @@ void update_statement_dobjstacks(Statement *node)
         if ((p->flags & 2) != 0) {
             currentDobjstack = currentDobjstack->next;
         } else if (p->type == ST_EXPRESSION) {
-            e = p->expr.expression;
+            e = p->expr;
             while (e->type == ECOMMA)
                 e = e->data.diadic.left;
             if (e->type == EINDIRECT)
@@ -1812,7 +1810,7 @@ void update_statement_dobjstacks(Statement *node)
                 insert_temporary_object_destruction(p, 0, 1);
                 break;
             case ST_RETURN:
-                if (p->expr.expression != NULL)
+                if (p->expr != NULL)
                     insert_temporary_object_destruction(
                         p, 0, CMachine_FunctionRequiresMemoryReturn((TypeFunc *)cscope_currentfunc->type) != 1);
                 break;
@@ -1864,7 +1862,7 @@ void setup_exception_specification(struct Statement *statements, struct ExceptSp
         ;
     if (statement->type != ST_GOTO && statement->type != ST_RETURN) {
         statement = CFunc_InsertAfterStatement(8, statement);
-        statement->expr.expression = NULL;
+        statement->expr = NULL;
         statement->dobjstack = NULL;
         if (TYPE_FUNC(cscope_currentfunc->type)->functype != &stvoid &&
             (copts.extended_errorcheck != 0 || copts.cplusplus != 0)) {
@@ -1873,8 +1871,8 @@ void setup_exception_specification(struct Statement *statements, struct ExceptSp
     }
     label_statement = CFunc_InsertAfterStatement(2, statement);
     start_label = newlabel();
-    label_statement->target.label = start_label;
-    label_statement->target.label->target.stmt = label_statement;
+    label_statement->label = start_label;
+    label_statement->label->stmt = label_statement;
     label_statement->flags = 1;
     label_statement->dobjstack = NULL;
     object = create_temp_object(&exception_temp_object_type);
@@ -1891,7 +1889,7 @@ void setup_exception_specification(struct Statement *statements, struct ExceptSp
     region->data.specification.count = handler_count;
     region->data.specification.ids = galloc(handler_count * sizeof(*region->data.specification.ids));
     handler_index = 0;
-    region->data.specification.label = label_statement->target.label;
+    region->data.specification.label = label_statement->label;
     region->data.specification.info = object;
     for (handler = handlers; handler != NULL; handler = handler->next) {
         expression = create_type_stringconst(handler->type, handler->qual, 0);
@@ -1901,7 +1899,7 @@ void setup_exception_specification(struct Statement *statements, struct ExceptSp
             CInit_DeclareString(expression->data.string.data, expression->data.string.size, 0, 0);
     }
     assignment = CFunc_InsertAfterStatement(4, label_statement);
-    assignment->expr.expression = funccallexpr(data_00587654, create_objectrefnode(object), NULL, NULL, NULL);
+    assignment->expr = funccallexpr(data_00587654, create_objectrefnode(object), NULL, NULL, NULL);
     object_region = CompilerTools_AllocatePool(sizeof(*object_region));
     memclrw(object_region, sizeof(*object_region));
     object_region->kind = 0x0e;
@@ -1910,11 +1908,11 @@ void setup_exception_specification(struct Statement *statements, struct ExceptSp
     assignment->dobjstack = object_region;
     end_statement = CFunc_InsertAfterStatement(2, assignment);
     end_label = newlabel();
-    end_statement->target.label = end_label;
-    end_statement->target.label->target.stmt = end_statement;
+    end_statement->label = end_label;
+    end_statement->label->stmt = end_statement;
     end_statement->dobjstack = NULL;
     return_statement = CFunc_InsertAfterStatement(3, end_statement);
-    return_statement->target.label = end_label;
+    return_statement->label = end_label;
 }
 
 void fn_004e0b20(ENode *expr)
@@ -1934,7 +1932,7 @@ unsigned char fn_004e0ab0(Statement *node)
             case ST_ASM:
                 break;
             case ST_RETURN:
-                if (node->expr.expression == NULL) {
+                if (node->expr == NULL) {
                     break;
                 }
             case ST_EXPRESSION:
@@ -1945,7 +1943,7 @@ unsigned char fn_004e0ab0(Statement *node)
             case ST_ENDCATCH:
             case ST_ENDCATCHDTOR:
             case ST_GOTOEXPR:
-                CExpr_SearchExprTree(node->expr.expression, fn_004e0b20, 2U, 54U, 55U);
+                CExpr_SearchExprTree(node->expr, fn_004e0b20, 2U, 54U, 55U);
                 if (data_00581c30 != 0) {
                     return 1;
                 }

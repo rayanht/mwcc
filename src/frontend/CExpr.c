@@ -83,12 +83,12 @@ static __inline void FindOrAdd(HashNameNode *key)
     CLabel *node;
     if ((node = FindNode(key)) == NULL)
         node = AddNode(key);
-    else if (node->target.stmt != NULL)
+    else if (node->stmt != NULL)
         CError_ReportError(ERR_LABEL_REDEFINED, key->name);
     {
         Statement *entry = CFunc_AppendStatement(2);
-        entry->target.label = node;
-        node->target.stmt = entry;
+        entry->label = node;
+        node->stmt = entry;
     }
 }
 

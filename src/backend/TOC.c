@@ -162,59 +162,56 @@ void fn_0049d420(Statement *statements)
             }
             switch (statement->type) {
                 case ST_EXPRESSION:
-                    TOC_0049d710(statement->expr.expression, NULL, 1);
-                    if ((expression = statement->expr.expression)->type != ETYPCON ||
-                        expression->rtype->type != TYPEVOID) {
+                    TOC_0049d710(statement->expr, NULL, 1);
+                    if ((expression = statement->expr)->type != ETYPCON || expression->rtype->type != TYPEVOID) {
                         break;
                     }
-                    statement->expr.expression = expression->data.monadic;
+                    statement->expr = expression->data.monadic;
                     break;
                 case ST_GOTOEXPR:
-                    TOC_0049d710(statement->expr.expression, NULL, 0);
+                    TOC_0049d710(statement->expr, NULL, 0);
                     break;
                 case ST_IFGOTO:
                 case ST_IFNGOTO:
-                    if (fn_0049f630(statement->expr.expression) == 0) {
-                        statement->expr.expression = create_diadic_node_with_constant(statement->expr.expression);
+                    if (fn_0049f630(statement->expr) == 0) {
+                        statement->expr = create_diadic_node_with_constant(statement->expr);
                     }
-                    TOC_0049d710(statement->expr.expression, NULL, 0);
+                    TOC_0049d710(statement->expr, NULL, 0);
                     break;
                 case ST_RETURN:
-                    if (statement->expr.expression == NULL) {
+                    if (statement->expr == NULL) {
                         continue;
                     }
                     special = 1;
                     classOrAggregate = 1;
                     arrayOrStruct = 1;
-                    if (statement->expr.expression->rtype->type != TYPEARRAY &&
-                        statement->expr.expression->rtype->type != TYPESTRUCT) {
+                    if (statement->expr->rtype->type != TYPEARRAY && statement->expr->rtype->type != TYPESTRUCT) {
                         arrayOrStruct = 0;
                     }
-                    if (arrayOrStruct == 0 && statement->expr.expression->rtype->type != TYPECLASS) {
+                    if (arrayOrStruct == 0 && statement->expr->rtype->type != TYPECLASS) {
                         classOrAggregate = 0;
                     }
                     if (classOrAggregate == 0) {
                         memberPointer = 0;
-                        if (statement->expr.expression->rtype->type == TYPEMEMBERPOINTER &&
-                            statement->expr.expression->rtype->size == 12) {
+                        if (statement->expr->rtype->type == TYPEMEMBERPOINTER && statement->expr->rtype->size == 12) {
                             memberPointer = 1;
                         }
                         if (memberPointer == 0) {
                             special = 0;
                         }
                     }
-                    TOC_0049d710(statement->expr.expression, NULL, special);
+                    TOC_0049d710(statement->expr, NULL, special);
                     break;
                 case ST_SWITCH:
                     data_00588500 = 1;
-                    TOC_0049d710(statement->expr.expression, NULL, 0);
+                    TOC_0049d710(statement->expr, NULL, 0);
                     break;
                 case ST_ENDCATCHDTOR:
                     data_00588521 = 0;
                     break;
                 case ST_ASM:
                     operandIndex = 0;
-                    instruction = statement->expr.asmInstruction;
+                    instruction = (ParsedAsmInstruction *)statement->expr;
                     operand = instruction->data.operands;
                     while (operandIndex < instruction->operand_count) {
                         if (operand->kind == 2 && operand->target.object == NULL) {

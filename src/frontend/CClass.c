@@ -1009,9 +1009,8 @@ void CClass_DefineCovariantFuncs(Object *func, CInlineInfo *inlineInfo)
         functionScope = CFunc_FuncGenSetup(&body, member);
         CInline_ReconstructFunction(member, inlineInfo, &body);
         for (statement = &body; statement != NULL; statement = statement->next) {
-            if (statement->type == ST_RETURN && statement->expr.expression != NULL) {
-                statement->expr.expression = oldassignmentpromotion(statement->expr.expression, returnType,
-                                                                    statement->expr.expression->flags & 3, 0);
+            if (statement->type == ST_RETURN && statement->expr != NULL) {
+                statement->expr = oldassignmentpromotion(statement->expr, returnType, statement->expr->flags & 3, 0);
             }
         }
         CFunc_Gen(&body, member, 0);

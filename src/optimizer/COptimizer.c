@@ -76,7 +76,7 @@ static inline void set_statement_location(Statement *statement)
 static inline void optimize_expression(Statement *statement)
 {
     set_statement_location(statement);
-    COptimizer_CountExpressionObjectUses(statement->expr.expression);
+    COptimizer_CountExpressionObjectUses(statement->expr);
 }
 
 Statement *DumpIR_OptimizeStatements(Object *object, Statement *statements)
@@ -91,7 +91,7 @@ Statement *DumpIR_OptimizeStatements(Object *object, Statement *statements)
     if (object && !(object->qual & Q_INLINE))
         COptimizer_CheckStmtsForNonVoidFunction(object, statements);
     for (statement = statements->next; statement; statement = statement->next) {
-        if (statement->type >= ST_EXPRESSION && statement->type <= 15 && statement->expr.expression) {
+        if (statement->type >= ST_EXPRESSION && statement->type <= 15 && statement->expr) {
             optimize_expression(statement);
         } else if (statement->type == ST_ASM) {
             set_statement_location(statement);
@@ -109,8 +109,8 @@ void DumpIR_OptimizeStatementList(Object *object, Statement *statements)
     if (statements != NULL) {
         do {
             if ((ST_EXPRESSION <= statement->type) && (statement->type <= 0xf)) {
-                if (statement->expr.expression != NULL) {
-                    CExpr_SearchExprTree(statement->expr.expression, set_label_stmt_flag, 1, 0x3f);
+                if (statement->expr != NULL) {
+                    CExpr_SearchExprTree(statement->expr, set_label_stmt_flag, 1, 0x3f);
                 }
             }
             statement = statement->next;
@@ -127,10 +127,10 @@ void set_label_stmt_flag(ENode *a)
     Statement *statement;
     CLabel *label;
     label = (CLabel *)a->data.longval;
-    if ((statement = label->target.stmt) == NULL || statement->type != ST_LABEL)
+    if ((statement = label->stmt) == NULL || statement->type != ST_LABEL)
         CError_FATAL(2133);
     label = (CLabel *)a->data.longval;
-    statement = label->target.stmt;
+    statement = label->stmt;
     statement->flags |= 1;
 }
 
@@ -142,7 +142,7 @@ static void CheckStmts(Statement *p)
                 CError_Warning(ERR_RETURN_VALUE_EXPECTED);
                 break;
             }
-            if (p->type == ST_RETURN && p->expr.expression == NULL && !(p->flags & 8)) {
+            if (p->type == ST_RETURN && p->expr == NULL && !(p->flags & 8)) {
                 CError_Warning(ERR_RETURN_VALUE_EXPECTED);
                 break;
             }
@@ -155,12 +155,12 @@ static CLabel *COpt_Follow(Statement *self, CLabel *node)
 {
     Statement *q;
 
-    for (q = node->target.stmt; q != NULL; q = q->next) {
+    for (q = node->stmt; q != NULL; q = q->next) {
         if (q->type > 2) {
             if (q != self && q->type == ST_GOTO) {
-                if (q->target.label != node)
+                if (q->label != node)
                     optimizer_changed = 1;
-                return q->target.label;
+                return q->label;
             }
             return node;
         }
@@ -178,7 +178,7 @@ static inline void COpt_Pass(Statement *stmt)
         switch (p->type) {
             case ST_GOTO:
                 for (u = p->next; u != NULL; u = u->next) {
-                    if (p->target.label->target.stmt == u) {
+                    if (p->label->stmt == u) {
                         p->type = ST_NOP;
                         optimizer_changed = 1;
                         goto next;
@@ -186,7 +186,7 @@ static inline void COpt_Pass(Statement *stmt)
                     if (u->type > 2)
                         break;
                 }
-                p->target.label = COpt_Follow(p, p->target.label);
+                p->label = COpt_Follow(p, p->label);
                 break;
             case ST_IFGOTO:
             case ST_IFNGOTO:
@@ -230,7 +230,7 @@ static inline void COptimizer_SimplifyBranch(Statement *stmt)
 {
     Statement *node;
     for (node = stmt->next; node != NULL; node = node->next) {
-        if (stmt->target.label->target.stmt == node) {
+        if (stmt->label->stmt == node) {
             stmt->type = ST_NOP;
             optimizer_changed = 1;
             return;
@@ -238,22 +238,22 @@ static inline void COptimizer_SimplifyBranch(Statement *stmt)
         if (node->type > 2)
             break;
     }
-    stmt->target.label = COpt_Follow(stmt, stmt->target.label);
+    stmt->label = COpt_Follow(stmt, stmt->label);
 }
 
 static inline CLabel *COFindOwner(Statement *s)
 {
     Statement *q;
     UInt8 kind;
-    SInt32 saved = (SInt32)s->target.label;
+    SInt32 saved = (SInt32)s->label;
     CLabel *owner = (CLabel *)saved;
-    for (q = ((CLabel *)saved)->target.stmt; q != NULL; q = q->next) {
+    for (q = ((CLabel *)saved)->stmt; q != NULL; q = q->next) {
         if ((kind = q->type) <= 2)
             continue;
         if (q != s && kind == 3) {
-            if (q->target.label != owner)
+            if (q->label != owner)
                 optimizer_changed = 1;
-            return q->target.label;
+            return q->label;
         } else {
             return owner;
         }
@@ -263,16 +263,16 @@ static inline CLabel *COFindOwner(Statement *s)
 
 static inline CLabel *COFindOwnerPlain(Statement *s)
 {
-    SInt32 saved = (SInt32)s->target.label;
+    SInt32 saved = (SInt32)s->label;
     CLabel *owner = (CLabel *)saved;
     Statement *q;
-    for (q = ((CLabel *)saved)->target.stmt; q != NULL; q = q->next) {
+    for (q = ((CLabel *)saved)->stmt; q != NULL; q = q->next) {
         if (q->type <= 2)
             continue;
         if (q != s && q->type == ST_GOTO) {
-            if (q->target.label != owner)
+            if (q->label != owner)
                 optimizer_changed = 1;
-            return q->target.label;
+            return q->label;
         } else {
             return owner;
         }
@@ -316,7 +316,7 @@ static inline void add_succ(COptBlock *b, CLabel *owner)
     e = (COptBlockLink *)CompilerTools_AllocatePool(8);
     e->next = b->succ;
     b->succ = e;
-    e->target.statement = owner->target.stmt;
+    e->target.statement = owner->stmt;
 }
 
 static inline void clear_words2(COptBlock *p, SInt16 i)
@@ -524,26 +524,26 @@ void mark_reachable_statements(Statement *input)
             case ST_IFGOTO:
             case ST_IFNGOTO:
             case ST_OVF:
-                mark_reachable_statements(node->target.label->target.stmt);
+                mark_reachable_statements(node->label->stmt);
                 break;
             case ST_GOTO:
             case ST_EXIT:
-                node = node->target.label->target.stmt;
+                node = node->label->stmt;
                 continue;
             case ST_RETURN:
                 return;
             case ST_SWITCH:
-                for (element = node->target.switchDescriptor->cases; element != NULL; element = element->next)
-                    mark_reachable_statements(element->label->target.stmt);
-                node = node->target.switchDescriptor->defaultlabel->target.stmt;
+                for (element = ((SwitchInfo *)node->label)->cases; element != NULL; element = element->next)
+                    mark_reachable_statements(element->label->stmt);
+                node = ((SwitchInfo *)node->label)->defaultlabel->stmt;
                 continue;
             case ST_ASM:
                 sub = InlineAsm_FindOperandLabel(node);
                 if (sub != NULL)
-                    mark_reachable_statements(sub->target.stmt);
+                    mark_reachable_statements(sub->stmt);
                 sub = InlineAsm_GetOperandLabel(node);
                 if (sub != NULL)
-                    mark_reachable_statements(sub->target.stmt);
+                    mark_reachable_statements(sub->stmt);
                 break;
             case ST_NOP:
             case ST_LABEL:
@@ -758,35 +758,35 @@ void remove_unreferenced_labels(Statement *statements)
             case ST_IFGOTO:
             case ST_IFNGOTO:
             case ST_OVF:
-                if (statement->target.label->target.stmt != NULL)
-                    statement->target.label->target.stmt->marked = 1;
+                if (statement->label->stmt != NULL)
+                    statement->label->stmt->marked = 1;
                 break;
             case ST_SWITCH: {
-                SwitchInfo *head = statement->target.switchDescriptor;
-                head->defaultlabel->target.stmt->marked = 1;
-                for (group = statement->target.switchDescriptor->cases; group != NULL; group = group->next)
-                    group->label->target.stmt->marked = 1;
+                SwitchInfo *head = (SwitchInfo *)statement->label;
+                head->defaultlabel->stmt->marked = 1;
+                for (group = ((SwitchInfo *)statement->label)->cases; group != NULL; group = group->next)
+                    group->label->stmt->marked = 1;
                 break;
             }
             case ST_ASM: {
                 CLabel *operandLabel;
                 result = InlineAsm_FindOperandLabel(statement);
                 if (result != NULL)
-                    result->target.stmt->marked = 1;
+                    result->stmt->marked = 1;
                 operandLabel = (CLabel *)InlineAsm_GetOperandLabel(statement);
                 if (operandLabel != NULL)
-                    operandLabel->target.stmt->marked = 1;
+                    operandLabel->stmt->marked = 1;
                 break;
             }
             default: {
                 ExceptionAction *exception;
                 for (exception = statement->dobjstack; exception != NULL; exception = exception->next) {
                     if (exception->kind == 0xd) {
-                        exception->data.catch_block.label->target.stmt->marked = 1;
-                        exception->data.catch_block.label->target.stmt->flags |= 1;
+                        exception->data.catch_block.label->stmt->marked = 1;
+                        exception->data.catch_block.label->stmt->flags |= 1;
                     } else if (exception->kind == 0xf) {
-                        exception->data.specification.label->target.stmt->marked = 1;
-                        exception->data.specification.label->target.stmt->flags |= 1;
+                        exception->data.specification.label->stmt->marked = 1;
+                        exception->data.specification.label->stmt->flags |= 1;
                     }
                 }
                 break;
@@ -806,19 +806,19 @@ void follow_switch_labels_and_fold_constant(Statement *self)
     SwitchInfo *b;
     SwitchCase *p;
 
-    CError_ASSERT(1731, (b = self->target.switchDescriptor) != NULL && b->cases != NULL && b->defaultlabel != NULL);
+    CError_ASSERT(1731, (b = (SwitchInfo *)self->label) != NULL && b->cases != NULL && b->defaultlabel != NULL);
 
     b->defaultlabel = COpt_Follow(self, b->defaultlabel);
     for (p = b->cases; p != NULL; p = p->next)
         p->label = COpt_Follow(self, p->label);
 
-    if (self->expr.expression->type == EINTCONST) {
+    if (self->expr->type == EINTCONST) {
         for (p = b->cases; p != NULL; p = p->next) {
-            if (CInt64_Equal(p->min, self->expr.expression->data.intval))
+            if (CInt64_Equal(p->min, self->expr->data.intval))
                 break;
         }
         self->type = ST_GOTO;
-        self->target.label = (p != NULL) ? p->label : b->defaultlabel;
+        self->label = (p != NULL) ? p->label : b->defaultlabel;
     }
 }
 
@@ -831,7 +831,7 @@ void fold_and_invert_conditional_branch(Statement *s)
     UInt8 kind;
     Statement *head;
 
-    if (CExpr2_IsZero(s->expr.expression)) {
+    if (CExpr2_IsZero(s->expr)) {
         if (s->type == ST_IFNGOTO) {
             q = CompilerTools_AllocatePool(sizeof(Statement));
             *q = *s;
@@ -842,7 +842,7 @@ void fold_and_invert_conditional_branch(Statement *s)
         optimizer_changed = 1;
         return;
     }
-    if (isnotzero(s->expr.expression)) {
+    if (isnotzero(s->expr)) {
         do {
             if (s->type != ST_IFGOTO) {
                 if (s->type != ST_IFNGOTO)
@@ -864,7 +864,7 @@ void fold_and_invert_conditional_branch(Statement *s)
         do {
             if ((kind = q->type) > 2) {
                 if (kind == 3) {
-                    if (q->target.label == s->target.label) {
+                    if (q->label == s->label) {
                         s->type = ST_EXPRESSION;
                         optimizer_changed = 1;
                         return;
@@ -875,26 +875,26 @@ void fold_and_invert_conditional_branch(Statement *s)
                     for (q = q->next; q != NULL; q = q->next) {
                         if (q->type > 2)
                             break;
-                        if (s->target.label->target.stmt == q) {
-                            s->target.label = prev->target.label;
+                        if (s->label->stmt == q) {
+                            s->label = prev->label;
                             prev->type = ST_NOP;
                             if (s->type == ST_IFGOTO)
                                 s->type = ST_IFNGOTO;
                             else
                                 s->type = ST_IFGOTO;
                             optimizer_changed = 1;
-                            s->target.label = COFindOwner(s);
+                            s->label = COFindOwner(s);
                             return;
                         }
                     }
                     break;
-                } else if (kind == 8 && q->expr.expression == NULL && data_00581300 == 0 && !seen) {
+                } else if (kind == 8 && q->expr == NULL && data_00581300 == 0 && !seen) {
                     prev = q;
                     for (q = q->next; q != NULL; q = q->next) {
                         if (q->type > 2)
                             break;
-                        if (s->target.label->target.stmt == q) {
-                            s->target.label = data_0058802c;
+                        if (s->label->stmt == q) {
+                            s->label = data_0058802c;
                             data_0058851f = 1;
                             prev->type = ST_NOP;
                             if (s->type == ST_IFGOTO)
@@ -911,14 +911,14 @@ void fold_and_invert_conditional_branch(Statement *s)
             } else {
                 if (kind == 2)
                     seen = 1;
-                if (s->target.label->target.stmt == q) {
+                if (s->label->stmt == q) {
                     s->type = ST_EXPRESSION;
                     optimizer_changed = 1;
                     return;
                 }
             }
         } while ((q = q->next) != NULL);
-    s->target.label = COFindOwnerPlain(s);
+    s->label = COFindOwnerPlain(s);
 }
 
 void build_opt_blocks(Statement *first)
@@ -992,10 +992,10 @@ void build_opt_blocks(Statement *first)
                     case ST_GOTOEXPR:
                         switch (first->type) {
                             case ST_SWITCH:
-                                if (first->target.switchDescriptor->defaultlabel != data_0058802c) {
-                                    add_succ(block, first->target.switchDescriptor->defaultlabel);
+                                if (((SwitchInfo *)first->label)->defaultlabel != data_0058802c) {
+                                    add_succ(block, ((SwitchInfo *)first->label)->defaultlabel);
                                 }
-                                for (caseEntry = first->target.switchDescriptor->cases; caseEntry != NULL;
+                                for (caseEntry = ((SwitchInfo *)first->label)->cases; caseEntry != NULL;
                                      caseEntry = caseEntry->next) {
                                     if (caseEntry->label != data_0058802c) {
                                         add_succ(block, caseEntry->label);
@@ -1006,8 +1006,8 @@ void build_opt_blocks(Statement *first)
                             case ST_IFGOTO:
                             case ST_IFNGOTO:
                             case ST_OVF:
-                                if (first->target.label != data_0058802c) {
-                                    add_succ(block, first->target.label);
+                                if (first->label != data_0058802c) {
+                                    add_succ(block, first->label);
                                 }
                                 if (first->type == ST_GOTO) {
                                     break;
@@ -1074,13 +1074,13 @@ void COptimizer_004bf980(void)
         if (remaining > 0) {
             do {
                 ENode *expr;
-                if (op->type >= 4 && op->type <= 0xf && (expr = op->expr.expression) != NULL && expr->type == ECOMMA) {
+                if (op->type >= 4 && op->type <= 0xf && (expr = op->expr) != NULL && expr->type == ECOMMA) {
                     Statement *next = (Statement *)CompilerTools_AllocatePool(0x1a);
                     *next = *op;
                     op->next = next;
                     op->type = ST_EXPRESSION;
-                    op->expr.expression = expr->data.diadic.left;
-                    next->expr.expression = expr->data.diadic.right;
+                    op->expr = expr->data.diadic.left;
+                    next->expr = expr->data.diadic.right;
                     func->count++;
                     advance = 0;
                     break;
@@ -1107,8 +1107,8 @@ void mark_and_propagate_dlocal_reference_bits(void)
                 SetBit_4bfa30(current_opt_block->referenceBarrierBits, i);
         }
         for (i = current_opt_block->count; i > 0; i--) {
-            if (item->type >= 4 && item->type <= 0xf && item->expr.expression != NULL)
-                mark_dlocal_reference_bits(item->expr.expression);
+            if (item->type >= 4 && item->type <= 0xf && item->expr != NULL)
+                mark_dlocal_reference_bits(item->expr);
             item = item->next;
         }
         current_opt_block = current_opt_block->next;

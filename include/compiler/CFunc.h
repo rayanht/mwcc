@@ -35,16 +35,9 @@ struct Statement {
     UInt8 type;
     UInt8 marked;
     UInt8 flags;
-    UInt8 unk07;
     SInt16 value;
-    union {
-        ENode *expression;
-        struct ParsedAsmInstruction *asmInstruction;
-    } expr;
-    union {
-        struct CLabel *label;
-        struct SwitchInfo *switchDescriptor;
-    } target;
+    ENode *expr;
+    struct CLabel *label;
     struct ExceptionAction *dobjstack;
     SInt32 sourceoffset;
 };
@@ -60,10 +53,7 @@ struct PendingFunction {
 #pragma options align = mac68k
 struct CLabel {
     struct CLabel *next;
-    union {
-        struct Statement *stmt;
-        struct IRONode *node;
-    } target;
+    struct Statement *stmt;
     struct HashNameNode *uniquename;
     struct HashNameNode *name;
     struct PCodeLabel *pclabel;

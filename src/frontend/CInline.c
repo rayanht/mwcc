@@ -123,7 +123,7 @@ void CInline_GeneratePendingFunctionBody(void)
             evalMode = 0;
             memo_list = NULL;
             alloc_state = 0;
-            statement->expr.expression = CInline_00513240(expression);
+            statement->expr = CInline_00513240(expression);
             pending = pending->next;
         }
     }
@@ -157,24 +157,23 @@ PendingFunction *generate_guarded_initializers(PendingFunction *pending)
     function->qual = Q_WEAK;
     fn_004ceab0(function, NULL, NULL, function->type->size);
     statement = CFunc_AppendStatement(6);
-    statement->expr.expression = create_objectnode(function);
+    statement->expr = create_objectnode(function);
     label = newlabel();
-    statement->target.label = label;
+    statement->label = label;
     do {
         statement = CFunc_AppendStatement(4);
         initializer = (ENode *)pending->func;
         evalMode = 0;
         memo_list = NULL;
         alloc_state = 0;
-        statement->expr.expression = CInline_00513240(initializer);
+        statement->expr = CInline_00513240(initializer);
         pending = pending->next;
     } while (pending && pending->cls == group);
     lastStatement = CFunc_AppendStatement(4);
-    lastStatement->expr.expression =
-        makediadicnode(create_objectnode(function), intconstnode((Type *)&stsignedchar, 1), 0x1e);
+    lastStatement->expr = makediadicnode(create_objectnode(function), intconstnode((Type *)&stsignedchar, 1), 0x1e);
     lastStatement = CFunc_AppendStatement(2);
-    lastStatement->target.label = label;
-    label->target.stmt = lastStatement;
+    lastStatement->label = label;
+    label->stmt = lastStatement;
     return pending;
 }
 
@@ -293,7 +292,7 @@ static inline Boolean CInline_Cleanup(Statement *stmt)
             case ST_ASM:
                 break;
             case ST_RETURN:
-                if (stmt->expr.expression == NULL)
+                if (stmt->expr == NULL)
                     break;
                 /* fall through */
             case ST_EXPRESSION:
@@ -301,7 +300,7 @@ static inline Boolean CInline_Cleanup(Statement *stmt)
             case ST_IFGOTO:
             case ST_IFNGOTO:
             case ST_GOTOEXPR:
-                CExpr_SearchExprTree(stmt->expr.expression, forward_objref, 1, 0x38);
+                CExpr_SearchExprTree(stmt->expr, forward_objref, 1, 0x38);
                 break;
             default:
                 CError_FATAL(3658);
@@ -790,7 +789,7 @@ static inline SInt16 inline_member_index(SInt32 key)
     Statement *entry = inline_statements;
     SInt16 index = 0;
     for (; entry != NULL; entry = entry->next, index++)
-        if (entry->type == ST_LABEL && ((SInt32 *)entry->target.label)[2] == key)
+        if (entry->type == ST_LABEL && ((SInt32 *)entry->label)[2] == key)
             return index;
     CError_FATAL(629);
     return 0;
@@ -1142,14 +1141,14 @@ void forward_statement_objrefs(Statement *stmt)
             case ST_ASM:
                 break;
             case ST_RETURN:
-                if (stmt->expr.expression == NULL)
+                if (stmt->expr == NULL)
                     break;
             case ST_EXPRESSION:
             case ST_SWITCH:
             case ST_IFGOTO:
             case ST_IFNGOTO:
             case ST_GOTOEXPR:
-                CExpr_SearchExprTree(stmt->expr.expression, forward_objref, 1, 0x38);
+                CExpr_SearchExprTree(stmt->expr, forward_objref, 1, 0x38);
                 break;
             default:
                 CError_FATAL(3658);
@@ -1459,22 +1458,22 @@ void CInline_ReconstructFunction(Object *function, CInlineInfo *rec, Statement *
                 evalMode = 3;
                 memo_list = NULL;
                 alloc_state = 0;
-                cursor->expr.expression = CInline_00513240(expression);
+                cursor->expr = CInline_00513240(expression);
                 break;
             case ST_RETURN:
                 if ((expression = (ENode *)record->data.operand) != NULL) {
                     evalMode = 3;
                     memo_list = NULL;
                     alloc_state = 0;
-                    cursor->expr.expression = CInline_00513240(expression);
+                    cursor->expr = CInline_00513240(expression);
                 } else {
-                    cursor->expr.expression = NULL;
+                    cursor->expr = NULL;
                 }
                 break;
             case ST_LABEL:
-                cursor->target.label = newlabel();
-                table[i] = cursor->target.label;
-                cursor->target.label->target.stmt = cursor;
+                cursor->label = newlabel();
+                table[i] = cursor->label;
+                cursor->label->stmt = cursor;
                 break;
             case ST_IFGOTO:
             case ST_IFNGOTO:
@@ -1482,14 +1481,14 @@ void CInline_ReconstructFunction(Object *function, CInlineInfo *rec, Statement *
                 evalMode = 3;
                 memo_list = NULL;
                 alloc_state = 0;
-                cursor->expr.expression = CInline_00513240(expression);
+                cursor->expr = CInline_00513240(expression);
                 break;
             case ST_SWITCH:
                 expression = record->data.switchInfo->expression;
                 evalMode = 3;
                 memo_list = NULL;
                 alloc_state = 0;
-                cursor->expr.expression = CInline_00513240(expression);
+                cursor->expr = CInline_00513240(expression);
                 break;
             case ST_ASM:
                 break;
@@ -1504,12 +1503,12 @@ void CInline_ReconstructFunction(Object *function, CInlineInfo *rec, Statement *
     while (stmt != NULL) {
         switch (stmt->type) {
             case ST_GOTO:
-                if ((stmt->target.label = table[record->data.targetIndex]) == NULL)
+                if ((stmt->label = table[record->data.targetIndex]) == NULL)
                     CError_FATAL(3312);
                 break;
             case ST_IFGOTO:
             case ST_IFNGOTO:
-                if ((stmt->target.label = table[record->secondaryOperand.targetIndex]) == NULL)
+                if ((stmt->label = table[record->secondaryOperand.targetIndex]) == NULL)
                     CError_FATAL(3317);
                 break;
             case ST_SWITCH:
@@ -1591,11 +1590,11 @@ void CInline_SaveInfo(CInlineInfo *out, Statement *list, Object *function)
             case ST_ENDCATCH:
             case ST_ENDCATCHDTOR:
             case ST_GOTOEXPR:
-                SaveName(savedStatement, statement->expr.expression);
+                SaveName(savedStatement, statement->expr);
                 break;
             case ST_RETURN:
-                if (statement->expr.expression) {
-                    expression = CInline_GetName(statement->expr.expression);
+                if (statement->expr) {
+                    expression = CInline_GetName(statement->expr);
                     CInline_005130b0(expression, 0);
                     savedStatement->data.operand = expression;
                 } else {
@@ -1603,15 +1602,15 @@ void CInline_SaveInfo(CInlineInfo *out, Statement *list, Object *function)
                 }
                 break;
             case ST_GOTO:
-                CInline_StoreIndex(savedStatement, (Statement **)list, statement->target.label->target.stmt);
+                CInline_StoreIndex(savedStatement, (Statement **)list, statement->label->stmt);
                 break;
             case ST_IFGOTO:
             case ST_IFNGOTO:
-                expression = CInline_GetName(statement->expr.expression);
+                expression = CInline_GetName(statement->expr);
                 CInline_005130b0(expression, 0);
                 savedStatement->data.operand = expression;
                 savedStatement->secondaryOperand.targetIndex =
-                    CInline_FindIndex((UInt32)statement->target.label->target.stmt, (Statement **)list);
+                    CInline_FindIndex((UInt32)statement->label->stmt, (Statement **)list);
                 break;
             case ST_SWITCH:
                 savedStatement->data.switchInfo = create_inline_switch_data(list->next, statement);
@@ -1765,7 +1764,7 @@ unsigned char fn_00511180(Object *function, Statement *statement)
                 break;
             case ST_RETURN:
                 if (statement->next == NULL) {
-                    if (statement->expr.expression != NULL)
+                    if (statement->expr != NULL)
                         break;
                     if (((TypeFunc *)function->type)->functype == &stvoid)
                         break;
@@ -1787,7 +1786,7 @@ void *create_inline_switch_data(Statement *base, Statement *classInfo)
     SInt16 count;
 
     list =
-        classInfo->target.switchDescriptor /* create_inline_switch_data: ST_SWITCH stores its switch descriptor here */;
+        ((SwitchInfo *)classInfo->label) /* create_inline_switch_data: ST_SWITCH stores its switch descriptor here */;
 
     count = 0;
     for (node = list->cases; node != NULL; node = node->next)
@@ -1795,17 +1794,17 @@ void *create_inline_switch_data(Statement *base, Statement *classInfo)
 
     result = (InlineSwitchData *)galloc(count * 10 + 12);
 
-    name = gen_name(classInfo->expr.expression);
+    name = gen_name(classInfo->expr);
     CInline_005130b0(name, 0);
     result->expression = name;
 
-    result->defaultStatementIndex = CIB_FindIndex(base, list->defaultlabel->target.stmt);
+    result->defaultStatementIndex = CIB_FindIndex(base, list->defaultlabel->stmt);
     result->valueType = list->sizetype;
     result->caseCount = count;
 
     count = 0;
     for (node = list->cases; node != NULL; node = node->next) {
-        result->entries[count].statementIndex = CIB_FindIndex(base, node->label->target.stmt);
+        result->entries[count].statementIndex = CIB_FindIndex(base, node->label->stmt);
         result->entries[count].caseValue = node->min;
         count++;
     }
@@ -1844,7 +1843,7 @@ void inline_statement_list(Statement *list)
             for (statement = list; statement != NULL; statement = statement->next) {
                 switch (statement->type) {
                     case ST_RETURN:
-                        if (statement->expr.expression == NULL)
+                        if (statement->expr == NULL)
                             break;
                         /* fall through */
                     case ST_EXPRESSION:
@@ -1888,7 +1887,7 @@ void inline_statement_list(Statement *list)
             CException_004e35b0(statement->dobjstack);
         switch (statement->type) {
             case ST_RETURN:
-                if (statement->expr.expression == NULL)
+                if (statement->expr == NULL)
                     break;
                 /* fall through */
             case ST_EXPRESSION:
@@ -1896,7 +1895,7 @@ void inline_statement_list(Statement *list)
             case ST_IFGOTO:
             case ST_IFNGOTO:
             case ST_GOTOEXPR:
-                CInline_005114e0(statement->expr.expression);
+                CInline_005114e0(statement->expr);
                 break;
             case ST_NOP:
             case ST_LABEL:
@@ -2054,27 +2053,25 @@ Statement *inline_statement(Statement *statement)
     char changed;
     do {
         changed = 0;
-        if (statement->type == ST_EXPRESSION && ((ENode *)statement->expr.expression)->type == 4 &&
-            CParser_IsVolatile(((ENode *)statement->expr.expression)->rtype,
-                               ((ENode *)statement->expr.expression)->flags & 3) == 0) {
-            statement->expr.expression = ((ENode *)statement->expr.expression)->data.diadic.left;
+        if (statement->type == ST_EXPRESSION && ((ENode *)statement->expr)->type == 4 &&
+            CParser_IsVolatile(((ENode *)statement->expr)->rtype, ((ENode *)statement->expr)->flags & 3) == 0) {
+            statement->expr = ((ENode *)statement->expr)->data.diadic.left;
             changed = 1;
-            if ((char)((ENode *)statement->expr.expression)->type == 56 ||
-                (char)((ENode *)statement->expr.expression)->type == 49) {
-                statement->expr.expression = nullnode();
+            if ((char)((ENode *)statement->expr)->type == 56 || (char)((ENode *)statement->expr)->type == 49) {
+                statement->expr = nullnode();
             }
         }
-        if (((ENode *)statement->expr.expression)->type == 41) {
+        if (((ENode *)statement->expr)->type == 41) {
             split = (Statement *)CompilerTools_AllocatePool(sizeof(Statement));
             *split = *statement;
             statement->next = split;
             statement->type = ST_EXPRESSION;
-            statement->expr.expression = ((ENode *)statement->expr.expression)->data.diadic.left;
-            split->expr.expression = ((ENode *)split->expr.expression)->data.diadic.right;
+            statement->expr = ((ENode *)statement->expr)->data.diadic.left;
+            split->expr = ((ENode *)split->expr)->data.diadic.right;
             changed = 1;
         }
     } while (changed != 0);
-    if (((expression = (ENode *)statement->expr.expression)->type == 54 || expression->type == EFUNCCALLP) &&
+    if (((expression = (ENode *)statement->expr)->type == 54 || expression->type == EFUNCCALLP) &&
         ((ENode *)expression->data.diadic.left)->type == 56 && can_inline(expression->data.diadic.left) != 0) {
         result = try_inline_statement(statement, &changed);
         statement = result;
@@ -2087,9 +2084,9 @@ Statement *inline_statement(Statement *statement)
     inline_statement_mode = 1;
     data_005824b5 = 0;
     inline_call_count = 0;
-    statement->expr.expression = inline_expression(statement->expr.expression);
+    statement->expr = inline_expression(statement->expr);
     if (inline_call_seen != 0) {
-        statement->expr.expression = fold_constants(statement->expr.expression);
+        statement->expr = fold_constants(statement->expr);
         data_00582467 = 1;
     }
     if (inline_call_count != 0 && data_005824b5 == 0) {
@@ -2147,7 +2144,7 @@ Statement *try_inline_statement(Statement *obj, char *flag)
     CLabel *v;
 
     *flag = 0;
-    t = obj->expr.expression->data.funccall.funcref->data.objref;
+    t = obj->expr->data.funccall.funcref->data.objref;
     if ((rec = t->u.func.u) == NULL || rec->kind < 3)
         return obj;
     if (obj->type != ST_EXPRESSION) {
@@ -2163,7 +2160,7 @@ Statement *try_inline_statement(Statement *obj, char *flag)
         v = newlabel();
     }
     *flag = 1;
-    return generate_inline_statements(t, obj, rec, obj->expr.expression, v, NULL, 0);
+    return generate_inline_statements(t, obj, rec, obj->expr, v, NULL, 0);
 }
 
 Statement *generate_inline_statements(Object *function, Statement *tail, CInlineInfo *args, ENode *result,
@@ -2183,7 +2180,7 @@ Statement *generate_inline_statements(Object *function, Statement *tail, CInline
     initializer = setup_inline_locals_and_arguments(function, args, result->data.funccall.args);
     if (initializer != NULL) {
         tail->type = ST_EXPRESSION;
-        tail->expr.expression = fold_constants(initializer);
+        tail->expr = fold_constants(initializer);
     } else {
         tail->type = ST_NOP;
     }
@@ -2222,11 +2219,11 @@ Statement *generate_inline_statements(Object *function, Statement *tail, CInline
             case ST_ENDCATCH:
             case ST_ENDCATCHDTOR:
             case ST_GOTOEXPR:
-                node->expr.expression = gen_expr(entry->data.operand);
+                node->expr = gen_expr(entry->data.operand);
                 break;
             case ST_RETURN:
                 if (entry->data.operand != NULL) {
-                    node->expr.expression = gen_expr(entry->data.operand);
+                    node->expr = gen_expr(entry->data.operand);
                     if (convertReturn) {
                         SInt32 index = CInline_ReturnZero(function->type);
                         ENode *conversion;
@@ -2235,12 +2232,11 @@ Statement *generate_inline_statements(Object *function, Statement *tail, CInline
                             conversion = gen_expr_save(data_0058245a[index].expr);
                         else
                             conversion = create_objectnode(data_0058245a[index].var);
-                        node->expr.expression = makecommaexpression(node->expr.expression, conversion);
+                        node->expr = makecommaexpression(node->expr, conversion);
                     }
                     if (returnObject != NULL) {
                         node->type = ST_EXPRESSION;
-                        node->expr.expression =
-                            makediadicnode(CExpr_New_EINDIRECT_Node(returnObject), node->expr.expression, 0x1e);
+                        node->expr = makediadicnode(CExpr_New_EINDIRECT_Node(returnObject), node->expr, 0x1e);
                     } else {
                         node->type = originalType;
                     }
@@ -2249,29 +2245,29 @@ Statement *generate_inline_statements(Object *function, Statement *tail, CInline
                         tail = tail->next;
                         *tail = templateStmt;
                         tail->type = ST_GOTO;
-                        tail->target.label = returnLabel;
+                        tail->label = returnLabel;
                     }
                 } else if (returnLabel != NULL) {
                     node->type = ST_GOTO;
-                    node->target.label = returnLabel;
+                    node->label = returnLabel;
                 } else {
                     node->type = ST_NOP;
                 }
                 break;
             case ST_LABEL:
-                node->target.label = newlabel();
-                labels[i] = node->target.label;
-                node->target.label->target.stmt = node;
+                node->label = newlabel();
+                labels[i] = node->label;
+                node->label->stmt = node;
                 break;
             case ST_IFGOTO:
             case ST_IFNGOTO:
-                node->expr.expression = gen_expr(entry->data.operand);
+                node->expr = gen_expr(entry->data.operand);
                 /* fall through */
             case ST_GOTO:
                 add_chain(&chain, node, entry);
                 break;
             case ST_SWITCH:
-                node->expr.expression = gen_expr(*(void **)entry->data.switchInfo);
+                node->expr = gen_expr(*(void **)entry->data.switchInfo);
                 /* fall through */
             case ST_ASM:
                 add_chain(&chain, node, entry);
@@ -2287,8 +2283,8 @@ Statement *generate_inline_statements(Object *function, Statement *tail, CInline
         tail = tail->next;
         *tail = templateStmt;
         tail->type = ST_LABEL;
-        tail->target.label = returnLabel;
-        returnLabel->target.stmt = tail;
+        tail->label = returnLabel;
+        returnLabel->stmt = tail;
         if (appendStatement != 0) {
             tail->next = (Statement *)CompilerTools_AllocatePool(sizeof(*tail));
             tail = tail->next;
@@ -2301,14 +2297,14 @@ Statement *generate_inline_statements(Object *function, Statement *tail, CInline
 
         switch (node->type) {
             case ST_GOTO:
-                node->target.label = labels[entry->data.targetIndex];
-                if (node->target.label == NULL)
+                node->label = labels[entry->data.targetIndex];
+                if (node->label == NULL)
                     CError_FATAL(2380);
                 break;
             case ST_IFGOTO:
             case ST_IFNGOTO:
-                node->target.label = labels[entry->secondaryOperand.targetIndex];
-                if (node->target.label == NULL)
+                node->label = labels[entry->secondaryOperand.targetIndex];
+                if (node->label == NULL)
                     CError_FATAL(2385);
                 break;
             case ST_SWITCH:
@@ -2481,7 +2477,7 @@ void reconstruct_switch_info(Statement *statement, IStmtRec *record, CLabel **la
     SInt16 caseIndex;
 
     switchInfo = (SwitchInfo *)CompilerTools_AllocatePool(sizeof(SwitchInfo));
-    statement->target.switchDescriptor = switchInfo;
+    statement->label = (CLabel *)switchInfo;
     switchInfo->defaultlabel = labelTable[record->data.switchInfo->defaultStatementIndex];
     CError_ASSERT(2054, switchInfo->defaultlabel != NULL);
     switchInfo->sizetype = record->data.switchInfo->valueType;

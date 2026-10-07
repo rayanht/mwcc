@@ -94,8 +94,8 @@ static inline Statement *destroy_array(Statement *expr, ObjMemberVar *member, Ty
     }
     if (offset != 0)
         base = makediadicnode(base, intconstnode((Type *)&stunsignedlong, offset), EADD);
-    node->expr.expression = funccallexpr(data_0058717c, base, ref, intconstnode((Type *)&stsignedlong, type->size),
-                                         intconstnode((Type *)&stsignedlong, member->type->size / type->size));
+    node->expr = funccallexpr(data_0058717c, base, ref, intconstnode((Type *)&stsignedlong, type->size),
+                              intconstnode((Type *)&stsignedlong, member->type->size / type->size));
     return node;
 }
 
@@ -162,7 +162,7 @@ static inline Statement *CABI_InitVBasePtrs(Statement *stmt, TypeClass *tclass)
     for (; vbase; vbase = vbase->next) {
         expr = build_vbase_ptr_initializers(CABI_MakeThisExpr(NULL, vbase->offset), tclass, tclass, vbase->base, 0);
         stmt = CFunc_InsertAfterStatement(ST_EXPRESSION, stmt);
-        stmt->expr.expression = (struct ENode *)expr;
+        stmt->expr = (struct ENode *)expr;
     }
     return stmt;
 }
@@ -708,16 +708,16 @@ void CABI_MakeDefaultArgConstructor(TypeClass *theclass, Object *function)
     body.next = &statement;
     memclrw(&statement, sizeof(statement));
     statement.type = ST_RETURN;
-    statement.expr.expression = (ENode *)CompilerTools_AllocatePool(sizeof(ENode));
-    statement.expr.expression->type = EFUNCCALL;
-    statement.expr.expression->cost = 200;
-    statement.expr.expression->flags = 0;
-    statement.expr.expression->rtype = (Type *)&void_ptr;
-    statement.expr.expression->data.funccall.funcref = CExpr_MakeObjRefNode(defaults->default_func, 0);
-    statement.expr.expression->data.funccall.functype = (TypeFunc *)defaults->default_func->type;
+    statement.expr = (ENode *)CompilerTools_AllocatePool(sizeof(ENode));
+    statement.expr->type = EFUNCCALL;
+    statement.expr->cost = 200;
+    statement.expr->flags = 0;
+    statement.expr->rtype = (Type *)&void_ptr;
+    statement.expr->data.funccall.funcref = CExpr_MakeObjRefNode(defaults->default_func, 0);
+    statement.expr->data.funccall.functype = (TypeFunc *)defaults->default_func->type;
     formalArgs = ((TypeMemberFunc *)defaults->default_func->type)->args;
-    statement.expr.expression->data.funccall.args = (ENodeList *)CompilerTools_AllocatePool(sizeof(ENodeList));
-    callArgs = statement.expr.expression->data.funccall.args;
+    statement.expr->data.funccall.args = (ENodeList *)CompilerTools_AllocatePool(sizeof(ENodeList));
+    callArgs = statement.expr->data.funccall.args;
     callArgs->node = ((ENode * (*)(Object *)) create_objectnode)(arguments->object);
     if ((theclass->flags & CLASS_HAS_VBASES) != 0) {
         formalArgs = formalArgs->next;
@@ -932,7 +932,7 @@ Statement *assign_vbase_ctor_offsets(Statement *list, TypeClass *cls)
             CError_ASSERT(1206, value != 0);
             expr = makediadicnode(create_objectnode(thisnode), obj, EASS);
             list = CFunc_InsertAfterStatement(4, list);
-            list->expr.expression = expr;
+            list->expr = expr;
 
             expr = makediadicnode(create_objectnode(thisnode), intconstnode((Type *)&stunsignedlong, ctoroffset), EADD);
             expr = makemonadicnode(expr, EINDIRECT);
@@ -944,7 +944,7 @@ Statement *assign_vbase_ctor_offsets(Statement *list, TypeClass *cls)
                 obj = makediadicnode(obj, intconstnode((Type *)&stunsignedlong, vbaseoffset), EADD);
             expr = makediadicnode(expr, makediadicnode(obj, create_objectnode(thisnode), ESUB), EASS);
             list = CFunc_InsertAfterStatement(4, list);
-            list->expr.expression = expr;
+            list->expr = expr;
         }
     }
     return list;
@@ -1006,7 +1006,7 @@ Statement *assign_vtable_pointers(Statement *result, Object *obj, TypeClass *cls
             }
 
             result = CFunc_InsertAfterStatement(4, result);
-            result->expr.expression = makediadicnode(makemonadicnode(name, EINDIRECT), objref, EASS);
+            result->expr = makediadicnode(makemonadicnode(name, EINDIRECT), objref, EASS);
         }
     }
 
@@ -1077,18 +1077,18 @@ void CABI_InsertConstructorInitialization(Object *obj, Statement *stmt, TypeClas
     if ((function = CABI_GetNewObject(tclass))) {
         label = newlabel();
         current = CFunc_InsertAfterStatement(ST_IFGOTO, stmt);
-        current->expr.expression = CABI_MakeThisExpr(NULL, 0);
-        current->target.label = label;
+        current->expr = CABI_MakeThisExpr(NULL, 0);
+        current->label = label;
         expr = funccallexpr(function, intconstnode((Type *)&stunsignedlong, tclass->size), NULL, NULL, NULL);
         expr = makediadicnode(CABI_MakeThisExpr(NULL, 0), expr, EASS);
         current = CFunc_InsertAfterStatement(ST_IFGOTO, current);
-        current->expr.expression = (ENode *)expr;
-        current->target.label = label;
+        current->expr = (ENode *)expr;
+        current->label = label;
         current = CFunc_InsertAfterStatement(ST_RETURN, current);
-        current->expr.expression = NULL;
+        current->expr = NULL;
         current = CFunc_InsertAfterStatement(ST_LABEL, current);
-        current->target.label = label;
-        label->target.stmt = current;
+        current->label = label;
+        label->stmt = current;
     }
 
     if (has_try) {
@@ -1104,8 +1104,8 @@ void CABI_InsertConstructorInitialization(Object *obj, Statement *stmt, TypeClas
             label = newlabel();
             current = CFunc_InsertAfterStatement(ST_IFGOTO, current);
             expr = create_objectnode(CABI_FlagArg());
-            current->expr.expression = CExpr_MakeComparisonNode(expr, intconstnode((Type *)&stsignedshort, 0));
-            current->target.label = label;
+            current->expr = CExpr_MakeComparisonNode(expr, intconstnode((Type *)&stsignedshort, 0));
+            current->label = label;
             current = CABI_InitVBasePtrs(current, tclass);
 
             for (virtualBase = tclass->vbases; virtualBase; virtualBase = virtualBase->next) {
@@ -1116,14 +1116,14 @@ void CABI_InsertConstructorInitialization(Object *obj, Statement *stmt, TypeClas
                     }
                     if (initializer) {
                         current = CFunc_InsertAfterStatement(ST_EXPRESSION, current);
-                        current->expr.expression = initializer->objexpr;
+                        current->expr = initializer->objexpr;
                     } else if (CClass_Constructor(virtualBase->base)) {
                         if ((function = (constructor = CClass_DefaultConstructor(virtualBase->base)))) {
                             args = NULL;
                             if (virtualBase->base->flags & CLASS_HAS_VBASES)
                                 args = intconstnode((Type *)&stsignedshort, 0);
                             current = CFunc_InsertAfterStatement(ST_EXPRESSION, current);
-                            current->expr.expression =
+                            current->expr =
                                 funccallexpr(function, CABI_MakeThisExpr(NULL, virtualBase->offset), args, NULL, NULL);
                         } else {
                             CError_ReportError(ERR_CANNOT_CONSTRUCT_BASE_CLASS, virtualBase->base->classname->name);
@@ -1136,8 +1136,8 @@ void CABI_InsertConstructorInitialization(Object *obj, Statement *stmt, TypeClas
             }
 
             current = CFunc_InsertAfterStatement(ST_LABEL, current);
-            current->target.label = label;
-            label->target.stmt = current;
+            current->label = label;
+            label->stmt = current;
         }
 
         for (base = tclass->bases; base; base = base->next) {
@@ -1149,14 +1149,14 @@ void CABI_InsertConstructorInitialization(Object *obj, Statement *stmt, TypeClas
                     }
                     if (initializer) {
                         current = CFunc_InsertAfterStatement(ST_EXPRESSION, current);
-                        current->expr.expression = initializer->objexpr;
+                        current->expr = initializer->objexpr;
                     } else if (CClass_Constructor(base->base)) {
                         if ((function = (constructor = CClass_DefaultConstructor(base->base)))) {
                             args = NULL;
                             if (base->base->flags & CLASS_HAS_VBASES)
                                 args = intconstnode((Type *)&stsignedshort, 0);
                             current = CFunc_InsertAfterStatement(ST_EXPRESSION, current);
-                            current->expr.expression =
+                            current->expr =
                                 funccallexpr(function, CABI_MakeThisExpr(NULL, base->offset), args, NULL, NULL);
                         } else {
                             CError_ReportError(ERR_CANNOT_CONSTRUCT_BASE_CLASS, base->base->classname->name);
@@ -1188,7 +1188,7 @@ void CABI_InsertConstructorInitialization(Object *obj, Statement *stmt, TypeClas
             }
             if (initializer) {
                 current = CFunc_InsertAfterStatement(ST_EXPRESSION, current);
-                current->expr.expression = initializer->objexpr;
+                current->expr = initializer->objexpr;
                 switch ((SInt8)(type = member->type)->type) {
                     case TYPEARRAY:
                         do {
@@ -1221,7 +1221,7 @@ void CABI_InsertConstructorInitialization(Object *obj, Statement *stmt, TypeClas
                                 else
                                     destructorRef = nullnode();
                                 current = CFunc_InsertAfterStatement(ST_EXPRESSION, current);
-                                current->expr.expression = CExpr_FuncCallSix(
+                                current->expr = CExpr_FuncCallSix(
                                     class_array_initializer, CABI_MakeThisExpr(tclass, member->offset), constructorRef,
                                     destructorRef, intconstnode((Type *)&stsignedlong, type->size),
                                     intconstnode((Type *)&stsignedlong, member->type->size / type->size), NULL);
@@ -1240,7 +1240,7 @@ void CABI_InsertConstructorInitialization(Object *obj, Statement *stmt, TypeClas
                                 if (((TypeClass *)type)->flags & CLASS_HAS_VBASES)
                                     args = intconstnode((Type *)&stsignedshort, 1);
                                 current = CFunc_InsertAfterStatement(ST_EXPRESSION, current);
-                                current->expr.expression =
+                                current->expr =
                                     funccallexpr(function, CABI_MakeThisExpr(tclass, member->offset), args, NULL, NULL);
                             } else {
                                 CError_ReportError(ERR_CANNOT_CONSTRUCT_DIRECT_MEMBER, member->name->name);
@@ -1259,8 +1259,8 @@ void CABI_InsertConstructorInitialization(Object *obj, Statement *stmt, TypeClas
     if (!tclass->sominfo) {
         for (current = stmt->next; current; current = current->next) {
             if (current->type == ST_RETURN) {
-                CError_ASSERT(1619, !current->expr.expression);
-                current->expr.expression = CABI_MakeThisExpr(NULL, 0);
+                CError_ASSERT(1619, !current->expr);
+                current->expr = CABI_MakeThisExpr(NULL, 0);
             }
         }
     }
@@ -1382,8 +1382,7 @@ Statement *make_baseclass_and_ivars_copy_statements(Statement *stmt, TypeClass *
             args = CompilerTools_AllocatePool(sizeof(ENodeList));
             args->next = NULL;
             args->node = src;
-            stmt->expr.expression =
-                CExpr_ConstructObject(TYPE(baseclass), CABI_MakeThisExpr(NULL, offset), args, 1, 0, 0, 0, 1);
+            stmt->expr = CExpr_ConstructObject(TYPE(baseclass), CABI_MakeThisExpr(NULL, offset), args, 1, 0, 0, 0, 1);
         } else {
             this_expr = CClass_DirectBasePointerCast(CABI_MakeThisExpr(NULL, 0), tclass, baseclass);
             if (!(func = CClass_AssignmentOperator(baseclass))) {
@@ -1393,7 +1392,7 @@ Statement *make_baseclass_and_ivars_copy_statements(Statement *stmt, TypeClass *
             } else {
                 expr = funccallexpr(func, this_expr, getnodeaddress(src, 0), NULL, NULL);
             }
-            stmt->expr.expression = expr;
+            stmt->expr = expr;
         }
     } else {
         for (ivar = tclass->ivars, regions = NULL; ivar; ivar = ivar->next) {
@@ -1462,7 +1461,7 @@ Statement *make_baseclass_and_ivars_copy_statements(Statement *stmt, TypeClass *
                             args = CompilerTools_AllocatePool(sizeof(ENodeList));
                             memclrw(args, sizeof(ENodeList));
                             args->node = src;
-                            stmt->expr.expression =
+                            stmt->expr =
                                 CExpr_ConstructObject(type, CABI_MakeThisExpr(tclass, off), args, 1, 1, 0, 1, 1);
                         } else {
                             this_expr = CABI_MakeThisExpr(tclass, off);
@@ -1473,7 +1472,7 @@ Statement *make_baseclass_and_ivars_copy_statements(Statement *stmt, TypeClass *
                             } else {
                                 expr = funccallexpr(func, this_expr, getnodeaddress(src, 0), NULL, NULL);
                             }
-                            stmt->expr.expression = expr;
+                            stmt->expr = expr;
                         }
                     }
 
@@ -1488,7 +1487,7 @@ Statement *make_baseclass_and_ivars_copy_statements(Statement *stmt, TypeClass *
                     args = CompilerTools_AllocatePool(sizeof(ENodeList));
                     memclrw(args, sizeof(ENodeList));
                     args->node = src;
-                    stmt->expr.expression =
+                    stmt->expr =
                         CExpr_ConstructObject(type, CABI_MakeThisExpr(tclass, regions->start), args, 1, 1, 0, 1, 1);
                     if ((dtor = CClass_Destructor(TYPE_CLASS(type))))
                         CExcept_RegisterMember(stmt, CABI_ThisArg(), regions->start, dtor, NULL, 1);
@@ -1507,7 +1506,7 @@ Statement *make_baseclass_and_ivars_copy_statements(Statement *stmt, TypeClass *
                 if (type->type == TYPEARRAY) {
                     if (type->size > 1 && ((regions->start & 1) || (type->size & 1))) {
                         stmt = CFunc_InsertAfterStatement(ST_EXPRESSION_0050b120, stmt);
-                        stmt->expr.expression =
+                        stmt->expr =
                             funccallexpr(data_005870d8, CABI_MakeThisExpr(tclass, regions->start),
                                          getnodeaddress(src, 0), intconstnode(TYPE(&stunsignedlong), type->size), NULL);
                         continue;
@@ -1520,7 +1519,7 @@ Statement *make_baseclass_and_ivars_copy_statements(Statement *stmt, TypeClass *
                 stmt = CFunc_InsertAfterStatement(ST_EXPRESSION_0050b120, stmt);
                 expr = makediadicnode(this_expr, src, EASS);
             }
-            stmt->expr.expression = expr;
+            stmt->expr = expr;
         }
     }
 
@@ -1616,7 +1615,7 @@ void CABI_MakeDefaultConstructor(TypeClass *cls, Object *func)
 
     node = create_objectnode(arguments->object);
     node->rtype = (Type *)&void_ptr;
-    ret->expr.expression = node;
+    ret->expr = node;
 
     CFunc_CodeCleanup(&stmt);
     CFunc_Gen(&stmt, func, 0);
@@ -1663,7 +1662,7 @@ Statement *destroy_members(Statement *expr, ObjMemberVar *member, TypeClass *cls
                 }
                 if (offset != 0)
                     base = makediadicnode(base, intconstnode((Type *)&stunsignedlong, offset), EADD);
-                expr->expr.expression = CABI_DestroyObject(dtor, base, 1, 1, 0);
+                expr->expr = CABI_DestroyObject(dtor, base, 1, 1, 0);
                 return expr;
             }
         }
@@ -1701,7 +1700,7 @@ Statement *destroy_nonvirtual_bases(Statement *acc, ClassList *list)
             node->rtype = (Type *)&void_ptr;
             if (offset != 0)
                 node = makediadicnode(node, intconstnode((Type *)&stunsignedlong, offset), EADD);
-            acc->expr.expression = CABI_DestroyObject(dtor, node, 0, 1, 0);
+            acc->expr = CABI_DestroyObject(dtor, node, 0, 1, 0);
         }
     }
     return acc;
@@ -1715,7 +1714,7 @@ Statement *build_base_destruction_statements(Statement *stmt, VClassList *bl)
         if ((dtor = CClass_Destructor(bl->base)) != NULL) {
             stmt = build_base_destruction_statements(stmt, bl->next);
             stmt = CFunc_InsertAfterStatement(EINDIRECT, stmt);
-            stmt->expr.expression = CABI_DestroyObject(dtor, CABI_MakeThisExpr(NULL, bl->offset), 0, 1, 0);
+            stmt->expr = CABI_DestroyObject(dtor, CABI_MakeThisExpr(NULL, bl->offset), 0, 1, 0);
             break;
         }
         bl = bl->next;
@@ -1751,12 +1750,12 @@ void CABI_TransDestructor(Object *destructor, Object *completeDestructor, Statem
     if (current != NULL) {
         do {
             if (current->type == ST_RETURN) {
-                CError_ASSERT(2297, current->expr.expression == 0);
+                CError_ASSERT(2297, current->expr == 0);
                 current->type = ST_GOTO;
-                current->target.label = label;
+                current->label = label;
             }
             if ((next = current->next) != NULL && next->type == ST_RETURN && next->next == NULL) {
-                CError_ASSERT(2302, next->expr.expression == 0);
+                CError_ASSERT(2302, next->expr == 0);
                 current->next = NULL;
                 break;
             }
@@ -1771,8 +1770,8 @@ void CABI_TransDestructor(Object *destructor, Object *completeDestructor, Statem
         CError_ASSERT(922, arguments != 0 && arguments->object->type->type == TYPEPOINTER);
         node = create_objectnode(arguments->object);
         node->rtype = (Type *)&void_ptr;
-        current->expr.expression = node;
-        current->target.label = exitLabel;
+        current->expr = node;
+        current->label = exitLabel;
     }
 
     if (destroyBases && tclass->vtable != NULL && ((VTable *)tclass->vtable)->object != NULL &&
@@ -1790,9 +1789,9 @@ void CABI_TransDestructor(Object *destructor, Object *completeDestructor, Statem
     while (next->next != NULL)
         next = next->next;
     current = CFunc_InsertAfterStatement(ST_LABEL, next);
-    current->target.label = label;
+    current->label = label;
     current->dobjstack = NULL;
-    label->target.stmt = current;
+    label->stmt = current;
 
     if (destroyMembers && (tclass->flags & CLASS_HANDLEOBJECT) == 0) {
         current = destroy_members(current, tclass->ivars, tclass);
@@ -1807,12 +1806,12 @@ void CABI_TransDestructor(Object *destructor, Object *completeDestructor, Statem
         current = CFunc_InsertAfterStatement(7, current);
         CError_ASSERT(967, arguments != 0 && arguments->next != 0 && arguments->next->object->type->type == TYPEINT);
         node = create_objectnode(arguments->next->object);
-        current->expr.expression = node;
-        current->target.label = label;
+        current->expr = node;
+        current->label = label;
         current = build_base_destruction_statements(current, tclass->vbases);
         current = CFunc_InsertAfterStatement(ST_LABEL, current);
-        current->target.label = label;
-        label->target.stmt = current;
+        current->label = label;
+        label->stmt = current;
     }
 
     if (handleDelete) {
@@ -1820,35 +1819,35 @@ void CABI_TransDestructor(Object *destructor, Object *completeDestructor, Statem
         CError_ASSERT(967, arguments != 0 && arguments->next != 0 && arguments->next->object->type->type == TYPEINT);
         node = create_objectnode(arguments->next->object);
         node = CExpr_New_ELESSEQU_Node(node, intconstnode((Type *)&stsignedshort, 0));
-        conditional->expr.expression = node;
-        conditional->target.label = exitLabel;
+        conditional->expr = node;
+        conditional->label = exitLabel;
         current = CFunc_InsertAfterStatement(ST_EXPRESSION, conditional);
         deleteFunction = CParser_FindClassMemberOrNamespaceFunctionObject((Type *)tclass, 0, 0);
         if ((deleteArgs = ((TypeFunc *)deleteFunction->type)->args) != NULL && deleteArgs->next != NULL) {
             CError_ASSERT(922, arguments != 0 && arguments->object->type->type == TYPEPOINTER);
             node = create_objectnode(arguments->object);
             node->rtype = (Type *)&void_ptr;
-            current->expr.expression =
+            current->expr =
                 funccallexpr(deleteFunction, node, intconstnode((Type *)&stunsignedlong, tclass->size), NULL, NULL);
         } else {
             CError_ASSERT(922, arguments != 0 && arguments->object->type->type == TYPEPOINTER);
             node = create_objectnode(arguments->object);
             node->rtype = (Type *)&void_ptr;
-            current->expr.expression = funccallexpr(deleteFunction, node, NULL, NULL, NULL);
+            current->expr = funccallexpr(deleteFunction, node, NULL, NULL, NULL);
         }
         current = CFunc_InsertAfterStatement(ST_LABEL, current);
-        current->target.label = exitLabel;
-        exitLabel->target.stmt = current;
+        current->label = exitLabel;
+        exitLabel->stmt = current;
     }
 
     current = CFunc_InsertAfterStatement(ST_RETURN, current);
     if (tclass->sominfo != NULL) {
-        current->expr.expression = NULL;
+        current->expr = NULL;
     } else {
         CError_ASSERT(922, arguments != 0 && arguments->object->type->type == TYPEPOINTER);
         node = create_objectnode(arguments->object);
         node->rtype = (Type *)&void_ptr;
-        current->expr.expression = node;
+        current->expr = node;
     }
 }
 

@@ -102,7 +102,7 @@ void CFunc_GenerateSingleExprFunc(Object *func, ENode *expr)
         node->dobjstack = UINT_00587fc4;
         data_00587644->next = node;
         data_00587644 = node;
-        node->expr.expression = expr;
+        node->expr = expr;
         if (cscope_currentclass != NULL && cscope_currentclass->sominfo != NULL)
             CSOM_GenerateSomselfAssignment(cscope_currentclass, &stmt);
         CFunc_WarnUnused();
@@ -288,21 +288,21 @@ void CFunc_ParseFuncDef(Object *func, DeclInfo *definition, TypeClass *scopeObje
             data_00587644->next = returnStatement;
             data_00587644 = returnStatement;
             returnStatement->dobjstack = NULL;
-            data_00587644->expr.expression = NULL;
+            data_00587644->expr = NULL;
             if (copts.cplusplus || copts.c9x) {
                 if (memcmp(func->name->name, "main", 5) == 0 &&
                     &TYPE_FUNC(func->type)->functype->type == &stsignedint.type)
-                    data_00587644->expr.expression = intconstnode((Type *)&stsignedint, 0);
+                    data_00587644->expr = intconstnode((Type *)&stsignedint, 0);
             }
             if (previousStatement->type == ST_EXPRESSION) {
                 ENode *expression;
-                if ((expression = previousStatement->expr.expression)->type == EFUNCCALL &&
-                    expression->rtype == &stvoid && (expression->flags & 2))
+                if ((expression = previousStatement->expr)->type == EFUNCCALL && expression->rtype == &stvoid &&
+                    (expression->flags & 2))
                     data_00587644->flags |= 8;
             }
         }
         for (label = clabels; label != NULL; label = label->next) {
-            if (label->target.stmt == NULL)
+            if (label->stmt == NULL)
                 CError_ReportError(ERR_UNDEFINED_LABEL, label->name->name);
         }
         if (!func_errors) {
@@ -868,7 +868,7 @@ void create_local_object_copy(Object *func, TypeIntegral *type, Type *type2, Boo
     expr->rtype = (Type *)type;
     if ((Type *)type != type2)
         expr = CExpr2_00473720(expr, type2);
-    stmt->expr.expression = makediadicnode(create_objectnode(newfunc), expr, EASS);
+    stmt->expr = makediadicnode(create_objectnode(newfunc), expr, EASS);
 }
 
 static void *NewScope(void)
@@ -984,8 +984,8 @@ static void CondJump(ENode *expr, CLabel *truelabel, char a, char b)
 {
     CLabel *label = NewLabel();
     generate_conditional_jump(expr, truelabel, label, a, b);
-    label->target.stmt = (Statement *)AppendStmt(2); /* AppendStmt statement view */
-    ((Statement *)label->target.stmt)->target.label = label;
+    label->stmt = (Statement *)AppendStmt(2); /* AppendStmt statement view */
+    ((Statement *)label->stmt)->label = label;
 }
 
 static inline char use_legacy_condition_scope(void)
@@ -1036,7 +1036,7 @@ void parse_statement(StatementContext *context)
                     s_expression();
                 }
                 stmt = AppendStmt(8);
-                stmt->expr.expression = NULL;
+                stmt->expr = NULL;
                 fn_00449d60();
                 tk = CPrepTokenizer_GetNextToken();
                 return;
@@ -1045,7 +1045,7 @@ void parse_statement(StatementContext *context)
                 if (context->thetype != &stvoid && (warn_missing_return_value() || copts.cplusplus))
                     CError_Warning(ERR_RETURN_VALUE_EXPECTED);
                 stmt = AppendStmt(8);
-                stmt->expr.expression = NULL;
+                stmt->expr = NULL;
                 fn_00449d60();
                 tk = CPrepTokenizer_GetNextToken();
                 return;
@@ -1055,16 +1055,16 @@ void parse_statement(StatementContext *context)
                 if (expr->rtype != &stvoid)
                     CError_ReportError(ERR_ILLEGAL_RETURN_VALUE_VOID_CONSTRUCTOR_DESTRUCTOR);
                 stmt = AppendStmt(4);
-                stmt->expr.expression = expr;
+                stmt->expr = expr;
                 stmt = AppendStmt(8);
-                stmt->expr.expression = NULL;
+                stmt->expr = NULL;
             } else {
                 if (CMachine_FunctionRequiresMemoryReturn((TypeFunc *)cscope_currentfunc->type) == 1)
                     expr = initialize_argument_object(expr, context->thetype, context->qual);
                 else
                     expr = oldassignmentpromotion(expr, context->thetype, context->qual, 1);
                 stmt = AppendStmt(8);
-                stmt->expr.expression = expr;
+                stmt->expr = expr;
                 if (context->thetype->type == TYPEPOINTER)
                     check_function_result_automatic_variable(expr);
             }
@@ -1084,9 +1084,9 @@ void parse_statement(StatementContext *context)
             if (context->switchinfo->defaultlabel)
                 CError_ReportErrorAndUpdateToken(ERR_DEFAULT_LABEL_DEFINED_MORE_THAN_ONCE);
             stmt = AppendStmt(2);
-            stmt->target.label = NewLabel();
-            stmt->target.label->target.stmt = stmt;
-            context->switchinfo->defaultlabel = stmt->target.label;
+            stmt->label = NewLabel();
+            stmt->label->stmt = stmt;
+            context->switchinfo->defaultlabel = stmt->label;
             parse_statement(context);
             return;
         case TK_SWITCH:
@@ -1110,18 +1110,18 @@ void parse_statement(StatementContext *context)
             if (expr->rtype->type != TYPEINT && expr->rtype->type != TYPEFLOAT && expr->rtype->type != TYPEPOINTER)
                 CError_ReportError(ERR_ILLEGAL_OPERAND);
             stmt = AppendStmt(5);
-            stmt->expr.expression = forceintegral(expr);
+            stmt->expr = forceintegral(expr);
             if (tk != ')')
                 CError_ReportErrorAndUpdateToken(ERR_RPAREN_EXPECTED);
             else
                 tk = CPrepTokenizer_GetNextToken();
-            stmt->target.switchDescriptor = (SwitchInfo *)CompilerTools_AllocatePool(sizeof(SwitchInfo));
-            stmt->target.switchDescriptor->defaultlabel = NULL;
-            stmt->target.switchDescriptor->cases = NULL;
-            stmt->target.switchDescriptor->sizetype = stmt->expr.expression->rtype;
+            stmt->label = (CLabel *)CompilerTools_AllocatePool(sizeof(SwitchInfo));
+            ((SwitchInfo *)stmt->label)->defaultlabel = NULL;
+            ((SwitchInfo *)stmt->label)->cases = NULL;
+            ((SwitchInfo *)stmt->label)->sizetype = stmt->expr->rtype;
             breakLabel = NewLabel();
             bodyContext = *context;
-            bodyContext.switchinfo = stmt->target.switchDescriptor;
+            bodyContext.switchinfo = (SwitchInfo *)stmt->label;
             bodyContext.loopBreak = breakLabel;
             ScopedBody(&bodyContext);
             if (!bodyContext.switchinfo->defaultlabel)
@@ -1132,12 +1132,12 @@ void parse_statement(StatementContext *context)
                 *jumpStmt = *stmt;
                 stmt->next = jumpStmt;
                 jumpStmt->type = ST_GOTO;
-                jumpStmt->target.label = bodyContext.switchinfo->defaultlabel;
+                jumpStmt->label = bodyContext.switchinfo->defaultlabel;
                 jumpStmt->dobjstack = UINT_00587fc4;
             }
             stmt = AppendStmt(2);
-            stmt->target.label = breakLabel;
-            breakLabel->target.stmt = stmt;
+            stmt->label = breakLabel;
+            breakLabel->stmt = stmt;
             if (switchScope)
                 RestoreBlock(switchScope);
             return;
@@ -1147,11 +1147,11 @@ void parse_statement(StatementContext *context)
                 if (tk == '*' && !copts.ANSIstrict) {
                     tk = CPrepTokenizer_GetNextToken();
                     stmt = AppendStmt(0xf);
-                    stmt->expr.expression = s_expression();
-                    if (stmt->expr.expression->rtype->type != TYPEPOINTER) {
+                    stmt->expr = s_expression();
+                    if (stmt->expr->rtype->type != TYPEPOINTER) {
                         CError_ReportError(ERR_ILLEGAL_TYPE);
-                        stmt->expr.expression = nullnode();
-                        stmt->expr.expression->rtype = (Type *)&void_ptr;
+                        stmt->expr = nullnode();
+                        stmt->expr->rtype = (Type *)&void_ptr;
                     }
                     break;
                 }
@@ -1159,19 +1159,19 @@ void parse_statement(StatementContext *context)
                 return;
             }
             stmt = AppendStmt(3);
-            stmt->target.label = FindLabel();
-            if (!stmt->target.label) {
-                stmt->target.label = NewLabel();
-                stmt->target.label->next = clabels;
-                clabels = stmt->target.label;
-                stmt->target.label->name = data_00587fa0;
+            stmt->label = FindLabel();
+            if (!stmt->label) {
+                stmt->label = NewLabel();
+                stmt->label->next = clabels;
+                clabels = stmt->label;
+                stmt->label->name = data_00587fa0;
             }
             tk = CPrepTokenizer_GetNextToken();
             break;
         case TK_BREAK:
             if (context->loopBreak) {
                 stmt = AppendStmt(3);
-                stmt->target.label = context->loopBreak;
+                stmt->label = context->loopBreak;
             } else
                 CError_ReportError(ERR_ILLEGAL_USE_KEYWORD);
             tk = CPrepTokenizer_GetNextToken();
@@ -1179,7 +1179,7 @@ void parse_statement(StatementContext *context)
         case TK_CONTINUE:
             if (context->loopContinue) {
                 stmt = AppendStmt(3);
-                stmt->target.label = context->loopContinue;
+                stmt->label = context->loopContinue;
             } else
                 CError_ReportError(ERR_ILLEGAL_USE_KEYWORD);
             tk = CPrepTokenizer_GetNextToken();
@@ -1205,7 +1205,7 @@ void parse_statement(StatementContext *context)
                 }
                 if (expr) {
                     stmt = AppendStmt(4);
-                    stmt->expr.expression = expr;
+                    stmt->expr = expr;
                 }
                 if (tk != ';')
                     CError_ReportError(ERR_SEMICOLON_EXPECTED);
@@ -1260,8 +1260,8 @@ void parse_statement(StatementContext *context)
                 tk = CPrepTokenizer_GetNextToken();
             if (testExpr) {
                 stmt = AppendStmt(3);
-                stmt->target.label = NewLabel();
-                conditionLabel = stmt->target.label;
+                stmt->label = NewLabel();
+                conditionLabel = stmt->label;
             } else
                 conditionLabel = NewLabel();
             if (current_statement_number >= 0x1000) {
@@ -1272,8 +1272,8 @@ void parse_statement(StatementContext *context)
             } else
                 current_statement_number <<= 3;
             stmt = AppendStmt(2);
-            stmt->target.label = NewLabel();
-            (topLabel = stmt->target.label)->target.stmt = stmt;
+            stmt->label = NewLabel();
+            (topLabel = stmt->label)->stmt = stmt;
             breakLabel = NewLabel();
             continueLabel = NewLabel();
             bodyContext = *context;
@@ -1286,15 +1286,15 @@ void parse_statement(StatementContext *context)
             } else
                 ScopedBody(&bodyContext);
             stmt = AppendStmt(2);
-            stmt->target.label = continueLabel;
-            continueLabel->target.stmt = stmt;
+            stmt->label = continueLabel;
+            continueLabel->stmt = stmt;
             if (stepExpr) {
                 stmt = AppendStmt(4);
-                stmt->expr.expression = stepExpr;
+                stmt->expr = stepExpr;
             }
             stmt = AppendStmt(2);
-            stmt->target.label = conditionLabel;
-            conditionLabel->target.stmt = stmt;
+            stmt->label = conditionLabel;
+            conditionLabel->stmt = stmt;
             CondJump(testExpr, topLabel, 1, 1);
             if (current_statement_number > 0x1000) {
                 if (current_statement_number > 0xf000)
@@ -1306,8 +1306,8 @@ void parse_statement(StatementContext *context)
             if (current_statement_number < 1)
                 current_statement_number = 1;
             stmt = AppendStmt(2);
-            stmt->target.label = breakLabel;
-            breakLabel->target.stmt = stmt;
+            stmt->label = breakLabel;
+            breakLabel->stmt = stmt;
             if (forScope)
                 RestoreBlock(forScope);
             return;
@@ -1320,8 +1320,8 @@ void parse_statement(StatementContext *context)
             } else
                 current_statement_number <<= 3;
             stmt = AppendStmt(2);
-            stmt->target.label = NewLabel();
-            (topLabel = stmt->target.label)->target.stmt = stmt;
+            stmt->label = NewLabel();
+            (topLabel = stmt->label)->stmt = stmt;
             continueLabel = NewLabel();
             breakLabel = NewLabel();
             bodyContext = *context;
@@ -1330,8 +1330,8 @@ void parse_statement(StatementContext *context)
             tk = CPrepTokenizer_GetNextToken();
             ScopedBody(&bodyContext);
             stmt = AppendStmt(2);
-            stmt->target.label = continueLabel;
-            continueLabel->target.stmt = stmt;
+            stmt->label = continueLabel;
+            continueLabel->stmt = stmt;
             if (tk != TK_WHILE)
                 CError_ReportError(ERR_ILLEGAL_TOKEN);
             if (CPrepTokenizer_GetNextToken() != '(')
@@ -1357,8 +1357,8 @@ void parse_statement(StatementContext *context)
             if (current_statement_number < 1)
                 current_statement_number = 1;
             stmt = AppendStmt(2);
-            stmt->target.label = breakLabel;
-            breakLabel->target.stmt = stmt;
+            stmt->label = breakLabel;
+            breakLabel->stmt = stmt;
             break;
         case TK_WHILE:
             tk = CPrepTokenizer_GetNextToken();
@@ -1394,8 +1394,8 @@ void parse_statement(StatementContext *context)
                     tk = CPrepTokenizer_GetNextToken();
             }
             stmt = AppendStmt(3);
-            stmt->target.label = NewLabel();
-            continueLabel = stmt->target.label;
+            stmt->label = NewLabel();
+            continueLabel = stmt->label;
             if (current_statement_number >= 0x1000) {
                 if (current_statement_number >= 0xf000)
                     current_statement_number++;
@@ -1404,16 +1404,16 @@ void parse_statement(StatementContext *context)
             } else
                 current_statement_number <<= 3;
             stmt = AppendStmt(2);
-            stmt->target.label = NewLabel();
-            (topLabel = stmt->target.label)->target.stmt = stmt;
+            stmt->label = NewLabel();
+            (topLabel = stmt->label)->stmt = stmt;
             breakLabel = NewLabel();
             bodyContext = *context;
             bodyContext.loopContinue = continueLabel;
             bodyContext.loopBreak = breakLabel;
             ScopedBody(&bodyContext);
             stmt = AppendStmt(2);
-            stmt->target.label = continueLabel;
-            continueLabel->target.stmt = stmt;
+            stmt->label = continueLabel;
+            continueLabel->stmt = stmt;
             CondJump(expr, topLabel, 1, 1);
             if (current_statement_number > 0x1000) {
                 if (current_statement_number > 0xf000)
@@ -1425,8 +1425,8 @@ void parse_statement(StatementContext *context)
             if (current_statement_number < 1)
                 current_statement_number = 1;
             stmt = AppendStmt(2);
-            stmt->target.label = breakLabel;
-            breakLabel->target.stmt = stmt;
+            stmt->label = breakLabel;
+            breakLabel->stmt = stmt;
             if (whileScope)
                 RestoreBlock(whileScope);
             return;
@@ -1474,16 +1474,16 @@ void parse_statement(StatementContext *context)
                 } else
                     tk = CPrepTokenizer_GetNextToken();
                 stmt = AppendStmt(3);
-                stmt->target.label = NewLabel();
-                endLabel = stmt->target.label;
+                stmt->label = NewLabel();
+                endLabel = stmt->label;
                 stmt = AppendStmt(2);
-                stmt->target.label = continueLabel;
-                continueLabel->target.stmt = stmt;
+                stmt->label = continueLabel;
+                continueLabel->stmt = stmt;
                 ScopedBody(context);
             }
             stmt = AppendStmt(2);
-            stmt->target.label = endLabel;
-            endLabel->target.stmt = stmt;
+            stmt->label = endLabel;
+            endLabel->stmt = stmt;
             if (ifScope)
                 RestoreBlock(ifScope);
             return;
@@ -1551,16 +1551,16 @@ void parse_statement(StatementContext *context)
         case TK_IDENTIFIER:
             if (IsLabel()) {
                 stmt = AppendStmt(2);
-                if ((stmt->target.label = FindLabel()) != NULL) {
-                    if (stmt->target.label->target.stmt)
+                if ((stmt->label = FindLabel()) != NULL) {
+                    if (stmt->label->stmt)
                         CError_ReportError(ERR_LABEL_REDEFINED, data_00587fa0->name);
                 } else {
-                    stmt->target.label = NewLabel();
-                    stmt->target.label->next = clabels;
-                    clabels = stmt->target.label;
-                    stmt->target.label->name = data_00587fa0;
+                    stmt->label = NewLabel();
+                    stmt->label->next = clabels;
+                    clabels = stmt->label;
+                    stmt->label->name = data_00587fa0;
                 }
-                stmt->target.label->target.stmt = stmt;
+                stmt->label->stmt = stmt;
                 tk = CPrepTokenizer_GetNextToken();
                 tk = CPrepTokenizer_GetNextToken();
                 parse_statement(context);
@@ -1575,8 +1575,8 @@ void parse_statement(StatementContext *context)
                 return;
             }
             stmt = AppendStmt(4);
-            stmt->expr.expression = s_expression();
-            CExpr_CheckUnusedExpression(stmt->expr.expression);
+            stmt->expr = s_expression();
+            CExpr_CheckUnusedExpression(stmt->expr);
             break;
     }
     if (tk == ';') {
@@ -1669,7 +1669,7 @@ void generate_conditional_jump(ENode *expr, CLabel *dest, CLabel *other, Boolean
 
     if (expr == NULL) {
         if (sense) {
-            NewStmt(3)->target.label = dest;
+            NewStmt(3)->label = dest;
             return;
         }
         return;
@@ -1679,14 +1679,14 @@ void generate_conditional_jump(ENode *expr, CLabel *dest, CLabel *other, Boolean
         expr = expr->data.monadic;
     if (isnotzero(expr)) {
         if (sense) {
-            NewStmt(3)->target.label = dest;
+            NewStmt(3)->label = dest;
             return;
         }
         return;
     }
     if (CExpr2_IsZero(expr)) {
         if (!sense) {
-            NewStmt(3)->target.label = dest;
+            NewStmt(3)->label = dest;
             return;
         }
         return;
@@ -1702,14 +1702,14 @@ void generate_conditional_jump(ENode *expr, CLabel *dest, CLabel *other, Boolean
         label->name = label->uniquename;
         if (sense) {
             generate_conditional_jump(expr->data.diadic.left, dest, label, 1, flag);
-            label->target.stmt = (Statement *)NewStmt(2);
-            label->target.stmt->target.label = label;
+            label->stmt = (Statement *)NewStmt(2);
+            label->stmt->label = label;
             generate_conditional_jump(expr->data.diadic.right, dest, other, 1, flag);
             return;
         }
         generate_conditional_jump(expr->data.diadic.left, other, label, 1, flag);
-        label->target.stmt = (Statement *)NewStmt(2);
-        label->target.stmt->target.label = label;
+        label->stmt = (Statement *)NewStmt(2);
+        label->stmt->label = label;
         generate_conditional_jump(expr->data.diadic.right, dest, other, 0, flag);
         return;
     }
@@ -1720,20 +1720,20 @@ void generate_conditional_jump(ENode *expr, CLabel *dest, CLabel *other, Boolean
         label->name = label->uniquename;
         if (sense) {
             generate_conditional_jump(expr->data.diadic.left, other, label, 0, flag);
-            label->target.stmt = (Statement *)NewStmt(2);
-            label->target.stmt->target.label = label;
+            label->stmt = (Statement *)NewStmt(2);
+            label->stmt->label = label;
             generate_conditional_jump(expr->data.diadic.right, dest, other, 1, flag);
             return;
         }
         generate_conditional_jump(expr->data.diadic.left, dest, label, 0, flag);
-        label->target.stmt = (Statement *)NewStmt(2);
-        label->target.stmt->target.label = label;
+        label->stmt = (Statement *)NewStmt(2);
+        label->stmt->label = label;
         generate_conditional_jump(expr->data.diadic.right, dest, other, 0, flag);
         return;
     }
     stmt = NewStmt(6);
-    stmt->target.label = dest;
-    stmt->expr.expression = expr;
+    stmt->label = dest;
+    stmt->expr = expr;
     if (!sense)
         stmt->type = ST_IFNGOTO;
     if (flag)
@@ -1952,11 +1952,11 @@ void declare_local_object(DeclInfo *declaration, TStreamElement *declarationToke
                     statement->sourceoffset = statement_sourceoffset;
                     statement->dobjstack = UINT_00587fc4, data_00587644->next = statement;
                     data_00587644 = statement;
-                    statement->expr.expression = makediadicnode(create_objectnode(localstatic_init_guard),
-                                                                intconstnode((Type *)&stsignedchar, 1), EASS);
+                    statement->expr = makediadicnode(create_objectnode(localstatic_init_guard),
+                                                     intconstnode((Type *)&stsignedchar, 1), EASS);
                     statement = allocate_and_append_statement(2);
-                    statement->target.label = data_0058087e;
-                    data_0058087e->target.stmt = statement;
+                    statement->label = data_0058087e;
+                    data_0058087e->stmt = statement;
                 }
             } else {
                 CInit_InitializeData(object);
@@ -2036,7 +2036,7 @@ void append_or_defer_expression_statement(ENode *node)
             record->dobjstack = UINT_00587fc4;
             data_00587644->next = record;
             data_00587644 = record;
-            record->expr.expression = deferred_expression;
+            record->expr = deferred_expression;
         }
         deferred_expression = (ENode *)node;
     } else {
@@ -2049,7 +2049,7 @@ void append_or_defer_expression_statement(ENode *node)
         record->dobjstack = UINT_00587fc4;
         data_00587644->next = record;
         data_00587644 = record;
-        record->expr.expression = (ENode *)node;
+        record->expr = (ENode *)node;
     }
 }
 
@@ -2096,11 +2096,11 @@ void append_localstatic_init_expr(ENode *expr)
         info->name = info->uniquename;
         data_0058087e = info;
         stmt = CFunc_NewStatement(6);
-        stmt->expr.expression = create_objectnode(localstatic_init_guard);
-        stmt->target.label = data_0058087e;
+        stmt->expr = create_objectnode(localstatic_init_guard);
+        stmt->label = data_0058087e;
     }
     stmt = CFunc_NewStatement(4);
-    stmt->expr.expression = expr;
+    stmt->expr = expr;
 }
 
 static inline Statement *MakeCaseStatement(void)
@@ -2141,11 +2141,11 @@ void parse_case_statement(struct StatementContext *context)
     memclrw(label, sizeof(*label));
     label->uniquename = CParser_GetUniqueName();
     label->name = label->uniquename;
-    statement->target.label = label;
-    statement->target.label->target.stmt = statement;
+    statement->label = label;
+    statement->label->stmt = statement;
     newCase = CompilerTools_AllocatePool(sizeof(*newCase));
     newCase->min = value;
-    newCase->label = statement->target.label;
+    newCase->label = statement->label;
     newCase->next = context->switchinfo->cases;
     context->switchinfo->cases = newCase;
     if (tk != ':') {
@@ -2257,14 +2257,14 @@ void CFunc_DestructorCleanup(Statement *first)
     for (next = first; next; next = next->next) {
         switch (next->type) {
             case ST_SWITCH:
-                CFunc_CheckJump(next, next->target.switchDescriptor->defaultlabel->target.stmt);
-                for (c = next->target.switchDescriptor->cases; c; c = c->next)
-                    CFunc_CheckJump(next, c->label->target.stmt);
+                CFunc_CheckJump(next, ((SwitchInfo *)next->label)->defaultlabel->stmt);
+                for (c = ((SwitchInfo *)next->label)->cases; c; c = c->next)
+                    CFunc_CheckJump(next, c->label->stmt);
                 break;
             case ST_GOTO:
             case ST_IFGOTO:
             case ST_IFNGOTO:
-                CFunc_CheckJump(next, next->target.label->target.stmt);
+                CFunc_CheckJump(next, next->label->stmt);
                 break;
             case ST_NOP:
             case ST_LABEL:
@@ -2292,14 +2292,12 @@ void CFunc_DestructorCleanup(Statement *first)
         }
         switch (next->type) {
             case ST_GOTO:
-                if (stmt->dobjstack != next->target.label->target.stmt->dobjstack &&
-                    CFunc_NeedsCleanup(stmt, next->target.label->target.stmt))
-                    CFunc_EmitCleanups(stmt, stmt->dobjstack,
-                                       CFunc_CommonScope(stmt, next->target.label->target.stmt->dobjstack));
+                if (stmt->dobjstack != next->label->stmt->dobjstack && CFunc_NeedsCleanup(stmt, next->label->stmt))
+                    CFunc_EmitCleanups(stmt, stmt->dobjstack, CFunc_CommonScope(stmt, next->label->stmt->dobjstack));
                 stmt = next;
                 break;
             case ST_RETURN:
-                if (next->expr.expression && CFunc_AnyCleanup(stmt->dobjstack))
+                if (next->expr && CFunc_AnyCleanup(stmt->dobjstack))
                     CFunc_0047b9a0(stmt, next);
                 else if (stmt->dobjstack)
                     CFunc_EmitAllCleanups(stmt, stmt->dobjstack);
@@ -2341,8 +2339,8 @@ void CFunc_DestructorCleanup(Statement *first)
                         break;
                     case ST_IFGOTO:
                     case ST_IFNGOTO:
-                        if (next->dobjstack != next->target.label->target.stmt->dobjstack &&
-                            CFunc_NeedsCleanup(next, next->target.label->target.stmt))
+                        if (next->dobjstack != next->label->stmt->dobjstack &&
+                            CFunc_NeedsCleanup(next, next->label->stmt))
                             stmt = insert_conditional_goto_cleanup(next);
                         else
                             stmt = next;
@@ -2404,7 +2402,7 @@ Statement *insert_conditional_goto_cleanup(Statement *statement)
     data = (CLabel *)CompilerTools_AllocatePool(sizeof(*data));
     memclrw(data, sizeof(*data));
     data->name = data->uniquename = CParser_GetUniqueName();
-    candidate = statement->target.label->target.stmt->dobjstack;
+    candidate = statement->label->stmt->dobjstack;
     FindStatementReference(statement, &candidate, &match);
     tail = statement;
     reference = statement->dobjstack;
@@ -2416,11 +2414,11 @@ Statement *insert_conditional_goto_cleanup(Statement *statement)
         reference = reference->next;
     }
     jump = CFunc_0047b880_inline1(ST_GOTO, tail);
-    jump->target.label = statement->target.label;
+    jump->label = statement->label;
     target = CFunc_0047b880_inline1(ST_LABEL, jump);
-    target->target.label = data;
-    data->target.stmt = target;
-    statement->target.label = data;
+    target->label = data;
+    data->stmt = target;
+    statement->label = data;
     target->dobjstack = statement->dobjstack;
     return target;
 }
@@ -2528,22 +2526,22 @@ void CFunc_0047b9a0(Statement *statement, Statement *expression)
     needsTemporary = CFunc_0047b9a0_inline1(expression);
     if (needsTemporary != 0) {
         if (CMachine_FunctionRequiresMemoryReturn((TypeFunc *)cscope_currentfunc->type) != 1) {
-            value = expression->expr.expression->rtype;
+            value = expression->expr->rtype;
             temporary = CParser_NewLocalDataObject(NULL, 1);
             temporary->name = (HashNameNode *)CParser_GetUniqueName();
             temporary->type = value;
             CFunc_SetupLocalVarInfo(temporary);
             inserted = CFunc_InsertStatement(statement);
-            inserted->expr.expression = makediadicnode(create_objectnode(temporary), expression->expr.expression, 30);
+            inserted->expr = makediadicnode(create_objectnode(temporary), expression->expr, 30);
             inserted->sourceoffset = expression->sourceoffset;
             CFunc_0047b9a0_inline3(expression->dobjstack, inserted, NULL);
-            expression->expr.expression = create_objectnode(temporary);
+            expression->expr = create_objectnode(temporary);
         } else {
             direct = CFunc_InsertStatement(statement);
-            direct->expr.expression = expression->expr.expression;
+            direct->expr = expression->expr;
             direct->sourceoffset = expression->sourceoffset;
             CFunc_0047b9a0_inline3(expression->dobjstack, direct, NULL);
-            expression->expr.expression = nullnode();
+            expression->expr = nullnode();
         }
     }
 }
@@ -2885,7 +2883,7 @@ void CheckCLabels(void)
     label = clabels;
     if (clabels != NULL) {
         do {
-            if (label->target.stmt == NULL) {
+            if (label->stmt == NULL) {
                 CError_ReportError(ERR_UNDEFINED_LABEL, label->name->name);
             }
             label = label->next;

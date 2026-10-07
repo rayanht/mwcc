@@ -291,13 +291,13 @@ void FuncLevelAsmPPC_GenerateFunction(Object *func)
     for (node = list->next; node != NULL; node = node->next) {
         switch (node->type) {
             case ST_ASM:
-                item.assembly = (ParsedAsmInstruction *)node->expr.asmInstruction;
+                item.assembly = (ParsedAsmInstruction *)node->expr;
                 if (item.assembly != NULL) {
                     if ((item.assembly->specialFlags & 1) != 0) {
                         if (item.assembly->opcode == 1) {
                             PCodeUtilities_ResolveLabel(PCode_NewLabel());
                             gCurrentBlock->line = node->sourceoffset;
-                            append_assembly((ParsedAsmInstruction *)node->expr.asmInstruction, gCurrentBlock);
+                            append_assembly((ParsedAsmInstruction *)node->expr, gCurrentBlock);
                         } else if (item.assembly->opcode == 4) {
                             PCodeUtilities_ResolveLabel(PCode_NewLabel());
                             (gReturnBlock = gCurrentBlock)->flags |= 2;
@@ -330,7 +330,7 @@ void FuncLevelAsmPPC_GenerateFunction(Object *func)
                 break;
 
             case ST_LABEL:
-                if ((item.label = node->target.label->pclabel)->resolved == 0)
+                if ((item.label = node->label->pclabel)->resolved == 0)
                     PCodeUtilities_ResolveLabel(item.label);
                 break;
 

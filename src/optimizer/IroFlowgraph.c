@@ -58,7 +58,7 @@ static void AddList(IRONode *node, SwitchInfo *info)
 {
     SwitchCase *it;
     for (it = info->cases; it != NULL; it = it->next)
-        AddRef(node, it->label->target.node);
+        AddRef(node, (IRONode *)it->label->stmt);
 }
 
 void fn_0044a640(IROLinear *value)
@@ -115,7 +115,7 @@ void IroFlowgraph_RebuildSuccPred(void)
     Statement *entryList;
 
     for (list = clabels; list != NULL; list = list->next)
-        list->target.node = NULL;
+        list->stmt = NULL;
 
     for (scanNode = iro_flowgraph_head; scanNode != NULL; scanNode = scanNode->nextnode) {
         scanNode->referenced = 0;
@@ -127,7 +127,7 @@ void IroFlowgraph_RebuildSuccPred(void)
             IROLinear *labelStatement;
             if ((labelStatement = scanNode->first) != NULL && labelStatement->type == IROLinearLabel) {
                 CLabel *label = labelStatement->u.label;
-                label->target.node = scanNode;
+                label->stmt = (Statement *)scanNode;
             }
         }
     }
@@ -145,14 +145,14 @@ void IroFlowgraph_RebuildSuccPred(void)
                     case IROLinearGoto:
                         node->succ = CompilerTools_AllocatePoolMemory(sizeof(*node->succ));
                         target = statement->u.label;
-                        AddRef(node, target->target.node);
+                        AddRef(node, (IRONode *)target->stmt);
                         break;
                     case IROLinearIf:
                     case IROLinearIfNot:
                         node->succ = CompilerTools_AllocatePoolMemory(2 * sizeof(*node->succ));
                         AddNext(node, node->nextnode);
                         target = statement->u.label;
-                        AddRef(node, target->target.node);
+                        AddRef(node, (IRONode *)target->stmt);
                         break;
                     case IROLinearSwitch:
                         branchList = node->last->u.swtch.info;
@@ -161,7 +161,7 @@ void IroFlowgraph_RebuildSuccPred(void)
                         node->succ = CompilerTools_AllocatePoolMemory(successorCount * sizeof(*node->succ));
                         AddList(node, branchList);
                         target = branchList->defaultlabel;
-                        AddRef(node, target->target.node);
+                        AddRef(node, (IRONode *)target->stmt);
                         break;
                     case IROLinearFunccall:
                         successorCount = 1;
@@ -175,10 +175,10 @@ void IroFlowgraph_RebuildSuccPred(void)
                         for (entry = entryList->dobjstack; entry != NULL; entry = entry->next) {
                             if (entry->kind == 0x0d) {
                                 target = entry->data.catch_block.label;
-                                AddRef(node, target->target.node);
+                                AddRef(node, (IRONode *)target->stmt);
                             } else if (entry->kind == 0x0f) {
                                 target = entry->data.specification.label;
-                                AddRef(node, target->target.node);
+                                AddRef(node, (IRONode *)target->stmt);
                             }
                         }
                         break;
@@ -193,7 +193,7 @@ void IroFlowgraph_RebuildSuccPred(void)
                             AddNext(node, node->nextnode);
                         for (successorIndex = 0; successorIndex < references.numlabels; successorIndex++) {
                             target = references.labels[successorIndex];
-                            AddRef(node, target->target.node);
+                            AddRef(node, (IRONode *)target->stmt);
                         }
                         break;
                     case IROLinearReturn:
@@ -297,14 +297,14 @@ void IRO_BuildflowGraph(IROLinear *source)
     int i;
 
     for (label = clabels; label != NULL; label = label->next)
-        label->target.node = NULL;
+        label->stmt = NULL;
     iro_node_count = 0;
     iro_flowgraph_head = iroNodeTail = data_00587fac = NULL;
     linear = source;
     while (linear != NULL) {
         fn_0044a640(linear);
         if (linear->type == IROLinearLabel)
-            ((CLabel *)linear->u.label)->target.node = iroNodeTail;
+            ((CLabel *)linear->u.label)->stmt = (Statement *)iroNodeTail;
         done = 0;
         while (!done && (next = linear->next) != NULL && (next->flags & 1) == 0) {
             switch (linear->type) {

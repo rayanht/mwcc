@@ -331,10 +331,10 @@ void IroCSE_RewriteStatementExpressions(Statement *stmt)
             case ST_IFGOTO:
             case ST_IFNGOTO:
             case ST_RETURN:
-                if (s->expr.expression != NULL) {
-                    s->expr.expression = walk_expr_postorder(s->expr.expression);
-                    rewrite_nested_bitwise_expressions(s->expr.expression);
-                    traverse_expr_postorder(s->expr.expression);
+                if (s->expr != NULL) {
+                    s->expr = walk_expr_postorder(s->expr);
+                    rewrite_nested_bitwise_expressions(s->expr);
+                    traverse_expr_postorder(s->expr);
                 }
                 break;
         }

@@ -87,12 +87,12 @@ static __inline void FindOrAdd(HashNameNode *key)
     CLabel *node;
     if ((node = FindNode(key)) == NULL)
         node = AddNode(key);
-    else if (node->target.stmt != NULL)
+    else if (node->stmt != NULL)
         CError_ReportError(ERR_LABEL_REDEFINED, key->name);
     {
         Statement *entry = CFunc_AppendStatement(2);
-        entry->target.label = node;
-        node->target.stmt = entry;
+        entry->label = node;
+        node->stmt = entry;
     }
 }
 
@@ -551,7 +551,7 @@ void InlineAsm_CopyAndRemapParsedAsmInstruction(Statement *owner, Statement *lin
                                                 UInt32 *resultSize)
 {
     long source = (long)owner;
-    ParsedAsmInstruction *table = ((Statement *)source)->expr.asmInstruction;
+    ParsedAsmInstruction *table = ((ParsedAsmInstruction *)((Statement *)source)->expr);
     SInt32 size = table->operand_count * sizeof(EncodedOperand) + offsetof(ParsedAsmInstruction, data);
     ParsedAsmInstruction *copy = (ParsedAsmInstruction *)galloc(size);
     int entryIndex;
@@ -570,11 +570,11 @@ void InlineAsm_CopyAndRemapParsedAsmInstruction(Statement *owner, Statement *lin
             case 3:
                 break;
             case 5:
-                entry->data.value = CInline_GetStatementIndex(links, entry->data.label->target.stmt);
+                entry->data.value = CInline_GetStatementIndex(links, entry->data.label->stmt);
                 break;
             case 6:
-                entry->data.value = CInline_GetStatementIndex(links, entry->data.label->target.stmt);
-                entry->target.object = (Object *)CInline_GetStatementIndex(links, entry->target.label->target.stmt);
+                entry->data.value = CInline_GetStatementIndex(links, entry->data.label->stmt);
+                entry->target.object = (Object *)CInline_GetStatementIndex(links, entry->target.label->stmt);
                 break;
         }
     }
@@ -615,7 +615,7 @@ void InlineAsm_CopyInstructionAndResolveOperands(Statement *output, struct CLabe
             }
         }
     }
-    output->expr.asmInstruction = instruction;
+    output->expr = (ENode *)instruction;
 }
 
 void InlineAsm_RecordObjectUses(Statement *record)
@@ -624,7 +624,7 @@ void InlineAsm_RecordObjectUses(Statement *record)
     int index;
     EncodedOperand *operand;
 
-    list = record->expr.asmInstruction;
+    list = (ParsedAsmInstruction *)record->expr;
     index = 0;
     operand = list->data.operands;
     while (index < list->operand_count) {
@@ -649,7 +649,7 @@ CLabel *InlineAsm_FindOperandLabel(Statement *object)
     EncodedOperand *entry;
     int index = 0;
 
-    table = object->expr.asmInstruction;
+    table = (ParsedAsmInstruction *)object->expr;
     entry = table->data.operands;
     for (; index < table->operand_count; index++, ++entry) {
         if (entry->kind == 5)
@@ -667,7 +667,7 @@ void *InlineAsm_GetOperandLabel(Statement *owner)
     int index;
 
     index = 0;
-    instruction = owner->expr.asmInstruction;
+    instruction = (ParsedAsmInstruction *)owner->expr;
     operand = instruction->data.operands;
     while (index < instruction->operand_count) {
         if (operand->kind == 6)

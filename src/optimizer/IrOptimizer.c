@@ -902,15 +902,15 @@ Statement *convert_linear_to_statements(void)
                     case IROLinearOp2Arg:
                     case IROLinearFunccall:
                         node = NewIrNode(4, item);
-                        node->expr.expression = IrOptimizer_0042eb40(item);
+                        node->expr = IrOptimizer_0042eb40(item);
                         break;
                     case IROLinearGoto:
                         node = NewIrNode(3, item);
-                        node->target.label = item->u.label;
+                        node->label = item->u.label;
                         break;
                     case IROLinearExit:
                         node = NewIrNode(0x0a, item);
-                        node->target.label = item->u.label;
+                        node->label = item->u.label;
                         break;
                     case IROLinearIf:
                     case IROLinearIfNot: {
@@ -921,43 +921,43 @@ Statement *convert_linear_to_statements(void)
                             nodeType = 7;
                         }
                         node = NewIrNode(nodeType, item);
-                        node->target.label = item->u.branch.label;
-                        node->expr.expression = IrOptimizer_0042eb40(item->u.branch.cond);
+                        node->label = item->u.branch.label;
+                        node->expr = IrOptimizer_0042eb40(item->u.branch.cond);
                         break;
                     }
                     case IROLinearReturn:
                         node = NewIrNode(8, item);
                         if (item->u.monadic != NULL) {
-                            node->expr.expression = IrOptimizer_0042eb40(item->u.monadic);
+                            node->expr = IrOptimizer_0042eb40(item->u.monadic);
                         }
                         break;
                     case IROLinearLabel:
                         node = NewIrNode(2, item);
-                        node->target.label = item->u.label;
-                        node->target.label->target.stmt = node;
+                        node->label = item->u.label;
+                        node->label->stmt = node;
                         break;
                     case IROLinearEntry:
                         node = NewIrNode(0x0b, item);
-                        node->target.label = item->u.label;
-                        node->target.label->target.stmt = node;
+                        node->label = item->u.label;
+                        node->label->stmt = node;
                         break;
                     case IROLinearSwitch:
                         node = NewIrNode(5, item);
-                        node->expr.expression = IrOptimizer_0042eb40(item->u.swtch.cond);
+                        node->expr = IrOptimizer_0042eb40(item->u.swtch.cond);
                         /* a switch statement's label slot holds its SwitchInfo */
-                        node->target.switchDescriptor = item->u.swtch.info;
+                        node->label = (CLabel *)item->u.swtch.info;
                         break;
                     case IROLinearBeginCatch:
                         node = NewIrNode(0x0c, item);
-                        node->expr.expression = IrOptimizer_0042eb40(item->u.monadic);
+                        node->expr = IrOptimizer_0042eb40(item->u.monadic);
                         break;
                     case IROLinearEndCatch:
                         node = NewIrNode(0x0d, item);
-                        node->expr.expression = IrOptimizer_0042eb40(item->u.monadic);
+                        node->expr = IrOptimizer_0042eb40(item->u.monadic);
                         break;
                     case IROLinearEndCatchDtor:
                         node = NewIrNode(0x0e, item);
-                        node->expr.expression = IrOptimizer_0042eb40(item->u.monadic);
+                        node->expr = IrOptimizer_0042eb40(item->u.monadic);
                         break;
                     case IROLinearAsm:
                         node = item->u.asm_stmt;
@@ -1097,36 +1097,36 @@ void build_linear_from_statements(Statement *node)
                 break;
             case ST_LABEL:
                 insn = NewInsn(IROLinearLabel);
-                insn->u.label = node->target.label;
+                insn->u.label = node->label;
                 insn->flags |= 1;
                 break;
             case ST_GOTO:
                 insn = NewInsn(IROLinearGoto);
-                insn->u.label = node->target.label;
+                insn->u.label = node->label;
                 break;
             case ST_EXPRESSION:
-                linearize_expression(node->expr.expression);
+                linearize_expression(node->expr);
                 break;
             case ST_SWITCH:
                 insn = NewInsn(IROLinearSwitch);
-                insn->u.swtch.cond = linearize_expression(node->expr.expression);
-                insn->u.swtch.info = node->target.switchDescriptor;
+                insn->u.swtch.cond = linearize_expression(node->expr);
+                insn->u.swtch.info = (SwitchInfo *)node->label;
                 break;
             case ST_IFGOTO:
                 insn = NewInsn(IROLinearIf);
-                insn->u.branch.cond = linearize_expression(node->expr.expression);
-                insn->u.branch.label = node->target.label;
+                insn->u.branch.cond = linearize_expression(node->expr);
+                insn->u.branch.label = node->label;
                 break;
             case ST_IFNGOTO:
                 insn = NewInsn(IROLinearIfNot);
-                insn->u.branch.cond = linearize_expression(node->expr.expression);
-                insn->u.branch.label = node->target.label;
+                insn->u.branch.cond = linearize_expression(node->expr);
+                insn->u.branch.label = node->label;
                 break;
             case ST_RETURN:
                 data_00588526 = 1;
                 insn = NewInsn(IROLinearReturn);
-                if (node->expr.expression != NULL)
-                    insn->u.monadic = linearize_expression(node->expr.expression);
+                if (node->expr != NULL)
+                    insn->u.monadic = linearize_expression(node->expr);
                 else
                     insn->u.monadic = NULL;
                 break;
@@ -1135,26 +1135,26 @@ void build_linear_from_statements(Statement *node)
                 break;
             case ST_EXIT:
                 insn = NewInsn(IROLinearExit);
-                insn->u.label = node->target.label;
+                insn->u.label = node->label;
                 break;
             case ST_ENTRY:
                 insn = NewInsn(IROLinearEntry);
-                insn->u.label = node->target.label;
+                insn->u.label = node->label;
                 insn->flags |= 1;
                 break;
             case ST_BEGINCATCH:
                 insn = NewInsn(IROLinearBeginCatch);
-                insn->u.args3.a = linearize_expression(node->expr.expression);
+                insn->u.args3.a = linearize_expression(node->expr);
                 insn->u.args3.b = NULL;
                 insn->u.args3.c = NULL;
                 break;
             case ST_ENDCATCH:
                 insn = NewInsn(IROLinearEndCatch);
-                insn->u.monadic = linearize_expression(node->expr.expression);
+                insn->u.monadic = linearize_expression(node->expr);
                 break;
             case ST_ENDCATCHDTOR:
                 insn = NewInsn(IROLinearEndCatchDtor);
-                insn->u.monadic = linearize_expression(node->expr.expression);
+                insn->u.monadic = linearize_expression(node->expr);
                 break;
             case ST_ASM:
                 insn = NewInsn(IROLinearAsm);
@@ -1319,30 +1319,30 @@ void visit_statement_expressions(struct Statement *stmt)
             case ST_OVF:
                 CError_FATAL(1895);
             case ST_EXPRESSION:
-                lower_expression_to_statements(stmt->expr.expression, 0, 0);
+                lower_expression_to_statements(stmt->expr, 0, 0);
                 break;
             case ST_SWITCH:
-                lower_expression_to_statements(stmt->expr.expression, 1, 0);
+                lower_expression_to_statements(stmt->expr, 1, 0);
                 break;
             case ST_IFGOTO:
-                lower_expression_to_statements(stmt->expr.expression, 1, 0);
+                lower_expression_to_statements(stmt->expr, 1, 0);
                 break;
             case ST_IFNGOTO:
-                lower_expression_to_statements(stmt->expr.expression, 1, 0);
+                lower_expression_to_statements(stmt->expr, 1, 0);
                 break;
             case ST_RETURN:
-                if (stmt->expr.expression != NULL) {
-                    lower_expression_to_statements(stmt->expr.expression, 1, 0);
+                if (stmt->expr != NULL) {
+                    lower_expression_to_statements(stmt->expr, 1, 0);
                 }
                 break;
             case ST_BEGINCATCH:
-                lower_expression_to_statements(stmt->expr.expression, 1, 0);
+                lower_expression_to_statements(stmt->expr, 1, 0);
                 break;
             case ST_ENDCATCH:
-                lower_expression_to_statements(stmt->expr.expression, 1, 0);
+                lower_expression_to_statements(stmt->expr, 1, 0);
                 break;
             case ST_ENDCATCHDTOR:
-                lower_expression_to_statements(stmt->expr.expression, 1, 0);
+                lower_expression_to_statements(stmt->expr, 1, 0);
                 break;
             default:
                 CError_FATAL(1944);
@@ -1659,7 +1659,7 @@ void lower_expression_to_statements(ENode *node, int valueNeeded, int force)
             if (node->type == ECOMMA && data_00587f08 == 0) {
                 lower_expression_to_statements(node->data.diadic.left, 0, 1);
                 statement = NewStmt(4);
-                statement->expr.expression = node->data.diadic.left, AppendStmt(statement);
+                statement->expr = node->data.diadic.left, AppendStmt(statement);
                 lower_expression_to_statements(node->data.diadic.right, valueNeeded, 0);
                 extract_right_operand_to_statement(node, force);
             } else {
@@ -1699,8 +1699,8 @@ void lower_expression_to_statements(ENode *node, int valueNeeded, int force)
                 lower_expression_to_statements(node->data.diadic.left, 1, 0);
                 andEndLabel = IroUtil_NewLabel();
                 statement = NewStmt(7);
-                statement->expr.expression = node->data.diadic.left;
-                statement->target.label = andEndLabel, AppendStmt(statement);
+                statement->expr = node->data.diadic.left;
+                statement->label = andEndLabel, AppendStmt(statement);
                 lower_expression_to_statements(node->data.diadic.right, 1, 0);
                 IrOptimizer_00430820(node, &andResult, &andEndLabel);
             } else if (node->type == ELOR) {
@@ -1709,8 +1709,8 @@ void lower_expression_to_statements(ENode *node, int valueNeeded, int force)
                 lower_expression_to_statements(node->data.diadic.left, 1, 0);
                 orEndLabel = IroUtil_NewLabel();
                 statement = NewStmt(6);
-                statement->expr.expression = node->data.diadic.left;
-                statement->target.label = orEndLabel, AppendStmt(statement);
+                statement->expr = node->data.diadic.left;
+                statement->label = orEndLabel, AppendStmt(statement);
                 lower_expression_to_statements(node->data.diadic.right, 1, 0);
                 fn_004305e0(node, &orResult, &orEndLabel);
             }
@@ -1723,21 +1723,21 @@ void lower_expression_to_statements(ENode *node, int valueNeeded, int force)
             lower_expression_to_statements(node->data.cond.cond, 1, 0);
             elseLabel = IroUtil_NewLabel();
             statement = NewStmt(7);
-            statement->expr.expression = node->data.cond.cond;
-            statement->target.label = elseLabel, AppendStmt(statement);
+            statement->expr = node->data.cond.cond;
+            statement->label = elseLabel, AppendStmt(statement);
             lower_expression_to_statements(node->data.cond.expr1, 1, 0);
             IrOptimizer_00430e60(node, &conditionalResult);
             endLabel = IroUtil_NewLabel();
             statement = NewStmt(3);
-            statement->target.label = endLabel, AppendStmt(statement);
+            statement->label = endLabel, AppendStmt(statement);
             statement = NewStmt(2);
-            statement->target.label = elseLabel;
-            statement->target.label->target.stmt = statement, AppendStmt(statement);
+            statement->label = elseLabel;
+            statement->label->stmt = statement, AppendStmt(statement);
             lower_expression_to_statements(node->data.cond.expr2, 1, 0);
             append_cond_expr2_statement(node, &conditionalResult);
             statement = NewStmt(2);
-            statement->target.label = endLabel;
-            statement->target.label->target.stmt = statement, AppendStmt(statement);
+            statement->label = endLabel;
+            statement->label->stmt = statement, AppendStmt(statement);
             if (node->rtype->type != TYPEVOID) {
                 node->type = EINDIRECT;
                 node->data.cond.cond = create_objectrefnode(conditionalResult);
@@ -1765,8 +1765,8 @@ void lower_expression_to_statements(ENode *node, int valueNeeded, int force)
             lower_expression_to_statements(node->data.diadic.right, 1, 0);
             IrOptimizer_00430a60(node, &nullCheckTemp);
             statement = NewStmt(2);
-            statement->target.label = nullCheckEndLabel;
-            statement->target.label->target.stmt = statement, AppendStmt(statement);
+            statement->label = nullCheckEndLabel;
+            statement->label->stmt = statement, AppendStmt(statement);
             if (node->rtype->type != TYPEVOID) {
                 node->type = EINDIRECT;
                 node->data.diadic.left = create_objectrefnode(nullCheckTemp);
@@ -1848,8 +1848,8 @@ void fn_004305e0(ENode *e, Object **pp, CLabel **lab)
     Statement *g;
 
     s = NewIRStat(6);
-    s->expr.expression = e->data.diadic.right;
-    s->target.label = *lab;
+    s->expr = e->data.diadic.right;
+    s->label = *lab;
     s->dobjstack = current_optimizer_statement->dobjstack;
     s->sourceoffset = current_optimizer_statement->sourceoffset;
     s->value = current_optimizer_statement->value;
@@ -1870,10 +1870,10 @@ void fn_004305e0(ENode *e, Object **pp, CLabel **lab)
     c->rtype = e->rtype;
 
     a = NewIRStat(4);
-    a->expr.expression = NewENode(EASS);
-    a->expr.expression->data.diadic.left = ref;
-    a->expr.expression->data.diadic.right = c;
-    a->expr.expression->rtype = e->rtype;
+    a->expr = NewENode(EASS);
+    a->expr->data.diadic.left = ref;
+    a->expr->data.diadic.right = c;
+    a->expr->rtype = e->rtype;
     a->dobjstack = current_optimizer_statement->dobjstack;
     a->sourceoffset = current_optimizer_statement->sourceoffset;
     a->value = current_optimizer_statement->value;
@@ -1883,8 +1883,8 @@ void fn_004305e0(ENode *e, Object **pp, CLabel **lab)
     statement_insertion_point = a;
 
     g = NewIRStat(2);
-    g->target.label = *lab;
-    g->target.label->target.stmt = g;
+    g->label = *lab;
+    g->label->stmt = g;
     g->dobjstack = current_optimizer_statement->dobjstack;
     g->sourceoffset = current_optimizer_statement->sourceoffset;
     g->value = current_optimizer_statement->value;
@@ -1907,8 +1907,8 @@ void IrOptimizer_00430820(ENode *e, Object **pp, CLabel **lab)
     Statement *g;
 
     s = NewIRStat(7);
-    s->expr.expression = e->data.diadic.right;
-    s->target.label = *lab;
+    s->expr = e->data.diadic.right;
+    s->label = *lab;
     s->dobjstack = current_optimizer_statement->dobjstack;
     s->sourceoffset = current_optimizer_statement->sourceoffset;
     s->value = current_optimizer_statement->value;
@@ -1929,10 +1929,10 @@ void IrOptimizer_00430820(ENode *e, Object **pp, CLabel **lab)
     c->rtype = e->rtype;
 
     a = NewIRStat(4);
-    a->expr.expression = NewENode(EASS);
-    a->expr.expression->data.diadic.left = ref;
-    a->expr.expression->data.diadic.right = c;
-    a->expr.expression->rtype = e->rtype;
+    a->expr = NewENode(EASS);
+    a->expr->data.diadic.left = ref;
+    a->expr->data.diadic.right = c;
+    a->expr->rtype = e->rtype;
     a->dobjstack = current_optimizer_statement->dobjstack;
     a->sourceoffset = current_optimizer_statement->sourceoffset;
     a->value = current_optimizer_statement->value;
@@ -1942,8 +1942,8 @@ void IrOptimizer_00430820(ENode *e, Object **pp, CLabel **lab)
     statement_insertion_point = a;
 
     g = NewIRStat(2);
-    g->target.label = *lab;
-    g->target.label->target.stmt = g;
+    g->label = *lab;
+    g->label->stmt = g;
     g->dobjstack = current_optimizer_statement->dobjstack;
     g->sourceoffset = current_optimizer_statement->sourceoffset;
     g->value = current_optimizer_statement->value;
@@ -1979,13 +1979,13 @@ void IrOptimizer_00430a60(ENode *p, Object **objp)
     c = (ENode *)CompilerTools_AllocatePool(sizeof(ENode));
     memset(c, 0, sizeof(ENode));
     c->type = EASS;
-    b->expr.expression = c;
-    b->expr.expression->data.diadic.left = a;
-    b->expr.expression->data.diadic.right = p->data.diadic.right;
+    b->expr = c;
+    b->expr->data.diadic.left = a;
+    b->expr->data.diadic.right = p->data.diadic.right;
     if (p->rtype->type)
-        b->expr.expression->rtype = p->rtype;
+        b->expr->rtype = p->rtype;
     else
-        b->expr.expression->rtype = p->data.diadic.left->rtype;
+        b->expr->rtype = p->data.diadic.left->rtype;
 
     b->dobjstack = current_optimizer_statement->dobjstack;
     b->sourceoffset = current_optimizer_statement->sourceoffset;
@@ -2016,8 +2016,8 @@ void insert_indirect_statement_with_label(ENode *node, Object **object, struct C
     statement = (Statement *)CompilerTools_AllocatePool(sizeof(Statement));
     memset(statement, 0, sizeof(Statement));
     statement->type = ST_IFNGOTO;
-    statement->expr.expression = indirect;
-    statement->target.label = *label;
+    statement->expr = indirect;
+    statement->label = *label;
     statement->dobjstack = current_optimizer_statement->dobjstack;
     statement->sourceoffset = current_optimizer_statement->sourceoffset;
     statement->value = current_optimizer_statement->value;
@@ -2042,12 +2042,12 @@ void lower_monadic_expression_to_statement(ENode *e, Object **pp)
 
     n = NewIRStat(4);
     if (e->rtype->type != TYPEVOID) {
-        n->expr.expression = NewENode(EASS);
-        n->expr.expression->data.diadic.left = ref;
-        n->expr.expression->data.diadic.right = e->data.monadic;
-        n->expr.expression->rtype = e->rtype;
+        n->expr = NewENode(EASS);
+        n->expr->data.diadic.left = ref;
+        n->expr->data.diadic.right = e->data.monadic;
+        n->expr->rtype = e->rtype;
     } else {
-        n->expr.expression = e->data.monadic;
+        n->expr = e->data.monadic;
     }
     n->dobjstack = current_optimizer_statement->dobjstack;
     n->sourceoffset = current_optimizer_statement->sourceoffset;
@@ -2072,12 +2072,12 @@ void append_cond_expr2_statement(ENode *e, Object **pp)
 
     n = NewIRStat(4);
     if (e->rtype->type != TYPEVOID) {
-        n->expr.expression = NewENode(EASS);
-        n->expr.expression->data.diadic.left = ref;
-        n->expr.expression->data.diadic.right = e->data.cond.expr2;
-        n->expr.expression->rtype = e->rtype;
+        n->expr = NewENode(EASS);
+        n->expr->data.diadic.left = ref;
+        n->expr->data.diadic.right = e->data.cond.expr2;
+        n->expr->rtype = e->rtype;
     } else {
-        n->expr.expression = e->data.cond.expr2;
+        n->expr = e->data.cond.expr2;
     }
     n->dobjstack = current_optimizer_statement->dobjstack;
     n->sourceoffset = current_optimizer_statement->sourceoffset;
@@ -2103,12 +2103,12 @@ void IrOptimizer_00430e60(ENode *e, Object **pp)
 
     n = NewIRStat(4);
     if (e->rtype->type != TYPEVOID) {
-        n->expr.expression = NewENode(EASS);
-        n->expr.expression->data.diadic.left = ref;
-        n->expr.expression->data.diadic.right = e->data.diadic.right;
-        n->expr.expression->rtype = e->rtype;
+        n->expr = NewENode(EASS);
+        n->expr->data.diadic.left = ref;
+        n->expr->data.diadic.right = e->data.diadic.right;
+        n->expr->rtype = e->rtype;
     } else {
-        n->expr.expression = e->data.diadic.right;
+        n->expr = e->data.diadic.right;
     }
     n->dobjstack = current_optimizer_statement->dobjstack;
     n->sourceoffset = current_optimizer_statement->sourceoffset;
@@ -2153,13 +2153,13 @@ void create_temp_object_assignment(ENode *expression, Object **tempObject)
     statement = (Statement *)CompilerTools_AllocatePool(sizeof(Statement));
     memset(statement, 0, sizeof(Statement));
     statement->type = ST_EXPRESSION;
-    statement->expr.expression = NewENode(EASS);
-    statement->expr.expression->data.diadic.left = reference;
-    statement->expr.expression->data.diadic.right = expression->data.monadic;
+    statement->expr = NewENode(EASS);
+    statement->expr->data.diadic.left = reference;
+    statement->expr->data.diadic.right = expression->data.monadic;
     if (expression->rtype->type != TYPEVOID)
-        statement->expr.expression->rtype = expression->rtype;
+        statement->expr->rtype = expression->rtype;
     else
-        statement->expr.expression->rtype = expression->data.monadic->rtype;
+        statement->expr->rtype = expression->data.monadic->rtype;
     statement->dobjstack = current_optimizer_statement->dobjstack;
     statement->sourceoffset = current_optimizer_statement->sourceoffset;
     statement->value = current_optimizer_statement->value;
@@ -2200,10 +2200,10 @@ void insert_intconst_assignment(ENode *expr, Object **out)
     statement = (Statement *)CompilerTools_AllocatePool(sizeof(Statement));
     memset(statement, 0, sizeof(Statement));
     statement->type = ST_EXPRESSION;
-    statement->expr.expression = IRO_NewNode(EASS);
-    statement->expr.expression->data.diadic.left = indirect;
-    statement->expr.expression->data.diadic.right = one;
-    statement->expr.expression->rtype = expr->rtype;
+    statement->expr = IRO_NewNode(EASS);
+    statement->expr->data.diadic.left = indirect;
+    statement->expr->data.diadic.right = one;
+    statement->expr->rtype = expr->rtype;
 
     statement->dobjstack = current_optimizer_statement->dobjstack;
     statement->sourceoffset = current_optimizer_statement->sourceoffset;
@@ -2238,10 +2238,10 @@ void create_zero_initialized_temp_object(ENode *expr, Object **out)
     statement = (Statement *)CompilerTools_AllocatePool(sizeof(*statement));
     memset(statement, 0, sizeof(*statement));
     statement->type = ST_EXPRESSION;
-    statement->expr.expression = IRO_NewNode(EASS);
-    statement->expr.expression->data.diadic.left = indirect;
-    statement->expr.expression->data.diadic.right = zero;
-    statement->expr.expression->rtype = expr->rtype;
+    statement->expr = IRO_NewNode(EASS);
+    statement->expr->data.diadic.left = indirect;
+    statement->expr->data.diadic.right = zero;
+    statement->expr->rtype = expr->rtype;
 
     statement->dobjstack = current_optimizer_statement->dobjstack;
     statement->sourceoffset = current_optimizer_statement->sourceoffset;
@@ -2279,10 +2279,10 @@ void extract_right_operand_to_statement(ENode *node, int force)
         stmt = (Statement *)CompilerTools_AllocatePool(sizeof(Statement));
         memset(stmt, 0, sizeof(Statement));
         stmt->type = ST_EXPRESSION;
-        stmt->expr.expression = new_enode(EASS);
-        stmt->expr.expression->data.diadic.left = ind;
-        stmt->expr.expression->data.diadic.right = node->data.diadic.right;
-        stmt->expr.expression->rtype = node->rtype;
+        stmt->expr = new_enode(EASS);
+        stmt->expr->data.diadic.left = ind;
+        stmt->expr->data.diadic.right = node->data.diadic.right;
+        stmt->expr->rtype = node->rtype;
         stmt->dobjstack = current_optimizer_statement->dobjstack;
         stmt->sourceoffset = current_optimizer_statement->sourceoffset;
         stmt->value = current_optimizer_statement->value;
@@ -2297,7 +2297,7 @@ void extract_right_operand_to_statement(ENode *node, int force)
         stmt = (Statement *)CompilerTools_AllocatePool(sizeof(Statement));
         memset(stmt, 0, sizeof(Statement));
         stmt->type = ST_EXPRESSION;
-        stmt->expr.expression = node->data.diadic.right;
+        stmt->expr = node->data.diadic.right;
         stmt->dobjstack = current_optimizer_statement->dobjstack;
         stmt->sourceoffset = current_optimizer_statement->sourceoffset;
         stmt->value = current_optimizer_statement->value;

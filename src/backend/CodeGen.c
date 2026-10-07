@@ -1015,12 +1015,12 @@ void CodeGen_AssignMissingEntryValues(Statement *entry)
     previous = NULL;
     if (entry != NULL) {
         do {
-            if ((entry->type == ST_LABEL) && (entry->target.label->pclabel == NULL)) {
+            if ((entry->type == ST_LABEL) && (entry->label->pclabel == NULL)) {
                 if ((previous != NULL) && (previous->type == ST_LABEL)) {
-                    entry->target.label->pclabel = previous->target.label->pclabel;
+                    entry->label->pclabel = previous->label->pclabel;
                 } else {
                     value = PCode_NewLabel();
-                    entry->target.label->pclabel = value;
+                    entry->label->pclabel = value;
                 }
             }
             previous = entry;
@@ -1373,11 +1373,11 @@ void CodeGen_Generator(Statement *statements, Object *functionObject, Boolean co
     emit_trailing_object_reg_moves();
     previousStatement = NULL;
     for (entry = statementList->next; entry != NULL; entry = entry->next) {
-        if (entry->type == ST_LABEL && entry->target.label->pclabel == NULL) {
+        if (entry->type == ST_LABEL && entry->label->pclabel == NULL) {
             if (previousStatement != NULL && previousStatement->type == ST_LABEL)
-                entry->target.label->pclabel = previousStatement->target.label->pclabel;
+                entry->label->pclabel = previousStatement->label->pclabel;
             else
-                entry->target.label->pclabel = PCode_NewLabel();
+                entry->label->pclabel = PCode_NewLabel();
         }
         previousStatement = entry;
     }
@@ -1389,10 +1389,10 @@ void CodeGen_Generator(Statement *statements, Object *functionObject, Boolean co
                 initialValue = statement->value;
                 set_block_line_and_execution_weight(statement->sourceoffset, initialValue,
                                                     (statement->flags & 0x10) != 0);
-                fn_00436390(statement->expr.expression);
+                fn_00436390(statement->expr);
                 break;
             case ST_LABEL:
-                emit_block(statement->target.label);
+                emit_block(statement->label);
                 for (entry = (Statement *)temporary_objects; entry != NULL;
                      entry = (Statement *)((TemporaryObjectEntry *)entry)->next)
                     ((TemporaryObjectEntry *)entry)->object->u.var.uid = 0;
@@ -1401,13 +1401,13 @@ void CodeGen_Generator(Statement *statements, Object *functionObject, Boolean co
                 initialValue = statement->value;
                 set_block_line_and_execution_weight(statement->sourceoffset, initialValue,
                                                     (statement->flags & 0x10) != 0);
-                generate_comparison_branch(statement->expr.expression, statement->target.label, 1);
+                generate_comparison_branch(statement->expr, statement->label, 1);
                 break;
             case ST_IFNGOTO:
                 initialValue = statement->value;
                 set_block_line_and_execution_weight(statement->sourceoffset, initialValue,
                                                     (statement->flags & 0x10) != 0);
-                generate_comparison_branch(statement->expr.expression, statement->target.label, 0);
+                generate_comparison_branch(statement->expr, statement->label, 0);
                 break;
             case ST_GOTOEXPR: {
                 struct TOCNameEntry *labelEntry;
@@ -1415,7 +1415,7 @@ void CodeGen_Generator(Statement *statements, Object *functionObject, Boolean co
                 initialValue = statement->value;
                 set_block_line_and_execution_weight(statement->sourceoffset, initialValue,
                                                     (statement->flags & 0x10) != 0);
-                operand = statement->expr.expression;
+                operand = statement->expr;
                 memclrw(&operandBuffer, sizeof(operandBuffer));
                 data_00560648[operand->type](operand, 0, 0, &operandBuffer);
                 if (operandBuffer.kind != OpndType_GPR)
@@ -1431,7 +1431,7 @@ void CodeGen_Generator(Statement *statements, Object *functionObject, Boolean co
                 initialValue = statement->value;
                 set_block_line_and_execution_weight(statement->sourceoffset, initialValue,
                                                     (statement->flags & 0x10) != 0);
-                branch_block(statement->target.label);
+                branch_block(statement->label);
                 for (temporaryEntry = temporary_objects; temporaryEntry != NULL; temporaryEntry = temporaryEntry->next)
                     temporaryEntry->object->u.var.uid = 0;
                 break;
@@ -1439,16 +1439,16 @@ void CodeGen_Generator(Statement *statements, Object *functionObject, Boolean co
                 initialValue = statement->value;
                 set_block_line_and_execution_weight(statement->sourceoffset, initialValue,
                                                     (statement->flags & 0x10) != 0);
-                generate_return(statement->expr.expression, is_tail(statement));
+                generate_return(statement->expr, is_tail(statement));
                 break;
             case ST_SWITCH:
                 initialValue = statement->value;
                 set_block_line_and_execution_weight(statement->sourceoffset, initialValue,
                                                     (statement->flags & 0x10) != 0);
-                Switch_GenerateSwitch(statement->expr.expression, statement->target.switchDescriptor);
+                Switch_GenerateSwitch(statement->expr, (SwitchInfo *)statement->label);
                 break;
             case ST_BEGINCATCH: {
-                Object *object = statement->expr.expression->data.objref;
+                Object *object = statement->expr->data.objref;
                 PCodeUtilities_ResolveLabel(PCode_NewLabel());
                 CError_ASSERT(1436, object->datatype == DLOCAL);
                 emit_opcode_with_base_offset(PC_STW, 1, stack_base_reg, object, 0x14);
@@ -1456,14 +1456,14 @@ void CodeGen_Generator(Statement *statements, Object *functionObject, Boolean co
                 break;
             }
             case ST_ENDCATCHDTOR: {
-                ENode *operand = statement->expr.expression;
+                ENode *operand = statement->expr;
                 CError_ASSERT(1845, operand->data.objref->datatype == DLOCAL);
-                PCodeUtilities_EmitAddress(3, stack_base_reg, statement->expr.expression->data.objref, 0);
+                PCodeUtilities_EmitAddress(3, stack_base_reg, statement->expr->data.objref, 0);
                 PCodeUtilities_EmitObjectInstructionWithPayload(data_005875a0, 1, 8, 0, 0);
             }
                 /* fall through */
             case ST_ENDCATCH: {
-                Object *object = statement->expr.expression->data.objref;
+                Object *object = statement->expr->data.objref;
                 PCodeInstruction *instruction;
                 CError_ASSERT(1463, object->datatype == DLOCAL);
                 PCodeUtilities_ResolveLabel(PCode_NewLabel());
@@ -1476,7 +1476,7 @@ void CodeGen_Generator(Statement *statements, Object *functionObject, Boolean co
                 break;
             }
             case ST_ASM:
-                expression = statement->expr.asmInstruction;
+                expression = (ParsedAsmInstruction *)statement->expr;
                 if (expression != NULL) {
                     if ((expression->specialFlags & 1) != 0) {
                         CError_FATAL(1860);

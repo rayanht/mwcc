@@ -2194,7 +2194,7 @@ void initialize_class_array(Object *obj, Type *type, Boolean staticInit)
             }
             if (dtor != NULL) {
                 statement = CFunc_AppendStatement(4);
-                statement->expr.expression = nullnode();
+                statement->expr = nullnode();
             }
         }
     } else {
@@ -2245,11 +2245,11 @@ void initialize_class_array(Object *obj, Type *type, Boolean staticInit)
             }
         } else {
             statement = CFunc_AppendStatement(4);
-            statement->expr.expression = node;
+            statement->expr = node;
             if (dtor != NULL) {
                 CException_RegisterMemberArray(statement, obj, dtor, count, type->size);
                 statement = CFunc_AppendStatement(4);
-                statement->expr.expression = nullnode();
+                statement->expr = nullnode();
             }
         }
     }

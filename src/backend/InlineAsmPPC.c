@@ -2441,8 +2441,8 @@ void InlineAsmPPC_ParseDirective(int directive)
             if (tk != TK_IDENTIFIER)
                 CError_ReportError(ERR_IDENTIFIER_EXPECTED);
             node = CFunc_AppendStatement(0x10);
-            node->expr.asmInstruction = NULL;
-            node->expr.asmInstruction = create_function_asm_directive(data_00587fa0, flag);
+            node->expr = NULL;
+            node->expr = (ENode *)create_function_asm_directive(data_00587fa0, flag);
             node->sourceoffset = -1;
             tk = CPrepTokenizer_GetNextToken();
             break;
@@ -2519,12 +2519,12 @@ void InlineAsmPPC_ParseDirective(int directive)
             if (data_00588521 != 0)
                 CError_ReportError(ERR_FUNCTION_NO_INITIALIZED_STACKFRAME);
             node = CFunc_AppendStatement(0x10);
-            node->expr.asmInstruction = NULL;
+            node->expr = NULL;
             instruction = CompilerTools_AllocatePool(offsetof(struct ParsedAsmInstruction, data));
             memclrw(instruction, offsetof(struct ParsedAsmInstruction, data));
             instruction->opcode = 4;
             instruction->specialFlags = 1;
-            node->expr.asmInstruction = instruction;
+            node->expr = (ENode *)instruction;
             if (copts.filesyminfo != 0)
                 node->sourceoffset = CPrep_UpdateTokenLine(&function_fileinfo);
             else
@@ -2676,7 +2676,7 @@ void InlineAsmPPC_ParseInstruction(void)
         return;
     }
     record = CFunc_AppendStatement(0x10);
-    record->expr.asmInstruction = NULL;
+    record->expr = NULL;
     if (copts.filesyminfo != 0)
         record->sourceoffset = CPrep_UpdateTokenLine(&function_fileinfo);
     else
@@ -2743,8 +2743,8 @@ void InlineAsmPPC_ParseInstruction(void)
         }
     }
     parsed = parse_asm_instruction_operands(operand);
-    record->expr.asmInstruction = parsed;
-    instruction = record->expr.asmInstruction;
+    record->expr = (ENode *)parsed;
+    instruction = (ParsedAsmInstruction *)record->expr;
     if (hasDot)
         instruction->branch_flags |= 1;
     if ((UInt8)flag0)
@@ -2939,7 +2939,7 @@ static int InlineAsm_Register(EncodedOperand *operand)
 void InlineAsmPPC_GenerateAsmInstruction(Statement *o)
 {
     UInt32 op;
-    ParsedAsmInstruction *q = (ParsedAsmInstruction *)o->expr.asmInstruction;
+    ParsedAsmInstruction *q = (ParsedAsmInstruction *)o->expr;
     PCodeInstruction *instr;
     PCodeLabel *found;
     PCodeLabel *r;
@@ -3146,7 +3146,7 @@ SInt32 InlineAsmPPC_004631f0(ParsedAsmInstruction *operand)
 
 void InlineAsmPPC_00462d70(Statement *stmt, AsmOut *out)
 {
-    ParsedAsmInstruction *instruction = stmt->expr.asmInstruction;
+    ParsedAsmInstruction *instruction = (ParsedAsmInstruction *)stmt->expr;
     EncodedOperand *operand;
     SInt32 operandIndex;
     PCodeOpcodeDescriptor *descriptor = &gPCodeOpcodeDescriptors[instruction->opcode];
@@ -3313,7 +3313,7 @@ void InlineAsmPPC_00462d70(Statement *stmt, AsmOut *out)
 
 void InlineAsmPPC_ReplaceObjectReferenceArguments(Statement *owner, Object *object, ENode *expr)
 {
-    ParsedAsmInstruction *list = (ParsedAsmInstruction *)owner->expr.asmInstruction;
+    ParsedAsmInstruction *list = (ParsedAsmInstruction *)owner->expr;
     Object *referencedObject;
     int i;
 
@@ -3350,10 +3350,10 @@ Statement *InlineAsmPPC_CopyStatement(Statement *stmt)
 
     result = galloc(sizeof(Statement));
     *result = *stmt;
-    instruction = stmt->expr.asmInstruction;
+    instruction = (ParsedAsmInstruction *)stmt->expr;
     size = offsetof(ParsedAsmInstruction, data) + instruction->operand_count * sizeof(EncodedOperand);
     copy = galloc(size);
     memcpy(copy, instruction, size);
-    result->expr.asmInstruction = copy;
+    result->expr = (ENode *)copy;
     return result;
 }

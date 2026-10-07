@@ -1952,7 +1952,7 @@ void unroll_loop(int factor, struct IRONode *header)
                     node2 = CError_NewIRONode();
                     node2->first = testLast;
                     node2->last = bodyLast;
-                    ((CLabel *)testLast->u.label)->target.node = node2;
+                    ((CLabel *)testLast->u.label)->stmt = (Statement *)node2;
                     node1->nextnode = node2;
                     node3 = CError_NewIRONode();
                     node3->first = gotoNd;
@@ -1961,12 +1961,12 @@ void unroll_loop(int factor, struct IRONode *header)
                     node4 = CError_NewIRONode();
                     node4->first = exitFirst;
                     node4->last = exitLast;
-                    ((CLabel *)exitFirst->u.label)->target.node = node4;
+                    ((CLabel *)exitFirst->u.label)->stmt = (Statement *)node4;
                     node3->nextnode = node4;
                     node5 = CError_NewIRONode();
                     node5->first = lab2;
                     node5->last = remLast;
-                    ((CLabel *)lab2->u.label)->target.node = node5;
+                    ((CLabel *)lab2->u.label)->stmt = (Statement *)node5;
                     node4->nextnode = node5;
                     node6 = CError_NewIRONode();
                     node6->first = oldlast;
@@ -1992,7 +1992,7 @@ void unroll_loop(int factor, struct IRONode *header)
                     lab->next = NULL;
                     lab->u.label = label;
                     lab->flags |= 1;
-                    label->target.node = labelnode;
+                    label->stmt = (Statement *)labelnode;
                     labelnode->first = lab;
                     labelnode->last = lab;
                     lab->next = newnode->last->next;
@@ -2137,7 +2137,7 @@ void unroll_loop(int factor, struct IRONode *header)
                     node3 = CError_NewIRONode();
                     node3->first = exitFirst;
                     node3->last = exitLast;
-                    ((CLabel *)exitFirst->u.label)->target.node = node3;
+                    ((CLabel *)exitFirst->u.label)->stmt = (Statement *)node3;
                     if (node2)
                         node2->nextnode = node3;
                     else
@@ -2145,7 +2145,7 @@ void unroll_loop(int factor, struct IRONode *header)
                     node4 = CError_NewIRONode();
                     node4->first = lab2;
                     node4->last = eremLast;
-                    ((CLabel *)lab2->u.label)->target.node = node4;
+                    ((CLabel *)lab2->u.label)->stmt = (Statement *)node4;
                     node3->nextnode = node4;
                     node5 = CError_NewIRONode();
                     node5->first = oldlast;
@@ -2161,7 +2161,7 @@ void unroll_loop(int factor, struct IRONode *header)
                     lab->next = NULL;
                     lab->u.label = label;
                     lab->flags |= 1;
-                    label->target.node = labelnode;
+                    label->stmt = (Statement *)labelnode;
                     labelnode->first = lab;
                     labelnode->last = lab;
                     lab->next = loop_header->last->next;
@@ -3229,7 +3229,7 @@ void split_last_linear_into_new_node(void)
         node = CError_NewIRONode();
 
         iroNodeTail->nextnode = node;
-        label->target.node = node;
+        label->stmt = (Statement *)node;
 
         iroNodesByIndex = (IRONode **)CompilerTools_AllocatePoolMemory(iro_node_count * sizeof(*iroNodesByIndex));
         for (scan = iro_flowgraph_head; scan != NULL; scan = scan->nextnode)
@@ -3333,7 +3333,7 @@ IRONode *insert_loop_preheader(IRONode *loopHead, IRONode *predecessor)
     label->flags |= 1;
     preheaderLabel = label->u.label;
     /* The flow graph uses the label's basic-block arm. */
-    preheaderLabel->target.node = preheader;
+    preheaderLabel->stmt = (Statement *)preheader;
     preheader->first = label;
     preheader->last = label;
     if (predecessor != NULL) {
