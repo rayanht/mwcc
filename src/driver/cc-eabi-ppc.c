@@ -1,6 +1,7 @@
 #define CERROR_FILE "unknown.c"
 #include "compiler/common.h"
 #include "driver/cc-eabi-ppc.h"
+#include "driver/PrefPanels.h"
 #include "compiler/CPrep.h"
 #include "compiler/CodeGen.h"
 #include "compiler/CompilerTools.h"
@@ -25,7 +26,7 @@ static struct {
 } lbl_0054c3e4 = {1, "CCompiler.hlp"};
 #pragma options align = reset
 
-static struct DriverSettings data_0057f448;
+static PFrontEndC frontEndPrefs;
 static char data_0057f486;
 
 void cc_eabi_ppc_ReportCompilingFunction(char *name)
@@ -113,23 +114,24 @@ int __stdcall dispatch_compiler_plugin_request(CWPluginPrivateContext *input)
 void initialize_copts(CPrepCU *source)
 {
     union {
-        struct DriverSettings **driver;
-        LanguageSettings **language;
-        SymbolSettings **symbols;
+        PFrontEndC **frontEnd;
+        PWarningC **warnings;
+        PGlobalOptimizer **optimizer;
     } settingsHandle;
     unsigned char extension[256];
-    LanguageSettings languageSettings;
-    SymbolSettings symbolSettings;
+    PWarningC warningPrefs;
+    PGlobalOptimizer optimizerPrefs;
     int dotPosition, extensionLength;
 
     memclrw(&copts, sizeof(copts));
-    DropInCompilerLinkerPrivate_CallArgumentValue(compiler_plugin_cu.context, "C/C++ Compiler", &settingsHandle.driver);
-    data_0057f448 = **settingsHandle.driver;
+    DropInCompilerLinkerPrivate_CallArgumentValue(compiler_plugin_cu.context, "C/C++ Compiler",
+                                                  &settingsHandle.frontEnd);
+    frontEndPrefs = **settingsHandle.frontEnd;
 
     copts.nativeByteOrder = 0;
     copts.cplusplus = 1;
     extension[0] = 0;
-    copts.f5c = data_0057f448.tail[1];
+    copts.f5c = frontEndPrefs.objective_c;
 
     for (dotPosition = source->mainFile.fileData.file.name[0]; source->mainFile.fileData.file.name[dotPosition] != '.';
          dotPosition--)
@@ -142,63 +144,63 @@ void initialize_copts(CPrepCU *source)
     }
 
     if (memcmp(extension, ".c", 3) == 0 || memcmp(extension, ".h", 3) == 0 || memcmp(extension, ".pch", 5) == 0) {
-        copts.cplusplus = data_0057f448.b[2];
+        copts.cplusplus = frontEndPrefs.cplusplus;
     } else if (memcmp(extension, ".m", 3) == 0) {
-        copts.cplusplus = data_0057f448.b[2];
+        copts.cplusplus = frontEndPrefs.cplusplus;
         copts.f5c = 1;
     } else if (memcmp(extension, ".mm", 4) == 0 || memcmp(extension, ".M", 3) == 0) {
         copts.cplusplus = 1;
         copts.f5c = 1;
     }
 
-    copts.f60 = data_0057f448.b[3];
-    copts.f5e = data_0057f448.b[4];
-    copts.f5f = data_0057f448.b[4];
-    copts.trigraphs = data_0057f448.b[5];
-    copts.f62 = data_0057f448.b[6];
-    copts.f63 = data_0057f448.b[7];
-    copts.f65 = data_0057f448.b[8];
-    copts.rejectZeroLengthArrayMembers = data_0057f448.options[0];
-    copts.f66 = data_0057f448.options[1];
-    copts.fb3 = data_0057f448.options[3];
-    copts.faf = data_0057f448.options[4];
-    copts.fb0 = data_0057f448.options[5];
-    copts.disableInlining = data_0057f448.options[6];
-    copts.rttiEnabled = data_0057f448.options[7];
-    copts.f54 = data_0057f448.name;
-    copts.f6f = data_0057f448.options[8];
-    copts.unsignedChar = data_0057f448.options[9];
-    copts.f70 = data_0057f448.options[10];
-    copts.f72 = data_0057f448.options[12];
-    copts.f73 = data_0057f448.options[13];
-    copts.f75 = data_0057f448.options[11];
-    copts.fb6 = data_0057f448.options[14];
-    copts.inlineLimit = data_0057f448.inlineLimit;
-    copts.f7f = data_0057f448.options[2];
-    copts.f5b = data_0057f448.tail[0];
-    copts.f71 = data_0057f448.tail[2];
+    copts.f60 = frontEndPrefs.checkprotos;
+    copts.f5e = frontEndPrefs.arm;
+    copts.f5f = frontEndPrefs.arm;
+    copts.trigraphs = frontEndPrefs.trigraphs;
+    copts.f62 = frontEndPrefs.onlystdkeywords;
+    copts.f63 = frontEndPrefs.enumsalwaysint;
+    copts.f65 = frontEndPrefs.mpwpointerstyle;
+    copts.rejectZeroLengthArrayMembers = frontEndPrefs.ansistrict;
+    copts.f66 = frontEndPrefs.mpwcnewline;
+    copts.fb3 = frontEndPrefs.enableexceptions;
+    copts.faf = frontEndPrefs.dontreusestrings;
+    copts.fb0 = frontEndPrefs.poolstrings;
+    copts.disableInlining = frontEndPrefs.dontinline;
+    copts.rttiEnabled = frontEndPrefs.useRTTI;
+    copts.f54 = (char *)frontEndPrefs.prefixname;
+    copts.f6f = frontEndPrefs.multibyteaware;
+    copts.unsignedChar = frontEndPrefs.unsignedchars;
+    copts.f70 = frontEndPrefs.autoinline;
+    copts.f72 = frontEndPrefs.direct_to_som;
+    copts.f73 = frontEndPrefs.som_env_check;
+    copts.f75 = frontEndPrefs.booltruefalse;
+    copts.fb6 = frontEndPrefs.alwaysinline;
+    copts.inlineLimit = frontEndPrefs.inlinelevel;
+    copts.f7f = frontEndPrefs.wchar_type;
+    copts.f5b = frontEndPrefs.ecplusplus;
+    copts.f71 = frontEndPrefs.defer_codegen;
 
     DropInCompilerLinkerPrivate_CallArgumentValue(compiler_plugin_cu.context, "C/C++ Warnings",
-                                                  &settingsHandle.language);
-    languageSettings = **settingsHandle.language;
-    copts.f9f = languageSettings.options[2];
-    copts.fa0 = languageSettings.options[3];
-    copts.fa1 = languageSettings.options[4];
-    copts.fa2 = languageSettings.options[5];
-    copts.fa3 = languageSettings.options[6];
-    copts.fa4 = languageSettings.options[7];
-    copts.f9d = languageSettings.options[8];
-    copts.f9c = languageSettings.options[9];
-    copts.fa5 = languageSettings.options[10];
-    copts.fa7 = languageSettings.options[11];
-    copts.fa8 = languageSettings.options[12];
-    copts.fa9 = languageSettings.options[13];
+                                                  &settingsHandle.warnings);
+    warningPrefs = **settingsHandle.warnings;
+    copts.f9f = warningPrefs.warn_illpragma;
+    copts.fa0 = warningPrefs.warn_emptydecl;
+    copts.fa1 = warningPrefs.warn_possunwant;
+    copts.fa2 = warningPrefs.warn_unusedvar;
+    copts.fa3 = warningPrefs.warn_unusedarg;
+    copts.fa4 = warningPrefs.warn_extracomma;
+    copts.f9d = warningPrefs.pedantic;
+    copts.f9c = warningPrefs.warningerrors;
+    copts.fa5 = warningPrefs.warn_hidevirtual;
+    copts.fa7 = warningPrefs.warn_implicitconv;
+    copts.fa8 = warningPrefs.warn_notinlined;
+    copts.fa9 = warningPrefs.warn_structclass;
 
     DropInCompilerLinkerPrivate_CallArgumentValue(compiler_plugin_cu.context, "EPPC Global Optimizer",
-                                                  &settingsHandle.symbols);
-    symbolSettings = **settingsHandle.symbols;
-    copts.deleteDeadInstructions = symbolSettings.deleteDeadInstructions;
-    copts.uniformSpillBlockWeight = (symbolSettings.spillBlockWeightMode == 1);
+                                                  &settingsHandle.optimizer);
+    optimizerPrefs = **settingsHandle.optimizer;
+    copts.deleteDeadInstructions = optimizerPrefs.optimizationlevel;
+    copts.uniformSpillBlockWeight = (optimizerPrefs.optfor == 1);
     copts.unrollOption = 8;
     copts.fd1 = 100;
     copts.filesyminfo = source->filesyminfo;
