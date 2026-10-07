@@ -44,8 +44,6 @@
 #include "compiler/Objects.h"
 /* Declarations gathered from the merged files. */
 
-/* 0x561a30, "CMangler.c" */
-
 HashNameNode *COptimizer_GetFunctionObject(Object *obj)
 {
     while (obj->datatype == DALIAS)
@@ -682,8 +680,6 @@ HashNameNode *CMangler_RTTIObjectName(Type *type, unsigned int flags)
     fn_004431b0(data_00583548.data);
     return name;
 }
-
-/* Buffer used while constructing a name. */
 
 HashNameNode *CMangler_VTableName(TypeClass *entry)
 {

@@ -28,16 +28,6 @@
 #include <stdlib.h>
 #include <string.h>
 
-/* Tool selection entry; fields not used here are retained as opaque bytes. */
-
-/* Stored command arguments and optional additional argument vector. */
-
-/* Tool execution record; only paths and flag words are used here. */
-
-/* Storage for a dynamically resized array of words. */
-
-/* Flag words in the records returned by the tool list. */
-
 void CLToolExec_AppendArgument(int *count, char ***storage, const char *value)
 {
     *storage = xrealloc("command-line arguments", *storage, (*count + 2U) << 2);

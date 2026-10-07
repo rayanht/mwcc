@@ -66,10 +66,6 @@
 
 static struct TemporaryObjectEntry *temporary_objects;
 
-/* Code generation record layouts. */
-
-/* Declarations gathered from the merged files. */
-
 typedef void (*XGenProc)(ENode *, UInt16, UInt16, Operand *);
 
 typedef void (*CGGenFunc)(ENode *enode, SInt32 a, SInt32 b, Operand *dest);
@@ -553,8 +549,6 @@ static inline Boolean is_tail(Statement *node)
     return 1;
 }
 
-/* Entry in the linked key table. */
-
 InterruptGenerationRecord *CodeGen_FindInterruptGenerationRecord(SInt16 key)
 {
     InterruptGenerationRecord *entry = interrupt_generation_records;
@@ -607,8 +601,6 @@ static int IsVolatile(Object *obj)
     return obj->qual & Q_VOLATILE;
 }
 
-/* Function metadata used to compute argument offsets. */
-
 unsigned int CodeGen_GetObjCParameterOffset(MethRec *function, ObjCParameterNode *argument)
 {
     unsigned int offset;
@@ -640,8 +632,6 @@ unsigned int CodeGen_GetObjCParameterOffset(MethRec *function, ObjCParameterNode
     return 0;
 }
 
-/* Record containing the type used for size calculation. */
-
 int fn_00432480(MethRec *record)
 {
     int size;
@@ -657,8 +647,6 @@ int fn_00432480(MethRec *record)
         size = 1;
     return (((size + 3) & ~3) + 7) & ~3;
 }
-
-/* Type-bearing record used by the code generator; preceding fields are unknown. */
 
 unsigned int CodeGen_GetMethRecRTypeSize(MethRec *record)
 {
@@ -1609,8 +1597,6 @@ void CodeGen_GenThunk(Object *stmt, Object *func, SInt32 a, SInt32 flag, SInt32 
     copts.emitExtraAssemblyData = save_27;
 }
 
-/* Expression record used by the code-generation dispatch table. */
-
 enum { PCodeInstruction_CoalesceDisabled_00432310 = 0x0400 };
 
 void CodeGen_Generator(Statement *statements, Object *functionObject, Boolean context, Boolean zero)
@@ -1938,8 +1924,6 @@ void CodeGen_Generator(Statement *statements, Object *functionObject, Boolean co
     }
 }
 
-/* Objects considered for register allocation. */
-
 void emit_name_string_address(const char *name)
 {
     Operand op;
@@ -2071,20 +2055,6 @@ void generate_return(ENode *enode, Boolean flag)
     }
 }
 
-/* 0x5842d0, byte-sized */
-
-/* stunsignedlong / stunsignedlonglong are declared by the headers. */
-
-/* Partial view of the objects reset after return-value generation. */
-
-/* Entries in the return cleanup list. */
-
-/* Expression node dispatcher: one generator per ENode kind. */
-
-/* Branch-generation context; preceding context data is opaque here. */
-
-/* Entries whose per-object value is cleared after branch generation. */
-
 void generate_comparison_branch(ENode *enode, CLabel *context, SInt32 flag)
 {
     Operand operand;
@@ -2154,8 +2124,6 @@ void fn_00436390(ENode *expression)
         }
     }
 }
-
-/* Block state used by this routine; the two word fields have no known names. */
 
 void set_block_line_and_execution_weight(SInt32 value, unsigned int initial_value, unsigned int set_flag)
 {

@@ -48,8 +48,6 @@ static short gSaveSpan;
 static unsigned char gSavedUsedPhysicalRegisters[32];
 static char lbl_00581392[14];
 
-/* Declarations gathered from the merged files. */
-
 static void Registers_RestoreClassState(unsigned char *used, short *save_span)
 {
     *save_span = gSaveSpan;
@@ -328,8 +326,6 @@ static int Registers_CountFree(const unsigned char *used)
     return count;
 }
 
-/* 0x5619b8, the "Registers.c" file name */
-
 static void Registers_MarkFPRUsed(SInt16 regnum)
 {
     SInt32 avail;
@@ -452,8 +448,6 @@ int Registers_AvailableGPRs(void)
     return Registers_CountFree(gUsedPhysicalGPR);
 }
 
-/* Register-info record bound to a variable object; 0x2c bytes. */
-
 void Registers_BindVR(Object *obj, short vr)
 {
     if (gUsedPhysicalVR[vr] == 0) {
@@ -552,8 +546,6 @@ void Registers_BindFPR(Object *obj, SInt16 regnum)
         info->reg = regnum;
     }
 }
-
-/* 0x5619b8: "Registers.c" */
 
 /* VarInfo layout recovered from the original: 0x2c bytes, with the
  * register fields at 0x24/0x26 and the two flags at 0x28/0x2a. */
@@ -715,8 +707,6 @@ void Registers_AllocateVR(Object *obj)
         vr->reg = reg;
 }
 
-/* The per-object register allocation record. */
-
 void Registers_AllocateFPR(Object *obj)
 {
     SInt16 reg;
@@ -821,8 +811,6 @@ void Registers_AllocateGPRPair(Object *obj)
         info->regHi = reg2;
     }
 }
-
-/* Register-allocation record linked from a variable Object. sizeof == 0x2c. */
 
 void Registers_AllocateGPR(Object *obj)
 {

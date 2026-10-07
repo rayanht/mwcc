@@ -4617,12 +4617,6 @@ void Intrinsics_GenerateIntrinsicCall(ENode *node, short requestedReg, Operand *
 #undef false
 #undef true
 
-/* Intrinsic object fields used by this dispatcher. */
-
-/* Linked arguments passed to intrinsic handlers. */
-
-/* IntrinsicBinaryEntry in the intrinsic operation table. */
-
 ENode *Intrinsics_MakeAltivecCall(Object *descriptor, ENodeList *args)
 {
     Object *intrinsic = descriptor;
@@ -5515,8 +5509,6 @@ UInt16 find_binary_intrinsic_code(UInt16 id, ENode *unused, ENode *left, ENode *
         CError_FATAL(4093);
     return record->code;
 }
-
-/* Type alternatives for an intrinsic, terminated by a null entry. */
 
 UInt16 find_unary_intrinsic_code(UInt16 id, ENode *unused, ENode *expression)
 {

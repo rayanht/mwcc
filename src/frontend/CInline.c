@@ -384,8 +384,6 @@ static inline void CInline_0050f240_inline2(Object *a0)
     return;
 }
 
-/* 0x573204: file name string */
-
 static inline SInt32 CInline_FindIndex(UInt32 target, Statement **list)
 {
     SInt32 i;
@@ -580,8 +578,6 @@ static void add_chain(ChainRec **head, Statement *node, IStmtRec *ent)
     r->ent = ent;
 }
 
-/* 0x58246a, fixup list head */
-
 static inline void CopyStatementExpression(CException *copy, CException *source, char copyExpressions)
 {
     copy->data.slots[0] = CInline_GetObjectByIndex(source->data.operands[0].value, copyExpressions);
@@ -635,8 +631,6 @@ static inline ENode *InlineWrapResult(ENode *expr)
     return wrapped;
 }
 
-/* 0x573204, "CInline.c" */
-
 /* Create the Object representing one inlined variable. */
 static Object *NewInlineVar(Type *type, SInt16 offset, UInt8 info)
 {
@@ -649,8 +643,6 @@ static Object *NewInlineVar(Type *type, SInt16 offset, UInt8 info)
     CFunc_SetupLocalVarInfo(obj);
     return obj;
 }
-
-/* 0x573204, "CInline.c" */
 
 /* Copy the node if it is a constant object reference. */
 static ENode *CInline_CopyConst(ENode *e)
@@ -801,8 +793,6 @@ static ENode *adjust(ENode *f, ENode *e)
     }
     return r;
 }
-
-/* Payload copied by the ENEWEXCEPTIONARRAY expression case. */
 
 static inline SInt16 inline_member_index(SInt32 key)
 {
@@ -1006,8 +996,6 @@ Boolean CInline_0050f120(struct InlineObjectEntry *list)
     return result;
 }
 
-/* An inline function awaiting expansion. */
-
 void CInline_0050f240(Object *object)
 {
     CInlineInfo *body;
@@ -1186,8 +1174,6 @@ void forward_objref(ENode *expr)
     add_undefined_function_object(object);
 }
 
-/* Linked entries visited by the inline traversal. */
-
 void add_undefined_exception_function_objects(CException *entry)
 {
     if (entry != NULL) {
@@ -1240,8 +1226,6 @@ void add_undefined_exception_function_objects(CException *entry)
         } while (entry != NULL);
     }
 }
-
-/* Objects queued for inline processing. */
 
 void add_undefined_function_object(Object *object)
 {
@@ -1661,8 +1645,6 @@ void CInline_SaveInfo(CInlineInfo *out, Statement *list, Object *function)
 
 #pragma opt_lifetimes off
 
-/* Inline records carry kind-dependent object, value, and index operands. */
-
 CException *CInline_005102f0(Statement *indexMap, Statement *info)
 {
     CException *src = info->dobjstack; /* CInline_005102f0: serialization view of exception actions */
@@ -1843,8 +1825,6 @@ void *create_inline_switch_data(Statement *base, Statement *classInfo)
     return result;
 }
 
-/* Link used to traverse the inline list. */
-
 SInt16 CInline_GetStatementIndex(Statement *link, Statement *target)
 {
     UInt16 index;
@@ -1944,10 +1924,6 @@ void inline_statement_list(Statement *list)
         }
     }
 }
-
-/* Auxiliary member-pointer target metadata; only the flags are accessed here. */
-
-/* Auxiliary data attached to an ELOCOBJ expression. */
 
 void CInline_005114e0(ENode *node)
 {

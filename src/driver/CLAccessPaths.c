@@ -47,8 +47,6 @@ void free_access_path_entry(AccessPathEntry *blocks)
     }
 }
 
-/* Indexed values and their 16-bit count. */
-
 unsigned char CLAccessPaths_Init(AccessPaths *paths)
 {
     if (paths == NULL) {
@@ -58,8 +56,6 @@ unsigned char CLAccessPaths_Init(AccessPaths *paths)
     paths->items = NULL;
     return 1;
 }
-
-/* Array of access-path entries and its 16-bit bookkeeping. */
 
 unsigned char CLAccessPaths_FreeItems(AccessPaths *paths)
 {
@@ -138,8 +134,6 @@ unsigned short CLAccessPaths_GetCount(AccessPaths *table)
     return table->count;
 }
 
-/* Records and indexed table used by access-path lookup. */
-
 AccessPathEntry *CLAccessPaths_FindPath(AccessPaths *table, void *value)
 {
     unsigned int index;
@@ -195,10 +189,6 @@ Boolean add_subdirectory_access_paths(AccessPaths *ctx, AccessPathEntry *param2)
     OS_CloseDir(&bufA.state);
     return count > 0;
 }
-
-/* Indexed entries with a 16-bit count. */
-
-/* Access-path entry holding separately allocated data. */
 
 unsigned char CLAccessPaths_InitializeChildren(AccessPathEntry *path)
 {

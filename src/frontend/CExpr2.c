@@ -56,8 +56,6 @@
 #include "Compiler/Objects.h"
 #include "Compiler/Types.h"
 
-/* Declarations gathered from the merged files. */
-
 typedef enum { ENX_A = 1 } ENodeTypeX;
 
 typedef enum RegClass { RC_GPR = 0, RC_FPR = 1, RC_SPR = 2, RC_CRFIELD = 3, RC_CRFIELDBIT = 8, RC_VR = 9 } RegClass;
@@ -499,8 +497,6 @@ static ENode *mk_intconst_flat(Type *type, SInt32 value)
     return node;
 }
 
-/* Allocation expression followed by array construction. */
-
 static inline ENode *NewIndirect(ENode *inner)
 {
     ENode *e = (ENode *)CompilerTools_AllocatePool(0x1a);
@@ -847,8 +843,6 @@ ENode *make_class_member_or_global_call(Type *classType, ENodeList *arguments, c
     return CExpr_GenericFuncCall(NULL, NULL, 0, function, overloads, NULL, arguments, 0, 0, 1);
 }
 
-/* Entry and result buffer returned by CScope_ParseQualifiedScope. */
-
 void parse_pointer_and_array_declarator(Type **type, char allowNonconstant)
 {
     ENode *node;
@@ -949,14 +943,6 @@ unsigned int fn_0046cea0(void)
     }
     return flags;
 }
-
-/* Result record filled by CScope_FindClassMemberObject / fn_00498250. */
-
-/* Operator result record filled by fn_0046f760 (2-byte packed: f1a at 0x1a). */
-
-/* Receiver and candidate functions for an overloaded call operator. */
-
-/* 0x5550d8 "CExpr2.c" */
 
 static ENode *make_child(ENode *inner, UInt8 ty)
 {
@@ -1195,8 +1181,6 @@ Boolean CExpr_CheckOperator(short token, ENode *left, ENode *right, BinaryOperat
     out->right = NULL;
     return TRUE;
 }
-
-/* The types a built-in operator found through a class's conversion functions takes its operands as. */
 
 /* A search of CLASS's conversion functions, its bases' included. */
 static inline void begin_conversion_search(ConversionSearchState *search, Type *type)
@@ -1469,10 +1453,6 @@ Boolean select_operator_operand_types(Type *leftType, Type *rightType, SInt16 op
     }
 }
 
-/* State used while enumerating conversion functions. */
-
-/* Results of converting a pair of expressions. */
-
 static inline char CExpr2_kind(Type *p, long k)
 {
     char result;
@@ -1511,10 +1491,6 @@ static inline ENode *tail_convert(ENode *a0, Type *v7)
         value = a0;
     return value;
 }
-
-/* State for enumerating class conversion members. */
-
-/* Output of a class conversion search. */
 
 char try_class_conversion_to_kind(ENode *expr, short kind, BinaryOperatorResult *result)
 {
@@ -1691,8 +1667,6 @@ Boolean CExpr2_0046e3e0(Type *type, SInt16 op)
     }
 }
 
-/* Intermediate record held by an ENEWEXCEPTIONARRAY-kind node's first union slot. */
-
 static ENode *CExpr2_MakeIntNode(void)
 {
     ENode *n;
@@ -1703,8 +1677,6 @@ static ENode *CExpr2_MakeIntNode(void)
     n->rtype = (Type *)&stsignedlong;
     return n;
 }
-
-/* Auxiliary data carried by a call candidate. */
 
 ENode *CExpr_MakeFunctionCall(ENode *expr, ENodeList *args)
 {
@@ -1968,8 +1940,6 @@ ENode *CExpr2_0046e9d0(Object *obj, Type *functype, ENodeList *args)
     make_funccall_with_dexprs(node, args, (TypeFunc *)functype, arg);
 }
 
-/* Referenced symbols (bound by the host to the original addresses). */
-
 /* error node: an int constant of type int */
 static ENode *make_slong(void)
 {
@@ -2224,8 +2194,6 @@ static inline ENode *CExpr2_0046f260_inline1(ENode *a0)
     return v4;
 }
 
-/* Byte fields used to classify a type descriptor. */
-
 ENode *CExpr_VarArgPromotion(ENode *expr, Boolean allowWarning)
 {
     switch ((char)expr->rtype->type) {
@@ -2339,12 +2307,6 @@ void make_funccall_with_dexprs(ENode *funcref, ENodeList *args, TypeFunc *ftype,
     funcref->data.objref->flags |= OBJECT_USED;
     CExpr_AdjustFunctionCall(n);
 }
-
-/* Argument lists prepared for a member call. */
-
-/* Result pair returned by the candidate check. */
-
-/* State record supplied to candidate processing. */
 
 void CExpr_FuncArgMatch(NameSpaceObjectList *source, void *context, ENodeList *objects, ArgMatch *state, ENode *mode,
                         char exclude)
@@ -2888,8 +2850,6 @@ static void InitLookup(ConversionSearchState *lu, TypeClass *tclass)
     }
 }
 
-/* Type and offset describing the conversion destination. */
-
 SInt16 user_assign_check(ENode *operand, Type *targetType, UInt32 targetQual, Boolean diagnose, Boolean allowExplicit,
                          Boolean conversionMode)
 {
@@ -3113,12 +3073,6 @@ SInt16 user_assign_check(ENode *operand, Type *targetType, UInt32 targetQual, Bo
         CError_ReportError(ERR_CANNOT_CONVERT, operand->rtype, operand->flags & Q_CV, targetType, targetQual);
     return 0;
 }
-
-/* pending list node: head at 0x00, pending item at 0x04 */
-
-/* list item: next at 0x00, pending list at 0x04, object at 0x08 */
-
-/* Opaque state used by the namespace lookup routines. */
 
 Object *CExpr_ConversionIteratorNext(ConversionSearchState *ctx)
 {
@@ -3820,8 +3774,6 @@ SInt32 check_member_pointer_conversion(Type *type, ENode *expr, Boolean convert)
     return 0;
 }
 
-/* Five ordered values used for lexicographic comparison. */
-
 SInt16 compare_short_arrays_lexicographically(SInt16 *left, SInt16 *right, Boolean compareFifth)
 {
     if (left[0] > right[0])
@@ -3848,8 +3800,6 @@ SInt16 compare_short_arrays_lexicographically(SInt16 *left, SInt16 *right, Boole
     }
     return -1;
 }
-
-/* Accumulated conversion scores and associated values. */
 
 Boolean CExpr2_UpdateArgMatchScores(Type *target, UInt32 qualifiers, ENode *expression, ArgMatch *scores)
 {
@@ -3912,8 +3862,6 @@ void CExpr_MatchCV(Type *firstType, UInt32 firstQualifiers, Type *secondType, UI
     if ((firstQualifiers & Q_VOLATILE) != (secondQualifiers & Q_VOLATILE))
         match->qualificationPenalty--;
 }
-
-/* Counts used to compare conversion candidates. */
 
 void init_comparison_values(unsigned int kind, ComparisonValues *counts, Type *sourceType, unsigned int sourceQual,
                             Type *targetType, unsigned int targetQual, unsigned int flag)
@@ -4038,8 +3986,6 @@ ENode *CExpr_FuncCallSix(Object *function, ENode *firstArgument, ENode *secondAr
 
     return CExpr_AdjustFunctionCall(call);
 }
-
-/* 0x587fd8, function pointer called with (0, func) */
 
 ENode *funccallexpr(Object *func, ENode *firstArgument, ENode *secondArgument, ENode *thirdArgument,
                     ENode *fourthArgument)
@@ -5004,8 +4950,6 @@ UInt8 CExpr_AllBitsSet(ENode *p)
     return '\0';
 }
 
-/* View of an expression's eight-byte numeric payload. */
-
 UInt8 CExpr_IsOne(ENode *expr)
 {
     if (expr->type == EINTCONST) {
@@ -5197,8 +5141,6 @@ ENode *intconstnode(Type *valueType, SInt32 value)
     return expr;
 }
 
-/* Integer expression record with a split 64-bit value. */
-
 ENode *nullnode(void)
 {
     ENode *node;
@@ -5253,8 +5195,6 @@ void CExpr_AliasTransform(ENode *expr)
         expr->data.objref = obj->u.alias.object;
     }
 }
-
-/* probe: does a known DAT_ name bind? */
 
 ENode *replace_expr_tree_nodes(ENode *node)
 {

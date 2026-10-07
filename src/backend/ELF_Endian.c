@@ -29,8 +29,6 @@
 #include <setjmp.h>
 
 static int (*DAT_005805e0)(const char *, int);
-/* inferred floating type; verify ABI */
-
 static inline void readhdr(volatile int *out, unsigned int *p, char flag)
 {
     if (flag) {
@@ -45,8 +43,6 @@ static inline void readheader(volatile int *out, unsigned int *p, char flag)
 {
     readhdr(out, p, flag);
 }
-/* Bounds of a serialized record in the input buffer. */
-
 void swap_tagged_records(unsigned char *data, unsigned int size, int (*errorHandler)(const char *, int),
                          char swapBeforeRead)
 {

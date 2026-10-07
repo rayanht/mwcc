@@ -36,8 +36,6 @@
 #include "compiler/Switch.h"
 #include "driver/Files.h"
 
-/* Declarations gathered from the merged files. */
-
 #pragma options align = mac68k
 static Boolean data_005824c8;
 static UInt8 template_argument_depth;
@@ -461,8 +459,6 @@ Boolean match_args(TypeFunc *a, TypeFunc *b, CTStateElem *c, Boolean d)
         pb = pb->next;
     }
 }
-/* 0x5824c8, byte-accessed */
-
 #define CB_TRUE 1
 #define CB_FALSE 0
 
@@ -550,8 +546,6 @@ Boolean match_state_elem_arguments(CTStateElem *a, CTStateElem *b, CTStateElem *
         b = b->next;
     }
 }
-/* Expression record fields used by this query. */
-
 int CTemplateFunc_GetArgumentParameterIndex(CTStateElem *argument)
 {
     if (argument->argument.expression == NULL)
@@ -808,8 +802,6 @@ struct TemplateSpecializationData *CTemplateFunc_FindOrCreateMatchedSpecializati
     }
     return find_or_create_template_specialization(func, match.slots, specialization);
 }
-/* Template function metadata and its argument substitution context. */
-
 struct TemplateSpecializationData *find_or_create_template_specialization(Object *func, CTStateElem *args,
                                                                           Object *premade)
 {

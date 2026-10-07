@@ -44,14 +44,6 @@ extern "C" {
 #include "mwcc/Plugins.h"
 /* Declarations gathered from the merged files. */
 
-/* Header, descriptor and state buffers for the drop-in callback interface. */
-
-/* Stored record and its exported representation. */
-
-/* Scratch results from the conversion and lookup helpers. */
-
-/* Six-byte conversion result. */
-
 #include "driver/CLFileOps.h"
 
 #include "driver/CLFileOps.h"
@@ -124,8 +116,6 @@ int __stdcall get_file_info(int unused, int key, int unusedFlags, struct Exporte
     result->optionI = 0;
     return 0;
 }
-
-/* Output record populated by the lookup. */
 
 Boolean lookup_file(DropinRequest *unused, char *key, DropinFileCallback *output, OSSpec *argument, Boolean *found)
 {
@@ -307,8 +297,6 @@ SInt32 __stdcall CLDropinCallbacks_V10_FindAndLoadFile(DropinRequest *dropin, ch
     return 0;
 }
 
-/* File reference supplied by the callback client. */
-
 int __stdcall CLDropinCallbacks_V10_GetFileText(void *context, CWFileSpec *file, void **result1, unsigned int *result2,
                                                 SInt16 *status)
 {
@@ -366,20 +354,6 @@ static inline void CLDropinCallbacks_V10_00425560_run1(CallbackPathEntry *p0, st
     }
 }
 
-/* Cached callback entries and their counts. */
-
-/* Callback request fields; intervening fields are not used here. */
-
-/* Cached callback path entry. */
-
-/* Callback request layout. */
-
-/* Cached callback state. */
-
-/* Callback operation parameters. */
-
-/* Callback input: optional name, data, and mode byte. */
-
 static inline void SetCallbackStorageHandle(DropinRequest *request, StorageHandle *data, StorageHandle **storage)
 {
     CLDropinCallbacks_V10_SetStorageHandle((unsigned int)request, (unsigned int)data, storage);
@@ -396,8 +370,6 @@ unsigned int __stdcall CLDropinCallbacks_V10_FreeMemory(struct DropinRequest *re
         result = 3U;
     return (short)result;
 }
-
-/* Callback records carry a 16-bit value at offset 32. */
 
 unsigned int __stdcall lookup_callback_record(unsigned int unused, unsigned int key, CallbackRecord *record)
 {
@@ -416,8 +388,6 @@ unsigned int __stdcall lookup_callback_record(unsigned int unused, unsigned int 
     record->value = found->value;
     return 0U;
 }
-
-/* Text and values returned by the overlay callback. */
 
 unsigned int __stdcall get_overlay_group_info(unsigned int callback, int index, struct CallbackOverlayRecord *record)
 {
@@ -461,10 +431,6 @@ unsigned int __stdcall call_overlays_and_translate_status(unsigned int callbackC
     return 3;
 }
 
-/* Callback result storage supplied by the caller. */
-
-/* Shared callback data with a payload at offset 28. */
-
 unsigned int __stdcall lookup_overlay_allocation(unsigned int unused, unsigned int groupIndex,
                                                  unsigned int allocationIndex, struct DropinResultStorage *result)
 {
@@ -481,8 +447,6 @@ unsigned int __stdcall lookup_overlay_allocation(unsigned int unused, unsigned i
     }
     return 3U;
 }
-
-/* Callback records whose fields have no compiler-header counterpart. */
 
 int __stdcall report_message(struct DiagnosticContext *context, struct DiagnosticLocation *location, char *message,
                              char *detail, short kind, int argument)

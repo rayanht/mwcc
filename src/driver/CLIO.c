@@ -359,10 +359,6 @@ void append_byte(struct ByteBuffer *buffer, char value)
     buffer->column++;
 }
 
-/* Growable byte buffer with a count of appended bytes. */
-
-/* 0x541b3a, word width */
-
 char *format_prefixed_text(char *output, int remaining, char *prefix, char *format, char **args)
 {
     char *text;

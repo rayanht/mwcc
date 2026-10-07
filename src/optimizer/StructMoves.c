@@ -163,8 +163,6 @@ void emit_pair_copy_loop(Operand *destination, Operand *source, int size)
     (void)count;
 }
 
-/* Operand record: 22 bytes (0x16), as copied on the stack by the caller. */
-
 void emit_unrolled_copy(Operand *dest, Operand *src, SInt32 size, SInt32 align)
 {
     SInt32 offset = 0;

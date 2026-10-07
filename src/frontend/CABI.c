@@ -57,8 +57,6 @@ static Object *CABI_ThisArg(void);
  * matched function by function against the original executable. */
 enum { OVERRIDE_VIRTUAL = 1 };
 
-/* Declarations gathered from the merged files. */
-
 enum { ST_EXPRESSION_0050b120 = 4 };
 
 typedef Statement *(*TransConstructorCallback)(Statement *stmt, TypeClass *tclass, TypeClass *base, SInt32 offset,
@@ -436,8 +434,6 @@ void layout_class_ivars(ClassLayoutInput *member, TypeClass *type)
     }
 }
 
-/* Entries returned by the ABI object lookup. */
-
 Object *CABI_FindZeroVirtualBaseMember(TypeClass *scope, Object *key)
 {
     NameSpaceObjectList *entry;
@@ -609,8 +605,6 @@ void layout_vtable(ClassLayoutInput *layout, TypeClass *classType)
     classType->vtable->owner = classType;
     classType->vtable->size = size;
 }
-
-/* Layout input with a byte flag at offset 12. */
 
 int CABI_LayoutClass(struct ClassLayoutInput *members, TypeClass *type)
 {
@@ -822,8 +816,6 @@ ENode *build_vbase_ptr_initializers(ENode *expr, TypeClass *func, TypeClass *cls
     }
     return expr;
 }
-
-/* Offset chain for a path through virtual bases. */
 
 BaseOffsetPath *find_shortest_virtual_base_offset_path(TypeClass *tclass, TypeClass *base)
 {
@@ -1744,8 +1736,6 @@ Statement *build_base_destruction_statements(Statement *stmt, VClassList *bl)
     }
     return stmt;
 }
-
-/* Label record linking a branch target to its statement. */
 
 void CABI_TransDestructor(Object *destructor, Object *completeDestructor, Statement *stmt, TypeClass *tclass, int mode)
 {

@@ -18,8 +18,6 @@
 #include <stdlib.h>
 #include <string.h>
 
-/* inferred floating type; verify ABI */
-
 #define SWAP16(x) ((((x) & 0xff00) >> 8) | (((x) & 0xff) << 8))
 #define SWAP32(x)                                                                                                      \
     (((((UINT)(x)) & 0xff000000u) >> 24) | ((((UINT)(x)) & 0x00ff0000u) >> 8) | ((((UINT)(x)) & 0x0000ff00u) << 8) |   \

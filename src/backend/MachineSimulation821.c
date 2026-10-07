@@ -352,12 +352,8 @@ static UInt32 data_00583050;
 static unsigned int record_enqueue_index;
 static CompletionEntry queue_slots[6];
 
-/* 0x5842e1, byte access */
-
 /* PCodeBlock: the object a liveness entry is indexed by; its block number
  * lives at 0x1c. */
-
-/* Per-block liveness record: four bit vectors. */
 
 /* TYPESTRUCT record with the byte classification field at 0x0e. */
 int get_instruction_opcode_table_entry(PCodeInstruction *instruction)

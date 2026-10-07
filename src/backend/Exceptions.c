@@ -38,8 +38,6 @@ static struct ExceptionScopeEntry *last_exception_scope_entry;
 static GList exception_records;
 static struct ObjGenRelocationRequest *exception_table_relocation_requests;
 static struct ObjGenRelocationRequest *relocation_request_tail;
-/* Layouts of the exception scope records used by this routine. */
-
 #pragma opt_lifetimes off
 
 #define CE_ASSERT(c, s)                                                                                                \
@@ -52,8 +50,6 @@ static inline unsigned short flags(void)
     return CTool_EndianConvertWord16(gGPRSaveSpan << 11 | (gFPRSaveSpan & 31) << 6 | (data_005883ee != 0) << 5 |
                                      (data_0058852d & 1) << 4 | 8);
 }
-
-/* Exception table entries and the compiler's exception range descriptors. */
 
 void Exceptions_EmitExceptionTable(Object *object, int offset)
 {
@@ -398,8 +394,6 @@ static inline void append_reference(void *obj, SInt32 offset)
         exception_table_relocation_requests = it;
     relocation_request_tail = it;
 }
-
-/* Serialized exception-table records, in target byte order. */
 
 static inline SInt32 ExceptionTypeValue(CLabel *typeInfo)
 {

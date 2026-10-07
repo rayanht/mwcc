@@ -43,8 +43,6 @@ int allocate_license_slot(int licenseData, int negateId)
     return 0;
 }
 
-/* A license value paired with its lookup identifier. */
-
 int find_license(unsigned int identifier, unsigned int *license)
 {
     int index;

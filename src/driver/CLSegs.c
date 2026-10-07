@@ -6,10 +6,6 @@
 #include <stdlib.h>
 #include <string.h>
 
-/* Growable table of four-byte entries. */
-
-/* Indexed values with a 16-bit count. */
-
 struct PayloadWithValue *CLSegs_CreatePayloadWithValue(const char *source, UInt16 value)
 {
     struct PayloadWithValue *record;
@@ -48,8 +44,6 @@ Boolean CLSegs_InitSegments(AccessPathValueTable *segments)
     }
     return 1;
 }
-
-/* Entry array and its two 16-bit metadata values. */
 
 unsigned char CLSegs_FreeValues(AccessPathValueTable *array)
 {

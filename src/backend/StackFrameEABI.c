@@ -48,8 +48,6 @@
 
 static Object *data_00580fa8;
 
-/* Declarations gathered from the merged files. */
-
 enum { STRUCT_KIND_4 = 4, STRUCT_KIND_14 = 14 };
 typedef enum { kMergeTag = 0x1f } MergeTag;
 
@@ -224,8 +222,6 @@ void emit_restore_special_registers(SInt16 frameRegister)
         emit_opcode_with_base_offset(PC_LWZ, frameRegister, frameRegister, NULL, offset);
     }
 }
-
-/* Stack-frame flags following two words of frame metadata. */
 
 static inline void SaveSpecialRegister(void)
 {
@@ -1009,8 +1005,6 @@ void emit_save_fprs(PCodeBlock *block, Boolean savefpr)
     }
 }
 
-/* Referenced symbols. */
-
 static inline UInt8 StackFrameEABI_LoadMultipleEnabled(void)
 {
     return copts.useRegisterSaveHelpers;
@@ -1140,8 +1134,6 @@ void StackFrameEABI_MergePrologueEpilogue(PCodeBlock *block, char emitReturn)
     block->flags |= 2;
     gCurrentBlock = savedBlock;
 }
-
-/* 0x5601e0 (file name) */
 
 static inline int NeedGSave(void)
 {

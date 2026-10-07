@@ -713,10 +713,6 @@ void BE_elf_InitSectionsAndFileSymbol(void)
     max_padding_size = 128;
 }
 
-/* Declarations gathered from the merged files. */
-
-/* File record used by the ELF backend. */
-
 void BE_elf_SetDeclSection(char *name, DeclInfo *declaration)
 {
     ObjGenSection *section;
@@ -772,10 +768,6 @@ static SectionRec *MakeRecA(void *f6, UInt8 f2, UInt8 f3)
     a->typebits = 0;
     return a;
 }
-
-/* ELF record attributes carried by the input descriptor. */
-
-/* Backend ELF record and input descriptor; undocumented fields retained. */
 
 ObjGenSection *BE_elf_0049c540(ObjGenSection *input, SInt32 context)
 {
@@ -833,8 +825,6 @@ static inline ObjGenSection *BE_elf_0049c670_inline1(char *v4)
     }
     return NULL;
 }
-
-/* ELF section record; only the entry and related section are used here. */
 
 ObjGenSection *BE_elf_CreateSectionWithRelocations(SectionRec *rawObject, short kind, char flags, int size,
                                                    int relocationSize, unsigned char attributes, char allocateData,

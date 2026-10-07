@@ -38,8 +38,6 @@
 #include "compiler/Switch.h"
 enum { lift_regnum_0 = 0, lift_regnum_3 = 3 };
 
-/* Declarations gathered from the merged files. */
-
 typedef enum { kCompareNodeType = 1 } CompareNodeType;
 
 typedef void (*ExpressionGenerator)(ENode *, short, short, Operand *);

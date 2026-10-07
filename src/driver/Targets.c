@@ -60,8 +60,6 @@ Boolean Targets_MatchCommandLineOptions(int argc, char **argv)
 #undef CERROR_FILE
 #define CERROR_FILE __FILE__
 
-/* Indexed values with an opaque 32-byte prefix. */
-
 int Targets_RegisterOptionLists(void)
 {
     int index;

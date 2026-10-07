@@ -39,10 +39,6 @@ Boolean CLOverlays_Init(Overlays *this)
     return 1;
 }
 
-/* Records in this chain store their link at offset 276. */
-
-/* Head of the record chain. */
-
 unsigned char CLOverlays_FreeGroups(Overlays *list)
 {
     struct CLOverlayEntry *entry;
@@ -60,10 +56,6 @@ unsigned char CLOverlays_FreeGroups(Overlays *list)
     list->groups = NULL;
     return 1;
 }
-
-/* List entry with its link following the entry's opaque data. */
-
-/* Head, tail and entry count for the list. */
 
 unsigned char CLOverlays_AppendGroup(Overlays *list, CLOverlayEntry *entry, unsigned int *index)
 {
@@ -100,14 +92,6 @@ struct CLOverlayEntry *CLOverlays_GetGroupByIndex(struct Overlays *list, int ind
         return record;
     return NULL;
 }
-
-/* Record data followed by the overlay chain link. */
-
-/* Head of an overlay record chain. */
-
-/* Overlay records have an opaque prefix before the list link. */
-
-/* Head of an overlay record list. */
 
 unsigned int CLOverlays_CountGroups(struct Overlays *list)
 {
@@ -149,10 +133,6 @@ unsigned int CLOverlays_GetAllocationValueByGroupIndex(Overlays *overlay, unsign
     return 4294967295U;
 }
 
-/* Two values stored with an overlay entry. */
-
-/* Overlay name and associated values. */
-
 CLOverlayEntry *CLOverlays_CreateOverlayEntry(const char *name, CLOverlayValues overlayValues)
 {
     CLOverlayEntry *overlay;
@@ -172,8 +152,6 @@ CLOverlayEntry *CLOverlays_CreateOverlayEntry(const char *name, CLOverlayValues 
     }
     return overlay;
 }
-
-/* Overlay storage followed by its associated value. */
 
 void free_overlay_allocations(CLOverlayEntry *list)
 {
@@ -213,8 +191,6 @@ char CLOverlays_AppendOverlay(CLOverlayEntry *self, struct OverlayAllocation *ov
     return 1;
 }
 
-/* Overlay list storage; preceding data is not interpreted here. */
-
 struct OverlayAllocation *CLOverlays_GetOverlayAtIndex(struct CLOverlayEntry *list, int index)
 {
     struct OverlayAllocation *entry;
@@ -231,8 +207,6 @@ struct OverlayAllocation *CLOverlays_GetOverlayAtIndex(struct CLOverlayEntry *li
         return entry;
     return NULL;
 }
-
-/* Records with an opaque prefix and links used by the overlay traversal. */
 
 unsigned int CLOverlays_CountOverlays(CLOverlayEntry *record)
 {
@@ -252,8 +226,6 @@ unsigned int CLOverlays_CountOverlays(CLOverlayEntry *record)
     }
     return count;
 }
-
-/* Overlay allocation: a bounded name followed by four state words. */
 
 struct OverlayAllocation *CLOverlays_CreateOverlayAllocation(const char *name)
 {
@@ -281,8 +253,6 @@ void free_overlay_values(struct OverlayAllocation *overlay)
     overlay->values = NULL;
 }
 
-/* Overlay table header and its growable array of entries. */
-
 UInt8 CLOverlays_AppendEntry(struct OverlayAllocation *table, SInt32 entry, SInt32 *entryIndex)
 {
     SInt32 count;
@@ -304,8 +274,6 @@ UInt8 CLOverlays_AppendEntry(struct OverlayAllocation *table, SInt32 entry, SInt
     return 1;
 }
 
-/* Overlay table data followed by its indexed values. */
-
 unsigned int get_allocation_value(OverlayAllocation *table, unsigned int index)
 {
     int allocationIndex;
@@ -321,8 +289,6 @@ unsigned int get_allocation_value(OverlayAllocation *table, unsigned int index)
     }
     return 0xffffffffU;
 }
-
-/* Opaque record payload followed by a word at offset 260. */
 
 unsigned int CLOverlays_GetValueCount(struct OverlayAllocation *record)
 {

@@ -51,8 +51,6 @@ static GList browse_member_list;
 static BrowseObjectBuffer browse_function_buffer;
 static SInt32 nextFunctionId;
 
-/* Declarations gathered from the merged files. */
-
 #define BROWSE_ASSERT(c, s)                                                                                            \
     do {                                                                                                               \
         if (c)                                                                                                         \
@@ -97,8 +95,6 @@ void write_template_function_browse_record(TemplateFunction *info)
     }
 }
 
-/* Browse record metadata. */
-
 void CBrowse_RecordClassLocation(struct TypeClass *type, PFile *location, int first_line, int last_line)
 {
     short file_id;
@@ -126,8 +122,6 @@ void CBrowse_RecordClassLocation(struct TypeClass *type, PFile *location, int fi
         }
     }
 }
-
-/* Browse output records; opaque bytes retain the surrounding record data. */
 
 void write_identifier_range_record(Macro *source, PFile *info, int first, int last)
 {
@@ -176,8 +170,6 @@ static inline void browse_write(char *pq, SInt32 id1, char *alt, SInt32 id2, int
         AppendGListWord(&data_00581ba8.buffer, 0);
     }
 }
-
-/* Browse metadata is stored in the source file record. */
 
 void CBrowse_WriteObjectBrowseInfo(Object *object, PFile *metadata, PFile *endMetadata, SInt32 start, SInt32 end)
 {
@@ -371,8 +363,6 @@ void CBrowse_WriteRelatedRecord(NameSpace *nameSpace, HashNameNode *name, PFile 
     }
 }
 
-/* Record metadata used by browse references. */
-
 void CBrowse_RecordNameRange(NameSpace *nameSpace, HashNameNode *hn, PFile *startRecord, PFile *endRecord, SInt32 start,
                              SInt32 end)
 {
@@ -405,8 +395,6 @@ void CBrowse_RecordNameRange(NameSpace *nameSpace, HashNameNode *hn, PFile *star
         }
     }
 }
-
-/* Source file metadata used by browser records. */
 
 static inline void writeBrowseLine(GList *stream, unsigned int line)
 {
@@ -493,18 +481,6 @@ void CBrowse_WriteStructMember(StructMember *param0, SInt32 param1, SInt32 param
     }
 }
 
-/* Global 16-byte browse/line state at 0x581bb8 (four dwords). */
-
-/* Sub-record reached through obj->f50 / obj->f54. */
-
-/* First argument: holds two sub-records and a count. */
-
-/* Second argument: holds a name node pointer at offset 6. */
-
-/* Source locations used by the browse record writer. */
-
-/* Input to a browse record. */
-
 void CBrowse_BuildTypeStructBrowseInfo(DeclInfo *obj, TypeStruct *info, GList *out)
 {
     HashNameNode *name;
@@ -554,8 +530,6 @@ void CBrowse_RestoreScope(SInt32 statementOffset, GList *savedScope)
     }
     browse_member_list = *savedScope;
 }
-
-/* 0x563344; table sits 4 bytes before it */
 
 void CBrowse_RecordDataObject(Object *obj, SInt32 param2, SInt32 param3)
 {
@@ -638,10 +612,6 @@ void CBrowse_WriteObjMemberVar(ObjMemberVar *rec, SInt32 start, SInt32 end)
         CompilerTools_AppendGListData(&browse_member_list, rec->name->name, len + 1);
     }
 }
-
-/* Entries referenced by a class browse record. */
-
-/* Class data and entry references collected for browse output. */
 
 void CBrowse_GenerateClassRecord(DeclInfo *record, GList *out)
 {
@@ -748,8 +718,6 @@ void CBrowse_FreeLists(struct CPrepCU *cu)
     FreeGList(&browse_function_buffer.buffer);
 }
 
-/* Arguments and result for the browse-data callback. */
-
 void CBrowse_StoreBrowseData(CPrepCU *arguments)
 {
     Object **objects;
@@ -776,8 +744,6 @@ void CBrowse_StoreBrowseData(CPrepCU *arguments)
         }
     }
 }
-
-/* Fixed-size browse stream header. */
 
 void CBrowse_InitBrowseData(CPrepCU *classes)
 {

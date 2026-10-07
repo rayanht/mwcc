@@ -241,8 +241,6 @@ void emit_vector128_constant(ENode *node, short requestedRegister, short unused,
     CError_FATAL(5481);
 }
 
-/* Instruction-selection operand storage with a register pair. */
-
 enum ETypeCode {
     ETC_VOID = TYPEVOID,
     ETC_INT = TYPEINT,
@@ -408,10 +406,6 @@ void generate_gpr_pair_division_or_modulo(ENode *node, SInt16 requestedReg, SInt
     PCodeUtilities_EmitInstruction(PC_MR, result->reg, return_gpr_first);
     PCodeUtilities_EmitInstruction(PC_MR, result->regHi, returnRegHi);
 }
-
-/* Operand storage used by the register-pair shift selector. */
-
-/* Operand storage used by integer-pair instruction selection. */
 
 void generate_gpr_pair_shift(ENode *node, short outputReg, short outputRegHi, Operand *result)
 {
@@ -846,10 +840,6 @@ void emit_gpr_pair_multiply(ENode *expr, SInt16 requestedLo, SInt16 requestedHi,
     out->regHi = resultHi;
 }
 
-/* 0x560774, "InstrSelection.c" */
-
-/* Operand / addressing-mode record: byte kind, then register pair. */
-
 void emit_gpr_pair_and(ENode *node, SInt16 reg1, SInt16 reg2, Operand *result)
 {
     Operand leftOperand;
@@ -937,8 +927,6 @@ void emit_gpr_pair_or(ENode *node, SInt16 reg1, SInt16 reg2, Operand *out)
     out->regHi = reg2;
 }
 
-/* 0x560774, filename string */
-
 static void genOperand(ENode *n, Operand *op)
 {
     (*(data_00560648[n->type]))(n, 0, 0, op);
@@ -985,8 +973,6 @@ void gen_xor_reg_pair(ENode *node, SInt16 reg1, SInt16 reg2, Operand *result)
     result->reg = rlo;
     result->regHi = rhi;
 }
-
-/* An operand record: byte kind, then two 16-bit register numbers. */
 
 void emit_gpr_pair_subtraction(ENode *node, SInt16 lowReg, SInt16 highReg, Operand *result)
 {
@@ -1777,8 +1763,6 @@ unsigned char fn_004b4aa0(unsigned char kind)
     }
 }
 
-/* Result produced by comparison instruction selection. */
-
 void generate_condition_branches(ENode *expr, PCodeLabel *trueLabel, PCodeLabel *falseLabel,
                                  PCodeLabel *fallthroughLabel)
 {
@@ -1860,8 +1844,6 @@ void get_function_type_operand(ENode *lookup, short unused1, short unused2, Oper
     }
     *result = entry->operand;
 }
-
-/* Saved operand for a nested function call. */
 
 void emit_conditional_funccall(ENode *expr, SInt32 requestedReg, SInt32 requestedRegHi, struct Operand *out)
 {
@@ -2115,8 +2097,6 @@ void InstrSelection_EmitThreeOperandFPRInstruction(SInt16 opcode, ENode *left, E
     result->reg = resultReg;
 }
 
-/* sizeof = 22 (0x16) */
-
 void InstrSelection_EmitUnaryFPRInstruction(SInt16 opcode, ENode *node, SInt16 reg, Operand *res)
 {
     Operand op;
@@ -2130,8 +2110,6 @@ void InstrSelection_EmitUnaryFPRInstruction(SInt16 opcode, ENode *node, SInt16 r
     res->kind = OpndType_FPR;
     res->reg = virtualRegister;
 }
-
-/* size 24 */
 
 void emit_binary_fpr_instruction(short opcode, ENode *left, ENode *right, SInt16 requestedReg, Operand *result)
 {
@@ -2173,8 +2151,6 @@ void emit_binary_fpr_instruction(short opcode, ENode *left, ENode *right, SInt16
     result->kind = OpndType_FPR;
     result->reg = resultReg;
 }
-
-/* sizeof == 0x16 */
 
 void emit_gpr_immediate_operation(SInt16 opcode, ENode *expr, SInt32 value, SInt16 outputReg, Operand *output)
 {
@@ -2670,10 +2646,6 @@ void select_diadic_left_then_right(ENode *node, SInt32 a, SInt32 b, Operand *ctx
 
     data_00560648[right->type](right, a, 0, ctx);
 }
-
-/* Register-colouring record returned by Registers_GetInfo. */
-
-/* Struct/class view: signed byte at 0x0e. */
 
 static void EmitAddImm(SInt16 dst, SInt16 src, SInt32 imm)
 {
@@ -3224,8 +3196,6 @@ void emit_add(ENode *node, SInt16 a, SInt16 b, Operand *c)
         Operands_Add(&opL, &opR, a, c);
     }
 }
-
-/* Parameters for division by a constant. */
 
 static void unsigned_mod_pow2(ENode *left, int sh, short reg, Operand *result)
 {
@@ -4217,8 +4187,6 @@ void generate_postinc_postdec(ENode *expr, SInt32 outputReg, SInt32 outputRegHi,
         }
     }
 }
-
-/* Evaluators write the cached result for an expression node. */
 
 void get_objaccess_cached_value(ENode *node, UInt32 argument2, UInt32 argument3, Operand *result, UInt32 argument5)
 {

@@ -220,10 +220,6 @@ static inline TypeClass *fn_00504c90_inline1(void)
     return NULL;
 }
 
-/* Linked initializer entries and their three expression values. */
-
-/* Leading expression in the initializer metadata. */
-
 ENode *CObjC_ParseStringConstant(void)
 {
     TypeClass *type;
@@ -1412,8 +1408,6 @@ void emit_classobject_and_metaclassobject(TypeClass *cls)
     fn_004ceab0(classObject, buffer, relocations, classObject->type->size);
 }
 
-/* 0x441a70, returns int (stored into vl[]) */
-
 static inline CObjCInfoRec *register_info0(void *i)
 {
     return (CObjCInfoRec *)i;
@@ -1547,8 +1541,6 @@ Object *CObjC_GetProtocolInfo(CRec *protocol)
 
 #pragma opt_propagation reset
 
-/* memcpy */
-
 Object *create_protocol_method_list(CRec *cls, char *nm, SInt16 val, UInt8 kind)
 {
     SInt32 count;
@@ -1619,12 +1611,6 @@ Object *create_protocol_method_list(CRec *cls, char *nm, SInt16 val, UInt8 kind)
     return result;
 }
 
-/* Linked entries used to build the Objective-C descriptor. */
-
-/* Allocated descriptor header followed by its variable-length entries. */
-
-/* Linked member layout for an Objective-C descriptor. */
-
 Object *create_protocol_list(ObjectList *entries, char *name)
 {
     int count;
@@ -1686,8 +1672,6 @@ Object *create_protocol_list(ObjectList *entries, char *name)
     }
     return result;
 }
-
-/* memcpy */
 
 Object *create_method_list_object(TypeClass *owner, CRec *category, MethRec *methods, UInt8 *namePrefix,
                                   char *nameSuffix, UInt16 qualifiers, char methodKind)
@@ -1790,8 +1774,6 @@ Object *create_method_list_object(TypeClass *owner, CRec *category, MethRec *met
     }
     return result;
 }
-
-/* memcpy */
 
 Object *create_ivar_list(TypeClass *cls)
 {
@@ -2320,8 +2302,6 @@ static inline ObjectList *FindObject(void *obj, ObjectList *list)
     return list;
 }
 
-/* Record produced here: a pointer type with one extra trailing field. */
-
 inline Type *FindIdType(void)
 {
     NameSpaceObjectList *node;
@@ -2595,8 +2575,6 @@ HashNameNode *CObjC_00508810(TypeClass *obj, CRec *ns, MethRec *info)
     return name;
 }
 
-/* Objective-C method entry used by the method matcher. */
-
 static inline Boolean ObjCMethodTypesEqual(Type *type, Type *other)
 {
     if (copts.f5d == 0 && CObjC_IsIdCompatiblePointerPair(type, other) != 0)
@@ -2866,8 +2844,6 @@ void CObjC_ConvertKeywordToIdentifier(void)
             break;
     }
 }
-
-/* ObjC class bookkeeping record: 0x1a bytes, two object pointers first. */
 
 TypeClass *find_or_create_objc_class(HashNameNode *name)
 {

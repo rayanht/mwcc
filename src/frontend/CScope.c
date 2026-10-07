@@ -62,13 +62,7 @@ static SInt8 data_00580ded;
             CError_Internal("CScope.c", line);                                                                         \
     } while (0)
 
-/* +0x22 */
-
-/* Declarations gathered from the merged files. */
-
 #undef CERROR_FILE
-
-/* Result record used by fn_0049a3e0; unused fields are not yet identified. */
 
 /* The scope separator. The linker stripped this function; its literal stays in the unit's .data, last, as the unit
    generates its functions in reverse order. */
@@ -237,8 +231,6 @@ static int lookup(struct NameSpace *a1, HashNameNode *a2)
     return 0;
 }
 
-/* CScopeParseResult state shared with the namespace lookup helpers. */
-
 static NameSpaceObjectList *FindInScope(NameSpace *scope, HashNameNode *name)
 {
     NameSpaceName *e;
@@ -255,8 +247,6 @@ static NameSpaceObjectList *FindInScope(NameSpace *scope, HashNameNode *name)
     }
     return NULL;
 }
-
-/* NameSpace record laid out from the disassembly offsets. */
 
 static ObjectList *Scope_FindList(NameSpace *sc, HashNameNode *nm)
 {
@@ -773,8 +763,6 @@ NameSpace *CScope_NewHashNameSpace(HashNameNode *name)
     nspace->is_global = 1;
     return nspace;
 }
-
-/* 0x1c-byte scope record: pointer at 0x04, flags at 0x18/0x19. */
 
 NameSpace *CScope_NewListNameSpace(HashNameNode *name, Boolean is_global)
 {
@@ -1456,10 +1444,6 @@ NameSpaceObjectList *find_scope_object_list(LookupCtx *ctx, HashNameNode *key)
     return NULL;
 }
 
-/* Result of resolving a scope name. */
-
-/* Result of a scope name lookup, including a resolved type or object list. */
-
 Boolean set_parse_result_from_objects(CScopeParseResult *result, NameSpaceObjectList *objects, HashNameNode *name)
 {
     if (objects->next == NULL || objects->next->object->otype == OT_TYPETAG) {
@@ -1784,10 +1768,6 @@ Boolean parse_qualified_templdep_type(CScopeParseResult *context, Type *qualifie
     return 1;
 }
 
-/* Additional storage used by classes carrying flag 0x800. */
-
-/* Storage for a scope lookup and its parser result. */
-
 Boolean parse_name_in_namespace(CScopeParseResult *scope, NameSpace *ns)
 {
     Boolean isDestructor;
@@ -2038,14 +2018,6 @@ Boolean CScope_ParseExprName(CScopeParseResult *scope)
 /* 0x58427a, byte accesses */
 /* 0x5884f8, byte accesses */
 
-/* Iterator node: next pointer at 0x00, object pointer at 0x04, flag at 0x08. */
-
-/* NameSpace node: flag at 0x08, current object at 0x0c. */
-
-/* Lookup state record allocated by the caller: 0x22 bytes. */
-
-/* Iterator state record whose address is handed to fn_00499ee0. */
-
 Boolean CScope_ParseDeclName(CScopeParseResult *lookup)
 {
     HashNameNode *name;
@@ -2203,8 +2175,6 @@ Boolean CScope_ParseDeclName(CScopeParseResult *lookup)
 }
 
 #define TCE(t) ((TypeClassExt800 *)(t))
-
-/* Result and traversal state for scope lookup. */
 
 Boolean CScope_ParseQualifiedScope(CScopeParseResult *result, SInt32 flag)
 {
@@ -2504,8 +2474,6 @@ Boolean CScope_FindObject(NameSpace *nspace, CScopeParseResult *result, HashName
 
 #define CERROR_FILE "CScopeParseResult.c"
 
-/* State carried while searching namespaces and using lists. */
-
 NameSpaceObjectList *CScope_FindObjectList(CScopeParseResult *result, HashNameNode *name)
 {
     NameSpace *namespace;
@@ -2662,8 +2630,6 @@ Object *CScope_NextObject(ScopeSearch *s)
 
 /* Hash-table owner/namespace record as laid out in this build: the hash
  * bucket array lives at 0x10 and the "is hashed" byte flag at 0x18. */
-
-/* Iteration state carried by the caller across lookups. */
 
 NameSpaceObjectList *CScope_NextNameSpaceObjectList(ScopeSearch *state)
 {
@@ -2914,8 +2880,6 @@ Boolean CScope_ParseMemberName(TypeClass *ctx, CScopeParseResult *node, Boolean 
     return result;
 }
 
-/* A member-variable alias carries its base-class path after the member. */
-
 void add_using_declaration(BClassList *bases, NameSpace *scope, ObjBase *def, HashNameNode *name, char access)
 {
     NameSpaceObjectList *lst;
@@ -3056,10 +3020,6 @@ void CScope_AddClassUsingDeclaration(TypeClass *def, TypeClass *tp, HashNameNode
         CError_ReportError(ERR_ILLEGAL_USE_TEMPLATE_ARGUMENT_DEPENDENT_TYPE, name->name);
     }
 }
-
-/* Layout of the scope entry inspected by this routine. */
-
-/* Result shared by class and namespace scope lookup. */
 
 void CScope_ParseUsingDeclaration(NameSpace *nspace, AccessType flag, Boolean unused)
 {

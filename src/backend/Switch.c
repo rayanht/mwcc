@@ -82,8 +82,6 @@ void Switch_GenerateSwitch(ENode *expression, SwitchInfo *cases)
         generate_switchtable_dispatch(expression, cases);
 }
 
-/* Raw generated operand, with overlapping register-value views. */
-
 void generate_switchtable_dispatch(ENode *node, SwitchInfo *cases)
 {
     Object *obj;

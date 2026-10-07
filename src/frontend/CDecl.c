@@ -241,8 +241,6 @@ UInt8 CDecl_ParseDeclarationAttributeFlags(void)
     return flags;
 }
 
-/* Indexed class members used to construct the virtual table. */
-
 TypeClass *CDecl_DefineClass(struct NameSpace *nspace, struct HashNameNode *name, struct TypeClass *type, short mode,
                              char flag4, char flag5)
 {
@@ -428,8 +426,6 @@ void fill_class_layout_entries(ClassLayoutInput *table, TypeClass *type, Object 
 /* 0x48ff20: new zeroed FuncArg (0x18) */
 /* 0x4ebca0: find class function object */
 
-/* 0x5870f4, name lookup key */
-
 void declare_auto_generated_destructor(ClassLayoutInput *type, TypeClass *cls)
 {
     ClassList *base;
@@ -595,8 +591,6 @@ void generate_copy_constructor(ClassLayoutInput *type, TypeClass *cls)
         declare_member_function(type, cls, &decl, access, 1, 0, 0, 0);
     }
 }
-
-/* Declaration state with flag at offset 12. */
 
 void declare_default_copy_constructor(ClassLayoutInput *decl, TypeClass *type)
 {
@@ -876,8 +870,6 @@ void make_defarg_function(TypeClass *cls)
         member = member->next;
     }
 }
-
-/* Result storage for base-name lookup; unexamined fields remain opaque. */
 
 void parse_class_bases(TypeClassTemplate *classType, short mode, char allowDependent)
 {
@@ -1596,8 +1588,6 @@ void parse_class_members(ClassLayoutInput *decle, TypeClass *tclass, SInt16 mode
     }
 }
 
-/* 0x49b4a0; reference: extern NameSpaceObjectList *CScope_FindName(NameSpace *nspace, HashNameNode *name); */
-
 ObjMemberVar *add_member_var(ClassLayoutInput *declaration, TypeClass *cls, Type *type, UInt32 qual, HashNameNode *name,
                              AccessType access)
 {
@@ -1657,8 +1647,6 @@ ObjMemberVar *add_member_var(ClassLayoutInput *declaration, TypeClass *cls, Type
     }
     return member;
 }
-
-/* A class friend entry records either an object or a type. */
 
 void parse_friend_declaration(TypeClassTemplate *cls)
 {
@@ -1791,8 +1779,6 @@ void CDecl_AddFriend(TypeClass *typeClass, Object *object, Type *type)
     }
 }
 
-/* Compact record used to initialize a declaration record. */
-
 /* Declaration record; intervening storage is cleared but not populated here. */
 void CDecl_InitDeclInfoFromTemplateDeclarationData(DeclInfo *dst, TemplateDeclarationData *src)
 {
@@ -1826,8 +1812,6 @@ unsigned char CDecl_CopyDeclInfoToNewFunc(NewFunc *destination, DeclInfo *source
     destination->hasTemplateArguments = hasTemplateArguments;
     return hasTemplateArguments;
 }
-
-/* 0x5882d8, accessed as word */
 
 Boolean check_qualified_identifier_or_operator(TypeClass *tclass, AccessType access)
 {
@@ -1891,10 +1875,6 @@ Boolean check_qualified_identifier_or_operator(TypeClass *tclass, AccessType acc
         }
     }
 }
-
-/* 26 bytes */
-
-/* 40 bytes */
 
 void declare_member_function(ClassLayoutInput *layout, TypeClass *cls, struct DeclInfo *info, UInt8 access,
                              UInt8 allowPure, UInt8 specialMember, UInt8 parseBody, UInt8 declarationOnly)
@@ -2399,8 +2379,6 @@ void compute_struct_layout(Type *str)
                            str->size - (previous->offset + previous->type->size), previous->name->name);
     }
 }
-
-/* Bit-field types produced while parsing declarations. */
 
 void CDecl_ScanStructDeclarator(MemberDecl *member)
 {
@@ -3303,8 +3281,6 @@ void parse_resolved_member_function_decl(DeclInfo *di, Boolean define)
     CError_ReportError(ERR_DECLARATION_SYNTAX_ERROR);
 }
 
-/* Declaration state used while checking and processing a definition. */
-
 Boolean CDecl_FunctionDeclarator(DeclInfo *decl, NameSpace *mode, Boolean allow_definition, int options)
 {
     Boolean needsPrototype;
@@ -3590,8 +3566,6 @@ void CDecl_TypedefDeclarator(DeclInfo *decl)
         }
     }
 }
-
-/* Temporary function type used when reporting a declaration mismatch. */
 
 Object *CDecl_GetFunctionObject(DeclInfo *decl, NameSpace *target_scope, Boolean *is_new_object, char lookup_mode)
 {

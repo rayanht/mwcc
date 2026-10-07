@@ -146,10 +146,6 @@ void ObjGen_PPC_EABI_EmitSerializedFormat(Object *key, int index)
     return;
 }
 
-/* Eight-byte entries accumulated for an output record. */
-
-/* Partial layouts of the output state and its owners. */
-
 void ObjGen_PPC_EABI_AppendOutputEntry(ObjGenSection *context, unsigned int value)
 {
     SerializedFormat *entries = context->output->sectionData.serialized->format;
@@ -275,8 +271,6 @@ InterruptGenerationRecord *ObjGen_PPC_EABI_GetInterruptInfo(Object *obj)
             s;                                                                                                         \
     } while (0)
 
-/* Object generation linkage and index records. */
-
 InterruptGenerationRecord *fn_00488750(Object *object, BE_SymNode *linkage)
 {
     InterruptGenerationRecord *resolved;
@@ -390,10 +384,6 @@ GList *ObjGen_PPC_EABI_GetSectionBuffer(ObjGenSection *section)
 {
     return &section->buffer;
 }
-
-/* Object-file section, symbol and relocation bookkeeping. */
-
-/* Output section storage and its symbol/relocation references. */
 
 void ObjGen_PPC_EABI_EmitDescriptorWithRelocations(Object *obj, SInt32 value, void *data, UInt32 size,
                                                    ObjGenRelocationRequest *list)
@@ -558,8 +548,6 @@ SInt16 ObjGen_PPC_EABI_SetupFunctionSection(Object *param)
     return index;
 }
 
-/* 0x587ff8, pointer to current context */
-
 void ObjGen_PPC_EABI_00488ee0(SInt32 entry, SInt32 value)
 {
     if ((entry == data_00587ff8->flags && value == data_00580da8) || entry == 0)
@@ -575,8 +563,6 @@ void ObjGen_PPC_EABI_00488ee0(SInt32 entry, SInt32 value)
 
 /* Serialized relocation record. */
 /* Relocation output block and its owning context. */
-
-/* Reference metadata used to select an alternate relocation target. */
 
 void emit_relocation(SInt32 op, SInt32 offset, Object *obj, ObjGenSection *ctx, SInt32 value)
 {
@@ -661,8 +647,6 @@ void ObjGen_PPC_EABI_SetSymbolOffset(Object *object, int offset)
     record->offset = DAT_00580dac + offset;
 }
 
-/* PPC object output section and allocation bookkeeping. */
-
 ObjGenSection *fn_004892a0(Object *object, int size)
 {
     BE_SymNode *info;
@@ -694,8 +678,6 @@ void fn_00489360(Object *object, int size, void *data)
 {
     CError_FATAL(1686);
 }
-
-/* References used by the object emitter. */
 
 void ObjGen_PPC_EABI_EmitSwitchTable(Object *gl, Object *func)
 {
@@ -744,8 +726,6 @@ void ObjGen_PPC_EABI_EmitSwitchTable(Object *gl, Object *func)
     object_data_size += info->size;
 }
 
-/* Output storage and extent for emitted object data. */
-
 void ObjGen_PPC_EABI_EmitFloatObject(Object *node)
 {
     ObjGenSection *output;
@@ -776,12 +756,6 @@ void ObjGen_PPC_EABI_EmitFloatObject(Object *node)
 
     object_data_size += object->type->size;
 }
-
-/* Object-emission buffer and associated bookkeeping. */
-
-/* Per-object emission information. */
-
-/* Relocation list entry and packed relocation payload. */
 
 void emit_object_data_and_relocations(Object *func, const char *data, RelocationList *list, SInt32 size, Boolean flag)
 {
@@ -1309,8 +1283,6 @@ static inline void fill_section_header_table(void)
     }
 }
 
-/* Object-section records; preceding metadata is not accessed here. */
-
 static inline void build_section_table(UInt16 sectionCount)
 {
     SInt16 count = sectionCount;
@@ -1585,8 +1557,6 @@ void ObjGen_PPC_EABI_UpdateSectionHeaders(void)
     }
 }
 
-/* 0x5884a4, word count */
-
 void ObjGen_PPC_EABI_BuildSectionHeaderTable(void)
 {
     ObjGenSection *p;
@@ -1699,8 +1669,6 @@ Boolean ObjGen_PPC_EABI_IsInvalidAbsName(char *name)
     }
     return 0;
 }
-
-/* Input descriptor; the preceding fields are not known here. */
 
 static inline void rebuild_section_header_table(void)
 {
@@ -1985,8 +1953,6 @@ void ObjGen_PPC_EABI_EmitObjectWithDebugEntry(Object *object, const void *data, 
     else
         allocate_object_storage(object, alignment, 0);
 }
-
-/* Records in the linked list rooted at section_list. */
 
 void ObjGen_PPC_EABI_ClearSectionSymbolLinkValues(void)
 {

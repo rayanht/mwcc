@@ -191,8 +191,6 @@ void split_variable_range(VarRecord *entry)
     }
 }
 
-/* 0x553d50: "BitVector_004597b0.h" */
-
 static void IRO_BitVectorSet(UInt32 bit, BitVector *bv)
 {
     if ((bit >> 5) < bv->size)

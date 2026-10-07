@@ -45,8 +45,6 @@
 #include "driver/Files.h"
 #include "compiler/ENode.h"
 
-/* Declarations gathered from the merged files. */
-
 typedef struct CClassObj CClassObj;
 
 typedef enum OverrideKind { OVERRIDE_NONE, OVERRIDE_1, OVERRIDE_2 } OverrideKind;
@@ -275,12 +273,6 @@ static TypeMemberFunc *copyMemberFunction(TypeMemberFunc *type)
     *copy = *type;
     return copy;
 }
-
-/* 0x14-byte node: linked list of member objects. */
-
-/* 0x0a-byte node: base-class layout link. */
-
-/* 0x16-byte layout record. */
 
 static SInt32 CL_FindOffset(TypeClass *base)
 {
@@ -825,8 +817,6 @@ void build_class_layout(TypeClass *type)
     build_virtual_function_entries(object);
 }
 
-/* Recovered record shapes (Mac 68k packing). */
-
 Object *CClass_004ea020(ClassLayout *record, char report)
 {
     Object *result = NULL;
@@ -920,8 +910,6 @@ void build_virtual_function_entries(ClassLayout *ctx)
         build_virtual_function_entries(child->layout);
 }
 
-/* 0x565260, "CClass.c" */
-
 static SInt32 vbase_offset(TypeClass *tclass, TypeClass *baseclass)
 {
     VClassList *vbase;
@@ -958,8 +946,6 @@ static Object *CClass_FindFuncObject(NameSpace *nspace, HashNameNode *name)
     }
     return NULL;
 }
-
-/* Nodes and links used by the recursive list traversal. */
 
 void select_layout_member_overrides(ClassLayout *node)
 {
@@ -1136,8 +1122,6 @@ CClassNode *collect_override_return_class_types(CClassNode *types, TypeClass *tc
     return types;
 }
 
-/* Class graph and candidates used while resolving an override. */
-
 void select_member_override(ClassLayout *classRecord, ClassLayout *context, struct ClassLayoutMember *search)
 {
     ClassLayoutMember *function;
@@ -1192,8 +1176,6 @@ Boolean contains_base_layout(ClassLayout *identity, ClassLayout *sub)
     }
     return 0;
 }
-
-/* Class layout records: the fields used while building the inheritance tree. */
 
 ClassLayout *create_class_layout(ClassLayout *root, TypeClass *cls, SInt32 offset, SInt32 voffset)
 {
@@ -1303,8 +1285,6 @@ unsigned int CClass_VirtualBaseVTableOffset(TypeClass *type, TypeClass *base)
     CError_FATAL(1199);
     return 0;
 }
-
-/* Linked class-to-offset lookup entries. */
 
 SInt32 CClass_FindVBaseOffset(TypeClass *cls, TypeClass *base)
 {
@@ -1652,8 +1632,6 @@ void CClass_Init(void)
     base_path_level = 0;
     return;
 }
-
-/* 0x58354c base; entries land on 0x583554/0x583558 */
 
 Boolean find_virtual_base_path(register TypeClass *cls, register TypeClass *target)
 {

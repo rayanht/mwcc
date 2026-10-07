@@ -38,10 +38,6 @@
 #include <string.h>
 
 static struct BE_SymNode *data_0055da80 = NULL;
-/* Declarations gathered from the merged files. */
-
-/* Back-end symbol records and their associated data. */
-
 Boolean BE_symbol_004913b0(Object *obj)
 {
     SInt16 kind;
@@ -160,10 +156,6 @@ unsigned int BE_symbol_GetOffset(BE_SymNode *symbol)
     return symbol->offset;
 }
 
-/* Input carrying the name used to construct a symbol. */
-
-/* Symbol record linked in creation order. */
-
 unsigned int BE_symbol_CreateSectionSymbol(ObjGenSection *input)
 {
     char *buffer;
@@ -191,10 +183,6 @@ unsigned int BE_symbol_CreateSectionSymbol(ObjGenSection *input)
     symbol->flags |= 64;
     return (unsigned int)symbol;
 }
-
-/* 0x32-byte symbol record: name at 0x00, next at 0x18, flags word at 0x2c. */
-
-/* Owner record: source name string at 0x18, cached symbol at 0x64. */
 
 BE_SymNode *BE_symbol_GetSectionSym(struct ObjGenSection *ctx)
 {
@@ -282,8 +270,6 @@ static BE_SymNode *FindSym(int obj, int kind)
     return NULL;
 }
 
-/* Backend symbol output record. */
-
 static inline void FindBackendSymbol(BE_SymNode **result, int key, int symbolCategory)
 {
     BE_SymNode *symbol;
@@ -354,8 +340,6 @@ void BE_symbol_Init(void)
     data_0055da80 = NULL;
 }
 
-/* Prefix of a 50-byte symbol record; the remaining fields are not used here. */
-
 BE_SymNode *BE_symbol_CreateSymNode(void *value)
 {
     BE_SymNode *record;
@@ -370,8 +354,6 @@ BE_SymNode *BE_symbol_CreateSymNode(void *value)
     symbol_tail = record;
     return record;
 }
-
-/* Backend symbol table entry, linked in insertion order. */
 
 enum { BACKEND_SYMBOL_KIND_258 = 258, BACKEND_SYMBOL_KIND_259 = 259 };
 

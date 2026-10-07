@@ -72,10 +72,6 @@ enum FlagVal { FLAGVAL_FALSE, FLAGVAL_TRUE };
 
 typedef enum { CFUNC_UNUSED_A, CFUNC_UNUSED_B } CFuncUnused;
 
-/* Return type and auxiliary state used while parsing a function body. */
-
-/* Function label resolution records. */
-
 static void SetLong(CInt64 *pN, long n)
 {
     pN->lo = n;
@@ -508,8 +504,6 @@ void fn_00476e60(TypeClass *type)
     CFunc_00476e70(type, NULL);
 }
 
-/* 0x4463d0, error report */
-
 /* A linked list of member initializer records: next, a discriminator byte at
  * 0x04 (2) and the member variable pointer at 0x0a. */
 
@@ -566,10 +560,6 @@ void CFunc_Gen(Statement *context, Object *object, unsigned int options)
         CClass_DefineCovariantFuncs(object, &buf);
     }
 }
-
-/* Statement view exposing the 16-bit field at 0x08. */
-
-/* Link in the active function-generation scope stack. */
 
 NameSpace *CFunc_FuncGenSetup(Statement *stmt, Object *func)
 {
@@ -733,8 +723,6 @@ void setup_function_arguments(Object *function, DeclInfo *body, Statement *state
     }
 }
 
-/* Variable bookkeeping record hung off Object.u.var.info. */
-
 /* Builds a list of parameter Objects from a FuncArg
  * chain; each Object also gets a VarInfo. */
 ObjectList *create_arg_object_list(FuncArg *arg)
@@ -821,8 +809,6 @@ void CFunc_SetupNewFuncArgs(Object *func, FuncArg *args)
     }
 }
 
-/* Per-variable bookkeeping returned by CPrep_AllocateVarInfo. */
-
 static void CFunc_InitVariableInfo(Object *obj)
 {
     obj->u.var.info = CPrep_AllocateVarInfo();
@@ -886,8 +872,6 @@ void create_local_object_copy(Object *func, TypeIntegral *type, Type *type2, Boo
     stmt->expr.expression = makediadicnode(create_objectnode(newfunc), expr, EASS);
 }
 
-/* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
-
 static void *NewScope(void)
 {
     struct SavedGlobalValues *s = CompilerTools_AllocatePool(0xe);
@@ -932,8 +916,6 @@ void CFunc_ParseScopedStatement(struct StatementContext *context)
     }
     RestoreBlock(scope);
 }
-
-/* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
 
 static CLabel *NewLabel(void)
 {
@@ -1006,8 +988,6 @@ static void CondJump(ENode *expr, CLabel *truelabel, char a, char b)
     label->target.stmt = (Statement *)AppendStmt(2); /* AppendStmt statement view */
     ((Statement *)label->target.stmt)->target.label = label;
 }
-
-/* Context passed through statement parsing. */
 
 static inline char use_legacy_condition_scope(void)
 {
@@ -1632,8 +1612,6 @@ void check_function_result_automatic_variable(ENode *e)
     }
 }
 
-/* Additional information passed to class initialization. */
-
 ENode *initialize_argument_object(ENode *initData, Type *type, UInt32 flags)
 {
     ObjectList *argument;
@@ -1762,8 +1740,6 @@ void generate_conditional_jump(ENode *expr, CLabel *dest, CLabel *other, Boolean
     if (flag)
         stmt->flags |= 4;
 }
-
-/* State passed between declaration parsing routines. */
 
 ENode *parse_declarations(char mode, int singleDeclaration, char allowEmpty, char stopAfterDeclaration)
 {
@@ -2078,10 +2054,6 @@ void append_or_defer_expression_statement(ENode *node)
     }
 }
 
-/* Statement metadata holding the two initial position references. */
-
-/* Function-body statement with source-position metadata. */
-
 static inline Statement *CFunc_NewStatement(UInt8 kind)
 {
     Statement *stmt = CompilerTools_AllocatePool(sizeof(Statement));
@@ -2131,8 +2103,6 @@ void append_localstatic_init_expr(ENode *expr)
     stmt = CFunc_NewStatement(4);
     stmt->expr.expression = expr;
 }
-
-/* Labels and statements used while parsing a switch. */
 
 static inline Statement *MakeCaseStatement(void)
 {
@@ -2704,8 +2674,6 @@ ENode *sub_47bca0(ENode *node)
             return node;
     }
 }
-
-/* A linked entry whose payload is transformed by fn_0047bca0. */
 
 void rewrite_enode_list_nodes(ENodeList *entry)
 {

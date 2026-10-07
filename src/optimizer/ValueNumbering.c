@@ -55,8 +55,6 @@ static SInt32 next_value_index;
 static SInt32 value_index_threshold;
 static struct Object *data_00582c44;
 static unsigned int data_00582c48;
-/* 12-byte operand descriptor. */
-
 void ValueNumbering_PerformValueNumbering(int options)
 {
     struct PCodeBlock *block;

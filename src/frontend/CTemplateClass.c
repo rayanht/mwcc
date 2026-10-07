@@ -46,17 +46,7 @@
 #include <errno.h>
 #include <stdlib.h>
 
-/* Declarations gathered from the merged files. */
-
-/* TC_Obj is opaque: only the unused TC_Map declaration refers to it. */
-
 typedef struct TCtx TCtx;
-
-/* Removed unused Inner recovery declaration: no objects or accesses refer to it. */
-
-/* Removed unused P recovery declaration: no objects or accesses refer to it. */
-
-/* Declaration-helper data not represented by a known header struct. */
 
 #define CE_ASSERT(c, s)                                                                                                \
     do {                                                                                                               \
@@ -66,18 +56,6 @@ typedef struct TCtx TCtx;
 
 struct S2;
 struct S3;
-
-/* Removed unused P8 recovery declaration: no objects or accesses refer to it. */
-
-/* Maps a template declaration to its instantiated entities. */
-
-/* Working state for class-template instantiation. */
-
-/* Declaration recorded for replay during class-template instantiation. */
-
-/* Class-template instance state following the class's common data. */
-
-/* Template type reference stored in an instantiation declaration. */
 
 void fn_0051b800(void)
 {
@@ -321,10 +299,6 @@ void instantiate_friend_declaration(TemplateContext *ctx, struct TemplateDeclara
     }
 }
 
-/* A member record with an optional base-class path. */
-
-/* Maps a template class to its instantiated class. */
-
 void instantiate_namespace_objects(TemplateContext *map, TypeClass *unused, TypeClass *obj)
 {
     MemberVarAlias *copy;
@@ -369,8 +343,6 @@ void instantiate_namespace_objects(TemplateContext *map, TypeClass *unused, Type
         }
     }
 }
-
-/* 0x5842b6, byte flag */
 
 void instantiate_object_type(TemplateContext *context, TemplateClassDeclaration *function, ObjBase *object)
 {
@@ -537,20 +509,6 @@ void instantiate_template_object(TemplateContext *ctx, Object *templ)
     CScope_AddObject(ctx->instance->nspace, obj->base.name, (ObjBase *)obj);
 }
 
-/* Records used while instantiating a template class. */
-
-/* Removed unused PrivateCTList recovery declaration: no objects or accesses refer to it. */
-
-/* Removed unused PrivateCFuncArg recovery declaration: no objects or accesses refer to it. */
-
-/* Removed unused PrivateCObj recovery declaration: no objects or accesses refer to it. */
-
-/* Removed unused CCtx recovery declaration: no objects or accesses refer to it. */
-
-/* A function whose template type is completed later. */
-
-/* State for instantiating a template class's functions. */
-
 void CTemplateClass_0051c680(TemplateContext *ctx, Object *obj)
 {
     TemplateClassDeclaration *found;
@@ -700,8 +658,6 @@ void instantiate_ivars(TemplateContext *ctx, TypeClass *dst, TypeClassTemplate *
         out = &m->next;
     }
 }
-
-/* Records used by template argument matching. */
 
 void initialize_enum_constants(TemplateContext *context, struct TemplateClassDeclaration *object, TypeEnum *scope)
 {
@@ -1012,8 +968,6 @@ char CTemplateClass_SelectSpecialization(CTStateElem *context, TypeClassTemplate
     return 0;
 }
 
-/* Linked arguments used by template matching. */
-
 struct TemplateClassMatch *remove_less_specialized_matches(struct TemplateClassMatch *list)
 {
     int count;
@@ -1226,15 +1180,9 @@ CTStateElem *match_specialization_arguments(ClassTemplateSpecialization *argumen
     }
 }
 
-/* 0x574388: the CERROR_FILE string "CTemplateClass.c" */
-
 struct TemplateComparisonEntry;
-/* Class record and its linked template instances. */
-
 /* Class-template data extending the ordinary class type. */
 /* Deferred member declaration and its source position. */
-
-/* State used while parsing a class-template definition. */
 
 void CTemplateClass_ParseClassDeclaration(TemplateScopeState *scope, TemplateParameterRecord *parameters, short access,
                                           SInt32 *state)
@@ -1323,18 +1271,6 @@ void CTemplateClass_ParseClassDeclaration(TemplateScopeState *scope, TemplatePar
             break;
     }
 }
-
-/* A class specialization and its template arguments. */
-
-/* Template parameter records and template-class extension data. */
-
-/* Saved declaration state passed to the class parser. */
-
-/* Scope pointers saved during template parsing. */
-
-/* Linked template arguments. */
-
-/* A partial specialization and its template argument list. */
 
 /* Template-specific data following the class type. */
 /* Parser state for a class declaration. */
@@ -1466,8 +1402,6 @@ void CTemplateClass_ParsePartialSpecialization(TemplateScopeState *scope, struct
 /* Fixed-size hash-name header, without the variable-length name. */
 /* Two-word payload associated with a keyed list entry. */
 
-/* Owner of the keyed-entry list; preceding fields are not used here. */
-
 struct KeyedEntry *CTemplateClass_AddTemplateArgumentOverride(TypeClassTemplate *owner, Object *key, FOI *name,
                                                               struct PrepTokenBuffer *payload)
 {
@@ -1507,8 +1441,6 @@ TypeClassExt800 *CTemplateClass_GetInstance(TypeClassTemplate *cls, CTStateElem 
     }
     return create_class_template_instance(cls, key, flag);
 }
-
-/* Template-class instance and definition records used by this routine. */
 
 TypeClassExt800 *create_class_template_instance(TypeClassTemplate *definition, void *argument, void *alternate_argument)
 {
@@ -1567,8 +1499,6 @@ TypeClassExt800 *create_class_template_instance(TypeClassTemplate *definition, v
     return instance;
 }
 
-/* Records used by the template-class state update; intervening data is opaque. */
-
 unsigned char CTemplateClass_CompleteClassLayout(TypeClassTemplate *state, ClassLayoutInput *values)
 {
     unsigned char byteValue;
@@ -1578,8 +1508,6 @@ unsigned char CTemplateClass_CompleteClassLayout(TypeClassTemplate *state, Class
     state->base.flags |= CLASS_COMPLETED;
     return byteValue;
 }
-
-/* Template bookkeeping record and the class extension that owns its list. */
 
 void CTemplateClass_AppendObjectDeclaration(TypeClassTemplate *ctx, Object *obj)
 {
@@ -1600,8 +1528,6 @@ void CTemplateClass_AppendObjectDeclaration(TypeClassTemplate *ctx, Object *obj)
         ctx->declarations = (struct TemplateClassDeclaration *)record;
     }
 }
-
-/* A pending template class record with saved parser state. */
 
 void CTemplateClass_AppendExpressionRecord(TypeClassTemplate *type, Object *object, ENode *expression)
 {

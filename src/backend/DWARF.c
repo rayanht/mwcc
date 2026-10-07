@@ -47,8 +47,6 @@
  * The record at argument 2 holds the type at offset 0, a "visited" marker
  * at offset 0x18 and a lazily created debug-information entry at 0x1a. */
 
-/* Declarations gathered from the merged files. */
-
 #pragma options align = mac68k
 static SInt32 data_00580fb0[50];
 static struct ObjGenRelocation *data_00581078[50];
@@ -468,8 +466,6 @@ void insert_type_node_before(DWInfo *before, DWInfo *info)
     owner->typeNode = node;
 }
 
-/* 0x586fc0, 16 bytes */
-
 static void SetScope(DwarfFunctionState *obj)
 {
     currentDwarfFunctionState = obj;
@@ -511,12 +507,6 @@ static void WritePosition(long pos)
 {
     *(long *)*dwarf_lines->data = pos;
 }
-
-/* sizeof == 0x1cc */
-
-/* Private per-function DWARF state; buffers are opaque. */
-
-/* Opaque function data followed by its DWARF state pointer. */
 
 static inline UInt8 DWARF_FullDebugEnabled(void)
 {
@@ -1461,8 +1451,6 @@ void emit_member_pointer_type(DwarfFixup **references, DWInfo *type)
     *(SInt32 *)(*dwarf_info_buffer->data + offset) = size;
 }
 
-/* 0x5604b0: "DWARF.c" */
-
 void emit_function_type(DwarfFixup **fixups, DWInfo *function)
 {
     TypeFunc *type;
@@ -1659,8 +1647,6 @@ void DWARF_SetupSectionDebugState(struct ObjGenSection *section)
 }
 
 #define S dwarf_info_buffer
-
-/* Encoded operand used while emitting a DWARF location expression. */
 
 SInt32 emit_entry_header(SInt16 value)
 {
@@ -2106,8 +2092,6 @@ void emit_array_type(Type *type)
     *(SInt32 *)(*dwarf_info_buffer->data + entryOffset) = entrySize;
 }
 
-/* 0x5604b0: "DWARF.c" */
-
 static SInt32 EmitName(char *s)
 {
     SInt32 i = 0;
@@ -2116,8 +2100,6 @@ static SInt32 EmitName(char *s)
     AppendGListByte(dwarf_info_buffer, 0);
     return i + 1;
 }
-
-/* DWARF location expression record. */
 
 static inline void PatchDwarfLength(SInt32 offset, SInt32 length)
 {

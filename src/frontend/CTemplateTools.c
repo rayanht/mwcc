@@ -44,10 +44,6 @@
 
 #include "compiler/Types.h"
 
-/* Instantiation context threaded through CTemplateTools.c. */
-
-/* Declarations gathered from the merged files. */
-
 typedef struct TemplateComparisonEntry TemplateComparisonEntry;
 
 Boolean CTemplateTools_MatchTypeAndCheckBoundSlots(Object *obj, Type *type, void *templateArgs)
@@ -243,8 +239,6 @@ static Boolean CTT_IsNeg(CInt64 *v)
     return (v->hi & 0x80000000) != 0;
 }
 
-/* Context data used by template argument substitution; other bytes are opaque. */
-
 FuncArg *CTemplateTools_005160b0(TemplateContext *ctx, FuncArg *args)
 {
     FuncArg *newlist;
@@ -292,8 +286,6 @@ static Boolean IsTemplDep(ENode *e)
         return 0;
     return e->rtype->type == TYPETEMPLDEPEXPR;
 }
-
-/* Result record returned by CDecl_NewTemplDepType(2); its first eight bytes are not used here. */
 
 #define CE_ASSERT(c, s)                                                                                                \
     do {                                                                                                               \
@@ -385,10 +377,6 @@ Type *resolve_templ_dep_pointer_target(TemplateContext *context, Type *typeArg, 
     resolvedType = CTemplateTools_ResolveType(context, type, qualifiers);
     return resolvedType;
 }
-
-/* State used while resolving template arguments. */
-
-/* Template argument and argument-list records used during resolution. */
 
 Type *resolve_templ_dep_type(TemplateContext *ctx, TypeTemplDep *arg, UInt32 *out)
 {
@@ -567,8 +555,6 @@ Type *make_bitfield_type(TemplateContext *ctx, Type *ty, ENode *node, UInt32 *ou
     return (Type *)tb;
 }
 
-/* Template class lookup state. */
-
 CTStateElem *find_template_argument(struct TemplateContext *context, struct TemplParamID pid)
 {
     CTStateElem *entry;
@@ -703,8 +689,6 @@ TypeClassTemplate *fn_00516b50(TemplateLookupContext *context, TypeClassTemplate
 
 /* Result storage used by template member lookup and expression conversion. */
 /* Scope lookup entry, linking a name lookup to its object. */
-
-/* Template substitution state and the argument lists searched by this routine. */
 
 ENode *CTemplTool_DeduceExpr(TemplateContext *ctx, ENode *node)
 {
@@ -982,8 +966,6 @@ TypeClassExt800 *fn_00517270(TypeClass *current, TypeClassExt800 *limit, TypeCla
     return match;
 }
 
-/* Records used to match a template key to its stored value. */
-
 Type *CTemplateTools_GetArgumentType(CTStateElem *record, TypeTemplDep *key, unsigned int qualifiers,
                                      unsigned int *resultQualifiers)
 {
@@ -1053,8 +1035,6 @@ CTStateElem *CTemplateTools_CopyCTStateElemList(CTStateElem *p)
     }
     return res;
 }
-
-/* Entry in the template argument comparison list. */
 
 UInt8 CTemplTool_EqualArgs(CTStateElem *left, CTStateElem *right)
 {
@@ -1212,8 +1192,6 @@ Boolean CTemplateTools_00517a40(ENode *left, ENode *right)
     return 0;
 }
 
-/* Template argument and parameter records used by the template tools. */
-
 Type *CTemplTool_IsDependentTemplate(TypeClassTemplate *templateClass, CTStateElem *arguments)
 {
     TypeTemplDep *result;
@@ -1255,8 +1233,6 @@ Type *CTemplTool_IsDependentTemplate(TypeClassTemplate *templateClass, CTStateEl
     return (Type *)result;
 }
 
-/* Record used by template tools, with a kind and an associated target. */
-
 TypeClass *CTemplateTools_GetTemplClass(TypeTemplDep *record)
 {
     if (record->kind == 1 && record->u.qual.type->kind == 2) {
@@ -1269,8 +1245,6 @@ TypeClass *CTemplateTools_GetTemplClass(TypeTemplDep *record)
         return (TypeClass *)record->u.templ.templ;
     return NULL;
 }
-
-/* Paired lists describing and supplying template parameters. */
 
 UInt8 CTemplTool_IsSameTemplate(TemplateParameterRecord *parameter, CTStateElem *argument)
 {
@@ -1529,10 +1503,6 @@ void CTemplTool_MergeArgNames(Type *sourceFunc, Type *destinationFunc)
     CTemplateTools_SetFirstArgName((TypeMemberFunc *)destinationFunc);
 }
 
-/* Payload shared by the two entry kinds. */
-
-/* Linked entries whose missing payloads are filled from a parallel list. */
-
 void CTemplTool_MergeDefaultArgs(TemplateParameterRecord *destination, TemplateParameterRecord *source)
 {
     do {
@@ -1632,10 +1602,6 @@ TypeClassTemplate *CTemplTool_IsTemplate(TypeTemplDep *reference)
 /* Records used by the template argument comparison. */
 /* The two layouts referenced by a pattern's value. */
 
-/* Alternative layouts of the value referenced by an argument pattern. */
-
-/* Linked argument pattern with a typed value reference. */
-
 UInt8 CTemplTool_IsIdenticalTemplArgList(CTStateElem *pattern, TemplateParameterRecord *argument)
 {
     TypeTemplDep *type;
@@ -1694,8 +1660,6 @@ void CTemplTool_InsertTemplateParameter(NameSpace *scope, TemplateParameterRecor
     object->type = (Type *)nspace;
     CScope_AddObject(scope, source->name, (ObjBase *)object);
 }
-
-/* Link stored at the head of the template-tools stack. */
 
 #ifndef TRUE
 #endif

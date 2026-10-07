@@ -472,8 +472,6 @@ TokenText *Targets_DecrementCountAndGetTokenText(void)
 #undef CERROR_FILE
 #define CERROR_FILE "unknown.c"
 
-/* Token kind and its printable text. */
-
 char *Targets_GetTokenTextDescription(TokenText *token)
 {
     char *result;
@@ -581,8 +579,6 @@ void terminate_ptr_list(PtrList *list)
     grow_ptr_list(list);
     list->items[list->count] = NULL;
 }
-
-/* Records used to describe a zero-terminated integer sequence. */
 
 void Targets_InitIntegerSequenceResult(PtrList *source, IntegerSequenceResult *result)
 {

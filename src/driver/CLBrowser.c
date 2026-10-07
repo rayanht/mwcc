@@ -20,8 +20,6 @@
 #include <setjmp.h>
 #include <string.h>
 
-/* An entry in the browser's name table. */
-
 /* A browser table entry associates a value with a name. */
 #include <stdlib.h>
 
@@ -238,12 +236,6 @@ int write_lookup_entries(CLBrowserLookupEntry *entries, DstRec *output, UInt32 c
     }
     return 1;
 }
-
-/* Serialized browser file header. */
-
-/* Opaque two-word allocation handle. */
-
-/* Count returned as a word, serialized as a short. */
 
 unsigned int build_browser_file_buffer(struct StorageHandle *dataHandle, void *indexHandle, MemBuffer *result)
 {

@@ -40,8 +40,6 @@
 #include "driver/Files.h"
 /* Inline-assembly operand resolved from a symbol name. */
 
-/* Label chain; middle words are not used by this lookup. */
-
 /* Operand and label records used by the inline assembler. */
 #include <string.h>
 #include <setjmp.h>

@@ -43,10 +43,6 @@
     (((UInt32)((SInt32)(i) >> 5) < (bv)->size) &&                                                                      \
      (((bv)->bits[(UInt32)((SInt32)(i) >> 5)] & ((UInt32)1 << ((i) & 31)))) != 0)
 
-/* Nodes and candidate records used by the local replacement pass. */
-
-/* The fixed-size value payload copied for a literal replacement. */
-
 static inline void BVFatal(void)
 {
     CError_Internal("BitVector.h", 0x2f);

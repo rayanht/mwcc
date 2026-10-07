@@ -43,8 +43,6 @@
 #include "driver/Files.h"
 #include "driver/cc-eabi-ppc.h"
 
-/* Declarations gathered from the merged files. */
-
 #include "compiler/ENode.h"
 
 static struct IROLinear *saved_node;
@@ -676,10 +674,6 @@ void IroVars_CollectAddrRecordElements(IROLinear *tree, IROAddrRecord *collectio
         collection->misc = rightMisc;
     }
 }
-
-/* Singly linked entry holding a four-byte value. */
-
-/* A linked list of nodes. */
 
 /* Pushes NODE on the term list *HEAD. */
 void IroVars_PrependElmList(IROLinear *node, IROElmList **head)

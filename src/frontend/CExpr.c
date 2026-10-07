@@ -271,8 +271,6 @@ static Boolean IsZeroValue(ENode *e)
     return e->data.intval.hi == 0 && e->data.intval.lo == 0;
 }
 
-/* The 8-byte float payload lives inline at ENode+0xa in this build. */
-
 static ENode *NormalizeOperand(ENode *e)
 {
     return CExpr_RewriteConst(pointer_generation(e));
@@ -290,8 +288,6 @@ static inline void set_comparison_result_type(ENode *node)
     else
         node->rtype = (Type *)&stsignedint;
 }
-
-/* Result node and replacement operands returned by binary expression processing. */
 
 static ENode *CExpr_WrapPrecomp(ENode *n, ENode *r)
 {
@@ -537,8 +533,6 @@ static inline ENode *parse_builtin_8b50(void)
     return e;
 }
 
-/* 0x584270, byte */
-
 static inline int CExpr_StructKind(Type *type)
 {
     return TYPE_STRUCT(type)->stype;
@@ -562,8 +556,6 @@ static inline ENode *dereference_reference_node(ENode *node)
     node->rtype = TYPE_POINTER(node->rtype)->target;
     return node;
 }
-
-/* Object candidates returned by name lookup. */
 
 static inline char CExpr_IsMemberFunction(CScopeParseResult *candidates)
 {
@@ -1018,8 +1010,6 @@ ENode *assignment_expression(void)
     }
     return enode;
 }
-
-/* Result storage filled by CExpr_CheckOperator. */
 
 ENode *parse_arithmetic_binary_expression(ENode *left, char op, SInt16 token)
 {
@@ -1969,8 +1959,6 @@ ENode *make_logical_or_node(ENode *left, ENode *right)
     return result;
 }
 
-/* Result expression and operands produced by binary operator processing. */
-
 ENode *CExpr_New_ELAND_Node(ENode *left, ENode *right)
 {
     ENode *convertedLeft;
@@ -2404,8 +2392,6 @@ ENode *CExpr_New_EGREATEREQU_Node(ENode *left, ENode *right)
     return left;
 }
 
-/* The 8-byte float payload lives inline at ENode+0xa in this build. */
-
 ENode *CExpr_New_EGREATER_Node(ENode *left, ENode *right)
 {
     Boolean comparison;
@@ -2451,8 +2437,6 @@ ENode *CExpr_New_EGREATER_Node(ENode *left, ENode *right)
     return left;
 }
 
-/* The 8-byte float payload lives inline at ENode+0xa in this build. */
-
 ENode *CExpr_New_ELESSEQU_Node(ENode *left, ENode *right)
 {
     Boolean result;
@@ -2491,10 +2475,6 @@ ENode *CExpr_New_ELESSEQU_Node(ENode *left, ENode *right)
     }
     return left;
 }
-
-/* The 8-byte float payload lives inline at ENode+0xa in this build. */
-
-/* Expression layout used when the floating value is stored inline. */
 
 ENode *CExpr_New_ELESS_Node(ENode *left, ENode *right)
 {
@@ -2912,8 +2892,6 @@ done:
     return expr;
 }
 
-/* Link carrying an expression for construction. */
-
 ENode *cast_expression(void)
 {
     ENode *right;
@@ -3205,8 +3183,6 @@ ENode *CExpr_MemberPointerConversion(ENode *enode, Type *type, Boolean flag)
     }
     return enode;
 }
-
-/* High and low words of the integer-helper argument. */
 
 ENode *CExpr_CastMemberPointer(ENode *value, TypeMemberPointer *sourceType, TypeMemberPointer *targetType)
 {
@@ -3688,8 +3664,6 @@ ENode *CExpr_New_ELOGNOT_Node(ENode *expr)
 
 #pragma opt_lifetimes reset
 
-/* Structs recovered from the disassembly offsets (Mac 68k packing, 2-byte). */
-
 void *make_memberpointer(ENode *node)
 {
     SInt32 offset;
@@ -3731,8 +3705,6 @@ void *make_memberpointer(ENode *node)
 
 /* 0x584288, byte access */
 /* 0x587fb4, dword access */
-
-/* Encoded member-pointer initializer and its object reference. */
 
 ENode *getpointertomemberfunc(ENode *node, Type *targetType, Boolean initialize)
 {
@@ -3953,8 +3925,6 @@ SInt32 scansizeof(void)
     }
     return node->data.intval.lo;
 }
-
-/* Primary/postfix expression parser. */
 
 ENode *parse_postfix_expression(Boolean allowSpecial)
 {
@@ -4511,8 +4481,6 @@ ENode *parse_primary_expression(Boolean expressionMode)
     return nullnode();
 }
 
-/* Working state populated while parsing a parenthesized type name. */
-
 Type *scan_type_or_expression_type(void)
 {
     UInt8 isType;
@@ -4618,8 +4586,6 @@ unsigned int fn_004f8ae0(const signed char *kind)
             return -1U;
     }
 }
-
-/* 0x4463d0, takes a single int */
 
 UInt32 encode_type_bits(Type *e)
 {
@@ -4770,8 +4736,6 @@ ENode *scan_vec_step(void)
     }
     return node;
 }
-
-/* Member variable with an optional base-class access path. */
 
 ENode *make_scope_parse_result_expr(CScopeParseResult *nameResult, ENode *expr, Boolean allowMemberReference,
                                     Boolean allowFunctionCall)
@@ -5176,8 +5140,6 @@ ENode *make_member_function_esetconst(CScopeParseResult *candidates)
     return expr;
 }
 
-/* Scratch node with the three fields written at 0x0a, 0x0e and 0x12. */
-
 ENode *scan_explicit_conversion(Type *type, SInt32 qualifiers)
 {
     ENodeList *arguments;
@@ -5311,8 +5273,6 @@ ENode *classargument(ENode *node)
     }
     return node;
 }
-
-/* Argument expressions passed to call construction. */
 
 enum { TYPECLASS_004f9ed0 = 5 };
 

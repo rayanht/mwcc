@@ -27,8 +27,6 @@
 #include "compiler/Registers.h"
 enum { Register2 = 2, Register13 = 13 };
 
-/* Declarations gathered from the merged files. */
-
 static inline SInt16 lowHalf(SInt32 value)
 {
     return value;
@@ -154,8 +152,6 @@ void emit_opcode_with_base_offset(short opcode, short dest_reg, short base_reg, 
     }
 }
 
-/* 0x55ebf8, file name string */
-
 PCodeInstruction *PCodeUtilities_MakeInstructionWithObject(short opcode, short operand, Object *object, short flags,
                                                            char appendToBlock)
 {
@@ -215,10 +211,6 @@ PCodeInstruction *PCodeUtilities_CreateInstructionWithObject(short operand1, sho
         if (c)                                                                                                         \
             s;                                                                                                         \
     } while (0)
-
-/* Flags and other per-opcode metadata, indexed by instruction opcode. */
-
-/* Packed instruction fields used when rewriting an emitted address. */
 
 void PCodeUtilities_EmitAddress(short resultReg, short baseReg, struct Object *object, short offset)
 {
@@ -301,8 +293,6 @@ void PCodeUtilities_EmitObjectInstructionWithPayload(Object *operand, SInt16 emi
     if (PCodeUtilities_ExceptionScopesEnabled() && gCurrentStatement)
         Exceptions_AppendScopeEntry(instruction, gCurrentStatement->dobjstack);
 }
-
-/* 12-byte descriptor record: byte kind, byte flags, word index. */
 
 PCodeOperand *PCodeUtilities_004a2290(PCodeOperand *operand, UInt32 gprMask, UInt32 fprMask, UInt32 vrMask)
 {
@@ -393,8 +383,6 @@ void PCodeUtilities_EmitBranch(PCodeLabel *target)
     PCode_AddSuccessor(gCurrentBlock, target);
     PCode_CreateBlock();
 }
-
-/* State record referenced by DAT_005880c4; only the trailing value is known. */
 
 void PCodeUtilities_EmitConditionBranch(SInt16 operand, SInt16 condition, SInt16 branchIfTrue, PCodeLabel *targetBlock)
 {

@@ -43,8 +43,6 @@ static struct IROLinear *linear_range_start;
 static IROLinear *linear_range_end;
 static struct IRONode *move_expr_before_node;
 
-/* 0x551f40: "IroUtil.c" */
-
 struct IROLinear *IroUtil_GetLinearRangeStart(struct IROLinear *node)
 {
     linear_range_start = linear_range_end = node;
@@ -122,8 +120,6 @@ IROLinear *IroUtil_ReplaceNextReference(IROLinear *obj, IROLinear *newobj)
     }
     return NULL;
 }
-
-/* 0x551f40, file name string */
 
 IROLinear *IroUtil_ReplaceFirstReference(IROLinear *node, IROLinear *newref)
 {
@@ -495,8 +491,6 @@ void IroUtil_InsertLinearRangeAfter(IROLinear *first, IROLinear *replacement, IR
     object->next = first;
 }
 
-/* 0x551f40: "IroUtil.c" */
-
 void IroUtil_InsertLinearBefore(IROLinear *newnode, IROLinear *owner, IROLinear *oldnode)
 {
     IRONode *node;
@@ -669,8 +663,6 @@ void IroUtil_ClearZeroOperands(struct IROLinear *object)
 {
     IroUtil_VisitLinearTree(object, (void (*)(IROLinear *, int))clear_operand_if_zero);
 }
-
-/* Avoid a collision with the file's existing ObjectList declaration. */
 
 void clear_operand_if_zero(Operand *operand, int value)
 {

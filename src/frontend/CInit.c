@@ -55,12 +55,6 @@ static struct InitListItem *tentative_init_list;
 static struct ENodeList *data_00581ba0;
 static UInt8 data_00581ba4;
 
-/* 0x5842d0: byte-sized switch. */
-
-/* Result of the address-computation helpers: object + byte offset. */
-
-/* Declarations gathered from the merged files. */
-
 enum { TYPESTRUCT_004d2700 = 4, TYPEARRAY_004d2700 = 12 };
 
 enum InitKind { IK_ONE = 1, IK_TWO = 2 };
@@ -190,10 +184,6 @@ void CInit_RewriteString(ENode *node, SInt32 flag_arg)
             CInit_DeclareString(node->data.string.data, node->data.string.size, node->data.temp.needs_dtor, flag);
     }
 }
-
-/* 0x404c30 memcpy */
-
-/* Parameters used to create the shared string-storage object. */
 
 NameEntry *CInit_DeclarePooledWString(char *string, UInt32 length)
 {
@@ -726,8 +716,6 @@ void CInit_InitializeAutoData(Object *obj, void (*emitInitializer)(ENode *),
     cinit_state = save.previous;
 }
 
-/* State produced while reading an initializer. */
-
 void fn_004cfc50(Object *object)
 {
     ENode *objectExpr;
@@ -1064,12 +1052,8 @@ ENode *create_scopebegin_node(Type *type)
     return node;
 }
 
-/* Emit target record reached through the global at 0x5876b8. */
-
 /* Local descriptor record used by CParser_NewObject; offsets are the verified
  * positions in the original frame. */
-
-/* Specification used to create the array destructor helper object. */
 
 void initialize_class_array(Object *obj, Type *type, Boolean staticInit)
 {
@@ -1207,10 +1191,6 @@ void CInit_ExportConst(Object *obj)
     else
         emit_object(obj, buf, NULL, obj->type->size, 0);
 }
-
-/* State record reached through the global at 0x5876b8. */
-
-/* Object, offset and output callback for the current initializer. */
 
 static Boolean IsComplexClass(Type *type)
 {
@@ -1464,8 +1444,6 @@ void CInit_004d1170(Type *type, ENode *expr, Boolean flag)
     }
 }
 
-/* 0x5876b8, pointer to the CInit state */
-
 void initialize_object_at_offset(Type *type, ENode *initializer, Boolean is_class)
 {
     ENode *node;
@@ -1569,8 +1547,6 @@ void initialize_data_by_type(Type *node, UInt32 mode, Boolean flag)
             return;
     }
 }
-
-/* 0x5882d8, token */
 
 void initialize_class_data(Type *t, Boolean flag)
 {
@@ -1963,8 +1939,6 @@ void init_int_or_relocation(Type *type, ENode *expression)
     cinit_state->offset += 4;
 }
 
-/* Linked list of initializer arguments. */
-
 Boolean CInit_004d20e0(Type *type, ENode *initializer, SInt32 offset, char parseArguments)
 {
     NameSpaceObjectList *objects;
@@ -2041,8 +2015,6 @@ Boolean CInit_004d20e0(Type *type, ENode *initializer, SInt32 offset, char parse
     }
     return 1;
 }
-
-/* Linked list of initializer argument expressions. */
 
 Boolean initialize_class_object(Object *obj, Type *initObject, ENode *expr, SInt32 offset, Boolean parse)
 {
@@ -2184,8 +2156,6 @@ ENode *build_init_assignment(ENode *previous, ENode *base, SInt32 offset, Type *
             s;                                                                                                         \
     } while (0)
 /* Chained initialization data, with allocation state in the head block. */
-
-/* State passed to the initializer parser. */
 
 void CInit_004d2700(InitializerData *data, Type *type, UInt32 qual, Boolean flag)
 {
@@ -2496,8 +2466,6 @@ void initialize_class_initializer_data(InitializerData *dst, CInit *op, Type *ty
     }
 }
 
-/* error(line) */
-
 void initialize_struct_data(InitializerData *ctx, CInit *ci, Type *type, UInt32 qual, Boolean allowIncomplete)
 {
     int base;
@@ -2786,8 +2754,6 @@ void initialize_array_data(InitializerData *pool, CInit *iter, TypePointer *arra
     }
 }
 
-/* 0x555428, {hi,lo} */
-
 void CInit_004d3620(TypeBitfield *bf, unsigned char *ptr, CInt64 value)
 {
     SInt32 i;
@@ -2920,12 +2886,6 @@ Boolean evaluate_int_or_relocation(ENode *node, Object **pobj, CInt64 *pval)
         }
     }
 }
-
-/* 0x4463d0, one int argument */
-
-/* Linked-list node allocated by the function (sizeof 0x10). */
-
-/* The record reached through arg1->field4. */
 
 void append_initializer_entry(InitializerData *ctx, Type *type, ENode *expr)
 {

@@ -703,8 +703,6 @@ void COptimizer_CountExpressionObjectUses(ENode *expression)
     }
 }
 
-/* Linked operands used by the optimizer. */
-
 /* Entries attached to optimizer statements. */
 /* Statement records traversed by the optimizer. */
 
@@ -1707,8 +1705,6 @@ COptCSE *find_or_create_cse(ENode *expr, COptCSE *left, COptCSE *right)
     entry->right = right;
     return entry;
 }
-
-/* Operand cache record; the auxiliary words have no identified meaning. */
 
 COptCSE *find_or_create_unary_cse(ENode *expr, COptCSE *left)
 {

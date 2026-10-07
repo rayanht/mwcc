@@ -310,8 +310,6 @@ void add_exception_initial_objects(CException *node)
 /* The flag is a field of the option block at 0x584220: its two reads in one
  * condition share a CSE temporary, which a plain global never does. */
 
-/* The object clone copies the original's full 0x36-byte object record. */
-
 static inline int TOC_IsSetjmp(ENode *fr)
 {
     if (fr->type == EOBJREF) {
@@ -322,8 +320,6 @@ static inline int TOC_IsSetjmp(ENode *fr)
     }
     return 0;
 }
-
-/* Fixed-size storage used when duplicating a function object. */
 
 void TOC_0049d710(ENode *node, Type *targetType, int ignored)
 {
@@ -1148,12 +1144,6 @@ Type *select_common_arithmetic_type(Type *leftType, Type *rightType)
     return leftType;
 }
 
-/* Links used to hold the pending TOC value. */
-
-/* Byte preceding the expression flags. */
-
-/* Expressions and statement associated with a TOC value. */
-
 void fn_0049ebb0(ENode *expr)
 {
     ENode *constantNode;
@@ -1251,10 +1241,6 @@ void TOC_EnumerateObjectCodeOffsets(void *arg)
 /* Descriptor allocated for a TOC cache entry. */
 /* Pointer-valued view of the TOC cache list. */
 
-/* Cached TOC objects, indexed by expression. */
-
-/* Name-bearing TOC key with an opaque eight-byte prefix. */
-
 Object *get_or_create_label_object(CLabel *node)
 {
     struct TOCNameEntry *entry;
@@ -1291,12 +1277,6 @@ Object *get_or_create_label_object(CLabel *node)
     toc_name_entries = newEntry;
     return object;
 }
-
-/* A list of 16-byte constants and their offsets in a shared object. */
-
-/* Descriptor passed to CParser_NewObject; unclassified fields retain offset names. */
-
-/* Interned representation of a member pointer constant. */
 
 void replace_vector_constant_with_objectref(ENode *node)
 {
@@ -1364,8 +1344,6 @@ void replace_vector_constant_with_objectref(ENode *node)
     node->data.monadic = expression;
 }
 
-/* 0x55fb6c, pass by address */
-
 void TOC_EmitMemberPointerConstants(void)
 {
     SInt32 size = 0;
@@ -1388,10 +1366,6 @@ void TOC_EmitMemberPointerConstants(void)
         fn_004cea90(member_pointer_constants->object, buffer, NULL, size);
     }
 }
-
-/* Entries in the integral constant pool. */
-
-/* Stored bits of an integral constant. */
 
 Object *TOC_GetFloatObject(Type *type, Float *value)
 {
@@ -1443,10 +1417,6 @@ Object *TOC_GetFloatObject(Type *type, Float *value)
     }
     return object;
 }
-
-/* Key referenced by a TOC list entry. */
-
-/* Record used by TOC rewriting; kind selects the pointer at offset 10. */
 
 void rewrite_indirect_toc_references(void)
 {

@@ -70,8 +70,6 @@ unsigned char CLFiles_FreeAllocationRecords(struct IndexedListLink *list)
     return 1;
 }
 
-/* Word-based argument record passed to the file helper. */
-
 unsigned char CLFiles_InsertIndexedListLinkAtFirstIndex(IndexedListLink *first, IndexedListLink *second)
 {
     return CLFiles_InsertIndexedListLink(first, second, first->index);
@@ -100,8 +98,6 @@ char CLFiles_InsertIndexedListLink(IndexedListLink *list, IndexedListLink *node,
     p->next = node;
     return 1;
 }
-
-/* Linked entries identified by a nonnegative index. */
 
 DropinFileRecord *CLFiles_FindFileByIndex(IndexedListLink *head, int index)
 {

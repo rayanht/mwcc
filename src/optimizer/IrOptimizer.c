@@ -169,8 +169,6 @@ void IRO_ExpressionPropagation(void)
     }
 }
 
-/* TravExprToUpdateFlags. */
-
 void trav_expr_to_update_flags(IROLinear *expression, unsigned int flag)
 {
     IROLinear *operand;
@@ -818,8 +816,6 @@ static inline void ClearReferences(void)
     }
 }
 
-/* error printer */
-
 static ENode *NewNode(UInt8 type)
 {
     ENode *p;
@@ -1357,8 +1353,6 @@ void visit_statement_expressions(struct Statement *stmt)
     IroVars_CheckTimedLongjmp();
 }
 
-/* An argument slot holds an expression until it is lowered to an IR node. */
-
 static inline IROLinear *new_linear(int type)
 {
     IROLinear *node = (IROLinear *)CompilerTools_AllocatePoolMemory(sizeof(IROLinear));
@@ -1829,8 +1823,6 @@ void lower_expression_to_statements(ENode *node, int valueNeeded, int force)
     }
 }
 
-/* IR statement record: 0x1a bytes, Mac 68k packing. */
-
 static ENode *NewENode(UInt8 type)
 {
     ENode *n = (ENode *)CompilerTools_AllocatePool(0x1a);
@@ -1905,8 +1897,6 @@ void fn_004305e0(ENode *e, Object **pp, CLabel **lab)
     e->data.monadic = create_objectrefnode(*pp);
     CError_ASSERT(1328, e->rtype->type != TYPEVOID);
 }
-
-/* IR statement record: 0x1a bytes, Mac 68k packing. */
 
 void IrOptimizer_00430820(ENode *e, Object **pp, CLabel **lab)
 {
@@ -2007,8 +1997,6 @@ void IrOptimizer_00430a60(ENode *p, Object **objp)
     statement_insertion_point = b;
 }
 
-/* IR statement record: 0x1a bytes, Mac 68k packing. */
-
 void insert_indirect_statement_with_label(ENode *node, Object **object, struct CLabel **label)
 {
     Statement *statement;
@@ -2070,8 +2058,6 @@ void lower_monadic_expression_to_statement(ENode *e, Object **pp)
     statement_insertion_point = n;
 }
 
-/* IR statement record: 0x1a bytes, Mac 68k packing. */
-
 void append_cond_expr2_statement(ENode *e, Object **pp)
 {
     ENode *ref;
@@ -2101,8 +2087,6 @@ void append_cond_expr2_statement(ENode *e, Object **pp)
     statement_insertion_point->next = n;
     statement_insertion_point = n;
 }
-
-/* IR statement record: 0x1a bytes, Mac 68k packing. */
 
 void IrOptimizer_00430e60(ENode *e, Object **pp)
 {
@@ -2134,8 +2118,6 @@ void IrOptimizer_00430e60(ENode *e, Object **pp)
     statement_insertion_point->next = n;
     statement_insertion_point = n;
 }
-
-/* IR statement record: 0x1a bytes, Mac 68k packing. */
 
 void create_temp_object_assignment(ENode *expression, Object **tempObject)
 {
@@ -2270,8 +2252,6 @@ void create_zero_initialized_temp_object(ENode *expr, Object **out)
     statement_insertion_point->next = statement;
     statement_insertion_point = statement;
 }
-
-/* Statement-like record: next at 0x00, type byte at 0x04, expr at 0x0a. */
 
 static void *new_enode(UInt8 type)
 {

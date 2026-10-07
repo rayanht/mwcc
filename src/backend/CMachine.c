@@ -139,8 +139,6 @@ TypeStruct stvector = {TYPESTRUCT, 16, NULL, NULL, 10, 0, 16};
 
 static SInt16 loadalign_table[5] = {1, 2, 4, 8, 16};
 
-/* Declarations gathered from the merged files. */
-
 void initialize_hash_name_globals(void)
 {
     HashNameNode *nameHash1;
@@ -777,8 +775,6 @@ SInt16 CMachine_GetTypeAlignment(Type *type)
     }
 }
 
-/* Records and links used by the maximum-value scan. */
-
 short CMach_GetClassAlign(TypeClass *list)
 {
     int maximum;
@@ -933,8 +929,6 @@ void *CMach_FloatScan(char *text, Float *result, char *flag)
     return end;
 }
 
-/* Four-word operands compared by the machine operation. */
-
 unsigned char CMach_CalcVectorDiadicBool(unsigned int context, const union MWVector128 *left, unsigned int operation,
                                          const union MWVector128 *right)
 {
@@ -950,8 +944,6 @@ unsigned char CMach_CalcVectorDiadicBool(unsigned int context, const union MWVec
             return 0;
     }
 }
-
-/* 0x55ff24, string "CMachine.c" */
 
 Boolean CMach_CalcFloatDiadicBool(Type *self, volatile double a, SInt16 op, volatile double b)
 {

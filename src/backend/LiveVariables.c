@@ -38,8 +38,6 @@
 #include "compiler/Registers.h"
 #include "compiler/Switch.h"
 
-/* Declarations gathered from the merged files. */
-
 #include <string.h>
 /* 0x5842e1, byte access */
 
@@ -83,10 +81,6 @@ SInt32 SpillCode_IsDeadInstruction(PCodeInstruction *instruction, SInt16 regClas
 
 /* PCodeBlock: the object a liveness entry is indexed by; its block number
  * lives at 0x1c. */
-
-/* Per-block liveness record: four bit vectors. */
-
-/* TYPESTRUCT record with the byte classification field at 0x0e. */
 
 void SpillCode_InitializeLiveness(Object *func, SInt32 mode, UInt32 nbits)
 {

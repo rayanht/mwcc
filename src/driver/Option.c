@@ -210,8 +210,6 @@ int Option_RegisterOptionList(OptionList *list)
     return 1;
 }
 
-/* Entries whose second word contains flags; the holder owns a null-terminated entry array. */
-
 void clear_option_avail_high_bits(OptionList *options)
 {
     Option **entry = options->options;
@@ -222,8 +220,6 @@ void clear_option_avail_high_bits(OptionList *options)
         }
     }
 }
-
-/* Two-word option data; the second word contains the flag mask. */
 
 void format_option_list(char *buf, OptionList *list, int flags)
 {

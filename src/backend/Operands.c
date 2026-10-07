@@ -107,8 +107,6 @@ void Operands_EmitAddress(SInt16 reg, Operand *operand)
     }
 }
 
-/* Register-bearing prefix of an operand record. */
-
 unsigned int Operands_InsertBitField(unsigned short reg, Operand *operand, TypeBitfield *record)
 {
     TypeBitfield adjusted;
@@ -128,8 +126,6 @@ unsigned int Operands_InsertBitField(unsigned short reg, Operand *operand, TypeB
     end = shift + width;
     return (unsigned int)PCodeUtilities_EmitInstruction(PC_RLWIMI, operand->reg, (short)reg, 32 - end, shift, end - 1);
 }
-
-/* Register operand prefix used by this instruction emitter. */
 
 void Operands_ExtractBitfield(Operand *operand, TypeBitfield *tbitfield, SInt16 reg, Operand *result)
 {
@@ -168,8 +164,6 @@ void Operands_ExtractBitfield(Operand *operand, TypeBitfield *tbitfield, SInt16 
     result->reg = regno;
 }
 
-/* 0x58846e, word access */
-
 void Operands_MoveToNewGPR(Operand *op, short outputReg)
 {
     if (op->reg != kRegOne)
@@ -196,8 +190,6 @@ void Operands_ConvertFloatToInteger(Operand *operand, SInt16 reg)
     operand->kind = OpndType_GPR;
     operand->reg = resultReg;
 }
-
-/* Address operand representation used by instruction emission. */
 
 static inline int fpr(Object *x)
 {
@@ -267,8 +259,6 @@ static inline Object *prelude(Float *p)
     return r;
 }
 
-/* Byte 53 of the instruction record returned by PCodeUtilities_CreateInstructionWithObject. */
-
 void Operands_ConvertSignedIntegerToFloat(struct Operand *operand, char subtract, short resultReg)
 {
     long immediateReg;
@@ -321,8 +311,6 @@ void Operands_ConvertSignedIntegerToFloat(struct Operand *operand, char subtract
     operand->kind = OpndType_FPR;
     operand->reg = outputReg;
 }
-
-/* Code records expose two byte-sized attributes; the remaining bytes are opaque. */
 
 void Operands_EmitOpcodeWithObjectBaseOffset(short dest, Type *type, Object *obj)
 {
@@ -451,8 +439,6 @@ void Operands_EmitGPRMemoryInstruction(SInt16 reg, Operand *node, Type *type)
             break;
     }
 }
-
-/* low word offset */
 
 void Operands_StoreGPRPair(SInt16 reg, SInt16 regHi, Operand *op, Type *type)
 {

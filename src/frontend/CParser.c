@@ -400,8 +400,6 @@ Object *CParser_ParseObject(void)
 /* Parser declaration-specifier state block.  Field offsets are the
  * authoritative ones observed in the disassembly. */
 
-/* Result record filled by CScope_ParseDeclName. */
-
 static inline Boolean CheckVectorKeyword(void)
 {
     HashNameNode *savedid;
@@ -507,10 +505,6 @@ static inline Boolean CParser_AlternateFunctionNamesEnabled(void)
     return copts.f86;
 }
 
-/* Maps a key to a value for the parser. */
-
-/* Linked values queued by the parser. */
-
 void CParser_CallBackAction(Object *key)
 {
     struct PendingObjectClass *entry;
@@ -534,8 +528,6 @@ void CParser_CallBackAction(Object *key)
     CError_FATAL(3854);
 }
 
-/* A link holding a class type in the parser's list. */
-
 unsigned int CParser_PrependClassTypeLink(TypeClass *type)
 {
     struct ClassTypeLink *link;
@@ -547,8 +539,6 @@ unsigned int CParser_PrependClassTypeLink(TypeClass *type)
     class_type_links = link;
     return (unsigned int)link;
 }
-
-/* Pending object and class pair. */
 
 void CParser_NewCallBackAction(Object *object, TypeClass *theclass)
 {
@@ -632,8 +622,6 @@ Boolean CParser_IsAnonymousClass(Type **ptype, Boolean flag)
     return result;
 }
 
-/* Pending parser input, linked in processing order. */
-
 void fn_0048c220(char processInput)
 {
     Boolean repeat;
@@ -660,8 +648,6 @@ void fn_0048c220(char processInput)
         }
     } while (repeat);
 }
-
-/* 0x580dcc: linked list of records with two pointer payloads. */
 
 /* 0x580dc8: linked list whose payload points at a structure holding a
  * list head pointer at +6. */
@@ -691,8 +677,6 @@ void CParser_Cleanup(void)
     freelheap();
 }
 
-/* List of objects paired with expressions. */
-
 void CParser_RegisterSingleExprFunction(Object *object, ENode *expr)
 {
     CParseCacheNode *entry;
@@ -715,8 +699,6 @@ void CParser_PrependClassParseRec(TypeClass *type)
     entry->listOwner = type;
     class_parse_recs = entry;
 }
-
-/* Results of a parser scope lookup. */
 
 #define NODEBYTE_6(n) (((TypeTemplDep *)(n))->kind)
 #define NODEBYTE_0xb(n) (((TypeTemplDep *)(n))->u.pid.type)
@@ -1811,8 +1793,6 @@ void CParser_ParseAttribute(Type *type, DeclInfo *function)
     } while (tk == TK_UU_ATTRIBUTE);
 }
 
-/* In/out type slot: the type plus a qualifier/flags word and a done byte. */
-
 void TypedefDeclInfo(DeclInfo *slot, Type *type, UInt32 quals)
 {
     TypePointer *nt;
@@ -1962,8 +1942,6 @@ UInt8 CParserIsVolatileExpr(ENode *node)
     return (qualifiers & Q_VOLATILE) != 0;
 }
 
-/* Layout view of the type records used to obtain qualifiers. */
-
 Boolean CParserIsConstExpr(ENode *expr)
 {
     Type *type;
@@ -2063,8 +2041,6 @@ UInt8 CParser_IsConst(Type *type, unsigned int qual)
     }
     return (qual & Q_CONST) != 0;
 }
-
-/* Shared target/qualifier prefix of array and pointer type records. */
 
 UInt32 CParser_GetCVTypeQualifiers(Type *type, SInt32 qual)
 {
@@ -2305,8 +2281,6 @@ StructMember *ismember(Type *type, HashNameNode *name)
     return NULL;
 }
 
-/* 0x58428e, read as a byte */
-
 Boolean Type_IsUnsigned(Type *type)
 {
     if (IS_TYPE_ENUM(type))
@@ -2466,8 +2440,6 @@ Boolean is_arglistsame(FuncArg *a, FuncArg *b)
         b = b->next;
     }
 }
-
-/* 0x48f2f0, returns 16-bit */
 
 SInt16 CParser_CompareArgLists(FuncArg *a, FuncArg *b)
 {
@@ -2911,10 +2883,6 @@ Object *CParser_NewCompilerDefDataObject(void)
     return object;
 }
 
-/* Qualifier view used when reading the declaration's qualifier word. */
-
-/* Declaration data used when creating an object; unknown fields are retained. */
-
 Object *CParser_NewObject(DeclInfo *declaration)
 {
     Object *object;
@@ -2943,8 +2911,6 @@ Object *CParser_NewObject(DeclInfo *declaration)
     CodeGen_SetObjectSectionAndInterruptInfo(object);
     return object;
 }
-
-/* Declaration details used while creating an object. */
 
 Object *CParser_NewLocalDataObject(DeclInfo *declaration, unsigned int addToList)
 {
@@ -2983,8 +2949,6 @@ Object *CParser_CreateObject(struct DeclInfo *record)
     return object;
 }
 
-/* Record carrying the value copied to Object::unk04. */
-
 void CParser_UpdateObject(Object *object, volatile DeclInfo *record)
 {
     if (record && record->extraQualifiers)
@@ -2992,8 +2956,6 @@ void CParser_UpdateObject(Object *object, volatile DeclInfo *record)
     fn_00490210(object, record);
     CodeGen_SetObjectSectionAndInterruptInfo(object);
 }
-
-/* Flag byte supplied by the parser's auxiliary record. */
 
 void fn_00490210(Object *object, volatile DeclInfo *record)
 {
@@ -3204,8 +3166,6 @@ SInt32 CParser_GetUniqueID(void)
     data_00580dc0 += 1;
     return lift_value_0;
 }
-
-/* Workspace filled by conversion_type_name for operator-name construction. */
 
 Boolean CParser_00490660(SInt16 *operatorToken, Boolean allowConversion)
 {

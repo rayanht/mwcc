@@ -53,8 +53,6 @@
 #include <string.h>
 #include <stdio.h>
 
-/* Declarations gathered from the merged files. */
-
 #define CE_ASSERT(c, s)                                                                                                \
     do {                                                                                                               \
         if (c)                                                                                                         \
@@ -153,14 +151,6 @@ Boolean CTemplateNew_InstantiatePendingTemplates(void)
     }
     return result;
 }
-
-/* Template definition data; the intervening storage is not decoded. */
-
-/* State for a template specialization. */
-
-/* Opaque source record with a trailing status byte. */
-
-/* Parser workspace with source information in its trailing fields. */
 
 static inline Object *TemplateObjectInstance_Source(Object *object)
 {
@@ -557,8 +547,6 @@ void parse_explicit_template_specialization(void)
             CError_ReportError(ERR_ILLEGAL_EXPLICIT_TEMPLATE_SPECIALIZATION);
     }
 }
-
-/* Records used to transfer a pending list entry to a destination slot. */
 
 static inline HashNameNode *CTempl_FindConversion(TypeClass *tclass, Type *type, UInt32 qual)
 {
@@ -1024,10 +1012,6 @@ void parse_function_template_declaration(TemplateScopeState *stack, TemplatePara
         CError_ReportError(ERR_DECLARATION_SYNTAX_ERROR);
     }
 }
-
-/* Lookup results and template instances have distinct payloads. */
-
-/* Saved token range and parser metadata for a template body. */
 
 void parse_template_member_definition(void *context, TypeClass *template_info, DeclInfo *declaration, SInt32 *position)
 {

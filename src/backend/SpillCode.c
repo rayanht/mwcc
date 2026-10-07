@@ -90,8 +90,6 @@ void SpillCode_EmitOperandSpills(PCodeBlock *unused, PCodeInstruction *op)
             s;                                                                                                         \
     } while (0)
 
-/* Register fields of the instruction consumed by spill insertion. */
-
 void SpillCode_ReplaceInstructionWithFPRSpillCode(PCodeBlock *block, PCodeInstruction *instruction)
 {
     int temporaryRegister;

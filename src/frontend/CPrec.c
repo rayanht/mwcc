@@ -489,10 +489,6 @@ void decompress_precompiled_header(void)
         CError_FatalError(ERR_ILLEGAL_DATA_PRECOMPILED_HEADER);
 }
 
-/* File information passed to the file-processing callbacks. */
-
-/* File handle and its stored processing information. */
-
 int CPrec_WritePrecompiledFile(void)
 {
     unsigned int status;
@@ -1169,8 +1165,6 @@ static NameSpaceList *CPrec_GetNSUsingPatch(NameSpaceList *u)
 /* append byte */
 /* append data */
 
-/* CPrec_NamePatch body */
-
 static ObjNameSpace *CPrec_GetObjNameSpacePatch(ObjNameSpace *obj)
 {
     CPrecWrittenEntry *e;
@@ -1348,12 +1342,6 @@ static inline int get_next_offset(long v2, int *saved)
     add_serialized_bucket_entry((SInt32)(v2 + 4), (SInt32)(t5));
     return t5;
 }
-
-/* Cache entry for an object's serialized offset. */
-
-/* Referenced record marked before relocation is emitted. */
-
-/* Serialized object layout. */
 
 static UInt32 hash_pointer(void *pv)
 {
@@ -1858,8 +1846,6 @@ static inline void forward_data_and_accumulate_len(void *data, SInt32 len)
     prec_position += len;
 }
 
-/* CPrec_NamePatch body */
-
 static inline int add_serialized_method(MethRec **field, MethRec *position)
 {
     return add_serialized_bucket_entry((SInt32)field, (SInt32)position);
@@ -2019,8 +2005,6 @@ static inline void accumulate_data_length_and_forward_data(void *data, SInt32 le
     prec_position += len;
 }
 
-/* CPrec_NamePatch body */
-
 static inline CPrecWrittenEntry *CPrec_FindAddrPatch_004deb20(void *key)
 {
     CPrecWrittenEntry *n;
@@ -2081,8 +2065,6 @@ static inline void CPrec_AppendData_004dee40(void *data, SInt32 len)
     prec_position += len;
 }
 
-/* CPrec_NamePatch body */
-
 static inline void *append_align(void)
 {
     if (data_00581c28) {
@@ -2119,8 +2101,6 @@ static inline void CPrec_AppendData_004df0c0(void *data, SInt32 len)
         CompilerTools_AppendGListData(&precompiled_buffer, data, len);
     prec_position += len;
 }
-
-/* CPrec_NamePatch body */
 
 #ifndef DEF_fn_004dbf80
 #endif
@@ -2376,8 +2356,6 @@ static inline void *append_prec_alignment(void)
     return (void *)prec_position;
 }
 
-/* CPrec_NamePatch body */
-
 static void CPrec_AppendWord32(SInt32 v)
 {
     if (data_00581c28)
@@ -2399,8 +2377,6 @@ static void CPrec_AppendString(const char *s)
         CompilerTools_AppendGListData(&precompiled_buffer, (void *)s, len);
     prec_position += len;
 }
-
-/* Linked entries stored in the serialization buckets. */
 
 void write_serialized_buckets(void)
 {
@@ -2791,8 +2767,6 @@ SInt32 write_namespace_name(NameSpaceName *namespaceName, Boolean allowFlush)
     return firstPosition;
 }
 
-/* CPrec_NamePatch body */
-
 SInt32 write_namespace_object_list(NameSpaceObjectList *x)
 {
     CPrecWrittenEntry *e;
@@ -3062,8 +3036,6 @@ SInt32 serialize_membervars(ObjMemberVar *object)
     return firstOffset;
 }
 
-/* CPrec_NamePatch body */
-
 ObjType *append_objtype_image(ObjType *x)
 {
     CPrecWrittenEntry *e;
@@ -3076,8 +3048,6 @@ ObjType *append_objtype_image(ObjType *x)
     add_serialized_bucket_entry((SInt32)(&p->type), write_type(x->type));
     return p;
 }
-
-/* CPrec_NamePatch body */
 
 ObjType *write_objtype(ObjType *x)
 {
@@ -3162,8 +3132,6 @@ SInt32 serialize_cprec_rec(CInlineInfo *record)
     }
     return base;
 }
-
-/* Record whose state is marked before its reference is emitted. */
 
 unsigned int serialize_reference_type_entries(unsigned int *entries, short count)
 {
@@ -3273,8 +3241,6 @@ UInt32 write_prec_recs(IStmtRec *recs, SInt16 count)
     }
     return start;
 }
-
-/* Variable-length record written by the precompiled-header serializer. */
 
 unsigned int write_precompiled_expression_record(InlineSwitchData *record)
 {
@@ -3511,8 +3477,6 @@ unsigned int write_member_func_ref(MemberFuncRef *entry)
     return offset;
 }
 
-/* CPrec_NamePatch body */
-
 SInt32 serialize_cpsi_list(CException *item)
 {
     SInt32 first;
@@ -3596,8 +3560,6 @@ SInt32 serialize_cpsi_list(CException *item)
     }
     return first;
 }
-
-/* Hash entry mapping a type to its serialized offset. */
 
 int write_type(Type *type)
 {
@@ -3879,8 +3841,6 @@ UInt32 write_typeclass(TypeClass *node)
 /* append byte */
 /* append data */
 
-/* CPrec_NamePatch body */
-
 TemplateFunction *write_template_function(TemplateFunction *function)
 {
     CPrecWrittenEntry *entry;
@@ -4028,8 +3988,6 @@ SInt32 serialize_template_class_declarations(TemplateClassDeclaration *list)
     return result;
 }
 
-/* Input record written to the precompiled-data stream. */
-
 unsigned int write_prec_input_record(TemplateDeclarationData *record)
 {
     SInt32 offset;
@@ -4071,8 +4029,6 @@ unsigned int write_prec_input_record(TemplateDeclarationData *record)
     }
     return offset;
 }
-
-/* Linked records containing a type and an auxiliary reference. */
 
 unsigned int serialize_reference_entries(ClassTemplateSpecialization *record)
 {
@@ -4290,8 +4246,6 @@ SInt32 serialize_pre_nodes(TemplateParameterRecord *node)
     return firstOffset;
 }
 
-/* 0x12-byte record: next link, a byte flag at +7 and a pointer at +8. */
-
 #include <stddef.h>
 
 SInt32 serialize_ct_state_elems(CTStateElem *element)
@@ -4342,8 +4296,6 @@ SInt32 serialize_ct_state_elems(CTStateElem *element)
     return base;
 }
 
-/* Record containing references written to the precompiled output. */
-
 #include <stddef.h>
 
 unsigned int serialize_objc_info(struct ObjCInfo *info)
@@ -4390,8 +4342,6 @@ unsigned int serialize_objc_info(struct ObjCInfo *info)
     return infoPosition;
 }
 
-/* CPrec_NamePatch body */
-
 CRec *write_crec_list(CRec *record)
 {
     CPrecWrittenEntry *entry;
@@ -4428,8 +4378,6 @@ CRec *write_crec_list(CRec *record)
     }
     return first;
 }
-
-/* CPrec_NamePatch body */
 
 ObjectList *write_object_list(ObjectList *x)
 {
@@ -4493,8 +4441,6 @@ struct CRec *write_crec(struct CRec *record)
     }
     return first;
 }
-
-/* CPrec_NamePatch body */
 
 MethRec *write_methrec(MethRec *method)
 {
@@ -4652,8 +4598,6 @@ SInt32 write_objc_parameter_nodes(ObjCParameterNode *p)
     return start;
 }
 
-/* Serialized entries and reference links used by the precompiled-header writer. */
-
 SInt32 write_som_info(SOMInfo *entry)
 {
     SInt32 start;
@@ -4717,8 +4661,6 @@ SInt32 write_som_info(SOMInfo *entry)
     return start;
 }
 
-/* Record serialized as four words, with references in the first two. */
-
 unsigned int write_vtable(VTable *record)
 {
     UInt32 recordOffset;
@@ -4745,8 +4687,6 @@ unsigned int write_vtable(VTable *record)
     }
     return recordOffset;
 }
-
-/* Linked type entry serialized as two 32-bit fields. */
 
 unsigned int write_prec_type_entries(struct PrecTypeEntry *entry)
 {
@@ -4785,8 +4725,6 @@ unsigned int write_prec_type_entries(struct PrecTypeEntry *entry)
     }
     return firstOffset;
 }
-
-/* Linked record serialized as a ten-byte entry. */
 
 /* Serialized entries occupy ten bytes, independent of host padding. */
 enum { CPrecSerializedEntryBytes = 10 };
@@ -4832,8 +4770,6 @@ unsigned int serialize_entry_list(CFriend *record)
     return startOffset;
 }
 
-/* Linked records written to the compiler's serialized output. */
-
 unsigned int write_vclasslist(VClassList *record)
 {
     SInt32 startOffset;
@@ -4871,8 +4807,6 @@ unsigned int write_vclasslist(VClassList *record)
     return startOffset;
 }
 
-/* CPrec_NamePatch body */
-
 ClassList *write_class_list(ClassList *x)
 {
     CPrecWrittenEntry *e;
@@ -4902,10 +4836,6 @@ ClassList *write_class_list(ClassList *x)
 /* hash-table / emitter base */
 /* tracing enabled? */
 /* running byte counter */
-
-/* Node the pass walks. kind 0..5, children at +8 / +0xc. */
-
-/* 0x581bf6: bucket array base */
 
 int write_templdep(TypeTemplDep *node)
 {
@@ -5247,8 +5177,6 @@ int hash_pointer_type(TypePointer *type)
     return ((hash >> 8) + ((hash >> 24) + hash + (hash >> 16))) & 1023;
 }
 
-/* CPrec_NamePatch body */
-
 SInt32 write_bclass_list(BClassList *classes)
 {
     CPrecWrittenEntry *entry;
@@ -5430,8 +5358,6 @@ static CPrecWrittenEntry *CPrec_Find(SInt32 id)
             return n;
     return NULL;
 }
-
-/* Locations in the image that require a written-object reference. */
 
 int patch_object_reference(SInt32 location, HashNameNode *object)
 {

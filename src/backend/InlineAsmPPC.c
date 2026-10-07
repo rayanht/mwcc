@@ -54,8 +54,6 @@
 #include <string.h>
 /* 0x554830: "InlineAsmPPC.c" */
 
-/* Declarations gathered from the merged files. */
-
 #include "compiler/Types.h"
 #include "compiler/Objects.h"
 
@@ -277,8 +275,6 @@ void InlineAsmPPC_00462d70(Statement *stmt, AsmOut *out)
     if ((descriptor->flags & 0x24) && out->numlabels == 0)
         out->unmodeledControlFlow = 1;
 }
-
-/* 0x554830, error file name string */
 
 SInt32 InlineAsmPPC_004631f0(ParsedAsmInstruction *operand)
 {

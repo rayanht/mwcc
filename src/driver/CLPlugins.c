@@ -31,15 +31,9 @@ typedef short(__stdcall *cb_t)(char **);
 
 typedef unsigned short(__stdcall *pfn_t)(void *);
 
-/* Declarations gathered from the merged files. */
-
 typedef SInt16(__stdcall *CLPluginFunc)(PluginRequest *, SInt32, SInt32, Boolean *);
 
 typedef struct PlugAux PlugAux;
-
-/* Information returned by the plugin fallback query. */
-
-/* Declarations gathered from the merged files. */
 
 typedef short(__stdcall *PluginInputCallback)(int, short *, unsigned int, int, int);
 typedef short(__stdcall *PluginResultCallback)(unsigned int *);
@@ -216,8 +210,6 @@ Boolean plugin_name_matches(Plugin *plugin, char *name)
     return comparison == 0;
 }
 
-/* Pair of identifier lists returned by the plug-in query. */
-
 char CLPlugins_MatchTarget(Plugin *plugin, int firstIdentifier, int secondIdentifier, int flag)
 {
     TargetInfo *lists;
@@ -241,8 +233,6 @@ char CLPlugins_MatchTarget(Plugin *plugin, int firstIdentifier, int secondIdenti
     }
     return 0;
 }
-
-/* Numeric reference followed by its name. */
 
 char file_map_matches(FileMap *reference, int value, char *name, char flag)
 {
@@ -294,20 +284,6 @@ Boolean call_query_callback(Plugin *p, PluginRequest *a, SInt32 b, SInt32 c)
     return 0;
 }
 
-/* Interface layout used to retrieve a plugin's name. */
-
-/* Plugin data callback interface; the first table entry is not used here. */
-
-/* Callback entry; the first word is not used by this accessor. */
-
-/* A callback-table record. */
-
-/* Callback dispatch record and its owning context. */
-
-/* Callback interface used by the plugin query wrapper. */
-
-/* Plugin query ABI: a header followed by its callback table. */
-
 UInt8 query_plugin(Plugin *plugin, unsigned int queryArgument, char **queryKind)
 {
     short status;
@@ -350,8 +326,6 @@ char *format_plugin_version(Plugin *plugin, char *buffer)
     return "(unknown)";
 }
 
-/* Callback record fields preceding this callback are not used here. */
-
 /* Callback table with five preceding entries. */
 /* Plugin value and callback table. */
 
@@ -388,10 +362,6 @@ UInt8 CLPlugins_WriteObjectFile(Plugin *plugin, struct CWFileSpec *context, stru
     result = fn_00415090(&outputSpec, objectFlags, option, objectBuffer);
     return result;
 }
-
-/* Records returned by the plugin lookup routine. */
-
-/* Plugin matching data followed by the value returned for a match. */
 
 UInt8 CLPlugins_FindFileMapValue(Plugin *plugin, int mode, char *name, unsigned int *result)
 {
@@ -476,8 +446,6 @@ Boolean validate_plugin(Plugin *plug, const char **errmsg)
     return 1;
 }
 
-/* Callback table and directory list supplied by the plugin. */
-
 Boolean fn_00409700(Plugin *plugin)
 {
     Boolean hasMissingDirectory;
@@ -499,8 +467,6 @@ Boolean fn_00409700(Plugin *plugin)
     }
     return (Boolean)(!hasMissingDirectory);
 }
-
-/* Fixed-size records copied into a plugin data bundle. */
 
 Plugin *CLPlugins_CreatePluginDataCopy(PluginRequiredInputRecord *record36, PluginOptionalData *record24,
                                        PluginQueryTable *record8)
@@ -572,10 +538,6 @@ void fn_004098d0(void)
     data_0057d91c = NULL;
     return;
 }
-
-/* List of fixed-size records visited by file_map_matches. */
-
-/* Three owned allocations released with their container. */
 
 void CLPlugins_FreePlugins(void)
 {
@@ -744,8 +706,6 @@ int CLPlugins_AddPlugin(void *pluginHandle)
     return 1;
 }
 
-/* 0x57d91c, list head */
-
 Plugin *CLPlugins_FindMatchingTargetPlugin(Plugin *node, SInt32 a, SInt32 b, SInt32 c, SInt32 d)
 {
     Plugin *obj = node ? node : data_0057d91c;
@@ -762,14 +722,6 @@ Plugin *CLPlugins_FindMatchingTargetPlugin(Plugin *node, SInt32 a, SInt32 b, SIn
     }
     return result;
 }
-
-/* Table with an optional callback in slot 7. */
-
-/* Plugin callback table; the final callback supplies a result pointer. */
-
-/* Callback table supplied by a plugin; earlier entries are unused here. */
-
-/* Linked entries inspected by plugin selection. */
 
 Plugin *CLPlugins_FindTargetPluginBySelectorOptionName(Plugin *first, int selector, int optionKind, int optionValue,
                                                        int nameKind, char *name, int selectorValue)
@@ -795,10 +747,6 @@ Plugin *CLPlugins_FindTargetPluginBySelectorOptionName(Plugin *first, int select
     }
     return match;
 }
-/* A plugin registration in the linked registry. */
-
-/* The leading words of a plugin's capability record. */
-
 Plugin *CLPlugins_FindLinkerPlugin(Plugin *start, int kind, int variant)
 {
     Plugin *plugin;
@@ -821,10 +769,6 @@ Plugin *CLPlugins_FindLinkerPlugin(Plugin *start, int kind, int variant)
     return candidate;
 }
 
-/* Plugin registry records; the leading metadata is not used here. */
-
-/* Plugin descriptor metadata followed by its flags. */
-
 Plugin *CLPlugins_FindLinkPluginForTarget(Plugin *plugins, unsigned int kind, unsigned int subtype)
 {
     Plugin *plugin = plugins ? plugins : data_0057d91c;
@@ -844,12 +788,6 @@ Plugin *CLPlugins_FindLinkPluginForTarget(Plugin *plugins, unsigned int kind, un
     return result;
 }
 
-/* Record returned by the plugin lookup helper. */
-
-/* Plugin-list entry: four metadata words followed by the next entry. */
-
-/* Information returned for a plugin, including its flag word. */
-
 Plugin *CLPlugins_FindMatchingLinkPlugin(Plugin *plugins, int kind, int selector)
 {
     Plugin *plugin = plugins ? plugins : data_0057d91c;
@@ -868,8 +806,6 @@ Plugin *CLPlugins_FindMatchingLinkPlugin(Plugin *plugins, int kind, int selector
     }
     return match;
 }
-
-/* Plugin chain entry; metadata is opaque here. */
 
 Plugin *CLPlugins_SelectPluginByRequestsAndValues(Plugin *plugins, int selector, int request_count,
                                                   PluginRequest *requests, int option4, int option5, int value_count,

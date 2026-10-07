@@ -115,8 +115,6 @@ static inline void reverse_one(ENodeList **arr, SInt32 i, ENodeList *found)
     }
 }
 
-/* Objects and initialization flags registered for temporary cleanup. */
-
 static inline Statement *NewTemporaryStatement(void)
 {
     Statement *statement = CFunc_InsertAfterStatement(4, data_00581c36);
@@ -225,8 +223,6 @@ static Boolean CException_IsClassType(Type *ty)
     return 1;
 }
 
-/* Exception cleanup record for an object or array destructor. */
-
 static inline ENode *CException_004e2c40_inline1(Object *p0, ENode *p1)
 {
     ENode *v3;
@@ -300,10 +296,6 @@ void fn_004e0b20(ENode *expr)
     data_00581c30 = 1U;
     return;
 }
-
-/* Label metadata used by exception statements. */
-
-/* Expression data used to describe an exception handler. */
 
 void setup_exception_specification(struct Statement *statements, struct ExceptSpecList *handlers)
 {
@@ -513,8 +505,6 @@ Statement *generate_temporary_object_destruction(Statement *arg)
     }
     return stmt;
 }
-
-/* Expression-node prefix used by exception rewriting. */
 
 ENode *fn_004e1050(ENode *expression)
 {
@@ -959,8 +949,6 @@ Object *CException_GetTempObject(ENode *obj)
     return create_temp_object(obj->data.temp.type);
 }
 
-/* Linked record describing an exception handler. */
-
 void CExcept_ScanTryBlock(void *context, char rethrow)
 {
     Statement *tryBody;
@@ -1093,10 +1081,6 @@ void CExcept_ScanTryBlock(void *context, char rethrow)
     }
     finish_label(handlerLabel);
 }
-
-/* Record in front of the created exception object: a type and a name. */
-
-/* Two object slots handed in by the caller. */
 
 ENode *create_catch_object_init(DeclInfo *info, ExceptionHandlerRecord *args)
 {
@@ -1425,8 +1409,6 @@ ENode *create_type_stringconst(Type *type, UInt32 qualifiers, Boolean flag)
     return node;
 }
 
-/* Temporary list produced by exception traversal. */
-
 void emit_flagged_class_offsets(TypeClass *type)
 {
     char buf[16];
@@ -1505,8 +1487,6 @@ void mark_class_and_bases(ClassNode *list, TypeClass *cls)
     for (base = cls->bases; base != NULL; base = base->next)
         mark_class_and_bases(list, base->base);
 }
-
-/* Records consumed by the exception-name writer. */
 
 void fn_004e2940(TypeClass *exceptionData)
 {
@@ -1764,8 +1744,6 @@ void insert_exception_action(Statement *stmt, CException *action)
     }
 }
 
-/* Record whose byte at offset 28 selects exception handling. */
-
 void CExcept_RegisterDeleteObject(Statement *expr, Object *first, Object *second)
 {
     CException *record;
@@ -1778,10 +1756,6 @@ void CExcept_RegisterDeleteObject(Statement *expr, Object *first, Object *second
     record->data.pair.second = second;
     exception_cleanup_registered = 1U;
 }
-
-/* 0x58851e, flag */
-
-/* Destructor entry in the exception cleanup list. */
 
 void CException_RegisterMemberArray(Statement *unused, Object *context, Object *destructor, SInt32 offset, SInt32 count)
 {
@@ -1947,8 +1921,6 @@ void CExcept_CompareSpecifications(ExceptSpecList *firstSpecs, ExceptSpecList *s
         }
     }
 }
-
-/* 0x5641d0, "CException.c" */
 
 void CException_004e35b0(CException *node)
 {

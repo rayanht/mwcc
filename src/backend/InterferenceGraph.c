@@ -49,8 +49,6 @@
 #include "compiler/StackFrameEABI.h"
 #include "compiler/Switch.h"
 
-/* Declarations gathered from the merged files. */
-
 #include <string.h>
 
 static UInt32 *gInterferenceBits;
@@ -69,12 +67,8 @@ static const char *SpillCode_RegisterFormat(int reg_class)
     return " vr%ld";
 }
 
-/* 0x5842e1, byte access */
-
 /* PCodeBlock: the object a liveness entry is indexed by; its block number
  * lives at 0x1c. */
-
-/* Per-block liveness record: four bit vectors. */
 
 /* TYPESTRUCT record with the byte classification field at 0x0e. */
 void SpillCode_BuildInterference(Object *function, int reg_class, int register_count)

@@ -246,8 +246,6 @@ static struct BufferedToken lastBufferedToken;
 static short DAT_0057fd6c;
 #pragma options align = reset
 
-/* Declarations gathered from the merged files. */
-
 typedef void (*Callback)(BufferedToken *);
 
 typedef enum { CPrep_DidPush, CPrep_DidPop } CPrep_DidFlag;
@@ -729,10 +727,6 @@ void parse_elif_directive(void)
     }
 }
 
-/* 0x57f948, word counter */
-
-/* One preprocessed-line record: 10 bytes each (mac68k packing). */
-
 /* Error reporting sequence emitted at each fatal site. */
 #define CPrep_ERROR(line)                                                                                              \
     do {                                                                                                               \
@@ -792,10 +786,6 @@ void parse_ifndef(void)
         skip_inactive_if_blocks();
     }
 }
-
-/* 0x57f948, word counter */
-
-/* One preprocessed-line record: 10 bytes each (mac68k packing). */
 
 void parse_ifdef_directive(void)
 {
@@ -999,8 +989,6 @@ CNameRef evaluate_conditional_expression_value(void)
     }
     return result;
 }
-
-/* A value represented by two consecutive words. */
 
 Boolean is_zero_name_ref(CNameRef *value)
 {
@@ -1296,8 +1284,6 @@ void parse_line_directive(void)
         CPrepTokenizer_SkipToEndOfLine();
     }
 }
-
-/* Hash-bucket link for an include name. */
 
 void CPrep_0043a0a0(char allowInclude)
 {
@@ -1925,8 +1911,6 @@ void parse_prep_setting(void)
     CPrepTokenizer_SkipToEndOfLine();
 }
 
-/* 0x550c38 "reset" */
-
 static inline void ApplyUnrollOption(void)
 {
     IROOptNode *option = saved_options;
@@ -1987,8 +1971,6 @@ void parse_unroll_pragma(void)
     }
     CPrepTokenizer_SkipToEndOfLine();
 }
-
-/* 0x550c38 "reset" */
 
 static inline void CPrep_RestoreOptimizationLevel(void)
 {
@@ -2094,8 +2076,6 @@ void CPrep_0043b790(void)
         data_005884fd = saved;
     }
 }
-
-/* 0x550c38 "reset" */
 
 void parse_align_pragma(void)
 {
@@ -2237,10 +2217,6 @@ void parse_inline_limit(void)
     if (copts.f9f)
         PREP_ERR(0xba);
 }
-
-/* Records inspected by this pragma handler. */
-
-/* Compiler settings block used by this handler. */
 
 void fn_0043be10(void)
 {
@@ -2422,8 +2398,6 @@ void CPrep_RestoreOption(int optionOffset)
         options[optionOffset] = *((const unsigned char *)data_0057fcea + optionOffset);
     }
 }
-
-/* IntrinsicBinaryEntry in the preprocessor's saved setting list. */
 
 static inline UInt8 *CPrep_OptionAddress(unsigned int index)
 {
@@ -3238,8 +3212,6 @@ Boolean evaluate_pragma_option(void)
     return result;
 }
 
-/* Link in the preprocessor's hash chain. */
-
 static inline Macro **macro_bucket_link(HashNameNode *name)
 {
     return &macro_buckets[name->hashval];
@@ -3722,10 +3694,6 @@ void skip_line_breaks_and_expand_macros(void)
     }
 }
 
-/* Record accessed by the preprocessor's periodic check. */
-
-/* Input record; the preceding state is not used here. */
-
 void fn_0043e8f0(void)
 {
     UInt32 ticks;
@@ -3794,8 +3762,6 @@ unsigned int lookup_available_macro(HashNameNode *name)
 
 #pragma sym reset
 
-/* IntrinsicBinaryEntry in the preprocessor name table. */
-
 Macro *find_macro(void)
 {
     HashNameNode *key = (HashNameNode *)data_00587fa0;
@@ -3815,8 +3781,6 @@ Macro *find_macro(void)
     }
     return entry;
 }
-
-/* 0x57f9d2: byte store (mov byte ptr,1) */
 
 /* 0x58719c: bucket table base */
 /* 0x587fa0: current hash key */
@@ -3877,10 +3841,6 @@ Macro *find_expandable_macro(UInt8 *text)
     }
     return NULL;
 }
-
-/* IntrinsicBinaryEntry in the preprocessor's name lookup table. */
-
-/* Preprocessor name-table entry, including its two control flags. */
 
 Macro *lookup_expandable_macro(void)
 {
@@ -3958,8 +3918,6 @@ Boolean CPrep_0043ecb0(short ch)
 
 #pragma sym on
 
-/* 0x583af8, stride 0xe */
-
 void CPrep_PopMacro(void)
 {
     macro_expansion_depth--;
@@ -3972,8 +3930,6 @@ void CPrep_PopMacro(void)
     macrocheck = macro_stack[macro_expansion_depth].macrocheck;
     DAT_00588523 = 1;
 }
-
-/* Opaque saved preprocessor option data. */
 
 UInt8 CPrep_Compile(CPrepCU *cu)
 {
@@ -4104,8 +4060,6 @@ void CPrep_GetPosition(PFile **position, SInt32 *offset)
         *offset = (char *)currentTextPosition - PTR_00587fb0;
 }
 
-/* Saved preprocessor input state; the preceding bytes are not used here. */
-
 SInt32 CPrep_UpdateTokenLine(FOI *foi)
 {
     int i;
@@ -4146,10 +4100,6 @@ void CPrep_GetFOI(FOI *location, BufferedToken *record)
     }
     location->isInline = 0;
 }
-
-/* Cached values associated with preprocessing names. */
-
-/* Cached name and the pair of values returned by fn_00441850. */
 
 void fn_0043f1f0(FOI *name)
 {
@@ -4498,8 +4448,6 @@ void CPrep_ResetBufferedTokenPosition(void)
 
 #pragma sym on
 
-/* Opaque 24-byte entries in the compacted table. */
-
 void CPrep_RemoveBufferedTokens(int *entryCount, SInt32 *firstIndex)
 {
     int remainingCount;
@@ -4575,12 +4523,6 @@ void CPrep_BufferTokensThroughSemicolon(PrepTokenBuffer *buffer, void (*processT
     memcpy(buffer->tokens, buffered_tokens + firstToken, tokenCount * sizeof(*buffer->tokens));
     data_0058850d = savedMode;
 }
-
-/* inferred floating type; verify ABI */
-
-/* A saved 24-byte preprocessor token, not a NameSpace. */
-
-/* Tokens retained for a deferred function body. */
 
 void CPrep_SaveFunctionBodyTokens(PrepTokenBuffer *result, void (*tokenCallback)(BufferedToken *), int option)
 {

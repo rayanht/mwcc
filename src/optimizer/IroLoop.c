@@ -70,8 +70,6 @@ static char lbl_00580680[32];
 /* IRO_NumLinear */
 /* IRO_NumNodes */
 
-/* Declarations gathered from the merged files. */
-
 typedef enum NodeKind { NK0 } NodeKind;
 
 static inline IROLinear *MakeSequenceNode(IROLinear *left, IROLinear *right, IROList *context, int storeRight)
@@ -1049,8 +1047,6 @@ void IroLoop_0045c520(IROLoop *loop, CInt64 *iterationCount, int *unrollFactor, 
         *exactMultiple = 1;
     }
 }
-
-/* Signature data compared by the IRO loop pass. */
 
 /* Whether two address sums differ only by a constant (returned in DIFFERENCE). */
 int compute_positive_addr_record_difference(IROAddrRecord *first, IROAddrRecord *second, int context,
@@ -3225,8 +3221,6 @@ void IRO_FindLoops(void)
     if (data_00588526 == 0 && data_00587fac != iroNodeTail)
         split_last_linear_into_new_node();
 }
-
-/* Records whose field offsets are dictated by the disassembly. */
 
 void split_last_linear_into_new_node(void)
 {

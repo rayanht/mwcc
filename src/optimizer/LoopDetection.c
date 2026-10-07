@@ -598,8 +598,6 @@ static inline PCodeBlockLink *code_00522b40_inline1(PCodeBlock *p0)
     return t5;
 }
 
-/* Link in a block's predecessor list. */
-
 void traverse_loops_postorder(register Loop *node)
 {
     register Loop *child;

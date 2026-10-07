@@ -224,8 +224,6 @@ void append_qualifiers(StrBuf *buf, UInt32 qual)
         CError_BufferAppendString(buf, "restrict ");
 }
 
-/* Dispatch record with a selector byte and two call arguments. */
-
 void append_targ_expr(StrBuf *buf, ENode *node)
 {
     if (node != NULL) {
@@ -826,8 +824,6 @@ char *CError_GetQualifiedHashName(NameSpace *nspace, HashNameNode *nameRef)
 }
 
 #pragma opt_lifetimes off
-
-/* Context assembled for CWPluginsPrivate_InvokeMessageCallback. */
 
 void report_diagnostic(int message, char *argument, char force, char mode)
 {

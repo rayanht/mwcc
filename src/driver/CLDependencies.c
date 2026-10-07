@@ -33,8 +33,6 @@
 
 static struct AccessPathEntry *data_0054d898 = NULL;
 
-/* Declarations gathered from the merged files. */
-
 /* 0x4ec5e0, signature unknown */
 /* 0x4ec610, signature unknown */
 /* 0x561510, file name string */

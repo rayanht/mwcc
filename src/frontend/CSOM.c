@@ -59,8 +59,6 @@ static struct HashNameNode *space_name;
 static struct HashNameNode *spaces_name;
 static struct HashNameNode *csom_blank_name;
 
-/* Declarations gathered from the merged files. */
-
 struct S2;
 
 ENode *CSOM_MakeMethodReference(BClassList *classPath, Object *method, Boolean parentResolve)
@@ -316,8 +314,6 @@ Boolean CSOM_004e3cd0(Type *ftype)
     return 1;
 }
 
-/* "CSOM.c" */
-
 /* In this build the temp-node kind byte compared by the original is 0x3c. */
 #define ETEMP_KIND 60
 
@@ -459,8 +455,6 @@ ENode *CSOM_GetOrCreateLocalObjectNode(TypeClass *value)
     return create_objectnode(object);
 }
 
-/* 0x4ec090; reference: extern OverrideKind CClass_GetOverrideKind(Object *a, Object *b, Boolean errorflag); */
-
 #define METHODTYPE(ty) ((TypeMemberFunc *)(ty))
 
 void find_method_vtbl_class_and_offset(TypeClass *cls, Object *method, TypeClass **outcls, SInt32 *outofs)
@@ -564,8 +558,6 @@ static inline TypeClass *CSOM_004e4a30_inline1(void)
 
 /* 0x441a70, byte-swap 32 (conditional) */
 /* 0x441ab0, byte-swap 16 (conditional) */
-
-/* Host-order SOM descriptor and its serialized representation. */
 
 static inline Object *MakeKinds(SOMClassBuildState *info)
 {
@@ -1056,14 +1048,6 @@ void initialize_class_data_object(SOMClassBuildState *methods, TypeClass *tclass
     fn_004ceab0(tclass->sominfo->classDataObject, buf, init, tclass->sominfo->classDataObject->type->size);
 }
 
-/* Data collected while building a SOM class descriptor. */
-
-/* SOM descriptor data associated with a class. */
-
-/* SOM class descriptor image; pointer slots are supplied by relocations. */
-
-/* Linked entry describing a SOM base or member. */
-
 void make_class_descriptor(SOMClassBuildState *record, TypeClass *classType)
 {
     SOMClassDescriptor descriptor;
@@ -1288,8 +1272,6 @@ void emit_som_kind_nibbles(SOMClassBuildState *info)
     CInit_DeclareString((char *)bits, size, 0, 0);
 }
 
-/* Linked groups of method entries used by the SOM table. */
-
 void create_special_functions_object(SOMClassBuildState *info, TypeClass *cls)
 {
     ScopeSearch search;
@@ -1470,8 +1452,6 @@ void create_ancestor_object(SOMClassBuildState *info, TypeClass *cls)
         info->ancestorObject = obj;
     }
 }
-
-/* Namespace enumeration state used by the CScope iterator API. */
 
 #include <stddef.h>
 
@@ -1960,8 +1940,6 @@ void encode_member_function_types(TypeMemberFunc *t, Boolean flag)
         }
     }
 }
-
-/* 0x4463d0, one int argument */
 
 UInt8 encode_som_type(UInt8 *p, Type *ty, Boolean flag)
 {

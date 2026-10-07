@@ -39,13 +39,9 @@
 #include "compiler/Switch.h"
 /* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
 
-/* 0x552bbc, "IroCSE.c" */
-
 #include "compiler/ENode.h"
 
 struct BitVector *data_00552b88 = NULL;
-
-/* Declarations gathered from the merged files. */
 
 static void IRO_BitVectorSet(UInt32 bit, BitVector *bv)
 {
