@@ -19,88 +19,14 @@ static struct ExceptionScopeEntry *last_exception_scope_entry;
 static GList exception_records;
 static struct ObjGenRelocationRequest *exception_table_relocation_requests;
 static struct ObjGenRelocationRequest *relocation_request_tail;
-#pragma opt_lifetimes off
+
+static void RemoveEntry(ExceptionScopeEntry *e);
 
 static inline unsigned short flags(void)
 {
     return CTool_EndianConvertWord16(gGPRSaveSpan << 11 | (gFPRSaveSpan & 31) << 6 | (data_005883ee != 0) << 5 |
                                      (data_0058852d & 1) << 4 | 8);
 }
-
-void Exceptions_EmitExceptionTable(Object *object, int offset)
-{
-    unsigned long size;
-    PCodeBlock *block;
-    PCodeInstruction *end;
-    ExceptionScopeEntry *range;
-    ExceptionScopeEntry *entryRange;
-    int endOffset;
-    ExceptionTableHeader *header;
-    int tableCursor;
-    PCodeInstruction *location;
-    unsigned int startOffset;
-    ExceptionAlignmentFill fill;
-
-    fill.zero = 0;
-    endOffset = compact_exception_scope_entries();
-    InitGList(&exception_records, 256);
-    AppendGListNoData(&exception_records, (endOffset << 3) + 4);
-    AppendGListLong(&exception_records, 0);
-    for (range = exception_scope_entries; range != NULL; range = range->next) {
-        if (range->info->child_count == 0 && range->info->recordOffset == 0) {
-            if (((size = exception_records.size) & 3) != 0)
-                AppendGListData(&exception_records, &fill, tableCursor = ((size + 3) & -4) - size);
-            emit_exception_records(range->info);
-        }
-    }
-    header = (ExceptionTableHeader *)(tableCursor = (int)*exception_records.data);
-    if (copts.altivec_model != 0 && gVRSaveSpan != 0) {
-        header->flags = flags();
-        header->flags = (short)(header->flags | 4);
-        if (copts.altivec_vrsave != 0)
-            header->value = CTool_EndianConvertWord16(gVRSaveSpan << 11 | 1024);
-        else
-            header->value = CTool_EndianConvertWord16(gVRSaveSpan << 11);
-    } else {
-        header->flags = flags();
-        header->value = 0;
-    }
-    tableCursor += sizeof(*header);
-    entryRange = exception_scope_entries;
-    while (entryRange != NULL) {
-        endOffset = (int)entryRange->start;
-        block = ((PCodeInstruction *)endOffset)->block;
-        (void)block;
-        size = (unsigned long)((PCodeInstruction *)endOffset)->previous;
-        (void)size;
-        startOffset = block->code_offset;
-        while (size != 0) {
-            size = (unsigned long)((PCodeInstruction *)size)->previous;
-            startOffset += 4;
-        }
-        block = (end = entryRange->end)->block;
-        location = end->previous;
-        (void)location;
-        endOffset = block->code_offset;
-        while (location != NULL) {
-            location = location->previous;
-            endOffset += 4;
-        }
-        CError_ASSERT(953, ((unsigned int)(endOffset - startOffset) >> 2 & -65536) == 0);
-        ((ExceptionTableEntry *)tableCursor)->offset = CTool_EndianConvertWord32(startOffset + 4);
-        ((ExceptionTableEntry *)tableCursor)->length =
-            CTool_EndianConvertWord16((unsigned int)(endOffset - startOffset) >> 2);
-        ((ExceptionTableEntry *)tableCursor)->value = CTool_EndianConvertWord16(entryRange->info->recordOffset);
-        tableCursor += sizeof(ExceptionTableEntry);
-        entryRange = entryRange->next;
-    }
-    LockGList(&exception_records);
-    ObjGen_PPC_EABI_EmitDescriptorWithRelocations(object, offset, *exception_records.data, exception_records.size,
-                                                  exception_table_relocation_requests);
-    FreeGList(&exception_records);
-}
-
-#pragma opt_lifetimes reset
 
 static inline int Exceptions_GetBoundUID(void *object)
 {
@@ -109,251 +35,11 @@ static inline int Exceptions_GetBoundUID(void *object)
     return Registers_GetInfo(object)->reg;
 }
 
-static void RemoveEntry(ExceptionScopeEntry *e)
-{
-    if (e->previous)
-        e->previous->next = e->next;
-    else
-        exception_scope_entries = e->next;
-    if (e->next)
-        e->next->previous = e->previous;
-}
-
-int compact_exception_scope_entries(void)
-{
-    ExceptionScopeEntry *e;
-    ExceptionScopeEntry *prev;
-    int count;
-
-    if (exception_scope_entries == NULL)
-        return 0;
-
-    for (e = exception_scope_entries; e != NULL; e = e->next) {
-        if (((PCodeInstruction *)e->start)->block->flags & 0x10)
-            RemoveEntry(e);
-    }
-
-    if (exception_scope_entries == NULL)
-        return 0;
-
-    for (e = exception_scope_entries; e != NULL; e = e->next) {
-        e->info = e->elements ? find_or_create_object_group(e->elements) : NULL;
-    }
-
-    prev = exception_scope_entries;
-    for (e = exception_scope_entries->next; e != NULL; e = e->next) {
-        if (e->info == prev->info) {
-            prev->end = e->end;
-            RemoveEntry(e);
-        } else {
-            prev = e;
-        }
-    }
-
-    count = 0;
-    for (e = exception_scope_entries; e != NULL; e = e->next) {
-        if (e->elements == NULL)
-            RemoveEntry(e);
-        else
-            count++;
-    }
-    return count;
-}
-
-void Exceptions_AppendScopeEntry(PCodeInstruction *context, ExceptionAction *elements)
-{
-    ExceptionScopeEntry *entry;
-
-    if (elements == NULL) {
-        if (last_exception_scope_entry == NULL || last_exception_scope_entry->elements == NULL)
-            return;
-    }
-    entry = (ExceptionScopeEntry *)lalloc(0x18);
-    entry->next = NULL;
-    entry->end = context;
-    entry->start = entry->end;
-    entry->elements = elements;
-    entry->previous = last_exception_scope_entry;
-    if (last_exception_scope_entry != NULL)
-        last_exception_scope_entry->next = entry;
-    else
-        exception_scope_entries = entry;
-    last_exception_scope_entry = entry;
-    while (elements != NULL) {
-        if (elements->kind == 13 && elements->data.catch_block.label->pclabel)
-            PCode_AddSuccessor(context->block, elements->data.catch_block.label->pclabel);
-        else if (elements->kind == 15 && elements->data.specification.label->pclabel)
-            PCode_AddSuccessor(context->block, elements->data.specification.label->pclabel);
-        elements = elements->next;
-    }
-}
-
-void Exceptions_CollectRegisterOperands(ExceptionAction *node, PCodeOperand *out)
-{
-    int uid;
-
-    while (node != NULL) {
-        switch (node->kind) {
-            case 2:
-                if ((uid = Registers_GetInfo(node->data.pair.second) ? Registers_GetInfo(node->data.pair.second)->reg
-                                                                     : 0) != 0) {
-                    out->kind = PCOp_GPR;
-                    out->value.reg = uid;
-                    out->flags = 1;
-                    ++out;
-                }
-                break;
-            case 4:
-                if ((uid = Registers_GetInfo(node->data.pair.first) ? Registers_GetInfo(node->data.pair.first)->reg
-                                                                    : 0) != 0) {
-                    out->kind = PCOp_GPR;
-                    out->value.reg = uid;
-                    out->flags = 1;
-                    ++out;
-                }
-                break;
-            case 7:
-                if ((uid = Registers_GetInfo(node->data.pair.first) ? Registers_GetInfo(node->data.pair.first)->reg
-                                                                    : 0) != 0) {
-                    out->kind = PCOp_GPR;
-                    out->value.reg = uid;
-                    out->flags = 1;
-                    ++out;
-                }
-                break;
-            case 17:
-                if ((uid = Registers_GetInfo(node->data.pair.first) ? Registers_GetInfo(node->data.pair.first)->reg
-                                                                    : 0) != 0) {
-                    out->kind = PCOp_GPR;
-                    out->value.reg = uid;
-                    out->flags = 1;
-                    ++out;
-                }
-                break;
-            case 8:
-                if ((uid = Registers_GetInfo(node->data.pair.second) ? Registers_GetInfo(node->data.pair.second)->reg
-                                                                     : 0) != 0) {
-                    out->kind = PCOp_GPR;
-                    out->value.reg = uid;
-                    out->flags = 1;
-                    ++out;
-                }
-                if ((uid = Registers_GetInfo(node->data.pair.first) ? Registers_GetInfo(node->data.pair.first)->reg
-                                                                    : 0) != 0) {
-                    out->kind = PCOp_GPR;
-                    out->value.reg = uid;
-                    out->flags = 1;
-                    ++out;
-                }
-                break;
-            case 9:
-                if ((uid = Registers_GetInfo(node->data.pair.first) ? Registers_GetInfo(node->data.pair.first)->reg
-                                                                    : 0) != 0) {
-                    out->kind = PCOp_GPR;
-                    out->value.reg = uid;
-                    out->flags = 1;
-                    ++out;
-                }
-                break;
-            case 10:
-            case 11:
-                if ((uid = Registers_GetInfo(node->data.pair.first) ? Registers_GetInfo(node->data.pair.first)->reg
-                                                                    : 0) != 0) {
-                    out->kind = PCOp_GPR;
-                    out->value.reg = uid;
-                    out->flags = 1;
-                    ++out;
-                }
-                break;
-            case 12:
-                if ((uid = Registers_GetInfo(node->data.delete_pointer_cond.cond)
-                               ? Registers_GetInfo(node->data.delete_pointer_cond.cond)->reg
-                               : 0) != 0) {
-                    out->kind = PCOp_GPR;
-                    out->value.reg = uid;
-                    out->flags = 1;
-                    ++out;
-                }
-                if ((uid = Registers_GetInfo(node->data.pair.first) ? Registers_GetInfo(node->data.pair.first)->reg
-                                                                    : 0) != 0) {
-                    out->kind = PCOp_GPR;
-                    out->value.reg = uid;
-                    out->flags = 1;
-                    ++out;
-                }
-                break;
-        }
-        node = node->next;
-    }
-}
-
 static inline int Exceptions_BoundObjectCount(Object **objectSlot)
 {
     if (Registers_GetInfo(*objectSlot))
         return Registers_GetInfo(*objectSlot)->reg;
     return 0;
-}
-
-int Exceptions_CountBoundObjectFields(ExceptionAction *action)
-{
-    int count = 0;
-
-    while (action != NULL) {
-        switch (action->kind) {
-            case 2:
-                if (Exceptions_BoundObjectCount(&action->data.local_cond.cond))
-                    count++;
-                break;
-            case 4:
-                if (Exceptions_BoundObjectCount(&action->data.pair.first))
-                    count++;
-                break;
-            case 7:
-                if (Exceptions_BoundObjectCount(&action->data.member.objectptr))
-                    count++;
-                break;
-            case 17:
-                if (Exceptions_BoundObjectCount(&action->data.member.objectptr))
-                    count++;
-                break;
-            case 8:
-                if (Exceptions_BoundObjectCount(&action->data.member_cond.cond))
-                    count++;
-                if (Exceptions_BoundObjectCount(&action->data.member_cond.objectptr))
-                    count++;
-                break;
-            case 9:
-                if (Exceptions_BoundObjectCount(&action->data.member_array.objectptr))
-                    count++;
-                break;
-            case 10:
-            case 11:
-                if (Exceptions_BoundObjectCount(&action->data.pair.first))
-                    count++;
-                break;
-            case 12:
-                if (Exceptions_BoundObjectCount(&action->data.delete_pointer_cond.cond))
-                    count++;
-                if (Exceptions_BoundObjectCount(&action->data.pair.first))
-                    count++;
-                break;
-        }
-        action = action->next;
-    }
-    return count;
-}
-
-void Exceptions_Reset(void)
-
-{
-    int i;
-
-    for (i = 0; i < 0x12; i = i + 1) {
-        object_groups[i] = NULL;
-    }
-    exception_scope_entries = last_exception_scope_entry = NULL;
-    exception_table_relocation_requests = relocation_request_tail = NULL;
-    return;
 }
 
 static inline void append_reference(void *obj, SInt32 offset)
@@ -379,6 +65,49 @@ static inline SInt32 ExceptionTypeValue(CLabel *typeInfo)
 static inline int ExceptionHasTypeValue(CLabel *typeInfo)
 {
     return typeInfo->pclabel != NULL;
+}
+
+struct ObjectGroup *find_or_create_object_group(ExceptionAction *object)
+{
+    struct ObjectGroup *node;
+    struct ObjectGroup *found;
+    struct ObjectGroup *parent;
+
+    node = object_groups[object->kind];
+    if (node != NULL) {
+        do {
+            if (node->object == object)
+                return node;
+            node = node->next;
+        } while (node != NULL);
+    }
+
+    if (object->next != NULL)
+        parent = find_or_create_object_group(object->next);
+    else
+        parent = NULL;
+
+    found = object_groups[object->kind];
+    if (found != NULL) {
+        do {
+            if (found->parent == parent) {
+                if (CExcept_ActionCompare(found->object, object))
+                    return found;
+            }
+            found = found->next;
+        } while (found != NULL);
+    }
+
+    node = (struct ObjectGroup *)lalloc(sizeof(struct ObjectGroup));
+    node->parent = parent;
+    node->object = object;
+    node->child_count = 0;
+    node->recordOffset = 0;
+    node->next = object_groups[object->kind];
+    object_groups[object->kind] = node;
+    if (parent != NULL)
+        parent->child_count++;
+    return node;
 }
 
 void emit_exception_records(ObjectGroup *node)
@@ -723,45 +452,306 @@ void emit_exception_records(ObjectGroup *node)
     }
 }
 
-struct ObjectGroup *find_or_create_object_group(ExceptionAction *object)
+void Exceptions_Reset(void)
+
 {
-    struct ObjectGroup *node;
-    struct ObjectGroup *found;
-    struct ObjectGroup *parent;
+    int i;
 
-    node = object_groups[object->kind];
-    if (node != NULL) {
-        do {
-            if (node->object == object)
-                return node;
-            node = node->next;
-        } while (node != NULL);
+    for (i = 0; i < 0x12; i = i + 1) {
+        object_groups[i] = NULL;
     }
+    exception_scope_entries = last_exception_scope_entry = NULL;
+    exception_table_relocation_requests = relocation_request_tail = NULL;
+    return;
+}
 
-    if (object->next != NULL)
-        parent = find_or_create_object_group(object->next);
+int Exceptions_CountBoundObjectFields(ExceptionAction *action)
+{
+    int count = 0;
+
+    while (action != NULL) {
+        switch (action->kind) {
+            case 2:
+                if (Exceptions_BoundObjectCount(&action->data.local_cond.cond))
+                    count++;
+                break;
+            case 4:
+                if (Exceptions_BoundObjectCount(&action->data.pair.first))
+                    count++;
+                break;
+            case 7:
+                if (Exceptions_BoundObjectCount(&action->data.member.objectptr))
+                    count++;
+                break;
+            case 17:
+                if (Exceptions_BoundObjectCount(&action->data.member.objectptr))
+                    count++;
+                break;
+            case 8:
+                if (Exceptions_BoundObjectCount(&action->data.member_cond.cond))
+                    count++;
+                if (Exceptions_BoundObjectCount(&action->data.member_cond.objectptr))
+                    count++;
+                break;
+            case 9:
+                if (Exceptions_BoundObjectCount(&action->data.member_array.objectptr))
+                    count++;
+                break;
+            case 10:
+            case 11:
+                if (Exceptions_BoundObjectCount(&action->data.pair.first))
+                    count++;
+                break;
+            case 12:
+                if (Exceptions_BoundObjectCount(&action->data.delete_pointer_cond.cond))
+                    count++;
+                if (Exceptions_BoundObjectCount(&action->data.pair.first))
+                    count++;
+                break;
+        }
+        action = action->next;
+    }
+    return count;
+}
+
+void Exceptions_CollectRegisterOperands(ExceptionAction *node, PCodeOperand *out)
+{
+    int uid;
+
+    while (node != NULL) {
+        switch (node->kind) {
+            case 2:
+                if ((uid = Registers_GetInfo(node->data.pair.second) ? Registers_GetInfo(node->data.pair.second)->reg
+                                                                     : 0) != 0) {
+                    out->kind = PCOp_GPR;
+                    out->value.reg = uid;
+                    out->flags = 1;
+                    ++out;
+                }
+                break;
+            case 4:
+                if ((uid = Registers_GetInfo(node->data.pair.first) ? Registers_GetInfo(node->data.pair.first)->reg
+                                                                    : 0) != 0) {
+                    out->kind = PCOp_GPR;
+                    out->value.reg = uid;
+                    out->flags = 1;
+                    ++out;
+                }
+                break;
+            case 7:
+                if ((uid = Registers_GetInfo(node->data.pair.first) ? Registers_GetInfo(node->data.pair.first)->reg
+                                                                    : 0) != 0) {
+                    out->kind = PCOp_GPR;
+                    out->value.reg = uid;
+                    out->flags = 1;
+                    ++out;
+                }
+                break;
+            case 17:
+                if ((uid = Registers_GetInfo(node->data.pair.first) ? Registers_GetInfo(node->data.pair.first)->reg
+                                                                    : 0) != 0) {
+                    out->kind = PCOp_GPR;
+                    out->value.reg = uid;
+                    out->flags = 1;
+                    ++out;
+                }
+                break;
+            case 8:
+                if ((uid = Registers_GetInfo(node->data.pair.second) ? Registers_GetInfo(node->data.pair.second)->reg
+                                                                     : 0) != 0) {
+                    out->kind = PCOp_GPR;
+                    out->value.reg = uid;
+                    out->flags = 1;
+                    ++out;
+                }
+                if ((uid = Registers_GetInfo(node->data.pair.first) ? Registers_GetInfo(node->data.pair.first)->reg
+                                                                    : 0) != 0) {
+                    out->kind = PCOp_GPR;
+                    out->value.reg = uid;
+                    out->flags = 1;
+                    ++out;
+                }
+                break;
+            case 9:
+                if ((uid = Registers_GetInfo(node->data.pair.first) ? Registers_GetInfo(node->data.pair.first)->reg
+                                                                    : 0) != 0) {
+                    out->kind = PCOp_GPR;
+                    out->value.reg = uid;
+                    out->flags = 1;
+                    ++out;
+                }
+                break;
+            case 10:
+            case 11:
+                if ((uid = Registers_GetInfo(node->data.pair.first) ? Registers_GetInfo(node->data.pair.first)->reg
+                                                                    : 0) != 0) {
+                    out->kind = PCOp_GPR;
+                    out->value.reg = uid;
+                    out->flags = 1;
+                    ++out;
+                }
+                break;
+            case 12:
+                if ((uid = Registers_GetInfo(node->data.delete_pointer_cond.cond)
+                               ? Registers_GetInfo(node->data.delete_pointer_cond.cond)->reg
+                               : 0) != 0) {
+                    out->kind = PCOp_GPR;
+                    out->value.reg = uid;
+                    out->flags = 1;
+                    ++out;
+                }
+                if ((uid = Registers_GetInfo(node->data.pair.first) ? Registers_GetInfo(node->data.pair.first)->reg
+                                                                    : 0) != 0) {
+                    out->kind = PCOp_GPR;
+                    out->value.reg = uid;
+                    out->flags = 1;
+                    ++out;
+                }
+                break;
+        }
+        node = node->next;
+    }
+}
+
+void Exceptions_AppendScopeEntry(PCodeInstruction *context, ExceptionAction *elements)
+{
+    ExceptionScopeEntry *entry;
+
+    if (elements == NULL) {
+        if (last_exception_scope_entry == NULL || last_exception_scope_entry->elements == NULL)
+            return;
+    }
+    entry = (ExceptionScopeEntry *)lalloc(0x18);
+    entry->next = NULL;
+    entry->end = context;
+    entry->start = entry->end;
+    entry->elements = elements;
+    entry->previous = last_exception_scope_entry;
+    if (last_exception_scope_entry != NULL)
+        last_exception_scope_entry->next = entry;
     else
-        parent = NULL;
+        exception_scope_entries = entry;
+    last_exception_scope_entry = entry;
+    while (elements != NULL) {
+        if (elements->kind == 13 && elements->data.catch_block.label->pclabel)
+            PCode_AddSuccessor(context->block, elements->data.catch_block.label->pclabel);
+        else if (elements->kind == 15 && elements->data.specification.label->pclabel)
+            PCode_AddSuccessor(context->block, elements->data.specification.label->pclabel);
+        elements = elements->next;
+    }
+}
 
-    found = object_groups[object->kind];
-    if (found != NULL) {
-        do {
-            if (found->parent == parent) {
-                if (CExcept_ActionCompare(found->object, object))
-                    return found;
-            }
-            found = found->next;
-        } while (found != NULL);
+int compact_exception_scope_entries(void)
+{
+    ExceptionScopeEntry *e;
+    ExceptionScopeEntry *prev;
+    int count;
+
+    if (exception_scope_entries == NULL)
+        return 0;
+
+    for (e = exception_scope_entries; e != NULL; e = e->next) {
+        if (((PCodeInstruction *)e->start)->block->flags & 0x10)
+            RemoveEntry(e);
     }
 
-    node = (struct ObjectGroup *)lalloc(sizeof(struct ObjectGroup));
-    node->parent = parent;
-    node->object = object;
-    node->child_count = 0;
-    node->recordOffset = 0;
-    node->next = object_groups[object->kind];
-    object_groups[object->kind] = node;
-    if (parent != NULL)
-        parent->child_count++;
-    return node;
+    if (exception_scope_entries == NULL)
+        return 0;
+
+    for (e = exception_scope_entries; e != NULL; e = e->next) {
+        e->info = e->elements ? find_or_create_object_group(e->elements) : NULL;
+    }
+
+    prev = exception_scope_entries;
+    for (e = exception_scope_entries->next; e != NULL; e = e->next) {
+        if (e->info == prev->info) {
+            prev->end = e->end;
+            RemoveEntry(e);
+        } else {
+            prev = e;
+        }
+    }
+
+    count = 0;
+    for (e = exception_scope_entries; e != NULL; e = e->next) {
+        if (e->elements == NULL)
+            RemoveEntry(e);
+        else
+            count++;
+    }
+    return count;
+}
+
+static void RemoveEntry(ExceptionScopeEntry *e)
+{
+    if (e->previous)
+        e->previous->next = e->next;
+    else
+        exception_scope_entries = e->next;
+    if (e->next)
+        e->next->previous = e->previous;
+}
+
+static unsigned int pc_offset(PCodeInstruction *instr)
+{
+    unsigned int offset;
+
+    for (offset = instr->block->code_offset, instr = instr->previous; instr != NULL; instr = instr->previous)
+        offset += 4;
+    return offset;
+}
+
+void Exceptions_EmitExceptionTable(Object *object, int offset)
+{
+    ExceptionScopeEntry *range;
+    char *data;
+    ExceptionTableHeader *header;
+    ExceptionTableEntry *entry;
+    int count;
+    unsigned int size;
+    unsigned int startOffset;
+    unsigned int endOffset;
+    int zero;
+
+    zero = 0;
+    count = compact_exception_scope_entries();
+    InitGList(&exception_records, 256);
+    AppendGListNoData(&exception_records, count * sizeof(ExceptionTableEntry) + sizeof(ExceptionTableHeader));
+    AppendGListLong(&exception_records, 0);
+    for (range = exception_scope_entries; range != NULL; range = range->next) {
+        if (range->info->child_count == 0 && range->info->recordOffset == 0) {
+            if ((size = exception_records.size) & 3)
+                AppendGListData(&exception_records, &zero, ((size + 3) & ~3) - size);
+            emit_exception_records(range->info);
+        }
+    }
+
+    header = (ExceptionTableHeader *)(data = *exception_records.data);
+    if (copts.altivec_model && gVRSaveSpan) {
+        header->flags = flags();
+        header->flags = header->flags | 4;
+        if (copts.altivec_vrsave)
+            header->value = CTool_EndianConvertWord16(gVRSaveSpan << 11 | 0x400);
+        else
+            header->value = CTool_EndianConvertWord16(gVRSaveSpan << 11);
+    } else {
+        header->flags = flags();
+        header->value = 0;
+    }
+
+    entry = (ExceptionTableEntry *)(data + sizeof(ExceptionTableHeader));
+    for (range = exception_scope_entries; range != NULL; range = range->next) {
+        startOffset = pc_offset(range->start);
+        endOffset = pc_offset(range->end);
+        CError_ASSERT(953, ((endOffset - startOffset) >> 2 & 0xFFFF0000) == 0);
+        entry->offset = CTool_EndianConvertWord32(startOffset + 4);
+        entry->length = CTool_EndianConvertWord16((endOffset - startOffset) >> 2);
+        entry->value = CTool_EndianConvertWord16(range->info->recordOffset);
+        entry++;
+    }
+
+    LockGList(&exception_records);
+    ObjGen_PPC_EABI_EmitDescriptorWithRelocations(object, offset, *exception_records.data, exception_records.size,
+                                                  exception_table_relocation_requests);
+    FreeGList(&exception_records);
 }
