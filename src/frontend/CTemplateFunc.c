@@ -185,7 +185,7 @@ Boolean match_template_function_args(Object *obj, DeduceInfo *state, FuncArg *ar
         template_argument_depth = state->depth;
         data_005824ca = state->count;
         data_005824ce = 1;
-        if (CTemplTool_IsTemplateArgumentDependentType(arg->type)) {
+        if (fn_00514970(arg->type)) {
             if (!data_005824ce) {
                 resolvedType = arg->type;
                 argQual = arg->qual & (Q_CONST | Q_VOLATILE);
@@ -257,7 +257,7 @@ Boolean match_template_function_args(Object *obj, DeduceInfo *state, FuncArg *ar
     return CExpr_MatchCompare(obj, ctx, &counts);
 }
 
-Boolean CTemplTool_IsTemplateArgumentDependentType(Type *ty)
+Boolean fn_00514970(Type *ty)
 {
     FuncArg *a;
     Boolean r;
@@ -272,17 +272,17 @@ Boolean CTemplTool_IsTemplateArgumentDependentType(Type *ty)
                             data_005824ce = 0;
                         return 1;
                     case 1:
-                        CTemplTool_IsTemplateArgumentDependentType(((TypeTemplDep *)ty)->u.array.type);
+                        fn_00514970(((TypeTemplDep *)ty)->u.array.type);
                         return 1;
                     case 2:
                         data_005824ce = 0;
                         return 1;
                     case 3:
-                        CTemplTool_IsTemplateArgumentDependentType(((TypeTemplDep *)ty)->u.array.type);
+                        fn_00514970(((TypeTemplDep *)ty)->u.array.type);
                         data_005824ce = 0;
                         return 1;
                     case 4:
-                        CTemplTool_IsTemplateArgumentDependentType(((TypeTemplDep *)ty)->u.array.type);
+                        fn_00514970(((TypeTemplDep *)ty)->u.array.type);
                         data_005824ce = 0;
                         return 1;
                     case 5:
@@ -298,9 +298,9 @@ Boolean CTemplTool_IsTemplateArgumentDependentType(Type *ty)
                 return 0;
             case TYPEMEMBERPOINTER:
                 r = 0;
-                if (CTemplTool_IsTemplateArgumentDependentType(((TypeMemberPointer *)ty)->ty1))
+                if (fn_00514970(((TypeMemberPointer *)ty)->ty1))
                     r = 1;
-                if (CTemplTool_IsTemplateArgumentDependentType(((TypeMemberPointer *)ty)->ty2))
+                if (fn_00514970(((TypeMemberPointer *)ty)->ty2))
                     r = 1;
                 return r;
             case TYPEPOINTER:
@@ -310,9 +310,9 @@ Boolean CTemplTool_IsTemplateArgumentDependentType(Type *ty)
             case TYPEFUNC:
                 r = 0;
                 for (a = ((TypeFunc *)ty)->args; a != NULL && a != &elipsis; a = a->next)
-                    if (CTemplTool_IsTemplateArgumentDependentType(a->type))
+                    if (fn_00514970(a->type))
                         r = 1;
-                if (CTemplTool_IsTemplateArgumentDependentType(((TypeFunc *)ty)->functype))
+                if (fn_00514970(((TypeFunc *)ty)->functype))
                     r = 1;
                 return r;
             default:
@@ -514,7 +514,7 @@ Boolean match_state_elem_arguments(TemplArg *a, TemplArg *b, TemplArg *r, char f
         } else {
             if (b->pid.type != 0)
                 return 0;
-            if (CTemplTool_IsTypeDepExpr(a->data.paramdecl.expr) != 0) {
+            if (CTemplTool_IsTemplateArgumentDependentExpression(a->data.paramdecl.expr) != 0) {
                 if (a->data.paramdecl.expr == NULL)
                     CError_FATAL(515);
                 idx = CTF_GetIndex(a);

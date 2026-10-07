@@ -616,7 +616,7 @@ TemplArg *match_specialization_arguments(TemplPartialSpec *arguments, TemplArg *
         if (pattern->pid.type != candidate->pid.type)
             return NULL;
         if (pattern->pid.type != 0) {
-            if (CTemplateTools_IsDependentType(pattern->data.typeparam.type)) {
+            if (CTemplTool_IsTemplateArgumentDependentType(pattern->data.typeparam.type)) {
                 actualQualifiers = candidateQualifiers = candidate->data.typeparam.qual;
                 mask = patternQualifiers = pattern->data.typeparam.qual;
                 missingQualifier = 0;
@@ -645,7 +645,7 @@ TemplArg *match_specialization_arguments(TemplPartialSpec *arguments, TemplArg *
                     return NULL;
             }
         } else {
-            if (CTemplTool_IsTypeDepExpr(pattern->data.paramdecl.expr)) {
+            if (CTemplTool_IsTemplateArgumentDependentExpression(pattern->data.paramdecl.expr)) {
                 index = CTemplateFunc_GetArgumentParameterIndex(pattern);
                 if (index < 0)
                     CError_FATAL(749);
@@ -706,7 +706,7 @@ unsigned char match_template_arguments(TemplPartialSpec *arguments, TemplPartial
                                         argument->data.typeparam.type, argument->data.typeparam.qual, state.args,
                                         0) == 0)
                 return 0;
-        } else if (CTemplTool_IsTypeDepExpr(patternArgument->data.paramdecl.expr) != 0) {
+        } else if (CTemplTool_IsTemplateArgumentDependentExpression(patternArgument->data.paramdecl.expr) != 0) {
             matchIndex = CTemplateFunc_GetArgumentParameterIndex(patternArgument);
             if (matchIndex < 0)
                 CError_FATAL(845);
@@ -1308,7 +1308,7 @@ void instantiate_template_object(TypeDeduce *ctx, Object *templ)
             if ((((TypeFunc *)obj->object.type)->flags & FUNC_CONVERSION) != 0) {
                 if (templ->type->type != TYPEFUNC)
                     CError_FATAL(1589);
-                if (CTemplateTools_IsDependentType(((TypeFunc *)templ->type)->functype)) {
+                if (CTemplTool_IsTemplateArgumentDependentType(((TypeFunc *)templ->type)->functype)) {
                     if (matchingInstance == NULL)
                         CError_FATAL(1592);
                     return;
@@ -1377,7 +1377,7 @@ void instantiate_object_type(TypeDeduce *context, TemplateAction *function, ObjB
                 CError_ASSERT(1693, IS_TYPE_FUNC(OBJECT(object)->type));
                 if (TYPE_FUNC(OBJECT(object)->type)->flags & FUNC_CONVERSION) {
                     CError_ASSERT(1696, IS_TYPE_FUNC(OBJECT(object)->type));
-                    if (CTemplateTools_IsDependentType(TYPE_FUNC(currentFunction->type)->functype)) {
+                    if (CTemplTool_IsTemplateArgumentDependentType(TYPE_FUNC(currentFunction->type)->functype)) {
                         OBJECT(object)->name = CMangler_ConversionFuncName(TYPE_FUNC(OBJECT(object)->type)->functype,
                                                                            TYPE_FUNC(OBJECT(object)->type)->qual);
                         CScope_AddObject(TYPE_CLASS(context->inst)->nspace, OBJECT(object)->name,
@@ -1452,18 +1452,18 @@ void instantiate_friend_declaration(TypeDeduce *ctx, struct TemplateFriend *decl
     Object *object;
 
     CDecl_UnpackDeclInfo(&instance, &declaration->decl);
-    if (CTemplateTools_IsDependentType(instance.thetype))
+    if (CTemplTool_IsTemplateArgumentDependentType(instance.thetype))
         instance.thetype = CTemplTool_DeduceTypeCopy(ctx, instance.thetype, (UInt32 *)&instance.qual);
     if (instance.expltargs != NULL) {
         instance.expltargs = CTemplTool_MakeGlobalTemplArgCopy(instance.expltargs);
         parameter = instance.expltargs;
         while (parameter != NULL) {
             if (parameter->pid.type) {
-                if (CTemplateTools_IsDependentType(parameter->data.typeparam.type))
+                if (CTemplTool_IsTemplateArgumentDependentType(parameter->data.typeparam.type))
                     parameter->data.typeparam.type = CTemplTool_DeduceTypeCopy(
                         ctx, parameter->data.typeparam.type, (UInt32 *)&parameter->data.typeparam.qual);
             } else {
-                if (CTemplTool_IsTypeDepExpr(parameter->data.paramdecl.expr))
+                if (CTemplTool_IsTemplateArgumentDependentExpression(parameter->data.paramdecl.expr))
                     parameter->data.paramdecl.expr = CTemplTool_DeduceExpr(ctx, parameter->data.paramdecl.expr);
             }
             parameter = parameter->next;

@@ -45,7 +45,7 @@ extern TemplParam *parse_template_parameter(NameSpace *owner, TemplParam *value,
 extern void fn_004f0000(void);
 extern void CTemplateNew_Reset(void);
 extern ENode *parse_non_type_template_argument(Type *targetType, unsigned int qualifiers);
-extern Type *CTemplTool_GetSelfRefTemplate(struct TemplClass *record);
+extern Type *fn_004ef5d0(struct TemplClass *record);
 extern struct TemplArg *CTemplateNew_ParseTemplateArguments(struct TemplParam *arg, char flag);
 extern void skip_balanced_angle_tokens(void);
 extern SInt32 source_line;

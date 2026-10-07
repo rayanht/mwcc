@@ -2351,10 +2351,10 @@ SInt16 iscpp_typeequal(Type *leftType, Type *rightType)
         if (leftType->type != rightType->type) {
             if (leftType->type == TYPETEMPLATE && rightType->type == TYPECLASS &&
                 (TYPE_CLASS(rightType)->flags & CLASS_IS_TEMPL))
-                return CTemplateTools_IsTemplDepClassBase(TYPE_CLASS(rightType), (TypeTemplDep *)leftType);
+                return CTemplTool_IsSameTemplateType(TYPE_CLASS(rightType), (TypeTemplDep *)leftType);
             if (rightType->type == TYPETEMPLATE && leftType->type == TYPECLASS &&
                 (TYPE_CLASS(leftType)->flags & CLASS_IS_TEMPL))
-                return CTemplateTools_IsTemplDepClassBase(TYPE_CLASS(leftType), (TypeTemplDep *)rightType);
+                return CTemplTool_IsSameTemplateType(TYPE_CLASS(leftType), (TypeTemplDep *)rightType);
             return 0;
         }
         switch ((SInt8)leftType->type) {

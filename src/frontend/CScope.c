@@ -1844,7 +1844,7 @@ Boolean parse_name_in_namespace(NameResult *scope, NameSpace *ns)
                 return 1;
             }
             tk = CPrepTokenizer_GetNextToken();
-            scope->type = CTemplTool_GetSelfRefTemplate(typeClass);
+            scope->type = fn_004ef5d0(typeClass);
             if (scope->type->type == TYPECLASS && CPrepTokenizer_GetNextTokenAndRestorePosition() == 0x174) {
                 CPrepTokenizer_GetNextToken();
                 tk = CPrepTokenizer_GetNextToken();
@@ -2255,7 +2255,7 @@ restart:
                     if ((TCE(classType)->theclass.flags & CLASS_IS_TEMPL) == 0)
                         CError_FATAL(2467);
                     templateClass = (TemplClass *)classType;
-                    templateType = CTemplTool_GetSelfRefTemplate(templateClass);
+                    templateType = fn_004ef5d0(templateClass);
                     if (templateType->type == TYPETEMPLATE) {
                         if (CPrepTokenizer_GetNextTokenAndRestorePosition() != 0x174) {
                             result->type = templateType;

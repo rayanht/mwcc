@@ -17649,7 +17649,7 @@
     "source": "src/frontend/CTemplateNew.c"
   },
   {
-    "name": "CTemplTool_GetSelfRefTemplate",
+    "name": "fn_004ef5d0",
     "address": "0x004ef5d0",
     "size": 104,
     "source": "src/frontend/CTemplateNew.c"
@@ -19569,7 +19569,7 @@
     "source": "src/frontend/CTemplateFunc.c"
   },
   {
-    "name": "CTemplTool_IsTemplateArgumentDependentType",
+    "name": "fn_00514970",
     "address": "0x00514970",
     "size": 314,
     "source": "src/frontend/CTemplateFunc.c"
@@ -19641,7 +19641,7 @@
     "source": "src/frontend/CTemplateTools.c"
   },
   {
-    "name": "CTemplateTools_IsTemplDepClassBase",
+    "name": "CTemplTool_IsSameTemplateType",
     "address": "0x00515a40",
     "size": 24,
     "source": "src/frontend/CTemplateTools.c"
@@ -19773,7 +19773,7 @@
     "source": "src/frontend/CTemplateTools.c"
   },
   {
-    "name": "CTemplateTools_GetTemplClass",
+    "name": "CTemplTool_IsTemplate",
     "address": "0x00517d90",
     "size": 84,
     "source": "src/frontend/CTemplateTools.c"
@@ -19785,13 +19785,13 @@
     "source": "src/frontend/CTemplateTools.c"
   },
   {
-    "name": "CTemplTool_IsTypeDepExpr",
+    "name": "CTemplTool_IsTemplateArgumentDependentExpression",
     "address": "0x00517eb0",
     "size": 31,
     "source": "src/frontend/CTemplateTools.c"
   },
   {
-    "name": "CTemplateTools_IsDependentType",
+    "name": "CTemplTool_IsTemplateArgumentDependentType",
     "address": "0x00517ed0",
     "size": 182,
     "source": "src/frontend/CTemplateTools.c"
@@ -19851,7 +19851,7 @@
     "source": "src/frontend/CTemplateTools.c"
   },
   {
-    "name": "CTemplTool_IsTemplate",
+    "name": "CTemplTool_GetSelfRefTemplate",
     "address": "0x00518500",
     "size": 360,
     "source": "src/frontend/CTemplateTools.c"

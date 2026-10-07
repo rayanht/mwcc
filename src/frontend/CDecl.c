@@ -1907,7 +1907,7 @@ Object *find_or_create_function_object(ObjectList *list, DeclInfo *ref, Boolean 
     }
     CScope_AddObject(cscope_current, ref->name, (ObjBase *)result);
     if (cscope_current->theclass != NULL && (cscope_current->theclass->flags & CLASS_IS_TEMPL) != 0 &&
-        CTemplateTools_IsDependentType(ref->thetype))
+        CTemplTool_IsTemplateArgumentDependentType(ref->thetype))
         CTemplateClass_AppendObjectDeclaration((TemplClass *)cscope_current->theclass, result);
     return result;
 }
@@ -2221,7 +2221,7 @@ void CDecl_TypedefDeclarator(DeclInfo *decl)
         newType->qual = decl->qual;
         CScope_AddObject(scope, decl->name, (ObjBase *)newType);
         if (scope->theclass != NULL && (scope->theclass->flags & CLASS_IS_TEMPL) != 0 &&
-            CTemplateTools_IsDependentType(decl->thetype))
+            CTemplTool_IsTemplateArgumentDependentType(decl->thetype))
             CTemplateClass_AppendObjectDeclaration((TemplClass *)scope->theclass, (Object *)newType);
         if (copts.cplusplus != 0) {
             if (decl->thetype->type == TYPECLASS &&
@@ -2373,7 +2373,7 @@ void declare_object(DeclInfo *d, UInt8 b, Boolean c)
         found->access = b;
         CScope_AddObject(nspace, d->name, (ObjBase *)found);
         if (nspace->theclass != NULL && (TYPE_CLASS(nspace->theclass)->flags & CLASS_IS_TEMPL) != 0 &&
-            CTemplateTools_IsDependentType(d->thetype))
+            CTemplTool_IsTemplateArgumentDependentType(d->thetype))
             CTemplateClass_AppendObjectDeclaration((TemplClass *)nspace->theclass, found);
         if (c != 0 && nspace->theclass != NULL && cprep_cu[0xe6] != 0)
             CBrowse_RecordDataObject(found, member_foi.tokenline + 1, CPrep_GetCurrentTextOffset());
@@ -3178,7 +3178,7 @@ void CDecl_ScanStructDeclarator(BigDeclInfo *member)
 
         do {
             if (member->declinfo2.thetype->type != TYPEINT && member->declinfo2.thetype->type != TYPEENUM) {
-                if (CTemplateTools_IsDependentType(member->declinfo2.thetype)) {
+                if (CTemplTool_IsTemplateArgumentDependentType(member->declinfo2.thetype)) {
                     break;
                 }
                 CError_ReportError(ERR_ILLEGAL_BITFIELD_DECLARATION);
@@ -3683,7 +3683,7 @@ void declare_member_function(ClassLayout *layout, TypeClass *cls, struct DeclInf
         memberType->vtbl_index = ++layout->lex_order_count;
         member = CParser_NewFunctionObject(info);
         if (cls->flags & CLASS_IS_TEMPL) {
-            if (CTemplateTools_IsDependentType(info->thetype))
+            if (CTemplTool_IsTemplateArgumentDependentType(info->thetype))
                 CTemplateClass_AppendObjectDeclaration((TemplClass *)cls, member);
         }
         CScope_AddObject(cls->nspace, info->name, (ObjBase *)member);
@@ -4006,7 +4006,7 @@ ObjMemberVar *add_member_var(ClassLayout *declaration, TypeClass *cls, Type *typ
     }
     if (name != NULL && name != unnamed_name) {
         CScope_AddObject(cls->nspace, name, (ObjBase *)member);
-        if ((cls->flags & CLASS_IS_TEMPL) != 0 && CTemplateTools_IsDependentType(type)) {
+        if ((cls->flags & CLASS_IS_TEMPL) != 0 && CTemplTool_IsTemplateArgumentDependentType(type)) {
             CTemplateClass_AppendObjectDeclaration((TemplClass *)cls, (Object *)member);
         }
         {
@@ -4279,7 +4279,7 @@ void parse_class_members(ClassLayout *decle, TypeClass *tclass, SInt16 mode)
                 md.declinfo2.isType = 0;
                 md.declinfo2.thetype = (Type *)tfunc;
                 md.declinfo2.storageclass = 0;
-                if ((tclass->flags & CLASS_IS_TEMPL) && CTemplateTools_IsDependentType(type))
+                if ((tclass->flags & CLASS_IS_TEMPL) && CTemplTool_IsTemplateArgumentDependentType(type))
                     md.declinfo2.name = CParser_GetUniqueName();
                 declare_member_function(decle, tclass, &md.declinfo2, access, 1, 1, 1, 0);
                 if (tk == ';') {
@@ -4621,7 +4621,7 @@ void parse_class_bases(TemplClass *classType, short mode, char allowDependent)
                     continue;
                 }
                 CDecl_CompleteType(lookup.type);
-                if (allowDependent != 0 && CTemplateTools_IsDependentType(lookup.type) != 0) {
+                if (allowDependent != 0 && CTemplTool_IsTemplateArgumentDependentType(lookup.type) != 0) {
                     CTemplateClass_PrependTemplateRecordEntry(classType, lookup.type, access, isVirtual);
                     if (isVirtual == 0) {
                         continue;

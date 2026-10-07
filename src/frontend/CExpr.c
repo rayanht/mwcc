@@ -585,7 +585,7 @@ ENode *CExpr_IntegralConstOrDepExpr(void)
         }
     }
 
-    if (CTemplTool_IsTypeDepExpr(expr)) {
+    if (CTemplTool_IsTemplateArgumentDependentExpression(expr)) {
         return expr;
     }
 
@@ -2955,7 +2955,8 @@ ENode *cast_expression(void)
     }
 
     expr = cast_expression();
-    if (copts.cplusplus != 0 && (CTemplateTools_IsDependentType(typeInfo.thetype) || CTemplTool_IsTypeDepExpr(expr))) {
+    if (copts.cplusplus != 0 && (CTemplTool_IsTemplateArgumentDependentType(typeInfo.thetype) ||
+                                 CTemplTool_IsTemplateArgumentDependentExpression(expr))) {
         link = lalloc(sizeof(*link));
         link->next = NULL;
         link->node = expr;
@@ -5150,7 +5151,7 @@ ENode *scan_explicit_conversion(Type *type, SInt32 qualifiers)
     }
     tk = (UInt16)CPrepTokenizer_GetNextToken();
 
-    if (CTemplateTools_IsDependentType(type)) {
+    if (CTemplTool_IsTemplateArgumentDependentType(type)) {
         ENode *node = CExpr_NewTemplDepENode(TDE_CAST);
         node->data.templdep.u.cast.args = arguments;
         node->data.templdep.u.cast.type = type;
@@ -5160,7 +5161,7 @@ ENode *scan_explicit_conversion(Type *type, SInt32 qualifiers)
 
     argument = arguments;
     while (argument != NULL) {
-        if (CTemplTool_IsTypeDepExpr(argument->node)) {
+        if (CTemplTool_IsTemplateArgumentDependentExpression(argument->node)) {
             ENode *node = CExpr_NewTemplDepENode(TDE_CAST);
             node->data.templdep.u.cast.args = arguments;
             node->data.templdep.u.cast.type = type;

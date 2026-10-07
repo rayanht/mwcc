@@ -9,7 +9,7 @@
 extern "C" {
 #endif
 
-extern Boolean CTemplTool_IsTemplateArgumentDependentType(Type *ty);
+extern Boolean fn_00514970(Type *ty);
 extern Boolean CTemplateFunc_MatchType(Type *pattern, UInt32 patternQual, Type *argument, UInt32 argumentQual,
                                        TemplArg *state, Boolean flag);
 extern Boolean match_args(TypeFunc *a, TypeFunc *b, TemplArg *c, Boolean d);

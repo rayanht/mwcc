@@ -832,7 +832,7 @@ void parse_function_template_declaration(TemplateScopeState *stack, TemplParam *
 
         if (di.thetype->type == TYPETEMPLATE) {
             if (tk == '(' && ((TypeTemplDep *)di.thetype)->dtype == 1 &&
-                (templclass = CTemplTool_IsTemplate(((TypeTemplDep *)di.thetype)->u.qual.type)) &&
+                (templclass = CTemplTool_GetSelfRefTemplate(((TypeTemplDep *)di.thetype)->u.qual.type)) &&
                 ((TypeTemplDep *)di.thetype)->u.qual.name == templclass->theclass.classname) {
                 if (tclass)
                     CError_ReportError(ERR_ILLEGAL_TEMPLATE_DECLARATION);
@@ -853,7 +853,7 @@ void parse_function_template_declaration(TemplateScopeState *stack, TemplParam *
             }
 
             if (tk == TK_COLON_COLON && (dependentType = (TypeTemplDep *)di.thetype)->dtype == 2 &&
-                (templclass = CTemplTool_IsTemplate(dependentType))) {
+                (templclass = CTemplTool_GetSelfRefTemplate(dependentType))) {
                 if (tclass)
                     CError_ReportError(ERR_ILLEGAL_TEMPLATE_DECLARATION);
                 tk = CPrepTokenizer_GetNextToken();
@@ -871,7 +871,7 @@ void parse_function_template_declaration(TemplateScopeState *stack, TemplParam *
                                 CError_ReportError(ERR_ILLEGAL_CONSTRUCTOR_DESTRUCTOR_DECLARATION);
                             if (destructorDecl.thetype != (Type *)templclass &&
                                 !((destructorType = (TypeTemplDep *)destructorDecl.thetype)->type == TYPETEMPLATE &&
-                                  CTemplateTools_GetTemplClass(destructorType) == (TypeClass *)templclass))
+                                  CTemplTool_IsTemplate(destructorType) == (TypeClass *)templclass))
                                 CError_ReportError(ERR_ILLEGAL_CONSTRUCTOR_DESTRUCTOR_DECLARATION);
                         } else {
                             CError_ReportError(ERR_ILLEGAL_CONSTRUCTOR_DESTRUCTOR_DECLARATION);
@@ -915,7 +915,7 @@ void parse_function_template_declaration(TemplateScopeState *stack, TemplParam *
                     conversionType = di.thetype;
                     conversionQual = di.qual;
                     CDecl_NewConvFuncType(&di);
-                    if (CTemplateTools_IsDependentType(conversionType) &&
+                    if (CTemplTool_IsTemplateArgumentDependentType(conversionType) &&
                         !(di.name = CTempl_FindConversion(&templclass->theclass, conversionType, conversionQual))) {
                         CError_ReportError(ERR_NOT_STRUCT_UNION_CLASS_MEMBER, "conversion function");
                         return;
@@ -1090,7 +1090,7 @@ UInt8 CTemplateNew_LinkTemplateScope(DeclInfo *context, TypeTemplDep *request, N
     TemplClass *result;
 
     if (request->dtype == 1) {
-        result = CTemplTool_IsTemplate(request->u.qual.type);
+        result = CTemplTool_GetSelfRefTemplate(request->u.qual.type);
         if (result != NULL) {
             *destination = result->theclass.nspace;
             if (context->templateScope == NULL || (*destination)->theclass == NULL) {
@@ -1112,7 +1112,7 @@ UInt8 CTemplateNew_LinkTemplateScope(DeclInfo *context, TypeTemplDep *request, N
     return 0;
 }
 
-Type *CTemplTool_GetSelfRefTemplate(TemplClass *record)
+Type *fn_004ef5d0(TemplClass *record)
 {
     TemplArg *key;
     Type *result;
@@ -1182,7 +1182,7 @@ TemplArg *parse_template_arguments(TemplClass **classType, TemplArg **result)
                 CTemplTool_CheckTemplArgType(parse.thetype);
                 argument->data.typeparam.type = parse.thetype;
                 argument->data.typeparam.qual = parse.qual;
-            } else if (CTemplateTools_IsDependentType(parameter->data.paramdecl.type) != 0) {
+            } else if (CTemplTool_IsTemplateArgumentDependentType(parameter->data.paramdecl.type) != 0) {
                 substituted = CTemplTool_DeduceArgDepType(arguments, (TypeTemplDep *)parameter->data.paramdecl.type,
                                                           parameter->data.paramdecl.qual, &substitutionInfo);
                 argument->data.paramdecl.expr = parse_non_type_template_argument(substituted, substitutionInfo);
@@ -1387,7 +1387,8 @@ TemplParam *parse_template_parameter(NameSpace *owner, TemplParam *value, short 
                 scandeclarator(&initializerState);
                 declaration->data.typeparam.type = initializerState.thetype;
                 declaration->data.typeparam.qual = initializerState.qual,
-                declaration->data.typeparam.isTypeDependent = CTemplateTools_IsDependentType(initializerState.thetype);
+                declaration->data.typeparam.isTypeDependent =
+                    CTemplTool_IsTemplateArgumentDependentType(initializerState.thetype);
             }
             declaration->pid.type = 1;
             break;
@@ -1439,7 +1440,8 @@ ENode *parse_non_type_template_argument(Type *targetType, unsigned int qualifier
     non_type_template_argument_mode = 1;
     expr = conv_assignment_expression();
     non_type_template_argument_mode = 0;
-    if (targetType != NULL && !CTemplateTools_IsDependentType(targetType) && expr->rtype->type != TYPETEMPLDEPEXPR) {
+    if (targetType != NULL && !CTemplTool_IsTemplateArgumentDependentType(targetType) &&
+        expr->rtype->type != TYPETEMPLDEPEXPR) {
         expr = argumentpromotion(expr, targetType, qualifiers, 1);
         if (targetType->type == TYPEPOINTER) {
             if (expr->type == ETYPCON && expr->data.monadic->type == EINTCONST) {

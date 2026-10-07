@@ -63,11 +63,11 @@ Boolean CTemplateTools_MatchTypeAndCheckBoundSlots(Object *obj, Type *type, void
     return 0;
 }
 
-Boolean CTemplateTools_IsTemplDepClassBase(TypeClass *type, TypeTemplDep *templateType)
+Boolean CTemplTool_IsSameTemplateType(TypeClass *type, TypeTemplDep *templateType)
 {
     TemplClass *foundClass;
 
-    foundClass = CTemplTool_IsTemplate(templateType);
+    foundClass = CTemplTool_GetSelfRefTemplate(templateType);
     return &foundClass->theclass == type;
 }
 
@@ -223,7 +223,7 @@ ExceptSpecList *copy_resolved_except_spec_list(void *ctx, ExceptSpecList *n)
 
     *c = *n;
     if (c->type != NULL) {
-        if (CTemplateTools_IsDependentType(c->type)) {
+        if (CTemplTool_IsTemplateArgumentDependentType(c->type)) {
             c->type = CTemplTool_DeduceTypeCopy(ctx, c->type, &c->qual);
         }
     }
@@ -378,7 +378,7 @@ Type *resolve_templ_dep_type(TypeDeduce *ctx, TypeTemplDep *arg, UInt32 *out)
     TemplClass *resolvedClass;
 
     if (ctx->processingClassTypes != 0) {
-        resolvedClass = CTemplTool_IsTemplate(arg);
+        resolvedClass = CTemplTool_GetSelfRefTemplate(arg);
         if (resolvedClass != NULL && resolvedClass == ctx->tmclass)
             return (Type *)resolvedClass;
         switch (arg->dtype) {
@@ -459,7 +459,7 @@ Type *resolve_templ_dep_type(TypeDeduce *ctx, TypeTemplDep *arg, UInt32 *out)
                 Type *base = arg->u.array.type;
                 ENode *resolvedSize;
 
-                if (CTemplateTools_IsDependentType(base)) {
+                if (CTemplTool_IsTemplateArgumentDependentType(base)) {
                     UInt32 baseResolutionData = 0;
                     base = CTemplTool_DeduceTypeCopy(ctx, base, &baseResolutionData);
                 }
@@ -503,7 +503,7 @@ Type *make_bitfield_type(TypeDeduce *ctx, Type *ty, ENode *node, UInt32 *out)
     SInt32 width;
     TypeBitfield *tb;
 
-    if (CTemplateTools_IsDependentType(ty)) {
+    if (CTemplTool_IsTemplateArgumentDependentType(ty)) {
         n = 0;
         ty = CTemplTool_DeduceTypeCopy(ctx, ty, &n);
     }
@@ -612,7 +612,7 @@ void CTemplateTools_00516930(void *context, TemplClass *function, TemplArg *argu
         TemplArg *argument = head;
         while (argument != NULL) {
             if (argument->pid.type != 0) {
-                if (CTemplateTools_IsDependentType(argument->data.typeparam.type))
+                if (CTemplTool_IsTemplateArgumentDependentType(argument->data.typeparam.type))
                     break;
             } else {
                 if (IsTemplDep(argument->data.paramdecl.expr))
@@ -1195,7 +1195,7 @@ Type *CTemplTool_IsDependentTemplate(TemplClass *templateClass, TemplArg *argume
             if (!parameter || (unsigned char)argument->pid.type != (unsigned char)parameter->pid.type)
                 CError_FATAL(809);
             if (argument->pid.type) {
-                dependent = CTemplateTools_IsDependentType(argument->data.typeparam.type);
+                dependent = CTemplTool_IsTemplateArgumentDependentType(argument->data.typeparam.type);
             } else {
                 TypePointer *type = (TypePointer *)argument->data.typeparam.type;
                 if (!type)
@@ -1218,7 +1218,7 @@ Type *CTemplTool_IsDependentTemplate(TemplClass *templateClass, TemplArg *argume
     return (Type *)result;
 }
 
-TypeClass *CTemplateTools_GetTemplClass(TypeTemplDep *record)
+TypeClass *CTemplTool_IsTemplate(TypeTemplDep *record)
 {
     if (record->dtype == 1 && record->u.qual.type->dtype == 2) {
         record = record->u.qual.type;
@@ -1260,7 +1260,7 @@ UInt8 CTemplTool_IsSameTemplate(TemplParam *parameter, TemplArg *argument)
     }
 }
 
-Boolean CTemplTool_IsTypeDepExpr(ENode *node)
+Boolean CTemplTool_IsTemplateArgumentDependentExpression(ENode *node)
 {
     if (node == NULL) {
         return 0;
@@ -1268,7 +1268,7 @@ Boolean CTemplTool_IsTypeDepExpr(ENode *node)
     return node->rtype->type == TYPETEMPLDEPEXPR;
 }
 
-unsigned char CTemplateTools_IsDependentType(Type *type)
+unsigned char CTemplTool_IsTemplateArgumentDependentType(Type *type)
 {
     for (;;) {
         switch ((SInt8)type->type) {
@@ -1283,7 +1283,7 @@ unsigned char CTemplateTools_IsDependentType(Type *type)
             case TYPECLASS:
                 return (((TypeClass *)type)->flags & CLASS_IS_TEMPL) != 0;
             case TYPEMEMBERPOINTER:
-                if (CTemplateTools_IsDependentType(((TypeMemberPointer *)type)->ty1))
+                if (CTemplTool_IsTemplateArgumentDependentType(((TypeMemberPointer *)type)->ty1))
                     return 1;
                 type = ((TypeMemberPointer *)type)->ty2;
                 break;
@@ -1294,7 +1294,7 @@ unsigned char CTemplateTools_IsDependentType(Type *type)
             case TYPEFUNC: {
                 FuncArg *e = ((TypeFunc *)type)->args;
                 while (e != NULL && e != &elipsis && e != &oldstyle) {
-                    if (CTemplateTools_IsDependentType(e->type))
+                    if (CTemplTool_IsTemplateArgumentDependentType(e->type))
                         return 1;
                     e = e->next;
                 }
@@ -1528,7 +1528,7 @@ struct TemplateFunction *CTemplTool_GetFuncTempl(Object *obj)
     return p->u.templateFunction;
 }
 
-TemplClass *CTemplTool_IsTemplate(TypeTemplDep *reference)
+TemplClass *CTemplTool_GetSelfRefTemplate(TypeTemplDep *reference)
 {
     TemplClass *target;
     TemplClass *parent;
@@ -1554,7 +1554,7 @@ TemplClass *CTemplTool_IsTemplate(TypeTemplDep *reference)
         return NULL;
     }
     if (reference->dtype == 1) {
-        parent = CTemplTool_IsTemplate(reference->u.qual.type);
+        parent = CTemplTool_GetSelfRefTemplate(reference->u.qual.type);
         if (parent != NULL) {
             instance = (TemplClass *)CScope_GetLocalTagType(parent->theclass.nspace, reference->u.qual.name);
             if (instance != NULL && instance->theclass.type == TYPECLASS &&
@@ -1566,7 +1566,7 @@ TemplClass *CTemplTool_IsTemplate(TypeTemplDep *reference)
     }
     if (reference->dtype == 4) {
         CError_ASSERT(284, reference->u.qualtempl.type->dtype == 1);
-        nestedParent = CTemplTool_IsTemplate(reference->u.qualtempl.type->u.qual.type);
+        nestedParent = CTemplTool_GetSelfRefTemplate(reference->u.qualtempl.type->u.qual.type);
         if (nestedParent != NULL) {
             nestedInstance = (TypeClass *)CScope_GetLocalTagType(nestedParent->theclass.nspace,
                                                                  reference->u.qualtempl.type->u.qual.name);

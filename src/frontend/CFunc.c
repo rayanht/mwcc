@@ -3145,7 +3145,8 @@ ENode *CFunc_DefaultArg(Type *destination, SInt32 flags, FuncArg *value)
     expr = conv_assignment_expression();
     data_00587fd8 = NULL;
 
-    if (CTemplTool_IsTypeDepExpr(expr) == 0 && CTemplateTools_IsDependentType(destination) == 0) {
+    if (CTemplTool_IsTemplateArgumentDependentExpression(expr) == 0 &&
+        CTemplTool_IsTemplateArgumentDependentType(destination) == 0) {
         expr = argumentpromotion(expr, destination, flags, 1);
     } else {
         record = CPrep_GetLastBufferedToken();
