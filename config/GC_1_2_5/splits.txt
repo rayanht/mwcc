@@ -180,9 +180,12 @@ src/driver/Resources.c:
 	.data       start:0x00541170 end:0x00541248
 	.bss        start:0x0057D5E8 end:0x0057D5F8
 
+auto_00541248_data:
+	.data       start:0x00541248 end:0x005413A8
+
 src/driver/CLErrors.c:
 	.text       start:0x004087D0 end:0x00408BA0
-	.data       start:0x00541248 end:0x005413E0
+	.data       start:0x005413A8 end:0x005413E0
 	.bss        start:0x0057D5F8 end:0x0057D7F8
 
 src/driver/ResourceStrings.c:
@@ -420,14 +423,14 @@ src/runtime/newop.cpp:
 
 src/driver/CLCompilerLinkerDropin_V10.cpp:
 	.text       start:0x00425B70 end:0x004270BA
-	.data       start:0x0054D158 end:0x0054D778
+	.data       start:0x0054D158 end:0x0054D7C8
 
 lmgr326b:
 	.text       start:0x004270BA end:0x004270D0 align:2
 
 src/driver/CLAccessPaths.c:
 	.text       start:0x004270D0 end:0x00427780
-	.data       start:0x0054D778 end:0x0054D848
+	.data       start:0x0054D7C8 end:0x0054D848
 
 src/driver/CLSegs.c:
 	.text       start:0x00427780 end:0x004279F0
@@ -477,12 +480,12 @@ src/frontend/CPrep.c:
 
 src/frontend/CompilerTools.c:
 	.text       start:0x00441890 end:0x004434E0
-	.data       start:0x00551100 end:0x00551208
+	.data       start:0x00551100 end:0x005513B8
 	.bss        start:0x0057FD70 end:0x005805E0
 
 src/backend/ELF_Endian.c:
 	.text       start:0x004434E0 end:0x00443F10
-	.data       start:0x00551208 end:0x00551410
+	.data       start:0x005513B8 end:0x00551410
 	.bss        start:0x005805E0 end:0x005805E8
 
 src/msl/wcstold.c:
@@ -717,12 +720,12 @@ src/backend/Scheduler.c:
 
 src/backend/Coloring.c:
 	.text       start:0x004CDEF0 end:0x004CEA40
-	.data       start:0x00563060 end:0x005630A0
+	.data       start:0x00563060 end:0x005630A8
 	.bss        start:0x00581B88 end:0x00581B90
 
 src/frontend/CInit.c:
 	.text       start:0x004CEA40 end:0x004D4020
-	.data       start:0x005630A0 end:0x00563340
+	.data       start:0x005630A8 end:0x00563340
 	.bss        start:0x00581B90 end:0x00581BA8
 
 src/frontend/CBrowse.c:

@@ -42,6 +42,8 @@
 #include "compiler/StackFrameEABI.h"
 #include "compiler/Switch.h"
 
+static short gColoringRegisterCount;
+
 static void Coloring_RunClass(Object *function, int reg_class, int register_count, int (*available_registers)(void),
                               void (*setup_class)(void))
 {
@@ -101,14 +103,6 @@ static int Coloring_SimplifyLowDegree(int available_colors, int register_count, 
         }
     }
     return changed;
-}
-
-static float Coloring_SpillScore(InterferenceNode *node, float fallback)
-{
-    if (node->virtual_register >= gColoringRegisterCount) {
-        return fallback;
-    }
-    return (float)node->spill_cost / (float)node->degree;
 }
 
 static void Coloring_ResetColors(int reg_class)
@@ -406,6 +400,9 @@ int Coloring_SelectColors(int register_class, InterferenceNode *node)
     }
     return success;
 }
+
+static float float_max = 3.40282347e+38f;
+static float data_005630a0 = 3.40282347e+38f;
 
 InterferenceNode *Coloring_SimplifyGraph(int allocation, int register_count, int node_count)
 {

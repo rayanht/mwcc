@@ -32,7 +32,6 @@ struct RecordBounds {
 };
 extern void swap_tagged_records(unsigned char *data, unsigned int size, int (*errorHandler)(const char *, int),
                                 char swapBeforeRead);
-extern int (*DAT_005805e0)(const char *, int);
 extern long double read_double(UInt8 *bytes, char flag);
 extern void swap_conversion_blocks(char *data, int remainingSize, int (*conversionMode)(const char *, int),
                                    char readBeforeConversion);

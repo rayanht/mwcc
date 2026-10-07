@@ -51,7 +51,6 @@ extern void *galloc(SInt32 size);
 extern void format_string(char *buf, int size, char *fmt, char *ap);
 extern unsigned char CompilerTools_ReportDiagnostic(SInt32 code, ...);
 extern SInt16 data_005511b4;
-extern unsigned char data_00551208[];
 extern SInt32 data_00588228;
 extern void CompilerTools_ReportLimitedDiagnostic(SInt32 code, ...);
 extern SInt16 limited_diagnostic_limit;

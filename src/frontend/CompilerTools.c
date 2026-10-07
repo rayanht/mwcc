@@ -1025,7 +1025,7 @@ unsigned char CompilerTools_ReportDiagnostic(SInt32 diagnosticCode, ...)
         CompilerTools_GetResourceCString(format, 0x2af9, diagnosticCode);
         args = (va_list)&diagnosticCode + ((va_list)(&diagnosticCode + 1) - (va_list)&diagnosticCode + 3) / 4 * 4;
         format_string(message, sizeof(message), format, args);
-        fn_0041e990(message, &data_00551208);
+        fn_0041e990(message, "");
         data_00588228++;
     }
 }
@@ -1045,7 +1045,7 @@ void CompilerTools_ReportLimitedDiagnostic(SInt32 diagnosticCode, ...)
         CompilerTools_GetResourceCString(format, 0x2af9, diagnosticCode);
         args = (va_list)&diagnosticCode + (((va_list)(&diagnosticCode + 1) - (va_list)&diagnosticCode + 3) / 4) * 4;
         format_string(message, sizeof(message), format, args);
-        fn_0041e970(message, &data_00551208);
+        fn_0041e970(message, "");
         limited_diagnostic_count++;
     } else if (limited_diagnostic_count == limited_diagnostic_limit) {
         CompilerTools_GetResourceCString(format, 0x2af9, 25);

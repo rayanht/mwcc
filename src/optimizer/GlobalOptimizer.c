@@ -18,32 +18,32 @@
 #include "compiler/StrengthReduction.h"
 #include "compiler/ValueNumbering.h"
 
-static void COptimizer_DumpStage(Object *function, const char *stage)
+static inline void COptimizer_DumpStage(Object *function, const char *stage)
 {
     Object *obj = function;
     CodeGen_DumpPCode_004c4bd0(COptimizer_GetFunctionObject(obj)->name, stage);
 }
 
-static void COptimizer_DumpIfChanged(Object *function, int changed, const char *stage)
+static inline void COptimizer_DumpIfChanged(Object *function, int changed, const char *stage)
 {
     if (changed && copts.cOptimizerDumpEnabled) {
         COptimizer_DumpStage(function, stage);
     }
 }
 
-static void COptimizer_RunCopyPropagation(Object *function, int mode)
+static inline void COptimizer_RunCopyPropagation(Object *function, int mode)
 {
     COpt_CopyPropagation(mode);
     COptimizer_DumpIfChanged(function, gCopyPropagationChanged, "AFTER COPY PROPAGATION");
 }
 
-static void COptimizer_RunAddPropagation(Object *function)
+static inline void COptimizer_RunAddPropagation(Object *function)
 {
     COpt_AddPropagation();
     COptimizer_DumpIfChanged(function, gAddPropagationChanged, "AFTER ADD PROPAGATION");
 }
 
-static void COptimizer_RunLoopPasses(Object *function)
+static inline void COptimizer_RunLoopPasses(Object *function)
 {
     LoopDetection_DetectLoops();
     if (data_0058763c != NULL) {

@@ -38,9 +38,6 @@ extern InterferenceNode *Coloring_SimplifyGraph(int allocation, int register_cou
 extern void Coloring_SetupVRs(void);
 extern void Coloring_SetupFPRs(void);
 extern void Coloring_SetupGPRs(void);
-extern float float_max;
-extern float data_005630a0;
-extern short gColoringRegisterCount;
 extern struct InterferenceNode **gInterferenceGraph;
 
 #ifdef __cplusplus

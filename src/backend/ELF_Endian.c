@@ -27,6 +27,8 @@
 #include "driver/libimp-eabi-ppc.h"
 #include <string.h>
 #include <setjmp.h>
+
+static int (*DAT_005805e0)(const char *, int);
 /* inferred floating type; verify ABI */
 
 static inline void readhdr(volatile int *out, unsigned int *p, char flag)
