@@ -545,7 +545,7 @@ void dump_eat_nodes(ExceptionAction *p)
             case EAT_DESTROYLOCALOFFSET:
                 fprintf(data_005811b0, "EAT_DESTROYLOCALOFFSET %s(&%s+%ld)%s",
                         COptimizer_GetFunctionObject(p->data.local.dtor)->name, p->data.local.object->name->name,
-                        p->data.delete_pointer_cond.cond, "\r\n");
+                        p->data.local.offset, "\r\n");
                 break;
             case EAT_DESTROYLOCALPOINTER:
                 fprintf(data_005811b0, "EAT_DESTROYLOCALPOINTER%s", "\r\n");
@@ -555,39 +555,40 @@ void dump_eat_nodes(ExceptionAction *p)
                 break;
             case EAT_DESTROYBASE:
                 fprintf(data_005811b0, "EAT_DESTROYBASE %s(this+%ld)%s",
-                        COptimizer_GetFunctionObject(p->data.local.dtor)->name, p->data.delete_pointer_cond.cond,
-                        "\r\n");
+                        COptimizer_GetFunctionObject(p->data.member.dtor)->name, p->data.member.offset, "\r\n");
                 break;
             case EAT_DESTROYMEMBER:
                 fprintf(data_005811b0, "EAT_DESTROYMEMBER %s(%s+%ld)%s",
-                        COptimizer_GetFunctionObject(p->data.local.dtor)->name, p->data.local.object->name->name,
-                        p->data.delete_pointer_cond.cond, "\r\n");
+                        COptimizer_GetFunctionObject(p->data.member.dtor)->name, p->data.member.objectptr->name->name,
+                        p->data.member.offset, "\r\n");
                 break;
             case EAT_DESTROYMEMBERCOND:
-                fprintf(data_005811b0, "EAT_DESTROYMEMBERCOND if(%s) %s(this+%ld)%s", p->data.local.dtor->name->name,
-                        COptimizer_GetFunctionObject(p->data.delete_pointer_cond.cond)->name,
-                        p->data.member_cond.offset, "\r\n");
+                fprintf(
+                    data_005811b0, "EAT_DESTROYMEMBERCOND if(%s) %s(this+%ld)%s", p->data.member_cond.cond->name->name,
+                    COptimizer_GetFunctionObject(p->data.member_cond.dtor)->name, p->data.member_cond.offset, "\r\n");
                 break;
             case EAT_DESTROYMEMBERARRAY:
                 fprintf(data_005811b0, "EAT_DESTROYMEMBERARRAY %s(this+%ld)[%ld] size: %ld%s",
-                        COptimizer_GetFunctionObject(p->data.local.dtor)->name, p->data.delete_pointer_cond.cond,
-                        p->data.member_cond.offset, p->data.catch_block.exceptionType, "\r\n");
+                        COptimizer_GetFunctionObject(p->data.member_array.dtor)->name, p->data.member_array.offset,
+                        p->data.member_array.count, p->data.member_array.size, "\r\n");
                 break;
             case EAT_DELETEPOINTER:
-                fprintf(data_005811b0, "EAT_DELETEPOINTER(%s)%s", p->data.local.object->name->name, "\r\n");
+                fprintf(data_005811b0, "EAT_DELETEPOINTER(%s)%s", p->data.delete_pointer.pointer->name->name, "\r\n");
                 break;
             case EAT_DELETELOCALPOINTER:
-                fprintf(data_005811b0, "EAT_DELETELOCALPOINTER(%s)%s", p->data.local.object->name->name, "\r\n");
+                fprintf(data_005811b0, "EAT_DELETELOCALPOINTER(%s)%s", p->data.delete_pointer.pointer->name->name,
+                        "\r\n");
                 break;
             case EAT_DELETEPOINTERCOND:
                 fprintf(data_005811b0, "EAT_DELETEPOINTERCOND if (%s)(%s)%s",
-                        p->data.delete_pointer_cond.cond->name->name, p->data.local.object->name->name, "\r\n");
+                        p->data.delete_pointer_cond.cond->name->name, p->data.delete_pointer_cond.pointer->name->name,
+                        "\r\n");
                 break;
             case EAT_CATCHBLOCK:
                 fprintf(data_005811b0, "EAT_CATCHBLOCK ");
                 if (p->data.catch_block.exceptionType != NULL) {
-                    if (p->data.local.object != NULL) {
-                        fprintf(data_005811b0, "[%s]", p->data.local.object->name->name);
+                    if (p->data.catch_block.object != NULL) {
+                        fprintf(data_005811b0, "[%s]", p->data.catch_block.object->name->name);
                     } else {
                         fprintf(data_005811b0, "[]");
                     }
