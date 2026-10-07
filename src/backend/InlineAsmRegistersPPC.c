@@ -682,7 +682,7 @@ void CTemplateNew_InitRegistrationHashTables(void)
         id = table->id;
         value = table->value;
         bucket = &inlineAsmRegisterHashTable[CHash(entryName) & 63];
-        entry = (struct RegistrationHashEntry *)CompilerTools_AllocatePool(sizeof(*entry));
+        entry = (struct RegistrationHashEntry *)lalloc(sizeof(*entry));
         entry->id = id;
         entry->name = entryName;
         entry->kind = 2;
@@ -697,7 +697,7 @@ void CTemplateNew_InitRegistrationHashTables(void)
         secondaryValue = secondaryTable->value;
         secondaryId = secondaryTable->id;
         secondaryBucket = &secondary_registration_hash[CHash(secondaryName) & 63];
-        secondaryEntry = (struct RegistrationHashEntry *)CompilerTools_AllocatePool(sizeof(*secondaryEntry));
+        secondaryEntry = (struct RegistrationHashEntry *)lalloc(sizeof(*secondaryEntry));
         secondaryEntry->id = secondaryId;
         secondaryEntry->name = secondaryName;
         secondaryEntry->kind = 2;

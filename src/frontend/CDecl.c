@@ -278,7 +278,7 @@ static UInt8 IsClassEnumOrRef(Type *p)
 
 static int IsSingleArg(FuncArg *p)
 {
-    return p != &data_00583098 && p->next == NULL;
+    return p != &elipsis && p->next == NULL;
 }
 
 static int IsMethod(DeclInfo *a, char f)
@@ -618,7 +618,7 @@ Boolean check_object_creation_type(Type *type)
     return TRUE;
 }
 
-void CDecl_WrapTypePointer(Type **type, unsigned int flags)
+void makethetypepointer(Type **type, unsigned int flags)
 {
     Type *wrappedType;
     TypePointer *pointerType;
@@ -634,7 +634,7 @@ void CDecl_WrapTypePointer(Type **type, unsigned int flags)
     result->qual = flags;
 }
 
-void prepend_class_pointer_argument(TypeFunc *owner, TypeClass *classType, char parseModifiers)
+void CDecl_AddThisPointerArgument(TypeFunc *owner, TypeClass *classType, char parseModifiers)
 {
     FuncArg *argument;
     TypePointer *pointerType;
@@ -837,7 +837,7 @@ void CDecl_ParseDirectFuncDecl(DeclInfo *d)
     tk = CPrepTokenizer_GetNextToken();
     if (tk == ')') {
         if (copts.cplusplus == 0)
-            args = &data_00584748;
+            args = &oldstyle;
         else
             args = NULL;
     } else {
@@ -867,7 +867,7 @@ void CDecl_ParseDirectFuncDecl(DeclInfo *d)
             CError_ReportError(ERR_ILLEGAL_TYPE_QUALIFIERS);
     }
 
-    scandeclarator(d);
+    scandirectdecl1(d);
 
     t = d->thetype;
     if (t->type == TYPEVOID)
@@ -883,7 +883,7 @@ void CDecl_ParseDirectFuncDecl(DeclInfo *d)
 }
 
 /* Type descriptor for an array with a nonconstant bound. */
-void scandeclarator(DeclInfo *decl)
+void scandirectdecl1(DeclInfo *decl)
 {
     Boolean unsized;
     CInt64 count;
@@ -908,7 +908,7 @@ void scandeclarator(DeclInfo *decl)
                     else
                         tk = CPrepTokenizer_GetNextToken();
                     decl->hasArrayDimension = 1;
-                    scandeclarator(decl);
+                    scandirectdecl1(decl);
                     if (!checkType(decl->thetype))
                         decl->thetype = (Type *)&stsignedchar;
                     {
@@ -953,7 +953,7 @@ void scandeclarator(DeclInfo *decl)
                 tk = CPrepTokenizer_GetNextToken();
         }
         decl->hasArrayDimension = 1;
-        scandeclarator(decl);
+        scandirectdecl1(decl);
         if (!unsized && !checkType(decl->thetype))
             decl->thetype = (Type *)&stsignedchar;
         elementType = decl->thetype;
@@ -1281,7 +1281,7 @@ unsigned int parse_parenthesized_declarator(DeclInfo *args)
     Type *newNext;
     savedNext = args->thetype;
     args->thetype = &type_placeholder;
-    CDecl_ParseDeclarator(args);
+    scandeclarator(args);
     if (tk != ')') {
         CError_ReportErrorAndUpdateToken(115U);
     } else {
@@ -1289,11 +1289,11 @@ unsigned int parse_parenthesized_declarator(DeclInfo *args)
     }
     if ((newNext = args->thetype) == &type_placeholder) {
         args->thetype = savedNext;
-        scandeclarator(args);
+        scandirectdecl1(args);
         return;
     }
     args->thetype = savedNext;
-    scandeclarator(args);
+    scandirectdecl1(args);
     replace_type_placeholder(newNext, args->thetype);
     args->thetype = newNext;
 }
@@ -1312,7 +1312,7 @@ Boolean check_operator_declaration(DeclInfo *declaration, Boolean isMember)
     }
     resultType = ((TypeFunc *)declaration->thetype)->functype;
     if ((arguments = ((TypeFunc *)declaration->thetype)->args) != NULL) {
-        if (arguments != &data_00583098 && arguments != &data_00584748) {
+        if (arguments != &elipsis && arguments != &oldstyle) {
             argumentCount = 1;
             if (arguments->dexpr != NULL) {
                 switch (declaration->operator_token) {
@@ -1517,7 +1517,7 @@ void parse_direct_declarator(DeclInfo *state, NameSpace *function)
                 if (state->parserOption != 0 && cscope_current->theclass != NULL) {
                     parserOption = 1;
                 }
-                parsed = CParser_00490660(&state->operator_token, parserOption);
+                parsed = CParser_ParseOperatorName(&state->operator_token, parserOption);
             }
             if (parsed == 0) {
                 CScope_RestoreScope(&save);
@@ -1559,7 +1559,7 @@ void parse_direct_declarator(DeclInfo *state, NameSpace *function)
                 if (state->parserOption != 0 && cscope_current->theclass != NULL) {
                     parserOption = 1;
                 }
-                parsed = CParser_00490660(&state->operator_token, parserOption);
+                parsed = CParser_ParseOperatorName(&state->operator_token, parserOption);
             }
             if (parsed == 0) {
                 return;
@@ -1573,13 +1573,13 @@ void parse_direct_declarator(DeclInfo *state, NameSpace *function)
         state->allowTemplateArguments = 0;
         tk = CPrepTokenizer_GetNextToken();
     }
-    scandeclarator(state);
+    scandirectdecl1(state);
     if (function != NULL) {
         CScope_RestoreScope(&save);
     }
 }
 
-void CDecl_MakeMemberPointerType(Type **result, TypeClass *owner, unsigned int value)
+void makememberpointertype(Type **result, TypeClass *owner, unsigned int value)
 {
     TypeMemberPointer *node;
     if (owner->flags & CLASS_HANDLEOBJECT) {
@@ -1624,7 +1624,7 @@ void CDecl_ScanPointer(DeclInfo *declarator, NameSpace *nspace, char finish)
             return;
         }
         if (nspace != NULL) {
-            CDecl_MakeMemberPointerType(&declarator->thetype, nspace->theclass, qualifiers);
+            makememberpointertype(&declarator->thetype, nspace->theclass, qualifiers);
             nspace = NULL;
         } else {
             pointerType = (TypePointer *)galloc(14);
@@ -1684,7 +1684,7 @@ void CDecl_ScanPointer(DeclInfo *declarator, NameSpace *nspace, char finish)
         parse_direct_declarator(declarator, nspace);
 }
 
-void CDecl_ParseDeclarator(DeclInfo *decl)
+void scandeclarator(DeclInfo *decl)
 {
     NameResult info;
     NameSpace *nspace;
@@ -1925,7 +1925,7 @@ void MergeDefaultArgs(FuncArg *args, FuncArg *otherArgs)
     FuncArg *clearArgsAgain;
     FuncArg *mergeOther;
 
-    if (args == &data_00584748 || otherArgs == &data_00584748)
+    if (args == &oldstyle || otherArgs == &oldstyle)
         return;
 
     arg = args;
@@ -1949,7 +1949,7 @@ void MergeDefaultArgs(FuncArg *args, FuncArg *otherArgs)
             for (;;) {
                 arg = arg->next;
                 other = other->next;
-                if (arg == NULL || arg == &data_00583098)
+                if (arg == NULL || arg == &elipsis)
                     break;
                 if (!(((defaultExpr = arg->dexpr) == NULL || other->dexpr == NULL) &&
                       (defaultExpr != NULL || other->dexpr != NULL))) {
@@ -1983,7 +1983,7 @@ void CheckDefaultArgs(FuncArg *args)
     FuncArg *arg = args;
     while (arg && !arg->dexpr)
         arg = arg->next;
-    while (arg && arg != &data_00583098 && arg != &data_00584748) {
+    while (arg && arg != &elipsis && arg != &oldstyle) {
         if (!arg->dexpr) {
             arg = args;
             while (arg) {
@@ -2044,7 +2044,7 @@ Object *CDecl_GetFunctionObject(DeclInfo *decl, NameSpace *target_scope, Boolean
                 return NULL;
             }
             if ((SInt32)tk == TK_CONST || (SInt32)tk == TK_VOLATILE) {
-                prepend_class_pointer_argument(TYPE_FUNC(decl->thetype), scope->theclass, 1);
+                CDecl_AddThisPointerArgument(TYPE_FUNC(decl->thetype), scope->theclass, 1);
                 object = find_or_create_function_object(lookup, decl, NULL, 2, lookup_mode);
                 if (!object)
                     return NULL;
@@ -2054,7 +2054,7 @@ Object *CDecl_GetFunctionObject(DeclInfo *decl, NameSpace *target_scope, Boolean
                     return NULL;
                 member_type = (TypeMemberFunc *)object->type;
                 if (!member_type->is_static)
-                    prepend_class_pointer_argument(TYPE_FUNC(decl->thetype), scope->theclass, 1);
+                    CDecl_AddThisPointerArgument(TYPE_FUNC(decl->thetype), scope->theclass, 1);
             }
         } else {
             if (decl->has_expltargs) {
@@ -2066,7 +2066,7 @@ Object *CDecl_GetFunctionObject(DeclInfo *decl, NameSpace *target_scope, Boolean
                 if (scope->theclass->sominfo)
                     CSOM_PrependTheClassArg(TYPE_FUNC(decl->thetype));
             } else {
-                prepend_class_pointer_argument(TYPE_FUNC(decl->thetype), scope->theclass, 1);
+                CDecl_AddThisPointerArgument(TYPE_FUNC(decl->thetype), scope->theclass, 1);
             }
             if (copts.cpp_extensions) {
                 decl->qual |= object->qual & (Q_CONST | Q_PASCAL);
@@ -2369,7 +2369,7 @@ void declare_object(DeclInfo *d, UInt8 b, Boolean c)
         }
         if (!ok)
             d->thetype = (Type *)&stsignedint;
-        found = CParser_NewObject(d);
+        found = CParser_NewGlobalDataObject(d);
         found->access = b;
         CScope_AddObject(nspace, d->name, (ObjBase *)found);
         if (nspace->theclass != NULL && (TYPE_CLASS(nspace->theclass)->flags & CLASS_IS_TEMPL) != 0 &&
@@ -2550,7 +2550,7 @@ void CDecl_ScanDeclarator(DeclInfo *p)
             *(TypeFunc *)p->thetype = *(TypeFunc *)node;
         }
         p->name = NULL;
-        CDecl_ParseDeclarator(p);
+        scandeclarator(p);
         if (p->name == NULL) {
             CError_ReportError(ERR_DECLARATION_SYNTAX_ERROR);
             break;
@@ -2655,7 +2655,7 @@ void *parse_enum_body(TypeEnum *enumType, HashNameNode *name)
             if (tk == '=') {
                 tk = CPrepTokenizer_GetNextToken();
                 currentValue = CExpr_IntegralConstExprType(&expressionType);
-                if (!IsNegative(currentValue.hi) || Type_IsUnsigned(expressionType) != 0) {
+                if (!IsNegative(currentValue.hi) || is_unsigned(expressionType) != 0) {
                     if (CInt64_GreaterU(currentValue, maximumValue)) {
                         maximumValue = currentValue;
                         rangeChanged = 1;
@@ -2818,14 +2818,14 @@ void CDecl_ComputeUnderlyingEnumType(TypeEnum *res)
 
     if (copts.enumsalwaysint == 0) {
         for (n = res->enumlist; n != NULL; n = n->next) {
-            if (HighIsNegative(n->val.hi) && !Type_IsUnsigned(n->type))
+            if (HighIsNegative(n->val.hi) && !is_unsigned(n->type))
                 break;
         }
         if (n != NULL) {
             CInt64 a, b;
             b = a = cint64_zero;
             for (m = res->enumlist; m != NULL; m = m->next) {
-                if (HighIsNegative(m->val.hi) && !Type_IsUnsigned(m->type)) {
+                if (HighIsNegative(m->val.hi) && !is_unsigned(m->type)) {
                     if (CInt64_Less(m->val, a))
                         a = m->val;
                 } else {
@@ -3010,7 +3010,7 @@ TypeEnum *parse_enum_definition(TypeEnum *decl, HashNameNode *name)
             }
             if (!dependent) {
                 nextValue = CInt64_Add(value, cint64_one);
-                if (Type_IsUnsigned(currentType)) {
+                if (is_unsigned(currentType)) {
                     if (IsZero(&nextValue))
                         overflow = 1;
                     if (!CInt64_IsInURange(nextValue, currentType->size)) {
@@ -3071,7 +3071,7 @@ void scanenum(DeclInfo *result)
     if (tk == TK_IDENTIFIER) {
         saved = (HashNameNode *)data_00587fa0;
         if (CPrepTokenizer_GetNextTokenAndRestorePosition() == 0x7b) {
-            type = CScope_GetTagType(cscope_current, saved);
+            type = CScope_GetLocalTagType(cscope_current, saved);
             if (type != NULL) {
                 CPrepTokenizer_GetNextToken();
             checktype:
@@ -3146,7 +3146,7 @@ void CDecl_ScanStructDeclarator(BigDeclInfo *member)
             unnamed = 1;
         } else {
             member->declinfo2.isStructMemberDeclarator = 1;
-            CDecl_ParseDeclarator(&member->declinfo2);
+            scandeclarator(&member->declinfo2);
             if (member->declinfo2.name == NULL) {
                 CError_ReportError(ERR_ILLEGAL_STRUCT_UNION_ENUM_CLASS_DEFINITION);
                 return;
@@ -3326,7 +3326,7 @@ void compute_struct_layout(Type *str)
     if (TYPE_STRUCT(str)->stype != 1)
         maxsize = CMach_StructLayoutGetCurSize();
     str->size = maxsize;
-    TYPE_STRUCT(str)->align = fn_004a8400(TYPE_STRUCT(str));
+    TYPE_STRUCT(str)->align = CMach_GetStructAlign(TYPE_STRUCT(str));
     str->size = maxsize + CABI_ComputeAlignmentPadding(str, maxsize);
     if (copts.reverse_bitfields) {
         for (member = TYPE_STRUCT(str)->members; member != NULL; member = member->next) {
@@ -3491,14 +3491,14 @@ void scanstruct(DeclInfo *state, SInt16 spec)
     }
     if (tk == TK_IDENTIFIER) {
         name = data_00587fa0;
-        node = CScope_FindTagType(cscope_current, name);
+        node = CScope_GetTagType(cscope_current, name);
         if (node != NULL) {
             if (node->type == TYPECLASS) {
                 CDecl_ParseClass(context, spec, 1, 0);
                 return;
             }
             tk = CPrepTokenizer_GetNextToken();
-            if (CScope_GetTagType(cscope_current, name) == NULL && (tk == ';' || tk == '{')) {
+            if (CScope_GetLocalTagType(cscope_current, name) == NULL && (tk == ';' || tk == '{')) {
                 MAKE_NODE(node, spec);
                 if (name != NULL)
                     attach_node(node, name);
@@ -3579,7 +3579,7 @@ void scan_inline_definition(Object *object, TypeClass *classType)
     }
 }
 
-TypeMemberFunc *CDecl_NewTypeMemberFunc(TypeFunc *type, TypeClass *theclass, Boolean is_static, Boolean arg)
+TypeMemberFunc *CDecl_MakeTypeMemberFunc(TypeFunc *type, TypeClass *theclass, Boolean is_static, Boolean arg)
 {
     TypeMemberFunc *member;
     member = galloc(40U);
@@ -3589,7 +3589,7 @@ TypeMemberFunc *CDecl_NewTypeMemberFunc(TypeFunc *type, TypeClass *theclass, Boo
     member->is_static = (unsigned char)is_static;
     member->flags |= FUNC_METHOD;
     if ((unsigned char)is_static == 0U)
-        prepend_class_pointer_argument(TYPE_FUNC(member), theclass, arg);
+        CDecl_AddThisPointerArgument(TYPE_FUNC(member), theclass, arg);
     return member;
 }
 
@@ -3646,7 +3646,7 @@ void declare_member_function(ClassLayout *layout, TypeClass *cls, struct DeclInf
         newType->is_static = declarationOnly;
         newType->flags |= FUNC_METHOD;
         if (declarationOnly == 0)
-            prepend_class_pointer_argument(TYPE_FUNC(newType), cls, parseBody);
+            CDecl_AddThisPointerArgument(TYPE_FUNC(newType), cls, parseBody);
         memberType = newType;
         info->thetype = (Type *)newType;
     } else {
@@ -3929,7 +3929,7 @@ void parse_friend_declaration(TemplClass *cls)
             decl.qual = baseQualifiers;
             decl.in_friend_decl = 1;
             decl.allowTemplateArguments = 1;
-            CDecl_ParseDeclarator(&decl);
+            scandeclarator(&decl);
             if (decl.thetype->type == TYPEFUNC) {
                 if (!isTemplateClass) {
                     CScope_SetNameSpaceScope(globalNamespace, &scopeSave);
@@ -4146,7 +4146,7 @@ void parse_class_members(ClassLayout *decle, TypeClass *tclass, SInt16 mode)
                         md.declinfo2.exportflags = dsx3e;
                         md.declinfo2.section = dsx3c;
                         md.declinfo2.isConstructor = 1;
-                        CDecl_ParseDeclarator(&md.declinfo2);
+                        scandeclarator(&md.declinfo2);
                         if (md.declinfo2.thetype->type == TYPEFUNC) {
                             if (member)
                                 md.declinfo2.thetype = CTemplTool_ResolveMemberSelfRefs(
@@ -4221,7 +4221,7 @@ void parse_class_members(ClassLayout *decle, TypeClass *tclass, SInt16 mode)
                     md.declinfo2.thetype = &stvoid;
                 else
                     md.declinfo2.thetype = (Type *)&void_ptr;
-                CDecl_ParseDeclarator(&md.declinfo2);
+                scandeclarator(&md.declinfo2);
                 if (md.declinfo2.thetype->type == TYPEFUNC && !((TypeFunc *)md.declinfo2.thetype)->args) {
                     if (!CScope_FindName(tclass->nspace, destructor_name)) {
                         if (tclass->sominfo) {
@@ -4421,7 +4421,7 @@ void parse_class_members(ClassLayout *decle, TypeClass *tclass, SInt16 mode)
                 tk = CPrepTokenizer_GetNextToken();
             }
         } else {
-            if (CParser_IsAnonymousClass(&md.declinfo.thetype, 1)) {
+            if (CParser_IsAnonymousUnion(&md.declinfo.thetype, 1)) {
                 if ((memberVar = add_member_var(decle, tclass, md.declinfo.thetype, 0, NULL, access)))
                     memberVar->anonunion = 1;
                 for (unionMember = (ObjMemberVar *)((TypeClass *)md.declinfo.thetype)->ivars; unionMember;
@@ -4471,7 +4471,7 @@ VClassList *append_unique_vbase(TypeClass *cls, TypeClass *base)
     return node;
 }
 
-void CDecl_SetVBaseOffsets(TypeClass *cls)
+void CDecl_MakeVBaseList(TypeClass *cls)
 {
     ClassList *base;
     VClassList *virtualBase;
@@ -4671,7 +4671,7 @@ void parse_class_bases(TemplClass *classType, short mode, char allowDependent)
         }
     } while ((tk = CPrepTokenizer_GetNextToken()) == 44);
     if ((classType->theclass.flags & CLASS_HAS_VBASES) != 0) {
-        CDecl_SetVBaseOffsets(&classType->theclass);
+        CDecl_MakeVBaseList(&classType->theclass);
     }
     if (copts.def_inherited != 0 && classType->theclass.bases != NULL && classType->theclass.bases->next == NULL) {
         typeObject = galloc(sizeof(ObjType));
@@ -4722,7 +4722,7 @@ void make_defarg_function(TypeClass *cls)
                     if (virtualBaseArg->next != NULL && virtualBaseArg->next->type == &stvoid)
                         virtualBaseArg->next = NULL;
                 }
-                prepend_class_pointer_argument(TYPE_FUNC(functionType), cls, 0);
+                CDecl_AddThisPointerArgument(TYPE_FUNC(functionType), cls, 0);
                 function->type = (Type *)functionType;
                 function->qual = Q_MANGLE_NAME;
                 function->name = constructor_name;
@@ -4821,7 +4821,7 @@ void make_auto_generated_dtor(ClassLayout *context, TypeClass *cls)
             if (arg->next != NULL && arg->next->type == &stvoid)
                 arg->next = NULL;
         }
-        prepend_class_pointer_argument(TYPE_FUNC(func), cls, 0);
+        CDecl_AddThisPointerArgument(TYPE_FUNC(func), cls, 0);
         name = constructor_name;
         obj = CParser_NewCompilerDefFunctionObject();
         obj->name = name;
@@ -4869,7 +4869,7 @@ TypeMemberFunc *CDecl_MakeDefaultDtorType(TypeClass *theclass, char is_const)
             extra_arg->next = NULL;
         }
     }
-    prepend_class_pointer_argument(TYPE_FUNC(func), theclass, 0);
+    CDecl_AddThisPointerArgument(TYPE_FUNC(func), theclass, 0);
     return func;
 }
 
@@ -5045,7 +5045,7 @@ void generate_copy_constructor(ClassLayout *type, TypeClass *cls)
         argptr->qual = Q_REFERENCE;
         arg->type = TYPE(argptr);
         func->args = arg;
-        prepend_class_pointer_argument(TYPE_FUNC(func), cls, 0);
+        CDecl_AddThisPointerArgument(TYPE_FUNC(func), cls, 0);
         decl.thetype = TYPE(func);
         decl.name = assignment_operator_name;
         declare_member_function(type, cls, &decl, access, 1, 0, 0, 0);
@@ -5122,7 +5122,7 @@ void declare_auto_generated_destructor(ClassLayout *type, TypeClass *cls)
         func->args = arg;
         if (arg->next != NULL && arg->next->type == &stvoid)
             arg->next = NULL;
-        prepend_class_pointer_argument(TYPE_FUNC(func), cls, 0);
+        CDecl_AddThisPointerArgument(TYPE_FUNC(func), cls, 0);
         spec.thetype = (Type *)func;
         spec.name = destructor_name;
         declare_member_function(type, cls, &spec, access, 1, 0, 0, 0);
@@ -5142,7 +5142,7 @@ void fill_class_layout_entries(ClassLayout *table, TypeClass *type, ObjBase **en
 
     if (table->lex_order_count > 32) {
         bytes = table->lex_order_count * sizeof(*entries);
-        entries = (ObjBase **)CompilerTools_AllocatePool(bytes);
+        entries = (ObjBase **)lalloc(bytes);
     } else {
         bytes = 32 * sizeof(*entries);
     }
@@ -5221,7 +5221,6 @@ void fill_class_layout_entries(ClassLayout *table, TypeClass *type, ObjBase **en
 
 void CDecl_CompleteClass(ClassLayout *ctx, TypeClass *cls)
 {
-    void fn_004e9ca0(TypeClass *);
     ObjBase *buf[32];
     ClassList *cl;
     TypeClass *base;
@@ -5255,7 +5254,7 @@ void CDecl_CompleteClass(ClassLayout *ctx, TypeClass *cls)
     if (cls->action == 0)
         CClass_MakeStaticActionClass(cls);
 
-    fn_004e9ca0(cls);
+    CClass_ClassDefaultFuncAction(cls);
 }
 
 TypeClass *CDecl_DefineClass(struct NameSpace *nspace, struct HashNameNode *name, struct TypeClass *type, short mode,
@@ -5306,12 +5305,12 @@ TypeClass *CDecl_DefineClass(struct NameSpace *nspace, struct HashNameNode *name
     classSpace->theclass = type;
     classSpace->parent = nspace;
     if (nspace->is_global == 0) {
-        CParser_PrependClassParseRec(type);
+        CParser_RegisterNonGlobalClass(type);
     }
     return type;
 }
 
-UInt8 CDecl_ParseDeclarationAttributeFlags(void)
+UInt8 CDecl_ParseClassDeclSpec(void)
 {
     UInt8 flags;
     DeclInfo declaration;
@@ -5358,7 +5357,7 @@ void CDecl_ParseClass(DeclInfo *ctx, SInt16 kind, Boolean advanceToken, UInt8 ex
     FileOffsetInfo nameSave;
     memclrw(&declarationState, 14);
     if (tk == TK_UU_DECLSPEC)
-        extraFlags |= CDecl_ParseDeclarationAttributeFlags();
+        extraFlags |= CDecl_ParseClassDeclSpec();
     if ((obj = ctx->pendingClass) == NULL) {
         switch (tk) {
             case ':':
@@ -5372,7 +5371,7 @@ void CDecl_ParseClass(DeclInfo *ctx, SInt16 kind, Boolean advanceToken, UInt8 ex
                     ((nextToken = CPrepTokenizer_GetNextTokenAndRestorePosition()) == ':' || nextToken == ';' ||
                      nextToken == '{')) {
                     tk = CPrepTokenizer_GetNextToken();
-                    existing = CScope_GetTagType(cscope_current, name);
+                    existing = CScope_GetLocalTagType(cscope_current, name);
                     if (existing != NULL) {
                     resolveDeclaration:
                         if (existing->type != TYPECLASS) {

@@ -4690,7 +4690,7 @@ ENode *Intrinsics_MakeAltivecCall(Object *descriptor, ENodeList *args)
                 if (functionType->type != TYPEFUNC) {
                     CError_FATAL(3718);
                 }
-                call = (ENode *)CompilerTools_AllocatePool(sizeof(*call));
+                call = (ENode *)lalloc(sizeof(*call));
                 call->type = EFUNCCALL;
                 call->cost = 4;
                 call->rtype = operation;
@@ -4923,7 +4923,7 @@ ENode *Intrinsics_MakeAltivecCall(Object *descriptor, ENodeList *args)
                 if (functionType->type != TYPEFUNC) {
                     CError_FATAL(3718);
                 }
-                call = (ENode *)CompilerTools_AllocatePool(sizeof(*call));
+                call = (ENode *)lalloc(sizeof(*call));
                 call->type = EFUNCCALL;
                 call->cost = 4;
                 call->rtype = operation;
@@ -5005,7 +5005,7 @@ ENode *Intrinsics_MakeAltivecCall(Object *descriptor, ENodeList *args)
                 if (functionType->type != TYPEFUNC) {
                     CError_FATAL(3718);
                 }
-                call = (ENode *)CompilerTools_AllocatePool(sizeof(*call));
+                call = (ENode *)lalloc(sizeof(*call));
                 call->type = EFUNCCALL;
                 call->cost = 4;
                 call->rtype = operation;
@@ -5051,7 +5051,7 @@ ENode *Intrinsics_MakeAltivecCall(Object *descriptor, ENodeList *args)
                 if (functionType->type != TYPEFUNC) {
                     CError_FATAL(3718);
                 }
-                call = (ENode *)CompilerTools_AllocatePool(sizeof(*call));
+                call = (ENode *)lalloc(sizeof(*call));
                 call->type = EFUNCCALL;
                 call->cost = 4;
                 call->rtype = operation;
@@ -5096,7 +5096,7 @@ ENode *Intrinsics_MakeAltivecCall(Object *descriptor, ENodeList *args)
                 if (functionType->type != TYPEFUNC) {
                     CError_FATAL(3718);
                 }
-                call = (ENode *)CompilerTools_AllocatePool(sizeof(*call));
+                call = (ENode *)lalloc(sizeof(*call));
                 call->type = EFUNCCALL;
                 call->cost = 4;
                 call->rtype = operation;

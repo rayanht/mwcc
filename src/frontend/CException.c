@@ -124,7 +124,7 @@ static inline Object *findTemporaryObject(SInt32 uniqueID, ENode *temporaryExpr)
 
 static TemporaryObject *CException_NewTypeNode(void)
 {
-    TemporaryObject *t = CompilerTools_AllocatePool(sizeof(TemporaryObject));
+    TemporaryObject *t = lalloc(sizeof(TemporaryObject));
     t->next = temporary_object_list;
     temporary_object_list = t;
     return t;
@@ -132,7 +132,7 @@ static TemporaryObject *CException_NewTypeNode(void)
 
 static ExceptionAction *CException_NewStmtNode(void)
 {
-    ExceptionAction *s = CompilerTools_AllocatePool(sizeof(ExceptionAction));
+    ExceptionAction *s = lalloc(sizeof(ExceptionAction));
     s->next = currentDobjstack;
     currentDobjstack = s;
     return s;
@@ -140,7 +140,7 @@ static ExceptionAction *CException_NewStmtNode(void)
 
 static ExceptionAction *CException_CopyStmtNode(void)
 {
-    ExceptionAction *s = CompilerTools_AllocatePool(sizeof(ExceptionAction));
+    ExceptionAction *s = lalloc(sizeof(ExceptionAction));
     *s = *currentDobjstack;
     s->next = current_dobjstack;
     current_dobjstack = s;
@@ -241,13 +241,13 @@ static Object *CException_StdType(void *name)
 
 void CExcept_Setup(void)
 {
-    UINT_00587fc4 = NULL;
+    cexcept_dobjstack = NULL;
     exception_cleanup_registered = 0U;
-    data_005884fa = 0U;
+    cexcept_magic = 0U;
     return;
 }
 
-void CException_004e35b0(ExceptionAction *node)
+void CExcept_CheckStackRefs(ExceptionAction *node)
 {
     while (node != NULL) {
         switch (node->kind) {
@@ -426,10 +426,10 @@ ENode *CExcept_RegisterDestructorObject(Object *obj, SInt32 value, Object *dtoro
     Object *dtor;
     ENode *result;
 
-    rec = CompilerTools_AllocatePool(sizeof(ExceptionAction));
+    rec = lalloc(sizeof(ExceptionAction));
     memclrw(rec, sizeof(ExceptionAction));
-    rec->next = UINT_00587fc4;
-    UINT_00587fc4 = rec;
+    rec->next = cexcept_dobjstack;
+    cexcept_dobjstack = rec;
     result = create_objectrefnode(obj);
     dtorobj = CABI_GetDestructorObject(dtorobj, 1);
     if (value == 0) {
@@ -447,14 +447,14 @@ ENode *CExcept_RegisterDestructorObject(Object *obj, SInt32 value, Object *dtoro
     return result;
 }
 
-void CException_RegisterMemberArray(Statement *unused, Object *context, Object *destructor, SInt32 offset, SInt32 count)
+void CExcept_RegisterLocalArray(Statement *unused, Object *context, Object *destructor, SInt32 offset, SInt32 count)
 {
     ExceptionAction *entry;
 
-    entry = CompilerTools_AllocatePool(sizeof(*entry));
+    entry = lalloc(sizeof(*entry));
     memclrw(entry, sizeof(*entry));
-    entry->next = UINT_00587fc4;
-    UINT_00587fc4 = entry;
+    entry->next = cexcept_dobjstack;
+    cexcept_dobjstack = entry;
     destructor = CABI_GetDestructorObject(destructor, 1);
     entry->kind = 5;
     entry->data.member_array.objectptr = context;
@@ -467,10 +467,10 @@ void CException_RegisterMemberArray(Statement *unused, Object *context, Object *
 void CExcept_RegisterDeleteObject(Statement *expr, Object *first, Object *second)
 {
     ExceptionAction *record;
-    record = CompilerTools_AllocatePool(30U);
+    record = lalloc(30U);
     memclrw(record, 30U);
-    record->next = UINT_00587fc4;
-    UINT_00587fc4 = record;
+    record->next = cexcept_dobjstack;
+    cexcept_dobjstack = record;
     record->kind = 11U;
     record->data.pair.first = first;
     record->data.pair.second = second;
@@ -532,36 +532,36 @@ void insert_exception_action(Statement *stmt, ExceptionAction *action)
     }
 }
 
-void CException_PushEntry(void)
+void CExcept_Terminate(void)
 {
     ExceptionAction *entry;
 
-    entry = CompilerTools_AllocatePool(30U);
+    entry = lalloc(30U);
     memclrw(entry, 30U);
     entry->kind = 16U;
-    entry->next = UINT_00587fc4;
-    UINT_00587fc4 = entry;
+    entry->next = cexcept_dobjstack;
+    cexcept_dobjstack = entry;
 }
 
-void fn_004e30c0(void)
+void CExcept_Magic(void)
 {
-    data_005884fa = 1;
+    cexcept_magic = 1;
     return;
 }
 
-void CException_AddStdTypeRecord(void)
+void CExcept_ArrayInit(void)
 {
     ExceptionAction *rec;
 
-    rec = CompilerTools_AllocatePool(sizeof(*rec));
+    rec = lalloc(sizeof(*rec));
     memclrw(rec, sizeof(*rec));
     rec->kind = 6;
     rec->data.types.type[0] = CException_StdType("ptr");
     rec->data.types.type[1] = CException_StdType("i");
     rec->data.types.type[2] = CException_StdType("dtor");
     rec->data.types.type[3] = CException_StdType("size");
-    rec->next = UINT_00587fc4;
-    UINT_00587fc4 = rec;
+    rec->next = cexcept_dobjstack;
+    cexcept_dobjstack = rec;
 }
 
 void CExcept_RegisterMember(Statement *statement, Object *objectptr, SInt32 offset, Object *destructor,
@@ -569,7 +569,7 @@ void CExcept_RegisterMember(Statement *statement, Object *objectptr, SInt32 offs
 {
     ExceptionAction *node;
 
-    node = (ExceptionAction *)CompilerTools_AllocatePool(sizeof(ExceptionAction));
+    node = (ExceptionAction *)lalloc(sizeof(ExceptionAction));
     memclrw(node, sizeof(ExceptionAction));
     if (condition == NULL) {
         if (complete) {
@@ -598,7 +598,7 @@ void CExcept_RegisterMemberArray(Statement *stmt, Object *object, SInt32 offset,
 {
     ExceptionAction *entry;
 
-    entry = (ExceptionAction *)CompilerTools_AllocatePool(sizeof(ExceptionAction));
+    entry = (ExceptionAction *)lalloc(sizeof(ExceptionAction));
     memclrw((unsigned char *)entry, sizeof(ExceptionAction));
     entry->kind = 9;
     entry->data.member_array.objectptr = object;
@@ -654,7 +654,7 @@ Statement *CExcept_ActionCleanup(ExceptionAction *cleanup, Statement *statement)
             deleteFunc = cleanup->data.local.dtor;
             deleteObject = cleanup->data.local.object;
             statement = CFunc_InsertAfterStatement(4, statement);
-            statement->expr = funccallexpr(deleteFunc, CExpr_New_EINDIRECT_Node(deleteObject), NULL, NULL, NULL);
+            statement->expr = funccallexpr(deleteFunc, create_objectnode2(deleteObject), NULL, NULL, NULL);
             statement->dobjstack = cleanup->next;
             break;
         case 5:
@@ -705,8 +705,8 @@ void append_namespace_names(NameSpace *p)
     for (; p; p = p->parent)
         if (p->name) {
             append_namespace_names(p->parent);
-            CompilerTools_AppendGListString(&data_00583548, p->name->name);
-            CompilerTools_AppendGListString(&data_00583548, "::");
+            AppendGListName(&data_00583548, p->name->name);
+            AppendGListName(&data_00583548, "::");
             return;
         }
 }
@@ -717,7 +717,7 @@ void fn_004e2940(TypeClass *exceptionData)
     char name[64];
 
     append_namespace_names(exceptionData->nspace->parent);
-    CompilerTools_AppendGListString(&data_00583548, exceptionData->classname->name);
+    AppendGListName(&data_00583548, exceptionData->classname->name);
     entry = exceptionData->nspace->parent;
     while (entry != NULL) {
         if (entry->is_global == 0 && entry->is_templ == 0 && entry->name == NULL) {
@@ -725,7 +725,7 @@ void fn_004e2940(TypeClass *exceptionData)
                 CError_FATAL(790);
             }
             sprintf(name, "*%lx*%lx*", &cscope_currentfunc, (int)&entry);
-            CompilerTools_AppendGListString(&data_00583548, name);
+            AppendGListName(&data_00583548, name);
             break;
         }
         entry = entry->parent;
@@ -764,7 +764,7 @@ ClassNode *add_class_and_bases(ClassNode *list, TypeClass *mostDerivedClass, Typ
             return list;
         }
     }
-    node = (ClassNode *)CompilerTools_AllocatePool(sizeof(*node));
+    node = (ClassNode *)lalloc(sizeof(*node));
     node->cls = cls;
     node->offset = offset;
     node->flagc = isVirtual;
@@ -780,7 +780,7 @@ ClassNode *add_class_and_bases(ClassNode *list, TypeClass *mostDerivedClass, Typ
             baseIsPublic = 1;
         if (base->is_virtual != 0) {
             list = add_class_and_bases(list, mostDerivedClass, base->base,
-                                       CClass_FindVBaseOffset(mostDerivedClass, base->base), 1, baseIsPublic);
+                                       CClass_VirtualBaseOffset(mostDerivedClass, base->base), 1, baseIsPublic);
         } else {
             list = add_class_and_bases(list, mostDerivedClass, base->base, offset + base->offset, 0, baseIsPublic);
         }
@@ -798,7 +798,7 @@ void emit_flagged_class_offsets(TypeClass *type)
             AppendGListByte(&data_00583548, 33);
             if ((UInt32)node->offset != 0U) {
                 sprintf(buf, "%ld!", node->offset);
-                CompilerTools_AppendGListString(&data_00583548, buf);
+                AppendGListName(&data_00583548, buf);
             } else {
                 AppendGListByte(&data_00583548, 33);
             }
@@ -848,7 +848,7 @@ ENode *create_type_stringconst(Type *type, UInt32 qualifiers, Boolean flag)
 
     AppendGListByte(&data_00583548, 0);
 
-    node = (ENode *)CompilerTools_AllocatePool(sizeof(ENode));
+    node = (ENode *)lalloc(sizeof(ENode));
     node->type = ESTRINGCONST;
     node->cost = 0;
     node->flags = 0;
@@ -881,7 +881,7 @@ void CExcept_ScanExceptionSpecification(TypeFunc *func)
             if (decl.storageclass != 0)
                 CError_ReportError(ERR_ILLEGAL_STORAGE_CLASS);
             CError_ReportIllegalFlags(decl.qual & ~(Q_CV | Q_PASCAL | Q_ALIGNED_MASK));
-            CDecl_ParseDeclarator(&decl);
+            scandeclarator(&decl);
             if (decl.name != NULL)
                 CError_ReportError(ERR_ILLEGAL_TYPE);
             if (decl.thetype->type == TYPEPOINTER) {
@@ -937,19 +937,19 @@ ENode *create_call_with_arg_and_default_args(Object *func, TypeClass *cls, ENode
 
     if (cls->flags & CLASS_HAS_VBASES) {
         CError_ASSERT(1102, (fa = fa->next) != 0);
-        list->next = (ENodeList *)CompilerTools_AllocatePool(8);
+        list->next = (ENodeList *)lalloc(8);
         list = list->next;
         list->next = NULL;
         list->node = intconstnode((Type *)&stsignedshort, 1);
     }
 
-    list->next = (ENodeList *)CompilerTools_AllocatePool(8);
+    list->next = (ENodeList *)lalloc(8);
     p = list->next;
     p->next = NULL;
     p->node = arg;
     while ((fa = fa->next) != NULL) {
         CError_ASSERT(1118, fa->dexpr != 0);
-        p->next = (ENodeList *)CompilerTools_AllocatePool(8);
+        p->next = (ENodeList *)lalloc(8);
         p = p->next;
         p->next = NULL;
         p->node = fn_00513040(fa->dexpr, 0);
@@ -1029,7 +1029,7 @@ void CException_004e1fb0(Statement *firstScope, Statement *insertionScope, State
 
     if (entries != NULL) {
         do {
-            entry = (ExceptionAction *)CompilerTools_AllocatePool(sizeof(ExceptionAction));
+            entry = (ExceptionAction *)lalloc(sizeof(ExceptionAction));
             memclrw(entry, sizeof(ExceptionAction));
             entry->next = replacementList;
             replacementList = entry;
@@ -1073,7 +1073,7 @@ void CException_004e1fb0(Statement *firstScope, Statement *insertionScope, State
         if (scope == lastScope)
             break;
         if (scope == insertionScope) {
-            ExceptionAction *scopeEntry = (ExceptionAction *)CompilerTools_AllocatePool(sizeof(ExceptionAction));
+            ExceptionAction *scopeEntry = (ExceptionAction *)lalloc(sizeof(ExceptionAction));
             memclrw(scopeEntry, sizeof(ExceptionAction));
             scopeEntry->next = originalList;
             scopeEntry->kind = 0xe;
@@ -1110,7 +1110,7 @@ ENode *create_catch_object_init(DeclInfo *info, ExceptionHandlerRecord *args)
     monad->rtype = CDecl_NewPointerType(info->thetype);
 
     if (info->thetype->type == TYPEPOINTER && (TYPE_POINTER(info->thetype)->qual & Q_REFERENCE) != 0) {
-        return makediadicnode(CExpr_New_EINDIRECT_Node(obj), monad, EASS);
+        return makediadicnode(create_objectnode2(obj), monad, EASS);
     }
 
     if (info->thetype->type == TYPECLASS) {
@@ -1149,7 +1149,7 @@ void CExcept_ScanTryBlock(void *context, char rethrow)
         CError_ReportError(ERR_EXCEPTION_HANDLING_OPTION_DISABLED);
 
     exceptionObject = create_temp_object(&exception_temp_object_type);
-    if (data_005884fa != 0) {
+    if (cexcept_magic != 0) {
         exceptionObject->name = GetHashNameNode("__exception_magic");
         CScope_AddObject(cscope_current, exceptionObject->name, (ObjBase *)exceptionObject);
     }
@@ -1166,7 +1166,7 @@ void CExcept_ScanTryBlock(void *context, char rethrow)
         CError_ReportError(ERR_LBRACE_EXPECTED);
         return;
     }
-    CFunc_ParseScopedStatement(context);
+    CFunc_CompoundStatement(context);
     if (tk != TK_CATCH) {
         CError_ReportError(ERR_CATCH_EXPECTED);
         return;
@@ -1188,7 +1188,7 @@ void CExcept_ScanTryBlock(void *context, char rethrow)
         cleanup = NULL;
         lastStatement->label->stmt = lastStatement;
 
-        handler = (ExceptionHandlerRecord *)CompilerTools_AllocatePool(sizeof(*handler));
+        handler = (ExceptionHandlerRecord *)lalloc(sizeof(*handler));
         memclrw(handler, sizeof(*handler));
         handler->previous = previous;
         previous = handler;
@@ -1211,7 +1211,7 @@ void CExcept_ScanTryBlock(void *context, char rethrow)
             if (declaration.storageclass != 0)
                 CError_ReportError(ERR_ILLEGAL_STORAGE_CLASS);
             CError_ReportIllegalFlags(declaration.qual & 0xe1fffff4u);
-            CDecl_ParseDeclarator(&declaration);
+            scandeclarator(&declaration);
             if (declaration.thetype->type == TYPEFUNC)
                 declaration.thetype = CDecl_NewPointerType(declaration.thetype);
             else if (declaration.thetype->type == TYPEARRAY)
@@ -1223,7 +1223,7 @@ void CExcept_ScanTryBlock(void *context, char rethrow)
             handler->exceptionType = declaration.thetype;
             handler->declarationData = declaration.qual;
             if (declaration.name != NULL) {
-                cleanup = fn_0047cb60();
+                cleanup = CFunc_NewDeclBlock();
                 initializer = create_catch_object_init(&declaration, handler);
                 lastStatement = CFunc_AppendStatement(4);
                 lastStatement->expr = initializer;
@@ -1239,14 +1239,14 @@ void CExcept_ScanTryBlock(void *context, char rethrow)
             CError_ReportError(ERR_LBRACE_EXPECTED);
             break;
         }
-        CFunc_ParseScopedStatement(context);
+        CFunc_CompoundStatement(context);
         if (rethrow != 0) {
             lastStatement = CFunc_AppendStatement(4);
             lastStatement->expr = funccallexpr(throw_func, nullnode(), nullnode(), nullnode(), NULL);
         }
         handler->handlerEnd = lastStatement;
         if (cleanup != NULL)
-            PPCError_RestoreGlobalValues(cleanup);
+            CFunc_RestoreBlock(cleanup);
         if (tk != TK_CATCH)
             break;
         {
@@ -1330,7 +1330,7 @@ void lower_newexception(ENode *node, Boolean useExpression)
         initialStatement = InsertPrevStatement(ST_EXPRESSION);
         initialStatement->expr = makediadicnode(create_objectnode(cleanupFlag), intconstnode((Type *)&stchar, 0), EASS);
         data_00581c36 = initialStatement;
-        cleanup = (ExceptionAction *)CompilerTools_AllocatePool(sizeof(ExceptionAction));
+        cleanup = (ExceptionAction *)lalloc(sizeof(ExceptionAction));
         cleanup->next = currentDobjstack;
         currentDobjstack = cleanup;
         cleanup->kind = 0xc;
@@ -1368,7 +1368,7 @@ void lower_newexception(ENode *node, Boolean useExpression)
         }
         statement = CFunc_InsertAfterStatement(ST_EXPRESSION, statement);
         statement->expr = node->data.newexception.tryexpr;
-        cleanup = (ExceptionAction *)CompilerTools_AllocatePool(sizeof(ExceptionAction));
+        cleanup = (ExceptionAction *)lalloc(sizeof(ExceptionAction));
         cleanup->next = currentDobjstack;
         cleanup->kind = 0xa;
         cleanup->data.delete_pointer.pointer = node->data.newexception.pointertemp;
@@ -1423,7 +1423,7 @@ ENode *rewrite_funccall_temporaries(ENode *node, Boolean reverse)
                 count++;
                 argument = argument->next;
             }
-            reverseArgs = CompilerTools_AllocatePool(count * sizeof(ENodeList *));
+            reverseArgs = lalloc(count * sizeof(ENodeList *));
             argument = node->data.funccall.args;
             index = 0;
             while (argument != NULL) {
@@ -1440,7 +1440,7 @@ ENode *rewrite_funccall_temporaries(ENode *node, Boolean reverse)
                     argument->node = fn_004e1050(argument->node);
             }
         }
-        temporary = CompilerTools_AllocatePool(sizeof(TemporaryObject));
+        temporary = lalloc(sizeof(TemporaryObject));
         temporary->next = temporary_object_list;
         temporary_object_list = temporary;
 
@@ -1473,14 +1473,14 @@ ENode *rewrite_funccall_temporaries(ENode *node, Boolean reverse)
             statement->expr = makediadicnode(create_objectnode(temporary->initializationFlag),
                                              intconstnode((Type *)&stchar, 0), EASS);
             data_00581c36 = statement;
-            cleanup = CompilerTools_AllocatePool(sizeof(ExceptionAction));
+            cleanup = lalloc(sizeof(ExceptionAction));
             cleanup->next = currentDobjstack;
             currentDobjstack = cleanup;
             cleanup->kind = 2;
             cleanup->data.local_cond.object = temporary->object;
             cleanup->data.local_cond.dtor = CABI_GetDestructorObject(temporary->classObject, 1);
             cleanup->data.local_cond.cond = temporary->initializationFlag;
-            cleanupCopy = CompilerTools_AllocatePool(sizeof(ExceptionAction));
+            cleanupCopy = lalloc(sizeof(ExceptionAction));
             *cleanupCopy = *currentDobjstack;
             cleanupCopy->next = current_dobjstack;
             current_dobjstack = cleanupCopy;
@@ -1488,17 +1488,17 @@ ENode *rewrite_funccall_temporaries(ENode *node, Boolean reverse)
             statement = NewTemporaryStatement();
             statement->expr = node;
             data_00581c36 = statement;
-            cleanup = CompilerTools_AllocatePool(sizeof(ExceptionAction));
+            cleanup = lalloc(sizeof(ExceptionAction));
             cleanup->next = currentDobjstack;
             currentDobjstack = cleanup;
             cleanup->kind = 1;
             cleanup->data.local.object = temporary->object;
             cleanup->data.local.dtor = CABI_GetDestructorObject(temporary->classObject, 1);
-            cleanupCopy = CompilerTools_AllocatePool(sizeof(ExceptionAction));
+            cleanupCopy = lalloc(sizeof(ExceptionAction));
             *cleanupCopy = *currentDobjstack;
             cleanupCopy->next = current_dobjstack;
             current_dobjstack = cleanupCopy;
-            result = CompilerTools_AllocatePool(sizeof(ENode));
+            result = lalloc(sizeof(ENode));
             *result = *statement->expr;
             result->type = EOBJREF;
             result->data.objref = temporaryArg->node->data.objref;
@@ -1513,7 +1513,7 @@ ENode *rewrite_funccall_temporaries(ENode *node, Boolean reverse)
             count++;
             argument = argument->next;
         }
-        args = CompilerTools_AllocatePool(count * sizeof(ENodeList *));
+        args = lalloc(count * sizeof(ENodeList *));
         argument = node->data.funccall.args;
         index = 0;
         while (argument != NULL) {
@@ -1812,7 +1812,7 @@ void update_statement_dobjstacks(Statement *node)
             case ST_RETURN:
                 if (p->expr != NULL)
                     insert_temporary_object_destruction(
-                        p, 0, CMachine_FunctionRequiresMemoryReturn((TypeFunc *)cscope_currentfunc->type) != 1);
+                        p, 0, CMach_GetFunctionResultClass((TypeFunc *)cscope_currentfunc->type) != 1);
                 break;
         }
         p->dobjstack = currentDobjstack;
@@ -1839,7 +1839,7 @@ void setup_exception_specification(struct Statement *statements, struct ExceptSp
     ENode *expression;
     Statement *return_statement;
 
-    region = CompilerTools_AllocatePool(sizeof(*region));
+    region = lalloc(sizeof(*region));
     memclrw(region, sizeof(*region));
     region->kind = 0x0f;
     for (statement = statements; statement != NULL; statement = statement->next) {
@@ -1900,7 +1900,7 @@ void setup_exception_specification(struct Statement *statements, struct ExceptSp
     }
     assignment = CFunc_InsertAfterStatement(4, label_statement);
     assignment->expr = funccallexpr(data_00587654, create_objectrefnode(object), NULL, NULL, NULL);
-    object_region = CompilerTools_AllocatePool(sizeof(*object_region));
+    object_region = lalloc(sizeof(*object_region));
     memclrw(object_region, sizeof(*object_region));
     object_region->kind = 0x0e;
     object_region->data.active_catch.info = object;

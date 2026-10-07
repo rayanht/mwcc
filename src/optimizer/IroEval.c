@@ -139,7 +139,7 @@ SInt32 group_adjacent_compare_cases(IRONode *first, IRONode *last)
     count = 0;
     for (; node != last; node = node->nextnode)
         count++;
-    recs = (CompareCase *)CompilerTools_AllocatePoolMemory(++count * 0x1c);
+    recs = (CompareCase *)oalloc(++count * 0x1c);
     node = first;
     for (i = 0; i < count; i++) {
         recs[i].state = 0;
@@ -624,21 +624,21 @@ int IRO_ConstantFolding(void)
                             folded = 1;
                             break;
                         case EMUL:
-                            if (Type_IsUnsigned(node->rtype))
+                            if (is_unsigned(node->rtype))
                                 value.i = CInt64_MulU(leftValue.i, rightValue.i);
                             else
                                 value.i = CInt64_Mul(leftValue.i, rightValue.i);
                             folded = 1;
                             break;
                         case EDIV:
-                            if (Type_IsUnsigned(node->rtype))
+                            if (is_unsigned(node->rtype))
                                 value.i = CInt64_DivU(leftValue.i, rightValue.i);
                             else
                                 value.i = CInt64_Div(leftValue.i, rightValue.i);
                             folded = 1;
                             break;
                         case EMODULO:
-                            if (Type_IsUnsigned(node->rtype))
+                            if (is_unsigned(node->rtype))
                                 value.i = CInt64_ModU(leftValue.i, rightValue.i);
                             else
                                 value.i = CInt64_Mod(leftValue.i, rightValue.i);
@@ -649,7 +649,7 @@ int IRO_ConstantFolding(void)
                             folded = 1;
                             break;
                         case ESHR:
-                            if (Type_IsUnsigned(node->rtype))
+                            if (is_unsigned(node->rtype))
                                 value.i = CInt64_ShrU(leftValue.i, rightValue.i);
                             else
                                 value.i = CInt64_Shr(leftValue.i, rightValue.i);
@@ -668,28 +668,28 @@ int IRO_ConstantFolding(void)
                             folded = 1;
                             break;
                         case ELESS:
-                            if (Type_IsUnsigned(node->u.diadic.left->rtype))
+                            if (is_unsigned(node->u.diadic.left->rtype))
                                 CInt64_SetULong(&value.i, CInt64_LessU(leftValue.i, rightValue.i));
                             else
                                 CInt64_SetULong(&value.i, CInt64_Less(leftValue.i, rightValue.i));
                             folded = 1;
                             break;
                         case EGREATER:
-                            if (Type_IsUnsigned(node->u.diadic.left->rtype))
+                            if (is_unsigned(node->u.diadic.left->rtype))
                                 CInt64_SetULong(&value.i, CInt64_GreaterU(leftValue.i, rightValue.i));
                             else
                                 CInt64_SetULong(&value.i, CInt64_Greater(leftValue.i, rightValue.i));
                             folded = 1;
                             break;
                         case ELESSEQU:
-                            if (Type_IsUnsigned(node->u.diadic.left->rtype))
+                            if (is_unsigned(node->u.diadic.left->rtype))
                                 CInt64_SetULong(&value.i, CInt64_LessEqualU(leftValue.i, rightValue.i));
                             else
                                 CInt64_SetULong(&value.i, CInt64_LessEqual(leftValue.i, rightValue.i));
                             folded = 1;
                             break;
                         case EGREATEREQU:
-                            if (Type_IsUnsigned(node->u.diadic.left->rtype))
+                            if (is_unsigned(node->u.diadic.left->rtype))
                                 CInt64_SetULong(&value.i, CInt64_GreaterEqualU(leftValue.i, rightValue.i));
                             else
                                 CInt64_SetULong(&value.i, CInt64_GreaterEqual(leftValue.i, rightValue.i));
@@ -822,7 +822,7 @@ void convert_cint64_to_bitfield(CInt64 *val, Type *type, TypeBitfield *type2)
     val->lo &= work.lo;
     val->hi = 0;
 
-    if (!Type_IsUnsigned(type)) {
+    if (!is_unsigned(type)) {
         work2 = cint64_zero;
         for (j = 0; j <= i - 1; j++) {
             if (j == i - 1)
@@ -835,7 +835,7 @@ void convert_cint64_to_bitfield(CInt64 *val, Type *type, TypeBitfield *type2)
         }
     }
 
-    if (Type_IsUnsigned(type)) {
+    if (is_unsigned(type)) {
         switch (type->size) {
             case 1:
                 CInt64_ConvertUInt8(val);

@@ -62,7 +62,7 @@ static inline PCodeInstruction *spill_load(short reg, InterferenceNode *node)
     short opcode;
     Type *type;
     type = node->object->type;
-    opcode = type->size == 1 ? 21 : type->size == 2 ? (Type_IsUnsigned(type) ? 25 : 29) : 34;
+    opcode = type->size == 1 ? 21 : type->size == 2 ? (is_unsigned(type) ? 25 : 29) : 34;
     memclrw(&operand, 22);
     operand.kind = OpndType_Symbol;
     operand.object = node->object;
@@ -181,7 +181,7 @@ void SpillCode_InsertGPRSpillCode(PCodeBlock *block, PCodeInstruction *instructi
                 if (type->size == 1)
                     opcode = 21;
                 else if (type->size == 2) {
-                    if (Type_IsUnsigned(type) != 0)
+                    if (is_unsigned(type) != 0)
                         opcode = 25;
                     else
                         opcode = 29;

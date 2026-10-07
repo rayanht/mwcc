@@ -55,7 +55,7 @@ typedef struct CMOState CMOState;
 #define CM_TEST(bv, n) ((1 << ((n) & 31)) & (bv)[(n) >> 5])
 static UInt32 *CodeMotion_NewBits(int bit_count)
 {
-    return CompilerTools_AllocatePoolMemory(((bit_count + 31) >> 5) * sizeof(unsigned int));
+    return oalloc(((bit_count + 31) >> 5) * sizeof(unsigned int));
 }
 
 static CodeMotionObjectNode *FindNode(CodeMotionObjectNode *p, Object *key)
@@ -89,7 +89,7 @@ static void CodeMotion_SetBit(UInt32 *bits, int index)
 
 static void CodeMotion_LinkEntry(CodeMotionEntryLink **head, int entry_index)
 {
-    CodeMotionEntryLink *link = (CodeMotionEntryLink *)CompilerTools_AllocatePoolMemory(sizeof(*link));
+    CodeMotionEntryLink *link = (CodeMotionEntryLink *)oalloc(sizeof(*link));
 
     link->entry_index = entry_index;
     link->next = *head;
@@ -152,27 +152,22 @@ static unsigned char CMKind(Object *p)
 static inline void CMInit(void)
 {
     int count;
-    cm_entries = CompilerTools_AllocatePoolMemory(data_00587e38 * sizeof(CodeMotionEntry));
-    code_motion_entries = CompilerTools_AllocatePoolMemory(codeMotionEntryCount * sizeof(CodeMotionEntry));
-    code_motion_register_use_heads =
-        (void *)CompilerTools_AllocatePoolMemory(gUsedVirtualRegistersGPR * sizeof(CodeMotionEntryLink *));
-    code_motion_register_definition_heads =
-        (void *)CompilerTools_AllocatePoolMemory(gUsedVirtualRegistersGPR * sizeof(CodeMotionEntryLink *));
+    cm_entries = oalloc(data_00587e38 * sizeof(CodeMotionEntry));
+    code_motion_entries = oalloc(codeMotionEntryCount * sizeof(CodeMotionEntry));
+    code_motion_register_use_heads = (void *)oalloc(gUsedVirtualRegistersGPR * sizeof(CodeMotionEntryLink *));
+    code_motion_register_definition_heads = (void *)oalloc(gUsedVirtualRegistersGPR * sizeof(CodeMotionEntryLink *));
     for (count = 0; count < gUsedVirtualRegistersGPR; count++) {
         code_motion_register_use_heads[count] = NULL;
         code_motion_register_definition_heads[count] = NULL;
     }
-    codeMotionUseEntryHeads =
-        (void *)CompilerTools_AllocatePoolMemory(gUsedVirtualRegistersFPR * sizeof(CodeMotionEntryLink *));
-    data_00587f04 = (void *)CompilerTools_AllocatePoolMemory(gUsedVirtualRegistersFPR * sizeof(CodeMotionEntryLink *));
+    codeMotionUseEntryHeads = (void *)oalloc(gUsedVirtualRegistersFPR * sizeof(CodeMotionEntryLink *));
+    data_00587f04 = (void *)oalloc(gUsedVirtualRegistersFPR * sizeof(CodeMotionEntryLink *));
     for (count = 0; count < gUsedVirtualRegistersFPR; count++) {
         codeMotionUseEntryHeads[count] = NULL;
         data_00587f04[count] = NULL;
     }
-    register_use_entry_heads =
-        (void *)CompilerTools_AllocatePoolMemory(gUsedVirtualRegistersVR * sizeof(CodeMotionEntryLink *));
-    register_definition_heads =
-        (void *)CompilerTools_AllocatePoolMemory(gUsedVirtualRegistersVR * sizeof(CodeMotionEntryLink *));
+    register_use_entry_heads = (void *)oalloc(gUsedVirtualRegistersVR * sizeof(CodeMotionEntryLink *));
+    register_definition_heads = (void *)oalloc(gUsedVirtualRegistersVR * sizeof(CodeMotionEntryLink *));
     for (count = 0; count < gUsedVirtualRegistersVR; count++) {
         register_use_entry_heads[count] = NULL;
         register_definition_heads[count] = NULL;
@@ -779,8 +774,8 @@ PCodeBlock *clone_block_with_bridge(Loop *region, PCodeBlock *insertionPoint, PC
     PCodeBlockLink *successor;
     PCodeInstruction *instruction;
 
-    cloneBlock = CompilerTools_AllocatePool(sizeof(PCodeBlock));
-    bridgeBlock = CompilerTools_AllocatePool(sizeof(PCodeBlock));
+    cloneBlock = lalloc(sizeof(PCodeBlock));
+    bridgeBlock = lalloc(sizeof(PCodeBlock));
 
     cloneBlock->labels = NULL;
     cloneBlock->predecessors = cloneBlock->successors = NULL;
@@ -813,12 +808,12 @@ PCodeBlock *clone_block_with_bridge(Loop *region, PCodeBlock *insertionPoint, PC
     successor = insertionPoint->successors;
     replace_successor(insertionPoint, successor->payload.block, cloneBlock);
 
-    link = CompilerTools_AllocatePool(sizeof(PCodeBlockLink));
+    link = lalloc(sizeof(PCodeBlockLink));
     link->payload.block = bridgeBlock;
     link->next = cloneBlock->successors;
     cloneBlock->successors = link;
 
-    link = CompilerTools_AllocatePool(sizeof(PCodeBlockLink));
+    link = lalloc(sizeof(PCodeBlockLink));
     link->payload.block = cloneBlock;
     link->next = bridgeBlock->predecessors;
     bridgeBlock->predecessors = link;
@@ -832,7 +827,7 @@ PCodeBlock *clone_block_with_bridge(Loop *region, PCodeBlock *insertionPoint, PC
 
     PCode_AddSuccessor(cloneBlock, destination->labels);
 
-    link = CompilerTools_AllocatePool(sizeof(PCodeBlockLink));
+    link = lalloc(sizeof(PCodeBlockLink));
     link->payload.block = cloneBlock;
     link->next = destination->predecessors;
     destination->predecessors = link;
@@ -871,7 +866,7 @@ PCodeBlockLink *collect_single_successor_memberblocks(Loop *cm, PCodeBlock *cur)
         if (b->successors != NULL && b->successors->next != NULL)
             return NULL;
         {
-            PCodeBlockLink *node = (PCodeBlockLink *)CompilerTools_AllocatePoolMemory(8);
+            PCodeBlockLink *node = (PCodeBlockLink *)oalloc(8);
             node->payload.block = b;
             node->next = NULL;
             if (result != NULL)
@@ -927,7 +922,7 @@ void unswitch_loop(Loop *loop)
     if (block == NULL)
         return;
 
-    definitions = CompilerTools_AllocatePoolMemory(((codeMotionEntryCount + 31) >> 5) * sizeof(*definitions));
+    definitions = oalloc(((codeMotionEntryCount + 31) >> 5) * sizeof(*definitions));
     CodeMotion_AllocateBits(definitions, data_00587fe4[block->index].definition_sets[2], codeMotionEntryCount);
 
     for (candidate = loop->preheader->next->instructions; candidate != NULL; candidate = candidate->next) {
@@ -1036,7 +1031,7 @@ void unswitch_loop(Loop *loop)
         replace_successor(loop->preheader, target->value.label->target.block, newBlock);
         target->value.label = newBlock->labels;
 
-        newLoop = CompilerTools_AllocatePool(sizeof(*newLoop));
+        newLoop = lalloc(sizeof(*newLoop));
         newLoop->parent = loop->parent;
         newLoop->children = NULL;
         newLoop->sibling = loop->sibling;
@@ -1049,17 +1044,15 @@ void unswitch_loop(Loop *loop)
         newLoop->inductionUpdate = NULL;
         newLoop->execution_weight = loop->execution_weight;
 
-        CRTTI_FillWords(newLoop->memberblocks =
-                            CompilerTools_AllocatePool(((data_005871a4 + 31) >> 5) * sizeof(*newLoop->memberblocks)),
+        CRTTI_FillWords(newLoop->memberblocks = lalloc(((data_005871a4 + 31) >> 5) * sizeof(*newLoop->memberblocks)),
                         data_005871a4, 0);
-        CRTTI_FillWords(newLoop->exitblocks =
-                            CompilerTools_AllocatePool(((data_005871a4 + 31) >> 5) * sizeof(*newLoop->exitblocks)),
+        CRTTI_FillWords(newLoop->exitblocks = lalloc(((data_005871a4 + 31) >> 5) * sizeof(*newLoop->exitblocks)),
                         data_005871a4, 0);
-        CRTTI_FillWords(newLoop->block_membership = CompilerTools_AllocatePool(((data_005871a4 + 31) >> 5) *
-                                                                               sizeof(*newLoop->block_membership)),
+        CRTTI_FillWords(newLoop->block_membership =
+                            lalloc(((data_005871a4 + 31) >> 5) * sizeof(*newLoop->block_membership)),
                         data_005871a4, 0);
-        CRTTI_FillWords(newLoop->backedge_dominators = CompilerTools_AllocatePool(
-                            ((data_005871a4 + 31) >> 5) * sizeof(*newLoop->backedge_dominators)),
+        CRTTI_FillWords(newLoop->backedge_dominators =
+                            lalloc(((data_005871a4 + 31) >> 5) * sizeof(*newLoop->backedge_dominators)),
                         data_005871a4, 0);
 
         remove_block(loop, newLoop->body);
@@ -1113,7 +1106,7 @@ void move_instructions_to_preheader(Loop *node)
     int definition_index;
     int changed;
 
-    available_definitions = (UInt32 *)CompilerTools_AllocatePoolMemory(((codeMotionEntryCount + 0x1f) >> 5) << 2);
+    available_definitions = (UInt32 *)oalloc(((codeMotionEntryCount + 0x1f) >> 5) << 2);
     do {
         changed = 0;
         for (block_link = node->blocks; block_link != NULL; block_link = block_link->next) {
@@ -1228,7 +1221,7 @@ void CodeMotion_VisitLoops(void)
         visit_loops_postorder(data_0058763c);
         visit_leaf_loops(data_0058763c);
     }
-    CompilerTools_ResetPool();
+    freeoheap();
 }
 
 #pragma auto_inline off
@@ -1266,7 +1259,7 @@ void COpt_00524b20(Object *object)
         }
     }
 
-    node = (CodeMotionObjectNode *)CompilerTools_AllocatePoolMemory(sizeof(CodeMotionObjectNode));
+    node = (CodeMotionObjectNode *)oalloc(sizeof(CodeMotionObjectNode));
     node->right = NULL;
     node->left = node->right;
     node->object = object;
@@ -1489,7 +1482,7 @@ void build_use_definition_entries(int include_implicit)
                         use_entry->instruction = instruction;
                         use_entry->kind = operand->kind;
                         use_entry->value.reg = operand->value.reg;
-                        link = (CodeMotionEntryLink *)CompilerTools_AllocatePoolMemory(sizeof(CodeMotionEntryLink));
+                        link = (CodeMotionEntryLink *)oalloc(sizeof(CodeMotionEntryLink));
                         link->entry_index = use_index;
                         if (operand->kind == PCOp_GPR) {
                             link->next = code_motion_register_use_heads[operand->value.reg];
@@ -1508,7 +1501,7 @@ void build_use_definition_entries(int include_implicit)
                         definition_entry->instruction = instruction;
                         definition_entry->kind = operand->kind;
                         definition_entry->value.reg = operand->value.reg;
-                        link = (CodeMotionEntryLink *)CompilerTools_AllocatePoolMemory(sizeof(CodeMotionEntryLink));
+                        link = (CodeMotionEntryLink *)oalloc(sizeof(CodeMotionEntryLink));
                         link->entry_index = definition_index;
                         if (operand->kind == PCOp_GPR) {
                             link->next = code_motion_register_definition_heads[operand->value.reg];
@@ -1538,7 +1531,7 @@ void build_use_definition_entries(int include_implicit)
                             use_entry->kind = 5;
                             use_entry->is_implicit = 1;
                             use_entry->value.object = object;
-                            link = (CodeMotionEntryLink *)CompilerTools_AllocatePoolMemory(sizeof(CodeMotionEntryLink));
+                            link = (CodeMotionEntryLink *)oalloc(sizeof(CodeMotionEntryLink));
                             link->entry_index = use_index;
                             use_entry++;
                             link->next = object_node->use_entries;
@@ -1552,7 +1545,7 @@ void build_use_definition_entries(int include_implicit)
                     use_entry->kind = 5;
                     use_entry->is_implicit = 0;
                     use_entry->value.object = object;
-                    link = (CodeMotionEntryLink *)CompilerTools_AllocatePoolMemory(sizeof(CodeMotionEntryLink));
+                    link = (CodeMotionEntryLink *)oalloc(sizeof(CodeMotionEntryLink));
                     link->entry_index = use_index;
                     found = CodeMotion_FindObjectNode(object);
                     link->next = found->use_entries;
@@ -1567,7 +1560,7 @@ void build_use_definition_entries(int include_implicit)
                             definition_entry->kind = 5;
                             definition_entry->is_implicit = 1;
                             definition_entry->value.object = object;
-                            link = (CodeMotionEntryLink *)CompilerTools_AllocatePoolMemory(sizeof(CodeMotionEntryLink));
+                            link = (CodeMotionEntryLink *)oalloc(sizeof(CodeMotionEntryLink));
                             link->entry_index = definition_index;
                             definition_entry++;
                             link->next = object_node->definition_entries;
@@ -1581,7 +1574,7 @@ void build_use_definition_entries(int include_implicit)
                     definition_entry->kind = 5;
                     definition_entry->is_implicit = 0;
                     definition_entry->value.object = object;
-                    link = (CodeMotionEntryLink *)CompilerTools_AllocatePoolMemory(sizeof(CodeMotionEntryLink));
+                    link = (CodeMotionEntryLink *)oalloc(sizeof(CodeMotionEntryLink));
                     link->entry_index = definition_index;
                     found = CodeMotion_FindObjectNode(object);
                     link->next = found->definition_entries;
@@ -1605,7 +1598,7 @@ void build_use_definition_entries(int include_implicit)
                     use_entry->kind = 5;
                     use_entry->is_implicit = 1;
                     use_entry->value.object = object;
-                    link = (CodeMotionEntryLink *)CompilerTools_AllocatePoolMemory(sizeof(CodeMotionEntryLink));
+                    link = (CodeMotionEntryLink *)oalloc(sizeof(CodeMotionEntryLink));
                     link->entry_index = use_index;
                     use_entry++;
                     link->next = object_node->use_entries;
@@ -1615,7 +1608,7 @@ void build_use_definition_entries(int include_implicit)
                     definition_entry->kind = 5;
                     definition_entry->is_implicit = 1;
                     definition_entry->value.object = object;
-                    link = (CodeMotionEntryLink *)CompilerTools_AllocatePoolMemory(sizeof(CodeMotionEntryLink));
+                    link = (CodeMotionEntryLink *)oalloc(sizeof(CodeMotionEntryLink));
                     link->entry_index = definition_index;
                     definition_entry++;
                     link->next = object_node->definition_entries;
@@ -1884,8 +1877,7 @@ void COpt_SetLoopCodeMotionMode(int mode)
     assign_definition_and_use_starts(mode);
     build_use_definition_entries(mode);
 
-    data_00587fe4 = (struct CodeMotionDataflowState *)CompilerTools_AllocatePoolMemory(
-        gPCodeBlockCount * sizeof(struct CodeMotionDataflowState));
+    data_00587fe4 = (struct CodeMotionDataflowState *)oalloc(gPCodeBlockCount * sizeof(struct CodeMotionDataflowState));
     state = data_00587fe4;
     for (index = 0; index < gPCodeBlockCount; index++, state++) {
         state->definition_sets[0] = CodeMotion_NewBits(codeMotionEntryCount);

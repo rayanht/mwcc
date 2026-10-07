@@ -94,11 +94,11 @@ struct SwitchInfo {
 #pragma options align = reset
 extern void CFunc_Gen(Statement *context, Object *object, unsigned int options);
 extern void parse_ctor_initializers(void);
-extern void fn_00476e60(TypeClass *type);
+extern void CFunc_CheckClassCtors(TypeClass *type);
 extern NameSpace *CFunc_FuncGenSetup(Statement *stmt, Object *func);
 extern ObjectList *create_arg_object_list(FuncArg *arg);
 extern void CFunc_SetupNewFuncArgs(Object *func, FuncArg *args);
-extern void CFunc_ParseScopedStatement(struct StatementContext *context);
+extern void CFunc_CompoundStatement(struct StatementContext *context);
 extern ENode *initialize_argument_object(ENode *initData, Type *type, UInt32 flags);
 extern ENode *parse_declarations(char mode, int singleDeclaration, char allowEmpty, char stopAfterDeclaration);
 extern void register_destructor_object(Type *type, Object *object, long offset, long flags);
@@ -132,7 +132,7 @@ extern void CFunc_GenerateSingleExprFunc(Object *func, ENode *expr);
 extern UInt32 statement_sourceoffset;
 extern struct Statement *data_00587644;
 extern struct CLabel *clabels;
-extern struct ExceptionAction *UINT_00587fc4;
+extern struct ExceptionAction *cexcept_dobjstack;
 extern SInt32 current_statement_number;
 extern struct HashNameNode *blank_argument_name;
 extern struct CtorChain *ctor_initializers;
@@ -158,15 +158,15 @@ extern void CFunc_SetupLocalVarInfo(Object *object);
 extern unsigned char in_parameter_type_list;
 extern FileOffsetInfo function_fileinfo;
 
-/* fn_0047cb60 allocates 0xe bytes with CompilerTools_AllocatePool for this saved-state list node. */
+/* CFunc_NewDeclBlock allocates 0xe bytes with lalloc for this saved-state list node. */
 struct DeclBlock {
     struct DeclBlock *next;
     struct ExceptionAction *dobjstack;
     struct NameSpace *parent_nspace;
     UInt16 index;
 };
-extern void PPCError_RestoreGlobalValues(const struct DeclBlock *values);
-extern struct DeclBlock *fn_0047cb60(void);
+extern void CFunc_RestoreBlock(const struct DeclBlock *values);
+extern struct DeclBlock *CFunc_NewDeclBlock(void);
 
 #ifdef __cplusplus
 }

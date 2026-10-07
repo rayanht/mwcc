@@ -195,7 +195,7 @@ static VarInfo *new_varinfo(void)
 {
     VarInfo *info;
 
-    info = CompilerTools_AllocatePool(0x2c);
+    info = lalloc(0x2c);
     memclrw(info, 0x2c);
     info->usage = 0;
     info->deftoken = *CPrep_GetLastBufferedToken();
@@ -241,14 +241,14 @@ Object *CodeGen_AllocateTemporaryObject(Type *type)
         }
         entry = entry->next;
     }
-    object = (Object *)CompilerTools_AllocatePool(sizeof(*object));
+    object = (Object *)lalloc(sizeof(*object));
     memclrw(object, sizeof(*object));
     object->otype = OT_OBJECT;
     object->access = ACCESSPUBLIC;
     object->datatype = DLOCAL;
     object->type = type;
     object->name = (HashNameNode *)CParser_GetUniqueName();
-    info = (VarInfo *)CompilerTools_AllocatePool(sizeof(*info));
+    info = (VarInfo *)lalloc(sizeof(*info));
     memclrw(info, sizeof(*info));
     info->usage = 0;
     info->deftoken = *CPrep_GetLastBufferedToken();
@@ -261,7 +261,7 @@ Object *CodeGen_AllocateTemporaryObject(Type *type)
     info->in_param_area = 0;
     object->u.var.info = info;
     object->u.var.uid = 1;
-    newEntry = (struct TemporaryObjectEntry *)CompilerTools_AllocatePool(sizeof(*newEntry));
+    newEntry = (struct TemporaryObjectEntry *)lalloc(sizeof(*newEntry));
     memclrw(newEntry, sizeof(*newEntry));
     newEntry->next = temporary_objects;
     newEntry->object = object;
@@ -964,8 +964,8 @@ void emit_dlocal_initialization(Object *object, SInt16 reg)
                     emit_opcode_with_base_offset(PC_LBZ, registers->reg, stack_base_reg, object, 0);
                     break;
                 case 2:
-                    emit_opcode_with_base_offset(Type_IsUnsigned(type) ? PC_LHZ : PC_LHA, registers->reg,
-                                                 stack_base_reg, object, 0);
+                    emit_opcode_with_base_offset(is_unsigned(type) ? PC_LHZ : PC_LHA, registers->reg, stack_base_reg,
+                                                 object, 0);
                     break;
                 case 4:
                     emit_opcode_with_base_offset(PC_LWZ, registers->reg, stack_base_reg, object, 0);
@@ -1302,14 +1302,14 @@ void CodeGen_Generator(Statement *statements, Object *functionObject, Boolean co
     }
     gStackFrameSize = 0;
     argument = ((TypeFunc *)functionObject->type)->args;
-    while (argument != NULL && argument != &data_00583098)
+    while (argument != NULL && argument != &elipsis)
         argument = argument->next;
-    hasSentinelArgument = (Boolean)(argument == &data_00583098);
+    hasSentinelArgument = (Boolean)(argument == &elipsis);
     data_005882c0.record = NULL;
     return_operand.kind = 0;
     gStackFrameSize += StackFrameEABI_GetRecordSize(functionObject);
     classTypeUpdates = NULL;
-    if ((Boolean)(argument == &data_00583098))
+    if ((Boolean)(argument == &elipsis))
         fn_004aa580();
     CodeGen_AllocateArgumentSlots(functionObject, context, hasSentinelArgument);
     data_0058851f = 0;
@@ -1755,7 +1755,7 @@ void fn_00434660(Boolean initializationOptions)
     data_00587e34->name = InternCodeGenName("_f_utof");
     data_00588210->name = InternCodeGenName("_f_lltof");
     data_00587f9c->name = InternCodeGenName("_f_ulltof");
-    initialize_hash_name_globals();
+    CMach_ReInitRuntimeObjects();
     Intrinsics_InitRegistrations(initializationOptions);
 }
 

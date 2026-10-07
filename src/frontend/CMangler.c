@@ -50,7 +50,7 @@ static void MangleQualifiers(UInt32 q);
 
 static inline void appendObjectName(const void *name)
 {
-    CompilerTools_AppendGListString(&data_00583548, name);
+    AppendGListName(&data_00583548, name);
 }
 
 static inline unsigned int mangledNameHandle(void)
@@ -60,7 +60,7 @@ static inline unsigned int mangledNameHandle(void)
 
 static inline void appendMangledName(const void *name)
 {
-    CompilerTools_AppendGListString(&data_00583548, name);
+    AppendGListName(&data_00583548, name);
 }
 
 /* Compute (and cache) the link name of an object, following aliases. */
@@ -356,7 +356,7 @@ HashNameNode *CMangler_VTableName(TypeClass *entry)
     char **resultBuffer;
     HashNameNode *name;
     data_00583548.size = 0;
-    CompilerTools_AppendGListString(&data_00583548, "__vt__");
+    AppendGListName(&data_00583548, "__vt__");
     if (entry->classname == NULL)
         mangle_qualified_name(entry->nspace->parent, "class");
     else
@@ -377,8 +377,8 @@ HashNameNode *CMangler_RTTIObjectName(Type *type, unsigned int flags)
     HashNameNode *name;
 
     data_00583548.size = 0;
-    CompilerTools_AppendGListString(&data_00583548, "__RTTI__");
-    mangle_type(type, flags);
+    AppendGListName(&data_00583548, "__RTTI__");
+    CMangler_MangleType(type, flags);
     AppendGListByte(&data_00583548, 0);
     COS_LockHandle(data_00583548.data);
     buffer = data_00583548.data;
@@ -431,8 +431,8 @@ HashNameNode *CMangler_ThunkName(Object *input, int offset, int adjustment, int 
     } else {
         sprintf(buffer, "@%ld@%ld@%ld@", -offset, index, adjustment);
     }
-    CompilerTools_AppendGListString(&data_00583548, buffer);
-    AppendGListName(&data_00583548, name->name);
+    AppendGListName(&data_00583548, buffer);
+    AppendGListID(&data_00583548, name->name);
     COS_LockHandle(data_00583548.data);
     nameBuffer = data_00583548.data;
     result = GetHashNameNode(*nameBuffer);
@@ -468,7 +468,7 @@ HashNameNode *CMangler_TemplateInstanceName(HashNameNode *name, TemplArg *list)
     }
 
     data_00583548.size = 0;
-    CompilerTools_AppendGListString(&data_00583548, name->name);
+    AppendGListName(&data_00583548, name->name);
     AppendGListByte(&data_00583548, '<');
 
     for (argument = list; argument != NULL; argument = argument->next) {
@@ -479,12 +479,12 @@ HashNameNode *CMangler_TemplateInstanceName(HashNameNode *name, TemplArg *list)
                 switch (expression->type) {
                     case EINTCONST:
                         CInt64_PrintDec(decimal, expression->data.intval);
-                        CompilerTools_AppendGListString(&data_00583548, decimal);
+                        AppendGListName(&data_00583548, decimal);
                         break;
                     case EOBJREF:
                         AppendGListByte(&data_00583548, '&');
                         link = CMangler_LinkName(expression->data.objref);
-                        CompilerTools_AppendGListString(&data_00583548, link->name);
+                        AppendGListName(&data_00583548, link->name);
                         break;
                     default:
                         CError_FATAL(409);
@@ -493,7 +493,7 @@ HashNameNode *CMangler_TemplateInstanceName(HashNameNode *name, TemplArg *list)
                 AppendGListByte(&data_00583548, 'T');
             }
         } else {
-            mangle_type(argument->data.typeparam.type, argument->data.typeparam.qual);
+            CMangler_MangleType(argument->data.typeparam.type, argument->data.typeparam.qual);
         }
         if (argument->next != NULL)
             AppendGListByte(&data_00583548, ',');
@@ -539,12 +539,12 @@ void mangle_qualified_name(NameSpace *nameSpace, const char *name)
         part = parts[count];
         length = strlen(part);
         sprintf(lengthBuffer, "%d", length);
-        CompilerTools_AppendGListString(&data_00583548, lengthBuffer);
-        CompilerTools_AppendGListString(&data_00583548, part);
+        AppendGListName(&data_00583548, lengthBuffer);
+        AppendGListName(&data_00583548, part);
     }
 }
 
-void mangle_type(Type *type, UInt32 flags)
+void CMangler_MangleType(Type *type, UInt32 flags)
 {
     char arraySize[16];
     char nameLength[16];
@@ -568,34 +568,34 @@ void mangle_type(Type *type, UInt32 flags)
                     AppendGListByte(&data_00583548, 'w');
                     return;
                 case IT_UCHAR:
-                    CompilerTools_AppendGListString(&data_00583548, "Uc");
+                    AppendGListName(&data_00583548, "Uc");
                     return;
                 case IT_SCHAR:
-                    CompilerTools_AppendGListString(&data_00583548, "Sc");
+                    AppendGListName(&data_00583548, "Sc");
                     return;
                 case IT_SHORT:
                     AppendGListByte(&data_00583548, 's');
                     return;
                 case IT_USHORT:
-                    CompilerTools_AppendGListString(&data_00583548, "Us");
+                    AppendGListName(&data_00583548, "Us");
                     return;
                 case IT_INT:
                     AppendGListByte(&data_00583548, 'i');
                     return;
                 case IT_UINT:
-                    CompilerTools_AppendGListString(&data_00583548, "Ui");
+                    AppendGListName(&data_00583548, "Ui");
                     return;
                 case IT_LONG:
                     AppendGListByte(&data_00583548, 'l');
                     return;
                 case IT_ULONG:
-                    CompilerTools_AppendGListString(&data_00583548, "Ul");
+                    AppendGListName(&data_00583548, "Ul");
                     return;
                 case IT_LONGLONG:
                     AppendGListByte(&data_00583548, 'x');
                     return;
                 case IT_ULONGLONG:
-                    CompilerTools_AppendGListString(&data_00583548, "Ux");
+                    AppendGListName(&data_00583548, "Ux");
                     return;
                 case IT_FLOAT:
                     AppendGListByte(&data_00583548, 'f');
@@ -625,12 +625,12 @@ void mangle_type(Type *type, UInt32 flags)
                 AppendGListByte(&data_00583548, 'R');
             else
                 AppendGListByte(&data_00583548, 'P');
-            mangle_type(TYPE_POINTER(type)->target, flags);
+            CMangler_MangleType(TYPE_POINTER(type)->target, flags);
             return;
         case TYPEMEMBERPOINTER: {
             TypeClass *memberClass;
             if (TYPE_MEMBER_POINTER(type)->ty2->type != TYPECLASS) {
-                CompilerTools_AppendGListString(&data_00583548, "3<T>");
+                AppendGListName(&data_00583548, "3<T>");
                 return;
             }
             MangleQualifiers(TYPE_MEMBER_POINTER(type)->qual);
@@ -640,80 +640,80 @@ void mangle_type(Type *type, UInt32 flags)
                 mangle_qualified_name(memberClass->nspace->parent, "class");
             else
                 mangle_qualified_name(memberClass->nspace->parent, memberClass->nspace->name->name);
-            mangle_type(TYPE_MEMBER_POINTER(type)->ty1, flags);
+            CMangler_MangleType(TYPE_MEMBER_POINTER(type)->ty1, flags);
             return;
         }
         case TYPEARRAY:
             AppendGListByte(&data_00583548, 'A');
             if (ElemSize(TYPE_POINTER(type)) != 0) {
                 sprintf(arraySize, "%ld", type->size / ElemSize(TYPE_POINTER(type)));
-                CompilerTools_AppendGListString(&data_00583548, arraySize);
+                AppendGListName(&data_00583548, arraySize);
             } else {
                 AppendGListByte(&data_00583548, '0');
             }
             AppendGListByte(&data_00583548, '_');
-            mangle_type(TPTR_TARGET(type), flags);
+            CMangler_MangleType(TPTR_TARGET(type), flags);
             return;
         case TYPEFUNC:
             MangleQualifiers(flags);
             AppendGListByte(&data_00583548, 'F');
             mangle_args(TYPE_FUNC(type)->args);
             AppendGListByte(&data_00583548, '_');
-            mangle_type(TYPE_FUNC(type)->functype, TYPE_FUNC(type)->qual);
+            CMangler_MangleType(TYPE_FUNC(type)->functype, TYPE_FUNC(type)->qual);
             return;
         case TYPESTRUCT: {
             TypeStruct *structType = TYPE_STRUCT(type);
             MangleQualifiers(flags);
             switch (structType->stype) {
                 case 4:
-                    CompilerTools_AppendGListString(&data_00583548, "XUc");
+                    AppendGListName(&data_00583548, "XUc");
                     return;
                 case 5:
-                    CompilerTools_AppendGListString(&data_00583548, "Xc");
+                    AppendGListName(&data_00583548, "Xc");
                     return;
                 case 6:
-                    CompilerTools_AppendGListString(&data_00583548, "XC");
+                    AppendGListName(&data_00583548, "XC");
                     return;
                 case 7:
-                    CompilerTools_AppendGListString(&data_00583548, "XUs");
+                    AppendGListName(&data_00583548, "XUs");
                     return;
                 case 8:
-                    CompilerTools_AppendGListString(&data_00583548, "Xs");
+                    AppendGListName(&data_00583548, "Xs");
                     return;
                 case 9:
-                    CompilerTools_AppendGListString(&data_00583548, "XS");
+                    AppendGListName(&data_00583548, "XS");
                     return;
                 case 10:
-                    CompilerTools_AppendGListString(&data_00583548, "XUi");
+                    AppendGListName(&data_00583548, "XUi");
                     return;
                 case 11:
-                    CompilerTools_AppendGListString(&data_00583548, "Xi");
+                    AppendGListName(&data_00583548, "Xi");
                     return;
                 case 12:
-                    CompilerTools_AppendGListString(&data_00583548, "XI");
+                    AppendGListName(&data_00583548, "XI");
                     return;
                 case 13:
-                    CompilerTools_AppendGListString(&data_00583548, "Xf");
+                    AppendGListName(&data_00583548, "Xf");
                     return;
                 case 14:
-                    CompilerTools_AppendGListString(&data_00583548, "Xp");
+                    AppendGListName(&data_00583548, "Xp");
                     return;
             }
             if (structType->name != NULL && !CParser_IsNullOrAtOrDollarPrefixedName(structType->name)) {
                 char *name = structType->name->name;
                 sprintf(nameLength, "%d", strlen(name));
-                CompilerTools_AppendGListString(&data_00583548, nameLength);
-                CompilerTools_AppendGListString(&data_00583548, name);
+                AppendGListName(&data_00583548, nameLength);
+                AppendGListName(&data_00583548, name);
             } else {
                 switch (structType->stype) {
                     case 0:
-                        CompilerTools_AppendGListString(&data_00583548, "struct");
+                        AppendGListName(&data_00583548, "struct");
                         return;
                     case 1:
-                        CompilerTools_AppendGListString(&data_00583548, "union");
+                        AppendGListName(&data_00583548, "union");
                         return;
                     case 2:
-                        CompilerTools_AppendGListString(&data_00583548, "class");
+                        AppendGListName(&data_00583548, "class");
                         return;
                     default:
                         CError_FATAL(626);
@@ -729,7 +729,7 @@ void mangle_type(Type *type, UInt32 flags)
                 mangle_qualified_name(TYPE_CLASS(type)->nspace->parent, TYPE_CLASS(type)->nspace->name->name);
             return;
         case TYPETEMPLATE:
-            CompilerTools_AppendGListString(&data_00583548, "1T");
+            AppendGListName(&data_00583548, "1T");
             return;
         default:
             CError_FATAL(641);
@@ -753,7 +753,7 @@ static void MangleQualifiers(UInt32 q)
 void fn_004c2ac0(Type *type, SInt32 flag)
 {
     data_00583548.size = 0;
-    mangle_type(type, flag);
+    CMangler_MangleType(type, flag);
 }
 
 void mangle_args(FuncArg *args)
@@ -763,13 +763,13 @@ void mangle_args(FuncArg *args)
     if (args != NULL) {
         if (args->type != NULL) {
             while (args != NULL) {
-                if (args != &data_00583098 && args != &data_00584748) {
+                if (args != &elipsis && args != &oldstyle) {
                     if (args->type->type == TYPEPOINTER) {
                         tptr = *TYPE_POINTER(args->type);
                         tptr.qual &= ~Q_CV;
-                        mangle_type(TYPE(&tptr), args->qual);
+                        CMangler_MangleType(TYPE(&tptr), args->qual);
                     } else {
-                        mangle_type(args->type, 0);
+                        CMangler_MangleType(args->type, 0);
                     }
                 } else {
                     AppendGListByte(&data_00583548, 0x65);
@@ -790,8 +790,8 @@ void mangle_function_name(HashNameNode *name, NameSpace *chain, Type *func)
     FuncArg *arg;
     UInt32 qual;
 
-    CompilerTools_AppendGListString(&data_00583548, name->name);
-    CompilerTools_AppendGListString(&data_00583548, "__");
+    AppendGListName(&data_00583548, name->name);
+    AppendGListName(&data_00583548, "__");
 
     while (chain != NULL && chain->name == NULL)
         chain = chain->parent;
@@ -800,7 +800,7 @@ void mangle_function_name(HashNameNode *name, NameSpace *chain, Type *func)
         mangle_qualified_name(chain->parent, chain->name->name);
         if ((cls = chain->theclass) != NULL) {
             if (name == destructor_name) {
-                CompilerTools_AppendGListString(&data_00583548, "Fv");
+                AppendGListName(&data_00583548, "Fv");
                 return;
             }
 
@@ -833,8 +833,8 @@ HashNameNode *CMangler_ConversionFuncName(Type *type, UInt32 qual)
     char **buffer;
     HashNameNode *name;
     data_00583548.size = 0;
-    CompilerTools_AppendGListString(&data_00583548, "__op");
-    mangle_type(type, qual);
+    AppendGListName(&data_00583548, "__op");
+    CMangler_MangleType(type, qual);
     AppendGListByte(&data_00583548, 0);
     COS_LockHandle(data_00583548.data);
     buffer = data_00583548.data;
@@ -902,7 +902,7 @@ HashNameNode *CMangler_GetCovariantFunctionName(Object *object, Type *type)
     data_00583548.size = 0;
     appendMangledName(result->name);
     appendMangledName((unsigned char *)"@@");
-    mangle_type(type, 0);
+    CMangler_MangleType(type, 0);
     AppendGListByte(&data_00583548, 0);
     COS_LockHandle(data_00583548.data);
     buffer = data_00583548.data;
@@ -923,12 +923,12 @@ HashNameNode *get_object_link_name(Object *object)
     if (!scope)
         return object->name;
 
-    CompilerTools_AppendGListData(&data_00583548, "", 0);
+    AppendGListData(&data_00583548, "", 0);
     appendObjectName(object->name->name);
     while (scope && !scope->name)
         scope = scope->parent;
     if (scope && (object->qual & Q_MANGLE_NAME)) {
-        CompilerTools_AppendGListString(&data_00583548, "__");
+        AppendGListName(&data_00583548, "__");
         mangle_qualified_name(scope->parent, scope->name->name);
     }
     AppendGListByte(&data_00583548, 0);

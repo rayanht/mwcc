@@ -178,7 +178,7 @@ void IRO_CopyAndConstantPropagation(void)
                 variableId = IroVars_GetOperandVarRecord(instruction);
                 if (variableId != NULL) {
                     IroDump_Print("Found propagatable assignment at: %d\n", instruction->index);
-                    definition = (ReplacementCandidate *)CompilerTools_AllocatePoolMemory(sizeof(ReplacementCandidate));
+                    definition = (ReplacementCandidate *)oalloc(sizeof(ReplacementCandidate));
                     definition->node = instruction;
                     definition->next = NULL;
                     propagationIndex = propagationIndex + 1;
@@ -438,8 +438,7 @@ void IroPropagate_PropagateExpressions(void)
                 candidateRegister = IroVars_GetOperandVarRecord(node);
                 if (candidateRegister != NULL) {
                     IroDump_Print("Found propagatable expression assignment at: %d\n", node->index);
-                    newCandidate =
-                        (ReplacementCandidate *)CompilerTools_AllocatePoolMemory(sizeof(ReplacementCandidate));
+                    newCandidate = (ReplacementCandidate *)oalloc(sizeof(ReplacementCandidate));
                     newCandidate->node = node;
                     newCandidate->next = NULL;
                     propagationIndex += 1;
@@ -665,7 +664,7 @@ int initialize_node_range(IROLinear *record)
             record->range = NULL;
             break;
         case EINTCONST:
-            storage = (ERange *)CompilerTools_AllocatePoolMemory(18);
+            storage = (ERange *)oalloc(18);
             storage->type = 0;
             record->range = storage;
             operand = record->u.node;
@@ -676,7 +675,7 @@ int initialize_node_range(IROLinear *record)
             break;
         case EFLOATCONST:
         case ESTRINGCONST:
-            emptyStorage = (ERange *)CompilerTools_AllocatePoolMemory(18);
+            emptyStorage = (ERange *)oalloc(18);
             emptyStorage->type = 0;
             record->range = emptyStorage;
     }

@@ -61,8 +61,8 @@ void fn_00521950(void)
     PCodeInstruction *inst;
     int n;
 
-    add_propagation_entry_counts = (int *)CompilerTools_AllocatePoolMemory(gPCodeBlockCount << 2);
-    add_propagation_block_bit_indices = (int *)CompilerTools_AllocatePoolMemory(gPCodeBlockCount << 2);
+    add_propagation_entry_counts = (int *)oalloc(gPCodeBlockCount << 2);
+    add_propagation_block_bit_indices = (int *)oalloc(gPCodeBlockCount << 2);
     add_propagation_entry_count = 0;
     for (b = gPCodeBlocks; b != (PCodeBlock *)0x0; b = b->next) {
         add_propagation_block_bit_indices[b->index] = add_propagation_entry_count;
@@ -98,9 +98,8 @@ void build_add_propagation_entries(void)
     struct CodeMotionEntry *d;
     struct CodeMotionEntry *us;
 
-    add_propagation_entries =
-        (struct AddPropagationEntry *)CompilerTools_AllocatePoolMemory(add_propagation_entry_count << 3);
-    bits = (UInt32 *)CompilerTools_AllocatePoolMemory(((data_00587e38 + 0x1f) >> 5) << 2);
+    add_propagation_entries = (struct AddPropagationEntry *)oalloc(add_propagation_entry_count << 3);
+    bits = (UInt32 *)oalloc(((data_00587e38 + 0x1f) >> 5) << 2);
     for (block = gPCodeBlocks; block != NULL; block = block->next) {
         if (add_propagation_entry_counts[block->index] != 0) {
             CodeMotion_AllocateBits(bits, data_00587fe4[block->index].use_sets[3], data_00587e38);
@@ -118,7 +117,7 @@ void build_add_propagation_entries(void)
                         out->list = NULL;
                         for (u = code_motion_register_use_heads[reg]; u != NULL; u = u->next) {
                             if (bits[u->entry_index >> 5] & (1 << (u->entry_index & 0x1f))) {
-                                e = (CodeMotionEntryLink *)CompilerTools_AllocatePoolMemory(8);
+                                e = (CodeMotionEntryLink *)oalloc(8);
                                 e->entry_index = u->entry_index;
                                 e->next = out->list;
                                 out->list = e;
@@ -135,7 +134,7 @@ void build_add_propagation_entries(void)
                         out->list = NULL;
                         for (u = code_motion_register_use_heads[reg]; u != NULL; u = u->next) {
                             if (bits[u->entry_index >> 5] & (1 << (u->entry_index & 0x1f))) {
-                                e = (CodeMotionEntryLink *)CompilerTools_AllocatePoolMemory(8);
+                                e = (CodeMotionEntryLink *)oalloc(8);
                                 e->entry_index = u->entry_index;
                                 e->next = out->list;
                                 out->list = e;
@@ -458,14 +457,13 @@ void COpt_AddPropagation(void)
         if (add_propagation_entry_count > 0) {
             COpt_SetLoopCodeMotionMode(0);
             build_add_propagation_entries();
-            addPropagationBlockBits =
-                CompilerTools_AllocatePoolMemory(gPCodeBlockCount * sizeof(*addPropagationBlockBits));
+            addPropagationBlockBits = oalloc(gPCodeBlockCount * sizeof(*addPropagationBlockBits));
             blockBits = addPropagationBlockBits;
             for (blockIndex = 0; gPCodeBlockCount > blockIndex; blockIndex++) {
-                blockBits->gen = CompilerTools_AllocatePoolMemory((add_propagation_entry_count + 31) >> 5 << 2);
-                blockBits->kill = CompilerTools_AllocatePoolMemory((add_propagation_entry_count + 31) >> 5 << 2);
-                blockBits->in = CompilerTools_AllocatePoolMemory((add_propagation_entry_count + 31) >> 5 << 2);
-                blockBits->out = CompilerTools_AllocatePoolMemory((add_propagation_entry_count + 31) >> 5 << 2);
+                blockBits->gen = oalloc((add_propagation_entry_count + 31) >> 5 << 2);
+                blockBits->kill = oalloc((add_propagation_entry_count + 31) >> 5 << 2);
+                blockBits->in = oalloc((add_propagation_entry_count + 31) >> 5 << 2);
+                blockBits->out = oalloc((add_propagation_entry_count + 31) >> 5 << 2);
                 blockBits++;
             }
             fn_00521480();
@@ -480,7 +478,7 @@ void COpt_AddPropagation(void)
                     propagate_add_operands(blockIndex);
             }
         }
-        CompilerTools_ResetPool();
+        freeoheap();
         iteration++;
     } while (copts.deleteDeadInstructions >= 4 && addPropagationChanged != 0 && iteration < 3);
 }

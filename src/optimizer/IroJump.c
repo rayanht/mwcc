@@ -296,7 +296,7 @@ int IRO_RemoveLabels(void)
 
 void IroJump_ConvertCInt64ToType(CInt64 *value, Type *type)
 {
-    if (Type_IsUnsigned(type)) {
+    if (is_unsigned(type)) {
         switch (type->size) {
             case 1:
                 CInt64_ConvertUInt8(value);

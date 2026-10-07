@@ -68,9 +68,8 @@ void CopyPropagation_CountBlockCopies(void)
     PCodeInstruction *instruction;
     PCodeBlock *block;
     int count;
-    block_copy_counts = (UInt32 *)CompilerTools_AllocatePoolMemory(gPCodeBlockCount * sizeof(*block_copy_counts));
-    blockCopyStartIndices =
-        (SInt32 *)CompilerTools_AllocatePoolMemory(gPCodeBlockCount * sizeof(*blockCopyStartIndices));
+    block_copy_counts = (UInt32 *)oalloc(gPCodeBlockCount * sizeof(*block_copy_counts));
+    blockCopyStartIndices = (SInt32 *)oalloc(gPCodeBlockCount * sizeof(*blockCopyStartIndices));
     copyCount = 0;
     for (block = gPCodeBlocks; block != NULL; block = block->next) {
         blockCopyStartIndices[block->index] = copyCount;
@@ -99,8 +98,8 @@ void CopyPropagation_BuildCodeMotionRecords(void)
     SInt32 useIndex;
     SInt32 definitionIndex;
 
-    code_motion_records = CompilerTools_AllocatePoolMemory(copyCount * sizeof(CodeMotionRec));
-    bits = (UInt32 *)CompilerTools_AllocatePoolMemory(((data_00587e38 + 31) >> 5) * sizeof(UInt32));
+    code_motion_records = oalloc(copyCount * sizeof(CodeMotionRec));
+    bits = (UInt32 *)oalloc(((data_00587e38 + 31) >> 5) * sizeof(UInt32));
     for (block = gPCodeBlocks; block != NULL; block = block->next) {
         if (block_copy_counts[block->index] == 0)
             continue;
@@ -124,8 +123,7 @@ void CopyPropagation_BuildCodeMotionRecords(void)
                         link = register_use_entry_heads[reg];
                     for (; link != NULL; link = link->next) {
                         if ((1 << (link->entry_index & 31)) & bits[link->entry_index >> 5]) {
-                            CodeMotionListNode *listNode =
-                                (CodeMotionListNode *)CompilerTools_AllocatePoolMemory(sizeof(CodeMotionListNode));
+                            CodeMotionListNode *listNode = (CodeMotionListNode *)oalloc(sizeof(CodeMotionListNode));
                             listNode->index = link->entry_index;
                             listNode->next = record->list;
                             record->list = listNode;
@@ -373,13 +371,13 @@ void COpt_CopyPropagation(SInt32 mode)
     if (copyCount > 0) {
         COpt_SetLoopCodeMotionMode(0);
         CopyPropagation_BuildCodeMotionRecords();
-        copyPropagationBitSets = CompilerTools_AllocatePoolMemory(gPCodeBlockCount * sizeof *block);
+        copyPropagationBitSets = oalloc(gPCodeBlockCount * sizeof *block);
         block = copyPropagationBitSets;
         for (blockIndex = 0; blockIndex < gPCodeBlockCount; blockIndex++) {
-            block->gen = CompilerTools_AllocatePoolMemory(((copyCount + 31) >> 5) * sizeof *block->gen);
-            block->kill = CompilerTools_AllocatePoolMemory(((copyCount + 31) >> 5) * sizeof *block->kill);
-            block->out = CompilerTools_AllocatePoolMemory(((copyCount + 31) >> 5) * sizeof *block->out);
-            block->in = CompilerTools_AllocatePoolMemory(((copyCount + 31) >> 5) * sizeof *block->in);
+            block->gen = oalloc(((copyCount + 31) >> 5) * sizeof *block->gen);
+            block->kill = oalloc(((copyCount + 31) >> 5) * sizeof *block->kill);
+            block->out = oalloc(((copyCount + 31) >> 5) * sizeof *block->out);
+            block->in = oalloc(((copyCount + 31) >> 5) * sizeof *block->in);
             block++;
         }
         CopyPropagation_ComputeGenKill();
@@ -395,5 +393,5 @@ void COpt_CopyPropagation(SInt32 mode)
                 CopyPropagation_ReplaceRegisterUses(copyIndex);
         }
     }
-    CompilerTools_ResetPool();
+    freeoheap();
 }

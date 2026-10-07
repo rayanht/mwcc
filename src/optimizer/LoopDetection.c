@@ -54,14 +54,14 @@ static struct PCodeBlock **data_00582c64;
 static inline PCodeBlockLink *code_00522b40_inline1(PCodeBlock *p0)
 {
     PCodeBlockLink *t5;
-    t5 = (PCodeBlockLink *)CompilerTools_AllocatePool(8);
+    t5 = (PCodeBlockLink *)lalloc(8);
     t5->payload.block = p0;
     return t5;
 }
 
 static void AddNode(Loop *w, PCodeBlock *item)
 {
-    PCodeBlockLink *nn = (PCodeBlockLink *)CompilerTools_AllocatePool(8);
+    PCodeBlockLink *nn = (PCodeBlockLink *)lalloc(8);
     SETB(w->memberblocks, item->index);
     nn->payload.block = item;
     nn->next = w->blocks;
@@ -84,11 +84,11 @@ void compute_dominators(void)
     SInt32 changed;
 
     count = gPCodeBlockCount;
-    dominators = (UInt32 **)CompilerTools_AllocatePoolMemory(count * 4);
+    dominators = (UInt32 **)oalloc(count * 4);
     for (i = 0; i < gPCodeBlockCount; i++)
-        dominators[i] = (UInt32 *)CompilerTools_AllocatePoolMemory(((count + 0x1f) >> 5) << 2);
+        dominators[i] = (UInt32 *)oalloc(((count + 0x1f) >> 5) << 2);
 
-    bits = (UInt32 *)CompilerTools_AllocatePoolMemory(((count + 0x1f) >> 5) << 2);
+    bits = (UInt32 *)oalloc(((count + 0x1f) >> 5) << 2);
 
     CRTTI_FillWords(dominators[gPCodeBlocks->index], count, 0);
     dominators[gPCodeBlocks->index][0] |= 1;
@@ -125,7 +125,7 @@ struct SelectedNode *collect_nodes_in_predecessor_bitsets(void)
                 break;
         }
         if (edge != NULL) {
-            SelectedNode *entry = (SelectedNode *)CompilerTools_AllocatePoolMemory(8);
+            SelectedNode *entry = (SelectedNode *)oalloc(8);
             entry->node = (PCodeBlock *)node;
             entry->next = selected_nodes;
             selected_nodes = entry;
@@ -138,7 +138,7 @@ struct SelectedNode *collect_nodes_in_predecessor_bitsets(void)
 void LoopDetection_AddBlock(Loop *loop, PCodeBlock *block)
 {
     PCodeBlockLink *entry;
-    entry = (PCodeBlockLink *)CompilerTools_AllocatePool(8);
+    entry = (PCodeBlockLink *)lalloc(8);
     loop->memberblocks[block->index >> 5] |= 1 << (block->index & 31);
     entry->payload.block = block;
     entry->next = loop->blocks;
@@ -235,9 +235,9 @@ void create_loops(void)
     Loop *block;
 
     data_005871a4 = predecessor_bitset_node_count * 5 + gPCodeBlockCount;
-    data_00582c64 = CompilerTools_AllocatePoolMemory(gPCodeBlockCount * 4);
+    data_00582c64 = oalloc(gPCodeBlockCount * 4);
     while (selected_nodes != NULL) {
-        block = (Loop *)CompilerTools_AllocatePool(0x58);
+        block = (Loop *)lalloc(0x58);
         block->parent = block->sibling = block->children = NULL;
         block->body = selected_nodes->node;
         block->preheader = NULL;
@@ -246,14 +246,10 @@ void create_loops(void)
         block->footer = NULL;
         block->inductionUpdate = NULL;
         block->execution_weight = block->body->execution_weight;
-        CRTTI_FillWords(block->memberblocks = CompilerTools_AllocatePool(((data_005871a4 + 31) >> 5) << 2),
-                        data_005871a4, 0);
-        CRTTI_FillWords(block->exitblocks = CompilerTools_AllocatePool(((data_005871a4 + 31) >> 5) << 2), data_005871a4,
-                        0);
-        CRTTI_FillWords(block->block_membership = CompilerTools_AllocatePool(((data_005871a4 + 31) >> 5) << 2),
-                        data_005871a4, 0);
-        CRTTI_FillWords(block->backedge_dominators = CompilerTools_AllocatePool(((data_005871a4 + 31) >> 5) << 2),
-                        data_005871a4, 0);
+        CRTTI_FillWords(block->memberblocks = lalloc(((data_005871a4 + 31) >> 5) << 2), data_005871a4, 0);
+        CRTTI_FillWords(block->exitblocks = lalloc(((data_005871a4 + 31) >> 5) << 2), data_005871a4, 0);
+        CRTTI_FillWords(block->block_membership = lalloc(((data_005871a4 + 31) >> 5) << 2), data_005871a4, 0);
+        CRTTI_FillWords(block->backedge_dominators = lalloc(((data_005871a4 + 31) >> 5) << 2), data_005871a4, 0);
         compute_loop_block_sets(block);
         fn_00523000(block, &data_0058763c);
         selected_nodes = selected_nodes->next;
@@ -284,7 +280,7 @@ void LoopDetection_CreatePreheader(Loop *region)
     PCodeBlockLink *predecessor;
 
     label = PCode_NewLabel();
-    allocatedBlock = (PCodeBlock *)CompilerTools_AllocatePool(sizeof(PCodeBlock));
+    allocatedBlock = (PCodeBlock *)lalloc(sizeof(PCodeBlock));
     allocatedBlock->next = NULL;
     allocatedBlock->prev = NULL;
     allocatedBlock->labels = NULL;
@@ -386,7 +382,7 @@ void LoopDetection_CreatePreheader(Loop *region)
     newBlock->successors = successorLink;
     region = region->parent;
     while (region != NULL) {
-        memberLink = (PCodeBlockLink *)CompilerTools_AllocatePool(sizeof(PCodeBlockLink));
+        memberLink = (PCodeBlockLink *)lalloc(sizeof(PCodeBlockLink));
         region->memberblocks[newBlock->index >> 5] |= 1 << newBlock->index;
         memberLink->payload.block = newBlock;
         memberLink->next = region->blocks;
@@ -473,7 +469,7 @@ void LoopDetection_DetectLoops(void)
         create_loops();
         traverse_loops_postorder(data_0058763c);
     }
-    CompilerTools_ResetPool();
+    freeoheap();
 }
 
 int compute_iteration_count(int op, int reg, SInt32 lower, SInt32 upper, SInt32 step, SInt32 *result)

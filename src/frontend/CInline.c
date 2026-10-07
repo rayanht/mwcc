@@ -155,7 +155,7 @@ PendingFunction *generate_guarded_initializers(PendingFunction *pending)
     groupName = COptimizer_GetFunctionObject(group);
     function->name = CParser_NameConcat("__init__", groupName->name);
     function->qual = Q_WEAK;
-    fn_004ceab0(function, NULL, NULL, function->type->size);
+    CInit_DeclareData(function, NULL, NULL, function->type->size);
     statement = CFunc_AppendStatement(6);
     statement->expr = create_objectnode(function);
     label = newlabel();
@@ -565,7 +565,7 @@ static ENode *gen_expr_save(void *x)
 
 static void add_chain(ChainRec **head, Statement *node, IStmtRec *ent)
 {
-    ChainRec *r = (ChainRec *)CompilerTools_AllocatePool(12);
+    ChainRec *r = (ChainRec *)lalloc(12);
     r->next = *head;
     *head = r;
     r->node = node;
@@ -612,7 +612,7 @@ static inline ENode *InlineWrapResult(ENode *expr)
         if (data_005824c3 == 0) {
             wrapped = expr;
         } else {
-            wrapped = (ENode *)CompilerTools_AllocatePool(sizeof(ENode));
+            wrapped = (ENode *)lalloc(sizeof(ENode));
             *wrapped = *expr;
             wrapped->type = EFORCELOAD;
             wrapped->data.monadic = expr;
@@ -641,7 +641,7 @@ static ENode *CInline_CopyConst(ENode *e)
 
     switch (e->type) {
         case EOBJREF:
-            r = (ENode *)CompilerTools_AllocatePool(sizeof(ENode));
+            r = (ENode *)lalloc(sizeof(ENode));
             *r = *e;
             return r;
         case ETEMP:
@@ -737,7 +737,7 @@ static SInt32 CInline_Memo(ENode *key)
     for (; m != NULL; m = m->next)
         if (m->key == k)
             return m->val;
-    (m = (MemoNode *)CompilerTools_AllocatePool(12))->next = memo_list;
+    (m = (MemoNode *)lalloc(12))->next = memo_list;
     memo_list = m;
     m->key = key;
     m->val = CParser_GetUniqueID();
@@ -756,7 +756,7 @@ static SInt32 MemoFirst(ENode *key)
     for (; m; m = m->next)
         if (m->key == k)
             return m->val;
-    fresh = (MemoNode *)CompilerTools_AllocatePool(12);
+    fresh = (MemoNode *)lalloc(12);
     fresh->next = memo_list;
     memo_list = fresh;
     fresh->key = key;
@@ -1234,7 +1234,7 @@ void add_undefined_function_object(Object *object)
             entry = entry->next;
         } while (entry != NULL);
     }
-    newEntry = (InlineObjectEntry *)CompilerTools_AllocatePool(sizeof(InlineObjectEntry));
+    newEntry = (InlineObjectEntry *)lalloc(sizeof(InlineObjectEntry));
     newEntry->object = object;
     newEntry->next = undefined_function_objects;
     undefined_function_objects = newEntry;
@@ -1346,9 +1346,9 @@ void CInline_ReconstructFunction(Object *function, CInlineInfo *rec, Statement *
     arg = rec->arginfo;
     for (i = 0; i < rec->nargs; i++, arg++) {
         if (i == 0) {
-            arguments = node = (ObjectList *)CompilerTools_AllocatePool(sizeof(ObjectList));
+            arguments = node = (ObjectList *)lalloc(sizeof(ObjectList));
         } else {
-            node = node->next = (ObjectList *)CompilerTools_AllocatePool(sizeof(ObjectList));
+            node = node->next = (ObjectList *)lalloc(sizeof(ObjectList));
         }
         obj = (Object *)galloc(sizeof(Object));
         memclrw(obj, sizeof(Object));
@@ -1391,9 +1391,9 @@ void CInline_ReconstructFunction(Object *function, CInlineInfo *rec, Statement *
     arg = rec->localinfo;
     for (i = 0; i < rec->nlocals; i++, arg++) {
         if (i == 0) {
-            locals = node = (ObjectList *)CompilerTools_AllocatePool(sizeof(ObjectList));
+            locals = node = (ObjectList *)lalloc(sizeof(ObjectList));
         } else {
-            node = node->next = (ObjectList *)CompilerTools_AllocatePool(sizeof(ObjectList));
+            node = node->next = (ObjectList *)lalloc(sizeof(ObjectList));
         }
         obj = (Object *)galloc(sizeof(Object));
         memclrw(obj, sizeof(Object));
@@ -1434,10 +1434,10 @@ void CInline_ReconstructFunction(Object *function, CInlineInfo *rec, Statement *
     }
 
     fixup_list = NULL;
-    table = (CLabel **)CompilerTools_AllocatePool((SInt16)rec->nstmts * sizeof(*table));
+    table = (CLabel **)lalloc((SInt16)rec->nstmts * sizeof(*table));
     memclrw(table, (SInt16)rec->nstmts * sizeof(*table));
     for (i = 0, cursor = out, record = rec->stmtinfo; i < (SInt16)rec->nstmts; i++, record++) {
-        cursor->next = (Statement *)CompilerTools_AllocatePool(sizeof(Statement));
+        cursor->next = (Statement *)lalloc(sizeof(Statement));
         cursor = cursor->next;
         cursor->type = record->type;
         cursor->value = record->value;
@@ -1739,16 +1739,16 @@ unsigned char fn_00511180(Object *function, Statement *statement)
     Boolean status;
     unsigned char result;
 
-    status = CMachine_FunctionRequiresMemoryReturn((TypeFunc *)function->type);
+    status = CMach_GetFunctionResultClass((TypeFunc *)function->type);
     if (status != 0) {
         if (status != 1 || (((TypeFunc *)function->type)->functype->type == TYPECLASS &&
                             CClass_Destructor((TypeClass *)((TypeFunc *)function->type)->functype) != NULL))
             return 0;
     }
     for (arg = ((TypeFunc *)function->type)->args; arg != NULL; arg = arg->next) {
-        if (arg == &data_00583098)
+        if (arg == &elipsis)
             return 0;
-        if (arg == &data_00584748)
+        if (arg == &oldstyle)
             break;
         if (arg->type->type == TYPECLASS) {
             if (CClass_Destructor((TypeClass *)arg->type) != NULL)
@@ -1884,7 +1884,7 @@ void inline_statement_list(Statement *list)
     }
     for (statement = list; statement != NULL; statement = statement->next) {
         if (statement->dobjstack != NULL)
-            CException_004e35b0(statement->dobjstack);
+            CExcept_CheckStackRefs(statement->dobjstack);
         switch (statement->type) {
             case ST_RETURN:
                 if (statement->expr == NULL)
@@ -2062,7 +2062,7 @@ Statement *inline_statement(Statement *statement)
             }
         }
         if (((ENode *)statement->expr)->type == 41) {
-            split = (Statement *)CompilerTools_AllocatePool(sizeof(Statement));
+            split = (Statement *)lalloc(sizeof(Statement));
             *split = *statement;
             statement->next = split;
             statement->type = ST_EXPRESSION;
@@ -2115,7 +2115,7 @@ Statement *expand_inline_calls(Statement *stmt)
                 ftype = TYPE_FUNC(obj->type);
                 CError_ASSERT(2459, IS_TYPE_FUNC(ftype));
                 if (ftype->functype->type != TYPEVOID) {
-                    if (CMachine_FunctionRequiresMemoryReturn((TypeFunc *)obj->type) == 1)
+                    if (CMach_GetFunctionResultClass((TypeFunc *)obj->type) == 1)
                         tempobj = CInline_MakeTemp(CDecl_NewPointerType(ftype->functype));
                     else
                         tempobj = CInline_MakeTemp(ftype->functype);
@@ -2124,7 +2124,7 @@ Statement *expand_inline_calls(Statement *stmt)
                 }
                 stmt = generate_inline_statements(obj, stmt, expr, x, newlabel(), tempobj, 1);
                 if (tempobj != NULL)
-                    node = CExpr_New_EINDIRECT_Node(tempobj);
+                    node = create_objectnode2(tempobj);
                 else
                     node = nullnode();
                 *x = *node;
@@ -2176,7 +2176,7 @@ Statement *generate_inline_statements(Object *function, Statement *tail, CInline
     ENode *initializer;
 
     templateStmt = *tail;
-    convertReturn = (CMachine_FunctionRequiresMemoryReturn((TypeFunc *)function->type) == 1);
+    convertReturn = (CMach_GetFunctionResultClass((TypeFunc *)function->type) == 1);
     initializer = setup_inline_locals_and_arguments(function, args, result->data.funccall.args);
     if (initializer != NULL) {
         tail->type = ST_EXPRESSION;
@@ -2186,7 +2186,7 @@ Statement *generate_inline_statements(Object *function, Statement *tail, CInline
     }
     chain = NULL;
     fixup_list = NULL;
-    labels = (CLabel **)CompilerTools_AllocatePool((SInt16)args->nstmts * sizeof(*labels));
+    labels = (CLabel **)lalloc((SInt16)args->nstmts * sizeof(*labels));
     memclrw(labels, (SInt16)args->nstmts * sizeof(*labels));
     i = 0;
     entry = (IStmtRec *)args->stmtinfo;
@@ -2194,7 +2194,7 @@ Statement *generate_inline_statements(Object *function, Statement *tail, CInline
     for (; i < (SInt16)args->nstmts; i++, entry++) {
         Statement *node;
 
-        tail->next = (Statement *)CompilerTools_AllocatePool(sizeof(*tail));
+        tail->next = (Statement *)lalloc(sizeof(*tail));
         tail = tail->next;
         *tail = templateStmt;
         node = tail;
@@ -2236,12 +2236,12 @@ Statement *generate_inline_statements(Object *function, Statement *tail, CInline
                     }
                     if (returnObject != NULL) {
                         node->type = ST_EXPRESSION;
-                        node->expr = makediadicnode(CExpr_New_EINDIRECT_Node(returnObject), node->expr, 0x1e);
+                        node->expr = makediadicnode(create_objectnode2(returnObject), node->expr, 0x1e);
                     } else {
                         node->type = originalType;
                     }
                     if (returnLabel != NULL) {
-                        tail->next = (Statement *)CompilerTools_AllocatePool(sizeof(*tail));
+                        tail->next = (Statement *)lalloc(sizeof(*tail));
                         tail = tail->next;
                         *tail = templateStmt;
                         tail->type = ST_GOTO;
@@ -2279,14 +2279,14 @@ Statement *generate_inline_statements(Object *function, Statement *tail, CInline
         }
     }
     if (returnLabel != NULL) {
-        tail->next = (Statement *)CompilerTools_AllocatePool(sizeof(*tail));
+        tail->next = (Statement *)lalloc(sizeof(*tail));
         tail = tail->next;
         *tail = templateStmt;
         tail->type = ST_LABEL;
         tail->label = returnLabel;
         returnLabel->stmt = tail;
         if (appendStatement != 0) {
-            tail->next = (Statement *)CompilerTools_AllocatePool(sizeof(*tail));
+            tail->next = (Statement *)lalloc(sizeof(*tail));
             tail = tail->next;
             *tail = templateStmt;
         }
@@ -2394,7 +2394,7 @@ ExceptionAction *copy_exception_actions(IStmtRec *parent, char copyExpressions)
                 copy->data.slots[0] = CInline_GetObjectByIndex(source->data.operands[0].value, copyExpressions);
                 copy->data.slots[1] = CInline_GetObjectByIndex(source->data.operands[1].value, copyExpressions);
                 {
-                    IFixup *fixup = CompilerTools_AllocatePool(sizeof(IFixup));
+                    IFixup *fixup = lalloc(sizeof(IFixup));
                     fixup->next = fixup_list;
                     fixup_list = fixup;
                     fixup->labelIndex = (UInt16)source->data.slots[2];
@@ -2411,7 +2411,7 @@ ExceptionAction *copy_exception_actions(IStmtRec *parent, char copyExpressions)
                 copy->data.slots[0] = source->data.slots[0];
                 copy->data.slots[1] = source->data.slots[1];
                 {
-                    IFixup *fixup = CompilerTools_AllocatePool(sizeof(IFixup));
+                    IFixup *fixup = lalloc(sizeof(IFixup));
                     fixup->next = fixup_list;
                     fixup_list = fixup;
                     fixup->labelIndex = (UInt16)source->data.slots[2];
@@ -2476,7 +2476,7 @@ void reconstruct_switch_info(Statement *statement, IStmtRec *record, CLabel **la
     SwitchCase *switchCase;
     SInt16 caseIndex;
 
-    switchInfo = (SwitchInfo *)CompilerTools_AllocatePool(sizeof(SwitchInfo));
+    switchInfo = (SwitchInfo *)lalloc(sizeof(SwitchInfo));
     statement->label = (CLabel *)switchInfo;
     switchInfo->defaultlabel = labelTable[record->data.switchInfo->defaultStatementIndex];
     CError_ASSERT(2054, switchInfo->defaultlabel != NULL);
@@ -2484,10 +2484,10 @@ void reconstruct_switch_info(Statement *statement, IStmtRec *record, CLabel **la
 
     for (caseIndex = 0; caseIndex < record->data.switchInfo->caseCount; caseIndex++) {
         if (caseIndex == 0) {
-            switchCase = (SwitchCase *)CompilerTools_AllocatePool(sizeof(SwitchCase));
+            switchCase = (SwitchCase *)lalloc(sizeof(SwitchCase));
             switchInfo->cases = switchCase;
         } else {
-            switchCase->next = (SwitchCase *)CompilerTools_AllocatePool(sizeof(SwitchCase));
+            switchCase->next = (SwitchCase *)lalloc(sizeof(SwitchCase));
             switchCase = switchCase->next;
         }
         switchCase->next = NULL;
@@ -2677,7 +2677,7 @@ ENode *inline_call_expression(ENode *expr)
         }
         return expr;
     }
-    memoryReturn = CMachine_FunctionRequiresMemoryReturn((TypeFunc *)object->type) == 1;
+    memoryReturn = CMach_GetFunctionResultClass((TypeFunc *)object->type) == 1;
     result = setup_inline_locals_and_arguments(object, body, expr->data.funccall.args);
     for (index = 0; index < (SInt16)body->nstmts; ++index) {
         switch (body->stmtinfo[index].type) {
@@ -2755,12 +2755,12 @@ ENode *setup_inline_locals_and_arguments(Object *function, CInlineInfo *inlineIn
     int i;
 
     targetMatches = 0;
-    if (TYPE_FUNC(function->type)->args == &data_00584748)
+    if (TYPE_FUNC(function->type)->args == &oldstyle)
         targetMatches = 1;
 
-    locals = CompilerTools_AllocatePool(inlineInfo->nlocals << 2);
+    locals = lalloc(inlineInfo->nlocals << 2);
     data_00582456 = locals;
-    data_0058245a = CompilerTools_AllocatePool(inlineInfo->nargs * 0xc);
+    data_0058245a = lalloc(inlineInfo->nargs * 0xc);
 
     i = 0;
     parameter = inlineInfo->localinfo;
@@ -2832,7 +2832,7 @@ ENode *setup_inline_locals_and_arguments(Object *function, CInlineInfo *inlineIn
                 argument->node = makemonadicnode(argument->node, ETYPCON);
                 argument->node->rtype = data_0058245a[i].var->type;
             }
-            expression = makediadicnode(CExpr_New_EINDIRECT_Node(data_0058245a[i].var), argument->node, EASS);
+            expression = makediadicnode(create_objectnode2(data_0058245a[i].var), argument->node, EASS);
             if (initializers == NULL)
                 initializers = expression;
             else
@@ -2866,7 +2866,7 @@ ENode *copy_result_reference(ENode *e)
                 return CInline_CopyConst(args->node);
             if (TPTR_TARGET(e->rtype) != e->data.funccall.functype->functype)
                 break;
-            if (CMachine_FunctionRequiresMemoryReturn(e->data.funccall.functype) != 1)
+            if (CMach_GetFunctionResultClass(e->data.funccall.functype) != 1)
                 break;
             if ((args = e->data.funccall.args) == NULL)
                 break;
@@ -3110,7 +3110,7 @@ ENode *CInline_00513240(ENode *expr)
     if (alloc_state)
         node = (ENode *)galloc(sizeof(ENode));
     else
-        node = (ENode *)CompilerTools_AllocatePool(sizeof(ENode));
+        node = (ENode *)lalloc(sizeof(ENode));
     for (;;) {
         *node = *expr;
         switch (node->type) {
@@ -3148,7 +3148,7 @@ ENode *CInline_00513240(ENode *expr)
                     case EM_ARG:
                     case EM_LOCAL: {
                         IFixup *entry;
-                        entry = (IFixup *)CompilerTools_AllocatePool(sizeof(IFixup));
+                        entry = (IFixup *)lalloc(sizeof(IFixup));
                         entry->next = fixup_list;
                         fixup_list = entry;
                         entry->labelIndex = node->data.longval;
@@ -3343,7 +3343,7 @@ ENode *CInline_00513240(ENode *expr)
                 if (alloc_state)
                     dst = (EMemberInfo *)galloc(sizeof(EMemberInfo));
                 else
-                    dst = (EMemberInfo *)CompilerTools_AllocatePool(sizeof(EMemberInfo));
+                    dst = (EMemberInfo *)lalloc(sizeof(EMemberInfo));
                 *dst = *src;
                 if (dst->path != NULL)
                     dst->path = CClass_GetPathCopy(dst->path, alloc_state);
@@ -3379,7 +3379,7 @@ ENodeList *copy_enode_list(ENodeList *values)
             if (alloc_state != '\0') {
                 node = (ENodeList *)galloc(sizeof(ENodeList));
             } else {
-                node = (ENodeList *)CompilerTools_AllocatePool(sizeof(ENodeList));
+                node = (ENodeList *)lalloc(sizeof(ENodeList));
             }
             node->node = CInline_00513240(values->node);
             node->next = NULL;
@@ -3689,7 +3689,7 @@ ENode *fold_constants(ENode *node)
 
         case ELAND:
             node->data.diadic.left = fold_constants(node->data.diadic.left);
-            if (CExpr2_IsZero(node->data.diadic.left)) {
+            if (iszero(node->data.diadic.left)) {
                 return node->data.diadic.left;
             }
             if (isnotzero(node->data.diadic.left)) {
@@ -3719,7 +3719,7 @@ ENode *fold_constants(ENode *node)
 
         case ELOR:
             node->data.diadic.left = fold_constants(node->data.diadic.left);
-            if (CExpr2_IsZero(node->data.diadic.left)) {
+            if (iszero(node->data.diadic.left)) {
                 right = fold_constants(node->data.diadic.right);
                 if (right->type != EINTCONST) {
                     operand = makemonadicnode(right, ELOGNOT);
@@ -3742,7 +3742,7 @@ ENode *fold_constants(ENode *node)
                 return left;
             }
             node->data.diadic.right = fold_constants(node->data.diadic.right);
-            if (CExpr2_IsZero(node->data.diadic.right)) {
+            if (iszero(node->data.diadic.right)) {
                 left = fold_constants(node->data.diadic.left);
                 if (left->type != EINTCONST) {
                     operand = makemonadicnode(left, ELOGNOT);
@@ -3778,7 +3778,7 @@ ENode *fold_constants(ENode *node)
             if (isnotzero(node->data.cond.cond)) {
                 return fold_constants(node->data.cond.expr1);
             }
-            if (CExpr2_IsZero(node->data.cond.cond)) {
+            if (iszero(node->data.cond.cond)) {
                 return fold_constants(node->data.cond.expr2);
             }
             node->data.cond.expr1 = fold_constants(node->data.cond.expr1);

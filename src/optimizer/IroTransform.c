@@ -313,14 +313,14 @@ void simplify_diadic_nodes(IROLinear *nd)
                 }
                 break;
             case EDIV:
-                if (nd->rtype->type == TYPEINT && Type_IsUnsigned(nd->rtype) && nd->rtype->size <= 4 &&
+                if (nd->rtype->type == TYPEINT && is_unsigned(nd->rtype) && nd->rtype->size <= 4 &&
                     IroDump_IsPowerOfTwo(nd->u.diadic.right, &shift)) {
                     nd->nodetype = ESHR;
                     set_shift_constant(nd->u.diadic.right, shift);
                 }
                 break;
             case EMODULO:
-                if (nd->rtype->type == TYPEINT && Type_IsUnsigned(nd->rtype) && nd->rtype->size <= 4 &&
+                if (nd->rtype->type == TYPEINT && is_unsigned(nd->rtype) && nd->rtype->size <= 4 &&
                     IroDump_IsPowerOfTwo(nd->u.diadic.right, &shift)) {
                     nd->nodetype = EAND;
                     nd->u.diadic.right->u.node->data.intval =
@@ -530,7 +530,7 @@ void simplify_diadic_constants(IROLinear *node)
                             case 0x24:
                                 limit.q.lo = resultBits;
                                 limit.q.hi = (resultBits < 0) ? -1 : 0;
-                                if (Type_IsUnsigned(operandType) != 0) {
+                                if (is_unsigned(operandType) != 0) {
                                     exceedsLimit = CInt64_GreaterEqualU(right->u.node->data.intval, limit.q);
                                 } else {
                                     Boolean result = CInt64_GreaterEqual(right->u.node->data.intval, limit.i);
@@ -541,7 +541,7 @@ void simplify_diadic_constants(IROLinear *node)
                             case 0x25:
                                 limit.q.lo = operandBits;
                                 limit.q.hi = (operandBits < 0) ? -1 : 0;
-                                exceedsLimit = Type_IsUnsigned(operandType) &&
+                                exceedsLimit = is_unsigned(operandType) &&
                                                CInt64_GreaterEqualU(right->u.node->data.intval, limit.q);
                                 break;
                         }
@@ -1705,7 +1705,7 @@ void collect_eadd_terms(ENode *n)
         collect_eadd_terms(n->data.diadic.left);
         collect_eadd_terms(n->data.diadic.right);
     } else {
-        ENodeList *s = (ENodeList *)CompilerTools_AllocatePoolMemory(8);
+        ENodeList *s = (ENodeList *)oalloc(8);
         ENodeList *tail;
         s->node = n;
         s->next = NULL;

@@ -249,7 +249,7 @@ extern char *data_00587e84;
 extern unsigned int CException_HashType(Type *type);
 extern void CException_AddPendingBuffer(Object *owner, const void *buffer, OLinkList *value, int entryValue);
 extern OLinkList *copy_relocation_list(OLinkList *p);
-extern void CExcept_Terminate(void);
+extern void fn_004e0970(void);
 extern void CException_ResetPrecompiledState(UInt8 c);
 
 #ifdef __cplusplus

@@ -164,7 +164,7 @@ ENode *expand_compound_assignment(ENode *expr)
         operation->rtype = expr->data.diadic.left->rtype;
     }
     if (operation->rtype->type == TYPEFLOAT) {
-        operation = CExpr2_ReturnNode(operation);
+        operation = CExpr_BinaryFloatExpression(operation);
     }
     if (state.direct == NULL) {
         storeAddress = ((ENode * (*)(Object *)) create_objectnode)(state.temporary);

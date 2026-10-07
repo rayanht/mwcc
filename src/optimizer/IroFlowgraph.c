@@ -66,7 +66,7 @@ void fn_0044a640(IROLinear *value)
     IRONode *node;
     IRONode *tail;
 
-    node = (IRONode *)CompilerTools_AllocatePoolMemory(sizeof(*node));
+    node = (IRONode *)oalloc(sizeof(*node));
     node->index = iro_node_count;
     node->numsucc = 0U;
     node->succ = NULL;
@@ -135,7 +135,7 @@ void IroFlowgraph_RebuildSuccPred(void)
     for (node = iro_flowgraph_head; node != NULL; node = node->nextnode) {
         if (node->first == NULL) {
             if (node->nextnode != NULL) {
-                node->succ = CompilerTools_AllocatePoolMemory(sizeof(*node->succ));
+                node->succ = oalloc(sizeof(*node->succ));
                 AddNext(node, node->nextnode);
             }
         } else {
@@ -143,13 +143,13 @@ void IroFlowgraph_RebuildSuccPred(void)
             for (;;) {
                 switch (statement->type) {
                     case IROLinearGoto:
-                        node->succ = CompilerTools_AllocatePoolMemory(sizeof(*node->succ));
+                        node->succ = oalloc(sizeof(*node->succ));
                         target = statement->u.label;
                         AddRef(node, (IRONode *)target->stmt);
                         break;
                     case IROLinearIf:
                     case IROLinearIfNot:
-                        node->succ = CompilerTools_AllocatePoolMemory(2 * sizeof(*node->succ));
+                        node->succ = oalloc(2 * sizeof(*node->succ));
                         AddNext(node, node->nextnode);
                         target = statement->u.label;
                         AddRef(node, (IRONode *)target->stmt);
@@ -158,7 +158,7 @@ void IroFlowgraph_RebuildSuccPred(void)
                         branchList = node->last->u.swtch.info;
                         for (branch = branchList->cases, successorCount = 1; branch != NULL; branch = branch->next)
                             successorCount++;
-                        node->succ = CompilerTools_AllocatePoolMemory(successorCount * sizeof(*node->succ));
+                        node->succ = oalloc(successorCount * sizeof(*node->succ));
                         AddList(node, branchList);
                         target = branchList->defaultlabel;
                         AddRef(node, (IRONode *)target->stmt);
@@ -169,7 +169,7 @@ void IroFlowgraph_RebuildSuccPred(void)
                         for (entry = entryList->dobjstack; entry != NULL; entry = entry->next)
                             if (entry->kind == 0x0d || entry->kind == 0x0f)
                                 successorCount++;
-                        node->succ = CompilerTools_AllocatePoolMemory(successorCount * sizeof(*node->succ));
+                        node->succ = oalloc(successorCount * sizeof(*node->succ));
                         AddNext(node, node->nextnode);
                         entryList = statement->stmt;
                         for (entry = entryList->dobjstack; entry != NULL; entry = entry->next) {
@@ -188,7 +188,7 @@ void IroFlowgraph_RebuildSuccPred(void)
                         if (references.noFallthrough == 0)
                             successorCount = 1;
                         successorCount += references.numlabels;
-                        node->succ = CompilerTools_AllocatePoolMemory(successorCount * sizeof(*node->succ));
+                        node->succ = oalloc(successorCount * sizeof(*node->succ));
                         if (references.noFallthrough == 0)
                             AddNext(node, node->nextnode);
                         for (successorIndex = 0; successorIndex < references.numlabels; successorIndex++) {
@@ -207,7 +207,7 @@ void IroFlowgraph_RebuildSuccPred(void)
                         /* fall through */
                     default:
                         if (node->nextnode != NULL) {
-                            node->succ = CompilerTools_AllocatePoolMemory(sizeof(*node->succ));
+                            node->succ = oalloc(sizeof(*node->succ));
                             AddNext(node, node->nextnode);
                         }
                         break;
@@ -219,7 +219,7 @@ void IroFlowgraph_RebuildSuccPred(void)
 
     for (scanNode = iro_flowgraph_head; scanNode != NULL; scanNode = scanNode->nextnode) {
         if (scanNode->numpred != 0)
-            scanNode->pred = CompilerTools_AllocatePoolMemory(scanNode->numpred * sizeof(*scanNode->pred));
+            scanNode->pred = oalloc(scanNode->numpred * sizeof(*scanNode->pred));
         else
             scanNode->pred = NULL;
         scanNode->numpred = 0;
@@ -350,7 +350,7 @@ void IRO_BuildflowGraph(IROLinear *source)
         iroNodeTail->last = linear;
         linear = linear->next;
     }
-    iroNodesByIndex = (IRONode **)CompilerTools_AllocatePoolMemory(iro_node_count * sizeof(*iroNodesByIndex));
+    iroNodesByIndex = (IRONode **)oalloc(iro_node_count * sizeof(*iroNodesByIndex));
     block = iro_flowgraph_head;
     for (i = 0; block != NULL; block = block->nextnode) {
         iroNodesByIndex[i] = block;

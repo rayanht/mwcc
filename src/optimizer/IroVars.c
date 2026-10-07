@@ -96,7 +96,7 @@ int record_var_part_use(IROLinear *source, VarRecord *operand, int offset, Type 
                 break;
             }
             if (range->offset == offset && IroUtil_AreTypesEqual(range->type, type) != 0) {
-                use = (IROElmList *)CompilerTools_AllocatePoolMemory(sizeof(*use));
+                use = (IROElmList *)oalloc(sizeof(*use));
                 use->element = value;
                 use->next = NULL;
                 if (range->uses != NULL) {
@@ -149,7 +149,7 @@ int record_var_part_use(IROLinear *source, VarRecord *operand, int offset, Type 
         if (offset >= 0)
             return 0;
     }
-    newRange = (IROVarPart *)CompilerTools_AllocatePoolMemory(sizeof(*newRange));
+    newRange = (IROVarPart *)oalloc(sizeof(*newRange));
     newRange->source = source;
     newRange->flags = 0;
     newRange->var = operand;
@@ -157,7 +157,7 @@ int record_var_part_use(IROLinear *source, VarRecord *operand, int offset, Type 
     newRange->size = type->size;
     newRange->type = type;
     newRange->next = NULL;
-    newRange->uses = (IROElmList *)CompilerTools_AllocatePoolMemory(sizeof(*newRange->uses));
+    newRange->uses = (IROElmList *)oalloc(sizeof(*newRange->uses));
     newRange->uses->element = value;
     newRange->uses->next = NULL;
     if ((type->type == TYPEFLOAT || type->type == TYPEINT || type->type == TYPEPOINTER) && offset != -1) {
@@ -597,7 +597,7 @@ void IroVars_CollectAddrRecordElements(IROLinear *tree, IROAddrRecord *collectio
     } else if (tree->u.diadic.left->type == EPOSTDEC && tree->u.diadic.left->u.node->type == EINTCONST) {
         collection->numInts += 1;
         leftIntNode = tree->u.diadic.left;
-        leftInt = (IROElmList *)CompilerTools_AllocatePoolMemory(sizeof(IROElmList));
+        leftInt = (IROElmList *)oalloc(sizeof(IROElmList));
         leftInt->element = leftIntNode;
         leftInt->next = NULL;
         if (collection->ints == NULL) {
@@ -609,7 +609,7 @@ void IroVars_CollectAddrRecordElements(IROLinear *tree, IROAddrRecord *collectio
     } else if (tree->u.diadic.left->type == EPOSTDEC && tree->u.diadic.left->u.node->type == EOBJREF) {
         collection->numObjRefs += 1;
         leftObjRefNode = tree->u.diadic.left;
-        leftObjRef = (IROElmList *)CompilerTools_AllocatePoolMemory(sizeof(IROElmList));
+        leftObjRef = (IROElmList *)oalloc(sizeof(IROElmList));
         leftObjRef->element = leftObjRefNode;
         leftObjRef->next = NULL;
         if (collection->objRefs == NULL) {
@@ -621,7 +621,7 @@ void IroVars_CollectAddrRecordElements(IROLinear *tree, IROAddrRecord *collectio
     } else {
         collection->numMisc += 1;
         leftMiscNode = tree->u.diadic.left;
-        leftMisc = (IROElmList *)CompilerTools_AllocatePoolMemory(sizeof(IROElmList));
+        leftMisc = (IROElmList *)oalloc(sizeof(IROElmList));
         leftMisc->element = leftMiscNode;
         leftMisc->next = NULL;
         if (collection->misc != NULL) {
@@ -634,7 +634,7 @@ void IroVars_CollectAddrRecordElements(IROLinear *tree, IROAddrRecord *collectio
     } else if (tree->u.diadic.right->type == EPOSTDEC && tree->u.diadic.right->u.node->type == EINTCONST) {
         collection->numInts += 1;
         rightIntNode = tree->u.diadic.right;
-        rightInt = (IROElmList *)CompilerTools_AllocatePoolMemory(sizeof(IROElmList));
+        rightInt = (IROElmList *)oalloc(sizeof(IROElmList));
         rightInt->element = rightIntNode;
         rightInt->next = NULL;
         if (collection->ints == NULL) {
@@ -646,7 +646,7 @@ void IroVars_CollectAddrRecordElements(IROLinear *tree, IROAddrRecord *collectio
     } else if (tree->u.diadic.right->type == EPOSTDEC && tree->u.diadic.right->u.node->type == EOBJREF) {
         collection->numObjRefs += 1;
         rightObjRefNode = tree->u.diadic.right;
-        rightObjRef = (IROElmList *)CompilerTools_AllocatePoolMemory(sizeof(IROElmList));
+        rightObjRef = (IROElmList *)oalloc(sizeof(IROElmList));
         rightObjRef->element = rightObjRefNode;
         rightObjRef->next = NULL;
         if (collection->objRefs == NULL) {
@@ -658,7 +658,7 @@ void IroVars_CollectAddrRecordElements(IROLinear *tree, IROAddrRecord *collectio
     } else {
         collection->numMisc += 1;
         rightMiscNode = tree->u.diadic.right;
-        rightMisc = (IROElmList *)CompilerTools_AllocatePoolMemory(sizeof(IROElmList));
+        rightMisc = (IROElmList *)oalloc(sizeof(IROElmList));
         rightMisc->element = rightMiscNode;
         rightMisc->next = NULL;
         if (collection->misc != NULL) {
@@ -673,7 +673,7 @@ void IroVars_PrependElmList(IROLinear *node, IROElmList **head)
 {
     IROElmList *entry;
 
-    entry = (IROElmList *)CompilerTools_AllocatePoolMemory(sizeof(IROElmList));
+    entry = (IROElmList *)oalloc(sizeof(IROElmList));
     entry->element = node;
     entry->next = NULL;
     if (*head != NULL) {
@@ -844,7 +844,7 @@ VarRecord *fn_0044ba70(Object *object, unsigned int create, unsigned int mode)
         if (info != NULL)
             info->usage = 0;
 
-        entry = (VarRecord *)CompilerTools_AllocatePoolMemory(sizeof(VarRecord));
+        entry = (VarRecord *)oalloc(sizeof(VarRecord));
         entry->object = object;
         iroVarCount = iroVarCount + 1;
         entry->index = iroVarCount;
@@ -1043,7 +1043,7 @@ IROLinear *fn_0044be00(IROLinear *node)
 IROAddrRecord *IroVars_CreateAddrRecord(struct IROLinear *linear)
 {
     IROAddrRecord *record;
-    record = (IROAddrRecord *)CompilerTools_AllocatePoolMemory(28U);
+    record = (IROAddrRecord *)oalloc(28U);
     record->x4 = 0U;
     record->numObjRefs = 0U;
     record->objRefs = 0U;

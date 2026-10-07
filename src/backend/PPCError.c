@@ -58,7 +58,7 @@ void PPCError_EmitClassTypeUpdate(SInt16 requestedReg, ENode *node, SInt16 flags
     Operand object;
     ClassTypeHeaderBytes header;
 
-    update = (ClassTypeUpdate *)CompilerTools_AllocatePool(sizeof(*update));
+    update = (ClassTypeUpdate *)lalloc(sizeof(*update));
     memclrw(&object, sizeof(object));
     data_00560648[node->type](node, 0, 0, &object);
     if (object.kind)

@@ -7104,7 +7104,7 @@
     "size": 70
   },
   {
-    "name": "CompilerTools_ClearPoolBlocks",
+    "name": "releasegheap",
     "address": "0x00440e90",
     "size": 46,
     "source": "src/frontend/CompilerTools.c"
@@ -7222,7 +7222,7 @@
     "source": "src/frontend/CompilerTools.c"
   },
   {
-    "name": "CompilerTools_AppendGListData",
+    "name": "AppendGListData",
     "address": "0x00441cc0",
     "size": 89,
     "source": "src/frontend/CompilerTools.c"
@@ -7234,7 +7234,7 @@
     "source": "src/frontend/CompilerTools.c"
   },
   {
-    "name": "fn_00442c00",
+    "name": "LockGList",
     "address": "0x00441d40",
     "size": 14,
     "source": "src/frontend/CompilerTools.c"
@@ -11577,7 +11577,7 @@
     "size": 2035
   },
   {
-    "name": "initialize_hash_name_globals",
+    "name": "CMach_ReInitRuntimeObjects",
     "address": "0x004be8c0",
     "size": 964,
     "source": "src/backend/CMachine.c"
@@ -13684,7 +13684,7 @@
     "size": 636
   },
   {
-    "name": "CParser_IsAnonymousClass",
+    "name": "CParser_IsAnonymousUnion",
     "address": "0x004e3150",
     "size": 112,
     "source": "src/frontend/CParser.c"
@@ -14520,7 +14520,7 @@
     "size": 133
   },
   {
-    "name": "fn_0047cb60",
+    "name": "CFunc_NewDeclBlock",
     "address": "0x004f4af0",
     "size": 109,
     "source": "src/frontend/CFunc.c"
@@ -15473,13 +15473,13 @@
     "source": "src/frontend/CInit.c"
   },
   {
-    "name": "fn_004cea90",
+    "name": "CInit_DeclareReadOnlyData",
     "address": "0x00508b00",
     "size": 31,
     "source": "src/frontend/CInit.c"
   },
   {
-    "name": "fn_004ceab0",
+    "name": "CInit_DeclareData",
     "address": "0x00508b20",
     "size": 31,
     "source": "src/frontend/CInit.c"
@@ -16604,7 +16604,7 @@
     "source": "src/frontend/CException.c"
   },
   {
-    "name": "CException_RegisterMemberArray",
+    "name": "CExcept_RegisterLocalArray",
     "address": "0x00520f90",
     "size": 89,
     "source": "src/frontend/CException.c"
@@ -17861,7 +17861,7 @@
     "source": "src/frontend/CDecl.c"
   },
   {
-    "name": "CDecl_SetVBaseOffsets",
+    "name": "CDecl_MakeVBaseList",
     "address": "0x005336c0",
     "size": 191,
     "source": "src/frontend/CDecl.c"
@@ -18105,7 +18105,7 @@
     "size": 125
   },
   {
-    "name": "CDecl_WrapTypePointer",
+    "name": "makethetypepointer",
     "address": "0x0053a2d0",
     "size": 57,
     "source": "src/frontend/CDecl.c"

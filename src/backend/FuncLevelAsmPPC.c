@@ -59,7 +59,7 @@ static struct PCodeAssemblyEntry **assembly_list_tail;
 
 static inline void append_assembly(ParsedAsmInstruction *q, PCodeBlock *block)
 {
-    PCodeAssemblyEntry *n = (PCodeAssemblyEntry *)CompilerTools_AllocatePool(12);
+    PCodeAssemblyEntry *n = (PCodeAssemblyEntry *)lalloc(12);
     memclrw(n, 12);
     n->object = q->data.directive.object;
     n->block = block;

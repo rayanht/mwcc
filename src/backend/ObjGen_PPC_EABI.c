@@ -1504,7 +1504,7 @@ void emit_object_data_and_relocations(Object *func, const char *data, OLinkList 
         buffer->maximumSize = info->alignment;
     BE_elf_AlignRecord(&buffer->buffer, info->alignment);
     info->offset = offset = buffer->buffer.size;
-    CompilerTools_AppendGListData(&buffer->buffer, data, info->size);
+    AppendGListData(&buffer->buffer, data, info->size);
     queue = buffer->relocations;
     while (list != NULL) {
         object = list->obj;
@@ -1530,7 +1530,7 @@ void emit_object_data_and_relocations(Object *func, const char *data, OLinkList 
         record.kind = 1;
         record.offset = offset + list->offset;
         record.addend = addend + list->addend;
-        CompilerTools_AppendGListData(&queue->buffer, &record, 0xc);
+        AppendGListData(&queue->buffer, &record, 0xc);
         node->next = relocation_list;
         relocation_list = node;
         list = list->next;
@@ -1567,11 +1567,11 @@ void ObjGen_PPC_EABI_EmitFloatObject(Object *node)
     if (object->type->size == 4) {
         float value = (float)*(double *)object->u.data.u.string;
         CTool_EndianConvertMem(&value, 4);
-        CompilerTools_AppendGListData(&output->buffer, &value, 4);
+        AppendGListData(&output->buffer, &value, 4);
     } else if (object->type->size == 8) {
         double value = *(double *)object->u.data.u.string;
         CTool_EndianConvertMem(&value, 8);
-        CompilerTools_AppendGListData(&output->buffer, &value, 8);
+        AppendGListData(&output->buffer, &value, 8);
     } else {
         CError_FATAL(1527);
     }
@@ -1617,12 +1617,12 @@ void ObjGen_PPC_EABI_EmitSwitchTable(Object *gl, Object *func)
         relocation.value = CTool_EndianConvertWord32(relocation.value);
         *(void **)((char *)gl->u.data.u.switchtable.data + index) = NULL;
         relocation.kind = 1;
-        CompilerTools_AppendGListData(&list->buffer, &relocation, 0xc);
+        AppendGListData(&list->buffer, &relocation, 0xc);
         node->next = relocation_list;
         relocation_list = node;
         index += 4;
     }
-    CompilerTools_AppendGListData(&record->buffer, gl->u.data.u.switchtable.data, gl->u.data.u.switchtable.size << 2);
+    AppendGListData(&record->buffer, gl->u.data.u.switchtable.data, gl->u.data.u.switchtable.size << 2);
     object_data_size += info->size;
 }
 
@@ -1739,7 +1739,7 @@ void emit_relocation(SInt32 op, SInt32 offset, Object *obj, ObjGenSection *ctx, 
     node->index = block->relocationCount - 1;
     record.offset = offset;
     record.kind = node->kind & 0xff;
-    CompilerTools_AppendGListData(&block->buffer, &record, sizeof(record));
+    AppendGListData(&block->buffer, &record, sizeof(record));
     node->next = relocation_list;
     relocation_list = node;
 }
@@ -1825,9 +1825,9 @@ void ObjGen_PPC_EABI_EmitDescriptorWithRelocations(Object *obj, SInt32 value, vo
         dataSymbol->flags = 2;
         BE_elf_AlignRecord(&section->buffer, dataSymbol->alignment);
         dataSymbol->offset = base = section->buffer.size;
-        CompilerTools_AppendGListData(&section->buffer, data, size);
+        AppendGListData(&section->buffer, data, size);
         if (size & 3)
-            CompilerTools_AppendGListData(&section->buffer, &zero, ((size + 3) & ~3u) - size);
+            AppendGListData(&section->buffer, &zero, ((size + 3) & ~3u) - size);
         relocations = section->relocations;
         for (; list != NULL; list = list->next) {
             target = list->object;
@@ -1840,7 +1840,7 @@ void ObjGen_PPC_EABI_EmitDescriptorWithRelocations(Object *obj, SInt32 value, vo
             record.offset = base + list->offset;
             record.addend = 0;
             record.kind = 1;
-            CompilerTools_AppendGListData(&relocations->buffer, &record, sizeof(record));
+            AppendGListData(&relocations->buffer, &record, sizeof(record));
             relocation->next = relocation_list;
             relocation_list = relocation;
         }
@@ -1868,7 +1868,7 @@ void ObjGen_PPC_EABI_EmitDescriptorWithRelocations(Object *obj, SInt32 value, vo
     descriptor.offset = 0;
     descriptor.kind = CTool_EndianConvertWord32((value & 0x7fffffff) | ((size == 4) << 31));
     descriptor.addend = (size == 4) ? *words : 0;
-    CompilerTools_AppendGListData(&recordSection->buffer, &descriptor, sizeof(descriptor));
+    AppendGListData(&recordSection->buffer, &descriptor, sizeof(descriptor));
     relocations = recordSection->relocations;
     relocations->relocationCount++;
     relocation = galloc(sizeof(*relocation));
@@ -1888,7 +1888,7 @@ void ObjGen_PPC_EABI_EmitDescriptorWithRelocations(Object *obj, SInt32 value, vo
     record.offset = recordOffset;
     record.addend = objectAddend;
     record.kind = 1;
-    CompilerTools_AppendGListData(&relocations->buffer, &record, sizeof(record));
+    AppendGListData(&relocations->buffer, &record, sizeof(record));
     relocation->next = relocation_list;
     relocation_list = relocation;
 
@@ -1913,7 +1913,7 @@ void ObjGen_PPC_EABI_EmitDescriptorWithRelocations(Object *obj, SInt32 value, vo
         record.offset = recordOffset;
         record.kind = 1;
         record.addend = dataAddend;
-        CompilerTools_AppendGListData(&relocations->buffer, &record, sizeof(record));
+        AppendGListData(&relocations->buffer, &record, sizeof(record));
         relocation->next = relocation_list;
         relocation_list = relocation;
     }
@@ -1947,7 +1947,7 @@ void ObjGen_PPC_EABI_EmitObjectRelocation(Object *object)
         CError_FATAL(2219);
     }
     position = output->buffer.size;
-    CompilerTools_AppendGListData(&output->buffer, &value, 4);
+    AppendGListData(&output->buffer, &value, 4);
     records = output->relocations;
     records->relocationCount += 1;
     record = (ObjGenRelocation *)galloc(24);
@@ -1958,7 +1958,7 @@ void ObjGen_PPC_EABI_EmitObjectRelocation(Object *object)
     header[0] = position;
     header[1] = record->kind & 0xff;
     header[2] = 0;
-    CompilerTools_AppendGListData(&records->buffer, header, 12);
+    AppendGListData(&records->buffer, header, 12);
     record->next = relocation_list;
     relocation_list = record;
 }
@@ -2184,7 +2184,7 @@ void ObjGen_PPC_EABI_EmitSerializedFormat(Object *key, int index)
             wide_header->index = CTool_EndianConvertWord32(index);
             wide_header->reserved = 0;
             header_offset = 8;
-            CompilerTools_AppendGListData(&output->buffer, wide_header, 12);
+            AppendGListData(&output->buffer, wide_header, 12);
             values = format->values;
             if (values != NULL) {
                 do {
@@ -2200,7 +2200,7 @@ void ObjGen_PPC_EABI_EmitSerializedFormat(Object *key, int index)
             short_header->index = CTool_EndianConvertWord16(index);
             short_header->reserved = 0;
             header_offset = 4;
-            CompilerTools_AppendGListData(&output->buffer, short_header, 8);
+            AppendGListData(&output->buffer, short_header, 8);
             short_values = (SerializedValueList *)format->values;
             if (short_values != NULL) {
                 do {
@@ -2220,7 +2220,7 @@ void ObjGen_PPC_EABI_EmitSerializedFormat(Object *key, int index)
         location.reserved = 0;
         position = location.offset;
         location.kind = 1;
-        CompilerTools_AppendGListData(&records->buffer, &location, 12);
+        AppendGListData(&records->buffer, &location, 12);
         pending->next = relocation_list;
         relocation_list = pending;
     }

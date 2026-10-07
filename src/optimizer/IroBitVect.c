@@ -8,7 +8,7 @@
 unsigned int IroBitVect_AllocateBitVector(BitVector **vector, unsigned int bitCount)
 {
     bitCount = (bitCount >> 5) + 1U;
-    *vector = CompilerTools_AllocatePoolMemory(bitCount * sizeof((*vector)->bits[0]) + sizeof((*vector)->size));
+    *vector = oalloc(bitCount * sizeof((*vector)->bits[0]) + sizeof((*vector)->size));
     (*vector)->size = bitCount;
     memset((*vector)->bits, 0, (*vector)->size * sizeof((*vector)->bits[0]));
 }

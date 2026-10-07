@@ -293,7 +293,7 @@ static inline COptBlock *new_block(void)
     COptBlock *p;
     SInt16 i, n;
 
-    p = (COptBlock *)CompilerTools_AllocatePool(opt_block_bits_size * 2 + 0x20);
+    p = (COptBlock *)lalloc(opt_block_bits_size * 2 + 0x20);
     p->flag = 0;
     p->next = NULL;
     p->pred = NULL;
@@ -313,7 +313,7 @@ static inline void add_succ(COptBlock *b, CLabel *owner)
 {
     COptBlockLink *e;
 
-    e = (COptBlockLink *)CompilerTools_AllocatePool(8);
+    e = (COptBlockLink *)lalloc(8);
     e->next = b->succ;
     b->succ = e;
     e->target.statement = owner->stmt;
@@ -332,7 +332,7 @@ static inline COptBlock *new_block2(void)
 {
     COptBlock *p;
     SInt16 i, n;
-    p = (COptBlock *)CompilerTools_AllocatePool(opt_block_bits_size * 2 + 0x20);
+    p = (COptBlock *)lalloc(opt_block_bits_size * 2 + 0x20);
     p->flag = 0;
     p->next = NULL;
     p->pred = NULL;
@@ -382,7 +382,7 @@ static COptCSE *COpt_NewCSE(ENode *expr)
 {
     COptCSE *cse;
 
-    (cse = (COptCSE *)CompilerTools_AllocatePoolMemory(30))->expr = expr;
+    (cse = (COptCSE *)oalloc(30))->expr = expr;
     cse->replacement = NULL;
     cse->block = current_opt_block;
     cse->last = current_cse_expr;
@@ -395,7 +395,7 @@ static COptCSE *COpt_NewCSE(ENode *expr)
 /* Records an occurrence of a common subexpression: the expression and the CSE it computes. */
 static COptCSE *COpt_AddOccurrence(ENode *expr, COptCSE *cse)
 {
-    OptimizerOccurrence *occ = (OptimizerOccurrence *)CompilerTools_AllocatePoolMemory(12);
+    OptimizerOccurrence *occ = (OptimizerOccurrence *)oalloc(12);
 
     occ->next = occurrence_list;
     occurrence_list = occ;
@@ -447,7 +447,7 @@ static inline COptCSE *COpt_VectorConst(ENode *expr)
             expr->rtype == cse->expr->rtype)
             return cse;
     }
-    cse = (COptCSE *)CompilerTools_AllocatePoolMemory(30);
+    cse = (COptCSE *)oalloc(30);
     cse->expr = expr;
     cse->replacement = NULL;
     cse->block = current_opt_block;
@@ -831,9 +831,9 @@ void fold_and_invert_conditional_branch(Statement *s)
     UInt8 kind;
     Statement *head;
 
-    if (CExpr2_IsZero(s->expr)) {
+    if (iszero(s->expr)) {
         if (s->type == ST_IFNGOTO) {
-            q = CompilerTools_AllocatePool(sizeof(Statement));
+            q = lalloc(sizeof(Statement));
             *q = *s;
             q->type = ST_GOTO;
             s->next = q;
@@ -848,7 +848,7 @@ void fold_and_invert_conditional_branch(Statement *s)
                 if (s->type != ST_IFNGOTO)
                     break;
             } else {
-                allocated = CompilerTools_AllocatePool(sizeof(Statement));
+                allocated = lalloc(sizeof(Statement));
                 *allocated = *s;
                 allocated->type = ST_GOTO;
                 s->next = allocated;
@@ -942,7 +942,7 @@ void build_opt_blocks(Statement *first)
     target->items = NULL;
     target->count = 0;
     if (first != NULL) {
-        successor = CompilerTools_AllocatePool(sizeof(*successor));
+        successor = lalloc(sizeof(*successor));
         successor->next = NULL;
         target->succ = successor;
         successor->target.statement = first;
@@ -1019,7 +1019,7 @@ void build_opt_blocks(Statement *first)
                             case ST_ENDCATCHDTOR:
                             default:
                                 if (first->next != NULL) {
-                                    COptBlockLink *edge = CompilerTools_AllocatePool(sizeof(*edge));
+                                    COptBlockLink *edge = lalloc(sizeof(*edge));
                                     edge->next = block->succ;
                                     block->succ = edge;
                                     edge->target.statement = first->next;
@@ -1047,7 +1047,7 @@ void build_opt_blocks(Statement *first)
             for (target = opt_blocks->next; target != NULL; target = target->next) {
                 if (target->items == first) {
                     successor->target.block = target;
-                    predecessor = CompilerTools_AllocatePool(sizeof(*predecessor));
+                    predecessor = lalloc(sizeof(*predecessor));
                     predecessor->next = target->pred;
                     target->pred = predecessor;
                     predecessor->target.block = block;
@@ -1075,7 +1075,7 @@ void COptimizer_004bf980(void)
             do {
                 ENode *expr;
                 if (op->type >= 4 && op->type <= 0xf && (expr = op->expr) != NULL && expr->type == ECOMMA) {
-                    Statement *next = (Statement *)CompilerTools_AllocatePool(0x1a);
+                    Statement *next = (Statement *)lalloc(0x1a);
                     *next = *op;
                     op->next = next;
                     op->type = ST_EXPRESSION;
@@ -1511,7 +1511,7 @@ Boolean traverse_node_list_reverse(ENodeList *node, FuncArg *value)
     Boolean result;
     if (node == NULL)
         return 1;
-    if (value != NULL && (const void *)value != &data_00583098 && (const void *)value != &data_00584748)
+    if (value != NULL && (const void *)value != &elipsis && (const void *)value != &oldstyle)
         value = value->next;
     if (node->next != NULL)
         result = traverse_node_list_reverse(node->next, value);
@@ -1534,7 +1534,7 @@ void invalidate_expr_cse(ENode *expression)
         eliminate_common_subexpressions();
         clearEntries(75);
         occurrence_list = NULL;
-        CompilerTools_ResetPool();
+        freeoheap();
         return;
     }
     data_005812ff = 1;
@@ -1642,7 +1642,7 @@ COptCSE *find_or_create_commutative_cse(ENode *expr, COptCSE *left, COptCSE *rig
         }
     }
 
-    entry = (COptCSE *)CompilerTools_AllocatePoolMemory(30);
+    entry = (COptCSE *)oalloc(30);
     entry->expr = expr;
     entry->replacement = NULL;
     entry->block = current_opt_block;
@@ -1673,7 +1673,7 @@ COptCSE *find_or_create_cse(ENode *expr, COptCSE *left, COptCSE *right)
         }
         entry = entry->next;
     }
-    entry = (COptCSE *)CompilerTools_AllocatePoolMemory(30);
+    entry = (COptCSE *)oalloc(30);
     entry->expr = expr;
     entry->replacement = NULL;
     entry->block = current_opt_block;
@@ -1703,7 +1703,7 @@ COptCSE *find_or_create_unary_cse(ENode *expr, COptCSE *left)
         }
         entry = entry->next;
     }
-    entry = (COptCSE *)CompilerTools_AllocatePoolMemory(30);
+    entry = (COptCSE *)oalloc(30);
     entry->expr = expr;
     entry->replacement = NULL;
     entry->block = current_opt_block;
@@ -1733,7 +1733,7 @@ COptCSE *find_or_create_left_cse(ENode *expr, COptCSE *left)
         }
         entry = entry->next;
     }
-    new_entry = (COptCSE *)CompilerTools_AllocatePoolMemory(0x1e);
+    new_entry = (COptCSE *)oalloc(0x1e);
     new_entry->expr = expr;
     new_entry->replacement = NULL;
     new_entry->block = current_opt_block;
@@ -1822,38 +1822,38 @@ void eliminate_common_subexpressions(void)
         if (best == NULL || data_005812fc >= 256)
             return;
 
-        object = (Object *)CompilerTools_AllocatePool(sizeof(Object));
+        object = (Object *)lalloc(sizeof(Object));
         memclrw(object, sizeof(Object));
         object->name = CParser_GetUniqueName();
         object->type = best->expr->rtype;
         object->datatype = DLOCAL;
         registerInfo = CPrep_AllocateVarInfo();
         object->u.var.info = registerInfo;
-        objectLink = (ObjectList *)CompilerTools_AllocatePool(sizeof(ObjectList));
+        objectLink = (ObjectList *)lalloc(sizeof(ObjectList));
         objectLink->object = object;
         objectLink->next = locals;
         locals = objectLink;
         registerInfo->used = 1;
         registerInfo->usage = best->uses + 1;
-        objectExpression = (ENode *)CompilerTools_AllocatePool(sizeof(ENode));
+        objectExpression = (ENode *)lalloc(sizeof(ENode));
         objectExpression->type = EOBJREF;
         objectExpression->cost = 0;
         objectExpression->flags = 0;
         objectExpression->data.objref = object;
         objectExpression->rtype = CDecl_NewPointerType(object->type);
-        reference = (ENode *)CompilerTools_AllocatePool(sizeof(ENode));
+        reference = (ENode *)lalloc(sizeof(ENode));
         reference->type = EINDIRECT;
         reference->cost = 1;
         reference->flags = 0;
         reference->data.diadic.left = objectExpression;
         reference->rtype = object->type;
-        assignment = (ENode *)CompilerTools_AllocatePool(sizeof(ENode));
+        assignment = (ENode *)lalloc(sizeof(ENode));
         assignment->type = EASS;
         assignment->cost = 255;
         assignment->flags = 0;
         assignment->rtype = object->type;
         assignment->data.diadic.left = reference;
-        assignment->data.diadic.right = (ENode *)CompilerTools_AllocatePool(sizeof(ENode));
+        assignment->data.diadic.right = (ENode *)lalloc(sizeof(ENode));
         *assignment->data.diadic.right = *best->expr;
         best->expr = assignment->data.diadic.right;
         data_00581302 = 0;
@@ -1872,7 +1872,7 @@ void eliminate_common_subexpressions(void)
             CError_FATAL(390);
         else
             data_005812fe = 1;
-        saved = (ENode *)CompilerTools_AllocatePool(sizeof(ENode));
+        saved = (ENode *)lalloc(sizeof(ENode));
         *saved = *best->last;
         best->last->type = ECOMMA;
         best->last->data.diadic.left = assignment;

@@ -413,7 +413,7 @@ void *IRO_Optimizer(Object *function, void *incomingBody)
     IroDump_DumpFunction("After IRO_Optimizer", 0);
     incomingBody = convert_linear_to_statements();
     IroVars_ClearObjectVarRecords();
-    CompilerTools_ResetPool();
+    freeoheap();
     return incomingBody;
 }
 
@@ -748,7 +748,7 @@ static Statement *NewIrNode(UInt8 type, IROLinear *src)
 {
     Statement *n;
 
-    n = (Statement *)CompilerTools_AllocatePool(sizeof(Statement));
+    n = (Statement *)lalloc(sizeof(Statement));
     memset(n, 0, sizeof(Statement));
     n->type = type;
     n->value = 1;
@@ -819,7 +819,7 @@ static inline void ClearReferences(void)
 static ENode *NewNode(UInt8 type)
 {
     ENode *p;
-    p = (ENode *)CompilerTools_AllocatePool(sizeof(ENode));
+    p = (ENode *)lalloc(sizeof(ENode));
     memset(p, 0, sizeof(ENode));
     p->type = type;
     return p;
@@ -827,7 +827,7 @@ static ENode *NewNode(UInt8 type)
 
 static IROLinear *NewInsn(UInt8 type)
 {
-    IROLinear *p = (IROLinear *)CompilerTools_AllocatePoolMemory(sizeof(IROLinear));
+    IROLinear *p = (IROLinear *)oalloc(sizeof(IROLinear));
     memset(p, 0, sizeof(IROLinear));
     p->stmt = current_statement;
     p->nodetype = EPOSTINC;
@@ -1052,7 +1052,7 @@ ENode *IrOptimizer_0042eb40(IROLinear *e)
                 i = n;
                 if (n >= 0) {
                     do {
-                        l = (ENodeList *)CompilerTools_AllocatePool(sizeof(ENodeList));
+                        l = (ENodeList *)lalloc(sizeof(ENodeList));
                         l->node = IrOptimizer_0042eb40(e->u.funccall.args[i]);
                         l->next = p->data.funccall.args;
                         p->data.funccall.args = l;
@@ -1073,7 +1073,7 @@ ENode *IrOptimizer_0042eb40(IROLinear *e)
 ENode *IrOptimizer_NewENode(UInt8 type)
 {
     ENode *node;
-    node = (ENode *)CompilerTools_AllocatePool(sizeof(ENode));
+    node = (ENode *)lalloc(sizeof(ENode));
     memset(node, 0, sizeof(ENode));
     node->type = (UInt8)type;
     return node;
@@ -1355,7 +1355,7 @@ void visit_statement_expressions(struct Statement *stmt)
 
 static inline IROLinear *new_linear(int type)
 {
-    IROLinear *node = (IROLinear *)CompilerTools_AllocatePoolMemory(sizeof(IROLinear));
+    IROLinear *node = (IROLinear *)oalloc(sizeof(IROLinear));
     memset(node, 0, sizeof(IROLinear));
     node->stmt = current_statement;
     node->nodetype = EPOSTINC;
@@ -1535,11 +1535,11 @@ struct IROLinear *linearize_expression(ENode *expression)
                 argumentCount++;
             arguments = NULL;
             if (argumentCount != 0) {
-                arguments = (IROLinear **)CompilerTools_AllocatePoolMemory(argumentCount * sizeof(IROLinear *));
+                arguments = (IROLinear **)oalloc(argumentCount * sizeof(IROLinear *));
                 cursor = expression->data.funccall.args;
                 for (argumentCount = 0; cursor != NULL; cursor = cursor->next)
                     arguments[argumentCount++] = (IROLinear *)cursor->node;
-                argumentOrder = (SInt16 *)CompilerTools_AllocatePoolMemory(argumentCount * sizeof(SInt16));
+                argumentOrder = (SInt16 *)oalloc(argumentCount * sizeof(SInt16));
                 for (argumentIndex = 0; argumentIndex < argumentCount; argumentIndex++)
                     argumentOrder[argumentIndex] = argumentCount - argumentIndex - 1;
                 for (argumentIndex = 0; argumentIndex < argumentCount; argumentIndex++) {
@@ -1569,7 +1569,7 @@ struct IROLinear *linearize_expression(ENode *expression)
 
 static inline Statement *NewStmt(UInt8 type)
 {
-    Statement *s = (Statement *)CompilerTools_AllocatePool(0x1a);
+    Statement *s = (Statement *)lalloc(0x1a);
     memset(s, 0, 0x1a);
     s->type = type;
     return s;
@@ -1793,14 +1793,14 @@ void lower_expression_to_statements(ENode *node, int valueNeeded, int force)
                 argumentCount++;
             }
             if (argumentCount != 0) {
-                arguments = (ENode **)CompilerTools_AllocatePoolMemory(argumentCount * sizeof(*arguments));
+                arguments = (ENode **)oalloc(argumentCount * sizeof(*arguments));
                 argument = node->data.funccall.args;
                 filledCount = 0;
                 while (argument != NULL) {
                     arguments[filledCount++] = argument->node;
                     argument = argument->next;
                 }
-                argumentOrder = (SInt16 *)CompilerTools_AllocatePoolMemory(filledCount * sizeof(*argumentOrder));
+                argumentOrder = (SInt16 *)oalloc(filledCount * sizeof(*argumentOrder));
                 for (index = 0; index < filledCount; index++)
                     argumentOrder[index] = filledCount - index - 1;
                 for (orderIndex = 0; orderIndex < filledCount; orderIndex++)
@@ -1825,7 +1825,7 @@ void lower_expression_to_statements(ENode *node, int valueNeeded, int force)
 
 static ENode *NewENode(UInt8 type)
 {
-    ENode *n = (ENode *)CompilerTools_AllocatePool(0x1a);
+    ENode *n = (ENode *)lalloc(0x1a);
     memset(n, 0, 0x1a);
     n->type = type;
     return n;
@@ -1833,7 +1833,7 @@ static ENode *NewENode(UInt8 type)
 
 static Statement *NewIRStat(UInt8 type)
 {
-    Statement *n = (Statement *)CompilerTools_AllocatePool(0x1a);
+    Statement *n = (Statement *)lalloc(0x1a);
     memset(n, 0, 0x1a);
     n->type = type;
     return n;
@@ -1963,7 +1963,7 @@ void IrOptimizer_00430a60(ENode *p, Object **objp)
     Statement *b;
     ENode *a;
 
-    a = (ENode *)CompilerTools_AllocatePool(sizeof(ENode));
+    a = (ENode *)lalloc(sizeof(ENode));
     memset(a, 0, sizeof(ENode));
     a->type = EINDIRECT;
     a->data.diadic.left = create_objectrefnode(*objp);
@@ -1972,11 +1972,11 @@ void IrOptimizer_00430a60(ENode *p, Object **objp)
     else
         a->rtype = p->data.diadic.left->rtype;
 
-    b = (Statement *)CompilerTools_AllocatePool(sizeof(Statement));
+    b = (Statement *)lalloc(sizeof(Statement));
     memset(b, 0, sizeof(Statement));
     b->type = ST_EXPRESSION;
 
-    c = (ENode *)CompilerTools_AllocatePool(sizeof(ENode));
+    c = (ENode *)lalloc(sizeof(ENode));
     memset(c, 0, sizeof(ENode));
     c->type = EASS;
     b->expr = c;
@@ -2002,7 +2002,7 @@ void insert_indirect_statement_with_label(ENode *node, Object **object, struct C
     Statement *statement;
     ENode *indirect;
 
-    indirect = (ENode *)CompilerTools_AllocatePool(sizeof(ENode));
+    indirect = (ENode *)lalloc(sizeof(ENode));
     memset(indirect, 0, sizeof(ENode));
     indirect->type = EINDIRECT;
     indirect->data.monadic = create_objectrefnode(*object);
@@ -2013,7 +2013,7 @@ void insert_indirect_statement_with_label(ENode *node, Object **object, struct C
 
     *label = IroUtil_NewLabel();
 
-    statement = (Statement *)CompilerTools_AllocatePool(sizeof(Statement));
+    statement = (Statement *)lalloc(sizeof(Statement));
     memset(statement, 0, sizeof(Statement));
     statement->type = ST_IFNGOTO;
     statement->expr = indirect;
@@ -2132,7 +2132,7 @@ void create_temp_object_assignment(ENode *expression, Object **tempObject)
         *tempObject = create_temp_object(expression->data.monadic->rtype);
 
     object = *tempObject;
-    entry = (List12 *)CompilerTools_AllocatePool(sizeof(List12));
+    entry = (List12 *)lalloc(sizeof(List12));
     entry->nullCheckExpression = (ENode *)expression->data.funccall.functype;
     entry->temporary = object;
     entry->next = NULL;
@@ -2150,7 +2150,7 @@ void create_temp_object_assignment(ENode *expression, Object **tempObject)
     else
         reference->rtype = expression->data.monadic->rtype;
 
-    statement = (Statement *)CompilerTools_AllocatePool(sizeof(Statement));
+    statement = (Statement *)lalloc(sizeof(Statement));
     memset(statement, 0, sizeof(Statement));
     statement->type = ST_EXPRESSION;
     statement->expr = NewENode(EASS);
@@ -2171,7 +2171,7 @@ void create_temp_object_assignment(ENode *expression, Object **tempObject)
 
 static void *IRO_NewNode(UInt8 type)
 {
-    ENode *n = (ENode *)CompilerTools_AllocatePool(0x1a);
+    ENode *n = (ENode *)lalloc(0x1a);
     memset(n, 0, 0x1a);
     n->type = type;
     return n;
@@ -2197,7 +2197,7 @@ void insert_intconst_assignment(ENode *expr, Object **out)
     one->data.intval = cint64_one;
     one->rtype = expr->rtype;
 
-    statement = (Statement *)CompilerTools_AllocatePool(sizeof(Statement));
+    statement = (Statement *)lalloc(sizeof(Statement));
     memset(statement, 0, sizeof(Statement));
     statement->type = ST_EXPRESSION;
     statement->expr = IRO_NewNode(EASS);
@@ -2235,7 +2235,7 @@ void create_zero_initialized_temp_object(ENode *expr, Object **out)
     zero->data.intval = cint64_zero;
     zero->rtype = expr->rtype;
 
-    statement = (Statement *)CompilerTools_AllocatePool(sizeof(*statement));
+    statement = (Statement *)lalloc(sizeof(*statement));
     memset(statement, 0, sizeof(*statement));
     statement->type = ST_EXPRESSION;
     statement->expr = IRO_NewNode(EASS);
@@ -2255,7 +2255,7 @@ void create_zero_initialized_temp_object(ENode *expr, Object **out)
 
 static void *new_enode(UInt8 type)
 {
-    ENode *n = (ENode *)CompilerTools_AllocatePool(0x1a);
+    ENode *n = (ENode *)lalloc(0x1a);
     memset(n, 0, 0x1a);
     n->type = type;
     return n;
@@ -2276,7 +2276,7 @@ void extract_right_operand_to_statement(ENode *node, int force)
         } else {
             CError_FATAL(574);
         }
-        stmt = (Statement *)CompilerTools_AllocatePool(sizeof(Statement));
+        stmt = (Statement *)lalloc(sizeof(Statement));
         memset(stmt, 0, sizeof(Statement));
         stmt->type = ST_EXPRESSION;
         stmt->expr = new_enode(EASS);
@@ -2294,7 +2294,7 @@ void extract_right_operand_to_statement(ENode *node, int force)
         node->data.monadic = create_objectrefnode(obj);
         CError_ASSERT(604, node->rtype->type != TYPEVOID);
     } else {
-        stmt = (Statement *)CompilerTools_AllocatePool(sizeof(Statement));
+        stmt = (Statement *)lalloc(sizeof(Statement));
         memset(stmt, 0, sizeof(Statement));
         stmt->type = ST_EXPRESSION;
         stmt->expr = node->data.diadic.right;
@@ -2427,7 +2427,7 @@ void set_monadic_addr_flags(IROLinear *p, int flag)
 IROLinear *IrOptimizer_NewLinear(unsigned char kind)
 {
     IROLinear *linear;
-    linear = CompilerTools_AllocatePoolMemory(sizeof(IROLinear));
+    linear = oalloc(sizeof(IROLinear));
     memset(linear, 0, sizeof(IROLinear));
     linear->stmt = current_statement;
     linear->nodetype = EPOSTINC;

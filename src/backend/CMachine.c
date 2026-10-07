@@ -259,7 +259,7 @@ int CMach_GetQUALalign(int qualifiers)
 
 CInt64 CMach_CalcIntDiadic(Type *type, CInt64 a, SInt16 op, CInt64 b)
 {
-    if (Type_IsUnsigned(type)) {
+    if (is_unsigned(type)) {
         switch (type->size) {
             case 1:
                 CInt64_ConvertUInt8(&a);
@@ -500,7 +500,7 @@ CInt64 CMach_CalcIntDiadic(Type *type, CInt64 a, SInt16 op, CInt64 b)
 
 CInt64 CMach_CalcIntMonadic(Type *type, SInt16 op, CInt64 val)
 {
-    if (Type_IsUnsigned(type)) {
+    if (is_unsigned(type)) {
         switch (type->size) {
             case 1:
                 CInt64_ConvertUInt8(&val);
@@ -592,11 +592,11 @@ CInt64 CMach_CalcIntConvertFromFloat(Type *type, double value)
 {
     CInt64 result;
     if ((type->type == TYPEINT || type->type == TYPEENUM) && type->size == 8) {
-        if (Type_IsUnsigned(type))
+        if (is_unsigned(type))
             CInt64_ConvertUFromLongDouble(&result, value);
         else
             CInt64_ConvertFromLongDouble(&result, value);
-    } else if (Type_IsUnsigned(type)) {
+    } else if (is_unsigned(type)) {
         result.hi = 0;
         result.lo = value;
     } else {
@@ -642,7 +642,7 @@ void CMach_InitIntMem(Type *type, CInt64 val, void *mem)
     }
 }
 
-void CMachine_InitVectorMem(Type *type, MWVector128 val, void *mem)
+void CMach_InitVectorMem(Type *type, MWVector128 val, void *mem)
 {
     UInt8 uc[16];
     UInt16 us[8];
@@ -808,12 +808,12 @@ Float CMach_CalcFloatConvertFromInt(Type *type, CInt64 value)
 {
     Float f;
     if ((type->type == TYPEINT || type->type == TYPEENUM) && type->size == 8) {
-        if (Type_IsUnsigned(type))
+        if (is_unsigned(type))
             f.data.value = CInt64_ConvertUToLongDouble(&value);
         else
             f.data.value = CInt64_ConvertToLongDouble(&value);
     } else {
-        if (Type_IsUnsigned(type))
+        if (is_unsigned(type))
             f.data.value = value.lo;
         else
             f.data.value = (SInt32)value.lo;
@@ -915,7 +915,7 @@ void CMach_PragmaParams(void)
     }
 }
 
-UInt16 fn_004a8400(TypeStruct *str)
+UInt16 CMach_GetStructAlign(TypeStruct *str)
 {
     unsigned int lift_value_0;
     lift_value_0 = maximumAlignment;
@@ -1055,7 +1055,7 @@ SInt16 CMachine_GetTypeAlignment(Type *type)
     }
 }
 
-SInt16 get_type_align(Type *type)
+SInt16 CMach_GetTypeAlign(Type *type)
 {
     SInt32 alignment;
     alignment = CMachine_GetTypeAlignment(type);
@@ -1089,7 +1089,7 @@ SInt16 get_type_align(Type *type)
 
 SInt16 CMach_MemberAlignValue(Type *type, SInt32 offset)
 {
-    SInt16 alignment = get_type_align(type);
+    SInt16 alignment = CMach_GetTypeAlign(type);
     if ((SInt32)alignment <= 1)
         return 0;
     return (alignment - (offset & (alignment - 1U))) & (alignment - 1U);
@@ -1155,7 +1155,7 @@ long CMach_StructLayoutGetOffset(Type *type, int flags)
     data_00580fa0 = 0;
     requiredAlignment = CMach_GetQUALalign(typeCode);
     currentOffset = structLayoutOffset;
-    alignment = get_type_align(type);
+    alignment = CMach_GetTypeAlign(type);
     if (requiredAlignment > alignment) {
         alignment = requiredAlignment;
     }
@@ -1259,7 +1259,7 @@ long CMach_StructLayoutBitfield(TypeBitfield *field, int alignmentKind)
     return data_00580fa4;
 }
 
-Boolean CMachine_FunctionRequiresMemoryReturn(TypeFunc *functype)
+Boolean CMach_GetFunctionResultClass(TypeFunc *functype)
 {
     SInt8 type = functype->functype->type;
     switch (type) {
@@ -1390,7 +1390,7 @@ Float CMach_FloatReciprocal(Float value)
     return value;
 }
 
-void initialize_hash_name_globals(void)
+void CMach_ReInitRuntimeObjects(void)
 {
     HashNameNode *nameHash1;
     HashNameNode *nameHash2;

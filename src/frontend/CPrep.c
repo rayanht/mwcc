@@ -287,7 +287,7 @@ typedef enum { CPrep_DidPush, CPrep_DidPop } CPrep_DidFlag;
 VarInfo *CPrep_AllocateVarInfo(void)
 {
     VarInfo *info;
-    info = (VarInfo *)CompilerTools_AllocatePool(sizeof(VarInfo));
+    info = (VarInfo *)lalloc(sizeof(VarInfo));
     memclrw(info, sizeof(VarInfo));
     info->usage = 0;
     info->deftoken = *CPrep_GetLastBufferedToken();
@@ -1266,7 +1266,7 @@ void parse_line_directive(void)
         filename[length++] = ch;
     }
     filename[length] = 0;
-    CompilerTools_ConvertCStringToPString(filename);
+    CTool_CtoPstr(filename);
     COS_FileSetFSSpec(data_0057f94a[current_file_index], filename);
     if (copts.filesyminfo != 0 && cprep_cu[0xe0] == 0) {
         newFile = fn_00441850(data_0057f94a[current_file_index], NULL);
@@ -1603,13 +1603,13 @@ void parse_pragma(void)
             parse_prep_setting();
         } else if (memcmp(PN, "exception_terminate", 20) == 0) {
             if (!data_0058850f)
-                CException_PushEntry();
+                CExcept_Terminate();
         } else if (memcmp(PN, "exception_arrayinit", 20) == 0) {
             if (!data_0058850f)
-                CException_AddStdTypeRecord();
+                CExcept_ArrayInit();
         } else if (memcmp(PN, "exception_magic", 16) == 0) {
             if (!data_0058850f)
-                fn_004e30c0();
+                CExcept_Magic();
         } else if (memcmp(PN, "SOMReleaseOrder", 16) == 0) {
             macrocheck = 1;
             CSOM_ParseMethodNameList();
@@ -2478,7 +2478,7 @@ static void CPrep_PopState(void)
 {
     macro_expansion_depth--;
     if (macro_expansion_depth == 0 && data_0057fcee)
-        CompilerTools_ResetPoolAvail();
+        freeaheap();
     currentTextPosition = (void *)macro_stack[macro_expansion_depth].pos;
     macro_text_start = macro_stack[macro_expansion_depth].macname;
     if (macro_stack[macro_expansion_depth].macro)
@@ -2521,8 +2521,8 @@ UInt8 *expand_macro(Macro *macro)
             variadicArgument = variadic && nargs == 2;
             parameterCount = (argumentCount = nargs) - 1;
             length = parameterCount * sizeof(char *);
-            arguments = CompilerTools_AllocateBlock(length);
-            expandedArguments = CompilerTools_AllocateBlock(length);
+            arguments = aalloc(length);
+            expandedArguments = aalloc(length);
             argument = 1;
             for (; argument < argumentCount;) {
                 firstToken = 1;
@@ -2563,8 +2563,7 @@ UInt8 *expand_macro(Macro *macro)
                             case 0x27:
                                 tokenStart = currentTextPosition - 1;
                                 CPrepTokenizer_SkipToChar(token);
-                                CompilerTools_AppendGListData(&macro_text, tokenStart,
-                                                              currentTextPosition - tokenStart);
+                                AppendGListData(&macro_text, tokenStart, currentTextPosition - tokenStart);
                                 goto tokenFinished;
                             case ')':
                                 depth--;
@@ -2610,7 +2609,7 @@ UInt8 *expand_macro(Macro *macro)
                     AppendGListByte(&macro_text, 0);
                     length = macro_text.size;
                     if (length <= 0x20000) {
-                        arguments[argument - 2] = CompilerTools_AllocateBlock(length);
+                        arguments[argument - 2] = aalloc(length);
                         memcpy(arguments[argument - 2], *macro_text.data, length);
                     } else {
                         CPrep_Error(0x6f);
@@ -2643,7 +2642,7 @@ UInt8 *expand_macro(Macro *macro)
                 CPrepTokenizer_SkipToChar(token);
                 text = (char *)currentTextPosition;
                 currentTextPosition = savedInput;
-                CompilerTools_AppendGListData(&macro_text, result, text - result);
+                AppendGListData(&macro_text, result, text - result);
                 continue;
             }
             case 2:
@@ -2701,12 +2700,12 @@ UInt8 *expand_macro(Macro *macro)
                     if (arguments[argumentIndex] == NULL)
                         continue;
                     savedLength = macro_text.size;
-                    savedText = CompilerTools_AllocateBlock(savedLength);
+                    savedText = aalloc(savedLength);
                     memcpy(savedText, *macro_text.data, savedLength);
                     expandedArguments[argumentIndex] = expand_macros_in_text(NULL, arguments[argumentIndex]);
                     argumentText = expandedArguments[argumentIndex];
                     macro_text.size = 0;
-                    CompilerTools_AppendGListData(&macro_text, savedText, savedLength);
+                    AppendGListData(&macro_text, savedText, savedLength);
                 }
                 while (*argumentText != 0)
                     AppendGListByte(&macro_text, *argumentText++);
@@ -2724,7 +2723,7 @@ UInt8 *expand_macro(Macro *macro)
         CPrep_Error(0x6f);
         return (UInt8 *)"";
     }
-    result = CompilerTools_AllocateBlock(length);
+    result = aalloc(length);
     memcpy(result, *macro_text.data, macro_text.size);
     return (UInt8 *)expand_macros_in_text(macro, result);
 }
@@ -2748,7 +2747,7 @@ char *expand_builtin_macro(Macro *macro)
             {
                 unsigned long textLength;
                 textLength = strlen(buffer);
-                text = CompilerTools_AllocateBlock(textLength + 1);
+                text = aalloc(textLength + 1);
                 strcpy(text, buffer);
                 return text;
             }
@@ -2894,7 +2893,7 @@ static void pop_macro_state(void)
 {
     macro_expansion_depth--;
     if (macro_expansion_depth == 0 && data_0057fcee != 0)
-        CompilerTools_ResetPoolAvail();
+        freeaheap();
     currentTextPosition = (UInt8 *)macro_stack[macro_expansion_depth].pos;
     macro_text_start = macro_stack[macro_expansion_depth].macname;
     if (macro_stack[macro_expansion_depth].macro != NULL)
@@ -2944,14 +2943,14 @@ char *expand_macros_in_text(Macro *state, char *text)
                             currentTextPosition = next;
                     }
                 }
-                CompilerTools_AppendGListData(&macro_text, token, currentTextPosition - token);
+                AppendGListData(&macro_text, token, currentTextPosition - token);
                 continue;
 
             case '"':
             case '\'':
                 quotedText = currentTextPosition++;
                 CPrepTokenizer_SkipToChar((char)*quotedText);
-                CompilerTools_AppendGListData(&macro_text, quotedText, currentTextPosition - quotedText);
+                AppendGListData(&macro_text, quotedText, currentTextPosition - quotedText);
                 continue;
 
             case 'A':
@@ -3014,7 +3013,7 @@ char *expand_macros_in_text(Macro *state, char *text)
                         next = find_identifier_end_after_optional_paren(currentTextPosition);
                         if (next != NULL) {
                             currentTextPosition = next;
-                            CompilerTools_AppendGListData(&macro_text, token, next - token);
+                            AppendGListData(&macro_text, token, next - token);
                             continue;
                         }
                     }
@@ -3031,7 +3030,7 @@ char *expand_macros_in_text(Macro *state, char *text)
                         CPrep_Fatal();
                         return "";
                     }
-                    savedText = CompilerTools_AllocateBlock(length);
+                    savedText = aalloc(length);
                     memcpy(savedText, *macro_text.data, length);
                     token = expand_macro(expansion);
                     if (macro_expansion_depth == initialDepth) {
@@ -3050,28 +3049,28 @@ char *expand_macros_in_text(Macro *state, char *text)
                         }
                         if (split > 0) {
                             macro_text.size = 0;
-                            CompilerTools_AppendGListString(&macro_text, (char *)&token[split + 1]);
-                            AppendGListName(&macro_text, (char *)currentTextPosition);
-                            currentTextPosition = CompilerTools_AllocateBlock(macro_text.size);
+                            AppendGListName(&macro_text, (char *)&token[split + 1]);
+                            AppendGListID(&macro_text, (char *)currentTextPosition);
+                            currentTextPosition = aalloc(macro_text.size);
                             memcpy(currentTextPosition, *macro_text.data, macro_text.size);
                             macro_text.size = 0;
-                            CompilerTools_AppendGListData(&macro_text, savedText, length);
-                            CompilerTools_AppendGListData(&macro_text, token, split + 1);
+                            AppendGListData(&macro_text, savedText, length);
+                            AppendGListData(&macro_text, token, split + 1);
                         } else {
                             macro_text.size = 0;
-                            CompilerTools_AppendGListString(&macro_text, (char *)token);
-                            AppendGListName(&macro_text, (char *)currentTextPosition);
-                            remainingText = CompilerTools_AllocateBlock(macro_text.size);
+                            AppendGListName(&macro_text, (char *)token);
+                            AppendGListID(&macro_text, (char *)currentTextPosition);
+                            remainingText = aalloc(macro_text.size);
                             memcpy(remainingText, *macro_text.data, macro_text.size);
                             macro_text.size = 0;
                             currentTextPosition = remainingText;
-                            CompilerTools_AppendGListData(&macro_text, savedText, length);
+                            AppendGListData(&macro_text, savedText, length);
                         }
                         goto checkDepth;
                     } else {
                         macro_text.size = 0;
-                        CompilerTools_AppendGListData(&macro_text, savedText, length);
-                        AppendGListName(&macro_text, (char *)token);
+                        AppendGListData(&macro_text, savedText, length);
+                        AppendGListID(&macro_text, (char *)token);
                         if (macro_expansion_depth < initialDepth)
                             goto allocateResult;
                         macro_text.size--;
@@ -3080,7 +3079,7 @@ char *expand_macros_in_text(Macro *state, char *text)
                 } else {
                     if (data_0057f9d2 != 0)
                         AppendGListByte(&macro_text, 4);
-                    CompilerTools_AppendGListData(&macro_text, token, currentTextPosition - token);
+                    AppendGListData(&macro_text, token, currentTextPosition - token);
                 }
                 continue;
 
@@ -3128,7 +3127,7 @@ allocateResult:
         CPrep_Fatal();
         return "";
     }
-    savedText = CompilerTools_AllocateBlock(size);
+    savedText = aalloc(size);
     memcpy(savedText, *macro_text.data, size);
     return savedText;
 }
@@ -3438,7 +3437,7 @@ void define_macro(void)
                 case '"':
                 case '\'':
                     CPrepTokenizer_SkipToDelimiter(ch);
-                    CompilerTools_AppendGListData(&macro_text, start, currentTextPosition - start);
+                    AppendGListData(&macro_text, start, currentTextPosition - start);
                     break;
                 case '#':
                     savedPosition = currentTextPosition;
@@ -3477,7 +3476,7 @@ void define_macro(void)
                             AppendGListByte(&macro_text, i);
                             lastArgument = 1;
                         } else {
-                            CompilerTools_AppendGListString(&macro_text, data_00587fa0->name);
+                            AppendGListName(&macro_text, data_00587fa0->name);
                         }
                     } else {
                         AppendGListByte(&macro_text, ch);
@@ -3557,7 +3556,7 @@ SInt16 CPrep_ScanMacroExpandedChar(void)
                 if (macro_expansion_depth != 0) {
                     macro_expansion_depth--;
                     if (macro_expansion_depth == 0 && data_0057fcee != 0)
-                        CompilerTools_ResetPoolAvail();
+                        freeaheap();
                     currentTextPosition = (UInt8 *)macro_stack[macro_expansion_depth].pos;
                     macro_text_start = macro_stack[macro_expansion_depth].macname;
                     if (macro_stack[macro_expansion_depth].macro != NULL)
@@ -3605,7 +3604,7 @@ static void pop_macro_expansion_state(void)
 {
     macro_expansion_depth--;
     if (macro_expansion_depth == 0 && data_0057fcee != 0)
-        CompilerTools_ResetPoolAvail();
+        freeaheap();
     currentTextPosition = (UInt8 *)macro_stack[macro_expansion_depth].pos;
     macro_text_start = macro_stack[macro_expansion_depth].macname;
     if (macro_stack[macro_expansion_depth].macro != NULL)
@@ -3911,7 +3910,7 @@ void CPrep_PopMacro(void)
 {
     macro_expansion_depth--;
     if (macro_expansion_depth == 0 && data_0057fcee != 0)
-        CompilerTools_ResetPoolAvail();
+        freeaheap();
     currentTextPosition = (UInt8 *)macro_stack[macro_expansion_depth].pos;
     macro_text_start = (char *)macro_stack[macro_expansion_depth].macname;
     if (macro_stack[macro_expansion_depth].macro != NULL)
@@ -4020,8 +4019,8 @@ UInt8 CPrep_Compile(CPrepCU *cu)
             CPrep_CallCompilerCallback(cu->context, line_count);
         }
 
-        fn_004908d0();
-        CExcept_Terminate();
+        CParser_Cleanup();
+        fn_004e0970();
         fn_004e67a0();
         fn_0048b2e0();
         fn_0048b2d0();

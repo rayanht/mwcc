@@ -173,7 +173,7 @@ void flatten_linear_to_elm_list(IROLinear *n)
         flatten_linear_to_elm_list(n->u.diadic.left);
         flatten_linear_to_elm_list(n->u.diadic.right);
     } else {
-        IROElmList *qn = CompilerTools_AllocatePoolMemory(8);
+        IROElmList *qn = oalloc(8);
         qn->element = n;
         qn->next = NULL;
         if (iro_elm_list_head != NULL)
@@ -1974,7 +1974,7 @@ void unroll_loop(int factor, struct IRONode *header)
                     node5->nextnode = node6;
                     node6->nextnode = nextnode;
 
-                    newnode = (IRONode *)CompilerTools_AllocatePoolMemory(sizeof(*newnode));
+                    newnode = (IRONode *)oalloc(sizeof(*newnode));
                     memset(newnode, 0, sizeof(*newnode));
                     newnode->index = iro_node_count++;
                     newnode->first = list.head;
@@ -1984,7 +1984,7 @@ void unroll_loop(int factor, struct IRONode *header)
                     newnode->nextnode = loop_header->nextnode;
                     loop_header->nextnode = newnode;
 
-                    labelnode = (IRONode *)CompilerTools_AllocatePoolMemory(sizeof(*labelnode));
+                    labelnode = (IRONode *)oalloc(sizeof(*labelnode));
                     memset(labelnode, 0, sizeof(*labelnode));
                     labelnode->index = iro_node_count++;
                     lab = IrOptimizer_NewLinear(IROLinearLabel);
@@ -2153,7 +2153,7 @@ void unroll_loop(int factor, struct IRONode *header)
                     node4->nextnode = node5;
                     node5->nextnode = nextnode;
 
-                    labelnode = (IRONode *)CompilerTools_AllocatePoolMemory(sizeof(*labelnode));
+                    labelnode = (IRONode *)oalloc(sizeof(*labelnode));
                     memset(labelnode, 0, sizeof(*labelnode));
                     labelnode->index = iro_node_count++;
                     lab = IrOptimizer_NewLinear(IROLinearLabel);
@@ -2198,7 +2198,7 @@ void unroll_loop(int factor, struct IRONode *header)
     }
 
     if (result) {
-        iroNodesByIndex = (IRONode **)CompilerTools_AllocatePoolMemory(iro_node_count * sizeof(*iroNodesByIndex));
+        iroNodesByIndex = (IRONode **)oalloc(iro_node_count * sizeof(*iroNodesByIndex));
         for (node6 = iro_flowgraph_head; node6; node6 = node6->nextnode)
             iroNodesByIndex[node6->index] = node6;
         IroFlowgraph_RebuildSuccPred();
@@ -2267,10 +2267,10 @@ unsigned int IRO_FindLoops_Unroll(void)
             }
             if (foundLoop) {
                 if (loop_candidates == NULL) {
-                    loop = (LoopCandidate *)CompilerTools_AllocatePoolMemory(0x12);
+                    loop = (LoopCandidate *)oalloc(0x12);
                     loop->next = NULL;
                 } else {
-                    loop = (LoopCandidate *)CompilerTools_AllocatePoolMemory(0x12);
+                    loop = (LoopCandidate *)oalloc(0x12);
                     loop->next = loop_candidates;
                 }
                 loop_candidates = loop;
@@ -2358,7 +2358,7 @@ IROLoop *fn_0045faa0(IRONode *loop)
     hasControlFlow = 0;
     gotoCount = 0;
     loop_header = loop;
-    info = (IROLoop *)CompilerTools_AllocatePoolMemory(sizeof(*info));
+    info = (IROLoop *)oalloc(sizeof(*info));
     info->fnode = loop;
     condition = loop_header->last->u.diadic.right;
     info->cond = condition;
@@ -3007,7 +3007,7 @@ void find_induction_variables(void)
                             if (variable != NULL && variable->inductionState == 2 &&
                                 (object = variable->object)->type->size <= 4) {
                                 IROLoopInd *induction;
-                                induction = CompilerTools_AllocatePoolMemory(sizeof(IROLoopInd));
+                                induction = oalloc(sizeof(IROLoopInd));
                                 induction->node = candidateLoop;
                                 induction->var = variable;
                                 induction->nd = stmt;
@@ -3231,7 +3231,7 @@ void split_last_linear_into_new_node(void)
         iroNodeTail->nextnode = node;
         label->stmt = (Statement *)node;
 
-        iroNodesByIndex = (IRONode **)CompilerTools_AllocatePoolMemory(iro_node_count * sizeof(*iroNodesByIndex));
+        iroNodesByIndex = (IRONode **)oalloc(iro_node_count * sizeof(*iroNodesByIndex));
         for (scan = iro_flowgraph_head; scan != NULL; scan = scan->nextnode)
             iroNodesByIndex[scan->index] = scan;
 
@@ -3323,7 +3323,7 @@ IRONode *insert_loop_preheader(IRONode *loopHead, IRONode *predecessor)
     SwitchInfo *switchInfo;
     SwitchCase *switchCase;
 
-    preheader = (IRONode *)CompilerTools_AllocatePoolMemory(sizeof(IRONode));
+    preheader = (IRONode *)oalloc(sizeof(IRONode));
     memset(preheader, 0, sizeof(IRONode));
     preheader->index = iro_node_count++;
     label = IrOptimizer_NewLinear(IROLinearLabel);
@@ -3352,7 +3352,7 @@ IRONode *insert_loop_preheader(IRONode *loopHead, IRONode *predecessor)
         last_linear = label->next;
     }
     preheader->last = label->next;
-    iroNodesByIndex = (IRONode **)CompilerTools_AllocatePoolMemory(iro_node_count * sizeof(*iroNodesByIndex));
+    iroNodesByIndex = (IRONode **)oalloc(iro_node_count * sizeof(*iroNodesByIndex));
     for (block = iro_flowgraph_head; block != NULL; block = block->nextnode) {
         iroNodesByIndex[block->index] = block;
     }

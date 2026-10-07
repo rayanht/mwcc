@@ -61,11 +61,10 @@ void ValueNumbering_PerformValueNumbering(int options)
     gValueNumberingChanged = 0;
     data_00582c48 = options;
     fn_0051ffc0();
-    register_value_state_array =
-        CompilerTools_AllocatePoolMemory(gUsedVirtualRegistersGPR * sizeof(*register_value_state_array));
-    fpr_value_states = CompilerTools_AllocatePoolMemory(gUsedVirtualRegistersFPR * sizeof(*fpr_value_states));
-    gRegisterValueStates = CompilerTools_AllocatePoolMemory(gUsedVirtualRegistersVR * sizeof(*gRegisterValueStates));
-    register_value_states = CompilerTools_AllocatePoolMemory(8 * sizeof(*register_value_states));
+    register_value_state_array = oalloc(gUsedVirtualRegistersGPR * sizeof(*register_value_state_array));
+    fpr_value_states = oalloc(gUsedVirtualRegistersFPR * sizeof(*fpr_value_states));
+    gRegisterValueStates = oalloc(gUsedVirtualRegistersVR * sizeof(*gRegisterValueStates));
+    register_value_states = oalloc(8 * sizeof(*register_value_states));
     for (block = gPCodeBlocks; block != NULL; block = block->next)
         block->flags &= ~4;
     for (block = gPCodeBlocks; block != NULL; block = block->next)
@@ -73,7 +72,7 @@ void ValueNumbering_PerformValueNumbering(int options)
             initialize_value_states();
             traverse_single_predecessor_successors(block);
         }
-    CompilerTools_ResetPool();
+    freeoheap();
 }
 
 void traverse_single_predecessor_successors(PCodeBlock *node)
@@ -212,7 +211,7 @@ static inline void invalidate(PCodeInstruction *inst)
     RegisterValueState *reg;
     reg = getreg(&inst->operandData.operands[1]);
     if (reg->index < value_index_threshold && next_value_index >= value_index_threshold) {
-        rec = (ValueUpdate *)CompilerTools_AllocatePoolMemory(0x1c);
+        rec = (ValueUpdate *)oalloc(0x1c);
         rec->next = data_00582c38;
         data_00582c38 = rec;
         rec->descriptor = inst->operandData.operands[1];
@@ -316,7 +315,7 @@ void value_number_block(PCodeBlock *block)
                         break;
                 }
                 if (reg->index < value_index_threshold && next_value_index >= value_index_threshold) {
-                    spill = (ValueUpdate *)CompilerTools_AllocatePoolMemory(sizeof(ValueUpdate));
+                    spill = (ValueUpdate *)oalloc(sizeof(ValueUpdate));
                     spill->next = data_00582c38;
                     data_00582c38 = spill;
                     spill->descriptor = inst->operandData.operands[1];
@@ -633,8 +632,7 @@ void invalidate_instruction_register_values(PCodeInstruction *instruction)
             }
 
             if (state->index < value_index_threshold && next_value_index >= value_index_threshold) {
-                RegisterValueSnapshot *snapshot =
-                    (RegisterValueSnapshot *)CompilerTools_AllocatePoolMemory(sizeof(RegisterValueSnapshot));
+                RegisterValueSnapshot *snapshot = (RegisterValueSnapshot *)oalloc(sizeof(RegisterValueSnapshot));
                 snapshot->next = data_00582c38;
                 data_00582c38 = snapshot;
                 snapshot->operand = *operand;
@@ -681,7 +679,7 @@ void invalidate_register_values(PCodeInstruction *obj)
                     break;
             }
             if (t->index < value_index_threshold && next_value_index >= value_index_threshold) {
-                ValueUpdate *n = (ValueUpdate *)CompilerTools_AllocatePoolMemory(0x1c);
+                ValueUpdate *n = (ValueUpdate *)oalloc(0x1c);
                 n->next = data_00582c38;
                 data_00582c38 = n;
                 n->descriptor = *e;
@@ -838,7 +836,7 @@ void assign_object_value_index(PCodeInstruction *entry)
     record = fn_0051efd0_inline1(operand);
     record_index = &record->index;
     if (record->index.index < value_index_threshold && next_value_index >= value_index_threshold) {
-        snapshot = (struct OperandIndexSnapshot *)CompilerTools_AllocatePoolMemory(28);
+        snapshot = (struct OperandIndexSnapshot *)oalloc(28);
         snapshot->next = data_00582c38;
         data_00582c38 = snapshot;
         snapshot->kind = 5;
@@ -872,8 +870,7 @@ void value_number_instruction(PCodeInstruction *instruction)
                 break;
         }
         if (state->index < value_index_threshold && next_value_index >= value_index_threshold) {
-            RegisterValueSnapshot *snapshot =
-                (RegisterValueSnapshot *)CompilerTools_AllocatePoolMemory(sizeof(RegisterValueSnapshot));
+            RegisterValueSnapshot *snapshot = (RegisterValueSnapshot *)oalloc(sizeof(RegisterValueSnapshot));
             snapshot->next = data_00582c38;
             data_00582c38 = snapshot;
             snapshot->operand = *destination;
@@ -963,9 +960,8 @@ void create_register_value_record(PCodeInstruction *instruction)
     ValueRegisterOperand *operand;
     int new_index;
     RegisterValueState *state;
-    value = (RegisterValueRecord *)CompilerTools_AllocatePoolMemory((sizeof(*value) - sizeof(value->input_indices)) +
-                                                                    (instruction->operand_count - 1) *
-                                                                        sizeof(value->input_indices[0]));
+    value = (RegisterValueRecord *)oalloc((sizeof(*value) - sizeof(value->input_indices)) +
+                                          (instruction->operand_count - 1) * sizeof(value->input_indices[0]));
     value->operands = NULL;
     value->instruction = instruction;
     input_index = 1;
@@ -1009,7 +1005,7 @@ void create_register_value_record(PCodeInstruction *instruction)
     }
     old_index = state->index;
     if ((int)old_index < value_index_threshold && next_value_index >= value_index_threshold) {
-        saved = (RegisterValueSnapshot *)CompilerTools_AllocatePoolMemory(sizeof(*saved));
+        saved = (RegisterValueSnapshot *)oalloc(sizeof(*saved));
         saved->next = data_00582c38;
         data_00582c38 = saved;
         saved->operand = *output;
@@ -1029,7 +1025,7 @@ void create_register_value_record(PCodeInstruction *instruction)
     new_index = state->index = next_value_index;
     ++next_value_index;
     value->index = new_index;
-    operand = (ValueRegisterOperand *)CompilerTools_AllocatePoolMemory(sizeof(*operand));
+    operand = (ValueRegisterOperand *)oalloc(sizeof(*operand));
     operand->operand = *output;
     operand->next = value->operands;
     value->operands = operand;
@@ -1249,7 +1245,7 @@ void copy_register_value_state(PCodeOperand *source, PCodeOperand *destination)
 
     if (destinationRecord->index < value_index_threshold && next_value_index >= value_index_threshold) {
         ValueUpdate *saved;
-        saved = (ValueUpdate *)CompilerTools_AllocatePoolMemory(sizeof(ValueUpdate));
+        saved = (ValueUpdate *)oalloc(sizeof(ValueUpdate));
         saved->next = data_00582c38;
         data_00582c38 = saved;
         saved->descriptor = *destination;
@@ -1271,7 +1267,7 @@ void copy_register_value_state(PCodeOperand *source, PCodeOperand *destination)
     if (destinationRecord->value != NULL) {
         ValueRegisterOperand *entry;
         newOwner = ((volatile RegisterValueState *)destinationRecord)->value;
-        entry = (ValueRegisterOperand *)CompilerTools_AllocatePoolMemory(sizeof(ValueRegisterOperand));
+        entry = (ValueRegisterOperand *)oalloc(sizeof(ValueRegisterOperand));
         entry->operand = *destination;
         entry->next = newOwner->operands;
         newOwner->operands = entry;
@@ -1305,7 +1301,7 @@ void invalidate_object_indices(Type *unused, int mode)
         }
         index = &entry->index;
         if (entry->index.index < value_index_threshold && next_value_index >= value_index_threshold) {
-            saved = CompilerTools_AllocatePoolMemory(28);
+            saved = oalloc(28);
             saved->next = data_00582c38;
             data_00582c38 = saved;
             saved->kind = 5;
@@ -1341,7 +1337,7 @@ SInt32 invalidate_register_value(PCodeOperand *operand)
             break;
     }
     if (reg->index < value_index_threshold && next_value_index >= value_index_threshold) {
-        snapshot = (ValueUpdate *)CompilerTools_AllocatePoolMemory(sizeof(ValueUpdate));
+        snapshot = (ValueUpdate *)oalloc(sizeof(ValueUpdate));
         snapshot->next = data_00582c38;
         data_00582c38 = snapshot;
         snapshot->descriptor = *operand;
@@ -1427,7 +1423,7 @@ void fn_0051fd70(ValueUpdate *update)
     slot->index = update->value.index;
     if ((slot->value = update->value.value) != NULL) {
         chain = slot->value;
-        newLink = (ValueRegisterOperand *)CompilerTools_AllocatePoolMemory(sizeof(*newLink));
+        newLink = (ValueRegisterOperand *)oalloc(sizeof(*newLink));
         newLink->operand = *descriptor;
         newLink->next = chain->operands;
         chain->operands = newLink;
@@ -1507,7 +1503,7 @@ static inline void InsertObjectIndex(ObjectIndexEntry **root, Object *key)
         else
             link = &n->right;
     }
-    n = (ObjectIndexEntry *)CompilerTools_AllocatePoolMemory(0x18);
+    n = (ObjectIndexEntry *)oalloc(0x18);
     n->right = NULL;
     n->left = n->right;
     n->object = key;

@@ -80,11 +80,11 @@ PCodeInstruction *PCode_CloneInstruction(PCodeInstruction *instr)
     PCodeInstruction *clone;
     int i;
     if ((((PCodeInstruction *)(instr))->flags & 0x200) && !(((PCodeInstruction *)(instr))->flags & fRecordBit))
-        clone = (PCodeInstruction *)CompilerTools_AllocatePool(
-            (((PCodeInstruction *)(instr))->operand_count + 1) * sizeof(PCodeOperand) + sizeof(PCodeInstruction));
+        clone = (PCodeInstruction *)lalloc((((PCodeInstruction *)(instr))->operand_count + 1) * sizeof(PCodeOperand) +
+                                           sizeof(PCodeInstruction));
     else
-        clone = (PCodeInstruction *)CompilerTools_AllocatePool(
-            ((PCodeInstruction *)(instr))->operand_count * sizeof(PCodeOperand) + sizeof(PCodeInstruction));
+        clone = (PCodeInstruction *)lalloc(((PCodeInstruction *)(instr))->operand_count * sizeof(PCodeOperand) +
+                                           sizeof(PCodeInstruction));
     clone->opcode = ((PCodeInstruction *)(instr))->opcode;
     clone->flags = ((PCodeInstruction *)(instr))->flags;
     clone->operand_count = ((PCodeInstruction *)(instr))->operand_count;
@@ -97,7 +97,7 @@ PCodeLabel *PCode_NewLabel(void)
 {
     PCodeLabel *node;
 
-    node = (PCodeLabel *)CompilerTools_AllocatePool(12);
+    node = (PCodeLabel *)lalloc(12);
     node->next = NULL;
     node->target.pendingLinks = NULL;
     node->resolved = 0;
@@ -110,7 +110,7 @@ PCodeBlock *PCode_CreateBlock(void)
 {
     PCodeBlock *block;
 
-    block = (PCodeBlock *)CompilerTools_AllocatePool(sizeof(*block));
+    block = (PCodeBlock *)lalloc(sizeof(*block));
     block->next = NULL;
     block->prev = gCurrentBlock;
     block->labels = NULL;
@@ -155,7 +155,7 @@ void PCode_ResolveLabel(PCodeBlock *target, PCodeLabel *entry)
 void PCode_AddSuccessor(PCodeBlock *block, PCodeLabel *name)
 {
     PCodeBlockLink *entry;
-    entry = (PCodeBlockLink *)CompilerTools_AllocatePool(sizeof(PCodeBlockLink));
+    entry = (PCodeBlockLink *)lalloc(sizeof(PCodeBlockLink));
     entry->payload = name->target;
     if (name->resolved == 0)
         name->target.pendingLinks = entry;
@@ -176,7 +176,7 @@ void PCode_BuildPredecessors(void)
             q = p->successors;
             if (q != NULL) {
                 do {
-                    n = (PCodeBlockLink *)CompilerTools_AllocatePool(8);
+                    n = (PCodeBlockLink *)lalloc(8);
                     n->payload.block = p;
                     n->next = q->payload.block->predecessors;
                     q->payload.block->predecessors = n;
@@ -304,12 +304,12 @@ void SpillCode_BuildBlockOrder(void)
     PCodeBlockLink *link;
     PCodeBlock *current;
 
-    gPCodeBlockOrder = CompilerTools_AllocatePool(gPCodeBlockCount * sizeof(*gPCodeBlockOrder));
+    gPCodeBlockOrder = lalloc(gPCodeBlockCount * sizeof(*gPCodeBlockOrder));
     pcodeBlockOrderIndex = gPCodeBlockCount;
     for (current = gPCodeBlocks; current != NULL; current = current->next) {
         current->flags &= ~4;
     }
-    stack = (struct BlockOrderEntry *)CompilerTools_AllocatePoolMemory(gPCodeBlockCount * sizeof(*stack));
+    stack = (struct BlockOrderEntry *)oalloc(gPCodeBlockCount * sizeof(*stack));
     gPCodeBlocks->flags |= 4;
     depth = 0;
     stack[0].block = gPCodeBlocks;

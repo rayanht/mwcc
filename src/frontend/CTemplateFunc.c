@@ -175,7 +175,7 @@ Boolean match_template_function_args(Object *obj, DeduceInfo *state, FuncArg *ar
                 return 0;
             break;
         }
-        if (arg == &data_00583098 || arg == &data_00584748)
+        if (arg == &elipsis || arg == &oldstyle)
             break;
         if (!exprs) {
             if (arg->dexpr)
@@ -239,10 +239,10 @@ Boolean match_template_function_args(Object *obj, DeduceInfo *state, FuncArg *ar
                 tempArg.args = entries;
                 resolvedQual = argumentQual;
                 resultType = matchType = CTemplTool_DeduceTypeCopy(&tempArg, argumentType, &resolvedQual);
-                if (resultType && !CExpr2_UpdateArgMatchScores(matchType, resolvedQual, exprs->node, &counts))
+                if (resultType && !CExpr_MatchAssign(matchType, resolvedQual, exprs->node, &counts))
                     return 0;
             }
-        } else if (!CExpr2_UpdateArgMatchScores(arg->type, arg->qual, exprs->node, &counts)) {
+        } else if (!CExpr_MatchAssign(arg->type, arg->qual, exprs->node, &counts)) {
             return 0;
         }
         exprs = exprs->next;
@@ -309,7 +309,7 @@ Boolean CTemplTool_IsTemplateArgumentDependentType(Type *ty)
                 continue;
             case TYPEFUNC:
                 r = 0;
-                for (a = ((TypeFunc *)ty)->args; a != NULL && a != &data_00583098; a = a->next)
+                for (a = ((TypeFunc *)ty)->args; a != NULL && a != &elipsis; a = a->next)
                     if (CTemplTool_IsTemplateArgumentDependentType(a->type))
                         r = 1;
                 if (CTemplTool_IsTemplateArgumentDependentType(((TypeFunc *)ty)->functype))
@@ -438,11 +438,11 @@ Boolean match_args(TypeFunc *a, TypeFunc *b, TemplArg *c, Boolean d)
     while (1) {
         if (pa == NULL)
             return pb == NULL;
-        if (pa == &data_00584748)
-            return pb == &data_00584748;
-        if (pa == &data_00583098)
-            return pb == &data_00583098;
-        if (pb == NULL || pb == &data_00584748 || pb == &data_00583098)
+        if (pa == &oldstyle)
+            return pb == &oldstyle;
+        if (pa == &elipsis)
+            return pb == &elipsis;
+        if (pb == NULL || pb == &oldstyle || pb == &elipsis)
             return 0;
         if (!CTemplateFunc_MatchType(pa->type, pa->qual, pb->type, pb->qual, c, d))
             return 0;
@@ -578,7 +578,7 @@ Object *select_unique_undominated_match(Object *func, struct ObjectList *funcs, 
     }
 
     if (count > 16)
-        candidates = (Object **)CompilerTools_AllocatePool(count * sizeof(Object *));
+        candidates = (Object **)lalloc(count * sizeof(Object *));
     else
         candidates = localCandidates;
 
@@ -659,7 +659,7 @@ unsigned char match_candidate_to_template_args(Object *candidate, Object *templ)
         if (templateArg == NULL)
             break;
         CError_ASSERT(299, templateArg->type != &stvoid);
-        if (templateArg == &data_00583098 || templateArg == &data_00584748)
+        if (templateArg == &elipsis || templateArg == &oldstyle)
             break;
         templateArg = templateArg->next;
         ++argumentCount;
@@ -674,7 +674,7 @@ unsigned char match_candidate_to_template_args(Object *candidate, Object *templ)
         if (candidateArg == NULL)
             break;
         CError_ASSERT(313, candidateArg->type != &stvoid);
-        if (candidateArg == &data_00583098 || candidateArg == &data_00584748)
+        if (candidateArg == &elipsis || candidateArg == &oldstyle)
             break;
         objectExpr = nullnode();
         objectExpr->rtype = (Type *)&void_ptr;
@@ -684,10 +684,10 @@ unsigned char match_candidate_to_template_args(Object *candidate, Object *templ)
         if (expression->rtype->type == TYPEPOINTER && (((TypePointer *)expression->rtype)->qual & Q_REFERENCE) != 0)
             expression->rtype = ((TypePointer *)expression->rtype)->target;
         if (arguments != NULL) {
-            tail->next = (ENodeList *)CompilerTools_AllocatePool(sizeof(ENodeList));
+            tail->next = (ENodeList *)lalloc(sizeof(ENodeList));
             tail = tail->next;
         } else {
-            tail = (ENodeList *)CompilerTools_AllocatePool(sizeof(ENodeList));
+            tail = (ENodeList *)lalloc(sizeof(ENodeList));
             arguments = tail;
         }
         tail->node = expression;
@@ -728,7 +728,7 @@ unsigned char match_candidate_to_template_args(Object *candidate, Object *templ)
         while (remaining > 0) {
             if (matchArg == NULL)
                 break;
-            if (matchArg == &data_00583098 || matchArg == &data_00584748)
+            if (matchArg == &elipsis || matchArg == &oldstyle)
                 break;
             CError_ASSERT(380, deducedArg != 0);
             candidateType = matchArg->type;

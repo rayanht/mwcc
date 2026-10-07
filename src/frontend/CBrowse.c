@@ -114,7 +114,7 @@ void CBrowse_InitBrowseData(CPrepCU *classes)
     header.valueC = 2U;
     header.language = (copts.cplusplus != 0) ? (unsigned char)2 : (unsigned char)1;
     header.valueA = data_005884f5;
-    CompilerTools_AppendGListData(&data_00581ba8.buffer, &header, 76U);
+    AppendGListData(&data_00581ba8.buffer, &header, 76U);
 }
 
 void CBrowse_StoreBrowseData(CPrepCU *arguments)
@@ -175,7 +175,7 @@ void write_text_or_name_id(GList *output, char *text, int index)
         length = strlen(text);
         AppendGListWord(output, length);
         if (length != 0)
-            CompilerTools_AppendGListData(output, text, length + 1U);
+            AppendGListData(output, text, length + 1U);
     }
 }
 
@@ -213,7 +213,7 @@ void CBrowse_GenerateClassRecord(DeclInfo *record, GList *out)
     write_text_or_name_id(&browse_member_list, name->name, name->id);
     fn_004c2ac0(record->thetype, 0);
     AppendGListByte(&data_00583548, 0);
-    className = CompilerTools_AllocatePool(data_00583548.size + 1);
+    className = lalloc(data_00583548.size + 1);
     strcpy(className, *data_00583548.data);
     while (*className != 0 && *className >= '0' && *className <= '9')
         className++;
@@ -236,7 +236,7 @@ void CBrowse_GenerateClassRecord(DeclInfo *record, GList *out)
             baseType = TYPE(base);
         fn_004c2ac0(baseType, 0);
         AppendGListByte(&data_00583548, 0);
-        baseName = CompilerTools_AllocatePool(data_00583548.size + 1);
+        baseName = lalloc(data_00583548.size + 1);
         strcpy(baseName, *data_00583548.data);
         while (*baseName != 0 && *baseName >= '0' && *baseName <= '9')
             baseName++;
@@ -265,7 +265,7 @@ void CBrowse_WriteObjMemberVar(ObjMemberVar *rec, SInt32 start, SInt32 end)
         AppendGListLong(&browse_member_list, end - 1);
         len = strlen(rec->name->name);
         AppendGListWord(&browse_member_list, len);
-        CompilerTools_AppendGListData(&browse_member_list, rec->name->name, len + 1);
+        AppendGListData(&browse_member_list, rec->name->name, len + 1);
     }
 }
 
@@ -327,7 +327,7 @@ void CBrowse_RecordDataObject(Object *obj, SInt32 param2, SInt32 param3)
         AppendGListLong(&browse_member_list, param3 - 1);
         len = (SInt16)strlen(obj->name->name);
         AppendGListWord(&browse_member_list, len);
-        CompilerTools_AppendGListData(&browse_member_list, obj->name->name, len + 1);
+        AppendGListData(&browse_member_list, obj->name->name, len + 1);
     }
 }
 
@@ -395,7 +395,7 @@ void CBrowse_WriteStructMember(StructMember *param0, SInt32 param1, SInt32 param
         AppendGListLong(&browse_member_list, param2 - 1);
         len = (SInt16)strlen(param0->name->name);
         AppendGListWord(&browse_member_list, len);
-        CompilerTools_AppendGListData(&browse_member_list, param0->name->name, len + 1);
+        AppendGListData(&browse_member_list, param0->name->name, len + 1);
     }
 }
 

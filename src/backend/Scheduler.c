@@ -75,7 +75,7 @@ static inline void CheckSpillNode(CColoringNode *a1, Object *a2, DependencyEntry
 
 static inline DependencyEntry *NewSpillNode(CColoringNode *obj)
 {
-    DependencyEntry *node = (DependencyEntry *)CompilerTools_AllocatePoolMemory(sizeof(DependencyEntry));
+    DependencyEntry *node = (DependencyEntry *)oalloc(sizeof(DependencyEntry));
     node->next = NULL;
     node->owner = obj;
     node->object = NULL;
@@ -107,20 +107,18 @@ void init_register_owner_lists(void)
     fprCount = gVirtualRegistersActive ? gUsedVirtualRegistersFPR : 32;
     vrCount = gVirtualRegistersActive ? gUsedVirtualRegistersVR : 32;
 
-    data_00581b00 = (DependencyEntry **)CompilerTools_AllocatePoolMemory(gprCount * sizeof(*data_00581b00));
-    gpr_owner_lists = (DependencyEntry **)CompilerTools_AllocatePoolMemory(gprCount * sizeof(*gpr_owner_lists));
+    data_00581b00 = (DependencyEntry **)oalloc(gprCount * sizeof(*data_00581b00));
+    gpr_owner_lists = (DependencyEntry **)oalloc(gprCount * sizeof(*gpr_owner_lists));
     for (i = 0; i < gprCount; i++)
         data_00581b00[i] = gpr_owner_lists[i] = NULL;
 
-    data_00581b08 = (DependencyEntry **)CompilerTools_AllocatePoolMemory(fprCount * sizeof(*data_00581b08));
-    fpr_owner_lists = (DependencyEntry **)CompilerTools_AllocatePoolMemory(fprCount * sizeof(*fpr_owner_lists));
+    data_00581b08 = (DependencyEntry **)oalloc(fprCount * sizeof(*data_00581b08));
+    fpr_owner_lists = (DependencyEntry **)oalloc(fprCount * sizeof(*fpr_owner_lists));
     for (i = 0; i < fprCount; i++)
         data_00581b08[i] = fpr_owner_lists[i] = NULL;
 
-    virtual_register_owner_lists =
-        (DependencyEntry **)CompilerTools_AllocatePoolMemory(vrCount * sizeof(*virtual_register_owner_lists));
-    register_owner_lists =
-        (DependencyEntry **)CompilerTools_AllocatePoolMemory(vrCount * sizeof(*register_owner_lists));
+    virtual_register_owner_lists = (DependencyEntry **)oalloc(vrCount * sizeof(*virtual_register_owner_lists));
+    register_owner_lists = (DependencyEntry **)oalloc(vrCount * sizeof(*register_owner_lists));
     for (i = 0; i < vrCount; i++)
         virtual_register_owner_lists[i] = register_owner_lists[i] = NULL;
 
@@ -164,7 +162,7 @@ void add_dependency(CColoringNode *owner, CColoringNode *dependency, Boolean has
         node = node->next;
     }
 
-    node = (CColoringList *)CompilerTools_AllocatePoolMemory(sizeof(*node));
+    node = (CColoringList *)oalloc(sizeof(*node));
     node->owner = dependency;
     node->next = owner->conflicts;
     owner->conflicts = node;
@@ -202,7 +200,7 @@ void fn_004cd7c0(int kind, CColoringNode *value, DependencyEntry **firstList, De
                 first = first->next;
             } while (first != NULL);
         }
-        entry = (DependencyEntry *)CompilerTools_AllocatePoolMemory(sizeof(DependencyEntry));
+        entry = (DependencyEntry *)oalloc(sizeof(DependencyEntry));
         entry->next = NULL;
         entry->owner = value;
         entry->object = NULL;
@@ -220,7 +218,7 @@ void fn_004cd7c0(int kind, CColoringNode *value, DependencyEntry **firstList, De
                 other = other->next;
             } while (other != NULL);
         }
-        entry = (DependencyEntry *)CompilerTools_AllocatePoolMemory(sizeof(DependencyEntry));
+        entry = (DependencyEntry *)oalloc(sizeof(DependencyEntry));
         entry->next = NULL;
         entry->owner = value;
         entry->object = NULL;
@@ -262,7 +260,7 @@ void fn_004cd650(void *object, Object *key, SInt16 useList74)
             add_dependency(object, node->owner, 1);
     }
     if (useList74 != 0) {
-        node = (DependencyEntry *)CompilerTools_AllocatePoolMemory(sizeof(DependencyEntry));
+        node = (DependencyEntry *)oalloc(sizeof(DependencyEntry));
         node->next = NULL;
         node->owner = object;
         node->object = NULL;
@@ -270,7 +268,7 @@ void fn_004cd650(void *object, Object *key, SInt16 useList74)
         node->next = dependency_entry_list;
         dependency_entry_list = node;
     } else {
-        node = (DependencyEntry *)CompilerTools_AllocatePoolMemory(sizeof(DependencyEntry));
+        node = (DependencyEntry *)oalloc(sizeof(DependencyEntry));
         node->next = NULL;
         node->owner = object;
         node->object = NULL;
@@ -327,7 +325,7 @@ void add_memory_dependencies(CColoringNode *owner, int mode, int flags)
                   (node->object->type->type == TYPEMEMBERPOINTER && node->object->type->size == 12))))
                 add_dependency(owner, node->owner, 1);
         }
-        node = (DependencyEntry *)CompilerTools_AllocatePoolMemory(sizeof(DependencyEntry));
+        node = (DependencyEntry *)oalloc(sizeof(DependencyEntry));
         node->next = NULL;
         node->owner = owner;
         node->object = NULL;
@@ -343,7 +341,7 @@ void add_memory_dependencies(CColoringNode *owner, int mode, int flags)
                   (node->object->type->type == TYPEMEMBERPOINTER && node->object->type->size == 12))))
                 add_dependency(owner, node->owner, 1);
         }
-        node = (DependencyEntry *)CompilerTools_AllocatePoolMemory(sizeof(DependencyEntry));
+        node = (DependencyEntry *)oalloc(sizeof(DependencyEntry));
         node->next = NULL;
         node->owner = owner;
         node->object = NULL;
@@ -422,7 +420,7 @@ void build_sched_dependencies(CColoringNode *list, CColoringNode *blk)
     if ((body->flags & 0x420) != 0 || data_00581b80->checkLate(body) != 0) {
         for (p = list; p != NULL; p = p->prev)
             add_dependency(blk, p, 0);
-        n = (struct SchedEntry *)CompilerTools_AllocatePoolMemory(sizeof(*n));
+        n = (struct SchedEntry *)oalloc(sizeof(*n));
         n->blk = blk;
         n->zero = 0;
         n->next = sched_entry_list;
@@ -509,7 +507,7 @@ void schedule_block(PCodeBlock *function)
     data_00581b7c = NULL;
     tail = NULL;
     for (object = function->reverse_instructions; object != NULL; object = object->previous) {
-        node = (CColoringNode *)CompilerTools_AllocatePoolMemory(sizeof(CColoringNode));
+        node = (CColoringNode *)oalloc(sizeof(CColoringNode));
         node->prev = NULL;
         node->next = NULL;
         node->conflicts = NULL;
@@ -565,7 +563,7 @@ void schedule_block(PCodeBlock *function)
         data_00581b80->advanceCycle();
         iteration++;
     }
-    CompilerTools_ResetPool();
+    freeoheap();
 }
 
 void Scheduler_Schedule(char force)

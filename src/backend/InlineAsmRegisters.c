@@ -68,7 +68,7 @@ void CTemplateNew_InsertRegisterBinding(const char *key, unsigned int attribute1
     struct RegisterBinding **bucket;
 
     bucket = &register_binding_hash[CHash(key) & 63];
-    entry = (struct RegisterBinding *)CompilerTools_AllocatePool(sizeof(*entry));
+    entry = (struct RegisterBinding *)lalloc(sizeof(*entry));
     entry->key = (unsigned int)key;
     entry->attribute1 = attribute1;
     entry->registerNumber = registerNumber;

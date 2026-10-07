@@ -451,7 +451,7 @@ void Coloring_AllocateRegisters(Object *function)
             InterferenceGraph_SpillRegisters(9, gUsedVirtualRegistersVR);
         else
             Coloring_CommitAssignments(9, gUsedVirtualRegistersVR);
-        CompilerTools_ResetPool();
+        freeoheap();
     }
     StackFrame_CheckAltivec();
     if (copts.debug_listing && gHasAltivecFrame) {
@@ -475,7 +475,7 @@ void Coloring_AllocateRegisters(Object *function)
             InterferenceGraph_SpillRegisters(0, gUsedVirtualRegistersGPR);
         else
             Coloring_CommitAssignments(0, gUsedVirtualRegistersGPR);
-        CompilerTools_ResetPool();
+        freeoheap();
     }
     Registers_SetupFPRs();
     gColoringRegisterCount = gUsedVirtualRegistersFPR;
@@ -497,7 +497,7 @@ void Coloring_AllocateRegisters(Object *function)
             InterferenceGraph_SpillRegisters(1, gUsedVirtualRegistersFPR);
         else
             Coloring_CommitAssignments(1, gUsedVirtualRegistersFPR);
-        CompilerTools_ResetPool();
+        freeoheap();
     }
     gVirtualRegistersActive = 0;
 }
@@ -600,6 +600,6 @@ static void Coloring_RunClass(Object *function, int reg_class, int register_coun
         } else {
             Coloring_CommitAssignments(reg_class, register_count);
         }
-        CompilerTools_ResetPool();
+        freeoheap();
     }
 }

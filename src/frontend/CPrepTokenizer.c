@@ -2890,7 +2890,7 @@ void concatenate_string_tokens(char strip_terminator)
                     remainingBufferedTokenCount * sizeof(struct TStreamElement));
         } while (token == -7);
 
-        piece = (NamePiece *)CompilerTools_AllocatePool(sizeof(NamePiece));
+        piece = (NamePiece *)lalloc(sizeof(NamePiece));
         piece->next = pieces;
         piece->src = string_token_data;
         piece->len = token_value_kind_or_string_length - 1;

@@ -93,13 +93,13 @@ void CFunc_GenerateSingleExprFunc(Object *func, ENode *expr)
         savedNamespace = CFunc_FuncGenSetup(&stmt, func);
         oldflag = copts.filesyminfo;
         copts.filesyminfo = 0;
-        node = (Statement *)CompilerTools_AllocatePool(0x1a);
+        node = (Statement *)lalloc(0x1a);
         node->next = NULL;
         node->type = ST_EXPRESSION;
         node->value = current_statement_number;
         node->flags = 0;
         node->sourceoffset = statement_sourceoffset;
-        node->dobjstack = UINT_00587fc4;
+        node->dobjstack = cexcept_dobjstack;
         data_00587644->next = node;
         data_00587644 = node;
         node->expr = expr;
@@ -278,13 +278,13 @@ void CFunc_ParseFuncDef(Object *func, DeclInfo *definition, TypeClass *scopeObje
         if (data_00587644->type != ST_RETURN && data_00587644->type != ST_GOTO) {
             previousStatement = data_00587644;
             statement_sourceoffset = CPrep_UpdateTokenLine(&function_fileinfo);
-            returnStatement = (Statement *)CompilerTools_AllocatePool(sizeof(*returnStatement));
+            returnStatement = (Statement *)lalloc(sizeof(*returnStatement));
             returnStatement->next = NULL;
             returnStatement->type = ST_RETURN;
             returnStatement->value = current_statement_number;
             returnStatement->flags = 0;
             returnStatement->sourceoffset = statement_sourceoffset;
-            returnStatement->dobjstack = UINT_00587fc4;
+            returnStatement->dobjstack = cexcept_dobjstack;
             data_00587644->next = returnStatement;
             data_00587644 = returnStatement;
             returnStatement->dobjstack = NULL;
@@ -397,7 +397,7 @@ void parse_ctor_initializers(void)
                         CError_ReportError(ERR_ILLEGAL_CTOR_INITIALIZER);
                         return;
                     }
-                entry = CompilerTools_AllocatePool(sizeof(CtorChain));
+                entry = lalloc(sizeof(CtorChain));
                 entry->what = 1;
                 entry->u.vbase = vbase;
             } else {
@@ -410,7 +410,7 @@ void parse_ctor_initializers(void)
                             CError_ReportError(ERR_ILLEGAL_CTOR_INITIALIZER);
                             return;
                         }
-                    entry = CompilerTools_AllocatePool(sizeof(CtorChain));
+                    entry = lalloc(sizeof(CtorChain));
                     entry->what = 0;
                     entry->u.base = base;
                 } else {
@@ -427,7 +427,7 @@ void parse_ctor_initializers(void)
                 for (previous = ctor_initializers; previous != NULL; previous = previous->next)
                     if (previous->what == 2 && previous->u.membervar == member)
                         CError_ReportError(ERR_ILLEGAL_CTOR_INITIALIZER);
-                entry = CompilerTools_AllocatePool(sizeof(CtorChain));
+                entry = lalloc(sizeof(CtorChain));
                 entry->what = 2;
                 entry->u.membervar = member;
             } else {
@@ -499,7 +499,7 @@ void parse_ctor_initializers(void)
         tk = CPrepTokenizer_GetNextToken();
     } while (tk == ',');
 }
-void fn_00476e60(TypeClass *type)
+void CFunc_CheckClassCtors(TypeClass *type)
 {
     CFunc_00476e70(type, NULL);
 }
@@ -581,7 +581,7 @@ NameSpace *CFunc_FuncGenSetup(Statement *stmt, Object *func)
     current_statement_number = 1;
     stmt->value = *(UInt16 *)&current_statement_number;
     data_00580878 = 0;
-    node = CompilerTools_AllocatePool(offsetof(struct DeclBlock, index) + sizeof(node->index));
+    node = lalloc(offsetof(struct DeclBlock, index) + sizeof(node->index));
     memclrw(node, offsetof(struct DeclBlock, index) + sizeof(node->index));
     node->index = data_00580878++;
     node->parent_nspace = cscope_current;
@@ -617,7 +617,7 @@ void setup_function_arguments(Object *function, DeclInfo *body, Statement *state
                 for (;;) {
                     declaration.thetype = declarationType;
                     declaration.name = NULL;
-                    CDecl_ParseDeclarator(&declaration);
+                    scandeclarator(&declaration);
                     if (declaration.name == NULL) {
                         CError_ReportError(ERR_IDENTIFIER_EXPECTED);
                         break;
@@ -633,7 +633,7 @@ void setup_function_arguments(Object *function, DeclInfo *body, Statement *state
                             }
                             break;
                         case TYPEFUNC:
-                            CDecl_WrapTypePointer(&declaration.thetype, 0);
+                            makethetypepointer(&declaration.thetype, 0);
                             break;
                         case TYPEARRAY:
                             declaration.thetype = CDecl_NewPointerType(((TypePointer *)declaration.thetype)->target);
@@ -687,7 +687,7 @@ void setup_function_arguments(Object *function, DeclInfo *body, Statement *state
             CFunc_SetupNewFuncArgs(function, ((TypeFunc *)function->type)->args);
         }
     }
-    if (CMachine_FunctionRequiresMemoryReturn((TypeFunc *)function->type) == 1) {
+    if (CMach_GetFunctionResultClass((TypeFunc *)function->type) == 1) {
         result = CParser_NewLocalDataObject(NULL, 0);
         result->name = blank_argument_name;
         result->type = (Type *)CDecl_NewPointerType(((TypeFunc *)function->type)->functype);
@@ -703,7 +703,7 @@ void setup_function_arguments(Object *function, DeclInfo *body, Statement *state
         if (result->type != NULL && is_volatile_object(result) != 0) {
             result->u.var.info->noregister = 1;
         }
-        newEntry = (ObjectList *)CompilerTools_AllocatePool(sizeof(ObjectList));
+        newEntry = (ObjectList *)lalloc(sizeof(ObjectList));
         newEntry->object = result;
         if (CInline_ReturnZero(function->type) != 0) {
             if (arguments == NULL)
@@ -732,9 +732,9 @@ ObjectList *create_arg_object_list(FuncArg *arg)
 
     while (arg != NULL) {
         if (res != NULL) {
-            cur = cur->next = (ObjectList *)CompilerTools_AllocatePool(8);
+            cur = cur->next = (ObjectList *)lalloc(8);
         } else {
-            res = cur = (ObjectList *)CompilerTools_AllocatePool(8);
+            res = cur = (ObjectList *)lalloc(8);
         }
         obj = CParser_NewLocalDataObject(NULL, 0);
         obj->name = arg->name;
@@ -766,8 +766,8 @@ void CFunc_SetupNewFuncArgs(Object *func, FuncArg *args)
     ObjectList *arglist;
 
     arguments = NULL;
-    if (args != &data_00583098 && args != &data_00584748) {
-        for (arglist = NULL; args != NULL && args != &data_00583098; args = args->next) {
+    if (args != &elipsis && args != &oldstyle) {
+        for (arglist = NULL; args != NULL && args != &elipsis; args = args->next) {
             CanAllocObject(args->type);
             obj = CParser_NewLocalDataObject(NULL, 0);
             if (args->name == NULL)
@@ -796,10 +796,10 @@ void CFunc_SetupNewFuncArgs(Object *func, FuncArg *args)
                 (func->qual & Q_MANGLE_NAME) == 0)
                 CError_ReportError(ERR_ILLEGAL_FUNCTION_DEFINITION);
             if (arglist != NULL) {
-                arglist->next = (ObjectList *)CompilerTools_AllocatePool(sizeof(ObjectList));
+                arglist->next = (ObjectList *)lalloc(sizeof(ObjectList));
                 arglist = arglist->next;
             } else {
-                arglist = (ObjectList *)CompilerTools_AllocatePool(sizeof(ObjectList));
+                arglist = (ObjectList *)lalloc(sizeof(ObjectList));
                 arguments = arglist;
             }
             arglist->next = NULL;
@@ -817,13 +817,13 @@ static void CFunc_InitVariableInfo(Object *obj)
 static struct Statement *CFunc_NewAssignmentStatement(void)
 {
     struct Statement *stmt;
-    stmt = (struct Statement *)CompilerTools_AllocatePool(sizeof(struct Statement));
+    stmt = (struct Statement *)lalloc(sizeof(struct Statement));
     stmt->next = NULL;
     stmt->type = ST_EXPRESSION;
     stmt->value = current_statement_number;
     stmt->flags = 0;
     stmt->sourceoffset = statement_sourceoffset;
-    stmt->dobjstack = UINT_00587fc4;
+    stmt->dobjstack = cexcept_dobjstack;
     data_00587644->next = stmt;
     data_00587644 = stmt;
     return stmt;
@@ -837,7 +837,7 @@ void create_local_object_copy(Object *func, TypeIntegral *type, Type *type2, Boo
     struct Statement *stmt;
     ENode *expr;
 
-    newfunc = (Object *)CompilerTools_AllocatePool(sizeof(Object));
+    newfunc = (Object *)lalloc(sizeof(Object));
     *newfunc = *func;
     newfunc->type = type2;
     CFunc_InitVariableInfo(newfunc);
@@ -855,7 +855,7 @@ void create_local_object_copy(Object *func, TypeIntegral *type, Type *type2, Boo
     if (list == NULL || list->object != (ObjBase *)func)
         CError_FATAL(2577);
     list->object = (ObjBase *)newfunc;
-    listnode = (ObjectList *)CompilerTools_AllocatePool(sizeof(ObjectList));
+    listnode = (ObjectList *)lalloc(sizeof(ObjectList));
     listnode->object = newfunc;
     listnode->next = locals;
     locals = listnode;
@@ -867,13 +867,13 @@ void create_local_object_copy(Object *func, TypeIntegral *type, Type *type2, Boo
     }
     expr->rtype = (Type *)type;
     if ((Type *)type != type2)
-        expr = CExpr2_00473720(expr, type2);
+        expr = promote(expr, type2);
     stmt->expr = makediadicnode(create_objectnode(newfunc), expr, EASS);
 }
 
 static void *NewScope(void)
 {
-    struct DeclBlock *s = CompilerTools_AllocatePool(0xe);
+    struct DeclBlock *s = lalloc(0xe);
     NameSpace *ns;
     if (data_00580870) {
         saved_global_values_tail->next = s;
@@ -883,7 +883,7 @@ static void *NewScope(void)
     }
     s->index = data_00580878++;
     s->parent_nspace = cscope_current;
-    s->dobjstack = UINT_00587fc4;
+    s->dobjstack = cexcept_dobjstack;
     ns = CScope_NewListNameSpace(NULL, 0);
     ns->parent = (NameSpace *)cscope_current;
     cscope_current = ns;
@@ -893,10 +893,10 @@ static void *NewScope(void)
 inline void RestoreBlock(void *block)
 {
     cscope_current = ((struct DeclBlock *)block)->parent_nspace;
-    UINT_00587fc4 = ((struct DeclBlock *)block)->dobjstack;
+    cexcept_dobjstack = ((struct DeclBlock *)block)->dobjstack;
 }
 
-void CFunc_ParseScopedStatement(struct StatementContext *context)
+void CFunc_CompoundStatement(struct StatementContext *context)
 {
     struct NameSpaceLookupList *scope = NewScope();
 
@@ -918,7 +918,7 @@ void CFunc_ParseScopedStatement(struct StatementContext *context)
 
 static CLabel *NewLabel(void)
 {
-    CLabel *label = (CLabel *)CompilerTools_AllocatePool(0x14);
+    CLabel *label = (CLabel *)lalloc(0x14);
     memclrw(label, 0x14);
     label->uniquename = CParser_GetUniqueName();
     label->name = label->uniquename;
@@ -968,13 +968,13 @@ inline void ScopedBody(StatementContext *ctx)
 
 static Statement *AppendStmt(unsigned char kind)
 {
-    Statement *s = (Statement *)CompilerTools_AllocatePool(0x1a);
+    Statement *s = (Statement *)lalloc(0x1a);
     s->next = NULL;
     s->type = kind;
     s->value = current_statement_number;
     s->flags = 0;
     s->sourceoffset = statement_sourceoffset;
-    s->dobjstack = UINT_00587fc4;
+    s->dobjstack = cexcept_dobjstack;
     data_00587644->next = s;
     data_00587644 = s;
     return s;
@@ -1059,7 +1059,7 @@ void parse_statement(StatementContext *context)
                 stmt = AppendStmt(8);
                 stmt->expr = NULL;
             } else {
-                if (CMachine_FunctionRequiresMemoryReturn((TypeFunc *)cscope_currentfunc->type) == 1)
+                if (CMach_GetFunctionResultClass((TypeFunc *)cscope_currentfunc->type) == 1)
                     expr = initialize_argument_object(expr, context->thetype, context->qual);
                 else
                     expr = oldassignmentpromotion(expr, context->thetype, context->qual, 1);
@@ -1110,12 +1110,12 @@ void parse_statement(StatementContext *context)
             if (expr->rtype->type != TYPEINT && expr->rtype->type != TYPEFLOAT && expr->rtype->type != TYPEPOINTER)
                 CError_ReportError(ERR_ILLEGAL_OPERAND);
             stmt = AppendStmt(5);
-            stmt->expr = forceintegral(expr);
+            stmt->expr = integralpromote(expr);
             if (tk != ')')
                 CError_ReportErrorAndUpdateToken(ERR_RPAREN_EXPECTED);
             else
                 tk = CPrepTokenizer_GetNextToken();
-            stmt->label = (CLabel *)CompilerTools_AllocatePool(sizeof(SwitchInfo));
+            stmt->label = (CLabel *)lalloc(sizeof(SwitchInfo));
             ((SwitchInfo *)stmt->label)->defaultlabel = NULL;
             ((SwitchInfo *)stmt->label)->cases = NULL;
             ((SwitchInfo *)stmt->label)->sizetype = stmt->expr->rtype;
@@ -1128,12 +1128,12 @@ void parse_statement(StatementContext *context)
                 bodyContext.switchinfo->defaultlabel = breakLabel;
             if (!bodyContext.switchinfo->cases) {
                 stmt->type = ST_EXPRESSION;
-                jumpStmt = (Statement *)CompilerTools_AllocatePool(sizeof(Statement));
+                jumpStmt = (Statement *)lalloc(sizeof(Statement));
                 *jumpStmt = *stmt;
                 stmt->next = jumpStmt;
                 jumpStmt->type = ST_GOTO;
                 jumpStmt->label = bodyContext.switchinfo->defaultlabel;
-                jumpStmt->dobjstack = UINT_00587fc4;
+                jumpStmt->dobjstack = cexcept_dobjstack;
             }
             stmt = AppendStmt(2);
             stmt->label = breakLabel;
@@ -1635,7 +1635,7 @@ ENode *initialize_argument_object(ENode *initData, Type *type, UInt32 flags)
 
     if (type->type == TYPECLASS) {
         node = create_objectnode(object);
-        info = CompilerTools_AllocatePool(sizeof(ENodeList));
+        info = lalloc(sizeof(ENodeList));
         info->next = NULL;
         info->node = initData;
         return CExpr_ConstructObject(type, node, info, 1, 1, 0, 1, 0);
@@ -1648,14 +1648,14 @@ ENode *initialize_argument_object(ENode *initData, Type *type, UInt32 flags)
 
 static Statement *NewStmt(UInt8 type)
 {
-    Statement *stmt = (Statement *)CompilerTools_AllocatePool(sizeof(Statement));
+    Statement *stmt = (Statement *)lalloc(sizeof(Statement));
 
     stmt->next = NULL;
     stmt->type = type;
     stmt->value = current_statement_number;
     stmt->flags = 0;
     stmt->sourceoffset = statement_sourceoffset;
-    stmt->dobjstack = UINT_00587fc4;
+    stmt->dobjstack = cexcept_dobjstack;
     data_00587644->next = stmt;
     data_00587644 = stmt;
     return stmt;
@@ -1684,7 +1684,7 @@ void generate_conditional_jump(ENode *expr, CLabel *dest, CLabel *other, Boolean
         }
         return;
     }
-    if (CExpr2_IsZero(expr)) {
+    if (iszero(expr)) {
         if (!sense) {
             NewStmt(3)->label = dest;
             return;
@@ -1696,7 +1696,7 @@ void generate_conditional_jump(ENode *expr, CLabel *dest, CLabel *other, Boolean
         return;
     }
     if (expr->type == ELOR) {
-        label = (CLabel *)CompilerTools_AllocatePool(sizeof(CLabel));
+        label = (CLabel *)lalloc(sizeof(CLabel));
         memclrw(label, sizeof(CLabel));
         label->uniquename = CParser_GetUniqueName();
         label->name = label->uniquename;
@@ -1714,7 +1714,7 @@ void generate_conditional_jump(ENode *expr, CLabel *dest, CLabel *other, Boolean
         return;
     }
     if (expr->type == ELAND) {
-        label = (CLabel *)CompilerTools_AllocatePool(sizeof(CLabel));
+        label = (CLabel *)lalloc(sizeof(CLabel));
         memclrw(label, sizeof(CLabel));
         label->uniquename = CParser_GetUniqueName();
         label->name = label->uniquename;
@@ -1764,7 +1764,7 @@ ENode *parse_declarations(char mode, int singleDeclaration, char allowEmpty, cha
             for (;;) {
                 snapshot = *CPrep_GetLastBufferedToken();
                 declarationState.name = NULL;
-                CDecl_ParseDeclarator(&declarationState);
+                scandeclarator(&declarationState);
                 if (declarationState.name != NULL) {
                     if (declarationState.storageclass != TK_TYPEDEF) {
                         if (declarationState.thetype->type == TYPEFUNC) {
@@ -1814,13 +1814,13 @@ ENode *parse_declarations(char mode, int singleDeclaration, char allowEmpty, cha
 
 static Statement *allocate_and_append_statement(UInt8 type)
 {
-    Statement *stmt = (Statement *)CompilerTools_AllocatePool(0x1a);
+    Statement *stmt = (Statement *)lalloc(0x1a);
     stmt->next = NULL;
     stmt->type = type;
     stmt->value = current_statement_number;
     stmt->flags = 0;
     stmt->sourceoffset = statement_sourceoffset;
-    stmt->dobjstack = UINT_00587fc4;
+    stmt->dobjstack = cexcept_dobjstack;
     data_00587644->next = stmt;
     data_00587644 = stmt;
     return stmt;
@@ -1898,7 +1898,7 @@ void declare_local_object(DeclInfo *declaration, TStreamElement *declarationToke
                 CError_ReportError(ERR_IDENTIFIER_REDECLARED_WAS_DECLARED_AS_NOW, declaration->name->name, found->type,
                                    found->qual, declaration->thetype, declaration->qual);
         } else {
-            found = CParser_NewObject(declaration);
+            found = CParser_NewGlobalDataObject(declaration);
             found->nspace = scope;
         }
         CParser_NewAliasObject(found, 0);
@@ -1906,9 +1906,9 @@ void declare_local_object(DeclInfo *declaration, TStreamElement *declarationToke
     }
 
     if (declaration->storageclass != STORAGE_STATIC)
-        object = CParser_CreateObject(declaration);
-    else
         object = CParser_NewObject(declaration);
+    else
+        object = CParser_NewGlobalDataObject(declaration);
     object->name = declaration->name;
     object->type = declaration->thetype;
     object->qual = declaration->qual;
@@ -1944,13 +1944,13 @@ void declare_local_object(DeclInfo *declaration, TStreamElement *declarationToke
                 localstatic_init_guard = NULL;
                 CInit_InitializeStaticData(object, append_localstatic_init_expr);
                 if (localstatic_init_guard != NULL) {
-                    statement = CompilerTools_AllocatePool(sizeof(Statement));
+                    statement = lalloc(sizeof(Statement));
                     statement->next = NULL;
                     statement->type = ST_EXPRESSION;
                     statement->value = current_statement_number;
                     statement->flags = 0;
                     statement->sourceoffset = statement_sourceoffset;
-                    statement->dobjstack = UINT_00587fc4, data_00587644->next = statement;
+                    statement->dobjstack = cexcept_dobjstack, data_00587644->next = statement;
                     data_00587644 = statement;
                     statement->expr = makediadicnode(create_objectnode(localstatic_init_guard),
                                                      intconstnode((Type *)&stsignedchar, 1), EASS);
@@ -2003,7 +2003,7 @@ void declare_local_object(DeclInfo *declaration, TStreamElement *declarationToke
                     }
                 }
                 if (object->datatype == DLOCAL) {
-                    local = CompilerTools_AllocatePool(sizeof(ObjectList));
+                    local = lalloc(sizeof(ObjectList));
                     local->object = object;
                     local->next = locals;
                     locals = local;
@@ -2027,26 +2027,26 @@ void append_or_defer_expression_statement(ENode *node)
     struct Statement *record;
     if (data_00580882 != 0) {
         if (deferred_expression != NULL) {
-            record = (struct Statement *)CompilerTools_AllocatePool(sizeof(struct Statement));
+            record = (struct Statement *)lalloc(sizeof(struct Statement));
             record->next = NULL;
             record->type = 4U;
             record->value = current_statement_number;
             record->flags = 0U;
             record->sourceoffset = statement_sourceoffset;
-            record->dobjstack = UINT_00587fc4;
+            record->dobjstack = cexcept_dobjstack;
             data_00587644->next = record;
             data_00587644 = record;
             record->expr = deferred_expression;
         }
         deferred_expression = (ENode *)node;
     } else {
-        record = (struct Statement *)CompilerTools_AllocatePool(sizeof(struct Statement));
+        record = (struct Statement *)lalloc(sizeof(struct Statement));
         record->next = NULL;
         record->type = 4U;
         record->value = current_statement_number;
         record->flags = 0U;
         record->sourceoffset = statement_sourceoffset;
-        record->dobjstack = UINT_00587fc4;
+        record->dobjstack = cexcept_dobjstack;
         data_00587644->next = record;
         data_00587644 = record;
         record->expr = (ENode *)node;
@@ -2055,13 +2055,13 @@ void append_or_defer_expression_statement(ENode *node)
 
 static inline Statement *CFunc_NewStatement(UInt8 kind)
 {
-    Statement *stmt = CompilerTools_AllocatePool(sizeof(Statement));
+    Statement *stmt = lalloc(sizeof(Statement));
     stmt->next = NULL;
     stmt->type = kind;
     stmt->value = current_statement_number;
     stmt->flags = 0;
     stmt->sourceoffset = statement_sourceoffset;
-    stmt->dobjstack = UINT_00587fc4;
+    stmt->dobjstack = cexcept_dobjstack;
     data_00587644->next = stmt;
     data_00587644 = stmt;
     return stmt;
@@ -2089,8 +2089,8 @@ void append_localstatic_init_expr(ENode *expr)
             obj->qual |= Q_IMPLICIT_WEAK;
             obj->sclass = TK_EOF;
         }
-        fn_004ceab0(localstatic_init_guard, NULL, NULL, localstatic_init_guard->type->size);
-        info = CompilerTools_AllocatePool(sizeof(CLabel));
+        CInit_DeclareData(localstatic_init_guard, NULL, NULL, localstatic_init_guard->type->size);
+        info = lalloc(sizeof(CLabel));
         memclrw(info, sizeof(CLabel));
         info->uniquename = CParser_GetUniqueName();
         info->name = info->uniquename;
@@ -2105,13 +2105,13 @@ void append_localstatic_init_expr(ENode *expr)
 
 static inline Statement *MakeCaseStatement(void)
 {
-    Statement *statement = CompilerTools_AllocatePool(0x1a);
+    Statement *statement = lalloc(0x1a);
     statement->next = NULL;
     statement->type = ST_LABEL;
     statement->value = current_statement_number;
     statement->flags = 0;
     statement->sourceoffset = statement_sourceoffset;
-    statement->dobjstack = UINT_00587fc4;
+    statement->dobjstack = cexcept_dobjstack;
     data_00587644->next = statement;
     data_00587644 = statement;
     return statement;
@@ -2130,20 +2130,21 @@ void parse_case_statement(struct StatementContext *context)
         return;
     }
     tk = CPrepTokenizer_GetNextToken();
-    value = CExpr_IntConstConvert(context->switchinfo->sizetype, context->switchinfo->sizetype, fn_004f0b30());
+    value =
+        CExpr_IntConstConvert(context->switchinfo->sizetype, context->switchinfo->sizetype, CExpr_IntegralConstExpr());
     for (entry = context->switchinfo->cases; entry != NULL; entry = entry->next) {
         if (CInt64_GreaterEqual(entry->min, value) && CInt64_LessEqual(entry->min, value)) {
             CError_ReportError(ERR_CASE_CONSTANT_DEFINED_MORE_THAN_ONCE);
         }
     }
     statement = MakeCaseStatement();
-    label = CompilerTools_AllocatePool(sizeof(*label));
+    label = lalloc(sizeof(*label));
     memclrw(label, sizeof(*label));
     label->uniquename = CParser_GetUniqueName();
     label->name = label->uniquename;
     statement->label = label;
     statement->label->stmt = statement;
-    newCase = CompilerTools_AllocatePool(sizeof(*newCase));
+    newCase = lalloc(sizeof(*newCase));
     newCase->min = value;
     newCase->label = statement->label;
     newCase->next = context->switchinfo->cases;
@@ -2356,7 +2357,7 @@ void CFunc_DestructorCleanup(Statement *first)
 static inline Statement *CFunc_0047b880_inline1(char type, Statement *after)
 {
     Statement *stmt;
-    stmt = (Statement *)CompilerTools_AllocatePool(26);
+    stmt = (Statement *)lalloc(26);
     stmt->next = after->next;
     after->next = stmt;
     stmt->type = type;
@@ -2399,7 +2400,7 @@ Statement *insert_conditional_goto_cleanup(Statement *statement)
     } else {
         statement->type = ST_IFGOTO;
     }
-    data = (CLabel *)CompilerTools_AllocatePool(sizeof(*data));
+    data = (CLabel *)lalloc(sizeof(*data));
     memclrw(data, sizeof(*data));
     data->name = data->uniquename = CParser_GetUniqueName();
     candidate = statement->label->stmt->dobjstack;
@@ -2475,7 +2476,7 @@ static inline Statement *CFunc_0047b9a0_inline3(ExceptionAction *node, Statement
 static inline Statement *CFunc_InsertStatement(Statement *statement)
 {
     Statement *inserted;
-    inserted = (Statement *)CompilerTools_AllocatePool(sizeof(Statement));
+    inserted = (Statement *)lalloc(sizeof(Statement));
     inserted->next = statement->next;
     statement->next = inserted;
     inserted->type = ST_EXPRESSION;
@@ -2525,7 +2526,7 @@ void CFunc_0047b9a0(Statement *statement, Statement *expression)
     }
     needsTemporary = CFunc_0047b9a0_inline1(expression);
     if (needsTemporary != 0) {
-        if (CMachine_FunctionRequiresMemoryReturn((TypeFunc *)cscope_currentfunc->type) != 1) {
+        if (CMach_GetFunctionResultClass((TypeFunc *)cscope_currentfunc->type) != 1) {
             value = expression->expr->rtype;
             temporary = CParser_NewLocalDataObject(NULL, 1);
             temporary->name = (HashNameNode *)CParser_GetUniqueName();
@@ -2587,7 +2588,7 @@ ENode *sub_47bca0(ENode *node)
         case ETEMP: {
             Object *n = CException_GetTempObject(node);
             if (node->data.temp.needs_dtor) {
-                CleanNode *r = (CleanNode *)CompilerTools_AllocatePool(12);
+                CleanNode *r = (CleanNode *)lalloc(12);
                 r->next = data_00580890;
                 data_00580890 = r;
                 r->object = n;
@@ -2835,7 +2836,7 @@ ENode *create_temp_node2(Type *type)
     if (data_0058757c != NULL) {
         return data_0058757c(type, 1);
     }
-    result = CExpr2_NewESCOPEBEGINNode(type, 0);
+    result = CExpr_NewETEMPNode(type, 0);
     result->data.temp.needs_dtor = 1;
     return result;
 }
@@ -2847,7 +2848,7 @@ ENode *create_temp_node(Type *type)
     if (data_0058757c != NULL) {
         return data_0058757c(type, 0);
     }
-    result = CExpr2_NewESCOPEBEGINNode(type, 0);
+    result = CExpr_NewETEMPNode(type, 0);
     if (type->type == TYPECLASS) {
         object = CClass_Destructor((TypeClass *)type);
         if (object != NULL) {
@@ -2895,7 +2896,7 @@ void CheckCLabels(void)
 Statement *CFunc_InsertAfterStatement(int type, Statement *after)
 {
     Statement *stmt;
-    stmt = (Statement *)CompilerTools_AllocatePool(26U);
+    stmt = (Statement *)lalloc(26U);
     stmt->next = after->next;
     after->next = stmt;
     stmt->type = type;
@@ -2912,7 +2913,7 @@ Statement *CFunc_AppendStatement(int kind)
     unsigned short value8;
     unsigned int value22;
     struct ExceptionAction *value18;
-    record = (Statement *)CompilerTools_AllocatePool(26U);
+    record = (Statement *)lalloc(26U);
     record->next = NULL;
     record->type = (unsigned char)kind;
     value8 = current_statement_number;
@@ -2920,7 +2921,7 @@ Statement *CFunc_AppendStatement(int kind)
     record->flags = 0;
     value22 = statement_sourceoffset;
     record->sourceoffset = value22;
-    value18 = UINT_00587fc4;
+    value18 = cexcept_dobjstack;
     record->dobjstack = value18;
     data_00587644->next = record;
     data_00587644 = record;
@@ -2930,7 +2931,7 @@ Statement *CFunc_AppendStatement(int kind)
 CLabel *newlabel(void)
 {
     CLabel *label;
-    label = (CLabel *)CompilerTools_AllocatePool(20U);
+    label = (CLabel *)lalloc(20U);
     memclrw(label, 20U);
     label->uniquename = CParser_GetUniqueName();
     label->name = label->uniquename;
@@ -2979,7 +2980,7 @@ FuncArg *parameter_type_list(DeclInfo *state)
             CError_ReportError(127U);
     } else {
         parse_old_style_parameter_names(state);
-        args = &data_00584748;
+        args = &oldstyle;
     }
     return args;
 }
@@ -2997,7 +2998,7 @@ UInt8 CFunc_ParseFakeArgList(char stop_at_comma)
         if (declaration_data.missingTypeSpecifier != 0) {
             return 0;
         }
-        CDecl_ParseDeclarator(&declaration_data);
+        scandeclarator(&declaration_data);
         if (tk == '=') {
             tk = CPrepTokenizer_GetNextToken();
             assignment_expression();
@@ -3041,9 +3042,9 @@ unsigned int parse_func_args(int parameter)
                 while (tail->next != NULL) {
                     tail = tail->next;
                 }
-                tail->next = &data_00583098;
+                tail->next = &elipsis;
             } else {
-                args = &data_00583098;
+                args = &elipsis;
             }
             tk = CPrepTokenizer_GetNextToken();
             return (unsigned int)args;
@@ -3059,7 +3060,7 @@ unsigned int parse_func_args(int parameter)
             decl.storageclass = 0;
         }
         decl.name = NULL;
-        CDecl_ParseDeclarator(&decl);
+        scandeclarator(&decl);
         if (first != 0) {
             first = 0;
             if (decl.thetype == &stvoid) {
@@ -3081,7 +3082,7 @@ unsigned int parse_func_args(int parameter)
                 }
                 break;
             case TYPEFUNC:
-                CDecl_WrapTypePointer(&decl.thetype, 0);
+                makethetypepointer(&decl.thetype, 0);
                 break;
             case TYPEARRAY:
                 decl.thetype = CDecl_NewPointerType(TPTR_TARGET(decl.thetype));
@@ -3145,7 +3146,7 @@ ENode *CFunc_DefaultArg(Type *destination, SInt32 flags, FuncArg *value)
     data_00587fd8 = NULL;
 
     if (CTemplTool_IsTypeDepExpr(expr) == 0 && CTemplateTools_IsDependentType(destination) == 0) {
-        expr = CExpr_AssignmentPromotion(expr, destination, flags, 1);
+        expr = argumentpromotion(expr, destination, flags, 1);
     } else {
         record = CPrep_GetLastBufferedToken();
         if (record != NULL && record->tokenfile != NULL) {
@@ -3224,7 +3225,7 @@ void fn_0047ca70(Type **pt)
             break;
         case TYPEFUNC: {
             Type **typeptr = pt;
-            CDecl_WrapTypePointer(typeptr, 0);
+            makethetypepointer(typeptr, 0);
             return;
         }
         case TYPEARRAY:
@@ -3250,19 +3251,19 @@ void CFunc_SetupLocalVarInfo(Object *object)
         object->u.var.info->noregister = 1;
 }
 
-void PPCError_RestoreGlobalValues(const struct DeclBlock *values)
+void CFunc_RestoreBlock(const struct DeclBlock *values)
 {
     cscope_current = (NameSpace *)values->parent_nspace;
-    UINT_00587fc4 = (struct ExceptionAction *)values->dobjstack;
+    cexcept_dobjstack = (struct ExceptionAction *)values->dobjstack;
 }
 
-struct DeclBlock *fn_0047cb60(void)
+struct DeclBlock *CFunc_NewDeclBlock(void)
 {
     DeclBlock *node;
     DeclBlock *tail;
     struct NameSpace *obj;
 
-    node = (DeclBlock *)CompilerTools_AllocatePool(0xe);
+    node = (DeclBlock *)lalloc(0xe);
     if (data_00580870 != NULL) {
         tail = saved_global_values_tail;
         tail->next = node;
@@ -3272,7 +3273,7 @@ struct DeclBlock *fn_0047cb60(void)
     }
     node->index = data_00580878++;
     node->parent_nspace = cscope_current;
-    node->dobjstack = UINT_00587fc4;
+    node->dobjstack = cexcept_dobjstack;
     obj = CScope_NewListNameSpace(NULL, 0);
     obj->parent = cscope_current;
     cscope_current = obj;

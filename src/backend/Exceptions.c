@@ -68,7 +68,7 @@ void Exceptions_EmitExceptionTable(Object *object, int offset)
     for (range = exception_scope_entries; range != NULL; range = range->next) {
         if (range->info->child_count == 0 && range->info->recordOffset == 0) {
             if (((size = exception_records.size) & 3) != 0)
-                CompilerTools_AppendGListData(&exception_records, &fill, tableCursor = ((size + 3) & -4) - size);
+                AppendGListData(&exception_records, &fill, tableCursor = ((size + 3) & -4) - size);
             emit_exception_records(range->info);
         }
     }
@@ -113,7 +113,7 @@ void Exceptions_EmitExceptionTable(Object *object, int offset)
         tableCursor += sizeof(ExceptionTableEntry);
         entryRange = entryRange->next;
     }
-    fn_00442c00(&exception_records);
+    LockGList(&exception_records);
     ObjGen_PPC_EABI_EmitDescriptorWithRelocations(object, offset, *exception_records.data, exception_records.size,
                                                   exception_table_relocation_requests);
     FreeGList(&exception_records);
@@ -187,7 +187,7 @@ void Exceptions_AppendScopeEntry(PCodeInstruction *context, ExceptionAction *ele
         if (last_exception_scope_entry == NULL || last_exception_scope_entry->elements == NULL)
             return;
     }
-    entry = (ExceptionScopeEntry *)CompilerTools_AllocatePool(0x18);
+    entry = (ExceptionScopeEntry *)lalloc(0x18);
     entry->next = NULL;
     entry->end = context;
     entry->start = entry->end;
@@ -378,7 +378,7 @@ void Exceptions_Reset(void)
 static inline void append_reference(void *obj, SInt32 offset)
 {
     ObjGenRelocationRequest *it;
-    it = (ObjGenRelocationRequest *)CompilerTools_AllocatePool(16);
+    it = (ObjGenRelocationRequest *)lalloc(16);
     it->next = NULL;
     it->object = obj;
     it->offset = offset;
@@ -450,7 +450,7 @@ void emit_exception_records(ObjectGroup *node)
                     baseOffset = fn_004a9f90();
                 offsetReference.offset = CTool_EndianConvertWord16(record->data.local.object->u.var.uid + baseOffset);
                 offsetReference.reference = 0;
-                CompilerTools_AppendGListData(&exception_records, &offsetReference, sizeof(offsetReference));
+                AppendGListData(&exception_records, &offsetReference, sizeof(offsetReference));
                 append_reference(record->data.local.dtor, recordOffset + 4);
                 break;
             case 2:
@@ -475,7 +475,7 @@ void emit_exception_records(ObjectGroup *node)
                 twoOffsetsReference.secondOffset =
                     CTool_EndianConvertWord16(record->data.local_cond.object->u.var.uid + baseOffset);
                 twoOffsetsReference.reference = 0;
-                CompilerTools_AppendGListData(&exception_records, &twoOffsetsReference, sizeof(twoOffsetsReference));
+                AppendGListData(&exception_records, &twoOffsetsReference, sizeof(twoOffsetsReference));
                 append_reference(record->data.local_cond.dtor, recordOffset + 8);
                 break;
             case 3:
@@ -488,8 +488,7 @@ void emit_exception_records(ObjectGroup *node)
                 adjustedOffsetReference.offset = CTool_EndianConvertWord16(record->data.local.object->u.var.uid +
                                                                            baseOffset + record->data.local.offset);
                 adjustedOffsetReference.reference = 0;
-                CompilerTools_AppendGListData(&exception_records, &adjustedOffsetReference,
-                                              sizeof(adjustedOffsetReference));
+                AppendGListData(&exception_records, &adjustedOffsetReference, sizeof(adjustedOffsetReference));
                 append_reference(record->data.local.dtor, recordOffset + 4);
                 break;
             case 4:
@@ -508,8 +507,7 @@ void emit_exception_records(ObjectGroup *node)
                 }
                 optionalOffsetReference.offset = CTool_EndianConvertWord16(offset);
                 optionalOffsetReference.reference = 0;
-                CompilerTools_AppendGListData(&exception_records, &optionalOffsetReference,
-                                              sizeof(optionalOffsetReference));
+                AppendGListData(&exception_records, &optionalOffsetReference, sizeof(optionalOffsetReference));
                 append_reference(record->data.local_pointer.dtor, recordOffset + 4);
                 break;
             case 5:
@@ -525,8 +523,7 @@ void emit_exception_records(ObjectGroup *node)
                     CTool_EndianConvertWord16((UInt32)record->data.member_array.offset);
                 offsetAndValuesReference.value = CTool_EndianConvertWord16((UInt32)record->data.member_array.count);
                 offsetAndValuesReference.reference = 0;
-                CompilerTools_AppendGListData(&exception_records, &offsetAndValuesReference,
-                                              sizeof(offsetAndValuesReference));
+                AppendGListData(&exception_records, &offsetAndValuesReference, sizeof(offsetAndValuesReference));
                 append_reference(record->data.member_array.dtor, recordOffset + 8);
                 break;
             case 7:
@@ -546,7 +543,7 @@ void emit_exception_records(ObjectGroup *node)
                 offsetValueReference.offset = CTool_EndianConvertWord16(offset);
                 offsetValueReference.value = CTool_EndianConvertWord32(record->data.member.offset);
                 offsetValueReference.reference = 0;
-                CompilerTools_AppendGListData(&exception_records, &offsetValueReference, sizeof(offsetValueReference));
+                AppendGListData(&exception_records, &offsetValueReference, sizeof(offsetValueReference));
                 append_reference(record->data.member.dtor, recordOffset + 8);
                 break;
             case 17:
@@ -566,8 +563,8 @@ void emit_exception_records(ObjectGroup *node)
                 alternateOffsetValueReference.offset = CTool_EndianConvertWord16(offset);
                 alternateOffsetValueReference.value = CTool_EndianConvertWord32(record->data.member.offset);
                 alternateOffsetValueReference.reference = 0;
-                CompilerTools_AppendGListData(&exception_records, &alternateOffsetValueReference,
-                                              sizeof(alternateOffsetValueReference));
+                AppendGListData(&exception_records, &alternateOffsetValueReference,
+                                sizeof(alternateOffsetValueReference));
                 append_reference(record->data.member.dtor, recordOffset + 8);
                 break;
             case 8:
@@ -600,8 +597,7 @@ void emit_exception_records(ObjectGroup *node)
                 twoOffsetsValueReference.secondOffset = CTool_EndianConvertWord16(firstOffset);
                 twoOffsetsValueReference.argument = CTool_EndianConvertWord32(record->data.member_cond.offset);
                 twoOffsetsValueReference.reference = 0;
-                CompilerTools_AppendGListData(&exception_records, &twoOffsetsValueReference,
-                                              sizeof(twoOffsetsValueReference));
+                AppendGListData(&exception_records, &twoOffsetsValueReference, sizeof(twoOffsetsValueReference));
                 append_reference(record->data.member_cond.dtor, recordOffset + 0xc);
                 break;
             case 9:
@@ -623,8 +619,7 @@ void emit_exception_records(ObjectGroup *node)
                 offsetValuesReference.secondValue = CTool_EndianConvertWord32(record->data.member_array.count);
                 offsetValuesReference.thirdValue = CTool_EndianConvertWord32(record->data.member_array.size);
                 offsetValuesReference.reference = 0;
-                CompilerTools_AppendGListData(&exception_records, &offsetValuesReference,
-                                              sizeof(offsetValuesReference));
+                AppendGListData(&exception_records, &offsetValuesReference, sizeof(offsetValuesReference));
                 append_reference(record->data.member_array.dtor, recordOffset + 0x10);
                 break;
             case 10:
@@ -644,7 +639,7 @@ void emit_exception_records(ObjectGroup *node)
                 }
                 kind10Reference.offset = CTool_EndianConvertWord16(offset);
                 kind10Reference.reference = 0;
-                CompilerTools_AppendGListData(&exception_records, &kind10Reference, sizeof(kind10Reference));
+                AppendGListData(&exception_records, &kind10Reference, sizeof(kind10Reference));
                 append_reference(record->data.pair.second, recordOffset + 4);
                 break;
             case 12:
@@ -675,7 +670,7 @@ void emit_exception_records(ObjectGroup *node)
                 }
                 kind12Reference.secondOffset = CTool_EndianConvertWord16(firstOffset);
                 kind12Reference.reference = 0;
-                CompilerTools_AppendGListData(&exception_records, &kind12Reference, sizeof(kind12Reference));
+                AppendGListData(&exception_records, &kind12Reference, sizeof(kind12Reference));
                 append_reference(record->data.delete_pointer_cond.deletefunc, recordOffset + 8);
                 break;
             case 13:
@@ -692,7 +687,7 @@ void emit_exception_records(ObjectGroup *node)
                 else
                     baseOffset = fn_004a9f90();
                 typeReference.offset = CTool_EndianConvertWord32(record->data.catch_block.info->u.var.uid + baseOffset);
-                CompilerTools_AppendGListData(&exception_records, &typeReference, sizeof(typeReference));
+                AppendGListData(&exception_records, &typeReference, sizeof(typeReference));
                 if (record->data.catch_block.typeInfo != NULL)
                     append_reference(record->data.catch_block.typeInfo, recordOffset + 4);
                 break;
@@ -704,7 +699,7 @@ void emit_exception_records(ObjectGroup *node)
                 else
                     baseOffset = fn_004a9f90();
                 shortRecord.value = CTool_EndianConvertWord16(record->data.active_catch.info->u.var.uid + baseOffset);
-                CompilerTools_AppendGListData(&exception_records, &shortRecord, sizeof(shortRecord));
+                AppendGListData(&exception_records, &shortRecord, sizeof(shortRecord));
                 break;
             case 15:
                 referenceTable.offsetFlags = 0;
@@ -719,7 +714,7 @@ void emit_exception_records(ObjectGroup *node)
                     baseOffset = fn_004a9f90();
                 referenceTable.offset =
                     CTool_EndianConvertWord32(record->data.specification.info->u.var.uid + baseOffset);
-                CompilerTools_AppendGListData(&exception_records, &referenceTable, 12);
+                AppendGListData(&exception_records, &referenceTable, 12);
                 referenceIndex = 0;
                 referenceOffset = 12;
                 for (; referenceIndex < record->data.specification.count; referenceIndex++) {
@@ -731,7 +726,7 @@ void emit_exception_records(ObjectGroup *node)
             case 16:
                 byteRecord.offsetFlags = 0;
                 byteRecord.kindFlags = flags | 0xe;
-                CompilerTools_AppendGListData(&exception_records, &byteRecord, sizeof(byteRecord));
+                AppendGListData(&exception_records, &byteRecord, sizeof(byteRecord));
                 break;
             default:
                 CError_FATAL(467);
@@ -743,7 +738,7 @@ void emit_exception_records(ObjectGroup *node)
         linkRecord.kindFlags = 1;
         linkRecord.offsetFlags = 0;
         linkRecord.value = CTool_EndianConvertWord16(node->recordOffset);
-        CompilerTools_AppendGListData(&exception_records, &linkRecord, sizeof(linkRecord));
+        AppendGListData(&exception_records, &linkRecord, sizeof(linkRecord));
     }
 }
 
@@ -778,7 +773,7 @@ struct ObjectGroup *find_or_create_object_group(ExceptionAction *object)
         } while (found != NULL);
     }
 
-    node = (struct ObjectGroup *)CompilerTools_AllocatePool(sizeof(struct ObjectGroup));
+    node = (struct ObjectGroup *)lalloc(sizeof(struct ObjectGroup));
     node->parent = parent;
     node->object = object;
     node->child_count = 0;

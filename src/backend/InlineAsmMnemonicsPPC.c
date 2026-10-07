@@ -1136,7 +1136,7 @@ void CTemplateNew_InitAsmOperandPatternLookup(void)
     for (entry = asm_operand_patterns; entry->name != NULL; ++entry) {
         hash = CHash(entry->name);
         bucket = asmOperandPatternLookup + (hash & 0xff);
-        node = CompilerTools_AllocatePool(sizeof(*node));
+        node = lalloc(sizeof(*node));
         node->record = entry;
         node->next = *bucket;
         *bucket = node;

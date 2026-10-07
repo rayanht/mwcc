@@ -132,7 +132,7 @@ struct IRONode *CError_NewIRONode(void)
 {
     IRONode *record;
     UInt16 number;
-    record = (IRONode *)CompilerTools_AllocatePoolMemory(60U);
+    record = (IRONode *)oalloc(60U);
     memset(record, 0, 60U);
     number = iro_node_count;
     record->index = number;
@@ -182,7 +182,7 @@ static void CError_BufferGrow(StrBuf *eb, UInt32 amount)
 {
     char *newBuf;
 
-    newBuf = (char *)CompilerTools_AllocatePool(eb->size + amount);
+    newBuf = (char *)lalloc(eb->size + amount);
     memcpy(newBuf, eb->start, eb->size);
     eb->start = newBuf;
     eb->cursor = newBuf + eb->size - eb->avail;
@@ -368,7 +368,7 @@ void append_function_args(StrBuf *buf, TypeMemberFunc *type, char skip)
             }
         }
         for (; arg;) {
-            if (arg == &data_00583098 || arg == &data_00584748) {
+            if (arg == &elipsis || arg == &oldstyle) {
                 CError_BufferAppendString(buf, "...");
                 break;
             }
@@ -632,7 +632,7 @@ char *CError_GetTypeString(Type *type, int qualifiers, char useAlternateAllocato
     if (useAlternateAllocator) {
         text = galloc(ctx.size + 1);
     } else {
-        text = (char *)CompilerTools_AllocatePool(ctx.size + 1);
+        text = (char *)lalloc(ctx.size + 1);
     }
     return (char *)strcpy(text, ctx.start);
 }
@@ -691,7 +691,7 @@ void append_object_name(StrBuf *sb, Object *obj)
         if (sb != NULL) {
             n = strlen(s);
             if (sb->avail < n) {
-                newbuf = CompilerTools_AllocatePool(sb->size + n);
+                newbuf = lalloc(sb->size + n);
                 memcpy(newbuf, sb->start, sb->size);
                 sb->start = newbuf;
                 sb->cursor = newbuf + sb->size - sb->avail;
@@ -740,7 +740,7 @@ char *CError_GetQualifiedName(NameSpace *nameSpace, HashNameNode *name)
     append_namespace_qualification(&sb, nameSpace);
     len = strlen(name->name);
     if (sb.avail < len) {
-        newdata = (char *)CompilerTools_AllocatePool(sb.size + len);
+        newdata = (char *)lalloc(sb.size + len);
         memcpy(newdata, sb.start, sb.size);
         sb.start = newdata;
         sb.cursor = newdata + sb.size - sb.avail;
@@ -752,7 +752,7 @@ char *CError_GetQualifiedName(NameSpace *nameSpace, HashNameNode *name)
     sb.avail -= len;
     *sb.cursor = 0;
     sb.avail = 0;
-    newdata = (char *)CompilerTools_AllocatePool(sb.size + 1);
+    newdata = (char *)lalloc(sb.size + 1);
     return strcpy(newdata, sb.start);
 }
 
@@ -768,7 +768,7 @@ char *CError_BuildNameSpaceNameTypeString(NameSpace *nspace, HashNameNode *name,
     append_qualified_function_signature(&s, nspace, name, x);
     *s.cursor = 0;
     s.avail = 0;
-    p = (char *)CompilerTools_AllocatePool(s.size + 1);
+    p = (char *)lalloc(s.size + 1);
     return strcpy(p, s.start);
 }
 
@@ -783,7 +783,7 @@ long CError_GetObjectString(Object *object)
     append_object_name(&buffer, object);
     *buffer.cursor = 0;
     buffer.avail = 0;
-    result = CompilerTools_AllocatePool(buffer.size + 1);
+    result = lalloc(buffer.size + 1);
     return (long)strcpy(result, buffer.start);
 }
 
@@ -812,7 +812,7 @@ char *CError_GetQualifiedHashName(NameSpace *nspace, HashNameNode *nameRef)
         CErrBuf_Append(&str, name);
         *str.cursor = 0;
         str.avail = 0;
-        return (char *)strcpy((char *)CompilerTools_AllocatePool(str.size + 1), str.start);
+        return (char *)strcpy((char *)lalloc(str.size + 1), str.start);
     }
     return name;
 }

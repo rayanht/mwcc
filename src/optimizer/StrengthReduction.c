@@ -134,7 +134,7 @@ void add_code_motion_search(Loop *block, SInt16 reg, SInt32 increment)
         node = node->next;
     }
 
-    node = (CMRegisterNode *)CompilerTools_AllocatePoolMemory(sizeof(CMRegisterNode));
+    node = (CMRegisterNode *)oalloc(sizeof(CMRegisterNode));
     node->next = block->codeMotionSearches;
     block->codeMotionSearches = node;
     node->loop = block;
@@ -146,7 +146,7 @@ void add_code_motion_search(Loop *block, SInt16 reg, SInt32 increment)
     for (defs = code_motion_register_definition_heads[reg]; defs != NULL; defs = defs->next) {
         def = code_motion_entries[defs->entry_index].instruction;
         if (block->memberblocks[def->block->index >> 5] & (1 << def->block->index)) {
-            ref = (CodeMotionRef *)CompilerTools_AllocatePoolMemory(sizeof(CodeMotionRef));
+            ref = (CodeMotionRef *)oalloc(sizeof(CodeMotionRef));
             ref->next = node->refs;
             node->refs = ref;
             ref->def = def;
@@ -343,7 +343,7 @@ SInt32 check_strength_reduction_use(CMRegisterNode *info, SInt32 useIndex, SInt3
 void add_code_motion_candidate(CMRegisterNode *list, PCodeInstruction *attributes, unsigned int argumentValue,
                                short firstValue, short secondValue, Loop *thirdValue)
 {
-    CodeMotionCandidate *record = (CodeMotionCandidate *)CompilerTools_AllocatePoolMemory(0x20);
+    CodeMotionCandidate *record = (CodeMotionCandidate *)oalloc(0x20);
     record->next = list->candidates;
     list->candidates = record;
     record->owner = list;
@@ -385,7 +385,7 @@ void collect_code_motion_candidates(Loop *context)
                 value18 = result18;
                 value14 = result14;
                 record = cm_entries[candidate->entry_index].instruction;
-                link = (CodeMotionCandidate *)CompilerTools_AllocatePoolMemory(32);
+                link = (CodeMotionCandidate *)oalloc(32);
                 link->next = entry->candidates;
                 entry->candidates = link;
                 link->owner = entry;
@@ -911,7 +911,7 @@ void StrengthReduction_RunLoopPasses(void)
         visit_loops_children_first(data_0058763c);
         fn_00527e80(data_0058763c);
         visit_code_motion_searches(data_0058763c);
-        CompilerTools_ResetPool();
+        freeoheap();
     }
     return;
 }

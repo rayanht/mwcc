@@ -54,7 +54,7 @@ CInt64 data_00553a28 = {0, 0xFFFFFFFF};
 static CInt64 lbl_00553A30 = {-1, 0xFFFFFFFF};
 static ERange *NewRange(UInt8 type)
 {
-    ERange *range = (void *)CompilerTools_AllocatePoolMemory(sizeof(ERange));
+    ERange *range = (void *)oalloc(sizeof(ERange));
     range->type = type;
     return range;
 }
@@ -69,7 +69,7 @@ static ERangeVar *FindVar(Object *key)
 
 static void AddVar(Object *key, ERange *range)
 {
-    ERangeVar *var = (void *)CompilerTools_AllocatePoolMemory(sizeof(ERangeVar));
+    ERangeVar *var = (void *)oalloc(sizeof(ERangeVar));
     var->object = key;
     var->range = range;
     var->next = range_vars;
@@ -474,14 +474,14 @@ int initialize_linear_range(IROLinear *nd)
                     nd->range = NULL;
                     break;
                 case EINTCONST:
-                    v = (ERange *)CompilerTools_AllocatePoolMemory(sizeof(ERange));
+                    v = (ERange *)oalloc(sizeof(ERange));
                     v->type = 0;
                     nd->range = v;
                     nd->range->upper = nd->range->lower = nd->u.node->data.intval;
                     break;
                 case EFLOATCONST:
                 case ESTRINGCONST:
-                    v = (ERange *)CompilerTools_AllocatePoolMemory(sizeof(ERange));
+                    v = (ERange *)oalloc(sizeof(ERange));
                     v->type = 0;
                     nd->range = v;
                     break;
@@ -538,7 +538,7 @@ SInt32 IRO_RangePropagateInFNode(void)
                             nd->range = NULL;
                             break;
                         case EINTCONST: {
-                            ERange *r = (ERange *)CompilerTools_AllocatePoolMemory(0x12);
+                            ERange *r = (ERange *)oalloc(0x12);
                             r->type = 0;
                             nd->range = r;
                             nd->range->upper = nd->range->lower = nd->u.node->data.intval;
@@ -546,7 +546,7 @@ SInt32 IRO_RangePropagateInFNode(void)
                         }
                         case EFLOATCONST:
                         case ESTRINGCONST: {
-                            ERange *r = (ERange *)CompilerTools_AllocatePoolMemory(0x12);
+                            ERange *r = (ERange *)oalloc(0x12);
                             r->type = 0;
                             nd->range = r;
                             break;
@@ -574,7 +574,7 @@ SInt32 IRO_RangePropagateInFNode(void)
                         nd->range = NULL;
                         break;
                     case EINTCONST: {
-                        ERange *r = (ERange *)CompilerTools_AllocatePoolMemory(0x12);
+                        ERange *r = (ERange *)oalloc(0x12);
                         r->type = 0;
                         nd->range = r;
                         nd->range->upper = nd->range->lower = nd->u.node->data.intval;
@@ -582,7 +582,7 @@ SInt32 IRO_RangePropagateInFNode(void)
                     }
                     case EFLOATCONST:
                     case ESTRINGCONST: {
-                        ERange *r = (ERange *)CompilerTools_AllocatePoolMemory(0x12);
+                        ERange *r = (ERange *)oalloc(0x12);
                         r->type = 0;
                         nd->range = r;
                         break;

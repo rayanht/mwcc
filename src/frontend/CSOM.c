@@ -120,7 +120,7 @@ static inline Object *MakeKinds(SOMClassBuildState *info)
     int t;
 
     size = (info->memberCount + 1) / 2;
-    memclrw(bits = (UInt8 *)CompilerTools_AllocatePool(size), size);
+    memclrw(bits = (UInt8 *)lalloc(size), size);
     for (n = (SOMEntry *)info->members, i = 0; n != NULL; n = n->next, i++) {
         switch (n->kind) {
             case 0:
@@ -296,7 +296,7 @@ UInt8 encode_som_type(UInt8 *p, Type *ty, Boolean flag)
             break;
         case TYPEINT:
         case TYPEENUM:
-            if (Type_IsUnsigned(ty)) {
+            if (is_unsigned(ty)) {
                 switch (ty->size) {
                     case 1:
                         p[1] |= 1;
@@ -368,7 +368,7 @@ void encode_member_function_types(TypeMemberFunc *t, Boolean flag)
     buf[0] = 0;
 
     for (arg = t->args; arg != NULL; arg = arg->next) {
-        if (arg == &data_00583098 || arg == &data_00584748 || ++buf[0] == 0) {
+        if (arg == &elipsis || arg == &oldstyle || ++buf[0] == 0) {
             CError_ReportError((SInt32)0x111);
             break;
         }
@@ -379,7 +379,7 @@ void encode_member_function_types(TypeMemberFunc *t, Boolean flag)
         if ((arg = t->args) != NULL) {
             if (t->is_static == 0)
                 arg = arg->next;
-            if (arg != NULL && CMachine_FunctionRequiresMemoryReturn((TypeFunc *)t))
+            if (arg != NULL && CMach_GetFunctionResultClass((TypeFunc *)t))
                 arg = arg->next;
         }
 
@@ -473,7 +473,7 @@ Object **build_vtbl_index_table(TypeClass *theclass, SInt32 *count)
     }
     tableSize = maxIndex + 1;
     *count = tableSize;
-    table = (Object **)CompilerTools_AllocatePool(tableSize * sizeof(*table));
+    table = (Object **)lalloc(tableSize * sizeof(*table));
     memclrw(table, tableSize * sizeof(*table));
     CScope_InitObjectIterator(&scope, theclass->nspace);
     for (;;) {
@@ -625,7 +625,7 @@ void CSOM_CompleteClass(TypeClass *tclass)
     }
     if (tclass->sominfo->omitEnvironmentParameter == 0) {
         name = spaces_name;
-        lookupType = CScope_FindTagType(cscope_current, name);
+        lookupType = CScope_GetTagType(cscope_current, name);
         if (!lookupType) {
             fn_0043f3e0(281, name->name);
             requiredType = &stvoid;
@@ -676,12 +676,12 @@ struct SOMVTable *find_or_add_base(SOMClassBuildState *list, TypeClass *unused, 
             p = p->next;
             count++;
         }
-        p->next = (struct SOMVTable *)CompilerTools_AllocatePool(sizeof(struct SOMVTable));
+        p->next = (struct SOMVTable *)lalloc(sizeof(struct SOMVTable));
         memclrw(p->next, sizeof(struct SOMVTable));
         node = p->next;
     } else {
         count = 0;
-        node = (struct SOMVTable *)CompilerTools_AllocatePool(sizeof(struct SOMVTable));
+        node = (struct SOMVTable *)lalloc(sizeof(struct SOMVTable));
         memclrw(node, sizeof(struct SOMVTable));
         list->bases = node;
     }
@@ -754,12 +754,12 @@ void build_class_vtables_and_members(SOMClassBuildState *layout, TypeClass *cls)
                     continue;
                 vtable = find_or_add_base(layout, cls, virtualBase->base, NULL);
                 if ((overrideSlot = vtable->slots) != NULL) {
-                    overrideSlot = (SOMSlot *)CompilerTools_AllocatePool(sizeof(*overrideSlot));
+                    overrideSlot = (SOMSlot *)lalloc(sizeof(*overrideSlot));
                     memclrw(overrideSlot, sizeof(*overrideSlot));
                     overrideSlot->next = vtable->slots;
                     vtable->slots = overrideSlot;
                 } else {
-                    overrideSlot = (SOMSlot *)CompilerTools_AllocatePool(sizeof(*overrideSlot));
+                    overrideSlot = (SOMSlot *)lalloc(sizeof(*overrideSlot));
                     memclrw(overrideSlot, sizeof(*overrideSlot));
                     vtable->slots = overrideSlot;
                     layout->overrideBaseCount++;
@@ -776,7 +776,7 @@ void build_class_vtables_and_members(SOMClassBuildState *layout, TypeClass *cls)
     if (cls->sominfo->methodNameList != NULL) {
         for (infoEntry = cls->sominfo->methodNameList, entryIndex = 0; infoEntry != NULL;
              infoEntry = infoEntry->next, entryIndex++) {
-            newEntry = (SOMEntry *)CompilerTools_AllocatePool(offsetof(SOMEntry, flag) + sizeof(newEntry->flag));
+            newEntry = (SOMEntry *)lalloc(offsetof(SOMEntry, flag) + sizeof(newEntry->flag));
             memclrw(newEntry, offsetof(SOMEntry, flag) + sizeof(newEntry->flag));
             *entryLink = newEntry;
             entryLink = &newEntry->next;
@@ -831,7 +831,7 @@ void build_class_vtables_and_members(SOMClassBuildState *layout, TypeClass *cls)
         methods = build_vtbl_index_table(cls, &methodCount);
         for (methodIndex = 0; methodIndex < methodCount; methodIndex++) {
             if ((object = methods[methodIndex]) != NULL) {
-                newEntry = (SOMEntry *)CompilerTools_AllocatePool(offsetof(SOMEntry, flag) + sizeof(newEntry->flag));
+                newEntry = (SOMEntry *)lalloc(offsetof(SOMEntry, flag) + sizeof(newEntry->flag));
                 memclrw(newEntry, offsetof(SOMEntry, flag) + sizeof(newEntry->flag));
                 *entryLink = newEntry;
                 entryLink = &newEntry->next;
@@ -862,7 +862,7 @@ void create_ancestor_object(SOMClassBuildState *info, TypeClass *cls)
         head = NULL;
         count = 0;
         for (base = info->bases; base != NULL; base = base->next) {
-            OLinkList *n = (OLinkList *)CompilerTools_AllocatePool(0x10);
+            OLinkList *n = (OLinkList *)lalloc(0x10);
             n->next = head;
             head = n;
             n->obj = base->base->sominfo->classDataObject;
@@ -872,9 +872,9 @@ void create_ancestor_object(SOMClassBuildState *info, TypeClass *cls)
         }
         {
             char *buf;
-            memclrw(buf = (char *)CompilerTools_AllocatePool(count), count);
+            memclrw(buf = (char *)lalloc(count), count);
             obj->type->size = count;
-            fn_004ceab0(obj, buf, head, obj->type->size);
+            CInit_DeclareData(obj, buf, head, obj->type->size);
         }
         info->ancestorObject = obj;
     }
@@ -906,7 +906,7 @@ void create_override_methods_object(SOMClassBuildState *cls, TypeClass *func)
         for (b = cls->bases; b != NULL; b = b->next) {
             if (b->slots != NULL) {
                 for (e = b->slots; e != NULL; e = e->next) {
-                    op = (OLinkList *)CompilerTools_AllocatePool(0x10);
+                    op = (OLinkList *)lalloc(0x10);
                     op->next = list;
                     list = op;
                     op->obj = e->overrideMethod;
@@ -916,8 +916,8 @@ void create_override_methods_object(SOMClassBuildState *cls, TypeClass *func)
                 }
             }
         }
-        memclrw(array = CompilerTools_AllocatePool(size), size);
-        fn_004ceab0(obj, array, list, obj->type->size);
+        memclrw(array = lalloc(size), size);
+        CInit_DeclareData(obj, array, list, obj->type->size);
         cls->overrideMethodsObject = obj;
     }
 }
@@ -1001,7 +1001,7 @@ void create_special_functions_object(SOMClassBuildState *info, TypeClass *cls)
         relocations = NULL;
         dataSize = 0;
         if (newOperator != NULL) {
-            relocation = (OLinkList *)CompilerTools_AllocatePool(sizeof(OLinkList));
+            relocation = (OLinkList *)lalloc(sizeof(OLinkList));
             relocation->next = relocations;
             relocations = relocation;
             relocation->obj = newOperator;
@@ -1010,7 +1010,7 @@ void create_special_functions_object(SOMClassBuildState *info, TypeClass *cls)
             dataSize += 4;
         }
         if (deleteOperator != NULL) {
-            relocation = (OLinkList *)CompilerTools_AllocatePool(sizeof(OLinkList));
+            relocation = (OLinkList *)lalloc(sizeof(OLinkList));
             relocation->next = relocations;
             relocations = relocation;
             relocation->obj = deleteOperator;
@@ -1020,7 +1020,7 @@ void create_special_functions_object(SOMClassBuildState *info, TypeClass *cls)
         }
         memclrw(initialData, sizeof(initialData));
         object->type->size = dataSize;
-        fn_004ceab0(object, initialData, relocations, object->type->size);
+        CInit_DeclareData(object, initialData, relocations, object->type->size);
         info->specialFunctionsObject = object;
     }
 }
@@ -1033,7 +1033,7 @@ void emit_som_kind_nibbles(SOMClassBuildState *info)
     int i;
 
     size = (info->memberCount + 1) / 2;
-    memclrw(bits = CompilerTools_AllocatePool(size), size);
+    memclrw(bits = lalloc(size), size);
     for (n = info->members, i = 0; n != NULL; n = n->next, i++) {
         switch (n->kind) {
             case 0:
@@ -1119,14 +1119,14 @@ void make_class_descriptor(SOMClassBuildState *record, TypeClass *classType)
     memclrw(&descriptor, sizeof(descriptor));
     descriptor.value0 = CTool_EndianConvertWord32(0x46);
 
-    head = NULL, node = CompilerTools_AllocatePool(sizeof(*node));
+    head = NULL, node = lalloc(sizeof(*node));
     node->next = head;
     node->obj = classType->sominfo->classDataObject;
     head = node;
     node->offset = 4;
     node->addend = 0;
     if (record->overrideMethodsObject != NULL) {
-        node = CompilerTools_AllocatePool(sizeof(*node));
+        node = lalloc(sizeof(*node));
         node->next = head;
         head = node;
         node->obj = record->overrideMethodsObject;
@@ -1134,7 +1134,7 @@ void make_class_descriptor(SOMClassBuildState *record, TypeClass *classType)
         node->addend = 0;
     }
     if (record->ancestorObject != NULL) {
-        node = CompilerTools_AllocatePool(sizeof(*node));
+        node = lalloc(sizeof(*node));
         node->next = head;
         head = node;
         node->obj = record->ancestorObject;
@@ -1142,7 +1142,7 @@ void make_class_descriptor(SOMClassBuildState *record, TypeClass *classType)
         node->addend = 0;
     }
     if (record->registrationFunction != NULL) {
-        node = CompilerTools_AllocatePool(sizeof(*node));
+        node = lalloc(sizeof(*node));
         node->next = head;
         head = node;
         node->obj = record->registrationFunction;
@@ -1150,7 +1150,7 @@ void make_class_descriptor(SOMClassBuildState *record, TypeClass *classType)
         node->addend = 0;
     }
     if (record->specialFunctionsObject != NULL) {
-        node = CompilerTools_AllocatePool(sizeof(*node));
+        node = lalloc(sizeof(*node));
         node->next = head;
         head = node;
         node->obj = record->specialFunctionsObject;
@@ -1159,14 +1159,14 @@ void make_class_descriptor(SOMClassBuildState *record, TypeClass *classType)
     }
 
     build_descriptor_output(record, classType, &descriptorText);
-    node = CompilerTools_AllocatePool(sizeof(*node));
+    node = lalloc(sizeof(*node));
     node->next = head;
     head = node;
     node->obj = CInit_DeclareString((char *)&descriptorText, sizeof(descriptorText), 0, 0);
     node->offset = 0x34;
     node->addend = 0;
 
-    node = CompilerTools_AllocatePool(sizeof(*node));
+    node = lalloc(sizeof(*node));
     node->next = head;
     head = node;
     node->obj = CInit_DeclareString(classType->classname->name, strlen(classType->classname->name) + 1, 0, 0);
@@ -1175,11 +1175,11 @@ void make_class_descriptor(SOMClassBuildState *record, TypeClass *classType)
 
     descriptor.classSize = CTool_EndianConvertWord32(classType->size);
 
-    node = CompilerTools_AllocatePool(sizeof(*node));
+    node = lalloc(sizeof(*node));
     node->next = head;
     head = node;
     size = (record->directBaseCount + record->implicitBaseCount) * (2 * sizeof(*baseValues));
-    baseValues = CompilerTools_AllocatePool(size);
+    baseValues = lalloc(size);
     firstEntry = (SOMVTable *)record->bases;
     entry = firstEntry;
     index = 0;
@@ -1194,21 +1194,21 @@ void make_class_descriptor(SOMClassBuildState *record, TypeClass *classType)
     node->addend = 0;
 
     if (record->members != NULL) {
-        node = CompilerTools_AllocatePool(sizeof(*node));
+        node = lalloc(sizeof(*node));
         node->next = head;
         head = node;
         node->obj = MakeKinds((SOMClassBuildState *)record);
         node->offset = 0x44;
         node->addend = 0;
 
-        node = CompilerTools_AllocatePool(sizeof(*node));
+        node = lalloc(sizeof(*node));
         node->next = head;
         head = node;
         node->obj = MakeOverrides((SOMClassBuildState *)record);
         node->offset = 0x48;
         node->addend = 0;
 
-        node = CompilerTools_AllocatePool(sizeof(*node));
+        node = lalloc(sizeof(*node));
         node->next = head;
         head = node;
         data_00583548.size = 0;
@@ -1219,7 +1219,7 @@ void make_class_descriptor(SOMClassBuildState *record, TypeClass *classType)
                     memberName = data_00581c48;
                 else if (memberName == destructor_name)
                     memberName = space_name;
-                AppendGListName(&data_00583548, memberName->name);
+                AppendGListID(&data_00583548, memberName->name);
             }
         }
         node->obj = FlushData();
@@ -1228,7 +1228,7 @@ void make_class_descriptor(SOMClassBuildState *record, TypeClass *classType)
     }
 
     if (record->overrideMethodsObject != NULL) {
-        node = CompilerTools_AllocatePool(sizeof(*node));
+        node = lalloc(sizeof(*node));
         node->next = head;
         head = node;
         node->obj = build_base_method_vtbl_index_object(record);
@@ -1236,7 +1236,7 @@ void make_class_descriptor(SOMClassBuildState *record, TypeClass *classType)
         node->addend = 0;
     }
     if (record->inheritedMemberCount != 0) {
-        node = CompilerTools_AllocatePool(sizeof(*node));
+        node = lalloc(sizeof(*node));
         node->next = head;
         head = node;
         node->obj = MakeWords((SOMClassBuildState *)record);
@@ -1245,7 +1245,7 @@ void make_class_descriptor(SOMClassBuildState *record, TypeClass *classType)
     }
 
     descriptor.value88 = 0;
-    fn_004ceab0(descriptorObject, &descriptor, head, descriptorObject->type->size);
+    CInit_DeclareData(descriptorObject, &descriptor, head, descriptorObject->type->size);
     record->object = descriptorObject;
 }
 
@@ -1261,7 +1261,7 @@ void initialize_class_data_object(SOMClassBuildState *methods, TypeClass *tclass
     offset = 0x18;
     for (m = (SOMEntry *)methods->members; m; m = m->next) {
         if (m->kind == 1) {
-            init = (OLinkList *)(CompilerTools_AllocatePool(sizeof(OLinkList)));
+            init = (OLinkList *)(lalloc(sizeof(OLinkList)));
             init->next = list;
             list = init;
             init->obj = m->u.object;
@@ -1271,16 +1271,16 @@ void initialize_class_data_object(SOMClassBuildState *methods, TypeClass *tclass
         offset += 4;
     }
 
-    memclrw(buf = CompilerTools_AllocatePool(offset), offset);
+    memclrw(buf = lalloc(offset), offset);
 
-    init = (OLinkList *)(CompilerTools_AllocatePool(sizeof(OLinkList)));
+    init = (OLinkList *)(lalloc(sizeof(OLinkList)));
     init->next = list;
     init->obj = methods->object;
     init->offset = 4;
     init->addend = 0;
 
     tclass->sominfo->classDataObject->type->size = offset;
-    fn_004ceab0(tclass->sominfo->classDataObject, buf, init, tclass->sominfo->classDataObject->type->size);
+    CInit_DeclareData(tclass->sominfo->classDataObject, buf, init, tclass->sominfo->classDataObject->type->size);
 }
 
 void CSOM_BuildClass(TypeClass *func)
@@ -1397,7 +1397,7 @@ void CSOM_ParseDescriptorValues(void)
         CPrep_ReportError(107);
         return;
     }
-    theclass = CScope_FindTagType(cscope_current, data_00587fa0);
+    theclass = CScope_GetTagType(cscope_current, data_00587fa0);
     if (!theclass || theclass->type != TYPECLASS || !TYPE_CLASS(theclass)->sominfo) {
         fn_0043f3e0(276, data_00587fa0->name);
         return;
@@ -1439,7 +1439,7 @@ void CSOM_ParseBaseClass(void)
         CPrep_ReportError(0x6b);
         return;
     }
-    cls = CScope_FindTagType(cscope_current, data_00587fa0);
+    cls = CScope_GetTagType(cscope_current, data_00587fa0);
     if (cls == NULL || !IS_TYPE_CLASS(cls) || TYPE_CLASS(cls)->sominfo == NULL) {
         fn_0043f3e0(0x114, data_00587fa0->name);
         return;
@@ -1452,7 +1452,7 @@ void CSOM_ParseBaseClass(void)
         CPrep_ReportError(0x6b);
         return;
     }
-    base = CScope_FindTagType(cscope_current, data_00587fa0);
+    base = CScope_GetTagType(cscope_current, data_00587fa0);
     if (base == NULL || !IS_TYPE_CLASS(base) || TYPE_CLASS(base)->sominfo == NULL) {
         fn_0043f3e0(0x114, data_00587fa0->name);
         return;
@@ -1494,7 +1494,7 @@ void CSOM_PrependTheClassArg(TypeFunc *function)
     arg = CParser_NewFuncArg();
     arg->name = GetHashNameNode("__theclass");
     name = GetHashNameNode("SOMClass");
-    type = CScope_FindTagType(cscope_current, name);
+    type = CScope_GetTagType(cscope_current, name);
     if (type == NULL) {
         fn_0043f3e0(281U, name->name);
         type = &stvoid;
@@ -1581,11 +1581,11 @@ ENode *CSOM_BuildNewObjectInstance(TypeClass *cls)
     callnode->rtype = CDecl_NewPointerType((Type *)cls);
 
     if (copts.SOMCheckEnvironment != 0 && copts.SOMCallOptimization == 0) {
-        temp = CExpr2_RewriteExprToTemp(callnode);
+        temp = CExpr_GetETEMPCopy(callnode);
         call2 = funccallexpr(data_005876c0, nullnode(), NULL, NULL, NULL);
         monadic = makemonadicnode(callnode, ELOGNOT);
         monadic->rtype = CParser_GetBoolType();
-        callnode = (ENode *)CompilerTools_AllocatePool(sizeof(ENode));
+        callnode = (ENode *)lalloc(sizeof(ENode));
         callnode->type = ECOND;
         callnode->cost = 0;
         callnode->flags = 0;
@@ -1625,7 +1625,7 @@ void CSOM_004e4390(Object *obj)
         obj->type = CDecl_NewPointerType((Type *)type);
         TYPE_POINTER(obj->type)->qual = Q_REFERENCE;
         node = CFunc_AppendStatement(EINDIRECT);
-        node->expr = makediadicnode(CExpr_New_EINDIRECT_Node(obj), CSOM_BuildNewObjectInstance(type), EASS);
+        node->expr = makediadicnode(create_objectnode2(obj), CSOM_BuildNewObjectInstance(type), EASS);
         CExcept_RegisterDeleteObject(node, obj, method);
     }
 }
@@ -1769,14 +1769,14 @@ ENode *CSOM_AppendPointerArgCall(ENode *node, ENodeList *spec)
             if (spec->node->type == ETEMP_KIND) {
                 if (spec->node->data.temp.uniqueid == 0)
                     spec->node->data.temp.uniqueid = CParser_GetUniqueID();
-                resultExpr = CompilerTools_AllocatePool(sizeof(ENode));
+                resultExpr = lalloc(sizeof(ENode));
                 *resultExpr = *spec->node;
                 resultExpr->data.temp.needs_dtor = 0;
             } else {
-                resultExpr = CExpr2_RewriteExprToTemp(spec->node);
+                resultExpr = CExpr_GetETEMPCopy(spec->node);
             }
         } else {
-            resultExpr = CExpr2_RewriteExprToTemp(node);
+            resultExpr = CExpr_GetETEMPCopy(node);
         }
     } else {
         resultExpr = NULL;
@@ -1785,13 +1785,13 @@ ENode *CSOM_AppendPointerArgCall(ENode *node, ENodeList *spec)
     if (pointerArg->node->type != EOBJREF) {
         if (pointerArg->node->type == EINDIRECT && pointerArg->node->data.monadic->type == EOBJREF &&
             pointerArg->node->data.monadic->data.objref->datatype == DLOCAL) {
-            pointerExpr = CompilerTools_AllocatePool(sizeof(ENode));
+            pointerExpr = lalloc(sizeof(ENode));
             *pointerExpr = *pointerArg->node;
         } else {
-            pointerExpr = CExpr2_RewriteExprToTemp(pointerArg->node);
+            pointerExpr = CExpr_GetETEMPCopy(pointerArg->node);
         }
     } else {
-        pointerExpr = CompilerTools_AllocatePool(sizeof(ENode));
+        pointerExpr = lalloc(sizeof(ENode));
         *pointerExpr = *pointerArg->node;
     }
 
@@ -1807,12 +1807,12 @@ ENode *CSOM_AppendPointerArgCall(ENode *node, ENodeList *spec)
         ENode *pointerValue;
         ENode *pointerCopy;
 
-        pointerCopy = CompilerTools_AllocatePool(sizeof(ENode));
+        pointerCopy = lalloc(sizeof(ENode));
         *pointerCopy = *pointerExpr;
         pointerValue = makemonadicnode(pointerCopy, EINDIRECT);
         pointerValue->rtype = (Type *)&stsignedlong;
         appendCall = funccallexpr(data_00588278, pointerExpr, NULL, NULL, NULL);
-        conditional = CompilerTools_AllocatePool(sizeof(ENode));
+        conditional = lalloc(sizeof(ENode));
         conditional->type = ECOND;
         conditional->cost = 0;
         conditional->flags = 0;
@@ -1840,12 +1840,12 @@ Boolean CSOM_004e3cd0(Type *ftype)
     SInt32 floatRegisters = 13;
     FuncArg *arg;
 
-    if (CMachine_FunctionRequiresMemoryReturn((TypeFunc *)ftype))
+    if (CMach_GetFunctionResultClass((TypeFunc *)ftype))
         integerRegisters--;
 
     arg = TYPE_FUNC(ftype)->args;
     while (arg != NULL) {
-        if (arg == &data_00583098 || arg == &data_00584748)
+        if (arg == &elipsis || arg == &oldstyle)
             return 0;
         switch ((SInt8)arg->type->type) {
             case TYPEINT:
@@ -1886,10 +1886,10 @@ ENode *create_glue_objectrefnode(TypeClass *cls, SInt32 id, Object *obj)
         ref = ref->next;
     }
     if (ref == NULL) {
-        memoryReturn = CMachine_FunctionRequiresMemoryReturn((TypeFunc *)obj->type);
+        memoryReturn = CMach_GetFunctionResultClass((TypeFunc *)obj->type);
         length = strlen(cls->sominfo->classDataObject->name->name) + 32;
         if (length > sizeof(work))
-            buffer = (char *)CompilerTools_AllocatePool(length);
+            buffer = (char *)lalloc(length);
         else
             buffer = work;
         argumentCode = CSOM_CopyName(buffer, "__glue_");

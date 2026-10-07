@@ -154,7 +154,7 @@ void narrow_bitfield_type(Type **type, int *displacement)
         }
         if (byteOffset >= 0) {
             if (baseType->size != 1) {
-                if (Type_IsUnsigned(bitField->bitfieldtype))
+                if (is_unsigned(bitField->bitfieldtype))
                     *type = (Type *)&stunsignedchar;
                 else
                     *type = (Type *)&stsignedchar;
@@ -177,7 +177,7 @@ void narrow_bitfield_type(Type **type, int *displacement)
         }
         if (byteOffset >= 0) {
             if (baseType->size != 2) {
-                if (Type_IsUnsigned(baseType))
+                if (is_unsigned(baseType))
                     *type = (Type *)&stunsignedshort;
                 else
                     *type = (Type *)&stsignedshort;
@@ -189,7 +189,7 @@ void narrow_bitfield_type(Type **type, int *displacement)
     }
     if (bitField->bitlength == 32 && bitField->offset == 0) {
         if (baseType->size != 4) {
-            if (Type_IsUnsigned(baseType))
+            if (is_unsigned(baseType))
                 *type = (Type *)&stunsignedlong;
             else
                 *type = (Type *)&stsignedlong;
@@ -214,7 +214,7 @@ void narrow_bitfield_type(Type **type, int *displacement)
             narrowOffset = 3;
         *displacement += narrowOffset;
         narrowed->offset -= (long)narrowOffset << 3;
-        narrowed->bitfieldtype = Type_IsUnsigned(baseType) ? (Type *)&stunsignedchar : (Type *)&stsignedchar;
+        narrowed->bitfieldtype = is_unsigned(baseType) ? (Type *)&stunsignedchar : (Type *)&stsignedchar;
         narrowed->size = narrowed->bitfieldtype->size;
         return;
     }
@@ -229,7 +229,7 @@ void narrow_bitfield_type(Type **type, int *displacement)
             wordOffset = 2;
         *displacement += wordOffset;
         narrowed->offset -= (long)wordOffset << 3;
-        narrowed->bitfieldtype = Type_IsUnsigned(baseType) ? (Type *)&stunsignedshort : (Type *)&stsignedshort;
+        narrowed->bitfieldtype = is_unsigned(baseType) ? (Type *)&stunsignedshort : (Type *)&stsignedshort;
         narrowed->size = narrowed->bitfieldtype->size;
         return;
     }
@@ -583,12 +583,12 @@ void CClass_MemberDef(Object *object, TypeClass *cls)
                         if ((cls->vtable->object->flags & OBJECT_FLAGS_2) == 0)
                             CParser_NewCallBackAction(cls->vtable->object, cls);
                         else if (cprep_cu[0xe0] != 1)
-                            CParser_PrependClassTypeLink(cls);
+                            CParser_NewClassAction(cls);
                     }
                     return;
                 }
                 if (cprep_cu[0xe0] != 1)
-                    CParser_PrependClassTypeLink(cls);
+                    CParser_NewClassAction(cls);
             }
             return;
         case 2:
@@ -613,12 +613,12 @@ void CClass_MakeStaticActionClass(TypeClass *theclass)
         if ((theclass->vtable->object->flags & OBJECT_FLAGS_2) == 0) {
             CParser_NewCallBackAction(theclass->vtable->object, theclass);
         } else if (cprep_cu[0xe0] != 1) {
-            CParser_PrependClassTypeLink(theclass);
+            CParser_NewClassAction(theclass);
         }
     }
 }
 
-void CClass_GenerateVTable(TypeClass *cls)
+void CClass_ClassAction(TypeClass *cls)
 {
     SInt32 size;
 
@@ -630,7 +630,7 @@ void CClass_GenerateVTable(TypeClass *cls)
     if (cls->vtable != NULL) {
         size = cls->vtable->size;
         vtable_size = size;
-        data_00581caa = CompilerTools_AllocatePool(vtable_size);
+        data_00581caa = lalloc(vtable_size);
         memclrw(data_00581caa, vtable_size);
 
         current_class = cls;
@@ -647,11 +647,11 @@ void CClass_GenerateVTable(TypeClass *cls)
 
         CError_ASSERT(2314, cls->vtable->object->type->size == cls->vtable->size);
 
-        fn_004ceab0(cls->vtable->object, data_00581caa, rtti_offset_table, cls->vtable->size);
+        CInit_DeclareData(cls->vtable->object, data_00581caa, rtti_offset_table, cls->vtable->size);
     }
 }
 
-void fn_004e9ca0(void)
+void CClass_ClassDefaultFuncAction(TypeClass *tclass)
 {
     return;
 }
@@ -882,7 +882,7 @@ void build_virtual_function_entries(OverrideClass *ctx)
             func = entry->object;
         }
         if ((TYPE_METHOD(func->type)->flags & FUNC_PURE) == 0) {
-            node = (VirtualFunctionEntry *)CompilerTools_AllocatePool(0x10);
+            node = (VirtualFunctionEntry *)lalloc(0x10);
             node->next = rtti_offset_table;
             node->func = func;
             node->slot = slot;
@@ -1052,7 +1052,7 @@ ObjectList *prepend_base_method_copies(ObjectList *objects, Object *method, Type
         object->qual = method->qual & ~Q_INLINE;
         object->sclass = method->sclass;
         object->u.func.linkname = name;
-        entry = (ObjectList *)CompilerTools_AllocatePool(sizeof(ObjectList));
+        entry = (ObjectList *)lalloc(sizeof(ObjectList));
         entry->object = object;
         entry->next = objects;
         objects = entry;
@@ -1087,7 +1087,7 @@ CClassNode *collect_override_return_class_types(CClassNode *types, TypeClass *tc
                         break;
                 }
                 if (node == NULL) {
-                    node = (CClassNode *)CompilerTools_AllocatePool(sizeof(CClassNode));
+                    node = (CClassNode *)lalloc(sizeof(CClassNode));
                     node->type = target;
                     node->next = types;
                     types = node;
@@ -1167,7 +1167,7 @@ OverrideClass *create_class_layout(OverrideClass *root, TypeClass *cls, SInt32 o
     OverrideFunc *member;
     OverrideClassBase *derived;
 
-    layout = CompilerTools_AllocatePool((sizeof(*layout) + 1) & ~1);
+    layout = lalloc((sizeof(*layout) + 1) & ~1);
     memclrw(layout, (sizeof(*layout) + 1) & ~1);
     layout->theclass = cls;
     layout->offset = offset;
@@ -1182,7 +1182,7 @@ OverrideClass *create_class_layout(OverrideClass *root, TypeClass *cls, SInt32 o
             break;
         if (object->datatype != DVFUNC)
             continue;
-        member = CompilerTools_AllocatePool(sizeof(*member));
+        member = lalloc(sizeof(*member));
         memclrw(member, sizeof(*member));
         member->next = layout->members;
         member->object = object;
@@ -1191,7 +1191,7 @@ OverrideClass *create_class_layout(OverrideClass *root, TypeClass *cls, SInt32 o
 
     for (base = cls->bases; base != NULL; base = base->next) {
         if (base->base->vtable != NULL || base->base->sominfo != NULL) {
-            derived = CompilerTools_AllocatePool((sizeof(*derived) + 1) & ~1);
+            derived = lalloc((sizeof(*derived) + 1) & ~1);
             memclrw(derived, (sizeof(*derived) + 1) & ~1);
             if (base->is_virtual) {
                 SInt32 baseOffset = CL_FindOffset(base->base);
@@ -1267,7 +1267,7 @@ unsigned int CClass_VirtualBaseVTableOffset(TypeClass *type, TypeClass *base)
     return 0;
 }
 
-SInt32 CClass_FindVBaseOffset(TypeClass *cls, TypeClass *base)
+SInt32 CClass_VirtualBaseOffset(TypeClass *cls, TypeClass *base)
 {
     VClassList *entry = (VClassList *)cls->vbases;
     while (entry != NULL) {
@@ -1341,8 +1341,8 @@ ENode *CClass_DirectBasePointerCast(ENode *expr, TypeClass *theclass, TypeClass 
     return CClass_AdjustBasePointer(expr, base_path_level, 0);
 }
 
-ENode *CClass_ConvertClassPointer(ENode *expr, TypeClass *sourceClass, TypeClass *targetClass, Boolean convertIndirect,
-                                  Boolean errorflag)
+ENode *CClass_ClassPointerCast(ENode *expr, TypeClass *sourceClass, TypeClass *targetClass, Boolean convertIndirect,
+                               Boolean errorflag)
 {
     Boolean reverseConversion = 0;
 
@@ -1446,7 +1446,7 @@ BClassList *CClass_GetBasePath(TypeClass *type, TypeClass *target, SInt16 *flags
     if (result != NULL) {
         *flags = base_path_level;
         *status = base_path_status;
-        entry = (BClassList *)CompilerTools_AllocatePool(8);
+        entry = (BClassList *)lalloc(8);
         entry->next = result;
         entry->type = (Type *)type;
         return entry;
@@ -1478,7 +1478,7 @@ BClassList *find_target_base_path(TypeClass *cls, TypeClass *target, SInt32 offs
             }
             base_path_offset = off;
             base_path_level = level;
-            result = CompilerTools_AllocatePool(8);
+            result = lalloc(8);
             result->next = NULL;
             result->type = (Type *)target;
         } else {
@@ -1486,7 +1486,7 @@ BClassList *find_target_base_path(TypeClass *cls, TypeClass *target, SInt32 offs
             if (path == NULL)
                 continue;
 
-            node = CompilerTools_AllocatePool(8);
+            node = lalloc(8);
             node->next = path;
             node->type = (Type *)base->base;
 
@@ -1607,7 +1607,7 @@ UInt8 CClass_FindBasePath(TypeClass *sourceClass, TypeClass *targetClass, char o
     return result;
 }
 
-void CClass_Init(void)
+void fn_004eb810(void)
 {
     base_path_depth = 0;
     base_path_level = 0;
@@ -1705,11 +1705,11 @@ BClassList *CClass_GetPathCopy(BClassList *list, Boolean global)
     if (!list)
         return NULL;
 
-    first = current = global ? galloc(sizeof(BClassList)) : CompilerTools_AllocatePool(sizeof(BClassList));
+    first = current = global ? galloc(sizeof(BClassList)) : lalloc(sizeof(BClassList));
     current->next = list->next;
     current->type = list->type;
     while ((list = list->next)) {
-        current->next = global ? galloc(sizeof(BClassList)) : CompilerTools_AllocatePool(sizeof(BClassList));
+        current->next = global ? galloc(sizeof(BClassList)) : lalloc(sizeof(BClassList));
         current = current->next;
         current->next = list->next;
         current->type = list->type;
@@ -1846,7 +1846,7 @@ Object *CClass_CopyConstructor(TypeClass *cls)
                 CError_ASSERT(353, arg != NULL);
                 arg = arg->next;
             }
-            if (arg != NULL && arg != &data_00583098 && (arg->next == NULL || arg->next->dexpr != NULL) &&
+            if (arg != NULL && arg != &elipsis && (arg->next == NULL || arg->next->dexpr != NULL) &&
                 arg->type->type == TYPEPOINTER && (TYPE_POINTER(arg->type)->qual & Q_REFERENCE) &&
                 TPTR_TARGET(arg->type) == (Type *)cls)
                 return obj;
@@ -2021,7 +2021,7 @@ void CClass_GenThunks(void)
     }
 }
 
-void CClass_ResetPendingThunks(void)
+void CClass_Init(void)
 {
     pending_thunks = NULL;
     return;

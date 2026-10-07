@@ -112,7 +112,7 @@ void CompilerGetCString(short value, char *destination)
     COS_GetString(destination, 0x2774, value);
 }
 
-void CompilerTools_ConvertCStringToPString(unsigned char *text)
+void CTool_CtoPstr(unsigned char *text)
 {
     unsigned char *end;
     int shifted;
@@ -155,7 +155,7 @@ void FreeGList(GList *storage)
     storage->size = storage->hndlsize;
 }
 
-void fn_00442c00(GList *entry)
+void LockGList(GList *entry)
 {
     COS_LockHandleHi(entry->data);
 }
@@ -166,7 +166,7 @@ void ShrinkGList(GList *list)
     COS_ResizeHandle((struct StorageHandle *)list->data, list->hndlsize);
 }
 
-void *CompilerTools_AppendGListData(GList *buffer, const void *source, SInt32 count)
+void *AppendGListData(GList *buffer, const void *source, SInt32 count)
 {
     char *data;
     Boolean result;
@@ -282,7 +282,7 @@ void AppendGListTargetEndianLong(GList *buf, UInt32 value)
     CopyFourBytes(dest, (const UInt8 *)&value);
 }
 
-void AppendGListName(GList *buf, const char *str)
+void AppendGListID(GList *buf, const char *str)
 {
     UInt32 len = strlen(str) + 1;
     if (buf->size + len > buf->hndlsize) {
@@ -299,7 +299,7 @@ void AppendGListName(GList *buf, const char *str)
     buf->size += len;
 }
 
-void CompilerTools_AppendGListString(GList *buf, const char *str)
+void AppendGListName(GList *buf, const char *str)
 {
     UInt32 len = strlen(str);
     if ((buf->size + len) > (UInt32)buf->hndlsize) {
@@ -610,7 +610,7 @@ void releaseheaps(void)
     memset(&heap_pool, 0, sizeof(heap_pool));
 }
 
-void CompilerTools_ClearPoolBlocks(void)
+void releasegheap(void)
 {
     HeapBlock *link;
 
@@ -637,7 +637,7 @@ void *galloc(SInt32 size)
     return result;
 }
 
-void *CompilerTools_AllocatePool(unsigned int size)
+void *lalloc(unsigned int size)
 {
     char *allocation;
     size = (size & ~7U) + 8U;
@@ -651,7 +651,7 @@ void *CompilerTools_AllocatePool(unsigned int size)
     return allocation;
 }
 
-void *CompilerTools_AllocateBlock(SInt32 size)
+void *aalloc(SInt32 size)
 {
     char *block;
     size = (size & ~7U) + 8U;
@@ -664,7 +664,7 @@ void *CompilerTools_AllocateBlock(SInt32 size)
     return block;
 }
 
-void *CompilerTools_AllocatePoolMemory(UInt32 requestedSize)
+void *oalloc(UInt32 requestedSize)
 {
     char *result;
 
@@ -679,13 +679,13 @@ void *CompilerTools_AllocatePoolMemory(UInt32 requestedSize)
     return result;
 }
 
-void fn_00441f10(void)
+void locklheap(void)
 {
     data_0057fdd8 += 1;
     return;
 }
 
-void CompilerTools_DecrementPositiveCounter(void)
+void unlocklheap(void)
 
 {
     if (0 < data_0057fdd8) {
@@ -715,7 +715,7 @@ void freelheap(void)
 
 #pragma sym reset
 
-void CompilerTools_ResetPoolAvail(void)
+void freeaheap(void)
 {
     HeapBlock *block;
     block = block_pool.blocks;
@@ -726,7 +726,7 @@ void CompilerTools_ResetPoolAvail(void)
 
 #pragma sym off
 
-void CompilerTools_ResetPool(void)
+void freeoheap(void)
 {
     HeapBlock *block = data_0057fdac.blocks;
 

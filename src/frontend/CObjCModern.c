@@ -125,7 +125,7 @@ ENode *CObjCModern_CreateAllocMessage(TypeClass *object)
 {
     ENode *result;
     struct MessageArgument *name;
-    name = (struct MessageArgument *)CompilerTools_AllocatePool(12U);
+    name = (struct MessageArgument *)lalloc(12U);
     memclrw(name, 12U);
     name->name = GetHashNameNodeExport("alloc");
     result = create_objectrefnode(object->objcinfo->classobject);
@@ -136,7 +136,7 @@ ENode *CObjCModern_MakeDeallocMessage(TypeClass *type, ENode *object)
 {
     MessageArgument *record;
 
-    record = (MessageArgument *)CompilerTools_AllocatePool(sizeof(MessageArgument));
+    record = (MessageArgument *)lalloc(sizeof(MessageArgument));
     memclrw(record, sizeof(MessageArgument));
     record->name = GetHashNameNodeExport("dealloc");
     return CObjC_MakeMessageSend(object, type, record, NULL, 0, '\0');

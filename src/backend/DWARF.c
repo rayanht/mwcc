@@ -1577,7 +1577,7 @@ void emit_compile_unit(struct ObjGenSection *section, UInt8 language)
     AppendGListByte(dwarf_info_buffer, 0);
     recordSize += nameLength + 1;
     AppendGListWord(dwarf_info_buffer, 0x136);
-    CompilerTools_AppendGListData(dwarf_info_buffer, &languageValue, sizeof(languageValue));
+    AppendGListData(dwarf_info_buffer, &languageValue, sizeof(languageValue));
     AppendGListWord(dwarf_info_buffer, 0x111);
     BE_elf_AddRelocation(dwarf_section, dwarf_info_buffer->size, NULL, section, 0, currentDwarfFunctionState->offset);
     AppendGListLong(dwarf_info_buffer, 0);

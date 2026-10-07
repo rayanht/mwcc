@@ -77,8 +77,7 @@ PCodeInstruction *create_pcode_instruction(SInt16 opcode, char *args)
     }
     if (desc->flags & 0x200)
         extra++;
-    inst = (PCodeInstruction *)CompilerTools_AllocatePool(sizeof(PCodeInstruction) +
-                                                          (count + extra) * sizeof(PCodeOperand));
+    inst = (PCodeInstruction *)lalloc(sizeof(PCodeInstruction) + (count + extra) * sizeof(PCodeOperand));
     inst->opcode = opcode;
     inst->operand_count = count;
     inst->flags = desc->flags;

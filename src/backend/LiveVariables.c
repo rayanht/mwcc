@@ -144,14 +144,14 @@ void SpillCode_InitializeLiveness(Object *func, SInt32 mode, UInt32 nbits)
     returnType = ((TypeFunc *)func->type)->functype;
 
     SpillCode_BuildBlockOrder();
-    gPCodeBlockLiveness = (PCodeLiveness *)CompilerTools_AllocatePoolMemory(gPCodeBlockCount * sizeof(PCodeLiveness));
+    gPCodeBlockLiveness = (PCodeLiveness *)oalloc(gPCodeBlockCount * sizeof(PCodeLiveness));
     liveness = gPCodeBlockLiveness;
 
     for (blockIndex = 0; blockIndex < gPCodeBlockCount; blockIndex++) {
-        CRTTI_FillWords(liveness->use = CompilerTools_AllocatePoolMemory(((nbits + 31) >> 5) << 2), nbits, 0);
-        CRTTI_FillWords(liveness->def = CompilerTools_AllocatePoolMemory(((nbits + 31) >> 5) << 2), nbits, 0);
-        CRTTI_FillWords(liveness->livein = CompilerTools_AllocatePoolMemory(((nbits + 31) >> 5) << 2), nbits, 0);
-        CRTTI_FillWords(liveness->liveout = CompilerTools_AllocatePoolMemory(((nbits + 31) >> 5) << 2), nbits, 0);
+        CRTTI_FillWords(liveness->use = oalloc(((nbits + 31) >> 5) << 2), nbits, 0);
+        CRTTI_FillWords(liveness->def = oalloc(((nbits + 31) >> 5) << 2), nbits, 0);
+        CRTTI_FillWords(liveness->livein = oalloc(((nbits + 31) >> 5) << 2), nbits, 0);
+        CRTTI_FillWords(liveness->liveout = oalloc(((nbits + 31) >> 5) << 2), nbits, 0);
         liveness++;
     }
 

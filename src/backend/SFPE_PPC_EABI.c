@@ -184,9 +184,9 @@ void SFPE_PPC_EABI_GenerateDiadicArithmetic(ENode *node, SInt16 requestedReg, SI
             PCodeUtilities_EmitObjectInstructionWithPayload(data_0058762c, 0, 0x78, 0, 0);
         } else if (node->type == EDIV) {
             if (((left->rtype->type == TYPEINT || left->rtype->type == TYPEENUM) && left->rtype->size == 8 &&
-                 Type_IsUnsigned(left->rtype)) ||
+                 is_unsigned(left->rtype)) ||
                 ((right->rtype->type == TYPEINT || right->rtype->type == TYPEENUM) && right->rtype->size == 8 &&
-                 Type_IsUnsigned(right->rtype))) {
+                 is_unsigned(right->rtype))) {
                 PPCError_ReportError(0x82, CERROR_FILE, 0xce);
                 PCodeUtilities_EmitObjectInstructionWithPayload(data_0058761c, 0, 0x78, 0, 0);
             } else {
@@ -579,7 +579,7 @@ int SFPE_PPC_EABI_GenerateComparison(ENode *node, Operand *result, int branch)
             Operands_ForceGPR(&rightOperand, right->rtype, 0);
         if (right->rtype->size < size) {
             reg = gUsedVirtualRegistersGPR++;
-            if (Type_IsUnsigned(right->rtype)) {
+            if (is_unsigned(right->rtype)) {
                 PPCError_ReportError(0x82, CERROR_FILE, 744);
                 PCodeUtilities_LoadImmediate(reg, 0);
             } else {
@@ -599,7 +599,7 @@ int SFPE_PPC_EABI_GenerateComparison(ENode *node, Operand *result, int branch)
             Operands_ForceGPR(&leftOperand, left->rtype, 0);
         if (left->rtype->size < size) {
             reg = gUsedVirtualRegistersGPR++;
-            if (Type_IsUnsigned(right->rtype)) {
+            if (is_unsigned(right->rtype)) {
                 PPCError_ReportError(0x82, CERROR_FILE, 762);
                 PCodeUtilities_LoadImmediate(reg, 0);
             } else {
@@ -619,7 +619,7 @@ int SFPE_PPC_EABI_GenerateComparison(ENode *node, Operand *result, int branch)
         }
         if (left->rtype->size < size) {
             reg = gUsedVirtualRegistersGPR++;
-            if (Type_IsUnsigned(right->rtype)) {
+            if (is_unsigned(right->rtype)) {
                 PPCError_ReportError(0x82, CERROR_FILE, 783);
                 PCodeUtilities_LoadImmediate(reg, 0);
             } else {
@@ -639,7 +639,7 @@ int SFPE_PPC_EABI_GenerateComparison(ENode *node, Operand *result, int branch)
             Operands_ForceGPR(&rightOperand, right->rtype, 0);
         if (right->rtype->size < size) {
             reg = gUsedVirtualRegistersGPR++;
-            if (Type_IsUnsigned(right->rtype)) {
+            if (is_unsigned(right->rtype)) {
                 PPCError_ReportError(0x82, CERROR_FILE, 801);
                 PCodeUtilities_LoadImmediate(reg, 0);
             } else {
@@ -769,8 +769,8 @@ void SFPE_PPC_EABI_GenerateConversion(ENode *expression, short requested_registe
                     PCodeUtilities_EmitInstruction(PC_MR, return_gpr_first, result->reg);
                 }
                 PCodeUtilities_EmitObjectInstructionWithPayload(
-                    Type_IsUnsigned(type) ? (target_type->size == 4 ? data_00587f9c : data_00587f50)
-                                          : (target_type->size == 4 ? data_00588210 : data_00588250),
+                    is_unsigned(type) ? (target_type->size == 4 ? data_00587f9c : data_00587f50)
+                                      : (target_type->size == 4 ? data_00588210 : data_00588250),
                     0, 0x18, 0, 0);
                 if (target_type->size == 4) {
                     lift_result(result, 0);
@@ -789,8 +789,8 @@ void SFPE_PPC_EABI_GenerateConversion(ENode *expression, short requested_registe
                     PCodeUtilities_EmitInstruction(PC_MR, 3, result->reg);
                 }
                 PCodeUtilities_EmitObjectInstructionWithPayload(
-                    Type_IsUnsigned(type) ? (target_type->size == 4 ? data_00587e34 : data_00587e5c)
-                                          : (target_type->size == 4 ? data_00587ec0 : data_00587e90),
+                    is_unsigned(type) ? (target_type->size == 4 ? data_00587e34 : data_00587e5c)
+                                      : (target_type->size == 4 ? data_00587ec0 : data_00587e90),
                     0, 8, 0, 0);
                 if (target_type->size == 4) {
                     lift_result(result, 0);
@@ -858,7 +858,7 @@ void SFPE_PPC_EABI_GenerateConversion(ENode *expression, short requested_registe
                 if (result->reg != return_gpr_first) {
                     PCodeUtilities_EmitInstruction(PC_MR, return_gpr_first, result->reg);
                 }
-                if (Type_IsUnsigned(expression->rtype)) {
+                if (is_unsigned(expression->rtype)) {
                     PCodeUtilities_EmitObjectInstructionWithPayload(data_00588068, 0, 0x18, 0, 0);
                 } else {
                     PCodeUtilities_EmitObjectInstructionWithPayload(data_0058823c, 0, 0x18, 0, 0);
@@ -874,7 +874,7 @@ void SFPE_PPC_EABI_GenerateConversion(ENode *expression, short requested_registe
                 if (result->reg != lift_regnum_3) {
                     PCodeUtilities_EmitInstruction(PC_MR, 3, result->reg);
                 }
-                if (Type_IsUnsigned(expression->rtype)) {
+                if (is_unsigned(expression->rtype)) {
                     PCodeUtilities_EmitObjectInstructionWithPayload(data_00588020, 0, 8, 0, 0);
                 } else {
                     PCodeUtilities_EmitObjectInstructionWithPayload(data_00588214, 0, 8, 0, 0);
@@ -893,7 +893,7 @@ void SFPE_PPC_EABI_GenerateConversion(ENode *expression, short requested_registe
                 if (result->reg != return_gpr_first) {
                     PCodeUtilities_EmitInstruction(PC_MR, return_gpr_first, result->reg);
                 }
-                if (Type_IsUnsigned(expression->rtype)) {
+                if (is_unsigned(expression->rtype)) {
                     PCodeUtilities_EmitObjectInstructionWithPayload(data_00587e94, 0, 0x18, 0, 0);
                 } else {
                     PCodeUtilities_EmitObjectInstructionWithPayload(data_00587ea4, 0, 0x18, 0, 0);
@@ -908,7 +908,7 @@ void SFPE_PPC_EABI_GenerateConversion(ENode *expression, short requested_registe
                 if (result->reg != lift_regnum_3) {
                     PCodeUtilities_EmitInstruction(PC_MR, 3, result->reg);
                 }
-                if (Type_IsUnsigned(expression->rtype)) {
+                if (is_unsigned(expression->rtype)) {
                     PCodeUtilities_EmitObjectInstructionWithPayload(data_00587e80, 0, 8, 0, 0);
                 } else {
                     PCodeUtilities_EmitObjectInstructionWithPayload(data_00587e7c, 0, 8, 0, 0);

@@ -56,7 +56,7 @@ extern BClassList *CScope_GetClassAccessPath(BClassList *classes, TypeClass *bas
 extern ObjectList *CScope_FindObjectListInNameSpace(NameSpace *nspace, HashNameNode *name);
 extern ObjectList *remove_dalias_objects(NameSpaceObjectList *list);
 extern Boolean CScope_FindTypeName(NameSpace *arg0, HashNameNode *arg1, NameResult *arg2);
-extern Type *CScope_GetTagType(NameSpace *nspace, HashNameNode *name);
+extern Type *CScope_GetLocalTagType(NameSpace *nspace, HashNameNode *name);
 extern void CScope_DefineTypeTag(NameSpace *ns, HashNameNode *arg2, Type *arg3);
 extern NameSpaceObjectList *CScope_NextObjectIteratorObjectList(CScopeObjectIterator *state);
 extern Object *CScope_NextObjectIteratorObject(CScopeObjectIterator *s);
@@ -69,7 +69,7 @@ extern Boolean CScope_ParseDeclName(NameResult *lookup);
 extern Boolean CScope_ParseExprName(NameResult *scope);
 extern Boolean parse_name_in_namespace(NameResult *scope, NameSpace *ns);
 extern Boolean parse_qualified_templdep_type(NameResult *context, Type *qualifier, Boolean allowToken328);
-extern Type *CScope_FindTagType(NameSpace *nspace, HashNameNode *name);
+extern Type *CScope_GetTagType(NameSpace *nspace, HashNameNode *name);
 extern Type *CScope_GetType(NameSpace *nspace, HashNameNode *name, UInt32 *qual);
 extern Boolean find_type_name_in_scope(NameResult *out, NameSpace *scope, HashNameNode *name);
 extern NameSpaceObjectList *find_namespace_object(NameResult *state, NameSpace *nspace, HashNameNode *name,

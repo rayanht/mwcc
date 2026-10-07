@@ -110,7 +110,7 @@ static unsigned int *SpillCode_AllocateEmptyBits(int register_count)
     unsigned int *bits;
     int word;
 
-    bits = (void *)CompilerTools_AllocatePoolMemory(SpillCode_WordCount(register_count) * sizeof(*bits));
+    bits = (void *)oalloc(SpillCode_WordCount(register_count) * sizeof(*bits));
     for (word = 0; word < SpillCode_WordCount(register_count); word++) {
         bits[word] = 0;
     }
@@ -557,7 +557,7 @@ void InterferenceGraph_SpillRegisters(int reg_class, int register_count)
                 } else {
                     type = TYPE(&stvectorunsignedchar);
                 }
-                object = (Object *)CompilerTools_AllocatePool(sizeof(Object));
+                object = (Object *)lalloc(sizeof(Object));
                 memclrw(object, sizeof(Object));
                 object->otype = OT_OBJECT;
                 object->access = ACCESSPUBLIC;
@@ -639,8 +639,7 @@ void SpillCode_ConstructInterference(SInt32 registerClass, UInt32 registerCount)
     PCodeOperand *operand;
     SInt16 reg;
     UInt32 i, j, k;
-    gInterferenceBits =
-        (UInt32 *)CompilerTools_AllocatePoolMemory(((registerCount * registerCount / 2 + 0x1f) >> 5) << 2);
+    gInterferenceBits = (UInt32 *)oalloc(((registerCount * registerCount / 2 + 0x1f) >> 5) << 2);
     CRTTI_FillWords(gInterferenceBits, registerCount * registerCount / 2, 0);
     for (i = 0; i < 0x20; i++) {
         for (j = 0; j < 0x20; j++) {
@@ -648,7 +647,7 @@ void SpillCode_ConstructInterference(SInt32 registerClass, UInt32 registerCount)
                 SC_Interfere(i, j);
         }
     }
-    bits = (UInt32 *)CompilerTools_AllocatePoolMemory(((registerCount + 0x1f) >> 5) << 2);
+    bits = (UInt32 *)oalloc(((registerCount + 0x1f) >> 5) << 2);
     for (block = gPCodeBlocks; block != NULL; block = block->next) {
         CodeMotion_AllocateBits(bits, gPCodeBlockLiveness[block->index].liveout, registerCount);
         for (instruction = block->reverse_instructions; instruction != NULL; instruction = instruction->previous) {
@@ -717,7 +716,7 @@ void SpillCode_CoalesceCopies(SInt32 regclass, UInt32 numRegs)
     else
         opcode = 0x18e;
 
-    gCoalescedRegisters = CompilerTools_AllocatePoolMemory(numRegs * sizeof(*gCoalescedRegisters));
+    gCoalescedRegisters = oalloc(numRegs * sizeof(*gCoalescedRegisters));
 
     for (i = 0; i < numRegs; i++)
         gCoalescedRegisters[i] = (SInt16)i;
@@ -775,8 +774,8 @@ void SpillCode_MaterializeGraph(UInt32 count)
     UInt32 copied;
     int root;
 
-    gInterferenceGraph = CompilerTools_AllocatePoolMemory(count * sizeof(*gInterferenceGraph));
-    neighbors = CompilerTools_AllocatePoolMemory(count * sizeof(*neighbors));
+    gInterferenceGraph = oalloc(count * sizeof(*gInterferenceGraph));
+    neighbors = oalloc(count * sizeof(*neighbors));
     for (register_index = 0; register_index < count; register_index++) {
         neighbor_count = 0;
         for (neighbor_index = 0; neighbor_index < count; neighbor_index++) {
@@ -786,7 +785,7 @@ void SpillCode_MaterializeGraph(UInt32 count)
             }
         }
         node = gInterferenceGraph[register_index] =
-            CompilerTools_AllocatePoolMemory(sizeof(InterferenceNode) + (neighbor_count - 1) * sizeof(*neighbors));
+            oalloc(sizeof(InterferenceNode) + (neighbor_count - 1) * sizeof(*neighbors));
         node->next = NULL;
         node->object = NULL;
         node->spill_cost = 0;
@@ -819,7 +818,7 @@ void SpillCode_MarkLastUses(SInt32 var, UInt32 count)
     SInt32 remaining;
     SInt16 reg;
 
-    bits = (UInt32 *)CompilerTools_AllocatePoolMemory(((count + 31) >> 5) * sizeof(UInt32));
+    bits = (UInt32 *)oalloc(((count + 31) >> 5) * sizeof(UInt32));
     for (block = gPCodeBlocks; block != NULL; block = block->next) {
         CodeMotion_AllocateBits(bits, gPCodeBlockLiveness[block->index].liveout, count);
         for (instr = block->reverse_instructions; instr != NULL; instr = instr->previous) {

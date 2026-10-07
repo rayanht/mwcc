@@ -59,14 +59,14 @@ void Peephole_OptimizeBlocks(Object *object)
         if (1 <= block->instruction_count) {
             build_reaching_def_table(block);
             peephole_optimize_block(block);
-            CompilerTools_ResetPool();
+            freeoheap();
         }
     }
 }
 
 static struct PeepHandler *AddPeepholeRule(struct PeepHandler **list, void *handler)
 {
-    struct PeepHandler *rule = (struct PeepHandler *)CompilerTools_AllocatePool(8);
+    struct PeepHandler *rule = (struct PeepHandler *)lalloc(8);
     rule->func = handler;
     rule->next = *list;
     *list = rule;
@@ -2970,8 +2970,8 @@ void build_reaching_def_table(PCodeBlock *block)
         operandCount += instruction->operand_count;
     }
     if (operandCount != 0) {
-        CodeGen_ReachingDefTable_00581af8 = (PCodeInstruction **)CompilerTools_AllocatePoolMemory(
-            operandCount * sizeof(*CodeGen_ReachingDefTable_00581af8));
+        CodeGen_ReachingDefTable_00581af8 =
+            (PCodeInstruction **)oalloc(operandCount * sizeof(*CodeGen_ReachingDefTable_00581af8));
         for (i = 0; i < operandCount; i++) {
             CodeGen_ReachingDefTable_00581af8[i] = initialDefinition;
         }
@@ -3010,14 +3010,10 @@ void build_register_block_liveness(Object *object)
     Type *returnType = TYPE_FUNC(object->type)->functype;
     int structKind;
 
-    register_block_liveness =
-        (RegisterBlockLiveness *)CompilerTools_AllocatePool(gPCodeBlockCount * sizeof(RegisterBlockLiveness));
-    gRegisterBlockLiveness =
-        (RegisterBlockLiveness *)CompilerTools_AllocatePool(gPCodeBlockCount * sizeof(RegisterBlockLiveness));
-    registerBlockLiveness =
-        (RegisterBlockLiveness *)CompilerTools_AllocatePool(gPCodeBlockCount * sizeof(RegisterBlockLiveness));
-    data_005813ac =
-        (RegisterBlockLiveness *)CompilerTools_AllocatePool(gPCodeBlockCount * sizeof(RegisterBlockLiveness));
+    register_block_liveness = (RegisterBlockLiveness *)lalloc(gPCodeBlockCount * sizeof(RegisterBlockLiveness));
+    gRegisterBlockLiveness = (RegisterBlockLiveness *)lalloc(gPCodeBlockCount * sizeof(RegisterBlockLiveness));
+    registerBlockLiveness = (RegisterBlockLiveness *)lalloc(gPCodeBlockCount * sizeof(RegisterBlockLiveness));
+    data_005813ac = (RegisterBlockLiveness *)lalloc(gPCodeBlockCount * sizeof(RegisterBlockLiveness));
 
     SpillCode_BuildBlockOrder();
     initialize_register_block_liveness();

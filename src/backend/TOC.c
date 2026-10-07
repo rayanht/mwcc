@@ -339,7 +339,7 @@ void TOC_0049d710(ENode *node, Type *targetType, int ignored)
             object = TOC_GetFloatObject(node->rtype, &node->data.floatval);
             data_00588500 = 1;
             if (PCodeUtilities_Require(object)) {
-                ref = CompilerTools_AllocatePool(sizeof(ENode));
+                ref = lalloc(sizeof(ENode));
                 memclrw(ref, sizeof(ENode));
                 ref->type = EOBJREF;
                 ref->cost = 0;
@@ -354,7 +354,7 @@ void TOC_0049d710(ENode *node, Type *targetType, int ignored)
             if (copts.usedatapool && (entry = BE_symbol_GetFunctionSymbolLinkData(object)) != NULL) {
                 add_toc_reference(entry, object, node, 1);
             } else {
-                ref = CompilerTools_AllocatePool(sizeof(ENode));
+                ref = lalloc(sizeof(ENode));
                 memclrw(ref, sizeof(ENode));
                 ref->type = EOBJREF;
                 ref->cost = 0;
@@ -479,7 +479,7 @@ void TOC_0049d710(ENode *node, Type *targetType, int ignored)
                 }
                 if (Type_RequiresMemoryReturn(node->data.funccall.functype->functype)) {
                     ENode *result = node->data.funccall.args->node;
-                    ENode *call = CompilerTools_AllocatePool(sizeof(ENode));
+                    ENode *call = lalloc(sizeof(ENode));
                     memclrw(call, sizeof(ENode));
                     *call = *node;
                     node->type = ECOMMA;
@@ -710,7 +710,7 @@ void TOC_0049d710(ENode *node, Type *targetType, int ignored)
                 data_00588521 = 0;
             }
             if (left->rtype->type == TYPEFLOAT) {
-                if (Type_IsUnsigned(node->rtype) && node->rtype->size == 4) {
+                if (is_unsigned(node->rtype) && node->rtype->size == 4) {
                     node->hascall = 1;
                     data_00588521 = 0;
                 } else {
@@ -733,7 +733,7 @@ void TOC_0049d710(ENode *node, Type *targetType, int ignored)
         case EPOSTINC:
             if (!node->ignored) {
                 if (node->data.diadic.left->rtype->type == TYPEFLOAT) {
-                    if (Type_IsUnsigned(node->rtype)) {
+                    if (is_unsigned(node->rtype)) {
                         data_00588500 = 1;
                     }
                 }
@@ -758,7 +758,7 @@ void TOC_0049d710(ENode *node, Type *targetType, int ignored)
         case EPOSTDEC:
             if (!node->ignored) {
                 if (node->data.diadic.left->rtype->type == TYPEFLOAT) {
-                    if (Type_IsUnsigned(node->rtype)) {
+                    if (is_unsigned(node->rtype)) {
                         data_00588500 = 1;
                     }
                 }
@@ -829,7 +829,7 @@ void TOC_0049d710(ENode *node, Type *targetType, int ignored)
             break;
         case ELABEL: {
             Object *object = get_or_create_label_object(node->data.label);
-            ENode *ref = CompilerTools_AllocatePool(sizeof(ENode));
+            ENode *ref = lalloc(sizeof(ENode));
             memclrw(ref, sizeof(ENode));
             ref->type = EOBJREF;
             ref->cost = 0;
@@ -924,7 +924,7 @@ void expandpreincdec(ENode *node)
 
     operand = node->data.monadic;
     rtype = node->rtype;
-    constant = CompilerTools_AllocatePool(sizeof(ENode));
+    constant = lalloc(sizeof(ENode));
     memclrw(constant, sizeof(ENode));
     if (rtype->type == TYPEFLOAT) {
         constant->type = EFLOATCONST;
@@ -963,7 +963,7 @@ void rewrite_compound_assignment(ENode *expr, unsigned char opcode)
     leftType = expr->data.diadic.left->rtype;
     rightType = expr->data.diadic.right->rtype;
 
-    operation = (ENode *)CompilerTools_AllocatePool(sizeof(ENode));
+    operation = (ENode *)lalloc(sizeof(ENode));
     memclrw(operation, sizeof(ENode));
     operation->type = opcode;
     operation->rtype = leftType;
@@ -976,11 +976,11 @@ void rewrite_compound_assignment(ENode *expr, unsigned char opcode)
 
     if (left->type != EOBJREF) {
         ENode *temporary;
-        temporary = (ENode *)CompilerTools_AllocatePool(sizeof(ENode));
+        temporary = (ENode *)lalloc(sizeof(ENode));
         memclrw(temporary, sizeof(ENode));
         temporary->type = EDEFINE;
         temporary->rtype = leftType;
-        reference = (ENode *)CompilerTools_AllocatePool(sizeof(ENode));
+        reference = (ENode *)lalloc(sizeof(ENode));
         memclrw(reference, sizeof(ENode));
         reference->type = EREUSE;
         reference->rtype = leftType;
@@ -993,7 +993,7 @@ void rewrite_compound_assignment(ENode *expr, unsigned char opcode)
             ENode *copy;
             temporary->data.diadic.left = left->data.diadic.left;
             left->data.diadic.left = temporary;
-            copy = (ENode *)CompilerTools_AllocatePool(sizeof(ENode));
+            copy = (ENode *)lalloc(sizeof(ENode));
             *copy = *left;
             copy->data.diadic.left = reference;
             operation->data.diadic.left->data.diadic.left = copy;
@@ -1032,13 +1032,13 @@ void rewrite_compound_assignment(ENode *expr, unsigned char opcode)
             Type *commonType;
             commonType = select_common_arithmetic_type(leftType, rightType);
             if (leftType != commonType) {
-                conversion = (ENode *)CompilerTools_AllocatePool(sizeof(ENode));
+                conversion = (ENode *)lalloc(sizeof(ENode));
                 memclrw(conversion, sizeof(ENode));
                 conversion->type = ETYPCON;
                 conversion->rtype = leftType;
                 conversion->data.diadic.left = expr->data.diadic.right;
                 expr->data.diadic.right = conversion;
-                operandConversion = (ENode *)CompilerTools_AllocatePool(sizeof(ENode));
+                operandConversion = (ENode *)lalloc(sizeof(ENode));
                 memclrw(operandConversion, sizeof(ENode));
                 operandConversion->type = ETYPCON;
                 operandConversion->rtype = commonType;
@@ -1046,7 +1046,7 @@ void rewrite_compound_assignment(ENode *expr, unsigned char opcode)
                 operation->data.diadic.left = operandConversion;
             }
             if (rightType != commonType) {
-                conversion = (ENode *)CompilerTools_AllocatePool(sizeof(ENode));
+                conversion = (ENode *)lalloc(sizeof(ENode));
                 memclrw(conversion, sizeof(ENode));
                 conversion->type = ETYPCON;
                 conversion->rtype = commonType;
@@ -1072,13 +1072,13 @@ void rewrite_compound_assignment(ENode *expr, unsigned char opcode)
             if (((TypeIntegral *)promotedRight)->integral <= stsignedint.integral)
                 promotedRight = (Type *)&stsignedint;
             if (leftType != promotedLeft) {
-                conversion = (ENode *)CompilerTools_AllocatePool(sizeof(ENode));
+                conversion = (ENode *)lalloc(sizeof(ENode));
                 memclrw(conversion, sizeof(ENode));
                 conversion->type = ETYPCON;
                 conversion->rtype = leftType;
                 conversion->data.diadic.left = expr->data.diadic.right;
                 expr->data.diadic.right = conversion;
-                conversion = (ENode *)CompilerTools_AllocatePool(sizeof(ENode));
+                conversion = (ENode *)lalloc(sizeof(ENode));
                 memclrw(conversion, sizeof(ENode));
                 conversion->type = ETYPCON;
                 conversion->rtype = promotedLeft;
@@ -1086,7 +1086,7 @@ void rewrite_compound_assignment(ENode *expr, unsigned char opcode)
                 operation->data.diadic.left = conversion;
             }
             if (rightType != promotedRight) {
-                conversion = (ENode *)CompilerTools_AllocatePool(sizeof(ENode));
+                conversion = (ENode *)lalloc(sizeof(ENode));
                 memclrw(conversion, sizeof(ENode));
                 conversion->type = ETYPCON;
                 conversion->rtype = promotedRight;
@@ -1125,7 +1125,7 @@ Type *select_common_arithmetic_type(Type *leftType, Type *rightType)
             leftType = rightType;
             rightType = swapType;
         }
-        if (leftType->size == rightType->size && !Type_IsUnsigned(leftType) && Type_IsUnsigned(rightType)) {
+        if (leftType->size == rightType->size && !is_unsigned(leftType) && is_unsigned(rightType)) {
             if (leftType == (Type *)&stsignedlong)
                 leftType = (Type *)&stunsignedlong;
             else {
@@ -1144,7 +1144,7 @@ void fn_0049ebb0(ENode *expr)
     ENodeList *list;
     SInt32 stringSize;
 
-    constantNode = (ENode *)CompilerTools_AllocatePool(sizeof(ENode));
+    constantNode = (ENode *)lalloc(sizeof(ENode));
     memclrw(constantNode, sizeof(ENode));
     constantNode->type = EINTCONST;
     constantNode->cost = 0;
@@ -1153,7 +1153,7 @@ void fn_0049ebb0(ENode *expr)
     stringSize = expr->data.funccall.args->next->node->data.string.size;
     constantNode->data.intval.lo = stringSize;
     constantNode->data.intval.hi = stringSize < 0 ? 0xffffffffU : 0U;
-    list = (ENodeList *)CompilerTools_AllocatePool(sizeof(ENodeList));
+    list = (ENodeList *)lalloc(sizeof(ENodeList));
     memclrw(list, sizeof(ENodeList));
     list->next = NULL;
     list->node = constantNode;
@@ -1166,9 +1166,9 @@ ENode *create_diadic_node_with_constant(ENode *e)
     ENode *n;
     ENode *c;
 
-    n = (ENode *)CompilerTools_AllocatePool(sizeof(ENode));
+    n = (ENode *)lalloc(sizeof(ENode));
     memclrw(n, sizeof(ENode));
-    c = (ENode *)CompilerTools_AllocatePool(sizeof(ENode));
+    c = (ENode *)lalloc(sizeof(ENode));
     memclrw(c, sizeof(ENode));
 
     if (e->rtype->type == TYPEFLOAT) {
@@ -1214,7 +1214,7 @@ void add_initial_object(void *object)
             return;
         node = node->next;
     }
-    node = (ObjectList *)CompilerTools_AllocatePool(sizeof(ObjectList));
+    node = (ObjectList *)lalloc(sizeof(ObjectList));
     memclrw(node, sizeof(ObjectList));
     node->object = object;
     node->next = gInitialObjectList_005882ac;
@@ -1284,7 +1284,7 @@ void replace_vector_constant_with_objectref(ENode *node)
     MWVector128 *newValue;
     DeclInfo objectInfo;
     newValue = (MWVector128 *)galloc(sizeof(*newValue));
-    CMachine_InitVectorMem(node->rtype, node->data.vector128val, newValue);
+    CMach_InitVectorMem(node->rtype, node->data.vector128val, newValue);
     if (cprep_cu[0xe0] == 1) {
         CError_ReportError(ERR_ILLEGAL_USE_PRECOMPILED_HEADER);
     }
@@ -1314,7 +1314,7 @@ void replace_vector_constant_with_objectref(ENode *node)
             } else {
                 objectInfo.section = ObjGen_PPC_EABI_GetHeaderIndex(32);
             }
-            object = CParser_NewObject(&objectInfo);
+            object = CParser_NewGlobalDataObject(&objectInfo);
             offset = 0;
             object->nspace = cscope_root;
         }
@@ -1357,7 +1357,7 @@ void TOC_EmitMemberPointerConstants(void)
         for (node = member_pointer_constants; node != NULL; node = node->next) {
             memcpy(buffer + node->offset, node->value, sizeof(TOCEntry));
         }
-        fn_004cea90(member_pointer_constants->object, buffer, NULL, size);
+        CInit_DeclareReadOnlyData(member_pointer_constants->object, buffer, NULL, size);
     }
 }
 
@@ -1423,7 +1423,7 @@ void rewrite_indirect_toc_references(void)
         if ((record = entry->expression) != NULL) {
             key = entry->lookupObject;
             if (entry->makeIndirect != 0) {
-                replacement = CompilerTools_AllocatePool(sizeof(*replacement));
+                replacement = lalloc(sizeof(*replacement));
                 memclrw(replacement, sizeof(*replacement));
                 replacement->type = EOBJREF;
                 replacement->cost = 0;
@@ -1531,7 +1531,7 @@ void make_objectref_offset(Object *object, Object *lookupObject, ENode *expressi
     record->sectionData.section->symbolLink->symbol->flags &= ~0x40;
 
     if (makeIndirect) {
-        sum = CompilerTools_AllocatePool(sizeof(ENode));
+        sum = lalloc(sizeof(ENode));
         memclrw(sum, sizeof(ENode));
         sum->type = EADD;
         sum->cost = 1;
@@ -1540,14 +1540,14 @@ void make_objectref_offset(Object *object, Object *lookupObject, ENode *expressi
         expression->cost = 1;
         expression->data.monadic = sum;
 
-        objectRef = CompilerTools_AllocatePool(sizeof(ENode));
+        objectRef = lalloc(sizeof(ENode));
         memclrw(objectRef, sizeof(ENode));
         objectRef->type = EOBJREF;
         objectRef->cost = 0;
         objectRef->data.objref = object;
         objectRef->rtype = expression->rtype;
 
-        offset = CompilerTools_AllocatePool(sizeof(ENode));
+        offset = lalloc(sizeof(ENode));
         memclrw(offset, sizeof(ENode));
         offset->type = EINTCONST;
         offset->cost = 0;
@@ -1559,13 +1559,13 @@ void make_objectref_offset(Object *object, Object *lookupObject, ENode *expressi
         sum->data.diadic.left = objectRef;
         sum->data.diadic.right = offset;
     } else {
-        objectRef = CompilerTools_AllocatePool(sizeof(ENode));
+        objectRef = lalloc(sizeof(ENode));
         objectRef->type = EOBJREF;
         objectRef->cost = 0;
         objectRef->data.objref = object;
         objectRef->rtype = expression->rtype;
 
-        offset = CompilerTools_AllocatePool(sizeof(ENode));
+        offset = lalloc(sizeof(ENode));
         offset->type = EINTCONST;
         offset->cost = 0;
         displacement = BE_symbol_GetOffset(record);

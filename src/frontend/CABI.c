@@ -708,7 +708,7 @@ void CABI_MakeDefaultArgConstructor(TypeClass *theclass, Object *function)
     body.next = &statement;
     memclrw(&statement, sizeof(statement));
     statement.type = ST_RETURN;
-    statement.expr = (ENode *)CompilerTools_AllocatePool(sizeof(ENode));
+    statement.expr = (ENode *)lalloc(sizeof(ENode));
     statement.expr->type = EFUNCCALL;
     statement.expr->cost = 200;
     statement.expr->flags = 0;
@@ -716,19 +716,19 @@ void CABI_MakeDefaultArgConstructor(TypeClass *theclass, Object *function)
     statement.expr->data.funccall.funcref = CExpr_MakeObjRefNode(defaults->default_func, 0);
     statement.expr->data.funccall.functype = (TypeFunc *)defaults->default_func->type;
     formalArgs = ((TypeMemberFunc *)defaults->default_func->type)->args;
-    statement.expr->data.funccall.args = (ENodeList *)CompilerTools_AllocatePool(sizeof(ENodeList));
+    statement.expr->data.funccall.args = (ENodeList *)lalloc(sizeof(ENodeList));
     callArgs = statement.expr->data.funccall.args;
     callArgs->node = ((ENode * (*)(Object *)) create_objectnode)(arguments->object);
     if ((theclass->flags & CLASS_HAS_VBASES) != 0) {
         formalArgs = formalArgs->next;
-        callArgs = callArgs->next = (ENodeList *)CompilerTools_AllocatePool(sizeof(ENodeList));
+        callArgs = callArgs->next = (ENodeList *)lalloc(sizeof(ENodeList));
         callArgs->node = ((ENode * (*)(Object *)) create_objectnode)(arguments->next->object);
     }
     arg = formalArgs->next;
-    callArgs = callArgs->next = (ENodeList *)CompilerTools_AllocatePool(sizeof(ENodeList));
+    callArgs = callArgs->next = (ENodeList *)lalloc(sizeof(ENodeList));
     callArgs->node = fn_00513040(defaults->default_arg, 0);
     while ((arg = arg->next) != NULL && arg->dexpr != NULL) {
-        callArgs = callArgs->next = (ENodeList *)CompilerTools_AllocatePool(sizeof(ENodeList));
+        callArgs = callArgs->next = (ENodeList *)lalloc(sizeof(ENodeList));
         callArgs->node = fn_00513040(arg->dexpr, 0);
     }
     callArgs->next = NULL;
@@ -782,7 +782,7 @@ ENode *build_vbase_ptr_initializers(ENode *expr, TypeClass *func, TypeClass *cls
                 if (off == p->off)
                     break;
             if (!p) {
-                p = (VToff *)CompilerTools_AllocatePool(8);
+                p = (VToff *)lalloc(8);
                 p->off = off;
                 p->next = trans_vtboffsets;
                 trans_vtboffsets = p;
@@ -797,7 +797,7 @@ ENode *build_vbase_ptr_initializers(ENode *expr, TypeClass *func, TypeClass *cls
         if (!list->is_virtual)
             off = offset + list->offset;
         else
-            off = CClass_FindVBaseOffset(func, list->base);
+            off = CClass_VirtualBaseOffset(func, list->base);
         expr = build_vbase_ptr_initializers(expr, func, list->base, vbase, off);
     }
     return expr;
@@ -818,7 +818,7 @@ BaseOffsetPath *find_shortest_virtual_base_offset_path(TypeClass *tclass, TypeCl
     directBase = tclass->bases;
     while (directBase != NULL) {
         if (directBase->base == base && directBase->is_virtual != 0) {
-            result = (BaseOffsetPath *)CompilerTools_AllocatePool(8);
+            result = (BaseOffsetPath *)lalloc(8);
             result->next = NULL;
             result->offset = directBase->offset;
             return result;
@@ -844,7 +844,7 @@ BaseOffsetPath *find_shortest_virtual_base_offset_path(TypeClass *tclass, TypeCl
                 }
                 if (bestPath == NULL || (short)length < bestLength) {
                     if (candidateBase->is_virtual != 0) {
-                        bestPath = (BaseOffsetPath *)CompilerTools_AllocatePool(8);
+                        bestPath = (BaseOffsetPath *)lalloc(8);
                         bestPath->next = path;
                         bestPath->offset = candidateBase->offset;
                     } else {
@@ -912,7 +912,7 @@ Statement *assign_vbase_ctor_offsets(Statement *list, TypeClass *cls)
         if (vb->has_override) {
             if (thisnode == NULL)
                 thisnode = create_temp_object((Type *)&void_ptr);
-            vbaseoffset = CClass_FindVBaseOffset(cls, vb->base);
+            vbaseoffset = CClass_VirtualBaseOffset(cls, vb->base);
             ctoroffset = CABI_GetCtorOffsetOffset(vb->base, NULL);
             path = find_shortest_virtual_base_offset_path(cls, vb->base);
             CError_ASSERT(1118, path != NULL);
@@ -971,7 +971,7 @@ Statement *assign_vtable_pointers(Statement *result, Object *obj, TypeClass *cls
             entry = entry->next;
         }
         if (entry == NULL) {
-            entry = CompilerTools_AllocatePool(8);
+            entry = lalloc(8);
             entry->value = key;
             entry->next = trans_vtboffsets;
             trans_vtboffsets = entry;
@@ -1015,7 +1015,7 @@ Statement *assign_vtable_pointers(Statement *result, Object *obj, TypeClass *cls
             base_path[base_path_depth] = b;
             base_path_depth++;
             if (b->is_virtual) {
-                noff = CClass_FindVBaseOffset(cls, b->base);
+                noff = CClass_VirtualBaseOffset(cls, b->base);
                 nvoff = CClass_VirtualBaseVTableOffset(cls, b->base);
             } else {
                 noff = offset + b->offset;
@@ -1104,7 +1104,7 @@ void CABI_InsertConstructorInitialization(Object *obj, Statement *stmt, TypeClas
             label = newlabel();
             current = CFunc_InsertAfterStatement(ST_IFGOTO, current);
             expr = create_objectnode(CABI_FlagArg());
-            current->expr = CExpr_MakeComparisonNode(expr, intconstnode((Type *)&stsignedshort, 0));
+            current->expr = CExpr_New_EEQU_Node(expr, intconstnode((Type *)&stsignedshort, 0));
             current->label = label;
             current = CABI_InitVBasePtrs(current, tclass);
 
@@ -1338,10 +1338,10 @@ OffsetEntry *CABI_0050bf30(OffsetEntry *list, Type *type, SInt32 offset, Boolean
     if (list) {
         for (e = list; e->next; e = e->next)
             ;
-        e->next = CompilerTools_AllocatePool(sizeof(OffsetEntry));
+        e->next = lalloc(sizeof(OffsetEntry));
         e = e->next;
     } else {
-        list = e = CompilerTools_AllocatePool(sizeof(OffsetEntry));
+        list = e = lalloc(sizeof(OffsetEntry));
     }
     e->next = NULL;
     e->type = type;
@@ -1379,7 +1379,7 @@ Statement *make_baseclass_and_ivars_copy_statements(Statement *stmt, TypeClass *
 
         stmt = CFunc_InsertAfterStatement(ST_EXPRESSION_0050b120, stmt);
         if (flag) {
-            args = CompilerTools_AllocatePool(sizeof(ENodeList));
+            args = lalloc(sizeof(ENodeList));
             args->next = NULL;
             args->node = src;
             stmt->expr = CExpr_ConstructObject(TYPE(baseclass), CABI_MakeThisExpr(NULL, offset), args, 1, 0, 0, 0, 1);
@@ -1458,7 +1458,7 @@ Statement *make_baseclass_and_ivars_copy_statements(Statement *stmt, TypeClass *
 
                         stmt = CFunc_InsertAfterStatement(ST_EXPRESSION_0050b120, stmt);
                         if (flag) {
-                            args = CompilerTools_AllocatePool(sizeof(ENodeList));
+                            args = lalloc(sizeof(ENodeList));
                             memclrw(args, sizeof(ENodeList));
                             args->node = src;
                             stmt->expr =
@@ -1484,7 +1484,7 @@ Statement *make_baseclass_and_ivars_copy_statements(Statement *stmt, TypeClass *
                 CError_ASSERT(1909, type->type == TYPECLASS);
                 stmt = CFunc_InsertAfterStatement(ST_EXPRESSION_0050b120, stmt);
                 if (flag) {
-                    args = CompilerTools_AllocatePool(sizeof(ENodeList));
+                    args = lalloc(sizeof(ENodeList));
                     memclrw(args, sizeof(ENodeList));
                     args->node = src;
                     stmt->expr =
@@ -1822,7 +1822,7 @@ void CABI_TransDestructor(Object *destructor, Object *completeDestructor, Statem
         conditional->expr = node;
         conditional->label = exitLabel;
         current = CFunc_InsertAfterStatement(ST_EXPRESSION, conditional);
-        deleteFunction = CParser_FindClassMemberOrNamespaceFunctionObject((Type *)tclass, 0, 0);
+        deleteFunction = CParser_FindDeallocationObject((Type *)tclass, 0, 0);
         if ((deleteArgs = ((TypeFunc *)deleteFunction->type)->args) != NULL && deleteArgs->next != NULL) {
             CError_ASSERT(922, arguments != 0 && arguments->object->type->type == TYPEPOINTER);
             node = create_objectnode(arguments->object);
@@ -1908,7 +1908,7 @@ ENode *CABI_DestroyObject(Object *dtor, ENode *objexpr, UInt8 mode, Boolean flag
             CError_FATAL(2751);
     }
 
-    expr = CompilerTools_AllocatePool(sizeof(ENode));
+    expr = lalloc(sizeof(ENode));
     expr->type = EFUNCCALL;
     expr->cost = 200;
     expr->flags = 0;
@@ -1919,10 +1919,10 @@ ENode *CABI_DestroyObject(Object *dtor, ENode *objexpr, UInt8 mode, Boolean flag
     expr->data.funccall.functype = TYPE_FUNC(dtor->type);
     dtor->flags |= OBJECT_USED;
 
-    list = CompilerTools_AllocatePool(sizeof(ENodeList));
+    list = lalloc(sizeof(ENodeList));
     list->node = objexpr;
     expr->data.funccall.args = list;
-    list->next = CompilerTools_AllocatePool(sizeof(ENodeList));
+    list->next = lalloc(sizeof(ENodeList));
     list = list->next;
     list->next = NULL;
     list->node = intconstnode(TYPE(&stsignedshort), val);
@@ -1943,13 +1943,13 @@ MessageArgument *CABI_SplitNameIntoMessageArguments(HashNameNode *hname, char *f
         while (*separator != '_') {
             if (*separator == 0) {
                 if (head == NULL) {
-                    argument = (MessageArgument *)CompilerTools_AllocatePool(sizeof(MessageArgument));
+                    argument = (MessageArgument *)lalloc(sizeof(MessageArgument));
                     memclrw(argument, sizeof(MessageArgument));
                     argument->name = hname;
                     *flag = 1;
                     return argument;
                 }
-                tail->next = (MessageArgument *)CompilerTools_AllocatePool(sizeof(MessageArgument));
+                tail->next = (MessageArgument *)lalloc(sizeof(MessageArgument));
                 tail = tail->next;
                 tail->next = NULL;
                 tail->name = GetHashNameNodeExport(segment);
@@ -1960,10 +1960,10 @@ MessageArgument *CABI_SplitNameIntoMessageArguments(HashNameNode *hname, char *f
             separator++;
         }
         if (head != NULL) {
-            tail->next = (MessageArgument *)CompilerTools_AllocatePool(sizeof(MessageArgument));
+            tail->next = (MessageArgument *)lalloc(sizeof(MessageArgument));
             tail = tail->next;
         } else {
-            tail = (MessageArgument *)CompilerTools_AllocatePool(sizeof(MessageArgument));
+            tail = (MessageArgument *)lalloc(sizeof(MessageArgument));
             head = tail;
         }
         *separator = 0;

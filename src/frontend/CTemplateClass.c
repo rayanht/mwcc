@@ -376,7 +376,7 @@ void CTemplateClass_ParsePartialSpecialization(TemplateScopeState *scope, struct
         CError_ReportError(ERR_IDENTIFIER_EXPECTED);
         return;
     }
-    type = (TypeClass *)CScope_GetTagType(scope->scope->parent, data_00587fa0);
+    type = (TypeClass *)CScope_GetLocalTagType(scope->scope->parent, data_00587fa0);
     if (type == NULL) {
         CError_ReportError(ERR_UNDEFINED_IDENTIFIER, data_00587fa0->name);
         return;
@@ -502,7 +502,7 @@ void CTemplateClass_ParseClassDeclaration(TemplateScopeState *scope, TemplParam 
         CError_ReportError(ERR_IDENTIFIER_EXPECTED);
         return;
     }
-    existing = (struct TypeClass *)CScope_GetTagType(scope->scope->parent, data_00587fa0);
+    existing = (struct TypeClass *)CScope_GetLocalTagType(scope->scope->parent, data_00587fa0);
     if (existing == NULL) {
         record = (TemplClass *)galloc(sizeof(*record));
         memclrw(record, sizeof(*record));
@@ -750,7 +750,7 @@ struct TemplateClassMatch *remove_less_specialized_matches(struct TemplateClassM
     count = 0;
     for (match = list; match != NULL; match = match->next)
         count++;
-    table = (struct TemplateClassMatch **)CompilerTools_AllocatePool(count * sizeof(*table));
+    table = (struct TemplateClassMatch **)lalloc(count * sizeof(*table));
     for (index = 0, match = list; match != NULL; match = match->next)
         table[index++] = match;
     for (i = 0; i < count; i++) {
@@ -809,7 +809,7 @@ char CTemplateClass_SelectSpecialization(TemplArg *context, TemplClass **classTy
     matches = NULL;
     for (entry = (*classType)->pspecs; entry != NULL; entry = entry->next) {
         if (match_specialization_arguments(entry, context, 0) != NULL) {
-            match = (TemplateClassMatch *)CompilerTools_AllocatePool(8);
+            match = (TemplateClassMatch *)lalloc(8);
             match->next = matches;
             match->candidate = entry;
             matches = match;
@@ -980,7 +980,7 @@ void instantiate_bases(TypeDeduce *context, TypeClass *instance, TemplClass *cla
     }
 
     if (instance->flags & CLASS_HAS_VBASES) {
-        CDecl_SetVBaseOffsets(instance);
+        CDecl_MakeVBaseList(instance);
     }
 }
 
@@ -1029,7 +1029,7 @@ void instantiate_enum(TypeDeduce *context, struct TemplateAction *entry)
         do {
             if (candidate->type == TAT_ENUMERATOR &&
                 (reference = candidate->u.enumerator.objenumconst)->type == (Type *)original) {
-                binding = (struct DefAction *)CompilerTools_AllocatePool(20);
+                binding = (struct DefAction *)lalloc(20);
                 binding->next = context->defActions;
                 binding->action = entry;
                 context->defActions = binding;
@@ -1103,7 +1103,7 @@ void instantiate_ivars(TypeDeduce *ctx, TypeClass *dst, TemplClass *src)
         *m = *p;
         for (q = (ctx->tmclass)->actions; q != NULL; q = q->next) {
             if (q->type == TAT_OBJECTDEF && q->u.refobj == (ObjBase *)p) {
-                r = (struct DefAction *)CompilerTools_AllocatePool(sizeof(struct DefAction));
+                r = (struct DefAction *)lalloc(sizeof(struct DefAction));
                 r->next = ctx->defActions;
                 r->action = q;
                 ctx->defActions = r;
@@ -1145,7 +1145,7 @@ void instantiate_objtype(TypeDeduce *context, ObjType *type, HashNameNode *name)
     *instantiatedType = *type;
 
     if (pendingType != NULL) {
-        binding = (DefAction *)CompilerTools_AllocatePool(20);
+        binding = (DefAction *)lalloc(20);
         binding->next = context->defActions;
         binding->action = pendingType;
         context->defActions = binding;
@@ -1210,7 +1210,7 @@ void CTemplateClass_0051c680(TypeDeduce *ctx, Object *obj)
     ctx->nindex = (list->params)->pid.nindex;
 
     if (found != NULL) {
-        pending = CompilerTools_AllocatePool(0x14);
+        pending = lalloc(0x14);
         pending->next = ctx->defActions;
         pending->action = found;
         ctx->defActions = pending;
@@ -1259,7 +1259,7 @@ void instantiate_template_object(TypeDeduce *ctx, Object *templ)
     obj = galloc(sizeof(ObjectTemplated));
     obj->object = *templ;
     if (matchingInstance != NULL) {
-        link = CompilerTools_AllocatePool(0x14);
+        link = lalloc(0x14);
         link->next = ctx->defActions;
         link->action = matchingInstance;
         ctx->defActions = link;
@@ -1279,7 +1279,7 @@ void instantiate_template_object(TypeDeduce *ctx, Object *templ)
             obj->object.u.data.linkname = NULL;
             for (instance = (ctx->tmclass)->actions; instance != NULL; instance = instance->next) {
                 if (instance->type == TAT_OBJECTINIT && instance->u.refobj == (ObjBase *)templ) {
-                    link = CompilerTools_AllocatePool(0x14);
+                    link = lalloc(0x14);
                     link->next = ctx->defActions;
                     link->action = instance;
                     ctx->defActions = link;

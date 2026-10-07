@@ -46,7 +46,7 @@ struct ExceptionReferenceTableRecord {
     UInt16 value;
 };
 #pragma pack(pop)
-/* Exceptions_AppendScopeEntry allocates 0x18 bytes with CompilerTools_AllocatePool(0x18). */
+/* Exceptions_AppendScopeEntry allocates 0x18 bytes with lalloc(0x18). */
 struct ExceptionScopeEntry {
     struct ExceptionScopeEntry *next;
     struct ExceptionScopeEntry *previous;

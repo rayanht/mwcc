@@ -2382,7 +2382,7 @@ void *create_function_asm_directive(HashNameNode *name, Boolean isGlobal)
             CError_ReportError(ERR_IDENTIFIER_REDECLARED, name->name);
         object->flags |= OBJECT_DEFINED;
         object->sclass = isGlobal ? 0x102 : 0x103;
-        allocation = (ParsedAsmInstruction(*)[1])CompilerTools_AllocatePool(0x10);
+        allocation = (ParsedAsmInstruction(*)[1])lalloc(0x10);
         memclrw(allocation, 0x10);
         instruction = (ParsedAsmInstruction *)allocation;
         instruction->opcode = 1;
@@ -2520,7 +2520,7 @@ void InlineAsmPPC_ParseDirective(int directive)
                 CError_ReportError(ERR_FUNCTION_NO_INITIALIZED_STACKFRAME);
             node = CFunc_AppendStatement(0x10);
             node->expr = NULL;
-            instruction = CompilerTools_AllocatePool(offsetof(struct ParsedAsmInstruction, data));
+            instruction = lalloc(offsetof(struct ParsedAsmInstruction, data));
             memclrw(instruction, offsetof(struct ParsedAsmInstruction, data));
             instruction->opcode = 4;
             instruction->specialFlags = 1;
@@ -2786,7 +2786,7 @@ PCodeInstruction *create_pcode_asm_instruction(ParsedAsmInstruction *ia, SInt32 
         if (copts.exceptions && gCurrentStatement && !inlineAsmMode)
             count += Exceptions_CountBoundObjectFields(gCurrentStatement->dobjstack);
         size = sizeof(*instr) + (count + extra) * sizeof(*out);
-        instr = CompilerTools_AllocatePool(size);
+        instr = lalloc(size);
         memset(instr, 0, size);
         instr->operand_count = count;
     } else if (count == PC_STMW || count == PC_LMW) {
@@ -2794,12 +2794,12 @@ PCodeInstruction *create_pcode_asm_instruction(ParsedAsmInstruction *ia, SInt32 
         firstReg = operand->target.object ? InlineAsm_Register(operand) : operand->data.value;
         count = 32 - firstReg + argcount;
         size = sizeof(*instr) + count * sizeof(*out);
-        instr = CompilerTools_AllocatePool(size);
+        instr = lalloc(size);
         memset(instr, 0, size);
         instr->operand_count = count;
     } else {
         size = sizeof(*instr) + (argcount + extra) * sizeof(*out);
-        instr = CompilerTools_AllocatePool(size);
+        instr = lalloc(size);
         memset(instr, 0, size);
         instr->operand_count = argcount;
     }

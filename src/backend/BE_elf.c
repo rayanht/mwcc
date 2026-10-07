@@ -99,7 +99,7 @@ ObjGenRelocation *BE_elf_AddRelocation(ObjGenSection *context, int offset, Objec
         payload.offset = offset;
         payload.kind = kind & 255;
         payload.value = value;
-        CompilerTools_AppendGListData(&writer->buffer, &payload, sizeof(payload));
+        AppendGListData(&writer->buffer, &payload, sizeof(payload));
         entry->next = relocation_list;
         relocation_list = entry;
     }
@@ -133,7 +133,7 @@ static SInt32 ElfPad(SInt32 alignment)
         ElfAllocZero(n);
         max_padding_size = n;
     }
-    CompilerTools_AppendGListData(&data_00583ae8.buffer, data_0055e528, n);
+    AppendGListData(&data_00583ae8.buffer, data_0055e528, n);
     return data_00583ae8.buffer.size;
 }
 
@@ -254,7 +254,7 @@ void fn_0049b920(void)
     elf_header.shentsize = CTool_EndianConvertWord16(40);
     elf_header.shnum = 0;
     elf_header.shstrndx = CTool_EndianConvertWord16(shstrtab_section->index);
-    CompilerTools_AppendGListData(&data_00583ae8.buffer, &elf_header, 52);
+    AppendGListData(&data_00583ae8.buffer, &elf_header, 52);
     assign_symbol_order();
     if (relocation_list) {
         for (r = relocation_list; r; r = r->next) {
@@ -286,7 +286,7 @@ void fn_0049b920(void)
             GList *list;
 
             list = &shstrtab_section->buffer, name = s->name;
-            CompilerTools_AppendGListData(list, name, len = strlen(name) + 1);
+            AppendGListData(list, name, len = strlen(name) + 1);
         }
         offset += len;
     }
@@ -302,14 +302,14 @@ void fn_0049b920(void)
         }
     }
     elf_header.shoff = ElfPad(8), ELF_Endian_SwapElf32Section((Elf32Section *)&section_list->nameoff);
-    CompilerTools_AppendGListData(&data_00583ae8.buffer, &section_list->nameoff, 40);
+    AppendGListData(&data_00583ae8.buffer, &section_list->nameoff, 40);
     elf_header.shnum++;
     {
         int index;
 
         for (index = 1, s = ordered_section_index[1]; s; s = ordered_section_index[++index]) {
             ELF_Endian_SwapElf32Section((Elf32Section *)&s->nameoff);
-            CompilerTools_AppendGListData(&data_00583ae8.buffer, &s->nameoff, 40);
+            AppendGListData(&data_00583ae8.buffer, &s->nameoff, 40);
             elf_header.shnum++;
         }
     }
@@ -390,7 +390,7 @@ void write_codewarrior_version_record(void)
     record.reservedWords[3] = 0;
     record.reservedWords[4] = 0;
 
-    CompilerTools_AppendGListData(&data_005884da->buffer, &record, sizeof(record));
+    AppendGListData(&data_005884da->buffer, &record, sizeof(record));
 }
 
 void BE_elf_AppendGList(GList *dst, GList *src)
@@ -424,7 +424,7 @@ void build_symbol_string_table(void)
             base = &symbol_string_table_section->buffer;
             name = (const char *)entry->nameData.hashName + 10U;
             length = strlen(name) + 1U;
-            CompilerTools_AppendGListData(base, name, length);
+            AppendGListData(base, name, length);
             offset += length;
         }
     }
@@ -445,7 +445,7 @@ void write_sym_nodes(void)
         memset(data_0055e528, 0, padding);
         max_padding_size = padding;
     }
-    CompilerTools_AppendGListData(&data_00583ae8.buffer, data_0055e528, padding);
+    AppendGListData(&data_00583ae8.buffer, data_0055e528, padding);
     record = BE_symbol_GetSymbolOrderTail();
     while (record != NULL) {
         if ((record->flags & 64) == 0) {
@@ -455,10 +455,10 @@ void write_sym_nodes(void)
             } else {
                 record->flags &= 63;
                 record->alignment = CTool_EndianConvertWord32(record->alignment);
-                CompilerTools_AppendGListData(&data_005884da->buffer, &record->alignment, 8);
+                AppendGListData(&data_005884da->buffer, &record->alignment, 8);
             }
             ELF_Endian_ConvertSymbolRecord(&record->stringOffset);
-            CompilerTools_AppendGListData(&data_005884ce->buffer, &record->stringOffset, 16);
+            AppendGListData(&data_005884ce->buffer, &record->stringOffset, 16);
         }
         record = record->orderNext;
     }
@@ -1049,5 +1049,5 @@ void BE_elf_AlignRecord(GList *record, SInt32 alignment)
         memset(data_0055e528, 0, paddingSize);
         max_padding_size = paddingSize;
     }
-    CompilerTools_AppendGListData(record, data_0055e528, paddingSize);
+    AppendGListData(record, data_0055e528, paddingSize);
 }

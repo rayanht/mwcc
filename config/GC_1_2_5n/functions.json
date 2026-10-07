@@ -7575,13 +7575,13 @@
     "source": "src/frontend/CompilerTools.c"
   },
   {
-    "name": "CompilerTools_ResetPool",
+    "name": "freeoheap",
     "address": "0x00441e20",
     "size": 57,
     "source": "src/frontend/CompilerTools.c"
   },
   {
-    "name": "CompilerTools_ResetPoolAvail",
+    "name": "freeaheap",
     "address": "0x00441e60",
     "size": 57,
     "source": "src/frontend/CompilerTools.c"
@@ -7593,31 +7593,31 @@
     "source": "src/frontend/CompilerTools.c"
   },
   {
-    "name": "CompilerTools_DecrementPositiveCounter",
+    "name": "unlocklheap",
     "address": "0x00441ef0",
     "size": 18,
     "source": "src/frontend/CompilerTools.c"
   },
   {
-    "name": "fn_00441f10",
+    "name": "locklheap",
     "address": "0x00441f10",
     "size": 8,
     "source": "src/frontend/CompilerTools.c"
   },
   {
-    "name": "CompilerTools_AllocatePoolMemory",
+    "name": "oalloc",
     "address": "0x00441f20",
     "size": 54,
     "source": "src/frontend/CompilerTools.c"
   },
   {
-    "name": "CompilerTools_AllocateBlock",
+    "name": "aalloc",
     "address": "0x00441f60",
     "size": 54,
     "source": "src/frontend/CompilerTools.c"
   },
   {
-    "name": "CompilerTools_AllocatePool",
+    "name": "lalloc",
     "address": "0x00441fa0",
     "size": 54,
     "source": "src/frontend/CompilerTools.c"
@@ -7629,7 +7629,7 @@
     "source": "src/frontend/CompilerTools.c"
   },
   {
-    "name": "CompilerTools_ClearPoolBlocks",
+    "name": "releasegheap",
     "address": "0x00442020",
     "size": 46,
     "source": "src/frontend/CompilerTools.c"
@@ -7689,13 +7689,13 @@
     "source": "src/frontend/CompilerTools.c"
   },
   {
-    "name": "CompilerTools_AppendGListString",
+    "name": "AppendGListName",
     "address": "0x004427f0",
     "size": 105,
     "source": "src/frontend/CompilerTools.c"
   },
   {
-    "name": "AppendGListName",
+    "name": "AppendGListID",
     "address": "0x00442860",
     "size": 106,
     "source": "src/frontend/CompilerTools.c"
@@ -7737,7 +7737,7 @@
     "source": "src/frontend/CompilerTools.c"
   },
   {
-    "name": "CompilerTools_AppendGListData",
+    "name": "AppendGListData",
     "address": "0x00442b80",
     "size": 89,
     "source": "src/frontend/CompilerTools.c"
@@ -7749,7 +7749,7 @@
     "source": "src/frontend/CompilerTools.c"
   },
   {
-    "name": "fn_00442c00",
+    "name": "LockGList",
     "address": "0x00442c00",
     "size": 14,
     "source": "src/frontend/CompilerTools.c"
@@ -7767,7 +7767,7 @@
     "source": "src/frontend/CompilerTools.c"
   },
   {
-    "name": "CompilerTools_ConvertCStringToPString",
+    "name": "CTool_CtoPstr",
     "address": "0x00442c90",
     "size": 48,
     "source": "src/frontend/CompilerTools.c"
@@ -9861,7 +9861,7 @@
     "source": "src/frontend/CExpr2.c"
   },
   {
-    "name": "CExpr2_0046e9d0",
+    "name": "CExpr_GenericPtmfCall",
     "address": "0x0046e9d0",
     "size": 439,
     "source": "src/frontend/CExpr2.c"
@@ -9981,7 +9981,7 @@
     "source": "src/frontend/CExpr2.c"
   },
   {
-    "name": "CExpr2_004719c0",
+    "name": "CExpr_GetClassAccessNode",
     "address": "0x004719c0",
     "size": 464,
     "source": "src/frontend/CExpr2.c"
@@ -10005,7 +10005,7 @@
     "source": "src/frontend/CExpr2.c"
   },
   {
-    "name": "CExpr2_UpdateArgMatchScores",
+    "name": "CExpr_MatchAssign",
     "address": "0x004720b0",
     "size": 207,
     "source": "src/frontend/CExpr2.c"
@@ -10053,7 +10053,7 @@
     "source": "src/frontend/CExpr2.c"
   },
   {
-    "name": "CExpr_New_EINDIRECT_Node",
+    "name": "create_objectnode2",
     "address": "0x00472850",
     "size": 260,
     "source": "src/frontend/CExpr2.c"
@@ -10101,7 +10101,7 @@
     "source": "src/frontend/CExpr2.c"
   },
   {
-    "name": "CExpr2_00473720",
+    "name": "promote",
     "address": "0x00473720",
     "size": 322,
     "source": "src/frontend/CExpr2.c"
@@ -10113,19 +10113,19 @@
     "source": "src/frontend/CExpr2.c"
   },
   {
-    "name": "forceintegral",
+    "name": "integralpromote",
     "address": "0x004738d0",
     "size": 151,
     "source": "src/frontend/CExpr2.c"
   },
   {
-    "name": "CExpr2_RewriteExprToTemp",
+    "name": "CExpr_GetETEMPCopy",
     "address": "0x00473970",
     "size": 363,
     "source": "src/frontend/CExpr2.c"
   },
   {
-    "name": "CExpr2_NewESCOPEBEGINNode",
+    "name": "CExpr_NewETEMPNode",
     "address": "0x00473ae0",
     "size": 70,
     "source": "src/frontend/CExpr2.c"
@@ -10149,7 +10149,7 @@
     "source": "src/frontend/CExpr2.c"
   },
   {
-    "name": "CExpr2_IsZero",
+    "name": "iszero",
     "address": "0x00473cb0",
     "size": 56,
     "source": "src/frontend/CExpr2.c"
@@ -10173,7 +10173,7 @@
     "source": "src/frontend/CExpr2.c"
   },
   {
-    "name": "CExpr_ConvertToIntegral",
+    "name": "forceintegral",
     "address": "0x00473ee0",
     "size": 74,
     "source": "src/frontend/CExpr2.c"
@@ -10203,13 +10203,13 @@
     "source": "src/frontend/CExpr2.c"
   },
   {
-    "name": "CExpr2_ReturnNode",
+    "name": "CExpr_BinaryFloatExpression",
     "address": "0x00473ff0",
     "size": 5,
     "source": "src/frontend/CExpr2.c"
   },
   {
-    "name": "CExpr2_ReturnENode",
+    "name": "CExpr_UnaryFloatExpression",
     "address": "0x00474000",
     "size": 5,
     "source": "src/frontend/CExpr2.c"
@@ -10545,7 +10545,7 @@
     "source": "src/frontend/CFunc.c"
   },
   {
-    "name": "fn_00476e60",
+    "name": "CFunc_CheckClassCtors",
     "address": "0x00476e60",
     "size": 15,
     "source": "src/frontend/CFunc.c"
@@ -10593,7 +10593,7 @@
     "source": "src/frontend/CFunc.c"
   },
   {
-    "name": "CFunc_ParseScopedStatement",
+    "name": "CFunc_CompoundStatement",
     "address": "0x00477750",
     "size": 252,
     "source": "src/frontend/CFunc.c"
@@ -10827,13 +10827,13 @@
     "source": "src/frontend/CFunc.c"
   },
   {
-    "name": "PPCError_RestoreGlobalValues",
+    "name": "CFunc_RestoreBlock",
     "address": "0x0047cb40",
     "size": 21,
     "source": "src/frontend/CFunc.c"
   },
   {
-    "name": "fn_0047cb60",
+    "name": "CFunc_NewDeclBlock",
     "address": "0x0047cb60",
     "size": 109,
     "source": "src/frontend/CFunc.c"
@@ -11373,7 +11373,7 @@
     "source": "src/frontend/CParser.c"
   },
   {
-    "name": "CParser_PrependClassTypeLink",
+    "name": "CParser_NewClassAction",
     "address": "0x0048bfb0",
     "size": 29,
     "source": "src/frontend/CParser.c"
@@ -11391,7 +11391,7 @@
     "source": "src/frontend/CParser.c"
   },
   {
-    "name": "CParser_IsAnonymousClass",
+    "name": "CParser_IsAnonymousUnion",
     "address": "0x0048c1a0",
     "size": 114,
     "source": "src/frontend/CParser.c"
@@ -11403,7 +11403,7 @@
     "source": "src/frontend/CParser.c"
   },
   {
-    "name": "CParser_Cleanup",
+    "name": "fn_0048c290",
     "address": "0x0048c290",
     "size": 129,
     "source": "src/frontend/CParser.c"
@@ -11415,7 +11415,7 @@
     "source": "src/frontend/CParser.c"
   },
   {
-    "name": "CParser_PrependClassParseRec",
+    "name": "CParser_RegisterNonGlobalClass",
     "address": "0x0048c350",
     "size": 29,
     "source": "src/frontend/CParser.c"
@@ -11571,7 +11571,7 @@
     "source": "src/frontend/CParser.c"
   },
   {
-    "name": "Type_IsUnsigned",
+    "name": "is_unsigned",
     "address": "0x0048f180",
     "size": 99,
     "source": "src/frontend/CParser.c"
@@ -11643,7 +11643,7 @@
     "source": "src/frontend/CParser.c"
   },
   {
-    "name": "CParser_FindClassMemberOrNamespaceFunctionObject",
+    "name": "CParser_FindDeallocationObject",
     "address": "0x0048fd50",
     "size": 287,
     "source": "src/frontend/CParser.c"
@@ -11685,7 +11685,7 @@
     "source": "src/frontend/CParser.c"
   },
   {
-    "name": "CParser_NewObject",
+    "name": "CParser_NewGlobalDataObject",
     "address": "0x004900a0",
     "size": 142,
     "source": "src/frontend/CParser.c"
@@ -11697,7 +11697,7 @@
     "source": "src/frontend/CParser.c"
   },
   {
-    "name": "CParser_CreateObject",
+    "name": "CParser_NewObject",
     "address": "0x004901a0",
     "size": 51,
     "source": "src/frontend/CParser.c"
@@ -11745,7 +11745,7 @@
     "source": "src/frontend/CParser.c"
   },
   {
-    "name": "fn_004905c0",
+    "name": "CParser_SetUniqueID",
     "address": "0x004905c0",
     "size": 10,
     "source": "src/frontend/CParser.c"
@@ -11763,7 +11763,7 @@
     "source": "src/frontend/CParser.c"
   },
   {
-    "name": "CParser_00490660",
+    "name": "CParser_ParseOperatorName",
     "address": "0x00490660",
     "size": 403,
     "source": "src/frontend/CParser.c"
@@ -11775,7 +11775,7 @@
     "source": "src/frontend/CParser.c"
   },
   {
-    "name": "fn_004908d0",
+    "name": "CParser_Cleanup",
     "address": "0x004908d0",
     "size": 32,
     "source": "src/frontend/CParser.c"
@@ -12369,7 +12369,7 @@
     "source": "src/frontend/CScope.c"
   },
   {
-    "name": "CScope_GetTagType",
+    "name": "CScope_GetLocalTagType",
     "address": "0x00497e40",
     "size": 89,
     "source": "src/frontend/CScope.c"
@@ -12459,7 +12459,7 @@
     "source": "src/frontend/CScope.c"
   },
   {
-    "name": "CScope_FindTagType",
+    "name": "CScope_GetTagType",
     "address": "0x00499760",
     "size": 226,
     "source": "src/frontend/CScope.c"
@@ -13377,7 +13377,7 @@
     "source": "src/backend/SFPE_PPC_EABI.c"
   },
   {
-    "name": "initialize_hash_name_globals",
+    "name": "CMach_ReInitRuntimeObjects",
     "address": "0x004a7480",
     "size": 964,
     "source": "src/backend/CMachine.c"
@@ -13413,7 +13413,7 @@
     "source": "src/backend/CMachine.c"
   },
   {
-    "name": "CMachine_FunctionRequiresMemoryReturn",
+    "name": "CMach_GetFunctionResultClass",
     "address": "0x004a7b80",
     "size": 86,
     "source": "src/backend/CMachine.c"
@@ -13455,7 +13455,7 @@
     "source": "src/backend/CMachine.c"
   },
   {
-    "name": "get_type_align",
+    "name": "CMach_GetTypeAlign",
     "address": "0x004a8020",
     "size": 126,
     "source": "src/backend/CMachine.c"
@@ -13473,7 +13473,7 @@
     "source": "src/backend/CMachine.c"
   },
   {
-    "name": "fn_004a8400",
+    "name": "CMach_GetStructAlign",
     "address": "0x004a8400",
     "size": 16,
     "source": "src/backend/CMachine.c"
@@ -13557,7 +13557,7 @@
     "source": "src/backend/CMachine.c"
   },
   {
-    "name": "CMachine_InitVectorMem",
+    "name": "CMach_InitVectorMem",
     "address": "0x004a8a70",
     "size": 367,
     "source": "src/backend/CMachine.c"
@@ -14998,7 +14998,7 @@
     "source": "src/frontend/CMangler.c"
   },
   {
-    "name": "mangle_type",
+    "name": "CMangler_MangleType",
     "address": "0x004c2ae0",
     "size": 1864,
     "source": "src/frontend/CMangler.c"
@@ -15526,13 +15526,13 @@
     "source": "src/frontend/CInit.c"
   },
   {
-    "name": "fn_004cea90",
+    "name": "CInit_DeclareReadOnlyData",
     "address": "0x004cea90",
     "size": 31,
     "source": "src/frontend/CInit.c"
   },
   {
-    "name": "fn_004ceab0",
+    "name": "CInit_DeclareData",
     "address": "0x004ceab0",
     "size": 31,
     "source": "src/frontend/CInit.c"
@@ -15778,7 +15778,7 @@
     "source": "src/frontend/CInit.c"
   },
   {
-    "name": "evaluate_int_or_relocation",
+    "name": "CInit_RelocInitCheck",
     "address": "0x004d3860",
     "size": 553,
     "source": "src/frontend/CInit.c"
@@ -16468,7 +16468,7 @@
     "source": "src/frontend/CPrec.c"
   },
   {
-    "name": "CExcept_Terminate",
+    "name": "fn_004e0970",
     "address": "0x004e0970",
     "size": 53,
     "source": "src/frontend/CPrec.c"
@@ -16648,19 +16648,19 @@
     "source": "src/frontend/CException.c"
   },
   {
-    "name": "CException_AddStdTypeRecord",
+    "name": "CExcept_ArrayInit",
     "address": "0x004e2f80",
     "size": 308,
     "source": "src/frontend/CException.c"
   },
   {
-    "name": "fn_004e30c0",
+    "name": "CExcept_Magic",
     "address": "0x004e30c0",
     "size": 8,
     "source": "src/frontend/CException.c"
   },
   {
-    "name": "CException_PushEntry",
+    "name": "CExcept_Terminate",
     "address": "0x004e30d0",
     "size": 40,
     "source": "src/frontend/CException.c"
@@ -16678,7 +16678,7 @@
     "source": "src/frontend/CException.c"
   },
   {
-    "name": "CException_RegisterMemberArray",
+    "name": "CExcept_RegisterLocalArray",
     "address": "0x004e3200",
     "size": 89,
     "source": "src/frontend/CException.c"
@@ -16708,7 +16708,7 @@
     "source": "src/frontend/CException.c"
   },
   {
-    "name": "CException_004e35b0",
+    "name": "CExcept_CheckStackRefs",
     "address": "0x004e35b0",
     "size": 253,
     "source": "src/frontend/CException.c"
@@ -17134,13 +17134,13 @@
     "source": "src/frontend/CClass.c"
   },
   {
-    "name": "CClass_GenerateVTable",
+    "name": "CClass_ClassAction",
     "address": "0x004e9ba0",
     "size": 244,
     "source": "src/frontend/CClass.c"
   },
   {
-    "name": "fn_004e9ca0",
+    "name": "CClass_ClassDefaultFuncAction",
     "address": "0x004e9ca0",
     "size": 1,
     "source": "src/frontend/CClass.c"
@@ -17248,7 +17248,7 @@
     "source": "src/frontend/CClass.c"
   },
   {
-    "name": "CClass_FindVBaseOffset",
+    "name": "CClass_VirtualBaseOffset",
     "address": "0x004eae70",
     "size": 58,
     "source": "src/frontend/CClass.c"
@@ -17272,7 +17272,7 @@
     "source": "src/frontend/CClass.c"
   },
   {
-    "name": "CClass_ConvertClassPointer",
+    "name": "CClass_ClassPointerCast",
     "address": "0x004eb0e0",
     "size": 353,
     "source": "src/frontend/CClass.c"
@@ -17326,7 +17326,7 @@
     "source": "src/frontend/CClass.c"
   },
   {
-    "name": "CClass_Init",
+    "name": "fn_004eb810",
     "address": "0x004eb810",
     "size": 19,
     "source": "src/frontend/CClass.c"
@@ -17440,7 +17440,7 @@
     "source": "src/frontend/CClass.c"
   },
   {
-    "name": "CClass_ResetPendingThunks",
+    "name": "CClass_Init",
     "address": "0x004ec380",
     "size": 11,
     "source": "src/frontend/CClass.c"
@@ -17770,7 +17770,7 @@
     "source": "src/frontend/CExpr.c"
   },
   {
-    "name": "fn_004f0b30",
+    "name": "CExpr_IntegralConstExpr",
     "address": "0x004f0b30",
     "size": 104,
     "source": "src/frontend/CExpr.c"
@@ -17878,7 +17878,7 @@
     "source": "src/frontend/CExpr.c"
   },
   {
-    "name": "make_logical_or_node",
+    "name": "CExpr_New_ELOR_Node",
     "address": "0x004f3180",
     "size": 624,
     "source": "src/frontend/CExpr.c"
@@ -17908,13 +17908,13 @@
     "source": "src/frontend/CExpr.c"
   },
   {
-    "name": "fold_or_make_comparison_node",
+    "name": "CExpr_New_ENOTEQU_Node",
     "address": "0x004f3b90",
     "size": 587,
     "source": "src/frontend/CExpr.c"
   },
   {
-    "name": "CExpr_MakeComparisonNode",
+    "name": "CExpr_New_EEQU_Node",
     "address": "0x004f3de0",
     "size": 587,
     "source": "src/frontend/CExpr.c"
@@ -18004,13 +18004,13 @@
     "source": "src/frontend/CExpr.c"
   },
   {
-    "name": "CExpr_CastMemberPointer",
+    "name": "PointerToMemberCast",
     "address": "0x004f6180",
     "size": 497,
     "source": "src/frontend/CExpr.c"
   },
   {
-    "name": "CExpr_New_EPRECOMP_Node",
+    "name": "do_castnullcheck",
     "address": "0x004f6380",
     "size": 120,
     "source": "src/frontend/CExpr.c"
@@ -18172,7 +18172,7 @@
     "source": "src/frontend/CExpr.c"
   },
   {
-    "name": "CExpr_AssignmentPromotion",
+    "name": "argumentpromotion",
     "address": "0x004f9ed0",
     "size": 291,
     "source": "src/frontend/CExpr.c"
@@ -18298,7 +18298,7 @@
     "source": "src/frontend/CDecl.c"
   },
   {
-    "name": "CDecl_ParseDeclarationAttributeFlags",
+    "name": "CDecl_ParseClassDeclSpec",
     "address": "0x004fba60",
     "size": 159,
     "source": "src/frontend/CDecl.c"
@@ -18370,7 +18370,7 @@
     "source": "src/frontend/CDecl.c"
   },
   {
-    "name": "CDecl_SetVBaseOffsets",
+    "name": "CDecl_MakeVBaseList",
     "address": "0x004fce40",
     "size": 191,
     "source": "src/frontend/CDecl.c"
@@ -18430,7 +18430,7 @@
     "source": "src/frontend/CDecl.c"
   },
   {
-    "name": "CDecl_NewTypeMemberFunc",
+    "name": "CDecl_MakeTypeMemberFunc",
     "address": "0x004fea20",
     "size": 94,
     "source": "src/frontend/CDecl.c"
@@ -18550,7 +18550,7 @@
     "source": "src/frontend/CDecl.c"
   },
   {
-    "name": "CDecl_ParseDeclarator",
+    "name": "scandeclarator",
     "address": "0x005028f0",
     "size": 482,
     "source": "src/frontend/CDecl.c"
@@ -18562,7 +18562,7 @@
     "source": "src/frontend/CDecl.c"
   },
   {
-    "name": "CDecl_MakeMemberPointerType",
+    "name": "makememberpointertype",
     "address": "0x00502d80",
     "size": 144,
     "source": "src/frontend/CDecl.c"
@@ -18598,7 +18598,7 @@
     "source": "src/frontend/CDecl.c"
   },
   {
-    "name": "scandeclarator",
+    "name": "scandirectdecl1",
     "address": "0x00503c60",
     "size": 1004,
     "source": "src/frontend/CDecl.c"
@@ -18640,13 +18640,13 @@
     "source": "src/frontend/CDecl.c"
   },
   {
-    "name": "prepend_class_pointer_argument",
+    "name": "CDecl_AddThisPointerArgument",
     "address": "0x005044e0",
     "size": 183,
     "source": "src/frontend/CDecl.c"
   },
   {
-    "name": "CDecl_WrapTypePointer",
+    "name": "makethetypepointer",
     "address": "0x005045a0",
     "size": 57,
     "source": "src/frontend/CDecl.c"

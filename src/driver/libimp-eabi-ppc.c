@@ -99,7 +99,7 @@ char **load_file_data_and_set_archive_signature(CWFileSpec *name, SInt32 *out1, 
         return NULL;
     }
     err = dispatch_file_input_by_kind(rec, buf);
-    CompilerTools_ClearPoolBlocks();
+    releasegheap();
     if (err != 0) {
         clear_file_input_data_handles(rec);
         return NULL;

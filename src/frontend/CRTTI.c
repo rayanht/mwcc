@@ -149,7 +149,7 @@ struct VBasePath *build_vbase_path_list(TypeClass *from, TypeClass *cls, struct 
             } while (path != NULL);
         }
         if (path == NULL || isAmbiguous) {
-            path = (VBasePath *)CompilerTools_AllocatePool(sizeof(*path));
+            path = (VBasePath *)lalloc(sizeof(*path));
             memclrw(path, sizeof(*path));
             path->next = list;
             list = path;
@@ -164,7 +164,7 @@ struct VBasePath *build_vbase_path_list(TypeClass *from, TypeClass *cls, struct 
         if (!base->is_virtual) {
             baseOffset = offset + base->offset;
         } else {
-            baseOffset = CClass_FindVBaseOffset(from, base->base);
+            baseOffset = CClass_VirtualBaseOffset(from, base->base);
         }
         baseIsPrivate = 1;
         if (!isPrivate && base->access != ACCESSPRIVATE) {
@@ -188,7 +188,7 @@ void collect_public_bases(TypeClass *object, VBasePath *baseList, TypeClass *typ
             entry = entry->next;
         }
         if (entry == NULL) {
-            entry = (RecBaseEntry *)CompilerTools_AllocatePool(sizeof(RecBaseEntry));
+            entry = (RecBaseEntry *)lalloc(sizeof(RecBaseEntry));
             entry->next = baseList->children;
             baseList->children = entry;
             entry->base = (Type *)typeClass;
@@ -205,7 +205,7 @@ void collect_public_bases(TypeClass *object, VBasePath *baseList, TypeClass *typ
         if (base->is_virtual) {
             if (!recurse)
                 continue;
-            baseOffset = CClass_FindVBaseOffset(object, base->base);
+            baseOffset = CClass_VirtualBaseOffset(object, base->base);
         } else {
             baseOffset = offset + base->offset;
         }
@@ -249,7 +249,7 @@ void *create_rtti_base_records(TypeClass *theclass)
         return NULL;
     size = (publicCount + childCount) * sizeof(RTTIBaseRecord) + groupCount * sizeof(struct RTTIBaseGroup) +
            sizeof(SInt32);
-    buffer = CompilerTools_AllocatePool(size);
+    buffer = lalloc(size);
     memclrw(buffer, size);
     object = CParser_NewCompilerDefDataObject();
     object->name = CParser_GetUniqueName();
@@ -260,7 +260,7 @@ void *create_rtti_base_records(TypeClass *theclass)
     if (publicCount != 0) {
         for (path = paths; path != NULL; path = path->next) {
             if (path->isPrivate == 0 && path->isAmbiguous == 0) {
-                reference = CompilerTools_AllocatePool(sizeof(DataReference));
+                reference = lalloc(sizeof(DataReference));
                 reference->next = references;
                 references = reference;
                 reference->target = get_or_create_type_object((Type *)path->theclass, 0);
@@ -275,7 +275,7 @@ void *create_rtti_base_records(TypeClass *theclass)
         for (path = paths; path != NULL; path = path->next) {
             if (path->count != 0) {
                 struct RTTIBaseGroup *group;
-                reference = CompilerTools_AllocatePool(sizeof(DataReference));
+                reference = lalloc(sizeof(DataReference));
                 reference->next = references;
                 references = reference;
                 reference->target = get_or_create_type_object((Type *)path->theclass, 0);
@@ -286,7 +286,7 @@ void *create_rtti_base_records(TypeClass *theclass)
                 group->count = CTool_EndianConvertWord32(path->count);
                 record = &(group + 1)->base;
                 for (child = path->children; child != NULL; child = child->next) {
-                    reference = CompilerTools_AllocatePool(sizeof(DataReference));
+                    reference = lalloc(sizeof(DataReference));
                     reference->next = references;
                     references = reference;
                     reference->target = get_or_create_type_object(child->base, 0);
@@ -298,7 +298,7 @@ void *create_rtti_base_records(TypeClass *theclass)
             }
         }
     }
-    fn_004ceab0(object, buffer, references, object->type->size);
+    CInit_DeclareData(object, buffer, references, object->type->size);
     return object;
 }
 
@@ -356,13 +356,13 @@ Object *get_or_create_type_object(Type *type, SInt32 flags)
         obj->type = CDecl_NewStructType(8, 4);
         obj->sclass = TK_STATIC;
 
-        rec = CompilerTools_AllocatePool(sizeof(DataReference));
+        rec = lalloc(sizeof(DataReference));
         rec->next = NULL;
         rec->target = str;
         rec->offset = 0;
         rec->value0c = 0;
         if (classObject != NULL) {
-            sub = CompilerTools_AllocatePool(sizeof(DataReference));
+            sub = lalloc(sizeof(DataReference));
             rec->next = sub;
             rec->next->next = NULL;
             rec->next->target = classObject;
@@ -371,7 +371,7 @@ Object *get_or_create_type_object(Type *type, SInt32 flags)
         }
 
         CScope_AddGlobalObject(obj);
-        fn_004ceab0(obj, buf, rec, obj->type->size);
+        CInit_DeclareData(obj, buf, rec, obj->type->size);
         result = obj;
     } while (0);
     return result;
@@ -393,11 +393,11 @@ void build_rtti_offset_table(TypeClass *rootClass, TypeClass *cls, Object *key, 
         }
         if (node == NULL) {
             RTTIOffsetEntry *entry;
-            node = (RTTIVTableOffsetNode *)CompilerTools_AllocatePool(sizeof(*node));
+            node = (RTTIVTableOffsetNode *)lalloc(sizeof(*node));
             node->next = rtti_vtable_offset_list;
             node->vtableOffset = vtableOffset;
             rtti_vtable_offset_list = node;
-            record = (RData *)CompilerTools_AllocatePool(sizeof(*record));
+            record = (RData *)lalloc(sizeof(*record));
             record->next = rtti_offset_table_head;
             record->key = key;
             record->vtableOffset = vtableOffset;
@@ -417,7 +417,7 @@ void build_rtti_offset_table(TypeClass *rootClass, TypeClass *cls, Object *key, 
     for (base = cls->bases; base != NULL; base = base->next) {
         if (base->base->vtable != NULL) {
             if (base->is_virtual) {
-                baseObjectOffset = CClass_FindVBaseOffset(rootClass, base->base);
+                baseObjectOffset = CClass_VirtualBaseOffset(rootClass, base->base);
                 baseVTableOffset = CClass_VirtualBaseVTableOffset(rootClass, base->base);
             } else {
                 baseObjectOffset = objectOffset + base->offset;
@@ -459,7 +459,7 @@ ENode *CRTTI_ParseTypeid(void)
 
     name = GetHashNameNode("type_info");
     {
-        Type *foundType = CScope_GetTagType(nspace, name);
+        Type *foundType = CScope_GetLocalTagType(nspace, name);
         if (foundType != NULL && foundType->type == TYPECLASS && foundType->size != 0)
             classType = foundType;
         else {
@@ -477,7 +477,7 @@ ENode *CRTTI_ParseTypeid(void)
     if (isdeclaration(1, 1, 1, ')') != 0) {
         memclrw(&typeInfo, sizeof(typeInfo));
         CParser_GetDeclSpecs(&typeInfo, 0);
-        CDecl_ParseDeclarator(&typeInfo);
+        scandeclarator(&typeInfo);
         if (tk != ')')
             CError_ReportErrorAndUpdateToken(ERR_RPAREN_EXPECTED);
         else
@@ -577,7 +577,7 @@ ENode *parse_cast_type_and_expression(DeclInfo *typeSpec)
     tk = CPrepTokenizer_GetNextToken();
     memclrw(typeSpec, sizeof(*typeSpec));
     CParser_GetDeclSpecs(typeSpec, 0);
-    CDecl_ParseDeclarator(typeSpec);
+    scandeclarator(typeSpec);
     if (typeSpec->name) {
         CError_ReportError(ERR_ILLEGAL_TYPE_CAST);
     }

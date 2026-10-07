@@ -374,7 +374,7 @@ Object *CParser_ParseObject(void)
     NameResult lookupState;
     memclrw(&declaration, sizeof(declaration));
     CParser_GetDeclSpecs(&declaration, 1);
-    CDecl_ParseDeclarator(&declaration);
+    scandeclarator(&declaration);
     if ((name = declaration.name) != NULL) {
         result = CScope_FindObjectList(&lookupState, name);
         if (result != NULL && result->object->otype == OT_OBJECT) {
@@ -522,7 +522,7 @@ void CParser_CallBackAction(Object *key)
     CError_FATAL(3854);
 }
 
-unsigned int CParser_PrependClassTypeLink(TypeClass *type)
+unsigned int CParser_NewClassAction(TypeClass *type)
 {
     struct ClassTypeLink *link;
     struct ClassTypeLink *head;
@@ -579,12 +579,12 @@ void CParser_CheckAnonymousUnion(DeclInfo *context, char flag)
         CFunc_SetupLocalVarInfo(object);
         object->u.alias.object->aliasOrVarRecord.flag = 1;
     } else {
-        object = CParser_NewObject(context);
+        object = CParser_NewGlobalDataObject(context);
         name2[0] = '@';
         CParser_PrintUniqueID(name2 + 1);
         object->name = GetHashNameNode(name2);
         object->sclass = TK_STATIC;
-        fn_004ceab0(object, NULL, NULL, object->type->size);
+        CInit_DeclareData(object, NULL, NULL, object->type->size);
     }
     {
         ObjMemberVar *member;
@@ -603,7 +603,7 @@ void CParser_CheckAnonymousUnion(DeclInfo *context, char flag)
     }
 }
 
-Boolean CParser_IsAnonymousClass(Type **ptype, Boolean flag)
+Boolean CParser_IsAnonymousUnion(Type **ptype, Boolean flag)
 {
     SInt32 result = 0;
     SInt32 isClass =
@@ -623,13 +623,13 @@ void fn_0048c220(char processInput)
     struct ClassTypeLink *input;
 
     do {
-        CParser_Cleanup();
+        fn_0048c290();
         repeat = 0;
         if (processInput != 0) {
             freelheap();
             if (class_type_links != NULL) {
                 input = class_type_links;
-                CClass_GenerateVTable(input->type);
+                CClass_ClassAction(input->type);
                 input = class_type_links;
                 class_type_links = input->next;
                 repeat = 1;
@@ -638,13 +638,13 @@ void fn_0048c220(char processInput)
             }
         }
         while (CInline_DispatchNextDeferredNode() != 0) {
-            CParser_Cleanup();
+            fn_0048c290();
             repeat = 1;
         }
     } while (repeat);
 }
 
-void CParser_Cleanup(void)
+void fn_0048c290(void)
 {
     CParseCacheNode *node;
     CParseRec *record;
@@ -673,7 +673,7 @@ void CParser_RegisterSingleExprFunction(Object *object, ENode *expr)
 {
     CParseCacheNode *entry;
     CParseCacheNode *previous;
-    entry = (CParseCacheNode *)CompilerTools_AllocatePool(sizeof(CParseCacheNode));
+    entry = (CParseCacheNode *)lalloc(sizeof(CParseCacheNode));
     previous = single_expr_functions;
     entry->next = previous;
     entry->object = object;
@@ -681,11 +681,11 @@ void CParser_RegisterSingleExprFunction(Object *object, ENode *expr)
     single_expr_functions = entry;
 }
 
-void CParser_PrependClassParseRec(TypeClass *type)
+void CParser_RegisterNonGlobalClass(TypeClass *type)
 {
     CParseRec *entry;
     CParseRec *previous;
-    entry = (CParseRec *)CompilerTools_AllocatePool(8U);
+    entry = (CParseRec *)lalloc(8U);
     previous = class_parse_recs;
     entry->next = previous;
     entry->listOwner = type;
@@ -2219,7 +2219,7 @@ unsigned char test_declaration(Boolean parseDeclaration, Boolean requireValue, B
             declaration.hasTypename != 0 || declaration.isType != 0) {
             if (parseDeclaration != 0) {
                 declaration.isNewExpression = declarationFlag;
-                CDecl_ParseDeclarator(&declaration);
+                scandeclarator(&declaration);
                 if (requireValue == 0 || declaration.name == NULL) {
                     if (terminator == 0) {
                         if (tk == ';' || tk == ',' || tk == '(' || tk == ')' || tk == '=' || tk == '>') {
@@ -2270,7 +2270,7 @@ StructMember *ismember(Type *type, HashNameNode *name)
     return NULL;
 }
 
-Boolean Type_IsUnsigned(Type *type)
+Boolean is_unsigned(Type *type)
 {
     if (IS_TYPE_ENUM(type))
         type = TYPE_ENUM(type)->enumtype;
@@ -2404,15 +2404,15 @@ SInt16 iscpp_typeequal(Type *leftType, Type *rightType)
 
 Boolean is_arglistsame(FuncArg *a, FuncArg *b)
 {
-    if (a == &data_00584748) {
-        if (b == &data_00584748)
+    if (a == &oldstyle) {
+        if (b == &oldstyle)
             return 1;
         return is_arglist_default_promoted(b);
     }
-    if (b == &data_00584748)
+    if (b == &oldstyle)
         return is_arglist_default_promoted(a);
     for (;;) {
-        if (a == NULL || b == NULL || a == &data_00583098 || b == &data_00583098)
+        if (a == NULL || b == NULL || a == &elipsis || b == &elipsis)
             return a == b;
         if (a->type->type == TYPEPOINTER) {
             if (b->type->type != TYPEPOINTER || (a->qual & Q_CV) != (b->qual & Q_CV) ||
@@ -2432,20 +2432,20 @@ SInt16 CParser_CompareArgLists(FuncArg *a, FuncArg *b)
 {
     Boolean flag = 0;
 
-    if (a == &data_00584748) {
-        if (b == &data_00584748)
+    if (a == &oldstyle) {
+        if (b == &oldstyle)
             return 1;
         return 2;
     }
-    if (b == &data_00584748)
+    if (b == &oldstyle)
         return 2;
     for (;;) {
-        if (a == &data_00583098) {
-            if (b != &data_00583098)
+        if (a == &elipsis) {
+            if (b != &elipsis)
                 return 0;
             break;
         }
-        if (b == &data_00583098)
+        if (b == &elipsis)
             return 0;
         if (a == NULL) {
             if (b != NULL)
@@ -2652,17 +2652,17 @@ Boolean is_funcarg_list_same(FuncArg *left, FuncArg *right)
 {
     SInt16 typesMatch;
 
-    if (left == &data_00584748) {
-        if (right == &data_00584748) {
+    if (left == &oldstyle) {
+        if (right == &oldstyle) {
             return 1;
         }
         return is_arglist_default_promoted(right);
     }
-    if (right == &data_00584748) {
+    if (right == &oldstyle) {
         return is_arglist_default_promoted(left);
     }
     for (;;) {
-        if (left == &data_00583098 || right == &data_00583098) {
+        if (left == &elipsis || right == &elipsis) {
             return 1;
         }
         if (left == NULL) {
@@ -2698,7 +2698,7 @@ Boolean is_arglist_default_promoted(FuncArg *arg)
     if (copts.ignore_oldstyle)
         return 1;
     while (arg != NULL) {
-        if (arg == &data_00583098)
+        if (arg == &elipsis)
             return 0;
         switch ((SInt8)arg->type->type) {
             case TYPEINT:
@@ -2715,7 +2715,7 @@ Boolean is_arglist_default_promoted(FuncArg *arg)
     return 1;
 }
 
-Object *CParser_FindClassMemberOrNamespaceFunctionObject(Type *ownerType, Boolean useAlternate, Boolean skipLookup)
+Object *CParser_FindDeallocationObject(Type *ownerType, Boolean useAlternate, Boolean skipLookup)
 {
     Boolean memberFound = 0;
     Object *object;
@@ -2868,7 +2868,7 @@ Object *CParser_NewCompilerDefDataObject(void)
     return object;
 }
 
-Object *CParser_NewObject(DeclInfo *declaration)
+Object *CParser_NewGlobalDataObject(DeclInfo *declaration)
 {
     Object *object;
     volatile DeclInfo *alignmentDeclaration = declaration;
@@ -2901,7 +2901,7 @@ Object *CParser_NewLocalDataObject(DeclInfo *declaration, unsigned int addToList
 {
     Object *object;
     ObjectList *entry;
-    object = (Object *)CompilerTools_AllocatePool(54U);
+    object = (Object *)lalloc(54U);
     memclrw(object, 54U);
     object->otype = OT_OBJECT;
     object->access = 0U;
@@ -2913,7 +2913,7 @@ Object *CParser_NewLocalDataObject(DeclInfo *declaration, unsigned int addToList
         object->sclass = declaration->storageclass;
     }
     if ((unsigned char)addToList != 0U) {
-        entry = (ObjectList *)CompilerTools_AllocatePool(8U);
+        entry = (ObjectList *)lalloc(8U);
         entry->object = object;
         entry->next = locals;
         locals = entry;
@@ -2921,7 +2921,7 @@ Object *CParser_NewLocalDataObject(DeclInfo *declaration, unsigned int addToList
     return object;
 }
 
-Object *CParser_CreateObject(struct DeclInfo *record)
+Object *CParser_NewObject(struct DeclInfo *record)
 {
     Object *object;
 
@@ -3081,7 +3081,7 @@ HashNameNode *CParser_NameConcat(char *first, char *second)
 
     length = strlen(first) + strlen(second);
     if (length > 255U)
-        dest = name = (char *)CompilerTools_AllocatePool(length + 1);
+        dest = name = (char *)lalloc(length + 1);
     else
         dest = name = buffer;
 
@@ -3119,7 +3119,7 @@ HashNameNode *CParser_GetUniqueName(void)
     return GetHashNameNode(buf);
 }
 
-unsigned int fn_004905c0(unsigned int value)
+unsigned int CParser_SetUniqueID(unsigned int value)
 {
     data_00580dc0 = value;
     return value;
@@ -3152,7 +3152,7 @@ SInt32 CParser_GetUniqueID(void)
     return lift_value_0;
 }
 
-Boolean CParser_00490660(SInt16 *operatorToken, Boolean allowConversion)
+Boolean CParser_ParseOperatorName(SInt16 *operatorToken, Boolean allowConversion)
 {
     HashNameNode *name;
     DeclInfo nameData;
@@ -3240,7 +3240,7 @@ SInt16 GetPrec(short token)
     return 0;
 }
 
-void fn_004908d0(void)
+void CParser_Cleanup(void)
 
 {
     fn_004f0000();
@@ -3260,7 +3260,7 @@ void CParser_Setup(void)
     }
     fn_00449dc0();
     CInit_Init();
-    CClass_ResetPendingThunks();
+    CClass_Init();
     fn_0051b810();
     CObjCModern_ResetGlobals();
     fn_00514220();
@@ -3335,7 +3335,7 @@ void initialize_runtime_objects(void)
     data_00587fd0 = CParser_NewRTFunc(&stvoid, NULL, 2, 0);
     data_00587f80 = CParser_NewRTFunc(&stvoid, NULL, 2, 0);
     member_function_pointer_call_rtfunc = CParser_NewRTFunc(&stvoid, NULL, 2, 0);
-    data_00587678 = CParser_NewObject(NULL);
+    data_00587678 = CParser_NewGlobalDataObject(NULL);
     data_00587678->type = &stvoid;
     data_00588060 = CParser_NewRTFunc((Type *)&void_ptr, NULL, 2, 3, &void_ptr, &stsignedlong, &stsignedlong);
     data_005876c0 = CParser_NewRTFunc(&stvoid, NULL, 0, 1, &void_ptr);

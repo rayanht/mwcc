@@ -60,7 +60,7 @@ static inline void emitobj12(Object *obj, Operand *o, unsigned int a, unsigned i
 
 static ArgumentContext *NewParm(ENode *e)
 {
-    ArgumentContext *p = (ArgumentContext *)CompilerTools_AllocatePool(0x2e);
+    ArgumentContext *p = (ArgumentContext *)lalloc(0x2e);
     p->next = NULL;
     p->node = e;
     p->stack_offset = -1;
@@ -131,7 +131,7 @@ ArgumentContext *assign_argument_locations(ENode *thisArg, ENodeList *args, Func
 
             if (argType->type == TYPESTRUCT && (int)(argType->stype) >= 4 && (int)(argType->stype) <= 0xe) {
                 *hasVectorArgs = 1;
-                if (type == (FuncArg *)&data_00583098) {
+                if (type == (FuncArg *)&elipsis) {
                     parm->flags |= 4;
                     onStack = 1;
                     stackOffset = (stackOffset + 0x17) & ~0x0f;
@@ -192,7 +192,7 @@ ArgumentContext *assign_argument_locations(ENode *thisArg, ENodeList *args, Func
                 }
             } else if (argType->type == TYPEFLOAT) {
                 *hasFloatArgs = 1;
-                if (type == NULL || type == (FuncArg *)&data_00584748 || type == (FuncArg *)&data_00583098) {
+                if (type == NULL || type == (FuncArg *)&oldstyle || type == (FuncArg *)&elipsis) {
                     if (nextFPR <= 8) {
                         parm->flags |= 2;
                         parm->fpr = nextFPR;
@@ -204,7 +204,7 @@ ArgumentContext *assign_argument_locations(ENode *thisArg, ENodeList *args, Func
                     if (onStack)
                         stackOffset += 8;
                     nextFPR++;
-                } else if (type == (FuncArg *)&data_00583098) {
+                } else if (type == (FuncArg *)&elipsis) {
                     if (nextGPR < 10) {
                         parm->flags |= 1;
                         parm->gpr = nextGPR;
@@ -259,7 +259,7 @@ ArgumentContext *assign_argument_locations(ENode *thisArg, ENodeList *args, Func
                     stackOffset += 8;
             } else if (argType->type == TYPEINT || argType->type == TYPEENUM || argType->type == TYPEPOINTER ||
                        (argType->type == TYPEMEMBERPOINTER && argType->size == 4)) {
-                if (type == NULL || type == (FuncArg *)&data_00583098 || type == (FuncArg *)&data_00584748) {
+                if (type == NULL || type == (FuncArg *)&elipsis || type == (FuncArg *)&oldstyle) {
                     if (argType->size < 4)
                         parm->flags |= 8;
                 }
@@ -297,7 +297,7 @@ ArgumentContext *assign_argument_locations(ENode *thisArg, ENodeList *args, Func
             }
 
             args = args->next;
-            if (type == NULL || type == (FuncArg *)&data_00583098 || type == (FuncArg *)&data_00584748)
+            if (type == NULL || type == (FuncArg *)&elipsis || type == (FuncArg *)&oldstyle)
                 continue;
         }
         type = type->next;
@@ -599,7 +599,7 @@ void FunctionCalls_GenerateCall(ENode *item, Operand *result)
     hasSpecialArgument = 0;
     for (formalArgument = item->data.funccall.functype->args; formalArgument != NULL;
          formalArgument = formalArgument->next) {
-        if (formalArgument == &data_00583098) {
+        if (formalArgument == &elipsis) {
             hasSpecialArgument = 1;
             break;
         }

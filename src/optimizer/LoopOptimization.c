@@ -124,8 +124,7 @@ void mark_registers_used_outside_loop(Loop *state)
     PCodeBlockLink *objectUse;
     SInt32 registerNumber;
 
-    CRTTI_FillWords(useMap = (UInt32 *)CompilerTools_AllocatePoolMemory(((data_00587e38 + 31) >> 5) << 2),
-                    data_00587e38, 0);
+    CRTTI_FillWords(useMap = (UInt32 *)oalloc(((data_00587e38 + 31) >> 5) << 2), data_00587e38, 0);
 
     for (objectUse = state->blocks; objectUse != NULL; objectUse = objectUse->next) {
         SInt32 objectRegister = objectUse->payload.block->index;
@@ -293,7 +292,7 @@ void unroll_counting_loop(Loop *loop)
     if (loop->iterationCount / factor != 1 && loop->bodySize < 4)
         return;
 
-    copies = (PCodeBlock *)CompilerTools_AllocatePoolMemory(sizeof(PCodeBlock));
+    copies = (PCodeBlock *)oalloc(sizeof(PCodeBlock));
     copies->instructions = copies->reverse_instructions = NULL;
     for (iteration = 0; iteration < factor - 1; ++iteration) {
         CError_ASSERT(378, (first = loop->body->instructions) != 0);
@@ -343,7 +342,7 @@ void LoopOptimization_AddMissingSuccessorPredecessors(PCodeBlock *block)
                 predecessor = predecessor->next;
             }
             if (predecessor == NULL) {
-                predecessor = (PCodeBlockLink *)CompilerTools_AllocatePool(8U);
+                predecessor = (PCodeBlockLink *)lalloc(8U);
                 predecessor->payload.block = block;
                 predecessor->next = successor->payload.block->predecessors;
                 successor->payload.block->predecessors = predecessor;
@@ -362,7 +361,7 @@ PCodeBlock *insert_block_after(PCodeBlock *list, int execution_weight)
     PCodeBlockLink *edge;
 
     label = PCode_NewLabel();
-    block = (PCodeBlock *)CompilerTools_AllocatePool(sizeof(PCodeBlock));
+    block = (PCodeBlock *)lalloc(sizeof(PCodeBlock));
     successor = list->next;
     block->next = successor;
     list->next = block;
@@ -404,11 +403,11 @@ PCodeBlock *insert_block_after(PCodeBlock *list, int execution_weight)
         }
         previous = edge;
     }
-    edge = (PCodeBlockLink *)CompilerTools_AllocatePool(sizeof(PCodeBlockLink));
+    edge = (PCodeBlockLink *)lalloc(sizeof(PCodeBlockLink));
     edge->payload.block = block;
     edge->next = list->successors;
     list->successors = edge;
-    edge = (PCodeBlockLink *)CompilerTools_AllocatePool(sizeof(PCodeBlockLink));
+    edge = (PCodeBlockLink *)lalloc(sizeof(PCodeBlockLink));
     edge->payload.block = block;
     edge->next = successor->predecessors;
     successor->predecessors = edge;
@@ -449,9 +448,9 @@ void unroll_loop_by_factor(Loop *loop)
     if (loop->bodySize - total - 2 < total || total > 8)
         return;
     k = n * 4;
-    orig = (PCodeBlock **)CompilerTools_AllocatePoolMemory(k);
-    copy = (PCodeBlock **)CompilerTools_AllocatePoolMemory(k);
-    all = (PCodeBlock **)CompilerTools_AllocatePoolMemory(total = factor * k);
+    orig = (PCodeBlock **)oalloc(k);
+    copy = (PCodeBlock **)oalloc(k);
+    all = (PCodeBlock **)oalloc(total = factor * k);
     memclrw(orig, k);
     memclrw(copy, k);
     memclrw(all, total);
@@ -697,14 +696,14 @@ void unroll_ctr_loop(Loop *loop)
     instruction = PCodeUtilities_CreateInstruction(5, 0, 2, remainderEntry->labels);
     PCode_AppendInstruction(setupBlock, instruction);
     PCode_AddSuccessor(setupBlock, remainderEntry->labels);
-    predecessor = (PCodeBlockLink *)CompilerTools_AllocatePool(sizeof(PCodeBlockLink));
+    predecessor = (PCodeBlockLink *)lalloc(sizeof(PCodeBlockLink));
     predecessor->payload.block = setupBlock;
     predecessor->next = remainderEntry->predecessors;
     remainderEntry->predecessors = predecessor;
     instruction = PCodeUtilities_CreateInstruction(0xb, unrolledBody->labels);
     PCode_AppendInstruction(repeatBlock, instruction);
     PCode_AddSuccessor(repeatBlock, unrolledBody->labels);
-    predecessor = (PCodeBlockLink *)CompilerTools_AllocatePool(sizeof(PCodeBlockLink));
+    predecessor = (PCodeBlockLink *)lalloc(sizeof(PCodeBlockLink));
     predecessor->payload.block = repeatBlock;
     predecessor->next = unrolledBody->predecessors;
     unrolledBody->predecessors = predecessor;
@@ -714,7 +713,7 @@ void unroll_ctr_loop(Loop *loop)
     instruction = PCodeUtilities_CreateInstruction(5, 0, 2, exitBlock->labels);
     PCode_AppendInstruction(remainderTest, instruction);
     PCode_AddSuccessor(remainderTest, exitBlock->labels);
-    predecessor = (PCodeBlockLink *)CompilerTools_AllocatePool(sizeof(PCodeBlockLink));
+    predecessor = (PCodeBlockLink *)lalloc(sizeof(PCodeBlockLink));
     predecessor->payload.block = remainderTest;
     predecessor->next = exitBlock->predecessors;
     exitBlock->predecessors = predecessor;
@@ -1134,22 +1133,22 @@ void convert_loop_to_count_register(struct Loop *loop)
         }
     }
 
-    link = CompilerTools_AllocatePool(sizeof(PCodeBlockLink));
+    link = lalloc(sizeof(PCodeBlockLink));
     link->payload.block = loop->preheader->next;
     link->next = loop->preheader->successors;
     loop->preheader->successors = link;
 
-    link = CompilerTools_AllocatePool(sizeof(PCodeBlockLink));
+    link = lalloc(sizeof(PCodeBlockLink));
     link->payload.block = loop->preheader;
     link->next = loop->preheader->next->predecessors;
     loop->preheader->next->predecessors = link;
 
-    link = CompilerTools_AllocatePool(sizeof(PCodeBlockLink));
+    link = lalloc(sizeof(PCodeBlockLink));
     link->payload.block = block;
     link->next = loop->preheader->successors;
     loop->preheader->successors = link;
 
-    link = CompilerTools_AllocatePool(sizeof(PCodeBlockLink));
+    link = lalloc(sizeof(PCodeBlockLink));
     link->payload.block = loop->preheader;
     link->next = block->predecessors;
     block->predecessors = link;
@@ -1230,7 +1229,7 @@ LoopVar *build_array_loopvars(void)
             continue;
         if (count > 8)
             continue;
-        node = (LoopVar *)CompilerTools_AllocatePoolMemory(sizeof(LoopVar) + (count - 1) * sizeof(node->values[0]));
+        node = (LoopVar *)oalloc(sizeof(LoopVar) + (count - 1) * sizeof(node->values[0]));
         node->next = head;
         head = node;
         node->object = list->object;
@@ -1243,7 +1242,7 @@ LoopVar *build_array_loopvars(void)
         node->isfloat = isFloat;
         node->isvalid = 0;
         node->isgpr = 1;
-        if (!node->isfloat && Type_IsUnsigned(TYPE_POINTER(list->object->type)->target))
+        if (!node->isfloat && is_unsigned(TYPE_POINTER(list->object->type)->target))
             node->isgpr = 0;
         for (i = 0; i < count; i++)
             node->values[i] = 0;
@@ -1469,7 +1468,7 @@ void COpt_ArrayToRegister(void)
             }
         }
     }
-    CompilerTools_ResetPool();
+    freeoheap();
 }
 
 void walk_loop_children_postorder(register Loop *loop)
@@ -1541,12 +1540,12 @@ void fn_005289b0(void)
         registerCount = gUsedVirtualRegistersGPR;
         data_00582c70 = registerCount;
         allocationSize = ((registerCount + 31) >> 5) * sizeof(*registers_used_outside_loop);
-        registers_used_outside_loop = CompilerTools_AllocatePoolMemory(allocationSize);
+        registers_used_outside_loop = oalloc(allocationSize);
         registerCount = data_00582c70;
         allocationSize = ((registerCount + 31) >> 5) * sizeof(*self_addi_candidate_regs);
-        self_addi_candidate_regs = CompilerTools_AllocatePoolMemory(allocationSize);
+        self_addi_candidate_regs = oalloc(allocationSize);
         walk_loop_children_postorder(data_0058763c);
-        CompilerTools_ResetPool();
+        freeoheap();
     }
 }
 

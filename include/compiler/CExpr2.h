@@ -77,7 +77,7 @@ extern unsigned char convert_class_binary_operands(ENode *left, ENode *right, Bi
 extern Boolean CExpr2_0046e3e0(Type *type, SInt16 op);
 extern ENode *CExpr_MakeFunctionCall(ENode *expr, ENodeList *args);
 extern ENode *convert_memberfunc_to_setconst_or_objref(ENode *expr);
-extern ENode *CExpr2_0046e9d0(Object *obj, Type *functype, ENodeList *args);
+extern ENode *CExpr_GenericPtmfCall(Object *obj, Type *functype, ENodeList *args);
 extern Boolean has_class_objref(ENode *node);
 extern void make_funccall_with_dexprs(ENode *funcref, ENodeList *args, TypeFunc *ftype, FuncArg *arglist);
 extern void CExpr_FuncArgMatch(NameSpaceObjectList *source, void *context, ENodeList *objects, ArgMatch *state,
@@ -94,43 +94,44 @@ extern void build_convertible_bases_tree(ConIterator *self);
 extern SInt32 check_standard_conversion(ENode *node, Type *ty, Boolean convert, Boolean checkAccess);
 extern ENode *CExpr_ConvertToBool(ENode *node, Boolean flag);
 extern SInt32 match_overloaded_function_pointer(NameSpaceObjectList *list, void *arg2, Type *type, UInt8 flag);
-extern ENode *CExpr2_004719c0(BClassList *scope, BClassList *baseList, ENode *node, UInt8 access, Boolean checkAccess);
+extern ENode *CExpr_GetClassAccessNode(BClassList *scope, BClassList *baseList, ENode *node, UInt8 access,
+                                       Boolean checkAccess);
 extern ENode *CExpr_ClassPointerCast(BClassList *path, ENode *node, Boolean checkNull);
 extern SInt32 check_member_pointer_conversion(Type *type, ENode *expr, Boolean convert);
 extern SInt16 compare_short_arrays_lexicographically(SInt16 *left, SInt16 *right, Boolean compareFifth);
-extern Boolean CExpr2_UpdateArgMatchScores(Type *target, UInt32 qualifiers, ENode *expression, ArgMatch *scores);
+extern Boolean CExpr_MatchAssign(Type *target, UInt32 qualifiers, ENode *expression, ArgMatch *scores);
 extern void CExpr_MatchCV(Type *ty1, UInt32 quals1, Type *ty2, UInt32 quals2, ArgMatch *ctx);
 extern ENode *CExpr_FuncCallSix(Object *function, ENode *firstArgument, ENode *secondArgument, ENode *thirdArgument,
                                 ENode *fourthArgument, ENode *fifthArgument, ENode *sixthArgument);
 extern ENode *funccallexpr(Object *func, ENode *arg1, ENode *arg2, ENode *arg3, ENode *arg4);
 extern ENode *CExpr_AdjustFunctionCall(ENode *p);
 extern ENode *CExpr_IsTempConstruction(ENode *e, Type *type, ENode **out);
-extern ENode *CExpr_New_EINDIRECT_Node(Object *obj);
+extern ENode *create_objectnode2(Object *obj);
 extern ENode *create_objectrefnode(Object *obj);
 extern ENode *CExpr_MakeObjRefNode(Object *obj, Boolean flag);
 extern Boolean CExpr_IsLValue(ENode *expr);
 extern ENode *CExpr_TempModifyExpr(ENode *expr);
 extern ENode *get_indirect_operand(ENode *node);
-extern ENode *CExpr2_00473720(ENode *expr, Type *type);
+extern ENode *promote(ENode *expr, Type *type);
 extern CInt64 CExpr_IntConstConvert(Type *type, Type *otherType, CInt64 value);
-extern ENode *forceintegral(ENode *node);
-extern ENode *CExpr2_RewriteExprToTemp(ENode *a);
+extern ENode *integralpromote(ENode *node);
+extern ENode *CExpr_GetETEMPCopy(ENode *a);
 extern UInt8 CExpr_IsOne(ENode *expr);
 extern SInt16 isnotzero(ENode *node);
-extern SInt16 CExpr2_IsZero(ENode *node);
+extern SInt16 iszero(ENode *node);
 extern ENode *makecommaexpression(ENode *a, ENode *b);
 extern ENode *makediadicnode(ENode *left, ENode *right, UInt8 ty);
-extern ENode *CExpr2_ReturnNode(ENode *node);
-extern ENode *CExpr2_ReturnENode(ENode *ene);
+extern ENode *CExpr_BinaryFloatExpression(ENode *node);
+extern ENode *CExpr_UnaryFloatExpression(ENode *ene);
 extern ENode *CExpr_NewENode(UInt8 kind);
 extern ENode *intconstnode(Type *valueType, SInt32 value);
 extern ENode *nullnode(void);
-extern ENode *CExpr2_NewESCOPEBEGINNode(Type *value, unsigned int withAuxiliary);
+extern ENode *CExpr_NewETEMPNode(Type *value, unsigned int withAuxiliary);
 extern unsigned char has_indirect_class_objref(ENode *expr, TypeClass *arg2);
 extern ENode *CExpr_NewTemplDepENode(unsigned int value);
 extern unsigned int fn_0046cea0(void);
 extern void match_function_arguments(Object *signature, FuncArg *argument, ENodeList *objects, ArgMatch *value);
-extern ENode *CExpr_ConvertToIntegral(ENode *expr);
+extern ENode *forceintegral(ENode *expr);
 extern void init_comparison_values(unsigned int kind, ComparisonValues *counts, Type *sourceType,
                                    unsigned int sourceQual, Type *targetType, unsigned int targetQual,
                                    unsigned int flag);
@@ -150,7 +151,7 @@ extern ENode *make_call_with_optional_size_arg(Object *func, ENode *arg, Type *a
 extern ENode *scannew(char global);
 extern struct Object *array_allocation_runtime_function;
 extern Boolean (*data_00587fd8)(int value, struct Object *object);
-extern FuncArg data_00583098;
+extern FuncArg elipsis;
 extern struct ENode *converted_expr;
 extern UInt8 data_0058850e;
 extern UInt8 data_0058852b;

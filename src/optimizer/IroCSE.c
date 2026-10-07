@@ -557,7 +557,7 @@ void fn_0044f230(IROLinear *expression, IRONode *value)
             if (data_005870f8 == 0)
                 eligible = 1;
             if (eligible) {
-                entry = CompilerTools_AllocatePoolMemory(sizeof(*entry));
+                entry = oalloc(sizeof(*entry));
                 expression_count++;
                 entry->index = expression_count;
                 entry->linear = expression;

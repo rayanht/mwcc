@@ -100,7 +100,7 @@ static __inline SInt32 Operands_GetOpcode(Type *type, SInt32 base, SInt32 line)
                 op = base - 0xd;
                 break;
             case 2:
-                if (Type_IsUnsigned(type))
+                if (is_unsigned(type))
                     op = base - 9;
                 else
                     op = base - 5;
@@ -634,7 +634,7 @@ void Operands_ForceGPRPair(Operand *op, Type *type, SInt16 first, SInt16 second)
             else
                 targetRegister = gUsedVirtualRegistersGPR++;
             secondRegister = targetRegister;
-            if (Type_IsUnsigned(type) || value >= 0)
+            if (is_unsigned(type) || value >= 0)
                 PCodeUtilities_EmitInstruction(PC_LI, targetRegister, 0);
             else
                 PCodeUtilities_EmitInstruction(PC_LI, targetRegister, -1);
@@ -945,7 +945,7 @@ void Operands_ExtendGPR(Operand *operand, Type *type, short requestedReg)
         Operands_ForceGPR(operand, type, requestedReg);
     switch (type->size) {
         case 1:
-            if (Type_IsUnsigned(type) != 0) {
+            if (is_unsigned(type) != 0) {
                 if (alreadyExtended)
                     return;
                 if (requestedReg != 0)
@@ -978,7 +978,7 @@ void Operands_ExtendGPR(Operand *operand, Type *type, short requestedReg)
                 gUsedVirtualRegistersGPR += 1;
             }
             resultReg = halfwordReg;
-            if (Type_IsUnsigned(type) != 0) {
+            if (is_unsigned(type) != 0) {
                 ((unsigned int (*)(unsigned int, ...))PCodeUtilities_EmitInstruction)(103, resultReg, operand->reg, 0,
                                                                                       16, 31);
                 break;
@@ -1154,7 +1154,7 @@ void Operands_ExtractBitfield(Operand *operand, TypeBitfield *tbitfield, SInt16 
         CABI_ReverseBitField(&reversedType);
         shift = 0x20 - reversedType.bitfieldtype->size * 8 + reversedType.offset;
     }
-    if (Type_IsUnsigned(tbitfield->bitfieldtype)) {
+    if (is_unsigned(tbitfield->bitfieldtype)) {
         PCodeUtilities_EmitInstruction(PC_RLWINM, regno, operand->reg, shift + bitlength, 0x20 - bitlength, 0x1f);
     } else {
         if (shift == 0) {

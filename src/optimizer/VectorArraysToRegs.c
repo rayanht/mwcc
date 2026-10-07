@@ -66,14 +66,13 @@ int fn_0052ce10(void)
         if (load_index_count > 0) {
             COpt_SetLoopCodeMotionMode(0);
             VectorArraysToRegs_BuildLoadIndexEntries(analysis);
-            codeMotionBits = CompilerTools_AllocatePoolMemory(gPCodeBlockCount * sizeof(CodeMotionBits));
+            codeMotionBits = oalloc(gPCodeBlockCount * sizeof(CodeMotionBits));
             bitsets = codeMotionBits;
             for (index = 0; index < gPCodeBlockCount; ++index) {
-                bitsets->gen = CompilerTools_AllocatePoolMemory(((load_index_count + 31) >> 5) * sizeof(*bitsets->gen));
-                bitsets->kill =
-                    CompilerTools_AllocatePoolMemory(((load_index_count + 31) >> 5) * sizeof(*bitsets->kill));
-                bitsets->in = CompilerTools_AllocatePoolMemory(((load_index_count + 31) >> 5) * sizeof(*bitsets->in));
-                bitsets->out = CompilerTools_AllocatePoolMemory(((load_index_count + 31) >> 5) * sizeof(*bitsets->out));
+                bitsets->gen = oalloc(((load_index_count + 31) >> 5) * sizeof(*bitsets->gen));
+                bitsets->kill = oalloc(((load_index_count + 31) >> 5) * sizeof(*bitsets->kill));
+                bitsets->in = oalloc(((load_index_count + 31) >> 5) * sizeof(*bitsets->in));
+                bitsets->out = oalloc(((load_index_count + 31) >> 5) * sizeof(*bitsets->out));
                 bitsets++;
             }
             VectorArraysToRegs_ComputeGenKill(analysis);
@@ -82,7 +81,7 @@ int fn_0052ce10(void)
             fn_0052cf10(analysis);
         }
     }
-    CompilerTools_ResetPool();
+    freeoheap();
     return data_00582c9c;
 }
 
@@ -483,9 +482,9 @@ void VectorArraysToRegs_BuildLoadIndexEntries(struct AggregateRecord *argument)
     int entryCount;
     int entryStart;
 
-    load_index_entries = CompilerTools_AllocatePoolMemory(load_index_count * sizeof(*load_index_entries));
+    load_index_entries = oalloc(load_index_count * sizeof(*load_index_entries));
     memclrw(load_index_entries, load_index_count * sizeof(*load_index_entries));
-    indexBits = CompilerTools_AllocatePoolMemory(((data_00587e38 + 31) >> 5) * sizeof(*indexBits));
+    indexBits = oalloc(((data_00587e38 + 31) >> 5) * sizeof(*indexBits));
     block = gPCodeBlocks;
     while (block != NULL) {
         if (load_index_entry_counts[block->index] != 0) {
@@ -508,7 +507,7 @@ void VectorArraysToRegs_BuildLoadIndexEntries(struct AggregateRecord *argument)
                                 if (uses != NULL) {
                                     do {
                                         if ((1 << use->entry_index & indexBits[use->entry_index >> 5]) != 0) {
-                                            newIndex = CompilerTools_AllocatePoolMemory(sizeof(*newIndex));
+                                            newIndex = oalloc(sizeof(*newIndex));
                                             newIndex->instructionIndex = use->entry_index;
                                             newIndex->next = entry->uses;
                                             entry->uses = newIndex;
@@ -558,9 +557,9 @@ void fn_0052d8d0(struct AggregateRecord *analysis)
     int *allocation;
     int remaining;
     int block_count;
-    load_index_entry_counts = CompilerTools_AllocatePoolMemory(gPCodeBlockCount << 2);
+    load_index_entry_counts = oalloc(gPCodeBlockCount << 2);
     memclrw(load_index_entry_counts, gPCodeBlockCount << 2);
-    allocation = (int *)CompilerTools_AllocatePoolMemory(gPCodeBlockCount << 2);
+    allocation = (int *)oalloc(gPCodeBlockCount << 2);
     block_entry_start = allocation;
     memclrw(allocation, gPCodeBlockCount << 2);
     load_index_count = 0;
@@ -628,7 +627,7 @@ struct AggregateRecord *VectorArraysToRegs_BuildAggregateRecords(void)
                 size = candidate->object->type->size;
                 count = candidate->object->type->size / 16;
                 if (count > 0 && count <= 8) {
-                    record = CompilerTools_AllocatePoolMemory(sizeof(*record) + (count - 1) * sizeof(record->slots[0]));
+                    record = oalloc(sizeof(*record) + (count - 1) * sizeof(record->slots[0]));
                     record->next = records;
                     records = record;
                     record->object = candidate->object;

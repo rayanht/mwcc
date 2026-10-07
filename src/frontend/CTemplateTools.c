@@ -119,7 +119,7 @@ Type *CTemplTool_DeduceTypeCopy(TypeDeduce *ctx, Type *type, UInt32 *qual)
                 CError_ASSERT(2103, ((TypeEnum *)type)->enumname);
                 theclass = find_corresponding_instance_class(ctx, ((TypeEnum *)type)->nspace->theclass);
                 CError_ASSERT(2105, theclass != NULL && theclass->theclass.type == TYPECLASS);
-                type = CScope_GetTagType(theclass->theclass.nspace, ((TypeEnum *)type)->enumname);
+                type = CScope_GetLocalTagType(theclass->theclass.nspace, ((TypeEnum *)type)->enumname);
                 CError_ASSERT(2108, type != NULL);
                 return type;
             }
@@ -136,7 +136,7 @@ Type *CTemplTool_DeduceTypeCopy(TypeDeduce *ctx, Type *type, UInt32 *qual)
                     Type *result;
                     CError_ASSERT(2123, ctx->inst);
                     CError_ASSERT(2124, ((TypeClass *)type)->classname);
-                    result = CScope_GetTagType(TYPE_CLASS(ctx->inst)->nspace, ((TypeClass *)type)->classname);
+                    result = CScope_GetLocalTagType(TYPE_CLASS(ctx->inst)->nspace, ((TypeClass *)type)->classname);
                     CError_ASSERT(2127, result != NULL);
                     return result;
                 }
@@ -245,11 +245,11 @@ FuncArg *CTemplTool_DeduceArgCopy(TypeDeduce *ctx, FuncArg *args)
     ENode *expression;
     FuncArg *tail;
 
-    if (args == &data_00584748 || args == &data_00583098)
+    if (args == &oldstyle || args == &elipsis)
         return args;
     newlist = NULL;
     while (args != NULL) {
-        if (args == &data_00583098) {
+        if (args == &elipsis) {
             tail->next = args;
             break;
         }
@@ -269,8 +269,7 @@ FuncArg *CTemplTool_DeduceArgCopy(TypeDeduce *ctx, FuncArg *args)
             else
                 isDependentExpression = (expression->rtype->type == TYPETEMPLDEPEXPR);
             if (isDependentExpression) {
-                tail->dexpr =
-                    CExpr_AssignmentPromotion(CTemplTool_DeduceExpr(ctx, tail->dexpr), tail->type, tail->qual, 0);
+                tail->dexpr = argumentpromotion(CTemplTool_DeduceExpr(ctx, tail->dexpr), tail->type, tail->qual, 0);
                 tail->dexpr = fn_00513040(tail->dexpr, 1);
             }
         }
@@ -300,14 +299,14 @@ static inline TemplArg *find(TemplArg *e, TemplParamID pid)
 
 static ENode *CloneNode(ENode *src)
 {
-    ENode *n = (ENode *)CompilerTools_AllocatePool(sizeof(ENode));
+    ENode *n = (ENode *)lalloc(sizeof(ENode));
     *n = *src;
     return n;
 }
 
 static ENode *CloneRecNode(TemplArg *r)
 {
-    ENode *n = (ENode *)CompilerTools_AllocatePool(sizeof(ENode));
+    ENode *n = (ENode *)lalloc(sizeof(ENode));
     *n = *r->data.paramdecl.expr;
     return n;
 }
@@ -660,7 +659,7 @@ TemplClass *fn_00516b50(TemplateLookupContext *context, TemplClass *record)
     }
     for (;;) {
         if (record->templ_parent == owner) {
-            result = (TemplClass *)CScope_GetTagType(scope->theclass.nspace, record->theclass.classname);
+            result = (TemplClass *)CScope_GetLocalTagType(scope->theclass.nspace, record->theclass.classname);
             if ((((result != NULL) && (result->theclass.type == TYPECLASS)) &&
                  ((result->theclass.flags & CLASS_IS_TEMPL) != 0)) &&
                 (result->templ_parent == record->templ_parent)) {
@@ -749,10 +748,10 @@ ENode *CTemplTool_DeduceExpr(TypeDeduce *ctx, ENode *node)
                     for (sourceArgument = node->data.templdep.u.cast.args, arguments = NULL; sourceArgument != NULL;
                          sourceArgument = sourceArgument->next) {
                         if (arguments != NULL) {
-                            argument->next = (ENodeList *)CompilerTools_AllocatePool(sizeof(ENodeList));
+                            argument->next = (ENodeList *)lalloc(sizeof(ENodeList));
                             argument = argument->next;
                         } else {
-                            argument = (ENodeList *)CompilerTools_AllocatePool(sizeof(ENodeList));
+                            argument = (ENodeList *)lalloc(sizeof(ENodeList));
                             arguments = argument;
                         }
                         *argument = *sourceArgument;
@@ -806,10 +805,10 @@ ENode *CTemplTool_DeduceExpr(TypeDeduce *ctx, ENode *node)
             for (sourceCallArgument = node->data.funccall.args, callArguments = NULL; sourceCallArgument != NULL;
                  sourceCallArgument = sourceCallArgument->next) {
                 if (callArguments != NULL) {
-                    callArgument->next = (ENodeList *)CompilerTools_AllocatePool(sizeof(ENodeList));
+                    callArgument->next = (ENodeList *)lalloc(sizeof(ENodeList));
                     callArgument = callArgument->next;
                 } else {
-                    callArgument = (ENodeList *)CompilerTools_AllocatePool(sizeof(ENodeList));
+                    callArgument = (ENodeList *)lalloc(sizeof(ENodeList));
                     callArguments = callArgument;
                 }
                 *callArgument = *sourceCallArgument;
@@ -1294,7 +1293,7 @@ unsigned char CTemplateTools_IsDependentType(Type *type)
                 break;
             case TYPEFUNC: {
                 FuncArg *e = ((TypeFunc *)type)->args;
-                while (e != NULL && e != &data_00583098 && e != &data_00584748) {
+                while (e != NULL && e != &elipsis && e != &oldstyle) {
                     if (CTemplateTools_IsDependentType(e->type))
                         return 1;
                     e = e->next;
@@ -1398,7 +1397,7 @@ NameSpace *CTemplTool_SetupTemplateArgumentNameSpace(TemplParam *arglist, TemplA
                     obj = (Object *)galloc(sizeof(Object));
                     memclrw(obj, sizeof(Object));
                 } else {
-                    obj = (Object *)CompilerTools_AllocatePool(sizeof(Object));
+                    obj = (Object *)lalloc(sizeof(Object));
                     memclrw(obj, sizeof(Object));
                 }
                 obj->otype = OT_OBJECT;
@@ -1417,7 +1416,7 @@ NameSpace *CTemplTool_SetupTemplateArgumentNameSpace(TemplParam *arglist, TemplA
                     typeObject = (ObjType *)galloc(sizeof(ObjType));
                     memclrw(typeObject, sizeof(ObjType));
                 } else {
-                    typeObject = (ObjType *)CompilerTools_AllocatePool(sizeof(ObjType));
+                    typeObject = (ObjType *)lalloc(sizeof(ObjType));
                     memclrw(typeObject, sizeof(ObjType));
                 }
                 typeObject->otype = OT_TYPE;
@@ -1476,8 +1475,7 @@ void CTemplTool_MergeArgNames(Type *sourceFunc, Type *destinationFunc)
     destinationArg = CTemplateTools_FirstArg((TypeMemberFunc *)destinationFunc);
 
     for (;;) {
-        if (sourceArg == NULL || destinationArg == NULL || sourceArg == &data_00583098 ||
-            destinationArg == &data_00583098) {
+        if (sourceArg == NULL || destinationArg == NULL || sourceArg == &elipsis || destinationArg == &elipsis) {
             CError_ASSERT(403, sourceArg == destinationArg);
             break;
         }
@@ -1558,7 +1556,7 @@ TemplClass *CTemplTool_IsTemplate(TypeTemplDep *reference)
     if (reference->dtype == 1) {
         parent = CTemplTool_IsTemplate(reference->u.qual.type);
         if (parent != NULL) {
-            instance = (TemplClass *)CScope_GetTagType(parent->theclass.nspace, reference->u.qual.name);
+            instance = (TemplClass *)CScope_GetLocalTagType(parent->theclass.nspace, reference->u.qual.name);
             if (instance != NULL && instance->theclass.type == TYPECLASS &&
                 (instance->theclass.flags & CLASS_IS_TEMPL) != 0 && instance->templ__params == NULL) {
                 return instance;
@@ -1570,8 +1568,8 @@ TemplClass *CTemplTool_IsTemplate(TypeTemplDep *reference)
         CError_ASSERT(284, reference->u.qualtempl.type->dtype == 1);
         nestedParent = CTemplTool_IsTemplate(reference->u.qualtempl.type->u.qual.type);
         if (nestedParent != NULL) {
-            nestedInstance =
-                (TypeClass *)CScope_GetTagType(nestedParent->theclass.nspace, reference->u.qualtempl.type->u.qual.name);
+            nestedInstance = (TypeClass *)CScope_GetLocalTagType(nestedParent->theclass.nspace,
+                                                                 reference->u.qualtempl.type->u.qual.name);
             if (nestedInstance != NULL && nestedInstance->type == TYPECLASS &&
                 (nestedInstance->flags & CLASS_IS_TEMPL) != 0) {
                 nestedClass = (TemplClass *)nestedInstance;
@@ -1677,7 +1675,7 @@ Boolean CTemplTool_InitDeduceInfo(DeduceInfo *info, TemplParam *params, TemplArg
     }
 
     if (count > 16) {
-        slots = (TemplArg *)CompilerTools_AllocatePool(count * sizeof(*slots));
+        slots = (TemplArg *)lalloc(count * sizeof(*slots));
         memclrw(slots, count * sizeof(*slots));
     } else {
         slots = info->argBuffer;

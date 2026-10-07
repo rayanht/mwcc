@@ -690,7 +690,7 @@ void mark_var_used_at_call(Object *obj)
 static inline void AddUse(IRONode *node, IROLinear *linear, VarRecord *var)
 {
     IROUse *use;
-    use = (IROUse *)CompilerTools_AllocatePoolMemory(sizeof(IROUse));
+    use = (IROUse *)oalloc(sizeof(IROUse));
     use->index = data_00580624++;
     use->node = node;
     use->linear = linear;
@@ -775,7 +775,7 @@ void create_def_record(VarRecord *var, struct IROLinear *linear, unsigned char d
 {
     IRODef *def;
 
-    def = CompilerTools_AllocatePoolMemory(sizeof(IRODef));
+    def = oalloc(sizeof(IRODef));
     def->index = def_count;
     def_count++;
     def->linear = linear;

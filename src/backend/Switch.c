@@ -88,7 +88,7 @@ void build_case_ranges(Type *type, SwitchCase *list, CLabel *defaultCase)
         data_00581160.hi = 0xffffffff;
         data_00581168.lo = 0x7fffffff;
         data_00581168.hi = 0;
-    } else if (Type_IsUnsigned(type)) {
+    } else if (is_unsigned(type)) {
         data_00581160.hi = 0;
         data_00581160.lo = 0;
         data_00581168.hi = 0;
@@ -99,7 +99,7 @@ void build_case_ranges(Type *type, SwitchCase *list, CLabel *defaultCase)
         data_00581168.lo = 0x7fff;
         data_00581168.hi = 0;
     }
-    p = CompilerTools_AllocatePool(switch_case_count * sizeof(SwitchCase *));
+    p = lalloc(switch_case_count * sizeof(SwitchCase *));
     data_00581150 = p;
     if (list != NULL) {
         do {
@@ -107,7 +107,7 @@ void build_case_ranges(Type *type, SwitchCase *list, CLabel *defaultCase)
             list = list->next;
         } while (list != NULL);
     }
-    case_ranges = CompilerTools_AllocatePool((switch_case_count * 2 + 2) * sizeof(CaseRange));
+    case_ranges = lalloc((switch_case_count * 2 + 2) * sizeof(CaseRange));
     if (type->size < 8) {
         for (i = 0; i < switch_case_count; i++) {
             SetSignedCaseValue(&data_00581150[i]->min, data_00581150[i]->min.lo);
@@ -180,7 +180,7 @@ void emit_case_range_binary_search(int a, int b)
 
     i = mid - 1;
 
-    if (switch_expr_type->size < 4 && Type_IsUnsigned(switch_expr_type)) {
+    if (switch_expr_type->size < 4 && is_unsigned(switch_expr_type)) {
         PCodeUtilities_EmitInstruction(PC_CMPLI, 0, data_00581178, p->base.lo);
     } else {
         value = p->base.lo;
@@ -402,8 +402,7 @@ Object *create_switchtable(void)
     obj->type = NULL;
     fn_0049f230(obj, 0, 0);
     obj->type = (Type *)&void_ptr;
-    obj->u.data.u.switchtable.data =
-        (SInt32 *)CompilerTools_AllocatePool((obj->u.data.u.switchtable.size = switchtable_max.lo + 1) << 2);
+    obj->u.data.u.switchtable.data = (SInt32 *)lalloc((obj->u.data.u.switchtable.size = switchtable_max.lo + 1) << 2);
 
     p = case_ranges;
     dst = obj->u.data.u.switchtable.data;

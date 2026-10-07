@@ -73,8 +73,8 @@ extern BClassList *deduplicate_and_select_base_path_suffix(BClassList *p, TypeCl
 extern Boolean check_base_path_access(BClassList *cl, UInt8 acc);
 extern void CClass_MemberDef(Object *object, TypeClass *cls);
 extern void CClass_MakeStaticActionClass(TypeClass *theclass);
-extern void CClass_GenerateVTable(TypeClass *cls);
-extern void fn_004e9ca0(void);
+extern void CClass_ClassAction(TypeClass *cls);
+extern void CClass_ClassDefaultFuncAction(TypeClass *tclass);
 extern void CClass_CheckOverrides(TypeClass *cls);
 extern void check_hidden_inherited_virtual_functions(OverrideClass *layout, OverrideClass *base);
 extern Object *CClass_004ea020(OverrideClass *record, char report);
@@ -91,14 +91,14 @@ extern unsigned char CClass_OverridesBaseMember(TypeClass *theclass, HashNameNod
 extern Boolean CClass_ClassDominates(TypeClass *cls, TypeClass *base);
 extern int CClass_GetPathOffset(BClassList *cl);
 extern ENode *CClass_DirectBasePointerCast(ENode *expr, TypeClass *theclass, TypeClass *base);
-extern ENode *CClass_ConvertClassPointer(ENode *expr, TypeClass *sourceClass, TypeClass *targetClass,
-                                         Boolean convertIndirect, Boolean errorflag);
+extern ENode *CClass_ClassPointerCast(ENode *expr, TypeClass *sourceClass, TypeClass *targetClass,
+                                      Boolean convertIndirect, Boolean errorflag);
 extern ENode *CClass_AdjustBasePointer(ENode *expr, SInt16 count, Boolean reverse);
 extern TypeClass *CClass_GetQualifiedClass(void);
 extern BClassList *CClass_GetBasePath(TypeClass *type, TypeClass *target, SInt16 *flags, Boolean *status);
 extern BClassList *find_target_base_path(TypeClass *cls, TypeClass *target, SInt32 offset, SInt16 level);
 extern SInt16 CClass_GetBasePathLevel(void);
-extern void CClass_Init(void);
+extern void fn_004eb810(void);
 extern void CClass_CheckBaseAccess(BClassList *bases, char access);
 extern Object *create_root_class_layout(TypeClass *type);
 extern void build_class_layout(TypeClass *type);
@@ -109,7 +109,7 @@ extern void CClass_CheckObjectAccess(BClassList *bases, Object *reference);
 extern ENode *CClass_CreateThisSelfExpr(void);
 extern Object *CClass_ThisSelfObject(void);
 extern unsigned int CClass_VirtualBaseVTableOffset(TypeClass *type, TypeClass *base);
-extern SInt32 CClass_FindVBaseOffset(TypeClass *cls, TypeClass *base);
+extern SInt32 CClass_VirtualBaseOffset(TypeClass *cls, TypeClass *base);
 extern unsigned char CClass_IsMoreAccessiblePath(BClassList *path, BClassList *otherPath);
 extern UInt8 get_path_access(BClassList *path);
 extern Boolean find_virtual_base_path(register TypeClass *cls, register TypeClass *target);
@@ -136,7 +136,7 @@ extern SInt16 base_path_level;
 extern Object *get_or_create_thunk_object(Object *source, SInt32 firstArgument, SInt32 secondArgument,
                                           SInt32 thirdArgument);
 extern void CClass_GenThunks(void);
-extern void CClass_ResetPendingThunks(void);
+extern void CClass_Init(void);
 struct BClassList;
 
 #ifdef __cplusplus

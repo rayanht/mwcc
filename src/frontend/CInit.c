@@ -150,7 +150,7 @@ static Object *CreateTempObject(Type *type)
     s.qual = 0;
     s.storageclass = 0x102;
     s.requireMangledName = 1;
-    obj = CParser_NewObject(&s);
+    obj = CParser_NewGlobalDataObject(&s);
     obj->nspace = cscope_root;
     CodeGen_SetObjectSectionAndInterruptInfo(obj);
     emit_object(obj, NULL, NULL, obj->type->size, 0);
@@ -169,7 +169,7 @@ static void InitBuffer(SInt32 size)
         size = 0x200;
     else if (size & 1)
         size++;
-    cinit_state->buffer = CompilerTools_AllocatePool(size);
+    cinit_state->buffer = lalloc(size);
     cinit_state->bufferUsed = size;
     memclrw(cinit_state->buffer, size);
 }
@@ -198,7 +198,7 @@ static Object *CreateObject(Type *type, SInt32 qual)
     rec.qual = qual;
     rec.storageclass = 0x102;
     rec.requireMangledName = 1;
-    obj = CParser_NewObject(&rec);
+    obj = CParser_NewGlobalDataObject(&rec);
     obj->nspace = cscope_root;
     return obj;
 }
@@ -268,7 +268,7 @@ void write_buffer_at_offset(void *src, SInt32 offset, SInt32 size)
         }
         if (needed & 1)
             needed++;
-        nb = (UInt8 *)CompilerTools_AllocatePool(needed);
+        nb = (UInt8 *)lalloc(needed);
         memclrw(nb, needed);
         {
             struct InitInfo *ctx = cinit_state;
@@ -470,7 +470,7 @@ void append_initializer_entry(InitializerData *ctx, Type *type, ENode *expr)
     SInt32 kind;
     if (ctx->owner->unknown9 != 0 ||
         (type->type == TYPESTRUCT && (kind = (SInt8)TYPE_STRUCT(type)->stype) >= 4 && kind <= 0x0e)) {
-        InitializerEntry *node = (InitializerEntry *)CompilerTools_AllocatePool(sizeof(InitializerEntry));
+        InitializerEntry *node = (InitializerEntry *)lalloc(sizeof(InitializerEntry));
         memclrw(node, sizeof(InitializerEntry));
         node->next = NULL;
         node->type = type;
@@ -489,7 +489,7 @@ void append_initializer_entry(InitializerData *ctx, Type *type, ENode *expr)
     }
 }
 
-Boolean evaluate_int_or_relocation(ENode *node, Object **pobj, CInt64 *pval)
+Boolean CInit_RelocInitCheck(ENode *node, Object **pobj, CInt64 *pval)
 {
     Object *obj;
     Object *lbase;
@@ -527,9 +527,9 @@ Boolean evaluate_int_or_relocation(ENode *node, Object **pobj, CInt64 *pval)
                 } while (node->type == ETYPCON);
                 break;
             case EADD:
-                if (!evaluate_int_or_relocation(node->data.diadic.left, &lbase, &lval))
+                if (!CInit_RelocInitCheck(node->data.diadic.left, &lbase, &lval))
                     return 0;
-                if (!evaluate_int_or_relocation(node->data.diadic.right, &rbase, &rval))
+                if (!CInit_RelocInitCheck(node->data.diadic.right, &rbase, &rval))
                     return 0;
                 if (lbase != NULL && rbase != NULL)
                     return 0;
@@ -537,9 +537,9 @@ Boolean evaluate_int_or_relocation(ENode *node, Object **pobj, CInt64 *pval)
                 *pval = CMach_CalcIntDiadic((Type *)&stunsignedlong, lval, '+', rval);
                 return 1;
             case ESUB:
-                if (!evaluate_int_or_relocation(node->data.diadic.left, &lbase, &lval))
+                if (!CInit_RelocInitCheck(node->data.diadic.left, &lbase, &lval))
                     return 0;
-                if (!evaluate_int_or_relocation(node->data.diadic.right, &rbase, &rval))
+                if (!CInit_RelocInitCheck(node->data.diadic.right, &rbase, &rval))
                     return 0;
                 if (rbase != NULL)
                     return 0;
@@ -560,9 +560,9 @@ void initialize_pointer_or_intconst(InitializerData *ctx, ENode *node, Type *ns,
 
     node = oldassignmentpromotion(node, ns, qual & Q_CV, 1);
     if (node->rtype->type == TYPEPOINTER || node->type == EINTCONST) {
-        if (evaluate_int_or_relocation(node, &flag, &val)) {
+        if (CInit_RelocInitCheck(node, &flag, &val)) {
             if (flag) {
-                p = (OLinkList *)CompilerTools_AllocatePool(16);
+                p = (OLinkList *)lalloc(16);
                 p->next = ctx->owner->relocations;
                 p->obj = flag;
                 p->addend = val.lo;
@@ -673,10 +673,10 @@ void initialize_array_data(InitializerData *pool, CInit *iter, TypePointer *arra
         if (incompleteArray) {
             arrayType->size = iter->expr->data.string.size;
             if (pool->capacity < (stringSize = iter->expr->data.string.size)) {
-                block = (InitializerData *)CompilerTools_AllocatePool(0x26);
+                block = (InitializerData *)lalloc(0x26);
                 memclrw(block, 0x26);
                 block->owner = pool->owner;
-                block->buffer = (unsigned char *)CompilerTools_AllocatePool(stringSize);
+                block->buffer = (unsigned char *)lalloc(stringSize);
                 block->offset = pool->offset + pool->size;
                 block->capacity = stringSize;
                 pool->next = block;
@@ -705,10 +705,10 @@ void initialize_array_data(InitializerData *pool, CInit *iter, TypePointer *arra
                 arraySize = (index + 1) * elementSize;
                 pool->size = base + arraySize - elementSize - pool->offset;
                 if (arraySize > pool->offset + pool->capacity) {
-                    block = (InitializerData *)CompilerTools_AllocatePool(0x26);
+                    block = (InitializerData *)lalloc(0x26);
                     memclrw(block, 0x26);
                     block->owner = pool->owner;
-                    block->buffer = (unsigned char *)CompilerTools_AllocatePool(elementSize * 16);
+                    block->buffer = (unsigned char *)lalloc(elementSize * 16);
                     block->offset = pool->offset + pool->size;
                     block->capacity = elementSize * 16;
                     pool->next = block;
@@ -1168,7 +1168,7 @@ void CInit_004d2700(InitializerData *data, Type *type, UInt32 qual, Boolean flag
     unsigned char *buffer;
     CInit state;
 
-    fn_00441f10();
+    locklheap();
     memclrw(data, 38);
     data->owner = data;
     if (type->size == 0) {
@@ -1180,7 +1180,7 @@ void CInit_004d2700(InitializerData *data, Type *type, UInt32 qual, Boolean flag
     } else {
         data->capacity = type->size;
     }
-    data->buffer = CompilerTools_AllocatePool(data->capacity);
+    data->buffer = lalloc(data->capacity);
     memset(data->buffer, 0, data->capacity);
     data->unknown9 = flag;
     state.state = 0;
@@ -1203,7 +1203,7 @@ void CInit_004d2700(InitializerData *data, Type *type, UInt32 qual, Boolean flag
     size = type->size + data->size_adjustment;
     if (size != 0) {
         if (data->next != NULL) {
-            buffer = CompilerTools_AllocatePool(size);
+            buffer = lalloc(size);
             block = data;
             while (block != NULL) {
                 CError_ASSERT(1577, block->offset + block->size <= size);
@@ -1217,7 +1217,7 @@ void CInit_004d2700(InitializerData *data, Type *type, UInt32 qual, Boolean flag
     }
     data->size = size;
     data->next = NULL;
-    CompilerTools_DecrementPositiveCounter();
+    unlocklheap();
 }
 
 ENode *build_init_assignment(ENode *previous, ENode *base, SInt32 offset, Type *type, ENode *value)
@@ -1225,7 +1225,7 @@ ENode *build_init_assignment(ENode *previous, ENode *base, SInt32 offset, Type *
     ENode *node;
     ENode *bitfield;
 
-    node = (ENode *)CompilerTools_AllocatePool(sizeof(ENode));
+    node = (ENode *)lalloc(sizeof(ENode));
     *node = *base;
     if (offset != 0) {
         node = makediadicnode(node, intconstnode((Type *)&stunsignedlong, offset), EADD);
@@ -1259,18 +1259,18 @@ ENode *create_destructor_registration_call(Type *objectType, Object *destructor,
     if (copts.no_static_dtors)
         return objectAddress;
 
-    call = CompilerTools_AllocatePool(sizeof(ENode));
+    call = lalloc(sizeof(ENode));
     call->type = EFUNCCALL;
     call->cost = 4;
     call->flags = 0;
     call->rtype = CDecl_NewPointerType(objectType);
     call->data.funccall.funcref = create_objectrefnode(destructor_registration_func);
     call->data.funccall.functype = (TypeFunc *)destructor_registration_func->type;
-    call->data.funccall.args = CompilerTools_AllocatePool(sizeof(ENodeList));
+    call->data.funccall.args = lalloc(sizeof(ENodeList));
     call->data.funccall.args->node = objectAddress;
-    call->data.funccall.args->next = CompilerTools_AllocatePool(sizeof(ENodeList));
+    call->data.funccall.args->next = lalloc(sizeof(ENodeList));
     call->data.funccall.args->next->node = create_objectrefnode(CABI_GetDestructorObject(destructor, 1));
-    call->data.funccall.args->next->next = CompilerTools_AllocatePool(sizeof(ENodeList));
+    call->data.funccall.args->next->next = lalloc(sizeof(ENodeList));
 
     registrationType = CDecl_NewStructType(void_ptr.size * 3, CMachine_GetTypeAlignment((Type *)&void_ptr));
     memclrw(&declaration, sizeof(declaration));
@@ -1279,7 +1279,7 @@ ENode *create_destructor_registration_call(Type *objectType, Object *destructor,
     declaration.qual = 0;
     declaration.storageclass = 0x102;
     declaration.requireMangledName = 1;
-    registrationRecord = CParser_NewObject(&declaration);
+    registrationRecord = CParser_NewGlobalDataObject(&declaration);
     registrationRecord->nspace = cscope_root;
     CodeGen_SetObjectSectionAndInterruptInfo(registrationRecord);
     emit_object(registrationRecord, NULL, NULL, registrationRecord->type->size, 0);
@@ -1313,7 +1313,7 @@ Boolean initialize_class_object(Object *obj, Type *initObject, ENode *expr, SInt
             CError_ReportError(ERR_RPAREN_EXPECTED);
     } else {
         if (expr != NULL) {
-            args = CompilerTools_AllocatePool(sizeof(ENodeList));
+            args = lalloc(sizeof(ENodeList));
             args->node = expr;
             args->next = NULL;
         } else
@@ -1329,7 +1329,7 @@ Boolean initialize_class_object(Object *obj, Type *initObject, ENode *expr, SInt
             flag = 0;
             if (args != NULL)
                 CError_ReportError(ERR_ILLEGAL_INITIALIZATION);
-            args = CompilerTools_AllocatePool(sizeof(ENodeList));
+            args = lalloc(sizeof(ENodeList));
             args->next = NULL;
             tk = CPrepTokenizer_GetNextToken();
             args->node = conv_assignment_expression();
@@ -1386,7 +1386,7 @@ Boolean CInit_004d20e0(Type *type, ENode *initializer, SInt32 offset, char parse
             CError_ReportError(ERR_RPAREN_EXPECTED);
     } else {
         if (initializer != NULL) {
-            arguments = CompilerTools_AllocatePool(sizeof(CInit_ArgumentList));
+            arguments = lalloc(sizeof(CInit_ArgumentList));
             arguments->node = initializer;
             arguments->next = NULL;
         } else {
@@ -1399,7 +1399,7 @@ Boolean CInit_004d20e0(Type *type, ENode *initializer, SInt32 offset, char parse
         if (tk == '=') {
             if (arguments != NULL)
                 CError_ReportError(ERR_ILLEGAL_INITIALIZATION);
-            arguments = CompilerTools_AllocatePool(sizeof(CInit_ArgumentList));
+            arguments = lalloc(sizeof(CInit_ArgumentList));
             arguments->next = NULL;
             tk = CPrepTokenizer_GetNextToken();
             expression = conv_assignment_expression();
@@ -1437,9 +1437,9 @@ void init_int_or_relocation(Type *type, ENode *expression)
     Object *object;
     CInt64 value;
 
-    if (evaluate_int_or_relocation(expression, &object, &value)) {
+    if (CInit_RelocInitCheck(expression, &object, &value)) {
         if (object != NULL) {
-            relocation = CompilerTools_AllocatePool(sizeof(OLinkList));
+            relocation = lalloc(sizeof(OLinkList));
             relocation->next = cinit_state->list;
             relocation->obj = object;
             relocation->addend = value.lo;
@@ -2231,7 +2231,7 @@ void initialize_class_array(Object *obj, Type *type, Boolean staticInit)
                 declaration.qual = 0;
                 declaration.storageclass = TK_STATIC;
                 declaration.requireMangledName = 1;
-                registrationObject = CParser_NewObject(&declaration);
+                registrationObject = CParser_NewGlobalDataObject(&declaration);
                 registrationObject->nspace = cscope_root;
                 CodeGen_SetObjectSectionAndInterruptInfo(registrationObject);
                 emit_object(registrationObject, NULL, NULL, registrationObject->type->size, 0);
@@ -2247,7 +2247,7 @@ void initialize_class_array(Object *obj, Type *type, Boolean staticInit)
             statement = CFunc_AppendStatement(4);
             statement->expr = node;
             if (dtor != NULL) {
-                CException_RegisterMemberArray(statement, obj, dtor, count, type->size);
+                CExcept_RegisterLocalArray(statement, obj, dtor, count, type->size);
                 statement = CFunc_AppendStatement(4);
                 statement->expr = nullnode();
             }
@@ -2258,7 +2258,7 @@ void initialize_class_array(Object *obj, Type *type, Boolean staticInit)
 ENode *create_scopebegin_node(Type *type)
 {
     ENode *node;
-    node = CExpr2_NewESCOPEBEGINNode(type, 0);
+    node = CExpr_NewETEMPNode(type, 0);
     if (type->type == TYPECLASS && CClass_Destructor((TypeClass *)type))
         node->data.scopebegin.state = 1;
     return node;
@@ -2289,11 +2289,11 @@ ENode *create_temp_object_expr(Type *type, Boolean reportError)
             call->rtype = CDecl_NewPointerType(type);
             call->data.funccall.funcref = create_objectrefnode(destructor_registration_func);
             call->data.funccall.functype = (TypeFunc *)destructor_registration_func->type;
-            call->data.funccall.args = CompilerTools_AllocatePool(sizeof(ENodeList));
+            call->data.funccall.args = lalloc(sizeof(ENodeList));
             call->data.funccall.args->node = result;
-            call->data.funccall.args->next = CompilerTools_AllocatePool(sizeof(ENodeList));
+            call->data.funccall.args->next = lalloc(sizeof(ENodeList));
             call->data.funccall.args->next->node = create_objectrefnode(CABI_GetDestructorObject(cls, 1));
-            call->data.funccall.args->next->next = CompilerTools_AllocatePool(sizeof(ENodeList));
+            call->data.funccall.args->next->next = lalloc(sizeof(ENodeList));
 
             tempType = CDecl_NewStructType(3 * void_ptr.size, CMachine_GetTypeAlignment((Type *)&void_ptr));
             argumentObject = CreateTempObject(tempType);
@@ -2394,7 +2394,7 @@ Boolean initialize_from_assignment(Object *obj, Boolean flag)
                     data_00581ba0->node = create_objectrefnode(temporary);
                 }
             }
-            cinit_state->insert_expr_cb(makediadicnode(CExpr_New_EINDIRECT_Node(obj), initializer, EASS));
+            cinit_state->insert_expr_cb(makediadicnode(create_objectnode2(obj), initializer, EASS));
         } else {
             cinit_state->expr_cb = emit_indirect_assignment;
             cinit_state->bufferSize = bufferSize = obj->type->size;
@@ -2402,7 +2402,7 @@ Boolean initialize_from_assignment(Object *obj, Boolean flag)
                 bufferSize = 0x200;
             else if (bufferSize & 1)
                 bufferSize++;
-            cinit_state->buffer = CompilerTools_AllocatePool(bufferSize);
+            cinit_state->buffer = lalloc(bufferSize);
             cinit_state->bufferUsed = bufferSize;
             memclrw(cinit_state->buffer, bufferSize);
             init_int_or_relocation(obj->type, initializer);
@@ -2496,7 +2496,7 @@ ENode *CInit_AutoObject(Object *object, Type *type, UInt32 qualifiers)
     if (object)
         reference = create_objectrefnode(object);
     else
-        reference = CExpr2_NewESCOPEBEGINNode(type, 1);
+        reference = CExpr_NewETEMPNode(type, 1);
     if ((constantType = type)->type == TYPEARRAY)
         constantType = CDecl_NewStructType(type->size, CMachine_GetTypeAlignment(type));
     memclrw(&declaration, sizeof(declaration));
@@ -2505,7 +2505,7 @@ ENode *CInit_AutoObject(Object *object, Type *type, UInt32 qualifiers)
     declaration.qual = 0;
     declaration.storageclass = 0x102;
     declaration.requireMangledName = 1;
-    constantObject = CParser_NewObject(&declaration);
+    constantObject = CParser_NewGlobalDataObject(&declaration);
     constantObject->nspace = cscope_root;
     emit_object(constantObject, initializer.buffer, initializer.relocations, initializer.size, 1);
     expression = makemonadicnode(reference, EINDIRECT);
@@ -2514,7 +2514,7 @@ ENode *CInit_AutoObject(Object *object, Type *type, UInt32 qualifiers)
     for (entry = initializer.entries; entry; entry = entry->next)
         expression = build_init_assignment(expression, reference, entry->offset, entry->type, entry->expression);
     if (!object) {
-        result = (ENode *)CompilerTools_AllocatePool(sizeof(ENode));
+        result = (ENode *)lalloc(sizeof(ENode));
         *result = *reference;
         result = makemonadicnode(result, EINDIRECT);
         result->rtype = type;
@@ -2586,7 +2586,7 @@ void CInit_InitializeAutoData(Object *obj, void (*emitInitializer)(ENode *),
                 ENode *expression;
                 expression = conv_assignment_expression();
                 expression = oldassignmentpromotion(expression, obj->type, obj->qual & Q_CV, 1);
-                emitInitializer(makediadicnode(CExpr_New_EINDIRECT_Node(obj), expression, 0x1e));
+                emitInitializer(makediadicnode(create_objectnode2(obj), expression, 0x1e));
             }
             return;
         } else {
@@ -2618,11 +2618,11 @@ void CInit_InitializeAutoData(Object *obj, void (*emitInitializer)(ENode *),
                     cinit_state = save.next;
                     return;
                 }
-                fn_00476e60(TYPE_CLASS(elementType));
+                CFunc_CheckClassCtors(TYPE_CLASS(elementType));
             }
         }
         if (obj->type->type == TYPECLASS)
-            fn_00476e60(TYPE_CLASS(obj->type));
+            CFunc_CheckClassCtors(TYPE_CLASS(obj->type));
         if (((type = obj->type)->type == TYPEPOINTER && (TYPE_POINTER(type)->qual & Q_REFERENCE) != 0) ||
             is_const_object(obj) != 0) {
             if (copts.cplusplus != 0)
@@ -2632,7 +2632,7 @@ void CInit_InitializeAutoData(Object *obj, void (*emitInitializer)(ENode *),
         if (obj->type->size != 0 || obj->type->type == TYPEARRAY) {
             ENode *initializer = CInit_004d0ae0(NULL, obj->type, obj->qual, CInit_004d1170, 0);
             if (initializer != NULL)
-                emitInitializer(makediadicnode(CExpr_New_EINDIRECT_Node(obj), initializer, 0x1e));
+                emitInitializer(makediadicnode(create_objectnode2(obj), initializer, 0x1e));
         } else {
             CError_ReportError(ERR_DATA_TYPE_INCOMPLETE);
         }
@@ -2720,12 +2720,12 @@ void CInit_InitializeStaticData(Object *initObject, void (*output)(ENode *))
                         cinit_state = context.next;
                         return;
                     }
-                    fn_00476e60(TYPE_CLASS(arrayElement));
+                    CFunc_CheckClassCtors(TYPE_CLASS(arrayElement));
                 }
             }
         }
         if (initObject->type->type == TYPECLASS)
-            fn_00476e60(TYPE_CLASS(initObject->type));
+            CFunc_CheckClassCtors(TYPE_CLASS(initObject->type));
         if ((initObject->type->type == TYPEPOINTER && (((TypePointer *)initObject->type)->qual & Q_REFERENCE) != 0) ||
             is_const_object(initObject) != 0) {
             if (copts.cplusplus != 0)
@@ -2735,7 +2735,7 @@ void CInit_InitializeStaticData(Object *initObject, void (*output)(ENode *))
         ENode *expression;
         expression = CInit_004d0ae0(initObject, initObject->type, initObject->qual, initialize_object_at_offset, 1);
         if (expression != NULL)
-            output(makediadicnode(CExpr_New_EINDIRECT_Node(initObject), expression, EASS));
+            output(makediadicnode(create_objectnode2(initObject), expression, EASS));
     } else {
         CError_ReportError(ERR_DATA_TYPE_INCOMPLETE);
     }
@@ -2759,7 +2759,7 @@ void CInit_InitializeData(Object *obj)
     if (tk == ':') {
         tk = CPrepTokenizer_GetNextToken();
         obj->datatype = DABSOLUTE;
-        v = fn_004f0b30();
+        v = CExpr_IntegralConstExpr();
         obj->u.data.u.intconst.hi = v.lo;
         return;
     }
@@ -2800,7 +2800,7 @@ void CInit_InitializeData(Object *obj)
                     cinit_state = ctx.next;
                     flag = 1;
                 }
-                fn_00476e60(TYPE_CLASS(a));
+                CFunc_CheckClassCtors(TYPE_CLASS(a));
             }
         } else if (kind == TYPECLASS) {
             t = TYPE_CLASS(ty);
@@ -2811,7 +2811,7 @@ void CInit_InitializeData(Object *obj)
                 cinit_state = ctx.next;
                 flag = 1;
             } else {
-                fn_00476e60(TYPE_CLASS(obj->type));
+                CFunc_CheckClassCtors(TYPE_CLASS(obj->type));
             }
         }
         if (!flag && copts.cplusplus != 0 &&
@@ -2963,7 +2963,7 @@ NameEntry *CInit_DeclarePooledString(const char *name, SInt32 length, SInt8 unsi
         declaration.qual = 0;
         declaration.storageclass = 0x102;
         declaration.requireMangledName = 1;
-        object = CParser_NewObject(&declaration);
+        object = CParser_NewGlobalDataObject(&declaration);
         object->nspace = cscope_root;
         stringObject = object;
         ObjGen_PPC_EABI_SetObjectSection(object, 0, copts.readonly_strings);
@@ -3011,7 +3011,7 @@ NameEntry *CInit_DeclarePooledWString(char *string, UInt32 length)
         declaration.storageclass = 0x102;
         declaration.requireMangledName = 1;
         {
-            Object *createdObject = CParser_NewObject(&declaration);
+            Object *createdObject = CParser_NewGlobalDataObject(&declaration);
             createdObject->nspace = cscope_root;
             object = createdObject;
         }
@@ -3121,12 +3121,12 @@ void emit_object(Object *object, const void *buffer, struct OLinkList *args, uns
     }
 }
 
-void fn_004ceab0(Object *object, void *buffer, void *args, SInt32 size)
+void CInit_DeclareData(Object *object, void *buffer, void *args, SInt32 size)
 {
     emit_object(object, buffer, args, size, 0);
 }
 
-void fn_004cea90(Object *object, void *buffer, void *args, int size)
+void CInit_DeclareReadOnlyData(Object *object, void *buffer, void *args, int size)
 {
     emit_object(object, buffer, args, size, 1);
 }

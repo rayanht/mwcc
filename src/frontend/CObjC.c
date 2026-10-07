@@ -57,8 +57,8 @@
             matchedParameter = method->args;                                                                           \
             matchedArgument = arguments;                                                                               \
             for (;;) {                                                                                                 \
-                matchedArgument->expression = CExpr_AssignmentPromotion(                                               \
-                    matchedArgument->expression, matchedParameter->type, matchedParameter->qual, 1);                   \
+                matchedArgument->expression =                                                                          \
+                    argumentpromotion(matchedArgument->expression, matchedParameter->type, matchedParameter->qual, 1); \
                 matchedArgument = matchedArgument->next;                                                               \
                 if (matchedArgument == 0)                                                                              \
                     break;                                                                                             \
@@ -124,7 +124,7 @@ ENode *CDecl_ParseSelectorExpression(void)
         for (;;) {
             tk = CPrepTokenizer_GetNextToken();
             if (tk == TK_IDENTIFIER) {
-                CompilerTools_AppendGListString(&data_00583548, data_00587fa0->name);
+                AppendGListName(&data_00583548, data_00587fa0->name);
                 tk = CPrepTokenizer_GetNextToken();
             }
             if (tk == ')') {
@@ -234,13 +234,13 @@ ENode *CObjC_ParseStringConstant(void)
     if (tk == TK_STRING) {
         if ((type = fn_00504c90_inline1()) != NULL) {
             values[0] = CTool_EndianConvertWord32(0);
-            tail = entry = (OLinkList *)CompilerTools_AllocatePool(16);
+            tail = entry = (OLinkList *)lalloc(16);
             entry->next = NULL;
             entry->obj = type->objcinfo->classobject;
             entry->offset = 0;
             entry->addend = 0;
             values[1] = CTool_EndianConvertWord32(0);
-            entries = (OLinkList *)CompilerTools_AllocatePool(16);
+            entries = (OLinkList *)lalloc(16);
             entries->next = tail;
             entries->obj = CInit_DeclareString(string_token_data, token_value_kind_or_string_length, 0, 0);
             entries->offset = 4;
@@ -254,7 +254,7 @@ ENode *CObjC_ParseStringConstant(void)
             object->type = (Type *)type;
             object->sclass = TK_STATIC;
             object->section = 10;
-            fn_004ceab0(object, values, entries, object->type->size);
+            CInit_DeclareData(object, values, entries, object->type->size);
             result = create_objectrefnode(object);
         } else {
             result = nullnode();
@@ -285,7 +285,7 @@ ENode *CObjC_ParseEncodeExpression(void)
     tk = CPrepTokenizer_GetNextToken();
     memclrw(&decl, sizeof(decl));
     CParser_GetDeclSpecs(&decl, 0);
-    CDecl_ParseDeclarator(&decl);
+    scandeclarator(&decl);
     if (tk != ')') {
         CError_ReportErrorAndUpdateToken(ERR_RPAREN_EXPECTED);
     } else {
@@ -306,7 +306,7 @@ ENode *CObjC_ParseEncodeExpression(void)
     encoding = galloc(data_00583548.size);
     encodingHandle = data_00583548.data;
     memcpy(encoding, *encodingHandle, data_00583548.size);
-    stringNode = CompilerTools_AllocatePool(sizeof(ENode));
+    stringNode = lalloc(sizeof(ENode));
     stringNode->type = ESTRINGCONST;
     stringNode->cost = 0;
     stringNode->flags = 0;
@@ -433,7 +433,7 @@ ENode *CObjC_ParseMessageExpression(void)
             }
             break;
     }
-    argument = CompilerTools_AllocatePool(sizeof(MessageArgument));
+    argument = lalloc(sizeof(MessageArgument));
     memclrw(argument, sizeof(MessageArgument));
     arguments = argument;
     extraArguments = NULL;
@@ -458,7 +458,7 @@ ENode *CObjC_ParseMessageExpression(void)
             extraArguments = CExpr_ScanExpressionList(0);
             break;
         }
-        argument->next = CompilerTools_AllocatePool(sizeof(MessageArgument));
+        argument->next = lalloc(sizeof(MessageArgument));
         memclrw(argument->next, sizeof(MessageArgument));
         argument = argument->next;
     }
@@ -598,7 +598,7 @@ ENode *CObjC_MakeMessageSend(ENode *receiver, TypeClass *obj, MessageArgument *a
     }
     if (method != NULL) {
         functionType = get_method_ftype(method);
-        resultKind = CMachine_FunctionRequiresMemoryReturn(functionType) != 0;
+        resultKind = CMach_GetFunctionResultClass(functionType) != 0;
         if (flag != 0) {
             if (resultKind)
                 callee = CObjCModern_GetOrCreateFunctionObject("objc_msgSendSuper_stret", "objc_msgSendSuper_stret");
@@ -611,11 +611,11 @@ ENode *CObjC_MakeMessageSend(ENode *receiver, TypeClass *obj, MessageArgument *a
                 callee = CObjCModern_GetOrCreateFunctionObject("objc_msgSend", "objc_msgSend");
         }
         if (flag != 0) {
-            temporary = CExpr2_NewESCOPEBEGINNode(CDecl_NewStructType(8, 4), 1);
+            temporary = CExpr_NewETEMPNode(CDecl_NewStructType(8, 4), 1);
             expression = makemonadicnode(temporary, EINDIRECT);
             expression->rtype = (Type *)&void_ptr;
             receiver = makediadicnode(expression, receiver, EASS);
-            expression = CompilerTools_AllocatePool(sizeof(ENode));
+            expression = lalloc(sizeof(ENode));
             *expression = *temporary;
             expression = makediadicnode(expression, intconstnode((Type *)&stunsignedlong, 4), EADD);
             expression = makemonadicnode(expression, EINDIRECT);
@@ -623,12 +623,12 @@ ENode *CObjC_MakeMessageSend(ENode *receiver, TypeClass *obj, MessageArgument *a
             expression =
                 makediadicnode(expression, create_objectrefnode(((ObjCInfo *)obj->objcinfo)->metaclassobject), EASS);
             receiver = makediadicnode(receiver, expression, ECOMMA);
-            expression = CompilerTools_AllocatePool(sizeof(ENode));
+            expression = lalloc(sizeof(ENode));
             *expression = *temporary;
             receiver = makediadicnode(receiver, expression, ECOMMA);
             receiver->rtype = temporary->rtype;
         }
-        call = CompilerTools_AllocatePool(sizeof(ENode));
+        call = lalloc(sizeof(ENode));
         call->type = EFUNCCALL;
         call->cost = 0xc8;
         call->rtype = method->rtype;
@@ -636,14 +636,14 @@ ENode *CObjC_MakeMessageSend(ENode *receiver, TypeClass *obj, MessageArgument *a
         call->data.funccall.funcref = create_objectrefnode(callee);
         call->data.funccall.functype = functionType;
         CError_ASSERT(3280, call->data.funccall.functype->type == TYPEFUNC);
-        firstArg = CompilerTools_AllocatePool(sizeof(ENodeList));
+        firstArg = lalloc(sizeof(ENodeList));
         call->data.funccall.args = firstArg;
         firstArg->node = receiver;
-        tail = firstArg->next = CompilerTools_AllocatePool(sizeof(ENodeList));
+        tail = firstArg->next = lalloc(sizeof(ENodeList));
         tail->node = create_objectnode(CObjCModern_GetSelectorReference(selector));
         for (argument = arguments; argument != NULL; argument = argument->next) {
             if (argument->expression != NULL) {
-                ENodeList *nextArg = CompilerTools_AllocatePool(sizeof(ENodeList));
+                ENodeList *nextArg = lalloc(sizeof(ENodeList));
                 tail->next = nextArg;
                 tail = tail->next;
                 tail->node = argument->expression;
@@ -668,7 +668,7 @@ ENode *CObjC_MakeMessageSend(ENode *receiver, TypeClass *obj, MessageArgument *a
             map = ob->f18;                                                                                             \
             mlp = l;                                                                                                   \
             for (;;) {                                                                                                 \
-                mlp->f08 = CExpr_AssignmentPromotion(mlp->f08, map->f0c, map->f10, 1);                                 \
+                mlp->f08 = argumentpromotion(mlp->f08, map->f0c, map->f10, 1);                                         \
                 mlp = mlp->next;                                                                                       \
                 if (mlp == 0)                                                                                          \
                     break;                                                                                             \
@@ -1223,14 +1223,14 @@ void create_category_definition(TypeClass *classType, CRec *category)
     categoryObject->sclass = TK_STATIC;
     categoryObject->section = 0x16;
     data[0] = CTool_EndianConvertWord32(0);
-    relocation = (OLinkList *)CompilerTools_AllocatePool(sizeof(OLinkList));
+    relocation = (OLinkList *)lalloc(sizeof(OLinkList));
     relocation->next = NULL;
     nameRelocation = relocation;
     relocation->obj = fn_00509c40(category->name->name, 0x13);
     relocation->offset = 0;
     relocation->addend = 0;
     data[1] = CTool_EndianConvertWord32(0);
-    relocation = (OLinkList *)CompilerTools_AllocatePool(sizeof(OLinkList));
+    relocation = (OLinkList *)lalloc(sizeof(OLinkList));
     relocation->next = nameRelocation;
     relocations = relocation;
     relocation->obj = fn_00509c40(classType->classname->name, 0x13);
@@ -1240,7 +1240,7 @@ void create_category_definition(TypeClass *classType, CRec *category)
     instanceMethods = create_method_list_object(classType, category, category->methods,
                                                 (UInt8 *)"L_OBJC_CATEGORY_INSTANCE_METHODS_", categoryName, 8, 0);
     if (instanceMethods) {
-        relocation = (OLinkList *)CompilerTools_AllocatePool(sizeof(OLinkList));
+        relocation = (OLinkList *)lalloc(sizeof(OLinkList));
         relocation->next = relocations;
         relocations = relocation;
         relocation->obj = instanceMethods;
@@ -1251,7 +1251,7 @@ void create_category_definition(TypeClass *classType, CRec *category)
     classMethods = create_method_list_object(classType, category, category->methods,
                                              (UInt8 *)"L_OBJC_CATEGORY_CLASS_METHODS_", categoryName, 7, 1);
     if (classMethods) {
-        relocation = (OLinkList *)CompilerTools_AllocatePool(sizeof(OLinkList));
+        relocation = (OLinkList *)lalloc(sizeof(OLinkList));
         relocation->next = relocations;
         relocations = relocation;
         relocation->obj = classMethods;
@@ -1260,14 +1260,14 @@ void create_category_definition(TypeClass *classType, CRec *category)
     }
     data[4] = CTool_EndianConvertWord32(0);
     if (category->bases) {
-        relocation = (OLinkList *)CompilerTools_AllocatePool(sizeof(OLinkList));
+        relocation = (OLinkList *)lalloc(sizeof(OLinkList));
         relocation->next = relocations;
         relocations = relocation;
         relocation->obj = create_protocol_list(category->bases, categoryName);
         relocation->offset = 0x10;
         relocation->addend = 0;
     }
-    fn_004ceab0(categoryObject, data, relocations, categoryObject->type->size);
+    CInit_DeclareData(categoryObject, data, relocations, categoryObject->type->size);
     definition = (ObjCDefinition *)galloc(sizeof(ObjCDefinition));
     definition->identity.category = category;
     definition->value = (int)categoryObject;
@@ -1295,21 +1295,21 @@ void emit_classobject_and_metaclassobject(TypeClass *cls)
     buffer[0] = CTool_EndianConvertWord32(0);
     buffer[1] = CTool_EndianConvertWord32(0);
     if (cls->bases != NULL) {
-        relocation = (OLinkList *)CompilerTools_AllocatePool(0x10);
+        relocation = (OLinkList *)lalloc(0x10);
         relocation->next = NULL;
         relocations = relocation;
         relocation->obj = cls->bases->base->objcinfo->metaclassobject;
         relocation->offset = 4;
         relocation->addend = 0;
     }
-    relocation = (OLinkList *)CompilerTools_AllocatePool(0x10);
+    relocation = (OLinkList *)lalloc(0x10);
     relocation->next = relocations;
     relocation->obj = metaclassObject;
     relocation->offset = 0;
     relocation->addend = 0;
     relocations = relocation;
     buffer[2] = CTool_EndianConvertWord32(0);
-    relocation = (OLinkList *)CompilerTools_AllocatePool(0x10);
+    relocation = (OLinkList *)lalloc(0x10);
     relocation->next = relocations;
     relocation->obj = className;
     relocation->offset = 8;
@@ -1323,7 +1323,7 @@ void emit_classobject_and_metaclassobject(TypeClass *cls)
     metadata = create_method_list_object(cls, NULL, cls->objcinfo->methods, (UInt8 *)"L_OBJC_CLASS_METHODS_",
                                          cls->classname->name, 0x10, 1);
     if (metadata != NULL) {
-        relocation = (OLinkList *)CompilerTools_AllocatePool(0x10);
+        relocation = (OLinkList *)lalloc(0x10);
         relocation->next = relocations;
         relocations = relocation;
         relocation->obj = metadata;
@@ -1333,7 +1333,7 @@ void emit_classobject_and_metaclassobject(TypeClass *cls)
     buffer[8] = CTool_EndianConvertWord32(0);
     buffer[9] = CTool_EndianConvertWord32(0);
     if (protocols != NULL) {
-        relocation = (OLinkList *)CompilerTools_AllocatePool(0x10);
+        relocation = (OLinkList *)lalloc(0x10);
         relocation->next = relocations;
         relocation->obj = protocols;
         relocation->offset = 0x24;
@@ -1341,10 +1341,10 @@ void emit_classobject_and_metaclassobject(TypeClass *cls)
         relocations = relocation;
     }
     CError_ASSERT(2364, metaclassObject->type->size == 0x28);
-    fn_004ceab0(metaclassObject, buffer, relocations, metaclassObject->type->size);
+    CInit_DeclareData(metaclassObject, buffer, relocations, metaclassObject->type->size);
 
     buffer[0] = CTool_EndianConvertWord32(0);
-    relocation = (OLinkList *)CompilerTools_AllocatePool(0x10);
+    relocation = (OLinkList *)lalloc(0x10);
     relocation->next = NULL;
     relocation->obj = metaclassObject;
     relocation->offset = 0;
@@ -1352,7 +1352,7 @@ void emit_classobject_and_metaclassobject(TypeClass *cls)
     relocations = relocation;
     buffer[1] = CTool_EndianConvertWord32(0);
     if (cls->bases != NULL) {
-        relocation = (OLinkList *)CompilerTools_AllocatePool(0x10);
+        relocation = (OLinkList *)lalloc(0x10);
         relocation->next = relocations;
         relocations = relocation;
         relocation->obj = cls->bases->base->objcinfo->classobject;
@@ -1360,7 +1360,7 @@ void emit_classobject_and_metaclassobject(TypeClass *cls)
         relocation->addend = 0;
     }
     buffer[2] = CTool_EndianConvertWord32(0);
-    relocation = (OLinkList *)CompilerTools_AllocatePool(0x10);
+    relocation = (OLinkList *)lalloc(0x10);
     relocation->next = relocations;
     relocation->obj = className;
     relocation->offset = 8;
@@ -1372,7 +1372,7 @@ void emit_classobject_and_metaclassobject(TypeClass *cls)
     buffer[6] = CTool_EndianConvertWord32(0);
     metadata = create_ivar_list(cls);
     if (metadata != NULL) {
-        relocation = (OLinkList *)CompilerTools_AllocatePool(0x10);
+        relocation = (OLinkList *)lalloc(0x10);
         relocation->next = relocations;
         relocations = relocation;
         relocation->obj = metadata;
@@ -1383,7 +1383,7 @@ void emit_classobject_and_metaclassobject(TypeClass *cls)
     metadata = create_method_list_object(cls, NULL, cls->objcinfo->methods, (UInt8 *)"L_OBJC_INSTANCE_METHODS_",
                                          cls->classname->name, 0x11, 0);
     if (metadata != NULL) {
-        relocation = (OLinkList *)CompilerTools_AllocatePool(0x10);
+        relocation = (OLinkList *)lalloc(0x10);
         relocation->next = relocations;
         relocations = relocation;
         relocation->obj = metadata;
@@ -1393,7 +1393,7 @@ void emit_classobject_and_metaclassobject(TypeClass *cls)
     buffer[8] = CTool_EndianConvertWord32(0);
     buffer[9] = CTool_EndianConvertWord32(0);
     if (protocols != NULL) {
-        relocation = (OLinkList *)CompilerTools_AllocatePool(0x10);
+        relocation = (OLinkList *)lalloc(0x10);
         relocation->next = relocations;
         relocation->obj = protocols;
         relocation->offset = 0x24;
@@ -1401,7 +1401,7 @@ void emit_classobject_and_metaclassobject(TypeClass *cls)
         relocations = relocation;
     }
     CError_ASSERT(2434, classObject->type->size == 0x28);
-    fn_004ceab0(classObject, buffer, relocations, classObject->type->size);
+    CInit_DeclareData(classObject, buffer, relocations, classObject->type->size);
 }
 
 static inline CObjCInfoRec *register_info0(void *i)
@@ -1423,7 +1423,7 @@ static inline void fillinstance(OLinkList *node, Object *value)
 
 static inline OLinkList *allocsection(void)
 {
-    OLinkList *n = CompilerTools_AllocatePool(16);
+    OLinkList *n = lalloc(16);
     return n;
 }
 
@@ -1469,7 +1469,7 @@ Object *CObjC_GetProtocolInfo(CRec *protocol)
             node = first;
 
             offsets[1] = CTool_EndianConvertWord32(0);
-            section = (OLinkList *)CompilerTools_AllocatePool(sizeof(OLinkList));
+            section = (OLinkList *)lalloc(sizeof(OLinkList));
             section->next = node;
             head.list.ptr = section;
             section->obj = fn_00509c40(protocol->name->name, 0x13);
@@ -1479,7 +1479,7 @@ Object *CObjC_GetProtocolInfo(CRec *protocol)
             offsets[2] = CTool_EndianConvertWord32(0);
             if (protocol->bases != NULL) {
                 name = CObjCModern_ConcatStrings(protocol->name->name, "_PROTOCOLS", NULL);
-                section = (OLinkList *)CompilerTools_AllocatePool(sizeof(OLinkList));
+                section = (OLinkList *)lalloc(sizeof(OLinkList));
                 section->next = head.list.ptr;
                 head.list.ptr = section;
                 section->obj = create_protocol_list(protocol->bases, name);
@@ -1490,7 +1490,7 @@ Object *CObjC_GetProtocolInfo(CRec *protocol)
             offsets[3] = CTool_EndianConvertWord32(0);
             methods = create_protocol_method_list(protocol, "L_OBJC_PROTOCOL_INSTANCE_METHODS_", 8, 0);
             if (methods != NULL) {
-                node = (OLinkList *)CompilerTools_AllocatePool(sizeof(OLinkList));
+                node = (OLinkList *)lalloc(sizeof(OLinkList));
                 node->next = previous = head.list.ptr;
                 head.list.ptr = node;
                 fillinstance(node, (methods = methods));
@@ -1499,7 +1499,7 @@ Object *CObjC_GetProtocolInfo(CRec *protocol)
             (void)methods;
             offsets[4] = CTool_EndianConvertWord32(0);
             if ((info = create_protocol_method_list(protocol, "L_OBJC_PROTOCOL_CLASS_METHODS_", 7, 1)) != NULL) {
-                section = (OLinkList *)CompilerTools_AllocatePool(sizeof(OLinkList));
+                section = (OLinkList *)lalloc(sizeof(OLinkList));
                 section->next = previous = head.list.ptr;
                 head.list.ptr = section;
                 section->obj = info;
@@ -1522,8 +1522,8 @@ Object *CObjC_GetProtocolInfo(CRec *protocol)
                 else
                     CError_FATAL(2259);
             }
-            ((void (*)(Object *, SInt32 *, struct CObjCListHead, SInt32))fn_004ceab0)(info, offsets, head.list,
-                                                                                      info->type->size);
+            ((void (*)(Object *, SInt32 *, struct CObjCListHead, SInt32))CInit_DeclareData)(info, offsets, head.list,
+                                                                                            info->type->size);
             info->type = (Type *)protocolClass;
         }
 
@@ -1559,7 +1559,7 @@ Object *create_protocol_method_list(CRec *cls, char *nm, SInt16 val, UInt8 kind)
 
     if (count != 0) {
         size = (count - 1) * 8 + 12;
-        buffer = (char *)CompilerTools_AllocatePool(size);
+        buffer = (char *)lalloc(size);
         memclrw(buffer, size);
         className = cls->name->name;
         obj = CParser_NewCompilerDefDataObject();
@@ -1576,13 +1576,13 @@ Object *create_protocol_method_list(CRec *cls, char *nm, SInt16 val, UInt8 kind)
         if (member != NULL) {
             do {
                 if (kind == member->isinst) {
-                    entry = (OLinkList *)CompilerTools_AllocatePool(0x10);
+                    entry = (OLinkList *)lalloc(0x10);
                     entry->next = head;
                     head = entry;
                     entry->obj = fn_00509c40(member->selector->name->name, 0x15);
                     entry->offset = ptr - buffer;
                     entry->addend = 0;
-                    entry = (OLinkList *)CompilerTools_AllocatePool(0x10);
+                    entry = (OLinkList *)lalloc(0x10);
                     entry->next = head;
                     head = entry;
                     data_00588507 = 1;
@@ -1600,7 +1600,7 @@ Object *create_protocol_method_list(CRec *cls, char *nm, SInt16 val, UInt8 kind)
                 member = member->next;
             } while (member != NULL);
         }
-        fn_004ceab0(obj, buffer, head, obj->type->size);
+        CInit_DeclareData(obj, buffer, head, obj->type->size);
     } else {
         result = NULL;
     }
@@ -1634,7 +1634,7 @@ Object *create_protocol_list(ObjectList *entries, char *name)
     if (count) {
         lastIndex = count - 1;
         entriesSize = lastIndex * sizeof(descriptor->protocols[0]);
-        descriptor = (struct ObjCProtocolList *)CompilerTools_AllocatePool(size = entriesSize + sizeof(*descriptor));
+        descriptor = (struct ObjCProtocolList *)lalloc(size = entriesSize + sizeof(*descriptor));
         memclrw(descriptor, size);
         object = CParser_NewCompilerDefDataObject();
         object->name = CParser_NameConcat("L_OBJC_PROTOCOLS_", name);
@@ -1650,7 +1650,7 @@ Object *create_protocol_list(ObjectList *entries, char *name)
         if (entry) {
             slot = (char *)descriptor;
             do {
-                relocation = (OLinkList *)CompilerTools_AllocatePool(sizeof(*relocation));
+                relocation = (OLinkList *)lalloc(sizeof(*relocation));
                 relocation->next = relocations;
                 relocations = relocation;
                 relocation->obj = CObjC_GetProtocolInfo((CRec *)entry->object);
@@ -1662,7 +1662,7 @@ Object *create_protocol_list(ObjectList *entries, char *name)
                 index++;
             } while (entry);
         }
-        fn_004ceab0(object, descriptor, relocations, object->type->size);
+        CInit_DeclareData(object, descriptor, relocations, object->type->size);
     } else {
         result = NULL;
     }
@@ -1693,7 +1693,7 @@ Object *create_method_list_object(TypeClass *owner, CRec *category, MethRec *met
     }
     if (count != 0) {
         size = (count - 1) * sizeof(ObjCMethodEntry) + sizeof(ObjCMethodList);
-        methodList = CompilerTools_AllocatePool(size);
+        methodList = lalloc(size);
         memclrw(methodList, size);
         object = CParser_NewCompilerDefDataObject();
         object->name = CParser_NameConcat((char *)namePrefix, nameSuffix);
@@ -1710,14 +1710,14 @@ Object *create_method_list_object(TypeClass *owner, CRec *category, MethRec *met
             do {
                 SInt8 isInstanceMethod = method->isinst;
                 if (methodKind == isInstanceMethod) {
-                    relocation = CompilerTools_AllocatePool(sizeof(OLinkList));
+                    relocation = lalloc(sizeof(OLinkList));
                     relocation->next = relocations;
                     relocations = relocation;
                     relocation->obj = fn_00509c40(method->selector->name->name, 0x15);
                     relocation->offset = (char *)&entry->selector - (char *)methodList;
                     relocation->addend = 0;
 
-                    relocation = CompilerTools_AllocatePool(sizeof(OLinkList));
+                    relocation = lalloc(sizeof(OLinkList));
                     relocation->next = relocations;
                     relocations = relocation;
 
@@ -1733,7 +1733,7 @@ Object *create_method_list_object(TypeClass *owner, CRec *category, MethRec *met
                     relocation->offset = (char *)&entry->encoding - (char *)methodList;
                     relocation->addend = 0;
 
-                    relocation = CompilerTools_AllocatePool(sizeof(OLinkList));
+                    relocation = lalloc(sizeof(OLinkList));
                     relocation->next = relocations;
                     relocations = relocation;
 
@@ -1764,7 +1764,7 @@ Object *create_method_list_object(TypeClass *owner, CRec *category, MethRec *met
                 method = method->next;
             } while (method != NULL);
         }
-        fn_004ceab0(object, methodList, relocations, object->type->size);
+        CInit_DeclareData(object, methodList, relocations, object->type->size);
     } else {
         result = NULL;
     }
@@ -1794,7 +1794,7 @@ Object *create_ivar_list(TypeClass *cls)
 
     if (count != 0) {
         size = (count - 1) * sizeof(IvarEntry) + sizeof(UInt32) + sizeof(IvarEntry);
-        buffer = CompilerTools_AllocatePool(size);
+        buffer = lalloc(size);
         memclrw(buffer, size);
         className = cls->classname->name;
         object = CParser_NewCompilerDefDataObject();
@@ -1809,7 +1809,7 @@ Object *create_ivar_list(TypeClass *cls)
         ivar = cls->ivars;
         entry = (IvarEntry *)(buffer + sizeof(UInt32));
         while (ivar != NULL) {
-            relocation = CompilerTools_AllocatePool(sizeof(OLinkList));
+            relocation = lalloc(sizeof(OLinkList));
             relocation->next = relocations;
             relocations = relocation;
             relocation->obj = fn_00509c40(ivar->name->name, 0x15);
@@ -1822,7 +1822,7 @@ Object *create_ivar_list(TypeClass *cls)
             AppendGListByte(&data_00583548, 0);
             encoding = galloc(data_00583548.size);
             memcpy(encoding, *data_00583548.data, data_00583548.size);
-            relocation = CompilerTools_AllocatePool(sizeof(OLinkList));
+            relocation = lalloc(sizeof(OLinkList));
             relocation->next = relocations;
             relocations = relocation;
             relocation->obj = fn_00509c40(encoding, 0x14);
@@ -1832,7 +1832,7 @@ Object *create_ivar_list(TypeClass *cls)
             entry++;
             ivar = ivar->next;
         }
-        fn_004ceab0(object, buffer, relocations, object->type->size);
+        CInit_DeclareData(object, buffer, relocations, object->type->size);
     } else {
         result = NULL;
     }
@@ -1987,7 +1987,7 @@ void CObjC_005074f0(Type *type, UInt32 qual, Boolean flag)
                 AppendGListByte(&data_00583548, '[');
                 if (TYPE_POINTER(type)->target->size) {
                     sprintf(buf, "%ld", type->size / TYPE_POINTER(type)->target->size);
-                    CompilerTools_AppendGListString(&data_00583548, buf);
+                    AppendGListName(&data_00583548, buf);
                 } else {
                     AppendGListByte(&data_00583548, '0');
                 }
@@ -1997,14 +1997,14 @@ void CObjC_005074f0(Type *type, UInt32 qual, Boolean flag)
             case TYPEBITFIELD:
                 AppendGListByte(&data_00583548, 'b');
                 sprintf(buf, "%ld", TYPE_BITFIELD(type)->bitlength);
-                CompilerTools_AppendGListString(&data_00583548, buf);
+                AppendGListName(&data_00583548, buf);
                 return;
             case TYPESTRUCT:
                 AppendGListByte(&data_00583548, TYPE_STRUCT(type)->stype == 1 ? '(' : '{');
                 if (data_00588507 != 0) {
                     AppendGListByte(&data_00583548, '?');
                 } else if (TYPE_STRUCT(type)->name != NULL) {
-                    CompilerTools_AppendGListString(&data_00583548, TYPE_STRUCT(type)->name->name);
+                    AppendGListName(&data_00583548, TYPE_STRUCT(type)->name->name);
                 }
                 if (flag) {
                     AppendGListByte(&data_00583548, '=');
@@ -2066,17 +2066,17 @@ void emit_method_type_encoding(MethRec *p, int b)
         AppendGListByte(&data_00583548, 0x40);
 
     sprintf(buf, "%ld", CodeGen_GetMethRecRtypeAndArgsSize(p));
-    CompilerTools_AppendGListString(&data_00583548, buf);
+    AppendGListName(&data_00583548, buf);
 
     AppendGListByte(&data_00583548, 0x40);
 
     sprintf(buf, "%ld", CodeGen_GetMethRecRTypeSize(p));
-    CompilerTools_AppendGListString(&data_00583548, buf);
+    AppendGListName(&data_00583548, buf);
 
     AppendGListByte(&data_00583548, 0x3a);
 
     sprintf(buf, "%ld", fn_00432480(p));
-    CompilerTools_AppendGListString(&data_00583548, buf);
+    AppendGListName(&data_00583548, buf);
 
     for (n = (ObjCParameterNode *)p->args; n != NULL; n = n->next) {
         if (n->type) {
@@ -2084,7 +2084,7 @@ void emit_method_type_encoding(MethRec *p, int b)
                 AppendGListByte(&data_00583548, 0x72);
             CObjC_005074f0(n->type, 0, b);
             sprintf(buf, "%ld", CodeGen_GetObjCParameterOffset(p, n));
-            CompilerTools_AppendGListString(&data_00583548, buf);
+            AppendGListName(&data_00583548, buf);
         }
     }
 }
@@ -2098,7 +2098,7 @@ void encode_class(TypeClass *cls, Boolean flag)
         if (data_00588507 != 0)
             AppendGListByte(&data_00583548, 0x3f);
         else if (cls->classname != NULL)
-            CompilerTools_AppendGListString(&data_00583548, cls->classname->name);
+            AppendGListName(&data_00583548, cls->classname->name);
         if (flag) {
             AppendGListByte(&data_00583548, 0x3d);
             for (iv = cls->ivars; iv != NULL; iv = iv->next)
@@ -2526,7 +2526,7 @@ TypeFunc *get_method_ftype(MethRec *spec)
             p = f->args;
             for (;;) {
                 if (p->next == NULL) {
-                    p->next = &data_00583098;
+                    p->next = &elipsis;
                     break;
                 }
                 p = p->next;
@@ -2543,25 +2543,25 @@ HashNameNode *CObjC_00508810(TypeClass *obj, CRec *ns, MethRec *info)
     ObjCParameterNode *p;
 
     data_00583548.size = 0;
-    CompilerTools_AppendGListString(&data_00583548, "");
+    AppendGListName(&data_00583548, "");
     if (info->isinst != 0)
-        CompilerTools_AppendGListString(&data_00583548, "+[");
+        AppendGListName(&data_00583548, "+[");
     else
-        CompilerTools_AppendGListString(&data_00583548, "-[");
-    CompilerTools_AppendGListString(&data_00583548, obj->classname->name);
+        AppendGListName(&data_00583548, "-[");
+    AppendGListName(&data_00583548, obj->classname->name);
     if (ns != NULL) {
         AppendGListByte(&data_00583548, 0x28);
-        CompilerTools_AppendGListString(&data_00583548, ns->name->name);
+        AppendGListName(&data_00583548, ns->name->name);
         AppendGListByte(&data_00583548, 0x29);
     }
     AppendGListByte(&data_00583548, 0x20);
     for (p = info->args; p != NULL; p = p->next) {
         if (p->selectorName != NULL)
-            CompilerTools_AppendGListString(&data_00583548, p->selectorName->name);
+            AppendGListName(&data_00583548, p->selectorName->name);
         if (p->type != NULL)
             AppendGListByte(&data_00583548, 0x3a);
     }
-    AppendGListName(&data_00583548, "]");
+    AppendGListID(&data_00583548, "]");
     COS_LockHandle(data_00583548.data);
     name = GetHashNameNode(*data_00583548.data);
     COS_UnlockHandle(data_00583548.data);
@@ -2695,7 +2695,7 @@ MethRec *parse_method_declaration(char useGlobalAllocation)
         method = (MethRec *)galloc(sizeof(*method));
         memclrw(method, sizeof(*method));
     } else {
-        method = (MethRec *)CompilerTools_AllocatePool(sizeof(*method));
+        method = (MethRec *)lalloc(sizeof(*method));
         memclrw(method, sizeof(*method));
     }
     switch (tk) {
@@ -2713,7 +2713,7 @@ MethRec *parse_method_declaration(char useGlobalAllocation)
         tk = CPrepTokenizer_GetNextToken();
         memclrw(&returnType, sizeof(returnType));
         CParser_GetDeclSpecs(&returnType, 0);
-        CDecl_ParseDeclarator(&returnType);
+        scandeclarator(&returnType);
         if (tk != ')')
             CError_ReportErrorAndUpdateToken(ERR_RPAREN_EXPECTED);
         else
@@ -2736,7 +2736,7 @@ MethRec *parse_method_declaration(char useGlobalAllocation)
             argument = (ObjCParameterNode *)galloc(sizeof(*argument));
             memclrw(argument, sizeof(*argument));
         } else {
-            argument = (ObjCParameterNode *)CompilerTools_AllocatePool(sizeof(*argument));
+            argument = (ObjCParameterNode *)lalloc(sizeof(*argument));
             memclrw(argument, sizeof(*argument));
         }
         *argumentLink = argument;
@@ -2761,7 +2761,7 @@ MethRec *parse_method_declaration(char useGlobalAllocation)
             tk = CPrepTokenizer_GetNextToken();
             memclrw(&argumentType, sizeof(argumentType));
             CParser_GetDeclSpecs(&argumentType, 0);
-            CDecl_ParseDeclarator(&argumentType);
+            scandeclarator(&argumentType);
             if (tk != ')')
                 CError_ReportErrorAndUpdateToken(ERR_RPAREN_EXPECTED);
             else
@@ -3001,7 +3001,7 @@ void CObjCModern_GenerateSymbolTableAndModule(void)
             count2++;
         }
         size = (count1 + count2 - 1) * 4 + 16;
-        symbols = (ObjCSymbolTable *)CompilerTools_AllocatePool(size);
+        symbols = (ObjCSymbolTable *)lalloc(size);
         memclrw(symbols, size);
         symbols->word0 = CTool_EndianConvertWord32(0);
         symbols->word4 = CTool_EndianConvertWord32(0);
@@ -3012,7 +3012,7 @@ void CObjCModern_GenerateSymbolTableAndModule(void)
         index = 0;
         definition = class_type_entries;
         while (definition != NULL) {
-            reference = (OLinkList *)CompilerTools_AllocatePool(16);
+            reference = (OLinkList *)lalloc(16);
             reference->next = references;
             references = reference;
             reference->obj = definition->type->objcinfo->classobject;
@@ -3023,7 +3023,7 @@ void CObjCModern_GenerateSymbolTableAndModule(void)
         }
         categoryDefinition = category_definitions;
         while (categoryDefinition != NULL) {
-            reference = (OLinkList *)CompilerTools_AllocatePool(16);
+            reference = (OLinkList *)lalloc(16);
             reference->next = references;
             references = reference;
             reference->obj = (Object *)categoryDefinition->value;
@@ -3038,18 +3038,18 @@ void CObjCModern_GenerateSymbolTableAndModule(void)
         CScope_AddObject(object->nspace, object->name, (ObjBase *)object);
         object->sclass = TK_STATIC;
         object->section = 0x1a;
-        fn_004ceab0(object, symbols, references, object->type->size);
+        CInit_DeclareData(object, symbols, references, object->type->size);
         module.version = CTool_EndianConvertWord32(5);
         module.size = CTool_EndianConvertWord32(0x10);
         module.name = CTool_EndianConvertWord32(0);
-        reference = (OLinkList *)CompilerTools_AllocatePool(16);
+        reference = (OLinkList *)lalloc(16);
         reference->next = NULL;
         references = reference;
         reference->obj = fn_00509c40(CPrep_GetFileName(NULL, 1, 0), 0x13);
         reference->offset = 8;
         reference->addend = 0;
         module.symtab = CTool_EndianConvertWord32(0);
-        reference = (OLinkList *)CompilerTools_AllocatePool(16);
+        reference = (OLinkList *)lalloc(16);
         reference->next = references;
         reference->obj = object;
         reference->offset = 0xc;
@@ -3060,7 +3060,7 @@ void CObjCModern_GenerateSymbolTableAndModule(void)
         CScope_AddObject(object->nspace, object->name, (ObjBase *)object);
         object->sclass = TK_STATIC;
         object->section = 0x19;
-        fn_004ceab0(object, &module, reference, object->type->size);
+        CInit_DeclareData(object, &module, reference, object->type->size);
     }
 }
 
@@ -3157,7 +3157,7 @@ Object *CObjCModern_GetSelectorReference(HashEntry *p)
         block[1] = (SInt32)id;
         block[2] = 0;
         block[3] = 0;
-        fn_004ceab0(obj, local14, block, obj->type->size);
+        CInit_DeclareData(obj, local14, block, obj->type->size);
     }
     return p->obj;
 }
@@ -3176,7 +3176,7 @@ HashEntry *CObjCModern_RegisterMethodSelector(MethRec *method)
         data_00583548.size = 0;
         for (parameter = method->args; parameter != NULL; parameter = parameter->next) {
             if (parameter->selectorName != NULL)
-                CompilerTools_AppendGListString(&data_00583548, parameter->selectorName->name);
+                AppendGListName(&data_00583548, parameter->selectorName->name);
             AppendGListByte(&data_00583548, ':');
         }
         AppendGListByte(&data_00583548, 0);
@@ -3259,7 +3259,7 @@ HashEntry *CObjCModern_FindMessageArgumentHashEntry(struct MessageArgument *p)
         data_00583548.size = 0;
         while (p != NULL) {
             if (p->name != NULL)
-                CompilerTools_AppendGListString(&data_00583548, p->name->name);
+                AppendGListName(&data_00583548, p->name->name);
             AppendGListByte(&data_00583548, 0x3a);
             p = p->next;
         }
@@ -3306,7 +3306,7 @@ Object *fn_00509c40(char *name, short kind)
     object->type = CDecl_NewArrayType((Type *)&stchar, length + 1);
     object->sclass = TK_STATIC;
     object->section = kind;
-    fn_004ceab0(object, name, NULL, object->type->size);
+    CInit_DeclareData(object, name, NULL, object->type->size);
     entry = (NamedObjectCacheEntry *)galloc(sizeof(NamedObjectCacheEntry));
     entry->next = named_object_cache;
     named_object_cache = entry;

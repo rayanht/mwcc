@@ -46,9 +46,8 @@ void LoadDeletion_InitializeLoadLivenessRecordCounts(void)
     PCodeInstruction *instruction;
     unsigned int count;
 
-    block_record_counts = CompilerTools_AllocatePoolMemory(gPCodeBlockCount * sizeof(*block_record_counts));
-    load_liveness_record_start =
-        CompilerTools_AllocatePoolMemory(gPCodeBlockCount * sizeof(*load_liveness_record_start));
+    block_record_counts = oalloc(gPCodeBlockCount * sizeof(*block_record_counts));
+    load_liveness_record_start = oalloc(gPCodeBlockCount * sizeof(*load_liveness_record_start));
     data_0058820c = 0;
     for (block = gPCodeBlocks; block != NULL; block = block->next) {
         load_liveness_record_start[block->index] = data_0058820c;
@@ -79,9 +78,8 @@ void LoadDeletion_RecordImmediateLoadLiveness(void)
     int registerIndex;
     int useIndex;
 
-    immediateLoadLiveness =
-        (struct E *)CompilerTools_AllocatePoolMemory(data_0058820c * sizeof(*immediateLoadLiveness));
-    liveBits = (UInt32 *)CompilerTools_AllocatePoolMemory(((data_00587e38 + 31) >> 5) * sizeof(*liveBits));
+    immediateLoadLiveness = (struct E *)oalloc(data_0058820c * sizeof(*immediateLoadLiveness));
+    liveBits = (UInt32 *)oalloc(((data_00587e38 + 31) >> 5) * sizeof(*liveBits));
     block = gPCodeBlocks;
     while (block != NULL) {
         if (block_record_counts[block->index] != 0) {

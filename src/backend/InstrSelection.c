@@ -164,7 +164,7 @@ static inline void EmitIntoReg(ENode *l, SInt16 r1, SInt16 r2, Operand *res)
         PCodeUtilities_EmitInstruction(PC_MR, rr, res->reg);
         res->reg = rr;
     }
-    if (Type_IsUnsigned(l->rtype))
+    if (is_unsigned(l->rtype))
         PCodeUtilities_LoadImmediate(r, 0);
     else
         PCodeUtilities_EmitInstruction(PC_SRAWI, r, res->reg, 0x1f);
@@ -322,7 +322,7 @@ static void shift_right_imm(ENode *left, short sh, Type *type, short reg, Operan
         Operands_ForceGPR(&op, left->rtype, 0);
     r = reg != 0 ? reg : gUsedVirtualRegistersGPR++;
     sh &= 0x1f;
-    if (Type_IsUnsigned(type))
+    if (is_unsigned(type))
         PCodeUtilities_EmitInstruction(PC_RLWINM, r, op.reg, 0x20 - sh, 0x20 - type->size * 8 + sh, 0x1f);
     else
         PCodeUtilities_EmitInstruction(PC_SRAWI, r, op.reg, sh);
@@ -434,7 +434,7 @@ void get_dispatch_result(struct DeferredDispatch *dispatch, unsigned int argumen
     struct DispatchResult *result;
 
     if (dispatch->result == NULL) {
-        result = (struct DispatchResult *)CompilerTools_AllocatePool(sizeof(struct DispatchResult));
+        result = (struct DispatchResult *)lalloc(sizeof(struct DispatchResult));
         dispatch->result = result;
         data_00560648[*dispatch->input](dispatch->input, 0, 0, result);
     }
@@ -451,7 +451,7 @@ void get_objaccess_cached_value(ENode *node, UInt32 argument2, UInt32 argument3,
         CError_FATAL(231);
     }
     if (objectAccess->data.objaccess.cachedValue == NULL) {
-        cachedValue = (Operand *)CompilerTools_AllocatePool(0x16);
+        cachedValue = (Operand *)lalloc(0x16);
         objectAccess->data.objaccess.cachedValue = cachedValue;
         data_00560648[objectAccess->data.objaccess.expression->type](objectAccess->data.objaccess.expression, 0, 0,
                                                                      cachedValue);
@@ -1063,7 +1063,7 @@ void generate_division(ENode *node, short reg, short flags, Operand *result)
     do {
         if (type->type == TYPEFLOAT) {
             emit_binary_fpr_instruction(type->size == 4 ? 0xa9 : 0xa8, left, right, reg, result);
-        } else if (Type_IsUnsigned(type)) {
+        } else if (is_unsigned(type)) {
             if (right->type == EINTCONST) {
                 shift = getbit(right->data.intval.lo);
                 shift = (shift > 0 && shift < 0x1f) ? shift : 0;
@@ -1199,7 +1199,7 @@ void generate_modulo(ENode *node, short outputReg, short outputRegHi, Operand *r
         shift = getbit(right->data.intval.lo);
         shift = (shift > 0 && shift < 0x1f) ? shift : 0;
         if (shift != 0) {
-            if (Type_IsUnsigned(node->rtype))
+            if (is_unsigned(node->rtype))
                 unsigned_mod_pow2(left, shift, outputReg, result);
             else
                 signed_mod_pow2(left, shift, outputReg, result);
@@ -1213,7 +1213,7 @@ void generate_modulo(ENode *node, short outputReg, short outputRegHi, Operand *r
         if (leftOperand.kind)
             Operands_ForceGPR(&leftOperand, left->rtype, 0);
 
-        if (Type_IsUnsigned(node->rtype)) {
+        if (is_unsigned(node->rtype)) {
             unsignedDividend = leftOperand.reg;
             quotient = gUsedVirtualRegistersGPR++;
             unsignedMultiplier = gUsedVirtualRegistersGPR++;
@@ -1312,7 +1312,7 @@ void generate_modulo(ENode *node, short outputReg, short outputRegHi, Operand *r
         divisionReg = gUsedVirtualRegistersGPR++;
         productReg = gUsedVirtualRegistersGPR++;
         resultReg = outputReg != 0 ? outputReg : gUsedVirtualRegistersGPR++;
-        PCodeUtilities_EmitInstruction(Type_IsUnsigned(node->rtype) ? 0x46 : 0x45, divisionReg, leftOperand.reg,
+        PCodeUtilities_EmitInstruction(is_unsigned(node->rtype) ? 0x46 : 0x45, divisionReg, leftOperand.reg,
                                        rightOperand.reg);
         PCodeUtilities_EmitInstruction(PC_MULLW, productReg, divisionReg, rightOperand.reg);
         PCodeUtilities_EmitInstruction(PC_SUBF, resultReg, productReg, leftOperand.reg);
@@ -1498,14 +1498,14 @@ void select_right_shift(ENode *expr, short outputReg, short outputRegHi, Operand
             Operands_ForceGPR(&op, (Type *)left->rtype, 0);
         reg = outputReg ? outputReg : gUsedVirtualRegistersGPR++;
         shift &= 31;
-        if (Type_IsUnsigned(type))
+        if (is_unsigned(type))
             PCodeUtilities_EmitInstruction(PC_RLWINM, reg, op.reg, 32 - shift, 32 - type->size * 8 + shift, 31);
         else
             PCodeUtilities_EmitInstruction(PC_SRAWI, reg, op.reg, shift);
         output->kind = OpndType_GPR;
         output->reg = reg;
     } else {
-        InstrSelection_EmitBinaryGPRInstruction(Type_IsUnsigned(type) ? 0x6b : 0x6d, left, right, outputReg, output);
+        InstrSelection_EmitBinaryGPRInstruction(is_unsigned(type) ? 0x6b : 0x6d, left, right, outputReg, output);
     }
 }
 
@@ -1897,7 +1897,7 @@ void generate_type_conversion(ENode *node, short outputReg, short outputRegHi, O
                 Operands_ExtendGPR(result, exprtype, 0);
             if (result->kind != OpndType_GPR)
                 Operands_ForceGPR(result, exprtype, 0);
-            if (Type_IsUnsigned(exprtype))
+            if (is_unsigned(exprtype))
                 Operands_ConvertIntegerToFloat(result, target->size == 4, outputReg);
             else
                 Operands_ConvertSignedIntegerToFloat(result, target->size == 4, outputReg);
@@ -1939,7 +1939,7 @@ void generate_type_conversion(ENode *node, short outputReg, short outputRegHi, O
                 result->kind = OpndType_FPR;
                 result->reg = reg;
             }
-        } else if (Type_IsUnsigned(target) && target->size == 4) {
+        } else if (is_unsigned(target) && target->size == 4) {
             data_00560648[expr->type](expr, 1, 0, result);
             if (result->kind != OpndType_FPR)
                 Operands_ForceFPR(result, exprtype, 1);
@@ -2235,7 +2235,7 @@ void InstrSelection_EmitBinaryGPRInstruction(short opcode, ENode *left, ENode *r
                 if (integral != 0) {
                     narrow = 1;
                     if (type->size >= 2) {
-                        smallInteger = type->size == 2 && !Type_IsUnsigned(type);
+                        smallInteger = type->size == 2 && !is_unsigned(type);
                         if (!smallInteger)
                             narrow = 0;
                     }
@@ -2602,8 +2602,8 @@ void emit_conditional_funccall(ENode *expr, SInt32 requestedReg, SInt32 requeste
     if (functionOperand.kind != OpndType_GPR)
         Operands_ForceGPR(&functionOperand, functionRef->rtype, 0);
 
-    frame = (struct FunctionCallFrame *)CompilerTools_AllocatePool(sizeof(frame->next) + sizeof(frame->functionType) +
-                                                                   sizeof(frame->operand));
+    frame =
+        (struct FunctionCallFrame *)lalloc(sizeof(frame->next) + sizeof(frame->functionType) + sizeof(frame->operand));
     frame->functionType = expr->data.funccall.functype;
     frame->operand = functionOperand;
     frame->next = function_call_frames;
@@ -2761,7 +2761,7 @@ void InstrSelection_SelectComparison(ENode *node, void *p)
         emit_fpr_comparison(node->type, left, right, result);
     } else {
         if (right->type == EINTCONST) {
-            if (Type_IsUnsigned(left->rtype)) {
+            if (is_unsigned(left->rtype)) {
                 UInt16 immediate;
                 unsignedValue = right->data.intval.lo;
                 immediate = unsignedValue;
@@ -2787,7 +2787,7 @@ void InstrSelection_SelectComparison(ENode *node, void *p)
                 }
             }
         } else if (left->type == EINTCONST) {
-            if (Type_IsUnsigned(right->rtype)) {
+            if (is_unsigned(right->rtype)) {
                 UInt16 immediate;
                 unsignedValue = left->data.intval.lo;
                 immediate = unsignedValue;
@@ -2886,7 +2886,7 @@ void generate_comparison_gpr(ENode *expr, Operand *output, short requestedReg)
             return;
         }
         if (expr->type == ELESSEQU) {
-            isUnsigned = Type_IsUnsigned(left->rtype);
+            isUnsigned = is_unsigned(left->rtype);
             if (isUnsigned) {
                 scratchReg1 = gUsedVirtualRegistersGPR++;
                 PCodeUtilities_EmitInstruction(PC_LI, scratchReg1, -1);
@@ -2912,7 +2912,7 @@ void generate_comparison_gpr(ENode *expr, Operand *output, short requestedReg)
             }
         }
         if (expr->type == EGREATEREQU) {
-            isUnsigned = Type_IsUnsigned(left->rtype);
+            isUnsigned = is_unsigned(left->rtype);
             if (isUnsigned) {
                 scratchReg1 = gUsedVirtualRegistersGPR++;
                 PCodeUtilities_EmitInstruction(PC_LI, scratchReg1, -1);
@@ -2938,7 +2938,7 @@ void generate_comparison_gpr(ENode *expr, Operand *output, short requestedReg)
             }
         }
         if (expr->type == ELESS) {
-            isUnsigned = Type_IsUnsigned(left->rtype);
+            isUnsigned = is_unsigned(left->rtype);
             if (isUnsigned) {
                 if (left->rtype->size <= 2) {
                     scratchReg1 = gUsedVirtualRegistersGPR++;
@@ -2973,7 +2973,7 @@ void generate_comparison_gpr(ENode *expr, Operand *output, short requestedReg)
             }
         }
         if (expr->type == EGREATER) {
-            isUnsigned = Type_IsUnsigned(left->rtype);
+            isUnsigned = is_unsigned(left->rtype);
             if (isUnsigned) {
                 if (left->rtype->size <= 2) {
                     scratchReg1 = gUsedVirtualRegistersGPR++;
@@ -3115,7 +3115,7 @@ void emit_gpr_comparison(short secondaryReg, ENode *left, ENode *right, Operand 
         if (rightOperand.kind != OpndType_GPR)
             Operands_ForceGPR(&rightOperand, right->rtype, 0);
     }
-    isUnsigned = Type_IsUnsigned(left->rtype);
+    isUnsigned = is_unsigned(left->rtype);
     if (isUnsigned != 0)
         opcode = 0x55;
     else
@@ -3191,10 +3191,10 @@ void InstrSelection_004b37b0(short comparison, ENode *input, short sense, Operan
         gCurrentBlock->reverse_instructions->opcode != PC_RLWINM &&
         (gCurrentBlock->reverse_instructions->flags & 3585) == 513 &&
         gCurrentBlock->reverse_instructions->operandData.operands[0].value.reg == selected.reg &&
-        (!Type_IsUnsigned(input->rtype) || comparison == EEQU || comparison == ENOTEQU)) {
+        (!is_unsigned(input->rtype) || comparison == EEQU || comparison == ENOTEQU)) {
         PCodeUtilities_MakeRecordForm(gCurrentBlock->reverse_instructions);
     } else {
-        PCodeUtilities_EmitInstruction(Type_IsUnsigned(input->rtype) ? PC_CMPLI : PC_CMPI, 0, selected.reg, sense);
+        PCodeUtilities_EmitInstruction(is_unsigned(input->rtype) ? PC_CMPLI : PC_CMPI, 0, selected.reg, sense);
     }
     if (hasImmediate) {
         short lowImmediate = immediate;
@@ -3789,7 +3789,7 @@ void InstrSelection_GenerateLongLongComparison(ENode *expr, Operand *result, SIn
         ENSURE_GPR(&rightOperand, right->rtype, 0);
         if (right->rtype->size < 8) {
             SInt16 highReg = gUsedVirtualRegistersGPR++;
-            if (Type_IsUnsigned(right->rtype))
+            if (is_unsigned(right->rtype))
                 PCodeUtilities_LoadImmediate(highReg, 0);
             else
                 PCodeUtilities_EmitInstruction(PC_SRAWI, highReg, rightOperand.reg, 0x1f);
@@ -3802,7 +3802,7 @@ void InstrSelection_GenerateLongLongComparison(ENode *expr, Operand *result, SIn
         ENSURE_GPR(&leftOperand, left->rtype, 0);
         if (left->rtype->size < 8) {
             SInt16 highReg = gUsedVirtualRegistersGPR++;
-            if (Type_IsUnsigned(right->rtype))
+            if (is_unsigned(right->rtype))
                 PCodeUtilities_LoadImmediate(highReg, 0);
             else
                 PCodeUtilities_EmitInstruction(PC_SRAWI, highReg, leftOperand.reg, 0x1f);
@@ -3816,7 +3816,7 @@ void InstrSelection_GenerateLongLongComparison(ENode *expr, Operand *result, SIn
             Operands_ExtendGPR(&leftOperand, left->rtype, 0);
         if (left->rtype->size < 8) {
             SInt16 highReg = gUsedVirtualRegistersGPR++;
-            if (Type_IsUnsigned(right->rtype))
+            if (is_unsigned(right->rtype))
                 PCodeUtilities_LoadImmediate(highReg, 0);
             else
                 PCodeUtilities_EmitInstruction(PC_SRAWI, highReg, leftOperand.reg, 0x1f);
@@ -3829,7 +3829,7 @@ void InstrSelection_GenerateLongLongComparison(ENode *expr, Operand *result, SIn
         ENSURE_GPR(&rightOperand, right->rtype, 0);
         if (right->rtype->size < 8) {
             SInt16 highReg = gUsedVirtualRegistersGPR++;
-            if (Type_IsUnsigned(right->rtype))
+            if (is_unsigned(right->rtype))
                 PCodeUtilities_LoadImmediate(highReg, 0);
             else
                 PCodeUtilities_EmitInstruction(PC_SRAWI, highReg, rightOperand.reg, 0x1f);
@@ -3977,7 +3977,7 @@ void generate_gpr_pair_shift(ENode *node, short outputReg, short outputRegHi, Op
         PCodeUtilities_EmitInstruction(PC_MR, 5, count.reg);
 
     if (node->type == ESHR) {
-        if (Type_IsUnsigned(left->rtype))
+        if (is_unsigned(left->rtype))
             PCodeUtilities_EmitObjectInstructionWithPayload(data_00587ff0, 0, 0x38, 0, 0);
         else
             PCodeUtilities_EmitObjectInstructionWithPayload(data_00587ff4, 0, 0x38, 0, 0);
@@ -4029,12 +4029,12 @@ void generate_gpr_pair_division_or_modulo(ENode *node, SInt16 requestedReg, SInt
         PCodeUtilities_EmitInstruction(PC_MR, sfpe_right_operand_reg, rightOperand.reg);
 
     if (node->type == EDIV) {
-        if (Type_IsUnsigned(left->rtype) || Type_IsUnsigned(right->rtype))
+        if (is_unsigned(left->rtype) || is_unsigned(right->rtype))
             PCodeUtilities_EmitObjectInstructionWithPayload(data_00588038, 0, 0x78, 0, 0);
         else
             PCodeUtilities_EmitObjectInstructionWithPayload(data_0058803c, 0, 0x78, 0, 0);
     } else if (node->type == EMODULO) {
-        if (Type_IsUnsigned(left->rtype) || Type_IsUnsigned(right->rtype))
+        if (is_unsigned(left->rtype) || is_unsigned(right->rtype))
             PCodeUtilities_EmitObjectInstructionWithPayload(data_00588078, 0, 0x78, 0, 0);
         else
             PCodeUtilities_EmitObjectInstructionWithPayload(data_0058808c, 0, 0x78, 0, 0);
@@ -4076,7 +4076,7 @@ void generate_gpr_pair_type_conversion(ENode *node, SInt16 reg1, SInt16 reg2, Op
                 PCodeUtilities_EmitInstruction(PC_MR, returnRegHi, result->regHi);
             if (result->reg != return_gpr_first)
                 PCodeUtilities_EmitInstruction(PC_MR, return_gpr_first, result->reg);
-            if (Type_IsUnsigned(operandType))
+            if (is_unsigned(operandType))
                 PCodeUtilities_EmitObjectInstructionWithPayload(
                     (conversionType->size == 4) ? data_00587eac : data_00587eb4, 0, 0x18, 0, 0);
             else

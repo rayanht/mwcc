@@ -611,7 +611,7 @@ void *StackFrameEABI_004aabb0(UInt32 codeOffset, char *name, SInt32 *outSize, Ob
 
     nameLength = strlen(name);
     size = (nameLength + 21 + (data_0058852d ? 1 : 0) + (gHasAltivecFrame ? 2 : 0)) & ~3;
-    traceback = (TB *)CompilerTools_AllocatePool(size);
+    traceback = (TB *)lalloc(size);
     memclrw(traceback, size);
     traceback->version = 0;
     traceback->lang = copts.cplusplus ? 9 : 0;
@@ -646,9 +646,9 @@ void *StackFrameEABI_004aabb0(UInt32 codeOffset, char *name, SInt32 *outSize, Ob
         vectorArgumentCount = 0;
         argument = TYPE_FUNC(function->type)->args;
         arguments = argument;
-        while (argument && argument != &data_00583098)
+        while (argument && argument != &elipsis)
             argument = argument->next;
-        isVariadic = argument == &data_00583098;
+        isVariadic = argument == &elipsis;
         for (argument = arguments; argument; argument = argument->next) {
             TypeStruct *type = TYPE_STRUCT(argument->type);
             if (type && type->type == TYPESTRUCT && StackFrameEABI_VectorTypeKind(type) >= 4 &&

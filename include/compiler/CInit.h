@@ -131,7 +131,7 @@ extern void initialize_struct_data(InitializerData *ctx, CInit *ci, Type *type, 
 extern void CInit_004d3620(TypeBitfield *bf, unsigned char *ptr, CInt64 value);
 extern void initialize_int(InitializerData *stage, ENode *expr, Type *type, UInt32 qual);
 extern void initialize_pointer_or_intconst(InitializerData *ctx, ENode *node, Type *ns, UInt32 qual);
-extern Boolean evaluate_int_or_relocation(ENode *node, Object **pobj, CInt64 *pval);
+extern Boolean CInit_RelocInitCheck(ENode *node, Object **pobj, CInt64 *pval);
 extern Boolean CInit_004d3b20(Type *type);
 extern Boolean CInit_004d3ba0(Type *type);
 extern UInt8 advance_initializer_state(CInit *ci);
@@ -140,8 +140,8 @@ extern void append_initializer_entry(InitializerData *ctx, Type *type, ENode *ex
 extern void initialize_class_initializer_data(InitializerData *dst, CInit *op, Type *type, UInt32 qual, int flag);
 extern NameEntry *CInit_DeclarePooledString(const char *name, SInt32 len, SInt8 flag);
 extern void CInit_InitializeData(Object *obj);
-extern void fn_004cea90(Object *object, void *buffer, void *args, int size);
-extern void fn_004ceab0(Object *object, void *buffer, void *args, SInt32 size);
+extern void CInit_DeclareReadOnlyData(Object *object, void *buffer, void *args, int size);
+extern void CInit_DeclareData(Object *object, void *buffer, void *args, SInt32 size);
 extern void emit_object(Object *object, const void *buffer, struct OLinkList *args, unsigned int options,
                         Boolean useAlternate);
 extern void CInit_DeclarePooledStrings(void);

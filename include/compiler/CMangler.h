@@ -15,7 +15,7 @@ extern void fn_004c2ac0(Type *type, SInt32 flag);
 extern HashNameNode *CMangler_ConversionFuncName(Type *type, UInt32 qual);
 extern HashNameNode *get_object_link_name(Object *object);
 extern HashNameNode *CMangler_GetCovariantFunctionName(Object *object, Type *type);
-extern void mangle_type(Type *type, UInt32 flags);
+extern void CMangler_MangleType(Type *type, UInt32 flags);
 extern void mangle_qualified_name(NameSpace *nameSpace, const char *name);
 extern HashNameNode *CMangler_TemplateInstanceName(HashNameNode *name, TemplArg *list);
 extern HashNameNode *CMangler_ThunkName(Object *input, int offset, int adjustment, int index);

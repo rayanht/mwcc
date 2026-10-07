@@ -63,7 +63,7 @@ void COpt_ConstantPropagation(void)
             }
         }
     } while (constantPropagationChanged != 0);
-    CompilerTools_ResetPool();
+    freeoheap();
 }
 
 static void SetType(PCodeInstruction *p, short t)
@@ -567,13 +567,12 @@ void COpt_LoadDeletion(void)
     if (data_0058820c > 0) {
         COpt_SetLoopCodeMotionMode(0);
         LoadDeletion_RecordImmediateLoadLiveness();
-        data_00587c98 = (CBlockData *)CompilerTools_AllocatePoolMemory(gPCodeBlockCount * sizeof(CBlockData));
+        data_00587c98 = (CBlockData *)oalloc(gPCodeBlockCount * sizeof(CBlockData));
         blockIndex = 0;
         sets = data_00587c98;
         while (blockIndex < gPCodeBlockCount) {
-            sets->generatedLoads =
-                (UInt32 *)CompilerTools_AllocatePoolMemory(((data_0058820c + 31) >> 5) * sizeof(UInt32));
-            secondSet = (UInt32 *)CompilerTools_AllocatePoolMemory(((data_0058820c + 31) >> 5) * sizeof(UInt32));
+            sets->generatedLoads = (UInt32 *)oalloc(((data_0058820c + 31) >> 5) * sizeof(UInt32));
+            secondSet = (UInt32 *)oalloc(((data_0058820c + 31) >> 5) * sizeof(UInt32));
             blockIndex++;
             sets->killedLoads = secondSet;
             sets++;
@@ -591,5 +590,5 @@ void COpt_LoadDeletion(void)
             gLoadDeletionChanged = 1;
         }
     }
-    CompilerTools_ResetPool();
+    freeoheap();
 }

@@ -110,7 +110,7 @@ static ObjectList *CScope_CopyList(ObjectList *list)
     ObjectList *newlist;
     ObjectList *p;
 
-    p = CompilerTools_AllocatePool(sizeof(ObjectList));
+    p = lalloc(sizeof(ObjectList));
     newlist = p;
     for (;;) {
         p->object = list->object;
@@ -119,7 +119,7 @@ static ObjectList *CScope_CopyList(ObjectList *list)
             p->next = NULL;
             break;
         }
-        p->next = CompilerTools_AllocatePool(sizeof(ObjectList));
+        p->next = lalloc(sizeof(ObjectList));
         p = p->next;
     }
     return newlist;
@@ -337,7 +337,7 @@ static NameSpaceObjectList *CScope_FindMemberName(HashNameNode *name, NameSpace 
 
 static BClassList *CScope_NewPath(TypeClass *tclass, BClassList *next)
 {
-    BClassList *path = CompilerTools_AllocatePool(8);
+    BClassList *path = lalloc(8);
 
     path->next = next;
     path->type = (Type *)tclass;
@@ -396,7 +396,7 @@ static void ScAdd(NameSpaceLookupList *node, NameSpaceList *item)
 {
     NameSpaceList *it;
 
-    it = CompilerTools_AllocatePool(sizeof(NameSpaceList));
+    it = lalloc(sizeof(NameSpaceList));
     it->nspace = item->nspace;
     it->next = node->next->namespaces;
     node->next->namespaces = it;
@@ -591,7 +591,7 @@ NameSpaceObjectList *CScope_InsertNameSpaceName(NameSpace *nspace, HashNameNode 
     if (nspace->is_global)
         entry = (NameSpaceName *)galloc(sizeof(NameSpaceName));
     else
-        entry = (NameSpaceName *)CompilerTools_AllocatePool(sizeof(NameSpaceName));
+        entry = (NameSpaceName *)lalloc(sizeof(NameSpaceName));
     entry->name = name;
     entry->first.next = NULL;
     entry->first.object = NULL;
@@ -619,7 +619,7 @@ NameSpaceObjectList *CScope_InsertName(NameSpace *scope, HashNameNode *name)
     if (target->is_global != 0) {
         entry = (NameSpaceName *)galloc(16U);
     } else {
-        entry = (NameSpaceName *)CompilerTools_AllocatePool(16U);
+        entry = (NameSpaceName *)lalloc(16U);
     }
     entry->next = NULL;
     entry->name = name;
@@ -648,7 +648,7 @@ NameSpaceList *fn_0049b300(NameSpaceList *list, NameSpace *nspace)
             return list;
     }
 
-    n = (NameSpaceList *)CompilerTools_AllocatePool(8);
+    n = (NameSpaceList *)lalloc(8);
     n->next = list;
     n->nspace = nspace;
     list = n;
@@ -753,7 +753,7 @@ NameSpaceObjectList *CScope_ArgumentDependentNameLookup(NameSpaceObjectList *res
                     scan = scan->next;
                 }
                 if (scan == NULL) {
-                    link = (NameSpaceObjectList *)CompilerTools_AllocatePool(sizeof(NameSpaceObjectList));
+                    link = (NameSpaceObjectList *)lalloc(sizeof(NameSpaceObjectList));
                     link->object = member->object;
                     link->next = results;
                     results = link;
@@ -787,7 +787,7 @@ NameSpace *CScope_NewListNameSpace(HashNameNode *name, Boolean is_global)
         ns = (NameSpace *)galloc(sizeof(NameSpace));
         memclrw(ns, sizeof(NameSpace));
     } else {
-        ns = (NameSpace *)CompilerTools_AllocatePool(sizeof(NameSpace));
+        ns = (NameSpace *)lalloc(sizeof(NameSpace));
         memclrw(ns, sizeof(NameSpace));
     }
     ns->name = name;
@@ -883,7 +883,7 @@ found:;
         goto addName;
     {
         newItem = scope->is_global ? (NameSpaceObjectList *)galloc(sizeof(NameSpaceObjectList))
-                                   : (NameSpaceObjectList *)CompilerTools_AllocatePool(sizeof(NameSpaceObjectList));
+                                   : (NameSpaceObjectList *)lalloc(sizeof(NameSpaceObjectList));
         if ((kind = object->otype) == 3 || first->object->otype == OT_NAMESPACE) {
             CError_ReportError(ERR_ILLEGAL_NAME_OVERLOADING);
             return;
@@ -962,7 +962,7 @@ addName:
         if (scope->is_global)
             newEntry = (NameSpaceName *)galloc(sizeof(NameSpaceName));
         else
-            newEntry = (NameSpaceName *)CompilerTools_AllocatePool(sizeof(NameSpaceName));
+            newEntry = (NameSpaceName *)lalloc(sizeof(NameSpaceName));
         newEntry->name = name;
         newEntry->first.next = NULL;
         newEntry->first.object = NULL;
@@ -997,7 +997,7 @@ struct NameSpaceLookupList *build_namespace_scope_rec(NameSpace *nspace)
     NameSpaceList *used;
     NameSpaceLookupList *r;
 
-    rec = CompilerTools_AllocatePool(12);
+    rec = lalloc(12);
     memclrw(rec, 12);
     rec->nspace = nspace;
     if (nspace->parent)
@@ -1011,7 +1011,7 @@ struct NameSpaceLookupList *build_namespace_scope_rec(NameSpace *nspace)
                     if (p->nspace == u->nspace)
                         break;
                 if (!p) {
-                    p = CompilerTools_AllocatePool(8);
+                    p = lalloc(8);
                     p->nspace = u->nspace;
                     p->next = scope->next;
                     scope->next = p;
@@ -1024,7 +1024,7 @@ struct NameSpaceLookupList *build_namespace_scope_rec(NameSpace *nspace)
                 if (p->nspace == used->nspace)
                     break;
             if (!p) {
-                p = CompilerTools_AllocatePool(8);
+                p = lalloc(8);
                 p->nspace = used->nspace;
                 p->next = r->namespaces;
                 r->namespaces = p;
@@ -1049,7 +1049,7 @@ NameSpaceLookupList *build_usings_scope_list(NameSpace *ns)
             for (usingEntry = scope->nspace->usings; usingEntry != NULL; usingEntry = usingEntry->next) {
                 if (!ScSeen(&root, usingEntry)) {
                     if (scope->next == NULL) {
-                        scope->next = CompilerTools_AllocatePool(sizeof(NameSpaceLookupList));
+                        scope->next = lalloc(sizeof(NameSpaceLookupList));
                         scope->next->nspace = NULL;
                         scope->next->namespaces = NULL;
                         scope->next->next = NULL;
@@ -1062,7 +1062,7 @@ NameSpaceLookupList *build_usings_scope_list(NameSpace *ns)
             for (usingEntry = namespaceEntry->nspace->usings; usingEntry != NULL; usingEntry = usingEntry->next) {
                 if (!ScSeen(&root, usingEntry)) {
                     if (scope->next == NULL) {
-                        scope->next = CompilerTools_AllocatePool(sizeof(NameSpaceLookupList));
+                        scope->next = lalloc(sizeof(NameSpaceLookupList));
                         scope->next->nspace = NULL;
                         scope->next->namespaces = NULL;
                         scope->next->next = NULL;
@@ -1206,9 +1206,9 @@ BClassList *find_class_member_path(NameResult *result, TypeClass *tclass, SInt32
         }
     }
     for (base = tclass->bases, bestBase = NULL; base; base = base->next) {
-        thisoffset = base->is_virtual ? CClass_FindVBaseOffset(class_path_base, base->base) : offset + base->offset;
+        thisoffset = base->is_virtual ? CClass_VirtualBaseOffset(class_path_base, base->base) : offset + base->offset;
         if ((candidate = find_class_member_path(result, base->base, thisoffset))) {
-            n = CompilerTools_AllocatePool(8);
+            n = lalloc(8);
             n->next = candidate;
             n->type = (Type *)tclass;
             if (bestBase && bestClass == found_class) {
@@ -1267,7 +1267,7 @@ BClassList *find_base_class_path(TypeClass *theclass, TypeClass *target, unsigne
     if (theclass == target) {
         if (found_class != NULL && class_path_offset != offset)
             CError_ReportError(ERR_AMBIGUOUS_ACCESS_CLASS_STRUCT_UNION_MEMBER);
-        node = (BClassList *)CompilerTools_AllocatePool(8);
+        node = (BClassList *)lalloc(8);
         node->next = NULL;
         node->type = (Type *)theclass;
         found_class = theclass;
@@ -1277,7 +1277,7 @@ BClassList *find_base_class_path(TypeClass *theclass, TypeClass *target, unsigne
     path = NULL;
     for (base = theclass->bases; base; base = base->next) {
         if (base->is_virtual)
-            baseOffset = CClass_FindVBaseOffset(class_path_base, base->base);
+            baseOffset = CClass_VirtualBaseOffset(class_path_base, base->base);
         else
             baseOffset = offset + base->offset;
         node = find_base_class_path(base->base, target, baseOffset);
@@ -1285,7 +1285,7 @@ BClassList *find_base_class_path(TypeClass *theclass, TypeClass *target, unsigne
             path = node;
     }
     if (path) {
-        node = (BClassList *)CompilerTools_AllocatePool(8);
+        node = (BClassList *)lalloc(8);
         node->next = path;
         node->type = (Type *)theclass;
         return node;
@@ -1381,7 +1381,7 @@ NameSpaceObjectList *CScope_0049a000(NameSpaceLookupList *context, HashNameNode 
                             continue;
                         AmbiguousError(scope, namespaceEntry, name);
                     }
-                    tail = (NameSpaceObjectList *)CompilerTools_AllocatePool(sizeof(NameSpaceObjectList));
+                    tail = (NameSpaceObjectList *)lalloc(sizeof(NameSpaceObjectList));
                     head = tail;
                     for (;;) {
                         tail->object = result->object;
@@ -1390,7 +1390,7 @@ NameSpaceObjectList *CScope_0049a000(NameSpaceLookupList *context, HashNameNode 
                             tail->next = NULL;
                             break;
                         }
-                        tail->next = (NameSpaceObjectList *)CompilerTools_AllocatePool(sizeof(NameSpaceObjectList));
+                        tail->next = (NameSpaceObjectList *)lalloc(sizeof(NameSpaceObjectList));
                         tail = tail->next;
                     }
                     result = head;
@@ -1400,8 +1400,7 @@ NameSpaceObjectList *CScope_0049a000(NameSpaceLookupList *context, HashNameNode 
                     Object *object = (Object *)candidate->object;
 
                     if (IsFunc(object)) {
-                        NameSpaceObjectList *newEntry =
-                            (NameSpaceObjectList *)CompilerTools_AllocatePool(sizeof(NameSpaceObjectList));
+                        NameSpaceObjectList *newEntry = (NameSpaceObjectList *)lalloc(sizeof(NameSpaceObjectList));
                         newEntry->object = candidate->object;
                         newEntry->next = result;
                         result = newEntry;
@@ -1691,7 +1690,7 @@ Type *CScope_GetType(NameSpace *nspace, HashNameNode *name, UInt32 *qual)
     return NULL;
 }
 
-Type *CScope_FindTagType(NameSpace *nspace, HashNameNode *name)
+Type *CScope_GetTagType(NameSpace *nspace, HashNameNode *name)
 {
     NameSpaceObjectList *objects;
     CScopeNSIterator ctx;
@@ -1727,7 +1726,7 @@ Boolean parse_qualified_templdep_type(NameResult *context, Type *qualifier, Bool
     for (;;) {
         token = CPrepTokenizer_GetNextToken();
         if (token == 0x148 && allowToken328) {
-            if (!CParser_00490660(NULL, 1))
+            if (!CParser_ParseOperatorName(NULL, 1))
                 return 0;
             node = CDecl_NewTemplDepType(1);
             node->u.qual.type = (TypeTemplDep *)qualifier;
@@ -1798,7 +1797,7 @@ Boolean parse_name_in_namespace(NameResult *scope, NameSpace *ns)
                 }
                 break;
             case TK_OPERATOR:
-                if (!CParser_00490660(NULL, 1))
+                if (!CParser_ParseOperatorName(NULL, 1))
                     return 0;
                 CPrep_UngetToken();
                 name = data_00587fa0;
@@ -1933,7 +1932,7 @@ Boolean CScope_ParseExprName(NameResult *scope)
             name = data_00587fa0;
             break;
         case TK_OPERATOR:
-            if (!CParser_00490660(NULL, 1))
+            if (!CParser_ParseOperatorName(NULL, 1))
                 return 0;
             name = data_00587fa0;
             CPrep_UngetToken();
@@ -2092,7 +2091,7 @@ Boolean CScope_ParseDeclName(NameResult *lookup)
             cscope_currentclass = scope->theclass;
             cscope_currentfunc = NULL;
             cscope_is_member_func = 0;
-            if (!CParser_00490660(NULL, 1)) {
+            if (!CParser_ParseOperatorName(NULL, 1)) {
                 cscope_current = savedScope;
                 cscope_currentclass = savedObject;
                 cscope_currentfunc = savedOffset;
@@ -2645,7 +2644,7 @@ void CScope_DefineTypeTag(NameSpace *ns, HashNameNode *name, Type *type)
     CScope_AddObject(ns, name, (ObjBase *)tag);
 }
 
-Type *CScope_GetTagType(NameSpace *nspace, HashNameNode *name)
+Type *CScope_GetLocalTagType(NameSpace *nspace, HashNameNode *name)
 {
     NameSpaceObjectList *list;
 
@@ -3181,4 +3180,3 @@ unsigned int CScope_ParseUsingDirective(NameSpace *container)
         entry = CError_ReportError(ERR_SEMICOLON_EXPECTED);
     return (unsigned int)entry;
 }
-

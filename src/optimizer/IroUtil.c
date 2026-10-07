@@ -313,7 +313,7 @@ IROLinear *IroUtil_CopyLinearToList(IROLinear *node, IROList *list)
         case IROLinearNop:
             break;
         case IROLinearOperand:
-            tmp = CompilerTools_AllocatePool(sizeof(*tmp));
+            tmp = lalloc(sizeof(*tmp));
             *tmp = *node->u.node;
             newnode->u.node = tmp;
             break;
@@ -331,8 +331,8 @@ IROLinear *IroUtil_CopyLinearToList(IROLinear *node, IROList *list)
             break;
         case IROLinearFunccall:
             newnode->u.funccall.callee = IroUtil_CopyLinearToList(newnode->u.funccall.callee, list);
-            newnode->u.funccall.args = (IROLinear **)CompilerTools_AllocatePoolMemory(
-                newnode->u.funccall.argCount * sizeof(*newnode->u.funccall.args));
+            newnode->u.funccall.args =
+                (IROLinear **)oalloc(newnode->u.funccall.argCount * sizeof(*newnode->u.funccall.args));
             for (i = 0; i < newnode->u.funccall.argCount; i++)
                 newnode->u.funccall.args[i] = IroUtil_CopyLinearToList(node->u.funccall.args[i], list);
             break;
