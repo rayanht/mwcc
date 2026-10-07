@@ -66,15 +66,12 @@ extern unsigned char Option_ShowHelp(void);
 extern void push_option(void *a);
 extern void push_option_arg(Option *opt, char *arg);
 extern unsigned int Option_ParseOptionList(OptionList *holder, unsigned int flags);
+extern int Option_ParseDefaultOption(OptionList *options);
 extern void Option_FormatMessageWithOptionContext(SInt32 id, char *arg);
 extern void Option_ReportError(SInt32 id, char *arg);
 extern int show_option_help(char *name);
 extern void format_and_dispatch_option_message(SInt32 id, char *arg);
 extern void report_option_message(SInt32 id, char *arg);
-extern struct OptionList *option_lists[];
-extern OptionList optionList;
-extern int data_0057f43c;
-extern struct Option **data_0057f440;
 extern int data_00587594;
 extern char data_00587ca0[];
 extern int option_list_count;
@@ -86,7 +83,6 @@ extern int parse_option_list(OptionList *options, UInt32 flags);
 extern char option_name[];
 extern int data_00587e10;
 extern char data_00587e2a;
-extern Triple option_kind_triples[];
 
 #ifdef __cplusplus
 }

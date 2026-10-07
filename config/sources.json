@@ -74,8 +74,7 @@
     ],
     "include_dirs": [
       "src/backend"
-    ],
-    "status": "NonMatching"
+    ]
   },
   "src/backend/Coloring.c": {
     "compiler": "pro53",
@@ -499,8 +498,7 @@
     ],
     "include_dirs": [
       "src/backend"
-    ],
-    "status": "NonMatching"
+    ]
   },
   "src/backend/Registers.c": {
     "compiler": "pro53",
@@ -1100,8 +1098,7 @@
     ],
     "include_dirs": [
       "src/driver"
-    ],
-    "status": "NonMatching"
+    ]
   },
   "src/driver/Parameter.c": {
     "compiler": "pro53",
@@ -1222,8 +1219,7 @@
     ],
     "include_dirs": [
       "src/driver"
-    ],
-    "status": "NonMatching"
+    ]
   },
   "src/driver/TargetOptimizer-ppc-eabi.c": {
     "compiler": "pro53",
@@ -1286,8 +1282,7 @@
     ],
     "include_dirs": [
       "src/driver"
-    ],
-    "status": "NonMatching"
+    ]
   },
   "src/driver/ToolHelpers.c": {
     "compiler": "pro53",
@@ -1762,8 +1757,7 @@
     ],
     "include_dirs": [
       "src/frontend"
-    ],
-    "status": "NonMatching"
+    ]
   },
   "src/frontend/CTemplateClass.c": {
     "compiler": "pro53",
@@ -1826,8 +1820,7 @@
     "include_dirs": [
       "src/frontend",
       "include"
-    ],
-    "status": "NonMatching"
+    ]
   },
   "src/frontend/CompilerTools.c": {
     "compiler": "pro53",
@@ -3018,8 +3011,7 @@
     ],
     "include_dirs": [
       "src/optimizer"
-    ],
-    "status": "NonMatching"
+    ]
   },
   "src/optimizer/IroJump.c": {
     "compiler": "pro53",

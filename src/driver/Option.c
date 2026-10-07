@@ -14,13 +14,16 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+static struct OptionList *option_lists[32];
+static OptionList optionList;
+
 #define oStack data_00586d20
 #define oStackPtr data_00587594
 
 #define MAXSTACK 8
 #define OPTION_ASSERT(cond, line) ((cond) ? (void)0 : CLIO_ReportAssertionFailure(#cond, "Option.c", line))
 /* Declarations gathered from the merged files. */
-OStack data_00586d20[180];
+OStack data_00586d20[MAXSTACK];
 
 void push_option(void *a)
 {
@@ -156,11 +159,11 @@ void Option_ResetOptionLists(void)
     option_list_count = 0;
     option_capacity = 0;
     option_count = 0;
-    if (data_0057f440)
-        free(data_0057f440);
-    data_0057f440 = NULL;
-    data_0057f43c = ((fn_0041c8ba() & 0x100) ? 0x100 : 0) | ((fn_0041c8ba() & 0x40) ? 0x200 : 0) |
-                    ((fn_0041c8ba() & 0x80) ? 0x400 : 0);
+    if (optionList.options)
+        free(optionList.options);
+    optionList.options = NULL;
+    optionList.flags = ((fn_0041c8ba() & 0x100) ? 0x100 : 0) | ((fn_0041c8ba() & 0x40) ? 0x200 : 0) |
+                       ((fn_0041c8ba() & 0x80) ? 0x400 : 0);
     fn_0041c1e2();
 }
 
@@ -176,20 +179,20 @@ void add_option(Option *option)
     Option *tmp;
     if (option_count >= option_capacity) {
         option_capacity += 32;
-        data_0057f440 = ToolHelpers_ResizeBuffer("options", data_0057f440, (option_capacity + 1) * 4);
+        optionList.options = ToolHelpers_ResizeBuffer("options", optionList.options, (option_capacity + 1) * 4);
     }
-    data_0057f440[option_count] = opt;
+    optionList.options[option_count] = opt;
     if (opt->avail & 6) {
-        for (i = 0; i < option_count && (data_0057f440[i]->avail & 6); i++)
+        for (i = 0; i < option_count && (optionList.options[i]->avail & 6); i++)
             ;
         if (i < option_count) {
-            tmp = data_0057f440[i];
-            data_0057f440[i] = data_0057f440[option_count];
-            data_0057f440[option_count] = tmp;
+            tmp = optionList.options[i];
+            optionList.options[i] = optionList.options[option_count];
+            optionList.options[option_count] = tmp;
         }
     }
     option_count++;
-    data_0057f440[option_count] = NULL;
+    optionList.options[option_count] = NULL;
 }
 
 int Option_RegisterOptionList(OptionList *list)
@@ -292,6 +295,9 @@ unsigned int fn_0041c913(Option *option)
         result = 1U;
     return result;
 }
+
+/* The token kinds that end an option at each nesting level. */
+static Triple option_kind_triples[5] = {{0, 0, 0}, {1, 5, 3}, {5, 0, 0}, {4, 0, 0}, {0, 0, 0}};
 
 Boolean token_matches_kind(int kind, TokenText *tok)
 {
@@ -862,6 +868,25 @@ unsigned int Option_ParseOptionList(OptionList *holder, unsigned int flags)
         result = parse_option_list(holder, flags);
         strcpy(option_name, savedState);
     }
+    pop_option_stack();
+    return result;
+}
+
+int Option_ParseDefaultOption(OptionList *options)
+{
+    Option *option;
+    int result;
+    int flags;
+
+    strcpy(option_name, "defaultoptions");
+    flags = 0;
+    option = find_matching_option(options, 0, &flags);
+    if (option == NULL) {
+        Targets_ForwardVarArgsAndLongjmp("Default options not defined");
+        return 1;
+    }
+    push_option(option);
+    result = parse_option(option, 0);
     pop_option_stack();
     return result;
 }

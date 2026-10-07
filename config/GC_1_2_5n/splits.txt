@@ -248,11 +248,11 @@ src/driver/TargetWarningHelpers-ppc-cc.c:
 
 src/driver/ToolHelpers-cc.c:
 	.text       start:0x0040E25F end:0x0040E8A0 align:1
-	.data       start:0x0054A858 end:0x0054A9D8
+	.data       start:0x0054A858 end:0x0054AA30
 
 src/driver/StringUtils.c:
 	.text       start:0x0040E8A0 end:0x0040EB76
-	.data       start:0x0054A9D8 end:0x0054AA60
+	.data       start:0x0054AA30 end:0x0054AA60
 	.bss        start:0x0057DB60 end:0x0057DC60
 
 src/driver/Targets.c:
@@ -579,11 +579,11 @@ src/frontend/CExpr2.c:
 
 src/frontend/CInt64.c:
 	.text       start:0x00474E30 end:0x00476100
-	.data       start:0x00555498 end:0x00555500
+	.data       start:0x00555498 end:0x005554F8
 
 src/frontend/CFunc.c:
 	.text       start:0x00476100 end:0x0047CB40
-	.data       start:0x00555500 end:0x005557B8
+	.data       start:0x005554F8 end:0x005557B8
 	.bss        start:0x00580870 end:0x00580898
 
 src/backend/PPCError.c:

@@ -41,6 +41,13 @@
 
 #include <string.h>
 
+static struct RegisterBlockLiveness *register_block_liveness;
+static struct RegisterBlockLiveness *gRegisterBlockLiveness;
+static struct RegisterBlockLiveness *registerBlockLiveness;
+static struct RegisterBlockLiveness *data_005813ac;
+static struct PeepHandler *CodeGen_PeepholeHandlers_005813b0[466];
+static struct PCodeInstruction **CodeGen_ReachingDefTable_00581af8;
+
 typedef int (*PeepholeRuleProc)(PCodeInstruction *, UInt32, UInt32, UInt32, UInt32);
 void Peephole_OptimizeBlocks(Object *object)
 {

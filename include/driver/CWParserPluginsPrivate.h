@@ -65,6 +65,14 @@ extern int __stdcall CWParserPluginsPrivate_PassValuePair(CWPluginPrivateContext
                                                           unsigned int secondValue);
 extern void __stdcall CWParserPluginsPrivate_CallValuePairCallback(CWPluginPrivateContext *target, char *firstValue,
                                                                    unsigned int secondValue);
+extern int __stdcall CWParserPluginsPrivate_AddOverlay1Group(CWPluginPrivateContext *context, char *name, void *address,
+                                                             SInt32 *groupNumber);
+extern int __stdcall CWParserPluginsPrivate_AddOverlay1(CWPluginPrivateContext *context, char *name, SInt32 groupNumber,
+                                                        SInt32 *overlayNumber);
+extern int __stdcall CWParserPluginsPrivate_AddSegment(CWPluginPrivateContext *context, char *name, short attributes,
+                                                       SInt32 *segmentNumber);
+extern int __stdcall CWParserPluginsPrivate_SetSegment(CWPluginPrivateContext *context, SInt32 segmentNumber,
+                                                       char *name, short attributes);
 struct PanelEntry;
 struct IntegerSequenceResult;
 

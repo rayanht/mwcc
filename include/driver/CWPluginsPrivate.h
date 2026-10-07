@@ -124,6 +124,7 @@ extern int __stdcall CWPluginsPrivate_ReturnArgument(CWPluginPrivateContext *a0,
 extern unsigned int __stdcall CWPluginsPrivate_GetRequest(CWPluginPrivateContext *entry, long *result);
 extern unsigned int __stdcall CWPluginsPrivate_GetAPIVersion(CWPluginPrivateContext *input, long *result);
 extern int __stdcall CWPluginsPrivate_GetSourceFile(CWPluginPrivateContext *p, CWFileSpec *q);
+extern int __stdcall CWPluginsPrivate_GetOutputFileDirectory(CWPluginPrivateContext *context, CWFileSpec *directory);
 extern unsigned int ensure_callback_cache(struct CWPluginPrivateContext *object);
 extern unsigned int __stdcall get_opcode_descriptor(CWPluginPrivateContext *input, PCodeOpcodeDescriptor *descriptor);
 extern unsigned int __stdcall CWPluginsPrivate_ValidateAndCallCallback(CWPluginPrivateContext *context, int argument2,

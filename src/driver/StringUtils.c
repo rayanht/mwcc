@@ -9,6 +9,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+static char hprintf_buffer[256];
+
 #define va_start(ap, last)                                                                                             \
     ((ap) = (char *)&(last) + (((int)((char *)&(last) + sizeof(last)) - (int)(char *)&(last) + 3) / 4) * 4)
 typedef char *(*TextFormatFunction)(char *buffer, unsigned int capacity, const char *format, va_list arguments);

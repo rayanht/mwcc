@@ -114,6 +114,16 @@ int __stdcall CWPluginsPrivate_GetSourceFile(CWPluginPrivateContext *p, CWFileSp
     return 0;
 }
 
+int __stdcall CWPluginsPrivate_GetOutputFileDirectory(CWPluginPrivateContext *context, CWFileSpec *directory)
+{
+    if (is_valid_context(context) || !is_valid_plugin_context(context))
+        return 3;
+    if (directory == NULL)
+        return 3;
+    *directory = context->targetfile;
+    return 0;
+}
+
 unsigned int __stdcall CWPluginsPrivate_GetNumFiles(CWPluginPrivateContext *state, long *count)
 {
     if (is_valid_context(state) || !is_valid_plugin_context(state))

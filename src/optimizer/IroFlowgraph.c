@@ -29,7 +29,7 @@
 #include "compiler/Switch.h"
 #include "compiler/BitVector.h"
 
-static void IRO_BitVectorSetBit(UInt32 bit, BitVector *bv)
+static inline void IRO_BitVectorSetBit(UInt32 bit, BitVector *bv)
 {
     if ((bit >> 5) < bv->size)
         bv->bits[bit >> 5] |= 1 << (31 & bit);

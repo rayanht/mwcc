@@ -48,9 +48,6 @@
 
 /* Declarations gathered from the merged files. */
 
-TypeClassExt800 *first;  /* 0x00 */
-TypeClassExt800 *second; /* 0x04 */
-
 typedef struct TemplateComparisonEntry TemplateComparisonEntry;
 
 Boolean CTemplateTools_MatchTypeAndCheckBoundSlots(Object *obj, Type *type, void *templateArgs)

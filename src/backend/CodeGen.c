@@ -118,7 +118,6 @@ static inline void IrOptimizer_CheckVectorLongConstant(const CInt64 *value, Type
 
 Boolean IrOptimizer_ConvertToVectorConstant(ENode *expr, union MWVector128 *dst, TypeStruct *vectorType)
 {
-    static const double float_bounds[6] = {0.0, 3.40282e+38, 1.17549e-38, 0.0, -3.40282e+38, -1.17549e-38};
     int commaCount;
     int elementIndex;
     int splatIndex;
@@ -260,21 +259,25 @@ Boolean IrOptimizer_ConvertToVectorConstant(ENode *expr, union MWVector128 *dst,
                         PPCError_ReportError(0x70);
                         break;
                     }
-                    if (value > float_bounds[0]) {
-                        if (value > float_bounds[1]) {
-                            PPCError_ReportError(0x70);
-                            break;
-                        } else if (value < float_bounds[2]) {
-                            PPCError_ReportError(0x70);
-                            break;
-                        }
-                    } else if (value < float_bounds[3]) {
-                        if (value < float_bounds[4]) {
-                            PPCError_ReportError(0x70);
-                            break;
-                        } else if (value > float_bounds[5]) {
-                            PPCError_ReportError(0x70);
-                            break;
+                    {
+                        static const double float_bounds[6] = {0.0, 3.40282e+38,  1.17549e-38,
+                                                               0.0, -3.40282e+38, -1.17549e-38};
+                        if (value > float_bounds[0]) {
+                            if (value > float_bounds[1]) {
+                                PPCError_ReportError(0x70);
+                                break;
+                            } else if (value < float_bounds[2]) {
+                                PPCError_ReportError(0x70);
+                                break;
+                            }
+                        } else if (value < float_bounds[3]) {
+                            if (value < float_bounds[4]) {
+                                PPCError_ReportError(0x70);
+                                break;
+                            } else if (value > float_bounds[5]) {
+                                PPCError_ReportError(0x70);
+                                break;
+                            }
                         }
                     }
                     dst->floatElements[elementIndex] = value;
@@ -288,21 +291,25 @@ Boolean IrOptimizer_ConvertToVectorConstant(ENode *expr, union MWVector128 *dst,
                     PPCError_ReportError(0x70);
                     break;
                 }
-                if (firstValue > float_bounds[0]) {
-                    if (firstValue > float_bounds[1]) {
-                        PPCError_ReportError(0x70);
-                        break;
-                    } else if (firstValue < float_bounds[2]) {
-                        PPCError_ReportError(0x70);
-                        break;
-                    }
-                } else if (firstValue < float_bounds[3]) {
-                    if (firstValue < float_bounds[4]) {
-                        PPCError_ReportError(0x70);
-                        break;
-                    } else if (firstValue > float_bounds[5]) {
-                        PPCError_ReportError(0x70);
-                        break;
+                {
+                    static const double float_bounds[6] = {0.0, 3.40282e+38,  1.17549e-38,
+                                                           0.0, -3.40282e+38, -1.17549e-38};
+                    if (firstValue > float_bounds[0]) {
+                        if (firstValue > float_bounds[1]) {
+                            PPCError_ReportError(0x70);
+                            break;
+                        } else if (firstValue < float_bounds[2]) {
+                            PPCError_ReportError(0x70);
+                            break;
+                        }
+                    } else if (firstValue < float_bounds[3]) {
+                        if (firstValue < float_bounds[4]) {
+                            PPCError_ReportError(0x70);
+                            break;
+                        } else if (firstValue > float_bounds[5]) {
+                            PPCError_ReportError(0x70);
+                            break;
+                        }
                     }
                 }
                 dst->floatElements[0] = firstValue;
@@ -377,21 +384,25 @@ Boolean IrOptimizer_ConvertToVectorConstant(ENode *expr, union MWVector128 *dst,
             case 13:
                 splatIndex = 0;
                 splatValue = expr->data.floatval.data.value;
-                if (splatValue > float_bounds[0]) {
-                    if (splatValue > float_bounds[1]) {
-                        PPCError_ReportError(0x70);
-                        break;
-                    } else if (splatValue < float_bounds[2]) {
-                        PPCError_ReportError(0x70);
-                        break;
-                    }
-                } else if (splatValue < float_bounds[3]) {
-                    if (splatValue < float_bounds[4]) {
-                        PPCError_ReportError(0x70);
-                        break;
-                    } else if (splatValue > float_bounds[5]) {
-                        PPCError_ReportError(0x70);
-                        break;
+                {
+                    static const double float_bounds[6] = {0.0, 3.40282e+38,  1.17549e-38,
+                                                           0.0, -3.40282e+38, -1.17549e-38};
+                    if (splatValue > float_bounds[0]) {
+                        if (splatValue > float_bounds[1]) {
+                            PPCError_ReportError(0x70);
+                            break;
+                        } else if (splatValue < float_bounds[2]) {
+                            PPCError_ReportError(0x70);
+                            break;
+                        }
+                    } else if (splatValue < float_bounds[3]) {
+                        if (splatValue < float_bounds[4]) {
+                            PPCError_ReportError(0x70);
+                            break;
+                        } else if (splatValue > float_bounds[5]) {
+                            PPCError_ReportError(0x70);
+                            break;
+                        }
                     }
                 }
                 for (; splatIndex < 4; splatIndex++) {

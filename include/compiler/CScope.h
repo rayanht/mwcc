@@ -91,6 +91,7 @@ extern NameSpace *CScope_NewListNameSpace(HashNameNode *name, Boolean is_global)
 extern NameSpaceList *collect_type_namespaces(NameSpaceList *acc, Type *type);
 extern NameSpaceObjectList *CScope_InsertNameSpaceName(NameSpace *nspace, HashNameNode *name);
 extern UInt8 CScope_IsEmptyNameSpace(NameSpace *nameSpace);
+extern Boolean CScope_IsStdNameSpace(NameSpace *nspace);
 extern NameSpace *CScope_FindGlobalNS(NameSpace *scope);
 extern NameSpace *CScope_FindNonClassNonTemplNameSpace(NameSpace *nspace);
 extern UInt8 CScope_IsInLocalNameSpace(NameSpace *scope);

@@ -41,6 +41,7 @@
 #include "driver/Files.h"
 #include "compiler/Objects.h"
 #include "compiler/Types.h"
+#include <string.h>
 
 static struct TypeClass *class_path_base;
 static struct HashNameNode *class_member_name;
@@ -806,6 +807,12 @@ NameSpace *CScope_FindGlobalNS(NameSpace *scope)
         scope = scope->parent;
     }
     return registration_context;
+}
+
+Boolean CScope_IsStdNameSpace(NameSpace *nspace)
+{
+    return nspace != NULL && nspace->is_global && nspace->parent == registration_context && nspace->name != NULL &&
+           !strcmp(nspace->name->name, "std");
 }
 
 UInt8 CScope_IsEmptyNameSpace(NameSpace *nameSpace)

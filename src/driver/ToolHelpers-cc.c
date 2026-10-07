@@ -19,11 +19,6 @@
 #include "driver/ToolHelpers.h"
 #include <stdio.h>
 #include <setjmp.h>
-static void emit_header(void *p)
-{
-    HPrintF(p, "C language warning options:\n");
-}
-
 void ToolHelpers_cc_CallValuePairCallback(char *key, struct StorageHandle *value)
 {
     long result;
@@ -75,7 +70,7 @@ void ToolHelpers_cc_PrintVersion(char includeValue)
     if (data_00587e22 == 0) {
         output = (struct StorageHandle *)Memory_NewHandle(0);
         if (output == NULL) {
-            Targets_ForwardVarArgsAndLongjmp(data_0054a870);
+            Targets_ForwardVarArgsAndLongjmp("Out of memory");
             longjmp(plugin_request_jmp_buf, 7);
         }
         for (index = 0; index < num_panels; index++) {
@@ -92,10 +87,10 @@ void ToolHelpers_cc_PrintVersion(char includeValue)
             }
         }
         CWParserPluginsPrivate_GetParserValues(pluginPrivateContext, &parserValue1, &parserValue2);
-        HPrintF(output, data_0054a880);
+        HPrintF(output, "\n");
         if (matchingVersion == NULL) {
             if (alternateVersion == NULL)
-                alternateVersion = data_0054a884;
+                alternateVersion = "???";
             matchingVersion = alternateVersion;
         }
         {
@@ -105,9 +100,10 @@ void ToolHelpers_cc_PrintVersion(char includeValue)
                     tool->toolInfo, (tool = (DriverTool *)driverTool)->copyright, matchingVersion, parserValue1,
                     parserValue2);
         }
-        HPrintF(output, data_0054a880);
+        HPrintF(output, "\n");
         if (includeValue != 0) {
-            HPrintF(output, please_enter_format, CLProj_GetFileName(*cmdline_environment->argv), *data_00587eec);
+            HPrintF(output, "Please enter '%s %chelp' for information about options.\n\n",
+                    CLProj_GetFileName(*cmdline_environment->argv), *data_00587eec);
         }
         ToolHelpers_cc_CallValuePairCallback(NULL, output);
         Memory_FreeHandle(output);
@@ -253,6 +249,17 @@ void ToolHelpers_cc_PassVirtualFileValuePair(char *fileData, struct StorageHandl
     }
 }
 
+void ToolHelpers_cc_GetOutputFileDirectory(CWFileSpec *directory)
+{
+    int result;
+
+    result = CWPluginsPrivate_GetOutputFileDirectory(pluginPrivateContext, directory);
+    if (result != 0) {
+        DAT_00543380 = "CWGetOutputFileDirectory";
+        longjmp(plugin_request_jmp_buf, result);
+    }
+}
+
 void ToolHelpers_cc_CallFileInfoForDirectory(OSSpec *input)
 {
     CWFileSpec body;
@@ -263,6 +270,50 @@ void ToolHelpers_cc_CallFileInfoForDirectory(OSSpec *input)
     result = CWParserPluginsPrivate_CallFileInfo(pluginPrivateContext, &body);
     if (result != 0U) {
         DAT_00543380 = "CWParserSetOutputFileDirectory";
+        longjmp(plugin_request_jmp_buf, result);
+    }
+}
+
+void ToolHelpers_cc_AddOverlay1Group(char *name, void *address, SInt32 *groupNumber)
+{
+    int result;
+
+    result = CWParserPluginsPrivate_AddOverlay1Group(pluginPrivateContext, name, address, groupNumber);
+    if (result != 0) {
+        DAT_00543380 = "CWParserAddOverlay1Group";
+        longjmp(plugin_request_jmp_buf, result);
+    }
+}
+
+void ToolHelpers_cc_AddOverlay1(char *name, SInt32 groupNumber, SInt32 *overlayNumber)
+{
+    int result;
+
+    result = CWParserPluginsPrivate_AddOverlay1(pluginPrivateContext, name, groupNumber, overlayNumber);
+    if (result != 0) {
+        DAT_00543380 = "CWParserAddOverlay1";
+        longjmp(plugin_request_jmp_buf, result);
+    }
+}
+
+void ToolHelpers_cc_AddSegment(char *name, short attributes, SInt32 *segmentNumber)
+{
+    int result;
+
+    result = CWParserPluginsPrivate_AddSegment(pluginPrivateContext, name, attributes, segmentNumber);
+    if (result != 0) {
+        DAT_00543380 = "CWParserAddSegment";
+        longjmp(plugin_request_jmp_buf, result);
+    }
+}
+
+void ToolHelpers_cc_ChangeSegment(SInt32 segmentNumber, char *name, short attributes)
+{
+    int result;
+
+    result = CWParserPluginsPrivate_ChangeSegment(pluginPrivateContext, segmentNumber, name, attributes);
+    if (result != 0) {
+        DAT_00543380 = "CWParserSetSegment";
         longjmp(plugin_request_jmp_buf, result);
     }
 }
