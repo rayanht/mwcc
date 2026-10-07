@@ -323,13 +323,13 @@ void insert_type_nodes_recursive(DWInfo *a, DWInfo *b)
             if (b->typeNode == NULL)
                 insert_type_node_before(a, b);
             b->typeNode->kind = 0x1f;
-            if (TYPE_MEMBER_POINTER(t)->memberType != NULL) {
-                DWInfo *e = find_or_create_dwinfo(TYPE_MEMBER_POINTER(t)->memberType);
+            if (TYPE_MEMBER_POINTER(t)->ty1 != NULL) {
+                DWInfo *e = find_or_create_dwinfo(TYPE_MEMBER_POINTER(t)->ty1);
                 if (e->marked == 0)
                     insert_type_nodes_recursive(b, e);
             }
-            if (TYPE_MEMBER_POINTER(t)->owner.type != NULL) {
-                DWInfo *e = find_or_create_dwinfo(TYPE_MEMBER_POINTER(t)->owner.type);
+            if (TYPE_MEMBER_POINTER(t)->ty2 != NULL) {
+                DWInfo *e = find_or_create_dwinfo(TYPE_MEMBER_POINTER(t)->ty2);
                 if (e->marked == 0)
                     insert_type_nodes_recursive(b, e);
             }
@@ -1435,13 +1435,13 @@ void emit_member_pointer_type(DwarfFixup **references, DWInfo *type)
     *references = reference;
     get_type_dwarf_ref(type, 0, 0);
     size = emit_entry_header(0x1f);
-    if (entry->memberType != NULL) {
-        record = find_or_create_dwinfo(entry->memberType);
+    if (entry->ty1 != NULL) {
+        record = find_or_create_dwinfo(entry->ty1);
         get_type_dwarf_ref(record, 0, 1);
         size += emit_dwarf_ref(record);
     }
-    if (entry->owner.type != NULL) {
-        record = find_or_create_dwinfo(entry->owner.type);
+    if (entry->ty2 != NULL) {
+        record = find_or_create_dwinfo(entry->ty2);
         get_type_dwarf_ref(record, 0, 1);
         saved = record->rec;
         record->rec.tag = 0x1d2;
@@ -2047,7 +2047,7 @@ void emit_array_type(Type *type)
     SInt32 entrySize;
 
     entryOffset = dwarf_info_buffer->size;
-    elementInfo = find_or_create_dwinfo(type->array[0].element);
+    elementInfo = find_or_create_dwinfo(TPTR_TARGET(type));
     arrayInfo = find_or_create_dwinfo(type);
 
     if (arrayInfo->typeNode == NULL)
@@ -2074,12 +2074,12 @@ void emit_array_type(Type *type)
     AppendGListWord(dwarf_info_buffer, 10);
     AppendGListLong(dwarf_info_buffer, 0);
 
-    if (type->array[0].element->size == 0) {
+    if (TPTR_TARGET(type)->size == 0) {
         upperBound = 0;
-    } else if (type->size == type->array[0].element->size) {
+    } else if (type->size == TPTR_TARGET(type)->size) {
         upperBound = 0;
     } else {
-        upperBound = type->size / type->array[0].element->size - 1;
+        upperBound = type->size / TPTR_TARGET(type)->size - 1;
     }
     AppendGListLong(dwarf_info_buffer, upperBound);
     AppendGListByte(dwarf_info_buffer, 8);

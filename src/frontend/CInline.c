@@ -2042,7 +2042,7 @@ void CInline_005114e0(ENode *node)
 
             case ENEWEXCEPTIONARRAY: {
                 ENode *expression;
-                if ((expression = node->data.memberfunc->expression) != NULL) {
+                if ((expression = node->data.emember->expr) != NULL) {
                     *node = *expression;
                     break;
                 }
@@ -3355,18 +3355,18 @@ ENode *CInline_00513240(ENode *expr)
                 node->data.diadic.right = CInline_00513240(node->data.diadic.right);
                 break;
             case ENEWEXCEPTIONARRAY: {
-                MemberFuncRef *dst;
-                MemberFuncRef *src = node->data.memberfunc;
+                EMemberInfo *dst;
+                EMemberInfo *src = node->data.emember;
                 if (alloc_state)
-                    dst = (MemberFuncRef *)galloc(sizeof(MemberFuncRef));
+                    dst = (EMemberInfo *)galloc(sizeof(EMemberInfo));
                 else
-                    dst = (MemberFuncRef *)CompilerTools_AllocatePool(sizeof(MemberFuncRef));
+                    dst = (EMemberInfo *)CompilerTools_AllocatePool(sizeof(EMemberInfo));
                 *dst = *src;
-                if (dst->bcl != NULL)
-                    dst->bcl = CClass_GetPathCopy(dst->bcl, alloc_state);
-                if (dst->expression != NULL)
-                    dst->expression = CInline_00513240(dst->expression);
-                node->data.memberfunc = dst;
+                if (dst->path != NULL)
+                    dst->path = CClass_GetPathCopy(dst->path, alloc_state);
+                if (dst->expr != NULL)
+                    dst->expr = CInline_00513240(dst->expr);
+                node->data.emember = dst;
                 break;
             }
             case EINTCONST:

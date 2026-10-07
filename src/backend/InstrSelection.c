@@ -210,7 +210,7 @@ void emit_vector128_constant(ENode *node, short requestedRegister, short unused,
         return;
     }
     patternIndex = 0;
-    value = &node->data.vector128;
+    value = &node->data.vector128val;
     word0 = value->longElements[0];
     word1 = value->longElements[1];
     word2 = value->longElements[2];

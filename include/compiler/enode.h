@@ -110,17 +110,17 @@ union ENodeUnion {
     CInt64 intval;
     long long bits;
     Float floatval;
-    MWVector128 vector128;
+    MWVector128 vector128val;
     SInt32 longval;
     ENode *monadic;
     struct MemberFunctionPointerData *memberFunctionPointer;
-    struct MemberFuncRef *
-        memberfunc; /* 0x00: make_memberpointer reads ENEWEXCEPTIONARRAY expression, addressTaken, bcl and list from the same member reference */
+    struct EMemberInfo *
+        emember; /* 0x00: make_memberpointer reads ENEWEXCEPTIONARRAY expression, addressTaken, bcl and list from the same member reference */
     Object *objref;
     struct ObjectList *
         overloadCandidates; /* 0x00: make_static_method_setconst stores ENEWEXCEPTION candidates; match_template_function_args reads this kind */
     struct CLabel *
-        labelAddress; /* 0x00: unary_expression selects ELOCOBJ for TK_LOGICAL_AND (GNU label address), stores findlabel/newlabel */
+        label; /* 0x00: unary_expression selects ELOCOBJ for TK_LOGICAL_AND (GNU label address), stores findlabel/newlabel */
     struct {
         char *info;
         UInt8 unk0e[8];
@@ -129,7 +129,7 @@ union ENodeUnion {
     struct {
         struct NameSpaceObjectList *list;
         struct TemplArg *
-            templargs; /* 0x04: CExpr.c copies objlist.templargs into MemberFuncRef.templargs; CExpr_MakeFunctionCall reads template arguments for ENEWEXCEPTION */
+            templargs; /* 0x04: CExpr.c copies objlist.templargs into EMemberInfo.templargs; CExpr_MakeFunctionCall reads template arguments for ENEWEXCEPTION */
         struct HashNameNode *name;
     } objlist;
     struct {

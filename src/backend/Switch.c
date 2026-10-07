@@ -199,7 +199,7 @@ Object *create_switchtable(void)
     obj->qual = Q_CONST;
     obj->flags |= 6;
     obj->u.data.linkname = obj->name;
-    obj->extraQualifiers = ObjGen_PPC_EABI_GetHeaderIndex(2);
+    obj->section = ObjGen_PPC_EABI_GetHeaderIndex(2);
     obj->type = NULL;
     fn_0049f230(obj, 0, 0);
     obj->type = (Type *)&void_ptr;
@@ -288,7 +288,8 @@ void emit_case_range_binary_tree(unsigned int firstCase, int lastCase)
                 pivotHighReg = gUsedVirtualRegistersGPR++;
                 PCodeUtilities_LoadImmediate(lowReg, pivot->base.lo);
                 PCodeUtilities_LoadImmediate(highReg, pivot->base.hi);
-                if (switch_expr_type->array[0].integral != 12 && switch_expr_type->array[0].integral != 12) {
+                if (TYPE_INTEGRAL(switch_expr_type)->integral != 12 &&
+                    TYPE_INTEGRAL(switch_expr_type)->integral != 12) {
                     PCodeUtilities_EmitInstruction(PC_XORIS, compareHighReg, switchRegHi, 0x8000);
                     PCodeUtilities_EmitInstruction(PC_XORIS, pivotHighReg, highReg, 0x8000);
                 } else {
@@ -310,7 +311,7 @@ void emit_case_range_binary_tree(unsigned int firstCase, int lastCase)
             pivotHighReg = gUsedVirtualRegistersGPR++;
             PCodeUtilities_LoadImmediate(lowReg, pivot->base.lo);
             PCodeUtilities_LoadImmediate(highReg, pivot->base.hi);
-            if (switch_expr_type->array[0].integral != 12 && switch_expr_type->array[0].integral != 12) {
+            if (TYPE_INTEGRAL(switch_expr_type)->integral != 12 && TYPE_INTEGRAL(switch_expr_type)->integral != 12) {
                 PCodeUtilities_EmitInstruction(PC_XORIS, compareHighReg, switchRegHi, 0x8000);
                 PCodeUtilities_EmitInstruction(PC_XORIS, pivotHighReg, highReg, 0x8000);
             } else {
@@ -333,7 +334,7 @@ void emit_case_range_binary_tree(unsigned int firstCase, int lastCase)
             pivotHighReg = gUsedVirtualRegistersGPR++;
             PCodeUtilities_LoadImmediate(lowReg, pivot->base.lo);
             PCodeUtilities_LoadImmediate(highReg, pivot->base.hi);
-            if (switch_expr_type->array[0].integral != 12 && switch_expr_type->array[0].integral != 12) {
+            if (TYPE_INTEGRAL(switch_expr_type)->integral != 12 && TYPE_INTEGRAL(switch_expr_type)->integral != 12) {
                 PCodeUtilities_EmitInstruction(PC_XORIS, compareHighReg, switchRegHi, 0x8000);
                 PCodeUtilities_EmitInstruction(PC_XORIS, pivotHighReg, highReg, 0x8000);
             } else {
@@ -355,7 +356,7 @@ void emit_case_range_binary_tree(unsigned int firstCase, int lastCase)
             pivotHighReg = gUsedVirtualRegistersGPR++;
             PCodeUtilities_LoadImmediate(lowReg, pivot->base.lo);
             PCodeUtilities_LoadImmediate(highReg, pivot->base.hi);
-            if (switch_expr_type->array[0].integral != 12 && switch_expr_type->array[0].integral != 12) {
+            if (TYPE_INTEGRAL(switch_expr_type)->integral != 12 && TYPE_INTEGRAL(switch_expr_type)->integral != 12) {
                 PCodeUtilities_EmitInstruction(PC_XORIS, compareHighReg, switchRegHi, 0x8000);
                 PCodeUtilities_EmitInstruction(PC_XORIS, pivotHighReg, highReg, 0x8000);
             } else {

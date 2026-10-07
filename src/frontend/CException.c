@@ -1027,18 +1027,19 @@ void CExcept_ScanTryBlock(void *context, char rethrow)
             CParser_GetDeclSpecs(&declaration, 0);
             if (declaration.missingTypeSpecifier != 0)
                 CError_ReportError(ERR_DECLARATION_SYNTAX_ERROR);
-            if (declaration.storage != 0)
+            if (declaration.storageclass != 0)
                 CError_ReportError(ERR_ILLEGAL_STORAGE_CLASS);
             CError_ReportIllegalFlags(declaration.qual & 0xe1fffff4u);
             CDecl_ParseDeclarator(&declaration);
-            if (declaration.dtype->type == TYPEFUNC)
-                declaration.dtype = CDecl_NewPointerType(declaration.dtype);
-            else if (declaration.dtype->type == TYPEARRAY)
-                declaration.dtype = CDecl_NewPointerType(TPTR_TARGET(declaration.dtype));
-            CanAllocObject(declaration.dtype);
-            if (declaration.dtype->type == TYPECLASS && (TYPE_CLASS(declaration.dtype)->flags & CLASS_ABSTRACT) != 0)
-                CError_IllegalUseAbstractClass(TYPE_CLASS(declaration.dtype));
-            handler->exceptionType = declaration.dtype;
+            if (declaration.thetype->type == TYPEFUNC)
+                declaration.thetype = CDecl_NewPointerType(declaration.thetype);
+            else if (declaration.thetype->type == TYPEARRAY)
+                declaration.thetype = CDecl_NewPointerType(TPTR_TARGET(declaration.thetype));
+            CanAllocObject(declaration.thetype);
+            if (declaration.thetype->type == TYPECLASS &&
+                (TYPE_CLASS(declaration.thetype)->flags & CLASS_ABSTRACT) != 0)
+                CError_IllegalUseAbstractClass(TYPE_CLASS(declaration.thetype));
+            handler->exceptionType = declaration.thetype;
             handler->declarationData = declaration.qual;
             if (declaration.name != NULL) {
                 cleanup = fn_0047cb60();
@@ -1101,28 +1102,28 @@ ENode *create_catch_object_init(DeclInfo *info, ExceptionHandlerRecord *args)
     args->catchObject = obj;
 
     node = makediadicnode(create_objectrefnode(args->exceptionObject), intconstnode((Type *)&stunsignedlong, 12), EADD);
-    node->rtype = CDecl_NewPointerType(CDecl_NewPointerType(info->dtype));
+    node->rtype = CDecl_NewPointerType(CDecl_NewPointerType(info->thetype));
     monad = makemonadicnode(node, EINDIRECT);
-    monad->rtype = CDecl_NewPointerType(info->dtype);
+    monad->rtype = CDecl_NewPointerType(info->thetype);
 
-    if (info->dtype->type == TYPEPOINTER && (TYPE_POINTER(info->dtype)->qual & Q_REFERENCE) != 0) {
+    if (info->thetype->type == TYPEPOINTER && (TYPE_POINTER(info->thetype)->qual & Q_REFERENCE) != 0) {
         return makediadicnode(CExpr_New_EINDIRECT_Node(obj), monad, EASS);
     }
 
-    if (info->dtype->type == TYPECLASS) {
-        cls = CClass_CopyConstructor(TYPE_CLASS(info->dtype));
+    if (info->thetype->type == TYPECLASS) {
+        cls = CClass_CopyConstructor(TYPE_CLASS(info->thetype));
         if (cls != NULL) {
-            cls2 = CClass_Destructor(TYPE_CLASS(info->dtype));
+            cls2 = CClass_Destructor(TYPE_CLASS(info->thetype));
             if (cls2 == NULL)
                 objnode = create_objectrefnode(obj);
             else
                 objnode = CExcept_RegisterDestructorObject(obj, 0, cls2, 0);
-            return create_call_with_arg_and_default_args(cls, TYPE_CLASS(info->dtype), objnode, monad);
+            return create_call_with_arg_and_default_args(cls, TYPE_CLASS(info->thetype), objnode, monad);
         }
     }
 
     m = makemonadicnode(monad, EINDIRECT);
-    m->rtype = info->dtype;
+    m->rtype = info->thetype;
     return makediadicnode(create_objectnode(obj), m, EASS);
 }
 
@@ -1311,31 +1312,31 @@ void CExcept_ScanExceptionSpecification(TypeFunc *func)
         for (;;) {
             memclrw(&decl, sizeof(decl));
             CParser_GetDeclSpecs(&decl, 0);
-            if (decl.storage != 0)
+            if (decl.storageclass != 0)
                 CError_ReportError(ERR_ILLEGAL_STORAGE_CLASS);
             CError_ReportIllegalFlags(decl.qual & ~(Q_CV | Q_PASCAL | Q_ALIGNED_MASK));
             CDecl_ParseDeclarator(&decl);
             if (decl.name != NULL)
                 CError_ReportError(ERR_ILLEGAL_TYPE);
-            if (decl.dtype->type == TYPEPOINTER) {
-                if (TYPE_POINTER(decl.dtype)->qual & Q_CV) {
+            if (decl.thetype->type == TYPEPOINTER) {
+                if (TYPE_POINTER(decl.thetype)->qual & Q_CV) {
                     unqualifiedType = (TypePointer *)galloc(sizeof(TypePointer));
-                    *unqualifiedType = *TYPE_POINTER(decl.dtype);
+                    *unqualifiedType = *TYPE_POINTER(decl.thetype);
                     unqualifiedType->qual = 0;
-                    decl.dtype = (Type *)unqualifiedType;
+                    decl.thetype = (Type *)unqualifiedType;
                 }
             } else {
                 decl.qual = 0;
             }
             for (existing = list; existing != NULL; existing = existing->next) {
-                if (iscpp_typeequal(existing->type, decl.dtype) != 0 && existing->qual == decl.qual)
+                if (iscpp_typeequal(existing->type, decl.thetype) != 0 && existing->qual == decl.qual)
                     break;
             }
             if (existing == NULL) {
                 node = (ExceptSpecList *)galloc(sizeof(ExceptSpecList));
                 memclrw(node, sizeof(ExceptSpecList));
                 node->next = list;
-                node->type = decl.dtype;
+                node->type = decl.thetype;
                 node->qual = decl.qual;
                 list = node;
             }

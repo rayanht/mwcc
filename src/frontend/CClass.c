@@ -377,7 +377,7 @@ void CClass_CheckObjectAccess(BClassList *bases, Object *reference)
 
 void CClass_CheckStaticAccess(BClassList *type, TypeClass *owner, UInt8 access)
 {
-    CFriend *friendEntry;
+    ClassFriend *friendEntry;
 
     if (type != NULL) {
         type = deduplicate_and_select_base_path_suffix(type, owner);
@@ -395,10 +395,10 @@ void CClass_CheckStaticAccess(BClassList *type, TypeClass *owner, UInt8 access)
             if (owner == data_00588040)
                 return;
             for (friendEntry = owner->friends; friendEntry != NULL; friendEntry = friendEntry->next) {
-                if (friendEntry->is_class != 0) {
-                    if (friendEntry->target.type == (Type *)data_00588040)
+                if (friendEntry->isclass != 0) {
+                    if (friendEntry->u.theclass == data_00588040)
                         return;
-                } else if (friendEntry->target.object == data_00588238) {
+                } else if (friendEntry->u.obj == data_00588238) {
                     return;
                 }
             }
@@ -459,7 +459,7 @@ Boolean check_base_path_access(BClassList *cl, UInt8 acc)
     BClassList *link;
     ClassList *base;
     BClassList *p;
-    CFriend *friend;
+    ClassFriend *friend;
     SInt8 access = acc;
     TypeClass *current;
     BClassList *save;
@@ -505,12 +505,12 @@ Boolean check_base_path_access(BClassList *cl, UInt8 acc)
             return 1;
         if (data_00587140 == cls)
             return 1;
-        for (friend = (CFriend *)cls->friends; friend != NULL; friend = friend->next) {
-            if (friend->is_class != 0) {
-                if (friend->target.type == (Type *)data_00588040)
+        for (friend = (ClassFriend *)cls->friends; friend != NULL; friend = friend->next) {
+            if (friend->isclass != 0) {
+                if (friend->u.theclass == data_00588040)
                     return 1;
             } else {
-                if (friend->target.object == data_00588238)
+                if (friend->u.obj == data_00588238)
                     return 1;
             }
         }
@@ -581,7 +581,7 @@ Object *CClass_ThisSelfObject(void)
 
 void CClass_MemberDef(Object *object, TypeClass *cls)
 {
-    switch ((SInt8)cls->state) {
+    switch ((SInt8)cls->action) {
         case 0:
         case 3:
             return;
@@ -590,7 +590,7 @@ void CClass_MemberDef(Object *object, TypeClass *cls)
                 if (object->qual & Q_INLINE) {
                     if (cls->sominfo != NULL)
                         CError_ReportError(ERR_SOM_CLASS_MUST_ONE_NON_INLINE);
-                    cls->state = 0;
+                    cls->action = 0;
                     if (cls->vtable != NULL) {
                         cls->vtable->object->sclass = TK_STATIC;
                         cls->vtable->object->qual |= Q_IMPLICIT_WEAK;
@@ -1053,7 +1053,7 @@ ObjectList *prepend_base_method_copies(ObjectList *objects, Object *method, Type
         memclrw(object, 54);
         object->otype = OT_OBJECT;
         object->datatype = DFUNC;
-        object->extraQualifiers = method->extraQualifiers;
+        object->section = method->section;
         object->nspace = method->nspace;
         object->name = name;
         baseclass = (TypeClass *)base->type;
@@ -1444,8 +1444,8 @@ TypeClass *CClass_GetQualifiedClass(void)
 
     memclrw(&info, sizeof info);
     CParser_GetDeclSpecs(&info, 0);
-    if (info.dtype->type == TYPECLASS)
-        return (TypeClass *)info.dtype;
+    if (info.thetype->type == TYPECLASS)
+        return (TypeClass *)info.thetype;
     return NULL;
 }
 

@@ -284,15 +284,15 @@ InterruptGenerationRecord *fn_00488750(Object *object, BE_SymNode *linkage)
     short tableSize;
     InterruptGenerationRecord *previous;
 
-    resolved = CodeGen_FindInterruptGenerationRecord(object->extraQualifiers);
+    resolved = CodeGen_FindInterruptGenerationRecord(object->section);
     CE_ASSERT(resolved->sectionIndex == 0, CError_FATAL(2299));
     if ((previous = linkage->interruptInfo) == NULL) {
         linkage->interruptInfo = resolved;
-        object->extraQualifiers = resolved->sectionIndex;
+        object->section = resolved->sectionIndex;
         return resolved;
     }
     if (previous->sectionIndex == 0) {
-        object->extraQualifiers = previous->sectionIndex = resolved->sectionIndex;
+        object->section = previous->sectionIndex = resolved->sectionIndex;
     }
     if (((short *)previous)[2] != (short)resolved->sectionIndex) {
         if ((index = previous->sectionIndex) < 0) {
@@ -327,7 +327,7 @@ InterruptGenerationRecord *fn_00488750(Object *object, BE_SymNode *linkage)
         CE_ASSERT(lookup->target == 0, CError_FATAL(2321));
         PPCError_ReportError(129, linkage->nameData.hashName->name, lookup->target->name);
     }
-    object->extraQualifiers = previous->sectionIndex;
+    object->section = previous->sectionIndex;
     return previous;
 }
 
@@ -413,7 +413,7 @@ void ObjGen_PPC_EABI_EmitDescriptorWithRelocations(Object *obj, SInt32 value, vo
         object->name = CParser_GetUniqueName();
         COptimizer_GetFunctionObject(object);
         object->datatype = DDATA;
-        object->extraQualifiers = data_005884b6->header->index;
+        object->section = data_005884b6->header->index;
         section = data_005884b6;
         dataSymbol = BE_symbol_GetOrCreateFunctionObjectSymbol(object);
         dataSymbol->symbolKind = 1;
@@ -452,7 +452,7 @@ void ObjGen_PPC_EABI_EmitDescriptorWithRelocations(Object *obj, SInt32 value, vo
     object->name = CParser_GetUniqueName();
     COptimizer_GetFunctionObject(object);
     object->datatype = DDATA;
-    object->extraQualifiers = data_005884ba->header->index;
+    object->section = data_005884ba->header->index;
     recordSection = data_005884ba;
     symbol = BE_symbol_GetOrCreateFunctionObjectSymbol(object);
     symbol->symbolKind = 1;
@@ -543,7 +543,7 @@ SInt16 ObjGen_PPC_EABI_SetupFunctionSection(Object *param)
         buffer->maximumSize = alignment;
     BE_elf_AlignRecord(&buffer->buffer, copts.codeAlignment);
     DAT_00580dac = buffer->buffer.size;
-    if ((index = param->extraQualifiers) < 0)
+    if ((index = param->section) < 0)
         index = CodeGen_FindInterruptGenerationRecord(index)->sectionIndex;
     return index;
 }
@@ -939,7 +939,7 @@ static inline SectionSymbolAttributes *ObjGen_Lookup(Object *obj)
 
     /* (stand-in: the original calls it through an int-returning declaration) */ (
         void)((int (*)(Object *, SInt32, Boolean))ObjGen_PPC_EABI_SetObjectSection)(obj, obj->type->size, 0);
-    s = obj->extraQualifiers;
+    s = obj->section;
     if (s < 0)
         s = CodeGen_FindInterruptGenerationRecord(s)->sectionIndex;
     id = s;
@@ -969,7 +969,7 @@ static inline UInt16 section_code(Object *obj)
         SInt32 id;
         /* (stand-in: the original calls it through an int-returning declaration) */ (
             void)((int (*)(Object *, SInt32, Boolean))ObjGen_PPC_EABI_SetObjectSection)(obj, obj->type->size, 0);
-        s = obj->extraQualifiers;
+        s = obj->section;
         if (s < 0)
             s = CodeGen_FindInterruptGenerationRecord(s)->sectionIndex;
         id = s;
@@ -1027,9 +1027,8 @@ ObjGenSection *select_object_section(Object *obj, SInt32 section, Boolean usePri
     Boolean hasAlternate = 0;
 
     ObjGen_PPC_EABI_SetObjectSection(obj, section, options);
-    id = (SInt16)obj->extraQualifiers < 0
-             ? (SInt16)CodeGen_FindInterruptGenerationRecord((SInt16)obj->extraQualifiers)->sectionIndex
-             : (SInt16)obj->extraQualifiers;
+    id = (SInt16)obj->section < 0 ? (SInt16)CodeGen_FindInterruptGenerationRecord((SInt16)obj->section)->sectionIndex
+                                  : (SInt16)obj->section;
 
     if (section_table_dirty)
         initialize_section_table();
@@ -1095,7 +1094,7 @@ static inline SectionSymbolAttributes *object_section_lookup(Object *obj)
     SInt32 id;
 
     (void)((int (*)(Object *, SInt32, Boolean))ObjGen_PPC_EABI_SetObjectSection)(obj, obj->type->size, 0);
-    if ((sectionIndex = obj->extraQualifiers) < 0)
+    if ((sectionIndex = obj->section) < 0)
         sectionIndex = CodeGen_FindInterruptGenerationRecord(sectionIndex)->sectionIndex;
     id = sectionIndex;
     if (section_table_dirty)
@@ -1124,7 +1123,7 @@ static inline SInt16 object_section_code(Object *obj)
         SInt32 id;
 
         (void)((int (*)(Object *, SInt32, Boolean))ObjGen_PPC_EABI_SetObjectSection)(obj, obj->type->size, 0);
-        if ((sectionIndex = obj->extraQualifiers) < 0)
+        if ((sectionIndex = obj->section) < 0)
             sectionIndex = CodeGen_FindInterruptGenerationRecord(sectionIndex)->sectionIndex;
         id = sectionIndex;
         if (section_table_dirty)
@@ -1189,7 +1188,7 @@ void ObjGen_PPC_EABI_SetObjectSection(Object *object, SInt32 size, Boolean isUni
     SInt32 smallDataLimit;
 
     interruptInfo = NULL;
-    if ((section = object->extraQualifiers) > 0)
+    if ((section = object->section) > 0)
         return;
     if (section < 0) {
         interruptInfo = fn_00488750(object, BE_symbol_GetOrCreateFunctionObjectSymbol(object));
@@ -1232,7 +1231,7 @@ void ObjGen_PPC_EABI_SetObjectSection(Object *object, SInt32 size, Boolean isUni
     }
     if (interruptInfo != NULL)
         interruptInfo->sectionIndex = section;
-    object->extraQualifiers = section;
+    object->section = section;
 }
 
 short ObjGen_PPC_EABI_GetHeaderIndex(short kind)
@@ -1731,7 +1730,7 @@ Boolean ObjGen_PPC_EABI_0048ac10(Object *obj)
         kind = 9;
     } else {
         ObjGen_PPC_EABI_SetObjectSection(obj, obj->type->size, 0);
-        if ((sectionId = obj->extraQualifiers) < 0)
+        if ((sectionId = obj->section) < 0)
             sectionId = CodeGen_FindInterruptGenerationRecord(sectionId)->sectionIndex;
         sectionKey = sectionId;
         if (section_table_dirty)
@@ -1789,7 +1788,7 @@ static inline SInt32 SectionKind(Object *obj)
     if (obj->datatype == DLOCAL)
         return 9;
     ObjGen_PPC_EABI_SetObjectSection(obj, obj->type->size, 0);
-    if ((id = ((Object *)obj)->extraQualifiers) < 0)
+    if ((id = ((Object *)obj)->section) < 0)
         id = CodeGen_FindInterruptGenerationRecord(id)->sectionIndex;
     key = id;
     if (section_table_dirty)
@@ -1878,7 +1877,7 @@ SInt32 ObjGen_PPC_EABI_GetSectionAlignmentOrKind(Object *obj)
 
     ObjGen_PPC_EABI_SetObjectSection(obj, obj->type->size, 0);
 
-    if ((id = obj->extraQualifiers) < 0)
+    if ((id = obj->section) < 0)
         id = CodeGen_FindInterruptGenerationRecord(id)->sectionIndex;
     key = id;
 
@@ -2064,7 +2063,7 @@ void ObjGen_PPC_EABI_SetObjectSectionIndex(Object *object)
             BE_elf_GetOrCreateSectionSymbolAttributes(result, mapping->header->kind, mapping->header->alignment,
                                                       mapping->header->linkedSymbol, mapping->header->auxiliary);
         name = (SectionSymbolAttributes *)result->header;
-        object->extraQualifiers = name->index;
+        object->section = name->index;
     }
 }
 

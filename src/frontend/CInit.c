@@ -207,12 +207,12 @@ NameEntry *CInit_DeclarePooledWString(char *string, UInt32 length)
         name = GetHashNameNode("@wstringBase0");
         type = CDecl_NewArrayType(CParser_GetWCharType(), length);
         memclrw(&declaration, sizeof(declaration));
-        declaration.dtype = type;
+        declaration.thetype = type;
         if (name == NULL)
             name = CParser_GetUniqueName();
         declaration.name = name;
         declaration.qual = 0;
-        declaration.storage = 0x102;
+        declaration.storageclass = 0x102;
         declaration.requireMangledName = 1;
         {
             Object *createdObject = CParser_NewObject(&declaration);
@@ -263,12 +263,12 @@ NameEntry *CInit_DeclarePooledString(const char *name, SInt32 length, SInt8 unsi
             charType = (Type *)&stchar;
         arrayType = CDecl_NewArrayType(charType, length);
         memclrw(&declaration, sizeof(declaration));
-        declaration.dtype = arrayType;
+        declaration.thetype = arrayType;
         if (baseName == NULL)
             baseName = CParser_GetUniqueName();
         declaration.name = baseName;
         declaration.qual = 0;
-        declaration.storage = 0x102;
+        declaration.storageclass = 0x102;
         declaration.requireMangledName = 1;
         object = CParser_NewObject(&declaration);
         object->nspace = registration_context;
@@ -818,10 +818,10 @@ ENode *CInit_AutoObject(Object *object, Type *type, UInt32 qualifiers)
     if ((constantType = type)->type == TYPEARRAY)
         constantType = CDecl_NewStructType(type->size, CMachine_GetTypeAlignment(type));
     memclrw(&declaration, sizeof(declaration));
-    declaration.dtype = constantType;
+    declaration.thetype = constantType;
     declaration.name = CParser_GetUniqueName();
     declaration.qual = 0;
-    declaration.storage = 0x102;
+    declaration.storageclass = 0x102;
     declaration.requireMangledName = 1;
     constantObject = CParser_NewObject(&declaration);
     constantObject->nspace = registration_context;
@@ -989,10 +989,10 @@ static Object *CreateTempObject(Type *type)
     Object *obj;
 
     memclrw(&s, sizeof(s));
-    s.dtype = type;
+    s.thetype = type;
     s.name = CParser_GetUniqueName();
     s.qual = 0;
-    s.storage = 0x102;
+    s.storageclass = 0x102;
     s.requireMangledName = 1;
     obj = CParser_NewObject(&s);
     obj->nspace = registration_context;
@@ -1135,10 +1135,10 @@ void initialize_class_array(Object *obj, Type *type, Boolean staticInit)
                 node->rtype = (Type *)&void_ptr;
                 registrationType = CDecl_NewStructType(void_ptr.size * 3, CMachine_GetTypeAlignment((Type *)&void_ptr));
                 memclrw(&declaration, sizeof(declaration));
-                declaration.dtype = registrationType;
+                declaration.thetype = registrationType;
                 declaration.name = CParser_GetUniqueName();
                 declaration.qual = 0;
-                declaration.storage = TK_STATIC;
+                declaration.storageclass = TK_STATIC;
                 declaration.requireMangledName = 1;
                 registrationObject = CParser_NewObject(&declaration);
                 registrationObject->nspace = registration_context;
@@ -1228,10 +1228,10 @@ static Object *CreateObject(Type *type, SInt32 qual)
     Object *obj;
 
     memclrw(&rec, sizeof(rec));
-    rec.dtype = type;
+    rec.thetype = type;
     rec.name = CParser_GetUniqueName();
     rec.qual = qual;
-    rec.storage = 0x102;
+    rec.storageclass = 0x102;
     rec.requireMangledName = 1;
     obj = CParser_NewObject(&rec);
     obj->nspace = registration_context;
@@ -2107,10 +2107,10 @@ ENode *create_destructor_registration_call(Type *objectType, Object *destructor,
 
     registrationType = CDecl_NewStructType(void_ptr.size * 3, CMachine_GetTypeAlignment((Type *)&void_ptr));
     memclrw(&declaration, sizeof(declaration));
-    declaration.dtype = registrationType;
+    declaration.thetype = registrationType;
     declaration.name = CParser_GetUniqueName();
     declaration.qual = 0;
-    declaration.storage = 0x102;
+    declaration.storageclass = 0x102;
     declaration.requireMangledName = 1;
     registrationRecord = CParser_NewObject(&declaration);
     registrationRecord->nspace = registration_context;
@@ -2170,7 +2170,7 @@ void CInit_004d2700(InitializerData *data, Type *type, UInt32 qual, Boolean flag
     data->owner = data;
     if (type->size == 0) {
         if (type->type == TYPEARRAY_004d2700) {
-            data->capacity = type->array[0].element->size << 4;
+            data->capacity = TPTR_TARGET(type)->size << 4;
         } else {
             CError_ReportError(ERR_DATA_TYPE_INCOMPLETE);
         }

@@ -262,7 +262,7 @@ void FuncLevelAsmPPC_GenerateFunction(Object *func)
     if (func_errors != 0)
         return;
 
-    func->extraQualifiers = function_header_index;
+    func->section = function_header_index;
     if (copts.filesyminfo != 0)
         function_token_line = CPrep_UpdateTokenLine(&function_fileinfo);
     copts.peepholeOptimizationEnabled = 0;

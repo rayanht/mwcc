@@ -283,9 +283,9 @@ static void MangleQualifiers(UInt32 q)
         AppendGListByte(&data_00583548, 'V');
 }
 
-static SInt32 ElemSize(Type *t)
+static SInt32 ElemSize(TypePointer *t)
 {
-    return ((Type *)t)->array[0].element->size;
+    return t->target->size;
 }
 
 void mangle_type(Type *type, UInt32 flags)
@@ -373,30 +373,30 @@ void mangle_type(Type *type, UInt32 flags)
             return;
         case TYPEMEMBERPOINTER: {
             TypeClass *memberClass;
-            if (TYPE_MEMBER_POINTER(type)->owner.type->type != TYPECLASS) {
+            if (TYPE_MEMBER_POINTER(type)->ty2->type != TYPECLASS) {
                 CompilerTools_AppendGListString(&data_00583548, "3<T>");
                 return;
             }
             MangleQualifiers(TYPE_MEMBER_POINTER(type)->qual);
             AppendGListByte(&data_00583548, 'M');
-            memberClass = TYPE_CLASS(TYPE_MEMBER_POINTER(type)->owner.type);
+            memberClass = TYPE_CLASS(TYPE_MEMBER_POINTER(type)->ty2);
             if (memberClass->classname == NULL)
                 mangle_qualified_name(memberClass->nspace->parent, "class");
             else
                 mangle_qualified_name(memberClass->nspace->parent, memberClass->nspace->name->name);
-            mangle_type(TYPE_MEMBER_POINTER(type)->memberType, flags);
+            mangle_type(TYPE_MEMBER_POINTER(type)->ty1, flags);
             return;
         }
         case TYPEARRAY:
             AppendGListByte(&data_00583548, 'A');
-            if (ElemSize(type) != 0) {
-                sprintf(arraySize, "%ld", type->size / ElemSize(type));
+            if (ElemSize(TYPE_POINTER(type)) != 0) {
+                sprintf(arraySize, "%ld", type->size / ElemSize(TYPE_POINTER(type)));
                 CompilerTools_AppendGListString(&data_00583548, arraySize);
             } else {
                 AppendGListByte(&data_00583548, '0');
             }
             AppendGListByte(&data_00583548, '_');
-            mangle_type(((Type *)type)->array[0].element, flags);
+            mangle_type(TPTR_TARGET(type), flags);
             return;
         case TYPEFUNC:
             MangleQualifiers(flags);

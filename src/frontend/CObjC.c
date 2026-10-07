@@ -253,7 +253,7 @@ ENode *CObjC_ParseStringConstant(void)
             CScope_AddObject(object->nspace, object->name, (ObjBase *)object);
             object->type = (Type *)type;
             object->sclass = TK_STATIC;
-            object->extraQualifiers = 10;
+            object->section = 10;
             fn_004ceab0(object, values, entries, object->type->size);
             result = create_objectrefnode(object);
         } else {
@@ -297,7 +297,7 @@ ENode *CObjC_ParseEncodeExpression(void)
     if (decl.parserOption != 0) {
         type = CObjC_GetIdType(1);
     } else {
-        type = decl.dtype;
+        type = decl.thetype;
     }
     qualifiers = decl.qual;
     data_00583548.size = 0;
@@ -1040,7 +1040,7 @@ void parse_ivars(TypeClass *classType, char checkExisting)
     ObjMemberVar *newMember;
     ObjMemberVar *existing;
     char matches;
-    MemberDecl declaration;
+    BigDeclInfo declaration;
     ObjMemberVar *members;
 
     tk = CPrepTokenizer_GetNextToken();
@@ -1063,45 +1063,44 @@ void parse_ivars(TypeClass *classType, char checkExisting)
                 continue;
             default:
                 memclrw(&declaration, sizeof(declaration));
-                CParser_GetDeclSpecs(&declaration.declarationSpecifiers, 0);
-                if (declaration.declarationSpecifiers.storage != 0 ||
-                    declaration.declarationSpecifiers.hasParameterNames != 0) {
+                CParser_GetDeclSpecs(&declaration.declinfo, 0);
+                if (declaration.declinfo.storageclass != 0 || declaration.declinfo.hasParameterNames != 0) {
                     CError_ReportError(ERR_ILLEGAL_STRUCT_UNION_ENUM_CLASS_DEFINITION);
                     return;
                 }
                 if (tk != ';') {
                     for (;;) {
                         CDecl_ScanStructDeclarator(&declaration);
-                        if (CDecl_CheckObjectType(declaration.declarator.dtype) == 0) {
+                        if (CDecl_CheckObjectType(declaration.declinfo2.thetype) == 0) {
                             CError_ReportError(ERR_ILLEGAL_STRUCT_UNION_ENUM_CLASS_DEFINITION);
                             declaration.valid = 0;
                         }
-                        if (declaration.declarator.operatorToken != 0) {
+                        if (declaration.declinfo2.operator_token != 0) {
                             CError_ReportError(ERR_ILLEGAL_STRUCT_UNION_ENUM_CLASS_DEFINITION);
                             declaration.valid = 0;
                         }
-                        if (declaration.declarationSpecifiers.missingTypeSpecifier != 0) {
+                        if (declaration.declinfo.missingTypeSpecifier != 0) {
                             CError_ReportError(ERR_DECLARATION_SYNTAX_ERROR);
                         }
                         if (declaration.valid != 0) {
                             member = members;
                             while (member != NULL) {
-                                if (member->name == declaration.declarator.name) {
+                                if (member->name == declaration.declinfo2.name) {
                                     break;
                                 }
                                 member = member->next;
                             }
-                            if (member != NULL || declaration.declarator.name == unnamed_name) {
+                            if (member != NULL || declaration.declinfo2.name == unnamed_name) {
                                 CError_ReportError(ERR_STRUCT_UNION_CLASS_MEMBER_REDEFINED,
-                                                   declaration.declarator.name->name);
+                                                   declaration.declinfo2.name->name);
                             } else {
                                 newMember = (ObjMemberVar *)galloc(sizeof(ObjMemberVar));
                                 memclrw(newMember, sizeof(*newMember));
                                 newMember->otype = OT_MEMBERVAR;
                                 newMember->access = access;
-                                newMember->type = declaration.declarator.dtype;
-                                newMember->name = declaration.declarator.name;
-                                newMember->qual = declaration.declarator.qual;
+                                newMember->type = declaration.declinfo2.thetype;
+                                newMember->name = declaration.declinfo2.name;
+                                newMember->qual = declaration.declinfo2.qual;
                                 if ((member = members) != NULL) {
                                     while (member->next != NULL) {
                                         member = member->next;
@@ -1225,7 +1224,7 @@ void create_category_definition(TypeClass *classType, CRec *category)
     categoryObject->type = CDecl_NewStructType(sizeof(data), 4);
     CScope_AddObject(categoryObject->nspace, categoryObject->name, (ObjBase *)categoryObject);
     categoryObject->sclass = TK_STATIC;
-    categoryObject->extraQualifiers = 0x16;
+    categoryObject->section = 0x16;
     data[0] = CTool_EndianConvertWord32(0);
     relocation = (RelocationList *)CompilerTools_AllocatePool(sizeof(RelocationList));
     relocation->next = NULL;
@@ -1519,7 +1518,7 @@ Object *CObjC_GetProtocolInfo(CRec *protocol)
             protocol->info = (Object *)CObjC_RegisterInfo((TypeClass *)info);
             info->type = (Type *)protocolClass;
             info->sclass = TK_STATIC;
-            info->extraQualifiers = 0x12;
+            info->section = 0x12;
             if (info->type->size != 0x14) {
                 if (!info->type->size)
                     info->type = CDecl_NewStructType(0x14, 4);
@@ -1572,7 +1571,7 @@ Object *create_protocol_method_list(CRec *cls, char *nm, SInt16 val, UInt8 kind)
         CScope_AddObject(obj->nspace, obj->name, (ObjBase *)obj);
         result = obj;
         obj->sclass = TK_STATIC;
-        obj->extraQualifiers = val;
+        obj->section = val;
         head = NULL;
         *(UInt32 *)buffer = CTool_EndianConvertWord32(count);
         member = cls->methods;
@@ -1647,7 +1646,7 @@ Object *create_protocol_list(ObjectList *entries, char *name)
         result = object;
         object->sclass = TK_STATIC;
         relocations = NULL;
-        object->extraQualifiers = 18;
+        object->section = 18;
         descriptor->count = CTool_EndianConvertWord32(count);
         entry = entries;
         index = 0;
@@ -1706,7 +1705,7 @@ Object *create_method_list_object(TypeClass *owner, CRec *category, MethRec *met
         result = object;
         object->sclass = TK_STATIC;
         relocations = NULL;
-        object->extraQualifiers = qualifiers;
+        object->section = qualifiers;
         methodList->count = CTool_EndianConvertWord32(count);
         method = methods;
         entry = methodList->methods;
@@ -1807,7 +1806,7 @@ Object *create_ivar_list(TypeClass *cls)
         CScope_AddObject(object->nspace, object->name, (ObjBase *)object);
         result = object;
         object->sclass = TK_STATIC;
-        object->extraQualifiers = 0x18;
+        object->section = 0x18;
         relocations = NULL;
         *(UInt32 *)buffer = CTool_EndianConvertWord32(count);
         ivar = cls->ivars;
@@ -2731,7 +2730,7 @@ MethRec *parse_method_declaration(char useGlobalAllocation)
         if (returnType.parserOption)
             method->rtype = CObjC_GetIdType(1);
         else
-            method->rtype = returnType.dtype;
+            method->rtype = returnType.thetype;
         method->rqual = returnType.qual;
         CError_ReportIllegalFlags(method->rqual & ~(Q_CV | Q_BYCOPY | Q_BYREF | Q_ONEWAY));
     } else {
@@ -2779,7 +2778,7 @@ MethRec *parse_method_declaration(char useGlobalAllocation)
             if (argumentType.parserOption)
                 argument->type = CObjC_GetIdType(1);
             else
-                argument->type = argumentType.dtype;
+                argument->type = argumentType.thetype;
             argument->qual = argumentType.qual;
             if (argument->type->type == TYPEARRAY)
                 argument->type = CDecl_NewPointerType(TYPE_POINTER(argument->type)->target);
@@ -2871,13 +2870,13 @@ TypeClass *find_or_create_objc_class(HashNameNode *name)
         classObject->type = CDecl_NewStructType(0x28, 4);
         CScope_AddObject(classObject->nspace, classObject->name, (ObjBase *)classObject);
         info->classobject = classObject;
-        info->classobject->extraQualifiers = 0xe;
+        info->classobject->section = 0xe;
         metaclassObject = CParser_NewCompilerDefDataObject();
         metaclassObject->name = CParser_NameConcat("L_OBJC_METACLASS_", name->name);
         metaclassObject->type = CDecl_NewStructType(0x28, 4);
         CScope_AddObject(metaclassObject->nspace, metaclassObject->name, (ObjBase *)metaclassObject);
         info->metaclassobject = metaclassObject;
-        info->metaclassobject->extraQualifiers = 0xf;
+        info->metaclassobject->section = 0xf;
         return classType;
     }
 }
@@ -3045,7 +3044,7 @@ void CObjCModern_GenerateSymbolTableAndModule(void)
         object->type = CDecl_NewStructType(size, 4);
         CScope_AddObject(object->nspace, object->name, (ObjBase *)object);
         object->sclass = TK_STATIC;
-        object->extraQualifiers = 0x1a;
+        object->section = 0x1a;
         fn_004ceab0(object, symbols, references, object->type->size);
         module.version = CTool_EndianConvertWord32(5);
         module.size = CTool_EndianConvertWord32(0x10);
@@ -3067,7 +3066,7 @@ void CObjCModern_GenerateSymbolTableAndModule(void)
         object->type = CDecl_NewStructType(0x10, 4);
         CScope_AddObject(object->nspace, object->name, (ObjBase *)object);
         object->sclass = TK_STATIC;
-        object->extraQualifiers = 0x19;
+        object->section = 0x19;
         fn_004ceab0(object, &module, reference, object->type->size);
     }
 }
@@ -3154,7 +3153,7 @@ Object *CObjCModern_GetSelectorReference(HashEntry *p)
         obj->name = GetHashNameNode(buf);
         obj->sclass = TK_STATIC;
         obj->type = (Type *)&void_ptr;
-        obj->extraQualifiers = 0xb;
+        obj->section = 0xb;
         if (CScope_FindObjectListInNameSpace(registration_context, obj->name))
             CError_ReportError(ERR_OBJECT_REDEFINED, obj);
         else
@@ -3313,7 +3312,7 @@ Object *fn_00509c40(char *name, short kind)
     length = strlen(name);
     object->type = CDecl_NewArrayType((Type *)&stchar, length + 1);
     object->sclass = TK_STATIC;
-    object->extraQualifiers = kind;
+    object->section = kind;
     fn_004ceab0(object, name, NULL, object->type->size);
     entry = (NamedObjectCacheEntry *)galloc(sizeof(NamedObjectCacheEntry));
     entry->next = named_object_cache;

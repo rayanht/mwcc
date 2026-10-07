@@ -14,13 +14,14 @@ struct CClassNode {
 };
 #pragma pack(pop)
 #pragma options align = mac68k
-struct CFriend {
-    struct CFriend *next; /* 0x00: CDecl_AddFriend links class friends */
+struct ClassFriend {
+    struct ClassFriend *next; /* 0x00: CDecl_AddFriend links class friends */
     union {
-        struct Type *type;     /* 0x04: CDecl_AddFriend sets when is_class != 0; serialize_entry_list writes type */
-        struct Object *object; /* 0x04: CDecl_AddFriend sets when is_class == 0; serialize_entry_list writes object */
-    } target;
-    UInt8 is_class; /* 0x08: CDecl_AddFriend selects type or object; check_base_path_access tests it */
+        struct TypeClass
+            *theclass;      /* 0x04: CDecl_AddFriend sets when is_class != 0; serialize_entry_list writes type */
+        struct Object *obj; /* 0x04: CDecl_AddFriend sets when is_class == 0; serialize_entry_list writes object */
+    } u;
+    UInt8 isclass; /* 0x08: CDecl_AddFriend selects type or object; check_base_path_access tests it */
 };
 #pragma options align = reset
 #pragma pack(push, 1)

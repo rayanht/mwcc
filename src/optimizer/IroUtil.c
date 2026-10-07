@@ -834,10 +834,10 @@ static inline int IRO_ConstsSame(ENode *a, ENode *b)
             case EFLOATCONST:
                 return a->data.floatval.data.value == b->data.floatval.data.value;
             case EASSBLK:
-                return a->data.vector128.longElements[0] == b->data.vector128.longElements[0] &&
-                       a->data.vector128.longElements[1] == b->data.vector128.longElements[1] &&
-                       a->data.vector128.longElements[2] == b->data.vector128.longElements[2] &&
-                       a->data.vector128.longElements[3] == b->data.vector128.longElements[3];
+                return a->data.vector128val.longElements[0] == b->data.vector128val.longElements[0] &&
+                       a->data.vector128val.longElements[1] == b->data.vector128val.longElements[1] &&
+                       a->data.vector128val.longElements[2] == b->data.vector128val.longElements[2] &&
+                       a->data.vector128val.longElements[3] == b->data.vector128val.longElements[3];
             case EOBJREF:
                 return a->data.objref == b->data.objref;
         }
@@ -957,10 +957,10 @@ int equal_enode_values(ENode *left, ENode *right)
             case '3':
                 return left->data.floatval.data.value == right->data.floatval.data.value;
             case 'J':
-                return left->data.vector128.longElements[0] == right->data.vector128.longElements[0] &&
-                       left->data.vector128.longElements[1] == right->data.vector128.longElements[1] &&
-                       left->data.vector128.longElements[2] == right->data.vector128.longElements[2] &&
-                       left->data.vector128.longElements[3] == right->data.vector128.longElements[3];
+                return left->data.vector128val.longElements[0] == right->data.vector128val.longElements[0] &&
+                       left->data.vector128val.longElements[1] == right->data.vector128val.longElements[1] &&
+                       left->data.vector128val.longElements[2] == right->data.vector128val.longElements[2] &&
+                       left->data.vector128val.longElements[3] == right->data.vector128val.longElements[3];
             case '8':
                 return left->data.objref == right->data.objref;
         }

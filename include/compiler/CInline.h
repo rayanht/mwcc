@@ -54,7 +54,7 @@ struct ChainRec {
 };
 #pragma options align = reset
 #pragma options align = mac68k
-/* ExcBase is opaque: CInline.h only retains MemberFuncRef::base; no code uses its members. */
+/* ExcBase is opaque: CInline.h only retains EMemberInfo::base; no code uses its members. */
 struct ExcBase;
 #pragma options align = reset
 #pragma options align = mac68k

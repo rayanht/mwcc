@@ -73,17 +73,17 @@ Object *CTemplateFunc_FindSpecializationObject(DeclInfo *search, ObjectList *can
     struct TemplFuncInstance *specialization;
     struct TemplFuncInstance *selected;
     TemplArg *context;
-    if (search->requireTemplateClassMember != 0 || search->hasTemplateArguments != 0) {
+    if (search->requireTemplateClassMember != 0 || search->has_expltargs != 0) {
         for (; candidates != NULL; candidates = candidates->next) {
             if (candidates->object.value->otype == OT_OBJECT && candidates->object.value->type->type == TYPEFUNC &&
                 (((TypeFunc *)candidates->object.value->type)->flags & 1024) != 0) {
-                context = search->parsedData;
-                value = search->dtype;
+                context = search->expltargs;
+                value = search->thetype;
                 candidate = (Object *)(int)candidates->object.value;
                 matched = CTemplateFunc_MatchesSpecialization(candidate, value, context);
                 if (matched != 0) {
                     specialization = (selected = CTemplateFunc_FindOrCreateMatchedSpecialization(
-                                          candidates->object.value, search->dtype, search->parsedData, NULL));
+                                          candidates->object.value, search->thetype, search->expltargs, NULL));
                     if (selected != NULL) {
                         if (search->requireTemplateClassMember != 0) {
                             if (specialization->is_specialized == 0 && specialization->is_instantiated != 0)
@@ -272,7 +272,7 @@ Boolean CTemplTool_IsTemplateArgumentDependentType(Type *ty)
     for (;;) {
         switch ((SInt8)ty->type) {
             case TYPETEMPLATE:
-                switch (((TypeTemplDep *)ty)->kind) {
+                switch (((TypeTemplDep *)ty)->dtype) {
                     case 0:
                         if ((SInt32)((TypeTemplDep *)ty)->u.pid.index >= data_005824ca ||
                             ((TypeTemplDep *)ty)->u.pid.nindex != template_argument_depth)
@@ -305,9 +305,9 @@ Boolean CTemplTool_IsTemplateArgumentDependentType(Type *ty)
                 return 0;
             case TYPEMEMBERPOINTER:
                 r = 0;
-                if (CTemplTool_IsTemplateArgumentDependentType(((TypeMemberPointer *)ty)->memberType))
+                if (CTemplTool_IsTemplateArgumentDependentType(((TypeMemberPointer *)ty)->ty1))
                     r = 1;
-                if (CTemplTool_IsTemplateArgumentDependentType(((TypeMemberPointer *)ty)->owner.type))
+                if (CTemplTool_IsTemplateArgumentDependentType(((TypeMemberPointer *)ty)->ty2))
                     r = 1;
                 return r;
             case TYPEPOINTER:
@@ -339,7 +339,7 @@ Boolean CTemplateFunc_MatchType(Type *pattern, UInt32 patternQual, Type *argumen
     for (;;) {
         switch ((char)pattern->type) {
             case TYPETEMPLATE:
-                switch (CTemplateFunc_TemplateType(pattern)->kind) {
+                switch (CTemplateFunc_TemplateType(pattern)->dtype) {
                     case 0: {
                         SInt16 index = CTemplateFunc_TemplateType(pattern)->u.pid.index;
                         if (state[index].is_deduced) {
@@ -399,11 +399,11 @@ Boolean CTemplateFunc_MatchType(Type *pattern, UInt32 patternQual, Type *argumen
             case TYPEMEMBERPOINTER:
                 if (pattern->type != argument->type)
                     return 0;
-                if (!CTemplateFunc_MatchType(((TypeMemberPointer *)pattern)->memberType, patternQual,
-                                             ((TypeMemberPointer *)argument)->memberType, argumentQual, state, flag))
+                if (!CTemplateFunc_MatchType(((TypeMemberPointer *)pattern)->ty1, patternQual,
+                                             ((TypeMemberPointer *)argument)->ty1, argumentQual, state, flag))
                     return 0;
-                pattern = ((TypeMemberPointer *)pattern)->owner.type;
-                argument = ((TypeMemberPointer *)argument)->owner.type;
+                pattern = ((TypeMemberPointer *)pattern)->ty2;
+                argument = ((TypeMemberPointer *)argument)->ty2;
                 break;
             case TYPEARRAY:
                 if (argument->type != TYPEARRAY)

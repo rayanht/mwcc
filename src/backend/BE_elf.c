@@ -720,14 +720,14 @@ void BE_elf_SetDeclSection(char *name, DeclInfo *declaration)
     InterruptGenerationRecord *record = NULL;
     UInt16 targetIndex;
 
-    if (declaration->extraQualifiers != 0) {
+    if (declaration->section != 0) {
         CError_FATAL(489);
     } else {
         record = galloc(sizeof(*record));
         memclrw(record, sizeof(*record));
         record->next = interrupt_generation_records;
         interrupt_generation_records = record;
-        record->id = declaration->extraQualifiers = --data_005876b4;
+        record->id = declaration->section = --data_005876b4;
     }
 
     head = section_list;
@@ -738,7 +738,7 @@ void BE_elf_SetDeclSection(char *name, DeclInfo *declaration)
                     PPCError_ReportError(0x8f, name);
                     return;
                 }
-                targetIndex = ObjGen_PPC_EABI_GetSectionIndex(declaration->extraQualifiers);
+                targetIndex = ObjGen_PPC_EABI_GetSectionIndex(declaration->section);
                 if (targetIndex != 0 && targetIndex != section->header->index) {
                     PPCError_ReportError(0x81, declaration->name->name, section->name);
                     return;

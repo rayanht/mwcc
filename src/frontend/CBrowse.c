@@ -488,8 +488,8 @@ void CBrowse_BuildTypeStructBrowseInfo(DeclInfo *obj, TypeStruct *info, GList *o
 
     CError_ASSERT(478, obj != NULL && out != NULL);
     *out = browse_member_list;
-    if (!(obj->browseFile != NULL && obj->browseFile->fileID != 0 && obj->browseFile->recordbrowseinfo != 0 &&
-          obj->sourceFile != NULL && obj->sourceFile->fileID != 0 && obj->sourceLine > 0)) {
+    if (!(obj->file != NULL && obj->file->fileID != 0 && obj->file->recordbrowseinfo != 0 && obj->file2 != NULL &&
+          obj->file2->fileID != 0 && obj->sourceoffset > 0)) {
         memclrw(&browse_member_list, sizeof(browse_member_list));
         return;
     }
@@ -499,11 +499,11 @@ void CBrowse_BuildTypeStructBrowseInfo(DeclInfo *obj, TypeStruct *info, GList *o
     }
     InitGList(&browse_member_list, 0x4000);
     AppendGListByte(&browse_member_list, 2);
-    AppendGListWord(&browse_member_list, obj->browseFile->fileID);
-    AppendGListWord(&browse_member_list, obj->sourceFile->fileID);
-    AppendGListLong(&browse_member_list, obj->sourceLine - 1);
+    AppendGListWord(&browse_member_list, obj->file->fileID);
+    AppendGListWord(&browse_member_list, obj->file2->fileID);
+    AppendGListLong(&browse_member_list, obj->sourceoffset - 1);
     CError_ASSERT(519, browse_member_list.size == 9);
-    AppendGListLong(&browse_member_list, obj->sourceLine - 1);
+    AppendGListLong(&browse_member_list, obj->sourceoffset - 1);
     AppendGListLong(&browse_member_list, 0);
     write_text_or_name_id(&browse_member_list, name->name, name->id);
     AppendGListWord(&browse_member_list, 0);
@@ -625,43 +625,43 @@ void CBrowse_GenerateClassRecord(DeclInfo *record, GList *out)
     char *className;
     SInt32 baseCount;
 
-    CError_ASSERT(225, record && record->dtype && out);
+    CError_ASSERT(225, record && record->thetype && out);
     *out = browse_member_list;
-    if (!(record->browseFile && record->browseFile->fileID && record->browseFile->recordbrowseinfo &&
-          record->sourceFile && record->sourceFile->fileID && record->sourceLine > 0)) {
+    if (!(record->file && record->file->fileID && record->file->recordbrowseinfo && record->file2 &&
+          record->file2->fileID && record->sourceoffset > 0)) {
         memclrw(&browse_member_list, sizeof(browse_member_list));
         return;
     }
-    if (CParser_IsNullOrAtOrDollarPrefixedName(TYPE_CLASS(record->dtype)->classname) != 0) {
+    if (CParser_IsNullOrAtOrDollarPrefixedName(TYPE_CLASS(record->thetype)->classname) != 0) {
         memclrw(&browse_member_list, sizeof(browse_member_list));
         return;
     }
     InitGList(&browse_member_list, 0x4000);
     AppendGListByte(&browse_member_list, 2);
-    AppendGListWord(&browse_member_list, record->browseFile->fileID);
-    AppendGListWord(&browse_member_list, record->sourceFile->fileID);
-    AppendGListLong(&browse_member_list, record->sourceLine - 1);
+    AppendGListWord(&browse_member_list, record->file->fileID);
+    AppendGListWord(&browse_member_list, record->file2->fileID);
+    AppendGListLong(&browse_member_list, record->sourceoffset - 1);
     CError_ASSERT(268, browse_member_list.size == 9);
-    AppendGListLong(&browse_member_list, record->sourceLine - 1);
+    AppendGListLong(&browse_member_list, record->sourceoffset - 1);
     AppendGListLong(&browse_member_list, 0);
-    name = TYPE_CLASS(record->dtype)->classname;
+    name = TYPE_CLASS(record->thetype)->classname;
     write_text_or_name_id(&browse_member_list, name->name, name->id);
-    fn_004c2ac0(record->dtype, 0);
+    fn_004c2ac0(record->thetype, 0);
     AppendGListByte(&data_00583548, 0);
     className = CompilerTools_AllocatePool(data_00583548.size + 1);
     strcpy(className, *data_00583548.data);
     while (*className != 0 && *className >= '0' && *className <= '9')
         className++;
-    if (strcmp(TYPE_CLASS(record->dtype)->classname->name, className) != 0)
+    if (strcmp(TYPE_CLASS(record->thetype)->classname->name, className) != 0)
         write_text_or_name_id(&browse_member_list, className, -1);
     else
         AppendGListWord(&browse_member_list, 0);
     AppendGListLong(&browse_member_list, 0);
     baseCount = 0;
-    for (baseList = TYPE_CLASS(record->dtype)->bases; baseList != NULL; baseList = baseList->next)
+    for (baseList = TYPE_CLASS(record->thetype)->bases; baseList != NULL; baseList = baseList->next)
         baseCount++;
     AppendGListByte(&browse_member_list, baseCount);
-    for (baseList = TYPE_CLASS(record->dtype)->bases; baseList != NULL; baseList = baseList->next) {
+    for (baseList = TYPE_CLASS(record->thetype)->bases; baseList != NULL; baseList = baseList->next) {
         AppendGListByte(&browse_member_list, data_00563340[baseList->access]);
         AppendGListByte(&browse_member_list, baseList->is_virtual);
         base = (TemplClassInst *)baseList->base;

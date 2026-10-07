@@ -589,7 +589,7 @@ void layout_vtable(ClassLayout *layout, TypeClass *classType)
     vtableObject->name = CMangler_VTableName(classType);
     vtableObject->type = CDecl_NewStructType(size, 4);
     vtableObject->nspace = classType->nspace;
-    switch ((signed char)classType->state) {
+    switch ((signed char)classType->action) {
         case 0:
             vtableObject->sclass = TK_STATIC;
             vtableObject->qual |= Q_IMPLICIT_WEAK;

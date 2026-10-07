@@ -85,12 +85,12 @@ static Boolean IsAnonymousName(HashNameNode *name)
 
 static int IsUnionType(DeclInfo *context)
 {
-    return context->dtype->type == TYPECLASS && ((TypeClass *)context->dtype)->mode == 1;
+    return context->thetype->type == TYPECLASS && ((TypeClass *)context->thetype)->mode == 1;
 }
 
 static Boolean IsAnonymousUnion(DeclInfo *context)
 {
-    return IsUnionType(context) && IsAnonymousName(((TypeClass *)context->dtype)->classname);
+    return IsUnionType(context) && IsAnonymousName(((TypeClass *)context->thetype)->classname);
 }
 
 static inline Object *fn_0048be40_inline1(TypeFunc *functionType, NameSpaceObjectList *result)
@@ -178,7 +178,7 @@ void parse_declaration(DeclInfo *p)
             return;
         case TK_EXTERN:
             if (copts.cplusplus != 0) {
-                p->storage = TK_EXTERN;
+                p->storageclass = TK_EXTERN;
                 tk = CPrepTokenizer_GetNextToken();
                 if (tk == TK_STRING) {
                     parse_linkage_specification(p);
@@ -187,9 +187,9 @@ void parse_declaration(DeclInfo *p)
             }
         default:
             CParser_GetDeclSpecs(p, 1);
-            if ((SInt32)p->storage == TK_REGISTER || (SInt32)p->storage == TK_AUTO) {
+            if ((SInt32)p->storageclass == TK_REGISTER || (SInt32)p->storageclass == TK_AUTO) {
                 CError_ReportError(ERR_ILLEGAL_STORAGE_CLASS);
-                p->storage = TK_EOF;
+                p->storageclass = TK_EOF;
             }
             if (tk != ';') {
                 CDecl_ScanDeclarator(p);
@@ -331,11 +331,11 @@ void parse_linkage_specification(DeclInfo *decl)
         decl->requireMangledName = linkageFlag;
         decl->qual = language;
         CParser_GetDeclSpecs(decl, 1);
-        if (decl->storage != TK_TYPEDEF) {
-            if (decl->storage != TK_EOF && copts.f9d)
+        if (decl->storageclass != TK_TYPEDEF) {
+            if (decl->storageclass != TK_EOF && copts.f9d)
                 CError_Warning(ERR_ILLEGAL_STORAGE_CLASS);
-            if (decl->storage == TK_EOF)
-                decl->storage = TK_EXTERN;
+            if (decl->storageclass == TK_EOF)
+                decl->storageclass = TK_EXTERN;
         }
         if (copts.f68)
             decl->missingTypeSpecifier = 0;
@@ -354,9 +354,9 @@ void CParser_ParseGlobalDeclaration(void)
         declaration_token = *CPrep_GetLastBufferedToken();
         memclrw(&buf, sizeof(buf));
         CParser_GetDeclSpecs(&buf, 1);
-        if ((SInt32)buf.storage == 0x101 || (SInt32)buf.storage == 0x100) {
+        if ((SInt32)buf.storageclass == 0x101 || (SInt32)buf.storageclass == 0x100) {
             CError_ReportError(ERR_ILLEGAL_STORAGE_CLASS);
-            buf.storage = 0;
+            buf.storageclass = 0;
         }
         if (tk != ';')
             CDecl_ScanDeclarator(&buf);
@@ -381,16 +381,16 @@ Object *CParser_ParseObject(void)
     if ((name = declaration.name) != NULL) {
         result = CScope_FindObjectList(&lookupState, name);
         if (result != NULL && result->object->otype == OT_OBJECT) {
-            if (declaration.dtype->type == TYPEFUNC) {
-                return fn_0048be40_inline1((TypeFunc *)declaration.dtype, result);
+            if (declaration.thetype->type == TYPEFUNC) {
+                return fn_0048be40_inline1((TypeFunc *)declaration.thetype, result);
             }
-            if (iscpp_typeequal(declaration.dtype, ((Object *)result->object)->type) != 0) {
+            if (iscpp_typeequal(declaration.thetype, ((Object *)result->object)->type) != 0) {
                 if (((Object *)result->object)->qual == declaration.qual) {
                     return (Object *)result->object;
                 }
             }
             CError_ReportError(ERR_IDENTIFIER_REDECLARED_WAS_DECLARED_AS_NOW, CError_GetObjectString(object),
-                               object->type, (object = (Object *)result->object)->qual, declaration.dtype,
+                               object->type, (object = (Object *)result->object)->qual, declaration.thetype,
                                declaration.qual);
         }
     }
@@ -561,13 +561,13 @@ void CParser_CheckAnonymousUnion(DeclInfo *context, char flag)
 
     if (!IsAnonymousUnion(context)) {
         if (copts.fa0) {
-            char type = context->dtype->type;
+            char type = context->thetype->type;
 
             switch (type) {
                 case 3:
                 case 4:
                 case 5:
-                    if (context->storage == TK_EOF && context->qual == 0)
+                    if (context->storageclass == TK_EOF && context->qual == 0)
                         break;
                 default:
                     CError_Warning(ERR_ILLEGAL_EMPTY_DECLARATION);
@@ -575,9 +575,9 @@ void CParser_CheckAnonymousUnion(DeclInfo *context, char flag)
         }
         return;
     }
-    if (flag == 0 && context->storage != TK_STATIC)
+    if (flag == 0 && context->storageclass != TK_STATIC)
         CError_ReportError(ERR_ILLEGAL_STORAGE_CLASS);
-    if (flag != 0 && context->storage != TK_STATIC) {
+    if (flag != 0 && context->storageclass != TK_STATIC) {
         object = CParser_NewLocalDataObject(context, 1);
         name1[0] = '@';
         CParser_PrintUniqueID(name1 + 1);
@@ -594,7 +594,7 @@ void CParser_CheckAnonymousUnion(DeclInfo *context, char flag)
     }
     {
         ObjMemberVar *member;
-        for (member = ((TypeClass *)context->dtype)->ivars; member != NULL; member = member->next) {
+        for (member = ((TypeClass *)context->thetype)->ivars; member != NULL; member = member->next) {
             Object *alias = (Object *)galloc(sizeof(Object));
             *(Object *)alias = *(Object *)object;
             alias->name = member->name;
@@ -700,9 +700,6 @@ void CParser_PrependClassParseRec(TypeClass *type)
     class_parse_recs = entry;
 }
 
-#define NODEBYTE_6(n) (((TypeTemplDep *)(n))->kind)
-#define NODEBYTE_0xb(n) (((TypeTemplDep *)(n))->u.pid.type)
-
 void CParser_GetDeclSpecs(DeclInfo *state, Boolean allowObject)
 {
     CScopeParseResult scope;
@@ -715,8 +712,8 @@ void CParser_GetDeclSpecs(DeclInfo *state, Boolean allowObject)
     Boolean requireType;
     UInt8 vectorKeyword;
 
-    state->browseFile = CPrep_GetPFile();
-    CPrep_GetBrowseFilePosition(&state->sourceFile, &state->sourceLine);
+    state->file = CPrep_GetPFile();
+    CPrep_GetBrowseFilePosition(&state->file2, &state->sourceoffset);
     firstToken = 1;
     requireType = copts.cplusplus;
     sizeModifier = signModifier = typeToken = 0;
@@ -729,15 +726,15 @@ void CParser_GetDeclSpecs(DeclInfo *state, Boolean allowObject)
             case TK_EXTERN:
             case TK_TYPEDEF:
             case TK_MUTABLE:
-                if (state->storage != TK_EOF)
+                if (state->storageclass != TK_EOF)
                     CError_ReportError(ERR_DECLARATION_SYNTAX_ERROR);
-                state->storage = tk;
+                state->storageclass = tk;
                 break;
             case TK_CONST:
-                if (state->dtype != NULL && state->dtype->type == TYPEPOINTER) {
-                    if (TYPE_POINTER(state->dtype)->qual & Q_CONST)
+                if (state->thetype != NULL && state->thetype->type == TYPEPOINTER) {
+                    if (TYPE_POINTER(state->thetype)->qual & Q_CONST)
                         CError_ReportIllegalFlags(Q_CONST);
-                    TYPE_POINTER(state->dtype)->qual |= Q_CONST;
+                    TYPE_POINTER(state->thetype)->qual |= Q_CONST;
                 } else {
                     if (state->qual & Q_CONST)
                         CError_ReportIllegalFlags(Q_CONST);
@@ -745,10 +742,10 @@ void CParser_GetDeclSpecs(DeclInfo *state, Boolean allowObject)
                 }
                 break;
             case TK_VOLATILE:
-                if (state->dtype != NULL && state->dtype->type == TYPEPOINTER) {
-                    if (TYPE_POINTER(state->dtype)->qual & Q_VOLATILE)
+                if (state->thetype != NULL && state->thetype->type == TYPEPOINTER) {
+                    if (TYPE_POINTER(state->thetype)->qual & Q_VOLATILE)
                         CError_ReportIllegalFlags(Q_VOLATILE);
-                    TYPE_POINTER(state->dtype)->qual |= Q_VOLATILE;
+                    TYPE_POINTER(state->thetype)->qual |= Q_VOLATILE;
                 } else {
                     if (state->qual & Q_VOLATILE)
                         CError_ReportIllegalFlags(Q_VOLATILE);
@@ -891,7 +888,7 @@ void CParser_GetDeclSpecs(DeclInfo *state, Boolean allowObject)
                 tk = CPrepTokenizer_GetNextToken();
                 scanstruct(state, 0);
                 if (tk == TK_UU_ATTRIBUTE)
-                    CParser_ParseAttribute(state->dtype, NULL);
+                    CParser_ParseAttribute(state->thetype, NULL);
                 if ((tokenValue = tk) == TK_CONST || tokenValue == TK_VOLATILE || tokenValue == TK_UU_FAR ||
                     tokenValue == 0x124) {
                     typeToken = -1;
@@ -904,7 +901,7 @@ void CParser_GetDeclSpecs(DeclInfo *state, Boolean allowObject)
                 tk = CPrepTokenizer_GetNextToken();
                 CDecl_ParseClass(state, 2, 1, 0);
                 if (tk == TK_UU_ATTRIBUTE)
-                    CParser_ParseAttribute(state->dtype, NULL);
+                    CParser_ParseAttribute(state->thetype, NULL);
                 if ((tokenValue = tk) == TK_CONST || tokenValue == TK_VOLATILE || tokenValue == TK_UU_FAR ||
                     tokenValue == 0x124) {
                     typeToken = -1;
@@ -917,7 +914,7 @@ void CParser_GetDeclSpecs(DeclInfo *state, Boolean allowObject)
                 tk = CPrepTokenizer_GetNextToken();
                 scanstruct(state, 1);
                 if (tk == TK_UU_ATTRIBUTE)
-                    CParser_ParseAttribute(state->dtype, NULL);
+                    CParser_ParseAttribute(state->thetype, NULL);
                 if ((tokenValue = tk) == TK_CONST || tokenValue == TK_VOLATILE || tokenValue == TK_UU_FAR ||
                     tokenValue == 0x124) {
                     typeToken = -1;
@@ -930,7 +927,7 @@ void CParser_GetDeclSpecs(DeclInfo *state, Boolean allowObject)
                 tk = CPrepTokenizer_GetNextToken();
                 scanenum(state);
                 if (tk == TK_UU_ATTRIBUTE)
-                    CParser_ParseAttribute(state->dtype, NULL);
+                    CParser_ParseAttribute(state->thetype, NULL);
                 if ((tokenValue = tk) == TK_CONST || tokenValue == TK_VOLATILE || tokenValue == TK_UU_FAR ||
                     tokenValue == 0x124) {
                     typeToken = -1;
@@ -985,7 +982,7 @@ void CParser_GetDeclSpecs(DeclInfo *state, Boolean allowObject)
                 }
                 if (typeToken == 0 && signModifier == 0 && sizeModifier == 0) {
                     if (copts.f5c && strcmp(data_00587fa0->name, "id") == 0) {
-                        state->dtype = CObjC_ParseIdType();
+                        state->thetype = CObjC_ParseIdType();
                         typeToken = -1;
                         goto reset_first_token;
                     }
@@ -995,9 +992,9 @@ void CParser_GetDeclSpecs(DeclInfo *state, Boolean allowObject)
                             type = scope.type.base;
                             do {
                                 if (type->type == TYPETEMPLATE) {
-                                    switch (NODEBYTE_6(type)) {
+                                    switch (TYPE_TEMPLATE(type)->dtype) {
                                         case 0:
-                                            if (NODEBYTE_0xb(type) == 0)
+                                            if (TYPE_TEMPLATE(type)->u.pid.type == 0)
                                                 CError_ReportError(ERR_ILLEGAL_TEMPLATE_ARGUMENT_DEPENDENT_EXPRESSION);
                                             break;
                                         case 1:
@@ -1023,9 +1020,9 @@ void CParser_GetDeclSpecs(DeclInfo *state, Boolean allowObject)
                             state->isType = scope.is_type;
                             typeToken = -1;
                             tk = CPrepTokenizer_GetNextToken();
-                            if (tk == '<' && copts.f5c != 0 && state->dtype->type == TYPECLASS &&
-                                TYPE_CLASS(state->dtype)->objcinfo != NULL) {
-                                state->dtype = CObjC_ParseProtocolList(state->dtype);
+                            if (tk == '<' && copts.f5c != 0 && state->thetype->type == TYPECLASS &&
+                                TYPE_CLASS(state->thetype)->objcinfo != NULL) {
+                                state->thetype = CObjC_ParseProtocolList(state->thetype);
                             }
                             goto reset_first_token;
                         }
@@ -1085,10 +1082,10 @@ void CParser_GetDeclSpecs(DeclInfo *state, Boolean allowObject)
                 if (typeToken == 0 && signModifier == 0 && sizeModifier == 0)
                     state->parserOption = 1;
                 if (typeToken >= 0)
-                    state->dtype = (Type *)select_builtin_type(typeToken, sizeModifier, signModifier);
+                    state->thetype = (Type *)select_builtin_type(typeToken, sizeModifier, signModifier);
                 if (firstToken) {
                     if (requireType != 0) {
-                        if (state->storage == TK_EOF && state->qual == 0 && state->declarationAttributes == 0) {
+                        if (state->storageclass == TK_EOF && state->qual == 0 && state->exportflags == 0) {
                             if (tk == TK_IDENTIFIER) {
                                 HashNameNode *name = data_00587fa0;
                                 if (CPrepTokenizer_GetNextTokenAndRestorePosition() != '(') {
@@ -1109,7 +1106,7 @@ void CParser_GetDeclSpecs(DeclInfo *state, Boolean allowObject)
                 if (typeToken == 0 && signModifier == 0 && sizeModifier == 0 && copts.fa0 != 0)
                     CError_Warning(ERR_ILLEGAL_EMPTY_DECLARATION);
                 if (typeToken >= 0)
-                    state->dtype = (Type *)select_builtin_type(typeToken, sizeModifier, signModifier);
+                    state->thetype = (Type *)select_builtin_type(typeToken, sizeModifier, signModifier);
                 return;
         }
         tk = CPrepTokenizer_GetNextToken();
@@ -1145,20 +1142,20 @@ int parse_dtype_specifiers(DeclInfo *state)
             tk = CPrepTokenizer_GetNextToken();
             switch (tk) {
                 case TK_BOOL:
-                    state->dtype = TYPE(&stvectorboolchar);
+                    state->thetype = TYPE(&stvectorboolchar);
                     tk = CPrepTokenizer_GetNextToken();
                     return 1;
                 case TK_UNSIGNED:
-                    state->dtype = TYPE(&stvectorunsignedchar);
+                    state->thetype = TYPE(&stvectorunsignedchar);
                     tk = CPrepTokenizer_GetNextToken();
                     return 1;
                 case TK_SIGNED:
-                    state->dtype = TYPE(&stvectorsignedchar);
+                    state->thetype = TYPE(&stvectorsignedchar);
                     tk = CPrepTokenizer_GetNextToken();
                     return 1;
                 case TK_IDENTIFIER:
                     if ((HashNameNode *)data_00587fa0 == GetHashNameNodeExport("bool")) {
-                        state->dtype = TYPE(&stvectorboolchar);
+                        state->thetype = TYPE(&stvectorboolchar);
                         tk = CPrepTokenizer_GetNextToken();
                         return 1;
                     }
@@ -1172,17 +1169,17 @@ int parse_dtype_specifiers(DeclInfo *state)
             tk = CPrepTokenizer_GetNextToken();
             switch (tk) {
                 case TK_CHAR:
-                    state->dtype = TYPE(&stvectorsignedchar);
+                    state->thetype = TYPE(&stvectorsignedchar);
                     tk = CPrepTokenizer_GetNextToken();
                     return 1;
                 case TK_SHORT:
-                    state->dtype = TYPE(&stvectorsignedshort);
+                    state->thetype = TYPE(&stvectorsignedshort);
                     tk = CPrepTokenizer_GetNextToken();
                     if (tk == TK_INT)
                         tk = CPrepTokenizer_GetNextToken();
                     return 1;
                 case 0x10a:
-                    state->dtype = TYPE(&stvectorsignedlong);
+                    state->thetype = TYPE(&stvectorsignedlong);
                     tk = CPrepTokenizer_GetNextToken();
                     if (tk == TK_INT)
                         tk = CPrepTokenizer_GetNextToken();
@@ -1191,15 +1188,15 @@ int parse_dtype_specifiers(DeclInfo *state)
                     tk = CPrepTokenizer_GetNextToken();
                     switch (tk) {
                         case TK_SHORT:
-                            state->dtype = TYPE(&stvectorsignedshort);
+                            state->thetype = TYPE(&stvectorsignedshort);
                             tk = CPrepTokenizer_GetNextToken();
                             return 1;
                         case 0x10a:
-                            state->dtype = TYPE(&stvectorsignedlong);
+                            state->thetype = TYPE(&stvectorsignedlong);
                             tk = CPrepTokenizer_GetNextToken();
                             return 1;
                         default:
-                            state->dtype = TYPE(&stvectorsignedlong);
+                            state->thetype = TYPE(&stvectorsignedlong);
                             return 1;
                     }
                 default:
@@ -1212,17 +1209,17 @@ int parse_dtype_specifiers(DeclInfo *state)
             tk = CPrepTokenizer_GetNextToken();
             switch (tk) {
                 case TK_CHAR:
-                    state->dtype = TYPE(&stvectorunsignedchar);
+                    state->thetype = TYPE(&stvectorunsignedchar);
                     tk = CPrepTokenizer_GetNextToken();
                     return 1;
                 case TK_SHORT:
-                    state->dtype = TYPE(&stvectorunsignedshort);
+                    state->thetype = TYPE(&stvectorunsignedshort);
                     tk = CPrepTokenizer_GetNextToken();
                     if (tk == TK_INT)
                         tk = CPrepTokenizer_GetNextToken();
                     return 1;
                 case 0x10a:
-                    state->dtype = TYPE(&stvectorunsignedlong);
+                    state->thetype = TYPE(&stvectorunsignedlong);
                     tk = CPrepTokenizer_GetNextToken();
                     if (tk == TK_INT)
                         tk = CPrepTokenizer_GetNextToken();
@@ -1231,15 +1228,15 @@ int parse_dtype_specifiers(DeclInfo *state)
                     tk = CPrepTokenizer_GetNextToken();
                     switch (tk) {
                         case TK_SHORT:
-                            state->dtype = TYPE(&stvectorunsignedshort);
+                            state->thetype = TYPE(&stvectorunsignedshort);
                             tk = CPrepTokenizer_GetNextToken();
                             return 1;
                         case 0x10a:
-                            state->dtype = TYPE(&stvectorunsignedlong);
+                            state->thetype = TYPE(&stvectorunsignedlong);
                             tk = CPrepTokenizer_GetNextToken();
                             return 1;
                         default:
-                            state->dtype = TYPE(&stvectorunsignedlong);
+                            state->thetype = TYPE(&stvectorunsignedlong);
                             return 1;
                     }
                 default:
@@ -1252,17 +1249,17 @@ int parse_dtype_specifiers(DeclInfo *state)
             tk = CPrepTokenizer_GetNextToken();
             switch (tk) {
                 case TK_CHAR:
-                    state->dtype = TYPE(&stvectorboolchar);
+                    state->thetype = TYPE(&stvectorboolchar);
                     tk = CPrepTokenizer_GetNextToken();
                     return 1;
                 case TK_SHORT:
-                    state->dtype = TYPE(&stvectorboolshort);
+                    state->thetype = TYPE(&stvectorboolshort);
                     tk = CPrepTokenizer_GetNextToken();
                     if (tk == TK_INT)
                         tk = CPrepTokenizer_GetNextToken();
                     return 1;
                 case 0x10a:
-                    state->dtype = TYPE(&stvectorboollong);
+                    state->thetype = TYPE(&stvectorboollong);
                     tk = CPrepTokenizer_GetNextToken();
                     if (tk == TK_INT)
                         tk = CPrepTokenizer_GetNextToken();
@@ -1271,15 +1268,15 @@ int parse_dtype_specifiers(DeclInfo *state)
                     tk = CPrepTokenizer_GetNextToken();
                     switch (tk) {
                         case TK_SHORT:
-                            state->dtype = TYPE(&stvectorboolshort);
+                            state->thetype = TYPE(&stvectorboolshort);
                             tk = CPrepTokenizer_GetNextToken();
                             return 1;
                         case 0x10a:
-                            state->dtype = TYPE(&stvectorboollong);
+                            state->thetype = TYPE(&stvectorboollong);
                             tk = CPrepTokenizer_GetNextToken();
                             return 1;
                         default:
-                            state->dtype = TYPE(&stvectorboollong);
+                            state->thetype = TYPE(&stvectorboollong);
                             return 1;
                     }
                 default:
@@ -1292,19 +1289,19 @@ int parse_dtype_specifiers(DeclInfo *state)
             tk = CPrepTokenizer_GetNextToken();
             switch (tk) {
                 case TK_BOOL:
-                    state->dtype = TYPE(&stvectorboolshort);
+                    state->thetype = TYPE(&stvectorboolshort);
                     tk = CPrepTokenizer_GetNextToken();
                     if (tk == TK_INT)
                         tk = CPrepTokenizer_GetNextToken();
                     return 1;
                 case TK_SIGNED:
-                    state->dtype = TYPE(&stvectorsignedshort);
+                    state->thetype = TYPE(&stvectorsignedshort);
                     tk = CPrepTokenizer_GetNextToken();
                     if (tk == TK_INT)
                         tk = CPrepTokenizer_GetNextToken();
                     return 1;
                 case TK_UNSIGNED:
-                    state->dtype = TYPE(&stvectorunsignedshort);
+                    state->thetype = TYPE(&stvectorunsignedshort);
                     tk = CPrepTokenizer_GetNextToken();
                     if (tk == TK_INT)
                         tk = CPrepTokenizer_GetNextToken();
@@ -1313,22 +1310,22 @@ int parse_dtype_specifiers(DeclInfo *state)
                     tk = CPrepTokenizer_GetNextToken();
                     switch (tk) {
                         case TK_BOOL:
-                            state->dtype = TYPE(&stvectorboolshort);
+                            state->thetype = TYPE(&stvectorboolshort);
                             tk = CPrepTokenizer_GetNextToken();
                             if (tk == TK_INT)
                                 tk = CPrepTokenizer_GetNextToken();
                             return 1;
                         case TK_SIGNED:
-                            state->dtype = TYPE(&stvectorsignedshort);
+                            state->thetype = TYPE(&stvectorsignedshort);
                             tk = CPrepTokenizer_GetNextToken();
                             return 1;
                         case TK_UNSIGNED:
-                            state->dtype = TYPE(&stvectorunsignedshort);
+                            state->thetype = TYPE(&stvectorunsignedshort);
                             tk = CPrepTokenizer_GetNextToken();
                             return 1;
                         case TK_IDENTIFIER:
                             if ((HashNameNode *)data_00587fa0 == GetHashNameNodeExport("bool")) {
-                                state->dtype = TYPE(&stvectorboolshort);
+                                state->thetype = TYPE(&stvectorboolshort);
                                 tk = CPrepTokenizer_GetNextToken();
                                 if (tk == TK_INT)
                                     tk = CPrepTokenizer_GetNextToken();
@@ -1341,7 +1338,7 @@ int parse_dtype_specifiers(DeclInfo *state)
                     break;
                 case TK_IDENTIFIER:
                     if ((HashNameNode *)data_00587fa0 == GetHashNameNodeExport("bool")) {
-                        state->dtype = TYPE(&stvectorboolshort);
+                        state->thetype = TYPE(&stvectorboolshort);
                         tk = CPrepTokenizer_GetNextToken();
                         if (tk == TK_INT)
                             tk = CPrepTokenizer_GetNextToken();
@@ -1357,19 +1354,19 @@ int parse_dtype_specifiers(DeclInfo *state)
             tk = CPrepTokenizer_GetNextToken();
             switch (tk) {
                 case TK_BOOL:
-                    state->dtype = TYPE(&stvectorboollong);
+                    state->thetype = TYPE(&stvectorboollong);
                     tk = CPrepTokenizer_GetNextToken();
                     if (tk == TK_INT)
                         tk = CPrepTokenizer_GetNextToken();
                     return 1;
                 case TK_SIGNED:
-                    state->dtype = TYPE(&stvectorsignedlong);
+                    state->thetype = TYPE(&stvectorsignedlong);
                     tk = CPrepTokenizer_GetNextToken();
                     if (tk == TK_INT)
                         tk = CPrepTokenizer_GetNextToken();
                     return 1;
                 case TK_UNSIGNED:
-                    state->dtype = TYPE(&stvectorunsignedlong);
+                    state->thetype = TYPE(&stvectorunsignedlong);
                     tk = CPrepTokenizer_GetNextToken();
                     if (tk == TK_INT)
                         tk = CPrepTokenizer_GetNextToken();
@@ -1378,20 +1375,20 @@ int parse_dtype_specifiers(DeclInfo *state)
                     tk = CPrepTokenizer_GetNextToken();
                     switch (tk) {
                         case TK_BOOL:
-                            state->dtype = TYPE(&stvectorboollong);
+                            state->thetype = TYPE(&stvectorboollong);
                             tk = CPrepTokenizer_GetNextToken();
                             return 1;
                         case TK_SIGNED:
-                            state->dtype = TYPE(&stvectorsignedlong);
+                            state->thetype = TYPE(&stvectorsignedlong);
                             tk = CPrepTokenizer_GetNextToken();
                             return 1;
                         case TK_UNSIGNED:
-                            state->dtype = TYPE(&stvectorunsignedlong);
+                            state->thetype = TYPE(&stvectorunsignedlong);
                             tk = CPrepTokenizer_GetNextToken();
                             return 1;
                         case TK_IDENTIFIER:
                             if ((HashNameNode *)data_00587fa0 == GetHashNameNodeExport("bool")) {
-                                state->dtype = TYPE(&stvectorboollong);
+                                state->thetype = TYPE(&stvectorboollong);
                                 tk = CPrepTokenizer_GetNextToken();
                                 return 1;
                             }
@@ -1402,7 +1399,7 @@ int parse_dtype_specifiers(DeclInfo *state)
                     break;
                 case TK_IDENTIFIER:
                     if ((HashNameNode *)data_00587fa0 == GetHashNameNodeExport("bool")) {
-                        state->dtype = TYPE(&stvectorboollong);
+                        state->thetype = TYPE(&stvectorboollong);
                         tk = CPrepTokenizer_GetNextToken();
                         if (tk == TK_INT)
                             tk = CPrepTokenizer_GetNextToken();
@@ -1421,65 +1418,65 @@ int parse_dtype_specifiers(DeclInfo *state)
                     tk = CPrepTokenizer_GetNextToken();
                     switch (tk) {
                         case TK_SHORT:
-                            state->dtype = TYPE(&stvectorboolshort);
+                            state->thetype = TYPE(&stvectorboolshort);
                             tk = CPrepTokenizer_GetNextToken();
                             return 1;
                         case 0x10a:
-                            state->dtype = TYPE(&stvectorboollong);
+                            state->thetype = TYPE(&stvectorboollong);
                             tk = CPrepTokenizer_GetNextToken();
                             return 1;
                         default:
-                            state->dtype = TYPE(&stvectorboollong);
+                            state->thetype = TYPE(&stvectorboollong);
                             return 1;
                     }
                 case TK_SIGNED:
                     tk = CPrepTokenizer_GetNextToken();
                     switch (tk) {
                         case TK_SHORT:
-                            state->dtype = TYPE(&stvectorsignedshort);
+                            state->thetype = TYPE(&stvectorsignedshort);
                             tk = CPrepTokenizer_GetNextToken();
                             return 1;
                         case 0x10a:
-                            state->dtype = TYPE(&stvectorsignedlong);
+                            state->thetype = TYPE(&stvectorsignedlong);
                             tk = CPrepTokenizer_GetNextToken();
                             return 1;
                         default:
-                            state->dtype = TYPE(&stvectorsignedlong);
+                            state->thetype = TYPE(&stvectorsignedlong);
                             return 1;
                     }
                 case TK_UNSIGNED:
                     tk = CPrepTokenizer_GetNextToken();
                     switch (tk) {
                         case TK_SHORT:
-                            state->dtype = TYPE(&stvectorunsignedshort);
+                            state->thetype = TYPE(&stvectorunsignedshort);
                             tk = CPrepTokenizer_GetNextToken();
                             return 1;
                         case 0x10a:
-                            state->dtype = TYPE(&stvectorunsignedlong);
+                            state->thetype = TYPE(&stvectorunsignedlong);
                             tk = CPrepTokenizer_GetNextToken();
                             return 1;
                         default:
-                            state->dtype = TYPE(&stvectorunsignedlong);
+                            state->thetype = TYPE(&stvectorunsignedlong);
                             return 1;
                     }
                 case TK_SHORT:
                     tk = CPrepTokenizer_GetNextToken();
                     switch (tk) {
                         case TK_BOOL:
-                            state->dtype = TYPE(&stvectorboolshort);
+                            state->thetype = TYPE(&stvectorboolshort);
                             tk = CPrepTokenizer_GetNextToken();
                             return 1;
                         case TK_SIGNED:
-                            state->dtype = TYPE(&stvectorsignedshort);
+                            state->thetype = TYPE(&stvectorsignedshort);
                             tk = CPrepTokenizer_GetNextToken();
                             return 1;
                         case TK_UNSIGNED:
-                            state->dtype = TYPE(&stvectorunsignedshort);
+                            state->thetype = TYPE(&stvectorunsignedshort);
                             tk = CPrepTokenizer_GetNextToken();
                             return 1;
                         case TK_IDENTIFIER:
                             if ((HashNameNode *)data_00587fa0 == GetHashNameNodeExport("bool")) {
-                                state->dtype = TYPE(&stvectorboolshort);
+                                state->thetype = TYPE(&stvectorboolshort);
                                 tk = CPrepTokenizer_GetNextToken();
                                 return 1;
                             }
@@ -1492,20 +1489,20 @@ int parse_dtype_specifiers(DeclInfo *state)
                     tk = CPrepTokenizer_GetNextToken();
                     switch (tk) {
                         case TK_BOOL:
-                            state->dtype = TYPE(&stvectorboollong);
+                            state->thetype = TYPE(&stvectorboollong);
                             tk = CPrepTokenizer_GetNextToken();
                             return 1;
                         case TK_SIGNED:
-                            state->dtype = TYPE(&stvectorsignedlong);
+                            state->thetype = TYPE(&stvectorsignedlong);
                             tk = CPrepTokenizer_GetNextToken();
                             return 1;
                         case TK_UNSIGNED:
-                            state->dtype = TYPE(&stvectorunsignedlong);
+                            state->thetype = TYPE(&stvectorunsignedlong);
                             tk = CPrepTokenizer_GetNextToken();
                             return 1;
                         case TK_IDENTIFIER:
                             if ((HashNameNode *)data_00587fa0 == GetHashNameNodeExport("bool")) {
-                                state->dtype = TYPE(&stvectorboollong);
+                                state->thetype = TYPE(&stvectorboollong);
                                 tk = CPrepTokenizer_GetNextToken();
                                 return 1;
                             }
@@ -1517,15 +1514,15 @@ int parse_dtype_specifiers(DeclInfo *state)
                         tk = CPrepTokenizer_GetNextToken();
                         switch (tk) {
                             case 0x10a:
-                                state->dtype = TYPE(&stvectorboollong);
+                                state->thetype = TYPE(&stvectorboollong);
                                 tk = CPrepTokenizer_GetNextToken();
                                 return 1;
                             case TK_SHORT:
-                                state->dtype = TYPE(&stvectorboolshort);
+                                state->thetype = TYPE(&stvectorboolshort);
                                 tk = CPrepTokenizer_GetNextToken();
                                 return 1;
                             default:
-                                state->dtype = TYPE(&stvectorboolshort);
+                                state->thetype = TYPE(&stvectorboolshort);
                                 return 1;
                         }
                     }
@@ -1536,14 +1533,14 @@ int parse_dtype_specifiers(DeclInfo *state)
             break;
 
         case TK_FLOAT:
-            state->dtype = TYPE(&stvectorfloat);
+            state->thetype = TYPE(&stvectorfloat);
             tk = CPrepTokenizer_GetNextToken();
             return 1;
 
         case TK_IDENTIFIER:
             if ((HashNameNode *)data_00587fa0 == GetHashNameNodeExport("pixel") ||
                 (HashNameNode *)data_00587fa0 == GetHashNameNodeExport("__pixel")) {
-                state->dtype = TYPE(&stvectorpixel);
+                state->thetype = TYPE(&stvectorpixel);
                 tk = CPrepTokenizer_GetNextToken();
                 return 1;
             }
@@ -1551,17 +1548,17 @@ int parse_dtype_specifiers(DeclInfo *state)
                 tk = CPrepTokenizer_GetNextToken();
                 switch (tk) {
                     case TK_CHAR:
-                        state->dtype = TYPE(&stvectorboolchar);
+                        state->thetype = TYPE(&stvectorboolchar);
                         tk = CPrepTokenizer_GetNextToken();
                         return 1;
                     case TK_SHORT:
-                        state->dtype = TYPE(&stvectorboolshort);
+                        state->thetype = TYPE(&stvectorboolshort);
                         tk = CPrepTokenizer_GetNextToken();
                         if (tk == TK_INT)
                             tk = CPrepTokenizer_GetNextToken();
                         return 1;
                     case 0x10a:
-                        state->dtype = TYPE(&stvectorboollong);
+                        state->thetype = TYPE(&stvectorboollong);
                         tk = CPrepTokenizer_GetNextToken();
                         if (tk == TK_INT)
                             tk = CPrepTokenizer_GetNextToken();
@@ -1570,15 +1567,15 @@ int parse_dtype_specifiers(DeclInfo *state)
                         tk = CPrepTokenizer_GetNextToken();
                         switch (tk) {
                             case TK_SHORT:
-                                state->dtype = TYPE(&stvectorboolshort);
+                                state->thetype = TYPE(&stvectorboolshort);
                                 tk = CPrepTokenizer_GetNextToken();
                                 return 1;
                             case 0x10a:
-                                state->dtype = TYPE(&stvectorboollong);
+                                state->thetype = TYPE(&stvectorboollong);
                                 tk = CPrepTokenizer_GetNextToken();
                                 return 1;
                             default:
-                                state->dtype = TYPE(&stvectorboollong);
+                                state->thetype = TYPE(&stvectorboollong);
                                 return 1;
                         }
                     default:
@@ -1603,25 +1600,25 @@ void CParser_ParseDeclSpec(DeclInfo *decl, int unused)
             CError_ReportError(ERR_IDENTIFIER_EXPECTED);
             return;
         }
-        decl->declarationAttributes |= 0x40;
+        decl->exportflags |= 0x40;
         return;
     }
     if (memcmp("internal", data_00587fa0->name, sizeof("internal")) == 0) {
-        decl->declarationAttributes |= 0x10;
+        decl->exportflags |= 0x10;
         return;
     }
     if (memcmp("import", data_00587fa0->name, sizeof("import")) == 0 ||
         memcmp("dllimport", data_00587fa0->name, sizeof("dllimport")) == 0) {
-        decl->declarationAttributes |= 0x20;
+        decl->exportflags |= 0x20;
         return;
     }
     if (memcmp("export", data_00587fa0->name, sizeof("export")) == 0 ||
         memcmp("dllexport", data_00587fa0->name, sizeof("dllexport")) == 0) {
-        decl->declarationAttributes |= 0x40;
+        decl->exportflags |= 0x40;
         return;
     }
     if (memcmp("lib_export", data_00587fa0->name, sizeof("lib_export")) == 0) {
-        decl->declarationAttributes |= 0x60;
+        decl->exportflags |= 0x60;
         return;
     }
     if (memcmp("weak", data_00587fa0->name, sizeof("weak")) == 0) {
@@ -1802,21 +1799,21 @@ void TypedefDeclInfo(DeclInfo *slot, Type *type, UInt32 quals)
             TypedefDeclInfo(slot, t->target, quals);
             nt = galloc(0xe);
             *nt = *(TypePointer *)type;
-            nt->target = slot->dtype;
-            slot->dtype = (Type *)nt;
+            nt->target = slot->thetype;
+            slot->thetype = (Type *)nt;
             return;
         }
-        slot->dtype = (Type *)galloc(0xe);
-        *(TypePointer *)slot->dtype = *t;
-        ((TypePointer *)slot->dtype)->qual |= slot->qual & (Q_CV | Q_REFERENCE | Q_RESTRICT);
+        slot->thetype = (Type *)galloc(0xe);
+        *(TypePointer *)slot->thetype = *t;
+        ((TypePointer *)slot->thetype)->qual |= slot->qual & (Q_CV | Q_REFERENCE | Q_RESTRICT);
         slot->qual &= ~(Q_CV | Q_REFERENCE | Q_RESTRICT);
         slot->qual |= quals & (Q_CV | Q_PASCAL | Q_REFERENCE | Q_ALIGNED_MASK);
     } else {
-        slot->dtype = type;
+        slot->thetype = type;
         slot->qual |= quals & (Q_CV | Q_PASCAL | Q_REFERENCE | Q_ALIGNED_MASK);
-        if (slot->dtype->type == TYPEARRAY && slot->dtype->size == 0) {
-            slot->dtype = (Type *)galloc(0xe);
-            *(TypePointer *)slot->dtype = *(TypePointer *)type;
+        if (slot->thetype->type == TYPEARRAY && slot->thetype->size == 0) {
+            slot->thetype = (Type *)galloc(0xe);
+            *(TypePointer *)slot->thetype = *(TypePointer *)type;
         }
     }
     slot->isType = 1;
@@ -1972,7 +1969,7 @@ UInt8 is_volatile_object(Object *object)
     qualifiers = object->qual;
     type = object->type;
     while (type->type == '\f') {
-        type = ((Type *)type)->array[0].element;
+        type = TPTR_TARGET(type);
     }
     kind = type->type;
     switch (kind) {
@@ -2012,7 +2009,7 @@ UInt8 CParser_IsVolatile(Type *type, unsigned int qualifiers)
 {
     char kind;
     while ((kind = type->type) == TYPEARRAY)
-        type = ((TypeMemberPointer *)type)->memberType;
+        type = ((TypeMemberPointer *)type)->ty1;
     switch (kind) {
         case TYPEPOINTER:
             qualifiers = ((TypePointer *)type)->qual;
@@ -2080,7 +2077,7 @@ Type *CParser_RemoveTopMostQualifiers(Type *type, UInt32 *qual)
     Type *copy;
     switch ((signed char)type->type) {
         case TYPEARRAY:
-            type->array[0].element = CParser_RemoveTopMostQualifiers(type->array[0].element, qual);
+            TPTR_TARGET(type) = CParser_RemoveTopMostQualifiers(TPTR_TARGET(type), qual);
             return type;
         case TYPEPOINTER:
             if (((TypePointer *)type)->qual & Q_CONST) {
@@ -2226,7 +2223,7 @@ unsigned char test_declaration(Boolean parseDeclaration, Boolean requireValue, B
     if (_Setjmp(savedState.buf) == 0) {
         memclrw(&declaration, sizeof(declaration));
         CParser_GetDeclSpecs((DeclInfo *)&declaration, 0);
-        if (declaration.dtype->type != TYPETEMPLATE || ((TypeIntegral *)declaration.dtype)->integral != IT_CHAR ||
+        if (declaration.thetype->type != TYPETEMPLATE || ((TypeIntegral *)declaration.thetype)->integral != IT_CHAR ||
             declaration.hasTypename != 0 || declaration.isType != 0) {
             if (parseDeclaration != 0) {
                 declaration.isNewExpression = declarationFlag;
@@ -2388,11 +2385,9 @@ SInt16 iscpp_typeequal(Type *leftType, Type *rightType)
                 rightType = TYPE_POINTER(rightType)->target;
                 break;
             case TYPEMEMBERPOINTER:
-                if (!iscpp_typeequal(TYPE_MEMBER_POINTER(leftType)->owner.type,
-                                     TYPE_MEMBER_POINTER(rightType)->owner.type))
+                if (!iscpp_typeequal(TYPE_MEMBER_POINTER(leftType)->ty2, TYPE_MEMBER_POINTER(rightType)->ty2))
                     return 0;
-                return is_memberpointerequal(TYPE_MEMBER_POINTER(leftType)->memberType,
-                                             TYPE_MEMBER_POINTER(rightType)->memberType);
+                return is_memberpointerequal(TYPE_MEMBER_POINTER(leftType)->ty1, TYPE_MEMBER_POINTER(rightType)->ty1);
             case TYPEARRAY:
                 if (TYPE_POINTER(leftType)->size != 0 && TYPE_POINTER(rightType)->size != 0 &&
                     TYPE_POINTER(leftType)->size != TYPE_POINTER(rightType)->size)
@@ -2551,15 +2546,14 @@ SInt16 is_typeequal(Type *leftType, Type *rightType)
                 rightType = TPTR_TARGET(rightType);
                 break;
             case TYPEMEMBERPOINTER:
-                if (TYPE_MEMBER_POINTER(leftType)->owner.type != TYPE_MEMBER_POINTER(rightType)->owner.type)
+                if (TYPE_MEMBER_POINTER(leftType)->ty2 != TYPE_MEMBER_POINTER(rightType)->ty2)
                     return 0;
-                return is_memberpointerequal(TYPE_MEMBER_POINTER(leftType)->memberType,
-                                             TYPE_MEMBER_POINTER(rightType)->memberType);
+                return is_memberpointerequal(TYPE_MEMBER_POINTER(leftType)->ty1, TYPE_MEMBER_POINTER(rightType)->ty1);
             case TYPEARRAY:
                 if (leftType->size != 0 && rightType->size != 0 && leftType->size != rightType->size)
                     return 0;
-                leftType = leftType->array[0].element;
-                rightType = rightType->array[0].element;
+                leftType = TPTR_TARGET(leftType);
+                rightType = TPTR_TARGET(rightType);
                 break;
             case TYPEFUNC:
                 if (iscpp_typeequal(TYPE_FUNC(leftType)->functype, TYPE_FUNC(rightType)->functype) == 0)
@@ -2604,10 +2598,9 @@ SInt16 is_typesame(Type *left, Type *right)
                     return 1;
                 break;
             case TYPEMEMBERPOINTER:
-                if (TYPE_MEMBER_POINTER(left)->owner.type != TYPE_MEMBER_POINTER(right)->owner.type)
+                if (TYPE_MEMBER_POINTER(left)->ty2 != TYPE_MEMBER_POINTER(right)->ty2)
                     return 0;
-                return is_memberpointerequal(TYPE_MEMBER_POINTER(left)->memberType,
-                                             TYPE_MEMBER_POINTER(right)->memberType);
+                return is_memberpointerequal(TYPE_MEMBER_POINTER(left)->ty1, TYPE_MEMBER_POINTER(right)->ty1);
             case TYPEARRAY:
                 if (left->size != 0 && right->size != 0 && left->size != right->size)
                     return 0;
@@ -2835,7 +2828,7 @@ Object *CParser_NewCompilerDefFunctionObject(void)
     memclrw(object, sizeof(Object));
     object->otype = OT_OBJECT;
     object->access = ACCESSPUBLIC;
-    object->extraQualifiers = 0;
+    object->section = 0;
     object->datatype = DFUNC;
     object->nspace = registration_context;
     return object;
@@ -2849,20 +2842,20 @@ Object *CParser_NewFunctionObject(volatile DeclInfo *decl)
     memclrw(obj, sizeof(Object));
     obj->otype = OT_OBJECT;
     obj->access = ACCESSPUBLIC;
-    obj->extraQualifiers = 0;
+    obj->section = 0;
     obj->datatype = DFUNC;
     obj->nspace = currentNameSpace;
     if (decl != NULL) {
-        obj->type = decl->dtype;
+        obj->type = decl->thetype;
         obj->name = decl->name;
         obj->qual = decl->qual;
-        obj->sclass = decl->storage;
+        obj->sclass = decl->storageclass;
         if (copts.cplusplus && decl->requireMangledName == 0)
             obj->qual |= Q_MANGLE_NAME;
     }
     if (decl != NULL) {
-        if (decl->extraQualifiers != 0)
-            obj->extraQualifiers = decl->extraQualifiers;
+        if (decl->section != 0)
+            obj->section = decl->section;
     }
     fn_00490210(obj, decl);
     CodeGen_SetObjectSectionAndInterruptInfo(obj);
@@ -2877,7 +2870,7 @@ Object *CParser_NewCompilerDefDataObject(void)
     memclrw(object, sizeof(Object));
     object->otype = OT_OBJECT;
     object->access = ACCESSPUBLIC;
-    object->extraQualifiers = 0;
+    object->section = 0;
     object->datatype = DDATA;
     object->nspace = registration_context;
     return object;
@@ -2892,20 +2885,20 @@ Object *CParser_NewObject(DeclInfo *declaration)
     memclrw(object, sizeof(Object));
     object->otype = OT_OBJECT;
     object->access = ACCESSPUBLIC;
-    object->extraQualifiers = 0;
+    object->section = 0;
     object->datatype = DDATA;
     object->nspace = currentNameSpace;
     if (declaration != NULL) {
-        object->type = declaration->dtype;
+        object->type = declaration->thetype;
         object->name = declaration->name;
         object->qual = declaration->qual;
-        object->sclass = declaration->storage;
+        object->sclass = declaration->storageclass;
         if (copts.cplusplus && !declaration->requireMangledName) {
             object->qual |= Q_MANGLE_NAME;
         }
     }
-    if (declaration != NULL && declaration->extraQualifiers != 0) {
-        object->extraQualifiers = alignmentDeclaration->extraQualifiers;
+    if (declaration != NULL && declaration->section != 0) {
+        object->section = alignmentDeclaration->section;
     }
     fn_00490210(object, declaration);
     CodeGen_SetObjectSectionAndInterruptInfo(object);
@@ -2922,10 +2915,10 @@ Object *CParser_NewLocalDataObject(DeclInfo *declaration, unsigned int addToList
     object->access = 0U;
     object->datatype = DLOCAL;
     if (declaration != NULL) {
-        object->type = declaration->dtype;
+        object->type = declaration->thetype;
         object->name = declaration->name;
         object->qual = declaration->qual;
-        object->sclass = declaration->storage;
+        object->sclass = declaration->storageclass;
     }
     if ((unsigned char)addToList != 0U) {
         entry = (ObjectList *)CompilerTools_AllocatePool(8U);
@@ -2945,14 +2938,14 @@ Object *CParser_CreateObject(struct DeclInfo *record)
     fn_00490210(object, record);
     object->otype = OT_OBJECT;
     object->access = ACCESSPUBLIC;
-    object->extraQualifiers = 0;
+    object->section = 0;
     return object;
 }
 
 void CParser_UpdateObject(Object *object, volatile DeclInfo *record)
 {
-    if (record && record->extraQualifiers)
-        object->extraQualifiers = record->extraQualifiers;
+    if (record && record->section)
+        object->section = record->section;
     fn_00490210(object, record);
     CodeGen_SetObjectSectionAndInterruptInfo(object);
 }
@@ -2960,7 +2953,7 @@ void CParser_UpdateObject(Object *object, volatile DeclInfo *record)
 void fn_00490210(Object *object, volatile DeclInfo *record)
 {
     if (record != NULL) {
-        UInt8 attributes = record->declarationAttributes;
+        UInt8 attributes = record->exportflags;
         if (attributes != 0) {
             object->flags |= attributes;
         }
@@ -3211,7 +3204,7 @@ Boolean CParser_00490660(SInt16 *operatorToken, Boolean allowConversion)
     if (allowConversion) {
         memclrw(&nameData, sizeof(nameData));
         conversion_type_name(&nameData);
-        data_00587fa0 = CMangler_ConversionFuncName(nameData.dtype, nameData.qual);
+        data_00587fa0 = CMangler_ConversionFuncName(nameData.thetype, nameData.qual);
         if (operatorToken != NULL)
             *operatorToken = 0;
         return 1;

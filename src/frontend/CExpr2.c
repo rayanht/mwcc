@@ -544,7 +544,7 @@ ENode *scannew(char global)
             if (di.name)
                 CError_ReportError(ERR_ILLEGAL_TYPE);
             array_bound = di.arrayBound;
-            type = di.dtype;
+            type = di.thetype;
         }
         if (tk != ')')
             CError_ReportError(ERR_RPAREN_EXPECTED);
@@ -562,7 +562,7 @@ ENode *scannew(char global)
             if (di.name)
                 CError_ReportError(ERR_ILLEGAL_TYPE);
             array_bound = di.arrayBound;
-            type = di.dtype;
+            type = di.thetype;
             if (tk != ')')
                 CError_ReportError(ERR_RPAREN_EXPECTED);
             else
@@ -572,8 +572,8 @@ ENode *scannew(char global)
             memclrw(&di, sizeof(di));
             di.isNewTypeId = 1;
             CParser_GetDeclSpecs(&di, 0);
-            parse_pointer_and_array_declarator(&di.dtype, 1);
-            type = di.dtype;
+            parse_pointer_and_array_declarator(&di.thetype, 1);
+            type = di.thetype;
         }
     }
     if (type->type == TYPEARRAY)
@@ -1069,17 +1069,17 @@ Boolean CExpr_CheckOperator(short token, ENode *left, ENode *right, BinaryOperat
     operatorName = CMangler_OperatorName(token);
 
     if (token == '(') {
-        MemberFuncRef *call;
+        EMemberInfo *call;
         ENode *node;
 
         if (left->rtype->type == TYPECLASS &&
             CScope_FindClassMemberObject(TYPE_CLASS(left->rtype), &name, operatorName)) {
             if (name.objects != NULL || (name.object != NULL && name.object->otype == OT_OBJECT &&
                                          ((Object *)name.object)->type->type == TYPEFUNC)) {
-                call = (MemberFuncRef *)CompilerTools_AllocatePool((sizeof(*call) + 3) & ~3);
+                call = (EMemberInfo *)CompilerTools_AllocatePool((sizeof(*call) + 3) & ~3);
                 memclrw(call, (sizeof(*call) + 3) & ~3);
-                call->bcl = name.basePath;
-                call->expression = left;
+                call->path = name.basePath;
+                call->expr = left;
                 call->is_qualified = name.is_qualified;
                 if (name.objects == NULL) {
                     call->list = (NameSpaceObjectList *)galloc(sizeof(*call->list));
@@ -1092,7 +1092,7 @@ Boolean CExpr_CheckOperator(short token, ENode *left, ENode *right, BinaryOperat
                 memclrw(node, sizeof(*node));
                 node->type = ENEWEXCEPTIONARRAY;
                 node->rtype = &stvoid;
-                node->data.memberfunc = call;
+                node->data.emember = call;
                 tk = (UInt32)CPrepTokenizer_GetNextToken();
                 node = CExpr_MakeFunctionCall(node, CExpr_ScanExpressionList(1));
                 out->expression = checkreference(node);
@@ -1690,7 +1690,7 @@ ENode *CExpr_MakeFunctionCall(ENode *expr, ENodeList *args)
     Type *type;
     TypeFunc *functionType;
     BClassList *candidateObject;
-    MemberFuncRef *candidate;
+    EMemberInfo *candidate;
     Object *object;
     ENode *candidateExpr;
     ENode *value;
@@ -1720,9 +1720,9 @@ ENode *CExpr_MakeFunctionCall(ENode *expr, ENodeList *args)
     }
 
     if (expr->type == ENEWEXCEPTIONARRAY) {
-        candidate = expr->data.memberfunc;
-        candidateObject = candidate->bcl;
-        candidateExpr = candidate->expression;
+        candidate = expr->data.emember;
+        candidateObject = candidate->path;
+        candidateExpr = candidate->expr;
         flag10 = candidate->is_qualified;
         flag12 = candidate->isambig;
         expr = convert_memberfunc_to_setconst_or_objref(expr);
@@ -1831,19 +1831,19 @@ ENode *convert_memberfunc_to_setconst_or_objref(ENode *expr)
     ENode *node;
     Object *object;
     CInt64 *value;
-    if (expr->data.memberfunc->list->next || expr->data.memberfunc->templargs) {
+    if (expr->data.emember->list->next || expr->data.emember->templargs) {
         node = (ENode *)CompilerTools_AllocatePool(sizeof(ENode));
         memclrw(node, sizeof(ENode));
         node->type = ENEWEXCEPTION;
-        node->rtype = ((Object *)expr->data.memberfunc->list->object)->type;
-        node->data.objlist.list = expr->data.memberfunc->list;
-        node->data.objlist.templargs = expr->data.memberfunc->templargs;
+        node->rtype = ((Object *)expr->data.emember->list->object)->type;
+        node->data.objlist.list = expr->data.emember->list;
+        node->data.objlist.templargs = expr->data.emember->templargs;
         return node;
     }
-    if (expr->data.memberfunc->list->object->otype != OT_OBJECT)
+    if (expr->data.emember->list->object->otype != OT_OBJECT)
         return NULL;
-    object = (Object *)(char *)expr->data.memberfunc->list->object;
-    if (((Object *)expr->data.memberfunc->list->object)->sclass == 260) {
+    object = (Object *)(char *)expr->data.emember->list->object;
+    if (((Object *)expr->data.emember->list->object)->sclass == 260) {
         CError_ReportError(ERR_EXPRESSION_SYNTAX_ERROR);
         result = (ENode *)CompilerTools_AllocatePool(sizeof(ENode));
         memclrw(result, sizeof(ENode));
@@ -2484,7 +2484,7 @@ SInt16 assign_check(ENode *operand, Type *targetType, SInt32 targetQual, Boolean
     converted_expr = operand;
     if (conversionType->type == TYPEARRAY) {
         isArray = TRUE;
-        conversionType = CDecl_NewPointerType(conversionType->array[0].element);
+        conversionType = CDecl_NewPointerType(TPTR_TARGET(conversionType));
     }
     if (conversionType->size == 0) {
         CDecl_CompleteType(conversionType);
@@ -3759,11 +3759,11 @@ SInt32 check_member_pointer_conversion(Type *type, ENode *expr, Boolean convert)
         }
     }
     if (node->rtype->type == TYPEMEMBERPOINTER) {
-        CError_ASSERT(1531, TYPE_MEMBER_POINTER(type)->owner.type->type == TYPECLASS);
-        CError_ASSERT(1532, TYPE_MEMBER_POINTER(node->rtype)->owner.type->type == TYPECLASS);
+        CError_ASSERT(1531, TYPE_MEMBER_POINTER(type)->ty2->type == TYPECLASS);
+        CError_ASSERT(1532, TYPE_MEMBER_POINTER(node->rtype)->ty2->type == TYPECLASS);
         CClass_Init();
-        if (CClass_FindBasePath(TYPE_MEMBER_POINTER(type)->owner.classType,
-                                TYPE_MEMBER_POINTER(node->rtype)->owner.classType, 0, 1) != 0) {
+        if (CClass_FindBasePath(TYPE_CLASS(TYPE_MEMBER_POINTER(type)->ty2),
+                                TYPE_CLASS(TYPE_MEMBER_POINTER(node->rtype)->ty2), 0, 1) != 0) {
             conversion_score = 1000 - CClass_GetBasePathLevel();
             if (convert != 0)
                 converted_expr =

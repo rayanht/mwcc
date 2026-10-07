@@ -211,7 +211,7 @@ unsigned char CTemplateClass_InstantiateClass(TypeClass *theclass)
                 templateType = memberDeclaration->u.usingdecl.type;
                 access = memberDeclaration->u.usingdecl.access;
                 typeResult = 0;
-                CE_ASSERT(templateType->type != TYPETEMPLATE || templateType->kind != 1, CError_FATAL(1802));
+                CE_ASSERT(templateType->type != TYPETEMPLATE || templateType->dtype != 1, CError_FATAL(1802));
                 instantiatedType =
                     CTemplateTools_ResolveType(&instantiation, (Type *)templateType->u.qual.type, &typeResult);
                 if (instantiatedType->type != TYPECLASS) {
@@ -262,11 +262,11 @@ void instantiate_friend_declaration(TypeDeduce *ctx, struct TemplateFriend *decl
     Object *object;
 
     CDecl_InitDeclInfoFromTemplateDeclarationData(&instance, &declaration->decl);
-    if (CTemplateTools_IsDependentType(instance.dtype))
-        instance.dtype = CTemplateTools_ResolveType(ctx, instance.dtype, (UInt32 *)&instance.qual);
-    if (instance.parsedData != NULL) {
-        instance.parsedData = CTemplateTools_CopyCTStateElemList(instance.parsedData);
-        parameter = instance.parsedData;
+    if (CTemplateTools_IsDependentType(instance.thetype))
+        instance.thetype = CTemplateTools_ResolveType(ctx, instance.thetype, (UInt32 *)&instance.qual);
+    if (instance.expltargs != NULL) {
+        instance.expltargs = CTemplateTools_CopyCTStateElemList(instance.expltargs);
+        parameter = instance.expltargs;
         while (parameter != NULL) {
             if (parameter->pid.type) {
                 if (CTemplateTools_IsDependentType(parameter->data.typeparam.type))
@@ -279,7 +279,7 @@ void instantiate_friend_declaration(TypeDeduce *ctx, struct TemplateFriend *decl
             parameter = parameter->next;
         }
     }
-    if (instance.dtype->type == TYPEFUNC) {
+    if (instance.thetype->type == TYPEFUNC) {
         scope = CScope_FindGlobalNS(TYPE_CLASS(ctx->inst)->nspace);
         BE_elf_SaveAndSetScope(scope, (CScopeSave *)&savedScope); /* original stack-slot view */
         object = CDecl_GetFunctionObject(&instance, NULL, &result, 0);
@@ -293,9 +293,9 @@ void instantiate_friend_declaration(TypeDeduce *ctx, struct TemplateFriend *decl
             CError_ReportError(ERR_ILLEGAL_FRIEND_DECLARATION);
         }
     } else {
-        if (instance.dtype->type != TYPECLASS)
+        if (instance.thetype->type != TYPECLASS)
             CError_FATAL(1881);
-        CDecl_AddFriend(TYPE_CLASS(ctx->inst), NULL, instance.dtype);
+        CDecl_AddFriend(TYPE_CLASS(ctx->inst), NULL, TYPE_CLASS(instance.thetype));
     }
 }
 
@@ -1244,15 +1244,15 @@ void CTemplateClass_ParseClassDeclaration(TemplateScopeState *scope, TemplParam 
             scope->linkedNamespace = record->theclass.nspace;
             record->align = copts.structalignment;
             memclrw(&context, sizeof(context));
-            context.browseFile = CPrep_GetPFile();
-            CPrep_GetBrowseFilePosition(&context.sourceFile, &context.sourceLine);
-            context.sourceLine = *state;
+            context.file = CPrep_GetPFile();
+            CPrep_GetBrowseFilePosition(&context.file2, &context.sourceoffset);
+            context.sourceoffset = *state;
             context.pendingClass = &record->theclass;
             CDecl_ParseClass(&context, access, 1, 0);
             if (tk != ';') {
                 CError_ReportError(ERR_SEMICOLON_EXPECTED);
             }
-            CBrowse_RecordClassLocation(&record->theclass, context.sourceFile, context.sourceLine,
+            CBrowse_RecordClassLocation(&record->theclass, context.file2, context.sourceoffset,
                                         CPrep_GetCurrentTextOffset() + 1);
             break;
         default:
@@ -1371,15 +1371,15 @@ void CTemplateClass_ParsePartialSpecialization(TemplateScopeState *scope, struct
             instance = specialization->templ;
             instance->align = copts.structalignment;
             memclrw(&declaration, 92);
-            declaration.browseFile = CPrep_GetPFile();
-            CPrep_GetBrowseFilePosition(&declaration.sourceFile, &declaration.sourceLine);
-            declaration.sourceLine = *position;
+            declaration.file = CPrep_GetPFile();
+            CPrep_GetBrowseFilePosition(&declaration.file2, &declaration.sourceoffset);
+            declaration.sourceoffset = *position;
             declaration.pendingClass = &instance->theclass;
             CDecl_ParseClass(&declaration, access, 1, 0);
             if (tk != ';') {
                 CError_ReportError(ERR_SEMICOLON_EXPECTED);
             }
-            CBrowse_RecordClassLocation(&instance->theclass, declaration.sourceFile, declaration.sourceLine,
+            CBrowse_RecordClassLocation(&instance->theclass, declaration.file2, declaration.sourceoffset,
                                         CPrep_GetCurrentTextOffset() + 1);
             break;
         default:
@@ -1617,9 +1617,9 @@ void CTemplateClass_AddDeferredFunctionDeclaration(TemplClass *classTemplate, De
     function = galloc(sizeof(*function));
     memclrw(function, sizeof(*function));
 
-    if (tk == '{' && declInfo->dtype->type == TYPEFUNC) {
+    if (tk == '{' && declInfo->thetype->type == TYPEFUNC) {
         declInfo->qual |= Q_INLINE;
-        functionType = (TypeFunc *)declInfo->dtype;
+        functionType = (TypeFunc *)declInfo->thetype;
         functionType->flags |= (FUNC_DEFINED | 0x8000000);
         function->fileoffset = function_fileinfo;
         CPrep_SaveFunctionBodyTokens(&function->stream, NULL, 1);

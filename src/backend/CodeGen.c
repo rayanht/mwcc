@@ -682,7 +682,7 @@ void CodeGen_SetObjectSectionAndInterruptInfo(Object *obj)
     BE_SymNode *infoObject;
     UInt32 qual;
 
-    if ((SInt16)obj->extraQualifiers <= 0) {
+    if ((SInt16)obj->section <= 0) {
         if (obj->datatype == DDATA) {
             if (obj == DAT_00587678) {
                 ObjGen_PPC_EABI_SetObjectSection(DAT_00587678, 0xc, 0);
@@ -1386,7 +1386,7 @@ void CodeGen_EmitLoadAndBranchFunction(Object *function, Object *branchTarget, O
     CError_ASSERT(2283, offset <= 0x7fff);
     PCode_ResetBlocks();
     PCode_CreateBlock();
-    table->extraQualifiers = ObjGen_PPC_EABI_GetHeaderIndex(2);
+    table->section = ObjGen_PPC_EABI_GetHeaderIndex(2);
     indirectSymbol = fn_0049f230(table, 1, 1);
     if (indirectSymbol != NULL) {
         operand.kind = OpndType_IndirectSymbol;
@@ -1941,7 +1941,7 @@ void emit_name_string_address(const char *name)
         offset = 0;
     }
 
-    stringObject->extraQualifiers = ObjGen_PPC_EABI_GetHeaderIndex(2);
+    stringObject->section = ObjGen_PPC_EABI_GetHeaderIndex(2);
 
     {
         Object *indirectObject = fn_0049f230(stringObject, 0, 1);

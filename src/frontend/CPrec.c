@@ -3386,7 +3386,7 @@ SInt32 write_enode(ENode *node)
             }
             break;
         case ENEWEXCEPTIONARRAY:
-            add_serialized_bucket_entry(offset + 10, write_member_func_ref(node->data.memberfunc));
+            add_serialized_bucket_entry(offset + 10, write_member_func_ref(node->data.emember));
             break;
         case EOBJLIST:
             switch (node->data.templatecomparison.tag) {
@@ -3446,7 +3446,7 @@ SInt32 write_enode(ENode *node)
     return offset;
 }
 
-unsigned int write_member_func_ref(MemberFuncRef *entry)
+unsigned int write_member_func_ref(EMemberInfo *entry)
 {
     SInt32 offset;
 
@@ -3461,10 +3461,10 @@ unsigned int write_member_func_ref(MemberFuncRef *entry)
     if (data_00581c28)
         CompilerTools_AppendGListData(&precompiled_buffer, entry, sizeof(*entry));
     prec_position += sizeof(*entry);
-    if (entry->bcl)
-        add_serialized_bucket_entry(offset, write_bclass_list(entry->bcl));
-    if (entry->expression)
-        add_serialized_bucket_entry(offset + 4, write_enode(entry->expression));
+    if (entry->path)
+        add_serialized_bucket_entry(offset, write_bclass_list(entry->path));
+    if (entry->expr)
+        add_serialized_bucket_entry(offset + 4, write_enode(entry->expr));
     if (entry->templargs)
         CError_FATAL(2863);
     add_serialized_bucket_entry(offset + 8, write_namespace_object_list(entry->list));
@@ -3684,8 +3684,8 @@ int write_type(Type *type)
         }
         case TYPEMEMBERPOINTER: {
             memberPointerOffset = CPrec_004dbc00_inline2(type, sizeof(TypeMemberPointer));
-            add_serialized_bucket_entry(memberPointerOffset + 6, write_type(((TypeMemberPointer *)type)->memberType));
-            add_serialized_bucket_entry(memberPointerOffset + 10, write_type(((TypeMemberPointer *)type)->owner.type));
+            add_serialized_bucket_entry(memberPointerOffset + 6, write_type(((TypeMemberPointer *)type)->ty1));
+            add_serialized_bucket_entry(memberPointerOffset + 10, write_type(((TypeMemberPointer *)type)->ty2));
             return memberPointerOffset;
         }
         case TYPETEMPLATE: {
@@ -4714,7 +4714,7 @@ unsigned int write_prec_type_entries(struct PrecTypeEntry *entry)
 /* Serialized entries occupy ten bytes, independent of host padding. */
 enum { CPrecSerializedEntryBytes = 10 };
 
-unsigned int serialize_entry_list(CFriend *record)
+unsigned int serialize_entry_list(ClassFriend *record)
 {
     SInt32 startOffset;
     SInt32 serializedOffset;
@@ -4733,11 +4733,11 @@ unsigned int serialize_entry_list(CFriend *record)
             CompilerTools_AppendGListData(&precompiled_buffer, record, CPrecSerializedEntryBytes);
         }
         prec_position += CPrecSerializedEntryBytes;
-        if (record->is_class != 0) {
-            serializedOffset = write_type(record->target.type);
+        if (record->isclass != 0) {
+            serializedOffset = write_type(TYPE(record->u.theclass));
             add_serialized_bucket_entry(recordOffset + 4, serializedOffset);
         } else {
-            serializedOffset = write_object(record->target.object);
+            serializedOffset = write_object(record->u.obj);
             add_serialized_bucket_entry(recordOffset + 4, serializedOffset);
         }
         if (record->next == NULL)
@@ -4850,7 +4850,7 @@ int write_templdep(TypeTemplDep *node)
         CompilerTools_AppendGListData(&precompiled_buffer, node, sizeof(*node));
     }
     prec_position += sizeof(*node);
-    switch (node->kind) {
+    switch (node->dtype) {
         case 0:
             break;
         case 1:
@@ -4896,8 +4896,8 @@ TypeMemberPointer *append_member_pointer_type(TypeMemberPointer *tmemp)
 
     insert_written_entry_by_key(tmemp, p = CPrec_AppendAlign_004de900());
     append_data_and_count_bytes(tmemp, 0x12);
-    add_serialized_bucket_entry((SInt32)(&p->memberType), write_type(tmemp->memberType));
-    add_serialized_bucket_entry((SInt32)(&p->owner.type), write_type(tmemp->owner.type));
+    add_serialized_bucket_entry((SInt32)(&p->ty1), write_type(tmemp->ty1));
+    add_serialized_bucket_entry((SInt32)(&p->ty2), write_type(tmemp->ty2));
     return p;
 }
 

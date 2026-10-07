@@ -25,8 +25,8 @@ enum { STORAGE_AUTO = TK_AUTO, STORAGE_REGISTER = TK_REGISTER, STORAGE_STATIC = 
 
 #pragma options align = mac68k
 struct DeclInfo {
-    Type
-        *dtype; /* 0x00: CParser_GetDeclSpecs supplies the declaration type; CClass_GetQualifiedClass tests TYPECLASS */
+    Type *
+        thetype; /* 0x00: CParser_GetDeclSpecs supplies the declaration type; CClass_GetQualifiedClass tests TYPECLASS */
     UInt32 qual;
     struct NameSpace *nspace;
     HashNameNode *name;
@@ -39,14 +39,14 @@ struct DeclInfo {
     ENode *arrayBound;
     struct TypeClass *pendingClass;
     struct TemplArg *
-        parsedData; /* 0x2c: CTemplateNew_ParseTemplateArguments supplies the list; CDecl_CopyDeclInfoToNewFunc copies it with CTemplateTools_CopyCTStateElemList */
+        expltargs; /* 0x2c: CTemplateNew_ParseTemplateArguments supplies the list; CDecl_CopyDeclInfoToNewFunc copies it with CTemplateTools_CopyCTStateElemList */
     struct TemplParam *
         templateParameters; /* 0x30: parse_function_template_declaration assigns its TemplParam *params before CDecl_ParseDeclarator */
     struct TemplateScopeState *templateScope;
-    SInt16 operatorToken;
-    SInt16 storage;
-    SInt16 extraQualifiers;
-    UInt8 declarationAttributes;
+    SInt16 operator_token;
+    SInt16 storageclass;
+    SInt16 section;
+    UInt8 exportflags;
     UInt8 hasParameterNames;
     UInt8 oldStyleParameters;
     UInt8 isNewExpression;
@@ -56,17 +56,17 @@ struct DeclInfo {
     Boolean parserOption;
     Boolean isConstructor;
     Boolean allowForeignNamespace;
-    Boolean isFriendDeclaration; /* 0x48: parse_friend_declaration sets this flag before CDecl_ParseDeclarator */
+    Boolean in_friend_decl; /* 0x48: parse_friend_declaration sets this flag before CDecl_ParseDeclarator */
     UInt8 requireMangledName;
     UInt8 isNewTypeId;
     UInt8 requireTemplateClassMember;
     UInt8 isStructMemberDeclarator;
     Boolean allowTemplateArguments;
-    Boolean hasTemplateArguments;
+    Boolean has_expltargs;
     UInt8 hasTypename;
-    struct CPrepFileInfo *browseFile;
-    struct CPrepFileInfo *sourceFile;
-    SInt32 sourceLine;
+    struct CPrepFileInfo *file;
+    struct CPrepFileInfo *file2;
+    SInt32 sourceoffset;
 };
 #pragma options align = reset
 struct DefArg {
@@ -78,11 +78,11 @@ union FunctionTypeBuffer {
     TypeFunc function;
 };
 #pragma pack(push, 1)
-struct MemberDecl {
-    DeclInfo declarationSpecifiers; /* 0x00: CParser_GetDeclSpecs in CDecl.c */
-    DeclInfo declarator;            /* 0x5c: CDecl_ScanStructDeclarator */
-    UInt8 unused;                   /* 0xb8: CDecl.c clears the whole MemberDecl; no member reads or writes */
-    Boolean valid;                  /* 0xb9: CDecl_ScanStructDeclarator sets declaration validity */
+struct BigDeclInfo {
+    DeclInfo declinfo;  /* 0x00: CParser_GetDeclSpecs in CDecl.c */
+    DeclInfo declinfo2; /* 0x5c: CDecl_ScanStructDeclarator */
+    UInt8 unused;       /* 0xb8: CDecl.c clears the whole BigDeclInfo; no member reads or writes */
+    Boolean valid;      /* 0xb9: CDecl_ScanStructDeclarator sets declaration validity */
 };
 #pragma pack(pop)
 extern TypeIntegral stunsignedint;
@@ -105,7 +105,7 @@ extern VClassList *append_unique_vbase(TypeClass *cls, TypeClass *base);
 extern ObjMemberVar *add_member_var(ClassLayout *declaration, TypeClass *cls, Type *type, UInt32 qual,
                                     HashNameNode *name, AccessType access);
 extern void parse_friend_declaration(struct TemplClass *cls);
-extern void CDecl_AddFriend(TypeClass *typeClass, Object *object, Type *type);
+extern void CDecl_AddFriend(TypeClass *typeClass, Object *object, TypeClass *type);
 extern void CDecl_InitDeclInfoFromTemplateDeclarationData(DeclInfo *dst, PackedDeclInfo *src);
 extern unsigned char CDecl_CopyDeclInfoToNewFunc(PackedDeclInfo *destination, DeclInfo *source);
 extern Boolean check_qualified_identifier_or_operator(TypeClass *tclass, AccessType access);
@@ -126,7 +126,7 @@ extern Object *CDecl_GetFunctionObject(DeclInfo *decl, NameSpace *nspace, Boolea
 extern void CDecl_TypedefDeclarator(DeclInfo *decl);
 extern void CDecl_ScanDeclarator(DeclInfo *p);
 extern void parse_resolved_member_function_decl(DeclInfo *di, Boolean define);
-extern void CDecl_ScanStructDeclarator(MemberDecl *p);
+extern void CDecl_ScanStructDeclarator(BigDeclInfo *p);
 extern struct HashNameNode *unnamed_name;
 extern struct NameSpace *currentNameSpace;
 extern struct FileOffsetInfo member_foi;

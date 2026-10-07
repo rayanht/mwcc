@@ -17,6 +17,7 @@ extern "C" {
 #define TYPE_BITFIELD(ty) ((TypeBitfield *)(ty))
 #define TYPE_MEMBER_POINTER(ty) ((TypeMemberPointer *)(ty))
 #define TYPE_POINTER(ty) ((TypePointer *)(ty))
+#define TYPE_TEMPLATE(ty) ((TypeTemplDep *)(ty))
 #define TPTR_TARGET(ty) (TYPE_POINTER(ty)->target)
 /* Single-byte enumeration in this build: TYPEPOINTER is 11, verified by
  * the argument check in CABI_ThisArg. */
@@ -92,24 +93,8 @@ enum {
 enum { CLASS_EFLAGS_INTERNAL = 1, CLASS_EFLAGS_IMPORT = 2, CLASS_EFLAGS_EXPORT = 4, CLASS_EFLAGS_F0 = 0xF0 };
 #pragma options align = mac68k
 struct Type {
-    UInt8 type;  /* 0x00: TypedefDeclInfo tests TYPEPOINTER and TYPEARRAY; type-kind discriminator */
-    SInt32 size; /* 0x02: scandeclarator sets total array byte size; emit_array_type reads it */
-    struct {
-        union {
-            struct {                    /* TYPEENUM: TypeEnum payload, not an array payload */
-                NameSpace *nspace;      /* 0x06: CDecl.c sets the TYPEENUM namespace */
-                ObjEnumConst *enumlist; /* 0x0a: emit_enum_type iterates TYPEENUM constants */
-                Type *enumtype;         /* 0x0e: DWARF.c reads the TYPEENUM underlying integral type */
-                HashNameNode *enumname; /* 0x12: emit_enum_type emits the TYPEENUM name */
-            };
-            UInt8 integral;    /* 0x06: DWARF.c reads the TYPEINT or TYPEFLOAT integral code */
-            struct {           /* TYPEARRAY: scandeclarator constructs; TypedefDeclInfo copies as TypePointer */
-                Type *element; /* 0x06: scandeclarator sets elementType; emit_array_type reads element size */
-                UInt32
-                    qual; /* 0x0a: scandeclarator clears; TypedefDeclInfo copies the TYPEARRAY payload as TypePointer, including qual */
-            };
-        };
-    } array[0]; /* 0x06: kind-selected extension; common Type prefix remains six bytes */
+    UInt8 type;
+    SInt32 size;
 };
 #pragma options align = reset
 #pragma options align = mac68k
@@ -145,9 +130,7 @@ struct TypeStruct {
     HashNameNode *name;    /* 0x06: DWARF_004b0a80 emits name */
     StructMember *members; /* 0x0a: DWARF_004b0a80 iterates members */
     SInt8 stype;           /* 0x0e: DWARF_004b0a80 selects structure or union tag */
-    UInt8
-        alignmentPadding; /* 0x0f: CDecl_NewStructType clears the 18-byte record; unused byte between stype and the two-byte-aligned align member. */
-    SInt16 align;         /* 0x10: CDecl_NewStructType sets alignment */
+    SInt16 align;          /* 0x10: CDecl_NewStructType sets alignment */
 };
 #pragma options align = reset
 #pragma options align = mac68k
@@ -198,17 +181,15 @@ struct TypeClass {
     ClassList *bases;
     VClassList *vbases;
     ObjMemberVar *ivars;
-    struct CFriend *friends; /* 0x1a: CClass_CheckStaticAccess traverses the friend list and tests is_class */
+    struct ClassFriend *friends; /* 0x1a: CClass_CheckStaticAccess traverses the friend list and tests is_class */
     VTable *vtable;
     SOMInfo *sominfo;
     ObjCInfo *objcinfo;
     UInt16 flags;
     UInt8 mode;
-    UInt8 state;
+    UInt8 action;
     SInt16 align;
     UInt8 eflags;
-    UInt8
-        alignmentPadding; /* 0x31: CDecl_DefineClass clears sizeof(*type); unused trailing byte rounds the class header to its two-byte alignment. */
 };
 #pragma options align = reset
 #pragma options align = mac68k
@@ -263,19 +244,14 @@ struct TypeBitfield {
     char offset;            /* 0x0a: CDecl_ScanStructDeclarator initially clears with memclrw */
     char bitlength;         /* 0x0b: CDecl_ScanStructDeclarator sets constant bit width */
     char suppressAlignment; /* 0x0c: CDecl_ScanStructDeclarator sets for unnamed bitfields */
-    char
-        alignmentPadding; /* 0x0d: CDecl_ScanStructDeclarator and make_bitfield_type clear the whole 0x0e-byte record; no member access, trailing byte after suppressAlignment at 0x0c. */
 };
 #pragma options align = reset
 #pragma options align = mac68k
 struct TypeMemberPointer {
     UInt8 type;
     SInt32 size;
-    Type *memberType;
-    union {
-        Type *type;
-        TypeClass *classType;
-    } owner;
+    Type *ty1;
+    Type *ty2;
     UInt32 qual;
 };
 #pragma options align = reset
@@ -286,13 +262,13 @@ struct TemplParamID {
     Boolean type;
 };
 #pragma options align = reset
-/* A template-dependent type (TYPETEMPLATE); dtype selects the union member: 0 argument, 1 qualified name, 2 template,
- * 3 array, 4 qualified template, 5 bitfield. */
+/* TypeTemplDep dtype: which arm of u */
+enum { TEMPLDEP_ARGUMENT, TEMPLDEP_QUALNAME, TEMPLDEP_TEMPLATE, TEMPLDEP_ARRAY, TEMPLDEP_QUALTEMPL, TEMPLDEP_BITFIELD };
 #pragma options align = mac68k
 struct TypeTemplDep {
     UInt8 type;
     SInt32 size;
-    UInt8 kind;
+    UInt8 dtype;
     union {
         TemplParamID pid;
         struct {

@@ -226,10 +226,10 @@ extern unsigned int serialize_pending_object_class_list(struct PendingObjectClas
 extern unsigned int write_csomrefnode_list(struct CSOMRefNode *record);
 extern unsigned int serialize_reference_type_entries(unsigned int *entries, short count);
 extern unsigned int write_precompiled_expression_record(struct InlineSwitchData *record);
-extern unsigned int write_member_func_ref(MemberFuncRef *entry);
+extern unsigned int write_member_func_ref(EMemberInfo *entry);
 extern unsigned int serialize_reference_entries(struct TemplPartialSpec *record);
 extern unsigned int write_prec_type_entries(struct PrecTypeEntry *entry);
-extern unsigned int serialize_entry_list(struct CFriend *record);
+extern unsigned int serialize_entry_list(struct ClassFriend *record);
 extern unsigned int write_vclasslist(VClassList *record);
 extern unsigned int write_except_spec_list(ExceptSpecList *record);
 extern UInt32 write_object(Object *obj);

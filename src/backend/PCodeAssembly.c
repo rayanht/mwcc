@@ -103,8 +103,8 @@ int PCodeAssembly_EmitFunction(Object *object, struct PCodeAssemblyEntry *symbol
     if (PCodeAssembly_ShouldEmitExtraData()) {
         extraData = StackFrameEABI_004aabb0(size, COptimizer_GetFunctionObject(object)->name, &extraSize, object);
     }
-    if (object->extraQualifiers == 0) {
-        object->extraQualifiers = 1;
+    if (object->section == 0) {
+        object->section = 1;
     }
     extraDataSize = extraSize;
     output = fn_004892a0(object, size + extraSize);

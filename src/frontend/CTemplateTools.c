@@ -172,12 +172,12 @@ Type *CTemplateTools_ResolveType(TypeDeduce *ctx, Type *type, UInt32 *qual)
             TypeMemberPointer *memberPointer = (TypeMemberPointer *)galloc(sizeof(TypeMemberPointer));
             TypeMemberPointer *original = (TypeMemberPointer *)type;
             *memberPointer = *original;
-            memberPointer->memberType = CTemplateTools_ResolveType(ctx, original->memberType, qual);
-            memberPointer->owner.type = CTemplateTools_ResolveType(ctx, original->owner.type, qual);
-            if (memberPointer->owner.type->type != TYPECLASS && ctx->processingClassTypes == 0 &&
+            memberPointer->ty1 = CTemplateTools_ResolveType(ctx, original->ty1, qual);
+            memberPointer->ty2 = CTemplateTools_ResolveType(ctx, original->ty2, qual);
+            if (memberPointer->ty2->type != TYPECLASS && ctx->processingClassTypes == 0 &&
                 ctx->processingArgument == 0) {
                 CError_ReportError(ERR_ILLEGAL_TEMPLATE_ARGUMENTS);
-                return memberPointer->memberType;
+                return memberPointer->ty1;
             }
             return (Type *)memberPointer;
         }
@@ -390,7 +390,7 @@ Type *resolve_templ_dep_type(TypeDeduce *ctx, TypeTemplDep *arg, UInt32 *out)
         resolvedClass = CTemplTool_IsTemplate(arg);
         if (resolvedClass != NULL && resolvedClass == ctx->tmclass)
             return (Type *)resolvedClass;
-        switch (arg->kind) {
+        switch (arg->dtype) {
             case 0:
                 return (Type *)arg;
             case 1:
@@ -434,7 +434,7 @@ Type *resolve_templ_dep_type(TypeDeduce *ctx, TypeTemplDep *arg, UInt32 *out)
                 return (Type *)arg;
         }
     } else {
-        switch (arg->kind) {
+        switch (arg->dtype) {
             case 0:
                 if (ctx->processingArgument != 0 && arg->u.pid.nindex == ctx->nindex)
                     return (Type *)arg;
@@ -970,7 +970,7 @@ Type *CTemplateTools_GetArgumentType(TemplArg *record, TypeTemplDep *key, unsign
 {
     UInt16 index;
     *resultQualifiers = qualifiers;
-    if (key->type == TYPETEMPLATE && key->kind == 0) {
+    if (key->type == TYPETEMPLATE && key->dtype == 0) {
         do {
             if (record == NULL) {
                 CError_FATAL(1103);
@@ -991,9 +991,9 @@ Boolean CTemplTool_TemplDepTypeCompare(TypeTemplDep *a, TypeTemplDep *b)
 {
     if (a == b)
         return 1;
-    if (a->kind != b->kind)
+    if (a->dtype != b->dtype)
         return 0;
-    switch (a->kind) {
+    switch (a->dtype) {
         case 0:
             return a->u.pid.nindex == b->u.pid.nindex && a->u.pid.index == b->u.pid.index;
         case 1:
@@ -1073,7 +1073,7 @@ void CTemplTool_CheckTemplArgType(Type *type)
     TypeClass *classType = (TypeClass *)type;
     while (classType->type == TYPEPOINTER) {
         Type *baseType = (Type *)classType;
-        classType = (TypeClass *)baseType->array[0].element;
+        classType = (TypeClass *)TPTR_TARGET(baseType);
     }
     if (classType->type == TYPECLASS) {
         if (CParser_IsNullOrAtOrDollarPrefixedName(classType->classname) ||
@@ -1235,9 +1235,9 @@ Type *CTemplTool_IsDependentTemplate(TemplClass *templateClass, TemplArg *argume
 
 TypeClass *CTemplateTools_GetTemplClass(TypeTemplDep *record)
 {
-    if (record->kind == 1 && record->u.qual.type->kind == 2) {
+    if (record->dtype == 1 && record->u.qual.type->dtype == 2) {
         record = record->u.qual.type;
-    } else if (record->kind != 2) {
+    } else if (record->dtype != 2) {
         return NULL;
     }
     if (CTemplTool_IsSameTemplate((record->u.templ.templ)->templ__params, record->u.templ.args))
@@ -1258,7 +1258,7 @@ UInt8 CTemplTool_IsSameTemplate(TemplParam *parameter, TemplArg *argument)
 
         if (argument->pid.type) {
             if (argument->data.typeparam.type->type != TYPETEMPLATE ||
-                ((TypeTemplDep *)argument->data.typeparam.type)->kind != 0 ||
+                ((TypeTemplDep *)argument->data.typeparam.type)->dtype != 0 ||
                 ((TypeTemplDep *)argument->data.typeparam.type)->u.pid.nindex != parameter->pid.nindex ||
                 ((TypeTemplDep *)argument->data.typeparam.type)->u.pid.index != parameter->pid.index ||
                 argument->data.typeparam.qual != 0)
@@ -1298,9 +1298,9 @@ unsigned char CTemplateTools_IsDependentType(Type *type)
             case TYPECLASS:
                 return (((TypeClass *)type)->flags & CLASS_IS_TEMPL) != 0;
             case TYPEMEMBERPOINTER:
-                if (CTemplateTools_IsDependentType(((TypeMemberPointer *)type)->memberType))
+                if (CTemplateTools_IsDependentType(((TypeMemberPointer *)type)->ty1))
                     return 1;
-                type = ((TypeMemberPointer *)type)->owner.type;
+                type = ((TypeMemberPointer *)type)->ty2;
                 break;
             case TYPEPOINTER:
             case TYPEARRAY:
@@ -1555,7 +1555,7 @@ TemplClass *CTemplTool_IsTemplate(TypeTemplDep *reference)
     TemplClass *resolved;
     TemplArg *arguments;
     CE_ASSERT(reference->type != TYPETEMPLATE, CError_FATAL(242));
-    if (reference->kind == 2) {
+    if (reference->dtype == 2) {
         if (CTemplTool_IsIdenticalTemplArgList(reference->u.templ.args, (reference->u.templ.templ)->templ__params) !=
             0) {
             return reference->u.templ.templ;
@@ -1569,7 +1569,7 @@ TemplClass *CTemplTool_IsTemplate(TypeTemplDep *reference)
         }
         return NULL;
     }
-    if (reference->kind == 1) {
+    if (reference->dtype == 1) {
         parent = CTemplTool_IsTemplate(reference->u.qual.type);
         if (parent != NULL) {
             instance = (TemplClass *)CScope_GetTagType(parent->theclass.nspace, reference->u.qual.name);
@@ -1580,8 +1580,8 @@ TemplClass *CTemplTool_IsTemplate(TypeTemplDep *reference)
         }
         return NULL;
     }
-    if (reference->kind == 4) {
-        CE_ASSERT(reference->u.qualtempl.type->kind != 1, CError_FATAL(284));
+    if (reference->dtype == 4) {
+        CE_ASSERT(reference->u.qualtempl.type->dtype != 1, CError_FATAL(284));
         nestedParent = CTemplTool_IsTemplate(reference->u.qualtempl.type->u.qual.type);
         if (nestedParent != NULL) {
             nestedInstance =
@@ -1611,7 +1611,7 @@ UInt8 CTemplTool_IsIdenticalTemplArgList(TemplArg *pattern, TemplParam *argument
             CError_FATAL(207);
         if (pattern->pid.type) {
             if (pattern->data.typeparam.type->type != TYPETEMPLATE ||
-                (type = (TypeTemplDep *)pattern->data.typeparam.type)->kind != 0 ||
+                (type = (TypeTemplDep *)pattern->data.typeparam.type)->dtype != 0 ||
                 type->u.pid.index != argument->pid.index || type->u.pid.nindex != argument->pid.nindex)
                 return 0;
         } else {

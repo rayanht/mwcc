@@ -57,25 +57,25 @@ ENode *CRTTI_ParseConstCast(void)
     if (result == NULL)
         return nullnode();
 
-    if (conv.dtype->type == TYPEPOINTER) {
-        if (TYPE_POINTER(conv.dtype)->qual & Q_REFERENCE) {
-            if (!is_typeequal(TPTR_TARGET(conv.dtype), result->rtype))
+    if (conv.thetype->type == TYPEPOINTER) {
+        if (TYPE_POINTER(conv.thetype)->qual & Q_REFERENCE) {
+            if (!is_typeequal(TPTR_TARGET(conv.thetype), result->rtype))
                 CError_ReportError(ERR_ILLEGAL_TYPE_CAST);
             if (result->type == EINDIRECT) {
-                result->rtype = TPTR_TARGET(conv.dtype);
+                result->rtype = TPTR_TARGET(conv.thetype);
                 result->flags = (UInt16)(conv.qual & Q_CV);
             } else {
                 CError_ReportError(ERR_NOT_LVALUE);
             }
         } else {
-            if (!is_typeequal(conv.dtype, result->rtype))
+            if (!is_typeequal(conv.thetype, result->rtype))
                 CError_ReportError(ERR_ILLEGAL_TYPE_CAST);
-            result = do_typecast(result, conv.dtype, conv.qual);
+            result = do_typecast(result, conv.thetype, conv.qual);
         }
-    } else if (conv.dtype->type == TYPEMEMBERPOINTER) {
-        if (!is_typeequal(conv.dtype, result->rtype))
+    } else if (conv.thetype->type == TYPEMEMBERPOINTER) {
+        if (!is_typeequal(conv.thetype, result->rtype))
             CError_ReportError(ERR_ILLEGAL_TYPE_CAST);
-        result = do_typecast(result, conv.dtype, conv.qual);
+        result = do_typecast(result, conv.thetype, conv.qual);
     } else {
         CError_ReportError(ERR_ILLEGAL_TYPE_CAST);
     }
@@ -92,28 +92,28 @@ ENode *CRTTI_ReinterpretCast(void)
     node = parse_cast_type_and_expression(&data);
     if (node == NULL)
         return nullnode();
-    check_constness_casted_away(node->rtype, node->flags, data.dtype, data.qual);
-    if (data.dtype->type == TYPEPOINTER && (TYPE_POINTER(data.dtype)->qual & Q_REFERENCE) != 0) {
+    check_constness_casted_away(node->rtype, node->flags, data.thetype, data.qual);
+    if (data.thetype->type == TYPEPOINTER && (TYPE_POINTER(data.thetype)->qual & Q_REFERENCE) != 0) {
         node = CExpr_LValue(node, 1, 1);
         if (node->type != EINDIRECT)
             return node;
         node->data.monadic->rtype = CDecl_NewPointerType(node->rtype);
         node = node->data.monadic;
-        referenceType = data.dtype;
-        data.dtype = CDecl_NewPointerType(TYPE_POINTER(data.dtype)->target);
-        TYPE_POINTER(data.dtype)->qual = data.qual;
+        referenceType = data.thetype;
+        data.thetype = CDecl_NewPointerType(TYPE_POINTER(data.thetype)->target);
+        TYPE_POINTER(data.thetype)->qual = data.qual;
         data.qual = 0;
     } else {
         referenceType = NULL;
     }
-    typeKind = data.dtype->type;
+    typeKind = data.thetype->type;
     switch (typeKind) {
         case TYPEINT:
             typeKind = node->rtype->type;
             switch (typeKind) {
                 case TYPEPOINTER:
                 case TYPEMEMBERPOINTER:
-                    node = do_typecast(node, data.dtype, data.qual);
+                    node = do_typecast(node, data.thetype, data.qual);
                     break;
                 default:
                     CError_ReportError(ERR_ILLEGAL_TYPE_CAST);
@@ -124,12 +124,12 @@ ENode *CRTTI_ReinterpretCast(void)
             switch (typeKind) {
                 case TYPEINT:
                     if (referenceType != NULL)
-                        data.dtype = referenceType;
-                    node = do_typecast(node, data.dtype, data.qual);
+                        data.thetype = referenceType;
+                    node = do_typecast(node, data.thetype, data.qual);
                     break;
                 case TYPEPOINTER:
                     node = makemonadicnode(node, ETYPCON);
-                    node->rtype = data.dtype;
+                    node->rtype = data.thetype;
                     node->flags = data.qual & Q_CV;
                     break;
                 default:
@@ -138,28 +138,28 @@ ENode *CRTTI_ReinterpretCast(void)
             break;
         case TYPEMEMBERPOINTER:
             if (node->rtype->type == TYPEMEMBERPOINTER) {
-                if (TYPE_MEMBER_POINTER(data.dtype)->memberType->type == TYPEFUNC) {
-                    if (TYPE_MEMBER_POINTER(node->rtype)->memberType->type == TYPEFUNC) {
-                        node->rtype = data.dtype;
+                if (TYPE_MEMBER_POINTER(data.thetype)->ty1->type == TYPEFUNC) {
+                    if (TYPE_MEMBER_POINTER(node->rtype)->ty1->type == TYPEFUNC) {
+                        node->rtype = data.thetype;
                         node->flags = data.qual & Q_CV;
                         break;
                     }
                 } else {
-                    if (TYPE_MEMBER_POINTER(node->rtype)->memberType->type != TYPEFUNC) {
-                        node->rtype = data.dtype;
+                    if (TYPE_MEMBER_POINTER(node->rtype)->ty1->type != TYPEFUNC) {
+                        node->rtype = data.thetype;
                         node->flags = data.qual & Q_CV;
                         break;
                     }
                 }
             }
-            node = do_typecast(node, data.dtype, data.qual);
+            node = do_typecast(node, data.thetype, data.qual);
             break;
         default:
             CError_ReportError(ERR_ILLEGAL_TYPE_CAST);
     }
     if (referenceType != NULL && node->rtype->type == TYPEPOINTER) {
         node = makemonadicnode(node, EINDIRECT);
-        node->rtype = TYPE_POINTER(data.dtype)->target;
+        node->rtype = TYPE_POINTER(data.thetype)->target;
     }
     return node;
 }
@@ -173,10 +173,10 @@ ENode *CRTTI_ParseExplicitTypecast(void)
     if (expr == NULL) {
         return nullnode();
     }
-    check_constness_casted_away(expr->rtype, expr->flags, conversion.dtype, conversion.qual);
-    if (conversion.dtype->type != TYPEVOID) {
-        conversionType = conversion.dtype;
-        if (conversion.dtype->type == TYPEPOINTER) {
+    check_constness_casted_away(expr->rtype, expr->flags, conversion.thetype, conversion.qual);
+    if (conversion.thetype->type != TYPEVOID) {
+        conversionType = conversion.thetype;
+        if (conversion.thetype->type == TYPEPOINTER) {
             conversionType = ((TypePointer *)conversionType)->target;
         }
         if ((conversionType->type == TYPECLASS) && (conversionType->size == 0)) {
@@ -196,7 +196,7 @@ ENode *CRTTI_ParseExplicitTypecast(void)
             }
         }
     }
-    return explicit_typecast(expr, conversion.dtype, conversion.qual, '\x02');
+    return explicit_typecast(expr, conversion.thetype, conversion.qual, '\x02');
 }
 
 static inline Boolean IsSameType(Type *a, Type *b)
@@ -243,12 +243,12 @@ ENode *CRTTI_ParseDynamicCast(void)
         return nullnode();
     if (copts.rttiEnabled == 0)
         CError_Warning(ERR_RTTI_OPTION_DISABLED);
-    check_constness_casted_away(expr->rtype, expr->flags, parsed.dtype, parsed.qual);
-    if (parsed.dtype->type != TYPEPOINTER) {
+    check_constness_casted_away(expr->rtype, expr->flags, parsed.thetype, parsed.qual);
+    if (parsed.thetype->type != TYPEPOINTER) {
         CError_ReportError(ERR_ILLEGAL_TYPE_CAST);
         return expr;
     }
-    targetPointer = (TypePointer *)parsed.dtype;
+    targetPointer = (TypePointer *)parsed.thetype;
     isReference = (targetPointer->qual & Q_REFERENCE) != 0;
     if ((targetKind = (targetClass = targetPointer->target)->type) == TYPECLASS) {
         CDecl_CompleteType(targetClass);
@@ -271,7 +271,7 @@ ENode *CRTTI_ParseDynamicCast(void)
         sourceClass = (TypeClass *)expr->rtype;
         if (targetClass != NULL && (sourceClass == TYPE_CLASS(targetClass) ||
                                     CClass_FindBasePath(sourceClass, TYPE_CLASS(targetClass), 0, 1) != 0))
-            return do_typecast(expr, parsed.dtype, parsed.qual);
+            return do_typecast(expr, parsed.thetype, parsed.qual);
         expr = getnodeaddress(expr, 1);
     } else {
         if (expr->rtype->type != TYPEPOINTER || ((TypePointer *)expr->rtype)->target->type != TYPECLASS) {
@@ -281,7 +281,7 @@ ENode *CRTTI_ParseDynamicCast(void)
         sourceClass = (TypeClass *)((TypePointer *)expr->rtype)->target;
         if (targetClass != NULL && (sourceClass == TYPE_CLASS(targetClass) ||
                                     CClass_FindBasePath(sourceClass, TYPE_CLASS(targetClass), 0, 1) != 0))
-            return do_typecast(expr, parsed.dtype, parsed.qual);
+            return do_typecast(expr, parsed.thetype, parsed.qual);
     }
     if ((sourceClass->flags & CLASS_COMPLETED) == 0) {
         CError_ReportError(ERR_ILLEGAL_USE_INCOMPLETE_STRUCT_UNION_CLASS, sourceClass, 0);
@@ -313,7 +313,7 @@ ENode *CRTTI_ParseDynamicCast(void)
         result = makemonadicnode(result, EINDIRECT);
         result->rtype = targetClass;
     } else {
-        result->rtype = parsed.dtype;
+        result->rtype = parsed.thetype;
     }
     result->flags = parsed.qual & ENODE_FLAG_QUALS;
     return result;
@@ -438,8 +438,8 @@ ENode *parse_cast_type_and_expression(DeclInfo *typeSpec)
     }
     tk = CPrepTokenizer_GetNextToken();
     expression = CExpr_ParseCommaExpression();
-    if (typeSpec->dtype->type == TYPEPOINTER) {
-        TypePointer *pointerType = (TypePointer *)typeSpec->dtype;
+    if (typeSpec->thetype->type == TYPEPOINTER) {
+        TypePointer *pointerType = (TypePointer *)typeSpec->thetype;
         if (!(pointerType->qual & Q_REFERENCE)) {
             expression = CExpr_GeneratePointerAndRewriteConst(expression);
         }
@@ -486,8 +486,8 @@ void check_constness_casted_away(Type *sourceType, int sourceQualifiers, Type *t
                         ((sourceMemberQualifiers & Q_VOLATILE) && !(targetMemberQualifiers & Q_VOLATILE)))
                         CError_ReportError(ERR_CONSTNESS_CASTED_AWAY);
                 }
-                sourceType = TYPE_MEMBER_POINTER(sourceType)->memberType;
-                targetType = TYPE_MEMBER_POINTER(targetType)->memberType;
+                sourceType = TYPE_MEMBER_POINTER(sourceType)->ty1;
+                targetType = TYPE_MEMBER_POINTER(targetType)->ty1;
                 skipOuterQualifiers = 0;
                 continue;
             default:
@@ -550,7 +550,7 @@ ENode *CRTTI_ParseTypeid(void)
             CError_ReportErrorAndUpdateToken(ERR_RPAREN_EXPECTED);
         else
             tk = CPrepTokenizer_GetNextToken();
-        type = typeInfo.dtype;
+        type = typeInfo.thetype;
         qualifiers = typeInfo.qual;
         if (type->type == TYPEPOINTER && (TYPE_POINTER(type)->qual & Q_REFERENCE) != 0)
             type = TYPE_POINTER(type)->target;

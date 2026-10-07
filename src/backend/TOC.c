@@ -369,7 +369,7 @@ void TOC_0049d710(ENode *node, Type *targetType, int ignored)
                 node->type = EINDIRECT;
                 node->cost = 1;
                 node->data.diadic.left = ref;
-                CError_ASSERT(648, object->extraQualifiers != 0);
+                CError_ASSERT(648, object->section != 0);
                 BE_symbol_GetOrCreateFunctionObjectSymbol(object);
             }
             node->hascall = 0;
@@ -406,7 +406,7 @@ void TOC_0049d710(ENode *node, Type *targetType, int ignored)
                         }
                     }
                     data_00588500 = 1;
-                    CError_ASSERT(648, object->extraQualifiers != 0);
+                    CError_ASSERT(648, object->section != 0);
                     BE_symbol_GetOrCreateFunctionObjectSymbol(object);
                     node->hascall = 0;
                     break;
@@ -834,7 +834,7 @@ void TOC_0049d710(ENode *node, Type *targetType, int ignored)
             node->hascall = 0;
             break;
         case ELOCOBJ: {
-            Object *object = get_or_create_label_object(node->data.labelAddress);
+            Object *object = get_or_create_label_object(node->data.label);
             ENode *ref = CompilerTools_AllocatePool(sizeof(ENode));
             memclrw(ref, sizeof(ENode));
             ref->type = EOBJREF;
@@ -1267,7 +1267,7 @@ Object *get_or_create_label_object(CLabel *node)
     object->qual = Q_CONST;
     object->datatype = DDATA;
     object->flags |= OBJECT_FLAGS_2 | OBJECT_DEFINED;
-    object->extraQualifiers = ObjGen_PPC_EABI_GetHeaderIndex(0x21);
+    object->section = ObjGen_PPC_EABI_GetHeaderIndex(0x21);
 
     newEntry = galloc(sizeof(struct TOCNameEntry));
     memclrw(newEntry, sizeof(struct TOCNameEntry));
@@ -1290,7 +1290,7 @@ void replace_vector_constant_with_objectref(ENode *node)
     MWVector128 *newValue;
     DeclInfo objectInfo;
     newValue = (MWVector128 *)galloc(sizeof(*newValue));
-    CMachine_InitVectorMem(node->rtype, node->data.vector128, newValue);
+    CMachine_InitVectorMem(node->rtype, node->data.vector128val, newValue);
     if (cprep_cu[0xe0] == 1) {
         CError_ReportError(ERR_ILLEGAL_USE_PRECOMPILED_HEADER);
     }
@@ -1310,15 +1310,15 @@ void replace_vector_constant_with_objectref(ENode *node)
             offset = lastOffset + sizeof(*newValue);
         } else {
             memclrw(&objectInfo, sizeof(objectInfo));
-            objectInfo.dtype = CDecl_NewArrayType(TYPE(&stvectorsignedlong), sizeof(*newValue));
+            objectInfo.thetype = CDecl_NewArrayType(TYPE(&stvectorsignedlong), sizeof(*newValue));
             objectInfo.name = GetHashNameNode("@vectorBase0");
             objectInfo.qual = Q_CONST;
-            objectInfo.storage = 258;
+            objectInfo.storageclass = 258;
             objectInfo.requireMangledName = 1;
             if (copts.smallBSSLimit > 16) {
-                objectInfo.extraQualifiers = ObjGen_PPC_EABI_GetHeaderIndex(34);
+                objectInfo.section = ObjGen_PPC_EABI_GetHeaderIndex(34);
             } else {
-                objectInfo.extraQualifiers = ObjGen_PPC_EABI_GetHeaderIndex(32);
+                objectInfo.section = ObjGen_PPC_EABI_GetHeaderIndex(32);
             }
             object = CParser_NewObject(&objectInfo);
             offset = 0;
@@ -1438,12 +1438,12 @@ void rewrite_indirect_toc_references(void)
                 record->type = EINDIRECT;
                 record->cost = 1;
                 record->data.monadic = replacement;
-                if (key->extraQualifiers == 0) {
+                if (key->section == 0) {
                     CError_FATAL(648);
                 }
                 BE_symbol_GetOrCreateFunctionObjectSymbol(key);
             } else {
-                if (key->extraQualifiers == 0) {
+                if (key->section == 0) {
                     CError_FATAL(648);
                 }
                 BE_symbol_GetOrCreateFunctionObjectSymbol(key);
@@ -1454,7 +1454,7 @@ void rewrite_indirect_toc_references(void)
 
 Object *fn_0049f230(Object *object, SInt32 a, SInt32 b)
 {
-    if (object->extraQualifiers == 0)
+    if (object->section == 0)
         CError_FATAL(648);
     BE_symbol_GetOrCreateFunctionObjectSymbol(object);
     return NULL;

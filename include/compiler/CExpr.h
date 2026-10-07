@@ -16,16 +16,15 @@ struct BinaryOperatorResult {
 };
 #pragma options align = reset
 #pragma options align = mac68k
-struct MemberFuncRef {
-    struct BClassList *bcl;   /* 0x00: CExpr.c copies nameResult->basePath; getpointertomemberfunc reads bases */
-    struct ENode *expression; /* 0x04: CExpr.c stores the member access expression; getpointertomemberfunc checks it */
+struct EMemberInfo {
+    struct BClassList *path; /* 0x00: CExpr.c copies nameResult->basePath; getpointertomemberfunc reads bases */
+    struct ENode *expr;      /* 0x04: CExpr.c stores the member access expression; getpointertomemberfunc checks it */
     struct NameSpaceObjectList *list; /* 0x08: make_member_function_esetconst supplies the candidate list */
     struct TemplArg *
         templargs; /* 0x0c: make_member_function_esetconst obtains CTemplateNew_ParseTemplateArguments; CExpr.c copies objlist.templargs */
     Boolean is_qualified; /* 0x10: CExpr.c copies nameResult->is_qualified */
     UInt8 addressTaken;   /* 0x11: make_memberpointer sets 1; getpointertomemberfunc checks explicit address taking */
     Boolean isambig;      /* 0x12: CExpr.c copies nameResult->isambig */
-    UInt8 tailPadding;    /* 0x13: CInline_00513240 copies the whole record; unused trailing alignment byte */
 };
 #pragma options align = reset
 #pragma pack(push, 1)
@@ -72,7 +71,22 @@ extern ENode *parse_postfix_expression(Boolean allowSpecial);
 extern ENode *scan_pseudo_destructor_call(ENode *node);
 extern ENode *parse_primary_expression(Boolean expressionMode);
 extern int CExpr_004f8a40(Type *p);
-extern UInt32 encode_type_bits(Type *e);
+/* a type seen through its integral code or enumeration payload, as encode_type_bits reads it */
+#pragma options align = mac68k
+typedef struct TypeKind {
+    UInt8 type;
+    SInt32 size;
+    union {
+        UInt8 integral;
+        struct {
+            NameSpace *nspace;
+            ObjEnumConst *enumlist;
+            struct TypeKind *enumtype;
+        } tenum;
+    } u;
+} TypeKind;
+#pragma options align = reset
+extern UInt32 encode_type_bits(TypeKind *e);
 extern ENode *scan_vec_step(void);
 extern ENode *CExpr_MakeNameLookupResultExpr(CScopeParseResult *p);
 extern ENode *make_member_function_esetconst(CScopeParseResult *candidates);

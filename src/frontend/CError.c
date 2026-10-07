@@ -296,8 +296,8 @@ void append_pointer_declarator(StrBuf *buf, Type *type)
             append_qualifiers(buf, TYPE_POINTER(type)->qual);
             return;
         case TYPEMEMBERPOINTER:
-            append_pointer_declarator(buf, TYPE_MEMBER_POINTER(type)->memberType);
-            append_type(buf, TYPE_MEMBER_POINTER(type)->owner.type, 0);
+            append_pointer_declarator(buf, TYPE_MEMBER_POINTER(type)->ty1);
+            append_type(buf, TYPE_MEMBER_POINTER(type)->ty2, 0);
             CError_BufferAppendString(buf, "::*");
             append_qualifiers(buf, TYPE_MEMBER_POINTER(type)->qual);
             return;
@@ -309,7 +309,7 @@ void append_templdep(StrBuf *buf, TypeTemplDep *node)
     char tmp[64];
     char msg[128];
 
-    switch (node->kind) {
+    switch (node->dtype) {
         case 0:
             if (node->u.pid.nindex)
                 sprintf(tmp, "T%ld_%ld", node->u.pid.nindex, node->u.pid.index);
@@ -536,7 +536,7 @@ void append_type(StrBuf *buf, Type *type, UInt32 qualifiers)
                             baseType = TYPE_POINTER(baseType)->target;
                             continue;
                         case TYPEMEMBERPOINTER:
-                            baseType = TYPE_MEMBER_POINTER(baseType)->memberType;
+                            baseType = TYPE_MEMBER_POINTER(baseType)->ty1;
                             continue;
                     }
                     break;

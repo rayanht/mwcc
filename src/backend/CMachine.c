@@ -124,18 +124,18 @@ static StructMember stVF_float2 = {&stVF_float3, (Type *)&stfloat, NULL, 8, 0};
 static StructMember stVF_float1 = {&stVF_float2, (Type *)&stfloat, NULL, 4, 0};
 static StructMember stVF_float0 = {&stVF_float1, (Type *)&stfloat, NULL, 0, 0};
 
-TypeStruct stvectorunsignedchar = {TYPESTRUCT, 16, NULL, &stVUC_unsignedchar0, 4, 0, 16};
-TypeStruct stvectorsignedchar = {TYPESTRUCT, 16, NULL, &stVSC_signedchar0, 5, 0, 16};
-TypeStruct stvectorboolchar = {TYPESTRUCT, 16, NULL, &stVSC_signedchar0, 6, 0, 16};
-TypeStruct stvectorunsignedshort = {TYPESTRUCT, 16, NULL, &stVUS_unsignedshort0, 7, 0, 16};
-TypeStruct stvectorsignedshort = {TYPESTRUCT, 16, NULL, &stVSS_signedshort0, 8, 0, 16};
-TypeStruct stvectorboolshort = {TYPESTRUCT, 16, NULL, &stVSS_signedshort0, 9, 0, 16};
-TypeStruct stvectorunsignedlong = {TYPESTRUCT, 16, NULL, &stVUL_unsignedlong0, 10, 0, 16};
-TypeStruct stvectorsignedlong = {TYPESTRUCT, 16, NULL, &stVSL_signedlong0, 11, 0, 16};
-TypeStruct stvectorboollong = {TYPESTRUCT, 16, NULL, &stVSL_signedlong0, 12, 0, 16};
-TypeStruct stvectorfloat = {TYPESTRUCT, 16, NULL, &stVF_float0, 13, 0, 16};
-TypeStruct stvectorpixel = {TYPESTRUCT, 16, NULL, &stVUS_unsignedshort0, 14, 0, 16};
-TypeStruct stvector = {TYPESTRUCT, 16, NULL, NULL, 10, 0, 16};
+TypeStruct stvectorunsignedchar = {TYPESTRUCT, 16, NULL, &stVUC_unsignedchar0, 4, 16};
+TypeStruct stvectorsignedchar = {TYPESTRUCT, 16, NULL, &stVSC_signedchar0, 5, 16};
+TypeStruct stvectorboolchar = {TYPESTRUCT, 16, NULL, &stVSC_signedchar0, 6, 16};
+TypeStruct stvectorunsignedshort = {TYPESTRUCT, 16, NULL, &stVUS_unsignedshort0, 7, 16};
+TypeStruct stvectorsignedshort = {TYPESTRUCT, 16, NULL, &stVSS_signedshort0, 8, 16};
+TypeStruct stvectorboolshort = {TYPESTRUCT, 16, NULL, &stVSS_signedshort0, 9, 16};
+TypeStruct stvectorunsignedlong = {TYPESTRUCT, 16, NULL, &stVUL_unsignedlong0, 10, 16};
+TypeStruct stvectorsignedlong = {TYPESTRUCT, 16, NULL, &stVSL_signedlong0, 11, 16};
+TypeStruct stvectorboollong = {TYPESTRUCT, 16, NULL, &stVSL_signedlong0, 12, 16};
+TypeStruct stvectorfloat = {TYPESTRUCT, 16, NULL, &stVF_float0, 13, 16};
+TypeStruct stvectorpixel = {TYPESTRUCT, 16, NULL, &stVUS_unsignedshort0, 14, 16};
+TypeStruct stvector = {TYPESTRUCT, 16, NULL, NULL, 10, 16};
 
 static SInt16 loadalign_table[5] = {1, 2, 4, 8, 16};
 

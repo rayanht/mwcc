@@ -668,8 +668,8 @@ NameSpaceList *collect_type_namespaces(NameSpaceList *acc, Type *type)
                 type = ((TypeFunc *)type)->functype;
                 continue;
             case TYPEMEMBERPOINTER:
-                acc = collect_type_namespaces(acc, ((TypeMemberPointer *)type)->memberType);
-                type = ((TypeMemberPointer *)type)->owner.type;
+                acc = collect_type_namespaces(acc, ((TypeMemberPointer *)type)->ty1);
+                type = ((TypeMemberPointer *)type)->ty2;
                 if (type->type != TYPECLASS)
                     break;
                 /* fall through */
@@ -2833,7 +2833,7 @@ Boolean CScope_ParseMemberName(TypeClass *ctx, CScopeParseResult *node, Boolean 
         if (!CScope_ParseExprName(node))
             return 0;
         if (node->type.base != NULL && node->type.base->type == TYPETEMPLATE &&
-            ((TypeTemplDep *)node->type.base)->kind == 1) {
+            ((TypeTemplDep *)node->type.base)->dtype == 1) {
             if (flag)
                 return 1;
             CError_ReportError(ERR_ILLEGAL_USE_TEMPLATE_ARGUMENT_DEPENDENT_TYPE,
@@ -3041,7 +3041,7 @@ void CScope_ParseUsingDeclaration(NameSpace *nspace, AccessType flag, Boolean un
             return;
         }
         if (info.type.base != NULL && info.type.base->type == TYPETEMPLATE &&
-            ((TypeTemplDep *)info.type.base)->kind == 1) {
+            ((TypeTemplDep *)info.type.base)->dtype == 1) {
             CError_ASSERT(3390, isVirtual);
             if (consumedToken) {
                 ObjType *record = galloc(10);

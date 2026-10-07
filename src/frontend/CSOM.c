@@ -1763,7 +1763,7 @@ void CSOM_CompleteClass(TypeClass *tclass)
             continue;
         CE_ASSERT(firstMethod->type->type != TYPEFUNC, CError_FATAL(529));
         ((TypeFunc *)firstMethod->type)->flags |= 4;
-        tclass->state = 1;
+        tclass->action = 1;
         for (;;) {
             otherMethod = CScope_NextObject(&iterator);
             if (!otherMethod)
@@ -1798,7 +1798,7 @@ void CSOM_CompleteClass(TypeClass *tclass)
             CError_ReportError(ERR_NEW_SOM_CALLSTYLE_METHOD_MUST_EXPLICIT, checkedMethod);
         }
     }
-    if (tclass->state == 0)
+    if (tclass->action == 0)
         CError_ReportError(ERR_SOM_CLASS_MUST_ONE_NON_INLINE);
 }
 

@@ -443,8 +443,8 @@ static inline COptCSE *COpt_VectorConst(ENode *expr)
     COptCSE *cse;
     MWVector128 value;
 
-    for (cse = cse_entries[EASSBLK], value = expr->data.vector128; cse; cse = cse->next) {
-        if (CMach_CalcVectorDiadicBool((unsigned int)cse->expr->rtype, &cse->expr->data.vector128, 360, &value) &&
+    for (cse = cse_entries[EASSBLK], value = expr->data.vector128val; cse; cse = cse->next) {
+        if (CMach_CalcVectorDiadicBool((unsigned int)cse->expr->rtype, &cse->expr->data.vector128val, 360, &value) &&
             expr->rtype == cse->expr->rtype)
             return cse;
     }

@@ -365,8 +365,8 @@ void format_type(Type *type, char *buf)
             break;
 
         case TYPEMEMBERPOINTER:
-            format_type(TYPE_MEMBER_POINTER(type)->owner.type, targetName);
-            format_type(TYPE_MEMBER_POINTER(type)->memberType, ownerName);
+            format_type(TYPE_MEMBER_POINTER(type)->ty2, targetName);
+            format_type(TYPE_MEMBER_POINTER(type)->ty1, ownerName);
             strcpy(buf, "memberpointer(");
             strcat(buf, targetName);
             strcat(buf, ",");
@@ -442,8 +442,8 @@ void print_enode_tree(ENode *node, int depth)
                 break;
             case EASSBLK:
                 fprintf(data_005811b0, "[0x%.8lX%.8lX%.8lX%.8lX]", node->data.intval.hi, node->data.intval.lo,
-                        ((ENode *)node)->data.vector128.longElements[2],
-                        ((ENode *)node)->data.vector128.longElements[3]);
+                        ((ENode *)node)->data.vector128val.longElements[2],
+                        ((ENode *)node)->data.vector128val.longElements[3]);
                 PrintType(node->rtype);
                 break;
             case ECOND:

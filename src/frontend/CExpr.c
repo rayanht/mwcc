@@ -529,7 +529,7 @@ static inline ENode *parse_4e9940(void)
 static inline ENode *parse_builtin_8b50(void)
 {
     ENode *e = intconstnode((Type *)&stsignedint, 0);
-    set_signed_integer(e, encode_type_bits(scan_type_or_expression_type()));
+    set_signed_integer(e, encode_type_bits((TypeKind *)scan_type_or_expression_type()));
     return e;
 }
 
@@ -537,8 +537,6 @@ static inline int CExpr_StructKind(Type *type)
 {
     return TYPE_STRUCT(type)->stype;
 }
-
-#define TYPE_TEMPLDEP(t) ((TypeTemplDep *)(t))
 
 /* The null test reads nspace through a cast, so its address differs from
  * et->nspace and IRO does not CSE the two: cmp [et+6],0 then a reload. */
@@ -2307,8 +2305,8 @@ ENode *memberpointercompare(UInt8 op, ENode *left, ENode *right)
         left = CExpr_CastMemberPointer(left, TYPE_MEMBER_POINTER(left->rtype), TYPE_MEMBER_POINTER(right->rtype));
     }
 
-    if ((left->type == EINTCONST || TYPE_MEMBER_POINTER(left->rtype)->memberType->type != TYPEFUNC) &&
-        (right->type == EINTCONST || TYPE_MEMBER_POINTER(right->rtype)->memberType->type != TYPEFUNC)) {
+    if ((left->type == EINTCONST || TYPE_MEMBER_POINTER(left->rtype)->ty1->type != TYPEFUNC) &&
+        (right->type == EINTCONST || TYPE_MEMBER_POINTER(right->rtype)->ty1->type != TYPEFUNC)) {
         left->rtype = (Type *)&stsignedlong;
         right->rtype = (Type *)&stsignedlong;
         node = makediadicnode(left, right, op);
@@ -2829,20 +2827,20 @@ ENode *member_pointer_expression(void)
             CError_ReportError(ERR_ILLEGAL_OPERAND);
             return expr;
         }
-        if (expr->rtype != TYPE_MEMBER_POINTER(right->rtype)->owner.type) {
+        if (expr->rtype != TYPE_MEMBER_POINTER(right->rtype)->ty2) {
             CClass_Init();
-            if (CClass_FindBasePath(TYPE_CLASS(expr->rtype), TYPE_MEMBER_POINTER(right->rtype)->owner.classType, 1,
+            if (CClass_FindBasePath(TYPE_CLASS(expr->rtype), TYPE_CLASS(TYPE_MEMBER_POINTER(right->rtype)->ty2), 1,
                                     1) != 0) {
                 type = right->rtype;
                 expr->data.diadic.left = CClass_ConvertClassPointer(expr->data.diadic.left, TYPE_CLASS(expr->rtype),
-                                                                    TYPE_MEMBER_POINTER(type)->owner.classType, 0, 1);
-                expr->rtype = TYPE_MEMBER_POINTER(right->rtype)->owner.type;
+                                                                    TYPE_CLASS(TYPE_MEMBER_POINTER(type)->ty2), 0, 1);
+                expr->rtype = TYPE_MEMBER_POINTER(right->rtype)->ty2;
             } else {
                 CError_ReportError(ERR_ILLEGAL_TYPE);
                 return expr;
             }
         }
-        memberType = TYPE_MEMBER_POINTER(right->rtype)->memberType;
+        memberType = TYPE_MEMBER_POINTER(right->rtype)->ty1;
         flags = expr->flags;
         if (memberType->type == TYPEFUNC)
             break;
@@ -2918,8 +2916,8 @@ ENode *cast_expression(void)
     if (typeInfo.name != NULL)
         CError_ReportError(ERR_ILLEGAL_TYPE_CAST);
 
-    if (copts.altivecModel != 0 && tk == '(' && typeInfo.dtype->type == TYPESTRUCT &&
-        (structKind = TYPE_STRUCT(typeInfo.dtype)->stype) >= 4 && structKind <= 0xe) {
+    if (copts.altivecModel != 0 && tk == '(' && typeInfo.thetype->type == TYPESTRUCT &&
+        (structKind = TYPE_STRUCT(typeInfo.thetype)->stype) >= 4 && structKind <= 0xe) {
         tk = CPrepTokenizer_GetNextToken();
         expr = assignment_expression();
         while (tk == ',') {
@@ -2939,7 +2937,7 @@ ENode *cast_expression(void)
             CError_ReportErrorAndUpdateToken(ERR_RPAREN_EXPECTED);
         else
             tk = CPrepTokenizer_GetNextToken();
-        success = IrOptimizer_ConvertToVectorConstant(expr, &value.vector128, TYPE_STRUCT(typeInfo.dtype));
+        success = IrOptimizer_ConvertToVectorConstant(expr, &value.vector128val, TYPE_STRUCT(typeInfo.thetype));
         if (success != 0) {
             node = CompilerTools_AllocatePool(sizeof(ENode));
             node->type = EASSBLK;
@@ -2947,34 +2945,34 @@ ENode *cast_expression(void)
             if (node->cost == 0)
                 node->cost = 1;
             node->flags = expr->flags & ENODE_FLAG_QUALS;
-            node->rtype = typeInfo.dtype;
+            node->rtype = typeInfo.thetype;
             node->data = value;
         } else {
             node = makemonadicnode(expr, ETYPCON);
         }
-        node->rtype = typeInfo.dtype;
+        node->rtype = typeInfo.thetype;
         node->flags = expr->flags;
         return node;
     }
 
     if (copts.rejectZeroLengthArrayMembers == 0 && tk == '{' &&
-        (typeInfo.dtype->type != TYPESTRUCT || (structKind = TYPE_STRUCT(typeInfo.dtype)->stype) < 4 ||
+        (typeInfo.thetype->type != TYPESTRUCT || (structKind = TYPE_STRUCT(typeInfo.thetype)->stype) < 4 ||
          structKind > 0xe)) {
-        return CInit_AutoObject(NULL, typeInfo.dtype, typeInfo.qual);
+        return CInit_AutoObject(NULL, typeInfo.thetype, typeInfo.qual);
     }
 
     expr = cast_expression();
-    if (copts.cplusplus != 0 && (CTemplateTools_IsDependentType(typeInfo.dtype) || CTemplTool_IsTypeDepExpr(expr))) {
+    if (copts.cplusplus != 0 && (CTemplateTools_IsDependentType(typeInfo.thetype) || CTemplTool_IsTypeDepExpr(expr))) {
         link = CompilerTools_AllocatePool(sizeof(*link));
         link->next = NULL;
         link->node = expr;
-        node = recovery_construct_4059(link, typeInfo.dtype, typeInfo.qual);
+        node = recovery_construct_4059(link, typeInfo.thetype, typeInfo.qual);
         return node;
     }
-    if (typeInfo.dtype->type != TYPEPOINTER || ((TYPE_POINTER(typeInfo.dtype)->qual & Q_REFERENCE) == 0)) {
+    if (typeInfo.thetype->type != TYPEPOINTER || ((TYPE_POINTER(typeInfo.thetype)->qual & Q_REFERENCE) == 0)) {
         expr = CExpr_RewriteConst(pointer_generation(expr));
     }
-    return do_typecast(expr, typeInfo.dtype, typeInfo.qual);
+    return do_typecast(expr, typeInfo.thetype, typeInfo.qual);
 }
 
 ENode *do_typecast(ENode *expr, Type *type, UInt32 qual)
@@ -3002,7 +3000,7 @@ ENode *do_typecast(ENode *expr, Type *type, UInt32 qual)
                 memberExpr = expr;
                 if (expr->rtype->type != TYPEMEMBERPOINTER) {
                     if (expr->type == EINTCONST && IsZero_4f5aa0(expr)) {
-                        if (TYPE_MEMBER_POINTER(type)->memberType->type == TYPEFUNC)
+                        if (TYPE_MEMBER_POINTER(type)->ty1->type == TYPEFUNC)
                             memberExpr = create_objectnode(DAT_00587678);
                         memberExpr->rtype = type;
                     } else if (expr->type == ENEWEXCEPTIONARRAY)
@@ -3197,18 +3195,18 @@ ENode *CExpr_CastMemberPointer(ENode *value, TypeMemberPointer *sourceType, Type
     CInt64 words;
     Type *sourceClass;
     Type *targetClass;
-    CE_ASSERT(sourceType->owner.type->type != TYPECLASS, CError_FATAL(3532));
-    CE_ASSERT(targetType->owner.type->type != TYPECLASS, CError_FATAL(3533));
-    sourceClass = sourceType->owner.type;
-    targetClass = targetType->owner.type;
+    CE_ASSERT(sourceType->ty2->type != TYPECLASS, CError_FATAL(3532));
+    CE_ASSERT(targetType->ty2->type != TYPECLASS, CError_FATAL(3533));
+    sourceClass = sourceType->ty2;
+    targetClass = targetType->ty2;
     if (sourceClass == targetClass) {
         value->rtype = (Type *)targetType;
         return value;
     }
     do {
         reversed = 0;
-        path = CClass_GetBasePath(targetType->owner.classType, sourceType->owner.classType, &pathFlags, &ambiguous);
-        if (path != NULL || ((path = CClass_GetBasePath(sourceType->owner.classType, targetType->owner.classType,
+        path = CClass_GetBasePath(TYPE_CLASS(targetType->ty2), TYPE_CLASS(sourceType->ty2), &pathFlags, &ambiguous);
+        if (path != NULL || ((path = CClass_GetBasePath(TYPE_CLASS(sourceType->ty2), TYPE_CLASS(targetType->ty2),
                                                         &pathFlags, &ambiguous)) != NULL &&
                              (reversed = 1, 1))) {
             if (ambiguous != 0) {
@@ -3507,12 +3505,12 @@ ENode *unary_expression(void)
                 result->flags = 0;
                 result->rtype = (Type *)&void_ptr;
                 label = findlabel();
-                result->data.labelAddress = label;
-                if (result->data.labelAddress == NULL) {
-                    result->data.labelAddress = newlabel();
-                    result->data.labelAddress->name = data_00587fa0;
-                    result->data.labelAddress->next = clabels;
-                    clabels = result->data.labelAddress;
+                result->data.label = label;
+                if (result->data.label == NULL) {
+                    result->data.label = newlabel();
+                    result->data.label->name = data_00587fa0;
+                    result->data.label->next = clabels;
+                    clabels = result->data.label;
                 }
                 tk = CPrepTokenizer_GetNextToken();
                 return result;
@@ -3673,13 +3671,13 @@ void *make_memberpointer(ENode *node)
     ObjMemberVar *member;
 
     CError_ASSERT(3132, node->type == ENEWEXCEPTIONARRAY);
-    if (node->data.memberfunc->expression != NULL) {
+    if (node->data.emember->expr != NULL) {
         CError_ReportError(ERR_EXPRESSION_SYNTAX_ERROR);
     }
-    node->data.memberfunc->addressTaken = 1;
-    if (node->data.memberfunc->list->next == NULL) {
-        if ((member = (ObjMemberVar *)node->data.memberfunc->list->object)->otype == OT_MEMBERVAR) {
-            base = node->data.memberfunc->bcl;
+    node->data.emember->addressTaken = 1;
+    if (node->data.emember->list->next == NULL) {
+        if ((member = (ObjMemberVar *)node->data.emember->list->object)->otype == OT_MEMBERVAR) {
+            base = node->data.emember->path;
             while (base->next != NULL) {
                 base = base->next;
             }
@@ -3687,8 +3685,8 @@ void *make_memberpointer(ENode *node)
             memclrw(memberType, sizeof(TypeMemberPointer));
             memberType->type = TYPEMEMBERPOINTER;
             memberType->size = 4;
-            memberType->owner.type = base->type;
-            memberType->memberType = member->type;
+            memberType->ty2 = base->type;
+            memberType->ty1 = member->type;
             result = nullnode();
             result->rtype = (Type *)memberType;
             offset = member->offset + 1;
@@ -3708,7 +3706,7 @@ void *make_memberpointer(ENode *node)
 
 ENode *getpointertomemberfunc(ENode *node, Type *targetType, Boolean initialize)
 {
-    MemberFuncRef *memberRef;
+    EMemberInfo *memberRef;
     ObjectList *candidate;
     TypeMemberPointer *memberPointer;
     TypeMemberFunc *functionCopy;
@@ -3722,19 +3720,19 @@ ENode *getpointertomemberfunc(ENode *node, Type *targetType, Boolean initialize)
 
     CError_ASSERT(3021, node->type == ENEWEXCEPTIONARRAY);
 
-    memberRef = node->data.memberfunc;
-    if (memberRef->expression != NULL && copts.f68 == 0)
+    memberRef = node->data.emember;
+    if (memberRef->expr != NULL && copts.f68 == 0)
         CError_ReportError(ERR_EXPRESSION_SYNTAX_ERROR);
 
-    if (copts.f68 == 0 && ((memberRef = node->data.memberfunc)->addressTaken == 0 || memberRef->is_qualified == 0) &&
+    if (copts.f68 == 0 && ((memberRef = node->data.emember)->addressTaken == 0 || memberRef->is_qualified == 0) &&
         targetType != NULL && targetType->type == TYPEMEMBERPOINTER)
         CError_Warning(ERR_ILLEGAL_IMPLICIT_MEMBER_POINTER_CONVERSION);
 
-    memberRef = node->data.memberfunc;
+    memberRef = node->data.emember;
     if ((methods = (ObjectList *)memberRef->list)->next != NULL) {
         if (targetType != NULL) {
             if (targetType->type == TYPEMEMBERPOINTER) {
-                Type *functionTarget = ((TypeMemberPointer *)targetType)->memberType;
+                Type *functionTarget = ((TypeMemberPointer *)targetType)->ty1;
                 for (candidate = methods; candidate != NULL; candidate = candidate->next) {
                     if (candidate->object.value->otype == OT_OBJECT &&
                         is_memberpointerequal(candidate->object.value->type, functionTarget) != 0) {
@@ -3762,8 +3760,8 @@ ENode *getpointertomemberfunc(ENode *node, Type *targetType, Boolean initialize)
                             (TYPE_METHOD(method->type)->flags & FUNC_METHOD) != 0 &&
                             TYPE_METHOD(method->type)->is_static == 0);
 
-    memberRef = node->data.memberfunc;
-    bases = memberRef->bcl;
+    memberRef = node->data.emember;
+    bases = memberRef->path;
     while ((bases = bases->next) != NULL)
         ;
 
@@ -3778,8 +3776,8 @@ ENode *getpointertomemberfunc(ENode *node, Type *targetType, Boolean initialize)
     memclrw(memberPointer, sizeof(*memberPointer));
     memberPointer->type = TYPEMEMBERPOINTER;
     memberPointer->size = 0xc;
-    memberPointer->owner.classType = TYPE_METHOD(method->type)->theclass;
-    memberPointer->memberType = (Type *)functionCopy;
+    memberPointer->ty2 = TYPE(TYPE_METHOD(method->type)->theclass);
+    memberPointer->ty1 = (Type *)functionCopy;
 
     functionType = TYPE_METHOD(method->type);
     result = CParser_NewObject(NULL);
@@ -3968,7 +3966,7 @@ ENode *parse_postfix_expression(Boolean allowSpecial)
                 if (copts.f68 == 0 && CPrepTokenizer_GetNextTokenAndRestorePosition() != '(')
                     CError_ReportError(ERR_LPAREN_EXPECTED);
                 CParser_GetDeclSpecs(&declaration, 0);
-                return scan_explicit_conversion(declaration.dtype, declaration.qual);
+                return scan_explicit_conversion(declaration.thetype, declaration.qual);
             default:
                 expr = parse_primary_expression(allowSpecial);
                 break;
@@ -4265,7 +4263,7 @@ ENode *scan_pseudo_destructor_call(ENode *node)
             if (token >= 0x100 && token <= 0x131) {
                 memclrw(&decl, sizeof(decl));
                 CParser_GetDeclSpecs(&decl, 0);
-                if (decl.storage != 0 || decl.qual != 0 || iscpp_typeequal(decl.dtype, node->rtype) == 0)
+                if (decl.storageclass != 0 || decl.qual != 0 || iscpp_typeequal(decl.thetype, node->rtype) == 0)
                     CError_ReportError(ERR_ILLEGAL_TYPE);
                 if (tk == TK_COLON_COLON) {
                     tk = CPrepTokenizer_GetNextToken();
@@ -4280,7 +4278,7 @@ ENode *scan_pseudo_destructor_call(ENode *node)
     tk = CPrepTokenizer_GetNextToken();
     memclrw(&decl, sizeof(decl));
     CParser_GetDeclSpecs(&decl, 0);
-    if (decl.storage != 0 || iscpp_typeequal(decl.dtype, node->rtype) == 0)
+    if (decl.storageclass != 0 || iscpp_typeequal(decl.thetype, node->rtype) == 0)
         CError_ReportError(ERR_ILLEGAL_TYPE);
     if (CParser_IsConst(node->rtype, node->flags & 3))
         CError_ReportError(ERR_CANNOT_DESTROY_CONST_OBJECT);
@@ -4502,7 +4500,7 @@ Type *scan_type_or_expression_type(void)
         } else {
             tk = CPrepTokenizer_GetNextToken();
         }
-        type = declaration.dtype;
+        type = declaration.thetype;
         if (type->type == TYPEPOINTER && (((TypePointer *)type)->qual & Q_REFERENCE) != 0) {
             type = ((TypePointer *)type)->target;
         }
@@ -4587,15 +4585,15 @@ unsigned int fn_004f8ae0(const signed char *kind)
     }
 }
 
-UInt32 encode_type_bits(Type *e)
+UInt32 encode_type_bits(TypeKind *e)
 {
     switch ((SInt8)e->type) {
         case TYPEINT:
-            return encode_kind(e->array[0].integral) | 0x100;
+            return encode_kind(e->u.integral) | 0x100;
         case TYPEFLOAT:
-            return encode_kind(e->array[0].integral) | 0x200;
+            return encode_kind(e->u.integral) | 0x200;
         case TYPEENUM:
-            return (encode_type_bits(e->array[0].enumtype) & 0xff) | 0x400;
+            return (encode_type_bits(e->u.tenum.enumtype) & 0xff) | 0x400;
         case TYPEPOINTER:
             return 0x800;
         case TYPEARRAY:
@@ -4698,7 +4696,7 @@ ENode *scan_vec_step(void)
             } else {
                 tk = CPrepTokenizer_GetNextToken();
             }
-            ty = decl.dtype;
+            ty = decl.thetype;
             if (ty->type == TYPEPOINTER && (TYPE_POINTER(ty)->qual & Q_REFERENCE) != 0) {
                 ty = TPTR_TARGET(ty);
             }
@@ -4742,24 +4740,24 @@ ENode *make_scope_parse_result_expr(CScopeParseResult *nameResult, ENode *expr, 
 {
     ENode *result;
     Object *object;
-    MemberFuncRef *memberRef;
+    EMemberInfo *memberRef;
     NameSpaceObjectList *overload;
     UInt8 datatype;
 
     if (nameResult->type.base) {
         if (copts.cplusplus) {
             if (nameResult->type.base->type == TYPETEMPLATE) {
-                if (TYPE_TEMPLDEP(nameResult->type.base)->kind == 0 &&
-                    !TYPE_TEMPLDEP(nameResult->type.base)->u.pid.type) {
+                if (TYPE_TEMPLATE(nameResult->type.base)->dtype == 0 &&
+                    !TYPE_TEMPLATE(nameResult->type.base)->u.pid.type) {
                     result = CExpr2_NewENEWEXCEPTIONARRAYNode(0);
-                    result->data.templdep.pid = (UInt32)TYPE_TEMPLDEP(nameResult->type.base)->u.qual.type;
+                    result->data.templdep.pid = (UInt32)TYPE_TEMPLATE(nameResult->type.base)->u.qual.type;
                     tk = CPrepTokenizer_GetNextToken();
                     return result;
                 }
-                if (TYPE_TEMPLDEP(nameResult->type.base)->kind == 1 && !nameResult->is_type) {
+                if (TYPE_TEMPLATE(nameResult->type.base)->dtype == 1 && !nameResult->is_type) {
                     result = CExpr2_NewENEWEXCEPTIONARRAYNode(4);
-                    result->data.templdep.pid = (UInt32)TYPE_TEMPLDEP(nameResult->type.base)->u.qual.type;
-                    result->data.templdep.name = (UInt32)TYPE_TEMPLDEP(nameResult->type.base)->u.qual.name;
+                    result->data.templdep.pid = (UInt32)TYPE_TEMPLATE(nameResult->type.base)->u.qual.type;
+                    result->data.templdep.name = (UInt32)TYPE_TEMPLATE(nameResult->type.base)->u.qual.name;
                     tk = CPrepTokenizer_GetNextToken();
                     return result;
                 }
@@ -4918,10 +4916,10 @@ ENode *make_scope_parse_result_expr(CScopeParseResult *nameResult, ENode *expr, 
                 CError_FATAL(1429);
         }
 
-        memberRef = CompilerTools_AllocatePool(sizeof(MemberFuncRef));
-        memclrw(memberRef, sizeof(MemberFuncRef));
-        memberRef->bcl = nameResult->basePath;
-        memberRef->expression = expr;
+        memberRef = CompilerTools_AllocatePool(sizeof(EMemberInfo));
+        memclrw(memberRef, sizeof(EMemberInfo));
+        memberRef->path = nameResult->basePath;
+        memberRef->expr = expr;
         memberRef->is_qualified = nameResult->is_qualified;
         memberRef->isambig = nameResult->isambig;
         tk = CPrepTokenizer_GetNextToken();
@@ -4937,7 +4935,7 @@ ENode *make_scope_parse_result_expr(CScopeParseResult *nameResult, ENode *expr, 
         }
         result = CExpr_NewENode(ENEWEXCEPTIONARRAY);
         result->rtype = &stvoid;
-        result->data.memberfunc = memberRef;
+        result->data.emember = memberRef;
         return result;
     }
 
@@ -4950,17 +4948,17 @@ ENode *make_scope_parse_result_expr(CScopeParseResult *nameResult, ENode *expr, 
                 if (overload->object->otype == OT_OBJECT && OBJECT(overload->object)->type->type == TYPEFUNC &&
                     (TYPE_FUNC(OBJECT(overload->object)->type)->flags & FUNC_METHOD) &&
                     !TYPE_METHOD(OBJECT(overload->object)->type)->is_static) {
-                    memberRef = CompilerTools_AllocatePool(sizeof(MemberFuncRef));
-                    memclrw(memberRef, sizeof(MemberFuncRef));
-                    memberRef->bcl = nameResult->basePath;
-                    memberRef->expression = expr;
+                    memberRef = CompilerTools_AllocatePool(sizeof(EMemberInfo));
+                    memclrw(memberRef, sizeof(EMemberInfo));
+                    memberRef->path = nameResult->basePath;
+                    memberRef->expr = expr;
                     memberRef->list = result->data.objlist.list;
                     memberRef->templargs = result->data.objlist.templargs;
                     memberRef->is_qualified = nameResult->is_qualified;
                     memberRef->isambig = nameResult->isambig;
                     result = CExpr_NewENode(ENEWEXCEPTIONARRAY);
                     result->rtype = &stvoid;
-                    result->data.memberfunc = memberRef;
+                    result->data.emember = memberRef;
                     return result;
                 }
             }
@@ -4970,16 +4968,16 @@ ENode *make_scope_parse_result_expr(CScopeParseResult *nameResult, ENode *expr, 
             if (overload->object->otype == OT_OBJECT && OBJECT(overload->object)->type->type == TYPEFUNC &&
                 (TYPE_FUNC(OBJECT(overload->object)->type)->flags & FUNC_METHOD) &&
                 !TYPE_METHOD(OBJECT(overload->object)->type)->is_static) {
-                memberRef = CompilerTools_AllocatePool(sizeof(MemberFuncRef));
-                memclrw(memberRef, sizeof(MemberFuncRef));
-                memberRef->bcl = nameResult->basePath;
-                memberRef->expression = expr;
+                memberRef = CompilerTools_AllocatePool(sizeof(EMemberInfo));
+                memclrw(memberRef, sizeof(EMemberInfo));
+                memberRef->path = nameResult->basePath;
+                memberRef->expr = expr;
                 memberRef->list = nameResult->objects;
                 memberRef->is_qualified = nameResult->is_qualified;
                 memberRef->isambig = nameResult->isambig;
                 result = CExpr_NewENode(ENEWEXCEPTIONARRAY);
                 result->rtype = &stvoid;
-                result->data.memberfunc = memberRef;
+                result->data.emember = memberRef;
                 return result;
             }
         }
@@ -5392,8 +5390,7 @@ ENode *CExpr_PointerGeneration(ENode *node)
         case TYPESTRUCT:
             switch ((signed char)node->rtype->type) {
                 case TYPEARRAY:
-                    node->data.monadic->rtype =
-                        (Type *)CDecl_NewPointerType(((TypeMemberPointer *)node->rtype)->memberType);
+                    node->data.monadic->rtype = (Type *)CDecl_NewPointerType(((TypeMemberPointer *)node->rtype)->ty1);
                     return node->data.monadic;
                 case TYPEFUNC:
                     return node->data.monadic;
@@ -5424,11 +5421,11 @@ ENode *pointer_generation(ENode *node)
                         case EPREINC:
                         case EPREDEC:
                             node->type = ETYPCON;
-                            node->rtype = CDecl_NewPointerType(node->rtype->array[0].element);
+                            node->rtype = CDecl_NewPointerType(TPTR_TARGET(node->rtype));
                             result = node;
                             return result;
                         default:
-                            node->data.monadic->rtype = CDecl_NewPointerType(node->rtype->array[0].element);
+                            node->data.monadic->rtype = CDecl_NewPointerType(TPTR_TARGET(node->rtype));
                             node->data.monadic->flags = node->flags;
                             result = node->data.monadic;
                             return result;

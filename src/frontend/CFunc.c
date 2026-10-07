@@ -610,41 +610,41 @@ void setup_function_arguments(Object *function, DeclInfo *body, Statement *state
                 }
                 memclrw(&declaration, sizeof(declaration));
                 CParser_GetDeclSpecs((DeclInfo *)&declaration, 0);
-                declarationType = declaration.dtype;
-                if ((short)declaration.storage != 0 && (short)declaration.storage != 257) {
+                declarationType = declaration.thetype;
+                if ((short)declaration.storageclass != 0 && (short)declaration.storageclass != 257) {
                     CError_ReportError(ERR_ILLEGAL_FUNCTION_DEFINITION);
                 }
                 for (;;) {
-                    declaration.dtype = declarationType;
+                    declaration.thetype = declarationType;
                     declaration.name = NULL;
                     CDecl_ParseDeclarator(&declaration);
                     if (declaration.name == NULL) {
                         CError_ReportError(ERR_IDENTIFIER_EXPECTED);
                         break;
                     }
-                    switch ((signed char)declaration.dtype->type) {
+                    switch ((signed char)declaration.thetype->type) {
                         case TYPECLASS:
-                            if (((TypeClass *)declaration.dtype)->sominfo != NULL) {
+                            if (((TypeClass *)declaration.thetype)->sominfo != NULL) {
                                 CError_ReportError(ERR_FUNCTIONS_CANNOT_SOM_CLASS_ARGUMENTS);
-                                declaration.dtype = (Type *)&stsignedint;
+                                declaration.thetype = (Type *)&stsignedint;
                             }
-                            if (CDecl_CheckObjectType(declaration.dtype) == 0) {
-                                declaration.dtype = (Type *)&stsignedint;
+                            if (CDecl_CheckObjectType(declaration.thetype) == 0) {
+                                declaration.thetype = (Type *)&stsignedint;
                             }
                             break;
                         case TYPEFUNC:
-                            CDecl_WrapTypePointer(&declaration.dtype, 0);
+                            CDecl_WrapTypePointer(&declaration.thetype, 0);
                             break;
                         case TYPEARRAY:
-                            declaration.dtype = CDecl_NewPointerType(((TypePointer *)declaration.dtype)->target);
+                            declaration.thetype = CDecl_NewPointerType(((TypePointer *)declaration.thetype)->target);
                             break;
                         default:
-                            if (CDecl_CheckObjectType(declaration.dtype) == 0) {
-                                declaration.dtype = (Type *)&stsignedint;
+                            if (CDecl_CheckObjectType(declaration.thetype) == 0) {
+                                declaration.thetype = (Type *)&stsignedint;
                             }
                             break;
                     }
-                    CanAllocObject(declaration.dtype);
+                    CanAllocObject(declaration.thetype);
                     candidate = arguments;
                     name = declaration.name;
                     while (candidate != NULL) {
@@ -659,8 +659,8 @@ void setup_function_arguments(Object *function, DeclInfo *body, Statement *state
                         if (parameter->type != NULL) {
                             CError_ReportError(ERR_OBJECT_REDEFINED, parameter);
                         }
-                        parameter->type = declaration.dtype;
-                        parameter->sclass = declaration.storage;
+                        parameter->type = declaration.thetype;
+                        parameter->sclass = declaration.storageclass;
                         parameter->qual = declaration.qual;
                     } else {
                         CError_ReportError(ERR_ILLEGAL_FUNCTION_DEFINITION);
@@ -1755,11 +1755,11 @@ ENode *parse_declarations(char mode, int singleDeclaration, char allowEmpty, cha
         memclrw(&declarationState, sizeof(declarationState));
         declarationState.requireMangledName = data_0058088c;
         CParser_GetDeclSpecs(&declarationState, 0);
-        if (declarationState.dtype->type == TYPETEMPLATE) {
+        if (declarationState.thetype->type == TYPETEMPLATE) {
             CError_ReportError(ERR_ILLEGAL_TYPE);
-            declarationState.dtype = (Type *)&stsignedint;
+            declarationState.thetype = (Type *)&stsignedint;
         }
-        baseType = declarationState.dtype;
+        baseType = declarationState.thetype;
         baseQualifiers = declarationState.qual;
         if (tk != ';') {
             for (;;) {
@@ -1767,8 +1767,8 @@ ENode *parse_declarations(char mode, int singleDeclaration, char allowEmpty, cha
                 declarationState.name = NULL;
                 CDecl_ParseDeclarator(&declarationState);
                 if (declarationState.name != NULL) {
-                    if (declarationState.storage != TK_TYPEDEF) {
-                        if (declarationState.dtype->type == TYPEFUNC) {
+                    if (declarationState.storageclass != TK_TYPEDEF) {
+                        if (declarationState.thetype->type == TYPEFUNC) {
                             if (CDecl_FunctionDeclarator(&declarationState, CScope_FindGlobalNS(currentNameSpace), 0,
                                                          0) == 0)
                                 break;
@@ -1789,7 +1789,7 @@ ENode *parse_declarations(char mode, int singleDeclaration, char allowEmpty, cha
                     break;
                 }
                 declarationState.nspace = NULL;
-                declarationState.dtype = baseType;
+                declarationState.thetype = baseType;
                 declarationState.qual = baseQualifiers;
                 tk = CPrepTokenizer_GetNextToken();
             }
@@ -1844,7 +1844,7 @@ void declare_local_object(DeclInfo *declaration, TStreamElement *declarationToke
 
     if (declaration->nspace != NULL)
         CError_ReportError(ERR_DECLARATION_SYNTAX_ERROR);
-    CDecl_CompleteType(declaration->dtype);
+    CDecl_CompleteType(declaration->thetype);
     existing = NULL;
     objects = CScope_FindName(currentNameSpace, declaration->name);
     if (objects != NULL) {
@@ -1869,7 +1869,7 @@ void declare_local_object(DeclInfo *declaration, TStreamElement *declarationToke
     if (existing != NULL)
         CError_ReportError(ERR_OBJECT_REDEFINED, existing);
 
-    if (declaration->storage == STORAGE_EXTERN) {
+    if (declaration->storageclass == STORAGE_EXTERN) {
         found = NULL;
         scope = CScope_FindGlobalNS(currentNameSpace);
         objects = CScope_FindName(scope, declaration->name);
@@ -1893,11 +1893,11 @@ void declare_local_object(DeclInfo *declaration, TStreamElement *declarationToke
             }
         }
         if (found != NULL) {
-            if (iscpp_typeequal(declaration->dtype, found->type) == 0 ||
+            if (iscpp_typeequal(declaration->thetype, found->type) == 0 ||
                 (declaration->qual & (Q_CV | Q_PASCAL | Q_IMPLICIT_WEAK | Q_WEAK | Q_ALIGNED_MASK)) !=
                     (found->qual & (Q_CV | Q_PASCAL | Q_IMPLICIT_WEAK | Q_WEAK | Q_ALIGNED_MASK)))
                 CError_ReportError(ERR_IDENTIFIER_REDECLARED_WAS_DECLARED_AS_NOW, declaration->name->name, found->type,
-                                   found->qual, declaration->dtype, declaration->qual);
+                                   found->qual, declaration->thetype, declaration->qual);
         } else {
             found = CParser_NewObject(declaration);
             found->nspace = scope;
@@ -1906,16 +1906,16 @@ void declare_local_object(DeclInfo *declaration, TStreamElement *declarationToke
         return;
     }
 
-    if (declaration->storage != STORAGE_STATIC)
+    if (declaration->storageclass != STORAGE_STATIC)
         object = CParser_CreateObject(declaration);
     else
         object = CParser_NewObject(declaration);
     object->name = declaration->name;
-    object->type = declaration->dtype;
+    object->type = declaration->thetype;
     object->qual = declaration->qual;
-    object->sclass = declaration->storage;
+    object->sclass = declaration->storageclass;
 
-    switch (declaration->storage) {
+    switch (declaration->storageclass) {
         case STORAGE_STATIC:
             if (isParameter != 0) {
                 CError_ReportError(ERR_ILLEGAL_STORAGE_CLASS);
@@ -1923,7 +1923,7 @@ void declare_local_object(DeclInfo *declaration, TStreamElement *declarationToke
             }
             if (forbidInitialization != 0)
                 CError_ReportError(ERR_ILLEGAL_INITIALIZATION);
-            if (CDecl_CheckObjectType(declaration->dtype) == 0)
+            if (CDecl_CheckObjectType(declaration->thetype) == 0)
                 break;
             CError_ReportIllegalFlags(declaration->qual &
                                       ~(Q_CV | Q_PASCAL | Q_IMPLICIT_WEAK | Q_WEAK | Q_ALIGNED_MASK));
@@ -1966,7 +1966,7 @@ void declare_local_object(DeclInfo *declaration, TStreamElement *declarationToke
         case 0:
         case TK_AUTO:
         case TK_REGISTER: {
-            if (CDecl_CheckObjectType(declaration->dtype) != 0) {
+            if (CDecl_CheckObjectType(declaration->thetype) != 0) {
                 CError_ReportIllegalFlags(declaration->qual & ~(Q_CV | Q_PASCAL | Q_ALIGNED_MASK));
                 object->datatype = DLOCAL;
                 object->u.var.info = CPrep_AllocateVarInfo();
@@ -1984,12 +1984,12 @@ void declare_local_object(DeclInfo *declaration, TStreamElement *declarationToke
                     object->u.var.info->usage = 100;
                 CScope_AddObject(currentNameSpace, object->name, (ObjBase *)object);
                 if (isParameter == 0) {
-                    if (declaration->dtype->type == TYPECLASS && TYPE_CLASS(declaration->dtype)->sominfo != NULL) {
+                    if (declaration->thetype->type == TYPECLASS && TYPE_CLASS(declaration->thetype)->sominfo != NULL) {
                         CSOM_004e4390(object);
                     } else {
                         CInit_InitializeAutoData(object, append_or_defer_expression_statement,
                                                  register_destructor_object);
-                        if (object->type != declaration->dtype) {
+                        if (object->type != declaration->thetype) {
                             if (object->type->type == TYPESTRUCT || object->type->type == TYPECLASS) {
                                 CError_ASSERT(1675, currentNameSpace->is_hash == 0);
                                 entry = CScope_FindNameSpaceName(currentNameSpace, object->name);
@@ -1998,7 +1998,7 @@ void declare_local_object(DeclInfo *declaration, TStreamElement *declarationToke
                                 CError_ASSERT(1678, entry->first.next == 0);
                                 entry->name = CParser_AppendUniqueName(object->name->name);
                                 found = CParser_NewAliasObject(object, 0);
-                                found->type = declaration->dtype;
+                                found->type = declaration->thetype;
                             }
                         }
                     }
@@ -2009,7 +2009,7 @@ void declare_local_object(DeclInfo *declaration, TStreamElement *declarationToke
                     local->next = locals;
                     locals = local;
                 }
-                (void)CanAllocObject(declaration->dtype);
+                (void)CanAllocObject(declaration->thetype);
             }
             break;
         }
@@ -3058,42 +3058,42 @@ unsigned int parse_func_args(int parameter)
         if (decl.missingTypeSpecifier != 0) {
             CError_ReportError(ERR_ILLEGAL_FUNCTION_DEFINITION);
         }
-        if ((storageClass = decl.storage) != 0 && (int)storageClass != 257 &&
+        if ((storageClass = decl.storageclass) != 0 && (int)storageClass != 257 &&
             (copts.cplusplus == 0 || (int)storageClass != 256)) {
             CError_ReportError(ERR_ILLEGAL_FUNCTION_DEFINITION);
-            decl.storage = 0;
+            decl.storageclass = 0;
         }
         decl.name = NULL;
         CDecl_ParseDeclarator(&decl);
         if (first != 0) {
             first = 0;
-            if (decl.dtype == &stvoid) {
-                if (decl.storage != 0 || decl.qual != 0 || decl.name != NULL) {
+            if (decl.thetype == &stvoid) {
+                if (decl.storageclass != 0 || decl.qual != 0 || decl.name != NULL) {
                     CError_ReportError(ERR_ILLEGAL_FUNCTION_DEFINITION);
                 }
                 return 0;
             }
         }
-        isArray = decl.dtype->type == TYPEARRAY;
-        switch ((signed char)decl.dtype->type) {
+        isArray = decl.thetype->type == TYPEARRAY;
+        switch ((signed char)decl.thetype->type) {
             case TYPECLASS:
-                if (((TypeClass *)decl.dtype)->sominfo != NULL) {
+                if (((TypeClass *)decl.thetype)->sominfo != NULL) {
                     CError_ReportError(ERR_FUNCTIONS_CANNOT_SOM_CLASS_ARGUMENTS);
-                    decl.dtype = (Type *)&stsignedint;
+                    decl.thetype = (Type *)&stsignedint;
                 }
-                if (CDecl_CheckObjectType(decl.dtype) == 0) {
-                    decl.dtype = (Type *)&stsignedint;
+                if (CDecl_CheckObjectType(decl.thetype) == 0) {
+                    decl.thetype = (Type *)&stsignedint;
                 }
                 break;
             case TYPEFUNC:
-                CDecl_WrapTypePointer(&decl.dtype, 0);
+                CDecl_WrapTypePointer(&decl.thetype, 0);
                 break;
             case TYPEARRAY:
-                decl.dtype = CDecl_NewPointerType(decl.dtype->array[0].element);
+                decl.thetype = CDecl_NewPointerType(TPTR_TARGET(decl.thetype));
                 break;
             default:
-                if (CDecl_CheckObjectType(decl.dtype) == 0) {
-                    decl.dtype = (Type *)&stsignedint;
+                if (CDecl_CheckObjectType(decl.thetype) == 0) {
+                    decl.thetype = (Type *)&stsignedint;
                 }
                 break;
         }
@@ -3107,14 +3107,14 @@ unsigned int parse_func_args(int parameter)
         } else {
             decl.name = unnamed_name;
         }
-        if (decl.dtype == &stvoid) {
+        if (decl.thetype == &stvoid) {
             CError_ReportError(ERR_ILLEGAL_USE_VOID);
         }
         arg = CParser_NewFuncArg();
         arg->name = decl.name;
-        arg->type = decl.dtype;
+        arg->type = decl.thetype;
         arg->qual = decl.qual;
-        arg->sclass = decl.storage;
+        arg->sclass = decl.storageclass;
         arg->is_array = isArray;
         if ((last = args) != NULL) {
             while (last->next != NULL) {

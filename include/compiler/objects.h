@@ -105,18 +105,12 @@ struct InlineXRef {
     } xref[1];
 };
 #pragma options align = reset
-/* sizeof(Object) is 0x36: every allocation site requests 54 bytes, so the
- * union at 0x26 is 16 bytes wide. Field positions verified in this build:
- * datatype 0x02, nspace 0x06, name 0x0a, type 0x0e, qual 0x12, flags 0x18,
- * union 0x26. The remaining positions follow the reference order and still
- * need confirmation. */
 #pragma options align = mac68k
 struct Object {
     UInt8 otype;
     UInt8 access;
     UInt8 datatype;
-    UInt8 unk03;
-    UInt16 extraQualifiers;
+    UInt16 section;
     NameSpace *nspace;
     HashNameNode *name;
     Type *type;
