@@ -33,6 +33,7 @@
 #include "driver/Resources.h"
 #include "driver/cc-eabi-ppc-mw.h"
 #include <string.h>
+#include <setjmp.h>
 unsigned int __stdcall copy_global_value_to_address(unsigned int destinationAddress)
 {
     *(SInt32 *)destinationAddress = data_00541e44;
@@ -573,7 +574,7 @@ unsigned int CLMain_InitializeAndParseCommandLine(void)
 {
     unsigned int result;
 
-    result = fn_0041b370(driver_jmp_buf);
+    result = setjmp(driver_jmp_buf);
     if (!result) {
         if (!create_cmdline_data_blocks())
             CLErrors_FatalError("Could not initialize preferences");

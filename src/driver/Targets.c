@@ -470,7 +470,7 @@ void Targets_ParseArguments(int argc, char **argv)
     if (argc > 1) {
         if (memcmp(argv[1], "--parser-debug", 15) == 0) {
             data_00588519 = 1;
-            fn_00404ba0((argv + 1), (argv + 2), (argc - 1) * sizeof(*argv));
+            memmove((argv + 1), (argv + 2), (argc - 1) * sizeof(*argv));
             argc--;
         }
     }
@@ -513,17 +513,17 @@ void Targets_ParseArguments(int argc, char **argv)
         Targets_ForwardVarArgsAndLongjmp("Unknown parser compatibility type (%d)\n", data_0054aa78);
     }
     if (data_00588519 != 0) {
-        fn_00403ae0("Incoming arguments: \n");
+        printf("Incoming arguments: \n");
         for (argumentIndex = 0; argumentIndex < argc; argumentIndex++)
-            fn_00403ae0("[%s] ", argv[argumentIndex]);
-        fn_00403ae0("\n");
+            printf("[%s] ", argv[argumentIndex]);
+        printf("\n");
     }
     initialize_arguments(argc, argv);
     tokenize_arguments();
     fn_0040f960();
     if (data_00588519 != 0) {
         for (resultIndex = 0; resultIndex < coalesced_argument_count; resultIndex++) {
-            fn_00403ae0("TOKEN:  '%s'\n", Targets_GetTokenTextDescription(token_texts + resultIndex));
+            printf("TOKEN:  '%s'\n", Targets_GetTokenTextDescription(token_texts + resultIndex));
         }
     }
 }

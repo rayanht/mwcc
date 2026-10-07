@@ -1089,6 +1089,8 @@
       "-O4,p",
       "-inline",
       "auto",
+      "-opt",
+      "nointrinsics",
       "-sym",
       "off",
       "-Cpp_exceptions",

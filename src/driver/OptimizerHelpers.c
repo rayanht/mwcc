@@ -21,7 +21,7 @@ int fn_0040d8c0(short option, int input, int output, int flags)
     if (data_0054a2f8 != '\0') {
         Option_ForwardVarArgs(0x3e);
     }
-    fn_00404c70(&data_0054a2fc, 0, 7);
+    memset(&data_0054a2fc, 0, 7);
     fn_00420700();
     return 1;
 }

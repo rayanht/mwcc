@@ -252,7 +252,7 @@ static inline void expectToken(SInt16 tok, SInt16 err)
     if (tk != tok) {
         SInt16 e = err;
         if (DAT_00587f18 != 0)
-            fn_0041b390(data_00583a68, 1);
+            longjmp(data_00583a68, 1);
         if (tk == TK_EOL || tk == ';')
             e = 0x70;
         CError_ReportError(e);
@@ -274,7 +274,7 @@ void InlineAsm_ParseAsmStatement(void)
 }
 void parse_asm_lines(volatile SInt16 endToken, int parseOption)
 {
-    if (fn_0041b370(inlineAsmJmpBuf) != 0) {
+    if (setjmp(inlineAsmJmpBuf) != 0) {
         while (tk != TK_EOL && tk != endToken && tk != '}' && tk != 0)
             tk = CPrepTokenizer_GetNextToken();
         if (tk == ';' || tk == TK_EOL)
@@ -282,7 +282,7 @@ void parse_asm_lines(volatile SInt16 endToken, int parseOption)
         return;
     }
     InlineAsmPPC_Init(parseOption);
-    if (fn_0041b370(inlineAsmJmpBuf) != 0) {
+    if (setjmp(inlineAsmJmpBuf) != 0) {
         while (tk != ';' && tk != TK_EOL && tk != endToken && tk != '}' && tk != 0)
             tk = CPrepTokenizer_GetNextToken();
         if (tk == ';' || tk == TK_EOL)

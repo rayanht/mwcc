@@ -247,139 +247,137 @@ void dump_linear_node(IROLinear *node)
     if (INT_005882b8 == 0)
         return;
 
-    fn_00403b40(iro_dump_output, "%4d: ", node->index);
+    fprintf(iro_dump_output, "%4d: ", node->index);
     switch (node->type) {
         case IROLinearNop:
-            fn_00403b40(iro_dump_output, "Nop");
+            fprintf(iro_dump_output, "Nop");
             break;
         case IROLinearOperand:
-            fn_00403b40(iro_dump_output, "Operand ");
+            fprintf(iro_dump_output, "Operand ");
             operand = node->u.node;
             if (INT_005882b8 != 0) {
                 switch (operand->type) {
                     case '8':
-                        fn_00403b40(iro_dump_output, "%s", operand->data.objref->name->name);
+                        fprintf(iro_dump_output, "%s", operand->data.objref->name->name);
                         break;
                     case '2':
                         integer = operand;
                         CExpr2_FormatCInt64Decimal(buffer, integer->data.intval);
-                        fn_00403b40(iro_dump_output, "%s", buffer);
+                        fprintf(iro_dump_output, "%s", buffer);
                         break;
                     case '3':
-                        fn_00403b40(iro_dump_output, "%g", operand->data.floatval.data.value);
+                        fprintf(iro_dump_output, "%g", operand->data.floatval.data.value);
                         break;
                     case 'J':
-                        fn_00403b40(iro_dump_output, "%.8lX%.8lX%.8lX%.8lX", operand->data.vector128.longElements[0],
-                                    operand->data.vector128.longElements[1], operand->data.vector128.longElements[2],
-                                    operand->data.vector128.longElements[3]);
+                        fprintf(iro_dump_output, "%.8lX%.8lX%.8lX%.8lX", operand->data.vector128.longElements[0],
+                                operand->data.vector128.longElements[1], operand->data.vector128.longElements[2],
+                                operand->data.vector128.longElements[3]);
                         break;
                 }
             }
             break;
         case IROLinearOp1Arg:
-            fn_00403b40(iro_dump_output, "%s %d", PTR_s_EPOSTINC_0055268c[node->nodetype],
-                        ((IROLinear *)node->u.diadic.left)->index);
+            fprintf(iro_dump_output, "%s %d", PTR_s_EPOSTINC_0055268c[node->nodetype],
+                    ((IROLinear *)node->u.diadic.left)->index);
             break;
         case IROLinearOp2Arg:
-            fn_00403b40(iro_dump_output, "%s %d %d", PTR_s_EPOSTINC_0055268c[node->nodetype],
-                        ((IROLinear *)node->u.diadic.left)->index, node->u.diadic.right->index);
+            fprintf(iro_dump_output, "%s %d %d", PTR_s_EPOSTINC_0055268c[node->nodetype],
+                    ((IROLinear *)node->u.diadic.left)->index, node->u.diadic.right->index);
             break;
         case IROLinearGoto:
-            fn_00403b40(iro_dump_output, "Goto %s", ((CLabel *)node->u.label)->name->name);
+            fprintf(iro_dump_output, "Goto %s", ((CLabel *)node->u.label)->name->name);
             break;
         case IROLinearIf:
-            fn_00403b40(iro_dump_output, "If %d %s", node->u.diadic.right->index,
-                        ((CLabel *)node->u.label)->name->name);
+            fprintf(iro_dump_output, "If %d %s", node->u.diadic.right->index, ((CLabel *)node->u.label)->name->name);
             break;
         case IROLinearIfNot:
-            fn_00403b40(iro_dump_output, "IfNot %d %s", node->u.diadic.right->index,
-                        ((CLabel *)node->u.label)->name->name);
+            fprintf(iro_dump_output, "IfNot %d %s", node->u.diadic.right->index, ((CLabel *)node->u.label)->name->name);
             break;
         case IROLinearReturn:
-            fn_00403b40(iro_dump_output, "Return ");
+            fprintf(iro_dump_output, "Return ");
             if (node->u.diadic.left != NULL) {
-                fn_00403b40(iro_dump_output, "%d", ((IROLinear *)node->u.diadic.left)->index);
+                fprintf(iro_dump_output, "%d", ((IROLinear *)node->u.diadic.left)->index);
             }
             break;
         case IROLinearLabel:
-            fn_00403b40(iro_dump_output, "Label %s", ((CLabel *)node->u.label)->name->name);
+            fprintf(iro_dump_output, "Label %s", ((CLabel *)node->u.label)->name->name);
             break;
         case IROLinearSwitch:
-            fn_00403b40(iro_dump_output, "Switch %d", node->u.diadic.right->index);
+            fprintf(iro_dump_output, "Switch %d", node->u.diadic.right->index);
             break;
         case IROLinearFunccall:
-            fn_00403b40(iro_dump_output, "Funccall %d(", node->u.funccall.callee->index);
+            fprintf(iro_dump_output, "Funccall %d(", node->u.funccall.callee->index);
             for (index = 0; index < node->u.funccall.argCount; ++index) {
-                fn_00403b40(iro_dump_output, "%d", node->u.funccall.args[index]->index);
+                fprintf(iro_dump_output, "%d", node->u.funccall.args[index]->index);
                 if (index < node->u.funccall.argCount - 1) {
-                    fn_00403b40(iro_dump_output, ",");
+                    fprintf(iro_dump_output, ",");
                 }
             }
-            fn_00403b40(iro_dump_output, ")");
+            fprintf(iro_dump_output, ")");
             break;
         case IROLinearBeginCatch:
-            fn_00403b40(iro_dump_output, "BeginCatch %d", ((IROLinear *)node->u.diadic.left)->index);
+            fprintf(iro_dump_output, "BeginCatch %d", ((IROLinear *)node->u.diadic.left)->index);
             break;
         case IROLinearEndCatch:
-            fn_00403b40(iro_dump_output, "EndCatch %d", ((IROLinear *)node->u.diadic.left)->index);
+            fprintf(iro_dump_output, "EndCatch %d", ((IROLinear *)node->u.diadic.left)->index);
             break;
         case IROLinearEndCatchDtor:
-            fn_00403b40(iro_dump_output, "EndCatchDtor %d", ((IROLinear *)node->u.diadic.left)->index);
+            fprintf(iro_dump_output, "EndCatchDtor %d", ((IROLinear *)node->u.diadic.left)->index);
             break;
         case IROLinearEnd:
-            fn_00403b40(iro_dump_output, "End");
+            fprintf(iro_dump_output, "End");
             break;
     }
     if ((node->flags & IROLF_Assigned) != 0) {
-        fn_00403b40(iro_dump_output, " <assigned>");
+        fprintf(iro_dump_output, " <assigned>");
     }
     if ((node->flags & IROLF_Used) != 0) {
-        fn_00403b40(iro_dump_output, " <used>");
+        fprintf(iro_dump_output, " <used>");
     }
     if ((node->flags & IROLF_Ind) != 0) {
-        fn_00403b40(iro_dump_output, " <ind>");
+        fprintf(iro_dump_output, " <ind>");
     }
     if ((node->flags & IROLF_Subs) != 0) {
-        fn_00403b40(iro_dump_output, " <subs>");
+        fprintf(iro_dump_output, " <subs>");
     }
     if ((node->flags & IROLF_LoopInvariant) != 0) {
-        fn_00403b40(iro_dump_output, " <loop invariant>");
+        fprintf(iro_dump_output, " <loop invariant>");
     }
     if ((node->flags & IROLF_BeginLoop) != 0) {
-        fn_00403b40(iro_dump_output, " <begin loop>");
+        fprintf(iro_dump_output, " <begin loop>");
     }
     if ((node->flags & IROLF_EndLoop) != 0) {
-        fn_00403b40(iro_dump_output, " <end loop>");
+        fprintf(iro_dump_output, " <end loop>");
     }
     if ((node->flags & IROLF_Ris) != 0) {
-        fn_00403b40(iro_dump_output, " <ris>");
+        fprintf(iro_dump_output, " <ris>");
     }
     if ((node->flags & IROLF_Immind) != 0) {
-        fn_00403b40(iro_dump_output, " <immind>");
+        fprintf(iro_dump_output, " <immind>");
     }
     if ((node->flags & IROLF_Reffed) != 0) {
-        fn_00403b40(iro_dump_output, " <reffed>");
+        fprintf(iro_dump_output, " <reffed>");
     }
     if ((node->flags & IROLF_VecOp) != 0) {
-        fn_00403b40(iro_dump_output, " <vec op>");
+        fprintf(iro_dump_output, " <vec op>");
     }
     if ((node->flags & IROLF_VecOpBase) != 0) {
-        fn_00403b40(iro_dump_output, " <vec op_base>");
+        fprintf(iro_dump_output, " <vec op_base>");
     }
     if ((node->flags & IROLF_CounterLoop) != 0) {
-        fn_00403b40(iro_dump_output, " <counter loop>");
+        fprintf(iro_dump_output, " <counter loop>");
     }
     if ((type = (Type *)node->rtype) != NULL && CParser_IsVolatile(type, node->nodeflags & 3)) {
-        fn_00403b40(iro_dump_output, " <volatile>");
+        fprintf(iro_dump_output, " <volatile>");
     }
     if (node->type == IROLinearOperand) {
         ENode *constant;
         if ((constant = node->u.node)->type == '8') {
             resolvedType = fn_0044ba70(constant->data.objref, 0, 1);
             if (resolvedType != NULL && (char)is_volatile_object(resolvedType->object)) {
-                fn_00403b40(iro_dump_output, " <volatile obj>");
+                fprintf(iro_dump_output, " <volatile obj>");
             }
         }
     }
-    fn_00403b40(iro_dump_output, "\n");
+    fprintf(iro_dump_output, "\n");
 }

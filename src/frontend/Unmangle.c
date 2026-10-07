@@ -930,12 +930,12 @@ static inline char *scan_component(int *context, MOutBuf *output, char *cursor, 
     p = cursor;
     while (length-- != 0) {
         if ((c = *p++) == 0)
-            fn_0041b390(context, 1);
+            longjmp(context, 1);
         if (c == 60) {
             r = unmangle_template_arguments(context, inner, p);
             if ((length = length - ((int)r - (int)p)) == 0)
                 return r;
-            fn_0041b390(context, 1);
+            longjmp(context, 1);
         } else if (output != NULL && output->left != 0) {
             *output->ptr++ = c;
             output->left -= 1;
@@ -957,7 +957,7 @@ char *unmangle_qualified_name(int *context, MOutBuf *output, char *cursor, char 
         cursor += 2;
         componentCount = componentCount - '0';
         if (componentCount < 1 || componentCount > 9) {
-            fn_0041b390(context, 1);
+            longjmp(context, 1);
         }
     } else {
         componentCount = 1;
@@ -967,14 +967,14 @@ char *unmangle_qualified_name(int *context, MOutBuf *output, char *cursor, char 
         if (component != 0 && output != NULL)
             put(output, "::", 2);
         if (*cursor < '0' || *cursor > '9') {
-            fn_0041b390(context, 1);
+            longjmp(context, 1);
         }
         length = 0;
         for (; *cursor >= '0' && *cursor <= '9'; cursor = cursor + 1) {
             length = *cursor + length * 10 - '0';
         }
         if (length == 0) {
-            fn_0041b390(context, 1);
+            longjmp(context, 1);
         }
         lastComponent = cursor;
         lastLength = length;
