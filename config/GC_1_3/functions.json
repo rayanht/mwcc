@@ -14832,13 +14832,13 @@
     "name": "DumpIR_OptimizeStatements",
     "address": "0x004fbf90",
     "size": 149,
-    "source": "src/backend/DumpIR.c"
+    "source": "src/optimizer/COptimizer.c"
   },
   {
     "name": "DumpIR_OptimizeStatementList",
     "address": "0x004fc030",
     "size": 98,
-    "source": "src/backend/DumpIR.c"
+    "source": "src/optimizer/COptimizer.c"
   },
   {
     "name": "fn_004fc0a0",

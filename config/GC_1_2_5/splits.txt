@@ -706,17 +706,17 @@ src/backend/Exceptions.c:
 	.bss        start:0x00581190 end:0x005811B0
 
 src/backend/DumpIR.c:
-	.text       start:0x004BD8F0 end:0x004BEAA0
+	.text       start:0x004BD8F0 end:0x004BE990
 	.data       start:0x005609E8 end:0x005614F0
 	.bss        start:0x005811B0 end:0x005811C0
 
 src/optimizer/COptimizer.c:
-	.text       start:0x004BEAA0 end:0x004C10B0
+	.text       start:0x004BE990 end:0x004C14D0
 	.data       start:0x005614F0 end:0x005619B8
 	.bss        start:0x005811C0 end:0x00581310
 
 src/backend/Registers.c:
-	.text       start:0x004C10B0 end:0x004C2560
+	.text       start:0x004C14D0 end:0x004C2560
 	.data       start:0x005619B8 end:0x00561A30
 	.bss        start:0x00581310 end:0x005813A0
 

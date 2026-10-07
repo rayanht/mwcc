@@ -73,10 +73,6 @@ extern short gVRCoalesceLast;
 extern short gVRCounterCheckpoint;
 extern void Registers_InitRegisterState(void);
 extern UInt32 Registers_GetOperandRegMask(PCodeBlock *list);
-extern void Registers_InvalidateCSE(COptCSE *node);
-extern int Registers_GetCSEWeight(COptCSE *tree);
-extern Boolean Registers_ContainsCOptCSE(COptCSE *target, COptCSE *node);
-extern void Registers_DivideUses(COptCSE *node, SInt16 divisor);
 
 #ifdef __cplusplus
 }

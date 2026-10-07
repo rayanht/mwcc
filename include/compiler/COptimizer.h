@@ -82,22 +82,15 @@ extern void build_opt_blocks(Statement *first);
 extern COptCSE *find_or_create_cse(ENode *expr, COptCSE *left, COptCSE *right);
 extern COptCSE *find_or_create_unary_cse(ENode *expr, COptCSE *left);
 extern void mark_and_propagate_dlocal_reference_bits(void);
-extern struct ENode *last_node;
-extern int DAT_00581308;
-extern SInt16 data_005614f0[];
-extern Boolean optimizer_changed;
-extern struct ENode *current_cse_expr;
-extern SInt16 opt_block_bits_size;
-extern struct COptCSE *cse_entries[75];
-extern struct COptCSE *cse_list;
-extern struct OptimizerOccurrence *occurrence_list;
-extern short data_005812fc;
-extern char data_005812fe;
-extern char data_005812ff;
-extern short data_00581302;
 extern struct CLabel *data_0058802c;
-extern struct COptBlock *current_opt_block;
 extern struct COptBlock *opt_blocks;
+
+extern Statement *DumpIR_OptimizeStatements(Object *object, Statement *statements);
+extern void DumpIR_OptimizeStatementList(Object *object, Statement *statements);
+extern int Registers_GetCSEWeight(COptCSE *tree);
+extern Boolean Registers_ContainsCOptCSE(COptCSE *target, COptCSE *node);
+extern void Registers_DivideUses(COptCSE *node, SInt16 divisor);
+extern void Registers_InvalidateCSE(COptCSE *node);
 
 #ifdef __cplusplus
 }

@@ -28,6 +28,7 @@
 #include "compiler/DWARF.h"
 #include "compiler/DumpIR.h"
 #include "compiler/IROUseDef.h"
+#include "compiler/IrOptimizer.h"
 #include "compiler/InlineAsm.h"
 #include "compiler/InlineAsmPPC.h"
 #include "compiler/IroCSE.h"
@@ -45,6 +46,81 @@
 
 #include <setjmp.h>
 /* Declarations gathered from the merged files. */
+
+static const SInt16 bit_masks[16] = {
+    0x0001, 0x0002, 0x0004, 0x0008, 0x0010, 0x0020, 0x0040, 0x0080,
+    0x0100, 0x0200, 0x0400, 0x0800, 0x1000, 0x2000, 0x4000, 0x8000,
+};
+
+#pragma options align = mac68k
+static Boolean optimizer_changed;
+static struct COptBlock *current_opt_block;
+static struct ENode *current_cse_expr;
+static SInt16 opt_block_bits_size;
+static struct COptCSE *cse_entries[75];
+static struct OptimizerOccurrence *occurrence_list;
+static short data_005812fc;
+static char data_005812fe;
+static char data_005812ff;
+static UInt8 data_00581300;
+static short data_00581302;
+static struct ENode *last_node;
+static int DAT_00581308;
+#pragma options align = reset
+
+static inline void set_statement_location(Statement *statement)
+{
+    current_statement_number = (UInt16)statement->value; /* set_statement_location: unsigned source-location value */
+}
+
+static inline void optimize_expression(Statement *statement)
+{
+    set_statement_location(statement);
+    COptimizer_CountExpressionObjectUses(statement->expr.expression);
+}
+
+Statement *DumpIR_OptimizeStatements(Object *object, Statement *statements)
+{
+    Statement *statement;
+
+    data_00588513 = 1;
+    if (copts.irOptimizationEnabled)
+        statements = IRO_Optimizer(object, statements);
+    data_00581300 = 0;
+    COptimizer_OptimizeStatementList(object, statements);
+    if (object && !(object->qual & Q_INLINE))
+        COptimizer_CheckStmtsForNonVoidFunction(object, statements);
+    for (statement = statements->next; statement; statement = statement->next) {
+        if (statement->type >= ST_EXPRESSION && statement->type <= 15 && statement->expr.expression) {
+            optimize_expression(statement);
+        } else if (statement->type == ST_ASM) {
+            set_statement_location(statement);
+            InlineAsm_RecordObjectUses(statement);
+        }
+    }
+    return statements;
+}
+
+void DumpIR_OptimizeStatementList(Object *object, Statement *statements)
+{
+    Statement *statement;
+
+    statement = statements;
+    if (statements != NULL) {
+        do {
+            if ((ST_EXPRESSION <= statement->type) && (statement->type <= 0xf)) {
+                if (statement->expr.expression != NULL) {
+                    CExpr_SearchExprTree(statement->expr.expression, set_label_stmt_flag, 1, 0x3f);
+                }
+            }
+            statement = statement->next;
+        } while (statement != NULL);
+    }
+    data_00581300 = 1;
+    data_0058802c = NULL;
+    COptimizer_OptimizeStatementList(object, statements);
+    COptimizer_CheckStmtsForNonVoidFunction(object, statements);
+}
 
 void set_label_stmt_flag(ENode *a)
 {
@@ -150,6 +226,291 @@ void COptimizer_CheckStmtsForNonVoidFunction(Object *func, Statement *stmt)
         CheckStmts(stmt);
 }
 
+static inline void COptimizer_SimplifyBranch(Statement *stmt)
+{
+    Statement *node;
+    for (node = stmt->next; node != NULL; node = node->next) {
+        if (stmt->target.label->target.stmt == node) {
+            stmt->type = ST_NOP;
+            optimizer_changed = 1;
+            return;
+        }
+        if (node->type > 2)
+            break;
+    }
+    stmt->target.label = COpt_Follow(stmt, stmt->target.label);
+}
+
+static inline CLabel *COFindOwner(Statement *s)
+{
+    Statement *q;
+    UInt8 kind;
+    SInt32 saved = (SInt32)s->target.label;
+    CLabel *owner = (CLabel *)saved;
+    for (q = ((CLabel *)saved)->target.stmt; q != NULL; q = q->next) {
+        if ((kind = q->type) <= 2)
+            continue;
+        if (q != s && kind == 3) {
+            if (q->target.label != owner)
+                optimizer_changed = 1;
+            return q->target.label;
+        } else {
+            return owner;
+        }
+    }
+    return owner;
+}
+
+static inline CLabel *COFindOwnerPlain(Statement *s)
+{
+    SInt32 saved = (SInt32)s->target.label;
+    CLabel *owner = (CLabel *)saved;
+    Statement *q;
+    for (q = ((CLabel *)saved)->target.stmt; q != NULL; q = q->next) {
+        if (q->type <= 2)
+            continue;
+        if (q != s && q->type == ST_GOTO) {
+            if (q->target.label != owner)
+                optimizer_changed = 1;
+            return q->target.label;
+        } else {
+            return owner;
+        }
+    }
+    return owner;
+}
+
+static inline void clear_words(COptBlock *p, SInt16 i)
+{
+    SInt16 *lo, *hi;
+    lo = p->referenceBits;
+    lo[i] = 0;
+    (hi = p->referenceBarrierBits)[i] = 0;
+}
+
+static inline COptBlock *new_block(void)
+{
+    COptBlock *p;
+    SInt16 i, n;
+
+    p = (COptBlock *)CompilerTools_AllocatePool(opt_block_bits_size * 2 + 0x20);
+    p->flag = 0;
+    p->next = NULL;
+    p->pred = NULL;
+    p->succ = NULL;
+    p->unused = 0;
+    p->referenceBits = (SInt16 *)(p + 1);
+    p->referenceBarrierBits = (SInt16 *)((UInt8 *)p + opt_block_bits_size + 0x20);
+    i = 0;
+    n = opt_block_bits_size / 2;
+    for (; i < n; i++) {
+        clear_words(p, i);
+    }
+    return p;
+}
+
+static inline void add_succ(COptBlock *b, CLabel *owner)
+{
+    COptBlockLink *e;
+
+    e = (COptBlockLink *)CompilerTools_AllocatePool(8);
+    e->next = b->succ;
+    b->succ = e;
+    e->target.statement = owner->target.stmt;
+}
+
+static inline void clear_words2(COptBlock *p, SInt16 i)
+{
+    SInt16 *lo, *hi;
+    lo = p->referenceBits;
+    lo[i] = 0;
+    hi = p->referenceBarrierBits;
+    hi[i] = 0;
+}
+
+static inline COptBlock *new_block2(void)
+{
+    COptBlock *p;
+    SInt16 i, n;
+    p = (COptBlock *)CompilerTools_AllocatePool(opt_block_bits_size * 2 + 0x20);
+    p->flag = 0;
+    p->next = NULL;
+    p->pred = NULL;
+    p->succ = NULL;
+    p->unused = 0;
+    p->referenceBits = (SInt16 *)(p + 1);
+    p->referenceBarrierBits = (SInt16 *)((UInt8 *)p + opt_block_bits_size + 0x20);
+    i = 0;
+    n = opt_block_bits_size / 2;
+    for (; i < n; i++) {
+        clear_words2(p, i);
+    }
+    return p;
+}
+
+static SInt16 TestBit_4bfa30(SInt16 *vec, SInt16 bit)
+{
+    return vec[bit >> 4] & bit_masks[bit & 0xf];
+}
+
+static void SetBit_4bfa30(SInt16 *vec, SInt16 bit)
+{
+    vec[bit >> 4] |= bit_masks[bit & 0xf];
+}
+
+/* Bit mask table referenced at 0x5614f0 (16 words). */
+static inline short tbit(short *p, int w, int b)
+{
+    return bit_masks[b] & p[w];
+}
+
+static inline void sbit(short *p, int w, int b)
+{
+    p[w] |= bit_masks[b];
+}
+
+static SInt16 TestBit(SInt16 *vec, SInt16 bit)
+{
+    return vec[bit >> 4] & bit_masks[bit & 0xf];
+}
+
+static void SetBit(SInt16 *vec, SInt16 bit)
+{
+    vec[bit >> 4] |= bit_masks[bit & 0xf];
+}
+
+static COptCSE *COpt_NewCSE(ENode *expr)
+{
+    COptCSE *cse;
+
+    (cse = (COptCSE *)CompilerTools_AllocatePoolMemory(30))->expr = expr;
+    cse->replacement = NULL;
+    cse->block = current_opt_block;
+    cse->last = current_cse_expr;
+    cse->left = NULL;
+    cse->right = NULL;
+    cse->uses = 1;
+    return cse;
+}
+
+/* Records an occurrence of a common subexpression: the expression and the CSE it computes. */
+static COptCSE *COpt_AddOccurrence(ENode *expr, COptCSE *cse)
+{
+    OptimizerOccurrence *occ = (OptimizerOccurrence *)CompilerTools_AllocatePoolMemory(12);
+
+    occ->next = occurrence_list;
+    occurrence_list = occ;
+    occ->group = cse;
+    occ->expression = expr;
+    return cse;
+}
+
+static COptCSE *COpt_IntConst(ENode *expr)
+{
+    COptCSE *cse;
+    ENode *node;
+
+    for (cse = cse_entries[EINTCONST]; cse; cse = cse->next) {
+        if (expr->rtype == (node = cse->expr)->rtype && CInt64_Equal(node->data.intval, expr->data.intval))
+            return cse;
+    }
+    cse = COpt_NewCSE(expr);
+    cse->next = cse_entries[EINTCONST];
+    cse_entries[EINTCONST] = cse;
+    return cse;
+}
+
+static COptCSE *COpt_FloatConst(ENode *expr)
+{
+    COptCSE *cse;
+    ENode *node;
+    Float value;
+
+    for (cse = cse_entries[EFLOATCONST], value = expr->data.floatval; cse; cse = cse->next) {
+        node = cse->expr;
+        if (CMach_CalcFloatDiadicBool(node->rtype, node->data.floatval.data.value, 360, value.data.value) &&
+            expr->rtype == cse->expr->rtype)
+            return cse;
+    }
+    cse = COpt_NewCSE(expr);
+    cse->next = cse_entries[EFLOATCONST];
+    cse_entries[EFLOATCONST] = cse;
+    return cse;
+}
+
+static inline COptCSE *COpt_VectorConst(ENode *expr)
+{
+    COptCSE *cse;
+    MWVector128 value;
+
+    for (cse = cse_entries[EASSBLK], value = expr->data.vector128; cse; cse = cse->next) {
+        if (CMach_CalcVectorDiadicBool((unsigned int)cse->expr->rtype, &cse->expr->data.vector128, 360, &value) &&
+            expr->rtype == cse->expr->rtype)
+            return cse;
+    }
+    cse = (COptCSE *)CompilerTools_AllocatePoolMemory(30);
+    cse->expr = expr;
+    cse->replacement = NULL;
+    cse->block = current_opt_block;
+    cse->last = current_cse_expr;
+    cse->left = NULL;
+    cse->right = NULL;
+    cse->uses = 1;
+    cse->next = cse_entries[EASSBLK];
+    cse_entries[EASSBLK] = cse;
+    return cse;
+}
+
+static COptCSE *COpt_ObjectRef(ENode *expr, COptCSE *cse)
+{
+    Object *obj = expr->data.objref;
+
+    for (; cse; cse = cse->next) {
+        if (cse->expr->data.objref == obj)
+            return cse;
+    }
+    cse = COpt_NewCSE(expr);
+    cse->next = cse_entries[EOBJREF];
+    cse_entries[EOBJREF] = cse;
+    return cse;
+}
+
+static void COpt_IncDecTarget(ENode *expr)
+{
+    ENode *target = expr->data.monadic;
+
+    collect_expr_cse(target->data.monadic);
+    invalidate_expr_cse(expr->data.monadic);
+}
+
+static inline void clearEntries(int count)
+{
+    int index;
+    for (index = 0; (short)index < count; index++)
+        cse_entries[(short)index] = NULL;
+}
+
+void eliminate_unreachable_statements(Statement *items)
+{
+    Statement *item;
+    for (item = items; item; item = item->next)
+        item->marked = 0;
+
+    mark_reachable_statements(items);
+
+    for (item = items; item; item = item->next) {
+        if (!item->marked && (item->flags & 1))
+            mark_reachable_statements(item);
+    }
+
+    for (item = items; item; item = item->next) {
+        if (!item->marked && item->type != ST_NOP) {
+            item->type = ST_NOP;
+            optimizer_changed = 1;
+        }
+    }
+}
+
 /* 0x4ec5e0, signature unknown */
 /* 0x4ec610, signature unknown */
 /* 0x561510, file name string */
@@ -204,21 +565,9 @@ void mark_reachable_statements(Statement *input)
     }
 }
 
-/* Linked operands used by the optimizer. */
-
-/* Entries attached to optimizer statements. */
-/* Statement records traversed by the optimizer. */
-
-/*
- * Frontend expression/object bridge recovered from COptimizer.c.
- *
- * A CodeGen item carries an expression pointer at +0x0a. This walk follows
- * that expression graph to source Object identities and updates the
- * same VarInfo fields later consumed by code motion and allocation.
- */
-
 /* Reconstructed from the stock GC/1.2.5 executable. */
-void COptimizer_RecordObjectUse(Object *object, unsigned char direct_reference)
+/* COptimizer_CountExpressionObjectUses inlines this; COptimizer_RecordObjectUse, defined after it, has the same body. */
+static inline void RecordObjectUse(Object *object, unsigned char direct_reference)
 {
     VarInfo *info;
 
@@ -241,7 +590,6 @@ void COptimizer_RecordObjectUse(Object *object, unsigned char direct_reference)
     }
 }
 
-/* Reconstructed from the stock GC/1.2.5 executable. */
 void COptimizer_CountExpressionObjectUses(ENode *expression)
 {
     ENodeList *list;
@@ -249,12 +597,12 @@ void COptimizer_CountExpressionObjectUses(ENode *expression)
     for (;;) {
         switch (expression->type) {
             case EOBJREF:
-                COptimizer_RecordObjectUse(expression->data.objref, 1);
+                RecordObjectUse(expression->data.objref, 1);
                 return;
 
             case EINDIRECT:
                 if (expression->data.monadic->type == EOBJREF) {
-                    COptimizer_RecordObjectUse(expression->data.monadic->data.objref, 0);
+                    RecordObjectUse(expression->data.monadic->data.objref, 0);
                     return;
                 }
                 expression = expression->data.monadic;
@@ -355,19 +703,41 @@ void COptimizer_CountExpressionObjectUses(ENode *expression)
     }
 }
 
-static inline void COptimizer_SimplifyBranch(Statement *stmt)
+/* Linked operands used by the optimizer. */
+
+/* Entries attached to optimizer statements. */
+/* Statement records traversed by the optimizer. */
+
+/*
+ * Frontend expression/object bridge recovered from COptimizer.c.
+ *
+ * A CodeGen item carries an expression pointer at +0x0a. This walk follows
+ * that expression graph to source Object identities and updates the
+ * same VarInfo fields later consumed by code motion and allocation.
+ */
+
+/* Reconstructed from the stock GC/1.2.5 executable. */
+void COptimizer_RecordObjectUse(Object *object, unsigned char direct_reference)
 {
-    Statement *node;
-    for (node = stmt->next; node != NULL; node = node->next) {
-        if (stmt->target.label->target.stmt == node) {
-            stmt->type = ST_NOP;
-            optimizer_changed = 1;
-            return;
-        }
-        if (node->type > 2)
-            break;
+    VarInfo *info;
+
+    if (object->datatype == DALIAS) {
+        CError_FATAL(1850);
     }
-    stmt->target.label = COpt_Follow(stmt, stmt->target.label);
+    if (object->datatype != DLOCAL) {
+        return;
+    }
+
+    info = object->u.var.info;
+    info->used = 1;
+    if (copts.uniformSpillBlockWeight) {
+        info->usage++;
+    } else {
+        info->usage += current_statement_number;
+    }
+    if (direct_reference) {
+        info->noregister = 1;
+    }
 }
 
 void simplify_statement_branches(Statement *stmt)
@@ -446,45 +816,6 @@ void remove_unreferenced_labels(Statement *statements)
             optimizer_changed = 1;
         }
     }
-}
-
-static inline CLabel *COFindOwner(Statement *s)
-{
-    Statement *q;
-    UInt8 kind;
-    SInt32 saved = (SInt32)s->target.label;
-    CLabel *owner = (CLabel *)saved;
-    for (q = ((CLabel *)saved)->target.stmt; q != NULL; q = q->next) {
-        if ((kind = q->type) <= 2)
-            continue;
-        if (q != s && kind == 3) {
-            if (q->target.label != owner)
-                optimizer_changed = 1;
-            return q->target.label;
-        } else {
-            return owner;
-        }
-    }
-    return owner;
-}
-
-static inline CLabel *COFindOwnerPlain(Statement *s)
-{
-    SInt32 saved = (SInt32)s->target.label;
-    CLabel *owner = (CLabel *)saved;
-    Statement *q;
-    for (q = ((CLabel *)saved)->target.stmt; q != NULL; q = q->next) {
-        if (q->type <= 2)
-            continue;
-        if (q != s && q->type == ST_GOTO) {
-            if (q->target.label != owner)
-                optimizer_changed = 1;
-            return q->target.label;
-        } else {
-            return owner;
-        }
-    }
-    return owner;
 }
 
 void follow_switch_labels_and_fold_constant(Statement *self)
@@ -607,72 +938,6 @@ void fold_and_invert_conditional_branch(Statement *s)
     s->target.label = COFindOwnerPlain(s);
 }
 
-static inline void clear_words(COptBlock *p, SInt16 i)
-{
-    SInt16 *lo, *hi;
-    lo = p->referenceBits;
-    lo[i] = 0;
-    (hi = p->referenceBarrierBits)[i] = 0;
-}
-
-static inline COptBlock *new_block(void)
-{
-    COptBlock *p;
-    SInt16 i, n;
-
-    p = (COptBlock *)CompilerTools_AllocatePool(opt_block_bits_size * 2 + 0x20);
-    p->flag = 0;
-    p->next = NULL;
-    p->pred = NULL;
-    p->succ = NULL;
-    p->unused = 0;
-    p->referenceBits = (SInt16 *)(p + 1);
-    p->referenceBarrierBits = (SInt16 *)((UInt8 *)p + opt_block_bits_size + 0x20);
-    i = 0;
-    n = opt_block_bits_size / 2;
-    for (; i < n; i++) {
-        clear_words(p, i);
-    }
-    return p;
-}
-
-static inline void add_succ(COptBlock *b, CLabel *owner)
-{
-    COptBlockLink *e;
-
-    e = (COptBlockLink *)CompilerTools_AllocatePool(8);
-    e->next = b->succ;
-    b->succ = e;
-    e->target.statement = owner->target.stmt;
-}
-
-static inline void clear_words2(COptBlock *p, SInt16 i)
-{
-    SInt16 *lo, *hi;
-    lo = p->referenceBits;
-    lo[i] = 0;
-    hi = p->referenceBarrierBits;
-    hi[i] = 0;
-}
-static inline COptBlock *new_block2(void)
-{
-    COptBlock *p;
-    SInt16 i, n;
-    p = (COptBlock *)CompilerTools_AllocatePool(opt_block_bits_size * 2 + 0x20);
-    p->flag = 0;
-    p->next = NULL;
-    p->pred = NULL;
-    p->succ = NULL;
-    p->unused = 0;
-    p->referenceBits = (SInt16 *)(p + 1);
-    p->referenceBarrierBits = (SInt16 *)((UInt8 *)p + opt_block_bits_size + 0x20);
-    i = 0;
-    n = opt_block_bits_size / 2;
-    for (; i < n; i++) {
-        clear_words2(p, i);
-    }
-    return p;
-}
 void build_opt_blocks(Statement *first)
 {
     COptBlock *block;
@@ -701,7 +966,7 @@ void build_opt_blocks(Statement *first)
     }
     for (objectEntry = arguments; objectEntry != NULL; objectEntry = objectEntry->next) {
         reg = objectEntry->object.value->u.var.info->varnumber;
-        target->referenceBarrierBits[reg >> 4] |= data_005614f0[reg & 0xf];
+        target->referenceBarrierBits[reg >> 4] |= bit_masks[reg & 0xf];
     }
     if (first != NULL) {
         for (;;) {
@@ -844,15 +1109,6 @@ void COptimizer_004bf980(void)
             func = func->next;
     }
 }
-static SInt16 TestBit_4bfa30(SInt16 *vec, SInt16 bit)
-{
-    return vec[bit >> 4] & data_005614f0[bit & 0xf];
-}
-
-static void SetBit_4bfa30(SInt16 *vec, SInt16 bit)
-{
-    vec[bit >> 4] |= data_005614f0[bit & 0xf];
-}
 
 void mark_and_propagate_dlocal_reference_bits(void)
 {
@@ -883,20 +1139,6 @@ void mark_and_propagate_dlocal_reference_bits(void)
         for (node = opt_blocks; node != NULL; node = node->next)
             node->flag = 0;
     }
-}
-
-/* Bit mask table referenced at 0x5614f0 (16 words). */
-UInt16 bitmask[16] = {0x0001, 0x0002, 0x0004, 0x0008, 0x0010, 0x0020, 0x0040, 0x0080,
-                      0x0100, 0x0200, 0x0400, 0x0800, 0x1000, 0x2000, 0x4000, 0x8000};
-
-static inline short tbit(short *p, int w, int b)
-{
-    return data_005614f0[b] & p[w];
-}
-
-static inline void sbit(short *p, int w, int b)
-{
-    p[w] |= data_005614f0[b];
 }
 
 void propagate_bit_to_preds(COptBlock *node, short bit)
@@ -954,19 +1196,6 @@ void propagate_bit_to_preds(COptBlock *node, short bit)
         break;
     }
     return;
-}
-
-static SInt16 bitmasks[16] = {0x0001, 0x0002, 0x0004, 0x0008, 0x0010, 0x0020, 0x0040, 0x0080,
-                              0x0100, 0x0200, 0x0400, 0x0800, 0x1000, 0x2000, 0x4000, 0x8000};
-
-static SInt16 TestBit(SInt16 *vec, SInt16 bit)
-{
-    return vec[bit >> 4] & bitmasks[bit & 0xf];
-}
-
-static void SetBit(SInt16 *vec, SInt16 bit)
-{
-    vec[bit >> 4] |= bitmasks[bit & 0xf];
 }
 
 void mark_dlocal_reference_bits(ENode *node)
@@ -1103,111 +1332,12 @@ void mark_dlocal_reference_bits(ENode *node)
 
 void set_bit(SInt16 *p, SInt16 n)
 {
-    p[n >> 4] |= bitmask[n & 0xf];
+    p[n >> 4] |= bit_masks[n & 0xf];
 }
 
-static COptCSE *COpt_NewCSE(ENode *expr)
+UInt16 test_bit(const SInt16 *words, short bit)
 {
-    COptCSE *cse;
-
-    (cse = (COptCSE *)CompilerTools_AllocatePoolMemory(30))->expr = expr;
-    cse->replacement = NULL;
-    cse->block = current_opt_block;
-    cse->last = current_cse_expr;
-    cse->left = NULL;
-    cse->right = NULL;
-    cse->uses = 1;
-    return cse;
-}
-
-/* Records an occurrence of a common subexpression: the expression and the CSE it computes. */
-static COptCSE *COpt_AddOccurrence(ENode *expr, COptCSE *cse)
-{
-    OptimizerOccurrence *occ = (OptimizerOccurrence *)CompilerTools_AllocatePoolMemory(12);
-
-    occ->next = occurrence_list;
-    occurrence_list = occ;
-    occ->group = cse;
-    occ->expression = expr;
-    return cse;
-}
-
-static COptCSE *COpt_IntConst(ENode *expr)
-{
-    COptCSE *cse;
-    ENode *node;
-
-    for (cse = cse_entries[EINTCONST]; cse; cse = cse->next) {
-        if (expr->rtype == (node = cse->expr)->rtype && CInt64_Equal(node->data.intval, expr->data.intval))
-            return cse;
-    }
-    cse = COpt_NewCSE(expr);
-    cse->next = cse_entries[EINTCONST];
-    cse_entries[EINTCONST] = cse;
-    return cse;
-}
-
-static COptCSE *COpt_FloatConst(ENode *expr)
-{
-    COptCSE *cse;
-    ENode *node;
-    Float value;
-
-    for (cse = cse_entries[EFLOATCONST], value = expr->data.floatval; cse; cse = cse->next) {
-        node = cse->expr;
-        if (CMach_CalcFloatDiadicBool(node->rtype, node->data.floatval.data.value, 360, value.data.value) &&
-            expr->rtype == cse->expr->rtype)
-            return cse;
-    }
-    cse = COpt_NewCSE(expr);
-    cse->next = cse_entries[EFLOATCONST];
-    cse_entries[EFLOATCONST] = cse;
-    return cse;
-}
-
-static inline COptCSE *COpt_VectorConst(ENode *expr)
-{
-    COptCSE *cse;
-    MWVector128 value;
-
-    for (cse = cse_entries[EASSBLK], value = expr->data.vector128; cse; cse = cse->next) {
-        if (CMach_CalcVectorDiadicBool((unsigned int)cse->expr->rtype, &cse->expr->data.vector128, 360, &value) &&
-            expr->rtype == cse->expr->rtype)
-            return cse;
-    }
-    cse = (COptCSE *)CompilerTools_AllocatePoolMemory(30);
-    cse->expr = expr;
-    cse->replacement = NULL;
-    cse->block = current_opt_block;
-    cse->last = current_cse_expr;
-    cse->left = NULL;
-    cse->right = NULL;
-    cse->uses = 1;
-    cse->next = cse_entries[EASSBLK];
-    cse_entries[EASSBLK] = cse;
-    return cse;
-}
-
-static COptCSE *COpt_ObjectRef(ENode *expr, COptCSE *cse)
-{
-    Object *obj = expr->data.objref;
-
-    for (; cse; cse = cse->next) {
-        if (cse->expr->data.objref == obj)
-            return cse;
-    }
-    cse = COpt_NewCSE(expr);
-    cse->next = cse_entries[EOBJREF];
-    cse_entries[EOBJREF] = cse;
-    return cse;
-}
-
-static void COpt_IncDecTarget(ENode *expr)
-{
-    ENode *target = expr->data.monadic;
-
-    collect_expr_cse(target->data.monadic);
-    invalidate_expr_cse(expr->data.monadic);
+    return bit_masks[bit & 15] & words[bit >> 4];
 }
 
 /* The common subexpression an expression computes, found or entered in the table by its kind and operands, every
@@ -1233,7 +1363,7 @@ COptCSE *collect_expr_cse(ENode *expr)
             if (expr->type == EFUNCCALLP)
                 collect_expr_cse(expr->data.funccall.funcref);
             eliminate_common_subexpressions();
-            for (cse = list = cse_list; list; cse = cse->next, list = cse) {
+            for (cse = list = cse_entries[4]; list; cse = cse->next, list = cse) {
                 if (cse->expr->data.monadic->type == EOBJREF) {
                     obj = cse->expr->data.monadic->data.objref;
                     CError_ASSERT(672, obj->datatype != DALIAS);
@@ -1364,97 +1494,6 @@ COptCSE *collect_expr_cse(ENode *expr)
     }
 }
 
-static const UInt16 bit_masks[16] = {
-    0x0001, 0x0002, 0x0004, 0x0008, 0x0010, 0x0020, 0x0040, 0x0080,
-    0x0100, 0x0200, 0x0400, 0x0800, 0x1000, 0x2000, 0x4000, 0x8000,
-};
-
-UInt16 test_bit(const SInt16 *words, short bit)
-{
-    return bit_masks[bit & 15] & words[bit >> 4];
-}
-
-static inline void clearEntries(int count)
-{
-    int index;
-    for (index = 0; (short)index < count; index++)
-        cse_entries[(short)index] = NULL;
-}
-
-void invalidate_expr_cse(ENode *expression)
-{
-    ENode *result;
-    Object *identity;
-    Object *object;
-    ENode *candidate;
-    COptCSE *entry;
-    COptCSE *remaining;
-    Object *remainingObject;
-    COptCSE *allEntries;
-    COptCSE *head;
-    if (expression == NULL) {
-        eliminate_common_subexpressions();
-        clearEntries(75);
-        occurrence_list = NULL;
-        CompilerTools_ResetPool();
-        return;
-    }
-    data_005812ff = 1;
-    if (expression->type == EINDIRECT) {
-        result = fn_004c07c0(expression->data.monadic);
-        if (result != NULL) {
-            do {
-                identity = result->data.objref;
-                eliminate_common_subexpressions();
-                head = (COptCSE *)(int)cse_list;
-                entry = head;
-                if (head != NULL) {
-                    do {
-                        candidate = fn_004c07c0(entry->expr->data.monadic);
-                        if (candidate != NULL && identity == candidate->data.objref)
-                            Registers_InvalidateCSE(entry);
-                        entry = entry->next;
-                    } while (entry != NULL);
-                }
-                result = fn_004c07c0(expression->data.monadic);
-                if (result == NULL) {
-                    head = (COptCSE *)(int)cse_list;
-                    remaining = head;
-                    if (head != NULL) {
-                        do {
-                            if (remaining->expr->data.monadic->type == EOBJREF) {
-                                object = remaining->expr->data.monadic->data.objref;
-                                if (object->datatype == DALIAS)
-                                    CError_FATAL(672);
-                                if (object->datatype == DLOCAL && object->u.var.info->noregister == 0)
-                                    continue;
-                            }
-                            Registers_InvalidateCSE(remaining);
-                        } while ((remaining = remaining->next) != NULL);
-                    }
-                    return;
-                }
-            } while (identity != result->data.objref);
-            return;
-        }
-    }
-    eliminate_common_subexpressions();
-    head = (COptCSE *)(int)cse_list;
-    allEntries = head;
-    if (head != NULL) {
-        do {
-            if (allEntries->expr->data.monadic->type == EOBJREF) {
-                remainingObject = allEntries->expr->data.monadic->data.objref;
-                if (remainingObject->datatype == DALIAS)
-                    CError_FATAL(672);
-                if (remainingObject->datatype == DLOCAL && remainingObject->u.var.info->noregister == 0)
-                    continue;
-            }
-            Registers_InvalidateCSE(allEntries);
-        } while ((allEntries = allEntries->next) != NULL);
-    }
-}
-
 void COptimizer_004c0470(ENode *node)
 {
     Object *obj;
@@ -1465,7 +1504,7 @@ void COptimizer_004c0470(ENode *node)
         if (node->type == EFUNCCALL)
             collect_expr_cse(node->data.funccall.funcref);
         eliminate_common_subexpressions();
-        entry = entries = cse_list;
+        entry = entries = cse_entries[4];
         if (entries) {
             do {
                 if (entry->expr->data.monadic->type == EOBJREF) {
@@ -1497,6 +1536,80 @@ Boolean traverse_node_list_reverse(ENodeList *node, FuncArg *value)
     return result;
 }
 
+void invalidate_expr_cse(ENode *expression)
+{
+    ENode *result;
+    Object *identity;
+    Object *object;
+    ENode *candidate;
+    COptCSE *entry;
+    COptCSE *remaining;
+    Object *remainingObject;
+    COptCSE *allEntries;
+    COptCSE *head;
+    if (expression == NULL) {
+        eliminate_common_subexpressions();
+        clearEntries(75);
+        occurrence_list = NULL;
+        CompilerTools_ResetPool();
+        return;
+    }
+    data_005812ff = 1;
+    if (expression->type == EINDIRECT) {
+        result = fn_004c07c0(expression->data.monadic);
+        if (result != NULL) {
+            do {
+                identity = result->data.objref;
+                eliminate_common_subexpressions();
+                head = cse_entries[4];
+                entry = head;
+                if (head != NULL) {
+                    do {
+                        candidate = fn_004c07c0(entry->expr->data.monadic);
+                        if (candidate != NULL && identity == candidate->data.objref)
+                            Registers_InvalidateCSE(entry);
+                        entry = entry->next;
+                    } while (entry != NULL);
+                }
+                result = fn_004c07c0(expression->data.monadic);
+                if (result == NULL) {
+                    head = cse_entries[4];
+                    remaining = head;
+                    if (head != NULL) {
+                        do {
+                            if (remaining->expr->data.monadic->type == EOBJREF) {
+                                object = remaining->expr->data.monadic->data.objref;
+                                if (object->datatype == DALIAS)
+                                    CError_FATAL(672);
+                                if (object->datatype == DLOCAL && object->u.var.info->noregister == 0)
+                                    continue;
+                            }
+                            Registers_InvalidateCSE(remaining);
+                        } while ((remaining = remaining->next) != NULL);
+                    }
+                    return;
+                }
+            } while (identity != result->data.objref);
+            return;
+        }
+    }
+    eliminate_common_subexpressions();
+    head = cse_entries[4];
+    allEntries = head;
+    if (head != NULL) {
+        do {
+            if (allEntries->expr->data.monadic->type == EOBJREF) {
+                remainingObject = allEntries->expr->data.monadic->data.objref;
+                if (remainingObject->datatype == DALIAS)
+                    CError_FATAL(672);
+                if (remainingObject->datatype == DLOCAL && remainingObject->u.var.info->noregister == 0)
+                    continue;
+            }
+            Registers_InvalidateCSE(allEntries);
+        } while ((allEntries = allEntries->next) != NULL);
+    }
+}
+
 ENode *fn_004c07c0(ENode *expr)
 {
     last_node = NULL;
@@ -1506,27 +1619,6 @@ ENode *fn_004c07c0(ENode *expr)
         return last_node;
     }
     return NULL;
-}
-
-void eliminate_unreachable_statements(Statement *items)
-{
-    Statement *item;
-    for (item = items; item; item = item->next)
-        item->marked = 0;
-
-    mark_reachable_statements(items);
-
-    for (item = items; item; item = item->next) {
-        if (!item->marked && (item->flags & 1))
-            mark_reachable_statements(item);
-    }
-
-    for (item = items; item; item = item->next) {
-        if (!item->marked && item->type != ST_NOP) {
-            item->type = ST_NOP;
-            optimizer_changed = 1;
-        }
-    }
 }
 
 /* 0x581304: last node seen */
@@ -1823,6 +1915,85 @@ void eliminate_common_subexpressions(void)
                     update->expression = saved;
             }
             update = update->next;
+        }
+    }
+}
+
+/* The cost of evaluating CSE's expression tree: its nodes, the divisions and multiplications twice, and the loads
+   of variables that cannot live in a register. */
+int Registers_GetCSEWeight(COptCSE *tree)
+{
+    Object *object;
+    int result;
+    int weight;
+    if (tree != NULL) {
+        while (tree->expr->type == ETYPCON && tree->expr->rtype->type == tree->expr->data.monadic->rtype->type &&
+               tree->expr->rtype->size == tree->expr->data.monadic->rtype->size) {
+            tree = tree->left;
+        }
+        if (tree->expr->type == EINDIRECT && tree->expr->data.monadic->type == EOBJREF) {
+            object = tree->expr->data.monadic->data.objref;
+            if (object->datatype == DLOCAL && object->u.var.info->noregister == 0) {
+                result = 0;
+            } else {
+                result = 1;
+            }
+            return result;
+        }
+        weight = 1;
+        if (copts.uniformSpillBlockWeight == 0 &&
+            (tree->expr->type == EMUL || (tree->expr->type == EDIV || tree->expr->type == EMODULO))) {
+            weight = 2;
+        }
+        return Registers_GetCSEWeight(tree->left) + Registers_GetCSEWeight(tree->right) + weight;
+    }
+    return 0;
+}
+
+Boolean Registers_ContainsCOptCSE(COptCSE *target, COptCSE *node)
+{
+    if (target == node)
+        return 1;
+    if (node->left != NULL && Registers_ContainsCOptCSE(target, node->left))
+        return 1;
+    if (node->right != NULL && Registers_ContainsCOptCSE(target, node->right))
+        return 1;
+    return 0;
+}
+
+void Registers_DivideUses(COptCSE *node, SInt16 divisor)
+{
+    node->uses /= divisor;
+    if (node->left)
+        Registers_DivideUses(node->left, divisor);
+    if (node->right)
+        Registers_DivideUses(node->right, divisor);
+}
+
+void Registers_InvalidateCSE(COptCSE *node)
+{
+    COptCSE *dependent;
+    OptimizerOccurrence *entry;
+    short listIndex;
+
+    if (node != NULL) {
+        for (entry = occurrence_list; entry != NULL; entry = entry->next) {
+            if (entry->group == node) {
+                entry->group = NULL;
+                entry->expression = NULL;
+            }
+        }
+        node->uses = 0xffff;
+        node->left = NULL;
+        node->right = NULL;
+        listIndex = 0;
+        while ((long)listIndex < 0x4b) {
+            for (dependent = cse_entries[listIndex]; dependent != NULL; dependent = dependent->next) {
+                if (dependent->left == node || dependent->right == node) {
+                    Registers_InvalidateCSE(dependent);
+                }
+            }
+            listIndex++;
         }
     }
 }

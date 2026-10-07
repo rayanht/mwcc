@@ -17,6 +17,7 @@
 #include "compiler/CInit.h"
 #include "compiler/CMachine.h"
 #include "compiler/CMangler.h"
+#include "compiler/COptimizer.h"
 #include "compiler/CObjC.h"
 #include "compiler/CObjCModern.h"
 #include "compiler/CParser.h"

@@ -150,6 +150,7 @@
     "src/msl/wscanf.c",
     "src/optimizer/AddPropagation.c",
     "src/optimizer/CIRTransform.c",
+    "src/optimizer/COptimizer.c",
     "src/optimizer/CodeMotion.c",
     "src/optimizer/ConstantPropagation.c",
     "src/optimizer/CopyPropagation.c",

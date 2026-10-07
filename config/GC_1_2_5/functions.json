@@ -14538,13 +14538,13 @@
     "name": "DumpIR_OptimizeStatements",
     "address": "0x004be990",
     "size": 159,
-    "source": "src/backend/DumpIR.c"
+    "source": "src/optimizer/COptimizer.c"
   },
   {
     "name": "DumpIR_OptimizeStatementList",
     "address": "0x004bea30",
     "size": 98,
-    "source": "src/backend/DumpIR.c"
+    "source": "src/optimizer/COptimizer.c"
   },
   {
     "name": "set_label_stmt_flag",
@@ -14724,25 +14724,25 @@
     "name": "Registers_GetCSEWeight",
     "address": "0x004c10b0",
     "size": 183,
-    "source": "src/backend/Registers.c"
+    "source": "src/optimizer/COptimizer.c"
   },
   {
     "name": "Registers_ContainsCOptCSE",
     "address": "0x004c1170",
     "size": 423,
-    "source": "src/backend/Registers.c"
+    "source": "src/optimizer/COptimizer.c"
   },
   {
     "name": "Registers_DivideUses",
     "address": "0x004c1320",
     "size": 294,
-    "source": "src/backend/Registers.c"
+    "source": "src/optimizer/COptimizer.c"
   },
   {
     "name": "Registers_InvalidateCSE",
     "address": "0x004c1450",
     "size": 119,
-    "source": "src/backend/Registers.c"
+    "source": "src/optimizer/COptimizer.c"
   },
   {
     "name": "Coloring_ResetVRColors",

@@ -48,37 +48,6 @@ static short gSaveSpan;
 static unsigned char gSavedUsedPhysicalRegisters[32];
 static char lbl_00581392[14];
 
-/* The cost of evaluating CSE's expression tree: its nodes, the divisions and multiplications twice, and the loads
-   of variables that cannot live in a register. */
-int Registers_GetCSEWeight(COptCSE *tree)
-{
-    Object *object;
-    int result;
-    int weight;
-    if (tree != NULL) {
-        while (tree->expr->type == ETYPCON && tree->expr->rtype->type == tree->expr->data.monadic->rtype->type &&
-               tree->expr->rtype->size == tree->expr->data.monadic->rtype->size) {
-            tree = tree->left;
-        }
-        if (tree->expr->type == EINDIRECT && tree->expr->data.monadic->type == EOBJREF) {
-            object = tree->expr->data.monadic->data.objref;
-            if (object->datatype == DLOCAL && object->u.var.info->noregister == 0) {
-                result = 0;
-            } else {
-                result = 1;
-            }
-            return result;
-        }
-        weight = 1;
-        if (copts.uniformSpillBlockWeight == 0 &&
-            (tree->expr->type == EMUL || (tree->expr->type == EDIV || tree->expr->type == EMODULO))) {
-            weight = 2;
-        }
-        return Registers_GetCSEWeight(tree->left) + Registers_GetCSEWeight(tree->right) + weight;
-    }
-    return 0;
-}
-
 /* Declarations gathered from the merged files. */
 
 static void Registers_RestoreClassState(unsigned char *used, short *save_span)
@@ -91,54 +60,6 @@ static void Registers_SaveClassState(const unsigned char *used, short save_span)
 {
     gSaveSpan = save_span;
     memcpy(gSavedUsedPhysicalRegisters, used, 32);
-}
-
-Boolean Registers_ContainsCOptCSE(COptCSE *target, COptCSE *node)
-{
-    if (target == node)
-        return 1;
-    if (node->left != NULL && Registers_ContainsCOptCSE(target, node->left))
-        return 1;
-    if (node->right != NULL && Registers_ContainsCOptCSE(target, node->right))
-        return 1;
-    return 0;
-}
-
-void Registers_DivideUses(COptCSE *node, SInt16 divisor)
-{
-    node->uses /= divisor;
-    if (node->left)
-        Registers_DivideUses(node->left, divisor);
-    if (node->right)
-        Registers_DivideUses(node->right, divisor);
-}
-
-void Registers_InvalidateCSE(COptCSE *node)
-{
-    COptCSE *dependent;
-    OptimizerOccurrence *entry;
-    short listIndex;
-
-    if (node != NULL) {
-        for (entry = occurrence_list; entry != NULL; entry = entry->next) {
-            if (entry->group == node) {
-                entry->group = NULL;
-                entry->expression = NULL;
-            }
-        }
-        node->uses = 0xffff;
-        node->left = NULL;
-        node->right = NULL;
-        listIndex = 0;
-        while ((long)listIndex < 0x4b) {
-            for (dependent = cse_entries[listIndex]; dependent != NULL; dependent = dependent->next) {
-                if (dependent->left == node || dependent->right == node) {
-                    Registers_InvalidateCSE(dependent);
-                }
-            }
-            listIndex++;
-        }
-    }
 }
 
 void Coloring_ResetVRColors(void)
