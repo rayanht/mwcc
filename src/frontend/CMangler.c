@@ -518,7 +518,7 @@ void mangle_qualified_name(NameSpace *nameSpace, const char *name)
 }
 
 /* Compute (and cache) the link name of an object, following aliases. */
-static HashNameNode *CMangler_LinkName(Object *obj)
+static inline HashNameNode *CMangler_LinkName(Object *obj)
 {
     while (obj->datatype == DALIAS)
         obj = obj->u.alias.object;

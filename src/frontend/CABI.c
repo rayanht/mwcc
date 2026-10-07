@@ -42,6 +42,8 @@
 #include "compiler/Registers.h"
 #include "compiler/Switch.h"
 #include "driver/Files.h"
+
+static void *trans_vtboffsets;
 static Object *CABI_ThisArg(void);
 
 /* CABI.c: C++ class ABI support (vtables, this expressions, generated

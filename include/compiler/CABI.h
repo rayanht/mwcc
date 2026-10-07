@@ -69,7 +69,6 @@ extern void CABI_InsertConstructorInitialization(Object *obj, Statement *stmt, T
                                                  Boolean has_try);
 extern MessageArgument *CABI_SplitNameIntoMessageArguments(HashNameNode *hname, char *flag);
 extern struct HashNameNode *vtable_name;
-extern void *trans_vtboffsets;
 extern TypeIntegral stunsignedlong;
 extern SInt16 CABI_ComputeAlignmentPadding(Type *data, SInt32 mask);
 extern Type *CABI_GetPtrDiffTType(void);

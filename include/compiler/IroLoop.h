@@ -216,10 +216,6 @@ extern int is_value_preserving_integral_conversion(IROLinear *op);
 extern void compute_mustreach(void);
 extern void flatten_linear_to_elm_list(IROLinear *n);
 extern struct BitVector *IRO_LoopScratchVector_005880dc;
-extern struct BitVector *data_0058064c;
-extern unsigned char data_0058066a;
-extern signed int data_00580674;
-extern struct IROLinear *loop_candidate_last;
 extern struct IROElmList *iro_elm_list_head;
 extern struct LoopCandidate *loop_candidates;
 extern int linear_index_counter;
@@ -227,14 +223,11 @@ extern struct BitVector *data_005876bc;
 extern struct IROElmList *elm_list_tail;
 extern UInt16 iro_node_count;
 extern UInt8 data_0058851c;
-extern struct IROExpr *iro_loop_roots;
 extern struct IRONode *data_00587c68;
-extern struct IROLoopInd *induction_variables;
 extern struct IRONode *iro_flowgraph_head;
 extern struct IRONode **iroNodesByIndex;
 extern struct IRONode *data_00587fac;
 extern CInt64 cint64_one;
-extern struct IRONode *loop_header;
 static void CInt64_SetLong(CInt64 *pN, SInt32 n)
 {
     pN->lo = n;

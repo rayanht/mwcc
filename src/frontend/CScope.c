@@ -42,6 +42,14 @@
 #include "compiler/Objects.h"
 #include "compiler/Types.h"
 
+static struct TypeClass *class_path_base;
+static struct HashNameNode *class_member_name;
+static struct TypeClass *found_class;
+static struct Type *data_00580de4;
+static UInt32 class_path_offset;
+static UInt8 data_00580dec;
+static SInt8 data_00580ded;
+
 #undef CERROR_FILE
 #define CERROR_FILE "CScope.c"
 #undef CError_FATAL

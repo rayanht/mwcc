@@ -39,6 +39,10 @@
 
 #include "compiler/Types.h"
 
+static struct IROLinear *linear_range_start;
+static IROLinear *linear_range_end;
+static struct IRONode *move_expr_before_node;
+
 /* 0x551f40: "IroUtil.c" */
 
 struct IROLinear *IroUtil_GetLinearRangeStart(struct IROLinear *node)
@@ -827,7 +831,7 @@ static int IRO_TypesEqual(Type *a, Type *b)
     return is_typesame(a, b);
 }
 
-static int IRO_ConstsSame(ENode *a, ENode *b)
+static inline int IRO_ConstsSame(ENode *a, ENode *b)
 {
     if (a->type == b->type) {
         switch (a->type) {

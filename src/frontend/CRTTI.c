@@ -196,7 +196,7 @@ ENode *CRTTI_ParseExplicitTypecast(void)
     return explicit_typecast(expr, conversion.dtype, conversion.qual, '\x02');
 }
 
-static Boolean IsSameType(Type *a, Type *b)
+static inline Boolean IsSameType(Type *a, Type *b)
 {
     for (;;) {
         if (a->type != b->type)

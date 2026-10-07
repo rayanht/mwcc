@@ -1131,7 +1131,7 @@ static void AddShortArg(TypeFunc *tfunc)
         arg->next = NULL;
 }
 
-static Boolean CheckMemberType1(Type *type)
+static inline Boolean CheckMemberType1(Type *type)
 {
     switch ((SInt8)type->type) {
         case TYPEVOID:
@@ -1150,7 +1150,7 @@ static Boolean CheckMemberType1(Type *type)
     return 1;
 }
 
-static Boolean CheckMemberType(Type *type)
+static inline Boolean CheckMemberType(Type *type)
 {
     if (!CheckMemberType1(type))
         return 0;

@@ -64,6 +64,8 @@
 #include "driver/cc-eabi-ppc.h"
 #include <string.h>
 
+static struct TemporaryObjectEntry *temporary_objects;
+
 /* Code generation record layouts. */
 
 /* Declarations gathered from the merged files. */

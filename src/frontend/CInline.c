@@ -251,7 +251,7 @@ static inline TypeClassExt800 *CInline_0050ebf0_inline2(struct CPrecNode *a0)
     return NULL;
 }
 
-static Boolean CInline_Cleanup(Statement *stmt)
+static inline Boolean CInline_Cleanup(Statement *stmt)
 {
     struct InlineObjectEntry *list;
     while (stmt != NULL) {

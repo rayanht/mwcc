@@ -45,6 +45,17 @@
 
 #include "compiler/ENode.h"
 
+static char lbl_00580640[4];
+static struct IROLoopInd *induction_variables;
+static struct IROExpr *iro_loop_roots;
+static struct BitVector *data_0058064c;
+static char lbl_00580650[26];
+static unsigned char data_0058066a;
+static char lbl_0058066B[9];
+static signed int data_00580674;
+static struct IRONode *loop_header;
+static struct IROLinear *loop_candidate_last;
+
 #define GMARKED(id)                                                                                                    \
     (((id) >> 5) < IRO_LoopScratchVector_005880dc->size &&                                                             \
      (IRO_LoopScratchVector_005880dc->bits[(id) >> 5] & (1 << (id))) != 0)

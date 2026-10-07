@@ -916,7 +916,7 @@ Float CMach_CalcFloatMonadic(Type *type, short op, double value)
     return result;
 }
 
-static Float CMach_CalcFloatConvert(Type *type, Float value)
+static inline Float CMach_CalcFloatConvert(Type *type, Float value)
 {
     switch (type->size) {
         case 4:

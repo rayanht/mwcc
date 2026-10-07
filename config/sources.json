@@ -1449,8 +1449,7 @@
     ],
     "include_dirs": [
       "src/frontend"
-    ],
-    "status": "NonMatching"
+    ]
   },
   "src/frontend/CError.c": {
     "compiler": "pro53",
@@ -3113,8 +3112,7 @@
     ],
     "include_dirs": [
       "src/optimizer"
-    ],
-    "status": "NonMatching"
+    ]
   },
   "src/optimizer/IroVars.c": {
     "compiler": "pro53",

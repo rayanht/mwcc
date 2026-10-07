@@ -1002,7 +1002,7 @@ static inline SInt16 low_word(SInt32 value)
     return value;
 }
 
-static int SwapOp(int op)
+static inline int SwapOp(int op)
 {
     int r = op;
     switch (op) {

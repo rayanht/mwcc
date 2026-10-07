@@ -54,7 +54,6 @@ extern void CodeGen_EnumerateArgumentRegisters(void (*cb)(Object *, SInt16));
 extern ENode *CodeGen_MakeAltivecCall(Object *object, ENodeList *arguments);
 extern void CodeGen_AllocateArgumentSlots(Object *arg1, Boolean arg2, Boolean arg3);
 extern ENode *CodeGen_MakeAltivecStructCast(ENode *a, Type *type, UInt32 qual);
-extern struct TemporaryObjectEntry *temporary_objects;
 extern SInt32 data_00588274;
 extern struct COpts copts;
 extern struct Object *data_0058758c;
