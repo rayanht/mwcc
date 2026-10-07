@@ -1596,3 +1596,25 @@ void add_toc_reference(Object *id, Object *a, ENode *b, char c)
         toc_references = nn;
     }
 }
+
+void Operands_ClearTrailingObjectInfo(void)
+{
+    ObjectList *list = gTrailingObjectList_005876a0;
+    while (list != NULL) {
+        list->object.value->u.data.info = NULL;
+        list = list->next;
+    }
+    toc_references = NULL;
+}
+
+void fn_0049f560(void)
+{
+    gTrailingObjectList_005876a0 = data_00587660 = (float_object_list = NULL);
+    gInitialObjectList_005882ac = NULL;
+    data_00588200 = 0;
+    member_pointer_constants = NULL;
+    data_00588508 = 1;
+    memclrw(data_005883f0, 54);
+    blank_name = GetHashNameNode("TOC");
+    toc_references = NULL;
+}

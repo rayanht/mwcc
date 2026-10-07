@@ -496,7 +496,7 @@ extern short current_file_index;
 extern SInt16 data_00588470;
 extern Boolean data_005884fd;
 extern UInt8 data_0058850d;
-extern UInt8 data_00588531;
+extern UInt8 macrocheck;
 extern MacroStack macro_stack[];
 extern OptionEntry pragma_options[];
 extern SInt32 CPrep_GetCurrentTextOffset(void);

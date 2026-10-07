@@ -352,39 +352,6 @@ char *__stdcall CLProj_MakeRelativePath(OSSpec *source, char *base, char *destin
     return destination;
 }
 
-DWORD __stdcall CLProj_FindFileInSearchPath(char *name, const char *searchPath, void *result)
-{
-    const char *separator;
-    DWORD status;
-    char directory[260];
-    while (searchPath != NULL && *searchPath != 0) {
-        separator = strchr((char *)searchPath, ';');
-        if (separator == NULL) {
-            separator = strpbrk(searchPath, ";,");
-        }
-        if (separator == NULL) {
-            separator = searchPath + strlen(searchPath);
-        }
-        CLProj_CopyStringBounded(directory, searchPath, separator - searchPath, 0x103);
-        status = CLProj_MakeOSSpecFromDirectoryAndFilename(directory, name, result);
-        if (status == 0) {
-            status = OS_Status(result);
-            if (status == 0) {
-                return 0;
-            }
-        }
-        searchPath = (*separator != 0) ? separator + 1 : NULL;
-    }
-    status = OS_MakeFileSpec(name, result);
-    if (status == 0) {
-        status = OS_Status(result);
-        if (status == 0) {
-            return 0;
-        }
-    }
-    return status;
-}
-
 static inline int applyClassTypes(DropinFileRecord *request)
 {
     TypeClassTemplate *classInfo;

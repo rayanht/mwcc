@@ -38,6 +38,192 @@
 
 #include "compiler/ENode.h"
 typedef enum { MutEnumByte_one = 1 } MutEnumByte;
+void fold_nested_diadic_intval(ENode *node)
+{
+    int operation;
+    short nestedKind;
+    ENodeType kind, leftKind;
+    unsigned char changed;
+    CInt64 rightValue, leftValue;
+    if ((node->type == EADD || node->type == EMUL || (node->type == EAND || node->type == EXOR || node->type == EOR) ||
+         (node->type == ESHL || node->type == ESHR)) &&
+        node->rtype->type == TYPEINT && node->data.diadic.right->type == EINTCONST) {
+        do {
+            changed = 0;
+            kind = node->type;
+            leftKind = node->data.diadic.left->type;
+            if (leftKind == kind && node->data.diadic.left->data.diadic.right->type == EINTCONST) {
+                rightValue = node->data.diadic.right->data.intval;
+                leftValue = node->data.diadic.left->data.diadic.right->data.intval;
+                switch ((unsigned char)kind) {
+                    case EADD:
+                    case ESHL:
+                    case ESHR:
+                        operation = '+';
+                        break;
+                    case EMUL:
+                        operation = '*';
+                        break;
+                    case EAND:
+                        operation = '&';
+                        break;
+                    case EOR:
+                        operation = '|';
+                        break;
+                    case EXOR:
+                        operation = '^';
+                        break;
+                    default:
+                        return;
+                }
+                node->data.diadic.right->data.intval =
+                    CMach_CalcIntDiadic(node->rtype, rightValue, operation, leftValue);
+                node->data.diadic.left = node->data.diadic.left->data.diadic.left;
+                changed = 1;
+            } else {
+                if ((short)kind != 25 && (short)kind != 27)
+                    continue;
+                if (((short)leftKind != 25 && (short)leftKind != 27) ||
+                    ((nestedKind = node->data.diadic.left->data.diadic.left->type) != 25 && nestedKind != 27) ||
+                    node->data.diadic.left->data.diadic.left->data.diadic.right->type != EINTCONST ||
+                    !CInt64_Equal(node->data.diadic.right->data.intval,
+                                  node->data.diadic.left->data.diadic.left->data.diadic.right->data.intval))
+                    continue;
+                if ((short)kind == nestedKind) {
+                    node->data.diadic.left->data.diadic.left =
+                        node->data.diadic.left->data.diadic.left->data.diadic.left;
+                    changed = 1;
+                } else if ((short)leftKind == nestedKind) {
+                    *node = *node->data.diadic.right;
+                    changed = 1;
+                } else {
+                    node->data.diadic.left = node->data.diadic.left->data.diadic.right;
+                    changed = 1;
+                }
+            }
+        } while (changed != 0);
+    }
+}
+
+ENode *walk_expr_postorder(ENode *expr)
+{
+    ENodeList *arg;
+    switch (expr->type) {
+        case EPOSTINC:
+        case EPOSTDEC:
+        case EPREINC:
+        case EPREDEC:
+        case EINDIRECT:
+        case EMONMIN:
+        case EBINNOT:
+        case ELOGNOT:
+        case EFORCELOAD:
+        case ETYPCON:
+        case EBITFIELD:
+            expr->data.monadic = walk_expr_postorder(expr->data.monadic);
+            break;
+        case EMUL:
+        case EMULV:
+        case EDIV:
+        case EMODULO:
+        case EADDV:
+        case ESUBV:
+        case EADD:
+        case ESUB:
+        case ESHL:
+        case ESHR:
+        case ELESS:
+        case EGREATER:
+        case ELESSEQU:
+        case EGREATEREQU:
+        case EEQU:
+        case ENOTEQU:
+        case EAND:
+        case EXOR:
+        case EOR:
+        case ELAND:
+        case ELOR:
+        case EASS:
+        case EMULASS:
+        case EDIVASS:
+        case EMODASS:
+        case EADDASS:
+        case ESUBASS:
+        case ESHLASS:
+        case ESHRASS:
+        case EANDASS:
+        case EXORASS:
+        case EORASS:
+        case ECOMMA:
+        case EPMODULO:
+        case EROTL:
+        case EROTR:
+        case EBCLR:
+        case EBTST:
+        case EBSET:
+            expr->data.diadic.left = walk_expr_postorder(expr->data.diadic.left);
+            expr->data.diadic.right = walk_expr_postorder(expr->data.diadic.right);
+            break;
+        case EFUNCCALL:
+        case EFUNCCALLP:
+            walk_expr_postorder(expr->data.funccall.funcref);
+            arg = expr->data.funccall.args;
+            while (arg) {
+                walk_expr_postorder(arg->node);
+                arg = arg->next;
+            }
+            break;
+        case ECOND:
+            walk_expr_postorder(expr->data.cond.cond);
+            walk_expr_postorder(expr->data.cond.expr1);
+            walk_expr_postorder(expr->data.cond.expr2);
+            break;
+        case EMFPOINTER:
+            walk_expr_postorder(expr->data.diadic.left);
+            walk_expr_postorder(expr->data.diadic.right);
+            break;
+    }
+    return canonicalize_diadic_expression(expr);
+}
+
+ENode *canonicalize_diadic_expression(ENode *expression)
+{
+    switch (expression->type) {
+        case EINDIRECT:
+            if (expression->data.diadic.left->type == EADD)
+                expression->data.diadic.left = IroTransform_CombineEAddTerms(expression->data.diadic.left);
+            break;
+        case EMUL:
+        case EADD:
+        case EAND:
+        case EXOR:
+        case EOR:
+            if (expression->rtype->type == TYPEINT && expression->data.diadic.right->type != EINTCONST &&
+                expression->data.diadic.left->type == EINTCONST) {
+                ENode *left = expression->data.diadic.left;
+                expression->data.diadic.left = expression->data.diadic.right;
+                expression->data.diadic.right = left;
+            }
+            break;
+        case EEQU:
+        case ENOTEQU:
+            if (expression->rtype->type == TYPEINT && expression->data.diadic.right->type != EINTCONST &&
+                expression->data.diadic.left->type == EINTCONST) {
+                ENode *left = expression->data.diadic.left;
+                expression->data.diadic.left = expression->data.diadic.right;
+                expression->data.diadic.right = left;
+            }
+            if (expression->data.diadic.right->type == EINTCONST && expression->data.diadic.left->type == EBINNOT) {
+                ENode *operand = expression->data.diadic.left;
+                expression->data.diadic.left = operand->data.diadic.left;
+                operand->data.diadic.left = expression->data.diadic.right;
+                expression->data.diadic.right = operand;
+            }
+            break;
+    }
+    return expression;
+}
+
 ENode *IroTransform_CombineEAddTerms(ENode *expression)
 {
     ENode *root = expression;

@@ -358,7 +358,7 @@ int classify_identifier_token(void)
 {
     data_00588524 = 0;
     currentTextPosition = CPrepTokenizer_ScanIdentifier(currentTextPosition - 1);
-    if ((data_00588531 != '\0') && (CPrep_ExpandMacro() != '\0')) {
+    if ((macrocheck != '\0') && (CPrep_ExpandMacro() != '\0')) {
         return 0;
     }
     if (memcmp("__stdcall", data_00587fa0->name, 10) == 0) {
@@ -420,7 +420,7 @@ int classify_identifier_or_xor_token(void)
 {
     data_00588524 = 0;
     currentTextPosition = CPrepTokenizer_ScanIdentifier(currentTextPosition - 1);
-    if ((data_00588531 != '\0') && (CPrep_ExpandMacro() != '\0')) {
+    if ((macrocheck != '\0') && (CPrep_ExpandMacro() != '\0')) {
         return 0;
     }
     if (((copts.cplusplus != '\0') && (data_005884fd == '\0')) && (DAT_0058850f == '\0')) {
@@ -443,7 +443,7 @@ int classify_w_keyword(void)
 {
     data_00588524 = 0;
     currentTextPosition = CPrepTokenizer_ScanIdentifier(currentTextPosition - 1);
-    if ((data_00588531 != '\0') && (CPrep_ExpandMacro() != '\0')) {
+    if ((macrocheck != '\0') && (CPrep_ExpandMacro() != '\0')) {
         return 0;
     }
     if (cmpw("while", data_00587fa0->name, 6) == 0) {
@@ -463,7 +463,7 @@ unsigned int tokenize_v_keyword(void)
 
     data_00588524 = 0;
     currentTextPosition = CPrepTokenizer_ScanIdentifier(currentTextPosition - 1);
-    if ((data_00588531 != 0) && (CPrep_ExpandMacro() != 0)) {
+    if ((macrocheck != 0) && (CPrep_ExpandMacro() != 0)) {
         return 0;
     }
     text = data_00587fa0->name;
@@ -487,7 +487,7 @@ int classify_u_keyword(void)
 {
     data_00588524 = 0;
     currentTextPosition = CPrepTokenizer_ScanIdentifier(currentTextPosition - 1);
-    if (data_00588531 != 0 && CPrep_ExpandMacro() != 0) {
+    if (macrocheck != 0 && CPrep_ExpandMacro() != 0) {
         return 0;
     }
     if (memcmp("union", data_00587fa0->name, 6) == 0) {
@@ -516,7 +516,7 @@ SInt32 scan_t_keyword(void)
 {
     data_00588524 = 0;
     currentTextPosition = CPrepTokenizer_ScanIdentifier(currentTextPosition - 1);
-    if (data_00588531 != 0 && CPrep_ExpandMacro())
+    if (macrocheck != 0 && CPrep_ExpandMacro())
         return 0;
     if (KW("typedef", 8))
         return TK_TYPEDEF;
@@ -553,7 +553,7 @@ unsigned int tokenize_s_keyword(void)
 {
     data_00588524 = 0;
     currentTextPosition = CPrepTokenizer_ScanIdentifier(currentTextPosition - 1);
-    if (data_00588531 && CPrep_ExpandMacro()) {
+    if (macrocheck && CPrep_ExpandMacro()) {
         return 0;
     }
     if (memcmp("short", data_00587fa0->name, 6) == 0) {
@@ -591,7 +591,7 @@ SInt32 scan_r_keyword(void)
     data_00588524 = 0;
     cursor = currentTextPosition - 1;
     currentTextPosition = CPrepTokenizer_ScanIdentifier(cursor);
-    if (data_00588531 != 0 && CPrep_ExpandMacro())
+    if (macrocheck != 0 && CPrep_ExpandMacro())
         return 0;
     if (KW("register", 9))
         return TK_REGISTER;
@@ -615,7 +615,7 @@ SInt32 scan_identifier(void)
 {
     data_00588524 = 0;
     currentTextPosition = CPrepTokenizer_ScanIdentifier(currentTextPosition - 1);
-    if (data_00588531 != 0 && CPrep_ExpandMacro() != 0)
+    if (macrocheck != 0 && CPrep_ExpandMacro() != 0)
         return 0;
     if (copts.f62 == 0) {
         if (memcmp("pascal", data_00587fa0->name, 7) == 0)
@@ -636,7 +636,7 @@ SInt32 scan_o_keyword(void)
 {
     data_00588524 = 0;
     currentTextPosition = CPrepTokenizer_ScanIdentifier(currentTextPosition - 1);
-    if (data_00588531 != 0 && CPrep_ExpandMacro())
+    if (macrocheck != 0 && CPrep_ExpandMacro())
         return 0;
     if (copts.cplusplus != 0) {
         if (memcmp("operator", data_00587fa0->name, 9) == 0)
@@ -663,7 +663,7 @@ SInt32 scan_n_keyword(void)
     data_00588524 = 0;
     cursor = currentTextPosition - 1;
     currentTextPosition = CPrepTokenizer_ScanIdentifier(cursor);
-    if (data_00588531 != 0 && CPrep_ExpandMacro())
+    if (macrocheck != 0 && CPrep_ExpandMacro())
         return 0;
     if (copts.cplusplus != 0) {
         if (KW("new", 4))
@@ -687,7 +687,7 @@ int classify_mutable_or_identifier(void)
 {
     data_00588524 = 0;
     currentTextPosition = CPrepTokenizer_ScanIdentifier(currentTextPosition - 1);
-    if (data_00588531 != '\0' && CPrep_ExpandMacro() != '\0') {
+    if (macrocheck != '\0' && CPrep_ExpandMacro() != '\0') {
         return 0;
     }
     if (copts.cplusplus != '\0') {
@@ -706,7 +706,7 @@ int classify_identifier_name_token(void)
     const char *comparisonData;
     data_00588524 = 0;
     currentTextPosition = CPrepTokenizer_ScanIdentifier(currentTextPosition - 1);
-    if ((data_00588531 != '\0') && (CPrep_ExpandMacro() != '\0')) {
+    if ((macrocheck != '\0') && (CPrep_ExpandMacro() != '\0')) {
         return 0;
     }
     comparisonData = data_00587fa0->name;
@@ -720,7 +720,7 @@ SInt32 scan_i_keyword(void)
 {
     data_00588524 = 0;
     currentTextPosition = CPrepTokenizer_ScanIdentifier(currentTextPosition - 1);
-    if (data_00588531 != 0 && CPrep_ExpandMacro())
+    if (macrocheck != 0 && CPrep_ExpandMacro())
         return 0;
     if (KW("if", 3))
         return TK_IF;
@@ -746,7 +746,7 @@ int expand_macro_or_classify_identifier(void)
 {
     data_00588524 = 0;
     currentTextPosition = CPrepTokenizer_ScanIdentifier(currentTextPosition - 1);
-    if ((data_00588531 != '\0') && (CPrep_ExpandMacro() != '\0')) {
+    if ((macrocheck != '\0') && (CPrep_ExpandMacro() != '\0')) {
         return 0;
     }
     if (memcmp(&goto_keyword, data_00587fa0->name, 5) == 0) {
@@ -759,7 +759,7 @@ unsigned int classify_f_keyword(void)
 {
     data_00588524 = 0;
     currentTextPosition = CPrepTokenizer_ScanIdentifier(currentTextPosition - 1);
-    if (data_00588531 != 0 && CPrep_ExpandMacro() != 0)
+    if (macrocheck != 0 && CPrep_ExpandMacro() != 0)
         return 0;
     if (memcmp("float", data_00587fa0->name, 6) == 0)
         return TK_FLOAT;
@@ -780,7 +780,7 @@ int recognize_e_keyword(void)
 {
     data_00588524 = 0;
     currentTextPosition = CPrepTokenizer_ScanIdentifier(currentTextPosition - 1);
-    if (data_00588531 != 0 && CPrep_ExpandMacro() != 0)
+    if (macrocheck != 0 && CPrep_ExpandMacro() != 0)
         return 0;
     if (memcmp("else", data_00587fa0->name, 5) == 0)
         return TK_ELSE;
@@ -801,7 +801,7 @@ int scan_d_keyword(void)
 {
     data_00588524 = 0;
     currentTextPosition = CPrepTokenizer_ScanIdentifier(currentTextPosition - 1);
-    if (data_00588531 != '\0' && CPrep_ExpandMacro() != '\0') {
+    if (macrocheck != '\0' && CPrep_ExpandMacro() != '\0') {
         return 0;
     }
     if (memcmp("default", data_00587fa0->name, 8) == 0) {
@@ -837,7 +837,7 @@ SInt32 fn_00493ea0(void)
 {
     data_00588524 = 0;
     currentTextPosition = CPrepTokenizer_ScanIdentifier(currentTextPosition - 1);
-    if (data_00588531 && CPrep_ExpandMacro())
+    if (macrocheck && CPrep_ExpandMacro())
         return 0;
     if (memcmp("case", data_00587fa0->name, sizeof("case")) == 0)
         return TK_CASE;
@@ -870,7 +870,7 @@ SInt32 scan_b_keyword(void)
 {
     data_00588524 = 0;
     currentTextPosition = CPrepTokenizer_ScanIdentifier(currentTextPosition - 1);
-    if (data_00588531 != 0 && CPrep_ExpandMacro())
+    if (macrocheck != 0 && CPrep_ExpandMacro())
         return 0;
     if (memcmp("break", data_00587fa0->name, 6) == 0)
         return TK_BREAK;
@@ -899,7 +899,7 @@ int scan_identifier_or_keyword_a(void)
 {
     data_00588524 = 0;
     currentTextPosition = CPrepTokenizer_ScanIdentifier(currentTextPosition - 1);
-    if (data_00588531 != 0 && CPrep_ExpandMacro() != 0)
+    if (macrocheck != 0 && CPrep_ExpandMacro() != 0)
         return 0;
     if (memcmp("auto", data_00587fa0->name, 5) == 0)
         return TK_AUTO;
@@ -1023,7 +1023,7 @@ short scan_quoted_literal(short ch)
         return r;
     }
     currentTextPosition = CPrepTokenizer_ScanIdentifier(currentTextPosition - 1);
-    if (data_00588531 && CPrep_ExpandMacro())
+    if (macrocheck && CPrep_ExpandMacro())
         return 0;
     return -3;
 }
@@ -1032,7 +1032,7 @@ int scan_identifier_and_expand_macro(void)
 {
     data_00588524 = 0;
     currentTextPosition = CPrepTokenizer_ScanIdentifier(currentTextPosition - 1);
-    if (data_00588531 != '\0' && CPrep_ExpandMacro() != '\0') {
+    if (macrocheck != '\0' && CPrep_ExpandMacro() != '\0') {
         return 0;
     }
     return -3;

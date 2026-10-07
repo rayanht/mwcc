@@ -753,7 +753,7 @@
     "name": "fn_00405340",
     "address": "0x00405340",
     "size": 14,
-    "source": "src/driver/StaticParserGlue.c"
+    "source": "src/driver/ClientGlue.c"
   },
   {
     "name": "fn_0040534e",
@@ -2175,7 +2175,7 @@
     "name": "ToolHelpers_cc_PrintCLanguageWarningOptions",
     "address": "0x0040e110",
     "size": 335,
-    "source": "src/driver/ToolHelpers-cc.c"
+    "source": "src/driver/WarningHelpers.c"
   },
   {
     "name": "ToolHelpers_cc_CallValuePairCallback",
@@ -3009,97 +3009,97 @@
     "name": "short_predecessor",
     "address": "0x00412ed0",
     "size": 22,
-    "source": "src/driver/MacSpecs.c"
+    "source": "src/driver/MsDos.c"
   },
   {
     "name": "MacSpecs_LoadMacResource",
     "address": "0x00412ef0",
     "size": 189,
-    "source": "src/driver/MacSpecs.c"
+    "source": "src/driver/MsDos.c"
   },
   {
     "name": "MacSpecs_IsByteInDBCSCharacter",
     "address": "0x00412fb0",
     "size": 98,
-    "source": "src/driver/MacSpecs.c"
+    "source": "src/driver/MsDos.c"
   },
   {
     "name": "store_mac_spec_entry",
     "address": "0x00413020",
     "size": 134,
-    "source": "src/driver/MacSpecs.c"
+    "source": "src/driver/MsDos.c"
   },
   {
     "name": "find_or_create_name_registry_entry",
     "address": "0x004130b0",
     "size": 202,
-    "source": "src/driver/MacSpecs.c"
+    "source": "src/driver/MsDos.c"
   },
   {
     "name": "lookup_dir_id",
     "address": "0x00413180",
     "size": 77,
-    "source": "src/driver/MacSpecs.c"
+    "source": "src/driver/MsDos.c"
   },
   {
     "name": "find_or_create_child_entry",
     "address": "0x004131d0",
     "size": 208,
-    "source": "src/driver/MacSpecs.c"
+    "source": "src/driver/MsDos.c"
   },
   {
     "name": "find_or_create_spec_entry",
     "address": "0x004132a0",
     "size": 298,
-    "source": "src/driver/MacSpecs.c"
+    "source": "src/driver/MsDos.c"
   },
   {
     "name": "lookup_spec_and_advance_parent",
     "address": "0x004133d0",
     "size": 123,
-    "source": "src/driver/MacSpecs.c"
+    "source": "src/driver/MsDos.c"
   },
   {
     "name": "find_or_create_spec_entry_negated",
     "address": "0x00413450",
     "size": 65,
-    "source": "src/driver/MacSpecs.c"
+    "source": "src/driver/MsDos.c"
   },
   {
     "name": "build_name_and_backslash_path",
     "address": "0x004134a0",
     "size": 225,
-    "source": "src/driver/MacSpecs.c"
+    "source": "src/driver/MsDos.c"
   },
   {
     "name": "parse_value_and_offset",
     "address": "0x00413590",
     "size": 88,
-    "source": "src/driver/MacSpecs.c"
+    "source": "src/driver/MsDos.c"
   },
   {
     "name": "MacSpecs_MakeCWFileSpecFromString",
     "address": "0x004135f0",
     "size": 120,
-    "source": "src/driver/MacSpecs.c"
+    "source": "src/driver/MsDos.c"
   },
   {
     "name": "fn_00413670",
     "address": "0x00413670",
     "size": 180,
-    "source": "src/driver/MacSpecs.c"
+    "source": "src/driver/MsDos.c"
   },
   {
     "name": "MacSpecs_MakeOSSpec",
     "address": "0x00413730",
     "size": 69,
-    "source": "src/driver/MacSpecs.c"
+    "source": "src/driver/MsDos.c"
   },
   {
     "name": "MacSpecs_MakeResourceForkSpec",
     "address": "0x00413780",
     "size": 287,
-    "source": "src/driver/MacSpecs.c"
+    "source": "src/driver/MsDos.c"
   },
   {
     "name": "Memory_GetSizeAddress",
@@ -3885,7 +3885,7 @@
     "name": "CLProj_FindFileInSearchPath",
     "address": "0x00418cf0",
     "size": 237,
-    "source": "src/driver/CLProj.c"
+    "source": "src/driver/CLFileOps.cpp"
   },
   {
     "name": "CLFileOps_FindExecutable",
@@ -6687,7 +6687,7 @@
     "name": "IrOptimizer_ConvertToVectorConstant",
     "address": "0x004317b0",
     "size": 2676,
-    "source": "src/optimizer/IrOptimizer.c"
+    "source": "src/backend/CodeGen.c"
   },
   {
     "name": "CodeGen_CheckAltivecStypeMatch",
@@ -8907,19 +8907,19 @@
     "name": "fold_nested_diadic_intval",
     "address": "0x0044fce0",
     "size": 449,
-    "source": "src/optimizer/IroCSE.c"
+    "source": "src/optimizer/IroTransform.c"
   },
   {
     "name": "walk_expr_postorder",
     "address": "0x0044feb0",
     "size": 190,
-    "source": "src/optimizer/IroCSE.c"
+    "source": "src/optimizer/IroTransform.c"
   },
   {
     "name": "canonicalize_diadic_expression",
     "address": "0x0044ff70",
     "size": 145,
-    "source": "src/optimizer/IroCSE.c"
+    "source": "src/optimizer/IroTransform.c"
   },
   {
     "name": "IroTransform_CombineEAddTerms",
@@ -9147,13 +9147,13 @@
     "name": "IRO_RangePropagateInFNode",
     "address": "0x00456ba0",
     "size": 435,
-    "source": "src/optimizer/IroJump.c"
+    "source": "src/optimizer/IroRangePropagation.c"
   },
   {
     "name": "initialize_linear_range",
     "address": "0x00456d60",
     "size": 178,
-    "source": "src/optimizer/IroJump.c"
+    "source": "src/optimizer/IroRangePropagation.c"
   },
   {
     "name": "IroRangePropagation_PropagateRangeInLinear",
@@ -9165,13 +9165,13 @@
     "name": "initialize_node_range",
     "address": "0x00458030",
     "size": 118,
-    "source": "src/optimizer/IroRangePropagation.c"
+    "source": "src/optimizer/IroPropagate.c"
   },
   {
     "name": "check_range_for_type",
     "address": "0x004580b0",
     "size": 573,
-    "source": "src/optimizer/IroRangePropagation.c"
+    "source": "src/optimizer/IroPropagate.c"
   },
   {
     "name": "IroPropagate_PropagateExpressions",
@@ -13059,13 +13059,13 @@
     "name": "Operands_ClearTrailingObjectInfo",
     "address": "0x0049f530",
     "size": 43,
-    "source": "src/backend/Operands.c"
+    "source": "src/backend/TOC.c"
   },
   {
     "name": "fn_0049f560",
     "address": "0x0049f560",
     "size": 107,
-    "source": "src/backend/Operands.c"
+    "source": "src/backend/TOC.c"
   },
   {
     "name": "Operands_IsLogicalExpression",
@@ -18718,13 +18718,13 @@
     "name": "CDecl_ParseSelectorExpression",
     "address": "0x005049d0",
     "size": 527,
-    "source": "src/frontend/CDecl.c"
+    "source": "src/frontend/CObjC.c"
   },
   {
     "name": "CDecl_ParseProtocolExpression",
     "address": "0x00504be0",
     "size": 163,
-    "source": "src/frontend/CDecl.c"
+    "source": "src/frontend/CObjC.c"
   },
   {
     "name": "CObjC_ParseStringConstant",
@@ -18959,7 +18959,7 @@
     "name": "CObjCModern_GenerateSymbolTableAndModule",
     "address": "0x005094c0",
     "size": 633,
-    "source": "src/frontend/CObjCModern.c"
+    "source": "src/frontend/CObjC.c"
   },
   {
     "name": "CObjCModern_GetOrCreateFunctionObject",

@@ -3241,7 +3241,7 @@
   "_data_0058852c": "0x0058852c",
   "_data_0058852d": "0x0058852d",
   "_data_00588530": "0x588530",
-  "_data_00588531": "0x00588531",
+  "_macrocheck": "0x00588531",
   "_deallocate_from_fixed_pools": "0x404590",
   "_div": "0x420a30",
   "_emit_opcode_with_base_offset": "0x004a1dd0",

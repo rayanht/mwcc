@@ -36,7 +36,7 @@ extern unsigned int __stdcall CLProj_MakeOSSpecFromPath(char *basePath, char *pa
 extern unsigned int __stdcall CLProj_SetFileExtension(void *file, const char *extensionAddress, unsigned char append);
 extern unsigned int __stdcall CLProj_ChangeFileExtension(char *file, char *extensionAddress);
 extern char *__stdcall CLProj_MakeRelativePath(OSSpec *source, char *base, char *destination, int capacity);
-extern DWORD __stdcall CLProj_FindFileInSearchPath(char *name, const char *searchPath, void *result);
+extern DWORD __stdcall CLProj_FindFileInSearchPath(char *name, const char *searchPath, OSSpec *result);
 extern OSSpec data_0057f018;
 
 #ifdef __cplusplus

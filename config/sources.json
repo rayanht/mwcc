@@ -999,19 +999,6 @@
       "src/driver"
     ]
   },
-  "src/driver/MacSpecs.c": {
-    "compiler": "pro53",
-    "flags": [
-      "-O4,p",
-      "-sym",
-      "off",
-      "-Cpp_exceptions",
-      "off"
-    ],
-    "include_dirs": [
-      "src/driver"
-    ]
-  },
   "src/driver/MemUtils.c": {
     "compiler": "pro53",
     "flags": [
@@ -1171,7 +1158,9 @@
   "src/driver/StaticParserGlue.c": {
     "compiler": "pro53",
     "flags": [
-      "-O4,p",
+      "-O1",
+      "-opt",
+      "intrinsics",
       "-sym",
       "off",
       "-Cpp_exceptions",

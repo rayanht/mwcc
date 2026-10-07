@@ -1,6 +1,8 @@
 #define CERROR_FILE "IroPropagate.c"
 #include "compiler/common.h"
 #include "compiler/IroPropagate.h"
+#include "compiler/IroRangePropagation.h"
+#include "compiler/CInt64.h"
 #include "compiler/enode.h"
 #include "compiler/objects.h"
 #include "compiler/scopes.h"
@@ -78,6 +80,84 @@ static void setbit(unsigned int bit, BitVector *bv)
 }
 
 #include <string.h>
+
+int initialize_node_range(IROLinear *record)
+{
+    ERange *storage;
+    ENode *operand;
+    ERange *result;
+    ERange *value;
+    ERange *emptyStorage;
+    switch (record->u.node->type) {
+        case EOBJREF:
+            record->range = NULL;
+            break;
+        case EINTCONST:
+            storage = (ERange *)CompilerTools_AllocatePoolMemory(18);
+            storage->type = 0;
+            record->range = storage;
+            operand = record->u.node;
+            result = record->range;
+            result->lower = operand->data.intval;
+            value = record->range;
+            value->upper = result->lower;
+            break;
+        case EFLOATCONST:
+        case ESTRINGCONST:
+            emptyStorage = (ERange *)CompilerTools_AllocatePoolMemory(18);
+            emptyStorage->type = 0;
+            record->range = emptyStorage;
+    }
+    return 1;
+}
+
+void check_range_for_type(ERange *p, Type *type)
+{
+    TypeIntegral *t = (TypeIntegral *)type;
+
+    if (p == NULL) {
+        return;
+    }
+    if (type->type != TYPEINT) {
+        p->type = 3;
+        return;
+    }
+    if (t == &stchar || t == &stsignedchar) {
+        if (CInt64_Greater(p->upper, signed_char_max) || CInt64_Less(p->lower, type_range_minimum)) {
+            p->type = 3;
+        }
+    } else if (t == &stunsignedchar) {
+        if (CInt64_GreaterU(p->upper, data_005539c8)) {
+            p->type = 3;
+        }
+    } else if (t == &stsignedshort) {
+        if (CInt64_Greater(p->upper, int16_max) || CInt64_Less(p->lower, data_005539d8)) {
+            p->type = 3;
+        }
+    } else if (t == &stunsignedshort) {
+        if (CInt64_GreaterU(p->upper, data_005539e0)) {
+            p->type = 3;
+        }
+    } else if (t == &stsignedint) {
+        if (CInt64_Greater(p->upper, int32_max) || CInt64_Less(p->lower, type_range_lower_bound)) {
+            p->type = 3;
+        }
+    } else if (t == &stunsignedint) {
+        if (CInt64_GreaterU(p->upper, data_00553a10)) {
+            p->type = 3;
+        }
+    } else if (t == &stsignedlong) {
+        if (CInt64_Greater(p->upper, range_int32_max) || CInt64_Less(p->lower, type_range_min)) {
+            p->type = 3;
+        }
+    } else if (t == &stunsignedlong) {
+        if (CInt64_GreaterU(p->upper, data_00553a28)) {
+            p->type = 3;
+        }
+    } else if (t == &stsignedlonglong || t == &stunsignedlonglong) {
+        p->type = 3;
+    }
+}
 
 void IroPropagate_PropagateExpressions(void)
 {

@@ -16,6 +16,7 @@
 #include "compiler/CFunc.h"
 #include "compiler/CInit.h"
 #include "compiler/CInline.h"
+#include "compiler/CInt64.h"
 #include "compiler/CMachine.h"
 #include "compiler/CMangler.h"
 #include "compiler/CObjC.h"
@@ -72,6 +73,340 @@ typedef void (*XGenProc)(ENode *, UInt16, UInt16, Operand *);
 typedef void (*CGGenFunc)(ENode *enode, SInt32 a, SInt32 b, Operand *dest);
 
 typedef void (*RegAssignFunc)(Object *, SInt32);
+
+static inline void IrOptimizer_CheckVectorByteConstant(const CInt64 *value, TypeStruct *vectorType)
+{
+    if (copts.f9d) {
+        if (vectorType->stype == 4) {
+            if (!CInt64_IsInURange(*value, 1))
+                PPCError_ReportDiagnostic(0x71, vectorType, 0);
+        } else {
+            if (!CInt64_IsInRange(*value, 1))
+                PPCError_ReportDiagnostic(0x71, vectorType, 0);
+        }
+    }
+}
+
+static inline void IrOptimizer_CheckVectorShortConstant(const CInt64 *value, TypeStruct *vectorType)
+{
+    if (copts.f9d) {
+        SInt32 elementType = vectorType->stype;
+        if (elementType == 7 || elementType == 14) {
+            if (!CInt64_IsInURange(*value, 2))
+                PPCError_ReportDiagnostic(0x71, vectorType, 0);
+        } else {
+            if (!CInt64_IsInRange(*value, 2))
+                PPCError_ReportDiagnostic(0x71, vectorType, 0);
+        }
+    }
+}
+
+static inline void IrOptimizer_CheckVectorLongConstant(const CInt64 *value, TypeStruct *vectorType)
+{
+    if (copts.f9d) {
+        if (vectorType->stype == 10) {
+            if (!CInt64_IsInURange(*value, 4))
+                PPCError_ReportDiagnostic(0x71, vectorType, 0);
+        } else {
+            if (!CInt64_IsInRange(*value, 4))
+                PPCError_ReportDiagnostic(0x71, vectorType, 0);
+        }
+    }
+}
+
+Boolean IrOptimizer_ConvertToVectorConstant(ENode *expr, union MWVector128 *dst, TypeStruct *vectorType)
+{
+    static const double float_bounds[6] = {0.0, 3.40282e+38, 1.17549e-38, 0.0, -3.40282e+38, -1.17549e-38};
+    int commaCount;
+    int elementIndex;
+    int splatIndex;
+    Boolean result;
+    double value;
+    double firstValue;
+    double splatValue;
+    CInt64 integerValue;
+    ENode *cursor;
+    ENode *node;
+
+    result = 0;
+    dst->longElements[0] = 0;
+    dst->longElements[1] = 0;
+    dst->longElements[2] = 0;
+    dst->longElements[3] = 0;
+    value = 0.0;
+    firstValue = 0.0;
+
+    if (expr->type == ECOMMA) {
+        commaCount = 0;
+        for (node = expr; node->type == ECOMMA; node = node->data.diadic.left) {
+            commaCount++;
+        }
+        switch (vectorType->stype) {
+            case 4:
+            case 5:
+            case 6:
+                if (commaCount < 15) {
+                    PPCError_ReportError(0x6e, vectorType, 0);
+                    break;
+                }
+                if (commaCount > 15) {
+                    PPCError_ReportError(0x6f, vectorType, 0);
+                    break;
+                }
+                for (cursor = expr, elementIndex = 15; cursor->type == ECOMMA; cursor = cursor->data.diadic.left) {
+                    node = cursor->data.diadic.right;
+                    integerValue = node->data.intval;
+                    if (node->type != EINTCONST) {
+                        PPCError_ReportError(0x70);
+                        break;
+                    }
+                    IrOptimizer_CheckVectorByteConstant(&integerValue, vectorType);
+                    dst->byteElements[elementIndex] = integerValue.lo;
+                    elementIndex--;
+                }
+                if (cursor->type == EINTCONST) {
+                    integerValue = cursor->data.intval;
+                    IrOptimizer_CheckVectorByteConstant(&integerValue, vectorType);
+                    dst->byteElements[0] = integerValue.lo;
+                } else {
+                    PPCError_ReportError(0x70);
+                    break;
+                }
+                result = 1;
+                break;
+            case 7:
+            case 8:
+            case 9:
+            case 14:
+                if (commaCount < 7) {
+                    PPCError_ReportError(0x6e, vectorType, 0);
+                    break;
+                }
+                if (commaCount > 7) {
+                    PPCError_ReportError(0x6f, vectorType, 0);
+                    break;
+                }
+                for (cursor = expr, elementIndex = 7; cursor->type == ECOMMA;
+                     cursor = cursor->data.diadic.left, elementIndex--) {
+                    node = cursor->data.diadic.right;
+                    integerValue = node->data.intval;
+                    if (node->type != EINTCONST) {
+                        PPCError_ReportError(0x70);
+                        break;
+                    }
+                    IrOptimizer_CheckVectorShortConstant(&integerValue, vectorType);
+                    dst->shortElements[elementIndex] = node->data.intval.lo;
+                }
+                if (cursor->type == EINTCONST) {
+                    integerValue = cursor->data.intval;
+                    IrOptimizer_CheckVectorShortConstant(&integerValue, vectorType);
+                    dst->shortElements[0] = integerValue.lo;
+                } else {
+                    PPCError_ReportError(0x70);
+                    break;
+                }
+                result = 1;
+                break;
+            case 10:
+            case 11:
+            case 12:
+                if (commaCount < 3) {
+                    PPCError_ReportError(0x6e, vectorType, 0);
+                    break;
+                }
+                if (commaCount > 3) {
+                    PPCError_ReportError(0x6f, vectorType, 0);
+                    break;
+                }
+                for (node = expr, elementIndex = 3; node->type == ECOMMA; node = node->data.diadic.left) {
+                    cursor = node->data.diadic.right;
+                    integerValue = cursor->data.intval;
+                    if (cursor->type != EINTCONST) {
+                        PPCError_ReportError(0x70);
+                        break;
+                    }
+                    IrOptimizer_CheckVectorLongConstant(&integerValue, vectorType);
+                    dst->longElements[elementIndex] = cursor->data.intval.lo;
+                    elementIndex--;
+                }
+                if (node->type == EINTCONST) {
+                    integerValue = node->data.intval;
+                    IrOptimizer_CheckVectorLongConstant(&integerValue, vectorType);
+                    dst->longElements[0] = integerValue.lo;
+                } else {
+                    PPCError_ReportError(0x70);
+                    break;
+                }
+                result = 1;
+                break;
+            case 13:
+                if (commaCount < 3) {
+                    PPCError_ReportError(0x6e, vectorType, 0);
+                    break;
+                }
+                if (commaCount > 3) {
+                    PPCError_ReportError(0x6f, vectorType, 0);
+                    break;
+                }
+                for (cursor = expr, elementIndex = 3; cursor->type == ECOMMA; cursor = cursor->data.diadic.left) {
+                    node = cursor->data.diadic.right;
+                    if (node->type == EFLOATCONST) {
+                        value = node->data.floatval.data.value;
+                    } else if (node->type == EINTCONST) {
+                        value = CExpr2_ConvertCInt64ToDouble(&node->data.intval);
+                    } else {
+                        PPCError_ReportError(0x70);
+                        break;
+                    }
+                    if (value > float_bounds[0]) {
+                        if (value > float_bounds[1]) {
+                            PPCError_ReportError(0x70);
+                            break;
+                        } else if (value < float_bounds[2]) {
+                            PPCError_ReportError(0x70);
+                            break;
+                        }
+                    } else if (value < float_bounds[3]) {
+                        if (value < float_bounds[4]) {
+                            PPCError_ReportError(0x70);
+                            break;
+                        } else if (value > float_bounds[5]) {
+                            PPCError_ReportError(0x70);
+                            break;
+                        }
+                    }
+                    dst->floatElements[elementIndex] = value;
+                    elementIndex--;
+                }
+                if (cursor->type == EFLOATCONST) {
+                    firstValue = cursor->data.floatval.data.value;
+                } else if (cursor->type == EINTCONST) {
+                    firstValue = CExpr2_ConvertCInt64ToDouble(&cursor->data.intval);
+                } else {
+                    PPCError_ReportError(0x70);
+                    break;
+                }
+                if (firstValue > float_bounds[0]) {
+                    if (firstValue > float_bounds[1]) {
+                        PPCError_ReportError(0x70);
+                        break;
+                    } else if (firstValue < float_bounds[2]) {
+                        PPCError_ReportError(0x70);
+                        break;
+                    }
+                } else if (firstValue < float_bounds[3]) {
+                    if (firstValue < float_bounds[4]) {
+                        PPCError_ReportError(0x70);
+                        break;
+                    } else if (firstValue > float_bounds[5]) {
+                        PPCError_ReportError(0x70);
+                        break;
+                    }
+                }
+                dst->floatElements[0] = firstValue;
+                result = 1;
+                break;
+        }
+    } else if (expr->type == EINTCONST) {
+        splatIndex = 0;
+        switch (vectorType->stype) {
+            case 4:
+            case 5:
+            case 6:
+                integerValue = expr->data.intval;
+                IrOptimizer_CheckVectorByteConstant(&integerValue, vectorType);
+                for (; splatIndex < 16; splatIndex++) {
+                    dst->byteElements[splatIndex] = integerValue.lo;
+                }
+                result = 1;
+                break;
+            case 7:
+            case 8:
+            case 9:
+            case 14:
+                integerValue = expr->data.intval;
+                IrOptimizer_CheckVectorShortConstant(&integerValue, vectorType);
+                for (; splatIndex < 8; splatIndex++) {
+                    dst->shortElements[splatIndex] = integerValue.lo;
+                }
+                result = 1;
+                break;
+            case 10:
+            case 11:
+            case 12:
+                integerValue = expr->data.intval;
+                IrOptimizer_CheckVectorLongConstant(&integerValue, vectorType);
+                for (; splatIndex < 4; splatIndex++) {
+                    dst->longElements[splatIndex] = integerValue.lo;
+                }
+                result = 1;
+                break;
+            case 13:
+                integerValue = expr->data.intval;
+                if (!CInt64_IsInRange(integerValue, 4)) {
+                    PPCError_ReportError(0x70);
+                    break;
+                }
+                CExpr2_SignExtendCInt64(&integerValue);
+                for (; splatIndex < 4; splatIndex++) {
+                    dst->floatElements[splatIndex] = (SInt32)integerValue.lo;
+                }
+                result = 1;
+                break;
+            default:
+                PPCError_ReportError(0x70);
+                break;
+        }
+    } else if (expr->type == EFLOATCONST) {
+        switch (vectorType->stype) {
+            case 4:
+            case 5:
+            case 6:
+            case 7:
+            case 8:
+            case 9:
+            case 10:
+            case 11:
+            case 12:
+            case 14:
+            default:
+                PPCError_ReportError(0x70);
+                break;
+            case 13:
+                splatIndex = 0;
+                splatValue = expr->data.floatval.data.value;
+                if (splatValue > float_bounds[0]) {
+                    if (splatValue > float_bounds[1]) {
+                        PPCError_ReportError(0x70);
+                        break;
+                    } else if (splatValue < float_bounds[2]) {
+                        PPCError_ReportError(0x70);
+                        break;
+                    }
+                } else if (splatValue < float_bounds[3]) {
+                    if (splatValue < float_bounds[4]) {
+                        PPCError_ReportError(0x70);
+                        break;
+                    } else if (splatValue > float_bounds[5]) {
+                        PPCError_ReportError(0x70);
+                        break;
+                    }
+                }
+                for (; splatIndex < 4; splatIndex++) {
+                    dst->floatElements[splatIndex] = splatValue;
+                }
+                result = 1;
+                break;
+        }
+    } else if (expr->type == EINDIRECT || expr->type == EFUNCCALL) {
+        if (expr->rtype->type != TYPESTRUCT) {
+            PPCError_ReportError(0x70);
+        }
+    } else if (expr->type != EASSBLK) {
+        PPCError_ReportError(0x70);
+    }
+    return result;
+}
 
 int CodeGen_CheckAltivecStypeMatch(ENode *expr, Type *type, Boolean convert, Boolean checkAccess)
 {

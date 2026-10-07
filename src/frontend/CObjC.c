@@ -72,6 +72,137 @@
         }                                                                                                              \
     } while (0)
 
+static Type *FindNamedPointerType(char *name, Boolean required)
+{
+    NameSpaceObjectList *node;
+    Type *t;
+
+    node = CScope_FindName(registration_context, GetHashNameNode(name));
+    if (node != NULL && node->object->otype == OT_TYPE) {
+        if ((t = OBJ_TYPE(node->object)->type)->type == TYPEPOINTER)
+            return t;
+        CError_ReportError(ERR_OBJECTIVE_C_TYPE_UNEXPECTED_TYPE, name);
+    } else if (required) {
+        CError_ReportError(ERR_OBJECTIVE_C_TYPE_UNDEFINED_SHOULD_DEFINED, name);
+    }
+    return NULL;
+}
+
+static Type *GetSelType(Boolean required)
+{
+    Type *t;
+
+    if (sel_type)
+        return sel_type;
+    if ((t = FindNamedPointerType("SEL", required)) == NULL)
+        return (Type *)&void_ptr;
+    return sel_type = t;
+}
+
+static CRec *FindProtocol(HashNameNode *name)
+{
+    CRec *p;
+
+    for (p = data_00588064; p; p = p->next) {
+        if (p->name == name)
+            break;
+    }
+    return p;
+}
+
+ENode *CDecl_ParseSelectorExpression(void)
+{
+    HashNameNode *name;
+    HashEntry *entry;
+    HashEntry **slot;
+    ENode *node;
+
+    tk = CPrepTokenizer_GetNextToken();
+    if (tk == '(') {
+        data_00583548.size = 0;
+        for (;;) {
+            tk = CPrepTokenizer_GetNextToken();
+            if (tk == TK_IDENTIFIER) {
+                CompilerTools_AppendGListString(&data_00583548, data_00587fa0->name);
+                tk = CPrepTokenizer_GetNextToken();
+            }
+            if (tk == ')') {
+                if (data_00583548.size == 0)
+                    CError_ReportError(ERR_IDENTIFIER_EXPECTED);
+                tk = CPrepTokenizer_GetNextToken();
+                break;
+            }
+            if (tk == ':') {
+                AppendGListByte(&data_00583548, ':');
+            } else {
+                CError_ReportError(ERR_RPAREN_EXPECTED);
+                break;
+            }
+        }
+        AppendGListByte(&data_00583548, 0);
+        fn_00443190(data_00583548.data);
+        name = GetHashNameNode(*data_00583548.data);
+        fn_004431b0(data_00583548.data);
+
+        if (selector_hash == NULL)
+            entry = NULL;
+        else {
+            entry = selector_hash[name->hashval & 0x3ff];
+            while (entry != NULL) {
+                if (entry->name == name)
+                    break;
+                entry = entry->next;
+            }
+        }
+        if (entry == NULL) {
+            if (selector_hash == NULL) {
+                selector_hash = galloc(1024 * sizeof(*selector_hash));
+                memclrw(selector_hash, 1024 * sizeof(*selector_hash));
+            }
+            entry = galloc(sizeof(*entry));
+            entry->obj = NULL;
+            entry->name = name;
+            entry->methods = NULL;
+            slot = &selector_hash[name->hashval & 0x3ff];
+            entry->next = *slot;
+            *slot = entry;
+        }
+        node = create_objectnode(CObjCModern_GetSelectorReference(entry));
+        node->rtype = GetSelType(1);
+        return node;
+    } else {
+        CError_ReportError(ERR_LPAREN_EXPECTED);
+        return nullnode();
+    }
+}
+
+ENode *CDecl_ParseProtocolExpression(void)
+{
+    CRec *proto;
+    ENode *expr;
+
+    tk = CPrepTokenizer_GetNextToken();
+    if (tk == '(') {
+        tk = CPrepTokenizer_GetNextToken();
+        if (tk == TK_IDENTIFIER) {
+            if ((proto = FindProtocol(data_00587fa0))) {
+                expr = create_objectrefnode(CObjC_GetProtocolInfo(proto));
+                tk = CPrepTokenizer_GetNextToken();
+                if (tk != ')')
+                    CError_ReportError(ERR_RPAREN_EXPECTED);
+                else
+                    tk = CPrepTokenizer_GetNextToken();
+                return expr;
+            }
+        } else {
+            CError_ReportError(ERR_IDENTIFIER_EXPECTED);
+        }
+    } else {
+        CError_ReportError(ERR_LPAREN_EXPECTED);
+    }
+    return nullnode();
+}
+
 static inline TypeClass *fn_00504c90_inline1(void)
 {
     HashNameNode *v0;
@@ -1720,22 +1851,6 @@ Object *create_ivar_list(TypeClass *cls)
     return result;
 }
 
-static Type *FindNamedPointerType(char *name, Boolean required)
-{
-    NameSpaceObjectList *node;
-    Type *t;
-
-    node = CScope_FindName(registration_context, GetHashNameNode(name));
-    if (node != NULL && node->object->otype == OT_TYPE) {
-        if ((t = OBJ_TYPE(node->object)->type)->type == TYPEPOINTER)
-            return t;
-        CError_ReportError(ERR_OBJECTIVE_C_TYPE_UNEXPECTED_TYPE, name);
-    } else if (required) {
-        CError_ReportError(ERR_OBJECTIVE_C_TYPE_UNDEFINED_SHOULD_DEFINED, name);
-    }
-    return NULL;
-}
-
 static Type *GetIdType(Boolean required)
 {
     Type *t;
@@ -1756,17 +1871,6 @@ static Type *GetClassType(Boolean required)
     if ((t = FindNamedPointerType("Class", required)) == NULL)
         return (Type *)&void_ptr;
     return class_pointer_type = t;
-}
-
-static Type *GetSelType(Boolean required)
-{
-    Type *t;
-
-    if (sel_type)
-        return sel_type;
-    if ((t = FindNamedPointerType("SEL", required)) == NULL)
-        return (Type *)&void_ptr;
-    return sel_type = t;
 }
 
 static Boolean IsIdType(Type *ty)
@@ -2885,4 +2989,95 @@ Type *CObjC_GetIdType(Boolean required)
     if ((t = find_id_type(required)) == NULL)
         return (Type *)&void_ptr;
     return id_type = t;
+}
+
+void CObjCModern_GenerateSymbolTableAndModule(void)
+{
+    int count2;
+    int index;
+    int count1;
+    int size;
+    ObjCSymbolTable *symbols;
+    RelocationList *references;
+    Object *object;
+    RelocationList *reference;
+    struct PrecTypeEntry *definition;
+    ObjCDefinition *categoryDefinition;
+    ObjcModule module;
+
+    if (copts.f5c != 0 || class_type_entries != NULL) {
+        definition = class_type_entries;
+        count1 = 0;
+        while (definition != NULL) {
+            definition = definition->next;
+            count1++;
+        }
+        categoryDefinition = category_definitions;
+        count2 = 0;
+        while (categoryDefinition != NULL) {
+            categoryDefinition = categoryDefinition->next;
+            count2++;
+        }
+        size = (count1 + count2 - 1) * 4 + 16;
+        symbols = (ObjCSymbolTable *)CompilerTools_AllocatePool(size);
+        memclrw(symbols, size);
+        symbols->word0 = CTool_EndianConvertWord32(0);
+        symbols->word4 = CTool_EndianConvertWord32(0);
+        symbols->word0 = CTool_EndianConvertWord16(0);
+        symbols->count1 = CTool_EndianConvertWord16(count1);
+        symbols->count2 = CTool_EndianConvertWord16(count2);
+        references = NULL;
+        index = 0;
+        definition = class_type_entries;
+        while (definition != NULL) {
+            reference = (RelocationList *)CompilerTools_AllocatePool(16);
+            reference->next = references;
+            references = reference;
+            reference->object = definition->type->objcinfo->classobject;
+            reference->offset = (char *)&symbols->definitions[index] - (char *)symbols;
+            reference->addend = 0;
+            definition = definition->next;
+            index++;
+        }
+        categoryDefinition = category_definitions;
+        while (categoryDefinition != NULL) {
+            reference = (RelocationList *)CompilerTools_AllocatePool(16);
+            reference->next = references;
+            references = reference;
+            reference->object = (Object *)categoryDefinition->value;
+            reference->offset = (char *)&symbols->definitions[index] - (char *)symbols;
+            reference->addend = 0;
+            categoryDefinition = categoryDefinition->next;
+            index++;
+        }
+        object = CParser_NewCompilerDefDataObject();
+        object->name = CParser_NameConcat("", "L_OBJC_SYMBOLS");
+        object->type = CDecl_NewStructType(size, 4);
+        CScope_AddObject(object->nspace, object->name, (ObjBase *)object);
+        object->sclass = TK_STATIC;
+        object->extraQualifiers = 0x1a;
+        fn_004ceab0(object, symbols, references, object->type->size);
+        module.version = CTool_EndianConvertWord32(5);
+        module.size = CTool_EndianConvertWord32(0x10);
+        module.name = CTool_EndianConvertWord32(0);
+        reference = (RelocationList *)CompilerTools_AllocatePool(16);
+        reference->next = NULL;
+        references = reference;
+        reference->object = fn_00509c40(CPrep_GetFileName(NULL, 1, 0), 0x13);
+        reference->offset = 8;
+        reference->addend = 0;
+        module.symtab = CTool_EndianConvertWord32(0);
+        reference = (RelocationList *)CompilerTools_AllocatePool(16);
+        reference->next = references;
+        reference->object = object;
+        reference->offset = 0xc;
+        reference->addend = 0;
+        object = CParser_NewCompilerDefDataObject();
+        object->name = CParser_NameConcat("", "L_OBJC_MODULES");
+        object->type = CDecl_NewStructType(0x10, 4);
+        CScope_AddObject(object->nspace, object->name, (ObjBase *)object);
+        object->sclass = TK_STATIC;
+        object->extraQualifiers = 0x19;
+        fn_004ceab0(object, &module, reference, object->type->size);
+    }
 }

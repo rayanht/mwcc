@@ -3,10 +3,6 @@
 #include "driver/CLMain.h"
 #include "driver/CLPlugins.h"
 #include "driver/ClientGlue.h"
-unsigned int __stdcall fn_00405340(unsigned int result)
-{
-    return CLMain_FreePlugins(result);
-}
 
 int fn_0040534e(void)
 {

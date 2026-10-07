@@ -135,3 +135,8 @@ int ClientGlue_InitializeAndParseCommandLine(void)
 {
     return CLMain_InitializeAndParseCommandLine();
 }
+
+unsigned int __stdcall fn_00405340(unsigned int result)
+{
+    return CLMain_FreePlugins(result);
+}

@@ -7,6 +7,9 @@
 extern "C" {
 #endif
 
+extern void fold_nested_diadic_intval(ENode *node);
+extern ENode *walk_expr_postorder(ENode *expr);
+extern ENode *canonicalize_diadic_expression(ENode *expression);
 extern ENode *IroTransform_CombineEAddTerms(ENode *expression);
 extern void IroTransform_SimplifyLinear(void);
 extern void remove_redundant_monadic_ops(IROLinear *expression);

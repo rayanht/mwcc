@@ -222,9 +222,18 @@ def resolve_function(symbols, sections, symbol_name, target_address, addresses, 
             raise ValueError("relocation crosses function boundary")
         dest = symbols[index]
         addend = struct.unpack_from("<I", body, local)[0]
-        if dest["name"] in addresses:
+        # (a binding names a static of this object only when the bound address holds its contents: literal numbers
+        # are per translation unit)
+        own = dest["storage"] == 3 and dest["section"] > 0 and not sections[dest["section"] - 1].get("code")
+        if own and dest["name"] in addresses:
+            literal = sections[dest["section"] - 1]["data"]
+            following = min((s["value"] for s in symbols.values() if s["section"] == dest["section"]
+                             and s["value"] > dest["value"]), default=len(literal))
+            text = literal[dest["value"]:following].split(b"\0", 1)[0]
+            own = bool(text) and all(32 <= c < 127 for c in text) and not pe.contains(addresses[dest["name"]], text)
+        if dest["name"] in addresses and not own:
             address = addresses[dest["name"]]
-        elif c_symbol(dest["name"]) in addresses:
+        elif c_symbol(dest["name"]) in addresses and not own:
             address = addresses[c_symbol(dest["name"])]
         elif dest["section"] == section_index and begin <= dest["value"] < end:
             address = target_address + dest["value"] - begin

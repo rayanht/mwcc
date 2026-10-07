@@ -2796,19 +2796,19 @@
     "name": "short_predecessor",
     "address": "0x004137e0",
     "size": 20,
-    "source": "src/driver/MacSpecs.c"
+    "source": "src/driver/MsDos.c"
   },
   {
     "name": "MacSpecs_LoadMacResource",
     "address": "0x00413800",
     "size": 189,
-    "source": "src/driver/MacSpecs.c"
+    "source": "src/driver/MsDos.c"
   },
   {
     "name": "MacSpecs_IsByteInDBCSCharacter",
     "address": "0x004138c0",
     "size": 98,
-    "source": "src/driver/MacSpecs.c"
+    "source": "src/driver/MsDos.c"
   },
   {
     "name": "fn_00413930",
@@ -2819,19 +2819,19 @@
     "name": "find_or_create_name_registry_entry",
     "address": "0x004139c0",
     "size": 193,
-    "source": "src/driver/MacSpecs.c"
+    "source": "src/driver/MsDos.c"
   },
   {
     "name": "lookup_dir_id",
     "address": "0x00413a90",
     "size": 77,
-    "source": "src/driver/MacSpecs.c"
+    "source": "src/driver/MsDos.c"
   },
   {
     "name": "find_or_create_child_entry",
     "address": "0x00413ae0",
     "size": 208,
-    "source": "src/driver/MacSpecs.c"
+    "source": "src/driver/MsDos.c"
   },
   {
     "name": "fn_00413bb0",
@@ -2842,13 +2842,13 @@
     "name": "lookup_spec_and_advance_parent",
     "address": "0x00413d10",
     "size": 123,
-    "source": "src/driver/MacSpecs.c"
+    "source": "src/driver/MsDos.c"
   },
   {
     "name": "find_or_create_spec_entry_negated",
     "address": "0x00413d90",
     "size": 65,
-    "source": "src/driver/MacSpecs.c"
+    "source": "src/driver/MsDos.c"
   },
   {
     "name": "fn_00413de0",
@@ -2859,7 +2859,7 @@
     "name": "parse_value_and_offset",
     "address": "0x00413ef0",
     "size": 88,
-    "source": "src/driver/MacSpecs.c"
+    "source": "src/driver/MsDos.c"
   },
   {
     "name": "fn_00413f50",
@@ -2875,7 +2875,7 @@
     "name": "fn_00413670",
     "address": "0x004140f0",
     "size": 168,
-    "source": "src/driver/MacSpecs.c"
+    "source": "src/driver/MsDos.c"
   },
   {
     "name": "fn_004141a0",
@@ -2891,7 +2891,7 @@
     "name": "MacSpecs_MakeResourceForkSpec",
     "address": "0x004142b0",
     "size": 287,
-    "source": "src/driver/MacSpecs.c"
+    "source": "src/driver/MsDos.c"
   },
   {
     "name": "Memory_GetSizeAddress",
@@ -3620,7 +3620,7 @@
     "name": "CLProj_FindFileInSearchPath",
     "address": "0x00419b80",
     "size": 226,
-    "source": "src/driver/CLProj.c"
+    "source": "src/driver/CLFileOps.cpp"
   },
   {
     "name": "fn_00419c70",
@@ -14918,12 +14918,6 @@
     "size": 316
   },
   {
-    "name": "CMangler_ConversionFuncName",
-    "address": "0x004fe050",
-    "size": 104,
-    "source": "src/frontend/CMangler.c"
-  },
-  {
     "name": "CMangler_RTTIObjectName",
     "address": "0x004fe050",
     "size": 104,
@@ -18941,13 +18935,13 @@
     "name": "CDecl_ParseSelectorExpression",
     "address": "0x0054f8e0",
     "size": 527,
-    "source": "src/frontend/CDecl.c"
+    "source": "src/frontend/CObjC.c"
   },
   {
     "name": "CDecl_ParseProtocolExpression",
     "address": "0x0054faf0",
     "size": 163,
-    "source": "src/frontend/CDecl.c"
+    "source": "src/frontend/CObjC.c"
   },
   {
     "name": "fn_0054fba0",
