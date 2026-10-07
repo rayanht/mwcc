@@ -24,8 +24,6 @@
 #include <string.h>
 #include <stdio.h>
 
-
-
 /* Declarations gathered from the merged files. */
 /* Calls deferred until the precompiled data has been loaded. */
 
@@ -3447,43 +3445,43 @@ SInt32 serialize_cpsi_list(ExceptionAction *item)
     while (1) {
         CPrec_AppendData_004db910(item, 0x1e);
         switch (item->kind) {
-            case 1:
+            case EAT_DESTROYLOCAL:
                 add_serialized_bucket_entry((SInt32)&current->data.local.dtor, write_object(item->data.local.dtor));
                 break;
-            case 2:
+            case EAT_DESTROYLOCALCOND:
                 add_serialized_bucket_entry((SInt32)&current->data.local_cond.dtor,
                                             write_object(item->data.local_cond.dtor));
                 break;
-            case 3:
+            case EAT_DESTROYLOCALOFFSET:
                 add_serialized_bucket_entry((SInt32)&current->data.local.dtor, write_object(item->data.local.dtor));
                 break;
-            case 4:
+            case EAT_DESTROYLOCALPOINTER:
                 add_serialized_bucket_entry((SInt32)&current->data.local.dtor, write_object(item->data.local.dtor));
                 break;
-            case 5:
+            case EAT_DESTROYLOCALARRAY:
                 add_serialized_bucket_entry((SInt32)&current->data.local.dtor, write_object(item->data.local.dtor));
                 break;
             case 6:
                 break;
-            case 7:
-            case 17:
+            case EAT_DESTROYMEMBER:
+            case EAT_DESTROYBASE:
                 add_serialized_bucket_entry((SInt32)&current->data.local.dtor, write_object(item->data.local.dtor));
                 break;
-            case 8:
+            case EAT_DESTROYMEMBERCOND:
                 add_serialized_bucket_entry((SInt32)&current->data.local_cond.dtor,
                                             write_object(item->data.local_cond.dtor));
                 break;
-            case 9:
+            case EAT_DESTROYMEMBERARRAY:
                 add_serialized_bucket_entry((SInt32)&current->data.local.dtor, write_object(item->data.local.dtor));
                 break;
-            case 10:
-            case 11:
+            case EAT_DELETEPOINTER:
+            case EAT_DELETELOCALPOINTER:
                 add_serialized_bucket_entry((SInt32)&current->data.local.dtor, write_object(item->data.local.dtor));
                 break;
-            case 12:
+            case EAT_DELETEPOINTERCOND:
                 add_serialized_bucket_entry((SInt32)&current->data.local.dtor, write_object(item->data.local.dtor));
                 break;
-            case 13:
+            case EAT_CATCHBLOCK:
                 if (item->data.catch_block.typeInfo) {
                     add_serialized_bucket_entry((SInt32)&current->data.catch_block.typeInfo,
                                                 write_object(item->data.catch_block.typeInfo));
@@ -3491,9 +3489,9 @@ SInt32 serialize_cpsi_list(ExceptionAction *item)
                                                 (SInt32)write_type(item->data.catch_block.exceptionType));
                 }
                 break;
-            case 14:
+            case EAT_ACTIVECATCHBLOCK:
                 break;
-            case 15:
+            case EAT_SPECIFICATION:
                 if (item->data.specification.ids) {
                     add_serialized_bucket_entry((SInt32)&current->data.specification.ids,
                                                 (SInt32)(objects = append_glist_alignment_padding()));
@@ -3504,7 +3502,7 @@ SInt32 serialize_cpsi_list(ExceptionAction *item)
                                                     write_object(item->data.specification.ids[i]));
                 }
                 break;
-            case 16:
+            case EAT_TERMINATE:
                 break;
             default:
                 CError_FATAL(2800);
@@ -4023,7 +4021,6 @@ unsigned int serialize_reference_entries(TemplPartialSpec *record)
     return startOffset;
 }
 
-
 UInt32 serialize_prec_records(TemplateMember *record)
 {
     SInt32 first_offset;
@@ -4194,7 +4191,6 @@ SInt32 serialize_pre_nodes(TemplParam *node)
     return firstOffset;
 }
 
-
 SInt32 serialize_ct_state_elems(TemplArg *element)
 {
     SInt32 base;
@@ -4242,7 +4238,6 @@ SInt32 serialize_ct_state_elems(TemplArg *element)
 
     return base;
 }
-
 
 unsigned int serialize_objc_info(struct ObjCInfo *info)
 {

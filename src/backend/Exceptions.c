@@ -151,7 +151,7 @@ void emit_exception_records(ObjectGroup *node)
             case 0:
                 CError_FATAL(149);
                 break;
-            case 1:
+            case EAT_DESTROYLOCAL:
                 offsetReference.kindFlags = flags | 2;
                 offsetReference.offsetFlags = 0;
                 if (Registers_GetInfo(record->data.local.object)->in_param_area)
@@ -163,7 +163,7 @@ void emit_exception_records(ObjectGroup *node)
                 AppendGListData(&exception_records, &offsetReference, sizeof(offsetReference));
                 append_reference(record->data.local.dtor, recordOffset + 4);
                 break;
-            case 2:
+            case EAT_DESTROYLOCALCOND:
                 if (Registers_GetInfo(record->data.local_cond.cond) != NULL)
                     offset = Registers_GetInfo(record->data.local_cond.cond)->reg;
                 else
@@ -188,7 +188,7 @@ void emit_exception_records(ObjectGroup *node)
                 AppendGListData(&exception_records, &twoOffsetsReference, sizeof(twoOffsetsReference));
                 append_reference(record->data.local_cond.dtor, recordOffset + 8);
                 break;
-            case 3:
+            case EAT_DESTROYLOCALOFFSET:
                 adjustedOffsetReference.offsetFlags = 0;
                 adjustedOffsetReference.kindFlags = flags | 2;
                 if (Registers_GetInfo(record->data.local.object)->in_param_area)
@@ -201,7 +201,7 @@ void emit_exception_records(ObjectGroup *node)
                 AppendGListData(&exception_records, &adjustedOffsetReference, sizeof(adjustedOffsetReference));
                 append_reference(record->data.local.dtor, recordOffset + 4);
                 break;
-            case 4:
+            case EAT_DESTROYLOCALPOINTER:
                 if (Registers_GetInfo(record->data.local_pointer.pointer) != NULL)
                     offset = Registers_GetInfo(record->data.local_pointer.pointer)->reg;
                 else
@@ -220,7 +220,7 @@ void emit_exception_records(ObjectGroup *node)
                 AppendGListData(&exception_records, &optionalOffsetReference, sizeof(optionalOffsetReference));
                 append_reference(record->data.local_pointer.dtor, recordOffset + 4);
                 break;
-            case 5:
+            case EAT_DESTROYLOCALARRAY:
                 offsetAndValuesReference.offsetFlags = 0;
                 offsetAndValuesReference.kindFlags = flags | 5;
                 if (Registers_GetInfo(record->data.member_array.objectptr)->in_param_area)
@@ -236,7 +236,7 @@ void emit_exception_records(ObjectGroup *node)
                 AppendGListData(&exception_records, &offsetAndValuesReference, sizeof(offsetAndValuesReference));
                 append_reference(record->data.member_array.dtor, recordOffset + 8);
                 break;
-            case 7:
+            case EAT_DESTROYMEMBER:
                 if (Registers_GetInfo(record->data.member.objectptr) != NULL)
                     offset = Registers_GetInfo(record->data.member.objectptr)->reg;
                 else
@@ -256,7 +256,7 @@ void emit_exception_records(ObjectGroup *node)
                 AppendGListData(&exception_records, &offsetValueReference, sizeof(offsetValueReference));
                 append_reference(record->data.member.dtor, recordOffset + 8);
                 break;
-            case 17:
+            case EAT_DESTROYBASE:
                 if (Registers_GetInfo(record->data.member.objectptr) != NULL)
                     offset = Registers_GetInfo(record->data.member.objectptr)->reg;
                 else
@@ -277,7 +277,7 @@ void emit_exception_records(ObjectGroup *node)
                                 sizeof(alternateOffsetValueReference));
                 append_reference(record->data.member.dtor, recordOffset + 8);
                 break;
-            case 8:
+            case EAT_DESTROYMEMBERCOND:
                 if (Registers_GetInfo(record->data.member_cond.cond) != NULL)
                     secondOffset = Registers_GetInfo(record->data.member_cond.cond)->reg;
                 else
@@ -310,7 +310,7 @@ void emit_exception_records(ObjectGroup *node)
                 AppendGListData(&exception_records, &twoOffsetsValueReference, sizeof(twoOffsetsValueReference));
                 append_reference(record->data.member_cond.dtor, recordOffset + 0xc);
                 break;
-            case 9:
+            case EAT_DESTROYMEMBERARRAY:
                 if (Registers_GetInfo(record->data.member_array.objectptr) != NULL)
                     offset = Registers_GetInfo(record->data.member_array.objectptr)->reg;
                 else
@@ -332,8 +332,8 @@ void emit_exception_records(ObjectGroup *node)
                 AppendGListData(&exception_records, &offsetValuesReference, sizeof(offsetValuesReference));
                 append_reference(record->data.member_array.dtor, recordOffset + 0x10);
                 break;
-            case 10:
-            case 11:
+            case EAT_DELETEPOINTER:
+            case EAT_DELETELOCALPOINTER:
                 if (Registers_GetInfo(record->data.pair.first) != NULL)
                     offset = Registers_GetInfo(record->data.pair.first)->reg;
                 else
@@ -352,7 +352,7 @@ void emit_exception_records(ObjectGroup *node)
                 AppendGListData(&exception_records, &kind10Reference, sizeof(kind10Reference));
                 append_reference(record->data.pair.second, recordOffset + 4);
                 break;
-            case 12:
+            case EAT_DELETEPOINTERCOND:
                 if (Registers_GetInfo(record->data.delete_pointer_cond.cond) != NULL)
                     thirdOffset = Registers_GetInfo(record->data.delete_pointer_cond.cond)->reg;
                 else
@@ -383,7 +383,7 @@ void emit_exception_records(ObjectGroup *node)
                 AppendGListData(&exception_records, &kind12Reference, sizeof(kind12Reference));
                 append_reference(record->data.delete_pointer_cond.deletefunc, recordOffset + 8);
                 break;
-            case 13:
+            case EAT_CATCHBLOCK:
                 typeReference.offsetFlags = 0;
                 typeReference.kindFlags = flags | 0x10;
                 typeReference.reference = 0;
@@ -401,7 +401,7 @@ void emit_exception_records(ObjectGroup *node)
                 if (record->data.catch_block.typeInfo != NULL)
                     append_reference(record->data.catch_block.typeInfo, recordOffset + 4);
                 break;
-            case 14:
+            case EAT_ACTIVECATCHBLOCK:
                 shortRecord.offsetFlags = 0;
                 shortRecord.kindFlags = flags | 0xd;
                 if (Registers_GetInfo(record->data.active_catch.info)->in_param_area)
@@ -411,7 +411,7 @@ void emit_exception_records(ObjectGroup *node)
                 shortRecord.value = CTool_EndianConvertWord16(record->data.active_catch.info->u.var.uid + baseOffset);
                 AppendGListData(&exception_records, &shortRecord, sizeof(shortRecord));
                 break;
-            case 15:
+            case EAT_SPECIFICATION:
                 referenceTable.offsetFlags = 0;
                 referenceTable.kindFlags = flags | 0xf;
                 referenceTable.count = CTool_EndianConvertWord16(record->data.specification.count);
@@ -433,7 +433,7 @@ void emit_exception_records(ObjectGroup *node)
                     referenceOffset += 4;
                 }
                 break;
-            case 16:
+            case EAT_TERMINATE:
                 byteRecord.offsetFlags = 0;
                 byteRecord.kindFlags = flags | 0xe;
                 AppendGListData(&exception_records, &byteRecord, sizeof(byteRecord));
@@ -471,38 +471,38 @@ int Exceptions_CountBoundObjectFields(ExceptionAction *action)
 
     while (action != NULL) {
         switch (action->kind) {
-            case 2:
+            case EAT_DESTROYLOCALCOND:
                 if (Exceptions_BoundObjectCount(&action->data.local_cond.cond))
                     count++;
                 break;
-            case 4:
+            case EAT_DESTROYLOCALPOINTER:
                 if (Exceptions_BoundObjectCount(&action->data.pair.first))
                     count++;
                 break;
-            case 7:
+            case EAT_DESTROYMEMBER:
                 if (Exceptions_BoundObjectCount(&action->data.member.objectptr))
                     count++;
                 break;
-            case 17:
+            case EAT_DESTROYBASE:
                 if (Exceptions_BoundObjectCount(&action->data.member.objectptr))
                     count++;
                 break;
-            case 8:
+            case EAT_DESTROYMEMBERCOND:
                 if (Exceptions_BoundObjectCount(&action->data.member_cond.cond))
                     count++;
                 if (Exceptions_BoundObjectCount(&action->data.member_cond.objectptr))
                     count++;
                 break;
-            case 9:
+            case EAT_DESTROYMEMBERARRAY:
                 if (Exceptions_BoundObjectCount(&action->data.member_array.objectptr))
                     count++;
                 break;
-            case 10:
-            case 11:
+            case EAT_DELETEPOINTER:
+            case EAT_DELETELOCALPOINTER:
                 if (Exceptions_BoundObjectCount(&action->data.pair.first))
                     count++;
                 break;
-            case 12:
+            case EAT_DELETEPOINTERCOND:
                 if (Exceptions_BoundObjectCount(&action->data.delete_pointer_cond.cond))
                     count++;
                 if (Exceptions_BoundObjectCount(&action->data.pair.first))
@@ -520,7 +520,7 @@ void Exceptions_CollectRegisterOperands(ExceptionAction *node, PCodeOperand *out
 
     while (node != NULL) {
         switch (node->kind) {
-            case 2:
+            case EAT_DESTROYLOCALCOND:
                 if ((uid = Registers_GetInfo(node->data.pair.second) ? Registers_GetInfo(node->data.pair.second)->reg
                                                                      : 0) != 0) {
                     out->kind = PCOp_GPR;
@@ -529,7 +529,7 @@ void Exceptions_CollectRegisterOperands(ExceptionAction *node, PCodeOperand *out
                     ++out;
                 }
                 break;
-            case 4:
+            case EAT_DESTROYLOCALPOINTER:
                 if ((uid = Registers_GetInfo(node->data.pair.first) ? Registers_GetInfo(node->data.pair.first)->reg
                                                                     : 0) != 0) {
                     out->kind = PCOp_GPR;
@@ -538,7 +538,7 @@ void Exceptions_CollectRegisterOperands(ExceptionAction *node, PCodeOperand *out
                     ++out;
                 }
                 break;
-            case 7:
+            case EAT_DESTROYMEMBER:
                 if ((uid = Registers_GetInfo(node->data.pair.first) ? Registers_GetInfo(node->data.pair.first)->reg
                                                                     : 0) != 0) {
                     out->kind = PCOp_GPR;
@@ -547,7 +547,7 @@ void Exceptions_CollectRegisterOperands(ExceptionAction *node, PCodeOperand *out
                     ++out;
                 }
                 break;
-            case 17:
+            case EAT_DESTROYBASE:
                 if ((uid = Registers_GetInfo(node->data.pair.first) ? Registers_GetInfo(node->data.pair.first)->reg
                                                                     : 0) != 0) {
                     out->kind = PCOp_GPR;
@@ -556,7 +556,7 @@ void Exceptions_CollectRegisterOperands(ExceptionAction *node, PCodeOperand *out
                     ++out;
                 }
                 break;
-            case 8:
+            case EAT_DESTROYMEMBERCOND:
                 if ((uid = Registers_GetInfo(node->data.pair.second) ? Registers_GetInfo(node->data.pair.second)->reg
                                                                      : 0) != 0) {
                     out->kind = PCOp_GPR;
@@ -572,7 +572,7 @@ void Exceptions_CollectRegisterOperands(ExceptionAction *node, PCodeOperand *out
                     ++out;
                 }
                 break;
-            case 9:
+            case EAT_DESTROYMEMBERARRAY:
                 if ((uid = Registers_GetInfo(node->data.pair.first) ? Registers_GetInfo(node->data.pair.first)->reg
                                                                     : 0) != 0) {
                     out->kind = PCOp_GPR;
@@ -581,8 +581,8 @@ void Exceptions_CollectRegisterOperands(ExceptionAction *node, PCodeOperand *out
                     ++out;
                 }
                 break;
-            case 10:
-            case 11:
+            case EAT_DELETEPOINTER:
+            case EAT_DELETELOCALPOINTER:
                 if ((uid = Registers_GetInfo(node->data.pair.first) ? Registers_GetInfo(node->data.pair.first)->reg
                                                                     : 0) != 0) {
                     out->kind = PCOp_GPR;
@@ -591,7 +591,7 @@ void Exceptions_CollectRegisterOperands(ExceptionAction *node, PCodeOperand *out
                     ++out;
                 }
                 break;
-            case 12:
+            case EAT_DELETEPOINTERCOND:
                 if ((uid = Registers_GetInfo(node->data.delete_pointer_cond.cond)
                                ? Registers_GetInfo(node->data.delete_pointer_cond.cond)->reg
                                : 0) != 0) {
@@ -633,9 +633,9 @@ void Exceptions_AppendScopeEntry(PCodeInstruction *context, ExceptionAction *ele
         exception_scope_entries = entry;
     last_exception_scope_entry = entry;
     while (elements != NULL) {
-        if (elements->kind == 13 && elements->data.catch_block.label->pclabel)
+        if (elements->kind == EAT_CATCHBLOCK && elements->data.catch_block.label->pclabel)
             PCode_AddSuccessor(context->block, elements->data.catch_block.label->pclabel);
-        else if (elements->kind == 15 && elements->data.specification.label->pclabel)
+        else if (elements->kind == EAT_SPECIFICATION && elements->data.specification.label->pclabel)
             PCode_AddSuccessor(context->block, elements->data.specification.label->pclabel);
         elements = elements->next;
     }

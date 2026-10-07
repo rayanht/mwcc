@@ -147,16 +147,16 @@ void IroFlowgraph_RebuildSuccPred(void)
                         successorCount = 1;
                         entryList = statement->stmt;
                         for (entry = entryList->dobjstack; entry != NULL; entry = entry->next)
-                            if (entry->kind == 0x0d || entry->kind == 0x0f)
+                            if (entry->kind == EAT_CATCHBLOCK || entry->kind == EAT_SPECIFICATION)
                                 successorCount++;
                         node->succ = oalloc(successorCount * sizeof(*node->succ));
                         AddNext(node, node->nextnode);
                         entryList = statement->stmt;
                         for (entry = entryList->dobjstack; entry != NULL; entry = entry->next) {
-                            if (entry->kind == 0x0d) {
+                            if (entry->kind == EAT_CATCHBLOCK) {
                                 target = entry->data.catch_block.label;
                                 AddRef(node, (IRONode *)target->stmt);
-                            } else if (entry->kind == 0x0f) {
+                            } else if (entry->kind == EAT_SPECIFICATION) {
                                 target = entry->data.specification.label;
                                 AddRef(node, (IRONode *)target->stmt);
                             }
@@ -310,7 +310,7 @@ void IRO_BuildflowGraph(IROLinear *source)
                     break;
                 case IROLinearFunccall:
                     for (exception = linear->stmt->dobjstack; exception != NULL; exception = exception->next) {
-                        if (exception->kind == 13 || exception->kind == 15) {
+                        if (exception->kind == EAT_CATCHBLOCK || exception->kind == EAT_SPECIFICATION) {
                             done = 1;
                             goto insert_label;
                         }

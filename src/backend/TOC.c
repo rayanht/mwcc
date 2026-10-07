@@ -227,23 +227,23 @@ void add_exception_initial_objects(ExceptionAction *node)
 {
     for (; node != NULL; node = node->next) {
         switch (node->kind) {
-            case 1:
+            case EAT_DESTROYLOCAL:
                 add_initial_object(node->data.slots[0]);
                 break;
-            case 2:
+            case EAT_DESTROYLOCALCOND:
                 add_initial_object(node->data.slots[0]);
                 add_initial_object(node->data.slots[1]);
                 break;
-            case 3:
+            case EAT_DESTROYLOCALOFFSET:
                 add_initial_object(node->data.slots[0]);
                 break;
-            case 4:
+            case EAT_DESTROYLOCALPOINTER:
                 add_initial_object(node->data.slots[0]);
                 break;
-            case 5:
+            case EAT_DESTROYLOCALARRAY:
                 add_initial_object(node->data.slots[0]);
                 break;
-            case 17:
+            case EAT_DESTROYBASE:
                 add_initial_object(node->data.slots[0]);
                 break;
             case 6:
@@ -251,29 +251,29 @@ void add_exception_initial_objects(ExceptionAction *node)
                 add_initial_object(node->data.slots[1]);
                 add_initial_object(node->data.slots[3]);
                 break;
-            case 7:
+            case EAT_DESTROYMEMBER:
                 add_initial_object(node->data.slots[0]);
                 break;
-            case 8:
+            case EAT_DESTROYMEMBERCOND:
                 add_initial_object(node->data.slots[0]);
                 add_initial_object(node->data.slots[1]);
                 break;
-            case 9:
+            case EAT_DESTROYMEMBERARRAY:
                 add_initial_object(node->data.slots[0]);
                 break;
-            case 10:
-            case 11:
+            case EAT_DELETEPOINTER:
+            case EAT_DELETELOCALPOINTER:
                 add_initial_object(node->data.slots[0]);
                 break;
-            case 12:
+            case EAT_DELETEPOINTERCOND:
                 add_initial_object(node->data.slots[0]);
                 add_initial_object(node->data.slots[2]);
                 break;
-            case 13:
+            case EAT_CATCHBLOCK:
                 add_initial_object(node->data.slots[0]);
                 add_initial_object(node->data.slots[1]);
                 break;
-            case 14:
+            case EAT_ACTIVECATCHBLOCK:
                 add_initial_object(node->data.slots[0]);
                 break;
         }

@@ -224,45 +224,45 @@ void CExcept_CheckStackRefs(ExceptionAction *node)
 {
     while (node != NULL) {
         switch (node->kind) {
-            case 1:
+            case EAT_DESTROYLOCAL:
                 fn_0050f240(node->data.local.dtor);
                 break;
-            case 2:
+            case EAT_DESTROYLOCALCOND:
                 fn_0050f240(node->data.types.type[2]);
                 break;
-            case 3:
+            case EAT_DESTROYLOCALOFFSET:
                 fn_0050f240(node->data.local.dtor);
                 break;
-            case 4:
+            case EAT_DESTROYLOCALPOINTER:
                 fn_0050f240(node->data.local_pointer.dtor);
                 break;
-            case 5:
+            case EAT_DESTROYLOCALARRAY:
                 fn_0050f240(node->data.member_array.dtor);
                 break;
             case 6:
                 fn_0050f240(node->data.types.type[2]);
                 break;
-            case 7:
-            case 17:
+            case EAT_DESTROYMEMBER:
+            case EAT_DESTROYBASE:
                 fn_0050f240(node->data.member.dtor);
                 break;
-            case 8:
+            case EAT_DESTROYMEMBERCOND:
                 fn_0050f240(node->data.types.type[2]);
                 break;
-            case 9:
+            case EAT_DESTROYMEMBERARRAY:
                 fn_0050f240(node->data.member_array.dtor);
                 break;
-            case 10:
-            case 11:
+            case EAT_DELETEPOINTER:
+            case EAT_DELETELOCALPOINTER:
                 fn_0050f240(node->data.pair.second);
                 break;
-            case 12:
+            case EAT_DELETEPOINTERCOND:
                 fn_0050f240(node->data.delete_pointer.deletefunc);
                 break;
-            case 13:
-            case 14:
-            case 15:
-            case 16:
+            case EAT_CATCHBLOCK:
+            case EAT_ACTIVECATCHBLOCK:
+            case EAT_SPECIFICATION:
+            case EAT_TERMINATE:
                 break;
             default:
                 CError_FATAL(131);
@@ -321,42 +321,42 @@ Boolean CExcept_ActionCompare(ExceptionAction *left, ExceptionAction *right)
 {
     if (left->kind == right->kind) {
         switch (left->kind) {
-            case 1:
+            case EAT_DESTROYLOCAL:
                 return left->data.local.object == right->data.local.object;
-            case 2:
+            case EAT_DESTROYLOCALCOND:
                 return left->data.local_cond.object == right->data.local_cond.object;
-            case 3:
+            case EAT_DESTROYLOCALOFFSET:
                 return left->data.local.object == right->data.local.object &&
                        left->data.local.offset == right->data.local.offset;
-            case 4:
+            case EAT_DESTROYLOCALPOINTER:
                 return left->data.local.object == right->data.local.object;
-            case 5:
+            case EAT_DESTROYLOCALARRAY:
                 return left->data.member_array.objectptr == right->data.member_array.objectptr;
             case 6:
                 return left->data.types.type[0] == right->data.types.type[0];
-            case 7:
-            case 17:
+            case EAT_DESTROYMEMBER:
+            case EAT_DESTROYBASE:
                 return left->data.member.objectptr == right->data.member.objectptr &&
                        left->data.member.offset == right->data.member.offset;
-            case 8:
+            case EAT_DESTROYMEMBERCOND:
                 return left->data.member_cond.objectptr == right->data.member_cond.objectptr &&
                        left->data.member_cond.offset == right->data.member_cond.offset;
-            case 9:
+            case EAT_DESTROYMEMBERARRAY:
                 return left->data.member_array.objectptr == right->data.member_array.objectptr &&
                        left->data.member_array.offset == right->data.member_array.offset;
-            case 10:
-            case 11:
+            case EAT_DELETEPOINTER:
+            case EAT_DELETELOCALPOINTER:
                 return left->data.pair.first == right->data.pair.first &&
                        left->data.pair.second == right->data.pair.second;
-            case 12:
+            case EAT_DELETEPOINTERCOND:
                 return left->data.delete_pointer_cond.cond == right->data.delete_pointer_cond.cond;
-            case 13:
+            case EAT_CATCHBLOCK:
                 return left->data.catch_block.label == right->data.catch_block.label;
-            case 14:
+            case EAT_ACTIVECATCHBLOCK:
                 return left->data.active_catch.info == right->data.active_catch.info;
-            case 16:
+            case EAT_TERMINATE:
                 return 1;
-            case 15:
+            case EAT_SPECIFICATION:
                 return left->data.specification.ids == right->data.specification.ids;
             default:
                 CError_FATAL(253);
@@ -369,21 +369,21 @@ unsigned char CExcept_ActionNeedsDestruction(ExceptionAction *entry)
 {
     unsigned char result;
     switch (entry->kind) {
-        case 13:
+        case EAT_CATCHBLOCK:
             result = 0;
             return result;
-        case 1:
-        case 3:
-        case 5:
-        case 11:
-        case 14:
+        case EAT_DESTROYLOCAL:
+        case EAT_DESTROYLOCALOFFSET:
+        case EAT_DESTROYLOCALARRAY:
+        case EAT_DELETELOCALPOINTER:
+        case EAT_ACTIVECATCHBLOCK:
             result = 1;
             return result;
         case 0:
-        case 7:
-        case 8:
-        case 9:
-        case 17:
+        case EAT_DESTROYMEMBER:
+        case EAT_DESTROYMEMBERCOND:
+        case EAT_DESTROYMEMBERARRAY:
+        case EAT_DESTROYBASE:
             break;
         default:
             CError_FATAL(302);
@@ -406,11 +406,11 @@ ENode *CExcept_RegisterDestructorObject(Object *obj, SInt32 value, Object *dtoro
     result = create_objectrefnode(obj);
     dtorobj = CABI_GetDestructorObject(dtorobj, 1);
     if (value == 0) {
-        rec->kind = 1;
+        rec->kind = EAT_DESTROYLOCAL;
         rec->data.local.object = obj;
         rec->data.local.dtor = dtorobj;
     } else {
-        rec->kind = 3;
+        rec->kind = EAT_DESTROYLOCALOFFSET;
         rec->data.local.object = obj;
         rec->data.local.dtor = dtorobj;
         rec->data.local.offset = value;
@@ -429,7 +429,7 @@ void CExcept_RegisterLocalArray(Statement *unused, Object *context, Object *dest
     entry->next = cexcept_dobjstack;
     cexcept_dobjstack = entry;
     destructor = CABI_GetDestructorObject(destructor, 1);
-    entry->kind = 5;
+    entry->kind = EAT_DESTROYLOCALARRAY;
     entry->data.member_array.objectptr = context;
     entry->data.member_array.dtor = destructor;
     entry->data.member_array.offset = offset;
@@ -444,7 +444,7 @@ void CExcept_RegisterDeleteObject(Statement *expr, Object *first, Object *second
     memclrw(record, 30U);
     record->next = cexcept_dobjstack;
     cexcept_dobjstack = record;
-    record->kind = 11U;
+    record->kind = EAT_DELETELOCALPOINTER;
     record->data.pair.first = first;
     record->data.pair.second = second;
     exception_cleanup_registered = 1U;
@@ -457,11 +457,11 @@ void insert_exception_action(Statement *stmt, ExceptionAction *action)
 
     for (act = (ExceptionAction *)stmt->dobjstack; act; act = act->next) {
         switch (act->kind) {
-            case 7:
-            case 8:
-            case 9:
-            case 15:
-            case 17:
+            case EAT_DESTROYMEMBER:
+            case EAT_DESTROYMEMBERCOND:
+            case EAT_DESTROYMEMBERARRAY:
+            case EAT_SPECIFICATION:
+            case EAT_DESTROYBASE:
                 break;
             default:
                 continue;
@@ -511,7 +511,7 @@ void CExcept_Terminate(void)
 
     entry = lalloc(30U);
     memclrw(entry, 30U);
-    entry->kind = 16U;
+    entry->kind = EAT_TERMINATE;
     entry->next = cexcept_dobjstack;
     cexcept_dobjstack = entry;
 }
@@ -546,17 +546,17 @@ void CExcept_RegisterMember(Statement *statement, Object *objectptr, SInt32 offs
     memclrw(node, sizeof(ExceptionAction));
     if (condition == NULL) {
         if (complete) {
-            node->kind = 7;
+            node->kind = EAT_DESTROYMEMBER;
             node->data.member.dtor = CABI_GetDestructorObject(destructor, 1);
         } else {
-            node->kind = 0x11;
+            node->kind = EAT_DESTROYBASE;
             node->data.member.dtor = CABI_GetDestructorObject(destructor, 0);
         }
         node->data.member.objectptr = objectptr;
         node->data.member.offset = offset;
     } else {
         CError_ASSERT(554, &condition->type->type == &stsignedshort.type);
-        node->kind = 8;
+        node->kind = EAT_DESTROYMEMBERCOND;
         node->data.member_cond.objectptr = objectptr;
         node->data.member_cond.cond = condition;
         node->data.member_cond.dtor = CABI_GetDestructorObject(destructor, 1);
@@ -573,7 +573,7 @@ void CExcept_RegisterMemberArray(Statement *stmt, Object *object, SInt32 offset,
 
     entry = (ExceptionAction *)lalloc(sizeof(ExceptionAction));
     memclrw((unsigned char *)entry, sizeof(ExceptionAction));
-    entry->kind = 9;
+    entry->kind = EAT_DESTROYMEMBERARRAY;
     entry->data.member_array.objectptr = object;
     entry->data.member_array.dtor = CABI_GetDestructorObject(dtor, 1);
     entry->data.member_array.offset = offset;
@@ -603,7 +603,7 @@ Statement *CExcept_ActionCleanup(ExceptionAction *cleanup, Statement *statement)
     SInt32 value2;
 
     switch (cleanup->kind) {
-        case 1:
+        case EAT_DESTROYLOCAL:
             localDtor = cleanup->data.local.dtor;
             localObjectExpression = create_objectrefnode(cleanup->data.local.object);
             localDtorCall = CException_004e2c40_inline1(localDtor, localObjectExpression);
@@ -611,7 +611,7 @@ Statement *CExcept_ActionCleanup(ExceptionAction *cleanup, Statement *statement)
             statement = localStatement;
             localStatement->dobjstack = cleanup->next;
             break;
-        case 3:
+        case EAT_DESTROYLOCALOFFSET:
             offset = cleanup->data.member.offset;
             memberDtor = cleanup->data.member.dtor;
             expression = create_objectrefnode(cleanup->data.member.objectptr);
@@ -623,14 +623,14 @@ Statement *CExcept_ActionCleanup(ExceptionAction *cleanup, Statement *statement)
             statement = memberStatement;
             memberStatement->dobjstack = cleanup->next;
             break;
-        case 11:
+        case EAT_DELETELOCALPOINTER:
             deleteFunc = cleanup->data.local.dtor;
             deleteObject = cleanup->data.local.object;
             statement = CFunc_InsertAfterStatement(4, statement);
             statement->expr = funccallexpr(deleteFunc, create_objectnode2(deleteObject), NULL, NULL, NULL);
             statement->dobjstack = cleanup->next;
             break;
-        case 5:
+        case EAT_DESTROYLOCALARRAY:
             value2 = (SInt32)cleanup->data.member_array.count;
             value1 = (SInt32)cleanup->data.member_array.offset;
             arrayDtor = cleanup->data.member_array.dtor;
@@ -646,7 +646,7 @@ Statement *CExcept_ActionCleanup(ExceptionAction *cleanup, Statement *statement)
                                            intconstnode((Type *)&stunsignedlong, value1));
             statement->dobjstack = cleanup->next;
             break;
-        case 14:
+        case EAT_ACTIVECATCHBLOCK:
             statement = CFunc_InsertAfterStatement(14, statement);
             statement->expr = create_objectrefnode(cleanup->data.active_catch.info);
             statement->dobjstack = cleanup->next;
@@ -656,18 +656,18 @@ Statement *CExcept_ActionCleanup(ExceptionAction *cleanup, Statement *statement)
             break;
         default:
             CError_FATAL(749);
-        case 2:
-        case 4:
+        case EAT_DESTROYLOCALCOND:
+        case EAT_DESTROYLOCALPOINTER:
         case 6:
-        case 7:
-        case 8:
-        case 9:
-        case 10:
-        case 12:
-        case 13:
-        case 15:
-        case 16:
-        case 17:
+        case EAT_DESTROYMEMBER:
+        case EAT_DESTROYMEMBERCOND:
+        case EAT_DESTROYMEMBERARRAY:
+        case EAT_DELETEPOINTER:
+        case EAT_DELETEPOINTERCOND:
+        case EAT_CATCHBLOCK:
+        case EAT_SPECIFICATION:
+        case EAT_TERMINATE:
+        case EAT_DESTROYBASE:
             break;
     }
     return statement;
@@ -1008,7 +1008,7 @@ void fn_004e1fb0(Statement *firstScope, Statement *insertionScope, Statement *la
             replacementList = entry;
             if (firstEntry == NULL)
                 firstEntry = entry;
-            entry->kind = 0xd;
+            entry->kind = EAT_CATCHBLOCK;
             entry->data.catch_block.object = (Object *)entries->catchObject;
             entry->data.catch_block.label = entries->handlerEntry->label;
             if (entries->exceptionType != NULL) {
@@ -1049,7 +1049,7 @@ void fn_004e1fb0(Statement *firstScope, Statement *insertionScope, Statement *la
             ExceptionAction *scopeEntry = (ExceptionAction *)lalloc(sizeof(ExceptionAction));
             memclrw(scopeEntry, sizeof(ExceptionAction));
             scopeEntry->next = originalList;
-            scopeEntry->kind = 0xe;
+            scopeEntry->kind = EAT_ACTIVECATCHBLOCK;
             scopeEntry->data.active_catch.info = (Object *)entryValue;
             scopeEntry->data.active_catch.call_dtor = hasClassType;
             replacementList = scopeEntry;
@@ -1272,7 +1272,7 @@ ENode *fn_004e1940(ENode *node)
         CError_ASSERT(1643, node->data.objref->otype == OT_OBJECT &&
                                 (type->classObject = CClass_Destructor((TypeClass *)node->data.objref)) != 0);
         stmt = CException_NewStmtNode();
-        stmt->kind = 1;
+        stmt->kind = EAT_DESTROYLOCAL;
         stmt->data.local.object = type->object;
         stmt->data.local.dtor = CABI_GetDestructorObject(type->classObject, 1);
         CException_CopyStmtNode();
@@ -1306,7 +1306,7 @@ void lower_newexception(ENode *node, Boolean useExpression)
         cleanup = (ExceptionAction *)lalloc(sizeof(ExceptionAction));
         cleanup->next = currentDobjstack;
         currentDobjstack = cleanup;
-        cleanup->kind = 0xc;
+        cleanup->kind = EAT_DELETEPOINTERCOND;
         cleanup->data.delete_pointer_cond.pointer = node->data.newexception.pointertemp;
         cleanup->data.delete_pointer_cond.deletefunc = node->data.newexception.deletefunc;
         cleanup->data.delete_pointer_cond.cond = cleanupFlag;
@@ -1343,7 +1343,7 @@ void lower_newexception(ENode *node, Boolean useExpression)
         statement->expr = node->data.newexception.tryexpr;
         cleanup = (ExceptionAction *)lalloc(sizeof(ExceptionAction));
         cleanup->next = currentDobjstack;
-        cleanup->kind = 0xa;
+        cleanup->kind = EAT_DELETEPOINTER;
         cleanup->data.delete_pointer.pointer = node->data.newexception.pointertemp;
         cleanup->data.delete_pointer.deletefunc = node->data.newexception.deletefunc;
         statement->dobjstack = cleanup;
@@ -1449,7 +1449,7 @@ ENode *rewrite_funccall_temporaries(ENode *node, Boolean reverse)
             cleanup = lalloc(sizeof(ExceptionAction));
             cleanup->next = currentDobjstack;
             currentDobjstack = cleanup;
-            cleanup->kind = 2;
+            cleanup->kind = EAT_DESTROYLOCALCOND;
             cleanup->data.local_cond.object = temporary->object;
             cleanup->data.local_cond.dtor = CABI_GetDestructorObject(temporary->classObject, 1);
             cleanup->data.local_cond.cond = temporary->initializationFlag;
@@ -1464,7 +1464,7 @@ ENode *rewrite_funccall_temporaries(ENode *node, Boolean reverse)
             cleanup = lalloc(sizeof(ExceptionAction));
             cleanup->next = currentDobjstack;
             currentDobjstack = cleanup;
-            cleanup->kind = 1;
+            cleanup->kind = EAT_DESTROYLOCAL;
             cleanup->data.local.object = temporary->object;
             cleanup->data.local.dtor = CABI_GetDestructorObject(temporary->classObject, 1);
             cleanupCopy = lalloc(sizeof(ExceptionAction));
@@ -1685,7 +1685,8 @@ Statement *generate_temporary_object_destruction(Statement *arg)
     Statement *stmt = arg;
     CLabel *label;
     while (p != NULL) {
-        if (current_dobjstack != NULL && (current_dobjstack->kind == 1 || current_dobjstack->kind == 2) &&
+        if (current_dobjstack != NULL &&
+            (current_dobjstack->kind == EAT_DESTROYLOCAL || current_dobjstack->kind == EAT_DESTROYLOCALCOND) &&
             current_dobjstack->data.local.object == p->object)
             current_dobjstack = current_dobjstack->next;
         else
@@ -1766,8 +1767,8 @@ void update_statement_dobjstacks(Statement *node)
             if (e->type == EFUNCCALL) {
                 if (e->data.funccall.funcref->type == EOBJREF &&
                     CClass_IsDestructor(e->data.funccall.funcref->data.objref) && (info = p->dobjstack) != NULL &&
-                    info->kind == 1 && (args = e->data.funccall.args) != NULL && args->node->type == EOBJREF &&
-                    args->node->data.objref == info->data.local.object) {
+                    info->kind == EAT_DESTROYLOCAL && (args = e->data.funccall.args) != NULL &&
+                    args->node->type == EOBJREF && args->node->data.objref == info->data.local.object) {
                     currentDobjstack = currentDobjstack->next;
                 }
             }
@@ -1814,12 +1815,12 @@ void setup_exception_specification(struct Statement *statements, struct ExceptSp
 
     region = lalloc(sizeof(*region));
     memclrw(region, sizeof(*region));
-    region->kind = 0x0f;
+    region->kind = EAT_SPECIFICATION;
     for (statement = statements; statement != NULL; statement = statement->next) {
         if (statement->dobjstack != NULL) {
             tail = statement->dobjstack;
             do {
-                if (tail->kind == 0x0f)
+                if (tail->kind == EAT_SPECIFICATION)
                     break;
                 if (tail->next == NULL) {
                     tail->next = region;
@@ -1875,7 +1876,7 @@ void setup_exception_specification(struct Statement *statements, struct ExceptSp
     assignment->expr = funccallexpr(data_00587654, create_objectrefnode(object), NULL, NULL, NULL);
     object_region = lalloc(sizeof(*object_region));
     memclrw(object_region, sizeof(*object_region));
-    object_region->kind = 0x0e;
+    object_region->kind = EAT_ACTIVECATCHBLOCK;
     object_region->data.active_catch.info = object;
     object_region->data.active_catch.call_dtor = 1;
     assignment->dobjstack = object_region;

@@ -144,8 +144,8 @@ SInt32 IRO_RemoveUnreachable(void)
                     if (entry->stmt != NULL && entry->stmt->marked == 0) {
                         entry->stmt->marked = 1;
                         for (link = &entry->stmt->dobjstack; (use = *link) != NULL; link = &use->next) {
-                            if ((use->kind == 0xd && use->data.catch_block.label == block->u.label) ||
-                                (use->kind == 0xf && use->data.specification.label == block->u.label)) {
+                            if ((use->kind == EAT_CATCHBLOCK && use->data.catch_block.label == block->u.label) ||
+                                (use->kind == EAT_SPECIFICATION && use->data.specification.label == block->u.label)) {
                                 *link = use->next;
                             }
                         }

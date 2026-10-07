@@ -1078,43 +1078,43 @@ void collect_undefined_function_objects(CInlineInfo *inlineData)
         for (action = (ExceptionAction *)inlineData->stmtinfo[statementIndex].exceptionActions; action != NULL;
              action = action->next) {
             switch (action->kind) {
-                case 1:
+                case EAT_DESTROYLOCAL:
                     add_undefined_function_object(action->data.local.dtor);
                     break;
-                case 2:
+                case EAT_DESTROYLOCALCOND:
                     add_undefined_function_object(action->data.local_cond.dtor);
                     break;
-                case 3:
+                case EAT_DESTROYLOCALOFFSET:
                     add_undefined_function_object(action->data.local_pointer.dtor);
                     break;
-                case 4:
+                case EAT_DESTROYLOCALPOINTER:
                     add_undefined_function_object(action->data.member_array.dtor);
                     break;
-                case 5:
+                case EAT_DESTROYLOCALARRAY:
                     add_undefined_function_object(action->data.member.dtor);
                     break;
-                case 7:
-                case 17:
+                case EAT_DESTROYMEMBER:
+                case EAT_DESTROYBASE:
                     add_undefined_function_object(action->data.delete_pointer.deletefunc);
                     break;
-                case 8:
+                case EAT_DESTROYMEMBERCOND:
                     add_undefined_function_object(action->data.member_cond.dtor);
                     break;
-                case 9:
+                case EAT_DESTROYMEMBERARRAY:
                     add_undefined_function_object(action->data.member_array.dtor);
                     break;
-                case 10:
-                case 11:
+                case EAT_DELETEPOINTER:
+                case EAT_DELETELOCALPOINTER:
                     add_undefined_function_object(action->data.pair.second);
                     break;
-                case 12:
+                case EAT_DELETEPOINTERCOND:
                     add_undefined_function_object(action->data.delete_pointer_cond.deletefunc);
                     break;
                 case 6:
-                case 13:
-                case 14:
-                case 15:
-                case 16:
+                case EAT_CATCHBLOCK:
+                case EAT_ACTIVECATCHBLOCK:
+                case EAT_SPECIFICATION:
+                case EAT_TERMINATE:
                     break;
                 default:
                     CError_FATAL(3760);
@@ -1169,45 +1169,45 @@ void add_undefined_exception_function_objects(ExceptionAction *entry)
     if (entry != NULL) {
         do {
             switch (entry->kind) {
-                case 1:
+                case EAT_DESTROYLOCAL:
                     add_undefined_function_object(entry->data.local.dtor);
                     break;
-                case 2:
+                case EAT_DESTROYLOCALCOND:
                     add_undefined_function_object(entry->data.local_cond.dtor);
                     break;
-                case 3:
+                case EAT_DESTROYLOCALOFFSET:
                     add_undefined_function_object(entry->data.local.dtor);
                     break;
-                case 4:
+                case EAT_DESTROYLOCALPOINTER:
                     add_undefined_function_object((Object *)entry->data.slots[1]);
                     break;
-                case 5:
+                case EAT_DESTROYLOCALARRAY:
                     add_undefined_function_object((Object *)entry->data.slots[1]);
                     break;
                 case 6:
                     add_undefined_function_object((Object *)entry->data.slots[2]);
                     break;
-                case 7:
-                case 17:
+                case EAT_DESTROYMEMBER:
+                case EAT_DESTROYBASE:
                     add_undefined_function_object((Object *)entry->data.slots[1]);
                     break;
-                case 8:
+                case EAT_DESTROYMEMBERCOND:
                     add_undefined_function_object((Object *)entry->data.slots[2]);
                     break;
-                case 9:
+                case EAT_DESTROYMEMBERARRAY:
                     add_undefined_function_object((Object *)entry->data.slots[1]);
                     break;
-                case 10:
-                case 11:
+                case EAT_DELETEPOINTER:
+                case EAT_DELETELOCALPOINTER:
                     add_undefined_function_object((Object *)entry->data.slots[1]);
                     break;
-                case 12:
+                case EAT_DELETEPOINTERCOND:
                     add_undefined_function_object((Object *)entry->data.slots[1]);
                     break;
-                case 13:
-                case 14:
-                case 15:
-                case 16:
+                case EAT_CATCHBLOCK:
+                case EAT_ACTIVECATCHBLOCK:
+                case EAT_SPECIFICATION:
+                case EAT_TERMINATE:
                     break;
                 default:
                     CError_FATAL(3597);
@@ -1643,25 +1643,25 @@ ExceptionAction *fn_005102f0(Statement *indexMap, Statement *info)
         dst = copy;
         copy->kind = src->kind;
         switch (src->kind) {
-            case 1:
+            case EAT_DESTROYLOCAL:
                 copy->data.operands[0].value = MapObj(src->data.operands[0].value);
                 copy->data.operands[1].value = src->data.operands[1].value;
                 break;
-            case 2:
+            case EAT_DESTROYLOCALCOND:
                 copy->data.operands[0].value = MapObj(src->data.operands[0].value);
                 copy->data.operands[2].value = src->data.operands[2].value;
                 copy->data.operands[1].value = MapObj(src->data.operands[1].value);
                 break;
-            case 3:
+            case EAT_DESTROYLOCALOFFSET:
                 copy->data.operands[0].value = MapObj(src->data.operands[0].value);
                 copy->data.operands[1].value = src->data.operands[1].value;
                 copy->data.operands[2].value = src->data.operands[2].value;
                 break;
-            case 4:
+            case EAT_DESTROYLOCALPOINTER:
                 copy->data.operands[0].value = MapObj(src->data.operands[0].value);
                 copy->data.operands[1].value = src->data.operands[1].value;
                 break;
-            case 5:
+            case EAT_DESTROYLOCALARRAY:
                 copy->data.operands[0].value = MapObj(src->data.operands[0].value);
                 copy->data.operands[1].value = src->data.operands[1].value;
                 copy->data.operands[2].value = src->data.operands[2].value;
@@ -1673,36 +1673,36 @@ ExceptionAction *fn_005102f0(Statement *indexMap, Statement *info)
                 copy->data.operands[2].value = MapObj(src->data.operands[2].value);
                 copy->data.operands[3].value = MapObj(src->data.operands[3].value);
                 break;
-            case 7:
-            case 0x11:
+            case EAT_DESTROYMEMBER:
+            case EAT_DESTROYBASE:
                 copy->data.operands[0].value = MapObj(src->data.operands[0].value);
                 copy->data.operands[1].value = src->data.operands[1].value;
                 copy->data.operands[2].value = src->data.operands[2].value;
                 break;
-            case 8:
+            case EAT_DESTROYMEMBERCOND:
                 copy->data.operands[0].value = MapObj(src->data.operands[0].value);
                 copy->data.operands[1].value = MapObj(src->data.operands[1].value);
                 copy->data.operands[2].value = src->data.operands[2].value;
                 copy->data.operands[3].value = src->data.operands[3].value;
                 break;
-            case 9:
+            case EAT_DESTROYMEMBERARRAY:
                 copy->data.operands[0].value = MapObj(src->data.operands[0].value);
                 copy->data.operands[1].value = src->data.operands[1].value;
                 copy->data.operands[2].value = src->data.operands[2].value;
                 copy->data.operands[3].value = src->data.operands[3].value;
                 copy->data.operands[4].value = src->data.operands[4].value;
                 break;
-            case 10:
-            case 11:
+            case EAT_DELETEPOINTER:
+            case EAT_DELETELOCALPOINTER:
                 copy->data.operands[0].value = MapObj(src->data.operands[0].value);
                 copy->data.operands[1].value = src->data.operands[1].value;
                 break;
-            case 12:
+            case EAT_DELETEPOINTERCOND:
                 copy->data.operands[0].value = MapObj(src->data.operands[0].value);
                 copy->data.operands[1].value = src->data.operands[1].value;
                 copy->data.operands[2].value = MapObj(src->data.operands[2].value);
                 break;
-            case 13:
+            case EAT_CATCHBLOCK:
                 copy->data.operands[0].value = MapObj(src->data.operands[0].value);
                 copy->data.operands[1].value = MapObj(src->data.operands[1].value);
                 copy->data.operands[2].value = FindIndex(indexMap, src->data.operands[2].reference->index);
@@ -1710,17 +1710,17 @@ ExceptionAction *fn_005102f0(Statement *indexMap, Statement *info)
                 copy->data.operands[4].value = src->data.operands[4].value;
                 copy->data.operands[5].value = src->data.operands[5].value;
                 break;
-            case 14:
+            case EAT_ACTIVECATCHBLOCK:
                 copy->data.operands[0].value = MapObj(src->data.operands[0].value);
                 copy->data.operands[1].byte = src->data.operands[1].byte;
                 break;
-            case 15:
+            case EAT_SPECIFICATION:
                 copy->data.operands[0].value = src->data.operands[0].value;
                 copy->data.operands[1].value = src->data.operands[1].value;
                 copy->data.operands[2].value = FindIndex(indexMap, src->data.operands[2].reference->index);
                 copy->data.operands[3].value = MapObj(src->data.operands[3].value);
                 break;
-            case 16:
+            case EAT_TERMINATE:
                 break;
             default:
                 CError_FATAL(3023);
@@ -2339,22 +2339,22 @@ ExceptionAction *copy_exception_actions(IStmtRec *parent, char copyExpressions)
         copies = copy;
         copy->kind = source->kind;
         switch (source->kind) {
-            case 1:
+            case EAT_DESTROYLOCAL:
                 CopyStatementExpression(copy, source, copyExpressions);
                 break;
-            case 2:
+            case EAT_DESTROYLOCALCOND:
                 copy->data.slots[0] = CInline_GetObjectByIndex(source->data.operands[0].value, copyExpressions);
                 copy->data.slots[2] = source->data.slots[2];
                 copy->data.slots[1] = CInline_GetObjectByIndex(source->data.operands[1].value, copyExpressions);
                 break;
-            case 3:
+            case EAT_DESTROYLOCALOFFSET:
                 CopyStatementExpression(copy, source, copyExpressions);
                 copy->data.slots[2] = source->data.slots[2];
                 break;
-            case 4:
+            case EAT_DESTROYLOCALPOINTER:
                 CopyStatementExpression(copy, source, copyExpressions);
                 break;
-            case 5:
+            case EAT_DESTROYLOCALARRAY:
                 CopyStatementExpression(copy, source, copyExpressions);
                 copy->data.slots[2] = source->data.slots[2];
                 copy->data.slots[3] = source->data.slots[3];
@@ -2365,32 +2365,32 @@ ExceptionAction *copy_exception_actions(IStmtRec *parent, char copyExpressions)
                 copy->data.slots[2] = CInline_GetObjectByIndex(source->data.operands[2].value, copyExpressions);
                 copy->data.slots[3] = CInline_GetObjectByIndex(source->data.operands[3].value, copyExpressions);
                 break;
-            case 7:
-            case 17:
+            case EAT_DESTROYMEMBER:
+            case EAT_DESTROYBASE:
                 CopyStatementExpression(copy, source, copyExpressions);
                 copy->data.slots[2] = source->data.slots[2];
                 break;
-            case 8:
+            case EAT_DESTROYMEMBERCOND:
                 copy->data.slots[0] = CInline_GetObjectByIndex(source->data.operands[0].value, copyExpressions);
                 copy->data.slots[1] = CInline_GetObjectByIndex(source->data.operands[1].value, copyExpressions);
                 copy->data.slots[2] = source->data.slots[2];
                 copy->data.slots[3] = source->data.slots[3];
                 break;
-            case 9:
+            case EAT_DESTROYMEMBERARRAY:
                 CopyStatementExpression(copy, source, copyExpressions);
                 copy->data.slots[2] = source->data.slots[2];
                 copy->data.slots[3] = source->data.slots[3];
                 copy->data.slots[4] = source->data.slots[4];
                 break;
-            case 10:
-            case 11:
+            case EAT_DELETEPOINTER:
+            case EAT_DELETELOCALPOINTER:
                 CopyStatementExpression(copy, source, copyExpressions);
                 break;
-            case 12:
+            case EAT_DELETEPOINTERCOND:
                 CopyStatementExpression(copy, source, copyExpressions);
                 copy->data.slots[2] = CInline_GetObjectByIndex(source->data.operands[2].value, copyExpressions);
                 break;
-            case 13:
+            case EAT_CATCHBLOCK:
                 copy->data.slots[0] = CInline_GetObjectByIndex(source->data.operands[0].value, copyExpressions);
                 copy->data.slots[1] = CInline_GetObjectByIndex(source->data.operands[1].value, copyExpressions);
                 {
@@ -2404,10 +2404,10 @@ ExceptionAction *copy_exception_actions(IStmtRec *parent, char copyExpressions)
                 copy->data.slots[4] = source->data.slots[4];
                 copy->data.slots[5] = source->data.slots[5];
                 break;
-            case 14:
+            case EAT_ACTIVECATCHBLOCK:
                 copy->data.slots[0] = CInline_GetObjectByIndex(source->data.operands[0].value, copyExpressions);
                 break;
-            case 15:
+            case EAT_SPECIFICATION:
                 copy->data.slots[0] = source->data.slots[0];
                 copy->data.slots[1] = source->data.slots[1];
                 {
@@ -2419,7 +2419,7 @@ ExceptionAction *copy_exception_actions(IStmtRec *parent, char copyExpressions)
                 }
                 copy->data.slots[3] = CInline_GetObjectByIndex(source->data.operands[3].value, copyExpressions);
                 break;
-            case 16:
+            case EAT_TERMINATE:
                 break;
             default:
                 CError_FATAL(2228);

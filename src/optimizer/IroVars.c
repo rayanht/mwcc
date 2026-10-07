@@ -162,20 +162,20 @@ void IroVars_VisitExceptionOperands(ExceptionAction *node, void (*visitOperand)(
 {
     for (; node != NULL; node = node->next) {
         switch (node->kind) {
-            case 1:
+            case EAT_DESTROYLOCAL:
                 visitOperand(node->data.operands[0].object);
                 break;
-            case 2:
+            case EAT_DESTROYLOCALCOND:
                 visitOperand(node->data.operands[0].object);
                 visitOperand(node->data.operands[1].object);
                 break;
-            case 3:
+            case EAT_DESTROYLOCALOFFSET:
                 visitOperand(node->data.operands[0].object);
                 break;
-            case 4:
+            case EAT_DESTROYLOCALPOINTER:
                 visitOperand(node->data.operands[0].object);
                 break;
-            case 5:
+            case EAT_DESTROYLOCALARRAY:
                 visitOperand(node->data.operands[0].object);
                 break;
             case 6:
@@ -183,23 +183,23 @@ void IroVars_VisitExceptionOperands(ExceptionAction *node, void (*visitOperand)(
                 visitOperand(node->data.operands[1].object);
                 visitOperand(node->data.operands[3].object);
                 break;
-            case 17:
+            case EAT_DESTROYBASE:
                 visitOperand(node->data.operands[0].object);
                 break;
-            case 7:
+            case EAT_DESTROYMEMBER:
                 visitOperand(node->data.operands[0].object);
                 break;
-            case 8:
+            case EAT_DESTROYMEMBERCOND:
                 visitOperand(node->data.operands[0].object);
                 visitOperand(node->data.operands[1].object);
                 break;
-            case 9:
+            case EAT_DESTROYMEMBERARRAY:
                 visitOperand(node->data.operands[0].object);
                 break;
-            case 10:
+            case EAT_DELETEPOINTER:
                 visitOperand(node->data.operands[0].object);
                 break;
-            case 12:
+            case EAT_DELETEPOINTERCOND:
                 visitOperand(node->data.operands[0].object);
                 visitOperand(node->data.operands[2].object);
                 break;
@@ -288,34 +288,34 @@ void visit_dobjstack_objects(IROLinear *linear)
     node = linear->stmt->dobjstack;
     while (node != NULL) {
         switch (node->kind) {
-            case 1:
+            case EAT_DESTROYLOCAL:
                 fn_0044ba70(node->data.local.object, 1, 0);
                 break;
-            case 2:
+            case EAT_DESTROYLOCALCOND:
                 fn_0044ba70(node->data.local_cond.object, 1, 0);
                 break;
-            case 3:
+            case EAT_DESTROYLOCALOFFSET:
                 fn_0044ba70(node->data.local.object, 1, 0);
                 break;
-            case 5:
+            case EAT_DESTROYLOCALARRAY:
                 fn_0044ba70(node->data.call.context, 1, 0);
                 break;
-            case 7:
-            case 17:
+            case EAT_DESTROYMEMBER:
+            case EAT_DESTROYBASE:
                 fn_0044ba70(node->data.member.objectptr, 1, 0);
                 break;
-            case 8:
+            case EAT_DESTROYMEMBERCOND:
                 fn_0044ba70(node->data.member_cond.objectptr, 1, 0);
                 break;
-            case 9:
+            case EAT_DESTROYMEMBERARRAY:
                 fn_0044ba70(node->data.member_array.objectptr, 1, 0);
                 break;
-            case 13:
+            case EAT_CATCHBLOCK:
                 if (node->data.catch_block.object != NULL)
                     fn_0044ba70(node->data.catch_block.object, 1, 0);
                 fn_0044ba70(node->data.catch_block.info, 1, 0);
                 break;
-            case 14:
+            case EAT_ACTIVECATCHBLOCK:
                 fn_0044ba70(node->data.active_catch.info, 1, 0);
                 break;
         }

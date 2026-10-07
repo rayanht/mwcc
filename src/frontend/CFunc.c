@@ -145,7 +145,7 @@ static inline void CFunc_CheckJump(Statement *stmt, Statement *dest)
 
     if (stmt->dobjstack != to && !CFunc_ScopeContains(stmt->dobjstack, to)) {
         while (to) {
-            if (CExcept_ActionNeedsDestruction(to) && to->kind != 14) {
+            if (CExcept_ActionNeedsDestruction(to) && to->kind != EAT_ACTIVECATCHBLOCK) {
                 CError_Warning(ERR_ILLEGAL_JUMP_PAST_INITIALIZER);
                 break;
             }

@@ -534,56 +534,56 @@ void dump_eat_nodes(ExceptionAction *p)
     while (p != NULL) {
         fprintf(data_005811b0, "\t\t:");
         switch (p->kind) {
-            case 1:
+            case EAT_DESTROYLOCAL:
                 fprintf(data_005811b0, "EAT_DESTROYLOCAL %s(&%s)%s",
                         COptimizer_GetFunctionObject(p->data.local.dtor)->name, p->data.local.object->name->name,
                         "\r\n");
                 break;
-            case 2:
+            case EAT_DESTROYLOCALCOND:
                 fprintf(data_005811b0, "EAT_DESTROYLOCALCOND%s", "\r\n");
                 break;
-            case 3:
+            case EAT_DESTROYLOCALOFFSET:
                 fprintf(data_005811b0, "EAT_DESTROYLOCALOFFSET %s(&%s+%ld)%s",
                         COptimizer_GetFunctionObject(p->data.local.dtor)->name, p->data.local.object->name->name,
                         p->data.delete_pointer_cond.cond, "\r\n");
                 break;
-            case 4:
+            case EAT_DESTROYLOCALPOINTER:
                 fprintf(data_005811b0, "EAT_DESTROYLOCALPOINTER%s", "\r\n");
                 break;
-            case 5:
+            case EAT_DESTROYLOCALARRAY:
                 fprintf(data_005811b0, "EAT_DESTROYLOCALARRAY%s", "\r\n");
                 break;
-            case 17:
+            case EAT_DESTROYBASE:
                 fprintf(data_005811b0, "EAT_DESTROYBASE %s(this+%ld)%s",
                         COptimizer_GetFunctionObject(p->data.local.dtor)->name, p->data.delete_pointer_cond.cond,
                         "\r\n");
                 break;
-            case 7:
+            case EAT_DESTROYMEMBER:
                 fprintf(data_005811b0, "EAT_DESTROYMEMBER %s(%s+%ld)%s",
                         COptimizer_GetFunctionObject(p->data.local.dtor)->name, p->data.local.object->name->name,
                         p->data.delete_pointer_cond.cond, "\r\n");
                 break;
-            case 8:
+            case EAT_DESTROYMEMBERCOND:
                 fprintf(data_005811b0, "EAT_DESTROYMEMBERCOND if(%s) %s(this+%ld)%s", p->data.local.dtor->name->name,
                         COptimizer_GetFunctionObject(p->data.delete_pointer_cond.cond)->name,
                         p->data.member_cond.offset, "\r\n");
                 break;
-            case 9:
+            case EAT_DESTROYMEMBERARRAY:
                 fprintf(data_005811b0, "EAT_DESTROYMEMBERARRAY %s(this+%ld)[%ld] size: %ld%s",
                         COptimizer_GetFunctionObject(p->data.local.dtor)->name, p->data.delete_pointer_cond.cond,
                         p->data.member_cond.offset, p->data.catch_block.exceptionType, "\r\n");
                 break;
-            case 10:
+            case EAT_DELETEPOINTER:
                 fprintf(data_005811b0, "EAT_DELETEPOINTER(%s)%s", p->data.local.object->name->name, "\r\n");
                 break;
-            case 11:
+            case EAT_DELETELOCALPOINTER:
                 fprintf(data_005811b0, "EAT_DELETELOCALPOINTER(%s)%s", p->data.local.object->name->name, "\r\n");
                 break;
-            case 12:
+            case EAT_DELETEPOINTERCOND:
                 fprintf(data_005811b0, "EAT_DELETEPOINTERCOND if (%s)(%s)%s",
                         p->data.delete_pointer_cond.cond->name->name, p->data.local.object->name->name, "\r\n");
                 break;
-            case 13:
+            case EAT_CATCHBLOCK:
                 fprintf(data_005811b0, "EAT_CATCHBLOCK ");
                 if (p->data.catch_block.exceptionType != NULL) {
                     if (p->data.local.object != NULL) {
@@ -598,13 +598,13 @@ void dump_eat_nodes(ExceptionAction *p)
                 }
                 fprintf(data_005811b0, " Label: %s%s", p->data.catch_block.label->uniquename->name, "\r\n");
                 break;
-            case 15:
+            case EAT_SPECIFICATION:
                 fprintf(data_005811b0, "EAT_SPECIFICATION%s", "\r\n");
                 break;
-            case 14:
+            case EAT_ACTIVECATCHBLOCK:
                 fprintf(data_005811b0, "EAT_ACTIVECATCHBLOCK%s", "\r\n");
                 break;
-            case 16:
+            case EAT_TERMINATE:
                 fprintf(data_005811b0, "EAT_TERMINATE%s", "\r\n");
                 break;
         }

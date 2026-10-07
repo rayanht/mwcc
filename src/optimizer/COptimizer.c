@@ -1499,10 +1499,10 @@ void remove_unreferenced_labels(Statement *statements)
             default: {
                 ExceptionAction *exception;
                 for (exception = statement->dobjstack; exception != NULL; exception = exception->next) {
-                    if (exception->kind == 0xd) {
+                    if (exception->kind == EAT_CATCHBLOCK) {
                         exception->data.catch_block.label->stmt->marked = 1;
                         exception->data.catch_block.label->stmt->flags |= 1;
-                    } else if (exception->kind == 0xf) {
+                    } else if (exception->kind == EAT_SPECIFICATION) {
                         exception->data.specification.label->stmt->marked = 1;
                         exception->data.specification.label->stmt->flags |= 1;
                     }

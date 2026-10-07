@@ -14,6 +14,25 @@ union InlineOperand {
     struct InlineIndexReference *reference;
     UInt8 byte;
 };
+/* ExceptionAction kinds, as DumpIR names them. */
+enum {
+    EAT_DESTROYLOCAL = 1,
+    EAT_DESTROYLOCALCOND = 2,
+    EAT_DESTROYLOCALOFFSET = 3,
+    EAT_DESTROYLOCALPOINTER = 4,
+    EAT_DESTROYLOCALARRAY = 5,
+    EAT_DESTROYMEMBER = 7,
+    EAT_DESTROYMEMBERCOND = 8,
+    EAT_DESTROYMEMBERARRAY = 9,
+    EAT_DELETEPOINTER = 10,
+    EAT_DELETELOCALPOINTER = 11,
+    EAT_DELETEPOINTERCOND = 12,
+    EAT_CATCHBLOCK = 13,
+    EAT_ACTIVECATCHBLOCK = 14,
+    EAT_SPECIFICATION = 15,
+    EAT_TERMINATE = 16,
+    EAT_DESTROYBASE = 17
+};
 #pragma options align = mac68k
 struct ExceptionAction {
     struct ExceptionAction *next;
