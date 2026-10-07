@@ -15,13 +15,13 @@ src/runtime/maincrt.c:
 	.text       start:0x00401000 end:0x00401070
 	.rdata      start:0x00534000 end:0x00534004
 	.exc        start:0x00535000 end:0x00535008 rename:.exc$BBB
-	.data       start:0x00536020 end:0x00536030
+	.data       start:0x00536020 end:0x0053602C
 
 src/runtime/exchand.cpp:
 	.text       start:0x00401070 end:0x00401110
 	.rdata      start:0x00534004 end:0x00534008
 	.exc        start:0x00535008 end:0x00535010 rename:.exc$BBB
-	.data       start:0x00536030 end:0x00536068
+	.data       start:0x00536030 end:0x00536065
 
 src/runtime/ExceptionX86.cpp:
 	.text       start:0x00401110 end:0x00401DE0
@@ -40,7 +40,7 @@ src/msl/startup.win32.c:
 
 src/msl/ThreadLocalData.c:
 	.text       start:0x00401FC0 end:0x00402130
-	.data       start:0x00536228 end:0x00536258
+	.data       start:0x00536228 end:0x00536254
 
 src/msl/abort_exit.c:
 	.text       start:0x00402130 end:0x00402270
@@ -50,7 +50,7 @@ src/runtime/setupargs.c:
 	.text       start:0x00402270 end:0x00402450
 	.rdata      start:0x00534150 end:0x0053415C
 	.exc        start:0x005350F0 end:0x00535108 rename:.exc$BBB
-	.data       start:0x00536258 end:0x00536268
+	.data       start:0x00536258 end:0x00536262
 	.bss        start:0x0057D220 end:0x0057D228
 
 src/runtime/runinit.c:
@@ -64,7 +64,7 @@ ccinit.obj:
 
 src/driver/CLStaticMain.c:
 	.text       start:0x00402480 end:0x004025C0
-	.data       start:0x00536268 end:0x00536350
+	.data       start:0x00536268 end:0x0053634C
 
 src/runtime/NMWException.cpp:
 	.text       start:0x004025C0 end:0x00402720
@@ -74,7 +74,7 @@ src/runtime/NMWException.cpp:
 
 src/msl/printf.c:
 	.text       start:0x00402720 end:0x00403C90
-	.data       start:0x00536358 end:0x005365B0
+	.data       start:0x00536358 end:0x005365AC
 
 src/runtime/arrcondes.cpp:
 	.text       start:0x00403C90 end:0x00403D00
@@ -113,12 +113,12 @@ src/runtime/globdest.c:
 
 src/msl/string.c:
 	.text       start:0x00404DE0 end:0x004050E0
-	.data       start:0x005365D8 end:0x005366B0
+	.data       start:0x005365D8 end:0x005366AE
 	.bss        start:0x0057D2C0 end:0x0057D2E0
 
 src/driver/ClientGlue.c:
 	.text       start:0x004050E0 end:0x0040534E
-	.data       start:0x005366B0 end:0x005366E8
+	.data       start:0x005366B0 end:0x005366E4
 
 src/driver/StaticParserGlue.c:
 	.text       start:0x0040534E end:0x00405380 align:1
@@ -134,7 +134,7 @@ src/msl/ansi_files.c:
 
 src/driver/ParserGlue-eabi-ppc-cc.c:
 	.text       start:0x00405670 end:0x00405850
-	.data       start:0x00537760 end:0x00540C38
+	.data       start:0x00537760 end:0x00540C34
 
 src/msl/ctype.c:
 	.text       start:0x00405850 end:0x00405890
@@ -158,7 +158,7 @@ src/msl/direct_io.c:
 
 src/msl/wchar_io.c:
 	.text       start:0x004062E0 end:0x00406450
-	.data       start:0x00541118 end:0x00541128
+	.data       start:0x00541118 end:0x00541124
 
 src/runtime/delarrop.cpp:
 	.text       start:0x00406450 end:0x00406480
@@ -170,14 +170,14 @@ src/msl/pool_alloc.win32.c:
 
 src/msl/extras.c:
 	.text       start:0x004064F0 end:0x004065B0
-	.data       start:0x00541128 end:0x00541170
+	.data       start:0x00541128 end:0x00541169
 
 src/msl/sysenv.win32.c:
 	.text       start:0x004065B0 end:0x00406610
 
 src/driver/Resources.c:
 	.text       start:0x00406610 end:0x004087D0
-	.data       start:0x00541170 end:0x005413A8
+	.data       start:0x00541170 end:0x005413A1
 	.bss        start:0x0057D5E8 end:0x0057D5F8
 
 src/driver/CLErrors.c:
@@ -202,7 +202,7 @@ src/driver/CLMain.c:
 
 src/driver/ParserFace.c:
 	.text       start:0x0040B6EB end:0x0040BDA0 align:1
-	.data       start:0x00543380 end:0x005434A8
+	.data       start:0x00543380 end:0x005434A4
 
 src/driver/cc-eabi-ppc-mw.c:
 	.text       start:0x0040BDA0 end:0x0040BFA0
@@ -214,7 +214,7 @@ src/driver/libimp-eabi-ppc-mw.c:
 
 src/msl/file_io.win32.c:
 	.text       start:0x0040C080 end:0x0040C270
-	.data       start:0x0054A098 end:0x0054A0A8
+	.data       start:0x0054A098 end:0x0054A0A3
 	.bss        start:0x0057D938 end:0x0057DA58
 
 src/msl/buffer_io.c:
@@ -222,29 +222,29 @@ src/msl/buffer_io.c:
 
 src/msl/string_io.c:
 	.text       start:0x0040C4E0 end:0x0040C510
-	.data       start:0x0054A0A8 end:0x0054A0B0
+	.data       start:0x0054A0A8 end:0x0054A0AC
 
 src/msl/file_io.c:
 	.text       start:0x0040C510 end:0x0040C8B0
-	.data       start:0x0054A0B0 end:0x0054A0B8
+	.data       start:0x0054A0B0 end:0x0054A0B4
 	.tls        start:0x0057C000 end:0x0057C200 rename:.tls$
 
 src/driver/ParserHelpers.c:
 	.text       start:0x0040C8B0 end:0x0040D012 align:1
-	.data       start:0x0054A0B8 end:0x0054A0F8
+	.data       start:0x0054A0B8 end:0x0054A0F3
 	.bss        start:0x0057DA58 end:0x0057DB60
 
 src/driver/ToolHelpers.c:
 	.text       start:0x0040D012 end:0x0040D283 align:1
-	.data       start:0x0054A0F8 end:0x0054A128
+	.data       start:0x0054A0F8 end:0x0054A123
 
 src/driver/ParserHelpers-cc.c:
 	.text       start:0x0040D283 end:0x0040D5BF align:1
-	.data       start:0x0054A128 end:0x0054A288
+	.data       start:0x0054A128 end:0x0054A284
 
 src/driver/ToolHelpers-cc.c:
 	.text       start:0x0040D5BF end:0x0040D8C0 align:1
-	.data       start:0x0054A288 end:0x0054A2F8
+	.data       start:0x0054A288 end:0x0054A2F2
 
 src/driver/OptimizerHelpers.c:
 	.text       start:0x0040D8C0 end:0x0040DE20
@@ -252,7 +252,7 @@ src/driver/OptimizerHelpers.c:
 
 src/driver/WarningHelpers.c:
 	.text       start:0x0040DE20 end:0x0040E010
-	.data       start:0x0054A5B0 end:0x0054A680
+	.data       start:0x0054A5B0 end:0x0054A67C
 
 src/driver/TargetWarningHelpers-ppc-cc.c:
 	.text       start:0x0040E010 end:0x0040E25F
@@ -274,23 +274,23 @@ src/driver/ParserErrors.c:
 
 src/driver/Arguments.c:
 	.text       start:0x0040EED5 end:0x0040FCAB align:1
-	.data       start:0x0054AA78 end:0x0054ABD0
+	.data       start:0x0054AA78 end:0x0054ABCC
 	.bss        start:0x0057E060 end:0x0057E1E0
 
 src/driver/Targets.c:
 	.text       start:0x0040FCAB end:0x0040FE30 align:1
-	.data       start:0x0054ABD0 end:0x0054AC28
+	.data       start:0x0054ABD0 end:0x0054AC24
 
 src/msl/misc_io.c:
 	.text       start:0x0040FE30 end:0x0040FE50
-	.data       start:0x0054AC28 end:0x0054AC38
+	.data       start:0x0054AC28 end:0x0054AC31
 
 src/msl/file_pos.c:
 	.text       start:0x0040FE50 end:0x00410010
 
 src/msl/time.c:
 	.text       start:0x00410010 end:0x00410A50
-	.data       start:0x0054AC38 end:0x0054AF88
+	.data       start:0x0054AC38 end:0x0054AF84
 	.bss        start:0x0057E1E0 end:0x0057E208
 
 src/msl/wcstoul.c:
@@ -299,19 +299,19 @@ src/msl/wcstoul.c:
 
 src/msl/wctype.c:
 	.text       start:0x004110E0 end:0x00411130
-	.data       start:0x0054B008 end:0x0054B650
+	.data       start:0x0054B008 end:0x0054B64B
 
 auto_0054B650_data:
 	.data       start:0x0054B650 end:0x0054B750
 
 src/driver/MsDos.c:
 	.text       start:0x00411130 end:0x00413020
-	.data       start:0x0054B750 end:0x0054B870
+	.data       start:0x0054B750 end:0x0054B86C
 	.bss        start:0x0057E208 end:0x0057E410
 
 src/driver/MacSpecs.c:
 	.text       start:0x00413020 end:0x004138A0
-	.data       start:0x0054B870 end:0x0054B8F8
+	.data       start:0x0054B870 end:0x0054B8F4
 	.bss        start:0x0057E410 end:0x0057EB60
 
 src/driver/Memory.c:
@@ -324,7 +324,7 @@ src/driver/Files.c:
 
 src/driver/AssertionFailure.c:
 	.text       start:0x00414A90 end:0x00414AC0
-	.data       start:0x0054B928 end:0x0054B958
+	.data       start:0x0054B928 end:0x0054B954
 
 src/driver/TextUtils.c:
 	.text       start:0x00414AC0 end:0x00414CD0
@@ -337,12 +337,12 @@ src/driver/CLIO.c:
 
 src/driver/CLPrefs.c:
 	.text       start:0x00416770 end:0x004169A0
-	.data       start:0x0054BC58 end:0x0054BCA0
+	.data       start:0x0054BC58 end:0x0054BC9C
 	.bss        start:0x0057EF00 end:0x0057EF08
 
 src/driver/MemUtils.c:
 	.text       start:0x004169A0 end:0x00416B40
-	.data       start:0x0054BCA0 end:0x0054BD10
+	.data       start:0x0054BCA0 end:0x0054BD0C
 
 src/driver/CLPluginRequests.cpp:
 	.text       start:0x00416B40 end:0x00417580
@@ -350,7 +350,7 @@ src/driver/CLPluginRequests.cpp:
 
 src/driver/CLLicenses.c:
 	.text       start:0x00417580 end:0x00417AB0
-	.data       start:0x0054BD78 end:0x0054BE38
+	.data       start:0x0054BD78 end:0x0054BE34
 	.bss        start:0x0057EF08 end:0x0057F018
 
 src/driver/CLToolExec.c:
@@ -366,7 +366,7 @@ src/driver/CLProj.c:
 
 src/driver/Generic.c:
 	.text       start:0x00418440 end:0x00419040
-	.data       start:0x0054BF08 end:0x0054BF38
+	.data       start:0x0054BF08 end:0x0054BF34
 	.bss        start:0x0057F018 end:0x0057F3B0
 
 src/driver/CLFileOps.cpp:
@@ -376,7 +376,7 @@ src/driver/CLFileOps.cpp:
 
 src/driver/CLTarg.c:
 	.text       start:0x0041B140 end:0x0041B370
-	.data       start:0x0054C120 end:0x0054C280
+	.data       start:0x0054C120 end:0x0054C27C
 
 src/msl/setjmp.x86.c:
 	.text       start:0x0041B370 end:0x0041B3B0
@@ -392,17 +392,17 @@ src/driver/CWParserPluginsPrivate.c:
 
 src/driver/Option.c:
 	.text       start:0x0041C14D end:0x0041E110 align:1
-	.data       start:0x0054C280 end:0x0054C3D0
+	.data       start:0x0054C280 end:0x0054C3CC
 	.bss        start:0x0057F3B8 end:0x0057F448
 
 src/driver/cc-eabi-ppc.c:
 	.text       start:0x0041E110 end:0x0041E960
-	.data       start:0x0054C3D0 end:0x0054C490
+	.data       start:0x0054C3D0 end:0x0054C48C
 	.bss        start:0x0057F448 end:0x0057F488
 
 src/driver/libimp-eabi-ppc.c:
 	.text       start:0x0041E960 end:0x0041F8B0
-	.data       start:0x0054C490 end:0x0054C518
+	.data       start:0x0054C490 end:0x0054C514
 	.bss        start:0x0057F488 end:0x0057F598
 
 src/msl/fcntl.win32.c:
@@ -434,7 +434,7 @@ src/msl/time.win32.c:
 
 src/msl/wscanf.c:
 	.text       start:0x00420DF0 end:0x00421A20
-	.data       start:0x0054C6A0 end:0x0054C820
+	.data       start:0x0054C6A0 end:0x0054C81C
 
 src/driver/MacFileTypes.c:
 	.text       start:0x00421A20 end:0x00421D50
@@ -446,7 +446,7 @@ src/msl/scanf.c:
 
 src/driver/CLFiles.c:
 	.text       start:0x004228F0 end:0x00422C30
-	.data       start:0x0054C9B0 end:0x0054C9F0
+	.data       start:0x0054C9B0 end:0x0054C9EC
 
 src/driver/CLOverlays.c:
 	.text       start:0x00422C30 end:0x00423540
@@ -471,15 +471,15 @@ lmgr326b:
 
 src/driver/CLAccessPaths.c:
 	.text       start:0x004270D0 end:0x00427780
-	.data       start:0x0054D7C8 end:0x0054D848
+	.data       start:0x0054D7C8 end:0x0054D844
 
 src/driver/CLSegs.c:
 	.text       start:0x00427780 end:0x004279F0
-	.data       start:0x0054D848 end:0x0054D898
+	.data       start:0x0054D848 end:0x0054D894
 
 src/driver/CLDependencies.c:
 	.text       start:0x004279F0 end:0x004285D0
-	.data       start:0x0054D898 end:0x0054D968
+	.data       start:0x0054D898 end:0x0054D964
 
 src/driver/CLWriteObjectFile.c:
 	.text       start:0x004285D0 end:0x004286D0
@@ -487,7 +487,7 @@ src/driver/CLWriteObjectFile.c:
 
 src/driver/CLBrowser.c:
 	.text       start:0x004286D0 end:0x00428F5D
-	.data       start:0x0054D9B0 end:0x0054DA38
+	.data       start:0x0054D9B0 end:0x0054DA34
 	.bss        start:0x0057F598 end:0x0057F5A8
 
 src/driver/Parameter.c:
@@ -496,7 +496,7 @@ src/driver/Parameter.c:
 
 src/driver/Help.c:
 	.text       start:0x0042ACB0 end:0x0042C0C0 align:1
-	.data       start:0x0054DCF8 end:0x0054E840
+	.data       start:0x0054DCF8 end:0x0054E83C
 	.bss        start:0x0057F5A8 end:0x0057F6A8
 
 src/driver/TargetPanels-eabi-ppc.c:
@@ -506,17 +506,17 @@ src/driver/TargetPanels-eabi-ppc.c:
 
 src/optimizer/IrOptimizer.c:
 	.text       start:0x0042C920 end:0x004317B0
-	.data       start:0x0054EA28 end:0x0054F5A0
+	.data       start:0x0054EA28 end:0x0054F59C
 	.bss        start:0x0057F6B0 end:0x0057F6C0
 
 src/backend/CodeGen.c:
 	.text       start:0x004317B0 end:0x00437D90
-	.data       start:0x0054F5A0 end:0x0054FD08
+	.data       start:0x0054F5A0 end:0x0054FD04
 	.bss        start:0x0057F6C0 end:0x0057F6C8
 
 src/frontend/CPrep.c:
 	.text       start:0x00437D90 end:0x00441890
-	.data       start:0x0054FD08 end:0x00551100
+	.data       start:0x0054FD08 end:0x005510FC
 	.bss        start:0x0057F6C8 end:0x0057FD70
 
 src/frontend/CompilerTools.c:
@@ -526,7 +526,7 @@ src/frontend/CompilerTools.c:
 
 src/driver/LibImportMessages.c:
 	.text       start:0x00442CE0 end:0x004430E0
-	.data       start:0x005511B0 end:0x00551228
+	.data       start:0x005511B0 end:0x00551224
 	.bss        start:0x0057FDE0 end:0x005805E0
 
 src/driver/COSToolsCLT.c:
@@ -537,7 +537,7 @@ auto_00551228_data:
 
 src/backend/ELF_Endian.c:
 	.text       start:0x004434E0 end:0x00443F10
-	.data       start:0x005513B8 end:0x00551410
+	.data       start:0x005513B8 end:0x0055140C
 	.bss        start:0x005805E0 end:0x005805E8
 
 src/msl/wcstold.c:
@@ -559,14 +559,14 @@ src/runtime/NewHand.cpp:
 	.text       start:0x004451B0 end:0x00445200
 	.rdata      start:0x00534200 end:0x0053422D
 	.exc        start:0x005351B0 end:0x005351B8 rename:.exc$BBB
-	.data       start:0x005514B0 end:0x00551508
+	.data       start:0x005514B0 end:0x00551505
 
 src/runtime/throwsbad.cpp:
-	.data       start:0x00551508 end:0x00551510
+	.data       start:0x00551508 end:0x00551509
 
 src/driver/ErrMgr.c:
 	.text       start:0x00445200 end:0x004454B0
-	.data       start:0x00551510 end:0x00551918
+	.data       start:0x00551510 end:0x00551914
 
 src/frontend/CError.c:
 	.text       start:0x004454B0 end:0x00449E30
@@ -598,7 +598,7 @@ src/optimizer/IroCSE.c:
 
 src/optimizer/IroTransform.c:
 	.text       start:0x0044FCE0 end:0x00454BB0
-	.data       start:0x00552D48 end:0x005536F0
+	.data       start:0x00552D48 end:0x005536EC
 
 src/optimizer/IroEval.c:
 	.text       start:0x00454BB0 end:0x00456590
@@ -606,7 +606,7 @@ src/optimizer/IroEval.c:
 
 src/optimizer/IroJump.c:
 	.text       start:0x00456590 end:0x00456BA0
-	.data       start:0x005538A8 end:0x005539B8
+	.data       start:0x005538A8 end:0x005539B4
 
 src/optimizer/IroRangePropagation.c:
 	.text       start:0x00456BA0 end:0x00458030
@@ -614,7 +614,7 @@ src/optimizer/IroRangePropagation.c:
 
 src/optimizer/IroPropagate.c:
 	.text       start:0x00458030 end:0x00459420
-	.data       start:0x00553C68 end:0x00553D50
+	.data       start:0x00553C68 end:0x00553D4C
 
 src/optimizer/IROUseDef.c:
 	.text       start:0x00459420 end:0x0045ADC0
@@ -632,16 +632,16 @@ src/optimizer/IroBitVect.c:
 
 src/backend/InlineAsmPPC.c:
 	.text       start:0x00462CA0 end:0x0046B3F0
-	.data       start:0x00554830 end:0x00555090
+	.data       start:0x00554830 end:0x0055508C
 
 src/frontend/CExpr2.c:
 	.text       start:0x0046B3F0 end:0x00474490
-	.data       start:0x00555090 end:0x00555418
+	.data       start:0x00555090 end:0x00555414
 	.bss        start:0x005806A0 end:0x00580758
 
 src/frontend/CInt64.c:
 	.text       start:0x00474490 end:0x00476170
-	.data       start:0x00555418 end:0x00555500
+	.data       start:0x00555418 end:0x005554FC
 	.bss        start:0x00580758 end:0x00580868
 
 auto_00580868_bss:
@@ -649,12 +649,12 @@ auto_00580868_bss:
 
 src/frontend/CFunc.c:
 	.text       start:0x00476170 end:0x0047CBD0
-	.data       start:0x00555500 end:0x005557B8
+	.data       start:0x00555500 end:0x005557B4
 	.bss        start:0x00580870 end:0x00580898
 
 src/backend/PPCError.c:
 	.text       start:0x0047CBD0 end:0x0047D000
-	.data       start:0x005557B8 end:0x005557C8
+	.data       start:0x005557B8 end:0x005557C4
 
 src/backend/Intrinsics.c:
 	.text       start:0x0047D000 end:0x00488260
@@ -663,7 +663,7 @@ src/backend/Intrinsics.c:
 
 src/backend/ObjGen_PPC_EABI.c:
 	.text       start:0x00488260 end:0x0048B6C0
-	.data       start:0x0055D460 end:0x0055D5C0
+	.data       start:0x0055D460 end:0x0055D5BC
 	.bss        start:0x00580D80 end:0x00580DC0
 
 src/frontend/CParser.c:
@@ -677,17 +677,17 @@ src/backend/BE_symbol.c:
 
 src/frontend/CPrepTokenizer.c:
 	.text       start:0x00491F80 end:0x00497000
-	.data       start:0x0055DA98 end:0x0055E480
+	.data       start:0x0055DA98 end:0x0055E47C
 	.bss        start:0x00580DD0 end:0x00580DD8
 
 src/frontend/CScope.c:
 	.text       start:0x00497000 end:0x0049B6A0
-	.data       start:0x0055E480 end:0x0055E528
+	.data       start:0x0055E480 end:0x0055E524
 	.bss        start:0x00580DD8 end:0x00580DF0
 
 src/backend/BE_elf.c:
 	.text       start:0x0049B6A0 end:0x0049CE40
-	.data       start:0x0055E528 end:0x0055E598
+	.data       start:0x0055E528 end:0x0055E594
 	.bss        start:0x00580DF0 end:0x00580F80
 
 src/backend/PCode.c:
@@ -705,11 +705,11 @@ src/backend/Operands.c:
 
 src/backend/PCodeUtilities.c:
 	.text       start:0x004A1BA0 end:0x004A2B70
-	.data       start:0x0055EBF8 end:0x0055ED08
+	.data       start:0x0055EBF8 end:0x0055ED04
 
 src/backend/PCodeAssembly.c:
 	.text       start:0x004A2B70 end:0x004A4CB0
-	.data       start:0x0055ED08 end:0x0055F598
+	.data       start:0x0055ED08 end:0x0055F594
 	.bss        start:0x00580F90 end:0x00580F98
 
 src/backend/SFPE_PPC_EABI.c:
@@ -718,17 +718,17 @@ src/backend/SFPE_PPC_EABI.c:
 
 src/backend/CMachine.c:
 	.text       start:0x004A7480 end:0x004A9C70
-	.data       start:0x0055F5A8 end:0x005601E0
+	.data       start:0x0055F5A8 end:0x005601DC
 	.bss        start:0x00580F98 end:0x00580FA8
 
 src/backend/StackFrameEABI.c:
 	.text       start:0x004A9C70 end:0x004AC5D0
-	.data       start:0x005601E0 end:0x00560498
+	.data       start:0x005601E0 end:0x00560494
 	.bss        start:0x00580FA8 end:0x00580FB0
 
 src/backend/DWARF.c:
 	.text       start:0x004AC5D0 end:0x004B1080
-	.data       start:0x00560498 end:0x00560648
+	.data       start:0x00560498 end:0x00560644
 	.bss        start:0x00580FB0 end:0x00581150
 
 src/backend/InstrSelection.c:
@@ -737,7 +737,7 @@ src/backend/InstrSelection.c:
 
 src/backend/Switch.c:
 	.text       start:0x004BAC10 end:0x004BC0A0
-	.data       start:0x005608F8 end:0x00560910
+	.data       start:0x005608F8 end:0x0056090C
 	.bss        start:0x00581150 end:0x00581190
 
 src/backend/Exceptions.c:
@@ -766,11 +766,11 @@ src/frontend/CMangler.c:
 
 src/optimizer/GlobalOptimizer.c:
 	.text       start:0x004C4430 end:0x004C4BA0
-	.data       start:0x00561FF0 end:0x005621A0
+	.data       start:0x00561FF0 end:0x0056219C
 
 src/backend/PCodeListing.c:
 	.text       start:0x004C4BA0 end:0x004C60B0
-	.data       start:0x005621A0 end:0x00563028
+	.data       start:0x005621A0 end:0x00563024
 
 src/backend/Peephole.c:
 	.text       start:0x004C60B0 end:0x004CCA50
@@ -778,12 +778,12 @@ src/backend/Peephole.c:
 
 src/backend/Scheduler.c:
 	.text       start:0x004CCA50 end:0x004CDEF0
-	.data       start:0x00563028 end:0x00563060
+	.data       start:0x00563028 end:0x0056305C
 	.bss        start:0x00581B00 end:0x00581B88
 
 src/backend/Coloring.c:
 	.text       start:0x004CDEF0 end:0x004CEA40
-	.data       start:0x00563060 end:0x005630A8
+	.data       start:0x00563060 end:0x005630A4
 	.bss        start:0x00581B88 end:0x00581B90
 
 src/frontend/CInit.c:
@@ -802,12 +802,12 @@ src/frontend/CPreprocess.c:
 
 src/frontend/CPrec.c:
 	.text       start:0x004D6F10 end:0x004E09F0
-	.data       start:0x00563E38 end:0x005641D0
+	.data       start:0x00563E38 end:0x005641CC
 	.bss        start:0x00581BE0 end:0x00581C30
 
 src/frontend/CException.c:
 	.text       start:0x004E09F0 end:0x004E36D0
-	.data       start:0x005641D0 end:0x005646A0
+	.data       start:0x005641D0 end:0x0056469C
 	.bss        start:0x00581C30 end:0x00581C48
 
 src/frontend/CSOM.c:
@@ -825,7 +825,7 @@ src/frontend/Unmangle.c:
 	.data       start:0x005649B8 end:0x005651C0
 
 src/msl/locale.c:
-	.data       start:0x005651C0 end:0x005651F8
+	.data       start:0x005651C0 end:0x005651F6
 	.bss        start:0x00581C60 end:0x00581C90
 
 src/msl/float.c:
@@ -839,7 +839,7 @@ src/frontend/CClass.c:
 
 src/backend/InlineAsm.c:
 	.text       start:0x004EC390 end:0x004ED690
-	.data       start:0x005652F8 end:0x005653E0
+	.data       start:0x005652F8 end:0x005653DC
 	.bss        start:0x00581CE0 end:0x005820E0
 
 src/frontend/CTemplateNew.c:
@@ -852,11 +852,11 @@ src/optimizer/IroSubable.c:
 	.data       start:0x00565458 end:0x005654B0
 
 src/backend/PCodeInfo.c:
-	.data       start:0x005654B0 end:0x00568028
+	.data       start:0x005654B0 end:0x00568023
 
 src/backend/InlineAsmMnemonicsPPC.c:
 	.text       start:0x004F0190 end:0x004F02A0
-	.data       start:0x00568028 end:0x0056F638
+	.data       start:0x00568028 end:0x0056F635
 
 src/backend/InlineAsmRegisters.c:
 	.text       start:0x004F02A0 end:0x004F03C0
@@ -864,7 +864,7 @@ src/backend/InlineAsmRegisters.c:
 
 src/backend/InlineAsmRegistersPPC.c:
 	.text       start:0x004F03C0 end:0x004F0B00
-	.data       start:0x0056F638 end:0x005723A8
+	.data       start:0x0056F638 end:0x005723A5
 	.bss        start:0x00582210 end:0x00582440
 
 src/frontend/CExpr.c:
@@ -873,11 +873,11 @@ src/frontend/CExpr.c:
 
 src/frontend/CDecl.c:
 	.text       start:0x004FB5B0 end:0x005049D0
-	.data       start:0x00572B18 end:0x00572E58
+	.data       start:0x00572B18 end:0x00572E54
 
 src/frontend/CObjC.c:
 	.text       start:0x005049D0 end:0x00509E80
-	.data       start:0x00572E58 end:0x00573178
+	.data       start:0x00572E58 end:0x00573174
 	.bss        start:0x00582440 end:0x00582448
 
 src/frontend/CObjCModern.c:
@@ -905,26 +905,26 @@ src/frontend/CTemplateTools.c:
 
 src/optimizer/FunctionCalls.c:
 	.text       start:0x00518A60 end:0x0051A270
-	.data       start:0x00574168 end:0x00574180
+	.data       start:0x00574168 end:0x0057417C
 
 src/optimizer/StructMoves.c:
 	.text       start:0x0051A270 end:0x0051B020
-	.data       start:0x00574180 end:0x005741B0
+	.data       start:0x00574180 end:0x005741AC
 
 src/optimizer/CIRTransform.c:
 	.text       start:0x0051B020 end:0x0051B800
-	.data       start:0x005741B0 end:0x00574388
+	.data       start:0x005741B0 end:0x00574384
 
 src/frontend/CTemplateClass.c:
 	.text       start:0x0051B800 end:0x0051E430
-	.data       start:0x00574388 end:0x00574418
+	.data       start:0x00574388 end:0x00574414
 
 src/msl/qsort.c:
 	.text       start:0x0051E430 end:0x0051E590
 
 src/optimizer/ValueNumbering.c:
 	.text       start:0x0051E590 end:0x005200E0
-	.data       start:0x00574418 end:0x00574CC0
+	.data       start:0x00574418 end:0x00574CBC
 	.bss        start:0x005824D8 end:0x00582C50
 
 src/optimizer/CopyPropagation.c:
@@ -933,7 +933,7 @@ src/optimizer/CopyPropagation.c:
 
 src/optimizer/AddPropagation.c:
 	.text       start:0x00520BF0 end:0x00521A10
-	.data       start:0x00574CC0 end:0x00574CD8
+	.data       start:0x00574CC0 end:0x00574CD4
 
 src/optimizer/LoopDetection.c:
 	.text       start:0x00521A10 end:0x00523650
@@ -942,15 +942,15 @@ src/optimizer/LoopDetection.c:
 
 src/optimizer/CodeMotion.c:
 	.text       start:0x00523650 end:0x005270C0
-	.data       start:0x00574CE8 end:0x00574D28
+	.data       start:0x00574CE8 end:0x00574D24
 
 src/optimizer/StrengthReduction.c:
 	.text       start:0x005270C0 end:0x005289B0
-	.data       start:0x00574D28 end:0x00574D40
+	.data       start:0x00574D28 end:0x00574D3C
 
 src/optimizer/LoopOptimization.c:
 	.text       start:0x005289B0 end:0x0052B530
-	.data       start:0x00574D40 end:0x00574D58
+	.data       start:0x00574D40 end:0x00574D54
 	.bss        start:0x00582C68 end:0x00582C78
 
 src/optimizer/ConstantPropagation.c:
@@ -967,32 +967,32 @@ src/optimizer/VectorArraysToRegs.c:
 
 src/backend/MachineSimulation603.c:
 	.text       start:0x0052DBC0 end:0x0052E0F0
-	.data       start:0x00574D70 end:0x00575880
+	.data       start:0x00574D70 end:0x0057587C
 	.bss        start:0x00582CA0 end:0x00582D18
 
 src/backend/MachineSimulation603e.c:
 	.text       start:0x0052E0F0 end:0x0052E680
-	.data       start:0x00575880 end:0x005763F8
+	.data       start:0x00575880 end:0x005763F4
 	.bss        start:0x00582D18 end:0x00582D90
 
 src/backend/MachineSimulation604.c:
 	.text       start:0x0052E680 end:0x0052ECD0
-	.data       start:0x005763F8 end:0x00576F08
+	.data       start:0x005763F8 end:0x00576F04
 	.bss        start:0x00582D90 end:0x00582E70
 
 src/backend/MachineSimulation750.c:
 	.text       start:0x0052ECD0 end:0x0052F370
-	.data       start:0x00576F08 end:0x00577640
+	.data       start:0x00576F08 end:0x0057763C
 	.bss        start:0x00582E70 end:0x00582F00
 
 src/backend/MachineSimulation7400.c:
 	.text       start:0x0052F370 end:0x0052FDD0
-	.data       start:0x00577640 end:0x00578320
+	.data       start:0x00577640 end:0x0057831E
 	.bss        start:0x00582F00 end:0x00582FE8
 
 src/backend/MachineSimulation601.c:
 	.text       start:0x0052FDD0 end:0x00530050
-	.data       start:0x00578320 end:0x00578E30
+	.data       start:0x00578320 end:0x00578E2C
 	.bss        start:0x00582FE8 end:0x00583018
 
 src/backend/LiveVariables.c:
@@ -1000,7 +1000,7 @@ src/backend/LiveVariables.c:
 
 src/backend/MachineSimulation821.c:
 	.text       start:0x00530640 end:0x00530A00
-	.data       start:0x00578E30 end:0x00579568
+	.data       start:0x00578E30 end:0x00579564
 	.bss        start:0x00583018 end:0x00583088
 
 src/backend/InterferenceGraph.c:
