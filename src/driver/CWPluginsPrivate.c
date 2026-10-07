@@ -236,13 +236,13 @@ int __stdcall fn_0041b7f0(CWPluginPrivateContext *object, void *argument)
 }
 
 unsigned int __stdcall CWPluginsPrivate_InvokeMessageCallback(void *object, struct MessageContext *argument1,
-                                                              char *argument2, char *argument3, unsigned int argument4,
+                                                              char *argument2, char *argument3, short argument4,
                                                               unsigned int argument5)
 {
     if (!is_valid_plugin_context(object)) {
         return 3;
     }
-    return ((unsigned int(__stdcall *)(CWPluginPrivateContext *, struct MessageContext *, char *, char *, unsigned int,
+    return ((unsigned int(__stdcall *)(CWPluginPrivateContext *, struct MessageContext *, char *, char *, short,
                                        unsigned int))((CWPluginPrivateContext *)object)
                 ->callbacks[8])(object, argument1, argument2, argument3, argument4, argument5);
 }

@@ -8082,13 +8082,13 @@
     "name": "get_status_string",
     "address": "0x00445200",
     "size": 617,
-    "source": "src/frontend/CError.c"
+    "source": "src/driver/ErrMgr.c"
   },
   {
     "name": "CError_GetErrorString",
     "address": "0x00445470",
     "size": 64,
-    "source": "src/frontend/CError.c"
+    "source": "src/driver/ErrMgr.c"
   },
   {
     "name": "CError_ReportIllegalFlags",

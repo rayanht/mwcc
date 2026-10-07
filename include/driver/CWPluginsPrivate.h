@@ -131,8 +131,8 @@ extern unsigned int __stdcall CWPluginsPrivate_ValidateAndCallCallback(CWPluginP
                                                                        int argument3, unsigned int argument4,
                                                                        int argument5);
 extern unsigned int __stdcall CWPluginsPrivate_InvokeMessageCallback(void *object, struct MessageContext *argument1,
-                                                                     char *argument2, char *argument3,
-                                                                     unsigned int argument4, unsigned int argument5);
+                                                                     char *argument2, char *argument3, short argument4,
+                                                                     unsigned int argument5);
 extern unsigned int __stdcall fn_0041b8d0(CWPluginPrivateContext *object, char *argument1, void *argument2);
 extern int __stdcall fn_0041b910(struct CWPluginPrivateContext *object);
 extern unsigned int __stdcall CWPluginsPrivate_CallArgumentValueCallback(CWPluginPrivateContext *object,

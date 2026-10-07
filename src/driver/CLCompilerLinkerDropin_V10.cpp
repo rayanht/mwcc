@@ -32,6 +32,7 @@ extern "C" {
 #include <stdlib.h>
 #include "mwcc/Plugins.h"
 #include "driver/CWPluginsPrivate.h"
+#include "driver/ErrMgr.h"
 /* References, values and path strings supplied to the drop-in callback. */
 
 char reserved[44];

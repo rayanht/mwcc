@@ -1531,12 +1531,25 @@
       "src/frontend"
     ]
   },
+  "src/driver/ErrMgr.c": {
+    "compiler": "pro53",
+    "flags": [
+      "-O4,p",
+      "-sym",
+      "off",
+      "-Cpp_exceptions",
+      "off"
+    ],
+    "include_dirs": [
+      "src/driver"
+    ]
+  },
   "src/frontend/CError.c": {
     "compiler": "pro53",
     "flags": [
       "-O4,p",
       "-inline",
-      "auto",
+      "auto,deferred",
       "-sym",
       "on",
       "-Cpp_exceptions",
@@ -1544,8 +1557,7 @@
     ],
     "include_dirs": [
       "src/frontend"
-    ],
-    "status": "NonMatching"
+    ]
   },
   "src/frontend/CException.c": {
     "compiler": "pro53",
@@ -3667,6 +3679,30 @@
     ]
   },
   "src/runtime/stackall.c": {
+    "compiler": "pro5",
+    "flags": [
+      "-O4,p",
+      "-sym",
+      "off",
+      "-Cpp_exceptions",
+      "on",
+      "-RTTI",
+      "off"
+    ],
+    "system_include_dirs": [
+      "lib/extra",
+      "lib/runtime",
+      "lib/msl/MSL_Cpp/MSL_Common/Include",
+      "lib/msl/MSL_Win32/Include",
+      "lib/msl/MSL_Common/Include",
+      "lib/msl/MSL_Common/Src",
+      "lib/msl/MSL_X86",
+      "lib/msl/MSL_Win32/Src",
+      "lib/msl/win32sdk",
+      "lib/msl/win32sdk/sys"
+    ]
+  },
+  "src/runtime/throwsbad.cpp": {
     "compiler": "pro5",
     "flags": [
       "-O4,p",

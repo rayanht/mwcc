@@ -557,9 +557,16 @@ src/runtime/NewHand.cpp:
 	.exc        start:0x005351B0 end:0x005351B8 rename:.exc$BBB
 	.data       start:0x005514B0 end:0x00551508
 
+src/runtime/throwsbad.cpp:
+	.data       start:0x00551508 end:0x00551510
+
+src/driver/ErrMgr.c:
+	.text       start:0x00445200 end:0x004454B0
+	.data       start:0x00551510 end:0x00551918
+
 src/frontend/CError.c:
-	.text       start:0x00445200 end:0x00449E30
-	.data       start:0x00551508 end:0x00551C80
+	.text       start:0x004454B0 end:0x00449E30
+	.data       start:0x00551918 end:0x00551C80
 	.bss        start:0x005805E8 end:0x005805F8
 
 src/optimizer/IroFlowgraph.c:

@@ -67,6 +67,7 @@
     "src/driver/CWPluginsPrivate.c",
     "src/driver/ClientGlue.c",
     "src/driver/DropInCompilerLinkerPrivate.c",
+    "src/driver/ErrMgr.c",
     "src/driver/Files.c",
     "src/driver/Generic.c",
     "src/driver/Help.c",
@@ -104,6 +105,7 @@
     "src/frontend/CBrowse.c",
     "src/frontend/CClass.c",
     "src/frontend/CDecl.c",
+    "src/frontend/CError.c",
     "src/frontend/CException.c",
     "src/frontend/CExpr.c",
     "src/frontend/CFunc.c",
@@ -204,6 +206,7 @@
     "src/runtime/newop.cpp",
     "src/runtime/runinit.c",
     "src/runtime/setupargs.c",
-    "src/runtime/stackall.c"
+    "src/runtime/stackall.c",
+    "src/runtime/throwsbad.cpp"
   ]
 }
