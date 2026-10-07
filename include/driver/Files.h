@@ -90,7 +90,6 @@ extern short __stdcall Files_GetSize(short predecessor, SInt32 *result);
 extern SInt16 __stdcall Files_SetSize(SInt16 handleId, SInt32 size);
 extern int __stdcall Files_SetPosition(short refNum, short posMode, SInt32 posOff);
 extern short __stdcall Files_UpdateRecordQuery(RecordQuery *record);
-extern unsigned int data_0054b770;
 extern SInt16 __stdcall Files_Write(SInt16 a0, SInt32 *a1, void *a2);
 extern UInt16 __stdcall fn_00414710(RecordQuery *record);
 extern int __stdcall Files_MakeFileSpecFromPath(short volume, int directory, unsigned char *path, CWFileSpec *result);

@@ -2884,19 +2884,19 @@
     "name": "find_or_create_name_registry_entry",
     "address": "0x004139c0",
     "size": 193,
-    "source": "src/driver/MsDos.c"
+    "source": "src/driver/MacSpecs.c"
   },
   {
     "name": "lookup_dir_id",
     "address": "0x00413a90",
     "size": 77,
-    "source": "src/driver/MsDos.c"
+    "source": "src/driver/MacSpecs.c"
   },
   {
     "name": "find_or_create_child_entry",
     "address": "0x00413ae0",
     "size": 208,
-    "source": "src/driver/MsDos.c"
+    "source": "src/driver/MacSpecs.c"
   },
   {
     "name": "fn_00413bb0",
@@ -2907,13 +2907,13 @@
     "name": "lookup_spec_and_advance_parent",
     "address": "0x00413d10",
     "size": 123,
-    "source": "src/driver/MsDos.c"
+    "source": "src/driver/MacSpecs.c"
   },
   {
     "name": "find_or_create_spec_entry_negated",
     "address": "0x00413d90",
     "size": 65,
-    "source": "src/driver/MsDos.c"
+    "source": "src/driver/MacSpecs.c"
   },
   {
     "name": "fn_00413de0",
@@ -2924,7 +2924,7 @@
     "name": "parse_value_and_offset",
     "address": "0x00413ef0",
     "size": 88,
-    "source": "src/driver/MsDos.c"
+    "source": "src/driver/MacSpecs.c"
   },
   {
     "name": "fn_00413f50",
@@ -2940,7 +2940,7 @@
     "name": "fn_00413670",
     "address": "0x004140f0",
     "size": 168,
-    "source": "src/driver/MsDos.c"
+    "source": "src/driver/MacSpecs.c"
   },
   {
     "name": "fn_004141a0",
@@ -2956,7 +2956,7 @@
     "name": "MacSpecs_MakeResourceForkSpec",
     "address": "0x004142b0",
     "size": 287,
-    "source": "src/driver/MsDos.c"
+    "source": "src/driver/MacSpecs.c"
   },
   {
     "name": "Memory_GetSizeAddress",

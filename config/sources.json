@@ -1086,8 +1086,20 @@
     ],
     "include_dirs": [
       "src/driver"
+    ]
+  },
+  "src/driver/MacSpecs.c": {
+    "compiler": "pro53",
+    "flags": [
+      "-O4,p",
+      "-sym",
+      "off",
+      "-Cpp_exceptions",
+      "off"
     ],
-    "status": "NonMatching"
+    "include_dirs": [
+      "src/driver"
+    ]
   },
   "src/driver/OptimizerHelpers.c": {
     "compiler": "pro53",

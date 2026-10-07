@@ -9,10 +9,6 @@
 extern "C" {
 #endif
 
-union MsDosCalendarData {
-    char pattern[4];
-    SInt32 monthDays[13];
-};
 struct OSSpec {
     CLTargetDirectory directory;
     char name[0x40];
@@ -70,17 +66,16 @@ extern unsigned int __stdcall OS_EqualPathSpec(const char *a0, const char *a1);
 extern unsigned int __stdcall equal_path(const char *a0, const char *a1);
 extern DWORD __stdcall OS_Tell(int file, long *position);
 extern void __stdcall OS_MacToTime(unsigned long secs, FILETIME *ft);
-extern DWORD open_access_modes[];
-extern DWORD seek_origins[];
-extern union MsDosCalendarData DAT_0054b80c;
-extern char DAT_0057e308[260];
 extern unsigned char __ctype_map[];
-extern SInt32 february_days;
 extern int __stdcall OS_Write(unsigned int handle, LPCVOID buffer, DWORD *size);
 extern int __stdcall OS_Execute(OSSpec *name, char **args, char **arg3, char *in, char *out, UInt32 *exitcode);
 extern char *__stdcall OS_GetErrText(DWORD errorCode);
-extern char errtext[];
 extern unsigned int __stdcall fn_004111c0(int *a0, char ***a1);
+
+extern unsigned int data_0054b770;
+extern int short_predecessor(short value);
+extern Boolean __stdcall MacSpecs_IsByteInDBCSCharacter(BYTE *a, BYTE *b);
+extern DWORD __stdcall MacSpecs_LoadMacResource(char *path, LPVOID *resourceData, DWORD *resourceSize);
 
 #ifdef __cplusplus
 }

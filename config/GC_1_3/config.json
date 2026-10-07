@@ -49,6 +49,7 @@
     "src/driver/Generic.c",
     "src/driver/Help.c",
     "src/driver/MacFileTypes.c",
+    "src/driver/MacSpecs.c",
     "src/driver/MemUtils.c",
     "src/driver/Memory.c",
     "src/driver/MsDos.c",

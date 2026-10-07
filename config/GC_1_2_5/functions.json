@@ -3027,79 +3027,79 @@
     "name": "store_mac_spec_entry",
     "address": "0x00413020",
     "size": 134,
-    "source": "src/driver/MsDos.c"
+    "source": "src/driver/MacSpecs.c"
   },
   {
     "name": "find_or_create_name_registry_entry",
     "address": "0x004130b0",
     "size": 202,
-    "source": "src/driver/MsDos.c"
+    "source": "src/driver/MacSpecs.c"
   },
   {
     "name": "lookup_dir_id",
     "address": "0x00413180",
     "size": 77,
-    "source": "src/driver/MsDos.c"
+    "source": "src/driver/MacSpecs.c"
   },
   {
     "name": "find_or_create_child_entry",
     "address": "0x004131d0",
     "size": 208,
-    "source": "src/driver/MsDos.c"
+    "source": "src/driver/MacSpecs.c"
   },
   {
     "name": "find_or_create_spec_entry",
     "address": "0x004132a0",
     "size": 298,
-    "source": "src/driver/MsDos.c"
+    "source": "src/driver/MacSpecs.c"
   },
   {
     "name": "lookup_spec_and_advance_parent",
     "address": "0x004133d0",
     "size": 123,
-    "source": "src/driver/MsDos.c"
+    "source": "src/driver/MacSpecs.c"
   },
   {
     "name": "find_or_create_spec_entry_negated",
     "address": "0x00413450",
     "size": 65,
-    "source": "src/driver/MsDos.c"
+    "source": "src/driver/MacSpecs.c"
   },
   {
     "name": "build_name_and_backslash_path",
     "address": "0x004134a0",
     "size": 225,
-    "source": "src/driver/MsDos.c"
+    "source": "src/driver/MacSpecs.c"
   },
   {
     "name": "parse_value_and_offset",
     "address": "0x00413590",
     "size": 88,
-    "source": "src/driver/MsDos.c"
+    "source": "src/driver/MacSpecs.c"
   },
   {
     "name": "MacSpecs_MakeCWFileSpecFromString",
     "address": "0x004135f0",
     "size": 120,
-    "source": "src/driver/MsDos.c"
+    "source": "src/driver/MacSpecs.c"
   },
   {
     "name": "fn_00413670",
     "address": "0x00413670",
     "size": 180,
-    "source": "src/driver/MsDos.c"
+    "source": "src/driver/MacSpecs.c"
   },
   {
     "name": "MacSpecs_MakeOSSpec",
     "address": "0x00413730",
     "size": 69,
-    "source": "src/driver/MsDos.c"
+    "source": "src/driver/MacSpecs.c"
   },
   {
     "name": "MacSpecs_MakeResourceForkSpec",
     "address": "0x00413780",
     "size": 287,
-    "source": "src/driver/MsDos.c"
+    "source": "src/driver/MacSpecs.c"
   },
   {
     "name": "Memory_GetSizeAddress",
