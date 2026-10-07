@@ -5,6 +5,7 @@
 #include "compiler/objects.h"
 #include "compiler/scopes.h"
 #include "compiler/types.h"
+#include "compiler/BitVector.h"
 #include "compiler/CExpr2.h"
 #include "compiler/CFunc.h"
 #include "compiler/CInt64.h"
@@ -20,7 +21,6 @@
 #include "compiler/IroVars.h"
 #include "compiler/Switch.h"
 #include <string.h>
-#include "compiler/BitVector.h"
 
 static char lbl_00580640[4];
 static struct IROLoopInd *induction_variables;
