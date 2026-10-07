@@ -53,7 +53,7 @@ typedef void (*RegAssignFunc)(Object *, SInt32);
 static inline void IrOptimizer_CheckVectorByteConstant(const CInt64 *value, TypeStruct *vectorType)
 {
     if (copts.extended_errorcheck) {
-        if (vectorType->stype == 4) {
+        if (vectorType->stype == STRUCT_VECTOR_UCHAR) {
             if (!CInt64_IsInURange(*value, 1))
                 PPCError_ReportDiagnostic(0x71, vectorType, 0);
         } else {
@@ -80,7 +80,7 @@ static inline void IrOptimizer_CheckVectorShortConstant(const CInt64 *value, Typ
 static inline void IrOptimizer_CheckVectorLongConstant(const CInt64 *value, TypeStruct *vectorType)
 {
     if (copts.extended_errorcheck) {
-        if (vectorType->stype == 10) {
+        if (vectorType->stype == STRUCT_VECTOR_UINT) {
             if (!CInt64_IsInURange(*value, 4))
                 PPCError_ReportDiagnostic(0x71, vectorType, 0);
         } else {
@@ -159,8 +159,6 @@ static inline Boolean is_tail(Statement *node)
             return 0;
     return 1;
 }
-
-enum { STRUCT_VECTOR_FIRST = 4, STRUCT_VECTOR_LAST = 14 };
 
 static int IsVolatile(Object *obj)
 {
@@ -346,8 +344,6 @@ void CodeGen_AllocateArgumentSlots(Object *function, Boolean isVariadic, Boolean
     data_00588274 = offset;
 }
 
-enum { STRUCT_VEC_FIRST = 4, STRUCT_VEC_LAST = 14 };
-
 void CodeGen_EnumerateArgumentRegisters(void (*callback)(Object *argument, SInt16 registerNumber))
 {
     Type *argumentType;
@@ -370,8 +366,7 @@ void CodeGen_EnumerateArgumentRegisters(void (*callback)(Object *argument, SInt1
         if (argumentType->type == TYPEFLOAT && !(copts.operandsDebug != 0 && argumentType->type == TYPEFLOAT)) {
             callback(object, floatRegister <= 8 ? floatRegister : 0);
             floatRegister++;
-        } else if (argumentType->type == TYPESTRUCT && TYPE_STRUCT(argumentType)->stype >= STRUCT_VEC_FIRST &&
-                   TYPE_STRUCT(argumentType)->stype <= STRUCT_VEC_LAST) {
+        } else if (IS_TYPE_VECTOR(argumentType)) {
             callback(object, vectorRegister <= 13 ? vectorRegister : 0);
             vectorRegister++;
         } else {
@@ -424,7 +419,7 @@ void bind_object_register(Object *object, SInt16 reg)
         } else if (type->type == TYPESTRUCT) {
             TypeStruct *structType = (TypeStruct *)type;
             int structKind;
-            if ((structKind = structType->stype) >= 4 && structKind <= 14)
+            if ((structKind = structType->stype) >= STRUCT_VECTOR_UCHAR && structKind <= STRUCT_VECTOR_PIXEL)
                 Registers_BindVR(object, reg);
         }
     }
@@ -759,9 +754,7 @@ void allocate_saved_vrs(void)
                 info = Registers_GetInfo(object);
                 if (!info->reg && info->used && !info->noregister) {
                     if (!IsVolatile(object) && info->usage >= bestUsage && info->usage >= 2 &&
-                        object->type->type == TYPESTRUCT &&
-                        ((TypeStruct *)object->type)->stype >= STRUCT_VECTOR_FIRST &&
-                        ((TypeStruct *)object->type)->stype <= STRUCT_VECTOR_LAST) {
+                        IS_TYPE_VECTOR(object->type)) {
                         best = object;
                         bestUsage = info->usage;
                     }
@@ -774,9 +767,7 @@ void allocate_saved_vrs(void)
                 info = Registers_GetInfo(object);
                 if (!info->reg && info->used && !info->noregister) {
                     if (!IsVolatile(object) && info->usage >= bestUsage && info->usage >= 2 &&
-                        object->type->type == TYPESTRUCT &&
-                        ((TypeStruct *)object->type)->stype >= STRUCT_VECTOR_FIRST &&
-                        ((TypeStruct *)object->type)->stype <= STRUCT_VECTOR_LAST) {
+                        IS_TYPE_VECTOR(object->type)) {
                         best = object;
                         bestUsage = info->usage;
                     }
@@ -867,7 +858,8 @@ void emit_dlocal_initialization(Object *object, SInt16 reg)
             } else if (registers->reg != reg) {
                 if (typecode == TYPEFLOAT && !(use_gpr && typecode == TYPEFLOAT)) {
                     PCodeUtilities_EmitInstruction(PC_FMR, registers->reg, reg);
-                } else if (typecode == TYPESTRUCT && (structKind = TYPE_STRUCT(type)->stype) >= 4 && structKind <= 14) {
+                } else if (typecode == TYPESTRUCT && (structKind = TYPE_STRUCT(type)->stype) >= STRUCT_VECTOR_UCHAR &&
+                           structKind <= STRUCT_VECTOR_PIXEL) {
                     PCodeUtilities_EmitInstruction(PC_VMR, registers->reg, reg);
                 } else {
                     PCodeUtilities_EmitInstruction(PC_MR, registers->reg, reg);
@@ -906,7 +898,8 @@ void emit_dlocal_initialization(Object *object, SInt16 reg)
                 }
             } else if (type->type == TYPEFLOAT) {
                 emit_opcode_with_base_offset(type->size == 4 ? PC_STFS : PC_STFD, reg, stack_base_reg, object, 0);
-            } else if (type->type == TYPESTRUCT && (structKind = TYPE_STRUCT(type)->stype) >= 4 && structKind <= 14) {
+            } else if (type->type == TYPESTRUCT && (structKind = TYPE_STRUCT(type)->stype) >= STRUCT_VECTOR_UCHAR &&
+                       structKind <= STRUCT_VECTOR_PIXEL) {
                 emit_opcode_with_base_offset(PC_STVX, reg, stack_base_reg, object, 0);
             } else {
                 bytes = (11 - reg) * 4;
@@ -934,7 +927,8 @@ void emit_dlocal_initialization(Object *object, SInt16 reg)
             }
         } else if (type->type == TYPEFLOAT) {
             emit_opcode_with_base_offset(type->size == 4 ? PC_LFS : PC_LFD, registers->reg, stack_base_reg, object, 0);
-        } else if (type->type == TYPESTRUCT && (structKind = TYPE_STRUCT(type)->stype) >= 4 && structKind <= 14) {
+        } else if (type->type == TYPESTRUCT && (structKind = TYPE_STRUCT(type)->stype) >= STRUCT_VECTOR_UCHAR &&
+                   structKind <= STRUCT_VECTOR_PIXEL) {
             emit_opcode_with_base_offset(PC_LVX, registers->reg, stack_base_reg, object, 0);
         } else {
             switch (type->size) {
@@ -1055,7 +1049,8 @@ void fn_00436390(ENode *expression)
             }
         } else if (type->type == TYPESTRUCT) {
             TypeStruct *structType = (TypeStruct *)type;
-            if ((subtype = structType->stype) >= 4 && subtype <= 14 && result.kind != OpndType_VR) {
+            if ((subtype = structType->stype) >= STRUCT_VECTOR_UCHAR && subtype <= STRUCT_VECTOR_PIXEL &&
+                result.kind != OpndType_VR) {
                 Operands_ForceVR(&result, type, 0);
             }
         }
@@ -2608,17 +2603,17 @@ ENode *CodeGen_MakeAltivecStructCast(ENode *a, Type *type, UInt32 qual)
         q = qual & Q_CV;
         if (type->type == TYPESTRUCT && a->rtype->type == TYPESTRUCT && a->flags == q) {
             switch (TYPE_STRUCT(type)->stype) {
-                case 4:
-                case 5:
-                case 6:
-                case 7:
-                case 8:
-                case 9:
-                case 10:
-                case 11:
-                case 12:
-                case 13:
-                case 14:
+                case STRUCT_VECTOR_UCHAR:
+                case STRUCT_VECTOR_SCHAR:
+                case STRUCT_VECTOR_BCHAR:
+                case STRUCT_VECTOR_USHORT:
+                case STRUCT_VECTOR_SSHORT:
+                case STRUCT_VECTOR_BSHORT:
+                case STRUCT_VECTOR_UINT:
+                case STRUCT_VECTOR_SINT:
+                case STRUCT_VECTOR_BINT:
+                case STRUCT_VECTOR_FLOAT:
+                case STRUCT_VECTOR_PIXEL:
                     a = makemonadicnode(a, 0x30);
                     a->rtype = type;
                     a->flags = q;
@@ -2679,9 +2674,9 @@ Boolean IrOptimizer_ConvertToVectorConstant(ENode *expr, union MWVector128 *dst,
             commaCount++;
         }
         switch (vectorType->stype) {
-            case 4:
-            case 5:
-            case 6:
+            case STRUCT_VECTOR_UCHAR:
+            case STRUCT_VECTOR_SCHAR:
+            case STRUCT_VECTOR_BCHAR:
                 if (commaCount < 15) {
                     PPCError_ReportError(0x6e, vectorType, 0);
                     break;
@@ -2711,10 +2706,10 @@ Boolean IrOptimizer_ConvertToVectorConstant(ENode *expr, union MWVector128 *dst,
                 }
                 result = 1;
                 break;
-            case 7:
-            case 8:
-            case 9:
-            case 14:
+            case STRUCT_VECTOR_USHORT:
+            case STRUCT_VECTOR_SSHORT:
+            case STRUCT_VECTOR_BSHORT:
+            case STRUCT_VECTOR_PIXEL:
                 if (commaCount < 7) {
                     PPCError_ReportError(0x6e, vectorType, 0);
                     break;
@@ -2744,9 +2739,9 @@ Boolean IrOptimizer_ConvertToVectorConstant(ENode *expr, union MWVector128 *dst,
                 }
                 result = 1;
                 break;
-            case 10:
-            case 11:
-            case 12:
+            case STRUCT_VECTOR_UINT:
+            case STRUCT_VECTOR_SINT:
+            case STRUCT_VECTOR_BINT:
                 if (commaCount < 3) {
                     PPCError_ReportError(0x6e, vectorType, 0);
                     break;
@@ -2776,7 +2771,7 @@ Boolean IrOptimizer_ConvertToVectorConstant(ENode *expr, union MWVector128 *dst,
                 }
                 result = 1;
                 break;
-            case 13:
+            case STRUCT_VECTOR_FLOAT:
                 if (commaCount < 3) {
                     PPCError_ReportError(0x6e, vectorType, 0);
                     break;
@@ -2855,9 +2850,9 @@ Boolean IrOptimizer_ConvertToVectorConstant(ENode *expr, union MWVector128 *dst,
     } else if (expr->type == EINTCONST) {
         splatIndex = 0;
         switch (vectorType->stype) {
-            case 4:
-            case 5:
-            case 6:
+            case STRUCT_VECTOR_UCHAR:
+            case STRUCT_VECTOR_SCHAR:
+            case STRUCT_VECTOR_BCHAR:
                 integerValue = expr->data.intval;
                 IrOptimizer_CheckVectorByteConstant(&integerValue, vectorType);
                 for (; splatIndex < 16; splatIndex++) {
@@ -2865,10 +2860,10 @@ Boolean IrOptimizer_ConvertToVectorConstant(ENode *expr, union MWVector128 *dst,
                 }
                 result = 1;
                 break;
-            case 7:
-            case 8:
-            case 9:
-            case 14:
+            case STRUCT_VECTOR_USHORT:
+            case STRUCT_VECTOR_SSHORT:
+            case STRUCT_VECTOR_BSHORT:
+            case STRUCT_VECTOR_PIXEL:
                 integerValue = expr->data.intval;
                 IrOptimizer_CheckVectorShortConstant(&integerValue, vectorType);
                 for (; splatIndex < 8; splatIndex++) {
@@ -2876,9 +2871,9 @@ Boolean IrOptimizer_ConvertToVectorConstant(ENode *expr, union MWVector128 *dst,
                 }
                 result = 1;
                 break;
-            case 10:
-            case 11:
-            case 12:
+            case STRUCT_VECTOR_UINT:
+            case STRUCT_VECTOR_SINT:
+            case STRUCT_VECTOR_BINT:
                 integerValue = expr->data.intval;
                 IrOptimizer_CheckVectorLongConstant(&integerValue, vectorType);
                 for (; splatIndex < 4; splatIndex++) {
@@ -2886,7 +2881,7 @@ Boolean IrOptimizer_ConvertToVectorConstant(ENode *expr, union MWVector128 *dst,
                 }
                 result = 1;
                 break;
-            case 13:
+            case STRUCT_VECTOR_FLOAT:
                 integerValue = expr->data.intval;
                 if (!CInt64_IsInRange(integerValue, 4)) {
                     PPCError_ReportError(0x70);
@@ -2904,20 +2899,20 @@ Boolean IrOptimizer_ConvertToVectorConstant(ENode *expr, union MWVector128 *dst,
         }
     } else if (expr->type == EFLOATCONST) {
         switch (vectorType->stype) {
-            case 4:
-            case 5:
-            case 6:
-            case 7:
-            case 8:
-            case 9:
-            case 10:
-            case 11:
-            case 12:
-            case 14:
+            case STRUCT_VECTOR_UCHAR:
+            case STRUCT_VECTOR_SCHAR:
+            case STRUCT_VECTOR_BCHAR:
+            case STRUCT_VECTOR_USHORT:
+            case STRUCT_VECTOR_SSHORT:
+            case STRUCT_VECTOR_BSHORT:
+            case STRUCT_VECTOR_UINT:
+            case STRUCT_VECTOR_SINT:
+            case STRUCT_VECTOR_BINT:
+            case STRUCT_VECTOR_PIXEL:
             default:
                 PPCError_ReportError(0x70);
                 break;
-            case 13:
+            case STRUCT_VECTOR_FLOAT:
                 splatIndex = 0;
                 splatValue = expr->data.floatval.data.value;
                 {

@@ -328,8 +328,7 @@ void store_argument_on_stack(ArgumentContext *arg)
         } else {
             emit_opcode_with_base_offset(PC_STFD, arg->operand.reg, 1, NULL, arg->stack_offset + 8);
         }
-    } else if (type->type == TYPESTRUCT && (SInt32)TYPE_STRUCT(type)->stype >= 4 &&
-               (SInt32)TYPE_STRUCT(type)->stype <= 14) {
+    } else if (IS_TYPE_VECTOR(type)) {
         if (arg->evaluated == 0) {
             (*data_00560648[arg->node->type])(arg->node, 0, 0, &arg->operand);
         }
@@ -431,7 +430,8 @@ void load_argument_registers(ArgumentContext *argument)
                 emit_opcode_with_base_offset(PC_LWZ, argument->gpr, 1, NULL, argument->stack_offset + 8);
                 emit_opcode_with_base_offset(PC_LWZ, argument->gpr + 1, 1, NULL, argument->stack_offset + 0xc);
             }
-        } else if (type->type == TYPESTRUCT && (struct_kind = TYPE_STRUCT(type)->stype) >= 4 && struct_kind <= 14) {
+        } else if (type->type == TYPESTRUCT && (struct_kind = TYPE_STRUCT(type)->stype) >= STRUCT_VECTOR_UCHAR &&
+                   struct_kind <= STRUCT_VECTOR_PIXEL) {
             if (argument->evaluated == 0) {
                 data_00560648[argument->node->type](argument->node, 0, 0, &argument->operand);
             }
@@ -676,8 +676,9 @@ void FunctionCalls_GenerateCall(ENode *item, Operand *result)
         result->reg = gUsedVirtualRegistersFPR;
         gUsedVirtualRegistersFPR++;
         PCodeUtilities_EmitInstruction(PC_FMR, result->reg, 1);
-    } else if (returnType->type == TYPESTRUCT && (structureType = TYPE_STRUCT(returnType)->stype) >= 4 &&
-               structureType <= 14) {
+    } else if (returnType->type == TYPESTRUCT &&
+               (structureType = TYPE_STRUCT(returnType)->stype) >= STRUCT_VECTOR_UCHAR &&
+               structureType <= STRUCT_VECTOR_PIXEL) {
         result->kind = OpndType_VR;
         result->reg = gUsedVirtualRegistersVR;
         gUsedVirtualRegistersVR++;

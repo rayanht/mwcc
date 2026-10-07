@@ -750,7 +750,8 @@ void fn_004ad260(DWInfo *ptype, union DwarfNodePayload *info)
                 location.kind = 2;
                 location.operand.registers.first = reg;
             }
-        } else if (typeCode == TYPESTRUCT && (structKind = TYPE_STRUCT(type)->stype) >= 4 && structKind <= 0xe) {
+        } else if (typeCode == TYPESTRUCT && (structKind = TYPE_STRUCT(type)->stype) >= STRUCT_VECTOR_UCHAR &&
+                   structKind <= STRUCT_VECTOR_PIXEL) {
             location.kind = 4;
             location.operand.registers.first = reg;
         } else if ((typeCode == TYPEINT || typeCode == TYPEENUM) && type->size == 8) {
@@ -861,7 +862,8 @@ void fn_004ad570(DWInfo *ptype, union DwarfNodePayload *info)
                 location.kind = 2;
                 location.operand.registers.first = reg;
             }
-        } else if (typecode == TYPESTRUCT && (structureKind = TYPE_STRUCT(type)->stype) >= 4 && structureKind <= 0xe) {
+        } else if (typecode == TYPESTRUCT && (structureKind = TYPE_STRUCT(type)->stype) >= STRUCT_VECTOR_UCHAR &&
+                   structureKind <= STRUCT_VECTOR_PIXEL) {
             location.kind = 4;
             location.operand.registers.first = reg;
         } else if ((typecode == TYPEINT || typecode == TYPEENUM) && type->size == 8) {
@@ -2339,21 +2341,21 @@ void fn_004b0a80(TypeStruct *type)
         } while (fixup != NULL);
     info->typeNode->u.fixups = fixup;
     switch (type->stype) {
-        case 0:
-        case 4:
-        case 5:
-        case 6:
-        case 7:
-        case 8:
-        case 9:
-        case 10:
-        case 11:
-        case 12:
-        case 13:
-        case 14:
+        case STRUCT_TYPE_STRUCT:
+        case STRUCT_VECTOR_UCHAR:
+        case STRUCT_VECTOR_SCHAR:
+        case STRUCT_VECTOR_BCHAR:
+        case STRUCT_VECTOR_USHORT:
+        case STRUCT_VECTOR_SSHORT:
+        case STRUCT_VECTOR_BSHORT:
+        case STRUCT_VECTOR_UINT:
+        case STRUCT_VECTOR_SINT:
+        case STRUCT_VECTOR_BINT:
+        case STRUCT_VECTOR_FLOAT:
+        case STRUCT_VECTOR_PIXEL:
             tag = 0x13;
             break;
-        case 1:
+        case STRUCT_TYPE_UNION:
             tag = 0x17;
             break;
         default:

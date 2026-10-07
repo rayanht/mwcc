@@ -370,7 +370,7 @@ Type *CDecl_NewStructType(SInt32 size, SInt16 align)
     type->type = TYPESTRUCT;
     type->size = size;
     type->align = (short)align;
-    type->stype = 0;
+    type->stype = STRUCT_TYPE_STRUCT;
     return (Type *)type;
 }
 
@@ -3230,13 +3230,13 @@ void compute_struct_layout(Type *str)
     has_anon = 0;
     CMach_StructLayoutInitOffset(0);
     for (member = TYPE_STRUCT(str)->members; member != NULL; member = member->next) {
-        if (TYPE_STRUCT(str)->stype == 1)
+        if (TYPE_STRUCT(str)->stype == STRUCT_TYPE_UNION)
             CMach_StructLayoutInitOffset(0);
         if (member->type->type == TYPEBITFIELD)
             member->offset = CMach_StructLayoutBitfield(TYPE_BITFIELD(member->type), member->qual);
         else
             member->offset = CMach_StructLayoutGetOffset(member->type, member->qual);
-        if (TYPE_STRUCT(str)->stype == 1) {
+        if (TYPE_STRUCT(str)->stype == STRUCT_TYPE_UNION) {
             size = CMach_StructLayoutGetCurSize();
             if (size > maxsize)
                 maxsize = size;
@@ -3291,7 +3291,7 @@ void compute_struct_layout(Type *str)
                 link = &next->next;
         }
     }
-    if (TYPE_STRUCT(str)->stype != 1)
+    if (TYPE_STRUCT(str)->stype != STRUCT_TYPE_UNION)
         maxsize = CMach_StructLayoutGetCurSize();
     str->size = maxsize;
     TYPE_STRUCT(str)->align = CMach_GetStructAlign(TYPE_STRUCT(str));
@@ -3302,7 +3302,7 @@ void compute_struct_layout(Type *str)
                 CABI_ReverseBitField(TYPE_BITFIELD(member->type));
         }
     }
-    if (copts.warn_padding && TYPE_STRUCT(str)->stype != 1) {
+    if (copts.warn_padding && TYPE_STRUCT(str)->stype != STRUCT_TYPE_UNION) {
         StructMember *previous;
         previous = NULL;
         for (member = TYPE_STRUCT(str)->members; member != NULL; member = member->next) {

@@ -638,37 +638,37 @@ void CMangler_MangleType(Type *type, UInt32 flags)
             TypeStruct *structType = TYPE_STRUCT(type);
             MangleQualifiers(flags);
             switch (structType->stype) {
-                case 4:
+                case STRUCT_VECTOR_UCHAR:
                     AppendGListName(&data_00583548, "XUc");
                     return;
-                case 5:
+                case STRUCT_VECTOR_SCHAR:
                     AppendGListName(&data_00583548, "Xc");
                     return;
-                case 6:
+                case STRUCT_VECTOR_BCHAR:
                     AppendGListName(&data_00583548, "XC");
                     return;
-                case 7:
+                case STRUCT_VECTOR_USHORT:
                     AppendGListName(&data_00583548, "XUs");
                     return;
-                case 8:
+                case STRUCT_VECTOR_SSHORT:
                     AppendGListName(&data_00583548, "Xs");
                     return;
-                case 9:
+                case STRUCT_VECTOR_BSHORT:
                     AppendGListName(&data_00583548, "XS");
                     return;
-                case 10:
+                case STRUCT_VECTOR_UINT:
                     AppendGListName(&data_00583548, "XUi");
                     return;
-                case 11:
+                case STRUCT_VECTOR_SINT:
                     AppendGListName(&data_00583548, "Xi");
                     return;
-                case 12:
+                case STRUCT_VECTOR_BINT:
                     AppendGListName(&data_00583548, "XI");
                     return;
-                case 13:
+                case STRUCT_VECTOR_FLOAT:
                     AppendGListName(&data_00583548, "Xf");
                     return;
-                case 14:
+                case STRUCT_VECTOR_PIXEL:
                     AppendGListName(&data_00583548, "Xp");
                     return;
             }
@@ -679,13 +679,13 @@ void CMangler_MangleType(Type *type, UInt32 flags)
                 AppendGListName(&data_00583548, name);
             } else {
                 switch (structType->stype) {
-                    case 0:
+                    case STRUCT_TYPE_STRUCT:
                         AppendGListName(&data_00583548, "struct");
                         return;
-                    case 1:
+                    case STRUCT_TYPE_UNION:
                         AppendGListName(&data_00583548, "union");
                         return;
-                    case 2:
+                    case STRUCT_TYPE_CLASS:
                         AppendGListName(&data_00583548, "class");
                         return;
                     default:

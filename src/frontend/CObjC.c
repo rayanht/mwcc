@@ -1975,7 +1975,7 @@ void fn_005074f0(Type *type, UInt32 qual, Boolean flag)
                 AppendGListName(&data_00583548, buf);
                 return;
             case TYPESTRUCT:
-                AppendGListByte(&data_00583548, TYPE_STRUCT(type)->stype == 1 ? '(' : '{');
+                AppendGListByte(&data_00583548, TYPE_STRUCT(type)->stype == STRUCT_TYPE_UNION ? '(' : '{');
                 if (data_00588507 != 0) {
                     AppendGListByte(&data_00583548, '?');
                 } else if (TYPE_STRUCT(type)->name != NULL) {
@@ -1991,7 +1991,7 @@ void fn_005074f0(Type *type, UInt32 qual, Boolean flag)
                         }
                     }
                 }
-                AppendGListByte(&data_00583548, TYPE_STRUCT(type)->stype == 1 ? ')' : '}');
+                AppendGListByte(&data_00583548, TYPE_STRUCT(type)->stype == STRUCT_TYPE_UNION ? ')' : '}');
                 return;
             case TYPECLASS:
                 encode_class(TYPE_CLASS(type), flag);

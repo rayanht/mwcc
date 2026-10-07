@@ -430,7 +430,8 @@ InlineAsmRegisterEntry *CTemplateNew_GetInlineAsmRegisterEntry(HashNameNode *nam
                 return entry;
             if (type->type == TYPEFLOAT)
                 CTemplateNew_InsertRegisterBinding(name->name, 1, 0, lookup.object);
-            else if (type->type == TYPESTRUCT && (stype = type->stype) >= 4 && stype <= 14)
+            else if (type->type == TYPESTRUCT && (stype = type->stype) >= STRUCT_VECTOR_UCHAR &&
+                     stype <= STRUCT_VECTOR_PIXEL)
                 CTemplateNew_InsertRegisterBinding(name->name, 9, 0, lookup.object);
             else
                 CTemplateNew_InsertRegisterBinding(name->name, 0, 0, lookup.object);

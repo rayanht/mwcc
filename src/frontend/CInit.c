@@ -794,7 +794,7 @@ void initialize_struct_data(InitializerData *ctx, CInit *ci, Type *type, UInt32 
         member = member->next;
         while (member != NULL && (member->qual & Q_WEAK) != 0)
             member = member->next;
-        if (member == NULL || TYPE_STRUCT(type)->stype == 1) {
+        if (member == NULL || TYPE_STRUCT(type)->stype == STRUCT_TYPE_UNION) {
             if (braced) {
                 switch (advance_initializer_state(ci)) {
                     case 3:
@@ -2407,7 +2407,8 @@ ENode *CInit_AutoObject(Object *object, Type *type, UInt32 qualifiers)
     int structureKind;
 
     fn_004d2700(&initializer, type, qualifiers, copts.cplusplus || copts.gcc_extensions || object == NULL);
-    if (type->type == TYPESTRUCT && (structureKind = TYPE_STRUCT(type)->stype) >= 4 && structureKind <= 14) {
+    if (type->type == TYPESTRUCT && (structureKind = TYPE_STRUCT(type)->stype) >= STRUCT_VECTOR_UCHAR &&
+        structureKind <= STRUCT_VECTOR_PIXEL) {
         switch (structureKind) {
             case 4:
             case 5:

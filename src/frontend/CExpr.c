@@ -2908,7 +2908,8 @@ ENode *cast_expression(void)
         CError_ReportError(ERR_ILLEGAL_TYPE_CAST);
 
     if (copts.altivec_model != 0 && tk == '(' && typeInfo.thetype->type == TYPESTRUCT &&
-        (structKind = TYPE_STRUCT(typeInfo.thetype)->stype) >= 4 && structKind <= 0xe) {
+        (structKind = TYPE_STRUCT(typeInfo.thetype)->stype) >= STRUCT_VECTOR_UCHAR &&
+        structKind <= STRUCT_VECTOR_PIXEL) {
         tk = CPrepTokenizer_GetNextToken();
         expr = assignment_expression();
         while (tk == ',') {
@@ -2947,8 +2948,9 @@ ENode *cast_expression(void)
     }
 
     if (copts.ANSIstrict == 0 && tk == '{' &&
-        (typeInfo.thetype->type != TYPESTRUCT || (structKind = TYPE_STRUCT(typeInfo.thetype)->stype) < 4 ||
-         structKind > 0xe)) {
+        (typeInfo.thetype->type != TYPESTRUCT ||
+         (structKind = TYPE_STRUCT(typeInfo.thetype)->stype) < STRUCT_VECTOR_UCHAR ||
+         structKind > STRUCT_VECTOR_PIXEL)) {
         return CInit_AutoObject(NULL, typeInfo.thetype, typeInfo.qual);
     }
 
@@ -4129,7 +4131,7 @@ ENode *parse_postfix_expression(Boolean allowSpecial)
                     }
                     continue;
                 }
-                if (allowSpecial != TYPESTRUCT || ((TypeStruct *)expr->rtype)->stype > 3) {
+                if (allowSpecial != TYPESTRUCT || ((TypeStruct *)expr->rtype)->stype > STRUCT_TYPE_MAX) {
                     if (copts.cplusplus != 0) {
                         result = scan_pseudo_destructor_call(expr);
                         if (result != NULL)
@@ -4698,7 +4700,8 @@ ENode *scan_vec_step(void)
             ty = node->rtype;
         }
         CDecl_CompleteType(ty);
-        if (ty->type == TYPESTRUCT && (kind = TYPE_STRUCT(ty)->stype) >= 4 && kind <= 14) {
+        if (ty->type == TYPESTRUCT && (kind = TYPE_STRUCT(ty)->stype) >= STRUCT_VECTOR_UCHAR &&
+            kind <= STRUCT_VECTOR_PIXEL) {
             switch (kind) {
                 case 4:
                 case 5:

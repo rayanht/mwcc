@@ -60,6 +60,9 @@ enum {
 #define IS_TYPE_ARRAY(ty) ((ty)->type == TYPEARRAY)
 #define IS_TYPE_BITFIELD(ty) ((ty)->type == TYPEBITFIELD)
 #define IS_TYPE_MEMBERPOINTER(ty) ((ty)->type == TYPEMEMBERPOINTER)
+#define IS_TYPESTRUCT_VECTOR(ty) ((ty)->stype >= STRUCT_VECTOR_UCHAR && (ty)->stype <= STRUCT_VECTOR_PIXEL)
+#define IS_TYPE_VECTOR(ty) ((ty)->type == TYPESTRUCT && IS_TYPESTRUCT_VECTOR(TYPE_STRUCT(ty)))
+#define IS_TYPE_NONVECTOR_STRUCT(ty) ((ty)->type == TYPESTRUCT && !IS_TYPESTRUCT_VECTOR(TYPE_STRUCT(ty)))
 enum {
     IT_BOOL,
     IT_CHAR,
@@ -121,6 +124,23 @@ struct StructMember {
     UInt32 qual;
 };
 #pragma options align = reset
+enum {
+    STRUCT_TYPE_STRUCT = 0,
+    STRUCT_TYPE_UNION = 1,
+    STRUCT_TYPE_CLASS = 2,
+    STRUCT_TYPE_MAX = 3,
+    STRUCT_VECTOR_UCHAR = 4,
+    STRUCT_VECTOR_SCHAR = 5,
+    STRUCT_VECTOR_BCHAR = 6,
+    STRUCT_VECTOR_USHORT = 7,
+    STRUCT_VECTOR_SSHORT = 8,
+    STRUCT_VECTOR_BSHORT = 9,
+    STRUCT_VECTOR_UINT = 10,
+    STRUCT_VECTOR_SINT = 11,
+    STRUCT_VECTOR_BINT = 12,
+    STRUCT_VECTOR_FLOAT = 13,
+    STRUCT_VECTOR_PIXEL = 14
+};
 #pragma options align = mac68k
 struct TypeStruct {
     UInt8 type;

@@ -3179,17 +3179,17 @@ void fn_00462d70(Statement *stmt, AsmOut *out)
                                 break;
                             case TYPESTRUCT:
                                 switch (((TypeStruct *)operand->target.object->type)->stype) {
-                                    case 4:
-                                    case 5:
-                                    case 6:
-                                    case 7:
-                                    case 8:
-                                    case 9:
-                                    case 10:
-                                    case 11:
-                                    case 12:
-                                    case 13:
-                                    case 14:
+                                    case STRUCT_VECTOR_UCHAR:
+                                    case STRUCT_VECTOR_SCHAR:
+                                    case STRUCT_VECTOR_BCHAR:
+                                    case STRUCT_VECTOR_USHORT:
+                                    case STRUCT_VECTOR_SSHORT:
+                                    case STRUCT_VECTOR_BSHORT:
+                                    case STRUCT_VECTOR_UINT:
+                                    case STRUCT_VECTOR_SINT:
+                                    case STRUCT_VECTOR_BINT:
+                                    case STRUCT_VECTOR_FLOAT:
+                                    case STRUCT_VECTOR_PIXEL:
                                         out->operands[out->numoperands].size = 0x10;
                                         break;
                                     default:
@@ -3218,17 +3218,17 @@ void fn_00462d70(Statement *stmt, AsmOut *out)
                                 break;
                             case TYPESTRUCT:
                                 switch (((TypeStruct *)operand->target.object->type)->stype) {
-                                    case 4:
-                                    case 5:
-                                    case 6:
-                                    case 7:
-                                    case 8:
-                                    case 9:
-                                    case 10:
-                                    case 11:
-                                    case 12:
-                                    case 13:
-                                    case 14:
+                                    case STRUCT_VECTOR_UCHAR:
+                                    case STRUCT_VECTOR_SCHAR:
+                                    case STRUCT_VECTOR_BCHAR:
+                                    case STRUCT_VECTOR_USHORT:
+                                    case STRUCT_VECTOR_SSHORT:
+                                    case STRUCT_VECTOR_BSHORT:
+                                    case STRUCT_VECTOR_UINT:
+                                    case STRUCT_VECTOR_SINT:
+                                    case STRUCT_VECTOR_BINT:
+                                    case STRUCT_VECTOR_FLOAT:
+                                    case STRUCT_VECTOR_PIXEL:
                                         out->operands[out->numoperands].size = 0x10;
                                         break;
                                     default:

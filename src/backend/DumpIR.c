@@ -438,37 +438,37 @@ void format_type(Type *type, char *buf)
         case TYPESTRUCT: {
             if ((int)(TYPE_STRUCT(type)->stype) >= 4 && (int)(TYPE_STRUCT(type)->stype) <= 14) {
                 switch (TYPE_STRUCT(type)->stype) {
-                    case 4:
+                    case STRUCT_VECTOR_UCHAR:
                         strcpy(buf, "vector unsigned char ");
                         break;
-                    case 5:
+                    case STRUCT_VECTOR_SCHAR:
                         strcpy(buf, "vector signed char ");
                         break;
-                    case 6:
+                    case STRUCT_VECTOR_BCHAR:
                         strcpy(buf, "vector bool char ");
                         break;
-                    case 7:
+                    case STRUCT_VECTOR_USHORT:
                         strcpy(buf, "vector unsigned short ");
                         break;
-                    case 8:
+                    case STRUCT_VECTOR_SSHORT:
                         strcpy(buf, "vector signed short ");
                         break;
-                    case 9:
+                    case STRUCT_VECTOR_BSHORT:
                         strcpy(buf, "vector bool short ");
                         break;
-                    case 10:
+                    case STRUCT_VECTOR_UINT:
                         strcpy(buf, "vector unsigned int ");
                         break;
-                    case 11:
+                    case STRUCT_VECTOR_SINT:
                         strcpy(buf, "vector signed int ");
                         break;
-                    case 12:
+                    case STRUCT_VECTOR_BINT:
                         strcpy(buf, "vector bool int ");
                         break;
-                    case 13:
+                    case STRUCT_VECTOR_FLOAT:
                         strcpy(buf, "vector float ");
                         break;
-                    case 14:
+                    case STRUCT_VECTOR_PIXEL:
                         strcpy(buf, "vector pixel ");
                         break;
                 }

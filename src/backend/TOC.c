@@ -698,10 +698,8 @@ void fn_0049d710(ENode *node, Type *targetType, int ignored)
                 node->hascall = 1;
                 data_00588521 = 0;
             }
-            if (node->rtype->type == TYPESTRUCT && (SInt32)((TypeStruct *)node->rtype)->stype >= 4 &&
-                (SInt32)((TypeStruct *)node->rtype)->stype <= 14) {
-                if (!(left->rtype->type == TYPESTRUCT && (SInt32)((TypeStruct *)left->rtype)->stype >= 4 &&
-                      (SInt32)((TypeStruct *)left->rtype)->stype <= 14))
+            if (IS_TYPE_VECTOR(node->rtype)) {
+                if (!(IS_TYPE_VECTOR(left->rtype)))
                     PPCError_ReportError(0x72);
             }
             break;
@@ -848,8 +846,7 @@ unsigned char is_small_splat_or_table_vector(long value, Type *type)
     int word3;
     int j;
     long word0;
-    if (type->type == TYPESTRUCT && (int)((TypeStruct *)type)[0].stype >= 4 &&
-        (int)((TypeStruct *)type)[0].stype <= 14) {
+    if (IS_TYPE_VECTOR(type)) {
         bytes = (char *)value;
         byte = bytes[0];
         bytes_match = 1;

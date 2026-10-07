@@ -619,7 +619,8 @@ void select_indirect_operand(ENode *expression, int targetReg, int flags, Operan
         } else if (InstrSelection_MatchPostIncDecRegister(value, &operand, &displacement) != 0 &&
                    (type->type == TYPEINT || type->type == TYPEENUM || type->type == TYPEPOINTER ||
                     type->type == TYPEMEMBERPOINTER && type->size == 4 || type->type == TYPEFLOAT ||
-                    type->type == TYPESTRUCT && (structKind = TYPE_STRUCT(type)->stype) >= 4 && structKind <= 14)) {
+                    type->type == TYPESTRUCT && (structKind = TYPE_STRUCT(type)->stype) >= STRUCT_VECTOR_UCHAR &&
+                        structKind <= STRUCT_VECTOR_PIXEL)) {
             Operands_MakeIndirect(&operand, expression);
             *result = operand;
             if (type->type == TYPEINT || type->type == TYPEENUM || type->type == TYPEPOINTER ||
@@ -771,8 +772,6 @@ void emit_bitwise_not(ENode *node, SInt16 requestedReg, SInt16 requestedHighReg,
     }
 }
 
-enum { STRUCT_VECTOR_FIRST = 4, STRUCT_VECTOR_LAST = 14 };
-
 void force_monadic_operand_register(ENode *expr, short outputReg, short outputRegHi, Operand *output)
 {
     ENode *inner = expr->data.monadic;
@@ -787,8 +786,7 @@ void force_monadic_operand_register(ENode *expr, short outputReg, short outputRe
     } else if (inner->rtype->type == TYPEFLOAT) {
         if (output->kind != OpndType_FPR)
             Operands_ForceFPR(output, inner->rtype, outputReg);
-    } else if (inner->rtype->type == TYPESTRUCT && TYPE_STRUCT(inner->rtype)->stype >= STRUCT_VECTOR_FIRST &&
-               TYPE_STRUCT(inner->rtype)->stype <= STRUCT_VECTOR_LAST) {
+    } else if (IS_TYPE_VECTOR(inner->rtype)) {
         if (output->kind != OpndType_VR)
             Operands_ForceVR(output, inner->rtype, outputReg);
     } else if (inner->rtype->type == TYPEINT || inner->rtype->type == TYPEENUM || inner->rtype->type == TYPEPOINTER ||
@@ -1741,8 +1739,7 @@ void generate_assignment(ENode *node, SInt16 requestedRegister, SInt16 flags, Op
             out->reg = value.reg;
             break;
         }
-        if (type->type == TYPESTRUCT && (SInt32)((TypeStruct *)type)->stype >= 4 &&
-            (SInt32)((TypeStruct *)type)->stype <= 0xe) {
+        if (IS_TYPE_VECTOR(type)) {
             data_00560648[right->type](right, 0, 0, &value);
             if (value.kind == OpndType_Immediate) {
                 if (value.kind != OpndType_VR)
@@ -1838,8 +1835,6 @@ void select_diadic_left_then_right(ENode *node, SInt32 a, SInt32 b, Operand *ctx
     data_00560648[right->type](right, a, 0, ctx);
 }
 
-enum TypeSubtypeBound { TypeSubtype_Min = 4, TypeSubtype_Max = 0xe };
-
 void generate_type_conversion(ENode *node, short outputReg, short outputRegHi, Operand *result)
 {
     ENode *expr = node->data.monadic;
@@ -1879,8 +1874,7 @@ void generate_type_conversion(ENode *node, short outputReg, short outputRegHi, O
                 Operands_ConvertIntegerToFloat(result, target->size == 4, outputReg);
             else
                 Operands_ConvertSignedIntegerToFloat(result, target->size == 4, outputReg);
-        } else if (target->type == TYPESTRUCT && TYPE_STRUCT(target)->stype >= TypeSubtype_Min &&
-                   TYPE_STRUCT(target)->stype <= TypeSubtype_Max) {
+        } else if (IS_TYPE_VECTOR(target)) {
             data_00560648[expr->type](expr, outputReg, 0, result);
             if (result->kind != OpndType_VR)
                 Operands_ForceVR(result, target, outputReg);
@@ -1928,9 +1922,7 @@ void generate_type_conversion(ENode *node, short outputReg, short outputRegHi, O
                 Operands_ForceFPR(result, exprtype, 0);
             Operands_ConvertFloatToInteger(result, outputReg);
         }
-    } else if (exprtype->type == TYPESTRUCT && TYPE_STRUCT(exprtype)->stype >= TypeSubtype_Min &&
-               TYPE_STRUCT(exprtype)->stype <= TypeSubtype_Max && target->type == TYPESTRUCT &&
-               TYPE_STRUCT(target)->stype >= TypeSubtype_Min && TYPE_STRUCT(target)->stype <= TypeSubtype_Max) {
+    } else if (IS_TYPE_VECTOR(exprtype) && IS_TYPE_VECTOR(target)) {
         data_00560648[expr->type](expr, outputReg, 0, result);
         if (result->kind != OpndType_VR)
             Operands_ForceVR(result, exprtype, outputReg);
@@ -2069,7 +2061,8 @@ void generate_conditional_expression(ENode *node, SInt16 outputReg, SInt16 outpu
             PCodeUtilities_EmitInstruction(PC_MR, resultReg, falseOperand.reg);
         output->kind = OpndType_GPR;
         output->reg = resultReg;
-    } else if (type->type == TYPESTRUCT && (structKind = TYPE_STRUCT(type)->stype) >= 4 && structKind <= 14) {
+    } else if (type->type == TYPESTRUCT && (structKind = TYPE_STRUCT(type)->stype) >= STRUCT_VECTOR_UCHAR &&
+               structKind <= STRUCT_VECTOR_PIXEL) {
         if (trueExpr->hascall != 0 || falseExpr->hascall != 0)
             resultReg = gUsedVirtualRegistersVR++;
         else

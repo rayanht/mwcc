@@ -476,10 +476,10 @@ void append_type(StrBuf *buf, Type *type, UInt32 qualifiers)
         case TYPESTRUCT:
             append_qualifiers(buf, qualifiers);
             switch (TYPE_STRUCT(type)->stype) {
-                case 0:
+                case STRUCT_TYPE_STRUCT:
                     CError_BufferAppendString(buf, "struct ");
                     break;
-                case 1:
+                case STRUCT_TYPE_UNION:
                     CError_BufferAppendString(buf, "union ");
                     break;
                 default:
@@ -489,17 +489,17 @@ void append_type(StrBuf *buf, Type *type, UInt32 qualifiers)
                     longjmp(error_jmp_buf, 1);
                     data_0058715c = data_0058715c + 1;
                     break;
-                case 4:
-                case 5:
-                case 6:
-                case 7:
-                case 8:
-                case 9:
-                case 10:
-                case 11:
-                case 12:
-                case 13:
-                case 14:
+                case STRUCT_VECTOR_UCHAR:
+                case STRUCT_VECTOR_SCHAR:
+                case STRUCT_VECTOR_BCHAR:
+                case STRUCT_VECTOR_USHORT:
+                case STRUCT_VECTOR_SSHORT:
+                case STRUCT_VECTOR_BSHORT:
+                case STRUCT_VECTOR_UINT:
+                case STRUCT_VECTOR_SINT:
+                case STRUCT_VECTOR_BINT:
+                case STRUCT_VECTOR_FLOAT:
+                case STRUCT_VECTOR_PIXEL:
                     break;
             }
             if (TYPE_STRUCT(type)->name != NULL)

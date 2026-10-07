@@ -511,8 +511,8 @@ void build_register_block_liveness(Object *object)
         } else {
             gRegisterBlockLiveness[gReturnBlock->index].use |= 2;
         }
-    } else if (returnType->type == TYPESTRUCT && (structKind = TYPE_STRUCT(returnType)->stype) >= 4 &&
-               structKind <= 14) {
+    } else if (returnType->type == TYPESTRUCT && (structKind = TYPE_STRUCT(returnType)->stype) >= STRUCT_VECTOR_UCHAR &&
+               structKind <= STRUCT_VECTOR_PIXEL) {
         data_005813ac[gReturnBlock->index].use |= 4;
     } else if ((returnType->type == TYPESTRUCT || returnType->type == TYPECLASS) &&
                !Type_RequiresMemoryReturn(returnType)) {

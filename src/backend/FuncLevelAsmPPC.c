@@ -101,7 +101,8 @@ void FuncLevelAsmPPC_AllocateLocals(void)
                 else
                     reg = 0;
                 CTemplateNew_InsertRegisterBinding(obj->name->name, 1, reg, obj);
-            } else if (typecode == TYPESTRUCT && (subtype = TYPE_STRUCT(type)->stype) >= 4 && subtype <= 0xe) {
+            } else if (typecode == TYPESTRUCT && (subtype = TYPE_STRUCT(type)->stype) >= STRUCT_VECTOR_UCHAR &&
+                       subtype <= STRUCT_VECTOR_PIXEL) {
                 if (gAvailableSavedVRs == 0)
                     CError_ReportError(ERR_COULD_NOT_ASSIGNED_REGISTER, obj->name->name);
                 Registers_AllocateVR(obj);

@@ -25,7 +25,6 @@
 
 static Object *data_00580fa8;
 
-enum { STRUCT_KIND_4 = 4, STRUCT_KIND_14 = 14 };
 typedef enum { kMergeTag = 0x1f } MergeTag;
 
 void fn_004a9c70(void)
@@ -518,7 +517,7 @@ SInt32 StackFrameEABI_GetTypeAlignment(Type *type)
                 return type->size == 4 ? 4 : 8;
 
             case TYPESTRUCT:
-                if (TYPE_STRUCT(type)->stype >= STRUCT_KIND_4 && TYPE_STRUCT(type)->stype <= STRUCT_KIND_14)
+                if (IS_TYPESTRUCT_VECTOR(TYPE_STRUCT(type)))
                     return 16;
                 aggregateAlignment = TYPE_STRUCT(type)->align;
                 memberAlignment = aggregateAlignment > 4 ? aggregateAlignment : 4;

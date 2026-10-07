@@ -102,8 +102,8 @@ struct AggregateRecord *VectorArraysToRegs_BuildAggregateRecords(void)
             qualifiers = qualifiers & Q_VOLATILE;
             if (qualifiers == 0 && candidate->object->type != NULL && candidate->object->type->type == TYPEARRAY &&
                 TYPE_POINTER(candidate->object->type)->target->type == TYPESTRUCT &&
-                (int)TYPE_STRUCT(TYPE_POINTER(candidate->object->type)->target)->stype >= 4 &&
-                (int)TYPE_STRUCT(TYPE_POINTER(candidate->object->type)->target)->stype <= 14) {
+                (int)TYPE_STRUCT(TYPE_POINTER(candidate->object->type)->target)->stype >= STRUCT_VECTOR_UCHAR &&
+                (int)TYPE_STRUCT(TYPE_POINTER(candidate->object->type)->target)->stype <= STRUCT_VECTOR_PIXEL) {
                 size = candidate->object->type->size;
                 count = candidate->object->type->size / 16;
                 if (count > 0 && count <= 8) {

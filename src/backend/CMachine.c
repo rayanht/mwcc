@@ -630,9 +630,9 @@ void CMach_InitVectorMem(Type *type, MWVector128 val, void *mem)
     switch ((char)type->type) {
         case TYPESTRUCT:
             switch (TYPE_STRUCT(type)->stype) {
-                case 4:
-                case 5:
-                case 6:
+                case STRUCT_VECTOR_UCHAR:
+                case STRUCT_VECTOR_SCHAR:
+                case STRUCT_VECTOR_BCHAR:
                     for (i = 0; i < 16; i++) {
                         if (!copts.littleendian)
                             uc[i] = val.uc[i];
@@ -641,10 +641,10 @@ void CMach_InitVectorMem(Type *type, MWVector128 val, void *mem)
                     }
                     memcpy(mem, uc, 16);
                     break;
-                case 7:
-                case 8:
-                case 9:
-                case 14:
+                case STRUCT_VECTOR_USHORT:
+                case STRUCT_VECTOR_SSHORT:
+                case STRUCT_VECTOR_BSHORT:
+                case STRUCT_VECTOR_PIXEL:
                     for (i = 0; i < 8; i++) {
                         if (!copts.littleendian)
                             us[i] = CTool_EndianConvertWord16(val.us[i]);
@@ -653,9 +653,9 @@ void CMach_InitVectorMem(Type *type, MWVector128 val, void *mem)
                     }
                     memcpy(mem, us, 16);
                     break;
-                case 10:
-                case 11:
-                case 12:
+                case STRUCT_VECTOR_UINT:
+                case STRUCT_VECTOR_SINT:
+                case STRUCT_VECTOR_BINT:
                     for (i = 0; i < 4; i++) {
                         if (!copts.littleendian)
                             ul[i] = CTool_EndianConvertWord32(val.ul[i]);
@@ -664,7 +664,7 @@ void CMach_InitVectorMem(Type *type, MWVector128 val, void *mem)
                     }
                     memcpy(mem, ul, 16);
                     break;
-                case 13:
+                case STRUCT_VECTOR_FLOAT:
                     for (i = 0; i < 4; i++) {
                         if (!copts.littleendian)
                             f[i] = val.f[i];
