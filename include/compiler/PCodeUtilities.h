@@ -29,7 +29,6 @@ extern void PCodeUtilities_EmitLoadImmediate(SInt16 destination, SInt32 value);
 extern void PCodeUtilities_LoadImmediate(SInt16 target, SInt32 value);
 extern void fn_004a1cb0(int first, int second, int third);
 extern void emit_opcode_with_base_offset(short opcode, short dest_reg, short base_reg, Object *obj, SInt32 offset);
-extern unsigned short data_00565d4a;
 extern struct Statement *gCurrentStatement;
 extern struct PCodeBlock *gCurrentBlock;
 

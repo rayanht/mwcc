@@ -1877,8 +1877,82 @@
     ],
     "include_dirs": [
       "src/frontend"
+    ]
+  },
+  "src/optimizer/IroSubable.c": {
+    "compiler": "pro53",
+    "flags": [
+      "-O4,p",
+      "-inline",
+      "auto",
+      "-sym",
+      "on",
+      "-Cpp_exceptions",
+      "off"
     ],
-    "status": "NonMatching"
+    "include_dirs": [
+      "src/optimizer"
+    ]
+  },
+  "src/backend/PCodeInfo.c": {
+    "compiler": "pro53",
+    "flags": [
+      "-O4,p",
+      "-inline",
+      "auto",
+      "-sym",
+      "on",
+      "-Cpp_exceptions",
+      "off"
+    ],
+    "include_dirs": [
+      "src/backend"
+    ]
+  },
+  "src/backend/InlineAsmMnemonicsPPC.c": {
+    "compiler": "pro53",
+    "flags": [
+      "-O4,p",
+      "-inline",
+      "auto",
+      "-sym",
+      "off",
+      "-Cpp_exceptions",
+      "off"
+    ],
+    "include_dirs": [
+      "src/backend"
+    ]
+  },
+  "src/backend/InlineAsmRegisters.c": {
+    "compiler": "pro53",
+    "flags": [
+      "-O4,p",
+      "-inline",
+      "auto",
+      "-sym",
+      "off",
+      "-Cpp_exceptions",
+      "off"
+    ],
+    "include_dirs": [
+      "src/backend"
+    ]
+  },
+  "src/backend/InlineAsmRegistersPPC.c": {
+    "compiler": "pro53",
+    "flags": [
+      "-O4,p",
+      "-inline",
+      "auto",
+      "-sym",
+      "off",
+      "-Cpp_exceptions",
+      "off"
+    ],
+    "include_dirs": [
+      "src/backend"
+    ]
   },
   "src/frontend/CTemplateTools.c": {
     "compiler": "pro53",

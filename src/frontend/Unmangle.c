@@ -13,6 +13,7 @@
 #include "compiler/CTemplateNew.h"
 #include "compiler/CodeGen.h"
 #include "compiler/DWARF.h"
+#include "compiler/InlineAsmRegisters.h"
 #include "compiler/Registers.h"
 #include "compiler/StackFrameEABI.h"
 /* Type extension carrying the byte-sized kind at offset 0x0e. */

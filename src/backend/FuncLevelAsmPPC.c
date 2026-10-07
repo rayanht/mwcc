@@ -30,6 +30,7 @@
 #include "compiler/IROUseDef.h"
 #include "compiler/InlineAsm.h"
 #include "compiler/InlineAsmPPC.h"
+#include "compiler/InlineAsmRegisters.h"
 #include "compiler/InstrSelection.h"
 #include "compiler/IroBitVect.h"
 #include "compiler/IroCSE.h"

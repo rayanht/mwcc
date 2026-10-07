@@ -839,9 +839,29 @@ src/backend/InlineAsm.c:
 	.bss        start:0x00581CE0 end:0x005820E0
 
 src/frontend/CTemplateNew.c:
-	.text       start:0x004ED690 end:0x004F0B00
-	.data       start:0x005653E0 end:0x005723A8
-	.bss        start:0x005820E0 end:0x00582440
+	.text       start:0x004ED690 end:0x004F0040
+	.data       start:0x005653E0 end:0x00565458
+	.bss        start:0x005820E0 end:0x00582110
+
+src/optimizer/IroSubable.c:
+	.text       start:0x004F0040 end:0x004F0190
+	.data       start:0x00565458 end:0x005654B0
+
+src/backend/PCodeInfo.c:
+	.data       start:0x005654B0 end:0x00568028
+
+src/backend/InlineAsmMnemonicsPPC.c:
+	.text       start:0x004F0190 end:0x004F02A0
+	.data       start:0x00568028 end:0x0056F638
+
+src/backend/InlineAsmRegisters.c:
+	.text       start:0x004F02A0 end:0x004F03C0
+	.bss        start:0x00582110 end:0x00582210
+
+src/backend/InlineAsmRegistersPPC.c:
+	.text       start:0x004F03C0 end:0x004F0B00
+	.data       start:0x0056F638 end:0x005723A8
+	.bss        start:0x00582210 end:0x00582440
 
 src/frontend/CExpr.c:
 	.text       start:0x004F0B00 end:0x004FB5B0

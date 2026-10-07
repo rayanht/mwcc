@@ -18206,7 +18206,7 @@
     "name": "CTemplateNew_ClearGlobalArray",
     "address": "0x0053a920",
     "size": 104,
-    "source": "src/frontend/CTemplateNew.c"
+    "source": "src/backend/InlineAsmRegisters.c"
   },
   {
     "name": "fn_0053a990",

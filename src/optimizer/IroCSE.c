@@ -30,6 +30,7 @@
 #include "compiler/IroJump.h"
 #include "compiler/IroLoop.h"
 #include "compiler/IroPropagate.h"
+#include "compiler/IroSubable.h"
 #include "compiler/IroTransform.h"
 #include "compiler/IroUtil.h"
 #include "compiler/IroVars.h"

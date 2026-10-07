@@ -12,19 +12,6 @@
 extern "C" {
 #endif
 
-#pragma pack(push, 1)
-struct AsmOperandPattern {
-    char *name;
-    unsigned int opcode;
-    unsigned char operands[6];
-    unsigned int processorMask;
-    unsigned int instruction;
-};
-#pragma pack(pop)
-struct NameLookupLink {
-    struct NameLookupLink *next;
-    struct AsmOperandPattern *record;
-};
 #pragma options align = mac68k
 struct ObjectReferenceEntry {
     struct ObjectReferenceEntry *
@@ -40,37 +27,6 @@ struct ParserPosition {
     long position;
 };
 #pragma options align = reset
-struct RegisterBinding {
-    struct RegisterBinding *next;
-    unsigned int key;
-    unsigned short attribute1;
-    unsigned short registerNumber;
-    struct Object *object;
-};
-struct RegistrationEntry {
-    const char *name;
-    unsigned char kind;
-    unsigned short value;
-};
-struct RegistrationHashEntry {
-    struct RegistrationHashEntry *next;
-    int id;
-    const char *name;
-    short kind;
-    short value;
-    int extra;
-};
-struct RegistrationTableEntry {
-    const char *name;       /* 0x00: CTemplateNew_InitRegistrationHashTables reads the register name */
-    short value;            /* 0x04: CTemplateNew_InitRegistrationHashTables copies the register value */
-    short alignmentPadding; /* 0x06: registration_table, unused space aligning id to 0x08 */
-    int id;                 /* 0x08: CTemplateNew_InitRegistrationHashTables copies the register id */
-};
-struct SecondaryRegistrationEntry {
-    int id;
-    const char *name;
-    short value;
-};
 #pragma options align = mac68k
 struct TemplateObjectInstance {
     Object base;
@@ -150,57 +106,13 @@ extern TemplateParameterRecord *parse_template_parameter(NameSpace *owner, Templ
                                                          short memberValue, char memberByte);
 extern void fn_004f0000(void);
 extern void CTemplateNew_Reset(void);
-extern unsigned int fn_004f0040(IROLinear *node);
-extern AsmOperandPattern *CTemplateNew_FindAsmOperandPattern(char *name);
-extern void CTemplateNew_InitAsmOperandPatternLookup(void);
-extern void *find_register_binding_key(unsigned int *key);
-extern void CTemplateNew_InsertRegisterBinding(const char *key, unsigned int attribute1, short registerNumber,
-                                               Object *object);
 extern ENode *parse_non_type_template_argument(Type *targetType, unsigned int qualifiers);
 extern Type *CTemplTool_GetSelfRefTemplate(struct TypeClassTemplate *record);
 extern struct CTStateElem *CTemplateNew_ParseTemplateArguments(struct TemplateParameterRecord *arg, char flag);
 extern void skip_balanced_angle_tokens(void);
-extern struct InlineAsmRegisterEntry *fn_004f06d0(char *name);
-extern struct InlineAsmRegisterEntry *CTemplateNew_LookupInlineAsmRegister(char *name);
-extern struct RegisterBinding *register_binding_hash[64];
-extern struct NameLookupLink *asmOperandPatternLookup[256];
-extern void *DAT_00584cb4[];
-extern void *DAT_00584cb8[];
-extern struct NameLookupLink *DAT_00584cbc[256];
-extern struct NameLookupLink *DAT_00584cc0[];
-extern struct NameLookupLink *DAT_00584cc4[];
-extern struct NameLookupLink *DAT_00584cc8[256];
-extern struct NameLookupLink *DAT_00584ccc[];
-extern char data_00565458[];
-extern unsigned int inline_asm_register_masks[];
-extern jmp_buf template_declaration_jmpbuf;
-extern Boolean data_00582108;
-extern struct InlineAsmRegisterEntry inlineAsmRegisterEntry;
-extern unsigned short data_0058242c;
-extern unsigned short data_0058242e;
-extern unsigned int data_00582430;
-extern struct InlineAsmRegisterEntry {
-    const char *name;      /* 0x00: fn_004f06d0 clears the numeric register name */
-    short kind;            /* 0x04: fn_004f06d0 sets DCR kind 4; CTemplateNew_LookupInlineAsmRegister sets SPR kind 2 */
-    short number;          /* 0x06: InlineAsmPPC.c reads the DCR register number */
-    struct Object *object; /* 0x08: CTemplateNew_LookupInlineAsmRegister clears object for numeric registers */
-} data_00582434;
-extern SInt16 data_00582438;
-extern SInt16 data_0058243a;
-extern SInt32 data_0058243c;
 extern SInt32 source_line;
 extern char template_recordbrowseinfo;
 extern CTStateElem *parse_template_arguments(struct TypeClassTemplate **classType, CTStateElem **result);
-extern void CTemplateNew_InitRegistrationHashTables(void);
-extern struct SecondaryRegistrationEntry secondary_registration_table[];
-extern char data_00572397[];
-extern struct RegistrationHashEntry *inlineAsmRegisterHashTable[64];
-extern struct RegistrationHashEntry *secondary_registration_hash[64];
-extern InlineAsmRegisterEntry *CTemplateNew_GetInlineAsmRegisterEntry(HashNameNode *name);
-extern void CTemplateNew_ClearGlobalArray(void);
-extern AsmOperandPattern asm_operand_patterns[];
-extern struct RegistrationEntry registration_entries[];
-extern struct RegistrationTableEntry registration_table[];
 
 #ifdef __cplusplus
 }

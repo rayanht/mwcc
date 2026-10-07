@@ -17707,61 +17707,61 @@
     "name": "fn_004f0040",
     "address": "0x004f0040",
     "size": 328,
-    "source": "src/frontend/CTemplateNew.c"
+    "source": "src/optimizer/IroSubable.c"
   },
   {
     "name": "CTemplateNew_FindAsmOperandPattern",
     "address": "0x004f0190",
     "size": 76,
-    "source": "src/frontend/CTemplateNew.c"
+    "source": "src/backend/InlineAsmMnemonicsPPC.c"
   },
   {
     "name": "CTemplateNew_InitAsmOperandPatternLookup",
     "address": "0x004f01e0",
     "size": 182,
-    "source": "src/frontend/CTemplateNew.c"
+    "source": "src/backend/InlineAsmMnemonicsPPC.c"
   },
   {
     "name": "find_register_binding_key",
     "address": "0x004f02a0",
     "size": 76,
-    "source": "src/frontend/CTemplateNew.c"
+    "source": "src/backend/InlineAsmRegisters.c"
   },
   {
     "name": "CTemplateNew_InsertRegisterBinding",
     "address": "0x004f02f0",
     "size": 74,
-    "source": "src/frontend/CTemplateNew.c"
+    "source": "src/backend/InlineAsmRegisters.c"
   },
   {
     "name": "CTemplateNew_ClearGlobalArray",
     "address": "0x004f0340",
     "size": 117,
-    "source": "src/frontend/CTemplateNew.c"
+    "source": "src/backend/InlineAsmRegisters.c"
   },
   {
     "name": "CTemplateNew_InitRegistrationHashTables",
     "address": "0x004f03c0",
     "size": 782,
-    "source": "src/frontend/CTemplateNew.c"
+    "source": "src/backend/InlineAsmRegistersPPC.c"
   },
   {
     "name": "fn_004f06d0",
     "address": "0x004f06d0",
     "size": 378,
-    "source": "src/frontend/CTemplateNew.c"
+    "source": "src/backend/InlineAsmRegistersPPC.c"
   },
   {
     "name": "CTemplateNew_LookupInlineAsmRegister",
     "address": "0x004f0850",
     "size": 506,
-    "source": "src/frontend/CTemplateNew.c"
+    "source": "src/backend/InlineAsmRegistersPPC.c"
   },
   {
     "name": "CTemplateNew_GetInlineAsmRegisterEntry",
     "address": "0x004f0a50",
     "size": 167,
-    "source": "src/frontend/CTemplateNew.c"
+    "source": "src/backend/InlineAsmRegistersPPC.c"
   },
   {
     "name": "CExpr_CheckUnwantedAssignment",

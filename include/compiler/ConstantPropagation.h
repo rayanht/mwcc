@@ -35,12 +35,6 @@ struct CBlockData {
 extern void ConstantPropagation_PropagateConstantsInBlock(struct PCodeBlock *block);
 extern struct PCodeInstruction *find_dlocal_addi(PCodeOperand *operand, SInt16 *size_out, SInt16 displacement);
 extern void ConstantPropagation_FindUniqueDefinitions(struct PCodeBlock *state);
-extern unsigned short constant_propagation_clear_mask;
-extern unsigned short DAT_005659aa;
-extern unsigned short DAT_00565a3a;
-extern unsigned short DAT_00565a8a;
-extern unsigned short DAT_00565d6a;
-extern unsigned short opcode_flags[][8];
 extern int gConstantPropagationChanged;
 extern void COpt_LoadDeletion(void);
 extern int gLoadDeletionChanged;
