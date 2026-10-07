@@ -342,8 +342,8 @@ SInt32 fn_0040aed0(void)
     }
     end = CLFileOps_GetScaledTicks();
     if (data_00541b2b != 0)
-        CLErrors_ForwardMessage(0x18, (double)(end - start) * data_00543248, &data_00543240, &data_00542f38,
-                                &data_00543238, &data_00542f38);
+        CLErrors_ForwardMessage(0x18, (double)(end - start) * data_00543248, "resolve", &data_00542f38, "project",
+                                &data_00542f38);
     return 0;
 }
 

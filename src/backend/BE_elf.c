@@ -541,11 +541,11 @@ void write_sym_nodes(void)
 static inline ObjGenSection *fn_0049c140_inline1(void)
 {
     ObjGenSection *section;
-    if (text_section_name[0] != 0) {
+    if (".text"[0] != 0) {
         section = section_list;
         if (section != NULL) {
             do {
-                if (section->context == NULL && memcmp(section->name, text_section_name, 6) == 0)
+                if (section->context == NULL && memcmp(section->name, ".text", 6) == 0)
                     return section;
                 section = section->next;
             } while (section != NULL);
@@ -558,12 +558,12 @@ static inline ObjGenSection *findInitialSection(void)
 {
     ObjGenSection *cursor;
     ObjGenSection *section;
-    if (text_section_name[0] != 0) {
+    if (".text"[0] != 0) {
         section = cursor = section_list;
         if (cursor != NULL) {
             do {
                 if (section->context == NULL) {
-                    if (memcmp(section->name, text_section_name, 6) == 0)
+                    if (memcmp(section->name, ".text", 6) == 0)
                         return section;
                 }
                 section = section->next;

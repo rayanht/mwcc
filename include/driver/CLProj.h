@@ -17,8 +17,6 @@ struct DirectorySearch {
 struct PathTextBuffer {
     char text[260];
 };
-extern char data_0054beec[];
-extern char this_not_null_string[];
 extern char directory_search[];
 extern char matching_entry_directory[];
 extern char data_0057f36b[];

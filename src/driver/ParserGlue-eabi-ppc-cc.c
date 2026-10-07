@@ -57,7 +57,8 @@ int fn_00405710(void)
         return 0;
     }
     if (data_00537a67 != 0 && data_00537b24 == 0) {
-        Targets_DispatchVariadicMessage(0x1c, &data_00540b6c);
+        Targets_DispatchVariadicMessage(0x1c,
+                                        "'-use_lmw_stmw on' or '-opt functions' only applies to big-endian machines");
     }
     if (output_path != 0) {
         fn_0040fbe1(data_005876fc, 1, NULL);

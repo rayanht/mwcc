@@ -87,9 +87,7 @@ unsigned char CLProj_InitializeCWD(char *a0)
 unsigned char CLProj_FreeTargets(void *value)
 {
     if (value == NULL) {
-        char *a = this_not_null_string;
-        char *b = data_0054beec;
-        CLIO_ReportAssertionFailure(a, b, 25U);
+        CLIO_ReportAssertionFailure("this != NULL", "CLProj.c", 25U);
     }
     CLTarg_FreeTargets(*(struct CLTarget **)value);
     return 1;

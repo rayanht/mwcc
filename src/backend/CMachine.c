@@ -70,33 +70,33 @@ void initialize_hash_name_globals(void)
     HashNameNode *nameHash25;
     HashNameNode *nameHash26;
     HashNameNode *nameHash27;
-    nameHash1 = GetHashNameNode(data_0055fbdc);
-    nameHash2 = GetHashNameNode(data_0055fbe0);
-    nameHash3 = GetHashNameNode(data_0055fbe4);
-    nameHash4 = GetHashNameNode(nameHash4_string);
-    nameHash5 = GetHashNameNode(nameHash5String);
-    nameHash6 = GetHashNameNode(data_0055fbf0);
-    nameHash7 = GetHashNameNode(data_0055fbf4);
-    nameHash8 = GetHashNameNode(data_0055fbf8);
-    nameHash9 = GetHashNameNode(data_0055fbfc);
-    nameHash10 = GetHashNameNode(name_hash10_string);
-    nameHash11 = GetHashNameNode(data_0055fc04);
-    nameHash12 = GetHashNameNode(name12);
-    nameHash13 = GetHashNameNode(data_0055fc14);
-    nameHash14 = GetHashNameNode(data_0055fc1c);
-    nameHash15 = GetHashNameNode(data_0055fc24);
-    nameHash16 = GetHashNameNode(data_0055fc2c);
-    nameHash17 = GetHashNameNode(vector_unsigned_name);
-    nameHash18 = GetHashNameNode(data_0055fc4c);
-    nameHash19 = GetHashNameNode(data_0055fc64);
-    nameHash20 = GetHashNameNode(vector_signed_char_name);
-    nameHash21 = GetHashNameNode(vector_signed_short_name);
-    nameHash22 = GetHashNameNode(data_0055fca0);
-    nameHash23 = GetHashNameNode(vector_bool_char_name);
-    nameHash24 = GetHashNameNode(vector_bool_short_name);
-    nameHash25 = GetHashNameNode(vector_bool_int_name);
-    nameHash26 = GetHashNameNode(vector_float_name);
-    nameHash27 = GetHashNameNode(vector_pixel_name);
+    nameHash1 = GetHashNameNode("[0]");
+    nameHash2 = GetHashNameNode("[1]");
+    nameHash3 = GetHashNameNode("[2]");
+    nameHash4 = GetHashNameNode("[3]");
+    nameHash5 = GetHashNameNode("[4]");
+    nameHash6 = GetHashNameNode("[5]");
+    nameHash7 = GetHashNameNode("[6]");
+    nameHash8 = GetHashNameNode("[7]");
+    nameHash9 = GetHashNameNode("[8]");
+    nameHash10 = GetHashNameNode("[9]");
+    nameHash11 = GetHashNameNode("[10]");
+    nameHash12 = GetHashNameNode("[11]");
+    nameHash13 = GetHashNameNode("[12]");
+    nameHash14 = GetHashNameNode("[13]");
+    nameHash15 = GetHashNameNode("[14]");
+    nameHash16 = GetHashNameNode("[15]");
+    nameHash17 = GetHashNameNode("vector unsigned char");
+    nameHash18 = GetHashNameNode("vector unsigned short");
+    nameHash19 = GetHashNameNode("vector unsigned int");
+    nameHash20 = GetHashNameNode("vector signed char");
+    nameHash21 = GetHashNameNode("vector signed short");
+    nameHash22 = GetHashNameNode("vector signed int");
+    nameHash23 = GetHashNameNode("vector bool char");
+    nameHash24 = GetHashNameNode("vector bool short");
+    nameHash25 = GetHashNameNode("vector bool int");
+    nameHash26 = GetHashNameNode("vector float");
+    nameHash27 = GetHashNameNode("vector pixel");
     data_0055fae6 = nameHash17;
     data_0055fb22 = nameHash18;
     data_0055fb5e = nameHash19;
@@ -350,7 +350,7 @@ long CMach_StructLayoutBitfield(TypeBitfield *field, int alignmentKind)
             storageBits = 32;
             break;
         default:
-            CError_Internal(cmachine_filename, 1437);
+            CError_Internal("CMachine.c", 1437);
     }
     switch (copts.structalignment) {
         case 3:
@@ -750,10 +750,10 @@ void CMach_PrintFloat(char *output, Float value)
                     break;
             }
         }
-        CError_Internal(cmachine_filename, 779);
+        CError_Internal("CMachine.c", 779);
     } while (0);
     CTool_EndianConvertMem(&buffer.value, sizeof(buffer.value));
-    sprintf(output, float_format, (long double)buffer.value);
+    sprintf(output, "%g", (long double)buffer.value);
 }
 
 void CMach_InitFloatMem(Type *type, Float value, unsigned char *dest)
@@ -806,7 +806,7 @@ Float CMachine_RoundFloatToType(Type *type, Float value)
         case 12:
             break;
         default:
-            CError_Internal(cmachine_filename, 714);
+            CError_Internal("CMachine.c", 714);
     }
     return value;
 }
@@ -862,7 +862,7 @@ unsigned char CMach_CalcVectorDiadicBool(unsigned int context, const union MWVec
             return left->longElements[0] != right->longElements[0] && left->longElements[1] != right->longElements[1] &&
                    left->longElements[2] != right->longElements[2] && left->longElements[3] != right->longElements[3];
         default:
-            CError_Internal(cmachine_filename, 653);
+            CError_Internal("CMachine.c", 653);
             return 0;
     }
 }
@@ -887,7 +887,7 @@ Boolean CMach_CalcFloatDiadicBool(Type *self, volatile double a, SInt16 op, vola
         case 0x3c:
             return a < b;
         default:
-            CError_Internal(cmachine_filename, 0x273);
+            CError_Internal("CMachine.c", 0x273);
             return 0;
     }
 }
@@ -1089,7 +1089,7 @@ CInt64 CMach_CalcIntMonadic(Type *type, SInt16 op, CInt64 val)
             case 8:
                 break;
             default:
-                CError_Internal(cmachine_filename, 364);
+                CError_Internal("CMachine.c", 364);
         }
         switch (op) {
             case '-':
@@ -1131,7 +1131,7 @@ CInt64 CMach_CalcIntMonadic(Type *type, SInt16 op, CInt64 val)
             case 8:
                 break;
             default:
-                CError_Internal(cmachine_filename, 394);
+                CError_Internal("CMachine.c", 394);
         }
         switch (op) {
             case '-':
@@ -1440,7 +1440,7 @@ int CMach_GetQUALalign(int qualifiers)
         } else if (qualifiers == Q_ALIGNED_MASK) {
             alignment = 8192;
         } else {
-            CError_Internal(cmachine_filename, 202);
+            CError_Internal("CMachine.c", 202);
         }
     }
     return alignment;

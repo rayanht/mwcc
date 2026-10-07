@@ -1011,18 +1011,18 @@ SInt32 InlineAsmPPC_ClassifyIdentifier(Boolean flag)
         tk = CPrepTokenizer_GetNextToken();
     if (tk == TK_IDENTIFIER) {
         char *s = data_00587fa0->name;
-        if (memcmp(s, &machine_keyword, 8) == 0)
+        if (memcmp(s, "machine", 8) == 0)
             result = 5;
         else if (flag == 1) {
-            if (memcmp(s, &entry_keyword, 6) == 0)
+            if (memcmp(s, "entry", 6) == 0)
                 result = 1;
-            else if (memcmp(s, &fralloc_keyword, 8) == 0)
+            else if (memcmp(s, "fralloc", 8) == 0)
                 result = 2;
-            else if (memcmp(s, &nofralloc_keyword, 10) == 0)
+            else if (memcmp(s, "nofralloc", 10) == 0)
                 result = 3;
-            else if (memcmp(s, &frfree_identifier, 7) == 0)
+            else if (memcmp(s, "frfree", 7) == 0)
                 result = 4;
-            else if (memcmp(s, &smclass_keyword, 8) == 0)
+            else if (memcmp(s, "smclass", 8) == 0)
                 result = 6;
             else
                 result = 0;

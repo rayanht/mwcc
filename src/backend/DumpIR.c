@@ -49,51 +49,51 @@ void dump_eat_nodes(CException *p)
             case 1:
                 fprintf(data_005811b0, "EAT_DESTROYLOCAL %s(&%s)%s",
                         COptimizer_GetFunctionObject(p->data.local.dtor)->name, p->data.local.object->name->name,
-                        &crlf);
+                        "\r\n");
                 break;
             case 2:
-                fprintf(data_005811b0, "EAT_DESTROYLOCALCOND%s", &crlf);
+                fprintf(data_005811b0, "EAT_DESTROYLOCALCOND%s", "\r\n");
                 break;
             case 3:
                 fprintf(data_005811b0, "EAT_DESTROYLOCALOFFSET %s(&%s+%ld)%s",
                         COptimizer_GetFunctionObject(p->data.local.dtor)->name, p->data.local.object->name->name,
-                        p->data.delete_pointer_cond.cond, &crlf);
+                        p->data.delete_pointer_cond.cond, "\r\n");
                 break;
             case 4:
-                fprintf(data_005811b0, "EAT_DESTROYLOCALPOINTER%s", &crlf);
+                fprintf(data_005811b0, "EAT_DESTROYLOCALPOINTER%s", "\r\n");
                 break;
             case 5:
-                fprintf(data_005811b0, "EAT_DESTROYLOCALARRAY%s", &crlf);
+                fprintf(data_005811b0, "EAT_DESTROYLOCALARRAY%s", "\r\n");
                 break;
             case 17:
                 fprintf(data_005811b0, "EAT_DESTROYBASE %s(this+%ld)%s",
                         COptimizer_GetFunctionObject(p->data.local.dtor)->name, p->data.delete_pointer_cond.cond,
-                        &crlf);
+                        "\r\n");
                 break;
             case 7:
                 fprintf(data_005811b0, "EAT_DESTROYMEMBER %s(%s+%ld)%s",
                         COptimizer_GetFunctionObject(p->data.local.dtor)->name, p->data.local.object->name->name,
-                        p->data.delete_pointer_cond.cond, &crlf);
+                        p->data.delete_pointer_cond.cond, "\r\n");
                 break;
             case 8:
                 fprintf(data_005811b0, "EAT_DESTROYMEMBERCOND if(%s) %s(this+%ld)%s", p->data.local.dtor->name->name,
                         COptimizer_GetFunctionObject(p->data.delete_pointer_cond.cond)->name,
-                        p->data.member_cond.offset, &crlf);
+                        p->data.member_cond.offset, "\r\n");
                 break;
             case 9:
                 fprintf(data_005811b0, "EAT_DESTROYMEMBERARRAY %s(this+%ld)[%ld] size: %ld%s",
                         COptimizer_GetFunctionObject(p->data.local.dtor)->name, p->data.delete_pointer_cond.cond,
-                        p->data.member_cond.offset, p->data.catch_block.exceptionType, &crlf);
+                        p->data.member_cond.offset, p->data.catch_block.exceptionType, "\r\n");
                 break;
             case 10:
-                fprintf(data_005811b0, "EAT_DELETEPOINTER(%s)%s", p->data.local.object->name->name, &crlf);
+                fprintf(data_005811b0, "EAT_DELETEPOINTER(%s)%s", p->data.local.object->name->name, "\r\n");
                 break;
             case 11:
-                fprintf(data_005811b0, "EAT_DELETELOCALPOINTER(%s)%s", p->data.local.object->name->name, &crlf);
+                fprintf(data_005811b0, "EAT_DELETELOCALPOINTER(%s)%s", p->data.local.object->name->name, "\r\n");
                 break;
             case 12:
                 fprintf(data_005811b0, "EAT_DELETEPOINTERCOND if (%s)(%s)%s",
-                        p->data.delete_pointer_cond.cond->name->name, p->data.local.object->name->name, &crlf);
+                        p->data.delete_pointer_cond.cond->name->name, p->data.local.object->name->name, "\r\n");
                 break;
             case 13:
                 fprintf(data_005811b0, "EAT_CATCHBLOCK ");
@@ -108,16 +108,16 @@ void dump_eat_nodes(CException *p)
                 } else {
                     fprintf(data_005811b0, "[...] ");
                 }
-                fprintf(data_005811b0, " Label: %s%s", p->data.catch_block.label->uniquename->name, &crlf);
+                fprintf(data_005811b0, " Label: %s%s", p->data.catch_block.label->uniquename->name, "\r\n");
                 break;
             case 15:
-                fprintf(data_005811b0, "EAT_SPECIFICATION%s", &crlf);
+                fprintf(data_005811b0, "EAT_SPECIFICATION%s", "\r\n");
                 break;
             case 14:
-                fprintf(data_005811b0, "EAT_ACTIVECATCHBLOCK%s", &crlf);
+                fprintf(data_005811b0, "EAT_ACTIVECATCHBLOCK%s", "\r\n");
                 break;
             case 16:
-                fprintf(data_005811b0, "EAT_TERMINATE%s", &crlf);
+                fprintf(data_005811b0, "EAT_TERMINATE%s", "\r\n");
                 break;
         }
         p = p->next;
@@ -303,7 +303,7 @@ static void PrintType(Type *type)
     char buf[256];
     format_type(type, buf);
     fprintf(data_005811b0, " (%s)", (unsigned int)buf);
-    fprintf(data_005811b0, crlf);
+    fprintf(data_005811b0, "\r\n");
 }
 
 static void PrintTypeLine(Type *type)
@@ -311,7 +311,7 @@ static void PrintTypeLine(Type *type)
     char buf[256];
     format_type(type, buf);
     fprintf(data_005811b0, " (%s)", (unsigned int)buf);
-    fputs(crlf, data_005811b0);
+    fputs("\r\n", data_005811b0);
 }
 
 void print_enode_tree(ENode *node, int depth)

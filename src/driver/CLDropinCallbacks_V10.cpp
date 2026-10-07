@@ -388,7 +388,7 @@ unsigned int __stdcall CLDropinCallbacks_V10_FreeMemory(struct DropinRequest *re
 {
     unsigned int result = 0U;
     if (DAT_00541b28 > 3)
-        CLIO_FormatAndDispatchText("Callback: %s\n", data_0054cb54);
+        CLIO_FormatAndDispatchText("Callback: %s\n", (unsigned char *)"UCBReleaseFileText");
     if (memory != NULL)
         free(memory);
     else
@@ -402,7 +402,7 @@ unsigned int __stdcall lookup_callback_record(unsigned int unused, unsigned int 
 {
     struct PayloadWithValue *found;
     if (DAT_00541b28 > 3)
-        CLIO_FormatAndDispatchText("Callback: %s\n", ucb_get_segment_info_text);
+        CLIO_FormatAndDispatchText("Callback: %s\n", (unsigned char *)"UCBGetSegmentInfo");
 
     if (default_target->linkage != 1U)
         return 4U;
@@ -448,7 +448,7 @@ unsigned int __stdcall call_overlays_and_translate_status(unsigned int callbackC
     int allocationValue;
 
     if (DAT_00541b28 > 3)
-        CLIO_FormatAndDispatchText("Callback: %s\n", data_0054cb94);
+        CLIO_FormatAndDispatchText("Callback: %s\n", (unsigned char *)"UCBGetOverlay1FileInfo");
     if (default_target->linkage != 2)
         return 4;
     allocationValue =
@@ -469,7 +469,7 @@ unsigned int __stdcall lookup_overlay_allocation(unsigned int unused, unsigned i
 {
     struct OverlayAllocation *allocation;
     if (DAT_00541b28 > 3)
-        CLIO_FormatAndDispatchText("Callback: %s\n", data_0054cbac);
+        CLIO_FormatAndDispatchText("Callback: %s\n", (unsigned char *)"UCBGetOverlay1Info");
     if (default_target->linkage != 2U)
         return 4U;
     allocation = CLOverlays_GetAllocationByGroupIndex(&default_target->overlays, groupIndex, allocationIndex);
@@ -578,7 +578,7 @@ unsigned int __stdcall report_message_detail(CWPluginPrivateContext *callback, c
     {
         short verbosity = DAT_00541b28;
         if (verbosity > 4) {
-            CLIO_FormatAndDispatchText("Callback: %s\n", ucb_show_status_text);
+            CLIO_FormatAndDispatchText("Callback: %s\n", (unsigned char *)"UCBShowStatus");
         }
     }
     if (fn_004151f0()) {
@@ -605,7 +605,7 @@ unsigned int __stdcall report_message_detail(CWPluginPrivateContext *callback, c
 unsigned int __stdcall fn_00424540(unsigned int argument)
 {
     if (DAT_00541b28 > 4) {
-        CLIO_FormatAndDispatchText("Callback: %s\n", data_0054cc40);
+        CLIO_FormatAndDispatchText("Callback: %s\n", (unsigned char *)"UCBUserBreak");
     }
     fn_004151d0(8);
     if (fn_004151f0() != 0) {
@@ -619,7 +619,7 @@ unsigned int __stdcall copy_named_destination_to_temporary(unsigned int context,
     unsigned int local;
     NameTableEntry *handle;
     if (DAT_00541b28 > 3)
-        CLIO_FormatAndDispatchText("Callback: %s\n", data_0054cc50);
+        CLIO_FormatAndDispatchText("Callback: %s\n", (unsigned char *)"UCBGetNamedPreferences");
     handle = CLPrefs_FindNameTableEntry(name);
     if (handle != 0) {
         if (DAT_00541b28 > 2)
@@ -638,7 +638,7 @@ unsigned int __stdcall report_store_plugin_data_not_implemented(unsigned int plu
                                                                 unsigned int pluginData, unsigned int dataSize)
 {
     if (DAT_00541b28 > 3)
-        CLIO_FormatAndDispatchText("Callback: %s\n", data_0054cc68);
+        CLIO_FormatAndDispatchText("Callback: %s\n", (unsigned char *)"UCBStorePluginData");
     CLErrors_ReportInternalError("CLDropinCallbacks_V10.cpp", 1261, "UCBStorePluginData not implemented");
     return 2U;
 }
@@ -646,7 +646,7 @@ unsigned int __stdcall report_store_plugin_data_not_implemented(unsigned int plu
 unsigned int __stdcall fn_00424660(unsigned int context, unsigned int plugin, unsigned int data, unsigned int size)
 {
     if (DAT_00541b28 > 3) {
-        CLIO_FormatAndDispatchText("Callback: %s\n", ucb_get_plugin_data_text);
+        CLIO_FormatAndDispatchText("Callback: %s\n", (unsigned char *)"UCBGetPluginData");
     }
     CLErrors_ReportInternalError("CLDropinCallbacks_V10.cpp", 1280, "UCBGetPluginData not implemented");
     return 2U;
@@ -960,7 +960,7 @@ unsigned int __stdcall allocate_memory(unsigned int unused0, unsigned int value,
 {
     unsigned int status;
     if (DAT_00541b28 > 3)
-        CLIO_FormatAndDispatchText("Callback: %s\n", ucbAllocateMemoryText);
+        CLIO_FormatAndDispatchText("Callback: %s\n", (unsigned char *)"UCBAllocateMemory");
     *result = (unsigned int)xmalloc(0U, value);
     if (*result == 0U)
         status = 2U;
@@ -972,7 +972,7 @@ unsigned int __stdcall allocate_memory(unsigned int unused0, unsigned int value,
 unsigned int __stdcall free_callback_argument(unsigned int unused1, unsigned int callbackArgument, unsigned int unused2)
 {
     if (DAT_00541b28 > 4)
-        CLIO_FormatAndDispatchText("Callback: %s\n", ucb_free_memory_text);
+        CLIO_FormatAndDispatchText("Callback: %s\n", (unsigned char *)"UCBFreeMemory");
     if (callbackArgument) {
         free((char *)callbackArgument);
         return 0;
@@ -984,7 +984,7 @@ unsigned int __stdcall fn_004252a0(unsigned int unused, unsigned int size, unsig
 {
     unsigned int handle;
     if (DAT_00541b28 > 4)
-        CLIO_FormatAndDispatchText("Callback: %s\n", data_0054ce2c);
+        CLIO_FormatAndDispatchText("Callback: %s\n", (unsigned char *)"UCBAllocMemHandle");
     handle = Memory_NewHandle(size);
     if (!handle)
         return 7U;
@@ -997,7 +997,7 @@ unsigned int __stdcall fn_004252f0(unsigned int callback, int callbackIndex)
     StorageHandle *callbackData;
 
     if (4 < DAT_00541b28) {
-        CLIO_FormatAndDispatchText("Callback: %s\n", &data_0054ce40);
+        CLIO_FormatAndDispatchText("Callback: %s\n", "UCBFreeMemHandle");
     }
     CLDropinCallbacks_V10_SetStorageHandle(callback, callbackIndex, &callbackData);
     Memory_FreeHandle(callbackData);
@@ -1008,7 +1008,7 @@ int __stdcall fn_00425340(unsigned int argument1, unsigned int argument2, unsign
 {
     StorageHandle *value;
     if (DAT_00541b28 > 4)
-        CLIO_FormatAndDispatchText("Callback: %s\n", data_0054ce54);
+        CLIO_FormatAndDispatchText("Callback: %s\n", (unsigned char *)"UCBGetMemHandleSize");
     CLDropinCallbacks_V10_SetStorageHandle(argument1, argument2, &value);
     *result = Memory_GetHandleSize(value);
     return 0;
@@ -1038,7 +1038,7 @@ unsigned int __stdcall get_storage_handle_data(unsigned int unused0, struct Stor
                                                char **destination)
 {
     if (DAT_00541b28 > 4)
-        CLIO_FormatAndDispatchText("Callback: %s\n", data_0054ce7c);
+        CLIO_FormatAndDispatchText("Callback: %s\n", (unsigned char *)"UCBLockMemHandle");
     fn_00413a00(args);
     *destination = args->data;
     return 0;
@@ -1047,7 +1047,7 @@ unsigned int __stdcall get_storage_handle_data(unsigned int unused0, struct Stor
 unsigned int __stdcall fn_00425430(unsigned int unused, unsigned int handle)
 {
     if (DAT_00541b28 > 4)
-        CLIO_FormatAndDispatchText("Callback: %s\n", data_0054ce90);
+        CLIO_FormatAndDispatchText("Callback: %s\n", (unsigned char *)"UCBUnlockMemHandle");
     fn_00413a50((StorageHandle *)handle);
     return 0;
 }
@@ -1055,7 +1055,7 @@ unsigned int __stdcall fn_00425430(unsigned int unused, unsigned int handle)
 unsigned int __stdcall copy_command_line_target(unsigned int unused, unsigned int value, unsigned int kind)
 {
     if (DAT_00541b28 > 3)
-        CLIO_FormatAndDispatchText("Callback: %s\n", ucb_get_target_name_text);
+        CLIO_FormatAndDispatchText("Callback: %s\n", (unsigned char *)"UCBGetTargetName");
     strncpy((char *)value, "command-line target", (short)kind);
     return 0;
 }
@@ -1063,21 +1063,21 @@ unsigned int __stdcall copy_command_line_target(unsigned int unused, unsigned in
 unsigned int __stdcall log_callback_string(unsigned int argument)
 {
     if (DAT_00541b28 > 3)
-        CLIO_FormatAndDispatchText("Callback: %s\n", ucb_pre_dialog_string);
+        CLIO_FormatAndDispatchText("Callback: %s\n", (unsigned char *)"UCBPreDialog");
     return 0;
 }
 
 unsigned int __stdcall log_callback_above_threshold(unsigned int argument)
 {
     if (DAT_00541b28 > 3)
-        CLIO_FormatAndDispatchText("Callback: %s\n", ucb_post_dialog_name);
+        CLIO_FormatAndDispatchText("Callback: %s\n", (unsigned char *)"UCBPostDialog");
     return 0;
 }
 
 unsigned int __stdcall fn_004254e0(unsigned int action, unsigned int fileReference)
 {
     if (DAT_00541b28 > 3) {
-        CLIO_FormatAndDispatchText("Callback: %s\n", ucb_pre_file_action_name);
+        CLIO_FormatAndDispatchText("Callback: %s\n", (unsigned char *)"UCBPreFileAction");
     }
     CLErrors_ReportInternalError("CLDropinCallbacks_V10.cpp", 1907, "UCBPreFileAction not implemented");
     return 2U;
@@ -1086,7 +1086,7 @@ unsigned int __stdcall fn_004254e0(unsigned int action, unsigned int fileReferen
 unsigned int __stdcall fn_00425520(unsigned int file, unsigned int action)
 {
     if (DAT_00541b28 > 3)
-        CLIO_FormatAndDispatchText("Callback: %s\n", data_0054cf24);
+        CLIO_FormatAndDispatchText("Callback: %s\n", (unsigned char *)"UCBPostFileAction");
     CLErrors_ReportInternalError("CLDropinCallbacks_V10.cpp", 1921, "UCBPostFileAction not implemented");
     return 2U;
 }
@@ -1147,7 +1147,7 @@ int __stdcall cache_access_path_list(CWPluginPrivateContext *request)
 unsigned int __stdcall CLDropinCallbacks_V10_StoreValue(unsigned int unused, unsigned int value, void *resultAddress)
 {
     if (DAT_00541b28 > 4)
-        CLIO_FormatAndDispatchText("Callback: %s\n", data_0054cf8c);
+        CLIO_FormatAndDispatchText("Callback: %s\n", (unsigned char *)"UCBSecretAttachHandle");
     *(unsigned int *)resultAddress = value;
     return 0;
 }
@@ -1156,7 +1156,7 @@ unsigned int __stdcall CLDropinCallbacks_V10_SetStorageHandle(unsigned int unuse
                                                               void *resultAddress)
 {
     if (DAT_00541b28 > 4)
-        CLIO_FormatAndDispatchText("Callback: %s\n", data_0054cfa4);
+        CLIO_FormatAndDispatchText("Callback: %s\n", (unsigned char *)"UCBSecretDetachHandle");
     if (!value || !resultAddress) {
         *(StorageHandle **)resultAddress = 0;
         return 3;
@@ -1168,7 +1168,7 @@ unsigned int __stdcall CLDropinCallbacks_V10_SetStorageHandle(unsigned int unuse
 unsigned int __stdcall copy_value_to_result(unsigned int unused, unsigned int value, unsigned int *result)
 {
     if (DAT_00541b28 > 4)
-        CLIO_FormatAndDispatchText("Callback: %s\n", data_0054cfbc);
+        CLIO_FormatAndDispatchText("Callback: %s\n", (unsigned char *)"UCBSecretPeekHandle");
 
     if (!value || !result) {
         *result = 0;
@@ -1187,7 +1187,7 @@ unsigned int __stdcall request_license(unsigned int unused0, unsigned int reques
     unsigned int cookieKind;
 
     if (DAT_00541b28 > 3)
-        CLIO_FormatAndDispatchText("Callback: %s\n", data_0054cfd0);
+        CLIO_FormatAndDispatchText("Callback: %s\n", (unsigned char *)"UCBCheckoutLicense");
     cookieKind = flags & 1U;
     if (cookieKind == 0U && licenseResult == 0)
         return 3U;
@@ -1208,7 +1208,7 @@ unsigned int __stdcall request_license(unsigned int unused0, unsigned int reques
 unsigned int __stdcall forward_nonzero_value(unsigned int unused, unsigned int value)
 {
     if (DAT_00541b28 > 3)
-        CLIO_FormatAndDispatchText("Callback: %s\n", data_0054cffc);
+        CLIO_FormatAndDispatchText("Callback: %s\n", (unsigned char *)"UCBCheckinLicense");
     if (value != 0)
         CLLicenses_DeleteLicense(value);
     return 0;

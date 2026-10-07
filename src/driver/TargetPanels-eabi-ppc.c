@@ -70,12 +70,12 @@ void TargetPanels_eabi_ppc_LoadCompilerOptions(void)
     ExtendedCompilerSettings extendedSettings;
     void **resource;
 
-    LoadPreferenceResource(ppc_eabi_codegen_resource_name, &resource);
+    LoadPreferenceResource((unsigned char *)"PPC EABI CodeGen", &resource);
     options = ReadCompilerOptions(resource);
     data_0057f6a8 = options.formatVersion;
-    LoadPreferenceResource(ppc_eabi_preference_resource_name, &resource);
+    LoadPreferenceResource((unsigned char *)"PPC EABI Project", &resource);
     settings = ReadCompilerSettings(resource);
-    LoadPreferenceResource(linkerPreferenceResourceName, &resource);
+    LoadPreferenceResource((unsigned char *)"PPC EABI Linker", &resource);
     extendedSettings = ReadExtendedCompilerSettings(resource);
 
     cprep_cu = (UInt8 *)&compiler_plugin_cu;

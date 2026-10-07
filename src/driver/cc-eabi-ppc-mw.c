@@ -78,7 +78,7 @@ unsigned int __stdcall set_data_pointer(unsigned int objectAddress)
     struct DataPointerObject *object;
     unsigned char *data;
     object = (struct DataPointerObject *)objectAddress;
-    object->data = (data = data_005437e8);
+    object->data = (data = (unsigned char *)"mwldnr2");
     object = NULL;
     return (unsigned int)object;
 }
@@ -88,7 +88,7 @@ unsigned int __stdcall fn_0040be90(unsigned int objectAddress)
     struct TableObject *object;
     unsigned char *table;
     object = (struct TableObject *)objectAddress;
-    object->table = (table = data_005437f0);
+    object->table = (table = (unsigned char *)"Linker Tool Stub");
     object = NULL;
     return (unsigned int)object;
 }

@@ -25,10 +25,6 @@ extern char *write_qualifiers(MOutBuf *output, char *qualifiers);
 extern char *fn_004e8800(int *a, MOutBuf *out, char *p);
 extern char *unmangle_template_arguments(int *ctx, MOutBuf *buf, char *p);
 extern char *unmangle_qualified_name(int *context, MOutBuf *output, char *cursor, char append, char alternate);
-extern char data_005649b8;
-extern char data_005649c0[];
-extern char const_qualifier[];
-extern char unmangle_volatile_string[];
 
 #ifdef __cplusplus
 }

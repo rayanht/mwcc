@@ -181,8 +181,6 @@ extern unsigned char fn_004e0ab0(Statement *node);
 extern void CExcept_Setup(void);
 extern struct Object *throw_func;
 extern struct ECacheNode *cached_objects;
-extern char dtor_type_name[];
-extern char size_type_name[];
 extern UInt8 data_00581c30;
 extern struct TemporaryObject *temporary_object_list;
 extern struct Statement *data_00581c36;

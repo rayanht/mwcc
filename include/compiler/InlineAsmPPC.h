@@ -112,12 +112,6 @@ extern const char *InlineAsmPPC_GetOpcodeMnemonic(struct ParsedAsmInstruction *i
 extern void encode_expression_operand(EncodedOperand *operand, int minimum, int maximum, char negative);
 extern void parse_branch_operand(struct ParsedAsmInstruction *stmt, EncodedOperand *out, Boolean wide, Boolean absolute,
                                  Boolean link);
-extern char machine_keyword[];
-extern char entry_keyword[];
-extern char fralloc_keyword[];
-extern char nofralloc_keyword[];
-extern char frfree_identifier[];
-extern char smclass_keyword[];
 extern SInt32 data_005652f8;
 extern unsigned int data_00587128;
 extern SInt32 asm_instruction_count;

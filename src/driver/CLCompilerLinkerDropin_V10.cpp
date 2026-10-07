@@ -57,7 +57,7 @@ unsigned int __stdcall call_primary_reference_callback(unsigned int argument, un
 {
     DropinFileRecord *record;
     if (DAT_00541b28 > (short)(3U)) {
-        CLIO_FormatAndDispatchText("Callback: %s\n", data_0054d184);
+        CLIO_FormatAndDispatchText("Callback: %s\n", (unsigned char *)"UCBLoadObjectData");
     }
     record = CLFiles_FindFileByIndex(&default_target->files, key);
     if (record == 0) {
@@ -144,7 +144,7 @@ unsigned int __stdcall report_begin_sub_compile_not_implemented(unsigned int arg
                                                                 unsigned int argument2)
 {
     if (DAT_00541b28 > 3)
-        CLIO_FormatAndDispatchText("Callback: %s\n", data_0054d218);
+        CLIO_FormatAndDispatchText("Callback: %s\n", (unsigned char *)"UCBBeginSubCompile");
     CLErrors_ReportInternalError("CLCompilerLinkerDropin_V10.cpp", 367, "UCBBeginSubCompile not implemented");
     return 2U;
 }
@@ -152,7 +152,7 @@ unsigned int __stdcall report_begin_sub_compile_not_implemented(unsigned int arg
 unsigned int __stdcall report_end_sub_compile_not_implemented(unsigned int unused)
 {
     if (DAT_00541b28 > 3)
-        CLIO_FormatAndDispatchText("Callback: %s\n", data_0054d250);
+        CLIO_FormatAndDispatchText("Callback: %s\n", (unsigned char *)"UCBEndSubCompile");
     CLErrors_ReportInternalError("CLCompilerLinkerDropin_V10.cpp", 379, "UCBEndSubCompile not implemented");
     return 2U;
 }
@@ -244,7 +244,7 @@ int __stdcall get_precompiled_header_spec(DropinRequest *request, int output, co
 unsigned int __stdcall fn_004262a0(unsigned int unused1, unsigned int unused2)
 {
     if (DAT_00541b28 > 3)
-        CLIO_FormatAndDispatchText("Callback: %s\n", data_0054d2c4);
+        CLIO_FormatAndDispatchText("Callback: %s\n", (unsigned char *)"UCBGetResourceFile");
     CLErrors_ReportInternalError("CLCompilerLinkerDropin_V10.cpp", 509, "UCBGetResourceFile not implemented");
     return 2U;
 }
@@ -252,7 +252,7 @@ unsigned int __stdcall fn_004262a0(unsigned int unused1, unsigned int unused2)
 unsigned int __stdcall report_unimplemented_resource_file_put(unsigned int, unsigned int, unsigned int, unsigned int)
 {
     if (DAT_00541b28 > 3)
-        CLIO_FormatAndDispatchText("Callback: %s\n", data_0054d2fc);
+        CLIO_FormatAndDispatchText("Callback: %s\n", (unsigned char *)"UCBPutResourceFile");
     CLErrors_ReportInternalError("CLCompilerLinkerDropin_V10.cpp", 524, "UCBPutResourceFile not implemented");
     return 2U;
 }
@@ -406,7 +406,7 @@ int __stdcall lookup_precompiled_unit(struct DropinRequest *request, char *input
 unsigned int __stdcall log_callback(unsigned int unused1, unsigned int unused2)
 {
     if (DAT_00541b28 > 3)
-        CLIO_FormatAndDispatchText("Callback: %s\n", data_0054d5a4);
+        CLIO_FormatAndDispatchText("Callback: %s\n", (unsigned char *)"UCBSBMfiles");
     return 0;
 }
 
@@ -487,7 +487,7 @@ unsigned int __stdcall free_allocation(unsigned int unused, unsigned int allocat
 {
     char *memory = (char *)allocation;
     if (DAT_00541b28 > 3)
-        CLIO_FormatAndDispatchText("Callback: %s\n", ucb_release_unit_text);
+        CLIO_FormatAndDispatchText("Callback: %s\n", (unsigned char *)"UCBReleaseUnit");
     if (!memory)
         return 2U;
     free(memory);
@@ -546,7 +546,7 @@ unsigned int __stdcall get_object_file_spec(unsigned int unused, unsigned int ke
 {
     DropinFileRecord *record;
     if (DAT_00541b28 > 3)
-        CLIO_FormatAndDispatchText("Callback: %s\n", data_0054d730);
+        CLIO_FormatAndDispatchText("Callback: %s\n", (unsigned char *)"UCBGetStoredObjectFileSpec");
 
     record = CLFiles_FindFileByIndex(&default_target->files, key);
     if (!record)
@@ -563,7 +563,7 @@ unsigned int __stdcall get_object_file_spec(unsigned int unused, unsigned int ke
 unsigned int __stdcall fn_00426da0(unsigned int unused, NameSpaceName *name, unsigned int unused2)
 {
     if (DAT_00541b28 > 3)
-        CLIO_FormatAndDispatchText("Callback: %s\n", data_0054d6d4);
+        CLIO_FormatAndDispatchText("Callback: %s\n", (unsigned char *)"UCBGetModifiedFiles");
     name->next = 0;
     CLErrors_ReportInternalError("CLCompilerLinkerDropin_V10.cpp", 945, "CWGetModifiedFiles not implemented!\n");
     return 0;
@@ -573,7 +573,7 @@ int __stdcall fn_00425ef0(unsigned int callbackContext, unsigned int callbackDat
 {
     fn_004151d0(12U);
     if (DAT_00541b28 > 3)
-        CLIO_FormatAndDispatchText("Callback: %s\n", data_0054d208);
+        CLIO_FormatAndDispatchText("Callback: %s\n", (unsigned char *)"UCBDisplayLines");
     if (fn_004151f0() != 0)
         return 1;
     return 0;
@@ -584,7 +584,7 @@ unsigned int __stdcall get_file_output_path(unsigned int context, unsigned int f
 {
     struct DropinFileRecord *file;
     if (DAT_00541b28 > 3) {
-        CLIO_FormatAndDispatchText("Callback: %s\n", data_0054d710);
+        CLIO_FormatAndDispatchText("Callback: %s\n", (unsigned char *)"UCBGetSuggestedObjectFileSpec");
     }
     file = CLFiles_FindFileByIndex(&default_target->files, fileIndex);
     if (file == NULL) {
@@ -600,7 +600,7 @@ unsigned int __stdcall get_file_output_path(unsigned int context, unsigned int f
 unsigned int __stdcall copy_name_with_p_extension(unsigned int unused, const char *name, char *output)
 {
     if (DAT_00541b28 > 3) {
-        CLIO_FormatAndDispatchText("Callback: %s\n", data_0054d684);
+        CLIO_FormatAndDispatchText("Callback: %s\n", (unsigned char *)"UCBUnitNameToFileName");
     }
     strcpy(output, name);
     if (ClientGlue_CompareLowercaseStrings(output + strlen(output) - 2, ".p") != 0) {
@@ -630,7 +630,7 @@ unsigned int __stdcall clear_primary_reference_value(unsigned int unused0, unsig
 {
     DropinFileRecord *record;
     if (DAT_00541b28 > (short)3) {
-        CLIO_FormatAndDispatchText("Callback: %s\n", data_0054d1f4);
+        CLIO_FormatAndDispatchText("Callback: %s\n", (unsigned char *)"UCBFreeObjectData");
     }
     record = CLFiles_FindFileByIndex(&default_target->files, recordKey);
     if (record == 0)

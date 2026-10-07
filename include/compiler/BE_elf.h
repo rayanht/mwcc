@@ -85,7 +85,6 @@ extern void BE_elf_AlignRecord(GList *record, SInt32 alignment);
 extern void build_ordered_section_index(void);
 extern void *data_0055e528;
 extern int max_padding_size;
-extern char text_section_name[];
 extern UInt8 elfBigEndian;
 extern SInt32 symbol_order_count;
 extern struct ElfHeader elf_header;

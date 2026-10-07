@@ -68,7 +68,7 @@ unsigned int CLBrowser_InitMemBuffer(MemBuffer *buffer)
 {
     unsigned int error = OS_NewHandle(0U, buffer);
     if (error != 0U) {
-        CLErrors_ReportOSError(63, error, data_0054d9c4, browse_file_table_string);
+        CLErrors_ReportOSError(63, error, (unsigned char *)"allocate", (unsigned char *)"browse file table");
         return 0U;
     }
     return 1U;

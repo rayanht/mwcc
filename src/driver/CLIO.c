@@ -665,14 +665,14 @@ unsigned char *select_plugin_type_data(Plugin *value)
         record = CLPlugins_GetPluginDesc(value);
         switch (record->type) {
             case 0x50617273:
-                return plugin_type_strings;
+                return (unsigned char *)"parsing";
             case 0x436F6D70:
-                return compiling_plugin_type;
+                return (unsigned char *)"compiling";
             case 0x4C696E6B:
-                return data_0054bab8;
+                return (unsigned char *)"linking";
         }
     }
-    return data_0054bac0;
+    return (unsigned char *)"processing";
 }
 
 void print_diagnostic(Plugin *object, DiagnosticSourcePosition *dump, SInt32 diagnosticCode, SInt16 level,

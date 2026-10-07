@@ -1744,8 +1744,8 @@ void CException_AddStdTypeRecord(void)
     rec->kind = 6;
     rec->data.types.type[0] = CException_StdType("ptr");
     rec->data.types.type[1] = CException_StdType("i");
-    rec->data.types.type[2] = CException_StdType(&dtor_type_name);
-    rec->data.types.type[3] = CException_StdType(&size_type_name);
+    rec->data.types.type[2] = CException_StdType("dtor");
+    rec->data.types.type[3] = CException_StdType("size");
     rec->next = UINT_00587fc4;
     UINT_00587fc4 = rec;
 }

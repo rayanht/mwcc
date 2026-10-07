@@ -63,8 +63,6 @@ extern void CLBrowser_CacheFileText(struct OSSpec *path, struct StorageHandle *b
 extern StorageHandle *CLBrowser_FindCacheEntryBuffer(OSSpec *key, unsigned char *value);
 extern void CLBrowser_ReleaseBuffer(StorageHandle *value);
 extern struct BrowserCacheEntry *browser_cache_free_list;
-extern unsigned char browse_file_table_string[];
-extern unsigned char data_0054d9c4[];
 extern struct BrowserCacheEntry *browser_cache_entries;
 extern unsigned int cache_free_size;
 extern int fn_004286d0(DropinFileRecord *input, unsigned int processingMode, unsigned int processingFlags);

@@ -528,7 +528,7 @@ ENode *CRTTI_ParseTypeid(void)
         if (foundType != NULL && foundType->type == TYPECLASS && foundType->size != 0)
             classType = foundType;
         else {
-            CError_ReportError(ERR_UNDEFINED_IDENTIFIER, &std_type_info_name);
+            CError_ReportError(ERR_UNDEFINED_IDENTIFIER, "::std::type_info");
             classType = (Type *)&stchar;
         }
     }

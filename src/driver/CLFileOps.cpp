@@ -211,7 +211,7 @@ int __stdcall add_access_path(NamespaceOperationContext *context, NamespaceOpera
         return 3;
     }
     if (DAT_00541b28 > 2) {
-        CLErrors_ForwardMessage(0x4d, &data_0054bf38, fn_00412340(buffer.directory.path, data_005880e0, 0x104));
+        CLErrors_ForwardMessage(0x4d, " search path", fn_00412340(buffer.directory.path, data_005880e0, 0x104));
     }
     if (state->flag4b == 0) {
         paths = default_target;

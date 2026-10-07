@@ -601,11 +601,11 @@ static inline HashNameNode *CTempl_FindConversion(TypeClass *tclass, Type *type,
         obj->name = (di).name;                                                                                         \
         obj->u.func.linkname = CParser_GetUniqueName();                                                                \
         obj->type = (di).dtype;                                                                                        \
-        obj->qual = (di).qual | Q_MANGLE_NAME;                                                                               \
+        obj->qual = (di).qual | Q_MANGLE_NAME;                                                                         \
         obj->sclass = (di).storage;                                                                                    \
         TYPE_FUNC(obj->type)->flags |= 0x400;                                                                          \
         obj->u.templateFunction = templ;                                                                               \
-        if ((di).qual & Q_INLINE)                                                                                          \
+        if ((di).qual & Q_INLINE)                                                                                      \
             obj->sclass = 0x102;                                                                                       \
         templ->tfunc = obj;                                                                                            \
         CScope_AddObject(currentNameSpace, (di).name, (ObjBase *)obj);                                                 \
@@ -829,7 +829,8 @@ void parse_function_template_declaration(TemplateScopeState *stack, TemplatePara
             di.storage = 0;
         }
     }
-    CError_ReportIllegalFlags(di.qual & ~(Q_CV | Q_ASM | Q_PASCAL | Q_INLINE | Q_EXPLICIT | Q_IMPLICIT_WEAK | Q_WEAK | Q_ALIGNED_MASK | Q_INTERRUPT));
+    CError_ReportIllegalFlags(di.qual & ~(Q_CV | Q_ASM | Q_PASCAL | Q_INLINE | Q_EXPLICIT | Q_IMPLICIT_WEAK | Q_WEAK |
+                                          Q_ALIGNED_MASK | Q_INTERRUPT));
 
     if (!di.hasTypename) {
         if (tclass && di.dtype->type == TYPECLASS && di.dtype == (Type *)tclass && tk == '(') {
@@ -1079,7 +1080,8 @@ void parse_template_member_definition(void *context, TypeClass *template_info, D
             CError_ReportError(ERR_IDENTIFIER_REDECLARED, declaration->name->name);
             return;
         }
-        if (iscpp_typeequal(declaration->dtype, object->type) == 0 || (object->qual & (Q_CV | Q_PASCAL)) != (declaration->qual & (Q_CV | Q_PASCAL))) {
+        if (iscpp_typeequal(declaration->dtype, object->type) == 0 ||
+            (object->qual & (Q_CV | Q_PASCAL)) != (declaration->qual & (Q_CV | Q_PASCAL))) {
             CError_ReportError(ERR_IDENTIFIER_REDECLARED_WAS_DECLARED_AS_NOW, CError_GetObjectString(object),
                                object->type, object->qual, declaration->dtype, declaration->qual);
             return;
@@ -1746,24 +1748,24 @@ void CTemplateNew_InitRegistrationHashTables(void)
             if (record != NULL && record->name == name) {
                 switch (registration->kind) {
                     case 0:
-                        format = data_0057238c;
+                        format = "r";
                         break;
                     case 1:
-                        format = data_0057238e;
+                        format = "f";
                         break;
                     case 9:
-                        format = data_00572390;
+                        format = "v";
                         break;
                     case 2:
-                        format = data_00572392;
+                        format = "S";
                         break;
                     case 3:
-                        format = data_00572394;
+                        format = "cr";
                         break;
                     default:
                         format = data_00572397;
                 }
-                sprintf(message, registration_message_format, format, registration->value);
+                sprintf(message, "%s%d", format, registration->value);
                 PPCError_ReportDiagnostic(101, record->name->name, message);
             }
         }
@@ -1772,24 +1774,24 @@ void CTemplateNew_InitRegistrationHashTables(void)
             if (secondaryRecord != NULL && secondaryRecord->name == name) {
                 switch (registration->kind) {
                     case 0:
-                        secondaryFormat = data_0057238c;
+                        secondaryFormat = "r";
                         break;
                     case 1:
-                        secondaryFormat = data_0057238e;
+                        secondaryFormat = "f";
                         break;
                     case 9:
-                        secondaryFormat = data_00572390;
+                        secondaryFormat = "v";
                         break;
                     case 2:
-                        secondaryFormat = data_00572392;
+                        secondaryFormat = "S";
                         break;
                     case 3:
-                        secondaryFormat = data_00572394;
+                        secondaryFormat = "cr";
                         break;
                     default:
                         secondaryFormat = data_00572397;
                 }
-                sprintf(message, registration_message_format, secondaryFormat, registration->value);
+                sprintf(message, "%s%d", secondaryFormat, registration->value);
                 PPCError_ReportDiagnostic(100, secondaryRecord->name->name, message);
             }
         }

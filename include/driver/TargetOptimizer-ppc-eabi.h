@@ -31,27 +31,6 @@ extern char data_00537a60;
 extern char data_00537a63;
 extern unsigned int TargetOptimizer_ppc_eabi_ReportScheduling(struct StorageHandle *argument);
 extern short data_00537a68;
-extern unsigned char generic_ppc_message[];
-extern unsigned char data_0054c5d0[];
-extern unsigned char data_0054c5d4[];
-extern unsigned char data_0054c5d8[];
-extern unsigned char data_0054c5dc[];
-extern unsigned char data_0054c5e0[];
-extern unsigned char data_0054c5e4[];
-extern unsigned char data_0054c5e8[];
-extern unsigned char data_0054c5ec[];
-extern unsigned char data_0054c5f0[];
-extern unsigned char data_0054c5f8[];
-extern unsigned char data_0054c5fc[];
-extern unsigned char data_0054c604[];
-extern unsigned char data_0054c608[];
-extern unsigned char data_0054c60c[];
-extern unsigned char data_0054c610[];
-extern unsigned char data_0054c614[];
-extern unsigned char data_0054c618[];
-extern unsigned char data_0054c61c[];
-extern signed char data_0054c624[];
-extern unsigned char data_0054c628[];
 
 #ifdef __cplusplus
 }

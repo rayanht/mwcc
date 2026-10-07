@@ -9,6 +9,10 @@
 #include "driver/ParserGlue-eabi-ppc-cc.h"
 #include "driver/StringUtils.h"
 #include <string.h>
+
+/* Data of the original file that none of its linked code uses. */
+static char lbl_0054C5A0 = 5;
+
 #pragma optimization_level 2
 
 int TargetOptimizer_ppc_eabi_SetOption(short option, char enabled)
@@ -45,47 +49,47 @@ unsigned int TargetOptimizer_ppc_eabi_ReportScheduling(struct StorageHandle *arg
         HPrintF(argument, "\t- no instruction scheduling\n");
     else {
         if ((setting = data_00537a68) == 20)
-            message = generic_ppc_message;
+            message = (unsigned char *)"generic PPC";
         else if (setting == 0)
-            message = data_0054c5d0;
+            message = (unsigned char *)"401";
         else if (setting == 1)
-            message = data_0054c5d4;
+            message = (unsigned char *)"403";
         else if (setting == 2)
-            message = data_0054c5d8;
+            message = (unsigned char *)"505";
         else if (setting == 3)
-            message = data_0054c5dc;
+            message = (unsigned char *)"509";
         else if (setting == 4)
-            message = data_0054c5e0;
+            message = (unsigned char *)"555";
         else if (setting == 5)
-            message = data_0054c5e4;
+            message = (unsigned char *)"601";
         else if (setting == 6)
-            message = data_0054c5e8;
+            message = (unsigned char *)"602";
         else if (setting == 7)
-            message = data_0054c5ec;
+            message = (unsigned char *)"603";
         else if (setting == 8)
-            message = data_0054c5f0;
+            message = (unsigned char *)"603e";
         else if (setting == 9)
-            message = data_0054c5f8;
+            message = (unsigned char *)"604";
         else if (setting == 10)
-            message = data_0054c5fc;
+            message = (unsigned char *)"604e";
         else if (setting == 11)
-            message = data_0054c604;
+            message = (unsigned char *)"740";
         else if (setting == 12)
-            message = data_0054c608;
+            message = (unsigned char *)"750";
         else if (setting == 13)
-            message = data_0054c60c;
+            message = (unsigned char *)"801";
         else if (setting == 14)
-            message = data_0054c610;
+            message = (unsigned char *)"821";
         else if (setting == 15)
-            message = data_0054c614;
+            message = (unsigned char *)"823";
         else if (setting == 16)
-            message = data_0054c618;
+            message = (unsigned char *)"850";
         else if (setting == 19)
-            message = data_0054c61c;
+            message = (unsigned char *)"8260";
         else if (setting == 17)
-            message = (unsigned char *)data_0054c624;
+            message = (unsigned char *)(signed char *)"860";
         else
-            message = data_0054c628;
+            message = (unsigned char *)"???";
 
         HPrintF(argument, "\t- schedule for %s\n", message);
     }

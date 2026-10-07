@@ -1227,8 +1227,7 @@
     ],
     "include_dirs": [
       "src/driver"
-    ],
-    "status": "NonMatching"
+    ]
   },
   "src/driver/TargetPanels-eabi-ppc.c": {
     "compiler": "pro53",
@@ -1683,8 +1682,7 @@
     ],
     "include_dirs": [
       "src/frontend"
-    ],
-    "status": "NonMatching"
+    ]
   },
   "src/frontend/CPreprocess.c": {
     "compiler": "pro53",
@@ -1843,8 +1841,7 @@
     "include_dirs": [
       "src/frontend",
       "include"
-    ],
-    "status": "NonMatching"
+    ]
   },
   "src/msl/ThreadLocalData.c": {
     "compiler": "pro5",

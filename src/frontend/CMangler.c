@@ -148,7 +148,7 @@ HashNameNode *CMangler_GetCovariantFunctionName(Object *object, Type *type)
     }
     data_00583548.size = 0;
     appendMangledName(result->name);
-    appendMangledName(covariant_function_name_prefix);
+    appendMangledName((unsigned char *)"@@");
     mangle_type(type, 0);
     AppendGListByte(&data_00583548, 0);
     fn_00443190(data_00583548.data);
@@ -709,39 +709,39 @@ HashNameNode *CMangler_OperatorName(short token)
 {
     switch (token) {
         case 0x147:
-            return GetHashNameNode(operator_new_name);
+            return GetHashNameNode("__nw");
         case 0x145:
-            return GetHashNameNode(delete_operator_name);
+            return GetHashNameNode("__dl");
         case 0x182:
             return GetHashNameNode("__nwa");
         case 0x183:
             return GetHashNameNode("__dla");
         case 0x2b:
-            return GetHashNameNode(plus_operator_code);
+            return GetHashNameNode("__pl");
         case 0x2d:
-            return GetHashNameNode(minus_operator_name);
+            return GetHashNameNode("__mi");
         case 0x2a:
-            return GetHashNameNode(operator_code_ml);
+            return GetHashNameNode("__ml");
         case 0x2f:
-            return GetHashNameNode(operator_dv_name);
+            return GetHashNameNode("__dv");
         case 0x25:
-            return GetHashNameNode(md_operator_code);
+            return GetHashNameNode("__md");
         case 0x5e:
-            return GetHashNameNode(operator_er_code);
+            return GetHashNameNode("__er");
         case 0x26:
-            return GetHashNameNode(data_00561cc0);
+            return GetHashNameNode("__ad");
         case 0x7c:
-            return GetHashNameNode(operator_or_code);
+            return GetHashNameNode("__or");
         case 0x7e:
-            return GetHashNameNode(co_operator_code);
+            return GetHashNameNode("__co");
         case 0x21:
-            return GetHashNameNode(operator_nt_code);
+            return GetHashNameNode("__nt");
         case 0x3d:
             return assignment_operator_name;
         case 0x3c:
-            return GetHashNameNode(lt_operator_name);
+            return GetHashNameNode("__lt");
         case 0x3e:
-            return GetHashNameNode(gt_operator_name);
+            return GetHashNameNode("__gt");
         case 0x15f:
             return GetHashNameNode("__apl");
         case 0x160:
@@ -759,39 +759,39 @@ HashNameNode *CMangler_OperatorName(short token)
         case 0x165:
             return GetHashNameNode("__aor");
         case 0x16c:
-            return GetHashNameNode(operator_ls);
+            return GetHashNameNode("__ls");
         case 0x16d:
-            return GetHashNameNode(operator_rs_code);
+            return GetHashNameNode("__rs");
         case 0x161:
             return GetHashNameNode("__als");
         case 0x162:
             return GetHashNameNode("__ars");
         case 0x168:
-            return GetHashNameNode(eq_operator_name);
+            return GetHashNameNode("__eq");
         case 0x169:
-            return GetHashNameNode(operator_ne_code);
+            return GetHashNameNode("__ne");
         case 0x16a:
-            return GetHashNameNode(operator_le_name);
+            return GetHashNameNode("__le");
         case 0x16b:
-            return GetHashNameNode(ge_operator_code);
+            return GetHashNameNode("__ge");
         case 0x167:
-            return GetHashNameNode(data_00561d70);
+            return GetHashNameNode("__aa");
         case 0x166:
-            return GetHashNameNode(operator_name_code);
+            return GetHashNameNode("__oo");
         case 0x16e:
-            return GetHashNameNode(operator_names);
+            return GetHashNameNode("__pp");
         case 0x16f:
-            return GetHashNameNode(operator_name_mm);
+            return GetHashNameNode("__mm");
         case 0x2c:
-            return GetHashNameNode(data_00561d90);
+            return GetHashNameNode("__cm");
         case 0x173:
-            return GetHashNameNode(operator_rm_code);
+            return GetHashNameNode("__rm");
         case 0x170:
-            return GetHashNameNode(operator_code_rf);
+            return GetHashNameNode("__rf");
         case 0x28:
-            return GetHashNameNode(operator_call_code);
+            return GetHashNameNode("__cl");
         case 0x5b:
-            return GetHashNameNode(operator_vc_name);
+            return GetHashNameNode("__vc");
     }
     return NULL;
 }
@@ -803,10 +803,10 @@ char *CMangler_GetOperator(HashNameNode *name)
         return "operator=";
     }
     operatorCode = name->name;
-    if (memcmp(name->name, &operator_new_name, 5) == 0) {
+    if (memcmp(name->name, "__nw", 5) == 0) {
         return "operator new";
     }
-    if (memcmp(operatorCode, &delete_operator_name, 5) == 0) {
+    if (memcmp(operatorCode, "__dl", 5) == 0) {
         return "operator delete";
     }
     if (memcmp(operatorCode, "__nwa", 6) == 0) {
@@ -815,40 +815,40 @@ char *CMangler_GetOperator(HashNameNode *name)
     if (memcmp(operatorCode, "__dla", 6) == 0) {
         return "operator delete[]";
     }
-    if (memcmp(operatorCode, &plus_operator_code, 5) == 0) {
+    if (memcmp(operatorCode, "__pl", 5) == 0) {
         return "operator+";
     }
-    if (memcmp(operatorCode, &minus_operator_name, 5) == 0) {
+    if (memcmp(operatorCode, "__mi", 5) == 0) {
         return "operator-";
     }
-    if (memcmp(operatorCode, &operator_code_ml, 5) == 0) {
+    if (memcmp(operatorCode, "__ml", 5) == 0) {
         return "operator*";
     }
-    if (memcmp(operatorCode, &operator_dv_name, 5) == 0) {
+    if (memcmp(operatorCode, "__dv", 5) == 0) {
         return "operator/";
     }
-    if (memcmp(operatorCode, &md_operator_code, 5) == 0) {
+    if (memcmp(operatorCode, "__md", 5) == 0) {
         return "operator%";
     }
-    if (memcmp(operatorCode, &operator_er_code, 5) == 0) {
+    if (memcmp(operatorCode, "__er", 5) == 0) {
         return "operator^";
     }
-    if (memcmp(operatorCode, &data_00561cc0, 5) == 0) {
+    if (memcmp(operatorCode, "__ad", 5) == 0) {
         return "operator&";
     }
-    if (memcmp(operatorCode, &operator_or_code, 5) == 0) {
+    if (memcmp(operatorCode, "__or", 5) == 0) {
         return "operator|";
     }
-    if (memcmp(operatorCode, &co_operator_code, 5) == 0) {
+    if (memcmp(operatorCode, "__co", 5) == 0) {
         return "operator~";
     }
-    if (memcmp(operatorCode, &operator_nt_code, 5) == 0) {
+    if (memcmp(operatorCode, "__nt", 5) == 0) {
         return "operator!";
     }
-    if (memcmp(operatorCode, &lt_operator_name, 5) == 0) {
+    if (memcmp(operatorCode, "__lt", 5) == 0) {
         return "operator<";
     }
-    if (memcmp(operatorCode, &gt_operator_name, 5) == 0) {
+    if (memcmp(operatorCode, "__gt", 5) == 0) {
         return "operator>";
     }
     if (memcmp(operatorCode, "__apl", 6) == 0) {
@@ -875,10 +875,10 @@ char *CMangler_GetOperator(HashNameNode *name)
     if (memcmp(operatorCode, "__aor", 6) == 0) {
         return "operator|=";
     }
-    if (memcmp(operatorCode, &operator_ls, 5) == 0) {
+    if (memcmp(operatorCode, "__ls", 5) == 0) {
         return "operator<<";
     }
-    if (memcmp(operatorCode, &operator_rs_code, 5) == 0) {
+    if (memcmp(operatorCode, "__rs", 5) == 0) {
         return "operator>>";
     }
     if (memcmp(operatorCode, "__als", 6) == 0) {
@@ -887,43 +887,43 @@ char *CMangler_GetOperator(HashNameNode *name)
     if (memcmp(operatorCode, "__ars", 6) == 0) {
         return "operator>>=";
     }
-    if (memcmp(operatorCode, &eq_operator_name, 5) == 0) {
+    if (memcmp(operatorCode, "__eq", 5) == 0) {
         return "operator==";
     }
-    if (memcmp(operatorCode, &operator_ne_code, 5) == 0) {
+    if (memcmp(operatorCode, "__ne", 5) == 0) {
         return "operator!=";
     }
-    if (memcmp(operatorCode, &operator_le_name, 5) == 0) {
+    if (memcmp(operatorCode, "__le", 5) == 0) {
         return "operator<=";
     }
-    if (memcmp(operatorCode, &ge_operator_code, 5) == 0) {
+    if (memcmp(operatorCode, "__ge", 5) == 0) {
         return "operator>=";
     }
-    if (memcmp(operatorCode, &data_00561d70, 5) == 0) {
+    if (memcmp(operatorCode, "__aa", 5) == 0) {
         return "operator&&";
     }
-    if (memcmp(operatorCode, &operator_name_code, 5) == 0) {
+    if (memcmp(operatorCode, "__oo", 5) == 0) {
         return "operator||";
     }
-    if (memcmp(operatorCode, &operator_names, 5) == 0) {
+    if (memcmp(operatorCode, "__pp", 5) == 0) {
         return "operator++";
     }
-    if (memcmp(operatorCode, &operator_name_mm, 5) == 0) {
+    if (memcmp(operatorCode, "__mm", 5) == 0) {
         return "operator--";
     }
-    if (memcmp(operatorCode, &data_00561d90, 5) == 0) {
+    if (memcmp(operatorCode, "__cm", 5) == 0) {
         return "operator,";
     }
-    if (memcmp(operatorCode, &operator_rm_code, 5) == 0) {
+    if (memcmp(operatorCode, "__rm", 5) == 0) {
         return "operator->*";
     }
-    if (memcmp(operatorCode, &operator_code_rf, 5) == 0) {
+    if (memcmp(operatorCode, "__rf", 5) == 0) {
         return "operator*";
     }
-    if (memcmp(operatorCode, &operator_call_code, 5) == 0) {
+    if (memcmp(operatorCode, "__cl", 5) == 0) {
         return "operator()";
     }
-    if (memcmp(operatorCode, &operator_vc_name, 5) == 0) {
+    if (memcmp(operatorCode, "__vc", 5) == 0) {
         return "operator[]";
     }
     return (char *)0;

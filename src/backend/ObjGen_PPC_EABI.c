@@ -525,7 +525,7 @@ SInt16 ObjGen_PPC_EABI_SetupFunctionSection(Object *param)
     if (copts.filesyminfo != 0)
         DWARF_SetupFunctionState(buffer);
     if ((buffer->flags & 4) == 0)
-        report_section_permission_conflict(param, buffer, &DAT_0055d48c, 4);
+        report_section_permission_conflict(param, buffer, "RX", 4);
     if ((alignment = copts.codeAlignment) > buffer->maximumSize)
         buffer->maximumSize = alignment;
     BE_elf_AlignRecord(&buffer->buffer, copts.codeAlignment);
@@ -648,7 +648,7 @@ ObjGenSection *fn_004892a0(Object *object, int size)
     section = select_object_section(object, size, 1, 1, 0);
     DAT_00580db0 = section;
     if ((section->flags & 4) == 0) {
-        report_section_permission_conflict(object, section, &DAT_0055d48c, 4);
+        report_section_permission_conflict(object, section, "RX", 4);
     }
     if ((data_005882c0.record != NULL) && (0x100 < size)) {
         PPCError_ReportDiagnostic(0xa3, object, size);
@@ -775,7 +775,7 @@ void emit_object_data_and_relocations(Object *func, const char *data, Relocation
 
     buffer = select_object_section(func, size, 1, 0, flag);
     if (flag == 0 && (buffer->flags & 1) == 0)
-        report_section_permission_conflict(func, buffer, &rw_section_permissions, 1);
+        report_section_permission_conflict(func, buffer, "RW", 1);
     info = BE_symbol_DefineObjectSymbol(func, size, buffer);
     if (info->alignment > buffer->maximumSize)
         buffer->maximumSize = info->alignment;
@@ -837,7 +837,7 @@ void allocate_object_storage(Object *obj, SInt32 size, Boolean flag)
     sec = select_object_section(obj, size, 0, 0, flag);
 
     if (!flag && !(sec->flags & 1))
-        report_section_permission_conflict(obj, sec, &rw_section_permissions, 1);
+        report_section_permission_conflict(obj, sec, "RW", 1);
 
     info = BE_symbol_DefineObjectSymbol(obj, size, sec);
 

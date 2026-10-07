@@ -161,7 +161,6 @@ extern struct Type *data_00541bfc;
 extern char *data_00541c00;
 extern char *data_00541c04;
 extern char data_00541c09;
-extern char data_0054bf38[];
 extern SInt16 data_0057f3b0;
 extern unsigned char data_0054bf4c[];
 struct DropinFileRecord;

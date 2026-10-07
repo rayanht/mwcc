@@ -451,7 +451,7 @@ static inline void ReportInvalidKind(unsigned int error, char *subject, const vo
 static inline void ReportUnsupportedKind(char *location, char *name)
 {
     ReportInvalidKind(54U, *name ? name : location, *name ? " of archive '" : "", *name ? location : "",
-                      *name ? "'" : "", powerpc_name);
+                      *name ? "'" : "", (unsigned char *)"PowerPC");
 }
 
 #pragma optimization_level reset
@@ -469,7 +469,7 @@ unsigned char fn_0041f430(Elf32Header *record, char *location, char *name)
             return 0U;
         }
     } else {
-        ReportInvalidMode(46U, ei_data, location, name);
+        ReportInvalidMode(46U, (unsigned char *)"EI_DATA", location, name);
         return 0U;
     }
 
@@ -484,7 +484,7 @@ unsigned char fn_0041f430(Elf32Header *record, char *location, char *name)
             return 0U;
         }
     } else {
-        ReportInvalidMode(46U, ei_class_name, location, name);
+        ReportInvalidMode(46U, (signed char *)"EI_CLASS", location, name);
         return 0U;
     }
 

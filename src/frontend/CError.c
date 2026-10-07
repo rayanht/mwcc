@@ -151,79 +151,79 @@ void CError_ReportIllegalFlags(UInt32 flags)
         Boolean found = 0;
 
         if (flags & 0x1) {
-            CError_ReportError(ERR_ILLEGAL_USE, &const_string);
+            CError_ReportError(ERR_ILLEGAL_USE, "const");
             found = 1;
         }
         if (flags & 0x2) {
-            CError_ReportError(ERR_ILLEGAL_USE, &volatile_string);
+            CError_ReportError(ERR_ILLEGAL_USE, "volatile");
             found = 1;
         }
         if (flags & 0x200000) {
-            CError_ReportError(ERR_ILLEGAL_USE, &restrict_name);
+            CError_ReportError(ERR_ILLEGAL_USE, "restrict");
             found = 1;
         }
         if (flags & 0x4) {
-            CError_ReportError(ERR_ILLEGAL_USE, &data_00551938);
+            CError_ReportError(ERR_ILLEGAL_USE, "asm");
             found = 1;
         }
         if (flags & 0x8) {
-            CError_ReportError(ERR_ILLEGAL_USE, &pascal_string);
+            CError_ReportError(ERR_ILLEGAL_USE, "pascal");
             found = 1;
         }
         if (flags & 0x10) {
-            CError_ReportError(ERR_ILLEGAL_USE, &inline_string);
+            CError_ReportError(ERR_ILLEGAL_USE, "inline");
             found = 1;
         }
         if (flags & 0x20) {
-            CError_ReportError(ERR_ILLEGAL_USE, &reference_type_error_text);
+            CError_ReportError(ERR_ILLEGAL_USE, "& reference type");
             found = 1;
         }
         if (flags & 0x40) {
-            CError_ReportError(ERR_ILLEGAL_USE, &explicit_keyword);
+            CError_ReportError(ERR_ILLEGAL_USE, "explicit");
             found = 1;
         }
         if (flags & 0x80) {
-            CError_ReportError(ERR_ILLEGAL_USE, &data_0055196c);
+            CError_ReportError(ERR_ILLEGAL_USE, "mutable");
             found = 1;
         }
         if (flags & 0x100) {
-            CError_ReportError(ERR_ILLEGAL_USE, &virtual_str);
+            CError_ReportError(ERR_ILLEGAL_USE, "virtual");
             found = 1;
         }
         if (flags & 0x200) {
-            CError_ReportError(ERR_ILLEGAL_USE, &friend_keyword);
+            CError_ReportError(ERR_ILLEGAL_USE, "friend");
             found = 1;
         }
         if (flags & 0x400) {
-            CError_ReportError(ERR_ILLEGAL_USE, &in_string);
+            CError_ReportError(ERR_ILLEGAL_USE, "in");
             found = 1;
         }
         if (flags & 0x800) {
-            CError_ReportError(ERR_ILLEGAL_USE, &data_00551988);
+            CError_ReportError(ERR_ILLEGAL_USE, "out");
             found = 1;
         }
         if (flags & 0x1000) {
-            CError_ReportError(ERR_ILLEGAL_USE, &inout_string);
+            CError_ReportError(ERR_ILLEGAL_USE, "inout");
             found = 1;
         }
         if (flags & 0x2000) {
-            CError_ReportError(ERR_ILLEGAL_USE, &bycopy_string);
+            CError_ReportError(ERR_ILLEGAL_USE, "bycopy");
             found = 1;
         }
         if (flags & 0x4000) {
-            CError_ReportError(ERR_ILLEGAL_USE, &byref_string);
+            CError_ReportError(ERR_ILLEGAL_USE, "byref");
             found = 1;
         }
         if (flags & 0x8000) {
-            CError_ReportError(ERR_ILLEGAL_USE, &oneway_string);
+            CError_ReportError(ERR_ILLEGAL_USE, "oneway");
             found = 1;
         }
         if (flags & 0x80000000) {
-            CError_ReportError(ERR_ILLEGAL_USE, &declspec_illegal_use_string);
+            CError_ReportError(ERR_ILLEGAL_USE, "__declspec(interrupt)");
             found = 1;
         }
         if (flags & 0x1e000000) {
-            CError_ReportError(ERR_ILLEGAL_USE, &illegal_flags_attribute_text);
+            CError_ReportError(ERR_ILLEGAL_USE, "__attribute__((aligned(?)))");
             found = 1;
         }
         if (!found) {
@@ -286,7 +286,7 @@ void CError_Warning(SInt32 diagnosticCode, ...)
 
     if ((SInt16)diagnosticID < 100 || (SInt16)diagnosticID >= 372) {
         CompilerGetCString(5, message);
-        sprintf(error_message_buffer, message, cerror_filename, 138);
+        sprintf(error_message_buffer, message, "CError.c", 138);
         report_diagnostic(0x2711, error_message_buffer, 1, 0);
         longjmp(error_jmp_buf, 1);
         data_0058715c++;
@@ -469,7 +469,7 @@ void CError_FunctionCallError(short errorCode, ObjectList *objects, ENodeList *a
 
     if ((diagnosticCode = errorCode) < 100 || diagnosticCode >= 0x174) {
         CompilerGetCString(5, resourceBuffer);
-        sprintf(error_message_buffer, resourceBuffer, cerror_filename, 0x8a);
+        sprintf(error_message_buffer, resourceBuffer, "CError.c", 0x8a);
         report_diagnostic(0x2711, error_message_buffer, 1, 0);
         longjmp(error_jmp_buf, 1);
         data_0058715c++;
@@ -531,7 +531,7 @@ void CError_FatalError(short errorNumber)
 
     if (+errorNumber < 100 || +errorNumber >= 372) {
         CompilerGetCString(5, message);
-        sprintf(error_message_buffer, (char *)message, cerror_filename, 138);
+        sprintf(error_message_buffer, (char *)message, "CError.c", 138);
         report_diagnostic(10001, error_message_buffer, 1, 0);
         longjmp(error_jmp_buf, 1);
         ++data_0058715c;
@@ -549,7 +549,7 @@ void CError_IllegalUseAbstractClass(TypeClass *type)
     result = CClass_CheckPures(type);
     if (result == NULL) {
         CompilerGetCString(5, buf);
-        sprintf(error_message_buffer, buf, &cerror_filename, 0x518);
+        sprintf(error_message_buffer, buf, "CError.c", 0x518);
         report_diagnostic(0x2711, error_message_buffer, 1, 0);
         longjmp(error_jmp_buf, 1);
         data_0058715c++;
@@ -563,7 +563,7 @@ static inline void CError_GetErrorMessage(char *message, short errorCode)
 
     if (errorCode < 100 || errorCode >= 372) {
         CompilerGetCString(5, format);
-        sprintf(error_message_buffer, format, &cerror_filename, 138);
+        sprintf(error_message_buffer, format, "CError.c", 138);
         report_diagnostic(10001, error_message_buffer, 1, 0);
         longjmp(error_jmp_buf, 1);
         data_0058715c++;
@@ -593,7 +593,7 @@ static inline int CError_GetResourceIndex(SInt16 errorNumber)
 
     if (errorNumber < 100 || errorNumber >= 372) {
         CompilerGetCString(5, internalErrorFormat);
-        sprintf(error_message_buffer, internalErrorFormat, &cerror_filename, 138);
+        sprintf(error_message_buffer, internalErrorFormat, "CError.c", 138);
         report_diagnostic(10001, error_message_buffer, 1, 0);
         longjmp(error_jmp_buf, 1);
         data_0058715c++;
@@ -684,7 +684,7 @@ void CError_FormatAndReportDiagnostic(int errorCode, const char *format, char *a
                         continue;
                     default:
                         CompilerGetCString(5, err);
-                        sprintf(error_message_buffer, err, cerror_filename, 1110);
+                        sprintf(error_message_buffer, err, "CError.c", 1110);
                         report_diagnostic(10001, error_message_buffer, 1, 0);
                         longjmp(error_jmp_buf, 1);
                         data_0058715c++;
@@ -818,7 +818,7 @@ char *CError_GetQualifiedHashName(NameSpace *nspace, HashNameNode *nameRef)
 
     if (nameRef == NULL) {
         CompilerGetCString(5, msgbuf);
-        sprintf(error_message_buffer, msgbuf, &cerror_filename, 0x39c);
+        sprintf(error_message_buffer, msgbuf, "CError.c", 0x39c);
         report_diagnostic(0x2711, error_message_buffer, 1, 0);
         longjmp(error_jmp_buf, 1);
         data_0058715c++;
@@ -1084,7 +1084,7 @@ void append_type(StrBuf *buf, Type *type, UInt32 qualifiers)
                     return;
                 default:
                     CompilerGetCString(5, integralError);
-                    sprintf(error_message_buffer, integralError, cerror_filename, 0x22d);
+                    sprintf(error_message_buffer, integralError, "CError.c", 0x22d);
                     report_diagnostic(0x2711, error_message_buffer, 1, 0);
                     longjmp(error_jmp_buf, 1);
                     data_0058715c = data_0058715c + 1;
@@ -1108,7 +1108,7 @@ void append_type(StrBuf *buf, Type *type, UInt32 qualifiers)
                     break;
                 default:
                     CompilerGetCString(5, structError);
-                    sprintf(error_message_buffer, structError, cerror_filename, 0x24f);
+                    sprintf(error_message_buffer, structError, "CError.c", 0x24f);
                     report_diagnostic(0x2711, error_message_buffer, 1, 0);
                     longjmp(error_jmp_buf, 1);
                     data_0058715c = data_0058715c + 1;
@@ -1232,7 +1232,7 @@ void append_type(StrBuf *buf, Type *type, UInt32 qualifiers)
             return;
         default:
             CompilerGetCString(5, typeError);
-            sprintf(error_message_buffer, typeError, cerror_filename, 0x2d0);
+            sprintf(error_message_buffer, typeError, "CError.c", 0x2d0);
             report_diagnostic(0x2711, error_message_buffer, 1, 0);
             longjmp(error_jmp_buf, 1);
             data_0058715c = data_0058715c + 1;
@@ -1319,7 +1319,7 @@ void append_templdep(StrBuf *buf, TypeTemplDep *node)
             break;
         default:
             CompilerGetCString(5, msg);
-            sprintf(error_message_buffer, msg, cerror_filename, 0x1b5);
+            sprintf(error_message_buffer, msg, "CError.c", 0x1b5);
             report_diagnostic(0x2711, error_message_buffer, 1, 0);
             longjmp(error_jmp_buf, 1);
             data_0058715c++;

@@ -96,9 +96,6 @@ extern char **read_file_into_buffer(CWFileSpec *file, short *error, int extraByt
 extern FileInputNode *read_file_into_input_nodes(CWFileSpec *name, SInt16 *err);
 extern void clear_file_input_data_handles(FileInputNode *args);
 extern unsigned char fn_0041f430(Elf32Header *record, char *location, char *name);
-extern unsigned char ei_data[];
-extern signed char ei_class_name[];
-extern unsigned char powerpc_name[];
 extern char data_00588517;
 extern void accumulate_section_sizes(FileInputNode *input, char *option1, char *option2);
 extern UInt8 nonNativeByteOrder;

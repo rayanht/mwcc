@@ -42,7 +42,7 @@ void CPreprocess_OutputPreprocessedText(void)
     while (token != 0) {
         if (data_00588470 != 0) {
             if (!CPreprocess_SuppressLineBreaks())
-                CompilerTools_AppendGListData(&DAT_00586da8.list, &UCHAR_0Dh_00563350, 2);
+                CompilerTools_AppendGListData(&DAT_00586da8.list, "\r\n", 2);
         } else if (DAT_00588523 != '\0') {
             AppendGListByte(&DAT_00586da8.list, ' ');
         }
@@ -65,7 +65,7 @@ void CPreprocess_OutputPreprocessedText(void)
                 CompilerTools_AppendGListData(&DAT_00586da8.list, data_00587fa0->name, strlen(data_00587fa0->name));
                 break;
             case 0x100:
-                CompilerTools_AppendGListData(&DAT_00586da8.list, &auto_string, 4);
+                CompilerTools_AppendGListData(&DAT_00586da8.list, "auto", 4);
                 break;
             case 0x101:
                 CompilerTools_AppendGListData(&DAT_00586da8.list, s_register_0056335c, sizeof(s_register_0056335c) - 1);
@@ -83,19 +83,19 @@ void CPreprocess_OutputPreprocessedText(void)
                 CompilerTools_AppendGListData(&DAT_00586da8.list, s_inline_00563380, sizeof(s_inline_00563380) - 1);
                 break;
             case 0x106:
-                CompilerTools_AppendGListData(&DAT_00586da8.list, &DAT_00563388, 4);
+                CompilerTools_AppendGListData(&DAT_00586da8.list, "void", 4);
                 break;
             case 0x107:
-                CompilerTools_AppendGListData(&DAT_00586da8.list, &DAT_00563390, 4);
+                CompilerTools_AppendGListData(&DAT_00586da8.list, "char", 4);
                 break;
             case 0x108:
                 CompilerTools_AppendGListData(&DAT_00586da8.list, s_short_00563398, sizeof(s_short_00563398) - 1);
                 break;
             case 0x109:
-                CompilerTools_AppendGListData(&DAT_00586da8.list, &int_string, 3);
+                CompilerTools_AppendGListData(&DAT_00586da8.list, "int", 3);
                 break;
             case 0x10a:
-                CompilerTools_AppendGListData(&DAT_00586da8.list, &DAT_005633a4, 4);
+                CompilerTools_AppendGListData(&DAT_00586da8.list, "long", 4);
                 break;
             case 0x10b:
                 CompilerTools_AppendGListData(&DAT_00586da8.list, s_float_005633ac, sizeof(s_float_005633ac) - 1);
@@ -116,7 +116,7 @@ void CPreprocess_OutputPreprocessedText(void)
                 CompilerTools_AppendGListData(&DAT_00586da8.list, s_union_005633d8, sizeof(s_union_005633d8) - 1);
                 break;
             case 0x111:
-                CompilerTools_AppendGListData(&DAT_00586da8.list, &enum_string, 4);
+                CompilerTools_AppendGListData(&DAT_00586da8.list, "enum", 4);
                 break;
             case 0x112:
                 CompilerTools_AppendGListData(&DAT_00586da8.list, s_class_005633e8, sizeof(s_class_005633e8) - 1);
@@ -137,10 +137,10 @@ void CPreprocess_OutputPreprocessedText(void)
                 CompilerTools_AppendGListData(&DAT_00586da8.list, s_oneway_00563414, sizeof(s_oneway_00563414) - 1);
                 break;
             case 0x12d:
-                CompilerTools_AppendGListData(&DAT_00586da8.list, &DAT_0056341c, 2);
+                CompilerTools_AppendGListData(&DAT_00586da8.list, "in", 2);
                 break;
             case 0x12f:
-                CompilerTools_AppendGListData(&DAT_00586da8.list, &out_string, 3);
+                CompilerTools_AppendGListData(&DAT_00586da8.list, "out", 3);
                 break;
             case 0x12e:
                 CompilerTools_AppendGListData(&DAT_00586da8.list, s_inout_00563424, sizeof(s_inout_00563424) - 1);
@@ -152,19 +152,19 @@ void CPreprocess_OutputPreprocessedText(void)
                 CompilerTools_AppendGListData(&DAT_00586da8.list, s_byref_00563434, sizeof(s_byref_00563434) - 1);
                 break;
             case 0x136:
-                CompilerTools_AppendGListData(&DAT_00586da8.list, &asm_string, 3);
+                CompilerTools_AppendGListData(&DAT_00586da8.list, "asm", 3);
                 break;
             case 0x137:
-                CompilerTools_AppendGListData(&DAT_00586da8.list, &case_string, 4);
+                CompilerTools_AppendGListData(&DAT_00586da8.list, "case", 4);
                 break;
             case 0x138:
                 CompilerTools_AppendGListData(&DAT_00586da8.list, s_default_00563448, sizeof(s_default_00563448) - 1);
                 break;
             case 0x139:
-                CompilerTools_AppendGListData(&DAT_00586da8.list, &DAT_00563450, 2);
+                CompilerTools_AppendGListData(&DAT_00586da8.list, "if", 2);
                 break;
             case 0x13a:
-                CompilerTools_AppendGListData(&DAT_00586da8.list, &else_string, 4);
+                CompilerTools_AppendGListData(&DAT_00586da8.list, "else", 4);
                 break;
             case 0x13b:
                 CompilerTools_AppendGListData(&DAT_00586da8.list, s_switch_0056345c, sizeof(s_switch_0056345c) - 1);
@@ -173,13 +173,13 @@ void CPreprocess_OutputPreprocessedText(void)
                 CompilerTools_AppendGListData(&DAT_00586da8.list, s_while_00563464, sizeof(s_while_00563464) - 1);
                 break;
             case 0x13d:
-                CompilerTools_AppendGListData(&DAT_00586da8.list, &DAT_0056346c, 2);
+                CompilerTools_AppendGListData(&DAT_00586da8.list, "do", 2);
                 break;
             case 0x13e:
-                CompilerTools_AppendGListData(&DAT_00586da8.list, &DAT_00563470, 3);
+                CompilerTools_AppendGListData(&DAT_00586da8.list, "for", 3);
                 break;
             case 0x13f:
-                CompilerTools_AppendGListData(&DAT_00586da8.list, &goto_string, 4);
+                CompilerTools_AppendGListData(&DAT_00586da8.list, "goto", 4);
                 break;
             case 0x140:
                 CompilerTools_AppendGListData(&DAT_00586da8.list, s_continue_0056347c, sizeof(s_continue_0056347c) - 1);
@@ -203,7 +203,7 @@ void CPreprocess_OutputPreprocessedText(void)
                 CompilerTools_AppendGListData(&DAT_00586da8.list, s_friend_005634b0, sizeof(s_friend_005634b0) - 1);
                 break;
             case 0x147:
-                CompilerTools_AppendGListData(&DAT_00586da8.list, &new_string, 3);
+                CompilerTools_AppendGListData(&DAT_00586da8.list, "new", 3);
                 break;
             case 0x148:
                 CompilerTools_AppendGListData(&DAT_00586da8.list, s_operator_005634bc, sizeof(s_operator_005634bc) - 1);
@@ -222,13 +222,13 @@ void CPreprocess_OutputPreprocessedText(void)
                 CompilerTools_AppendGListData(&DAT_00586da8.list, s_template_005634e4, sizeof(s_template_005634e4) - 1);
                 break;
             case 0x14d:
-                CompilerTools_AppendGListData(&DAT_00586da8.list, &this_string, 4);
+                CompilerTools_AppendGListData(&DAT_00586da8.list, "this", 4);
                 break;
             case 0x14e:
                 CompilerTools_AppendGListData(&DAT_00586da8.list, s_throw_005634f8, sizeof(s_throw_005634f8) - 1);
                 break;
             case 0x14f:
-                CompilerTools_AppendGListData(&DAT_00586da8.list, &DAT_00563500, 3);
+                CompilerTools_AppendGListData(&DAT_00586da8.list, "try", 3);
                 break;
             case 0x150:
                 CompilerTools_AppendGListData(&DAT_00586da8.list, s_virtual_00563504, sizeof(s_virtual_00563504) - 1);
@@ -273,7 +273,7 @@ void CPreprocess_OutputPreprocessedText(void)
                 CompilerTools_AppendGListData(&DAT_00586da8.list, s_typename_00563584, sizeof(s_typename_00563584) - 1);
                 break;
             case 0x158:
-                CompilerTools_AppendGListData(&DAT_00586da8.list, &true_string, 4);
+                CompilerTools_AppendGListData(&DAT_00586da8.list, "true", 4);
                 break;
             case 0x159:
                 CompilerTools_AppendGListData(&DAT_00586da8.list, s_false_00563598, sizeof(s_false_00563598) - 1);
@@ -304,79 +304,79 @@ void CPreprocess_OutputPreprocessedText(void)
                                               sizeof(s___declspec_005635dc) - 1);
                 break;
             case 0x15c:
-                CompilerTools_AppendGListData(&DAT_00586da8.list, &DAT_005635e8, 2);
+                CompilerTools_AppendGListData(&DAT_00586da8.list, "*=", 2);
                 break;
             case 0x15d:
-                CompilerTools_AppendGListData(&DAT_00586da8.list, &DAT_005635ec, 2);
+                CompilerTools_AppendGListData(&DAT_00586da8.list, "/=", 2);
                 break;
             case 0x15e:
-                CompilerTools_AppendGListData(&DAT_00586da8.list, &DAT_005635f0, 2);
+                CompilerTools_AppendGListData(&DAT_00586da8.list, "%=", 2);
                 break;
             case 0x15f:
-                CompilerTools_AppendGListData(&DAT_00586da8.list, &DAT_005635f4, 2);
+                CompilerTools_AppendGListData(&DAT_00586da8.list, "+=", 2);
                 break;
             case 0x160:
-                CompilerTools_AppendGListData(&DAT_00586da8.list, &DAT_005635f8, 2);
+                CompilerTools_AppendGListData(&DAT_00586da8.list, "-=", 2);
                 break;
             case 0x161:
-                CompilerTools_AppendGListData(&DAT_00586da8.list, &DAT_005635fc, 3);
+                CompilerTools_AppendGListData(&DAT_00586da8.list, "<<=", 3);
                 break;
             case 0x162:
-                CompilerTools_AppendGListData(&DAT_00586da8.list, &DAT_00563600, 3);
+                CompilerTools_AppendGListData(&DAT_00586da8.list, ">>=", 3);
                 break;
             case 0x163:
-                CompilerTools_AppendGListData(&DAT_00586da8.list, &DAT_00563604, 2);
+                CompilerTools_AppendGListData(&DAT_00586da8.list, "&=", 2);
                 break;
             case 0x164:
-                CompilerTools_AppendGListData(&DAT_00586da8.list, &DAT_00563608, 2);
+                CompilerTools_AppendGListData(&DAT_00586da8.list, "^=", 2);
                 break;
             case 0x165:
-                CompilerTools_AppendGListData(&DAT_00586da8.list, &DAT_0056360c, 2);
+                CompilerTools_AppendGListData(&DAT_00586da8.list, "|=", 2);
                 break;
             case 0x166:
-                CompilerTools_AppendGListData(&DAT_00586da8.list, &DAT_00563610, 2);
+                CompilerTools_AppendGListData(&DAT_00586da8.list, "||", 2);
                 break;
             case 0x167:
-                CompilerTools_AppendGListData(&DAT_00586da8.list, &DAT_00563614, 2);
+                CompilerTools_AppendGListData(&DAT_00586da8.list, "&&", 2);
                 break;
             case 0x168:
-                CompilerTools_AppendGListData(&DAT_00586da8.list, &DAT_00563618, 2);
+                CompilerTools_AppendGListData(&DAT_00586da8.list, "==", 2);
                 break;
             case 0x169:
-                CompilerTools_AppendGListData(&DAT_00586da8.list, &DAT_0056361c, 2);
+                CompilerTools_AppendGListData(&DAT_00586da8.list, "!=", 2);
                 break;
             case 0x16a:
-                CompilerTools_AppendGListData(&DAT_00586da8.list, &DAT_00563620, 2);
+                CompilerTools_AppendGListData(&DAT_00586da8.list, "<=", 2);
                 break;
             case 0x16b:
-                CompilerTools_AppendGListData(&DAT_00586da8.list, &DAT_00563624, 2);
+                CompilerTools_AppendGListData(&DAT_00586da8.list, ">=", 2);
                 break;
             case 0x16c:
-                CompilerTools_AppendGListData(&DAT_00586da8.list, &DAT_00563628, 2);
+                CompilerTools_AppendGListData(&DAT_00586da8.list, "<<", 2);
                 break;
             case 0x16d:
-                CompilerTools_AppendGListData(&DAT_00586da8.list, &DAT_0056362c, 2);
+                CompilerTools_AppendGListData(&DAT_00586da8.list, ">>", 2);
                 break;
             case 0x16e:
-                CompilerTools_AppendGListData(&DAT_00586da8.list, &DAT_00563630, 2);
+                CompilerTools_AppendGListData(&DAT_00586da8.list, "++", 2);
                 break;
             case 0x16f:
-                CompilerTools_AppendGListData(&DAT_00586da8.list, &DAT_00563634, 2);
+                CompilerTools_AppendGListData(&DAT_00586da8.list, "--", 2);
                 break;
             case 0x170:
-                CompilerTools_AppendGListData(&DAT_00586da8.list, &DAT_00563638, 2);
+                CompilerTools_AppendGListData(&DAT_00586da8.list, "->", 2);
                 break;
             case 0x171:
-                CompilerTools_AppendGListData(&DAT_00586da8.list, &ellipsis, 3);
+                CompilerTools_AppendGListData(&DAT_00586da8.list, "...", 3);
                 break;
             case 0x172:
-                CompilerTools_AppendGListData(&DAT_00586da8.list, &DAT_00563640, 2);
+                CompilerTools_AppendGListData(&DAT_00586da8.list, ".*", 2);
                 break;
             case 0x173:
-                CompilerTools_AppendGListData(&DAT_00586da8.list, &DAT_00563644, 3);
+                CompilerTools_AppendGListData(&DAT_00586da8.list, "->*", 3);
                 break;
             case 0x174:
-                CompilerTools_AppendGListData(&DAT_00586da8.list, &double_colon, 2);
+                CompilerTools_AppendGListData(&DAT_00586da8.list, "::", 2);
                 break;
             case 0x175:
                 CompilerTools_AppendGListData(&DAT_00586da8.list, data_0056364c, sizeof(data_0056364c) - 1);
@@ -388,7 +388,7 @@ void CPreprocess_OutputPreprocessedText(void)
                 CompilerTools_AppendGListData(&DAT_00586da8.list, protocol_string, sizeof(protocol_string) - 1);
                 break;
             case 0x178:
-                CompilerTools_AppendGListData(&DAT_00586da8.list, &at_end_string, 4);
+                CompilerTools_AppendGListData(&DAT_00586da8.list, "@end", 4);
                 break;
             case 0x179:
                 CompilerTools_AppendGListData(&DAT_00586da8.list, private_directive, sizeof(private_directive) - 1);
@@ -413,7 +413,7 @@ void CPreprocess_OutputPreprocessedText(void)
                 CompilerTools_AppendGListData(&DAT_00586da8.list, defs_string, sizeof(defs_string) - 1);
                 break;
             case 0x180:
-                CompilerTools_AppendGListData(&DAT_00586da8.list, &self_string, 4);
+                CompilerTools_AppendGListData(&DAT_00586da8.list, "self", 4);
                 break;
             case 0x181:
                 CompilerTools_AppendGListData(&DAT_00586da8.list, s_super_005636c8, sizeof(s_super_005636c8) - 1);
@@ -422,7 +422,7 @@ void CPreprocess_OutputPreprocessedText(void)
                 if (copts.cplusplus == '\0' && CPreprocess_UseC99Keywords())
                     CompilerTools_AppendGListData(&DAT_00586da8.list, s__Bool_005636d0, sizeof(s__Bool_005636d0) - 1);
                 else
-                    CompilerTools_AppendGListData(&DAT_00586da8.list, &bool_name, 4);
+                    CompilerTools_AppendGListData(&DAT_00586da8.list, "bool", 4);
                 break;
             case 0x184:
                 if (CPreprocess_UseC99Keywords())
@@ -451,7 +451,7 @@ void CPreprocess_OutputPreprocessedText(void)
                 break;
             case -4:
                 if (DAT_005882de != 0) {
-                    CompilerTools_AppendGListData(&DAT_00586da8.list, &DAT_00563738, 3);
+                    CompilerTools_AppendGListData(&DAT_00586da8.list, "\"\\p", 3);
                     append_escaped_text(string_token_data + 1, token_value_kind_or_string_length - 1);
                 } else {
                     AppendGListByte(&DAT_00586da8.list, '"');
@@ -460,7 +460,7 @@ void CPreprocess_OutputPreprocessedText(void)
                 AppendGListByte(&DAT_00586da8.list, '"');
                 break;
             case -5:
-                CompilerTools_AppendGListData(&DAT_00586da8.list, &DAT_0056373c, 2);
+                CompilerTools_AppendGListData(&DAT_00586da8.list, "L\"", 2);
                 output_escaped_wide_chars(string_token_data, token_value_kind_or_string_length / wide_char_size - 1);
                 AppendGListByte(&DAT_00586da8.list, '"');
                 break;
@@ -602,7 +602,7 @@ static inline char CPreprocess_ShouldEmitLineDirectives(void)
 static inline void CPreprocess_AppendLineBreak(void)
 {
     if (CPreprocess_ShouldEmitLineDirectives() && DAT_00586da8.handle != NULL && current_file_index >= 0)
-        CompilerTools_AppendGListData(&DAT_00586da8.list, &UCHAR_0Dh_00563350, 2);
+        CompilerTools_AppendGListData(&DAT_00586da8.list, "\r\n", 2);
 }
 
 void CPreprocess_EmitLineDirective(void)
@@ -615,7 +615,7 @@ void CPreprocess_EmitLineDirective(void)
 
     if (DAT_00586da8.handle != NULL && current_file_index >= 0) {
         if (data_00588470 != 0 && DAT_00586da8.list.size > 0)
-            CompilerTools_AppendGListString(&DAT_00586da8.list, UCHAR_0Dh_00563350);
+            CompilerTools_AppendGListString(&DAT_00586da8.list, "\r\n");
 
         if (CPreprocess_ShouldEmitLineDirectives())
             length = sprintf(buffer, "#line %ld\t\"", DAT_00587ef0);
@@ -644,6 +644,6 @@ void CPreprocess_EmitLineDirective(void)
 void fn_004d6ed0(void)
 {
     if (copts.f8b != '\0' && DAT_00586da8.handle != NULL && current_file_index >= 0) {
-        CompilerTools_AppendGListData(&DAT_00586da8.list, &UCHAR_0Dh_00563350, 2);
+        CompilerTools_AppendGListData(&DAT_00586da8.list, "\r\n", 2);
     }
 }

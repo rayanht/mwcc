@@ -27,7 +27,6 @@ extern char data_00537b24;
 extern char data_00537d40;
 extern unsigned char data_00540add;
 extern char *data_00540b68;
-extern char data_00540b6c[];
 extern unsigned char data_0054a388[];
 extern char output_path;
 extern struct PtrList data_005876fc[];

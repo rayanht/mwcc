@@ -98,8 +98,6 @@ extern SInt32 data_00541e48;
 extern unsigned char data_00541ee4[];
 extern unsigned char data_00542f38[];
 extern char *data_00542f3c[];
-extern char data_00543238[];
-extern char data_00543240[];
 extern double data_00543248;
 extern unsigned int CLMain_InitializeAndParseCommandLine(void);
 extern SInt32 data_005871c4;

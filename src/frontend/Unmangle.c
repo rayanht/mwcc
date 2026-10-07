@@ -19,6 +19,8 @@
 
 #include <setjmp.h>
 #include <string.h>
+
+static char data_005649b8 = 0;
 #define false 0
 #define true 1
 void assign_object_register(Object *func, SInt16 register_number)
@@ -360,7 +362,7 @@ void unmangle_function_parameters(int *context, MOutBuf *output, char *encoding)
                     if (output->left < length) {
                         length = output->left;
                     }
-                    memcpy(output->ptr, &data_005649c0, length);
+                    memcpy(output->ptr, "...", length);
                     output->ptr += length;
                     output->left -= length;
                 }
@@ -386,7 +388,7 @@ void unmangle_function_parameters(int *context, MOutBuf *output, char *encoding)
         if (output->left < length) {
             length = output->left;
         }
-        memcpy(output->ptr, &const_qualifier, length);
+        memcpy(output->ptr, " const", length);
         output->ptr += length;
         output->left -= length;
     }
@@ -395,7 +397,7 @@ void unmangle_function_parameters(int *context, MOutBuf *output, char *encoding)
         if (output->left < length) {
             length = output->left;
         }
-        memcpy(output->ptr, &unmangle_volatile_string, length);
+        memcpy(output->ptr, " volatile", length);
         output->ptr += length;
         output->left -= length;
     }
