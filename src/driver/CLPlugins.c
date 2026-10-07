@@ -182,10 +182,10 @@ unsigned int get_callback_result(void *input)
     return 0;
 }
 
-void *CLPlugins_GetObjectFlags(Plugin *plugin)
+const CWObjectFlags *CLPlugins_GetObjectFlags(Plugin *plugin)
 {
     static CWObjectFlags object_flags = {2, 0, "", "", "", "", "", ""};
-    unsigned char *flags;
+    const CWObjectFlags *flags;
     PluginDesc *info;
 
     if (plugin == NULL) {
@@ -461,14 +461,14 @@ Boolean validate_plugin(Plugin *plug, const char **errmsg)
         return 0;
     }
     if (plug->targetCallbacks != NULL) {
-        ObjFlagsData *objectFlags;
+        const CWObjectFlags *objectFlags;
 
         if (plug->targetCallbacks->getObjectFlags == NULL && flags->type == 'Comp') {
             *errmsg = "GetObjectFlags callback not found in compiler plugin";
             return 0;
         }
         objectFlags = CLPlugins_GetObjectFlags(plug);
-        if (objectFlags->version < 2 || (objectFlags->compilerFlags & 0x7fffffff) != 0) {
+        if (objectFlags->version < 2 || (objectFlags->flags & 0x7fffffff) != 0) {
             *errmsg = "The object flags data is out-of-date or invalid";
             return 0;
         }

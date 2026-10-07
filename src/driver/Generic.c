@@ -179,7 +179,7 @@ unsigned int __stdcall CLProj_SetFileExtension(void *file, const char *extension
     return OS_MakeNameSpec(buffer, file);
 }
 
-unsigned int __stdcall CLProj_ChangeFileExtension(char *file, char *extensionAddress)
+unsigned int __stdcall CLProj_ChangeFileExtension(char *file, const char *extensionAddress)
 {
     char path[64];
     char *suffix;

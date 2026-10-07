@@ -28,7 +28,8 @@ struct PlugAux {
     short(__stdcall *getFileMap)(struct FileMapInfo **); /* 0x04: get_file_map obtains the plugin file map */
     UInt8 pad[0x08]; /* 0x08: CLPlugins.c does not access these bytes; meaning unknown */
     SInt16(__stdcall *getObjectFlags)(
-        unsigned char **); /* 0x10: CLPlugins_GetObjectFlags calls this with &flags and tests the returned status */
+        const CWObjectFlags *
+            *); /* 0x10: CLPlugins_GetObjectFlags calls this with &flags and tests the returned status */
     short(__stdcall *writeObjectFile)(
         struct CWFileSpec *, struct CWFileSpec *, unsigned int, int,
         int); /* 0x14: CLPlugins_WriteObjectFile passes context, input, objectFlags, option and objectHandle */
@@ -122,7 +123,7 @@ struct TargetInfo {
 };
 #pragma options align = reset
 extern void *get_plugin_directory_list(Plugin *plugin);
-extern void *CLPlugins_GetObjectFlags(Plugin *obj);
+extern const CWObjectFlags *CLPlugins_GetObjectFlags(Plugin *obj);
 extern Boolean call_query_callback(Plugin *p, PluginRequest *a, SInt32 b, SInt32 c);
 extern Boolean fn_004098a0(Plugin *input);
 extern void fn_004098d0(void);

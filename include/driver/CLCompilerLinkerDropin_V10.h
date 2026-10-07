@@ -41,24 +41,11 @@ struct DropinResultSlot {
 };
 #pragma options align = reset
 #pragma pack(push, 1)
-struct DropinSettings {
-    char reserved[26];
-    char *
-        precompiledHeaderExtension; /* 0x1a: get_precompiled_header_spec passes the default extension to CLProj_ChangeFileExtension */
-};
-#pragma pack(pop)
-#pragma pack(push, 1)
 struct InitializationAuxiliaryState {
     UInt8 opaquePrefix[0xd8];
     SInt32 defaultValue1;
     SInt32 defaultValue2;
     UInt8 opaqueSuffix[0x136 - 0xe0];
-};
-#pragma pack(pop)
-#pragma pack(push, 1)
-struct StringLookupResult {
-    unsigned char reserved[26];
-    char *text;
 };
 #pragma pack(pop)
 extern int __stdcall cache_precompiled_header(unsigned int context, short *callback, int argument);

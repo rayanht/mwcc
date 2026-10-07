@@ -170,10 +170,10 @@ int __stdcall get_precompiled_header_spec(DropinRequest *request, int output, co
 {
     struct DropinRequest *fileRequest;
     DropinFileRecord *file;
-    struct DropinSettings *settings;
+    const CWObjectFlags *objectFlags;
     unsigned int error;
     unsigned char useDefault;
-    char *base;
+    const char *base;
     unsigned int pathError;
     OSSpec resolvedPath;
     char convertedPath[260];
@@ -190,7 +190,7 @@ int __stdcall get_precompiled_header_spec(DropinRequest *request, int output, co
     if (file == 0) {
         CLIO_ReportAssertionFailure("file != NULL", "CLCompilerLinkerDropin_V10.cpp", 415);
     }
-    settings = (struct DropinSettings *)CLPlugins_GetObjectFlags(file->selectedPlugin);
+    objectFlags = CLPlugins_GetObjectFlags(file->selectedPlugin);
     if (file->outputName[0] == 0) {
         if (path != 0) {
             if (optsCompiler.canonicalIncludes != 0) {
@@ -218,7 +218,7 @@ int __stdcall get_precompiled_header_spec(DropinRequest *request, int output, co
             if (optsCompiler.pchFileExt[0] != 0) {
                 base = optsCompiler.pchFileExt;
             } else {
-                base = settings->precompiledHeaderExtension;
+                base = objectFlags->pchFileExt;
             }
             CLProj_ChangeFileExtension(resolvedPath.name, base);
             if (file->kind == 0 || file->kind == 2) {
@@ -618,9 +618,9 @@ unsigned int __stdcall copy_name_with_p_extension(unsigned int unused, const cha
 
 unsigned int fn_00426320(OSSpec *destination, DropinFileRecord *record)
 {
-    char *text;
+    const char *text;
     unsigned int startsWithDot;
-    text = ((struct StringLookupResult *)CLPlugins_GetObjectFlags(record->selectedPlugin))->text;
+    text = CLPlugins_GetObjectFlags(record->selectedPlugin)->pchFileExt;
     startsWithDot = text ? (text[0] == '.') : 0;
     if (text == 0)
         text = ".sbm";

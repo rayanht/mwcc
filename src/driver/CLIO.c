@@ -536,10 +536,10 @@ static inline char *formatDiagnosticPath(const char *path)
 unsigned char nonmatching_plugin_with_clear_high_bit(Plugin *type)
 {
     struct CLTarget *entries;
-    struct ObjFlagsData *flags;
+    const CWObjectFlags *flags;
 
     flags = CLPlugins_GetObjectFlags(type);
-    if ((flags->compilerFlags & 0x80000000U) != 0U)
+    if ((flags->flags & 0x80000000U) != 0U)
         return 0;
 
     entries = default_target;

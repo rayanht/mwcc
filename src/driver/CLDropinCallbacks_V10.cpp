@@ -709,7 +709,7 @@ __stdcall SInt32 add_project_entry(DropinRequest *context, CWFileSpec *file, UIn
     struct CLOverlayEntry *overlayGroup;
     struct OverlayAllocation *overlay;
     Plugin *plugin;
-    ObjFlagsData *objectFlags;
+    const CWObjectFlags *objectFlags;
     OSSpec sourcePath;
     UInt32 fileType;
     char extension[16];
@@ -822,8 +822,8 @@ __stdcall SInt32 add_project_entry(DropinRequest *context, CWFileSpec *file, UIn
     fileRecord->fileOpenFlag1 = args->flag1;
     fileRecord->requiresLink = (flags & 0x20000000) != 0;
     if (fileRecord->selectedPlugin != 0) {
-        objectFlags = (ObjFlagsData *)CLPlugins_GetObjectFlags(fileRecord->selectedPlugin);
-        fileRecord->compilerFlags = objectFlags->compilerFlags;
+        objectFlags = CLPlugins_GetObjectFlags(fileRecord->selectedPlugin);
+        fileRecord->compilerFlags = objectFlags->flags;
     } else {
         fileRecord->compilerFlags = 0;
     }

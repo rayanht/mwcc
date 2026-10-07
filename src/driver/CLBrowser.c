@@ -32,15 +32,15 @@ int fn_004286d0(DropinFileRecord *input, unsigned int processingMode, unsigned i
 {
     MemBuffer lookupResult;
     OSSpec state;
-    OutputSuffixes *type;
-    char *extension;
+    const CWObjectFlags *objectFlags;
+    const char *extension;
 
-    type = CLPlugins_GetObjectFlags(input->selectedPlugin);
+    objectFlags = CLPlugins_GetObjectFlags(input->selectedPlugin);
     state = input->outputPath;
     if (optsCompiler.browseFileExt[0] != 0)
         extension = optsCompiler.browseFileExt;
     else
-        extension = type->suffix0;
+        extension = objectFlags->brsFileExt;
     CLProj_ChangeFileExtension(state.name, extension);
     if (optsCmdLine.verbose != 0) {
         char *result = CLProj_MakeRelativePath(&state, NULL, data_005880e0, 260);

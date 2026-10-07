@@ -75,26 +75,6 @@ struct NamespaceOperationState {
     UInt8 flag4b;
 };
 #pragma pack(pop)
-#pragma options align = mac68k
-struct ObjFlagsData {
-    SInt16 version;
-    SInt32
-        compilerFlags; /* 0x02: add_project_entry reads CLPlugins_GetObjectFlags result into fileRecord->compilerFlags */
-    UInt8 reserved06[0x20];
-    UInt32 fileType;
-    UInt32 creator;
-};
-#pragma options align = reset
-#pragma options align = mac68k
-struct OutputSuffixes {
-    UInt8 reserved00[6];
-    char *suffix2;
-    char *suffix0;
-    char *suffix1;
-    char *suffix4;
-    char *suffix8;
-};
-#pragma options align = reset
 extern void set_bytes(unsigned int a0, int *a1, char **a2);
 extern int compile_file(DropinFileRecord *file, char *processed);
 extern int CLFileOps_CompileProject(void);

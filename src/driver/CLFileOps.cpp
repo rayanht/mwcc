@@ -70,10 +70,10 @@ extern "C" {
 extern "C" {
 static inline int applyClassTypes(DropinFileRecord *request)
 {
-    CWObjectFlags *objectFlags;
+    const CWObjectFlags *objectFlags;
     UInt32 creator;
     UInt32 type;
-    objectFlags = (CWObjectFlags *)CLPlugins_GetObjectFlags(request->selectedPlugin);
+    objectFlags = CLPlugins_GetObjectFlags(request->selectedPlugin);
     type = optsCompiler.disFileType ? optsCompiler.disFileType : objectFlags->disFileType;
     creator = optsCompiler.disFileCreator ? optsCompiler.disFileCreator : objectFlags->disFileCreator;
     return dispatch_output_storage_by_mask(request, 4, creator, type);
@@ -358,11 +358,11 @@ int CLFileOps_SetupOutputPath(DropinFileRecord *obj, SInt16 mask)
     char pathName[260];
     char suffix[16];
     char directoryPath[260];
-    char *outputSuffix;
+    const char *outputSuffix;
     char *extension;
     UInt32 result;
     char *directory;
-    OutputSuffixes *suffixes;
+    const CWObjectFlags *objectFlags;
     char *name;
     char *outputName;
     Boolean hasOutputName;
@@ -387,28 +387,28 @@ int CLFileOps_SetupOutputPath(DropinFileRecord *obj, SInt16 mask)
         obj->temporaryOutputMask |= mask;
 
     if (!hasOutputName && (((optsCmdLine.toDisk | obj->outputMask | obj->temporaryOutputMask) & mask) != 0)) {
-        suffixes = (OutputSuffixes *)CLPlugins_GetObjectFlags(obj->selectedPlugin);
+        objectFlags = CLPlugins_GetObjectFlags(obj->selectedPlugin);
         int outputKind = mask;
         if (outputKind == 1) {
             if (optsCompiler.ppFileExt[0] != 0)
                 outputSuffix = optsCompiler.ppFileExt;
             else
-                outputSuffix = suffixes->suffix1;
+                outputSuffix = objectFlags->ppFileExt;
         } else if (outputKind == 4) {
             if (optsCompiler.disFileExt[0] != 0)
                 outputSuffix = optsCompiler.disFileExt;
             else
-                outputSuffix = suffixes->suffix4;
+                outputSuffix = objectFlags->disFileExt;
         } else if (outputKind == 8) {
             if (optsCompiler.depFileExt[0] != 0)
                 outputSuffix = optsCompiler.depFileExt;
             else
-                outputSuffix = suffixes->suffix8;
+                outputSuffix = objectFlags->depFileExt;
         } else if (outputKind == 2) {
             if (optsCompiler.objFileExt[0] != 0)
                 outputSuffix = optsCompiler.objFileExt;
             else
-                outputSuffix = suffixes->suffix2;
+                outputSuffix = objectFlags->objFileExt;
             if ((obj->compilerFlags & 0x80000000) == 0 && !hasOutputName)
                 outputSuffix = NULL;
         } else {
@@ -501,7 +501,7 @@ int setup_preprocessing_output(DropinFileRecord *st)
         return 0;
     }
     if (st->outputStorage != 0) {
-        CWObjectFlags *objectFlags = (CWObjectFlags *)CLPlugins_GetObjectFlags(st->selectedPlugin);
+        const CWObjectFlags *objectFlags = CLPlugins_GetObjectFlags(st->selectedPlugin);
         UInt32 type = optsCompiler.ppFileType ? optsCompiler.ppFileType : objectFlags->ppFileType;
         UInt32 creator = optsCompiler.ppFileCreator ? optsCompiler.ppFileCreator : objectFlags->ppFileCreator;
         return dispatch_output_storage_by_mask(st, 1, creator, type);
@@ -513,11 +513,11 @@ int setup_preprocessing_output(DropinFileRecord *st)
 unsigned int fn_00419c90(DropinFileRecord *state, unsigned int mode)
 {
     MemBuffer recovery;
-    CWObjectFlags *objectFlags;
+    const CWObjectFlags *objectFlags;
     UInt32 type;
     UInt32 creator;
 
-    objectFlags = static_cast<CWObjectFlags *>(CLPlugins_GetObjectFlags(state->selectedPlugin));
+    objectFlags = CLPlugins_GetObjectFlags(state->selectedPlugin);
     if (!(optsCmdLine.stages & 3) && static_cast<unsigned char>(mode)) {
         if (!CLPluginRequests_SetupFileRequest(state->selectedPlugin, state, 8))
             return 0;
@@ -540,7 +540,7 @@ unsigned int fn_00419c90(DropinFileRecord *state, unsigned int mode)
 
 unsigned int fn_00419d80(DropinFileRecord *input)
 {
-    struct ObjFlagsData *object;
+    const CWObjectFlags *objectFlags;
     unsigned int value;
     unsigned int info;
     if ((char)input->dependencyStatusNegative == '\0')
@@ -551,9 +551,9 @@ unsigned int fn_00419d80(DropinFileRecord *input)
         return 0;
     }
     if (((optsCmdLine.toDisk & 2) != 0) && (optsCompiler.browserEnabled != '\0')) {
-        object = (ObjFlagsData *)CLPlugins_GetObjectFlags(input->selectedPlugin);
-        value = optsCompiler.browseFileType ? optsCompiler.browseFileType : object->creator;
-        info = optsCompiler.browseFileCreator ? optsCompiler.browseFileCreator : object->fileType;
+        objectFlags = CLPlugins_GetObjectFlags(input->selectedPlugin);
+        value = optsCompiler.browseFileType ? optsCompiler.browseFileType : objectFlags->brsFileType;
+        info = optsCompiler.browseFileCreator ? optsCompiler.browseFileCreator : objectFlags->brsFileCreator;
         value = fn_004286d0(input, info, value);
         if (value == 0)
             return 0;
@@ -563,15 +563,15 @@ unsigned int fn_00419d80(DropinFileRecord *input)
 
 unsigned int write_object_file(DropinFileRecord *record)
 {
-    TypeMemberFunc *member;
-    SInt32 funcid;
-    SInt32 vtbl_index;
-    member = (TypeMemberFunc *)CLPlugins_GetObjectFlags(record->selectedPlugin);
+    const CWObjectFlags *objectFlags;
+    SInt32 type;
+    SInt32 creator;
+    objectFlags = CLPlugins_GetObjectFlags(record->selectedPlugin);
     if (record->objectData == 0U)
         return 1;
-    funcid = optsCompiler.objFileType ? optsCompiler.objFileType : member->funcid;
-    vtbl_index = optsCompiler.objFileCreator ? optsCompiler.objFileCreator : member->vtbl_index;
-    if (CLWriteObjectFile_WriteObjectFile(record, vtbl_index, funcid) == 0U)
+    type = optsCompiler.objFileType ? optsCompiler.objFileType : objectFlags->objFileType;
+    creator = optsCompiler.objFileCreator ? optsCompiler.objFileCreator : objectFlags->objFileCreator;
+    if (CLWriteObjectFile_WriteObjectFile(record, creator, type) == 0U)
         return 0;
     return 1;
 }

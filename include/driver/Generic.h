@@ -24,7 +24,7 @@ extern int __stdcall CLProj_MakeOSSpecFromDirectoryAndFilename(char *directory, 
 extern unsigned int __stdcall CLProj_MakeOSSpecFromPath(char *basePath, char *path, UInt8 useSpecialPath,
                                                         OSSpec *destination);
 extern unsigned int __stdcall CLProj_SetFileExtension(void *file, const char *extensionAddress, unsigned char append);
-extern unsigned int __stdcall CLProj_ChangeFileExtension(char *file, char *extensionAddress);
+extern unsigned int __stdcall CLProj_ChangeFileExtension(char *file, const char *extensionAddress);
 extern char *__stdcall CLProj_MakeRelativePath(OSSpec *source, char *base, char *destination, int capacity);
 extern DWORD __stdcall CLProj_FindFileInSearchPath(char *name, const char *searchPath, OSSpec *result);
 extern int __stdcall CLFileOps_FindExecutable(char *name, void *param2);
