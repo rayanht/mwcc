@@ -1,15 +1,11 @@
 #include "compiler/common.h"
 #include "driver/WarningHelpers.h"
-#include "driver/CWPluginsPrivate.h"
 #include "driver/Memory.h"
 #include "driver/ParserErrors.h"
 #include "driver/ParserFace.h"
 #include "driver/Projects.h"
 #include "driver/StringUtils.h"
 #include "driver/TargetWarningHelpers-ppc-cc.h"
-#include "driver/Targets.h"
-#include "driver/ParserGlue-eabi-ppc-cc.h"
-#include <setjmp.h>
 
 int parse_warning_settings(int option, char *settings, int argument, int flags)
 {

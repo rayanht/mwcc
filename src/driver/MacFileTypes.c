@@ -1,17 +1,12 @@
 #define CERROR_FILE "unknown.c"
 #include "compiler/common.h"
 #include "driver/MacFileTypes.h"
-#include "compiler/win32.h"
 #include "driver/AssertionFailure.h"
 #include "driver/CLIO.h"
-#include "driver/CLTarg.h"
-#include "driver/Files.h"
 #include "driver/MacSpecs.h"
-#include "driver/MsDos.h"
 /* A file-type list node: 8 bytes, payload at 0x00 and link at 0x04. */
 
 #include <stdlib.h>
-#include <setjmp.h>
 #include <string.h>
 
 static struct MacFileTypeNode *defaultlist = NULL;

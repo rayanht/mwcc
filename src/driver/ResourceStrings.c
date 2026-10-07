@@ -1,7 +1,6 @@
 #define CERROR_FILE "unknown.c"
 #include "compiler/common.h"
 #include "driver/ResourceStrings.h"
-#include <stdlib.h>
 #include <stdio.h>
 
 static ResourceRegistration resourceRegistrations[16];

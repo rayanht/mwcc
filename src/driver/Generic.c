@@ -1,6 +1,5 @@
 #include "compiler/common.h"
 #include "driver/Generic.h"
-#include "compiler/win32.h"
 #include "driver/ClientGlue.h"
 #include "driver/MsDos.h"
 #include "driver/StringExtras.h"

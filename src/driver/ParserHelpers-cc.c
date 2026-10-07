@@ -1,25 +1,11 @@
 #include "compiler/common.h"
 #include "driver/ParserHelpers-cc.h"
 #include "driver/AssertionFailure.h"
-#include "driver/CLIO.h"
-#include "driver/CWParserPluginsPrivate.h"
-#include "driver/CWPluginsPrivate.h"
-#include "driver/Files.h"
-#include "driver/MacSpecs.h"
-#include "driver/Memory.h"
-#include "driver/MsDos.h"
-#include "driver/Option.h"
-#include "driver/Parameter.h"
 #include "driver/ParserErrors.h"
 #include "driver/ParserFace.h"
 #include "driver/ParserGlue-eabi-ppc-cc.h"
 #include "driver/ParserHelpers.h"
-#include "driver/Projects.h"
-#include "driver/Targets.h"
 #include <stdio.h>
-#include <setjmp.h>
-#include <string.h>
-#include "driver/CLDropinCallbacks_V10.h"
 #define OPTION_ASSERT(cond, line) ((cond) ? (void)0 : CLIO_ReportAssertionFailure(#cond, "ParserHelpers-cc.c", line))
 #define PR_UNSET 0
 int fn_0040d283(int unused, char *first, char *second)

@@ -9,12 +9,9 @@
 #include "driver/ParserFace.h"
 #include "driver/Projects.h"
 #include "driver/StringUtils.h"
-#include "driver/Targets.h"
 #include "driver/Utils.h"
 #include <stdio.h>
 #include <string.h>
-#include <setjmp.h>
-#include "compiler/win32.h"
 
 static char help_line[256];
 

@@ -3,15 +3,12 @@
 #include "driver/ClientGlue.h"
 #include "compiler/objects.h"
 #include "compiler/scopes.h"
-#include "driver/CLDropinCallbacks_V10.h"
 #include "driver/CLErrors.h"
-#include "driver/CLFileOps.h"
 #include "driver/CLMain.h"
 #include "driver/CLPlugins.h"
 #include "driver/ResourceStrings.h"
 #include "driver/Resources.h"
 #include <string.h>
-#include <stdio.h>
 #include <stdlib.h>
 #include <ctype.h>
 int fn_004050e0(char *left, char *right, int count)

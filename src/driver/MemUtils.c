@@ -3,27 +3,14 @@
 #include "driver/MemUtils.h"
 #include "driver/CLBrowser.h"
 #include "driver/CLErrors.h"
-#include "driver/CLFiles.h"
 #include "driver/CLPlugins.h"
-#include "driver/CWPluginsPrivate.h"
-#include "driver/Memory.h"
 #include <string.h>
 
 /* Source and destination handles for a preference data copy. */
-#include <ctype.h>
-#include <setjmp.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <string.h>
-#include <ctype.h>
 
-#include <stdlib.h>
-#include <stdio.h>
-#include <setjmp.h>
 
-#include <stdlib.h>
-#include <stdio.h>
-#include <setjmp.h>
 
 void *xmalloc(const char *text, unsigned int size)
 {

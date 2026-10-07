@@ -3,10 +3,8 @@
 #include "driver/COSToolsCLT.h"
 #include "compiler/CPrep.h"
 #include "driver/CLFileOps.h"
-#include "driver/CLIO.h"
 #include "driver/MacSpecs.h"
 #include "driver/Memory.h"
-#include "driver/MsDos.h"
 #include "driver/TextUtils.h"
 #include "driver/cc-eabi-ppc.h"
 #include <string.h>

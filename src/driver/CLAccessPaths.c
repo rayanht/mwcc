@@ -1,17 +1,11 @@
 #include "compiler/common.h"
 #include "driver/CLAccessPaths.h"
-#include "compiler/win32.h"
 #include "driver/AssertionFailure.h"
-#include "driver/CLDependencies.h"
 #include "driver/CLIO.h"
 #include "driver/CLPluginRequests.h"
-#include "driver/CLTarg.h"
-#include "driver/CWParserPluginsPrivate.h"
-#include "driver/Files.h"
 #include "driver/Generic.h"
 #include "driver/MacSpecs.h"
 #include "driver/MemUtils.h"
-#include "driver/MsDos.h"
 #include <string.h>
 #include <stdlib.h>
 

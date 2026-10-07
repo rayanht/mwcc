@@ -7,18 +7,12 @@
 #include "compiler/scopes.h"
 #include "compiler/types.h"
 #include "compiler/CError.h"
-#include "compiler/CExpr2.h"
-#include "compiler/CPrec.h"
-#include "compiler/CPrep.h"
-#include "compiler/CTemplateNew.h"
 #include "compiler/CodeGen.h"
-#include "compiler/DWARF.h"
 #include "compiler/InlineAsmRegisters.h"
 #include "compiler/Registers.h"
 #include "compiler/StackFrameEABI.h"
 /* Type extension carrying the byte-sized kind at offset 0x0e. */
 
-#include <setjmp.h>
 #include <string.h>
 
 static char data_005649b8 = 0;

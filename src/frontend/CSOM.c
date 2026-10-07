@@ -5,49 +5,21 @@
 #include "compiler/objects.h"
 #include "compiler/scopes.h"
 #include "compiler/types.h"
-#include "compiler/BE_symbol.h"
-#include "compiler/CABI.h"
 #include "compiler/CClass.h"
 #include "compiler/CDecl.h"
 #include "compiler/CError.h"
 #include "compiler/CException.h"
-#include "compiler/CExpr.h"
 #include "compiler/CExpr2.h"
 #include "compiler/CFunc.h"
 #include "compiler/CInit.h"
-#include "compiler/CInline.h"
 #include "compiler/CMachine.h"
 #include "compiler/CMangler.h"
 #include "compiler/CObjC.h"
-#include "compiler/CObjCModern.h"
-#include "compiler/CParser.h"
-#include "compiler/CPrec.h"
-#include "compiler/CPrep.h"
 #include "compiler/CPrepTokenizer.h"
-#include "compiler/CScope.h"
-#include "compiler/CTemplateClass.h"
-#include "compiler/CTemplateFunc.h"
-#include "compiler/CTemplateTools.h"
 #include "compiler/CodeGen.h"
 #include "compiler/CompilerTools.h"
-#include "compiler/DWARF.h"
-#include "compiler/ELF_Endian.h"
-#include "compiler/IROUseDef.h"
-#include "compiler/InlineAsmPPC.h"
-#include "compiler/Intrinsics.h"
-#include "compiler/IroBitVect.h"
-#include "compiler/IroCSE.h"
-#include "compiler/IroJump.h"
-#include "compiler/IroLoop.h"
-#include "compiler/IroVars.h"
-#include "compiler/ObjGen_PPC_EABI.h"
-#include "compiler/PCode.h"
-#include "compiler/Registers.h"
-#include "compiler/Switch.h"
 #include "driver/COSToolsCLT.h"
-#include "driver/Files.h"
 #include <stdio.h>
-#include "compiler/Objects.h"
 
 #include <string.h>
 
@@ -691,7 +663,6 @@ struct SOMVTable *find_or_add_base(SOMClassBuildState *list, TypeClass *unused, 
     return node;
 }
 
-#include <stddef.h>
 
 void build_class_vtables_and_members(SOMClassBuildState *layout, TypeClass *cls)
 {
@@ -1748,7 +1719,6 @@ void CSOM_GenerateSomselfAssignment(TypeClass *tclass, Statement *stmt)
 
 #define ETEMP_KIND 60
 
-#include <string.h>
 
 ENode *CSOM_AppendPointerArgCall(ENode *node, ENodeList *spec)
 {

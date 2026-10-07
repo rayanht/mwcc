@@ -3,23 +3,15 @@
 #include "driver/CLIO.h"
 #include "driver/CWParserPluginsPrivate.h"
 #include "driver/CWPluginsPrivate.h"
-#include "driver/Files.h"
 #include "driver/MacSpecs.h"
-#include "driver/Memory.h"
-#include "driver/MsDos.h"
 #include "driver/Option.h"
-#include "driver/Parameter.h"
 #include "driver/ParserErrors.h"
 #include "driver/ParserFace.h"
 #include "driver/ParserGlue-eabi-ppc-cc.h"
 #include "driver/ParserHelpers.h"
 #include "driver/Projects.h"
-#include "driver/Targets.h"
-#include <stdio.h>
-#include <setjmp.h>
 #include <string.h>
 #include "driver/CLDropinCallbacks_V10.h"
-#include "driver/ToolHelpers.h"
 int set_output_path(char *name, int unused, char *path)
 {
     OSSpec spec1;

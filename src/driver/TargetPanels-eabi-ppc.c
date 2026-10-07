@@ -3,10 +3,8 @@
 #include "driver/PrefPanels.h"
 #include "compiler/CPrep.h"
 #include "compiler/CodeGen.h"
-#include "driver/CWPluginsPrivate.h"
 #include "driver/DropInCompilerLinkerPrivate.h"
 #include "driver/cc-eabi-ppc.h"
-#include <string.h>
 
 static SInt16 data_0057f6a8;
 

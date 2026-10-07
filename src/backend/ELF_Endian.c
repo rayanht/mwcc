@@ -5,28 +5,8 @@
 #include "compiler/objects.h"
 #include "compiler/scopes.h"
 #include "compiler/types.h"
-#include "compiler/BE_symbol.h"
-#include "compiler/CException.h"
-#include "compiler/CExpr2.h"
-#include "compiler/CFunc.h"
-#include "compiler/CInline.h"
-#include "compiler/CPrec.h"
-#include "compiler/CPrep.h"
-#include "compiler/CTemplateFunc.h"
-#include "compiler/CTemplateTools.h"
-#include "compiler/Coloring.h"
 #include "compiler/CompilerTools.h"
-#include "compiler/DWARF.h"
-#include "compiler/InlineAsmPPC.h"
-#include "compiler/IroJump.h"
-#include "compiler/IroLoop.h"
-#include "compiler/IroVars.h"
-#include "compiler/ObjGen_PPC_EABI.h"
-#include "driver/CWParserPluginsPrivate.h"
-#include "driver/Files.h"
 #include "driver/libimp-eabi-ppc.h"
-#include <string.h>
-#include <setjmp.h>
 
 static int (*data_005805e0)(const char *, int);
 static inline void readhdr(volatile int *out, unsigned int *p, char flag)

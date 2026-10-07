@@ -5,7 +5,6 @@
 #include "compiler/objects.h"
 #include "compiler/scopes.h"
 #include "compiler/types.h"
-#include "compiler/BE_symbol.h"
 #include "compiler/CABI.h"
 #include "compiler/CClass.h"
 #include "compiler/CDecl.h"
@@ -14,38 +13,13 @@
 #include "compiler/CExpr.h"
 #include "compiler/CExpr2.h"
 #include "compiler/CFunc.h"
-#include "compiler/CInline.h"
 #include "compiler/CInt64.h"
 #include "compiler/CMachine.h"
 #include "compiler/CObjC.h"
-#include "compiler/CObjCModern.h"
-#include "compiler/CParser.h"
-#include "compiler/CPrec.h"
-#include "compiler/CPrep.h"
 #include "compiler/CPrepTokenizer.h"
-#include "compiler/CScope.h"
-#include "compiler/CTemplateFunc.h"
-#include "compiler/CTemplateNew.h"
-#include "compiler/CTemplateTools.h"
 #include "compiler/CodeGen.h"
-#include "compiler/CompilerTools.h"
-#include "compiler/DWARF.h"
-#include "compiler/ELF_Endian.h"
 #include "compiler/FuncLevelAsmPPC.h"
-#include "compiler/IROUseDef.h"
-#include "compiler/InlineAsmPPC.h"
-#include "compiler/IroBitVect.h"
-#include "compiler/IroCSE.h"
-#include "compiler/IroJump.h"
-#include "compiler/IroLoop.h"
-#include "compiler/IroVars.h"
 #include "compiler/ObjGen_PPC_EABI.h"
-#include "compiler/PCode.h"
-#include "compiler/Switch.h"
-#include "driver/Files.h"
-#include "compiler/Objects.h"
-#include "compiler/ENode.h"
-#include "compiler/Types.h"
 #include <string.h>
 
 static struct PooledString *string_cache;
@@ -909,9 +883,7 @@ void initialize_struct_data(InitializerData *ctx, CInit *ci, Type *type, UInt32 
     } while (1);
 }
 
-#include <string.h>
 
-#include <string.h>
 
 void initialize_class_initializer_data(InitializerData *dst, CInit *op, Type *type, UInt32 qual, int flag)
 {
@@ -2425,7 +2397,6 @@ Boolean initialize_from_assignment(Object *obj, Boolean flag)
 /* The initialization of OBJ (or of a temporary when OBJ is NULL) of TYPE from its parsed initializer: a vector whose
    elements are one small value is that constant; otherwise an anonymous static object holds the constant part, the object
    is copied from it and the parts computed at run time are assigned after. */
-#include <string.h>
 
 ENode *CInit_AutoObject(Object *object, Type *type, UInt32 qualifiers)
 {

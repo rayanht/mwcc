@@ -1,7 +1,5 @@
 #include "compiler/common.h"
 #include "driver/StaticParserGlue.h"
-#include "driver/CLMain.h"
-#include "driver/CLPlugins.h"
 #include "driver/ClientGlue.h"
 #include "driver/ParserFace.h"
 

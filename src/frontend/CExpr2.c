@@ -5,56 +5,24 @@
 #include "compiler/objects.h"
 #include "compiler/scopes.h"
 #include "compiler/types.h"
-#include "compiler/BE_symbol.h"
 #include "compiler/CABI.h"
 #include "compiler/CClass.h"
 #include "compiler/CDecl.h"
 #include "compiler/CError.h"
-#include "compiler/CException.h"
 #include "compiler/CExpr.h"
 #include "compiler/CFunc.h"
 #include "compiler/CInit.h"
-#include "compiler/CInline.h"
 #include "compiler/CInt64.h"
 #include "compiler/CMachine.h"
 #include "compiler/CMangler.h"
 #include "compiler/CObjC.h"
 #include "compiler/CObjCModern.h"
-#include "compiler/CParser.h"
-#include "compiler/CPrec.h"
-#include "compiler/CPrep.h"
 #include "compiler/CPrepTokenizer.h"
-#include "compiler/CSOM.h"
-#include "compiler/CScope.h"
 #include "compiler/CTemplateFunc.h"
-#include "compiler/CTemplateNew.h"
-#include "compiler/CTemplateTools.h"
 #include "compiler/CodeGen.h"
 #include "compiler/CompilerTools.h"
-#include "compiler/DWARF.h"
-#include "compiler/ELF_Endian.h"
-#include "compiler/IROUseDef.h"
-#include "compiler/InlineAsmPPC.h"
-#include "compiler/InstrSelection.h"
-#include "compiler/Intrinsics.h"
-#include "compiler/IroBitVect.h"
-#include "compiler/IroCSE.h"
-#include "compiler/IroJump.h"
-#include "compiler/IroLoop.h"
-#include "compiler/IroTransform.h"
-#include "compiler/IroVars.h"
-#include "compiler/ObjGen_PPC_EABI.h"
-#include "compiler/PCode.h"
 #include "compiler/PPCError.h"
-#include "compiler/Switch.h"
-#include "driver/Files.h"
-#include <string.h>
 
-#include "compiler/ENode.h"
-#include "compiler/Types.h"
-#include "compiler/Objects.h"
-#include "Compiler/Objects.h"
-#include "Compiler/Types.h"
 
 typedef enum { ENX_A = 1 } ENodeTypeX;
 
@@ -510,7 +478,6 @@ static inline ENode *NewIndirect(ENode *inner)
     return e;
 }
 
-#include <string.h>
 
 ENode *scannew(char global)
 {
@@ -4863,7 +4830,6 @@ static ENode *mkTemp(Type *t)
     return n;
 }
 
-#include <string.h>
 
 ENode *CExpr_GetETEMPCopy(ENode *expr)
 {

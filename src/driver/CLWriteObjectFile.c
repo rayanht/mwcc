@@ -2,22 +2,13 @@
 #include "compiler/common.h"
 #include "driver/CLWriteObjectFile.h"
 #include "driver/AssertionFailure.h"
-#include "driver/CLDependencies.h"
-#include "driver/CLDropinCallbacks_V10.h"
 #include "driver/CLErrors.h"
 #include "driver/CLFileOps.h"
 #include "driver/CLIO.h"
 #include "driver/CLMain.h"
 #include "driver/CLPlugins.h"
-#include "driver/CLTarg.h"
-#include "driver/Files.h"
 #include "driver/Generic.h"
 #include "driver/MacSpecs.h"
-#include "driver/MsDos.h"
-#include <stdlib.h>
-#include <setjmp.h>
-#include <string.h>
-#include <stdio.h>
 #pragma auto_inline off
 
 #pragma auto_inline reset

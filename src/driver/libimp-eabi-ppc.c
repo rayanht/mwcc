@@ -2,25 +2,16 @@
 #include "compiler/common.h"
 #include "driver/libimp-eabi-ppc.h"
 #include "driver/PrefPanels.h"
-#include "compiler/CError.h"
-#include "compiler/CPrep.h"
 #include "compiler/CodeGen.h"
 #include "compiler/CompilerTools.h"
 #include "compiler/ELF_Endian.h"
 #include "driver/COSToolsCLT.h"
-#include "driver/CWParserPluginsPrivate.h"
 #include "driver/CWPluginsPrivate.h"
 #include "driver/DropInCompilerLinkerPrivate.h"
-#include "driver/Files.h"
 #include "driver/LibImportMessages.h"
-#include "driver/MacFileTypes.h"
 #include "driver/Memory.h"
 #include "driver/MsDos.h"
 #include "driver/StringUtils.h"
-#include "driver/Targets.h"
-#include <ctype.h>
-#include <stdlib.h>
-#include <setjmp.h>
 #include <string.h>
 #include <stdio.h>
 

@@ -1,14 +1,9 @@
 #define CERROR_FILE "unknown.c"
 #include "compiler/common.h"
 #include "driver/Memory.h"
-#include "compiler/win32.h"
-#include "compiler/CPrep.h"
 #include "driver/CLFileOps.h"
 #include "driver/Generic.h"
-#include "driver/MsDos.h"
-#include <string.h>
 #include <stdlib.h>
-#include <stdio.h>
 
 static unsigned short memory_error;
 OSHandle *Memory_GetSizeAddress(void *allocation)

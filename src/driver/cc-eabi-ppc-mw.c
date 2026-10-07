@@ -1,10 +1,8 @@
 #include "compiler/common.h"
 #include "driver/cc-eabi-ppc-mw.h"
-#include "compiler/InlineAsmPPC.h"
 #include "driver/CLPlugins.h"
 #include "driver/ClientGlue.h"
 #include "driver/cc-eabi-ppc.h"
-#include "driver/libimp-eabi-ppc.h"
 
 /* The static plugins the tool links in: the C/C++ compiler, a linker stub, the compiler's message strings and the
  * library importer. Each plugin's descriptions are its getters' data. */

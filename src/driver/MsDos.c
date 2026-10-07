@@ -1,39 +1,16 @@
 #define CERROR_FILE "unknown.c"
 #include "compiler/common.h"
 #include "driver/MsDos.h"
-#include "compiler/win32.h"
-#include "compiler/CTemplateNew.h"
 #include "driver/AssertionFailure.h"
-#include "driver/CLAccessPaths.h"
-#include "driver/CLIO.h"
-#include "driver/CLTarg.h"
 #include "driver/Generic.h"
 #include "driver/Memory.h"
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include "driver/MacSpecs.h"
 #include "compiler/enode.h"
 #include "compiler/objects.h"
 #include "compiler/scopes.h"
 #include "compiler/types.h"
-#include "compiler/CException.h"
-#include "compiler/CExpr.h"
-#include "compiler/CFunc.h"
-#include "compiler/CInline.h"
-#include "compiler/CPrec.h"
-#include "compiler/CTemplateFunc.h"
-#include "compiler/CTemplateTools.h"
-#include "compiler/DWARF.h"
-#include "compiler/IROUseDef.h"
-#include "compiler/IroCSE.h"
-#include "compiler/IroLoop.h"
-#include "compiler/IroVars.h"
-#include "compiler/ObjGen_PPC_EABI.h"
-#include "compiler/PCode.h"
-#include "compiler/Switch.h"
-#include "driver/Files.h"
-#include "driver/StringUtils.h"
 static char errtext[256];
 static char data_0057e308[260];
 
@@ -1202,8 +1179,6 @@ unsigned int __stdcall OS_RefToMac(unsigned int value)
     return value + 1U;
 }
 
-#include <stdlib.h>
-#include <stdio.h>
 
 int OS_MacToRef(short value)
 {

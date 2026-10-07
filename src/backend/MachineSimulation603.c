@@ -4,15 +4,9 @@
 #include "compiler/enode.h"
 #include "compiler/objects.h"
 #include "compiler/types.h"
-#include "compiler/CExpr2.h"
-#include "compiler/CTemplateNew.h"
 #include "compiler/ConstantPropagation.h"
-#include "compiler/DWARF.h"
-#include "compiler/MachineSimulation601.h"
 #include "compiler/PCode.h"
-#include "compiler/PCodeAssembly.h"
 #include "compiler/Scheduler.h"
-#include <string.h>
 
 struct MachineInfo machine603 = {
     2,

@@ -2,9 +2,7 @@
 #include "driver/CWParserPluginsPrivate.h"
 #include "compiler/objects.h"
 #include "compiler/scopes.h"
-#include "driver/CLPluginRequests.h"
 #include "driver/CWPluginsPrivate.h"
-#include "driver/Files.h"
 typedef int(__stdcall *ParserTextCallback)(CWPluginPrivateContext *context, int argument2, int argument3, char *text);
 
 typedef int(__stdcall *FileInfoMethod)(CWPluginPrivateContext *, CWFileSpec *);

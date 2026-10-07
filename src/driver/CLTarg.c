@@ -1,18 +1,9 @@
 #define CERROR_FILE "unknown.c"
 #include "compiler/common.h"
 #include "driver/CLTarg.h"
-#include "compiler/InlineAsmPPC.h"
 #include "driver/AssertionFailure.h"
-#include "driver/CLAccessPaths.h"
-#include "driver/CLDependencies.h"
-#include "driver/CLFiles.h"
 #include "driver/CLIO.h"
-#include "driver/CLOverlays.h"
-#include "driver/CLPlugins.h"
-#include "driver/CLSegs.h"
-#include "driver/Files.h"
 #include "driver/MemUtils.h"
-#include "driver/MsDos.h"
 // "CLTarg.c"
 #include <string.h>
 

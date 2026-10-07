@@ -6,19 +6,12 @@
 #include "compiler/scopes.h"
 #include "compiler/types.h"
 #include "compiler/CError.h"
-#include "compiler/CException.h"
-#include "compiler/CFunc.h"
 #include "compiler/CPrep.h"
 #include "compiler/CodeGen.h"
-#include "compiler/DWARF.h"
-#include "compiler/InlineAsmPPC.h"
 #include "compiler/InstrSelection.h"
-#include "compiler/IroLoop.h"
-#include "compiler/IroVars.h"
 #include "compiler/Operands.h"
 #include "compiler/PCode.h"
 #include "compiler/PCodeUtilities.h"
-#include "compiler/Registers.h"
 
 static inline SInt16 allocateGPR(void)
 {

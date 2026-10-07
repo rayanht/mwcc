@@ -1,11 +1,7 @@
 #define CERROR_FILE "unknown.c"
 #include "compiler/common.h"
 #include "driver/CWPluginsPrivate.h"
-#include "compiler/CError.h"
 #include "compiler/InlineAsmPPC.h"
-#include "driver/CWParserPluginsPrivate.h"
-#include "driver/Files.h"
-#include "driver/CLDropinCallbacks_V10.h"
 typedef unsigned int __stdcall ContextArgumentCallback(CWPluginPrivateContext *context, unsigned int argument);
 typedef unsigned int(__stdcall *ValuePairCallback)(CWPluginPrivateContext *, struct ValuePairState *);
 typedef SInt32(__stdcall *DispatchOperation)(CWPluginPrivateContext *, void *, int, void *, void *);

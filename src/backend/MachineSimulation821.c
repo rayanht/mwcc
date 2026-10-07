@@ -4,21 +4,9 @@
 #include "compiler/enode.h"
 #include "compiler/objects.h"
 #include "compiler/types.h"
-#include "compiler/CException.h"
-#include "compiler/CFunc.h"
-#include "compiler/DWARF.h"
-#include "compiler/IROUseDef.h"
-#include "compiler/InlineAsmPPC.h"
-#include "compiler/InterferenceGraph.h"
-#include "compiler/IroCSE.h"
-#include "compiler/IroLoop.h"
-#include "compiler/IroVars.h"
-#include "compiler/LiveVariables.h"
 #include "compiler/PCode.h"
-#include "compiler/PCodeAssembly.h"
 
 #include "compiler/Scheduler.h"
-#include <string.h>
 
 struct MachineInfo machine821 = {
     1,

@@ -4,10 +4,8 @@
 #include "compiler/objects.h"
 #include "compiler/Unmangle.h"
 #include "driver/COSToolsCLT.h"
-#include "driver/MsDos.h"
 #include "driver/libimp-eabi-ppc.h"
 #include <stdio.h>
-#include <setjmp.h>
 
 #define VA_ARG(ap, T) (*(T *)((ap += 4) - 4))
 

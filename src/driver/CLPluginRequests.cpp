@@ -4,35 +4,21 @@
 #include "compiler/common.h"
 #include "driver/CLPluginRequests.h"
 #include "driver/AssertionFailure.h"
-#include "driver/CLCompilerLinkerDropin_V10.h"
 #include "driver/CLDropinCallbacks_V10.h"
 #include "driver/CLErrors.h"
 #include "driver/CLFileOps.h"
-#include "driver/CLFiles.h"
-#include "driver/CLIO.h"
 #include "driver/CLLicenses.h"
 #include "driver/CLMain.h"
-#include "driver/CLOverlays.h"
 #include "driver/CLPlugins.h"
-#include "driver/CLTarg.h"
-#include "driver/CWParserPluginsPrivate.h"
 #include "driver/CWPluginsPrivate.h"
-#include "driver/Files.h"
 #include "driver/Generic.h"
 #include "driver/MacFileTypes.h"
 #include "driver/MacSpecs.h"
 #include "driver/MemUtils.h"
-#include "driver/Memory.h"
-#include "driver/MsDos.h"
 extern "C" {
 
 #include "mwcc/Plugins.h"
 
-#include <string.h>
-#include <ctype.h>
-#include <setjmp.h>
-#include <stdio.h>
-#include <stdlib.h>
 #include <string.h>
 }
 

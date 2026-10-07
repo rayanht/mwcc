@@ -5,53 +5,28 @@
 #include "compiler/objects.h"
 #include "compiler/scopes.h"
 #include "compiler/types.h"
-#include "compiler/BE_symbol.h"
-#include "compiler/CABI.h"
 #include "compiler/CBrowse.h"
 #include "compiler/CDecl.h"
 #include "compiler/CError.h"
 #include "compiler/CException.h"
-#include "compiler/CExpr.h"
 #include "compiler/CExpr2.h"
 #include "compiler/CFunc.h"
-#include "compiler/CInline.h"
 #include "compiler/CInt64.h"
 #include "compiler/CMachine.h"
 #include "compiler/CObjC.h"
-#include "compiler/CObjCModern.h"
-#include "compiler/CParser.h"
-#include "compiler/CPrec.h"
 #include "compiler/CPrepTokenizer.h"
 #include "compiler/CPreprocess.h"
-#include "compiler/CSOM.h"
-#include "compiler/CScope.h"
-#include "compiler/CTemplateFunc.h"
-#include "compiler/CTemplateNew.h"
-#include "compiler/CTemplateTools.h"
 #include "compiler/CodeGen.h"
-#include "compiler/CompilerTools.h"
 #include "compiler/DWARF.h"
 #include "compiler/FuncLevelAsmPPC.h"
-#include "compiler/InlineAsmPPC.h"
-#include "compiler/InstrSelection.h"
 #include "compiler/IrOptimizer.h"
-#include "compiler/IroBitVect.h"
-#include "compiler/IroCSE.h"
-#include "compiler/IroLoop.h"
-#include "compiler/IroTransform.h"
-#include "compiler/IroVars.h"
 #include "compiler/ObjGen_PPC_EABI.h"
-#include "compiler/PCode.h"
 #include "compiler/Registers.h"
 #include "compiler/StackFrameEABI.h"
-#include "compiler/Switch.h"
 #include "driver/CLDropinCallbacks_V10.h"
 #include "driver/CLPluginRequests.h"
-#include "driver/CLPlugins.h"
 #include "driver/COSToolsCLT.h"
-#include "driver/CWParserPluginsPrivate.h"
 #include "driver/CWPluginsPrivate.h"
-#include "driver/Files.h"
 #include "driver/Memory.h"
 #include <time.h>
 
@@ -59,8 +34,6 @@
 #include <ctype.h>
 #include <stdio.h>
 
-#include <setjmp.h>
-#include <stddef.h>
 static Macro data_0054fd08 = {NULL, NULL, NULL, 0, 1, 0, {NULL}};
 static Macro data_0054fd1c = {NULL, NULL, NULL, 0, 2, 0, {NULL}};
 static Macro data_0054fd30 = {NULL, NULL, NULL, 0, 3, 0, {NULL}};

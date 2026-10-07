@@ -3,24 +3,14 @@
 #include "driver/Files.h"
 #include "compiler/objects.h"
 #include "compiler/scopes.h"
-#include "compiler/win32.h"
-#include "compiler/CPrep.h"
 #include "driver/AssertionFailure.h"
-#include "driver/CLIO.h"
-#include "driver/CLMain.h"
-#include "driver/CLPluginRequests.h"
-#include "driver/CLTarg.h"
-#include "driver/CWParserPluginsPrivate.h"
 #include "driver/MacFileTypes.h"
 #include "driver/MacSpecs.h"
-#include "driver/Memory.h"
-#include "driver/MsDos.h"
 #include "driver/Resources.h"
 #include "driver/StringUtils.h"
 #include <string.h>
 
 #include <stdio.h>
-#include <stdlib.h>
 /* Data of the original file that none of its linked code uses. */
 static char lbl_0054B8F8[] = "%*.*s";
 

@@ -4,11 +4,7 @@
 #include "compiler/enode.h"
 #include "compiler/objects.h"
 #include "compiler/types.h"
-#include "compiler/DWARF.h"
-#include "compiler/MachineSimulation601.h"
-#include "compiler/MachineSimulation603.h"
 #include "compiler/PCode.h"
-#include "compiler/PCodeAssembly.h"
 #include "compiler/Scheduler.h"
 
 struct MachineInfo machine604 = {

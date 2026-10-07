@@ -1,15 +1,9 @@
 #define CERROR_FILE "unknown.c"
 #include "compiler/common.h"
 #include "driver/TargetOptimizer-ppc-eabi.h"
-#include "compiler/win32.h"
-#include "driver/CLFileOps.h"
-#include "driver/Files.h"
 #include "driver/Generic.h"
-#include "driver/Memory.h"
-#include "driver/MsDos.h"
 #include "driver/ParserGlue-eabi-ppc-cc.h"
 #include "driver/StringUtils.h"
-#include <string.h>
 
 /* Data of the original file that none of its linked code uses. */
 static char lbl_0054C5A0 = 5;

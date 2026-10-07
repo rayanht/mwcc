@@ -5,9 +5,7 @@
 #include "compiler/objects.h"
 #include "compiler/scopes.h"
 #include "compiler/types.h"
-#include "compiler/win32.h"
 #include "compiler/BE_elf.h"
-#include "compiler/BE_symbol.h"
 #include "compiler/CABI.h"
 #include "compiler/CClass.h"
 #include "compiler/CDecl.h"
@@ -17,47 +15,19 @@
 #include "compiler/CExpr2.h"
 #include "compiler/CFunc.h"
 #include "compiler/CInit.h"
-#include "compiler/CInline.h"
-#include "compiler/CMachine.h"
 #include "compiler/CMangler.h"
 #include "compiler/CObjC.h"
 #include "compiler/CObjCModern.h"
-#include "compiler/CPrec.h"
-#include "compiler/CPrep.h"
 #include "compiler/CPrepTokenizer.h"
-#include "compiler/CSOM.h"
-#include "compiler/CScope.h"
-#include "compiler/CTemplateClass.h"
 #include "compiler/CTemplateFunc.h"
-#include "compiler/CTemplateNew.h"
-#include "compiler/CTemplateTools.h"
 #include "compiler/CodeGen.h"
-#include "compiler/CompilerTools.h"
-#include "compiler/DWARF.h"
-#include "compiler/ELF_Endian.h"
-#include "compiler/InlineAsmPPC.h"
-#include "compiler/InstrSelection.h"
-#include "compiler/Intrinsics.h"
-#include "compiler/IroBitVect.h"
-#include "compiler/IroCSE.h"
-#include "compiler/IroJump.h"
-#include "compiler/IroLoop.h"
-#include "compiler/IroVars.h"
-#include "compiler/ObjGen_PPC_EABI.h"
-#include "compiler/PCode.h"
 #include "compiler/StackFrameEABI.h"
-#include "compiler/Switch.h"
 #include "driver/COSToolsCLT.h"
-#include "driver/Files.h"
-#include <setjmp.h>
 #include <string.h>
-#include "compiler/Types.h"
 #define va_start(ap, last) (ap = (va_list)((char *)&(last) + (((char *)(&(last) + 1) - (char *)&(last)) + 3) / 4 * 4))
 #define va_arg(ap, type) (*(type *)((ap += sizeof(type)) - sizeof(type)))
 
-#include "compiler/CDecl.h"
 
-#include "compiler/CDecl.h"
 
 Type data_0055d5c0 = {TYPETEMPLDEPEXPR, 0};
 Type type_placeholder = {0xFF, 1};

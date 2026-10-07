@@ -1,23 +1,14 @@
 #define CERROR_FILE "CLBrowser.c"
 #include "compiler/common.h"
 #include "driver/CLBrowser.h"
-#include "compiler/win32.h"
-#include "compiler/CPrep.h"
 #include "driver/AssertionFailure.h"
-#include "driver/CLDropinCallbacks_V10.h"
 #include "driver/CLErrors.h"
 #include "driver/CLFileOps.h"
-#include "driver/CLFiles.h"
 #include "driver/CLIO.h"
 #include "driver/CLMain.h"
 #include "driver/CLPlugins.h"
-#include "driver/CLTarg.h"
-#include "driver/Files.h"
 #include "driver/Generic.h"
 #include "driver/MemUtils.h"
-#include "driver/Memory.h"
-#include "driver/MsDos.h"
-#include <setjmp.h>
 #include <string.h>
 
 /* A browser table entry associates a value with a name. */

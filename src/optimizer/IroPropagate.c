@@ -7,23 +7,10 @@
 #include "compiler/objects.h"
 #include "compiler/scopes.h"
 #include "compiler/types.h"
-#include "compiler/BE_symbol.h"
 #include "compiler/CError.h"
-#include "compiler/CException.h"
-#include "compiler/CExpr.h"
 #include "compiler/CExpr2.h"
-#include "compiler/CFunc.h"
-#include "compiler/CInline.h"
 #include "compiler/CParser.h"
-#include "compiler/CPrec.h"
-#include "compiler/CPrep.h"
-#include "compiler/CTemplateFunc.h"
-#include "compiler/CTemplateTools.h"
 #include "compiler/CompilerTools.h"
-#include "compiler/DWARF.h"
-#include "compiler/ELF_Endian.h"
-#include "compiler/IROUseDef.h"
-#include "compiler/InlineAsmPPC.h"
 #include "compiler/IrOptimizer.h"
 #include "compiler/IroBitVect.h"
 #include "compiler/IroCSE.h"
@@ -32,11 +19,7 @@
 #include "compiler/IroLoop.h"
 #include "compiler/IroUtil.h"
 #include "compiler/IroVars.h"
-#include "compiler/ObjGen_PPC_EABI.h"
-#include "compiler/PCode.h"
 #include "compiler/Registers.h"
-#include "compiler/Switch.h"
-#include <string.h>
 #define BVGet(bv, i)                                                                                                   \
     (((UInt32)((SInt32)(i) >> 5) < (bv)->size) && (((bv)->bits[(i) >> 5] & ((UInt32)1 << ((i) & 31)))) != 0)
 #define BVTEST(bv, i)                                                                                                  \
@@ -650,7 +633,6 @@ void check_range_for_type(ERange *p, Type *type)
     }
 }
 
-#include <string.h>
 
 int initialize_node_range(IROLinear *record)
 {

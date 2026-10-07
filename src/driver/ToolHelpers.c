@@ -3,25 +3,9 @@
 #include "driver/ToolHelpers.h"
 #include "driver/ParserErrors.h"
 #include "driver/ParserHelpers.h"
-#include "compiler/win32.h"
-#include "compiler/CPrep.h"
-#include "driver/CWPluginsPrivate.h"
-#include "driver/Files.h"
-#include "driver/Generic.h"
-#include "driver/MacSpecs.h"
-#include "driver/Memory.h"
-#include "driver/MsDos.h"
 #include "driver/ParserFace.h"
 #include "driver/ParserGlue-eabi-ppc-cc.h"
-#include "driver/ParserHelpers-cc.h"
 #include "driver/Projects.h"
-#include "driver/Targets.h"
-#include "driver/Utils.h"
-#include <string.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <setjmp.h>
-#include "driver/CLDropinCallbacks_V10.h"
 
 static inline short *driverStatus(void)
 {

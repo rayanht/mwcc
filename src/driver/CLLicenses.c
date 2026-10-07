@@ -2,9 +2,7 @@
 #include "compiler/common.h"
 #include "driver/CLLicenses.h"
 #include "driver/CLErrors.h"
-#include "driver/CLTarg.h"
 #include "driver/MemUtils.h"
-#include "driver/MsDos.h"
 #include "driver/CLMain.h"
 #include <string.h>
 

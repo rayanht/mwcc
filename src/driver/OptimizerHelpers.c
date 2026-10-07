@@ -3,19 +3,12 @@
 #include "driver/OptimizerHelpers.h"
 #include "compiler/objects.h"
 #include "compiler/scopes.h"
-#include "compiler/win32.h"
-#include "driver/Memory.h"
 #include "driver/Option.h"
 #include "driver/ParserErrors.h"
 #include "driver/Projects.h"
 #include "driver/StringUtils.h"
 #include "driver/TargetOptimizer-ppc-eabi.h"
-#include "driver/Targets.h"
-#include "driver/ParserGlue-eabi-ppc-cc.h"
 #include <string.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <setjmp.h>
 typedef char *(*TextFormatFunction)(char *buffer, unsigned int capacity, const char *format, va_list arguments);
 
 static Boolean data_0054a2f8 = 0;

@@ -3,8 +3,6 @@
 #include "driver/MacSpecs.h"
 #include "compiler/enode.h"
 #include "compiler/objects.h"
-#include "compiler/CFunc.h"
-#include "compiler/IroLoop.h"
 #include "driver/AssertionFailure.h"
 #include "driver/CLIO.h"
 #include "driver/Files.h"

@@ -1,19 +1,11 @@
 #define CERROR_FILE "unknown.c"
 #include "compiler/common.h"
-#include "compiler/CompilerTools.h"
 #include "driver/Resources.h"
 #include "compiler/types.h"
-#include "compiler/win32.h"
 #include "compiler/CExpr2.h"
-#include "compiler/CPrep.h"
-#include "compiler/InlineAsmPPC.h"
 #include "driver/AssertionFailure.h"
-#include "driver/CLIO.h"
-#include "driver/CWParserPluginsPrivate.h"
-#include "driver/Files.h"
 #include "driver/MacSpecs.h"
 #include "driver/Memory.h"
-#include "driver/MsDos.h"
 #include "driver/StringUtils.h"
 #include <stdlib.h>
 #include <string.h>
@@ -475,11 +467,8 @@ int count_entries(ResType *list)
     return count;
 }
 
-#include <stddef.h>
 
-#include <stddef.h>
 
-#include <stddef.h>
 
 void write_resource_file(short refnum)
 {

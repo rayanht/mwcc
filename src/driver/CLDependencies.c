@@ -3,33 +3,17 @@
 #include "compiler/enode.h"
 #include "compiler/objects.h"
 #include "compiler/types.h"
-#include "compiler/BE_symbol.h"
-#include "compiler/CExpr.h"
-#include "compiler/DWARF.h"
-#include "compiler/ELF_Endian.h"
-#include "compiler/ObjGen_PPC_EABI.h"
 #include "driver/AssertionFailure.h"
-#include "driver/CLAccessPaths.h"
 #include "driver/CLBrowser.h"
-#include "driver/CLDropinCallbacks_V10.h"
 #include "driver/CLErrors.h"
 #include "driver/CLFileOps.h"
 #include "driver/CLIO.h"
 #include "driver/CLMain.h"
-#include "driver/CLPluginRequests.h"
-#include "driver/CLSegs.h"
-#include "driver/CLTarg.h"
-#include "driver/CWParserPluginsPrivate.h"
 #include "driver/Generic.h"
 #include "driver/MemUtils.h"
-#include "driver/Memory.h"
-#include "driver/MsDos.h"
 #include <string.h>
 #include <stdlib.h>
-#include <setjmp.h>
 #include <stdio.h>
-#include "compiler/ENode.h"
-#include "compiler/Types.h"
 
 static struct AccessPathEntry *data_0054d898 = NULL;
 

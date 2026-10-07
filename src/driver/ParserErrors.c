@@ -1,7 +1,6 @@
 #include "compiler/common.h"
 #include "driver/ParserErrors.h"
 #include "compiler/objects.h"
-#include "compiler/CError.h"
 #include "driver/CWPluginsPrivate.h"
 #include "driver/ParserFace.h"
 #include "driver/Projects.h"

@@ -2,7 +2,6 @@
 #include "compiler/common.h"
 #include "driver/cc-eabi-ppc.h"
 #include "driver/PrefPanels.h"
-#include "compiler/CPrep.h"
 #include "compiler/CodeGen.h"
 #include "compiler/CompilerTools.h"
 #include "compiler/IrOptimizer.h"
@@ -10,8 +9,6 @@
 #include "driver/CWParserPluginsPrivate.h"
 #include "driver/CWPluginsPrivate.h"
 #include "driver/DropInCompilerLinkerPrivate.h"
-#include "driver/Files.h"
-#include "driver/Memory.h"
 #include "driver/TargetPanels-eabi-ppc.h"
 #include <stdio.h>
 #include <string.h>

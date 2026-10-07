@@ -1,31 +1,14 @@
 #define CERROR_FILE "unknown.c"
 #include "compiler/common.h"
 #include "driver/CLPrefs.h"
-#include "compiler/CPrep.h"
 #include "driver/AssertionFailure.h"
-#include "driver/CLCompilerLinkerDropin_V10.h"
 #include "driver/CLErrors.h"
-#include "driver/CLFiles.h"
 #include "driver/CLIO.h"
-#include "driver/CLPlugins.h"
-#include "driver/CLTarg.h"
-#include "driver/CWPluginsPrivate.h"
-#include "driver/Files.h"
-#include "driver/Memory.h"
 #include "driver/CLMain.h"
 #include <string.h>
 
 /* Source and destination handles for a preference data copy. */
-#include <stdlib.h>
-#include <stdio.h>
-#include <setjmp.h>
-#include <string.h>
-#include <ctype.h>
-#include <setjmp.h>
-#include <stdio.h>
-#include <stdlib.h>
 #pragma auto_inline off
-#include <ctype.h>
 
 static NameTableEntry *name_table_entries;
 

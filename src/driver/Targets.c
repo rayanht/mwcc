@@ -1,7 +1,6 @@
 #include "compiler/common.h"
 #include "driver/Targets.h"
 #include "compiler/objects.h"
-#include "compiler/CError.h"
 #include "driver/AssertionFailure.h"
 #include "driver/ClientGlue.h"
 #include "driver/Option.h"

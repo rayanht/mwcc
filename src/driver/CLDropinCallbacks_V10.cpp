@@ -4,36 +4,21 @@
 #include "compiler/common.h"
 #include "driver/CLDropinCallbacks_V10.h"
 #include "compiler/types.h"
-#include "compiler/win32.h"
-#include "compiler/CExpr2.h"
-#include "compiler/CPrep.h"
-#include "compiler/InlineAsmPPC.h"
 #include "driver/AssertionFailure.h"
-#include "driver/CLAccessPaths.h"
 #include "driver/CLBrowser.h"
-#include "driver/CLCompilerLinkerDropin_V10.h"
-#include "driver/CLDependencies.h"
 #include "driver/CLErrors.h"
 #include "driver/CLFileOps.h"
-#include "driver/CLFiles.h"
 #include "driver/CLIO.h"
 #include "driver/CLLicenses.h"
 #include "driver/CLLoadAndCache.h"
 #include "driver/CLMain.h"
-#include "driver/CLOverlays.h"
 #include "driver/CLPlugins.h"
 #include "driver/CLPrefs.h"
-#include "driver/CLSegs.h"
-#include "driver/CLTarg.h"
-#include "driver/CWParserPluginsPrivate.h"
 #include "driver/CWPluginsPrivate.h"
-#include "driver/Files.h"
 #include "driver/Generic.h"
 #include "driver/MacFileTypes.h"
 #include "driver/MacSpecs.h"
 #include "driver/MemUtils.h"
-#include "driver/Memory.h"
-#include "driver/MsDos.h"
 #include "driver/StringUtils.h"
 extern "C" {
 
@@ -44,11 +29,8 @@ extern "C" {
 #include "mwcc/Plugins.h"
 /* Declarations gathered from the merged files. */
 
-#include "driver/CLFileOps.h"
 
-#include "driver/CLFileOps.h"
 
-#include "driver/CLFileOps.h"
 }
 
 extern "C" {

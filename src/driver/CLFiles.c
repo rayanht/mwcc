@@ -1,20 +1,14 @@
 #include "compiler/common.h"
 #include "driver/CLFiles.h"
-#include "compiler/InlineAsmPPC.h"
 #include "driver/AssertionFailure.h"
 #include "driver/CLFileOps.h"
-#include "driver/CLIO.h"
-#include "driver/CLOverlays.h"
-#include "driver/CLPlugins.h"
 #include "driver/CLPrefs.h"
 #include "driver/MemUtils.h"
 #include "driver/Memory.h"
-#include "driver/MsDos.h"
 /* Link used by the file cleanup list. */
 #include <string.h>
 
 #include <stdlib.h>
-#include <stddef.h>
 
 struct DropinFileRecord *CLFiles_AllocDropinFileRecord(void)
 {

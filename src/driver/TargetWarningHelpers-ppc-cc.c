@@ -1,7 +1,6 @@
 #include "compiler/common.h"
 #include "driver/TargetWarningHelpers-ppc-cc.h"
 #include "driver/StringUtils.h"
-#include "driver/ParserGlue-eabi-ppc-cc.h"
 
 Pragma data_0054a690[] = {
     {&data_00588528, "warn_largeargs", 0},
