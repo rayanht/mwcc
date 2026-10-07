@@ -55,19 +55,13 @@
 
 static struct RegisterBinding *register_binding_hash[64];
 
-void *find_register_binding_key(unsigned int *key)
+void CTemplateNew_ClearGlobalArray(void)
 {
-    struct RegisterBinding *binding = register_binding_hash[CHash((const char *)key) & 0x3f];
-    while (binding) {
-        unsigned int *bindingKey = &binding->key;
-        if (strcmp((const char *)binding->key, (const char *)key) == 0)
-            return bindingKey;
-        binding = binding->next;
-    }
-    return NULL;
+    SInt32 index;
+    for (index = 0; index < 64; index++)
+        register_binding_hash[index] = NULL;
 }
 
-#pragma auto_inline off
 void CTemplateNew_InsertRegisterBinding(const char *key, unsigned int attribute1, short registerNumber, Object *object)
 {
     struct RegisterBinding *entry;
@@ -82,13 +76,15 @@ void CTemplateNew_InsertRegisterBinding(const char *key, unsigned int attribute1
     entry->next = *bucket;
     *bucket = entry;
 }
-#pragma auto_inline reset
 
-#pragma opt_propagation off
-void CTemplateNew_ClearGlobalArray(void)
+void *find_register_binding_key(unsigned int *key)
 {
-    int index;
-    for (index = 0; index < 64; ++index)
-        register_binding_hash[index] = NULL;
+    struct RegisterBinding *binding = register_binding_hash[CHash((const char *)key) & 0x3f];
+    while (binding) {
+        unsigned int *bindingKey = &binding->key;
+        if (strcmp((const char *)binding->key, (const char *)key) == 0)
+            return bindingKey;
+        binding = binding->next;
+    }
+    return NULL;
 }
-#pragma opt_propagation reset
