@@ -215,7 +215,7 @@ void mark_var_used_at_call(Object *obj)
     if ((si = fn_0044ba70(obj, 0, 1)) != NULL) {
         for (u = si->defs; u != NULL; u = u->varnext) {
             if ((u->index >> 5) < use_def_in->size && (use_def_in->bits[u->index >> 5] & (1u << (u->index & 31)))) {
-                IROUseDef_SetBit(u->index, used_defs_bitvector);
+                IroBitVect_SetBit(u->index, used_defs_bitvector);
                 u->useCount++;
             }
         }
@@ -457,7 +457,7 @@ SInt32 IRO_UseDef(UInt8 eliminateUnused, UInt8 simplifyUses)
     IroVars_CheckTimedLongjmp();
     for (variable = def_list; variable != NULL; variable = variable->globalnext)
         if (variable->global || variable->noregister)
-            IROUseDef_SetBit(variable->index, callDefs);
+            IroBitVect_SetBit(variable->index, callDefs);
     IroBitVect_AllocateBitVector(&usedDefs, def_count);
     variable = def_list;
     for (block = iro_flowgraph_head; block != NULL; block = block->nextnode) {
@@ -467,11 +467,11 @@ SInt32 IRO_UseDef(UInt8 eliminateUnused, UInt8 simplifyUses)
         IroBitVect_AllocateBitVector(&block->out, def_count);
         for (node = block->first; node != NULL; node = node->next) {
             while (variable != NULL && variable->linear == node) {
-                IROUseDef_SetBit(variable->index, block->gen);
+                IroBitVect_SetBit(variable->index, block->gen);
                 if (variable->definite) {
                     for (reference = variable->var->defs; reference != NULL; reference = reference->varnext) {
                         if (reference != variable) {
-                            IROUseDef_SetBit(reference->index, block->kill);
+                            IroBitVect_SetBit(reference->index, block->kill);
                             IroBitVect_ClearBit(reference->index, block->gen);
                         }
                     }
@@ -497,7 +497,7 @@ SInt32 IRO_UseDef(UInt8 eliminateUnused, UInt8 simplifyUses)
                 }
             } else if (block == iro_flowgraph_head) {
                 for (entry = var_records; entry != NULL; entry = entry->next) {
-                    IROUseDef_SetBit(entry->defs->index, block->in);
+                    IroBitVect_SetBit(entry->defs->index, block->in);
                 }
             }
             (void)((SInt32 (*)(BitVector *, BitVector *))IroBitVect_CopyBitVector)(block->in, reachingDefs);
@@ -519,8 +519,8 @@ SInt32 IRO_UseDef(UInt8 eliminateUnused, UInt8 simplifyUses)
             for (; definition != NULL && definition->linear == currentNode; definition = definition->globalnext) {
                 for (reference = definition->var->defs; reference != NULL; reference = reference->varnext) {
                     if (BVTEST(use_def_in, reference->index)) {
-                        IROUseDef_SetBit(reference->index, definition->reachingDefs);
-                        IROUseDef_SetBit(reference->index, used_defs_bitvector);
+                        IroBitVect_SetBit(reference->index, definition->reachingDefs);
+                        IroBitVect_SetBit(reference->index, used_defs_bitvector);
                         reference->useCount++;
                         definition->reachingDefCount++;
                     }
@@ -549,7 +549,7 @@ SInt32 IRO_UseDef(UInt8 eliminateUnused, UInt8 simplifyUses)
             if (currentNode->type == IROLinearReturn || currentNode->type == IROLinearEnd) {
                 for (addressTakenVar = def_list; addressTakenVar != NULL; addressTakenVar = addressTakenVar->globalnext)
                     if (addressTakenVar->global && BVTEST(use_def_in, addressTakenVar->index)) {
-                        IROUseDef_SetBit(addressTakenVar->index, used_defs_bitvector);
+                        IroBitVect_SetBit(addressTakenVar->index, used_defs_bitvector);
                         addressTakenVar->useCount++;
                     }
             }
@@ -558,7 +558,7 @@ SInt32 IRO_UseDef(UInt8 eliminateUnused, UInt8 simplifyUses)
                     for (reference = variable->var->defs; reference != NULL; reference = reference->varnext)
                         IroBitVect_ClearBit(reference->index, use_def_in);
                 }
-                IROUseDef_SetBit(variable->index, use_def_in);
+                IroBitVect_SetBit(variable->index, use_def_in);
                 variable = variable->globalnext;
             }
             if (currentNode == block->last)
@@ -645,7 +645,7 @@ static void visit_connected_use(IROUse *n)
 {
     IRODef *m;
 
-    IROUseDef_SetBit(n->index, connected_defs_and_uses_bits);
+    IroBitVect_SetBit(n->index, connected_defs_and_uses_bits);
     IroBitVect_ClearBit(n->index, data_00587174);
     for (m = n->var->defs; m != NULL; m = m->varnext) {
         if ((m->index >> 5) < data_0058711c->size && (data_0058711c->bits[m->index >> 5] & (1u << (m->index & 31)))) {
@@ -663,7 +663,7 @@ void visit_connected_defs_and_uses(IRODef *p)
     IROUse *n;
     IROLinear *key;
 
-    IROUseDef_SetBit(p->index, data_00587f70);
+    IroBitVect_SetBit(p->index, data_00587f70);
     IroBitVect_ClearBit(p->index, data_0058711c);
     for (n = p->var->uses, key = fn_00459940(p->linear); n != NULL; n = n->varnext) {
         if ((n->index >> 5) < data_00587174->size && (data_00587174->bits[n->index >> 5] & (1u << (n->index & 31)))) {
@@ -740,12 +740,12 @@ void fn_00459420(void)
             for (reference = record->defs; reference != NULL; reference = reference->varnext) {
                 if (reference->linear != NULL && reference->linear->type == IROLinearAsm)
                     goto next;
-                IROUseDef_SetBit(reference->index, data_0058711c);
+                IroBitVect_SetBit(reference->index, data_0058711c);
             }
             for (secondary = record->uses; secondary != NULL; secondary = secondary->varnext) {
                 if (secondary->linear != NULL && secondary->linear->type == IROLinearAsm)
                     goto next;
-                IROUseDef_SetBit(secondary->index, data_00587174);
+                IroBitVect_SetBit(secondary->index, data_00587174);
             }
             first = 1;
             for (;;) {

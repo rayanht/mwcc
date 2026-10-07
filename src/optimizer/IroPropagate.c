@@ -7,6 +7,7 @@
 #include "compiler/objects.h"
 #include "compiler/scopes.h"
 #include "compiler/types.h"
+#include "compiler/BitVector.h"
 #include "compiler/CError.h"
 #include "compiler/CExpr2.h"
 #include "compiler/CParser.h"
@@ -26,19 +27,6 @@
     (((UInt32)((SInt32)(i) >> 5) < (bv)->size) &&                                                                      \
      (((bv)->bits[(UInt32)((SInt32)(i) >> 5)] & ((UInt32)1 << ((i) & 31)))) != 0)
 
-static inline void BVFatal(void)
-{
-    CError_Internal("BitVector.h", 0x2f);
-}
-
-static inline void BVSet(BitVector *bv, UInt32 i)
-{
-    if ((i >> 5) < bv->size)
-        bv->bits[i >> 5] |= (UInt32)1 << (i & 31);
-    else
-        BVFatal();
-}
-
 static int NeedProp(IROLinear *instr)
 {
     if (instr->type == IROLinearFunccall)
@@ -48,14 +36,6 @@ static int NeedProp(IROLinear *instr)
     if (instr->type == IROLinearAsm)
         return 1;
     return 0;
-}
-
-static inline void setbit(unsigned int bit, BitVector *bv)
-{
-    if ((bit >> 5) < (unsigned int)bv->size)
-        bv->bits[bit >> 5] |= 1 << bit;
-    else
-        CError_Internal("BitVector.h", 47);
 }
 
 /* Whether OBJECT is a local that may live in a register. */
@@ -209,19 +189,19 @@ void IRO_CopyAndConstantPropagation(void)
                 for (node = replacementCandidate; node != NULL; node = node->next) {
                     bit = node->uvarIndex;
                     if (BVGet(data_00588018, bit)) {
-                        BVSet(block->kill, node->index);
+                        IroBitVect_SetBit(node->index, block->kill);
                         IroBitVect_ClearBit(node->index, block->gen);
                     }
                     if (node->var != NULL) {
                         if (BVTEST(data_00588018, (SInt32)node->var->index)) {
-                            BVSet(block->kill, node->index);
+                            IroBitVect_SetBit(node->index, block->kill);
                             IroBitVect_ClearBit(node->index, block->gen);
                         }
                     }
                 }
             }
             while (nextDefinition != NULL && nextDefinition->node == instruction) {
-                BVSet(block->gen, nextDefinition->index);
+                IroBitVect_SetBit(nextDefinition->index, block->gen);
                 nextDefinition = nextDefinition->next;
             }
             if (instruction == block->last)
@@ -344,7 +324,7 @@ void IRO_CopyAndConstantPropagation(void)
                     }
                 }
                 while (nextDefinition != NULL && nextDefinition->node == instruction) {
-                    BVSet(availableExpressions, nextDefinition->index);
+                    IroBitVect_SetBit(nextDefinition->index, availableExpressions);
                     nextDefinition = nextDefinition->next;
                 }
             }
@@ -571,7 +551,7 @@ void IroPropagate_PropagateExpressions(void)
                             ((candidateToMark->uvarIndex >> 5) >= candidateToMark->registers->size ||
                              (1 << candidateToMark->uvarIndex &
                               candidateToMark->registers->bits[candidateToMark->uvarIndex >> 5]) == 0)) {
-                            setbit(candidateToMark->index, availableExpressions);
+                            IroBitVect_SetBit(candidateToMark->index, availableExpressions);
                         }
                     }
                 }

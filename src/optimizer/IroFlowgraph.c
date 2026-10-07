@@ -5,6 +5,7 @@
 #include "compiler/objects.h"
 #include "compiler/scopes.h"
 #include "compiler/types.h"
+#include "compiler/BitVector.h"
 #include "compiler/CError.h"
 #include "compiler/CException.h"
 #include "compiler/CFunc.h"
@@ -15,14 +16,6 @@
 #include "compiler/IroLoop.h"
 #include "compiler/IroVars.h"
 #include "compiler/Switch.h"
-
-static inline void IRO_BitVectorSetBit(UInt32 bit, BitVector *bv)
-{
-    if ((bit >> 5) < bv->size)
-        bv->bits[bit >> 5] |= 1 << (31 & bit);
-    else
-        CError_Internal("BitVector.h", 47);
-}
 
 static void AddRef(IRONode *node, IRONode *t)
 {
@@ -245,7 +238,7 @@ void IroFlowgraph_ComputeDom(void)
     SInt32 changed;
     SInt32 i;
     IroBitVect_AllocateBitVector(&iro_flowgraph_head->dom, iro_node_count);
-    IRO_BitVectorSetBit(iro_flowgraph_head->index, iro_flowgraph_head->dom);
+    IroBitVect_SetBit(iro_flowgraph_head->index, iro_flowgraph_head->dom);
     for (p = iro_flowgraph_head->nextnode; p != NULL; p = p->nextnode) {
         IroBitVect_AllocateBitVector(&p->dom, iro_node_count);
         IroBitVect_SetAllBits(p->dom);
@@ -258,10 +251,10 @@ void IroFlowgraph_ComputeDom(void)
                 IroBitVect_SetAllBits(local);
                 for (i = 0; i < p->numpred; i++)
                     IroBitVect_Intersect(iroNodesByIndex[p->pred[i]]->dom, local);
-                IRO_BitVectorSetBit(p->index, local);
+                IroBitVect_SetBit(p->index, local);
             } else {
                 IroBitVect_ClearBitVector(local);
-                IRO_BitVectorSetBit(p->index, local);
+                IroBitVect_SetBit(p->index, local);
             }
             if (IroBitVect_AreEqual(local, p->dom) == 0) {
                 IroBitVect_CopyBitVector(local, p->dom);

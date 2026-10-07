@@ -5,6 +5,7 @@
 #include "compiler/objects.h"
 #include "compiler/scopes.h"
 #include "compiler/types.h"
+#include "compiler/BitVector.h"
 #include "compiler/CError.h"
 #include "compiler/CExpr2.h"
 #include "compiler/CFunc.h"
@@ -19,17 +20,8 @@
 #include "compiler/IroSubable.h"
 #include "compiler/IroUtil.h"
 #include "compiler/IroVars.h"
-/* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
 
 struct BitVector *data_00552b88 = NULL;
-
-static void IRO_BitVectorSet(UInt32 bit, BitVector *bv)
-{
-    if ((bit >> 5) < bv->size)
-        bv->bits[bit >> 5] |= 1u << bit;
-    else
-        CError_Internal("BitVector.h", 47);
-}
 
 static IROLinear *MakeRef(Object *obj, IROLinear *arg3)
 {
@@ -50,40 +42,6 @@ static IROLinear *MakeRef(Object *obj, IROLinear *arg3)
     n1->next = n2;
     IroUtil_InsertLinearRangeAfter(n1, n2, arg3);
     return n2;
-}
-
-static void IRO_BitVectorSet_0044ecc0(UInt32 bit, BitVector *bv)
-{
-    if ((bit >> 5) < bv->size)
-        bv->bits[bit >> 5] |= 1u << bit;
-    else
-        CError_Internal("BitVector.h", 47);
-}
-
-static void IRO_BitVectorSet_0044ef10(UInt32 bit, BitVector *bv)
-{
-    if ((bit >> 5) < bv->size)
-        bv->bits[bit >> 5] |= 1u << bit;
-    else
-        CError_Internal("BitVector.h", 47);
-}
-
-static void IRO_BitVectorSet_0044f3d0(UInt32 bit, BitVector *bv)
-{
-    if ((bit >> 5) < bv->size)
-        bv->bits[bit >> 5] |= 1u << bit;
-    else
-        CError_Internal("BitVector.h", 47);
-}
-
-#undef BVSET
-
-static void set_bit_vector_bit(UInt32 bit, BitVector *bv)
-{
-    if ((bit >> 5) < bv->size)
-        bv->bits[bit >> 5] |= 1u << bit;
-    else
-        CError_Internal("BitVector.h", 47);
 }
 
 void traverse_expr_postorder(ENode *expr)
@@ -323,8 +281,6 @@ void IroCSE_RewriteStatementExpressions(Statement *stmt)
     IroVars_CheckTimedLongjmp();
 }
 
-#define BVSET(bit) set_bit_vector_bit((bit), data_00552b88)
-
 /* As collect_expression_var_refs_and_flags, for a candidate common subexpression (stopping at the first side effect). */
 void fn_0044f6a0(IROLinear *e, SInt32 flag)
 {
@@ -350,7 +306,7 @@ void fn_0044f6a0(IROLinear *e, SInt32 flag)
                     data_00587630 = 1;
                 }
                 v = q->index;
-                BVSET(v);
+                IroBitVect_SetBit(v, data_00552b88);
             } else {
                 data_00587630 = 1;
             }
@@ -372,12 +328,12 @@ void fn_0044f6a0(IROLinear *e, SInt32 flag)
                         IroVars_CollectAddrRecordElements(p, t);
                         if (t->numObjRefs != 1) {
                             data_00587e58 = 1;
-                            BVSET(0);
+                            IroBitVect_SetBit(0, data_00552b88);
                             IroBitVect_Or(noregister_bitvector, data_00552b88);
                         }
                     } else {
                         data_00587e58 = 1;
-                        BVSET(0);
+                        IroBitVect_SetBit(0, data_00552b88);
                         IroBitVect_Or(noregister_bitvector, data_00552b88);
                     }
                 }
@@ -411,8 +367,6 @@ void fn_0044f6a0(IROLinear *e, SInt32 flag)
     }
 }
 
-#define BVSET(bit) IRO_BitVectorSet_0044f3d0((bit), data_00552b88)
-
 /* Notes the variables E reads (data_00552b88) and whether it has side effects (data_00587630) or reads memory
    through an unknown address (data_00587e58). */
 void collect_expression_var_refs_and_flags(IROLinear *e, SInt32 flag)
@@ -439,7 +393,7 @@ void collect_expression_var_refs_and_flags(IROLinear *e, SInt32 flag)
                     data_00587630 = 1;
                 }
                 v = q->index;
-                BVSET(v);
+                IroBitVect_SetBit(v, data_00552b88);
             } else {
                 data_00587630 = 1;
             }
@@ -458,12 +412,12 @@ void collect_expression_var_refs_and_flags(IROLinear *e, SInt32 flag)
                         fn_0044b4e0(p);
                         if (data_00587ef4 != 1) {
                             data_00587e58 = 1;
-                            BVSET(0);
+                            IroBitVect_SetBit(0, data_00552b88);
                             IroBitVect_Or(noregister_bitvector, data_00552b88);
                         }
                     } else {
                         data_00587e58 = 1;
-                        BVSET(0);
+                        IroBitVect_SetBit(0, data_00552b88);
                         IroBitVect_Or(noregister_bitvector, data_00552b88);
                     }
                 }
@@ -634,7 +588,7 @@ void IroCSE_RemoveExpr(IROExpr *entry)
     }
 }
 
-#define SETBIT(n) IRO_BitVectorSet_0044ef10((n), killed_exprs)
+#define SETBIT(n) IroBitVect_SetBit((n), killed_exprs)
 
 /* The expressions NODE kills: their bits in killed_exprs. */
 void mark_dependent_exprs(IROLinear *node)
@@ -707,7 +661,7 @@ void IroCSE_ComputeAvailableExpressions(void)
         IroBitVect_AllocateBitVector(&blk->out, expression_count);
         for (node = blk->first; node != NULL; node = node->next) {
             if (node->expr != NULL)
-                IRO_BitVectorSet_0044ecc0(node->expr->index, (BitVector *)blk->gen);
+                IroBitVect_SetBit(node->expr->index, (BitVector *)blk->gen);
             mark_dependent_exprs(node);
             IroBitVect_Or(killed_exprs, blk->kill);
             IroBitVect_Subtract(killed_exprs, blk->gen);
@@ -1132,7 +1086,7 @@ void IRO_CommonSubs(void)
                 }
             }
             if (stmt->expr != NULL)
-                IRO_BitVectorSet(stmt->expr->index, availableExpressions);
+                IroBitVect_SetBit(stmt->expr->index, availableExpressions);
             mark_dependent_exprs(stmt);
             IroBitVect_Subtract(killed_exprs, availableExpressions);
             if (stmt == proc->last)

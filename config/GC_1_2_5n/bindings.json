@@ -3666,7 +3666,7 @@
   "_fn_004592e0": "0x004592e0",
   "_IroPropagate_IsRegisterEligible": "0x004593f0",
   "_fn_00459420": "0x00459420",
-  "_IROUseDef_SetBit": "0x00459910",
+  "_IroBitVect_SetBit": "0x00459910",
   "_fn_00459940": "0x00459940",
   "_mark_var_used_at_call": "0x0045a8c0",
   "_build_use_def_records": "0x0045a960",

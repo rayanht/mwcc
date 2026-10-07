@@ -9213,7 +9213,7 @@
     "source": "src/optimizer/IROUseDef.c"
   },
   {
-    "name": "IROUseDef_SetBit",
+    "name": "IroBitVect_SetBit",
     "address": "0x00459910",
     "size": 48,
     "source": "src/optimizer/IROUseDef.c"

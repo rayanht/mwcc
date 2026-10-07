@@ -59,8 +59,6 @@ typedef enum NodeKind { NK0 } NodeKind;
 #define BitVector_Test(v, id) (((id) >> 5) < (v)->size && ((v)->bits[(id) >> 5] & (1u << ((id) & 31))))
 enum { LOOP_FLAGS_10 = 0x10, LOOP_FLAGS_24 = 0x24, LOOP_FLAGS_34 = 0x34 };
 
-static void BVSET(BitVector *bv, UInt32 index);
-static void BitVectorInsert(BitVector *bv, unsigned bit);
 static void NopOutBlock(IRONode *node);
 static IROLinear *NewLabelLinear(IROList *list);
 static IROLinear *NewTypedLinear(UInt8 type, IROList *list);
@@ -92,14 +90,6 @@ static inline void unsigned_kind(UInt32 p, int *r)
     if (v->integral == IT_UCHAR || t->integral == IT_USHORT || t->integral == IT_UINT || t->integral == IT_ULONG ||
         t->integral == IT_ULONGLONG)
         *r = 1;
-}
-
-static inline void BV_SET(BitVector *v, unsigned int bit)
-{
-    if (((UInt32)(bit)) >> 5 < (v)->size)
-        (v)->bits[((UInt32)(bit)) >> 5] |= 1u << ((bit) & 31);
-    else
-        CError_Internal("BitVector.h", 47);
 }
 
 void compute_mustreach(void)
@@ -739,7 +729,7 @@ void fn_004614f0(IRONode *lp)
     for (i = 0; i < lp->numpred; i++) {
         b = iroNodesByIndex[lp->pred[i]];
         if (!BitVector_Test(IRO_LoopScratchVector_005880dc, b->index)) {
-            IROUseDef_SetBit(b->index, IRO_LoopScratchVector_005880dc);
+            IroBitVect_SetBit(b->index, IRO_LoopScratchVector_005880dc);
             fn_004614f0(b);
         }
     }
@@ -764,10 +754,10 @@ void IroLoop_ComputeLoopDepth(void)
                 if (!(SInt16)flag) {
                     IroBitVect_AllocateBitVector(&IRO_LoopScratchVector_005880dc, iro_node_count + 1);
                     IroBitVect_ClearBitVector(IRO_LoopScratchVector_005880dc);
-                    BV_SET(IRO_LoopScratchVector_005880dc, bb->index);
+                    IroBitVect_SetBit(bb->index, IRO_LoopScratchVector_005880dc);
                 }
                 flag = 1;
-                BV_SET(IRO_LoopScratchVector_005880dc, q->index);
+                IroBitVect_SetBit(q->index, IRO_LoopScratchVector_005880dc);
                 if (q != bb)
                     fn_004614f0(q);
             }
@@ -846,10 +836,10 @@ void IRO_FindLoops(void)
                 if (!found) {
                     IroBitVect_AllocateBitVector(&IRO_LoopScratchVector_005880dc, iro_node_count + 1);
                     IroBitVect_ClearBitVector(IRO_LoopScratchVector_005880dc);
-                    BVSET(IRO_LoopScratchVector_005880dc, loop->index);
+                    IroBitVect_SetBit(loop->index, IRO_LoopScratchVector_005880dc);
                 }
                 found = 1;
-                BVSET(IRO_LoopScratchVector_005880dc, block->index);
+                IroBitVect_SetBit(block->index, IRO_LoopScratchVector_005880dc);
                 if (block != loop)
                     fn_004614f0(block);
             }
@@ -911,14 +901,6 @@ void fn_00460f70(void)
             item = item->next;
         }
     }
-}
-
-static void BVSET(BitVector *bv, UInt32 index)
-{
-    if ((index >> 5) < bv->size)
-        bv->bits[index >> 5] |= (UInt32)(1 << (index & 31));
-    else
-        CError_Internal("BitVector.h", 0x2f);
 }
 
 void mark_nonintersecting_linears(void)
@@ -1750,10 +1732,10 @@ unsigned int IRO_FindLoops_Unroll(void)
                     if (!foundLoop) {
                         IroBitVect_AllocateBitVector(&IRO_LoopScratchVector_005880dc, iro_node_count + 1);
                         IroBitVect_ClearBitVector(IRO_LoopScratchVector_005880dc);
-                        BitVectorInsert(IRO_LoopScratchVector_005880dc, header->index);
+                        IroBitVect_SetBit(header->index, IRO_LoopScratchVector_005880dc);
                     }
                     foundLoop = 1;
-                    BitVectorInsert(IRO_LoopScratchVector_005880dc, predecessor->index);
+                    IroBitVect_SetBit(predecessor->index, IRO_LoopScratchVector_005880dc);
                     if (predecessor != header)
                         fn_004614f0(predecessor);
                 }
@@ -1802,14 +1784,6 @@ unsigned int IRO_FindLoops_Unroll(void)
             IRO_ExpressionPropagation();
         }
     }
-}
-
-static void BitVectorInsert(BitVector *bv, unsigned bit)
-{
-    if ((bit >> 5) < bv->size)
-        bv->bits[bit >> 5] |= 1u << bit;
-    else
-        CError_Internal("BitVector.h", 47);
 }
 
 #pragma auto_inline off
