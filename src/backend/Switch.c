@@ -38,6 +38,21 @@
 #include "compiler/TOC.h"
 #include "driver/Files.h"
 #include "compiler/ENode.h"
+static CInt64 data_005608f8 = {0, 3};
+
+static struct SwitchCase **data_00581150;
+static struct CaseRange *case_ranges;
+static SInt32 switch_case_count;
+static SInt32 case_range_count;
+static CInt64 data_00581160;
+static CInt64 data_00581168;
+static CInt64 switchtable_base;
+static SInt16 data_00581178;
+static SInt16 switchRegHi;
+static struct Type *switch_expr_type;
+static struct PCodeLabel *default_case_label;
+static CInt64 switchtable_max;
+
 void Switch_GenerateSwitch(ENode *expression, SwitchInfo *cases)
 {
     SwitchCase *caseNode;
@@ -61,7 +76,7 @@ void Switch_GenerateSwitch(ENode *expression, SwitchInfo *cases)
     build_case_ranges(expression->rtype, cases->cases, cases->defaultlabel);
     if ((expression->rtype->type == TYPEINT || expression->rtype->type == TYPEENUM) && expression->rtype->size == 8)
         emit_case_ranges(expression);
-    else if (case_range_count < 8 || (case_range_count * 2U) < (data_00581188 >> 1) + 4)
+    else if (case_range_count < 8 || (case_range_count * 2U) < (switchtable_max.lo >> 1) + 4)
         emit_case_ranges(expression);
     else
         generate_switchtable_dispatch(expression, cases);
@@ -191,7 +206,7 @@ Object *create_switchtable(void)
     fn_0049f230(obj, 0, 0);
     obj->type = (Type *)&void_ptr;
     obj->u.data.u.switchtable.data =
-        (SInt32 *)CompilerTools_AllocatePool((obj->u.data.u.switchtable.size = data_00581188 + 1) << 2);
+        (SInt32 *)CompilerTools_AllocatePool((obj->u.data.u.switchtable.size = switchtable_max.lo + 1) << 2);
 
     p = case_ranges;
     dst = obj->u.data.u.switchtable.data;

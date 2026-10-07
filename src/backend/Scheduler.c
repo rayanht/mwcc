@@ -35,6 +35,23 @@
 #include "compiler/Registers.h"
 #include "compiler/Switch.h"
 
+static struct DependencyEntry **data_00581b00;
+static struct DependencyEntry **gpr_owner_lists;
+static struct DependencyEntry **data_00581b08;
+static struct DependencyEntry **fpr_owner_lists;
+static struct DependencyEntry **virtual_register_owner_lists;
+static struct DependencyEntry **register_owner_lists;
+static struct DependencyEntry *data_00581b18[3];
+static struct DependencyEntry *data_00581b24[3];
+static struct DependencyEntry *data_00581b30[8];
+static struct DependencyEntry *data_00581b50[8];
+static struct DependencyEntry *memory_dependency_list;
+static struct DependencyEntry *dependency_entry_list;
+static struct SchedEntry *sched_entry_list;
+static void *data_00581b7c;
+static struct Checker *data_00581b80;
+static UInt16 max_height;
+
 int Scheduler_ReturnZero(PCodeInstruction *list, PCodeInstruction *ref, char c)
 {
     SInt32 refid;
@@ -589,16 +606,16 @@ void init_register_owner_lists(void)
         virtual_register_owner_lists[i] = register_owner_lists[i] = NULL;
 
     data_00581b30[0] = data_00581b50[0] = NULL;
-    DAT_00581b34 = DAT_00581b54 = 0;
-    DAT_00581b38 = DAT_00581b58 = 0;
-    DAT_00581b3c = DAT_00581b5c = 0;
-    DAT_00581b40 = DAT_00581b60 = 0;
-    DAT_00581b44 = DAT_00581b64 = 0;
-    DAT_00581b48 = DAT_00581b68 = 0;
-    DAT_00581b4c = DAT_00581b6c = 0;
+    data_00581b30[1] = data_00581b50[1] = NULL;
+    data_00581b30[2] = data_00581b50[2] = NULL;
+    data_00581b30[3] = data_00581b50[3] = NULL;
+    data_00581b30[4] = data_00581b50[4] = NULL;
+    data_00581b30[5] = data_00581b50[5] = NULL;
+    data_00581b30[6] = data_00581b50[6] = NULL;
+    data_00581b30[7] = data_00581b50[7] = NULL;
     data_00581b18[0] = data_00581b24[0] = NULL;
-    DAT_00581b1c = DAT_00581b28 = 0;
-    DAT_00581b20 = DAT_00581b2c = 0;
+    data_00581b18[1] = data_00581b24[1] = NULL;
+    data_00581b18[2] = data_00581b24[2] = NULL;
     memory_dependency_list = dependency_entry_list = NULL;
     sched_entry_list = NULL;
     max_height = 0;

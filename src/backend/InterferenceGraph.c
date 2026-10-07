@@ -53,6 +53,9 @@
 
 #include <string.h>
 
+static UInt32 *gInterferenceBits;
+static short *gCoalescedRegisters;
+
 static void SC_Interfere(unsigned int a, unsigned int b);
 
 static const char *SpillCode_RegisterFormat(int reg_class)

@@ -49,6 +49,23 @@
 
 /* Declarations gathered from the merged files. */
 
+#pragma options align = mac68k
+static SInt32 data_00580fb0[50];
+static struct ObjGenRelocation *data_00581078[50];
+static UInt8 data_00581140;
+static struct DwarfNode *dwarf_node_head;
+static struct DwarfNode *currentDwarfNode;
+static struct DwarfNode *currentDwarfScope;
+static UInt8 data_0058114e;
+#pragma options align = reset
+
+static SInt32 data_00560498 = -1;
+static SInt32 *dwarf_depth_ptr = &data_00560498;
+static SInt32 *dwarf_entry_offsets = data_00580fb0;
+static struct ObjGenRelocation **data_005604a4 = data_00581078;
+static UInt8 *data_005604a8 = &data_00581140;
+static SInt32 data_005604ac = -1;
+
 typedef struct DObj DObj;
 
 typedef struct DwarfSym DwarfSym;
@@ -345,8 +362,6 @@ void insert_type_nodes_recursive(DWInfo *a, DWInfo *b)
     }
 }
 
-#define CERROR_FILE dwarf_filename
-
 void create_type_node(DWInfo *typeLink)
 {
     DwarfNode *node;
@@ -528,8 +543,6 @@ static inline UInt8 dwarf_uses_zero_addends(void)
     return copts.fd5;
 }
 
-#define data_00560530 (dwarf_filename + 0x80)
-
 static inline char *dwarfFileName(char *path, Boolean fullPath)
 {
     SInt32 i;
@@ -608,7 +621,7 @@ void DWARF_CreateObjectDebugEntry(Object *object)
     entry = currentDwarfNode;
     object->debugInfo.entry = entry;
     if (object->dwarfLinks.pendingEntry != NULL) {
-        CError_Internal(dwarf_filename, 0x7f5);
+        CError_Internal(CERROR_FILE, 0x7f5);
         object->dwarfLinks.pendingEntry->u.sym.replacement = entry;
     }
 
@@ -1118,7 +1131,7 @@ void DWARF_WriteDebugInfo(void)
                         case 0xffff:
                             break;
                         default:
-                            CError_Internal(dwarf_filename, 0x66d);
+                            CError_Internal(CERROR_FILE, 0x66d);
                             break;
                     }
                 }
@@ -1449,7 +1462,6 @@ void emit_member_pointer_type(DwarfFixup **references, DWInfo *type)
 }
 
 /* 0x5604b0: "DWARF.c" */
-#define CERROR_FILE dwarf_filename
 
 void emit_function_type(DwarfFixup **fixups, DWInfo *function)
 {
@@ -1547,6 +1559,8 @@ void DWARF_AppendLongWordLong(unsigned int firstValue, unsigned int secondValue)
     *(int *)*dwarf_lines->data = outputPosition + 10;
 }
 
+#define DWARF_PRODUCER "MW EABI PPC C-Compiler"
+
 void emit_compile_unit(struct ObjGenSection *section, UInt8 language)
 {
     SInt32 recordOffset;
@@ -1561,8 +1575,8 @@ void emit_compile_unit(struct ObjGenSection *section, UInt8 language)
     recordSize = emit_entry_header(0x11);
     AppendGListWord(dwarf_info_buffer, 600);
     recordSize += 2;
-    for (nameLength = 0; (dwarf_filename + 0x80)[nameLength] != 0; nameLength++)
-        AppendGListByte(dwarf_info_buffer, dwarf_filename[nameLength + 0x80]);
+    for (nameLength = 0; DWARF_PRODUCER[nameLength] != 0; nameLength++)
+        AppendGListByte(dwarf_info_buffer, DWARF_PRODUCER[nameLength]);
     AppendGListByte(dwarf_info_buffer, 0);
     recordSize += nameLength + 1;
     AppendGListWord(dwarf_info_buffer, 0x38);
@@ -1593,7 +1607,7 @@ void emit_compile_unit(struct ObjGenSection *section, UInt8 language)
     if (copts.f26 == 0)
         currentDwarfFunctionState->lineBaseRelocated = 1;
     if (++(*dwarf_depth_ptr) >= 50)
-        CError_Internal(dwarf_filename, 0x49b);
+        CError_Internal(CERROR_FILE, 0x49b);
     dwarf_entry_offsets[*dwarf_depth_ptr] = 0;
 }
 
@@ -1785,7 +1799,7 @@ int emit_location_attribute(DwarfLocationOperand *location, UInt16 attribute, un
             expressionSize += 5;
             break;
         default:
-            CError_Internal(dwarf_filename, 1011);
+            CError_Internal(CERROR_FILE, 1011);
             break;
     }
 

@@ -33,20 +33,6 @@ extern void emit_case_range_binary_tree(unsigned int firstCase, int lastCase);
 extern void emit_case_range_binary_search(int a, int b);
 extern int compare_switch_case_min(const void *a, const void *b);
 extern void build_case_ranges(Type *type, SwitchCase *list, CLabel *defaultCase);
-extern CInt64 data_005608f8;
-extern struct CaseRange *case_ranges;
-extern SInt32 switch_case_count;
-extern SInt32 case_range_count;
-extern CInt64 data_00581160;
-extern CInt64 data_00581168;
-extern CInt64 switchtable_base;
-extern SInt16 data_00581178;
-extern SInt16 switchRegHi;
-extern struct Type *switch_expr_type;
-extern struct PCodeLabel *default_case_label;
-extern CInt64 switchtable_max;
-extern UInt32 data_00581188;
-extern struct SwitchCase **data_00581150;
 
 #ifdef __cplusplus
 }
