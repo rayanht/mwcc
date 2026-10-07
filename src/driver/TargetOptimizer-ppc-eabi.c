@@ -20,16 +20,16 @@ int TargetOptimizer_ppc_eabi_SetOption(short option, char enabled)
 {
     switch (option) {
         case 20581:
-            data_00537a60 = enabled;
+            pBackEnd.peephole = enabled;
             break;
         case 19831:
-            data_00537a67 = enabled;
+            pBackEnd.use_lmw_stmw = enabled;
             break;
         case 21358:
-            data_00537a63 = 0;
+            pBackEnd.schedule = 0;
             break;
         case 21352:
-            data_00537a63 = enabled;
+            pBackEnd.schedule = enabled;
             break;
         default:
             return 0;
@@ -46,10 +46,10 @@ unsigned int TargetOptimizer_ppc_eabi_ReportScheduling(struct StorageHandle *arg
     int setting;
     unsigned char *message;
 
-    if (data_00537a63 == 0)
+    if (pBackEnd.schedule == 0)
         HPrintF(argument, "\t- no instruction scheduling\n");
     else {
-        if ((setting = data_00537a68) == 20)
+        if ((setting = pBackEnd.processor) == 20)
             message = (unsigned char *)"generic PPC";
         else if (setting == 0)
             message = (unsigned char *)"401";

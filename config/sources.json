@@ -1155,8 +1155,7 @@
     ],
     "include_dirs": [
       "src/driver"
-    ],
-    "status": "NonMatching"
+    ]
   },
   "src/driver/ParserHelpers-cc.c": {
     "compiler": "pro53",

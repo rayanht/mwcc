@@ -89,6 +89,7 @@
     "src/driver/Parameter.c",
     "src/driver/ParserErrors.c",
     "src/driver/ParserFace.c",
+    "src/driver/ParserGlue-eabi-ppc-cc.c",
     "src/driver/ParserHelpers-cc.c",
     "src/driver/ParserHelpers.c",
     "src/driver/Projects.c",

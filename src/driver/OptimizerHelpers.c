@@ -11,6 +11,7 @@
 #include "driver/StringUtils.h"
 #include "driver/TargetOptimizer-ppc-eabi.h"
 #include "driver/Targets.h"
+#include "driver/ParserGlue-eabi-ppc-cc.h"
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -113,25 +114,25 @@ int parse_optimizer_settings(SInt32 option, unsigned char *options, int unused, 
                     data_0054a2f8 = 1;
                     break;
                 case 0x4730: /* G0 */
-                    data_00540b26 = enabled.b ? 0 : 0;
+                    pGlobalOptimizer.optimizationlevel = enabled.b ? 0 : 0;
                     break;
                 case 0x4731: /* G1 */
-                    data_00540b26 = enabled.b ? 1 : 0;
+                    pGlobalOptimizer.optimizationlevel = enabled.b ? 1 : 0;
                     break;
                 case 0x4732: /* G2 */
-                    data_00540b26 = enabled.b ? 2 : 0;
+                    pGlobalOptimizer.optimizationlevel = enabled.b ? 2 : 0;
                     break;
                 case 0x4733: /* G3 */
-                    data_00540b26 = enabled.b ? 3 : 0;
+                    pGlobalOptimizer.optimizationlevel = enabled.b ? 3 : 0;
                     break;
                 case 0x4734: /* G4 */
-                    data_00540b26 = enabled.b ? 4 : 0;
+                    pGlobalOptimizer.optimizationlevel = enabled.b ? 4 : 0;
                     break;
                 case 0x4773: /* Gs */
-                    data_00540b27 = enabled.b ? forceOn : clear;
+                    pGlobalOptimizer.optfor = enabled.b ? forceOn : clear;
                     break;
                 case 0x4770: /* Gp */
-                    data_00540b27 = enabled.b ? clear : forceOn;
+                    pGlobalOptimizer.optfor = enabled.b ? clear : forceOn;
                     break;
                 default:
                     if (TargetOptimizer_ppc_eabi_SetOption(optionCode, enabled.b) == 0)
@@ -156,8 +157,8 @@ int report_optimizer_options(void)
     buf = (struct StorageHandle *)Memory_NewHandle(0);
     if (buf == NULL)
         longjmp(plugin_request_jmp_buf, 7);
-    HPrintF(buf, "\t- global optimizer level %d\n", data_00540b26);
-    HPrintF(buf, "\t- global optimize for %s\n", data_00540b27 == 0 ? "speed" : "size");
+    HPrintF(buf, "\t- global optimizer level %d\n", pGlobalOptimizer.optimizationlevel);
+    HPrintF(buf, "\t- global optimize for %s\n", pGlobalOptimizer.optfor == 0 ? "speed" : "size");
     len = Memory_GetHandleSize(buf);
     if (data_0054a2fc.commonSubs)
         HPrintF(buf, "\t- common subexpression elimination %s\n", data_0054a2fc.commonSubs == 1 ? "on" : "off");

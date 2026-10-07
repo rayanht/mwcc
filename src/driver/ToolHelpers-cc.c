@@ -32,7 +32,7 @@ int set_output_path(char *name, int unused, char *path)
     int err;
     if (!path)
         path = name;
-    if (DAT_00537762 == 3 || (DAT_00537762 == 0 && driverTool[0] == 0x4c696e6b)) {
+    if (pCmdLine.state == 3 || (pCmdLine.state == 0 && driverTool[0] == 0x4c696e6b)) {
         if (data_0058851d) {
             fn_0040ecb1(0x29, path);
             return 0;
@@ -73,7 +73,7 @@ int set_output_path(char *name, int unused, char *path)
             return 0;
         }
         strncpy(data_00587d04, path, 0x100);
-        if (data_00537764 == 8)
+        if (pCmdLine.stages == 8)
             return 1;
         if (data_00588530 > 1)
             return 1;
@@ -108,8 +108,8 @@ void fn_0040d822(void)
 {
     if (data_00587d04[0]) {
         int n = ToolHelpers_cc_GetNumFiles();
-        if (data_00537764 == 8)
-            strcpy(data_00537848, data_00587d04);
+        if (pCmdLine.stages == 8)
+            strcpy(pCmdLineCompiler.outMakefile, data_00587d04);
         else if (data_00588530 == 2) {
             if (data_00587e10 > 0 || data_00587e14 > 0)
                 fn_0040ecb1(0x29, data_00587d04);
@@ -120,6 +120,6 @@ void fn_0040d822(void)
         data_00587d04[0] = 0;
     }
     if (output_path_set) {
-        data_00537845 = 0;
+        pCmdLineCompiler.relPathInOutputDir = 0;
     }
 }

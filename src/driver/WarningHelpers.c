@@ -8,6 +8,7 @@
 #include "driver/StringUtils.h"
 #include "driver/TargetWarningHelpers-ppc-cc.h"
 #include "driver/Targets.h"
+#include "driver/ParserGlue-eabi-ppc-cc.h"
 #include <setjmp.h>
 
 int parse_warning_settings(int option, char *settings, int argument, int flags)
@@ -35,19 +36,19 @@ int parse_warning_settings(int option, char *settings, int argument, int flags)
         } else {
             optionCode = cursor[1] | *cursor << 8;
             if (enabled)
-                data_00537770 = 0;
+                pCmdLine.noWarnings = 0;
             switch (optionCode) {
                 case 0x4e77:
-                    data_00537770 = enabled;
+                    pCmdLine.noWarnings = enabled;
                     break;
                 case 0x4177:
                     set_warning_option(optionCode, enabled);
                     break;
                 case 0x4377:
-                    data_0053777a = !enabled;
+                    pCmdLine.noCmdLineWarnings = !enabled;
                     break;
                 case 0x5765:
-                    data_00537771 = enabled;
+                    pCmdLine.warningsAreErrors = enabled;
                     set_warning_option(optionCode, enabled);
                     break;
                 default:
@@ -72,17 +73,17 @@ unsigned int print_command_line_warning_options(void)
         longjmp(plugin_request_jmp_buf, 7);
     }
     HPrintF(output, "Command-line warning options:\n");
-    if (data_0053777a != '\0') {
+    if (pCmdLine.noCmdLineWarnings != '\0') {
         HPrintF(output, "\t- no command-line warnings\n");
     } else {
         HPrintF(output, "\t- command-line warnings\n");
     }
-    if (data_00537771 != '\0') {
+    if (pCmdLine.warningsAreErrors != '\0') {
         HPrintF(output, "\t- warnings are errors\n");
     } else {
         HPrintF(output, "\t- warnings are not errors\n");
     }
-    if (data_00537770 != '\0') {
+    if (pCmdLine.noWarnings != '\0') {
         HPrintF(output, "\t- no warnings at all\n");
     }
     ToolHelpers_cc_PrintCLanguageWarningOptions(output);

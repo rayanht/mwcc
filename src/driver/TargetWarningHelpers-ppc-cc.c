@@ -1,6 +1,7 @@
 #include "compiler/common.h"
 #include "driver/TargetWarningHelpers-ppc-cc.h"
 #include "driver/StringUtils.h"
+#include "driver/ParserGlue-eabi-ppc-cc.h"
 
 Pragma data_0054a690[] = {
     {&data_00588528, "warn_largeargs", 0},
@@ -13,37 +14,37 @@ int set_warning_option(short option, char enabled)
 
     switch (option) {
         case 18800:
-            data_00540b16 = enabled;
+            pWarningC.warn_illpragma = enabled;
             break;
         case 17764:
-            data_00540b17 = enabled;
+            pWarningC.warn_emptydecl = enabled;
             break;
         case 20597:
-            data_00540b18 = enabled;
+            pWarningC.warn_possunwant = enabled;
             break;
         case 21878:
-            data_00540b19 = enabled;
+            pWarningC.warn_unusedvar = enabled;
             break;
         case 21857:
-            data_00540b1a = enabled;
+            pWarningC.warn_unusedarg = enabled;
             break;
         case 17763:
-            data_00540b1b = enabled;
+            pWarningC.warn_extracomma = enabled;
             break;
         case 20580:
-            data_00540b1c = enabled;
+            pWarningC.pedantic = enabled;
             break;
         case 18550:
-            data_00540b1e = enabled;
+            pWarningC.warn_hidevirtual = enabled;
             break;
         case 18787:
-            data_00540b1f = enabled;
+            pWarningC.warn_implicitconv = enabled;
             break;
         case 20073:
-            data_00540b20 = enabled;
+            pWarningC.warn_notinlined = enabled;
             break;
         case 21347:
-            data_00540b21 = enabled;
+            pWarningC.warn_structclass = enabled;
             break;
         case 19553:
             if (enabled != 0) {
@@ -54,10 +55,10 @@ int set_warning_option(short option, char enabled)
             data_00588528 = mode;
             break;
         case 22373:
-            data_00540b1d = enabled;
+            pWarningC.warningerrors = enabled;
             break;
         case 17264:
-            data_00540ad7 = enabled;
+            pFrontEndC.checkprotos = enabled;
             break;
         default:
             return 0;
@@ -68,33 +69,33 @@ int set_warning_option(short option, char enabled)
 void ToolHelpers_cc_PrintCLanguageWarningOptions(void *self)
 {
     HPrintF(self, "C language warning options:\n");
-    if (data_00540b16)
+    if (pWarningC.warn_illpragma)
         HPrintF(self, "\t- illegal pragmas\n");
-    if (data_00540b17)
+    if (pWarningC.warn_emptydecl)
         HPrintF(self, "\t- empty declarations\n");
-    if (data_00540b18)
+    if (pWarningC.warn_possunwant)
         HPrintF(self, "\t- possible unwanted effects\n");
-    if (data_00540b19)
+    if (pWarningC.warn_unusedvar)
         HPrintF(self, "\t- unused variables\n");
-    if (data_00540b1a)
+    if (pWarningC.warn_unusedarg)
         HPrintF(self, "\t- unused arguments\n");
-    if (data_00540b1b)
+    if (pWarningC.warn_extracomma)
         HPrintF(self, "\t- extra commas\n");
-    if (data_00540b1c)
+    if (pWarningC.pedantic)
         HPrintF(self, "\t- pedantic\n");
-    if (data_00540b1e)
+    if (pWarningC.warn_hidevirtual)
         HPrintF(self, "\t- hidden virtual functions\n");
-    if (data_00540b1f)
+    if (pWarningC.warn_implicitconv)
         HPrintF(self, "\t- implicit conversions\n");
-    if (data_00540b20)
+    if (pWarningC.warn_notinlined)
         HPrintF(self, "\t- 'inline' not performed\n");
-    if (data_00540b21)
+    if (pWarningC.warn_structclass)
         HPrintF(self, "\t- struct/class conflict\n");
     if (data_00588528 == 1)
         HPrintF(self, "\t- large args passed to unprototyped functions\n");
-    if (data_00540ad7)
+    if (pFrontEndC.checkprotos)
         HPrintF(self, "\t- checking prototypes\n");
-    if (data_00540b1d)
+    if (pWarningC.warningerrors)
         HPrintF(self, "\t- warnings are errors\n");
     else
         HPrintF(self, "\t- warnings are not errors\n");

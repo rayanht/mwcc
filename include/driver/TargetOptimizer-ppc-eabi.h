@@ -27,10 +27,7 @@ extern int __stdcall TargetOptimizer_ppc_eabi_GetMemBufferPtrAndSize(unsigned ch
                                                                      int *secondResult);
 extern unsigned int __stdcall TargetOptimizer_ppc_eabi_UnloadOperationRecord(struct OperationRecord *record);
 extern int TargetOptimizer_ppc_eabi_SetOption(short a0, char a1);
-extern char data_00537a60;
-extern char data_00537a63;
 extern unsigned int TargetOptimizer_ppc_eabi_ReportScheduling(struct StorageHandle *argument);
-extern short data_00537a68;
 
 #ifdef __cplusplus
 }

@@ -3,6 +3,7 @@
 
 #include "compiler/common.h"
 #include "driver/Memory.h"
+#include "driver/PrefPanels.h"
 #include "driver/MsDos.h"
 #include "driver/CLProj.h"
 
@@ -10,78 +11,6 @@
 extern "C" {
 #endif
 
-/* The command-line tool's preference panels ("CmdLine Panel", "CmdLine Environment", "CmdLine Compiler Panel",
- * "CmdLine Linker Panel"). */
-#pragma options align = mac68k
-struct PCmdLine {
-    UInt16 version;
-    SInt16 state;
-    SInt16 stages;
-    SInt16 toDisk;
-    SInt16 outNameOwner;
-    SInt8 dryRun;
-    unsigned char debugInfo;
-    short verbose;
-    char showLines;
-    SInt8 timeWorking;
-    char noWarnings;
-    char warningsAreErrors;
-    short maxErrors;
-    short maxWarnings;
-    short msgStyle;
-    SInt8 noWrapOutput;
-    char stderr2stdout;
-    char noCmdLineWarnings;
-};
-struct PCmdLineEnvir {
-    UInt16 version;
-    SInt16 cols;
-    short rows;
-    char underIDE;
-};
-struct PCmdLineCompiler {
-    UInt16 version;
-    char noSysPath;
-    char noFail;
-    SInt16 includeSearch;
-    char linkerName[64];
-    char objFileExt[15];
-    char browseFileExt[15];
-    char ppFileExt[15];
-    char disFileExt[15];
-    char depFileExt[15];
-    char pchFileExt[15];
-    SInt32 objFileCreator;
-    SInt32 objFileType;
-    int browseFileCreator;
-    int browseFileType;
-    UInt32 ppFileCreator;
-    UInt32 ppFileType;
-    UInt32 disFileCreator;
-    UInt32 disFileType;
-    UInt32 depFileCreator;
-    UInt32 depFileType;
-    UInt8 compileIgnored;
-    char relPathInOutputDir;
-    char browserEnabled;
-    char depsOnlyUserFiles;
-    char outMakefile[256];
-    UInt8 forcePrecompile;
-    char ignoreMissingFiles;
-    UInt8 printHeaderNames;
-    SInt8 sbmState;
-    char sbmPath[256];
-    Boolean canonicalIncludes;
-    Boolean keepObjects;
-};
-struct PCmdLineLinker {
-    UInt16 version;
-    SInt8 callPreLinker;
-    SInt8 callPostLinker;
-    SInt8 keepLinkerOutput;
-    SInt8 callLinker;
-};
-#pragma options align = reset
 extern PCmdLine optsCmdLine;
 extern PCmdLineEnvir optsEnvir;
 extern PCmdLineCompiler optsCompiler;

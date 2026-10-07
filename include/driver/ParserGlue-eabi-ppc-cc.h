@@ -2,6 +2,7 @@
 #define DRIVER_PARSERGLUE_EABI_PPC_CC_H
 
 #include "compiler/common.h"
+#include "driver/PrefPanels.h"
 #include "driver/Targets.h"
 
 #ifdef __cplusplus
@@ -14,24 +15,25 @@ struct Pragma {
     int flags;    /* 0x08: ParserHelpers_cc_EmitPragmas selects normal or reversed on/off settings */
 };
 extern unsigned int fn_00405670(void);
-extern UInt8 data_00537aa2;
-extern char data_00537d38;
 extern int fn_004056a0(void);
-extern signed short DAT_00537762;
 extern int fn_00405710(void);
-extern char data_0053776b;
-extern char data_00537a67;
-extern char data_00537a76;
-extern char data_00537a77;
-extern char data_00537b24;
-extern char data_00537d40;
-extern unsigned char data_00540add;
-extern char *data_00540b68;
 extern char output_path;
 extern struct PtrList data_005876fc[];
 extern struct StorageHandle *directive_storage;
 extern int fn_00405840(void);
-extern int data_00540bf8;
+extern PCmdLine pCmdLine;
+extern PCmdLineCompiler pCmdLineCompiler;
+extern PCmdLineLinker pCmdLineLinker;
+extern PBackEnd pBackEnd;
+extern PLinker pLinker;
+extern PDisassembler pDisassembler;
+extern PProject pProject;
+extern PCLTExtras pCLTExtras;
+extern char useDefaultIncludes;
+extern char useFullPaths;
+extern PFrontEndC pFrontEndC;
+extern PWarningC pWarningC;
+extern PGlobalOptimizer pGlobalOptimizer;
 
 #ifdef __cplusplus
 }

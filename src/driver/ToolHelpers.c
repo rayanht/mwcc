@@ -25,7 +25,7 @@
 
 static inline short *driverStatus(void)
 {
-    return &DAT_00537762;
+    return &pCmdLine.state;
 }
 
 static inline int *pendingCount(void)
@@ -40,12 +40,12 @@ static inline int *activeCount(void)
 
 static inline short *driverFlags(void)
 {
-    return &data_00537766;
+    return &pCmdLine.toDisk;
 }
 
 static inline short *driverOptions(void)
 {
-    return &data_00537764;
+    return &pCmdLine.stages;
 }
 
 static inline int shouldReportError(unsigned char reportError)
@@ -93,10 +93,10 @@ unsigned int fn_0040d012(unsigned int reportError)
 
 int fn_0040d0eb(void)
 {
-    if (data_0053776c > 0) {
-        data_0053776c++;
+    if (pCmdLine.verbose) {
+        pCmdLine.verbose++;
     } else {
-        data_0053776c = 2;
+        pCmdLine.verbose = 2;
     }
     fn_0040ba99(pluginPrivateContext);
     return 1;
@@ -127,30 +127,30 @@ int parse_stage_settings(int unused1, unsigned char *opt, int unused2, int flags
             switch (stage) {
                 case 'Cg':
                     if (enabled)
-                        data_00537764 |= 2;
+                        pCmdLine.stages |= 2;
                     else
-                        data_00537764 &= ~2;
+                        pCmdLine.stages &= ~2;
                     data_0054a0b8 = 1;
                     break;
                 case 'Ds':
                     if (enabled)
-                        data_00537764 |= 4;
+                        pCmdLine.stages |= 4;
                     else
-                        data_00537764 &= ~4;
+                        pCmdLine.stages &= ~4;
                     data_0054a0b8 = 3;
                     break;
                 case 'Pp':
                     if (enabled)
-                        data_00537764 |= 1;
+                        pCmdLine.stages |= 1;
                     else
-                        data_00537764 &= ~1;
+                        pCmdLine.stages &= ~1;
                     data_0054a0b8 = 2;
                     break;
                 case 'Dp':
                     if (enabled)
-                        data_00537764 |= 8;
+                        pCmdLine.stages |= 8;
                     else
-                        data_00537764 &= ~8;
+                        pCmdLine.stages &= ~8;
                     break;
                 default:
                     Targets_ForwardVarArgsAndLongjmp("Bad stage settings in %s (%c%c)\n", opt, cursor[0], cursor[1]);

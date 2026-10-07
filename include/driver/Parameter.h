@@ -23,12 +23,97 @@ struct ByteQuad {
     UInt8 bytes
         [4]; /* 0x00: set_file_code copies file-type bytes; is_mask_entry_unchanged loads the four destination bytes for its 32-bit comparison */
 };
+/* An option's parameter: its kind, how it is given, its name in help, and the parameter that follows it. */
+enum {
+    PARAMWHICH_None,
+    PARAMWHICH_FTypeCreator,
+    PARAMWHICH_FilePath,
+    PARAMWHICH_Number,
+    PARAMWHICH_String,
+    PARAMWHICH_Id,
+    PARAMWHICH_Sym,
+    PARAMWHICH_OnOff,
+    PARAMWHICH_OffOn,
+    PARAMWHICH_Mask,
+    PARAMWHICH_Toggle,
+    PARAMWHICH_Set,
+    PARAMWHICH_SetString,
+    PARAMWHICH_Generic,
+    PARAMWHICH_IfArg,
+    PARAMWHICH_Setting
+};
 #pragma pack(push, 1)
 struct PARAM_T {
     signed char which;
     char flags;
     char *myname;
     struct PARAM_T *next;
+};
+#pragma pack(pop)
+#pragma pack(push, 1)
+struct MASK_T {
+    signed char which;
+    char flags;
+    char *myname;
+    PARAM_T *next;
+    char size;
+    UInt32 ormask;
+    UInt32 andmask;
+    void *num;
+};
+struct SET_T {
+    signed char which;
+    char flags;
+    char *myname;
+    PARAM_T *next;
+    char size;
+    UInt32 value;
+    void *num;
+};
+struct NUM_T {
+    signed char which;
+    char flags;
+    char *myname;
+    PARAM_T *next;
+    char size;
+    char fit;
+    UInt32 lo;
+    UInt32 hi;
+    void *num;
+};
+struct ONOFF_T {
+    signed char which;
+    char flags;
+    char *myname;
+    PARAM_T *next;
+    void *var;
+};
+struct GENERIC_T {
+    signed char which;
+    char flags;
+    char *myname;
+    PARAM_T *next;
+    int (*parse)(const char *opt, void *var, const char *pstr, int flags);
+    void *var;
+    char *help;
+};
+struct IFARG_T {
+    signed char which;
+    char flags;
+    char *myname;
+    PARAM_T *next;
+    PARAM_T *parg;
+    char *helpa;
+    PARAM_T *pnone;
+    char *helpn;
+};
+struct SETTING_T {
+    signed char which;
+    char flags;
+    char *myname;
+    PARAM_T *next;
+    int (*parse)(const char *name, const char *value);
+    char *valuename;
 };
 #pragma pack(pop)
 #pragma pack(push, 1)
