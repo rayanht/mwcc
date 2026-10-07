@@ -43,21 +43,6 @@
 #include "compiler/Switch.h"
 
 static SInt32 lbl_00574168 = 8;
-void CTemplTool_PushInstance(TemplStack *entry, TypeClass *tmclass, Object *object)
-{
-    if (tmclass) {
-        entry->u.theclass = tmclass;
-        entry->is_func = 0;
-    } else {
-        entry->u.func = object;
-        entry->is_func = 1;
-    }
-    entry->next = ctempl_curinstance;
-    ctempl_curinstance = entry;
-    ctempl_instdepth += 1;
-    if (ctempl_instdepth >= 64)
-        CError_FatalError(ERR_TEMPLATE_TOO_COMPLEX_RECURSIVE);
-}
 
 static inline void emit12(Operand *o, unsigned int a, unsigned int b, unsigned int t)
 {

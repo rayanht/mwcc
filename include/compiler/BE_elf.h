@@ -98,13 +98,7 @@ extern struct ObjGenSection *data_005884da;
 extern struct ObjGenSection *data_005884de;
 extern struct ObjGenSection *data_005884e2;
 extern UInt16 data_005884ee;
-extern NameSpace *CScope_SetClassDefScope(TypeClass *theclass, CScopeSave *save);
-extern void CScope_SetClassScope(TypeClass *theclass, CScopeSave *saved);
-extern TypeClass *CScope_SetNameSpaceScope(NameSpace *scope, CScopeSave *save);
-extern void CScope_GetScope(CScopeSave *snapshot);
-extern void CScope_Cleanup(void);
 extern void BE_elf_SetRelocationValue(ObjGenRelocation *selection, unsigned int value);
-extern unsigned int CScope_Setup(void);
 extern ObjGenRelocation *BE_elf_AddRelocation(struct ObjGenSection *context, int offset, Object *object, void *source,
                                               int value, int adjustment);
 extern void *symbol_order_tail;

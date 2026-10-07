@@ -452,6 +452,63 @@ static inline int CScope_0049b0e0_inline1(NameSpace *v2, HashNameNode *a1)
     return 0;
 }
 
+void CScope_Setup(void)
+{
+    cscope_current = cscope_root = CScope_NewHashNameSpace(NULL);
+    cscope_currentclass = NULL;
+    cscope_currentfunc = NULL;
+    cscope_is_member_func = 0;
+}
+
+void CScope_Cleanup(void)
+{
+}
+
+void CScope_GetScope(CScopeSave *save)
+{
+    save->current = cscope_current;
+    save->currentclass = cscope_currentclass;
+    save->currentfunc = cscope_currentfunc;
+    save->is_member_func = cscope_is_member_func;
+}
+
+void CScope_SetNameSpaceScope(NameSpace *nspace, CScopeSave *save)
+{
+    save->current = cscope_current;
+    save->currentclass = cscope_currentclass;
+    save->currentfunc = cscope_currentfunc;
+    save->is_member_func = cscope_is_member_func;
+
+    cscope_current = nspace;
+    cscope_currentclass = nspace->theclass;
+    cscope_currentfunc = NULL;
+    cscope_is_member_func = 0;
+}
+
+void CScope_SetClassScope(TypeClass *cls, CScopeSave *save)
+{
+    save->current = cscope_current;
+    save->currentclass = cscope_currentclass;
+    save->currentfunc = cscope_currentfunc;
+    save->is_member_func = cscope_is_member_func;
+
+    cscope_current = cls->nspace;
+    cscope_currentclass = cls;
+    cscope_currentfunc = NULL;
+    cscope_is_member_func = 0;
+}
+
+void CScope_SetClassDefScope(TypeClass *cls, CScopeSave *save)
+{
+    save->current = cscope_current;
+    save->currentclass = cscope_currentclass;
+    save->currentfunc = cscope_currentfunc;
+    save->is_member_func = cscope_is_member_func;
+
+    cscope_current = cls->nspace;
+    cscope_currentclass = cls;
+}
+
 /* Enters FUNCTION's scope, saving the current one in SAVED. */
 void CScope_SetFunctionScope(Object *function, CScopeSave *saved)
 {

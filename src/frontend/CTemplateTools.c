@@ -1755,15 +1755,25 @@ Boolean CTemplTool_InitDeduceInfo(DeduceInfo *info, TemplParam *params, TemplArg
     return TRUE;
 }
 
-struct TemplStack *CTemplTool_PopInstance(struct TemplStack *entry)
+void CTemplTool_PopInstance(TemplStack *stack)
 {
-    struct TemplStack *next;
-    if (ctempl_curinstance != entry)
-        CError_FATAL(53);
-    next = entry->next;
-    ctempl_curinstance = next;
-    ctempl_instdepth -= 1U;
-    if (ctempl_instdepth < 0)
-        ctempl_instdepth = 0U;
-    return next;
+    CError_ASSERT(53, ctempl_curinstance == stack);
+    ctempl_curinstance = stack->next;
+    if (--ctempl_instdepth < 0)
+        ctempl_instdepth = 0;
+}
+
+void CTemplTool_PushInstance(TemplStack *stack, TypeClass *tmclass, Object *func)
+{
+    if (tmclass) {
+        stack->u.theclass = tmclass;
+        stack->is_func = 0;
+    } else {
+        stack->u.func = func;
+        stack->is_func = 1;
+    }
+    stack->next = ctempl_curinstance;
+    ctempl_curinstance = stack;
+    if (++ctempl_instdepth >= 64)
+        CError_FatalError(ERR_TEMPLATE_TOO_COMPLEX_RECURSIVE);
 }

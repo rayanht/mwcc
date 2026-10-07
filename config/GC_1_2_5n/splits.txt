@@ -681,12 +681,12 @@ src/frontend/CPrepTokenizer.c:
 	.bss        start:0x00580DD0 end:0x00580DD8
 
 src/frontend/CScope.c:
-	.text       start:0x00497000 end:0x0049B6A0
+	.text       start:0x00497000 end:0x0049B830
 	.data       start:0x0055E480 end:0x0055E524
 	.bss        start:0x00580DD8 end:0x00580DF0
 
 src/backend/BE_elf.c:
-	.text       start:0x0049B6A0 end:0x0049CE40
+	.text       start:0x0049B830 end:0x0049CE40
 	.data       start:0x0055E528 end:0x0055E594
 	.bss        start:0x00580DF0 end:0x00580F80
 
@@ -900,11 +900,11 @@ src/frontend/CTemplateFunc.c:
 	.bss        start:0x005824C8 end:0x005824D8
 
 src/frontend/CTemplateTools.c:
-	.text       start:0x005159A0 end:0x00518A60
+	.text       start:0x005159A0 end:0x00518AB0
 	.data       start:0x00573E28 end:0x00574168
 
 src/optimizer/FunctionCalls.c:
-	.text       start:0x00518A60 end:0x0051A270
+	.text       start:0x00518AB0 end:0x0051A270
 	.data       start:0x00574168 end:0x0057417C
 
 src/optimizer/StructMoves.c:

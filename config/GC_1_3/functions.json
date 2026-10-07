@@ -13111,19 +13111,19 @@
     "name": "CScope_SetClassDefScope",
     "address": "0x004da0a0",
     "size": 54,
-    "source": "src/backend/BE_elf.c"
+    "source": "src/frontend/CScope.c"
   },
   {
     "name": "CScope_SetClassScope",
     "address": "0x004da0e0",
     "size": 71,
-    "source": "src/backend/BE_elf.c"
+    "source": "src/frontend/CScope.c"
   },
   {
     "name": "CScope_SetNameSpaceScope",
     "address": "0x004da130",
     "size": 71,
-    "source": "src/backend/BE_elf.c"
+    "source": "src/frontend/CScope.c"
   },
   {
     "name": "fn_004da180",
@@ -20019,7 +20019,7 @@
     "name": "CTemplTool_PushInstance",
     "address": "0x00563890",
     "size": 74,
-    "source": "src/optimizer/FunctionCalls.c"
+    "source": "src/frontend/CTemplateTools.c"
   },
   {
     "name": "fn_005638e0",

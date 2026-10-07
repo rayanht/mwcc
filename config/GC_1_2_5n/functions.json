@@ -12672,37 +12672,37 @@
     "name": "CScope_SetClassDefScope",
     "address": "0x0049b6a0",
     "size": 54,
-    "source": "src/backend/BE_elf.c"
+    "source": "src/frontend/CScope.c"
   },
   {
     "name": "CScope_SetClassScope",
     "address": "0x0049b6e0",
     "size": 71,
-    "source": "src/backend/BE_elf.c"
+    "source": "src/frontend/CScope.c"
   },
   {
     "name": "CScope_SetNameSpaceScope",
     "address": "0x0049b730",
     "size": 71,
-    "source": "src/backend/BE_elf.c"
+    "source": "src/frontend/CScope.c"
   },
   {
     "name": "CScope_GetScope",
     "address": "0x0049b780",
     "size": 36,
-    "source": "src/backend/BE_elf.c"
+    "source": "src/frontend/CScope.c"
   },
   {
     "name": "CScope_Cleanup",
     "address": "0x0049b7b0",
     "size": 1,
-    "source": "src/backend/BE_elf.c"
+    "source": "src/frontend/CScope.c"
   },
   {
     "name": "CScope_Setup",
     "address": "0x0049b7c0",
     "size": 109,
-    "source": "src/backend/BE_elf.c"
+    "source": "src/frontend/CScope.c"
   },
   {
     "name": "BE_elf_SetRelocationValue",
@@ -19892,7 +19892,7 @@
     "name": "CTemplTool_PushInstance",
     "address": "0x00518a60",
     "size": 74,
-    "source": "src/optimizer/FunctionCalls.c"
+    "source": "src/frontend/CTemplateTools.c"
   },
   {
     "name": "FunctionCalls_GenerateCall",
