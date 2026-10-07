@@ -157,8 +157,6 @@ struct SerializedBucketEntry {
     struct SerializedBucketEntry *next;
     unsigned int offset;
 };
-struct SelectorMethod;
-struct SelectorMethod;
 extern void CPrec_LoadPrecompiledHeader(short file, UInt8 *buffer);
 extern void restore_macro_lists(void);
 extern void patch_buffered_token_locations(void);

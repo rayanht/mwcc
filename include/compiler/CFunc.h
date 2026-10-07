@@ -166,8 +166,6 @@ extern void parse_old_style_parameter_names(DeclInfo *scope);
 extern void fn_0047ca70(Type **pt);
 extern void CFunc_SetupLocalVarInfo(Object *object);
 extern unsigned char in_parameter_type_list;
-struct CLabel;
-struct Statement;
 extern FileOffsetInfo function_fileinfo;
 
 /* fn_0047cb60 allocates 0xe bytes with CompilerTools_AllocatePool for this saved-state list node. */

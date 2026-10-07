@@ -101,7 +101,6 @@ extern unsigned int fn_00419e90(DropinFileRecord *state);
 extern int setup_compile_file_request(DropinFileRecord *file);
 extern unsigned int execute_tool_with_output_path(DropinFileRecord *record, Plugin *arg1, unsigned int arg2);
 extern int disassemble_file(DropinFileRecord *request);
-struct DropinFileRecord;
 extern unsigned int (*data_0054bf48)(char *);
 
 #ifdef __cplusplus

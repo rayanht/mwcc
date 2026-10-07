@@ -137,7 +137,6 @@ extern struct Type *id_type;
 extern UInt8 data_00588507;
 extern struct NameSpace *cscope_root;
 extern CRec *data_00588064;
-struct CRec;
 
 #ifdef __cplusplus
 }

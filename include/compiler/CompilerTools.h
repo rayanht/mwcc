@@ -41,7 +41,6 @@ union UInt32ByteSwapStorage {
     UInt32 word;
     UInt8 bytes[4];
 };
-struct GList;
 extern void CompilerTools_ResetPool(void);
 extern void CompilerTools_ResetPoolAvail(void);
 extern void freelheap(void);

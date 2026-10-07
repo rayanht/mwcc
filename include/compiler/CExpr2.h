@@ -46,7 +46,6 @@ struct ConIterator {
     struct TypeClass *tclass;
 };
 #pragma pack(pop)
-struct ConIterator;
 #pragma pack(push, 2)
 struct ConversionIterator {
     CScopeObjectIterator objiter;
@@ -156,13 +155,6 @@ extern UInt8 data_0058852b;
 extern TypeIntegral stsignedlong;
 extern struct ENode *scandelete(char mode);
 struct Type;
-struct Object;
-struct Object;
-struct Object;
-struct Object;
-struct Object;
-struct Object;
-struct Object;
 struct Object;
 
 #ifdef __cplusplus

@@ -82,7 +82,6 @@ struct BigDeclInfo {
 };
 #pragma pack(pop)
 extern TypeIntegral stunsignedint;
-struct ClassLayout;
 extern UInt8 CDecl_ParseDeclarationAttributeFlags(void);
 extern TypeClass *CDecl_DefineClass(struct NameSpace *nspace, struct HashNameNode *name, struct TypeClass *type,
                                     short mode, char flag4, char flag5);

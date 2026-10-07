@@ -161,10 +161,6 @@ extern int CLPlugins_DispatchArgumentToPlugins(Plugin *node, SInt32 argument, SI
                                                SInt32 secondIdentifier);
 extern int CLPlugins_GetUniquePluginNames(Plugin *nameList, SInt32 *nameCount, char ***nameArray);
 extern short CLPlugins_CallEntry(Plugin *dispatch, CWPluginPrivateContext *argument);
-struct Plugin;
-struct Plugin;
-struct PluginDataCallbacks;
-struct PluginDirectoryList;
 
 #ifdef __cplusplus
 }

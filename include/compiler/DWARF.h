@@ -203,10 +203,6 @@ extern struct DwarfNode *current_block_node;
 extern struct GList *dwarf_lines;
 extern struct DwarfStateList *dwarf_state_list_tail;
 extern DwarfLocationOperand return_operand;
-struct DwarfFunctionState;
-struct DwarfFunctionState;
-struct DwarfFixup;
-struct DwarfFixup;
 
 #ifdef __cplusplus
 }

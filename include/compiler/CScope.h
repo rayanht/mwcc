@@ -123,7 +123,6 @@ extern void CScope_SetMethodScope(Object *cls, TypeClass *ns, unsigned char flag
 extern void CScope_SetFunctionScope(Object *function, CScopeSave *saved);
 extern UInt8 cscope_is_member_func;
 struct HashNameNode;
-struct HashNameNode;
 struct NameSpace;
 
 #ifdef __cplusplus

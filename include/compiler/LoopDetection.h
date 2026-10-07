@@ -67,7 +67,6 @@ extern void compute_dominators(void);
 extern void traverse_loops_postorder(register Loop *node);
 extern signed long data_005871a4;
 extern int gPCodeBlockCount;
-struct Loop;
 
 #ifdef __cplusplus
 }

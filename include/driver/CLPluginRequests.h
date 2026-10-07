@@ -53,7 +53,6 @@ extern Boolean CLPluginRequests_ParseCommandLine(Plugin *func, struct CLTarget *
 extern Boolean CLPluginRequests_SetupFileRequest(Plugin *job, DropinFileRecord *input, short flags);
 extern Boolean CLPluginRequests_UpdateTargetSettings(Plugin *record, UInt32 flags, struct TgtRec *snapshot);
 extern int fn_00417440(Plugin *obj, Boolean flag);
-struct TgtRec;
 
 #ifdef __cplusplus
 }

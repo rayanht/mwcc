@@ -51,7 +51,6 @@ extern void CObjCModern_ResetGlobals(void);
 extern ENode *CObjCModern_MakeDeallocMessage(TypeClass *type, ENode *object);
 extern HashEntry *CObjCModern_FindMessageArgumentHashEntry(struct MessageArgument *p);
 extern struct HashEntry **selector_hash;
-struct HashEntry;
 extern struct PrecTypeEntry *class_type_entries;
 extern SInt32 selector_reference_count;
 

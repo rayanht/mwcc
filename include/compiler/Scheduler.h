@@ -96,7 +96,6 @@ extern struct MachineInfo machine7400;
 extern struct MachineInfo machine601;
 extern struct MachineInfo machine821;
 extern int Scheduler_ReturnZero(PCodeInstruction *list, PCodeInstruction *ref, char c);
-struct CColoringNode;
 
 #ifdef __cplusplus
 }

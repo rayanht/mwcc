@@ -57,8 +57,6 @@ struct DivisionParameters {
     int addIndicator;
     int shift;
 };
-struct Operand;
-struct Operand;
 struct FunctionCallFrame {
     struct FunctionCallFrame *next;
     TypeFunc *functionType;
@@ -144,7 +142,6 @@ extern void get_dispatch_result(struct DeferredDispatch *dispatch, unsigned int 
                                 struct DispatchResult *output);
 extern void InstrSelection_EmitSwitchTables(Object *a0);
 extern struct ObjectList *switch_tables;
-struct PCodeLabel;
 struct PCodeLabel;
 extern TypeIntegral stunsignedlonglong;
 

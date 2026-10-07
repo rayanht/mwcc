@@ -222,7 +222,6 @@ struct _PROCESS_INFORMATION {
     DWORD dwProcessId;
     DWORD dwThreadId;
 };
-struct _PROCESS_INFORMATION;
 struct _TIME_ZONE_INFORMATION;
 __declspec(dllimport) BOOL __stdcall CloseHandle(HANDLE hObject);
 __declspec(dllimport) BOOL __stdcall CreateDirectoryA(LPCSTR lpPathName, LPSECURITY_ATTRIBUTES lpSecurityAttributes);

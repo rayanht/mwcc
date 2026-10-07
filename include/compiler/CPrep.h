@@ -477,9 +477,6 @@ extern unsigned int __stdcall CPrep_GetResultValues(CWPluginPrivateContext *hand
 extern unsigned int __stdcall CPrep_InvokeCompilerCallback(CWPluginPrivateContext *instance_id,
                                                            struct FileProcessingInfo *argument, const char *value);
 extern HashNameNode *fn_00441850(CPrepFileInfo *a0, SInt32 *a1);
-struct CPrepFileInfo;
-struct ObjectCallbackContext;
-struct ObjectCallbackContext;
 
 #ifdef __cplusplus
 }

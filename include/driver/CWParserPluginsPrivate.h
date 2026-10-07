@@ -73,8 +73,6 @@ extern int __stdcall CWParserPluginsPrivate_AddSegment(CWPluginPrivateContext *c
                                                        SInt32 *segmentNumber);
 extern int __stdcall CWParserPluginsPrivate_SetSegment(CWPluginPrivateContext *context, SInt32 segmentNumber,
                                                        char *name, short attributes);
-struct PanelEntry;
-struct IntegerSequenceResult;
 
 #ifdef __cplusplus
 }

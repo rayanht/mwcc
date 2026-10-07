@@ -98,8 +98,6 @@ extern void add_code_motion_search(Loop *block, SInt16 reg, SInt32 param3);
 extern PCodeInstruction *fn_005288e0(Loop *search, SInt16 reg);
 extern SInt32 check_strength_reduction_use(struct CMRegisterNode *info, SInt32 useIndex, SInt32 *value,
                                            SInt16 *operandIndex, SInt16 *otherOperandIndex, Loop **lastBlock);
-struct CMBody;
-struct CodeMotionRef;
 
 #ifdef __cplusplus
 }

@@ -184,7 +184,6 @@ extern SInt8 data_005884fa;
 extern UInt8 exception_cleanup_registered;
 extern TypeIntegral stchar;
 extern Type exception_temp_object_type;
-struct ExceptionAction;
 
 #ifdef __cplusplus
 }

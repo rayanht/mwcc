@@ -163,7 +163,6 @@ struct SerializedWideHeader {
     int index;
     int reserved;
 };
-struct InterruptGenerationRecord;
 extern void ObjGen_PPC_EABI_AddSectionAttribute(Object *a, UInt8 b);
 extern void create_main_file_object(void);
 extern InterruptGenerationRecord *ObjGen_PPC_EABI_GetInterruptInfo(Object *obj);
@@ -228,9 +227,6 @@ extern void fn_0048b500(void);
 extern void emit_dwarf_arguments_and_locals(void);
 extern void ObjGen_PPC_EABI_FinalizeOutputBuffers(void);
 extern void fn_0048b3f0(void);
-struct ObjGenRelocation;
-struct ObjGenRelocation;
-struct ObjGenSection;
 
 #ifdef __cplusplus
 }

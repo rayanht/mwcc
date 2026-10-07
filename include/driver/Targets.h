@@ -33,8 +33,6 @@ extern char argument_space_char;
 extern char data_00588519;
 extern char data_0058852c;
 extern char data_00588505;
-struct DispatchTable;
-struct DispatchObject;
 
 #ifdef __cplusplus
 }

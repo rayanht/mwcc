@@ -26,7 +26,6 @@ struct WeirdOperand {
 };
 #pragma options align = reset
 struct PCodeInstruction;
-struct PCodeInstruction;
 extern void expand_out_of_range_conditional_branches(void);
 extern UInt32 encode_assembly_instruction(PCodeInstruction *instr, UInt32 offset, WeirdOperand *wop);
 struct PCodeAssemblyEntry {
