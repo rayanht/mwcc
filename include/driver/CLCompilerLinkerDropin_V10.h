@@ -46,31 +46,29 @@ struct InitializationAuxiliaryState {
     UInt8 opaqueSuffix[0x136 - 0xe0];
 };
 #pragma pack(pop)
-extern int __stdcall cache_precompiled_header(unsigned int context, short *callback, int argument);
-extern unsigned int __stdcall call_primary_reference_callback(unsigned int argument, unsigned int key, void *extra);
-extern int __stdcall store_object_data(int compiler, int dropinId, DropinConfiguration *configuration);
-extern unsigned int __stdcall report_begin_sub_compile_not_implemented(unsigned int argument0, unsigned int argument1,
-                                                                       unsigned int argument2);
-extern unsigned int __stdcall report_end_sub_compile_not_implemented(unsigned int unused);
-extern int __stdcall get_precompiled_header_spec(DropinRequest *request, int output, const char *path);
-extern unsigned int __stdcall fn_004262a0(unsigned int unused1, unsigned int unused2);
-extern unsigned int __stdcall report_unimplemented_resource_file_put(unsigned int a0, unsigned int a1, unsigned int a2,
-                                                                     unsigned int a3);
-extern int __stdcall lookup_precompiled_unit(struct DropinRequest *request, char *inputName, char mode,
-                                             void **outputObject, struct DropinResultSlot *outputValue);
-extern unsigned int __stdcall log_callback(unsigned int unused1, unsigned int unused2);
-extern int __stdcall store_precompiled_unit(void *obj, char *filename, int arg3, int arg4);
-extern unsigned int __stdcall free_allocation(unsigned int unused, unsigned int value);
-extern int __stdcall report_alert(DropinContext *context, const char *text, short code);
-extern int __stdcall report_os_error_message(struct DropinRequest *request, const char *message, short code);
-extern unsigned int __stdcall get_object_file_spec(unsigned int unused, unsigned int key, unsigned int output);
-extern unsigned int __stdcall fn_00426da0(unsigned int unused, NameSpaceName *name, unsigned int unused2);
-extern int __stdcall fn_00425ef0(unsigned int a0, unsigned int a1);
-extern unsigned int __stdcall get_file_output_path(unsigned int a0, unsigned int a1, unsigned int a2);
-extern unsigned int __stdcall copy_name_with_p_extension(unsigned int unused, const char *name, char *output);
+extern int __stdcall UCBCachePrecompiledHeader(unsigned int context, short *callback, int argument);
+extern unsigned int __stdcall UCBLoadObjectData(unsigned int argument, unsigned int key, void *extra);
+extern int __stdcall UCBStoreObjectData(int compiler, int dropinId, DropinConfiguration *configuration);
+extern unsigned int __stdcall UCBBeginSubCompile(unsigned int argument0, unsigned int argument1,
+                                                 unsigned int argument2);
+extern unsigned int __stdcall UCBEndSubCompile(unsigned int unused);
+extern int __stdcall UCBGetPrecompiledHeaderSpec(DropinRequest *request, int output, const char *path);
+extern unsigned int __stdcall UCBGetResourceFile(unsigned int unused1, unsigned int unused2);
+extern unsigned int __stdcall UCBPutResourceFile(unsigned int a0, unsigned int a1, unsigned int a2, unsigned int a3);
+extern int __stdcall UCBLookUpUnit(struct DropinRequest *request, char *inputName, char mode, void **outputObject,
+                                   struct DropinResultSlot *outputValue);
+extern unsigned int __stdcall UCBSBMfiles(unsigned int unused1, unsigned int unused2);
+extern int __stdcall UCBStoreUnit(void *obj, char *filename, int arg3, int arg4);
+extern unsigned int __stdcall UCBReleaseUnit(unsigned int unused, unsigned int value);
+extern int __stdcall UCBOSAlert(DropinContext *context, const char *text, short code);
+extern int __stdcall UCBOSErrorMessage(struct DropinRequest *request, const char *message, short code);
+extern unsigned int __stdcall UCBGetStoredObjectFileSpec(unsigned int unused, unsigned int key, unsigned int output);
+extern unsigned int __stdcall UCBGetModifiedFiles(unsigned int unused, NameSpaceName *name, unsigned int unused2);
+extern int __stdcall UCBDisplayLines(unsigned int a0, unsigned int a1);
+extern unsigned int __stdcall UCBGetSuggestedObjectFileSpec(unsigned int a0, unsigned int a1, unsigned int a2);
+extern unsigned int __stdcall UCBUnitNameToFileName(unsigned int unused, const char *name, char *output);
 extern unsigned int fn_00426320(OSSpec *destination, DropinFileRecord *record);
-extern unsigned int __stdcall clear_primary_reference_value(unsigned int unused0, unsigned int recordKey,
-                                                            unsigned int unused2);
+extern unsigned int __stdcall UCBFreeObjectData(unsigned int unused0, unsigned int recordKey, unsigned int unused2);
 
 #ifdef __cplusplus
 }

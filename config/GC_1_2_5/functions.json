@@ -5214,7 +5214,7 @@
     "source": "src/driver/CLOverlays.c"
   },
   {
-    "name": "get_file_info",
+    "name": "UCBGetFileInfo",
     "address": "0x00423540",
     "size": 473,
     "source": "src/driver/CLDropinCallbacks_V10.cpp"
@@ -5238,223 +5238,223 @@
     "source": "src/driver/CLDropinCallbacks_V10.cpp"
   },
   {
-    "name": "CLDropinCallbacks_V10_FindAndLoadFile",
+    "name": "UCBFindAndLoadFile",
     "address": "0x00423a50",
     "size": 640,
     "source": "src/driver/CLDropinCallbacks_V10.cpp"
   },
   {
-    "name": "CLDropinCallbacks_V10_GetFileText",
+    "name": "UCBGetFileText",
     "address": "0x00423cd0",
     "size": 363,
     "source": "src/driver/CLDropinCallbacks_V10.cpp"
   },
   {
-    "name": "CLDropinCallbacks_V10_FreeMemory",
+    "name": "UCBReleaseFileText",
     "address": "0x00423e40",
     "size": 61,
     "source": "src/driver/CLDropinCallbacks_V10.cpp"
   },
   {
-    "name": "lookup_callback_record",
+    "name": "UCBGetSegmentInfo",
     "address": "0x00423e80",
     "size": 120,
     "source": "src/driver/CLDropinCallbacks_V10.cpp"
   },
   {
-    "name": "get_overlay_group_info",
+    "name": "UCBGetOverlay1GroupInfo",
     "address": "0x00423f00",
     "size": 154,
     "source": "src/driver/CLDropinCallbacks_V10.cpp"
   },
   {
-    "name": "call_overlays_and_translate_status",
+    "name": "UCBGetOverlay1FileInfo",
     "address": "0x00423fa0",
     "size": 107,
     "source": "src/driver/CLDropinCallbacks_V10.cpp"
   },
   {
-    "name": "lookup_overlay_allocation",
+    "name": "UCBGetOverlay1Info",
     "address": "0x00424010",
     "size": 128,
     "source": "src/driver/CLDropinCallbacks_V10.cpp"
   },
   {
-    "name": "report_message",
+    "name": "UCBReportMessage",
     "address": "0x00424090",
     "size": 641,
     "source": "src/driver/CLDropinCallbacks_V10.cpp"
   },
   {
-    "name": "emit_alert_messages",
+    "name": "UCBAlert",
     "address": "0x00424320",
     "size": 328,
     "source": "src/driver/CLDropinCallbacks_V10.cpp"
   },
   {
-    "name": "report_message_detail",
+    "name": "UCBShowStatus",
     "address": "0x00424470",
     "size": 207,
     "source": "src/driver/CLDropinCallbacks_V10.cpp"
   },
   {
-    "name": "fn_00424540",
+    "name": "UCBUserBreak",
     "address": "0x00424540",
     "size": 57,
     "source": "src/driver/CLDropinCallbacks_V10.cpp"
   },
   {
-    "name": "copy_named_destination_to_temporary",
+    "name": "UCBGetNamedPreferences",
     "address": "0x00424580",
     "size": 159,
     "source": "src/driver/CLDropinCallbacks_V10.cpp"
   },
   {
-    "name": "report_store_plugin_data_not_implemented",
+    "name": "UCBStorePluginData",
     "address": "0x00424620",
     "size": 58,
     "source": "src/driver/CLDropinCallbacks_V10.cpp"
   },
   {
-    "name": "fn_00424660",
+    "name": "UCBGetPluginData",
     "address": "0x00424660",
     "size": 58,
     "source": "src/driver/CLDropinCallbacks_V10.cpp"
   },
   {
-    "name": "set_mod_date",
+    "name": "UCBSetModDate",
     "address": "0x004246a0",
     "size": 279,
     "source": "src/driver/CLDropinCallbacks_V10.cpp"
   },
   {
-    "name": "add_project_entry",
+    "name": "UCBAddProjectEntry",
     "address": "0x004247c0",
     "size": 1873,
     "source": "src/driver/CLDropinCallbacks_V10.cpp"
   },
   {
-    "name": "create_new_text_document",
+    "name": "UCBCreateNewTextDocument",
     "address": "0x00424f20",
     "size": 745,
     "source": "src/driver/CLDropinCallbacks_V10.cpp"
   },
   {
-    "name": "allocate_memory",
+    "name": "UCBAllocateMemory",
     "address": "0x00425210",
     "size": 73,
     "source": "src/driver/CLDropinCallbacks_V10.cpp"
   },
   {
-    "name": "free_callback_argument",
+    "name": "UCBFreeMemory",
     "address": "0x00425260",
     "size": 58,
     "source": "src/driver/CLDropinCallbacks_V10.cpp"
   },
   {
-    "name": "fn_004252a0",
+    "name": "UCBAllocMemHandle",
     "address": "0x004252a0",
     "size": 71,
     "source": "src/driver/CLDropinCallbacks_V10.cpp"
   },
   {
-    "name": "fn_004252f0",
+    "name": "UCBFreeMemHandle",
     "address": "0x004252f0",
     "size": 68,
     "source": "src/driver/CLDropinCallbacks_V10.cpp"
   },
   {
-    "name": "fn_00425340",
+    "name": "UCBGetMemHandleSize",
     "address": "0x00425340",
     "size": 76,
     "source": "src/driver/CLDropinCallbacks_V10.cpp"
   },
   {
-    "name": "resize_mem_handle",
+    "name": "UCBResizeMemHandle",
     "address": "0x00425390",
     "size": 94,
     "source": "src/driver/CLDropinCallbacks_V10.cpp"
   },
   {
-    "name": "get_storage_handle_data",
+    "name": "UCBLockMemHandle",
     "address": "0x004253f0",
     "size": 54,
     "source": "src/driver/CLDropinCallbacks_V10.cpp"
   },
   {
-    "name": "fn_00425430",
+    "name": "UCBUnlockMemHandle",
     "address": "0x00425430",
     "size": 42,
     "source": "src/driver/CLDropinCallbacks_V10.cpp"
   },
   {
-    "name": "copy_command_line_target",
+    "name": "UCBGetTargetName",
     "address": "0x00425460",
     "size": 56,
     "source": "src/driver/CLDropinCallbacks_V10.cpp"
   },
   {
-    "name": "log_callback_string",
+    "name": "UCBPreDialog",
     "address": "0x004254a0",
     "size": 32,
     "source": "src/driver/CLDropinCallbacks_V10.cpp"
   },
   {
-    "name": "log_callback_above_threshold",
+    "name": "UCBPostDialog",
     "address": "0x004254c0",
     "size": 32,
     "source": "src/driver/CLDropinCallbacks_V10.cpp"
   },
   {
-    "name": "fn_004254e0",
+    "name": "UCBPreFileAction",
     "address": "0x004254e0",
     "size": 58,
     "source": "src/driver/CLDropinCallbacks_V10.cpp"
   },
   {
-    "name": "fn_00425520",
+    "name": "UCBPostFileAction",
     "address": "0x00425520",
     "size": 58,
     "source": "src/driver/CLDropinCallbacks_V10.cpp"
   },
   {
-    "name": "cache_access_path_list",
+    "name": "UCBCacheAccessPathList",
     "address": "0x00425560",
     "size": 697,
     "source": "src/driver/CLDropinCallbacks_V10.cpp"
   },
   {
-    "name": "CLDropinCallbacks_V10_StoreValue",
+    "name": "UCBSecretAttachHandle",
     "address": "0x00425820",
     "size": 42,
     "source": "src/driver/CLDropinCallbacks_V10.cpp"
   },
   {
-    "name": "CLDropinCallbacks_V10_SetStorageHandle",
+    "name": "UCBSecretDetachHandle",
     "address": "0x00425850",
     "size": 73,
     "source": "src/driver/CLDropinCallbacks_V10.cpp"
   },
   {
-    "name": "copy_value_to_result",
+    "name": "UCBSecretPeekHandle",
     "address": "0x004258a0",
     "size": 73,
     "source": "src/driver/CLDropinCallbacks_V10.cpp"
   },
   {
-    "name": "request_license",
+    "name": "UCBCheckoutLicense",
     "address": "0x004258f0",
     "size": 207,
     "source": "src/driver/CLDropinCallbacks_V10.cpp"
   },
   {
-    "name": "forward_nonzero_value",
+    "name": "UCBCheckinLicense",
     "address": "0x004259c0",
     "size": 49,
     "source": "src/driver/CLDropinCallbacks_V10.cpp"
   },
   {
-    "name": "fn_00425a00",
+    "name": "UCBResolveRelativePath",
     "address": "0x00425a00",
     "size": 31,
     "source": "src/driver/CLDropinCallbacks_V10.cpp"
@@ -5490,61 +5490,61 @@
     "source": "src/runtime/newop.cpp"
   },
   {
-    "name": "cache_precompiled_header",
+    "name": "UCBCachePrecompiledHeader",
     "address": "0x00425b70",
     "size": 106,
     "source": "src/driver/CLCompilerLinkerDropin_V10.cpp"
   },
   {
-    "name": "call_primary_reference_callback",
+    "name": "UCBLoadObjectData",
     "address": "0x00425be0",
     "size": 104,
     "source": "src/driver/CLCompilerLinkerDropin_V10.cpp"
   },
   {
-    "name": "store_object_data",
+    "name": "UCBStoreObjectData",
     "address": "0x00425c50",
     "size": 552,
     "source": "src/driver/CLCompilerLinkerDropin_V10.cpp"
   },
   {
-    "name": "clear_primary_reference_value",
+    "name": "UCBFreeObjectData",
     "address": "0x00425e80",
     "size": 107,
     "source": "src/driver/CLCompilerLinkerDropin_V10.cpp"
   },
   {
-    "name": "fn_00425ef0",
+    "name": "UCBDisplayLines",
     "address": "0x00425ef0",
     "size": 57,
     "source": "src/driver/CLCompilerLinkerDropin_V10.cpp"
   },
   {
-    "name": "report_begin_sub_compile_not_implemented",
+    "name": "UCBBeginSubCompile",
     "address": "0x00425f30",
     "size": 58,
     "source": "src/driver/CLCompilerLinkerDropin_V10.cpp"
   },
   {
-    "name": "report_end_sub_compile_not_implemented",
+    "name": "UCBEndSubCompile",
     "address": "0x00425f70",
     "size": 58,
     "source": "src/driver/CLCompilerLinkerDropin_V10.cpp"
   },
   {
-    "name": "get_precompiled_header_spec",
+    "name": "UCBGetPrecompiledHeaderSpec",
     "address": "0x00425fb0",
     "size": 739,
     "source": "src/driver/CLCompilerLinkerDropin_V10.cpp"
   },
   {
-    "name": "fn_004262a0",
+    "name": "UCBGetResourceFile",
     "address": "0x004262a0",
     "size": 58,
     "source": "src/driver/CLCompilerLinkerDropin_V10.cpp"
   },
   {
-    "name": "report_unimplemented_resource_file_put",
+    "name": "UCBPutResourceFile",
     "address": "0x004262e0",
     "size": 58,
     "source": "src/driver/CLCompilerLinkerDropin_V10.cpp"
@@ -5556,61 +5556,61 @@
     "source": "src/driver/CLCompilerLinkerDropin_V10.cpp"
   },
   {
-    "name": "lookup_precompiled_unit",
+    "name": "UCBLookUpUnit",
     "address": "0x00426370",
     "size": 1355,
     "source": "src/driver/CLCompilerLinkerDropin_V10.cpp"
   },
   {
-    "name": "log_callback",
+    "name": "UCBSBMfiles",
     "address": "0x004268c0",
     "size": 32,
     "source": "src/driver/CLCompilerLinkerDropin_V10.cpp"
   },
   {
-    "name": "store_precompiled_unit",
+    "name": "UCBStoreUnit",
     "address": "0x004268e0",
     "size": 687,
     "source": "src/driver/CLCompilerLinkerDropin_V10.cpp"
   },
   {
-    "name": "free_allocation",
+    "name": "UCBReleaseUnit",
     "address": "0x00426b90",
     "size": 61,
     "source": "src/driver/CLCompilerLinkerDropin_V10.cpp"
   },
   {
-    "name": "copy_name_with_p_extension",
+    "name": "UCBUnitNameToFileName",
     "address": "0x00426bd0",
     "size": 108,
     "source": "src/driver/CLCompilerLinkerDropin_V10.cpp"
   },
   {
-    "name": "report_alert",
+    "name": "UCBOSAlert",
     "address": "0x00426c40",
     "size": 154,
     "source": "src/driver/CLCompilerLinkerDropin_V10.cpp"
   },
   {
-    "name": "report_os_error_message",
+    "name": "UCBOSErrorMessage",
     "address": "0x00426ce0",
     "size": 183,
     "source": "src/driver/CLCompilerLinkerDropin_V10.cpp"
   },
   {
-    "name": "fn_00426da0",
+    "name": "UCBGetModifiedFiles",
     "address": "0x00426da0",
     "size": 67,
     "source": "src/driver/CLCompilerLinkerDropin_V10.cpp"
   },
   {
-    "name": "get_file_output_path",
+    "name": "UCBGetSuggestedObjectFileSpec",
     "address": "0x00426df0",
     "size": 119,
     "source": "src/driver/CLCompilerLinkerDropin_V10.cpp"
   },
   {
-    "name": "get_object_file_spec",
+    "name": "UCBGetStoredObjectFileSpec",
     "address": "0x00426e70",
     "size": 133,
     "source": "src/driver/CLCompilerLinkerDropin_V10.cpp"

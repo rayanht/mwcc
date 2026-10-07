@@ -171,8 +171,7 @@ Boolean CLPluginRequests_SetupFileRequest(Plugin *job, DropinFileRecord *input, 
     ctx = job->object;
     *ctx->targetSettings = *default_target->settings;
     OS_OSSpec_To_FSSpec(&input->inputPath, &ctx->contextData.payload);
-    if (CLDropinCallbacks_V10_GetFileText(ctx, &ctx->contextData.payload, &ctx->callbackValue, &ctx->callbackFlags,
-                                          &result))
+    if (UCBGetFileText(ctx, &ctx->contextData.payload, &ctx->callbackValue, &ctx->callbackFlags, &result))
         return 0;
     ctx->requestData.fileIndex = input->listEntry.index;
     ctx->setting = optsCmdLine.debugInfo;

@@ -57,7 +57,7 @@ static inline void SetFileDependencyCode(struct ExportedRecord *fileInfo, short 
     fileInfo->code = dependencyCode;
 }
 
-int __stdcall get_file_info(int unused, int key, int unusedFlags, struct ExportedRecord *result)
+int __stdcall UCBGetFileInfo(int unused, int key, int unusedFlags, struct ExportedRecord *result)
 {
     union TimestampRecord {
         struct StoredRecord record;
@@ -234,8 +234,7 @@ Boolean insert_dependency_from_path(DropinRequest *descriptor, char *argument, D
     return 0;
 }
 
-SInt32 __stdcall CLDropinCallbacks_V10_FindAndLoadFile(DropinRequest *dropin, char *inputPath,
-                                                       DropinFileCallback *parameters)
+SInt32 __stdcall UCBFindAndLoadFile(DropinRequest *dropin, char *inputPath, DropinFileCallback *parameters)
 {
     OSSpec callbackPath;
     Boolean handled;
@@ -287,8 +286,8 @@ SInt32 __stdcall CLDropinCallbacks_V10_FindAndLoadFile(DropinRequest *dropin, ch
 
     if (handled == 0) {
         if (parameters->suppressFileReferenceLookup == 0)
-            return CLDropinCallbacks_V10_GetFileText(dropin, &parameters->output, (void **)&parameters->fileReference,
-                                                     &parameters->referenceValue, &parameters->referenceKind);
+            return UCBGetFileText(dropin, &parameters->output, (void **)&parameters->fileReference,
+                                  &parameters->referenceValue, &parameters->referenceKind);
         parameters->fileReference = 0;
         parameters->referenceValue = 0;
         parameters->referenceKind = 0;
@@ -297,8 +296,7 @@ SInt32 __stdcall CLDropinCallbacks_V10_FindAndLoadFile(DropinRequest *dropin, ch
     return 0;
 }
 
-int __stdcall CLDropinCallbacks_V10_GetFileText(void *context, CWFileSpec *file, void **result1, unsigned int *result2,
-                                                SInt16 *status)
+int __stdcall UCBGetFileText(void *context, CWFileSpec *file, void **result1, unsigned int *result2, SInt16 *status)
 {
     StorageHandle *object = 0;
     UInt8 flag;
@@ -356,10 +354,10 @@ static inline void CLDropinCallbacks_V10_00425560_run1(CallbackPathEntry *p0, st
 
 static inline void SetCallbackStorageHandle(DropinRequest *request, StorageHandle *data, StorageHandle **storage)
 {
-    CLDropinCallbacks_V10_SetStorageHandle((unsigned int)request, (unsigned int)data, storage);
+    UCBSecretDetachHandle((unsigned int)request, (unsigned int)data, storage);
 }
 
-unsigned int __stdcall CLDropinCallbacks_V10_FreeMemory(struct DropinRequest *request, void *memory)
+unsigned int __stdcall UCBReleaseFileText(struct DropinRequest *request, void *memory)
 {
     unsigned int result = 0U;
     if (optsCmdLine.verbose > 3)
@@ -371,7 +369,7 @@ unsigned int __stdcall CLDropinCallbacks_V10_FreeMemory(struct DropinRequest *re
     return (short)result;
 }
 
-unsigned int __stdcall lookup_callback_record(unsigned int unused, unsigned int key, CallbackRecord *record)
+unsigned int __stdcall UCBGetSegmentInfo(unsigned int unused, unsigned int key, CallbackRecord *record)
 {
     struct PayloadWithValue *found;
     if (optsCmdLine.verbose > 3)
@@ -389,7 +387,7 @@ unsigned int __stdcall lookup_callback_record(unsigned int unused, unsigned int 
     return 0U;
 }
 
-unsigned int __stdcall get_overlay_group_info(unsigned int callback, int index, struct CallbackOverlayRecord *record)
+unsigned int __stdcall UCBGetOverlay1GroupInfo(unsigned int callback, int index, struct CallbackOverlayRecord *record)
 {
     struct CLOverlayEntry *entry;
     unsigned int result;
@@ -412,9 +410,9 @@ unsigned int __stdcall get_overlay_group_info(unsigned int callback, int index, 
     return 3;
 }
 
-unsigned int __stdcall call_overlays_and_translate_status(unsigned int callbackContext, unsigned int groupIndex,
-                                                          unsigned int allocationIndex, unsigned int valueIndex,
-                                                          unsigned int *result)
+unsigned int __stdcall UCBGetOverlay1FileInfo(unsigned int callbackContext, unsigned int groupIndex,
+                                              unsigned int allocationIndex, unsigned int valueIndex,
+                                              unsigned int *result)
 {
     int allocationValue;
 
@@ -431,8 +429,8 @@ unsigned int __stdcall call_overlays_and_translate_status(unsigned int callbackC
     return 3;
 }
 
-unsigned int __stdcall lookup_overlay_allocation(unsigned int unused, unsigned int groupIndex,
-                                                 unsigned int allocationIndex, struct DropinResultStorage *result)
+unsigned int __stdcall UCBGetOverlay1Info(unsigned int unused, unsigned int groupIndex, unsigned int allocationIndex,
+                                          struct DropinResultStorage *result)
 {
     struct OverlayAllocation *allocation;
     if (optsCmdLine.verbose > 3)
@@ -448,8 +446,8 @@ unsigned int __stdcall lookup_overlay_allocation(unsigned int unused, unsigned i
     return 3U;
 }
 
-int __stdcall report_message(struct DiagnosticContext *context, struct DiagnosticLocation *location, char *message,
-                             char *detail, short kind, int argument)
+int __stdcall UCBReportMessage(struct DiagnosticContext *context, struct DiagnosticLocation *location, char *message,
+                               char *detail, short kind, int argument)
 {
     int messageHasNewline;
     char lastMessageChar;
@@ -520,7 +518,7 @@ int __stdcall report_message(struct DiagnosticContext *context, struct Diagnosti
     return 0;
 }
 
-int __stdcall emit_alert_messages(DropinContext *ctx, char *message1, char *message2, char *message3, char *message4)
+int __stdcall UCBAlert(DropinContext *ctx, char *message1, char *message2, char *message3, char *message4)
 {
     if (optsCmdLine.verbose > 4)
         CLIO_FormatAndDispatchText("Callback: %s\n", "UCBAlert");
@@ -540,7 +538,7 @@ int __stdcall emit_alert_messages(DropinContext *ctx, char *message1, char *mess
     return 0;
 }
 
-unsigned int __stdcall report_message_detail(CWPluginPrivateContext *callback, char *message, char *detail)
+unsigned int __stdcall UCBShowStatus(CWPluginPrivateContext *callback, char *message, char *detail)
 {
     {
         short verbosity = optsCmdLine.verbose;
@@ -569,7 +567,7 @@ unsigned int __stdcall report_message_detail(CWPluginPrivateContext *callback, c
     return 0;
 }
 
-unsigned int __stdcall fn_00424540(unsigned int argument)
+unsigned int __stdcall UCBUserBreak(unsigned int argument)
 {
     if (optsCmdLine.verbose > 4) {
         CLIO_FormatAndDispatchText("Callback: %s\n", (unsigned char *)"UCBUserBreak");
@@ -581,7 +579,7 @@ unsigned int __stdcall fn_00424540(unsigned int argument)
     return 0;
 }
 
-unsigned int __stdcall copy_named_destination_to_temporary(unsigned int context, char *name, unsigned int *result)
+unsigned int __stdcall UCBGetNamedPreferences(unsigned int context, char *name, unsigned int *result)
 {
     unsigned int local;
     NameTableEntry *handle;
@@ -591,9 +589,9 @@ unsigned int __stdcall copy_named_destination_to_temporary(unsigned int context,
     if (handle != 0) {
         if (optsCmdLine.verbose > 2)
             CLErrors_ForwardMessage(0x53U, name);
-        CLDropinCallbacks_V10_SetStorageHandle(context, *result, &local);
+        UCBSecretDetachHandle(context, *result, &local);
         local = (unsigned int)CLPrefs_CopyDestinationToTemporary(handle);
-        CLDropinCallbacks_V10_StoreValue(context, local, result);
+        UCBSecretAttachHandle(context, local, result);
         return 0U;
     }
     CLErrors_EmitDiagnostic(0x5bU, name);
@@ -601,8 +599,8 @@ unsigned int __stdcall copy_named_destination_to_temporary(unsigned int context,
     return 2U;
 }
 
-unsigned int __stdcall report_store_plugin_data_not_implemented(unsigned int pluginContext, unsigned int dataKey,
-                                                                unsigned int pluginData, unsigned int dataSize)
+unsigned int __stdcall UCBStorePluginData(unsigned int pluginContext, unsigned int dataKey, unsigned int pluginData,
+                                          unsigned int dataSize)
 {
     if (optsCmdLine.verbose > 3)
         CLIO_FormatAndDispatchText("Callback: %s\n", (unsigned char *)"UCBStorePluginData");
@@ -610,7 +608,7 @@ unsigned int __stdcall report_store_plugin_data_not_implemented(unsigned int plu
     return 2U;
 }
 
-unsigned int __stdcall fn_00424660(unsigned int context, unsigned int plugin, unsigned int data, unsigned int size)
+unsigned int __stdcall UCBGetPluginData(unsigned int context, unsigned int plugin, unsigned int data, unsigned int size)
 {
     if (optsCmdLine.verbose > 3) {
         CLIO_FormatAndDispatchText("Callback: %s\n", (unsigned char *)"UCBGetPluginData");
@@ -628,7 +626,7 @@ unsigned int __stdcall fn_00424660(unsigned int context, unsigned int plugin, un
 /* stdcall, 2 args */
 /* stdcall, 3 args */
 
-int __stdcall set_mod_date(int callbackContext, char *name, SInt32 *modificationDate, int reserved)
+int __stdcall UCBSetModDate(int callbackContext, char *name, SInt32 *modificationDate, int reserved)
 {
     SInt32 macTime;
     OSSpec fileSpec;
@@ -661,8 +659,8 @@ int __stdcall set_mod_date(int callbackContext, char *name, SInt32 *modification
     return 2;
 }
 
-__stdcall SInt32 add_project_entry(DropinRequest *context, CWFileSpec *file, UInt8 ignored, FileOpenOptions *args,
-                                   UInt32 *objectId)
+__stdcall SInt32 UCBAddProjectEntry(DropinRequest *context, CWFileSpec *file, UInt8 ignored, FileOpenOptions *args,
+                                    UInt32 *objectId)
 {
     DropinFileRecord *fileRecord;
     char *extensionStart;
@@ -846,7 +844,7 @@ __stdcall SInt32 add_project_entry(DropinRequest *context, CWFileSpec *file, UIn
     return 0;
 }
 
-int __stdcall create_new_text_document(DropinRequest *request, DropinCallbackData *document)
+int __stdcall UCBCreateNewTextDocument(DropinRequest *request, DropinCallbackData *document)
 {
     DropinFileRecord *file;
     ChainRecord *entry;
@@ -907,7 +905,7 @@ int __stdcall create_new_text_document(DropinRequest *request, DropinCallbackDat
             options.flag1 = options.flag2 = options.flag3 = 0;
             c2pstrcpy(pascalName, document->name);
             Files_MakeFileSpecFromPath(0, 0, pascalName, &fileSpec);
-            result = add_project_entry(request, &fileSpec, 1, &options, &status);
+            result = UCBAddProjectEntry(request, &fileSpec, 1, &options, &status);
             return result;
         }
         resourceSize = Memory_GetHandleSize(resourceStorage);
@@ -920,8 +918,8 @@ int __stdcall create_new_text_document(DropinRequest *request, DropinCallbackDat
     return 4;
 }
 
-unsigned int __stdcall allocate_memory(unsigned int unused0, unsigned int value, unsigned int unused2,
-                                       unsigned int *result)
+unsigned int __stdcall UCBAllocateMemory(unsigned int unused0, unsigned int value, unsigned int unused2,
+                                         unsigned int *result)
 {
     unsigned int status;
     if (optsCmdLine.verbose > 3)
@@ -934,7 +932,7 @@ unsigned int __stdcall allocate_memory(unsigned int unused0, unsigned int value,
     return (unsigned short)status;
 }
 
-unsigned int __stdcall free_callback_argument(unsigned int unused1, unsigned int callbackArgument, unsigned int unused2)
+unsigned int __stdcall UCBFreeMemory(unsigned int unused1, unsigned int callbackArgument, unsigned int unused2)
 {
     if (optsCmdLine.verbose > 4)
         CLIO_FormatAndDispatchText("Callback: %s\n", (unsigned char *)"UCBFreeMemory");
@@ -945,7 +943,7 @@ unsigned int __stdcall free_callback_argument(unsigned int unused1, unsigned int
     return 2;
 }
 
-unsigned int __stdcall fn_004252a0(unsigned int unused, unsigned int size, unsigned int reserved, void *result)
+unsigned int __stdcall UCBAllocMemHandle(unsigned int unused, unsigned int size, unsigned int reserved, void *result)
 {
     unsigned int handle;
     if (optsCmdLine.verbose > 4)
@@ -953,33 +951,33 @@ unsigned int __stdcall fn_004252a0(unsigned int unused, unsigned int size, unsig
     handle = Memory_NewHandle(size);
     if (!handle)
         return 7U;
-    CLDropinCallbacks_V10_StoreValue(unused, handle, result);
+    UCBSecretAttachHandle(unused, handle, result);
     return 0U;
 }
 
-unsigned int __stdcall fn_004252f0(unsigned int callback, int callbackIndex)
+unsigned int __stdcall UCBFreeMemHandle(unsigned int callback, int callbackIndex)
 {
     StorageHandle *callbackData;
 
     if (4 < optsCmdLine.verbose) {
         CLIO_FormatAndDispatchText("Callback: %s\n", "UCBFreeMemHandle");
     }
-    CLDropinCallbacks_V10_SetStorageHandle(callback, callbackIndex, &callbackData);
+    UCBSecretDetachHandle(callback, callbackIndex, &callbackData);
     Memory_FreeHandle(callbackData);
     return 0;
 }
 
-int __stdcall fn_00425340(unsigned int argument1, unsigned int argument2, unsigned int *result)
+int __stdcall UCBGetMemHandleSize(unsigned int argument1, unsigned int argument2, unsigned int *result)
 {
     StorageHandle *value;
     if (optsCmdLine.verbose > 4)
         CLIO_FormatAndDispatchText("Callback: %s\n", (unsigned char *)"UCBGetMemHandleSize");
-    CLDropinCallbacks_V10_SetStorageHandle(argument1, argument2, &value);
+    UCBSecretDetachHandle(argument1, argument2, &value);
     *result = Memory_GetHandleSize(value);
     return 0;
 }
 
-unsigned int __stdcall resize_mem_handle(unsigned int callback, int argument, unsigned int size)
+unsigned int __stdcall UCBResizeMemHandle(unsigned int callback, int argument, unsigned int size)
 {
     unsigned short status;
     unsigned short result;
@@ -988,7 +986,7 @@ unsigned int __stdcall resize_mem_handle(unsigned int callback, int argument, un
     if (4 < optsCmdLine.verbose) {
         CLIO_FormatAndDispatchText("Callback: %s\n", "UCBResizeMemHandle");
     }
-    CLDropinCallbacks_V10_SetStorageHandle(callback, argument, &handle);
+    UCBSecretDetachHandle(callback, argument, &handle);
     Memory_ResizeStorageHandle(handle, size);
     status = Memory_GetError();
     if (status == 0) {
@@ -999,8 +997,8 @@ unsigned int __stdcall resize_mem_handle(unsigned int callback, int argument, un
     return result;
 }
 
-unsigned int __stdcall get_storage_handle_data(unsigned int unused0, struct StorageHandle *args, unsigned int unused2,
-                                               char **destination)
+unsigned int __stdcall UCBLockMemHandle(unsigned int unused0, struct StorageHandle *args, unsigned int unused2,
+                                        char **destination)
 {
     if (optsCmdLine.verbose > 4)
         CLIO_FormatAndDispatchText("Callback: %s\n", (unsigned char *)"UCBLockMemHandle");
@@ -1009,7 +1007,7 @@ unsigned int __stdcall get_storage_handle_data(unsigned int unused0, struct Stor
     return 0;
 }
 
-unsigned int __stdcall fn_00425430(unsigned int unused, unsigned int handle)
+unsigned int __stdcall UCBUnlockMemHandle(unsigned int unused, unsigned int handle)
 {
     if (optsCmdLine.verbose > 4)
         CLIO_FormatAndDispatchText("Callback: %s\n", (unsigned char *)"UCBUnlockMemHandle");
@@ -1017,7 +1015,7 @@ unsigned int __stdcall fn_00425430(unsigned int unused, unsigned int handle)
     return 0;
 }
 
-unsigned int __stdcall copy_command_line_target(unsigned int unused, unsigned int value, unsigned int kind)
+unsigned int __stdcall UCBGetTargetName(unsigned int unused, unsigned int value, unsigned int kind)
 {
     if (optsCmdLine.verbose > 3)
         CLIO_FormatAndDispatchText("Callback: %s\n", (unsigned char *)"UCBGetTargetName");
@@ -1025,21 +1023,21 @@ unsigned int __stdcall copy_command_line_target(unsigned int unused, unsigned in
     return 0;
 }
 
-unsigned int __stdcall log_callback_string(unsigned int argument)
+unsigned int __stdcall UCBPreDialog(unsigned int argument)
 {
     if (optsCmdLine.verbose > 3)
         CLIO_FormatAndDispatchText("Callback: %s\n", (unsigned char *)"UCBPreDialog");
     return 0;
 }
 
-unsigned int __stdcall log_callback_above_threshold(unsigned int argument)
+unsigned int __stdcall UCBPostDialog(unsigned int argument)
 {
     if (optsCmdLine.verbose > 3)
         CLIO_FormatAndDispatchText("Callback: %s\n", (unsigned char *)"UCBPostDialog");
     return 0;
 }
 
-unsigned int __stdcall fn_004254e0(unsigned int action, unsigned int fileReference)
+unsigned int __stdcall UCBPreFileAction(unsigned int action, unsigned int fileReference)
 {
     if (optsCmdLine.verbose > 3) {
         CLIO_FormatAndDispatchText("Callback: %s\n", (unsigned char *)"UCBPreFileAction");
@@ -1048,7 +1046,7 @@ unsigned int __stdcall fn_004254e0(unsigned int action, unsigned int fileReferen
     return 2U;
 }
 
-unsigned int __stdcall fn_00425520(unsigned int file, unsigned int action)
+unsigned int __stdcall UCBPostFileAction(unsigned int file, unsigned int action)
 {
     if (optsCmdLine.verbose > 3)
         CLIO_FormatAndDispatchText("Callback: %s\n", (unsigned char *)"UCBPostFileAction");
@@ -1056,7 +1054,7 @@ unsigned int __stdcall fn_00425520(unsigned int file, unsigned int action)
     return 2U;
 }
 
-int __stdcall cache_access_path_list(CWPluginPrivateContext *request)
+int __stdcall UCBCacheAccessPathList(CWPluginPrivateContext *request)
 {
     struct CallbackCache *cache;
     CallbackPathEntry *entry0;
@@ -1109,7 +1107,7 @@ int __stdcall cache_access_path_list(CWPluginPrivateContext *request)
     return 0;
 }
 
-unsigned int __stdcall CLDropinCallbacks_V10_StoreValue(unsigned int unused, unsigned int value, void *resultAddress)
+unsigned int __stdcall UCBSecretAttachHandle(unsigned int unused, unsigned int value, void *resultAddress)
 {
     if (optsCmdLine.verbose > 4)
         CLIO_FormatAndDispatchText("Callback: %s\n", (unsigned char *)"UCBSecretAttachHandle");
@@ -1117,8 +1115,7 @@ unsigned int __stdcall CLDropinCallbacks_V10_StoreValue(unsigned int unused, uns
     return 0;
 }
 
-unsigned int __stdcall CLDropinCallbacks_V10_SetStorageHandle(unsigned int unused, unsigned int value,
-                                                              void *resultAddress)
+unsigned int __stdcall UCBSecretDetachHandle(unsigned int unused, unsigned int value, void *resultAddress)
 {
     if (optsCmdLine.verbose > 4)
         CLIO_FormatAndDispatchText("Callback: %s\n", (unsigned char *)"UCBSecretDetachHandle");
@@ -1130,7 +1127,7 @@ unsigned int __stdcall CLDropinCallbacks_V10_SetStorageHandle(unsigned int unuse
     return 0;
 }
 
-unsigned int __stdcall copy_value_to_result(unsigned int unused, unsigned int value, unsigned int *result)
+unsigned int __stdcall UCBSecretPeekHandle(unsigned int unused, unsigned int value, unsigned int *result)
 {
     if (optsCmdLine.verbose > 4)
         CLIO_FormatAndDispatchText("Callback: %s\n", (unsigned char *)"UCBSecretPeekHandle");
@@ -1144,8 +1141,8 @@ unsigned int __stdcall copy_value_to_result(unsigned int unused, unsigned int va
     return 0;
 }
 
-unsigned int __stdcall request_license(unsigned int unused0, unsigned int request, unsigned int options,
-                                       unsigned int flags, unsigned int unused4, unsigned int *licenseResult)
+unsigned int __stdcall UCBCheckoutLicense(unsigned int unused0, unsigned int request, unsigned int options,
+                                          unsigned int flags, unsigned int unused4, unsigned int *licenseResult)
 {
     char message[4096];
     int license;
@@ -1170,7 +1167,7 @@ unsigned int __stdcall request_license(unsigned int unused0, unsigned int reques
     return 516U;
 }
 
-unsigned int __stdcall forward_nonzero_value(unsigned int unused, unsigned int value)
+unsigned int __stdcall UCBCheckinLicense(unsigned int unused, unsigned int value)
 {
     if (optsCmdLine.verbose > 3)
         CLIO_FormatAndDispatchText("Callback: %s\n", (unsigned char *)"UCBCheckinLicense");
@@ -1179,8 +1176,8 @@ unsigned int __stdcall forward_nonzero_value(unsigned int unused, unsigned int v
     return 0;
 }
 
-unsigned int __stdcall fn_00425a00(unsigned int clientContext, unsigned int basePath, unsigned int relativePath,
-                                   unsigned int resolvedPath)
+unsigned int __stdcall UCBResolveRelativePath(unsigned int clientContext, unsigned int basePath,
+                                              unsigned int relativePath, unsigned int resolvedPath)
 {
     CLErrors_ReportInternalError("CLDropinCallbacks_V10.cpp", 2196, "UCBResolveRelativePath not implemented");
     return 2U;
@@ -1191,49 +1188,49 @@ static char lbl_0054d038[] = "UCBMacOSErrToCWResult";
 
 /* The callbacks a plug-in calls back into the driver through. */
 static void *data_0054d050[43] = {
-    (void *)get_file_info,
-    (void *)CLDropinCallbacks_V10_FindAndLoadFile,
-    (void *)CLDropinCallbacks_V10_GetFileText,
-    (void *)CLDropinCallbacks_V10_FreeMemory,
-    (void *)lookup_callback_record,
-    (void *)get_overlay_group_info,
-    (void *)lookup_overlay_allocation,
-    (void *)call_overlays_and_translate_status,
-    (void *)report_message,
-    (void *)emit_alert_messages,
-    (void *)report_message_detail,
-    (void *)fn_00424540,
-    (void *)copy_named_destination_to_temporary,
-    (void *)report_store_plugin_data_not_implemented,
-    (void *)fn_00424660,
-    (void *)set_mod_date,
-    (void *)add_project_entry,
-    (void *)create_new_text_document,
-    (void *)allocate_memory,
-    (void *)free_callback_argument,
-    (void *)fn_004252a0,
-    (void *)fn_004252f0,
-    (void *)fn_00425340,
-    (void *)resize_mem_handle,
-    (void *)get_storage_handle_data,
-    (void *)fn_00425430,
-    (void *)CLDropinCallbacks_V10_StoreValue,
-    (void *)CLDropinCallbacks_V10_SetStorageHandle,
-    (void *)copy_value_to_result,
+    (void *)UCBGetFileInfo,
+    (void *)UCBFindAndLoadFile,
+    (void *)UCBGetFileText,
+    (void *)UCBReleaseFileText,
+    (void *)UCBGetSegmentInfo,
+    (void *)UCBGetOverlay1GroupInfo,
+    (void *)UCBGetOverlay1Info,
+    (void *)UCBGetOverlay1FileInfo,
+    (void *)UCBReportMessage,
+    (void *)UCBAlert,
+    (void *)UCBShowStatus,
+    (void *)UCBUserBreak,
+    (void *)UCBGetNamedPreferences,
+    (void *)UCBStorePluginData,
+    (void *)UCBGetPluginData,
+    (void *)UCBSetModDate,
+    (void *)UCBAddProjectEntry,
+    (void *)UCBCreateNewTextDocument,
+    (void *)UCBAllocateMemory,
+    (void *)UCBFreeMemory,
+    (void *)UCBAllocMemHandle,
+    (void *)UCBFreeMemHandle,
+    (void *)UCBGetMemHandleSize,
+    (void *)UCBResizeMemHandle,
+    (void *)UCBLockMemHandle,
+    (void *)UCBUnlockMemHandle,
+    (void *)UCBSecretAttachHandle,
+    (void *)UCBSecretDetachHandle,
+    (void *)UCBSecretPeekHandle,
     NULL,
     NULL,
     NULL,
     NULL,
     NULL,
-    (void *)copy_command_line_target,
-    (void *)cache_access_path_list,
-    (void *)log_callback_string,
-    (void *)log_callback_above_threshold,
-    (void *)fn_004254e0,
-    (void *)fn_00425520,
-    (void *)request_license,
-    (void *)forward_nonzero_value,
-    (void *)fn_00425a00,
+    (void *)UCBGetTargetName,
+    (void *)UCBCacheAccessPathList,
+    (void *)UCBPreDialog,
+    (void *)UCBPostDialog,
+    (void *)UCBPreFileAction,
+    (void *)UCBPostFileAction,
+    (void *)UCBCheckoutLicense,
+    (void *)UCBCheckinLicense,
+    (void *)UCBResolveRelativePath,
 };
 
 static unsigned char data_0054d0fc[12] = {3, 0, 3, 0, 0, 0, 0, 0, 10, 0, 0, 0};
