@@ -109,7 +109,6 @@ unsigned int fn_0042910d(void)
     return 0U;
 }
 
-#include <string.h>
 
 int fn_00429110(NUM_T *record, char *cursor)
 {

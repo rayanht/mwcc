@@ -1319,7 +1319,6 @@ ENode *conditional_expression(void)
     return CExpr_New_ECOND_Node(cond, then, els);
 }
 
-#include <string.h>
 
 ENode *CExpr_New_ECOND_Node(ENode *condition, ENode *trueExpr, ENode *falseExpr)
 {
