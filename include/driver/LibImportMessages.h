@@ -16,7 +16,7 @@ extern void CompilerTools_ReportLimitedDiagnostic(SInt32 code, ...);
 extern SInt16 limited_diagnostic_limit;
 extern SInt32 limited_diagnostic_count;
 extern void CompilerTools_FormatMessageAndLongjmp(int arg1, int arg2);
-extern void CompilerTools_DispatchMessageBufferByMode(int a0);
+extern void CompilerTools_DispatchMessageBufferByMode(int mode);
 
 #ifdef __cplusplus
 }

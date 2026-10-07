@@ -21,11 +21,12 @@ extern unsigned char CLFiles_InsertIndexedListLinkAtFirstIndex(IndexedListLink *
 extern SInt32 CLFiles_GetIndex(IndexedListLink *entry);
 extern DropinFileRecord *CLFiles_FindFileByIndex(IndexedListLink *head, int index);
 extern unsigned char CLFiles_AssertNonNullIndexedListLink(struct IndexedListLink *value);
-extern struct DropinFileRecord *CLFiles_FindDropinFileRecord(struct IndexedListLink *a0, const struct OSSpec *a1);
+extern struct DropinFileRecord *CLFiles_FindDropinFileRecord(struct IndexedListLink *files,
+                                                             const struct OSSpec *fileSpec);
 extern char CLFiles_InsertIndexedListLink(IndexedListLink *list, IndexedListLink *node, int pos);
 extern struct DropinFileRecord *CLFiles_AllocDropinFileRecord(void);
 extern void free_allocation_record(void *ptr);
-extern Boolean CLFiles_InitChain(struct ChainRecord **a0);
+extern Boolean CLFiles_InitChain(struct ChainRecord **chain);
 extern void CLFiles_FreeChainNodes(struct ChainRecord **nodes);
 extern struct ChainRecord *CLFiles_CreateChainRecord(const char *source, StorageHandle *argument);
 extern Boolean CLFiles_AppendChainRecord(struct ChainRecord **link, struct ChainRecord *record);

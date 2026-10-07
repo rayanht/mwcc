@@ -8,13 +8,13 @@
 extern "C" {
 #endif
 
-extern int __stdcall get_stored_name_and_length(char **a0, int *a1);
-extern unsigned int __stdcall fn_0040bfc0(unsigned char *volatile *a0);
-extern unsigned int __stdcall get_global_value(unsigned int *a0);
-extern unsigned int __stdcall fn_0040bff0(unsigned int *a0);
+extern int __stdcall get_stored_name_and_length(char **name, int *length);
+extern unsigned int __stdcall fn_0040bfc0(unsigned char *volatile *buffer);
+extern unsigned int __stdcall get_global_value(unsigned int *value);
+extern unsigned int __stdcall fn_0040bff0(unsigned int *value);
 extern unsigned int __stdcall fn_0040c010(struct ListLink *link);
 extern unsigned int __stdcall set_next_from_global(struct ListLink *node);
-extern unsigned int __stdcall get_buffer(unsigned char **a0);
+extern unsigned int __stdcall get_buffer(unsigned char **buffer);
 extern int __stdcall set_list_link_next(struct ListLink *link);
 extern unsigned int __stdcall fn_0040c050(struct ListLink *link);
 extern int fn_0040c060(void);

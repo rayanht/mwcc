@@ -60,7 +60,7 @@ extern Boolean tool_checks_passed;
 extern void **copy_resource_by_name(char *name);
 extern int fn_0040ba99(struct CWPluginPrivateContext *context);
 extern int set_enabled_link_parser_entries(struct CWPluginPrivateContext *context);
-extern int __stdcall get_data_pointer_and_constant(unsigned char **a0, int *a1);
+extern int __stdcall get_data_pointer_and_constant(unsigned char **dataPointer, int *constant);
 extern unsigned int __stdcall set_next_to_head(struct ListLink *entry);
 extern unsigned int __stdcall set_link_next_from_global(struct ListLink *link);
 extern unsigned int __stdcall fn_0040bc70(struct ListLink *link);

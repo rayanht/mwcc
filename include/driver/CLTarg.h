@@ -45,7 +45,7 @@ struct CLTarget {
     struct CLTarget *next;
 };
 extern struct CLTarget *CLTarg_CreateTarget(char *targetName, int processor, int operatingSystem, int targetKind);
-extern void free_target(CLTarget *a0);
+extern void free_target(CLTarget *target);
 extern void CLTarg_FreeTargets(CLTarget *head);
 extern void CLTarg_AppendEntry(CLTarget **list, CLTarget *target);
 

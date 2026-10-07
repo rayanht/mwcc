@@ -51,7 +51,7 @@ extern int write_lookup_entries(CLBrowserLookupEntry *src, DstRec *dst, UInt32 c
 extern unsigned int build_browser_file_buffer(struct StorageHandle *dataHandle, void *indexHandle, OSHandle *result);
 extern void fn_004287c0(OSHandle *value, struct CLBrowserLookupEntry **result, unsigned int *shifted_value,
                         unsigned int *raw_value);
-extern unsigned int CLBrowser_InitMemBuffer(OSHandle *a0);
+extern unsigned int CLBrowser_InitMemBuffer(OSHandle *buffer);
 extern unsigned int free_lookup_entries(OSHandle *container);
 extern unsigned int CLBrowser_FreeMemBuffer(OSHandle *value);
 extern BrowserCacheEntry *allocate_browser_cache_entry(void);

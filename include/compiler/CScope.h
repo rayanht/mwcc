@@ -102,7 +102,7 @@ extern NameSpaceObjectList *CScope_InsertName(NameSpace *scope, HashNameNode *na
 extern NameSpaceName *CScope_FindNameSpaceName(NameSpace *nameSpace, HashNameNode *name);
 extern NameSpaceObjectList *CScope_FindName(NameSpace *space, HashNameNode *name);
 extern Boolean CScope_IsEmptySymTable(void);
-extern void CScope_AddObject(NameSpace *a0, HashNameNode *a1, ObjBase *a2);
+extern void CScope_AddObject(NameSpace *scope, HashNameNode *name, ObjBase *object);
 extern Boolean CScope_FindObject(NameSpace *nspace, NameResult *result, HashNameNode *name);
 extern Boolean CScope_ParseMemberName(TypeClass *ctx, NameResult *node, Boolean flag);
 extern NameSpaceObjectList *CScope_ArgumentDependentNameLookup(NameSpaceObjectList *results, HashNameNode *name,

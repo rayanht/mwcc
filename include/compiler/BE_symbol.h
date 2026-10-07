@@ -35,7 +35,7 @@ struct BE_SymNode {
 extern BE_SymNode *BE_symbol_SetupObjectSymbol(Object *object, int size, ObjGenSection *section);
 extern Boolean BE_symbol_004913b0(Object *obj);
 extern Object *BE_symbol_GetFunctionSymbolLinkData(Object *func);
-extern unsigned int BE_symbol_GetOffset(BE_SymNode *a0);
+extern unsigned int BE_symbol_GetOffset(BE_SymNode *symbol);
 extern unsigned int BE_symbol_CreateSectionSymbol(ObjGenSection *input);
 extern BE_SymNode *BE_symbol_GetOrCreateFunctionObjectSymbol(Object *arg);
 extern struct BE_SymNode *BE_symbol_GetSymbolOrderTail(void);

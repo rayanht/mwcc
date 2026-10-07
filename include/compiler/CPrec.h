@@ -166,7 +166,7 @@ extern void decompress_precompiled_header(void);
 extern int CPrec_WritePrecompiledFile(void);
 extern SInt16 write_precompiled_file(void);
 extern SInt32 write_serialized_bucket_offsets(void);
-extern short encode_zero_runs(char *a0, int a1);
+extern short encode_zero_runs(char *data, int size);
 extern UInt32 serialize_cprec_nodes(CPrecNode *info);
 extern PendingBuffer *serialize_pending_buffers(PendingBuffer *item);
 extern void serialize_namespace_usings_and_hash(void);
@@ -246,7 +246,7 @@ extern int objc_string_constant_count;
 extern struct Type *sel_type;
 extern char *data_00587e84;
 
-extern unsigned int CException_HashType(Type *a0);
+extern unsigned int CException_HashType(Type *type);
 extern void CException_AddPendingBuffer(Object *owner, const void *buffer, OLinkList *value, int entryValue);
 extern OLinkList *copy_relocation_list(OLinkList *p);
 extern void CExcept_Terminate(void);

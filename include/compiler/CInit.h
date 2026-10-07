@@ -127,7 +127,7 @@ extern ENode *create_destructor_registration_call(Type *p1, Object *p2, ENode *p
 extern ENode *build_init_assignment(ENode *previous, ENode *base, SInt32 offset, Type *type, ENode *value);
 extern void CInit_004d2700(InitializerData *data, Type *type, UInt32 qual, Boolean flag);
 extern int initialize_typed_data(InitializerData *p1, CInit *p2, Type *ty, UInt32 fl, int p5);
-extern void initialize_struct_data(InitializerData *ctx, CInit *ci, Type *ts, UInt32 a4, Boolean a5);
+extern void initialize_struct_data(InitializerData *ctx, CInit *ci, Type *type, UInt32 qual, Boolean allowIncomplete);
 extern void CInit_004d3620(TypeBitfield *bf, unsigned char *ptr, CInt64 value);
 extern void initialize_int(InitializerData *stage, ENode *expr, Type *type, UInt32 qual);
 extern void initialize_pointer_or_intconst(InitializerData *ctx, ENode *node, Type *ns, UInt32 qual);

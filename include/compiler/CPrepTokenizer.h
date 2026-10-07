@@ -25,7 +25,7 @@ extern short CPrepTokenizer_GetNextToken(void);
 extern int classify_identifier_token(void);
 extern int check_null_terminator(void);
 extern unsigned int mark_previous_text_character(unsigned int result);
-extern unsigned int clear_global_and_return_argument(unsigned int a0);
+extern unsigned int clear_global_and_return_argument(unsigned int argument);
 extern void concatenate_string_tokens(char strip_terminator);
 extern int check_illegal_token(void);
 extern short CPrepTokenizer_PeekNextToken(void);

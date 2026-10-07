@@ -12,7 +12,7 @@ extern void dump_eat_nodes(struct ExceptionAction *p);
 extern void format_type(Type *type, char *buf);
 extern void fn_004be830(void *arg1, void *arg2);
 extern void fn_004be840(void);
-extern void write_escaped_string(void *a1, char *s, SInt32 n);
+extern void write_escaped_string(void *stream, char *string, SInt32 length);
 
 #ifdef __cplusplus
 }

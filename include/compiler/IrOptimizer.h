@@ -37,7 +37,7 @@ extern Statement *convert_linear_to_statements(void);
 extern void IrOptimizer_0042e200(IROLinear *node, int level);
 extern void trav_expr_to_update_flags(IROLinear *expression, unsigned int flag);
 extern void visit_statement_expressions(struct Statement *stmt);
-extern void lower_expression_to_statements(ENode *node, int a2, int a3);
+extern void lower_expression_to_statements(ENode *node, int valueNeeded, int force);
 extern void IrOptimizer_00430a60(ENode *p, Object **objp);
 extern void add_local_usage_and_set_noregister(IROLinear *node, int weightIndex);
 extern struct IROLinear *linearize_expression(ENode *expression);

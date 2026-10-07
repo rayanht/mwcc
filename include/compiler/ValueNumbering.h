@@ -66,7 +66,7 @@ struct ValueUpdate {
 };
 #pragma options align = reset
 extern SInt32 ValueNumbering_0051f790(RegisterValueRecord *a, PCodeInstruction *b);
-extern void ValueNumbering_PerformValueNumbering(int a0);
+extern void ValueNumbering_PerformValueNumbering(int options);
 extern void traverse_single_predecessor_successors(PCodeBlock *node);
 extern void fn_0051e720(void);
 extern void value_number_block(PCodeBlock *block);

@@ -73,7 +73,7 @@ struct NamespaceOperationState {
     UInt8 flag4b;
 };
 #pragma pack(pop)
-extern void set_bytes(unsigned int a0, int *a1, char **a2);
+extern void set_bytes(unsigned int byteCount, int *value, char **unitName);
 extern int compile_file(DropinFileRecord *file, char *processed);
 extern int CLFileOps_CompileProject(void);
 extern int CLFileOps_LinkProject(void);

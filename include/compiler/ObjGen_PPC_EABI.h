@@ -167,7 +167,7 @@ extern void ObjGen_PPC_EABI_AddSectionAttribute(Object *a, UInt8 b);
 extern void create_main_file_object(void);
 extern InterruptGenerationRecord *ObjGen_PPC_EABI_GetInterruptInfo(Object *obj);
 extern InterruptGenerationRecord *fn_00488750(Object *object, BE_SymNode *linkage);
-extern GList *ObjGen_PPC_EABI_GetSectionBuffer(ObjGenSection *a0);
+extern GList *ObjGen_PPC_EABI_GetSectionBuffer(ObjGenSection *section);
 extern void ObjGen_PPC_EABI_EmitDescriptorWithRelocations(Object *obj, SInt32 value, void *data, UInt32 size,
                                                           ObjGenRelocationRequest *list);
 extern void ObjGen_PPC_EABI_RestoreFunctionState(void);

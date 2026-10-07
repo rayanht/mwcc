@@ -9,7 +9,7 @@ extern "C" {
 #endif
 
 extern void Targets_FormatAndDispatchMessage(char *message, char *arguments);
-extern void Targets_ReportFormattedMessage(char *a0, char *a1);
+extern void Targets_ReportFormattedMessage(char *format, char *arguments);
 extern void format_and_dispatch_message(char *first, char *second);
 extern void format_and_forward_message(char *message, unsigned int *arguments);
 extern void format_and_report_message(const char *text, va_list position);

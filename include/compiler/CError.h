@@ -367,7 +367,7 @@ extern void CError_DispatchAndLongJump(void);
 extern void CError_Longjmp(void);
 extern void CError_LongJump(void);
 extern void fn_00449d60(void);
-extern void CError_SetWrittenEntry(int *a0);
+extern void CError_SetWrittenEntry(int *entry);
 extern void CError_SaveAndSetWrittenEntry(TStreamElement *entry, int *savedEntry);
 extern void CError_SetBufferedToken(TStreamElement *entry);
 extern void fn_00449dc0(void);

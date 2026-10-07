@@ -26,7 +26,7 @@ extern unsigned int __stdcall TargetOptimizer_ppc_eabi_InitOperationRecord(OSSpe
 extern int __stdcall TargetOptimizer_ppc_eabi_GetMemBufferPtrAndSize(unsigned char *state, char **firstResult,
                                                                      int *secondResult);
 extern unsigned int __stdcall TargetOptimizer_ppc_eabi_UnloadOperationRecord(struct OperationRecord *record);
-extern int TargetOptimizer_ppc_eabi_SetOption(short a0, char a1);
+extern int TargetOptimizer_ppc_eabi_SetOption(short option, char enabled);
 extern unsigned int TargetOptimizer_ppc_eabi_ReportScheduling(struct StorageHandle *argument);
 
 #ifdef __cplusplus

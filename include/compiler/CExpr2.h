@@ -84,7 +84,8 @@ extern void CExpr_FuncArgMatch(NameSpaceObjectList *source, void *context, ENode
                                ENode *mode, char exclude);
 extern Boolean CExpr_GetFuncMatchArgs(Object *obj, ENodeList *arguments, ENode *instance, MemberCallArguments *result);
 extern Boolean CExpr_MatchCompare(Object *obj, ArgMatch *dst, ArgMatch *src);
-extern SInt16 assign_check(ENode *e1, Type *t2, SInt32 a3, Boolean a4, Boolean a5, Boolean a6);
+extern SInt16 assign_check(ENode *operand, Type *targetType, SInt32 targetQual, Boolean convert, Boolean isExplicit,
+                           Boolean checkAccess);
 extern ENode *get_address_of_temp_copy(ENode *expr, char materialize);
 extern void CExpr_CheckArithmConversion(ENode *node, Type *type);
 extern ENode *CExpr2_ConvertScalarOperand(ENode *result, Boolean integerOnly, Boolean preferBool);
@@ -99,7 +100,8 @@ extern SInt32 check_member_pointer_conversion(Type *type, ENode *expr, Boolean c
 extern SInt16 compare_short_arrays_lexicographically(SInt16 *left, SInt16 *right, Boolean compareFifth);
 extern Boolean CExpr2_UpdateArgMatchScores(Type *target, UInt32 qualifiers, ENode *expression, ArgMatch *scores);
 extern void CExpr_MatchCV(Type *ty1, UInt32 quals1, Type *ty2, UInt32 quals2, ArgMatch *ctx);
-extern ENode *CExpr_FuncCallSix(Object *obj, ENode *a1, ENode *a2, ENode *a3, ENode *a4, ENode *a5, ENode *a6);
+extern ENode *CExpr_FuncCallSix(Object *function, ENode *firstArgument, ENode *secondArgument, ENode *thirdArgument,
+                                ENode *fourthArgument, ENode *fifthArgument, ENode *sixthArgument);
 extern ENode *funccallexpr(Object *func, ENode *arg1, ENode *arg2, ENode *arg3, ENode *arg4);
 extern ENode *CExpr_AdjustFunctionCall(ENode *p);
 extern ENode *CExpr_IsTempConstruction(ENode *e, Type *type, ENode **out);

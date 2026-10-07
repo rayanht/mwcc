@@ -79,7 +79,7 @@ extern void emit_rlwimi(ENode *p1, ENode *p2, ENode *p3, ENode *p4, ENode *p5, s
 extern void emit_operation_from_nodes(short operation, ENode *leftNode, ENode *rightNode);
 extern void emit_three_gpr_instruction(SInt16 code, ENode *a, ENode *b, ENode *c);
 extern void emit_two_operand_gpr_instruction(SInt16 ins, ENode *e1, ENode *e2, SInt16 reg, Operand *dst);
-extern char Intrinsics_IsRegisteredObject(ObjBase *a0);
+extern char Intrinsics_IsRegisteredObject(ObjBase *object);
 extern Type *match_intrinsic_triple(UInt16 id, ENodeList *args, HashNameNode *name);
 extern Type *check_binary_intrinsic_args(UInt16 op, ENodeList *args, HashNameNode *opname);
 extern SInt32 select_altivec_mangle_result(UInt16 code, ENodeList *arg2, HashNameNode *nm);

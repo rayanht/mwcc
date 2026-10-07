@@ -167,8 +167,8 @@ extern void fn_00428f61(unsigned int context, void **firstList, void **secondLis
 extern int parse_parameter_value(PARAM_T *parameter, char **value, UInt32 flags);
 extern int Parameter_CheckParameters(PARAM_T *parameter, int incomingflags);
 extern Boolean is_non_text_file(char *name, Boolean flag);
-extern void Parameter_ForwardVarArgs(int a0, ...);
-extern void forward_stack_varargs(SInt32 a0, ...);
+extern void Parameter_ForwardVarArgs(int messageId, ...);
+extern void forward_stack_varargs(SInt32 errorId, ...);
 extern void Parameter_InitHelpColumn(HelpColumn *buf, short left, short width);
 extern char option_parameter_text[4096];
 extern int set_filepath(FILEPATH_T *parm, char *arg);
@@ -192,16 +192,20 @@ extern unsigned int fn_00429896(void);
 extern int set_on_off(OFFON_T *opt, char *arg, int flags);
 extern void get_filepath_name_flags_value(FILEPATH_T *opt, char **name, int *flags, int *value);
 extern unsigned int fn_0042994d(void);
-extern void zero_unsigned_int_outputs(int a0, unsigned int *a1, unsigned int *a2, unsigned int *a3);
+extern void zero_unsigned_int_outputs(int unused, unsigned int *firstOutput, unsigned int *secondOutput,
+                                      unsigned int *thirdOutput);
 extern int is_mask_entry_unchanged(MASK_T *p);
 extern int apply_mask_entry(MASK_T *p, int unused, int flags);
-extern void clear_unsigned_outputs(int a0, unsigned int *a1, unsigned int *a2, unsigned int *a3);
+extern void clear_unsigned_outputs(int unused, unsigned int *firstOutput, unsigned int *secondOutput,
+                                   unsigned int *thirdOutput);
 extern int is_dest_unchanged_by_val_xor(TOGGLE_T *p);
 extern int xor_const_dest(TOGGLE_T *p);
-extern void zero_unsigned_outputs(int a0, unsigned int *a1, unsigned int *a2, unsigned int *a3);
+extern void zero_unsigned_outputs(int mode, unsigned int *firstOutput, unsigned int *secondOutput,
+                                  unsigned int *thirdOutput);
 extern int const_matches_dest(SET_T *p);
 extern Boolean store_constrec_val(SET_T *rec, void *unused, UInt32 flags);
-extern void zero_outputs(int a0, unsigned int *a1, unsigned int *a2, unsigned int *a3);
+extern void zero_outputs(int selector, unsigned int *firstOutput, unsigned int *secondOutput,
+                         unsigned int *thirdOutput);
 extern int compare_setstring_value(SETSTRING_T *parm);
 extern int set_string(struct SETSTRING_T *arguments);
 extern void get_setting_name_value(GENERIC_T *opt, char **name, int *value, int *flags);

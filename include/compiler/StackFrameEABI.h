@@ -34,7 +34,7 @@ extern void generate_interrupt_register_saves(void);
 extern void emit_restore_special_registers(SInt16 frameRegister);
 extern void save_and_update_vrsave(int a, int argb);
 extern void StackFrameEABI_004aa7d0(void);
-extern int emit_lwz_register_restores(short a0);
+extern int emit_lwz_register_restores(short base_register);
 extern SInt32 StackFrameEABI_GetTypeAlignment(Type *type);
 extern void *StackFrameEABI_004aabb0(UInt32 value, char *name, SInt32 *outSize, Object *func);
 extern void StackFrameEABI_EmitFrameAllocation(char allocateFrame, short scratchReg, int frameSize);

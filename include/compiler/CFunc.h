@@ -101,7 +101,7 @@ extern void CFunc_SetupNewFuncArgs(Object *func, FuncArg *args);
 extern void CFunc_ParseScopedStatement(struct StatementContext *context);
 extern ENode *initialize_argument_object(ENode *initData, Type *type, UInt32 flags);
 extern ENode *parse_declarations(char mode, int singleDeclaration, char allowEmpty, char stopAfterDeclaration);
-extern void register_destructor_object(Type *a1, Object *a2, long a3, long a4);
+extern void register_destructor_object(Type *type, Object *object, long offset, long flags);
 extern void append_localstatic_init_expr(ENode *expr);
 extern void CFunc_CodeCleanup(Statement *stmt);
 extern ENode *sub_47bca0(ENode *node);

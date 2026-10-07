@@ -148,7 +148,7 @@ extern void CException_004e1fb0(Statement *firstScope, Statement *insertionScope
 extern ENode *CExcept_ScanThrowExpression(void);
 extern ENode *create_call_with_arg_and_default_args(Object *func, TypeClass *cls, ENode *which, ENode *arg);
 extern void CExcept_ScanExceptionSpecification(TypeFunc *func);
-extern ENode *create_type_stringconst(Type *type, UInt32 a2, Boolean flag);
+extern ENode *create_type_stringconst(Type *type, UInt32 qualifiers, Boolean flag);
 extern ClassNode *add_class_and_bases(ClassNode *list, TypeClass *ctx, TypeClass *cls, SInt32 offset, Boolean a,
                                       Boolean b);
 extern void mark_class_and_bases(ClassNode *list, TypeClass *cls);

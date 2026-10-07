@@ -111,7 +111,7 @@ extern Object *create_method_list_object(TypeClass *owner, CRec *category, MethR
 extern Object *create_ivar_list(TypeClass *cls);
 extern void CObjC_005074f0(Type *type, UInt32 qual, Boolean flag);
 extern void parse_method_definition(TypeClass *object, CRec *kind, MethRec **methods);
-extern void parse_category(TypeClass *a0);
+extern void parse_category(TypeClass *owner);
 extern Type *CObjC_ParseProtocolList(Type *type);
 extern void encode_class(TypeClass *cls, Boolean flag);
 extern Type *CObjC_ParseIdType(void);
@@ -128,7 +128,7 @@ extern Boolean CObjC_IsIdOrSelType(Type *ty);
 extern Type *CObjC_GetIdType(Boolean required);
 extern void emit_method_type_encoding(MethRec *p, int b);
 extern ENode *CObjC_ParseMessageExpression(void);
-extern void create_category_definition(TypeClass *a0, CRec *pb);
+extern void create_category_definition(TypeClass *classType, CRec *category);
 extern Boolean CObjC_IsIdCompatiblePointerPair(Type *t1, Type *t2);
 extern struct TypeClass *data_00587140;
 extern struct HashNameNode *this_self_name;

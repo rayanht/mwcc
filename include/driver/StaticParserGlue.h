@@ -7,7 +7,7 @@
 extern "C" {
 #endif
 
-extern unsigned int __stdcall fn_00405340(unsigned int a0);
+extern unsigned int __stdcall fn_00405340(unsigned int result);
 extern int fn_0040534e(void);
 extern int fn_0040535e(void);
 

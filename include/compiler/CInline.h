@@ -173,10 +173,10 @@ extern ENode *setup_inline_locals_and_arguments(Object *function, CInlineInfo *i
 extern void CInline_ReconstructFunction(Object *unused, CInlineInfo *rec, Statement *out);
 extern Statement *try_inline_statement(Statement *obj, char *flag);
 extern void CInline_0050f240(Object *object);
-extern void CInline_SaveInfo(CInlineInfo *out, Statement *list, Object *a3);
+extern void CInline_SaveInfo(CInlineInfo *out, Statement *list, Object *function);
 struct CPrecNode;
 extern void parse_inline_definition(struct CPrecNode *inlineInfo);
-extern Object *create_local_object(Type *type, unsigned int qual, unsigned int a2);
+extern Object *create_local_object(Type *type, unsigned int qual, unsigned int storageClassFlags);
 extern void *create_inline_switch_data(Statement *base, Statement *classInfo);
 extern SInt16 CInline_ReturnZero(Type *type);
 extern void CInline_GeneratePendingFunctionBody(void);

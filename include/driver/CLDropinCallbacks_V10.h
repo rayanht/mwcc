@@ -155,27 +155,29 @@ extern int __stdcall UCBGetFileText(void *context, CWFileSpec *file, void **resu
 extern int __stdcall UCBReportMessage(struct DiagnosticContext *context, struct DiagnosticLocation *location,
                                       char *message, char *detail, short kind, int argument);
 extern int __stdcall UCBAlert(DropinContext *ctx, char *message1, char *message2, char *message3, char *message4);
-extern int __stdcall UCBSetModDate(int a1, char *name, SInt32 *tp, int a4);
+extern int __stdcall UCBSetModDate(int callbackContext, char *name, SInt32 *modificationDate, int reserved);
 extern __stdcall SInt32 UCBAddProjectEntry(DropinRequest *context, CWFileSpec *file, UInt8 flag,
                                            struct FileOpenOptions *args, UInt32 *objectId);
 extern int __stdcall UCBCreateNewTextDocument(DropinRequest *request, struct DropinCallbackData *descriptor);
-extern unsigned int __stdcall UCBResolveRelativePath(unsigned int a0, unsigned int a1, unsigned int a2,
-                                                     unsigned int a3);
+extern unsigned int __stdcall UCBResolveRelativePath(unsigned int clientContext, unsigned int basePath,
+                                                     unsigned int relativePath, unsigned int resolvedPath);
 extern unsigned int __stdcall UCBStorePluginData(unsigned int arg0, unsigned int arg1, unsigned int arg2,
                                                  unsigned int arg3);
-extern unsigned int __stdcall UCBGetPluginData(unsigned int a0, unsigned int a1, unsigned int a2, unsigned int a3);
+extern unsigned int __stdcall UCBGetPluginData(unsigned int context, unsigned int plugin, unsigned int data,
+                                               unsigned int size);
 extern unsigned int __stdcall UCBFreeMemory(unsigned int unused1, unsigned int callbackArgument, unsigned int unused2);
-extern unsigned int __stdcall UCBAllocMemHandle(unsigned int a0, unsigned int a1, unsigned int a2, void *a3);
+extern unsigned int __stdcall UCBAllocMemHandle(unsigned int unused, unsigned int size, unsigned int reserved,
+                                                void *result);
 extern unsigned int __stdcall UCBUnlockMemHandle(unsigned int unused, unsigned int value);
 extern unsigned int __stdcall UCBPreDialog(unsigned int argument);
 extern unsigned int __stdcall UCBPostDialog(unsigned int argument);
-extern unsigned int __stdcall UCBPreFileAction(unsigned int a0, unsigned int a1);
-extern unsigned int __stdcall UCBPostFileAction(unsigned int a0, unsigned int a1);
+extern unsigned int __stdcall UCBPreFileAction(unsigned int action, unsigned int fileReference);
+extern unsigned int __stdcall UCBPostFileAction(unsigned int file, unsigned int action);
 extern unsigned int __stdcall UCBSecretAttachHandle(unsigned int unused, unsigned int value, void *resultAddress);
 extern unsigned int __stdcall UCBSecretDetachHandle(unsigned int unused, unsigned int value, void *resultAddress);
 extern unsigned int __stdcall UCBSecretPeekHandle(unsigned int unused, unsigned int value, unsigned int *result);
 extern unsigned int __stdcall UCBCheckinLicense(unsigned int unused, unsigned int value);
-extern unsigned int __stdcall UCBReleaseFileText(struct DropinRequest *a0, void *a1);
+extern unsigned int __stdcall UCBReleaseFileText(struct DropinRequest *request, void *memory);
 extern unsigned int __stdcall UCBAllocateMemory(unsigned int unused0, unsigned int value, unsigned int unused2,
                                                 unsigned int *result);
 extern unsigned int __stdcall UCBGetTargetName(unsigned int unused, unsigned int value, unsigned int kind);

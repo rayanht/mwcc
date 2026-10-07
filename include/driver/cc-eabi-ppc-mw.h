@@ -47,20 +47,20 @@ struct SharedDataHeader {
 struct TableObject {
     unsigned char *table;
 };
-extern int __stdcall get_name_and_length(char **a0, int *a1);
+extern int __stdcall get_name_and_length(char **name, int *length);
 extern void *__stdcall set_next_to_global(struct ListNodeLink *node);
-extern unsigned int __stdcall copy_global_to_value(unsigned int *a0);
-extern unsigned int __stdcall get_stored_value(unsigned int *a0);
-extern int __stdcall fn_0040be10(signed char **a0);
+extern unsigned int __stdcall copy_global_to_value(unsigned int *value);
+extern unsigned int __stdcall get_stored_value(unsigned int *value);
+extern int __stdcall fn_0040be10(signed char **arguments);
 extern unsigned int __stdcall fn_0040be20(struct ListLink *link);
 extern unsigned int __stdcall fn_0040be30(struct ListLink *link);
 extern void *__stdcall set_listnode_next_to_global(struct ListNode *node);
 extern int __stdcall set_link_next_to_global(struct ListLink *link);
-extern int __stdcall get_global_name_and_length(char **a0, int *a1);
+extern int __stdcall get_global_name_and_length(char **name, int *length);
 extern unsigned int __stdcall set_data_pointer(unsigned int objectAddress);
 extern unsigned int __stdcall fn_0040be90(unsigned int objectAddress);
 extern unsigned int __stdcall fn_0040bea0(struct ListLink *link);
-extern unsigned int __stdcall get_data_pointer(unsigned char **a0);
+extern unsigned int __stdcall get_data_pointer(unsigned char **output);
 extern unsigned int __stdcall set_shared_data(struct SharedDataHeader *header);
 extern unsigned int fn_0040bf10(void);
 extern unsigned int fn_0040bed0(void);

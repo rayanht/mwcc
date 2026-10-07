@@ -115,7 +115,7 @@ struct FileProcessingInfo {
 extern Boolean is_valid_plugin_context(struct CWPluginPrivateContext *context);
 extern UInt8 has_entry_signature_and_kind(CWPluginPrivateContext *entry);
 extern unsigned char is_valid_context(CWPluginPrivateContext *record);
-extern int __stdcall CWPluginsPrivate_ReturnArgument(CWPluginPrivateContext *a0, int a1);
+extern int __stdcall CWPluginsPrivate_ReturnArgument(CWPluginPrivateContext *context, int argument);
 extern unsigned int __stdcall CWPluginsPrivate_GetRequest(CWPluginPrivateContext *entry, long *result);
 extern unsigned int __stdcall CWPluginsPrivate_GetAPIVersion(CWPluginPrivateContext *input, long *result);
 extern int __stdcall CWPluginsPrivate_GetSourceFile(CWPluginPrivateContext *p, CWFileSpec *q);

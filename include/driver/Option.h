@@ -36,7 +36,7 @@ struct TokenText {
 struct Triple {
     short a, b, c;
 };
-extern void fn_0041c1ae(char *a0);
+extern void fn_0041c1ae(char *destination);
 extern void pop_option_stack(void);
 extern void fn_0041c1e2(void);
 extern int fn_0041c1eb(void);
@@ -53,14 +53,14 @@ extern void format_option_list(char *buf, OptionList *list, int flags);
 extern int Option_IsAvailable(Option *option, unsigned int mask);
 extern unsigned int fn_0041c8ba(void);
 extern int fn_0041c8d5(Option *option);
-extern unsigned int fn_0041c913(Option *a0);
+extern unsigned int fn_0041c913(Option *option);
 extern Boolean token_matches_kind(int kind, TokenText *tok);
 extern Boolean match_option_kind(int idx, TokenText *s);
 extern Boolean fn_0041ca5d(int n, TokenText *x);
 extern int match_option_names(char *names, char *arg, int flags, int *result);
 extern Option *find_matching_option(OptionList *list, int x, int *result);
-extern unsigned int forward_varargs(unsigned int a0, ...);
-extern unsigned int Option_ForwardVarArgs(unsigned int a0, ...);
+extern unsigned int forward_varargs(unsigned int messageId, ...);
+extern unsigned int Option_ForwardVarArgs(unsigned int messageId, ...);
 extern int print_option_help(char *filter);
 extern unsigned char Option_ShowHelp(void);
 extern void push_option(void *a);

@@ -468,7 +468,7 @@ extern unsigned int __stdcall CPrep_GetActive(int selector, unsigned char *value
 extern unsigned int __stdcall CPrep_GetOperation(int key, unsigned char *value);
 extern unsigned int __stdcall CPrep_GetSetting(CWPluginPrivateContext *key, unsigned char *value);
 extern unsigned int __stdcall CPrep_GetReserved15d(int handle, unsigned char *value);
-extern unsigned int __stdcall CPrep_GetDependencyState(CWPluginPrivateContext *a0, BrowseOptions *a1);
+extern unsigned int __stdcall CPrep_GetDependencyState(CWPluginPrivateContext *context, BrowseOptions *state);
 extern unsigned int __stdcall CPrep_GetFileIndex(CWPluginPrivateContext *key, unsigned int *value);
 extern unsigned int __stdcall CPrep_GetDependencyOption(int lookupKey, unsigned short *value);
 extern int __stdcall CPrep_GetContextPayload(CWPluginPrivateContext *handle, CWFileSpec *destination);
@@ -476,7 +476,7 @@ extern unsigned int __stdcall CPrep_GetResultValues(CWPluginPrivateContext *hand
                                                     UInt32 *second_value);
 extern unsigned int __stdcall CPrep_InvokeCompilerCallback(CWPluginPrivateContext *instance_id,
                                                            struct FileProcessingInfo *argument, const char *value);
-extern HashNameNode *fn_00441850(CPrepFileInfo *a0, SInt32 *a1);
+extern HashNameNode *fn_00441850(CPrepFileInfo *file, SInt32 *position);
 
 #ifdef __cplusplus
 }

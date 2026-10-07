@@ -79,13 +79,13 @@ extern SInt16 __stdcall Files_GetFileIdentifierInfoFromPath(SInt16 input, SInt32
                                                             FileIdentifierInfo *destination);
 extern unsigned int __stdcall Files_CreateFile(CWFileSpec *input, unsigned int secondArgument,
                                                unsigned int thirdArgument, int fourthArgument);
-extern SInt16 __stdcall Files_Read(SInt16 a0, SInt32 *a1, void *a2);
+extern SInt16 __stdcall Files_Read(SInt16 file, SInt32 *byteCount, void *buffer);
 extern DWORD __stdcall Files_Close(short handleIndex);
 extern short __stdcall Files_GetSize(short predecessor, SInt32 *result);
 extern SInt16 __stdcall Files_SetSize(SInt16 handleId, SInt32 size);
 extern int __stdcall Files_SetPosition(short refNum, short posMode, SInt32 posOff);
 extern short __stdcall Files_UpdateRecordQuery(RecordQuery *record);
-extern SInt16 __stdcall Files_Write(SInt16 a0, SInt32 *a1, void *a2);
+extern SInt16 __stdcall Files_Write(SInt16 refNum, SInt32 *size, void *buffer);
 extern UInt16 __stdcall fn_00414710(RecordQuery *record);
 extern int __stdcall Files_MakeFileSpecFromPath(short volume, int directory, unsigned char *path, CWFileSpec *result);
 

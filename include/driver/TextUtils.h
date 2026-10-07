@@ -14,7 +14,7 @@ struct StringListHeader {
 extern char *CLIO_ConvertToPascalString(char *string);
 extern char *__stdcall CLIO_ConvertPascalToCString(char *p);
 extern void __stdcall CLIO_GetResourceString(unsigned char *output, short resourceID, short stringIndex);
-extern void __stdcall CLIO_GetResourceCString(char *a0, int a1, int a2);
+extern void __stdcall CLIO_GetResourceCString(char *output, int resourceID, int stringIndex);
 
 #ifdef __cplusplus
 }

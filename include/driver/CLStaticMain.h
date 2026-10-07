@@ -8,7 +8,7 @@
 extern "C" {
 #endif
 
-extern int main(int a0, char **a1);
+extern int main(int argc, char **argv);
 extern SInt32 data_0053600c;
 extern SInt32 data_0053601c;
 

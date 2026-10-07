@@ -54,7 +54,7 @@ extern unsigned int __stdcall UCBBeginSubCompile(unsigned int argument0, unsigne
 extern unsigned int __stdcall UCBEndSubCompile(unsigned int unused);
 extern int __stdcall UCBGetPrecompiledHeaderSpec(DropinRequest *request, int output, const char *path);
 extern unsigned int __stdcall UCBGetResourceFile(unsigned int unused1, unsigned int unused2);
-extern unsigned int __stdcall UCBPutResourceFile(unsigned int a0, unsigned int a1, unsigned int a2, unsigned int a3);
+extern unsigned int __stdcall UCBPutResourceFile(unsigned int, unsigned int, unsigned int, unsigned int);
 extern int __stdcall UCBLookUpUnit(struct DropinRequest *request, char *inputName, char mode, void **outputObject,
                                    struct DropinResultSlot *outputValue);
 extern unsigned int __stdcall UCBSBMfiles(unsigned int unused1, unsigned int unused2);
@@ -64,8 +64,9 @@ extern int __stdcall UCBOSAlert(DropinContext *context, const char *text, short 
 extern int __stdcall UCBOSErrorMessage(struct DropinRequest *request, const char *message, short code);
 extern unsigned int __stdcall UCBGetStoredObjectFileSpec(unsigned int unused, unsigned int key, unsigned int output);
 extern unsigned int __stdcall UCBGetModifiedFiles(unsigned int unused, NameSpaceName *name, unsigned int unused2);
-extern int __stdcall UCBDisplayLines(unsigned int a0, unsigned int a1);
-extern unsigned int __stdcall UCBGetSuggestedObjectFileSpec(unsigned int a0, unsigned int a1, unsigned int a2);
+extern int __stdcall UCBDisplayLines(unsigned int callbackContext, unsigned int callbackData);
+extern unsigned int __stdcall UCBGetSuggestedObjectFileSpec(unsigned int context, unsigned int fileIndex,
+                                                            unsigned int outputSpecAddress);
 extern unsigned int __stdcall UCBUnitNameToFileName(unsigned int unused, const char *name, char *output);
 extern unsigned int fn_00426320(OSSpec *destination, DropinFileRecord *record);
 extern unsigned int __stdcall UCBFreeObjectData(unsigned int unused0, unsigned int recordKey, unsigned int unused2);

@@ -28,7 +28,7 @@ struct NameRegistryEntry {
 extern DWORD __stdcall fn_00413670(short kind, int value, OSPathSpec *path);
 extern int __stdcall MacSpecs_MakeResourceForkSpec(OSSpec *source, OSSpec *destination, char retryOnError);
 extern int __stdcall MacSpecs_MakeOSSpec(CWFileSpec *record, OSSpec *spec);
-extern struct MacSpecEntry *lookup_dir_id(unsigned int a0);
+extern struct MacSpecEntry *lookup_dir_id(unsigned int dirID);
 extern MacSpecEntry *find_or_create_child_entry(MacSpecEntry *table, char *name);
 extern int find_or_create_spec_entry(OSPathSpec *spec, unsigned int *typePtr, unsigned int *offsetPtr);
 extern int find_or_create_spec_entry_negated(OSPathSpec *input, unsigned int *firstResult, unsigned int *secondResult);

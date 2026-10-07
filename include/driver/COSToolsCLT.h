@@ -9,25 +9,25 @@ extern "C" {
 #endif
 
 extern void copy_pstring(UInt8 *destination, UInt8 *source);
-extern void *COS_NewHandle(SInt32 a0);
+extern void *COS_NewHandle(SInt32 size);
 extern void *COS_NewOSHandle(SIZE_T size);
-extern void COS_FreeHandle(void *a0);
-extern Boolean COS_ResizeHandle(struct StorageHandle *a0, UInt32 a1);
-extern void COS_LockHandle(void *a0);
-extern void COS_LockHandleHi(void *a0);
-extern void COS_UnlockHandle(void *a0);
+extern void COS_FreeHandle(void *handle);
+extern Boolean COS_ResizeHandle(struct StorageHandle *handle, UInt32 size);
+extern void COS_LockHandle(void *handle);
+extern void COS_LockHandleHi(void *handle);
+extern void COS_UnlockHandle(void *entry);
 extern UInt32 COS_GetTicks(void);
 extern void COS_GetString(char *buffer, SInt16 id, SInt16 arg);
-extern unsigned char COS_IsMultiByte(unsigned char *a0, unsigned char *a1);
+extern unsigned char COS_IsMultiByte(unsigned char *textStart, unsigned char *bytePosition);
 extern int COS_FileNew(CWFileSpec *record, short *output, unsigned int argument4, unsigned int argument5);
-extern short COS_FileOpen(CWFileSpec *h, short *a1);
+extern short COS_FileOpen(CWFileSpec *fileSpec, short *fileRef);
 extern SInt16 COS_FileGetType(CWFileSpec *arguments, UInt32 *output);
-extern short COS_FileGetSize(short a0, SInt32 *a1);
+extern short COS_FileGetSize(short fileRef, SInt32 *size);
 extern SInt16 COS_FileRead(SInt16 first, void *second, SInt32 third);
 extern SInt16 COS_FileWrite(SInt16 first, void *second, SInt32 third);
 extern short COS_FileGetPos(short value, long *result);
-extern SInt16 COS_FileSetPos(SInt16 a0, SInt32 a1);
-extern void COS_FileClose(short a0);
+extern SInt16 COS_FileSetPos(SInt16 refNum, SInt32 position);
+extern void COS_FileClose(short handleIndex);
 extern void COS_FileSetFSSpec(void *result, unsigned char *name);
 extern void COS_FileGetFSSpecInfo(CWFileSpec *record, unsigned short *tag, SInt32 *value, void *data);
 extern void resolve_file_name_to_pascal_string(short category, int recordId, void *inputName);

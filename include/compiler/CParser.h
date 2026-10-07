@@ -206,7 +206,7 @@ extern Object *CParser_NewLocalDataObject(DeclInfo *declaration, unsigned int ad
 extern HashNameNode *CParser_AppendUniqueNameFile(char *prefix);
 extern HashNameNode *CParser_AppendUniqueName(char *name);
 extern HashNameNode *CParser_GetUniqueName(void);
-extern unsigned int fn_004905c0(unsigned int a0);
+extern unsigned int fn_004905c0(unsigned int value);
 extern void CParser_PrintUniqueID(char *p);
 extern SInt32 CParser_GetUniqueID(void);
 extern Type *CParser_GetWCharType(void);
@@ -245,7 +245,7 @@ extern Boolean is_funcarg_list_same(FuncArg *left, FuncArg *right);
 extern HashNameNode *CParser_NameConcat(char *first, char *second);
 extern void initialize_runtime_objects(void);
 extern Object *CParser_CreateObject(struct DeclInfo *record);
-extern Object *CParser_NewAliasObject(Object *a0, int a1);
+extern Object *CParser_NewAliasObject(Object *object, int offset);
 extern void fn_00490210(Object *object, volatile DeclInfo *record);
 extern SInt16 is_typesame(Type *e1, Type *e2);
 extern void cparser(void);

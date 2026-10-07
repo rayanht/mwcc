@@ -40,7 +40,8 @@ struct Deps {
     struct AccessPaths *scope;
 };
 #pragma options align = reset
-extern Boolean find_dependency_access_path_entry(AccessPaths *dependencies, char *a2, AccessPathEntry **a3, char *a4);
+extern Boolean find_dependency_access_path_entry(AccessPaths *dependencies, char *comparison, AccessPathEntry **result,
+                                                 char *path);
 extern void append_dep_record(Deps *deps, char *name, UInt8 flag, AccessPathEntry *obj, AccessPathEntry *type,
                               AccessPathEntry *unused, SInt32 *out);
 extern unsigned char CLDependencies_FindFile(Deps *dependencies, char *file, char searchFirst, OSSpec *context,

@@ -8,7 +8,7 @@ extern "C" {
 #endif
 
 extern char *get_status_string(SInt16 status);
-extern unsigned int __stdcall CError_GetErrorString(short a0, char *a1);
+extern unsigned int __stdcall CError_GetErrorString(short errorCode, char *errorString);
 
 #ifdef __cplusplus
 }

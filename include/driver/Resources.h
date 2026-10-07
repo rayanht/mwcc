@@ -106,7 +106,7 @@ extern void read_resource_file(short refnum, char readonly, unsigned char *buf, 
 extern void write_default_binary_record(SInt16 file);
 extern ResEntry *find_res_entry_in_files(int lookupArg, short lookupKind);
 extern int Resources_SetFileTimes(unsigned int a, UInt32 b, UInt32 c);
-extern short __stdcall open_resource_fork(void *a1, char a2, short *a3);
+extern short __stdcall open_resource_fork(void *fileSpec, char mode, short *refNum);
 extern unsigned char fn_00406610(void);
 extern struct ResFile *find_resfile_by_refnum(short value);
 extern ResFile *find_resfile_with_previous(short value, ResFile **previous);
@@ -124,7 +124,7 @@ extern unsigned int calculate_resource_sizes(ResFile *root, unsigned int *pa1, u
 extern void append_identifier_list_node(SInt32 a, OSSpec *b);
 extern void Resources_RemoveIdentifier(unsigned int key);
 extern Boolean Resources_FindIdentifier(OSSpec *key, SInt32 *value);
-extern void fn_00408510(struct OSSpec *a0);
+extern void fn_00408510(struct OSSpec *resourceSpec);
 extern SInt16 __stdcall open_resource_file(void *param1, SInt8 param2);
 extern unsigned char **Resources_GetHand(SInt32 first, SInt16 second);
 extern void __stdcall close_resource_file(short param);
