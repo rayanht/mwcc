@@ -29,7 +29,7 @@ typedef enum ParamKind { PK_ZERO = 0, PK_ONE = 1, PK_FOUR = 4, PK_FIVE = 5 } Par
 
 static inline ByteQuad *fileCodeStorage(FTYPE_T *opt)
 {
-    return (ByteQuad *)opt->fileCode;
+    return (ByteQuad *)opt->fc;
 }
 
 static inline ByteQuad *fileCodeValue(unsigned char (*fileCode)[4])
@@ -54,36 +54,36 @@ unsigned int return_unsigned_zero(void)
     return 0U;
 }
 
-void format_num_parm(NumParm *parm, char **name, char **help, char **value)
+void format_num_parm(NUM_T *parm, char **name, char **help, char **value)
 {
     unsigned long v;
     unsigned short w;
     *name = (char *)(v = 0);
-    if (parm->name)
-        *name = parm->name;
+    if (parm->myname)
+        *name = parm->myname;
     if (parm->size == 1) {
         unsigned char c;
         if (!*name)
             *name = "byte";
-        if (parm->var)
-            c = *parm->var;
+        if (parm->num)
+            c = *(unsigned char *)parm->num;
         v = c;
     } else if (parm->size == 2) {
         if (!*name)
             *name = "short";
-        if (parm->var) {
-            ((unsigned char *)&w)[0] = parm->var[0];
-            ((unsigned char *)&w)[1] = parm->var[1];
+        if (parm->num) {
+            ((unsigned char *)&w)[0] = ((unsigned char *)parm->num)[0];
+            ((unsigned char *)&w)[1] = ((unsigned char *)parm->num)[1];
         }
         v = w;
     } else if (parm->size == 4) {
         if (!*name)
             *name = "long";
-        if (parm->var) {
-            ((unsigned char *)&v)[0] = parm->var[0];
-            ((unsigned char *)&v)[1] = parm->var[1];
-            ((unsigned char *)&v)[2] = parm->var[2];
-            ((unsigned char *)&v)[3] = parm->var[3];
+        if (parm->num) {
+            ((unsigned char *)&v)[0] = ((unsigned char *)parm->num)[0];
+            ((unsigned char *)&v)[1] = ((unsigned char *)parm->num)[1];
+            ((unsigned char *)&v)[2] = ((unsigned char *)parm->num)[2];
+            ((unsigned char *)&v)[3] = ((unsigned char *)parm->num)[3];
         }
     }
     if (parm->size == 4) {
@@ -98,7 +98,7 @@ void format_num_parm(NumParm *parm, char **name, char **help, char **value)
         sprintf(parm_format_buffer, "%u", v);
     }
     *value = parm_format_buffer;
-    if (!parm->var)
+    if (!parm->num)
         *value = NULL;
     if (parm->lo == parm->hi)
         *help = NULL;
@@ -111,7 +111,7 @@ unsigned int fn_0042910d(void)
 
 #include <string.h>
 
-int fn_00429110(NumParm *record, char *cursor)
+int fn_00429110(NUM_T *record, char *cursor)
 {
     UInt32 value = 0;
     UInt32 minimum = 0;
@@ -186,7 +186,7 @@ int fn_00429110(NumParm *record, char *cursor)
         maximum = record->hi;
     }
 
-    if (record->clamp == 0) {
+    if (record->fit == 0) {
         if (value < minimum || value > maximum) {
             Parameter_ForwardVarArgs(6, value, minimum, maximum);
             return 0;
@@ -203,7 +203,7 @@ int fn_00429110(NumParm *record, char *cursor)
 
     if (record->size == 1) {
         UInt8 byteValue = value;
-        UInt8 *destination = record->var;
+        UInt8 *destination = record->num;
         *destination = byteValue;
     }
     if (record->size == 2) {
@@ -213,13 +213,13 @@ int fn_00429110(NumParm *record, char *cursor)
         } narrowedValue;
         BytePair destinationBytes, valueBytes;
         narrowedValue.value = value;
-        destinationBytes.bytes[0] = ((BytePair *)record->var)->bytes[0];
-        destinationBytes.bytes[1] = ((BytePair *)record->var)->bytes[1];
+        destinationBytes.bytes[0] = ((BytePair *)record->num)->bytes[0];
+        destinationBytes.bytes[1] = ((BytePair *)record->num)->bytes[1];
         valueBytes.bytes[0] = ((BytePair *)&narrowedValue)->bytes[0];
         valueBytes.bytes[1] = ((BytePair *)&narrowedValue)->bytes[1];
         destinationBytes = valueBytes;
-        ((BytePair *)record->var)->bytes[0] = destinationBytes.bytes[0];
-        ((BytePair *)record->var)->bytes[1] = destinationBytes.bytes[1];
+        ((BytePair *)record->num)->bytes[0] = destinationBytes.bytes[0];
+        ((BytePair *)record->num)->bytes[1] = destinationBytes.bytes[1];
     } else if (record->size == 4) {
         union {
             UInt32 value;
@@ -227,19 +227,19 @@ int fn_00429110(NumParm *record, char *cursor)
         } storedValue;
         ByteQuad destinationBytes, valueBytes;
         storedValue.value = value;
-        destinationBytes.bytes[0] = ((ByteQuad *)record->var)->bytes[0];
-        destinationBytes.bytes[1] = ((ByteQuad *)record->var)->bytes[1];
-        destinationBytes.bytes[2] = ((ByteQuad *)record->var)->bytes[2];
-        destinationBytes.bytes[3] = ((ByteQuad *)record->var)->bytes[3];
+        destinationBytes.bytes[0] = ((ByteQuad *)record->num)->bytes[0];
+        destinationBytes.bytes[1] = ((ByteQuad *)record->num)->bytes[1];
+        destinationBytes.bytes[2] = ((ByteQuad *)record->num)->bytes[2];
+        destinationBytes.bytes[3] = ((ByteQuad *)record->num)->bytes[3];
         valueBytes.bytes[0] = ((ByteQuad *)&storedValue)->bytes[0];
         valueBytes.bytes[1] = ((ByteQuad *)&storedValue)->bytes[1];
         valueBytes.bytes[2] = ((ByteQuad *)&storedValue)->bytes[2];
         valueBytes.bytes[3] = ((ByteQuad *)&storedValue)->bytes[3];
         destinationBytes = valueBytes;
-        ((ByteQuad *)record->var)->bytes[0] = destinationBytes.bytes[0];
-        ((ByteQuad *)record->var)->bytes[1] = destinationBytes.bytes[1];
-        ((ByteQuad *)record->var)->bytes[2] = destinationBytes.bytes[2];
-        ((ByteQuad *)record->var)->bytes[3] = destinationBytes.bytes[3];
+        ((ByteQuad *)record->num)->bytes[0] = destinationBytes.bytes[0];
+        ((ByteQuad *)record->num)->bytes[1] = destinationBytes.bytes[1];
+        ((ByteQuad *)record->num)->bytes[2] = destinationBytes.bytes[2];
+        ((ByteQuad *)record->num)->bytes[3] = destinationBytes.bytes[3];
     }
 
     return 1;
@@ -247,17 +247,17 @@ int fn_00429110(NumParm *record, char *cursor)
 
 void format_filecode_option(FTYPE_T *opt, char **name, int *flags, char **value)
 {
-    if (opt->base.myname)
-        *name = opt->base.myname;
+    if (opt->myname)
+        *name = opt->myname;
     else if (opt->iscreator)
         *name = "creator";
     else
         *name = "type";
-    if (!opt->fileCode)
+    if (!opt->fc)
         *value = NULL;
     else {
         char *p = parm_format_buffer;
-        unsigned int v = *opt->fileCode;
+        unsigned int v = *opt->fc;
         int i = 0;
         *p++ = '\'';
         for (; i < 4; i++) {
@@ -309,8 +309,8 @@ int set_file_code(FTYPE_T *opt, char *arg)
 
 void format_string_name_help_value(STRING_T *parm, char **name, char **help, char **value)
 {
-    if (parm->base.myname)
-        *name = parm->base.myname;
+    if (parm->myname)
+        *name = parm->myname;
     else
         *name = "string";
     if (!parm->str) {
@@ -347,9 +347,9 @@ int copy_idparm_arg(STRING_T *parm, char *arg, int x)
 
 void get_string_name_help_value(STRING_T *parm, char **name, char **help, char **value)
 {
-    if (parm->base.myname)
-        *name = parm->base.myname;
-    else if (parm->base.which == 5)
+    if (parm->myname)
+        *name = parm->myname;
+    else if (parm->which == 5)
         *name = "identifier";
     else
         *name = "symbol";
@@ -377,9 +377,9 @@ int validate_id_arg(STRING_T *parm, char *arg, int x)
     char *s;
     const char *extra;
     if (copy_idparm_arg(parm, arg, x)) {
-        if (parm->base.which == 5)
+        if (parm->which == 5)
             extra = "$_";
-        else if (parm->base.which == 6)
+        else if (parm->which == 6)
             extra = "_.$@?#";
         for (s = arg; *s; s++) {
             if (s == arg && Utils_IsDigit(*s))
@@ -392,12 +392,12 @@ int validate_id_arg(STRING_T *parm, char *arg, int x)
     return 0;
 }
 
-void get_option_val_count_state(register OnOff *p, register char **out_val, register SInt32 *out_count,
+void get_option_val_count_state(register ONOFF_T *p, register char **out_val, register SInt32 *out_count,
                                 register char **out_state)
 {
     char cc;
-    if (p->name != NULL)
-        *out_val = p->name;
+    if (p->myname != NULL)
+        *out_val = p->myname;
     else
         *out_val = "on|off";
     *out_count = 0;
@@ -418,7 +418,7 @@ unsigned int fn_004297bf(void)
     return 0U;
 }
 
-int parse_on_off(OnOff *opt, char *arg, int flags)
+int parse_on_off(ONOFF_T *opt, char *arg, int flags)
 {
     unsigned char on = (flags & 8) == 0;
     if (!ClientGlue_CompareLowercaseStrings(arg, "on"))
@@ -432,10 +432,10 @@ int parse_on_off(OnOff *opt, char *arg, int flags)
     return 1;
 }
 
-void get_on_off_option_info(OnOff *opt, char **name, int *flags, char **value)
+void get_on_off_option_info(OFFON_T *opt, char **name, int *flags, char **value)
 {
-    if (opt->name)
-        *name = opt->name;
+    if (opt->myname)
+        *name = opt->myname;
     else
         *name = "off|on";
     *flags = 0;
@@ -457,7 +457,7 @@ unsigned int fn_00429896(void)
     return 0U;
 }
 
-int set_on_off(OnOff *opt, char *arg, int flags)
+int set_on_off(OFFON_T *opt, char *arg, int flags)
 {
     unsigned char on = (flags & 8) == 0;
     if (!ClientGlue_CompareLowercaseStrings(arg, "off"))
@@ -474,8 +474,8 @@ int set_on_off(OnOff *opt, char *arg, int flags)
 void get_filepath_name_flags_value(FILEPATH_T *opt, char **name, int *flags, int *value)
 {
     char *unused = parm_help_buffer;
-    if (opt->base.myname)
-        *name = opt->base.myname;
+    if (opt->myname)
+        *name = opt->myname;
     else
         *name = "filepath";
     *flags = 0;
@@ -522,45 +522,45 @@ void zero_unsigned_int_outputs(int unused, unsigned int *firstOutput, unsigned i
     *thirdOutput = 0U;
 }
 
-int is_mask_entry_unchanged(MaskEntry *entry)
+int is_mask_entry_unchanged(MASK_T *entry)
 {
-    if (entry->width == 1) {
-        unsigned char value = entry->value.b;
-        unsigned char mask = entry->mask.b;
+    if (entry->size == 1) {
+        unsigned char value = entry->ormask;
+        unsigned char mask = entry->andmask;
         unsigned char current;
-        if (entry->addr)
-            current = *entry->addr;
+        if (entry->num)
+            current = *(unsigned char *)entry->num;
         return current == ((current & ~mask) | value);
-    } else if (entry->width == 2) {
-        unsigned short value = entry->value.w;
-        unsigned short mask = entry->mask.w;
+    } else if (entry->size == 2) {
+        unsigned short value = entry->ormask;
+        unsigned short mask = entry->andmask;
         union {
             unsigned short word;
             unsigned char bytes[2];
         } current;
-        if (entry->addr) {
-            ((BytePair *)current.bytes)->bytes[0] = entry->addr[0];
-            ((BytePair *)current.bytes)->bytes[1] = entry->addr[1];
+        if (entry->num) {
+            ((BytePair *)current.bytes)->bytes[0] = ((unsigned char *)entry->num)[0];
+            ((BytePair *)current.bytes)->bytes[1] = ((unsigned char *)entry->num)[1];
         }
         return current.word == ((current.word & ~mask) | value);
     } else {
-        unsigned long value = entry->value.l;
-        unsigned long mask = entry->mask.l;
+        unsigned long value = entry->ormask;
+        unsigned long mask = entry->andmask;
         union {
             unsigned long word;
             unsigned char bytes[4];
         } current;
-        if (entry->addr) {
-            ((ByteQuad *)current.bytes)->bytes[0] = entry->addr[0];
-            ((ByteQuad *)current.bytes)->bytes[1] = entry->addr[1];
-            ((ByteQuad *)current.bytes)->bytes[2] = entry->addr[2];
-            ((ByteQuad *)current.bytes)->bytes[3] = entry->addr[3];
+        if (entry->num) {
+            ((ByteQuad *)current.bytes)->bytes[0] = ((unsigned char *)entry->num)[0];
+            ((ByteQuad *)current.bytes)->bytes[1] = ((unsigned char *)entry->num)[1];
+            ((ByteQuad *)current.bytes)->bytes[2] = ((unsigned char *)entry->num)[2];
+            ((ByteQuad *)current.bytes)->bytes[3] = ((unsigned char *)entry->num)[3];
         }
         return current.word == ((~mask & current.word) | value);
     }
 }
 
-int apply_mask_entry(MaskEntry *entry, int unused, int flags)
+int apply_mask_entry(MASK_T *entry, int unused, int flags)
 {
     typedef union {
         unsigned short w;
@@ -570,46 +570,46 @@ int apply_mask_entry(MaskEntry *entry, int unused, int flags)
         unsigned long l;
         unsigned char b[4];
     } LongBytes;
-    if (entry->width == 1) {
-        unsigned char value = entry->value.b;
-        unsigned char mask = entry->mask.b;
+    if (entry->size == 1) {
+        unsigned char value = entry->ormask;
+        unsigned char mask = entry->andmask;
         if (flags & 8) {
             unsigned char oldMask = mask;
             mask |= value;
             value = oldMask;
         }
-        *entry->addr = (*entry->addr & ~mask) | value;
-    } else if (entry->width == 2) {
-        unsigned short value = entry->value.w;
-        unsigned short mask = entry->mask.w;
+        *(unsigned char *)entry->num = (*(unsigned char *)entry->num & ~mask) | value;
+    } else if (entry->size == 2) {
+        unsigned short value = entry->ormask;
+        unsigned short mask = entry->andmask;
         WordBytes current, maskBytes, valueBytes;
         if (flags & 8) {
             unsigned short oldMask = mask;
             mask |= value;
             value = oldMask;
         }
-        current.b[0] = entry->addr[0];
-        current.b[1] = entry->addr[1];
+        current.b[0] = ((unsigned char *)entry->num)[0];
+        current.b[1] = ((unsigned char *)entry->num)[1];
         maskBytes.b[0] = ((WordBytes *)&mask)->b[0];
         maskBytes.b[1] = ((WordBytes *)&mask)->b[1];
         valueBytes.b[0] = ((WordBytes *)&value)->b[0];
         valueBytes.b[1] = ((WordBytes *)&value)->b[1];
         current.w = (~maskBytes.w & current.w) | valueBytes.w;
-        entry->addr[0] = current.b[0];
-        entry->addr[1] = current.b[1];
+        ((unsigned char *)entry->num)[0] = current.b[0];
+        ((unsigned char *)entry->num)[1] = current.b[1];
     } else {
-        unsigned long value = entry->value.l;
-        unsigned long mask = entry->mask.l;
+        unsigned long value = entry->ormask;
+        unsigned long mask = entry->andmask;
         LongBytes current, maskBytes, valueBytes;
         if (flags & 8) {
             unsigned long oldMask = mask;
             mask |= value;
             value = oldMask;
         }
-        current.b[0] = entry->addr[0];
-        current.b[1] = entry->addr[1];
-        current.b[2] = entry->addr[2];
-        current.b[3] = entry->addr[3];
+        current.b[0] = ((unsigned char *)entry->num)[0];
+        current.b[1] = ((unsigned char *)entry->num)[1];
+        current.b[2] = ((unsigned char *)entry->num)[2];
+        current.b[3] = ((unsigned char *)entry->num)[3];
         maskBytes.b[0] = ((LongBytes *)&mask)->b[0];
         maskBytes.b[1] = ((LongBytes *)&mask)->b[1];
         maskBytes.b[2] = ((LongBytes *)&mask)->b[2];
@@ -619,10 +619,10 @@ int apply_mask_entry(MaskEntry *entry, int unused, int flags)
         valueBytes.b[2] = ((LongBytes *)&value)->b[2];
         valueBytes.b[3] = ((LongBytes *)&value)->b[3];
         current.l = (~maskBytes.l & current.l) | valueBytes.l;
-        entry->addr[0] = current.b[0];
-        entry->addr[1] = current.b[1];
-        entry->addr[2] = current.b[2];
-        entry->addr[3] = current.b[3];
+        ((unsigned char *)entry->num)[0] = current.b[0];
+        ((unsigned char *)entry->num)[1] = current.b[1];
+        ((unsigned char *)entry->num)[2] = current.b[2];
+        ((unsigned char *)entry->num)[3] = current.b[3];
     }
     return 1;
 }
@@ -635,75 +635,75 @@ void clear_unsigned_outputs(int unused, unsigned int *firstOutput, unsigned int 
     *thirdOutput = 0U;
 }
 
-int is_dest_unchanged_by_val_xor(ConstRec *parameter)
+int is_dest_unchanged_by_val_xor(TOGGLE_T *parameter)
 {
     struct ValueBytes {
         unsigned char low;
         unsigned char high;
     };
-    if (parameter->kind == 1) {
-        unsigned char mask = parameter->val.b;
+    if (parameter->size == 1) {
+        unsigned char mask = parameter->mask;
         unsigned char current;
-        if (parameter->dest)
-            current = *parameter->dest;
+        if (parameter->num)
+            current = *(UInt8 *)parameter->num;
         return current == (current ^ mask);
-    } else if (parameter->kind == 2) {
-        unsigned short mask = parameter->val.w;
+    } else if (parameter->size == 2) {
+        unsigned short mask = parameter->mask;
         unsigned short current;
-        if (parameter->dest) {
-            ((struct ValueBytes *)&current)->low = parameter->dest[0];
-            ((struct ValueBytes *)&current)->high = parameter->dest[1];
+        if (parameter->num) {
+            ((struct ValueBytes *)&current)->low = ((UInt8 *)parameter->num)[0];
+            ((struct ValueBytes *)&current)->high = ((UInt8 *)parameter->num)[1];
         }
         return current == (current ^ mask);
     } else {
-        unsigned long mask = parameter->val.dw;
+        unsigned long mask = parameter->mask;
         unsigned long current;
-        if (parameter->dest) {
-            ((struct ValueBytes *)&current)->low = parameter->dest[0];
-            ((struct ValueBytes *)&current)->high = parameter->dest[1];
+        if (parameter->num) {
+            ((struct ValueBytes *)&current)->low = ((UInt8 *)parameter->num)[0];
+            ((struct ValueBytes *)&current)->high = ((UInt8 *)parameter->num)[1];
         }
         return current == (current ^ mask);
     }
 }
 
-int xor_const_dest(ConstRec *constant)
+int xor_const_dest(TOGGLE_T *constant)
 {
-    if (constant->kind == 1) {
-        UInt8 mask = (UInt8)constant->val.w;
-        constant->dest[0] ^= mask;
-    } else if (constant->kind == 2) {
+    if (constant->size == 1) {
+        UInt8 mask = (UInt8)constant->mask;
+        ((UInt8 *)constant->num)[0] ^= mask;
+    } else if (constant->size == 2) {
         typedef union {
             SInt16 word;
             UInt8 bytes[2];
         } WordBytes;
-        SInt16 value = constant->val.w;
+        SInt16 value = constant->mask;
         WordBytes destination, mask;
-        destination.bytes[0] = constant->dest[0];
-        destination.bytes[1] = constant->dest[1];
+        destination.bytes[0] = ((UInt8 *)constant->num)[0];
+        destination.bytes[1] = ((UInt8 *)constant->num)[1];
         mask.bytes[0] = ((WordBytes *)&value)->bytes[0];
         mask.bytes[1] = ((WordBytes *)&value)->bytes[1];
         destination.word ^= mask.word;
-        constant->dest[0] = destination.bytes[0];
-        constant->dest[1] = destination.bytes[1];
+        ((UInt8 *)constant->num)[0] = destination.bytes[0];
+        ((UInt8 *)constant->num)[1] = destination.bytes[1];
     } else {
         typedef union {
             SInt32 word;
             UInt8 bytes[4];
         } LongBytes;
         LongBytes destination, mask;
-        destination.bytes[0] = constant->dest[0];
-        destination.bytes[1] = constant->dest[1];
-        destination.bytes[2] = constant->dest[2];
-        destination.bytes[3] = constant->dest[3];
-        mask.bytes[0] = ((LongBytes *)&constant->val)->bytes[0];
-        mask.bytes[1] = ((LongBytes *)&constant->val)->bytes[1];
-        mask.bytes[2] = ((LongBytes *)&constant->val)->bytes[2];
-        mask.bytes[3] = ((LongBytes *)&constant->val)->bytes[3];
+        destination.bytes[0] = ((UInt8 *)constant->num)[0];
+        destination.bytes[1] = ((UInt8 *)constant->num)[1];
+        destination.bytes[2] = ((UInt8 *)constant->num)[2];
+        destination.bytes[3] = ((UInt8 *)constant->num)[3];
+        mask.bytes[0] = ((LongBytes *)&constant->mask)->bytes[0];
+        mask.bytes[1] = ((LongBytes *)&constant->mask)->bytes[1];
+        mask.bytes[2] = ((LongBytes *)&constant->mask)->bytes[2];
+        mask.bytes[3] = ((LongBytes *)&constant->mask)->bytes[3];
         destination.word ^= mask.word;
-        constant->dest[0] = destination.bytes[0];
-        constant->dest[1] = destination.bytes[1];
-        constant->dest[2] = destination.bytes[2];
-        constant->dest[3] = destination.bytes[3];
+        ((UInt8 *)constant->num)[0] = destination.bytes[0];
+        ((UInt8 *)constant->num)[1] = destination.bytes[1];
+        ((UInt8 *)constant->num)[2] = destination.bytes[2];
+        ((UInt8 *)constant->num)[3] = destination.bytes[3];
     }
     return 1;
 }
@@ -715,49 +715,49 @@ void zero_unsigned_outputs(int mode, unsigned int *firstOutput, unsigned int *se
     *thirdOutput = 0U;
 }
 
-int const_matches_dest(ConstRec *constant)
+int const_matches_dest(SET_T *constant)
 {
-    if (constant->kind == 1) {
-        unsigned char value = constant->val.b;
+    if (constant->size == 1) {
+        unsigned char value = constant->value;
         unsigned char current;
-        if (constant->dest)
-            current = *constant->dest;
+        if (constant->num)
+            current = *(UInt8 *)constant->num;
         return value == current;
-    } else if (constant->kind == 2) {
-        unsigned short value = constant->val.w;
+    } else if (constant->size == 2) {
+        unsigned short value = constant->value;
         struct WordBytes {
             unsigned char low, high;
         };
         unsigned short current;
-        if (constant->dest) {
-            ((struct WordBytes *)&current)->low = constant->dest[0];
-            ((struct WordBytes *)&current)->high = constant->dest[1];
+        if (constant->num) {
+            ((struct WordBytes *)&current)->low = ((UInt8 *)constant->num)[0];
+            ((struct WordBytes *)&current)->high = ((UInt8 *)constant->num)[1];
         }
         return value == current;
     } else {
-        unsigned long value = constant->val.dw;
+        unsigned long value = constant->value;
         struct LongBytes {
             unsigned char first, second, third, fourth;
         };
         unsigned long current;
-        if (constant->dest) {
-            ((struct LongBytes *)&current)->first = constant->dest[0];
-            ((struct LongBytes *)&current)->second = constant->dest[1];
-            ((struct LongBytes *)&current)->third = constant->dest[2];
-            ((struct LongBytes *)&current)->fourth = constant->dest[3];
+        if (constant->num) {
+            ((struct LongBytes *)&current)->first = ((UInt8 *)constant->num)[0];
+            ((struct LongBytes *)&current)->second = ((UInt8 *)constant->num)[1];
+            ((struct LongBytes *)&current)->third = ((UInt8 *)constant->num)[2];
+            ((struct LongBytes *)&current)->fourth = ((UInt8 *)constant->num)[3];
         }
         return value == current;
     }
 }
 
-Boolean store_constrec_val(ConstRec *rec, void *unused, UInt32 flags)
+Boolean store_constrec_val(SET_T *rec, void *unused, UInt32 flags)
 {
-    if (rec->kind == 1) {
-        UInt8 value = rec->val.b;
+    if (rec->size == 1) {
+        UInt8 value = rec->value;
         if ((flags & 8) && value <= 1)
             value = !value;
-        rec->dest[0] = value;
-    } else if (rec->kind == 2) {
+        ((UInt8 *)rec->num)[0] = value;
+    } else if (rec->size == 2) {
         struct WordBytes {
             UInt8 low, high;
         };
@@ -766,16 +766,16 @@ Boolean store_constrec_val(ConstRec *rec, void *unused, UInt32 flags)
             UInt16 word;
         };
         union WordValue value, output, temporary;
-        value.word = rec->val.w;
+        value.word = rec->value;
         if ((flags & 8) && value.word <= 1)
             value.word = !value.word;
-        output.bytes[0] = rec->dest[0];
-        output.bytes[1] = rec->dest[1];
+        output.bytes[0] = ((UInt8 *)rec->num)[0];
+        output.bytes[1] = ((UInt8 *)rec->num)[1];
         temporary.bytes[0] = ((struct WordBytes *)&value)->low;
         temporary.bytes[1] = ((struct WordBytes *)&value)->high;
         output.word = temporary.word;
-        rec->dest[0] = output.bytes[0];
-        rec->dest[1] = output.bytes[1];
+        ((UInt8 *)rec->num)[0] = output.bytes[0];
+        ((UInt8 *)rec->num)[1] = output.bytes[1];
     } else {
         struct LongBytes {
             UInt8 first, second, third, fourth;
@@ -785,22 +785,22 @@ Boolean store_constrec_val(ConstRec *rec, void *unused, UInt32 flags)
             UInt32 word;
         };
         union LongValue value, output, temporary;
-        value.word = rec->val.dw;
+        value.word = rec->value;
         if ((flags & 8) && value.word <= 1)
             value.word = !value.word;
-        output.bytes[0] = rec->dest[0];
-        output.bytes[1] = rec->dest[1];
-        output.bytes[2] = rec->dest[2];
-        output.bytes[3] = rec->dest[3];
+        output.bytes[0] = ((UInt8 *)rec->num)[0];
+        output.bytes[1] = ((UInt8 *)rec->num)[1];
+        output.bytes[2] = ((UInt8 *)rec->num)[2];
+        output.bytes[3] = ((UInt8 *)rec->num)[3];
         temporary.bytes[0] = ((struct LongBytes *)&value)->first;
         temporary.bytes[1] = ((struct LongBytes *)&value)->second;
         temporary.bytes[2] = ((struct LongBytes *)&value)->third;
         temporary.bytes[3] = ((struct LongBytes *)&value)->fourth;
         output.word = temporary.word;
-        rec->dest[0] = output.bytes[0];
-        rec->dest[1] = output.bytes[1];
-        rec->dest[2] = output.bytes[2];
-        rec->dest[3] = output.bytes[3];
+        ((UInt8 *)rec->num)[0] = output.bytes[0];
+        ((UInt8 *)rec->num)[1] = output.bytes[1];
+        ((UInt8 *)rec->num)[2] = output.bytes[2];
+        ((UInt8 *)rec->num)[3] = output.bytes[3];
     }
     return 1;
 }
@@ -832,15 +832,15 @@ int set_string(SETSTRING_T *arguments)
     return 1;
 }
 
-void get_setting_name_value(Setting *opt, char **name, int *value, int *flags)
+void get_setting_name_value(GENERIC_T *opt, char **name, int *value, int *flags)
 {
-    if (opt->name)
-        *name = opt->name;
+    if (opt->myname)
+        *name = opt->myname;
     else if ((opt->flags & 3) != 1)
         *name = "xxx";
     else
         *name = NULL;
-    *value = opt->value;
+    *value = (int)opt->help;
     *flags = 0;
 }
 
@@ -849,15 +849,15 @@ unsigned int fn_0042a192(void)
     return 0U;
 }
 
-void invoke_float_parameter_callback(FloatParameterCallback *rec, float a, float b)
+void invoke_float_parameter_callback(GENERIC_T *rec, char *pstr, int flags)
 {
-    rec->handler(&option_name, rec->arg, a, b);
+    rec->parse(option_name, rec->var, pstr, flags);
 }
 
-void format_setting_help(Setting *opt, char **help, int *a, int *b)
+void format_setting_help(SETTING_T *opt, char **help, int *a, int *b)
 {
     char *p = data_0054da38;
-    p += sprintf(p, "%s", opt->name ? opt->name : "var");
+    p += sprintf(p, "%s", opt->myname ? opt->myname : "var");
     if ((opt->flags & 3) != 1)
         p += sprintf(p, "%s=%s%s", (opt->flags & 2) ? "[" : "", opt->valuename ? opt->valuename : "...",
                      (opt->flags & 2) ? "]" : "");
@@ -871,7 +871,7 @@ unsigned int fn_0042a263(void)
     return 0U;
 }
 
-int fn_0042a266(HANDLER_T *h, char *arg, int x)
+int fn_0042a266(SETTING_T *h, char *arg, int x)
 {
     char buf[0x100];
     char *value;
@@ -886,16 +886,16 @@ int fn_0042a266(HANDLER_T *h, char *arg, int x)
     if (tok && *tok == 4) {
         Targets_AdvanceArgument();
         hasvalue = 1;
-        if (!parse_parameter_value(&h->base, &value, x))
+        if (!parse_parameter_value((PARAM_T *)h, &value, x))
             return 0;
     } else
         value = NULL;
     if (!value && hasvalue)
         value = "";
-    return h->func(buf, value);
+    return h->parse(buf, value);
 }
 
-void fn_0042a312(DumpTextRecord *record, char **firstOutput, char **secondOutput, int *status)
+void fn_0042a312(IFARG_T *record, char **firstOutput, char **secondOutput, int *status)
 {
     char *firstText = NULL;
     int secondText = 0;
@@ -912,31 +912,30 @@ void fn_0042a312(DumpTextRecord *record, char **firstOutput, char **secondOutput
 
     *firstCursor = 0;
     *secondCursor = 0;
-    if (record->firstInput != NULL)
-        Parameter_DispatchByWhich(record->firstInput, (int *)&firstText, &firstBody, &firstSuffix);
-    if (record->secondInput != NULL)
-        Parameter_DispatchByWhich(record->secondInput, &secondText, &secondBody, &secondSuffix);
+    if (record->parg != NULL)
+        Parameter_DispatchByWhich(record->parg, (int *)&firstText, &firstBody, &firstSuffix);
+    if (record->pnone != NULL)
+        Parameter_DispatchByWhich(record->pnone, &secondText, &secondBody, &secondSuffix);
 
-    if (record->firstDetail != NULL && record->secondDetail != NULL) {
+    if (record->helpa != NULL && record->helpn != NULL) {
         if (firstSuffix != 0) {
-            written = sprintf(secondCursor, "%s (default is %s), else %s", record->firstDetail, firstSuffix,
-                              record->secondDetail);
+            written = sprintf(secondCursor, "%s (default is %s), else %s", record->helpa, firstSuffix, record->helpn);
             secondCursor += written;
         } else {
-            written = sprintf(secondCursor, "%s, else %s", record->firstDetail, record->secondDetail);
+            written = sprintf(secondCursor, "%s, else %s", record->helpa, record->helpn);
             secondCursor += written;
         }
-    } else if (record->firstDetail != NULL) {
-        secondCursor += sprintf(secondCursor, "%s", record->firstDetail);
+    } else if (record->helpa != NULL) {
+        secondCursor += sprintf(secondCursor, "%s", record->helpa);
         if (firstSuffix != 0)
             secondCursor += sprintf(secondCursor, "; default is %s", firstSuffix);
-    } else if (record->secondDetail != NULL) {
-        secondCursor += sprintf(secondCursor, "nothing, else %s", record->secondDetail);
+    } else if (record->helpn != NULL) {
+        secondCursor += sprintf(secondCursor, "nothing, else %s", record->helpn);
     }
 
     if (firstText != NULL) {
-        if (record->firstLabel != NULL) {
-            written = sprintf(firstCursor, "[%s]", record->firstLabel ? record->firstLabel : "param");
+        if (record->myname != NULL) {
+            written = sprintf(firstCursor, "[%s]", record->myname ? record->myname : "param");
             firstCursor += written;
         } else if (firstBody != 0) {
             lineEnd = strchr(firstText, '\n');
@@ -1015,12 +1014,12 @@ unsigned int get_unsigned_zero(void)
     return 0U;
 }
 
-int evaluate_conditional_branch(struct PARAM_Conditional *expr, char *a, int b)
+int evaluate_conditional_branch(IFARG_T *expr, char *a, int b)
 {
     if (a)
-        return dispatch_param_by_which(expr->iftrue, a, b);
-    else if (expr->iffalse)
-        return dispatch_param_by_which(expr->iffalse, a, b);
+        return dispatch_param_by_which(expr->parg, a, b);
+    else if (expr->pnone)
+        return dispatch_param_by_which(expr->pnone, a, b);
     return 1;
 }
 

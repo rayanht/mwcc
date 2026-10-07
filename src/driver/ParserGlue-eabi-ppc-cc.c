@@ -127,7 +127,7 @@ Option optlstCmdLine_help_secret = {"secret", 0x103101, (PARAM_T *)&optlstCmdLin
 MASK_T optlstCmdLine_help_opt_param1 = {PARAMWHICH_Mask, 1, NULL, NULL, 4, 0x1, 0x0, &data_00587ce0};
 
 STRING_T optlstCmdLine_help_opt_param0 = {
-    {PARAMWHICH_String, 0, "name", (PARAM_T *)&optlstCmdLine_help_opt_param1}, 64, 0, (char *)&data_00587ca0};
+    PARAMWHICH_String, 0, "name", (PARAM_T *)&optlstCmdLine_help_opt_param1, 64, 0, (char *)&data_00587ca0};
 
 Option optlstCmdLine_help_opt = {"opt|option",
                                  0x42101,
@@ -136,7 +136,7 @@ Option optlstCmdLine_help_opt = {"opt|option",
                                  &optlstCmdLine_help_opt_conflicts,
                                  "show help for a given option"};
 
-STRING_T optlstCmdLine_help_search_param0 = {{PARAMWHICH_String, 0, "keyword", NULL}, 64, 0, (char *)&data_00587ca0};
+STRING_T optlstCmdLine_help_search_param0 = {PARAMWHICH_String, 0, "keyword", NULL, 64, 0, (char *)&data_00587ca0};
 
 Option optlstCmdLine_help_search = {"search",
                                     0x42101,
@@ -148,7 +148,7 @@ Option optlstCmdLine_help_search = {"search",
 MASK_T optlstCmdLine_help_group_param1 = {PARAMWHICH_Mask, 1, NULL, NULL, 4, 0x8000, 0x0, &data_00587ce0};
 
 STRING_T optlstCmdLine_help_group_param0 = {
-    {PARAMWHICH_String, 0, "keyword", (PARAM_T *)&optlstCmdLine_help_group_param1}, 64, 0, (char *)&data_00587ca0};
+    PARAMWHICH_String, 0, "keyword", (PARAM_T *)&optlstCmdLine_help_group_param1, 64, 0, (char *)&data_00587ca0};
 
 Option optlstCmdLine_help_group = {"group",
                                    0x42101,
@@ -530,8 +530,8 @@ SET_T optlstCmdLineCompiler_EP_param0 = {PARAMWHICH_Set, 1, NULL, (PARAM_T *)&op
 Option optlstCmdLineCompiler_EP = {"EP", 0x105, (PARAM_T *)&optlstCmdLineCompiler_EP_param0,
                                    NULL, NULL,  "preprocess and strip out #line directives"};
 
-STRING_T optlstCmdLineCompiler_ext_param0 = {
-    {PARAMWHICH_String, 0, "extension", NULL}, 15, 0, pCmdLineCompiler.objFileExt};
+STRING_T optlstCmdLineCompiler_ext_param0 = {PARAMWHICH_String,          0, "extension", NULL, 15, 0,
+                                             pCmdLineCompiler.objFileExt};
 
 Option optlstCmdLineCompiler_ext = {
     "ext",
@@ -541,8 +541,8 @@ Option optlstCmdLineCompiler_ext = {
     NULL,
     "specify extension for generated object files; with a leading period ('.'), appends extension; without, replaces source file's extension"};
 
-SETSTRING_T optlstCmdLineCompiler_fatext_param0 = {
-    {PARAMWHICH_SetString, 1, NULL, NULL}, "eppc.o", 0, pCmdLineCompiler.objFileExt};
+SETSTRING_T optlstCmdLineCompiler_fatext_param0 = {PARAMWHICH_SetString,       1, NULL, NULL, "eppc.o", 0,
+                                                   pCmdLineCompiler.objFileExt};
 
 Option optlstCmdLineCompiler_fatext = {"fatext", 0x101, (PARAM_T *)&optlstCmdLineCompiler_fatext_param0,
                                        NULL,     NULL,  "use 'eppc.o' as extension for generated object files"};
@@ -587,8 +587,8 @@ GENERIC_T optlstCmdLineCompiler_ir_param0 = {
 Option optlstCmdLineCompiler_ir = {"ir", 0x101, (PARAM_T *)&optlstCmdLineCompiler_ir_param0,
                                    NULL, NULL,  "add a recursive access path to list of #include search paths"};
 
-STRING_T optlstCmdLineCompiler_linkername_param0 = {
-    {PARAMWHICH_String, 0, NULL, NULL}, 64, 0, pCmdLineCompiler.linkerName};
+STRING_T optlstCmdLineCompiler_linkername_param0 = {PARAMWHICH_String,          0, NULL, NULL, 64, 0,
+                                                    pCmdLineCompiler.linkerName};
 
 Option optlstCmdLineCompiler_linkername = {"linkername", 0x1101, (PARAM_T *)&optlstCmdLineCompiler_linkername_param0,
                                            NULL,         NULL,   "give name of alternate linker"};
@@ -2735,7 +2735,7 @@ Option *optlstProject_big_conflicts_list[] = {&optlstProject_big, &optlstProject
 
 OptionList optlstProject_big_conflicts = {NULL, 0x0, optlstProject_big_conflicts_list};
 
-STRING_T optlstLinker_m_param1 = {{PARAMWHICH_Sym, 0, NULL, NULL}, 64, 0, pLinker.mainname};
+STRING_T optlstLinker_m_param1 = {PARAMWHICH_Sym, 0, NULL, NULL, 64, 0, pLinker.mainname};
 
 SET_T optlstLinker_m_param0 = {PARAMWHICH_Set, 1, NULL, (PARAM_T *)&optlstLinker_m_param1, 1, 1, NULL};
 
@@ -2746,7 +2746,7 @@ Option optlstLinker_m = {"m|main",
                          &optlstLinker_m_conflicts,
                          "set main entry point for application or shared library"};
 
-SETSTRING_T optlstLinker_noentry_param1 = {{PARAMWHICH_SetString, 1, NULL, NULL}, "", 0, pLinker.mainname};
+SETSTRING_T optlstLinker_noentry_param1 = {PARAMWHICH_SetString, 1, NULL, NULL, "", 0, pLinker.mainname};
 
 SET_T optlstLinker_noentry_param0 = {PARAMWHICH_Set, 1, NULL, (PARAM_T *)&optlstLinker_noentry_param1, 1, 1, NULL};
 
@@ -2754,8 +2754,8 @@ Option optlstLinker_noentry = {
     "noentry|nomain",           0x40040, (PARAM_T *)&optlstLinker_noentry_param0, NULL, &optlstLinker_m_conflicts,
     "do not use an entry point"};
 
-FILEPATH_T optlstLinker_map_param2 = {
-    {PARAMWHICH_FilePath, 0, "filename", NULL}, 1, "<outfile>.MAP", pCLTExtras.mapfilename, 255};
+FILEPATH_T optlstLinker_map_param2 = {PARAMWHICH_FilePath,    0,  "filename", NULL, 1, "<outfile>.MAP",
+                                      pCLTExtras.mapfilename, 255};
 
 IFARG_T optlstLinker_map_param1 = {PARAMWHICH_IfArg,
                                    2,
@@ -2795,8 +2795,8 @@ Option optlstLinker_o = {"o", 0x20040, (PARAM_T *)&optlstLinker_o_param0, NULL, 
 
 Option optlstLinker_nosrec = {"nosrec", 0x3840, NULL, NULL, NULL, "option only has a positive form"};
 
-FILEPATH_T optlstLinker_srec_param2 = {
-    {PARAMWHICH_FilePath, 0, "filename", NULL}, 1, "<outfile>.mot", pCLTExtras.srecfilename, 255};
+FILEPATH_T optlstLinker_srec_param2 = {PARAMWHICH_FilePath,     0,  "filename", NULL, 1, "<outfile>.mot",
+                                       pCLTExtras.srecfilename, 255};
 
 IFARG_T optlstLinker_srec_param1 = {PARAMWHICH_IfArg,
                                     2,

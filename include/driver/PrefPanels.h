@@ -139,14 +139,14 @@ struct PBackEnd {
     UInt8 unk05;
     UInt8 profiler;
     UInt8 unk07;
-    char peephole;
+    UInt8 peephole;
     UInt8 unk09;
     UInt8 unk0a;
-    char schedule;
+    UInt8 schedule;
     UInt8 unk0c;
     UInt8 common;
     UInt8 fpmode;
-    char use_lmw_stmw;
+    UInt8 use_lmw_stmw;
     short processor;
     UInt8 funcalign;
     UInt8 fp_contract;
