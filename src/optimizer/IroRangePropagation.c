@@ -34,6 +34,24 @@
 #include "compiler/ObjGen_PPC_EABI.h"
 #include "compiler/PCode.h"
 #include "compiler/Switch.h"
+
+/* The bounds of the integral types. */
+CInt64 signed_char_max = {0, 0x7F};
+CInt64 type_range_minimum = {-1, 0xFFFFFF80};
+CInt64 data_005539c8 = {0, 0xFF};
+CInt64 int16_max = {0, 0x7FFF};
+CInt64 data_005539d8 = {-1, 0xFFFF8000};
+CInt64 data_005539e0 = {0, 0xFFFF};
+static CInt64 lbl_005539E8 = {0, 0x7FFF};
+static CInt64 lbl_005539F0 = {-1, 0xFFFF8000};
+static CInt64 lbl_005539F8 = {0, 0xFFFF};
+CInt64 int32_max = {0, 0x7FFFFFFF};
+CInt64 type_range_lower_bound = {-1, 0x80000000};
+CInt64 data_00553a10 = {0, 0xFFFFFFFF};
+CInt64 range_int32_max = {0, 0x7FFFFFFF};
+CInt64 type_range_min = {-1, 0x80000000};
+CInt64 data_00553a28 = {0, 0xFFFFFFFF};
+static CInt64 lbl_00553A30 = {-1, 0xFFFFFFFF};
 static ERange *NewRange(UInt8 type)
 {
     ERange *range = (void *)CompilerTools_AllocatePoolMemory(sizeof(ERange));

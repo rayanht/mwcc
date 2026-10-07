@@ -58,6 +58,8 @@ extern "C" {
 
 #include <stdio.h>
 #include <stdlib.h>
+
+static SInt16 data_0057f3b0;
 #define CERROR_FILE "unknown.c"
 }
 
@@ -196,6 +198,9 @@ DWORD __stdcall CLFileOps_AppendMemBuffer(void *handle, const void *source, unsi
     return result;
 }
 
+/* Data of the original file that none of its linked code uses. */
+static SInt32 lbl_0054BF34 = 0;
+
 int __stdcall add_access_path(NamespaceOperationContext *context, NamespaceOperationState *state)
 {
     struct CLTarget *paths;
@@ -238,6 +243,8 @@ int __stdcall add_access_path(NamespaceOperationContext *context, NamespaceOpera
         context->status[4] = 1;
     return 0;
 }
+
+unsigned int (*data_0054bf48)(char *) = NULL;
 
 unsigned int __stdcall add_or_copy_pref_panel_storage(unsigned int unused, char *name, StorageHandle *data)
 {
@@ -404,6 +411,19 @@ unsigned int __stdcall set_lookup_paths_name_and_value(unsigned int context, uns
     return 0;
 }
 }
+
+/* The parser's callbacks. */
+static void *data_0054bf4c[9] = {
+    (void *)add_access_path,
+    (void *)add_or_copy_pref_panel_storage,
+    (void *)set_file_output_name_and_kind,
+    (void *)set_output_directory,
+    (void *)add_overlay_group,
+    (void *)append_file_to_overlay,
+    (void *)lookup_path_index,
+    (void *)set_lookup_paths_name_and_value,
+    NULL,
+};
 
 PluginB::PluginB() : PluginA(0x50617273, -1)
 {
@@ -878,10 +898,9 @@ int compile_file(DropinFileRecord *file, char *processed)
     endTime = OS_GetMilliseconds();
     if (data_00541b2b != 0) {
         if (DAT_00541b28 != 0) {
-            CLErrors_ForwardMessage(0x18, (double)(UInt32)(endTime - startTime) * compile_time_scale, "compile", "", "",
-                                    "");
+            CLErrors_ForwardMessage(0x18, (double)(UInt32)(endTime - startTime) * 0.001, "compile", "", "", "");
         } else {
-            CLErrors_ForwardMessage(0x18, (double)(UInt32)(endTime - startTime) * data_0054c000, "compile", "'",
+            CLErrors_ForwardMessage(0x18, (double)(UInt32)(endTime - startTime) * 0.001, "compile", "'",
                                     &file->inputName, "'");
         }
     }
@@ -1022,7 +1041,7 @@ int CLFileOps_CompileProject(void)
     elapsed = OS_GetMilliseconds();
     if (data_00541b2b != 0) {
         elapsed = elapsed - startTime;
-        CLErrors_ForwardMessage(0x18, elapsed * data_0054c0a0, "compile", "", "", "project");
+        CLErrors_ForwardMessage(0x18, elapsed * 0.001, "compile", "", "", "project");
     }
 
     if (failed > 0 && succeeded == 0) {
@@ -1037,6 +1056,9 @@ int CLFileOps_CompileProject(void)
         return 1;
     return CLFileOps_Err0();
 }
+
+/* Data of the original file that none of its linked code uses. */
+static double lbl_0054C0A8 = 0.001;
 
 int CLFileOps_LinkProject(void)
 {
@@ -1070,8 +1092,7 @@ int CLFileOps_LinkProject(void)
         }
         currentTime = OS_GetMilliseconds();
         if (data_00541b2b != 0)
-            CLErrors_ForwardMessage(0x18, (double)(currentTime - stageStart) * link_elapsed_time_scale,
-                                    "prelink project", "", "", "");
+            CLErrors_ForwardMessage(0x18, (double)(currentTime - stageStart) * 0.001, "prelink project", "", "", "");
     }
 
     if (default_target->linker != 0 && data_00541e19 != 0 && data_00541b1e == 3) {
@@ -1087,8 +1108,7 @@ int CLFileOps_LinkProject(void)
         }
         currentTime = OS_GetMilliseconds();
         if (data_00541b2b != 0)
-            CLErrors_ForwardMessage(0x18, (double)(currentTime - stageStart) * link_time_scale, "link project", "", "",
-                                    "");
+            CLErrors_ForwardMessage(0x18, (double)(currentTime - stageStart) * 0.001, "link project", "", "", "");
     }
 
     if (default_target->postLinker != 0 && data_00541e17 != 0 && data_00541b1e == 3) {
@@ -1114,8 +1134,7 @@ int CLFileOps_LinkProject(void)
         }
         currentTime = OS_GetMilliseconds();
         if (data_00541b2b != 0)
-            CLErrors_ForwardMessage(0x18, (double)(currentTime - stageStart) * data_0054c0f8, "postlink project", "",
-                                    "", "");
+            CLErrors_ForwardMessage(0x18, (double)(currentTime - stageStart) * 0.001, "postlink project", "", "", "");
         if (!data_00541e18 && default_target->settings->head.tag == 1) {
             if (DAT_00541b28 > 1) {
                 MacSpecs_MakeOSSpec(&commandLine, commandText);
@@ -1130,8 +1149,7 @@ int CLFileOps_LinkProject(void)
 
     currentTime = OS_GetMilliseconds();
     if (data_00541b2b != 0)
-        CLErrors_ForwardMessage(0x18, (double)(currentTime - startTime) * linkTimeScale, finish_link_stage_message, "",
-                                "", "");
+        CLErrors_ForwardMessage(0x18, (double)(currentTime - startTime) * 0.001, "finish link stage", "", "", "");
 
     return 0;
 }
