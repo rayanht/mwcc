@@ -1315,7 +1315,7 @@ int scan_numeric_literal(void)
 
     data_00588524 = 0;
     start = (char *)(currentTextPosition - 1);
-    currentTextPosition = CExpr2_ParseDecimalCInt64(&token_integer, start, &integerOverflow);
+    currentTextPosition = CInt64_ScanDecString(&token_integer, start, &integerOverflow);
     c = peek();
     if (c == '.' || c == 'e' || c == 'E') {
         currentTextPosition = CMach_FloatScan(start, &token_float, &floatOverflow);
@@ -1383,11 +1383,11 @@ unsigned int parse_zero_prefixed_number(SInt16 c)
     c = CPrepTokenizer_NextChar();
     if (c == 'x' || c == 'X') {
         cursor = currentTextPosition;
-        cursor = CExpr2_ParseHexInt64(&token_integer, cursor, &flag);
+        cursor = CInt64_ScanHexString(&token_integer, cursor, &flag);
         currentTextPosition = cursor;
     } else if (copts.ANSIstrict == 0 && (c == 'b' || c == 'B')) {
         cursor = currentTextPosition;
-        cursor = parse_binary_digits(&token_integer, cursor, &flag);
+        cursor = CInt64_ScanBinString(&token_integer, cursor, &flag);
         currentTextPosition = cursor;
     } else {
         while (c >= '0' && c <= '9')
@@ -1411,7 +1411,7 @@ unsigned int parse_zero_prefixed_number(SInt16 c)
             default:
                 break;
         }
-        cursor = CExpr2_ParseOctalInt64(&token_integer, p, &flag);
+        cursor = CInt64_ScanOctString(&token_integer, p, &flag);
         currentTextPosition = cursor;
     }
     if (flag) {
@@ -1796,7 +1796,7 @@ SInt32 scan_string_literal(short ch)
         if (length + 2 >= string_literal_buffer_size) {
             offset = output - string_literal_storage->data;
             string_literal_buffer_size += 0x100;
-            if (!fn_00443170(string_literal_storage, string_literal_buffer_size))
+            if (!COS_ResizeHandle(string_literal_storage, string_literal_buffer_size))
                 CError_LongJump();
             output = string_literal_storage->data + offset;
         }
@@ -1821,7 +1821,7 @@ SInt32 scan_string_literal(short ch)
     } else {
         if (length + 1 >= string_literal_buffer_size) {
             string_literal_buffer_size += 0x100;
-            if (!fn_00443170(string_literal_storage, string_literal_buffer_size))
+            if (!COS_ResizeHandle(string_literal_storage, string_literal_buffer_size))
                 CError_LongJump();
         }
         if (data_00588515 != 0) {
@@ -1926,7 +1926,7 @@ static inline void CPrepTokenizer_SkipLineSplices(unsigned char **position)
 {
     if (copts.multibyteaware != 0) {
         while (**position == '\\' &&
-               CompilerTools_IsByteInDBCSCharacter(findSpliceLineStart((char *)*position), *position) == 0 &&
+               COS_IsMultiByte(findSpliceLineStart((char *)*position), *position) == 0 &&
                (*position)[1] == '\r') {
             CPrep_IncrementCountersAndUpdateTextOffset();
             if ((*position)[2] == '\n')
@@ -2006,7 +2006,7 @@ void CPrepTokenizer_SkipToEndOfLine(void)
             case '\\':
                 if (copts.multibyteaware != 0) {
                     spliceLineStart = findSpliceLineStart((char *)cursor - 1);
-                    if (CompilerTools_IsByteInDBCSCharacter(spliceLineStart, (unsigned char *)((char *)cursor - 1)) !=
+                    if (COS_IsMultiByte(spliceLineStart, (unsigned char *)((char *)cursor - 1)) !=
                         0)
                         break;
                 }
@@ -2071,7 +2071,7 @@ Boolean CPrepTokenizer_SkipQuotedLiteral(UInt8 *p, SInt16 quote)
                         while (*f != '\r' && (char *)f > macro_text_start)
                             f--;
                     }
-                    if (CompilerTools_IsByteInDBCSCharacter(f, q))
+                    if (COS_IsMultiByte(f, q))
                         break;
                 }
                 q = p++;
@@ -2128,7 +2128,7 @@ unsigned char *skip_line(unsigned char *p)
                         while (*q != '\r' && (char *)q > macro_text_start)
                             q--;
                     }
-                    if (CompilerTools_IsByteInDBCSCharacter(q, start))
+                    if (COS_IsMultiByte(q, start))
                         break;
                 }
                 if (*p == '\r')
@@ -2250,7 +2250,7 @@ static inline char verify(unsigned char *saved)
         for (; *v1 != 13 && v1 > macro_text_start; --v1)
             ;
     }
-    return CompilerTools_IsByteInDBCSCharacter((unsigned char *)v1, saved);
+    return COS_IsMultiByte((unsigned char *)v1, saved);
 }
 
 static inline short signedpeek(void)
@@ -2564,7 +2564,7 @@ UInt8 *CPrepTokenizer_ScanIdentifier(UInt8 *cursor)
                     lineStart = lineStart - 1;
                 }
             }
-            lineStatus = CompilerTools_IsByteInDBCSCharacter(lineStart, cursor);
+            lineStatus = COS_IsMultiByte(lineStart, cursor);
             if ((lineStatus != '\0') || (cursor[1] != '\r'))
                 break;
             if (cursor[2] == '\n') {
@@ -2614,7 +2614,7 @@ static inline unsigned char CheckEscapedNewline(UInt8 *cursor)
         while (*lineStart != '\r' && (char *)lineStart > macro_text_start)
             --lineStart;
     }
-    return CompilerTools_IsByteInDBCSCharacter(lineStart, slash);
+    return COS_IsMultiByte(lineStart, slash);
 }
 
 short fn_00496610(char report)
@@ -2710,7 +2710,7 @@ static inline unsigned char is_multibyte_trail_before(unsigned char *p)
         while (*q != '\r' && (char *)q > macro_text_start)
             q--;
     }
-    return CompilerTools_IsByteInDBCSCharacter(q, s);
+    return COS_IsMultiByte(q, s);
 }
 
 static inline char multibyte_characters_enabled(void)
@@ -2733,7 +2733,7 @@ short CPrepTokenizer_NextChar(void)
 
             case '/':
                 if (multibyte_characters_enabled()) {
-                    while (*cursor == '\\' && CompilerTools_IsByteInDBCSCharacter(find_start(cursor), cursor) == 0 &&
+                    while (*cursor == '\\' && COS_IsMultiByte(find_start(cursor), cursor) == 0 &&
                            cursor[1] == '\r') {
                         CPrep_IncrementCountersAndUpdateTextOffset();
                         if (cursor[2] == '\n')
@@ -2772,7 +2772,7 @@ short CPrepTokenizer_NextChar(void)
                         if (character == '*') {
                             if (multibyte_characters_enabled()) {
                                 while (*cursor == '\\' &&
-                                       CompilerTools_IsByteInDBCSCharacter(find_start(cursor), cursor) == 0 &&
+                                       COS_IsMultiByte(find_start(cursor), cursor) == 0 &&
                                        cursor[1] == '\r') {
                                     CPrep_IncrementCountersAndUpdateTextOffset();
                                     if (cursor[2] == '\n')
@@ -2877,7 +2877,7 @@ static inline unsigned char CPrepTokenizer_CheckSplice(unsigned char *cursor)
         while (*lineStart != '\r' && lineStart > macro_text_start)
             lineStart--;
     }
-    return CompilerTools_IsByteInDBCSCharacter((unsigned char *)lineStart, cursor);
+    return COS_IsMultiByte((unsigned char *)lineStart, cursor);
 }
 
 static inline unsigned char CPrepTokenizer_IsDBCSTrail(unsigned char *cursor)
@@ -2891,7 +2891,7 @@ static inline unsigned char CPrepTokenizer_IsDBCSTrail(unsigned char *cursor)
         while (*lineStart != '\r' && lineStart > macro_text_start)
             lineStart--;
     }
-    return CompilerTools_IsByteInDBCSCharacter((unsigned char *)lineStart, backslash);
+    return COS_IsMultiByte((unsigned char *)lineStart, backslash);
 }
 
 short CPrepTokenizer_ScanChar(void)

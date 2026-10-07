@@ -74,7 +74,7 @@ int __stdcall get_file_info(int unused, int key, int unusedFlags, struct Exporte
         return 9;
     }
     memset(result, 0, sizeof(*result));
-    MacSpecs_MakeCWFileSpecFromString(&record->file.inputPath, &result->fileReference);
+    OS_OSSpec_To_FSSpec(&record->file.inputPath, &result->fileReference);
     OS_TimeToMac(record->file.sourceFileTime, &result->convertedValue);
     CLOverlays_ConvertSecondsToTimestamp(result->convertedValue, &conversion);
     CLOverlays_ConvertTimestampTo1904EpochSeconds(conversion.value, &result->convertedValue);
@@ -121,7 +121,7 @@ Boolean lookup_file(DropinRequest *unused, char *key, DropinFileCallback *output
 {
     char *value;
     ChainRecord *result;
-    value = CLProj_GetFileName(key);
+    value = OS_GetFileNamePtr(key);
     result = CLFiles_FindChainRecord(default_target->fileLookup, value);
     if (result) {
         if (output->suppressFileReferenceLookup == 0) {
@@ -186,7 +186,7 @@ Boolean lookup_dependency_file(DropinRequest *state, char *request, DropinFileCa
                 flags->lookupResult = 0;
             }
         }
-        MacSpecs_MakeCWFileSpecFromString(fileSpec, &flags->output);
+        OS_OSSpec_To_FSSpec(fileSpec, &flags->output);
         return 1;
     }
     return 0;
@@ -210,7 +210,7 @@ Boolean insert_dependency_from_path(DropinRequest *descriptor, char *argument, D
         if (entry == 0) {
             CLIO_ReportAssertionFailure("file != NULL", "CLDropinCallbacks_V10.cpp", 496);
         }
-        CLProj_MakeOSSpecFromPath(&entry->inputPath.path, argument, 1, context);
+        OS_MakeSpecWithPath(&entry->inputPath.path, argument, 1, context);
         flag = state->enableDependencyLookup != 0 || optsCompiler.noSysPath != 0;
         callbackFlag = !flag;
         callbackState = &state->callbackState;
@@ -228,7 +228,7 @@ Boolean insert_dependency_from_path(DropinRequest *descriptor, char *argument, D
             state->referenceValue = 0;
             state->referenceKind = 0;
         }
-        MacSpecs_MakeCWFileSpecFromString(context, (CWFileSpec *)&state->output);
+        OS_OSSpec_To_FSSpec(context, (CWFileSpec *)&state->output);
         return 1;
     }
     return 0;
@@ -263,7 +263,7 @@ SInt32 __stdcall CLDropinCallbacks_V10_FindAndLoadFile(DropinRequest *dropin, ch
 
     if (optsCompiler.printHeaderNames != 0)
         CLIO_FormatAndDispatchText("%s\n",
-                                   CLProj_MakeRelativePath(&callbackPath, 0, data_005880e0, sizeof(resolvedPath)));
+                                   OS_SpecToStringRelative(&callbackPath, 0, data_005880e0, sizeof(resolvedPath)));
 
     if (dropin->signature == 0x436f6d70) {
         SInt16 verbosity;
@@ -689,7 +689,7 @@ __stdcall SInt32 add_project_entry(DropinRequest *context, CWFileSpec *file, UIn
     if (OS_IsDir(&sourcePath) != 0) {
         return 3;
     }
-    MsDos_CopyStringToBuffer(&sourcePath.name, filename, sizeof(filename));
+    OS_NameSpecToString(&sourcePath.name, filename, sizeof(filename));
     extensionStart = filename + strlen(filename) - 1;
     while (extensionStart > filename && *extensionStart != '.') {
         extensionStart--;
@@ -699,7 +699,7 @@ __stdcall SInt32 add_project_entry(DropinRequest *context, CWFileSpec *file, UIn
     }
     strncpy(extension, extensionStart, sizeof(extension) - 1);
     extension[sizeof(extension) - 1] = 0;
-    CLProj_MakeRelativePath(&sourcePath, 0, filename, sizeof(filename));
+    OS_SpecToStringRelative(&sourcePath, 0, filename, sizeof(filename));
     if (optsCmdLine.verbose > 2) {
         CLErrors_ForwardMessage(0x4d, " to project", filename);
     }
@@ -1087,8 +1087,8 @@ int __stdcall cache_access_path_list(CWPluginPrivateContext *request)
             if (source0 == 0) {
                 CLIO_ReportAssertionFailure("path", "CLDropinCallbacks_V10.cpp", 1954);
             }
-            CLProj_MakeOSSpecFromPath(source0->path, 0, 0, &buffer0);
-            MacSpecs_MakeCWFileSpecFromString(&buffer0, &entry0->file);
+            OS_MakeSpecWithPath(source0->path, 0, 0, &buffer0);
+            OS_OSSpec_To_FSSpec(&buffer0, &entry0->file);
             CLDropinCallbacks_V10_00425560_run1(entry0, source0);
         }
         dirty[4] = 0;
@@ -1102,8 +1102,8 @@ int __stdcall cache_access_path_list(CWPluginPrivateContext *request)
             if (source1 == 0) {
                 CLIO_ReportAssertionFailure("path", "CLDropinCallbacks_V10.cpp", 1988);
             }
-            CLProj_MakeOSSpecFromPath(source1->path, 0, 0, &buffer1);
-            MacSpecs_MakeCWFileSpecFromString(&buffer1, &entry1->file);
+            OS_MakeSpecWithPath(source1->path, 0, 0, &buffer1);
+            OS_OSSpec_To_FSSpec(&buffer1, &entry1->file);
             CLDropinCallbacks_V10_00425560_run1(entry1, source1);
         }
         dirty[5] = 0;

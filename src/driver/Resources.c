@@ -52,14 +52,14 @@ unsigned int Resources_OpenResourceFile(OSSpec *path)
 
     resfile_list = NULL;
     current_resfile_refnum = 0;
-    resourceStatus = MacSpecs_LoadMacResource(path, &resourceData, &resourceSize);
+    resourceStatus = OS_LoadMacResourceFork(path, &resourceData, &resourceSize);
     if (resourceStatus == 0) {
         read_resource_file(-1, '\x01', resourceData, resourceSize);
         current_resfile_refnum = 0xffff;
         resource_error = 0;
         return 0;
     }
-    queryStatus = MacSpecs_MakeCWFileSpecFromString(path, &pathInfo);
+    queryStatus = OS_OSSpec_To_FSSpec(path, &pathInfo);
     if (queryStatus == 0) {
         openStatus = open_resource_file(&pathInfo, '\x01');
         if (openStatus == 0) {
@@ -949,7 +949,7 @@ SInt32 fn_004083b0(int handle, UInt32 *secondValue, UInt32 *firstValue)
 
 void fn_00408510(struct OSSpec *resourceSpec)
 {
-    fn_00411780(resourceSpec);
+    OS_Rmdir(resourceSpec);
 }
 
 #pragma options align = mac68k
@@ -977,7 +977,7 @@ short __stdcall open_resource_fork(void *fileSpec, char mode, short *refNum)
     if (error != 0)
         return OS_OSErrorToMacError(error);
 
-    error = MacSpecs_MakeCWFileSpecFromString(&resourceSpec, (CWFileSpec *)&resourceFile);
+    error = OS_OSSpec_To_FSSpec(&resourceSpec, (CWFileSpec *)&resourceFile);
     if (error != 0)
         return OS_OSErrorToMacError(error);
 
@@ -987,7 +987,7 @@ short __stdcall open_resource_fork(void *fileSpec, char mode, short *refNum)
 
     result = Files_OpenFileFromPath(resourceFile.u.first, resourceFile.u.type.size, resourceFile.name, mode, refNum);
     if (result == 0)
-        append_identifier_list_node(short_predecessor(*refNum), &resourceSpec);
+        append_identifier_list_node(OS_MacToRef(*refNum), &resourceSpec);
 
     return result;
 }

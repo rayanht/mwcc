@@ -327,7 +327,7 @@ static inline void SetInt64(CInt64 *arg, int n)
 
 static inline ENode *recovery_construct_4059(ENodeList *arguments, Type *targetType, SInt32 qualifiers)
 {
-    ENode *node = CExpr2_NewENEWEXCEPTIONARRAYNode(TDE_CAST);
+    ENode *node = CExpr_NewTemplDepENode(TDE_CAST);
     node->data.templdep.u.cast.args = arguments;
     node->data.templdep.u.cast.type = targetType;
     node->data.templdep.u.cast.qual = qualifiers;
@@ -3475,7 +3475,7 @@ ENode *unary_expression(void)
             if (type->type == TYPECLASS && TYPE_CLASS(type)->sominfo != NULL)
                 CError_ReportError(ERR_SIZEOF_NOT_SUPPORTED_SOM_CLASSES);
             if (type->type == TYPETEMPLATE) {
-                result = CExpr2_NewENEWEXCEPTIONARRAYNode(1);
+                result = CExpr_NewTemplDepENode(1);
                 result->data.objref = (Object *)type;
             } else {
                 if (type->size == 0) {
@@ -3640,7 +3640,7 @@ ENode *CExpr_New_ELOGNOT_Node(ENode *expr)
 
     switch (node->type) {
         case EINTCONST:
-            node->data.intval = CFunc_LogicalNotCInt64(node->data.intval);
+            node->data.intval = CInt64_Not(node->data.intval);
             break;
         case EFLOATCONST:
             node->type = EINTCONST;
@@ -3783,7 +3783,7 @@ ENode *getpointertomemberfunc(ENode *node, Type *targetType, Boolean initialize)
     functionType = TYPE_METHOD(method->type);
     result = CParser_NewObject(NULL);
     result->name = CParser_GetUniqueName();
-    result->nspace = registration_context;
+    result->nspace = cscope_root;
     result->type = (Type *)memberPointer;
     result->sclass = TK_STATIC;
 
@@ -3907,7 +3907,7 @@ SInt32 scansizeof(void)
     if (ty->type == TYPECLASS && TYPE_CLASS(ty)->sominfo != NULL)
         CError_ReportError(ERR_SIZEOF_NOT_SUPPORTED_SOM_CLASSES);
     if (ty->type == TYPETEMPLATE) {
-        node = CExpr2_NewENEWEXCEPTIONARRAYNode(1);
+        node = CExpr_NewTemplDepENode(1);
         node->data.monadic = (ENode *)ty;
     } else {
         if (ty->size == 0) {
@@ -4224,10 +4224,10 @@ ENode *scan_pseudo_destructor_call(ENode *node)
     NameSpace *scope;
 
     CPrep_GetBufferedTokenPosition(&savedPosition);
-    scope = currentNameSpace;
+    scope = cscope_current;
     tk = CPrepTokenizer_GetNextToken();
     if (tk == TK_COLON_COLON) {
-        scope = registration_context;
+        scope = cscope_root;
         tk = CPrepTokenizer_GetNextToken();
     } else if (tk != TK_COMPL && tk != TK_IDENTIFIER) {
         SInt32 token = tk;
@@ -4749,13 +4749,13 @@ ENode *make_scope_parse_result_expr(NameResult *nameResult, ENode *expr, Boolean
         if (copts.cplusplus) {
             if (nameResult->type->type == TYPETEMPLATE) {
                 if (TYPE_TEMPLATE(nameResult->type)->dtype == 0 && !TYPE_TEMPLATE(nameResult->type)->u.pid.type) {
-                    result = CExpr2_NewENEWEXCEPTIONARRAYNode(TDE_PARAM);
+                    result = CExpr_NewTemplDepENode(TDE_PARAM);
                     result->data.templdep.u.pid = TYPE_TEMPLATE(nameResult->type)->u.pid;
                     tk = CPrepTokenizer_GetNextToken();
                     return result;
                 }
                 if (TYPE_TEMPLATE(nameResult->type)->dtype == 1 && !nameResult->is_type) {
-                    result = CExpr2_NewENEWEXCEPTIONARRAYNode(TDE_QUALNAME);
+                    result = CExpr_NewTemplDepENode(TDE_QUALNAME);
                     result->data.templdep.u.qual.type = TYPE_TEMPLATE(nameResult->type)->u.qual.type;
                     result->data.templdep.u.qual.name = TYPE_TEMPLATE(nameResult->type)->u.qual.name;
                     tk = CPrepTokenizer_GetNextToken();
@@ -4776,7 +4776,7 @@ ENode *make_scope_parse_result_expr(NameResult *nameResult, ENode *expr, Boolean
             case OT_OBJECT:
                 if (OBJECT(nameResult->object)->nspace && OBJECT(nameResult->object)->nspace->theclass &&
                     (OBJECT(nameResult->object)->nspace->theclass->flags & CLASS_IS_TEMPL)) {
-                    result = CExpr2_NewENEWEXCEPTIONARRAYNode(5);
+                    result = CExpr_NewTemplDepENode(5);
                     result->data.objref = OBJECT(nameResult->object);
                     tk = CPrepTokenizer_GetNextToken();
                     return result;
@@ -4788,7 +4788,7 @@ ENode *make_scope_parse_result_expr(NameResult *nameResult, ENode *expr, Boolean
                     if (tk == '<' && (result = make_member_function_esetconst(nameResult)))
                         return result;
                     if ((datatype = (object = OBJECT(nameResult->object))->datatype) == DLOCAL &&
-                        object->u.var.info->func != data_00588238) {
+                        object->u.var.info->func != cscope_currentfunc) {
                         CError_ReportError(ERR_ILLEGAL_ACCESS_LOCAL_VARIABLE_FROM_OTHER);
                         return nullnode();
                     }
@@ -5161,7 +5161,7 @@ ENode *scan_explicit_conversion(Type *type, SInt32 qualifiers)
     tk = (UInt16)CPrepTokenizer_GetNextToken();
 
     if (CTemplateTools_IsDependentType(type)) {
-        ENode *node = CExpr2_NewENEWEXCEPTIONARRAYNode(TDE_CAST);
+        ENode *node = CExpr_NewTemplDepENode(TDE_CAST);
         node->data.templdep.u.cast.args = arguments;
         node->data.templdep.u.cast.type = type;
         node->data.templdep.u.cast.qual = qualifiers;
@@ -5171,7 +5171,7 @@ ENode *scan_explicit_conversion(Type *type, SInt32 qualifiers)
     argument = arguments;
     while (argument != NULL) {
         if (CTemplTool_IsTypeDepExpr(argument->node)) {
-            ENode *node = CExpr2_NewENEWEXCEPTIONARRAYNode(TDE_CAST);
+            ENode *node = CExpr_NewTemplDepENode(TDE_CAST);
             node->data.templdep.u.cast.args = arguments;
             node->data.templdep.u.cast.type = type;
             node->data.templdep.u.cast.qual = qualifiers;
@@ -5452,7 +5452,7 @@ ENode *checkreference(ENode *e)
 ENode *CExpr_New_ESUB_Node(ENode *left, ENode *right)
 {
     if (right->type == EINTCONST && !Type_IsUnsigned(right->rtype) && left->rtype->type != TYPEFLOAT) {
-        right->data.intval = CInt64_Inv(right->data.intval);
+        right->data.intval = CInt64_Neg(right->data.intval);
         return CExpr_New_EADD_Node(left, right);
     }
     if ((SInt8)left->rtype->type >= TYPEPOINTER) {
@@ -5464,7 +5464,7 @@ ENode *CExpr_New_ESUB_Node(ENode *left, ENode *right)
     }
     if (CExpr2_IsZero(left)) {
         if (right->type == EINTCONST) {
-            right->data.intval = CInt64_Inv(right->data.intval);
+            right->data.intval = CInt64_Neg(right->data.intval);
             return right;
         }
         if (right->type == EFLOATCONST) {
@@ -5482,7 +5482,7 @@ ENode *CExpr_New_ESUB_Node(ENode *left, ENode *right)
         return left;
     }
     if (right->type == EINTCONST) {
-        if (add_to_expression_constant(left, CInt64_Inv(right->data.intval))) {
+        if (add_to_expression_constant(left, CInt64_Neg(right->data.intval))) {
             return left;
         }
     }
@@ -5582,7 +5582,7 @@ ENode *make_pointer_subtraction(ENode *left, ENode *right)
     }
     right = CExpr_New_EMUL_Node(right, intconstnode(CABI_GetPtrDiffTType(), elementSize));
     if (right->type == EINTCONST) {
-        if (add_to_expression_constant(left, CInt64_Inv(right->data.intval)) != 0)
+        if (add_to_expression_constant(left, CInt64_Neg(right->data.intval)) != 0)
             return left;
     }
     right = makediadicnode(left, right, ESUB);
@@ -5706,7 +5706,7 @@ SInt16 add_to_expression_constant(ENode *node, CInt64 v)
         case ESUB:
             if (add_to_expression_constant(node->data.diadic.left, v))
                 return 1;
-            if (add_to_expression_constant(node->data.diadic.right, CInt64_Inv(v)))
+            if (add_to_expression_constant(node->data.diadic.right, CInt64_Neg(v)))
                 return 1;
             return 0;
 

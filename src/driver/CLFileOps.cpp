@@ -94,7 +94,7 @@ int __stdcall add_access_path(NamespaceOperationContext *context, NamespaceOpera
         return 3;
     }
     if (optsCmdLine.verbose > 2) {
-        CLErrors_ForwardMessage(0x4d, " search path", fn_00412340(&buffer.path, data_005880e0, 0x104));
+        CLErrors_ForwardMessage(0x4d, " search path", OS_PathSpecToString(&buffer.path, data_005880e0, 0x104));
     }
     if (state->flag4b == 0) {
         paths = default_target;
@@ -340,7 +340,7 @@ SInt32 dispatch_output_storage_by_mask(DropinFileRecord *state, SInt16 mask, SIn
             if ((state->outputMask & (SInt32)mask) == 0)
                 return CLIO_WriteStorageToStdout(state->outputStorage, value, 0);
             if (optsCmdLine.verbose != 0)
-                CLErrors_ForwardMessage(0xf, CLProj_MakeRelativePath(&state->outputPath, NULL, data_005880e0, 0x104));
+                CLErrors_ForwardMessage(0xf, OS_SpecToStringRelative(&state->outputPath, NULL, data_005880e0, 0x104));
             result = CLIO_WriteTextFile(&state->outputPath, state->outputStorage, value, argument1, argument2);
             state->validatedOutputMask |= mask;
             return result;
@@ -429,16 +429,16 @@ int CLFileOps_SetupOutputPath(DropinFileRecord *obj, SInt16 mask)
                     directory = getenv("TMPDIR");
                 if (directory == NULL || *directory == 0 || OS_MakePathSpec(0, directory, &directoryPath) != 0)
                     directory = ".";
-                sprintf(pathName, "%s%c%s", directory, '\\', CLProj_GetFileName(obj->inputName));
+                sprintf(pathName, "%s%c%s", directory, '\\', OS_GetFileNamePtr(obj->inputName));
                 name = pathName;
             } else {
                 if (optsCompiler.relPathInOutputDir == 0)
-                    name = CLProj_GetFileName(obj->inputName);
+                    name = OS_GetFileNamePtr(obj->inputName);
                 else
                     name = obj->inputName;
             }
 
-            extension = strrchr(CLProj_GetFileName(name), '.');
+            extension = strrchr(OS_GetFileNamePtr(name), '.');
             if (extension == NULL || *outputSuffix == '.')
                 extension = name + strlen(name);
             if ((extension - name) + strlen(suffix) >= 64)
@@ -453,7 +453,7 @@ int CLFileOps_SetupOutputPath(DropinFileRecord *obj, SInt16 mask)
 
     if (((obj->outputMask | obj->temporaryOutputMask) & mask) != 0) {
         context = default_target;
-        result = CLProj_MakeOSSpecFromPath(&context->outputDirectory, outputName, !optsCompiler.relPathInOutputDir,
+        result = OS_MakeSpecWithPath(&context->outputDirectory, outputName, !optsCompiler.relPathInOutputDir,
                                            &obj->outputPath);
         if (result == 0) {
             if (OS_EqualSpec(&obj->inputPath, &obj->outputPath) != 0) {
@@ -468,7 +468,7 @@ int CLFileOps_SetupOutputPath(DropinFileRecord *obj, SInt16 mask)
             }
         } else {
             context = default_target;
-            CLErrors_ReportOSError(9, result, outputName, fn_00412340(&context->outputDirectory, data_005880e0, 0x104));
+            CLErrors_ReportOSError(9, result, outputName, OS_PathSpecToString(&context->outputDirectory, data_005880e0, 0x104));
         }
         return (result == 0);
     }
@@ -546,7 +546,7 @@ unsigned int fn_00419d80(DropinFileRecord *input)
         return 1;
     if (input->secondaryReferenceHandle == 0) {
         CLErrors_EmitDiagnostic(0x65, CLPlugins_GetName(input->selectedPlugin),
-                                CLProj_MakeRelativePath(&input->inputPath, 0, data_005880e0, 0x104));
+                                OS_SpecToStringRelative(&input->inputPath, 0, data_005880e0, 0x104));
         return 0;
     }
     if (((optsCmdLine.toDisk & 2) != 0) && (optsCompiler.browserEnabled != '\0')) {
@@ -802,14 +802,14 @@ int CLFileOps_CompileProject(void)
             path = CLAccessPaths_GetEntry(&default_target->systemPaths, index);
             if (path == 0)
                 CLIO_ReportAssertionFailure("path != NULL", "CLFileOps.c", 0x3ca);
-            CLErrors_ForwardMessage(0x55, fn_00412340(path->path, data_005880e0, 0x104), path->children ? " [r]" : "");
+            CLErrors_ForwardMessage(0x55, OS_PathSpecToString(path->path, data_005880e0, 0x104), path->children ? " [r]" : "");
             if (path->children != 0) {
                 for (subIndex = 0; subIndex < CLAccessPaths_GetCount(path->children); subIndex++) {
                     struct AccessPathEntry *subPath;
                     subPath = CLAccessPaths_GetEntry(path->children, subIndex);
                     if (subPath == 0)
                         CLIO_ReportAssertionFailure("sub", "CLFileOps.c", 0x3d3);
-                    CLErrors_ForwardMessage(0x55, "\t", fn_00412340(subPath->path, data_005880e0, 0x104));
+                    CLErrors_ForwardMessage(0x55, "\t", OS_PathSpecToString(subPath->path, data_005880e0, 0x104));
                 }
             }
         }
@@ -819,14 +819,14 @@ int CLFileOps_CompileProject(void)
             path = CLAccessPaths_GetEntry(&default_target->userPaths, pathIndex);
             if (path == 0)
                 CLIO_ReportAssertionFailure("path != NULL", "CLFileOps.c", 0x3e0);
-            CLErrors_ForwardMessage(0x55, fn_00412340(path->path, data_005880e0, 0x104), path->children ? " [r]" : "");
+            CLErrors_ForwardMessage(0x55, OS_PathSpecToString(path->path, data_005880e0, 0x104), path->children ? " [r]" : "");
             if (path->children != 0) {
                 for (subIndex = 0; subIndex < CLAccessPaths_GetCount(path->children); subIndex++) {
                     struct AccessPathEntry *subPath;
                     subPath = CLAccessPaths_GetEntry(path->children, subIndex);
                     if (subPath == 0)
                         CLIO_ReportAssertionFailure("sub", "CLFileOps.c", 0x3e9);
-                    CLErrors_ForwardMessage(0x55, "\t", fn_00412340(subPath->path, data_005880e0, 0x104));
+                    CLErrors_ForwardMessage(0x55, "\t", OS_PathSpecToString(subPath->path, data_005880e0, 0x104));
                 }
             }
         }

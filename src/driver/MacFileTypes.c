@@ -62,7 +62,7 @@ void __stdcall fn_00421af0(OSSpec *value, DWORD input)
     unsigned int result;
 
     fn_00421a80(input, &result);
-    fn_00411290(value, &result);
+    OS_SetFileType(value, &result);
 }
 
 unsigned char __stdcall MacFileTypes_MatchBytes(void *bytes, int length, UInt32 *mnemonic)

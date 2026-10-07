@@ -144,7 +144,7 @@ Boolean initialize_file_token_cursor(char *name)
 
     if ((error = OS_MakeFileSpec(name, (OSSpec *)buffer)) != 0 ||
         (error = TargetOptimizer_ppc_eabi_InitOperationRecord((OSSpec *)buffer, NULL, 0, &operation_record)) != 0 ||
-        (error = CLFileOps_AppendMemBuffer(&operation_record.buffer, "", 1)) != 0 ||
+        (error = OS_AppendHandle(&operation_record.buffer, "", 1)) != 0 ||
         (error = TargetOptimizer_ppc_eabi_GetMemBufferPtrAndSize((unsigned char *)&operation_record, &token_cursor,
                                                                  &data_0057e1d4)) != 0) {
         Targets_ReportOperatingSystemError(0x4a, error, name);

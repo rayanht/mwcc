@@ -37,24 +37,24 @@ void IroJump_ConvertCInt64ToType(CInt64 *value, Type *type)
     if (Type_IsUnsigned(type)) {
         switch (type->size) {
             case 1:
-                CExpr2_ConvertCInt64ToUInt8(value);
+                CInt64_ConvertUInt8(value);
                 break;
             case 2:
-                CExpr2_ConvertCInt64ToUnsignedShort(value);
+                CInt64_ConvertUInt16(value);
                 break;
             case 4:
-                CExpr2_ClearCInt64Hi(value);
+                CInt64_ConvertUInt32(value);
         }
     } else {
         switch (type->size) {
             case 1:
-                CExpr2_SignExtendSignedChar(value);
+                CInt64_ConvertInt8(value);
                 break;
             case 2:
-                CExpr2_SignExtendShort(value);
+                CInt64_ConvertInt16(value);
                 break;
             case 4:
-                CExpr2_SignExtendCInt64(value);
+                CInt64_ConvertInt32(value);
         }
     }
 }

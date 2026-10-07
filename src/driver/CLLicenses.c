@@ -126,11 +126,11 @@ int CLLicenses_RequestLicense(int request, int options, int cookieKind, char *er
         strcpy(licensePath, license_path);
     } else {
         OSSpec *defaultPath;
-        fn_00412340(&(defaultPath = &clState.programSpec)->path, licensePath, sizeof(defaultPath->path.s));
+        OS_PathSpecToString(&(defaultPath = &clState.programSpec)->path, licensePath, sizeof(defaultPath->path.s));
         strcat(licensePath, "license.dat");
         if (OS_MakeFileSpec(licensePath, &alternatePath) != 0 || OS_Status(&alternatePath) != 0) {
-            if (fn_004125b0(defaultPath, &alternatePath) == 0) {
-                fn_00412340(&alternatePath.path, licensePath, sizeof(alternatePath.path.s));
+            if (OS_ResolveLink(defaultPath, &alternatePath) == 0) {
+                OS_PathSpecToString(&alternatePath.path, licensePath, sizeof(alternatePath.path.s));
                 strcat(licensePath, "license.dat");
             }
         }

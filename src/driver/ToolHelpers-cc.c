@@ -42,16 +42,16 @@ int set_output_path(char *name, int unused, char *path)
             strncpy(&output_path, path, 0x100);
             return 1;
         }
-        if ((err = make_osspec_from_path(path, &spec2, &isdir2)) != 0) {
+        if ((err = OS_MakeSpec(path, &spec2, &isdir2)) != 0) {
             Targets_ReportOperatingSystemError(0x40, err, path);
             return 0;
         }
         if (isdir2)
-            MsDos_CopyStringToBuffer(&spec2.name, &output_path, 0x104);
+            OS_NameSpecToString(&spec2.name, &output_path, 0x104);
         ToolHelpers_cc_CallFileInfoForDirectory(&spec2);
         return 1;
     }
-    if ((err = make_osspec_from_path(path, &spec1, &isdir1)) != 0) {
+    if ((err = OS_MakeSpec(path, &spec1, &isdir1)) != 0) {
         Targets_ReportOperatingSystemError(0x40, err, path);
         return 0;
     }
@@ -61,7 +61,7 @@ int set_output_path(char *name, int unused, char *path)
             return 0;
         }
         output_path_set = 1;
-        MacSpecs_MakeCWFileSpecFromString(&spec1, &info);
+        OS_OSSpec_To_FSSpec(&spec1, &info);
         if ((err = CWParserPluginsPrivate_CallFileInfo(pluginPrivateContext, &info)) != 0) {
             DAT_00543380 = "CWParserSetOutputFileDirectory";
             longjmp(plugin_request_jmp_buf, err);

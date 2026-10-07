@@ -114,10 +114,10 @@ unsigned char CTemplateClass_InstantiateClass(TypeClass *theclass)
     if (classInstance->is_instantiated != 0)
         return 0;
     classInstance->is_instantiated = 1;
-    BE_elf_SaveScopeAndEnterClass(theclass, &scopeSave);
-    FunctionCalls_PushObjectReferenceEntry(&templateSave, theclass, NULL);
-    savedState = data_00588240;
-    data_00588240 = NULL;
+    CScope_SetClassScope(theclass, &scopeSave);
+    CTemplTool_PushInstance(&templateSave, theclass, NULL);
+    savedState = trychain;
+    trychain = NULL;
     memclrw(&instantiation, sizeof(instantiation));
     instantiation.tmclass = resolvedTemplate;
     instantiation.inst = classInstance;
@@ -213,7 +213,7 @@ unsigned char CTemplateClass_InstantiateClass(TypeClass *theclass)
                 typeResult = 0;
                 CE_ASSERT(templateType->type != TYPETEMPLATE || templateType->dtype != 1, CError_FATAL(1802));
                 instantiatedType =
-                    CTemplateTools_ResolveType(&instantiation, (Type *)templateType->u.qual.type, &typeResult);
+                    CTemplTool_DeduceTypeCopy(&instantiation, (Type *)templateType->u.qual.type, &typeResult);
                 if (instantiatedType->type != TYPECLASS) {
                     CError_ReportError(ERR_ILLEGAL_USE_TEMPLATE_ARGUMENT_DEPENDENT_TYPE,
                                        templateType->u.qual.name->name);
@@ -246,9 +246,9 @@ unsigned char CTemplateClass_InstantiateClass(TypeClass *theclass)
     copts.structalignment = resolvedTemplate->align;
     CDecl_CompleteClass(&classInfo, &classInstance->theclass);
     copts.structalignment = savedMode;
-    CTemplateTools_PopObjectReferenceEntry(&templateSave);
+    CTemplTool_PopInstance(&templateSave);
     CScope_RestoreScope(&scopeSave);
-    data_00588240 = savedState;
+    trychain = savedState;
     return 1;
 }
 
@@ -256,21 +256,21 @@ void instantiate_friend_declaration(TypeDeduce *ctx, struct TemplateFriend *decl
 {
     DeclInfo instance;
     TemplArg *parameter;
-    void *savedScope[3]; /* BE_elf_SaveAndSetScope: retain the original three-word stack slot */
+    void *savedScope[3]; /* CScope_SetNameSpaceScope: retain the original three-word stack slot */
     Boolean result;
     NameSpace *scope;
     Object *object;
 
-    CDecl_InitDeclInfoFromTemplateDeclarationData(&instance, &declaration->decl);
+    CDecl_UnpackDeclInfo(&instance, &declaration->decl);
     if (CTemplateTools_IsDependentType(instance.thetype))
-        instance.thetype = CTemplateTools_ResolveType(ctx, instance.thetype, (UInt32 *)&instance.qual);
+        instance.thetype = CTemplTool_DeduceTypeCopy(ctx, instance.thetype, (UInt32 *)&instance.qual);
     if (instance.expltargs != NULL) {
-        instance.expltargs = CTemplateTools_CopyCTStateElemList(instance.expltargs);
+        instance.expltargs = CTemplTool_MakeGlobalTemplArgCopy(instance.expltargs);
         parameter = instance.expltargs;
         while (parameter != NULL) {
             if (parameter->pid.type) {
                 if (CTemplateTools_IsDependentType(parameter->data.typeparam.type))
-                    parameter->data.typeparam.type = CTemplateTools_ResolveType(
+                    parameter->data.typeparam.type = CTemplTool_DeduceTypeCopy(
                         ctx, parameter->data.typeparam.type, (UInt32 *)&parameter->data.typeparam.qual);
             } else {
                 if (CTemplTool_IsTypeDepExpr(parameter->data.paramdecl.expr))
@@ -281,7 +281,7 @@ void instantiate_friend_declaration(TypeDeduce *ctx, struct TemplateFriend *decl
     }
     if (instance.thetype->type == TYPEFUNC) {
         scope = CScope_FindGlobalNS(TYPE_CLASS(ctx->inst)->nspace);
-        BE_elf_SaveAndSetScope(scope, (CScopeSave *)&savedScope); /* original stack-slot view */
+        CScope_SetNameSpaceScope(scope, (CScopeSave *)&savedScope); /* original stack-slot view */
         object = CDecl_GetFunctionObject(&instance, NULL, &result, 0);
         CScope_RestoreScope((CScopeSave *)&savedScope); /* original stack-slot view */
         if (object != NULL) {
@@ -348,7 +348,7 @@ void instantiate_object_type(TypeDeduce *context, TemplateAction *function, ObjB
 {
     if (object->otype == OT_MEMBERVAR) {
         OBJ_MEMBER_VAR(object)->type =
-            CTemplateTools_ResolveType(context, OBJ_MEMBER_VAR(object)->type, &OBJ_MEMBER_VAR(object)->qual);
+            CTemplTool_DeduceTypeCopy(context, OBJ_MEMBER_VAR(object)->type, &OBJ_MEMBER_VAR(object)->qual);
         if (OBJ_MEMBER_VAR(object)->type->size == 0) {
             CDecl_CompleteType(OBJ_MEMBER_VAR(object)->type);
             if (!(copts.experimental != 0 && OBJ_MEMBER_VAR(object)->next == NULL &&
@@ -358,7 +358,7 @@ void instantiate_object_type(TypeDeduce *context, TemplateAction *function, ObjB
         return;
     }
     if (object->otype == OT_TYPE) {
-        OBJ_TYPE(object)->type = CTemplateTools_ResolveType(context, OBJ_TYPE(object)->type, &OBJ_TYPE(object)->qual);
+        OBJ_TYPE(object)->type = CTemplTool_DeduceTypeCopy(context, OBJ_TYPE(object)->type, &OBJ_TYPE(object)->qual);
         return;
     }
     if (object->otype != OT_OBJECT)
@@ -371,13 +371,13 @@ void instantiate_object_type(TypeDeduce *context, TemplateAction *function, ObjB
             CError_ASSERT(1672, !context->processingArgument);
             context->processingArgument = 1;
             context->nindex = ((TypeBitfield *)((TemplateFunction *)currentFunction)->params)->offset;
-            OBJECT(object)->type = CTemplateTools_ResolveType(context, OBJECT(object)->type, &OBJECT(object)->qual);
+            OBJECT(object)->type = CTemplTool_DeduceTypeCopy(context, OBJECT(object)->type, &OBJECT(object)->qual);
             context->processingArgument = 0;
             CError_ASSERT(1677, IS_TYPE_FUNC(OBJECT(object)->type));
             TYPE_FUNC(OBJECT(object)->type)->flags |= 0x400;
             return;
         }
-        OBJECT(object)->type = CTemplateTools_ResolveType(context, OBJECT(object)->type, &OBJECT(object)->qual);
+        OBJECT(object)->type = CTemplTool_DeduceTypeCopy(context, OBJECT(object)->type, &OBJECT(object)->qual);
         OBJECT(object)->qual |= Q_IS_TEMPLATED;
         if (IS_TYPE_FUNC(OBJECT(object)->type))
             TYPE_FUNC(OBJECT(object)->type)->flags &= ~FUNC_DEFINED;
@@ -439,7 +439,7 @@ void instantiate_template_object(TypeDeduce *ctx, Object *templ)
         link->refobj = (ObjBase *)obj;
     } else {
         obj->object.type =
-            (Type *)CTemplateTools_ResolveType(ctx, (Type *)obj->object.type, (UInt32 *)&obj->object.qual);
+            (Type *)CTemplTool_DeduceTypeCopy(ctx, (Type *)obj->object.type, (UInt32 *)&obj->object.qual);
     }
     if (needsNewNamespace)
         obj->object.nspace = TYPE_CLASS(ctx->inst)->nspace;
@@ -555,7 +555,7 @@ void CTemplateClass_0051c680(TypeDeduce *ctx, Object *obj)
         ctx->defActions = pending;
         pending->refobj = (ObjBase *)newobj;
     } else {
-        newobj->type = (Type *)CTemplateTools_ResolveType(ctx, (Type *)newobj->type, (UInt32 *)&newobj->qual);
+        newobj->type = (Type *)CTemplTool_DeduceTypeCopy(ctx, (Type *)newobj->type, (UInt32 *)&newobj->qual);
     }
     ctx->processingArgument = 0;
 
@@ -598,7 +598,7 @@ void instantiate_objtype(TypeDeduce *context, ObjType *type, HashNameNode *name)
         context->defActions = binding;
         binding->refobj = (ObjBase *)instantiatedType;
     } else {
-        instantiatedType->type = CTemplateTools_ResolveType(context, instantiatedType->type, &instantiatedType->qual);
+        instantiatedType->type = CTemplTool_DeduceTypeCopy(context, instantiatedType->type, &instantiatedType->qual);
     }
 
     objects = CScope_FindName(TYPE_CLASS(context->inst)->nspace, name);
@@ -640,7 +640,7 @@ void instantiate_ivars(TypeDeduce *ctx, TypeClass *dst, TemplClass *src)
             }
         }
         if (q == NULL) {
-            m->type = (Type *)CTemplateTools_ResolveType(ctx, m->type, &m->qual);
+            m->type = (Type *)CTemplTool_DeduceTypeCopy(ctx, m->type, &m->qual);
             if (TYPE(m->type)->size == 0) {
                 CDecl_CompleteType(m->type);
                 CanAllocObject(m->type);
@@ -796,7 +796,7 @@ void instantiate_bases(TypeDeduce *context, TypeClass *instance, TemplClass *cla
             CError_SaveAndSetWrittenEntry(&declaration->source_ref, &savedEntry);
             newBase = galloc(sizeof(ClassList));
             memclrw(newBase, sizeof(ClassList));
-            newBase->base = (TypeClass *)CTemplateTools_ResolveType(context, declaration->u.base.type,
+            newBase->base = (TypeClass *)CTemplTool_DeduceTypeCopy(context, declaration->u.base.type,
                                                                     (UInt32 *)(resolvedQualifiers = &resolvedTypeData));
             newBase->access = declaration->u.base.access;
             newBase->is_virtual = declaration->u.base.is_virtual;
@@ -1055,7 +1055,7 @@ unsigned char match_template_arguments(TemplPartialSpec *arguments, TemplPartial
             if (state.args[matchIndex].is_deduced != 0) {
                 if (argument->data.typeparam.type != NULL) {
                     if (state.args[matchIndex].data.typeparam.type == NULL ||
-                        CTemplateTools_00517a40(argument->data.paramdecl.expr,
+                        CTemplTool_EqualExprTypes(argument->data.paramdecl.expr,
                                                 state.args[matchIndex].data.paramdecl.expr) == 0)
                         return 0;
                 } else {
@@ -1071,7 +1071,7 @@ unsigned char match_template_arguments(TemplPartialSpec *arguments, TemplPartial
             }
         } else {
             if (argument->data.typeparam.type == NULL ||
-                CTemplateTools_00517a40(argument->data.paramdecl.expr, patternArgument->data.paramdecl.expr) == 0)
+                CTemplTool_EqualExprTypes(argument->data.paramdecl.expr, patternArgument->data.paramdecl.expr) == 0)
                 return 0;
         }
         argument = argument->next;
@@ -1110,7 +1110,7 @@ TemplArg *match_specialization_arguments(TemplPartialSpec *arguments, TemplArg *
                 patternQualifiers = patternQualifiers + 1;
             }
             if (instantiate)
-                result = CTemplateTools_CopySlotsToList(&state);
+                result = CTemplTool_MakeTemplArgList(&state);
             else
                 result = actual;
             return result;
@@ -1154,14 +1154,14 @@ TemplArg *match_specialization_arguments(TemplPartialSpec *arguments, TemplArg *
                 if (index < 0)
                     CError_FATAL(749);
                 if (state.args[index].is_deduced != 0) {
-                    if (!CTemplateTools_00517a40(candidate->data.paramdecl.expr, state.args[index].data.paramdecl.expr))
+                    if (!CTemplTool_EqualExprTypes(candidate->data.paramdecl.expr, state.args[index].data.paramdecl.expr))
                         return NULL;
                 } else {
                     state.args[index].data.paramdecl.expr = candidate->data.paramdecl.expr;
                     state.args[index].pid.type = 0;
                     state.args[index].is_deduced = 1;
                 }
-            } else if (!CTemplateTools_00517a40(candidate->data.paramdecl.expr, pattern->data.paramdecl.expr))
+            } else if (!CTemplTool_EqualExprTypes(candidate->data.paramdecl.expr, pattern->data.paramdecl.expr))
                 return NULL;
         }
         pattern = pattern->next;
@@ -1351,7 +1351,7 @@ void CTemplateClass_ParsePartialSpecialization(TemplateScopeState *scope, struct
         specialization = (TemplPartialSpec *)galloc(12);
         memclrw(specialization, 12);
         specialization->templ = instance;
-        specialization->args = CTemplateTools_CopyCTStateElemList(arguments);
+        specialization->args = CTemplTool_MakeGlobalTemplArgCopy(arguments);
         specialization->next = templateClass->pspecs;
         templateClass->pspecs = specialization;
     } else {
@@ -1629,7 +1629,7 @@ void CTemplateClass_AddDeferredFunctionDeclaration(TemplClass *classTemplate, De
             tk = ';';
     }
 
-    CDecl_CopyDeclInfoToNewFunc(&function->decl, declInfo);
+    CDecl_PackDeclInfo(&function->decl, declInfo);
 
     declaration = galloc(sizeof(*declaration));
     memclrw(declaration, sizeof(*declaration));

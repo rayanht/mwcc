@@ -157,7 +157,7 @@ ENode *CSOM_CreateMemberAccessExpr(BClassList *classList, ObjMemberVar *request,
     ENode *operand;
     ENode *converted;
     Object functionObject;
-    if (expr == NULL && (data_00588238 == NULL || data_00588040 == NULL || data_005884f8 == 0 ||
+    if (expr == NULL && (cscope_currentfunc == NULL || cscope_currentclass == NULL || cscope_is_member_func == 0 ||
                          (expr = CClass_CreateThisSelfExpr()) == NULL)) {
         CError_ReportError(ERR_ILLEGAL_USE_NON_STATIC_MEMBER);
         return NULL;
@@ -166,7 +166,7 @@ ENode *CSOM_CreateMemberAccessExpr(BClassList *classList, ObjMemberVar *request,
     expr = expr->data.monadic;
     do {
         if (classList->next == NULL) {
-            currentClass = data_00588040;
+            currentClass = cscope_currentclass;
             if (currentClass == (base = TYPE_CLASS(classList->type)) && expr->type == EOBJREF &&
                 expr->data.objref->name == this_arg_name) {
                 result = (ENode *)CSOM_004e38b0_inline1((Type *)currentClass);
@@ -254,7 +254,7 @@ ENode *create_glue_objectrefnode(TypeClass *cls, SInt32 id, Object *obj)
         *cursor = 0;
 
         function = CParser_NewCompilerDefFunctionObject();
-        function->nspace = registration_context;
+        function->nspace = cscope_root;
         function->name = GetHashNameNode(buffer);
         function->u.func.linkname = function->name;
         function->type = obj->type;
@@ -465,9 +465,9 @@ void find_method_vtbl_class_and_offset(TypeClass *cls, Object *method, TypeClass
     UInt16 vtblIndex;
 
     if ((METHODTYPE(method->type)->flags & 0x20) == 0) {
-        CScope_InitScopeSearch(&state, cls->nspace);
+        CScope_InitObjectIterator(&state, cls->nspace);
         for (;;) {
-            found = CScope_NextObject(&state);
+            found = CScope_NextObjectIteratorObject(&state);
             if (found == NULL)
                 break;
             if (found == method) {
@@ -479,9 +479,9 @@ void find_method_vtbl_class_and_offset(TypeClass *cls, Object *method, TypeClass
             }
         }
         for (vbase = cls->vbases; vbase != NULL; vbase = vbase->next) {
-            CScope_InitScopeSearch(&state, vbase->base->nspace);
+            CScope_InitObjectIterator(&state, vbase->base->nspace);
             for (;;) {
-                found = CScope_NextObject(&state);
+                found = CScope_NextObjectIteratorObject(&state);
                 if (found == NULL)
                     break;
                 if (found == method) {
@@ -495,9 +495,9 @@ void find_method_vtbl_class_and_offset(TypeClass *cls, Object *method, TypeClass
         }
     } else {
         for (vbase = cls->vbases; vbase != NULL; vbase = vbase->next) {
-            CScope_InitScopeSearch(&state, vbase->base->nspace);
+            CScope_InitObjectIterator(&state, vbase->base->nspace);
             for (;;) {
-                found = CScope_NextObject(&state);
+                found = CScope_NextObjectIteratorObject(&state);
                 if (found == NULL)
                     break;
                 if (found->name == method->name) {
@@ -539,7 +539,7 @@ void CSOM_004e4390(Object *obj)
 static TypeClass *GetOwner(void)
 {
     TypeClass *o;
-    if (!(o = currentNameSpace->theclass) || !o->sominfo) {
+    if (!(o = cscope_current->theclass) || !o->sominfo) {
         CError_ReportError(ERR_ILLEGAL_USE_PRAGMA_OUTSIDE_SOM_CLASS);
         o = NULL;
     }
@@ -549,7 +549,7 @@ static TypeClass *GetOwner(void)
 static inline TypeClass *CSOM_004e4a30_inline1(void)
 {
     TypeClass *v0;
-    if (((int)(v0 = currentNameSpace->theclass)) == 0 || v0->sominfo == NULL) {
+    if (((int)(v0 = cscope_current->theclass)) == 0 || v0->sominfo == NULL) {
         CError_ReportError(ERR_ILLEGAL_USE_PRAGMA_OUTSIDE_SOM_CLASS);
         v0 = (TypeClass *)0;
     }
@@ -603,9 +603,9 @@ static inline Object *MakeKinds(SOMClassBuildState *info)
 static Object *FlushData(void)
 {
     Object *data;
-    fn_00443190(data_00583548.data);
+    COS_LockHandle(data_00583548.data);
     data = CInit_DeclareString(*data_00583548.data, data_00583548.size, 0, 0);
-    fn_004431b0(data_00583548.data);
+    COS_UnlockHandle(data_00583548.data);
     return data;
 }
 
@@ -753,7 +753,7 @@ Object *CSOM_004e45b0(char *name, char *signature)
     Object *obj;
     FuncArg *arg;
 
-    list = CScope_FindObjectListInNameSpace(registration_context, GetHashNameNode(name));
+    list = CScope_FindObjectListInNameSpace(cscope_root, GetHashNameNode(name));
     if (list != NULL && (obj = list->object)->otype == OT_OBJECT) {
         if (obj->type->type == TYPEFUNC && *signature++ == 'p' && TYPE_FUNC(obj->type)->functype->type == TYPEPOINTER) {
             for (arg = TYPE_FUNC(obj->type)->args; arg != NULL; arg = arg->next) {
@@ -803,7 +803,7 @@ void CSOM_PrependTheClassArg(TypeFunc *function)
     arg = CParser_NewFuncArg();
     arg->name = GetHashNameNode("__theclass");
     name = GetHashNameNode("SOMClass");
-    type = CScope_FindTagType(currentNameSpace, name);
+    type = CScope_FindTagType(cscope_current, name);
     if (type == NULL) {
         fn_0043f3e0(281U, name->name);
         type = &stvoid;
@@ -846,7 +846,7 @@ void CSOM_ParseBaseClass(void)
         CPrep_ReportError(0x6b);
         return;
     }
-    cls = CScope_FindTagType(currentNameSpace, data_00587fa0);
+    cls = CScope_FindTagType(cscope_current, data_00587fa0);
     if (cls == NULL || !IS_TYPE_CLASS(cls) || TYPE_CLASS(cls)->sominfo == NULL) {
         fn_0043f3e0(0x114, data_00587fa0->name);
         return;
@@ -859,7 +859,7 @@ void CSOM_ParseBaseClass(void)
         CPrep_ReportError(0x6b);
         return;
     }
-    base = CScope_FindTagType(currentNameSpace, data_00587fa0);
+    base = CScope_FindTagType(cscope_current, data_00587fa0);
     if (base == NULL || !IS_TYPE_CLASS(base) || TYPE_CLASS(base)->sominfo == NULL) {
         fn_0043f3e0(0x114, data_00587fa0->name);
         return;
@@ -882,7 +882,7 @@ void CSOM_ParseDescriptorValues(void)
         CPrep_ReportError(107);
         return;
     }
-    theclass = CScope_FindTagType(currentNameSpace, data_00587fa0);
+    theclass = CScope_FindTagType(cscope_current, data_00587fa0);
     if (!theclass || theclass->type != TYPECLASS || !TYPE_CLASS(theclass)->sominfo) {
         fn_0043f3e0(276, data_00587fa0->name);
         return;
@@ -1005,7 +1005,7 @@ void CSOM_BuildClass(TypeClass *func)
     obj->type = (Type *)ft;
     obj->sclass = TK_STATIC;
     obj->name = CParser_NameConcat(func->classname->name, "DLLD");
-    if (CScope_FindObjectListInNameSpace(registration_context, obj->name) != NULL)
+    if (CScope_FindObjectListInNameSpace(cscope_root, obj->name) != NULL)
         CError_ReportError(ERR_OBJECT_REDEFINED, obj);
     state.registrationFunction = obj;
     CFunc_GenerateDummyFunction(obj);
@@ -1285,9 +1285,9 @@ void create_special_functions_object(SOMClassBuildState *info, TypeClass *cls)
     char *className;
 
     newOperator = deleteOperator = NULL;
-    CScope_InitScopeSearch(&search, cls->nspace);
+    CScope_InitObjectIterator(&search, cls->nspace);
     for (;;) {
-        object = CScope_NextObject(&search);
+        object = CScope_NextObjectIteratorObject(&search);
         if (object == NULL)
             break;
         if (object->type->type == TYPEFUNC) {
@@ -1369,9 +1369,9 @@ Object *build_base_method_vtbl_index_object(SOMClassBuildState *groups)
         group = group->next;
         groupIndex++;
     }
-    fn_00443190(data_00583548.data);
+    COS_LockHandle(data_00583548.data);
     result = CInit_DeclareString(*data_00583548.data, data_00583548.size, 0, 0);
-    fn_004431b0(data_00583548.data);
+    COS_UnlockHandle(data_00583548.data);
     return result;
 }
 
@@ -1489,9 +1489,9 @@ void build_class_vtables_and_members(SOMClassBuildState *layout, TypeClass *cls)
         layout->implicitBaseCount++;
     }
 
-    CScope_InitScopeSearch(&classScope, cls->nspace);
+    CScope_InitObjectIterator(&classScope, cls->nspace);
     for (;;) {
-        method = CScope_NextObject(&classScope);
+        method = CScope_NextObjectIteratorObject(&classScope);
         if (method == NULL)
             break;
         if (method->type->type != TYPEFUNC)
@@ -1499,9 +1499,9 @@ void build_class_vtables_and_members(SOMClassBuildState *layout, TypeClass *cls)
         if ((TYPE_FUNC(method->type)->flags & 0x20) == 0)
             continue;
         for (virtualBase = cls->vbases; virtualBase != NULL; virtualBase = virtualBase->next) {
-            CScope_InitScopeSearch(&baseScope, virtualBase->base->nspace);
+            CScope_InitObjectIterator(&baseScope, virtualBase->base->nspace);
             for (;;) {
-                candidate = CScope_NextObject(&baseScope);
+                candidate = CScope_NextObjectIteratorObject(&baseScope);
                 if (candidate == NULL)
                     break;
                 if (candidate->type->type != TYPEFUNC)
@@ -1564,9 +1564,9 @@ void build_class_vtables_and_members(SOMClassBuildState *layout, TypeClass *cls)
                     layout->inheritedMemberCount++;
                     break;
                 case 1:
-                    CScope_InitScopeSearch(&classScope, cls->nspace);
+                    CScope_InitObjectIterator(&classScope, cls->nspace);
                     for (;;) {
-                        candidate = CScope_NextObject(&classScope);
+                        candidate = CScope_NextObjectIteratorObject(&classScope);
                         if (candidate == NULL)
                             break;
                         if (candidate->type->type != TYPEFUNC)
@@ -1675,9 +1675,9 @@ void CSOM_CompleteClass(TypeClass *tclass)
     SInt32 count;
 
     if (tclass->sominfo->methodNameList) {
-        CScope_InitScopeSearch(&iterator, tclass->nspace);
+        CScope_InitObjectIterator(&iterator, tclass->nspace);
         for (;;) {
-            method = CScope_NextObject(&iterator);
+            method = CScope_NextObjectIteratorObject(&iterator);
             if (!method)
                 break;
             if (method->type->type == TYPEFUNC && (((TypeMemberFunc *)method->type)->flags & 32) == 0 &&
@@ -1739,9 +1739,9 @@ void CSOM_CompleteClass(TypeClass *tclass)
                 index++;
             } while (index < count);
     }
-    CScope_InitScopeSearch(&iterator, tclass->nspace);
+    CScope_InitObjectIterator(&iterator, tclass->nspace);
     for (;;) {
-        objects = CScope_NextNameSpaceObjectList(&iterator);
+        objects = CScope_NextObjectIteratorObjectList(&iterator);
         if (!objects)
             break;
         if (objects->object->otype != OT_OBJECT || (next = objects->next) == NULL || next->object->otype != OT_OBJECT ||
@@ -1754,9 +1754,9 @@ void CSOM_CompleteClass(TypeClass *tclass)
             objects = objects->next;
         } while (objects);
     }
-    CScope_InitScopeSearch(&iterator, tclass->nspace);
+    CScope_InitObjectIterator(&iterator, tclass->nspace);
     for (;;) {
-        firstMethod = CScope_NextObject(&iterator);
+        firstMethod = CScope_NextObjectIteratorObject(&iterator);
         if (!firstMethod)
             break;
         if ((firstMethod->qual & Q_INLINE) != 0)
@@ -1765,7 +1765,7 @@ void CSOM_CompleteClass(TypeClass *tclass)
         ((TypeFunc *)firstMethod->type)->flags |= 4;
         tclass->action = 1;
         for (;;) {
-            otherMethod = CScope_NextObject(&iterator);
+            otherMethod = CScope_NextObjectIteratorObject(&iterator);
             if (!otherMethod)
                 break;
             if (otherMethod->type->type != TYPEFUNC)
@@ -1776,16 +1776,16 @@ void CSOM_CompleteClass(TypeClass *tclass)
     }
     if (tclass->sominfo->omitEnvironmentParameter == 0) {
         name = spaces_name;
-        lookupType = CScope_FindTagType(currentNameSpace, name);
+        lookupType = CScope_FindTagType(cscope_current, name);
         if (!lookupType) {
             fn_0043f3e0(281, name->name);
             requiredType = &stvoid;
         } else {
             requiredType = lookupType;
         }
-        CScope_InitScopeSearch(&iterator, tclass->nspace);
+        CScope_InitObjectIterator(&iterator, tclass->nspace);
         for (;;) {
-            checkedMethod = CScope_NextObject(&iterator);
+            checkedMethod = CScope_NextObjectIteratorObject(&iterator);
             if (!checkedMethod)
                 break;
             if (checkedMethod->type->type != TYPEFUNC || ((TypeMemberFunc *)checkedMethod->type)->is_static != 0 ||
@@ -1814,9 +1814,9 @@ Object **build_vtbl_index_table(TypeClass *theclass, SInt32 *count)
     CScopeObjectIterator scope;
     TypeMemberFunc *method;
 
-    CScope_InitScopeSearch(&scope, theclass->nspace);
+    CScope_InitObjectIterator(&scope, theclass->nspace);
     for (;;) {
-        object = CScope_NextObject(&scope);
+        object = CScope_NextObjectIteratorObject(&scope);
         if (!object)
             break;
         if (object->type->type != TYPEFUNC || (((TypeMemberFunc *)object->type)->flags & FUNC_METHOD) == 0)
@@ -1840,9 +1840,9 @@ Object **build_vtbl_index_table(TypeClass *theclass, SInt32 *count)
     *count = tableSize;
     table = (Object **)CompilerTools_AllocatePool(tableSize * sizeof(*table));
     memclrw(table, tableSize * sizeof(*table));
-    CScope_InitScopeSearch(&scope, theclass->nspace);
+    CScope_InitObjectIterator(&scope, theclass->nspace);
     for (;;) {
-        methodObject = CScope_NextObject(&scope);
+        methodObject = CScope_NextObjectIteratorObject(&scope);
         if (!methodObject)
             break;
         if (methodObject->type->type == TYPEFUNC && (((TypeMemberFunc *)methodObject->type)->flags & 32) == 0 &&

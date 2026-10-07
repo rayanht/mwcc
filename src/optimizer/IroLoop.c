@@ -1625,7 +1625,7 @@ void unroll_loop(int factor, struct IRONode *header)
                                                                     count2++;
                                                                     if (checkLinear->type == IROLinearOp2Arg &&
                                                                         checkLinear->nodetype == EANDASS)
-                                                                        mask = CFunc_LogicalNotCInt64(mask);
+                                                                        mask = CInt64_Not(mask);
                                                                 }
                                                             } else {
                                                                 return;
@@ -2225,7 +2225,7 @@ int combine_nonoverlapping_shifts(CInt64 a, CInt64 b, CInt64 *out)
             sum = CInt64_And(term, result);
             if (CInt64_NotEqual(sum, cint64_zero))
                 return 0;
-            result = CExpr2_BitwiseOrCInt64(term, result);
+            result = CInt64_Or(term, result);
             index = CInt64_Add(index, cint64_one);
         } while (CInt64_Less(index, a));
     }
@@ -3034,13 +3034,13 @@ void find_induction_variables(void)
                                         if (stmt->type == IROLinearOp2Arg && stmt->nodetype == EADDASS &&
                                             CInt64_Less(value, cint64_zero)) {
                                             stmt->nodetype = ESUBASS;
-                                            stmt->u.diadic.right->u.node->data.intval = CInt64_Inv(value);
+                                            stmt->u.diadic.right->u.node->data.intval = CInt64_Neg(value);
                                         }
                                         if (isUnsigned) {
                                             rhs = stmt->u.diadic.right;
-                                            CExpr2_ClearCInt64Hi(&rhs->u.node->data.intval);
+                                            CInt64_ConvertUInt32(&rhs->u.node->data.intval);
                                         } else
-                                            CExpr2_SignExtendCInt64(&(rhs = stmt->u.diadic.right)->u.node->data.intval);
+                                            CInt64_ConvertInt32(&(rhs = stmt->u.diadic.right)->u.node->data.intval);
                                         induction->addConst = stmt->u.diadic.right->u.node->data.intval.lo;
                                         induction->step = NULL;
                                     } else {

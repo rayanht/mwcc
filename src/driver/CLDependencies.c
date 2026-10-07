@@ -77,7 +77,7 @@ void make_dependency_osspec(Deps *table, int index, char *output)
     DepRecord *record = &table->records[index];
     struct AccessPathEntry *path = record->resolvedPath;
 
-    CLProj_MakeOSSpecFromPath(path->path, table->text + record->nameOffset, 0, (OSSpec *)output);
+    OS_MakeSpecWithPath(path->path, table->text + record->nameOffset, 0, (OSSpec *)output);
 }
 
 unsigned char fn_00427ad0(Deps *table, char flags, char *key, char *argument, SInt32 *index_out, DepRecord **entry_out)
@@ -126,7 +126,7 @@ AccessPathEntry *find_or_create_access_path_entry(AccessPaths *scope, OSPathSpec
 
 unsigned char find_access_path_entry(AccessPathEntry *entry, char *comparison, AccessPathEntry **result, char *context)
 {
-    if (CLProj_MakeOSSpecFromPath(entry->path, comparison, 0, (struct OSSpec *)context) == 0) {
+    if (OS_MakeSpecWithPath(entry->path, comparison, 0, (struct OSSpec *)context) == 0) {
         if (OS_IsFile((struct OSSpec *)context) != 0) {
             *result = entry;
             return 1;
@@ -166,7 +166,7 @@ void append_dep_record(Deps *deps, char *name, UInt8 flag, AccessPathEntry *obj,
     AccessPathEntry *resolvedType;
 
     if (obj == NULL && type == NULL)
-        str = CLProj_GetFileName(name);
+        str = OS_GetFileNamePtr(name);
     else
         str = name;
 
@@ -227,7 +227,7 @@ unsigned char CLDependencies_FindFile(Deps *dependencies, char *file, char searc
         result = NULL;
         value = NULL;
         searchMode = searchFirst;
-        if (MsDos_IsAbsolutePath(file) != 0) {
+        if (OS_IsFullPath(file) != 0) {
             found = OS_MakeFileSpec(file, context) == 0 && OS_Status(context) == 0;
             value = result = lookupText = NULL;
         } else {
@@ -309,7 +309,7 @@ SInt32 CLDependencies_SetAccessPath(OSSpec *name, Boolean flag)
     data_0054d898 = find_or_create_access_path_entry(default_target->dependencyTable.scope, path);
 
     if (optsCmdLine.verbose > 1) {
-        CLErrors_ForwardMessage(0x69, fn_00412340(path, data_005880e0, 0x104));
+        CLErrors_ForwardMessage(0x69, OS_PathSpecToString(path, data_005880e0, 0x104));
     }
     return 1;
 }
@@ -408,19 +408,19 @@ void CLDependencies_WriteDependencies(Deps *ctx, DropinFileRecord *file, MemBuff
         }
         remaining = file->dependencies.count;
         source = &file->outputPath;
-        CLProj_MakeRelativePath(source, NULL, target, 0x104);
+        OS_SpecToStringRelative(source, NULL, target, 0x104);
         if (target[0] != 0) {
             hasSpace = (strchr(target, ' ') != NULL);
             sprintf(line, "%s%s%s%s ", hasSpace ? EMPTYS : EMPTYS, escape_spaces(hasSpace, escaped, target),
                     hasSpace ? EMPTYS : EMPTYS, ":");
-            if (CLFileOps_AppendMemBuffer(stream, line, strlen(line)) != 0) {
+            if (OS_AppendHandle(stream, line, strlen(line)) != 0) {
                 break;
             }
             hasSpace = (strchr(file->inputName, ' ') != NULL);
             separator = remaining ? "\\" : EMPTYS;
             sprintf(line, "%s%s%s %s\n", hasSpace ? EMPTYS : EMPTYS, escape_spaces(hasSpace, escaped, file->inputName),
                     hasSpace ? EMPTYS : EMPTYS, separator);
-            if (CLFileOps_AppendMemBuffer(stream, line, strlen(line)) != 0) {
+            if (OS_AppendHandle(stream, line, strlen(line)) != 0) {
                 break;
             }
         } else {
@@ -428,7 +428,7 @@ void CLDependencies_WriteDependencies(Deps *ctx, DropinFileRecord *file, MemBuff
             separator = remaining ? "\\" : EMPTYS;
             sprintf(line, "%s%s%s%s %s\n", hasSpace ? EMPTYS : EMPTYS,
                     escape_spaces(hasSpace, escaped, file->inputName), hasSpace ? EMPTYS : EMPTYS, ":", separator);
-            if (CLFileOps_AppendMemBuffer(stream, line, strlen(line)) != 0) {
+            if (OS_AppendHandle(stream, line, strlen(line)) != 0) {
                 break;
             }
         }
@@ -441,7 +441,7 @@ void CLDependencies_WriteDependencies(Deps *ctx, DropinFileRecord *file, MemBuff
             separator = remaining ? "\\" : EMPTYS;
             sprintf(line, "\t%s%s%s %s\n", hasSpace ? EMPTYS : EMPTYS, escape_spaces(hasSpace, escaped, dependency),
                     hasSpace ? EMPTYS : EMPTYS, separator);
-            if (CLFileOps_AppendMemBuffer(stream, line, strlen(line)) != 0) {
+            if (OS_AppendHandle(stream, line, strlen(line)) != 0) {
                 goto out_of_memory;
             }
         }

@@ -97,7 +97,7 @@ void CDecl_ParseClass(DeclInfo *ctx, SInt16 kind, Boolean advanceToken, UInt8 ex
         switch (tk) {
             case ':':
             case '{':
-                obj = CDecl_DefineClass(currentNameSpace, NULL, NULL, kind, 0, 1);
+                obj = CDecl_DefineClass(cscope_current, NULL, NULL, kind, 0, 1);
                 obj->eflags |= extraFlags;
                 break;
             case TK_IDENTIFIER:
@@ -106,7 +106,7 @@ void CDecl_ParseClass(DeclInfo *ctx, SInt16 kind, Boolean advanceToken, UInt8 ex
                     ((nextToken = CPrepTokenizer_GetNextTokenAndRestorePosition()) == ':' || nextToken == ';' ||
                      nextToken == '{')) {
                     tk = CPrepTokenizer_GetNextToken();
-                    existing = CScope_GetTagType(currentNameSpace, name);
+                    existing = CScope_GetTagType(cscope_current, name);
                     if (existing != NULL) {
                     resolveDeclaration:
                         if (existing->type != TYPECLASS) {
@@ -117,7 +117,7 @@ void CDecl_ParseClass(DeclInfo *ctx, SInt16 kind, Boolean advanceToken, UInt8 ex
                                 }
                             }
                             CError_ReportError(ERR_STRUCT_UNION_ENUM_CLASS_TAG_REDEFINED, name->name);
-                            obj = CDecl_DefineClass(currentNameSpace, NULL, NULL, kind, 0, 1);
+                            obj = CDecl_DefineClass(cscope_current, NULL, NULL, kind, 0, 1);
                         } else {
                             SInt8 declaredKind;
                             obj = (TypeClass *)existing;
@@ -134,7 +134,7 @@ void CDecl_ParseClass(DeclInfo *ctx, SInt16 kind, Boolean advanceToken, UInt8 ex
                             obj->eflags |= extraFlags;
                         }
                     } else {
-                        obj = CDecl_DefineClass(currentNameSpace, name, NULL, kind, 0, 1);
+                        obj = CDecl_DefineClass(cscope_current, name, NULL, kind, 0, 1);
                         obj->eflags |= extraFlags;
                     }
                     break;
@@ -150,7 +150,7 @@ void CDecl_ParseClass(DeclInfo *ctx, SInt16 kind, Boolean advanceToken, UInt8 ex
                 if ((existing = spec.type) != NULL)
                     goto resolveDeclaration;
                 CError_ASSERT(6192, spec.name != NULL);
-                obj = CDecl_DefineClass(CScope_FindNonClassNonTemplNameSpace(currentNameSpace), spec.name, NULL, kind,
+                obj = CDecl_DefineClass(CScope_FindNonClassNonTemplNameSpace(cscope_current), spec.name, NULL, kind,
                                         0, 1);
                 obj->eflags |= extraFlags;
         }
@@ -160,14 +160,14 @@ void CDecl_ParseClass(DeclInfo *ctx, SInt16 kind, Boolean advanceToken, UInt8 ex
         return;
     if ((obj->flags & CLASS_COMPLETED) != 0) {
         CError_ReportError(ERR_STRUCT_UNION_ENUM_CLASS_TAG_REDEFINED, obj->classname->name);
-        obj = CDecl_DefineClass(currentNameSpace, NULL, NULL, kind, 0, 1);
+        obj = CDecl_DefineClass(cscope_current, NULL, NULL, kind, 0, 1);
     }
     {
-        NameSpace *ns = currentNameSpace;
+        NameSpace *ns = cscope_current;
         while (ns != NULL) {
             if (ns == obj->nspace) {
                 CError_ReportError(ERR_STRUCT_UNION_ENUM_CLASS_TAG_REDEFINED, obj->classname->name);
-                obj = CDecl_DefineClass(currentNameSpace, NULL, NULL, kind, 0, 1);
+                obj = CDecl_DefineClass(cscope_current, NULL, NULL, kind, 0, 1);
                 break;
             }
             ns = ns->parent;
@@ -181,7 +181,7 @@ void CDecl_ParseClass(DeclInfo *ctx, SInt16 kind, Boolean advanceToken, UInt8 ex
     obj->eflags |= ((copts.structalignment + 1) << 4) & CLASS_EFLAGS_F0;
     if (tk == ':')
         parse_class_bases((TemplClass *)obj, kind, isTemplate);
-    BE_elf_SaveAndSetClassScope(obj, &scopeSave);
+    CScope_SetClassDefScope(obj, &scopeSave);
     if (tk == '{') {
         tk = CPrepTokenizer_GetNextToken();
         savedContext = class_browse_enabled(ctx);
@@ -274,10 +274,10 @@ TypeClass *CDecl_DefineClass(struct NameSpace *nspace, struct HashNameNode *name
             }
         }
         CScope_DefineTypeTag(classSpace, name, (Type *)type);
-        if (data_00588238 != NULL) {
+        if (cscope_currentfunc != NULL) {
             classSpace->name = CParser_AppendUniqueNameFile(name->name);
         }
-        if (copts.direct_to_som != 0 && nspace == registration_context) {
+        if (copts.direct_to_som != 0 && nspace == cscope_root) {
             if (memcmp(name->name, "SOMObject", 10) == 0) {
                 CSOM_InitSOMInfo(type);
             }
@@ -352,10 +352,10 @@ void fill_class_layout_entries(ClassLayout *table, TypeClass *type, ObjBase **en
     }
     memclrw(entries, bytes);
     table->objlist = entries;
-    CScope_InitScopeSearch(&scope, type->nspace);
+    CScope_InitObjectIterator(&scope, type->nspace);
     filled = 0;
     for (;;) {
-        obj = CScope_NextObject(&scope);
+        obj = CScope_NextObjectIteratorObject(&scope);
         if (obj == NULL)
             break;
         if (obj->type->type == TYPEFUNC && (((TypeFunc *)obj->type)->flags & FUNC_METHOD) != 0 &&
@@ -1192,7 +1192,7 @@ void parse_class_members(ClassLayout *decle, TypeClass *tclass, SInt16 mode)
         dsx3e = 0;
         dsx3c = 0;
         if (tk == TK_TEMPLATE) {
-            scope = currentNameSpace;
+            scope = cscope_current;
             if (!scope->theclass || !(scope->theclass->flags & CLASS_IS_TEMPL)) {
                 for (; scope; scope = scope->parent) {
                     if (!scope->name && !scope->theclass && scope->parent && !scope->is_templ) {
@@ -1704,7 +1704,7 @@ void parse_friend_declaration(TemplClass *cls)
             tk = CPrepTokenizer_GetNextToken();
         return;
     } else {
-        globalNamespace = CScope_FindGlobalNS(currentNameSpace);
+        globalNamespace = CScope_FindGlobalNS(cscope_current);
         baseType = decl.thetype;
         baseQualifiers = decl.qual;
         for (;;) {
@@ -1716,7 +1716,7 @@ void parse_friend_declaration(TemplClass *cls)
             CDecl_ParseDeclarator(&decl);
             if (decl.thetype->type == TYPEFUNC) {
                 if (!isTemplateClass) {
-                    BE_elf_SaveAndSetScope(globalNamespace, &scopeSave);
+                    CScope_SetNameSpaceScope(globalNamespace, &scopeSave);
                     function = CDecl_GetFunctionObject(&decl, NULL, &isNewFunction, 0);
                     CScope_RestoreScope(&scopeSave);
                     if (function != NULL) {
@@ -1779,7 +1779,7 @@ void CDecl_AddFriend(TypeClass *typeClass, Object *object, TypeClass *type)
 }
 
 /* Declaration record; intervening storage is cleared but not populated here. */
-void CDecl_InitDeclInfoFromTemplateDeclarationData(DeclInfo *dst, PackedDeclInfo *src)
+void CDecl_UnpackDeclInfo(DeclInfo *dst, PackedDeclInfo *src)
 {
     memclrw(dst, sizeof(*dst));
     dst->thetype = src->thetype;
@@ -1796,14 +1796,14 @@ void CDecl_InitDeclInfoFromTemplateDeclarationData(DeclInfo *dst, PackedDeclInfo
 /* Compact projection of the declaration record's selected values. */
 /* Layout of the input record; reserved regions are not read here. */
 
-unsigned char CDecl_CopyDeclInfoToNewFunc(PackedDeclInfo *destination, DeclInfo *source)
+unsigned char CDecl_PackDeclInfo(PackedDeclInfo *destination, DeclInfo *source)
 {
     unsigned char hasTemplateArguments;
     destination->thetype = source->thetype;
     destination->qual = source->qual;
     destination->nspace = source->nspace;
     destination->name = source->name;
-    destination->expltargs = CTemplateTools_CopyCTStateElemList(source->expltargs);
+    destination->expltargs = CTemplTool_MakeGlobalTemplArgCopy(source->expltargs);
     destination->storageclass = source->storageclass;
     destination->section = source->section;
     destination->exportflags = source->exportflags;
@@ -1945,7 +1945,7 @@ void declare_member_function(ClassLayout *layout, TypeClass *cls, struct DeclInf
             info->exportflags |= 0x40;
     }
 
-    CError_ASSERT(4010, currentNameSpace == cls->nspace);
+    CError_ASSERT(4010, cscope_current == cls->nspace);
 
     if (found != NULL) {
         UInt8 kind;
@@ -2075,7 +2075,7 @@ static void attach_node(Type *p, HashNameNode *name)
     SInt32 b;
     TYPE_STRUCT(p)->name = name;
     b = (in_parameter_type_list != 0 && !copts.cplusplus);
-    CScope_DefineTypeTag((b ? registration_context : currentNameSpace), name, p);
+    CScope_DefineTypeTag((b ? cscope_root : cscope_current), name, p);
 }
 
 void scanstruct(DeclInfo *state, SInt16 spec)
@@ -2094,14 +2094,14 @@ void scanstruct(DeclInfo *state, SInt16 spec)
     }
     if (tk == TK_IDENTIFIER) {
         name = data_00587fa0;
-        node = CScope_FindTagType(currentNameSpace, name);
+        node = CScope_FindTagType(cscope_current, name);
         if (node != NULL) {
             if (node->type == TYPECLASS) {
                 CDecl_ParseClass(context, spec, 1, 0);
                 return;
             }
             tk = CPrepTokenizer_GetNextToken();
-            if (CScope_GetTagType(currentNameSpace, name) == NULL && (tk == ';' || tk == '{')) {
+            if (CScope_GetTagType(cscope_current, name) == NULL && (tk == ';' || tk == '{')) {
                 MAKE_NODE(node, spec);
                 if (name != NULL)
                     attach_node(node, name);
@@ -2596,7 +2596,7 @@ void scanenum(DeclInfo *result)
     if (tk == TK_IDENTIFIER) {
         saved = (HashNameNode *)data_00587fa0;
         if (CPrepTokenizer_GetNextTokenAndRestorePosition() == 0x7b) {
-            type = CScope_GetTagType(currentNameSpace, saved);
+            type = CScope_GetTagType(cscope_current, saved);
             if (type != NULL) {
                 CPrepTokenizer_GetNextToken();
             checktype:
@@ -2614,7 +2614,7 @@ void scanenum(DeclInfo *result)
                 result->thetype = (Type *)decl;
             }
             if (cprep_cu[0xe7] != 0 && result->file->recordbrowseinfo != 0) {
-                CBrowse_RecordNameRange(currentNameSpace, ((TypeEnum *)result->thetype)->enumname, result->file,
+                CBrowse_RecordNameRange(cscope_current, ((TypeEnum *)result->thetype)->enumname, result->file,
                                         result->file2, result->sourceoffset, CPrep_GetCurrentTextOffset());
             }
             return;
@@ -2675,12 +2675,12 @@ TypeEnum *parse_enum_definition(TypeEnum *decl, HashNameNode *name)
         decl = galloc(sizeof(TypeEnum));
         memclrw(decl, sizeof(TypeEnum));
         decl->type = TYPEENUM;
-        decl->nspace = currentNameSpace;
+        decl->nspace = cscope_current;
         if (name != NULL) {
             decl->enumname = name;
-            CScope_DefineTypeTag(currentNameSpace, name, (Type *)decl);
+            CScope_DefineTypeTag(cscope_current, name, (Type *)decl);
         }
-        if (currentNameSpace->is_global == 0) {
+        if (cscope_current->is_global == 0) {
             do
                 decl->nspace = decl->nspace->parent;
             while (decl->nspace->is_global == 0);
@@ -2689,13 +2689,13 @@ TypeEnum *parse_enum_definition(TypeEnum *decl, HashNameNode *name)
         }
     }
 
-    if (currentNameSpace->theclass != NULL && (currentNameSpace->theclass->flags & CLASS_IS_TEMPL) != 0) {
-        templateClass = (TemplClass *)currentNameSpace->theclass;
+    if (cscope_current->theclass != NULL && (cscope_current->theclass->flags & CLASS_IS_TEMPL) != 0) {
+        templateClass = (TemplClass *)cscope_current->theclass;
         CTemplateClass_AppendEnumDeclaration(templateClass, decl);
     } else
         templateClass = NULL;
 
-    if (currentNameSpace->theclass != NULL)
+    if (cscope_current->theclass != NULL)
         access = member_access;
     else
         access = 0;
@@ -2771,7 +2771,7 @@ TypeEnum *parse_enum_definition(TypeEnum *decl, HashNameNode *name)
             }
             decl->size = currentType->size;
             decl->enumtype = currentType;
-            CScope_AddObject(currentNameSpace, enumerator->name, (ObjBase *)enumerator);
+            CScope_AddObject(cscope_current, enumerator->name, (ObjBase *)enumerator);
             if (last != NULL) {
                 last->next = enumerator;
                 last = enumerator;
@@ -2783,7 +2783,7 @@ TypeEnum *parse_enum_definition(TypeEnum *decl, HashNameNode *name)
                 if (compilationUnit->browseOptions.browseEnums != 0) {
                     context = CPrep_GetPFile();
                     if (context->recordbrowseinfo != 0)
-                        CBrowse_WriteRelatedRecord(currentNameSpace, enumerator->name, context, sourceFile,
+                        CBrowse_WriteRelatedRecord(cscope_current, enumerator->name, context, sourceFile,
                                                    sourcePosition, CPrep_GetCurrentTextOffset());
                 }
             }
@@ -2918,12 +2918,12 @@ void *parse_enum_body(TypeEnum *enumType, HashNameNode *name)
         enumType = (TypeEnum *)galloc(sizeof(TypeEnum));
         memclrw(enumType, sizeof(TypeEnum));
         enumType->type = TYPEENUM;
-        enumType->nspace = currentNameSpace;
+        enumType->nspace = cscope_current;
         if (name != NULL) {
             enumType->enumname = name;
-            CScope_DefineTypeTag(currentNameSpace, name, (Type *)enumType);
+            CScope_DefineTypeTag(cscope_current, name, (Type *)enumType);
         }
-        if (currentNameSpace->is_global == 0) {
+        if (cscope_current->is_global == 0) {
             do
                 enumType->nspace = enumType->nspace->parent;
             while (enumType->nspace->is_global == 0);
@@ -2932,10 +2932,10 @@ void *parse_enum_body(TypeEnum *enumType, HashNameNode *name)
         }
     }
 
-    if (currentNameSpace->theclass != NULL && (TYPE_CLASS(currentNameSpace->theclass)->flags & Q_VIRTUAL) != 0)
-        CTemplateClass_AppendEnumDeclaration((TemplClass *)currentNameSpace->theclass, enumType);
+    if (cscope_current->theclass != NULL && (TYPE_CLASS(cscope_current->theclass)->flags & Q_VIRTUAL) != 0)
+        CTemplateClass_AppendEnumDeclaration((TemplClass *)cscope_current->theclass, enumType);
 
-    if (currentNameSpace->theclass != NULL)
+    if (cscope_current->theclass != NULL)
         access = member_access;
     else
         access = 0;
@@ -3094,7 +3094,7 @@ void *parse_enum_body(TypeEnum *enumType, HashNameNode *name)
             enumType->size = underlyingType->size;
             enumType->enumtype = (Type *)underlyingType;
             enumerator->val = currentValue;
-            CScope_AddObject(currentNameSpace, enumerator->name, (ObjBase *)enumerator);
+            CScope_AddObject(cscope_current, enumerator->name, (ObjBase *)enumerator);
             if (tail != NULL) {
                 tail->next = enumerator;
                 tail = enumerator;
@@ -3104,7 +3104,7 @@ void *parse_enum_body(TypeEnum *enumType, HashNameNode *name)
             if (((CPrepCU *)cprep_cu)->browseOptions.browseEnums != 0) {
                 browseFile = CPrep_GetPFile();
                 if (browseFile->recordbrowseinfo != 0)
-                    CBrowse_WriteRelatedRecord(currentNameSpace, enumerator->name, browseFile, sourceFile, sourceOffset,
+                    CBrowse_WriteRelatedRecord(cscope_current, enumerator->name, browseFile, sourceFile, sourceOffset,
                                                CPrep_GetCurrentTextOffset());
             }
             nextValue = CInt64_Add(currentValue, cint64_one);
@@ -3143,7 +3143,7 @@ void CDecl_ScanDeclarator(DeclInfo *p)
         parse_resolved_member_function_decl(p, 1);
         return;
     }
-    BE_elf_SaveScope(&save);
+    CScope_GetScope(&save);
     if (p->thetype == NULL)
         CError_FATAL(2559);
     first = 1;
@@ -3231,10 +3231,10 @@ void parse_resolved_member_function_decl(DeclInfo *di, Boolean define)
             if (TYPE_FUNC(obj->type)->flags & FUNC_IS_DTOR)
                 di->isConstructor = 1;
             tk = CPrepTokenizer_GetNextToken();
-            save = currentNameSpace;
-            currentNameSpace = obj->nspace;
+            save = cscope_current;
+            cscope_current = obj->nspace;
             CDecl_ParseDirectFuncDecl(di);
-            currentNameSpace = save;
+            cscope_current = save;
             if (di->thetype->type == TYPEFUNC) {
                 if (TYPE_FUNC(obj->type)->flags & FUNC_IS_DTOR) {
                     if (((tclass = obj->nspace->theclass)->flags & CLASS_HAS_VBASES) && !tclass->sominfo)
@@ -3266,10 +3266,10 @@ void parse_resolved_member_function_decl(DeclInfo *di, Boolean define)
             di->thetype = (Type *)&stsignedint;
             di->nspace = obj->nspace;
             di->name = obj->name;
-            save = currentNameSpace;
-            currentNameSpace = obj->nspace;
+            save = cscope_current;
+            cscope_current = obj->nspace;
             CDecl_ParseDirectFuncDecl(di);
-            currentNameSpace = save;
+            cscope_current = save;
             if (di->thetype->type == TYPEFUNC) {
                 if (define)
                     CDecl_FunctionDeclarator(di, NULL, 1, 1);
@@ -3288,10 +3288,10 @@ Boolean CDecl_FunctionDeclarator(DeclInfo *decl, NameSpace *mode, Boolean allow_
     object = CDecl_GetFunctionObject(decl, mode, &needsPrototype, 1);
     if (object != NULL && (decl->hasParameterNames || tk == '{' || tk == TK_TRY || (decl->isConstructor && tk == ':') ||
                            (!copts.cplusplus && isdeclaration(0, 0, 0, 0)))) {
-        if (!allow_definition || data_00588238)
+        if (!allow_definition || cscope_currentfunc)
             CError_ReportError(ERR_ILLEGAL_FUNCTION_DEFINITION);
 
-        if (object->nspace == registration_context && memcmp(object->name->name, "main", 5) == 0) {
+        if (object->nspace == cscope_root && memcmp(object->name->name, "main", 5) == 0) {
             if (object->sclass == TK_STATIC ||
                 (copts.ANSIstrict && TYPE_FUNC(object->type)->functype != (Type *)&stsignedint))
                 CError_ReportError(ERR_MAIN_NOT_DEFINED_AS_EXTERNAL_INT);
@@ -3327,7 +3327,7 @@ void declare_object(DeclInfo *d, UInt8 b, Boolean c)
     Boolean r;
     CScopeSave save;
     if ((nspace = d->nspace) == NULL)
-        nspace = currentNameSpace;
+        nspace = cscope_current;
     CError_ReportIllegalFlags(d->qual & ~(Q_CV | Q_PASCAL | Q_IMPLICIT_WEAK | Q_WEAK | Q_ALIGNED_MASK));
     if (d->missingTypeSpecifier != 0 || d->hasParameterNames != 0)
         CError_ReportError(ERR_DECLARATION_SYNTAX_ERROR);
@@ -3454,7 +3454,7 @@ void declare_object(DeclInfo *d, UInt8 b, Boolean c)
     }
     if (c == 0) {
         if (!(d->nspace == NULL)) {
-            BE_elf_SaveAndSetScope(d->nspace, &save);
+            CScope_SetNameSpaceScope(d->nspace, &save);
             CInit_InitializeData(found);
             CScope_RestoreScope(&save);
             if (d->requireTemplateClassMember != 0 && found->nspace->theclass != NULL &&
@@ -3491,7 +3491,7 @@ void CDecl_TypedefDeclarator(DeclInfo *decl)
     Boolean warnDuplicate;
 
     if ((scope = decl->nspace) == NULL)
-        scope = currentNameSpace;
+        scope = cscope_current;
 
     CError_ReportIllegalFlags(decl->qual & ~(Q_CV | Q_PASCAL | Q_REFERENCE | Q_ALIGNED_MASK));
 
@@ -3580,7 +3580,7 @@ Object *CDecl_GetFunctionObject(DeclInfo *decl, NameSpace *target_scope, Boolean
     if (is_new_object)
         *is_new_object = 0;
     if (!(scope = decl->nspace))
-        scope = currentNameSpace;
+        scope = cscope_current;
     CError_ReportIllegalFlags(
         decl->qual & ~(Q_CV | Q_ASM | Q_PASCAL | Q_INLINE | Q_IMPLICIT_WEAK | Q_WEAK | Q_ALIGNED_MASK | Q_INTERRUPT));
     return_kind = TYPE_FUNC(decl->thetype)->functype->type;
@@ -4056,10 +4056,10 @@ Object *find_or_create_function_object(ObjectList *list, DeclInfo *ref, Boolean 
                 CError_ReportError(ERR_ILLEGAL_FUNCTION_OVERLOADING);
         }
     }
-    CScope_AddObject(currentNameSpace, ref->name, (ObjBase *)result);
-    if (currentNameSpace->theclass != NULL && (currentNameSpace->theclass->flags & CLASS_IS_TEMPL) != 0 &&
+    CScope_AddObject(cscope_current, ref->name, (ObjBase *)result);
+    if (cscope_current->theclass != NULL && (cscope_current->theclass->flags & CLASS_IS_TEMPL) != 0 &&
         CTemplateTools_IsDependentType(ref->thetype))
-        CTemplateClass_AppendObjectDeclaration((TemplClass *)currentNameSpace->theclass, result);
+        CTemplateClass_AppendObjectDeclaration((TemplClass *)cscope_current->theclass, result);
     return result;
 }
 
@@ -4208,8 +4208,8 @@ void CDecl_ScanPointer(DeclInfo *declarator, NameSpace *nspace, char finish)
             case TK_IDENTIFIER:
                 if (copts.cplusplus == 0)
                     break;
-                if (copts.cpp_extensions != 0 && currentNameSpace->theclass != NULL &&
-                    currentNameSpace->theclass->classname == data_00587fa0 &&
+                if (copts.cpp_extensions != 0 && cscope_current->theclass != NULL &&
+                    cscope_current->theclass->classname == data_00587fa0 &&
                     CPrepTokenizer_GetNextTokenAndRestorePosition() == 372) {
                     tk = CPrepTokenizer_GetNextToken();
                     tk = CPrepTokenizer_GetNextToken();
@@ -4281,7 +4281,7 @@ void parse_direct_declarator(DeclInfo *state, NameSpace *function)
     SInt32 parserOption;
 
     if (function != NULL) {
-        BE_elf_SaveAndSetScope(function, &save);
+        CScope_SetNameSpaceScope(function, &save);
     }
     if (tk == '(') {
         tk = CPrepTokenizer_GetNextToken();
@@ -4313,7 +4313,7 @@ void parse_direct_declarator(DeclInfo *state, NameSpace *function)
             } else {
                 state->operator_token = 0;
                 parserOption = 0;
-                if (state->parserOption != 0 && currentNameSpace->theclass != NULL) {
+                if (state->parserOption != 0 && cscope_current->theclass != NULL) {
                     parserOption = 1;
                 }
                 parsed = CParser_00490660(&state->operator_token, parserOption);
@@ -4355,7 +4355,7 @@ void parse_direct_declarator(DeclInfo *state, NameSpace *function)
             } else {
                 state->operator_token = 0;
                 parserOption = 0;
-                if (state->parserOption != 0 && currentNameSpace->theclass != NULL) {
+                if (state->parserOption != 0 && cscope_current->theclass != NULL) {
                     parserOption = 1;
                 }
                 parsed = CParser_00490660(&state->operator_token, parserOption);

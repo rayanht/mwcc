@@ -104,7 +104,7 @@ char **load_file_data_and_set_archive_signature(CWFileSpec *name, SInt32 *out1, 
         clear_file_input_data_handles(rec);
         return NULL;
     }
-    if (!fn_00443170(contents = contents = (StorageHandle *)rec->dataHandle, length = 8)) {
+    if (!COS_ResizeHandle(contents = contents = (StorageHandle *)rec->dataHandle, length = 8)) {
         CompilerTools_ReportLimitedDiagnostic(0x1d, name->fileData.file.name);
         clear_file_input_data_handles(rec);
         return NULL;
@@ -284,16 +284,16 @@ char **read_file_into_buffer(CWFileSpec *file, short *error, int extraBytes)
             Files_Close(fileRef);
             return NULL;
         }
-        buffer = CompilerTools_AllocateMemoryIfEnabled(fileSize + extraBytes);
+        buffer = COS_NewOSHandle(fileSize + extraBytes);
         if (buffer == NULL) {
-            buffer = fn_00443110(fileSize + extraBytes);
+            buffer = COS_NewHandle(fileSize + extraBytes);
             if (buffer == NULL) {
                 Files_Close(fileRef);
                 *error = -108;
                 return NULL;
             }
         }
-        fn_00443190(buffer);
+        COS_LockHandle(buffer);
         bytesRead = fileSize;
         *error = Files_Read(fileRef, &bytesRead, *buffer);
         if (*error != 0 || bytesRead != fileSize) {
@@ -304,7 +304,7 @@ char **read_file_into_buffer(CWFileSpec *file, short *error, int extraBytes)
         if (extraBytes != 0) {
             (*buffer)[fileSize] = 0;
         }
-        fn_004431b0(buffer);
+        COS_UnlockHandle(buffer);
         Files_Close(fileRef);
         return buffer;
     }
@@ -388,9 +388,9 @@ FileInputNode *read_file_into_input_nodes(CWFileSpec *name, SInt16 *err)
             header = member->archiveMemberHeader;
             position += 0x3c;
             sscanf(header + 0x30, "%ld", &length);
-            data = CompilerTools_AllocateMemoryIfEnabled(length);
+            data = COS_NewOSHandle(length);
             if (data == NULL) {
-                data = fn_00443110(length);
+                data = COS_NewHandle(length);
                 if (data == NULL) {
                     Files_Close(handle);
                     *err = -0x6c;
@@ -401,7 +401,7 @@ FileInputNode *read_file_into_input_nodes(CWFileSpec *name, SInt16 *err)
                 }
             }
             member->dataHandle = data;
-            fn_00443190(member->dataHandle);
+            COS_LockHandle(member->dataHandle);
             count = length;
             *err = Files_Read(handle, &count, *member->dataHandle);
             if (*err != 0 || count != length) {
@@ -424,7 +424,7 @@ FileInputNode *read_file_into_input_nodes(CWFileSpec *name, SInt16 *err)
                 }
                 position++;
             }
-            fn_004431b0(member->dataHandle);
+            COS_UnlockHandle(member->dataHandle);
             if (last != NULL)
                 last->next = member;
             last = member;
@@ -518,7 +518,7 @@ void accumulate_section_sizes(FileInputNode *input, char *option1, char *option2
     Elf32Section *section;
     int section_index;
     char *image;
-    fn_004431a0(input->dataHandle);
+    COS_LockHandleHi(input->dataHandle);
     image = (char *)*input->dataHandle;
     check_ticks_and_longjmp();
     header = (Elf32Header *)image;
@@ -542,7 +542,7 @@ void accumulate_section_sizes(FileInputNode *input, char *option1, char *option2
             }
         }
     }
-    fn_004431b0(input->dataHandle);
+    COS_UnlockHandle(input->dataHandle);
 }
 #pragma optimization_level reset
 
@@ -616,7 +616,7 @@ void classify_archive_members(FileInputNode *list, char *arg)
         }
         if (!memcmp(name, "//", 3)) {
             longNames = data;
-            fn_004431a0(data);
+            COS_LockHandleHi(data);
             terminate_slash_newline_sequences(data, Memory_GetHandleSize((struct StorageHandle *)data));
             node->kind = 3;
         }
@@ -626,7 +626,7 @@ void classify_archive_members(FileInputNode *list, char *arg)
         accumulate_section_sizes(node, arg, name);
     }
     if (longNames)
-        fn_004431b0(longNames);
+        COS_UnlockHandle(longNames);
 }
 #pragma optimization_level reset
 #pragma optimization_level 2

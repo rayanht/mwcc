@@ -14,7 +14,7 @@
     if (!(cond))                                                                                                       \
     CLIO_ReportAssertionFailure(#cond, "CLOverlays.c", line)
 
-Boolean CLOverlays_Init(Overlays *this)
+Boolean Overlays_Initialize(Overlays *this)
 {
     CLOverlayEntry *grp;
     struct OverlayAllocation *ovl;

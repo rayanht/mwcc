@@ -114,7 +114,7 @@ static inline void CError_GetErrorMessage(char *message, short errorCode)
         longjmp(error_jmp_buf, 1);
         data_0058715c++;
     }
-    CompilerTools_GetResourceCString(message, 10000, errorCode - 99);
+    COS_GetString(message, 10000, errorCode - 99);
 }
 
 static inline int CError_GetResourceIndex(SInt16 errorNumber)
@@ -149,7 +149,7 @@ void fn_00449dc0(void)
     data_005805ec = 0;
     data_005805ee = -1;
     buffered_token = 0;
-    writtenEntry = 0;
+    cerror_locktoken = 0;
     return;
 }
 
@@ -164,15 +164,15 @@ void CError_SetBufferedToken(TStreamElement *entry)
 
 void CError_SaveAndSetWrittenEntry(TStreamElement *entry, int *savedEntry)
 {
-    *savedEntry = writtenEntry;
+    *savedEntry = cerror_locktoken;
     if (entry != NULL && entry->tokenfile != NULL) {
-        writtenEntry = (int)entry;
+        cerror_locktoken = (int)entry;
     }
 }
 
 void CError_SetWrittenEntry(int *entry)
 {
-    writtenEntry = *entry;
+    cerror_locktoken = *entry;
 }
 
 void fn_00449d60(void)
@@ -230,7 +230,7 @@ void append_targ_expr(StrBuf *buf, ENode *node)
         switch (node->type) {
             case EINTCONST: {
                 char tmp[32];
-                CExpr2_FormatCInt64Decimal(tmp, node->data.intval);
+                CInt64_PrintDec(tmp, node->data.intval);
                 CError_BufferAppendString(buf, tmp);
                 return;
             }
@@ -858,8 +858,8 @@ void report_diagnostic(int message, char *argument, char force, char mode)
 
         if (buffered_token != 0)
             token = buffered_token;
-        else if (writtenEntry != 0)
-            token = writtenEntry;
+        else if (cerror_locktoken != 0)
+            token = cerror_locktoken;
         else
             token = 0;
 
@@ -897,7 +897,7 @@ void append_instantiation_stack(StrBuf *buf)
     struct TemplStack *stack[64];
 
     {
-        struct TemplStack *p = object_reference_stack;
+        struct TemplStack *p = ctempl_curinstance;
         count = 0;
         while (p != NULL && count < 64) {
             stack[count] = p;
@@ -1017,11 +1017,11 @@ NameSpaceList *CError_ReportError(int errorNumber, ...)
     char format[256];
     va_list args;
 
-    if (data_00588240 != NULL)
-        longjmp(data_00588240->jmpbuf, 1);
+    if (trychain != NULL)
+        longjmp(trychain->jmpbuf, 1);
     va_start(args, errorNumber);
     diagnosticCode = errorNumber;
-    CompilerTools_GetResourceCString(format, 10000, CError_GetResourceIndex(diagnosticCode));
+    COS_GetString(format, 10000, CError_GetResourceIndex(diagnosticCode));
     CError_FormatAndReportDiagnostic(diagnosticCode + 10000, format, args, 0, 0);
     if (data_005884fd != 0)
         InlineAsm_LongJump();
@@ -1038,7 +1038,7 @@ void CError_FatalError(short errorNumber)
         longjmp(error_jmp_buf, 1);
         ++data_0058715c;
     }
-    CompilerTools_GetResourceCString(error_message_buffer, 10000, errorNumber - 99);
+    COS_GetString(error_message_buffer, 10000, errorNumber - 99);
     report_diagnostic(errorNumber + 10000, error_message_buffer, 0, 0);
     longjmp(error_jmp_buf, 1);
 }
@@ -1049,8 +1049,8 @@ void CError_ReportErrorAndUpdateToken(int errorNumber, ...)
     va_list args;
     int errorCode;
 
-    if (data_00588240 != NULL)
-        longjmp(data_00588240->jmpbuf, 1);
+    if (trychain != NULL)
+        longjmp(trychain->jmpbuf, 1);
     va_start(args, errorNumber);
     errorCode = errorNumber;
     CError_GetErrorMessage(message, errorCode);
@@ -1068,8 +1068,8 @@ void CError_FunctionCallError(short errorCode, ObjectList *objects, ENodeList *a
     int diagnosticCode;
     ENodeList *argument;
 
-    if (data_00588240 != NULL)
-        longjmp(data_00588240->jmpbuf, 1);
+    if (trychain != NULL)
+        longjmp(trychain->jmpbuf, 1);
 
     if ((diagnosticCode = errorCode) < 100 || diagnosticCode >= 0x174) {
         CompilerGetCString(5, resourceBuffer);
@@ -1078,7 +1078,7 @@ void CError_FunctionCallError(short errorCode, ObjectList *objects, ENodeList *a
         longjmp(error_jmp_buf, 1);
         data_0058715c++;
     }
-    CompilerTools_GetResourceCString(error_message_buffer, 10000, diagnosticCode - 99);
+    COS_GetString(error_message_buffer, 10000, diagnosticCode - 99);
 
     CError_BufferInit(&message, messageBuffer, sizeof(messageBuffer));
     cursor = error_message_buffer;
@@ -1133,9 +1133,9 @@ void CError_OverloadedFunctionError(Object *name, struct ObjectList *names)
     StrBuf message;
     char buffer[256];
 
-    if (data_00588240 != NULL)
-        longjmp(data_00588240->jmpbuf, 1);
-    CompilerTools_GetResourceCString(error_message_buffer, 10000, 100);
+    if (trychain != NULL)
+        longjmp(trychain->jmpbuf, 1);
+    COS_GetString(error_message_buffer, 10000, 100);
     message.start = message.cursor = buffer;
     message.avail = 255;
     message.size = message.avail;
@@ -1181,7 +1181,7 @@ void CError_Warning(SInt32 diagnosticCode, ...)
     SInt32 diagnosticID;
     SInt16 errorCode;
 
-    if (data_00588240)
+    if (trychain)
         return;
 
     va_start(args, diagnosticCode);
@@ -1196,7 +1196,7 @@ void CError_Warning(SInt32 diagnosticCode, ...)
     }
 
     errorCode = diagnosticID;
-    CompilerTools_GetResourceCString(format, 10000, errorCode - 99);
+    COS_GetString(format, 10000, errorCode - 99);
     CError_FormatAndReportDiagnostic(diagnosticID + 10000, format, args, 0, 1);
 }
 

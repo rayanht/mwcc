@@ -519,11 +519,11 @@ ENode *CRTTI_ParseTypeid(void)
         CError_Warning(ERR_RTTI_OPTION_DISABLED);
 
     name = GetHashNameNode("std");
-    objects = CScope_FindName(registration_context, name);
+    objects = CScope_FindName(cscope_root, name);
     if (objects != NULL && objects->object->otype == OT_NAMESPACE)
         nspace = ((ObjNameSpace *)objects->object)->nspace;
     else
-        nspace = registration_context;
+        nspace = cscope_root;
 
     name = GetHashNameNode("type_info");
     {
@@ -674,7 +674,7 @@ Object *get_or_create_type_object(Type *type, SInt32 flags)
 
         namehash = CMangler_RTTIObjectName(type, flags);
 
-        found = CScope_FindName(registration_context, namehash);
+        found = CScope_FindName(cscope_root, namehash);
         if (found != NULL) {
             if ((obj = (Object *)found->object)->otype == OT_OBJECT && obj->datatype == DDATA) {
                 result = obj;

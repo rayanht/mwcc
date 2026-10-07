@@ -885,13 +885,13 @@ void IroVars_CheckTimedLongjmp(void)
 {
     unsigned int current;
     unsigned int previous;
-    current = CompilerTools_GetScaledTicks();
+    current = COS_GetTicks();
     previous = data_00588234;
     previous += 8U;
     if (previous < current) {
         if (fn_0041b910(compiler_plugin_cu.context) != 0U)
             CError_Longjmp();
-        data_00588234 = CompilerTools_GetScaledTicks();
+        data_00588234 = COS_GetTicks();
     }
 }
 

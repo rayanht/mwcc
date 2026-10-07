@@ -449,7 +449,7 @@ void dump_linear_node(IROLinear *node)
                         break;
                     case '2':
                         integer = operand;
-                        CExpr2_FormatCInt64Decimal(buffer, integer->data.intval);
+                        CInt64_PrintDec(buffer, integer->data.intval);
                         fprintf(iro_dump_output, "%s", buffer);
                         break;
                     case '3':

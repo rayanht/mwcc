@@ -64,7 +64,7 @@ static DWORD open_access_modes[4] = {0x80000000, 0x40000000, 0xC0000000, 0x40000
 static char zero_fill[32] = {0};
 static DWORD seek_origins[3] = {1, 0, 2};
 
-unsigned int __stdcall fn_004111c0(int *argc, char ***argv)
+unsigned int __stdcall OS_InitProgram(int *argc, char ***argv)
 {
     return 0U;
 }
@@ -83,7 +83,7 @@ DWORD __stdcall OS_Create(OSSpec *spec, const unsigned int *options)
         return GetLastError();
     }
     CloseHandle(file);
-    return fn_00411290(spec, options);
+    return OS_SetFileType(spec, options);
 }
 
 DWORD __stdcall OS_Status(OSSpec *spec)
@@ -103,7 +103,7 @@ DWORD __stdcall OS_Status(OSSpec *spec)
     return 0;
 }
 
-unsigned int __stdcall fn_00411290(const void *spec, const unsigned int *type)
+unsigned int __stdcall OS_SetFileType(const void *spec, const unsigned int *type)
 {
     return 0U;
 }
@@ -348,13 +348,13 @@ DWORD __stdcall OS_Mkdir(OSSpec *path)
     return 0;
 }
 
-DWORD __stdcall fn_00411780(OSSpec *path)
+DWORD __stdcall OS_Rmdir(OSSpec *path)
 {
     char *convertedPath;
     BOOL created;
     DWORD error;
 
-    convertedPath = fn_00412340(&path->path, DAT_0057e308, 0x104);
+    convertedPath = OS_PathSpecToString(&path->path, DAT_0057e308, 0x104);
     if (convertedPath == NULL) {
         return 0x6f;
     }
@@ -550,7 +550,7 @@ unsigned int OS_CanonPath(const char *src, char *dst)
     return 0;
 }
 
-unsigned int __stdcall MsDos_IsAbsolutePath(char *path)
+unsigned int __stdcall OS_IsFullPath(char *path)
 {
     unsigned int isAbsolute;
     int hasDriveRoot;
@@ -594,7 +594,7 @@ int __stdcall OS_EqualPath(const char *left, const char *right)
     return equal;
 }
 
-int __stdcall make_osspec_from_path(const char *path, OSSpec *output, Boolean *is_file)
+int __stdcall OS_MakeSpec(const char *path, OSSpec *output, Boolean *is_file)
 {
     unsigned int error;
     char *last_char;
@@ -677,7 +677,7 @@ SInt32 __stdcall OS_MakeFileSpec(const char *input, OSSpec *output)
     Boolean status;
     const char *path = input;
 
-    result = make_osspec_from_path(path, output, &status);
+    result = OS_MakeSpec(path, output, &status);
     if (result > 0) {
         return result;
     }
@@ -716,7 +716,7 @@ __stdcall UInt32 OS_MakePathSpec(char *directory, char *path, OSPathSpec *spec)
         else
             strcpy(buffer, ".");
     }
-    status = make_osspec_from_path(buffer, &name, &flag);
+    status = OS_MakeSpec(buffer, &name, &flag);
     strcpy(spec->s, name.path.s);
     if (status == 0 && OS_Status(&name) != 0) {
         status = 3;
@@ -777,7 +777,7 @@ char *__stdcall OS_SpecToString(OSSpec *spec, char *destination, int capacity)
     return destination;
 }
 
-char *__stdcall fn_00412340(const OSPathSpec *spec, char *destination, unsigned int capacity)
+char *__stdcall OS_PathSpecToString(const OSPathSpec *spec, char *destination, unsigned int capacity)
 {
     int length;
 
@@ -799,7 +799,7 @@ char *__stdcall fn_00412340(const OSPathSpec *spec, char *destination, unsigned 
     return destination;
 }
 
-char *__stdcall MsDos_CopyStringToBuffer(const OSNameSpec *spec, char *buffer, unsigned int capacity)
+char *__stdcall OS_NameSpecToString(const OSNameSpec *spec, char *buffer, unsigned int capacity)
 {
     int length;
 
@@ -829,7 +829,7 @@ int __stdcall OS_EqualSpec(const struct OSSpec *first, const struct OSSpec *seco
     matches = 0;
     comparisonResult = OS_EqualPathSpec(&first->path, &second->path);
     if (comparisonResult != 0) {
-        comparisonResult = equal_path(&first->name, &second->name);
+        comparisonResult = OS_EqualNameSpec(&first->name, &second->name);
         if (comparisonResult != 0) {
             matches = 1;
         }
@@ -842,7 +842,7 @@ unsigned int __stdcall OS_EqualPathSpec(const OSPathSpec *left, const OSPathSpec
     return OS_EqualPath(left->s, right->s);
 }
 
-unsigned int __stdcall equal_path(const OSNameSpec *left, const OSNameSpec *right)
+unsigned int __stdcall OS_EqualNameSpec(const OSNameSpec *left, const OSNameSpec *right)
 {
     return OS_EqualPath(left->s, right->s);
 }
@@ -884,12 +884,12 @@ int __stdcall OS_IsFile(OSSpec *spec)
     return (attributes & 0x10) == 0;
 }
 
-int __stdcall MsDos_ReturnZero(OSSpec *spec)
+int __stdcall OS_IsLink(OSSpec *spec)
 {
     return 0;
 }
 
-int __stdcall fn_004125b0(const OSSpec *source, OSSpec *destination)
+int __stdcall OS_ResolveLink(const OSSpec *source, OSSpec *destination)
 {
     const OSSpec *sourceSpec = source;
     *destination = *sourceSpec;
@@ -953,7 +953,7 @@ UInt32 __stdcall OS_ReadDir(DirectorySearch *state, OSSpec *spec, char *filename
         }
         strncpy(filename, name, 0x3f);
         filename[0x3f] = 0;
-        return make_osspec_from_path(path, spec, isdir);
+        return OS_MakeSpec(path, spec, isdir);
     }
 }
 
@@ -1021,7 +1021,7 @@ UInt32 __stdcall OS_ResizeHandle(MemBuffer *buf, UInt32 newsize)
     return 0;
 }
 
-HGLOBAL __stdcall MsDos_GetValidMemBufferPtr(MemBuffer *handle)
+HGLOBAL __stdcall OS_LockHandle(MemBuffer *handle)
 {
     UINT flags;
 
@@ -1032,7 +1032,7 @@ HGLOBAL __stdcall MsDos_GetValidMemBufferPtr(MemBuffer *handle)
     return NULL;
 }
 
-void __stdcall fn_004129c0(MemBuffer *buffer)
+void __stdcall OS_UnlockHandle(MemBuffer *buffer)
 {
     return;
 }
@@ -1205,7 +1205,7 @@ unsigned int __stdcall OS_RefToMac(unsigned int value)
 #include <stdlib.h>
 #include <stdio.h>
 
-int short_predecessor(short value)
+int OS_MacToRef(short value)
 {
     if (value != 0) {
         return value - 1;
@@ -1213,7 +1213,7 @@ int short_predecessor(short value)
     return -1;
 }
 
-DWORD __stdcall MacSpecs_LoadMacResource(OSSpec *spec, LPVOID *resourceData, DWORD *resourceSize)
+DWORD __stdcall OS_LoadMacResourceFork(OSSpec *spec, LPVOID *resourceData, DWORD *resourceSize)
 {
     char *convertedPath;
     HMODULE module;

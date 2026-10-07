@@ -14,7 +14,7 @@ static DirectorySearch directory_search;
 static char matching_entry_directory[0x103];
 static char data_0057f36b[0x3f];
 
-int match_wildcard_pattern(char *pattern, char *str)
+int WildCardMatch(char *pattern, char *str)
 {
     char c;
     char *last;
@@ -52,7 +52,7 @@ int match_wildcard_pattern(char *pattern, char *str)
     return *str == 0 || (*str == '\\' && str[1] == 0);
 }
 
-OSSpec *__stdcall CLProj_FindNextMatchingEntry(char *name)
+OSSpec *__stdcall OS_MatchPath(char *name)
 {
     char entryName[0x43];
     Boolean flag;
@@ -78,7 +78,7 @@ OSSpec *__stdcall CLProj_FindNextMatchingEntry(char *name)
             return NULL;
     }
     while ((state = &directory_search, spec = &data_0057f018, OS_ReadDir(state, spec, entryName, &flag)) == 0) {
-        if (flag != 0 && match_wildcard_pattern(data_0057f36b, entryName) != 0)
+        if (flag != 0 && WildCardMatch(data_0057f36b, entryName) != 0)
             return &data_0057f018;
     }
     state = &directory_search;
@@ -86,7 +86,7 @@ OSSpec *__stdcall CLProj_FindNextMatchingEntry(char *name)
     return NULL;
 }
 
-char *__stdcall CLProj_GetFileName(char *path)
+char *__stdcall OS_GetFileNamePtr(char *path)
 {
     char *name;
     name = strrchr(path, '\\');
@@ -97,7 +97,7 @@ char *__stdcall CLProj_GetFileName(char *path)
     return name;
 }
 
-int __stdcall CLProj_MakeOSSpecFromDirectoryAndFilename(char *directory, char *filename, OSSpec *result)
+int __stdcall OS_MakeSpec2(char *directory, char *filename, OSSpec *result)
 {
     char path[260];
     int directoryLength;
@@ -120,10 +120,10 @@ int __stdcall CLProj_MakeOSSpecFromDirectoryAndFilename(char *directory, char *f
     }
     strcpy(end, filename);
     output = result;
-    return make_osspec_from_path(path, output, NULL);
+    return OS_MakeSpec(path, output, NULL);
 }
 
-unsigned int __stdcall CLProj_MakeOSSpecFromPath(OSPathSpec *basePath, char *path, UInt8 useSpecialPath,
+unsigned int __stdcall OS_MakeSpecWithPath(OSPathSpec *basePath, char *path, UInt8 useSpecialPath,
                                                  OSSpec *destination)
 {
     int hasSpecialCharacters = 0;
@@ -140,9 +140,9 @@ unsigned int __stdcall CLProj_MakeOSSpecFromPath(OSPathSpec *basePath, char *pat
         return OS_MakeNameSpec("", &destination->name);
     }
     specialCharacters = hasSpecialCharacters;
-    if (!((useSpecialPath && specialCharacters) || MsDos_IsAbsolutePath(path) != 0)) {
+    if (!((useSpecialPath && specialCharacters) || OS_IsFullPath(path) != 0)) {
         if (basePath != NULL)
-            fn_00412340(basePath, buffer, 0x104);
+            OS_PathSpecToString(basePath, buffer, 0x104);
         else
             buffer[0] = 0;
         {
@@ -152,16 +152,16 @@ unsigned int __stdcall CLProj_MakeOSSpecFromPath(OSPathSpec *basePath, char *pat
                 appendAt = end;
             strcpy(appendAt, path);
         }
-        return make_osspec_from_path(buffer, destination, NULL);
+        return OS_MakeSpec(buffer, destination, NULL);
     }
-    return make_osspec_from_path(path, destination, NULL);
+    return OS_MakeSpec(path, destination, NULL);
 }
 
-unsigned int __stdcall CLProj_SetFileExtension(OSNameSpec *file, const char *extensionAddress, unsigned char append)
+unsigned int __stdcall OS_NameSpecChangeExtension(OSNameSpec *file, const char *extensionAddress, unsigned char append)
 {
     char buffer[64];
     char *extensionStart;
-    MsDos_CopyStringToBuffer(file, buffer, 260U);
+    OS_NameSpecToString(file, buffer, 260U);
     if (!append) {
         extensionStart = strrchr(buffer, '.');
         if (extensionStart == NULL)
@@ -180,11 +180,11 @@ unsigned int __stdcall CLProj_SetFileExtension(OSNameSpec *file, const char *ext
     return OS_MakeNameSpec(buffer, file);
 }
 
-unsigned int __stdcall CLProj_ChangeFileExtension(OSNameSpec *file, const char *extensionAddress)
+unsigned int __stdcall OS_NameSpecSetExtension(OSNameSpec *file, const char *extensionAddress)
 {
     char path[64];
     char *suffix;
-    MsDos_CopyStringToBuffer(file, path, 260U);
+    OS_NameSpecToString(file, path, 260U);
     if (*extensionAddress != '.') {
         suffix = strrchr(path, '.');
         if (!suffix)
@@ -208,7 +208,7 @@ unsigned int __stdcall CLProj_ChangeFileExtension(OSNameSpec *file, const char *
 
 static char lbl_0054bf14[] = "%s%s";
 
-char *__stdcall CLProj_MakeRelativePath(OSSpec *source, OSPathSpec *base, char *destination, int capacity)
+char *__stdcall OS_SpecToStringRelative(OSSpec *source, OSPathSpec *base, char *destination, int capacity)
 {
     char *sourceCursor;
     char *baseCursor;
@@ -232,7 +232,7 @@ char *__stdcall CLProj_MakeRelativePath(OSSpec *source, OSPathSpec *base, char *
         OS_GetCWD(&currentPath);
         base = &currentPath;
     }
-    if (fn_00412340(base, basePath, sizeof(basePath)) == NULL) {
+    if (OS_PathSpecToString(base, basePath, sizeof(basePath)) == NULL) {
         memcpy(destination, sourcePath, capacity - 1);
         destination[capacity - 1] = 0;
         return destination;
@@ -273,7 +273,7 @@ char *__stdcall CLProj_MakeRelativePath(OSSpec *source, OSPathSpec *base, char *
     return destination;
 }
 
-DWORD __stdcall CLProj_FindFileInSearchPath(char *name, const char *searchPath, OSSpec *result)
+DWORD __stdcall OS_FindFileInPath(char *name, const char *searchPath, OSSpec *result)
 {
     const char *separator;
     DWORD status;
@@ -287,7 +287,7 @@ DWORD __stdcall CLProj_FindFileInSearchPath(char *name, const char *searchPath, 
             separator = searchPath + strlen(searchPath);
         }
         CLProj_CopyStringBounded(directory, searchPath, separator - searchPath, 0x103);
-        status = CLProj_MakeOSSpecFromDirectoryAndFilename(directory, name, result);
+        status = OS_MakeSpec2(directory, name, result);
         if (status == 0) {
             status = OS_Status(result);
             if (status == 0) {
@@ -306,7 +306,7 @@ DWORD __stdcall CLProj_FindFileInSearchPath(char *name, const char *searchPath, 
     return status;
 }
 
-int __stdcall CLFileOps_FindExecutable(char *name, void *param2)
+int __stdcall OS_FindProgram(char *name, void *param2)
 {
     char buf[0x104];
     char dir[0x104];
@@ -321,19 +321,19 @@ int __stdcall CLFileOps_FindExecutable(char *name, void *param2)
 
     if (strchr(buf, '\\') == 0) {
         if (GetSystemDirectoryA(dir, 0x104) != 0) {
-            if (CLProj_MakeOSSpecFromDirectoryAndFilename(dir, buf, output) == 0) {
+            if (OS_MakeSpec2(dir, buf, output) == 0) {
                 if ((r = OS_Status(output)) == 0)
                     return r;
             }
         }
         if (GetWindowsDirectoryA(dir, 0x104) != 0) {
-            if (CLProj_MakeOSSpecFromDirectoryAndFilename(dir, buf, output) == 0) {
+            if (OS_MakeSpec2(dir, buf, output) == 0) {
                 if ((r = OS_Status(output)) == 0)
                     return r;
             }
         }
         p = getenv("PATH");
-        if (CLProj_FindFileInSearchPath(buf, p, output) == 0)
+        if (OS_FindFileInPath(buf, p, output) == 0)
             return 0;
     }
 
@@ -343,7 +343,7 @@ int __stdcall CLFileOps_FindExecutable(char *name, void *param2)
     return r;
 }
 
-unsigned int __stdcall CLFileOps_CopyMemBuffer(MemBuffer *source, MemBuffer *destination)
+unsigned int __stdcall OS_CopyHandle(MemBuffer *source, MemBuffer *destination)
 {
     unsigned int err;
     DWORD size;
@@ -354,11 +354,11 @@ unsigned int __stdcall CLFileOps_CopyMemBuffer(MemBuffer *source, MemBuffer *des
     if (err == 0) {
         err = OS_NewHandle(size, destination);
         if (err == 0) {
-            sourceData = MsDos_GetValidMemBufferPtr(source);
-            destinationData = MsDos_GetValidMemBufferPtr(destination);
+            sourceData = OS_LockHandle(source);
+            destinationData = OS_LockHandle(destination);
             memcpy(destinationData, sourceData, size);
-            fn_004129c0(source);
-            fn_004129c0(destination);
+            OS_UnlockHandle(source);
+            OS_UnlockHandle(destination);
             return 0;
         }
     }
@@ -366,7 +366,7 @@ unsigned int __stdcall CLFileOps_CopyMemBuffer(MemBuffer *source, MemBuffer *des
     return err;
 }
 
-DWORD __stdcall CLFileOps_AppendMemBuffer(void *handle, const void *source, unsigned int size)
+DWORD __stdcall OS_AppendHandle(void *handle, const void *source, unsigned int size)
 {
     DWORD result;
     char *buffer;
@@ -376,10 +376,10 @@ DWORD __stdcall CLFileOps_AppendMemBuffer(void *handle, const void *source, unsi
     if (result == 0) {
         result = OS_ResizeHandle((struct MemBuffer *)handle, offset + size);
         if (result == 0) {
-            buffer = (char *)MsDos_GetValidMemBufferPtr((struct MemBuffer *)handle);
+            buffer = (char *)OS_LockHandle((struct MemBuffer *)handle);
             if (buffer != 0) {
                 memcpy(buffer + offset, source, size);
-                fn_004129c0((struct MemBuffer *)handle);
+                OS_UnlockHandle((struct MemBuffer *)handle);
                 return 0;
             }
         }

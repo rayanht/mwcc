@@ -171,9 +171,9 @@ void parse_declaration(DeclInfo *p)
             tk = CPrepTokenizer_GetNextToken();
             if (tk == TK_NAMESPACE) {
                 tk = CPrepTokenizer_GetNextToken();
-                CScope_ParseUsingDirective(currentNameSpace);
+                CScope_ParseUsingDirective(cscope_current);
             } else {
-                CScope_ParseUsingDeclaration(currentNameSpace, ACCESSPUBLIC, 0);
+                CScope_ParseUsingDeclaration(cscope_current, ACCESSPUBLIC, 0);
             }
             return;
         case TK_EXTERN:
@@ -230,7 +230,7 @@ void parse_namespace_declaration(void *declarationData)
         name = GetHashNameNode("@unnamed@");
         isUnnamed = 1;
     }
-    nspace = currentNameSpace;
+    nspace = cscope_current;
     found = CScope_FindName(nspace, name);
     if (found == NULL) {
         object = galloc(sizeof(*object));
@@ -241,17 +241,17 @@ void parse_namespace_declaration(void *declarationData)
             nspace = CScope_NewListNameSpace(name, 1);
             nspace->is_unnamed = 1;
             usingEntry = galloc(sizeof(*usingEntry));
-            usingEntry->next = currentNameSpace->usings;
+            usingEntry->next = cscope_current->usings;
             usingEntry->nspace = nspace;
-            currentNameSpace->usings = usingEntry;
+            cscope_current->usings = usingEntry;
         } else {
             nspace = CScope_NewHashNameSpace(name);
-            if (currentNameSpace->is_unnamed != 0)
+            if (cscope_current->is_unnamed != 0)
                 nspace->is_unnamed = 1;
         }
-        nspace->parent = currentNameSpace;
+        nspace->parent = cscope_current;
         object->nspace = nspace;
-        CScope_AddObject(currentNameSpace, name, (ObjBase *)object);
+        CScope_AddObject(cscope_current, name, (ObjBase *)object);
     } else {
         if (found->object->otype != OT_NAMESPACE) {
             CError_ReportError(ERR_ILLEGAL_NAMESPACE);
@@ -264,7 +264,7 @@ void parse_namespace_declaration(void *declarationData)
         CError_ReportError(ERR_LBRACE_EXPECTED);
         return;
     }
-    BE_elf_SaveAndSetScope(nspace, &save);
+    CScope_SetNameSpaceScope(nspace, &save);
     for (;;) {
         tk = CPrepTokenizer_GetNextToken();
         if (tk == 0) {
@@ -436,7 +436,7 @@ static inline Boolean CheckClassAccess(void *node)
     TemplClass *templateClass = node;
     NameSpace *qv;
     if (templateClass->templ__params != NULL) {
-        for (qv = currentNameSpace;; qv = qv->parent) {
+        for (qv = cscope_current;; qv = qv->parent) {
             if (qv == NULL) {
                 CError_ReportError(ERR_LESS_EXPECTED);
                 return 0;
@@ -450,40 +450,40 @@ static inline Boolean CheckClassAccess(void *node)
 
 static void CParser_SaveState(ParserTryBlock *sv)
 {
-    sv->cscope_current = currentNameSpace;
-    sv->cscope_currentclass = data_00588040;
-    sv->cscope_currentfunc = data_00588238;
-    sv->ctempl_curinstance = object_reference_stack;
-    sv->cerror_locktoken = writtenEntry;
-    sv->cscope_is_member_func = data_005884f8;
-    sv->next = data_00588240;
-    data_00588240 = sv;
+    sv->cscope_current = cscope_current;
+    sv->cscope_currentclass = cscope_currentclass;
+    sv->cscope_currentfunc = cscope_currentfunc;
+    sv->ctempl_curinstance = ctempl_curinstance;
+    sv->cerror_locktoken = cerror_locktoken;
+    sv->cscope_is_member_func = cscope_is_member_func;
+    sv->next = trychain;
+    trychain = sv;
 }
 
 static void CParser_RestoreState(ParserTryBlock *sv)
 {
-    currentNameSpace = sv->cscope_current;
-    data_00588040 = sv->cscope_currentclass;
-    data_00588238 = sv->cscope_currentfunc;
-    object_reference_stack = sv->ctempl_curinstance;
-    writtenEntry = sv->cerror_locktoken;
-    data_005884f8 = sv->cscope_is_member_func;
-    data_00588240 = sv->next;
+    cscope_current = sv->cscope_current;
+    cscope_currentclass = sv->cscope_currentclass;
+    cscope_currentfunc = sv->cscope_currentfunc;
+    ctempl_curinstance = sv->ctempl_curinstance;
+    cerror_locktoken = sv->cerror_locktoken;
+    cscope_is_member_func = sv->cscope_is_member_func;
+    trychain = sv->next;
 }
 
 static void save(ParserTryBlock *s, unsigned char *flag)
 {
     NameSpace *x;
-    x = currentNameSpace;
+    x = cscope_current;
     s->cscope_current = x;
-    s->cscope_currentclass = data_00588040;
+    s->cscope_currentclass = cscope_currentclass;
     *flag = 0;
-    s->cscope_currentfunc = data_00588238;
-    s->ctempl_curinstance = object_reference_stack;
-    s->cerror_locktoken = writtenEntry;
-    s->cscope_is_member_func = data_005884f8;
-    s->next = data_00588240;
-    data_00588240 = s;
+    s->cscope_currentfunc = cscope_currentfunc;
+    s->ctempl_curinstance = ctempl_curinstance;
+    s->cerror_locktoken = cerror_locktoken;
+    s->cscope_is_member_func = cscope_is_member_func;
+    s->next = trychain;
+    trychain = s;
     (void)s->cscope_current;
 }
 
@@ -491,13 +491,13 @@ static void restore(ParserTryBlock *s)
 {
     TypeClass *t3;
     t3 = s->cscope_currentclass;
-    currentNameSpace = s->cscope_current;
-    data_00588040 = t3;
-    data_00588238 = s->cscope_currentfunc;
-    object_reference_stack = s->ctempl_curinstance;
-    writtenEntry = s->cerror_locktoken;
-    data_005884f8 = s->cscope_is_member_func;
-    data_00588240 = s->next;
+    cscope_current = s->cscope_current;
+    cscope_currentclass = t3;
+    cscope_currentfunc = s->cscope_currentfunc;
+    ctempl_curinstance = s->ctempl_curinstance;
+    cerror_locktoken = s->cerror_locktoken;
+    cscope_is_member_func = s->cscope_is_member_func;
+    trychain = s->next;
 }
 
 static inline Boolean CParser_AlternateFunctionNamesEnabled(void)
@@ -604,7 +604,7 @@ void CParser_CheckAnonymousUnion(DeclInfo *context, char flag)
             alias->u.alias.object = object;
             alias->u.alias.offset = member->offset;
             alias->u.alias.member = NULL;
-            CScope_AddObject(currentNameSpace, alias->name, (ObjBase *)alias);
+            CScope_AddObject(cscope_current, alias->name, (ObjBase *)alias);
         }
     }
 }
@@ -1121,7 +1121,7 @@ unsigned char CParser_CheckTemplateClassScope(Type *type)
     NameSpace *space;
     TemplClass *classType = (TemplClass *)type;
     if (classType->templ__params != NULL) {
-        space = currentNameSpace;
+        space = cscope_current;
         for (;;) {
             if (space == NULL) {
                 CError_ReportError(230U);
@@ -2817,7 +2817,7 @@ Object *CParser_NewAliasObject(Object *object, int offset)
     alias->u.alias.object = object;
     alias->u.alias.member = NULL;
     alias->u.alias.offset = offset;
-    CScope_AddObject(currentNameSpace, alias->name, (ObjBase *)alias);
+    CScope_AddObject(cscope_current, alias->name, (ObjBase *)alias);
     return alias;
 }
 
@@ -2831,7 +2831,7 @@ Object *CParser_NewCompilerDefFunctionObject(void)
     object->access = ACCESSPUBLIC;
     object->section = 0;
     object->datatype = DFUNC;
-    object->nspace = registration_context;
+    object->nspace = cscope_root;
     return object;
 }
 
@@ -2845,7 +2845,7 @@ Object *CParser_NewFunctionObject(volatile DeclInfo *decl)
     obj->access = ACCESSPUBLIC;
     obj->section = 0;
     obj->datatype = DFUNC;
-    obj->nspace = currentNameSpace;
+    obj->nspace = cscope_current;
     if (decl != NULL) {
         obj->type = decl->thetype;
         obj->name = decl->name;
@@ -2873,7 +2873,7 @@ Object *CParser_NewCompilerDefDataObject(void)
     object->access = ACCESSPUBLIC;
     object->section = 0;
     object->datatype = DDATA;
-    object->nspace = registration_context;
+    object->nspace = cscope_root;
     return object;
 }
 
@@ -2888,7 +2888,7 @@ Object *CParser_NewObject(DeclInfo *declaration)
     object->access = ACCESSPUBLIC;
     object->section = 0;
     object->datatype = DDATA;
-    object->nspace = currentNameSpace;
+    object->nspace = cscope_current;
     if (declaration != NULL) {
         object->type = declaration->thetype;
         object->name = declaration->name;
@@ -3033,7 +3033,7 @@ HashNameNode *CParser_AppendUniqueNameFile(char *prefix)
         d++;
         len++;
     }
-    CompilerTools_GetPFileFields(&((CPrepCU *)cprep_cu)->mainFile, NULL, NULL, (UInt8 *)name);
+    COS_FileGetFSSpecInfo(&((CPrepCU *)cprep_cu)->mainFile, NULL, NULL, (UInt8 *)name);
     n = (UInt8)name[0];
     p_s = name + 1;
     i = 0;
@@ -3255,14 +3255,14 @@ void fn_004908d0(void)
     fn_004f0000();
     fn_0051b800();
     fn_00509df0();
-    fn_0049b7b0();
+    CScope_Cleanup();
     FreeGList(&data_00583548);
     return;
 }
 
 void CParser_Setup(void)
 {
-    BE_elf_CreateGlobalNameSpace();
+    CScope_Setup();
     data_00583548.data = NULL;
     if (InitGList(&data_00583548, 0x100) != 0) {
         CError_LongJump();
@@ -3283,7 +3283,7 @@ void CParser_Setup(void)
     pending_object_classes = NULL;
     pending_functions = NULL;
     single_expr_functions = NULL;
-    data_00588240 = NULL;
+    trychain = NULL;
     cached_objects = NULL;
     class_parse_recs = NULL;
     memclrw(&function_fileinfo, sizeof(function_fileinfo));
@@ -3373,13 +3373,13 @@ void initialize_runtime_objects(void)
 Boolean CParser_ReInitRuntimeObjects(Boolean flag)
 {
     if ((runtime_operator_namespace_name =
-             CScope_FindNameSpaceName(registration_context, CMangler_OperatorName(0x147))) == NULL)
+             CScope_FindNameSpaceName(cscope_root, CMangler_OperatorName(0x147))) == NULL)
         return 0;
-    if ((data_00588008 = CScope_FindNameSpaceName(registration_context, CMangler_OperatorName(0x182))) == NULL)
+    if ((data_00588008 = CScope_FindNameSpaceName(cscope_root, CMangler_OperatorName(0x182))) == NULL)
         return 0;
-    if ((data_00587680 = CScope_FindNameSpaceName(registration_context, CMangler_OperatorName(0x145))) == NULL)
+    if ((data_00587680 = CScope_FindNameSpaceName(cscope_root, CMangler_OperatorName(0x145))) == NULL)
         return 0;
-    if ((data_00587e64 = CScope_FindNameSpaceName(registration_context, CMangler_OperatorName(0x183))) == NULL)
+    if ((data_00587e64 = CScope_FindNameSpaceName(cscope_root, CMangler_OperatorName(0x183))) == NULL)
         return 0;
     newh_func->name = GetHashNameNode("__new_hdl");
     DAT_00587ed0->name = GetHashNameNode("__del_hdl");

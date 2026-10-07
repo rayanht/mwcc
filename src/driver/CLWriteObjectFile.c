@@ -40,11 +40,11 @@ UInt32 CLWriteObjectFile_WriteObjectFile(struct DropinFileRecord *self, unsigned
     unsigned int ready = self->objectData != 0 && self->selectedPlugin != NULL;
     if (!ready)
         CLIO_ReportAssertionFailure("file->objectdata && file->compiler", "CLWriteObjectFile.c", 0x16);
-    MacSpecs_MakeCWFileSpecFromString(&self->outputPath, &objectFile);
-    MacSpecs_MakeCWFileSpecFromString(&self->inputPath, &sourceFile);
+    OS_OSSpec_To_FSSpec(&self->outputPath, &objectFile);
+    OS_OSSpec_To_FSSpec(&self->inputPath, &sourceFile);
     if (optsCmdLine.verbose != 0) {
         unsigned char *message = (self->temporaryOutputMask & 2) ? (unsigned char *)"temporary " : (unsigned char *)"";
-        result = CLProj_MakeRelativePath(&self->outputPath, NULL, data_005880e0, 0x104);
+        result = OS_SpecToStringRelative(&self->outputPath, NULL, data_005880e0, 0x104);
         CLErrors_ForwardMessage(0x10, message, result);
     }
     success = CLPlugins_WriteObjectFile(self->selectedPlugin, &sourceFile, &objectFile, option1, option2,

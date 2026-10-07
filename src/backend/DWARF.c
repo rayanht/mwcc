@@ -297,9 +297,9 @@ void insert_type_nodes_recursive(DWInfo *a, DWInfo *b)
                     insert_type_nodes_recursive(b, e);
             }
 
-            CScope_InitScopeSearch(&save, TYPE_CLASS(t)->nspace);
+            CScope_InitObjectIterator(&save, TYPE_CLASS(t)->nspace);
             for (;;) {
-                Object *obj = CScope_NextObject(&save);
+                Object *obj = CScope_NextObjectIteratorObject(&save);
                 DWInfo *e;
 
                 if (obj == NULL)
@@ -2258,9 +2258,9 @@ void emit_class_dwarf(TypeClass *cls)
         memberLength += emit_location_attribute(&location, 0x23, 0);
         PatchDwarfLength(memberPos, memberLength);
     }
-    CScope_InitScopeSearch(&search, cls->nspace);
+    CScope_InitObjectIterator(&search, cls->nspace);
     for (;;) {
-        if (!(entry = CScope_NextObject(&search)))
+        if (!(entry = CScope_NextObjectIteratorObject(&search)))
             break;
         if (entry->datatype == DFUNC || entry->datatype == DVFUNC) {
             if (entry->type->type == TYPEFUNC && (TYPE_FUNC(entry->type)->flags & 0x400) != 0) {

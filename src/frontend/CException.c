@@ -98,9 +98,9 @@ static inline Boolean CException_HasThrow(Statement *s)
 void CExcept_ExceptionTansform(Statement *stmt)
 {
     update_statement_dobjstacks(stmt);
-    if (data_00588238 != NULL && copts.exceptions != 0 && TYPE_FUNC(data_00588238->type)->exspecs != NULL) {
+    if (cscope_currentfunc != NULL && copts.exceptions != 0 && TYPE_FUNC(cscope_currentfunc->type)->exspecs != NULL) {
         if (CException_HasThrow(stmt)) {
-            setup_exception_specification(stmt, TYPE_FUNC(data_00588238->type)->exspecs);
+            setup_exception_specification(stmt, TYPE_FUNC(cscope_currentfunc->type)->exspecs);
         }
     }
 }
@@ -340,7 +340,7 @@ void setup_exception_specification(struct Statement *statements, struct ExceptSp
         statement = CFunc_InsertAfterStatement(8, statement);
         statement->expr.expression = NULL;
         statement->dobjstack = NULL;
-        if (TYPE_FUNC(data_00588238->type)->functype != &stvoid &&
+        if (TYPE_FUNC(cscope_currentfunc->type)->functype != &stvoid &&
             (copts.extended_errorcheck != 0 || copts.cplusplus != 0)) {
             CError_Warning(ERR_RETURN_VALUE_EXPECTED);
         }
@@ -431,7 +431,7 @@ void update_statement_dobjstacks(Statement *node)
             case ST_RETURN:
                 if (p->expr.expression != NULL)
                     insert_temporary_object_destruction(
-                        p, 0, CMachine_FunctionRequiresMemoryReturn((TypeFunc *)data_00588238->type) != 1);
+                        p, 0, CMachine_FunctionRequiresMemoryReturn((TypeFunc *)cscope_currentfunc->type) != 1);
                 break;
         }
         p->dobjstack = currentDobjstack;
@@ -971,7 +971,7 @@ void CExcept_ScanTryBlock(void *context, char rethrow)
     exceptionObject = create_temp_object(&exception_temp_object_type);
     if (data_005884fa != 0) {
         exceptionObject->name = GetHashNameNode("__exception_magic");
-        CScope_AddObject(currentNameSpace, exceptionObject->name, (ObjBase *)exceptionObject);
+        CScope_AddObject(cscope_current, exceptionObject->name, (ObjBase *)exceptionObject);
     }
 
     entry = CFunc_AppendStatement(2);
@@ -1094,12 +1094,12 @@ ENode *create_catch_object_init(DeclInfo *info, ExceptionHandlerRecord *args)
     ENode *objnode;
     ENode *m;
 
-    if (CScope_FindName(currentNameSpace, info->name) != NULL)
+    if (CScope_FindName(cscope_current, info->name) != NULL)
         CError_ReportError(ERR_IDENTIFIER_REDECLARED, info->name->name);
 
     obj = CParser_NewLocalDataObject(info, 1);
     CFunc_SetupLocalVarInfo(obj);
-    CScope_AddObject(currentNameSpace, info->name, (ObjBase *)obj);
+    CScope_AddObject(cscope_current, info->name, (ObjBase *)obj);
     args->catchObject = obj;
 
     node = makediadicnode(create_objectrefnode(args->exceptionObject), intconstnode((Type *)&stunsignedlong, 12), EADD);
@@ -1500,10 +1500,10 @@ void fn_004e2940(TypeClass *exceptionData)
     entry = exceptionData->nspace->parent;
     while (entry != NULL) {
         if (entry->is_global == 0 && entry->is_templ == 0 && entry->name == NULL) {
-            if (data_00588238 == NULL) {
+            if (cscope_currentfunc == NULL) {
                 CError_FATAL(790);
             }
-            sprintf(name, "*%lx*%lx*", &data_00588238, (int)&entry);
+            sprintf(name, "*%lx*%lx*", &cscope_currentfunc, (int)&entry);
             CompilerTools_AppendGListString(&data_00583548, name);
             break;
         }

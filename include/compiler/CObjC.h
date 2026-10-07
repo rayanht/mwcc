@@ -139,7 +139,7 @@ extern struct HashNameNode *this_self_name;
 extern struct Type *class_pointer_type;
 extern struct Type *id_type;
 extern UInt8 data_00588507;
-extern struct NameSpace *registration_context;
+extern struct NameSpace *cscope_root;
 extern CRec *data_00588064;
 struct CRec;
 

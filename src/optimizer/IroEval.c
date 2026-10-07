@@ -243,7 +243,7 @@ int fn_00454f80(CompareCase *list, CInt64 value)
     constant->index = (linear_index_counter = linear_index_counter + 1);
 
     constant->u.node = IrOptimizer_NewENode(0x32);
-    constant->u.node->data.intval = CInt64_Inv(value);
+    constant->u.node->data.intval = CInt64_Neg(value);
     constant->u.node->rtype = constant->rtype;
 
     leftWrapper->next = expression->u.branch.cond->u.diadic.left->next;
@@ -264,7 +264,7 @@ int fn_00454f80(CompareCase *list, CInt64 value)
 
 static int IsAdjacent(CInt64 d)
 {
-    if (CInt64_Equal(d, cint64_one) || CInt64_Equal(d, CInt64_Inv(cint64_one)))
+    if (CInt64_Equal(d, cint64_one) || CInt64_Equal(d, CInt64_Neg(cint64_one)))
         return 1;
     return 0;
 }
@@ -544,7 +544,7 @@ int IRO_ConstantFolding(void)
                     value.i = node->u.monadic->u.node->data.intval;
                     if (node->nodetype == ETYPCON && node->rtype->type == TYPEFLOAT) {
                         constant = IrOptimizer_NewENode(EFLOATCONST);
-                        constant->data.floatval.data.value = CExpr2_ConvertCInt64ToDouble(&value.i);
+                        constant->data.floatval.data.value = CInt64_ConvertToLongDouble(&value.i);
                         constant->rtype = node->rtype;
                     } else {
                         switch (node->nodetype) {
@@ -552,15 +552,15 @@ int IRO_ConstantFolding(void)
                                 folded = 1;
                                 break;
                             case ELOGNOT:
-                                value.i = CFunc_LogicalNotCInt64(value.i);
+                                value.i = CInt64_Not(value.i);
                                 folded = 1;
                                 break;
                             case EBINNOT:
-                                value.i = CFunc_BitwiseNot(value.i);
+                                value.i = CInt64_Inv(value.i);
                                 folded = 1;
                                 break;
                             case EMONMIN:
-                                value.i = CInt64_Inv(value.i);
+                                value.i = CInt64_Neg(value.i);
                                 folded = 1;
                                 break;
                         }
@@ -591,7 +591,7 @@ int IRO_ConstantFolding(void)
                         node->nodetype = EADD;
                         if (IroDump_IsType1NodeType50(node->u.diadic.right)) {
                             CInt64 negated;
-                            negated = CInt64_Inv(node->u.diadic.right->u.node->data.intval);
+                            negated = CInt64_Neg(node->u.diadic.right->u.node->data.intval);
                             node->u.diadic.right->u.node->data.intval = negated;
                         } else {
                             union {
@@ -671,11 +671,11 @@ int IRO_ConstantFolding(void)
                             folded = 1;
                             break;
                         case EOR:
-                            value.i = CExpr2_BitwiseOrCInt64(leftValue.i, rightValue.i);
+                            value.i = CInt64_Or(leftValue.i, rightValue.i);
                             folded = 1;
                             break;
                         case EXOR:
-                            value.i = xor_64(leftValue.i, rightValue.i);
+                            value.i = CInt64_Xor(leftValue.i, rightValue.i);
                             folded = 1;
                             break;
                         case ELESS:
@@ -854,25 +854,25 @@ void convert_cint64_to_bitfield(CInt64 *val, Type *type, TypeBitfield *type2)
     if (Type_IsUnsigned(type)) {
         switch (type->size) {
             case 1:
-                CExpr2_ConvertCInt64ToUInt8(val);
+                CInt64_ConvertUInt8(val);
                 break;
             case 2:
-                CExpr2_ConvertCInt64ToUnsignedShort(val);
+                CInt64_ConvertUInt16(val);
                 break;
             case 4:
-                CExpr2_ClearCInt64Hi(val);
+                CInt64_ConvertUInt32(val);
                 break;
         }
     } else {
         switch (type->size) {
             case 1:
-                CExpr2_SignExtendSignedChar(val);
+                CInt64_ConvertInt8(val);
                 break;
             case 2:
-                CExpr2_SignExtendShort(val);
+                CInt64_ConvertInt16(val);
                 break;
             case 4:
-                CExpr2_SignExtendCInt64(val);
+                CInt64_ConvertInt32(val);
                 break;
         }
     }

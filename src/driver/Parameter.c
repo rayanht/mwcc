@@ -1136,7 +1136,7 @@ Boolean is_non_text_file(char *name, Boolean flag)
     UInt32 seg;
     Boolean found;
 
-    if (make_osspec_from_path(name, &buf, &found) == 0 && found != 0 && OS_Status(&buf) == 0 &&
+    if (OS_MakeSpec(name, &buf, &found) == 0 && found != 0 && OS_Status(&buf) == 0 &&
         MacFileTypes_GetFileType(&buf, &seg) == 0 && seg != 0x54455854) {
         if (flag)
             forward_stack_varargs(0x4d, name);

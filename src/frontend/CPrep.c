@@ -504,10 +504,10 @@ static inline void process_newline(void)
             text_offset = calc_line(data_0057f94a[0]);
     }
     SETLINE();
-    if (CompilerTools_GetScaledTicks() > next_scaled_ticks) {
+    if (COS_GetTicks() > next_scaled_ticks) {
         if (check_time() != 0)
             CError_Longjmp();
-        next_scaled_ticks = CompilerTools_GetScaledTicks() + 5;
+        next_scaled_ticks = COS_GetTicks() + 5;
     }
 }
 
@@ -1267,7 +1267,7 @@ void parse_line_directive(void)
     }
     filename[length] = 0;
     CompilerTools_ConvertCStringToPString(filename);
-    CompilerTools_MakeCWFileSpecFromPString(data_0057f94a[current_file_index], filename);
+    COS_FileSetFSSpec(data_0057f94a[current_file_index], filename);
     if (copts.filesyminfo != 0 && cprep_cu[0xe0] == 0) {
         newFile = fn_00441850(data_0057f94a[current_file_index], NULL);
         if (oldFile != newFile) {
@@ -1502,7 +1502,7 @@ void parse_pragma(void)
             if (CPrep_ScanMacroExpandedChar() != 0) {
                 CPrep_ParseListingOption();
             } else {
-                CompilerTools_GetPFileFields(&currentPFile->textfile, NULL, NULL, filename);
+                COS_FileGetFSSpecInfo(&currentPFile->textfile, NULL, NULL, filename);
                 isDefault = currentPFile->isDefault;
                 length = (UInt8)filename[0];
                 remaining = length;
@@ -2230,10 +2230,10 @@ void fn_0043be10(void)
         CPrepTokenizer_SkipToEndOfLine();
         return;
     }
-    if (data_00588238 != NULL && CPrep_ScanMacroExpandedChar() != 0 && CPrepTokenizer_ScanToken() == 40 &&
+    if (cscope_currentfunc != NULL && CPrep_ScanMacroExpandedChar() != 0 && CPrepTokenizer_ScanToken() == 40 &&
         CPrep_ScanMacroExpandedChar() != 0) {
     next_name:
-        if (CPrepTokenizer_ScanToken() == -3 && (scope = currentNameSpace) != NULL) {
+        if (CPrepTokenizer_ScanToken() == -3 && (scope = cscope_current) != NULL) {
             do {
                 if (scope->is_global)
                     break;
@@ -2340,7 +2340,7 @@ void apply_pragma_object_flags(unsigned int flags)
             break;
         if (CPrepTokenizer_ScanToken() != -3)
             break;
-        node = CScope_FindObjectListInNameSpace(registration_context, data_00587fa0);
+        node = CScope_FindObjectListInNameSpace(cscope_root, data_00587fa0);
         if (node == NULL) {
             break;
         } else {
@@ -2755,7 +2755,7 @@ char *expand_builtin_macro(Macro *macro)
 
         case 2:
             cursor = buffer;
-            CompilerTools_GetPFileFields(&data_0057f94a[current_file_index]->textfile, NULL, NULL, filename);
+            COS_FileGetFSSpecInfo(&data_0057f94a[current_file_index]->textfile, NULL, NULL, filename);
             length = filename[0];
             if (cursor == NULL)
                 cursor = galloc(length + 3);
@@ -2855,7 +2855,7 @@ char *CPrep_GetFileName(char *param1, Boolean param2, Boolean param3)
     char *p;
     int i;
 
-    CompilerTools_GetPFileFields(&data_0057f94a[param2 ? 0 : current_file_index]->textfile, NULL, NULL, buf);
+    COS_FileGetFSSpecInfo(&data_0057f94a[param2 ? 0 : current_file_index]->textfile, NULL, NULL, buf);
     len = buf[0];
     if (param1 == NULL)
         param1 = galloc(len + 3);
@@ -3654,11 +3654,11 @@ void skip_line_breaks_and_expand_macros(void)
                 data_00588470 = 1;
                 data_00588524 = 1;
                 DAT_00588523 = 1;
-                if (CompilerTools_GetScaledTicks() > next_scaled_ticks) {
+                if (COS_GetTicks() > next_scaled_ticks) {
                     struct CPrepCU *compilerUnit = (struct CPrepCU *)cprep_cu;
                     if (CPrep_CallCompilerCallback(compilerUnit->context, line_count))
                         CError_Longjmp();
-                    next_scaled_ticks = CompilerTools_GetScaledTicks() + 5;
+                    next_scaled_ticks = COS_GetTicks() + 5;
                 }
                 currentTextPosition = (UInt8 *)lookahead_position;
                 break;
@@ -3709,12 +3709,12 @@ void fn_0043e8f0(void)
     data_00588470 = 1;
     data_00588524 = 1;
     DAT_00588523 = 1;
-    ticks = CompilerTools_GetScaledTicks();
+    ticks = COS_GetTicks();
     if (ticks > next_scaled_ticks) {
         struct CPrepCU *compilationUnit = (struct CPrepCU *)cprep_cu;
         if (CPrep_CallCompilerCallback(compilationUnit->context, line_count) != 0)
             CError_Longjmp();
-        ticks = CompilerTools_GetScaledTicks();
+        ticks = COS_GetTicks();
         ticks += 5;
         next_scaled_ticks = ticks;
     }
@@ -3949,7 +3949,7 @@ UInt8 CPrep_Compile(CPrepCU *cu)
     if (CPrep_CallCompilerCallback(cu->context, 0) != 0)
         return 0;
 
-    next_scaled_ticks = CompilerTools_GetScaledTicks() + 5;
+    next_scaled_ticks = COS_GetTicks() + 5;
     result = 0;
 
     copts.delete_exception = 1;
@@ -4258,7 +4258,7 @@ void CPrep_GetTokenLocation(TStreamElement *token, CPrepFileInfo **file, SInt32 
     if (!(base = (pf = *file)->textbuffer)) {
         if (CWPluginsPrivate_ValidateAndCallCallback(*(CWPluginPrivateContext **)cprep_cu, (int)pf, (int)&loaded,
                                                      (int)&auxlong, (int)&auxshort)) {
-            CompilerTools_GetPFileFields(&pf->textfile, NULL, NULL, name);
+            COS_FileGetFSSpecInfo(&pf->textfile, NULL, NULL, name);
             c = name[0];
             if (c > 63)
                 c = 63;
@@ -4478,10 +4478,10 @@ void CPrep_InsertTokenBuffer(TokenStream *arg, SInt32 *result)
 
     if (remainingBufferedTokenCount + (index = bufferedTokenPosition - buffered_tokens) + (count = arg->tokens) >=
         buffered_token_capacity) {
-        fn_004431b0(buffered_token_storage);
-        if (!fn_00443170(buffered_token_storage, (buffered_token_capacity + count) * sizeof(TStreamElement)))
+        COS_UnlockHandle(buffered_token_storage);
+        if (!COS_ResizeHandle(buffered_token_storage, (buffered_token_capacity + count) * sizeof(TStreamElement)))
             CError_LongJump();
-        fn_004431a0(buffered_token_storage);
+        COS_LockHandleHi(buffered_token_storage);
         buffered_token_capacity += count;
         tokenData = buffered_token_storage->data;
         buffered_tokens = (TStreamElement *)tokenData;
@@ -4744,10 +4744,10 @@ void CPrep_GrowBufferedTokenBuffer(SInt32 n)
     SInt32 count = bufferedTokenPosition - buffered_tokens;
     char *tokenData;
 
-    fn_004431b0(buffered_token_storage);
-    if (!fn_00443170(buffered_token_storage, (buffered_token_capacity + n) * 24))
+    COS_UnlockHandle(buffered_token_storage);
+    if (!COS_ResizeHandle(buffered_token_storage, (buffered_token_capacity + n) * 24))
         CError_LongJump();
-    fn_004431a0(buffered_token_storage);
+    COS_LockHandleHi(buffered_token_storage);
     buffered_token_capacity += n;
     tokenData = buffered_token_storage->data;
     buffered_tokens = (struct TStreamElement *)tokenData;
@@ -4808,13 +4808,13 @@ unsigned char fn_004401b0(unsigned char *name, unsigned char mode, unsigned char
                 return 0;
             }
         } else {
-            CompilerTools_GetPFileFields(&node.textfile, &volume, &directory, resolvedName);
-            if (fn_00443250(&node.textfile, &id) != 0) {
+            COS_FileGetFSSpecInfo(&node.textfile, &volume, &directory, resolvedName);
+            if (COS_FileOpen(&node.textfile, &id) != 0) {
                 LogName(name);
                 return 0;
             }
-            if (CompilerTools_GetFileType(&node.textfile, &type) != 0 || CompilerTools_GetFileSize(id, &offset) != 0) {
-                CompilerTools_CloseFile(id);
+            if (COS_FileGetType(&node.textfile, &type) != 0 || COS_FileGetSize(id, &offset) != 0) {
+                COS_FileClose(id);
                 LogName(name);
                 return 0;
             }
@@ -4822,33 +4822,33 @@ unsigned char fn_004401b0(unsigned char *name, unsigned char mode, unsigned char
                 if (CPrep_CurrentCompilationUnit()->useMappedPrecompiledHeaders != 0) {
                     if (fn_0041bab0(CPrep_CurrentCompilationUnit()->context, offset, 1, &mapping) != 0 &&
                         fn_0041bab0(CPrep_CurrentCompilationUnit()->context, offset, 0, &mapping) != 0) {
-                        CompilerTools_CloseFile(id);
+                        COS_FileClose(id);
                         CError_LongJump();
                     }
                     fn_0041bb50(CPrep_CurrentCompilationUnit()->context, mapping, 0, &handle);
-                    if (CompilerTools_ReadFile(id, handle, offset) != 0) {
-                        CompilerTools_CloseFile(id);
+                    if (COS_FileRead(id, handle, offset) != 0) {
+                        COS_FileClose(id);
                         CWPluginsPrivate_CallContextArgumentCallback(CPrep_CurrentCompilationUnit()->context, mapping);
                         LogName(name);
                         return 0;
                     }
-                    CompilerTools_CloseFile(id);
+                    COS_FileClose(id);
                     call_compiler_callback(CPrep_CurrentCompilationUnit()->context, &node, mapping);
                     CPrec_LoadPrecompiledHeader(0, handle);
                     fn_0041bbb0(CPrep_CurrentCompilationUnit()->context, mapping);
                     return 1;
                 }
                 CPrec_LoadPrecompiledHeader(id, NULL);
-                CompilerTools_CloseFile(id);
+                COS_FileClose(id);
                 return 1;
             }
-            CompilerTools_CloseFile(id);
+            COS_FileClose(id);
             LogName(name);
             return 0;
         }
     } else {
         if (CPrep_CurrentCompilationUnit()->mainFileOffset == 0) {
-            CompilerTools_GetPFileFields(&CPrep_CurrentCompilationUnit()->mainFile, &volume, &directory, resolvedName);
+            COS_FileGetFSSpecInfo(&CPrep_CurrentCompilationUnit()->mainFile, &volume, &directory, resolvedName);
             LogName(resolvedName);
             CError_DispatchAndLongJump();
             return 0;
@@ -4891,11 +4891,11 @@ void pop_files_and_release_heaps_and_lists(void)
     FreeGList(&macro_text);
     FreeGList(&DAT_00586da8.list);
     if (string_literal_storage != NULL) {
-        fn_00443160(string_literal_storage);
+        COS_FreeHandle(string_literal_storage);
         string_literal_storage = NULL;
     }
     if (buffered_token_storage != NULL) {
-        fn_00443160(buffered_token_storage);
+        COS_FreeHandle(buffered_token_storage);
         buffered_token_storage = NULL;
     }
     buffered_tokens = buffered_token_buffer_end = bufferedTokenPosition = NULL;
@@ -4928,13 +4928,13 @@ int initialize_preprocessor(void)
     if (InitGList(&macro_text, 10000) != 0) {
         CError_LongJump();
     }
-    if ((string_literal_storage = fn_00443110(0x100)) == NULL) {
+    if ((string_literal_storage = COS_NewHandle(0x100)) == NULL) {
         CError_LongJump();
     }
-    if ((buffered_token_storage = fn_00443110(1024 * sizeof(*buffered_tokens))) == NULL) {
+    if ((buffered_token_storage = COS_NewHandle(1024 * sizeof(*buffered_tokens))) == NULL) {
         CError_LongJump();
     }
-    fn_004431a0(buffered_token_storage);
+    COS_LockHandleHi(buffered_token_storage);
     buffered_tokens = buffered_token_storage->tokens;
     buffered_token_buffer_end = buffered_tokens + 1023;
     bufferedTokenPosition = buffered_tokens;
@@ -5317,6 +5317,6 @@ int CPrep_AppendStringBounded(char *dst, char *src, int size)
 HashNameNode *fn_00441850(CPrepFileInfo *file, SInt32 *position)
 {
     char fileName[256];
-    CompilerTools_ResolveFileNameToCString(fileName, file, position);
+    COS_FileGetPathName(fileName, file, position);
     return GetHashNameNode(fileName);
 }

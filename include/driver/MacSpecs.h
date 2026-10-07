@@ -37,7 +37,7 @@ extern int find_or_create_spec_entry(OSPathSpec *spec, unsigned int *typePtr, un
 extern int find_or_create_spec_entry_negated(OSPathSpec *input, unsigned int *firstResult, unsigned int *secondResult);
 extern int build_name_and_backslash_path(int a, int b, void *buffer1, void *buffer2);
 extern int __stdcall parse_value_and_offset(OSPathSpec *text, unsigned short *value, unsigned int *offset);
-extern int __stdcall MacSpecs_MakeCWFileSpecFromString(OSSpec *input, CWFileSpec *output);
+extern int __stdcall OS_OSSpec_To_FSSpec(OSSpec *input, CWFileSpec *output);
 extern void lookup_spec_and_advance_parent(int *id, int *kind, unsigned int **result);
 extern int store_mac_spec_entry(MacSpecEntry *entry);
 extern struct NameRegistryEntry *find_or_create_name_registry_entry(struct NameRegistryEntry **entries, char *name);

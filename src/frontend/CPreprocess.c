@@ -27,7 +27,7 @@ static inline char CPreprocess_SuppressLineBreaks(void)
 static inline void CPreprocess_FinishOutput(void)
 {
     AppendGListByte(&DAT_00586da8.list, '\0');
-    fn_00443170(DAT_00586da8.handle, DAT_00586da8.list.size);
+    COS_ResizeHandle(DAT_00586da8.handle, DAT_00586da8.list.size);
 }
 
 void CPreprocess_OutputPreprocessedText(void)
@@ -609,10 +609,10 @@ void CPreprocess_EmitLineDirective(void)
         CompilerTools_AppendGListData(&DAT_00586da8.list, buffer, length);
 
         if (copts.fullpath_prepdump != 0) {
-            CompilerTools_ResolveFileNameToCString(buffer, currentPFile, &fileValue);
+            COS_FileGetPathName(buffer, currentPFile, &fileValue);
             CompilerTools_AppendGListData(&DAT_00586da8.list, buffer, strlen(buffer));
         } else {
-            CompilerTools_GetPFileFields(&currentPFile->textfile, &fileTag, &fileValue, &fileName.len);
+            COS_FileGetFSSpecInfo(&currentPFile->textfile, &fileTag, &fileValue, &fileName.len);
             CompilerTools_AppendGListData(&DAT_00586da8.list, fileName.name, fileName.len);
         }
 

@@ -20,7 +20,7 @@ struct CParseRec {
 };
 #pragma options align = reset
 /* A parser checkpoint (tentative parsing): the state to restore and where to longjmp when an error is raised while
-   data_00588240 points at it */
+   trychain points at it */
 struct ParserTryBlock {
     struct ParserTryBlock *next;
     jmp_buf jmpbuf;
@@ -281,7 +281,7 @@ extern unsigned char DAT_0058848a;
 extern unsigned char DAT_0058852e;
 extern struct TStreamElement declaration_token;
 extern FuncArg data_00584748;
-extern struct TemplStack *object_reference_stack;
+extern struct TemplStack *ctempl_curinstance;
 extern struct Object *data_0058717c;
 extern struct Object *member_function_pointer_call_rtfunc;
 extern struct Object *cast_member_pointer_func;

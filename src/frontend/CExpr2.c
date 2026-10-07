@@ -160,7 +160,7 @@ struct ENode *scandelete(char mode)
                 frame.myconiter.tclass = conversionClass;
                 frame.coniter = &frame.myconiter;
                 build_convertible_bases_tree(&frame.myconiter);
-                CScope_InitScopeSearch(&frame.objiter, conversionClass->nspace);
+                CScope_InitObjectIterator(&frame.objiter, conversionClass->nspace);
             }
             {
                 TypeFunc *owner;
@@ -611,7 +611,7 @@ ENode *scannew(char global)
             objectExpr->rtype = CDecl_NewPointerType(type);
             return CExpr_ConstructObject(type, objectExpr, initlist, 0, 1, 1, 1, 1);
         }
-        if (data_00588238 && !placement && copts.delete_exception &&
+        if (cscope_currentfunc && !placement && copts.delete_exception &&
             (deleteFunction = CParser_FindClassMemberOrNamespaceFunctionObject(type, 0, global)) != NULL) {
             constructedExpr = (ENode *)CompilerTools_AllocatePool(sizeof(*constructedExpr));
             *constructedExpr = *result;
@@ -747,7 +747,7 @@ ENode *build_array_allocation_expression(Type *type, ENodeList *placement, char 
         }
         allocation = make_class_member_or_global_call(element, pair, global, 1);
         allocation->rtype = (Type *)pointerType;
-        if (data_00588238 != NULL && placement == NULL && copts.delete_exception != 0 &&
+        if (cscope_currentfunc != NULL && placement == NULL && copts.delete_exception != 0 &&
             (constructor = CParser_FindClassMemberOrNamespaceFunctionObject(element, 1, global)) != NULL) {
             ENode *sizeNode;
             ENode *destructorNode;
@@ -1137,7 +1137,7 @@ Boolean CExpr_CheckOperator(short token, ENode *left, ENode *right, BinaryOperat
         }
     }
 
-    if (CScope_FindObject(currentNameSpace, &name, operatorName)) {
+    if (CScope_FindObject(cscope_current, &name, operatorName)) {
         if (name.object != NULL) {
             globalObject.next = NULL;
             globalObject.object = name.object;
@@ -1192,7 +1192,7 @@ static inline void begin_conversion_search(ConversionIterator *search, Type *typ
         search->myconiter.tclass = theclass;
         search->coniter = &search->myconiter;
         build_convertible_bases_tree(&search->myconiter);
-        CScope_InitScopeSearch(&search->objiter, theclass->nspace);
+        CScope_InitObjectIterator(&search->objiter, theclass->nspace);
     }
 }
 
@@ -1516,7 +1516,7 @@ char try_class_conversion_to_kind(ENode *expr, short kind, BinaryOperatorResult 
         search.myconiter.tclass = theclass;
         search.coniter = &search.myconiter;
         build_convertible_bases_tree(search.coniter);
-        CScope_InitScopeSearch(&search.objiter, theclass->nspace);
+        CScope_InitObjectIterator(&search.objiter, theclass->nspace);
     }
     while ((conversion = CExpr_ConversionIteratorNext(&search)) != NULL) {
         matchKind = kind;
@@ -1570,7 +1570,7 @@ unsigned char convert_class_binary_operands(ENode *left, ENode *right, BinaryOpe
             search.myconiter.tclass = leftClass;
             search.coniter = &search.myconiter;
             build_convertible_bases_tree(search.coniter);
-            CScope_InitScopeSearch(&search.objiter, leftClass->nspace);
+            CScope_InitObjectIterator(&search.objiter, leftClass->nspace);
         }
         while ((conversion = CExpr_ConversionIteratorNext(&search)) != NULL) {
             leftType = ((TypeMemberFunc *)conversion->type)->functype;
@@ -1600,7 +1600,7 @@ leftDone:
             search.myconiter.tclass = rightClass;
             search.coniter = &search.myconiter;
             build_convertible_bases_tree(search.coniter);
-            CScope_InitScopeSearch(&search.objiter, rightClass->nspace);
+            CScope_InitObjectIterator(&search.objiter, rightClass->nspace);
         }
         while ((rightConversion = CExpr_ConversionIteratorNext(&search)) != NULL) {
             rightType = ((TypeMemberFunc *)rightConversion->type)->functype;
@@ -1999,11 +1999,11 @@ ENode *CExpr_GenericFuncCall(BClassList *scope, ENode *instance, Boolean qualifi
     memclrw(&resolution, sizeof(resolution));
 
     if (function == NULL || (function->type->type == TYPEFUNC && (CExpr_FunctionFlags(function->type) & 0x400) != 0)) {
-        if (instance == NULL && data_00588238 != NULL && data_00588040 != NULL && data_005884f8 != 0) {
+        if (instance == NULL && cscope_currentfunc != NULL && cscope_currentclass != NULL && cscope_is_member_func != 0) {
             instance = CClass_CreateThisSelfExpr();
             if (instance != NULL) {
                 ENode *indirect = make_monadic_46eb90(instance);
-                indirect->rtype = (Type *)data_00588040;
+                indirect->rtype = (Type *)cscope_currentclass;
                 instance = indirect;
             }
         }
@@ -2091,9 +2091,9 @@ ENode *CExpr_GenericFuncCall(BClassList *scope, ENode *instance, Boolean qualifi
                 return make_slong();
         }
 
-        if ((type->flags & FUNC_PURE) != 0 && data_00588238 != NULL) {
-            TypeFunc *enclosingType = (TypeFunc *)data_00588238->type;
-            if ((enclosingType->flags & 0x6000) != 0 && data_00588040 == type->theclass &&
+        if ((type->flags & FUNC_PURE) != 0 && cscope_currentfunc != NULL) {
+            TypeFunc *enclosingType = (TypeFunc *)cscope_currentfunc->type;
+            if ((enclosingType->flags & 0x6000) != 0 && cscope_currentclass == type->theclass &&
                 instance->type == EINDIRECT && instance->data.monadic->type == EINDIRECT &&
                 instance->data.monadic->data.monadic->type == EOBJREF &&
                 instance->data.monadic->data.monadic->data.objref->name == this_arg_name &&
@@ -2759,7 +2759,7 @@ ENode *CExpr2_ConvertScalarOperand(ENode *result, Boolean integerOnly, Boolean p
                 state.myconiter.tclass = classType;
                 state.coniter = list;
                 build_convertible_bases_tree(list);
-                CScope_InitScopeSearch(&state.objiter, classType->nspace);
+                CScope_InitObjectIterator(&state.objiter, classType->nspace);
             }
             while ((conversion = CExpr_ConversionIteratorNext(&state)) != NULL) {
                 functionType = TYPE_FUNC(conversion->type);
@@ -2844,7 +2844,7 @@ static void InitLookup(ConversionIterator *lu, TypeClass *tclass)
         lu->myconiter.tclass = tclass;
         lu->coniter = &lu->myconiter;
         build_convertible_bases_tree(&lu->myconiter);
-        CScope_InitScopeSearch(&lu->objiter, tclass->nspace);
+        CScope_InitObjectIterator(&lu->objiter, tclass->nspace);
     }
 }
 
@@ -3089,15 +3089,15 @@ Object *CExpr_ConversionIteratorNext(ConversionIterator *ctx)
     current = ctx->coniter;
 
     for (;;) {
-        if ((found = CScope_NextObject(&ctx->objiter)) != NULL) {
+        if ((found = CScope_NextObjectIteratorObject(&ctx->objiter)) != NULL) {
             if (found->type->type == TYPEFUNC && (TYPE_FUNC(found->type)->flags & FUNC_CONVERSION)) {
                 CScopeObjectIterator local;
                 foundType = found->type;
 
                 for (item = current->parent; item != NULL; item = item->parent) {
-                    CScope_InitScopeSearch(&local, item->tclass->nspace);
+                    CScope_InitObjectIterator(&local, item->tclass->nspace);
                     for (;;) {
-                        candidate = CScope_NextObject(&local);
+                        candidate = CScope_NextObjectIteratorObject(&local);
                         if (candidate == NULL)
                             break;
                         if ((candidateType = candidate->type)->type != TYPEFUNC ||
@@ -3131,7 +3131,7 @@ Object *CExpr_ConversionIteratorNext(ConversionIterator *ctx)
                     ctx->coniter = current->children->iter;
                     current->children = current->children->next;
                     current = ctx->coniter;
-                    CScope_InitScopeSearch(&ctx->objiter, current->tclass->nspace);
+                    CScope_InitObjectIterator(&ctx->objiter, current->tclass->nspace);
                     break;
                 }
                 current = current->parent;
@@ -3578,13 +3578,13 @@ ENode *CExpr2_004719c0(BClassList *scope, BClassList *baseList, ENode *node, UIn
     BClassList *classList;
 
     if (node == NULL) {
-        if (data_00588238 == NULL || data_00588040 == NULL || data_005884f8 == 0 ||
+        if (cscope_currentfunc == NULL || cscope_currentclass == NULL || cscope_is_member_func == 0 ||
             (node = CClass_CreateThisSelfExpr()) == NULL) {
             CError_ReportError(ERR_ILLEGAL_USE_NON_STATIC_MEMBER);
             return NULL;
         }
         node = makemonadic(node, EINDIRECT);
-        node->rtype = (Type *)data_00588040;
+        node->rtype = (Type *)cscope_currentclass;
     }
     CError_ASSERT(1662, scope != NULL);
     CError_ASSERT(1663, node->rtype->type == TYPECLASS);
@@ -5149,7 +5149,7 @@ ENode *nullnode(void)
     return node;
 }
 
-ENode *CExpr2_NewENEWEXCEPTIONARRAYNode(unsigned int value)
+ENode *CExpr_NewTemplDepENode(unsigned int value)
 {
     ENode *node = (ENode *)CompilerTools_AllocatePool(sizeof(ENode));
     memclrw(node, sizeof(ENode));

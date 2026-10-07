@@ -676,7 +676,7 @@ unsigned char InlineAsm_ResolveOperandName(HashNameNode *name, struct AsmOperand
     if (operand->label != NULL) {
         return 1;
     }
-    scope = currentNameSpace;
+    scope = cscope_current;
     while (scope != NULL) {
         lookup = CScope_FindName(scope, name);
         if (lookup != NULL) {

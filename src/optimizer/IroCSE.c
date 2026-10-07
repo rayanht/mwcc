@@ -1122,9 +1122,9 @@ int fn_0044fad0(ENode *node)
         } else if (nested_bitwise_type == EAND) {
             data_005834f8 = CInt64_And(expression->data.intval, data_005834f8);
         } else if (nested_bitwise_type == EOR) {
-            data_005834f8 = CExpr2_BitwiseOrCInt64(expression->data.intval, data_005834f8);
+            data_005834f8 = CInt64_Or(expression->data.intval, data_005834f8);
         } else if (nested_bitwise_type == EXOR) {
-            data_005834f8 = xor_64(expression->data.intval, data_005834f8);
+            data_005834f8 = CInt64_Xor(expression->data.intval, data_005834f8);
         }
         return 1;
     }

@@ -215,7 +215,7 @@ NameEntry *CInit_DeclarePooledWString(char *string, UInt32 length)
         declaration.requireMangledName = 1;
         {
             Object *createdObject = CParser_NewObject(&declaration);
-            createdObject->nspace = registration_context;
+            createdObject->nspace = cscope_root;
             object = createdObject;
         }
         offset = 0;
@@ -270,7 +270,7 @@ NameEntry *CInit_DeclarePooledString(const char *name, SInt32 length, SInt8 unsi
         declaration.storageclass = 0x102;
         declaration.requireMangledName = 1;
         object = CParser_NewObject(&declaration);
-        object->nspace = registration_context;
+        object->nspace = cscope_root;
         stringObject = object;
         ObjGen_PPC_EABI_SetObjectSection(object, 0, copts.readonly_strings);
         offset = 0;
@@ -823,7 +823,7 @@ ENode *CInit_AutoObject(Object *object, Type *type, UInt32 qualifiers)
     declaration.storageclass = 0x102;
     declaration.requireMangledName = 1;
     constantObject = CParser_NewObject(&declaration);
-    constantObject->nspace = registration_context;
+    constantObject->nspace = cscope_root;
     emit_object(constantObject, initializer.buffer, initializer.relocations, initializer.size, 1);
     expression = makemonadicnode(reference, EINDIRECT);
     expression->rtype = constantType;
@@ -994,7 +994,7 @@ static Object *CreateTempObject(Type *type)
     s.storageclass = 0x102;
     s.requireMangledName = 1;
     obj = CParser_NewObject(&s);
-    obj->nspace = registration_context;
+    obj->nspace = cscope_root;
     CodeGen_SetObjectSectionAndInterruptInfo(obj);
     emit_object(obj, NULL, NULL, obj->type->size, 0);
     return obj;
@@ -1140,7 +1140,7 @@ void initialize_class_array(Object *obj, Type *type, Boolean staticInit)
                 declaration.storageclass = TK_STATIC;
                 declaration.requireMangledName = 1;
                 registrationObject = CParser_NewObject(&declaration);
-                registrationObject->nspace = registration_context;
+                registrationObject->nspace = cscope_root;
                 CodeGen_SetObjectSectionAndInterruptInfo(registrationObject);
                 emit_object(registrationObject, NULL, NULL, registrationObject->type->size, 0);
                 node = funccallexpr(destructor_registration_func, node, create_objectrefnode(arrayDtor),
@@ -1233,7 +1233,7 @@ static Object *CreateObject(Type *type, SInt32 qual)
     rec.storageclass = 0x102;
     rec.requireMangledName = 1;
     obj = CParser_NewObject(&rec);
-    obj->nspace = registration_context;
+    obj->nspace = cscope_root;
     return obj;
 }
 
@@ -2113,7 +2113,7 @@ ENode *create_destructor_registration_call(Type *objectType, Object *destructor,
     declaration.storageclass = 0x102;
     declaration.requireMangledName = 1;
     registrationRecord = CParser_NewObject(&declaration);
-    registrationRecord->nspace = registration_context;
+    registrationRecord->nspace = cscope_root;
     CodeGen_SetObjectSectionAndInterruptInfo(registrationRecord);
     emit_object(registrationRecord, NULL, NULL, registrationRecord->type->size, 0);
     call->data.funccall.args->next->next->node = create_objectrefnode(registrationRecord);

@@ -33,7 +33,7 @@ struct Overlays {
     struct CLOverlayEntry *lastgrp;
     SInt32 numgrps;
 };
-extern Boolean CLOverlays_Init(Overlays *this_);
+extern Boolean Overlays_Initialize(Overlays *this_);
 extern struct CLOverlayEntry *CLOverlays_GetGroupByIndex(struct Overlays *list, int index);
 extern unsigned int CLOverlays_CountGroups(struct Overlays *list);
 extern struct OverlayAllocation *CLOverlays_GetAllocationByGroupIndex(Overlays *overlay, int name, int value);

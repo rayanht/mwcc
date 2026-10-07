@@ -1446,7 +1446,7 @@ void simplify_diadic_with_monadic_operand(IROLinear *expr)
                         case EOR:
                             if (matchingOperand->nodetype == EBINNOT) {
                                 replace_const(expr, cint64_zero.hi, cint64_zero.lo);
-                                expr->u.node->data.intval = CFunc_BitwiseNot(expr->u.node->data.intval);
+                                expr->u.node->data.intval = CInt64_Inv(expr->u.node->data.intval);
                             }
                             break;
                         case EXORASS:
@@ -1454,7 +1454,7 @@ void simplify_diadic_with_monadic_operand(IROLinear *expr)
                             if (matchingOperand->nodetype == EBINNOT) {
                                 expr->nodetype = EASS;
                                 replace_const(right, cint64_zero.hi, cint64_zero.lo);
-                                right->u.node->data.intval = CFunc_BitwiseNot(right->u.node->data.intval);
+                                right->u.node->data.intval = CInt64_Inv(right->u.node->data.intval);
                                 expr->u.diadic.right->rtype = expr->rtype;
                                 expr->u.diadic.right->u.node->rtype = expr->rtype;
                             }

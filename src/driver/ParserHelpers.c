@@ -62,7 +62,7 @@ char *ParserHelpers_GetFirstEnvironmentVariable(char *list, char verbose, char *
 
 Boolean match_extension_pattern(char *pattern, char *name)
 {
-    char *base = CLProj_GetFileName(name);
+    char *base = OS_GetFileNamePtr(name);
     char *ext = strrchr(base, '.');
     char *p;
     if (!ext)
@@ -194,7 +194,7 @@ int fn_0040cd55(char *name, char *filter, char *override)
     if (!*path)
         return 1;
     data_00587e14++;
-    err = make_osspec_from_path(path, &spec, &isdir);
+    err = OS_MakeSpec(path, &spec, &isdir);
     if (!err)
         err = OS_Status(&spec);
     if (!err && !isdir) {
@@ -207,17 +207,17 @@ int fn_0040cd55(char *name, char *filter, char *override)
         data_00587e18++;
         return 0;
     }
-    if (err && (match = CLProj_FindNextMatchingEntry(path))) {
+    if (err && (match = OS_MatchPath(path))) {
         do {
             if (filter &&
-                !match_extension_pattern(filter, MsDos_CopyStringToBuffer(&match->name, match_path_buffer, 0x104)))
-                Targets_ReportMessage(0x4c, CLProj_MakeRelativePath(match, NULL, match_path_buffer, 0x104), filter);
+                !match_extension_pattern(filter, OS_NameSpecToString(&match->name, match_path_buffer, 0x104)))
+                Targets_ReportMessage(0x4c, OS_SpecToStringRelative(match, NULL, match_path_buffer, 0x104), filter);
             if (!ToolHelpers_cc_AddProjectEntry(match, data_0054a0b8, data_00587d04, 1, -1)) {
                 data_00587e18++;
                 return 0;
             }
             data_00587d04[0] = 0;
-        } while ((match = CLProj_FindNextMatchingEntry(NULL)));
+        } while ((match = OS_MatchPath(NULL)));
         return 1;
     }
     if (err && data_00587e20) {

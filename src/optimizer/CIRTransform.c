@@ -344,7 +344,7 @@ Object *get_or_create_type_name_object(CIRTypeName *entry, Type *ty)
     if ((obj = entry->object) == NULL) {
         obj = CParser_NewFunctionObject(NULL);
         entry->object = obj;
-        obj->nspace = registration_context;
+        obj->nspace = cscope_root;
         obj->name = GetHashNameNode(entry->name);
         obj->flags = OBJECT_INTERNAL;
         if (ty) {

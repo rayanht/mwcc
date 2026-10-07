@@ -58,70 +58,70 @@ static struct ObjGenSection **ordered_section_index;
 static void *data_0055e528 = data_00580df6;
 static int max_padding_size = 128;
 /* Enters THECLASS's scope, saving the current one in SAVE. */
-NameSpace *BE_elf_SaveAndSetClassScope(TypeClass *theclass, CScopeSave *save)
+NameSpace *CScope_SetClassDefScope(TypeClass *theclass, CScopeSave *save)
 {
-    NameSpace *name = currentNameSpace;
+    NameSpace *name = cscope_current;
     save->current = name;
-    save->currentclass = data_00588040;
-    save->currentfunc = data_00588238;
-    save->is_member_func = data_005884f8;
+    save->currentclass = cscope_currentclass;
+    save->currentfunc = cscope_currentfunc;
+    save->is_member_func = cscope_is_member_func;
     name = theclass->nspace;
-    currentNameSpace = name;
-    data_00588040 = theclass;
+    cscope_current = name;
+    cscope_currentclass = theclass;
     return name;
 }
 
 /* Enters THECLASS's scope outside any function, saving the current one in SAVED. */
-void BE_elf_SaveScopeAndEnterClass(TypeClass *theclass, CScopeSave *saved)
+void CScope_SetClassScope(TypeClass *theclass, CScopeSave *saved)
 {
     NameSpace *wrapped_type;
     TypeClass *class_type;
     class_type = theclass;
-    wrapped_type = currentNameSpace;
+    wrapped_type = cscope_current;
     saved->current = wrapped_type;
-    saved->currentclass = data_00588040;
-    saved->currentfunc = data_00588238;
-    saved->is_member_func = data_005884f8;
+    saved->currentclass = cscope_currentclass;
+    saved->currentfunc = cscope_currentfunc;
+    saved->is_member_func = cscope_is_member_func;
     wrapped_type = class_type->nspace;
-    currentNameSpace = wrapped_type;
-    data_00588040 = class_type;
-    data_00588238 = NULL;
-    data_005884f8 = 0;
+    cscope_current = wrapped_type;
+    cscope_currentclass = class_type;
+    cscope_currentfunc = NULL;
+    cscope_is_member_func = 0;
 }
 
-TypeClass *BE_elf_SaveAndSetScope(NameSpace *scope, CScopeSave *save)
+TypeClass *CScope_SetNameSpaceScope(NameSpace *scope, CScopeSave *save)
 {
     TypeClass *value;
     CScopeSave *saved;
     NameSpace *newScope;
     saved = save;
     newScope = scope;
-    saved->current = currentNameSpace;
-    saved->currentclass = data_00588040;
-    saved->currentfunc = data_00588238;
-    saved->is_member_func = data_005884f8;
-    currentNameSpace = newScope;
+    saved->current = cscope_current;
+    saved->currentclass = cscope_currentclass;
+    saved->currentfunc = cscope_currentfunc;
+    saved->is_member_func = cscope_is_member_func;
+    cscope_current = newScope;
     value = newScope->theclass;
-    data_00588040 = value;
-    data_00588238 = NULL;
-    data_005884f8 = 0;
+    cscope_currentclass = value;
+    cscope_currentfunc = NULL;
+    cscope_is_member_func = 0;
     return value;
 }
 
-void BE_elf_SaveScope(CScopeSave *snapshot)
+void CScope_GetScope(CScopeSave *snapshot)
 {
-    snapshot->current = currentNameSpace;
-    snapshot->currentclass = data_00588040;
-    snapshot->currentfunc = data_00588238;
-    snapshot->is_member_func = data_005884f8;
+    snapshot->current = cscope_current;
+    snapshot->currentclass = cscope_currentclass;
+    snapshot->currentfunc = cscope_currentfunc;
+    snapshot->is_member_func = cscope_is_member_func;
 }
 
-void fn_0049b7b0(void)
+void CScope_Cleanup(void)
 {
     return;
 }
 
-unsigned int BE_elf_CreateGlobalNameSpace(void)
+unsigned int CScope_Setup(void)
 {
     struct NameSpaceName **hash;
     struct NameSpace *namespace;
@@ -135,11 +135,11 @@ unsigned int BE_elf_CreateGlobalNameSpace(void)
     namespace->data.hash = hash;
     namespace->is_hash = 1;
     namespace->is_global = 1;
-    registration_context = namespace;
-    currentNameSpace = (struct NameSpace *)namespaceHandle;
-    data_00588040 = NULL;
-    data_00588238 = NULL;
-    data_005884f8 = 0;
+    cscope_root = namespace;
+    cscope_current = (struct NameSpace *)namespaceHandle;
+    cscope_currentclass = NULL;
+    cscope_currentfunc = NULL;
+    cscope_is_member_func = 0;
     return namespaceHandle;
 }
 
@@ -239,7 +239,7 @@ static inline void ElfAppend(GList *list)
     if (data_00583ae8.buffer.size + src->size > data_00583ae8.buffer.hndlsize) {
         data_00583ae8.buffer.hndlsize += src->size + data_00583ae8.buffer.growsize;
         capacity = data_00583ae8.buffer.hndlsize;
-        if (!fn_00443170((struct StorageHandle *)data_00583ae8.buffer.data, capacity) && DAT_00587708)
+        if (!COS_ResizeHandle((struct StorageHandle *)data_00583ae8.buffer.data, capacity) && DAT_00587708)
             DAT_00587708();
     }
     memcpy(*data_00583ae8.buffer.data + data_00583ae8.buffer.size, *src->data, src->size);
@@ -288,7 +288,7 @@ static void ElfLinkSection(ObjGenSection *section)
 
 static void ElfLockSection(ObjGenSection *section)
 {
-    fn_00443190(section->buffer.data);
+    COS_LockHandle(section->buffer.data);
 }
 
 static int ElfBigEndian(void)
@@ -313,10 +313,10 @@ void fn_0049b920(void)
         if (elfBigEndian) {
             ElfLockSection(ELF_SECTION(dwarf_line_section));
             ElfSwapSection(ELF_SECTION(dwarf_line_section), 1);
-            fn_004431b0(ELF_SECTION(dwarf_line_section)->buffer.data);
+            COS_UnlockHandle(ELF_SECTION(dwarf_line_section)->buffer.data);
             ElfLockSection(ELF_SECTION(dwarf_info_section));
             ElfSwapSection(ELF_SECTION(dwarf_info_section), 0);
-            fn_004431b0(ELF_SECTION(dwarf_info_section)->buffer.data);
+            COS_UnlockHandle(ELF_SECTION(dwarf_info_section)->buffer.data);
         }
     }
     build_ordered_section_index();
@@ -485,7 +485,7 @@ void BE_elf_AppendGList(GList *dst, GList *src)
 {
     if (dst->size + src->size > dst->hndlsize) {
         dst->hndlsize += src->size + dst->growsize;
-        if (!fn_00443170((struct StorageHandle *)dst->data, dst->hndlsize) && DAT_00587708)
+        if (!COS_ResizeHandle((struct StorageHandle *)dst->data, dst->hndlsize) && DAT_00587708)
             DAT_00587708();
     }
     memcpy(*dst->data + dst->size, *src->data, src->size);
@@ -698,7 +698,7 @@ void BE_elf_InitSectionsAndFileSymbol(void)
     data_0058847a = 1;
     memset(&DAT_0058849e, 0, 82);
     ObjGen_PPC_EABI_InitSections();
-    CompilerTools_GetPFileFields(&((CPrepCU *)cprep_cu)->mainFile, NULL, NULL, file_name);
+    COS_FileGetFSSpecInfo(&((CPrepCU *)cprep_cu)->mainFile, NULL, NULL, file_name);
     CLIO_ConvertPascalToCString(file_name);
 
     record = BE_symbol_CreateSymNode(GetHashNameNodeExport(file_name));

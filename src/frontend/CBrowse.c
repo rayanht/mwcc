@@ -729,16 +729,16 @@ void CBrowse_StoreBrowseData(CPrepCU *arguments)
     CError_ASSERT(149, arguments != NULL);
 
     if (data_00581ba8.buffer.size >= 0x4cU) {
-        fn_004431a0(browse_function_buffer.buffer.data);
+        COS_LockHandleHi(browse_function_buffer.buffer.data);
         count = browse_function_buffer.objects.size / sizeof(Object *);
         objects = *browse_function_buffer.objects.data;
         for (index = 0; index < count; index++, objects++) {
             if ((*objects)->type->type == TYPEFUNC && (TYPE_FUNC((*objects)->type)->flags & FUNC_DEFINED) == 0)
                 write_function_browse_record(*objects, 0, 0, -1, -1);
         }
-        fn_004431b0(browse_function_buffer.buffer.data);
+        COS_UnlockHandle(browse_function_buffer.buffer.data);
         AppendGListByte(&data_00581ba8.buffer, -1);
-        fn_00443170(data_00581ba8.handle, data_00581ba8.buffer.size);
+        COS_ResizeHandle(data_00581ba8.handle, data_00581ba8.buffer.size);
         if (fn_0041bcb0(arguments->context, data_00581ba8.handle, &result) == 0) {
             arguments->browseData = result;
             data_00581ba8.buffer.data = NULL;

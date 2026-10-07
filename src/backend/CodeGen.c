@@ -250,7 +250,7 @@ Boolean IrOptimizer_ConvertToVectorConstant(ENode *expr, union MWVector128 *dst,
                     if (node->type == EFLOATCONST) {
                         value = node->data.floatval.data.value;
                     } else if (node->type == EINTCONST) {
-                        value = CExpr2_ConvertCInt64ToDouble(&node->data.intval);
+                        value = CInt64_ConvertToLongDouble(&node->data.intval);
                     } else {
                         PPCError_ReportError(0x70);
                         break;
@@ -282,7 +282,7 @@ Boolean IrOptimizer_ConvertToVectorConstant(ENode *expr, union MWVector128 *dst,
                 if (cursor->type == EFLOATCONST) {
                     firstValue = cursor->data.floatval.data.value;
                 } else if (cursor->type == EINTCONST) {
-                    firstValue = CExpr2_ConvertCInt64ToDouble(&cursor->data.intval);
+                    firstValue = CInt64_ConvertToLongDouble(&cursor->data.intval);
                 } else {
                     PPCError_ReportError(0x70);
                     break;
@@ -352,7 +352,7 @@ Boolean IrOptimizer_ConvertToVectorConstant(ENode *expr, union MWVector128 *dst,
                     PPCError_ReportError(0x70);
                     break;
                 }
-                CExpr2_SignExtendCInt64(&integerValue);
+                CInt64_ConvertInt32(&integerValue);
                 for (; splatIndex < 4; splatIndex++) {
                     dst->floatElements[splatIndex] = (SInt32)integerValue.lo;
                 }
@@ -887,7 +887,7 @@ void CodeGen_ParsePragma(HashNameNode *name)
     }
 
     if (!strcmp(name->name, "section")) {
-        if (data_00588238) {
+        if (cscope_currentfunc) {
             PPCError_ReportDiagnostic(0x9c, "pragma section");
             CheckPragmaEnd();
             return;
@@ -1357,7 +1357,7 @@ void parse_section_pragma(void)
 void CodeGen_ParseDeclspecSection(HashNameNode *node, DeclInfo *value)
 {
     if (memcmp(node->name, "section", 8) == 0) {
-        if (data_00588238 != NULL) {
+        if (cscope_currentfunc != NULL) {
             PPCError_ReportDiagnostic(0x9c, "__declspec");
             return;
         }

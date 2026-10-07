@@ -116,7 +116,7 @@ int __stdcall store_object_data(int compiler, int dropinId, DropinConfiguration 
     if (configuration->path != 0) {
         DropinRequest *request = reinterpret_cast<DropinRequest *>(compiler);
         path = static_cast<char *>(configuration->path);
-        if (make_osspec_from_path(path, &dropin->inputPath, 0) != 0 || OS_Status(&dropin->inputPath) != 0) {
+        if (OS_MakeSpec(path, &dropin->inputPath, 0) != 0 || OS_Status(&dropin->inputPath) != 0) {
             nameBuffer.enableDependencyLookup = 1;
             nameBuffer.searchOption = 0;
             nameBuffer.fileKey = -1;
@@ -124,7 +124,7 @@ int __stdcall store_object_data(int compiler, int dropinId, DropinConfiguration 
             if (CLDropinCallbacks_V10_FindAndLoadFile(request, path, &nameBuffer) == 0) {
                 MacSpecs_MakeOSSpec(&nameBuffer.output, &dropin->inputPath);
             } else {
-                char *basename = CLProj_GetFileName(path);
+                char *basename = OS_GetFileNamePtr(path);
                 if (basename != path) {
                     nameBuffer.enableDependencyLookup = 1;
                     nameBuffer.searchOption = 0;
@@ -215,46 +215,46 @@ int __stdcall get_precompiled_header_spec(DropinRequest *request, int output, co
             } else if (OS_CanonPath(path, convertedPath) != 0) {
                 return 3;
             }
-            error = CLProj_MakeOSSpecFromPath(&file->inputPath.path, convertedPath, 0, &resolvedPath);
+            error = OS_MakeSpecWithPath(&file->inputPath.path, convertedPath, 0, &resolvedPath);
             if (error != 0) {
                 CLErrors_ReportOSError(97, error, convertedPath);
                 return 2;
             }
             if (file->kind == 0 || file->kind == 2) {
                 file->kind = 2;
-                CLProj_MakeRelativePath(&resolvedPath, 0, file->outputName, sizeof(convertedPath));
+                OS_SpecToStringRelative(&resolvedPath, 0, file->outputName, sizeof(convertedPath));
             }
             if (optsCmdLine.verbose != 0) {
                 CLErrors_ForwardMessage(
                     16, "precompiled ",
-                    CLProj_MakeRelativePath(&resolvedPath, 0, data_005880e0, sizeof(convertedPath)));
+                    OS_SpecToStringRelative(&resolvedPath, 0, data_005880e0, sizeof(convertedPath)));
             }
         } else {
             useDefault = !optsCompiler.relPathInOutputDir;
-            CLProj_MakeOSSpecFromPath(&default_target->outputDirectory, file->inputName, useDefault, &resolvedPath);
+            OS_MakeSpecWithPath(&default_target->outputDirectory, file->inputName, useDefault, &resolvedPath);
             if (optsCompiler.pchFileExt[0] != 0) {
                 base = optsCompiler.pchFileExt;
             } else {
                 base = objectFlags->pchFileExt;
             }
-            CLProj_ChangeFileExtension(&resolvedPath.name, base);
+            OS_NameSpecSetExtension(&resolvedPath.name, base);
             if (file->kind == 0 || file->kind == 2) {
                 file->kind = 2;
-                MsDos_CopyStringToBuffer(&resolvedPath.name, file->outputName, sizeof(convertedPath));
+                OS_NameSpecToString(&resolvedPath.name, file->outputName, sizeof(convertedPath));
             }
             CLErrors_ForwardMessage(59,
-                                    CLProj_MakeRelativePath(&resolvedPath, 0, data_005880e0, sizeof(convertedPath)));
+                                    OS_SpecToStringRelative(&resolvedPath, 0, data_005880e0, sizeof(convertedPath)));
         }
-        MacSpecs_MakeCWFileSpecFromString(&resolvedPath, (CWFileSpec *)output);
+        OS_OSSpec_To_FSSpec(&resolvedPath, (CWFileSpec *)output);
     } else {
-        pathError = CLProj_MakeOSSpecFromPath(&default_target->outputDirectory, file->outputName, 0, &resolvedPath);
+        pathError = OS_MakeSpecWithPath(&default_target->outputDirectory, file->outputName, 0, &resolvedPath);
         if (pathError != 0) {
             CLErrors_ReportOSError(97, pathError, file->outputName);
             return 2;
         }
-        MacSpecs_MakeCWFileSpecFromString(&resolvedPath, (CWFileSpec *)output);
+        OS_OSSpec_To_FSSpec(&resolvedPath, (CWFileSpec *)output);
         if (path != 0) {
-            CLErrors_ForwardMessage(60, CLProj_MakeRelativePath(&resolvedPath, 0, data_005880e0, sizeof(convertedPath)),
+            CLErrors_ForwardMessage(60, OS_SpecToStringRelative(&resolvedPath, 0, data_005880e0, sizeof(convertedPath)),
                                     path);
         }
     }
@@ -281,7 +281,7 @@ unsigned int fn_00426320(OSSpec *destination, DropinFileRecord *record)
 {
     const CWObjectFlags *objectFlags;
     objectFlags = CLPlugins_GetObjectFlags(record->selectedPlugin);
-    return CLProj_SetFileExtension(&destination->name, objectFlags->pchFileExt ? objectFlags->pchFileExt : ".sbm",
+    return OS_NameSpecChangeExtension(&destination->name, objectFlags->pchFileExt ? objectFlags->pchFileExt : ".sbm",
                                    objectFlags->pchFileExt ? objectFlags->pchFileExt[0] == '.' : 0);
 }
 
@@ -356,7 +356,7 @@ int __stdcall lookup_precompiled_unit(struct DropinRequest *request, char *input
             CLIO_FormatAndDispatchText("UCBLookUpUnit:  Only looking at '%s'\n", outputName);
         }
     } else {
-        MsDos_CopyStringToBuffer(&outputPath.name, outputName, sizeof(outputName));
+        OS_NameSpecToString(&outputPath.name, outputName, sizeof(outputName));
         if (clState.pluginDebug != 0) {
             CLIO_FormatAndDispatchText("UCBLookUpUnit:  searching paths for '%s'\n", outputName);
         }
@@ -417,7 +417,7 @@ int __stdcall lookup_precompiled_unit(struct DropinRequest *request, char *input
     if (optsCmdLine.verbose != 0) {
         CLErrors_ForwardMessage(
             62, "unit symbol table",
-            (int)CLProj_MakeRelativePath((OSSpec *)&outputPath, 0, data_005880e0, sizeof(outputName)));
+            (int)OS_SpecToStringRelative((OSSpec *)&outputPath, 0, data_005880e0, sizeof(outputName)));
     }
     *outputObject = callback.fileReference;
     outputValue->value = callback.referenceValue;
@@ -466,7 +466,7 @@ int __stdcall store_precompiled_unit(void *compilerObject, char *filename, int s
             CLIO_ReportAssertionFailure("srcfile != NULL", "CLCompilerLinkerDropin_V10.cpp", 0x312);
 
         if (optsCompiler.sbmPath[0] != 0) {
-            error = CLProj_MakeOSSpecFromPath(&clState.sbmPathSpec, name, 1, &path);
+            error = OS_MakeSpecWithPath(&clState.sbmPathSpec, name, 1, &path);
             if (error != 0) {
                 if (clState.pluginDebug != 0)
                     CLIO_FormatAndDispatchText("UCBStoreUnit:  '%s' is a bad unit name (%s)\n", name,
@@ -492,14 +492,14 @@ int __stdcall store_precompiled_unit(void *compilerObject, char *filename, int s
         }
 
         if (optsCmdLine.verbose != 0)
-            CLErrors_ForwardMessage(0x3d, "unit symbol table", CLProj_MakeRelativePath(&path, 0, data_005880e0, 0x104));
+            CLErrors_ForwardMessage(0x3d, "unit symbol table", OS_SpecToStringRelative(&path, 0, data_005880e0, 0x104));
 
         CLDropinCallbacks_V10_SetStorageHandle((unsigned int)compilerObject, storageHandle, &unit);
         Memory_ExtractMemBuffer(unit, &state);
         error = TargetOptimizer_ppc_eabi_InitOperationRecord(&path, &state, 1, &operation);
         if (error != 0 || (error = TargetOptimizer_ppc_eabi_UnloadOperationRecord(&operation)) != 0) {
             CLErrors_ReportOSError(0x12, error, "precompiled unit",
-                                   CLProj_MakeRelativePath(&path, 0, data_005880e0, 0x104));
+                                   OS_SpecToStringRelative(&path, 0, data_005880e0, 0x104));
             return 2;
         }
     }
@@ -594,7 +594,7 @@ unsigned int __stdcall get_file_output_path(unsigned int context, unsigned int f
     if (!CLFileOps_SetupOutputPath(file, 2)) {
         return 2;
     }
-    MacSpecs_MakeCWFileSpecFromString(&file->outputPath, (CWFileSpec *)outputSpecAddress);
+    OS_OSSpec_To_FSSpec(&file->outputPath, (CWFileSpec *)outputSpecAddress);
     return 0;
 }
 
@@ -612,7 +612,7 @@ unsigned int __stdcall get_object_file_spec(unsigned int unused, unsigned int ke
                                      record->inputName);
         return 2U;
     }
-    MacSpecs_MakeCWFileSpecFromString(&record->outputPath, (CWFileSpec *)output);
+    OS_OSSpec_To_FSSpec(&record->outputPath, (CWFileSpec *)output);
     return 0U;
 }
 

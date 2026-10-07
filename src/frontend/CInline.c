@@ -135,7 +135,7 @@ void CInline_GeneratePendingFunctionBody(void)
         }
         CodeGen_Generator(&body, NULL, 0, 1);
     }
-    currentNameSpace = functionNamespace->parent;
+    cscope_current = functionNamespace->parent;
     copts.filesyminfo = savedFileSymInfo;
 }
 
@@ -3562,7 +3562,7 @@ ENode *fold_constants(ENode *node)
                         operand->data.intval =
                             CMach_CalcIntMonadic(node->rtype, CParser_GetOperator(node->type), operand->data.intval);
                     } else {
-                        operand->data.intval = CFunc_LogicalNotCInt64(operand->data.intval);
+                        operand->data.intval = CInt64_Not(operand->data.intval);
                     }
                     operand->rtype = node->rtype;
                     return operand;
@@ -3716,7 +3716,7 @@ ENode *fold_constants(ENode *node)
                     operand->rtype = CParser_GetBoolType();
                     right = makemonadicnode(operand, ELOGNOT);
                 } else {
-                    right->data.intval = CFunc_LogicalNotCInt64(CFunc_LogicalNotCInt64(right->data.intval));
+                    right->data.intval = CInt64_Not(CInt64_Not(right->data.intval));
                 }
                 return right;
             }
@@ -3728,7 +3728,7 @@ ENode *fold_constants(ENode *node)
                     operand->rtype = CParser_GetBoolType();
                     left = makemonadicnode(operand, ELOGNOT);
                 } else {
-                    left->data.intval = CFunc_LogicalNotCInt64(CFunc_LogicalNotCInt64(left->data.intval));
+                    left->data.intval = CInt64_Not(CInt64_Not(left->data.intval));
                 }
                 return left;
             }
@@ -3743,7 +3743,7 @@ ENode *fold_constants(ENode *node)
                     operand->rtype = CParser_GetBoolType();
                     right = makemonadicnode(operand, ELOGNOT);
                 } else {
-                    right->data.intval = CFunc_LogicalNotCInt64(CFunc_LogicalNotCInt64(right->data.intval));
+                    right->data.intval = CInt64_Not(CInt64_Not(right->data.intval));
                 }
                 return right;
             }
@@ -3754,7 +3754,7 @@ ENode *fold_constants(ENode *node)
                     operand->rtype = CParser_GetBoolType();
                     left = makemonadicnode(operand, ELOGNOT);
                 } else {
-                    left->data.intval = CFunc_LogicalNotCInt64(CFunc_LogicalNotCInt64(left->data.intval));
+                    left->data.intval = CInt64_Not(CInt64_Not(left->data.intval));
                 }
                 return left;
             }
@@ -3766,7 +3766,7 @@ ENode *fold_constants(ENode *node)
                     operand->rtype = CParser_GetBoolType();
                     left = makemonadicnode(operand, ELOGNOT);
                 } else {
-                    left->data.intval = CFunc_LogicalNotCInt64(CFunc_LogicalNotCInt64(left->data.intval));
+                    left->data.intval = CInt64_Not(CInt64_Not(left->data.intval));
                 }
                 return left;
             }

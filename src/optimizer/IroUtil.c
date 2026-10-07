@@ -680,7 +680,7 @@ short IroUtil_IsOne(IROLinear *node)
     int result;
     int isFloatOne;
 
-    value = CInt64_Inv(node->u.node->data.intval);
+    value = CInt64_Neg(node->u.node->data.intval);
     isIntegerOne = is_int_const(node);
     result = 1;
     isIntegerOne = isIntegerOne && is_one(&value);

@@ -725,10 +725,10 @@ void restore_gprs(PCodeBlock *func, Boolean a, Boolean b, SInt16 c)
         PCodeUtilities_EmitInstruction(PC_ADDI, 0xb, c, 0, regcount - (data_00587638 + frame_alignment_padding));
         Operands_AllocateGPR(0x400);
         sprintf(buf, "_restgpr_%d", 0x20 - gGPRSaveSpan);
-        old = currentNameSpace;
-        currentNameSpace = registration_context;
+        old = cscope_current;
+        cscope_current = cscope_root;
         node = CParser_NewRTFunc(&stvoid, NULL, 2, 0);
-        currentNameSpace = old;
+        cscope_current = old;
         node->name = GetHashNameNode(buf);
         BE_symbol_GetOrCreateFunctionObjectSymbol(node);
         base = (char *)PCodeUtilities_CreateInstruction(1, gGPRSaveSpan, node, 0);
@@ -776,10 +776,10 @@ void save_gprs(PCodeBlock *func, Boolean a, Boolean b)
         PCodeUtilities_EmitInstruction(PC_ADDI, 0xb, 1, 0, regcount - (data_00587638 + frame_alignment_padding));
         Operands_AllocateGPR(0x400);
         sprintf(buf, "_savegpr_%d", 0x20 - gGPRSaveSpan);
-        old = currentNameSpace;
-        currentNameSpace = registration_context;
+        old = cscope_current;
+        cscope_current = cscope_root;
         node = CParser_NewRTFunc(&stvoid, NULL, 2, 0);
-        currentNameSpace = old;
+        cscope_current = old;
         node->name = GetHashNameNode(buf);
         BE_symbol_GetOrCreateFunctionObjectSymbol(node);
         base = (char *)PCodeUtilities_CreateInstruction(1, gGPRSaveSpan, node, 0);
@@ -833,10 +833,10 @@ void restore_vrs(PCodeBlock *block)
     } else {
         PCodeUtilities_EmitInstruction(PC_ADDI, 0, stack_base_reg, 0, size + 16);
         sprintf(name, "_restvr%d", 0x20 - gVRSaveSpan);
-        savedValue = currentNameSpace;
-        currentNameSpace = registration_context;
+        savedValue = cscope_current;
+        cscope_current = cscope_root;
         object = CParser_NewRTFunc(&stvoid, NULL, 2, 0);
-        currentNameSpace = savedValue;
+        cscope_current = savedValue;
         object->name = GetHashNameNode(name);
         BE_symbol_GetOrCreateFunctionObjectSymbol(object);
         instruction = PCodeUtilities_CreateInstruction(1, gVRSaveSpan + 1, object, 0);
@@ -884,10 +884,10 @@ void emit_restore_fprs(PCodeBlock *func, Boolean flag)
             Operands_AllocateGPR(0x400);
         }
         sprintf(name, "_restfpr_%d", 0x20 - gFPRSaveSpan);
-        savedNamespace = currentNameSpace;
-        currentNameSpace = registration_context;
+        savedNamespace = cscope_current;
+        cscope_current = cscope_root;
         helper = (Object *)CParser_NewRTFunc(&stvoid, NULL, 2, 0);
-        currentNameSpace = savedNamespace;
+        cscope_current = savedNamespace;
         helper->name = GetHashNameNode(name);
         BE_symbol_GetOrCreateFunctionObjectSymbol(helper);
         instruction = PCodeUtilities_CreateInstruction(1, gFPRSaveSpan, helper, 0);
@@ -934,10 +934,10 @@ void emit_vr_saves(PCodeBlock *block)
     } else {
         PCodeUtilities_EmitInstruction(PC_ADDI, 0, 1, 0, saveOffset + 16);
         sprintf(name, "_savevr%d", 0x20 - gVRSaveSpan);
-        savedState = currentNameSpace;
-        currentNameSpace = registration_context;
+        savedState = cscope_current;
+        cscope_current = cscope_root;
         helper = CParser_NewRTFunc(&stvoid, NULL, 2, 0);
-        currentNameSpace = savedState;
+        cscope_current = savedState;
         helper->name = GetHashNameNode(name);
         BE_symbol_GetOrCreateFunctionObjectSymbol(helper);
         instruction = PCodeUtilities_CreateInstruction(1, gVRSaveSpan + 2, helper, 0);
@@ -984,10 +984,10 @@ void emit_save_fprs(PCodeBlock *block, Boolean savefpr)
             Operands_AllocateGPR(0x400);
         }
         sprintf(buf, "_savefpr_%d", 0x20 - gFPRSaveSpan);
-        save = currentNameSpace;
-        currentNameSpace = registration_context;
+        save = cscope_current;
+        cscope_current = cscope_root;
         obj = CParser_NewRTFunc(&stvoid, NULL, 2, 0);
-        currentNameSpace = save;
+        cscope_current = save;
         obj->name = GetHashNameNode(buf);
         BE_symbol_GetOrCreateFunctionObjectSymbol(obj);
         result = PCodeUtilities_CreateInstruction(1, gFPRSaveSpan, obj, 0);

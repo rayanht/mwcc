@@ -296,7 +296,7 @@ int IroRangePropagation_PropagateRangeInLinear(struct IROLinear *nd)
                     x.hi = 0;
                     x.lo = count;
                     mask = CInt64_Sub(CInt64_Shl(cint64_one, x), cint64_one);
-                    if ((CInt64_NotEqual(cint64_zero, CInt64_And(CFunc_BitwiseNot(val), mask)) ? 0 : 1) &&
+                    if ((CInt64_NotEqual(cint64_zero, CInt64_And(CInt64_Inv(val), mask)) ? 0 : 1) &&
                         !fn_0044be00(nd->u.diadic.left)) {
                         IroUtil_ClearZeroOperands(nd->u.diadic.right);
                         nd->type = IROLinearNop;

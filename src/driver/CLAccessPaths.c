@@ -170,7 +170,7 @@ Boolean add_subdirectory_access_paths(AccessPaths *ctx, AccessPathEntry *param2)
         if (status == 0) {
             if (flag == 0) {
                 ptr = CLAccessPaths_CreateAccessPathEntry(&bufB.path);
-                name = CLProj_GetFileName(bufC);
+                name = OS_GetFileNamePtr(bufC);
                 if (*name != '(' && name[strlen(name) - 2] != ')') {
                     if (!CLAccessPaths_StoreItem(ctx, ptr))
                         break;
@@ -230,8 +230,8 @@ void copy_access_paths_to_file_specs(CWFileSpec **destination, AccessPaths *path
         if (!validEntry) {
             CLIO_ReportAssertionFailure("path && *count > 0", "CLAccessPaths.c", 0x157);
         }
-        CLProj_MakeOSSpecFromPath(entry->path, NULL, '\0', &spec);
-        if (MacSpecs_MakeCWFileSpecFromString(&spec, *destination) == 0) {
+        OS_MakeSpecWithPath(entry->path, NULL, '\0', &spec);
+        if (OS_OSSpec_To_FSSpec(&spec, *destination) == 0) {
             CLIO_ReportAssertionFailure("OS_OSSpec_To_FSSpec(&spec, *list)", "CLAccessPaths.c", 0x159);
         }
         *destination += 1;

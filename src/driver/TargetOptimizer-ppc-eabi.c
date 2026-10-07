@@ -121,13 +121,13 @@ unsigned int fn_00420710(OperationRecord *context)
             if (error)
                 break;
 
-            handle = MsDos_GetValidMemBufferPtr(&context->buffer);
+            handle = OS_LockHandle(&context->buffer);
             error = OS_Read(operation, handle, &value);
             if (!error) {
                 context->loaded = 1;
                 context->dirty = 0;
             }
-            fn_004129c0(&context->buffer);
+            OS_UnlockHandle(&context->buffer);
         } while (0);
 
         OS_Close(operation);
@@ -152,12 +152,12 @@ DWORD write_file_buffer(struct OperationRecord *file)
         if (error == 0) {
             error = OS_GetHandleSize(&file->buffer, &size);
             if (error == 0) {
-                contents = MsDos_GetValidMemBufferPtr(&file->buffer);
+                contents = OS_LockHandle(&file->buffer);
                 error = OS_Write(handle, contents, &size);
                 if (error == 0) {
                     file->dirty = 0;
                 }
-                fn_004129c0(&file->buffer);
+                OS_UnlockHandle(&file->buffer);
                 OS_Close(handle);
             }
         }
@@ -184,7 +184,7 @@ unsigned int __stdcall TargetOptimizer_ppc_eabi_InitOperationRecord(OSSpec *sour
             result = fn_00420710(context);
         }
     } else {
-        result = CLFileOps_CopyMemBuffer(argument, &state->buffer);
+        result = OS_CopyHandle(argument, &state->buffer);
         if (result != 0U) {
             return result;
         }
@@ -203,7 +203,7 @@ int __stdcall TargetOptimizer_ppc_eabi_GetMemBufferPtrAndSize(unsigned char *sta
     if (!OS_ValidHandle(buffer)) {
         return 8;
     }
-    result = MsDos_GetValidMemBufferPtr((MemBuffer *)(state + 324));
+    result = OS_LockHandle((MemBuffer *)(state + 324));
     *firstResult = result;
     {
         MemBuffer *sizeBuffer = (MemBuffer *)(state + 324);

@@ -33,8 +33,8 @@ StorageHandle *Memory_CreateStorageHandle(MemBuffer *input)
     }
     record->buffer = *input;
     OS_InvalidateHandle(input);
-    record->data = (char *)MsDos_GetValidMemBufferPtr(&record->buffer);
-    fn_004129c0(&record->buffer);
+    record->data = (char *)OS_LockHandle(&record->buffer);
+    OS_UnlockHandle(&record->buffer);
     return record;
 }
 
@@ -100,7 +100,7 @@ void __stdcall Memory_FreeHandle(StorageHandle *record)
 void __stdcall fn_00413a00(struct StorageHandle *data)
 {
     if (data != NULL) {
-        HGLOBAL result = MsDos_GetValidMemBufferPtr(&data->buffer);
+        HGLOBAL result = OS_LockHandle(&data->buffer);
         set_storage_handle_data(data, result);
         memory_error = 0U;
     } else {
@@ -118,7 +118,7 @@ void __stdcall fn_00413a50(void *entry)
     StorageHandle *record = entry;
     if (record) {
         memory_error = 0;
-        fn_004129c0(&record->buffer);
+        OS_UnlockHandle(&record->buffer);
     } else {
         memory_error = -109;
     }
@@ -142,17 +142,17 @@ void __stdcall Memory_ResizeStorageHandle(StorageHandle *handle, unsigned int si
 {
     MemBuffer *buffer;
     memory_error = OS_OSErrorToMacError(OS_ResizeHandle(buffer = &handle->buffer, size));
-    set_storage_handle_data(handle, MsDos_GetValidMemBufferPtr(buffer));
-    fn_004129c0(buffer);
+    set_storage_handle_data(handle, OS_LockHandle(buffer));
+    OS_UnlockHandle(buffer);
 }
 
 unsigned short __stdcall Memory_AppendStorageHandle(const void *data, StorageHandle *handle, int size)
 {
     int result;
     MemBuffer *buffer;
-    result = OS_OSErrorToMacError(CLFileOps_AppendMemBuffer(buffer = &handle->buffer, data, size));
-    set_storage_handle_data(handle, MsDos_GetValidMemBufferPtr(buffer));
-    fn_004129c0(buffer);
+    result = OS_OSErrorToMacError(OS_AppendHandle(buffer = &handle->buffer, data, size));
+    set_storage_handle_data(handle, OS_LockHandle(buffer));
+    OS_UnlockHandle(buffer);
     return result;
 }
 

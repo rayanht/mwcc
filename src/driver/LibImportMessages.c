@@ -93,7 +93,7 @@ unsigned char CompilerTools_ReportDiagnostic(SInt32 diagnosticCode, ...)
     va_list args;
 
     if (data_00587958 == 0 && data_00588228 < data_005511b4) {
-        CompilerTools_GetResourceCString(format, 0x2af9, diagnosticCode);
+        COS_GetString(format, 0x2af9, diagnosticCode);
         args = (va_list)&diagnosticCode + ((va_list)(&diagnosticCode + 1) - (va_list)&diagnosticCode + 3) / 4 * 4;
         format_string(message, sizeof(message), format, args);
         fn_0041e990(message, "");
@@ -108,13 +108,13 @@ void CompilerTools_ReportLimitedDiagnostic(SInt32 diagnosticCode, ...)
     char format[256];
 
     if (limited_diagnostic_count < limited_diagnostic_limit) {
-        CompilerTools_GetResourceCString(format, 0x2af9, diagnosticCode);
+        COS_GetString(format, 0x2af9, diagnosticCode);
         args = (va_list)&diagnosticCode + (((va_list)(&diagnosticCode + 1) - (va_list)&diagnosticCode + 3) / 4) * 4;
         format_string(message, sizeof(message), format, args);
         fn_0041e970(message, "");
         limited_diagnostic_count++;
     } else if (limited_diagnostic_count == limited_diagnostic_limit) {
-        CompilerTools_GetResourceCString(format, 0x2af9, 25);
+        COS_GetString(format, 0x2af9, 25);
         args = (va_list)&diagnosticCode + (((va_list)(&diagnosticCode + 1) - (va_list)&diagnosticCode + 3) / 4) * 4;
         format_string(message, sizeof(message), format, args);
         fn_0041e970(message, NULL);
@@ -127,7 +127,7 @@ void CompilerTools_FormatMessageAndLongjmp(int message, int status)
     va_list args;
     char buf[256];
 
-    CompilerTools_GetResourceCString(buf, 0x2af9, message);
+    COS_GetString(buf, 0x2af9, message);
     args = (va_list)&status + (((va_list)(&status + 1) - (va_list)&status + 3) / 4) * 4;
     format_string(message_buffer, 0x800, buf, args);
     longjmp(file_input_jmpbuf, status);

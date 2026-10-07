@@ -903,9 +903,9 @@ Float CMach_CalcFloatConvertFromInt(Type *type, CInt64 value)
     Float f;
     if ((type->type == TYPEINT || type->type == TYPEENUM) && type->size == 8) {
         if (Type_IsUnsigned(type))
-            f.data.value = CExpr2_ConvertUnsignedCInt64ToDouble(&value);
+            f.data.value = CInt64_ConvertUToLongDouble(&value);
         else
-            f.data.value = CExpr2_ConvertCInt64ToDouble(&value);
+            f.data.value = CInt64_ConvertToLongDouble(&value);
     } else {
         if (Type_IsUnsigned(type))
             f.data.value = value.lo;
@@ -1134,9 +1134,9 @@ CInt64 CMach_CalcIntConvertFromFloat(Type *type, double value)
     CInt64 result;
     if ((type->type == TYPEINT || type->type == TYPEENUM) && type->size == 8) {
         if (Type_IsUnsigned(type))
-            CExpr2_ConvertDoubleToUnsignedCInt64(&result, value);
+            CInt64_ConvertUFromLongDouble(&result, value);
         else
-            CExpr2_ConvertDoubleToCInt64(&result, value);
+            CInt64_ConvertFromLongDouble(&result, value);
     } else if (Type_IsUnsigned(type)) {
         result.hi = 0;
         result.lo = value;
@@ -1154,13 +1154,13 @@ CInt64 CMach_CalcIntMonadic(Type *type, SInt16 op, CInt64 val)
     if (Type_IsUnsigned(type)) {
         switch (type->size) {
             case 1:
-                CExpr2_ConvertCInt64ToUInt8(&val);
+                CInt64_ConvertUInt8(&val);
                 break;
             case 2:
-                CExpr2_ConvertCInt64ToUnsignedShort(&val);
+                CInt64_ConvertUInt16(&val);
                 break;
             case 4:
-                CExpr2_ClearCInt64Hi(&val);
+                CInt64_ConvertUInt32(&val);
                 break;
             case 8:
                 break;
@@ -1169,26 +1169,26 @@ CInt64 CMach_CalcIntMonadic(Type *type, SInt16 op, CInt64 val)
         }
         switch (op) {
             case '-':
-                val = CInt64_Inv(val);
+                val = CInt64_Neg(val);
                 break;
             case '~':
-                val = CFunc_BitwiseNot(val);
+                val = CInt64_Inv(val);
                 break;
             case '!':
-                val = CFunc_LogicalNotCInt64(val);
+                val = CInt64_Not(val);
                 break;
             default:
                 CError_ReportError(ERR_UNEXPECTED_TOKEN);
         }
         switch (type->size) {
             case 1:
-                CExpr2_ConvertCInt64ToUInt8(&val);
+                CInt64_ConvertUInt8(&val);
                 break;
             case 2:
-                CExpr2_ConvertCInt64ToUnsignedShort(&val);
+                CInt64_ConvertUInt16(&val);
                 break;
             case 4:
-                CExpr2_ClearCInt64Hi(&val);
+                CInt64_ConvertUInt32(&val);
                 break;
             case 8:
                 break;
@@ -1196,13 +1196,13 @@ CInt64 CMach_CalcIntMonadic(Type *type, SInt16 op, CInt64 val)
     } else {
         switch (type->size) {
             case 1:
-                CExpr2_SignExtendSignedChar(&val);
+                CInt64_ConvertInt8(&val);
                 break;
             case 2:
-                CExpr2_SignExtendShort(&val);
+                CInt64_ConvertInt16(&val);
                 break;
             case 4:
-                CExpr2_SignExtendCInt64(&val);
+                CInt64_ConvertInt32(&val);
                 break;
             case 8:
                 break;
@@ -1211,26 +1211,26 @@ CInt64 CMach_CalcIntMonadic(Type *type, SInt16 op, CInt64 val)
         }
         switch (op) {
             case '-':
-                val = CInt64_Inv(val);
+                val = CInt64_Neg(val);
                 break;
             case '~':
-                val = CFunc_BitwiseNot(val);
+                val = CInt64_Inv(val);
                 break;
             case '!':
-                val = CFunc_LogicalNotCInt64(val);
+                val = CInt64_Not(val);
                 break;
             default:
                 CError_ReportError(ERR_UNEXPECTED_TOKEN);
         }
         switch (type->size) {
             case 1:
-                CExpr2_SignExtendSignedChar(&val);
+                CInt64_ConvertInt8(&val);
                 break;
             case 2:
-                CExpr2_SignExtendShort(&val);
+                CInt64_ConvertInt16(&val);
                 break;
             case 4:
-                CExpr2_SignExtendCInt64(&val);
+                CInt64_ConvertInt32(&val);
                 break;
             case 8:
                 break;
@@ -1246,16 +1246,16 @@ CInt64 CMach_CalcIntDiadic(Type *type, CInt64 a, SInt16 op, CInt64 b)
     if (Type_IsUnsigned(type)) {
         switch (type->size) {
             case 1:
-                CExpr2_ConvertCInt64ToUInt8(&a);
-                CExpr2_ConvertCInt64ToUInt8(&b);
+                CInt64_ConvertUInt8(&a);
+                CInt64_ConvertUInt8(&b);
                 break;
             case 2:
-                CExpr2_ConvertCInt64ToUnsignedShort(&a);
-                CExpr2_ConvertCInt64ToUnsignedShort(&b);
+                CInt64_ConvertUInt16(&a);
+                CInt64_ConvertUInt16(&b);
                 break;
             case 4:
-                CExpr2_ClearCInt64Hi(&a);
-                CExpr2_ClearCInt64Hi(&b);
+                CInt64_ConvertUInt32(&a);
+                CInt64_ConvertUInt32(&b);
                 break;
             case 8:
                 break;
@@ -1330,10 +1330,10 @@ CInt64 CMach_CalcIntDiadic(Type *type, CInt64 a, SInt16 op, CInt64 b)
                 a = CInt64_And(a, b);
                 break;
             case '^':
-                a = xor_64(a, b);
+                a = CInt64_Xor(a, b);
                 break;
             case '|':
-                a = CExpr2_BitwiseOrCInt64(a, b);
+                a = CInt64_Or(a, b);
                 break;
             case 0x167: {
                 SInt32 t = !ISZERO64(a) && !ISZERO64(b);
@@ -1350,13 +1350,13 @@ CInt64 CMach_CalcIntDiadic(Type *type, CInt64 a, SInt16 op, CInt64 b)
         }
         switch (type->size) {
             case 1:
-                CExpr2_ConvertCInt64ToUInt8(&a);
+                CInt64_ConvertUInt8(&a);
                 break;
             case 2:
-                CExpr2_ConvertCInt64ToUnsignedShort(&a);
+                CInt64_ConvertUInt16(&a);
                 break;
             case 4:
-                CExpr2_ClearCInt64Hi(&a);
+                CInt64_ConvertUInt32(&a);
                 break;
             case 8:
                 break;
@@ -1364,16 +1364,16 @@ CInt64 CMach_CalcIntDiadic(Type *type, CInt64 a, SInt16 op, CInt64 b)
     } else {
         switch (type->size) {
             case 1:
-                CExpr2_SignExtendSignedChar(&a);
-                CExpr2_SignExtendSignedChar(&b);
+                CInt64_ConvertInt8(&a);
+                CInt64_ConvertInt8(&b);
                 break;
             case 2:
-                CExpr2_SignExtendShort(&a);
-                CExpr2_SignExtendShort(&b);
+                CInt64_ConvertInt16(&a);
+                CInt64_ConvertInt16(&b);
                 break;
             case 4:
-                CExpr2_SignExtendCInt64(&a);
-                CExpr2_SignExtendCInt64(&b);
+                CInt64_ConvertInt32(&a);
+                CInt64_ConvertInt32(&b);
                 break;
             case 8:
                 break;
@@ -1447,10 +1447,10 @@ CInt64 CMach_CalcIntDiadic(Type *type, CInt64 a, SInt16 op, CInt64 b)
                 a = CInt64_And(a, b);
                 break;
             case '^':
-                a = xor_64(a, b);
+                a = CInt64_Xor(a, b);
                 break;
             case '|':
-                a = CExpr2_BitwiseOrCInt64(a, b);
+                a = CInt64_Or(a, b);
                 break;
             case 0x167: {
                 SInt32 t = !ISZERO64(a) && !ISZERO64(b);
@@ -1467,13 +1467,13 @@ CInt64 CMach_CalcIntDiadic(Type *type, CInt64 a, SInt16 op, CInt64 b)
         }
         switch (type->size) {
             case 1:
-                CExpr2_SignExtendSignedChar(&a);
+                CInt64_ConvertInt8(&a);
                 break;
             case 2:
-                CExpr2_SignExtendShort(&a);
+                CInt64_ConvertInt16(&a);
                 break;
             case 4:
-                CExpr2_SignExtendCInt64(&a);
+                CInt64_ConvertInt32(&a);
                 break;
             case 8:
                 break;

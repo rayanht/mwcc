@@ -27,7 +27,7 @@ struct DiagnosticDetails {
 struct DiagnosticSourcePosition {
     OSSpec primaryFile;
     OSSpec
-        file; /* 0x144: format_and_print_message passes the diagnostic file to CLProj_MakeRelativePath; CLIO_ReportDiagnostic copies it from record. */
+        file; /* 0x144: format_and_print_message passes the diagnostic file to OS_SpecToStringRelative; CLIO_ReportDiagnostic copies it from record. */
     char *sourceLine;
     SInt32 line; /* 0x28c: format_and_print_message prints the source line number after the file path. */
     int column;

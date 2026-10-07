@@ -103,7 +103,7 @@ Object *TOC_CreateSinitObject(void)
     TypeFunc *ftype;
     char *p;
 
-    CompilerTools_GetPFileFields(&((CPrepCU *)cprep_cu)->mainFile, NULL, NULL, buf);
+    COS_FileGetFSSpecInfo(&((CPrepCU *)cprep_cu)->mainFile, NULL, NULL, buf);
     sprintf(name, "__sinit_%*.*s", -buf[0], buf[0], (char *)&buf[1]);
     p = name + 1;
     while (*p != 0) {
@@ -657,7 +657,7 @@ void TOC_0049d710(ENode *node, Type *targetType, int ignored)
         case ESUB:
             if (node->data.diadic.right->type == EINTCONST) {
                 node->type = EADD;
-                node->data.diadic.right->data.intval = CInt64_Inv(node->data.diadic.right->data.intval);
+                node->data.diadic.right->data.intval = CInt64_Neg(node->data.diadic.right->data.intval);
             }
             /* fallthrough */
         case EMUL:
@@ -1322,7 +1322,7 @@ void replace_vector_constant_with_objectref(ENode *node)
             }
             object = CParser_NewObject(&objectInfo);
             offset = 0;
-            object->nspace = registration_context;
+            object->nspace = cscope_root;
         }
         constant = (struct MemberPointerConstant *)galloc(sizeof(*constant));
         constant->next = member_pointer_constants;

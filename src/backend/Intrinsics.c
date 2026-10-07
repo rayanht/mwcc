@@ -2604,7 +2604,7 @@ static void GenVR(UInt8 *node, Operand *op)
 
 static void *registration_find(const char *name)
 {
-    NameSpaceName *r = CScope_FindNameSpaceName(registration_context, GetHashNameNode(name));
+    NameSpaceName *r = CScope_FindNameSpaceName(cscope_root, GetHashNameNode(name));
     void *object = NULL;
     if (r && (object = ((NameSpaceName *)r)[0].first.object) && !((NameSpaceName *)r)[0].first.next)
         return object;

@@ -659,7 +659,7 @@ CInt64 get_update_delta(IROLinear *node)
                 r = node->u.diadic.right->u.node->data.intval;
                 break;
             case ESUBASS:
-                r = CInt64_Inv(node->u.diadic.right->u.node->data.intval);
+                r = CInt64_Neg(node->u.diadic.right->u.node->data.intval);
                 break;
             default:
                 CError_FATAL(424);

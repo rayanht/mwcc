@@ -357,7 +357,7 @@ extern int data_0058715c;
 extern char data_005830c8[];
 extern jmp_buf error_jmp_buf;
 extern char error_message_buffer[];
-extern struct ParserTryBlock *data_00588240;
+extern struct ParserTryBlock *trychain;
 extern char data_005883ec[];
 extern int CError_Internal(const char *file, int line);
 extern void CError_BufferAppendString(StrBuf *eb, const char *str);
@@ -372,7 +372,7 @@ extern void CError_SaveAndSetWrittenEntry(TStreamElement *entry, int *savedEntry
 extern void CError_SetBufferedToken(TStreamElement *entry);
 extern void fn_00449dc0(void);
 extern struct IRONode *CError_NewIRONode(void);
-extern int writtenEntry;
+extern int cerror_locktoken;
 struct DispatchObject_0041b830;
 
 #ifdef __cplusplus

@@ -368,8 +368,8 @@ void CClass_CheckObjectAccess(BClassList *bases, Object *reference)
     Boolean lookup_flags;
 
     if (reference->nspace != NULL && reference->nspace->theclass != NULL) {
-        if (bases == NULL && data_00588040 != NULL) {
-            bases = CClass_GetBasePath(data_00588040, reference->nspace->theclass, &lookup_result, &lookup_flags);
+        if (bases == NULL && cscope_currentclass != NULL) {
+            bases = CClass_GetBasePath(cscope_currentclass, reference->nspace->theclass, &lookup_result, &lookup_flags);
         }
         CClass_CheckStaticAccess(bases, reference->nspace->theclass, reference->access);
     }
@@ -392,13 +392,13 @@ void CClass_CheckStaticAccess(BClassList *type, TypeClass *owner, UInt8 access)
             return;
         case 1:
         case 2:
-            if (owner == data_00588040)
+            if (owner == cscope_currentclass)
                 return;
             for (friendEntry = owner->friends; friendEntry != NULL; friendEntry = friendEntry->next) {
                 if (friendEntry->isclass != 0) {
-                    if (friendEntry->u.theclass == data_00588040)
+                    if (friendEntry->u.theclass == cscope_currentclass)
                         return;
-                } else if (friendEntry->u.obj == data_00588238) {
+                } else if (friendEntry->u.obj == cscope_currentfunc) {
                     return;
                 }
             }
@@ -501,16 +501,16 @@ Boolean check_base_path_access(BClassList *cl, UInt8 acc)
     if (access == 0)
         return 1;
     if (access != 3) {
-        if (data_00588040 == cls)
+        if (cscope_currentclass == cls)
             return 1;
         if (data_00587140 == cls)
             return 1;
         for (friend = (ClassFriend *)cls->friends; friend != NULL; friend = friend->next) {
             if (friend->isclass != 0) {
-                if (friend->u.theclass == data_00588040)
+                if (friend->u.theclass == cscope_currentclass)
                     return 1;
             } else {
-                if (friend->u.obj == data_00588238)
+                if (friend->u.obj == cscope_currentfunc)
                     return 1;
             }
         }
@@ -541,7 +541,7 @@ ENode *CClass_CreateThisSelfExpr(void)
         return NULL;
 
     expr = create_objectrefnode(parsedType);
-    expr->rtype = (Type *)CDecl_NewPointerType((Type *)data_00588040);
+    expr->rtype = (Type *)CDecl_NewPointerType((Type *)cscope_currentclass);
     result = makemonadicnode(expr, EINDIRECT);
     result->data.monadic->rtype = (Type *)CDecl_NewPointerType(result->rtype);
     return result;
@@ -550,8 +550,8 @@ ENode *CClass_CreateThisSelfExpr(void)
 Object *CClass_ThisSelfObject(void)
 {
     ObjectList *objects;
-    if (data_00588238 != NULL && data_00588040 != NULL) {
-        if (data_00588040->objcinfo != NULL) {
+    if (cscope_currentfunc != NULL && cscope_currentclass != NULL) {
+        if (cscope_currentclass->objcinfo != NULL) {
             objects = (ObjectList *)arguments;
             if (objects != NULL) {
                 do {
@@ -562,7 +562,7 @@ Object *CClass_ThisSelfObject(void)
             }
             CError_ReportError(ERR_ILLEGAL_USE_SELF);
         } else {
-            if (data_005884f8 != 0) {
+            if (cscope_is_member_func != 0) {
                 objects = (ObjectList *)arguments;
                 if (objects != NULL) {
                     do {
@@ -708,9 +708,9 @@ void CClass_CheckOverrides(TypeClass *cls)
     }
 
     linked = NULL;
-    CScope_InitScopeSearch(&iter, cls->nspace);
+    CScope_InitObjectIterator(&iter, cls->nspace);
     for (;;) {
-        object = CScope_NextObject(&iter);
+        object = CScope_NextObjectIteratorObject(&iter);
         if (object == NULL) {
             break;
         }
@@ -747,9 +747,9 @@ void check_hidden_inherited_virtual_functions(OverrideClass *layout, OverrideCla
     if (layout != base) {
         for (b = (OverrideFunc *)base->members; b != NULL; b = b->next) {
             if (b->selectedClass != layout) {
-                CScope_InitScopeSearch(&iter, layout->theclass->nspace);
+                CScope_InitObjectIterator(&iter, layout->theclass->nspace);
                 for (;;) {
-                    obj = CScope_NextObject(&iter);
+                    obj = CScope_NextObjectIteratorObject(&iter);
                     if (obj == NULL)
                         break;
                     if (obj->name != b->object->name || obj->type->type != TYPEFUNC || obj->datatype == TYPEFUNC ||
@@ -1032,7 +1032,7 @@ void CClass_DefineCovariantFuncs(Object *func, CInlineInfo *inlineInfo)
             }
         }
         CFunc_Gen(&body, member, 0);
-        currentNameSpace = functionScope->parent;
+        cscope_current = functionScope->parent;
     }
 }
 
@@ -1089,9 +1089,9 @@ CClassNode *collect_override_return_class_types(CClassNode *types, TypeClass *tc
     ClassList *base;
 
     if (skipClass == 0) {
-        CScope_InitScopeSearch(&it, tclass->nspace);
+        CScope_InitObjectIterator(&it, tclass->nspace);
         for (;;) {
-            obj = CScope_NextObject(&it);
+            obj = CScope_NextObjectIteratorObject(&it);
             if (obj == NULL)
                 break;
             if (obj->name == method->name && obj->datatype == DVFUNC &&
@@ -1194,9 +1194,9 @@ OverrideClass *create_class_layout(OverrideClass *root, TypeClass *cls, SInt32 o
     if (root == NULL)
         root = layout;
 
-    CScope_InitScopeSearch(&scope, cls->nspace);
+    CScope_InitObjectIterator(&scope, cls->nspace);
     for (;;) {
-        object = CScope_NextObject(&scope);
+        object = CScope_NextObjectIteratorObject(&scope);
         if (object == NULL)
             break;
         if (object->datatype != DVFUNC)

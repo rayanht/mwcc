@@ -65,7 +65,7 @@ static CInt64 divu(CInt64 lhs, CInt64 rhs)
     return result;
 }
 
-int CExpr2_FormatCInt64Decimal(char *output, CInt64 num)
+int CInt64_PrintDec(char *output, CInt64 num)
 {
     int length;
     CInt64 rem;
@@ -117,7 +117,7 @@ static void CInt64_ScanAsmNumberLiterals(const char **literals)
     literals[4] = "acdefACEDF";
 }
 
-char *parse_binary_digits(CInt64 *value, char *digits, unsigned char *overflow)
+char *CInt64_ScanBinString(CInt64 *value, char *digits, unsigned char *overflow)
 {
     UInt32 low;
     Boolean bit;
@@ -150,7 +150,7 @@ char *parse_binary_digits(CInt64 *value, char *digits, unsigned char *overflow)
     return digits;
 }
 
-char *CExpr2_ParseHexInt64(CInt64 *value, char *p, Boolean *overflow)
+char *CInt64_ScanHexString(CInt64 *value, char *p, Boolean *overflow)
 {
     SInt8 digit;
     SInt32 n;
@@ -221,7 +221,7 @@ char *CExpr2_ParseHexInt64(CInt64 *value, char *p, Boolean *overflow)
         (result) = data_0058075e[(short)(n)];                                                                          \
     } while (0)
 
-UInt8 *CExpr2_ParseDecimalCInt64(CInt64 *v, char *s, Boolean *ovf)
+UInt8 *CInt64_ScanDecString(CInt64 *v, char *s, Boolean *ovf)
 {
     CInt64 t;
     char c;
@@ -272,7 +272,7 @@ UInt8 *CExpr2_ParseDecimalCInt64(CInt64 *v, char *s, Boolean *ovf)
     return (UInt8 *)s;
 }
 
-char *CExpr2_ParseOctalInt64(CInt64 *val, char *s, Boolean *overflow)
+char *CInt64_ScanOctString(CInt64 *val, char *s, Boolean *overflow)
 {
     char c;
     UInt32 hi;
@@ -311,17 +311,17 @@ char *CExpr2_ParseOctalInt64(CInt64 *val, char *s, Boolean *overflow)
     return s;
 }
 
-double CExpr2_ConvertCInt64ToDouble(CInt64 *val)
+double CInt64_ConvertToLongDouble(CInt64 *val)
 {
     CInt64 tmp;
     if (isneg(val)) {
         tmp = neg(*val);
-        return -CExpr2_ConvertUnsignedCInt64ToDouble(&tmp);
+        return -CInt64_ConvertUToLongDouble(&tmp);
     }
-    return CExpr2_ConvertUnsignedCInt64ToDouble(val);
+    return CInt64_ConvertUToLongDouble(val);
 }
 
-double CExpr2_ConvertUnsignedCInt64ToDouble(CInt64 *v)
+double CInt64_ConvertUToLongDouble(CInt64 *v)
 {
     double result;
     Boolean iszero;
@@ -363,22 +363,22 @@ double CExpr2_ConvertUnsignedCInt64ToDouble(CInt64 *v)
     return result;
 }
 
-void CExpr2_ConvertDoubleToCInt64(CInt64 *p, double x)
+void CInt64_ConvertFromLongDouble(CInt64 *p, double x)
 {
     CInt64 r, w, v;
     if (x < 0.0) {
-        CExpr2_ConvertDoubleToUnsignedCInt64(p, -x);
+        CInt64_ConvertUFromLongDouble(p, -x);
         v = *p;
         w.hi = ~v.hi, w.lo = ~v.lo;
         r = CInt64_Add(w, cint64_one);
         *p = r;
     } else {
-        CExpr2_ConvertDoubleToUnsignedCInt64(p, x);
+        CInt64_ConvertUFromLongDouble(p, x);
     }
 }
 
 /* VALUE as an unsigned 64-bit integer: 0 at or below zero, all ones from 2^64 up. */
-void CExpr2_ConvertDoubleToUnsignedCInt64(CInt64 *result, double value)
+void CInt64_ConvertUFromLongDouble(CInt64 *result, double value)
 {
     static double data_00555488 = 0.0;
     UInt32 hi, lo;
@@ -417,13 +417,13 @@ void CExpr2_ConvertDoubleToUnsignedCInt64(CInt64 *result, double value)
     result->lo = lo;
 }
 
-void CExpr2_ConvertCInt64ToUInt8(CInt64 *value)
+void CInt64_ConvertUInt8(CInt64 *value)
 {
     value->lo = (UInt8)value->lo;
     value->hi = 0;
 }
 
-void CExpr2_SignExtendSignedChar(CInt64 *value)
+void CInt64_ConvertInt8(CInt64 *value)
 {
     SInt32 high;
 
@@ -436,13 +436,13 @@ void CExpr2_SignExtendSignedChar(CInt64 *value)
     value->hi = high;
 }
 
-void CExpr2_ConvertCInt64ToUnsignedShort(CInt64 *value)
+void CInt64_ConvertUInt16(CInt64 *value)
 {
     value->lo = (unsigned short)value->lo;
     value->hi = 0;
 }
 
-void CExpr2_SignExtendShort(register CInt64 *value)
+void CInt64_ConvertInt16(register CInt64 *value)
 {
     UInt32 high;
 
@@ -455,12 +455,12 @@ void CExpr2_SignExtendShort(register CInt64 *value)
     value->hi = high;
 }
 
-void CExpr2_ClearCInt64Hi(CInt64 *value)
+void CInt64_ConvertUInt32(CInt64 *value)
 {
     value->hi = 0;
 }
 
-int CExpr2_SignExtendCInt64(CInt64 *value)
+int CInt64_ConvertInt32(CInt64 *value)
 {
     int highWord;
 
@@ -474,14 +474,14 @@ int CExpr2_SignExtendCInt64(CInt64 *value)
     return highWord;
 }
 
-CInt64 CExpr2_BitwiseOrCInt64(CInt64 left, CInt64 right)
+CInt64 CInt64_Or(CInt64 left, CInt64 right)
 {
     left.hi |= right.hi;
     left.lo |= right.lo;
     return left;
 }
 
-CInt64 xor_64(CInt64 left, CInt64 right)
+CInt64 CInt64_Xor(CInt64 left, CInt64 right)
 {
     left.hi ^= right.hi;
     left.lo ^= right.lo;
@@ -846,7 +846,7 @@ static CInt64 recovered_complement_CInt64_Neg(CInt64 x)
     return y;
 }
 
-static CInt64 CInt64_Neg(CInt64 x)
+static CInt64 recovered_CInt64_Neg(CInt64 x)
 {
     CInt64 recovered_result;
     recovered_result = CInt64_Add(recovered_complement_CInt64_Neg(x), cint64_one);
@@ -857,14 +857,14 @@ CInt64 CInt64_Mod(CInt64 a, CInt64 b)
 {
     CInt64 r;
     if (CInt64_IsNeg(a.hi)) {
-        a = CInt64_Neg(a);
+        a = recovered_CInt64_Neg(a);
         if (CInt64_IsNeg(b.hi))
-            b = CInt64_Neg(b);
+            b = recovered_CInt64_Neg(b);
         CInt64_DivMod(&a, &b, NULL, &r);
-        return CInt64_Neg(r);
+        return recovered_CInt64_Neg(r);
     }
     if (CInt64_IsNeg(b.hi))
-        b = CInt64_Neg(b);
+        b = recovered_CInt64_Neg(b);
     CInt64_DivMod(&a, &b, NULL, &r);
     return r;
 }
@@ -1075,7 +1075,7 @@ CInt64 CInt64_Sub(CInt64 lhs, CInt64 rhs)
     return lhs;
 }
 
-CInt64 CInt64_Inv(CInt64 x)
+CInt64 CInt64_Neg(CInt64 x)
 {
     CInt64 r;
     r = CInt64_Add(not64(x), cint64_one);
@@ -1106,7 +1106,7 @@ CInt64 CInt64_Add(CInt64 a, CInt64 b)
     return a;
 }
 
-CInt64 CFunc_BitwiseNot(CInt64 input)
+CInt64 CInt64_Inv(CInt64 input)
 {
     CInt64 output;
     output.hi = ~input.hi;
@@ -1114,7 +1114,7 @@ CInt64 CFunc_BitwiseNot(CInt64 input)
     return output;
 }
 
-CInt64 CFunc_LogicalNotCInt64(CInt64 input)
+CInt64 CInt64_Not(CInt64 input)
 {
     CInt64 output;
     long value = (Boolean)(input.hi == 0 && input.lo == 0);

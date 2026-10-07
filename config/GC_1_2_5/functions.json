@@ -2670,7 +2670,7 @@
     "source": "src/driver/MsDos.c"
   },
   {
-    "name": "fn_004111c0",
+    "name": "OS_InitProgram",
     "address": "0x004111c0",
     "size": 5,
     "source": "src/driver/MsDos.c"
@@ -2688,7 +2688,7 @@
     "source": "src/driver/MsDos.c"
   },
   {
-    "name": "fn_00411290",
+    "name": "OS_SetFileType",
     "address": "0x00411290",
     "size": 5,
     "source": "src/driver/MsDos.c"
@@ -2766,7 +2766,7 @@
     "source": "src/driver/MsDos.c"
   },
   {
-    "name": "fn_00411780",
+    "name": "OS_Rmdir",
     "address": "0x00411780",
     "size": 61,
     "source": "src/driver/MsDos.c"
@@ -2808,7 +2808,7 @@
     "source": "src/driver/MsDos.c"
   },
   {
-    "name": "MsDos_IsAbsolutePath",
+    "name": "OS_IsFullPath",
     "address": "0x00411cc0",
     "size": 92,
     "source": "src/driver/MsDos.c"
@@ -2820,7 +2820,7 @@
     "source": "src/driver/MsDos.c"
   },
   {
-    "name": "make_osspec_from_path",
+    "name": "OS_MakeSpec",
     "address": "0x00411d90",
     "size": 616,
     "source": "src/driver/MsDos.c"
@@ -2850,13 +2850,13 @@
     "source": "src/driver/MsDos.c"
   },
   {
-    "name": "fn_00412340",
+    "name": "OS_PathSpecToString",
     "address": "0x00412340",
     "size": 100,
     "source": "src/driver/MsDos.c"
   },
   {
-    "name": "MsDos_CopyStringToBuffer",
+    "name": "OS_NameSpecToString",
     "address": "0x004123b0",
     "size": 100,
     "source": "src/driver/MsDos.c"
@@ -2874,7 +2874,7 @@
     "source": "src/driver/MsDos.c"
   },
   {
-    "name": "equal_path",
+    "name": "OS_EqualNameSpec",
     "address": "0x00412480",
     "size": 18,
     "source": "src/driver/MsDos.c"
@@ -2892,13 +2892,13 @@
     "source": "src/driver/MsDos.c"
   },
   {
-    "name": "MsDos_ReturnZero",
+    "name": "OS_IsLink",
     "address": "0x004125a0",
     "size": 5,
     "source": "src/driver/MsDos.c"
   },
   {
-    "name": "fn_004125b0",
+    "name": "OS_ResolveLink",
     "address": "0x004125b0",
     "size": 28,
     "source": "src/driver/MsDos.c"
@@ -2946,13 +2946,13 @@
     "source": "src/driver/MsDos.c"
   },
   {
-    "name": "MsDos_GetValidMemBufferPtr",
+    "name": "OS_LockHandle",
     "address": "0x00412990",
     "size": 38,
     "source": "src/driver/MsDos.c"
   },
   {
-    "name": "fn_004129c0",
+    "name": "OS_UnlockHandle",
     "address": "0x004129c0",
     "size": 3,
     "source": "src/driver/MsDos.c"
@@ -3006,13 +3006,13 @@
     "source": "src/driver/MsDos.c"
   },
   {
-    "name": "short_predecessor",
+    "name": "OS_MacToRef",
     "address": "0x00412ed0",
     "size": 22,
     "source": "src/driver/MsDos.c"
   },
   {
-    "name": "MacSpecs_LoadMacResource",
+    "name": "OS_LoadMacResourceFork",
     "address": "0x00412ef0",
     "size": 189,
     "source": "src/driver/MsDos.c"
@@ -3078,7 +3078,7 @@
     "source": "src/driver/MacSpecs.c"
   },
   {
-    "name": "MacSpecs_MakeCWFileSpecFromString",
+    "name": "OS_OSSpec_To_FSSpec",
     "address": "0x004135f0",
     "size": 120,
     "source": "src/driver/MacSpecs.c"
@@ -3834,73 +3834,73 @@
     "source": "src/driver/CLProj.c"
   },
   {
-    "name": "match_wildcard_pattern",
+    "name": "WildCardMatch",
     "address": "0x00418440",
     "size": 293,
     "source": "src/driver/Generic.c"
   },
   {
-    "name": "CLProj_FindNextMatchingEntry",
+    "name": "OS_MatchPath",
     "address": "0x00418570",
     "size": 291,
     "source": "src/driver/Generic.c"
   },
   {
-    "name": "CLProj_GetFileName",
+    "name": "OS_GetFileNamePtr",
     "address": "0x004186a0",
     "size": 28,
     "source": "src/driver/Generic.c"
   },
   {
-    "name": "CLProj_MakeOSSpecFromDirectoryAndFilename",
+    "name": "OS_MakeSpec2",
     "address": "0x004186c0",
     "size": 185,
     "source": "src/driver/Generic.c"
   },
   {
-    "name": "CLProj_MakeOSSpecFromPath",
+    "name": "OS_MakeSpecWithPath",
     "address": "0x00418780",
     "size": 349,
     "source": "src/driver/Generic.c"
   },
   {
-    "name": "CLProj_SetFileExtension",
+    "name": "OS_NameSpecChangeExtension",
     "address": "0x004188e0",
     "size": 218,
     "source": "src/driver/Generic.c"
   },
   {
-    "name": "CLProj_ChangeFileExtension",
+    "name": "OS_NameSpecSetExtension",
     "address": "0x004189c0",
     "size": 252,
     "source": "src/driver/Generic.c"
   },
   {
-    "name": "CLProj_MakeRelativePath",
+    "name": "OS_SpecToStringRelative",
     "address": "0x00418ac0",
     "size": 558,
     "source": "src/driver/Generic.c"
   },
   {
-    "name": "CLProj_FindFileInSearchPath",
+    "name": "OS_FindFileInPath",
     "address": "0x00418cf0",
     "size": 237,
     "source": "src/driver/Generic.c"
   },
   {
-    "name": "CLFileOps_FindExecutable",
+    "name": "OS_FindProgram",
     "address": "0x00418de0",
     "size": 367,
     "source": "src/driver/Generic.c"
   },
   {
-    "name": "CLFileOps_CopyMemBuffer",
+    "name": "OS_CopyHandle",
     "address": "0x00418f50",
     "size": 117,
     "source": "src/driver/Generic.c"
   },
   {
-    "name": "CLFileOps_AppendMemBuffer",
+    "name": "OS_AppendHandle",
     "address": "0x00418fd0",
     "size": 107,
     "source": "src/driver/Generic.c"
@@ -5100,7 +5100,7 @@
     "source": "src/driver/CLFiles.c"
   },
   {
-    "name": "CLOverlays_Init",
+    "name": "Overlays_Initialize",
     "address": "0x00422c30",
     "size": 220,
     "source": "src/driver/CLOverlays.c"
@@ -5751,7 +5751,7 @@
     "source": "src/driver/CLSegs.c"
   },
   {
-    "name": "CLSegs_InitSegments",
+    "name": "Segments_Initialize",
     "address": "0x004277c0",
     "size": 170,
     "source": "src/driver/CLSegs.c"
@@ -7815,127 +7815,127 @@
     "source": "src/driver/COSToolsCLT.c"
   },
   {
-    "name": "fn_00443110",
+    "name": "COS_NewHandle",
     "address": "0x00443110",
     "size": 12,
     "source": "src/driver/COSToolsCLT.c"
   },
   {
-    "name": "CompilerTools_AllocateMemoryIfEnabled",
+    "name": "COS_NewOSHandle",
     "address": "0x00443120",
     "size": 54,
     "source": "src/driver/COSToolsCLT.c"
   },
   {
-    "name": "fn_00443160",
+    "name": "COS_FreeHandle",
     "address": "0x00443160",
     "size": 11,
     "source": "src/driver/COSToolsCLT.c"
   },
   {
-    "name": "fn_00443170",
+    "name": "COS_ResizeHandle",
     "address": "0x00443170",
     "size": 32,
     "source": "src/driver/COSToolsCLT.c"
   },
   {
-    "name": "fn_00443190",
+    "name": "COS_LockHandle",
     "address": "0x00443190",
     "size": 11,
     "source": "src/driver/COSToolsCLT.c"
   },
   {
-    "name": "fn_004431a0",
+    "name": "COS_LockHandleHi",
     "address": "0x004431a0",
     "size": 11,
     "source": "src/driver/COSToolsCLT.c"
   },
   {
-    "name": "fn_004431b0",
+    "name": "COS_UnlockHandle",
     "address": "0x004431b0",
     "size": 11,
     "source": "src/driver/COSToolsCLT.c"
   },
   {
-    "name": "CompilerTools_GetScaledTicks",
+    "name": "COS_GetTicks",
     "address": "0x004431c0",
     "size": 6,
     "source": "src/driver/COSToolsCLT.c"
   },
   {
-    "name": "CompilerTools_GetResourceCString",
+    "name": "COS_GetString",
     "address": "0x004431d0",
     "size": 29,
     "source": "src/driver/COSToolsCLT.c"
   },
   {
-    "name": "CompilerTools_IsByteInDBCSCharacter",
+    "name": "COS_IsMultiByte",
     "address": "0x004431f0",
     "size": 16,
     "source": "src/driver/COSToolsCLT.c"
   },
   {
-    "name": "fn_00443200",
+    "name": "COS_FileNew",
     "address": "0x00443200",
     "size": 80,
     "source": "src/driver/COSToolsCLT.c"
   },
   {
-    "name": "fn_00443250",
+    "name": "COS_FileOpen",
     "address": "0x00443250",
     "size": 31,
     "source": "src/driver/COSToolsCLT.c"
   },
   {
-    "name": "CompilerTools_GetFileType",
+    "name": "COS_FileGetType",
     "address": "0x00443270",
     "size": 45,
     "source": "src/driver/COSToolsCLT.c"
   },
   {
-    "name": "CompilerTools_GetFileSize",
+    "name": "COS_FileGetSize",
     "address": "0x004432a0",
     "size": 16,
     "source": "src/driver/COSToolsCLT.c"
   },
   {
-    "name": "CompilerTools_ReadFile",
+    "name": "COS_FileRead",
     "address": "0x004432b0",
     "size": 21,
     "source": "src/driver/COSToolsCLT.c"
   },
   {
-    "name": "CompilerTools_Write",
+    "name": "COS_FileWrite",
     "address": "0x004432d0",
     "size": 21,
     "source": "src/driver/COSToolsCLT.c"
   },
   {
-    "name": "fn_004432f0",
+    "name": "COS_FileGetPos",
     "address": "0x004432f0",
     "size": 16,
     "source": "src/driver/COSToolsCLT.c"
   },
   {
-    "name": "CompilerTools_SetFilePosition",
+    "name": "COS_FileSetPos",
     "address": "0x00443300",
     "size": 18,
     "source": "src/driver/COSToolsCLT.c"
   },
   {
-    "name": "CompilerTools_CloseFile",
+    "name": "COS_FileClose",
     "address": "0x00443320",
     "size": 11,
     "source": "src/driver/COSToolsCLT.c"
   },
   {
-    "name": "CompilerTools_MakeCWFileSpecFromPString",
+    "name": "COS_FileSetFSSpec",
     "address": "0x00443330",
     "size": 95,
     "source": "src/driver/COSToolsCLT.c"
   },
   {
-    "name": "CompilerTools_GetPFileFields",
+    "name": "COS_FileGetFSSpecInfo",
     "address": "0x00443390",
     "size": 56,
     "source": "src/driver/COSToolsCLT.c"
@@ -7947,7 +7947,7 @@
     "source": "src/driver/COSToolsCLT.c"
   },
   {
-    "name": "CompilerTools_ResolveFileNameToCString",
+    "name": "COS_FileGetPathName",
     "address": "0x00443440",
     "size": 128,
     "source": "src/driver/COSToolsCLT.c"
@@ -10191,7 +10191,7 @@
     "source": "src/frontend/CExpr2.c"
   },
   {
-    "name": "CExpr2_NewENEWEXCEPTIONARRAYNode",
+    "name": "CExpr_NewTemplDepENode",
     "address": "0x00473fa0",
     "size": 42,
     "source": "src/frontend/CExpr2.c"
@@ -10239,103 +10239,103 @@
     "source": "src/frontend/CExpr2.c"
   },
   {
-    "name": "CExpr2_FormatCInt64Decimal",
+    "name": "CInt64_PrintDec",
     "address": "0x00474490",
     "size": 418,
     "source": "src/frontend/CInt64.c"
   },
   {
-    "name": "parse_binary_digits",
+    "name": "CInt64_ScanBinString",
     "address": "0x00474640",
     "size": 140,
     "source": "src/frontend/CInt64.c"
   },
   {
-    "name": "CExpr2_ParseHexInt64",
+    "name": "CInt64_ScanHexString",
     "address": "0x004746d0",
     "size": 251,
     "source": "src/frontend/CInt64.c"
   },
   {
-    "name": "CExpr2_ParseDecimalCInt64",
+    "name": "CInt64_ScanDecString",
     "address": "0x004747d0",
     "size": 396,
     "source": "src/frontend/CInt64.c"
   },
   {
-    "name": "CExpr2_ParseOctalInt64",
+    "name": "CInt64_ScanOctString",
     "address": "0x00474960",
     "size": 199,
     "source": "src/frontend/CInt64.c"
   },
   {
-    "name": "CExpr2_ConvertCInt64ToDouble",
+    "name": "CInt64_ConvertToLongDouble",
     "address": "0x00474a30",
     "size": 126,
     "source": "src/frontend/CInt64.c"
   },
   {
-    "name": "CExpr2_ConvertUnsignedCInt64ToDouble",
+    "name": "CInt64_ConvertUToLongDouble",
     "address": "0x00474ab0",
     "size": 111,
     "source": "src/frontend/CInt64.c"
   },
   {
-    "name": "CExpr2_ConvertDoubleToCInt64",
+    "name": "CInt64_ConvertFromLongDouble",
     "address": "0x00474b20",
     "size": 137,
     "source": "src/frontend/CInt64.c"
   },
   {
-    "name": "CExpr2_ConvertDoubleToUnsignedCInt64",
+    "name": "CInt64_ConvertUFromLongDouble",
     "address": "0x00474bb0",
     "size": 355,
     "source": "src/frontend/CInt64.c"
   },
   {
-    "name": "CExpr2_ConvertCInt64ToUInt8",
+    "name": "CInt64_ConvertUInt8",
     "address": "0x00474d20",
     "size": 18,
     "source": "src/frontend/CInt64.c"
   },
   {
-    "name": "CExpr2_SignExtendSignedChar",
+    "name": "CInt64_ConvertInt8",
     "address": "0x00474d40",
     "size": 37,
     "source": "src/frontend/CInt64.c"
   },
   {
-    "name": "CExpr2_ConvertCInt64ToUnsignedShort",
+    "name": "CInt64_ConvertUInt16",
     "address": "0x00474d70",
     "size": 18,
     "source": "src/frontend/CInt64.c"
   },
   {
-    "name": "CExpr2_SignExtendShort",
+    "name": "CInt64_ConvertInt16",
     "address": "0x00474d90",
     "size": 37,
     "source": "src/frontend/CInt64.c"
   },
   {
-    "name": "CExpr2_ClearCInt64Hi",
+    "name": "CInt64_ConvertUInt32",
     "address": "0x00474dc0",
     "size": 11,
     "source": "src/frontend/CInt64.c"
   },
   {
-    "name": "CExpr2_SignExtendCInt64",
+    "name": "CInt64_ConvertInt32",
     "address": "0x00474dd0",
     "size": 26,
     "source": "src/frontend/CInt64.c"
   },
   {
-    "name": "CExpr2_BitwiseOrCInt64",
+    "name": "CInt64_Or",
     "address": "0x00474df0",
     "size": 25,
     "source": "src/frontend/CInt64.c"
   },
   {
-    "name": "xor_64",
+    "name": "CInt64_Xor",
     "address": "0x00474e10",
     "size": 25,
     "source": "src/frontend/CInt64.c"
@@ -10491,7 +10491,7 @@
     "source": "src/frontend/CInt64.c"
   },
   {
-    "name": "CInt64_Inv",
+    "name": "CInt64_Neg",
     "address": "0x00476040",
     "size": 65,
     "source": "src/frontend/CInt64.c"
@@ -10503,13 +10503,13 @@
     "source": "src/frontend/CInt64.c"
   },
   {
-    "name": "CFunc_BitwiseNot",
+    "name": "CInt64_Inv",
     "address": "0x00476100",
     "size": 33,
     "source": "src/frontend/CInt64.c"
   },
   {
-    "name": "CFunc_LogicalNotCInt64",
+    "name": "CInt64_Not",
     "address": "0x00476130",
     "size": 51,
     "source": "src/frontend/CInt64.c"
@@ -12381,19 +12381,19 @@
     "source": "src/frontend/CScope.c"
   },
   {
-    "name": "CScope_NextNameSpaceObjectList",
+    "name": "CScope_NextObjectIteratorObjectList",
     "address": "0x00497ef0",
     "size": 64,
     "source": "src/frontend/CScope.c"
   },
   {
-    "name": "CScope_NextObject",
+    "name": "CScope_NextObjectIteratorObject",
     "address": "0x00497f30",
     "size": 112,
     "source": "src/frontend/CScope.c"
   },
   {
-    "name": "CScope_InitScopeSearch",
+    "name": "CScope_InitObjectIterator",
     "address": "0x00497fa0",
     "size": 46,
     "source": "src/frontend/CScope.c"
@@ -12669,37 +12669,37 @@
     "source": "src/frontend/CScope.c"
   },
   {
-    "name": "BE_elf_SaveAndSetClassScope",
+    "name": "CScope_SetClassDefScope",
     "address": "0x0049b6a0",
     "size": 54,
     "source": "src/backend/BE_elf.c"
   },
   {
-    "name": "BE_elf_SaveScopeAndEnterClass",
+    "name": "CScope_SetClassScope",
     "address": "0x0049b6e0",
     "size": 71,
     "source": "src/backend/BE_elf.c"
   },
   {
-    "name": "BE_elf_SaveAndSetScope",
+    "name": "CScope_SetNameSpaceScope",
     "address": "0x0049b730",
     "size": 71,
     "source": "src/backend/BE_elf.c"
   },
   {
-    "name": "BE_elf_SaveScope",
+    "name": "CScope_GetScope",
     "address": "0x0049b780",
     "size": 36,
     "source": "src/backend/BE_elf.c"
   },
   {
-    "name": "fn_0049b7b0",
+    "name": "CScope_Cleanup",
     "address": "0x0049b7b0",
     "size": 1,
     "source": "src/backend/BE_elf.c"
   },
   {
-    "name": "BE_elf_CreateGlobalNameSpace",
+    "name": "CScope_Setup",
     "address": "0x0049b7c0",
     "size": 109,
     "source": "src/backend/BE_elf.c"
@@ -18405,13 +18405,13 @@
     "source": "src/frontend/CDecl.c"
   },
   {
-    "name": "CDecl_InitDeclInfoFromTemplateDeclarationData",
+    "name": "CDecl_UnpackDeclInfo",
     "address": "0x004fe470",
     "size": 79,
     "source": "src/frontend/CDecl.c"
   },
   {
-    "name": "CDecl_CopyDeclInfoToNewFunc",
+    "name": "CDecl_PackDeclInfo",
     "address": "0x004fe4c0",
     "size": 76,
     "source": "src/frontend/CDecl.c"
@@ -19653,7 +19653,7 @@
     "source": "src/frontend/CTemplateTools.c"
   },
   {
-    "name": "CTemplateTools_ResolveType",
+    "name": "CTemplTool_DeduceTypeCopy",
     "address": "0x00515ae0",
     "size": 1099,
     "source": "src/frontend/CTemplateTools.c"
@@ -19665,7 +19665,7 @@
     "source": "src/frontend/CTemplateTools.c"
   },
   {
-    "name": "CTemplateTools_005160b0",
+    "name": "CTemplTool_DeduceArgCopy",
     "address": "0x005160b0",
     "size": 274,
     "source": "src/frontend/CTemplateTools.c"
@@ -19725,7 +19725,7 @@
     "source": "src/frontend/CTemplateTools.c"
   },
   {
-    "name": "CTemplateTools_GetArgumentType",
+    "name": "CTemplTool_DeduceArgDepType",
     "address": "0x00517330",
     "size": 132,
     "source": "src/frontend/CTemplateTools.c"
@@ -19737,7 +19737,7 @@
     "source": "src/frontend/CTemplateTools.c"
   },
   {
-    "name": "CTemplateTools_CopyCTStateElemList",
+    "name": "CTemplTool_MakeGlobalTemplArgCopy",
     "address": "0x00517850",
     "size": 117,
     "source": "src/frontend/CTemplateTools.c"
@@ -19761,7 +19761,7 @@
     "source": "src/frontend/CTemplateTools.c"
   },
   {
-    "name": "CTemplateTools_00517a40",
+    "name": "CTemplTool_EqualExprTypes",
     "address": "0x00517a40",
     "size": 623,
     "source": "src/frontend/CTemplateTools.c"
@@ -19809,7 +19809,7 @@
     "source": "src/frontend/CTemplateTools.c"
   },
   {
-    "name": "CTemplateTools_InsertTemplateArgs",
+    "name": "CTemplTool_InsertTemplateArgumentNameSpace",
     "address": "0x00518010",
     "size": 121,
     "source": "src/frontend/CTemplateTools.c"
@@ -19863,7 +19863,7 @@
     "source": "src/frontend/CTemplateTools.c"
   },
   {
-    "name": "CTemplateTools_CopySlotsToList",
+    "name": "CTemplTool_MakeTemplArgList",
     "address": "0x00518730",
     "size": 127,
     "source": "src/frontend/CTemplateTools.c"
@@ -19881,13 +19881,13 @@
     "source": "src/frontend/CTemplateTools.c"
   },
   {
-    "name": "CTemplateTools_PopObjectReferenceEntry",
+    "name": "CTemplTool_PopInstance",
     "address": "0x00518a20",
     "size": 62,
     "source": "src/frontend/CTemplateTools.c"
   },
   {
-    "name": "FunctionCalls_PushObjectReferenceEntry",
+    "name": "CTemplTool_PushInstance",
     "address": "0x00518a60",
     "size": 74,
     "source": "src/optimizer/FunctionCalls.c"

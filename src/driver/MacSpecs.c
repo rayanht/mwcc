@@ -141,7 +141,7 @@ int find_or_create_spec_entry(OSPathSpec *spec, unsigned int *typePtr, unsigned 
     MacSpecEntry *rec;
     char *tok;
 
-    if (!fn_00412340(spec, buf, 0x104))
+    if (!OS_PathSpecToString(spec, buf, 0x104))
         return 0;
     end = OS_GetDirPtr(buf);
     strncpy(name, buf, end - buf);
@@ -261,7 +261,7 @@ int __stdcall parse_value_and_offset(OSPathSpec *text, unsigned short *value, un
     return 3;
 }
 
-int __stdcall MacSpecs_MakeCWFileSpecFromString(OSSpec *input, CWFileSpec *output)
+int __stdcall OS_OSSpec_To_FSSpec(OSSpec *input, CWFileSpec *output)
 {
     UInt16 volumeRef;
     unsigned int directoryId;
@@ -273,7 +273,7 @@ int __stdcall MacSpecs_MakeCWFileSpecFromString(OSSpec *input, CWFileSpec *outpu
     if (status != 0) {
         return status;
     }
-    if (MsDos_CopyStringToBuffer(&input->name, file_name_buffer, 0x40) == NULL) {
+    if (OS_NameSpecToString(&input->name, file_name_buffer, 0x40) == NULL) {
         return 0x6f;
     }
     c2pstrcpy(output->fileData.file.name, file_name_buffer);
@@ -321,9 +321,9 @@ int __stdcall MacSpecs_MakeResourceForkSpec(OSSpec *source, OSSpec *destination,
     char pathBuffer[0x104];
     DWORD error;
 
-    fn_00412340(&source->path, pathBuffer, 0x104);
+    OS_PathSpecToString(&source->path, pathBuffer, 0x104);
 
-    error = CLProj_MakeOSSpecFromDirectoryAndFilename(pathBuffer, "RESOURCE.FRK", destination);
+    error = OS_MakeSpec2(pathBuffer, "RESOURCE.FRK", destination);
     if (error != 0)
         return error;
 
@@ -337,7 +337,7 @@ int __stdcall MacSpecs_MakeResourceForkSpec(OSSpec *source, OSSpec *destination,
         } else {
             return error;
         }
-        error = CLProj_MakeOSSpecFromDirectoryAndFilename(pathBuffer, "RESOURCE.FRK", destination);
+        error = OS_MakeSpec2(pathBuffer, "RESOURCE.FRK", destination);
         if (error != 0)
             return error;
     } else {
@@ -345,7 +345,7 @@ int __stdcall MacSpecs_MakeResourceForkSpec(OSSpec *source, OSSpec *destination,
             return 0x10b;
     }
 
-    error = OS_MakeNameSpec(MsDos_CopyStringToBuffer(&source->name, data_005880e0, 0x104), &destination->name);
+    error = OS_MakeNameSpec(OS_NameSpecToString(&source->name, data_005880e0, 0x104), &destination->name);
     if (error != 0)
         return error;
     return 0;

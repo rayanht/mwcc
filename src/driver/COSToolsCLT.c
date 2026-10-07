@@ -20,12 +20,12 @@ void copy_pstring(UInt8 *destination, UInt8 *source)
     }
 }
 
-void *fn_00443110(SInt32 size)
+void *COS_NewHandle(SInt32 size)
 {
     return (struct StorageHandle *)Memory_NewHandle(size);
 }
 
-void *CompilerTools_AllocateMemoryIfEnabled(SIZE_T size)
+void *COS_NewOSHandle(SIZE_T size)
 {
     char *allocation;
     short status;
@@ -39,49 +39,49 @@ void *CompilerTools_AllocateMemoryIfEnabled(SIZE_T size)
     return NULL;
 }
 
-void fn_00443160(void *handle)
+void COS_FreeHandle(void *handle)
 {
     Memory_FreeHandle(handle);
 }
 
-Boolean fn_00443170(struct StorageHandle *handle, UInt32 size)
+Boolean COS_ResizeHandle(struct StorageHandle *handle, UInt32 size)
 {
     Memory_ResizeStorageHandle(handle, size);
     return fn_00419620() == 0;
 }
 
-void fn_00443190(void *handle)
+void COS_LockHandle(void *handle)
 {
     fn_00413a00(handle);
 }
 
-void fn_004431a0(void *handle)
+void COS_LockHandleHi(void *handle)
 {
     fn_00413a40((struct StorageHandle *)handle);
 }
 
-void fn_004431b0(void *entry)
+void COS_UnlockHandle(void *entry)
 {
     fn_00413a50(entry);
 }
 
-UInt32 CompilerTools_GetScaledTicks(void)
+UInt32 COS_GetTicks(void)
 {
     return CLFileOps_GetScaledTicks();
 }
 
-void CompilerTools_GetResourceCString(char *buffer, SInt16 id, SInt16 arg)
+void COS_GetString(char *buffer, SInt16 id, SInt16 arg)
 {
     CLIO_GetResourceString((unsigned char *)buffer, id, arg);
     CLIO_ConvertPascalToCString(buffer);
 }
 
-unsigned char CompilerTools_IsByteInDBCSCharacter(unsigned char *textStart, unsigned char *bytePosition)
+unsigned char COS_IsMultiByte(unsigned char *textStart, unsigned char *bytePosition)
 {
     return MacSpecs_IsByteInDBCSCharacter(textStart, bytePosition);
 }
 
-int fn_00443200(CWFileSpec *record, short *output, unsigned int argument4, unsigned int argument5)
+int COS_FileNew(CWFileSpec *record, short *output, unsigned int argument4, unsigned int argument5)
 {
     int result;
 
@@ -95,13 +95,13 @@ int fn_00443200(CWFileSpec *record, short *output, unsigned int argument4, unsig
     }
 }
 
-short fn_00443250(CWFileSpec *fileSpec, short *fileRef)
+short COS_FileOpen(CWFileSpec *fileSpec, short *fileRef)
 {
     return Files_OpenFileByPath(fileSpec->fileData.file.volumeRef, fileSpec->fileData.file.directoryId,
                                 fileSpec->fileData.file.name, 1, fileRef);
 }
 
-SInt16 CompilerTools_GetFileType(CWFileSpec *arguments, UInt32 *output)
+SInt16 COS_FileGetType(CWFileSpec *arguments, UInt32 *output)
 {
     FileIdentifierInfo resultData;
     SInt16 result;
@@ -113,48 +113,48 @@ SInt16 CompilerTools_GetFileType(CWFileSpec *arguments, UInt32 *output)
     return result;
 }
 
-short CompilerTools_GetFileSize(short fileRef, SInt32 *size)
+short COS_FileGetSize(short fileRef, SInt32 *size)
 {
     return Files_GetSize(fileRef, size);
 }
 
-SInt16 CompilerTools_ReadFile(SInt16 first, void *second, SInt32 third)
+SInt16 COS_FileRead(SInt16 first, void *second, SInt32 third)
 {
     return Files_Read(first, &third, second);
 }
 
-SInt16 CompilerTools_Write(SInt16 first, void *second, SInt32 third)
+SInt16 COS_FileWrite(SInt16 first, void *second, SInt32 third)
 {
     return Files_Write(first, &third, second);
 }
 
-short fn_004432f0(short value, long *result)
+short COS_FileGetPos(short value, long *result)
 {
     return Files_Tell(value, result);
 }
 
-SInt16 CompilerTools_SetFilePosition(SInt16 refNum, SInt32 position)
+SInt16 COS_FileSetPos(SInt16 refNum, SInt32 position)
 {
     return Files_SetPosition(refNum, 1, position);
 }
 
-void CompilerTools_CloseFile(short handleIndex)
+void COS_FileClose(short handleIndex)
 {
     Files_Close(handleIndex);
 }
 
-void CompilerTools_MakeCWFileSpecFromPString(void *result, unsigned char *name)
+void COS_FileSetFSSpec(void *result, unsigned char *name)
 {
     OSSpec spec;
     char path[256];
 
     memcpy(path, name + 1, *name);
     path[*name] = 0;
-    make_osspec_from_path(path, &spec, NULL);
-    MacSpecs_MakeCWFileSpecFromString(&spec, (CWFileSpec *)result);
+    OS_MakeSpec(path, &spec, NULL);
+    OS_OSSpec_To_FSSpec(&spec, (CWFileSpec *)result);
 }
 
-void CompilerTools_GetPFileFields(CWFileSpec *record, unsigned short *tag, SInt32 *value, void *data)
+void COS_FileGetFSSpecInfo(CWFileSpec *record, unsigned short *tag, SInt32 *value, void *data)
 {
     if (tag != NULL) {
         *tag = record->fileData.file.volumeRef;
@@ -181,7 +181,7 @@ void resolve_file_name_to_pascal_string(short category, int recordId, void *inpu
     }
 }
 
-void CompilerTools_ResolveFileNameToCString(void *destination, CPrepFileInfo *record, SInt32 *result)
+void COS_FileGetPathName(void *destination, CPrepFileInfo *record, SInt32 *result)
 {
     RecordQuery query;
     if (result) {

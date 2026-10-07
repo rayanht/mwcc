@@ -7,16 +7,16 @@
 extern "C" {
 #endif
 
-/* The current scope, saved while another is entered (CScope_SetFunctionScope, BE_elf_SaveAndSetClassScope, BE_elf_SaveScopeAndEnterClass, BE_elf_SaveAndSetScope) and put
+/* The current scope, saved while another is entered (CScope_SetFunctionScope, CScope_SetClassDefScope, CScope_SetClassScope, CScope_SetNameSpaceScope) and put
    back by CScope_RestoreScope. */
 #pragma options align = mac68k
 struct CScopeSave {
-    struct NameSpace *current;      /* 0x00: BE_elf_SaveScope saves currentNameSpace. */
-    struct TypeClass *currentclass; /* 0x04: BE_elf_SaveScope saves data_00588040. */
-    struct Object *currentfunc;     /* 0x08: BE_elf_SaveScope saves data_00588238. */
-    UInt8 is_member_func;           /* 0x0c: BE_elf_SaveScope saves data_005884f8. */
+    struct NameSpace *current;      /* 0x00: CScope_GetScope saves cscope_current. */
+    struct TypeClass *currentclass; /* 0x04: CScope_GetScope saves cscope_currentclass. */
+    struct Object *currentfunc;     /* 0x08: CScope_GetScope saves cscope_currentfunc. */
+    UInt8 is_member_func;           /* 0x0c: CScope_GetScope saves cscope_is_member_func. */
     UInt8 trailingPadding
-        [3]; /* 0x0d: no CScopeSave user reads or writes these bytes; BE_elf_SaveScope saves only the four preceding members. */
+        [3]; /* 0x0d: no CScopeSave user reads or writes these bytes; CScope_GetScope saves only the four preceding members. */
 };
 #pragma options align = reset
 #pragma options align = mac68k
@@ -60,9 +60,9 @@ extern ObjectList *remove_dalias_objects(NameSpaceObjectList *list);
 extern Boolean CScope_FindTypeName(NameSpace *arg0, HashNameNode *arg1, NameResult *arg2);
 extern Type *CScope_GetTagType(NameSpace *nspace, HashNameNode *name);
 extern void CScope_DefineTypeTag(NameSpace *ns, HashNameNode *arg2, Type *arg3);
-extern NameSpaceObjectList *CScope_NextNameSpaceObjectList(CScopeObjectIterator *state);
-extern Object *CScope_NextObject(CScopeObjectIterator *s);
-extern int CScope_InitScopeSearch(CScopeObjectIterator *save, NameSpace *obj);
+extern NameSpaceObjectList *CScope_NextObjectIteratorObjectList(CScopeObjectIterator *state);
+extern Object *CScope_NextObjectIteratorObject(CScopeObjectIterator *s);
+extern int CScope_InitObjectIterator(CScopeObjectIterator *save, NameSpace *obj);
 extern Boolean CScope_PossibleTypeName(HashNameNode *arg);
 extern NameSpaceObjectList *CScope_FindObjectList(NameResult *result, HashNameNode *arg);
 extern Boolean CScope_ParseElaborateName(NameResult *s);
@@ -116,7 +116,7 @@ extern void CScope_ParseNameSpaceAlias(HashNameNode *name);
 extern void CScope_RestoreScope(CScopeSave *save);
 extern void CScope_SetMethodScope(Object *cls, TypeClass *ns, unsigned char flag, CScopeSave *save);
 extern void CScope_SetFunctionScope(Object *function, CScopeSave *saved);
-extern UInt8 data_005884f8;
+extern UInt8 cscope_is_member_func;
 struct HashNameNode;
 struct HashNameNode;
 struct NameSpace;

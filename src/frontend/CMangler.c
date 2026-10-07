@@ -101,10 +101,10 @@ HashNameNode *get_object_link_name(Object *object)
         mangle_qualified_name(scope->parent, scope->name->name);
     }
     AppendGListByte(&data_00583548, 0);
-    fn_00443190(data_00583548.data);
+    COS_LockHandle(data_00583548.data);
     buffer = data_00583548.data;
     result = GetHashNameNode(*buffer);
-    fn_004431b0(data_00583548.data);
+    COS_UnlockHandle(data_00583548.data);
     return result;
 }
 
@@ -151,10 +151,10 @@ HashNameNode *CMangler_GetCovariantFunctionName(Object *object, Type *type)
     appendMangledName((unsigned char *)"@@");
     mangle_type(type, 0);
     AppendGListByte(&data_00583548, 0);
-    fn_00443190(data_00583548.data);
+    COS_LockHandle(data_00583548.data);
     buffer = data_00583548.data;
     result = GetHashNameNode(*buffer);
-    fn_004431b0(data_00583548.data);
+    COS_UnlockHandle(data_00583548.data);
     return result;
 }
 
@@ -170,15 +170,15 @@ HashNameNode *CMangler_GetLinkName(Object *obj)
     if (is_pascal_object(obj) && (nspace == NULL || nspace->theclass == NULL))
         return obj->name;
     if ((obj->qual & Q_MANGLE_NAME) != 0 &&
-        (memcmp("main", obj->name->name, 5) != 0 || obj->nspace != registration_context)) {
+        (memcmp("main", obj->name->name, 5) != 0 || obj->nspace != cscope_root)) {
         mangle_function_name(obj->name, nspace, obj->type);
         AppendGListByte(&data_00583548, 0);
     } else {
         return obj->name;
     }
-    fn_00443190(data_00583548.data);
+    COS_LockHandle(data_00583548.data);
     result = GetHashNameNode(*data_00583548.data);
-    fn_004431b0(data_00583548.data);
+    COS_UnlockHandle(data_00583548.data);
     return (HashNameNode *)result;
 }
 
@@ -190,10 +190,10 @@ HashNameNode *CMangler_ConversionFuncName(Type *type, UInt32 qual)
     CompilerTools_AppendGListString(&data_00583548, "__op");
     mangle_type(type, qual);
     AppendGListByte(&data_00583548, 0);
-    fn_00443190(data_00583548.data);
+    COS_LockHandle(data_00583548.data);
     buffer = data_00583548.data;
     name = GetHashNameNode(*buffer);
-    fn_004431b0(data_00583548.data);
+    COS_UnlockHandle(data_00583548.data);
     return name;
 }
 
@@ -582,7 +582,7 @@ HashNameNode *CMangler_TemplateInstanceName(HashNameNode *name, TemplArg *list)
             if (expression->rtype->type != TYPETEMPLDEPEXPR) {
                 switch (expression->type) {
                     case EINTCONST:
-                        CExpr2_FormatCInt64Decimal(decimal, expression->data.intval);
+                        CInt64_PrintDec(decimal, expression->data.intval);
                         CompilerTools_AppendGListString(&data_00583548, decimal);
                         break;
                     case EOBJREF:
@@ -605,10 +605,10 @@ HashNameNode *CMangler_TemplateInstanceName(HashNameNode *name, TemplArg *list)
 
     AppendGListByte(&data_00583548, '>');
     AppendGListByte(&data_00583548, 0);
-    fn_00443190(data_00583548.data);
+    COS_LockHandle(data_00583548.data);
     buffer = data_00583548.data;
     result = GetHashNameNode(*buffer);
-    fn_004431b0(data_00583548.data);
+    COS_UnlockHandle(data_00583548.data);
     return result;
 }
 
@@ -658,10 +658,10 @@ HashNameNode *CMangler_ThunkName(Object *input, int offset, int adjustment, int 
     }
     CompilerTools_AppendGListString(&data_00583548, buffer);
     AppendGListName(&data_00583548, name->name);
-    fn_00443190(data_00583548.data);
+    COS_LockHandle(data_00583548.data);
     nameBuffer = data_00583548.data;
     result = GetHashNameNode(*nameBuffer);
-    fn_004431b0(data_00583548.data);
+    COS_UnlockHandle(data_00583548.data);
     return result;
 }
 
@@ -674,10 +674,10 @@ HashNameNode *CMangler_RTTIObjectName(Type *type, unsigned int flags)
     CompilerTools_AppendGListString(&data_00583548, "__RTTI__");
     mangle_type(type, flags);
     AppendGListByte(&data_00583548, 0);
-    fn_00443190(data_00583548.data);
+    COS_LockHandle(data_00583548.data);
     buffer = data_00583548.data;
     name = GetHashNameNode(*buffer);
-    fn_004431b0(data_00583548.data);
+    COS_UnlockHandle(data_00583548.data);
     return name;
 }
 
@@ -695,11 +695,11 @@ HashNameNode *CMangler_VTableName(TypeClass *entry)
         mangle_qualified_name(entry->nspace->parent, entry->nspace->name->name);
     AppendGListByte(&data_00583548, 0);
     buffer = data_00583548.data;
-    fn_00443190(buffer);
+    COS_LockHandle(buffer);
     current = data_00583548.data;
     name = GetHashNameNode(*current);
     resultBuffer = data_00583548.data;
-    fn_004431b0(resultBuffer);
+    COS_UnlockHandle(resultBuffer);
     return name;
 }
 

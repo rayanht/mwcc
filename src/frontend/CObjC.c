@@ -78,7 +78,7 @@ static inline Type *FindNamedPointerType(char *name, Boolean required)
     NameSpaceObjectList *node;
     Type *t;
 
-    node = CScope_FindName(registration_context, GetHashNameNode(name));
+    node = CScope_FindName(cscope_root, GetHashNameNode(name));
     if (node != NULL && node->object->otype == OT_TYPE) {
         if ((t = OBJ_TYPE(node->object)->type)->type == TYPEPOINTER)
             return t;
@@ -141,9 +141,9 @@ ENode *CDecl_ParseSelectorExpression(void)
             }
         }
         AppendGListByte(&data_00583548, 0);
-        fn_00443190(data_00583548.data);
+        COS_LockHandle(data_00583548.data);
         name = GetHashNameNode(*data_00583548.data);
-        fn_004431b0(data_00583548.data);
+        COS_UnlockHandle(data_00583548.data);
 
         if (selector_hash == NULL)
             entry = NULL;
@@ -210,7 +210,7 @@ static inline TypeClass *fn_00504c90_inline1(void)
     NameSpaceObjectList *v1;
     TypeClass *v3;
     v0 = GetHashNameNode("NSConstantString");
-    v1 = CScope_FindName(registration_context, v0);
+    v1 = CScope_FindName(cscope_root, v0);
     if ((int)v1 != 0 && ((ObjType *)v1->object)->otype == 1) {
         if ((v3 = (TypeClass *)((ObjType *)v1->object)->type)->type == 5 && v3->objcinfo != NULL) {
             return v3;
@@ -324,7 +324,7 @@ static inline Type *FindNamedPointerType_504fb0(char *name, Boolean required)
     NameSpaceObjectList *node;
     Type *t;
 
-    node = CScope_FindName(registration_context, GetHashNameNode(name));
+    node = CScope_FindName(cscope_root, GetHashNameNode(name));
     if (node != NULL && node->object->otype == OT_TYPE) {
         if ((t = OBJ_TYPE(node->object)->type)->type == TYPEPOINTER)
             return t;
@@ -390,18 +390,18 @@ ENode *CObjC_ParseMessageExpression(void)
             if (memcmp(data_00587fa0->name, "super", 6) == 0) {
                 case 0x181:
                     receiver = CClass_CreateThisSelfExpr();
-                    if (receiver == NULL || data_00588040->bases == NULL) {
+                    if (receiver == NULL || cscope_currentclass->bases == NULL) {
                         CError_ReportError(ERR_ILLEGAL_USE_SUPER);
                         receiver = nullnode();
                     } else {
-                        receiverClass = data_00588040->bases->base;
+                        receiverClass = cscope_currentclass->bases->base;
                         isSuper = 1;
                     }
-                    receiverMode = !data_005884f8 ? (Boolean)1 : (Boolean)0;
+                    receiverMode = !cscope_is_member_func ? (Boolean)1 : (Boolean)0;
                     tk = CPrepTokenizer_GetNextToken();
                     break;
             }
-            found = CScope_FindName(registration_context, data_00587fa0);
+            found = CScope_FindName(cscope_root, data_00587fa0);
             if (found != NULL && OBJ_BASE(found->object)->otype == OT_TYPE &&
                 (receiverClass = TYPE_CLASS(OBJ_TYPE(found->object)->type))->type == TYPECLASS &&
                 receiverClass->objcinfo != NULL) {
@@ -422,7 +422,7 @@ ENode *CObjC_ParseMessageExpression(void)
                     receiver = nullnode();
                     receiverMode = 2;
                 } else {
-                    if (data_00588040 == TYPE_CLASS(TPTR_TARGET(receiver->rtype)) && data_005884f8 == 0 &&
+                    if (cscope_currentclass == TYPE_CLASS(TPTR_TARGET(receiver->rtype)) && cscope_is_member_func == 0 &&
                         receiver->type == EINDIRECT && receiver->data.monadic->type == EOBJREF &&
                         receiver->data.monadic->data.objref->name == this_self_name)
                         receiverMode = 1;
@@ -935,7 +935,7 @@ void parse_class_interface_or_implementation(void)
             return;
         }
         name = data_00587fa0;
-        lookup = CScope_FindName(registration_context, name);
+        lookup = CScope_FindName(cscope_root, name);
         if ((superclass = CObjC_FindClass(lookup, name)) != NULL) {
             if (superclass->flags & CLASS_COMPLETED) {
                 if (!isComplete) {
@@ -1454,7 +1454,7 @@ Object *CObjC_GetProtocolInfo(CRec *protocol)
 
     if (protocol->info == NULL) {
         HashNameNode *protocolName = GetHashNameNode("Protocol");
-        NameSpaceObjectList *objects = CScope_FindName(registration_context, protocolName);
+        NameSpaceObjectList *objects = CScope_FindName(cscope_root, protocolName);
         if (objects == NULL || objects->object->otype != OT_TYPE ||
             (protocolClass = (TypeClass *)((ObjType *)objects->object)->type)->type != TYPECLASS ||
             protocolClass->objcinfo == NULL) {
@@ -1746,8 +1746,8 @@ Object *create_method_list_object(TypeClass *owner, CRec *category, MethRec *met
 
                         savedState = copts.cplusplus;
                         copts.cplusplus = 0;
-                        savedContext = currentNameSpace;
-                        currentNameSpace = registration_context;
+                        savedContext = cscope_current;
+                        cscope_current = cscope_root;
                         function = CParser_NewFunctionObject(NULL);
                         function->nspace = owner->nspace;
                         functionType = get_method_ftype(method);
@@ -1756,7 +1756,7 @@ Object *create_method_list_object(TypeClass *owner, CRec *category, MethRec *met
                         function->u.func.linkname = function->name;
                         function->sclass = TK_STATIC;
                         method->function = function;
-                        currentNameSpace = savedContext;
+                        cscope_current = savedContext;
                         copts.cplusplus = savedState;
                     }
                     relocation->obj = method->function;
@@ -2151,8 +2151,8 @@ void parse_method_definition(TypeClass *object, CRec *kind, MethRec **methods)
     if (method->function == NULL) {
         savedCPlusPlus = copts.cplusplus;
         copts.cplusplus = 0;
-        savedNameSpace = currentNameSpace;
-        currentNameSpace = registration_context;
+        savedNameSpace = cscope_current;
+        cscope_current = cscope_root;
         newFunction = CParser_NewFunctionObject(NULL);
         newFunction->nspace = object->nspace;
         functionType = get_method_ftype(method);
@@ -2161,7 +2161,7 @@ void parse_method_definition(TypeClass *object, CRec *kind, MethRec **methods)
         newFunction->u.func.linkname = newFunction->name;
         newFunction->sclass = TK_STATIC;
         method->function = newFunction;
-        currentNameSpace = savedNameSpace;
+        cscope_current = savedNameSpace;
         copts.cplusplus = savedCPlusPlus;
     }
     function = method->function;
@@ -2306,7 +2306,7 @@ inline Type *FindIdType(void)
     NameSpaceObjectList *node;
     Type *t;
 
-    node = CScope_FindName(registration_context, GetHashNameNode("id"));
+    node = CScope_FindName(cscope_root, GetHashNameNode("id"));
     if (node != NULL && OBJ_TYPE(node->object)->otype == OT_TYPE) {
         t = OBJ_TYPE(node->object)->type;
         if (t->type == TYPEPOINTER)
@@ -2370,7 +2370,7 @@ static inline TypeClass *find_objc_class(HashNameNode *name)
     NameSpaceObjectList *list;
     TypeClass *type;
 
-    list = CScope_FindName(registration_context, name);
+    list = CScope_FindName(cscope_root, name);
     if (list != NULL && OBJ_BASE(list->object)->otype == OT_TYPE &&
         (type = (TypeClass *)OBJ_TYPE(list->object)->type)->type == TYPECLASS && type->objcinfo != NULL)
         return type;
@@ -2568,9 +2568,9 @@ HashNameNode *CObjC_00508810(TypeClass *obj, CRec *ns, MethRec *info)
             AppendGListByte(&data_00583548, 0x3a);
     }
     AppendGListName(&data_00583548, "]");
-    fn_00443190(data_00583548.data);
+    COS_LockHandle(data_00583548.data);
     name = GetHashNameNode(*data_00583548.data);
-    fn_004431b0(data_00583548.data);
+    COS_UnlockHandle(data_00583548.data);
     return name;
 }
 
@@ -2664,7 +2664,7 @@ static inline Type *find_named_pointer_type(char *name, Boolean required)
     NameSpaceObjectList *node;
     Type *t;
 
-    node = CScope_FindName(registration_context, GetHashNameNode(name));
+    node = CScope_FindName(cscope_root, GetHashNameNode(name));
     if (node != NULL && node->object->otype == OT_TYPE) {
         if ((t = OBJ_TYPE(node->object)->type)->type == TYPEPOINTER)
             return t;
@@ -2847,7 +2847,7 @@ void CObjC_ConvertKeywordToIdentifier(void)
 TypeClass *find_or_create_objc_class(HashNameNode *name)
 {
     TypeClass *classType;
-    NameSpaceObjectList *found = CScope_FindName(registration_context, name);
+    NameSpaceObjectList *found = CScope_FindName(cscope_root, name);
     if (found != NULL) {
         if (found->object->otype != OT_TYPE ||
             (classType = (TypeClass *)((ObjType *)found->object)->type)->type != TYPECLASS ||
@@ -2862,7 +2862,7 @@ TypeClass *find_or_create_objc_class(HashNameNode *name)
         Object *metaclassObject;
         Object *classObject;
         memclrw(info, sizeof(*info) + sizeof(UInt16));
-        classType = CDecl_DefineClass(registration_context, name, NULL, 2, 1, 1);
+        classType = CDecl_DefineClass(cscope_root, name, NULL, 2, 1, 1);
         classType->flags |= CLASS_SINGLE_OBJECT;
         classType->objcinfo = info;
         classObject = CParser_NewCompilerDefDataObject();
@@ -2906,7 +2906,7 @@ static inline Type *lookup_named_pointer_type(char *name, Boolean required)
     NameSpaceObjectList *node;
     Type *t;
 
-    node = CScope_FindName(registration_context, GetHashNameNode(name));
+    node = CScope_FindName(cscope_root, GetHashNameNode(name));
     if (node != NULL && node->object->otype == OT_TYPE) {
         if ((t = OBJ_TYPE(node->object)->type)->type == TYPEPOINTER)
             return t;
@@ -2958,7 +2958,7 @@ static inline Type *find_id_type(Boolean required)
     NameSpaceObjectList *node;
     Type *t;
 
-    node = CScope_FindName(registration_context, GetHashNameNode("id"));
+    node = CScope_FindName(cscope_root, GetHashNameNode("id"));
     if (node != NULL && node->object->otype == OT_TYPE) {
         if ((t = OBJ_TYPE(node->object)->type)->type == TYPEPOINTER)
             return t;
@@ -3117,7 +3117,7 @@ Object *CObjCModern_GetOrCreateFunctionObject(char *identifier, char *identifier
 
     savedState = copts.cplusplus;
     name = GetHashNameNode(identifier);
-    found = CScope_FindObjectListInNameSpace(registration_context, name);
+    found = CScope_FindObjectListInNameSpace(cscope_root, name);
     if (found != NULL) {
         entry = found;
         object = entry->object;
@@ -3126,14 +3126,14 @@ Object *CObjCModern_GetOrCreateFunctionObject(char *identifier, char *identifier
         CError_ReportError(ERR_IDENTIFIER_REDECLARED, name);
     }
     copts.cplusplus = 0;
-    savedContext = currentNameSpace;
-    currentNameSpace = registration_context;
+    savedContext = cscope_current;
+    cscope_current = cscope_root;
     newObject = CParser_NewFunctionObject(NULL);
-    currentNameSpace = savedContext;
+    cscope_current = savedContext;
     newObject->type = (Type *)&data_0055d5e8;
     newObject->name = name;
     if (found == NULL)
-        CScope_AddObject(registration_context, name, (ObjBase *)newObject);
+        CScope_AddObject(cscope_root, name, (ObjBase *)newObject);
     copts.cplusplus = savedState;
     return newObject;
 }
@@ -3154,7 +3154,7 @@ Object *CObjCModern_GetSelectorReference(HashEntry *p)
         obj->sclass = TK_STATIC;
         obj->type = (Type *)&void_ptr;
         obj->section = 0xb;
-        if (CScope_FindObjectListInNameSpace(registration_context, obj->name))
+        if (CScope_FindObjectListInNameSpace(cscope_root, obj->name))
             CError_ReportError(ERR_OBJECT_REDEFINED, obj);
         else
             CScope_AddGlobalObject(obj);
@@ -3187,9 +3187,9 @@ HashEntry *CObjCModern_RegisterMethodSelector(MethRec *method)
             AppendGListByte(&data_00583548, ':');
         }
         AppendGListByte(&data_00583548, 0);
-        fn_00443190(data_00583548.data);
+        COS_LockHandle(data_00583548.data);
         name = GetHashNameNode(*data_00583548.data);
-        fn_004431b0(data_00583548.data);
+        COS_UnlockHandle(data_00583548.data);
     }
 
     if ((record = FindHashNode(name)) == NULL) {
@@ -3271,9 +3271,9 @@ HashEntry *CObjCModern_FindMessageArgumentHashEntry(struct MessageArgument *p)
             p = p->next;
         }
         AppendGListByte(&data_00583548, 0);
-        fn_00443190(data_00583548.data);
+        COS_LockHandle(data_00583548.data);
         node = GetHashNameNode(*data_00583548.data);
-        fn_004431b0(data_00583548.data);
+        COS_UnlockHandle(data_00583548.data);
     }
 
     if (selector_hash == NULL) {
@@ -3307,7 +3307,7 @@ Object *fn_00509c40(char *name, short kind)
         cached = cached->next;
     }
     object = CParser_NewCompilerDefDataObject();
-    object->nspace = registration_context;
+    object->nspace = cscope_root;
     object->name = CParser_GetUniqueName();
     length = strlen(name);
     object->type = CDecl_NewArrayType((Type *)&stchar, length + 1);

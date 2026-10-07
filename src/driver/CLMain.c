@@ -344,7 +344,7 @@ int CLMain_Initialize(int argc, char **argv)
     static char secret[8];
     char buf[260];
 
-    fn_004111c0(&argc, &argv);
+    OS_InitProgram(&argc, &argv);
     memset(&clState, 0, sizeof(clState));
     driver_options[0].name = secret;
     secret[7] = 0;
@@ -371,12 +371,12 @@ int CLMain_Initialize(int argc, char **argv)
         CLErrors_FatalError("Could not initialize resource strings");
     if (fn_0040a7c0() == 0)
         CLErrors_FatalError("Could not initialize built-in plugins");
-    if (MsDos_IsAbsolutePath(*argv) == 0)
+    if (OS_IsFullPath(*argv) == 0)
         clState.programName = *argv;
     else
-        clState.programName = CLProj_GetFileName(*argv);
+        clState.programName = OS_GetFileNamePtr(*argv);
 
-    if (CLFileOps_FindExecutable(buf, clState.programSpec.path.s) != 0)
+    if (OS_FindProgram(buf, clState.programSpec.path.s) != 0)
         CLErrors_EmitDiagnostic(2, buf);
     Resources_OpenResourceFile(&clState.programSpec);
     fn_00417750();

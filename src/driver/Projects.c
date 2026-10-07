@@ -100,7 +100,7 @@ void ToolHelpers_cc_PrintVersion(char includeValue)
         HPrintF(output, "\n");
         if (includeValue != 0) {
             HPrintF(output, "Please enter '%s %chelp' for information about options.\n\n",
-                    CLProj_GetFileName(*cmdline_environment->argv), *data_00587eec);
+                    OS_GetFileNamePtr(*cmdline_environment->argv), *data_00587eec);
         }
         ToolHelpers_cc_CallValuePairCallback(NULL, output);
         Memory_FreeHandle(output);
@@ -136,9 +136,9 @@ SInt32 ToolHelpers_cc_AddProjectEntry(OSSpec *path, SInt16 mode, char *name, Boo
     long *link;
     int error;
 
-    error = MacSpecs_MakeCWFileSpecFromString(path, fileSpec);
+    error = OS_OSSpec_To_FSSpec(path, fileSpec);
     if (error != 0) {
-        Targets_ReportOperatingSystemError(0x2c, error, CLProj_MakeRelativePath(path, NULL, data_005880e0, 0x104));
+        Targets_ReportOperatingSystemError(0x2c, error, OS_SpecToStringRelative(path, NULL, data_005880e0, 0x104));
         result = 0;
     } else {
         if (fileId == -2)
@@ -184,10 +184,10 @@ int ToolHelpers_cc_AddAccessPath(OSPathSpec *path, char use_first, int value, un
     FileOperationInfo info;
     OSSpec spec;
     struct QueryValues values;
-    CLProj_MakeOSSpecFromPath(path, NULL, 0, &spec);
-    status = MacSpecs_MakeCWFileSpecFromString(&spec, &info.file.fileReference);
+    OS_MakeSpecWithPath(path, NULL, 0, &spec);
+    status = OS_OSSpec_To_FSSpec(&spec, &info.file.fileReference);
     if (status != 0) {
-        Targets_ReportOperatingSystemError(45, status, fn_00412340(&spec.path, data_005880e0, 260));
+        Targets_ReportOperatingSystemError(45, status, OS_PathSpecToString(&spec.path, data_005880e0, 260));
         result = 0;
     } else {
         if (value == -2) {
@@ -263,7 +263,7 @@ void ToolHelpers_cc_CallFileInfoForDirectory(OSSpec *input)
     OSSpec spec;
     int result;
     spec.path = input->path;
-    MacSpecs_MakeCWFileSpecFromString(&spec, &body);
+    OS_OSSpec_To_FSSpec(&spec, &body);
     result = CWParserPluginsPrivate_CallFileInfo(pluginPrivateContext, &body);
     if (result != 0U) {
         DAT_00543380 = "CWParserSetOutputFileDirectory";

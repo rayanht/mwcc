@@ -50,8 +50,8 @@ void PPCError_FatalError(short diagnostic, ...)
     SInt32 diagnosticCode;
     SInt16 errorCode;
 
-    if (data_00588240 != NULL)
-        longjmp(data_00588240->jmpbuf, 1);
+    if (trychain != NULL)
+        longjmp(trychain->jmpbuf, 1);
 
     args = (va_list)&diagnostic + (((va_list)(&diagnostic + 1) - (va_list)&diagnostic + 3) / 4 * 4);
 
@@ -60,7 +60,7 @@ void PPCError_FatalError(short diagnostic, ...)
 
     errorCode = diagnosticCode;
 
-    CompilerTools_GetResourceCString(buffer, 10001, errorCode - 99);
+    COS_GetString(buffer, 10001, errorCode - 99);
     CError_FormatAndReportDiagnostic(diagnosticCode + 10001, buffer, args, 1, 0);
 
     if (data_005884fd != 0)
@@ -82,14 +82,14 @@ void PPCError_ReportDiagnostic(SInt32 diagnosticId, ...)
     SInt32 diagnosticCode;
     SInt16 errorCode;
 
-    if (data_00588240 != NULL) {
+    if (trychain != NULL) {
         return;
     }
     args = (va_list)&diagnosticId + (((va_list)(&diagnosticId + 1) - (va_list)&diagnosticId) + 3) / 4 * 4;
     diagnosticCode = diagnosticId;
     PPCError_CheckDiagnosticCode(diagnosticCode);
     errorCode = diagnosticCode;
-    CompilerTools_GetResourceCString(buf, 10001, errorCode - 99);
+    COS_GetString(buf, 10001, errorCode - 99);
     CError_FormatAndReportDiagnostic(diagnosticCode + 10001, buf, args, 0, 1);
 }
 void PPCError_ReportError(SInt32 error, ...)
@@ -99,15 +99,15 @@ void PPCError_ReportError(SInt32 error, ...)
     SInt32 diagnosticCode;
     SInt16 errorCode;
 
-    if (data_00588240 != NULL)
-        longjmp(data_00588240->jmpbuf, 1);
+    if (trychain != NULL)
+        longjmp(trychain->jmpbuf, 1);
 
     args = (char *)&error + (((char *)(&error + 1) - (char *)&error + 3) / 4 * 4);
     diagnosticCode = error;
     CError_ASSERT(40, (SInt16)diagnosticCode >= 100 && (SInt16)diagnosticCode < 178);
 
     errorCode = diagnosticCode;
-    CompilerTools_GetResourceCString(buffer, 10001, errorCode - 99);
+    COS_GetString(buffer, 10001, errorCode - 99);
     CError_FormatAndReportDiagnostic(diagnosticCode + 10001, buffer, args, 0, 0);
 
     if (data_005884fd != 0)

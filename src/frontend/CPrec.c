@@ -105,8 +105,8 @@ void CPrec_LoadPrecompiledHeader(short file, UInt8 *buffer)
     if (data_00581c1e == NULL) {
         prec_header = galloc(sizeof(struct CPrecHeader));
         header = prec_header;
-        if (CompilerTools_SetFilePosition(precompiled_file, 0) != 0 ||
-            CompilerTools_ReadFile(precompiled_file, header, sizeof(*header)) != 0)
+        if (COS_FileSetPos(precompiled_file, 0) != 0 ||
+            COS_FileRead(precompiled_file, header, sizeof(*header)) != 0)
             CError_FatalError(ERR_ILLEGAL_DATA_PRECOMPILED_HEADER);
     } else {
         header = (struct CPrecHeader *)data_00581c1e;
@@ -154,7 +154,7 @@ void CPrec_LoadPrecompiledHeader(short file, UInt8 *buffer)
     restore_macro_lists();
     patch_buffered_token_locations();
 
-    CError_ASSERT(4845, registration_context->is_hash != 0);
+    CError_ASSERT(4845, cscope_root->is_hash != 0);
     {
         SInt32 namespaceOffset;
         UInt8 *namespaceBase;
@@ -162,7 +162,7 @@ void CPrec_LoadPrecompiledHeader(short file, UInt8 *buffer)
         SInt32 *namespaceOffsets;
         NameSpaceName **namespaceEntries;
 
-        registration_context->names = prec_header->nameCount, namespaceEntries = registration_context->data.hash;
+        cscope_root->names = prec_header->nameCount, namespaceEntries = cscope_root->data.hash;
         namespaceOffsets = prec_header->namespaceNameOffsets;
         namespaceBase = precompiled_header_base;
         namespaceIndex = 0;
@@ -178,9 +178,9 @@ void CPrec_LoadPrecompiledHeader(short file, UInt8 *buffer)
     }
 
     if (!prec_header->usingsOffset)
-        registration_context->usings = NULL;
+        cscope_root->usings = NULL;
     else
-        registration_context->usings = (struct NameSpaceList *)(precompiled_header_base + prec_header->usingsOffset);
+        cscope_root->usings = (struct NameSpaceList *)(precompiled_header_base + prec_header->usingsOffset);
 
     if (!prec_header->classExtensionOffset)
         class_template_list = NULL;
@@ -256,7 +256,7 @@ void CPrec_LoadPrecompiledHeader(short file, UInt8 *buffer)
     precompiled_file = 0;
     if (precompiled_buffer.data != NULL)
         FreeGList(&precompiled_buffer);
-    currentNameSpace = registration_context;
+    cscope_current = cscope_root;
     if (!CParser_ReInitRuntimeObjects(1))
         CError_FatalError(ERR_ILLEGAL_DATA_PRECOMPILED_HEADER);
     CPrep_RegisterPredefinedMacros();
@@ -315,8 +315,8 @@ void restore_macro_lists(void)
 
 static void CPrec_ReadData(SInt32 offset, void *buffer, SInt32 size)
 {
-    if (CompilerTools_SetFilePosition(precompiled_file, offset) != 0 ||
-        CompilerTools_ReadFile(precompiled_file, buffer, size) != 0)
+    if (COS_FileSetPos(precompiled_file, offset) != 0 ||
+        COS_FileRead(precompiled_file, buffer, size) != 0)
         CError_FatalError(ERR_ILLEGAL_DATA_PRECOMPILED_HEADER);
 }
 
@@ -360,8 +360,8 @@ void patch_buffered_token_locations(void)
 
 static void read_precompiled_header_data_at_offset(SInt32 offset, void *buffer, SInt32 size)
 {
-    if (CompilerTools_SetFilePosition(precompiled_file, offset) != 0 ||
-        CompilerTools_ReadFile(precompiled_file, buffer, size) != 0)
+    if (COS_FileSetPos(precompiled_file, offset) != 0 ||
+        COS_FileRead(precompiled_file, buffer, size) != 0)
         CError_FatalError(ERR_ILLEGAL_DATA_PRECOMPILED_HEADER);
 }
 
@@ -398,8 +398,8 @@ UInt8 *apply_object_patches(void)
 
 static void read_precompiled_header_data(SInt32 offset, void *buffer, SInt32 size)
 {
-    if (CompilerTools_SetFilePosition(precompiled_file, offset) != 0 ||
-        CompilerTools_ReadFile(precompiled_file, buffer, size) != 0)
+    if (COS_FileSetPos(precompiled_file, offset) != 0 ||
+        COS_FileRead(precompiled_file, buffer, size) != 0)
         CError_FatalError(ERR_ILLEGAL_DATA_PRECOMPILED_HEADER);
 }
 
@@ -463,8 +463,8 @@ void decompress_precompiled_header(void)
         precompiled_header_base = dst;
         src = dst + size - prec_header->compressedSize;
         csize = prec_header->compressedSize;
-        if (CompilerTools_SetFilePosition(precompiled_file, prec_header->dataOffset) != 0 ||
-            CompilerTools_ReadFile(precompiled_file, src, csize) != 0)
+        if (COS_FileSetPos(precompiled_file, prec_header->dataOffset) != 0 ||
+            COS_FileRead(precompiled_file, src, csize) != 0)
             CError_FatalError(ERR_ILLEGAL_DATA_PRECOMPILED_HEADER);
     } else {
         dst = galloc(prec_header->fileSize);
@@ -506,14 +506,14 @@ int CPrec_WritePrecompiledFile(void)
         return status;
     }
     messageKind = 3;
-    error = fn_00443200(&fileInfo.info, &precompiled_file, copts.precompiledHeaderCreator,
+    error = COS_FileNew(&fileInfo.info, &precompiled_file, copts.precompiledHeaderCreator,
                         copts.precompiledHeaderFileTypes[0]);
     if (error == 0) {
         messageKind = 4;
         error = write_precompiled_file();
     }
     if (precompiled_file != 0) {
-        CompilerTools_CloseFile(precompiled_file);
+        COS_FileClose(precompiled_file);
         precompiled_file = 0;
     }
     if (precompiled_buffer.data != NULL) {
@@ -541,7 +541,7 @@ static inline SInt16 align_output(SInt16 handle, SInt32 *position)
         return 0;
     count = 8 - (*position & 7);
     memclrw(padding, 8);
-    result = CompilerTools_Write(handle, padding, count);
+    result = COS_FileWrite(handle, padding, count);
     *position += count;
     return result;
 }
@@ -588,7 +588,7 @@ SInt16 write_precompiled_file(void)
     prec_header->objcState = data_00587f6c;
     prec_header->objcStringConstantCount = objc_string_constant_count;
 
-    error = CompilerTools_Write(precompiled_file, prec_header, 0x50e8);
+    error = COS_FileWrite(precompiled_file, prec_header, 0x50e8);
     if (error)
         return error;
 
@@ -600,7 +600,7 @@ SInt16 write_precompiled_file(void)
     prec_header->fileSize = prec_position;
     prec_header->dataOffset = position;
 
-    error = fn_004432f0(precompiled_file, &position);
+    error = COS_FileGetPos(precompiled_file, &position);
     if (error)
         return error;
 
@@ -610,7 +610,7 @@ SInt16 write_precompiled_file(void)
     prec_header->relocationOffset = position;
 
     if (prec_header->relocationCount != 0) {
-        error = CompilerTools_Write(precompiled_file, *precompiled_buffer.data, precompiled_buffer.size);
+        error = COS_FileWrite(precompiled_file, *precompiled_buffer.data, precompiled_buffer.size);
         if (error)
             return error;
         position += precompiled_buffer.size;
@@ -624,7 +624,7 @@ SInt16 write_precompiled_file(void)
     prec_header->objectPatchSize = precompiled_buffer.size;
     prec_header->objectPatchOffset = position;
 
-    error = CompilerTools_Write(precompiled_file, *precompiled_buffer.data, precompiled_buffer.size);
+    error = COS_FileWrite(precompiled_file, *precompiled_buffer.data, precompiled_buffer.size);
     if (error)
         return error;
 
@@ -647,17 +647,17 @@ SInt16 write_precompiled_file(void)
         prec_position += 4;
         prec_header->sourcePatchSize = precompiled_buffer.size;
         prec_header->sourcePatchOffset = position;
-        error = CompilerTools_Write(precompiled_file, *precompiled_buffer.data, precompiled_buffer.size);
+        error = COS_FileWrite(precompiled_file, *precompiled_buffer.data, precompiled_buffer.size);
         if (error)
             return error;
         position += precompiled_buffer.size;
     }
 
-    error = CompilerTools_SetFilePosition(precompiled_file, 0);
+    error = COS_FileSetPos(precompiled_file, 0);
     if (error)
         return error;
 
-    error = CompilerTools_Write(precompiled_file, prec_header, 0x50e8);
+    error = COS_FileWrite(precompiled_file, prec_header, 0x50e8);
     if (error)
         return error;
 
@@ -687,10 +687,10 @@ static SInt16 CPrec_Flush(void)
         char **buffer;
         CPrec_Pad();
         flushed_size += precompiled_buffer.size;
-        fn_00443190(precompiled_buffer.data);
+        COS_LockHandle(precompiled_buffer.data);
         buffer = precompiled_buffer.data;
         r = encode_zero_runs(*buffer, precompiled_buffer.size);
-        fn_004431b0(precompiled_buffer.data);
+        COS_UnlockHandle(precompiled_buffer.data);
         precompiled_buffer.size = 0;
         return r;
     }
@@ -1043,7 +1043,7 @@ short encode_zero_runs(char *data, int size)
                 }
             }
         } while (cursor < end && outputSize <= 0x800);
-        result = CompilerTools_Write(precompiled_file, buffer, outputSize);
+        result = COS_FileWrite(precompiled_file, buffer, outputSize);
         if (result)
             return result;
         if (cursor >= end)
@@ -1238,9 +1238,9 @@ static inline SInt16 flush(void)
     if (data_00581c28) {
         alignbuf();
         flushed_size += precompiled_buffer.size;
-        fn_00443190(precompiled_buffer.data);
+        COS_LockHandle(precompiled_buffer.data);
         err = encode_zero_runs(*precompiled_buffer.data, precompiled_buffer.size);
-        fn_004431b0(precompiled_buffer.data);
+        COS_UnlockHandle(precompiled_buffer.data);
         precompiled_buffer.size = 0;
     } else
         err = 0;
@@ -2645,9 +2645,9 @@ void serialize_namespace_usings_and_hash(void)
     SInt32 bucket;
     SInt32 nameOffset;
 
-    CError_ASSERT(3777, registration_context->is_hash);
+    CError_ASSERT(3777, cscope_root->is_hash);
 
-    if ((usingEntry = registration_context->usings) != NULL) {
+    if ((usingEntry = cscope_root->usings) != NULL) {
         if (data_00581c28) {
             while (prec_position & 3) {
                 AppendGListByte(&precompiled_buffer, 0);
@@ -2678,11 +2678,11 @@ void serialize_namespace_usings_and_hash(void)
             prec_header->usingsOffset = usingsOffset;
     }
     if (data_00581c28)
-        prec_header->nameCount = registration_context->names;
+        prec_header->nameCount = cscope_root->names;
 
     for (bucket = 0; bucket < 0x400; bucket++) {
-        if (registration_context->data.hash[bucket] != NULL) {
-            nameOffset = write_namespace_name(registration_context->data.hash[bucket], 1);
+        if (cscope_root->data.hash[bucket] != NULL) {
+            nameOffset = write_namespace_name(cscope_root->data.hash[bucket], 1);
             if (data_00581c28) {
                 if (data_00581c26 != 0)
                     return;
@@ -5397,7 +5397,7 @@ void build_global_pointer_entries(void)
     index = count = 0;
     for (;;) {
         if (!counting) {
-            entries[index].address = (UInt8 *)registration_context;
+            entries[index].address = (UInt8 *)cscope_root;
             index++;
         } else
             count++;
@@ -5775,7 +5775,7 @@ OLinkList *copy_relocation_list(OLinkList *p)
 void CExcept_Terminate(void)
 {
     if (precompiled_file != 0) {
-        CompilerTools_CloseFile(precompiled_file);
+        COS_FileClose(precompiled_file);
         precompiled_file = 0;
     }
     if (precompiled_buffer.data != NULL) {

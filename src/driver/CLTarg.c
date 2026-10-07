@@ -30,9 +30,9 @@ struct CLTarget *CLTarg_CreateTarget(char *targetName, int processor, int operat
     target->os = operatingSystem;
     target->targetKind = targetKind;
     OS_GetCWD(&target->outputDirectory);
-    if (!CLSegs_InitSegments(&target->lookupPaths))
+    if (!Segments_Initialize(&target->lookupPaths))
         CLIO_ReportAssertionFailure("Segments_Initialize(&targ->linkage.segs)", "CLTarg.c", 25);
-    if (!CLOverlays_Init(&target->overlays))
+    if (!Overlays_Initialize(&target->overlays))
         CLIO_ReportAssertionFailure("Overlays_Initialize(&targ->linkage.overlays)", "CLTarg.c", 28);
     initialized = CLFiles_AssertNonNullIndexedListLink(&target->files) &&
                   CLFiles_AssertNonNullIndexedListLink(&target->generatedFiles) &&

@@ -1056,7 +1056,7 @@ void InlineAsmPPC_Init(char mode)
 
     inlineAsmMode = mode;
     if (copts.catssupport != '\0' && copts.forcecatssupport == '\0') {
-        ObjGen_PPC_EABI_AddSectionAttribute(data_00588238, 1);
+        ObjGen_PPC_EABI_AddSectionAttribute(cscope_currentfunc, 1);
     }
     if (inlineAsmMode == '\0') {
         InlineAsmPPC_Initialize();

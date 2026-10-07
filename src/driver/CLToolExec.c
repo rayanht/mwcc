@@ -200,7 +200,7 @@ int CLToolExec_ExecuteLinker(Plugin *tool, UInt32 flags, DropinFileRecord *argum
     if ((flags & 0x48000000) == 0 && optsCompiler.linkerName[0] != 0)
         toolName = optsCompiler.linkerName;
 
-    if (CLFileOps_FindExecutable(toolName, &toolPath) != 0) {
+    if (OS_FindProgram(toolName, &toolPath) != 0) {
         strcpy(fallbackName, clState.programName);
         for (cursor = fallbackName; *cursor != 0; cursor++)
             *cursor = (char)tolower(*cursor);
@@ -223,7 +223,7 @@ int CLToolExec_ExecuteLinker(Plugin *tool, UInt32 flags, DropinFileRecord *argum
             }
         }
 
-        if (CLFileOps_FindExecutable(fallbackName, &toolPath) == 0) {
+        if (OS_FindProgram(fallbackName, &toolPath) == 0) {
             char *resolvedName = fallbackName;
             if (optsCmdLine.verbose != 0)
                 CLErrors_ForwardMessage(0x41, resolvedName, clState.programName);

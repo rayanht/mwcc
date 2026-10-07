@@ -23,7 +23,7 @@ void free_if_not_null(void *ptr)
     }
 }
 
-Boolean CLSegs_InitSegments(Segments *segments)
+Boolean Segments_Initialize(Segments *segments)
 {
     unsigned short segmentIndex;
     struct PayloadWithValue *segment;

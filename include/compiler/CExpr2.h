@@ -126,7 +126,7 @@ extern ENode *intconstnode(Type *valueType, SInt32 value);
 extern ENode *nullnode(void);
 extern ENode *CExpr2_NewESCOPEBEGINNode(Type *value, unsigned int withAuxiliary);
 extern unsigned char has_indirect_class_objref(ENode *expr, TypeClass *arg2);
-extern ENode *CExpr2_NewENEWEXCEPTIONARRAYNode(unsigned int value);
+extern ENode *CExpr_NewTemplDepENode(unsigned int value);
 extern unsigned int fn_0046cea0(void);
 extern void match_function_arguments(Object *signature, FuncArg *argument, ENodeList *objects, ArgMatch *value);
 extern ENode *CExpr_ConvertToIntegral(ENode *expr);

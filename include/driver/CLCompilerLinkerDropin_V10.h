@@ -17,7 +17,7 @@ struct DropinConfiguration {
     UInt32 values[4];
     UInt8 flag;
     UInt8 reserved1;
-    char *path; /* 0x1e: store_object_data reads a path string through make_osspec_from_path */
+    char *path; /* 0x1e: store_object_data reads a path string through OS_MakeSpec */
     UInt8 reserved2[8];
     UInt16 option;
     struct CWFileSpec *outputFileSpec; /* 0x2c: store_object_data passes outputFileSpec to MacSpecs_MakeOSSpec */

@@ -216,7 +216,7 @@ void create_main_file_object(void)
     CPrepCU *unit = (CPrepCU *)cprep_cu;
 
     savedFileSymInfo = copts.filesyminfo;
-    CompilerTools_GetPFileFields(&unit->mainFile, NULL, NULL, sourceName);
+    COS_FileGetFSSpecInfo(&unit->mainFile, NULL, NULL, sourceName);
     sprintf(objectName, "__%.*s", sourceName[0], sourceName + 1);
 
     cursor = &objectName[sourceName[0] + 1];

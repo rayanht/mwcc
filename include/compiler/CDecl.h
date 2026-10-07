@@ -39,7 +39,7 @@ struct DeclInfo {
     ENode *arrayBound;
     struct TypeClass *pendingClass;
     struct TemplArg *
-        expltargs; /* 0x2c: CTemplateNew_ParseTemplateArguments supplies the list; CDecl_CopyDeclInfoToNewFunc copies it with CTemplateTools_CopyCTStateElemList */
+        expltargs; /* 0x2c: CTemplateNew_ParseTemplateArguments supplies the list; CDecl_PackDeclInfo copies it with CTemplTool_MakeGlobalTemplArgCopy */
     struct TemplParam *
         templateParameters; /* 0x30: parse_function_template_declaration assigns its TemplParam *params before CDecl_ParseDeclarator */
     struct TemplateScopeState *templateScope;
@@ -106,8 +106,8 @@ extern ObjMemberVar *add_member_var(ClassLayout *declaration, TypeClass *cls, Ty
                                     HashNameNode *name, AccessType access);
 extern void parse_friend_declaration(struct TemplClass *cls);
 extern void CDecl_AddFriend(TypeClass *typeClass, Object *object, TypeClass *type);
-extern void CDecl_InitDeclInfoFromTemplateDeclarationData(DeclInfo *dst, PackedDeclInfo *src);
-extern unsigned char CDecl_CopyDeclInfoToNewFunc(PackedDeclInfo *destination, DeclInfo *source);
+extern void CDecl_UnpackDeclInfo(DeclInfo *dst, PackedDeclInfo *src);
+extern unsigned char CDecl_PackDeclInfo(PackedDeclInfo *destination, DeclInfo *source);
 extern Boolean check_qualified_identifier_or_operator(TypeClass *tclass, AccessType access);
 extern TypeMemberFunc *CDecl_NewTypeMemberFunc(TypeFunc *type, TypeClass *theclass, Boolean is_static, Boolean arg);
 extern void scan_inline_definition(Object *object, TypeClass *classType);
@@ -128,7 +128,7 @@ extern void CDecl_ScanDeclarator(DeclInfo *p);
 extern void parse_resolved_member_function_decl(DeclInfo *di, Boolean define);
 extern void CDecl_ScanStructDeclarator(BigDeclInfo *p);
 extern struct HashNameNode *unnamed_name;
-extern struct NameSpace *currentNameSpace;
+extern struct NameSpace *cscope_current;
 extern struct FileOffsetInfo member_foi;
 extern TypeIntegral stunsignedshort;
 extern TypeIntegral stunsignedchar;

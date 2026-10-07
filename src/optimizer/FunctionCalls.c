@@ -43,7 +43,7 @@
 #include "compiler/Switch.h"
 
 static SInt32 lbl_00574168 = 8;
-void FunctionCalls_PushObjectReferenceEntry(TemplStack *entry, TypeClass *tmclass, Object *object)
+void CTemplTool_PushInstance(TemplStack *entry, TypeClass *tmclass, Object *object)
 {
     if (tmclass) {
         entry->u.theclass = tmclass;
@@ -52,10 +52,10 @@ void FunctionCalls_PushObjectReferenceEntry(TemplStack *entry, TypeClass *tmclas
         entry->u.func = object;
         entry->is_func = 1;
     }
-    entry->next = object_reference_stack;
-    object_reference_stack = entry;
-    objectReferenceEntryCount += 1;
-    if (objectReferenceEntryCount >= 64)
+    entry->next = ctempl_curinstance;
+    ctempl_curinstance = entry;
+    ctempl_instdepth += 1;
+    if (ctempl_instdepth >= 64)
         CError_FatalError(ERR_TEMPLATE_TOO_COMPLEX_RECURSIVE);
 }
 

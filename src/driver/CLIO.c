@@ -526,7 +526,7 @@ char *make_source_position_carets(DiagnosticSourcePosition *sourcePosition)
 
 static inline char *formatDiagnosticPath(const char *path)
 {
-    return CLProj_MakeRelativePath((OSSpec *)path, NULL, data_005880e0, 260);
+    return OS_SpecToStringRelative((OSSpec *)path, NULL, data_005880e0, 260);
 }
 
 unsigned char nonmatching_plugin_with_clear_high_bit(Plugin *type)
@@ -642,16 +642,16 @@ void emit_formatted_diagnostic(Plugin *source, DiagnosticSourcePosition *diagnos
         if (data_0057edfc != 0 || (data_0057edfb != 0 && specs_equal != 0)) {
             if (specs_equal != 0) {
                 formatDiagnosticDetail(detail, "#%8s: %s\n", "File",
-                                       CLProj_MakeRelativePath(&data_0057ecb6, NULL, data_005880e0, 260));
+                                       OS_SpecToStringRelative(&data_0057ecb6, NULL, data_005880e0, 260));
             } else {
                 formatDiagnosticDetail(detail, "#%8s: %s\n", "In",
-                                       CLProj_MakeRelativePath(&data_0057ecb6, NULL, data_005880e0, 260));
+                                       OS_SpecToStringRelative(&data_0057ecb6, NULL, data_005880e0, 260));
             }
             emitDiagnosticText(kind, detail);
         }
         if (data_0057edfb != 0 && specs_equal == 0) {
             formatDiagnosticDetail(detail, "# %7s: %s\n", "From",
-                                   CLProj_MakeRelativePath(&cachedRecordSpec, NULL, data_005880e0, 260));
+                                   OS_SpecToStringRelative(&cachedRecordSpec, NULL, data_005880e0, 260));
             emitDiagnosticText(kind, detail);
         }
         if (data_0057edfc != 0 || data_0057edfb != 0) {
@@ -690,11 +690,11 @@ void format_and_print_message(Plugin *type, DiagnosticSourcePosition *obj, int m
     if (obj != NULL) {
         if (kind != 3) {
             message = mprintf(messageBuffer, sizeof(messageBuffer),
-                              "%s:%d:%s: ", CLProj_MakeRelativePath(&obj->file, NULL, data_005880e0, 0x104), obj->line,
+                              "%s:%d:%s: ", OS_SpecToStringRelative(&obj->file, NULL, data_005880e0, 0x104), obj->line,
                               diagnostic_level_names[kind]);
         } else {
             message = mprintf(messageBuffer, sizeof(messageBuffer),
-                              "%s:%d: ", CLProj_MakeRelativePath(&obj->file, NULL, data_005880e0, 0x104), obj->line);
+                              "%s:%d: ", OS_SpecToStringRelative(&obj->file, NULL, data_005880e0, 0x104), obj->line);
         }
     } else {
         if (kind != 5) {
@@ -741,7 +741,7 @@ void print_diagnostic_with_details(Plugin *unused, struct DiagnosticDetails *det
     if (details != NULL) {
         detailMessage = forward_format_arguments(buffer, sizeof(buffer), "\t", "%", details->formatValue);
         emit_formatted_message(diagnostic, "%s line %d%s\n",
-                               CLProj_MakeRelativePath((OSSpec *)details->text, NULL, data_005880e0, 260),
+                               OS_SpecToStringRelative((OSSpec *)details->text, NULL, data_005880e0, 260),
                                details->diagnosticValue, detailMessage);
         if (detailMessage != buffer) {
             free(detailMessage);

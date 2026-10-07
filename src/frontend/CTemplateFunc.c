@@ -244,7 +244,7 @@ Boolean match_template_function_args(Object *obj, DeduceInfo *state, FuncArg *ar
                 tempArg.params = nspace->params;
                 tempArg.args = entries;
                 resolvedQual = argumentQual;
-                resultType = matchType = CTemplateTools_ResolveType(&tempArg, argumentType, &resolvedQual);
+                resultType = matchType = CTemplTool_DeduceTypeCopy(&tempArg, argumentType, &resolvedQual);
                 if (resultType && !CExpr2_UpdateArgMatchScores(matchType, resolvedQual, exprs->node, &counts))
                     return 0;
             }
@@ -527,7 +527,7 @@ Boolean match_state_elem_arguments(TemplArg *a, TemplArg *b, TemplArg *r, char f
                 if (idx < 0)
                     return 0;
                 if (r[idx].is_deduced != 0) {
-                    if (!CTemplateTools_00517a40(b->data.paramdecl.expr, r[idx].data.paramdecl.expr))
+                    if (!CTemplTool_EqualExprTypes(b->data.paramdecl.expr, r[idx].data.paramdecl.expr))
                         return 0;
                 } else {
                     r[idx].data.paramdecl.expr = b->data.paramdecl.expr;
@@ -535,7 +535,7 @@ Boolean match_state_elem_arguments(TemplArg *a, TemplArg *b, TemplArg *r, char f
                     r[idx].is_deduced = 1;
                 }
             } else {
-                if (!CTemplateTools_00517a40(b->data.paramdecl.expr, a->data.paramdecl.expr))
+                if (!CTemplTool_EqualExprTypes(b->data.paramdecl.expr, a->data.paramdecl.expr))
                     return 0;
             }
         }
@@ -725,7 +725,7 @@ unsigned char match_candidate_to_template_args(Object *candidate, Object *templ)
         memclrw(&substitution, sizeof(substitution));
         substitution.params = templateInfo->params;
         substitution.args = bindingList;
-        deducedArg = CTemplateTools_005160b0(&substitution, ((TypeMemberFunc *)templ->type)->args);
+        deducedArg = CTemplTool_DeduceArgCopy(&substitution, ((TypeMemberFunc *)templ->type)->args);
         if (((TypeFunc *)templ->type)->flags & FUNC_METHOD) {
             TypeMemberFunc *memberType = (TypeMemberFunc *)templ->type;
             if (!memberType->is_static)
@@ -881,7 +881,7 @@ struct TemplFuncInstance *find_or_create_template_specialization(Object *func, T
         object->nspace = func->nspace;
         object->qual = func->qual | Q_MANGLE_NAME;
         object->name = CMangler_TemplateInstanceName(info->name, instance->args);
-        object->type = CTemplateTools_ResolveType(&local, func->type, &object->qual);
+        object->type = CTemplTool_DeduceTypeCopy(&local, func->type, &object->qual);
         if (object->type->type == TYPEFUNC) {
             ((TypeFunc *)object->type)->flags &= ~FUNC_DEFINED;
             ((TypeFunc *)object->type)->flags |= 0x800;
