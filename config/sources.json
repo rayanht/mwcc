@@ -528,7 +528,7 @@
     "flags": [
       "-O4,p",
       "-inline",
-      "auto",
+      "auto,deferred",
       "-sym",
       "on",
       "-Cpp_exceptions",
