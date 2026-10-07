@@ -223,6 +223,7 @@ typedef struct CScopeParseResult CScopeParseResult;
 typedef struct CScopeSave CScopeSave;
 typedef struct CTStateElem CTStateElem;
 typedef struct CWFileSpec CWFileSpec;
+typedef struct CWObjectFlags CWObjectFlags;
 typedef struct CWPluginPrivateContext CWPluginPrivateContext;
 typedef struct CachedOpcodeMetadata CachedOpcodeMetadata;
 typedef struct CallbackPathEntry CallbackPathEntry;
@@ -734,7 +735,6 @@ typedef union U16Bytes U16Bytes;
 typedef union UInt32ByteSwapStorage UInt32ByteSwapStorage;
 typedef union Val Val;
 union MsDosCalendarData;
-union PluginDataValidation;
 union RecoveryPathFrame;
 union _union_518;
 

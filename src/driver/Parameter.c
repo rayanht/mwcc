@@ -16,6 +16,11 @@
 #include "driver/Utils.h"
 #include <string.h>
 
+char option_parameter_text[4096];
+static char *data_0054da38 = &option_parameter_text[0];
+static char *parm_help_buffer = &option_parameter_text[1024];
+static char *parm_format_buffer = &option_parameter_text[2048];
+
 typedef enum ParamKind { PK_ZERO = 0, PK_ONE = 1, PK_FOUR = 4, PK_FIVE = 5 } ParamKind;
 
 static inline ByteQuad *fileCodeStorage(FTYPE_T *opt)
@@ -957,9 +962,9 @@ void fn_0042a312(DumpTextRecord *record, char **firstOutput, char **secondOutput
                 secondCursor += written;
             }
             if (secondBody != 0) {
-                written = sprintf(firstCursor, data_0054dbc4);
+                written = sprintf(firstCursor, "\b\t");
                 firstCursor += written;
-                written = sprintf(secondCursor, data_0054dbc4);
+                written = sprintf(secondCursor, "\b\t");
                 secondCursor += written;
             }
         }
@@ -980,9 +985,9 @@ void fn_0042a312(DumpTextRecord *record, char **firstOutput, char **secondOutput
             secondCursor += written;
         }
 
-        written = sprintf(firstCursor, data_0054dbd8);
+        written = sprintf(firstCursor, "\b");
         firstCursor += written;
-        written = sprintf(secondCursor, data_0054dbd8);
+        written = sprintf(secondCursor, "\b");
         secondCursor += written;
     }
 
@@ -1015,6 +1020,25 @@ int evaluate_conditional_branch(struct PARAM_Conditional *expr, char *a, int b)
     return 1;
 }
 
+static int (*data_0054dbdc[16])(PARAM_T *, int, int) = {
+    (int (*)(PARAM_T *, int, int))return_true,
+    (int (*)(PARAM_T *, int, int))set_file_code,
+    (int (*)(PARAM_T *, int, int))set_filepath,
+    (int (*)(PARAM_T *, int, int))fn_00429110,
+    (int (*)(PARAM_T *, int, int))copy_idparm_arg,
+    (int (*)(PARAM_T *, int, int))validate_id_arg,
+    (int (*)(PARAM_T *, int, int))validate_id_arg,
+    (int (*)(PARAM_T *, int, int))parse_on_off,
+    (int (*)(PARAM_T *, int, int))set_on_off,
+    (int (*)(PARAM_T *, int, int))apply_mask_entry,
+    (int (*)(PARAM_T *, int, int))xor_const_dest,
+    (int (*)(PARAM_T *, int, int))store_constrec_val,
+    (int (*)(PARAM_T *, int, int))set_string,
+    (int (*)(PARAM_T *, int, int))invoke_float_parameter_callback,
+    (int (*)(PARAM_T *, int, int))evaluate_conditional_branch,
+    (int (*)(PARAM_T *, int, int))fn_0042a266,
+};
+
 int dispatch_param_by_which(PARAM_T *param, char *a, int b)
 {
     int result = 0;
@@ -1029,6 +1053,25 @@ int dispatch_param_by_which(PARAM_T *param, char *a, int b)
     return result;
 }
 
+static void (*data_0054dc44[16])(PARAM_T *, int *, int *, int *) = {
+    (void (*)(PARAM_T *, int *, int *, int *))fn_00428f61,
+    (void (*)(PARAM_T *, int *, int *, int *))format_filecode_option,
+    (void (*)(PARAM_T *, int *, int *, int *))get_filepath_name_flags_value,
+    (void (*)(PARAM_T *, int *, int *, int *))format_num_parm,
+    (void (*)(PARAM_T *, int *, int *, int *))format_string_name_help_value,
+    (void (*)(PARAM_T *, int *, int *, int *))get_string_name_help_value,
+    (void (*)(PARAM_T *, int *, int *, int *))get_string_name_help_value,
+    (void (*)(PARAM_T *, int *, int *, int *))get_option_val_count_state,
+    (void (*)(PARAM_T *, int *, int *, int *))get_on_off_option_info,
+    (void (*)(PARAM_T *, int *, int *, int *))zero_unsigned_int_outputs,
+    (void (*)(PARAM_T *, int *, int *, int *))clear_unsigned_outputs,
+    (void (*)(PARAM_T *, int *, int *, int *))zero_unsigned_outputs,
+    (void (*)(PARAM_T *, int *, int *, int *))zero_outputs,
+    (void (*)(PARAM_T *, int *, int *, int *))get_setting_name_value,
+    (void (*)(PARAM_T *, int *, int *, int *))fn_0042a312,
+    (void (*)(PARAM_T *, int *, int *, int *))format_setting_help,
+};
+
 void Parameter_DispatchByWhich(PARAM_T *param, int *a, int *b, int *c)
 {
     *a = 0;
@@ -1041,6 +1084,25 @@ void Parameter_DispatchByWhich(PARAM_T *param, int *a, int *b, int *c)
     else
         Targets_ForwardVarArgsAndLongjmp("Unhandled PARAM_T (%d)", param->which);
 }
+
+static int (*data_0054dc84[16])(PARAM_T *) = {
+    (int (*)(PARAM_T *))return_unsigned_zero,
+    (int (*)(PARAM_T *))fn_00429462,
+    (int (*)(PARAM_T *))fn_0042994d,
+    (int (*)(PARAM_T *))fn_0042910d,
+    (int (*)(PARAM_T *))fn_004295ca,
+    (int (*)(PARAM_T *))fn_004296d1,
+    (int (*)(PARAM_T *))fn_004296d1,
+    (int (*)(PARAM_T *))fn_004297bf,
+    (int (*)(PARAM_T *))fn_00429896,
+    (int (*)(PARAM_T *))is_mask_entry_unchanged,
+    (int (*)(PARAM_T *))is_dest_unchanged_by_val_xor,
+    (int (*)(PARAM_T *))const_matches_dest,
+    (int (*)(PARAM_T *))compare_setstring_value,
+    (int (*)(PARAM_T *))fn_0042a192,
+    (int (*)(PARAM_T *))get_unsigned_zero,
+    (int (*)(PARAM_T *))fn_0042a263,
+};
 
 unsigned char Parameter_DispatchParam(PARAM_T *param)
 {

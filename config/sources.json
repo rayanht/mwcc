@@ -12,8 +12,7 @@
     ],
     "include_dirs": [
       "src/backend"
-    ],
-    "status": "NonMatching"
+    ]
   },
   "src/backend/BE_symbol.c": {
     "compiler": "pro53",
@@ -800,8 +799,7 @@
     ],
     "include_dirs": [
       "src/driver"
-    ],
-    "status": "NonMatching"
+    ]
   },
   "src/driver/CLPrefs.c": {
     "compiler": "pro53",
@@ -1021,8 +1019,7 @@
     ],
     "include_dirs": [
       "src/driver"
-    ],
-    "status": "NonMatching"
+    ]
   },
   "src/driver/MacFileTypes.c": {
     "compiler": "pro53",
@@ -1124,8 +1121,7 @@
     ],
     "include_dirs": [
       "src/driver"
-    ],
-    "status": "NonMatching"
+    ]
   },
   "src/driver/ParserGlue-eabi-ppc-cc.c": {
     "compiler": "pro53",
@@ -1227,8 +1223,7 @@
     ],
     "include_dirs": [
       "src/driver"
-    ],
-    "status": "NonMatching"
+    ]
   },
   "src/driver/StaticParserGlue.c": {
     "compiler": "pro53",
@@ -1577,8 +1572,7 @@
     "include_dirs": [
       "include",
       "src/frontend"
-    ],
-    "status": "NonMatching"
+    ]
   },
   "src/frontend/CInline.c": {
     "compiler": "pro53",

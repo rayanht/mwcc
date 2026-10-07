@@ -14,6 +14,8 @@
 #include <setjmp.h>
 #include "compiler/win32.h"
 
+static char help_line[256];
+
 void append_formatted_text(HelpColumn *buf, char *format, ...)
 {
     char text[1024];
@@ -184,6 +186,7 @@ void append_columns_newline(void)
 
 unsigned int Help_FormatOption(OptionList *scope, Option *pragma, unsigned int formatMode, char *nameFilter)
 {
+    static struct FlagTextBuffer data_0054dd04 = {""};
     char formatFlags;
     const char normalFormat = 1;
     const char alternateFormat = 2;
@@ -410,8 +413,8 @@ unsigned int Help_FormatOption(OptionList *scope, Option *pragma, unsigned int f
             append_formatted_text(&firstHelpColumn, "\t");
             append_formatted_text(&third_help_column, "\t");
             Help_PrintOptionList(pragma->def, 1, "");
-            append_formatted_text(&third_help_column, data_0054ded8);
-            append_formatted_text(&firstHelpColumn, data_0054ded8);
+            append_formatted_text(&third_help_column, "\b");
+            append_formatted_text(&firstHelpColumn, "\b");
         } else {
             append_formatted_text(&firstHelpColumn, "\n");
             append_formatted_text(&third_help_column, "\n");
@@ -477,14 +480,21 @@ void Help_PrintOptionUsageNotes(void)
 {
     const char *s;
 
-    append_formatted_text(&helpTextColumn, option_usage_notes);
+    append_formatted_text(
+        &helpTextColumn,
+        "\tGuide to help:\b\tWhen an option is specified as '~~xxx | yy[y] | zzz', then either '~~xxx', '~~yy', '~~yyy', or '~~zzz' matches the option.\b\tAn option given as '~~[no]xxx' may be given as '~~xxx' or '~~noxxx'; '~~noxxx' reverses the meaning of the option.\b");
     drain_column(&helpTextColumn);
     if (data_0054aa78 != 1)
         s = "";
     else
         s = "colon or ";
-    append_formatted_text(&helpTextColumn, option_usage_notes_format, s);
-    append_formatted_text(&helpTextColumn, data_0054e0bc);
+    append_formatted_text(
+        &helpTextColumn,
+        "\tFor most options, the option and the parameters are separated by a %sspace.  When the option's name is '~~xxx+', however, the parameter must directly follow the option, without the '+' (as in '~~xxx45').\b",
+        s);
+    append_formatted_text(
+        &helpTextColumn,
+        "\tA parameter included in brackets '[]' is optional. An ellipsis '...' indicates that the previous type of parameter may be repeated as a list.\b");
     drain_column(&helpTextColumn);
     if (data_0054aa78 != 1)
         s = "-- \"cased\" indicates that the option is case-sensitive.  By default, no options are case-sensitive.\r";
@@ -495,18 +505,27 @@ void Help_PrintOptionUsageNotes(void)
         "\t%s-- \"compatability\" indicates that the option is borrowed from another vendor's tool and may only approximate its counterpart.\r-- \"global\" indicates that the option has an effect over the entire command line and is parsed before any other options.  When several global options are specified, they are interpreted in order.\r-- \"deprecated\" indicates that the option will be eliminated in the future and should not be used any longer.  An alternative form is supplied.\r",
         s);
     drain_column(&helpTextColumn);
-    append_formatted_text(&helpTextColumn, data_0054e38c);
+    append_formatted_text(
+        &helpTextColumn,
+        "-- \"ignored\" means the option will be accepted but has no effect on the tool.\r-- \"meaningless\" means the option is accepted but probably has no meaning for the target OS.\r-- \"obsolete\" means the option was once deprecated and is now gone.\r-- \"substituted\" means the option has the same effect as another. This points out a preferred form and prevents confusion when similar options appear in the help.\r-- \"default\" in the help text indicates that the given value or variation of an option will be used unless otherwise overridden. \b");
     drain_column(&helpTextColumn);
     if (data_0054aa78 != 1)
         s = "and '='";
     else
         s = ", ':', and '='";
-    append_formatted_text(&helpTextColumn, option_usage_notes_text, s);
+    append_formatted_text(
+        &helpTextColumn,
+        "\tThe symbols ',' %s separate options and parameters unconditionally; to include one of these symbols in a parameter or filename, escape it (e.g., as '\\,' in mwcc file.c\\,v).\b\n",
+        s);
     drain_column(&helpTextColumn);
     if (data_00587e23 && driverTool[0] == 0x436f6d70)
-        append_formatted_text(&helpTextColumn, data_0054e66c);
+        append_formatted_text(
+            &helpTextColumn,
+            "\tThis tool calls the linker (unless a compiler option such as ~~c prevents it) and understands linker options -- use '~~help tool=other' to see them.  Options marked \"passed to linker\" are used by the compiler and the linker; options marked \"for linker\" are used only by the linker. When using the compiler and linker separately, you must pass the common options to both.\b\n");
     drain_column(&helpTextColumn);
 }
+
+static char lbl_0054e7e4[] = "%s [options, filenames...]\n\nExecute '%s %shelp' for more information.";
 
 void Help_InitColumns(void)
 {

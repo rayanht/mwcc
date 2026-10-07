@@ -77,10 +77,6 @@ struct PluginQueryTable {
     unsigned int unknownEntry;
     short(__stdcall *query)(unsigned int argument, char **kind, UInt8 *result);
 };
-union PluginDataValidation {
-    char message[36];
-    UInt32 sizes[9];
-};
 #pragma options align = mac68k
 struct PluginRequest {
     union {
@@ -92,6 +88,28 @@ struct PluginRequest {
     unsigned int name;
     char flag_10;
     char reserved;
+};
+#pragma options align = reset
+#pragma options align = mac68k
+struct CWObjectFlags {
+    SInt16 version;
+    UInt32 flags;
+    const char *objFileExt;
+    const char *brsFileExt;
+    const char *ppFileExt;
+    const char *disFileExt;
+    const char *depFileExt;
+    const char *pchFileExt;
+    UInt32 objFileCreator;
+    UInt32 objFileType;
+    UInt32 brsFileCreator;
+    UInt32 brsFileType;
+    UInt32 ppFileCreator;
+    UInt32 ppFileType;
+    UInt32 disFileCreator;
+    UInt32 disFileType;
+    UInt32 depFileCreator;
+    UInt32 depFileType;
 };
 #pragma options align = reset
 #pragma options align = mac68k
@@ -147,23 +165,14 @@ extern int fn_0040a610(Plugin *input, SInt32 param_2);
 extern int CLPlugins_DispatchArgumentToPlugins(Plugin *node, SInt32 argument, SInt32 firstIdentifier,
                                                SInt32 secondIdentifier);
 extern int CLPlugins_GetUniquePluginNames(Plugin *nameList, SInt32 *nameCount, char ***nameArray);
-extern unsigned char DAT_00541480[];
-extern char DAT_0057d90a[];
-extern unsigned char plugin_directory_list[];
-extern unsigned char object_flags[];
-extern union PluginDataValidation data_00541578;
-extern Plugin *data_0057d91c;
 extern short CLPlugins_CallEntry(Plugin *dispatch, CWPluginPrivateContext *argument);
 extern unsigned int __stdcall return_zero(unsigned int a0);
 extern unsigned int __stdcall get_data_and_size(unsigned char **data, unsigned int *size);
 extern unsigned char data_00541e1c[];
 struct Plugin;
 struct Plugin;
-extern FileMapInfo file_map;
 struct PluginDataCallbacks;
 struct PluginDirectoryList;
-extern PluginDesc plugin_desc;
-extern TargetInfo target_info;
 
 #ifdef __cplusplus
 }

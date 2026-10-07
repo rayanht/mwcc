@@ -177,11 +177,8 @@ src/msl/sysenv.win32.c:
 
 src/driver/Resources.c:
 	.text       start:0x00406610 end:0x004087D0
-	.data       start:0x00541170 end:0x00541248
+	.data       start:0x00541170 end:0x005413A8
 	.bss        start:0x0057D5E8 end:0x0057D5F8
-
-auto_00541248_data:
-	.data       start:0x00541248 end:0x005413A8
 
 src/driver/CLErrors.c:
 	.text       start:0x004087D0 end:0x00408BA0
@@ -634,12 +631,12 @@ src/frontend/CPrepTokenizer.c:
 
 src/frontend/CScope.c:
 	.text       start:0x00497000 end:0x0049B6A0
-	.data       start:0x0055E480 end:0x0055E520
+	.data       start:0x0055E480 end:0x0055E528
 	.bss        start:0x00580DD8 end:0x00580DF0
 
 src/backend/BE_elf.c:
 	.text       start:0x0049B6A0 end:0x0049CE40
-	.data       start:0x0055E520 end:0x0055E598
+	.data       start:0x0055E528 end:0x0055E598
 	.bss        start:0x00580DF0 end:0x00580F80
 
 src/backend/PCode.c:

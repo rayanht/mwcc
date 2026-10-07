@@ -24,6 +24,14 @@
     (((((UINT)(x)) & 0xff000000u) >> 24) | ((((UINT)(x)) & 0x00ff0000u) >> 8) | ((((UINT)(x)) & 0x0000ff00u) << 8) |   \
      ((((UINT)(x)) & 0x000000ffu) << 24))
 
+static UInt8 data_00541170 = 0;
+
+static short resource_error;
+static SInt16 current_resfile_refnum;
+static struct ResFile *resfile_list;
+static struct IdentifierListNode *identifier_list;
+static struct IdentifierListNode *identifier_list_tail;
+
 unsigned char fn_00406610(void)
 {
     return data_00541170;
@@ -1054,3 +1062,25 @@ void __stdcall close_resource_file(short param)
     else
         current_resfile_refnum = 0;
 }
+
+static char lbl_00541248[] = "Could not find resource fork for ref = %d\n";
+static char lbl_00541274[] = "Fork attributes = %04X\n";
+static char lbl_0054128c[] = "Creator = '%4.4s';  Type = '%4.4s'\n";
+static char lbl_005412b0[] = "Types:\n";
+static char lbl_005412b8[] = "'%c%c%c%c':\n";
+static char lbl_005412c8[] = "!!! RefList type '%c%c%c%c' does not match TypeList type !!!\n";
+static char lbl_00541308[] = "<none>";
+static char lbl_00541310[] = "\tID = %d '%s'\n";
+static char lbl_00541320[] = "\tAttributes: ";
+static char lbl_00541330[] = "SysHeap ";
+static char lbl_0054133c[] = "Purgeable ";
+static char lbl_00541348[] = "Locked ";
+static char lbl_00541350[] = "Protected ";
+static char lbl_0054135c[] = "Preload ";
+static char lbl_00541368[] = "Changed ";
+static char lbl_00541374[] = "\n";
+static char lbl_00541378[] = "Contents:";
+static char lbl_00541384[] = "\n%08X: ";
+static char lbl_0054138c[] = "%02X ";
+static char lbl_00541394[] = "   ";
+static char lbl_00541398[] = " %16.16s";

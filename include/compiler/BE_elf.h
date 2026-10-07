@@ -83,15 +83,8 @@ extern SectionSymbolAttributes *find_section_symbol_attributes(ObjGenSection *ke
 extern void assign_symbol_order(void);
 extern void BE_elf_AlignRecord(GList *record, SInt32 alignment);
 extern void build_ordered_section_index(void);
-extern void *data_0055e528;
-extern int max_padding_size;
-extern UInt8 elfBigEndian;
-extern SInt32 symbol_order_count;
 extern struct ElfHeader elf_header;
 extern void fn_0049b920(void);
-extern unsigned char data_00580df6[];
-extern char file_name[];
-extern struct ObjGenSection **ordered_section_index;
 extern UInt16 data_0058847a;
 extern SInt32 data_005884a0;
 extern struct ObjGenSection *section_list;

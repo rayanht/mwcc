@@ -48,6 +48,13 @@
 #include "compiler/Types.h"
 #include <string.h>
 
+static struct CInit_StrNode *string_cache;
+static struct NameEntry *pooled_strings;
+static struct NameEntry *pooled_wstrings;
+static struct InitListItem *tentative_init_list;
+static struct ENodeList *data_00581ba0;
+static UInt8 data_00581ba4;
+
 /* 0x5842d0: byte-sized switch. */
 
 /* Result of the address-computation helpers: object + byte offset. */

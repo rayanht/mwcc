@@ -61,6 +61,7 @@ char *CLPlugins_GetName(Plugin *plugin)
 
 UInt8 *get_plugin_result(Plugin *plugin)
 {
+    static UInt8 DAT_00541480[4] = {0};
     short status;
     UInt8 *result;
 
@@ -78,6 +79,7 @@ UInt8 *get_plugin_result(Plugin *plugin)
 
 PluginDesc *CLPlugins_GetPluginDesc(Plugin *provider)
 {
+    static PluginDesc plugin_desc;
     unsigned int *data;
     unsigned int size;
 
@@ -107,6 +109,7 @@ unsigned int CLPlugins_GetType(Plugin *type)
 
 TargetInfo *get_target_info(Plugin *entry)
 {
+    static TargetInfo target_info = {1};
     short status;
     unsigned char *result;
 
@@ -127,6 +130,7 @@ TargetInfo *get_target_info(Plugin *entry)
 
 void *get_plugin_directory_list(Plugin *plugin)
 {
+    static struct PluginDirectoryList plugin_directory_list = {1, 0, NULL};
     struct PluginDirectoryList *directoryList;
     SInt16 status;
     if (plugin == NULL)
@@ -141,6 +145,7 @@ void *get_plugin_directory_list(Plugin *plugin)
 
 FileMapInfo *get_file_map(Plugin *context)
 {
+    static FileMapInfo file_map = {1};
     FileMapInfo *result;
 
     if (context == NULL) {
@@ -177,6 +182,7 @@ unsigned int get_callback_result(void *input)
 
 void *CLPlugins_GetObjectFlags(Plugin *plugin)
 {
+    static CWObjectFlags object_flags = {2, 0, "", "", "", "", "", ""};
     unsigned char *flags;
     PluginDesc *info;
 
@@ -195,7 +201,7 @@ void *CLPlugins_GetObjectFlags(Plugin *plugin)
     if (info->type == 0x436f6d70) {
         return NULL;
     }
-    return object_flags;
+    return &object_flags;
 }
 
 Boolean plugin_name_matches(Plugin *plugin, char *name)
@@ -319,6 +325,7 @@ UInt8 query_plugin(Plugin *plugin, unsigned int queryArgument, char **queryKind)
 
 char *format_plugin_version(Plugin *plugin, char *buffer)
 {
+    static char DAT_0057d90a[18];
     UInt8 *version;
     char *cursor;
 
@@ -411,13 +418,15 @@ UInt8 CLPlugins_FindFileMapValue(Plugin *plugin, int mode, char *name, unsigned 
 }
 Boolean validate_plugin(Plugin *plug, const char **errmsg)
 {
+    /* the size of each version of DropInFlags */
+    static SInt32 dropin_flags_size[3] = {0, 16, 18};
     PluginDesc *flags;
     unsigned int size;
 
     *errmsg = "";
 
     if (plug->callbacks->getData == NULL) {
-        *errmsg = data_00541578.message;
+        *errmsg = "GetDropInFlags callback not found";
         return 0;
     }
     if (plug->callbacks->getData((unsigned int **)&flags, &size) != 0) {
@@ -437,7 +446,7 @@ Boolean validate_plugin(Plugin *plug, const char **errmsg)
         CLIO_WriteFormattedText("%s's newest compatible API version is probably too old for this driver\n",
                                 CLPlugins_GetName(plug));
     }
-    if (size != data_00541578.sizes[flags->descriptorVersion - 3]) {
+    if (size != dropin_flags_size[flags->descriptorVersion]) {
         *errmsg = "The plugin's DropInFlags has an unexpected size";
         return 0;
     }
@@ -553,6 +562,8 @@ Boolean fn_004098a0(Plugin *input)
     }
     return 1;
 }
+
+static Plugin *data_0057d91c;
 
 void fn_004098d0(void)
 {

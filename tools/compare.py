@@ -249,7 +249,7 @@ def resolve_function(symbols, sections, symbol_name, target_address, addresses, 
                 and target_size and local + 4 <= len(original)):
             text = sections[dest["section"] - 1]["data"][dest["value"]:].split(b"\0", 1)[0]
             there = (struct.unpack_from("<I", original, local)[0] - addend) & 0xFFFFFFFF
-            if text and all(c in (9, 10, 13) or 32 <= c < 127 for c in text) and pe.contains(there, text + b"\0"):
+            if text and all(c in (8, 9, 10, 13) or 32 <= c < 127 for c in text) and pe.contains(there, text + b"\0"):
                 referred = there
         if referred is not None:
             address = referred
@@ -315,7 +315,7 @@ def resolve_function(symbols, sections, symbol_name, target_address, addresses, 
                 stop = tail.find(b"\0")
                 string = tail[: stop + 1] if stop > 0 else b""
                 printable = string and all(
-                    c in (9, 10, 13) or 32 <= c < 127 for c in string[:-1]
+                    c in (8, 9, 10, 13) or 32 <= c < 127 for c in string[:-1]
                 )
                 hits = (
                     locate(string, addend)

@@ -70,6 +70,13 @@ static SInt8 data_00580ded;
 
 /* Result record used by fn_0049a3e0; unused fields are not yet identified. */
 
+/* The scope separator. The linker stripped this function; its literal stays in the unit's .data, last, as the unit
+   generates its functions in reverse order. */
+static char *CScope_ScopeSeparator(void)
+{
+    return "::";
+}
+
 static inline Boolean CScope_ResolveLookupContext(CScopeParseResult *result, Object *def)
 {
     result->basePath = (BClassList *)CScope_GetClassAccessPath(result->basePath, (TypeClass *)def);

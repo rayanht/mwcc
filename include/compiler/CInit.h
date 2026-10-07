@@ -153,12 +153,6 @@ extern void CInit_Init(void);
 extern void CInit_DefineTentativeData(void);
 extern struct Object *destructor_registration_func;
 extern int pointer_size;
-extern struct CInit_StrNode *string_cache;
-extern struct NameEntry *pooled_strings;
-extern struct NameEntry *pooled_wstrings;
-extern struct InitListItem *tentative_init_list;
-extern struct ENodeList *data_00581ba0;
-extern UInt8 data_00581ba4;
 extern struct CInitSave *cinit_state;
 
 #ifdef __cplusplus

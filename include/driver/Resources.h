@@ -103,7 +103,6 @@ struct ResourceTypeEntry {
 };
 #pragma pack(pop)
 extern void write_resource_file(short refnum);
-extern short resource_error;
 extern struct ResEntry *insert_res_entry(struct ResEntry **listAddress, UInt16 key, UInt32 value, UInt8 *name,
                                          UInt8 flag, void **extra);
 extern void read_resource_file(short refnum, char readonly, unsigned char *buf, SInt32 size);
@@ -134,12 +133,7 @@ extern unsigned char **Resources_GetHand(SInt32 first, SInt16 second);
 extern void __stdcall close_resource_file(short param);
 extern ResEntry *find_res_entry(ResFile *key, int index, short value);
 extern SInt32 fn_004083b0(int handle, UInt32 *secondValue, UInt32 *firstValue);
-extern struct IdentifierListNode *identifier_list;
-extern SInt16 current_resfile_refnum;
-extern UInt8 data_00541170;
-extern struct ResFile *resfile_list;
 extern UInt8 data_00588525;
-extern struct IdentifierListNode *identifier_list_tail;
 
 #ifdef __cplusplus
 }

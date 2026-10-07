@@ -174,12 +174,13 @@ class Coff:
     """A relocatable i386 COFF object being written."""
 
     def __init__(self):
-        self.sections, self.symbols, self.strings, self.index = [], [], bytearray(4), {}
+        self.sections, self.symbols, self.strings, self.index, self.section_symbols = [], [], bytearray(4), {}, {}
 
     def section(self, name, flags, data, size, relocations):
         number = len(self.sections) + 1
         self.sections.append((name, flags, data, size, relocations))
-        self.add_symbol(name, 0, number, 0, 3, struct.pack("<IHHIHBB2x", size, len(relocations), 0, 0, 0, 0, 0))
+        self.section_symbols[number] = self.add_symbol(name, 0, number, 0, 3,
+                                                       struct.pack("<IHHIHBB2x", size, len(relocations), 0, 0, 0, 0, 0))
         return number
 
     def add_symbol(self, name, value, section, kind, storage, aux=b""):
@@ -279,6 +280,8 @@ def split(version):
         coff = Coff()
         local = {}
         defined = []
+        # (the compiler writes a reference to a static in .bss against the section, as it names none of them)
+        bss_start = next((start for section, start, _, _ in ranges if section == ".bss"), None)
         for section, start, end, options in ranges:
             if options.get("common"):
                 # (left to the linker's COMMON allocation, as the original's last variables were)
@@ -322,6 +325,9 @@ def split(version):
                             target = name, section, address, symbol_options
                         if target is None:
                             raise SystemExit(f"{unit}: no symbol for 0x{value:08x} referenced at 0x{at:08x}")
+                        if (target[1] == ".bss" and target[3].get("scope") == "local" and bss_start is not None
+                                and unit_at(".bss", target[2]) == unit):
+                            target = ".bss", ".bss", bss_start, {"scope": "local"}
                         struct.pack_into("<I", content, at - piece_start, (value - target[2]) & 0xFFFFFFFF)
                         relocations.append((at - piece_start, target, 6))
                 if kind == "code":
@@ -341,10 +347,14 @@ def split(version):
                             relocations.append((address + field - piece_start, target, 20))
                 number = coff.section(options.get("rename", section), flags, bytes(content) if kind != "bss" else b"",
                                       piece_end - piece_start, relocations)
+                if kind == "bss" and section == ".bss":
+                    local[(".bss", piece_start)] = coff.section_symbols[number]
                 for name, address, symbol_options in members:
                     if not (piece_start <= address < piece_end or piece_start == address == piece_end):
                         continue
                     scope = symbol_options.get("scope", "global")
+                    if kind == "bss" and scope == "local":
+                        continue
                     kind_bits = 0x20 if symbol_options.get("type") == "function" else 0
                     index = coff.add_symbol(name, address - piece_start, number, kind_bits, 3 if scope == "local" else 2)
                     local[(name, address)] = index

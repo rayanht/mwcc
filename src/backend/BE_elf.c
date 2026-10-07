@@ -43,6 +43,18 @@
 #include "driver/TargetPanels-eabi-ppc.h"
 #include "driver/libimp-eabi-ppc.h"
 #include <string.h>
+
+#pragma options align = mac68k
+static UInt8 elfBigEndian;
+static SInt32 symbol_order_count;
+static unsigned char data_00580df6[128];
+static char file_name[256];
+static struct ObjGenSection **ordered_section_index;
+#pragma options align = reset
+
+/* zeros ElfPad copies: the buffer grows when a padding is longer */
+static void *data_0055e528 = data_00580df6;
+static int max_padding_size = 128;
 /* Enters THECLASS's scope, saving the current one in SAVE. */
 NameSpace *BE_elf_SaveAndSetClassScope(TypeClass *theclass, CScopeSave *save)
 {
