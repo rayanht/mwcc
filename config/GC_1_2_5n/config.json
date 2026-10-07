@@ -124,6 +124,7 @@
     "src/frontend/CParser.c",
     "src/frontend/CPrec.c",
     "src/frontend/CPrepTokenizer.c",
+    "src/frontend/CPreprocess.c",
     "src/frontend/CRTTI.c",
     "src/frontend/CSOM.c",
     "src/frontend/CScope.c",

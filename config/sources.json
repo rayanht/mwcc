@@ -1799,8 +1799,7 @@
     ],
     "include_dirs": [
       "src/frontend"
-    ],
-    "status": "NonMatching"
+    ]
   },
   "src/frontend/CRTTI.c": {
     "compiler": "pro53",
