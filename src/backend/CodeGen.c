@@ -1229,8 +1229,6 @@ void emit_name_string_address(const char *name)
     PCodeUtilities_EmitObjectInstructionWithPayload(data_00588054, 1, 8, 0, 0);
 }
 
-enum { PCodeInstruction_CoalesceDisabled_00432310 = 0x0400 };
-
 void CodeGen_Generator(Statement *statements, Object *functionObject, Boolean context, Boolean zero)
 {
     Statement *statementList;
@@ -1442,7 +1440,7 @@ void CodeGen_Generator(Statement *statements, Object *functionObject, Boolean co
                 PCodeUtilities_ResolveLabel(PCode_NewLabel());
                 emit_opcode_with_base_offset(PC_LWZ, 0, 1, NULL, 0);
                 instruction = PCodeUtilities_CreateInstruction(0x22, 1, stack_base_reg, object, 0x14);
-                instruction->flags |= PCodeInstruction_CoalesceDisabled_00432310;
+                instruction->flags |= fSideEffects;
                 PCode_AppendInstruction(gCurrentBlock, instruction);
                 emit_opcode_with_base_offset(PC_STW, 0, 1, NULL, 0);
                 PCodeUtilities_ResolveLabel(PCode_NewLabel());

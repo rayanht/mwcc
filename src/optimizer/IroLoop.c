@@ -57,7 +57,6 @@ typedef enum NodeKind { NK0 } NodeKind;
 #define BV_TEST(v, bit)                                                                                                \
     (((UInt32)((bit) >> 5) < (v)->size) && (((v)->bits[(UInt32)((bit) >> 5)] & (1u << ((bit) & 31))) != 0))
 #define BitVector_Test(v, id) (((id) >> 5) < (v)->size && ((v)->bits[(id) >> 5] & (1u << ((id) & 31))))
-enum { LOOP_FLAGS_10 = 0x10, LOOP_FLAGS_24 = 0x24, LOOP_FLAGS_34 = 0x34 };
 
 static void NopOutBlock(IRONode *node);
 static IROLinear *NewLabelLinear(IROList *list);
@@ -523,8 +522,8 @@ IROExpr *fn_00461860(IROExpr *root, IROLinear *initial, IROLinear *step, IROLoop
     operation->rtype = type;
     operation->nodetype = EASS;
     operation->u.diadic.left = IroUtil_AppendObjectRefAndUse(temporary, &initList);
-    operation->u.diadic.left->flags |= LOOP_FLAGS_24;
-    operation->u.diadic.left->u.monadic->flags |= LOOP_FLAGS_24;
+    operation->u.diadic.left->flags |= IROLF_Assigned | IROLF_Ind;
+    operation->u.diadic.left->u.monadic->flags |= IROLF_Assigned | IROLF_Ind;
     operation->u.diadic.right = value;
     IroUtil_AppendLinear(operation, &initList);
     IroUtil_InsertLinearBefore(initList.head, initList.tail, loop_candidate_last);
@@ -575,8 +574,8 @@ IROExpr *fn_00461860(IROExpr *root, IROLinear *initial, IROLinear *step, IROLoop
         operation->rtype = step->rtype;
         operation->nodetype = EASS;
         operation->u.diadic.left = IroUtil_AppendObjectRefAndUse(stepTemporary, &initList);
-        operation->u.diadic.left->flags |= LOOP_FLAGS_24;
-        operation->u.diadic.left->u.monadic->flags |= LOOP_FLAGS_24;
+        operation->u.diadic.left->flags |= IROLF_Assigned | IROLF_Ind;
+        operation->u.diadic.left->u.monadic->flags |= IROLF_Assigned | IROLF_Ind;
         operation->u.diadic.right = value;
         IroUtil_AppendLinear(operation, &initList);
         IroUtil_InsertLinearBefore(initList.head, initList.tail, loop_candidate_last);
@@ -602,8 +601,8 @@ IROExpr *fn_00461860(IROExpr *root, IROLinear *initial, IROLinear *step, IROLoop
         operation->nodetype = ESUBASS;
     }
     operation->u.diadic.left = IroUtil_AppendObjectRefAndUse(temporary, &updateList);
-    operation->u.diadic.left->flags |= LOOP_FLAGS_34;
-    operation->u.diadic.left->u.monadic->flags |= LOOP_FLAGS_34;
+    operation->u.diadic.left->flags |= IROLF_Assigned | IROLF_Used | IROLF_Ind;
+    operation->u.diadic.left->u.monadic->flags |= IROLF_Assigned | IROLF_Used | IROLF_Ind;
     if (mode == 0) {
         if (!hasStepTemporary) {
             if (context->addConst == 1 || (root->linear->type == IROLinearOp2Arg &&
@@ -626,7 +625,7 @@ IROExpr *fn_00461860(IROExpr *root, IROLinear *initial, IROLinear *step, IROLoop
             }
         } else {
             operation->u.diadic.right = IroUtil_AppendObjectRefAndUse(stepTemporary, &updateList);
-            operation->u.diadic.right->flags |= LOOP_FLAGS_10;
+            operation->u.diadic.right->flags |= IROLF_Used;
         }
     }
     linear_index_counter++;

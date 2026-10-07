@@ -15,9 +15,9 @@
 #include "compiler/PCodeUtilities.h"
 #include "compiler/PPCError.h"
 #include "compiler/Registers.h"
-enum { lift_regnum_0 = 0, lift_regnum_3 = 3 };
 
-typedef enum { kCompareNodeType = 1 } CompareNodeType;
+/* r3, where a runtime routine takes its argument and returns its result */
+enum { RESULT_GPR = 3 };
 
 typedef void (*ExpressionGenerator)(ENode *, short, short, Operand *);
 
@@ -533,7 +533,7 @@ int SFPE_PPC_EABI_GenerateComparison(ENode *node, Operand *result, int branch)
     SInt32 flags;
     SInt16 reg;
     int registerMask;
-    CompareNodeType comparison;
+    ENodeType comparison;
 
     left = node->data.diadic.left;
     right = node->data.diadic.right;
@@ -655,38 +655,38 @@ int SFPE_PPC_EABI_GenerateComparison(ENode *node, Operand *result, int branch)
 
     comparison = node->type;
     switch (comparison) {
-        case 0x13:
-        case 0x14:
-        case 0x15:
-        case 0x16:
-        case 0x17:
-        case 0x18:
-            if (comparison == 0x17) {
+        case ELESS:
+        case EGREATER:
+        case ELESSEQU:
+        case EGREATEREQU:
+        case EEQU:
+        case ENOTEQU:
+            if (comparison == EEQU) {
                 PCodeUtilities_EmitObjectInstructionWithPayload(size == 8 ? data_0058760c : data_005875d8, 0,
                                                                 registerMask, 0, 0);
                 condition = 0x17;
                 flags = 1;
-            } else if (comparison == 0x18) {
+            } else if (comparison == ENOTEQU) {
                 PCodeUtilities_EmitObjectInstructionWithPayload(size == 8 ? data_00587604 : data_005875d4, 0,
                                                                 registerMask, 0, 0);
                 condition = 0x17;
                 flags = 1;
-            } else if (comparison == 0x14) {
+            } else if (comparison == EGREATER) {
                 PCodeUtilities_EmitObjectInstructionWithPayload(size == 8 ? data_00587610 : data_005875dc, 0,
                                                                 registerMask, 0, 0);
                 condition = 0x17;
                 flags = 1;
-            } else if (comparison == 0x13) {
+            } else if (comparison == ELESS) {
                 PCodeUtilities_EmitObjectInstructionWithPayload(size == 8 ? data_00587618 : data_005875e4, 0,
                                                                 registerMask, 0, 0);
                 condition = 0x17;
                 flags = 1;
-            } else if (comparison == 0x15) {
+            } else if (comparison == ELESSEQU) {
                 PCodeUtilities_EmitObjectInstructionWithPayload(size == 8 ? data_005875fc : data_005875c8, 0,
                                                                 registerMask, 0, 0);
                 condition = 0x17;
                 flags = 1;
-            } else if (comparison == 0x16) {
+            } else if (comparison == EGREATEREQU) {
                 PCodeUtilities_EmitObjectInstructionWithPayload(size == 8 ? data_00587628 : data_005875ec, 0,
                                                                 registerMask, 0, 0);
                 condition = 0x17;
@@ -764,7 +764,7 @@ void SFPE_PPC_EABI_GenerateConversion(ENode *expression, short requested_registe
                 if (result->kind != OpndType_GPR) {
                     Operands_ForceGPR(result, type, 0);
                 }
-                if (result->reg != lift_regnum_3) {
+                if (result->reg != RESULT_GPR) {
                     PCodeUtilities_EmitInstruction(PC_MR, 3, result->reg);
                 }
                 PCodeUtilities_EmitObjectInstructionWithPayload(
@@ -801,7 +801,7 @@ void SFPE_PPC_EABI_GenerateConversion(ENode *expression, short requested_registe
                 if (result->kind != OpndType_GPR) {
                     Operands_ForceGPR(result, type, 0);
                 }
-                if (result->reg != lift_regnum_3) {
+                if (result->reg != RESULT_GPR) {
                     PCodeUtilities_EmitInstruction(PC_MR, 3, result->reg);
                 }
                 PCodeUtilities_EmitObjectInstructionWithPayload(data_00587e6c, 0, 8, 0, 0);
@@ -850,7 +850,7 @@ void SFPE_PPC_EABI_GenerateConversion(ENode *expression, short requested_registe
                 if (result->kind != OpndType_GPR) {
                     Operands_ForceGPR(result, type, 0);
                 }
-                if (result->reg != lift_regnum_3) {
+                if (result->reg != RESULT_GPR) {
                     PCodeUtilities_EmitInstruction(PC_MR, 3, result->reg);
                 }
                 if (is_unsigned(expression->rtype)) {
@@ -884,7 +884,7 @@ void SFPE_PPC_EABI_GenerateConversion(ENode *expression, short requested_registe
                 if (result->kind != OpndType_GPR) {
                     Operands_ForceGPR(result, type, 0);
                 }
-                if (result->reg != lift_regnum_3) {
+                if (result->reg != RESULT_GPR) {
                     PCodeUtilities_EmitInstruction(PC_MR, 3, result->reg);
                 }
                 if (is_unsigned(expression->rtype)) {
