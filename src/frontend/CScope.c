@@ -105,9 +105,6 @@ static NameSpaceObjectList *Scope_Find(NameSpace *scope, HashNameNode *name)
     return NULL;
 }
 
-/* NameSpace record as laid out in this build: the name table lives at 0x10
- * and the hash/list discriminator byte at 0x18. */
-
 static NameSpaceObjectList *ScopeFindName(NameSpace *nspace, HashNameNode *name)
 {
     NameSpaceName *np;
@@ -393,8 +390,6 @@ static void CScope_AmbigFoundClassError(NameSpace **nspace1, NameSpace *nspace2,
 
 #undef CERROR_FILE
 
-/* CError_Internal declared in the headers */
-
 static inline NameSpaceLookupList *CScope_FindUsingScope(NameSpaceLookupList *scope, NameSpaceList *used)
 {
     NameSpace *ancestor;
@@ -547,9 +542,6 @@ void CScope_RestoreScope(CScopeSave *save)
     cscope_currentfunc = save->currentfunc;
     cscope_is_member_func = save->is_member_func;
 }
-
-/* Global describing a hashed namespace / object table. Offsets verified from
- * the disassembly: bucket array pointer at 0x10, is_hash flag byte at 0x18. */
 
 Boolean CScope_IsEmptySymTable(void)
 {
@@ -2674,9 +2666,6 @@ Object *CScope_NextObjectIteratorObject(CScopeObjectIterator *s)
 }
 
 #undef CERROR_FILE
-
-/* Hash-table owner/namespace record as laid out in this build: the hash
- * bucket array lives at 0x10 and the "is hashed" byte flag at 0x18. */
 
 NameSpaceObjectList *CScope_NextObjectIteratorObjectList(CScopeObjectIterator *state)
 {

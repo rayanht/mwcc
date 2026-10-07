@@ -13,8 +13,6 @@ extern "C" {
 #define OBJ_MEMBER_VAR(obj) ((ObjMemberVar *)(obj))
 #define OBJECT(obj) ((Object *)(obj))
 enum { OT_ENUMCONST, OT_TYPE, OT_TYPETAG, OT_NAMESPACE, OT_MEMBERVAR, OT_OBJECT, OT_ILLEGAL };
-/* Single-byte enumeration; DALIAS is 6 in this build (CMangler_GetLinkName
- * follows the alias chain on 6) and DFUNC/DVFUNC are 3/4. */
 enum { DDATA, DLOCAL, DABSOLUTE, DFUNC, DVFUNC, DINLINEFUNC, DALIAS, DEXPR, DUNUSED };
 enum {
     OBJECT_USED = 1,

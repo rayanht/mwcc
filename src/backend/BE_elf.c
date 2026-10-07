@@ -106,8 +106,6 @@ ObjGenRelocation *BE_elf_AddRelocation(ObjGenSection *context, int offset, Objec
     return entry;
 }
 
-/* The byte-swapped sections (dwarf_line_section and dwarf_info_section) and the symbol table (data_005884ce) are reached
-   through a void * view, as the original's declarations of them do. */
 #define ELF_SECTION(p) ((ObjGenSection *)(void *)(p))
 
 static void ElfAllocZero(SInt32 size)

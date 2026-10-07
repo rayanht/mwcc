@@ -55,9 +55,6 @@
 #define va_start(ap, last) (ap = (va_list)((char *)&(last) + (((char *)(&(last) + 1) - (char *)&(last)) + 3) / 4 * 4))
 #define va_arg(ap, type) (*(type *)((ap += sizeof(type)) - sizeof(type)))
 
-/* 0x36-byte Object copy image (the reconstructed Object record is padded to
- * 0x38; the original allocation and copy are 54 bytes). */
-
 #include "compiler/CDecl.h"
 
 #include "compiler/CDecl.h"
@@ -396,9 +393,6 @@ Object *CParser_ParseObject(void)
     }
     return NULL;
 }
-
-/* Parser declaration-specifier state block.  Field offsets are the
- * authoritative ones observed in the disassembly. */
 
 static inline Boolean CheckVectorKeyword(void)
 {

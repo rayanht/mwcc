@@ -73,10 +73,7 @@ Boolean match_extension_pattern(char *pattern, char *name)
     while (*pattern) {
         if (*pattern == '|' && *p == 0)
             return 1;
-        if (/* (stand-in: the original caller passes a char through its own prototype) */ ((int (*)(char))to_lowercase)(
-                *pattern) ==
-            /* (stand-in: the original caller passes a char through its own prototype) */ ((int (*)(char))to_lowercase)(
-                *p)) {
+        if (((int (*)(char))to_lowercase)(*pattern) == ((int (*)(char))to_lowercase)(*p)) {
             pattern++;
             p++;
         } else {

@@ -163,7 +163,6 @@ void split_variable_range(VarRecord *entry)
     object = create_temp_object(entry->object->type);
     for (use = entry->defs; use != NULL; use = use->varnext) {
         UInt32 wordIndex = use->index >> 5;
-        /* the original's vectors here are int-sized */
         if (wordIndex < data_00587f70->size && (1 << use->index & data_00587f70->bits[use->index >> 5]) != 0 &&
             use->linear != NULL) {
             useReference = entry->object;

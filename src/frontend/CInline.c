@@ -1244,10 +1244,6 @@ void add_undefined_function_object(Object *object)
     }
 }
 
-/* Record allocated by the original: 0x20 bytes, fields at 0x00 (next),
- * 0x04 (function object), 0x08 / 0x0c (two stored pointers) and a byte
- * state at 0x1e. */
-
 void CInline_AddSpecialization(Object *func, void *definition, void *specialization)
 {
     CPrecNode *work;

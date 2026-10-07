@@ -44,10 +44,6 @@
 
 static short gColoringRegisterCount;
 
-/* Interference graph node, recovered from the field offsets used in
- * Coloring_SetupGPRs: the object pointer sits at 0x04, the register number
- * (a word) at 0x10 and a byte of flags at 0x12. */
-
 /* Register record returned by the binding lookup: word register number at
  * 0x24, second word register number at 0x26, byte flag at 0x28. */
 

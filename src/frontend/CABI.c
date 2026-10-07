@@ -52,9 +52,6 @@
 static void *trans_vtboffsets;
 static Object *CABI_ThisArg(void);
 
-/* CABI.c: C++ class ABI support (vtables, this expressions, generated
- * constructors and destructors). Port of the GC/1.2.5 Windows compiler,
- * matched function by function against the original executable. */
 enum { OVERRIDE_VIRTUAL = 1 };
 
 enum { ST_EXPRESSION_0050b120 = 4 };

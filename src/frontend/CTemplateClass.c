@@ -1452,7 +1452,7 @@ void instantiate_friend_declaration(TypeDeduce *ctx, struct TemplateFriend *decl
 {
     DeclInfo instance;
     TemplArg *parameter;
-    void *savedScope[3]; /* CScope_SetNameSpaceScope: retain the original three-word stack slot */
+    void *savedScope[3];
     Boolean result;
     NameSpace *scope;
     Object *object;

@@ -739,10 +739,6 @@ void fn_004e2940(TypeClass *exceptionData)
     }
 }
 
-/* One entry in the list of exception-specification classes: next pointer at
- * 0x00, the class it denotes at 0x04, and a byte flag at 0x0e.  Only the
- * fields touched by the original body are named. */
-
 /* * Mark every entry of `list` whose class is `cls` or one of its transitive
  * base classes. */
 void mark_class_and_bases(ClassNode *list, TypeClass *cls)

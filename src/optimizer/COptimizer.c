@@ -560,7 +560,6 @@ void mark_reachable_statements(Statement *input)
     }
 }
 
-/* Reconstructed from the stock GC/1.2.5 executable. */
 /* COptimizer_CountExpressionObjectUses inlines this; COptimizer_RecordObjectUse, defined after it, has the same body. */
 static inline void RecordObjectUse(Object *object, unsigned char direct_reference)
 {
@@ -701,15 +700,6 @@ void COptimizer_CountExpressionObjectUses(ENode *expression)
 /* Entries attached to optimizer statements. */
 /* Statement records traversed by the optimizer. */
 
-/*
- * Frontend expression/object bridge recovered from COptimizer.c.
- *
- * A CodeGen item carries an expression pointer at +0x0a. This walk follows
- * that expression graph to source Object identities and updates the
- * same VarInfo fields later consumed by code motion and allocation.
- */
-
-/* Reconstructed from the stock GC/1.2.5 executable. */
 void COptimizer_RecordObjectUse(Object *object, unsigned char direct_reference)
 {
     VarInfo *info;

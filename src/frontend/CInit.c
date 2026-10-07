@@ -139,10 +139,6 @@ static Boolean CInit_IsDtorTemp(ENode *e)
     return e->type == EPRECOMP && e->data.temp.needs_dtor;
 }
 
-/* Local record used to describe the object being created.  Offsets verified
- * against the disassembly: 0x00 pointer, 0x04 dword, 0x0c pointer,
- * 0x3a word, 0x49 byte; total size 0x5c. */
-
 static Object *CreateTempObject(Type *type)
 {
     DeclInfo s;
@@ -2154,9 +2150,6 @@ void CInit_ExportConst(Object *obj)
     else
         emit_object(obj, buf, NULL, obj->type->size, 0);
 }
-
-/* Local descriptor record used by CParser_NewObject; offsets are the verified
- * positions in the original frame. */
 
 void initialize_class_array(Object *obj, Type *type, Boolean staticInit)
 {

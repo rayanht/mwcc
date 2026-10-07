@@ -725,27 +725,23 @@ int IRO_ConstantFolding(void)
                     integerResult = 0;
                     switch (node->nodetype) {
                         case EADD:
-                            /* (stand-in: the original folds through a long long prototype) */ floatValue.ll =
-                                ((long long (*)(Type *, long long, int, long long))CMach_CalcFloatDiadic)(
-                                    node->rtype, leftValue.ll, '+', rightValue.ll);
+                            floatValue.ll = ((long long (*)(Type *, long long, int, long long))CMach_CalcFloatDiadic)(
+                                node->rtype, leftValue.ll, '+', rightValue.ll);
                             folded = 1;
                             break;
                         case ESUB:
-                            /* (stand-in: the original folds through a long long prototype) */ floatValue.ll =
-                                ((long long (*)(Type *, long long, int, long long))CMach_CalcFloatDiadic)(
-                                    node->rtype, leftValue.ll, '-', rightValue.ll);
+                            floatValue.ll = ((long long (*)(Type *, long long, int, long long))CMach_CalcFloatDiadic)(
+                                node->rtype, leftValue.ll, '-', rightValue.ll);
                             folded = 1;
                             break;
                         case EMUL:
-                            /* (stand-in: the original folds through a long long prototype) */ floatValue.ll =
-                                ((long long (*)(Type *, long long, int, long long))CMach_CalcFloatDiadic)(
-                                    node->rtype, leftValue.ll, '*', rightValue.ll);
+                            floatValue.ll = ((long long (*)(Type *, long long, int, long long))CMach_CalcFloatDiadic)(
+                                node->rtype, leftValue.ll, '*', rightValue.ll);
                             folded = 1;
                             break;
                         case EDIV:
-                            /* (stand-in: the original folds through a long long prototype) */ floatValue.ll =
-                                ((long long (*)(Type *, long long, int, long long))CMach_CalcFloatDiadic)(
-                                    node->rtype, leftValue.ll, '/', rightValue.ll);
+                            floatValue.ll = ((long long (*)(Type *, long long, int, long long))CMach_CalcFloatDiadic)(
+                                node->rtype, leftValue.ll, '/', rightValue.ll);
                             folded = 1;
                             break;
                         case ELESS:
@@ -806,7 +802,6 @@ int IRO_ConstantFolding(void)
                 break;
         }
     }
-    /* (stand-in: this caller takes the result of IroVars_CheckTimedLongjmp) */
     return ((int (*)(void))IroVars_CheckTimedLongjmp)();
 }
 

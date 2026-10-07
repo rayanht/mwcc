@@ -184,10 +184,6 @@ void Operands_MakeIndirect(Operand *op, ENode *e)
     }
 }
 
-/* Operand descriptor used by the P-code address generator.  Field offsets are
- * the ones observed in the original: type 0, reg 2, reg2 6, offset 8,
- * disp 0xe, object 0x12. */
-
 void Operands_Add(Operand *left, Operand *right, SInt16 hint, Operand *dest)
 {
     Operand *swap;

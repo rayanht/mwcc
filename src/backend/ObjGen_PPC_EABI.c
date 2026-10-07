@@ -107,8 +107,7 @@ static inline SectionSymbolAttributes *ObjGen_Lookup(Object *obj)
     SInt16 s;
     SInt32 id;
 
-    /* (stand-in: the original calls it through an int-returning declaration) */ (
-        void)((int (*)(Object *, SInt32, Boolean))ObjGen_PPC_EABI_SetObjectSection)(obj, obj->type->size, 0);
+    (void)((int (*)(Object *, SInt32, Boolean))ObjGen_PPC_EABI_SetObjectSection)(obj, obj->type->size, 0);
     s = obj->section;
     if (s < 0)
         s = CodeGen_FindInterruptGenerationRecord(s)->sectionIndex;
@@ -137,8 +136,7 @@ static inline UInt16 section_code(Object *obj)
         SectionSymbolAttributes *p_s;
         SInt16 s;
         SInt32 id;
-        /* (stand-in: the original calls it through an int-returning declaration) */ (
-            void)((int (*)(Object *, SInt32, Boolean))ObjGen_PPC_EABI_SetObjectSection)(obj, obj->type->size, 0);
+        (void)((int (*)(Object *, SInt32, Boolean))ObjGen_PPC_EABI_SetObjectSection)(obj, obj->type->size, 0);
         s = obj->section;
         if (s < 0)
             s = CodeGen_FindInterruptGenerationRecord(s)->sectionIndex;

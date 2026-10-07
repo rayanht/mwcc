@@ -276,7 +276,6 @@ void emit_pair_copy_loop(Operand *destination, Operand *source, int size)
     StructMoves_0051aee0(source, -8);
     wordRegister = allocateGPR();
     PCodeUtilities_LoadImmediate(wordRegister, count = (SInt32)size >> 3);
-    /* (stand-in: the call is compiled as against a two-argument prototype taking the register as SInt16) */
     ((void (*)(int, SInt16))PCodeUtilities_EmitInstruction)(0x78, wordRegister);
     PCodeUtilities_ResolveLabel(loopLabel);
 

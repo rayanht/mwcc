@@ -19,8 +19,6 @@ extern "C" {
 #define TYPE_POINTER(ty) ((TypePointer *)(ty))
 #define TYPE_TEMPLATE(ty) ((TypeTemplDep *)(ty))
 #define TPTR_TARGET(ty) (TYPE_POINTER(ty)->target)
-/* Single-byte enumeration in this build: TYPEPOINTER is 11, verified by
- * the argument check in CABI_ThisArg. */
 enum {
     TYPEVOID = 0,
     TYPEINT = 1,

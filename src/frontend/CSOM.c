@@ -1752,7 +1752,6 @@ void CSOM_GenerateSomselfAssignment(TypeClass *tclass, Statement *stmt)
     }
 }
 
-/* In this build the temp-node kind byte compared by the original is 0x3c. */
 #define ETEMP_KIND 60
 
 #include <string.h>

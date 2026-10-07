@@ -1004,9 +1004,6 @@ void select_layout_member_overrides(OverrideClass *node)
     return;
 }
 
-/* Forward declarations for the helpers (real signatures recovered from the
- * caller's pushes / field accesses). */
-
 void CClass_DefineCovariantFuncs(Object *func, CInlineInfo *inlineInfo)
 {
     CClassNode *returnClass;

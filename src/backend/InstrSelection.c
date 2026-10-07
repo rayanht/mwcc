@@ -151,7 +151,6 @@ enum ETypeCode {
     ETC_POINTER = TYPEPOINTER
 };
 
-/* The integer-constant node kind in this build. */
 enum { INTCONST_NODE = 49 };
 
 static inline void EmitIntoReg(ENode *l, SInt16 r1, SInt16 r2, Operand *res)

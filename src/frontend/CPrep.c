@@ -4485,9 +4485,6 @@ void CPrep_InsertTokenBuffer(TokenStream *arg, SInt32 *result)
     *result = bufferedTokenPosition - buffered_tokens;
 }
 
-/* 24-byte token record: the /0x18 in the disassembly is the pointer
- * difference scaling produced by this struct size. */
-
 void CPrep_BufferTokensThroughSemicolon(TokenStream *buffer, void (*processToken)(struct TStreamElement *))
 {
     int savedMode;

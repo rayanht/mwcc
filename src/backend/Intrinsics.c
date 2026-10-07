@@ -4536,8 +4536,7 @@ void Intrinsics_GenerateIntrinsicCall(ENode *node, short requestedReg, Operand *
         case 0x11c: {
             UInt16 opcode;
             opcode = find_intrinsic_triple_code(intrinsic, node, args->node, args->next->node, args->next->next->node);
-            /* (stand-in: the original caller pushes the opcode through a short prototype) */ (
-                (void (*)(ENode *, ENode *, ENode *, short, Operand *, short))emit_instruction_with_vr_result)(
+            ((void (*)(ENode *, ENode *, ENode *, short, Operand *, short))emit_instruction_with_vr_result)(
                 (ENode *)args->node, (ENode *)args->next->node, (ENode *)args->next->next->node, requestedReg, result,
                 (short)opcode);
         } break;
@@ -4565,8 +4564,7 @@ void Intrinsics_GenerateIntrinsicCall(ENode *node, short requestedReg, Operand *
         case 0x9c: {
             UInt16 opcode;
             opcode = find_binary_intrinsic_code(intrinsic, node, args->node, args->next->node);
-            /* (stand-in: the original caller pushes the opcode through a short prototype) */ (
-                (void (*)(ENode *, ENode *, short, Operand *, short, unsigned short))emit_record_form_condition)(
+            ((void (*)(ENode *, ENode *, short, Operand *, short, unsigned short))emit_record_form_condition)(
                 (ENode *)args->node, (ENode *)args->next->node, requestedReg, result, (short)opcode, intrinsic);
         } break;
         case 0x89:

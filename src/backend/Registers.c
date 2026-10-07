@@ -502,9 +502,6 @@ void Registers_BindGPR(Object *obj, SInt16 reg)
     }
 }
 
-/* VarInfo layout recovered from the original: 0x2c bytes, with the
- * register fields at 0x24/0x26 and the two flags at 0x28/0x2a. */
-
 void Registers_BindGPRPair(Object *obj, SInt16 reg0, SInt16 reg1)
 {
     VarInfo *info;
