@@ -152,7 +152,6 @@ extern void write_buffer_at_offset(void *src, SInt32 offset, SInt32 size);
 extern void CInit_Init(void);
 extern void CInit_DefineTentativeData(void);
 extern struct Object *destructor_registration_func;
-extern int pointer_size;
 extern struct CInitSave *cinit_state;
 
 #ifdef __cplusplus

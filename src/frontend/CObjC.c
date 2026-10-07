@@ -3155,7 +3155,7 @@ Object *CObjCModern_GetOrCreateFunctionObject(char *identifier, char *identifier
     currentNameSpace = registration_context;
     newObject = CParser_NewFunctionObject(NULL);
     currentNameSpace = savedContext;
-    newObject->type = &data_0055d5e8;
+    newObject->type = (Type *)&data_0055d5e8;
     newObject->name = name;
     if (found == NULL)
         CScope_AddObject(registration_context, name, (ObjBase *)newObject);

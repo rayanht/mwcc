@@ -44,6 +44,7 @@ struct PendingObjectClass {
 };
 extern TypeIntegral stlongdouble;
 extern Type stvoid;
+extern TypeFunc data_0055d5e8;
 /* The tokens the lexer returns in tk: a character is its own token, the rest are these (keywords as the lexer names them,
  * operators in the lexer's order); numbers, as tk is a short. */
 #define TK_EOF 0
@@ -279,10 +280,6 @@ extern unsigned char DAT_0058844a;
 extern unsigned char DAT_0058848a;
 extern unsigned char DAT_0058852e;
 extern struct BufferedToken declaration_token;
-extern int data_00580dc0;
-extern struct ClassTypeLink *class_type_links;
-extern struct CParseRec *class_parse_recs;
-extern struct CParseCacheNode *single_expr_functions;
 extern FuncArg data_00584748;
 extern struct ObjectReferenceEntry *object_reference_stack;
 extern struct Object *data_0058717c;
@@ -295,7 +292,6 @@ extern struct PendingObjectClass *pending_object_classes;
 extern struct Object *dynamic_cast_object;
 extern SInt32 data_00588454;
 extern Type data_0058847c;
-extern char s_vector_0055d638[7];
 extern unsigned short _DAT_0058844c;
 extern unsigned short _DAT_0058848c;
 extern unsigned int _DAT_0058843e;

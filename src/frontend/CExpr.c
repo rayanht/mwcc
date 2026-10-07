@@ -4089,7 +4089,7 @@ ENode *parse_postfix_expression(Boolean allowSpecial)
                     result->rtype = &data_0055d5c0;
                     result->data.funccall.funcref = expr;
                     result->data.funccall.args = operand.list;
-                    result->data.funccall.functype = (TypeFunc *)&data_0055d5e8;
+                    result->data.funccall.functype = &data_0055d5e8;
                     tk = CPrepTokenizer_GetNextToken();
                     expr = result;
                 } else {

@@ -62,6 +62,17 @@
 
 #include "compiler/CDecl.h"
 
+Type data_0055d5c0 = {TYPETEMPLDEPEXPR, 0};
+Type type_placeholder = {0xFF, 1};
+Type stvoid = {TYPEVOID, 0};
+TypePointer void_ptr = {TYPEPOINTER, 4, &stvoid, 0};
+TypeFunc data_0055d5e8 = {TYPEFUNC, 0, NULL, NULL, &stvoid, 0, 0};
+
+static int data_00580dc0;
+static struct ClassTypeLink *class_type_links;
+static struct CParseRec *class_parse_recs;
+static struct CParseCacheNode *single_expr_functions;
+
 static int IsTempName(HashNameNode *name)
 {
     return name == NULL || name->name[0] == '@';
@@ -2155,7 +2166,7 @@ UInt8 islookaheaddeclaration(void)
     token = tk;
     if ((token < 0x100 || token > 0x131) && token != 0x174 &&
         (tk != TK_IDENTIFIER || CScope_PossibleTypeName(data_00587fa0) == 0)) {
-        if (tk != TK_IDENTIFIER || copts.altivecModel == 0 || memcmp(data_00587fa0->name, s_vector_0055d638, 7) != 0) {
+        if (tk != TK_IDENTIFIER || copts.altivecModel == 0 || memcmp(data_00587fa0->name, "vector", 7) != 0) {
             CPrep_SetPosition(&savedState);
             return 0;
         }
@@ -2182,7 +2193,7 @@ Boolean isdeclaration(Boolean option1, Boolean option2, Boolean option3, short o
     if (((token < 0x100 || token > 0x131) && token != 0x174) &&
         (tk != TK_IDENTIFIER || CScope_PossibleTypeName(data_00587fa0) == 0)) {
         if (tk != TK_IDENTIFIER || copts.altivecModel == 0 ||
-            memcmp(data_00587fa0->name, s_vector_0055d638, sizeof(s_vector_0055d638)) != 0) {
+            memcmp(data_00587fa0->name, "vector", sizeof("vector")) != 0) {
             return 0;
         }
     } else if (copts.cplusplus == 0) {

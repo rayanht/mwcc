@@ -1044,7 +1044,7 @@ ENode *create_temp_object_expr(Type *type, Boolean reportError)
             call->data.funccall.args->next->node = create_objectrefnode(CABI_GetDestructorObject(cls, 1));
             call->data.funccall.args->next->next = CompilerTools_AllocatePool(sizeof(ENodeList));
 
-            tempType = CDecl_NewStructType(3 * pointer_size, CMachine_GetTypeAlignment((Type *)&void_ptr));
+            tempType = CDecl_NewStructType(3 * void_ptr.size, CMachine_GetTypeAlignment((Type *)&void_ptr));
             argumentObject = CreateTempObject(tempType);
 
             call->data.funccall.args->next->next->node = create_objectrefnode(argumentObject);
@@ -1139,7 +1139,7 @@ void initialize_class_array(Object *obj, Type *type, Boolean staticInit)
             if (dtor != NULL && copts.f92 == 0) {
                 arrayDtor = CParser_NewCompilerDefFunctionObject();
                 arrayDtor->name = CParser_AppendUniqueName("__arraydtor");
-                arrayDtor->type = &data_0055d5e8;
+                arrayDtor->type = (Type *)&data_0055d5e8;
                 arrayDtor->sclass = TK_STATIC;
                 arrayDtor->qual = Q_INLINE;
                 CParser_RegisterSingleExprFunction(arrayDtor,
@@ -1149,7 +1149,7 @@ void initialize_class_array(Object *obj, Type *type, Boolean staticInit)
                                                                 intconstnode((Type *)&stsignedlong, count)));
                 node = makediadicnode(node, nullnode(), ECOMMA);
                 node->rtype = (Type *)&void_ptr;
-                registrationType = CDecl_NewStructType(pointer_size * 3, CMachine_GetTypeAlignment((Type *)&void_ptr));
+                registrationType = CDecl_NewStructType(void_ptr.size * 3, CMachine_GetTypeAlignment((Type *)&void_ptr));
                 memclrw(&declaration, sizeof(declaration));
                 declaration.dtype = registrationType;
                 declaration.name = CParser_GetUniqueName();
@@ -2133,7 +2133,7 @@ ENode *create_destructor_registration_call(Type *objectType, Object *destructor,
     call->data.funccall.args->next->node = create_objectrefnode(CABI_GetDestructorObject(destructor, 1));
     call->data.funccall.args->next->next = CompilerTools_AllocatePool(sizeof(ENodeList));
 
-    registrationType = CDecl_NewStructType(pointer_size * 3, CMachine_GetTypeAlignment((Type *)&void_ptr));
+    registrationType = CDecl_NewStructType(void_ptr.size * 3, CMachine_GetTypeAlignment((Type *)&void_ptr));
     memclrw(&declaration, sizeof(declaration));
     declaration.dtype = registrationType;
     declaration.name = CParser_GetUniqueName();

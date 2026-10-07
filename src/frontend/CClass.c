@@ -2014,7 +2014,7 @@ Object *get_or_create_thunk_object(Object *source, SInt32 firstArgument, SInt32 
 
     object = CParser_NewCompilerDefFunctionObject();
     object->name = CMangler_ThunkName(source, firstArgument, secondArgument, thirdArgument);
-    object->type = &data_0055d5e8;
+    object->type = (Type *)&data_0055d5e8;
     object->sclass = TK_EXTERN;
     object->qual = Q_IMPLICIT_WEAK;
     object->u.func.linkname = object->name;

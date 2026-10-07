@@ -537,7 +537,7 @@ void layout_vtable(ClassLayoutInput *layout, TypeClass *classType)
             --index;
         }
         if ((classType->flags & (8192 | CLASS_SINGLE_OBJECT)) != 0) {
-            size = pointer_size;
+            size = void_ptr.size;
         } else {
             size = 8;
         }
@@ -638,7 +638,7 @@ int CABI_LayoutClass(struct ClassLayoutInput *members, TypeClass *type)
             while (base != NULL) {
                 if (base->is_virtual != 0) {
                     base->offset = CMach_MemberAlignValue(TYPE(&void_ptr), baseSize) + baseSize;
-                    baseSize = base->offset + pointer_size;
+                    baseSize = base->offset + void_ptr.size;
                 }
                 base = base->next;
             }

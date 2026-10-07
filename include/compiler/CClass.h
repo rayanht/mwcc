@@ -152,7 +152,6 @@ extern Object *get_or_create_thunk_object(Object *source, SInt32 firstArgument, 
 extern PendingThunk *pending_thunks;
 extern void CClass_GenThunks(void);
 extern void CClass_ResetPendingThunks(void);
-extern Type data_0055d5e8;
 struct BClassList;
 
 #ifdef __cplusplus
