@@ -2545,664 +2545,11 @@ static short intrinsic_opcodes[313] = {
 
 static TypePointer stchar_ptr = {TYPEPOINTER, 4, TYPE(&stchar)};
 
-char Intrinsics_IsRegisteredObject(ObjBase *object)
-{
-    int i;
-    for (i = 0; i < 313; i++) {
-        if (object == (ObjBase *)intrinsics[i])
-            return 1;
-    }
-    return 0;
-}
-
-static void GenGPR(UInt8 *node, Operand *op)
-{
-    data_00560648[*node](node, 0, 0, op);
-    if (op->kind != '\0')
-        Operands_ForceGPR(op, ((ENode *)node)->rtype, 0);
-}
-
-static void GenFPR(UInt8 *node, Operand *op)
-{
-    data_00560648[*node](node, 0, 0, op);
-    if (op->kind != '\x05')
-        Operands_ForceFPR(op, ((ENode *)node)->rtype, 0);
-}
-
-static void GenVR(UInt8 *node, Operand *op)
-{
-    data_00560648[*node](node, 0, 0, op);
-    if (op->kind != '\x06')
-        Operands_ForceVR(op, ((ENode *)node)->rtype, 0);
-}
-
-static void *registration_find(const char *name)
-{
-    NameSpaceName *r = CScope_FindNameSpaceName(cscope_root, GetHashNameNode(name));
-    void *object = NULL;
-    if (r && (object = ((NameSpaceName *)r)[0].first.object) && !((NameSpaceName *)r)[0].first.next)
-        return object;
-    return NULL;
-}
-
-unsigned char Intrinsics_InitRegistrations(unsigned char active)
-{
-    if (active) {
-        if (!(intrinsics[0] = registration_find("__eieio")))
-            return 0;
-        if (!(intrinsics[1] = registration_find("__sync")))
-            return 0;
-        if (!(intrinsics[2] = registration_find("__isync")))
-            return 0;
-        if (!(intrinsics[3] = registration_find("__abs")))
-            return 0;
-        if (!(intrinsics[4] = registration_find("__labs")))
-            return 0;
-        if (!(intrinsics[5] = registration_find("__fabs")))
-            return 0;
-        if (!(intrinsics[6] = registration_find("__fnabs")))
-            return 0;
-        if (!(intrinsics[7] = registration_find("__setflm")))
-            return 0;
-        if (!(intrinsics[33] = registration_find("__frsqrte")))
-            return 0;
-        if (!(intrinsics[8] = registration_find("__alloca")))
-            return 0;
-        if (!(intrinsics[9] = registration_find("__cntlzw")))
-            return 0;
-        if (!(intrinsics[10] = registration_find("__lhbrx")))
-            return 0;
-        if (!(intrinsics[11] = registration_find("__lwbrx")))
-            return 0;
-        if (!(intrinsics[12] = registration_find("__sthbrx")))
-            return 0;
-        if (!(intrinsics[13] = registration_find("__stwbrx")))
-            return 0;
-        if (!(intrinsics[14] = registration_find("__dcbf")))
-            return 0;
-        if (!(intrinsics[15] = registration_find("__dcbt")))
-            return 0;
-        if (!(intrinsics[16] = registration_find("__dcbst")))
-            return 0;
-        if (!(intrinsics[17] = registration_find("__dcbtst")))
-            return 0;
-        if (!(intrinsics[18] = registration_find("__dcbz")))
-            return 0;
-        if (!(intrinsics[19] = registration_find("__mulhw")))
-            return 0;
-        if (!(intrinsics[20] = registration_find("__mulhwu")))
-            return 0;
-        if (!(intrinsics[21] = registration_find("__divw")))
-            return 0;
-        if (!(intrinsics[22] = registration_find("__divwu")))
-            return 0;
-        if (!(intrinsics[23] = registration_find("__fmadd")))
-            return 0;
-        if (!(intrinsics[24] = registration_find("__fmsub")))
-            return 0;
-        if (!(intrinsics[25] = registration_find("__fnmadd")))
-            return 0;
-        if (!(intrinsics[26] = registration_find("__fnmsub")))
-            return 0;
-        if (!(intrinsics[34] = registration_find("__fsel")))
-            return 0;
-        if (!(intrinsics[27] = registration_find("__fmadds")))
-            return 0;
-        if (!(intrinsics[28] = registration_find("__fmsubs")))
-            return 0;
-        if (!(intrinsics[29] = registration_find("__fnmadds")))
-            return 0;
-        if (!(intrinsics[30] = registration_find("__fnmsubs")))
-            return 0;
-        if (!(intrinsics[31] = registration_find("__mffs")))
-            return 0;
-        if (!(intrinsics[32] = registration_find("__fres")))
-            return 0;
-        if (!(intrinsics[40] = registration_find("__fabsf")))
-            return 0;
-        if (!(intrinsics[41] = registration_find("__fnabsf")))
-            return 0;
-        if (!(intrinsics[35] = registration_find("__strcpy")))
-            return 0;
-        if (!(intrinsics[37] = registration_find("__rlwimi")))
-            return 0;
-        if (!(intrinsics[38] = registration_find("__rlwinm")))
-            return 0;
-        if (!(intrinsics[39] = registration_find("__rlwnm")))
-            return 0;
-        if (!(intrinsics[42] = registration_find("vec_add")))
-            return 0;
-        if (!(intrinsics[43] = registration_find("vec_addc")))
-            return 0;
-        if (!(intrinsics[44] = registration_find("vec_adds")))
-            return 0;
-        if (!(intrinsics[45] = registration_find("vec_and")))
-            return 0;
-        if (!(intrinsics[46] = registration_find("vec_andc")))
-            return 0;
-        if (!(intrinsics[47] = registration_find("vec_avg")))
-            return 0;
-        if (!(intrinsics[48] = registration_find("vec_ceil")))
-            return 0;
-        if (!(intrinsics[49] = registration_find("vec_cmpb")))
-            return 0;
-        if (!(intrinsics[50] = registration_find("vec_cmpeq")))
-            return 0;
-        if (!(intrinsics[51] = registration_find("vec_cmpge")))
-            return 0;
-        if (!(intrinsics[52] = registration_find("vec_cmple")))
-            return 0;
-        if (!(intrinsics[53] = registration_find("vec_cmpgt")))
-            return 0;
-        if (!(intrinsics[54] = registration_find("vec_cmplt")))
-            return 0;
-        if (!(intrinsics[55] = registration_find("vec_ctf")))
-            return 0;
-        if (!(intrinsics[56] = registration_find("vec_cts")))
-            return 0;
-        if (!(intrinsics[57] = registration_find("vec_ctu")))
-            return 0;
-        if (!(intrinsics[64] = registration_find("vec_expte")))
-            return 0;
-        if (!(intrinsics[65] = registration_find("vec_floor")))
-            return 0;
-        if (!(intrinsics[66] = registration_find("vec_ld")))
-            return 0;
-        if (!(intrinsics[67] = registration_find("vec_lde")))
-            return 0;
-        if (!(intrinsics[68] = registration_find("vec_ldl")))
-            return 0;
-        if (!(intrinsics[69] = registration_find("vec_loge")))
-            return 0;
-        if (!(intrinsics[70] = registration_find("vec_lvsl")))
-            return 0;
-        if (!(intrinsics[71] = registration_find("vec_lvsr")))
-            return 0;
-        if (!(intrinsics[72] = registration_find("vec_madd")))
-            return 0;
-        if (!(intrinsics[73] = registration_find("vec_madds")))
-            return 0;
-        if (!(intrinsics[74] = registration_find("vec_max")))
-            return 0;
-        if (!(intrinsics[75] = registration_find("vec_mergeh")))
-            return 0;
-        if (!(intrinsics[76] = registration_find("vec_mergel")))
-            return 0;
-        if (!(intrinsics[77] = registration_find("vec_mfvscr")))
-            return 0;
-        if (!(intrinsics[78] = registration_find("vec_min")))
-            return 0;
-        if (!(intrinsics[79] = registration_find("vec_mladd")))
-            return 0;
-        if (!(intrinsics[80] = registration_find("vec_mradds")))
-            return 0;
-        if (!(intrinsics[81] = registration_find("vec_msum")))
-            return 0;
-        if (!(intrinsics[82] = registration_find("vec_msums")))
-            return 0;
-        if (!(intrinsics[83] = registration_find("vec_mtvscr")))
-            return 0;
-        if (!(intrinsics[84] = registration_find("vec_mule")))
-            return 0;
-        if (!(intrinsics[85] = registration_find("vec_mulo")))
-            return 0;
-        if (!(intrinsics[86] = registration_find("vec_nmsub")))
-            return 0;
-        if (!(intrinsics[87] = registration_find("vec_nor")))
-            return 0;
-        if (!(intrinsics[88] = registration_find("vec_or")))
-            return 0;
-        if (!(intrinsics[89] = registration_find("vec_pack")))
-            return 0;
-        if (!(intrinsics[90] = registration_find("vec_packpx")))
-            return 0;
-        if (!(intrinsics[91] = registration_find("vec_packs")))
-            return 0;
-        if (!(intrinsics[92] = registration_find("vec_packsu")))
-            return 0;
-        if (!(intrinsics[93] = registration_find("vec_perm")))
-            return 0;
-        if (!(intrinsics[94] = registration_find("vec_re")))
-            return 0;
-        if (!(intrinsics[95] = registration_find("vec_rl")))
-            return 0;
-        if (!(intrinsics[96] = registration_find("vec_round")))
-            return 0;
-        if (!(intrinsics[97] = registration_find("vec_rsqrte")))
-            return 0;
-        if (!(intrinsics[98] = registration_find("vec_sel")))
-            return 0;
-        if (!(intrinsics[99] = registration_find("vec_sl")))
-            return 0;
-        if (!(intrinsics[100] = registration_find("vec_sld")))
-            return 0;
-        if (!(intrinsics[101] = registration_find("vec_sll")))
-            return 0;
-        if (!(intrinsics[102] = registration_find("vec_slo")))
-            return 0;
-        if (!(intrinsics[103] = registration_find("vec_splat")))
-            return 0;
-        if (!(intrinsics[104] = registration_find("vec_splat_s8")))
-            return 0;
-        if (!(intrinsics[105] = registration_find("vec_splat_s16")))
-            return 0;
-        if (!(intrinsics[106] = registration_find("vec_splat_s32")))
-            return 0;
-        if (!(intrinsics[107] = registration_find("vec_splat_u8")))
-            return 0;
-        if (!(intrinsics[108] = registration_find("vec_splat_u16")))
-            return 0;
-        if (!(intrinsics[109] = registration_find("vec_splat_u32")))
-            return 0;
-        if (!(intrinsics[110] = registration_find("vec_sr")))
-            return 0;
-        if (!(intrinsics[111] = registration_find("vec_sra")))
-            return 0;
-        if (!(intrinsics[112] = registration_find("vec_srl")))
-            return 0;
-        if (!(intrinsics[113] = registration_find("vec_sro")))
-            return 0;
-        if (!(intrinsics[114] = registration_find("vec_st")))
-            return 0;
-        if (!(intrinsics[115] = registration_find("vec_ste")))
-            return 0;
-        if (!(intrinsics[116] = registration_find("vec_stl")))
-            return 0;
-        if (!(intrinsics[117] = registration_find("vec_sub")))
-            return 0;
-        if (!(intrinsics[118] = registration_find("vec_subc")))
-            return 0;
-        if (!(intrinsics[119] = registration_find("vec_subs")))
-            return 0;
-        if (!(intrinsics[120] = registration_find("vec_sum4s")))
-            return 0;
-        if (!(intrinsics[121] = registration_find("vec_sum2s")))
-            return 0;
-        if (!(intrinsics[122] = registration_find("vec_sums")))
-            return 0;
-        if (!(intrinsics[123] = registration_find("vec_trunc")))
-            return 0;
-        if (!(intrinsics[124] = registration_find("vec_unpack2sh")))
-            return 0;
-        if (!(intrinsics[125] = registration_find("vec_unpack2sl")))
-            return 0;
-        if (!(intrinsics[126] = registration_find("vec_unpack2uh")))
-            return 0;
-        if (!(intrinsics[127] = registration_find("vec_unpack2ul")))
-            return 0;
-        if (!(intrinsics[128] = registration_find("vec_unpackh")))
-            return 0;
-        if (!(intrinsics[129] = registration_find("vec_unpackl")))
-            return 0;
-        if (!(intrinsics[130] = registration_find("vec_xor")))
-            return 0;
-        if (!(intrinsics[131] = registration_find("vec_all_eq")))
-            return 0;
-        if (!(intrinsics[132] = registration_find("vec_all_ge")))
-            return 0;
-        if (!(intrinsics[133] = registration_find("vec_all_gt")))
-            return 0;
-        if (!(intrinsics[134] = registration_find("vec_all_in")))
-            return 0;
-        if (!(intrinsics[135] = registration_find("vec_all_le")))
-            return 0;
-        if (!(intrinsics[136] = registration_find("vec_all_lt")))
-            return 0;
-        if (!(intrinsics[137] = registration_find("vec_all_nan")))
-            return 0;
-        if (!(intrinsics[138] = registration_find("vec_all_ne")))
-            return 0;
-        if (!(intrinsics[139] = registration_find("vec_all_nge")))
-            return 0;
-        if (!(intrinsics[140] = registration_find("vec_all_ngt")))
-            return 0;
-        if (!(intrinsics[141] = registration_find("vec_all_nle")))
-            return 0;
-        if (!(intrinsics[142] = registration_find("vec_all_nlt")))
-            return 0;
-        if (!(intrinsics[143] = registration_find("vec_all_numeric")))
-            return 0;
-        if (!(intrinsics[144] = registration_find("vec_any_eq")))
-            return 0;
-        if (!(intrinsics[145] = registration_find("vec_any_ge")))
-            return 0;
-        if (!(intrinsics[146] = registration_find("vec_any_gt")))
-            return 0;
-        if (!(intrinsics[147] = registration_find("vec_any_le")))
-            return 0;
-        if (!(intrinsics[148] = registration_find("vec_any_lt")))
-            return 0;
-        if (!(intrinsics[149] = registration_find("vec_any_nan")))
-            return 0;
-        if (!(intrinsics[150] = registration_find("vec_any_ne")))
-            return 0;
-        if (!(intrinsics[151] = registration_find("vec_any_nge")))
-            return 0;
-        if (!(intrinsics[152] = registration_find("vec_any_ngt")))
-            return 0;
-        if (!(intrinsics[153] = registration_find("vec_any_nle")))
-            return 0;
-        if (!(intrinsics[154] = registration_find("vec_any_nlt")))
-            return 0;
-        if (!(intrinsics[155] = registration_find("vec_any_numeric")))
-            return 0;
-        if (!(intrinsics[156] = registration_find("vec_any_out")))
-            return 0;
-        if (!(intrinsics[157] = registration_find("vec_vaddubm")))
-            return 0;
-        if (!(intrinsics[158] = registration_find("vec_vadduhm")))
-            return 0;
-        if (!(intrinsics[159] = registration_find("vec_vadduwm")))
-            return 0;
-        if (!(intrinsics[160] = registration_find("vec_vaddfp")))
-            return 0;
-        if (!(intrinsics[161] = registration_find("vec_vaddcuw")))
-            return 0;
-        if (!(intrinsics[162] = registration_find("vec_vaddubs")))
-            return 0;
-        if (!(intrinsics[163] = registration_find("vec_vaddubs")))
-            return 0;
-        if (!(intrinsics[164] = registration_find("vec_vadduhs")))
-            return 0;
-        if (!(intrinsics[165] = registration_find("vec_vadduhs")))
-            return 0;
-        if (!(intrinsics[166] = registration_find("vec_vadduws")))
-            return 0;
-        if (!(intrinsics[167] = registration_find("vec_vadduws")))
-            return 0;
-        if (!(intrinsics[168] = registration_find("vec_vand")))
-            return 0;
-        if (!(intrinsics[169] = registration_find("vec_vandc")))
-            return 0;
-        if (!(intrinsics[170] = registration_find("vec_vavgub")))
-            return 0;
-        if (!(intrinsics[171] = registration_find("vec_vavgsb")))
-            return 0;
-        if (!(intrinsics[172] = registration_find("vec_vavguh")))
-            return 0;
-        if (!(intrinsics[173] = registration_find("vec_vavgsh")))
-            return 0;
-        if (!(intrinsics[174] = registration_find("vec_vavguw")))
-            return 0;
-        if (!(intrinsics[175] = registration_find("vec_vavgsw")))
-            return 0;
-        if (!(intrinsics[176] = registration_find("vec_vrfip")))
-            return 0;
-        if (!(intrinsics[177] = registration_find("vec_vcmpbfp")))
-            return 0;
-        if (!(intrinsics[178] = registration_find("vec_vcmpequb")))
-            return 0;
-        if (!(intrinsics[179] = registration_find("vec_vcmpequh")))
-            return 0;
-        if (!(intrinsics[180] = registration_find("vec_vcmpequw")))
-            return 0;
-        if (!(intrinsics[181] = registration_find("vec_vcmpeqfp")))
-            return 0;
-        if (!(intrinsics[182] = registration_find("vec_vcmpgefp")))
-            return 0;
-        if (!(intrinsics[183] = registration_find("vec_vcmpgtub")))
-            return 0;
-        if (!(intrinsics[184] = registration_find("vec_vcmpgtsb")))
-            return 0;
-        if (!(intrinsics[185] = registration_find("vec_vcmpgtuh")))
-            return 0;
-        if (!(intrinsics[186] = registration_find("vec_vcmpgtsh")))
-            return 0;
-        if (!(intrinsics[187] = registration_find("vec_vcmpgtuw")))
-            return 0;
-        if (!(intrinsics[188] = registration_find("vec_vcmpgtsw")))
-            return 0;
-        if (!(intrinsics[189] = registration_find("vec_vcmpgtfp")))
-            return 0;
-        if (!(intrinsics[190] = registration_find("vec_vcfux")))
-            return 0;
-        if (!(intrinsics[191] = registration_find("vec_vcfsx")))
-            return 0;
-        if (!(intrinsics[192] = registration_find("vec_vctsxs")))
-            return 0;
-        if (!(intrinsics[193] = registration_find("vec_vctuxs")))
-            return 0;
-        if (!(intrinsics[194] = registration_find("vec_vexptefp")))
-            return 0;
-        if (!(intrinsics[195] = registration_find("vec_vrfim")))
-            return 0;
-        if (!(intrinsics[196] = registration_find("vec_lvx")))
-            return 0;
-        if (!(intrinsics[197] = registration_find("vec_lvebx")))
-            return 0;
-        if (!(intrinsics[198] = registration_find("vec_lvehx")))
-            return 0;
-        if (!(intrinsics[199] = registration_find("vec_lvewx")))
-            return 0;
-        if (!(intrinsics[200] = registration_find("vec_lvxl")))
-            return 0;
-        if (!(intrinsics[201] = registration_find("vec_vlogefp")))
-            return 0;
-        if (!(intrinsics[202] = registration_find("vec_vmaddfp")))
-            return 0;
-        if (!(intrinsics[203] = registration_find("vec_vmhaddshs")))
-            return 0;
-        if (!(intrinsics[204] = registration_find("vec_vmaxub")))
-            return 0;
-        if (!(intrinsics[205] = registration_find("vec_vmaxsb")))
-            return 0;
-        if (!(intrinsics[206] = registration_find("vec_vmaxuh")))
-            return 0;
-        if (!(intrinsics[207] = registration_find("vec_vmaxsh")))
-            return 0;
-        if (!(intrinsics[208] = registration_find("vec_vmaxuw")))
-            return 0;
-        if (!(intrinsics[209] = registration_find("vec_vmaxsw")))
-            return 0;
-        if (!(intrinsics[210] = registration_find("vec_vmaxfp")))
-            return 0;
-        if (!(intrinsics[211] = registration_find("vec_vmrghb")))
-            return 0;
-        if (!(intrinsics[212] = registration_find("vec_vmrghh")))
-            return 0;
-        if (!(intrinsics[213] = registration_find("vec_vmrghw")))
-            return 0;
-        if (!(intrinsics[214] = registration_find("vec_vmrglb")))
-            return 0;
-        if (!(intrinsics[215] = registration_find("vec_vmrglh")))
-            return 0;
-        if (!(intrinsics[216] = registration_find("vec_vmrglw")))
-            return 0;
-        if (!(intrinsics[204] = registration_find("vec_vminub")))
-            return 0;
-        if (!(intrinsics[205] = registration_find("vec_vminsb")))
-            return 0;
-        if (!(intrinsics[206] = registration_find("vec_vminuh")))
-            return 0;
-        if (!(intrinsics[207] = registration_find("vec_vminsh")))
-            return 0;
-        if (!(intrinsics[208] = registration_find("vec_vminuw")))
-            return 0;
-        if (!(intrinsics[209] = registration_find("vec_vminsw")))
-            return 0;
-        if (!(intrinsics[210] = registration_find("vec_vminfp")))
-            return 0;
-        if (!(intrinsics[224] = registration_find("vec_vmladduhm")))
-            return 0;
-        if (!(intrinsics[225] = registration_find("vec_vmhraddshs")))
-            return 0;
-        if (!(intrinsics[226] = registration_find("vec_vmsumubm")))
-            return 0;
-        if (!(intrinsics[227] = registration_find("vec_vmsumuhm")))
-            return 0;
-        if (!(intrinsics[228] = registration_find("vec_vmsummbm")))
-            return 0;
-        if (!(intrinsics[229] = registration_find("vec_vmsumshm")))
-            return 0;
-        if (!(intrinsics[230] = registration_find("vec_vmsumuhs")))
-            return 0;
-        if (!(intrinsics[231] = registration_find("vec_vmsumshs")))
-            return 0;
-        if (!(intrinsics[232] = registration_find("vec_vmuleub")))
-            return 0;
-        if (!(intrinsics[233] = registration_find("vec_vmulesb")))
-            return 0;
-        if (!(intrinsics[234] = registration_find("vec_vmuleuh")))
-            return 0;
-        if (!(intrinsics[235] = registration_find("vec_vmulesh")))
-            return 0;
-        if (!(intrinsics[236] = registration_find("vec_vmuloub")))
-            return 0;
-        if (!(intrinsics[237] = registration_find("vec_vmulosb")))
-            return 0;
-        if (!(intrinsics[238] = registration_find("vec_vmulouh")))
-            return 0;
-        if (!(intrinsics[239] = registration_find("vec_vmulosh")))
-            return 0;
-        if (!(intrinsics[240] = registration_find("vec_vnmsubfp")))
-            return 0;
-        if (!(intrinsics[241] = registration_find("vec_vnor")))
-            return 0;
-        if (!(intrinsics[242] = registration_find("vec_vor")))
-            return 0;
-        if (!(intrinsics[243] = registration_find("vec_vpkuhum")))
-            return 0;
-        if (!(intrinsics[244] = registration_find("vec_vpkuwum")))
-            return 0;
-        if (!(intrinsics[245] = registration_find("vec_vpkpx")))
-            return 0;
-        if (!(intrinsics[246] = registration_find("vec_vpkuhus")))
-            return 0;
-        if (!(intrinsics[247] = registration_find("vec_vpkshss")))
-            return 0;
-        if (!(intrinsics[248] = registration_find("vec_vpkuwus")))
-            return 0;
-        if (!(intrinsics[249] = registration_find("vec_vpkswss")))
-            return 0;
-        if (!(intrinsics[250] = registration_find("vec_vpkshus")))
-            return 0;
-        if (!(intrinsics[251] = registration_find("vec_vpkswus")))
-            return 0;
-        if (!(intrinsics[252] = registration_find("vec_vperm")))
-            return 0;
-        if (!(intrinsics[253] = registration_find("vec_vrefp")))
-            return 0;
-        if (!(intrinsics[254] = registration_find("vec_vrlb")))
-            return 0;
-        if (!(intrinsics[255] = registration_find("vec_vrlh")))
-            return 0;
-        if (!(intrinsics[256] = registration_find("vec_vrlw")))
-            return 0;
-        if (!(intrinsics[257] = registration_find("vec_vrfin")))
-            return 0;
-        if (!(intrinsics[258] = registration_find("vec_vrsqrtefp")))
-            return 0;
-        if (!(intrinsics[259] = registration_find("vec_vsel")))
-            return 0;
-        if (!(intrinsics[260] = registration_find("vec_vslb")))
-            return 0;
-        if (!(intrinsics[261] = registration_find("vec_vslh")))
-            return 0;
-        if (!(intrinsics[262] = registration_find("vec_vslw")))
-            return 0;
-        if (!(intrinsics[263] = registration_find("vec_vsldoi")))
-            return 0;
-        if (!(intrinsics[264] = registration_find("vec_vsl")))
-            return 0;
-        if (!(intrinsics[265] = registration_find("vec_vslo")))
-            return 0;
-        if (!(intrinsics[266] = registration_find("vec_vspltb")))
-            return 0;
-        if (!(intrinsics[267] = registration_find("vec_vsplth")))
-            return 0;
-        if (!(intrinsics[268] = registration_find("vec_vspltw")))
-            return 0;
-        if (!(intrinsics[269] = registration_find("vec_vspltisb")))
-            return 0;
-        if (!(intrinsics[270] = registration_find("vec_vspltish")))
-            return 0;
-        if (!(intrinsics[271] = registration_find("vec_vspltisw")))
-            return 0;
-        if (!(intrinsics[272] = registration_find("vec_vsrb")))
-            return 0;
-        if (!(intrinsics[273] = registration_find("vec_vsrh")))
-            return 0;
-        if (!(intrinsics[274] = registration_find("vec_vsrw")))
-            return 0;
-        if (!(intrinsics[275] = registration_find("vec_vsrab")))
-            return 0;
-        if (!(intrinsics[276] = registration_find("vec_vsrah")))
-            return 0;
-        if (!(intrinsics[277] = registration_find("vec_vsraw")))
-            return 0;
-        if (!(intrinsics[278] = registration_find("vec_vsr")))
-            return 0;
-        if (!(intrinsics[279] = registration_find("vec_vsro")))
-            return 0;
-        if (!(intrinsics[280] = registration_find("vec_stvx")))
-            return 0;
-        if (!(intrinsics[281] = registration_find("vec_stvebx")))
-            return 0;
-        if (!(intrinsics[282] = registration_find("vec_stvehx")))
-            return 0;
-        if (!(intrinsics[283] = registration_find("vec_stvewx")))
-            return 0;
-        if (!(intrinsics[284] = registration_find("vec_stvxl")))
-            return 0;
-        if (!(intrinsics[285] = registration_find("vec_vsububm")))
-            return 0;
-        if (!(intrinsics[286] = registration_find("vec_vsubuhm")))
-            return 0;
-        if (!(intrinsics[287] = registration_find("vec_vsubuwm")))
-            return 0;
-        if (!(intrinsics[288] = registration_find("vec_vsubfp")))
-            return 0;
-        if (!(intrinsics[289] = registration_find("vec_vsubcuw")))
-            return 0;
-        if (!(intrinsics[290] = registration_find("vec_vsububs")))
-            return 0;
-        if (!(intrinsics[291] = registration_find("vec_vsubsbs")))
-            return 0;
-        if (!(intrinsics[292] = registration_find("vec_vsubuhs")))
-            return 0;
-        if (!(intrinsics[293] = registration_find("vec_vsubshs")))
-            return 0;
-        if (!(intrinsics[294] = registration_find("vec_vsubuws")))
-            return 0;
-        if (!(intrinsics[295] = registration_find("vec_vsubsws")))
-            return 0;
-        if (!(intrinsics[296] = registration_find("vec_vsum4ubs")))
-            return 0;
-        if (!(intrinsics[297] = registration_find("vec_vsum4sbs")))
-            return 0;
-        if (!(intrinsics[298] = registration_find("vec_vsum4shs")))
-            return 0;
-        if (!(intrinsics[299] = registration_find("vec_vsum2sws")))
-            return 0;
-        if (!(intrinsics[300] = registration_find("vec_vsumsws")))
-            return 0;
-        if (!(intrinsics[301] = registration_find("vec_vrfiz")))
-            return 0;
-        if (!(intrinsics[302] = registration_find("vec_vupkhsb")))
-            return 0;
-        if (!(intrinsics[303] = registration_find("vec_vupklsb")))
-            return 0;
-        if (!(intrinsics[304] = registration_find("vec_vupkhpx")))
-            return 0;
-        if (!(intrinsics[305] = registration_find("vec_vupklpx")))
-            return 0;
-        if (!(intrinsics[306] = registration_find("vec_vupkhsh")))
-            return 0;
-        if (!(intrinsics[307] = registration_find("vec_vupklsh")))
-            return 0;
-        if (!(intrinsics[308] = registration_find("vec_vxor")))
-            return 0;
-        if (!(intrinsics[309] = registration_find("vec_abs")))
-            return 0;
-        if (!(intrinsics[310] = registration_find("vec_abss")))
-            return 0;
-        if (!(intrinsics[311] = registration_find("__va_setup")))
-            return 0;
-        if (!(intrinsics[312] = registration_find("__builtin_va_info")))
-            return 0;
-    }
-    return 1;
-}
+static int OpIndex(UInt16 token);
+static void *registration_find(const char *name);
+static void GenVR(UInt8 *node, Operand *op);
+static void GenFPR(UInt8 *node, Operand *op);
+static void GenGPR(UInt8 *node, Operand *op);
 
 static inline void Intrinsics_00486bb0_inline1(ENode *p0, Operand *p1)
 {
@@ -3228,590 +2575,1336 @@ static inline void Intrinsics_00487090_inline1(ENode *p0, Operand *p1)
     }
 }
 
-void Intrinsics_RegisterIntrinsics(void)
+static inline void unwrapIntrinsicPointerTypes(Type **expected, Type **actual)
 {
-    unsigned char saved_cplusplus = copts.cplusplus;
-    int i;
-    TypeFunc *function;
-
-    copts.cplusplus = 0;
-    for (i = 0; i < 313; i++)
-        intrinsics[i] = NULL;
-    intrinsics[0] = CParser_NewRTFunc(&stvoid, GetHashNameNode("__eieio"), 0, 0);
-    intrinsics[1] = CParser_NewRTFunc(&stvoid, GetHashNameNode("__sync"), 0, 0);
-    intrinsics[2] = CParser_NewRTFunc(&stvoid, GetHashNameNode("__isync"), 0, 0);
-    intrinsics[3] = CParser_NewRTFunc((Type *)&stsignedint, GetHashNameNode("__abs"), 0, 1, &stsignedint);
-    intrinsics[4] = CParser_NewRTFunc((Type *)&stsignedlong, GetHashNameNode("__labs"), 0, 1, &stsignedlong);
-    intrinsics[5] = CParser_NewRTFunc((Type *)&stdouble, GetHashNameNode("__fabs"), 0, 1, &stdouble);
-    intrinsics[6] = CParser_NewRTFunc((Type *)&stdouble, GetHashNameNode("__fnabs"), 0, 1, &stdouble);
-    intrinsics[7] = CParser_NewRTFunc((Type *)&stdouble, GetHashNameNode("__setflm"), 0, 1, &stdouble);
-    intrinsics[33] = CParser_NewRTFunc((Type *)&stdouble, GetHashNameNode("__frsqrte"), 0, 1, &stdouble);
-    intrinsics[8] = CParser_NewRTFunc((Type *)&void_ptr, GetHashNameNode("__alloca"), 0, 1, &stunsignedint);
-    intrinsics[9] = CParser_NewRTFunc((Type *)&stsignedint, GetHashNameNode("__cntlzw"), 0, 1, &stunsignedint);
-    intrinsics[10] =
-        CParser_NewRTFunc((Type *)&stunsignedint, GetHashNameNode("__lhbrx"), 0, 2, &void_ptr, &stsignedint);
-    intrinsics[11] =
-        CParser_NewRTFunc((Type *)&stunsignedint, GetHashNameNode("__lwbrx"), 0, 2, &void_ptr, &stsignedint);
-    intrinsics[12] =
-        CParser_NewRTFunc(&stvoid, GetHashNameNode("__sthbrx"), 0, 3, &stunsignedshort, &void_ptr, &stsignedint);
-    intrinsics[13] =
-        CParser_NewRTFunc(&stvoid, GetHashNameNode("__stwbrx"), 0, 3, &stunsignedint, &void_ptr, &stsignedint);
-    intrinsics[14] = CParser_NewRTFunc(&stvoid, GetHashNameNode("__dcbf"), 0, 2, &void_ptr, &stsignedint);
-    intrinsics[15] = CParser_NewRTFunc(&stvoid, GetHashNameNode("__dcbt"), 0, 2, &void_ptr, &stsignedint);
-    intrinsics[16] = CParser_NewRTFunc(&stvoid, GetHashNameNode("__dcbst"), 0, 2, &void_ptr, &stsignedint);
-    intrinsics[17] = CParser_NewRTFunc(&stvoid, GetHashNameNode("__dcbtst"), 0, 2, &void_ptr, &stsignedint);
-    intrinsics[18] = CParser_NewRTFunc(&stvoid, GetHashNameNode("__dcbz"), 0, 2, &void_ptr, &stsignedint);
-    intrinsics[19] =
-        CParser_NewRTFunc((Type *)&stsignedint, GetHashNameNode("__mulhw"), 0, 2, &stsignedint, &stsignedint);
-    intrinsics[20] =
-        CParser_NewRTFunc((Type *)&stunsignedint, GetHashNameNode("__mulhwu"), 0, 2, &stunsignedint, &stunsignedint);
-    intrinsics[21] =
-        CParser_NewRTFunc((Type *)&stsignedint, GetHashNameNode("__divw"), 0, 2, &stsignedint, &stsignedint);
-    intrinsics[22] =
-        CParser_NewRTFunc((Type *)&stsignedint, GetHashNameNode("__divwu"), 0, 2, &stsignedint, &stsignedint);
-    intrinsics[23] =
-        CParser_NewRTFunc((Type *)&stdouble, GetHashNameNode("__fmadd"), 0, 3, &stdouble, &stdouble, &stdouble);
-    intrinsics[24] =
-        CParser_NewRTFunc((Type *)&stdouble, GetHashNameNode("__fmsub"), 0, 3, &stdouble, &stdouble, &stdouble);
-    intrinsics[25] =
-        CParser_NewRTFunc((Type *)&stdouble, GetHashNameNode("__fnmadd"), 0, 3, &stdouble, &stdouble, &stdouble);
-    intrinsics[26] =
-        CParser_NewRTFunc((Type *)&stdouble, GetHashNameNode("__fnmsub"), 0, 3, &stdouble, &stdouble, &stdouble);
-    intrinsics[34] =
-        CParser_NewRTFunc((Type *)&stdouble, GetHashNameNode("__fsel"), 0, 3, &stdouble, &stdouble, &stdouble);
-    intrinsics[27] =
-        CParser_NewRTFunc((Type *)&stfloat, GetHashNameNode("__fmadds"), 0, 3, &stfloat, &stfloat, &stfloat);
-    intrinsics[28] =
-        CParser_NewRTFunc((Type *)&stfloat, GetHashNameNode("__fmsubs"), 0, 3, &stfloat, &stfloat, &stfloat);
-    intrinsics[29] =
-        CParser_NewRTFunc((Type *)&stfloat, GetHashNameNode("__fnmadds"), 0, 3, &stfloat, &stfloat, &stfloat);
-    intrinsics[30] =
-        CParser_NewRTFunc((Type *)&stfloat, GetHashNameNode("__fnmsubs"), 0, 3, &stfloat, &stfloat, &stfloat);
-    intrinsics[31] = CParser_NewRTFunc((Type *)&stdouble, GetHashNameNode("__mffs"), 0, 0);
-    intrinsics[32] = CParser_NewRTFunc((Type *)&stfloat, GetHashNameNode("__fres"), 0, 1, &stfloat);
-    intrinsics[40] = CParser_NewRTFunc((Type *)&stfloat, GetHashNameNode("__fabsf"), 0, 1, &stfloat);
-    intrinsics[41] = CParser_NewRTFunc((Type *)&stfloat, GetHashNameNode("__fnabsf"), 0, 1, &stfloat);
-    intrinsics[35] =
-        CParser_NewRTFunc(TYPE(&stchar_ptr), GetHashNameNode("__strcpy"), 0, 2, TYPE(&stchar_ptr), TYPE(&stchar_ptr));
-    function = (TypeFunc *)intrinsics[35]->type;
-    function->args->next->qual |= Q_CONST;
-    intrinsics[36] =
-        CParser_NewRTFunc((Type *)&void_ptr, GetHashNameNode("__memcpy"), 0, 3, &void_ptr, &void_ptr, &stunsignedlong);
-    data_00587fc0 = intrinsics[36];
-    function = (TypeFunc *)intrinsics[36]->type;
-    function->args->next->qual |= Q_CONST;
-    intrinsics[37] = CParser_NewRTFunc((Type *)&stsignedint, GetHashNameNode("__rlwimi"), 0, 5, &stsignedint,
-                                       &stsignedint, &stsignedint, &stsignedint, &stsignedint);
-    intrinsics[38] = CParser_NewRTFunc((Type *)&stsignedint, GetHashNameNode("__rlwinm"), 0, 4, &stsignedint,
-                                       &stsignedint, &stsignedint, &stsignedint);
-    intrinsics[39] = CParser_NewRTFunc((Type *)&stsignedint, GetHashNameNode("__rlwnm"), 0, 4, &stsignedint,
-                                       &stsignedint, &stsignedint, &stsignedint);
-    intrinsics[42] =
-        CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_add"), 0, 2, TYPE(&stvector), TYPE(&stvector));
-    intrinsics[43] =
-        CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_addc"), 0, 2, TYPE(&stvector), TYPE(&stvector));
-    intrinsics[44] =
-        CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_adds"), 0, 2, TYPE(&stvector), TYPE(&stvector));
-    intrinsics[45] =
-        CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_and"), 0, 2, TYPE(&stvector), TYPE(&stvector));
-    intrinsics[46] =
-        CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_andc"), 0, 2, TYPE(&stvector), TYPE(&stvector));
-    intrinsics[47] =
-        CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_avg"), 0, 2, TYPE(&stvector), TYPE(&stvector));
-    intrinsics[48] = CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_ceil"), 0, 1, TYPE(&stvector));
-    intrinsics[49] =
-        CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_cmpb"), 0, 2, TYPE(&stvector), TYPE(&stvector));
-    intrinsics[50] =
-        CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_cmpeq"), 0, 2, TYPE(&stvector), TYPE(&stvector));
-    intrinsics[51] =
-        CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_cmpge"), 0, 2, TYPE(&stvector), TYPE(&stvector));
-    intrinsics[52] =
-        CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_cmple"), 0, 2, TYPE(&stvector), TYPE(&stvector));
-    intrinsics[53] =
-        CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_cmpgt"), 0, 2, TYPE(&stvector), TYPE(&stvector));
-    intrinsics[54] =
-        CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_cmplt"), 0, 2, TYPE(&stvector), TYPE(&stvector));
-    intrinsics[55] =
-        CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_ctf"), 0, 2, TYPE(&stvector), TYPE(&stvector));
-    intrinsics[56] =
-        CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_cts"), 0, 2, TYPE(&stvector), TYPE(&stvector));
-    intrinsics[57] =
-        CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_ctu"), 0, 2, TYPE(&stvector), TYPE(&stvector));
-    intrinsics[58] = CParser_NewRTFunc(&stvoid, GetHashNameNode("vec_dss"), 0, 1, &stsignedint);
-    intrinsics[59] = CParser_NewRTFunc(&stvoid, GetHashNameNode("vec_dssall"), 0, 0);
-    intrinsics[60] =
-        CParser_NewRTFunc(&stvoid, GetHashNameNode("vec_dst"), 0, 3, TYPE(&stvector), &stsignedint, &stsignedint);
-    intrinsics[61] =
-        CParser_NewRTFunc(&stvoid, GetHashNameNode("vec_dstst"), 0, 3, TYPE(&stvector), &stsignedint, &stsignedint);
-    intrinsics[62] =
-        CParser_NewRTFunc(&stvoid, GetHashNameNode("vec_dststt"), 0, 3, TYPE(&stvector), &stsignedint, &stsignedint);
-    intrinsics[63] =
-        CParser_NewRTFunc(&stvoid, GetHashNameNode("vec_dstt"), 0, 3, TYPE(&stvector), &stsignedint, &stsignedint);
-    intrinsics[64] = CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_expte"), 0, 1, TYPE(&stvector));
-    intrinsics[65] = CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_floor"), 0, 1, TYPE(&stvector));
-    intrinsics[66] =
-        CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_ld"), 0, 2, TYPE(&stvector), TYPE(&stvector));
-    intrinsics[67] =
-        CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_lde"), 0, 2, TYPE(&stvector), TYPE(&stvector));
-    intrinsics[68] =
-        CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_ldl"), 0, 2, TYPE(&stvector), TYPE(&stvector));
-    intrinsics[69] = CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_loge"), 0, 1, TYPE(&stvector));
-    intrinsics[70] =
-        CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_lvsl"), 0, 2, TYPE(&stvector), TYPE(&stvector));
-    intrinsics[71] =
-        CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_lvsr"), 0, 2, TYPE(&stvector), TYPE(&stvector));
-    intrinsics[72] = CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_madd"), 0, 3, TYPE(&stvector),
-                                       TYPE(&stvector), TYPE(&stvector));
-    intrinsics[73] = CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_madds"), 0, 3, TYPE(&stvector),
-                                       TYPE(&stvector), TYPE(&stvector));
-    intrinsics[74] =
-        CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_max"), 0, 2, TYPE(&stvector), TYPE(&stvector));
-    intrinsics[75] =
-        CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_mergeh"), 0, 2, TYPE(&stvector), TYPE(&stvector));
-    intrinsics[76] =
-        CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_mergel"), 0, 2, TYPE(&stvector), TYPE(&stvector));
-    intrinsics[77] = CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_mfvscr"), 0, 0);
-    intrinsics[78] =
-        CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_min"), 0, 2, TYPE(&stvector), TYPE(&stvector));
-    intrinsics[79] = CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_mladd"), 0, 3, TYPE(&stvector),
-                                       TYPE(&stvector), TYPE(&stvector));
-    intrinsics[80] = CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_mradds"), 0, 3, TYPE(&stvector),
-                                       TYPE(&stvector), TYPE(&stvector));
-    intrinsics[81] = CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_msum"), 0, 3, TYPE(&stvector),
-                                       TYPE(&stvector), TYPE(&stvector));
-    intrinsics[82] = CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_msums"), 0, 3, TYPE(&stvector),
-                                       TYPE(&stvector), TYPE(&stvector));
-    intrinsics[83] = CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_mtvscr"), 0, 1, TYPE(&stvector));
-    intrinsics[84] =
-        CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_mule"), 0, 2, TYPE(&stvector), TYPE(&stvector));
-    intrinsics[85] =
-        CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_mulo"), 0, 2, TYPE(&stvector), TYPE(&stvector));
-    intrinsics[86] = CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_nmsub"), 0, 2, TYPE(&stvector),
-                                       TYPE(&stvector), TYPE(&stvector));
-    intrinsics[87] =
-        CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_nor"), 0, 2, TYPE(&stvector), TYPE(&stvector));
-    intrinsics[88] =
-        CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_or"), 0, 2, TYPE(&stvector), TYPE(&stvector));
-    intrinsics[89] =
-        CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_pack"), 0, 2, TYPE(&stvector), TYPE(&stvector));
-    intrinsics[90] =
-        CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_packpx"), 0, 2, TYPE(&stvector), TYPE(&stvector));
-    intrinsics[91] =
-        CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_packs"), 0, 2, TYPE(&stvector), TYPE(&stvector));
-    intrinsics[92] =
-        CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_packsu"), 0, 2, TYPE(&stvector), TYPE(&stvector));
-    intrinsics[93] = CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_perm"), 0, 3, TYPE(&stvector),
-                                       TYPE(&stvector), TYPE(&stvector));
-    intrinsics[94] = CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_re"), 0, 1, TYPE(&stvector));
-    intrinsics[95] =
-        CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_rl"), 0, 2, TYPE(&stvector), TYPE(&stvector));
-    intrinsics[96] = CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_round"), 0, 1, TYPE(&stvector));
-    intrinsics[97] = CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_rsqrte"), 0, 1, TYPE(&stvector));
-    intrinsics[98] = CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_sel"), 0, 3, TYPE(&stvector),
-                                       TYPE(&stvector), TYPE(&stvector));
-    intrinsics[99] =
-        CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_sl"), 0, 2, TYPE(&stvector), TYPE(&stvector));
-    intrinsics[100] = CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_sld"), 0, 3, TYPE(&stvector),
-                                        TYPE(&stvector), TYPE(&stvector));
-    intrinsics[101] =
-        CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_sll"), 0, 2, TYPE(&stvector), TYPE(&stvector));
-    intrinsics[102] =
-        CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_slo"), 0, 2, TYPE(&stvector), TYPE(&stvector));
-    intrinsics[103] =
-        CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_splat"), 0, 2, TYPE(&stvector), TYPE(&stvector));
-    intrinsics[104] = CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_splat_s8"), 0, 1, TYPE(&stvector));
-    intrinsics[105] = CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_splat_s16"), 0, 1, TYPE(&stvector));
-    intrinsics[106] = CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_splat_s32"), 0, 1, TYPE(&stvector));
-    intrinsics[107] = CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_splat_u8"), 0, 1, TYPE(&stvector));
-    intrinsics[108] = CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_splat_u16"), 0, 1, TYPE(&stvector));
-    intrinsics[109] = CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_splat_u32"), 0, 1, TYPE(&stvector));
-    intrinsics[110] =
-        CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_sr"), 0, 2, TYPE(&stvector), TYPE(&stvector));
-    intrinsics[111] =
-        CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_sra"), 0, 2, TYPE(&stvector), TYPE(&stvector));
-    intrinsics[112] =
-        CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_srl"), 0, 2, TYPE(&stvector), TYPE(&stvector));
-    intrinsics[113] =
-        CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_sro"), 0, 2, TYPE(&stvector), TYPE(&stvector));
-    intrinsics[114] = CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_st"), 0, 3, TYPE(&stvector),
-                                        TYPE(&stvector), TYPE(&stvector));
-    intrinsics[115] = CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_ste"), 0, 3, TYPE(&stvector),
-                                        TYPE(&stvector), TYPE(&stvector));
-    intrinsics[116] = CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_stl"), 0, 3, TYPE(&stvector),
-                                        TYPE(&stvector), TYPE(&stvector));
-    intrinsics[117] =
-        CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_sub"), 0, 2, TYPE(&stvector), TYPE(&stvector));
-    intrinsics[118] =
-        CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_subc"), 0, 2, TYPE(&stvector), TYPE(&stvector));
-    intrinsics[119] =
-        CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_subs"), 0, 2, TYPE(&stvector), TYPE(&stvector));
-    intrinsics[120] =
-        CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_sum4s"), 0, 2, TYPE(&stvector), TYPE(&stvector));
-    intrinsics[121] =
-        CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_sum2s"), 0, 2, TYPE(&stvector), TYPE(&stvector));
-    intrinsics[122] =
-        CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_sums"), 0, 2, TYPE(&stvector), TYPE(&stvector));
-    intrinsics[123] = CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_trunc"), 0, 1, TYPE(&stvector));
-    intrinsics[124] =
-        CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_unpack2sh"), 0, 2, TYPE(&stvector), TYPE(&stvector));
-    intrinsics[125] =
-        CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_unpack2sl"), 0, 2, TYPE(&stvector), TYPE(&stvector));
-    intrinsics[126] =
-        CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_unpack2uh"), 0, 2, TYPE(&stvector), TYPE(&stvector));
-    intrinsics[127] =
-        CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_unpack2ul"), 0, 2, TYPE(&stvector), TYPE(&stvector));
-    intrinsics[128] = CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_unpackh"), 0, 1, TYPE(&stvector));
-    intrinsics[129] = CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_unpackl"), 0, 1, TYPE(&stvector));
-    intrinsics[130] =
-        CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_xor"), 0, 2, TYPE(&stvector), TYPE(&stvector));
-    intrinsics[131] =
-        CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_all_eq"), 0, 2, TYPE(&stvector), TYPE(&stvector));
-    intrinsics[132] =
-        CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_all_ge"), 0, 2, TYPE(&stvector), TYPE(&stvector));
-    intrinsics[133] =
-        CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_all_gt"), 0, 2, TYPE(&stvector), TYPE(&stvector));
-    intrinsics[134] =
-        CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_all_in"), 0, 2, TYPE(&stvector), TYPE(&stvector));
-    intrinsics[135] =
-        CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_all_le"), 0, 2, TYPE(&stvector), TYPE(&stvector));
-    intrinsics[136] =
-        CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_all_lt"), 0, 2, TYPE(&stvector), TYPE(&stvector));
-    intrinsics[137] = CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_all_nan"), 0, 1, TYPE(&stvector));
-    intrinsics[138] =
-        CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_all_ne"), 0, 2, TYPE(&stvector), TYPE(&stvector));
-    intrinsics[139] =
-        CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_all_nge"), 0, 2, TYPE(&stvector), TYPE(&stvector));
-    intrinsics[140] =
-        CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_all_ngt"), 0, 2, TYPE(&stvector), TYPE(&stvector));
-    intrinsics[141] =
-        CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_all_nle"), 0, 2, TYPE(&stvector), TYPE(&stvector));
-    intrinsics[142] =
-        CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_all_nlt"), 0, 2, TYPE(&stvector), TYPE(&stvector));
-    intrinsics[143] = CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_all_numeric"), 0, 1, TYPE(&stvector));
-    intrinsics[144] =
-        CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_any_eq"), 0, 2, TYPE(&stvector), TYPE(&stvector));
-    intrinsics[145] =
-        CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_any_ge"), 0, 2, TYPE(&stvector), TYPE(&stvector));
-    intrinsics[146] =
-        CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_any_gt"), 0, 2, TYPE(&stvector), TYPE(&stvector));
-    intrinsics[147] =
-        CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_any_le"), 0, 2, TYPE(&stvector), TYPE(&stvector));
-    intrinsics[148] =
-        CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_any_lt"), 0, 2, TYPE(&stvector), TYPE(&stvector));
-    intrinsics[149] = CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_any_nan"), 0, 1, TYPE(&stvector));
-    intrinsics[150] =
-        CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_any_ne"), 0, 2, TYPE(&stvector), TYPE(&stvector));
-    intrinsics[151] =
-        CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_any_nge"), 0, 2, TYPE(&stvector), TYPE(&stvector));
-    intrinsics[152] =
-        CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_any_ngt"), 0, 2, TYPE(&stvector), TYPE(&stvector));
-    intrinsics[153] =
-        CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_any_nle"), 0, 2, TYPE(&stvector), TYPE(&stvector));
-    intrinsics[154] =
-        CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_any_nlt"), 0, 2, TYPE(&stvector), TYPE(&stvector));
-    intrinsics[155] = CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_any_numeric"), 0, 1, TYPE(&stvector));
-    intrinsics[156] =
-        CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_any_out"), 0, 2, TYPE(&stvector), TYPE(&stvector));
-    intrinsics[157] =
-        CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_vaddubm"), 0, 2, TYPE(&stvector), TYPE(&stvector));
-    intrinsics[158] =
-        CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_vadduhm"), 0, 2, TYPE(&stvector), TYPE(&stvector));
-    intrinsics[159] =
-        CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_vadduwm"), 0, 2, TYPE(&stvector), TYPE(&stvector));
-    intrinsics[160] =
-        CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_vaddfp"), 0, 2, TYPE(&stvector), TYPE(&stvector));
-    intrinsics[161] =
-        CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_vaddcuw"), 0, 2, TYPE(&stvector), TYPE(&stvector));
-    intrinsics[162] =
-        CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_vaddubs"), 0, 2, TYPE(&stvector), TYPE(&stvector));
-    intrinsics[163] =
-        CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_vaddsbs"), 0, 2, TYPE(&stvector), TYPE(&stvector));
-    intrinsics[164] =
-        CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_vadduhs"), 0, 2, TYPE(&stvector), TYPE(&stvector));
-    intrinsics[165] =
-        CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_vaddshs"), 0, 2, TYPE(&stvector), TYPE(&stvector));
-    intrinsics[166] =
-        CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_vadduws"), 0, 2, TYPE(&stvector), TYPE(&stvector));
-    intrinsics[167] =
-        CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_vaddsws"), 0, 2, TYPE(&stvector), TYPE(&stvector));
-    intrinsics[168] =
-        CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_vand"), 0, 2, TYPE(&stvector), TYPE(&stvector));
-    intrinsics[169] =
-        CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_vandc"), 0, 2, TYPE(&stvector), TYPE(&stvector));
-    intrinsics[170] =
-        CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_vavgub"), 0, 2, TYPE(&stvector), TYPE(&stvector));
-    intrinsics[171] =
-        CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_vavgsb"), 0, 2, TYPE(&stvector), TYPE(&stvector));
-    intrinsics[172] =
-        CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_vavguh"), 0, 2, TYPE(&stvector), TYPE(&stvector));
-    intrinsics[173] =
-        CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_vavgsh"), 0, 2, TYPE(&stvector), TYPE(&stvector));
-    intrinsics[174] =
-        CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_vavguw"), 0, 2, TYPE(&stvector), TYPE(&stvector));
-    intrinsics[175] =
-        CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_vavgsw"), 0, 2, TYPE(&stvector), TYPE(&stvector));
-    intrinsics[176] = CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_vrfip"), 0, 1, TYPE(&stvector));
-    intrinsics[177] =
-        CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_vcmpbfp"), 0, 2, TYPE(&stvector), TYPE(&stvector));
-    intrinsics[178] =
-        CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_vcmpequb"), 0, 2, TYPE(&stvector), TYPE(&stvector));
-    intrinsics[179] =
-        CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_vcmpequh"), 0, 2, TYPE(&stvector), TYPE(&stvector));
-    intrinsics[180] =
-        CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_vcmpequw"), 0, 2, TYPE(&stvector), TYPE(&stvector));
-    intrinsics[181] =
-        CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_vcmpeqfp"), 0, 2, TYPE(&stvector), TYPE(&stvector));
-    intrinsics[182] =
-        CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_vcmpgefp"), 0, 2, TYPE(&stvector), TYPE(&stvector));
-    intrinsics[183] =
-        CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_vcmpgtub"), 0, 2, TYPE(&stvector), TYPE(&stvector));
-    intrinsics[184] =
-        CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_vcmpgtsb"), 0, 2, TYPE(&stvector), TYPE(&stvector));
-    intrinsics[185] =
-        CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_vcmpgtuh"), 0, 2, TYPE(&stvector), TYPE(&stvector));
-    intrinsics[186] =
-        CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_vcmpgtsh"), 0, 2, TYPE(&stvector), TYPE(&stvector));
-    intrinsics[187] =
-        CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_vcmpgtuw"), 0, 2, TYPE(&stvector), TYPE(&stvector));
-    intrinsics[188] =
-        CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_vcmpgtsw"), 0, 2, TYPE(&stvector), TYPE(&stvector));
-    intrinsics[189] =
-        CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_vcmpgtfp"), 0, 2, TYPE(&stvector), TYPE(&stvector));
-    intrinsics[190] =
-        CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_vcfux"), 0, 2, TYPE(&stvector), TYPE(&stvector));
-    intrinsics[191] =
-        CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_vcfsx"), 0, 2, TYPE(&stvector), TYPE(&stvector));
-    intrinsics[192] =
-        CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_vctsxs"), 0, 2, TYPE(&stvector), TYPE(&stvector));
-    intrinsics[193] =
-        CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_vctuxs"), 0, 2, TYPE(&stvector), TYPE(&stvector));
-    intrinsics[194] = CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_vexptefp"), 0, 1, TYPE(&stvector));
-    intrinsics[195] = CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_vrfim"), 0, 1, TYPE(&stvector));
-    intrinsics[196] =
-        CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_lvx"), 0, 2, TYPE(&stvector), TYPE(&stvector));
-    intrinsics[197] =
-        CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_lvebx"), 0, 2, TYPE(&stvector), TYPE(&stvector));
-    intrinsics[198] =
-        CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_lvehx"), 0, 2, TYPE(&stvector), TYPE(&stvector));
-    intrinsics[199] =
-        CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_lvewx"), 0, 2, TYPE(&stvector), TYPE(&stvector));
-    intrinsics[200] =
-        CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_lvxl"), 0, 2, TYPE(&stvector), TYPE(&stvector));
-    intrinsics[201] = CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_vlogefp"), 0, 1, TYPE(&stvector));
-    intrinsics[202] = CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_vmaddfp"), 0, 3, TYPE(&stvector),
-                                        TYPE(&stvector), TYPE(&stvector));
-    intrinsics[203] = CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_vmhaddshs"), 0, 3, TYPE(&stvector),
-                                        TYPE(&stvector), TYPE(&stvector));
-    intrinsics[204] =
-        CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_vmaxub"), 0, 2, TYPE(&stvector), TYPE(&stvector));
-    intrinsics[205] =
-        CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_vmaxsb"), 0, 2, TYPE(&stvector), TYPE(&stvector));
-    intrinsics[206] =
-        CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_vmaxuh"), 0, 2, TYPE(&stvector), TYPE(&stvector));
-    intrinsics[207] =
-        CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_vmaxsh"), 0, 2, TYPE(&stvector), TYPE(&stvector));
-    intrinsics[208] =
-        CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_vmaxuw"), 0, 2, TYPE(&stvector), TYPE(&stvector));
-    intrinsics[209] =
-        CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_vmaxsw"), 0, 2, TYPE(&stvector), TYPE(&stvector));
-    intrinsics[210] =
-        CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_vmaxfp"), 0, 2, TYPE(&stvector), TYPE(&stvector));
-    intrinsics[211] =
-        CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_vmrghb"), 0, 2, TYPE(&stvector), TYPE(&stvector));
-    intrinsics[212] =
-        CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_vmrghh"), 0, 2, TYPE(&stvector), TYPE(&stvector));
-    intrinsics[213] =
-        CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_vmrghw"), 0, 2, TYPE(&stvector), TYPE(&stvector));
-    intrinsics[214] =
-        CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_vmrglb"), 0, 2, TYPE(&stvector), TYPE(&stvector));
-    intrinsics[215] =
-        CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_vmrglh"), 0, 2, TYPE(&stvector), TYPE(&stvector));
-    intrinsics[216] =
-        CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_vmrglw"), 0, 2, TYPE(&stvector), TYPE(&stvector));
-    intrinsics[217] =
-        CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_vminub"), 0, 2, TYPE(&stvector), TYPE(&stvector));
-    intrinsics[218] =
-        CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_vminsb"), 0, 2, TYPE(&stvector), TYPE(&stvector));
-    intrinsics[219] =
-        CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_vminuh"), 0, 2, TYPE(&stvector), TYPE(&stvector));
-    intrinsics[220] =
-        CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_vminsh"), 0, 2, TYPE(&stvector), TYPE(&stvector));
-    intrinsics[221] =
-        CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_vminuw"), 0, 2, TYPE(&stvector), TYPE(&stvector));
-    intrinsics[222] =
-        CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_vminsw"), 0, 2, TYPE(&stvector), TYPE(&stvector));
-    intrinsics[223] =
-        CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_vminfp"), 0, 2, TYPE(&stvector), TYPE(&stvector));
-    intrinsics[224] = CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_vmladduhm"), 0, 3, TYPE(&stvector),
-                                        TYPE(&stvector), TYPE(&stvector));
-    intrinsics[225] = CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_vmhraddshs"), 0, 3, TYPE(&stvector),
-                                        TYPE(&stvector), TYPE(&stvector));
-    intrinsics[226] = CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_vmsumubm"), 0, 3, TYPE(&stvector),
-                                        TYPE(&stvector), TYPE(&stvector));
-    intrinsics[227] = CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_vmsumuhm"), 0, 3, TYPE(&stvector),
-                                        TYPE(&stvector), TYPE(&stvector));
-    intrinsics[228] = CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_vmsummbm"), 0, 3, TYPE(&stvector),
-                                        TYPE(&stvector), TYPE(&stvector));
-    intrinsics[229] = CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_vmsumshm"), 0, 3, TYPE(&stvector),
-                                        TYPE(&stvector), TYPE(&stvector));
-    intrinsics[230] = CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_vmsumuhs"), 0, 3, TYPE(&stvector),
-                                        TYPE(&stvector), TYPE(&stvector));
-    intrinsics[231] = CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_vmsumshs"), 0, 3, TYPE(&stvector),
-                                        TYPE(&stvector), TYPE(&stvector));
-    intrinsics[232] =
-        CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_vmuleub"), 0, 2, TYPE(&stvector), TYPE(&stvector));
-    intrinsics[233] =
-        CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_vmulesb"), 0, 2, TYPE(&stvector), TYPE(&stvector));
-    intrinsics[234] =
-        CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_vmuleuh"), 0, 2, TYPE(&stvector), TYPE(&stvector));
-    intrinsics[235] =
-        CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_vmulesh"), 0, 2, TYPE(&stvector), TYPE(&stvector));
-    intrinsics[236] =
-        CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_vmuloub"), 0, 2, TYPE(&stvector), TYPE(&stvector));
-    intrinsics[237] =
-        CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_vmulosb"), 0, 2, TYPE(&stvector), TYPE(&stvector));
-    intrinsics[238] =
-        CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_vmulouh"), 0, 2, TYPE(&stvector), TYPE(&stvector));
-    intrinsics[239] =
-        CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_vmulosh"), 0, 2, TYPE(&stvector), TYPE(&stvector));
-    intrinsics[240] = CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_vnmsubfp"), 0, 2, TYPE(&stvector),
-                                        TYPE(&stvector), TYPE(&stvector));
-    intrinsics[241] =
-        CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_vnor"), 0, 2, TYPE(&stvector), TYPE(&stvector));
-    intrinsics[242] =
-        CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_vor"), 0, 2, TYPE(&stvector), TYPE(&stvector));
-    intrinsics[243] =
-        CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_vpkuhum"), 0, 2, TYPE(&stvector), TYPE(&stvector));
-    intrinsics[244] =
-        CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_vpkuwum"), 0, 2, TYPE(&stvector), TYPE(&stvector));
-    intrinsics[245] =
-        CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_vpkpx"), 0, 2, TYPE(&stvector), TYPE(&stvector));
-    intrinsics[246] =
-        CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_vpkuhus"), 0, 2, TYPE(&stvector), TYPE(&stvector));
-    intrinsics[247] =
-        CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_vpkshss"), 0, 2, TYPE(&stvector), TYPE(&stvector));
-    intrinsics[248] =
-        CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_vpkuwus"), 0, 2, TYPE(&stvector), TYPE(&stvector));
-    intrinsics[249] =
-        CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_vpkswss"), 0, 2, TYPE(&stvector), TYPE(&stvector));
-    intrinsics[250] =
-        CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_vpkshus"), 0, 2, TYPE(&stvector), TYPE(&stvector));
-    intrinsics[251] =
-        CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_vpkswus"), 0, 2, TYPE(&stvector), TYPE(&stvector));
-    intrinsics[252] = CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_vperm"), 0, 3, TYPE(&stvector),
-                                        TYPE(&stvector), TYPE(&stvector));
-    intrinsics[253] = CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_vrefp"), 0, 1, TYPE(&stvector));
-    intrinsics[254] =
-        CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_vrlb"), 0, 2, TYPE(&stvector), TYPE(&stvector));
-    intrinsics[255] =
-        CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_vrlh"), 0, 2, TYPE(&stvector), TYPE(&stvector));
-    intrinsics[256] =
-        CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_vrlw"), 0, 2, TYPE(&stvector), TYPE(&stvector));
-    intrinsics[257] = CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_vrfin"), 0, 1, TYPE(&stvector));
-    intrinsics[258] = CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_vrsqrtefp"), 0, 1, TYPE(&stvector));
-    intrinsics[259] = CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_vsel"), 0, 3, TYPE(&stvector),
-                                        TYPE(&stvector), TYPE(&stvector));
-    intrinsics[260] =
-        CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_vslb"), 0, 2, TYPE(&stvector), TYPE(&stvector));
-    intrinsics[261] =
-        CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_vslh"), 0, 2, TYPE(&stvector), TYPE(&stvector));
-    intrinsics[262] =
-        CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_vslw"), 0, 2, TYPE(&stvector), TYPE(&stvector));
-    intrinsics[263] = CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_vsldoi"), 0, 3, TYPE(&stvector),
-                                        TYPE(&stvector), TYPE(&stvector));
-    intrinsics[264] =
-        CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_vsl"), 0, 2, TYPE(&stvector), TYPE(&stvector));
-    intrinsics[265] =
-        CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_vslo"), 0, 2, TYPE(&stvector), TYPE(&stvector));
-    intrinsics[266] =
-        CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_vspltb"), 0, 2, TYPE(&stvector), TYPE(&stvector));
-    intrinsics[267] =
-        CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_vsplth"), 0, 2, TYPE(&stvector), TYPE(&stvector));
-    intrinsics[268] =
-        CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_vspltw"), 0, 2, TYPE(&stvector), TYPE(&stvector));
-    intrinsics[269] = CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_vspltisb"), 0, 1, TYPE(&stvector));
-    intrinsics[270] = CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_vspltish"), 0, 1, TYPE(&stvector));
-    intrinsics[271] = CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_vspltisw"), 0, 1, TYPE(&stvector));
-    intrinsics[272] =
-        CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_vsrb"), 0, 2, TYPE(&stvector), TYPE(&stvector));
-    intrinsics[273] =
-        CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_vsrh"), 0, 2, TYPE(&stvector), TYPE(&stvector));
-    intrinsics[274] =
-        CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_vsrw"), 0, 2, TYPE(&stvector), TYPE(&stvector));
-    intrinsics[275] =
-        CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_vsrab"), 0, 2, TYPE(&stvector), TYPE(&stvector));
-    intrinsics[276] =
-        CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_vsrah"), 0, 2, TYPE(&stvector), TYPE(&stvector));
-    intrinsics[277] =
-        CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_vsraw"), 0, 2, TYPE(&stvector), TYPE(&stvector));
-    intrinsics[278] =
-        CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_vsr"), 0, 2, TYPE(&stvector), TYPE(&stvector));
-    intrinsics[279] =
-        CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_vsro"), 0, 2, TYPE(&stvector), TYPE(&stvector));
-    intrinsics[280] = CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_stvx"), 0, 3, TYPE(&stvector),
-                                        TYPE(&stvector), TYPE(&stvector));
-    intrinsics[281] = CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_stvebx"), 0, 3, TYPE(&stvector),
-                                        TYPE(&stvector), TYPE(&stvector));
-    intrinsics[282] = CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_stvehx"), 0, 3, TYPE(&stvector),
-                                        TYPE(&stvector), TYPE(&stvector));
-    intrinsics[283] = CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_stvewx"), 0, 3, TYPE(&stvector),
-                                        TYPE(&stvector), TYPE(&stvector));
-    intrinsics[284] = CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_stvxl"), 0, 3, TYPE(&stvector),
-                                        TYPE(&stvector), TYPE(&stvector));
-    intrinsics[285] =
-        CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_vsububm"), 0, 2, TYPE(&stvector), TYPE(&stvector));
-    intrinsics[286] =
-        CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_vsubuhm"), 0, 2, TYPE(&stvector), TYPE(&stvector));
-    intrinsics[287] =
-        CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_vsubuwm"), 0, 2, TYPE(&stvector), TYPE(&stvector));
-    intrinsics[288] =
-        CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_vsubfp"), 0, 2, TYPE(&stvector), TYPE(&stvector));
-    intrinsics[289] =
-        CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_vsubcuw"), 0, 2, TYPE(&stvector), TYPE(&stvector));
-    intrinsics[290] =
-        CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_vsububs"), 0, 2, TYPE(&stvector), TYPE(&stvector));
-    intrinsics[291] =
-        CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_vsubsbs"), 0, 2, TYPE(&stvector), TYPE(&stvector));
-    intrinsics[292] =
-        CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_vsubuhs"), 0, 2, TYPE(&stvector), TYPE(&stvector));
-    intrinsics[293] =
-        CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_vsubshs"), 0, 2, TYPE(&stvector), TYPE(&stvector));
-    intrinsics[294] =
-        CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_vsubuws"), 0, 2, TYPE(&stvector), TYPE(&stvector));
-    intrinsics[295] =
-        CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_vsubsws"), 0, 2, TYPE(&stvector), TYPE(&stvector));
-    intrinsics[296] =
-        CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_vsum4ubs"), 0, 2, TYPE(&stvector), TYPE(&stvector));
-    intrinsics[297] =
-        CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_vsum4sbs"), 0, 2, TYPE(&stvector), TYPE(&stvector));
-    intrinsics[298] =
-        CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_vsum4shs"), 0, 2, TYPE(&stvector), TYPE(&stvector));
-    intrinsics[299] =
-        CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_vsum2sws"), 0, 2, TYPE(&stvector), TYPE(&stvector));
-    intrinsics[300] =
-        CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_vsumsws"), 0, 2, TYPE(&stvector), TYPE(&stvector));
-    intrinsics[301] = CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_vrfiz"), 0, 1, TYPE(&stvector));
-    intrinsics[302] = CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_vupkhsb"), 0, 1, TYPE(&stvector));
-    intrinsics[303] = CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_vupklsb"), 0, 1, TYPE(&stvector));
-    intrinsics[304] = CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_vupkhpx"), 0, 1, TYPE(&stvector));
-    intrinsics[305] = CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_vupklpx"), 0, 1, TYPE(&stvector));
-    intrinsics[306] = CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_vupkhsh"), 0, 1, TYPE(&stvector));
-    intrinsics[307] = CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_vupklsh"), 0, 1, TYPE(&stvector));
-    intrinsics[308] =
-        CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_vxor"), 0, 2, TYPE(&stvector), TYPE(&stvector));
-    intrinsics[309] = CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_abs"), 0, 1, TYPE(&stvector));
-    intrinsics[310] = CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_abss"), 0, 1, TYPE(&stvector));
-    intrinsics[311] = CParser_NewRTFunc(&stvoid, GetHashNameNode("__va_setup"), 0, 1, &void_ptr);
-    intrinsics[312] = CParser_NewRTFunc(&stvoid, GetHashNameNode("__builtin_va_info"), 0, 1, &void_ptr);
-    for (i = 0; i < 313; i++) {
-        if (!intrinsics[i])
-            CError_FATAL(6535);
-        intrinsics[i]->u.data.u.intconst.hi = i;
-        function = (TypeFunc *)intrinsics[i]->type;
-        function->flags |= FUNC_INTRINSIC;
-        CScope_AddGlobalObject(intrinsics[i]);
+    if ((*expected)->type == TYPEPOINTER && (*actual)->type == TYPEPOINTER) {
+        *expected = ((TypePointer *)*expected)->target;
+        *actual = ((TypePointer *)*actual)->target;
     }
-    copts.cplusplus = saved_cplusplus;
+}
+
+static inline void fn_00487de0_inline1(ENode *p0, Operand *p1)
+{
+    unsigned char t3;
+    void (*t4)(void *, short, short, void *);
+    t3 = p0->type;
+    t4 = data_00560648[t3];
+    t4(p0, 0, 0, p1);
+    if (p1->kind != OpndType_GPR) {
+        Operands_ForceGPR(p1, p0->rtype, 0);
+    }
+}
+
+unsigned int Intrinsics_IsMonadicObjrefTypeFuncFlag200Set(ENode *expression)
+{
+    ENode *operand = expression->data.monadic;
+    unsigned int result = 0;
+    int isKind3 = 0;
+    if (operand->type == EOBJREF) {
+        if (operand->data.objref->datatype == DFUNC) {
+            isKind3 = 1;
+        }
+    }
+    if (isKind3 != 0) {
+        if ((((TypeFunc *)operand->data.objref->type)->flags & FUNC_INTRINSIC) != 0) {
+            result = 1;
+        }
+    }
+    return result;
+}
+
+void emit_two_operand_gpr_instruction(SInt16 opcode, ENode *left, ENode *right, SInt16 requestedReg, Operand *result)
+{
+    Operand leftOperand;
+    Operand rightOperand;
+    SInt32 resultReg = requestedReg ? requestedReg : gUsedVirtualRegistersGPR++;
+
+    memclrw(&leftOperand, sizeof(leftOperand));
+    memclrw(&rightOperand, sizeof(rightOperand));
+
+    if (right->type == EINTCONST && right->data.intval.lo == 0) {
+        data_00560648[left->type](left, 0, 0, &leftOperand);
+        if (leftOperand.kind == OpndType_GPR_Indexed) {
+            PCodeUtilities_EmitInstruction(opcode, resultReg, leftOperand.reg, leftOperand.secondary_reg);
+        } else {
+            if (leftOperand.kind != OpndType_GPR)
+                Operands_ForceGPR(&leftOperand, left->rtype, 0);
+            PCodeUtilities_EmitInstruction(opcode, resultReg, 0, leftOperand.reg);
+        }
+    } else {
+        data_00560648[left->type](left, 0, 0, &leftOperand);
+        if (leftOperand.kind != OpndType_GPR)
+            Operands_ForceGPR(&leftOperand, left->rtype, 0);
+        data_00560648[right->type](right, 0, 0, &rightOperand);
+        if (rightOperand.kind != OpndType_GPR)
+            Operands_ForceGPR(&rightOperand, right->rtype, 0);
+        PCodeUtilities_EmitInstruction(opcode, resultReg, leftOperand.reg, rightOperand.reg);
+    }
+
+    Operands_AllocateGPR(((left->flags | right->flags | result->flags) & 0x30000) | 0x400);
+    result->kind = OpndType_GPR;
+    result->reg = resultReg;
+}
+
+void emit_three_gpr_instruction(SInt16 opcode, ENode *destination, ENode *left, ENode *right)
+{
+    Operand destinationOperand, leftOperand, rightOperand;
+
+    memclrw(&destinationOperand, sizeof(destinationOperand));
+    memclrw(&leftOperand, sizeof(leftOperand));
+    memclrw(&rightOperand, sizeof(rightOperand));
+
+    if (right->type == EINTCONST && right->data.intval.lo == 0) {
+        data_00560648[destination->type](destination, 0, 0, &destinationOperand);
+        if (destinationOperand.kind != OpndType_GPR)
+            Operands_ForceGPR(&destinationOperand, destination->rtype, 0);
+        data_00560648[left->type](left, 0, 0, &leftOperand);
+        if (leftOperand.kind == OpndType_GPR_Indexed) {
+            PCodeUtilities_EmitInstruction(opcode, destinationOperand.reg, leftOperand.reg, leftOperand.secondary_reg);
+        } else {
+            if (leftOperand.kind != OpndType_GPR)
+                Operands_ForceGPR(&leftOperand, left->rtype, 0);
+            PCodeUtilities_EmitInstruction(opcode, destinationOperand.reg, 0, leftOperand.reg);
+        }
+    } else {
+        data_00560648[destination->type](destination, 0, 0, &destinationOperand);
+        if (destinationOperand.kind != OpndType_GPR)
+            Operands_ForceGPR(&destinationOperand, destination->rtype, 0);
+        data_00560648[left->type](left, 0, 0, &leftOperand);
+        if (leftOperand.kind != OpndType_GPR)
+            Operands_ForceGPR(&leftOperand, left->rtype, 0);
+        data_00560648[right->type](right, 0, 0, &rightOperand);
+        if (rightOperand.kind != OpndType_GPR)
+            Operands_ForceGPR(&rightOperand, right->rtype, 0);
+        PCodeUtilities_EmitInstruction(opcode, destinationOperand.reg, leftOperand.reg, rightOperand.reg);
+    }
+
+    Operands_AllocateGPR(((destinationOperand.flags | leftOperand.flags | rightOperand.flags) & 0x30000) | 0x400);
+}
+
+void emit_operation_from_nodes(short operation, ENode *leftNode, ENode *rightNode)
+{
+    Operand leftOperand;
+    Operand rightOperand;
+    memclrw(&leftOperand, 22);
+    memclrw(&rightOperand, 22);
+    PCodeUtilities_ResolveLabel(PCode_NewLabel());
+    if (rightNode->type == EINTCONST && rightNode->data.intval.lo == 0) {
+        ENode *left = leftNode;
+        unsigned char kind = left->type;
+        void (*handler)(void *, short, short, void *) = data_00560648[kind];
+        handler(left, 0, 0, &leftOperand);
+        if (leftOperand.kind == OpndType_GPR_Indexed) {
+            PCodeUtilities_EmitInstruction(operation, leftOperand.reg, leftOperand.secondary_reg);
+        } else {
+            if (leftOperand.kind != OpndType_GPR) {
+                Operands_ForceGPR(&leftOperand, left->rtype, 0);
+            }
+            PCodeUtilities_EmitInstruction(operation, 0, leftOperand.reg);
+        }
+    } else {
+        fn_00487de0_inline1(leftNode, &leftOperand);
+        fn_00487de0_inline1(rightNode, &rightOperand);
+        PCodeUtilities_EmitInstruction(operation, leftOperand.reg, rightOperand.reg);
+    }
+    PCodeUtilities_ResolveLabel(PCode_NewLabel());
+}
+
+void emit_rlwimi(ENode *destination, ENode *source, ENode *shift, ENode *maskBegin, ENode *maskEnd, short unused,
+                 Operand *result)
+{
+    Operand destinationOperand;
+    Operand sourceOperand;
+
+    memclrw(&destinationOperand, sizeof(destinationOperand));
+    memclrw(&sourceOperand, sizeof(sourceOperand));
+    if (shift->type != EINTCONST || maskBegin->type != EINTCONST || maskEnd->type != EINTCONST)
+        CError_FatalError(ERR_ILLEGAL_OPERAND);
+    data_00560648[destination->type](destination, 0, 0, &destinationOperand);
+    if (destinationOperand.kind)
+        Operands_ForceGPR(&destinationOperand, destination->rtype, 0);
+    data_00560648[source->type](source, 0, 0, &sourceOperand);
+    if (sourceOperand.kind)
+        Operands_ForceGPR(&sourceOperand, source->rtype, 0);
+    PCodeUtilities_EmitInstruction(PC_RLWIMI, destinationOperand.reg, sourceOperand.reg, shift->data.intval.lo,
+                                   maskBegin->data.intval.lo, maskEnd->data.intval.lo);
+    result->kind = OpndType_GPR;
+    result->reg = destinationOperand.reg;
+}
+
+void emit_rlwnm(ENode *value, ENode *shift, ENode *maskBegin, ENode *maskEnd, short targetReg, Operand *result)
+{
+    Operand valueOperand;
+    Operand shiftOperand;
+    SInt16 reg;
+
+    memclrw(&valueOperand, sizeof(valueOperand));
+    memclrw(&shiftOperand, sizeof(shiftOperand));
+    if (maskBegin->type != EINTCONST || maskEnd->type != EINTCONST)
+        CError_FatalError(ERR_ILLEGAL_OPERAND);
+    data_00560648[value->type](value, 0, 0, &valueOperand);
+    if (valueOperand.kind)
+        Operands_ForceGPR(&valueOperand, value->rtype, 0);
+    data_00560648[shift->type](shift, 0, 0, &shiftOperand);
+    if (shiftOperand.kind)
+        Operands_ForceGPR(&shiftOperand, shift->rtype, 0);
+    if (targetReg != 0)
+        reg = targetReg;
+    else
+        reg = gUsedVirtualRegistersGPR++;
+    PCodeUtilities_EmitInstruction(PC_RLWNM, reg, valueOperand.reg, shiftOperand.reg, maskBegin->data.intval.lo,
+                                   maskEnd->data.intval.lo);
+    result->kind = OpndType_GPR;
+    result->reg = reg;
+}
+
+unsigned char is_same_type_or_signedint_compatible(struct Type *firstType, struct Type *secondType)
+{
+    int result;
+    int isSpecial;
+    struct TypeIntegral *secondIntegral;
+
+    if (firstType == secondType) {
+        result = 1;
+        return result;
+    }
+    isSpecial = &firstType->type == &stsignedint.type;
+    secondIntegral = (struct TypeIntegral *)secondType;
+    if (isSpecial &&
+        (secondIntegral == &stunsignedint || secondIntegral == &stsignedchar || secondIntegral == &stunsignedchar ||
+         secondIntegral == &stsignedshort || secondIntegral == &stunsignedshort || secondIntegral == &stsignedlong ||
+         secondIntegral == &stunsignedlong || secondIntegral == &stbool)) {
+        result = 1;
+        return result;
+    }
+    result = 0;
+    return result;
+}
+
+Type *find_matching_op_result(UInt16 token, ENodeList *args, HashNameNode *name)
+{
+    ENode *node;
+    OpEntry *entry;
+    Type *argumentType;
+    Type *operandType;
+
+    node = args->node;
+    for (entry = intrinsic_tables[OpIndex(token)].op; entry->result; entry++) {
+        operandType = entry->operandType;
+        argumentType = node->rtype;
+        if (operandType->type == TYPEPOINTER && argumentType->type == TYPEPOINTER) {
+            operandType = TPTR_TARGET(operandType);
+            argumentType = TPTR_TARGET(argumentType);
+        }
+        if (is_same_type_or_signedint_compatible(operandType, argumentType))
+            break;
+    }
+    if (!entry->result) {
+        PPCError_ReportError(0x68, name->name, name->name, node->rtype, 0);
+        return NULL;
+    }
+    return entry->result;
+}
+
+static int OpIndex(UInt16 token)
+{
+    return token - 0x2a;
+}
+
+SInt32 select_altivec_mangle_result(UInt16 intrinsicCode, ENodeList *arguments, HashNameNode *name)
+{
+    ENode *node = arguments->node;
+    SInt32 index = intrinsicCode - 0x2a;
+    MangleEntry *entry = (MangleEntry *)intrinsic_tables[index].op;
+    SInt32 value;
+    SInt32 result;
+
+    while (entry->result != 0) {
+        Type *argumentType = node->rtype;
+        Type *expectedType = entry->type;
+        unsigned char matches;
+        if (expectedType->type == TYPEPOINTER && argumentType->type == TYPEPOINTER) {
+            expectedType = TPTR_TARGET(expectedType);
+            argumentType = TPTR_TARGET(argumentType);
+        }
+        matches = is_same_type_or_signedint_compatible(expectedType, argumentType);
+        if (matches)
+            break;
+        entry++;
+    }
+
+    switch (intrinsicCode) {
+        case 0x68:
+        case 0x69:
+        case 0x6a:
+        case 0x6b:
+        case 0x6c:
+        case 0x6d:
+        case 0x10d:
+        case 0x10e:
+        case 0x10f:
+            if (node->type == EINTCONST) {
+                value = (SInt32)node->data.intval.lo;
+                if (value > 15 || value < -16) {
+                    PPCError_ReportError(0x6c, name->name, name->name, 5);
+                    return 0;
+                }
+            } else {
+                PPCError_ReportError(0x6c, name->name, name->name, 5);
+                return 0;
+            }
+            break;
+        case 0x3a:
+            if (node->type == EINTCONST) {
+                value = (SInt32)node->data.intval.lo;
+                if (value > 3 || value < 0) {
+                    PPCError_ReportError(0x6c, name->name, name->name, 2);
+                    return 0;
+                }
+            } else {
+                PPCError_ReportError(0x6c, name->name, name->name, 2);
+                return 0;
+            }
+            break;
+    }
+
+    result = entry->result;
+    if (result == 0) {
+        PPCError_ReportError(0x68, name->name, name->name, node->rtype, 0);
+        return 0;
+    }
+    return result;
+}
+
+Type *check_binary_intrinsic_args(UInt16 op, ENodeList *args, HashNameNode *opname)
+{
+    ENode *leftOperand;
+    Type *leftType;
+    Type *expectedLeftType;
+    UInt32 index;
+    ENode *rightOperand;
+    IntrinsicBinaryEntry *entry;
+    Type *rightType;
+    Type *expectedRightType;
+
+    leftOperand = args->node;
+    rightOperand = args->next->node;
+    index = op - 0x2a;
+    entry = intrinsic_tables[index].binary;
+    switch (op) {
+        case 0x37:
+        case 0x38:
+        case 0x39:
+        case 0x67:
+        case 0xbe:
+        case 0xbf:
+        case 0xc0:
+        case 0xc1:
+        case 0x10a:
+        case 0x10b:
+        case 0x10c:
+            if (rightOperand->type == EINTCONST) {
+                if (rightOperand->data.intval.lo > 0x1f || rightOperand->data.intval.hi < 0) {
+                    PPCError_ReportError(0x6c, opname->name, opname->name, 5);
+                    return NULL;
+                }
+            } else {
+                PPCError_ReportError(0x6c, opname->name, opname->name, 5);
+                return NULL;
+            }
+            break;
+    }
+    for (; entry->result; entry++) {
+        leftType = leftOperand->rtype;
+        rightType = rightOperand->rtype;
+        expectedLeftType = entry->leftType;
+        expectedRightType = entry->rightType;
+        if (expectedLeftType->type == TYPEPOINTER && leftType->type == TYPEPOINTER) {
+            expectedLeftType = ((TypePointer *)expectedLeftType)->target;
+            leftType = ((TypePointer *)leftType)->target;
+        }
+        if (expectedRightType->type == TYPEPOINTER && rightType->type == TYPEPOINTER) {
+            expectedRightType = ((TypePointer *)expectedRightType)->target;
+            rightType = ((TypePointer *)rightType)->target;
+        }
+        if (is_same_type_or_signedint_compatible(expectedLeftType, leftType) &&
+            is_same_type_or_signedint_compatible(expectedRightType, rightType))
+            break;
+    }
+    if (!entry->result) {
+        PPCError_ReportError(0x69, opname->name, opname->name, leftOperand->rtype, 0, rightOperand->rtype, 0);
+        return NULL;
+    }
+    return entry->result;
+}
+
+Type *match_intrinsic_triple(UInt16 id, ENodeList *args, HashNameNode *name)
+{
+    ENode *firstArg = args->node;
+    ENode *secondArg = args->next->node;
+    ENode *thirdArg = args->next->next->node;
+    IntrinsicTripleEntry *entry;
+    Type *firstActual, *secondActual, *thirdActual;
+    Type *firstExpected, *secondExpected, *thirdExpected;
+    SInt32 index = id - 42;
+    for (entry = intrinsic_tables[index].triple; entry->result; entry++) {
+        firstActual = firstArg->rtype;
+        secondActual = secondArg->rtype;
+        thirdActual = thirdArg->rtype;
+        firstExpected = entry->type1;
+        secondExpected = entry->type2;
+        thirdExpected = entry->type3;
+        unwrapIntrinsicPointerTypes(&firstExpected, &firstActual);
+        unwrapIntrinsicPointerTypes(&secondExpected, &secondActual);
+        unwrapIntrinsicPointerTypes(&thirdExpected, &thirdActual);
+        if (is_same_type_or_signedint_compatible(firstExpected, firstActual) &&
+            is_same_type_or_signedint_compatible(secondExpected, secondActual) &&
+            is_same_type_or_signedint_compatible(thirdExpected, thirdActual))
+            break;
+    }
+    switch (id) {
+        case 60:
+        case 61:
+        case 62:
+        case 63:
+            if (thirdArg->type == EINTCONST) {
+                SInt32 value = thirdArg->data.intval.lo;
+                if (value > 3 || value < 0) {
+                    PPCError_ReportError(108, name->name, name->name, 2);
+                    return NULL;
+                }
+            } else {
+                PPCError_ReportError(108, name->name, name->name, 2);
+                return NULL;
+            }
+            break;
+        case 100:
+        case 263:
+            if (thirdArg->type == EINTCONST) {
+                if (thirdArg->data.intval.lo > 15 || thirdArg->data.intval.hi < 0) {
+                    PPCError_ReportError(108, name->name, name->name, 4);
+                    return NULL;
+                }
+            } else {
+                PPCError_ReportError(108, name->name, name->name, 4);
+                return NULL;
+            }
+            break;
+    }
+    if (!entry->result) {
+        PPCError_ReportError(106, name->name, name->name, firstArg->rtype, 0, secondArg->rtype, 0, thirdArg->rtype, 0);
+        return NULL;
+    }
+    return entry->result;
+}
+
+UInt16 find_unary_intrinsic_code(UInt16 id, ENode *unused, ENode *expression)
+{
+    IntrinsicTypeEntry *entry;
+    Type *expressionType, *candidateType;
+    UInt32 index;
+    index = id - 0x2a;
+    for (entry = intrinsic_tables[index].unary; entry->result != NULL; entry++) {
+        expressionType = expression->rtype;
+        candidateType = entry->type;
+        if (candidateType->type == TYPEPOINTER && expressionType->type == TYPEPOINTER) {
+            candidateType = ((TypePointer *)candidateType)->target;
+            expressionType = ((TypePointer *)expressionType)->target;
+        }
+        if (is_same_type_or_signedint_compatible(candidateType, expressionType))
+            break;
+    }
+    if (entry->result == NULL)
+        CError_FATAL(4054);
+    return entry->code;
+}
+
+UInt16 find_binary_intrinsic_code(UInt16 id, ENode *unused, ENode *left, ENode *right)
+{
+    IntrinsicBinaryEntry *record;
+    Type *leftType, *rightType, *expectedLeft, *expectedRight;
+    UInt32 index;
+    index = id - 0x2a;
+    for (record = intrinsic_tables[index].binary; record->result != NULL; record++) {
+        leftType = left->rtype;
+        rightType = right->rtype;
+        expectedLeft = record->leftType;
+        expectedRight = record->rightType;
+        if (expectedLeft->type == TYPEPOINTER && leftType->type == TYPEPOINTER) {
+            expectedLeft = ((TypePointer *)expectedLeft)->target;
+            leftType = ((TypePointer *)leftType)->target;
+        }
+        if (expectedRight->type == TYPEPOINTER && rightType->type == TYPEPOINTER) {
+            expectedRight = ((TypePointer *)expectedRight)->target;
+            rightType = ((TypePointer *)rightType)->target;
+        }
+        if (is_same_type_or_signedint_compatible(expectedLeft, leftType) &&
+            is_same_type_or_signedint_compatible(expectedRight, rightType))
+            break;
+    }
+    if (record->result == NULL)
+        CError_FATAL(4093);
+    return record->code;
+}
+
+UInt16 find_intrinsic_triple_code(UInt16 id, ENode *unused, ENode *firstOperand, ENode *secondOperand,
+                                  ENode *thirdOperand)
+{
+    IntrinsicTripleEntry *entry;
+    Type *firstActualType, *secondActualType, *firstExpectedType, *secondExpectedType, *thirdExpectedType,
+        *thirdActualType;
+    UInt32 intrinsicIndex;
+
+    intrinsicIndex = id - 0x2a;
+    for (entry = intrinsic_tables[intrinsicIndex].triple; entry->result != NULL; entry++) {
+        firstActualType = firstOperand->rtype;
+        secondActualType = secondOperand->rtype;
+        thirdActualType = thirdOperand->rtype;
+        firstExpectedType = entry->type1;
+        secondExpectedType = entry->type2;
+        thirdExpectedType = entry->type3;
+        if (firstExpectedType->type == TYPEPOINTER && firstActualType->type == TYPEPOINTER) {
+            firstExpectedType = TPTR_TARGET(firstExpectedType);
+            firstActualType = TPTR_TARGET(firstActualType);
+        }
+        if (secondExpectedType->type == TYPEPOINTER && secondActualType->type == TYPEPOINTER) {
+            secondExpectedType = TPTR_TARGET(secondExpectedType);
+            secondActualType = TPTR_TARGET(secondActualType);
+        }
+        if (thirdExpectedType->type == TYPEPOINTER && thirdActualType->type == TYPEPOINTER) {
+            thirdExpectedType = TPTR_TARGET(thirdExpectedType);
+            thirdActualType = TPTR_TARGET(thirdActualType);
+        }
+        if (is_same_type_or_signedint_compatible(firstExpectedType, firstActualType) &&
+            is_same_type_or_signedint_compatible(secondExpectedType, secondActualType) &&
+            is_same_type_or_signedint_compatible(thirdExpectedType, thirdActualType))
+            break;
+    }
+    if (entry->result == NULL)
+        CError_FATAL(4140);
+    return entry->code;
+}
+
+void emit_three_vr_instruction(ENode *firstExpression, ENode *secondExpression, ENode *thirdExpression,
+                               SInt16 targetReg, Operand *result, SInt16 opcode)
+{
+    Operand firstOperand, secondOperand, thirdOperand;
+    SInt16 resultReg;
+
+    memclrw(&firstOperand, sizeof(firstOperand));
+    memclrw(&secondOperand, sizeof(secondOperand));
+    memclrw(&thirdOperand, sizeof(thirdOperand));
+
+    (*data_00560648[firstExpression->type])(firstExpression, 0, 0, &firstOperand);
+    if (firstOperand.kind != OpndType_VR)
+        Operands_ForceVR(&firstOperand, firstExpression->rtype, 0);
+
+    (*data_00560648[secondExpression->type])(secondExpression, 0, 0, &secondOperand);
+    if (secondOperand.kind != OpndType_VR)
+        Operands_ForceVR(&secondOperand, secondExpression->rtype, 0);
+
+    (*data_00560648[thirdExpression->type])(thirdExpression, 0, 0, &thirdOperand);
+    if (thirdOperand.kind != OpndType_VR)
+        Operands_ForceVR(&thirdOperand, thirdExpression->rtype, 0);
+
+    if (targetReg != 0)
+        resultReg = targetReg;
+    else
+        resultReg = gUsedVirtualRegistersVR++;
+
+    PCodeUtilities_EmitInstruction(opcode, resultReg, firstOperand.reg, secondOperand.reg, thirdOperand.reg);
+
+    result->kind = OpndType_VR;
+    result->reg = resultReg;
+}
+
+/* Operand/register descriptor filled by the per-enode emit routines. */
+
+void emit_two_gpr_immediate_instruction(ENode *destination, ENode *source, ENode *immediate, SInt16 op)
+{
+    Operand destinationOperand;
+    Operand sourceOperand;
+
+    memclrw(&destinationOperand, sizeof(destinationOperand));
+    memclrw(&sourceOperand, sizeof(sourceOperand));
+    CError_ASSERT(4397, immediate->type == EINTCONST);
+    PCodeUtilities_ResolveLabel(PCode_NewLabel());
+    data_00560648[destination->type](destination, 0, 0, &destinationOperand);
+    if (destinationOperand.kind)
+        Operands_ForceGPR(&destinationOperand, destination->rtype, 0);
+    data_00560648[source->type](source, 0, 0, &sourceOperand);
+    if (sourceOperand.kind)
+        Operands_ForceGPR(&sourceOperand, source->rtype, 0);
+    switch (op) {
+        case 0xee:
+        case 0xf0:
+            PCodeUtilities_EmitInstruction(op, destinationOperand.reg, sourceOperand.reg, immediate->data.intval.lo, 0);
+            break;
+        case 0xef:
+        case 0xf1:
+            PCodeUtilities_EmitInstruction(op, destinationOperand.reg, sourceOperand.reg, immediate->data.intval.lo);
+            break;
+        default:
+            CError_FATAL(4417);
+    }
+    PCodeUtilities_ResolveLabel(PCode_NewLabel());
+}
+
+void emit_instruction_with_vr_result(ENode *expression, ENode *left, ENode *right, short opcode, Operand *result,
+                                     int instruction)
+{
+    unsigned char nodeType;
+    void (*handler)(void *, short, short, void *);
+    Operand value;
+    union {
+        Operand legacy;
+        Operand operand;
+    } leftValue, rightValue;
+    memclrw(&value, sizeof(value));
+    memclrw(&leftValue, sizeof(Operand));
+    memclrw(&rightValue, sizeof(Operand));
+    nodeType = expression->type;
+    handler = data_00560648[nodeType];
+    (*handler)(expression, 0, 0, &value);
+    if (value.kind != OpndType_VR) {
+        Operands_ForceVR(&value, expression->rtype, 0);
+    }
+    Intrinsics_00487090_inline1(left, &leftValue.legacy);
+    Intrinsics_00487090_inline1(right, &rightValue.legacy);
+    ((unsigned int (*)(unsigned int, int, int, int))PCodeUtilities_EmitInstruction)(
+        instruction, value.reg, leftValue.operand.reg, rightValue.operand.reg);
+    result->kind = OpndType_VR;
+    result->reg = value.reg;
+}
+
+void generate_unary_vector_intrinsic(UInt16 token, ENode *unused, ENode *node, SInt16 requestedReg, Operand *result)
+{
+    IntrinsicVariant *variant;
+    SInt16 constantReg;
+    SInt16 temporaryReg;
+    SInt16 resultReg;
+    Operand operand;
+    SInt32 intrinsicIndex;
+
+    intrinsicIndex = token - 0x2a;
+    variant = intrinsic_tables[intrinsicIndex].variant;
+    for (; variant->resultType != NULL; variant++) {
+        Type *argumentType = node->rtype;
+        Type *variantType = variant->type;
+
+        if (variantType->type == TYPEPOINTER && argumentType->type == TYPEPOINTER) {
+            variantType = ((TypePointer *)variantType)->target;
+            argumentType = ((TypePointer *)argumentType)->target;
+        }
+        if (is_same_type_or_signedint_compatible(variantType, argumentType)) {
+            break;
+        }
+    }
+    if (variant->resultType == NULL) {
+        CError_FATAL(4548);
+    }
+
+    constantReg = gUsedVirtualRegistersVR++;
+    temporaryReg = gUsedVirtualRegistersVR++;
+    if (requestedReg != 0) {
+        resultReg = requestedReg;
+    } else {
+        resultReg = gUsedVirtualRegistersVR++;
+    }
+
+    memclrw(&operand, sizeof(operand));
+    data_00560648[node->type](node, 0, 0, &operand);
+    if (operand.kind != OpndType_VR) {
+        Operands_ForceVR(&operand, node->rtype, 0);
+    }
+    if (node->rtype == TYPE(&stvectorfloat)) {
+        PCodeUtilities_EmitInstruction(PC_VSPLTISW, constantReg, -1);
+        PCodeUtilities_EmitInstruction(PC_VSLW, temporaryReg, constantReg, constantReg);
+        PCodeUtilities_EmitInstruction(variant->op1, resultReg, operand.reg, temporaryReg);
+    } else {
+        PCodeUtilities_EmitInstruction(PC_VSPLTISB, constantReg, 0);
+        PCodeUtilities_EmitInstruction(variant->op1, temporaryReg, constantReg, operand.reg);
+        PCodeUtilities_EmitInstruction(variant->op3, resultReg, operand.reg, temporaryReg);
+    }
+    result->kind = OpndType_VR;
+    result->reg = resultReg;
+}
+
+void fn_00486db0(UInt16 token, ENode *unused, ENode *node, SInt16 requestedReg, Operand *result)
+{
+    IntrinsicVariant *variant;
+    SInt16 zeroReg;
+    SInt16 intermediateReg;
+    SInt16 resultReg;
+    Operand operand;
+    SInt32 index;
+
+    index = token - 0x2a;
+    variant = intrinsic_tables[index].variant;
+    for (; variant->resultType != NULL; variant++) {
+        Type *resultType = node->rtype;
+        Type *variantType = variant->type;
+
+        if (variantType->type == TYPEPOINTER && resultType->type == TYPEPOINTER) {
+            variantType = ((TypePointer *)variantType)->target;
+            resultType = ((TypePointer *)resultType)->target;
+        }
+        if (is_same_type_or_signedint_compatible(variantType, resultType)) {
+            break;
+        }
+    }
+    if (variant->resultType == NULL) {
+        CError_FATAL(4614);
+    }
+
+    zeroReg = gUsedVirtualRegistersVR++;
+    intermediateReg = gUsedVirtualRegistersVR++;
+    if (requestedReg != 0) {
+        resultReg = requestedReg;
+    } else {
+        resultReg = gUsedVirtualRegistersVR++;
+    }
+
+    memclrw(&operand, sizeof(operand));
+    data_00560648[node->type](node, 0, 0, &operand);
+    if (operand.kind != OpndType_VR) {
+        Operands_ForceVR(&operand, node->rtype, 0);
+    }
+    PCodeUtilities_EmitInstruction(PC_VSPLTISB, zeroReg, 0);
+    PCodeUtilities_EmitInstruction(variant->op1, intermediateReg, zeroReg, operand.reg);
+    PCodeUtilities_EmitInstruction(variant->op3, resultReg, operand.reg, intermediateReg);
+    result->kind = OpndType_VR;
+    result->reg = resultReg;
+}
+
+void emit_record_form_condition(ENode *left, ENode *right, short unused, Operand *result, int opcode,
+                                unsigned short kind)
+{
+    short conditionRegister;
+    short conditionCode;
+    short firstRegister;
+    short secondRegister;
+    short leftRegister;
+    short rightRegister;
+    union {
+        Operand operand;
+        Operand storage;
+        char extent[24];
+    } leftOperand, rightOperand;
+
+    memclrw(&leftOperand, sizeof(Operand));
+    memclrw(&rightOperand, sizeof(Operand));
+    Intrinsics_00486bb0_inline1(left, &leftOperand.storage);
+    Intrinsics_00486bb0_inline1(right, &rightOperand.storage);
+    conditionRegister = gUsedVirtualRegistersVR++;
+    firstRegister = leftRegister = leftOperand.operand.reg;
+    secondRegister = rightRegister = rightOperand.operand.reg;
+    if (((kind == 132 || kind == 145) && left->rtype != TYPE(&stvectorfloat)) ||
+        ((kind == 135 || kind == 147) && left->rtype == TYPE(&stvectorfloat)) || kind == 136 || kind == 148 ||
+        kind == 141 || kind == 142 || kind == 153 || kind == 154) {
+        secondRegister = leftRegister;
+        firstRegister = rightRegister;
+    }
+    ((unsigned int (*)(unsigned int, int, int, int))PCodeUtilities_EmitInstruction)(opcode, conditionRegister,
+                                                                                    firstRegister, secondRegister);
+    PCodeUtilities_MakeRecordForm(gCurrentBlock->reverse_instructions);
+    if (left->rtype == TYPE(&stvectorfloat)) {
+        switch (kind) {
+            case 131:
+            case 132:
+            case 133:
+            case 135:
+            case 136:
+                conditionCode = 19;
+                break;
+            case 150:
+            case 151:
+            case 152:
+            case 153:
+            case 154:
+                conditionCode = 22;
+                break;
+            case 134:
+            case 138:
+            case 139:
+            case 140:
+            case 141:
+            case 142:
+                conditionCode = 23;
+                break;
+            case 144:
+            case 145:
+            case 146:
+            case 147:
+            case 148:
+            case 156:
+                conditionCode = 24;
+                break;
+            default:
+                CError_FATAL(4736);
+                break;
+        }
+    } else {
+        switch (kind) {
+            case 131:
+            case 133:
+            case 136:
+                conditionCode = 19;
+                break;
+            case 144:
+            case 146:
+            case 148:
+                conditionCode = 24;
+                break;
+            case 132:
+            case 135:
+            case 138:
+                conditionCode = 23;
+                break;
+            case 145:
+            case 147:
+            case 150:
+                conditionCode = 22;
+                break;
+            default:
+                CError_FATAL(4765);
+        }
+    }
+    result->kind = OpndType_CRField;
+    result->reg = 6;
+    result->secondary_reg = conditionCode;
+}
+
+void fn_00486ad0(ENode *node, short unused, Operand *result, short target, unsigned short kind)
+{
+    unsigned short secondaryReg;
+    Operand operand;
+
+    memclrw((unsigned char *)&operand, sizeof(operand));
+    data_00560648[node->type](node, 0, 0, &operand);
+    if (operand.kind != OpndType_VR) {
+        Operands_ForceVR(&operand, node->rtype, 0);
+    }
+    PCodeUtilities_EmitInstruction(target, gUsedVirtualRegistersVR++, operand.reg, operand.reg);
+    PCodeUtilities_MakeRecordForm(gCurrentBlock->reverse_instructions);
+    switch (kind) {
+        case 0x8f:
+            secondaryReg = 0x13;
+            break;
+        case 0x95:
+            secondaryReg = 0x16;
+            break;
+        case 0x89:
+            secondaryReg = 0x17;
+            break;
+        case 0x9b:
+            secondaryReg = 0x18;
+            break;
+        default:
+            CError_FATAL(4809);
+            break;
+    }
+    result->kind = OpndType_CRField;
+    result->reg = 6;
+    result->secondary_reg = secondaryReg;
+}
+
+ENode *Intrinsics_MakeAltivecCall(Object *descriptor, ENodeList *args)
+{
+    Object *intrinsic = descriptor;
+    ENode *result = NULL;
+    unsigned short intrinsicID;
+    int tableIndex;
+    if (copts.altivec_model != 0) {
+        switch (tableIndex = (intrinsicID = intrinsic->u.intrinsic)) {
+            case 60:
+            case 61:
+            case 62:
+            case 63:
+            case 72:
+            case 73:
+            case 79:
+            case 80:
+            case 81:
+            case 82:
+            case 86:
+            case 93:
+            case 98:
+            case 100:
+            case 114:
+            case 115:
+            case 116:
+            case 202:
+            case 203:
+            case 224:
+            case 225:
+            case 226:
+            case 227:
+            case 228:
+            case 229:
+            case 230:
+            case 231:
+            case 240:
+            case 252:
+            case 259:
+            case 263:
+            case 280:
+            case 281:
+            case 282:
+            case 283:
+            case 284: {
+                ENodeList *argument;
+                HashNameNode *name;
+                int count;
+                int valid;
+                TypeFunc *functionType;
+                ENode *call;
+                Type *operation;
+                count = 0;
+                argument = args;
+                name = intrinsic->name;
+                while (argument != NULL) {
+                    count++;
+                    argument = argument->next;
+                }
+                if (count != 3) {
+                    PPCError_ReportError(103, name->name, count, 3);
+                    valid = 0;
+                } else {
+                    valid = 1;
+                }
+                if (!valid) {
+                    break;
+                }
+                operation = match_intrinsic_triple(intrinsicID, args, intrinsic->name);
+                if (operation == NULL) {
+                    break;
+                }
+                functionType = (TypeFunc *)intrinsic->type;
+                if (functionType->type != TYPEFUNC) {
+                    CError_FATAL(3718);
+                }
+                call = (ENode *)lalloc(sizeof(*call));
+                call->type = EFUNCCALL;
+                call->cost = 4;
+                call->rtype = operation;
+                call->ignored = 0;
+                call->flags = functionType->qual & Q_CV;
+                call->data.funccall.funcref = create_objectrefnode(intrinsic);
+                call->data.funccall.args = args;
+                call->data.funccall.functype = functionType;
+                result = CExpr_AdjustFunctionCall(call);
+                break;
+            }
+            case 42:
+            case 43:
+            case 44:
+            case 45:
+            case 46:
+            case 47:
+            case 49:
+            case 50:
+            case 51:
+            case 52:
+            case 53:
+            case 54:
+            case 55:
+            case 56:
+            case 57:
+            case 66:
+            case 67:
+            case 68:
+            case 70:
+            case 71:
+            case 74:
+            case 75:
+            case 76:
+            case 78:
+            case 84:
+            case 85:
+            case 87:
+            case 88:
+            case 89:
+            case 90:
+            case 91:
+            case 92:
+            case 95:
+            case 99:
+            case 101:
+            case 102:
+            case 103:
+            case 110:
+            case 111:
+            case 112:
+            case 113:
+            case 117:
+            case 118:
+            case 119:
+            case 120:
+            case 121:
+            case 122:
+            case 124:
+            case 125:
+            case 126:
+            case 127:
+            case 130:
+            case 131:
+            case 132:
+            case 133:
+            case 134:
+            case 135:
+            case 136:
+            case 138:
+            case 139:
+            case 140:
+            case 141:
+            case 142:
+            case 144:
+            case 145:
+            case 146:
+            case 147:
+            case 148:
+            case 150:
+            case 151:
+            case 152:
+            case 153:
+            case 154:
+            case 156:
+            case 157:
+            case 158:
+            case 159:
+            case 160:
+            case 161:
+            case 162:
+            case 163:
+            case 164:
+            case 165:
+            case 166:
+            case 167:
+            case 168:
+            case 169:
+            case 170:
+            case 171:
+            case 172:
+            case 173:
+            case 174:
+            case 175:
+            case 177:
+            case 178:
+            case 179:
+            case 180:
+            case 181:
+            case 182:
+            case 183:
+            case 184:
+            case 185:
+            case 186:
+            case 187:
+            case 188:
+            case 189:
+            case 190:
+            case 191:
+            case 192:
+            case 193:
+            case 196:
+            case 197:
+            case 198:
+            case 199:
+            case 200:
+            case 204:
+            case 205:
+            case 206:
+            case 207:
+            case 208:
+            case 209:
+            case 210:
+            case 211:
+            case 212:
+            case 213:
+            case 214:
+            case 215:
+            case 216:
+            case 217:
+            case 218:
+            case 219:
+            case 220:
+            case 221:
+            case 222:
+            case 223:
+            case 232:
+            case 233:
+            case 234:
+            case 235:
+            case 236:
+            case 237:
+            case 238:
+            case 239:
+            case 241:
+            case 242:
+            case 243:
+            case 244:
+            case 245:
+            case 246:
+            case 247:
+            case 248:
+            case 249:
+            case 250:
+            case 251:
+            case 254:
+            case 255:
+            case 256:
+            case 260:
+            case 261:
+            case 262:
+            case 264:
+            case 265:
+            case 266:
+            case 267:
+            case 268:
+            case 272:
+            case 273:
+            case 274:
+            case 275:
+            case 276:
+            case 277:
+            case 278:
+            case 279:
+            case 285:
+            case 286:
+            case 287:
+            case 288:
+            case 289:
+            case 290:
+            case 291:
+            case 292:
+            case 293:
+            case 294:
+            case 295:
+            case 296:
+            case 297:
+            case 298:
+            case 299:
+            case 300:
+            case 308: {
+                ENodeList *argument;
+                HashNameNode *name;
+                int count;
+                int valid;
+                TypeFunc *functionType;
+                ENode *call;
+                Type *operation;
+                count = 0;
+                argument = args;
+                name = intrinsic->name;
+                while (argument != NULL) {
+                    count++;
+                    argument = argument->next;
+                }
+                if (count != 2) {
+                    PPCError_ReportError(103, name->name, count, 2);
+                    valid = 0;
+                } else {
+                    valid = 1;
+                }
+                if (!valid) {
+                    break;
+                }
+                operation = check_binary_intrinsic_args(intrinsicID, args, intrinsic->name);
+                if (operation == NULL) {
+                    break;
+                }
+                functionType = (TypeFunc *)intrinsic->type;
+                if (functionType->type != TYPEFUNC) {
+                    CError_FATAL(3718);
+                }
+                call = (ENode *)lalloc(sizeof(*call));
+                call->type = EFUNCCALL;
+                call->cost = 4;
+                call->rtype = operation;
+                call->ignored = 0;
+                call->flags = functionType->qual & Q_CV;
+                call->data.funccall.funcref = create_objectrefnode(intrinsic);
+                call->data.funccall.args = args;
+                call->data.funccall.functype = functionType;
+                result = CExpr_AdjustFunctionCall(call);
+                break;
+            }
+            case 48:
+            case 58:
+            case 64:
+            case 65:
+            case 69:
+            case 83:
+            case 94:
+            case 96:
+            case 97:
+            case 104:
+            case 105:
+            case 106:
+            case 107:
+            case 108:
+            case 109:
+            case 123:
+            case 128:
+            case 129:
+            case 137:
+            case 143:
+            case 149:
+            case 155:
+            case 176:
+            case 194:
+            case 195:
+            case 201:
+            case 253:
+            case 257:
+            case 258:
+            case 269:
+            case 270:
+            case 271:
+            case 301:
+            case 302:
+            case 303:
+            case 304:
+            case 305:
+            case 306:
+            case 307: {
+                ENodeList *argument;
+                HashNameNode *name;
+                int count;
+                int valid;
+                TypeFunc *functionType;
+                ENode *call;
+                Type *operation;
+                count = 0;
+                argument = args;
+                name = intrinsic->name;
+                while (argument != NULL) {
+                    count++;
+                    argument = argument->next;
+                }
+                if (count != 1) {
+                    PPCError_ReportError(103, name->name, count, 1);
+                    valid = 0;
+                } else {
+                    valid = 1;
+                }
+                if (!valid) {
+                    break;
+                }
+                operation = (Type *)select_altivec_mangle_result(intrinsicID, args, intrinsic->name);
+                if (operation == NULL) {
+                    break;
+                }
+                functionType = (TypeFunc *)intrinsic->type;
+                if (functionType->type != TYPEFUNC) {
+                    CError_FATAL(3718);
+                }
+                call = (ENode *)lalloc(sizeof(*call));
+                call->type = EFUNCCALL;
+                call->cost = 4;
+                call->rtype = operation;
+                call->ignored = 0;
+                call->flags = functionType->qual & Q_CV;
+                call->data.funccall.funcref = create_objectrefnode(intrinsic);
+                call->data.funccall.args = args;
+                call->data.funccall.functype = functionType;
+                result = CExpr_AdjustFunctionCall(call);
+                break;
+            }
+            case 59:
+            case 77: {
+                ENodeList *argument;
+                HashNameNode *name;
+                int count;
+                int valid;
+                TypeFunc *functionType;
+                ENode *call;
+                Type *operation;
+                count = 0;
+                argument = args;
+                name = intrinsic->name;
+                while (argument != NULL) {
+                    count++;
+                    argument = argument->next;
+                }
+                if (count != 0) {
+                    PPCError_ReportError(103, name->name, count, 0);
+                    valid = 0;
+                } else {
+                    valid = 1;
+                }
+                if (!valid) {
+                    break;
+                }
+                tableIndex -= 42;
+                operation = (Type *)intrinsic_tables[tableIndex].operation->operation;
+                if (operation == NULL) {
+                    break;
+                }
+                functionType = (TypeFunc *)intrinsic->type;
+                if (functionType->type != TYPEFUNC) {
+                    CError_FATAL(3718);
+                }
+                call = (ENode *)lalloc(sizeof(*call));
+                call->type = EFUNCCALL;
+                call->cost = 4;
+                call->rtype = operation;
+                call->ignored = 0;
+                call->flags = functionType->qual & Q_CV;
+                call->data.funccall.funcref = create_objectrefnode(intrinsic);
+                call->data.funccall.args = args;
+                call->data.funccall.functype = functionType;
+                result = CExpr_AdjustFunctionCall(call);
+                break;
+            }
+            case 309:
+            case 310: {
+                ENodeList *argument;
+                HashNameNode *name;
+                int count;
+                int valid;
+                TypeFunc *functionType;
+                ENode *call;
+                Type *operation;
+                count = 0;
+                argument = args;
+                name = intrinsic->name;
+                while (argument != NULL) {
+                    count++;
+                    argument = argument->next;
+                }
+                if (count != 1) {
+                    PPCError_ReportError(103, name->name, count, 1);
+                    valid = 0;
+                } else {
+                    valid = 1;
+                }
+                if (!valid) {
+                    break;
+                }
+                operation = find_matching_op_result(intrinsicID, args, intrinsic->name);
+                if (operation == NULL) {
+                    break;
+                }
+                functionType = (TypeFunc *)intrinsic->type;
+                if (functionType->type != TYPEFUNC) {
+                    CError_FATAL(3718);
+                }
+                call = (ENode *)lalloc(sizeof(*call));
+                call->type = EFUNCCALL;
+                call->cost = 4;
+                call->rtype = operation;
+                call->ignored = 0;
+                call->flags = functionType->qual & Q_CV;
+                call->data.funccall.funcref = create_objectrefnode(intrinsic);
+                call->data.funccall.args = args;
+                call->data.funccall.functype = functionType;
+                result = CExpr_AdjustFunctionCall(call);
+                break;
+            }
+        }
+    }
+    return result;
 }
 
 void Intrinsics_GenerateIntrinsicCall(ENode *node, short requestedReg, Operand *result)
@@ -4586,1337 +4679,1247 @@ void Intrinsics_GenerateIntrinsicCall(ENode *node, short requestedReg, Operand *
     }
 }
 
-#undef false
-#undef true
-
-ENode *Intrinsics_MakeAltivecCall(Object *descriptor, ENodeList *args)
+void Intrinsics_RegisterIntrinsics(void)
 {
-    Object *intrinsic = descriptor;
-    ENode *result = NULL;
-    unsigned short intrinsicID;
-    int tableIndex;
-    if (copts.altivec_model != 0) {
-        switch (tableIndex = (intrinsicID = intrinsic->u.intrinsic)) {
-            case 60:
-            case 61:
-            case 62:
-            case 63:
-            case 72:
-            case 73:
-            case 79:
-            case 80:
-            case 81:
-            case 82:
-            case 86:
-            case 93:
-            case 98:
-            case 100:
-            case 114:
-            case 115:
-            case 116:
-            case 202:
-            case 203:
-            case 224:
-            case 225:
-            case 226:
-            case 227:
-            case 228:
-            case 229:
-            case 230:
-            case 231:
-            case 240:
-            case 252:
-            case 259:
-            case 263:
-            case 280:
-            case 281:
-            case 282:
-            case 283:
-            case 284: {
-                ENodeList *argument;
-                HashNameNode *name;
-                int count;
-                int valid;
-                TypeFunc *functionType;
-                ENode *call;
-                Type *operation;
-                count = 0;
-                argument = args;
-                name = intrinsic->name;
-                while (argument != NULL) {
-                    count++;
-                    argument = argument->next;
-                }
-                if (count != 3) {
-                    PPCError_ReportError(103, name->name, count, 3);
-                    valid = 0;
-                } else {
-                    valid = 1;
-                }
-                if (!valid) {
-                    break;
-                }
-                operation = match_intrinsic_triple(intrinsicID, args, intrinsic->name);
-                if (operation == NULL) {
-                    break;
-                }
-                functionType = (TypeFunc *)intrinsic->type;
-                if (functionType->type != TYPEFUNC) {
-                    CError_FATAL(3718);
-                }
-                call = (ENode *)lalloc(sizeof(*call));
-                call->type = EFUNCCALL;
-                call->cost = 4;
-                call->rtype = operation;
-                call->ignored = 0;
-                call->flags = functionType->qual & Q_CV;
-                call->data.funccall.funcref = create_objectrefnode(intrinsic);
-                call->data.funccall.args = args;
-                call->data.funccall.functype = functionType;
-                result = CExpr_AdjustFunctionCall(call);
-                break;
-            }
-            case 42:
-            case 43:
-            case 44:
-            case 45:
-            case 46:
-            case 47:
-            case 49:
-            case 50:
-            case 51:
-            case 52:
-            case 53:
-            case 54:
-            case 55:
-            case 56:
-            case 57:
-            case 66:
-            case 67:
-            case 68:
-            case 70:
-            case 71:
-            case 74:
-            case 75:
-            case 76:
-            case 78:
-            case 84:
-            case 85:
-            case 87:
-            case 88:
-            case 89:
-            case 90:
-            case 91:
-            case 92:
-            case 95:
-            case 99:
-            case 101:
-            case 102:
-            case 103:
-            case 110:
-            case 111:
-            case 112:
-            case 113:
-            case 117:
-            case 118:
-            case 119:
-            case 120:
-            case 121:
-            case 122:
-            case 124:
-            case 125:
-            case 126:
-            case 127:
-            case 130:
-            case 131:
-            case 132:
-            case 133:
-            case 134:
-            case 135:
-            case 136:
-            case 138:
-            case 139:
-            case 140:
-            case 141:
-            case 142:
-            case 144:
-            case 145:
-            case 146:
-            case 147:
-            case 148:
-            case 150:
-            case 151:
-            case 152:
-            case 153:
-            case 154:
-            case 156:
-            case 157:
-            case 158:
-            case 159:
-            case 160:
-            case 161:
-            case 162:
-            case 163:
-            case 164:
-            case 165:
-            case 166:
-            case 167:
-            case 168:
-            case 169:
-            case 170:
-            case 171:
-            case 172:
-            case 173:
-            case 174:
-            case 175:
-            case 177:
-            case 178:
-            case 179:
-            case 180:
-            case 181:
-            case 182:
-            case 183:
-            case 184:
-            case 185:
-            case 186:
-            case 187:
-            case 188:
-            case 189:
-            case 190:
-            case 191:
-            case 192:
-            case 193:
-            case 196:
-            case 197:
-            case 198:
-            case 199:
-            case 200:
-            case 204:
-            case 205:
-            case 206:
-            case 207:
-            case 208:
-            case 209:
-            case 210:
-            case 211:
-            case 212:
-            case 213:
-            case 214:
-            case 215:
-            case 216:
-            case 217:
-            case 218:
-            case 219:
-            case 220:
-            case 221:
-            case 222:
-            case 223:
-            case 232:
-            case 233:
-            case 234:
-            case 235:
-            case 236:
-            case 237:
-            case 238:
-            case 239:
-            case 241:
-            case 242:
-            case 243:
-            case 244:
-            case 245:
-            case 246:
-            case 247:
-            case 248:
-            case 249:
-            case 250:
-            case 251:
-            case 254:
-            case 255:
-            case 256:
-            case 260:
-            case 261:
-            case 262:
-            case 264:
-            case 265:
-            case 266:
-            case 267:
-            case 268:
-            case 272:
-            case 273:
-            case 274:
-            case 275:
-            case 276:
-            case 277:
-            case 278:
-            case 279:
-            case 285:
-            case 286:
-            case 287:
-            case 288:
-            case 289:
-            case 290:
-            case 291:
-            case 292:
-            case 293:
-            case 294:
-            case 295:
-            case 296:
-            case 297:
-            case 298:
-            case 299:
-            case 300:
-            case 308: {
-                ENodeList *argument;
-                HashNameNode *name;
-                int count;
-                int valid;
-                TypeFunc *functionType;
-                ENode *call;
-                Type *operation;
-                count = 0;
-                argument = args;
-                name = intrinsic->name;
-                while (argument != NULL) {
-                    count++;
-                    argument = argument->next;
-                }
-                if (count != 2) {
-                    PPCError_ReportError(103, name->name, count, 2);
-                    valid = 0;
-                } else {
-                    valid = 1;
-                }
-                if (!valid) {
-                    break;
-                }
-                operation = check_binary_intrinsic_args(intrinsicID, args, intrinsic->name);
-                if (operation == NULL) {
-                    break;
-                }
-                functionType = (TypeFunc *)intrinsic->type;
-                if (functionType->type != TYPEFUNC) {
-                    CError_FATAL(3718);
-                }
-                call = (ENode *)lalloc(sizeof(*call));
-                call->type = EFUNCCALL;
-                call->cost = 4;
-                call->rtype = operation;
-                call->ignored = 0;
-                call->flags = functionType->qual & Q_CV;
-                call->data.funccall.funcref = create_objectrefnode(intrinsic);
-                call->data.funccall.args = args;
-                call->data.funccall.functype = functionType;
-                result = CExpr_AdjustFunctionCall(call);
-                break;
-            }
-            case 48:
-            case 58:
-            case 64:
-            case 65:
-            case 69:
-            case 83:
-            case 94:
-            case 96:
-            case 97:
-            case 104:
-            case 105:
-            case 106:
-            case 107:
-            case 108:
-            case 109:
-            case 123:
-            case 128:
-            case 129:
-            case 137:
-            case 143:
-            case 149:
-            case 155:
-            case 176:
-            case 194:
-            case 195:
-            case 201:
-            case 253:
-            case 257:
-            case 258:
-            case 269:
-            case 270:
-            case 271:
-            case 301:
-            case 302:
-            case 303:
-            case 304:
-            case 305:
-            case 306:
-            case 307: {
-                ENodeList *argument;
-                HashNameNode *name;
-                int count;
-                int valid;
-                TypeFunc *functionType;
-                ENode *call;
-                Type *operation;
-                count = 0;
-                argument = args;
-                name = intrinsic->name;
-                while (argument != NULL) {
-                    count++;
-                    argument = argument->next;
-                }
-                if (count != 1) {
-                    PPCError_ReportError(103, name->name, count, 1);
-                    valid = 0;
-                } else {
-                    valid = 1;
-                }
-                if (!valid) {
-                    break;
-                }
-                operation = (Type *)select_altivec_mangle_result(intrinsicID, args, intrinsic->name);
-                if (operation == NULL) {
-                    break;
-                }
-                functionType = (TypeFunc *)intrinsic->type;
-                if (functionType->type != TYPEFUNC) {
-                    CError_FATAL(3718);
-                }
-                call = (ENode *)lalloc(sizeof(*call));
-                call->type = EFUNCCALL;
-                call->cost = 4;
-                call->rtype = operation;
-                call->ignored = 0;
-                call->flags = functionType->qual & Q_CV;
-                call->data.funccall.funcref = create_objectrefnode(intrinsic);
-                call->data.funccall.args = args;
-                call->data.funccall.functype = functionType;
-                result = CExpr_AdjustFunctionCall(call);
-                break;
-            }
-            case 59:
-            case 77: {
-                ENodeList *argument;
-                HashNameNode *name;
-                int count;
-                int valid;
-                TypeFunc *functionType;
-                ENode *call;
-                Type *operation;
-                count = 0;
-                argument = args;
-                name = intrinsic->name;
-                while (argument != NULL) {
-                    count++;
-                    argument = argument->next;
-                }
-                if (count != 0) {
-                    PPCError_ReportError(103, name->name, count, 0);
-                    valid = 0;
-                } else {
-                    valid = 1;
-                }
-                if (!valid) {
-                    break;
-                }
-                tableIndex -= 42;
-                operation = (Type *)intrinsic_tables[tableIndex].operation->operation;
-                if (operation == NULL) {
-                    break;
-                }
-                functionType = (TypeFunc *)intrinsic->type;
-                if (functionType->type != TYPEFUNC) {
-                    CError_FATAL(3718);
-                }
-                call = (ENode *)lalloc(sizeof(*call));
-                call->type = EFUNCCALL;
-                call->cost = 4;
-                call->rtype = operation;
-                call->ignored = 0;
-                call->flags = functionType->qual & Q_CV;
-                call->data.funccall.funcref = create_objectrefnode(intrinsic);
-                call->data.funccall.args = args;
-                call->data.funccall.functype = functionType;
-                result = CExpr_AdjustFunctionCall(call);
-                break;
-            }
-            case 309:
-            case 310: {
-                ENodeList *argument;
-                HashNameNode *name;
-                int count;
-                int valid;
-                TypeFunc *functionType;
-                ENode *call;
-                Type *operation;
-                count = 0;
-                argument = args;
-                name = intrinsic->name;
-                while (argument != NULL) {
-                    count++;
-                    argument = argument->next;
-                }
-                if (count != 1) {
-                    PPCError_ReportError(103, name->name, count, 1);
-                    valid = 0;
-                } else {
-                    valid = 1;
-                }
-                if (!valid) {
-                    break;
-                }
-                operation = find_matching_op_result(intrinsicID, args, intrinsic->name);
-                if (operation == NULL) {
-                    break;
-                }
-                functionType = (TypeFunc *)intrinsic->type;
-                if (functionType->type != TYPEFUNC) {
-                    CError_FATAL(3718);
-                }
-                call = (ENode *)lalloc(sizeof(*call));
-                call->type = EFUNCCALL;
-                call->cost = 4;
-                call->rtype = operation;
-                call->ignored = 0;
-                call->flags = functionType->qual & Q_CV;
-                call->data.funccall.funcref = create_objectrefnode(intrinsic);
-                call->data.funccall.args = args;
-                call->data.funccall.functype = functionType;
-                result = CExpr_AdjustFunctionCall(call);
-                break;
-            }
-        }
+    unsigned char saved_cplusplus = copts.cplusplus;
+    int i;
+    TypeFunc *function;
+
+    copts.cplusplus = 0;
+    for (i = 0; i < 313; i++)
+        intrinsics[i] = NULL;
+    intrinsics[0] = CParser_NewRTFunc(&stvoid, GetHashNameNode("__eieio"), 0, 0);
+    intrinsics[1] = CParser_NewRTFunc(&stvoid, GetHashNameNode("__sync"), 0, 0);
+    intrinsics[2] = CParser_NewRTFunc(&stvoid, GetHashNameNode("__isync"), 0, 0);
+    intrinsics[3] = CParser_NewRTFunc((Type *)&stsignedint, GetHashNameNode("__abs"), 0, 1, &stsignedint);
+    intrinsics[4] = CParser_NewRTFunc((Type *)&stsignedlong, GetHashNameNode("__labs"), 0, 1, &stsignedlong);
+    intrinsics[5] = CParser_NewRTFunc((Type *)&stdouble, GetHashNameNode("__fabs"), 0, 1, &stdouble);
+    intrinsics[6] = CParser_NewRTFunc((Type *)&stdouble, GetHashNameNode("__fnabs"), 0, 1, &stdouble);
+    intrinsics[7] = CParser_NewRTFunc((Type *)&stdouble, GetHashNameNode("__setflm"), 0, 1, &stdouble);
+    intrinsics[33] = CParser_NewRTFunc((Type *)&stdouble, GetHashNameNode("__frsqrte"), 0, 1, &stdouble);
+    intrinsics[8] = CParser_NewRTFunc((Type *)&void_ptr, GetHashNameNode("__alloca"), 0, 1, &stunsignedint);
+    intrinsics[9] = CParser_NewRTFunc((Type *)&stsignedint, GetHashNameNode("__cntlzw"), 0, 1, &stunsignedint);
+    intrinsics[10] =
+        CParser_NewRTFunc((Type *)&stunsignedint, GetHashNameNode("__lhbrx"), 0, 2, &void_ptr, &stsignedint);
+    intrinsics[11] =
+        CParser_NewRTFunc((Type *)&stunsignedint, GetHashNameNode("__lwbrx"), 0, 2, &void_ptr, &stsignedint);
+    intrinsics[12] =
+        CParser_NewRTFunc(&stvoid, GetHashNameNode("__sthbrx"), 0, 3, &stunsignedshort, &void_ptr, &stsignedint);
+    intrinsics[13] =
+        CParser_NewRTFunc(&stvoid, GetHashNameNode("__stwbrx"), 0, 3, &stunsignedint, &void_ptr, &stsignedint);
+    intrinsics[14] = CParser_NewRTFunc(&stvoid, GetHashNameNode("__dcbf"), 0, 2, &void_ptr, &stsignedint);
+    intrinsics[15] = CParser_NewRTFunc(&stvoid, GetHashNameNode("__dcbt"), 0, 2, &void_ptr, &stsignedint);
+    intrinsics[16] = CParser_NewRTFunc(&stvoid, GetHashNameNode("__dcbst"), 0, 2, &void_ptr, &stsignedint);
+    intrinsics[17] = CParser_NewRTFunc(&stvoid, GetHashNameNode("__dcbtst"), 0, 2, &void_ptr, &stsignedint);
+    intrinsics[18] = CParser_NewRTFunc(&stvoid, GetHashNameNode("__dcbz"), 0, 2, &void_ptr, &stsignedint);
+    intrinsics[19] =
+        CParser_NewRTFunc((Type *)&stsignedint, GetHashNameNode("__mulhw"), 0, 2, &stsignedint, &stsignedint);
+    intrinsics[20] =
+        CParser_NewRTFunc((Type *)&stunsignedint, GetHashNameNode("__mulhwu"), 0, 2, &stunsignedint, &stunsignedint);
+    intrinsics[21] =
+        CParser_NewRTFunc((Type *)&stsignedint, GetHashNameNode("__divw"), 0, 2, &stsignedint, &stsignedint);
+    intrinsics[22] =
+        CParser_NewRTFunc((Type *)&stsignedint, GetHashNameNode("__divwu"), 0, 2, &stsignedint, &stsignedint);
+    intrinsics[23] =
+        CParser_NewRTFunc((Type *)&stdouble, GetHashNameNode("__fmadd"), 0, 3, &stdouble, &stdouble, &stdouble);
+    intrinsics[24] =
+        CParser_NewRTFunc((Type *)&stdouble, GetHashNameNode("__fmsub"), 0, 3, &stdouble, &stdouble, &stdouble);
+    intrinsics[25] =
+        CParser_NewRTFunc((Type *)&stdouble, GetHashNameNode("__fnmadd"), 0, 3, &stdouble, &stdouble, &stdouble);
+    intrinsics[26] =
+        CParser_NewRTFunc((Type *)&stdouble, GetHashNameNode("__fnmsub"), 0, 3, &stdouble, &stdouble, &stdouble);
+    intrinsics[34] =
+        CParser_NewRTFunc((Type *)&stdouble, GetHashNameNode("__fsel"), 0, 3, &stdouble, &stdouble, &stdouble);
+    intrinsics[27] =
+        CParser_NewRTFunc((Type *)&stfloat, GetHashNameNode("__fmadds"), 0, 3, &stfloat, &stfloat, &stfloat);
+    intrinsics[28] =
+        CParser_NewRTFunc((Type *)&stfloat, GetHashNameNode("__fmsubs"), 0, 3, &stfloat, &stfloat, &stfloat);
+    intrinsics[29] =
+        CParser_NewRTFunc((Type *)&stfloat, GetHashNameNode("__fnmadds"), 0, 3, &stfloat, &stfloat, &stfloat);
+    intrinsics[30] =
+        CParser_NewRTFunc((Type *)&stfloat, GetHashNameNode("__fnmsubs"), 0, 3, &stfloat, &stfloat, &stfloat);
+    intrinsics[31] = CParser_NewRTFunc((Type *)&stdouble, GetHashNameNode("__mffs"), 0, 0);
+    intrinsics[32] = CParser_NewRTFunc((Type *)&stfloat, GetHashNameNode("__fres"), 0, 1, &stfloat);
+    intrinsics[40] = CParser_NewRTFunc((Type *)&stfloat, GetHashNameNode("__fabsf"), 0, 1, &stfloat);
+    intrinsics[41] = CParser_NewRTFunc((Type *)&stfloat, GetHashNameNode("__fnabsf"), 0, 1, &stfloat);
+    intrinsics[35] =
+        CParser_NewRTFunc(TYPE(&stchar_ptr), GetHashNameNode("__strcpy"), 0, 2, TYPE(&stchar_ptr), TYPE(&stchar_ptr));
+    function = (TypeFunc *)intrinsics[35]->type;
+    function->args->next->qual |= Q_CONST;
+    intrinsics[36] =
+        CParser_NewRTFunc((Type *)&void_ptr, GetHashNameNode("__memcpy"), 0, 3, &void_ptr, &void_ptr, &stunsignedlong);
+    data_00587fc0 = intrinsics[36];
+    function = (TypeFunc *)intrinsics[36]->type;
+    function->args->next->qual |= Q_CONST;
+    intrinsics[37] = CParser_NewRTFunc((Type *)&stsignedint, GetHashNameNode("__rlwimi"), 0, 5, &stsignedint,
+                                       &stsignedint, &stsignedint, &stsignedint, &stsignedint);
+    intrinsics[38] = CParser_NewRTFunc((Type *)&stsignedint, GetHashNameNode("__rlwinm"), 0, 4, &stsignedint,
+                                       &stsignedint, &stsignedint, &stsignedint);
+    intrinsics[39] = CParser_NewRTFunc((Type *)&stsignedint, GetHashNameNode("__rlwnm"), 0, 4, &stsignedint,
+                                       &stsignedint, &stsignedint, &stsignedint);
+    intrinsics[42] =
+        CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_add"), 0, 2, TYPE(&stvector), TYPE(&stvector));
+    intrinsics[43] =
+        CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_addc"), 0, 2, TYPE(&stvector), TYPE(&stvector));
+    intrinsics[44] =
+        CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_adds"), 0, 2, TYPE(&stvector), TYPE(&stvector));
+    intrinsics[45] =
+        CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_and"), 0, 2, TYPE(&stvector), TYPE(&stvector));
+    intrinsics[46] =
+        CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_andc"), 0, 2, TYPE(&stvector), TYPE(&stvector));
+    intrinsics[47] =
+        CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_avg"), 0, 2, TYPE(&stvector), TYPE(&stvector));
+    intrinsics[48] = CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_ceil"), 0, 1, TYPE(&stvector));
+    intrinsics[49] =
+        CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_cmpb"), 0, 2, TYPE(&stvector), TYPE(&stvector));
+    intrinsics[50] =
+        CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_cmpeq"), 0, 2, TYPE(&stvector), TYPE(&stvector));
+    intrinsics[51] =
+        CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_cmpge"), 0, 2, TYPE(&stvector), TYPE(&stvector));
+    intrinsics[52] =
+        CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_cmple"), 0, 2, TYPE(&stvector), TYPE(&stvector));
+    intrinsics[53] =
+        CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_cmpgt"), 0, 2, TYPE(&stvector), TYPE(&stvector));
+    intrinsics[54] =
+        CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_cmplt"), 0, 2, TYPE(&stvector), TYPE(&stvector));
+    intrinsics[55] =
+        CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_ctf"), 0, 2, TYPE(&stvector), TYPE(&stvector));
+    intrinsics[56] =
+        CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_cts"), 0, 2, TYPE(&stvector), TYPE(&stvector));
+    intrinsics[57] =
+        CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_ctu"), 0, 2, TYPE(&stvector), TYPE(&stvector));
+    intrinsics[58] = CParser_NewRTFunc(&stvoid, GetHashNameNode("vec_dss"), 0, 1, &stsignedint);
+    intrinsics[59] = CParser_NewRTFunc(&stvoid, GetHashNameNode("vec_dssall"), 0, 0);
+    intrinsics[60] =
+        CParser_NewRTFunc(&stvoid, GetHashNameNode("vec_dst"), 0, 3, TYPE(&stvector), &stsignedint, &stsignedint);
+    intrinsics[61] =
+        CParser_NewRTFunc(&stvoid, GetHashNameNode("vec_dstst"), 0, 3, TYPE(&stvector), &stsignedint, &stsignedint);
+    intrinsics[62] =
+        CParser_NewRTFunc(&stvoid, GetHashNameNode("vec_dststt"), 0, 3, TYPE(&stvector), &stsignedint, &stsignedint);
+    intrinsics[63] =
+        CParser_NewRTFunc(&stvoid, GetHashNameNode("vec_dstt"), 0, 3, TYPE(&stvector), &stsignedint, &stsignedint);
+    intrinsics[64] = CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_expte"), 0, 1, TYPE(&stvector));
+    intrinsics[65] = CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_floor"), 0, 1, TYPE(&stvector));
+    intrinsics[66] =
+        CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_ld"), 0, 2, TYPE(&stvector), TYPE(&stvector));
+    intrinsics[67] =
+        CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_lde"), 0, 2, TYPE(&stvector), TYPE(&stvector));
+    intrinsics[68] =
+        CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_ldl"), 0, 2, TYPE(&stvector), TYPE(&stvector));
+    intrinsics[69] = CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_loge"), 0, 1, TYPE(&stvector));
+    intrinsics[70] =
+        CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_lvsl"), 0, 2, TYPE(&stvector), TYPE(&stvector));
+    intrinsics[71] =
+        CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_lvsr"), 0, 2, TYPE(&stvector), TYPE(&stvector));
+    intrinsics[72] = CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_madd"), 0, 3, TYPE(&stvector),
+                                       TYPE(&stvector), TYPE(&stvector));
+    intrinsics[73] = CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_madds"), 0, 3, TYPE(&stvector),
+                                       TYPE(&stvector), TYPE(&stvector));
+    intrinsics[74] =
+        CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_max"), 0, 2, TYPE(&stvector), TYPE(&stvector));
+    intrinsics[75] =
+        CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_mergeh"), 0, 2, TYPE(&stvector), TYPE(&stvector));
+    intrinsics[76] =
+        CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_mergel"), 0, 2, TYPE(&stvector), TYPE(&stvector));
+    intrinsics[77] = CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_mfvscr"), 0, 0);
+    intrinsics[78] =
+        CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_min"), 0, 2, TYPE(&stvector), TYPE(&stvector));
+    intrinsics[79] = CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_mladd"), 0, 3, TYPE(&stvector),
+                                       TYPE(&stvector), TYPE(&stvector));
+    intrinsics[80] = CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_mradds"), 0, 3, TYPE(&stvector),
+                                       TYPE(&stvector), TYPE(&stvector));
+    intrinsics[81] = CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_msum"), 0, 3, TYPE(&stvector),
+                                       TYPE(&stvector), TYPE(&stvector));
+    intrinsics[82] = CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_msums"), 0, 3, TYPE(&stvector),
+                                       TYPE(&stvector), TYPE(&stvector));
+    intrinsics[83] = CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_mtvscr"), 0, 1, TYPE(&stvector));
+    intrinsics[84] =
+        CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_mule"), 0, 2, TYPE(&stvector), TYPE(&stvector));
+    intrinsics[85] =
+        CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_mulo"), 0, 2, TYPE(&stvector), TYPE(&stvector));
+    intrinsics[86] = CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_nmsub"), 0, 2, TYPE(&stvector),
+                                       TYPE(&stvector), TYPE(&stvector));
+    intrinsics[87] =
+        CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_nor"), 0, 2, TYPE(&stvector), TYPE(&stvector));
+    intrinsics[88] =
+        CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_or"), 0, 2, TYPE(&stvector), TYPE(&stvector));
+    intrinsics[89] =
+        CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_pack"), 0, 2, TYPE(&stvector), TYPE(&stvector));
+    intrinsics[90] =
+        CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_packpx"), 0, 2, TYPE(&stvector), TYPE(&stvector));
+    intrinsics[91] =
+        CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_packs"), 0, 2, TYPE(&stvector), TYPE(&stvector));
+    intrinsics[92] =
+        CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_packsu"), 0, 2, TYPE(&stvector), TYPE(&stvector));
+    intrinsics[93] = CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_perm"), 0, 3, TYPE(&stvector),
+                                       TYPE(&stvector), TYPE(&stvector));
+    intrinsics[94] = CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_re"), 0, 1, TYPE(&stvector));
+    intrinsics[95] =
+        CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_rl"), 0, 2, TYPE(&stvector), TYPE(&stvector));
+    intrinsics[96] = CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_round"), 0, 1, TYPE(&stvector));
+    intrinsics[97] = CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_rsqrte"), 0, 1, TYPE(&stvector));
+    intrinsics[98] = CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_sel"), 0, 3, TYPE(&stvector),
+                                       TYPE(&stvector), TYPE(&stvector));
+    intrinsics[99] =
+        CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_sl"), 0, 2, TYPE(&stvector), TYPE(&stvector));
+    intrinsics[100] = CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_sld"), 0, 3, TYPE(&stvector),
+                                        TYPE(&stvector), TYPE(&stvector));
+    intrinsics[101] =
+        CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_sll"), 0, 2, TYPE(&stvector), TYPE(&stvector));
+    intrinsics[102] =
+        CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_slo"), 0, 2, TYPE(&stvector), TYPE(&stvector));
+    intrinsics[103] =
+        CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_splat"), 0, 2, TYPE(&stvector), TYPE(&stvector));
+    intrinsics[104] = CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_splat_s8"), 0, 1, TYPE(&stvector));
+    intrinsics[105] = CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_splat_s16"), 0, 1, TYPE(&stvector));
+    intrinsics[106] = CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_splat_s32"), 0, 1, TYPE(&stvector));
+    intrinsics[107] = CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_splat_u8"), 0, 1, TYPE(&stvector));
+    intrinsics[108] = CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_splat_u16"), 0, 1, TYPE(&stvector));
+    intrinsics[109] = CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_splat_u32"), 0, 1, TYPE(&stvector));
+    intrinsics[110] =
+        CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_sr"), 0, 2, TYPE(&stvector), TYPE(&stvector));
+    intrinsics[111] =
+        CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_sra"), 0, 2, TYPE(&stvector), TYPE(&stvector));
+    intrinsics[112] =
+        CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_srl"), 0, 2, TYPE(&stvector), TYPE(&stvector));
+    intrinsics[113] =
+        CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_sro"), 0, 2, TYPE(&stvector), TYPE(&stvector));
+    intrinsics[114] = CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_st"), 0, 3, TYPE(&stvector),
+                                        TYPE(&stvector), TYPE(&stvector));
+    intrinsics[115] = CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_ste"), 0, 3, TYPE(&stvector),
+                                        TYPE(&stvector), TYPE(&stvector));
+    intrinsics[116] = CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_stl"), 0, 3, TYPE(&stvector),
+                                        TYPE(&stvector), TYPE(&stvector));
+    intrinsics[117] =
+        CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_sub"), 0, 2, TYPE(&stvector), TYPE(&stvector));
+    intrinsics[118] =
+        CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_subc"), 0, 2, TYPE(&stvector), TYPE(&stvector));
+    intrinsics[119] =
+        CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_subs"), 0, 2, TYPE(&stvector), TYPE(&stvector));
+    intrinsics[120] =
+        CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_sum4s"), 0, 2, TYPE(&stvector), TYPE(&stvector));
+    intrinsics[121] =
+        CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_sum2s"), 0, 2, TYPE(&stvector), TYPE(&stvector));
+    intrinsics[122] =
+        CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_sums"), 0, 2, TYPE(&stvector), TYPE(&stvector));
+    intrinsics[123] = CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_trunc"), 0, 1, TYPE(&stvector));
+    intrinsics[124] =
+        CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_unpack2sh"), 0, 2, TYPE(&stvector), TYPE(&stvector));
+    intrinsics[125] =
+        CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_unpack2sl"), 0, 2, TYPE(&stvector), TYPE(&stvector));
+    intrinsics[126] =
+        CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_unpack2uh"), 0, 2, TYPE(&stvector), TYPE(&stvector));
+    intrinsics[127] =
+        CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_unpack2ul"), 0, 2, TYPE(&stvector), TYPE(&stvector));
+    intrinsics[128] = CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_unpackh"), 0, 1, TYPE(&stvector));
+    intrinsics[129] = CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_unpackl"), 0, 1, TYPE(&stvector));
+    intrinsics[130] =
+        CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_xor"), 0, 2, TYPE(&stvector), TYPE(&stvector));
+    intrinsics[131] =
+        CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_all_eq"), 0, 2, TYPE(&stvector), TYPE(&stvector));
+    intrinsics[132] =
+        CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_all_ge"), 0, 2, TYPE(&stvector), TYPE(&stvector));
+    intrinsics[133] =
+        CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_all_gt"), 0, 2, TYPE(&stvector), TYPE(&stvector));
+    intrinsics[134] =
+        CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_all_in"), 0, 2, TYPE(&stvector), TYPE(&stvector));
+    intrinsics[135] =
+        CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_all_le"), 0, 2, TYPE(&stvector), TYPE(&stvector));
+    intrinsics[136] =
+        CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_all_lt"), 0, 2, TYPE(&stvector), TYPE(&stvector));
+    intrinsics[137] = CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_all_nan"), 0, 1, TYPE(&stvector));
+    intrinsics[138] =
+        CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_all_ne"), 0, 2, TYPE(&stvector), TYPE(&stvector));
+    intrinsics[139] =
+        CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_all_nge"), 0, 2, TYPE(&stvector), TYPE(&stvector));
+    intrinsics[140] =
+        CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_all_ngt"), 0, 2, TYPE(&stvector), TYPE(&stvector));
+    intrinsics[141] =
+        CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_all_nle"), 0, 2, TYPE(&stvector), TYPE(&stvector));
+    intrinsics[142] =
+        CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_all_nlt"), 0, 2, TYPE(&stvector), TYPE(&stvector));
+    intrinsics[143] = CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_all_numeric"), 0, 1, TYPE(&stvector));
+    intrinsics[144] =
+        CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_any_eq"), 0, 2, TYPE(&stvector), TYPE(&stvector));
+    intrinsics[145] =
+        CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_any_ge"), 0, 2, TYPE(&stvector), TYPE(&stvector));
+    intrinsics[146] =
+        CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_any_gt"), 0, 2, TYPE(&stvector), TYPE(&stvector));
+    intrinsics[147] =
+        CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_any_le"), 0, 2, TYPE(&stvector), TYPE(&stvector));
+    intrinsics[148] =
+        CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_any_lt"), 0, 2, TYPE(&stvector), TYPE(&stvector));
+    intrinsics[149] = CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_any_nan"), 0, 1, TYPE(&stvector));
+    intrinsics[150] =
+        CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_any_ne"), 0, 2, TYPE(&stvector), TYPE(&stvector));
+    intrinsics[151] =
+        CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_any_nge"), 0, 2, TYPE(&stvector), TYPE(&stvector));
+    intrinsics[152] =
+        CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_any_ngt"), 0, 2, TYPE(&stvector), TYPE(&stvector));
+    intrinsics[153] =
+        CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_any_nle"), 0, 2, TYPE(&stvector), TYPE(&stvector));
+    intrinsics[154] =
+        CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_any_nlt"), 0, 2, TYPE(&stvector), TYPE(&stvector));
+    intrinsics[155] = CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_any_numeric"), 0, 1, TYPE(&stvector));
+    intrinsics[156] =
+        CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_any_out"), 0, 2, TYPE(&stvector), TYPE(&stvector));
+    intrinsics[157] =
+        CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_vaddubm"), 0, 2, TYPE(&stvector), TYPE(&stvector));
+    intrinsics[158] =
+        CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_vadduhm"), 0, 2, TYPE(&stvector), TYPE(&stvector));
+    intrinsics[159] =
+        CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_vadduwm"), 0, 2, TYPE(&stvector), TYPE(&stvector));
+    intrinsics[160] =
+        CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_vaddfp"), 0, 2, TYPE(&stvector), TYPE(&stvector));
+    intrinsics[161] =
+        CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_vaddcuw"), 0, 2, TYPE(&stvector), TYPE(&stvector));
+    intrinsics[162] =
+        CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_vaddubs"), 0, 2, TYPE(&stvector), TYPE(&stvector));
+    intrinsics[163] =
+        CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_vaddsbs"), 0, 2, TYPE(&stvector), TYPE(&stvector));
+    intrinsics[164] =
+        CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_vadduhs"), 0, 2, TYPE(&stvector), TYPE(&stvector));
+    intrinsics[165] =
+        CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_vaddshs"), 0, 2, TYPE(&stvector), TYPE(&stvector));
+    intrinsics[166] =
+        CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_vadduws"), 0, 2, TYPE(&stvector), TYPE(&stvector));
+    intrinsics[167] =
+        CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_vaddsws"), 0, 2, TYPE(&stvector), TYPE(&stvector));
+    intrinsics[168] =
+        CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_vand"), 0, 2, TYPE(&stvector), TYPE(&stvector));
+    intrinsics[169] =
+        CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_vandc"), 0, 2, TYPE(&stvector), TYPE(&stvector));
+    intrinsics[170] =
+        CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_vavgub"), 0, 2, TYPE(&stvector), TYPE(&stvector));
+    intrinsics[171] =
+        CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_vavgsb"), 0, 2, TYPE(&stvector), TYPE(&stvector));
+    intrinsics[172] =
+        CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_vavguh"), 0, 2, TYPE(&stvector), TYPE(&stvector));
+    intrinsics[173] =
+        CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_vavgsh"), 0, 2, TYPE(&stvector), TYPE(&stvector));
+    intrinsics[174] =
+        CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_vavguw"), 0, 2, TYPE(&stvector), TYPE(&stvector));
+    intrinsics[175] =
+        CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_vavgsw"), 0, 2, TYPE(&stvector), TYPE(&stvector));
+    intrinsics[176] = CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_vrfip"), 0, 1, TYPE(&stvector));
+    intrinsics[177] =
+        CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_vcmpbfp"), 0, 2, TYPE(&stvector), TYPE(&stvector));
+    intrinsics[178] =
+        CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_vcmpequb"), 0, 2, TYPE(&stvector), TYPE(&stvector));
+    intrinsics[179] =
+        CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_vcmpequh"), 0, 2, TYPE(&stvector), TYPE(&stvector));
+    intrinsics[180] =
+        CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_vcmpequw"), 0, 2, TYPE(&stvector), TYPE(&stvector));
+    intrinsics[181] =
+        CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_vcmpeqfp"), 0, 2, TYPE(&stvector), TYPE(&stvector));
+    intrinsics[182] =
+        CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_vcmpgefp"), 0, 2, TYPE(&stvector), TYPE(&stvector));
+    intrinsics[183] =
+        CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_vcmpgtub"), 0, 2, TYPE(&stvector), TYPE(&stvector));
+    intrinsics[184] =
+        CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_vcmpgtsb"), 0, 2, TYPE(&stvector), TYPE(&stvector));
+    intrinsics[185] =
+        CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_vcmpgtuh"), 0, 2, TYPE(&stvector), TYPE(&stvector));
+    intrinsics[186] =
+        CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_vcmpgtsh"), 0, 2, TYPE(&stvector), TYPE(&stvector));
+    intrinsics[187] =
+        CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_vcmpgtuw"), 0, 2, TYPE(&stvector), TYPE(&stvector));
+    intrinsics[188] =
+        CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_vcmpgtsw"), 0, 2, TYPE(&stvector), TYPE(&stvector));
+    intrinsics[189] =
+        CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_vcmpgtfp"), 0, 2, TYPE(&stvector), TYPE(&stvector));
+    intrinsics[190] =
+        CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_vcfux"), 0, 2, TYPE(&stvector), TYPE(&stvector));
+    intrinsics[191] =
+        CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_vcfsx"), 0, 2, TYPE(&stvector), TYPE(&stvector));
+    intrinsics[192] =
+        CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_vctsxs"), 0, 2, TYPE(&stvector), TYPE(&stvector));
+    intrinsics[193] =
+        CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_vctuxs"), 0, 2, TYPE(&stvector), TYPE(&stvector));
+    intrinsics[194] = CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_vexptefp"), 0, 1, TYPE(&stvector));
+    intrinsics[195] = CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_vrfim"), 0, 1, TYPE(&stvector));
+    intrinsics[196] =
+        CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_lvx"), 0, 2, TYPE(&stvector), TYPE(&stvector));
+    intrinsics[197] =
+        CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_lvebx"), 0, 2, TYPE(&stvector), TYPE(&stvector));
+    intrinsics[198] =
+        CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_lvehx"), 0, 2, TYPE(&stvector), TYPE(&stvector));
+    intrinsics[199] =
+        CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_lvewx"), 0, 2, TYPE(&stvector), TYPE(&stvector));
+    intrinsics[200] =
+        CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_lvxl"), 0, 2, TYPE(&stvector), TYPE(&stvector));
+    intrinsics[201] = CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_vlogefp"), 0, 1, TYPE(&stvector));
+    intrinsics[202] = CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_vmaddfp"), 0, 3, TYPE(&stvector),
+                                        TYPE(&stvector), TYPE(&stvector));
+    intrinsics[203] = CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_vmhaddshs"), 0, 3, TYPE(&stvector),
+                                        TYPE(&stvector), TYPE(&stvector));
+    intrinsics[204] =
+        CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_vmaxub"), 0, 2, TYPE(&stvector), TYPE(&stvector));
+    intrinsics[205] =
+        CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_vmaxsb"), 0, 2, TYPE(&stvector), TYPE(&stvector));
+    intrinsics[206] =
+        CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_vmaxuh"), 0, 2, TYPE(&stvector), TYPE(&stvector));
+    intrinsics[207] =
+        CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_vmaxsh"), 0, 2, TYPE(&stvector), TYPE(&stvector));
+    intrinsics[208] =
+        CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_vmaxuw"), 0, 2, TYPE(&stvector), TYPE(&stvector));
+    intrinsics[209] =
+        CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_vmaxsw"), 0, 2, TYPE(&stvector), TYPE(&stvector));
+    intrinsics[210] =
+        CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_vmaxfp"), 0, 2, TYPE(&stvector), TYPE(&stvector));
+    intrinsics[211] =
+        CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_vmrghb"), 0, 2, TYPE(&stvector), TYPE(&stvector));
+    intrinsics[212] =
+        CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_vmrghh"), 0, 2, TYPE(&stvector), TYPE(&stvector));
+    intrinsics[213] =
+        CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_vmrghw"), 0, 2, TYPE(&stvector), TYPE(&stvector));
+    intrinsics[214] =
+        CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_vmrglb"), 0, 2, TYPE(&stvector), TYPE(&stvector));
+    intrinsics[215] =
+        CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_vmrglh"), 0, 2, TYPE(&stvector), TYPE(&stvector));
+    intrinsics[216] =
+        CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_vmrglw"), 0, 2, TYPE(&stvector), TYPE(&stvector));
+    intrinsics[217] =
+        CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_vminub"), 0, 2, TYPE(&stvector), TYPE(&stvector));
+    intrinsics[218] =
+        CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_vminsb"), 0, 2, TYPE(&stvector), TYPE(&stvector));
+    intrinsics[219] =
+        CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_vminuh"), 0, 2, TYPE(&stvector), TYPE(&stvector));
+    intrinsics[220] =
+        CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_vminsh"), 0, 2, TYPE(&stvector), TYPE(&stvector));
+    intrinsics[221] =
+        CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_vminuw"), 0, 2, TYPE(&stvector), TYPE(&stvector));
+    intrinsics[222] =
+        CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_vminsw"), 0, 2, TYPE(&stvector), TYPE(&stvector));
+    intrinsics[223] =
+        CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_vminfp"), 0, 2, TYPE(&stvector), TYPE(&stvector));
+    intrinsics[224] = CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_vmladduhm"), 0, 3, TYPE(&stvector),
+                                        TYPE(&stvector), TYPE(&stvector));
+    intrinsics[225] = CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_vmhraddshs"), 0, 3, TYPE(&stvector),
+                                        TYPE(&stvector), TYPE(&stvector));
+    intrinsics[226] = CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_vmsumubm"), 0, 3, TYPE(&stvector),
+                                        TYPE(&stvector), TYPE(&stvector));
+    intrinsics[227] = CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_vmsumuhm"), 0, 3, TYPE(&stvector),
+                                        TYPE(&stvector), TYPE(&stvector));
+    intrinsics[228] = CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_vmsummbm"), 0, 3, TYPE(&stvector),
+                                        TYPE(&stvector), TYPE(&stvector));
+    intrinsics[229] = CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_vmsumshm"), 0, 3, TYPE(&stvector),
+                                        TYPE(&stvector), TYPE(&stvector));
+    intrinsics[230] = CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_vmsumuhs"), 0, 3, TYPE(&stvector),
+                                        TYPE(&stvector), TYPE(&stvector));
+    intrinsics[231] = CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_vmsumshs"), 0, 3, TYPE(&stvector),
+                                        TYPE(&stvector), TYPE(&stvector));
+    intrinsics[232] =
+        CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_vmuleub"), 0, 2, TYPE(&stvector), TYPE(&stvector));
+    intrinsics[233] =
+        CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_vmulesb"), 0, 2, TYPE(&stvector), TYPE(&stvector));
+    intrinsics[234] =
+        CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_vmuleuh"), 0, 2, TYPE(&stvector), TYPE(&stvector));
+    intrinsics[235] =
+        CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_vmulesh"), 0, 2, TYPE(&stvector), TYPE(&stvector));
+    intrinsics[236] =
+        CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_vmuloub"), 0, 2, TYPE(&stvector), TYPE(&stvector));
+    intrinsics[237] =
+        CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_vmulosb"), 0, 2, TYPE(&stvector), TYPE(&stvector));
+    intrinsics[238] =
+        CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_vmulouh"), 0, 2, TYPE(&stvector), TYPE(&stvector));
+    intrinsics[239] =
+        CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_vmulosh"), 0, 2, TYPE(&stvector), TYPE(&stvector));
+    intrinsics[240] = CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_vnmsubfp"), 0, 2, TYPE(&stvector),
+                                        TYPE(&stvector), TYPE(&stvector));
+    intrinsics[241] =
+        CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_vnor"), 0, 2, TYPE(&stvector), TYPE(&stvector));
+    intrinsics[242] =
+        CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_vor"), 0, 2, TYPE(&stvector), TYPE(&stvector));
+    intrinsics[243] =
+        CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_vpkuhum"), 0, 2, TYPE(&stvector), TYPE(&stvector));
+    intrinsics[244] =
+        CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_vpkuwum"), 0, 2, TYPE(&stvector), TYPE(&stvector));
+    intrinsics[245] =
+        CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_vpkpx"), 0, 2, TYPE(&stvector), TYPE(&stvector));
+    intrinsics[246] =
+        CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_vpkuhus"), 0, 2, TYPE(&stvector), TYPE(&stvector));
+    intrinsics[247] =
+        CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_vpkshss"), 0, 2, TYPE(&stvector), TYPE(&stvector));
+    intrinsics[248] =
+        CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_vpkuwus"), 0, 2, TYPE(&stvector), TYPE(&stvector));
+    intrinsics[249] =
+        CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_vpkswss"), 0, 2, TYPE(&stvector), TYPE(&stvector));
+    intrinsics[250] =
+        CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_vpkshus"), 0, 2, TYPE(&stvector), TYPE(&stvector));
+    intrinsics[251] =
+        CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_vpkswus"), 0, 2, TYPE(&stvector), TYPE(&stvector));
+    intrinsics[252] = CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_vperm"), 0, 3, TYPE(&stvector),
+                                        TYPE(&stvector), TYPE(&stvector));
+    intrinsics[253] = CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_vrefp"), 0, 1, TYPE(&stvector));
+    intrinsics[254] =
+        CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_vrlb"), 0, 2, TYPE(&stvector), TYPE(&stvector));
+    intrinsics[255] =
+        CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_vrlh"), 0, 2, TYPE(&stvector), TYPE(&stvector));
+    intrinsics[256] =
+        CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_vrlw"), 0, 2, TYPE(&stvector), TYPE(&stvector));
+    intrinsics[257] = CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_vrfin"), 0, 1, TYPE(&stvector));
+    intrinsics[258] = CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_vrsqrtefp"), 0, 1, TYPE(&stvector));
+    intrinsics[259] = CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_vsel"), 0, 3, TYPE(&stvector),
+                                        TYPE(&stvector), TYPE(&stvector));
+    intrinsics[260] =
+        CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_vslb"), 0, 2, TYPE(&stvector), TYPE(&stvector));
+    intrinsics[261] =
+        CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_vslh"), 0, 2, TYPE(&stvector), TYPE(&stvector));
+    intrinsics[262] =
+        CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_vslw"), 0, 2, TYPE(&stvector), TYPE(&stvector));
+    intrinsics[263] = CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_vsldoi"), 0, 3, TYPE(&stvector),
+                                        TYPE(&stvector), TYPE(&stvector));
+    intrinsics[264] =
+        CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_vsl"), 0, 2, TYPE(&stvector), TYPE(&stvector));
+    intrinsics[265] =
+        CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_vslo"), 0, 2, TYPE(&stvector), TYPE(&stvector));
+    intrinsics[266] =
+        CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_vspltb"), 0, 2, TYPE(&stvector), TYPE(&stvector));
+    intrinsics[267] =
+        CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_vsplth"), 0, 2, TYPE(&stvector), TYPE(&stvector));
+    intrinsics[268] =
+        CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_vspltw"), 0, 2, TYPE(&stvector), TYPE(&stvector));
+    intrinsics[269] = CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_vspltisb"), 0, 1, TYPE(&stvector));
+    intrinsics[270] = CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_vspltish"), 0, 1, TYPE(&stvector));
+    intrinsics[271] = CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_vspltisw"), 0, 1, TYPE(&stvector));
+    intrinsics[272] =
+        CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_vsrb"), 0, 2, TYPE(&stvector), TYPE(&stvector));
+    intrinsics[273] =
+        CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_vsrh"), 0, 2, TYPE(&stvector), TYPE(&stvector));
+    intrinsics[274] =
+        CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_vsrw"), 0, 2, TYPE(&stvector), TYPE(&stvector));
+    intrinsics[275] =
+        CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_vsrab"), 0, 2, TYPE(&stvector), TYPE(&stvector));
+    intrinsics[276] =
+        CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_vsrah"), 0, 2, TYPE(&stvector), TYPE(&stvector));
+    intrinsics[277] =
+        CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_vsraw"), 0, 2, TYPE(&stvector), TYPE(&stvector));
+    intrinsics[278] =
+        CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_vsr"), 0, 2, TYPE(&stvector), TYPE(&stvector));
+    intrinsics[279] =
+        CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_vsro"), 0, 2, TYPE(&stvector), TYPE(&stvector));
+    intrinsics[280] = CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_stvx"), 0, 3, TYPE(&stvector),
+                                        TYPE(&stvector), TYPE(&stvector));
+    intrinsics[281] = CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_stvebx"), 0, 3, TYPE(&stvector),
+                                        TYPE(&stvector), TYPE(&stvector));
+    intrinsics[282] = CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_stvehx"), 0, 3, TYPE(&stvector),
+                                        TYPE(&stvector), TYPE(&stvector));
+    intrinsics[283] = CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_stvewx"), 0, 3, TYPE(&stvector),
+                                        TYPE(&stvector), TYPE(&stvector));
+    intrinsics[284] = CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_stvxl"), 0, 3, TYPE(&stvector),
+                                        TYPE(&stvector), TYPE(&stvector));
+    intrinsics[285] =
+        CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_vsububm"), 0, 2, TYPE(&stvector), TYPE(&stvector));
+    intrinsics[286] =
+        CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_vsubuhm"), 0, 2, TYPE(&stvector), TYPE(&stvector));
+    intrinsics[287] =
+        CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_vsubuwm"), 0, 2, TYPE(&stvector), TYPE(&stvector));
+    intrinsics[288] =
+        CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_vsubfp"), 0, 2, TYPE(&stvector), TYPE(&stvector));
+    intrinsics[289] =
+        CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_vsubcuw"), 0, 2, TYPE(&stvector), TYPE(&stvector));
+    intrinsics[290] =
+        CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_vsububs"), 0, 2, TYPE(&stvector), TYPE(&stvector));
+    intrinsics[291] =
+        CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_vsubsbs"), 0, 2, TYPE(&stvector), TYPE(&stvector));
+    intrinsics[292] =
+        CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_vsubuhs"), 0, 2, TYPE(&stvector), TYPE(&stvector));
+    intrinsics[293] =
+        CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_vsubshs"), 0, 2, TYPE(&stvector), TYPE(&stvector));
+    intrinsics[294] =
+        CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_vsubuws"), 0, 2, TYPE(&stvector), TYPE(&stvector));
+    intrinsics[295] =
+        CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_vsubsws"), 0, 2, TYPE(&stvector), TYPE(&stvector));
+    intrinsics[296] =
+        CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_vsum4ubs"), 0, 2, TYPE(&stvector), TYPE(&stvector));
+    intrinsics[297] =
+        CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_vsum4sbs"), 0, 2, TYPE(&stvector), TYPE(&stvector));
+    intrinsics[298] =
+        CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_vsum4shs"), 0, 2, TYPE(&stvector), TYPE(&stvector));
+    intrinsics[299] =
+        CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_vsum2sws"), 0, 2, TYPE(&stvector), TYPE(&stvector));
+    intrinsics[300] =
+        CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_vsumsws"), 0, 2, TYPE(&stvector), TYPE(&stvector));
+    intrinsics[301] = CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_vrfiz"), 0, 1, TYPE(&stvector));
+    intrinsics[302] = CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_vupkhsb"), 0, 1, TYPE(&stvector));
+    intrinsics[303] = CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_vupklsb"), 0, 1, TYPE(&stvector));
+    intrinsics[304] = CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_vupkhpx"), 0, 1, TYPE(&stvector));
+    intrinsics[305] = CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_vupklpx"), 0, 1, TYPE(&stvector));
+    intrinsics[306] = CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_vupkhsh"), 0, 1, TYPE(&stvector));
+    intrinsics[307] = CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_vupklsh"), 0, 1, TYPE(&stvector));
+    intrinsics[308] =
+        CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_vxor"), 0, 2, TYPE(&stvector), TYPE(&stvector));
+    intrinsics[309] = CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_abs"), 0, 1, TYPE(&stvector));
+    intrinsics[310] = CParser_NewRTFunc(TYPE(&stvector), GetHashNameNode("vec_abss"), 0, 1, TYPE(&stvector));
+    intrinsics[311] = CParser_NewRTFunc(&stvoid, GetHashNameNode("__va_setup"), 0, 1, &void_ptr);
+    intrinsics[312] = CParser_NewRTFunc(&stvoid, GetHashNameNode("__builtin_va_info"), 0, 1, &void_ptr);
+    for (i = 0; i < 313; i++) {
+        if (!intrinsics[i])
+            CError_FATAL(6535);
+        intrinsics[i]->u.data.u.intconst.hi = i;
+        function = (TypeFunc *)intrinsics[i]->type;
+        function->flags |= FUNC_INTRINSIC;
+        CScope_AddGlobalObject(intrinsics[i]);
     }
-    return result;
+    copts.cplusplus = saved_cplusplus;
 }
 
-void fn_00486ad0(ENode *node, short unused, Operand *result, short target, unsigned short kind)
+unsigned char Intrinsics_InitRegistrations(unsigned char active)
 {
-    unsigned short secondaryReg;
-    Operand operand;
-
-    memclrw((unsigned char *)&operand, sizeof(operand));
-    data_00560648[node->type](node, 0, 0, &operand);
-    if (operand.kind != OpndType_VR) {
-        Operands_ForceVR(&operand, node->rtype, 0);
+    if (active) {
+        if (!(intrinsics[0] = registration_find("__eieio")))
+            return 0;
+        if (!(intrinsics[1] = registration_find("__sync")))
+            return 0;
+        if (!(intrinsics[2] = registration_find("__isync")))
+            return 0;
+        if (!(intrinsics[3] = registration_find("__abs")))
+            return 0;
+        if (!(intrinsics[4] = registration_find("__labs")))
+            return 0;
+        if (!(intrinsics[5] = registration_find("__fabs")))
+            return 0;
+        if (!(intrinsics[6] = registration_find("__fnabs")))
+            return 0;
+        if (!(intrinsics[7] = registration_find("__setflm")))
+            return 0;
+        if (!(intrinsics[33] = registration_find("__frsqrte")))
+            return 0;
+        if (!(intrinsics[8] = registration_find("__alloca")))
+            return 0;
+        if (!(intrinsics[9] = registration_find("__cntlzw")))
+            return 0;
+        if (!(intrinsics[10] = registration_find("__lhbrx")))
+            return 0;
+        if (!(intrinsics[11] = registration_find("__lwbrx")))
+            return 0;
+        if (!(intrinsics[12] = registration_find("__sthbrx")))
+            return 0;
+        if (!(intrinsics[13] = registration_find("__stwbrx")))
+            return 0;
+        if (!(intrinsics[14] = registration_find("__dcbf")))
+            return 0;
+        if (!(intrinsics[15] = registration_find("__dcbt")))
+            return 0;
+        if (!(intrinsics[16] = registration_find("__dcbst")))
+            return 0;
+        if (!(intrinsics[17] = registration_find("__dcbtst")))
+            return 0;
+        if (!(intrinsics[18] = registration_find("__dcbz")))
+            return 0;
+        if (!(intrinsics[19] = registration_find("__mulhw")))
+            return 0;
+        if (!(intrinsics[20] = registration_find("__mulhwu")))
+            return 0;
+        if (!(intrinsics[21] = registration_find("__divw")))
+            return 0;
+        if (!(intrinsics[22] = registration_find("__divwu")))
+            return 0;
+        if (!(intrinsics[23] = registration_find("__fmadd")))
+            return 0;
+        if (!(intrinsics[24] = registration_find("__fmsub")))
+            return 0;
+        if (!(intrinsics[25] = registration_find("__fnmadd")))
+            return 0;
+        if (!(intrinsics[26] = registration_find("__fnmsub")))
+            return 0;
+        if (!(intrinsics[34] = registration_find("__fsel")))
+            return 0;
+        if (!(intrinsics[27] = registration_find("__fmadds")))
+            return 0;
+        if (!(intrinsics[28] = registration_find("__fmsubs")))
+            return 0;
+        if (!(intrinsics[29] = registration_find("__fnmadds")))
+            return 0;
+        if (!(intrinsics[30] = registration_find("__fnmsubs")))
+            return 0;
+        if (!(intrinsics[31] = registration_find("__mffs")))
+            return 0;
+        if (!(intrinsics[32] = registration_find("__fres")))
+            return 0;
+        if (!(intrinsics[40] = registration_find("__fabsf")))
+            return 0;
+        if (!(intrinsics[41] = registration_find("__fnabsf")))
+            return 0;
+        if (!(intrinsics[35] = registration_find("__strcpy")))
+            return 0;
+        if (!(intrinsics[37] = registration_find("__rlwimi")))
+            return 0;
+        if (!(intrinsics[38] = registration_find("__rlwinm")))
+            return 0;
+        if (!(intrinsics[39] = registration_find("__rlwnm")))
+            return 0;
+        if (!(intrinsics[42] = registration_find("vec_add")))
+            return 0;
+        if (!(intrinsics[43] = registration_find("vec_addc")))
+            return 0;
+        if (!(intrinsics[44] = registration_find("vec_adds")))
+            return 0;
+        if (!(intrinsics[45] = registration_find("vec_and")))
+            return 0;
+        if (!(intrinsics[46] = registration_find("vec_andc")))
+            return 0;
+        if (!(intrinsics[47] = registration_find("vec_avg")))
+            return 0;
+        if (!(intrinsics[48] = registration_find("vec_ceil")))
+            return 0;
+        if (!(intrinsics[49] = registration_find("vec_cmpb")))
+            return 0;
+        if (!(intrinsics[50] = registration_find("vec_cmpeq")))
+            return 0;
+        if (!(intrinsics[51] = registration_find("vec_cmpge")))
+            return 0;
+        if (!(intrinsics[52] = registration_find("vec_cmple")))
+            return 0;
+        if (!(intrinsics[53] = registration_find("vec_cmpgt")))
+            return 0;
+        if (!(intrinsics[54] = registration_find("vec_cmplt")))
+            return 0;
+        if (!(intrinsics[55] = registration_find("vec_ctf")))
+            return 0;
+        if (!(intrinsics[56] = registration_find("vec_cts")))
+            return 0;
+        if (!(intrinsics[57] = registration_find("vec_ctu")))
+            return 0;
+        if (!(intrinsics[64] = registration_find("vec_expte")))
+            return 0;
+        if (!(intrinsics[65] = registration_find("vec_floor")))
+            return 0;
+        if (!(intrinsics[66] = registration_find("vec_ld")))
+            return 0;
+        if (!(intrinsics[67] = registration_find("vec_lde")))
+            return 0;
+        if (!(intrinsics[68] = registration_find("vec_ldl")))
+            return 0;
+        if (!(intrinsics[69] = registration_find("vec_loge")))
+            return 0;
+        if (!(intrinsics[70] = registration_find("vec_lvsl")))
+            return 0;
+        if (!(intrinsics[71] = registration_find("vec_lvsr")))
+            return 0;
+        if (!(intrinsics[72] = registration_find("vec_madd")))
+            return 0;
+        if (!(intrinsics[73] = registration_find("vec_madds")))
+            return 0;
+        if (!(intrinsics[74] = registration_find("vec_max")))
+            return 0;
+        if (!(intrinsics[75] = registration_find("vec_mergeh")))
+            return 0;
+        if (!(intrinsics[76] = registration_find("vec_mergel")))
+            return 0;
+        if (!(intrinsics[77] = registration_find("vec_mfvscr")))
+            return 0;
+        if (!(intrinsics[78] = registration_find("vec_min")))
+            return 0;
+        if (!(intrinsics[79] = registration_find("vec_mladd")))
+            return 0;
+        if (!(intrinsics[80] = registration_find("vec_mradds")))
+            return 0;
+        if (!(intrinsics[81] = registration_find("vec_msum")))
+            return 0;
+        if (!(intrinsics[82] = registration_find("vec_msums")))
+            return 0;
+        if (!(intrinsics[83] = registration_find("vec_mtvscr")))
+            return 0;
+        if (!(intrinsics[84] = registration_find("vec_mule")))
+            return 0;
+        if (!(intrinsics[85] = registration_find("vec_mulo")))
+            return 0;
+        if (!(intrinsics[86] = registration_find("vec_nmsub")))
+            return 0;
+        if (!(intrinsics[87] = registration_find("vec_nor")))
+            return 0;
+        if (!(intrinsics[88] = registration_find("vec_or")))
+            return 0;
+        if (!(intrinsics[89] = registration_find("vec_pack")))
+            return 0;
+        if (!(intrinsics[90] = registration_find("vec_packpx")))
+            return 0;
+        if (!(intrinsics[91] = registration_find("vec_packs")))
+            return 0;
+        if (!(intrinsics[92] = registration_find("vec_packsu")))
+            return 0;
+        if (!(intrinsics[93] = registration_find("vec_perm")))
+            return 0;
+        if (!(intrinsics[94] = registration_find("vec_re")))
+            return 0;
+        if (!(intrinsics[95] = registration_find("vec_rl")))
+            return 0;
+        if (!(intrinsics[96] = registration_find("vec_round")))
+            return 0;
+        if (!(intrinsics[97] = registration_find("vec_rsqrte")))
+            return 0;
+        if (!(intrinsics[98] = registration_find("vec_sel")))
+            return 0;
+        if (!(intrinsics[99] = registration_find("vec_sl")))
+            return 0;
+        if (!(intrinsics[100] = registration_find("vec_sld")))
+            return 0;
+        if (!(intrinsics[101] = registration_find("vec_sll")))
+            return 0;
+        if (!(intrinsics[102] = registration_find("vec_slo")))
+            return 0;
+        if (!(intrinsics[103] = registration_find("vec_splat")))
+            return 0;
+        if (!(intrinsics[104] = registration_find("vec_splat_s8")))
+            return 0;
+        if (!(intrinsics[105] = registration_find("vec_splat_s16")))
+            return 0;
+        if (!(intrinsics[106] = registration_find("vec_splat_s32")))
+            return 0;
+        if (!(intrinsics[107] = registration_find("vec_splat_u8")))
+            return 0;
+        if (!(intrinsics[108] = registration_find("vec_splat_u16")))
+            return 0;
+        if (!(intrinsics[109] = registration_find("vec_splat_u32")))
+            return 0;
+        if (!(intrinsics[110] = registration_find("vec_sr")))
+            return 0;
+        if (!(intrinsics[111] = registration_find("vec_sra")))
+            return 0;
+        if (!(intrinsics[112] = registration_find("vec_srl")))
+            return 0;
+        if (!(intrinsics[113] = registration_find("vec_sro")))
+            return 0;
+        if (!(intrinsics[114] = registration_find("vec_st")))
+            return 0;
+        if (!(intrinsics[115] = registration_find("vec_ste")))
+            return 0;
+        if (!(intrinsics[116] = registration_find("vec_stl")))
+            return 0;
+        if (!(intrinsics[117] = registration_find("vec_sub")))
+            return 0;
+        if (!(intrinsics[118] = registration_find("vec_subc")))
+            return 0;
+        if (!(intrinsics[119] = registration_find("vec_subs")))
+            return 0;
+        if (!(intrinsics[120] = registration_find("vec_sum4s")))
+            return 0;
+        if (!(intrinsics[121] = registration_find("vec_sum2s")))
+            return 0;
+        if (!(intrinsics[122] = registration_find("vec_sums")))
+            return 0;
+        if (!(intrinsics[123] = registration_find("vec_trunc")))
+            return 0;
+        if (!(intrinsics[124] = registration_find("vec_unpack2sh")))
+            return 0;
+        if (!(intrinsics[125] = registration_find("vec_unpack2sl")))
+            return 0;
+        if (!(intrinsics[126] = registration_find("vec_unpack2uh")))
+            return 0;
+        if (!(intrinsics[127] = registration_find("vec_unpack2ul")))
+            return 0;
+        if (!(intrinsics[128] = registration_find("vec_unpackh")))
+            return 0;
+        if (!(intrinsics[129] = registration_find("vec_unpackl")))
+            return 0;
+        if (!(intrinsics[130] = registration_find("vec_xor")))
+            return 0;
+        if (!(intrinsics[131] = registration_find("vec_all_eq")))
+            return 0;
+        if (!(intrinsics[132] = registration_find("vec_all_ge")))
+            return 0;
+        if (!(intrinsics[133] = registration_find("vec_all_gt")))
+            return 0;
+        if (!(intrinsics[134] = registration_find("vec_all_in")))
+            return 0;
+        if (!(intrinsics[135] = registration_find("vec_all_le")))
+            return 0;
+        if (!(intrinsics[136] = registration_find("vec_all_lt")))
+            return 0;
+        if (!(intrinsics[137] = registration_find("vec_all_nan")))
+            return 0;
+        if (!(intrinsics[138] = registration_find("vec_all_ne")))
+            return 0;
+        if (!(intrinsics[139] = registration_find("vec_all_nge")))
+            return 0;
+        if (!(intrinsics[140] = registration_find("vec_all_ngt")))
+            return 0;
+        if (!(intrinsics[141] = registration_find("vec_all_nle")))
+            return 0;
+        if (!(intrinsics[142] = registration_find("vec_all_nlt")))
+            return 0;
+        if (!(intrinsics[143] = registration_find("vec_all_numeric")))
+            return 0;
+        if (!(intrinsics[144] = registration_find("vec_any_eq")))
+            return 0;
+        if (!(intrinsics[145] = registration_find("vec_any_ge")))
+            return 0;
+        if (!(intrinsics[146] = registration_find("vec_any_gt")))
+            return 0;
+        if (!(intrinsics[147] = registration_find("vec_any_le")))
+            return 0;
+        if (!(intrinsics[148] = registration_find("vec_any_lt")))
+            return 0;
+        if (!(intrinsics[149] = registration_find("vec_any_nan")))
+            return 0;
+        if (!(intrinsics[150] = registration_find("vec_any_ne")))
+            return 0;
+        if (!(intrinsics[151] = registration_find("vec_any_nge")))
+            return 0;
+        if (!(intrinsics[152] = registration_find("vec_any_ngt")))
+            return 0;
+        if (!(intrinsics[153] = registration_find("vec_any_nle")))
+            return 0;
+        if (!(intrinsics[154] = registration_find("vec_any_nlt")))
+            return 0;
+        if (!(intrinsics[155] = registration_find("vec_any_numeric")))
+            return 0;
+        if (!(intrinsics[156] = registration_find("vec_any_out")))
+            return 0;
+        if (!(intrinsics[157] = registration_find("vec_vaddubm")))
+            return 0;
+        if (!(intrinsics[158] = registration_find("vec_vadduhm")))
+            return 0;
+        if (!(intrinsics[159] = registration_find("vec_vadduwm")))
+            return 0;
+        if (!(intrinsics[160] = registration_find("vec_vaddfp")))
+            return 0;
+        if (!(intrinsics[161] = registration_find("vec_vaddcuw")))
+            return 0;
+        if (!(intrinsics[162] = registration_find("vec_vaddubs")))
+            return 0;
+        if (!(intrinsics[163] = registration_find("vec_vaddubs")))
+            return 0;
+        if (!(intrinsics[164] = registration_find("vec_vadduhs")))
+            return 0;
+        if (!(intrinsics[165] = registration_find("vec_vadduhs")))
+            return 0;
+        if (!(intrinsics[166] = registration_find("vec_vadduws")))
+            return 0;
+        if (!(intrinsics[167] = registration_find("vec_vadduws")))
+            return 0;
+        if (!(intrinsics[168] = registration_find("vec_vand")))
+            return 0;
+        if (!(intrinsics[169] = registration_find("vec_vandc")))
+            return 0;
+        if (!(intrinsics[170] = registration_find("vec_vavgub")))
+            return 0;
+        if (!(intrinsics[171] = registration_find("vec_vavgsb")))
+            return 0;
+        if (!(intrinsics[172] = registration_find("vec_vavguh")))
+            return 0;
+        if (!(intrinsics[173] = registration_find("vec_vavgsh")))
+            return 0;
+        if (!(intrinsics[174] = registration_find("vec_vavguw")))
+            return 0;
+        if (!(intrinsics[175] = registration_find("vec_vavgsw")))
+            return 0;
+        if (!(intrinsics[176] = registration_find("vec_vrfip")))
+            return 0;
+        if (!(intrinsics[177] = registration_find("vec_vcmpbfp")))
+            return 0;
+        if (!(intrinsics[178] = registration_find("vec_vcmpequb")))
+            return 0;
+        if (!(intrinsics[179] = registration_find("vec_vcmpequh")))
+            return 0;
+        if (!(intrinsics[180] = registration_find("vec_vcmpequw")))
+            return 0;
+        if (!(intrinsics[181] = registration_find("vec_vcmpeqfp")))
+            return 0;
+        if (!(intrinsics[182] = registration_find("vec_vcmpgefp")))
+            return 0;
+        if (!(intrinsics[183] = registration_find("vec_vcmpgtub")))
+            return 0;
+        if (!(intrinsics[184] = registration_find("vec_vcmpgtsb")))
+            return 0;
+        if (!(intrinsics[185] = registration_find("vec_vcmpgtuh")))
+            return 0;
+        if (!(intrinsics[186] = registration_find("vec_vcmpgtsh")))
+            return 0;
+        if (!(intrinsics[187] = registration_find("vec_vcmpgtuw")))
+            return 0;
+        if (!(intrinsics[188] = registration_find("vec_vcmpgtsw")))
+            return 0;
+        if (!(intrinsics[189] = registration_find("vec_vcmpgtfp")))
+            return 0;
+        if (!(intrinsics[190] = registration_find("vec_vcfux")))
+            return 0;
+        if (!(intrinsics[191] = registration_find("vec_vcfsx")))
+            return 0;
+        if (!(intrinsics[192] = registration_find("vec_vctsxs")))
+            return 0;
+        if (!(intrinsics[193] = registration_find("vec_vctuxs")))
+            return 0;
+        if (!(intrinsics[194] = registration_find("vec_vexptefp")))
+            return 0;
+        if (!(intrinsics[195] = registration_find("vec_vrfim")))
+            return 0;
+        if (!(intrinsics[196] = registration_find("vec_lvx")))
+            return 0;
+        if (!(intrinsics[197] = registration_find("vec_lvebx")))
+            return 0;
+        if (!(intrinsics[198] = registration_find("vec_lvehx")))
+            return 0;
+        if (!(intrinsics[199] = registration_find("vec_lvewx")))
+            return 0;
+        if (!(intrinsics[200] = registration_find("vec_lvxl")))
+            return 0;
+        if (!(intrinsics[201] = registration_find("vec_vlogefp")))
+            return 0;
+        if (!(intrinsics[202] = registration_find("vec_vmaddfp")))
+            return 0;
+        if (!(intrinsics[203] = registration_find("vec_vmhaddshs")))
+            return 0;
+        if (!(intrinsics[204] = registration_find("vec_vmaxub")))
+            return 0;
+        if (!(intrinsics[205] = registration_find("vec_vmaxsb")))
+            return 0;
+        if (!(intrinsics[206] = registration_find("vec_vmaxuh")))
+            return 0;
+        if (!(intrinsics[207] = registration_find("vec_vmaxsh")))
+            return 0;
+        if (!(intrinsics[208] = registration_find("vec_vmaxuw")))
+            return 0;
+        if (!(intrinsics[209] = registration_find("vec_vmaxsw")))
+            return 0;
+        if (!(intrinsics[210] = registration_find("vec_vmaxfp")))
+            return 0;
+        if (!(intrinsics[211] = registration_find("vec_vmrghb")))
+            return 0;
+        if (!(intrinsics[212] = registration_find("vec_vmrghh")))
+            return 0;
+        if (!(intrinsics[213] = registration_find("vec_vmrghw")))
+            return 0;
+        if (!(intrinsics[214] = registration_find("vec_vmrglb")))
+            return 0;
+        if (!(intrinsics[215] = registration_find("vec_vmrglh")))
+            return 0;
+        if (!(intrinsics[216] = registration_find("vec_vmrglw")))
+            return 0;
+        if (!(intrinsics[204] = registration_find("vec_vminub")))
+            return 0;
+        if (!(intrinsics[205] = registration_find("vec_vminsb")))
+            return 0;
+        if (!(intrinsics[206] = registration_find("vec_vminuh")))
+            return 0;
+        if (!(intrinsics[207] = registration_find("vec_vminsh")))
+            return 0;
+        if (!(intrinsics[208] = registration_find("vec_vminuw")))
+            return 0;
+        if (!(intrinsics[209] = registration_find("vec_vminsw")))
+            return 0;
+        if (!(intrinsics[210] = registration_find("vec_vminfp")))
+            return 0;
+        if (!(intrinsics[224] = registration_find("vec_vmladduhm")))
+            return 0;
+        if (!(intrinsics[225] = registration_find("vec_vmhraddshs")))
+            return 0;
+        if (!(intrinsics[226] = registration_find("vec_vmsumubm")))
+            return 0;
+        if (!(intrinsics[227] = registration_find("vec_vmsumuhm")))
+            return 0;
+        if (!(intrinsics[228] = registration_find("vec_vmsummbm")))
+            return 0;
+        if (!(intrinsics[229] = registration_find("vec_vmsumshm")))
+            return 0;
+        if (!(intrinsics[230] = registration_find("vec_vmsumuhs")))
+            return 0;
+        if (!(intrinsics[231] = registration_find("vec_vmsumshs")))
+            return 0;
+        if (!(intrinsics[232] = registration_find("vec_vmuleub")))
+            return 0;
+        if (!(intrinsics[233] = registration_find("vec_vmulesb")))
+            return 0;
+        if (!(intrinsics[234] = registration_find("vec_vmuleuh")))
+            return 0;
+        if (!(intrinsics[235] = registration_find("vec_vmulesh")))
+            return 0;
+        if (!(intrinsics[236] = registration_find("vec_vmuloub")))
+            return 0;
+        if (!(intrinsics[237] = registration_find("vec_vmulosb")))
+            return 0;
+        if (!(intrinsics[238] = registration_find("vec_vmulouh")))
+            return 0;
+        if (!(intrinsics[239] = registration_find("vec_vmulosh")))
+            return 0;
+        if (!(intrinsics[240] = registration_find("vec_vnmsubfp")))
+            return 0;
+        if (!(intrinsics[241] = registration_find("vec_vnor")))
+            return 0;
+        if (!(intrinsics[242] = registration_find("vec_vor")))
+            return 0;
+        if (!(intrinsics[243] = registration_find("vec_vpkuhum")))
+            return 0;
+        if (!(intrinsics[244] = registration_find("vec_vpkuwum")))
+            return 0;
+        if (!(intrinsics[245] = registration_find("vec_vpkpx")))
+            return 0;
+        if (!(intrinsics[246] = registration_find("vec_vpkuhus")))
+            return 0;
+        if (!(intrinsics[247] = registration_find("vec_vpkshss")))
+            return 0;
+        if (!(intrinsics[248] = registration_find("vec_vpkuwus")))
+            return 0;
+        if (!(intrinsics[249] = registration_find("vec_vpkswss")))
+            return 0;
+        if (!(intrinsics[250] = registration_find("vec_vpkshus")))
+            return 0;
+        if (!(intrinsics[251] = registration_find("vec_vpkswus")))
+            return 0;
+        if (!(intrinsics[252] = registration_find("vec_vperm")))
+            return 0;
+        if (!(intrinsics[253] = registration_find("vec_vrefp")))
+            return 0;
+        if (!(intrinsics[254] = registration_find("vec_vrlb")))
+            return 0;
+        if (!(intrinsics[255] = registration_find("vec_vrlh")))
+            return 0;
+        if (!(intrinsics[256] = registration_find("vec_vrlw")))
+            return 0;
+        if (!(intrinsics[257] = registration_find("vec_vrfin")))
+            return 0;
+        if (!(intrinsics[258] = registration_find("vec_vrsqrtefp")))
+            return 0;
+        if (!(intrinsics[259] = registration_find("vec_vsel")))
+            return 0;
+        if (!(intrinsics[260] = registration_find("vec_vslb")))
+            return 0;
+        if (!(intrinsics[261] = registration_find("vec_vslh")))
+            return 0;
+        if (!(intrinsics[262] = registration_find("vec_vslw")))
+            return 0;
+        if (!(intrinsics[263] = registration_find("vec_vsldoi")))
+            return 0;
+        if (!(intrinsics[264] = registration_find("vec_vsl")))
+            return 0;
+        if (!(intrinsics[265] = registration_find("vec_vslo")))
+            return 0;
+        if (!(intrinsics[266] = registration_find("vec_vspltb")))
+            return 0;
+        if (!(intrinsics[267] = registration_find("vec_vsplth")))
+            return 0;
+        if (!(intrinsics[268] = registration_find("vec_vspltw")))
+            return 0;
+        if (!(intrinsics[269] = registration_find("vec_vspltisb")))
+            return 0;
+        if (!(intrinsics[270] = registration_find("vec_vspltish")))
+            return 0;
+        if (!(intrinsics[271] = registration_find("vec_vspltisw")))
+            return 0;
+        if (!(intrinsics[272] = registration_find("vec_vsrb")))
+            return 0;
+        if (!(intrinsics[273] = registration_find("vec_vsrh")))
+            return 0;
+        if (!(intrinsics[274] = registration_find("vec_vsrw")))
+            return 0;
+        if (!(intrinsics[275] = registration_find("vec_vsrab")))
+            return 0;
+        if (!(intrinsics[276] = registration_find("vec_vsrah")))
+            return 0;
+        if (!(intrinsics[277] = registration_find("vec_vsraw")))
+            return 0;
+        if (!(intrinsics[278] = registration_find("vec_vsr")))
+            return 0;
+        if (!(intrinsics[279] = registration_find("vec_vsro")))
+            return 0;
+        if (!(intrinsics[280] = registration_find("vec_stvx")))
+            return 0;
+        if (!(intrinsics[281] = registration_find("vec_stvebx")))
+            return 0;
+        if (!(intrinsics[282] = registration_find("vec_stvehx")))
+            return 0;
+        if (!(intrinsics[283] = registration_find("vec_stvewx")))
+            return 0;
+        if (!(intrinsics[284] = registration_find("vec_stvxl")))
+            return 0;
+        if (!(intrinsics[285] = registration_find("vec_vsububm")))
+            return 0;
+        if (!(intrinsics[286] = registration_find("vec_vsubuhm")))
+            return 0;
+        if (!(intrinsics[287] = registration_find("vec_vsubuwm")))
+            return 0;
+        if (!(intrinsics[288] = registration_find("vec_vsubfp")))
+            return 0;
+        if (!(intrinsics[289] = registration_find("vec_vsubcuw")))
+            return 0;
+        if (!(intrinsics[290] = registration_find("vec_vsububs")))
+            return 0;
+        if (!(intrinsics[291] = registration_find("vec_vsubsbs")))
+            return 0;
+        if (!(intrinsics[292] = registration_find("vec_vsubuhs")))
+            return 0;
+        if (!(intrinsics[293] = registration_find("vec_vsubshs")))
+            return 0;
+        if (!(intrinsics[294] = registration_find("vec_vsubuws")))
+            return 0;
+        if (!(intrinsics[295] = registration_find("vec_vsubsws")))
+            return 0;
+        if (!(intrinsics[296] = registration_find("vec_vsum4ubs")))
+            return 0;
+        if (!(intrinsics[297] = registration_find("vec_vsum4sbs")))
+            return 0;
+        if (!(intrinsics[298] = registration_find("vec_vsum4shs")))
+            return 0;
+        if (!(intrinsics[299] = registration_find("vec_vsum2sws")))
+            return 0;
+        if (!(intrinsics[300] = registration_find("vec_vsumsws")))
+            return 0;
+        if (!(intrinsics[301] = registration_find("vec_vrfiz")))
+            return 0;
+        if (!(intrinsics[302] = registration_find("vec_vupkhsb")))
+            return 0;
+        if (!(intrinsics[303] = registration_find("vec_vupklsb")))
+            return 0;
+        if (!(intrinsics[304] = registration_find("vec_vupkhpx")))
+            return 0;
+        if (!(intrinsics[305] = registration_find("vec_vupklpx")))
+            return 0;
+        if (!(intrinsics[306] = registration_find("vec_vupkhsh")))
+            return 0;
+        if (!(intrinsics[307] = registration_find("vec_vupklsh")))
+            return 0;
+        if (!(intrinsics[308] = registration_find("vec_vxor")))
+            return 0;
+        if (!(intrinsics[309] = registration_find("vec_abs")))
+            return 0;
+        if (!(intrinsics[310] = registration_find("vec_abss")))
+            return 0;
+        if (!(intrinsics[311] = registration_find("__va_setup")))
+            return 0;
+        if (!(intrinsics[312] = registration_find("__builtin_va_info")))
+            return 0;
     }
-    PCodeUtilities_EmitInstruction(target, gUsedVirtualRegistersVR++, operand.reg, operand.reg);
-    PCodeUtilities_MakeRecordForm(gCurrentBlock->reverse_instructions);
-    switch (kind) {
-        case 0x8f:
-            secondaryReg = 0x13;
-            break;
-        case 0x95:
-            secondaryReg = 0x16;
-            break;
-        case 0x89:
-            secondaryReg = 0x17;
-            break;
-        case 0x9b:
-            secondaryReg = 0x18;
-            break;
-        default:
-            CError_FATAL(4809);
-            break;
-    }
-    result->kind = OpndType_CRField;
-    result->reg = 6;
-    result->secondary_reg = secondaryReg;
+    return 1;
 }
 
-void emit_record_form_condition(ENode *left, ENode *right, short unused, Operand *result, int opcode,
-                                unsigned short kind)
+static void *registration_find(const char *name)
 {
-    short conditionRegister;
-    short conditionCode;
-    short firstRegister;
-    short secondRegister;
-    short leftRegister;
-    short rightRegister;
-    union {
-        Operand operand;
-        Operand storage;
-        char extent[24];
-    } leftOperand, rightOperand;
-
-    memclrw(&leftOperand, sizeof(Operand));
-    memclrw(&rightOperand, sizeof(Operand));
-    Intrinsics_00486bb0_inline1(left, &leftOperand.storage);
-    Intrinsics_00486bb0_inline1(right, &rightOperand.storage);
-    conditionRegister = gUsedVirtualRegistersVR++;
-    firstRegister = leftRegister = leftOperand.operand.reg;
-    secondRegister = rightRegister = rightOperand.operand.reg;
-    if (((kind == 132 || kind == 145) && left->rtype != TYPE(&stvectorfloat)) ||
-        ((kind == 135 || kind == 147) && left->rtype == TYPE(&stvectorfloat)) || kind == 136 || kind == 148 ||
-        kind == 141 || kind == 142 || kind == 153 || kind == 154) {
-        secondRegister = leftRegister;
-        firstRegister = rightRegister;
-    }
-    ((unsigned int (*)(unsigned int, int, int, int))PCodeUtilities_EmitInstruction)(opcode, conditionRegister,
-                                                                                    firstRegister, secondRegister);
-    PCodeUtilities_MakeRecordForm(gCurrentBlock->reverse_instructions);
-    if (left->rtype == TYPE(&stvectorfloat)) {
-        switch (kind) {
-            case 131:
-            case 132:
-            case 133:
-            case 135:
-            case 136:
-                conditionCode = 19;
-                break;
-            case 150:
-            case 151:
-            case 152:
-            case 153:
-            case 154:
-                conditionCode = 22;
-                break;
-            case 134:
-            case 138:
-            case 139:
-            case 140:
-            case 141:
-            case 142:
-                conditionCode = 23;
-                break;
-            case 144:
-            case 145:
-            case 146:
-            case 147:
-            case 148:
-            case 156:
-                conditionCode = 24;
-                break;
-            default:
-                CError_FATAL(4736);
-                break;
-        }
-    } else {
-        switch (kind) {
-            case 131:
-            case 133:
-            case 136:
-                conditionCode = 19;
-                break;
-            case 144:
-            case 146:
-            case 148:
-                conditionCode = 24;
-                break;
-            case 132:
-            case 135:
-            case 138:
-                conditionCode = 23;
-                break;
-            case 145:
-            case 147:
-            case 150:
-                conditionCode = 22;
-                break;
-            default:
-                CError_FATAL(4765);
-        }
-    }
-    result->kind = OpndType_CRField;
-    result->reg = 6;
-    result->secondary_reg = conditionCode;
+    NameSpaceName *r = CScope_FindNameSpaceName(cscope_root, GetHashNameNode(name));
+    void *object = NULL;
+    if (r && (object = ((NameSpaceName *)r)[0].first.object) && !((NameSpaceName *)r)[0].first.next)
+        return object;
+    return NULL;
 }
 
-void fn_00486db0(UInt16 token, ENode *unused, ENode *node, SInt16 requestedReg, Operand *result)
+static void GenVR(UInt8 *node, Operand *op)
 {
-    IntrinsicVariant *variant;
-    SInt16 zeroReg;
-    SInt16 intermediateReg;
-    SInt16 resultReg;
-    Operand operand;
-    SInt32 index;
-
-    index = token - 0x2a;
-    variant = intrinsic_tables[index].variant;
-    for (; variant->resultType != NULL; variant++) {
-        Type *resultType = node->rtype;
-        Type *variantType = variant->type;
-
-        if (variantType->type == TYPEPOINTER && resultType->type == TYPEPOINTER) {
-            variantType = ((TypePointer *)variantType)->target;
-            resultType = ((TypePointer *)resultType)->target;
-        }
-        if (is_same_type_or_signedint_compatible(variantType, resultType)) {
-            break;
-        }
-    }
-    if (variant->resultType == NULL) {
-        CError_FATAL(4614);
-    }
-
-    zeroReg = gUsedVirtualRegistersVR++;
-    intermediateReg = gUsedVirtualRegistersVR++;
-    if (requestedReg != 0) {
-        resultReg = requestedReg;
-    } else {
-        resultReg = gUsedVirtualRegistersVR++;
-    }
-
-    memclrw(&operand, sizeof(operand));
-    data_00560648[node->type](node, 0, 0, &operand);
-    if (operand.kind != OpndType_VR) {
-        Operands_ForceVR(&operand, node->rtype, 0);
-    }
-    PCodeUtilities_EmitInstruction(PC_VSPLTISB, zeroReg, 0);
-    PCodeUtilities_EmitInstruction(variant->op1, intermediateReg, zeroReg, operand.reg);
-    PCodeUtilities_EmitInstruction(variant->op3, resultReg, operand.reg, intermediateReg);
-    result->kind = OpndType_VR;
-    result->reg = resultReg;
+    data_00560648[*node](node, 0, 0, op);
+    if (op->kind != '\x06')
+        Operands_ForceVR(op, ((ENode *)node)->rtype, 0);
 }
 
-void generate_unary_vector_intrinsic(UInt16 token, ENode *unused, ENode *node, SInt16 requestedReg, Operand *result)
+static void GenFPR(UInt8 *node, Operand *op)
 {
-    IntrinsicVariant *variant;
-    SInt16 constantReg;
-    SInt16 temporaryReg;
-    SInt16 resultReg;
-    Operand operand;
-    SInt32 intrinsicIndex;
-
-    intrinsicIndex = token - 0x2a;
-    variant = intrinsic_tables[intrinsicIndex].variant;
-    for (; variant->resultType != NULL; variant++) {
-        Type *argumentType = node->rtype;
-        Type *variantType = variant->type;
-
-        if (variantType->type == TYPEPOINTER && argumentType->type == TYPEPOINTER) {
-            variantType = ((TypePointer *)variantType)->target;
-            argumentType = ((TypePointer *)argumentType)->target;
-        }
-        if (is_same_type_or_signedint_compatible(variantType, argumentType)) {
-            break;
-        }
-    }
-    if (variant->resultType == NULL) {
-        CError_FATAL(4548);
-    }
-
-    constantReg = gUsedVirtualRegistersVR++;
-    temporaryReg = gUsedVirtualRegistersVR++;
-    if (requestedReg != 0) {
-        resultReg = requestedReg;
-    } else {
-        resultReg = gUsedVirtualRegistersVR++;
-    }
-
-    memclrw(&operand, sizeof(operand));
-    data_00560648[node->type](node, 0, 0, &operand);
-    if (operand.kind != OpndType_VR) {
-        Operands_ForceVR(&operand, node->rtype, 0);
-    }
-    if (node->rtype == TYPE(&stvectorfloat)) {
-        PCodeUtilities_EmitInstruction(PC_VSPLTISW, constantReg, -1);
-        PCodeUtilities_EmitInstruction(PC_VSLW, temporaryReg, constantReg, constantReg);
-        PCodeUtilities_EmitInstruction(variant->op1, resultReg, operand.reg, temporaryReg);
-    } else {
-        PCodeUtilities_EmitInstruction(PC_VSPLTISB, constantReg, 0);
-        PCodeUtilities_EmitInstruction(variant->op1, temporaryReg, constantReg, operand.reg);
-        PCodeUtilities_EmitInstruction(variant->op3, resultReg, operand.reg, temporaryReg);
-    }
-    result->kind = OpndType_VR;
-    result->reg = resultReg;
+    data_00560648[*node](node, 0, 0, op);
+    if (op->kind != '\x05')
+        Operands_ForceFPR(op, ((ENode *)node)->rtype, 0);
 }
 
-void emit_instruction_with_vr_result(ENode *expression, ENode *left, ENode *right, short opcode, Operand *result,
-                                     int instruction)
+static void GenGPR(UInt8 *node, Operand *op)
 {
-    unsigned char nodeType;
-    void (*handler)(void *, short, short, void *);
-    Operand value;
-    union {
-        Operand legacy;
-        Operand operand;
-    } leftValue, rightValue;
-    memclrw(&value, sizeof(value));
-    memclrw(&leftValue, sizeof(Operand));
-    memclrw(&rightValue, sizeof(Operand));
-    nodeType = expression->type;
-    handler = data_00560648[nodeType];
-    (*handler)(expression, 0, 0, &value);
-    if (value.kind != OpndType_VR) {
-        Operands_ForceVR(&value, expression->rtype, 0);
-    }
-    Intrinsics_00487090_inline1(left, &leftValue.legacy);
-    Intrinsics_00487090_inline1(right, &rightValue.legacy);
-    ((unsigned int (*)(unsigned int, int, int, int))PCodeUtilities_EmitInstruction)(
-        instruction, value.reg, leftValue.operand.reg, rightValue.operand.reg);
-    result->kind = OpndType_VR;
-    result->reg = value.reg;
+    data_00560648[*node](node, 0, 0, op);
+    if (op->kind != '\0')
+        Operands_ForceGPR(op, ((ENode *)node)->rtype, 0);
 }
 
-/* Operand/register descriptor filled by the per-enode emit routines. */
-
-void emit_two_gpr_immediate_instruction(ENode *destination, ENode *source, ENode *immediate, SInt16 op)
+char Intrinsics_IsRegisteredObject(ObjBase *object)
 {
-    Operand destinationOperand;
-    Operand sourceOperand;
-
-    memclrw(&destinationOperand, sizeof(destinationOperand));
-    memclrw(&sourceOperand, sizeof(sourceOperand));
-    CError_ASSERT(4397, immediate->type == EINTCONST);
-    PCodeUtilities_ResolveLabel(PCode_NewLabel());
-    data_00560648[destination->type](destination, 0, 0, &destinationOperand);
-    if (destinationOperand.kind)
-        Operands_ForceGPR(&destinationOperand, destination->rtype, 0);
-    data_00560648[source->type](source, 0, 0, &sourceOperand);
-    if (sourceOperand.kind)
-        Operands_ForceGPR(&sourceOperand, source->rtype, 0);
-    switch (op) {
-        case 0xee:
-        case 0xf0:
-            PCodeUtilities_EmitInstruction(op, destinationOperand.reg, sourceOperand.reg, immediate->data.intval.lo, 0);
-            break;
-        case 0xef:
-        case 0xf1:
-            PCodeUtilities_EmitInstruction(op, destinationOperand.reg, sourceOperand.reg, immediate->data.intval.lo);
-            break;
-        default:
-            CError_FATAL(4417);
+    int i;
+    for (i = 0; i < 313; i++) {
+        if (object == (ObjBase *)intrinsics[i])
+            return 1;
     }
-    PCodeUtilities_ResolveLabel(PCode_NewLabel());
-}
-
-void emit_three_vr_instruction(ENode *firstExpression, ENode *secondExpression, ENode *thirdExpression,
-                               SInt16 targetReg, Operand *result, SInt16 opcode)
-{
-    Operand firstOperand, secondOperand, thirdOperand;
-    SInt16 resultReg;
-
-    memclrw(&firstOperand, sizeof(firstOperand));
-    memclrw(&secondOperand, sizeof(secondOperand));
-    memclrw(&thirdOperand, sizeof(thirdOperand));
-
-    (*data_00560648[firstExpression->type])(firstExpression, 0, 0, &firstOperand);
-    if (firstOperand.kind != OpndType_VR)
-        Operands_ForceVR(&firstOperand, firstExpression->rtype, 0);
-
-    (*data_00560648[secondExpression->type])(secondExpression, 0, 0, &secondOperand);
-    if (secondOperand.kind != OpndType_VR)
-        Operands_ForceVR(&secondOperand, secondExpression->rtype, 0);
-
-    (*data_00560648[thirdExpression->type])(thirdExpression, 0, 0, &thirdOperand);
-    if (thirdOperand.kind != OpndType_VR)
-        Operands_ForceVR(&thirdOperand, thirdExpression->rtype, 0);
-
-    if (targetReg != 0)
-        resultReg = targetReg;
-    else
-        resultReg = gUsedVirtualRegistersVR++;
-
-    PCodeUtilities_EmitInstruction(opcode, resultReg, firstOperand.reg, secondOperand.reg, thirdOperand.reg);
-
-    result->kind = OpndType_VR;
-    result->reg = resultReg;
-}
-
-UInt16 find_intrinsic_triple_code(UInt16 id, ENode *unused, ENode *firstOperand, ENode *secondOperand,
-                                  ENode *thirdOperand)
-{
-    IntrinsicTripleEntry *entry;
-    Type *firstActualType, *secondActualType, *firstExpectedType, *secondExpectedType, *thirdExpectedType,
-        *thirdActualType;
-    UInt32 intrinsicIndex;
-
-    intrinsicIndex = id - 0x2a;
-    for (entry = intrinsic_tables[intrinsicIndex].triple; entry->result != NULL; entry++) {
-        firstActualType = firstOperand->rtype;
-        secondActualType = secondOperand->rtype;
-        thirdActualType = thirdOperand->rtype;
-        firstExpectedType = entry->type1;
-        secondExpectedType = entry->type2;
-        thirdExpectedType = entry->type3;
-        if (firstExpectedType->type == TYPEPOINTER && firstActualType->type == TYPEPOINTER) {
-            firstExpectedType = TPTR_TARGET(firstExpectedType);
-            firstActualType = TPTR_TARGET(firstActualType);
-        }
-        if (secondExpectedType->type == TYPEPOINTER && secondActualType->type == TYPEPOINTER) {
-            secondExpectedType = TPTR_TARGET(secondExpectedType);
-            secondActualType = TPTR_TARGET(secondActualType);
-        }
-        if (thirdExpectedType->type == TYPEPOINTER && thirdActualType->type == TYPEPOINTER) {
-            thirdExpectedType = TPTR_TARGET(thirdExpectedType);
-            thirdActualType = TPTR_TARGET(thirdActualType);
-        }
-        if (is_same_type_or_signedint_compatible(firstExpectedType, firstActualType) &&
-            is_same_type_or_signedint_compatible(secondExpectedType, secondActualType) &&
-            is_same_type_or_signedint_compatible(thirdExpectedType, thirdActualType))
-            break;
-    }
-    if (entry->result == NULL)
-        CError_FATAL(4140);
-    return entry->code;
-}
-
-UInt16 find_binary_intrinsic_code(UInt16 id, ENode *unused, ENode *left, ENode *right)
-{
-    IntrinsicBinaryEntry *record;
-    Type *leftType, *rightType, *expectedLeft, *expectedRight;
-    UInt32 index;
-    index = id - 0x2a;
-    for (record = intrinsic_tables[index].binary; record->result != NULL; record++) {
-        leftType = left->rtype;
-        rightType = right->rtype;
-        expectedLeft = record->leftType;
-        expectedRight = record->rightType;
-        if (expectedLeft->type == TYPEPOINTER && leftType->type == TYPEPOINTER) {
-            expectedLeft = ((TypePointer *)expectedLeft)->target;
-            leftType = ((TypePointer *)leftType)->target;
-        }
-        if (expectedRight->type == TYPEPOINTER && rightType->type == TYPEPOINTER) {
-            expectedRight = ((TypePointer *)expectedRight)->target;
-            rightType = ((TypePointer *)rightType)->target;
-        }
-        if (is_same_type_or_signedint_compatible(expectedLeft, leftType) &&
-            is_same_type_or_signedint_compatible(expectedRight, rightType))
-            break;
-    }
-    if (record->result == NULL)
-        CError_FATAL(4093);
-    return record->code;
-}
-
-UInt16 find_unary_intrinsic_code(UInt16 id, ENode *unused, ENode *expression)
-{
-    IntrinsicTypeEntry *entry;
-    Type *expressionType, *candidateType;
-    UInt32 index;
-    index = id - 0x2a;
-    for (entry = intrinsic_tables[index].unary; entry->result != NULL; entry++) {
-        expressionType = expression->rtype;
-        candidateType = entry->type;
-        if (candidateType->type == TYPEPOINTER && expressionType->type == TYPEPOINTER) {
-            candidateType = ((TypePointer *)candidateType)->target;
-            expressionType = ((TypePointer *)expressionType)->target;
-        }
-        if (is_same_type_or_signedint_compatible(candidateType, expressionType))
-            break;
-    }
-    if (entry->result == NULL)
-        CError_FATAL(4054);
-    return entry->code;
-}
-
-static inline void unwrapIntrinsicPointerTypes(Type **expected, Type **actual)
-{
-    if ((*expected)->type == TYPEPOINTER && (*actual)->type == TYPEPOINTER) {
-        *expected = ((TypePointer *)*expected)->target;
-        *actual = ((TypePointer *)*actual)->target;
-    }
-}
-
-Type *match_intrinsic_triple(UInt16 id, ENodeList *args, HashNameNode *name)
-{
-    ENode *firstArg = args->node;
-    ENode *secondArg = args->next->node;
-    ENode *thirdArg = args->next->next->node;
-    IntrinsicTripleEntry *entry;
-    Type *firstActual, *secondActual, *thirdActual;
-    Type *firstExpected, *secondExpected, *thirdExpected;
-    SInt32 index = id - 42;
-    for (entry = intrinsic_tables[index].triple; entry->result; entry++) {
-        firstActual = firstArg->rtype;
-        secondActual = secondArg->rtype;
-        thirdActual = thirdArg->rtype;
-        firstExpected = entry->type1;
-        secondExpected = entry->type2;
-        thirdExpected = entry->type3;
-        unwrapIntrinsicPointerTypes(&firstExpected, &firstActual);
-        unwrapIntrinsicPointerTypes(&secondExpected, &secondActual);
-        unwrapIntrinsicPointerTypes(&thirdExpected, &thirdActual);
-        if (is_same_type_or_signedint_compatible(firstExpected, firstActual) &&
-            is_same_type_or_signedint_compatible(secondExpected, secondActual) &&
-            is_same_type_or_signedint_compatible(thirdExpected, thirdActual))
-            break;
-    }
-    switch (id) {
-        case 60:
-        case 61:
-        case 62:
-        case 63:
-            if (thirdArg->type == EINTCONST) {
-                SInt32 value = thirdArg->data.intval.lo;
-                if (value > 3 || value < 0) {
-                    PPCError_ReportError(108, name->name, name->name, 2);
-                    return NULL;
-                }
-            } else {
-                PPCError_ReportError(108, name->name, name->name, 2);
-                return NULL;
-            }
-            break;
-        case 100:
-        case 263:
-            if (thirdArg->type == EINTCONST) {
-                if (thirdArg->data.intval.lo > 15 || thirdArg->data.intval.hi < 0) {
-                    PPCError_ReportError(108, name->name, name->name, 4);
-                    return NULL;
-                }
-            } else {
-                PPCError_ReportError(108, name->name, name->name, 4);
-                return NULL;
-            }
-            break;
-    }
-    if (!entry->result) {
-        PPCError_ReportError(106, name->name, name->name, firstArg->rtype, 0, secondArg->rtype, 0, thirdArg->rtype, 0);
-        return NULL;
-    }
-    return entry->result;
-}
-
-Type *check_binary_intrinsic_args(UInt16 op, ENodeList *args, HashNameNode *opname)
-{
-    ENode *leftOperand;
-    Type *leftType;
-    Type *expectedLeftType;
-    UInt32 index;
-    ENode *rightOperand;
-    IntrinsicBinaryEntry *entry;
-    Type *rightType;
-    Type *expectedRightType;
-
-    leftOperand = args->node;
-    rightOperand = args->next->node;
-    index = op - 0x2a;
-    entry = intrinsic_tables[index].binary;
-    switch (op) {
-        case 0x37:
-        case 0x38:
-        case 0x39:
-        case 0x67:
-        case 0xbe:
-        case 0xbf:
-        case 0xc0:
-        case 0xc1:
-        case 0x10a:
-        case 0x10b:
-        case 0x10c:
-            if (rightOperand->type == EINTCONST) {
-                if (rightOperand->data.intval.lo > 0x1f || rightOperand->data.intval.hi < 0) {
-                    PPCError_ReportError(0x6c, opname->name, opname->name, 5);
-                    return NULL;
-                }
-            } else {
-                PPCError_ReportError(0x6c, opname->name, opname->name, 5);
-                return NULL;
-            }
-            break;
-    }
-    for (; entry->result; entry++) {
-        leftType = leftOperand->rtype;
-        rightType = rightOperand->rtype;
-        expectedLeftType = entry->leftType;
-        expectedRightType = entry->rightType;
-        if (expectedLeftType->type == TYPEPOINTER && leftType->type == TYPEPOINTER) {
-            expectedLeftType = ((TypePointer *)expectedLeftType)->target;
-            leftType = ((TypePointer *)leftType)->target;
-        }
-        if (expectedRightType->type == TYPEPOINTER && rightType->type == TYPEPOINTER) {
-            expectedRightType = ((TypePointer *)expectedRightType)->target;
-            rightType = ((TypePointer *)rightType)->target;
-        }
-        if (is_same_type_or_signedint_compatible(expectedLeftType, leftType) &&
-            is_same_type_or_signedint_compatible(expectedRightType, rightType))
-            break;
-    }
-    if (!entry->result) {
-        PPCError_ReportError(0x69, opname->name, opname->name, leftOperand->rtype, 0, rightOperand->rtype, 0);
-        return NULL;
-    }
-    return entry->result;
-}
-
-SInt32 select_altivec_mangle_result(UInt16 intrinsicCode, ENodeList *arguments, HashNameNode *name)
-{
-    ENode *node = arguments->node;
-    SInt32 index = intrinsicCode - 0x2a;
-    MangleEntry *entry = (MangleEntry *)intrinsic_tables[index].op;
-    SInt32 value;
-    SInt32 result;
-
-    while (entry->result != 0) {
-        Type *argumentType = node->rtype;
-        Type *expectedType = entry->type;
-        unsigned char matches;
-        if (expectedType->type == TYPEPOINTER && argumentType->type == TYPEPOINTER) {
-            expectedType = TPTR_TARGET(expectedType);
-            argumentType = TPTR_TARGET(argumentType);
-        }
-        matches = is_same_type_or_signedint_compatible(expectedType, argumentType);
-        if (matches)
-            break;
-        entry++;
-    }
-
-    switch (intrinsicCode) {
-        case 0x68:
-        case 0x69:
-        case 0x6a:
-        case 0x6b:
-        case 0x6c:
-        case 0x6d:
-        case 0x10d:
-        case 0x10e:
-        case 0x10f:
-            if (node->type == EINTCONST) {
-                value = (SInt32)node->data.intval.lo;
-                if (value > 15 || value < -16) {
-                    PPCError_ReportError(0x6c, name->name, name->name, 5);
-                    return 0;
-                }
-            } else {
-                PPCError_ReportError(0x6c, name->name, name->name, 5);
-                return 0;
-            }
-            break;
-        case 0x3a:
-            if (node->type == EINTCONST) {
-                value = (SInt32)node->data.intval.lo;
-                if (value > 3 || value < 0) {
-                    PPCError_ReportError(0x6c, name->name, name->name, 2);
-                    return 0;
-                }
-            } else {
-                PPCError_ReportError(0x6c, name->name, name->name, 2);
-                return 0;
-            }
-            break;
-    }
-
-    result = entry->result;
-    if (result == 0) {
-        PPCError_ReportError(0x68, name->name, name->name, node->rtype, 0);
-        return 0;
-    }
-    return result;
-}
-
-static int OpIndex(UInt16 token)
-{
-    return token - 0x2a;
-}
-
-Type *find_matching_op_result(UInt16 token, ENodeList *args, HashNameNode *name)
-{
-    ENode *node;
-    OpEntry *entry;
-    Type *argumentType;
-    Type *operandType;
-
-    node = args->node;
-    for (entry = intrinsic_tables[OpIndex(token)].op; entry->result; entry++) {
-        operandType = entry->operandType;
-        argumentType = node->rtype;
-        if (operandType->type == TYPEPOINTER && argumentType->type == TYPEPOINTER) {
-            operandType = TPTR_TARGET(operandType);
-            argumentType = TPTR_TARGET(argumentType);
-        }
-        if (is_same_type_or_signedint_compatible(operandType, argumentType))
-            break;
-    }
-    if (!entry->result) {
-        PPCError_ReportError(0x68, name->name, name->name, node->rtype, 0);
-        return NULL;
-    }
-    return entry->result;
-}
-
-unsigned char is_same_type_or_signedint_compatible(struct Type *firstType, struct Type *secondType)
-{
-    int result;
-    int isSpecial;
-    struct TypeIntegral *secondIntegral;
-
-    if (firstType == secondType) {
-        result = 1;
-        return result;
-    }
-    isSpecial = &firstType->type == &stsignedint.type;
-    secondIntegral = (struct TypeIntegral *)secondType;
-    if (isSpecial &&
-        (secondIntegral == &stunsignedint || secondIntegral == &stsignedchar || secondIntegral == &stunsignedchar ||
-         secondIntegral == &stsignedshort || secondIntegral == &stunsignedshort || secondIntegral == &stsignedlong ||
-         secondIntegral == &stunsignedlong || secondIntegral == &stbool)) {
-        result = 1;
-        return result;
-    }
-    result = 0;
-    return result;
-}
-
-void emit_rlwnm(ENode *value, ENode *shift, ENode *maskBegin, ENode *maskEnd, short targetReg, Operand *result)
-{
-    Operand valueOperand;
-    Operand shiftOperand;
-    SInt16 reg;
-
-    memclrw(&valueOperand, sizeof(valueOperand));
-    memclrw(&shiftOperand, sizeof(shiftOperand));
-    if (maskBegin->type != EINTCONST || maskEnd->type != EINTCONST)
-        CError_FatalError(ERR_ILLEGAL_OPERAND);
-    data_00560648[value->type](value, 0, 0, &valueOperand);
-    if (valueOperand.kind)
-        Operands_ForceGPR(&valueOperand, value->rtype, 0);
-    data_00560648[shift->type](shift, 0, 0, &shiftOperand);
-    if (shiftOperand.kind)
-        Operands_ForceGPR(&shiftOperand, shift->rtype, 0);
-    if (targetReg != 0)
-        reg = targetReg;
-    else
-        reg = gUsedVirtualRegistersGPR++;
-    PCodeUtilities_EmitInstruction(PC_RLWNM, reg, valueOperand.reg, shiftOperand.reg, maskBegin->data.intval.lo,
-                                   maskEnd->data.intval.lo);
-    result->kind = OpndType_GPR;
-    result->reg = reg;
-}
-
-void emit_rlwimi(ENode *destination, ENode *source, ENode *shift, ENode *maskBegin, ENode *maskEnd, short unused,
-                 Operand *result)
-{
-    Operand destinationOperand;
-    Operand sourceOperand;
-
-    memclrw(&destinationOperand, sizeof(destinationOperand));
-    memclrw(&sourceOperand, sizeof(sourceOperand));
-    if (shift->type != EINTCONST || maskBegin->type != EINTCONST || maskEnd->type != EINTCONST)
-        CError_FatalError(ERR_ILLEGAL_OPERAND);
-    data_00560648[destination->type](destination, 0, 0, &destinationOperand);
-    if (destinationOperand.kind)
-        Operands_ForceGPR(&destinationOperand, destination->rtype, 0);
-    data_00560648[source->type](source, 0, 0, &sourceOperand);
-    if (sourceOperand.kind)
-        Operands_ForceGPR(&sourceOperand, source->rtype, 0);
-    PCodeUtilities_EmitInstruction(PC_RLWIMI, destinationOperand.reg, sourceOperand.reg, shift->data.intval.lo,
-                                   maskBegin->data.intval.lo, maskEnd->data.intval.lo);
-    result->kind = OpndType_GPR;
-    result->reg = destinationOperand.reg;
-}
-
-static inline void fn_00487de0_inline1(ENode *p0, Operand *p1)
-{
-    unsigned char t3;
-    void (*t4)(void *, short, short, void *);
-    t3 = p0->type;
-    t4 = data_00560648[t3];
-    t4(p0, 0, 0, p1);
-    if (p1->kind != OpndType_GPR) {
-        Operands_ForceGPR(p1, p0->rtype, 0);
-    }
-}
-
-void emit_operation_from_nodes(short operation, ENode *leftNode, ENode *rightNode)
-{
-    Operand leftOperand;
-    Operand rightOperand;
-    memclrw(&leftOperand, 22);
-    memclrw(&rightOperand, 22);
-    PCodeUtilities_ResolveLabel(PCode_NewLabel());
-    if (rightNode->type == EINTCONST && rightNode->data.intval.lo == 0) {
-        ENode *left = leftNode;
-        unsigned char kind = left->type;
-        void (*handler)(void *, short, short, void *) = data_00560648[kind];
-        handler(left, 0, 0, &leftOperand);
-        if (leftOperand.kind == OpndType_GPR_Indexed) {
-            PCodeUtilities_EmitInstruction(operation, leftOperand.reg, leftOperand.secondary_reg);
-        } else {
-            if (leftOperand.kind != OpndType_GPR) {
-                Operands_ForceGPR(&leftOperand, left->rtype, 0);
-            }
-            PCodeUtilities_EmitInstruction(operation, 0, leftOperand.reg);
-        }
-    } else {
-        fn_00487de0_inline1(leftNode, &leftOperand);
-        fn_00487de0_inline1(rightNode, &rightOperand);
-        PCodeUtilities_EmitInstruction(operation, leftOperand.reg, rightOperand.reg);
-    }
-    PCodeUtilities_ResolveLabel(PCode_NewLabel());
-}
-
-void emit_three_gpr_instruction(SInt16 opcode, ENode *destination, ENode *left, ENode *right)
-{
-    Operand destinationOperand, leftOperand, rightOperand;
-
-    memclrw(&destinationOperand, sizeof(destinationOperand));
-    memclrw(&leftOperand, sizeof(leftOperand));
-    memclrw(&rightOperand, sizeof(rightOperand));
-
-    if (right->type == EINTCONST && right->data.intval.lo == 0) {
-        data_00560648[destination->type](destination, 0, 0, &destinationOperand);
-        if (destinationOperand.kind != OpndType_GPR)
-            Operands_ForceGPR(&destinationOperand, destination->rtype, 0);
-        data_00560648[left->type](left, 0, 0, &leftOperand);
-        if (leftOperand.kind == OpndType_GPR_Indexed) {
-            PCodeUtilities_EmitInstruction(opcode, destinationOperand.reg, leftOperand.reg, leftOperand.secondary_reg);
-        } else {
-            if (leftOperand.kind != OpndType_GPR)
-                Operands_ForceGPR(&leftOperand, left->rtype, 0);
-            PCodeUtilities_EmitInstruction(opcode, destinationOperand.reg, 0, leftOperand.reg);
-        }
-    } else {
-        data_00560648[destination->type](destination, 0, 0, &destinationOperand);
-        if (destinationOperand.kind != OpndType_GPR)
-            Operands_ForceGPR(&destinationOperand, destination->rtype, 0);
-        data_00560648[left->type](left, 0, 0, &leftOperand);
-        if (leftOperand.kind != OpndType_GPR)
-            Operands_ForceGPR(&leftOperand, left->rtype, 0);
-        data_00560648[right->type](right, 0, 0, &rightOperand);
-        if (rightOperand.kind != OpndType_GPR)
-            Operands_ForceGPR(&rightOperand, right->rtype, 0);
-        PCodeUtilities_EmitInstruction(opcode, destinationOperand.reg, leftOperand.reg, rightOperand.reg);
-    }
-
-    Operands_AllocateGPR(((destinationOperand.flags | leftOperand.flags | rightOperand.flags) & 0x30000) | 0x400);
-}
-
-void emit_two_operand_gpr_instruction(SInt16 opcode, ENode *left, ENode *right, SInt16 requestedReg, Operand *result)
-{
-    Operand leftOperand;
-    Operand rightOperand;
-    SInt32 resultReg = requestedReg ? requestedReg : gUsedVirtualRegistersGPR++;
-
-    memclrw(&leftOperand, sizeof(leftOperand));
-    memclrw(&rightOperand, sizeof(rightOperand));
-
-    if (right->type == EINTCONST && right->data.intval.lo == 0) {
-        data_00560648[left->type](left, 0, 0, &leftOperand);
-        if (leftOperand.kind == OpndType_GPR_Indexed) {
-            PCodeUtilities_EmitInstruction(opcode, resultReg, leftOperand.reg, leftOperand.secondary_reg);
-        } else {
-            if (leftOperand.kind != OpndType_GPR)
-                Operands_ForceGPR(&leftOperand, left->rtype, 0);
-            PCodeUtilities_EmitInstruction(opcode, resultReg, 0, leftOperand.reg);
-        }
-    } else {
-        data_00560648[left->type](left, 0, 0, &leftOperand);
-        if (leftOperand.kind != OpndType_GPR)
-            Operands_ForceGPR(&leftOperand, left->rtype, 0);
-        data_00560648[right->type](right, 0, 0, &rightOperand);
-        if (rightOperand.kind != OpndType_GPR)
-            Operands_ForceGPR(&rightOperand, right->rtype, 0);
-        PCodeUtilities_EmitInstruction(opcode, resultReg, leftOperand.reg, rightOperand.reg);
-    }
-
-    Operands_AllocateGPR(((left->flags | right->flags | result->flags) & 0x30000) | 0x400);
-    result->kind = OpndType_GPR;
-    result->reg = resultReg;
-}
-
-unsigned int Intrinsics_IsMonadicObjrefTypeFuncFlag200Set(ENode *expression)
-{
-    ENode *operand = expression->data.monadic;
-    unsigned int result = 0;
-    int isKind3 = 0;
-    if (operand->type == EOBJREF) {
-        if (operand->data.objref->datatype == DFUNC) {
-            isKind3 = 1;
-        }
-    }
-    if (isKind3 != 0) {
-        if ((((TypeFunc *)operand->data.objref->type)->flags & FUNC_INTRINSIC) != 0) {
-            result = 1;
-        }
-    }
-    return result;
+    return 0;
 }

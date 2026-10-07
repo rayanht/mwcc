@@ -634,32 +634,6 @@ ENode *CObjC_MakeMessageSend(ENode *receiver, TypeClass *obj, MessageArgument *a
     return expression;
 }
 
-#undef MATCH_BODY
-#define MATCH_BODY()                                                                                                   \
-    do {                                                                                                               \
-        Statement *mlp;                                                                                                \
-        ObjCParameterNode *map;                                                                                        \
-        Statement *p;                                                                                                  \
-        p = a;                                                                                                         \
-        if (l->f08 != 0) {                                                                                             \
-            map = ob->f18;                                                                                             \
-            mlp = l;                                                                                                   \
-            for (;;) {                                                                                                 \
-                mlp->f08 = argumentpromotion(mlp->f08, map->f0c, map->f10, 1);                                         \
-                mlp = mlp->next;                                                                                       \
-                if (mlp == 0)                                                                                          \
-                    break;                                                                                             \
-                map = map->next;                                                                                       \
-                if (map == 0)                                                                                          \
-                    CError_FATAL(2998);                                                                                \
-            }                                                                                                          \
-        }                                                                                                              \
-        while (p != 0) {                                                                                               \
-            p->f04 = CExpr_VarArgPromotion(p->f04, 1);                                                                 \
-            p = p->next;                                                                                               \
-        }                                                                                                              \
-    } while (0)
-
 Boolean match_message_arguments(register MethRec *info, MessageArgument *b, Boolean flag)
 {
     ObjCParameterNode *p;
