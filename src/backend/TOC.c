@@ -1288,7 +1288,7 @@ void replace_vector_constant_with_objectref(ENode *node)
             offset = lastOffset + sizeof(*newValue);
         } else {
             memclrw(&objectInfo, sizeof(objectInfo));
-            objectInfo.dtype = CDecl_NewArrayType(&pass_by_address_type, sizeof(*newValue));
+            objectInfo.dtype = CDecl_NewArrayType(TYPE(&stvectorsignedlong), sizeof(*newValue));
             objectInfo.name = GetHashNameNode("@vectorBase0");
             objectInfo.qual = Q_CONST;
             objectInfo.storage = 258;
@@ -1337,7 +1337,7 @@ void TOC_EmitMemberPointerConstants(void)
     }
 
     if (size != 0) {
-        type = CDecl_NewArrayType(&pass_by_address_type, size);
+        type = CDecl_NewArrayType(TYPE(&stvectorsignedlong), size);
         member_pointer_constants->object->type = type;
         buffer = (char *)galloc(size);
         for (node = member_pointer_constants; node != NULL; node = node->next) {

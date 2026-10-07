@@ -88,7 +88,6 @@ extern SInt32 select_altivec_mangle_result(UInt16 code, ENodeList *arg2, HashNam
 extern int _DAT_005557c8;
 extern struct MangleEntry *DAT_0055542c[];
 extern short intrinsic_opcodes[];
-extern Type data_0055fb94;
 extern struct Object *data_00587fc0;
 extern SInt16 gUsedVirtualRegistersVR;
 extern Type initializer_data_0055bb90;
@@ -102,7 +101,6 @@ extern char initializer_data_0055c9e4[];
 extern char initializer_data_0055c9f0[];
 extern char initializer_data_0055c9fc[];
 extern char initializer_data_0055ca08[];
-extern Type initializer_data_0055fbbc;
 extern char registration_name_0055bba0[8];
 extern char registration_name_0055bba8[];
 extern char registration_name_0055bbb0[8];

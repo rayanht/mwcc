@@ -1151,20 +1151,20 @@ int parse_dtype_specifiers(DeclInfo *state)
             tk = CPrepTokenizer_GetNextToken();
             switch (tk) {
                 case TK_BOOL:
-                    state->dtype = &data_0055fb08;
+                    state->dtype = TYPE(&stvectorboolchar);
                     tk = CPrepTokenizer_GetNextToken();
                     return 1;
                 case TK_UNSIGNED:
-                    state->dtype = &data_0055fae0;
+                    state->dtype = TYPE(&stvectorunsignedchar);
                     tk = CPrepTokenizer_GetNextToken();
                     return 1;
                 case TK_SIGNED:
-                    state->dtype = &data_0055faf4;
+                    state->dtype = TYPE(&stvectorsignedchar);
                     tk = CPrepTokenizer_GetNextToken();
                     return 1;
                 case TK_IDENTIFIER:
                     if ((HashNameNode *)data_00587fa0 == GetHashNameNodeExport("bool")) {
-                        state->dtype = &data_0055fb08;
+                        state->dtype = TYPE(&stvectorboolchar);
                         tk = CPrepTokenizer_GetNextToken();
                         return 1;
                     }
@@ -1178,17 +1178,17 @@ int parse_dtype_specifiers(DeclInfo *state)
             tk = CPrepTokenizer_GetNextToken();
             switch (tk) {
                 case TK_CHAR:
-                    state->dtype = &data_0055faf4;
+                    state->dtype = TYPE(&stvectorsignedchar);
                     tk = CPrepTokenizer_GetNextToken();
                     return 1;
                 case TK_SHORT:
-                    state->dtype = &data_0055fb30;
+                    state->dtype = TYPE(&stvectorsignedshort);
                     tk = CPrepTokenizer_GetNextToken();
                     if (tk == TK_INT)
                         tk = CPrepTokenizer_GetNextToken();
                     return 1;
                 case 0x10a:
-                    state->dtype = &pass_by_address_type;
+                    state->dtype = TYPE(&stvectorsignedlong);
                     tk = CPrepTokenizer_GetNextToken();
                     if (tk == TK_INT)
                         tk = CPrepTokenizer_GetNextToken();
@@ -1197,15 +1197,15 @@ int parse_dtype_specifiers(DeclInfo *state)
                     tk = CPrepTokenizer_GetNextToken();
                     switch (tk) {
                         case TK_SHORT:
-                            state->dtype = &data_0055fb30;
+                            state->dtype = TYPE(&stvectorsignedshort);
                             tk = CPrepTokenizer_GetNextToken();
                             return 1;
                         case 0x10a:
-                            state->dtype = &pass_by_address_type;
+                            state->dtype = TYPE(&stvectorsignedlong);
                             tk = CPrepTokenizer_GetNextToken();
                             return 1;
                         default:
-                            state->dtype = &pass_by_address_type;
+                            state->dtype = TYPE(&stvectorsignedlong);
                             return 1;
                     }
                 default:
@@ -1218,17 +1218,17 @@ int parse_dtype_specifiers(DeclInfo *state)
             tk = CPrepTokenizer_GetNextToken();
             switch (tk) {
                 case TK_CHAR:
-                    state->dtype = &data_0055fae0;
+                    state->dtype = TYPE(&stvectorunsignedchar);
                     tk = CPrepTokenizer_GetNextToken();
                     return 1;
                 case TK_SHORT:
-                    state->dtype = &data_0055fb1c;
+                    state->dtype = TYPE(&stvectorunsignedshort);
                     tk = CPrepTokenizer_GetNextToken();
                     if (tk == TK_INT)
                         tk = CPrepTokenizer_GetNextToken();
                     return 1;
                 case 0x10a:
-                    state->dtype = &data_0055fb58;
+                    state->dtype = TYPE(&stvectorunsignedlong);
                     tk = CPrepTokenizer_GetNextToken();
                     if (tk == TK_INT)
                         tk = CPrepTokenizer_GetNextToken();
@@ -1237,15 +1237,15 @@ int parse_dtype_specifiers(DeclInfo *state)
                     tk = CPrepTokenizer_GetNextToken();
                     switch (tk) {
                         case TK_SHORT:
-                            state->dtype = &data_0055fb1c;
+                            state->dtype = TYPE(&stvectorunsignedshort);
                             tk = CPrepTokenizer_GetNextToken();
                             return 1;
                         case 0x10a:
-                            state->dtype = &data_0055fb58;
+                            state->dtype = TYPE(&stvectorunsignedlong);
                             tk = CPrepTokenizer_GetNextToken();
                             return 1;
                         default:
-                            state->dtype = &data_0055fb58;
+                            state->dtype = TYPE(&stvectorunsignedlong);
                             return 1;
                     }
                 default:
@@ -1258,17 +1258,17 @@ int parse_dtype_specifiers(DeclInfo *state)
             tk = CPrepTokenizer_GetNextToken();
             switch (tk) {
                 case TK_CHAR:
-                    state->dtype = &data_0055fb08;
+                    state->dtype = TYPE(&stvectorboolchar);
                     tk = CPrepTokenizer_GetNextToken();
                     return 1;
                 case TK_SHORT:
-                    state->dtype = &data_0055fb44;
+                    state->dtype = TYPE(&stvectorboolshort);
                     tk = CPrepTokenizer_GetNextToken();
                     if (tk == TK_INT)
                         tk = CPrepTokenizer_GetNextToken();
                     return 1;
                 case 0x10a:
-                    state->dtype = &data_0055fb80;
+                    state->dtype = TYPE(&stvectorboollong);
                     tk = CPrepTokenizer_GetNextToken();
                     if (tk == TK_INT)
                         tk = CPrepTokenizer_GetNextToken();
@@ -1277,15 +1277,15 @@ int parse_dtype_specifiers(DeclInfo *state)
                     tk = CPrepTokenizer_GetNextToken();
                     switch (tk) {
                         case TK_SHORT:
-                            state->dtype = &data_0055fb44;
+                            state->dtype = TYPE(&stvectorboolshort);
                             tk = CPrepTokenizer_GetNextToken();
                             return 1;
                         case 0x10a:
-                            state->dtype = &data_0055fb80;
+                            state->dtype = TYPE(&stvectorboollong);
                             tk = CPrepTokenizer_GetNextToken();
                             return 1;
                         default:
-                            state->dtype = &data_0055fb80;
+                            state->dtype = TYPE(&stvectorboollong);
                             return 1;
                     }
                 default:
@@ -1298,19 +1298,19 @@ int parse_dtype_specifiers(DeclInfo *state)
             tk = CPrepTokenizer_GetNextToken();
             switch (tk) {
                 case TK_BOOL:
-                    state->dtype = &data_0055fb44;
+                    state->dtype = TYPE(&stvectorboolshort);
                     tk = CPrepTokenizer_GetNextToken();
                     if (tk == TK_INT)
                         tk = CPrepTokenizer_GetNextToken();
                     return 1;
                 case TK_SIGNED:
-                    state->dtype = &data_0055fb30;
+                    state->dtype = TYPE(&stvectorsignedshort);
                     tk = CPrepTokenizer_GetNextToken();
                     if (tk == TK_INT)
                         tk = CPrepTokenizer_GetNextToken();
                     return 1;
                 case TK_UNSIGNED:
-                    state->dtype = &data_0055fb1c;
+                    state->dtype = TYPE(&stvectorunsignedshort);
                     tk = CPrepTokenizer_GetNextToken();
                     if (tk == TK_INT)
                         tk = CPrepTokenizer_GetNextToken();
@@ -1319,22 +1319,22 @@ int parse_dtype_specifiers(DeclInfo *state)
                     tk = CPrepTokenizer_GetNextToken();
                     switch (tk) {
                         case TK_BOOL:
-                            state->dtype = &data_0055fb44;
+                            state->dtype = TYPE(&stvectorboolshort);
                             tk = CPrepTokenizer_GetNextToken();
                             if (tk == TK_INT)
                                 tk = CPrepTokenizer_GetNextToken();
                             return 1;
                         case TK_SIGNED:
-                            state->dtype = &data_0055fb30;
+                            state->dtype = TYPE(&stvectorsignedshort);
                             tk = CPrepTokenizer_GetNextToken();
                             return 1;
                         case TK_UNSIGNED:
-                            state->dtype = &data_0055fb1c;
+                            state->dtype = TYPE(&stvectorunsignedshort);
                             tk = CPrepTokenizer_GetNextToken();
                             return 1;
                         case TK_IDENTIFIER:
                             if ((HashNameNode *)data_00587fa0 == GetHashNameNodeExport("bool")) {
-                                state->dtype = &data_0055fb44;
+                                state->dtype = TYPE(&stvectorboolshort);
                                 tk = CPrepTokenizer_GetNextToken();
                                 if (tk == TK_INT)
                                     tk = CPrepTokenizer_GetNextToken();
@@ -1347,7 +1347,7 @@ int parse_dtype_specifiers(DeclInfo *state)
                     break;
                 case TK_IDENTIFIER:
                     if ((HashNameNode *)data_00587fa0 == GetHashNameNodeExport("bool")) {
-                        state->dtype = &data_0055fb44;
+                        state->dtype = TYPE(&stvectorboolshort);
                         tk = CPrepTokenizer_GetNextToken();
                         if (tk == TK_INT)
                             tk = CPrepTokenizer_GetNextToken();
@@ -1363,19 +1363,19 @@ int parse_dtype_specifiers(DeclInfo *state)
             tk = CPrepTokenizer_GetNextToken();
             switch (tk) {
                 case TK_BOOL:
-                    state->dtype = &data_0055fb80;
+                    state->dtype = TYPE(&stvectorboollong);
                     tk = CPrepTokenizer_GetNextToken();
                     if (tk == TK_INT)
                         tk = CPrepTokenizer_GetNextToken();
                     return 1;
                 case TK_SIGNED:
-                    state->dtype = &pass_by_address_type;
+                    state->dtype = TYPE(&stvectorsignedlong);
                     tk = CPrepTokenizer_GetNextToken();
                     if (tk == TK_INT)
                         tk = CPrepTokenizer_GetNextToken();
                     return 1;
                 case TK_UNSIGNED:
-                    state->dtype = &data_0055fb58;
+                    state->dtype = TYPE(&stvectorunsignedlong);
                     tk = CPrepTokenizer_GetNextToken();
                     if (tk == TK_INT)
                         tk = CPrepTokenizer_GetNextToken();
@@ -1384,20 +1384,20 @@ int parse_dtype_specifiers(DeclInfo *state)
                     tk = CPrepTokenizer_GetNextToken();
                     switch (tk) {
                         case TK_BOOL:
-                            state->dtype = &data_0055fb80;
+                            state->dtype = TYPE(&stvectorboollong);
                             tk = CPrepTokenizer_GetNextToken();
                             return 1;
                         case TK_SIGNED:
-                            state->dtype = &pass_by_address_type;
+                            state->dtype = TYPE(&stvectorsignedlong);
                             tk = CPrepTokenizer_GetNextToken();
                             return 1;
                         case TK_UNSIGNED:
-                            state->dtype = &data_0055fb58;
+                            state->dtype = TYPE(&stvectorunsignedlong);
                             tk = CPrepTokenizer_GetNextToken();
                             return 1;
                         case TK_IDENTIFIER:
                             if ((HashNameNode *)data_00587fa0 == GetHashNameNodeExport("bool")) {
-                                state->dtype = &data_0055fb80;
+                                state->dtype = TYPE(&stvectorboollong);
                                 tk = CPrepTokenizer_GetNextToken();
                                 return 1;
                             }
@@ -1408,7 +1408,7 @@ int parse_dtype_specifiers(DeclInfo *state)
                     break;
                 case TK_IDENTIFIER:
                     if ((HashNameNode *)data_00587fa0 == GetHashNameNodeExport("bool")) {
-                        state->dtype = &data_0055fb80;
+                        state->dtype = TYPE(&stvectorboollong);
                         tk = CPrepTokenizer_GetNextToken();
                         if (tk == TK_INT)
                             tk = CPrepTokenizer_GetNextToken();
@@ -1427,65 +1427,65 @@ int parse_dtype_specifiers(DeclInfo *state)
                     tk = CPrepTokenizer_GetNextToken();
                     switch (tk) {
                         case TK_SHORT:
-                            state->dtype = &data_0055fb44;
+                            state->dtype = TYPE(&stvectorboolshort);
                             tk = CPrepTokenizer_GetNextToken();
                             return 1;
                         case 0x10a:
-                            state->dtype = &data_0055fb80;
+                            state->dtype = TYPE(&stvectorboollong);
                             tk = CPrepTokenizer_GetNextToken();
                             return 1;
                         default:
-                            state->dtype = &data_0055fb80;
+                            state->dtype = TYPE(&stvectorboollong);
                             return 1;
                     }
                 case TK_SIGNED:
                     tk = CPrepTokenizer_GetNextToken();
                     switch (tk) {
                         case TK_SHORT:
-                            state->dtype = &data_0055fb30;
+                            state->dtype = TYPE(&stvectorsignedshort);
                             tk = CPrepTokenizer_GetNextToken();
                             return 1;
                         case 0x10a:
-                            state->dtype = &pass_by_address_type;
+                            state->dtype = TYPE(&stvectorsignedlong);
                             tk = CPrepTokenizer_GetNextToken();
                             return 1;
                         default:
-                            state->dtype = &pass_by_address_type;
+                            state->dtype = TYPE(&stvectorsignedlong);
                             return 1;
                     }
                 case TK_UNSIGNED:
                     tk = CPrepTokenizer_GetNextToken();
                     switch (tk) {
                         case TK_SHORT:
-                            state->dtype = &data_0055fb1c;
+                            state->dtype = TYPE(&stvectorunsignedshort);
                             tk = CPrepTokenizer_GetNextToken();
                             return 1;
                         case 0x10a:
-                            state->dtype = &data_0055fb58;
+                            state->dtype = TYPE(&stvectorunsignedlong);
                             tk = CPrepTokenizer_GetNextToken();
                             return 1;
                         default:
-                            state->dtype = &data_0055fb58;
+                            state->dtype = TYPE(&stvectorunsignedlong);
                             return 1;
                     }
                 case TK_SHORT:
                     tk = CPrepTokenizer_GetNextToken();
                     switch (tk) {
                         case TK_BOOL:
-                            state->dtype = &data_0055fb44;
+                            state->dtype = TYPE(&stvectorboolshort);
                             tk = CPrepTokenizer_GetNextToken();
                             return 1;
                         case TK_SIGNED:
-                            state->dtype = &data_0055fb30;
+                            state->dtype = TYPE(&stvectorsignedshort);
                             tk = CPrepTokenizer_GetNextToken();
                             return 1;
                         case TK_UNSIGNED:
-                            state->dtype = &data_0055fb1c;
+                            state->dtype = TYPE(&stvectorunsignedshort);
                             tk = CPrepTokenizer_GetNextToken();
                             return 1;
                         case TK_IDENTIFIER:
                             if ((HashNameNode *)data_00587fa0 == GetHashNameNodeExport("bool")) {
-                                state->dtype = &data_0055fb44;
+                                state->dtype = TYPE(&stvectorboolshort);
                                 tk = CPrepTokenizer_GetNextToken();
                                 return 1;
                             }
@@ -1498,20 +1498,20 @@ int parse_dtype_specifiers(DeclInfo *state)
                     tk = CPrepTokenizer_GetNextToken();
                     switch (tk) {
                         case TK_BOOL:
-                            state->dtype = &data_0055fb80;
+                            state->dtype = TYPE(&stvectorboollong);
                             tk = CPrepTokenizer_GetNextToken();
                             return 1;
                         case TK_SIGNED:
-                            state->dtype = &pass_by_address_type;
+                            state->dtype = TYPE(&stvectorsignedlong);
                             tk = CPrepTokenizer_GetNextToken();
                             return 1;
                         case TK_UNSIGNED:
-                            state->dtype = &data_0055fb58;
+                            state->dtype = TYPE(&stvectorunsignedlong);
                             tk = CPrepTokenizer_GetNextToken();
                             return 1;
                         case TK_IDENTIFIER:
                             if ((HashNameNode *)data_00587fa0 == GetHashNameNodeExport("bool")) {
-                                state->dtype = &data_0055fb80;
+                                state->dtype = TYPE(&stvectorboollong);
                                 tk = CPrepTokenizer_GetNextToken();
                                 return 1;
                             }
@@ -1523,15 +1523,15 @@ int parse_dtype_specifiers(DeclInfo *state)
                         tk = CPrepTokenizer_GetNextToken();
                         switch (tk) {
                             case 0x10a:
-                                state->dtype = &data_0055fb80;
+                                state->dtype = TYPE(&stvectorboollong);
                                 tk = CPrepTokenizer_GetNextToken();
                                 return 1;
                             case TK_SHORT:
-                                state->dtype = &data_0055fb44;
+                                state->dtype = TYPE(&stvectorboolshort);
                                 tk = CPrepTokenizer_GetNextToken();
                                 return 1;
                             default:
-                                state->dtype = &data_0055fb44;
+                                state->dtype = TYPE(&stvectorboolshort);
                                 return 1;
                         }
                     }
@@ -1542,14 +1542,14 @@ int parse_dtype_specifiers(DeclInfo *state)
             break;
 
         case TK_FLOAT:
-            state->dtype = &data_0055fb94;
+            state->dtype = TYPE(&stvectorfloat);
             tk = CPrepTokenizer_GetNextToken();
             return 1;
 
         case TK_IDENTIFIER:
             if ((HashNameNode *)data_00587fa0 == GetHashNameNodeExport("pixel") ||
                 (HashNameNode *)data_00587fa0 == GetHashNameNodeExport("__pixel")) {
-                state->dtype = &data_0055fba8;
+                state->dtype = TYPE(&stvectorpixel);
                 tk = CPrepTokenizer_GetNextToken();
                 return 1;
             }
@@ -1557,17 +1557,17 @@ int parse_dtype_specifiers(DeclInfo *state)
                 tk = CPrepTokenizer_GetNextToken();
                 switch (tk) {
                     case TK_CHAR:
-                        state->dtype = &data_0055fb08;
+                        state->dtype = TYPE(&stvectorboolchar);
                         tk = CPrepTokenizer_GetNextToken();
                         return 1;
                     case TK_SHORT:
-                        state->dtype = &data_0055fb44;
+                        state->dtype = TYPE(&stvectorboolshort);
                         tk = CPrepTokenizer_GetNextToken();
                         if (tk == TK_INT)
                             tk = CPrepTokenizer_GetNextToken();
                         return 1;
                     case 0x10a:
-                        state->dtype = &data_0055fb80;
+                        state->dtype = TYPE(&stvectorboollong);
                         tk = CPrepTokenizer_GetNextToken();
                         if (tk == TK_INT)
                             tk = CPrepTokenizer_GetNextToken();
@@ -1576,15 +1576,15 @@ int parse_dtype_specifiers(DeclInfo *state)
                         tk = CPrepTokenizer_GetNextToken();
                         switch (tk) {
                             case TK_SHORT:
-                                state->dtype = &data_0055fb44;
+                                state->dtype = TYPE(&stvectorboolshort);
                                 tk = CPrepTokenizer_GetNextToken();
                                 return 1;
                             case 0x10a:
-                                state->dtype = &data_0055fb80;
+                                state->dtype = TYPE(&stvectorboollong);
                                 tk = CPrepTokenizer_GetNextToken();
                                 return 1;
                             default:
-                                state->dtype = &data_0055fb80;
+                                state->dtype = TYPE(&stvectorboollong);
                                 return 1;
                         }
                     default:

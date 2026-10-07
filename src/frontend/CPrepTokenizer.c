@@ -2363,7 +2363,7 @@ SInt16 parse_float_suffix(short suffix)
             nextCharacter = *currentTextPosition;
             suffix = nextCharacter;
             floatType = 13;
-            if (data_0055f612 != data_0055f62a)
+            if (stfloat.size != stlongdouble.size)
                 token_float = CMachine_RoundFloatToType(TYPE(&stfloat), token_float);
             break;
 
@@ -2383,18 +2383,18 @@ SInt16 parse_float_suffix(short suffix)
             nextCharacter = *currentTextPosition;
             suffix = nextCharacter;
             floatType = 15;
-            if (data_0055f622 != data_0055f62a)
+            if (stdouble.size != stlongdouble.size)
                 token_float = CMachine_RoundFloatToType(TYPE(&stdouble), token_float);
             break;
 
         default:
             if (copts.f91) {
                 floatType = 13;
-                if (data_0055f612 != data_0055f62a)
+                if (stfloat.size != stlongdouble.size)
                     token_float = CMachine_RoundFloatToType(TYPE(&stfloat), token_float);
             } else {
                 floatType = 15;
-                if (data_0055f622 != data_0055f62a)
+                if (stdouble.size != stlongdouble.size)
                     token_float = CMachine_RoundFloatToType(TYPE(&stdouble), token_float);
             }
             break;

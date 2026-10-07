@@ -809,7 +809,7 @@ void InterferenceGraph_SpillRegisters(int reg_class, int register_count)
                 } else if (reg_class == 1) {
                     type = (Type *)&stdouble;
                 } else {
-                    type = &data_0055fae0;
+                    type = TYPE(&stvectorunsignedchar);
                 }
                 object = (Object *)CompilerTools_AllocatePool(sizeof(Object));
                 memclrw(object, sizeof(Object));

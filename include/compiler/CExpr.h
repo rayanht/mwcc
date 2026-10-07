@@ -127,7 +127,6 @@ extern void CExpr_CheckUnwantedAssignment(ENode *node);
 extern CInt64 fn_004f0b30(void);
 extern Type data_0055d5c0;
 extern char non_type_template_argument_mode;
-extern SInt32 data_0055f5fa;
 struct ENode;
 
 #ifdef __cplusplus

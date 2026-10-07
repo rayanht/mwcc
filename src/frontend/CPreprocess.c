@@ -461,7 +461,7 @@ void CPreprocess_OutputPreprocessedText(void)
                 break;
             case -5:
                 CompilerTools_AppendGListData(&DAT_00586da8.list, "L\"", 2);
-                output_escaped_wide_chars(string_token_data, token_value_kind_or_string_length / wide_char_size - 1);
+                output_escaped_wide_chars(string_token_data, token_value_kind_or_string_length / stwchar.size - 1);
                 AppendGListByte(&DAT_00586da8.list, '"');
                 break;
             default:

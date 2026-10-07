@@ -3130,7 +3130,7 @@ ENode *do_typecast(ENode *expr, Type *type, UInt32 qual)
             constant->data.intval = CExpr_IntConstConvert(type, STUNSIG, constant->data.intval);
             return constant;
         }
-        if (type->size != data_0055f5fa) {
+        if (type->size != stunsignedlong.size) {
             expr = makemonadicnode(expr, ETYPCON);
             expr->rtype = STUNSIG;
         }

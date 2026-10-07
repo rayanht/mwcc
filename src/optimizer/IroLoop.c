@@ -3828,7 +3828,7 @@ int match_induction_expression(IROLinear *node, IROLinear **factor, IROLinear **
         if ((variableType->integral == IT_UCHAR || variableType->integral == IT_USHORT ||
              variableType->integral == IT_UINT || variableType->integral == IT_ULONG ||
              variableType->integral == IT_ULONGLONG) &&
-            variableType->size < data_0055f5fa)
+            variableType->size < stunsignedlong.size)
             return 0;
     }
     if (node->type == IROLinearOp2Arg && (node->nodetype == ESHR || node->nodetype == EDIV)) {

@@ -58,8 +58,7 @@
     ],
     "include_dirs": [
       "src/backend"
-    ],
-    "status": "NonMatching"
+    ]
   },
   "src/backend/CodeGen.c": {
     "compiler": "pro53",

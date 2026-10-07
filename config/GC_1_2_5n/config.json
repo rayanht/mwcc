@@ -4,6 +4,7 @@
   "matching": [
     "src/backend/BE_symbol.c",
     "src/backend/BitVectors.c",
+    "src/backend/CMachine.c",
     "src/backend/CodeGen.c",
     "src/backend/Coloring.c",
     "src/backend/ELF_Endian.c",

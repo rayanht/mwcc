@@ -39,6 +39,106 @@
 #include <string.h>
 #include <stdio.h>
 
+static int maximumAlignment;
+static int structLayoutOffset;
+static short data_00580fa0;
+static signed short bitfield_storage_size;
+static int data_00580fa4;
+
+TypeIntegral stbool = {TYPEINT, 1, IT_BOOL};
+TypeIntegral stchar = {TYPEINT, 1, IT_CHAR};
+TypeIntegral stsignedchar = {TYPEINT, 1, IT_SCHAR};
+TypeIntegral stunsignedchar = {TYPEINT, 1, IT_UCHAR};
+TypeIntegral stwchar = {TYPEINT, 2, IT_WCHAR_T};
+TypeIntegral stsignedshort = {TYPEINT, 2, IT_SHORT};
+TypeIntegral stunsignedshort = {TYPEINT, 2, IT_USHORT};
+TypeIntegral stsignedint = {TYPEINT, 4, IT_INT};
+TypeIntegral stunsignedint = {TYPEINT, 4, IT_UINT};
+TypeIntegral stsignedlong = {TYPEINT, 4, IT_LONG};
+TypeIntegral stunsignedlong = {TYPEINT, 4, IT_ULONG};
+TypeIntegral stsignedlonglong = {TYPEINT, 8, IT_LONGLONG};
+TypeIntegral stunsignedlonglong = {TYPEINT, 8, IT_ULONGLONG};
+TypeIntegral stfloat = {TYPEFLOAT, 4, IT_FLOAT};
+TypeIntegral stshortdouble = {TYPEFLOAT, 8, IT_SHORTDOUBLE};
+TypeIntegral stdouble = {TYPEFLOAT, 8, IT_DOUBLE};
+TypeIntegral stlongdouble = {TYPEFLOAT, 8, IT_LONGDOUBLE};
+
+static StructMember stVUC_unsignedchar15 = {NULL, (Type *)&stunsignedchar, NULL, 15, 0};
+static StructMember stVUC_unsignedchar14 = {&stVUC_unsignedchar15, (Type *)&stunsignedchar, NULL, 14, 0};
+static StructMember stVUC_unsignedchar13 = {&stVUC_unsignedchar14, (Type *)&stunsignedchar, NULL, 13, 0};
+static StructMember stVUC_unsignedchar12 = {&stVUC_unsignedchar13, (Type *)&stunsignedchar, NULL, 12, 0};
+static StructMember stVUC_unsignedchar11 = {&stVUC_unsignedchar12, (Type *)&stunsignedchar, NULL, 11, 0};
+static StructMember stVUC_unsignedchar10 = {&stVUC_unsignedchar11, (Type *)&stunsignedchar, NULL, 10, 0};
+static StructMember stVUC_unsignedchar9 = {&stVUC_unsignedchar10, (Type *)&stunsignedchar, NULL, 9, 0};
+static StructMember stVUC_unsignedchar8 = {&stVUC_unsignedchar9, (Type *)&stunsignedchar, NULL, 8, 0};
+static StructMember stVUC_unsignedchar7 = {&stVUC_unsignedchar8, (Type *)&stunsignedchar, NULL, 7, 0};
+static StructMember stVUC_unsignedchar6 = {&stVUC_unsignedchar7, (Type *)&stunsignedchar, NULL, 6, 0};
+static StructMember stVUC_unsignedchar5 = {&stVUC_unsignedchar6, (Type *)&stunsignedchar, NULL, 5, 0};
+static StructMember stVUC_unsignedchar4 = {&stVUC_unsignedchar5, (Type *)&stunsignedchar, NULL, 4, 0};
+static StructMember stVUC_unsignedchar3 = {&stVUC_unsignedchar4, (Type *)&stunsignedchar, NULL, 3, 0};
+static StructMember stVUC_unsignedchar2 = {&stVUC_unsignedchar3, (Type *)&stunsignedchar, NULL, 2, 0};
+static StructMember stVUC_unsignedchar1 = {&stVUC_unsignedchar2, (Type *)&stunsignedchar, NULL, 1, 0};
+static StructMember stVUC_unsignedchar0 = {&stVUC_unsignedchar1, (Type *)&stunsignedchar, NULL, 0, 0};
+static StructMember stVSC_signedchar15 = {NULL, (Type *)&stsignedchar, NULL, 15, 0};
+static StructMember stVSC_signedchar14 = {&stVSC_signedchar15, (Type *)&stsignedchar, NULL, 14, 0};
+static StructMember stVSC_signedchar13 = {&stVSC_signedchar14, (Type *)&stsignedchar, NULL, 13, 0};
+static StructMember stVSC_signedchar12 = {&stVSC_signedchar13, (Type *)&stsignedchar, NULL, 12, 0};
+static StructMember stVSC_signedchar11 = {&stVSC_signedchar12, (Type *)&stsignedchar, NULL, 11, 0};
+static StructMember stVSC_signedchar10 = {&stVSC_signedchar11, (Type *)&stsignedchar, NULL, 10, 0};
+static StructMember stVSC_signedchar9 = {&stVSC_signedchar10, (Type *)&stsignedchar, NULL, 9, 0};
+static StructMember stVSC_signedchar8 = {&stVSC_signedchar9, (Type *)&stsignedchar, NULL, 8, 0};
+static StructMember stVSC_signedchar7 = {&stVSC_signedchar8, (Type *)&stsignedchar, NULL, 7, 0};
+static StructMember stVSC_signedchar6 = {&stVSC_signedchar7, (Type *)&stsignedchar, NULL, 6, 0};
+static StructMember stVSC_signedchar5 = {&stVSC_signedchar6, (Type *)&stsignedchar, NULL, 5, 0};
+static StructMember stVSC_signedchar4 = {&stVSC_signedchar5, (Type *)&stsignedchar, NULL, 4, 0};
+static StructMember stVSC_signedchar3 = {&stVSC_signedchar4, (Type *)&stsignedchar, NULL, 3, 0};
+static StructMember stVSC_signedchar2 = {&stVSC_signedchar3, (Type *)&stsignedchar, NULL, 2, 0};
+static StructMember stVSC_signedchar1 = {&stVSC_signedchar2, (Type *)&stsignedchar, NULL, 1, 0};
+static StructMember stVSC_signedchar0 = {&stVSC_signedchar1, (Type *)&stsignedchar, NULL, 0, 0};
+static StructMember stVUS_unsignedshort7 = {NULL, (Type *)&stunsignedshort, NULL, 14, 0};
+static StructMember stVUS_unsignedshort6 = {&stVUS_unsignedshort7, (Type *)&stunsignedshort, NULL, 12, 0};
+static StructMember stVUS_unsignedshort5 = {&stVUS_unsignedshort6, (Type *)&stunsignedshort, NULL, 10, 0};
+static StructMember stVUS_unsignedshort4 = {&stVUS_unsignedshort5, (Type *)&stunsignedshort, NULL, 8, 0};
+static StructMember stVUS_unsignedshort3 = {&stVUS_unsignedshort4, (Type *)&stunsignedshort, NULL, 6, 0};
+static StructMember stVUS_unsignedshort2 = {&stVUS_unsignedshort3, (Type *)&stunsignedshort, NULL, 4, 0};
+static StructMember stVUS_unsignedshort1 = {&stVUS_unsignedshort2, (Type *)&stunsignedshort, NULL, 2, 0};
+static StructMember stVUS_unsignedshort0 = {&stVUS_unsignedshort1, (Type *)&stunsignedshort, NULL, 0, 0};
+static StructMember stVSS_signedshort7 = {NULL, (Type *)&stsignedshort, NULL, 14, 0};
+static StructMember stVSS_signedshort6 = {&stVSS_signedshort7, (Type *)&stsignedshort, NULL, 12, 0};
+static StructMember stVSS_signedshort5 = {&stVSS_signedshort6, (Type *)&stsignedshort, NULL, 10, 0};
+static StructMember stVSS_signedshort4 = {&stVSS_signedshort5, (Type *)&stsignedshort, NULL, 8, 0};
+static StructMember stVSS_signedshort3 = {&stVSS_signedshort4, (Type *)&stsignedshort, NULL, 6, 0};
+static StructMember stVSS_signedshort2 = {&stVSS_signedshort3, (Type *)&stsignedshort, NULL, 4, 0};
+static StructMember stVSS_signedshort1 = {&stVSS_signedshort2, (Type *)&stsignedshort, NULL, 2, 0};
+static StructMember stVSS_signedshort0 = {&stVSS_signedshort1, (Type *)&stsignedshort, NULL, 0, 0};
+static StructMember stVUL_unsignedlong3 = {NULL, (Type *)&stunsignedlong, NULL, 12, 0};
+static StructMember stVUL_unsignedlong2 = {&stVUL_unsignedlong3, (Type *)&stunsignedlong, NULL, 8, 0};
+static StructMember stVUL_unsignedlong1 = {&stVUL_unsignedlong2, (Type *)&stunsignedlong, NULL, 4, 0};
+static StructMember stVUL_unsignedlong0 = {&stVUL_unsignedlong1, (Type *)&stunsignedlong, NULL, 0, 0};
+static StructMember stVSL_signedlong3 = {NULL, (Type *)&stsignedlong, NULL, 12, 0};
+static StructMember stVSL_signedlong2 = {&stVSL_signedlong3, (Type *)&stsignedlong, NULL, 8, 0};
+static StructMember stVSL_signedlong1 = {&stVSL_signedlong2, (Type *)&stsignedlong, NULL, 4, 0};
+static StructMember stVSL_signedlong0 = {&stVSL_signedlong1, (Type *)&stsignedlong, NULL, 0, 0};
+static StructMember stVF_float3 = {NULL, (Type *)&stfloat, NULL, 12, 0};
+static StructMember stVF_float2 = {&stVF_float3, (Type *)&stfloat, NULL, 8, 0};
+static StructMember stVF_float1 = {&stVF_float2, (Type *)&stfloat, NULL, 4, 0};
+static StructMember stVF_float0 = {&stVF_float1, (Type *)&stfloat, NULL, 0, 0};
+
+TypeStruct stvectorunsignedchar = {TYPESTRUCT, 16, NULL, &stVUC_unsignedchar0, 4, 0, 16};
+TypeStruct stvectorsignedchar = {TYPESTRUCT, 16, NULL, &stVSC_signedchar0, 5, 0, 16};
+TypeStruct stvectorboolchar = {TYPESTRUCT, 16, NULL, &stVSC_signedchar0, 6, 0, 16};
+TypeStruct stvectorunsignedshort = {TYPESTRUCT, 16, NULL, &stVUS_unsignedshort0, 7, 0, 16};
+TypeStruct stvectorsignedshort = {TYPESTRUCT, 16, NULL, &stVSS_signedshort0, 8, 0, 16};
+TypeStruct stvectorboolshort = {TYPESTRUCT, 16, NULL, &stVSS_signedshort0, 9, 0, 16};
+TypeStruct stvectorunsignedlong = {TYPESTRUCT, 16, NULL, &stVUL_unsignedlong0, 10, 0, 16};
+TypeStruct stvectorsignedlong = {TYPESTRUCT, 16, NULL, &stVSL_signedlong0, 11, 0, 16};
+TypeStruct stvectorboollong = {TYPESTRUCT, 16, NULL, &stVSL_signedlong0, 12, 0, 16};
+TypeStruct stvectorfloat = {TYPESTRUCT, 16, NULL, &stVF_float0, 13, 0, 16};
+TypeStruct stvectorpixel = {TYPESTRUCT, 16, NULL, &stVUS_unsignedshort0, 14, 0, 16};
+TypeStruct stvector = {TYPESTRUCT, 16, NULL, NULL, 10, 0, 16};
+
+static SInt16 loadalign_table[5] = {1, 2, 4, 8, 16};
+
 /* Declarations gathered from the merged files. */
 
 void initialize_hash_name_globals(void)
@@ -97,77 +197,77 @@ void initialize_hash_name_globals(void)
     nameHash25 = GetHashNameNode("vector bool int");
     nameHash26 = GetHashNameNode("vector float");
     nameHash27 = GetHashNameNode("vector pixel");
-    data_0055fae6 = nameHash17;
-    data_0055fb22 = nameHash18;
-    data_0055fb5e = nameHash19;
-    data_0055fafa = nameHash20;
-    data_0055fb36 = nameHash21;
-    data_0055fb72 = nameHash22;
-    data_0055fb0e = nameHash23;
-    data_0055fb4a = nameHash24;
-    data_0055fb86 = nameHash25;
-    data_0055fb9a = nameHash26;
-    data_0055fbae = nameHash27;
-    data_0055f764 = nameHash1;
-    data_0055f750 = nameHash2;
-    data_0055f73c = nameHash3;
-    data_0055f728 = nameHash4;
-    data_0055f714 = nameHash5;
-    name_hash6 = nameHash6;
-    data_0055f6ec = nameHash7;
-    nameHash8Ptr = nameHash8;
-    data_0055f6c4 = nameHash9;
-    data_0055f6b0 = nameHash10;
-    data_0055f69c = nameHash11;
-    data_0055f688 = nameHash12;
-    data_0055f674 = nameHash13;
-    data_0055f660 = nameHash14;
-    data_0055f64c = nameHash15;
-    data_0055f638 = nameHash16;
-    data_0055f8a4 = nameHash1;
-    data_0055f890 = nameHash2;
-    data_0055f87c = nameHash3;
-    data_0055f868 = nameHash4;
-    data_0055f854 = nameHash5;
-    data_0055f840 = nameHash6;
-    data_0055f82c = nameHash7;
-    name_hash8 = nameHash8;
-    data_0055f804 = nameHash9;
-    data_0055f7f0 = nameHash10;
-    data_0055f7dc = nameHash11;
-    data_0055f7c8 = nameHash12;
-    data_0055f7b4 = nameHash13;
-    data_0055f7a0 = nameHash14;
-    data_0055f78c = nameHash15;
-    data_0055f778 = nameHash16;
-    data_0055f944 = nameHash1;
-    data_0055f930 = nameHash2;
-    data_0055f91c = nameHash3;
-    data_0055f908 = nameHash4;
-    data_0055f8f4 = nameHash5;
-    data_0055f8e0 = nameHash6;
-    data_0055f8cc = nameHash7;
-    data_0055f8b8 = nameHash8;
-    data_0055f9e4 = nameHash1;
-    gNameHash2 = nameHash2;
-    data_0055f9bc = nameHash3;
-    data_0055f9a8 = nameHash4;
-    data_0055f994 = nameHash5;
-    data_0055f980 = nameHash6;
-    data_0055f96c = nameHash7;
-    data_0055f958 = nameHash8;
-    data_0055fa34 = nameHash1;
-    data_0055fa20 = nameHash2;
-    data_0055fa0c = nameHash3;
-    data_0055f9f8 = nameHash4;
-    data_0055fa84 = nameHash1;
-    data_0055fa70 = nameHash2;
-    nameHash3Ptr = nameHash3;
-    data_0055fa48 = nameHash4;
-    data_0055fad4 = nameHash1;
-    data_0055fac0 = nameHash2;
-    data_0055faac = nameHash3;
-    data_0055fa98 = nameHash4;
+    stvectorunsignedchar.name = nameHash17;
+    stvectorunsignedshort.name = nameHash18;
+    stvectorunsignedlong.name = nameHash19;
+    stvectorsignedchar.name = nameHash20;
+    stvectorsignedshort.name = nameHash21;
+    stvectorsignedlong.name = nameHash22;
+    stvectorboolchar.name = nameHash23;
+    stvectorboolshort.name = nameHash24;
+    stvectorboollong.name = nameHash25;
+    stvectorfloat.name = nameHash26;
+    stvectorpixel.name = nameHash27;
+    stVUC_unsignedchar0.name = nameHash1;
+    stVUC_unsignedchar1.name = nameHash2;
+    stVUC_unsignedchar2.name = nameHash3;
+    stVUC_unsignedchar3.name = nameHash4;
+    stVUC_unsignedchar4.name = nameHash5;
+    stVUC_unsignedchar5.name = nameHash6;
+    stVUC_unsignedchar6.name = nameHash7;
+    stVUC_unsignedchar7.name = nameHash8;
+    stVUC_unsignedchar8.name = nameHash9;
+    stVUC_unsignedchar9.name = nameHash10;
+    stVUC_unsignedchar10.name = nameHash11;
+    stVUC_unsignedchar11.name = nameHash12;
+    stVUC_unsignedchar12.name = nameHash13;
+    stVUC_unsignedchar13.name = nameHash14;
+    stVUC_unsignedchar14.name = nameHash15;
+    stVUC_unsignedchar15.name = nameHash16;
+    stVSC_signedchar0.name = nameHash1;
+    stVSC_signedchar1.name = nameHash2;
+    stVSC_signedchar2.name = nameHash3;
+    stVSC_signedchar3.name = nameHash4;
+    stVSC_signedchar4.name = nameHash5;
+    stVSC_signedchar5.name = nameHash6;
+    stVSC_signedchar6.name = nameHash7;
+    stVSC_signedchar7.name = nameHash8;
+    stVSC_signedchar8.name = nameHash9;
+    stVSC_signedchar9.name = nameHash10;
+    stVSC_signedchar10.name = nameHash11;
+    stVSC_signedchar11.name = nameHash12;
+    stVSC_signedchar12.name = nameHash13;
+    stVSC_signedchar13.name = nameHash14;
+    stVSC_signedchar14.name = nameHash15;
+    stVSC_signedchar15.name = nameHash16;
+    stVUS_unsignedshort0.name = nameHash1;
+    stVUS_unsignedshort1.name = nameHash2;
+    stVUS_unsignedshort2.name = nameHash3;
+    stVUS_unsignedshort3.name = nameHash4;
+    stVUS_unsignedshort4.name = nameHash5;
+    stVUS_unsignedshort5.name = nameHash6;
+    stVUS_unsignedshort6.name = nameHash7;
+    stVUS_unsignedshort7.name = nameHash8;
+    stVSS_signedshort0.name = nameHash1;
+    stVSS_signedshort1.name = nameHash2;
+    stVSS_signedshort2.name = nameHash3;
+    stVSS_signedshort3.name = nameHash4;
+    stVSS_signedshort4.name = nameHash5;
+    stVSS_signedshort5.name = nameHash6;
+    stVSS_signedshort6.name = nameHash7;
+    stVSS_signedshort7.name = nameHash8;
+    stVUL_unsignedlong0.name = nameHash1;
+    stVUL_unsignedlong1.name = nameHash2;
+    stVUL_unsignedlong2.name = nameHash3;
+    stVUL_unsignedlong3.name = nameHash4;
+    stVSL_signedlong0.name = nameHash1;
+    stVSL_signedlong1.name = nameHash2;
+    stVSL_signedlong2.name = nameHash3;
+    stVSL_signedlong3.name = nameHash4;
+    stVF_float0.name = nameHash1;
+    stVF_float1.name = nameHash2;
+    stVF_float2.name = nameHash3;
+    stVF_float3.name = nameHash4;
 }
 
 Float CMach_FloatReciprocal(Float value)
@@ -176,23 +276,11 @@ Float CMach_FloatReciprocal(Float value)
     return value;
 }
 
-static double data_0055fd18 = 0.0;
-static double double_four = 1.0;
-static double data_0055fd28 = -1.0;
-static double data_0055fd30 = 0.5;
-static double data_0055fd38 = -0.5;
-static double data_0055fd40 = 2.0;
-static double data_0055fd48 = -2.0;
-static double data_0055fd50 = 4.0;
-static double data_0055fd58 = -4.0;
-static double data_0055fd60 = 8.0;
-
 Boolean CMach_FloatIsPowerOf2(Float f)
 {
-    return f.data.value == data_0055fd18 || f.data.value == double_four || f.data.value == data_0055fd28 ||
-           f.data.value == data_0055fd30 || f.data.value == data_0055fd38 || f.data.value == data_0055fd40 ||
-           f.data.value == data_0055fd48 || f.data.value == data_0055fd50 || f.data.value == data_0055fd58 ||
-           f.data.value == data_0055fd60;
+    return f.data.value == 2.0L || f.data.value == 4.0L || f.data.value == 8.0L || f.data.value == 16.0L ||
+           f.data.value == 32.0L || f.data.value == 64.0L || f.data.value == 128.0L || f.data.value == 256.0L ||
+           f.data.value == 512.0L || f.data.value == 1024.0L;
 }
 
 const char *CMach_GetCPU(void)
@@ -779,17 +867,17 @@ void CMach_InitFloatMem(Type *type, Float value, unsigned char *dest)
 
 UInt8 CMach_FloatIsNegOne(double value)
 {
-    return value == negative_one;
+    return value == -1.0L;
 }
 
 unsigned char CMach_FloatIsOne(double value)
 {
-    return value == DAT_0055fff0;
+    return value == 1.0L;
 }
 
 unsigned char CMach_FloatIsZero(double value)
 {
-    return value == float_zero;
+    return value == 0.0L;
 }
 
 Float CMachine_RoundFloatToType(Type *type, Float value)
@@ -833,19 +921,15 @@ Float CMach_CalcFloatConvertFromInt(Type *type, CInt64 value)
 
 void *CMach_FloatScan(char *text, Float *result, char *flag)
 {
-    union {
-        double value;
-        Float integer;
-    } val;
+    double value;
+    char *end;
 
-    char *end = CTemplateClass_ParseDouble(text, &val.value, flag);
-    if (end == NULL)
+    if (!(end = CTemplateClass_ParseDouble(text, &value, flag)))
         CError_FatalError(ERR_NUMBER_OUT_RANGE);
-    if (*flag) {
-        Float value = data_00560028;
-        *result = value;
-    } else
-        *result = val.integer;
+    if (*flag)
+        result->data.value = 0.0;
+    else
+        result->data.value = value;
     return end;
 }
 

@@ -335,6 +335,21 @@ def resolve_function(symbols, sections, symbol_name, target_address, addresses, 
                             there = bytes(len(payload))
                         if there == bytes(payload):
                             hits = [derived + addend]
+                if len(hits) != 1 and kind == 6 and target_size and local + 4 <= len(original):
+                    # (or the item the reference selects holds what the original's reference does, where the
+                    # section's start differs: other data of the object is laid out otherwise)
+                    raw = struct.unpack_from("<I", original, local)[0]
+                    start = dest["value"] + addend
+                    item_end = min((s["value"] for s in symbols.values() if s["section"] == dest["section"]
+                                    and s["value"] > start), default=len(literal["data"]))
+                    item = literal["data"][start:item_end]
+                    relocated = any(start <= off + k < item_end for off, _, _ in literal["relocs"] for k in range(4))
+                    try:
+                        there = pe.read(raw, len(item)) if item and not relocated else None
+                    except ValueError:
+                        there = None
+                    if there == item:
+                        hits = [raw]
                 if len(hits) != 1:
                     raise ValueError(
                         f"unbound literal: {dest['name']} ({len(matches)} retail blocks, {len(hits)} strings)"

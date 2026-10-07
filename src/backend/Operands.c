@@ -240,7 +240,7 @@ void Operands_ConvertIntegerToFloat(struct Operand *result, Boolean useOpcodeA5,
         }
         operand = NULL;
     }
-    emit_opcode_with_base_offset(data_0055f622 == 4 ? 0x8e : 0x92, memoryRegister, baseRegister, operand, 0);
+    emit_opcode_with_base_offset(stdouble.size == 4 ? 0x8e : 0x92, memoryRegister, baseRegister, operand, 0);
     emit_opcode_with_base_offset(PC_STW, result->reg, stack_base_reg, storage, low_word_offset);
     integerRegister = gpr();
     PCodeUtilities_EmitInstruction(PC_LIS, integerRegister, 0, 0x4330);
@@ -296,7 +296,7 @@ void Operands_ConvertSignedIntegerToFloat(struct Operand *operand, char subtract
         }
         object = NULL;
     }
-    emit_opcode_with_base_offset(data_0055f622 == 4 ? 142 : 146, loadFPR, baseReg, object, 0);
+    emit_opcode_with_base_offset(stdouble.size == 4 ? 142 : 146, loadFPR, baseReg, object, 0);
     integerReg = gUsedVirtualRegistersGPR++;
     PCodeUtilities_EmitInstruction(PC_XORIS, integerReg, operand->reg, 32768);
     emit_opcode_with_base_offset(PC_STW, integerReg, stack_base_reg, stackBase, low_word_offset);

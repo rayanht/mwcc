@@ -1740,7 +1740,7 @@ void initialize_array_data_by_type(TypePointer *tptr, UInt32 mode, Boolean flag)
         }
     }
     chars = element->type == TYPEINT && element->size == 1;
-    wide = element->type == TYPEINT && tptr->target->size == wide_char_size;
+    wide = element->type == TYPEINT && tptr->target->size == stwchar.size;
     braced = 1;
     if (flag && !(tk == TK_STRING && (Boolean)chars) && !(tk == TK_STRING_WIDE && (Boolean)wide)) {
         if (tk != '{') {
@@ -1758,7 +1758,7 @@ void initialize_array_data_by_type(TypePointer *tptr, UInt32 mode, Boolean flag)
         if (tptr->size) {
             if (token_value_kind_or_string_length > tptr->size) {
                 if (copts.cplusplus ||
-                    token_value_kind_or_string_length - ((Boolean)wide ? wide_char_size : 1) > tptr->size)
+                    token_value_kind_or_string_length - ((Boolean)wide ? stwchar.size : 1) > tptr->size)
                     CError_ReportError(ERR_TOO_MANY_INITIALIZERS);
                 token_value_kind_or_string_length = tptr->size;
             }
@@ -1914,7 +1914,7 @@ void init_int(Type *type, ENode *node)
     if (node->type == EINTCONST) {
         CMach_InitIntMem(type, node->data.intval, cinit_state->buffer + cinit_state->offset);
     } else if (node->type == ETYPCON && node->data.monadic->rtype->type == TYPEPOINTER &&
-               node->rtype->size == data_0055f5fa &&
+               node->rtype->size == stunsignedlong.size &&
                (copts.cplusplus != 0 || copts.rejectZeroLengthArrayMembers == 0)) {
         init_int_or_relocation(node->data.monadic->rtype, node->data.monadic);
     } else {
@@ -2661,7 +2661,7 @@ void initialize_array_data(InitializerData *pool, CInit *iter, TypePointer *arra
         return;
     }
     isChar = arrayType->target->type == TYPEINT && arrayType->target->size == 1;
-    isWideChar = arrayType->target->type == TYPEINT && arrayType->target->size == wide_char_size;
+    isWideChar = arrayType->target->type == TYPEINT && arrayType->target->size == stwchar.size;
 
     switch (iter->state) {
         case 1:

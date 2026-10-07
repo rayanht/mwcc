@@ -370,6 +370,18 @@ extern TypeIntegral stfloat;
 extern TypeIntegral stshortdouble;
 extern TypeIntegral stdouble;
 extern TypeIntegral stlongdouble;
+extern TypeStruct stvectorunsignedchar;
+extern TypeStruct stvectorsignedchar;
+extern TypeStruct stvectorboolchar;
+extern TypeStruct stvectorunsignedshort;
+extern TypeStruct stvectorsignedshort;
+extern TypeStruct stvectorboolshort;
+extern TypeStruct stvectorunsignedlong;
+extern TypeStruct stvectorsignedlong;
+extern TypeStruct stvectorboollong;
+extern TypeStruct stvectorfloat;
+extern TypeStruct stvectorpixel;
+extern TypeStruct stvector;
 extern Type stvoid;
 extern TypePointer void_ptr;
 

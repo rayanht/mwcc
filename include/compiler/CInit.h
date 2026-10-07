@@ -153,7 +153,6 @@ extern void CInit_Init(void);
 extern void CInit_DefineTentativeData(void);
 extern struct Object *destructor_registration_func;
 extern int pointer_size;
-extern SInt32 wide_char_size;
 extern struct CInit_StrNode *string_cache;
 extern struct NameEntry *pooled_strings;
 extern struct NameEntry *pooled_wstrings;
