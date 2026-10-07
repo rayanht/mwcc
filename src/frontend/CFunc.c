@@ -41,11 +41,6 @@ static SInt16 local_name_counter;
 static struct CleanNode *data_00580890;
 #pragma options align = reset
 
-/* Declarations gathered from the merged files. */
-enum FlagVal { FLAGVAL_FALSE, FLAGVAL_TRUE };
-
-typedef enum { CFUNC_UNUSED_A, CFUNC_UNUSED_B } CFuncUnused;
-
 static FuncArg *FindNameLink(FuncArg *list, HashNameNode *name);
 static Statement *allocate_and_append_statement(UInt8 type);
 static Statement *NewStmt(UInt8 type);
@@ -3146,9 +3141,9 @@ void CFunc_ParseFuncDef(Object *func, DeclInfo *definition, TypeClass *scopeObje
             oldStyleArguments = definition->oldStyleParameters;
             if ((TYPE_FUNC(func->type)->flags & 0x20000000) && !anyerrors) {
                 CInline_SaveInfo(&savedState, &state, func);
-                hasSavedState = savedStateCopy = FLAGVAL_TRUE;
+                hasSavedState = savedStateCopy = 1;
             } else {
-                hasSavedState = FLAGVAL_FALSE;
+                hasSavedState = 0;
             }
             fn_0050ee60(&state, func, oldStyleArguments);
             if (hasSavedState) {

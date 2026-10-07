@@ -27,9 +27,6 @@ extern "C" {
 
 #include <string.h>
 #include "mwcc/Plugins.h"
-/* Declarations gathered from the merged files. */
-
-
 
 }
 

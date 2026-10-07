@@ -17,8 +17,6 @@
 #include "compiler/Operands.h"
 #include "compiler/PCode.h"
 #include "compiler/PCodeUtilities.h"
-/* Declarations gathered from the merged files. */
-
 
 short spill_address_register = 0;
 

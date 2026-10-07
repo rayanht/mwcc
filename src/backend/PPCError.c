@@ -19,7 +19,6 @@
 
 typedef void (*PCodeGenFn)(ENode *node, SInt32 a, SInt32 b, Operand *dst);
 
-/* Declarations gathered from the merged files. */
 typedef char *va_list;
 
 static inline void PPCError_CheckDiagnosticCode(SInt16 diagnosticId)

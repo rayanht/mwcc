@@ -24,7 +24,6 @@
 #include <string.h>
 #include <stdio.h>
 
-/* Declarations gathered from the merged files. */
 /* Calls deferred until the precompiled data has been loaded. */
 
 typedef enum { PRECFLAG_OFF = 0, PRECFLAG_ON = 1 } PrecFlag;

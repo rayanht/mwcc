@@ -23,7 +23,6 @@ static OptionList optionList;
 
 #define MAXSTACK 8
 #define OPTION_ASSERT(cond, line) ((cond) ? (void)0 : CLIO_ReportAssertionFailure(#cond, "Option.c", line))
-/* Declarations gathered from the merged files. */
 OStack data_00586d20[MAXSTACK];
 
 void push_option(void *a)

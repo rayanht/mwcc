@@ -15,8 +15,6 @@
 #include <string.h>
 #include <stdio.h>
 
-/* Declarations gathered from the merged files. */
-
 static SInt32 ElemSize(TypePointer *t);
 
 static void MangleQualifiers(UInt32 q);

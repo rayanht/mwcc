@@ -11,7 +11,6 @@
 #include "compiler/CFunc.h"
 #include "compiler/CObjC.h"
 #include "compiler/CompilerTools.h"
-/* Declarations gathered from the merged files. */
 
 static TypeFunc data_005741b0 = {TYPEFUNC, 0, NULL, NULL, TYPE(&stsignedshort), 0, 0};
 static TypeFunc data_005741cc = {TYPEFUNC, 0, NULL, NULL, TYPE(&stunsignedlong), 0, 0};
