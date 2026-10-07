@@ -752,18 +752,9 @@ typedef unsigned long UInt32;
 typedef long SInt32;
 typedef unsigned char Boolean;
 typedef unsigned char Str63[64];
-typedef unsigned int code();
-typedef unsigned char undefined;
-#ifndef __cplusplus
-typedef unsigned char bool;
-#endif
-typedef unsigned char byte;
-typedef unsigned int dword;
-/* inferred floating type; verify ABI */
 #ifndef __cplusplus
 typedef short wchar_t;
 #endif
-typedef unsigned short word;
 
 typedef enum AccessType { ACCESSPUBLIC, ACCESSPRIVATE, ACCESSPROTECTED, ACCESSNONE } AccessType;
 #pragma options align = mac68k
