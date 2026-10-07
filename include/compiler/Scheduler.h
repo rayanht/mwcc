@@ -27,6 +27,12 @@ struct CColoringNode {
     UInt16 flag;
 };
 #pragma options align = reset
+/* One opcode's entry in a machine model's table: its class there, and its length. */
+struct MachineOpcodeInfo {
+    UInt8 executionUnit;
+    SInt8 latency;
+    SInt8 stageCycles[4];
+};
 #pragma options align = mac68k
 struct Checker {
     SInt32 count; /* 0x00: schedule_block limits issue slots */
@@ -106,13 +112,13 @@ extern struct SchedEntry *sched_entry_list;
 extern UInt16 max_height;
 extern SInt32 gVirtualRegistersActive;
 extern void Scheduler_Schedule(char force);
-extern struct Checker checkers[];
-extern struct Checker scheduler_checkers[];
-extern struct Checker data_005763f8[];
-extern struct Checker data_00576f08[];
-extern struct Checker data_00577640[];
-extern struct Checker scheduler_checker_array[];
-extern struct Checker data_00578e30[];
+extern struct Checker machine603;
+extern struct Checker machine603e;
+extern struct Checker machine604;
+extern struct Checker machine750;
+extern struct Checker machine7400;
+extern struct Checker machine601;
+extern struct Checker machine821;
 extern struct Checker *data_00581b80;
 extern int Scheduler_ReturnZero(PCodeInstruction *list, PCodeInstruction *ref, char c);
 struct CColoringNode;

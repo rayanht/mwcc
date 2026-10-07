@@ -899,27 +899,32 @@ src/optimizer/VectorArraysToRegs.c:
 
 src/backend/MachineSimulation603.c:
 	.text       start:0x0052DBC0 end:0x0052E0F0
+	.data       start:0x00574D70 end:0x00575880
 	.bss        start:0x00582CA0 end:0x00582D18
 
 src/backend/MachineSimulation603e.c:
 	.text       start:0x0052E0F0 end:0x0052E680
-	.data       start:0x00574D70 end:0x005763F8
+	.data       start:0x00575880 end:0x005763F8
 	.bss        start:0x00582D18 end:0x00582D90
 
 src/backend/MachineSimulation604.c:
 	.text       start:0x0052E680 end:0x0052ECD0
+	.data       start:0x005763F8 end:0x00576F08
 	.bss        start:0x00582D90 end:0x00582E70
 
 src/backend/MachineSimulation750.c:
 	.text       start:0x0052ECD0 end:0x0052F370
+	.data       start:0x00576F08 end:0x00577640
 	.bss        start:0x00582E70 end:0x00582F00
 
 src/backend/MachineSimulation7400.c:
 	.text       start:0x0052F370 end:0x0052FDD0
+	.data       start:0x00577640 end:0x00578320
 	.bss        start:0x00582F00 end:0x00582FE8
 
 src/backend/MachineSimulation601.c:
 	.text       start:0x0052FDD0 end:0x00530050
+	.data       start:0x00578320 end:0x00578E30
 	.bss        start:0x00582FE8 end:0x00583018
 
 src/backend/LiveVariables.c:
@@ -927,11 +932,12 @@ src/backend/LiveVariables.c:
 
 src/backend/MachineSimulation821.c:
 	.text       start:0x00530640 end:0x00530A00
+	.data       start:0x00578E30 end:0x00579568
 	.bss        start:0x00583018 end:0x00583088
 
 src/backend/InterferenceGraph.c:
 	.text       start:0x00530A00 end:0x00531AB0
-	.data       start:0x005763F8 end:0x00579580
+	.data       start:0x00579568 end:0x00579580
 	.bss        start:0x00583088 end:0x00583090
 
 src/backend/SpillCode.c:

@@ -62,23 +62,23 @@ void Scheduler_Schedule(char force)
     SInt32 tgt;
 
     if (copts.altivecModel || (tgt = copts.processorModel) == 7)
-        data_00581b80 = data_00577640;
+        data_00581b80 = &machine7400;
     else if (tgt == 2)
-        data_00581b80 = checkers;
+        data_00581b80 = &machine603;
     else if (tgt == 5)
-        data_00581b80 = scheduler_checkers;
+        data_00581b80 = &machine603e;
     else if (tgt == 3)
-        data_00581b80 = data_005763f8;
+        data_00581b80 = &machine604;
     else if (tgt == 6)
-        data_00581b80 = data_005763f8;
+        data_00581b80 = &machine604;
     else if (tgt == 4)
-        data_00581b80 = data_00576f08;
+        data_00581b80 = &machine750;
     else if (tgt == 1)
-        data_00581b80 = scheduler_checker_array;
+        data_00581b80 = &machine601;
     else if (tgt == 9)
-        data_00581b80 = data_00578e30;
+        data_00581b80 = &machine821;
     else
-        data_00581b80 = checkers;
+        data_00581b80 = &machine603;
 
     for (blk = gPCodeBlocks; blk != NULL; blk = blk->next) {
         if (blk->instruction_count > 2 && (force || (blk->flags & 3) == 0) && (blk->flags & 8) == 0) {

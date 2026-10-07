@@ -14,12 +14,10 @@ extern void advance_instruction_pipeline(void);
 extern void set_execution_unit_instruction(PCodeInstruction *instruction);
 extern int is_execution_unit_available(PCodeInstruction *instruction);
 extern void clear_instruction_and_globals(void);
-extern signed char sclass_pipeline_table[];
 struct InstructionCountdown {
     PCodeInstruction *instruction;
     unsigned int count;
 };
-extern MachineOpcodeInfo data_00578340[];
 
 #ifdef __cplusplus
 }

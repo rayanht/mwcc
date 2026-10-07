@@ -23,19 +23,6 @@ extern void record_instruction_kind(PCodeInstruction *p);
 extern void reset_simulation_pipeline(void);
 extern int fn_0052f330(PCodeInstruction *instruction);
 extern int fn_0052f120(struct PCodeInstruction *instruction);
-extern struct OpcodeOperandInfo {
-    char count;
-    UInt8 reserved[4];
-    UInt8 kind;
-} DAT_00576f29[];
-extern char opcode_table_entries[];
-extern struct OpcodeScheduleInfo {
-    UInt8 kind;
-    UInt8 reserved[2];
-    SInt8 latency3;
-    SInt8 latency4;
-    UInt8 reserved5;
-} data_00576f28[];
 
 #ifdef __cplusplus
 }
