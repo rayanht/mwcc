@@ -44,69 +44,7 @@ static UInt8 data_005536f0[75] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 1, 0, 1
                                   1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
                                   0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
 
-int fn_00454bb0(void)
-{
-    IRONode *obj;
-    IRONode *first;
-    IRONode *last;
-    IRONode *next;
-    int found;
-
-    found = 0;
-    for (obj = iro_flowgraph_head; obj != NULL; obj = obj->nextnode) {
-        if (obj->last->type == IROLinearIf || obj->last->type == IROLinearIfNot) {
-            first = last = obj;
-            while ((next = obj->nextnode) != NULL &&
-                   (next->last->type == IROLinearIf || next->last->type == IROLinearIfNot)) {
-                last = (obj = next);
-            }
-            if (first != last && fn_00454c30(first, last) != 0)
-                found = 1;
-        }
-    }
-    if (found != 0) {
-        IroFlowgraph_RebuildSuccPred();
-        IroFlowgraph_ComputeDom();
-    }
-    IroVars_CheckTimedLongjmp();
-    return found;
-}
-
-unsigned int fn_00454c30(IRONode *first, IRONode *limit)
-{
-    IRONode *entry;
-    IRONode *last;
-    int changed;
-    changed = 0;
-    while (first != limit) {
-        if ((first->last->type == IROLinearIf) && (fn_00455350(first, first) != 0))
-            break;
-        first = first->nextnode;
-    }
-    entry = first;
-    if (first != limit) {
-        last = first;
-        entry = last->nextnode;
-        while ((entry != limit) && (entry->last->type == IROLinearIf)) {
-            if (fn_00455350(first, entry) != 0) {
-                last = entry;
-                entry = entry->nextnode;
-            } else {
-                entry = last;
-                break;
-            }
-        }
-        if (((entry == limit) || (entry->last->type == IROLinearIfNot)) && (fn_00455350(first, entry) == 0))
-            entry = last;
-        if ((first != entry) && (group_adjacent_compare_cases(first, entry) != 0))
-            changed = 1;
-        if (entry != limit)
-            entry = entry->nextnode;
-    }
-    if ((entry != limit) && (fn_00454c30(entry, limit) != 0))
-        changed = 1;
-    return changed;
-}
+static int IsAdjacent(CInt64 d);
 
 static inline Object *get_key(IROLinear *cond)
 {
@@ -122,393 +60,61 @@ static inline Object *get_key(IROLinear *cond)
     return hasKey ? IroDump_GetObjRef(cond->u.diadic.left) : NULL;
 }
 
-SInt32 group_adjacent_compare_cases(IRONode *first, IRONode *last)
+void convert_cint64_to_bitfield(CInt64 *val, Type *type, TypeBitfield *type2)
 {
-    IRONode *node;
-    SInt32 count;
-    CompareCase *recs;
-    SInt32 i, j, k;
-    CompareCase *entry;
-    ENode *valueRecord;
-    CInt64 value;
-    IROLinear *object;
-    SInt32 result = 0;
-    if (first == last)
-        return 0;
-    node = first;
-    count = 0;
-    for (; node != last; node = node->nextnode)
-        count++;
-    recs = (CompareCase *)oalloc(++count * 0x1c);
-    node = first;
-    for (i = 0; i < count; i++) {
-        recs[i].state = 0;
-        recs[i].flag = 0;
-        recs[i].node = node;
-        recs[i].link = NULL;
-        object = node->last->u.branch.cond;
-        recs[i].key = get_key(object);
-        if (recs[i].key != NULL) {
-            valueRecord = node->last->u.branch.cond->u.diadic.right->u.node;
-            recs[i].val = valueRecord->data.intval;
-            recs[i].flag = 1;
-        }
-        node = node->nextnode;
-    }
-    for (j = 0; j < count; j++) {
-        if (recs[j].flag == 1 && recs[j].key != NULL) {
-            recs[j].flag = -1;
-            entry = &recs[j];
-            for (k = j + 1; k < count; k++) {
-                if (recs[j].key == recs[k].key) {
-                    entry->link = &recs[k];
-                    entry = entry->link;
-                    recs[k].flag = 0;
-                }
-            }
-        }
-    }
-    for (k = 0; k < count; k++) {
-        if (recs[k].flag == -1) {
-            for (entry = &recs[k]; entry != NULL; entry = entry->link) {
-                if (entry->state == 0) {
-                    entry->state = 2;
-                    value = entry->val;
-                    if (mark_adjacent_compare_cases(&recs[k], entry->link, &value) != 0) {
-                        result = 1;
-                        fn_00454f80(&recs[k], value);
-                    } else {
-                        entry->state = -1;
-                    }
-                }
-            }
-        }
-    }
-    return result;
-}
+    UInt32 i;
+    UInt32 j;
+    UInt32 limit;
+    CInt64 work;
+    CInt64 work2;
 
-int fn_00454f80(CompareCase *list, CInt64 value)
-{
-    CompareCase *last;
-    CompareCase *record;
-    IROLinear *expression;
-    IROLinear *leftWrapper;
-    IROLinear *rightWrapper;
-    IROLinear *operation;
-    IROLinear *constant;
-    int count;
-    CompareCase *entry;
-
-    count = 0;
-    for (entry = list; entry != NULL; entry = entry->link) {
-        if (entry->state == 2) {
-            count = count + 1;
-            last = entry;
-        }
+    work = cint64_zero;
+    limit = type2->bitlength;
+    for (i = 0; i < limit; i++) {
+        if (i < 32)
+            work.lo = work.lo | (1 << i);
     }
-    if (count == 0)
-        return 0;
+    val->lo &= work.lo;
+    val->hi = 0;
 
-    for (record = list; record != last; record = record->link) {
-        if (record->state == 2) {
-            record->state = -1;
-            IroUtil_ClearZeroOperands(record->node->last);
-            IroUtil_ClearZeroOperands(record->node->last->u.branch.cond);
+    if (!is_unsigned(type)) {
+        work2 = cint64_zero;
+        for (j = 0; j <= i - 1; j++) {
+            if (j == i - 1)
+                work2.lo = work2.lo | (1 << j);
+        }
+        if (work2.lo & val->lo) {
+            for (j = i - 1; j < 32; j++)
+                val->lo |= 1 << j;
+            val->hi = -1;
         }
     }
 
-    last->state = -1;
-    expression = last->node->last;
-    expression->u.branch.cond->nodetype = ELESSEQU;
-    expression->u.branch.cond->u.diadic.right->u.node->data.intval.hi = 0;
-    expression->u.branch.cond->u.diadic.right->u.node->data.intval.lo = count - 1;
-
-    leftWrapper = IrOptimizer_NewLinear(IROLinearOp1Arg);
-    leftWrapper->nodetype = ETYPCON;
-    leftWrapper->rtype = get_unsigned_type(expression->u.branch.cond->u.diadic.left->rtype);
-    leftWrapper->index = (linear_index_counter = linear_index_counter + 1);
-
-    rightWrapper = IrOptimizer_NewLinear(IROLinearOp1Arg);
-    *rightWrapper = *leftWrapper;
-    rightWrapper->index = (linear_index_counter = linear_index_counter + 1);
-
-    operation = IrOptimizer_NewLinear(IROLinearOp2Arg);
-    operation->nodetype = EADD;
-    operation->rtype = expression->u.branch.cond->u.diadic.left->rtype;
-    operation->index = (linear_index_counter = linear_index_counter + 1);
-
-    constant = IrOptimizer_NewLinear(IROLinearOperand);
-    constant->nodetype = EINTCONST;
-    constant->rtype = expression->u.branch.cond->u.diadic.left->rtype;
-    constant->index = (linear_index_counter = linear_index_counter + 1);
-
-    constant->u.node = IrOptimizer_NewENode(0x32);
-    constant->u.node->data.intval = CInt64_Neg(value);
-    constant->u.node->rtype = constant->rtype;
-
-    leftWrapper->next = expression->u.branch.cond->u.diadic.left->next;
-    expression->u.branch.cond->u.diadic.left->next = constant;
-    constant->next = operation;
-    operation->next = leftWrapper;
-    rightWrapper->next = expression->u.branch.cond->u.diadic.right->next;
-    expression->u.branch.cond->u.diadic.right->next = rightWrapper;
-    leftWrapper->u.monadic = operation;
-    operation->u.diadic.left = expression->u.branch.cond->u.diadic.left;
-    operation->u.diadic.right = constant;
-    expression->u.branch.cond->u.diadic.left = leftWrapper;
-    rightWrapper->u.monadic = expression->u.branch.cond->u.diadic.right;
-    expression->u.branch.cond->u.diadic.right = rightWrapper;
-
-    return count;
-}
-
-static int IsAdjacent(CInt64 d)
-{
-    if (CInt64_Equal(d, cint64_one) || CInt64_Equal(d, CInt64_Neg(cint64_one)))
-        return 1;
-    return 0;
-}
-
-SInt32 mark_adjacent_compare_cases(CompareCase *cases, CompareCase *candidate, CInt64 *minimum)
-{
-    CompareCase *current;
-
-    if (candidate == NULL)
-        return 0;
-    if (candidate->state != 0)
-        return mark_adjacent_compare_cases(cases, candidate->link, minimum);
-
-    current = cases;
-    while (current != NULL) {
-        if (current->state == 2) {
-            CInt64 difference;
-
-            if (CInt64_Equal(candidate->val, current->val)) {
-                IroUtil_ClearZeroOperands(current->node->last);
-                IroUtil_ClearZeroOperands(current->node->last->u.branch.cond);
-                current->state = -1;
-                return mark_adjacent_compare_cases(cases, candidate->link, minimum);
-            }
-            difference = CInt64_Sub(current->val, candidate->val);
-            if (IsAdjacent(difference)) {
-                candidate->state = 2;
-                if (CInt64_Greater(*minimum, current->val))
-                    *minimum = current->val;
-                if (CInt64_Greater(*minimum, candidate->val))
-                    *minimum = candidate->val;
-                mark_adjacent_compare_cases(current->link, candidate, minimum);
-                mark_adjacent_compare_cases(cases, cases->link, minimum);
-                return 1;
-            }
+    if (is_unsigned(type)) {
+        switch (type->size) {
+            case 1:
+                CInt64_ConvertUInt8(val);
+                break;
+            case 2:
+                CInt64_ConvertUInt16(val);
+                break;
+            case 4:
+                CInt64_ConvertUInt32(val);
+                break;
         }
-        current = current->link;
-    }
-    return mark_adjacent_compare_cases(cases, candidate->link, minimum);
-}
-
-int fn_00455350(IRONode *left, IRONode *right)
-{
-    Object *result;
-
-    if (left == right) {
-        IROLinear *node = left->last->u.branch.cond;
-        unsigned int matches = 0;
-        int is_kind_17 = (node != NULL && node->nodetype == EEQU);
-        if (is_kind_17) {
-            if (IroDump_IsType1NodeType50(node->u.diadic.right))
-                matches = 1;
-        }
-        if (matches)
-            result = IroDump_GetObjRef(node->u.diadic.left);
-        else
-            result = NULL;
-        if (fn_0044be00(node))
-            result = NULL;
-        return (int)result;
     } else {
-        int matches;
-        IROLinear *node = left->last;
-        CLabel *label = (CLabel *)node->u.branch.label;
-        Object *object = IroDump_GetObjRef(node->u.branch.cond->u.diadic.left);
-        int result = 0;
-        matches = 0;
-
-        if (starts_with_branch_cond(right)) {
-            if (has_label_successor(label, right))
-                matches = 1;
-        }
-        if (matches) {
-            if (get_matching_cond_objref(object, right->last->u.branch.cond))
-                result = 1;
-        }
-        return result;
-    }
-}
-
-int get_matching_cond_objref(Object *expectedResult, IROLinear *cond)
-{
-    Object *result = NULL;
-    int kindMatches = 0;
-    int payloadMatches = 0;
-
-    if (cond != NULL && cond->nodetype == EEQU)
-        kindMatches = 1;
-    if (kindMatches) {
-        if (IroDump_IsType1NodeType50(cond->u.diadic.right) != 0)
-            payloadMatches = 1;
-    }
-    if (payloadMatches)
-        result = IroDump_GetObjRef(cond->u.diadic.left);
-    else
-        result = NULL;
-    if (expectedResult == NULL || expectedResult == result) {
-        if (fn_0044be00(cond) == NULL)
-            return (int)result;
-    }
-    return 0;
-}
-
-SInt32 has_label_successor(void *id, IRONode *node)
-{
-    IROLinear *t = node->last;
-
-    switch (t->type) {
-        case IROLinearIf:
-            if (id == t->u.label)
-                return 1;
-            break;
-        case IROLinearIfNot: {
-            SInt32 i = node->numsucc;
-            while (i) {
-                if (iroNodesByIndex[node->succ[--i]]->first->u.label == id)
-                    return 1;
-            }
-            break;
-        }
-    }
-    return 0;
-}
-
-int starts_with_branch_cond(IRONode *node)
-{
-    IROLinear *n;
-
-    if (node->numpred <= 1) {
-        if (node->last->type == IROLinearIf || node->last->type == IROLinearIfNot) {
-            n = node->first;
-            while (n != node->last && (n->type == IROLinearNop || n->type == IROLinearLabel))
-                n = n->next;
-            if (n == find_leftmost_leaf(node->last->u.branch.cond))
-                return 1;
-        }
-    }
-    return 0;
-}
-
-IROLinear *find_leftmost_leaf(IROLinear *p)
-{
-    switch (p->type) {
-        case IROLinearOp1Arg:
-            return find_leftmost_leaf(p->u.monadic);
-        case IROLinearOp2Arg:
-            return find_leftmost_leaf(p->u.diadic.left);
-        case IROLinearOperand:
-            return p;
-        default:
-            return NULL;
-    }
-}
-
-Type *get_unsigned_type(Type *type)
-{
-    TypeIntegral *it = (TypeIntegral *)type;
-    if (type->type == TYPEENUM || it->type == TYPEPOINTER) {
-        if (it->size == stunsignedchar.size)
-            return (Type *)&stunsignedchar;
-        if (it->size == stunsignedint.size)
-            return (Type *)&stunsignedint;
-        if (it->size == stunsignedshort.size)
-            return (Type *)&stunsignedshort;
-        if (it->size == stunsignedlong.size)
-            return (Type *)&stunsignedlong;
-        return (Type *)&stunsignedlonglong;
-    }
-    if (it->type != TYPEINT) {
-        CError_FATAL(877);
-        return NULL;
-    }
-    if (it == &stbool || it == &stwchar)
-        return type;
-    if (it == &stchar || it == &stsignedchar || it == &stunsignedchar)
-        return (Type *)&stunsignedchar;
-    if (it == &stsignedshort || it == &stunsignedshort)
-        return (Type *)&stunsignedshort;
-    if (it == &stsignedint || it == &stunsignedint)
-        return (Type *)&stunsignedint;
-    if (it == &stsignedlong || it == &stunsignedlong)
-        return (Type *)&stunsignedlong;
-    return (Type *)&stunsignedlonglong;
-}
-
-int IRO_EvaluateConditionals(void)
-{
-    IRONode *node;
-    IROLinear *s;
-    IROLinear *type;
-    SInt32 changed;
-    SwitchInfo *g;
-    SwitchCase *p;
-    char found;
-    CInt64 v;
-
-    changed = 0;
-    for (node = iro_flowgraph_head; node != NULL; node = node->nextnode) {
-        s = node->last;
-        switch (s->type) {
-            case IROLinearIf:
-            case IROLinearIfNot:
-                type = s->u.branch.cond;
-                if (IroDump_IsType1NodeType50(type) != 0) {
-                    Boolean flag = CInt64_IsZero(&s->u.branch.cond->u.node->data.intval);
-                    IroUtil_ClearZeroOperands(s->u.branch.cond);
-                    if ((!flag != 0) == (s->type == IROLinearIf))
-                        s->type = IROLinearGoto;
-                    else
-                        s->type = IROLinearNop;
-                    changed = 1;
-                }
+        switch (type->size) {
+            case 1:
+                CInt64_ConvertInt8(val);
                 break;
-            case IROLinearSwitch:
-                type = s->u.swtch.cond;
-                if (IroDump_IsType1NodeType50(type) != 0) {
-                    v = s->u.swtch.cond->u.node->data.intval;
-                    g = s->u.swtch.info;
-                    p = g->cases;
-                    IroUtil_ClearZeroOperands(s->u.swtch.cond);
-                    s->type = IROLinearGoto;
-                    found = 0;
-                    while (p) {
-                        if (CInt64_Equal(p->min, v)) {
-                            found = 1;
-                            s->u.label = p->label;
-                            break;
-                        }
-                        p = p->next;
-                    }
-                    if (!found)
-                        s->u.label = g->defaultlabel;
-                    changed = 1;
-                }
+            case 2:
+                CInt64_ConvertInt16(val);
+                break;
+            case 4:
+                CInt64_ConvertInt32(val);
                 break;
         }
     }
-
-    if (changed) {
-        IroFlowgraph_RebuildSuccPred();
-        IroFlowgraph_ComputeDom();
-    }
-    IroVars_CheckTimedLongjmp();
-    return changed;
 }
 
 int IRO_ConstantFolding(void)
@@ -805,59 +411,457 @@ int IRO_ConstantFolding(void)
     return ((int (*)(void))IroVars_CheckTimedLongjmp)();
 }
 
-void convert_cint64_to_bitfield(CInt64 *val, Type *type, TypeBitfield *type2)
+int IRO_EvaluateConditionals(void)
 {
-    UInt32 i;
-    UInt32 j;
-    UInt32 limit;
-    CInt64 work;
-    CInt64 work2;
+    IRONode *node;
+    IROLinear *s;
+    IROLinear *type;
+    SInt32 changed;
+    SwitchInfo *g;
+    SwitchCase *p;
+    char found;
+    CInt64 v;
 
-    work = cint64_zero;
-    limit = type2->bitlength;
-    for (i = 0; i < limit; i++) {
-        if (i < 32)
-            work.lo = work.lo | (1 << i);
+    changed = 0;
+    for (node = iro_flowgraph_head; node != NULL; node = node->nextnode) {
+        s = node->last;
+        switch (s->type) {
+            case IROLinearIf:
+            case IROLinearIfNot:
+                type = s->u.branch.cond;
+                if (IroDump_IsType1NodeType50(type) != 0) {
+                    Boolean flag = CInt64_IsZero(&s->u.branch.cond->u.node->data.intval);
+                    IroUtil_ClearZeroOperands(s->u.branch.cond);
+                    if ((!flag != 0) == (s->type == IROLinearIf))
+                        s->type = IROLinearGoto;
+                    else
+                        s->type = IROLinearNop;
+                    changed = 1;
+                }
+                break;
+            case IROLinearSwitch:
+                type = s->u.swtch.cond;
+                if (IroDump_IsType1NodeType50(type) != 0) {
+                    v = s->u.swtch.cond->u.node->data.intval;
+                    g = s->u.swtch.info;
+                    p = g->cases;
+                    IroUtil_ClearZeroOperands(s->u.swtch.cond);
+                    s->type = IROLinearGoto;
+                    found = 0;
+                    while (p) {
+                        if (CInt64_Equal(p->min, v)) {
+                            found = 1;
+                            s->u.label = p->label;
+                            break;
+                        }
+                        p = p->next;
+                    }
+                    if (!found)
+                        s->u.label = g->defaultlabel;
+                    changed = 1;
+                }
+                break;
+        }
     }
-    val->lo &= work.lo;
-    val->hi = 0;
 
-    if (!is_unsigned(type)) {
-        work2 = cint64_zero;
-        for (j = 0; j <= i - 1; j++) {
-            if (j == i - 1)
-                work2.lo = work2.lo | (1 << j);
-        }
-        if (work2.lo & val->lo) {
-            for (j = i - 1; j < 32; j++)
-                val->lo |= 1 << j;
-            val->hi = -1;
+    if (changed) {
+        IroFlowgraph_RebuildSuccPred();
+        IroFlowgraph_ComputeDom();
+    }
+    IroVars_CheckTimedLongjmp();
+    return changed;
+}
+
+Type *get_unsigned_type(Type *type)
+{
+    TypeIntegral *it = (TypeIntegral *)type;
+    if (type->type == TYPEENUM || it->type == TYPEPOINTER) {
+        if (it->size == stunsignedchar.size)
+            return (Type *)&stunsignedchar;
+        if (it->size == stunsignedint.size)
+            return (Type *)&stunsignedint;
+        if (it->size == stunsignedshort.size)
+            return (Type *)&stunsignedshort;
+        if (it->size == stunsignedlong.size)
+            return (Type *)&stunsignedlong;
+        return (Type *)&stunsignedlonglong;
+    }
+    if (it->type != TYPEINT) {
+        CError_FATAL(877);
+        return NULL;
+    }
+    if (it == &stbool || it == &stwchar)
+        return type;
+    if (it == &stchar || it == &stsignedchar || it == &stunsignedchar)
+        return (Type *)&stunsignedchar;
+    if (it == &stsignedshort || it == &stunsignedshort)
+        return (Type *)&stunsignedshort;
+    if (it == &stsignedint || it == &stunsignedint)
+        return (Type *)&stunsignedint;
+    if (it == &stsignedlong || it == &stunsignedlong)
+        return (Type *)&stunsignedlong;
+    return (Type *)&stunsignedlonglong;
+}
+
+IROLinear *find_leftmost_leaf(IROLinear *p)
+{
+    switch (p->type) {
+        case IROLinearOp1Arg:
+            return find_leftmost_leaf(p->u.monadic);
+        case IROLinearOp2Arg:
+            return find_leftmost_leaf(p->u.diadic.left);
+        case IROLinearOperand:
+            return p;
+        default:
+            return NULL;
+    }
+}
+
+int starts_with_branch_cond(IRONode *node)
+{
+    IROLinear *n;
+
+    if (node->numpred <= 1) {
+        if (node->last->type == IROLinearIf || node->last->type == IROLinearIfNot) {
+            n = node->first;
+            while (n != node->last && (n->type == IROLinearNop || n->type == IROLinearLabel))
+                n = n->next;
+            if (n == find_leftmost_leaf(node->last->u.branch.cond))
+                return 1;
         }
     }
+    return 0;
+}
 
-    if (is_unsigned(type)) {
-        switch (type->size) {
-            case 1:
-                CInt64_ConvertUInt8(val);
-                break;
-            case 2:
-                CInt64_ConvertUInt16(val);
-                break;
-            case 4:
-                CInt64_ConvertUInt32(val);
-                break;
+#pragma auto_inline off
+SInt32 has_label_successor(void *id, IRONode *node)
+{
+    IROLinear *t = node->last;
+
+    switch (t->type) {
+        case IROLinearIf:
+            if (id == t->u.label)
+                return 1;
+            break;
+        case IROLinearIfNot: {
+            SInt32 i = node->numsucc;
+            while (i) {
+                if (iroNodesByIndex[node->succ[--i]]->first->u.label == id)
+                    return 1;
+            }
+            break;
         }
+    }
+    return 0;
+}
+#pragma auto_inline reset
+
+int get_matching_cond_objref(Object *expectedResult, IROLinear *cond)
+{
+    Object *result = NULL;
+    int kindMatches = 0;
+    int payloadMatches = 0;
+
+    if (cond != NULL && cond->nodetype == EEQU)
+        kindMatches = 1;
+    if (kindMatches) {
+        if (IroDump_IsType1NodeType50(cond->u.diadic.right) != 0)
+            payloadMatches = 1;
+    }
+    if (payloadMatches)
+        result = IroDump_GetObjRef(cond->u.diadic.left);
+    else
+        result = NULL;
+    if (expectedResult == NULL || expectedResult == result) {
+        if (fn_0044be00(cond) == NULL)
+            return (int)result;
+    }
+    return 0;
+}
+
+int fn_00455350(IRONode *left, IRONode *right)
+{
+    Object *result;
+
+    if (left == right) {
+        IROLinear *node = left->last->u.branch.cond;
+        unsigned int matches = 0;
+        int is_kind_17 = (node != NULL && node->nodetype == EEQU);
+        if (is_kind_17) {
+            if (IroDump_IsType1NodeType50(node->u.diadic.right))
+                matches = 1;
+        }
+        if (matches)
+            result = IroDump_GetObjRef(node->u.diadic.left);
+        else
+            result = NULL;
+        if (fn_0044be00(node))
+            result = NULL;
+        return (int)result;
     } else {
-        switch (type->size) {
-            case 1:
-                CInt64_ConvertInt8(val);
-                break;
-            case 2:
-                CInt64_ConvertInt16(val);
-                break;
-            case 4:
-                CInt64_ConvertInt32(val);
-                break;
+        int matches;
+        IROLinear *node = left->last;
+        CLabel *label = (CLabel *)node->u.branch.label;
+        Object *object = IroDump_GetObjRef(node->u.branch.cond->u.diadic.left);
+        int result = 0;
+        matches = 0;
+
+        if (starts_with_branch_cond(right)) {
+            if (has_label_successor(label, right))
+                matches = 1;
+        }
+        if (matches) {
+            if (get_matching_cond_objref(object, right->last->u.branch.cond))
+                result = 1;
+        }
+        return result;
+    }
+}
+
+SInt32 mark_adjacent_compare_cases(CompareCase *cases, CompareCase *candidate, CInt64 *minimum)
+{
+    CompareCase *current;
+
+    if (candidate == NULL)
+        return 0;
+    if (candidate->state != 0)
+        return mark_adjacent_compare_cases(cases, candidate->link, minimum);
+
+    current = cases;
+    while (current != NULL) {
+        if (current->state == 2) {
+            CInt64 difference;
+
+            if (CInt64_Equal(candidate->val, current->val)) {
+                IroUtil_ClearZeroOperands(current->node->last);
+                IroUtil_ClearZeroOperands(current->node->last->u.branch.cond);
+                current->state = -1;
+                return mark_adjacent_compare_cases(cases, candidate->link, minimum);
+            }
+            difference = CInt64_Sub(current->val, candidate->val);
+            if (IsAdjacent(difference)) {
+                candidate->state = 2;
+                if (CInt64_Greater(*minimum, current->val))
+                    *minimum = current->val;
+                if (CInt64_Greater(*minimum, candidate->val))
+                    *minimum = candidate->val;
+                mark_adjacent_compare_cases(current->link, candidate, minimum);
+                mark_adjacent_compare_cases(cases, cases->link, minimum);
+                return 1;
+            }
+        }
+        current = current->link;
+    }
+    return mark_adjacent_compare_cases(cases, candidate->link, minimum);
+}
+
+static int IsAdjacent(CInt64 d)
+{
+    if (CInt64_Equal(d, cint64_one) || CInt64_Equal(d, CInt64_Neg(cint64_one)))
+        return 1;
+    return 0;
+}
+
+int fn_00454f80(CompareCase *list, CInt64 value)
+{
+    CompareCase *last;
+    CompareCase *record;
+    IROLinear *expression;
+    IROLinear *leftWrapper;
+    IROLinear *rightWrapper;
+    IROLinear *operation;
+    IROLinear *constant;
+    int count;
+    CompareCase *entry;
+
+    count = 0;
+    for (entry = list; entry != NULL; entry = entry->link) {
+        if (entry->state == 2) {
+            count = count + 1;
+            last = entry;
         }
     }
+    if (count == 0)
+        return 0;
+
+    for (record = list; record != last; record = record->link) {
+        if (record->state == 2) {
+            record->state = -1;
+            IroUtil_ClearZeroOperands(record->node->last);
+            IroUtil_ClearZeroOperands(record->node->last->u.branch.cond);
+        }
+    }
+
+    last->state = -1;
+    expression = last->node->last;
+    expression->u.branch.cond->nodetype = ELESSEQU;
+    expression->u.branch.cond->u.diadic.right->u.node->data.intval.hi = 0;
+    expression->u.branch.cond->u.diadic.right->u.node->data.intval.lo = count - 1;
+
+    leftWrapper = IrOptimizer_NewLinear(IROLinearOp1Arg);
+    leftWrapper->nodetype = ETYPCON;
+    leftWrapper->rtype = get_unsigned_type(expression->u.branch.cond->u.diadic.left->rtype);
+    leftWrapper->index = (linear_index_counter = linear_index_counter + 1);
+
+    rightWrapper = IrOptimizer_NewLinear(IROLinearOp1Arg);
+    *rightWrapper = *leftWrapper;
+    rightWrapper->index = (linear_index_counter = linear_index_counter + 1);
+
+    operation = IrOptimizer_NewLinear(IROLinearOp2Arg);
+    operation->nodetype = EADD;
+    operation->rtype = expression->u.branch.cond->u.diadic.left->rtype;
+    operation->index = (linear_index_counter = linear_index_counter + 1);
+
+    constant = IrOptimizer_NewLinear(IROLinearOperand);
+    constant->nodetype = EINTCONST;
+    constant->rtype = expression->u.branch.cond->u.diadic.left->rtype;
+    constant->index = (linear_index_counter = linear_index_counter + 1);
+
+    constant->u.node = IrOptimizer_NewENode(0x32);
+    constant->u.node->data.intval = CInt64_Neg(value);
+    constant->u.node->rtype = constant->rtype;
+
+    leftWrapper->next = expression->u.branch.cond->u.diadic.left->next;
+    expression->u.branch.cond->u.diadic.left->next = constant;
+    constant->next = operation;
+    operation->next = leftWrapper;
+    rightWrapper->next = expression->u.branch.cond->u.diadic.right->next;
+    expression->u.branch.cond->u.diadic.right->next = rightWrapper;
+    leftWrapper->u.monadic = operation;
+    operation->u.diadic.left = expression->u.branch.cond->u.diadic.left;
+    operation->u.diadic.right = constant;
+    expression->u.branch.cond->u.diadic.left = leftWrapper;
+    rightWrapper->u.monadic = expression->u.branch.cond->u.diadic.right;
+    expression->u.branch.cond->u.diadic.right = rightWrapper;
+
+    return count;
+}
+
+SInt32 group_adjacent_compare_cases(IRONode *first, IRONode *last)
+{
+    IRONode *node;
+    SInt32 count;
+    CompareCase *recs;
+    SInt32 i, j, k;
+    CompareCase *entry;
+    ENode *valueRecord;
+    CInt64 value;
+    IROLinear *object;
+    SInt32 result = 0;
+    if (first == last)
+        return 0;
+    node = first;
+    count = 0;
+    for (; node != last; node = node->nextnode)
+        count++;
+    recs = (CompareCase *)oalloc(++count * 0x1c);
+    node = first;
+    for (i = 0; i < count; i++) {
+        recs[i].state = 0;
+        recs[i].flag = 0;
+        recs[i].node = node;
+        recs[i].link = NULL;
+        object = node->last->u.branch.cond;
+        recs[i].key = get_key(object);
+        if (recs[i].key != NULL) {
+            valueRecord = node->last->u.branch.cond->u.diadic.right->u.node;
+            recs[i].val = valueRecord->data.intval;
+            recs[i].flag = 1;
+        }
+        node = node->nextnode;
+    }
+    for (j = 0; j < count; j++) {
+        if (recs[j].flag == 1 && recs[j].key != NULL) {
+            recs[j].flag = -1;
+            entry = &recs[j];
+            for (k = j + 1; k < count; k++) {
+                if (recs[j].key == recs[k].key) {
+                    entry->link = &recs[k];
+                    entry = entry->link;
+                    recs[k].flag = 0;
+                }
+            }
+        }
+    }
+    for (k = 0; k < count; k++) {
+        if (recs[k].flag == -1) {
+            for (entry = &recs[k]; entry != NULL; entry = entry->link) {
+                if (entry->state == 0) {
+                    entry->state = 2;
+                    value = entry->val;
+                    if (mark_adjacent_compare_cases(&recs[k], entry->link, &value) != 0) {
+                        result = 1;
+                        fn_00454f80(&recs[k], value);
+                    } else {
+                        entry->state = -1;
+                    }
+                }
+            }
+        }
+    }
+    return result;
+}
+
+unsigned int fn_00454c30(IRONode *first, IRONode *limit)
+{
+    IRONode *entry;
+    IRONode *last;
+    int changed;
+    changed = 0;
+    while (first != limit) {
+        if ((first->last->type == IROLinearIf) && (fn_00455350(first, first) != 0))
+            break;
+        first = first->nextnode;
+    }
+    entry = first;
+    if (first != limit) {
+        last = first;
+        entry = last->nextnode;
+        while ((entry != limit) && (entry->last->type == IROLinearIf)) {
+            if (fn_00455350(first, entry) != 0) {
+                last = entry;
+                entry = entry->nextnode;
+            } else {
+                entry = last;
+                break;
+            }
+        }
+        if (((entry == limit) || (entry->last->type == IROLinearIfNot)) && (fn_00455350(first, entry) == 0))
+            entry = last;
+        if ((first != entry) && (group_adjacent_compare_cases(first, entry) != 0))
+            changed = 1;
+        if (entry != limit)
+            entry = entry->nextnode;
+    }
+    if ((entry != limit) && (fn_00454c30(entry, limit) != 0))
+        changed = 1;
+    return changed;
+}
+
+int fn_00454bb0(void)
+{
+    IRONode *obj;
+    IRONode *first;
+    IRONode *last;
+    IRONode *next;
+    int found;
+
+    found = 0;
+    for (obj = iro_flowgraph_head; obj != NULL; obj = obj->nextnode) {
+        if (obj->last->type == IROLinearIf || obj->last->type == IROLinearIfNot) {
+            first = last = obj;
+            while ((next = obj->nextnode) != NULL &&
+                   (next->last->type == IROLinearIf || next->last->type == IROLinearIfNot)) {
+                last = (obj = next);
+            }
+            if (first != last && fn_00454c30(first, last) != 0)
+                found = 1;
+        }
+    }
+    if (found != 0) {
+        IroFlowgraph_RebuildSuccPred();
+        IroFlowgraph_ComputeDom();
+    }
+    IroVars_CheckTimedLongjmp();
+    return found;
 }
