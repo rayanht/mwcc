@@ -1768,8 +1768,7 @@
     ],
     "include_dirs": [
       "src/frontend"
-    ],
-    "status": "NonMatching"
+    ]
   },
   "src/frontend/CPrepTokenizer.c": {
     "compiler": "pro53",

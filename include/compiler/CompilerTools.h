@@ -9,14 +9,14 @@
 extern "C" {
 #endif
 
-#pragma pack(push, 1)
+#pragma options align = mac68k
 struct GList {
     char **data;
     SInt32 size;
     SInt32 hndlsize;
     SInt32 growsize;
 };
-#pragma pack(pop)
+#pragma options align = reset
 struct Pool {
     struct PoolNode *head;
     SInt32 overhead;

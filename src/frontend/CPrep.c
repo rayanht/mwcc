@@ -61,6 +61,191 @@
 
 #include <setjmp.h>
 #include <stddef.h>
+static Macro data_0054fd08 = {NULL, NULL, NULL, 0, 1, 0, {NULL}};
+static Macro data_0054fd1c = {NULL, NULL, NULL, 0, 2, 0, {NULL}};
+static Macro data_0054fd30 = {NULL, NULL, NULL, 0, 3, 0, {NULL}};
+static Macro data_0054fd44 = {NULL, NULL, NULL, 0, 4, 0, {NULL}};
+static Macro data_0054fd58 = {NULL, NULL, NULL, 0, 5, 0, {NULL}};
+static Macro data_0054fd6c = {NULL, NULL, NULL, 0, 6, 0, {NULL}};
+static Macro data_0054fd80 = {NULL, NULL, NULL, 0, 7, 0, {NULL}};
+static Macro data_0054fd94 = {NULL, NULL, NULL, 0, 8, 0, {NULL}};
+static Macro data_0054fda8 = {NULL, NULL, NULL, 0, 9, 0, {NULL}};
+static Macro cplusplus_predefined_macro = {NULL, NULL, NULL, 0, 10, 0, {NULL}};
+static Macro data_0054fdd0 = {NULL, NULL, NULL, 0, 11, 0, {NULL}};
+static Macro data_0054fde4 = {NULL, NULL, NULL, 0, 12, 0, {NULL}};
+static Macro data_0054fdf8 = {NULL, NULL, NULL, 0, 13, 0, {NULL}};
+static Macro data_0054fe0c = {NULL, NULL, NULL, 0, 14, 0, {NULL}};
+static Macro data_0054fe20 = {NULL, NULL, NULL, 0, 15, 0, {NULL}};
+static Macro optionalNameMacro = {NULL, NULL, NULL, 0, 19, 0, {NULL}};
+static Macro data_0054fe48 = {NULL, NULL, NULL, 0, 16, 0, {NULL}};
+static Macro data_0054fe5c = {NULL, NULL, NULL, 0, 17, 0, {NULL}};
+static Macro data_0054fe70 = {NULL, NULL, NULL, 0, 18, 0, {NULL}};
+static Macro data_0054fe84 = {NULL, NULL, NULL, 0, 20, 0, {NULL}};
+static Macro data_0054fe98 = {NULL, NULL, NULL, 0, 21, 0, {NULL}};
+static Macro data_0054feac = {NULL, NULL, NULL, 0, 34, 0, {NULL}};
+static Macro data_0054fec0 = {NULL, NULL, NULL, 0, 33, 0, {NULL}};
+static Macro data_0054fed4 = {NULL, NULL, NULL, 0, 32, 0, {NULL}};
+
+static OptionEntry pragma_options[] = {
+    {"little_endian", 0x4000},
+    {"longlong", 0x77},
+    {"disable_registers", 0x8},
+    {"fp_contract", 0x9},
+    {"cats", 0x13},
+    {"force_cats", 0x14},
+    {"pool_data", 0x1F},
+    {"use_lmw_stmw", 0x22},
+    {"incompatible_return_small_structs", 0x4E},
+    {"create_file_object", 0x4F},
+    {"incompatible_sfpe_double_params", 0x50},
+    {"debug_listing", 0x6},
+    {"rsqrt", 0x51},
+    {"k63d", 0x52},
+    {"3dnow", 0x52},
+    {"cplusplus", 0x5A},
+    {"ecplusplus", 0x5B},
+    {"objective_c", 0x5C},
+    {"objc_strict", 0x5D},
+    {"ARM_conform", 0x5E},
+    {"ARM_scoping", 0x5F},
+    {"require_prototypes", 0x60},
+    {"trigraphs", 0x61},
+    {"only_std_keywords", 0x62},
+    {"enumsalwaysint", 0x63},
+    {"ANSI_strict", 0x64},
+    {"mpwc_relax", 0x65},
+    {"mpwc_newline", 0x66},
+    {"ignore_oldstyle", 0x67},
+    {"cpp_extensions", 0x68},
+    {"pointercast_lvalue", 0x69},
+    {"RTTI", 0x6A},
+    {"delete_exception", 0x6B},
+    {"oldalignment", 0x6D},
+    {"multibyteaware", 0x6F},
+    {"unsigned_char", 0x6E},
+    {"auto_inline", 0x70},
+    {"defer_codegen", 0x71},
+    {"direct_to_som", 0x72},
+    {"SOMCheckEnvironment", 0x73},
+    {"SOMCallOptimization", 0x74},
+    {"bool", 0x75},
+    {"old_enum_mangler", 0x76},
+    {"longlong_enums", 0x78},
+    {"no_tfuncinline", 0x79},
+    {"flat_include", 0x7B},
+    {"syspath_once", 0x7C},
+    {"always_import", 0x7D},
+    {"simple_class_byval", 0x7E},
+    {"wchar_type", 0x7F},
+    {"vbase_ctor_offset", 0x80},
+    {"vbase_abi_v2", 0x81},
+    {"def_inherited", 0x82},
+    {"template_patch", 0x83},
+    {"template_friends", 0x84},
+    {"faster_pch_gen", 0x85},
+    {"array_new_delete", 0x86},
+    {"dollar_identifiers", 0x87},
+    {"def_inline_tfuncs", 0x88},
+    {"arg_dep_lookup", 0x89},
+    {"simple_prepdump", 0x8A},
+    {"line_prepdump", 0x8B},
+    {"fullpath_prepdump", 0x8C},
+    {"old_mtemplparser", 0x8D},
+    {"suppress_init_code", 0x8E},
+    {"reverse_bitfields", 0x8F},
+    {"c9x", 0x90},
+    {"float_constants", 0x91},
+    {"no_static_dtors", 0x92},
+    {"longlong_prepeval", 0x93},
+    {"const_strings", 0x94},
+    {"dumpir", 0x95},
+    {"experimental", 0x96},
+    {"gcc_extensions", 0x97},
+    {"stdc_fp_contract", 0x98},
+    {"stdc_fenv_access", 0x99},
+    {"stdc_cx_limitedr", 0x9A},
+    {"microsoft_exceptions", 0x9B},
+    {"microsoft_RTTI", 0x9B},
+    {"warning_errors", 0x9C},
+    {"extended_errorcheck", 0x9D},
+    {"check_header_flags", 0x9E},
+    {"warn_illpragma", 0x9F},
+    {"warn_emptydecl", 0xA0},
+    {"warn_possunwant", 0xA1},
+    {"warn_unusedvar", 0xA2},
+    {"warn_unusedarg", 0xA3},
+    {"warn_extracomma", 0xA4},
+    {"warn_hidevirtual", 0xA5},
+    {"warn_largeargs", 0xA6},
+    {"warn_implicitconv", 0xA7},
+    {"warn_notinlined", 0xA8},
+    {"warn_structclass", 0xA9},
+    {"warn_padding", 0xAA},
+    {"warn_no_side_effect", 0xAB},
+    {"warn_resultnotused", 0xAC},
+    {"align_array_members", 0xAE},
+    {"dont_reuse_strings", 0xAF},
+    {"pool_strings", 0xB0},
+    {"explicit_zero_data", 0xB1},
+    {"readonly_strings", 0xB2},
+    {"opt_common_subs", 0xC4},
+    {"opt_loop_invariants", 0xC5},
+    {"opt_propagation", 0xC6},
+    {"opt_unroll_loops", 0xCD},
+    {"opt_lifetimes", 0xCB},
+    {"opt_strength_reduction", 0xC8},
+    {"opt_strength_reduction_strict", 0xC9},
+    {"opt_dead_code", 0xCA},
+    {"opt_dead_assignments", 0xC7},
+    {"opt_vectorize_loops", 0xCE},
+    {"exceptions", 0xB3},
+    {"dont_inline", 0xB5},
+    {"always_inline", 0xB6},
+    {"optimize_for_size", 0xC2},
+    {"peephole", 0xB7},
+    {"global_optimizer", 0xB8},
+    {"side_effects", 0xB9},
+    {"profile", 0xBA},
+    {"internal", 0x20BB},
+    {"import", 0x20BC},
+    {"export", 0x20BD},
+    {"lib_export", 0x20BE},
+    {"nosyminline", 0xBF},
+    {"force_active", 0xC0},
+    {"sym", 0xD2},
+    {NULL, 0x0},
+};
+
+#pragma options align = mac68k
+static struct CPrepRec data_0057f6c8[64];
+static SInt16 if_depth;
+static struct PFile *data_0057f94a[32];
+static struct PrepNameCacheEntry *DAT_0057f9ca;
+static UInt32 next_scaled_ticks;
+static UInt8 data_0057f9d2;
+static UInt8 data_0057f9d3;
+static SInt32 data_0057f9d4;
+static SInt32 text_offset;
+static UInt8 DAT_0057f9dc;
+static UInt8 data_0057f9dd;
+static UInt8 DAT_0057f9de;
+static struct CPrep_0043afc0_Entry saved_structalignments[128];
+static SInt16 data_0057fce0;
+static struct PragmaNode *pragma_list;
+static struct IROOptNode *saved_options;
+static struct COpts *data_0057fcea;
+static UInt8 DAT_0057fcee;
+static GList macro_text;
+static struct StorageHandle *buffered_token_storage;
+static struct BufferedToken *buffered_tokens;
+static SInt32 buffered_token_capacity;
+static SInt32 data_0057fd0c;
+static unsigned char file_cannot_opened_name[64];
+static unsigned int total_heap_size;
+static struct BufferedToken lastBufferedToken;
+static short DAT_0057fd6c;
+#pragma options align = reset
+
 /* Declarations gathered from the merged files. */
 
 typedef void (*Callback)(BufferedToken *);
@@ -1555,6 +1740,16 @@ void concatenate_and_dispatch_string_tokens(void)
     }
 }
 
+/* The linker stripped the function that used these literals; they stay in the unit's .data. */
+static void CPrep_CommentKindLiterals(const char **literals)
+{
+    literals[0] = "compiler";
+    literals[1] = "exestr";
+    literals[2] = "linker";
+    literals[3] = "user";
+    literals[4] = "lib";
+}
+
 static void CPrep_0043afc0_error(SInt32 code)
 {
     Boolean saved = data_005884fd;
@@ -3008,15 +3203,15 @@ Boolean evaluate_pragma_option(void)
         return 0;
     }
 
-    if (memcmp(data_00587fa0->name, scheduling_name, sizeof(scheduling_name)) == 0) {
+    if (memcmp(data_00587fa0->name, "scheduling", 11) == 0) {
         result = copts.instructionSchedulingMode != 0;
-    } else if (memcmp(data_00587fa0->name, floatingpoint, sizeof(floatingpoint)) == 0) {
+    } else if (memcmp(data_00587fa0->name, "floatingpoint", 14) == 0) {
         result = copts.debugEnabled;
-    } else if (memcmp(data_00587fa0->name, sfp_emulation, sizeof(sfp_emulation)) == 0) {
+    } else if (memcmp(data_00587fa0->name, "sfp_emulation", 14) == 0) {
         result = copts.operandsDebug;
-    } else if (memcmp(data_00587fa0->name, precompile_name, sizeof(precompile_name)) == 0) {
+    } else if (memcmp(data_00587fa0->name, "precompile", 11) == 0) {
         result = cprep_cu[0xe0] == 1;
-    } else if (memcmp(data_00587fa0->name, data_00550e4c, sizeof(data_00550e4c)) == 0) {
+    } else if (memcmp(data_00587fa0->name, "preprocess", 11) == 0) {
         result = cprep_cu[0xe2];
     } else {
         for (option = pragma_options; option->name != NULL; option++) {

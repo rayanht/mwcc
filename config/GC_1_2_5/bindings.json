@@ -1697,7 +1697,6 @@
   "_floatingpoint": "0x550e20",
   "_sfp_emulation": "0x550e30",
   "_precompile_name": "0x550e40",
-  "_data_00550e4c": "0x550e4c",
   "_low_bit_masks": "0x551100",
   "_limited_diagnostic_limit": "0x5511b0",
   "_data_005511b4": "0x5511b4",

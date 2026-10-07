@@ -123,6 +123,7 @@
     "src/frontend/CObjCModern.c",
     "src/frontend/CParser.c",
     "src/frontend/CPrec.c",
+    "src/frontend/CPrep.c",
     "src/frontend/CPrepTokenizer.c",
     "src/frontend/CPreprocess.c",
     "src/frontend/CRTTI.c",
