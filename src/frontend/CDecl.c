@@ -150,8 +150,8 @@ void CDecl_ParseClass(DeclInfo *ctx, SInt16 kind, Boolean advanceToken, UInt8 ex
                 if ((existing = spec.type) != NULL)
                     goto resolveDeclaration;
                 CError_ASSERT(6192, spec.name != NULL);
-                obj = CDecl_DefineClass(CScope_FindNonClassNonTemplNameSpace(cscope_current), spec.name, NULL, kind,
-                                        0, 1);
+                obj = CDecl_DefineClass(CScope_FindNonClassNonTemplNameSpace(cscope_current), spec.name, NULL, kind, 0,
+                                        1);
                 obj->eflags |= extraFlags;
         }
     }
@@ -4907,16 +4907,6 @@ inline Boolean checkType(Type *t)
         }
     }
     return 1;
-}
-
-inline Boolean CInt64_IsNegative(CInt64 *p)
-{
-    return (p->hi & 0x80000000) != 0;
-}
-
-inline Boolean CInt64_IsZero(CInt64 *p)
-{
-    return p->hi == 0 && p->lo == 0;
 }
 
 /* Type descriptor for an array with a nonconstant bound. */

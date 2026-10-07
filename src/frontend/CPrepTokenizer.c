@@ -1315,7 +1315,7 @@ int scan_numeric_literal(void)
 
     data_00588524 = 0;
     start = (char *)(currentTextPosition - 1);
-    currentTextPosition = CInt64_ScanDecString(&token_integer, start, &integerOverflow);
+    currentTextPosition = (UInt8 *)CInt64_ScanDecString(&token_integer, start, &integerOverflow);
     c = peek();
     if (c == '.' || c == 'e' || c == 'E') {
         currentTextPosition = CMach_FloatScan(start, &token_float, &floatOverflow);
@@ -1925,8 +1925,7 @@ unsigned int return_unsigned_minus_six(void)
 static inline void CPrepTokenizer_SkipLineSplices(unsigned char **position)
 {
     if (copts.multibyteaware != 0) {
-        while (**position == '\\' &&
-               COS_IsMultiByte(findSpliceLineStart((char *)*position), *position) == 0 &&
+        while (**position == '\\' && COS_IsMultiByte(findSpliceLineStart((char *)*position), *position) == 0 &&
                (*position)[1] == '\r') {
             CPrep_IncrementCountersAndUpdateTextOffset();
             if ((*position)[2] == '\n')
@@ -2006,8 +2005,7 @@ void CPrepTokenizer_SkipToEndOfLine(void)
             case '\\':
                 if (copts.multibyteaware != 0) {
                     spliceLineStart = findSpliceLineStart((char *)cursor - 1);
-                    if (COS_IsMultiByte(spliceLineStart, (unsigned char *)((char *)cursor - 1)) !=
-                        0)
+                    if (COS_IsMultiByte(spliceLineStart, (unsigned char *)((char *)cursor - 1)) != 0)
                         break;
                 }
                 if (*cursor != '\r')
@@ -2733,8 +2731,7 @@ short CPrepTokenizer_NextChar(void)
 
             case '/':
                 if (multibyte_characters_enabled()) {
-                    while (*cursor == '\\' && COS_IsMultiByte(find_start(cursor), cursor) == 0 &&
-                           cursor[1] == '\r') {
+                    while (*cursor == '\\' && COS_IsMultiByte(find_start(cursor), cursor) == 0 && cursor[1] == '\r') {
                         CPrep_IncrementCountersAndUpdateTextOffset();
                         if (cursor[2] == '\n')
                             cursor += 3;
@@ -2771,8 +2768,7 @@ short CPrepTokenizer_NextChar(void)
                         }
                         if (character == '*') {
                             if (multibyte_characters_enabled()) {
-                                while (*cursor == '\\' &&
-                                       COS_IsMultiByte(find_start(cursor), cursor) == 0 &&
+                                while (*cursor == '\\' && COS_IsMultiByte(find_start(cursor), cursor) == 0 &&
                                        cursor[1] == '\r') {
                                     CPrep_IncrementCountersAndUpdateTextOffset();
                                     if (cursor[2] == '\n')

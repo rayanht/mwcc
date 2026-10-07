@@ -450,11 +450,6 @@ Type *get_unsigned_type(Type *type)
     return (Type *)&stunsignedlonglong;
 }
 
-inline Boolean CInt64_IsZero(CInt64 *p)
-{
-    return p->hi == 0 && p->lo == 0;
-}
-
 int IRO_EvaluateConditionals(void)
 {
     IRONode *node;
@@ -514,12 +509,6 @@ int IRO_EvaluateConditionals(void)
     }
     IroVars_CheckTimedLongjmp();
     return changed;
-}
-
-static void CInt64_SetULong(Val *p, UInt32 x)
-{
-    p->w.hi = x;
-    p->w.lo = 0;
 }
 
 int IRO_ConstantFolding(void)
@@ -680,38 +669,38 @@ int IRO_ConstantFolding(void)
                             break;
                         case ELESS:
                             if (Type_IsUnsigned(node->u.diadic.left->rtype))
-                                CInt64_SetULong(&value.v, CInt64_LessU(leftValue.i, rightValue.i));
+                                CInt64_SetULong(&value.i, CInt64_LessU(leftValue.i, rightValue.i));
                             else
-                                CInt64_SetULong(&value.v, CInt64_Less(leftValue.i, rightValue.i));
+                                CInt64_SetULong(&value.i, CInt64_Less(leftValue.i, rightValue.i));
                             folded = 1;
                             break;
                         case EGREATER:
                             if (Type_IsUnsigned(node->u.diadic.left->rtype))
-                                CInt64_SetULong(&value.v, CInt64_GreaterU(leftValue.i, rightValue.i));
+                                CInt64_SetULong(&value.i, CInt64_GreaterU(leftValue.i, rightValue.i));
                             else
-                                CInt64_SetULong(&value.v, CInt64_Greater(leftValue.i, rightValue.i));
+                                CInt64_SetULong(&value.i, CInt64_Greater(leftValue.i, rightValue.i));
                             folded = 1;
                             break;
                         case ELESSEQU:
                             if (Type_IsUnsigned(node->u.diadic.left->rtype))
-                                CInt64_SetULong(&value.v, CInt64_LessEqualU(leftValue.i, rightValue.i));
+                                CInt64_SetULong(&value.i, CInt64_LessEqualU(leftValue.i, rightValue.i));
                             else
-                                CInt64_SetULong(&value.v, CInt64_LessEqual(leftValue.i, rightValue.i));
+                                CInt64_SetULong(&value.i, CInt64_LessEqual(leftValue.i, rightValue.i));
                             folded = 1;
                             break;
                         case EGREATEREQU:
                             if (Type_IsUnsigned(node->u.diadic.left->rtype))
-                                CInt64_SetULong(&value.v, CInt64_GreaterEqualU(leftValue.i, rightValue.i));
+                                CInt64_SetULong(&value.i, CInt64_GreaterEqualU(leftValue.i, rightValue.i));
                             else
-                                CInt64_SetULong(&value.v, CInt64_GreaterEqual(leftValue.i, rightValue.i));
+                                CInt64_SetULong(&value.i, CInt64_GreaterEqual(leftValue.i, rightValue.i));
                             folded = 1;
                             break;
                         case EEQU:
-                            CInt64_SetULong(&value.v, CInt64_Equal(leftValue.i, rightValue.i));
+                            CInt64_SetULong(&value.i, CInt64_Equal(leftValue.i, rightValue.i));
                             folded = 1;
                             break;
                         case ENOTEQU:
-                            CInt64_SetULong(&value.v, CInt64_NotEqual(leftValue.i, rightValue.i));
+                            CInt64_SetULong(&value.i, CInt64_NotEqual(leftValue.i, rightValue.i));
                             folded = 1;
                             break;
                     }
@@ -760,37 +749,37 @@ int IRO_ConstantFolding(void)
                             folded = 1;
                             break;
                         case ELESS:
-                            CInt64_SetULong(&value.v,
+                            CInt64_SetULong(&value.i,
                                             CMach_CalcFloatDiadicBool(node->rtype, leftValue.d, '<', rightValue.d));
                             folded = 1;
                             integerResult = 1;
                             break;
                         case EGREATER:
-                            CInt64_SetULong(&value.v,
+                            CInt64_SetULong(&value.i,
                                             CMach_CalcFloatDiadicBool(node->rtype, leftValue.d, '>', rightValue.d));
                             folded = 1;
                             integerResult = 1;
                             break;
                         case ELESSEQU:
-                            CInt64_SetULong(&value.v,
+                            CInt64_SetULong(&value.i,
                                             CMach_CalcFloatDiadicBool(node->rtype, leftValue.d, 0x16a, rightValue.d));
                             folded = 1;
                             integerResult = 1;
                             break;
                         case EGREATEREQU:
-                            CInt64_SetULong(&value.v,
+                            CInt64_SetULong(&value.i,
                                             CMach_CalcFloatDiadicBool(node->rtype, leftValue.d, 0x16b, rightValue.d));
                             folded = 1;
                             integerResult = 1;
                             break;
                         case EEQU:
-                            CInt64_SetULong(&value.v,
+                            CInt64_SetULong(&value.i,
                                             CMach_CalcFloatDiadicBool(node->rtype, leftValue.d, 0x168, rightValue.d));
                             folded = 1;
                             integerResult = 1;
                             break;
                         case ENOTEQU:
-                            CInt64_SetULong(&value.v,
+                            CInt64_SetULong(&value.i,
                                             CMach_CalcFloatDiadicBool(node->rtype, leftValue.d, 0x169, rightValue.d));
                             folded = 1;
                             integerResult = 1;
