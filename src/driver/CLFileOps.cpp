@@ -88,13 +88,13 @@ int __stdcall add_access_path(NamespaceOperationContext *context, NamespaceOpera
     int failed;
     int result;
 
-    result = MacSpecs_MakeOSSpec(&state->file, buffer.directory.path);
+    result = MacSpecs_MakeOSSpec(&state->file, &buffer);
     if (result != 0) {
         context->errorCode = OS_OSErrorToMacError(result);
         return 3;
     }
     if (optsCmdLine.verbose > 2) {
-        CLErrors_ForwardMessage(0x4d, " search path", fn_00412340(buffer.directory.path, data_005880e0, 0x104));
+        CLErrors_ForwardMessage(0x4d, " search path", fn_00412340(&buffer.path, data_005880e0, 0x104));
     }
     if (state->flag4b == 0) {
         paths = default_target;
@@ -103,7 +103,7 @@ int __stdcall add_access_path(NamespaceOperationContext *context, NamespaceOpera
         paths = default_target;
         paths_list = &paths->systemPaths;
     }
-    entry = CLAccessPaths_CreateAccessPathEntry(buffer.directory.path);
+    entry = CLAccessPaths_CreateAccessPathEntry(&buffer.path);
     if (state->index >= 0)
         failed = !CLAccessPaths_InsertItem(paths_list, state->index, entry);
     else
@@ -177,13 +177,13 @@ int __stdcall set_output_directory(CWPluginPrivateContext *record, short *input)
     int result;
     struct CLTarget *data;
 
-    result = MacSpecs_MakeOSSpec((CWFileSpec *)input, (char *)&workspace);
+    result = MacSpecs_MakeOSSpec((CWFileSpec *)input, &workspace);
     if (result != 0) {
         record->callbackOSError = OS_OSErrorToMacError(result);
         return 3;
     }
     data = default_target;
-    data->outputDirectory = workspace.directory;
+    data->outputDirectory = workspace.path;
     record->targetfile = *(CWFileSpec *)input;
     return 0;
 }
@@ -357,7 +357,7 @@ int CLFileOps_SetupOutputPath(DropinFileRecord *obj, SInt16 mask)
     char fallbackName[64];
     char pathName[260];
     char suffix[16];
-    char directoryPath[260];
+    OSPathSpec directoryPath;
     const char *outputSuffix;
     char *extension;
     UInt32 result;
@@ -423,11 +423,11 @@ int CLFileOps_SetupOutputPath(DropinFileRecord *obj, SInt16 mask)
 
             if ((obj->temporaryOutputMask & mask) != 0 && (optsCmdLine.stages & 8) == 0) {
                 directory = getenv("TEMP");
-                if (directory == NULL || *directory == 0 || OS_MakePathSpec(0, directory, directoryPath) != 0)
+                if (directory == NULL || *directory == 0 || OS_MakePathSpec(0, directory, &directoryPath) != 0)
                     directory = getenv("TMP");
-                if (directory == NULL || *directory == 0 || OS_MakePathSpec(0, directory, directoryPath) != 0)
+                if (directory == NULL || *directory == 0 || OS_MakePathSpec(0, directory, &directoryPath) != 0)
                     directory = getenv("TMPDIR");
-                if (directory == NULL || *directory == 0 || OS_MakePathSpec(0, directory, directoryPath) != 0)
+                if (directory == NULL || *directory == 0 || OS_MakePathSpec(0, directory, &directoryPath) != 0)
                     directory = ".";
                 sprintf(pathName, "%s%c%s", directory, '\\', CLProj_GetFileName(obj->inputName));
                 name = pathName;
@@ -453,7 +453,7 @@ int CLFileOps_SetupOutputPath(DropinFileRecord *obj, SInt16 mask)
 
     if (((obj->outputMask | obj->temporaryOutputMask) & mask) != 0) {
         context = default_target;
-        result = CLProj_MakeOSSpecFromPath(context->outputDirectory.path, outputName, !optsCompiler.relPathInOutputDir,
+        result = CLProj_MakeOSSpecFromPath(&context->outputDirectory, outputName, !optsCompiler.relPathInOutputDir,
                                            &obj->outputPath);
         if (result == 0) {
             if (OS_EqualSpec(&obj->inputPath, &obj->outputPath) != 0) {
@@ -468,8 +468,7 @@ int CLFileOps_SetupOutputPath(DropinFileRecord *obj, SInt16 mask)
             }
         } else {
             context = default_target;
-            CLErrors_ReportOSError(9, result, outputName,
-                                   fn_00412340(context->outputDirectory.path, data_005880e0, 0x104));
+            CLErrors_ReportOSError(9, result, outputName, fn_00412340(&context->outputDirectory, data_005880e0, 0x104));
         }
         return (result == 0);
     }
@@ -923,7 +922,7 @@ static double lbl_0054C0A8 = 0.001;
 int CLFileOps_LinkProject(void)
 {
     CWFileSpec commandLine;
-    char commandText[324];
+    OSSpec commandText;
     int startTime;
     int stageStart;
     int currentTime;
@@ -997,8 +996,8 @@ int CLFileOps_LinkProject(void)
             CLErrors_ForwardMessage(0x18, (double)(currentTime - stageStart) * 0.001, "postlink project", "", "", "");
         if (!optsLinker.keepLinkerOutput && default_target->settings->head.tag == 1) {
             if (optsCmdLine.verbose > 1) {
-                MacSpecs_MakeOSSpec(&commandLine, commandText);
-                CLErrors_ForwardMessage(0x13, OS_SpecToString((OSSpec *)commandText, data_005880e0, 0x104));
+                MacSpecs_MakeOSSpec(&commandLine, &commandText);
+                CLErrors_ForwardMessage(0x13, OS_SpecToString(&commandText, data_005880e0, 0x104));
             }
             Files_DeleteFile(&commandLine);
         }

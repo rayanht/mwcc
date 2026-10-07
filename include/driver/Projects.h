@@ -3,6 +3,7 @@
 
 #include <setjmp.h>
 #include "compiler/common.h"
+#include "driver/OS.h"
 #include "driver/CLAccessPaths.h"
 
 #ifdef __cplusplus
@@ -16,10 +17,6 @@ struct QueryValues {
     char reserved[4];
 };
 #pragma pack(pop)
-union RecoveryPathFrame {
-    OSPathBuffer copy;
-    unsigned char bytes[324];
-};
 extern jmp_buf plugin_request_jmp_buf;
 extern struct CWPluginPrivateContext *pluginPrivateContext;
 extern void ToolHelpers_cc_CallValuePairCallback(char *key, struct StorageHandle *value);
@@ -32,7 +29,7 @@ extern SInt32 ToolHelpers_cc_AddProjectEntry(OSSpec *path, SInt16 mode, char *na
 extern UInt8 data_00587e26;
 extern UInt8 data_00587e27;
 extern UInt8 data_00587e28;
-extern int ToolHelpers_cc_AddAccessPath(char *spec, char use_first, int value, unsigned char option);
+extern int ToolHelpers_cc_AddAccessPath(OSPathSpec *path, char use_first, int value, unsigned char option);
 extern void ToolHelpers_cc_PassVirtualFileValuePair(char *fileData, struct StorageHandle **virtualFile);
 extern void ToolHelpers_cc_GetOutputFileDirectory(CWFileSpec *directory);
 extern void ToolHelpers_cc_CallFileInfoForDirectory(OSSpec *input);

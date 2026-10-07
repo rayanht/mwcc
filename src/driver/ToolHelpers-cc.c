@@ -47,7 +47,7 @@ int set_output_path(char *name, int unused, char *path)
             return 0;
         }
         if (isdir2)
-            MsDos_CopyStringToBuffer(spec2.name, &output_path, 0x104);
+            MsDos_CopyStringToBuffer(&spec2.name, &output_path, 0x104);
         ToolHelpers_cc_CallFileInfoForDirectory(&spec2);
         return 1;
     }
@@ -61,7 +61,7 @@ int set_output_path(char *name, int unused, char *path)
             return 0;
         }
         output_path_set = 1;
-        MacSpecs_MakeCWFileSpecFromString((char *)&spec1, &info);
+        MacSpecs_MakeCWFileSpecFromString(&spec1, &info);
         if ((err = CWParserPluginsPrivate_CallFileInfo(pluginPrivateContext, &info)) != 0) {
             DAT_00543380 = "CWParserSetOutputFileDirectory";
             longjmp(plugin_request_jmp_buf, err);

@@ -34,7 +34,7 @@ int get_spec_from_signature_callback(const char *path, OSSpec *spec)
     l.suppressFileReferenceLookup = 1;
     l.fileKey = -1;
     if (CWPluginsPrivate_CallSignatureCallback(pluginPrivateContext, path, &l) == 0) {
-        MacSpecs_MakeOSSpec(&l.output, (char *)spec);
+        MacSpecs_MakeOSSpec(&l.output, spec);
         return 1;
     }
     return 0;
@@ -92,7 +92,7 @@ Boolean match_extension_pattern(char *pattern, char *name)
 
 int fn_0040c9e7(char *name, int recursive, char *override)
 {
-    char spec[260];
+    OSPathSpec spec;
     UInt32 err;
     char *path = override ? override : name;
     if (!path)
@@ -103,7 +103,7 @@ int fn_0040c9e7(char *name, int recursive, char *override)
         fn_0040ecb1(0xd, path + strlen(path) - 32, 0x104);
         return 0;
     }
-    err = OS_MakePathSpec(NULL, path, spec);
+    err = OS_MakePathSpec(NULL, path, &spec);
     if (err == 2 || err == 3) {
         Targets_ReportMessage(0x2d, path);
         return 1;
@@ -112,7 +112,7 @@ int fn_0040c9e7(char *name, int recursive, char *override)
         Targets_ReportOperatingSystemError(0x2d, err, path);
         return 1;
     }
-    if (!ToolHelpers_cc_AddAccessPath(spec, data_0058851b, 0, recursive ? 1 : 0))
+    if (!ToolHelpers_cc_AddAccessPath(&spec, data_0058851b, 0, recursive ? 1 : 0))
         return 0;
     return 1;
 }
@@ -137,14 +137,14 @@ int ParserHelpers_ParsePathList(char *path, char separator, char alternateSepara
     char *end;
     unsigned char plus;
     char component[260];
-    char resolved[260];
+    OSPathSpec resolved;
     plus = *path == '+';
     if (plus) {
         ++path;
     }
     if ((separator == ':' || alternateSeparator == ':') && Utils_IsAlpha(*path) != 0 && path[1] == ':' &&
-        OS_MakePathSpec(NULL, path, resolved) == 0) {
-        result = ToolHelpers_cc_AddAccessPath(resolved, option, flags, plus ^ toggle);
+        OS_MakePathSpec(NULL, path, &resolved) == 0) {
+        result = ToolHelpers_cc_AddAccessPath(&resolved, option, flags, plus ^ toggle);
     } else {
         if (strchr(path, separator) == NULL) {
             separator = alternateSeparator;
@@ -161,11 +161,11 @@ int ParserHelpers_ParsePathList(char *path, char separator, char alternateSepara
                                                     component, component + strlen(component) - 16, 260);
                 return 0;
             }
-            if (OS_MakePathSpec(NULL, component, resolved) != 0) {
+            if (OS_MakePathSpec(NULL, component, &resolved) != 0) {
                 report_environment_variable_message(Targets_ReportFormattedMessage, mode == 1 ? name : NULL, 45,
                                                     component);
             } else {
-                ToolHelpers_cc_AddAccessPath(resolved, option, flags, plus ^ toggle);
+                ToolHelpers_cc_AddAccessPath(&resolved, option, flags, plus ^ toggle);
             }
             if (*path != 0) {
                 ++path;
@@ -210,7 +210,7 @@ int fn_0040cd55(char *name, char *filter, char *override)
     if (err && (match = CLProj_FindNextMatchingEntry(path))) {
         do {
             if (filter &&
-                !match_extension_pattern(filter, MsDos_CopyStringToBuffer(match->name, match_path_buffer, 0x104)))
+                !match_extension_pattern(filter, MsDos_CopyStringToBuffer(&match->name, match_path_buffer, 0x104)))
                 Targets_ReportMessage(0x4c, CLProj_MakeRelativePath(match, NULL, match_path_buffer, 0x104), filter);
             if (!ToolHelpers_cc_AddProjectEntry(match, data_0054a0b8, data_00587d04, 1, -1)) {
                 data_00587e18++;

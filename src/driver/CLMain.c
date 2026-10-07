@@ -376,9 +376,9 @@ int CLMain_Initialize(int argc, char **argv)
     else
         clState.programName = CLProj_GetFileName(*argv);
 
-    if (CLFileOps_FindExecutable(buf, clState.programSpec.directory.path) != 0)
+    if (CLFileOps_FindExecutable(buf, clState.programSpec.path.s) != 0)
         CLErrors_EmitDiagnostic(2, buf);
-    Resources_OpenResourceFile(clState.programSpec.directory.path);
+    Resources_OpenResourceFile(&clState.programSpec);
     fn_00417750();
     did_init = 1;
     return 0;
@@ -474,13 +474,13 @@ int delete_file_and_make_path_spec(void)
         OS_Delete(&clState.makefileSpec);
     }
     if (optsCompiler.sbmPath[0] != '\0') {
-        error = OS_MakePathSpec(NULL, optsCompiler.sbmPath, clState.sbmPathSpec.path);
+        error = OS_MakePathSpec(NULL, optsCompiler.sbmPath, &clState.sbmPathSpec);
         if (error > 0) {
             CLErrors_ReportOSError(0x17, error, optsCompiler.sbmPath);
             return 1;
         }
     } else {
-        OS_GetCWD(clState.sbmPathSpec.path);
+        OS_GetCWD(&clState.sbmPathSpec);
     }
     return 0;
 }

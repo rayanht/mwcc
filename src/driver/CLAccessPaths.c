@@ -15,19 +15,18 @@
 #include <string.h>
 #include <stdlib.h>
 
-AccessPathEntry *init_access_path_entry(OSPathBuffer *src, AccessPathEntry *result)
+AccessPathEntry *init_access_path_entry(OSPathSpec *src, AccessPathEntry *result)
 {
     result->path = xmalloc(NULL, sizeof(*src));
-    *(OSPathBuffer *)result->path = *src;
+    *result->path = *src;
     result->children = NULL;
     result->auxiliary2 = 0;
     return result;
 }
 
-AccessPathEntry *CLAccessPaths_CreateAccessPathEntry(char *source)
+AccessPathEntry *CLAccessPaths_CreateAccessPathEntry(OSPathSpec *path)
 {
     AccessPathEntry *result;
-    OSPathBuffer *path = (OSPathBuffer *)source;
 
     result = xmalloc(NULL, 0x10);
     return init_access_path_entry(path, result);
@@ -134,7 +133,7 @@ unsigned short CLAccessPaths_GetCount(AccessPaths *table)
     return table->count;
 }
 
-AccessPathEntry *CLAccessPaths_FindPath(AccessPaths *table, void *value)
+AccessPathEntry *CLAccessPaths_FindPath(AccessPaths *table, OSPathSpec *value)
 {
     unsigned int index;
     AccessPathEntry *entry;
@@ -170,7 +169,7 @@ Boolean add_subdirectory_access_paths(AccessPaths *ctx, AccessPathEntry *param2)
         status = OS_ReadDir(&bufA.state, &bufB, bufC, &flag);
         if (status == 0) {
             if (flag == 0) {
-                ptr = CLAccessPaths_CreateAccessPathEntry(bufB.directory.path);
+                ptr = CLAccessPaths_CreateAccessPathEntry(&bufB.path);
                 name = CLProj_GetFileName(bufC);
                 if (*name != '(' && name[strlen(name) - 2] != ')') {
                     if (!CLAccessPaths_StoreItem(ctx, ptr))
@@ -220,7 +219,7 @@ void copy_access_paths_to_file_specs(CWFileSpec **destination, AccessPaths *path
     int validEntry;
     AccessPathEntry *entry;
     UInt16 index;
-    char pathBuffer[324];
+    OSSpec spec;
 
     for (index = 0; index < CLAccessPaths_GetCount(paths); index = index + 1) {
         entry = CLAccessPaths_GetEntry(paths, index);
@@ -231,8 +230,8 @@ void copy_access_paths_to_file_specs(CWFileSpec **destination, AccessPaths *path
         if (!validEntry) {
             CLIO_ReportAssertionFailure("path && *count > 0", "CLAccessPaths.c", 0x157);
         }
-        CLProj_MakeOSSpecFromPath(entry->path, NULL, '\0', (struct OSSpec *)pathBuffer);
-        if (MacSpecs_MakeCWFileSpecFromString(pathBuffer, *destination) == 0) {
+        CLProj_MakeOSSpecFromPath(entry->path, NULL, '\0', &spec);
+        if (MacSpecs_MakeCWFileSpecFromString(&spec, *destination) == 0) {
             CLIO_ReportAssertionFailure("OS_OSSpec_To_FSSpec(&spec, *list)", "CLAccessPaths.c", 0x159);
         }
         *destination += 1;

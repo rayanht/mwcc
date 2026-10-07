@@ -8,8 +8,8 @@
 unsigned char CLProj_InitializeCWD(Project *project)
 {
     project->targets = NULL;
-    OS_GetCWD(project->projectDirectory.directory.path);
-    OS_MakeNameSpec("", project->projectDirectory.name);
+    OS_GetCWD(&project->projectDirectory.path);
+    OS_MakeNameSpec("", &project->projectDirectory.name);
     return 1;
 }
 

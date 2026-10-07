@@ -56,7 +56,7 @@ OSSpec *__stdcall CLProj_FindNextMatchingEntry(char *name)
 {
     char entryName[0x43];
     Boolean flag;
-    char path[0x144];
+    OSSpec path;
     char *fileName;
     DirectorySearch *state;
     OSSpec *spec;
@@ -69,12 +69,12 @@ OSSpec *__stdcall CLProj_FindNextMatchingEntry(char *name)
             ++fileName;
             CLProj_CopyStringBounded(matching_entry_directory, name, fileName - name, 0x104);
         }
-        if (OS_MakePathSpec(NULL, matching_entry_directory, path) != 0)
+        if (OS_MakePathSpec(NULL, matching_entry_directory, &path.path) != 0)
             return NULL;
         CLProj_CopyStringBounded(data_0057f36b, fileName, -1, 0x40);
-        if (OS_MakeNameSpec(data_0057f36b, path + 0x104) != 0)
+        if (OS_MakeNameSpec(data_0057f36b, &path.name) != 0)
             return NULL;
-        if (OS_OpenDir(path, &directory_search) != 0)
+        if (OS_OpenDir(&path.path, &directory_search) != 0)
             return NULL;
     }
     while ((state = &directory_search, spec = &data_0057f018, OS_ReadDir(state, spec, entryName, &flag)) == 0) {
@@ -123,7 +123,8 @@ int __stdcall CLProj_MakeOSSpecFromDirectoryAndFilename(char *directory, char *f
     return make_osspec_from_path(path, output, NULL);
 }
 
-unsigned int __stdcall CLProj_MakeOSSpecFromPath(char *basePath, char *path, UInt8 useSpecialPath, OSSpec *destination)
+unsigned int __stdcall CLProj_MakeOSSpecFromPath(OSPathSpec *basePath, char *path, UInt8 useSpecialPath,
+                                                 OSSpec *destination)
 {
     int hasSpecialCharacters = 0;
     UInt8 specialCharacters;
@@ -133,10 +134,10 @@ unsigned int __stdcall CLProj_MakeOSSpecFromPath(char *basePath, char *path, UIn
         hasSpecialCharacters = 1;
     if (path == NULL) {
         if (basePath != NULL)
-            *(PathTextBuffer *)destination->directory.path = *(PathTextBuffer *)basePath;
+            destination->path = *basePath;
         else
-            OS_GetCWD(destination->directory.path);
-        return OS_MakeNameSpec("", destination->name);
+            OS_GetCWD(&destination->path);
+        return OS_MakeNameSpec("", &destination->name);
     }
     specialCharacters = hasSpecialCharacters;
     if (!((useSpecialPath && specialCharacters) || MsDos_IsAbsolutePath(path) != 0)) {
@@ -156,7 +157,7 @@ unsigned int __stdcall CLProj_MakeOSSpecFromPath(char *basePath, char *path, UIn
     return make_osspec_from_path(path, destination, NULL);
 }
 
-unsigned int __stdcall CLProj_SetFileExtension(void *file, const char *extensionAddress, unsigned char append)
+unsigned int __stdcall CLProj_SetFileExtension(OSNameSpec *file, const char *extensionAddress, unsigned char append)
 {
     char buffer[64];
     char *extensionStart;
@@ -179,7 +180,7 @@ unsigned int __stdcall CLProj_SetFileExtension(void *file, const char *extension
     return OS_MakeNameSpec(buffer, file);
 }
 
-unsigned int __stdcall CLProj_ChangeFileExtension(char *file, const char *extensionAddress)
+unsigned int __stdcall CLProj_ChangeFileExtension(OSNameSpec *file, const char *extensionAddress)
 {
     char path[64];
     char *suffix;
@@ -207,14 +208,14 @@ unsigned int __stdcall CLProj_ChangeFileExtension(char *file, const char *extens
 
 static char lbl_0054bf14[] = "%s%s";
 
-char *__stdcall CLProj_MakeRelativePath(OSSpec *source, char *base, char *destination, int capacity)
+char *__stdcall CLProj_MakeRelativePath(OSSpec *source, OSPathSpec *base, char *destination, int capacity)
 {
     char *sourceCursor;
     char *baseCursor;
     char *outputCursor;
     char sourcePath[260];
     char basePath[260];
-    char currentPath[260];
+    OSPathSpec currentPath;
     sourceCursor = sourcePath;
     baseCursor = basePath;
     OS_SpecToString(source, sourcePath, sizeof(sourcePath));
@@ -228,8 +229,8 @@ char *__stdcall CLProj_MakeRelativePath(OSSpec *source, char *base, char *destin
         }
     }
     if (base == NULL) {
-        OS_GetCWD(currentPath);
-        base = currentPath;
+        OS_GetCWD(&currentPath);
+        base = &currentPath;
     }
     if (fn_00412340(base, basePath, sizeof(basePath)) == NULL) {
         memcpy(destination, sourcePath, capacity - 1);

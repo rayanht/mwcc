@@ -74,7 +74,7 @@ int __stdcall get_file_info(int unused, int key, int unusedFlags, struct Exporte
         return 9;
     }
     memset(result, 0, sizeof(*result));
-    MacSpecs_MakeCWFileSpecFromString(record->file.inputPath.directory.path, &result->fileReference);
+    MacSpecs_MakeCWFileSpecFromString(&record->file.inputPath, &result->fileReference);
     OS_TimeToMac(record->file.sourceFileTime, &result->convertedValue);
     CLOverlays_ConvertSecondsToTimestamp(result->convertedValue, &conversion);
     CLOverlays_ConvertTimestampTo1904EpochSeconds(conversion.value, &result->convertedValue);
@@ -186,7 +186,7 @@ Boolean lookup_dependency_file(DropinRequest *state, char *request, DropinFileCa
                 flags->lookupResult = 0;
             }
         }
-        MacSpecs_MakeCWFileSpecFromString(fileSpec->directory.path, &flags->output);
+        MacSpecs_MakeCWFileSpecFromString(fileSpec, &flags->output);
         return 1;
     }
     return 0;
@@ -210,7 +210,7 @@ Boolean insert_dependency_from_path(DropinRequest *descriptor, char *argument, D
         if (entry == 0) {
             CLIO_ReportAssertionFailure("file != NULL", "CLDropinCallbacks_V10.cpp", 496);
         }
-        CLProj_MakeOSSpecFromPath(entry->inputPath.directory.path, argument, 1, context);
+        CLProj_MakeOSSpecFromPath(&entry->inputPath.path, argument, 1, context);
         flag = state->enableDependencyLookup != 0 || optsCompiler.noSysPath != 0;
         callbackFlag = !flag;
         callbackState = &state->callbackState;
@@ -228,7 +228,7 @@ Boolean insert_dependency_from_path(DropinRequest *descriptor, char *argument, D
             state->referenceValue = 0;
             state->referenceKind = 0;
         }
-        MacSpecs_MakeCWFileSpecFromString(context->directory.path, (CWFileSpec *)&state->output);
+        MacSpecs_MakeCWFileSpecFromString(context, (CWFileSpec *)&state->output);
         return 1;
     }
     return 0;
@@ -309,7 +309,7 @@ int __stdcall CLDropinCallbacks_V10_GetFileText(void *context, CWFileSpec *file,
 
     if (optsCmdLine.verbose > 3)
         CLIO_FormatAndDispatchText("Callback: %s\n", "UCBGetFileText");
-    MacSpecs_MakeOSSpec(file, path.directory.path);
+    MacSpecs_MakeOSSpec(file, &path);
     error = CLLoadAndCache_GetFileText(&path, &object, &flag);
     if (error != 0) {
         p2cstrcpy(fileName, file->fileData.file.name);
@@ -494,8 +494,8 @@ int __stdcall report_message(struct DiagnosticContext *context, struct Diagnosti
                                   data_0054cbdc[0][messageHasNewline], message);
         }
     } else {
-        MacSpecs_MakeOSSpec((CWFileSpec *)&context->sourceData, record.primaryFile.directory.path);
-        MacSpecs_MakeOSSpec(&location->file, record.file.directory.path);
+        MacSpecs_MakeOSSpec((CWFileSpec *)&context->sourceData, &record.primaryFile);
+        MacSpecs_MakeOSSpec(&location->file, &record.file);
         record.sourceLine = detail;
         record.line = location->line;
         record.column = location->column;
@@ -641,7 +641,7 @@ int __stdcall set_mod_date(int callbackContext, char *name, SInt32 *modification
     if (optsCmdLine.verbose > 3)
         CLIO_FormatAndDispatchText("Callback: %s\n", "UCBSetModDate");
 
-    MacSpecs_MakeOSSpec((CWFileSpec *)name, fileSpec.directory.path);
+    MacSpecs_MakeOSSpec((CWFileSpec *)name, &fileSpec);
 
     macTime = *modificationDate;
     if (macTime == 0)
@@ -685,11 +685,11 @@ __stdcall SInt32 add_project_entry(DropinRequest *context, CWFileSpec *file, UIn
     if (optsCmdLine.verbose > 3) {
         CLIO_FormatAndDispatchText("Callback: %s\n", "UCBAddProjectEntry");
     }
-    MacSpecs_MakeOSSpec(file, sourcePath.directory.path);
-    if (OS_IsDir(sourcePath.directory.path) != 0) {
+    MacSpecs_MakeOSSpec(file, &sourcePath);
+    if (OS_IsDir(&sourcePath) != 0) {
         return 3;
     }
-    MsDos_CopyStringToBuffer(sourcePath.name, filename, sizeof(filename));
+    MsDos_CopyStringToBuffer(&sourcePath.name, filename, sizeof(filename));
     extensionStart = filename + strlen(filename) - 1;
     while (extensionStart > filename && *extensionStart != '.') {
         extensionStart--;
@@ -1068,8 +1068,8 @@ int __stdcall cache_access_path_list(CWPluginPrivateContext *request)
     int index;
     CallbackPathEntry *entry1;
     short version;
-    char buffer0[324];
-    char buffer1[324];
+    OSSpec buffer0;
+    OSSpec buffer1;
     version = optsCmdLine.verbose;
     dirty = (char *)request->shellContext;
     if (version > 3) {
@@ -1087,8 +1087,8 @@ int __stdcall cache_access_path_list(CWPluginPrivateContext *request)
             if (source0 == 0) {
                 CLIO_ReportAssertionFailure("path", "CLDropinCallbacks_V10.cpp", 1954);
             }
-            CLProj_MakeOSSpecFromPath(source0->path, 0, 0, (struct OSSpec *)buffer0);
-            MacSpecs_MakeCWFileSpecFromString(buffer0, &entry0->file);
+            CLProj_MakeOSSpecFromPath(source0->path, 0, 0, &buffer0);
+            MacSpecs_MakeCWFileSpecFromString(&buffer0, &entry0->file);
             CLDropinCallbacks_V10_00425560_run1(entry0, source0);
         }
         dirty[4] = 0;
@@ -1102,8 +1102,8 @@ int __stdcall cache_access_path_list(CWPluginPrivateContext *request)
             if (source1 == 0) {
                 CLIO_ReportAssertionFailure("path", "CLDropinCallbacks_V10.cpp", 1988);
             }
-            CLProj_MakeOSSpecFromPath(source1->path, 0, 0, (struct OSSpec *)buffer1);
-            MacSpecs_MakeCWFileSpecFromString(buffer1, &entry1->file);
+            CLProj_MakeOSSpecFromPath(source1->path, 0, 0, &buffer1);
+            MacSpecs_MakeCWFileSpecFromString(&buffer1, &entry1->file);
             CLDropinCallbacks_V10_00425560_run1(entry1, source1);
         }
         dirty[5] = 0;

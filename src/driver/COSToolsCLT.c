@@ -151,7 +151,7 @@ void CompilerTools_MakeCWFileSpecFromPString(void *result, unsigned char *name)
     memcpy(path, name + 1, *name);
     path[*name] = 0;
     make_osspec_from_path(path, &spec, NULL);
-    MacSpecs_MakeCWFileSpecFromString((char *)&spec, (CWFileSpec *)result);
+    MacSpecs_MakeCWFileSpecFromString(&spec, (CWFileSpec *)result);
 }
 
 void CompilerTools_GetPFileFields(CWFileSpec *record, unsigned short *tag, SInt32 *value, void *data)
@@ -170,13 +170,13 @@ void CompilerTools_GetPFileFields(CWFileSpec *record, unsigned short *tag, SInt3
 void resolve_file_name_to_pascal_string(short category, int recordId, void *inputName)
 {
     CWFileSpec record;
-    char resolvedName[324];
+    OSSpec resolvedName;
 
     record.fileData.file.volumeRef = category;
     record.fileData.file.directoryId = recordId;
     copy_pstring(record.fileData.file.name, inputName);
-    if (MacSpecs_MakeOSSpec(&record, resolvedName) == 0) {
-        OS_SpecToString((OSSpec *)resolvedName, inputName, 260);
+    if (MacSpecs_MakeOSSpec(&record, &resolvedName) == 0) {
+        OS_SpecToString(&resolvedName, inputName, 260);
         CLIO_ConvertToPascalString(inputName);
     }
 }

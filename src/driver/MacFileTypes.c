@@ -117,7 +117,7 @@ SInt32 __stdcall MacFileTypes_GetFileType(OSSpec *path, UInt32 *fileType)
 
     if (data_00587e70 == NULL || data_00587e70(path, fileType) == 0) {
         if (fileFlags == 0) {
-            result = MacSpecs_MakeResourceForkSpec(path->directory.path, &resolvedPath, 0);
+            result = MacSpecs_MakeResourceForkSpec(path, &resolvedPath, 0);
             if (result == 0) {
                 result = OS_Open(&resolvedPath, 0, &resolvedFile);
                 if (result == 0) {

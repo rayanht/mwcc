@@ -29,7 +29,7 @@ struct CLTarget *CLTarg_CreateTarget(char *targetName, int processor, int operat
     target->cpu = processor;
     target->os = operatingSystem;
     target->targetKind = targetKind;
-    OS_GetCWD(target->outputDirectory.path);
+    OS_GetCWD(&target->outputDirectory);
     if (!CLSegs_InitSegments(&target->lookupPaths))
         CLIO_ReportAssertionFailure("Segments_Initialize(&targ->linkage.segs)", "CLTarg.c", 25);
     if (!CLOverlays_Init(&target->overlays))

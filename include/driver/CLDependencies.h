@@ -8,7 +8,7 @@ extern "C" {
 #endif
 
 struct AccessPathEntry {
-    char *path;
+    OSPathSpec *path;
     struct AccessPaths *children;
     unsigned int auxiliary2;
 };
@@ -63,7 +63,7 @@ extern void make_dependency_osspec(Deps *table, int index, char *output);
 extern unsigned char fn_00427ad0(Deps *table, char flags, char *key, char *argument, SInt32 *index_out,
                                  DepRecord **entry_out);
 extern Boolean dep_records_equal(Deps *table, SInt32 firstIndex, SInt32 secondIndex);
-extern AccessPathEntry *find_or_create_access_path_entry(AccessPaths *scope, char *name);
+extern AccessPathEntry *find_or_create_access_path_entry(AccessPaths *scope, OSPathSpec *name);
 extern unsigned char find_access_path_entry(AccessPathEntry *entry, char *comparison, AccessPathEntry **result,
                                             char *context);
 extern AccessPathEntry *get_access_path_entry(void);

@@ -42,7 +42,7 @@ void initialize_plugin_request(Plugin *owner, int phase)
     PluginOutputItem *item;
     struct CLTarget *target;
     OSSpec text;
-    char name[260];
+    OSPathSpec name;
 
     item = (PluginOutputItem *)owner->object->shellContext;
     item->owner = owner;
@@ -52,15 +52,15 @@ void initialize_plugin_request(Plugin *owner, int phase)
     owner->object->apiVersion = 11;
     owner->object->pluginStorage = 0;
     OS_MakeFileSpec("Project.mcp", &text);
-    MacSpecs_MakeCWFileSpecFromString(text.directory.path, &owner->object->sourcefile);
+    MacSpecs_MakeCWFileSpecFromString(&text, &owner->object->sourcefile);
     if (default_target != 0) {
         target = default_target;
-        CLProj_MakeOSSpecFromPath(target->outputDirectory.path, 0, 0, &text);
-        MacSpecs_MakeCWFileSpecFromString(text.directory.path, &owner->object->targetfile);
+        CLProj_MakeOSSpecFromPath(&target->outputDirectory, 0, 0, &text);
+        MacSpecs_MakeCWFileSpecFromString(&text, &owner->object->targetfile);
     } else {
-        OS_GetCWD(name);
-        CLProj_MakeOSSpecFromPath(name, 0, 0, &text);
-        MacSpecs_MakeCWFileSpecFromString(text.directory.path, &owner->object->targetfile);
+        OS_GetCWD(&name);
+        CLProj_MakeOSSpecFromPath(&name, 0, 0, &text);
+        MacSpecs_MakeCWFileSpecFromString(&text, &owner->object->targetfile);
     }
     owner->object->shellSignature = 0x43574945;
     owner->object->contextSignature = (void *)CLPlugins_GetPluginDesc(owner)->type;
@@ -170,7 +170,7 @@ Boolean CLPluginRequests_SetupFileRequest(Plugin *job, DropinFileRecord *input, 
     initialize_plugin_request(job, 0);
     ctx = job->object;
     *ctx->targetSettings = *default_target->settings;
-    MacSpecs_MakeCWFileSpecFromString(input->inputPath.directory.path, &ctx->contextData.payload);
+    MacSpecs_MakeCWFileSpecFromString(&input->inputPath, &ctx->contextData.payload);
     if (CLDropinCallbacks_V10_GetFileText(ctx, &ctx->contextData.payload, &ctx->callbackValue, &ctx->callbackFlags,
                                           &result))
         return 0;
@@ -228,7 +228,7 @@ Boolean CLPluginRequests_InitializeTargetSettings(CLTarget *input, Plugin *plugi
         *(struct TgtRec *)requestInput->settings = *pluginData->targetSettings;
     } else {
         OS_MakeFileSpec("(unknown file)", &path);
-        MacSpecs_MakeCWFileSpecFromString(path.directory.path, &file);
+        MacSpecs_MakeCWFileSpecFromString(&path, &file);
         ((struct TgtRec *)requestInput->settings)->head.tag = 1;
         ((struct TgtRec *)requestInput->settings)->head.firstFile = file;
         ((struct TgtRec *)requestInput->settings)->head.secondFile = file;

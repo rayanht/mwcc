@@ -114,7 +114,7 @@ Boolean dep_records_equal(Deps *table, SInt32 firstIndex, SInt32 secondIndex)
     return result;
 }
 
-AccessPathEntry *find_or_create_access_path_entry(AccessPaths *scope, char *name)
+AccessPathEntry *find_or_create_access_path_entry(AccessPaths *scope, OSPathSpec *name)
 {
     AccessPathEntry *result = CLAccessPaths_FindPath(scope, name);
     if (result == NULL) {
@@ -188,7 +188,7 @@ void append_dep_record(Deps *deps, char *name, UInt8 flag, AccessPathEntry *obj,
         resolvedType = find_or_create_access_path_entry(deps->scope, obj->path);
     } else {
         OS_MakeFileSpec(name, &buf);
-        resolvedType = find_or_create_access_path_entry(deps->scope, buf.directory.path);
+        resolvedType = find_or_create_access_path_entry(deps->scope, &buf.path);
     }
     rec->resolvedPath = resolvedType;
     rec->contextPath = get_access_path_entry();
@@ -215,7 +215,7 @@ unsigned char CLDependencies_FindFile(Deps *dependencies, char *file, char searc
 
     *index = -1;
     found = 0;
-    cached = fn_00427ad0(dependencies, searchFirst, file, context->directory.path, index, &record);
+    cached = fn_00427ad0(dependencies, searchFirst, file, context->path.s, index, &record);
     if (cached != 0) {
         if (record->contextPath == data_0054d898) {
             found = 1;
@@ -233,27 +233,27 @@ unsigned char CLDependencies_FindFile(Deps *dependencies, char *file, char searc
         } else {
             result = lookupText = get_access_path_entry();
             if (lookupText != NULL) {
-                found = find_access_path_entry(result, file, &result, context->directory.path);
+                found = find_access_path_entry(result, file, &result, context->path.s);
                 value = NULL;
             }
             if (found == 0 && cached != 0) {
                 lookupText = NULL;
                 result = record->resolvedPath;
                 value = record->searchPath;
-                make_dependency_osspec(dependencies, *index, context->directory.path);
+                make_dependency_osspec(dependencies, *index, context->path.s);
                 found = 1;
             }
             if (found == 0 && searchFirst != 0) {
                 searchMode = 1;
                 result = NULL;
                 found = find_dependency_access_path_entry(&dependencies->target->systemPaths, file, &value,
-                                                          context->directory.path);
+                                                          context->path.s);
             }
             if (found == 0) {
                 searchMode = 0;
                 result = NULL;
-                found = find_dependency_access_path_entry(&dependencies->target->userPaths, file, &value,
-                                                          context->directory.path);
+                found =
+                    find_dependency_access_path_entry(&dependencies->target->userPaths, file, &value, context->path.s);
             }
         }
         if (found != 0 && *index < 0) {
@@ -275,8 +275,8 @@ Boolean initialize_four_words(DependencyCollection *value, struct Deps *fourth)
 
 SInt32 CLDependencies_SetAccessPath(OSSpec *name, Boolean flag)
 {
-    char buffer[260];
-    char *path;
+    OSPathSpec buffer;
+    OSPathSpec *path;
 
     switch (optsCompiler.includeSearch) {
         case 2:
@@ -285,8 +285,8 @@ SInt32 CLDependencies_SetAccessPath(OSSpec *name, Boolean flag)
         case 0:
             if (!flag)
                 return 1;
-            OS_GetCWD(buffer);
-            path = buffer;
+            OS_GetCWD(&buffer);
+            path = &buffer;
             break;
         case 1:
             if (!flag)
@@ -294,10 +294,10 @@ SInt32 CLDependencies_SetAccessPath(OSSpec *name, Boolean flag)
             /* fall through */
         case 3:
             if (name != NULL) {
-                path = name->directory.path;
+                path = &name->path;
             } else {
-                OS_GetCWD(buffer);
-                path = buffer;
+                OS_GetCWD(&buffer);
+                path = &buffer;
             }
             break;
         default:

@@ -130,7 +130,7 @@ MacSpecEntry *find_or_create_child_entry(MacSpecEntry *table, char *name)
     return entry;
 }
 
-int find_or_create_spec_entry(char *spec, unsigned int *typePtr, unsigned int *offsetPtr)
+int find_or_create_spec_entry(OSPathSpec *spec, unsigned int *typePtr, unsigned int *offsetPtr)
 {
     char str[0x104];
     char name[0x40];
@@ -197,7 +197,7 @@ void lookup_spec_and_advance_parent(int *id, int *kind, unsigned int **result)
     }
 }
 
-int find_or_create_spec_entry_negated(char *input, unsigned int *firstResult, unsigned int *secondResult)
+int find_or_create_spec_entry_negated(OSPathSpec *input, unsigned int *firstResult, unsigned int *secondResult)
 {
     if (find_or_create_spec_entry(input, firstResult, secondResult) != 0) {
         *firstResult = -*firstResult;
@@ -246,7 +246,7 @@ int build_name_and_backslash_path(int a, int b, void *buffer1, void *buffer2)
     return 1;
 }
 
-int __stdcall parse_value_and_offset(char *text, unsigned short *value, unsigned int *offset)
+int __stdcall parse_value_and_offset(OSPathSpec *text, unsigned short *value, unsigned int *offset)
 {
     unsigned int parsedValue;
     unsigned int parsedOffset;
@@ -261,26 +261,26 @@ int __stdcall parse_value_and_offset(char *text, unsigned short *value, unsigned
     return 3;
 }
 
-int __stdcall MacSpecs_MakeCWFileSpecFromString(char *input, CWFileSpec *output)
+int __stdcall MacSpecs_MakeCWFileSpecFromString(OSSpec *input, CWFileSpec *output)
 {
     UInt16 volumeRef;
     unsigned int directoryId;
     int status;
 
-    status = parse_value_and_offset(input, &volumeRef, &directoryId);
+    status = parse_value_and_offset(&input->path, &volumeRef, &directoryId);
     output->fileData.file.volumeRef = volumeRef;
     output->fileData.file.directoryId = directoryId;
     if (status != 0) {
         return status;
     }
-    if (MsDos_CopyStringToBuffer(input + 0x104, file_name_buffer, 0x40) == NULL) {
+    if (MsDos_CopyStringToBuffer(&input->name, file_name_buffer, 0x40) == NULL) {
         return 0x6f;
     }
     c2pstrcpy(output->fileData.file.name, file_name_buffer);
     return 0;
 }
 
-DWORD __stdcall fn_00413670(short kind, int value, char *path)
+DWORD __stdcall fn_00413670(short kind, int value, OSPathSpec *path)
 {
     unsigned int directoryLength;
     unsigned int nameLength;
@@ -298,30 +298,30 @@ DWORD __stdcall fn_00413670(short kind, int value, char *path)
         directoryLength = strlen(DAT_0057e818);
         nameLength = strlen(DAT_0057e858);
         if ((int)(directoryLength + nameLength) < 0x104) {
-            memcpy(path, DAT_0057e818, directoryLength);
-            memcpy(path + directoryLength, DAT_0057e858, 1 + nameLength);
+            memcpy(path->s, DAT_0057e818, directoryLength);
+            memcpy(path->s + directoryLength, DAT_0057e858, 1 + nameLength);
         }
     }
     return 0;
 }
 
 /* Unused lookup request declaration removed: no accesses or allocations. */
-int __stdcall MacSpecs_MakeOSSpec(CWFileSpec *record, char *buffer)
+int __stdcall MacSpecs_MakeOSSpec(CWFileSpec *record, OSSpec *spec)
 {
-    int result = fn_00413670(record->fileData.file.volumeRef, record->fileData.file.directoryId, buffer);
+    int result = fn_00413670(record->fileData.file.volumeRef, record->fileData.file.directoryId, &spec->path);
     if (result != 0) {
         return result;
     }
     p2cstrcpy(file_name_buffer, record->fileData.file.name);
-    return OS_MakeNameSpec(file_name_buffer, buffer + 0x104);
+    return OS_MakeNameSpec(file_name_buffer, &spec->name);
 }
 
-int __stdcall MacSpecs_MakeResourceForkSpec(char *source, OSSpec *destination, char retryOnError)
+int __stdcall MacSpecs_MakeResourceForkSpec(OSSpec *source, OSSpec *destination, char retryOnError)
 {
     char pathBuffer[0x104];
     DWORD error;
 
-    fn_00412340(source, pathBuffer, 0x104);
+    fn_00412340(&source->path, pathBuffer, 0x104);
 
     error = CLProj_MakeOSSpecFromDirectoryAndFilename(pathBuffer, "RESOURCE.FRK", destination);
     if (error != 0)
@@ -345,7 +345,7 @@ int __stdcall MacSpecs_MakeResourceForkSpec(char *source, OSSpec *destination, c
             return 0x10b;
     }
 
-    error = OS_MakeNameSpec(MsDos_CopyStringToBuffer(source + 0x104, data_005880e0, 0x104), destination->name);
+    error = OS_MakeNameSpec(MsDos_CopyStringToBuffer(&source->name, data_005880e0, 0x104), &destination->name);
     if (error != 0)
         return error;
     return 0;

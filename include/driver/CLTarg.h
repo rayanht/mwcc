@@ -2,6 +2,7 @@
 #define DRIVER_CLTARG_H
 
 #include "compiler/common.h"
+#include "driver/OS.h"
 #include "driver/CLAccessPaths.h"
 #include "driver/CLDependencies.h"
 #include "driver/CLFiles.h"
@@ -12,9 +13,6 @@
 extern "C" {
 #endif
 
-struct CLTargetDirectory {
-    char path[0x104];
-};
 /* The target the command line builds (CLTarg_CreateTarget makes it; default_target is the current one): its counts, file
    lists, access paths, overlays and the plugins that link it. Members are placed as every reader of default_target
    reads them; the unnamed stretches are not read anywhere. */
@@ -42,7 +40,7 @@ struct CLTarget {
     UInt32 preLinkerFlags;
     UInt32 linkerFlags;
     UInt32 postLinkerFlags;
-    CLTargetDirectory outputDirectory;
+    OSPathSpec outputDirectory;
     struct ChainRecord *fileLookup;
     struct CLTarget *next;
 };

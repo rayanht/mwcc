@@ -2,6 +2,7 @@
 #define DRIVER_CLMAIN_H
 
 #include "compiler/common.h"
+#include "driver/OS.h"
 #include "driver/Memory.h"
 #include "driver/PrefPanels.h"
 #include "driver/MsDos.h"
@@ -35,7 +36,7 @@ struct CLState {
     char withholdWarnings;
     char withholdErrors;
     OSSpec makefileSpec;
-    CLTargetDirectory sbmPathSpec;
+    OSPathSpec sbmPathSpec;
     MemBuffer browseTableHandle;
 };
 extern CLState clState;

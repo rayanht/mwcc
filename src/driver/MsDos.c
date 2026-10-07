@@ -354,7 +354,7 @@ DWORD __stdcall fn_00411780(OSSpec *path)
     BOOL created;
     DWORD error;
 
-    convertedPath = fn_00412340(path->directory.path, DAT_0057e308, 0x104);
+    convertedPath = fn_00412340(&path->path, DAT_0057e308, 0x104);
     if (convertedPath == NULL) {
         return 0x6f;
     }
@@ -375,16 +375,16 @@ void ensure_trailing_backslash(char *path)
     }
 }
 
-DWORD __stdcall OS_GetCWD(char *text)
+DWORD __stdcall OS_GetCWD(OSPathSpec *spec)
 {
     DWORD result;
 
-    result = GetCurrentDirectoryA(0x104, text);
+    result = GetCurrentDirectoryA(0x104, spec->s);
     if (result == 0) {
         result = GetLastError();
         return result;
     }
-    ensure_trailing_backslash(text);
+    ensure_trailing_backslash(spec->s);
     return 0;
 }
 
@@ -657,17 +657,17 @@ int __stdcall make_osspec_from_path(const char *path, OSSpec *output, Boolean *i
     }
     length = filename - resolved_path;
     if (length >= 260) {
-        output->directory.path[0] = 0;
+        output->path.s[0] = 0;
         return 111;
     }
-    memcpy(output->directory.path, resolved_path, length);
-    output->directory.path[length] = 0;
+    memcpy(output->path.s, resolved_path, length);
+    output->path.s[length] = 0;
     name_length = strlen(filename);
     if (name_length >= 64) {
-        output->name[0] = 0;
+        output->name.s[0] = 0;
         return 111;
     }
-    memcpy(output->name, filename, name_length + 1);
+    memcpy(output->name.s, filename, name_length + 1);
     return 0;
 }
 
@@ -687,7 +687,7 @@ SInt32 __stdcall OS_MakeFileSpec(const char *input, OSSpec *output)
     return 0;
 }
 
-__stdcall UInt32 OS_MakePathSpec(char *directory, char *path, char *spec)
+__stdcall UInt32 OS_MakePathSpec(char *directory, char *path, OSPathSpec *spec)
 {
     OSSpec name;
     Boolean flag;
@@ -717,7 +717,7 @@ __stdcall UInt32 OS_MakePathSpec(char *directory, char *path, char *spec)
             strcpy(buffer, ".");
     }
     status = make_osspec_from_path(buffer, &name, &flag);
-    strcpy(spec, (char *)&name);
+    strcpy(spec->s, name.path.s);
     if (status == 0 && OS_Status(&name) != 0) {
         status = 3;
         flag = 0;
@@ -729,7 +729,7 @@ __stdcall UInt32 OS_MakePathSpec(char *directory, char *path, char *spec)
     return 0;
 }
 
-int __stdcall OS_MakeNameSpec(const char *name, char *destination)
+int __stdcall OS_MakeNameSpec(const char *name, OSNameSpec *spec)
 {
     int length;
 
@@ -743,7 +743,7 @@ int __stdcall OS_MakeNameSpec(const char *name, char *destination)
     if (strpbrk(name, "<>:\"/\\|") != NULL) {
         return 0x7b;
     }
-    memcpy(destination, name, length + 1);
+    memcpy(spec->s, name, length + 1);
     return 0;
 }
 
@@ -753,7 +753,7 @@ char *__stdcall OS_SpecToString(OSSpec *spec, char *destination, int capacity)
     int pathLength;
 
     if (capacity == 0) {
-        capacity = sizeof(spec->directory.path);
+        capacity = sizeof(spec->path.s);
     }
     if (destination == NULL) {
         destination = (char *)malloc(capacity);
@@ -761,8 +761,8 @@ char *__stdcall OS_SpecToString(OSSpec *spec, char *destination, int capacity)
             return NULL;
         }
     }
-    pathLength = strlen(spec->directory.path);
-    nameLength = strlen(spec->name);
+    pathLength = strlen(spec->path.s);
+    nameLength = strlen(spec->name.s);
     if (pathLength + nameLength >= capacity) {
         if (pathLength >= capacity) {
             nameLength = 0;
@@ -771,13 +771,13 @@ char *__stdcall OS_SpecToString(OSSpec *spec, char *destination, int capacity)
             nameLength = (capacity - pathLength) - 1;
         }
     }
-    memcpy(destination, spec->directory.path, pathLength);
-    memcpy(destination + pathLength, spec->name, nameLength);
+    memcpy(destination, spec->path.s, pathLength);
+    memcpy(destination + pathLength, spec->name.s, nameLength);
     destination[pathLength + nameLength] = 0;
     return destination;
 }
 
-char *__stdcall fn_00412340(char *source, char *destination, unsigned int capacity)
+char *__stdcall fn_00412340(const OSPathSpec *spec, char *destination, unsigned int capacity)
 {
     int length;
 
@@ -790,16 +790,16 @@ char *__stdcall fn_00412340(char *source, char *destination, unsigned int capaci
             return NULL;
         }
     }
-    length = strlen(source);
+    length = strlen(spec->s);
     if (length >= (int)capacity) {
         length = capacity - 1;
     }
-    memcpy(destination, source, length);
+    memcpy(destination, spec->s, length);
     destination[length] = 0;
     return destination;
 }
 
-char *__stdcall MsDos_CopyStringToBuffer(char *source, char *buffer, unsigned int capacity)
+char *__stdcall MsDos_CopyStringToBuffer(const OSNameSpec *spec, char *buffer, unsigned int capacity)
 {
     int length;
 
@@ -812,11 +812,11 @@ char *__stdcall MsDos_CopyStringToBuffer(char *source, char *buffer, unsigned in
             return NULL;
         }
     }
-    length = strlen(source);
+    length = strlen(spec->s);
     if (length >= (int)capacity) {
         length = capacity - 1;
     }
-    memcpy(buffer, source, length);
+    memcpy(buffer, spec->s, length);
     buffer[length] = 0;
     return buffer;
 }
@@ -827,9 +827,9 @@ int __stdcall OS_EqualSpec(const struct OSSpec *first, const struct OSSpec *seco
     int matches;
 
     matches = 0;
-    comparisonResult = OS_EqualPathSpec(first->directory.path, second->directory.path);
+    comparisonResult = OS_EqualPathSpec(&first->path, &second->path);
     if (comparisonResult != 0) {
-        comparisonResult = equal_path(first->name, second->name);
+        comparisonResult = equal_path(&first->name, &second->name);
         if (comparisonResult != 0) {
             matches = 1;
         }
@@ -837,22 +837,22 @@ int __stdcall OS_EqualSpec(const struct OSSpec *first, const struct OSSpec *seco
     return matches;
 }
 
-unsigned int __stdcall OS_EqualPathSpec(const char *left, const char *right)
+unsigned int __stdcall OS_EqualPathSpec(const OSPathSpec *left, const OSPathSpec *right)
 {
-    return OS_EqualPath(left, right);
+    return OS_EqualPath(left->s, right->s);
 }
 
-unsigned int __stdcall equal_path(const char *left, const char *right)
+unsigned int __stdcall equal_path(const OSNameSpec *left, const OSNameSpec *right)
 {
-    return OS_EqualPath(left, right);
+    return OS_EqualPath(left->s, right->s);
 }
 
-int __stdcall OS_IsDir(char *path)
+int __stdcall OS_IsDir(OSSpec *spec)
 {
     DWORD attributes;
     int length;
 
-    if (OS_SpecToString((OSSpec *)path, DAT_0057e308, 0x104) == NULL)
+    if (OS_SpecToString(spec, DAT_0057e308, 0x104) == NULL)
         return 0x6f;
     length = strlen(DAT_0057e308);
     if (DAT_0057e308[length - 1] == '\\')
@@ -884,7 +884,7 @@ int __stdcall OS_IsFile(OSSpec *spec)
     return (attributes & 0x10) == 0;
 }
 
-int __stdcall MsDos_ReturnZero(char *argument)
+int __stdcall MsDos_ReturnZero(OSSpec *spec)
 {
     return 0;
 }
@@ -896,7 +896,7 @@ int __stdcall fn_004125b0(const OSSpec *source, OSSpec *destination)
     return 0;
 }
 
-DWORD __stdcall OS_OpenDir(char *path, struct DirectorySearch *directory)
+DWORD __stdcall OS_OpenDir(OSPathSpec *spec, struct DirectorySearch *directory)
 {
     LPWIN32_FIND_DATAA findData;
     HANDLE handle;
@@ -908,8 +908,8 @@ DWORD __stdcall OS_OpenDir(char *path, struct DirectorySearch *directory)
     if (directory->findData == NULL) {
         return 8;
     }
-    directory->path = *(OSPathBuffer *)path;
-    strcpy(pattern, path);
+    directory->path = *spec;
+    strcpy(pattern, spec->s);
     strcat(pattern, "*");
     handle = FindFirstFileA(pattern, directory->findData);
     directory->handle = handle;
@@ -941,10 +941,10 @@ UInt32 __stdcall OS_ReadDir(DirectorySearch *state, OSSpec *spec, char *filename
             continue;
         if (memcmp(name, "..", 3) == 0)
             continue;
-        if (strlen(state->path.path) + strlen(name) >= 0x104)
+        if (strlen(state->path.s) + strlen(name) >= 0x104)
             continue;
-        len = strlen(state->path.path);
-        strncpy(path, state->path.path, 0x103);
+        len = strlen(state->path.s);
+        strncpy(path, state->path.s, 0x103);
         if (len < 0x104) {
             strncpy(path + len, name, 0x103 - len);
             path[0x103] = 0;
@@ -1213,9 +1213,8 @@ int short_predecessor(short value)
     return -1;
 }
 
-DWORD __stdcall MacSpecs_LoadMacResource(char *path, LPVOID *resourceData, DWORD *resourceSize)
+DWORD __stdcall MacSpecs_LoadMacResource(OSSpec *spec, LPVOID *resourceData, DWORD *resourceSize)
 {
-    OSSpec *spec = (OSSpec *)path;
     char *convertedPath;
     HMODULE module;
     HRSRC resource;

@@ -2,6 +2,7 @@
 #define DRIVER_CLACCESSPATHS_H
 
 #include "compiler/common.h"
+#include "driver/OS.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -15,9 +16,6 @@ struct AccessPaths {
     UInt16 count;    /* 0x06: allocate_slot increments; CLAccessPaths_GetCount returns the entry count. */
 };
 #pragma pack(pop)
-struct OSPathBuffer {
-    char path[260];
-};
 extern void copy_access_paths_to_file_specs_checked(CWFileSpec *path, AccessPaths *value, short result);
 extern unsigned char CLAccessPaths_FreeItems(AccessPaths *paths);
 extern unsigned char CLAccessPaths_StoreItem(AccessPaths *ctx, void *value);
@@ -28,12 +26,12 @@ extern unsigned char CLAccessPaths_InitializeChildren(AccessPathEntry *path);
 extern int count_access_paths_recursive(AccessPaths *a0);
 extern void copy_access_paths_to_file_specs(CWFileSpec **destination, AccessPaths *paths, short *remaining);
 extern Boolean allocate_slot(AccessPaths *table, UInt16 *slotIndex);
-extern AccessPathEntry *CLAccessPaths_FindPath(AccessPaths *table, void *value);
+extern AccessPathEntry *CLAccessPaths_FindPath(AccessPaths *table, OSPathSpec *value);
 extern Boolean CLAccessPaths_InsertItem(AccessPaths *paths, UInt16 index, void *value);
 extern Boolean add_subdirectory_access_paths(AccessPaths *ctx, AccessPathEntry *param2);
 extern unsigned char remove_access_path(AccessPaths *list, UInt16 index);
-extern AccessPathEntry *init_access_path_entry(OSPathBuffer *src, AccessPathEntry *result);
-extern AccessPathEntry *CLAccessPaths_CreateAccessPathEntry(char *source);
+extern AccessPathEntry *init_access_path_entry(OSPathSpec *src, AccessPathEntry *result);
+extern AccessPathEntry *CLAccessPaths_CreateAccessPathEntry(OSPathSpec *path);
 extern void free_access_path_entry(AccessPathEntry *blocks);
 
 #ifdef __cplusplus

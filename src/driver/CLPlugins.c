@@ -357,7 +357,7 @@ UInt8 CLPlugins_WriteObjectFile(Plugin *plugin, struct CWFileSpec *context, stru
         callbackResult = (*plugin->targetCallbacks->writeObjectFile)(context, input, objectFlags, option, objectHandle);
         return callbackResult == 0;
     }
-    MacSpecs_MakeOSSpec(input, outputSpec.directory.path);
+    MacSpecs_MakeOSSpec(input, &outputSpec);
     objectBuffer = Memory_GetSizeAddress((struct StorageHandle *)objectHandle);
     result = fn_00415090(&outputSpec, objectFlags, option, objectBuffer);
     return result;

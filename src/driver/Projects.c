@@ -136,7 +136,7 @@ SInt32 ToolHelpers_cc_AddProjectEntry(OSSpec *path, SInt16 mode, char *name, Boo
     long *link;
     int error;
 
-    error = MacSpecs_MakeCWFileSpecFromString((char *)path, fileSpec);
+    error = MacSpecs_MakeCWFileSpecFromString(path, fileSpec);
     if (error != 0) {
         Targets_ReportOperatingSystemError(0x2c, error, CLProj_MakeRelativePath(path, NULL, data_005880e0, 0x104));
         result = 0;
@@ -173,7 +173,7 @@ SInt32 ToolHelpers_cc_AddProjectEntry(OSSpec *path, SInt16 mode, char *name, Boo
     return result;
 }
 
-int ToolHelpers_cc_AddAccessPath(char *spec, char use_first, int value, unsigned char option)
+int ToolHelpers_cc_AddAccessPath(OSPathSpec *path, char use_first, int value, unsigned char option)
 {
     int status;
     int result;
@@ -182,12 +182,12 @@ int ToolHelpers_cc_AddAccessPath(char *spec, char use_first, int value, unsigned
     char option_b;
     unsigned int update_status;
     FileOperationInfo info;
-    char path_buffer[324];
+    OSSpec spec;
     struct QueryValues values;
-    CLProj_MakeOSSpecFromPath(spec, NULL, 0, (OSSpec *)path_buffer);
-    status = MacSpecs_MakeCWFileSpecFromString(path_buffer, &info.file.fileReference);
+    CLProj_MakeOSSpecFromPath(path, NULL, 0, &spec);
+    status = MacSpecs_MakeCWFileSpecFromString(&spec, &info.file.fileReference);
     if (status != 0) {
-        Targets_ReportOperatingSystemError(45, status, fn_00412340(path_buffer, data_005880e0, 260));
+        Targets_ReportOperatingSystemError(45, status, fn_00412340(&spec.path, data_005880e0, 260));
         result = 0;
     } else {
         if (value == -2) {
@@ -260,10 +260,10 @@ void ToolHelpers_cc_GetOutputFileDirectory(CWFileSpec *directory)
 void ToolHelpers_cc_CallFileInfoForDirectory(OSSpec *input)
 {
     CWFileSpec body;
-    union RecoveryPathFrame frame;
+    OSSpec spec;
     int result;
-    frame.copy = *(OSPathBuffer *)input->directory.path;
-    MacSpecs_MakeCWFileSpecFromString((char *)&frame.copy, &body);
+    spec.path = input->path;
+    MacSpecs_MakeCWFileSpecFromString(&spec, &body);
     result = CWParserPluginsPrivate_CallFileInfo(pluginPrivateContext, &body);
     if (result != 0U) {
         DAT_00543380 = "CWParserSetOutputFileDirectory";

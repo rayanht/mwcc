@@ -39,7 +39,7 @@ int fn_004286d0(DropinFileRecord *input, unsigned int processingMode, unsigned i
         extension = optsCompiler.browseFileExt;
     else
         extension = objectFlags->brsFileExt;
-    CLProj_ChangeFileExtension(state.name, extension);
+    CLProj_ChangeFileExtension(&state.name, extension);
     if (optsCmdLine.verbose != 0) {
         char *result = CLProj_MakeRelativePath(&state, NULL, data_005880e0, 260);
         CLErrors_ForwardMessage(17, result);

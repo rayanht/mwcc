@@ -73,7 +73,7 @@ int build_tool_command_line(int flags, DropinFileRecord *tool, struct ToolComman
 {
     int index;
     struct ToolArgumentSet *argument_set;
-    char path[324];
+    OSSpec path;
     index = 0;
     if (plugin_request_count > 0) {
         do {
@@ -127,9 +127,8 @@ int build_tool_command_line(int flags, DropinFileRecord *tool, struct ToolComman
         }
     } else {
         if ((flags & 1073741824) != 0) {
-            MacSpecs_MakeOSSpec(&default_target->settings->head.firstFile, path);
-            CLToolExec_AppendArgument(&arguments->argc, &arguments->argv,
-                                      OS_SpecToString((OSSpec *)path, data_005880e0, 260));
+            MacSpecs_MakeOSSpec(&default_target->settings->head.firstFile, &path);
+            CLToolExec_AppendArgument(&arguments->argc, &arguments->argv, OS_SpecToString(&path, data_005880e0, 260));
         }
     }
     arguments->argv[arguments->argc] = NULL;

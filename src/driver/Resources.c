@@ -41,7 +41,7 @@ static UInt32 SwapRecord32(UInt32 v)
     return ((v & 0xff000000) >> 24) | ((v & 0xff0000) >> 8) | ((v & 0xff00) << 8) | ((v & 0xff) << 24);
 }
 
-unsigned int Resources_OpenResourceFile(char *path)
+unsigned int Resources_OpenResourceFile(OSSpec *path)
 {
     DWORD resourceStatus;
     int queryStatus;
@@ -963,34 +963,31 @@ short __stdcall open_resource_fork(void *fileSpec, char mode, short *refNum)
         } u;
         unsigned char name[0x42];
     } resourceFile;
-    char path[sizeof(OSSpec)];
-    union {
-        OSSpec spec;
-        char path[sizeof(OSSpec)];
-    } resourceSpec;
+    OSSpec path;
+    OSSpec resourceSpec;
     Boolean create = (mode != 1);
     int error;
     short result;
 
-    error = MacSpecs_MakeOSSpec(fileSpec, path);
+    error = MacSpecs_MakeOSSpec(fileSpec, &path);
     if (error != 0)
         return OS_OSErrorToMacError(error);
 
-    error = MacSpecs_MakeResourceForkSpec(path, &resourceSpec.spec, create);
+    error = MacSpecs_MakeResourceForkSpec(&path, &resourceSpec, create);
     if (error != 0)
         return OS_OSErrorToMacError(error);
 
-    error = MacSpecs_MakeCWFileSpecFromString(resourceSpec.path, (CWFileSpec *)&resourceFile);
+    error = MacSpecs_MakeCWFileSpecFromString(&resourceSpec, (CWFileSpec *)&resourceFile);
     if (error != 0)
         return OS_OSErrorToMacError(error);
 
-    if (OS_Status(&resourceSpec.spec) != 0 && create)
+    if (OS_Status(&resourceSpec) != 0 && create)
         Files_CallWithFileSpecFromPath(resourceFile.u.first, resourceFile.u.type.size, resourceFile.name, 0x43574945,
                                        0x72737263);
 
     result = Files_OpenFileFromPath(resourceFile.u.first, resourceFile.u.type.size, resourceFile.name, mode, refNum);
     if (result == 0)
-        append_identifier_list_node(short_predecessor(*refNum), &resourceSpec.spec);
+        append_identifier_list_node(short_predecessor(*refNum), &resourceSpec);
 
     return result;
 }

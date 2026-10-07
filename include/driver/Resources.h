@@ -118,7 +118,7 @@ extern int count_entries(ResType *list);
 extern ResType *find_res_type(ResFile *list, int key);
 extern IdentifierListNode *Resources_FindIdentifierById(int id);
 extern void __stdcall Resources_ClearError(void *handle);
-extern unsigned int Resources_OpenResourceFile(char *path);
+extern unsigned int Resources_OpenResourceFile(OSSpec *path);
 extern struct ResFile *create_resfile(short value0, int value2, int value4, int value8);
 extern ResType *append_res_type(ResType **link, unsigned int value1, ResEntry *value2, ResType *next);
 extern void free_res_file(short key);
