@@ -70,7 +70,7 @@ struct IROVarPart {
 extern void IRO_ScalarizeClassDataMembers(void);
 extern void RewriteBitFieldTemps(void);
 extern void IroVars_CheckVariablesInitializedBeforeUse(void);
-extern void IroVars_0044b2d0(IROLinear *p);
+extern void fn_0044b2d0(IROLinear *p);
 extern VarRecord *IroVars_GetOperandVarRecord(IROLinear *node);
 extern void IroVars_CollectAddrRecordElements(IROLinear *tree, IROAddrRecord *collection);
 extern void IroVars_BuildNoregisterBitVector(void);

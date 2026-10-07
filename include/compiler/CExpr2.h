@@ -74,7 +74,7 @@ extern Boolean CExpr_CheckOperatorConversion(short token, ENode *left, ENode *ri
                                              BinaryOperatorResult *out);
 extern char try_class_conversion_to_kind(ENode *expr, short kind, BinaryOperatorResult *result);
 extern unsigned char convert_class_binary_operands(ENode *left, ENode *right, BinaryOperatorResult *result);
-extern Boolean CExpr2_0046e3e0(Type *type, SInt16 op);
+extern Boolean fn_0046e3e0(Type *type, SInt16 op);
 extern ENode *CExpr_MakeFunctionCall(ENode *expr, ENodeList *args);
 extern ENode *convert_memberfunc_to_setconst_or_objref(ENode *expr);
 extern ENode *CExpr_GenericPtmfCall(Object *obj, Type *functype, ENodeList *args);
@@ -138,7 +138,7 @@ extern void init_comparison_values(unsigned int kind, ComparisonValues *counts, 
 extern UInt8 CExpr_AllBitsSet(ENode *p);
 extern ENode *replace_expr_tree_nodes(ENode *node);
 extern void CExpr_SearchExprTree(ENode *expr, void (*value)(ENode *), SInt32 count, ...);
-extern void CExpr2_004743d0(ENode *e);
+extern void fn_004743d0(ENode *e);
 extern ENode *CExpr_VarArgPromotion(ENode *expr, Boolean allowWarning);
 extern ENode *CExpr_GenericFuncCall(BClassList *scope, ENode *instance, Boolean qualified, Object *function,
                                     void *candidates, void *kind, ENodeList *arguments, SInt32 extraArguments,

@@ -64,7 +64,7 @@ extern void emit_two_gpr_immediate_instruction(ENode *p1, ENode *p2, ENode *p3, 
 extern void emit_three_vr_instruction(ENode *e1, ENode *e2, ENode *e3, SInt16 dstreg, Operand *dst, SInt16 op);
 extern void Intrinsics_RegisterIntrinsics(void);
 extern UInt16 find_intrinsic_triple_code(UInt16 id, ENode *unused, ENode *e1, ENode *e2, ENode *e3);
-extern void Intrinsics_00486db0(UInt16 tok, ENode *unused, ENode *node, SInt16 reg, Operand *out);
+extern void fn_00486db0(UInt16 tok, ENode *unused, ENode *node, SInt16 reg, Operand *out);
 extern UInt16 find_binary_intrinsic_code(UInt16 id, ENode *unused, ENode *left, ENode *right);
 extern UInt16 find_unary_intrinsic_code(UInt16 id, ENode *unused, ENode *expression);
 extern void generate_unary_vector_intrinsic(UInt16 tok, ENode *unused, ENode *node, SInt16 reg, Operand *out);

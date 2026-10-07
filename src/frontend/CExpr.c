@@ -751,10 +751,10 @@ void CExpr_CheckUnusedExpression(ENode *node)
                 }
                 break;
             case ECOMMA:
-                result = CInline_00513910(node->data.diadic.right);
+                result = fn_00513910(node->data.diadic.right);
                 break;
             case ECOND:
-                result = CInline_00513910(node->data.cond.expr1) || CInline_00513910(node->data.cond.expr2);
+                result = fn_00513910(node->data.cond.expr1) || fn_00513910(node->data.cond.expr2);
                 break;
             case EPOSTINC:
             case EPOSTDEC:
@@ -874,11 +874,11 @@ Boolean fn_004f0f40(ENode *node)
             }
             return 0;
         case ECOMMA:
-            return CInline_00513910(node->data.cond.expr1);
+            return fn_00513910(node->data.cond.expr1);
         case ECOND:
             result = 1;
-            operandResult = CInline_00513910(node->data.cond.expr1);
-            if ((operandResult == 0) && (operandResult = CInline_00513910(node->data.cond.expr2), operandResult == 0)) {
+            operandResult = fn_00513910(node->data.cond.expr1);
+            if ((operandResult == 0) && (operandResult = fn_00513910(node->data.cond.expr2), operandResult == 0)) {
                 result = 0;
             }
             return result;
@@ -1318,7 +1318,6 @@ ENode *conditional_expression(void)
     }
     return CExpr_New_ECOND_Node(cond, then, els);
 }
-
 
 ENode *CExpr_New_ECOND_Node(ENode *condition, ENode *trueExpr, ENode *falseExpr)
 {
@@ -2546,7 +2545,7 @@ ENode *simplify_unsigned_zero_comparison(ENode *node, Boolean lessThan, Boolean 
         } else {
             constant = intconstnode(node->rtype, !lessThan);
         }
-        return CInline_00513910(node) ? makediadicnode(node, constant, ECOMMA) : constant;
+        return fn_00513910(node) ? makediadicnode(node, constant, ECOMMA) : constant;
     }
     set_comparison_result_type(node);
     return node;
@@ -3308,7 +3307,7 @@ ENode *unary_expression(void)
                 operand->data.temp.type = NULL;
                 return makediadicnode(converted, operand, EASS);
             } else {
-                CExpr_004fb400(converted);
+                fn_004fb400(converted);
                 return makemonadicnode(converted, EPREINC);
             }
         }
@@ -3324,7 +3323,7 @@ ENode *unary_expression(void)
                 }
             }
             operand = CExpr_LValue(operand, 1, 1);
-            CExpr_004fb400(operand);
+            fn_004fb400(operand);
             return makemonadicnode(operand, EPREDEC);
         }
 
@@ -4179,7 +4178,7 @@ ENode *parse_postfix_expression(Boolean allowSpecial)
                     expr = CExpr_TempModifyExpr(operand.node);
                     tk = CPrepTokenizer_GetNextToken();
                 } else {
-                    CExpr_004fb400(operand.node);
+                    fn_004fb400(operand.node);
                     expr = makemonadicnode(operand.node, EPOSTINC);
                     tk = CPrepTokenizer_GetNextToken();
                 }
@@ -4195,7 +4194,7 @@ ENode *parse_postfix_expression(Boolean allowSpecial)
                     continue;
                 }
                 operand.node = CExpr_LValue(left, 1, 1);
-                CExpr_004fb400(operand.node);
+                fn_004fb400(operand.node);
                 expr = makemonadicnode(operand.node, EPOSTDEC);
                 tk = CPrepTokenizer_GetNextToken();
                 continue;
@@ -4435,7 +4434,7 @@ ENode *parse_primary_expression(Boolean expressionMode)
                 if (memcmp(data_00587fa0->name, "__builtin_type", 15) == 0 ||
                     memcmp(data_00587fa0->name, "__builtin_vargtype", 19) == 0) {
                     expression = intconstnode((Type *)&stsignedint, 0);
-                    set_signed_integer(expression, CExpr_004f8a40(scan_type_or_expression_type()));
+                    set_signed_integer(expression, fn_004f8a40(scan_type_or_expression_type()));
                     return expression;
                 }
                 if (memcmp(data_00587fa0->name, "__builtin_classify_type", 24) == 0) {
@@ -4451,7 +4450,7 @@ ENode *parse_primary_expression(Boolean expressionMode)
             if (memcmp("_INFO", data_00587fa0->name, 6) == 0 ||
                 memcmp("_var_arg_typeof", data_00587fa0->name, 16) == 0) {
                 expression = intconstnode((Type *)&stsignedint, 0);
-                set_signed_integer(expression, CExpr_004f8a40(scan_type_or_expression_type()));
+                set_signed_integer(expression, fn_004f8a40(scan_type_or_expression_type()));
                 return expression;
             }
             /* fall through */
@@ -4506,7 +4505,7 @@ Type *scan_type_or_expression_type(void)
     return type;
 }
 
-int CExpr_004f8a40(Type *type)
+int fn_004f8a40(Type *type)
 {
     int result;
     switch ((SInt8)type->type) {
@@ -5728,7 +5727,7 @@ ENode *CExpr_New_EDIV_Node(ENode *left, ENode *right, Boolean flag)
         } else {
             n = intconstnode(r->rtype, 0);
         }
-        return CInline_00513910(r) ? makediadicnode(r, n, ECOMMA) : n;
+        return fn_00513910(r) ? makediadicnode(r, n, ECOMMA) : n;
     }
     if (left->type == EINTCONST && right->type == EINTCONST) {
         left->data.intval = CMach_CalcIntDiadic(left->rtype, left->data.intval, 0x2f, right->data.intval);
@@ -5758,7 +5757,7 @@ ENode *CExpr_New_EMUL_Node(ENode *lhs, ENode *rhs)
         } else {
             n = intconstnode(x->rtype, 0);
         }
-        return CInline_00513910(x) ? makediadicnode(x, n, ECOMMA) : n;
+        return fn_00513910(x) ? makediadicnode(x, n, ECOMMA) : n;
     }
     if (iszero(rhs)) {
         x = lhs;
@@ -5770,7 +5769,7 @@ ENode *CExpr_New_EMUL_Node(ENode *lhs, ENode *rhs)
         } else {
             n = intconstnode(x->rtype, 0);
         }
-        return CInline_00513910(x) ? makediadicnode(x, n, ECOMMA) : n;
+        return fn_00513910(x) ? makediadicnode(x, n, ECOMMA) : n;
     }
     if (CExpr_IsOne(rhs))
         return lhs;
@@ -5877,7 +5876,7 @@ void unify_arithmetic_rtypes(ENode **leftp, ENode **rightp, SInt32 unused)
     CExpr_ArithmeticConversion(leftp, rightp);
 }
 
-void CExpr_004fb400(ENode *e)
+void fn_004fb400(ENode *e)
 {
     switch ((SInt8)e->rtype->type) {
         case TYPEINT:

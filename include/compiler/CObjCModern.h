@@ -36,7 +36,7 @@ struct ObjcModule {
     int symtab;
 };
 #pragma options align = reset
-extern ENode *CObjCModern_0050a000(TypeClass *context, ENode *receiver, HashNameNode *name, char option);
+extern ENode *fn_0050a000(TypeClass *context, ENode *receiver, HashNameNode *name, char option);
 extern ENode *CObjCModern_CreateAllocMessage(TypeClass *object);
 extern ENode *CObjCModern_TryParseMethodCall(TypeClass *a, ENode *b);
 extern void CObjCModern_GenerateSymbolTableAndModule(void);

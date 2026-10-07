@@ -653,7 +653,7 @@ static SectionRec *MakeRecA(void *f6, UInt8 f2, UInt8 f3)
     return a;
 }
 
-ObjGenSection *BE_elf_0049c540(ObjGenSection *input, SInt32 context)
+ObjGenSection *fn_0049c540(ObjGenSection *input, SInt32 context)
 {
     ObjGenSection *relatedRecord = NULL;
     SectionRec *object;

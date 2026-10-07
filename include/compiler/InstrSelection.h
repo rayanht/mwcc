@@ -102,7 +102,7 @@ extern void emit_gpr_pair_subtraction(ENode *node, SInt16 reg1, SInt16 reg2, Ope
 extern void emit_gpr_pair_add(ENode *node, short a, short b, Operand *out);
 extern void gen_xor_reg_pair(ENode *node, SInt16 reg1, SInt16 reg2, Operand *result);
 extern void emit_cmpli_with_addis(SInt16 p1, ENode *node, SInt32 p3, Operand *res);
-extern void InstrSelection_004b37b0(short comparison, ENode *input, short sense, Operand *result);
+extern void fn_004b37b0(short comparison, ENode *input, short sense, Operand *result);
 extern void emit_binary_fpr_instruction(short op, ENode *n1, ENode *n2, SInt16 reg, Operand *dst);
 extern void emit_conditional_funccall(ENode *expr, SInt32 requestedReg, SInt32 requestedRegHi, struct Operand *out);
 extern void emit_multiply(ENode *node, SInt16 dstreg, SInt16 src, Operand *result);

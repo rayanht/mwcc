@@ -397,7 +397,7 @@ void PCodeUtilities_EmitInstructionAndCreateBlock(Object *object)
     PCode_CreateBlock();
 }
 
-PCodeOperand *PCodeUtilities_004a2290(PCodeOperand *operand, UInt32 gprMask, UInt32 fprMask, UInt32 vrMask)
+PCodeOperand *fn_004a2290(PCodeOperand *operand, UInt32 gprMask, UInt32 fprMask, UInt32 vrMask)
 {
     SInt32 reg;
 
@@ -486,8 +486,8 @@ void PCodeUtilities_EmitObjectInstructionWithPayload(Object *operand, SInt16 emi
         instruction = PCodeUtilities_CreateInstruction(1, operandCount, operand, 0);
     }
 
-    payload = PCodeUtilities_004a2290(instruction->operandData.operands + 1, firstRegisterMask, secondRegisterMask,
-                                      thirdRegisterMask);
+    payload =
+        fn_004a2290(instruction->operandData.operands + 1, firstRegisterMask, secondRegisterMask, thirdRegisterMask);
 
     if (PCodeUtilities_ExceptionScopesEnabled() && gCurrentStatement)
         Exceptions_CollectRegisterOperands(gCurrentStatement->dobjstack, payload);
@@ -645,8 +645,8 @@ void fn_004a1cb0(int integerRegisterMask, int floatingRegisterMask, int vectorRe
     if (exception_scopes_enabled() && gCurrentStatement)
         operandCount += Exceptions_CountBoundObjectFields(gCurrentStatement->dobjstack);
     instruction = PCodeUtilities_CreateInstruction(PC_BLRL, operandCount, 0);
-    nextOperand = PCodeUtilities_004a2290(instruction->operandData.operands + 1, integerRegisterMask,
-                                          floatingRegisterMask, vectorRegisterMask);
+    nextOperand = fn_004a2290(instruction->operandData.operands + 1, integerRegisterMask, floatingRegisterMask,
+                              vectorRegisterMask);
     if (exception_scopes_enabled() && gCurrentStatement)
         Exceptions_CollectRegisterOperands(gCurrentStatement->dobjstack, nextOperand);
     if (copts.instructionSchedulingMode) {

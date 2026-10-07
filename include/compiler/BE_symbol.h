@@ -33,7 +33,7 @@ struct BE_SymNode {
 };
 #pragma options align = reset
 extern BE_SymNode *BE_symbol_SetupObjectSymbol(Object *object, int size, ObjGenSection *section);
-extern Boolean BE_symbol_004913b0(Object *obj);
+extern Boolean fn_004913b0(Object *obj);
 extern Object *BE_symbol_GetFunctionSymbolLinkData(Object *func);
 extern unsigned int BE_symbol_GetOffset(BE_SymNode *symbol);
 extern unsigned int BE_symbol_CreateSectionSymbol(ObjGenSection *input);
@@ -44,7 +44,7 @@ extern BE_SymNode *BE_symbol_AdvanceSymbolTail(void);
 extern void BE_symbol_Init(void);
 extern BE_SymNode *BE_symbol_CreateSymNode(void *value);
 extern BE_SymNode *BE_symbol_GetSectionSym(struct ObjGenSection *ctx);
-extern BE_SymNode *BE_symbol_004918f0(Object *symbol, struct ObjGenSection *value);
+extern BE_SymNode *fn_004918f0(Object *symbol, struct ObjGenSection *value);
 extern struct BE_SymNode *be_symbol_list;
 extern struct BE_SymNode *symbol_tail;
 extern struct ObjGenSection *data_005884aa;

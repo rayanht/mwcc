@@ -18,8 +18,6 @@
 #include "compiler/IroLoop.h"
 #include "compiler/IroVars.h"
 
-
-
 static struct IROLinear *linear_range_start;
 static IROLinear *linear_range_end;
 static struct IRONode *move_expr_before_node;
@@ -677,7 +675,7 @@ short IroUtil_IsOne(IROLinear *node)
 #ifndef TRUE
 #endif
 
-short IroUtil_0044cad0(IROLinear *p)
+short fn_0044cad0(IROLinear *p)
 {
     int b;
     Boolean one;

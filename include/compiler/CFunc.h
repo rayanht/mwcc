@@ -113,7 +113,7 @@ extern ENode *rewrite_cond_with_cleannodes(ENode *node);
 extern ENode *sub_47c050(ENode *node, struct CleanNode *args, Boolean flag);
 extern void generate_conditional_jump(ENode *expr, CLabel *dest, CLabel *other, Boolean sense, Boolean flag);
 extern void setup_function_arguments(Object *function, DeclInfo *body, Statement *state);
-extern void CFunc_00476e70(TypeClass *theclass, struct CtorChain *inits);
+extern void fn_00476e70(TypeClass *theclass, struct CtorChain *inits);
 extern void create_local_object_copy(Object *func, TypeIntegral *type, Type *type2, Boolean flag);
 extern void declare_local_object(DeclInfo *declaration, TStreamElement *proto, char flag3, char flag4);
 extern void rewrite_enode_list_nodes(ENodeList *entry);
@@ -122,7 +122,7 @@ extern void CFunc_ParseFuncDef(Object *func, DeclInfo *definition, TypeClass *sc
                                unsigned char scopeFlag, NameSpace *scope);
 extern void parse_case_statement(struct StatementContext *context);
 extern void check_function_result_automatic_variable(ENode *e);
-extern void CFunc_0047b9a0(Statement *statement, Statement *expression);
+extern void fn_0047b9a0(Statement *statement, Statement *expression);
 extern Statement *insert_conditional_goto_cleanup(Statement *statement);
 extern void CFunc_DestructorCleanup(Statement *first);
 extern void CFunc_GenerateDummyFunction(Object *functionObject);

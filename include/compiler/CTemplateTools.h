@@ -41,7 +41,7 @@ extern void CTemplTool_SetupOuterTemplateArgumentNameSpace(NameSpace *nameSpace)
 extern struct TemplateFunction *CTemplTool_GetFuncTempl(Object *obj);
 extern Type *resolve_templ_dep_type(TypeDeduce *ctx, TypeTemplDep *arg, UInt32 *out);
 extern struct TemplArg *find_template_argument(struct TypeDeduce *context, struct TemplParamID pid);
-extern void CTemplateTools_00516930(void *context, struct TemplClass *function, TemplArg *arguments);
+extern void fn_00516930(void *context, struct TemplClass *function, TemplArg *arguments);
 extern ExceptSpecList *copy_resolved_except_spec_list(void *ctx, ExceptSpecList *n);
 extern unsigned char CTemplTool_IsTemplateArgumentDependentType(Type *type);
 extern TemplClassInst *find_corresponding_instance_class(TypeDeduce *list, TypeClass *targetClass);

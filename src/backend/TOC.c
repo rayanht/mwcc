@@ -138,21 +138,21 @@ void fn_0049d420(Statement *statements)
             }
             switch (statement->type) {
                 case ST_EXPRESSION:
-                    TOC_0049d710(statement->expr, NULL, 1);
+                    fn_0049d710(statement->expr, NULL, 1);
                     if ((expression = statement->expr)->type != ETYPCON || expression->rtype->type != TYPEVOID) {
                         break;
                     }
                     statement->expr = expression->data.monadic;
                     break;
                 case ST_GOTOEXPR:
-                    TOC_0049d710(statement->expr, NULL, 0);
+                    fn_0049d710(statement->expr, NULL, 0);
                     break;
                 case ST_IFGOTO:
                 case ST_IFNGOTO:
                     if (fn_0049f630(statement->expr) == 0) {
                         statement->expr = create_diadic_node_with_constant(statement->expr);
                     }
-                    TOC_0049d710(statement->expr, NULL, 0);
+                    fn_0049d710(statement->expr, NULL, 0);
                     break;
                 case ST_RETURN:
                     if (statement->expr == NULL) {
@@ -176,11 +176,11 @@ void fn_0049d420(Statement *statements)
                             special = 0;
                         }
                     }
-                    TOC_0049d710(statement->expr, NULL, special);
+                    fn_0049d710(statement->expr, NULL, special);
                     break;
                 case ST_SWITCH:
                     data_00588500 = 1;
-                    TOC_0049d710(statement->expr, NULL, 0);
+                    fn_0049d710(statement->expr, NULL, 0);
                     break;
                 case ST_ENDCATCHDTOR:
                     data_00588521 = 0;
@@ -291,7 +291,7 @@ static inline int TOC_IsSetjmp(ENode *fr)
     return 0;
 }
 
-void TOC_0049d710(ENode *node, Type *targetType, int ignored)
+void fn_0049d710(ENode *node, Type *targetType, int ignored)
 {
     UInt8 kind;
     ENode *expr;
@@ -349,13 +349,13 @@ void TOC_0049d710(ENode *node, Type *targetType, int ignored)
             if (!is_small_splat_or_table_vector((long)&node->data, node->rtype)) {
                 data_00588500 = 1;
                 replace_vector_constant_with_objectref(node);
-                TOC_0049d710(node, NULL, 0);
+                fn_0049d710(node, NULL, 0);
             }
             break;
         case ESTRINGCONST:
             data_00588500 = 1;
             CInit_RewriteString(node, 1);
-            TOC_0049d710(node, NULL, 0);
+            fn_0049d710(node, NULL, 0);
             break;
         case EOBJREF: {
             Object *object = node->data.objref;
@@ -392,9 +392,9 @@ void TOC_0049d710(ENode *node, Type *targetType, int ignored)
                     node->data.diadic.left = create_diadic_node_with_constant(node->data.diadic.left);
                 }
             }
-            TOC_0049d710(node->data.diadic.left, NULL, 0);
-            TOC_0049d710(node->data.diadic.right, NULL, ignored);
-            TOC_0049d710(node->data.cond.expr2, NULL, ignored);
+            fn_0049d710(node->data.diadic.left, NULL, 0);
+            fn_0049d710(node->data.diadic.right, NULL, ignored);
+            fn_0049d710(node->data.cond.expr2, NULL, ignored);
             node->hascall =
                 node->data.diadic.left->hascall | node->data.diadic.right->hascall | node->data.cond.expr2->hascall;
             break;
@@ -443,10 +443,10 @@ void TOC_0049d710(ENode *node, Type *targetType, int ignored)
                         node->data.funccall.funcref->data.objref = object;
                     }
                 } else {
-                    TOC_0049d710(node->data.funccall.funcref, NULL, 0);
+                    fn_0049d710(node->data.funccall.funcref, NULL, 0);
                 }
                 for (args = node->data.funccall.args; args; args = args->next) {
-                    TOC_0049d710(args->node, NULL, 0);
+                    fn_0049d710(args->node, NULL, 0);
                 }
                 if (Intrinsics_IsMonadicObjrefTypeFuncFlag200Set(node)) {
                     for (args = node->data.funccall.args; args; args = args->next) {
@@ -465,8 +465,8 @@ void TOC_0049d710(ENode *node, Type *targetType, int ignored)
             }
             break;
         case ECOMMA:
-            TOC_0049d710(node->data.diadic.left, NULL, 1);
-            TOC_0049d710(node->data.diadic.right, NULL, ignored);
+            fn_0049d710(node->data.diadic.left, NULL, 1);
+            fn_0049d710(node->data.diadic.right, NULL, ignored);
             node->hascall = node->data.diadic.left->hascall | node->data.diadic.right->hascall;
             break;
         case ELAND:
@@ -481,8 +481,8 @@ void TOC_0049d710(ENode *node, Type *targetType, int ignored)
                     node->data.diadic.right = create_diadic_node_with_constant(node->data.diadic.right);
                 }
             }
-            TOC_0049d710(node->data.diadic.left, NULL, 0);
-            TOC_0049d710(node->data.diadic.right, NULL, 0);
+            fn_0049d710(node->data.diadic.left, NULL, 0);
+            fn_0049d710(node->data.diadic.right, NULL, 0);
             node->hascall = node->data.diadic.left->hascall | node->data.diadic.right->hascall;
             break;
         case EDIVASS:
@@ -540,8 +540,8 @@ void TOC_0049d710(ENode *node, Type *targetType, int ignored)
                 node->data.diadic.left = operand->data.diadic.left;
         }
         assignment:
-            TOC_0049d710(node->data.diadic.left, NULL, 0);
-            TOC_0049d710(node->data.diadic.right, NULL, 0);
+            fn_0049d710(node->data.diadic.left, NULL, 0);
+            fn_0049d710(node->data.diadic.right, NULL, 0);
             node->hascall = node->data.diadic.left->hascall | node->data.diadic.right->hascall;
             break;
         case EEQU:
@@ -567,7 +567,7 @@ void TOC_0049d710(ENode *node, Type *targetType, int ignored)
                         else
                             node->type = EEQU;
                         node->data.diadic.left = operand->data.diadic.left;
-                        TOC_0049d710(node, NULL, 0);
+                        fn_0049d710(node, NULL, 0);
                         break;
                     }
                 }
@@ -575,14 +575,14 @@ void TOC_0049d710(ENode *node, Type *targetType, int ignored)
                     if (kind == EEQU)
                         operand->type = ENOTEQU;
                     *node = *operand;
-                    TOC_0049d710(node, NULL, 0);
+                    fn_0049d710(node, NULL, 0);
                     break;
                 }
                 if (operand->type == ENOTEQU) {
                     if (kind == EEQU)
                         operand->type = EEQU;
                     *node = *operand;
-                    TOC_0049d710(node, NULL, 0);
+                    fn_0049d710(node, NULL, 0);
                     break;
                 }
             }
@@ -604,8 +604,8 @@ void TOC_0049d710(ENode *node, Type *targetType, int ignored)
         case EGREATER:
         case ELESSEQU:
         case EGREATEREQU:
-            TOC_0049d710(node->data.diadic.left, NULL, 0);
-            TOC_0049d710(node->data.diadic.right, NULL, 0);
+            fn_0049d710(node->data.diadic.left, NULL, 0);
+            fn_0049d710(node->data.diadic.right, NULL, 0);
             node->hascall = node->data.diadic.left->hascall | node->data.diadic.right->hascall;
             if ((node->rtype->type == TYPEINT || node->rtype->type == TYPEENUM) && node->rtype->size == 8 &&
                 (node->type == EDIV || node->type == EMODULO || (UInt8)(node->type - ESHL) <= 1)) {
@@ -635,8 +635,8 @@ void TOC_0049d710(ENode *node, Type *targetType, int ignored)
         case EAND:
         case EXOR:
         case EOR:
-            TOC_0049d710(node->data.diadic.left, targetType, 0);
-            TOC_0049d710(node->data.diadic.right, targetType, 0);
+            fn_0049d710(node->data.diadic.left, targetType, 0);
+            fn_0049d710(node->data.diadic.right, targetType, 0);
             node->hascall = node->data.diadic.left->hascall | node->data.diadic.right->hascall;
             if (targetType) {
                 expr = node->data.diadic.left;
@@ -670,9 +670,9 @@ void TOC_0049d710(ENode *node, Type *targetType, int ignored)
             if ((node->rtype->type == TYPEINT || node->rtype->type == TYPEENUM) && node->rtype->size < 4 &&
                 (left->rtype->type == TYPEINT || left->rtype->type == TYPEENUM) &&
                 !((left->rtype->type == TYPEINT || left->rtype->type == TYPEENUM) && left->rtype->size == 8)) {
-                TOC_0049d710(left, node->rtype, 0);
+                fn_0049d710(left, node->rtype, 0);
             } else {
-                TOC_0049d710(left, NULL, node->rtype->type == TYPEVOID);
+                fn_0049d710(left, NULL, node->rtype->type == TYPEVOID);
             }
             node->hascall = left->hascall;
             if ((left->rtype->type == TYPEINT || left->rtype->type == TYPEENUM) && node->rtype->type == TYPEFLOAT)
@@ -713,7 +713,7 @@ void TOC_0049d710(ENode *node, Type *targetType, int ignored)
                         data_00588500 = 1;
                     }
                 }
-                TOC_0049d710(node->data.diadic.left, NULL, 0);
+                fn_0049d710(node->data.diadic.left, NULL, 0);
                 node->hascall = node->data.diadic.left->hascall;
                 if (copts.operandsDebug && node->rtype->type == TYPEFLOAT) {
                     node->hascall = 1;
@@ -738,7 +738,7 @@ void TOC_0049d710(ENode *node, Type *targetType, int ignored)
                         data_00588500 = 1;
                     }
                 }
-                TOC_0049d710(node->data.diadic.left, NULL, 0);
+                fn_0049d710(node->data.diadic.left, NULL, 0);
                 node->hascall = node->data.diadic.left->hascall;
                 if (copts.operandsDebug && node->rtype->type == TYPEFLOAT) {
                     node->hascall = 1;
@@ -766,7 +766,7 @@ void TOC_0049d710(ENode *node, Type *targetType, int ignored)
         case EMONMIN:
         case EBINNOT:
             left = node->data.diadic.left;
-            TOC_0049d710(left, targetType, 0);
+            fn_0049d710(left, targetType, 0);
             node->hascall = left->hascall;
             if (targetType) {
                 expr = node->data.diadic.left;
@@ -783,12 +783,12 @@ void TOC_0049d710(ENode *node, Type *targetType, int ignored)
         case EFORCELOAD:
         case EBITFIELD:
             operand = node->data.diadic.left;
-            TOC_0049d710(operand, NULL, 0);
+            fn_0049d710(operand, NULL, 0);
             node->hascall = operand->hascall;
             break;
         case EDEFINE:
             operand = node->data.diadic.left;
-            TOC_0049d710(operand, NULL, 0);
+            fn_0049d710(operand, NULL, 0);
             node->hascall = operand->hascall;
             break;
         case EREUSE:
@@ -796,8 +796,8 @@ void TOC_0049d710(ENode *node, Type *targetType, int ignored)
             node->hascall = operand->hascall;
             break;
         case ENULLCHECK:
-            TOC_0049d710(node->data.diadic.left, NULL, 0);
-            TOC_0049d710(node->data.diadic.right, NULL, 0);
+            fn_0049d710(node->data.diadic.left, NULL, 0);
+            fn_0049d710(node->data.diadic.right, NULL, 0);
             node->hascall = node->data.diadic.left->hascall | node->data.diadic.right->hascall;
             break;
         case EPRECOMP:

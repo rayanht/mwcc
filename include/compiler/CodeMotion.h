@@ -51,7 +51,7 @@ struct CMDefInfo {
     } u;
 };
 #pragma options align = reset
-extern int COpt_005266e0(int definitionIndex, Loop *ctx);
+extern int fn_005266e0(int definitionIndex, Loop *ctx);
 extern void unswitch_loop(Loop *context);
 extern PCodeBlock *clone_block_with_bridge(Loop *region, PCodeBlock *insertionPoint, PCodeBlock *source,
                                            PCodeBlock *destination);
@@ -60,7 +60,7 @@ extern void CodeMotion_00525e70(Loop *region, PCodeBlock *block, PCodeInstructio
 extern void fn_00525f20(PCodeBlock *replacement, PCodeBlock *block, PCodeBlock *successor);
 extern void replace_successor(PCodeBlock *block, PCodeBlock *oldSuccessor, PCodeBlock *newSuccessor);
 extern unsigned int fn_00525fc0(PCodeInstruction *node, Loop *arg2, UInt32 *arg3);
-extern SInt32 CodeMotion_00526070(PCodeInstruction *definition, Loop *context);
+extern SInt32 fn_00526070(PCodeInstruction *definition, Loop *context);
 extern PCodeBlockLink *collect_single_successor_memberblocks(Loop *cm, PCodeBlock *cur);
 extern void propagate_use_sets(void);
 extern void solve_definition_sets(void);

@@ -330,7 +330,7 @@ BE_SymNode *BE_symbol_SetupObjectSymbol(Object *object, int size, ObjGenSection 
 
 enum { BACKEND_SYMBOL_KIND_258 = 258, BACKEND_SYMBOL_KIND_259 = 259 };
 
-BE_SymNode *BE_symbol_004918f0(Object *symbol, struct ObjGenSection *value)
+BE_SymNode *fn_004918f0(Object *symbol, struct ObjGenSection *value)
 {
     char flags;
     HashNameNode *symbolKey;
@@ -541,7 +541,7 @@ Object *BE_symbol_GetFunctionSymbolLinkData(Object *func)
     return NULL;
 }
 
-Boolean BE_symbol_004913b0(Object *obj)
+Boolean fn_004913b0(Object *obj)
 {
     SInt16 kind;
     HashNameNode *function;

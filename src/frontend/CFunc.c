@@ -27,7 +27,6 @@
 #include <string.h>
 #include <stdio.h>
 
-
 #pragma options align = mac68k
 static void *data_00580870;
 static struct DeclBlock *saved_global_values_tail;
@@ -82,7 +81,7 @@ void CFunc_GenerateSingleExprFunc(Object *func, ENode *expr)
             CSOM_GenerateSomselfAssignment(cscope_currentclass, &stmt);
         CFunc_WarnUnused();
         CExcept_ExceptionTansform(&stmt);
-        CInline_0050ee60(&stmt, func, 0);
+        fn_0050ee60(&stmt, func, 0);
         cscope_current = savedNamespace->parent;
         copts.filesyminfo = oldflag;
     }
@@ -113,7 +112,7 @@ void CFunc_GenerateDummyFunction(Object *functionObject)
     } else {
         restoreInlineState = FALSE;
     }
-    CInline_0050ee60(&statements, functionObject, FALSE);
+    fn_0050ee60(&statements, functionObject, FALSE);
     if (restoreInlineState) {
         CClass_DefineCovariantFuncs(functionObject, &inlineState);
     }
@@ -221,7 +220,7 @@ void CFunc_ParseFuncDef(Object *func, DeclInfo *definition, TypeClass *scopeObje
         if (cscope_currentclass == NULL)
             CError_FATAL(3466);
         parse_ctor_initializers();
-        CFunc_00476e70(cscope_currentclass, ctor_initializers);
+        fn_00476e70(cscope_currentclass, ctor_initializers);
     }
     CPrep_ResetBufferedTokenPosition();
     if (!(func->qual & Q_ASM)) {
@@ -298,7 +297,7 @@ void CFunc_ParseFuncDef(Object *func, DeclInfo *definition, TypeClass *scopeObje
             } else {
                 hasSavedState = FLAGVAL_FALSE;
             }
-            CInline_0050ee60(&state, func, oldStyleArguments);
+            fn_0050ee60(&state, func, oldStyleArguments);
             if (hasSavedState) {
                 CClass_DefineCovariantFuncs(func, &savedState);
             }
@@ -476,13 +475,13 @@ void parse_ctor_initializers(void)
 }
 void CFunc_CheckClassCtors(TypeClass *type)
 {
-    CFunc_00476e70(type, NULL);
+    fn_00476e70(type, NULL);
 }
 
 /* A linked list of member initializer records: next, a discriminator byte at
  * 0x04 (2) and the member variable pointer at 0x0a. */
 
-void CFunc_00476e70(TypeClass *theclass, struct CtorChain *inits)
+void fn_00476e70(TypeClass *theclass, struct CtorChain *inits)
 {
     ObjMemberVar *member;
     CtorChain *node;
@@ -529,7 +528,7 @@ void CFunc_Gen(Statement *context, Object *object, unsigned int options)
         flag = 0;
     }
 
-    CInline_0050ee60(context, object, options);
+    fn_0050ee60(context, object, options);
 
     if (flag) {
         CClass_DefineCovariantFuncs(object, &buf);
@@ -1959,7 +1958,7 @@ void declare_local_object(DeclInfo *declaration, TStreamElement *declarationToke
                 CScope_AddObject(cscope_current, object->name, (ObjBase *)object);
                 if (isParameter == 0) {
                     if (declaration->thetype->type == TYPECLASS && TYPE_CLASS(declaration->thetype)->sominfo != NULL) {
-                        CSOM_004e4390(object);
+                        fn_004e4390(object);
                     } else {
                         CInit_InitializeAutoData(object, append_or_defer_expression_statement,
                                                  register_destructor_object);
@@ -2274,7 +2273,7 @@ void CFunc_DestructorCleanup(Statement *first)
                 break;
             case ST_RETURN:
                 if (next->expr && CFunc_AnyCleanup(stmt->dobjstack))
-                    CFunc_0047b9a0(stmt, next);
+                    fn_0047b9a0(stmt, next);
                 else if (stmt->dobjstack)
                     CFunc_EmitAllCleanups(stmt, stmt->dobjstack);
                 stmt = next;
@@ -2462,7 +2461,7 @@ static inline Statement *CFunc_InsertStatement(Statement *statement)
     return inserted;
 }
 
-void CFunc_0047b9a0(Statement *statement, Statement *expression)
+void fn_0047b9a0(Statement *statement, Statement *expression)
 {
     ExceptionAction *targetScope;
     Object *temporary;

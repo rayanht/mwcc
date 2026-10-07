@@ -1032,11 +1032,11 @@ void build_opt_blocks(Statement *first)
             }
         }
     }
-    COptimizer_004bf980();
+    fn_004bf980();
     mark_and_propagate_dlocal_reference_bits();
 }
 
-void COptimizer_004bf980(void)
+void fn_004bf980(void)
 {
     COptBlock *func;
     func = opt_blocks->next;
@@ -1311,7 +1311,7 @@ COptCSE *collect_expr_cse(ENode *expr)
 
     switch (type = expr->type) {
         case EFUNCCALL:
-            COptimizer_004c0470(expr);
+            fn_004c0470(expr);
             return NULL;
         case EFUNCCALLP:
             for (arg = expr->data.funccall.args; arg; arg = arg->next)
@@ -1450,7 +1450,7 @@ COptCSE *collect_expr_cse(ENode *expr)
     }
 }
 
-void COptimizer_004c0470(ENode *node)
+void fn_004c0470(ENode *node)
 {
     Object *obj;
     COptCSE *entry;
@@ -1570,14 +1570,14 @@ ENode *fn_004c07c0(ENode *expr)
 {
     last_node = NULL;
     data_00581308 = 0;
-    COptimizer_004c0800(expr);
+    fn_004c0800(expr);
     if (data_00581308 == 1) {
         return last_node;
     }
     return NULL;
 }
 
-void COptimizer_004c0800(ENode *n)
+void fn_004c0800(ENode *n)
 {
     for (;;) {
         switch (n->type) {
@@ -1590,7 +1590,7 @@ void COptimizer_004c0800(ENode *n)
                 return;
             case EADD:
             case ESUB:
-                COptimizer_004c0800(n->data.diadic.left);
+                fn_004c0800(n->data.diadic.left);
                 n = n->data.diadic.right;
                 break;
             default:

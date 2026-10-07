@@ -23,7 +23,7 @@ extern SInt32 CodeGen_GetMethRecRtypeAndArgsSize(MethRec *p);
 extern void CodeGen_SetIROptimizationEnabled(void);
 extern void CodeGen_SetObjectSectionAndInterruptInfo(Object *obj);
 extern void CodeGen_ParsePragma(HashNameNode *name);
-extern void CodeGen_004332e0(void);
+extern void fn_004332e0(void);
 extern void parse_section_pragma(void);
 extern void CodeGen_ParseDeclspecSection(HashNameNode *node, DeclInfo *value);
 extern void CodeGen_EmitLoadAndBranchFunction(Object *function, Object *branchTarget, Object *table, SInt32 offset);

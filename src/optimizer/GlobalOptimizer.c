@@ -19,7 +19,7 @@
 static inline void COptimizer_DumpStage(Object *function, const char *stage)
 {
     Object *obj = function;
-    CodeGen_DumpPCode_004c4bd0(COptimizer_GetFunctionObject(obj)->name, stage);
+    fn_004c4bd0(COptimizer_GetFunctionObject(obj)->name, stage);
 }
 
 static inline void COptimizer_DumpIfChanged(Object *function, int changed, const char *stage)

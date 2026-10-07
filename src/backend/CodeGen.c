@@ -1488,7 +1488,7 @@ void CodeGen_Generator(Statement *statements, Object *functionObject, Boolean co
     if (copts.deleteDeadInstructions > 0 && data_00588224 == 0) {
         COptimizer_Optimize(functionObject);
     } else {
-        CodeGen_DumpPCode_004c4bd0(COptimizer_GetFunctionObject(functionObject)->name, "INITIAL CODE");
+        fn_004c4bd0(COptimizer_GetFunctionObject(functionObject)->name, "INITIAL CODE");
     }
     if (copts.instructionSchedulingMode == 2) {
         if (copts.peephole)
@@ -1499,19 +1499,18 @@ void CodeGen_Generator(Statement *statements, Object *functionObject, Boolean co
         if (copts.debug_listing)
             fn_004c4ba0();
         if (copts.debug_listing)
-            CodeGen_DumpPCode_004c4bd0(COptimizer_GetFunctionObject(functionObject)->name,
-                                       "AFTER INSTRUCTION SCHEDULING");
+            fn_004c4bd0(COptimizer_GetFunctionObject(functionObject)->name, "AFTER INSTRUCTION SCHEDULING");
     }
     if (copts.peephole) {
         if (copts.instructionSchedulingMode == 0 && copts.deleteDeadInstructions > 1)
             Peephole_MergeAdjacentBlocks(functionObject, 0);
         Peephole_VisitBlocksWithMultipleInstructions(functionObject);
         if (copts.debug_listing)
-            CodeGen_DumpPCode_004c4bd0(COptimizer_GetFunctionObject(functionObject)->name, "AFTER PEEPHOLE FORWARD");
+            fn_004c4bd0(COptimizer_GetFunctionObject(functionObject)->name, "AFTER PEEPHOLE FORWARD");
     }
     Coloring_AllocateRegisters(functionObject);
     if (copts.debug_listing)
-        CodeGen_DumpPCode_004c4bd0(COptimizer_GetFunctionObject(functionObject)->name, "AFTER REGISTER COLORING");
+        fn_004c4bd0(COptimizer_GetFunctionObject(functionObject)->name, "AFTER REGISTER COLORING");
     for (temporaryEntry = temporary_objects; temporaryEntry != NULL; temporaryEntry = temporaryEntry->next)
         StackFrameEABI_AllocateObjectSlot(temporaryEntry->object);
     if (!hasSentinelArgument)
@@ -1525,19 +1524,16 @@ void CodeGen_Generator(Statement *statements, Object *functionObject, Boolean co
         PCodeUtilities_EmitObjectInstructionWithPayload(data_00587c8c, 1, 0, 0, 0);
     StackFrameEABI_MergePrologueEpilogue(gReturnBlock, 1);
     if (copts.debug_listing)
-        CodeGen_DumpPCode_004c4bd0(COptimizer_GetFunctionObject(functionObject)->name,
-                                   "AFTER GENERATING EPILOGUE, PROLOGUE");
+        fn_004c4bd0(COptimizer_GetFunctionObject(functionObject)->name, "AFTER GENERATING EPILOGUE, PROLOGUE");
     if (copts.peephole) {
         if (copts.instructionSchedulingMode != 0) {
             Peephole_MergeAdjacentBlocks(functionObject, 1);
             if (copts.debug_listing)
-                CodeGen_DumpPCode_004c4bd0(COptimizer_GetFunctionObject(functionObject)->name,
-                                           "AFTER MERGING EPILOGUE, PROLOGUE");
+                fn_004c4bd0(COptimizer_GetFunctionObject(functionObject)->name, "AFTER MERGING EPILOGUE, PROLOGUE");
         }
         Peephole_OptimizeBlocks(functionObject);
         if (copts.debug_listing)
-            CodeGen_DumpPCode_004c4bd0(COptimizer_GetFunctionObject(functionObject)->name,
-                                       "AFTER PEEPHOLE OPTIMIZATION");
+            fn_004c4bd0(COptimizer_GetFunctionObject(functionObject)->name, "AFTER PEEPHOLE OPTIMIZATION");
     }
     if (copts.instructionSchedulingMode != 0) {
         if (copts.debug_listing)
@@ -1546,11 +1542,10 @@ void CodeGen_Generator(Statement *statements, Object *functionObject, Boolean co
         if (copts.debug_listing)
             fn_004c4ba0();
         if (copts.debug_listing)
-            CodeGen_DumpPCode_004c4bd0(COptimizer_GetFunctionObject(functionObject)->name,
-                                       "FINAL CODE AFTER INSTRUCTION SCHEDULING");
+            fn_004c4bd0(COptimizer_GetFunctionObject(functionObject)->name, "FINAL CODE AFTER INSTRUCTION SCHEDULING");
     } else {
         if (copts.debug_listing)
-            CodeGen_DumpPCode_004c4bd0(COptimizer_GetFunctionObject(functionObject)->name, "FINAL CODE");
+            fn_004c4bd0(COptimizer_GetFunctionObject(functionObject)->name, "FINAL CODE");
     }
     {
         int result = PCodeAssembly_EmitFunction(functionObject, NULL);
@@ -2044,7 +2039,7 @@ void parse_section_pragma(void)
     return;
 }
 
-void CodeGen_004332e0(void)
+void fn_004332e0(void)
 {
     SInt32 processor;
 
@@ -2182,7 +2177,7 @@ void CodeGen_ParsePragma(HashNameNode *name)
     InterruptList *savedList;
 
     if (!strcmp(name->name, "scheduling")) {
-        CodeGen_004332e0();
+        fn_004332e0();
         CheckPragmaEnd();
         return;
     }

@@ -32,10 +32,8 @@
 #include "driver/TargetPanels-eabi-ppc.h"
 #include <string.h>
 
-
 /* Copies an asm statement and the instruction its expr slot holds. */
 typedef enum RegClass { RC_GPR = 0, RC_FPR = 1, RC_SPR = 2, RC_CRFIELD = 3, RC_CRFIELDBIT = 8, RC_VR = 9 } RegClass;
-
 
 static int InlineAsm_Register(EncodedOperand *operand);
 
@@ -2895,7 +2893,7 @@ PCodeInstruction *create_pcode_asm_instruction(ParsedAsmInstruction *ia, SInt32 
             out->arg = access;
         }
     if (ia->specialFlags & 2) {
-        PCodeUtilities_004a2290((PCodeOperand *)out, 4096, 0, 0);
+        fn_004a2290((PCodeOperand *)out, 4096, 0, 0);
         if (copts.exceptions && gCurrentStatement && !inlineAsmMode)
             Exceptions_CollectRegisterOperands(gCurrentStatement->dobjstack, (PCodeOperand *)out);
     }
@@ -3002,7 +3000,7 @@ const char *InlineAsmPPC_GetOpcodeMnemonic(struct ParsedAsmInstruction *instruct
     return gPCodeOpcodeDescriptors[instruction->opcode].mnemonic;
 }
 
-SInt32 InlineAsmPPC_004631f0(ParsedAsmInstruction *operand)
+SInt32 fn_004631f0(ParsedAsmInstruction *operand)
 {
     PCodeOpcodeDescriptor *descriptor = &gPCodeOpcodeDescriptors[operand->opcode];
     SInt32 opcode = operand->opcode;
@@ -3120,7 +3118,7 @@ SInt32 InlineAsmPPC_004631f0(ParsedAsmInstruction *operand)
     return 0;
 }
 
-void InlineAsmPPC_00462d70(Statement *stmt, AsmOut *out)
+void fn_00462d70(Statement *stmt, AsmOut *out)
 {
     ParsedAsmInstruction *instruction = (ParsedAsmInstruction *)stmt->expr;
     EncodedOperand *operand;
@@ -3251,19 +3249,19 @@ void InlineAsmPPC_00462d70(Statement *stmt, AsmOut *out)
                         out->operands[out->numoperands].type = 0;
                         out->operands[out->numoperands].object = operand->target.object;
                         out->operands[out->numoperands].offset = operand->data.value;
-                        out->operands[out->numoperands].size = InlineAsmPPC_004631f0(instruction);
+                        out->operands[out->numoperands].size = fn_004631f0(instruction);
                         out->numoperands++;
                     } else if (descriptor->flags & fIsWrite) {
                         out->operands[out->numoperands].type = 1;
                         out->operands[out->numoperands].object = operand->target.object;
                         out->operands[out->numoperands].offset = operand->data.value;
-                        out->operands[out->numoperands].size = InlineAsmPPC_004631f0(instruction);
+                        out->operands[out->numoperands].size = fn_004631f0(instruction);
                         out->numoperands++;
                     } else {
                         out->operands[out->numoperands].type = 3;
                         out->operands[out->numoperands].object = operand->target.object;
                         out->operands[out->numoperands].offset = operand->data.value;
-                        out->operands[out->numoperands].size = InlineAsmPPC_004631f0(instruction);
+                        out->operands[out->numoperands].size = fn_004631f0(instruction);
                         out->numoperands++;
                     }
                 }

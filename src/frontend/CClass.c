@@ -657,7 +657,7 @@ void CClass_CheckOverrides(TypeClass *cls)
     root_class_layout = layout;
     select_layout_member_overrides(layout);
 
-    if (CClass_004ea020(layout, 0) != NULL) {
+    if (fn_004ea020(layout, 0) != NULL) {
         cls->flags |= CLASS_ABSTRACT;
     }
     if (copts.warn_hidevirtual != 0) {
@@ -762,7 +762,7 @@ Object *create_root_class_layout(TypeClass *type)
     object = create_class_layout(NULL, type, 0, 0);
     root_class_layout = object;
     select_layout_member_overrides(object);
-    return CClass_004ea020(object, 0);
+    return fn_004ea020(object, 0);
 }
 
 void build_class_layout(TypeClass *type)
@@ -773,11 +773,11 @@ void build_class_layout(TypeClass *type)
     object = create_class_layout(NULL, type, 0, 0);
     root_class_layout = object;
     select_layout_member_overrides(object);
-    CClass_004ea020(object, '\x01');
+    fn_004ea020(object, '\x01');
     build_virtual_function_entries(object);
 }
 
-Object *CClass_004ea020(OverrideClass *record, char report)
+Object *fn_004ea020(OverrideClass *record, char report)
 {
     Object *result = NULL;
     OverrideFunc *nodeA;
@@ -800,9 +800,9 @@ Object *CClass_004ea020(OverrideClass *record, char report)
     }
     for (nodeB = (OverrideClassBase *)record->children; nodeB != NULL; nodeB = nodeB->next) {
         if (result != NULL)
-            CClass_004ea020(nodeB->layout, report);
+            fn_004ea020(nodeB->layout, report);
         else
-            result = CClass_004ea020(nodeB->layout, report);
+            result = fn_004ea020(nodeB->layout, report);
     }
     return result;
 }
@@ -1958,7 +1958,7 @@ Object *get_or_create_thunk_object(Object *source, SInt32 firstArgument, SInt32 
     Object *object;
     PendingThunk *newEntry;
 
-    CInline_0050f240(source);
+    fn_0050f240(source);
     entry = pending_thunks;
     while (entry) {
         if (source == entry->functionObject && firstArgument == entry->b && secondArgument == entry->c &&

@@ -663,7 +663,6 @@ struct SOMVTable *find_or_add_base(SOMClassBuildState *list, TypeClass *unused, 
     return node;
 }
 
-
 void build_class_vtables_and_members(SOMClassBuildState *layout, TypeClass *cls)
 {
     ClassList *baseClass;
@@ -1475,7 +1474,7 @@ void CSOM_PrependTheClassArg(TypeFunc *function)
     func->args = arg;
 }
 
-Object *CSOM_004e45b0(char *name, char *signature)
+Object *fn_004e45b0(char *name, char *signature)
 {
     ObjectList *list;
     Object *obj;
@@ -1539,7 +1538,7 @@ ENode *CSOM_BuildNewObjectInstance(TypeClass *cls)
     }
 
     if (copts.SOMCheckEnvironment == 0 || copts.SOMCallOptimization == 0) {
-        obj = CSOM_004e45b0("somNewObjectInstance", "ppll");
+        obj = fn_004e45b0("somNewObjectInstance", "ppll");
         if (obj == NULL)
             return nullnode();
     } else {
@@ -1577,20 +1576,20 @@ ENode *CSOM_CallReleaseObjectReference(TypeClass *unused, ENode *argument)
 {
     Object *object;
 
-    object = CSOM_004e45b0("somReleaseObjectReference", "pp");
+    object = fn_004e45b0("somReleaseObjectReference", "pp");
     if (object != NULL) {
         return funccallexpr(object, argument, NULL, NULL, NULL);
     }
     return nullnode();
 }
 
-void CSOM_004e4390(Object *obj)
+void fn_004e4390(Object *obj)
 {
     TypeClass *type;
     Statement *node;
     Object *method;
 
-    method = CSOM_004e45b0("somReleaseObjectReference", "pp");
+    method = fn_004e45b0("somReleaseObjectReference", "pp");
     if (method != NULL) {
         type = TYPE_CLASS(obj->type);
         obj->type = CDecl_NewPointerType((Type *)type);
@@ -1719,7 +1718,6 @@ void CSOM_GenerateSomselfAssignment(TypeClass *tclass, Statement *stmt)
 
 #define ETEMP_KIND 60
 
-
 ENode *CSOM_AppendPointerArgCall(ENode *node, ENodeList *spec)
 {
     Type *resultType = node->rtype;
@@ -1804,7 +1802,7 @@ ENode *CSOM_AppendPointerArgCall(ENode *node, ENodeList *spec)
     return node;
 }
 
-Boolean CSOM_004e3cd0(Type *ftype)
+Boolean fn_004e3cd0(Type *ftype)
 {
     SInt32 integerRegisters = 8;
     SInt32 floatRegisters = 13;
@@ -1998,7 +1996,7 @@ ENode *CSOM_MakeMethodReference(BClassList *classPath, Object *method, Boolean p
             methodRef = makemonadicnode(methodRef, EINDIRECT);
         }
         methodRef->rtype = CDecl_NewPointerType(method->type);
-        resolveFunction = CSOM_004e45b0("somParentNumResolve", "ppip");
+        resolveFunction = fn_004e45b0("somParentNumResolve", "ppip");
         if (resolveFunction == NULL)
             return nullnode();
         result = funccallexpr(resolveFunction, create_objectrefnode(originalClass->sominfo->classDataObject),
@@ -2008,7 +2006,7 @@ ENode *CSOM_MakeMethodReference(BClassList *classPath, Object *method, Boolean p
             result->flags |= 0x10;
     } else {
         find_method_vtbl_class_and_offset(targetClass, method, &methodClass, &methodOffset);
-        if (copts.SOMCallOptimization != 0 && CSOM_004e3cd0(method->type) != 0)
+        if (copts.SOMCallOptimization != 0 && fn_004e3cd0(method->type) != 0)
             return create_glue_objectrefnode(methodClass, methodOffset, method);
         {
             ENode *classDataRef = create_objectrefnode(methodClass->sominfo->classDataObject);

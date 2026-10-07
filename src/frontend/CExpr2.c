@@ -23,7 +23,6 @@
 #include "compiler/CompilerTools.h"
 #include "compiler/PPCError.h"
 
-
 typedef enum { ENX_A = 1 } ENodeTypeX;
 
 typedef enum RegClass { RC_GPR = 0, RC_FPR = 1, RC_SPR = 2, RC_CRFIELD = 3, RC_CRFIELDBIT = 8, RC_VR = 9 } RegClass;
@@ -477,7 +476,6 @@ static inline ENode *NewIndirect(ENode *inner)
     e->data.monadic = inner;
     return e;
 }
-
 
 ENode *scannew(char global)
 {
@@ -1617,7 +1615,7 @@ rightDone:
     return 1;
 }
 
-Boolean CExpr2_0046e3e0(Type *type, SInt16 op)
+Boolean fn_0046e3e0(Type *type, SInt16 op)
 {
     switch (op) {
         case 0:
@@ -4830,7 +4828,6 @@ static ENode *mkTemp(Type *t)
     return n;
 }
 
-
 ENode *CExpr_GetETEMPCopy(ENode *expr)
 {
     ENode *temp;
@@ -5281,11 +5278,11 @@ void CExpr_SearchExprTree(ENode *expr, void (*value)(ENode *), SInt32 count, ...
         expr_search_types[i] = 0;
     for (i = 0; i < count; i++)
         expr_search_types[*(SInt32 *)((args += 4) - 4)] = 1;
-    CExpr2_004743d0(expr);
+    fn_004743d0(expr);
 }
 
 /* Recursive expression-tree walker. */
-void CExpr2_004743d0(ENode *e)
+void fn_004743d0(ENode *e)
 {
     ENodeList *list;
 
@@ -5345,7 +5342,7 @@ void CExpr2_004743d0(ENode *e)
             case EBCLR:
             case EBTST:
             case EBSET:
-                CExpr2_004743d0(e->data.diadic.left);
+                fn_004743d0(e->data.diadic.left);
                 e = e->data.diadic.right;
                 break;
             case EINTCONST:
@@ -5365,20 +5362,20 @@ void CExpr2_004743d0(ENode *e)
             case EFUNCCALL:
             case EFUNCCALLP:
                 for (list = e->data.funccall.args; list != NULL; list = list->next)
-                    CExpr2_004743d0(list->node);
+                    fn_004743d0(list->node);
                 e = e->data.funccall.funcref;
                 break;
             case ENULLCHECK:
-                CExpr2_004743d0(e->data.monadic);
+                fn_004743d0(e->data.monadic);
                 e = e->data.diadic.right;
                 break;
             case EMFPOINTER:
-                CExpr2_004743d0(e->data.monadic);
+                fn_004743d0(e->data.monadic);
                 e = e->data.diadic.right;
                 break;
             case ECOND:
-                CExpr2_004743d0(e->data.cond.cond);
-                CExpr2_004743d0(e->data.cond.expr1);
+                fn_004743d0(e->data.cond.cond);
+                fn_004743d0(e->data.cond.expr1);
                 e = e->data.cond.expr2;
                 break;
             default:

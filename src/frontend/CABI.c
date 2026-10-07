@@ -1282,7 +1282,7 @@ void CABI_GenerateClassFunction(TypeClass *cl, Object *func)
     copts.filesyminfo = savesym;
 }
 
-OffsetEntry *CABI_0050bf30(OffsetEntry *list, Type *type, SInt32 offset, Boolean flag)
+OffsetEntry *fn_0050bf30(OffsetEntry *list, Type *type, SInt32 offset, Boolean flag)
 {
     OffsetEntry *e;
     SInt32 end;
@@ -1379,23 +1379,23 @@ Statement *make_baseclass_and_ivars_copy_statements(Statement *stmt, TypeClass *
                     while (type->type == TYPEARRAY)
                         type = TYPE_POINTER(type)->target;
                     if (type->type != TYPECLASS) {
-                        regions = CABI_0050bf30(regions, ivar->type, ivar->offset, 1);
+                        regions = fn_0050bf30(regions, ivar->type, ivar->offset, 1);
                         break;
                     }
                 case TYPECLASS:
                     if (flag) {
                         if (CClass_CopyConstructor(TYPE_CLASS(type)) || CClass_CopyConstructor(TYPE_CLASS(type))) {
-                            regions = CABI_0050bf30(regions, ivar->type, ivar->offset, 0);
+                            regions = fn_0050bf30(regions, ivar->type, ivar->offset, 0);
                             break;
                         }
                     } else {
                         if (CClass_AssignmentOperator(TYPE_CLASS(type))) {
-                            regions = CABI_0050bf30(regions, ivar->type, ivar->offset, 0);
+                            regions = fn_0050bf30(regions, ivar->type, ivar->offset, 0);
                             break;
                         }
                     }
                 default:
-                    regions = CABI_0050bf30(regions, ivar->type, ivar->offset, 1);
+                    regions = fn_0050bf30(regions, ivar->type, ivar->offset, 1);
                     break;
             }
         }

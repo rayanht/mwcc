@@ -55,15 +55,15 @@ extern void COptimizer_RecordObjectUse(Object *object, unsigned char direct_refe
 extern void COptimizer_CountExpressionObjectUses(ENode *expression);
 extern void simplify_statement_branches(Statement *stmt);
 extern void follow_switch_labels_and_fold_constant(Statement *self);
-extern void COptimizer_004bf980(void);
+extern void fn_004bf980(void);
 extern void mark_dlocal_reference_bits(ENode *node);
 extern void set_bit(SInt16 *p, SInt16 n);
 extern UInt16 test_bit(const SInt16 *words, short bit);
-extern void COptimizer_004c0470(ENode *node);
+extern void fn_004c0470(ENode *node);
 extern void invalidate_expr_cse(ENode *expression);
 extern ENode *fn_004c07c0(ENode *expr);
 extern void eliminate_unreachable_statements(Statement *items);
-extern void COptimizer_004c0800(ENode *n);
+extern void fn_004c0800(ENode *n);
 extern COptCSE *find_or_create_commutative_cse(ENode *expr, COptCSE *left, COptCSE *right);
 extern void eliminate_common_subexpressions(void);
 extern COptCSE *collect_expr_cse(ENode *expr);

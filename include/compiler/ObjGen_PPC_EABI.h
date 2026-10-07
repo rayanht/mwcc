@@ -172,7 +172,7 @@ extern void ObjGen_PPC_EABI_EmitDescriptorWithRelocations(Object *obj, SInt32 va
                                                           ObjGenRelocationRequest *list);
 extern void ObjGen_PPC_EABI_RestoreFunctionState(void);
 extern SInt16 ObjGen_PPC_EABI_SetupFunctionSection(Object *param);
-extern void ObjGen_PPC_EABI_00488ee0(SInt32 entry, SInt32 value);
+extern void fn_00488ee0(SInt32 entry, SInt32 value);
 extern void emit_relocation(SInt32 op, SInt32 offset, Object *obj, ObjGenSection *ctx, SInt32 value);
 extern void ObjGen_PPC_EABI_SetSymbolOffset(Object *object, int offset);
 extern void fn_00489360(Object *arg1, int arg2, void *arg3);

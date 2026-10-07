@@ -105,7 +105,7 @@ void CInline_GeneratePendingFunctionBody(void)
         CExpr_SearchExprTree((ENode *)pending->func, forward_objref, 1, 0x38);
     }
     objects = undefined_function_objects;
-    CInline_0050f120(objects);
+    fn_0050f120(objects);
     while (CInline_DispatchNextDeferredNode()) {
     }
     functionNamespace = CFunc_FuncGenSetup(&body, NULL);
@@ -123,7 +123,7 @@ void CInline_GeneratePendingFunctionBody(void)
             evalMode = 0;
             memo_list = NULL;
             alloc_state = 0;
-            statement->expr = CInline_00513240(expression);
+            statement->expr = fn_00513240(expression);
             pending = pending->next;
         }
     }
@@ -166,7 +166,7 @@ PendingFunction *generate_guarded_initializers(PendingFunction *pending)
         evalMode = 0;
         memo_list = NULL;
         alloc_state = 0;
-        statement->expr = CInline_00513240(initializer);
+        statement->expr = fn_00513240(initializer);
         pending = pending->next;
     } while (pending && pending->cls == group);
     lastStatement = CFunc_AppendStatement(4);
@@ -308,7 +308,7 @@ static inline Boolean CInline_Cleanup(Statement *stmt)
         stmt = stmt->next;
     }
     list = undefined_function_objects;
-    return CInline_0050f120(list);
+    return fn_0050f120(list);
 }
 
 #define CERROR_FILE ("CInline.c")
@@ -446,7 +446,7 @@ static inline ENode *CInline_GetName0(ENode *name)
     evalMode = 2;
     memo_list = NULL;
     alloc_state = 1;
-    return CInline_00513240(name);
+    return fn_00513240(name);
 }
 
 static inline ENode *CInline_GetName(ENode *name)
@@ -457,7 +457,7 @@ static inline ENode *CInline_GetName(ENode *name)
 static inline void SaveName(IStmtRec *sp, ENode *name)
 {
     ENode *str = CInline_GetName(name);
-    CInline_005130b0(str, 0);
+    fn_005130b0(str, 0);
     sp->data.operand = str;
 }
 
@@ -541,7 +541,7 @@ static ENode *gen_expr(void *x)
     evalMode = 4;
     memo_list = NULL;
     alloc_state = 0;
-    return fold_constants(CInline_00513240(x));
+    return fold_constants(fn_00513240(x));
 }
 
 static ENode *gen_expr_save(void *x)
@@ -556,7 +556,7 @@ static ENode *gen_expr_save(void *x)
     evalMode = 4;
     v2 = memo_list;
     memo_list = NULL;
-    x = CInline_00513240(x);
+    x = fn_00513240(x);
     alloc_state = v1;
     evalMode = v0;
     memo_list = v2;
@@ -594,7 +594,7 @@ static inline ENode *InlineArgument(ENode *expr)
     evalMode = 4;
     savedState = memo_list;
     memo_list = NULL;
-    result = CInline_00513240(expr);
+    result = fn_00513240(expr);
     alloc_state = savedFlag;
     evalMode = savedMode;
     memo_list = savedState;
@@ -726,7 +726,7 @@ static ENode *gen_name(ENode *x)
     evalMode = 2;
     memo_list = NULL;
     alloc_state = 1;
-    return CInline_00513240(x);
+    return fn_00513240(x);
 }
 
 static SInt32 CInline_Memo(ENode *key)
@@ -874,7 +874,7 @@ void make_auto_generated_method(Object *func)
     CError_FATAL(4097);
 }
 
-void CInline_0050ee60(Statement *stmt, Object *func, Boolean flag)
+void fn_0050ee60(Statement *stmt, Object *func, Boolean flag)
 {
     Boolean autoInline;
     Boolean isInline;
@@ -958,7 +958,7 @@ Boolean check_statement_count_and_locals_size(Object *func, Statement *stmt)
     return 1;
 }
 
-Boolean CInline_0050f120(struct InlineObjectEntry *list)
+Boolean fn_0050f120(struct InlineObjectEntry *list)
 {
     Boolean result = 0;
     while (list != NULL) {
@@ -986,7 +986,7 @@ Boolean CInline_0050f120(struct InlineObjectEntry *list)
     return result;
 }
 
-void CInline_0050f240(Object *object)
+void fn_0050f240(Object *object)
 {
     CInlineInfo *body;
     InlineNode *pending;
@@ -1021,7 +1021,7 @@ void CInline_0050f240(Object *object)
             }
             return;
         case DALIAS:
-            CInline_0050f240(object->u.alias.object);
+            fn_0050f240(object->u.alias.object);
             return;
         case DDATA:
             if ((object->qual & Q_INLINE_DATA) != 0) {
@@ -1458,14 +1458,14 @@ void CInline_ReconstructFunction(Object *function, CInlineInfo *rec, Statement *
                 evalMode = 3;
                 memo_list = NULL;
                 alloc_state = 0;
-                cursor->expr = CInline_00513240(expression);
+                cursor->expr = fn_00513240(expression);
                 break;
             case ST_RETURN:
                 if ((expression = (ENode *)record->data.operand) != NULL) {
                     evalMode = 3;
                     memo_list = NULL;
                     alloc_state = 0;
-                    cursor->expr = CInline_00513240(expression);
+                    cursor->expr = fn_00513240(expression);
                 } else {
                     cursor->expr = NULL;
                 }
@@ -1481,14 +1481,14 @@ void CInline_ReconstructFunction(Object *function, CInlineInfo *rec, Statement *
                 evalMode = 3;
                 memo_list = NULL;
                 alloc_state = 0;
-                cursor->expr = CInline_00513240(expression);
+                cursor->expr = fn_00513240(expression);
                 break;
             case ST_SWITCH:
                 expression = record->data.switchInfo->expression;
                 evalMode = 3;
                 memo_list = NULL;
                 alloc_state = 0;
-                cursor->expr = CInline_00513240(expression);
+                cursor->expr = fn_00513240(expression);
                 break;
             case ST_ASM:
                 break;
@@ -1582,7 +1582,7 @@ void CInline_SaveInfo(CInlineInfo *out, Statement *list, Object *function)
         savedStatement->type = statement->type;
         savedStatement->flags = statement->flags;
         savedStatement->value = statement->value;
-        savedStatement->exceptionActions = CInline_005102f0(list, statement);
+        savedStatement->exceptionActions = fn_005102f0(list, statement);
         savedStatement->sourceoffset = statement->sourceoffset;
         switch (statement->type) {
             case ST_EXPRESSION:
@@ -1595,7 +1595,7 @@ void CInline_SaveInfo(CInlineInfo *out, Statement *list, Object *function)
             case ST_RETURN:
                 if (statement->expr) {
                     expression = CInline_GetName(statement->expr);
-                    CInline_005130b0(expression, 0);
+                    fn_005130b0(expression, 0);
                     savedStatement->data.operand = expression;
                 } else {
                     savedStatement->data.operand = NULL;
@@ -1607,7 +1607,7 @@ void CInline_SaveInfo(CInlineInfo *out, Statement *list, Object *function)
             case ST_IFGOTO:
             case ST_IFNGOTO:
                 expression = CInline_GetName(statement->expr);
-                CInline_005130b0(expression, 0);
+                fn_005130b0(expression, 0);
                 savedStatement->data.operand = expression;
                 savedStatement->secondaryOperand.targetIndex =
                     CInline_FindIndex((UInt32)statement->label->stmt, (Statement **)list);
@@ -1631,9 +1631,9 @@ void CInline_SaveInfo(CInlineInfo *out, Statement *list, Object *function)
 
 #pragma opt_lifetimes off
 
-ExceptionAction *CInline_005102f0(Statement *indexMap, Statement *info)
+ExceptionAction *fn_005102f0(Statement *indexMap, Statement *info)
 {
-    ExceptionAction *src = info->dobjstack; /* CInline_005102f0: serialization view of exception actions */
+    ExceptionAction *src = info->dobjstack; /* fn_005102f0: serialization view of exception actions */
     ExceptionAction *dst = NULL;
 
     while (src != NULL) {
@@ -1795,7 +1795,7 @@ void *create_inline_switch_data(Statement *base, Statement *classInfo)
     result = (InlineSwitchData *)galloc(count * 10 + 12);
 
     name = gen_name(classInfo->expr);
-    CInline_005130b0(name, 0);
+    fn_005130b0(name, 0);
     result->expression = name;
 
     result->defaultStatementIndex = CIB_FindIndex(base, list->defaultlabel->stmt);
@@ -1895,7 +1895,7 @@ void inline_statement_list(Statement *list)
             case ST_IFGOTO:
             case ST_IFNGOTO:
             case ST_GOTOEXPR:
-                CInline_005114e0(statement->expr);
+                fn_005114e0(statement->expr);
                 break;
             case ST_NOP:
             case ST_LABEL:
@@ -1911,7 +1911,7 @@ void inline_statement_list(Statement *list)
     }
 }
 
-void CInline_005114e0(ENode *node)
+void fn_005114e0(ENode *node)
 {
     TypeClass *value1;
     UInt32 value2;
@@ -1919,7 +1919,7 @@ void CInline_005114e0(ENode *node)
     for (;;) {
         switch (node->type) {
             case EOBJREF:
-                CInline_0050f240(node->data.objref);
+                fn_0050f240(node->data.objref);
                 if (node->data.objref->datatype == TYPEFUNC) {
                     CExpr_AliasTransform(node);
                     break;
@@ -1979,7 +1979,7 @@ void CInline_005114e0(ENode *node)
             case EBCLR:
             case EBTST:
             case EBSET:
-                CInline_005114e0(node->data.diadic.left);
+                fn_005114e0(node->data.diadic.left);
                 node = node->data.diadic.right;
                 break;
 
@@ -2002,7 +2002,7 @@ void CInline_005114e0(ENode *node)
             case EFUNCCALLP: {
                 ENodeList *argument;
                 for (argument = node->data.funccall.args; argument != NULL; argument = argument->next)
-                    CInline_005114e0(argument->node);
+                    fn_005114e0(argument->node);
                 node = node->data.funccall.funcref;
                 if (copts.warn_notinlined && !copts.dontinline && node->type == EOBJREF &&
                     (node->data.objref->qual & Q_INLINE) && node->data.objref->datatype != TYPECLASS &&
@@ -2012,7 +2012,7 @@ void CInline_005114e0(ENode *node)
             }
 
             case ENULLCHECK:
-                CInline_005114e0(node->data.diadic.left);
+                fn_005114e0(node->data.diadic.left);
                 node = node->data.diadic.right;
                 break;
 
@@ -2021,8 +2021,8 @@ void CInline_005114e0(ENode *node)
                 break;
 
             case ECOND:
-                CInline_005114e0(node->data.cond.cond);
-                CInline_005114e0(node->data.cond.expr1);
+                fn_005114e0(node->data.cond.cond);
+                fn_005114e0(node->data.cond.expr1);
                 node = node->data.cond.expr2;
                 break;
 
@@ -2688,7 +2688,7 @@ ENode *inline_call_expression(ENode *expr)
                 evalMode = 4;
                 memo_list = NULL;
                 alloc_state = 0;
-                statementExpr = CInline_00513240(source);
+                statementExpr = fn_00513240(source);
                 if (memoryReturn != 0) {
                     if (result != NULL) {
                         statementExpr = makecommaexpression(result, statementExpr);
@@ -2714,14 +2714,14 @@ ENode *inline_call_expression(ENode *expr)
                     evalMode = 4;
                     memo_list = NULL;
                     alloc_state = 0;
-                    result = makecommaexpression(result, CInline_00513240(statementSource));
+                    result = makecommaexpression(result, fn_00513240(statementSource));
                     break;
                 }
                 firstSource = body->stmtinfo[index].data.operand;
                 evalMode = 4;
                 memo_list = NULL;
                 alloc_state = 0;
-                result = CInline_00513240(firstSource);
+                result = fn_00513240(firstSource);
                 break;
             default:
                 CError_FATAL(1437);
@@ -2784,7 +2784,7 @@ ENode *setup_inline_locals_and_arguments(Object *function, CInlineInfo *inlineIn
         if (parameter->used == 0) {
             data_0058245a[i].var = NULL;
             data_0058245a[i].expr = NULL;
-        } else if (argument != NULL && parameter->dirty != 0 && CInline_00513910(argument->node) == 0 &&
+        } else if (argument != NULL && parameter->dirty != 0 && fn_00513910(argument->node) == 0 &&
                    !(targetMatches && argument->node->rtype->size != parameter->type->size)) {
             data_0058245a[i].var = NULL;
             data_0058245a[i].expr = argument->node;
@@ -2818,7 +2818,7 @@ ENode *setup_inline_locals_and_arguments(Object *function, CInlineInfo *inlineIn
                 else
                     initializers = makecommaexpression(data_0058245a[i].arg, initializers);
             } else if (data_0058245a[i].expr == NULL) {
-                if (CInline_00513910(argument->node) != 0) {
+                if (fn_00513910(argument->node) != 0) {
                     if (initializers == NULL)
                         initializers = argument->node;
                     else
@@ -2948,21 +2948,21 @@ ENode *fn_00513040(ENode *expr, UInt8 mode)
         case 3:
         case 4:
             alloc_state = 0;
-            expr = CInline_00513240(expr);
+            expr = fn_00513240(expr);
             break;
         case 1:
             alloc_state = 1;
-            expr = CInline_00513240(expr);
+            expr = fn_00513240(expr);
             break;
         case 2:
             alloc_state = 1;
-            expr = CInline_00513240(expr);
-            CInline_005130b0(expr, 0);
+            expr = fn_00513240(expr);
+            fn_005130b0(expr, 0);
     }
     return expr;
 }
 
-void CInline_005130b0(ENode *node, Boolean flag)
+void fn_005130b0(ENode *node, Boolean flag)
 {
     ENodeList *l;
 
@@ -3017,7 +3017,7 @@ void CInline_005130b0(ENode *node, Boolean flag)
             case EANDASS:
             case EXORASS:
             case EORASS:
-                CInline_005130b0(node->data.diadic.left, 1);
+                fn_005130b0(node->data.diadic.left, 1);
                 node = node->data.diadic.right;
                 flag = 0;
                 break;
@@ -3043,7 +3043,7 @@ void CInline_005130b0(ENode *node, Boolean flag)
             case ECOMMA:
             case EROTL:
             case EROTR:
-                CInline_005130b0(node->data.diadic.left, 0);
+                fn_005130b0(node->data.diadic.left, 0);
                 node = node->data.diadic.right;
                 flag = 0;
                 break;
@@ -3062,31 +3062,31 @@ void CInline_005130b0(ENode *node, Boolean flag)
             case EMEMBER:
                 node = ((ENodeList *)node->data.monadic)->node;
                 if (node != NULL)
-                    CInline_005130b0(node, 0);
+                    fn_005130b0(node, 0);
                 return;
 
             case EFUNCCALL:
             case EFUNCCALLP:
-                CInline_005130b0(node->data.funccall.funcref, 0);
+                fn_005130b0(node->data.funccall.funcref, 0);
                 for (l = node->data.funccall.args; l != NULL; l = l->next)
-                    CInline_005130b0(l->node, 0);
+                    fn_005130b0(l->node, 0);
                 return;
 
             case ENULLCHECK:
-                CInline_005130b0(node->data.diadic.left, 0);
+                fn_005130b0(node->data.diadic.left, 0);
                 node = node->data.diadic.right;
                 flag = 0;
                 break;
 
             case EMFPOINTER:
-                CInline_005130b0(node->data.diadic.left, 0);
+                fn_005130b0(node->data.diadic.left, 0);
                 node = node->data.diadic.right;
                 flag = 0;
                 break;
 
             case ECOND:
-                CInline_005130b0(node->data.cond.cond, 0);
-                CInline_005130b0(node->data.cond.expr1, 0);
+                fn_005130b0(node->data.cond.cond, 0);
+                fn_005130b0(node->data.cond.expr1, 0);
                 node = node->data.cond.expr2;
                 flag = 0;
                 break;
@@ -3100,7 +3100,7 @@ void CInline_005130b0(ENode *node, Boolean flag)
     }
 }
 
-ENode *CInline_00513240(ENode *expr)
+ENode *fn_00513240(ENode *expr)
 {
     ENode *node;
     ObjectList *objects;
@@ -3123,7 +3123,7 @@ ENode *CInline_00513240(ENode *expr)
                         break;
                     }
                     case TDE_SOURCEREF:
-                        node->data.templdep.u.sourceref.expr = CInline_00513240(node->data.templdep.u.sourceref.expr);
+                        node->data.templdep.u.sourceref.expr = fn_00513240(node->data.templdep.u.sourceref.expr);
                         break;
                     case TDE_PARAM:
                     case TDE_SIZEOF:
@@ -3167,7 +3167,7 @@ ENode *CInline_00513240(ENode *expr)
             case EFORCELOAD:
             case ETYPCON:
             case EBITFIELD:
-                node->data.monadic = CInline_00513240(node->data.monadic);
+                node->data.monadic = fn_00513240(node->data.monadic);
                 break;
             case EMUL:
             case EMULV:
@@ -3208,27 +3208,27 @@ ENode *CInline_00513240(ENode *expr)
             case EBCLR:
             case EBTST:
             case EBSET:
-                node->data.diadic.left = CInline_00513240(node->data.diadic.left);
-                node->data.diadic.right = CInline_00513240(node->data.diadic.right);
+                node->data.diadic.left = fn_00513240(node->data.diadic.left);
+                node->data.diadic.right = fn_00513240(node->data.diadic.right);
                 break;
             case ECOND:
-                node->data.cond.cond = CInline_00513240(node->data.cond.cond);
-                node->data.cond.expr1 = CInline_00513240(node->data.cond.expr1);
-                node->data.cond.expr2 = CInline_00513240(node->data.cond.expr2);
+                node->data.cond.cond = fn_00513240(node->data.cond.cond);
+                node->data.cond.expr1 = fn_00513240(node->data.cond.expr1);
+                node->data.cond.expr2 = fn_00513240(node->data.cond.expr2);
                 break;
             case EMFPOINTER:
-                node->data.diadic.left = CInline_00513240(node->data.diadic.left);
-                node->data.diadic.right = CInline_00513240(node->data.diadic.right);
+                node->data.diadic.left = fn_00513240(node->data.diadic.left);
+                node->data.diadic.right = fn_00513240(node->data.diadic.right);
                 break;
             case EFUNCCALL:
             case EFUNCCALLP:
-                node->data.funccall.funcref = CInline_00513240(node->data.funccall.funcref);
+                node->data.funccall.funcref = fn_00513240(node->data.funccall.funcref);
                 node->data.funccall.args = copy_enode_list(node->data.funccall.args);
                 break;
             case ENULLCHECK:
                 node->data.cond.expr2 = (ENode *)CInline_Memo(node->data.cond.expr2);
-                node->data.diadic.left = CInline_00513240(node->data.diadic.left);
-                node->data.diadic.right = CInline_00513240(node->data.diadic.right);
+                node->data.diadic.left = fn_00513240(node->data.diadic.left);
+                node->data.diadic.right = fn_00513240(node->data.diadic.right);
                 break;
             case EPRECOMP:
                 node->data.monadic = (ENode *)CInline_Memo(node->data.monadic);
@@ -3253,7 +3253,7 @@ ENode *CInline_00513240(ENode *expr)
                             evalMode = EM_LOCAL;
                             saved_list = memo_list;
                             memo_list = NULL;
-                            copy = CInline_00513240(input);
+                            copy = fn_00513240(input);
                             result = copy;
                             alloc_state = saved_flag;
                             evalMode = saved_mode;
@@ -3264,7 +3264,7 @@ ENode *CInline_00513240(ENode *expr)
                         }
                     }
                 }
-                node->data.monadic = CInline_00513240(node->data.monadic);
+                node->data.monadic = fn_00513240(node->data.monadic);
                 break;
             }
             case EOBJREF: {
@@ -3334,8 +3334,8 @@ ENode *CInline_00513240(ENode *expr)
                 break;
             case ENEWEXCEPTION:
             case ENEWEXCEPTIONARRAY:
-                node->data.diadic.left = CInline_00513240(node->data.diadic.left);
-                node->data.diadic.right = CInline_00513240(node->data.diadic.right);
+                node->data.diadic.left = fn_00513240(node->data.diadic.left);
+                node->data.diadic.right = fn_00513240(node->data.diadic.right);
                 break;
             case EMEMBER: {
                 EMemberInfo *dst;
@@ -3348,7 +3348,7 @@ ENode *CInline_00513240(ENode *expr)
                 if (dst->path != NULL)
                     dst->path = CClass_GetPathCopy(dst->path, alloc_state);
                 if (dst->expr != NULL)
-                    dst->expr = CInline_00513240(dst->expr);
+                    dst->expr = fn_00513240(dst->expr);
                 node->data.emember = dst;
                 break;
             }
@@ -3381,7 +3381,7 @@ ENodeList *copy_enode_list(ENodeList *values)
             } else {
                 node = (ENodeList *)lalloc(sizeof(ENodeList));
             }
-            node->node = CInline_00513240(values->node);
+            node->node = fn_00513240(values->node);
             node->next = NULL;
             if (head != NULL) {
                 tail->next = node;
@@ -3395,7 +3395,7 @@ ENodeList *copy_enode_list(ENodeList *values)
     return head;
 }
 
-Boolean CInline_00513910(ENode *expr)
+Boolean fn_00513910(ENode *expr)
 {
     Object *object;
     for (;;) {
@@ -3412,7 +3412,7 @@ Boolean CInline_00513910(ENode *expr)
                 return copts.dont_reuse_strings;
             case EMEMBER:
                 if (CInline_ArrayInitializer(expr) != NULL)
-                    return CInline_00513910(CInline_ArrayInitializer(expr));
+                    return fn_00513910(CInline_ArrayInitializer(expr));
                 return 0;
             case EINDIRECT:
                 if (expr->data.monadic->type == EOBJREF) {
@@ -3473,14 +3473,14 @@ Boolean CInline_00513910(ENode *expr)
             case ECOMMA:
             case EROTL:
             case EROTR:
-                if (CInline_00513910(expr->data.diadic.left))
+                if (fn_00513910(expr->data.diadic.left))
                     return 1;
                 expr = expr->data.diadic.right;
                 break;
             case ECOND:
-                if (CInline_00513910(expr->data.cond.cond))
+                if (fn_00513910(expr->data.cond.cond))
                     return 1;
-                if (CInline_00513910(expr->data.cond.expr1))
+                if (fn_00513910(expr->data.cond.expr1))
                     return 1;
                 expr = expr->data.cond.expr2;
                 break;

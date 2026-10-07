@@ -69,7 +69,7 @@ extern ENode *CExpr_New_ELOGNOT_Node(ENode *expr);
 extern ENode *parse_postfix_expression(Boolean allowSpecial);
 extern ENode *scan_pseudo_destructor_call(ENode *node);
 extern ENode *parse_primary_expression(Boolean expressionMode);
-extern int CExpr_004f8a40(Type *p);
+extern int fn_004f8a40(Type *p);
 /* a type seen through its integral code or enumeration payload, as encode_type_bits reads it */
 #pragma options align = mac68k
 typedef struct TypeKind {
@@ -119,7 +119,7 @@ extern SInt16 add_to_expression_constant(ENode *node, CInt64 v);
 extern ENode *CExpr_New_EDIV_Node(ENode *left, ENode *right, Boolean flag);
 extern ENode *CExpr_New_EMUL_Node(ENode *lhs, ENode *rhs);
 extern void unify_arithmetic_rtypes(ENode **leftp, ENode **rightp, SInt32 unused);
-extern void CExpr_004fb400(ENode *e);
+extern void fn_004fb400(ENode *e);
 extern void optimizecomm(ENode *expression);
 extern unsigned char get_binary_operator_info(short token, unsigned char *operatorInfo);
 extern ENode *CExpr_MemberPointerConversion(ENode *enode, Type *type, Boolean flag);

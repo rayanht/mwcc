@@ -352,7 +352,7 @@ UInt32 encode_assembly_instruction(PCodeInstruction *instr, UInt32 offset, Weird
                         value += object->u.var.uid;
                         break;
                     case DDATA:
-                        if (instr->operandData.assemblyOperands[2].arg == 10 || BE_symbol_004913b0(object)) {
+                        if (instr->operandData.assemblyOperands[2].arg == 10 || fn_004913b0(object)) {
                             if (instr->operandData.assemblyOperands[2].arg == 6)
                                 relocation->type = 5;
                             else if (instr->operandData.assemblyOperands[2].arg == 2)
@@ -1800,7 +1800,7 @@ int PCodeAssembly_EmitFunction(Object *object, struct PCodeAssemblyEntry *symbol
     }
     extraSize = 0;
     if (PCodeAssembly_ShouldEmitExtraData()) {
-        extraData = StackFrameEABI_004aabb0(size, COptimizer_GetFunctionObject(object)->name, &extraSize, object);
+        extraData = fn_004aabb0(size, COptimizer_GetFunctionObject(object)->name, &extraSize, object);
     }
     if (object->section == 0) {
         object->section = 1;
@@ -1812,7 +1812,7 @@ int PCodeAssembly_EmitFunction(Object *object, struct PCodeAssemblyEntry *symbol
     AppendGListNoData(buffer, size + extraDataSize);
     if (PCodeAssembly_ShouldEmitDebugInfo()) {
         DWARF_CreateBlockNode(object, size + extraSize, assembly_buffer_offset, output);
-        ObjGen_PPC_EABI_00488ee0(function_tokenoffset, 0);
+        fn_00488ee0(function_tokenoffset, 0);
     }
     ObjGen_PPC_EABI_ClearSectionSymbolLinkValues();
     if (symbolEntries != NULL) {
@@ -1824,7 +1824,7 @@ int PCodeAssembly_EmitFunction(Object *object, struct PCodeAssemblyEntry *symbol
     }
     for (block = gPCodeBlocks; block != NULL; block = block->next) {
         if (PCodeAssembly_ShouldEmitDebugInfo() && block->line != -1L) {
-            ObjGen_PPC_EABI_00488ee0(block->line, block->code_offset);
+            fn_00488ee0(block->line, block->code_offset);
         }
         instruction = block->instructions;
         offset = block->code_offset;

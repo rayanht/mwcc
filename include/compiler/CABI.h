@@ -38,7 +38,7 @@ extern void CABI_TransDestructor(Object *destructor, Object *completeDestructor,
                                  int mode);
 extern Statement *build_base_destruction_statements(Statement *node, VClassList *bl);
 extern Statement *destroy_members(Statement *expr, ObjMemberVar *member, TypeClass *cls);
-extern OffsetEntry *CABI_0050bf30(OffsetEntry *list, Type *type, SInt32 offset, Boolean flag);
+extern OffsetEntry *fn_0050bf30(OffsetEntry *list, Type *type, SInt32 offset, Boolean flag);
 extern Object *CABI_ConstructorCallsNew(TypeClass *tclass);
 extern Statement *assign_vbase_ctor_offsets(Statement *list, TypeClass *cls);
 extern SInt32 CABI_GetCtorOffsetOffset(TypeClass *tclass, TypeClass *baseclass);

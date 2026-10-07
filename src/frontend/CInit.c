@@ -179,7 +179,7 @@ static Object *CreateObject(Type *type, SInt32 qual)
 
 inline void InitExprWrap(Type *pt, ENode *node, Boolean flag)
 {
-    CInit_004d1d90(pt, node);
+    fn_004d1d90(pt, node);
 }
 
 static void CInit_DefaultInit(Type *type, ENode *node)
@@ -401,7 +401,7 @@ UInt8 advance_initializer_state(CInit *initializer)
     return initializer->state;
 }
 
-Boolean CInit_004d3ba0(Type *type)
+Boolean fn_004d3ba0(Type *type)
 {
     switch ((SInt8)type->type) {
         case TYPESTRUCT:
@@ -418,7 +418,7 @@ Boolean CInit_004d3ba0(Type *type)
     }
 }
 
-Boolean CInit_004d3b20(Type *type)
+Boolean fn_004d3b20(Type *type)
 {
     Boolean flag;
 
@@ -570,7 +570,7 @@ void initialize_int(InitializerData *stage, ENode *expr, Type *type, UInt32 qual
     }
 }
 
-void CInit_004d3620(TypeBitfield *bf, unsigned char *ptr, CInt64 value)
+void fn_004d3620(TypeBitfield *bf, unsigned char *ptr, CInt64 value)
 {
     SInt32 i;
     SInt32 n;
@@ -883,8 +883,6 @@ void initialize_struct_data(InitializerData *ctx, CInit *ci, Type *type, UInt32 
     } while (1);
 }
 
-
-
 void initialize_class_initializer_data(InitializerData *dst, CInit *op, Type *type, UInt32 qual, int flag)
 {
     ObjMemberVar *member;
@@ -1087,7 +1085,7 @@ int initialize_typed_data(InitializerData *data, CInit *init, Type *type, UInt32
                     expr = oldassignmentpromotion(initializerExpr, baseType, qualifiers & Q_CV, 1);
                     if (expr->rtype->type == TYPEINT) {
                         if (expr->type == EINTCONST)
-                            CInit_004d3620(TYPE_BITFIELD(type), data->buffer + data->size, expr->data.intval);
+                            fn_004d3620(TYPE_BITFIELD(type), data->buffer + data->size, expr->data.intval);
                         else
                             append_initializer_entry(data, type, expr);
                     } else {
@@ -1132,7 +1130,7 @@ int initialize_typed_data(InitializerData *data, CInit *init, Type *type, UInt32
 
 /* Chained initialization data, with allocation state in the head block. */
 
-void CInit_004d2700(InitializerData *data, Type *type, UInt32 qual, Boolean flag)
+void fn_004d2700(InitializerData *data, Type *type, UInt32 qual, Boolean flag)
 {
     SInt32 size;
     TypePointer *array;
@@ -1326,7 +1324,7 @@ Boolean initialize_class_object(Object *obj, Type *initObject, ENode *expr, SInt
     return 1;
 }
 
-Boolean CInit_004d20e0(Type *type, ENode *initializer, SInt32 offset, char parseArguments)
+Boolean fn_004d20e0(Type *type, ENode *initializer, SInt32 offset, char parseArguments)
 {
     NameSpaceObjectList *objects;
     Object *classInfo;
@@ -1449,7 +1447,7 @@ void init_int(Type *type, ENode *node)
     cinit_state->expr_offset += type->size;
 }
 
-void CInit_004d1d90(Type *type, ENode *node)
+void fn_004d1d90(Type *type, ENode *node)
 {
     switch ((SInt8)type->type) {
         case TYPEINT:
@@ -1773,7 +1771,7 @@ void initialize_class_data(Type *t, Boolean flag)
     } else {
         if (brace)
             CError_ReportError(ERR_ILLEGAL_INITIALIZATION);
-        CInit_004d1d90(t, oldassignmentpromotion(conv_assignment_expression(), t, 0, 1));
+        fn_004d1d90(t, oldassignmentpromotion(conv_assignment_expression(), t, 0, 1));
     }
     cinit_state->expr_offset = base + t->size;
     if (tk == '}' && brace)
@@ -1813,7 +1811,7 @@ void initialize_data_by_type(Type *node, UInt32 mode, Boolean flag)
                 ctx = parse_initializer_expression(&localA);
                 n = oldassignmentpromotion(ctx, node, mode & 3, 1);
             }
-            CInit_004d1d90(node, n);
+            fn_004d1d90(node, n);
             return;
 
         case TYPEBITFIELD:
@@ -1825,7 +1823,7 @@ void initialize_data_by_type(Type *node, UInt32 mode, Boolean flag)
                 ty = TYPE_ENUM(ty)->enumtype;
             n = oldassignmentpromotion(ctx, ty, 0, 1);
             if (n->type == EINTCONST)
-                CInit_004d3620(TYPE_BITFIELD(node), cinit_state->buffer + cinit_state->expr_offset, n->data.intval);
+                fn_004d3620(TYPE_BITFIELD(node), cinit_state->buffer + cinit_state->expr_offset, n->data.intval);
             else
                 CError_ReportError(ERR_ILLEGAL_CONSTANT_EXPRESSION);
             if (braced) {
@@ -1884,14 +1882,14 @@ void initialize_object_at_offset(Type *type, ENode *initializer, Boolean is_clas
     }
 }
 
-void CInit_004d1170(Type *type, ENode *expr, Boolean flag)
+void fn_004d1170(Type *type, ENode *expr, Boolean flag)
 {
     ENode *node;
     TypePointer *arrayType;
     SInt32 offset;
 
     if (flag) {
-        CInit_004d20e0(type, expr, cinit_state->expr_offset, 0);
+        fn_004d20e0(type, expr, cinit_state->expr_offset, 0);
     } else {
         if (type->type == TYPEARRAY && (type->size & 1)) {
             arrayType = (TypePointer *)galloc(sizeof(TypePointer));
@@ -1919,8 +1917,7 @@ void CInit_004d1170(Type *type, ENode *expr, Boolean flag)
     }
 }
 
-ENode *CInit_004d0ae0(Object *obj, Type *type, UInt32 qual, void (*contextOffset)(Type *, ENode *, Boolean),
-                      Boolean flag)
+ENode *fn_004d0ae0(Object *obj, Type *type, UInt32 qual, void (*contextOffset)(Type *, ENode *, Boolean), Boolean flag)
 {
     ENode *objectNode;
     Object *targetObject;
@@ -2067,7 +2064,7 @@ ENode *CInit_004d0ae0(Object *obj, Type *type, UInt32 qual, void (*contextOffset
             return result;
         }
         InitBuffer(type->size);
-        CInit_004d1d90(type, result);
+        fn_004d1d90(type, result);
         if (obj->type->size != cinit_state->bufferSize)
             CError_FATAL(2684);
         CanAllocObject(obj->type);
@@ -2409,7 +2406,7 @@ ENode *CInit_AutoObject(Object *object, Type *type, UInt32 qualifiers)
     int index;
     int structureKind;
 
-    CInit_004d2700(&initializer, type, qualifiers, copts.cplusplus || copts.gcc_extensions || object == NULL);
+    fn_004d2700(&initializer, type, qualifiers, copts.cplusplus || copts.gcc_extensions || object == NULL);
     if (type->type == TYPESTRUCT && (structureKind = TYPE_STRUCT(type)->stype) >= 4 && structureKind <= 14) {
         switch (structureKind) {
             case 4:
@@ -2502,7 +2499,7 @@ void fn_004cfc50(Object *object)
     InitializerEntry *entry;
     InitializerData initData;
 
-    CInit_004d2700(&initData, object->type, object->qual, copts.cplusplus);
+    fn_004d2700(&initData, object->type, object->qual, copts.cplusplus);
     objectExpr = create_objectrefnode(object);
     CanAllocObject(object->type);
     if (initData.entries == NULL && is_const_object(object) != 0) {
@@ -2568,7 +2565,7 @@ void CInit_InitializeAutoData(Object *obj, void (*emitInitializer)(ENode *),
     }
     CInit_SetupSave(&save, obj, emitInitializer, registerDestructor);
 
-    if (obj->type->type == TYPECLASS && CInit_004d20e0(obj->type, NULL, 0, 1) != 0) {
+    if (obj->type->type == TYPECLASS && fn_004d20e0(obj->type, NULL, 0, 1) != 0) {
         cinit_state = save.next;
         return;
     }
@@ -2601,7 +2598,7 @@ void CInit_InitializeAutoData(Object *obj, void (*emitInitializer)(ENode *),
         }
     } else {
         if (obj->type->size != 0 || obj->type->type == TYPEARRAY) {
-            ENode *initializer = CInit_004d0ae0(NULL, obj->type, obj->qual, CInit_004d1170, 0);
+            ENode *initializer = fn_004d0ae0(NULL, obj->type, obj->qual, fn_004d1170, 0);
             if (initializer != NULL)
                 emitInitializer(makediadicnode(create_objectnode2(obj), initializer, 0x1e));
         } else {
@@ -2627,7 +2624,7 @@ void CInit_InitializeStaticData(Object *initObject, void (*output)(ENode *))
             if (tk == '=')
                 tk = CPrepTokenizer_GetNextToken();
             flag = copts.cplusplus;
-            CInit_004d2700(&initializer, initObject->type, initObject->qual, flag);
+            fn_004d2700(&initializer, initObject->type, initObject->qual, flag);
             CanAllocObject(initObject->type);
             if (initializer.entries == NULL && is_const_object(initObject) != 0)
                 emit_object(initObject, initializer.buffer, initializer.relocations, initializer.size, 1);
@@ -2704,7 +2701,7 @@ void CInit_InitializeStaticData(Object *initObject, void (*output)(ENode *))
         }
     } else if (initObject->type->size != 0 || initObject->type->type == TYPEARRAY) {
         ENode *expression;
-        expression = CInit_004d0ae0(initObject, initObject->type, initObject->qual, initialize_object_at_offset, 1);
+        expression = fn_004d0ae0(initObject, initObject->type, initObject->qual, initialize_object_at_offset, 1);
         if (expression != NULL)
             output(makediadicnode(create_objectnode2(initObject), expression, EASS));
     } else {
@@ -2842,9 +2839,9 @@ void CInit_InitializeData(Object *obj)
         return;
     }
     if (copts.cplusplus != 0)
-        CInit_004d0ae0(obj, a, obj->qual, initialize_object_at_offset, 0);
+        fn_004d0ae0(obj, a, obj->qual, initialize_object_at_offset, 0);
     else
-        CInit_004d0ae0(obj, a, obj->qual, NULL, 0);
+        fn_004d0ae0(obj, a, obj->qual, NULL, 0);
     if (obj->type->type == TYPECLASS) {
         destructor = (Object *)CClass_Destructor((TypeClass *)obj->type);
         if (destructor != NULL) {
@@ -3081,7 +3078,7 @@ void emit_object(Object *object, const void *buffer, struct OLinkList *args, uns
     object->flags |= OBJECT_DEFINED;
     if (!func_errors) {
         for (argument = args; argument; argument = argument->next)
-            CInline_0050f240(argument->obj);
+            fn_0050f240(argument->obj);
         if (copts.filesyminfo)
             fn_0043f1f0(&function_fileinfo);
         if (useAlternate)

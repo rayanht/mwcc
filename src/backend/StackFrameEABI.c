@@ -399,7 +399,7 @@ void save_and_update_vrsave(int a, int argb)
     }
 }
 
-void StackFrameEABI_004aa7d0(void)
+void fn_004aa7d0(void)
 {
     PCodeBlock *block;
     PCodeInstruction *instruction;
@@ -438,7 +438,7 @@ void StackFrameEABI_ClearUnusedStackFrame(void)
     int i;
 
     if (data_005882c0.record != NULL) {
-        StackFrameEABI_004aa7d0();
+        fn_004aa7d0();
         return;
     }
     if (outgoing_argument_size != 0 || gGPRSaveSpan != 0 || gFPRSaveSpan != 0 || gVRSaveSpan != 0)
@@ -576,7 +576,7 @@ static inline SInt32 StackFrameEABI_VectorTypeKind(TypeStruct *type)
     return type->stype;
 }
 
-void *StackFrameEABI_004aabb0(UInt32 codeOffset, char *name, SInt32 *outSize, Object *function)
+void *fn_004aabb0(UInt32 codeOffset, char *name, SInt32 *outSize, Object *function)
 {
     SInt16 nameLength;
     SInt32 size;

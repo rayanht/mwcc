@@ -1121,7 +1121,7 @@ void fn_004c4be0(void)
     return;
 }
 
-void CodeGen_DumpPCode_004c4bd0(const char *function_name, const char *stage)
+void fn_004c4bd0(const char *function_name, const char *stage)
 {
     return;
 }

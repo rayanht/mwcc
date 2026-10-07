@@ -31,7 +31,7 @@ extern short IroUtil_IsZeroConstant(IROLinear *node);
 extern void IroUtil_VisitLinearTree(IROLinear *node, void (*visit)(IROLinear *, int));
 extern IROLinear *IroUtil_CopyLinearToList(IROLinear *node, IROList *list);
 extern IROLinear *IroUtil_ReplaceNextReference(IROLinear *obj, IROLinear *newobj);
-extern short IroUtil_0044cad0(IROLinear *p);
+extern short fn_0044cad0(IROLinear *p);
 extern void visit_linear_postorder(IROLinear *node, void (*visit)(IROLinear *, int));
 extern CLabel *IroUtil_NewLabel(void);
 extern int IroUtil_AreTypesEqual(Type *a, Type *b);

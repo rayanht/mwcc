@@ -38,7 +38,7 @@ struct TOCReferenceEntry {
     char makeIndirect;
 };
 #pragma pack(pop)
-extern void TOC_0049d710(ENode *node, Type *targetType, int ignored);
+extern void fn_0049d710(ENode *node, Type *targetType, int ignored);
 extern unsigned char is_small_splat_or_table_vector(long value, Type *type);
 extern void TOC_EmitMemberPointerConstants(void);
 extern Object *TOC_GetFloatObject(Type *type, Float *value);

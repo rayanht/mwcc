@@ -19,7 +19,6 @@
 #include "compiler/IroVars.h"
 /* Links in the expression work list. */
 
-
 /* The compound assignment of each binary operator; 0 for none. */
 static UInt8 nodetype_map[68] = {
     0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x1F, 0x00, 0x20, 0x21, 0x00, 0x00, 0x22, 0x23,
@@ -85,7 +84,7 @@ static void fix30(IROLinear *a0)
 
 static inline UInt16 isTrueConstant(IROLinear *node)
 {
-    return IroUtil_0044cad0(node);
+    return fn_0044cad0(node);
 }
 
 static inline UInt16 isFalseConstant(IROLinear *node)
@@ -541,7 +540,7 @@ void simplify_diadic_constants(IROLinear *node)
                             }
                             changed = TRUE;
                         }
-                    } else if (IroUtil_0044cad0(right) != 0) {
+                    } else if (fn_0044cad0(right) != 0) {
                         switch (node->nodetype) {
                             case EMUL:
                             case EMULV:
@@ -613,7 +612,7 @@ void simplify_diadic_constants(IROLinear *node)
                         replace_right(node);
                     } else if (node->nodetype == ELOR) {
                         replace_const(node, cint64_one.hi, cint64_one.lo);
-                    } else if (IroUtil_0044cad0(left) != 0) {
+                    } else if (fn_0044cad0(left) != 0) {
                         switch (node->nodetype) {
                             case EMUL:
                             case EMULV:

@@ -139,12 +139,12 @@ extern void setup_exception_specification(struct Statement *statements, struct E
 extern void insert_temporary_object_destruction(Statement *statement, char flag1, char flag2);
 extern Statement *generate_temporary_object_destruction(Statement *arg);
 extern ENode *rewrite_funccall_temporaries(ENode *node, Boolean reverse);
-extern ENode *CException_004e1940(ENode *node);
+extern ENode *fn_004e1940(ENode *node);
 extern Object *CException_GetTempObject(ENode *obj);
 extern void CExcept_ScanTryBlock(void *context, char flag);
 extern ENode *create_catch_object_init(DeclInfo *info, ExceptionHandlerRecord *args);
-extern void CException_004e1fb0(Statement *firstScope, Statement *insertionScope, Statement *lastScope,
-                                ExceptionHandlerRecord *entries);
+extern void fn_004e1fb0(Statement *firstScope, Statement *insertionScope, Statement *lastScope,
+                        ExceptionHandlerRecord *entries);
 extern ENode *CExcept_ScanThrowExpression(void);
 extern ENode *create_call_with_arg_and_default_args(Object *func, TypeClass *cls, ENode *which, ENode *arg);
 extern void CExcept_ScanExceptionSpecification(TypeFunc *func);

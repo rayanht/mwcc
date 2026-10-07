@@ -843,7 +843,7 @@ TemplClass *CTemplateClass_CreateClassTemplateDeclaration(TypeClass *owner, Hash
     return object;
 }
 
-void CTemplateClass_0051cec0(TypeDeduce *context, TemplClass *templateClass)
+void fn_0051cec0(TypeDeduce *context, TemplClass *templateClass)
 {
     ObjType *reference = galloc(sizeof(ObjNameSpace));
     memclrw(reference, sizeof(ObjNameSpace));
@@ -1141,7 +1141,7 @@ void instantiate_objtype(TypeDeduce *context, ObjType *type, HashNameNode *name)
     }
 }
 
-void CTemplateClass_0051c680(TypeDeduce *ctx, Object *obj)
+void fn_0051c680(TypeDeduce *ctx, Object *obj)
 {
     TemplateAction *found;
     Object *newobj;
@@ -1221,7 +1221,7 @@ void instantiate_template_object(TypeDeduce *ctx, Object *templ)
         needsNewNamespace = 0;
     }
     if (templ->type->type == TYPEFUNC && (((TypeFunc *)templ->type)->flags & 0x400) != 0) {
-        CTemplateClass_0051c680(ctx, templ);
+        fn_0051c680(ctx, templ);
         return;
     }
     for (matchingInstance = (ctx->tmclass)->actions; matchingInstance != NULL;
@@ -1530,7 +1530,7 @@ unsigned char CTemplateClass_InstantiateClass(TypeClass *theclass)
             case TAT_NESTEDCLASS:
                 fn_00449d60();
                 CError_SaveAndSetWrittenEntry(&declaration->source_ref, &sourceSave);
-                CTemplateClass_0051cec0(&instantiation, declaration->u.tclasstype);
+                fn_0051cec0(&instantiation, declaration->u.tclasstype);
                 fn_00449d60();
                 CError_SetWrittenEntry(&sourceSave);
                 break;

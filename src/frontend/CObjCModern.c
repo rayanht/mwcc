@@ -15,7 +15,7 @@
 #include "compiler/CompilerTools.h"
 #include <string.h>
 
-ENode *CObjCModern_0050a000(TypeClass *context, ENode *receiver, HashNameNode *name, char option)
+ENode *fn_0050a000(TypeClass *context, ENode *receiver, HashNameNode *name, char option)
 {
     MessageArgument *args;
     MessageArgument *arg;
@@ -82,12 +82,12 @@ ENode *CObjCModern_TryParseMethodCall(TypeClass *a, ENode *b)
                 CObjC_ConvertKeywordToIdentifier();
                 name = data_00587fa0;
                 if (tk == TK_IDENTIFIER && CPrepTokenizer_GetNextToken() == '(')
-                    return CObjCModern_0050a000(a, b, name, 1);
+                    return fn_0050a000(a, b, name, 1);
             }
         } else {
             name = data_00587fa0;
             if (CPrepTokenizer_GetNextToken() == '(')
-                return CObjCModern_0050a000(a, b, name, 0);
+                return fn_0050a000(a, b, name, 0);
         }
     }
     CPrep_SetBufferedTokenPosition(&state);

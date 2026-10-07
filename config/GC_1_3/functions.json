@@ -6710,7 +6710,7 @@
     "source": "src/frontend/CPrep.c"
   },
   {
-    "name": "CPrep_0043ecb0",
+    "name": "fn_0043ecb0",
     "address": "0x0043d650",
     "size": 122,
     "source": "src/frontend/CPrep.c"
@@ -14298,7 +14298,7 @@
     "size": 15
   },
   {
-    "name": "CFunc_00476e70",
+    "name": "fn_00476e70",
     "address": "0x004eeea0",
     "size": 180,
     "source": "src/frontend/CFunc.c"
@@ -15684,7 +15684,7 @@
     "size": 1051
   },
   {
-    "name": "CInit_004d3620",
+    "name": "fn_004d3620",
     "address": "0x0050d890",
     "size": 181,
     "source": "src/frontend/CInit.c"
@@ -16663,7 +16663,7 @@
     "size": 545
   },
   {
-    "name": "CSOM_004e3cd0",
+    "name": "fn_004e3cd0",
     "address": "0x00521af0",
     "size": 130,
     "source": "src/frontend/CSOM.c"
@@ -16691,7 +16691,7 @@
     "source": "src/frontend/CSOM.c"
   },
   {
-    "name": "CSOM_004e4390",
+    "name": "fn_004e4390",
     "address": "0x00522190",
     "size": 109,
     "source": "src/frontend/CSOM.c"
@@ -16708,7 +16708,7 @@
     "size": 365
   },
   {
-    "name": "CSOM_004e45b0",
+    "name": "fn_004e45b0",
     "address": "0x005223b0",
     "size": 235,
     "source": "src/frontend/CSOM.c"
@@ -17286,7 +17286,7 @@
     "source": "src/frontend/CClass.c"
   },
   {
-    "name": "CClass_004ea020",
+    "name": "fn_004ea020",
     "address": "0x0052b5d0",
     "size": 162,
     "source": "src/frontend/CClass.c"
@@ -19165,7 +19165,7 @@
     "source": "src/frontend/CObjC.c"
   },
   {
-    "name": "CObjC_005082b0",
+    "name": "fn_005082b0",
     "address": "0x005530d0",
     "size": 223,
     "source": "src/frontend/CObjC.c"
@@ -19187,7 +19187,7 @@
     "size": 604
   },
   {
-    "name": "CObjC_00508810",
+    "name": "fn_00508810",
     "address": "0x00553620",
     "size": 276,
     "source": "src/frontend/CObjC.c"
@@ -19372,7 +19372,7 @@
     "size": 228
   },
   {
-    "name": "CABI_0050bf30",
+    "name": "fn_0050bf30",
     "address": "0x00557370",
     "size": 219,
     "source": "src/frontend/CABI.c"
@@ -20202,7 +20202,7 @@
     "size": 438
   },
   {
-    "name": "CTemplateClass_0051cec0",
+    "name": "fn_0051cec0",
     "address": "0x005675b0",
     "size": 258,
     "source": "src/frontend/CTemplateClass.c"

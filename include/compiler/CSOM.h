@@ -129,14 +129,14 @@ struct SOMVTable {
 };
 #pragma options align = reset
 extern ENode *create_glue_objectrefnode(TypeClass *cls, SInt32 id, Object *obj);
-extern Boolean CSOM_004e3cd0(Type *ftype);
+extern Boolean fn_004e3cd0(Type *ftype);
 extern ENode *CSOM_AppendPointerArgCall(ENode *node, ENodeList *spec);
 extern void CSOM_GenerateSomselfAssignment(TypeClass *tclass, Statement *stmt);
 extern ENode *CSOM_GetOrCreateLocalObjectNode(TypeClass *value);
 extern void find_method_vtbl_class_and_offset(TypeClass *cls, Object *method, TypeClass **outcls, SInt32 *outofs);
-extern void CSOM_004e4390(Object *obj);
+extern void fn_004e4390(Object *obj);
 extern ENode *CSOM_BuildNewObjectInstance(TypeClass *cls);
-extern Object *CSOM_004e45b0(char *name, char *signature);
+extern Object *fn_004e45b0(char *name, char *signature);
 extern void set_owner_target_flag(void);
 extern void CSOM_ParseBaseClass(void);
 extern void CSOM_ParseMethodNameList(void);

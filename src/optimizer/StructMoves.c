@@ -53,7 +53,7 @@ void StructMoves_PrepareOperandForOffset(Operand *operand, unsigned int offset, 
     }
 }
 
-void StructMoves_0051aee0(Operand *node, SInt32 offset)
+void fn_0051aee0(Operand *node, SInt32 offset)
 {
     SInt32 resultReg = gUsedVirtualRegistersGPR++;
 
@@ -265,8 +265,8 @@ void emit_pair_copy_loop(Operand *destination, Operand *source, int size)
     int count;
 
     loopLabel = PCode_NewLabel();
-    StructMoves_0051aee0(destination, -8);
-    StructMoves_0051aee0(source, -8);
+    fn_0051aee0(destination, -8);
+    fn_0051aee0(source, -8);
     wordRegister = allocateGPR();
     PCodeUtilities_LoadImmediate(wordRegister, count = (SInt32)size >> 3);
     ((void (*)(int, SInt16))PCodeUtilities_EmitInstruction)(0x78, wordRegister);

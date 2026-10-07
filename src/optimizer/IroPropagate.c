@@ -205,7 +205,7 @@ void IRO_CopyAndConstantPropagation(void)
                 break;
             if (NeedProp(instruction)) {
                 IroBitVect_ClearBitVector(data_00588018);
-                IroVars_0044b2d0(instruction);
+                fn_0044b2d0(instruction);
                 for (node = replacementCandidate; node != NULL; node = node->next) {
                     bit = node->uvarIndex;
                     if (BVGet(data_00588018, bit)) {
@@ -299,7 +299,7 @@ void IRO_CopyAndConstantPropagation(void)
                     }
                 }
             } else if (instruction->type == IROLinearAsm) {
-                InlineAsmPPC_00462d70(instruction->u.asm_stmt, &list);
+                fn_00462d70(instruction->u.asm_stmt, &list);
                 for (candidateIndex = 0; candidateIndex < list.numoperands; candidateIndex++) {
                     if (list.operands[candidateIndex].type != 0)
                         continue;
@@ -333,7 +333,7 @@ void IRO_CopyAndConstantPropagation(void)
             }
             if (NeedProp(instruction)) {
                 IroBitVect_ClearBitVector(data_00588018);
-                IroVars_0044b2d0(instruction);
+                fn_0044b2d0(instruction);
                 for (node = replacementCandidate; node != NULL; node = node->next) {
                     bit = node->uvarIndex;
                     if (BVGet(data_00588018, bit))
@@ -533,7 +533,7 @@ void IroPropagate_PropagateExpressions(void)
                 }
                 if (invalidatesCandidates != 0) {
                     IroBitVect_ClearBitVector(data_00588018);
-                    IroVars_0044b2d0(currentNode);
+                    fn_0044b2d0(currentNode);
                     candidateToInvalidate = replacementCandidate;
                     for (; candidateToInvalidate != NULL; candidateToInvalidate = candidateToInvalidate->next) {
                         registerIndex = candidateToInvalidate->uvarIndex;
@@ -632,7 +632,6 @@ void check_range_for_type(ERange *p, Type *type)
         p->type = 3;
     }
 }
-
 
 int initialize_node_range(IROLinear *record)
 {

@@ -4553,7 +4553,7 @@ void Intrinsics_GenerateIntrinsicCall(ENode *node, short requestedReg, Operand *
             generate_unary_vector_intrinsic(intrinsic, node, args->node, requestedReg, result);
             break;
         case 0x136:
-            Intrinsics_00486db0(intrinsic, node, args->node, requestedReg, result);
+            fn_00486db0(intrinsic, node, args->node, requestedReg, result);
             break;
         case 0x34:
         case 0x36: {
@@ -5219,7 +5219,7 @@ void emit_record_form_condition(ENode *left, ENode *right, short unused, Operand
     result->secondary_reg = conditionCode;
 }
 
-void Intrinsics_00486db0(UInt16 token, ENode *unused, ENode *node, SInt16 requestedReg, Operand *result)
+void fn_00486db0(UInt16 token, ENode *unused, ENode *node, SInt16 requestedReg, Operand *result)
 {
     IntrinsicVariant *variant;
     SInt16 zeroReg;

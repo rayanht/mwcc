@@ -22,7 +22,6 @@
 #include <string.h>
 #include "compiler/BitVector.h"
 
-
 static char lbl_00580640[4];
 static struct IROLoopInd *induction_variables;
 static struct IROExpr *iro_loop_roots;
@@ -978,8 +977,8 @@ struct IROLinear *create_loop_iteration_count(struct IROList *context, struct IR
     return assignment->u.diadic.left;
 }
 
-void IroLoop_0045c520(IROLoop *loop, CInt64 *iterationCount, int *unrollFactor, int *remainderLoop, int *unrollLoop,
-                      int *exactMultiple)
+void fn_0045c520(IROLoop *loop, CInt64 *iterationCount, int *unrollFactor, int *remainderLoop, int *unrollLoop,
+                 int *exactMultiple)
 {
     TypeIntegral *conditionType;
     SInt32 isUnsigned;
@@ -2000,7 +1999,7 @@ void unroll_loop(int factor, struct IRONode *header)
                     flag2 = 1;
                     flag3 = 0;
                     if (n)
-                        IroLoop_0045c520(loop, &niters, &factor, &flag1, &flag2, &flag3);
+                        fn_0045c520(loop, &niters, &factor, &flag1, &flag2, &flag3);
 
                     IroUtil_InitList(&list);
                     initialCountLinear = create_loop_iteration_count(&list, loop);
@@ -2240,7 +2239,7 @@ unsigned int IRO_FindLoops_Unroll(void)
                     foundLoop = 1;
                     BitVectorInsert(IRO_LoopScratchVector_005880dc, predecessor->index);
                     if (predecessor != header)
-                        IRO_CollectLoopBlocks_004614f0(predecessor);
+                        fn_004614f0(predecessor);
                 }
             }
             if (foundLoop) {
@@ -2681,7 +2680,7 @@ void find_induction_init(struct IROLoop *state, struct IRONode *list)
         mask = 1u << (bit & 0x1f);
         do {
             IroBitVect_ClearBitVector(data_00588018);
-            IroVars_0044b2d0(item);
+            fn_0044b2d0(item);
             if (idx < data_00588018->size && (data_00588018->bits[idx] & mask) != 0)
                 state->init = item;
             if (item == list->last)
@@ -2826,7 +2825,7 @@ void reduce_strength_and_move_loop_invariants(IRONode *func)
                         IroDump_Print("Using existing RIS: %d\n", matchingEntry->linear->index);
                         IroUtil_VisitLinearTree(memberUse->linear, forward_expr_if_check_object);
                     } else {
-                        IROExpr *result = IroLoop_00461860(memberUse, bases, expression, info, 0);
+                        IROExpr *result = fn_00461860(memberUse, bases, expression, info, 0);
                         matchingEntry = result;
                     }
                     IroCSE_ReplaceReference(memberUse->linear, matchingEntry->temp, memberUse->linear);
@@ -2897,7 +2896,7 @@ void find_induction_variables(void)
             if (stmt != NULL) {
                 for (;;) {
                     IroBitVect_ClearBitVector(data_00588018);
-                    IroVars_0044b2d0(stmt);
+                    fn_0044b2d0(stmt);
                     IroBitVect_Or(data_00588018, data_0058064c);
                     isInduction = 0;
                     if ((stmt->type == IROLinearOp2Arg && stmt->rtype->size <= 4 &&
@@ -3125,7 +3124,7 @@ void fn_00460f70(void)
         IroBitVect_AllocateBitVector(&node->gen, iroVarCount + 1);
         for (;;) {
             IroBitVect_ClearBitVector(data_00588018);
-            IroVars_0044b2d0(item);
+            fn_0044b2d0(item);
             IroBitVect_Or(data_00588018, data_0058064c);
             if (item == node->last)
                 break;
@@ -3160,7 +3159,7 @@ void IRO_FindLoops(void)
                 found = 1;
                 BVSET(IRO_LoopScratchVector_005880dc, block->index);
                 if (block != loop)
-                    IRO_CollectLoopBlocks_004614f0(block);
+                    fn_004614f0(block);
             }
         }
         if (found) {
@@ -3261,7 +3260,7 @@ void IroLoop_ComputeLoopDepth(void)
                 flag = 1;
                 BV_SET(IRO_LoopScratchVector_005880dc, q->index);
                 if (q != bb)
-                    IRO_CollectLoopBlocks_004614f0(q);
+                    fn_004614f0(q);
             }
         }
         if ((SInt16)flag) {
@@ -3278,7 +3277,7 @@ void IroLoop_ComputeLoopDepth(void)
 
 #define BitVector_Test(v, id) (((id) >> 5) < (v)->size && ((v)->bits[(id) >> 5] & (1u << ((id) & 31))))
 
-void IRO_CollectLoopBlocks_004614f0(IRONode *lp)
+void fn_004614f0(IRONode *lp)
 {
     SInt32 i;
     IRONode *b;
@@ -3287,7 +3286,7 @@ void IRO_CollectLoopBlocks_004614f0(IRONode *lp)
         b = iroNodesByIndex[lp->pred[i]];
         if (!BitVector_Test(IRO_LoopScratchVector_005880dc, b->index)) {
             IROUseDef_SetBit(b->index, IRO_LoopScratchVector_005880dc);
-            IRO_CollectLoopBlocks_004614f0(b);
+            fn_004614f0(b);
         }
     }
 }
@@ -3373,7 +3372,7 @@ enum { LOOP_FLAGS_10 = 0x10, LOOP_FLAGS_24 = 0x24, LOOP_FLAGS_34 = 0x34 };
 
 /* Strength-reduces ROOT, an address of CONTEXT's induction variable times a factor: a temporary set to its value
    before the loop (from INITIAL, STEP and MODE) and stepped with the variable. */
-IROExpr *IroLoop_00461860(IROExpr *root, IROLinear *initial, IROLinear *step, IROLoopInd *context, SInt32 mode)
+IROExpr *fn_00461860(IROExpr *root, IROLinear *initial, IROLinear *step, IROLoopInd *context, SInt32 mode)
 {
     Object *temporary;
     Object *stepTemporary;

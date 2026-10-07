@@ -21,7 +21,6 @@
 #include "compiler/IroVars.h"
 /* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
 
-
 struct BitVector *data_00552b88 = NULL;
 
 static void IRO_BitVectorSet(UInt32 bit, BitVector *bv)
@@ -327,7 +326,7 @@ void IroCSE_RewriteStatementExpressions(Statement *stmt)
 #define BVSET(bit) set_bit_vector_bit((bit), data_00552b88)
 
 /* As collect_expression_var_refs_and_flags, for a candidate common subexpression (stopping at the first side effect). */
-void IroCSE_0044f6a0(IROLinear *e, SInt32 flag)
+void fn_0044f6a0(IROLinear *e, SInt32 flag)
 {
     if (e->rtype != NULL && CParser_IsVolatile(e->rtype, e->nodeflags & 3)) {
         data_005880a4 = 1;
@@ -383,7 +382,7 @@ void IroCSE_0044f6a0(IROLinear *e, SInt32 flag)
                     }
                 }
             }
-            IroCSE_0044f6a0(e->u.monadic, e->nodetype == EINDIRECT);
+            fn_0044f6a0(e->u.monadic, e->nodetype == EINDIRECT);
             break;
         }
 
@@ -398,8 +397,8 @@ void IroCSE_0044f6a0(IROLinear *e, SInt32 flag)
                     data_00587e58 = 1;
                 }
             }
-            IroCSE_0044f6a0(e->u.diadic.left, flag);
-            IroCSE_0044f6a0(e->u.diadic.right, flag);
+            fn_0044f6a0(e->u.diadic.left, flag);
+            fn_0044f6a0(e->u.diadic.right, flag);
             break;
 
         case IROLinearFunccall:
@@ -515,7 +514,7 @@ void fn_0044f350(IROLinear *expression)
     IroBitVect_AllocateBitVector(&data_00552b88, iroVarCount + 1U);
     data_00587e58 = 0;
     data_00587630 = 0;
-    IroCSE_0044f6a0(expression, 0);
+    fn_0044f6a0(expression, 0);
 }
 
 void set_global_if_zero_value_and_flag(IROLinear *type, int value)
@@ -548,7 +547,7 @@ void fn_0044f230(IROLinear *expression, IRONode *value)
                 IroBitVect_AllocateBitVector(&data_00552b88, iroVarCount + 1);
                 data_00587e58 = 0;
                 data_00587630 = 0;
-                IroCSE_0044f6a0(expression, 0);
+                fn_0044f6a0(expression, 0);
                 entry->depends = data_00552b88;
                 entry->hasSideEffects = data_00587630;
                 entry->mayTrap = data_00587e58;
@@ -668,7 +667,7 @@ void mark_dependent_exprs(IROLinear *node)
                 }
                 break;
             case IROLinearAsm:
-                IroVars_0044b2d0(node);
+                fn_0044b2d0(node);
                 for (object = expr_list; object != NULL; object = object->next)
                     if (IroBitVect_Intersects(object->depends, data_00588018)) {
                         bit = object->index;
@@ -844,7 +843,7 @@ void IroCSE_ReplaceReference(IROLinear *target, Object *object, IROLinear *refer
 }
 
 /* Makes the node using FROM as an operand use TO instead. */
-void IroCSE_0044e560(IROLinear *from, IROLinear *to)
+void fn_0044e560(IROLinear *from, IROLinear *to)
 {
     int pass;
     IROLinear *ep;
@@ -1011,7 +1010,7 @@ void create_replacement_temp_assignment(IROExpr *replacement)
     assignment->index = ++linear_index_counter;
     reference->next = conversion;
     conversion->next = assignment;
-    IroCSE_0044e560(replacement->linear, assignment);
+    fn_0044e560(replacement->linear, assignment);
     IroUtil_InsertLinearRangeAfter(reference, assignment, replacement->linear);
 }
 
@@ -1099,7 +1098,7 @@ void move_common_sub(IROExpr *group)
         node->u.diadic.left = IroCSE_CreateTempAssignment(group);
         node->u.diadic.right = nodes[splitIndex];
         node->stmt = nodes[splitIndex]->stmt;
-        IroCSE_0044e560(nodes[splitIndex], node);
+        fn_0044e560(nodes[splitIndex], node);
         IroUtil_InsertLinearRangeAfter(node, node, nodes[splitIndex]);
     }
 }

@@ -168,7 +168,7 @@ static int CodeMotion_CanMove(PCodeInstruction *instruction, Loop *node)
 {
     if (is_only_definition_in_loop(instruction, node) == 0)
         return 0;
-    if (COpt_005266e0(instruction->useStart, node) == 0)
+    if (fn_005266e0(instruction->useStart, node) == 0)
         return 0;
     if (!CodeMotion_TestBit(node->block_membership, instruction->block->index) &&
         has_use_outside_loop_in_preheader_set((PCodeOperand *)&code_motion_entries[instruction->useStart].kind, node) !=
@@ -212,7 +212,7 @@ static inline int CodeMotion_CanMove524d90(PCodeInstruction *instruction, Loop *
 {
     if (is_only_definition_in_loop(instruction, node) == 0)
         return 0;
-    if (COpt_005266e0(instruction->useStart, node) == 0)
+    if (fn_005266e0(instruction->useStart, node) == 0)
         return 0;
     if (!(node->block_membership[instruction->block->index >> 5] & (1U << (instruction->block->index & 31))) &&
         has_use_outside_loop_in_preheader_set((PCodeOperand *)&code_motion_entries[instruction->useStart].kind, node) !=
@@ -438,7 +438,7 @@ int fn_00526950(int itemIndex, int targetIndex)
     return 0;
 }
 
-int COpt_005266e0(int definitionIndex, Loop *ctx)
+int fn_005266e0(int definitionIndex, Loop *ctx)
 {
     CMDefInfo *info;
     CodeMotionEntryLink *use;
@@ -601,7 +601,7 @@ void move_instruction_to_preheader(PCodeInstruction *instruction, Loop *region)
     }
 }
 
-SInt32 CodeMotion_00526070(PCodeInstruction *definition, Loop *context)
+SInt32 fn_00526070(PCodeInstruction *definition, Loop *context)
 {
     CodeMotionEntry *entry;
     PCodeOperand *registerInfo;
@@ -632,7 +632,7 @@ SInt32 CodeMotion_00526070(PCodeInstruction *definition, Loop *context)
     } else {
         CError_FATAL(572);
     }
-    if (COpt_005266e0(definition->useStart, context) == 0)
+    if (fn_005266e0(definition->useStart, context) == 0)
         return 0;
     bit = definition->block->index;
     if (((1 << (bit & 0x1f)) & context->block_membership[bit >> 5]) == 0 &&
@@ -660,7 +660,7 @@ unsigned int fn_00525fc0(PCodeInstruction *node, Loop *loop, UInt32 *defs)
         next->operandData.operands[0].value.reg == next->operandData.operands[1].value.reg &&
         (node->flags & 0x20460) == 0 && (next->flags & 0x20460) == 0) {
         if (is_loop_invariant(node, loop, defs, 1, 0)) {
-            if (CodeMotion_00526070(node, loop)) {
+            if (fn_00526070(node, loop)) {
                 data_00574ce8 = next;
                 return 1;
             }

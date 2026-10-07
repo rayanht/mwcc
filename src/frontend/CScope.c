@@ -130,7 +130,7 @@ static NameSpaceObjectList *CScope_NSIteratorFind(CScopeNSIterator *iterator, Ha
 
     if (iterator->lookup) {
         if (iterator->lookup->namespaces)
-            return CScope_0049a000(iterator->lookup, name, NULL);
+            return fn_0049a000(iterator->lookup, name, NULL);
         if (iterator->lookup->nspace->theclass)
             return NULL;
         if ((list = CScope_FindName(iterator->lookup->nspace, name)))
@@ -1265,7 +1265,7 @@ BClassList *find_base_class_path(TypeClass *theclass, TypeClass *target, unsigne
     return NULL;
 }
 
-NameSpaceObjectList *CScope_0049a000(NameSpaceLookupList *context, HashNameNode *name, NameSpace **outscope)
+NameSpaceObjectList *fn_0049a000(NameSpaceLookupList *context, HashNameNode *name, NameSpace **outscope)
 {
     NameSpaceObjectList *matches;
     NameSpace *scope;
@@ -1400,7 +1400,7 @@ NameSpaceObjectList *find_scope_object_list(CScopeNSIterator *ctx, HashNameNode 
     if ((scopeRecord = ctx->lookup) != NULL) {
         NameSpace *namespace;
         if (scopeRecord->namespaces != NULL)
-            return CScope_0049a000(scopeRecord, key, NULL);
+            return fn_0049a000(scopeRecord, key, NULL);
         if ((namespace = scopeRecord->nspace)->theclass != NULL) {
             if (find_and_append_class_member_path(ctx->result, namespace, key, 0) != 0) {
                 result = ctx->result->objects;
@@ -1546,7 +1546,7 @@ NameSpaceObjectList *find_namespace_object(NameResult *state, NameSpace *nspace,
     if (nspace->usings != NULL) {
         usingSpace = CScope_BuildNameSpaceLookupList(nspace);
         while (usingSpace != NULL) {
-            usingResult = CScope_0049a000(usingSpace, name, foundSpace);
+            usingResult = fn_0049a000(usingSpace, name, foundSpace);
             if (usingResult != NULL) {
                 return usingResult;
             }

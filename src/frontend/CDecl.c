@@ -3330,7 +3330,7 @@ int parse_struct_members(TypeStruct *obj, Boolean block)
     memclrw(&memberDecl, sizeof(memberDecl));
     if (tk == TK_AT_DEFS) {
         CPrep_GetFOI(&member_foi, NULL);
-        CObjC_005082b0(obj);
+        fn_005082b0(obj);
         tk = CPrepTokenizer_GetNextToken();
         if (tk != '}') {
             CError_ReportError(ERR_RBRACE_EXPECTED);

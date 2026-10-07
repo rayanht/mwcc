@@ -657,7 +657,7 @@ void ObjGen_PPC_EABI_SetObjectSectionIndex(Object *object)
         mapping = select_object_section(object, 0, 1, 1, 1);
         result = BE_elf_FindSection(mapping->name, data_00587ff8->uid);
         if (result == NULL) {
-            result = BE_elf_0049c540(mapping, data_00587ff8->uid);
+            result = fn_0049c540(mapping, data_00587ff8->uid);
         }
         result->header =
             BE_elf_GetOrCreateSectionSymbolAttributes(result, mapping->header->kind, mapping->header->alignment,
@@ -1639,7 +1639,7 @@ void ObjGen_PPC_EABI_SetSymbolOffset(Object *object, int offset)
 {
     BE_SymNode *record;
 
-    record = BE_symbol_004918f0(object, data_00580db0);
+    record = fn_004918f0(object, data_00580db0);
     record->offset = data_00580dac + offset;
 }
 
@@ -1721,7 +1721,7 @@ void emit_relocation(SInt32 op, SInt32 offset, Object *obj, ObjGenSection *ctx, 
     relocation_list = node;
 }
 
-void ObjGen_PPC_EABI_00488ee0(SInt32 entry, SInt32 value)
+void fn_00488ee0(SInt32 entry, SInt32 value)
 {
     if ((entry == data_00587ff8->flags && value == data_00580da8) || entry == 0)
         return;

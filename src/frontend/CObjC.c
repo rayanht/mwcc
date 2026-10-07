@@ -278,7 +278,7 @@ ENode *CObjC_ParseEncodeExpression(void)
     }
     qualifiers = decl.qual;
     data_00583548.size = 0;
-    CObjC_005074f0(type, qualifiers, 1);
+    fn_005074f0(type, qualifiers, 1);
     AppendGListByte(&data_00583548, 0);
     encoding = galloc(data_00583548.size);
     encodingHandle = data_00583548.data;
@@ -1125,7 +1125,6 @@ void parse_ivars(TypeClass *classType, char checkExisting)
     }
 }
 
-
 static struct ObjCDefinition *category_definitions;
 
 void parse_category_methods_and_check_defined(TypeClass *theclass)
@@ -1725,7 +1724,7 @@ Object *create_method_list_object(TypeClass *owner, CRec *category, MethRec *met
                         function->nspace = owner->nspace;
                         functionType = get_method_ftype(method);
                         function->type = (Type *)functionType;
-                        function->name = CObjC_00508810(owner, category, method);
+                        function->name = fn_00508810(owner, category, method);
                         function->u.func.linkname = function->name;
                         function->sclass = TK_STATIC;
                         method->function = function;
@@ -1794,7 +1793,7 @@ Object *create_ivar_list(TypeClass *cls)
             ivarQualifiers = ivar->qual;
             ivarType = ivar->type;
             data_00583548.size = 0;
-            CObjC_005074f0(ivarType, ivarQualifiers, 1);
+            fn_005074f0(ivarType, ivarQualifiers, 1);
             AppendGListByte(&data_00583548, 0);
             encoding = galloc(data_00583548.size);
             memcpy(encoding, *data_00583548.data, data_00583548.size);
@@ -1869,7 +1868,7 @@ static inline Boolean IsSelType(Type *ty)
     return t == TPTR_TARGET((Type *)sel);
 }
 
-void CObjC_005074f0(Type *type, UInt32 qual, Boolean flag)
+void fn_005074f0(Type *type, UInt32 qual, Boolean flag)
 {
     char buf[16];
 
@@ -1967,7 +1966,7 @@ void CObjC_005074f0(Type *type, UInt32 qual, Boolean flag)
                 } else {
                     AppendGListByte(&data_00583548, '0');
                 }
-                CObjC_005074f0(TYPE_POINTER(type)->target, 0, 1);
+                fn_005074f0(TYPE_POINTER(type)->target, 0, 1);
                 AppendGListByte(&data_00583548, ']');
                 return;
             case TYPEBITFIELD:
@@ -1987,7 +1986,7 @@ void CObjC_005074f0(Type *type, UInt32 qual, Boolean flag)
                     {
                         StructMember *member = TYPE_STRUCT(type)->members;
                         while (member != NULL) {
-                            CObjC_005074f0(member->type, member->qual, 1);
+                            fn_005074f0(member->type, member->qual, 1);
                             member = member->next;
                         }
                     }
@@ -2037,7 +2036,7 @@ void emit_method_type_encoding(MethRec *p, int b)
         AppendGListByte(&data_00583548, 0x56);
 
     if (p->rtype)
-        CObjC_005074f0(p->rtype, 0, b);
+        fn_005074f0(p->rtype, 0, b);
     else
         AppendGListByte(&data_00583548, 0x40);
 
@@ -2058,7 +2057,7 @@ void emit_method_type_encoding(MethRec *p, int b)
         if (n->type) {
             if (n->qual & Q_CONST)
                 AppendGListByte(&data_00583548, 0x72);
-            CObjC_005074f0(n->type, 0, b);
+            fn_005074f0(n->type, 0, b);
             sprintf(buf, "%ld", CodeGen_GetObjCParameterOffset(p, n));
             AppendGListName(&data_00583548, buf);
         }
@@ -2078,7 +2077,7 @@ void encode_class(TypeClass *cls, Boolean flag)
         if (flag) {
             AppendGListByte(&data_00583548, 0x3d);
             for (iv = cls->ivars; iv != NULL; iv = iv->next)
-                CObjC_005074f0(iv->type, iv->qual, 1);
+                fn_005074f0(iv->type, iv->qual, 1);
         }
         AppendGListByte(&data_00583548, cls->mode == 1 ? 0x29 : 0x7d);
     } else {
@@ -2127,7 +2126,7 @@ void parse_method_definition(TypeClass *object, CRec *kind, MethRec **methods)
         newFunction->nspace = object->nspace;
         functionType = get_method_ftype(method);
         newFunction->type = (Type *)functionType;
-        newFunction->name = CObjC_00508810(object, kind, method);
+        newFunction->name = fn_00508810(object, kind, method);
         newFunction->u.func.linkname = newFunction->name;
         newFunction->sclass = TK_STATIC;
         method->function = newFunction;
@@ -2348,7 +2347,7 @@ static inline TypeClass *find_objc_class(HashNameNode *name)
     return NULL;
 }
 
-void CObjC_005082b0(TypeStruct *classInfo)
+void fn_005082b0(TypeStruct *classInfo)
 {
     TypeClass *baseClass;
 
@@ -2513,7 +2512,7 @@ TypeFunc *get_method_ftype(MethRec *spec)
     return spec->ftype;
 }
 
-HashNameNode *CObjC_00508810(TypeClass *obj, CRec *ns, MethRec *info)
+HashNameNode *fn_00508810(TypeClass *obj, CRec *ns, MethRec *info)
 {
     HashNameNode *name;
     ObjCParameterNode *p;

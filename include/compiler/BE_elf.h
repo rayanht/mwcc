@@ -59,7 +59,7 @@ union U16Bytes {
 #pragma pack(pop)
 extern void BE_elf_SetDeclSection(char *name, DeclInfo *file);
 extern void fn_0049c510(char *value1, UInt8 value2, SInt8 value3, SInt32 value4);
-extern ObjGenSection *BE_elf_0049c540(ObjGenSection *input, SInt32 context);
+extern ObjGenSection *fn_0049c540(ObjGenSection *input, SInt32 context);
 extern SectionRec *BE_elf_CreateSectionRec(char *nspace, char *name, unsigned int datatype, unsigned int unk03,
                                            unsigned int access);
 extern ObjGenSection *BE_elf_FindSection(const char *name, SInt32 hashval);

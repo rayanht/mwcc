@@ -23,7 +23,6 @@
 #include "driver/CWPluginsPrivate.h"
 #include "driver/cc-eabi-ppc.h"
 
-
 static struct IROLinear *saved_node;
 
 /* Flags of each ENode type. */
@@ -232,7 +231,7 @@ void IRO_ScalarizeClassDataMembers(void)
         if (node->type == IROLinearOp1Arg && node->nodetype == EINDIRECT)
             record_monadic_var_part_use(node);
         if (node->type == IROLinearAsm) {
-            InlineAsmPPC_00462d70(node->u.asm_stmt, &references);
+            fn_00462d70(node->u.asm_stmt, &references);
             for (i = 0; i < references.numoperands; i++) {
                 reference = fn_0044ba70(references.operands[i].object, 0, 1);
                 if (reference != NULL)
@@ -383,7 +382,7 @@ void IroVars_CheckVariablesInitializedBeforeUse(void)
                 if (variable != NULL)
                     IRO_BV_SET(block->gen, variable->index);
             } else if (statement->type == IROLinearAsm) {
-                InlineAsmPPC_00462d70(statement->u.asm_stmt, &buffer);
+                fn_00462d70(statement->u.asm_stmt, &buffer);
                 for (i = 0; i < buffer.numoperands; i++) {
                     VarRecord *variable = fn_0044ba70(buffer.operands[i].object, 0, 1);
                     switch (buffer.operands[i].type) {
@@ -448,7 +447,7 @@ static void IRO_BitVectorSet_0044b2d0(UInt32 bit, BitVector *bv)
         CError_Internal("BitVector.h", 47);
 }
 
-void IroVars_0044b2d0(IROLinear *p)
+void fn_0044b2d0(IROLinear *p)
 {
     SInt32 i;
     UInt32 n;
@@ -475,7 +474,7 @@ void IroVars_0044b2d0(IROLinear *p)
             break;
 
         case IROLinearAsm:
-            InlineAsmPPC_00462d70(p->u.asm_stmt, &vars);
+            fn_00462d70(p->u.asm_stmt, &vars);
             for (i = 0; i < vars.numoperands; i++) {
                 switch (vars.operands[i].type) {
                     case 1:
@@ -749,7 +748,7 @@ void IroVars_BuildVarRecords(void)
             } else if (node->type == IROLinearFunccall) {
                 visit_dobjstack_objects(node);
             } else if (node->type == IROLinearAsm) {
-                InlineAsmPPC_00462d70(node->u.asm_stmt, &references);
+                fn_00462d70(node->u.asm_stmt, &references);
                 for (index = 0; index < references.numoperands; index++)
                     fn_0044ba70(references.operands[index].object, 1, references.operands[index].type != 3);
             }

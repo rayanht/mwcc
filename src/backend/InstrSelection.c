@@ -2744,7 +2744,7 @@ void InstrSelection_SelectComparison(ENode *node, void *p)
                 unsignedValue = right->data.intval.lo;
                 immediate = unsignedValue;
                 if (unsignedValue == immediate) {
-                    InstrSelection_004b37b0(node->type, left, unsignedValue, result);
+                    fn_004b37b0(node->type, left, unsignedValue, result);
                     return;
                 }
                 if (node->type == EEQU || node->type == ENOTEQU) {
@@ -2756,7 +2756,7 @@ void InstrSelection_SelectComparison(ENode *node, void *p)
                 value = right->data.intval.lo;
                 immediate = value;
                 if (value == immediate) {
-                    InstrSelection_004b37b0(node->type, left, value, result);
+                    fn_004b37b0(node->type, left, value, result);
                     return;
                 }
                 if (node->type == EEQU || node->type == ENOTEQU) {
@@ -2770,7 +2770,7 @@ void InstrSelection_SelectComparison(ENode *node, void *p)
                 unsignedValue = left->data.intval.lo;
                 immediate = unsignedValue;
                 if (unsignedValue == immediate) {
-                    InstrSelection_004b37b0(SwapOp(node->type), right, unsignedValue, result);
+                    fn_004b37b0(SwapOp(node->type), right, unsignedValue, result);
                     return;
                 }
                 if (node->type == EEQU || node->type == ENOTEQU) {
@@ -2782,7 +2782,7 @@ void InstrSelection_SelectComparison(ENode *node, void *p)
                 value = left->data.intval.lo;
                 immediate = value;
                 if (value == immediate) {
-                    InstrSelection_004b37b0(SwapOp(node->type), right, value, result);
+                    fn_004b37b0(SwapOp(node->type), right, value, result);
                     return;
                 }
                 if (node->type == EEQU || node->type == ENOTEQU) {
@@ -3104,7 +3104,7 @@ void emit_gpr_comparison(short secondaryReg, ENode *left, ENode *right, Operand 
     result->secondary_reg = secondaryReg;
 }
 
-void InstrSelection_004b37b0(short comparison, ENode *input, short sense, Operand *result)
+void fn_004b37b0(short comparison, ENode *input, short sense, Operand *result)
 {
     short savedRegister;
     int hasImmediate;

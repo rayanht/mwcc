@@ -77,7 +77,7 @@ extern void CClass_ClassAction(TypeClass *cls);
 extern void CClass_ClassDefaultFuncAction(TypeClass *tclass);
 extern void CClass_CheckOverrides(TypeClass *cls);
 extern void check_hidden_inherited_virtual_functions(OverrideClass *layout, OverrideClass *base);
-extern Object *CClass_004ea020(OverrideClass *record, char report);
+extern Object *fn_004ea020(OverrideClass *record, char report);
 extern void build_virtual_function_entries(OverrideClass *ctx);
 extern void CClass_DefineCovariantFuncs(Object *func, CInlineInfo *arg2);
 extern ObjectList *prepend_base_method_copies(ObjectList *objects, Object *method, TypeClass *theclass);

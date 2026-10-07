@@ -1058,7 +1058,7 @@ int find_matching_value_signature(PCodeInstruction *func, PCodeOperand *out)
             ((UInt16)node->instruction->operand_count) != (UInt16)func->operand_count)
             continue;
 
-        if (ValueNumbering_0051f790(node, func) == 0) {
+        if (fn_0051f790(node, func) == 0) {
             switch (op = func->opcode) {
                 case PC_ADD:
                 case PC_MULLW:
@@ -1120,7 +1120,7 @@ int find_matching_value_signature(PCodeInstruction *func, PCodeOperand *out)
             tmp = func->operandData.operands[1];
             func->operandData.operands[1] = func->operandData.operands[2];
             func->operandData.operands[2] = tmp;
-            if (ValueNumbering_0051f790(node, func) == 0) {
+            if (fn_0051f790(node, func) == 0) {
                 tmp = func->operandData.operands[1];
                 func->operandData.operands[1] = func->operandData.operands[2];
                 func->operandData.operands[2] = tmp;
@@ -1150,7 +1150,7 @@ static ObjectIndexEntry *VN_FindNode(Object *key)
     return NULL;
 }
 
-SInt32 ValueNumbering_0051f790(RegisterValueRecord *record, PCodeInstruction *instruction)
+SInt32 fn_0051f790(RegisterValueRecord *record, PCodeInstruction *instruction)
 {
     SInt32 operandIndex;
     SInt32 operandCount;

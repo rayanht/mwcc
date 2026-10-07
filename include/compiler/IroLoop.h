@@ -187,15 +187,15 @@ extern void fn_00461dc0(IROLinear *type, unsigned int enabled);
 extern void forward_expr_if_check_object(IROLinear *entry, int checkObject);
 extern void fn_00460f70(void);
 extern void unroll_loop(int factor, struct IRONode *header);
-extern void IRO_CollectLoopBlocks_004614f0(IRONode *lp);
-extern void IroLoop_0045c520(IROLoop *p1, CInt64 *p2, int *p3, int *p4, int *p5, int *p6);
+extern void fn_004614f0(IRONode *lp);
+extern void fn_0045c520(IROLoop *p1, CInt64 *p2, int *p3, int *p4, int *p5, int *p6);
 extern int compute_loop_count(IROLoop *loop, CInt64 *count);
 extern int is_loop_unrollable(IROLoop *loop);
 extern int compute_positive_addr_record_difference(IROAddrRecord *first, IROAddrRecord *second, int context,
                                                    CInt64 *difference);
 extern void find_induction_init(struct IROLoop *state, struct IRONode *list);
 extern void reduce_strength_and_move_loop_invariants(IRONode *func);
-extern IROExpr *IroLoop_00461860(IROExpr *root, IROLinear *initial, IROLinear *step, IROLoopInd *context, SInt32 mode);
+extern IROExpr *fn_00461860(IROExpr *root, IROLinear *initial, IROLinear *step, IROLoopInd *context, SInt32 mode);
 extern IRONode *insert_loop_preheader(IRONode *p1, IRONode *p2);
 extern IROLoop *fn_0045faa0(IRONode *loop);
 extern int match_induction_expression(IROLinear *node, IROLinear **factor, IROLinear **expression,

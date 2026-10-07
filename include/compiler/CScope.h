@@ -78,7 +78,7 @@ extern NameSpace *find_name_nspace(NameResult *result, NameSpace *nspace, HashNa
 extern Boolean CScope_FindClassMemberObject(TypeClass *tclass, NameResult *result, HashNameNode *name);
 extern Boolean set_parse_result_from_objects(NameResult *result, NameSpaceObjectList *objects, HashNameNode *name);
 extern NameSpaceObjectList *find_scope_object_list(CScopeNSIterator *ctx, HashNameNode *key);
-extern NameSpaceObjectList *CScope_0049a000(NameSpaceLookupList *ctx, HashNameNode *name, NameSpace **outscope);
+extern NameSpaceObjectList *fn_0049a000(NameSpaceLookupList *ctx, HashNameNode *name, NameSpace **outscope);
 extern Boolean find_and_append_class_member_path(NameResult *scope, NameSpace *target, HashNameNode *mode,
                                                  Boolean flag);
 extern NameSpace *get_object_list_nspace(ObjectList *objects, Boolean *flag);

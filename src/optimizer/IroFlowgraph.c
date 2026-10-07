@@ -170,7 +170,7 @@ void IroFlowgraph_RebuildSuccPred(void)
                         }
                         break;
                     case IROLinearAsm:
-                        InlineAsmPPC_00462d70(statement->u.asm_stmt, &references);
+                        fn_00462d70(statement->u.asm_stmt, &references);
                         successorCount = 0;
                         if (references.noFallthrough == 0)
                             successorCount = 1;
@@ -324,7 +324,7 @@ void IRO_BuildflowGraph(IROLinear *source)
                     }
                     break;
                 case IROLinearAsm:
-                    InlineAsmPPC_00462d70(linear->u.asm_stmt, &info);
+                    fn_00462d70(linear->u.asm_stmt, &info);
                     if (info.numlabels != 0)
                         done = 1;
                     break;

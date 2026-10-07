@@ -16,7 +16,6 @@
 #include "compiler/CodeGen.h"
 #include <string.h>
 
-
 typedef struct TemplateComparisonEntry TemplateComparisonEntry;
 
 Boolean CTemplateTools_MatchTypeAndCheckBoundSlots(Object *obj, Type *type, void *templateArgs)
@@ -425,7 +424,7 @@ Type *resolve_templ_dep_type(TypeDeduce *ctx, TypeTemplDep *arg, UInt32 *out)
                 }
                 return (Type *)&stsignedint;
             case 2:
-                CTemplateTools_00516930(ctx, arg->u.templ.templ, arg->u.templ.args);
+                fn_00516930(ctx, arg->u.templ.templ, arg->u.templ.args);
                 return;
             case 3: {
                 ENode *sizeExpression = arg->u.array.index;
@@ -459,7 +458,7 @@ Type *resolve_templ_dep_type(TypeDeduce *ctx, TypeTemplDep *arg, UInt32 *out)
                     CError_ReportError(ERR_DECLARATION_SYNTAX_ERROR);
                     return (Type *)&stsignedint;
                 }
-                CTemplateTools_00516930(ctx, resolvedClass, arg->u.qualtempl.args);
+                fn_00516930(ctx, resolvedClass, arg->u.qualtempl.args);
                 return;
             case 5:
                 return make_bitfield_type(ctx, arg->u.bitfield.type, arg->u.bitfield.size, out);
@@ -541,7 +540,7 @@ TemplArg *find_template_argument(struct TypeDeduce *context, struct TemplParamID
     }
 }
 
-void CTemplateTools_00516930(void *context, TemplClass *function, TemplArg *arguments)
+void fn_00516930(void *context, TemplClass *function, TemplArg *arguments)
 {
     TemplArg *source;
     TemplArg *head;

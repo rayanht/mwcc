@@ -12,7 +12,7 @@ extern PCodeInstruction *PCodeUtilities_MakeInstructionWithObject(short opcode, 
 extern void PCodeUtilities_EmitAddress(short resultReg, short baseReg, struct Object *object, short offset);
 extern void PCodeUtilities_EmitObjectInstructionWithPayload(Object *operand, SInt16 emitInstruction, SInt32 value1,
                                                             SInt32 value2, SInt32 value3);
-extern PCodeOperand *PCodeUtilities_004a2290(PCodeOperand *p, UInt32 mask0, UInt32 mask1, UInt32 mask2);
+extern PCodeOperand *fn_004a2290(PCodeOperand *p, UInt32 mask0, UInt32 mask1, UInt32 mask2);
 extern void PCodeUtilities_EmitInstructionAndCreateBlock(Object *object);
 extern unsigned int PCodeUtilities_EmitConditionalBranch(unsigned int opcode, PCodeLabel *target);
 extern void PCodeUtilities_EmitBranch(PCodeLabel *target);

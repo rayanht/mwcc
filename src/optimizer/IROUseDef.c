@@ -377,7 +377,7 @@ SInt32 IRO_UseDef(UInt8 eliminateUnused, UInt8 simplifyUses)
                     IroVars_VisitExceptionOperands(currentNode->stmt->dobjstack, mark_var_used_at_call);
             }
             if (currentNode->type == IROLinearAsm) {
-                InlineAsmPPC_00462d70(currentNode->u.asm_stmt, &buffer);
+                fn_00462d70(currentNode->u.asm_stmt, &buffer);
                 if (buffer.readsMemory != 0) {
                     IroBitVect_CopyBitVector(use_def_in, usedDefs);
                     IroBitVect_Intersect(callDefs, usedDefs);
@@ -725,7 +725,7 @@ void build_use_def_records(void)
                     create_def_record(entry, member, member->rtype->size == (UInt32)entry->object->type->size);
             }
             if (member->type == IROLinearAsm) {
-                InlineAsmPPC_00462d70(member->u.asm_stmt, &list);
+                fn_00462d70(member->u.asm_stmt, &list);
                 for (index = 0; index < list.numoperands; index++) {
                     entry = fn_0044ba70(list.operands[index].object, 0, 1);
                     switch (list.operands[index].type) {

@@ -19,7 +19,6 @@
 
 #include <string.h>
 
-
 /* The compiler walks a type graph, marking each type record it visits.
  * The record at argument 2 holds the type at offset 0, a "visited" marker
  * at offset 0x18 and a lazily created debug-information entry at 0x1a. */
@@ -699,7 +698,7 @@ void DWARF_AddVar(Object *record, SInt32 offset)
     node->u.var.name = record->name;
 }
 
-void DWARF_004ad260(DWInfo *ptype, union DwarfNodePayload *info)
+void fn_004ad260(DWInfo *ptype, union DwarfNodePayload *info)
 {
     Type *type = ptype->type;
     SInt32 length;
@@ -810,7 +809,7 @@ void DWARF_AddLocalVariable(Object *parameter, int offset)
     location->u.var.name = parameter->name;
 }
 
-void DWARF_004ad570(DWInfo *ptype, union DwarfNodePayload *info)
+void fn_004ad570(DWInfo *ptype, union DwarfNodePayload *info)
 {
     Type *type = ptype->type;
     SInt32 len;
@@ -1076,10 +1075,10 @@ void DWARF_WriteDebugInfo(void)
                             emit_variable_entry(&node->u.sym, node->u.sym.object, node->type);
                             break;
                         case 5:
-                            DWARF_004ad260(entryData, &node->u);
+                            fn_004ad260(entryData, &node->u);
                             break;
                         case 0xc:
-                            DWARF_004ad570(entryData, &node->u);
+                            fn_004ad570(entryData, &node->u);
                             break;
                         case 6:
                         case 0x14:
@@ -1846,7 +1845,7 @@ void set_type_dwarf_ref(Type *p, UInt16 x, Boolean flag, DwarfRef *out)
                 out->valid = 1;
                 {
                     TypeStruct *structure = (TypeStruct *)p;
-                    DWARF_004b0a80(structure);
+                    fn_004b0a80(structure);
                 }
             }
             return;
@@ -2308,7 +2307,7 @@ void emit_class_dwarf(TypeClass *cls)
         patch_dwarf_sibling();
 }
 
-void DWARF_004b0a80(TypeStruct *type)
+void fn_004b0a80(TypeStruct *type)
 {
     SInt32 entryOffset;
     SInt32 length;

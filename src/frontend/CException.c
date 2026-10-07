@@ -225,39 +225,39 @@ void CExcept_CheckStackRefs(ExceptionAction *node)
     while (node != NULL) {
         switch (node->kind) {
             case 1:
-                CInline_0050f240(node->data.local.dtor);
+                fn_0050f240(node->data.local.dtor);
                 break;
             case 2:
-                CInline_0050f240(node->data.types.type[2]);
+                fn_0050f240(node->data.types.type[2]);
                 break;
             case 3:
-                CInline_0050f240(node->data.local.dtor);
+                fn_0050f240(node->data.local.dtor);
                 break;
             case 4:
-                CInline_0050f240(node->data.local_pointer.dtor);
+                fn_0050f240(node->data.local_pointer.dtor);
                 break;
             case 5:
-                CInline_0050f240(node->data.member_array.dtor);
+                fn_0050f240(node->data.member_array.dtor);
                 break;
             case 6:
-                CInline_0050f240(node->data.types.type[2]);
+                fn_0050f240(node->data.types.type[2]);
                 break;
             case 7:
             case 17:
-                CInline_0050f240(node->data.member.dtor);
+                fn_0050f240(node->data.member.dtor);
                 break;
             case 8:
-                CInline_0050f240(node->data.types.type[2]);
+                fn_0050f240(node->data.types.type[2]);
                 break;
             case 9:
-                CInline_0050f240(node->data.member_array.dtor);
+                fn_0050f240(node->data.member_array.dtor);
                 break;
             case 10:
             case 11:
-                CInline_0050f240(node->data.pair.second);
+                fn_0050f240(node->data.pair.second);
                 break;
             case 12:
-                CInline_0050f240(node->data.delete_pointer.deletefunc);
+                fn_0050f240(node->data.delete_pointer.deletefunc);
                 break;
             case 13:
             case 14:
@@ -981,8 +981,8 @@ ENode *CExcept_ScanThrowExpression(void)
     return e;
 }
 
-void CException_004e1fb0(Statement *firstScope, Statement *insertionScope, Statement *lastScope,
-                         ExceptionHandlerRecord *entries)
+void fn_004e1fb0(Statement *firstScope, Statement *insertionScope, Statement *lastScope,
+                 ExceptionHandlerRecord *entries)
 {
     ExceptionAction *originalList;
     SInt32 entryValue;
@@ -1232,7 +1232,7 @@ void CExcept_ScanTryBlock(void *context, char rethrow)
         Statement *end = CFunc_AppendStatement(2);
         end->label = endLabel;
         endLabel->stmt = end;
-        CException_004e1fb0(tryBody, handlerStart, end, handler);
+        fn_004e1fb0(tryBody, handlerStart, end, handler);
     }
     finish_label(handlerLabel);
 }
@@ -1259,7 +1259,7 @@ Object *CException_GetTempObject(ENode *obj)
     return create_temp_object(obj->data.temp.type);
 }
 
-ENode *CException_004e1940(ENode *node)
+ENode *fn_004e1940(ENode *node)
 {
     Object *obj;
     obj = CException_CachedObject(node);
@@ -1510,7 +1510,7 @@ ENode *rewrite_expr_temporaries(ENode *expr)
 {
     switch (expr->type) {
         case ETEMP:
-            return CException_004e1940(expr);
+            return fn_004e1940(expr);
         case ENEWEXCEPTION:
         case ENEWEXCEPTIONARRAY:
             lower_newexception(expr, 1);
@@ -1594,7 +1594,7 @@ ENode *fn_004e1050(ENode *expression)
 {
     switch (expression->type) {
         case ETEMP:
-            return CException_004e1940(expression);
+            return fn_004e1940(expression);
         case ENEWEXCEPTION:
         case ENEWEXCEPTIONARRAY:
             lower_newexception(expression, 0);

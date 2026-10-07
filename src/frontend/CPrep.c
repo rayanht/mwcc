@@ -350,7 +350,7 @@ void CPrep_ParseDirective(void)
         return;
     }
     if (!strcmp("include", data_00587fa0->name)) {
-        CPrep_0043a0a0(0);
+        fn_0043a0a0(0);
         macrocheck = 1;
         return;
     }
@@ -424,7 +424,7 @@ void CPrep_ParseDirective(void)
     }
     if (copts.objective_c != 0 || copts.ANSIstrict == 0) {
         if (!strcmp("import", data_00587fa0->name)) {
-            CPrep_0043a0a0(1);
+            fn_0043a0a0(1);
             macrocheck = 1;
             return;
         }
@@ -1258,7 +1258,7 @@ void parse_line_directive(void)
     }
 }
 
-void CPrep_0043a0a0(char allowInclude)
+void fn_0043a0a0(char allowInclude)
 {
     short length;
     short ch;
@@ -1531,7 +1531,7 @@ void parse_pragma(void)
             CMach_PragmaParams();
         } else if (memcmp(PN, "overload", 9) == 0) {
             macrocheck = 1;
-            CPrep_0043b790();
+            fn_0043b790();
         } else if (memcmp(PN, "mark", 5) == 0) {
             CPrepTokenizer_SkipToEndOfLine();
             macrocheck = 1;
@@ -2006,7 +2006,7 @@ void parse_optimization_level_pragma(void)
     CPrepTokenizer_SkipToEndOfLine();
 }
 
-void CPrep_0043b790(void)
+void fn_0043b790(void)
 {
     Object *obj;
     UInt8 saved;
@@ -3793,7 +3793,7 @@ Macro *find_expandable_macro(UInt8 *text)
             if (entry->nargs != 0) {
                 while ((character = *text) == ' ' || (character >= 9 && character <= 12))
                     text++;
-                if (character != '(' && !CPrep_0043ecb0('('))
+                if (character != '(' && !fn_0043ecb0('('))
                     return NULL;
             }
             return entry;
@@ -3848,7 +3848,7 @@ Macro *lookup_expandable_macro(void)
     return NULL;
 }
 
-Boolean CPrep_0043ecb0(short ch)
+Boolean fn_0043ecb0(short ch)
 {
     char *p;
     short level;
@@ -4244,7 +4244,7 @@ void CPrep_GetTokenLocation(TStreamElement *token, CPrepFileInfo **file, SInt32 
         *line = n;
     } else
         *line = lineno = data_00587ef0;
-    c = CPrep_0043f860(end = base + offset);
+    c = fn_0043f860(end = base + offset);
     *column = c;
     if (!token && macro_expansion_depth == 1) {
         cursor = (char *)token_start;
@@ -4276,7 +4276,7 @@ void CPrep_GetTokenLocation(TStreamElement *token, CPrepFileInfo **file, SInt32 
         *textcol = 1;
     } else {
         text[j] = 0;
-        *textcol = CPrep_0043f860(text + *textpos);
+        *textcol = fn_0043f860(text + *textpos);
     }
     if (offset > 16) {
         cursor = end - 16;
@@ -4304,7 +4304,7 @@ TStreamElement *CPrep_GetLastBufferedToken(void)
 
 #pragma sym reset
 
-int CPrep_0043f860(char *p)
+int fn_0043f860(char *p)
 {
     int len;
     short c;

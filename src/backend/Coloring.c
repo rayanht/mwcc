@@ -433,7 +433,7 @@ void Coloring_AllocateRegisters(Object *function)
     }
     StackFrame_CheckAltivec();
     if (copts.debug_listing && gHasAltivecFrame) {
-        CodeGen_DumpPCode_004c4bd0(COptimizer_GetFunctionObject(function)->name, "AFTER CHECKING FOR ALTIVEC FRAME");
+        fn_004c4bd0(COptimizer_GetFunctionObject(function)->name, "AFTER CHECKING FOR ALTIVEC FRAME");
     }
     Registers_SetupGPRs();
     gColoringRegisterCount = gUsedVirtualRegistersGPR;

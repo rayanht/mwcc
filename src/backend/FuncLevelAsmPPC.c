@@ -280,19 +280,17 @@ void FuncLevelAsmPPC_GenerateFunction(Object *func)
                                 return;
                             PCode_BuildPredecessors();
                             if (copts.debug_listing != 0)
-                                CodeGen_DumpPCode_004c4bd0(functionName, "[FUNCTION-LEVEL ASM] INITIAL CODE");
+                                fn_004c4bd0(functionName, "[FUNCTION-LEVEL ASM] INITIAL CODE");
                             Coloring_AllocateRegisters(func);
                             if (copts.debug_listing != 0)
-                                CodeGen_DumpPCode_004c4bd0(functionName,
-                                                           "[FUNCTION-LEVEL ASM] AFTER REGISTER COLORING");
+                                fn_004c4bd0(functionName, "[FUNCTION-LEVEL ASM] AFTER REGISTER COLORING");
                             StackFrameEABI_ClearUnusedStackFrame();
                             StackFrameEABI_FinalizeLayout(frameBlock);
                             StackFrameEABI_GeneratePrologueEpilogue(prologueBlock, 0, has_dlocal_initialization);
                             StackFrameEABI_MergePrologueEpilogue(gReturnBlock = gCurrentBlock,
                                                                  data_005882c0.record ? 1 : 0);
                             if (copts.debug_listing != 0)
-                                CodeGen_DumpPCode_004c4bd0(functionName,
-                                                           "[FUNCTION-LEVEL ASM] AFTER PROLOGUE/EPILOGUE CREATION");
+                                fn_004c4bd0(functionName, "[FUNCTION-LEVEL ASM] AFTER PROLOGUE/EPILOGUE CREATION");
                             frameFinalized = 1;
                         }
                     } else {
@@ -325,13 +323,13 @@ void FuncLevelAsmPPC_GenerateFunction(Object *func)
         (gReturnBlock = gCurrentBlock)->flags |= 2;
         PCode_BuildPredecessors();
         if (copts.debug_listing != 0)
-            CodeGen_DumpPCode_004c4bd0(functionName, "[FUNCTION-LEVEL ASM] INITIAL CODE");
+            fn_004c4bd0(functionName, "[FUNCTION-LEVEL ASM] INITIAL CODE");
         if (data_005884f4 == 0) {
             Coloring_AllocateRegisters(func);
             if (func_errors != 0)
                 return;
             if (copts.debug_listing != 0)
-                CodeGen_DumpPCode_004c4bd0(functionName, "[FUNCTION-LEVEL ASM] AFTER REGISTER COLORING");
+                fn_004c4bd0(functionName, "[FUNCTION-LEVEL ASM] AFTER REGISTER COLORING");
         }
         StackFrameEABI_ClearUnusedStackFrame();
         StackFrameEABI_FinalizeLayout(frameBlock);
@@ -344,7 +342,7 @@ void FuncLevelAsmPPC_GenerateFunction(Object *func)
             StackFrameEABI_MergePrologueEpilogue(gReturnBlock, 1);
         }
         if (copts.debug_listing != 0)
-            CodeGen_DumpPCode_004c4bd0(functionName, "[FUNCTION-LEVEL ASM] AFTER PROLOGUE/EPILOGUE CREATION");
+            fn_004c4bd0(functionName, "[FUNCTION-LEVEL ASM] AFTER PROLOGUE/EPILOGUE CREATION");
     }
 
     if (func_errors != 0)
@@ -356,6 +354,6 @@ void FuncLevelAsmPPC_GenerateFunction(Object *func)
     copts.peephole = 0;
     PCodeAssembly_EmitFunction(func, data_00581c58);
     if (copts.debug_listing != 0)
-        CodeGen_DumpPCode_004c4bd0(COptimizer_GetFunctionObject(func)->name, "[FUNCTION-LEVEL ASM] FINAL CODE");
+        fn_004c4bd0(COptimizer_GetFunctionObject(func)->name, "[FUNCTION-LEVEL ASM] FINAL CODE");
     CFunc_WarnUnused();
 }

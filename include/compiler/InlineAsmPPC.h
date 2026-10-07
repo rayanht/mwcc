@@ -84,8 +84,8 @@ struct ParsedAsmInstruction {
 };
 #pragma pack(pop)
 
-extern void InlineAsmPPC_00462d70(Statement *stmt, AsmOut *out);
-extern SInt32 InlineAsmPPC_004631f0(ParsedAsmInstruction *operand);
+extern void fn_00462d70(Statement *stmt, AsmOut *out);
+extern SInt32 fn_004631f0(ParsedAsmInstruction *operand);
 extern void InlineAsmPPC_GenerateAsmInstruction(Statement *o);
 extern void InlineAsmPPC_ParseInstruction(void);
 extern void InlineAsmPPC_ParseDirectiveIdentifier(void);

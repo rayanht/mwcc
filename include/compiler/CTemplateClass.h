@@ -23,7 +23,7 @@ struct TemplateClassMatch {
 
 extern unsigned char CTemplateClass_InstantiateClass(TypeClass *theclass);
 extern void instantiate_namespace_objects(TypeDeduce *map, TypeClass *unused, TypeClass *obj);
-extern void CTemplateClass_0051c680(TypeDeduce *ctx, Object *obj);
+extern void fn_0051c680(TypeDeduce *ctx, Object *obj);
 extern void instantiate_objtype(TypeDeduce *context, ObjType *type, HashNameNode *name);
 extern void initialize_enum_constants(TypeDeduce *context, struct TemplateAction *object, TypeEnum *scope);
 extern void instantiate_enum(TypeDeduce *context, struct TemplateAction *entry);
@@ -48,7 +48,7 @@ extern unsigned int CTemplateClass_PrependTemplateRecordEntry(struct TemplClass 
 extern void instantiate_friend_declaration(TypeDeduce *ctx, struct TemplateFriend *declaration);
 extern void instantiate_object_type(TypeDeduce *context, TemplateAction *function, ObjBase *object);
 extern void instantiate_template_object(TypeDeduce *ctx, Object *templ);
-extern void CTemplateClass_0051cec0(TypeDeduce *context, struct TemplClass *templateClass);
+extern void fn_0051cec0(TypeDeduce *context, struct TemplClass *templateClass);
 extern void CTemplateClass_ParsePartialSpecialization(TemplateScopeState *scope, struct TemplParam *parameters,
                                                       short access, SInt32 *position);
 extern TemplClassInst *CTemplateClass_GetInstance(struct TemplClass *cls, TemplArg *key, TemplArg *flag);
