@@ -1303,7 +1303,7 @@ void CSOM_BuildClass(TypeClass *func)
     obj->type = (Type *)ft;
     obj->sclass = TK_STATIC;
     obj->name = CParser_NameConcat(func->classname->name, "DLLD");
-    if (CScope_FindObjectListInNameSpace(cscope_root, obj->name) != NULL)
+    if (CScope_GetLocalObject(cscope_root, obj->name) != NULL)
         CError_ReportError(ERR_OBJECT_REDEFINED, obj);
     state.registrationFunction = obj;
     CFunc_GenerateDummyFunction(obj);
@@ -1510,7 +1510,7 @@ Object *CSOM_004e45b0(char *name, char *signature)
     Object *obj;
     FuncArg *arg;
 
-    list = CScope_FindObjectListInNameSpace(cscope_root, GetHashNameNode(name));
+    list = CScope_GetLocalObject(cscope_root, GetHashNameNode(name));
     if (list != NULL && (obj = list->object)->otype == OT_OBJECT) {
         if (obj->type->type == TYPEFUNC && *signature++ == 'p' && TYPE_FUNC(obj->type)->functype->type == TYPEPOINTER) {
             for (arg = TYPE_FUNC(obj->type)->args; arg != NULL; arg = arg->next) {

@@ -53,7 +53,7 @@ extern void CScope_ParseUsingDeclaration(NameSpace *nspace, AccessType flag, Boo
 extern void CScope_AddClassUsingDeclaration(TypeClass *def, TypeClass *tp, HashNameNode *name, Boolean flag);
 extern void add_using_declaration(BClassList *bases, NameSpace *scope, ObjBase *def, HashNameNode *name, char access);
 extern BClassList *CScope_GetClassAccessPath(BClassList *classes, TypeClass *base);
-extern ObjectList *CScope_FindObjectListInNameSpace(NameSpace *nspace, HashNameNode *name);
+extern ObjectList *CScope_GetLocalObject(NameSpace *nspace, HashNameNode *name);
 extern ObjectList *remove_dalias_objects(NameSpaceObjectList *list);
 extern Boolean CScope_FindTypeName(NameSpace *arg0, HashNameNode *arg1, NameResult *arg2);
 extern Type *CScope_GetLocalTagType(NameSpace *nspace, HashNameNode *name);
@@ -64,7 +64,7 @@ extern int CScope_InitObjectIterator(CScopeObjectIterator *save, NameSpace *obj)
 extern Boolean CScope_PossibleTypeName(HashNameNode *arg);
 extern NameSpaceObjectList *CScope_FindObjectList(NameResult *result, HashNameNode *arg);
 extern Boolean CScope_ParseElaborateName(NameResult *s);
-extern Boolean CScope_ParseQualifiedScope(NameResult *result, SInt32 flag);
+extern Boolean CScope_ParseQualifiedNameSpace(NameResult *result, SInt32 flag);
 extern Boolean CScope_ParseDeclName(NameResult *lookup);
 extern Boolean CScope_ParseExprName(NameResult *scope);
 extern Boolean parse_name_in_namespace(NameResult *scope, NameSpace *ns);
@@ -83,7 +83,7 @@ extern Boolean find_and_append_class_member_path(NameResult *scope, NameSpace *t
                                                  Boolean flag);
 extern NameSpace *get_object_list_nspace(ObjectList *objects, Boolean *flag);
 extern BClassList *find_class_member_path(NameResult *result, TypeClass *tclass, SInt32 offset);
-extern NameSpaceLookupList *build_usings_scope_list(NameSpace *ns);
+extern NameSpaceLookupList *CScope_BuildNameSpaceLookupList(NameSpace *ns);
 extern void CScope_AddGlobalObject(Object *object);
 extern NameSpace *CScope_NewListNameSpace(HashNameNode *name, Boolean is_global);
 extern NameSpaceList *collect_type_namespaces(NameSpaceList *acc, Type *type);
@@ -91,7 +91,7 @@ extern NameSpaceObjectList *CScope_InsertNameSpaceName(NameSpace *nspace, HashNa
 extern UInt8 CScope_IsEmptyNameSpace(NameSpace *nameSpace);
 extern Boolean CScope_IsStdNameSpace(NameSpace *nspace);
 extern NameSpace *CScope_FindGlobalNS(NameSpace *scope);
-extern NameSpace *CScope_FindNonClassNonTemplNameSpace(NameSpace *nspace);
+extern NameSpace *CScope_FindNonClassNonFunctionNS(NameSpace *nspace);
 extern UInt8 CScope_IsInLocalNameSpace(NameSpace *scope);
 extern UInt8 CScope_FindQualifiedClassMember(NameResult *holder, TypeClass *type, HashNameNode *name);
 extern BClassList *find_base_class_path(TypeClass *theclass, TypeClass *target, unsigned int offset);

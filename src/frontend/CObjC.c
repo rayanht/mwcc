@@ -3110,7 +3110,7 @@ Object *CObjCModern_GetOrCreateFunctionObject(char *identifier, char *identifier
 
     savedState = copts.cplusplus;
     name = GetHashNameNode(identifier);
-    found = CScope_FindObjectListInNameSpace(cscope_root, name);
+    found = CScope_GetLocalObject(cscope_root, name);
     if (found != NULL) {
         entry = found;
         object = entry->object;
@@ -3147,7 +3147,7 @@ Object *CObjCModern_GetSelectorReference(HashEntry *p)
         obj->sclass = TK_STATIC;
         obj->type = (Type *)&void_ptr;
         obj->section = 0xb;
-        if (CScope_FindObjectListInNameSpace(cscope_root, obj->name))
+        if (CScope_GetLocalObject(cscope_root, obj->name))
             CError_ReportError(ERR_OBJECT_REDEFINED, obj);
         else
             CScope_AddGlobalObject(obj);

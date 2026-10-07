@@ -480,7 +480,7 @@
   "_CSOM_GenerateSomselfAssignment": "0x00521e10",
   "_CScope_AddObject": "0x004d9680",
   "_CScope_FindName": "0x004d9ea0",
-  "_CScope_FindObjectListInNameSpace": "0x004d6540",
+  "_CScope_GetLocalObject": "0x004d6540",
   "_CScope_GetTagType": "0x004d81e0",
   "_CScope_InitObjectIterator": "0x004d68f0",
   "_CScope_IsInLocalNameSpace": "0x004d9f00",

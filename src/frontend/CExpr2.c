@@ -859,8 +859,8 @@ void parse_pointer_and_array_declarator(Type **type, char allowNonconstant)
             break;
         case TK_IDENTIFIER:
         case TK_COLON_COLON:
-            if (CScope_ParseQualifiedScope(&lookup, 1) && lookup.nspace != NULL && lookup.nspace->theclass != NULL &&
-                tk == '*') {
+            if (CScope_ParseQualifiedNameSpace(&lookup, 1) && lookup.nspace != NULL &&
+                lookup.nspace->theclass != NULL && tk == '*') {
                 makememberpointertype(type, lookup.nspace->theclass, fn_0046cea0());
                 if (tk != '[') {
                     parse_pointer_and_array_declarator(type, allowNonconstant);

@@ -796,7 +796,7 @@ NameSpace *CScope_NewListNameSpace(HashNameNode *name, Boolean is_global)
     return ns;
 }
 
-NameSpace *CScope_FindNonClassNonTemplNameSpace(NameSpace *nspace)
+NameSpace *CScope_FindNonClassNonFunctionNS(NameSpace *nspace)
 {
     while (nspace != NULL) {
         if (nspace->theclass == NULL && nspace->is_templ == '\0') {
@@ -1034,7 +1034,7 @@ struct NameSpaceLookupList *build_namespace_scope_rec(NameSpace *nspace)
     return rec;
 }
 
-NameSpaceLookupList *build_usings_scope_list(NameSpace *ns)
+NameSpaceLookupList *CScope_BuildNameSpaceLookupList(NameSpace *ns)
 {
     NameSpaceLookupList *scope;
     NameSpaceLookupList root;
@@ -1529,7 +1529,7 @@ NameSpace *find_name_nspace(NameResult *result, NameSpace *nspace, HashNameNode 
 
     if (local == 0 && nspace->usings != NULL) {
         found = NULL;
-        for (scope = build_usings_scope_list(nspace); scope != NULL; scope = scope->next) {
+        for (scope = CScope_BuildNameSpaceLookupList(nspace); scope != NULL; scope = scope->next) {
             for (using = scope->namespaces; using != NULL; using = using->next) {
                 ObjectList *usingList;
                 nspace = using->nspace;
@@ -1572,7 +1572,7 @@ NameSpaceObjectList *find_namespace_object(NameResult *state, NameSpace *nspace,
         return result;
     }
     if (nspace->usings != NULL) {
-        usingSpace = build_usings_scope_list(nspace);
+        usingSpace = CScope_BuildNameSpaceLookupList(nspace);
         while (usingSpace != NULL) {
             usingResult = CScope_0049a000(usingSpace, name, foundSpace);
             if (usingResult != NULL) {
@@ -1613,7 +1613,7 @@ Boolean find_type_name_in_scope(NameResult *out, NameSpace *scope, HashNameNode 
 
     if (scope->usings != NULL) {
         offset = 0;
-        for (nl = build_usings_scope_list(scope); nl != NULL; nl = nl->next) {
+        for (nl = CScope_BuildNameSpaceLookupList(scope); nl != NULL; nl = nl->next) {
             for (ol = nl->namespaces; ol != NULL; ol = ol->next) {
                 obj = ol->nspace;
                 for (p = FindInScope((NameSpace *)(void *)obj, name); p != NULL; p = p->next) {
@@ -1917,7 +1917,7 @@ Boolean CScope_ParseExprName(NameResult *scope)
         return 1;
     }
 
-    if ((tk == TK_COLON_COLON || tk == TK_IDENTIFIER) && CScope_ParseQualifiedScope(scope, 1)) {
+    if ((tk == TK_COLON_COLON || tk == TK_IDENTIFIER) && CScope_ParseQualifiedNameSpace(scope, 1)) {
         if (scope->type != NULL)
             return 1;
         if (scope->nspace == NULL)
@@ -2074,7 +2074,7 @@ Boolean CScope_ParseDeclName(NameResult *lookup)
         CError_ReportError(ERR_IDENTIFIER_EXPECTED);
         return 0;
     }
-    if (!CScope_ParseQualifiedScope(lookup, 0))
+    if (!CScope_ParseQualifiedNameSpace(lookup, 0))
         goto unqualified;
     if (lookup->type != NULL)
         return 1;
@@ -2174,7 +2174,7 @@ Boolean CScope_ParseDeclName(NameResult *lookup)
 
 #define TCE(t) ((TemplClassInst *)(t))
 
-Boolean CScope_ParseQualifiedScope(NameResult *result, SInt32 flag)
+Boolean CScope_ParseQualifiedNameSpace(NameResult *result, SInt32 flag)
 {
     Type *classType;
     HashNameNode *name;
@@ -2389,7 +2389,7 @@ Boolean CScope_ParseElaborateName(NameResult *result)
         CError_ReportError(ERR_IDENTIFIER_EXPECTED);
         return 0;
     }
-    if (CScope_ParseQualifiedScope(result, 0) == 0) {
+    if (CScope_ParseQualifiedNameSpace(result, 0) == 0) {
         result->nspace = cscope_current;
         if (tk != TK_IDENTIFIER) {
             CError_ReportError(ERR_IDENTIFIER_EXPECTED);
@@ -2729,7 +2729,7 @@ ObjectList *remove_dalias_objects(NameSpaceObjectList *list)
     return (ObjectList *)list;
 }
 
-ObjectList *CScope_FindObjectListInNameSpace(NameSpace *nspace, HashNameNode *name)
+ObjectList *CScope_GetLocalObject(NameSpace *nspace, HashNameNode *name)
 {
     NameSpaceObjectList *nol;
     Object *obj;

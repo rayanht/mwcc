@@ -784,8 +784,7 @@ ENode *CTemplTool_DeduceExpr(TypeDeduce *ctx, ENode *node)
                     if (resolvedObject == NULL || resolvedObject->theclass.type != TYPECLASS) {
                         CError_FATAL(1379);
                     }
-                    entry = CScope_FindObjectListInNameSpace(resolvedObject->theclass.nspace,
-                                                             node->data.templdep.u.obj->name);
+                    entry = CScope_GetLocalObject(resolvedObject->theclass.nspace, node->data.templdep.u.obj->name);
                     if (entry == NULL) {
                         CError_FATAL(1382);
                     }

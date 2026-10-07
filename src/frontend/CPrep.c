@@ -2237,7 +2237,7 @@ void fn_0043be10(void)
             do {
                 if (scope->is_global)
                     break;
-                entry = CScope_FindObjectListInNameSpace(scope, data_00587fa0);
+                entry = CScope_GetLocalObject(scope, data_00587fa0);
                 if (entry != NULL) {
                     if ((record = entry->object)->otype == 5U && record->datatype == 1U) {
                         record->flags |= 1U;
@@ -2340,7 +2340,7 @@ void apply_pragma_object_flags(unsigned int flags)
             break;
         if (CPrepTokenizer_ScanToken() != -3)
             break;
-        node = CScope_FindObjectListInNameSpace(cscope_root, data_00587fa0);
+        node = CScope_GetLocalObject(cscope_root, data_00587fa0);
         if (node == NULL) {
             break;
         } else {

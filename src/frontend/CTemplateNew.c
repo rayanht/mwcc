@@ -1042,7 +1042,7 @@ void parse_template_member_definition(void *context, TypeClass *template_info, D
             CBrowse_ForwardObjectFileRange(object, start, start, *position, end + 1);
         }
     } else {
-        entry = CScope_FindObjectListInNameSpace(template_info->nspace, declaration->name);
+        entry = CScope_GetLocalObject(template_info->nspace, declaration->name);
         if (entry == NULL) {
             CError_ReportError(ERR_UNDEFINED_IDENTIFIER, declaration->name->name);
             return;

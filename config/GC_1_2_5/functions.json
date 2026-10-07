@@ -12351,7 +12351,7 @@
     "source": "src/frontend/CScope.c"
   },
   {
-    "name": "CScope_FindObjectListInNameSpace",
+    "name": "CScope_GetLocalObject",
     "address": "0x00497bf0",
     "size": 117,
     "source": "src/frontend/CScope.c"
@@ -12429,7 +12429,7 @@
     "source": "src/frontend/CScope.c"
   },
   {
-    "name": "CScope_ParseQualifiedScope",
+    "name": "CScope_ParseQualifiedNameSpace",
     "address": "0x004986e0",
     "size": 1124,
     "source": "src/frontend/CScope.c"
@@ -12537,7 +12537,7 @@
     "source": "src/frontend/CScope.c"
   },
   {
-    "name": "build_usings_scope_list",
+    "name": "CScope_BuildNameSpaceLookupList",
     "address": "0x0049a990",
     "size": 447,
     "source": "src/frontend/CScope.c"
@@ -12579,7 +12579,7 @@
     "source": "src/frontend/CScope.c"
   },
   {
-    "name": "CScope_FindNonClassNonTemplNameSpace",
+    "name": "CScope_FindNonClassNonFunctionNS",
     "address": "0x0049b020",
     "size": 33,
     "source": "src/frontend/CScope.c"

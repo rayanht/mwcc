@@ -1655,7 +1655,7 @@ void CDecl_ScanPointer(DeclInfo *declarator, NameSpace *nspace, char finish)
                     break;
                 }
             case TK_COLON_COLON:
-                if (!CScope_ParseQualifiedScope(&lookup, 1))
+                if (!CScope_ParseQualifiedNameSpace(&lookup, 1))
                     break;
                 nspace = lookup.nspace;
                 foundNamespace = nspace;
@@ -1705,7 +1705,7 @@ void scandeclarator(DeclInfo *decl)
                 break;
             /* fall through */
         case TK_COLON_COLON:
-            if (CScope_ParseQualifiedScope(&info, 1)) {
+            if (CScope_ParseQualifiedNameSpace(&info, 1)) {
                 nspace = info.nspace;
                 if (info.nspace != NULL) {
                     if (info.nspace->theclass != NULL && tk == '*')
@@ -1773,7 +1773,7 @@ void conversion_type_name(DeclInfo *result)
         case TK_IDENTIFIER:
         case TK_COLON_COLON: {
             NameSpace *object;
-            if (CScope_ParseQualifiedScope(&lookup, 0)) {
+            if (CScope_ParseQualifiedNameSpace(&lookup, 0)) {
                 object = lookup.nspace;
                 if (object != NULL && object->theclass != NULL && tk == '*')
                     CDecl_ScanPointer(&declaration, object, 0);
@@ -2027,7 +2027,7 @@ Object *CDecl_GetFunctionObject(DeclInfo *decl, NameSpace *target_scope, Boolean
     if (scope->theclass) {
         if (!decl->name)
             CError_FATAL(1877);
-        lookup = CScope_FindObjectListInNameSpace(scope, decl->name);
+        lookup = CScope_GetLocalObject(scope, decl->name);
         if (!lookup) {
             CError_ReportError(ERR_UNDEFINED_IDENTIFIER, decl->name->name);
             return NULL;
@@ -2099,7 +2099,7 @@ Object *CDecl_GetFunctionObject(DeclInfo *decl, NameSpace *target_scope, Boolean
     } else {
         if (decl->operator_token && !check_operator_declaration(decl, 0))
             return NULL;
-        lookup = CScope_FindObjectListInNameSpace(scope, decl->name);
+        lookup = CScope_GetLocalObject(scope, decl->name);
         if (lookup) {
             if (copts.cplusplus) {
                 object = find_or_create_function_object(lookup, decl, &overload_created, 0, lookup_mode);
@@ -5415,8 +5415,7 @@ void CDecl_ParseClass(DeclInfo *ctx, SInt16 kind, Boolean advanceToken, UInt8 ex
                 if ((existing = spec.type) != NULL)
                     goto resolveDeclaration;
                 CError_ASSERT(6192, spec.name != NULL);
-                obj = CDecl_DefineClass(CScope_FindNonClassNonTemplNameSpace(cscope_current), spec.name, NULL, kind, 0,
-                                        1);
+                obj = CDecl_DefineClass(CScope_FindNonClassNonFunctionNS(cscope_current), spec.name, NULL, kind, 0, 1);
                 obj->eflags |= extraFlags;
         }
     }
