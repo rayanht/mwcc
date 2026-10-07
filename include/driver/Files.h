@@ -9,15 +9,10 @@ extern "C" {
 #endif
 
 #pragma options align = mac68k
-struct CWFileSpec {
-    struct {
-        struct {
-            UInt16 volumeRef;
-            UInt32 directoryId;
-            UInt8 name[62];
-        } file;
-    } fileData;
-    UInt16 tail;
+struct FSSpec {
+    SInt16 vRefNum;
+    SInt32 parID;
+    Str63 name;
 };
 #pragma options align = reset
 struct FileIdentifierInfo {

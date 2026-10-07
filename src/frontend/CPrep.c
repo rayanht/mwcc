@@ -5145,7 +5145,7 @@ SInt32 __stdcall CPrep_GetTargetSettings(CWPluginPrivateContext *context, TgtRec
         target->head = plugin->targetSettings->head;
     } else {
         memset(target, 0, sizeof(*target));
-        if (plugin->firstFile.fileData.file.name[0] != 0) {
+        if (plugin->firstFile.name[0] != 0) {
             target->head.tag = 1;
         } else {
             target->head.tag = 0;

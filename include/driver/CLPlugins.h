@@ -31,7 +31,7 @@ struct PlugAux {
         const CWObjectFlags *
             *); /* 0x10: CLPlugins_GetObjectFlags calls this with &flags and tests the returned status */
     short(__stdcall *writeObjectFile)(
-        struct CWFileSpec *, struct CWFileSpec *, unsigned int, int,
+        CWFileSpec *, CWFileSpec *, unsigned int, int,
         int); /* 0x14: CLPlugins_WriteObjectFile passes context, input, objectFlags, option and objectHandle */
 };
 #pragma options align = reset
@@ -152,8 +152,8 @@ extern struct Plugin *CLPlugins_CreatePluginDataCopy(PluginRequiredInputRecord *
 extern char CLPlugins_MatchTarget(Plugin *plugin, int firstIdentifier, int secondIdentifier, int flag);
 extern char file_map_matches(FileMap *reference, int value, char *name, char flag);
 extern Plugin *CLPlugins_FindLinkPluginForTarget(Plugin *plugins, unsigned int kind, unsigned int subtype);
-extern UInt8 CLPlugins_WriteObjectFile(Plugin *plugin, struct CWFileSpec *context, struct CWFileSpec *input,
-                                       unsigned int argument, int option, int handle);
+extern UInt8 CLPlugins_WriteObjectFile(Plugin *plugin, CWFileSpec *context, CWFileSpec *input, unsigned int argument,
+                                       int option, int handle);
 extern Boolean validate_plugin(Plugin *plug, const char **errmsg);
 extern int CLPlugins_BuildPluginRequests(Plugin *list, SInt32 *count, PluginRequest **out);
 extern unsigned int get_callback_result(void *input);

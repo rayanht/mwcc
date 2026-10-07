@@ -289,9 +289,9 @@ void __stdcall set_record_identifier(CWFileSpec *input, RecordData *data)
     RecordQuery record;
     UInt8 name[256];
 
-    _pstrcpy(name, input->fileData.file.name);
-    record.kind = input->fileData.file.volumeRef;
-    record.value = input->fileData.file.directoryId;
+    _pstrcpy(name, input->name);
+    record.kind = input->vRefNum;
+    record.value = input->parID;
     record.name = name;
     record.flags = 0;
     if (Files_UpdateRecordQuery(&record) == 0) {
@@ -497,12 +497,12 @@ int __stdcall Files_MakeFileSpecFromPath(short volume, int directory, unsigned c
     CWFileSpec base;
     char volumeName[volumeNameCapacity];
 
-    result->fileData.file.volumeRef = 0;
-    result->fileData.file.directoryId = 0;
+    result->vRefNum = 0;
+    result->parID = 0;
     if (volume == 0 && directory == 0) {
         error = OS_GetCWD(&location.path);
         if (error != 0) {
-            result->fileData.file.name[0] = 0;
+            result->name[0] = 0;
             return OS_OSErrorToMacError(error);
         }
         OS_PathSpecToString(&location.path, fullPath, sizeof(fullPath));
@@ -510,12 +510,12 @@ int __stdcall Files_MakeFileSpecFromPath(short volume, int directory, unsigned c
         if (volume == 0) {
             CLIO_ReportAssertionFailure("vRefNum!=0", "Files.c", 839);
         }
-        base.fileData.file.volumeRef = volume;
-        base.fileData.file.directoryId = directory == 0 ? 2 : directory;
-        base.fileData.file.name[0] = 0;
+        base.vRefNum = volume;
+        base.parID = directory == 0 ? 2 : directory;
+        base.name[0] = 0;
         error = MacSpecs_MakeOSSpec(&base, &location);
         if (error != 0) {
-            result->fileData.file.name[0] = 0;
+            result->name[0] = 0;
             return OS_OSErrorToMacError(error);
         }
         OS_PathSpecToString(&location.path, fullPath, sizeof(fullPath));
@@ -530,7 +530,7 @@ int __stdcall Files_MakeFileSpecFromPath(short volume, int directory, unsigned c
                 volumeName[index - 1] = character;
                 index++;
                 if (index >= volumeNameCapacity) {
-                    result->fileData.file.name[0] = 0;
+                    result->name[0] = 0;
                     return -35;
                 }
             }
@@ -539,7 +539,7 @@ int __stdcall Files_MakeFileSpecFromPath(short volume, int directory, unsigned c
             if (OS_MakePathSpec(volumeName, NULL, &location.path) == 0) {
                 OS_PathSpecToString(&location.path, fullPath, sizeof(fullPath));
             } else {
-                c2pstrcpy(result->fileData.file.name, volumeName);
+                c2pstrcpy(result->name, volumeName);
                 return -35;
             }
         }
@@ -571,6 +571,6 @@ int __stdcall Files_MakeFileSpecFromPath(short volume, int directory, unsigned c
         OS_OSSpec_To_FSSpec(&location, result);
         return OS_OSErrorToMacError(OS_Status(&location));
     }
-    result->fileData.file.name[0] = 0;
+    result->name[0] = 0;
     return OS_OSErrorToMacError(error);
 }

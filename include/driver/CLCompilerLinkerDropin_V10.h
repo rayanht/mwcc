@@ -20,7 +20,7 @@ struct DropinConfiguration {
     char *path; /* 0x1e: store_object_data reads a path string through OS_MakeSpec */
     UInt8 reserved2[8];
     UInt16 option;
-    struct CWFileSpec *outputFileSpec; /* 0x2c: store_object_data passes outputFileSpec to MacSpecs_MakeOSSpec */
+    CWFileSpec *outputFileSpec; /* 0x2c: store_object_data passes outputFileSpec to MacSpecs_MakeOSSpec */
 };
 #pragma options align = reset
 struct DropinContext {

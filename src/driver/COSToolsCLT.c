@@ -85,20 +85,16 @@ int COS_FileNew(CWFileSpec *record, short *output, unsigned int argument4, unsig
 {
     int result;
 
-    Files_DeleteFileFromPath(record->fileData.file.volumeRef, record->fileData.file.directoryId,
-                             record->fileData.file.name);
-    result = Files_CallWithFileSpecFromPath(record->fileData.file.volumeRef, record->fileData.file.directoryId,
-                                            record->fileData.file.name, argument4, argument5);
+    Files_DeleteFileFromPath(record->vRefNum, record->parID, record->name);
+    result = Files_CallWithFileSpecFromPath(record->vRefNum, record->parID, record->name, argument4, argument5);
     if ((short)result == 0) {
-        Files_OpenFileByPath(record->fileData.file.volumeRef, record->fileData.file.directoryId,
-                             record->fileData.file.name, 3, output);
+        Files_OpenFileByPath(record->vRefNum, record->parID, record->name, 3, output);
     }
 }
 
 short COS_FileOpen(CWFileSpec *fileSpec, short *fileRef)
 {
-    return Files_OpenFileByPath(fileSpec->fileData.file.volumeRef, fileSpec->fileData.file.directoryId,
-                                fileSpec->fileData.file.name, 1, fileRef);
+    return Files_OpenFileByPath(fileSpec->vRefNum, fileSpec->parID, fileSpec->name, 1, fileRef);
 }
 
 SInt16 COS_FileGetType(CWFileSpec *arguments, UInt32 *output)
@@ -106,9 +102,7 @@ SInt16 COS_FileGetType(CWFileSpec *arguments, UInt32 *output)
     FileIdentifierInfo resultData;
     SInt16 result;
 
-    result =
-        Files_GetFileIdentifierInfoFromPath(arguments->fileData.file.volumeRef, arguments->fileData.file.directoryId,
-                                            arguments->fileData.file.name, &resultData);
+    result = Files_GetFileIdentifierInfoFromPath(arguments->vRefNum, arguments->parID, arguments->name, &resultData);
     *output = resultData.type;
     return result;
 }
@@ -157,13 +151,13 @@ void COS_FileSetFSSpec(void *result, unsigned char *name)
 void COS_FileGetFSSpecInfo(CWFileSpec *record, unsigned short *tag, SInt32 *value, void *data)
 {
     if (tag != NULL) {
-        *tag = record->fileData.file.volumeRef;
+        *tag = record->vRefNum;
     }
     if (value != NULL) {
-        *value = record->fileData.file.directoryId;
+        *value = record->parID;
     }
     if (data != NULL) {
-        copy_pstring(data, record->fileData.file.name);
+        copy_pstring(data, record->name);
     }
 }
 
@@ -172,9 +166,9 @@ void resolve_file_name_to_pascal_string(short category, int recordId, void *inpu
     CWFileSpec record;
     OSSpec resolvedName;
 
-    record.fileData.file.volumeRef = category;
-    record.fileData.file.directoryId = recordId;
-    copy_pstring(record.fileData.file.name, inputName);
+    record.vRefNum = category;
+    record.parID = recordId;
+    copy_pstring(record.name, inputName);
     if (MacSpecs_MakeOSSpec(&record, &resolvedName) == 0) {
         OS_SpecToString(&resolvedName, inputName, 260);
         CLIO_ConvertToPascalString(inputName);
@@ -185,18 +179,17 @@ void COS_FileGetPathName(void *destination, CPrepFileInfo *record, SInt32 *resul
 {
     RecordQuery query;
     if (result) {
-        query.name = record->textfile.fileData.file.name;
-        query.kind = record->textfile.fileData.file.volumeRef;
-        query.value = record->textfile.fileData.file.directoryId;
+        query.name = record->textfile.name;
+        query.kind = record->textfile.vRefNum;
+        query.value = record->textfile.parID;
         query.flags = 0;
         if (Files_UpdateRecordQuery(&query) == 0)
             *result = query.result;
         else
             *result = 0;
     }
-    copy_pstring(destination, record->textfile.fileData.file.name);
-    resolve_file_name_to_pascal_string(record->textfile.fileData.file.volumeRef,
-                                       record->textfile.fileData.file.directoryId, destination);
+    copy_pstring(destination, record->textfile.name);
+    resolve_file_name_to_pascal_string(record->textfile.vRefNum, record->textfile.parID, destination);
     CLIO_ConvertPascalToCString(destination);
 }
 

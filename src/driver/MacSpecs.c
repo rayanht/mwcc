@@ -268,15 +268,15 @@ int __stdcall OS_OSSpec_To_FSSpec(OSSpec *input, CWFileSpec *output)
     int status;
 
     status = parse_value_and_offset(&input->path, &volumeRef, &directoryId);
-    output->fileData.file.volumeRef = volumeRef;
-    output->fileData.file.directoryId = directoryId;
+    output->vRefNum = volumeRef;
+    output->parID = directoryId;
     if (status != 0) {
         return status;
     }
     if (OS_NameSpecToString(&input->name, file_name_buffer, 0x40) == NULL) {
         return 0x6f;
     }
-    c2pstrcpy(output->fileData.file.name, file_name_buffer);
+    c2pstrcpy(output->name, file_name_buffer);
     return 0;
 }
 
@@ -308,11 +308,11 @@ DWORD __stdcall fn_00413670(short kind, int value, OSPathSpec *path)
 /* Unused lookup request declaration removed: no accesses or allocations. */
 int __stdcall MacSpecs_MakeOSSpec(CWFileSpec *record, OSSpec *spec)
 {
-    int result = fn_00413670(record->fileData.file.volumeRef, record->fileData.file.directoryId, &spec->path);
+    int result = fn_00413670(record->vRefNum, record->parID, &spec->path);
     if (result != 0) {
         return result;
     }
-    p2cstrcpy(file_name_buffer, record->fileData.file.name);
+    p2cstrcpy(file_name_buffer, record->name);
     return OS_MakeNameSpec(file_name_buffer, &spec->name);
 }
 

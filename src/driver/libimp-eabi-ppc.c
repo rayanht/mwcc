@@ -79,20 +79,20 @@ char **load_file_data_and_set_archive_signature(CWFileSpec *name, SInt32 *out1, 
     err = 0;
     rec = read_file_into_input_nodes(name, &err);
     if (err != 0 || rec == NULL) {
-        CompilerTools_ReportLimitedDiagnostic(0x1d, name->fileData.file.name);
+        CompilerTools_ReportLimitedDiagnostic(0x1d, name->name);
         if (rec != NULL)
             clear_file_input_data_handles(rec);
         return NULL;
     }
     if (rec->kind == 0) {
-        CompilerTools_ReportLimitedDiagnostic(0x1e, name->fileData.file.name);
+        CompilerTools_ReportLimitedDiagnostic(0x1e, name->name);
         clear_file_input_data_handles(rec);
         return NULL;
     }
     accumulated_section_size = 0;
     accumulated_section_sizes = 0;
     section_size_total = 0;
-    p2cstrcpy(buf, name->fileData.file.name);
+    p2cstrcpy(buf, name->name);
     if (initheaps(format_message_and_longjmp) != 0) {
         format_message_and_longjmp();
         clear_file_input_data_handles(rec);
@@ -105,7 +105,7 @@ char **load_file_data_and_set_archive_signature(CWFileSpec *name, SInt32 *out1, 
         return NULL;
     }
     if (!COS_ResizeHandle(contents = contents = (StorageHandle *)rec->dataHandle, length = 8)) {
-        CompilerTools_ReportLimitedDiagnostic(0x1d, name->fileData.file.name);
+        CompilerTools_ReportLimitedDiagnostic(0x1d, name->name);
         clear_file_input_data_handles(rec);
         return NULL;
     }

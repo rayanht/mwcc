@@ -133,13 +133,11 @@ void initialize_copts(CPrepCU *source)
     extension[0] = 0;
     copts.objective_c = frontEndPrefs.objective_c;
 
-    for (dotPosition = source->mainFile.fileData.file.name[0]; source->mainFile.fileData.file.name[dotPosition] != '.';
-         dotPosition--)
+    for (dotPosition = source->mainFile.name[0]; source->mainFile.name[dotPosition] != '.'; dotPosition--)
         ;
     if (dotPosition >= 2) {
-        for (extensionLength = 0; extensionLength + dotPosition <= source->mainFile.fileData.file.name[0];
-             extensionLength++)
-            extension[extensionLength] = tolower(source->mainFile.fileData.file.name[extensionLength + dotPosition]);
+        for (extensionLength = 0; extensionLength + dotPosition <= source->mainFile.name[0]; extensionLength++)
+            extension[extensionLength] = tolower(source->mainFile.name[extensionLength + dotPosition]);
         extension[extensionLength] = 0;
     }
 

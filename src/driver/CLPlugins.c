@@ -329,8 +329,8 @@ char *format_plugin_version(Plugin *plugin, char *buffer)
 /* Callback table with five preceding entries. */
 /* Plugin value and callback table. */
 
-UInt8 CLPlugins_WriteObjectFile(Plugin *plugin, struct CWFileSpec *context, struct CWFileSpec *input,
-                                unsigned int objectFlags, int option, int objectHandle)
+UInt8 CLPlugins_WriteObjectFile(Plugin *plugin, CWFileSpec *context, CWFileSpec *input, unsigned int objectFlags,
+                                int option, int objectHandle)
 {
     int validInput;
     int validContext;

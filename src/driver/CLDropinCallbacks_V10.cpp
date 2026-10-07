@@ -133,9 +133,9 @@ Boolean lookup_file(DropinRequest *unused, char *key, DropinFileCallback *output
         output->lookupResult = 0;
         output->callbackState = 0;
         output->lookupFailed = 0;
-        output->output.fileData.file.directoryId = 0;
-        output->output.fileData.file.volumeRef = output->output.fileData.file.directoryId;
-        c2pstrcpy(output->output.fileData.file.name, value);
+        output->output.parID = 0;
+        output->output.vRefNum = output->output.parID;
+        c2pstrcpy(output->output.name, value);
         OS_MakeFileSpec(value, argument);
         if (optsCompiler.printHeaderNames != 0)
             CLIO_FormatAndDispatchText("%s\n", value);
@@ -312,8 +312,8 @@ int __stdcall CLDropinCallbacks_V10_GetFileText(void *context, CWFileSpec *file,
     MacSpecs_MakeOSSpec(file, &path);
     error = CLLoadAndCache_GetFileText(&path, &object, &flag);
     if (error != 0) {
-        p2cstrcpy(fileName, file->fileData.file.name);
-        if (file->fileData.file.volumeRef != 0 || file->fileData.file.directoryId != 0 ||
+        p2cstrcpy(fileName, file->name);
+        if (file->vRefNum != 0 || file->parID != 0 ||
             (lookup = CLFiles_FindChainRecord(default_target->fileLookup, fileName)) == NULL) {
             CLErrors_ReportOSError(0x5d, error, OS_SpecToString(&path, data_005880e0, 0x104));
             return 8;

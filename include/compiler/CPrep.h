@@ -236,10 +236,10 @@ struct CPrepCU {
     SInt32 browseBuffer;
     SInt32 pluginRequest;
     SInt32 apiVersion;
-    struct CWFileSpec projectFile;
+    CWFileSpec projectFile;
     SInt32 projectFileCount;
     SInt32 mainFileNumber;
-    struct CWFileSpec mainFile;
+    CWFileSpec mainFile;
     UInt32 mainFileOffset;
     UInt32 mainFileLength;
     UInt8 precompiling;
