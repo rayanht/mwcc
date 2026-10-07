@@ -15,6 +15,7 @@
 #include "driver/CLErrors.h"
 #include "driver/CLFileOps.h"
 #include "driver/CLIO.h"
+#include "driver/CLMain.h"
 #include "driver/CLPluginRequests.h"
 #include "driver/CLSegs.h"
 #include "driver/CLTarg.h"
@@ -279,7 +280,7 @@ SInt32 CLDependencies_SetAccessPath(OSSpec *name, Boolean flag)
     char buffer[260];
     char *path;
 
-    switch (data_00541b44) {
+    switch (optsCompiler.includeSearch) {
         case 2:
             data_0054d898 = NULL;
             return 1;
@@ -303,13 +304,13 @@ SInt32 CLDependencies_SetAccessPath(OSSpec *name, Boolean flag)
             break;
         default:
             CLErrors_ReportInternalError("CLDependencies.c", 0x197, "Unhandled include file search type (%d)\n",
-                                         data_00541b44);
+                                         optsCompiler.includeSearch);
             break;
     }
 
     data_0054d898 = find_or_create_access_path_entry(default_target->dependencyTable.scope, path);
 
-    if (DAT_00541b28 > 1) {
+    if (optsCmdLine.verbose > 1) {
         CLErrors_ForwardMessage(0x69, fn_00412340(path, data_005880e0, 0x104));
     }
     return 1;
@@ -356,7 +357,7 @@ void CLDependencies_InsertDependencyIfAbsent(DependencyCollection *collection, S
     }
     matched = contains_dependency(collection, index);
     if (!matched) {
-        if (DAT_00541c0b) {
+        if (optsCompiler.depsOnlyUserFiles) {
             alternateMatch = get_record_flag(collection->dependencyTable, index);
         } else {
             alternateMatch = 0;

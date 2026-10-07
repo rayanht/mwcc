@@ -16,6 +16,7 @@
 #include "driver/CLFileOps.h"
 #include "driver/CLFiles.h"
 #include "driver/CLIO.h"
+#include "driver/CLMain.h"
 #include "driver/CLPlugins.h"
 #include "driver/CLSegs.h"
 #include "driver/CLTarg.h"
@@ -44,7 +45,7 @@ int __stdcall cache_precompiled_header(unsigned int context, short *callback, in
     StorageHandle *callbackBuffer;
     OSSpec callbackName;
 
-    if (3 < DAT_00541b28) {
+    if (3 < optsCmdLine.verbose) {
         CLIO_FormatAndDispatchText("Callback: %s\n", "UCBCachePrecompiledHeader");
     }
     MacSpecs_MakeOSSpec((CWFileSpec *)callback, callbackName.directory.path);
@@ -58,7 +59,7 @@ int __stdcall cache_precompiled_header(unsigned int context, short *callback, in
 unsigned int __stdcall call_primary_reference_callback(unsigned int argument, unsigned int key, void *extra)
 {
     DropinFileRecord *record;
-    if (DAT_00541b28 > (short)(3U)) {
+    if (optsCmdLine.verbose > (short)(3U)) {
         CLIO_FormatAndDispatchText("Callback: %s\n", (unsigned char *)"UCBLoadObjectData");
     }
     record = CLFiles_FindFileByIndex(&default_target->files, key);
@@ -80,7 +81,7 @@ int __stdcall store_object_data(int compiler, int dropinId, DropinConfiguration 
     DropinFileRecord *dropin;
     char *path;
 
-    if (DAT_00541b28 > 3)
+    if (optsCmdLine.verbose > 3)
         CLIO_FormatAndDispatchText("Callback: %s\n", "UCBStoreObjectData");
     if (fn_004151f0())
         return 1;
@@ -145,7 +146,7 @@ int __stdcall store_object_data(int compiler, int dropinId, DropinConfiguration 
 unsigned int __stdcall report_begin_sub_compile_not_implemented(unsigned int argument0, unsigned int argument1,
                                                                 unsigned int argument2)
 {
-    if (DAT_00541b28 > 3)
+    if (optsCmdLine.verbose > 3)
         CLIO_FormatAndDispatchText("Callback: %s\n", (unsigned char *)"UCBBeginSubCompile");
     CLErrors_ReportInternalError("CLCompilerLinkerDropin_V10.cpp", 367, "UCBBeginSubCompile not implemented");
     return 2U;
@@ -153,7 +154,7 @@ unsigned int __stdcall report_begin_sub_compile_not_implemented(unsigned int arg
 
 unsigned int __stdcall report_end_sub_compile_not_implemented(unsigned int unused)
 {
-    if (DAT_00541b28 > 3)
+    if (optsCmdLine.verbose > 3)
         CLIO_FormatAndDispatchText("Callback: %s\n", (unsigned char *)"UCBEndSubCompile");
     CLErrors_ReportInternalError("CLCompilerLinkerDropin_V10.cpp", 379, "UCBEndSubCompile not implemented");
     return 2U;
@@ -177,7 +178,7 @@ int __stdcall get_precompiled_header_spec(DropinRequest *request, int output, co
     OSSpec resolvedPath;
     char convertedPath[260];
 
-    if (DAT_00541b28 > 3) {
+    if (optsCmdLine.verbose > 3) {
         CLIO_FormatAndDispatchText("Callback: %s\n", "UCBGetPrecompiledHeaderSpec");
     }
     if (request->signature == 1131375984 || request->signature == 1281977963) {
@@ -192,7 +193,7 @@ int __stdcall get_precompiled_header_spec(DropinRequest *request, int output, co
     settings = (struct DropinSettings *)CLPlugins_GetObjectFlags(file->selectedPlugin);
     if (file->outputName[0] == 0) {
         if (path != 0) {
-            if (data_00541e10 != 0) {
+            if (optsCompiler.canonicalIncludes != 0) {
                 strcpy(convertedPath, path);
             } else if (OS_CanonPath(path, convertedPath) != 0) {
                 return 3;
@@ -206,16 +207,16 @@ int __stdcall get_precompiled_header_spec(DropinRequest *request, int output, co
                 file->kind = 2;
                 CLProj_MakeRelativePath(&resolvedPath, 0, file->outputName, sizeof(convertedPath));
             }
-            if (DAT_00541b28 != 0) {
+            if (optsCmdLine.verbose != 0) {
                 CLErrors_ForwardMessage(
                     16, "precompiled ",
                     CLProj_MakeRelativePath(&resolvedPath, 0, data_005880e0, sizeof(convertedPath)));
             }
         } else {
-            useDefault = !data_00541c09;
+            useDefault = !optsCompiler.relPathInOutputDir;
             CLProj_MakeOSSpecFromPath(default_target->outputDirectory.path, file->inputName, useDefault, &resolvedPath);
-            if (data_00541bd1 != 0) {
-                base = &data_00541bd1;
+            if (optsCompiler.pchFileExt[0] != 0) {
+                base = optsCompiler.pchFileExt;
             } else {
                 base = settings->precompiledHeaderExtension;
             }
@@ -245,7 +246,7 @@ int __stdcall get_precompiled_header_spec(DropinRequest *request, int output, co
 
 unsigned int __stdcall fn_004262a0(unsigned int unused1, unsigned int unused2)
 {
-    if (DAT_00541b28 > 3)
+    if (optsCmdLine.verbose > 3)
         CLIO_FormatAndDispatchText("Callback: %s\n", (unsigned char *)"UCBGetResourceFile");
     CLErrors_ReportInternalError("CLCompilerLinkerDropin_V10.cpp", 509, "UCBGetResourceFile not implemented");
     return 2U;
@@ -253,7 +254,7 @@ unsigned int __stdcall fn_004262a0(unsigned int unused1, unsigned int unused2)
 
 unsigned int __stdcall report_unimplemented_resource_file_put(unsigned int, unsigned int, unsigned int, unsigned int)
 {
-    if (DAT_00541b28 > 3)
+    if (optsCmdLine.verbose > 3)
         CLIO_FormatAndDispatchText("Callback: %s\n", (unsigned char *)"UCBPutResourceFile");
     CLErrors_ReportInternalError("CLCompilerLinkerDropin_V10.cpp", 524, "UCBPutResourceFile not implemented");
     return 2U;
@@ -290,7 +291,7 @@ int __stdcall lookup_precompiled_unit(struct DropinRequest *request, char *input
     int fileValue;
     struct DropinFileValue *outputFile;
     char outputName[260];
-    if (DAT_00541b28 > 3) {
+    if (optsCmdLine.verbose > 3) {
         CLIO_FormatAndDispatchText("Callback: %s\n", "UCBLookUpUnit");
     }
     if (request->signature == 1131375984 || request->signature == 1281977963) {
@@ -304,16 +305,16 @@ int __stdcall lookup_precompiled_unit(struct DropinRequest *request, char *input
     }
     *outputObject = 0;
     outputValue->value = 0;
-    compilerState = data_00541d0f;
+    compilerState = optsCompiler.sbmState;
     if (compilerState == 1 || compilerState == 3) {
-        if (DAT_00587324 != 0) {
+        if (clState.pluginDebug != 0) {
             CLIO_FormatAndDispatchText("UCBLookUpUnit:  sbmState == sbmRebuild or sbmClean; failing\n");
         }
         return 514;
     }
     resetcb(&callback, mode, 1);
     if (CLDropinCallbacks_V10_FindAndLoadFile(request, inputName, &callback) != 0) {
-        if (DAT_00587324 != 0) {
+        if (clState.pluginDebug != 0) {
             CLIO_FormatAndDispatchText("UCBLookUpUnit:  could not find source '%s'; failing\n", inputName);
         }
         return 8;
@@ -323,27 +324,27 @@ int __stdcall lookup_precompiled_unit(struct DropinRequest *request, char *input
     outputPath = inputPath;
     error = fn_00426320(&outputPath, settings);
     if (error != 0) {
-        if (DAT_00587324 != 0) {
+        if (clState.pluginDebug != 0) {
             CLIO_FormatAndDispatchText("UCBLookUpUnit:  could not make precompiled unit spec for '%s' (%s)\n",
                                        inputName, OS_GetErrText(error));
         }
         return 2;
     }
-    if (data_00541d10[0] != 0) {
-        outputPath.directory = precompiled_unit_directory;
+    if (optsCompiler.sbmPath[0] != 0) {
+        outputPath.directory = clState.sbmPathSpec;
         OS_SpecToString(&outputPath, outputName, sizeof(outputName));
-        if (DAT_00587324 != 0) {
+        if (clState.pluginDebug != 0) {
             CLIO_FormatAndDispatchText("UCBLookUpUnit:  Only looking at '%s'\n", outputName);
         }
     } else {
         MsDos_CopyStringToBuffer(outputPath.name, outputName, sizeof(outputName));
-        if (DAT_00587324 != 0) {
+        if (clState.pluginDebug != 0) {
             CLIO_FormatAndDispatchText("UCBLookUpUnit:  searching paths for '%s'\n", outputName);
         }
     }
     resetcb(&callback, mode, 0);
     if (CLDropinCallbacks_V10_FindAndLoadFile(request, outputName, &callback) != 0 || callback.fileReference == 0) {
-        if (DAT_00587324 != 0) {
+        if (clState.pluginDebug != 0) {
             CLIO_FormatAndDispatchText("UCBLookUpUnit:  could not find or load precompiled unit file '%s'; failing\n",
                                        outputName);
         }
@@ -361,7 +362,7 @@ int __stdcall lookup_precompiled_unit(struct DropinRequest *request, char *input
     OS_TimeToMac(fileInfo, &fileValue);
     outputFile = (struct DropinFileValue *)callback.fileReference;
     if (fileValue != outputFile->value) {
-        if (DAT_00587324 != 0) {
+        if (clState.pluginDebug != 0) {
             CLIO_FormatAndDispatchText(
                 "UCBLookUpUnit:  file '%s' does not have internal timestamp that matches source unit's timestamp (0x%8x != 0x%8x)\n",
                 OS_SpecToString((OSSpec *)&outputPath, data_005880e0, sizeof(outputName)), fileValue,
@@ -391,10 +392,10 @@ int __stdcall lookup_precompiled_unit(struct DropinRequest *request, char *input
             return 2;
         }
     }
-    if (DAT_00587324 != 0) {
+    if (clState.pluginDebug != 0) {
         CLIO_FormatAndDispatchText("UCBLookUpUnit:  success for '%s'\n", inputName);
     }
-    if (DAT_00541b28 != 0) {
+    if (optsCmdLine.verbose != 0) {
         CLErrors_ForwardMessage(
             62, "unit symbol table",
             (int)CLProj_MakeRelativePath((OSSpec *)&outputPath, 0, data_005880e0, sizeof(outputName)));
@@ -407,7 +408,7 @@ int __stdcall lookup_precompiled_unit(struct DropinRequest *request, char *input
 
 unsigned int __stdcall log_callback(unsigned int unused1, unsigned int unused2)
 {
-    if (DAT_00541b28 > 3)
+    if (optsCmdLine.verbose > 3)
         CLIO_FormatAndDispatchText("Callback: %s\n", (unsigned char *)"UCBSBMfiles");
     return 0;
 }
@@ -424,16 +425,16 @@ int __stdcall store_precompiled_unit(void *compilerObject, char *filename, int s
     DropinFileRecord *sourceFile;
     int compilerState;
 
-    if (DAT_00541b28 > 3)
+    if (optsCmdLine.verbose > 3)
         CLIO_FormatAndDispatchText("Callback: %s\n", "UCBStoreUnit");
 
-    if (data_00541e10 != 0) {
+    if (optsCompiler.canonicalIncludes != 0) {
         strcpy(name, filename);
     } else if (OS_CanonPath(filename, name) != 0) {
         return 3;
     }
 
-    if ((compilerState = data_00541d0f) == 0 || compilerState == 1) {
+    if ((compilerState = optsCompiler.sbmState) == 0 || compilerState == 1) {
         CWPluginPrivateContext &object = *(CWPluginPrivateContext *)compilerObject;
         UInt32 tag;
         if ((tag = (UInt32)object.contextSignature) == 0x436f6d70 || tag == 0x4c696e6b)
@@ -445,10 +446,10 @@ int __stdcall store_precompiled_unit(void *compilerObject, char *filename, int s
         if (sourceFile == 0)
             CLIO_ReportAssertionFailure("srcfile != NULL", "CLCompilerLinkerDropin_V10.cpp", 0x312);
 
-        if (data_00541d10[0] != 0) {
-            error = CLProj_MakeOSSpecFromPath(precompiled_unit_directory.path, name, 1, &path);
+        if (optsCompiler.sbmPath[0] != 0) {
+            error = CLProj_MakeOSSpecFromPath(clState.sbmPathSpec.path, name, 1, &path);
             if (error != 0) {
-                if (DAT_00587324 != 0)
+                if (clState.pluginDebug != 0)
                     CLIO_FormatAndDispatchText("UCBStoreUnit:  '%s' is a bad unit name (%s)\n", name,
                                                OS_GetErrText(error));
                 return 3;
@@ -456,7 +457,7 @@ int __stdcall store_precompiled_unit(void *compilerObject, char *filename, int s
         } else {
             error = OS_MakeFileSpec(name, &path);
             if (error != 0) {
-                if (DAT_00587324 != 0)
+                if (clState.pluginDebug != 0)
                     CLIO_FormatAndDispatchText("UCBStoreUnit:  '%s' is a bad filename (%s)\n", name,
                                                OS_GetErrText(error));
                 return 3;
@@ -465,13 +466,13 @@ int __stdcall store_precompiled_unit(void *compilerObject, char *filename, int s
 
         error = fn_00426320(&path, sourceFile);
         if (error != 0) {
-            if (DAT_00587324 != 0)
+            if (clState.pluginDebug != 0)
                 CLIO_FormatAndDispatchText("UCBStoreUnit:  could not make precompiled unit form of '%s' (%s)\n", name,
                                            OS_GetErrText(error));
             return 3;
         }
 
-        if (DAT_00541b28 != 0)
+        if (optsCmdLine.verbose != 0)
             CLErrors_ForwardMessage(0x3d, "unit symbol table", CLProj_MakeRelativePath(&path, 0, data_005880e0, 0x104));
 
         CLDropinCallbacks_V10_SetStorageHandle((unsigned int)compilerObject, storageHandle, &unit);
@@ -488,7 +489,7 @@ int __stdcall store_precompiled_unit(void *compilerObject, char *filename, int s
 unsigned int __stdcall free_allocation(unsigned int unused, unsigned int allocation)
 {
     char *memory = (char *)allocation;
-    if (DAT_00541b28 > 3)
+    if (optsCmdLine.verbose > 3)
         CLIO_FormatAndDispatchText("Callback: %s\n", (unsigned char *)"UCBReleaseUnit");
     if (!memory)
         return 2U;
@@ -505,7 +506,7 @@ int __stdcall report_alert(DropinContext *context, const char *text, short error
     const char *message;
     char errorMessage[256];
 
-    if (DAT_00541b28 > 3) {
+    if (optsCmdLine.verbose > 3) {
         CLIO_FormatAndDispatchText("Callback: %s\n", "UCBOSAlert");
     }
     if (fn_004151f0() != 0) {
@@ -528,7 +529,7 @@ int __stdcall report_os_error_message(struct DropinRequest *request, const char 
     const char *messageText;
     char errorText[256];
 
-    if (DAT_00541b28 > 3) {
+    if (optsCmdLine.verbose > 3) {
         CLIO_FormatAndDispatchText("Callback: %s\n", "UCBOSErrorMessage");
     }
     if (errorCode == 0) {
@@ -547,7 +548,7 @@ int __stdcall report_os_error_message(struct DropinRequest *request, const char 
 unsigned int __stdcall get_object_file_spec(unsigned int unused, unsigned int key, unsigned int output)
 {
     DropinFileRecord *record;
-    if (DAT_00541b28 > 3)
+    if (optsCmdLine.verbose > 3)
         CLIO_FormatAndDispatchText("Callback: %s\n", (unsigned char *)"UCBGetStoredObjectFileSpec");
 
     record = CLFiles_FindFileByIndex(&default_target->files, key);
@@ -564,7 +565,7 @@ unsigned int __stdcall get_object_file_spec(unsigned int unused, unsigned int ke
 
 unsigned int __stdcall fn_00426da0(unsigned int unused, NameSpaceName *name, unsigned int unused2)
 {
-    if (DAT_00541b28 > 3)
+    if (optsCmdLine.verbose > 3)
         CLIO_FormatAndDispatchText("Callback: %s\n", (unsigned char *)"UCBGetModifiedFiles");
     name->next = 0;
     CLErrors_ReportInternalError("CLCompilerLinkerDropin_V10.cpp", 945, "CWGetModifiedFiles not implemented!\n");
@@ -574,7 +575,7 @@ unsigned int __stdcall fn_00426da0(unsigned int unused, NameSpaceName *name, uns
 int __stdcall fn_00425ef0(unsigned int callbackContext, unsigned int callbackData)
 {
     fn_004151d0(12U);
-    if (DAT_00541b28 > 3)
+    if (optsCmdLine.verbose > 3)
         CLIO_FormatAndDispatchText("Callback: %s\n", (unsigned char *)"UCBDisplayLines");
     if (fn_004151f0() != 0)
         return 1;
@@ -585,7 +586,7 @@ unsigned int __stdcall get_file_output_path(unsigned int context, unsigned int f
                                             unsigned int outputSpecAddress)
 {
     struct DropinFileRecord *file;
-    if (DAT_00541b28 > 3) {
+    if (optsCmdLine.verbose > 3) {
         CLIO_FormatAndDispatchText("Callback: %s\n", (unsigned char *)"UCBGetSuggestedObjectFileSpec");
     }
     file = CLFiles_FindFileByIndex(&default_target->files, fileIndex);
@@ -601,7 +602,7 @@ unsigned int __stdcall get_file_output_path(unsigned int context, unsigned int f
 
 unsigned int __stdcall copy_name_with_p_extension(unsigned int unused, const char *name, char *output)
 {
-    if (DAT_00541b28 > 3) {
+    if (optsCmdLine.verbose > 3) {
         CLIO_FormatAndDispatchText("Callback: %s\n", (unsigned char *)"UCBUnitNameToFileName");
     }
     strcpy(output, name);
@@ -631,7 +632,7 @@ unsigned int fn_00426320(OSSpec *destination, DropinFileRecord *record)
 unsigned int __stdcall clear_primary_reference_value(unsigned int unused0, unsigned int recordKey, unsigned int unused2)
 {
     DropinFileRecord *record;
-    if (DAT_00541b28 > (short)3) {
+    if (optsCmdLine.verbose > (short)3) {
         CLIO_FormatAndDispatchText("Callback: %s\n", (unsigned char *)"UCBFreeObjectData");
     }
     record = CLFiles_FindFileByIndex(&default_target->files, recordKey);
@@ -649,7 +650,7 @@ unsigned int __stdcall clear_primary_reference_value(unsigned int unused0, unsig
 extern "C" {
 }
 
-PluginC::PluginC() : PluginA(plugin_type, sizeof(PluginC))
+PluginC::PluginC() : PluginA(clState.plugintype, sizeof(PluginC))
 {
     CLTarget *globals;
     auxiliary = new InitializationAuxiliaryState;

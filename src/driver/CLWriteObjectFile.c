@@ -7,6 +7,7 @@
 #include "driver/CLErrors.h"
 #include "driver/CLFileOps.h"
 #include "driver/CLIO.h"
+#include "driver/CLMain.h"
 #include "driver/CLPlugins.h"
 #include "driver/CLTarg.h"
 #include "driver/Files.h"
@@ -41,7 +42,7 @@ UInt32 CLWriteObjectFile_WriteObjectFile(struct DropinFileRecord *self, unsigned
         CLIO_ReportAssertionFailure("file->objectdata && file->compiler", "CLWriteObjectFile.c", 0x16);
     MacSpecs_MakeCWFileSpecFromString(self->outputPath.directory.path, &objectFile);
     MacSpecs_MakeCWFileSpecFromString(self->inputPath.directory.path, &sourceFile);
-    if (DAT_00541b28 != 0) {
+    if (optsCmdLine.verbose != 0) {
         unsigned char *message = (self->temporaryOutputMask & 2) ? (unsigned char *)"temporary " : (unsigned char *)"";
         result = CLProj_MakeRelativePath(&self->outputPath, NULL, data_005880e0, 0x104);
         CLErrors_ForwardMessage(0x10, message, result);

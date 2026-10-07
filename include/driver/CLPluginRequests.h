@@ -51,7 +51,6 @@ extern Boolean CLPluginRequests_ParseCommandLine(Plugin *func, struct CLTarget *
                                                  struct ToolArgumentSet *value8, struct ToolArgumentSet *value9,
                                                  void *value10, void *value11);
 extern Boolean CLPluginRequests_SetupFileRequest(Plugin *job, DropinFileRecord *input, short flags);
-extern unsigned char data_00541b27;
 extern Boolean CLPluginRequests_UpdateTargetSettings(Plugin *record, UInt32 flags, struct TgtRec *snapshot);
 extern int fn_00417440(Plugin *obj, Boolean flag);
 struct TgtRec;

@@ -207,16 +207,6 @@ extern unsigned int __stdcall request_license(unsigned int unused0, unsigned int
 extern int __stdcall cache_access_path_list(CWPluginPrivateContext *request);
 extern unsigned int __stdcall lookup_callback_record(unsigned int unused, unsigned int key, CallbackRecord *record);
 extern unsigned int __stdcall report_message_detail(CWPluginPrivateContext *callback, char *message, char *detail);
-extern short DAT_00541b28;
-extern char data_00541b42;
-extern UInt8 data_00541c08;
-extern UInt8 data_00541d0c;
-extern char data_00541d0d;
-extern UInt8 data_00541d0e;
-extern char data_00541c0a;
-extern SInt32 data_005871d0;
-extern MemBuffer data_00587570;
-extern struct MessageRecord data_00541b1c;
 
 #ifdef __cplusplus
 }

@@ -152,7 +152,7 @@ unsigned int CLToolExec_SetTemporaryOutputMask(void)
     int index = 0;
     while (index < CLFiles_GetIndex(&default_target->files)) {
         record = CLFiles_FindFileByIndex(&default_target->files, index);
-        if ((record->outputArgumentMask & 2) != 0 && (data_00541b22 & 2) == 0 && (record->outputMask & 2) == 0)
+        if ((record->outputArgumentMask & 2) != 0 && (optsCmdLine.toDisk & 2) == 0 && (record->outputMask & 2) == 0)
             record->temporaryOutputMask |= 2;
         ++index;
     }
@@ -168,7 +168,7 @@ unsigned int CLToolExec_DeleteTemporaryOutputs(void)
     while (index < CLFiles_GetIndex(&default_target->files)) {
         entry = CLFiles_FindFileByIndex(&default_target->files, index);
         if ((entry->outputArgumentMask & 2) && (entry->temporaryOutputMask & 2)) {
-            if (DAT_00541b28 > 1) {
+            if (optsCmdLine.verbose > 1) {
                 CLErrors_ForwardMessage(19U, OS_SpecToString(&entry->outputPath, data_005880e0, 260U));
             }
             OS_Delete(&entry->outputPath);
@@ -208,11 +208,11 @@ int CLToolExec_ExecuteLinker(Plugin *tool, UInt32 flags, DropinFileRecord *argum
 
     pluginName = CLPlugins_GetName(tool);
     toolName = pluginName;
-    if ((flags & 0x48000000) == 0 && linker_tool_name != 0)
-        toolName = &linker_tool_name;
+    if ((flags & 0x48000000) == 0 && optsCompiler.linkerName[0] != 0)
+        toolName = optsCompiler.linkerName;
 
     if (CLFileOps_FindExecutable(toolName, &toolPath) != 0) {
-        strcpy(fallbackName, program_name);
+        strcpy(fallbackName, clState.programName);
         for (cursor = fallbackName; *cursor != 0; cursor++)
             *cursor = (char)tolower(*cursor);
 
@@ -236,8 +236,8 @@ int CLToolExec_ExecuteLinker(Plugin *tool, UInt32 flags, DropinFileRecord *argum
 
         if (CLFileOps_FindExecutable(fallbackName, &toolPath) == 0) {
             char *resolvedName = fallbackName;
-            if (DAT_00541b28 != 0)
-                CLErrors_ForwardMessage(0x41, resolvedName, program_name);
+            if (optsCmdLine.verbose != 0)
+                CLErrors_ForwardMessage(0x41, resolvedName, clState.programName);
         } else {
             CLErrors_EmitDiagnostic(0x42, message, toolName);
             return 0;
@@ -250,7 +250,7 @@ int CLToolExec_ExecuteLinker(Plugin *tool, UInt32 flags, DropinFileRecord *argum
     command.argv[0] = xstrdup(cursor);
     command.argv[command.argc] = NULL;
 
-    if (DAT_00541b28 != 0 || data_00541b26 != 0) {
+    if (optsCmdLine.verbose != 0 || optsCmdLine.dryRun != 0) {
         CLIO_FormatAndDispatchText("Command line:\n");
         for (index = 0; index < command.argc && command.argv[index] != NULL; index++) {
             if (strchr(command.argv[index], ' ') != NULL)
@@ -264,12 +264,12 @@ int CLToolExec_ExecuteLinker(Plugin *tool, UInt32 flags, DropinFileRecord *argum
     fflush(stdout);
     fflush(stderr);
 
-    if (DAT_00541b28 != 0) {
+    if (optsCmdLine.verbose != 0) {
         cursor = OS_SpecToString(&toolPath, data_005880e0, 0x104);
         CLErrors_ForwardMessage(0x43, message, cursor);
     }
 
-    if (data_00541b26 == 0) {
+    if (optsCmdLine.dryRun == 0) {
         int executionError = OS_Execute(&toolPath, command.argv, command.envp, inputPath, outputPath, &status);
         if (executionError != 0) {
             char *errorDetail = OS_GetErrText(executionError);

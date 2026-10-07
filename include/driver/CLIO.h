@@ -59,11 +59,6 @@ extern char *forward_format_arguments(char *output, int size, char *prefix, char
 extern unsigned int write_text_to_stdout_or_stderr(int unused, short messageType, const char *textAddress);
 extern void append_byte(struct ByteBuffer *buffer, char value);
 extern void append_text(struct ByteBuffer *buffer, char *text);
-extern char DAT_00541b3e;
-extern SInt8 no_wrap;
-extern char data_00541b35;
-extern SInt16 data_00541b3a;
-extern char data_00587325;
 extern int report_user_break(unsigned int value);
 extern void initialize_console(void);
 extern void clear_global(void);
@@ -71,15 +66,8 @@ extern void CLIO_ExchangeClearGlobal(void);
 extern char CLIO_InitializeStreamBuffering(void);
 extern unsigned char fn_00414e20(void);
 extern unsigned char clear_global_byte(void);
-extern short consoleBufferHeight;
 extern short CLIO_ReportDiagnostic(Plugin *type, DiagnosticSourcePosition *record, int message, short severity,
                                    char *argument, ...);
-extern char data_00541b2c;
-extern char data_00541b2d;
-extern short diagnostic_count_limit;
-extern short diagnostic_limit;
-extern short data_00541b32;
-extern char data_00541b36;
 extern char *make_source_position_carets(DiagnosticSourcePosition *sourcePosition);
 extern void update_cached_specs(OSSpec *recordAddress);
 extern unsigned char nonmatching_plugin_with_clear_high_bit(Plugin *type);
@@ -99,7 +87,6 @@ extern void print_diagnostic(Plugin *object, DiagnosticSourcePosition *dump, SIn
                              char *messageArg1, char **messageArg2);
 extern void CLIO_FormatAndDispatchText(char *fmt, ...);
 extern void extract_diagnostic_source_line(DiagnosticSourcePosition *info);
-extern char *program_name;
 extern int CLIO_CompareStringsIgnoreCase(char *left, char *right);
 extern NameTableEntry *create_data_block(char *name, const void *source, unsigned int size);
 

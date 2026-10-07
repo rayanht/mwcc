@@ -50,7 +50,7 @@ unsigned int __stdcall copy_global_value(unsigned int valueAddress)
 
 int __stdcall fn_0040a730(char **panelData)
 {
-    if (plugin_type == 0x436f6d70) {
+    if (clState.plugintype == 0x436f6d70) {
         DAT_0057d920 = "CmdLine Panel";
         DAT_0057d924 = "CmdLine Compiler Panel";
         DAT_0057d928 = "CmdLine Linker Panel";
@@ -98,10 +98,10 @@ unsigned char invoke_if_requested(char shouldInvoke)
 unsigned char latch_flag(unsigned int flag)
 {
     if ((unsigned char)flag != 0) {
-        DAT_00587324 = 1;
+        clState.pluginDebug = 1;
         return 1;
     }
-    return DAT_00587324;
+    return clState.pluginDebug;
 }
 
 Boolean is_enabled_or_global_nonzero(char enabled)
@@ -172,13 +172,9 @@ void CLMain_AppendEnabledCommandLineOptions(int *first, char ***second)
 int CLMain_Initialize(int argc, char **argv)
 {
     char buf[260];
-    char *path;
-    CommandParseInfo *commandLine;
 
     fn_004111c0(&argc, &argv);
-    memset(&data_005871bc, 0,
-           sizeof(CommandParseInfo) + 4 * sizeof(SInt32) + 2 * sizeof(OSSpec) + sizeof(program_name) +
-               2 * sizeof(short) + 4 * sizeof(Boolean) + sizeof(CLTargetDirectory) + sizeof(MemBuffer));
+    memset(&clState, 0, sizeof(clState));
     PTR_DAT_00543124[0].name = data_0057d930;
     data_0057d930[7] = 0;
     data_0057d930[4] = 'b';
@@ -189,9 +185,8 @@ int CLMain_Initialize(int argc, char **argv)
     data_0057d930[3] = 'e';
     data_0057d930[6] = 'g';
     consume_driver_command_line_options(&argc, &argv);
-    data_005871bc = argc;
-    commandLine = (CommandParseInfo *)&data_005871bc;
-    commandLine->argv = argv;
+    clState.argc = argc;
+    clState.argv = argv;
 
     CLProj_CopyStringBounded(buf, *argv, strlen(*argv), sizeof(buf));
     buf[sizeof(buf) - 1] = 0;
@@ -206,14 +201,13 @@ int CLMain_Initialize(int argc, char **argv)
     if (fn_0040a7c0() == 0)
         CLErrors_FatalError("Could not initialize built-in plugins");
     if (MsDos_IsAbsolutePath(*argv) == 0)
-        program_name = *argv;
+        clState.programName = *argv;
     else
-        program_name = CLProj_GetFileName(*argv);
+        clState.programName = CLProj_GetFileName(*argv);
 
-    path = data_005871d8.directory.path;
-    if (CLFileOps_FindExecutable(buf, path) != 0)
+    if (CLFileOps_FindExecutable(buf, clState.programSpec.directory.path) != 0)
         CLErrors_EmitDiagnostic(2, buf);
-    Resources_OpenResourceFile(path);
+    Resources_OpenResourceFile(clState.programSpec.directory.path);
     fn_00417750();
     DAT_00543148 = 1;
     return 0;
@@ -248,13 +242,14 @@ int parse_command_line(void)
 
     env = default_target;
     requests = plugin_requests;
-    parser = CLPlugins_SelectPluginByRequestsAndValues(NULL, data_005871d4, plugin_request_count, requests, env->cpu,
-                                                       env->os, unique_plugin_name_count, unique_plugin_names);
+    parser =
+        CLPlugins_SelectPluginByRequestsAndValues(NULL, clState.parserplugin, plugin_request_count, requests, env->cpu,
+                                                  env->os, unique_plugin_name_count, unique_plugin_names);
     if (parser == NULL)
         CLErrors_FatalError("Could not find a command-line parser!");
 
-    info.argc = data_005871bc;
-    info.argv = (char **)data_005871c0;
+    info.argc = clState.argc;
+    info.argv = clState.argv;
     info.value2 = 0;
     env = default_target;
     if (!CLPluginRequests_ParseCommandLine(parser, env, &info, env->cpu, env->os, plugin_request_count, plugin_requests,
@@ -268,7 +263,7 @@ int parse_command_line(void)
         return status;
     }
 
-    if (DAT_00587324 != 0) {
+    if (clState.pluginDebug != 0) {
         for (fileIndex = 0; fileIndex < unique_plugin_name_count; fileIndex++) {
             CLIO_WriteFormattedText("Outgoing args for '%s':  ", unique_plugin_names[fileIndex]);
             for (argumentIndex = 0; argumentIndex < file_argument_sets[fileIndex].count; argumentIndex++)
@@ -297,30 +292,24 @@ int parse_command_line(void)
 int delete_file_and_make_path_spec(void)
 {
     DWORD error;
-    UInt8 *firstName;
-    OSSpec *resolvedName;
-    char *secondName;
 
     data_0054bf48(NULL);
-    if (DAT_00541c0c != '\0') {
-        resolvedName = &DAT_00587328;
-        firstName = &DAT_00541c0c;
-        error = OS_MakeFileSpec((const char *)firstName, resolvedName);
+    if (optsCompiler.outMakefile[0] != '\0') {
+        error = OS_MakeFileSpec(optsCompiler.outMakefile, &clState.makefileSpec);
         if (error > 0) {
-            CLErrors_ReportOSError(8, error, firstName);
+            CLErrors_ReportOSError(8, error, optsCompiler.outMakefile);
             return 1;
         }
-        OS_Delete(resolvedName);
+        OS_Delete(&clState.makefileSpec);
     }
-    if (data_00541d10[0] != '\0') {
-        secondName = data_00541d10;
-        error = OS_MakePathSpec(NULL, secondName, precompiled_unit_directory.path);
+    if (optsCompiler.sbmPath[0] != '\0') {
+        error = OS_MakePathSpec(NULL, optsCompiler.sbmPath, clState.sbmPathSpec.path);
         if (error > 0) {
-            CLErrors_ReportOSError(0x17, error, secondName);
+            CLErrors_ReportOSError(0x17, error, optsCompiler.sbmPath);
             return 1;
         }
     } else {
-        OS_GetCWD(precompiled_unit_directory.path);
+        OS_GetCWD(clState.sbmPathSpec.path);
     }
     return 0;
 }
@@ -331,49 +320,49 @@ SInt32 fn_0040aed0(void)
     SInt32 end;
     SInt32 r;
 
-    if (+data_00541b1e == 0 || +data_00541b1e == 1)
+    if (+optsCmdLine.state == 0 || +optsCmdLine.state == 1)
         return 0;
     start = CLFileOps_GetScaledTicks();
     r = CLFileOps_CompileProject();
     if (r != 0)
         return r;
-    if (data_00541b1e == 3) {
+    if (optsCmdLine.state == 3) {
         r = CLFileOps_LinkProject();
         if (r != 0)
             return r;
     }
     end = CLFileOps_GetScaledTicks();
-    if (data_00541b2b != 0)
+    if (optsCmdLine.timeWorking != 0)
         CLErrors_ForwardMessage(0x18, (double)(end - start) * data_00543248, "resolve", &data_00542f38, "project",
                                 &data_00542f38);
     return 0;
 }
 
-int fn_0040af70(struct MessageRecord *message, struct MessageRecord *result)
+int fn_0040af70(PCmdLine *message, PCmdLine *result)
 {
-    if (message->tag == 0x1002) {
+    if (message->version == 0x1002) {
         *result = *message;
         return 1;
     }
-    if (message->tag == 0x1001) {
+    if (message->version == 0x1001) {
         CLErrors_ForwardMessageArguments(0x68, "CmdLine Panel");
         *result = *message;
-        result->attributes[2] = 0;
+        result->noCmdLineWarnings = 0;
         return 1;
     }
-    if (message->tag == 0x1000) {
+    if (message->version == 0x1000) {
         CLErrors_ForwardMessageArguments(0x68, "CmdLine Panel");
         *result = *message;
-        result->attributes[1] = 1;
+        result->stderr2stdout = 1;
         return 1;
     }
     CLErrors_EmitDiagnostic(0x68, "CmdLine Panel");
     return 0;
 }
 
-unsigned int copy_environment_code_record(struct CodeRecord *record, struct CodeRecord *result)
+unsigned int copy_environment_code_record(PCmdLineEnvir *record, PCmdLineEnvir *result)
 {
-    if (record->code == 4096U) {
+    if (record->version == 4096U) {
         *result = *record;
         return 1U;
     }
@@ -381,69 +370,68 @@ unsigned int copy_environment_code_record(struct CodeRecord *record, struct Code
     return 0U;
 }
 
-int convert_command_line_panel_settings(struct CommandLinePanelSettings *source,
-                                        struct CommandLinePanelSettings *destination)
+int convert_command_line_panel_settings(PCmdLineCompiler *source, PCmdLineCompiler *destination)
 {
     if (source->version == 0x1004) {
         *destination = *source;
         return 1;
     }
     if (source->version == 0x1003) {
-        if (DAT_00587324)
+        if (clState.pluginDebug)
             CLErrors_ForwardMessageArguments(0x68, "CmdLine Panel");
         *destination = *source;
-        destination->version1004Option = 1;
+        destination->canonicalIncludes = 1;
         return 1;
     }
     if (source->version == 0x1002) {
-        if (DAT_00587324)
+        if (clState.pluginDebug)
             CLErrors_ForwardMessageArguments(0x68, "CmdLine Panel");
         *destination = *source;
-        destination->version1003Option1 = 0;
-        destination->version1003Option2 = 0;
+        destination->sbmState = 0;
+        destination->sbmPath[0] = 0;
         return 1;
     }
     if (source->version == 0x1001) {
-        if (DAT_00587324)
+        if (clState.pluginDebug)
             CLErrors_ForwardMessageArguments(0x68, "CmdLine Panel");
         *destination = *source;
-        destination->version1002Option1 = 0;
-        destination->version1002Option2 = 0;
-        destination->version1003Option1 = 0;
-        destination->version1003Option2 = 0;
+        destination->ignoreMissingFiles = 0;
+        destination->printHeaderNames = 0;
+        destination->sbmState = 0;
+        destination->sbmPath[0] = 0;
         return 1;
     }
     if (source->version == 0x1000) {
         CLErrors_ForwardMessageArguments(0x68, "CmdLine Panel");
         *destination = *source;
-        destination->version1001Option = 0;
-        destination->version1002Option1 = 0;
-        destination->version1002Option2 = 0;
-        destination->version1003Option1 = 0;
-        destination->version1003Option2 = 0;
+        destination->forcePrecompile = 0;
+        destination->ignoreMissingFiles = 0;
+        destination->printHeaderNames = 0;
+        destination->sbmState = 0;
+        destination->sbmPath[0] = 0;
         return 1;
     }
     CLErrors_EmitDiagnostic(0x68, "CmdLine Compiler Panel");
     return 0;
 }
 
-int convert_linker_panel_settings(LinkerPanelSettings *input, LinkerPanelSettings *output)
+int convert_linker_panel_settings(PCmdLineLinker *input, PCmdLineLinker *output)
 {
-    if (input->kind == 0x1002) {
+    if (input->version == 0x1002) {
         *output = *input;
         return 1;
     }
-    if (input->kind == 0x1001) {
+    if (input->version == 0x1001) {
         *output = *input;
-        output->flag5 = 1;
+        output->callLinker = 1;
         return 1;
     }
-    if (input->kind == 0x1000) {
+    if (input->version == 0x1000) {
         *output = *input;
-        output->flag2 = 1;
-        output->flag3 = 1;
-        output->flag4 = 1;
-        output->flag5 = 1;
+        output->callPreLinker = 1;
+        output->callPostLinker = 1;
+        output->keepLinkerOutput = 1;
+        output->callLinker = 1;
         return 1;
     }
     CLErrors_EmitDiagnostic(0x68, "CmdLine Linker Panel");
@@ -457,8 +445,7 @@ unsigned int check_cmdline_entries(char *context)
     if (!context || !ClientGlue_CompareLowercaseStrings(context, "CmdLine Panel")) {
         entry = CLPrefs_FindNameTableEntry("CmdLine Panel");
         if (entry && (handle = CLPrefs_CopyDestinationToTemporary(entry)) != NULL) {
-            if (context &&
-                !((int (*)(void *, void *))fn_0040af70)((struct MessageRecord *)handle->data, &data_00541b1c))
+            if (context && !((int (*)(void *, void *))fn_0040af70)((PCmdLine *)handle->data, &optsCmdLine))
                 return 0;
         } else {
             CLErrors_EmitDiagnostic(91, "CmdLine Panel");
@@ -468,8 +455,8 @@ unsigned int check_cmdline_entries(char *context)
     if (!context || !ClientGlue_CompareLowercaseStrings(context, "CmdLine Environment")) {
         entry = CLPrefs_FindNameTableEntry("CmdLine Environment");
         if (entry && (handle = CLPrefs_CopyDestinationToTemporary(entry)) != NULL) {
-            if (context && !((int (*)(void *, void *))copy_environment_code_record)((struct CodeRecord *)handle->data,
-                                                                                    &cmdline_code_record))
+            if (context &&
+                !((int (*)(void *, void *))copy_environment_code_record)((PCmdLineEnvir *)handle->data, &optsEnvir))
                 return 0;
         } else {
             CLErrors_EmitDiagnostic(91, "CmdLine Environment");
@@ -480,7 +467,7 @@ unsigned int check_cmdline_entries(char *context)
         entry = CLPrefs_FindNameTableEntry("CmdLine Compiler Panel");
         if (entry && (handle = CLPrefs_CopyDestinationToTemporary(entry)) != NULL) {
             if (context && !((int (*)(void *, void *))convert_command_line_panel_settings)(
-                               (CommandLinePanelSettings *)handle->data, &data_00541b40))
+                               (PCmdLineCompiler *)handle->data, &optsCompiler))
                 return 0;
         } else {
             CLErrors_EmitDiagnostic(91, "CmdLine Compiler Panel");
@@ -490,8 +477,8 @@ unsigned int check_cmdline_entries(char *context)
     if (!context || !ClientGlue_CompareLowercaseStrings(context, "CmdLine Linker Panel")) {
         entry = CLPrefs_FindNameTableEntry("CmdLine Linker Panel");
         if (entry && (handle = CLPrefs_CopyDestinationToTemporary(entry)) != NULL) {
-            if (context && !((int (*)(void *, void *))convert_linker_panel_settings)(
-                               (LinkerPanelSettings *)handle->data, &linker_panel_settings))
+            if (context &&
+                !((int (*)(void *, void *))convert_linker_panel_settings)((PCmdLineLinker *)handle->data, &optsLinker))
                 return 0;
         } else {
             CLErrors_EmitDiagnostic(91, "CmdLine Linker Panel");
@@ -510,7 +497,7 @@ unsigned int create_cmdline_data_blocks(void)
     NameTableEntry *entry;
 
     data_0054bf48 = check_cmdline_entries;
-    entry = create_data_block("CmdLine Environment", &cmdline_code_record, 8U);
+    entry = create_data_block("CmdLine Environment", &optsEnvir, 8U);
     result = CLPrefs_AddPrefPanel(entry);
     combined = result;
     enabled = 0U;
@@ -532,7 +519,7 @@ unsigned int create_cmdline_data_blocks(void)
 
 int create_default_target(void)
 {
-    default_target = CLTarg_CreateTarget("default", data_005871c4, data_005871c8, data_005871d0);
+    default_target = CLTarg_CreateTarget("default", clState.cpu, clState.os, clState.language);
     CLTarg_AppendEntry(PTR_DAT_00541b18, default_target);
 
     CLPlugins_DispatchArgumentToPlugins(NULL, 0, default_target->cpu, default_target->os);
@@ -564,7 +551,7 @@ int create_default_target(void)
         default_target->postLinkerFlags = 0;
     }
 
-    if (plugin_type == 0x4c696e6b && default_target->preLinker == NULL && default_target->linker == NULL &&
+    if (clState.plugintype == 0x4c696e6b && default_target->preLinker == NULL && default_target->linker == NULL &&
         default_target->postLinker == NULL)
         CLErrors_FatalError("The linker plugin was not found!");
 

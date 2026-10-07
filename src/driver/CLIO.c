@@ -14,6 +14,7 @@
 #include "driver/CLErrors.h"
 #include "driver/CLFileOps.h"
 #include "driver/CLFiles.h"
+#include "driver/CLMain.h"
 #include "driver/CLPlugins.h"
 #include "driver/CLPrefs.h"
 #include "driver/CLSegs.h"
@@ -56,7 +57,7 @@ int report_user_break(unsigned int value)
 {
     if (value <= 1) {
         CLIO_WriteFormattedText("\nUser break, cancelled...\n");
-        data_00587325 = 1;
+        clState.userBreak = 1;
         return 1;
     }
     return 0;
@@ -75,13 +76,13 @@ void initialize_console(void)
     DAT_0057eb68 = 0;
     gotBufferInfo = GetConsoleScreenBufferInfo(consoleOutput, &bufferInfo);
     if (!gotBufferInfo) {
-        consoleBufferHeight = 0;
-        data_00541b3a = 80;
+        optsEnvir.rows = 0;
+        optsEnvir.cols = 80;
     } else {
-        consoleBufferHeight = bufferInfo.dwSize.Y;
-        data_00541b3a = (unsigned short)bufferInfo.dwSize.X;
-        if (data_00541b3a > 256) {
-            data_00541b3a = 256;
+        optsEnvir.rows = bufferInfo.dwSize.Y;
+        optsEnvir.cols = (unsigned short)bufferInfo.dwSize.X;
+        if (optsEnvir.cols > 256) {
+            optsEnvir.cols = 256;
         }
     }
 }
@@ -265,13 +266,13 @@ void fn_004151e0(void)
 unsigned char fn_004151f0(void)
 {
     fn_004151d0(4);
-    return data_00587325;
+    return clState.userBreak;
 }
 
 void reset_column_and_append_prefix(struct ByteBuffer *node)
 {
     node->column = 0;
-    if ((DAT_00541b3e == '\0') && (node->prefix != NULL)) {
+    if ((optsEnvir.underIDE == '\0') && (node->prefix != NULL)) {
         append_text(node, node->prefix);
     }
 }
@@ -302,10 +303,10 @@ void wrap_line(struct ByteBuffer *p)
     char buf[256];
     SInt32 n = 0;
 
-    if (no_wrap || p->prefix == NULL || strlen(p->prefix) > data_00541b3a / 2)
+    if (optsCmdLine.noWrapOutput || p->prefix == NULL || strlen(p->prefix) > optsEnvir.cols / 2)
         return;
 
-    while (n < data_00541b3a - 1 && p->column > strlen(p->prefix)) {
+    while (n < optsEnvir.cols - 1 && p->column > strlen(p->prefix)) {
         char c = p->data[p->size - 1];
         if (c == ' ' || c == '/' || c == '-')
             break;
@@ -316,7 +317,7 @@ void wrap_line(struct ByteBuffer *p)
     }
 
     if (p->column <= strlen(p->prefix)) {
-        while (p->column < data_00541b3a - 1 && n > 0) {
+        while (p->column < optsEnvir.cols - 1 && n > 0) {
             n--;
             append_byte(p, buf[n]);
         }
@@ -393,7 +394,7 @@ char *format_prefixed_text(char *output, int remaining, char *prefix, char *form
                     text++;
                 } else {
                     append_byte(&state, *text++);
-                    if (no_wrap == 0 && state.prefix != NULL && state.column >= data_00541b3a - 1)
+                    if (optsCmdLine.noWrapOutput == 0 && state.prefix != NULL && state.column >= optsEnvir.cols - 1)
                         wrap_line(&state);
                 }
             }
@@ -403,7 +404,7 @@ char *format_prefixed_text(char *output, int remaining, char *prefix, char *form
             append_prefix_separator(&state);
         } else {
             append_byte(&state, *format++);
-            if (no_wrap == 0 && state.column >= data_00541b3a - 1)
+            if (optsCmdLine.noWrapOutput == 0 && state.column >= optsEnvir.cols - 1)
                 wrap_line(&state);
         }
     }
@@ -435,7 +436,7 @@ unsigned int write_text_to_stdout_or_stderr(int unused, short messageType, const
     const char *lineEnd;
     char mode;
 
-    if ((mode = data_00541b35) == 1 || mode == 2 || (type = messageType) == 1 || type == 5) {
+    if ((mode = optsCmdLine.stderr2stdout) == 1 || mode == 2 || (type = messageType) == 1 || type == 5) {
         output = stdout;
     } else if (type == 2 || type == 3 || type == 4) {
         output = stderr;
@@ -453,7 +454,7 @@ unsigned int write_text_to_stdout_or_stderr(int unused, short messageType, const
             ++lineEnd;
         }
         if ((int)(lineEnd - cursor) != 0 && fwrite(cursor, lineEnd - cursor, 1, output) != 1) {
-            data_00587325 = 1;
+            clState.userBreak = 1;
         }
         if (*lineEnd != 0) {
             data_0054b988 += 1;
@@ -511,7 +512,7 @@ char *make_source_position_carets(DiagnosticSourcePosition *sourcePosition)
 
     DAT_0057edfd[0] = 0;
     column = sourcePosition->column;
-    column %= data_00541b3a;
+    column %= optsEnvir.cols;
     if ((column >= 0) && ((unsigned)column < 0x100)) {
         length = (int)sourcePosition->length;
         if (0x100 < (unsigned)(length + column)) {
@@ -543,7 +544,8 @@ unsigned char nonmatching_plugin_with_clear_high_bit(Plugin *type)
 
     entries = default_target;
 
-    if (type == CLPlugins_FindMatchingTargetPlugin(NULL, entries->cpu, entries->os, plugin_type, data_005871d0))
+    if (type ==
+        CLPlugins_FindMatchingTargetPlugin(NULL, entries->cpu, entries->os, clState.plugintype, clState.language))
         return 0;
     return 1;
 }
@@ -599,7 +601,7 @@ void print_diagnostic(Plugin *object, DiagnosticSourcePosition *dump, SInt32 dia
 
     message = format_prefixed_text(buffer, sizeof(buffer), "#   ", messageArg1, messageArg2);
     if (level != 5) {
-        emit_formatted_message(level, "### %s %s %s:\n", program_name, get_plugin_type_name(object),
+        emit_formatted_message(level, "### %s %s %s:\n", clState.programName, get_plugin_type_name(object),
                                diagnostic_level_names[level]);
     }
     if (dump != NULL) {
@@ -634,9 +636,9 @@ void emit_formatted_diagnostic(Plugin *source, DiagnosticSourcePosition *diagnos
 
     message = format_prefixed_text(buffer, sizeof(buffer), "#   ", format, arguments);
     if (diagnostic != NULL) {
-        emit_formatted_message(kind, "### %s %s:\n", program_name, get_plugin_type_name(source));
+        emit_formatted_message(kind, "### %s %s:\n", clState.programName, get_plugin_type_name(source));
     } else if (kind != 5) {
-        emit_formatted_message(kind, "### %s %s %s:\n", program_name, get_plugin_type_name(source),
+        emit_formatted_message(kind, "### %s %s %s:\n", clState.programName, get_plugin_type_name(source),
                                diagnostic_level_names[kind]);
     }
     if (diagnostic != NULL) {
@@ -663,7 +665,7 @@ void emit_formatted_diagnostic(Plugin *source, DiagnosticSourcePosition *diagnos
                 ++cursor;
             }
             *cursor = 0;
-            if (cursor - detail >= (limit = data_00541b3a) - 1) {
+            if (cursor - detail >= (limit = optsEnvir.cols) - 1) {
                 detail[limit - 1] = 0;
             }
             strcat(detail, "\n");
@@ -700,7 +702,7 @@ void format_and_print_message(Plugin *type, DiagnosticSourcePosition *obj, int m
         }
     } else {
         if (kind != 5) {
-            message = mprintf(messageBuffer, sizeof(messageBuffer), "%s: ", program_name);
+            message = mprintf(messageBuffer, sizeof(messageBuffer), "%s: ", clState.programName);
         } else {
             messageBuffer[0] = 0;
             message = messageBuffer;
@@ -733,9 +735,9 @@ void print_diagnostic_with_details(Plugin *unused, struct DiagnosticDetails *det
     char *detailMessage;
     char buffer[256];
 
-    savedDiagnostic = data_00541b3a;
+    savedDiagnostic = optsEnvir.cols;
     message = format_prefixed_text(buffer, sizeof(buffer), "           ", formatArg, formatArgs);
-    data_00541b3a = savedDiagnostic;
+    optsEnvir.cols = savedDiagnostic;
     emit_formatted_message(diagnostic, "%8s : %s\n", diagnostic_level_names[diagnostic], message + 11);
     if (message != buffer) {
         free(message);
@@ -757,7 +759,7 @@ void print_pipe_delimited_diagnostic(Plugin *kind, DiagnosticSourcePosition *rec
     char *message;
     char messageBuffer[256];
 
-    emit_formatted_message(level, "%s|%s|%s\n", program_name, get_plugin_type_name(kind),
+    emit_formatted_message(level, "%s|%s|%s\n", clState.programName, get_plugin_type_name(kind),
                            diagnostic_level_names[level]);
     if (record != NULL) {
         emit_formatted_message(level, "(%s|%d|%d|%d|%d|%d)\n", OS_SpecToString(&record->file, data_005880e0, 260),
@@ -859,21 +861,21 @@ short CLIO_ReportDiagnostic(Plugin *type, DiagnosticSourcePosition *record, int 
         } else {
             language = 1668047986;
         }
-        if (data_00541b2c != 0) {
+        if (optsCmdLine.noWarnings != 0) {
             return 0;
         }
-        if ((language == 1668047986 || language == 1348563571) && data_00541b36 != 0) {
+        if ((language == 1668047986 || language == 1348563571) && optsCmdLine.noCmdLineWarnings != 0) {
             return 0;
         }
-        if (data_00541b2d != 0) {
+        if (optsCmdLine.warningsAreErrors != 0) {
             severity = 3;
         }
     }
     diagnosticKind = severity;
-    if (diagnosticKind == 3 && diagnosticReported != 0) {
+    if (diagnosticKind == 3 && clState.withholdErrors != 0) {
         return 0;
     }
-    if (diagnosticKind == 2 && data_00587326 != 0) {
+    if (diagnosticKind == 2 && clState.withholdWarnings != 0) {
         return 0;
     }
     if (record != NULL) {
@@ -882,7 +884,7 @@ short CLIO_ReportDiagnostic(Plugin *type, DiagnosticSourcePosition *record, int 
     }
     args = &argument + (((char *)(&argument + 1) - (char *)&argument + 3) / 4);
     {
-        if ((language = data_00541b32) == 2) {
+        if ((language = optsCmdLine.msgStyle) == 2) {
             print_diagnostic(type, record != NULL ? &diagnostic.dump : NULL, message, severity, argument, args);
         } else if (language == 1) {
             format_and_print_message(type, record != NULL ? &diagnostic.msg : NULL, message, severity, argument, args);
@@ -901,19 +903,19 @@ short CLIO_ReportDiagnostic(Plugin *type, DiagnosticSourcePosition *record, int 
         free(diagnostic.record.sourceLine);
     }
     if (diagnosticKind == 3) {
-        if ((limit = diagnostic_count_limit) != 0 && ++diagnostic_limit_count >= limit) {
-            diagnosticReported = 1;
-            if (data_00541b43 == 0) {
+        if ((limit = optsCmdLine.maxErrors) != 0 && ++clState.countErrors >= limit) {
+            clState.withholdErrors = 1;
+            if (optsCompiler.noFail == 0) {
                 CLErrors_ForwardMessage(70);
-                data_00587325 = 1;
+                clState.userBreak = 1;
             } else {
                 CLErrors_ForwardMessage(71);
             }
         }
     }
     if (diagnosticKind == 2) {
-        if ((limit = diagnostic_limit) != 0 && ++diagnostic_count >= limit) {
-            data_00587326 = 1;
+        if ((limit = optsCmdLine.maxWarnings) != 0 && ++clState.countWarnings >= limit) {
+            clState.withholdWarnings = 1;
             CLErrors_ForwardMessage(72);
         }
     }

@@ -12,6 +12,7 @@
 #include "driver/CWPluginsPrivate.h"
 #include "driver/Files.h"
 #include "driver/Memory.h"
+#include "driver/CLMain.h"
 #include <string.h>
 
 /* Source and destination handles for a preference data copy. */
@@ -90,7 +91,7 @@ Boolean CLPrefs_AddPrefPanel(NameTableEntry *entry)
         }
         link = &(*link)->next;
     }
-    if (DAT_00587324 != '\0') {
+    if (clState.pluginDebug != '\0') {
         CLIO_FormatAndDispatchText("Defining/adding pref panel '%s'\n", entry->name);
     }
     *link = entry;

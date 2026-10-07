@@ -3,6 +3,7 @@
 
 #include "compiler/common.h"
 #include "compiler/win32.h"
+#include "version.h"
 #include "driver/CLTarg.h"
 
 #ifdef __cplusplus
@@ -11,7 +12,11 @@ extern "C" {
 
 struct OSSpec {
     CLTargetDirectory directory;
+#if VERSION >= VERSION_GC_1_3
+    char name[0x100];
+#else
     char name[0x40];
+#endif
 };
 extern unsigned int __stdcall OS_RefToMac(unsigned int value);
 extern DWORD __stdcall OS_Create(OSSpec *spec, const unsigned int *options);

@@ -5,6 +5,7 @@
 #include "driver/CLTarg.h"
 #include "driver/MemUtils.h"
 #include "driver/MsDos.h"
+#include "driver/CLMain.h"
 #include <string.h>
 
 static struct License *data_0057ef08;
@@ -127,7 +128,8 @@ int CLLicenses_RequestLicense(int request, int options, int cookieKind, char *er
         strcpy(licensePath, license_path);
     } else {
         OSSpec *defaultPath;
-        fn_00412340((defaultPath = &data_005871d8)->directory.path, licensePath, sizeof(defaultPath->directory.path));
+        fn_00412340((defaultPath = &clState.programSpec)->directory.path, licensePath,
+                    sizeof(defaultPath->directory.path));
         strcat(licensePath, "license.dat");
         if (OS_MakeFileSpec(licensePath, &alternatePath) != 0 || OS_Status(&alternatePath) != 0) {
             if (fn_004125b0(defaultPath, &alternatePath) == 0) {

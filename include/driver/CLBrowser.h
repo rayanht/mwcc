@@ -63,7 +63,6 @@ extern void CLBrowser_CacheFileText(struct OSSpec *path, struct StorageHandle *b
 extern StorageHandle *CLBrowser_FindCacheEntryBuffer(OSSpec *key, unsigned char *value);
 extern void CLBrowser_ReleaseBuffer(StorageHandle *value);
 extern int fn_004286d0(DropinFileRecord *input, unsigned int processingMode, unsigned int processingFlags);
-extern char data_00541b95[];
 extern jmp_buf driver_jmp_buf;
 
 #ifdef __cplusplus

@@ -41,7 +41,6 @@ extern void CLLicenses_DeleteLicense(int identifier);
 extern void CLLicenses_ReleaseLicenses(void);
 extern int release_negative_license_values(void);
 extern char *license_path;
-extern OSSpec data_005871d8;
 
 #ifdef __cplusplus
 }

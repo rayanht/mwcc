@@ -19,6 +19,7 @@
 #include "driver/MemUtils.h"
 #include "driver/Memory.h"
 #include "driver/MsDos.h"
+#include "driver/CLMain.h"
 
 #include <string.h>
 #include <stdio.h>
@@ -443,7 +444,7 @@ Boolean validate_plugin(Plugin *plug, const char **errmsg)
         *errmsg = "The plugin's earliest compatible API version is too new for this driver";
         return 0;
     }
-    if (flags->api1 > 1 && flags->api2 < 10 && DAT_00587324) {
+    if (flags->api1 > 1 && flags->api2 < 10 && clState.pluginDebug) {
         CLIO_WriteFormattedText("%s's newest compatible API version is probably too old for this driver\n",
                                 CLPlugins_GetName(plug));
     }
@@ -630,7 +631,7 @@ int CLPlugins_AddPlugin(void *pluginHandle)
         CLErrors_EmitDiagnostic(4, "linker", name);
     }
 
-    if (DAT_00587324) {
+    if (clState.pluginDebug) {
         lang = desc->lang;
         if (lang == 0)
             lang = 0x2d2d2d2d;

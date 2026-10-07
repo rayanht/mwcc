@@ -140,7 +140,7 @@ Boolean CLPluginRequests_SetupFileRequest(Plugin *job, DropinFileRecord *input, 
     CWPluginPrivateContext *ctx;
     if (mode) {
         unsigned char setting;
-        if ((setting = data_00541d0c) == 1)
+        if ((setting = optsCompiler.forcePrecompile) == 1)
             enabled = 1;
         else if (setting == 2)
             enabled = 0;
@@ -148,9 +148,9 @@ Boolean CLPluginRequests_SetupFileRequest(Plugin *job, DropinFileRecord *input, 
             enabled = (input->fileFlags & 0x80000000) != 0;
     } else
         enabled = 0;
-    if (DAT_00541b28) {
+    if (optsCmdLine.verbose) {
         char *messageArgument = CLPlugins_GetName(job);
-        int extra = DAT_00541b28 > 1;
+        int extra = optsCmdLine.verbose > 1;
         if (operationFlags & 1)
             CLErrors_ForwardMessage(extra + 34, input->inputName, messageArgument);
         else if (mode) {
@@ -175,7 +175,7 @@ Boolean CLPluginRequests_SetupFileRequest(Plugin *job, DropinFileRecord *input, 
                                           &result))
         return 0;
     ctx->requestData.fileIndex = input->listEntry.index;
-    ctx->setting = data_00541b27;
+    ctx->setting = optsCmdLine.debugInfo;
     ctx->dependencyStatusNegative = input->dependencyStatusNegative;
     ctx->dependencyOption = input->dependencyOption;
     memcpy(&ctx->dependencyState, &input->dependencyState, sizeof(ctx->dependencyState));
@@ -210,7 +210,7 @@ Boolean CLPluginRequests_InitializeTargetSettings(CLTarget *input, Plugin *plugi
     if (plugin != 0 && (flags & 1) == 0) {
         CWPluginPrivateContext *pluginData;
 
-        if (DAT_00541b28 > 1) {
+        if (optsCmdLine.verbose > 1) {
             char *pluginValue = CLPlugins_GetName(plugin);
             CLErrors_ForwardMessage(0x32, pluginValue);
         }
@@ -249,9 +249,9 @@ Boolean CLPluginRequests_InitializeTargetSettings(CLTarget *input, Plugin *plugi
 
 Boolean CLPluginRequests_UpdateTargetSettings(Plugin *record, UInt32 flags, struct TgtRec *snapshot)
 {
-    if (DAT_00541b28 != 0) {
+    if (optsCmdLine.verbose != 0) {
         char *diagnosticArg = CLPlugins_GetName(record);
-        SInt32 diagnosticVariant = (DAT_00541b28 > 1);
+        SInt32 diagnosticVariant = (optsCmdLine.verbose > 1);
         if (flags & 0x40000000)
             CLErrors_ForwardMessage(diagnosticVariant + 0x2c, diagnosticArg);
         else if (flags & 0x8000000)
@@ -283,8 +283,8 @@ UInt8 CLPluginRequests_CallPluginForFile(Plugin *plugin, DropinFileRecord *conte
     } else {
         selectedPlugin = plugin;
     }
-    if (DAT_00541b28 != 0) {
-        CLErrors_ForwardMessage((1 < DAT_00541b28) + 0x2e, context->inputName, CLPlugins_GetName(plugin));
+    if (optsCmdLine.verbose != 0) {
+        CLErrors_ForwardMessage((1 < optsCmdLine.verbose) + 0x2e, context->inputName, CLPlugins_GetName(plugin));
     }
     if ((UInt8)fn_004098a0(selectedPlugin) == 0) {
         return 0;
@@ -305,7 +305,7 @@ extern "C" int fn_00417440(Plugin *plugin, Boolean initialize)
 {
     int result = 2;
     if (plugin != NULL) {
-        if (DAT_00587324 != 0) {
+        if (clState.pluginDebug != 0) {
             UInt8 message;
             if (initialize)
                 message = 0x33;

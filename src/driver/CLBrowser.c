@@ -9,6 +9,7 @@
 #include "driver/CLFileOps.h"
 #include "driver/CLFiles.h"
 #include "driver/CLIO.h"
+#include "driver/CLMain.h"
 #include "driver/CLPlugins.h"
 #include "driver/CLTarg.h"
 #include "driver/Files.h"
@@ -36,16 +37,16 @@ int fn_004286d0(DropinFileRecord *input, unsigned int processingMode, unsigned i
 
     type = CLPlugins_GetObjectFlags(input->selectedPlugin);
     state = input->outputPath;
-    if (data_00541b95[0] != 0)
-        extension = data_00541b95;
+    if (optsCompiler.browseFileExt[0] != 0)
+        extension = optsCompiler.browseFileExt;
     else
         extension = type->suffix0;
     CLProj_ChangeFileExtension(state.name, extension);
-    if (DAT_00541b28 != 0) {
+    if (optsCmdLine.verbose != 0) {
         char *result = CLProj_MakeRelativePath(&state, NULL, data_005880e0, 260);
         CLErrors_ForwardMessage(17, result);
     }
-    if (build_browser_file_buffer(input->secondaryReferenceHandle, &data_00587570, &lookupResult) == 0)
+    if (build_browser_file_buffer(input->secondaryReferenceHandle, &clState.browseTableHandle, &lookupResult) == 0)
         return 0;
     if (fn_00415090(&state, processingMode, processingFlags, &lookupResult) == 0)
         return 0;

@@ -86,12 +86,6 @@ extern unsigned int __stdcall copy_name_with_p_extension(unsigned int unused, co
 extern unsigned int fn_00426320(OSSpec *destination, DropinFileRecord *record);
 extern unsigned int __stdcall clear_primary_reference_value(unsigned int unused0, unsigned int recordKey,
                                                             unsigned int unused2);
-extern Boolean DAT_00587324;
-extern char data_00541bd1;
-extern SInt8 data_00541d0f;
-extern Boolean data_00541e10;
-extern char data_00541d10[];
-extern CLTargetDirectory precompiled_unit_directory;
 
 #ifdef __cplusplus
 }

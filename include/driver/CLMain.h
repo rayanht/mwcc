@@ -2,53 +2,122 @@
 #define DRIVER_CLMAIN_H
 
 #include "compiler/common.h"
+#include "driver/Memory.h"
+#include "driver/MsDos.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-struct CodeRecord {
-    unsigned short code;
-    unsigned short data;
-    unsigned int value;
-};
-struct CommandLinePanelSettings {
+/* The command-line tool's preference panels ("CmdLine Panel", "CmdLine Environment", "CmdLine Compiler Panel",
+ * "CmdLine Linker Panel"). */
+#pragma options align = mac68k
+struct PCmdLine {
     UInt16 version;
-    UInt8 reserved[0x1cc - sizeof(UInt16)];
-    UInt8 version1001Option;
-    UInt8 version1002Option1;
-    UInt8 version1002Option2;
-    UInt8 version1003Option1;
-    UInt8 version1003Option2;
-    UInt8 reserved2[0x2d0 - 0x1d1];
-    UInt8 version1004Option;
-    UInt8 reserved3[1];
+    SInt16 state;
+    SInt16 stages;
+    SInt16 toDisk;
+    SInt16 outNameOwner;
+    SInt8 dryRun;
+    unsigned char debugInfo;
+    short verbose;
+    char showLines;
+    SInt8 timeWorking;
+    char noWarnings;
+    char warningsAreErrors;
+    short maxErrors;
+    short maxWarnings;
+    short msgStyle;
+    SInt8 noWrapOutput;
+    char stderr2stdout;
+    char noCmdLineWarnings;
 };
+struct PCmdLineEnvir {
+    UInt16 version;
+    SInt16 cols;
+    short rows;
+    char underIDE;
+};
+struct PCmdLineCompiler {
+    UInt16 version;
+    char noSysPath;
+    char noFail;
+    SInt16 includeSearch;
+    char linkerName[64];
+    char objFileExt[15];
+    char browseFileExt[15];
+    char ppFileExt[15];
+    char disFileExt[15];
+    char depFileExt[15];
+    char pchFileExt[15];
+    SInt32 objFileCreator;
+    SInt32 objFileType;
+    int browseFileCreator;
+    int browseFileType;
+    UInt32 ppFileCreator;
+    UInt32 ppFileType;
+    UInt32 disFileCreator;
+    UInt32 disFileType;
+    UInt32 depFileCreator;
+    UInt32 depFileType;
+    UInt8 compileIgnored;
+    char relPathInOutputDir;
+    char browserEnabled;
+    char depsOnlyUserFiles;
+    char outMakefile[256];
+    UInt8 forcePrecompile;
+    char ignoreMissingFiles;
+    UInt8 printHeaderNames;
+    SInt8 sbmState;
+    char sbmPath[256];
+    Boolean canonicalIncludes;
+    Boolean keepObjects;
+};
+struct PCmdLineLinker {
+    UInt16 version;
+    SInt8 callPreLinker;
+    SInt8 callPostLinker;
+    SInt8 keepLinkerOutput;
+    SInt8 callLinker;
+};
+#pragma options align = reset
+extern PCmdLine optsCmdLine;
+extern PCmdLineEnvir optsEnvir;
+extern PCmdLineCompiler optsCompiler;
+extern PCmdLineLinker optsLinker;
+
+/* The driver's state: its arguments, the target and plugin it was built for, the counts of reported diagnostics and the
+ * specs of its outputs. */
+struct CLState {
+    int argc;
+    char **argv;
+    SInt32 cpu;
+    SInt32 os;
+    SInt32 plugintype;
+    SInt32 language;
+    SInt32 parserplugin;
+    OSSpec programSpec;
+    char *programName;
+    short countWarnings;
+    short countErrors;
+    Boolean pluginDebug;
+    char userBreak;
+    char withholdWarnings;
+    char withholdErrors;
+    OSSpec makefileSpec;
+    CLTargetDirectory sbmPathSpec;
+    MemBuffer browseTableHandle;
+};
+extern CLState clState;
+
 extern char **argv;
 struct CommandParseInfo {
     SInt32 argc;
     char **argv;
     SInt32 value2;
 };
-struct LinkerPanelSettings {
-    unsigned short kind;
-    unsigned char flag2;
-    unsigned char flag3;
-    unsigned char flag4;
-    unsigned char flag5;
-};
-#pragma options align = mac68k
-struct MessageRecord {
-    unsigned short tag;
-    unsigned short reserved;
-    short payload[10];
-    unsigned char attributes[4];
-};
-#pragma options align = reset
 extern int CLMain_Initialize(int argc, char **argv);
 extern char data_0057d930[8];
-extern int data_005871bc;
-extern int data_005871c0;
 extern int parse_command_line(void);
 extern SInt32 unique_plugin_name_count;
 extern SInt32 plugin_request_count;
@@ -71,15 +140,13 @@ extern void CLMain_AppendEnabledCommandLineOptions(int *first, char ***second);
 extern unsigned int CLMain_FreePlugins(unsigned int result);
 extern int delete_file_and_make_path_spec(void);
 extern SInt32 fn_0040aed0(void);
-extern int fn_0040af70(struct MessageRecord *message, struct MessageRecord *result);
-extern unsigned int copy_environment_code_record(struct CodeRecord *record, struct CodeRecord *result);
-extern int convert_command_line_panel_settings(struct CommandLinePanelSettings *source,
-                                               struct CommandLinePanelSettings *destination);
-extern int convert_linker_panel_settings(LinkerPanelSettings *input, LinkerPanelSettings *output);
+extern int fn_0040af70(PCmdLine *message, PCmdLine *result);
+extern unsigned int copy_environment_code_record(PCmdLineEnvir *record, PCmdLineEnvir *result);
+extern int convert_command_line_panel_settings(PCmdLineCompiler *source, PCmdLineCompiler *destination);
+extern int convert_linker_panel_settings(PCmdLineLinker *input, PCmdLineLinker *output);
 extern unsigned int create_cmdline_data_blocks(void);
 extern int create_default_target(void);
 extern unsigned int check_cmdline_entries(char *context);
-extern UInt8 DAT_00541c0c;
 extern char DAT_00541e4c[];
 extern unsigned short DAT_00541e4e;
 extern int DAT_00543148;
@@ -92,7 +159,6 @@ extern struct DriverCommandLineOption {
     char **value;
     char (*handler)(int, char *);
 } PTR_DAT_00543124[3];
-extern struct CommandLinePanelSettings data_00541b40;
 extern SInt32 data_00541e44;
 extern SInt32 data_00541e48;
 extern unsigned char data_00541ee4[];
@@ -100,13 +166,8 @@ extern unsigned char data_00542f38[];
 extern char *data_00542f3c[];
 extern double data_00543248;
 extern unsigned int CLMain_InitializeAndParseCommandLine(void);
-extern SInt32 data_005871c4;
-extern SInt32 data_005871c8;
-extern SInt32 data_005871d4;
 extern char input_name[];
 extern char output_name[];
-extern struct CodeRecord cmdline_code_record;
-extern struct LinkerPanelSettings linker_panel_settings;
 extern ListLink data_00541edc;
 extern ListLink data_00541eac;
 

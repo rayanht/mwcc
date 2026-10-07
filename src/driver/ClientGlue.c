@@ -104,21 +104,21 @@ void __stdcall fn_00405280(PluginRequiredInputRecord *a0, PluginQueryTable *a1)
 
 void __stdcall fn_004052a0(unsigned int a0, unsigned int a1)
 {
-    data_005871c4 = a0;
-    data_005871c8 = a1;
+    clState.cpu = a0;
+    clState.os = a1;
     return;
 }
 
 unsigned int __stdcall fn_004052c0(unsigned int a0)
 {
-    data_005871d4 = a0;
+    clState.parserplugin = a0;
     return a0;
 }
 
 void __stdcall fn_004052d0(unsigned int a0, unsigned int a1)
 {
-    data_005871d0 = a0;
-    plugin_type = a1;
+    clState.language = a0;
+    clState.plugintype = a1;
     return;
 }
 

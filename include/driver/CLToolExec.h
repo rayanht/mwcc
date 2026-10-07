@@ -21,7 +21,6 @@ extern unsigned int CLToolExec_SetTemporaryOutputMask(void);
 extern unsigned int CLToolExec_DeleteTemporaryOutputs(void);
 extern int CLToolExec_ExecuteLinker(Plugin *tool, UInt32 flags, DropinFileRecord *argument, char *inputPath,
                                     char *outputPath);
-extern char linker_tool_name;
 
 #ifdef __cplusplus
 }
