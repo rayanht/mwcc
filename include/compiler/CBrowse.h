@@ -55,14 +55,6 @@ extern void CBrowse_WriteNameLineRange(NameSpace *names, HashNameNode *name, PFi
                                        int lastLine);
 extern void CBrowse_StoreBrowseData(CPrepCU *arguments);
 extern void CBrowse_InitBrowseData(CPrepCU *classes);
-extern char cbrowse_filename[];
-extern union {
-    GList buffer;
-    struct StorageHandle *handle;
-} data_00581ba8;
-extern GList browse_member_list;
-extern BrowseObjectBuffer browse_function_buffer;
-extern SInt32 nextFunctionId;
 extern UInt8 data_005884f5;
 
 #ifdef __cplusplus

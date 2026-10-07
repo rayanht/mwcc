@@ -39,6 +39,17 @@
 #include "driver/Memory.h"
 #include <string.h>
 
+/* The browser's access code of each access type. */
+static UInt8 data_00563340[4] = {4, 1, 2, 0};
+
+static union {
+    GList buffer;
+    struct StorageHandle *handle;
+} data_00581ba8;
+static GList browse_member_list;
+static BrowseObjectBuffer browse_function_buffer;
+static SInt32 nextFunctionId;
+
 /* Declarations gathered from the merged files. */
 
 #define BROWSE_ASSERT(c, s)                                                                                            \
@@ -95,13 +106,13 @@ void CBrowse_RecordClassLocation(struct TypeClass *type, PFile *location, int fi
     char *name;
     char *name_check;
     int name_value;
-    BROWSE_ASSERT(location != 0 && location->recordbrowseinfo == 0, CError_Internal(cbrowse_filename, 963));
+    BROWSE_ASSERT(location != 0 && location->recordbrowseinfo == 0, CError_Internal("CBrowse.c", 963));
     if (location != NULL) {
         if ((file_id = location->fileID) != 0 && first_line > 0 && last_line >= first_line) {
             name_value = type->classname->id;
             name = name_check = type->classname->name;
             file_end = file_start = (int)file_id;
-            BROWSE_ASSERT(name_check == 0, CError_Internal(cbrowse_filename, 582));
+            BROWSE_ASSERT(name_check == 0, CError_Internal("CBrowse.c", 582));
             AppendGListByte(&data_00581ba8.buffer, 7);
             AppendGListWord(&data_00581ba8.buffer, file_start);
             AppendGListWord(&data_00581ba8.buffer, file_end);
@@ -125,14 +136,13 @@ void write_identifier_range_record(Macro *source, PFile *info, int first, int la
     char *payload;
     char *checkedPayload;
     int recordValue;
-    BROWSE_ASSERT(info != 0 && (info->recordbrowseinfo == 0 || source->flag != 0),
-                  CError_Internal(cbrowse_filename, 949));
+    BROWSE_ASSERT(info != 0 && (info->recordbrowseinfo == 0 || source->flag != 0), CError_Internal("CBrowse.c", 949));
     if (info != NULL) {
         if ((identifier = info->fileID) != 0 && first > 0 && last >= first) {
             recordValue = source->name->id;
             payload = checkedPayload = source->name->name;
             secondIdentifier = firstIdentifier = (int)identifier;
-            BROWSE_ASSERT(checkedPayload == 0, CError_Internal(cbrowse_filename, 582));
+            BROWSE_ASSERT(checkedPayload == 0, CError_Internal("CBrowse.c", 582));
             AppendGListByte(&data_00581ba8.buffer, 3);
             AppendGListWord(&data_00581ba8.buffer, firstIdentifier);
             AppendGListWord(&data_00581ba8.buffer, secondIdentifier);
@@ -206,7 +216,7 @@ void CBrowse_ForwardObjectFileRange(Object *object, PFile *browseFile, PFile *so
                                     SInt32 endOffset)
 {
     if (browseFile == NULL || browseFile->recordbrowseinfo == 0)
-        CError_Internal(cbrowse_filename, 0x378);
+        CError_Internal("CBrowse.c", 0x378);
     if (sourceFile != NULL && sourceFile->fileID != 0 && startOffset > 0 && endOffset + 1 >= startOffset)
         write_function_browse_record(object, browseFile->fileID, sourceFile->fileID, startOffset, endOffset + 1);
 }
@@ -370,7 +380,7 @@ void CBrowse_RecordNameRange(NameSpace *nameSpace, HashNameNode *hn, PFile *star
     SInt32 endIndex;
     SInt32 startIndex;
     if (startRecord == NULL || startRecord->recordbrowseinfo == 0) {
-        CError_Internal(cbrowse_filename, 0x276);
+        CError_Internal("CBrowse.c", 0x276);
     }
     if (endRecord != NULL && endRecord->fileID != 0 && start > 0 && end >= start) {
         qualifiedName = CError_GetQualifiedName(nameSpace, hn);
@@ -378,7 +388,7 @@ void CBrowse_RecordNameRange(NameSpace *nameSpace, HashNameNode *hn, PFile *star
         endIndex = endRecord->fileID;
         startIndex = startRecord->fileID;
         if (hn->name == NULL) {
-            CError_Internal(cbrowse_filename, 0x246);
+            CError_Internal("CBrowse.c", 0x246);
         }
         AppendGListByte(&data_00581ba8.buffer, 4);
         AppendGListWord(&data_00581ba8.buffer, startIndex);
@@ -404,7 +414,7 @@ static inline void writeBrowseLine(GList *stream, unsigned int line)
 
 static inline void reportBrowseError(unsigned int line)
 {
-    CError_Internal(cbrowse_filename, line);
+    CError_Internal("CBrowse.c", line);
 }
 
 static inline void writeBrowseRecordKind(GList *stream, SInt8 kind)
@@ -449,7 +459,7 @@ void CBrowse_FlushAndRestoreMemberList(SInt32 value, GList *state)
 {
     unsigned int offset;
     if (state == NULL) {
-        CError_Internal(cbrowse_filename, 556U);
+        CError_Internal("CBrowse.c", 556U);
     }
     if (browse_member_list.data != NULL) {
         if (value > 0 && browse_member_list.size > 0) {
@@ -528,7 +538,7 @@ void CBrowse_RestoreScope(SInt32 statementOffset, GList *savedScope)
     UInt32 outputOffset;
 
     if (savedScope == NULL)
-        CError_Internal(cbrowse_filename, 451U);
+        CError_Internal("CBrowse.c", 451U);
     if (browse_member_list.data != NULL) {
         if (browse_member_list.size > 0) {
             if (tk == ';')
@@ -557,7 +567,7 @@ void CBrowse_RecordDataObject(Object *obj, SInt32 param2, SInt32 param3)
         if (tk == ';')
             param3++;
         AppendGListByte(&browse_member_list, 1);
-        AppendGListByte(&browse_member_list, cbrowse_filename[obj->access - 4]);
+        AppendGListByte(&browse_member_list, data_00563340[obj->access]);
         AppendGListLong(&browse_member_list, 2);
         AppendGListLong(&browse_member_list, param2 - 1);
         AppendGListLong(&browse_member_list, param3 - 1);
@@ -592,7 +602,7 @@ void CBrowse_RecordFunction(Object *obj, SInt32 start, SInt32 end)
             if (func->flags & 0x4000)
                 flags |= 0x1000;
             AppendGListByte(&browse_member_list, 0);
-            AppendGListByte(&browse_member_list, cbrowse_filename[obj->access - 4]);
+            AppendGListByte(&browse_member_list, data_00563340[obj->access]);
             AppendGListLong(&browse_member_list, flags);
             id = func->funcid;
             if (id <= 0) {
@@ -613,12 +623,12 @@ void CBrowse_WriteObjMemberVar(ObjMemberVar *rec, SInt32 start, SInt32 end)
     SInt16 len;
 
     if (rec == NULL)
-        CError_Internal(cbrowse_filename, 0x166);
+        CError_Internal("CBrowse.c", 0x166);
     if (browse_member_list.data != NULL && start > 0 && end >= start) {
         if (tk == ';')
             end++;
         AppendGListByte(&browse_member_list, 1);
-        AppendGListByte(&browse_member_list, cbrowse_filename[rec->access - 4]);
+        AppendGListByte(&browse_member_list, data_00563340[rec->access]);
         AppendGListLong(&browse_member_list, 0);
         AppendGListLong(&browse_member_list, start - 1);
         AppendGListLong(&browse_member_list, end - 1);
@@ -680,7 +690,7 @@ void CBrowse_GenerateClassRecord(DeclInfo *record, GList *out)
         baseCount++;
     AppendGListByte(&browse_member_list, baseCount);
     for (baseList = TYPE_CLASS(record->dtype)->bases; baseList != NULL; baseList = baseList->next) {
-        AppendGListByte(&browse_member_list, cbrowse_filename[baseList->access - 4]);
+        AppendGListByte(&browse_member_list, data_00563340[baseList->access]);
         AppendGListByte(&browse_member_list, baseList->is_virtual);
         base = (TypeClassExt800 *)baseList->base;
         if ((base->base.flags & CLASS_IS_TEMPL_INST) && base->suppressImplicitInstantiation == 0)
@@ -708,7 +718,7 @@ void write_text_or_name_id(GList *output, char *text, int index)
     unsigned int length;
 
     if (output == NULL || text == NULL || *text == 0)
-        CError_Internal(cbrowse_filename, 0xbc);
+        CError_Internal("CBrowse.c", 0xbc);
 
     if (index < 0 && data_005884f5 != 0) {
         for (entry = data_00587f88[CHash(text)]; entry != NULL; entry = entry->next) {
@@ -772,7 +782,7 @@ void CBrowse_InitBrowseData(CPrepCU *classes)
 {
     struct BrowseStreamHeader header;
     if (classes == NULL) {
-        CError_Internal(cbrowse_filename, 122U);
+        CError_Internal("CBrowse.c", 122U);
     }
     classes->browseData = 0;
     InitGList(&data_00581ba8.buffer, 65536);

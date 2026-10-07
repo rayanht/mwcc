@@ -41,6 +41,12 @@
 #include "compiler/StrengthReduction.h"
 #include "compiler/Switch.h"
 #include "compiler/TOC.h"
+
+static UInt32 **dominators;
+static struct SelectedNode *selected_nodes;
+static SInt32 predecessor_bitset_node_count;
+static struct PCodeBlock **data_00582c64;
+
 #define CE_ASSERT(c, s)                                                                                                \
     do {                                                                                                               \
         if (c)                                                                                                         \

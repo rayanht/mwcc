@@ -41,7 +41,7 @@ UInt32 CLWriteObjectFile_WriteObjectFile(struct DropinFileRecord *self, unsigned
     MacSpecs_MakeCWFileSpecFromString(self->outputPath.directory.path, &objectFile);
     MacSpecs_MakeCWFileSpecFromString(self->inputPath.directory.path, &sourceFile);
     if (DAT_00541b28 != 0) {
-        unsigned char *message = (self->temporaryOutputMask & 2) ? temporary_output_message : browse_file_message;
+        unsigned char *message = (self->temporaryOutputMask & 2) ? (unsigned char *)"temporary " : (unsigned char *)"";
         result = CLProj_MakeRelativePath(&self->outputPath, NULL, data_005880e0, 0x104);
         CLErrors_ForwardMessage(0x10, message, result);
     }

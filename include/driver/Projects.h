@@ -43,7 +43,6 @@ extern void ToolHelpers_cc_ChangeSegment(SInt32 segmentNumber, char *name, short
 extern int data_00587e04;
 extern int data_00587e08;
 extern int data_00587e0c;
-extern const char *DAT_00543380;
 
 #ifdef __cplusplus
 }

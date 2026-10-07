@@ -10,6 +10,7 @@
 #include "compiler/CodeGen.h"
 #include "compiler/CodeMotion.h"
 #include "compiler/ConstantPropagation.h"
+#include "compiler/CopyPropagation.h"
 #include "compiler/DWARF.h"
 #include "compiler/LoadDeletion.h"
 #include "compiler/LoopDetection.h"

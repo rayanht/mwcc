@@ -47,6 +47,14 @@
 #include <stdio.h>
 #include "compiler/ENode.h"
 
+#pragma options align = mac68k
+static UInt8 data_00581c30;
+static struct TemporaryObject *temporary_object_list;
+static struct Statement *data_00581c36;
+static struct CException *currentDobjstack;
+static struct CException *current_dobjstack;
+#pragma options align = reset
+
 #define CE_ASSERT(c, s)                                                                                                \
     do {                                                                                                               \
         if (c)                                                                                                         \

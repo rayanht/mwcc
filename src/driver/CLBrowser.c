@@ -22,6 +22,10 @@
 
 /* A browser table entry associates a value with a name. */
 #include <stdlib.h>
+
+static struct BrowserCacheEntry *browser_cache_entries;
+static struct BrowserCacheEntry *browser_cache_free_list;
+static unsigned int cache_free_size;
 int fn_004286d0(DropinFileRecord *input, unsigned int processingMode, unsigned int processingFlags)
 {
     MemBuffer lookupResult;

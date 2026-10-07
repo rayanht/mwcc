@@ -20316,7 +20316,7 @@
     "name": "COpt_CopyPropagation",
     "address": "0x005200e0",
     "size": 327,
-    "source": "src/optimizer/ValueNumbering.c"
+    "source": "src/optimizer/CopyPropagation.c"
   },
   {
     "name": "CopyPropagation_ReplaceRegisterUses",

@@ -492,6 +492,8 @@ int __stdcall report_message(struct DiagnosticContext *context, struct Diagnosti
     char lastDetailChar;
     int diagnosticKind;
     DiagnosticSourcePosition record;
+    /* The format of a message, then of a message and its detail, by which of them end with a newline. */
+    static char *data_0054cbdc[2][4] = {{"%\n", "%", "%\n", "%"}, {"%\n%\n", "%%\n", "%\n%", "%%"}};
 
     if (DAT_00541b28 > 4) {
         CLIO_FormatAndDispatchText("Callback: %s\n", "UCBReportMessage");
@@ -521,10 +523,10 @@ int __stdcall report_message(struct DiagnosticContext *context, struct Diagnosti
                 detailHasNewline = 0;
             }
             CLIO_ReportDiagnostic(context->target->identifier, 0, argument, diagnosticKind,
-                                  data_0054cbec[(detailHasNewline << 1) + messageHasNewline], message, detail);
+                                  data_0054cbdc[1][(detailHasNewline << 1) + messageHasNewline], message, detail);
         } else {
             CLIO_ReportDiagnostic(context->target->identifier, 0, argument, diagnosticKind,
-                                  data_0054cbdc[messageHasNewline], message);
+                                  data_0054cbdc[0][messageHasNewline], message);
         }
     } else {
         MacSpecs_MakeOSSpec((CWFileSpec *)&context->sourceData, record.primaryFile.directory.path);
@@ -548,7 +550,7 @@ int __stdcall report_message(struct DiagnosticContext *context, struct Diagnosti
             record.selectionLength = 0;
         }
         CLIO_ReportDiagnostic(context->target->identifier, &record, argument, diagnosticKind,
-                              data_0054cbdc[messageHasNewline], message);
+                              data_0054cbdc[0][messageHasNewline], message);
     }
     return 0;
 }
@@ -1221,6 +1223,57 @@ unsigned int __stdcall fn_00425a00(unsigned int clientContext, unsigned int base
     return 2U;
 }
 }
+
+static char lbl_0054d038[] = "UCBMacOSErrToCWResult";
+
+/* The callbacks a plug-in calls back into the driver through. */
+static void *data_0054d050[43] = {
+    (void *)get_file_info,
+    (void *)CLDropinCallbacks_V10_FindAndLoadFile,
+    (void *)CLDropinCallbacks_V10_GetFileText,
+    (void *)CLDropinCallbacks_V10_FreeMemory,
+    (void *)lookup_callback_record,
+    (void *)get_overlay_group_info,
+    (void *)lookup_overlay_allocation,
+    (void *)call_overlays_and_translate_status,
+    (void *)report_message,
+    (void *)emit_alert_messages,
+    (void *)report_message_detail,
+    (void *)fn_00424540,
+    (void *)copy_named_destination_to_temporary,
+    (void *)report_store_plugin_data_not_implemented,
+    (void *)fn_00424660,
+    (void *)set_mod_date,
+    (void *)add_project_entry,
+    (void *)create_new_text_document,
+    (void *)allocate_memory,
+    (void *)free_callback_argument,
+    (void *)fn_004252a0,
+    (void *)fn_004252f0,
+    (void *)fn_00425340,
+    (void *)resize_mem_handle,
+    (void *)get_storage_handle_data,
+    (void *)fn_00425430,
+    (void *)CLDropinCallbacks_V10_StoreValue,
+    (void *)CLDropinCallbacks_V10_SetStorageHandle,
+    (void *)copy_value_to_result,
+    NULL,
+    NULL,
+    NULL,
+    NULL,
+    NULL,
+    (void *)copy_command_line_target,
+    (void *)cache_access_path_list,
+    (void *)log_callback_string,
+    (void *)log_callback_above_threshold,
+    (void *)fn_004254e0,
+    (void *)fn_00425520,
+    (void *)request_license,
+    (void *)forward_nonzero_value,
+    (void *)fn_00425a00,
+};
+
+static unsigned char data_0054d0fc[12] = {3, 0, 3, 0, 0, 0, 0, 0, 10, 0, 0, 0};
 
 PluginA::PluginA(UInt32 code, int size)
 {

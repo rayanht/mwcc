@@ -41,6 +41,13 @@
 #include "compiler/Switch.h"
 #include <string.h>
 
+static UInt8 gUsedPhysicalGPR[32];
+static unsigned char gUsedPhysicalFPR[32];
+static UInt8 gUsedPhysicalVR[32];
+static short gSaveSpan;
+static unsigned char gSavedUsedPhysicalRegisters[32];
+static char lbl_00581392[14];
+
 /* The cost of evaluating CSE's expression tree: its nodes, the divisions and multiplications twice, and the loads
    of variables that cannot live in a register. */
 int Registers_GetCSEWeight(COptCSE *tree)

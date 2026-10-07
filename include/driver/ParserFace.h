@@ -59,20 +59,17 @@ extern void **copy_resource_by_name(char *name);
 extern int fn_0040ba99(struct CWPluginPrivateContext *context);
 extern int set_enabled_link_parser_entries(struct CWPluginPrivateContext *context);
 extern int __stdcall get_data_pointer_and_constant(unsigned char **a0, int *a1);
-extern unsigned char data_00543430[];
 extern unsigned int __stdcall set_next_to_head(struct ListLink *entry);
-extern struct ListLink *data_00543458;
 extern unsigned int __stdcall set_link_next_from_global(struct ListLink *link);
-extern struct ListLink *data_0054345c;
 extern unsigned int __stdcall fn_0040bc70(struct ListLink *link);
 extern int __stdcall set_list_link_next_to_global(struct ListLink *link);
 extern int __stdcall match_tool(int *pair, int b, int c, unsigned char *out);
 extern unsigned int __stdcall store_boolean_result(int argument0, char **argument1, unsigned char *result);
 extern int __stdcall dispatch_plugin_request(struct CWPluginPrivateContext *context);
-extern ListLink data_00543480;
-extern ListLink data_00543460;
 extern PtrList data_00587688[1];
 extern PtrList data_00588044;
+
+extern const char *DAT_00543380;
 
 #ifdef __cplusplus
 }

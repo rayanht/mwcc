@@ -424,11 +424,11 @@ src/driver/CLFiles.c:
 
 src/driver/CLOverlays.c:
 	.text       start:0x00422C30 end:0x00423540
-	.data       start:0x0054C9F0 end:0x0054CA80
+	.data       start:0x0054C9F0 end:0x0054CAB0
 
 src/driver/CLDropinCallbacks_V10.cpp:
 	.text       start:0x00423540 end:0x00425A70
-	.data       start:0x0054CA80 end:0x0054D108
+	.data       start:0x0054CAB0 end:0x0054D108
 
 src/runtime/newop.cpp:
 	.text       start:0x00425A70 end:0x00425B70
@@ -457,11 +457,11 @@ src/driver/CLDependencies.c:
 
 src/driver/CLWriteObjectFile.c:
 	.text       start:0x004285D0 end:0x004286D0
-	.data       start:0x0054D968 end:0x0054D9A0
+	.data       start:0x0054D968 end:0x0054D9B0
 
 src/driver/CLBrowser.c:
 	.text       start:0x004286D0 end:0x00428F5D
-	.data       start:0x0054D9A0 end:0x0054DA38
+	.data       start:0x0054D9B0 end:0x0054DA38
 	.bss        start:0x0057F598 end:0x0057F5A8
 
 src/driver/Parameter.c:
@@ -847,12 +847,13 @@ src/msl/qsort.c:
 	.text       start:0x0051E430 end:0x0051E590
 
 src/optimizer/ValueNumbering.c:
-	.text       start:0x0051E590 end:0x00520230
+	.text       start:0x0051E590 end:0x005200E0
 	.data       start:0x00574418 end:0x00574CC0
 	.bss        start:0x005824D8 end:0x00582C50
 
 src/optimizer/CopyPropagation.c:
-	.text       start:0x00520230 end:0x00520BF0
+	.text       start:0x005200E0 end:0x00520BF0
+	.bss        start:0x00582C50 end:0x00582C58
 
 src/optimizer/AddPropagation.c:
 	.text       start:0x00520BF0 end:0x00521A10
@@ -861,7 +862,7 @@ src/optimizer/AddPropagation.c:
 src/optimizer/LoopDetection.c:
 	.text       start:0x00521A10 end:0x00523650
 	.data       start:0x00574CD8 end:0x00574CE8
-	.bss        start:0x00582C50 end:0x00582C68
+	.bss        start:0x00582C58 end:0x00582C68
 
 src/optimizer/CodeMotion.c:
 	.text       start:0x00523650 end:0x005270C0

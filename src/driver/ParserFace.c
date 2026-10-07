@@ -3,6 +3,7 @@
 #include "compiler/CPrep.h"
 #include "compiler/InlineAsmPPC.h"
 #include "driver/CLMain.h"
+#include "driver/CLPlugins.h"
 #include "driver/CLToolExec.h"
 #include "driver/CWParserPluginsPrivate.h"
 #include "driver/CWPluginsPrivate.h"
@@ -27,6 +28,23 @@
 #define B2(x) (((x) & 0xff0000) >> 16)
 #define B1(x) (((x) & 0xff00) >> 8)
 #define B0(x) ((x) & 0xff)
+
+const char *DAT_00543380 = NULL;
+
+static void *xmalloc(const char *what, int size)
+{
+    char *buffer;
+    char message[80];
+
+    buffer = malloc(size);
+    if (buffer == NULL) {
+        sprintf(message, "Out of memory when allocating %d bytes%s%s", size, what ? " for " : "", what ? what : "");
+        CWPluginsPrivate_CallCallback9(pluginPrivateContext, message, NULL, NULL, 0);
+        longjmp(plugin_request_jmp_buf, 7);
+        return NULL;
+    }
+    return buffer;
+}
 
 void *ToolHelpers_ResizeBuffer(const char *what, void *buffer, int size)
 {
@@ -192,9 +210,26 @@ int set_enabled_link_parser_entries(struct CWPluginPrivateContext *context)
     return 0;
 }
 
+static PluginDesc data_00543430 = {2, 'Pars', 7, 0, 'Seep', 11};
+static const char *data_00543458 = "Command-Line Parser";
+static const char *data_0054345c = "Command-Line Parser";
+static PluginDirectoryList data_00543460 = {1, 0, NULL};
+static UInt32 lbl_00543468 = '****';
+static UInt32 lbl_0054346c = '****';
+#pragma options align = mac68k
+static struct {
+    SInt16 version;
+    SInt16 cpuCount;
+    UInt32 *cpus;
+    SInt16 osCount;
+    UInt32 *oss;
+} lbl_00543470 = {1, 1, &lbl_00543468, 1, &lbl_0054346c};
+#pragma options align = reset
+static UInt8 data_00543480[4] = {1, 1, 0, 0};
+
 int __stdcall get_data_pointer_and_constant(unsigned char **dataPointer, int *constant)
 {
-    *dataPointer = data_00543430;
+    *dataPointer = (unsigned char *)&data_00543430;
     *constant = 18;
     return 0;
 }
@@ -202,7 +237,7 @@ int __stdcall get_data_pointer_and_constant(unsigned char **dataPointer, int *co
 unsigned int __stdcall set_next_to_head(struct ListLink *entry)
 {
     struct ListLink *head;
-    head = data_00543458;
+    head = (struct ListLink *)data_00543458;
     entry->next = head;
     return 0U;
 }
@@ -210,20 +245,20 @@ unsigned int __stdcall set_next_to_head(struct ListLink *entry)
 unsigned int __stdcall set_link_next_from_global(struct ListLink *link)
 {
     struct ListLink *next;
-    next = data_0054345c;
+    next = (struct ListLink *)data_0054345c;
     link->next = next;
     return 0U;
 }
 
 unsigned int __stdcall fn_0040bc70(struct ListLink *link)
 {
-    link->next = &data_00543460;
+    link->next = (struct ListLink *)&data_00543460;
     return 0;
 }
 
 int __stdcall set_list_link_next_to_global(struct ListLink *link)
 {
-    link->next = &data_00543480;
+    link->next = (struct ListLink *)data_00543480;
     return 0;
 }
 

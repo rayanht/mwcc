@@ -49,6 +49,15 @@
 #include "compiler/Objects.h"
 
 #include <string.h>
+
+static FuncArg lbl_005646a0 = {NULL, NULL, NULL, TYPE(&void_ptr), 0, 0, 0};
+static TypeFunc data_005646b8 = {TYPEFUNC, 0, &lbl_005646a0, NULL, TYPE(&void_ptr), 0, 0};
+
+static struct HashNameNode *data_00581c48;
+static struct HashNameNode *space_name;
+static struct HashNameNode *spaces_name;
+static struct HashNameNode *csom_blank_name;
+
 /* Declarations gathered from the merged files. */
 
 struct S2;
@@ -172,13 +181,13 @@ ENode *CSOM_CreateMemberAccessExpr(BClassList *classList, ObjMemberVar *request,
             classList = classList->next;
         operand = (ENode *)create_objectrefnode(TYPE_CLASS(classList->type)->sominfo->classDataObject);
         node = makediadicnode(operand, intconstnode((Type *)&stsignedlong, 8), EADD);
-        node->rtype = CDecl_NewPointerType(&data_005646b8);
+        node->rtype = CDecl_NewPointerType(TYPE(&data_005646b8));
         value = makemonadicnode(node, EINDIRECT);
         memclrw(&functionObject, 54);
         functionObject.otype = OT_OBJECT;
         functionObject.name = unnamed_name;
         functionObject.datatype = DFUNC;
-        functionObject.type = &data_005646b8;
+        functionObject.type = TYPE(&data_005646b8);
         call = funccallexpr(&functionObject, expr, NULL, NULL, NULL);
         CE_ASSERT(call->type != EFUNCCALL, CError_FATAL(1761));
         call->data.monadic = value;
@@ -414,13 +423,13 @@ void CSOM_GenerateSomselfAssignment(TypeClass *tclass, Statement *stmt)
             CError_ASSERT(1811, somself != NULL);
             expr = create_objectrefnode(tclass->sominfo->classDataObject);
             expr = makediadicnode(expr, intconstnode((Type *)&stsignedlong, 8), EADD);
-            expr->rtype = CDecl_NewPointerType(&data_005646b8);
+            expr->rtype = CDecl_NewPointerType(TYPE(&data_005646b8));
             expr = makemonadicnode(expr, EINDIRECT);
             memclrw(&obj, sizeof(Object));
             obj.otype = 5;
             obj.name = unnamed_name;
             obj.datatype = DFUNC;
-            obj.type = &data_005646b8;
+            obj.type = TYPE(&data_005646b8);
             call = funccallexpr(&obj, somself, NULL, NULL, NULL);
             CError_ASSERT(1761, call->type == EFUNCCALL);
             call->data.funccall.funcref = expr;

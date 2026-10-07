@@ -68,11 +68,7 @@ extern void LoopDetection_AddBlock(Loop *loop, PCodeBlock *block);
 extern struct SelectedNode *collect_nodes_in_predecessor_bitsets(void);
 extern void compute_dominators(void);
 extern void traverse_loops_postorder(register Loop *node);
-extern UInt32 **dominators;
-extern SInt32 predecessor_bitset_node_count;
 extern signed long data_005871a4;
-extern struct PCodeBlock **data_00582c64;
-extern struct SelectedNode *selected_nodes;
 extern int gPCodeBlockCount;
 struct Loop;
 

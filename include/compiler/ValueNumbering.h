@@ -68,7 +68,6 @@ struct ValueUpdate {
         value; /* 0x14: copy_register_value_state saves destinationRecord for restoration by fn_0051fd70 */
 };
 #pragma options align = reset
-extern void COpt_CopyPropagation(SInt32 mode);
 extern SInt32 ValueNumbering_0051f790(RegisterValueRecord *a, PCodeInstruction *b);
 extern void ValueNumbering_PerformValueNumbering(int a0);
 extern void traverse_single_predecessor_successors(PCodeBlock *node);

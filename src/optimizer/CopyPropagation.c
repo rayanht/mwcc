@@ -35,6 +35,9 @@
 #include "compiler/Registers.h"
 #include "compiler/StrengthReduction.h"
 #include "compiler/Switch.h"
+
+static SInt32 copy_propagation_mode;
+
 static inline SInt32 CanPropagateCopy(SInt32 copyIndex, CodeMotionListNode *useNode)
 {
     for (; useNode != NULL; useNode = useNode->next) {
@@ -42,6 +45,44 @@ static inline SInt32 CanPropagateCopy(SInt32 copyIndex, CodeMotionListNode *useN
             return 0;
     }
     return 1;
+}
+
+void COpt_CopyPropagation(SInt32 mode)
+{
+    int blockIndex;
+    struct CopyPropagationBitSets *block;
+    SInt32 copyIndex;
+    SInt32 propagate;
+
+    gCopyPropagationChanged = 0;
+    copy_propagation_mode = mode;
+    CopyPropagation_CountBlockCopies();
+    if (copyCount > 0) {
+        COpt_SetLoopCodeMotionMode(0);
+        CopyPropagation_BuildCodeMotionRecords();
+        copyPropagationBitSets = CompilerTools_AllocatePoolMemory(gPCodeBlockCount * sizeof *block);
+        block = copyPropagationBitSets;
+        for (blockIndex = 0; blockIndex < gPCodeBlockCount; blockIndex++) {
+            block->gen = CompilerTools_AllocatePoolMemory(((copyCount + 31) >> 5) * sizeof *block->gen);
+            block->kill = CompilerTools_AllocatePoolMemory(((copyCount + 31) >> 5) * sizeof *block->kill);
+            block->out = CompilerTools_AllocatePoolMemory(((copyCount + 31) >> 5) * sizeof *block->out);
+            block->in = CompilerTools_AllocatePoolMemory(((copyCount + 31) >> 5) * sizeof *block->in);
+            block++;
+        }
+        CopyPropagation_ComputeGenKill();
+        SpillCode_BuildBlockOrder();
+        CopyPropagation_ComputeInOutSets();
+        for (copyIndex = 0; copyIndex < copyCount; copyIndex++) {
+            if (code_motion_records[copyIndex].node->flags & PCodeInstruction_CoalesceDisabled) {
+                propagate = 0;
+            } else {
+                propagate = CanPropagateCopy(copyIndex, code_motion_records[copyIndex].list);
+            }
+            if (propagate)
+                CopyPropagation_ReplaceRegisterUses(copyIndex);
+        }
+    }
+    CompilerTools_ResetPool();
 }
 
 void CopyPropagation_ReplaceRegisterUses(int index)

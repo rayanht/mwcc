@@ -347,6 +347,7 @@ void CLOverlays_ConvertTimestampTo1904EpochSeconds(SInt32 timestamp, int *result
 
 void CLOverlays_ConvertSecondsToTimestamp(unsigned int seconds, struct PackedConversionResult *result)
 {
+    static long days_in_month[12] = {31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31};
     struct tm time;
     unsigned int remaining;
     int month;
