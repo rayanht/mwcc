@@ -24,93 +24,123 @@ static int constantPropagationChanged;
 static struct PCodeInstruction **unique_definitions;
 static struct PCodeInstruction **virtual_register_definitions;
 
-void COpt_ConstantPropagation(void)
-{
-    PCodeBlock *block;
-    SInt32 i;
+static int GetMask(int index, unsigned int *out);
+static int GetKind2(int index);
+static int GetKind(int index);
+static int GetSync(int index, short *out, short *typeout);
+static int GetConst(int index, short *out);
+static void SetType(PCodeInstruction *p, short t);
 
-    gConstantPropagationChanged = 0;
-    COpt_SetLoopCodeMotionMode(0);
-    unique_definitions = galloc(gUsedVirtualRegistersGPR * 4);
-    virtual_register_definitions = galloc(gUsedVirtualRegistersVR * 4);
-    do {
-        constantPropagationChanged = 0;
-        for (i = 0; i < gPCodeBlockCount; i++) {
-            if ((block = gPCodeBlockOrder[i]) != NULL) {
-                ConstantPropagation_FindUniqueDefinitions(block);
-                ConstantPropagation_PropagateConstantsInBlock(block);
-            }
+void COpt_LoadDeletion(void)
+{
+    int blockIndex;
+    CBlockData *sets;
+    int instructionIndex;
+    struct E *entry;
+    int k;
+    UInt32 *secondSet;
+
+    gLoadDeletionChanged = 0;
+    LoadDeletion_InitializeLoadLivenessRecordCounts();
+    if (data_0058820c > 0) {
+        COpt_SetLoopCodeMotionMode(0);
+        LoadDeletion_RecordImmediateLoadLiveness();
+        data_00587c98 = (CBlockData *)oalloc(gPCodeBlockCount * sizeof(CBlockData));
+        blockIndex = 0;
+        sets = data_00587c98;
+        while (blockIndex < gPCodeBlockCount) {
+            sets->generatedLoads = (UInt32 *)oalloc(((data_0058820c + 31) >> 5) * sizeof(UInt32));
+            secondSet = (UInt32 *)oalloc(((data_0058820c + 31) >> 5) * sizeof(UInt32));
+            blockIndex++;
+            sets->killedLoads = secondSet;
+            sets++;
         }
-    } while (constantPropagationChanged != 0);
+        LoadDeletion_BuildLoadLivenessSets();
+        for (instructionIndex = 0; instructionIndex < data_0058820c; instructionIndex++) {
+            k = 0;
+            entry = &immediateLoadLiveness[instructionIndex];
+            (void)((int)entry * k);
+            if (entry->flag != 0)
+                continue;
+            if ((entry->inst->flags & fSideEffects) != 0)
+                continue;
+            PCode_UnlinkInstruction(entry->inst);
+            gLoadDeletionChanged = 1;
+        }
+    }
     freeoheap();
 }
 
-static void SetType(PCodeInstruction *p, short t)
+void ConstantPropagation_FindUniqueDefinitions(struct PCodeBlock *state)
 {
-    p->flags = gPCodeOpcodeDescriptors[t].flags | (p->flags & ~gPCodeOpcodeDescriptors[p->opcode].flags);
-    p->opcode = (short)t;
-}
+    SInt32 i;
+    SInt32 j;
+    struct CodeMotionEntryLink *def;
+    SInt32 reg;
+    struct PCodeInstruction *result;
 
-static int GetConst(int index, short *out)
-{
-    PCodeInstruction *t = unique_definitions[index];
-    if (t != NULL && t->opcode == PC_LI && t->operandData.operands[1].kind == PCOp_IMMEDIATE) {
-        *out = (short)t->operandData.operands[1].value.signed_value;
-        return 1;
-    }
-    return 0;
-}
-
-static int GetSync(int index, short *out, short *typeout)
-{
-    PCodeInstruction *t = virtual_register_definitions[index];
-    if (t != NULL && (t->opcode == PC_VSPLTISB || (unsigned short)(t->opcode - 0x15f) <= 1) &&
-        t->operandData.operands[1].kind == PCOp_IMMEDIATE) {
-        *out = (short)t->operandData.operands[1].value.signed_value;
-        *typeout = t->opcode;
-        return 1;
-    }
-    return 0;
-}
-
-static int GetKind(int index)
-{
-    PCodeInstruction *t = unique_definitions[index];
-    if (t != NULL) {
-        if (t->flags & fIsRead) {
-            if (t->opcode >= 29 && t->opcode <= 32)
-                return 2;
-        } else {
-            if (t->opcode == PC_EXTSB)
-                return 1;
-            if (t->opcode == PC_EXTSH)
-                return 2;
+    for (i = 0; i < gUsedVirtualRegistersGPR; i++) {
+        result = NULL;
+        for (def = code_motion_register_definition_heads[i]; def != NULL; def = def->next) {
+            reg = def->entry_index;
+            if (data_00587fe4[state->index].definition_sets[2][reg >> 5] & (1 << reg)) {
+                if (result == NULL) {
+                    result = code_motion_entries[reg].instruction;
+                } else {
+                    result = NULL;
+                    break;
+                }
+            }
         }
+        unique_definitions[i] = result;
     }
-    return 0;
+
+    for (j = 0; j < gUsedVirtualRegistersVR; j++) {
+        struct PCodeInstruction *vresult;
+        SInt32 vreg;
+        struct CodeMotionEntryLink *vdef;
+        vresult = NULL;
+        for (vdef = register_definition_heads[j]; vdef != NULL; vdef = vdef->next) {
+            vreg = vdef->entry_index;
+            if (data_00587fe4[state->index].definition_sets[2][vreg >> 5] & (1 << vreg)) {
+                if (vresult == NULL) {
+                    vresult = code_motion_entries[vreg].instruction;
+                } else {
+                    vresult = NULL;
+                    break;
+                }
+            }
+        }
+        virtual_register_definitions[j] = vresult;
+    }
 }
 
-static int GetKind2(int index)
+#pragma auto_inline off
+struct PCodeInstruction *find_dlocal_addi(PCodeOperand *operand, SInt16 *size_out, SInt16 displacement)
 {
-    PCodeInstruction *t = unique_definitions[index];
-    if (t != NULL && (t->flags & fIsRead)) {
-        if (t->opcode >= 0x19 && t->opcode <= 0x1c)
-            return 2;
-        if (t->opcode >= 0x15 && t->opcode <= 0x18)
-            return 1;
-    }
-    return 0;
-}
+    SInt32 size;
+    struct PCodeInstruction *entry;
+    struct PCodeInstruction *record;
+    SInt32 offset;
 
-static int GetMask(int index, unsigned int *out)
-{
-    PCodeInstruction *t = unique_definitions[index];
-    if (t != NULL && t->opcode == PC_RLWINM) {
-        *out = RangeMask(t->operandData.operands[3], t->operandData.operands[4]);
-        return 1;
+    entry = unique_definitions[operand->value.reg];
+    if ((record = entry) != NULL && record->opcode == PC_ADDI) {
+        if (record->operandData.operands[2].kind == PCOp_MEMORY &&
+            record->operandData.operands[1].value.reg == stack_base_reg &&
+            record->operandData.operands[2].object->datatype == DLOCAL) {
+            size = record->operandData.operands[2].value.signed_value;
+            offset = displacement + record->operandData.operands[2].object->u.var.uid + size;
+            if (offset == (SInt16)offset) {
+                *size_out = (SInt16)size;
+                return record;
+            }
+            return NULL;
+        }
+        return NULL;
     }
-    return 0;
+    return NULL;
 }
+#pragma auto_inline reset
 
 void ConstantPropagation_PropagateConstantsInBlock(struct PCodeBlock *block)
 {
@@ -463,111 +493,90 @@ void ConstantPropagation_PropagateConstantsInBlock(struct PCodeBlock *block)
     }
 }
 
-struct PCodeInstruction *find_dlocal_addi(PCodeOperand *operand, SInt16 *size_out, SInt16 displacement)
+static int GetMask(int index, unsigned int *out)
 {
-    SInt32 size;
-    struct PCodeInstruction *entry;
-    struct PCodeInstruction *record;
-    SInt32 offset;
-
-    entry = unique_definitions[operand->value.reg];
-    if ((record = entry) != NULL && record->opcode == PC_ADDI) {
-        if (record->operandData.operands[2].kind == PCOp_MEMORY &&
-            record->operandData.operands[1].value.reg == stack_base_reg &&
-            record->operandData.operands[2].object->datatype == DLOCAL) {
-            size = record->operandData.operands[2].value.signed_value;
-            offset = displacement + record->operandData.operands[2].object->u.var.uid + size;
-            if (offset == (SInt16)offset) {
-                *size_out = (SInt16)size;
-                return record;
-            }
-            return NULL;
-        }
-        return NULL;
+    PCodeInstruction *t = unique_definitions[index];
+    if (t != NULL && t->opcode == PC_RLWINM) {
+        *out = RangeMask(t->operandData.operands[3], t->operandData.operands[4]);
+        return 1;
     }
-    return NULL;
+    return 0;
 }
 
-void ConstantPropagation_FindUniqueDefinitions(struct PCodeBlock *state)
+static int GetKind2(int index)
 {
+    PCodeInstruction *t = unique_definitions[index];
+    if (t != NULL && (t->flags & fIsRead)) {
+        if (t->opcode >= 0x19 && t->opcode <= 0x1c)
+            return 2;
+        if (t->opcode >= 0x15 && t->opcode <= 0x18)
+            return 1;
+    }
+    return 0;
+}
+
+static int GetKind(int index)
+{
+    PCodeInstruction *t = unique_definitions[index];
+    if (t != NULL) {
+        if (t->flags & fIsRead) {
+            if (t->opcode >= 29 && t->opcode <= 32)
+                return 2;
+        } else {
+            if (t->opcode == PC_EXTSB)
+                return 1;
+            if (t->opcode == PC_EXTSH)
+                return 2;
+        }
+    }
+    return 0;
+}
+
+static int GetSync(int index, short *out, short *typeout)
+{
+    PCodeInstruction *t = virtual_register_definitions[index];
+    if (t != NULL && (t->opcode == PC_VSPLTISB || (unsigned short)(t->opcode - 0x15f) <= 1) &&
+        t->operandData.operands[1].kind == PCOp_IMMEDIATE) {
+        *out = (short)t->operandData.operands[1].value.signed_value;
+        *typeout = t->opcode;
+        return 1;
+    }
+    return 0;
+}
+
+static int GetConst(int index, short *out)
+{
+    PCodeInstruction *t = unique_definitions[index];
+    if (t != NULL && t->opcode == PC_LI && t->operandData.operands[1].kind == PCOp_IMMEDIATE) {
+        *out = (short)t->operandData.operands[1].value.signed_value;
+        return 1;
+    }
+    return 0;
+}
+
+static void SetType(PCodeInstruction *p, short t)
+{
+    p->flags = gPCodeOpcodeDescriptors[t].flags | (p->flags & ~gPCodeOpcodeDescriptors[p->opcode].flags);
+    p->opcode = (short)t;
+}
+
+void COpt_ConstantPropagation(void)
+{
+    PCodeBlock *block;
     SInt32 i;
-    SInt32 j;
-    struct CodeMotionEntryLink *def;
-    SInt32 reg;
-    struct PCodeInstruction *result;
 
-    for (i = 0; i < gUsedVirtualRegistersGPR; i++) {
-        result = NULL;
-        for (def = code_motion_register_definition_heads[i]; def != NULL; def = def->next) {
-            reg = def->entry_index;
-            if (data_00587fe4[state->index].definition_sets[2][reg >> 5] & (1 << reg)) {
-                if (result == NULL) {
-                    result = code_motion_entries[reg].instruction;
-                } else {
-                    result = NULL;
-                    break;
-                }
+    gConstantPropagationChanged = 0;
+    COpt_SetLoopCodeMotionMode(0);
+    unique_definitions = galloc(gUsedVirtualRegistersGPR * 4);
+    virtual_register_definitions = galloc(gUsedVirtualRegistersVR * 4);
+    do {
+        constantPropagationChanged = 0;
+        for (i = 0; i < gPCodeBlockCount; i++) {
+            if ((block = gPCodeBlockOrder[i]) != NULL) {
+                ConstantPropagation_FindUniqueDefinitions(block);
+                ConstantPropagation_PropagateConstantsInBlock(block);
             }
         }
-        unique_definitions[i] = result;
-    }
-
-    for (j = 0; j < gUsedVirtualRegistersVR; j++) {
-        struct PCodeInstruction *vresult;
-        SInt32 vreg;
-        struct CodeMotionEntryLink *vdef;
-        vresult = NULL;
-        for (vdef = register_definition_heads[j]; vdef != NULL; vdef = vdef->next) {
-            vreg = vdef->entry_index;
-            if (data_00587fe4[state->index].definition_sets[2][vreg >> 5] & (1 << vreg)) {
-                if (vresult == NULL) {
-                    vresult = code_motion_entries[vreg].instruction;
-                } else {
-                    vresult = NULL;
-                    break;
-                }
-            }
-        }
-        virtual_register_definitions[j] = vresult;
-    }
-}
-
-void COpt_LoadDeletion(void)
-{
-    int blockIndex;
-    CBlockData *sets;
-    int instructionIndex;
-    struct E *entry;
-    int k;
-    UInt32 *secondSet;
-
-    gLoadDeletionChanged = 0;
-    LoadDeletion_InitializeLoadLivenessRecordCounts();
-    if (data_0058820c > 0) {
-        COpt_SetLoopCodeMotionMode(0);
-        LoadDeletion_RecordImmediateLoadLiveness();
-        data_00587c98 = (CBlockData *)oalloc(gPCodeBlockCount * sizeof(CBlockData));
-        blockIndex = 0;
-        sets = data_00587c98;
-        while (blockIndex < gPCodeBlockCount) {
-            sets->generatedLoads = (UInt32 *)oalloc(((data_0058820c + 31) >> 5) * sizeof(UInt32));
-            secondSet = (UInt32 *)oalloc(((data_0058820c + 31) >> 5) * sizeof(UInt32));
-            blockIndex++;
-            sets->killedLoads = secondSet;
-            sets++;
-        }
-        LoadDeletion_BuildLoadLivenessSets();
-        for (instructionIndex = 0; instructionIndex < data_0058820c; instructionIndex++) {
-            k = 0;
-            entry = &immediateLoadLiveness[instructionIndex];
-            (void)((int)entry * k);
-            if (entry->flag != 0)
-                continue;
-            if ((entry->inst->flags & fSideEffects) != 0)
-                continue;
-            PCode_UnlinkInstruction(entry->inst);
-            gLoadDeletionChanged = 1;
-        }
-    }
+    } while (constantPropagationChanged != 0);
     freeoheap();
 }
