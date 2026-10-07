@@ -263,10 +263,19 @@ src/driver/StringUtils.c:
 	.data       start:0x0054AA30 end:0x0054AA60
 	.bss        start:0x0057DB60 end:0x0057DC60
 
+src/driver/ParserErrors.c:
+	.text       start:0x0040EB76 end:0x0040EED5 align:1
+	.data       start:0x0054AA60 end:0x0054AA78
+	.bss        start:0x0057DC60 end:0x0057E060
+
+src/driver/Arguments.c:
+	.text       start:0x0040EED5 end:0x0040FCAB align:1
+	.data       start:0x0054AA78 end:0x0054ABD0
+	.bss        start:0x0057E060 end:0x0057E1E0
+
 src/driver/Targets.c:
-	.text       start:0x0040EB76 end:0x0040FE30 align:1
-	.data       start:0x0054AA60 end:0x0054AC28
-	.bss        start:0x0057DC60 end:0x0057E1E0
+	.text       start:0x0040FCAB end:0x0040FE30 align:1
+	.data       start:0x0054ABD0 end:0x0054AC28
 
 src/msl/misc_io.c:
 	.text       start:0x0040FE30 end:0x0040FE50

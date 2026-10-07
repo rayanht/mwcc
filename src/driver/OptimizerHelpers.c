@@ -6,6 +6,7 @@
 #include "compiler/win32.h"
 #include "driver/Memory.h"
 #include "driver/Option.h"
+#include "driver/ParserErrors.h"
 #include "driver/Projects.h"
 #include "driver/StringUtils.h"
 #include "driver/TargetOptimizer-ppc-eabi.h"

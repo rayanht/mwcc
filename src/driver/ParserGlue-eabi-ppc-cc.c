@@ -2,9 +2,11 @@
 #pragma scheduling off
 #include "compiler/common.h"
 #include "driver/ParserGlue-eabi-ppc-cc.h"
+#include "driver/Arguments.h"
 #include "driver/Memory.h"
 #include "driver/OptimizerHelpers.h"
 #include "driver/Option.h"
+#include "driver/ParserErrors.h"
 #include "driver/ParserHelpers-cc.h"
 #include "driver/ParserHelpers.h"
 #include "driver/Projects.h"

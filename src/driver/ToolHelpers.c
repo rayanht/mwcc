@@ -1,6 +1,7 @@
 #define CERROR_FILE "unknown.c"
 #include "compiler/common.h"
 #include "driver/ToolHelpers.h"
+#include "driver/ParserErrors.h"
 #include "driver/ParserHelpers.h"
 #include "compiler/win32.h"
 #include "compiler/CPrep.h"

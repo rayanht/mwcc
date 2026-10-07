@@ -9,6 +9,7 @@
 #include "driver/MacSpecs.h"
 #include "driver/Memory.h"
 #include "driver/MsDos.h"
+#include "driver/ParserErrors.h"
 #include "driver/ParserFace.h"
 #include "driver/ParserGlue-eabi-ppc-cc.h"
 #include "driver/ParserHelpers-cc.h"

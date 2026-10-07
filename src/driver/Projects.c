@@ -14,6 +14,7 @@
 #include "driver/MacSpecs.h"
 #include "driver/Memory.h"
 #include "driver/MsDos.h"
+#include "driver/ParserErrors.h"
 #include "driver/ParserFace.h"
 #include "driver/StringUtils.h"
 #include "driver/Targets.h"

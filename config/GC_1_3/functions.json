@@ -2154,43 +2154,43 @@
     "name": "Targets_FormatAndDispatchMessage",
     "address": "0x0040eed6",
     "size": 53,
-    "source": "src/driver/Targets.c"
+    "source": "src/driver/ParserErrors.c"
   },
   {
     "name": "Targets_ReportFormattedMessage",
     "address": "0x0040ef0b",
     "size": 46,
-    "source": "src/driver/Targets.c"
+    "source": "src/driver/ParserErrors.c"
   },
   {
     "name": "format_and_dispatch_message",
     "address": "0x0040ef39",
     "size": 46,
-    "source": "src/driver/Targets.c"
+    "source": "src/driver/ParserErrors.c"
   },
   {
     "name": "format_and_forward_message",
     "address": "0x0040ef67",
     "size": 40,
-    "source": "src/driver/Targets.c"
+    "source": "src/driver/ParserErrors.c"
   },
   {
     "name": "format_and_report_message",
     "address": "0x0040ef8f",
     "size": 51,
-    "source": "src/driver/Targets.c"
+    "source": "src/driver/ParserErrors.c"
   },
   {
     "name": "report_operating_system_error",
     "address": "0x0040efc2",
     "size": 55,
-    "source": "src/driver/Targets.c"
+    "source": "src/driver/ParserErrors.c"
   },
   {
     "name": "Targets_GetResourceCString",
     "address": "0x0040eff9",
     "size": 24,
-    "source": "src/driver/Targets.c"
+    "source": "src/driver/ParserErrors.c"
   },
   {
     "name": "fn_0040f011",
@@ -2211,7 +2211,7 @@
     "name": "Targets_ReportOperatingSystemError",
     "address": "0x0040f10d",
     "size": 94,
-    "source": "src/driver/Targets.c"
+    "source": "src/driver/ParserErrors.c"
   },
   {
     "name": "fn_0040f16b",
@@ -2222,7 +2222,7 @@
     "name": "Targets_ForwardVarArgsAndLongjmp",
     "address": "0x0040f1bf",
     "size": 58,
-    "source": "src/driver/Targets.c"
+    "source": "src/driver/ParserErrors.c"
   },
   {
     "name": "fn_0040f1f9",
@@ -2263,25 +2263,25 @@
     "name": "has_more_tokens_or_args",
     "address": "0x0040f6c4",
     "size": 62,
-    "source": "src/driver/Targets.c"
+    "source": "src/driver/Arguments.c"
   },
   {
     "name": "tokenize_arguments",
     "address": "0x0040f702",
     "size": 735,
-    "source": "src/driver/Targets.c"
+    "source": "src/driver/Arguments.c"
   },
   {
     "name": "Targets_ParseArguments",
     "address": "0x0040f9e1",
     "size": 557,
-    "source": "src/driver/Targets.c"
+    "source": "src/driver/Arguments.c"
   },
   {
     "name": "Targets_FreeTokenText",
     "address": "0x0040fc0e",
     "size": 77,
-    "source": "src/driver/Targets.c"
+    "source": "src/driver/Arguments.c"
   },
   {
     "name": "fn_0040fc5b",
@@ -2302,7 +2302,7 @@
     "name": "Targets_IsValueNullOrZero",
     "address": "0x0040fc9e",
     "size": 23,
-    "source": "src/driver/Targets.c"
+    "source": "src/driver/Arguments.c"
   },
   {
     "name": "fn_0040fcb5",
@@ -2318,13 +2318,13 @@
     "name": "Targets_GetTokenTextDescription",
     "address": "0x0040fcdd",
     "size": 130,
-    "source": "src/driver/Targets.c"
+    "source": "src/driver/Arguments.c"
   },
   {
     "name": "Targets_CopyTokenText",
     "address": "0x0040fd5f",
     "size": 149,
-    "source": "src/driver/Targets.c"
+    "source": "src/driver/Arguments.c"
   },
   {
     "name": "fn_0040fdf4",
@@ -2340,7 +2340,7 @@
     "name": "Targets_InitPtrList",
     "address": "0x0040fea5",
     "size": 28,
-    "source": "src/driver/Targets.c"
+    "source": "src/driver/Arguments.c"
   },
   {
     "name": "fn_0040fec1",
@@ -2351,13 +2351,13 @@
     "name": "terminate_ptr_list",
     "address": "0x0040ff43",
     "size": 28,
-    "source": "src/driver/Targets.c"
+    "source": "src/driver/Arguments.c"
   },
   {
     "name": "Targets_InitIntegerSequenceResult",
     "address": "0x0040ff5f",
     "size": 45,
-    "source": "src/driver/Targets.c"
+    "source": "src/driver/Arguments.c"
   },
   {
     "name": "fn_0040ff8c",

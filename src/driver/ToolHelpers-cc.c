@@ -9,6 +9,7 @@
 #include "driver/MsDos.h"
 #include "driver/Option.h"
 #include "driver/Parameter.h"
+#include "driver/ParserErrors.h"
 #include "driver/ParserFace.h"
 #include "driver/ParserGlue-eabi-ppc-cc.h"
 #include "driver/ParserHelpers.h"

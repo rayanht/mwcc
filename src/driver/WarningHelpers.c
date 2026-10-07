@@ -2,6 +2,7 @@
 #include "driver/WarningHelpers.h"
 #include "driver/CWPluginsPrivate.h"
 #include "driver/Memory.h"
+#include "driver/ParserErrors.h"
 #include "driver/ParserFace.h"
 #include "driver/Projects.h"
 #include "driver/StringUtils.h"

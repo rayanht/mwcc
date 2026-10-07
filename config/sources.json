@@ -1308,6 +1308,36 @@
       "src/driver"
     ]
   },
+  "src/driver/ParserErrors.c": {
+    "compiler": "pro53",
+    "flags": [
+      "-O1",
+      "-opt",
+      "intrinsics",
+      "-sym",
+      "off",
+      "-Cpp_exceptions",
+      "off"
+    ],
+    "include_dirs": [
+      "src/driver"
+    ]
+  },
+  "src/driver/Arguments.c": {
+    "compiler": "pro53",
+    "flags": [
+      "-O1",
+      "-opt",
+      "intrinsics",
+      "-sym",
+      "off",
+      "-Cpp_exceptions",
+      "off"
+    ],
+    "include_dirs": [
+      "src/driver"
+    ]
+  },
   "src/driver/Targets.c": {
     "compiler": "pro53",
     "flags": [
@@ -1321,8 +1351,7 @@
     ],
     "include_dirs": [
       "src/driver"
-    ],
-    "status": "NonMatching"
+    ]
   },
   "src/driver/Projects.c": {
     "compiler": "pro53",
