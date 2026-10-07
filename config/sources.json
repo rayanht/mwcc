@@ -617,8 +617,6 @@
     "compiler": "pro53",
     "flags": [
       "-O4,p",
-      "-inline",
-      "auto",
       "-sym",
       "off",
       "-Cpp_exceptions",
@@ -626,8 +624,7 @@
     ],
     "include_dirs": [
       "src/driver"
-    ],
-    "status": "NonMatching"
+    ]
   },
   "src/driver/CLDependencies.c": {
     "compiler": "pro53",

@@ -67,7 +67,7 @@ public:
     UInt8 trailingStorage[0xa2];  /* 0x1a4 */
     InitializationAuxiliaryState *auxiliary; /* 0x246 */
     UInt8 opaqueTail[0x1c];       /* 0x24a */
-    char *sharedValue;            /* 0x266 */
+    void **callbacks;             /* 0x266 */
 };
 #pragma options align=reset
 

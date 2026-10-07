@@ -34,9 +34,6 @@ extern "C" {
 #include "mwcc/Plugins.h"
 #include "driver/CWPluginsPrivate.h"
 #include "driver/ErrMgr.h"
-/* References, values and path strings supplied to the drop-in callback. */
-
-char reserved[44];
 
 typedef OSSpec DropinPath;
 
@@ -53,8 +50,6 @@ int __stdcall cache_precompiled_header(unsigned int context, short *callback, in
     CLBrowser_CacheFileText(&callbackName, callbackBuffer, 1);
     return 0;
 }
-
-/* The files list contains DropinFileRecord records. */
 
 unsigned int __stdcall call_primary_reference_callback(unsigned int argument, unsigned int key, void *extra)
 {
@@ -143,6 +138,34 @@ int __stdcall store_object_data(int compiler, int dropinId, DropinConfiguration 
     }
     return 0;
 }
+
+unsigned int __stdcall clear_primary_reference_value(unsigned int unused0, unsigned int recordKey, unsigned int unused2)
+{
+    DropinFileRecord *record;
+    if (optsCmdLine.verbose > (short)3) {
+        CLIO_FormatAndDispatchText("Callback: %s\n", (unsigned char *)"UCBFreeObjectData");
+    }
+    record = CLFiles_FindFileByIndex(&default_target->files, recordKey);
+    if (record == 0)
+        return 9U;
+    if ((unsigned int)record->objectData != 0U) {
+        Memory_FreeHandle((StorageHandle *)record->objectData);
+        record->objectData = 0U;
+        return 0U;
+    }
+    return 3U;
+}
+
+int __stdcall fn_00425ef0(unsigned int callbackContext, unsigned int callbackData)
+{
+    fn_004151d0(12U);
+    if (optsCmdLine.verbose > 3)
+        CLIO_FormatAndDispatchText("Callback: %s\n", (unsigned char *)"UCBDisplayLines");
+    if (fn_004151f0() != 0)
+        return 1;
+    return 0;
+}
+
 unsigned int __stdcall report_begin_sub_compile_not_implemented(unsigned int argument0, unsigned int argument1,
                                                                 unsigned int argument2)
 {
@@ -159,12 +182,6 @@ unsigned int __stdcall report_end_sub_compile_not_implemented(unsigned int unuse
     CLErrors_ReportInternalError("CLCompilerLinkerDropin_V10.cpp", 379, "UCBEndSubCompile not implemented");
     return 2U;
 }
-
-/* Drop-in request and per-file path state. */
-
-/* Settings record supplying the path base. */
-
-/* Common request header preceding the file-specific fields. */
 
 int __stdcall get_precompiled_header_spec(DropinRequest *request, int output, const char *path)
 {
@@ -260,19 +277,21 @@ unsigned int __stdcall report_unimplemented_resource_file_put(unsigned int, unsi
     return 2U;
 }
 
-/* Per-file state uses DropinFileRecord (get_precompiled_header_spec). */
+unsigned int fn_00426320(OSSpec *destination, DropinFileRecord *record)
+{
+    const CWObjectFlags *objectFlags;
+    objectFlags = CLPlugins_GetObjectFlags(record->selectedPlugin);
+    return CLProj_SetFileExtension(destination->name, objectFlags->pchFileExt ? objectFlags->pchFileExt : ".sbm",
+                                   objectFlags->pchFileExt ? objectFlags->pchFileExt[0] == '.' : 0);
+}
 
-static void resetcb(DropinFileCallback *p, char fl, int f6v)
+static inline void resetcb(DropinFileCallback *p, char fl, int f6v)
 {
     p->enableDependencyLookup = 1;
     p->searchOption = fl ? (char)1 : (char)0;
     p->fileKey = -1;
     p->suppressFileReferenceLookup = f6v;
 }
-
-/* Private drop-in request, settings, cache entry and result records. */
-
-/* File-list record with cached input and output names and paths. */
 
 #pragma opt_propagation off
 int __stdcall lookup_precompiled_unit(struct DropinRequest *request, char *inputName, char mode, void **outputObject,
@@ -486,6 +505,7 @@ int __stdcall store_precompiled_unit(void *compilerObject, char *filename, int s
     }
     return 0;
 }
+
 unsigned int __stdcall free_allocation(unsigned int unused, unsigned int allocation)
 {
     char *memory = (char *)allocation;
@@ -497,9 +517,17 @@ unsigned int __stdcall free_allocation(unsigned int unused, unsigned int allocat
     return 0U;
 }
 
-/* Record returned by call_00422a70_2; only these regions are used here. */
-
-/* Record and context passed to the drop-in callback. */
+unsigned int __stdcall copy_name_with_p_extension(unsigned int unused, const char *name, char *output)
+{
+    if (optsCmdLine.verbose > 3) {
+        CLIO_FormatAndDispatchText("Callback: %s\n", (unsigned char *)"UCBUnitNameToFileName");
+    }
+    strcpy(output, name);
+    if (ClientGlue_CompareLowercaseStrings(output + strlen(output) - 2, ".p") != 0) {
+        strcat(output, ".p");
+    }
+    return 0;
+}
 
 int __stdcall report_alert(DropinContext *context, const char *text, short errorCode)
 {
@@ -522,8 +550,6 @@ int __stdcall report_alert(DropinContext *context, const char *text, short error
     return 0;
 }
 
-/* Opaque drop-in request header and its referenced data. */
-
 int __stdcall report_os_error_message(struct DropinRequest *request, const char *message, short errorCode)
 {
     const char *messageText;
@@ -545,40 +571,12 @@ int __stdcall report_os_error_message(struct DropinRequest *request, const char 
     return 0;
 }
 
-unsigned int __stdcall get_object_file_spec(unsigned int unused, unsigned int key, unsigned int output)
-{
-    DropinFileRecord *record;
-    if (optsCmdLine.verbose > 3)
-        CLIO_FormatAndDispatchText("Callback: %s\n", (unsigned char *)"UCBGetStoredObjectFileSpec");
-
-    record = CLFiles_FindFileByIndex(&default_target->files, key);
-    if (!record)
-        return 9U;
-    if ((unsigned short)record->kind != 2U) {
-        CLErrors_ReportInternalError("CLCompilerLinkerDropin_V10.cpp", 989, "Lost stored object file spec for '%s'\n",
-                                     record->inputName);
-        return 2U;
-    }
-    MacSpecs_MakeCWFileSpecFromString((char *)&record->outputPath, (CWFileSpec *)output);
-    return 0U;
-}
-
 unsigned int __stdcall fn_00426da0(unsigned int unused, NameSpaceName *name, unsigned int unused2)
 {
     if (optsCmdLine.verbose > 3)
         CLIO_FormatAndDispatchText("Callback: %s\n", (unsigned char *)"UCBGetModifiedFiles");
     name->next = 0;
     CLErrors_ReportInternalError("CLCompilerLinkerDropin_V10.cpp", 945, "CWGetModifiedFiles not implemented!\n");
-    return 0;
-}
-
-int __stdcall fn_00425ef0(unsigned int callbackContext, unsigned int callbackData)
-{
-    fn_004151d0(12U);
-    if (optsCmdLine.verbose > 3)
-        CLIO_FormatAndDispatchText("Callback: %s\n", (unsigned char *)"UCBDisplayLines");
-    if (fn_004151f0() != 0)
-        return 1;
     return 0;
 }
 
@@ -600,54 +598,45 @@ unsigned int __stdcall get_file_output_path(unsigned int context, unsigned int f
     return 0;
 }
 
-unsigned int __stdcall copy_name_with_p_extension(unsigned int unused, const char *name, char *output)
-{
-    if (optsCmdLine.verbose > 3) {
-        CLIO_FormatAndDispatchText("Callback: %s\n", (unsigned char *)"UCBUnitNameToFileName");
-    }
-    strcpy(output, name);
-    if (ClientGlue_CompareLowercaseStrings(output + strlen(output) - 2, ".p") != 0) {
-        strcat(output, ".p");
-    }
-    return 0;
-}
-
-/* Opaque record carrying the string lookup value. */
-
-/* Packed string lookup result; the preceding data is not used here. */
-
-unsigned int fn_00426320(OSSpec *destination, DropinFileRecord *record)
-{
-    const char *text;
-    unsigned int startsWithDot;
-    text = CLPlugins_GetObjectFlags(record->selectedPlugin)->pchFileExt;
-    startsWithDot = text ? (text[0] == '.') : 0;
-    if (text == 0)
-        text = ".sbm";
-    return CLProj_SetFileExtension(destination->name, text, startsWithDot);
-}
-
-/* Drop-in record with an opaque prefix and a stored value. */
-
-unsigned int __stdcall clear_primary_reference_value(unsigned int unused0, unsigned int recordKey, unsigned int unused2)
+unsigned int __stdcall get_object_file_spec(unsigned int unused, unsigned int key, unsigned int output)
 {
     DropinFileRecord *record;
-    if (optsCmdLine.verbose > (short)3) {
-        CLIO_FormatAndDispatchText("Callback: %s\n", (unsigned char *)"UCBFreeObjectData");
-    }
-    record = CLFiles_FindFileByIndex(&default_target->files, recordKey);
-    if (record == 0)
+    if (optsCmdLine.verbose > 3)
+        CLIO_FormatAndDispatchText("Callback: %s\n", (unsigned char *)"UCBGetStoredObjectFileSpec");
+
+    record = CLFiles_FindFileByIndex(&default_target->files, key);
+    if (!record)
         return 9U;
-    if ((unsigned int)record->objectData != 0U) {
-        Memory_FreeHandle((StorageHandle *)record->objectData);
-        record->objectData = 0U;
-        return 0U;
+    if ((unsigned short)record->kind != 2U) {
+        CLErrors_ReportInternalError("CLCompilerLinkerDropin_V10.cpp", 989, "Lost stored object file spec for '%s'\n",
+                                     record->inputName);
+        return 2U;
     }
-    return 3U;
-}
+    MacSpecs_MakeCWFileSpecFromString((char *)&record->outputPath, (CWFileSpec *)output);
+    return 0U;
 }
 
-extern "C" {
+static void *compiler_linker_callbacks[21] = {(void *)cache_precompiled_header,
+                                              (void *)call_primary_reference_callback,
+                                              (void *)store_object_data,
+                                              (void *)clear_primary_reference_value,
+                                              (void *)fn_00425ef0,
+                                              (void *)report_begin_sub_compile_not_implemented,
+                                              (void *)report_end_sub_compile_not_implemented,
+                                              (void *)get_precompiled_header_spec,
+                                              (void *)fn_004262a0,
+                                              (void *)report_unimplemented_resource_file_put,
+                                              (void *)lookup_precompiled_unit,
+                                              (void *)log_callback,
+                                              (void *)store_precompiled_unit,
+                                              (void *)free_allocation,
+                                              (void *)copy_name_with_p_extension,
+                                              (void *)report_os_error_message,
+                                              (void *)report_alert,
+                                              (void *)fn_00426da0,
+                                              (void *)get_file_output_path,
+                                              (void *)get_object_file_spec,
+                                              NULL};
 }
 
 PluginC::PluginC() : PluginA(clState.plugintype, sizeof(PluginC))
@@ -680,5 +669,5 @@ PluginC::PluginC() : PluginA(clState.plugintype, sizeof(PluginC))
     value6 = 0;
     value7 = 0;
     memset(&trailingStorage, 0, 0xa2);
-    sharedValue = "p[B";
+    callbacks = compiler_linker_callbacks;
 }
