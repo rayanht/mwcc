@@ -55,12 +55,6 @@
 #include "compiler/Types.h"
 #include <string.h>
 
-#define CE_ASSERT(c, s)                                                                                                \
-    do {                                                                                                               \
-        if (c)                                                                                                         \
-            s;                                                                                                         \
-    } while (0)
-
 typedef enum { bt_false, bt_true } btype;
 
 static inline void begin_class_instantiation(TemplClassInst *instance, const DeclInfo *ctx)
@@ -5270,7 +5264,7 @@ TypeClass *CDecl_DefineClass(struct NameSpace *nspace, struct HashNameNode *name
     struct NameSpace *classSpace;
     struct ObjType *typeObject;
     if (type == NULL && nspace->theclass != NULL && (nspace->theclass->flags & CLASS_IS_TEMPL) != 0) {
-        CE_ASSERT(flag4 != 0, CError_FATAL(6004));
+        CError_ASSERT(6004, flag4 == 0);
         return &CTemplateClass_CreateClassTemplateDeclaration(nspace->theclass, name, mode)->theclass;
     }
     classSpace = CScope_NewListNameSpace(name, 1);

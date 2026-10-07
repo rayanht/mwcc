@@ -44,12 +44,6 @@ static UInt8 data_005824ce;
 static char lbl_005824cf[9];
 #pragma options align = reset
 
-#define CE_ASSERT(c, s)                                                                                                \
-    do {                                                                                                               \
-        if (c)                                                                                                         \
-            s;                                                                                                         \
-    } while (0)
-
 static inline char CTemplateFunc_MatchesSpecialization(Object *candidate, Type *value, TemplArg *context)
 {
     int index;
@@ -631,11 +625,6 @@ Object *select_unique_undominated_match(Object *func, struct ObjectList *funcs, 
 /* State records passed to the template deduction helpers. */
 /* Views of the metadata used during template substitution. */
 
-static inline void templateFunctionAssertion(int line)
-{
-    CError_Internal("CTemplateFunc.c", line);
-}
-
 unsigned char match_candidate_to_template_args(Object *candidate, Object *templ)
 {
     FuncArg *templateArg;
@@ -669,7 +658,7 @@ unsigned char match_candidate_to_template_args(Object *candidate, Object *templ)
     for (;;) {
         if (templateArg == NULL)
             break;
-        CE_ASSERT(templateArg->type == &stvoid, templateFunctionAssertion(299));
+        CError_ASSERT(299, templateArg->type != &stvoid);
         if (templateArg == &data_00583098 || templateArg == &data_00584748)
             break;
         templateArg = templateArg->next;
@@ -684,7 +673,7 @@ unsigned char match_candidate_to_template_args(Object *candidate, Object *templ)
     while (countRemaining > 0) {
         if (candidateArg == NULL)
             break;
-        CE_ASSERT(candidateArg->type == &stvoid, templateFunctionAssertion(313));
+        CError_ASSERT(313, candidateArg->type != &stvoid);
         if (candidateArg == &data_00583098 || candidateArg == &data_00584748)
             break;
         objectExpr = nullnode();
@@ -719,7 +708,7 @@ unsigned char match_candidate_to_template_args(Object *candidate, Object *templ)
         match_template_function_args(templ, &bindings, result.parameters, result.arguments, &deductionState)) {
         if (deductionState.score2Count != 0 || deductionState.score3Count != 0 || deductionState.score4Count != 0)
             return 0;
-        CE_ASSERT(templ->type->type != TYPEFUNC, templateFunctionAssertion(356));
+        CError_ASSERT(356, templ->type->type == TYPEFUNC);
         bindingList = bindings.args;
         templateInfo = CTemplTool_GetFuncTempl(templ);
         memclrw(&substitution, sizeof(substitution));
@@ -741,7 +730,7 @@ unsigned char match_candidate_to_template_args(Object *candidate, Object *templ)
                 break;
             if (matchArg == &data_00583098 || matchArg == &data_00584748)
                 break;
-            CE_ASSERT(deducedArg == 0, templateFunctionAssertion(380));
+            CError_ASSERT(380, deducedArg != 0);
             candidateType = matchArg->type;
             if (candidateType->type == TYPEPOINTER && (((TypePointer *)candidateType)->qual & Q_REFERENCE) != 0)
                 candidateType = ((TypePointer *)candidateType)->target;

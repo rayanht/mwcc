@@ -5113,8 +5113,6 @@ ENode *Intrinsics_MakeAltivecCall(Object *descriptor, ENodeList *args)
     return result;
 }
 
-#undef CE_ASSERT
-
 void fn_00486ad0(ENode *node, short unused, Operand *result, short target, unsigned short kind)
 {
     unsigned short secondaryReg;
@@ -5294,8 +5292,6 @@ void Intrinsics_00486db0(UInt16 token, ENode *unused, ENode *node, SInt16 reques
     result->reg = resultReg;
 }
 
-#undef CE_ASSERT
-
 void generate_unary_vector_intrinsic(UInt16 token, ENode *unused, ENode *node, SInt16 requestedReg, Operand *result)
 {
     IntrinsicVariant *variant;
@@ -5376,7 +5372,6 @@ void emit_instruction_with_vr_result(ENode *expression, ENode *left, ENode *righ
     result->reg = value.reg;
 }
 
-#undef CE_ASSERT
 /* Operand/register descriptor filled by the per-enode emit routines. */
 
 void emit_two_gpr_immediate_instruction(ENode *destination, ENode *source, ENode *immediate, SInt16 op)

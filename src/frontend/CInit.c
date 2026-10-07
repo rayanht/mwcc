@@ -1158,11 +1158,6 @@ int initialize_typed_data(InitializerData *data, CInit *init, Type *type, UInt32
     }
 }
 
-#define CE_ASSERT(c, s)                                                                                                \
-    do {                                                                                                               \
-        if (c)                                                                                                         \
-            s;                                                                                                         \
-    } while (0)
 /* Chained initialization data, with allocation state in the head block. */
 
 void CInit_004d2700(InitializerData *data, Type *type, UInt32 qual, Boolean flag)
@@ -1211,7 +1206,7 @@ void CInit_004d2700(InitializerData *data, Type *type, UInt32 qual, Boolean flag
             buffer = CompilerTools_AllocatePool(size);
             block = data;
             while (block != NULL) {
-                CE_ASSERT(block->offset + block->size > size, CError_FATAL(1577));
+                CError_ASSERT(1577, block->offset + block->size <= size);
                 memcpy(buffer + block->offset, block->buffer, block->size);
                 block = block->next;
             }

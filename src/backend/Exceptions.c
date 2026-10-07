@@ -40,11 +40,6 @@ static struct ObjGenRelocationRequest *exception_table_relocation_requests;
 static struct ObjGenRelocationRequest *relocation_request_tail;
 #pragma opt_lifetimes off
 
-#define CE_ASSERT(c, s)                                                                                                \
-    do {                                                                                                               \
-        if (c)                                                                                                         \
-            s;                                                                                                         \
-    } while (0)
 static inline unsigned short flags(void)
 {
     return CTool_EndianConvertWord16(gGPRSaveSpan << 11 | (gFPRSaveSpan & 31) << 6 | (data_005883ee != 0) << 5 |
@@ -72,8 +67,8 @@ void Exceptions_EmitExceptionTable(Object *object, int offset)
     AppendGListLong(&exception_records, 0);
     for (range = exception_scope_entries; range != NULL; range = range->next) {
         if (range->info->child_count == 0 && range->info->recordOffset == 0) {
-            CE_ASSERT(((size = exception_records.size) & 3) != 0,
-                      CompilerTools_AppendGListData(&exception_records, &fill, tableCursor = ((size + 3) & -4) - size));
+            if (((size = exception_records.size) & 3) != 0)
+                CompilerTools_AppendGListData(&exception_records, &fill, tableCursor = ((size + 3) & -4) - size);
             emit_exception_records(range->info);
         }
     }
@@ -110,7 +105,7 @@ void Exceptions_EmitExceptionTable(Object *object, int offset)
             location = location->previous;
             endOffset += 4;
         }
-        CE_ASSERT(((unsigned int)(endOffset - startOffset) >> 2 & -65536) != 0, CError_FATAL(953));
+        CError_ASSERT(953, ((unsigned int)(endOffset - startOffset) >> 2 & -65536) == 0);
         ((ExceptionTableEntry *)tableCursor)->offset = CTool_EndianConvertWord32(startOffset + 4);
         ((ExceptionTableEntry *)tableCursor)->length =
             CTool_EndianConvertWord16((unsigned int)(endOffset - startOffset) >> 2);

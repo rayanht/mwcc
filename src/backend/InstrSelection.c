@@ -44,11 +44,6 @@
 #include <stdlib.h>
 #include "compiler/ENode.h"
 
-#define CE_ASSERT(c, s)                                                                                                \
-    do {                                                                                                               \
-        if (c)                                                                                                         \
-            s;                                                                                                         \
-    } while (0)
 typedef void (*DispatchHandler)(unsigned char *input, int argument2, int argument3, struct DispatchResult *output);
 typedef void (*OperandGenFunc)(ENode *node, int a, int b, Operand *out);
 
@@ -3718,7 +3713,7 @@ void emit_postinc_postdec_gpr_pair(ENode *expr, short outputReg, short outputReg
             PCodeUtilities_EmitInstruction(PC_ADDME, sourceHi, sourceHi);
         }
     } else {
-        CE_ASSERT(operand->type == EBITFIELD, CError_FATAL(4709));
+        CError_ASSERT(4709, operand->type != EBITFIELD);
         kind = operand->type;
         data_00560648[kind](operand, 0, 0, &original);
         Operands_MakeIndirect(&original, operand);

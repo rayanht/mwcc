@@ -47,11 +47,6 @@ static struct SelectedNode *selected_nodes;
 static SInt32 predecessor_bitset_node_count;
 static struct PCodeBlock **data_00582c64;
 
-#define CE_ASSERT(c, s)                                                                                                \
-    do {                                                                                                               \
-        if (c)                                                                                                         \
-            s;                                                                                                         \
-    } while (0)
 #define SETB(a, i) ((a)[(i) >> 5] |= (UInt32)1 << (i))
 #define TESTB(a, i) ((a)[(i) >> 5] & ((UInt32)1 << (i)))
 #define bitvectorgetbit(n, bv) ((1 << ((n) & 31)) & (bv)[(n) >> 5])
@@ -349,7 +344,7 @@ void LoopDetection_CreatePreheader(Loop *region)
                         }
                     }
                 } else
-                    CE_ASSERT(predecessor->payload.block->next != oldBlock, CError_FATAL(496));
+                    CError_ASSERT(496, predecessor->payload.block->next == oldBlock);
             }
             successor = predecessor->payload.block->successors;
             if (successor != NULL) {

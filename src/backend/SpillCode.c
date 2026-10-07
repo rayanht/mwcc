@@ -84,12 +84,6 @@ void SpillCode_EmitOperandSpills(PCodeBlock *unused, PCodeInstruction *op)
     PCode_UnlinkInstruction(op);
 }
 
-#define CE_ASSERT(c, s)                                                                                                \
-    do {                                                                                                               \
-        if (c)                                                                                                         \
-            s;                                                                                                         \
-    } while (0)
-
 void SpillCode_ReplaceInstructionWithFPRSpillCode(PCodeBlock *block, PCodeInstruction *instruction)
 {
     int temporaryRegister;
@@ -108,7 +102,7 @@ void SpillCode_ReplaceInstructionWithFPRSpillCode(PCodeBlock *block, PCodeInstru
             temporaryRegister = gUsedVirtualRegistersFPR;
             gUsedVirtualRegistersFPR++;
             destinationType = destination->object->type;
-            CE_ASSERT(destination->object->datatype != DLOCAL, CError_FATAL(165));
+            CError_ASSERT(165, destination->object->datatype == DLOCAL);
             if ((destination->flags & 32) != 0) {
                 destinationOffset = low_word_offset;
             } else if ((destination->flags & 16) != 0) {
@@ -126,7 +120,7 @@ void SpillCode_ReplaceInstructionWithFPRSpillCode(PCodeBlock *block, PCodeInstru
                                                                            source->object, 0));
         } else {
             reloadType = destination->object->type;
-            CE_ASSERT(destination->object->datatype != DLOCAL, CError_FATAL(165));
+            CError_ASSERT(165, destination->object->datatype == DLOCAL);
             if ((destination->flags & 32) != 0) {
                 reloadOffset = low_word_offset;
             } else if ((destination->flags & 16) != 0) {
@@ -151,7 +145,7 @@ static inline void SC_InsertLoad(PCodeInstruction *instruction, InterferenceNode
 {
     PCodeInstruction *load;
     PCodeInstruction *load_address;
-    CE_ASSERT(node->object->datatype != DLOCAL, CError_FATAL(184));
+    CError_ASSERT(184, node->object->datatype == DLOCAL);
     load_address = PCodeUtilities_CreateInstruction(63, spill_address_register, stack_base_reg, node->object, 0);
     load = PCodeUtilities_CreateInstruction(247, replacement_register, 0, spill_address_register);
     PCode_InsertInstructionBefore(instruction, load_address);
@@ -327,7 +321,7 @@ void SpillCode_RewriteSpilledFPRs(PCodeBlock *unused, PCodeInstruction *instruct
                     }
                     if (use_count) {
                         type = node->object->type;
-                        CE_ASSERT(node->object->datatype != DLOCAL, CError_FATAL(165));
+                        CError_ASSERT(165, node->object->datatype == DLOCAL);
                         if (node->flags & 32)
                             base_register = low_word_offset;
                         else if (node->flags & 16)

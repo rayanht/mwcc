@@ -61,12 +61,6 @@ static struct HashNameNode *csom_blank_name;
 
 struct S2;
 
-#define CE_ASSERT(c, s)                                                                                                \
-    do {                                                                                                               \
-        if (c)                                                                                                         \
-            s;                                                                                                         \
-    } while (0)
-
 struct S3;
 
 static inline ENode *CSOM_004e38b0_inline1(Type *v4)
@@ -616,7 +610,7 @@ void CSOM_CompleteClass(TypeClass *tclass)
             break;
         if ((firstMethod->qual & Q_INLINE) != 0)
             continue;
-        CE_ASSERT(firstMethod->type->type != TYPEFUNC, CError_FATAL(529));
+        CError_ASSERT(529, firstMethod->type->type == TYPEFUNC);
         ((TypeFunc *)firstMethod->type)->flags |= 4;
         tclass->action = 1;
         for (;;) {
@@ -1964,7 +1958,7 @@ ENode *CSOM_CreateMemberAccessExpr(BClassList *classList, ObjMemberVar *request,
         CError_ReportError(ERR_ILLEGAL_USE_NON_STATIC_MEMBER);
         return NULL;
     }
-    CE_ASSERT(expr->type != EINDIRECT, CError_FATAL(2069));
+    CError_ASSERT(2069, expr->type == EINDIRECT);
     expr = expr->data.monadic;
     do {
         if (classList->next == NULL) {
@@ -1990,7 +1984,7 @@ ENode *CSOM_CreateMemberAccessExpr(BClassList *classList, ObjMemberVar *request,
         functionObject.datatype = DFUNC;
         functionObject.type = TYPE(&data_005646b8);
         call = funccallexpr(&functionObject, expr, NULL, NULL, NULL);
-        CE_ASSERT(call->type != EFUNCCALL, CError_FATAL(1761));
+        CError_ASSERT(1761, call->type == EFUNCCALL);
         call->data.monadic = value;
         result = call;
     } while (0);

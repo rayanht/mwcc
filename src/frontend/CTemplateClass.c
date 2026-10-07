@@ -48,12 +48,6 @@
 
 typedef struct TCtx TCtx;
 
-#define CE_ASSERT(c, s)                                                                                                \
-    do {                                                                                                               \
-        if (c)                                                                                                         \
-            s;                                                                                                         \
-    } while (0)
-
 struct S2;
 struct S3;
 
@@ -393,7 +387,7 @@ void CTemplateClass_ParsePartialSpecialization(TemplateScopeState *scope, struct
     }
     templateClass = (TemplClass *)type;
     tk = CPrepTokenizer_GetNextToken();
-    CE_ASSERT(tk != '<', CError_FATAL(461));
+    CError_ASSERT(461, tk == '<');
     parameter = parameters;
     for (; parameter != NULL; parameter = parameter->next) {
         if (parameter->pid.type != 0) {
@@ -1519,7 +1513,7 @@ unsigned char CTemplateClass_InstantiateClass(TypeClass *theclass)
     int sourceSave;
     TemplArg *resolvedArgs;
     UInt32 typeResult;
-    CE_ASSERT((theclass->flags & CLASS_IS_TEMPL_INST) == 0, CError_FATAL(1907));
+    CError_ASSERT(1907, (theclass->flags & CLASS_IS_TEMPL_INST) != 0);
     if ((theclass->flags & CLASS_COMPLETED) != 0)
         return 1;
     if ((classInstance = (TemplClassInst *)theclass)->is_specialized != 0)
@@ -1527,12 +1521,12 @@ unsigned char CTemplateClass_InstantiateClass(TypeClass *theclass)
     templateClass = classInstance->templ;
     if (templateClass->inst_parent != NULL) {
         templateClass = (TemplClass *)templateClass->theclass.nspace->theclass;
-        CE_ASSERT((templateClass->theclass.flags & CLASS_IS_TEMPL) == 0, CError_FATAL(42));
+        CError_ASSERT(42, (templateClass->theclass.flags & CLASS_IS_TEMPL) != 0);
     }
     resolvedTemplate = templateClass;
     if (templateClass->pspecs != NULL &&
         CTemplateClass_SelectSpecialization(classInstance->inst_args, &resolvedTemplate, &resolvedArgs) != 0) {
-        CE_ASSERT(classInstance->oargs != 0, CError_FATAL(1926));
+        CError_ASSERT(1926, classInstance->oargs == 0);
         classInstance->templ = resolvedTemplate;
         classInstance->oargs = classInstance->inst_args;
         classInstance->inst_args = resolvedArgs;
@@ -1551,9 +1545,9 @@ unsigned char CTemplateClass_InstantiateClass(TypeClass *theclass)
     instantiation.inst = classInstance;
     instantiation.params = resolvedTemplate->templ__params;
     instantiation.args = classInstance->inst_args;
-    CE_ASSERT(resolvedTemplate->theclass.sominfo != 0, CError_FATAL(1958));
-    CE_ASSERT(resolvedTemplate->theclass.objcinfo != 0, CError_FATAL(1959));
-    CE_ASSERT(resolvedTemplate->theclass.vtable != 0, CError_FATAL(1960));
+    CError_ASSERT(1958, resolvedTemplate->theclass.sominfo == 0);
+    CError_ASSERT(1959, resolvedTemplate->theclass.objcinfo == 0);
+    CError_ASSERT(1960, resolvedTemplate->theclass.vtable == 0);
     classInstance->theclass.flags |= resolvedTemplate->theclass.flags & 8312;
     instantiate_bases(&instantiation, &classInstance->theclass, resolvedTemplate);
     instantiation.hasNewVBases = (classInstance->theclass.flags & CLASS_HAS_VBASES) != 0 &&
@@ -1587,7 +1581,7 @@ unsigned char CTemplateClass_InstantiateClass(TypeClass *theclass)
     }
     instantiate_ivars(&instantiation, &classInstance->theclass, resolvedTemplate);
     instantiate_namespace_objects(&instantiation, &classInstance->theclass, &resolvedTemplate->theclass);
-    CE_ASSERT(resolvedTemplate->theclass.friends != 0, CError_FATAL(2016));
+    CError_ASSERT(2016, resolvedTemplate->theclass.friends == 0);
     for (memberDeclaration = resolvedTemplate->actions; memberDeclaration != NULL;
          memberDeclaration = memberDeclaration->next) {
         switch (memberDeclaration->type) {
@@ -1614,7 +1608,7 @@ unsigned char CTemplateClass_InstantiateClass(TypeClass *theclass)
                 break;
             case TAT_OBJECTINIT:
                 for (objectMapping = instantiation.defActions;; objectMapping = objectMapping->next) {
-                    CE_ASSERT(objectMapping == 0, CError_FATAL(2047));
+                    CError_ASSERT(2047, objectMapping != 0);
                     if (objectMapping->action == memberDeclaration) {
                         fn_00449d60();
                         CError_SaveAndSetWrittenEntry(&memberDeclaration->source_ref, &sourceSave);
@@ -1639,7 +1633,7 @@ unsigned char CTemplateClass_InstantiateClass(TypeClass *theclass)
                 templateType = memberDeclaration->u.usingdecl.type;
                 access = memberDeclaration->u.usingdecl.access;
                 typeResult = 0;
-                CE_ASSERT(templateType->type != TYPETEMPLATE || templateType->dtype != 1, CError_FATAL(1802));
+                CError_ASSERT(1802, !(templateType->type != TYPETEMPLATE || templateType->dtype != 1));
                 instantiatedType =
                     CTemplTool_DeduceTypeCopy(&instantiation, (Type *)templateType->u.qual.type, &typeResult);
                 if (instantiatedType->type != TYPECLASS) {
@@ -1655,7 +1649,7 @@ unsigned char CTemplateClass_InstantiateClass(TypeClass *theclass)
                 break;
             case TAT_OBJECTDEF:
                 for (baseMapping = instantiation.defActions;; baseMapping = baseMapping->next) {
-                    CE_ASSERT(baseMapping == 0, CError_FATAL(2067));
+                    CError_ASSERT(2067, baseMapping != 0);
                     if (baseMapping->action == memberDeclaration) {
                         fn_00449d60();
                         CError_SaveAndSetWrittenEntry(&memberDeclaration->source_ref, &sourceSave);

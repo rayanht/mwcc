@@ -56,12 +56,6 @@
 #include <string.h>
 #include "compiler/ENode.h"
 
-#define CE_ASSERT(c, s)                                                                                                \
-    do {                                                                                                               \
-        if (c)                                                                                                         \
-            s;                                                                                                         \
-    } while (0)
-
 typedef struct _res res;
 
 static __inline CLabel *FindNode(HashNameNode *key)
@@ -1027,7 +1021,7 @@ ENode *parse_arithmetic_binary_expression(ENode *left, char op, SInt16 token)
         parsedRight = CExpr_RewriteConst(pointer_generation(assignment_expression()));
         right = parsedRight;
         if (CExpr_CheckOperator(token, operand, parsedRight, &result)) {
-            CE_ASSERT(result.expression == 0, CError_FATAL(6166));
+            CError_ASSERT(6166, result.expression != 0);
             return result.expression;
         }
         if (operand->rtype->type != TYPEINT && (operand->rtype->type != TYPEFLOAT || op == 33)) {
@@ -1624,8 +1618,8 @@ ENode *parse_binary_expression(ENode *left, unsigned char precedence, char condi
                         result = conversion.expression;
                         break;
                     }
-                    CE_ASSERT((left = conversion.left) == 0, CError_FATAL(4139));
-                    CE_ASSERT((convertedRight = conversion.right) == 0, CError_FATAL(4140));
+                    CError_ASSERT(4139, (left = conversion.left) != 0);
+                    CError_ASSERT(4140, (convertedRight = conversion.right) != 0);
                 }
                 result = CExpr_New_EDIV_Node(left, convertedRight, conditional);
                 break;
@@ -2877,7 +2871,7 @@ ENode *member_pointer_expression(void)
         wrapped->rtype = TYPE_POINTER(wrapped->rtype)->target;
         expr = wrapped;
     }
-    CE_ASSERT(right->type != EINDIRECT, CError_FATAL(4082));
+    CError_ASSERT(4082, right->type == EINDIRECT);
     resultNode = CompilerTools_AllocatePool(26);
     resultNode->type = EQUALNAME;
     resultNode->cost = 4;
@@ -3195,8 +3189,8 @@ ENode *CExpr_CastMemberPointer(ENode *value, TypeMemberPointer *sourceType, Type
     CInt64 words;
     Type *sourceClass;
     Type *targetClass;
-    CE_ASSERT(sourceType->ty2->type != TYPECLASS, CError_FATAL(3532));
-    CE_ASSERT(targetType->ty2->type != TYPECLASS, CError_FATAL(3533));
+    CError_ASSERT(3532, sourceType->ty2->type == TYPECLASS);
+    CError_ASSERT(3533, targetType->ty2->type == TYPECLASS);
     sourceClass = sourceType->ty2;
     targetClass = targetType->ty2;
     if (sourceClass == targetClass) {

@@ -56,12 +56,6 @@ static struct ExceptionAction *currentDobjstack;
 static struct ExceptionAction *current_dobjstack;
 #pragma options align = reset
 
-#define CE_ASSERT(c, s)                                                                                                \
-    do {                                                                                                               \
-        if (c)                                                                                                         \
-            s;                                                                                                         \
-    } while (0)
-
 static inline Boolean CException_HasThrow(Statement *s)
 {
     data_00581c30 = 0;
@@ -217,7 +211,7 @@ static inline ENode *CException_004e2c40_inline1(Object *p0, ENode *p1)
 {
     ENode *v3;
     v3 = CABI_DestroyObject(p0, p1, 1, 1, 0);
-    CE_ASSERT(v3->type != EFUNCCALL || v3->data.funccall.funcref->type != EOBJREF, CError_FATAL(609));
+    CError_ASSERT(609, !(v3->type != EFUNCCALL || v3->data.funccall.funcref->type != EOBJREF));
     if (v3->data.funccall.funcref->data.objref->datatype == DVFUNC) {
         v3->data.funccall.funcref->flags |= 128;
     }
@@ -1760,9 +1754,8 @@ void insert_temporary_object_destruction(Statement *statement, char flag1, char 
         if (flag1 == 0) {
             if (flag2 != 0) {
                 expr = statement->expr.expression;
-                CE_ASSERT(statement->expr.expression->rtype->type == TYPECLASS &&
-                              CClass_Destructor((TypeClass *)expr->rtype) != 0,
-                          CError_FATAL(2194));
+                CError_ASSERT(2194, !(statement->expr.expression->rtype->type == TYPECLASS &&
+                                      CClass_Destructor((TypeClass *)expr->rtype) != 0));
                 object = create_temp_object(expr->rtype);
                 statement->expr.expression = makediadicnode(create_objectnode(object), expr, 30);
             }

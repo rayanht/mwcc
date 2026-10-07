@@ -43,12 +43,6 @@
 #include "compiler/Switch.h"
 #include "driver/Files.h"
 
-#define CE_ASSERT(c, s)                                                                                                \
-    do {                                                                                                               \
-        if (c)                                                                                                         \
-            s;                                                                                                         \
-    } while (0)
-
 static void *trans_vtboffsets;
 static Object *CABI_ThisArg(void);
 
@@ -692,7 +686,7 @@ void CABI_MakeDefaultArgConstructor(TypeClass *theclass, Object *function)
     if (anyerrors != 0 || function->access == ACCESSNONE) {
         return;
     }
-    CE_ASSERT((defaults = function->u.func.defargdata) == 0, CError_FATAL(857));
+    CError_ASSERT(857, (defaults = function->u.func.defargdata) != 0);
     classFlags = theclass->eflags;
     if ((classFlags & CLASS_EFLAGS_INTERNAL) != 0) {
         function->flags |= OBJECT_INTERNAL;

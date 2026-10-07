@@ -530,12 +530,6 @@ void PCodeUtilities_EmitObjectInstructionWithPayload(Object *operand, SInt16 emi
         Exceptions_AppendScopeEntry(instruction, gCurrentStatement->dobjstack);
 }
 
-#define CE_ASSERT(c, s)                                                                                                \
-    do {                                                                                                               \
-        if (c)                                                                                                         \
-            s;                                                                                                         \
-    } while (0)
-
 void PCodeUtilities_EmitAddress(short resultReg, short baseReg, struct Object *object, short offset)
 {
     short addressReg;
@@ -562,7 +556,7 @@ void PCodeUtilities_EmitAddress(short resultReg, short baseReg, struct Object *o
             instruction->operandData.operands[1] = instruction->operandData.operands[2];
         }
     } else
-        CE_ASSERT(baseReg == 0, CError_FATAL(848));
+        CError_ASSERT(848, baseReg != 0);
 }
 
 PCodeInstruction *PCodeUtilities_CreateInstructionWithObject(short operand1, short operand2, Object *operand3,

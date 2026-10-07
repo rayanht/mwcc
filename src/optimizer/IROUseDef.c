@@ -48,12 +48,6 @@ static struct BitVector *used_defs_bitvector;
 static SInt32 data_00580638;
 inline void IROUseDef_SetBit(UInt32 bit, BitVector *bv);
 
-#define CE_ASSERT(c, s)                                                                                                \
-    do {                                                                                                               \
-        if (c)                                                                                                         \
-            s;                                                                                                         \
-    } while (0)
-
 static inline void process_record(VarRecord *record)
 {
     IRODef *reference;
@@ -167,9 +161,8 @@ void split_variable_range(VarRecord *entry)
             use->linear != NULL) {
             useReference = entry->object;
             useNode = fn_00459940(use->linear);
-            CE_ASSERT(useNode == 0 || useNode->type != IROLinearOperand || useNode->u.node->type != EOBJREF ||
-                          useNode->u.node->data.objref != useReference,
-                      CError_FATAL(1277));
+            CError_ASSERT(1277, !(useNode == 0 || useNode->type != IROLinearOperand ||
+                                  useNode->u.node->type != EOBJREF || useNode->u.node->data.objref != useReference));
             useNode->u.node->data.objref = object;
         }
     }
@@ -180,12 +173,11 @@ void split_variable_range(VarRecord *entry)
             (1 << definition->index & connected_defs_and_uses_bits->bits[definition->index >> 5]) != 0) {
             definitionReference = entry->object;
             definitionNode = definition->linear;
-            CE_ASSERT(definitionNode->type != IROLinearOperand || definitionNode->u.node->type != EOBJREF,
-                      CError_FATAL(1300));
+            CError_ASSERT(1300, !(definitionNode->type != IROLinearOperand || definitionNode->u.node->type != EOBJREF));
             if (definitionNode->u.node->data.objref == definitionReference) {
                 definitionNode->u.node->data.objref = object;
             } else
-                CE_ASSERT(definitionNode->u.node->data.objref != object, CError_FATAL(1312));
+                CError_ASSERT(1312, definitionNode->u.node->data.objref == object);
         }
     }
 }

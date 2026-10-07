@@ -52,12 +52,6 @@ static SInt32 data_00582c70;
 
 #define NULL 0
 
-#define CE_ASSERT(c, s)                                                                                                \
-    do {                                                                                                               \
-        if (c)                                                                                                         \
-            s;                                                                                                         \
-    } while (0)
-
 static inline LoopVar *findarray(LoopVar *a, Object *o)
 {
     for (; a; a = a->next)
@@ -302,8 +296,8 @@ void unroll_counting_loop(Loop *loop)
     copies = (PCodeBlock *)CompilerTools_AllocatePoolMemory(sizeof(PCodeBlock));
     copies->instructions = copies->reverse_instructions = NULL;
     for (iteration = 0; iteration < factor - 1; ++iteration) {
-        CE_ASSERT((first = loop->body->instructions) == 0, CError_FATAL(378));
-        CE_ASSERT((opcode = first->opcode) != 83 && opcode != 85 && opcode != 82 && opcode != 84, CError_FATAL(380));
+        CError_ASSERT(378, (first = loop->body->instructions) != 0);
+        CError_ASSERT(380, !((opcode = first->opcode) != 83 && opcode != 85 && opcode != 82 && opcode != 84));
         body = first->next;
         while (body && !(body->flags & PCodeInstruction_SkipCodeMotion)) {
             PCode_AppendInstruction(copies, PCode_CloneInstruction(body));

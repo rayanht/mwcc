@@ -53,12 +53,6 @@
 #include <string.h>
 #include <stdio.h>
 
-#define CE_ASSERT(c, s)                                                                                                \
-    do {                                                                                                               \
-        if (c)                                                                                                         \
-            s;                                                                                                         \
-    } while (0)
-
 static jmp_buf template_declaration_jmpbuf;
 static Boolean data_00582108;
 
@@ -507,7 +501,7 @@ void CTemplateNew_ParseTemplateDeclaration(TypeClass *templateClass)
         parse_function_template_declaration(&namespaceState, parameters, templateClass, &savedPosition.position);
     } while (0);
     if ((linkedNamespace = namespaceState.linkedNamespace) != NULL) {
-        CE_ASSERT(linkedNamespace->parent != namespaceState.scope, CError_FATAL(1609));
+        CError_ASSERT(1609, linkedNamespace->parent == namespaceState.scope);
         namespaceState.linkedNamespace->parent = namespaceState.scope->parent;
     }
     CScope_RestoreScope(&scopeSave);
@@ -1064,7 +1058,7 @@ void parse_template_member_definition(void *context, TypeClass *template_info, D
                                object->type, object->qual, declaration->thetype, declaration->qual);
             return;
         }
-        CE_ASSERT(object->datatype != DDATA, CError_FATAL(869));
+        CError_ASSERT(869, object->datatype == DDATA);
         CPrep_BufferTokensThroughSemicolon(&parsed_body, NULL);
     }
     if (parsed_body.tokens != 0) {

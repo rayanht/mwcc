@@ -1974,12 +1974,6 @@ UInt16 ObjGen_PPC_EABI_GetSectionIndex(short reg)
     return reg;
 }
 
-#define CE_ASSERT(c, s)                                                                                                \
-    do {                                                                                                               \
-        if (c)                                                                                                         \
-            s;                                                                                                         \
-    } while (0)
-
 InterruptGenerationRecord *fn_00488750(Object *object, BE_SymNode *linkage)
 {
     InterruptGenerationRecord *resolved;
@@ -1994,7 +1988,7 @@ InterruptGenerationRecord *fn_00488750(Object *object, BE_SymNode *linkage)
     InterruptGenerationRecord *previous;
 
     resolved = CodeGen_FindInterruptGenerationRecord(object->section);
-    CE_ASSERT(resolved->sectionIndex == 0, CError_FATAL(2299));
+    CError_ASSERT(2299, resolved->sectionIndex != 0);
     if ((previous = linkage->interruptInfo) == NULL) {
         linkage->interruptInfo = resolved;
         object->section = resolved->sectionIndex;
@@ -2032,8 +2026,8 @@ InterruptGenerationRecord *fn_00488750(Object *object, BE_SymNode *linkage)
                 lookup = lookup->next;
             } while (lookup != NULL);
         }
-        CE_ASSERT(lookup == 0, CError_FATAL(2320));
-        CE_ASSERT(lookup->target == 0, CError_FATAL(2321));
+        CError_ASSERT(2320, lookup != 0);
+        CError_ASSERT(2321, lookup->target != 0);
         PPCError_ReportError(129, linkage->nameData.hashName->name, lookup->target->name);
     }
     object->section = previous->sectionIndex;

@@ -286,12 +286,6 @@ static Boolean IsTemplDep(ENode *e)
     return e->rtype->type == TYPETEMPLDEPEXPR;
 }
 
-#define CE_ASSERT(c, s)                                                                                                \
-    do {                                                                                                               \
-        if (c)                                                                                                         \
-            s;                                                                                                         \
-    } while (0)
-
 static inline TemplArg *find(TemplArg *e, TemplParamID pid)
 {
     for (; e; e = e->next) {
@@ -561,9 +555,9 @@ TemplArg *find_template_argument(struct TypeDeduce *context, struct TemplParamID
 
     if ((entry = find(context->args, pid)))
         return entry;
-    CE_ASSERT((originalClass = context->tmclass) == 0, CError_FATAL(1678));
+    CError_ASSERT(1678, (originalClass = context->tmclass) != 0);
     if (!(currentClass = (TemplClass *)context->inst)) {
-        CE_ASSERT(originalClass->templ_parent == 0 || originalClass->inst_parent == 0, CError_FATAL(1681));
+        CError_ASSERT(1681, !(originalClass->templ_parent == 0 || originalClass->inst_parent == 0));
         originalClass = context->tmclass;
         currentClass = (TemplClass *)originalClass->inst_parent;
     }
@@ -1546,7 +1540,7 @@ TemplClass *CTemplTool_IsTemplate(TypeTemplDep *reference)
     TemplClass *nestedClass;
     TemplClass *resolved;
     TemplArg *arguments;
-    CE_ASSERT(reference->type != TYPETEMPLATE, CError_FATAL(242));
+    CError_ASSERT(242, reference->type == TYPETEMPLATE);
     if (reference->dtype == 2) {
         if (CTemplTool_IsIdenticalTemplArgList(reference->u.templ.args, (reference->u.templ.templ)->templ__params) !=
             0) {
@@ -1573,7 +1567,7 @@ TemplClass *CTemplTool_IsTemplate(TypeTemplDep *reference)
         return NULL;
     }
     if (reference->dtype == 4) {
-        CE_ASSERT(reference->u.qualtempl.type->dtype != 1, CError_FATAL(284));
+        CError_ASSERT(284, reference->u.qualtempl.type->dtype == 1);
         nestedParent = CTemplTool_IsTemplate(reference->u.qualtempl.type->u.qual.type);
         if (nestedParent != NULL) {
             nestedInstance =

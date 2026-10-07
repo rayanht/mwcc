@@ -125,12 +125,6 @@ ENode *CClass_AccessMember(ENode *node, Type *type, UInt32 quals, int value)
     return node;
 }
 
-#define CE_ASSERT(c, s)                                                                                                \
-    do {                                                                                                               \
-        if (c)                                                                                                         \
-            s;                                                                                                         \
-    } while (0)
-
 void narrow_bitfield_type(Type **type, int *displacement)
 {
     struct TypeBitfield *bitField;
@@ -241,8 +235,6 @@ void narrow_bitfield_type(Type **type, int *displacement)
     }
 }
 
-#undef CE_ASSERT
-
 Type *copy_pointer_array_type(Type *type)
 {
     TypePointer *copy;
@@ -260,12 +252,6 @@ Type *copy_pointer_array_type(Type *type)
 }
 
 #define FT_PTR(o) TYPE_POINTER(((TypeMemberFunc *)(o)->type)->functype)
-
-#define CE_ASSERT(c, s)                                                                                                \
-    do {                                                                                                               \
-        if (c)                                                                                                         \
-            s;                                                                                                         \
-    } while (0)
 
 static TypeMemberFunc *copyMemberFunction(TypeMemberFunc *type)
 {
@@ -1055,9 +1041,8 @@ ObjectList *prepend_base_method_copies(ObjectList *objects, Object *method, Type
         object->name = name;
         baseclass = (TypeClass *)base->type;
         functype = (TypeMemberFunc *)method->type;
-        CE_ASSERT(functype->type != TYPEFUNC || (functype->flags & FUNC_METHOD) == 0 ||
-                      functype->functype->type != TYPEPOINTER,
-                  CError_FATAL(1564));
+        CError_ASSERT(1564, !(functype->type != TYPEFUNC || (functype->flags & FUNC_METHOD) == 0 ||
+                              functype->functype->type != TYPEPOINTER));
         pointertype = (TypePointer *)galloc(sizeof(TypePointer));
         *pointertype = *(TypePointer *)functype->functype;
         pointertype->target = (Type *)baseclass;
