@@ -113,69 +113,6 @@ static char *enode_type_names[] = {
     "EASSBLK",
     "EVECTOR128CONST",
 };
-unsigned int IroDump_IsType1NodeType50(IROLinear *linear)
-{
-    if (linear->type == IROLinearOperand && linear->u.node->type == 50U)
-        return 1U;
-    return 0U;
-}
-
-SInt32 IroDump_IsPowerOfTwo(IROLinear *node, SInt32 *bit)
-{
-    SInt32 value;
-    SInt32 mask;
-    UInt32 index;
-    ENode *expr;
-
-    *bit = -1;
-    if (node->type == IROLinearOperand) {
-        if ((expr = node->u.node)->type == EINTCONST) {
-            if (expr->data.intval.hi != 0)
-                return 0;
-            value = expr->data.intval.lo;
-            mask = 1;
-            index = 0;
-            do {
-                if (mask == value) {
-                    *bit = index;
-                    return 1;
-                }
-                index++;
-                mask += mask;
-            } while (index < 31);
-        }
-    }
-    return 0;
-}
-
-int fn_0044d520(IROLinear *node)
-{
-    if (node->type == 1U &&
-        (node->u.node->type == EINTCONST || node->u.node->type == EASSBLK || node->u.node->type == EFLOATCONST))
-        return 1;
-    return 0;
-}
-
-Object *IroDump_GetObjRef(IROLinear *linear)
-{
-    if (linear->type == IROLinearOp1Arg && linear->nodetype == EINDIRECT &&
-        linear->u.monadic->type == IROLinearOperand && linear->u.monadic->u.node->type == EOBJREF)
-        return linear->u.monadic->u.node->data.objref;
-    return NULL;
-}
-
-void IroDump_Print(const char *message, ...)
-{
-    va_list arguments;
-    int argumentSize;
-
-    if (INT_005882b8 == 0)
-        return;
-
-    argumentSize = (va_list)(&message + 1) - (va_list)&message;
-    arguments = (va_list)&message + (argumentSize + 3) / 4 * 4;
-    vfprintf(iro_dump_output, message, arguments);
-}
 
 static inline void dump_separator(void)
 {
@@ -187,196 +124,6 @@ static inline void *dump_output_handle(void)
     return iro_dump_output;
 }
 
-void IroDump_DumpAddress(IROLinear *address, IROLinear *baseTerm, IROLinear *varTerm, IROLinear *constTerm)
-{
-    if (INT_005882b8 == 0)
-        return;
-    fprintf(iro_dump_output, "\n");
-    fprintf(iro_dump_output, "Address  :\n");
-    dump_linear_node(address);
-    fprintf(iro_dump_output, "\n");
-    fprintf(iro_dump_output, "BaseTerms:\n");
-    dump_linear_node(baseTerm);
-    fprintf(iro_dump_output, "\n");
-    fprintf(iro_dump_output, "VarTerms:\n");
-    dump_linear_node(varTerm);
-    fprintf(iro_dump_output, "\n");
-    fprintf(iro_dump_output, "ConstTerms:\n");
-    dump_linear_node(constTerm);
-    fprintf(iro_dump_output, "\n");
-}
-
-void IroDump_OpenLog(char *name)
-{
-    char path[256];
-
-    strcpy(path, name);
-    strcat(path, ".log");
-    iro_dump_output = fopen(path, "wt");
-}
-
-void IroDump_DumpExpressions(void)
-{
-    IROExpr *entry;
-
-    if (INT_005882b8 == 0)
-        return;
-
-    fprintf(dump_output_handle(), "Expressions\n\n");
-    for (entry = expr_list; entry != NULL; entry = entry->next) {
-        fprintf(dump_output_handle(), "%4d: %d FN:%d CE:%d NS:%d ", entry->index, entry->linear->index,
-                entry->node->index, entry->mayTrap, entry->hasSideEffects);
-        IroDump_PrintBitSet("Depends: ", entry->depends);
-        dump_separator();
-    }
-    dump_separator();
-}
-
-void IroDump_DumpDataFlow(void)
-{
-    IRONode *node;
-
-    if (INT_005882b8 == 0)
-        return;
-    for (node = iro_flowgraph_head; node != NULL; node = node->nextnode) {
-        fprintf(iro_dump_output, "Node %d\n", node->index);
-        IroDump_PrintBitSet("In:   ", node->in);
-        IroDump_PrintBitSet("Gen:  ", node->gen);
-        IroDump_PrintBitSet("Kill: ", node->kill);
-        IroDump_PrintBitSet("Out:  ", node->out);
-        IroDump_PrintBitSet("AA:   ", node->copyOut);
-    }
-}
-
-void IroDump_DumpVariables(void)
-{
-    VarRecord *var;
-
-    if (INT_005882b8 == 0)
-        return;
-    fprintf(iro_dump_output, "\nVariables\n");
-    for (var = var_records; var != NULL; var = var->next)
-        fprintf(iro_dump_output, "%5d %s %s\n", var->index, var->object->name->name,
-                var->noregister ? "<addressed>" : "");
-}
-
-void IroDump_DumpAssignments(void)
-{
-    IRONode *node;
-    IROLinear *linear;
-
-    if (INT_005882b8 == 0)
-        return;
-    fprintf(iro_dump_output, "\nAssignments\n\n");
-    for (node = iro_flowgraph_head; node != NULL; node = node->nextnode) {
-        for (linear = node->first; linear != NULL; linear = linear->next) {
-            if (linear->flags & IROLF_Assigned) {
-                fprintf(iro_dump_output, "%5d ", linear->index);
-                dump_linear_node(linear);
-            }
-            if (linear == node->last)
-                break;
-        }
-    }
-}
-
-void IroDump_DumpNode(IRONode *node)
-{
-    SInt32 i;
-    IROLinear *p;
-
-    if (INT_005882b8 == 0)
-        return;
-    fprintf(iro_dump_output, "Flowgraph node %d  First=%d, Last=%d\n", node->index, node->first->index,
-            node->last->index);
-    fprintf(iro_dump_output, "Succ = ");
-    for (i = 0; i < node->numsucc; i++)
-        fprintf(iro_dump_output, "%d ", node->succ[i]);
-    fprintf(iro_dump_output, "\n");
-    fprintf(iro_dump_output, "Pred = ");
-    for (i = 0; i < node->numpred; i++)
-        fprintf(iro_dump_output, "%d ", node->pred[i]);
-    fprintf(iro_dump_output, "\n");
-    fprintf(iro_dump_output, "MustReach = %d\n", node->mustreach);
-    fprintf(iro_dump_output, "LoopDepth = %d\n", node->loopdepth);
-    IroDump_PrintBitSet("Dom: ", node->dom);
-    for (p = node->first; p != NULL; p = p->next) {
-        dump_linear_node(p);
-        if (p == node->last)
-            break;
-    }
-    fprintf(iro_dump_output, "\n\n");
-}
-
-void dump_flowgraph(void)
-{
-    SInt32 i;
-    SInt32 count;
-    IROLinear *p;
-    UInt16 *list;
-    SInt32 j;
-    SInt32 npred;
-    UInt16 *pred;
-    IRONode *node;
-
-    if (INT_005882b8 == 0)
-        return;
-    if (iro_dump_output == NULL)
-        return;
-
-    fprintf(iro_dump_output, "\nFlowgraph\n");
-    for (node = iro_flowgraph_head; node != NULL; node = node->nextnode) {
-        fprintf(iro_dump_output, "Flowgraph node %d  First=%d, Last=%d\n", node->index, node->first->index,
-                node->last->index);
-        fprintf(iro_dump_output, "Succ = ");
-        count = node->numsucc;
-        list = node->succ;
-        if (INT_005882b8) {
-            for (i = 0; i < count; i++)
-                fprintf(iro_dump_output, "%d ", list[i]);
-            fprintf(iro_dump_output, "\n");
-        }
-        fprintf(iro_dump_output, "Pred = ");
-        pred = node->pred;
-        npred = node->numpred;
-        if (INT_005882b8) {
-            for (j = 0; j < npred; j++)
-                fprintf(iro_dump_output, "%d ", pred[j]);
-            fprintf(iro_dump_output, "\n");
-        }
-        fprintf(iro_dump_output, "MustReach = %d\n", node->mustreach);
-        fprintf(iro_dump_output, "LoopDepth = %d\n", node->loopdepth);
-        IroDump_PrintBitSet("Dom: ", node->dom);
-        p = node->first;
-        if (p != NULL) {
-            for (;;) {
-                dump_linear_node(p);
-                if (p == node->last)
-                    break;
-                p = p->next;
-            }
-        }
-        fprintf(iro_dump_output, "\n\n");
-    }
-    fprintf(iro_dump_output, "\n");
-    fflush(iro_dump_output);
-}
-
-void IroDump_DumpFunction(char *value, int enabled)
-{
-    char *name;
-    if ((unsigned char)enabled != 0U) {
-        if (data_005875b8 != 0U) {
-            name = data_005875b8->name->name;
-        } else {
-            name = "Init-code";
-        }
-        IroDump_Print("Dumping function %s after %s \n", name, value);
-        IroDump_Print("--------------------------------------------------------------------------------\n");
-        dump_flowgraph();
-    }
-}
-
 static inline void printBitIndex(const char *format, int bitIndex)
 {
     fprintf(iro_dump_output, (const char *)format, bitIndex);
@@ -385,40 +132,6 @@ static inline void printBitIndex(const char *format, int bitIndex)
 static inline void printBitSetText(const void *text)
 {
     fprintf(iro_dump_output, (const char *)text);
-}
-
-void IroDump_PrintBitSet(char *prefix, BitVector *bitset)
-{
-    Boolean inRange = 0;
-    Boolean firstRange = 1;
-    int bitIndex;
-    int rangeStart;
-
-    if (INT_005882b8 == 0)
-        return;
-
-    printBitSetText(prefix);
-    for (bitIndex = 0; bitIndex < bitset->size << 5; ++bitIndex) {
-        if (((bitIndex >> 5) < bitset->size) && ((1 << bitIndex & bitset->bits[bitIndex >> 5]) != 0)) {
-            if (!inRange) {
-                if (!firstRange) {
-                    struct _FILE *output = iro_dump_output;
-                    fputc(',', output);
-                }
-                firstRange = 0;
-                printBitIndex("%d", bitIndex);
-                inRange = 1;
-                rangeStart = bitIndex;
-            }
-        } else if (inRange) {
-            inRange = 0;
-            if (bitIndex != rangeStart + 1)
-                printBitIndex("-%d", bitIndex - 1);
-        }
-    }
-    if (inRange && bitIndex != rangeStart + 1)
-        printBitIndex("-%d", bitIndex - 1);
-    fprintf(iro_dump_output, "\n");
 }
 
 void dump_linear_node(IROLinear *node)
@@ -567,4 +280,292 @@ void dump_linear_node(IROLinear *node)
         }
     }
     fprintf(iro_dump_output, "\n");
+}
+
+void IroDump_PrintBitSet(char *prefix, BitVector *bitset)
+{
+    Boolean inRange = 0;
+    Boolean firstRange = 1;
+    int bitIndex;
+    int rangeStart;
+
+    if (INT_005882b8 == 0)
+        return;
+
+    printBitSetText(prefix);
+    for (bitIndex = 0; bitIndex < bitset->size << 5; ++bitIndex) {
+        if (((bitIndex >> 5) < bitset->size) && ((1 << bitIndex & bitset->bits[bitIndex >> 5]) != 0)) {
+            if (!inRange) {
+                if (!firstRange) {
+                    struct _FILE *output = iro_dump_output;
+                    fputc(',', output);
+                }
+                firstRange = 0;
+                printBitIndex("%d", bitIndex);
+                inRange = 1;
+                rangeStart = bitIndex;
+            }
+        } else if (inRange) {
+            inRange = 0;
+            if (bitIndex != rangeStart + 1)
+                printBitIndex("-%d", bitIndex - 1);
+        }
+    }
+    if (inRange && bitIndex != rangeStart + 1)
+        printBitIndex("-%d", bitIndex - 1);
+    fprintf(iro_dump_output, "\n");
+}
+
+void IroDump_DumpFunction(char *value, int enabled)
+{
+    char *name;
+    if ((unsigned char)enabled != 0U) {
+        if (data_005875b8 != 0U) {
+            name = data_005875b8->name->name;
+        } else {
+            name = "Init-code";
+        }
+        IroDump_Print("Dumping function %s after %s \n", name, value);
+        IroDump_Print("--------------------------------------------------------------------------------\n");
+        dump_flowgraph();
+    }
+}
+
+void dump_flowgraph(void)
+{
+    SInt32 i;
+    SInt32 count;
+    IROLinear *p;
+    UInt16 *list;
+    SInt32 j;
+    SInt32 npred;
+    UInt16 *pred;
+    IRONode *node;
+
+    if (INT_005882b8 == 0)
+        return;
+    if (iro_dump_output == NULL)
+        return;
+
+    fprintf(iro_dump_output, "\nFlowgraph\n");
+    for (node = iro_flowgraph_head; node != NULL; node = node->nextnode) {
+        fprintf(iro_dump_output, "Flowgraph node %d  First=%d, Last=%d\n", node->index, node->first->index,
+                node->last->index);
+        fprintf(iro_dump_output, "Succ = ");
+        count = node->numsucc;
+        list = node->succ;
+        if (INT_005882b8) {
+            for (i = 0; i < count; i++)
+                fprintf(iro_dump_output, "%d ", list[i]);
+            fprintf(iro_dump_output, "\n");
+        }
+        fprintf(iro_dump_output, "Pred = ");
+        pred = node->pred;
+        npred = node->numpred;
+        if (INT_005882b8) {
+            for (j = 0; j < npred; j++)
+                fprintf(iro_dump_output, "%d ", pred[j]);
+            fprintf(iro_dump_output, "\n");
+        }
+        fprintf(iro_dump_output, "MustReach = %d\n", node->mustreach);
+        fprintf(iro_dump_output, "LoopDepth = %d\n", node->loopdepth);
+        IroDump_PrintBitSet("Dom: ", node->dom);
+        p = node->first;
+        if (p != NULL) {
+            for (;;) {
+                dump_linear_node(p);
+                if (p == node->last)
+                    break;
+                p = p->next;
+            }
+        }
+        fprintf(iro_dump_output, "\n\n");
+    }
+    fprintf(iro_dump_output, "\n");
+    fflush(iro_dump_output);
+}
+
+void IroDump_DumpNode(IRONode *node)
+{
+    SInt32 i;
+    IROLinear *p;
+
+    if (INT_005882b8 == 0)
+        return;
+    fprintf(iro_dump_output, "Flowgraph node %d  First=%d, Last=%d\n", node->index, node->first->index,
+            node->last->index);
+    fprintf(iro_dump_output, "Succ = ");
+    for (i = 0; i < node->numsucc; i++)
+        fprintf(iro_dump_output, "%d ", node->succ[i]);
+    fprintf(iro_dump_output, "\n");
+    fprintf(iro_dump_output, "Pred = ");
+    for (i = 0; i < node->numpred; i++)
+        fprintf(iro_dump_output, "%d ", node->pred[i]);
+    fprintf(iro_dump_output, "\n");
+    fprintf(iro_dump_output, "MustReach = %d\n", node->mustreach);
+    fprintf(iro_dump_output, "LoopDepth = %d\n", node->loopdepth);
+    IroDump_PrintBitSet("Dom: ", node->dom);
+    for (p = node->first; p != NULL; p = p->next) {
+        dump_linear_node(p);
+        if (p == node->last)
+            break;
+    }
+    fprintf(iro_dump_output, "\n\n");
+}
+
+void IroDump_DumpAssignments(void)
+{
+    IRONode *node;
+    IROLinear *linear;
+
+    if (INT_005882b8 == 0)
+        return;
+    fprintf(iro_dump_output, "\nAssignments\n\n");
+    for (node = iro_flowgraph_head; node != NULL; node = node->nextnode) {
+        for (linear = node->first; linear != NULL; linear = linear->next) {
+            if (linear->flags & IROLF_Assigned) {
+                fprintf(iro_dump_output, "%5d ", linear->index);
+                dump_linear_node(linear);
+            }
+            if (linear == node->last)
+                break;
+        }
+    }
+}
+
+void IroDump_DumpVariables(void)
+{
+    VarRecord *var;
+
+    if (INT_005882b8 == 0)
+        return;
+    fprintf(iro_dump_output, "\nVariables\n");
+    for (var = var_records; var != NULL; var = var->next)
+        fprintf(iro_dump_output, "%5d %s %s\n", var->index, var->object->name->name,
+                var->noregister ? "<addressed>" : "");
+}
+
+void IroDump_DumpDataFlow(void)
+{
+    IRONode *node;
+
+    if (INT_005882b8 == 0)
+        return;
+    for (node = iro_flowgraph_head; node != NULL; node = node->nextnode) {
+        fprintf(iro_dump_output, "Node %d\n", node->index);
+        IroDump_PrintBitSet("In:   ", node->in);
+        IroDump_PrintBitSet("Gen:  ", node->gen);
+        IroDump_PrintBitSet("Kill: ", node->kill);
+        IroDump_PrintBitSet("Out:  ", node->out);
+        IroDump_PrintBitSet("AA:   ", node->copyOut);
+    }
+}
+
+void IroDump_DumpExpressions(void)
+{
+    IROExpr *entry;
+
+    if (INT_005882b8 == 0)
+        return;
+
+    fprintf(dump_output_handle(), "Expressions\n\n");
+    for (entry = expr_list; entry != NULL; entry = entry->next) {
+        fprintf(dump_output_handle(), "%4d: %d FN:%d CE:%d NS:%d ", entry->index, entry->linear->index,
+                entry->node->index, entry->mayTrap, entry->hasSideEffects);
+        IroDump_PrintBitSet("Depends: ", entry->depends);
+        dump_separator();
+    }
+    dump_separator();
+}
+
+void IroDump_OpenLog(char *name)
+{
+    char path[256];
+
+    strcpy(path, name);
+    strcat(path, ".log");
+    iro_dump_output = fopen(path, "wt");
+}
+
+void IroDump_DumpAddress(IROLinear *address, IROLinear *baseTerm, IROLinear *varTerm, IROLinear *constTerm)
+{
+    if (INT_005882b8 == 0)
+        return;
+    fprintf(iro_dump_output, "\n");
+    fprintf(iro_dump_output, "Address  :\n");
+    dump_linear_node(address);
+    fprintf(iro_dump_output, "\n");
+    fprintf(iro_dump_output, "BaseTerms:\n");
+    dump_linear_node(baseTerm);
+    fprintf(iro_dump_output, "\n");
+    fprintf(iro_dump_output, "VarTerms:\n");
+    dump_linear_node(varTerm);
+    fprintf(iro_dump_output, "\n");
+    fprintf(iro_dump_output, "ConstTerms:\n");
+    dump_linear_node(constTerm);
+    fprintf(iro_dump_output, "\n");
+}
+
+void IroDump_Print(const char *message, ...)
+{
+    va_list arguments;
+    int argumentSize;
+
+    if (INT_005882b8 == 0)
+        return;
+
+    argumentSize = (va_list)(&message + 1) - (va_list)&message;
+    arguments = (va_list)&message + (argumentSize + 3) / 4 * 4;
+    vfprintf(iro_dump_output, message, arguments);
+}
+
+Object *IroDump_GetObjRef(IROLinear *linear)
+{
+    if (linear->type == IROLinearOp1Arg && linear->nodetype == EINDIRECT &&
+        linear->u.monadic->type == IROLinearOperand && linear->u.monadic->u.node->type == EOBJREF)
+        return linear->u.monadic->u.node->data.objref;
+    return NULL;
+}
+
+int fn_0044d520(IROLinear *node)
+{
+    if (node->type == 1U &&
+        (node->u.node->type == EINTCONST || node->u.node->type == EASSBLK || node->u.node->type == EFLOATCONST))
+        return 1;
+    return 0;
+}
+
+SInt32 IroDump_IsPowerOfTwo(IROLinear *node, SInt32 *bit)
+{
+    SInt32 value;
+    SInt32 mask;
+    UInt32 index;
+    ENode *expr;
+
+    *bit = -1;
+    if (node->type == IROLinearOperand) {
+        if ((expr = node->u.node)->type == EINTCONST) {
+            if (expr->data.intval.hi != 0)
+                return 0;
+            value = expr->data.intval.lo;
+            mask = 1;
+            index = 0;
+            do {
+                if (mask == value) {
+                    *bit = index;
+                    return 1;
+                }
+                index++;
+                mask += mask;
+            } while (index < 31);
+        }
+    }
+    return 0;
+}
+
+unsigned int IroDump_IsType1NodeType50(IROLinear *linear)
+{
+    if (linear->type == IROLinearOperand && linear->u.node->type == 50U)
+        return 1U;
+    return 0U;
 }

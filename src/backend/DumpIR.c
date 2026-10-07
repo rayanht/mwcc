@@ -122,282 +122,60 @@ static char *data_00560cb4[75] = {
     "EVECTOR128CONST",
 };
 
-void dump_eat_nodes(ExceptionAction *p)
-{
-    char buf[256];
+static void PrintTypeLine(Type *type);
+static void PrintType(Type *type);
+static void WriteString(void *file, char *str);
 
-    while (p != NULL) {
-        fprintf(data_005811b0, "\t\t:");
-        switch (p->kind) {
-            case 1:
-                fprintf(data_005811b0, "EAT_DESTROYLOCAL %s(&%s)%s",
-                        COptimizer_GetFunctionObject(p->data.local.dtor)->name, p->data.local.object->name->name,
-                        "\r\n");
+void write_escaped_string(void *stream, char *string, SInt32 length)
+{
+    FILE *output = stream;
+    while (length--) {
+        switch (*string) {
+            case '\0':
+                fputs("\\x00", output);
                 break;
-            case 2:
-                fprintf(data_005811b0, "EAT_DESTROYLOCALCOND%s", "\r\n");
+            case '\a':
+                fputs("\\a", output);
                 break;
-            case 3:
-                fprintf(data_005811b0, "EAT_DESTROYLOCALOFFSET %s(&%s+%ld)%s",
-                        COptimizer_GetFunctionObject(p->data.local.dtor)->name, p->data.local.object->name->name,
-                        p->data.delete_pointer_cond.cond, "\r\n");
+            case '\b':
+                fputs("\\b", output);
                 break;
-            case 4:
-                fprintf(data_005811b0, "EAT_DESTROYLOCALPOINTER%s", "\r\n");
+            case '\f':
+                fputs("\\f", output);
                 break;
-            case 5:
-                fprintf(data_005811b0, "EAT_DESTROYLOCALARRAY%s", "\r\n");
+            case '\n':
+                fputs("\\n", output);
                 break;
-            case 17:
-                fprintf(data_005811b0, "EAT_DESTROYBASE %s(this+%ld)%s",
-                        COptimizer_GetFunctionObject(p->data.local.dtor)->name, p->data.delete_pointer_cond.cond,
-                        "\r\n");
+            case '\r':
+                fputs("\\r", output);
                 break;
-            case 7:
-                fprintf(data_005811b0, "EAT_DESTROYMEMBER %s(%s+%ld)%s",
-                        COptimizer_GetFunctionObject(p->data.local.dtor)->name, p->data.local.object->name->name,
-                        p->data.delete_pointer_cond.cond, "\r\n");
+            case '\t':
+                fputs("\\t", output);
                 break;
-            case 8:
-                fprintf(data_005811b0, "EAT_DESTROYMEMBERCOND if(%s) %s(this+%ld)%s", p->data.local.dtor->name->name,
-                        COptimizer_GetFunctionObject(p->data.delete_pointer_cond.cond)->name,
-                        p->data.member_cond.offset, "\r\n");
+            case '\v':
+                fputs("\\v", output);
                 break;
-            case 9:
-                fprintf(data_005811b0, "EAT_DESTROYMEMBERARRAY %s(this+%ld)[%ld] size: %ld%s",
-                        COptimizer_GetFunctionObject(p->data.local.dtor)->name, p->data.delete_pointer_cond.cond,
-                        p->data.member_cond.offset, p->data.catch_block.exceptionType, "\r\n");
-                break;
-            case 10:
-                fprintf(data_005811b0, "EAT_DELETEPOINTER(%s)%s", p->data.local.object->name->name, "\r\n");
-                break;
-            case 11:
-                fprintf(data_005811b0, "EAT_DELETELOCALPOINTER(%s)%s", p->data.local.object->name->name, "\r\n");
-                break;
-            case 12:
-                fprintf(data_005811b0, "EAT_DELETEPOINTERCOND if (%s)(%s)%s",
-                        p->data.delete_pointer_cond.cond->name->name, p->data.local.object->name->name, "\r\n");
-                break;
-            case 13:
-                fprintf(data_005811b0, "EAT_CATCHBLOCK ");
-                if (p->data.catch_block.exceptionType != NULL) {
-                    if (p->data.local.object != NULL) {
-                        fprintf(data_005811b0, "[%s]", p->data.local.object->name->name);
-                    } else {
-                        fprintf(data_005811b0, "[]");
-                    }
-                    format_type(p->data.catch_block.exceptionType, buf);
-                    fprintf(data_005811b0, " (%s)", buf);
-                } else {
-                    fprintf(data_005811b0, "[...] ");
-                }
-                fprintf(data_005811b0, " Label: %s%s", p->data.catch_block.label->uniquename->name, "\r\n");
-                break;
-            case 15:
-                fprintf(data_005811b0, "EAT_SPECIFICATION%s", "\r\n");
-                break;
-            case 14:
-                fprintf(data_005811b0, "EAT_ACTIVECATCHBLOCK%s", "\r\n");
-                break;
-            case 16:
-                fprintf(data_005811b0, "EAT_TERMINATE%s", "\r\n");
+            case '"':
+            case '\'':
+            case '?':
+            case '\\':
+                fputc('\\', output);
+                /* fallthrough */
+            default:
+                fputc(*string, output);
                 break;
         }
-        p = p->next;
+        string++;
     }
 }
 
-void format_type(Type *type, char *buf)
+void fn_004be840(void)
 {
-    char targetName[256];
-    char ownerName[256];
-
-    switch ((SInt8)type->type) {
-        case TYPEVOID:
-            strcpy(buf, "void");
-            return;
-
-        case TYPEINT:
-            switch (TYPE_INTEGRAL(type)->integral) {
-                case IT_BOOL:
-                    strcpy(buf, "bool");
-                    break;
-                case IT_CHAR:
-                    strcpy(buf, "char");
-                    break;
-                case IT_WCHAR_T:
-                    strcpy(buf, "wchar_t");
-                    break;
-                case IT_SCHAR:
-                    strcpy(buf, "signed char");
-                    break;
-                case IT_UCHAR:
-                    strcpy(buf, "unsigned char");
-                    break;
-                case IT_SHORT:
-                    strcpy(buf, "short");
-                    break;
-                case IT_USHORT:
-                    strcpy(buf, "unsigned short");
-                    break;
-                case IT_INT:
-                    strcpy(buf, "int");
-                    break;
-                case IT_UINT:
-                    strcpy(buf, "unsigned int");
-                    break;
-                case IT_LONG:
-                    strcpy(buf, "long");
-                    break;
-                case IT_ULONG:
-                    strcpy(buf, "unsigned long");
-                    break;
-                case IT_LONGLONG:
-                    strcpy(buf, "long long");
-                    break;
-                case IT_ULONGLONG:
-                    strcpy(buf, "unsigned long long");
-                    break;
-            }
-            break;
-
-        case TYPEFLOAT:
-            switch (TYPE_INTEGRAL(type)->integral) {
-                case IT_FLOAT:
-                    strcpy(buf, "float");
-                    break;
-                case IT_SHORTDOUBLE:
-                    strcpy(buf, "short double");
-                    break;
-                case IT_DOUBLE:
-                    strcpy(buf, "double");
-                    break;
-                case IT_LONGDOUBLE:
-                    strcpy(buf, "long double");
-                    break;
-            }
-            break;
-
-        case TYPEENUM:
-            strcpy(buf, "enum ");
-            if (TYPE_ENUM(type)->enumname != NULL)
-                strcat(buf, TYPE_ENUM(type)->enumname->name);
-            break;
-
-        case TYPESTRUCT: {
-            if ((int)(TYPE_STRUCT(type)->stype) >= 4 && (int)(TYPE_STRUCT(type)->stype) <= 14) {
-                switch (TYPE_STRUCT(type)->stype) {
-                    case 4:
-                        strcpy(buf, "vector unsigned char ");
-                        break;
-                    case 5:
-                        strcpy(buf, "vector signed char ");
-                        break;
-                    case 6:
-                        strcpy(buf, "vector bool char ");
-                        break;
-                    case 7:
-                        strcpy(buf, "vector unsigned short ");
-                        break;
-                    case 8:
-                        strcpy(buf, "vector signed short ");
-                        break;
-                    case 9:
-                        strcpy(buf, "vector bool short ");
-                        break;
-                    case 10:
-                        strcpy(buf, "vector unsigned int ");
-                        break;
-                    case 11:
-                        strcpy(buf, "vector signed int ");
-                        break;
-                    case 12:
-                        strcpy(buf, "vector bool int ");
-                        break;
-                    case 13:
-                        strcpy(buf, "vector float ");
-                        break;
-                    case 14:
-                        strcpy(buf, "vector pixel ");
-                        break;
-                }
-            } else {
-                strcpy(buf, "struct ");
-                if (TYPE_STRUCT(type)->name != NULL)
-                    strcat(buf, TYPE_STRUCT(type)->name->name);
-            }
-        } break;
-
-        case TYPECLASS:
-            strcpy(buf, "class ");
-            if (TYPE_CLASS(type)->classname != NULL)
-                strcat(buf, TYPE_CLASS(type)->classname->name);
-            break;
-
-        case TYPEFUNC:
-            format_type(TYPE_FUNC(type)->functype, targetName);
-            strcpy(buf, "freturns(");
-            strcat(buf, targetName);
-            strcat(buf, ")");
-            break;
-
-        case TYPEBITFIELD:
-            format_type(TYPE_BITFIELD(type)->bitfieldtype, targetName);
-            sprintf(buf, "bitfield(%s){%d:%d}", targetName, TYPE_BITFIELD(type)->offset,
-                    TYPE_BITFIELD(type)->bitlength);
-            break;
-
-        case TYPELABEL:
-            strcpy(buf, "label");
-            break;
-
-        case TYPEPOINTER:
-            format_type(TYPE_POINTER(type)->target, targetName);
-            strcpy(buf, "pointer(");
-            strcat(buf, targetName), strcat(buf, ")");
-            break;
-
-        case TYPEARRAY:
-            format_type(TYPE_POINTER(type)->target, targetName);
-            strcpy(buf, "array(");
-            strcat(buf, targetName);
-            strcat(buf, ")");
-            break;
-
-        case TYPEMEMBERPOINTER:
-            format_type(TYPE_MEMBER_POINTER(type)->ty2, targetName);
-            format_type(TYPE_MEMBER_POINTER(type)->ty1, ownerName);
-            strcpy(buf, "memberpointer(");
-            strcat(buf, targetName);
-            strcat(buf, ",");
-            strcat(buf, ownerName);
-            strcat(buf, ")");
-            break;
-    }
+    return;
 }
 
-static char lbl_005612f4[] = "\t\t%11s: %s\r\n";
-static char lbl_00561304[] = "\t\t    default: %s\r\n";
-
-static void WriteString(void *file, char *str)
+void fn_004be830(void *context, void *node)
 {
-    write_escaped_string(file, str, strlen(str));
-}
-
-static void PrintType(Type *type)
-{
-    char buf[256];
-    format_type(type, buf);
-    fprintf(data_005811b0, " (%s)", (unsigned int)buf);
-    fprintf(data_005811b0, "\r\n");
-}
-
-static void PrintTypeLine(Type *type)
-{
-    char buf[256];
-    format_type(type, buf);
-    fprintf(data_005811b0, " (%s)", (unsigned int)buf);
-    fputs("\r\n", data_005811b0);
 }
 
 void print_enode_tree(ENode *node, int depth)
@@ -579,54 +357,284 @@ void print_enode_tree(ENode *node, int depth)
     }
 }
 
-void fn_004be830(void *context, void *node)
+static void PrintTypeLine(Type *type)
 {
+    char buf[256];
+    format_type(type, buf);
+    fprintf(data_005811b0, " (%s)", (unsigned int)buf);
+    fputs("\r\n", data_005811b0);
 }
 
-void fn_004be840(void)
+static void PrintType(Type *type)
 {
-    return;
+    char buf[256];
+    format_type(type, buf);
+    fprintf(data_005811b0, " (%s)", (unsigned int)buf);
+    fprintf(data_005811b0, "\r\n");
 }
 
-void write_escaped_string(void *stream, char *string, SInt32 length)
+static void WriteString(void *file, char *str)
 {
-    FILE *output = stream;
-    while (length--) {
-        switch (*string) {
-            case '\0':
-                fputs("\\x00", output);
+    write_escaped_string(file, str, strlen(str));
+}
+
+/* The linker stripped the function that used these literals; they stay in the unit's .data. */
+static void DumpIR_StrippedLiterals(const char **literals)
+{
+    literals[0] = "\t\t%11s: %s\r\n";
+    literals[1] = "\t\t    default: %s\r\n";
+}
+
+void format_type(Type *type, char *buf)
+{
+    char targetName[256];
+    char ownerName[256];
+
+    switch ((SInt8)type->type) {
+        case TYPEVOID:
+            strcpy(buf, "void");
+            return;
+
+        case TYPEINT:
+            switch (TYPE_INTEGRAL(type)->integral) {
+                case IT_BOOL:
+                    strcpy(buf, "bool");
+                    break;
+                case IT_CHAR:
+                    strcpy(buf, "char");
+                    break;
+                case IT_WCHAR_T:
+                    strcpy(buf, "wchar_t");
+                    break;
+                case IT_SCHAR:
+                    strcpy(buf, "signed char");
+                    break;
+                case IT_UCHAR:
+                    strcpy(buf, "unsigned char");
+                    break;
+                case IT_SHORT:
+                    strcpy(buf, "short");
+                    break;
+                case IT_USHORT:
+                    strcpy(buf, "unsigned short");
+                    break;
+                case IT_INT:
+                    strcpy(buf, "int");
+                    break;
+                case IT_UINT:
+                    strcpy(buf, "unsigned int");
+                    break;
+                case IT_LONG:
+                    strcpy(buf, "long");
+                    break;
+                case IT_ULONG:
+                    strcpy(buf, "unsigned long");
+                    break;
+                case IT_LONGLONG:
+                    strcpy(buf, "long long");
+                    break;
+                case IT_ULONGLONG:
+                    strcpy(buf, "unsigned long long");
+                    break;
+            }
+            break;
+
+        case TYPEFLOAT:
+            switch (TYPE_INTEGRAL(type)->integral) {
+                case IT_FLOAT:
+                    strcpy(buf, "float");
+                    break;
+                case IT_SHORTDOUBLE:
+                    strcpy(buf, "short double");
+                    break;
+                case IT_DOUBLE:
+                    strcpy(buf, "double");
+                    break;
+                case IT_LONGDOUBLE:
+                    strcpy(buf, "long double");
+                    break;
+            }
+            break;
+
+        case TYPEENUM:
+            strcpy(buf, "enum ");
+            if (TYPE_ENUM(type)->enumname != NULL)
+                strcat(buf, TYPE_ENUM(type)->enumname->name);
+            break;
+
+        case TYPESTRUCT: {
+            if ((int)(TYPE_STRUCT(type)->stype) >= 4 && (int)(TYPE_STRUCT(type)->stype) <= 14) {
+                switch (TYPE_STRUCT(type)->stype) {
+                    case 4:
+                        strcpy(buf, "vector unsigned char ");
+                        break;
+                    case 5:
+                        strcpy(buf, "vector signed char ");
+                        break;
+                    case 6:
+                        strcpy(buf, "vector bool char ");
+                        break;
+                    case 7:
+                        strcpy(buf, "vector unsigned short ");
+                        break;
+                    case 8:
+                        strcpy(buf, "vector signed short ");
+                        break;
+                    case 9:
+                        strcpy(buf, "vector bool short ");
+                        break;
+                    case 10:
+                        strcpy(buf, "vector unsigned int ");
+                        break;
+                    case 11:
+                        strcpy(buf, "vector signed int ");
+                        break;
+                    case 12:
+                        strcpy(buf, "vector bool int ");
+                        break;
+                    case 13:
+                        strcpy(buf, "vector float ");
+                        break;
+                    case 14:
+                        strcpy(buf, "vector pixel ");
+                        break;
+                }
+            } else {
+                strcpy(buf, "struct ");
+                if (TYPE_STRUCT(type)->name != NULL)
+                    strcat(buf, TYPE_STRUCT(type)->name->name);
+            }
+        } break;
+
+        case TYPECLASS:
+            strcpy(buf, "class ");
+            if (TYPE_CLASS(type)->classname != NULL)
+                strcat(buf, TYPE_CLASS(type)->classname->name);
+            break;
+
+        case TYPEFUNC:
+            format_type(TYPE_FUNC(type)->functype, targetName);
+            strcpy(buf, "freturns(");
+            strcat(buf, targetName);
+            strcat(buf, ")");
+            break;
+
+        case TYPEBITFIELD:
+            format_type(TYPE_BITFIELD(type)->bitfieldtype, targetName);
+            sprintf(buf, "bitfield(%s){%d:%d}", targetName, TYPE_BITFIELD(type)->offset,
+                    TYPE_BITFIELD(type)->bitlength);
+            break;
+
+        case TYPELABEL:
+            strcpy(buf, "label");
+            break;
+
+        case TYPEPOINTER:
+            format_type(TYPE_POINTER(type)->target, targetName);
+            strcpy(buf, "pointer(");
+            strcat(buf, targetName), strcat(buf, ")");
+            break;
+
+        case TYPEARRAY:
+            format_type(TYPE_POINTER(type)->target, targetName);
+            strcpy(buf, "array(");
+            strcat(buf, targetName);
+            strcat(buf, ")");
+            break;
+
+        case TYPEMEMBERPOINTER:
+            format_type(TYPE_MEMBER_POINTER(type)->ty2, targetName);
+            format_type(TYPE_MEMBER_POINTER(type)->ty1, ownerName);
+            strcpy(buf, "memberpointer(");
+            strcat(buf, targetName);
+            strcat(buf, ",");
+            strcat(buf, ownerName);
+            strcat(buf, ")");
+            break;
+    }
+}
+
+void dump_eat_nodes(ExceptionAction *p)
+{
+    char buf[256];
+
+    while (p != NULL) {
+        fprintf(data_005811b0, "\t\t:");
+        switch (p->kind) {
+            case 1:
+                fprintf(data_005811b0, "EAT_DESTROYLOCAL %s(&%s)%s",
+                        COptimizer_GetFunctionObject(p->data.local.dtor)->name, p->data.local.object->name->name,
+                        "\r\n");
                 break;
-            case '\a':
-                fputs("\\a", output);
+            case 2:
+                fprintf(data_005811b0, "EAT_DESTROYLOCALCOND%s", "\r\n");
                 break;
-            case '\b':
-                fputs("\\b", output);
+            case 3:
+                fprintf(data_005811b0, "EAT_DESTROYLOCALOFFSET %s(&%s+%ld)%s",
+                        COptimizer_GetFunctionObject(p->data.local.dtor)->name, p->data.local.object->name->name,
+                        p->data.delete_pointer_cond.cond, "\r\n");
                 break;
-            case '\f':
-                fputs("\\f", output);
+            case 4:
+                fprintf(data_005811b0, "EAT_DESTROYLOCALPOINTER%s", "\r\n");
                 break;
-            case '\n':
-                fputs("\\n", output);
+            case 5:
+                fprintf(data_005811b0, "EAT_DESTROYLOCALARRAY%s", "\r\n");
                 break;
-            case '\r':
-                fputs("\\r", output);
+            case 17:
+                fprintf(data_005811b0, "EAT_DESTROYBASE %s(this+%ld)%s",
+                        COptimizer_GetFunctionObject(p->data.local.dtor)->name, p->data.delete_pointer_cond.cond,
+                        "\r\n");
                 break;
-            case '\t':
-                fputs("\\t", output);
+            case 7:
+                fprintf(data_005811b0, "EAT_DESTROYMEMBER %s(%s+%ld)%s",
+                        COptimizer_GetFunctionObject(p->data.local.dtor)->name, p->data.local.object->name->name,
+                        p->data.delete_pointer_cond.cond, "\r\n");
                 break;
-            case '\v':
-                fputs("\\v", output);
+            case 8:
+                fprintf(data_005811b0, "EAT_DESTROYMEMBERCOND if(%s) %s(this+%ld)%s", p->data.local.dtor->name->name,
+                        COptimizer_GetFunctionObject(p->data.delete_pointer_cond.cond)->name,
+                        p->data.member_cond.offset, "\r\n");
                 break;
-            case '"':
-            case '\'':
-            case '?':
-            case '\\':
-                fputc('\\', output);
-                /* fallthrough */
-            default:
-                fputc(*string, output);
+            case 9:
+                fprintf(data_005811b0, "EAT_DESTROYMEMBERARRAY %s(this+%ld)[%ld] size: %ld%s",
+                        COptimizer_GetFunctionObject(p->data.local.dtor)->name, p->data.delete_pointer_cond.cond,
+                        p->data.member_cond.offset, p->data.catch_block.exceptionType, "\r\n");
+                break;
+            case 10:
+                fprintf(data_005811b0, "EAT_DELETEPOINTER(%s)%s", p->data.local.object->name->name, "\r\n");
+                break;
+            case 11:
+                fprintf(data_005811b0, "EAT_DELETELOCALPOINTER(%s)%s", p->data.local.object->name->name, "\r\n");
+                break;
+            case 12:
+                fprintf(data_005811b0, "EAT_DELETEPOINTERCOND if (%s)(%s)%s",
+                        p->data.delete_pointer_cond.cond->name->name, p->data.local.object->name->name, "\r\n");
+                break;
+            case 13:
+                fprintf(data_005811b0, "EAT_CATCHBLOCK ");
+                if (p->data.catch_block.exceptionType != NULL) {
+                    if (p->data.local.object != NULL) {
+                        fprintf(data_005811b0, "[%s]", p->data.local.object->name->name);
+                    } else {
+                        fprintf(data_005811b0, "[]");
+                    }
+                    format_type(p->data.catch_block.exceptionType, buf);
+                    fprintf(data_005811b0, " (%s)", buf);
+                } else {
+                    fprintf(data_005811b0, "[...] ");
+                }
+                fprintf(data_005811b0, " Label: %s%s", p->data.catch_block.label->uniquename->name, "\r\n");
+                break;
+            case 15:
+                fprintf(data_005811b0, "EAT_SPECIFICATION%s", "\r\n");
+                break;
+            case 14:
+                fprintf(data_005811b0, "EAT_ACTIVECATCHBLOCK%s", "\r\n");
+                break;
+            case 16:
+                fprintf(data_005811b0, "EAT_TERMINATE%s", "\r\n");
                 break;
         }
-        string++;
+        p = p->next;
     }
 }

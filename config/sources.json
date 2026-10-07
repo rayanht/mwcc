@@ -79,7 +79,7 @@
     "flags": [
       "-O4,p",
       "-inline",
-      "auto",
+      "auto,deferred",
       "-sym",
       "on",
       "-Cpp_exceptions",
@@ -109,7 +109,7 @@
     "flags": [
       "-O4,p",
       "-inline",
-      "auto",
+      "auto,deferred",
       "-sym",
       "on",
       "-Cpp_exceptions",
@@ -184,7 +184,7 @@
     "flags": [
       "-O4,p",
       "-inline",
-      "auto",
+      "auto,deferred",
       "-sym",
       "off",
       "-Cpp_exceptions",
@@ -425,7 +425,7 @@
     "flags": [
       "-O4,p",
       "-inline",
-      "auto",
+      "auto,deferred",
       "-sym",
       "on",
       "-Cpp_exceptions",
@@ -1679,7 +1679,7 @@
     "flags": [
       "-O4,p",
       "-inline",
-      "auto",
+      "auto,deferred",
       "-sym",
       "on",
       "-Cpp_exceptions",
@@ -3191,7 +3191,7 @@
     "flags": [
       "-O4,p",
       "-inline",
-      "auto",
+      "auto,deferred",
       "-sym",
       "on",
       "-Cpp_exceptions",
