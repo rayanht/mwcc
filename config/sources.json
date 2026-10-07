@@ -833,6 +833,8 @@
       "-inline",
       "auto",
       "-sym",
+      "off",
+      "-Cpp_exceptions",
       "off"
     ],
     "include_dirs": [
@@ -1771,19 +1773,21 @@
       "include"
     ]
   },
-  "src/msl/abort_exit.c": {
+  "src/msl/ThreadLocalData.c": {
     "compiler": "pro5",
     "flags": [
       "-O4,p",
       "-Cpp_exceptions",
       "off",
       "-sym",
-      "off"
+      "on",
+      "-align",
+      "8"
     ],
     "system_include_dirs": [
+      "lib/extra",
       "lib/runtime",
       "lib/msl/MSL_Cpp/MSL_Common/Include",
-      "lib/msl/extra",
       "lib/msl/MSL_Win32/Include",
       "lib/msl/MSL_Common/Include",
       "lib/msl/MSL_Common/Src",
@@ -1793,19 +1797,45 @@
       "lib/msl/win32sdk/sys"
     ]
   },
-  "src/msl/alloc_g.c": {
+  "src/msl/abort_exit.c": {
     "compiler": "pro5",
     "flags": [
       "-O4,p",
       "-Cpp_exceptions",
       "off",
       "-sym",
-      "on"
+      "on",
+      "-align",
+      "8"
     ],
     "system_include_dirs": [
+      "lib/extra",
       "lib/runtime",
       "lib/msl/MSL_Cpp/MSL_Common/Include",
-      "lib/msl/extra",
+      "lib/msl/MSL_Win32/Include",
+      "lib/msl/MSL_Common/Include",
+      "lib/msl/MSL_Common/Src",
+      "lib/msl/MSL_X86",
+      "lib/msl/MSL_Win32/Src",
+      "lib/msl/win32sdk",
+      "lib/msl/win32sdk/sys"
+    ]
+  },
+  "src/msl/alloc.c": {
+    "compiler": "pro5",
+    "flags": [
+      "-O4,p",
+      "-Cpp_exceptions",
+      "off",
+      "-sym",
+      "on",
+      "-align",
+      "8"
+    ],
+    "system_include_dirs": [
+      "lib/extra",
+      "lib/runtime",
+      "lib/msl/MSL_Cpp/MSL_Common/Include",
       "lib/msl/MSL_Win32/Include",
       "lib/msl/MSL_Common/Include",
       "lib/msl/MSL_Common/Src",
@@ -1822,30 +1852,14 @@
       "-Cpp_exceptions",
       "off",
       "-sym",
-      "off"
+      "on",
+      "-align",
+      "8"
     ],
     "system_include_dirs": [
-      "lib/msl/extra",
-      "lib/msl/MSL_Win32/Include",
-      "lib/msl/MSL_Common/Include",
-      "lib/msl/MSL_Common/Src",
-      "lib/msl/MSL_X86",
-      "lib/msl/MSL_Win32/Src"
-    ]
-  },
-  "src/msl/ansi_files_g.c": {
-    "compiler": "pro5",
-    "flags": [
-      "-O4,p",
-      "-Cpp_exceptions",
-      "off",
-      "-sym",
-      "on"
-    ],
-    "system_include_dirs": [
+      "lib/extra",
       "lib/runtime",
       "lib/msl/MSL_Cpp/MSL_Common/Include",
-      "lib/msl/extra",
       "lib/msl/MSL_Win32/Include",
       "lib/msl/MSL_Common/Include",
       "lib/msl/MSL_Common/Src",
@@ -1875,12 +1889,14 @@
       "-Cpp_exceptions",
       "off",
       "-sym",
-      "off"
+      "on",
+      "-align",
+      "8"
     ],
     "system_include_dirs": [
+      "lib/extra",
       "lib/runtime",
       "lib/msl/MSL_Cpp/MSL_Common/Include",
-      "lib/msl/extra",
       "lib/msl/MSL_Win32/Include",
       "lib/msl/MSL_Common/Include",
       "lib/msl/MSL_Common/Src",
@@ -1890,19 +1906,21 @@
       "lib/msl/win32sdk/sys"
     ]
   },
-  "src/msl/buffer_io_g.c": {
+  "src/msl/buffer_io.c": {
     "compiler": "pro5",
     "flags": [
       "-O4,p",
       "-Cpp_exceptions",
       "off",
       "-sym",
-      "on"
+      "on",
+      "-align",
+      "8"
     ],
     "system_include_dirs": [
+      "lib/extra",
       "lib/runtime",
       "lib/msl/MSL_Cpp/MSL_Common/Include",
-      "lib/msl/extra",
       "lib/msl/MSL_Win32/Include",
       "lib/msl/MSL_Common/Include",
       "lib/msl/MSL_Common/Src",
@@ -1919,34 +1937,45 @@
       "-Cpp_exceptions",
       "off",
       "-sym",
-      "off"
+      "on",
+      "-align",
+      "8"
     ],
     "system_include_dirs": [
-      "lib/msl/extra",
+      "lib/extra",
+      "lib/runtime",
+      "lib/msl/MSL_Cpp/MSL_Common/Include",
       "lib/msl/MSL_Win32/Include",
       "lib/msl/MSL_Common/Include",
       "lib/msl/MSL_Common/Src",
       "lib/msl/MSL_X86",
       "lib/msl/MSL_Win32/Src",
-      "lib/runtime",
-      "lib/msl/MSL_Cpp/MSL_Common/Include",
       "lib/msl/win32sdk",
       "lib/msl/win32sdk/sys"
     ]
   },
-  "src/msl/critical_regions_win32.c": {
-    "compiler": "pro53",
+  "src/msl/critical_regions.win32.c": {
+    "compiler": "pro5",
     "flags": [
       "-O4,p",
-      "-inline",
-      "auto",
-      "-sym",
-      "off",
       "-Cpp_exceptions",
-      "off"
+      "off",
+      "-sym",
+      "on",
+      "-align",
+      "8"
     ],
-    "include_dirs": [
-      "src/driver"
+    "system_include_dirs": [
+      "lib/extra",
+      "lib/runtime",
+      "lib/msl/MSL_Cpp/MSL_Common/Include",
+      "lib/msl/MSL_Win32/Include",
+      "lib/msl/MSL_Common/Include",
+      "lib/msl/MSL_Common/Src",
+      "lib/msl/MSL_X86",
+      "lib/msl/MSL_Win32/Src",
+      "lib/msl/win32sdk",
+      "lib/msl/win32sdk/sys"
     ]
   },
   "src/msl/ctype.c": {
@@ -1956,12 +1985,14 @@
       "-Cpp_exceptions",
       "off",
       "-sym",
-      "off"
+      "on",
+      "-align",
+      "8"
     ],
     "system_include_dirs": [
+      "lib/extra",
       "lib/runtime",
       "lib/msl/MSL_Cpp/MSL_Common/Include",
-      "lib/msl/extra",
       "lib/msl/MSL_Win32/Include",
       "lib/msl/MSL_Common/Include",
       "lib/msl/MSL_Common/Src",
@@ -1971,52 +2002,69 @@
       "lib/msl/win32sdk/sys"
     ]
   },
-  "src/msl/direct_io_g.c": {
+  "src/msl/direct_io.c": {
     "compiler": "pro5",
     "flags": [
       "-O4,p",
       "-Cpp_exceptions",
       "off",
       "-sym",
-      "on"
+      "on",
+      "-align",
+      "8"
     ],
     "system_include_dirs": [
-      "lib/msl/extra",
+      "lib/extra",
+      "lib/runtime",
+      "lib/msl/MSL_Cpp/MSL_Common/Include",
       "lib/msl/MSL_Win32/Include",
       "lib/msl/MSL_Common/Include",
       "lib/msl/MSL_Common/Src",
       "lib/msl/MSL_X86",
-      "lib/msl/MSL_Win32/Src"
+      "lib/msl/MSL_Win32/Src",
+      "lib/msl/win32sdk",
+      "lib/msl/win32sdk/sys"
     ]
   },
   "src/msl/extras.c": {
-    "compiler": "pro53",
-    "flags": [
-      "-O4,p",
-      "-inline",
-      "auto",
-      "-sym",
-      "off",
-      "-Cpp_exceptions",
-      "off"
-    ],
-    "include_dirs": [
-      "src/driver"
-    ]
-  },
-  "src/msl/fcntl_win32_g.c": {
     "compiler": "pro5",
     "flags": [
       "-O4,p",
       "-Cpp_exceptions",
       "off",
       "-sym",
-      "on"
+      "on",
+      "-align",
+      "8"
     ],
     "system_include_dirs": [
+      "lib/extra",
       "lib/runtime",
       "lib/msl/MSL_Cpp/MSL_Common/Include",
-      "lib/msl/extra",
+      "lib/msl/MSL_Win32/Include",
+      "lib/msl/MSL_Common/Include",
+      "lib/msl/MSL_Common/Src",
+      "lib/msl/MSL_X86",
+      "lib/msl/MSL_Win32/Src",
+      "lib/msl/win32sdk",
+      "lib/msl/win32sdk/sys"
+    ]
+  },
+  "src/msl/fcntl.win32.c": {
+    "compiler": "pro5",
+    "flags": [
+      "-O4,p",
+      "-Cpp_exceptions",
+      "off",
+      "-sym",
+      "on",
+      "-align",
+      "8"
+    ],
+    "system_include_dirs": [
+      "lib/extra",
+      "lib/runtime",
+      "lib/msl/MSL_Cpp/MSL_Common/Include",
       "lib/msl/MSL_Win32/Include",
       "lib/msl/MSL_Common/Include",
       "lib/msl/MSL_Common/Src",
@@ -2033,30 +2081,14 @@
       "-Cpp_exceptions",
       "off",
       "-sym",
-      "off"
+      "on",
+      "-align",
+      "8"
     ],
     "system_include_dirs": [
-      "lib/msl/extra",
-      "lib/msl/MSL_Win32/Include",
-      "lib/msl/MSL_Common/Include",
-      "lib/msl/MSL_Common/Src",
-      "lib/msl/MSL_X86",
-      "lib/msl/MSL_Win32/Src"
-    ]
-  },
-  "src/msl/file_io_g.c": {
-    "compiler": "pro5",
-    "flags": [
-      "-O4,p",
-      "-Cpp_exceptions",
-      "off",
-      "-sym",
-      "on"
-    ],
-    "system_include_dirs": [
+      "lib/extra",
       "lib/runtime",
       "lib/msl/MSL_Cpp/MSL_Common/Include",
-      "lib/msl/extra",
       "lib/msl/MSL_Win32/Include",
       "lib/msl/MSL_Common/Include",
       "lib/msl/MSL_Common/Src",
@@ -2066,41 +2098,45 @@
       "lib/msl/win32sdk/sys"
     ]
   },
-  "src/msl/file_io_win32_g.c": {
+  "src/msl/file_io.win32.c": {
     "compiler": "pro5",
     "flags": [
       "-O4,p",
       "-Cpp_exceptions",
       "off",
       "-sym",
-      "on"
+      "on",
+      "-align",
+      "8"
     ],
     "system_include_dirs": [
-      "lib/msl/extra",
+      "lib/extra",
+      "lib/runtime",
+      "lib/msl/MSL_Cpp/MSL_Common/Include",
       "lib/msl/MSL_Win32/Include",
       "lib/msl/MSL_Common/Include",
       "lib/msl/MSL_Common/Src",
       "lib/msl/MSL_X86",
       "lib/msl/MSL_Win32/Src",
       "lib/msl/win32sdk",
-      "lib/msl/win32sdk/sys",
-      "lib/runtime",
-      "lib/msl/MSL_Cpp/MSL_Common/Include"
+      "lib/msl/win32sdk/sys"
     ]
   },
-  "src/msl/file_pos_g.c": {
+  "src/msl/file_pos.c": {
     "compiler": "pro5",
     "flags": [
       "-O4,p",
       "-Cpp_exceptions",
       "off",
       "-sym",
-      "on"
+      "on",
+      "-align",
+      "8"
     ],
     "system_include_dirs": [
+      "lib/extra",
       "lib/runtime",
       "lib/msl/MSL_Cpp/MSL_Common/Include",
-      "lib/msl/extra",
       "lib/msl/MSL_Win32/Include",
       "lib/msl/MSL_Common/Include",
       "lib/msl/MSL_Common/Src",
@@ -2117,12 +2153,14 @@
       "-Cpp_exceptions",
       "off",
       "-sym",
-      "off"
+      "on",
+      "-align",
+      "8"
     ],
     "system_include_dirs": [
+      "lib/extra",
       "lib/runtime",
       "lib/msl/MSL_Cpp/MSL_Common/Include",
-      "lib/msl/extra",
       "lib/msl/MSL_Win32/Include",
       "lib/msl/MSL_Common/Include",
       "lib/msl/MSL_Common/Src",
@@ -2139,15 +2177,21 @@
       "-Cpp_exceptions",
       "off",
       "-sym",
-      "off"
+      "on",
+      "-align",
+      "8"
     ],
     "system_include_dirs": [
-      "lib/msl/extra",
+      "lib/extra",
+      "lib/runtime",
+      "lib/msl/MSL_Cpp/MSL_Common/Include",
       "lib/msl/MSL_Win32/Include",
       "lib/msl/MSL_Common/Include",
       "lib/msl/MSL_Common/Src",
       "lib/msl/MSL_X86",
-      "lib/msl/MSL_Win32/Src"
+      "lib/msl/MSL_Win32/Src",
+      "lib/msl/win32sdk",
+      "lib/msl/win32sdk/sys"
     ]
   },
   "src/msl/misc_io.c": {
@@ -2157,12 +2201,14 @@
       "-Cpp_exceptions",
       "off",
       "-sym",
-      "off"
+      "on",
+      "-align",
+      "8"
     ],
     "system_include_dirs": [
+      "lib/extra",
       "lib/runtime",
       "lib/msl/MSL_Cpp/MSL_Common/Include",
-      "lib/msl/extra",
       "lib/msl/MSL_Win32/Include",
       "lib/msl/MSL_Common/Include",
       "lib/msl/MSL_Common/Src",
@@ -2172,29 +2218,7 @@
       "lib/msl/win32sdk/sys"
     ]
   },
-  "src/msl/pool_alloc_win32_g.c": {
-    "compiler": "pro5",
-    "flags": [
-      "-O4,p",
-      "-Cpp_exceptions",
-      "off",
-      "-sym",
-      "on"
-    ],
-    "system_include_dirs": [
-      "lib/msl/extra",
-      "lib/msl/MSL_Win32/Include",
-      "lib/msl/MSL_Common/Include",
-      "lib/msl/MSL_Common/Src",
-      "lib/msl/MSL_X86",
-      "lib/msl/MSL_Win32/Src",
-      "lib/msl/win32sdk",
-      "lib/msl/win32sdk/sys",
-      "lib/runtime",
-      "lib/msl/MSL_Cpp/MSL_Common/Include"
-    ]
-  },
-  "src/msl/printf_g.c": {
+  "src/msl/pool_alloc.win32.c": {
     "compiler": "pro5",
     "flags": [
       "-O4,p",
@@ -2206,34 +2230,64 @@
       "8"
     ],
     "system_include_dirs": [
-      "lib/msl/extra",
+      "lib/extra",
+      "lib/runtime",
+      "lib/msl/MSL_Cpp/MSL_Common/Include",
       "lib/msl/MSL_Win32/Include",
       "lib/msl/MSL_Common/Include",
       "lib/msl/MSL_Common/Src",
       "lib/msl/MSL_X86",
       "lib/msl/MSL_Win32/Src",
-      "lib/runtime",
-      "lib/msl/MSL_Cpp/MSL_Common/Include",
       "lib/msl/win32sdk",
       "lib/msl/win32sdk/sys"
     ]
   },
-  "src/msl/qsort_g.c": {
+  "src/msl/printf.c": {
     "compiler": "pro5",
     "flags": [
       "-O4,p",
       "-Cpp_exceptions",
       "off",
       "-sym",
-      "on"
+      "on",
+      "-align",
+      "8"
     ],
     "system_include_dirs": [
-      "lib/msl/extra",
+      "lib/extra",
+      "lib/runtime",
+      "lib/msl/MSL_Cpp/MSL_Common/Include",
       "lib/msl/MSL_Win32/Include",
       "lib/msl/MSL_Common/Include",
       "lib/msl/MSL_Common/Src",
       "lib/msl/MSL_X86",
-      "lib/msl/MSL_Win32/Src"
+      "lib/msl/MSL_Win32/Src",
+      "lib/msl/win32sdk",
+      "lib/msl/win32sdk/sys"
+    ]
+  },
+  "src/msl/qsort.c": {
+    "compiler": "pro5",
+    "flags": [
+      "-O4,p",
+      "-Cpp_exceptions",
+      "off",
+      "-sym",
+      "on",
+      "-align",
+      "8"
+    ],
+    "system_include_dirs": [
+      "lib/extra",
+      "lib/runtime",
+      "lib/msl/MSL_Cpp/MSL_Common/Include",
+      "lib/msl/MSL_Win32/Include",
+      "lib/msl/MSL_Common/Include",
+      "lib/msl/MSL_Common/Src",
+      "lib/msl/MSL_X86",
+      "lib/msl/MSL_Win32/Src",
+      "lib/msl/win32sdk",
+      "lib/msl/win32sdk/sys"
     ]
   },
   "src/msl/scanf.c": {
@@ -2243,18 +2297,24 @@
       "-Cpp_exceptions",
       "off",
       "-sym",
-      "off"
+      "on",
+      "-align",
+      "8"
     ],
     "system_include_dirs": [
-      "lib/msl/extra",
+      "lib/extra",
+      "lib/runtime",
+      "lib/msl/MSL_Cpp/MSL_Common/Include",
       "lib/msl/MSL_Win32/Include",
       "lib/msl/MSL_Common/Include",
       "lib/msl/MSL_Common/Src",
       "lib/msl/MSL_X86",
-      "lib/msl/MSL_Win32/Src"
+      "lib/msl/MSL_Win32/Src",
+      "lib/msl/win32sdk",
+      "lib/msl/win32sdk/sys"
     ]
   },
-  "src/msl/scanf_g.c": {
+  "src/msl/setjmp.x86.c": {
     "compiler": "pro5",
     "flags": [
       "-O4,p",
@@ -2266,9 +2326,9 @@
       "8"
     ],
     "system_include_dirs": [
+      "lib/extra",
       "lib/runtime",
       "lib/msl/MSL_Cpp/MSL_Common/Include",
-      "lib/msl/extra",
       "lib/msl/MSL_Win32/Include",
       "lib/msl/MSL_Common/Include",
       "lib/msl/MSL_Common/Src",
@@ -2278,52 +2338,52 @@
       "lib/msl/win32sdk/sys"
     ]
   },
-  "src/msl/setjmp_x86.c": {
+  "src/msl/signal.c": {
     "compiler": "pro5",
     "flags": [
       "-O4,p",
       "-Cpp_exceptions",
       "off",
       "-sym",
-      "off"
+      "on",
+      "-align",
+      "8"
     ],
     "system_include_dirs": [
-      "lib/msl/extra",
+      "lib/extra",
+      "lib/runtime",
+      "lib/msl/MSL_Cpp/MSL_Common/Include",
       "lib/msl/MSL_Win32/Include",
       "lib/msl/MSL_Common/Include",
       "lib/msl/MSL_Common/Src",
       "lib/msl/MSL_X86",
-      "lib/msl/MSL_Win32/Src"
+      "lib/msl/MSL_Win32/Src",
+      "lib/msl/win32sdk",
+      "lib/msl/win32sdk/sys"
     ]
   },
-  "src/msl/signal.c": {
-    "compiler": "pro53",
+  "src/msl/startup.win32.c": {
+    "compiler": "pro5",
     "flags": [
       "-O4,p",
-      "-inline",
-      "auto",
-      "-sym",
-      "off",
       "-Cpp_exceptions",
-      "off"
-    ],
-    "include_dirs": [
-      "src/driver"
-    ]
-  },
-  "src/msl/startup_win32.c": {
-    "compiler": "pro53",
-    "flags": [
-      "-O4,p",
-      "-inline",
-      "auto",
+      "off",
       "-sym",
       "on",
-      "-Cpp_exceptions",
-      "off"
+      "-align",
+      "8"
     ],
-    "include_dirs": [
-      "src/driver"
+    "system_include_dirs": [
+      "lib/extra",
+      "lib/runtime",
+      "lib/msl/MSL_Cpp/MSL_Common/Include",
+      "lib/msl/MSL_Win32/Include",
+      "lib/msl/MSL_Common/Include",
+      "lib/msl/MSL_Common/Src",
+      "lib/msl/MSL_X86",
+      "lib/msl/MSL_Win32/Src",
+      "lib/msl/win32sdk",
+      "lib/msl/win32sdk/sys"
     ]
   },
   "src/msl/string.c": {
@@ -2333,30 +2393,14 @@
       "-Cpp_exceptions",
       "off",
       "-sym",
-      "off"
+      "on",
+      "-align",
+      "8"
     ],
     "system_include_dirs": [
-      "lib/msl/extra",
-      "lib/msl/MSL_Win32/Include",
-      "lib/msl/MSL_Common/Include",
-      "lib/msl/MSL_Common/Src",
-      "lib/msl/MSL_X86",
-      "lib/msl/MSL_Win32/Src"
-    ]
-  },
-  "src/msl/string_g.c": {
-    "compiler": "pro5",
-    "flags": [
-      "-O4,p",
-      "-Cpp_exceptions",
-      "off",
-      "-sym",
-      "on"
-    ],
-    "system_include_dirs": [
+      "lib/extra",
       "lib/runtime",
       "lib/msl/MSL_Cpp/MSL_Common/Include",
-      "lib/msl/extra",
       "lib/msl/MSL_Win32/Include",
       "lib/msl/MSL_Common/Include",
       "lib/msl/MSL_Common/Src",
@@ -2373,12 +2417,14 @@
       "-Cpp_exceptions",
       "off",
       "-sym",
-      "off"
+      "on",
+      "-align",
+      "8"
     ],
     "system_include_dirs": [
+      "lib/extra",
       "lib/runtime",
       "lib/msl/MSL_Cpp/MSL_Common/Include",
-      "lib/msl/extra",
       "lib/msl/MSL_Win32/Include",
       "lib/msl/MSL_Common/Include",
       "lib/msl/MSL_Common/Src",
@@ -2395,17 +2441,19 @@
       "-Cpp_exceptions",
       "off",
       "-sym",
-      "off"
+      "on",
+      "-align",
+      "8"
     ],
     "system_include_dirs": [
-      "lib/msl/extra",
+      "lib/extra",
+      "lib/runtime",
+      "lib/msl/MSL_Cpp/MSL_Common/Include",
       "lib/msl/MSL_Win32/Include",
       "lib/msl/MSL_Common/Include",
       "lib/msl/MSL_Common/Src",
       "lib/msl/MSL_X86",
       "lib/msl/MSL_Win32/Src",
-      "lib/runtime",
-      "lib/msl/MSL_Cpp/MSL_Common/Include",
       "lib/msl/win32sdk",
       "lib/msl/win32sdk/sys"
     ]
@@ -2417,36 +2465,14 @@
       "-Cpp_exceptions",
       "off",
       "-sym",
-      "off",
+      "on",
       "-align",
       "8"
     ],
     "system_include_dirs": [
-      "lib/msl/extra",
-      "lib/msl/MSL_Win32/Include",
-      "lib/msl/MSL_Common/Include",
-      "lib/msl/MSL_Common/Src",
-      "lib/msl/MSL_X86",
-      "lib/msl/MSL_Win32/Src",
+      "lib/extra",
       "lib/runtime",
       "lib/msl/MSL_Cpp/MSL_Common/Include",
-      "lib/msl/win32sdk",
-      "lib/msl/win32sdk/sys"
-    ]
-  },
-  "src/msl/sysenv_win32.c": {
-    "compiler": "pro5",
-    "flags": [
-      "-O4,p",
-      "-Cpp_exceptions",
-      "off",
-      "-sym",
-      "off"
-    ],
-    "system_include_dirs": [
-      "lib/runtime",
-      "lib/msl/MSL_Cpp/MSL_Common/Include",
-      "lib/msl/extra",
       "lib/msl/MSL_Win32/Include",
       "lib/msl/MSL_Common/Include",
       "lib/msl/MSL_Common/Src",
@@ -2456,19 +2482,21 @@
       "lib/msl/win32sdk/sys"
     ]
   },
-  "src/msl/time_g.c": {
+  "src/msl/sysenv.win32.c": {
     "compiler": "pro5",
     "flags": [
       "-O4,p",
       "-Cpp_exceptions",
       "off",
       "-sym",
-      "on"
+      "on",
+      "-align",
+      "8"
     ],
     "system_include_dirs": [
+      "lib/extra",
       "lib/runtime",
       "lib/msl/MSL_Cpp/MSL_Common/Include",
-      "lib/msl/extra",
       "lib/msl/MSL_Win32/Include",
       "lib/msl/MSL_Common/Include",
       "lib/msl/MSL_Common/Src",
@@ -2478,19 +2506,21 @@
       "lib/msl/win32sdk/sys"
     ]
   },
-  "src/msl/time_win32.c": {
+  "src/msl/time.c": {
     "compiler": "pro5",
     "flags": [
       "-O4,p",
       "-Cpp_exceptions",
       "off",
       "-sym",
-      "off"
+      "on",
+      "-align",
+      "8"
     ],
     "system_include_dirs": [
+      "lib/extra",
       "lib/runtime",
       "lib/msl/MSL_Cpp/MSL_Common/Include",
-      "lib/msl/extra",
       "lib/msl/MSL_Win32/Include",
       "lib/msl/MSL_Common/Include",
       "lib/msl/MSL_Common/Src",
@@ -2500,19 +2530,45 @@
       "lib/msl/win32sdk/sys"
     ]
   },
-  "src/msl/unistd_win32.c": {
+  "src/msl/time.win32.c": {
     "compiler": "pro5",
     "flags": [
       "-O4,p",
       "-Cpp_exceptions",
       "off",
       "-sym",
-      "off"
+      "on",
+      "-align",
+      "8"
     ],
     "system_include_dirs": [
+      "lib/extra",
       "lib/runtime",
       "lib/msl/MSL_Cpp/MSL_Common/Include",
-      "lib/msl/extra",
+      "lib/msl/MSL_Win32/Include",
+      "lib/msl/MSL_Common/Include",
+      "lib/msl/MSL_Common/Src",
+      "lib/msl/MSL_X86",
+      "lib/msl/MSL_Win32/Src",
+      "lib/msl/win32sdk",
+      "lib/msl/win32sdk/sys"
+    ]
+  },
+  "src/msl/unistd.win32.c": {
+    "compiler": "pro5",
+    "flags": [
+      "-O4,p",
+      "-Cpp_exceptions",
+      "off",
+      "-sym",
+      "on",
+      "-align",
+      "8"
+    ],
+    "system_include_dirs": [
+      "lib/extra",
+      "lib/runtime",
+      "lib/msl/MSL_Cpp/MSL_Common/Include",
       "lib/msl/MSL_Win32/Include",
       "lib/msl/MSL_Common/Include",
       "lib/msl/MSL_Common/Src",
@@ -2529,12 +2585,14 @@
       "-Cpp_exceptions",
       "off",
       "-sym",
-      "off"
+      "on",
+      "-align",
+      "8"
     ],
     "system_include_dirs": [
+      "lib/extra",
       "lib/runtime",
       "lib/msl/MSL_Cpp/MSL_Common/Include",
-      "lib/msl/extra",
       "lib/msl/MSL_Win32/Include",
       "lib/msl/MSL_Common/Include",
       "lib/msl/MSL_Common/Src",
@@ -2551,15 +2609,21 @@
       "-Cpp_exceptions",
       "off",
       "-sym",
-      "off"
+      "on",
+      "-align",
+      "8"
     ],
     "system_include_dirs": [
-      "lib/msl/extra",
+      "lib/extra",
+      "lib/runtime",
+      "lib/msl/MSL_Cpp/MSL_Common/Include",
       "lib/msl/MSL_Win32/Include",
       "lib/msl/MSL_Common/Include",
       "lib/msl/MSL_Common/Src",
       "lib/msl/MSL_X86",
-      "lib/msl/MSL_Win32/Src"
+      "lib/msl/MSL_Win32/Src",
+      "lib/msl/win32sdk",
+      "lib/msl/win32sdk/sys"
     ]
   },
   "src/msl/wcstoul.c": {
@@ -2569,19 +2633,19 @@
       "-Cpp_exceptions",
       "off",
       "-sym",
-      "off",
+      "on",
       "-align",
       "8"
     ],
     "system_include_dirs": [
-      "lib/msl/extra",
+      "lib/extra",
+      "lib/runtime",
+      "lib/msl/MSL_Cpp/MSL_Common/Include",
       "lib/msl/MSL_Win32/Include",
       "lib/msl/MSL_Common/Include",
       "lib/msl/MSL_Common/Src",
       "lib/msl/MSL_X86",
       "lib/msl/MSL_Win32/Src",
-      "lib/runtime",
-      "lib/msl/MSL_Cpp/MSL_Common/Include",
       "lib/msl/win32sdk",
       "lib/msl/win32sdk/sys"
     ]
@@ -2593,12 +2657,14 @@
       "-Cpp_exceptions",
       "off",
       "-sym",
-      "off"
+      "on",
+      "-align",
+      "8"
     ],
     "system_include_dirs": [
+      "lib/extra",
       "lib/runtime",
       "lib/msl/MSL_Cpp/MSL_Common/Include",
-      "lib/msl/extra",
       "lib/msl/MSL_Win32/Include",
       "lib/msl/MSL_Common/Include",
       "lib/msl/MSL_Common/Src",
@@ -2615,36 +2681,14 @@
       "-Cpp_exceptions",
       "off",
       "-sym",
-      "off",
+      "on",
       "-align",
       "8"
     ],
     "system_include_dirs": [
-      "lib/msl/extra",
-      "lib/msl/MSL_Win32/Include",
-      "lib/msl/MSL_Common/Include",
-      "lib/msl/MSL_Common/Src",
-      "lib/msl/MSL_X86",
-      "lib/msl/MSL_Win32/Src",
+      "lib/extra",
       "lib/runtime",
       "lib/msl/MSL_Cpp/MSL_Common/Include",
-      "lib/msl/win32sdk",
-      "lib/msl/win32sdk/sys"
-    ]
-  },
-  "src/msl/wscanf_g.c": {
-    "compiler": "pro5",
-    "flags": [
-      "-O4,p",
-      "-Cpp_exceptions",
-      "off",
-      "-sym",
-      "on"
-    ],
-    "system_include_dirs": [
-      "lib/runtime",
-      "lib/msl/MSL_Cpp/MSL_Common/Include",
-      "lib/msl/extra",
       "lib/msl/MSL_Win32/Include",
       "lib/msl/MSL_Common/Include",
       "lib/msl/MSL_Common/Src",
@@ -3090,32 +3134,19 @@
       "off"
     ]
   },
-  "src/runtime/ExceptionTables.c": {
-    "compiler": "pro53",
-    "flags": [
-      "-O4,p",
-      "-inline",
-      "auto",
-      "-sym",
-      "off"
-    ],
-    "include_dirs": [
-      "src/driver"
-    ]
-  },
   "src/runtime/ExceptionX86.cpp": {
     "compiler": "pro5",
     "flags": [
       "-O4,p",
-      "-Cpp_exceptions",
-      "off",
       "-sym",
-      "off"
+      "off",
+      "-Cpp_exceptions",
+      "on"
     ],
     "system_include_dirs": [
+      "lib/extra",
       "lib/runtime",
       "lib/msl/MSL_Cpp/MSL_Common/Include",
-      "lib/msl/extra",
       "lib/msl/MSL_Win32/Include",
       "lib/msl/MSL_Common/Include",
       "lib/msl/MSL_Common/Src",
@@ -3129,14 +3160,15 @@
     "compiler": "pro5",
     "flags": [
       "-O4,p",
-      "-Cpp_exceptions",
-      "off",
       "-sym",
-      "off"
+      "off",
+      "-Cpp_exceptions",
+      "on"
     ],
     "system_include_dirs": [
+      "lib/extra",
       "lib/runtime",
-      "lib/msl/extra",
+      "lib/msl/MSL_Cpp/MSL_Common/Include",
       "lib/msl/MSL_Win32/Include",
       "lib/msl/MSL_Common/Include",
       "lib/msl/MSL_Common/Src",
@@ -3150,15 +3182,15 @@
     "compiler": "pro5",
     "flags": [
       "-O4,p",
-      "-Cpp_exceptions",
-      "off",
       "-sym",
-      "off"
+      "off",
+      "-Cpp_exceptions",
+      "on"
     ],
     "system_include_dirs": [
+      "lib/extra",
       "lib/runtime",
       "lib/msl/MSL_Cpp/MSL_Common/Include",
-      "lib/msl/extra",
       "lib/msl/MSL_Win32/Include",
       "lib/msl/MSL_Common/Include",
       "lib/msl/MSL_Common/Src",
@@ -3172,15 +3204,15 @@
     "compiler": "pro5",
     "flags": [
       "-O4,p",
-      "-Cpp_exceptions",
-      "off",
       "-sym",
-      "off"
+      "off",
+      "-Cpp_exceptions",
+      "on"
     ],
     "system_include_dirs": [
+      "lib/extra",
       "lib/runtime",
       "lib/msl/MSL_Cpp/MSL_Common/Include",
-      "lib/msl/extra",
       "lib/msl/MSL_Win32/Include",
       "lib/msl/MSL_Common/Include",
       "lib/msl/MSL_Common/Src",
@@ -3194,15 +3226,15 @@
     "compiler": "pro5",
     "flags": [
       "-O4,p",
-      "-Cpp_exceptions",
-      "off",
       "-sym",
-      "off"
+      "off",
+      "-Cpp_exceptions",
+      "on"
     ],
     "system_include_dirs": [
+      "lib/extra",
       "lib/runtime",
       "lib/msl/MSL_Cpp/MSL_Common/Include",
-      "lib/msl/extra",
       "lib/msl/MSL_Win32/Include",
       "lib/msl/MSL_Common/Include",
       "lib/msl/MSL_Common/Src",
@@ -3216,15 +3248,15 @@
     "compiler": "pro5",
     "flags": [
       "-O4,p",
-      "-Cpp_exceptions",
-      "off",
       "-sym",
-      "off"
+      "off",
+      "-Cpp_exceptions",
+      "on"
     ],
     "system_include_dirs": [
+      "lib/extra",
       "lib/runtime",
       "lib/msl/MSL_Cpp/MSL_Common/Include",
-      "lib/msl/extra",
       "lib/msl/MSL_Win32/Include",
       "lib/msl/MSL_Common/Include",
       "lib/msl/MSL_Common/Src",
@@ -3238,15 +3270,37 @@
     "compiler": "pro5",
     "flags": [
       "-O4,p",
-      "-Cpp_exceptions",
-      "off",
       "-sym",
-      "off"
+      "off",
+      "-Cpp_exceptions",
+      "on"
     ],
     "system_include_dirs": [
+      "lib/extra",
       "lib/runtime",
       "lib/msl/MSL_Cpp/MSL_Common/Include",
-      "lib/msl/extra",
+      "lib/msl/MSL_Win32/Include",
+      "lib/msl/MSL_Common/Include",
+      "lib/msl/MSL_Common/Src",
+      "lib/msl/MSL_X86",
+      "lib/msl/MSL_Win32/Src",
+      "lib/msl/win32sdk",
+      "lib/msl/win32sdk/sys"
+    ]
+  },
+  "src/runtime/exchand.cpp": {
+    "compiler": "pro5",
+    "flags": [
+      "-O4,p",
+      "-sym",
+      "off",
+      "-Cpp_exceptions",
+      "on"
+    ],
+    "system_include_dirs": [
+      "lib/extra",
+      "lib/runtime",
+      "lib/msl/MSL_Cpp/MSL_Common/Include",
       "lib/msl/MSL_Win32/Include",
       "lib/msl/MSL_Common/Include",
       "lib/msl/MSL_Common/Src",
@@ -3260,14 +3314,15 @@
     "compiler": "pro5",
     "flags": [
       "-O4,p",
-      "-Cpp_exceptions",
-      "off",
       "-sym",
-      "off"
+      "off",
+      "-Cpp_exceptions",
+      "on"
     ],
     "system_include_dirs": [
+      "lib/extra",
       "lib/runtime",
-      "lib/msl/extra",
+      "lib/msl/MSL_Cpp/MSL_Common/Include",
       "lib/msl/MSL_Win32/Include",
       "lib/msl/MSL_Common/Include",
       "lib/msl/MSL_Common/Src",
@@ -3281,14 +3336,15 @@
     "compiler": "pro5",
     "flags": [
       "-O4,p",
-      "-Cpp_exceptions",
-      "off",
       "-sym",
-      "off"
+      "off",
+      "-Cpp_exceptions",
+      "on"
     ],
     "system_include_dirs": [
+      "lib/extra",
       "lib/runtime",
-      "lib/msl/extra",
+      "lib/msl/MSL_Cpp/MSL_Common/Include",
       "lib/msl/MSL_Win32/Include",
       "lib/msl/MSL_Common/Include",
       "lib/msl/MSL_Common/Src",
@@ -3302,15 +3358,60 @@
     "compiler": "pro5",
     "flags": [
       "-O4,p",
-      "-Cpp_exceptions",
-      "off",
       "-sym",
-      "off"
+      "off",
+      "-Cpp_exceptions",
+      "on"
     ],
     "system_include_dirs": [
+      "lib/extra",
       "lib/runtime",
       "lib/msl/MSL_Cpp/MSL_Common/Include",
-      "lib/msl/extra",
+      "lib/msl/MSL_Win32/Include",
+      "lib/msl/MSL_Common/Include",
+      "lib/msl/MSL_Common/Src",
+      "lib/msl/MSL_X86",
+      "lib/msl/MSL_Win32/Src",
+      "lib/msl/win32sdk",
+      "lib/msl/win32sdk/sys"
+    ]
+  },
+  "src/runtime/runinit.c": {
+    "compiler": "pro5",
+    "flags": [
+      "-O4,p",
+      "-sym",
+      "off",
+      "-Cpp_exceptions",
+      "on"
+    ],
+    "system_include_dirs": [
+      "lib/extra",
+      "lib/runtime",
+      "lib/msl/MSL_Cpp/MSL_Common/Include",
+      "lib/msl/MSL_Win32/Include",
+      "lib/msl/MSL_Common/Include",
+      "lib/msl/MSL_Common/Src",
+      "lib/msl/MSL_X86",
+      "lib/msl/MSL_Win32/Src",
+      "lib/msl/win32sdk",
+      "lib/msl/win32sdk/sys"
+    ]
+  },
+  "src/runtime/setupargs.c": {
+    "compiler": "pro5",
+    "flags": [
+      "-O4,p",
+      "-sym",
+      "off",
+      "-Cpp_exceptions",
+      "on"
+    ],
+    "system_include_dirs": [
+      "lib/runtime53",
+      "lib/extra",
+      "lib/runtime",
+      "lib/msl/MSL_Cpp/MSL_Common/Include",
       "lib/msl/MSL_Win32/Include",
       "lib/msl/MSL_Common/Include",
       "lib/msl/MSL_Common/Src",
@@ -3324,14 +3425,15 @@
     "compiler": "pro5",
     "flags": [
       "-O4,p",
-      "-Cpp_exceptions",
-      "off",
       "-sym",
-      "off"
+      "off",
+      "-Cpp_exceptions",
+      "on"
     ],
     "system_include_dirs": [
+      "lib/extra",
       "lib/runtime",
-      "lib/msl/extra",
+      "lib/msl/MSL_Cpp/MSL_Common/Include",
       "lib/msl/MSL_Win32/Include",
       "lib/msl/MSL_Common/Include",
       "lib/msl/MSL_Common/Src",

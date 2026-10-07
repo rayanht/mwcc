@@ -51,7 +51,6 @@
 #include "driver/CWPluginsPrivate.h"
 #include "driver/Files.h"
 #include "driver/Memory.h"
-#include "msl/time_g.h"
 #include <time.h>
 
 #include <string.h>
@@ -2595,7 +2594,7 @@ char *expand_builtin_macro(Macro *macro)
             goto copy_ret;
 
         case 3: {
-            struct tm *time = time_to_tm(&data_0057f9d4);
+            struct tm *time = localtime(&data_0057f9d4);
             strftime(buffer, 64, "\"%b ", time);
             strftime(datePart, sizeof(datePart), "%d", time);
             if (datePart[0] == '0')
@@ -2607,7 +2606,7 @@ char *expand_builtin_macro(Macro *macro)
             goto copy_ret;
 
         case 4:
-            strftime(buffer, 64, "\"%H:%M:%S\"", time_to_tm(&data_0057f9d4));
+            strftime(buffer, 64, "\"%H:%M:%S\"", localtime(&data_0057f9d4));
             goto copy_ret;
 
         case 6:
@@ -4749,7 +4748,7 @@ int initialize_preprocessor(void)
 {
     SInt32 character;
 
-    data_0057f9d4 = get_gm_time(NULL);
+    data_0057f9d4 = time(NULL);
     text_offset = 0;
     data_0057f9d3 = 0;
     data_0058850d = 0;

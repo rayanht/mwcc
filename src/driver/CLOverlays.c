@@ -5,7 +5,6 @@
 #include "driver/CLFiles.h"
 #include "driver/CLIO.h"
 #include "driver/MemUtils.h"
-#include "msl/time_g.h"
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
@@ -201,7 +200,7 @@ void CLOverlays_ConvertTimestampTo1904EpochSeconds(SInt32 timestamp, int *result
     int yearOffset;
     struct tm *calendar;
 
-    calendar = time_to_tm(&timestamp);
+    calendar = localtime(&timestamp);
     year = calendar->tm_year;
     yearOffset = year - 4;
     *result = ((yearOffset + 3) / 4 + yearOffset * 365 - (yearOffset + 4) / 100 + (yearOffset - 296) / 400 +

@@ -13,7 +13,6 @@
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <msl_internal.h>
 #include <ctype.h>
 int fn_004050e0(char *left, char *right, int count)
 {

@@ -43,7 +43,7 @@
 #include "compiler/Registers.h"
 #include "compiler/Switch.h"
 #include "driver/Files.h"
-#include "msl/startup_win32.h"
+#include <errno.h>
 #include <stdlib.h>
 
 /* Declarations gathered from the merged files. */
@@ -1733,15 +1733,11 @@ TypeClassTemplate *CTemplateClass_ResolveRelatedClass(TypeClassTemplate *record)
 
 char *CTemplateClass_ParseDouble(char *value, double *result, char *error)
 {
-    SInt32 *errorState;
-    SInt32 *updatedErrorState;
     char *status;
 
-    errorState = _GetThreadLocalData();
-    *errorState = 0;
+    errno = 0;
     *result = strtod(value, &status);
-    updatedErrorState = _GetThreadLocalData();
-    *error = *updatedErrorState != 0;
+    *error = errno != 0;
     return status;
 }
 

@@ -29,8 +29,8 @@
 #include "driver/Resources.h"
 #include "driver/StringUtils.h"
 #include "driver/TargetOptimizer-ppc-eabi.h"
-#include "msl/signal.h"
-#include "msl/startup_win32.h"
+#include <signal.h>
+#include <errno.h>
 #include <stdio.h>
 #include <ctype.h>
 #include <string.h>
@@ -182,8 +182,7 @@ void clear_global(void)
 
 void CLIO_ExchangeClearGlobal(void)
 {
-    unsigned int value = (unsigned int)clear_global;
-    exchange_indexed_value(1, value);
+    signal(SIGABRT, (__signal_func_ptr)clear_global);
 }
 
 char CLIO_InitializeStreamBuffering(void)
@@ -232,14 +231,14 @@ static inline Boolean writeBufferLines(struct _FILE *fp, StorageHandle *bufp, ch
             lineLength = lineEnd - cursor;
             if (lineLength != 0) {
                 if (fwrite(cursor, lineLength, 1, fp) != 1) {
-                    CLErrors_ReportFormattedOSError(10, *_GetThreadLocalData());
+                    CLErrors_ReportFormattedOSError(10, errno);
                     return 0;
                 }
             }
             if (fn_004151f0())
                 break;
             if (fwrite("\r\n", 2, 1, fp) != 1) {
-                CLErrors_ReportFormattedOSError(10, *_GetThreadLocalData());
+                CLErrors_ReportFormattedOSError(10, errno);
                 return 0;
             }
             if (*lineEnd != 0) {
@@ -296,7 +295,7 @@ Boolean CLIO_WriteTextFile(OSSpec *fileRef, StorageHandle *text, SInt32 textLeng
     OS_SpecToString(fileRef, path, 0x104);
     file = fopen(path, "w+b");
     if (file == NULL) {
-        CLErrors_ReportFormattedOSError(8, *_GetThreadLocalData(), path);
+        CLErrors_ReportFormattedOSError(8, errno, path);
         return 0;
     }
     write_text_buffer(file, text, textLength);
@@ -328,7 +327,7 @@ unsigned char CLIO_AppendStorageToFile(OSSpec *fileSpec, struct StorageHandle *s
     OS_SpecToString(fileSpec, path, 0x104);
     file = fopen(path, "a+b");
     if (file == NULL) {
-        CLErrors_ReportFormattedOSError(8, *_GetThreadLocalData(), path);
+        CLErrors_ReportFormattedOSError(8, errno, path);
         return 0;
     }
     write_text_buffer(file, storage, textLength);

@@ -70,13 +70,8 @@ extern int __stdcall set_list_link_next(struct ListLink *link);
 extern unsigned int __stdcall fn_0040c050(struct ListLink *link);
 extern unsigned char data_0054a014[];
 extern unsigned int fn_0040c070(void);
-extern struct DriverLookupEntry *find_driver_lookup_entry(int key);
 extern unsigned int fn_0040bed0(void);
 extern int fn_0040c060(void);
-extern struct DriverLookupEntry {
-    int key;
-    int data;
-} DAT_0057d938[0x23];
 extern unsigned char PTR_fn_0054a05c[];
 extern unsigned char PTR_fn_0054a080[];
 extern unsigned char data_00543738[];

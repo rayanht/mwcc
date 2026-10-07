@@ -147,10 +147,13 @@ def read_object(path):
         off = 20 + i * 40
         rawsize, rawoff, reloff = struct.unpack_from("<III", data, off + 16)
         nrel = struct.unpack_from("<H", data, off + 32)[0]
+        flags = struct.unpack_from("<I", data, off + 36)[0]
         sections.append(
             dict(
-                code=bool(struct.unpack_from("<I", data, off + 36)[0] & 0x20),
-                data=data[rawoff : rawoff + rawsize] if rawoff else bytes(rawsize),
+                code=bool(flags & 0x20),
+                # (an uninitialized-data section has no contents, whatever its raw data pointer says: Pro 5 points it
+                # at the next section's)
+                data=data[rawoff : rawoff + rawsize] if rawoff and not flags & 0x80 else bytes(rawsize),
                 relocs=[
                     struct.unpack_from("<IIH", data, reloff + j * 10)
                     for j in range(nrel)
@@ -383,6 +386,11 @@ def check(version):
     fixups = base_relocations(pe)
     addresses = {name: int(value, 0) for name, value in json.loads(Path(f"config/{version}/bindings.json").read_text()).items()}
     addresses.update({r["symbol"]: r["address"] for r in rows if "symbol" in r})
+    # (a static function is its own source's: the same name can be static in several)
+    own = {}
+    for r in rows:
+        if "symbol" in r:
+            own.setdefault(r.get("source"), {})[r["symbol"]] = r["address"]
     objects, results = {}, {}
     for row in rows:
         if "source" not in row:
@@ -390,8 +398,8 @@ def check(version):
         if row["source"] not in objects:
             objects[row["source"]] = read_object(Path(f"build/{version}/compiled/{row['source']}.obj"))
         try:
-            body, resolutions = resolve_function(*objects[row["source"]], row["symbol"], row["address"], addresses, pe,
-                                                 row["size"])
+            body, resolutions = resolve_function(*objects[row["source"]], row["symbol"], row["address"],
+                                                 {**addresses, **own[row["source"]]}, pe, row["size"])
         except ValueError:
             results[row["name"]] = (None, False)
             continue

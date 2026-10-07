@@ -11,7 +11,6 @@
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <msl_internal.h>
 #include "driver/MacSpecs.h"
 #include "compiler/enode.h"
 #include "compiler/objects.h"

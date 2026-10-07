@@ -6,8 +6,8 @@
   compilers     decomp.dev's compiler archive, with the original executables (OUTPUT: a stamp in the extracted tree)
   pro4, pro5, pro53, pro6
                 the CodeWarrior Windows/x86 compilers the sources build with (OUTPUT: mwcc.exe)
-  lib           the MSL C library and runtime sources of CodeWarrior Pro 5, which src/msl and src/runtime build
-                (OUTPUT: lib/ok)
+  lib           the MSL C library and runtime sources of CodeWarrior Pro 5 and the runtime sources of its 5.3
+                updater, which src/msl and src/runtime build (OUTPUT: lib/ok)
 """
 import io
 import json
@@ -160,22 +160,27 @@ def tools_zip_member(url, raw, archive, member):
     return zipfile.ZipFile(Disc(url, raw).file(archive)).read(member)
 
 
-def pro53():
-    """mwcc.exe of the Pro 5.3 updater: an InstallShield executable whose data1.cab/data1.hdr are deflated ZIP
-    members at these offsets; unshield unpacks the cabinet."""
+def pro53_updater(root, files=(), flatten=False):
+    """The directory of ROOT the Pro 5.3 updater's Win32 C/C++ files (FILES: all when empty; FLATTEN: without their
+    directories) are unpacked into: the updater is an InstallShield executable whose data1.cab/data1.hdr are deflated
+    ZIP members at these offsets; unshield unpacks the cabinet."""
     updater = fetch(PRO53_UPDATER)
+    for offset in (100746, 40487531):
+        _, _, _, _, _, _, packed, _, length, extra = struct.unpack_from("<5H3I2H", updater, offset + 4)
+        name = updater[offset + 30:offset + 30 + length].decode()
+        begin = offset + 30 + length + extra
+        (root / name).write_bytes(zlib.decompress(updater[begin:begin + packed], -15))
+    if not shutil.which("unshield"):
+        raise SystemExit("unshield is required (brew install unshield / apt install unshield)")
+    subprocess.run(["unshield", "-g", "Win CC++ - FU2", *(["-j"] if flatten else []), "-d", str(root / "files"), "x",
+                    str(root / "data1.cab"), *files], check=True, stdout=subprocess.DEVNULL)
+    return root / "files/Win_CC++_-_FU2"
+
+
+def pro53():
+    """mwcc.exe of the Pro 5.3 updater."""
     with tempfile.TemporaryDirectory() as temporary:
-        root = Path(temporary)
-        for offset in (100746, 40487531):
-            _, _, _, _, _, _, packed, _, length, extra = struct.unpack_from("<5H3I2H", updater, offset + 4)
-            name = updater[offset + 30:offset + 30 + length].decode()
-            begin = offset + 30 + length + extra
-            (root / name).write_bytes(zlib.decompress(updater[begin:begin + packed], -15))
-        if not shutil.which("unshield"):
-            raise SystemExit("unshield is required (brew install unshield / apt install unshield)")
-        subprocess.run(["unshield", "-g", "Win CC++ - FU2", "-j", "-d", str(root / "files"), "x", str(root / "data1.cab"),
-                        "mwcc.exe"], check=True, stdout=subprocess.DEVNULL)
-        return (root / "files/Win_CC++_-_FU2/mwcc.exe").read_bytes()
+        return (pro53_updater(Path(temporary), ["mwcc.exe"], flatten=True) / "mwcc.exe").read_bytes()
 
 
 # lib/ from the Pro 5 tools archive: (directory, archive directory, files: all when None)
@@ -188,13 +193,30 @@ LIB = [
     ("msl/MSL_Win32/Src", "MSL/MSL_C/MSL_Win32/Src", None),
     ("msl/MSL_X86", "MSL/MSL_C/MSL_X86", None),
     ("msl/win32sdk", "Win32-x86 Support/Headers/Win32 SDK",
-     ["BaseTsd.h", "POPPACK.H", "PSHPACK2.H", "PSHPACK4.H", "PSHPACK8.H", "TCHAR.H", "WINBASE.H", "WINDEF.H",
-      "WINERROR.H", "WINNT.H", "WINUSER.H", "sys/TYPES.H"]),
-    ("msl/extra", "MSL/MSL_C/MSL_Common/Include", ["os_enum.h"]),
-    ("msl/extra", "Win32-x86 Support/Headers/Win32 SDK", ["x86_prefix.h"]),
-    ("msl/extra", "MSL/MSL_C/MSL_Common/Src", ["printf.c"]),
+     ["BaseTsd.h", "EXCPT.H", "IMM.H", "MCX.H", "POPPACK.H", "PSHPACK1.H", "PSHPACK2.H", "PSHPACK4.H", "PSHPACK8.H",
+      "TCHAR.H", "WINBASE.H", "WINCON.H", "WINDEF.H", "WINDOWS.H", "WINERROR.H", "WINGDI.H", "WINNETWK.H", "WINNLS.H",
+      "WINNT.H", "WINREG.H", "WINSVC.H", "WINUSER.H", "WINVER.H", "sys/TYPES.H"]),
+    ("extra", "MSL/MSL_C/MSL_Common/Include", ["os_enum.h"]),
+    ("extra", "Win32-x86 Support/Headers/Win32 SDK", ["x86_prefix.h"]),
+    ("extra", "MSL/MSL_C/MSL_Common/Src", ["printf.c", "time.c"]),
+    ("extra", "MSL/MSL_C/MSL_Win32/Src", ["startup.win32.c", "ThreadLocalData.c", "time.win32.c"]),
+    ("extra", "Win32-x86 Support/Libraries/Runtime/(Sources)", ["exchand.cpp"]),
     ("runtime", "Win32-x86 Support/Libraries/Runtime/(Sources)", None),
 ]
+# lib/ from the Pro 5.3 updater, whose setupargs.c the compiler's runtime has: (directory, updater directory)
+LIB53 = [
+    ("runtime53", "Win32-x86_Support/Libraries/Runtime/(Sources)"),
+]
+
+
+def patch(path, *replacements):
+    """Each OLD in PATH, which must occur exactly once, replaced by NEW."""
+    data = path.read_bytes()
+    for old, new in replacements:
+        if data.count(old) != 1:
+            raise SystemExit(f"{path}: unexpected contents")
+        data = data.replace(old, new)
+    path.write_bytes(data)
 
 
 def lib(output):
@@ -209,14 +231,44 @@ def lib(output):
                 target = root / directory / relative
                 target.parent.mkdir(parents=True, exist_ok=True)
                 target.write_bytes(archive.read(name))
+    with tempfile.TemporaryDirectory() as temporary:
+        files = pro53_updater(Path(temporary))
+        for directory, source in LIB53:
+            shutil.copytree(files / source, root / directory, dirs_exist_ok=True)
+    extra = root / "extra"
     # (the compiler was linked with an MSL revision whose printf prints a null %s as "(null)": the string its
     # __pformatter references)
-    printf = root / "msl/extra/printf.c"
-    data = printf.read_bytes()
-    old = b'buff_ptr = "";      /*97010mani@be */'
-    if data.count(old) != 1:
-        raise SystemExit(f"{printf}: unexpected contents")
-    printf.write_bytes(data.replace(old, b'buff_ptr = "(null)";      /*97010mani@be */'))
+    patch(extra / "printf.c", (b'buff_ptr = "";      /*97010mani@be */', b'buff_ptr = "(null)";      /*97010mani@be */'))
+    # (whose time() returns coordinated universal time and localtime() applies the time zone bias, through a function
+    # time.win32.c adds)
+    patch(extra / "time.c",
+          (b"\ttime_t\ttime = __get_time();", b"\ttime_t\ttime = __get_time();\r\n\r\n\t__to_gm_time(&time);"),
+          (b"\t\t__time2tm(*timer, &tm);",
+           b"\t{\r\n\t\ttime_t t = *timer;\r\n\r\n\t\tsubtract_time_zone_bias(&t);\r\n\t\t__time2tm(t, &tm);\r\n\t}"),
+          (b"struct tm * localtime(const time_t * timer)",
+           b"int subtract_time_zone_bias(time_t * time);\r\n\r\nstruct tm * localtime(const time_t * timer)"))
+    patch(extra / "time.win32.c",
+          (b"/*  Change Record",
+           b"int subtract_time_zone_bias(time_t * time)\r\n{\r\n\tTIME_ZONE_INFORMATION tzi;\r\n\r\n"
+           b"\tif (GetTimeZoneInformation(&tzi) == TIME_ZONE_ID_UNKNOWN)\r\n\t\treturn 0;\r\n"
+           b"\t*time -= (tzi.Bias * 60);\r\n\treturn(1);\r\n}\r\n\r\n/*  Change Record"))
+    # (whose _CRTStartup opens the standard streams untranslated)
+    patch(extra / "startup.win32.c",
+          *((b"_HandleTable[%d]->translate = 1;" % i, b"_HandleTable[%d]->translate = 0;" % i) for i in range(3)))
+    # (whose _GetThreadLocalData reports its failure on the standard error stream)
+    patch(extra / "ThreadLocalData.c",
+          (b"\t    MessageBox(NULL, TEXT(\"Could not get thread local data\"), TEXT(\"MW Win32 Runtime\"), MB_OK);\r\n"
+           b"\t    exit(0);",
+           b"\t    static char *message = \"Could not get thread local data\\n\";\r\n\t    DWORD written;\r\n"
+           b"\t    HANDLE handle = GetStdHandle(STD_ERROR_HANDLE);\r\n\r\n"
+           b"\t    WriteFile(handle, message, strlen(message), &written, NULL);\r\n\t    exit(7);"))
+    # (and whose runtime reports an unhandled exception there too)
+    patch(extra / "exchand.cpp",
+          (b"#include <stdio.h>\t// 960711: Wouldn't compile without it.\r\n",
+           b"#include <stdio.h>\t// 960711: Wouldn't compile without it.\r\n#include <string.h>\r\n"),
+          (b"    MessageBox(NULL, buffer, TEXT(\"Unhandled Exception\"), MB_OK | MB_TASKMODAL);",
+           b"    DWORD written;\r\n    HANDLE handle = GetStdHandle(STD_ERROR_HANDLE);\r\n\r\n"
+           b"    WriteFile(handle, buffer, strlen(buffer), &written, NULL);"))
     output.touch()
 
 

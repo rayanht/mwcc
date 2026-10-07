@@ -45,8 +45,9 @@ The build downloads what it needs but this repository does not contain:
   their published SHA-1 (`build/compilers/GC`)
 - the CodeWarrior Pro 4, 5, 5.3 and 6 Windows/x86 compilers that built them, from the Internet Archive
   (`build/compilers/pro*`)
-- the MSL C library and runtime sources of CodeWarrior Pro 5, from the same Internet Archive disc (`lib/`), with
-  `printf.c` patched to the revision the compiler was linked with
+- the MSL C library and runtime sources of CodeWarrior Pro 5, from the same Internet Archive disc, and the runtime
+  sources of its 5.3 updater (`lib/`), with the compiler's own changes to `printf.c`, `time.c`, `time.win32.c`,
+  `startup.win32.c`, `ThreadLocalData.c` and `exchand.cpp` applied (`lib/extra`)
 
 Each function of the compiled sources is compared with the original's; `ninja` fails when a function of a Matching
 source differs. `python tools/verify.py` builds and checks every version.
@@ -60,16 +61,15 @@ Project structure
 =================
 
 - `config/sources.json`: each source's compiler, flags and status (Matching or NonMatching)
-- `config/<version>/config.json`: the original executable and its SHA-1; for 1.3, the compiler that replaces Pro 5.3
-  and the sources Matching in that version
+- `config/<version>/config.json`: the original executable and its SHA-1; for 1.3, the compilers that replace Pro 5
+  and 5.3 and the sources Matching in that version
 - `config/<version>/functions.json`: each function's address, size and source (none yet for a function not
   decompiled)
 - `config/<version>/bindings.json`: the addresses of the data and functions the sources reference
 - `src/`: the compiler (`driver`, `frontend`, `optimizer`, `backend`) and its statically linked C library and
-  runtime (`msl`, `runtime`)
+  runtime (`msl`, `runtime`: one source per object of the original, which builds the library's source of it)
 - `include/`: headers; `include/libc` is the C library as the compiler's sources see it
-- `lib/` (downloaded): the MSL C library and runtime sources of CodeWarrior Pro 5, built by `src/msl` and
-  `src/runtime`
+- `lib/` (downloaded): the MSL C library and runtime sources, built by `src/msl` and `src/runtime`
 
 The source is formatted with `clang-format` (`uv run clang-format -i FILE`).
 

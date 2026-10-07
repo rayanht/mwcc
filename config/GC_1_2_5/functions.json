@@ -9,112 +9,112 @@
     "name": "_MWCHandler",
     "address": "0x00401070",
     "size": 148,
-    "source": "src/runtime/ExceptionTables.c"
+    "source": "src/runtime/exchand.cpp"
   },
   {
     "name": "_RegisterExceptionTables",
     "address": "0x00401110",
     "size": 60,
-    "source": "src/runtime/ExceptionTables.c"
+    "source": "src/runtime/ExceptionX86.cpp"
   },
   {
-    "name": "lookup_runtime_record_and_call_value",
+    "name": "?ExX86_FindExceptionRecord@@YAXPADPAUExceptionInfo@@@Z",
     "address": "0x00401150",
     "size": 403,
-    "source": "src/runtime/ExceptionTables.c"
+    "source": "src/runtime/ExceptionX86.cpp"
   },
   {
-    "name": "?ExceptionX86_ExX86_CurrentAction@@YAGPBUActionIterator@@@Z",
+    "name": "?ExX86_CurrentAction@@YAGPBUActionIterator@@@Z",
     "address": "0x004012f0",
     "size": 25,
     "source": "src/runtime/ExceptionX86.cpp"
   },
   {
-    "name": "?ExceptionX86_ExX86_NextAction@@YAGPAUActionIterator@@@Z",
+    "name": "?ExX86_NextAction@@YAGPAUActionIterator@@@Z",
     "address": "0x00401310",
     "size": 237,
     "source": "src/runtime/ExceptionX86.cpp"
   },
   {
-    "name": "?ExceptionX86_ExX86_PopStackFrame@@YAPADPAUThrowContext@@PAUExceptionInfo@@@Z",
+    "name": "?ExX86_PopStackFrame@@YAPADPAUThrowContext@@PAUExceptionInfo@@@Z",
     "address": "0x00401400",
     "size": 85,
     "source": "src/runtime/ExceptionX86.cpp"
   },
   {
-    "name": "?ExceptionX86_ExX86_GetValue@@YAJPAUThrowContext@@JF@Z",
+    "name": "?ExX86_GetValue@@YAJPAUThrowContext@@JF@Z",
     "address": "0x00401460",
     "size": 202,
     "source": "src/runtime/ExceptionX86.cpp"
   },
   {
-    "name": "?ExceptionX86_ExX86_DestroyLocal@@YAXPAUThrowContext@@PBUex_destroylocal@@@Z",
+    "name": "?ExX86_DestroyLocal@@YAXPAUThrowContext@@PBUex_destroylocal@@@Z",
     "address": "0x00401530",
     "size": 22,
     "source": "src/runtime/ExceptionX86.cpp"
   },
   {
-    "name": "?ExceptionX86_ExX86_DestroyLocalCond@@YAXPAUThrowContext@@PBUex_destroylocalcond@@@Z",
+    "name": "?ExX86_DestroyLocalCond@@YAXPAUThrowContext@@PBUex_destroylocalcond@@@Z",
     "address": "0x00401550",
     "size": 50,
     "source": "src/runtime/ExceptionX86.cpp"
   },
   {
-    "name": "?ExceptionX86_ExX86_DestroyLocalPointer@@YAXPAUThrowContext@@PBUex_destroylocalpointer@@@Z",
+    "name": "?ExX86_DestroyLocalPointer@@YAXPAUThrowContext@@PBUex_destroylocalpointer@@@Z",
     "address": "0x00401590",
     "size": 38,
     "source": "src/runtime/ExceptionX86.cpp"
   },
   {
-    "name": "?ExceptionX86_ExX86_DestroyLocalArray@@YAXPAUThrowContext@@PBUex_destroylocalarray@@@Z",
+    "name": "?ExX86_DestroyLocalArray@@YAXPAUThrowContext@@PBUex_destroylocalarray@@@Z",
     "address": "0x004015c0",
     "size": 68,
     "source": "src/runtime/ExceptionX86.cpp"
   },
   {
-    "name": "?ExceptionX86_ExX86_DestroyPartialArray@@YAXPAUThrowContext@@PBUex_destroypartialarray@@@Z",
+    "name": "?ExX86_DestroyPartialArray@@YAXPAUThrowContext@@PBUex_destroypartialarray@@@Z",
     "address": "0x00401610",
     "size": 118,
     "source": "src/runtime/ExceptionX86.cpp"
   },
   {
-    "name": "?ExceptionX86_ExX86_DestroyMember@@YAXPAUThrowContext@@PBUex_destroymember@@H@Z",
+    "name": "?ExX86_DestroyMember@@YAXPAUThrowContext@@PBUex_destroymember@@H@Z",
     "address": "0x00401690",
     "size": 41,
     "source": "src/runtime/ExceptionX86.cpp"
   },
   {
-    "name": "?ExceptionX86_ExX86_DestroyMemberCond@@YAXPAUThrowContext@@PBUex_destroymembercond@@@Z",
+    "name": "?ExX86_DestroyMemberCond@@YAXPAUThrowContext@@PBUex_destroymembercond@@@Z",
     "address": "0x004016c0",
     "size": 62,
     "source": "src/runtime/ExceptionX86.cpp"
   },
   {
-    "name": "?ExceptionX86_ExX86_DestroyMemberArray@@YAXPAUThrowContext@@PBUex_destroymemberarray@@@Z",
+    "name": "?ExX86_DestroyMemberArray@@YAXPAUThrowContext@@PBUex_destroymemberarray@@@Z",
     "address": "0x00401700",
     "size": 84,
     "source": "src/runtime/ExceptionX86.cpp"
   },
   {
-    "name": "?ExceptionX86_ExX86_DeletePointer@@YAXPAUThrowContext@@PBUex_deletepointer@@@Z",
+    "name": "?ExX86_DeletePointer@@YAXPAUThrowContext@@PBUex_deletepointer@@@Z",
     "address": "0x00401760",
     "size": 36,
     "source": "src/runtime/ExceptionX86.cpp"
   },
   {
-    "name": "?ExceptionX86_ExX86_DeletePointerCond@@YAXPAUThrowContext@@PBUex_deletepointercond@@@Z",
+    "name": "?ExX86_DeletePointerCond@@YAXPAUThrowContext@@PBUex_deletepointercond@@@Z",
     "address": "0x00401790",
     "size": 57,
     "source": "src/runtime/ExceptionX86.cpp"
   },
   {
-    "name": "?ExceptionX86_ExX86_UnwindStack@@YAXPAUThrowContext@@PAUExceptionInfo@@PAX@Z",
+    "name": "?ExX86_UnwindStack@@YAXPAUThrowContext@@PAUExceptionInfo@@PAX@Z",
     "address": "0x004017d0",
     "size": 432,
     "source": "src/runtime/ExceptionX86.cpp"
   },
   {
-    "name": "?ExceptionX86_ExX86_IsInSpecification@@YAHPADPAUex_specification@@@Z",
+    "name": "?ExX86_IsInSpecification@@YAHPADPAUex_specification@@@Z",
     "address": "0x00401980",
     "size": 73,
     "source": "src/runtime/ExceptionX86.cpp"
@@ -138,13 +138,13 @@
     "source": "src/runtime/ExceptionX86.cpp"
   },
   {
-    "name": "?ExceptionX86_ExX86_HandleUnexpected@@YAXPAUThrowContext@@PAUExceptionInfo@@PAUex_specification@@@Z",
+    "name": "?ExX86_HandleUnexpected@@YAXPAUThrowContext@@PAUExceptionInfo@@PAUex_specification@@@Z",
     "address": "0x00401a80",
     "size": 102,
     "source": "src/runtime/ExceptionX86.cpp"
   },
   {
-    "name": "?ExceptionX86_ExX86_ThrowHandler@@YAXPAUThrowContext@@@Z",
+    "name": "?ExX86_ThrowHandler@@YAXPAUThrowContext@@@Z",
     "address": "0x00401af0",
     "size": 495,
     "source": "src/runtime/ExceptionX86.cpp"
@@ -180,46 +180,46 @@
     "source": "src/runtime/ExceptionX86.cpp"
   },
   {
-    "name": "fn_00401de0",
+    "name": "__get_MSL_init_count",
     "address": "0x00401de0",
     "size": 6,
-    "source": "src/msl/startup_win32.c"
+    "source": "src/msl/startup.win32.c"
   },
   {
     "name": "_CRTStartup",
     "address": "0x00401df0",
     "size": 455,
-    "source": "src/msl/startup_win32.c"
+    "source": "src/msl/startup.win32.c"
   },
   {
-    "name": "allocate_tls_index",
+    "name": "_InitializeThreadDataIndex",
     "address": "0x00401fc0",
     "size": 61,
-    "source": "src/msl/startup_win32.c"
+    "source": "src/msl/ThreadLocalData.c"
   },
   {
-    "name": "free_tls_index",
+    "name": "_DisposeThreadDataIndex",
     "address": "0x00402000",
     "size": 39,
-    "source": "src/msl/startup_win32.c"
+    "source": "src/msl/ThreadLocalData.c"
   },
   {
-    "name": "initialize_thread_local_data",
+    "name": "_InitializeThreadData",
     "address": "0x00402030",
     "size": 66,
-    "source": "src/msl/startup_win32.c"
+    "source": "src/msl/ThreadLocalData.c"
   },
   {
     "name": "_InitializeMainThreadData",
     "address": "0x00402080",
     "size": 35,
-    "source": "src/msl/startup_win32.c"
+    "source": "src/msl/ThreadLocalData.c"
   },
   {
     "name": "_GetThreadLocalData",
     "address": "0x004020b0",
     "size": 119,
-    "source": "src/msl/startup_win32.c"
+    "source": "src/msl/ThreadLocalData.c"
   },
   {
     "name": "abort",
@@ -228,46 +228,46 @@
     "source": "src/msl/abort_exit.c"
   },
   {
-    "name": "register_callback",
+    "name": "atexit",
     "address": "0x00402150",
     "size": 58,
-    "source": "src/driver/CLStaticMain.c"
+    "source": "src/msl/abort_exit.c"
   },
   {
     "name": "exit",
     "address": "0x00402190",
     "size": 106,
-    "source": "src/driver/CLStaticMain.c"
+    "source": "src/msl/abort_exit.c"
   },
   {
-    "name": "call_exit_callbacks_and_exit",
+    "name": "__exit",
     "address": "0x00402200",
     "size": 97,
-    "source": "src/driver/CLStaticMain.c"
+    "source": "src/msl/abort_exit.c"
   },
   {
-    "name": "free_argv_and_buffer",
+    "name": "_FreeCommandLine",
     "address": "0x00402270",
     "size": 58,
-    "source": "src/driver/CLStaticMain.c"
+    "source": "src/runtime/setupargs.c"
   },
   {
-    "name": "reset_args",
+    "name": "_MemFailure",
     "address": "0x004022b0",
     "size": 21,
-    "source": "src/driver/CLStaticMain.c"
+    "source": "src/runtime/setupargs.c"
   },
   {
     "name": "_SetupArgs",
     "address": "0x004022d0",
     "size": 369,
-    "source": "src/driver/CLStaticMain.c"
+    "source": "src/runtime/setupargs.c"
   },
   {
     "name": "_RunInit",
     "address": "0x00402450",
     "size": 45,
-    "source": "src/driver/CLStaticMain.c"
+    "source": "src/runtime/runinit.c"
   },
   {
     "name": "main",
@@ -276,28 +276,28 @@
     "source": "src/driver/CLStaticMain.c"
   },
   {
-    "name": "abort_execution",
+    "name": "?dthandler@std@@YAXXZ",
     "address": "0x004025c0",
     "size": 12,
-    "source": "src/driver/CLStaticMain.c"
+    "source": "src/runtime/NMWException.cpp"
   },
   {
-    "name": "fn_004025d0",
+    "name": "?duhandler@std@@YAXXZ",
     "address": "0x004025d0",
     "size": 12,
-    "source": "src/driver/CLStaticMain.c"
+    "source": "src/runtime/NMWException.cpp"
   },
   {
-    "name": "invoke_function_pointer",
+    "name": "?terminate@std@@YAXXZ",
     "address": "0x004025e0",
     "size": 13,
-    "source": "src/driver/CLStaticMain.c"
+    "source": "src/runtime/NMWException.cpp"
   },
   {
-    "name": "call_function_pointer",
+    "name": "?unexpected@std@@YAXXZ",
     "address": "0x004025f0",
     "size": 13,
-    "source": "src/driver/CLStaticMain.c"
+    "source": "src/runtime/NMWException.cpp"
   },
   {
     "name": "__throw_catch_compare",
@@ -306,88 +306,88 @@
     "source": "src/runtime/NMWException.cpp"
   },
   {
-    "name": "printf_g_parse_format",
+    "name": "parse_format",
     "address": "0x00402720",
     "size": 804,
-    "source": "src/msl/printf_g.c"
+    "source": "src/msl/printf.c"
   },
   {
-    "name": "printf_g_long2str",
+    "name": "long2str",
     "address": "0x00402a50",
     "size": 454,
-    "source": "src/msl/printf_g.c"
+    "source": "src/msl/printf.c"
   },
   {
-    "name": "printf_g_longlong2str",
+    "name": "longlong2str",
     "address": "0x00402c20",
     "size": 613,
-    "source": "src/msl/printf_g.c"
+    "source": "src/msl/printf.c"
   },
   {
-    "name": "printf_g_round_decimal",
+    "name": "round_decimal",
     "address": "0x00402e90",
     "size": 213,
-    "source": "src/msl/printf_g.c"
+    "source": "src/msl/printf.c"
   },
   {
-    "name": "printf_g_float2str",
+    "name": "float2str",
     "address": "0x00402f70",
     "size": 1147,
-    "source": "src/msl/printf_g.c"
+    "source": "src/msl/printf.c"
   },
   {
     "name": "__pformatter",
     "address": "0x004033f0",
     "size": 1656,
-    "source": "src/msl/printf_g.c"
+    "source": "src/msl/printf.c"
   },
   {
     "name": "__FileWrite",
     "address": "0x00403a70",
     "size": 40,
-    "source": "src/msl/printf_g.c"
+    "source": "src/msl/printf.c"
   },
   {
     "name": "__StringWrite",
     "address": "0x00403aa0",
     "size": 60,
-    "source": "src/msl/printf_g.c"
+    "source": "src/msl/printf.c"
   },
   {
     "name": "printf",
     "address": "0x00403ae0",
     "size": 95,
-    "source": "src/msl/printf_g.c"
+    "source": "src/msl/printf.c"
   },
   {
     "name": "fprintf",
     "address": "0x00403b40",
     "size": 95,
-    "source": "src/msl/printf_g.c"
+    "source": "src/msl/printf.c"
   },
   {
     "name": "vfprintf",
     "address": "0x00403ba0",
     "size": 58,
-    "source": "src/msl/printf_g.c"
+    "source": "src/msl/printf.c"
   },
   {
     "name": "vsnprintf",
     "address": "0x00403be0",
     "size": 78,
-    "source": "src/msl/printf_g.c"
+    "source": "src/msl/printf.c"
   },
   {
     "name": "vsprintf",
     "address": "0x00403c30",
     "size": 26,
-    "source": "src/msl/printf_g.c"
+    "source": "src/msl/printf.c"
   },
   {
     "name": "sprintf",
     "address": "0x00403c50",
     "size": 63,
-    "source": "src/msl/printf_g.c"
+    "source": "src/msl/printf.c"
   },
   {
     "name": "__destroy_new_array",
@@ -402,172 +402,172 @@
     "source": "src/runtime/delop.cpp"
   },
   {
-    "name": "initialize_critical_sections",
+    "name": "__init_critical_regions",
     "address": "0x00403d30",
     "size": 35,
-    "source": "src/msl/critical_regions_win32.c"
+    "source": "src/msl/critical_regions.win32.c"
   },
   {
-    "name": "delete_critical_sections",
+    "name": "__kill_critical_regions",
     "address": "0x00403d60",
     "size": 35,
-    "source": "src/msl/critical_regions_win32.c"
+    "source": "src/msl/critical_regions.win32.c"
   },
   {
     "name": "__begin_critical_region",
     "address": "0x00403d90",
     "size": 20,
-    "source": "src/msl/critical_regions_win32.c"
+    "source": "src/msl/critical_regions.win32.c"
   },
   {
     "name": "__end_critical_region",
     "address": "0x00403db0",
     "size": 20,
-    "source": "src/msl/critical_regions_win32.c"
+    "source": "src/msl/critical_regions.win32.c"
   },
   {
-    "name": "alloc_g_Block_construct",
+    "name": "Block_construct",
     "address": "0x00403dd0",
     "size": 93,
-    "source": "src/msl/alloc_g.c"
+    "source": "src/msl/alloc.c"
   },
   {
-    "name": "alloc_g_Block_subBlock",
+    "name": "Block_subBlock",
     "address": "0x00403e30",
     "size": 154,
-    "source": "src/msl/alloc_g.c"
+    "source": "src/msl/alloc.c"
   },
   {
-    "name": "alloc_g_Block_link",
+    "name": "Block_link",
     "address": "0x00403ed0",
     "size": 142,
-    "source": "src/msl/alloc_g.c"
+    "source": "src/msl/alloc.c"
   },
   {
-    "name": "alloc_g_Block_unlink",
+    "name": "Block_unlink",
     "address": "0x00403f60",
     "size": 100,
-    "source": "src/msl/alloc_g.c"
+    "source": "src/msl/alloc.c"
   },
   {
-    "name": "alloc_g_SubBlock_construct",
+    "name": "SubBlock_construct",
     "address": "0x00403fd0",
     "size": 75,
-    "source": "src/msl/alloc_g.c"
+    "source": "src/msl/alloc.c"
   },
   {
-    "name": "alloc_g_SubBlock_split",
+    "name": "SubBlock_split",
     "address": "0x00404020",
     "size": 177,
-    "source": "src/msl/alloc_g.c"
+    "source": "src/msl/alloc.c"
   },
   {
-    "name": "alloc_g_SubBlock_merge_prev",
+    "name": "SubBlock_merge_prev",
     "address": "0x004040e0",
     "size": 150,
-    "source": "src/msl/alloc_g.c"
+    "source": "src/msl/alloc.c"
   },
   {
-    "name": "alloc_g_SubBlock_merge_next",
+    "name": "SubBlock_merge_next",
     "address": "0x00404180",
     "size": 153,
-    "source": "src/msl/alloc_g.c"
+    "source": "src/msl/alloc.c"
   },
   {
-    "name": "fn_00404220",
+    "name": "link",
     "address": "0x00404220",
     "size": 63,
-    "source": "src/msl/alloc_g.c"
+    "source": "src/msl/alloc.c"
   },
   {
-    "name": "unlink_list_elem",
+    "name": "unlink",
     "address": "0x00404260",
     "size": 57,
-    "source": "src/msl/alloc_g.c"
+    "source": "src/msl/alloc.c"
   },
   {
-    "name": "alloc_g_link_new_block",
+    "name": "link_new_block",
     "address": "0x004042a0",
     "size": 70,
-    "source": "src/msl/alloc_g.c"
+    "source": "src/msl/alloc.c"
   },
   {
-    "name": "allocate_sub_block",
+    "name": "allocate_from_var_pools",
     "address": "0x004042f0",
     "size": 145,
-    "source": "src/msl/alloc_g.c"
+    "source": "src/msl/alloc.c"
   },
   {
-    "name": "alloc_g_deallocate_from_var_pools",
+    "name": "deallocate_from_var_pools",
     "address": "0x00404390",
     "size": 103,
-    "source": "src/msl/alloc_g.c"
+    "source": "src/msl/alloc.c"
   },
   {
-    "name": "alloc_g_FixBlock_construct",
+    "name": "FixBlock_construct",
     "address": "0x00404400",
     "size": 218,
-    "source": "src/msl/alloc_g.c"
+    "source": "src/msl/alloc.c"
   },
   {
     "name": "allocate_from_fixed_pools",
     "address": "0x004044e0",
     "size": 174,
-    "source": "src/msl/alloc_g.c"
+    "source": "src/msl/alloc.c"
   },
   {
     "name": "deallocate_from_fixed_pools",
     "address": "0x00404590",
     "size": 119,
-    "source": "src/msl/alloc_g.c"
+    "source": "src/msl/alloc.c"
   },
   {
     "name": "malloc",
     "address": "0x00404610",
     "size": 58,
-    "source": "src/msl/alloc_g.c"
+    "source": "src/msl/alloc.c"
   },
   {
     "name": "free",
     "address": "0x00404650",
     "size": 113,
-    "source": "src/msl/alloc_g.c"
+    "source": "src/msl/alloc.c"
   },
   {
     "name": "realloc",
     "address": "0x004046d0",
     "size": 435,
-    "source": "src/msl/alloc_g.c"
+    "source": "src/msl/alloc.c"
   },
   {
     "name": "calloc",
     "address": "0x00404890",
     "size": 37,
-    "source": "src/msl/alloc_g.c"
+    "source": "src/msl/alloc.c"
   },
   {
     "name": "close",
     "address": "0x004048c0",
     "size": 98,
-    "source": "src/msl/unistd_win32.c"
+    "source": "src/msl/unistd.win32.c"
   },
   {
     "name": "lseek",
     "address": "0x00404930",
     "size": 109,
-    "source": "src/msl/unistd_win32.c"
+    "source": "src/msl/unistd.win32.c"
   },
   {
     "name": "read",
     "address": "0x004049a0",
     "size": 229,
-    "source": "src/msl/unistd_win32.c"
+    "source": "src/msl/unistd.win32.c"
   },
   {
     "name": "write",
     "address": "0x00404a90",
     "size": 263,
-    "source": "src/msl/unistd_win32.c"
+    "source": "src/msl/unistd.win32.c"
   },
   {
     "name": "memmove",
@@ -594,7 +594,7 @@
     "source": "src/msl/mem.c"
   },
   {
-    "name": "exchange_indexed_value",
+    "name": "signal",
     "address": "0x00404cf0",
     "size": 74,
     "source": "src/msl/signal.c"
@@ -666,7 +666,7 @@
     "source": "src/msl/string.c"
   },
   {
-    "name": "get_strerror",
+    "name": "strerror",
     "address": "0x00405020",
     "size": 18,
     "source": "src/msl/string.c"
@@ -675,7 +675,7 @@
     "name": "__strerror",
     "address": "0x00405040",
     "size": 149,
-    "source": "src/msl/string_g.c"
+    "source": "src/msl/string.c"
   },
   {
     "name": "fn_004050e0",
@@ -807,25 +807,25 @@
     "name": "__init_file",
     "address": "0x00405470",
     "size": 197,
-    "source": "src/msl/ansi_files_g.c"
+    "source": "src/msl/ansi_files.c"
   },
   {
     "name": "__close_all",
     "address": "0x00405540",
     "size": 127,
-    "source": "src/msl/ansi_files_g.c"
+    "source": "src/msl/ansi_files.c"
   },
   {
     "name": "__flush_all",
     "address": "0x004055c0",
     "size": 65,
-    "source": "src/msl/ansi_files_g.c"
+    "source": "src/msl/ansi_files.c"
   },
   {
     "name": "__flush_line_buffered_output_files",
     "address": "0x00405610",
     "size": 93,
-    "source": "src/msl/ansi_files_g.c"
+    "source": "src/msl/ansi_files.c"
   },
   {
     "name": "fn_00405670",
@@ -927,13 +927,13 @@
     "name": "fread",
     "address": "0x00405d20",
     "size": 707,
-    "source": "src/msl/direct_io_g.c"
+    "source": "src/msl/direct_io.c"
   },
   {
     "name": "fwrite",
     "address": "0x00405ff0",
     "size": 741,
-    "source": "src/msl/direct_io_g.c"
+    "source": "src/msl/direct_io.c"
   },
   {
     "name": "getwc",
@@ -969,13 +969,13 @@
     "name": "__sys_alloc",
     "address": "0x00406480",
     "size": 67,
-    "source": "src/msl/pool_alloc_win32_g.c"
+    "source": "src/msl/pool_alloc.win32.c"
   },
   {
     "name": "__sys_free",
     "address": "0x004064d0",
     "size": 27,
-    "source": "src/msl/pool_alloc_win32_g.c"
+    "source": "src/msl/pool_alloc.win32.c"
   },
   {
     "name": "_strnicmp",
@@ -993,7 +993,7 @@
     "name": "getenv",
     "address": "0x004065b0",
     "size": 86,
-    "source": "src/msl/sysenv_win32.c"
+    "source": "src/msl/sysenv.win32.c"
   },
   {
     "name": "fn_00406610",
@@ -1884,82 +1884,82 @@
     "source": "src/driver/cc-eabi-ppc-mw.c"
   },
   {
-    "name": "find_driver_lookup_entry",
+    "name": "find_temp_info",
     "address": "0x0040c080",
     "size": 35,
-    "source": "src/driver/cc-eabi-ppc-mw.c"
+    "source": "src/msl/file_io.win32.c"
   },
   {
     "name": "__open_file",
     "address": "0x0040c0b0",
     "size": 150,
-    "source": "src/msl/file_io_win32_g.c"
+    "source": "src/msl/file_io.win32.c"
   },
   {
     "name": "__read_file",
     "address": "0x0040c150",
     "size": 55,
-    "source": "src/msl/file_io_win32_g.c"
+    "source": "src/msl/file_io.win32.c"
   },
   {
     "name": "__write_file",
     "address": "0x0040c190",
     "size": 45,
-    "source": "src/msl/file_io_win32_g.c"
+    "source": "src/msl/file_io.win32.c"
   },
   {
     "name": "__position_file",
     "address": "0x0040c1c0",
     "size": 44,
-    "source": "src/msl/file_io_win32_g.c"
+    "source": "src/msl/file_io.win32.c"
   },
   {
     "name": "__close_file",
     "address": "0x0040c1f0",
     "size": 87,
-    "source": "src/msl/file_io_win32_g.c"
+    "source": "src/msl/file_io.win32.c"
   },
   {
     "name": "__delete_file",
     "address": "0x0040c250",
     "size": 25,
-    "source": "src/msl/file_io_win32_g.c"
+    "source": "src/msl/file_io.win32.c"
   },
   {
     "name": "__convert_from_newlines",
     "address": "0x0040c270",
     "size": 1,
-    "source": "src/msl/buffer_io_g.c"
+    "source": "src/msl/buffer_io.c"
   },
   {
     "name": "__convert_to_newlines",
     "address": "0x0040c280",
     "size": 1,
-    "source": "src/msl/buffer_io_g.c"
+    "source": "src/msl/buffer_io.c"
   },
   {
     "name": "__prep_buffer",
     "address": "0x0040c290",
     "size": 32,
-    "source": "src/msl/buffer_io_g.c"
+    "source": "src/msl/buffer_io.c"
   },
   {
     "name": "__load_buffer",
     "address": "0x0040c2b0",
     "size": 158,
-    "source": "src/msl/buffer_io_g.c"
+    "source": "src/msl/buffer_io.c"
   },
   {
     "name": "__flush_buffer",
     "address": "0x0040c350",
     "size": 105,
-    "source": "src/msl/buffer_io_g.c"
+    "source": "src/msl/buffer_io.c"
   },
   {
     "name": "setvbuf",
     "address": "0x0040c3c0",
     "size": 276,
-    "source": "src/msl/buffer_io_g.c"
+    "source": "src/msl/buffer_io.c"
   },
   {
     "name": "__read_string",
@@ -1974,16 +1974,16 @@
     "source": "src/msl/string_io.c"
   },
   {
-    "name": "ttyname",
+    "name": "__close_string",
     "address": "0x0040c500",
     "size": 3,
-    "source": "src/msl/unistd_win32.c"
+    "source": "src/msl/string_io.c"
   },
   {
     "name": "fclose",
     "address": "0x0040c510",
     "size": 136,
-    "source": "src/msl/file_io_g.c"
+    "source": "src/msl/file_io.c"
   },
   {
     "name": "fflush",
@@ -1995,19 +1995,19 @@
     "name": "fopen",
     "address": "0x0040c690",
     "size": 47,
-    "source": "src/msl/file_io_g.c"
+    "source": "src/msl/file_io.c"
   },
   {
     "name": "freopen",
     "address": "0x0040c6c0",
     "size": 187,
-    "source": "src/msl/file_io_g.c"
+    "source": "src/msl/file_io.c"
   },
   {
     "name": "__get_file_modes",
     "address": "0x0040c780",
     "size": 304,
-    "source": "src/msl/file_io_g.c"
+    "source": "src/msl/file_io.c"
   },
   {
     "name": "get_spec_from_signature_callback",
@@ -2547,97 +2547,97 @@
     "name": "_ftell",
     "address": "0x0040fe50",
     "size": 147,
-    "source": "src/msl/file_pos_g.c"
+    "source": "src/msl/file_pos.c"
   },
   {
     "name": "ftell",
     "address": "0x0040fef0",
     "size": 12,
-    "source": "src/msl/file_pos_g.c"
+    "source": "src/msl/file_pos.c"
   },
   {
     "name": "_fseek",
     "address": "0x0040ff00",
     "size": 228,
-    "source": "src/msl/file_pos_g.c"
+    "source": "src/msl/file_pos.c"
   },
   {
     "name": "fseek",
     "address": "0x0040fff0",
     "size": 24,
-    "source": "src/msl/file_pos_g.c"
+    "source": "src/msl/file_pos.c"
   },
   {
     "name": "__leap_year",
     "address": "0x00410010",
     "size": 79,
-    "source": "src/msl/time_g.c"
+    "source": "src/msl/time.c"
   },
   {
-    "name": "time_g_leap_days",
+    "name": "leap_days",
     "address": "0x00410060",
     "size": 159,
-    "source": "src/msl/time_g.c"
+    "source": "src/msl/time.c"
   },
   {
-    "name": "time_g_adjust",
+    "name": "adjust",
     "address": "0x00410100",
     "size": 56,
-    "source": "src/msl/time_g.c"
+    "source": "src/msl/time.c"
   },
   {
     "name": "__time2tm",
     "address": "0x00410140",
     "size": 282,
-    "source": "src/msl/time_g.c"
+    "source": "src/msl/time.c"
   },
   {
     "name": "__tm2time",
     "address": "0x00410260",
     "size": 362,
-    "source": "src/msl/time_g.c"
+    "source": "src/msl/time.c"
   },
   {
-    "name": "time_g_clear_tm",
+    "name": "clear_tm",
     "address": "0x004103d0",
     "size": 67,
-    "source": "src/msl/time_g.c"
+    "source": "src/msl/time.c"
   },
   {
     "name": "mktime",
     "address": "0x00410420",
     "size": 77,
-    "source": "src/msl/time_g.c"
+    "source": "src/msl/time.c"
   },
   {
-    "name": "get_gm_time",
+    "name": "time",
     "address": "0x00410470",
     "size": 47,
-    "source": "src/msl/time_g.c"
+    "source": "src/msl/time.c"
   },
   {
-    "name": "time_to_tm",
+    "name": "localtime",
     "address": "0x004104a0",
     "size": 66,
-    "source": "src/msl/time_g.c"
+    "source": "src/msl/time.c"
   },
   {
-    "name": "time_g_emit",
+    "name": "emit",
     "address": "0x004104f0",
     "size": 79,
-    "source": "src/msl/time_g.c"
+    "source": "src/msl/time.c"
   },
   {
-    "name": "time_g_week_num",
+    "name": "week_num",
     "address": "0x00410540",
     "size": 61,
-    "source": "src/msl/time_g.c"
+    "source": "src/msl/time.c"
   },
   {
     "name": "strftime",
     "address": "0x00410580",
     "size": 1228,
-    "source": "src/msl/time_g.c"
+    "source": "src/msl/time.c"
   },
   {
     "name": "__wcstoul",
@@ -4089,13 +4089,13 @@
     "name": "_Setjmp",
     "address": "0x0041b370",
     "size": 24,
-    "source": "src/msl/setjmp_x86.c"
+    "source": "src/msl/setjmp.x86.c"
   },
   {
     "name": "longjmp",
     "address": "0x0041b390",
     "size": 31,
-    "source": "src/msl/setjmp_x86.c"
+    "source": "src/msl/setjmp.x86.c"
   },
   {
     "name": "is_valid_plugin_context",
@@ -4743,7 +4743,7 @@
     "name": "open",
     "address": "0x0041f8b0",
     "size": 506,
-    "source": "src/msl/fcntl_win32_g.c"
+    "source": "src/msl/fcntl.win32.c"
   },
   {
     "name": "to_lowercase",
@@ -4905,22 +4905,22 @@
     "name": "__get_time",
     "address": "0x00420c90",
     "size": 210,
-    "source": "src/msl/time_win32.c"
+    "source": "src/msl/time.win32.c"
   },
   {
     "name": "__to_gm_time",
     "address": "0x00420d70",
     "size": 61,
-    "source": "src/msl/time_win32.c"
+    "source": "src/msl/time.win32.c"
   },
   {
     "name": "subtract_time_zone_bias",
     "address": "0x00420db0",
     "size": 61,
-    "source": "src/msl/time_win32.c"
+    "source": "src/msl/time.win32.c"
   },
   {
-    "name": "wscanf_parse_format",
+    "name": "parse_format",
     "address": "0x00420df0",
     "size": 751,
     "source": "src/msl/wscanf.c"
@@ -4935,13 +4935,13 @@
     "name": "__wFileRead",
     "address": "0x00421950",
     "size": 71,
-    "source": "src/msl/wscanf_g.c"
+    "source": "src/msl/wscanf.c"
   },
   {
     "name": "__wStringRead",
     "address": "0x004219a0",
     "size": 120,
-    "source": "src/msl/wscanf_g.c"
+    "source": "src/msl/wscanf.c"
   },
   {
     "name": "MacFileTypes_AppendTable",
@@ -4980,7 +4980,7 @@
     "source": "src/driver/MacFileTypes.c"
   },
   {
-    "name": "scanf_parse_format",
+    "name": "parse_format",
     "address": "0x00421d50",
     "size": 675,
     "source": "src/msl/scanf.c"
@@ -4989,13 +4989,13 @@
     "name": "__sformatter",
     "address": "0x00422000",
     "size": 1970,
-    "source": "src/msl/scanf_g.c"
+    "source": "src/msl/scanf.c"
   },
   {
     "name": "__FileRead",
     "address": "0x004227c0",
     "size": 71,
-    "source": "src/msl/scanf_g.c"
+    "source": "src/msl/scanf.c"
   },
   {
     "name": "__StringRead",
@@ -5007,13 +5007,13 @@
     "name": "__vsscanf",
     "address": "0x00422870",
     "size": 50,
-    "source": "src/msl/scanf_g.c"
+    "source": "src/msl/scanf.c"
   },
   {
     "name": "sscanf",
     "address": "0x004228b0",
     "size": 61,
-    "source": "src/msl/scanf_g.c"
+    "source": "src/msl/scanf.c"
   },
   {
     "name": "CLFiles_AllocDropinFileRecord",
@@ -5475,19 +5475,19 @@
     "name": "??1bad_alloc@std@@UAE@XZ",
     "address": "0x00425b00",
     "size": 15,
-    "source": "src/runtime/NewHand.cpp"
+    "source": "src/runtime/newop.cpp"
   },
   {
     "name": "??_Ebad_alloc@std@@UAE@I@Z",
     "address": "0x00425b10",
     "size": 74,
-    "source": "src/runtime/NewHand.cpp"
+    "source": "src/runtime/newop.cpp"
   },
   {
     "name": "?what@bad_alloc@std@@UBEPBDXZ",
     "address": "0x00425b60",
     "size": 16,
-    "source": "src/runtime/NewHand.cpp"
+    "source": "src/runtime/newop.cpp"
   },
   {
     "name": "cache_precompiled_header",
@@ -8076,7 +8076,7 @@
     "source": "src/driver/CLLoadAndCache.c"
   },
   {
-    "name": "?NewHand_default_new_handler@std@@YAXXZ",
+    "name": "?default_new_handler@std@@YAXXZ",
     "address": "0x004451b0",
     "size": 66,
     "source": "src/runtime/NewHand.cpp"
@@ -20187,7 +20187,7 @@
     "name": "qsort",
     "address": "0x0051e430",
     "size": 341,
-    "source": "src/msl/qsort_g.c"
+    "source": "src/msl/qsort.c"
   },
   {
     "name": "ValueNumbering_PerformValueNumbering",

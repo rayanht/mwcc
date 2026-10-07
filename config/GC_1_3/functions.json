@@ -6,112 +6,115 @@
     "source": "src/runtime/maincrt.c"
   },
   {
-    "name": "fn_00401070",
+    "name": "_MWCHandler",
     "address": "0x00401070",
-    "size": 148
+    "size": 148,
+    "source": "src/runtime/exchand.cpp"
   },
   {
-    "name": "fn_00401110",
+    "name": "_RegisterExceptionTables",
     "address": "0x00401110",
-    "size": 60
+    "size": 60,
+    "source": "src/runtime/ExceptionX86.cpp"
   },
   {
-    "name": "fn_00401150",
+    "name": "?ExX86_FindExceptionRecord@@YAXPADPAUExceptionInfo@@@Z",
     "address": "0x00401150",
-    "size": 403
+    "size": 403,
+    "source": "src/runtime/ExceptionX86.cpp"
   },
   {
-    "name": "?ExceptionX86_ExX86_CurrentAction@@YAGPBUActionIterator@@@Z",
+    "name": "?ExX86_CurrentAction@@YAGPBUActionIterator@@@Z",
     "address": "0x004012f0",
     "size": 25,
     "source": "src/runtime/ExceptionX86.cpp"
   },
   {
-    "name": "?ExceptionX86_ExX86_NextAction@@YAGPAUActionIterator@@@Z",
+    "name": "?ExX86_NextAction@@YAGPAUActionIterator@@@Z",
     "address": "0x00401310",
     "size": 237,
     "source": "src/runtime/ExceptionX86.cpp"
   },
   {
-    "name": "?ExceptionX86_ExX86_PopStackFrame@@YAPADPAUThrowContext@@PAUExceptionInfo@@@Z",
+    "name": "?ExX86_PopStackFrame@@YAPADPAUThrowContext@@PAUExceptionInfo@@@Z",
     "address": "0x00401400",
     "size": 85,
     "source": "src/runtime/ExceptionX86.cpp"
   },
   {
-    "name": "?ExceptionX86_ExX86_GetValue@@YAJPAUThrowContext@@JF@Z",
+    "name": "?ExX86_GetValue@@YAJPAUThrowContext@@JF@Z",
     "address": "0x00401460",
     "size": 202,
     "source": "src/runtime/ExceptionX86.cpp"
   },
   {
-    "name": "?ExceptionX86_ExX86_DestroyLocal@@YAXPAUThrowContext@@PBUex_destroylocal@@@Z",
+    "name": "?ExX86_DestroyLocal@@YAXPAUThrowContext@@PBUex_destroylocal@@@Z",
     "address": "0x00401530",
     "size": 22,
     "source": "src/runtime/ExceptionX86.cpp"
   },
   {
-    "name": "?ExceptionX86_ExX86_DestroyLocalCond@@YAXPAUThrowContext@@PBUex_destroylocalcond@@@Z",
+    "name": "?ExX86_DestroyLocalCond@@YAXPAUThrowContext@@PBUex_destroylocalcond@@@Z",
     "address": "0x00401550",
     "size": 50,
     "source": "src/runtime/ExceptionX86.cpp"
   },
   {
-    "name": "?ExceptionX86_ExX86_DestroyLocalPointer@@YAXPAUThrowContext@@PBUex_destroylocalpointer@@@Z",
+    "name": "?ExX86_DestroyLocalPointer@@YAXPAUThrowContext@@PBUex_destroylocalpointer@@@Z",
     "address": "0x00401590",
     "size": 38,
     "source": "src/runtime/ExceptionX86.cpp"
   },
   {
-    "name": "?ExceptionX86_ExX86_DestroyLocalArray@@YAXPAUThrowContext@@PBUex_destroylocalarray@@@Z",
+    "name": "?ExX86_DestroyLocalArray@@YAXPAUThrowContext@@PBUex_destroylocalarray@@@Z",
     "address": "0x004015c0",
     "size": 68,
     "source": "src/runtime/ExceptionX86.cpp"
   },
   {
-    "name": "?ExceptionX86_ExX86_DestroyPartialArray@@YAXPAUThrowContext@@PBUex_destroypartialarray@@@Z",
+    "name": "?ExX86_DestroyPartialArray@@YAXPAUThrowContext@@PBUex_destroypartialarray@@@Z",
     "address": "0x00401610",
     "size": 118,
     "source": "src/runtime/ExceptionX86.cpp"
   },
   {
-    "name": "?ExceptionX86_ExX86_DestroyMember@@YAXPAUThrowContext@@PBUex_destroymember@@H@Z",
+    "name": "?ExX86_DestroyMember@@YAXPAUThrowContext@@PBUex_destroymember@@H@Z",
     "address": "0x00401690",
     "size": 41,
     "source": "src/runtime/ExceptionX86.cpp"
   },
   {
-    "name": "?ExceptionX86_ExX86_DestroyMemberCond@@YAXPAUThrowContext@@PBUex_destroymembercond@@@Z",
+    "name": "?ExX86_DestroyMemberCond@@YAXPAUThrowContext@@PBUex_destroymembercond@@@Z",
     "address": "0x004016c0",
     "size": 62,
     "source": "src/runtime/ExceptionX86.cpp"
   },
   {
-    "name": "?ExceptionX86_ExX86_DestroyMemberArray@@YAXPAUThrowContext@@PBUex_destroymemberarray@@@Z",
+    "name": "?ExX86_DestroyMemberArray@@YAXPAUThrowContext@@PBUex_destroymemberarray@@@Z",
     "address": "0x00401700",
     "size": 84,
     "source": "src/runtime/ExceptionX86.cpp"
   },
   {
-    "name": "?ExceptionX86_ExX86_DeletePointer@@YAXPAUThrowContext@@PBUex_deletepointer@@@Z",
+    "name": "?ExX86_DeletePointer@@YAXPAUThrowContext@@PBUex_deletepointer@@@Z",
     "address": "0x00401760",
     "size": 36,
     "source": "src/runtime/ExceptionX86.cpp"
   },
   {
-    "name": "?ExceptionX86_ExX86_DeletePointerCond@@YAXPAUThrowContext@@PBUex_deletepointercond@@@Z",
+    "name": "?ExX86_DeletePointerCond@@YAXPAUThrowContext@@PBUex_deletepointercond@@@Z",
     "address": "0x00401790",
     "size": 57,
     "source": "src/runtime/ExceptionX86.cpp"
   },
   {
-    "name": "?ExceptionX86_ExX86_UnwindStack@@YAXPAUThrowContext@@PAUExceptionInfo@@PAX@Z",
+    "name": "?ExX86_UnwindStack@@YAXPAUThrowContext@@PAUExceptionInfo@@PAX@Z",
     "address": "0x004017d0",
     "size": 432,
     "source": "src/runtime/ExceptionX86.cpp"
   },
   {
-    "name": "?ExceptionX86_ExX86_IsInSpecification@@YAHPADPAUex_specification@@@Z",
+    "name": "?ExX86_IsInSpecification@@YAHPADPAUex_specification@@@Z",
     "address": "0x00401980",
     "size": 73,
     "source": "src/runtime/ExceptionX86.cpp"
@@ -123,25 +126,28 @@
     "source": "src/runtime/ExceptionX86.cpp"
   },
   {
-    "name": "fn_00401a60",
+    "name": "??1bad_exception@std@@UAE@XZ",
     "address": "0x00401a60",
-    "size": 15
+    "size": 15,
+    "source": "src/runtime/ExceptionX86.cpp"
   },
   {
-    "name": "fn_00401a70",
+    "name": "??1exception@std@@UAE@XZ",
     "address": "0x00401a70",
-    "size": 9
+    "size": 9,
+    "source": "src/runtime/ExceptionX86.cpp"
   },
   {
-    "name": "?ExceptionX86_ExX86_HandleUnexpected@@YAXPAUThrowContext@@PAUExceptionInfo@@PAUex_specification@@@Z",
+    "name": "?ExX86_HandleUnexpected@@YAXPAUThrowContext@@PAUExceptionInfo@@PAUex_specification@@@Z",
     "address": "0x00401a80",
     "size": 102,
     "source": "src/runtime/ExceptionX86.cpp"
   },
   {
-    "name": "fn_00401af0",
+    "name": "?ExX86_ThrowHandler@@YAXPAUThrowContext@@@Z",
     "address": "0x00401af0",
-    "size": 467
+    "size": 467,
+    "source": "src/runtime/ExceptionX86.cpp"
   },
   {
     "name": "__throw",
@@ -150,14 +156,16 @@
     "source": "src/runtime/ExceptionX86.cpp"
   },
   {
-    "name": "fn_00401d10",
+    "name": "??_Ebad_exception@std@@UAE@I@Z",
     "address": "0x00401d10",
-    "size": 74
+    "size": 74,
+    "source": "src/runtime/ExceptionX86.cpp"
   },
   {
-    "name": "fn_00401d60",
+    "name": "?what@bad_exception@std@@UBEPBDXZ",
     "address": "0x00401d60",
-    "size": 16
+    "size": 16,
+    "source": "src/runtime/ExceptionX86.cpp"
   },
   {
     "name": "??_Eexception@std@@UAE@I@Z",
@@ -166,84 +174,100 @@
     "source": "src/runtime/ExceptionX86.cpp"
   },
   {
-    "name": "fn_00401dc0",
+    "name": "?what@exception@std@@UBEPBDXZ",
     "address": "0x00401dc0",
-    "size": 16
+    "size": 16,
+    "source": "src/runtime/ExceptionX86.cpp"
   },
   {
-    "name": "fn_00401dd0",
+    "name": "__get_MSL_init_count",
     "address": "0x00401dd0",
-    "size": 6
+    "size": 6,
+    "source": "src/msl/startup.win32.c"
   },
   {
-    "name": "fn_00401de0",
+    "name": "_CRTStartup",
     "address": "0x00401de0",
-    "size": 455
+    "size": 455,
+    "source": "src/msl/startup.win32.c"
   },
   {
-    "name": "fn_00401fb0",
+    "name": "_InitializeThreadDataIndex",
     "address": "0x00401fb0",
-    "size": 61
+    "size": 61,
+    "source": "src/msl/ThreadLocalData.c"
   },
   {
-    "name": "fn_00401ff0",
+    "name": "_DisposeThreadDataIndex",
     "address": "0x00401ff0",
-    "size": 39
+    "size": 39,
+    "source": "src/msl/ThreadLocalData.c"
   },
   {
-    "name": "fn_00402020",
+    "name": "_InitializeThreadData",
     "address": "0x00402020",
-    "size": 66
+    "size": 66,
+    "source": "src/msl/ThreadLocalData.c"
   },
   {
-    "name": "fn_00402070",
+    "name": "_InitializeMainThreadData",
     "address": "0x00402070",
-    "size": 35
+    "size": 35,
+    "source": "src/msl/ThreadLocalData.c"
   },
   {
-    "name": "fn_004020a0",
+    "name": "_GetThreadLocalData",
     "address": "0x004020a0",
-    "size": 119
+    "size": 119,
+    "source": "src/msl/ThreadLocalData.c"
   },
   {
-    "name": "fn_00402120",
+    "name": "abort",
     "address": "0x00402120",
-    "size": 27
+    "size": 27,
+    "source": "src/msl/abort_exit.c"
   },
   {
-    "name": "fn_00402140",
+    "name": "atexit",
     "address": "0x00402140",
-    "size": 58
+    "size": 58,
+    "source": "src/msl/abort_exit.c"
   },
   {
-    "name": "fn_00402180",
+    "name": "exit",
     "address": "0x00402180",
-    "size": 106
+    "size": 106,
+    "source": "src/msl/abort_exit.c"
   },
   {
-    "name": "fn_004021f0",
+    "name": "__exit",
     "address": "0x004021f0",
-    "size": 97
+    "size": 97,
+    "source": "src/msl/abort_exit.c"
   },
   {
-    "name": "fn_00402260",
+    "name": "_FreeCommandLine",
     "address": "0x00402260",
-    "size": 58
+    "size": 58,
+    "source": "src/runtime/setupargs.c"
   },
   {
-    "name": "fn_004022a0",
+    "name": "_MemFailure",
     "address": "0x004022a0",
-    "size": 21
+    "size": 21,
+    "source": "src/runtime/setupargs.c"
   },
   {
-    "name": "fn_004022c0",
+    "name": "_SetupArgs",
     "address": "0x004022c0",
-    "size": 498
+    "size": 498,
+    "source": "src/runtime/setupargs.c"
   },
   {
-    "name": "fn_004024c0",
+    "name": "_RunInit",
     "address": "0x004024c0",
-    "size": 45
+    "size": 45,
+    "source": "src/runtime/runinit.c"
   },
   {
     "name": "fn_004024f0",
@@ -251,24 +275,28 @@
     "size": 302
   },
   {
-    "name": "fn_00402620",
+    "name": "?dthandler@std@@YAXXZ",
     "address": "0x00402620",
-    "size": 12
+    "size": 12,
+    "source": "src/runtime/NMWException.cpp"
   },
   {
-    "name": "fn_00402630",
+    "name": "?duhandler@std@@YAXXZ",
     "address": "0x00402630",
-    "size": 12
+    "size": 12,
+    "source": "src/runtime/NMWException.cpp"
   },
   {
-    "name": "fn_00402640",
+    "name": "?terminate@std@@YAXXZ",
     "address": "0x00402640",
-    "size": 13
+    "size": 13,
+    "source": "src/runtime/NMWException.cpp"
   },
   {
-    "name": "fn_00402650",
+    "name": "?unexpected@std@@YAXXZ",
     "address": "0x00402650",
-    "size": 13
+    "size": 13,
+    "source": "src/runtime/NMWException.cpp"
   },
   {
     "name": "__throw_catch_compare",
@@ -277,260 +305,274 @@
     "source": "src/runtime/NMWException.cpp"
   },
   {
-    "name": "printf_g_parse_format",
+    "name": "parse_format",
     "address": "0x00402780",
     "size": 804,
-    "source": "src/msl/printf_g.c"
+    "source": "src/msl/printf.c"
   },
   {
-    "name": "fn_00402ab0",
+    "name": "long2str",
     "address": "0x00402ab0",
-    "size": 453
+    "size": 453,
+    "source": "src/msl/printf.c"
   },
   {
-    "name": "fn_00402c80",
+    "name": "longlong2str",
     "address": "0x00402c80",
-    "size": 598
+    "size": 598,
+    "source": "src/msl/printf.c"
   },
   {
-    "name": "fn_00402ee0",
+    "name": "round_decimal",
     "address": "0x00402ee0",
-    "size": 213
+    "size": 213,
+    "source": "src/msl/printf.c"
   },
   {
-    "name": "fn_00402fc0",
+    "name": "float2str",
     "address": "0x00402fc0",
-    "size": 1190
+    "size": 1195,
+    "source": "src/msl/printf.c"
   },
   {
-    "name": "fn_00403470",
+    "name": "__pformatter",
     "address": "0x00403470",
-    "size": 1672
+    "size": 1672,
+    "source": "src/msl/printf.c"
   },
   {
     "name": "__FileWrite",
     "address": "0x00403b00",
     "size": 40,
-    "source": "src/msl/printf_g.c"
+    "source": "src/msl/printf.c"
   },
   {
     "name": "__StringWrite",
     "address": "0x00403b30",
     "size": 60,
-    "source": "src/msl/printf_g.c"
+    "source": "src/msl/printf.c"
   },
   {
     "name": "printf",
     "address": "0x00403b70",
     "size": 95,
-    "source": "src/msl/printf_g.c"
+    "source": "src/msl/printf.c"
   },
   {
     "name": "fprintf",
     "address": "0x00403bd0",
     "size": 95,
-    "source": "src/msl/printf_g.c"
+    "source": "src/msl/printf.c"
   },
   {
     "name": "vfprintf",
     "address": "0x00403c30",
     "size": 58,
-    "source": "src/msl/printf_g.c"
+    "source": "src/msl/printf.c"
   },
   {
     "name": "vsnprintf",
     "address": "0x00403c70",
     "size": 78,
-    "source": "src/msl/printf_g.c"
+    "source": "src/msl/printf.c"
   },
   {
     "name": "vsprintf",
     "address": "0x00403cc0",
     "size": 26,
-    "source": "src/msl/printf_g.c"
+    "source": "src/msl/printf.c"
   },
   {
-    "name": "fn_00403ce0",
+    "name": "snprintf",
     "address": "0x00403ce0",
-    "size": 66
+    "size": 66,
+    "source": "src/msl/printf.c"
   },
   {
     "name": "sprintf",
     "address": "0x00403d30",
     "size": 63,
-    "source": "src/msl/printf_g.c"
+    "source": "src/msl/printf.c"
   },
   {
-    "name": "fn_00403d70",
+    "name": "__destroy_new_array",
     "address": "0x00403d70",
-    "size": 107
+    "size": 107,
+    "source": "src/runtime/arrcondes.cpp"
   },
   {
-    "name": "fn_00403de0",
+    "name": "??3@YAXPAX@Z",
     "address": "0x00403de0",
-    "size": 34
+    "size": 34,
+    "source": "src/runtime/delop.cpp"
   },
   {
-    "name": "fn_00403e10",
+    "name": "__init_critical_regions",
     "address": "0x00403e10",
-    "size": 35
+    "size": 35,
+    "source": "src/msl/critical_regions.win32.c"
   },
   {
-    "name": "fn_00403e40",
+    "name": "__kill_critical_regions",
     "address": "0x00403e40",
-    "size": 35
+    "size": 35,
+    "source": "src/msl/critical_regions.win32.c"
   },
   {
-    "name": "fn_00403e70",
+    "name": "__begin_critical_region",
     "address": "0x00403e70",
-    "size": 20
+    "size": 20,
+    "source": "src/msl/critical_regions.win32.c"
   },
   {
-    "name": "fn_00403e90",
+    "name": "__end_critical_region",
     "address": "0x00403e90",
-    "size": 20
+    "size": 20,
+    "source": "src/msl/critical_regions.win32.c"
   },
   {
-    "name": "alloc_g_Block_construct",
+    "name": "Block_construct",
     "address": "0x00403eb0",
     "size": 93,
-    "source": "src/msl/alloc_g.c"
+    "source": "src/msl/alloc.c"
   },
   {
-    "name": "alloc_g_Block_subBlock",
+    "name": "Block_subBlock",
     "address": "0x00403f10",
     "size": 154,
-    "source": "src/msl/alloc_g.c"
+    "source": "src/msl/alloc.c"
   },
   {
-    "name": "alloc_g_Block_link",
+    "name": "Block_link",
     "address": "0x00403fb0",
     "size": 142,
-    "source": "src/msl/alloc_g.c"
+    "source": "src/msl/alloc.c"
   },
   {
-    "name": "alloc_g_Block_unlink",
+    "name": "Block_unlink",
     "address": "0x00404040",
     "size": 100,
-    "source": "src/msl/alloc_g.c"
+    "source": "src/msl/alloc.c"
   },
   {
-    "name": "alloc_g_SubBlock_construct",
+    "name": "SubBlock_construct",
     "address": "0x004040b0",
     "size": 75,
-    "source": "src/msl/alloc_g.c"
+    "source": "src/msl/alloc.c"
   },
   {
-    "name": "alloc_g_SubBlock_split",
+    "name": "SubBlock_split",
     "address": "0x00404100",
     "size": 177,
-    "source": "src/msl/alloc_g.c"
+    "source": "src/msl/alloc.c"
   },
   {
-    "name": "alloc_g_SubBlock_merge_prev",
+    "name": "SubBlock_merge_prev",
     "address": "0x004041c0",
     "size": 150,
-    "source": "src/msl/alloc_g.c"
+    "source": "src/msl/alloc.c"
   },
   {
-    "name": "alloc_g_SubBlock_merge_next",
+    "name": "SubBlock_merge_next",
     "address": "0x00404260",
     "size": 153,
-    "source": "src/msl/alloc_g.c"
+    "source": "src/msl/alloc.c"
   },
   {
-    "name": "fn_00404220",
+    "name": "link",
     "address": "0x00404300",
     "size": 63,
-    "source": "src/msl/alloc_g.c"
+    "source": "src/msl/alloc.c"
   },
   {
-    "name": "unlink_list_elem",
+    "name": "unlink",
     "address": "0x00404340",
     "size": 57,
-    "source": "src/msl/alloc_g.c"
+    "source": "src/msl/alloc.c"
   },
   {
-    "name": "alloc_g_link_new_block",
+    "name": "link_new_block",
     "address": "0x00404380",
     "size": 70,
-    "source": "src/msl/alloc_g.c"
+    "source": "src/msl/alloc.c"
   },
   {
-    "name": "allocate_sub_block",
+    "name": "allocate_from_var_pools",
     "address": "0x004043d0",
     "size": 145,
-    "source": "src/msl/alloc_g.c"
+    "source": "src/msl/alloc.c"
   },
   {
-    "name": "alloc_g_deallocate_from_var_pools",
+    "name": "deallocate_from_var_pools",
     "address": "0x00404470",
     "size": 103,
-    "source": "src/msl/alloc_g.c"
+    "source": "src/msl/alloc.c"
   },
   {
-    "name": "alloc_g_FixBlock_construct",
+    "name": "FixBlock_construct",
     "address": "0x004044e0",
     "size": 218,
-    "source": "src/msl/alloc_g.c"
+    "source": "src/msl/alloc.c"
   },
   {
     "name": "allocate_from_fixed_pools",
     "address": "0x004045c0",
     "size": 174,
-    "source": "src/msl/alloc_g.c"
+    "source": "src/msl/alloc.c"
   },
   {
     "name": "deallocate_from_fixed_pools",
     "address": "0x00404670",
     "size": 119,
-    "source": "src/msl/alloc_g.c"
+    "source": "src/msl/alloc.c"
   },
   {
     "name": "malloc",
     "address": "0x004046f0",
     "size": 58,
-    "source": "src/msl/alloc_g.c"
+    "source": "src/msl/alloc.c"
   },
   {
-    "name": "fn_00404730",
+    "name": "free",
     "address": "0x00404730",
-    "size": 100
+    "size": 100,
+    "source": "src/msl/alloc.c"
   },
   {
-    "name": "fn_004047a0",
+    "name": "realloc",
     "address": "0x004047a0",
-    "size": 435
+    "size": 435,
+    "source": "src/msl/alloc.c"
   },
   {
     "name": "calloc",
     "address": "0x00404960",
     "size": 37,
-    "source": "src/msl/alloc_g.c"
+    "source": "src/msl/alloc.c"
   },
   {
     "name": "close",
     "address": "0x00404990",
     "size": 98,
-    "source": "src/msl/unistd_win32.c"
+    "source": "src/msl/unistd.win32.c"
   },
   {
     "name": "lseek",
     "address": "0x00404a00",
     "size": 109,
-    "source": "src/msl/unistd_win32.c"
+    "source": "src/msl/unistd.win32.c"
   },
   {
     "name": "read",
     "address": "0x00404a70",
     "size": 229,
-    "source": "src/msl/unistd_win32.c"
+    "source": "src/msl/unistd.win32.c"
   },
   {
     "name": "write",
     "address": "0x00404b60",
     "size": 263,
-    "source": "src/msl/unistd_win32.c"
+    "source": "src/msl/unistd.win32.c"
   },
   {
     "name": "memmove",
@@ -557,14 +599,16 @@
     "source": "src/msl/mem.c"
   },
   {
-    "name": "fn_00404dc0",
+    "name": "signal",
     "address": "0x00404dc0",
-    "size": 74
+    "size": 74,
+    "source": "src/msl/signal.c"
   },
   {
-    "name": "fn_00404e10",
+    "name": "raise",
     "address": "0x00404e10",
-    "size": 107
+    "size": 107,
+    "source": "src/msl/signal.c"
   },
   {
     "name": "__destroy_global_chain",
@@ -627,15 +671,16 @@
     "source": "src/msl/string.c"
   },
   {
-    "name": "fn_004050f0",
+    "name": "strerror",
     "address": "0x004050f0",
-    "size": 18
+    "size": 18,
+    "source": "src/msl/string.c"
   },
   {
     "name": "__strerror",
     "address": "0x00405110",
     "size": 149,
-    "source": "src/msl/string_g.c"
+    "source": "src/msl/string.c"
   },
   {
     "name": "ClientGlue_AddResourceStrings",
@@ -738,25 +783,25 @@
     "name": "__init_file",
     "address": "0x00405450",
     "size": 197,
-    "source": "src/msl/ansi_files_g.c"
+    "source": "src/msl/ansi_files.c"
   },
   {
     "name": "__close_all",
     "address": "0x00405520",
     "size": 127,
-    "source": "src/msl/ansi_files_g.c"
+    "source": "src/msl/ansi_files.c"
   },
   {
     "name": "__flush_all",
     "address": "0x004055a0",
     "size": 65,
-    "source": "src/msl/ansi_files_g.c"
+    "source": "src/msl/ansi_files.c"
   },
   {
     "name": "__flush_line_buffered_output_files",
     "address": "0x004055f0",
     "size": 93,
-    "source": "src/msl/ansi_files_g.c"
+    "source": "src/msl/ansi_files.c"
   },
   {
     "name": "fn_00405650",
@@ -781,19 +826,22 @@
     "size": 12
   },
   {
-    "name": "fn_00405830",
+    "name": "isalpha",
     "address": "0x00405830",
-    "size": 18
+    "size": 18,
+    "source": "src/msl/ctype.c"
   },
   {
-    "name": "fn_00405850",
+    "name": "tolower",
     "address": "0x00405850",
-    "size": 27
+    "size": 27,
+    "source": "src/msl/ctype.c"
   },
   {
-    "name": "fn_00405870",
+    "name": "toupper",
     "address": "0x00405870",
-    "size": 27
+    "size": 27,
+    "source": "src/msl/ctype.c"
   },
   {
     "name": "_rt_mul64",
@@ -844,9 +892,10 @@
     "source": "src/msl/ansifp_x86.c"
   },
   {
-    "name": "fn_00405cd0",
+    "name": "mbtowc",
     "address": "0x00405cd0",
-    "size": 56
+    "size": 56,
+    "source": "src/msl/mbstring.c"
   },
   {
     "name": "wctomb",
@@ -864,13 +913,13 @@
     "name": "fread",
     "address": "0x00405d60",
     "size": 707,
-    "source": "src/msl/direct_io_g.c"
+    "source": "src/msl/direct_io.c"
   },
   {
     "name": "fwrite",
     "address": "0x00406030",
     "size": 741,
-    "source": "src/msl/direct_io_g.c"
+    "source": "src/msl/direct_io.c"
   },
   {
     "name": "getwc",
@@ -879,9 +928,10 @@
     "source": "src/msl/wchar_io.c"
   },
   {
-    "name": "fn_00406370",
+    "name": "fgetwc",
     "address": "0x00406370",
-    "size": 12
+    "size": 12,
+    "source": "src/msl/wchar_io.c"
   },
   {
     "name": "ungetwc",
@@ -896,37 +946,40 @@
     "source": "src/msl/wchar_io.c"
   },
   {
-    "name": "fn_00406490",
+    "name": "?_V@@YAXPAX@Z",
     "address": "0x00406490",
-    "size": 34
+    "size": 34,
+    "source": "src/runtime/delarrop.cpp"
   },
   {
     "name": "__sys_alloc",
     "address": "0x004064c0",
     "size": 67,
-    "source": "src/msl/pool_alloc_win32_g.c"
+    "source": "src/msl/pool_alloc.win32.c"
   },
   {
     "name": "__sys_free",
     "address": "0x00406510",
     "size": 27,
-    "source": "src/msl/pool_alloc_win32_g.c"
+    "source": "src/msl/pool_alloc.win32.c"
   },
   {
-    "name": "fn_00406530",
+    "name": "_strnicmp",
     "address": "0x00406530",
-    "size": 108
+    "size": 108,
+    "source": "src/msl/extras.c"
   },
   {
-    "name": "fn_004065a0",
+    "name": "GetHandle",
     "address": "0x004065a0",
-    "size": 69
+    "size": 69,
+    "source": "src/msl/extras.c"
   },
   {
     "name": "getenv",
     "address": "0x004065f0",
     "size": 86,
-    "source": "src/msl/sysenv_win32.c"
+    "source": "src/msl/sysenv.win32.c"
   },
   {
     "name": "fn_00406650",
@@ -1718,100 +1771,106 @@
     "size": 6
   },
   {
-    "name": "fn_0040c260",
+    "name": "find_temp_info",
     "address": "0x0040c260",
-    "size": 35
+    "size": 35,
+    "source": "src/msl/file_io.win32.c"
   },
   {
     "name": "__open_file",
     "address": "0x0040c290",
     "size": 150,
-    "source": "src/msl/file_io_win32_g.c"
+    "source": "src/msl/file_io.win32.c"
   },
   {
     "name": "__read_file",
     "address": "0x0040c330",
     "size": 55,
-    "source": "src/msl/file_io_win32_g.c"
+    "source": "src/msl/file_io.win32.c"
   },
   {
     "name": "__write_file",
     "address": "0x0040c370",
     "size": 45,
-    "source": "src/msl/file_io_win32_g.c"
+    "source": "src/msl/file_io.win32.c"
   },
   {
     "name": "__position_file",
     "address": "0x0040c3a0",
     "size": 44,
-    "source": "src/msl/file_io_win32_g.c"
+    "source": "src/msl/file_io.win32.c"
   },
   {
     "name": "__close_file",
     "address": "0x0040c3d0",
     "size": 87,
-    "source": "src/msl/file_io_win32_g.c"
+    "source": "src/msl/file_io.win32.c"
   },
   {
     "name": "__delete_file",
     "address": "0x0040c430",
     "size": 25,
-    "source": "src/msl/file_io_win32_g.c"
+    "source": "src/msl/file_io.win32.c"
   },
   {
-    "name": "fn_0040c450",
+    "name": "__convert_from_newlines",
     "address": "0x0040c450",
-    "size": 1
+    "size": 1,
+    "source": "src/msl/buffer_io.c"
   },
   {
-    "name": "fn_0040c460",
+    "name": "__convert_to_newlines",
     "address": "0x0040c460",
-    "size": 1
+    "size": 1,
+    "source": "src/msl/buffer_io.c"
   },
   {
     "name": "__prep_buffer",
     "address": "0x0040c470",
     "size": 32,
-    "source": "src/msl/buffer_io_g.c"
+    "source": "src/msl/buffer_io.c"
   },
   {
     "name": "__load_buffer",
     "address": "0x0040c490",
     "size": 158,
-    "source": "src/msl/buffer_io_g.c"
+    "source": "src/msl/buffer_io.c"
   },
   {
     "name": "__flush_buffer",
     "address": "0x0040c530",
     "size": 105,
-    "source": "src/msl/buffer_io_g.c"
+    "source": "src/msl/buffer_io.c"
   },
   {
     "name": "setvbuf",
     "address": "0x0040c5a0",
     "size": 276,
-    "source": "src/msl/buffer_io_g.c"
+    "source": "src/msl/buffer_io.c"
   },
   {
-    "name": "fn_0040c6c0",
+    "name": "__read_string",
     "address": "0x0040c6c0",
-    "size": 6
+    "size": 6,
+    "source": "src/msl/string_io.c"
   },
   {
-    "name": "fn_0040c6d0",
+    "name": "__write_string",
     "address": "0x0040c6d0",
-    "size": 3
+    "size": 3,
+    "source": "src/msl/string_io.c"
   },
   {
-    "name": "fn_0040c6e0",
+    "name": "__close_string",
     "address": "0x0040c6e0",
-    "size": 3
+    "size": 3,
+    "source": "src/msl/string_io.c"
   },
   {
     "name": "fclose",
     "address": "0x0040c6f0",
     "size": 136,
-    "source": "src/msl/file_io_g.c"
+    "source": "src/msl/file_io.c"
   },
   {
     "name": "fflush",
@@ -1823,19 +1882,19 @@
     "name": "fopen",
     "address": "0x0040c870",
     "size": 47,
-    "source": "src/msl/file_io_g.c"
+    "source": "src/msl/file_io.c"
   },
   {
     "name": "freopen",
     "address": "0x0040c8a0",
     "size": 187,
-    "source": "src/msl/file_io_g.c"
+    "source": "src/msl/file_io.c"
   },
   {
     "name": "__get_file_modes",
     "address": "0x0040c960",
     "size": 304,
-    "source": "src/msl/file_io_g.c"
+    "source": "src/msl/file_io.c"
   },
   {
     "name": "get_spec_from_signature_callback",
@@ -2328,90 +2387,94 @@
     "source": "src/msl/misc_io.c"
   },
   {
-    "name": "fn_00410130",
+    "name": "__stdio_atexit",
     "address": "0x00410130",
-    "size": 11
+    "size": 11,
+    "source": "src/msl/misc_io.c"
   },
   {
     "name": "_ftell",
     "address": "0x00410140",
     "size": 147,
-    "source": "src/msl/file_pos_g.c"
+    "source": "src/msl/file_pos.c"
   },
   {
-    "name": "fn_004101e0",
+    "name": "ftell",
     "address": "0x004101e0",
-    "size": 12
+    "size": 12,
+    "source": "src/msl/file_pos.c"
   },
   {
     "name": "_fseek",
     "address": "0x004101f0",
     "size": 228,
-    "source": "src/msl/file_pos_g.c"
+    "source": "src/msl/file_pos.c"
   },
   {
     "name": "fseek",
     "address": "0x004102e0",
     "size": 24,
-    "source": "src/msl/file_pos_g.c"
+    "source": "src/msl/file_pos.c"
   },
   {
     "name": "__leap_year",
     "address": "0x00410300",
     "size": 79,
-    "source": "src/msl/time_g.c"
+    "source": "src/msl/time.c"
   },
   {
-    "name": "time_g_leap_days",
+    "name": "leap_days",
     "address": "0x00410350",
     "size": 159,
-    "source": "src/msl/time_g.c"
+    "source": "src/msl/time.c"
   },
   {
-    "name": "time_g_adjust",
+    "name": "adjust",
     "address": "0x004103f0",
     "size": 56,
-    "source": "src/msl/time_g.c"
+    "source": "src/msl/time.c"
   },
   {
     "name": "__time2tm",
     "address": "0x00410430",
     "size": 282,
-    "source": "src/msl/time_g.c"
+    "source": "src/msl/time.c"
   },
   {
     "name": "__tm2time",
     "address": "0x00410550",
     "size": 362,
-    "source": "src/msl/time_g.c"
+    "source": "src/msl/time.c"
   },
   {
-    "name": "time_g_clear_tm",
+    "name": "clear_tm",
     "address": "0x004106c0",
     "size": 67,
-    "source": "src/msl/time_g.c"
+    "source": "src/msl/time.c"
   },
   {
-    "name": "fn_00410710",
+    "name": "clock",
     "address": "0x00410710",
-    "size": 6
+    "size": 6,
+    "source": "src/msl/time.c"
   },
   {
-    "name": "fn_00410720",
+    "name": "difftime",
     "address": "0x00410720",
-    "size": 48
+    "size": 48,
+    "source": "src/msl/time.c"
   },
   {
     "name": "mktime",
     "address": "0x00410750",
     "size": 77,
-    "source": "src/msl/time_g.c"
+    "source": "src/msl/time.c"
   },
   {
-    "name": "get_gm_time",
+    "name": "time",
     "address": "0x004107a0",
     "size": 47,
-    "source": "src/msl/time_g.c"
+    "source": "src/msl/time.c"
   },
   {
     "name": "fn_004107d0",
@@ -2419,21 +2482,22 @@
     "size": 71
   },
   {
-    "name": "time_to_tm",
+    "name": "localtime",
     "address": "0x00410820",
     "size": 66,
-    "source": "src/msl/time_g.c"
+    "source": "src/msl/time.c"
   },
   {
-    "name": "time_g_emit",
+    "name": "emit",
     "address": "0x00410870",
     "size": 79,
-    "source": "src/msl/time_g.c"
+    "source": "src/msl/time.c"
   },
   {
-    "name": "fn_004108c0",
+    "name": "week_num",
     "address": "0x004108c0",
-    "size": 61
+    "size": 61,
+    "source": "src/msl/time.c"
   },
   {
     "name": "fn_00410900",
@@ -2446,9 +2510,10 @@
     "size": 211
   },
   {
-    "name": "fn_00410a90",
+    "name": "strftime",
     "address": "0x00410a90",
-    "size": 1935
+    "size": 1935,
+    "source": "src/msl/time.c"
   },
   {
     "name": "__wcstoul",
@@ -3844,13 +3909,13 @@
     "name": "_Setjmp",
     "address": "0x0041c750",
     "size": 24,
-    "source": "src/msl/setjmp_x86.c"
+    "source": "src/msl/setjmp.x86.c"
   },
   {
     "name": "longjmp",
     "address": "0x0041c770",
     "size": 31,
-    "source": "src/msl/setjmp_x86.c"
+    "source": "src/msl/setjmp.x86.c"
   },
   {
     "name": "has_valid_shell_signature",
@@ -4484,7 +4549,7 @@
     "name": "open",
     "address": "0x00420d50",
     "size": 506,
-    "source": "src/msl/fcntl_win32_g.c"
+    "source": "src/msl/fcntl.win32.c"
   },
   {
     "name": "to_lowercase",
@@ -4540,14 +4605,16 @@
     "source": "src/msl/strtoul.c"
   },
   {
-    "name": "fn_004219a0",
+    "name": "strtol",
     "address": "0x004219a0",
-    "size": 166
+    "size": 166,
+    "source": "src/msl/strtoul.c"
   },
   {
-    "name": "fn_00421a50",
+    "name": "atoi",
     "address": "0x00421a50",
-    "size": 18
+    "size": 18,
+    "source": "src/msl/strtoul.c"
   },
   {
     "name": "fn_00421a70",
@@ -4602,14 +4669,16 @@
     "source": "src/msl/arith.c"
   },
   {
-    "name": "fn_00422000",
+    "name": "__add",
     "address": "0x00422000",
-    "size": 68
+    "size": 68,
+    "source": "src/msl/arith.c"
   },
   {
-    "name": "fn_00422050",
+    "name": "__ladd",
     "address": "0x00422050",
-    "size": 68
+    "size": 68,
+    "source": "src/msl/arith.c"
   },
   {
     "name": "__lmul",
@@ -4633,45 +4702,49 @@
     "name": "__get_time",
     "address": "0x00422200",
     "size": 210,
-    "source": "src/msl/time_win32.c"
+    "source": "src/msl/time.win32.c"
   },
   {
-    "name": "fn_004222e0",
+    "name": "__get_clock",
     "address": "0x004222e0",
-    "size": 218
+    "size": 226,
+    "source": "src/msl/time.win32.c"
   },
   {
     "name": "__to_gm_time",
     "address": "0x004223d0",
     "size": 61,
-    "source": "src/msl/time_win32.c"
+    "source": "src/msl/time.win32.c"
   },
   {
     "name": "subtract_time_zone_bias",
     "address": "0x00422410",
     "size": 61,
-    "source": "src/msl/time_win32.c"
+    "source": "src/msl/time.win32.c"
   },
   {
-    "name": "fn_00422450",
+    "name": "parse_format",
     "address": "0x00422450",
-    "size": 738
+    "size": 738,
+    "source": "src/msl/wscanf.c"
   },
   {
-    "name": "fn_00422740",
+    "name": "__wsformatter",
     "address": "0x00422740",
-    "size": 2140
+    "size": 2140,
+    "source": "src/msl/wscanf.c"
   },
   {
-    "name": "fn_00422fa0",
+    "name": "__wFileRead",
     "address": "0x00422fa0",
-    "size": 71
+    "size": 71,
+    "source": "src/msl/wscanf.c"
   },
   {
     "name": "__wStringRead",
     "address": "0x00422ff0",
     "size": 120,
-    "source": "src/msl/wscanf_g.c"
+    "source": "src/msl/wscanf.c"
   },
   {
     "name": "fn_00423070",
@@ -4707,19 +4780,22 @@
     "source": "src/driver/MacFileTypes.c"
   },
   {
-    "name": "fn_00423380",
+    "name": "parse_format",
     "address": "0x00423380",
-    "size": 721
+    "size": 721,
+    "source": "src/msl/scanf.c"
   },
   {
-    "name": "fn_00423660",
+    "name": "__sformatter",
     "address": "0x00423660",
-    "size": 2076
+    "size": 2076,
+    "source": "src/msl/scanf.c"
   },
   {
-    "name": "fn_00423e80",
+    "name": "__FileRead",
     "address": "0x00423e80",
-    "size": 71
+    "size": 71,
+    "source": "src/msl/scanf.c"
   },
   {
     "name": "__StringRead",
@@ -4728,15 +4804,16 @@
     "source": "src/msl/scanf.c"
   },
   {
-    "name": "fn_00423f30",
+    "name": "__vsscanf",
     "address": "0x00423f30",
-    "size": 72
+    "size": 72,
+    "source": "src/msl/scanf.c"
   },
   {
     "name": "sscanf",
     "address": "0x00423f80",
     "size": 61,
-    "source": "src/msl/scanf_g.c"
+    "source": "src/msl/scanf.c"
   },
   {
     "name": "fn_00423fc0",
@@ -5161,24 +5238,28 @@
     "source": "src/driver/CLDropinCallbacks_V10.cpp"
   },
   {
-    "name": "fn_00427250",
+    "name": "??2@YAPAXI@Z",
     "address": "0x00427250",
-    "size": 127
+    "size": 127,
+    "source": "src/runtime/newop.cpp"
   },
   {
-    "name": "fn_004272d0",
+    "name": "??1bad_alloc@std@@UAE@XZ",
     "address": "0x004272d0",
-    "size": 15
+    "size": 15,
+    "source": "src/runtime/newop.cpp"
   },
   {
-    "name": "fn_004272e0",
+    "name": "??_Ebad_alloc@std@@UAE@I@Z",
     "address": "0x004272e0",
-    "size": 74
+    "size": 74,
+    "source": "src/runtime/newop.cpp"
   },
   {
-    "name": "fn_00427330",
+    "name": "?what@bad_alloc@std@@UBEPBDXZ",
     "address": "0x00427330",
-    "size": 16
+    "size": 16,
+    "source": "src/runtime/newop.cpp"
   },
   {
     "name": "fn_00427340",
@@ -7380,19 +7461,22 @@
     "source": "src/backend/ELF_Endian.c"
   },
   {
-    "name": "fn_00442ea0",
+    "name": "__wcstold",
     "address": "0x00442ea0",
-    "size": 1628
+    "size": 1628,
+    "source": "src/msl/wcstold.c"
   },
   {
-    "name": "fn_00443500",
+    "name": "__strtold",
     "address": "0x00443500",
-    "size": 1595
+    "size": 1595,
+    "source": "src/msl/strtold.c"
   },
   {
-    "name": "fn_00443b40",
+    "name": "strtod",
     "address": "0x00443b40",
-    "size": 172
+    "size": 172,
+    "source": "src/msl/strtold.c"
   },
   {
     "name": "__get_char",
@@ -7441,7 +7525,7 @@
     "size": 70
   },
   {
-    "name": "?NewHand_default_new_handler@std@@YAXXZ",
+    "name": "?default_new_handler@std@@YAXXZ",
     "address": "0x00444120",
     "size": 66,
     "source": "src/runtime/NewHand.cpp"
@@ -19404,12 +19488,6 @@
     "size": 85
   },
   {
-    "name": "CMach_MemberAlignValue",
-    "address": "0x005599d0",
-    "size": 36,
-    "source": "src/backend/CMachine.c"
-  },
-  {
     "name": "CABI_ComputeAlignmentPadding",
     "address": "0x005599d0",
     "size": 36,
@@ -20236,7 +20314,7 @@
     "name": "qsort",
     "address": "0x00568ac0",
     "size": 341,
-    "source": "src/msl/qsort_g.c"
+    "source": "src/msl/qsort.c"
   },
   {
     "name": "fn_00568c20",

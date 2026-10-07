@@ -10,7 +10,6 @@
 #include "driver/CLStaticMain.h"
 #include "driver/MsDos.h"
 #include "driver/StringUtils.h"
-#include "msl/string.h"
 #include <string.h>
 #include <stdlib.h>
 #define va_start(ap, last) ((ap) = (char *)&(last) + (((char *)(&(last) + 1) - (char *)&(last) + 3) / 4 * 4))
@@ -91,7 +90,7 @@ void CLErrors_ReportFormattedOSError(SInt32 diagnosticCode, SInt32 osError, ...)
     va_start(args, osError);
     message = mvprintf(messageBuffer, sizeof(messageBuffer), fn_004087d0(diagnosticCode, formatBuffer), args);
     {
-        int errorMessage = get_strerror(osError);
+        char *errorMessage = strerror(osError);
         CLErrors_EmitDiagnostic(100, message, errorMessage, osError);
     }
     if (message != messageBuffer)

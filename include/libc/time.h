@@ -19,6 +19,8 @@ struct tm {
 };
 
 time_t mktime(struct tm *timeptr);
+time_t time(time_t *timer);
+struct tm *localtime(const time_t *timer);
 size_t strftime(char *str, size_t max_size, const char *format_str, const struct tm *timeptr);
 
 #endif

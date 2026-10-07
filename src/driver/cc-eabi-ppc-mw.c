@@ -248,20 +248,3 @@ unsigned int fn_0040c070(void)
 {
     return 1U;
 }
-
-struct DriverLookupEntry *find_driver_lookup_entry(int key)
-{
-    struct DriverLookupEntry *entry;
-    int index;
-
-    index = 0;
-    entry = DAT_0057d938;
-    do {
-        if (entry->key == key) {
-            return entry;
-        }
-        index = index + 1;
-        entry = entry + 1;
-    } while (index < 0x23);
-    return NULL;
-}
