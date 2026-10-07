@@ -75,15 +75,15 @@ Object *CTemplateFunc_FindSpecializationObject(DeclInfo *search, ObjectList *can
     TemplArg *context;
     if (search->requireTemplateClassMember != 0 || search->has_expltargs != 0) {
         for (; candidates != NULL; candidates = candidates->next) {
-            if (candidates->object.value->otype == OT_OBJECT && candidates->object.value->type->type == TYPEFUNC &&
-                (((TypeFunc *)candidates->object.value->type)->flags & 1024) != 0) {
+            if (candidates->object->otype == OT_OBJECT && candidates->object->type->type == TYPEFUNC &&
+                (((TypeFunc *)candidates->object->type)->flags & 1024) != 0) {
                 context = search->expltargs;
                 value = search->thetype;
-                candidate = (Object *)(int)candidates->object.value;
+                candidate = (Object *)(int)candidates->object;
                 matched = CTemplateFunc_MatchesSpecialization(candidate, value, context);
                 if (matched != 0) {
                     specialization = (selected = CTemplateFunc_FindOrCreateMatchedSpecialization(
-                                          candidates->object.value, search->thetype, search->expltargs, NULL));
+                                          candidates->object, search->thetype, search->expltargs, NULL));
                     if (selected != NULL) {
                         if (search->requireTemplateClassMember != 0) {
                             if (specialization->is_specialized == 0 && specialization->is_instantiated != 0)
@@ -111,7 +111,7 @@ void fn_00514380(ObjectList *list, void *ptype, ENodeList *args, struct ArgMatch
 
     while (list != NULL) {
         Object *object;
-        if ((object = list->object.value)->otype == OT_OBJECT && object->type->type == TYPEFUNC &&
+        if ((object = list->object)->otype == OT_OBJECT && object->type->type == TYPEFUNC &&
             (TYPE_FUNC(object->type)->flags & 0x400)) {
             if (CExpr_GetFuncMatchArgs(object, args, flag, &match)) {
                 if (CTemplTool_InitDeduceInfo(&conversion, CTemplTool_GetFuncTempl(object)->params, ptype, 0)) {
@@ -145,7 +145,7 @@ void fn_00514380(ObjectList *list, void *ptype, ENodeList *args, struct ArgMatch
                     ctx->object = find_or_create_template_specialization(found, bestConversion.args, NULL)->object;
             } else {
                 one.next = NULL;
-                one.object.value = result;
+                one.object = result;
                 memclrw(ctx, sizeof(*ctx));
                 fn_00514380(&one, ptype, args, ctx, flag);
             }
@@ -214,9 +214,8 @@ Boolean match_template_function_args(Object *obj, DeduceInfo *state, FuncArg *ar
                     return 0;
                 if (exprs->node->type == ENEWEXCEPTION) {
                     for (candidate = exprs->node->data.overloadCandidates; candidate; candidate = candidate->next) {
-                        if (candidate->object.value->otype == OT_OBJECT &&
-                            candidate->object.value->type->type == TYPEFUNC &&
-                            (((TypeFunc *)candidate->object.value->type)->flags & 1024))
+                        if (candidate->object->otype == OT_OBJECT && candidate->object->type->type == TYPEFUNC &&
+                            (((TypeFunc *)candidate->object->type)->flags & 1024))
                             break;
                     }
                     if (candidate)
@@ -563,10 +562,10 @@ static inline struct TemplFuncInstance *InstantiateAccessibleTemplate(Object *fu
     return find_or_create_template_specialization(func, frame->args, flags);
 }
 
-Object *select_unique_undominated_match(Object *func, struct MatchLink *funcs, int options)
+Object *select_unique_undominated_match(Object *func, struct ObjectList *funcs, int options)
 {
     int count;
-    struct MatchLink *link;
+    struct ObjectList *link;
     Object *other;
     int i;
     int reverseDoesNotMatch;

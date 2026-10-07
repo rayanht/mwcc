@@ -40,7 +40,7 @@ static inline void IRO_BitVectorSetBit(UInt32 bit, BitVector *bv)
 void IRO_BuildflowGraph(IROLinear *source)
 {
     CLabel *label;
-    CException *exception;
+    ExceptionAction *exception;
     IROLinear *linear;
     IROLinear *next;
     IROLinear *record;
@@ -179,7 +179,7 @@ void IroFlowgraph_RebuildSuccPred(void)
     IROLinear *statement;
     SwitchInfo *branchList;
     SwitchCase *branch;
-    CException *entry;
+    ExceptionAction *entry;
     AsmOut references;
     SInt32 successorCount;
     SInt32 nodeIndex;

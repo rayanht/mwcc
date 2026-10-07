@@ -311,13 +311,13 @@ void FuncLevelAsmPPC_AllocateLocals(void)
 
     for (local = locals; local != NULL; local = local->next) {
         info = CPrep_AllocateVarInfo();
-        local->object.value->u.var.info = info;
-        local->object.value->flags |= 1;
+        local->object->u.var.info = info;
+        local->object->flags |= 1;
         info->used = 1;
     }
 
     for (local = locals; local != NULL; local = local->next) {
-        obj = local->object.value;
+        obj = local->object;
         type = obj->type;
         if (obj->sclass != TK_REGISTER)
             continue;
@@ -376,7 +376,7 @@ void FuncLevelAsmPPC_AllocateLocals(void)
     }
 
     for (local = locals; local != NULL; local = local->next) {
-        obj = local->object.value;
+        obj = local->object;
         if (Registers_GetInfo(obj))
             reg = Registers_GetInfo(obj)->reg;
         else

@@ -72,7 +72,8 @@ struct IStmtRec {
     UInt8 flags;         /* 0x01: CInline_SaveInfo saves statement flags */
     UInt16 value;        /* 0x02: CInline_SaveInfo saves statement value */
     UInt32 sourceoffset; /* 0x04: CInline_SaveInfo saves statement sourceoffset */
-    struct CException *exceptionActions; /* 0x08: CInline_005102f0 saves actions; write_prec_recs serializes them */
+    struct ExceptionAction
+        *exceptionActions; /* 0x08: CInline_005102f0 saves actions; write_prec_recs serializes them */
     union {
         struct ParsedAsmInstruction *assembly; /* 0x0c: CInline_SaveInfo type 16 copies assembly */
         struct ENode *operand; /* 0x0c: CInline_SaveInfo types 4, 6, 7, 8, 12, 13, 14, 15 save expressions */
@@ -147,14 +148,14 @@ extern void forward_statement_objrefs(Statement *stmt);
 extern void CInline_AddSpecialization(Object *func, void *a, void *b);
 extern void CInline_AddFunctionPrecNode(Object *func, TypeClass *value, FileOffsetInfo *key, TokenStream *pair,
                                         Boolean flag);
-extern CException *CInline_005102f0(Statement *indexMap, Statement *info);
+extern ExceptionAction *CInline_005102f0(Statement *indexMap, Statement *info);
 extern void inline_statement_list(Statement *list);
 extern void CInline_005114e0(ENode *node);
 extern Statement *inline_statement(Statement *statement);
 extern Statement *expand_inline_calls(Statement *stmt);
 extern Statement *generate_inline_statements(Object *function, Statement *tail, CInlineInfo *args, ENode *result,
                                              CLabel *returnLabel, Object *returnObject, UInt8 appendStatement);
-extern CException *copy_exception_actions(IStmtRec *parent, char copyExpressions);
+extern ExceptionAction *copy_exception_actions(IStmtRec *parent, char copyExpressions);
 extern void reconstruct_switch_info(Statement *arg1, IStmtRec *arg2, CLabel **table);
 extern ENode *inline_expression(ENode *node);
 extern Boolean can_inline(ENode *node);
@@ -164,7 +165,7 @@ extern void forward_objref(ENode *expr);
 extern ENode *copy_result_reference(ENode *e);
 extern ENode *fn_00513040(ENode *expr, UInt8 mode);
 extern unsigned char fn_0050ebc0(void);
-extern void add_undefined_exception_function_objects(CException *entry);
+extern void add_undefined_exception_function_objects(ExceptionAction *entry);
 extern void add_undefined_function_object(Object *object);
 extern void generate_inline_code(Object *object, CInlineInfo *input, char mode);
 extern unsigned char fn_00511180(Object *function, Statement *statement);

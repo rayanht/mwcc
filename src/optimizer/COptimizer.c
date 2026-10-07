@@ -794,7 +794,7 @@ void remove_unreferenced_labels(Statement *statements)
                 break;
             }
             default: {
-                CException *exception;
+                ExceptionAction *exception;
                 for (exception = statement->dobjstack; exception != NULL; exception = exception->next) {
                     if (exception->kind == 0xd) {
                         exception->data.catch_block.label->target.stmt->marked = 1;
@@ -963,7 +963,7 @@ void build_opt_blocks(Statement *first)
         successor->target.statement = first;
     }
     for (objectEntry = arguments; objectEntry != NULL; objectEntry = objectEntry->next) {
-        reg = objectEntry->object.value->u.var.info->varnumber;
+        reg = objectEntry->object->u.var.info->varnumber;
         target->referenceBarrierBits[reg >> 4] |= bit_masks[reg & 0xf];
     }
     if (first != NULL) {
@@ -1848,7 +1848,7 @@ void eliminate_common_subexpressions(void)
         registerInfo = CPrep_AllocateVarInfo();
         object->u.var.info = registerInfo;
         objectLink = (ObjectList *)CompilerTools_AllocatePool(sizeof(ObjectList));
-        objectLink->object.value = object;
+        objectLink->object = object;
         objectLink->next = locals;
         locals = objectLink;
         registerInfo->used = 1;

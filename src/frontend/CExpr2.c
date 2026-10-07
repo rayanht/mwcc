@@ -130,7 +130,7 @@ struct ENode *scandelete(char mode)
     ENode *originalExpr;
     SInt32 referenceExpr;
     short token;
-    ConversionSearchState frame;
+    ConversionIterator frame;
     BClassList typeContext;
     unsigned char isArray;
     char hasReference;
@@ -157,10 +157,10 @@ struct ENode *scandelete(char mode)
             conversionClass = TYPE_CLASS(target = expr->rtype);
             memclrw(&frame, sizeof(frame));
             if ((TYPE_CLASS(target)->flags & CLASS_IS_CONVERTIBLE) != 0) {
-                frame.iterator.cls = conversionClass;
-                frame.current = &frame.iterator;
-                build_convertible_bases_tree(&frame.iterator);
-                CScope_InitScopeSearch(&frame.scope, conversionClass->nspace);
+                frame.myconiter.tclass = conversionClass;
+                frame.coniter = &frame.myconiter;
+                build_convertible_bases_tree(&frame.myconiter);
+                CScope_InitScopeSearch(&frame.objiter, conversionClass->nspace);
             }
             {
                 TypeFunc *owner;
@@ -808,7 +808,7 @@ static inline NameSpaceName *array_allocation_operator_namespace(void)
 
 ENode *make_class_member_or_global_call(Type *classType, ENodeList *arguments, char forceGlobal, Boolean isArray)
 {
-    CScopeParseResult lookup;
+    NameResult lookup;
     Boolean found = 0;
     NameSpaceObjectList *overloads;
     Object *function;
@@ -848,7 +848,7 @@ void parse_pointer_and_array_declarator(Type **type, char allowNonconstant)
     ENode *node;
     SInt32 count;
     BinaryOperatorResult conversion;
-    CScopeParseResult lookup;
+    NameResult lookup;
 
     switch (tk) {
         case '*':
@@ -1049,7 +1049,7 @@ Boolean CExpr_CheckOperator(short token, ENode *left, ENode *right, BinaryOperat
     Object *memberNode;
     HashNameNode *operatorName;
     BClassList *bclass;
-    CScopeParseResult name;
+    NameResult name;
     ArgMatch res;
     NameSpaceObjectList globalObject;
     NameSpaceObjectList memberObject;
@@ -1183,16 +1183,16 @@ Boolean CExpr_CheckOperator(short token, ENode *left, ENode *right, BinaryOperat
 }
 
 /* A search of CLASS's conversion functions, its bases' included. */
-static inline void begin_conversion_search(ConversionSearchState *search, Type *type)
+static inline void begin_conversion_search(ConversionIterator *search, Type *type)
 {
     TypeClass *theclass = (TypeClass *)type;
 
-    memclrw(search, sizeof(ConversionSearchState));
+    memclrw(search, sizeof(ConversionIterator));
     if ((theclass->flags & CLASS_IS_CONVERTIBLE) != 0) {
-        search->iterator.cls = theclass;
-        search->current = &search->iterator;
-        build_convertible_bases_tree(&search->iterator);
-        CScope_InitScopeSearch(&search->scope, theclass->nspace);
+        search->myconiter.tclass = theclass;
+        search->coniter = &search->myconiter;
+        build_convertible_bases_tree(&search->myconiter);
+        CScope_InitScopeSearch(&search->objiter, theclass->nspace);
     }
 }
 
@@ -1283,7 +1283,7 @@ Boolean CExpr_CheckOperatorConversion(short token, ENode *left, ENode *right, EN
     memclrw(&match, sizeof(ArgMatch));
     if (left->rtype->type == TYPECLASS) {
         if (right->rtype->type == TYPECLASS) {
-            ConversionSearchState rightSearch, leftSearch;
+            ConversionIterator rightSearch, leftSearch;
             Object *conversion, *other;
             short mode;
             mode = kind;
@@ -1299,7 +1299,7 @@ Boolean CExpr_CheckOperatorConversion(short token, ENode *left, ENode *right, EN
                 }
             }
         } else {
-            ConversionSearchState search;
+            ConversionIterator search;
             Object *conversion;
             short mode;
             mode = kind;
@@ -1315,7 +1315,7 @@ Boolean CExpr_CheckOperatorConversion(short token, ENode *left, ENode *right, EN
         }
     } else {
         if (right->rtype->type == TYPECLASS) {
-            ConversionSearchState search;
+            ConversionIterator search;
             Object *conversion;
             short mode;
             mode = kind;
@@ -1500,7 +1500,7 @@ char try_class_conversion_to_kind(ENode *expr, short kind, BinaryOperatorResult 
     Object *conversion;
     Type *type;
     TypeClass *theclass;
-    ConversionSearchState search;
+    ConversionIterator search;
 
     if ((type = expr->rtype)->type != TYPECLASS)
         return 0;
@@ -1513,10 +1513,10 @@ char try_class_conversion_to_kind(ENode *expr, short kind, BinaryOperatorResult 
     theclass = (TypeClass *)type;
     memclrw(&search, sizeof(search));
     if ((theclass->flags & CLASS_IS_CONVERTIBLE) != 0) {
-        search.iterator.cls = theclass;
-        search.current = &search.iterator;
-        build_convertible_bases_tree(search.current);
-        CScope_InitScopeSearch(&search.scope, theclass->nspace);
+        search.myconiter.tclass = theclass;
+        search.coniter = &search.myconiter;
+        build_convertible_bases_tree(search.coniter);
+        CScope_InitScopeSearch(&search.objiter, theclass->nspace);
     }
     while ((conversion = CExpr_ConversionIteratorNext(&search)) != NULL) {
         matchKind = kind;
@@ -1560,17 +1560,17 @@ unsigned char convert_class_binary_operands(ENode *left, ENode *right, BinaryOpe
     Boolean otherRightEligible;
     int rightArithmetic;
     int otherRightArithmetic;
-    ConversionSearchState search;
+    ConversionIterator search;
     leftType = rightType = NULL;
 
     if ((classType = left->rtype)->type == TYPECLASS) {
         leftClass = (TypeClass *)classType;
         memclrw(&search, sizeof(search));
         if ((leftClass->flags & CLASS_IS_CONVERTIBLE) != 0) {
-            search.iterator.cls = leftClass;
-            search.current = &search.iterator;
-            build_convertible_bases_tree(search.current);
-            CScope_InitScopeSearch(&search.scope, leftClass->nspace);
+            search.myconiter.tclass = leftClass;
+            search.coniter = &search.myconiter;
+            build_convertible_bases_tree(search.coniter);
+            CScope_InitScopeSearch(&search.objiter, leftClass->nspace);
         }
         while ((conversion = CExpr_ConversionIteratorNext(&search)) != NULL) {
             leftType = ((TypeMemberFunc *)conversion->type)->functype;
@@ -1597,10 +1597,10 @@ leftDone:
         rightClass = (TypeClass *)secondClass;
         memclrw(&search, sizeof(search));
         if ((rightClass->flags & CLASS_IS_CONVERTIBLE) != 0) {
-            search.iterator.cls = rightClass;
-            search.current = &search.iterator;
-            build_convertible_bases_tree(search.current);
-            CScope_InitScopeSearch(&search.scope, rightClass->nspace);
+            search.myconiter.tclass = rightClass;
+            search.coniter = &search.myconiter;
+            build_convertible_bases_tree(search.coniter);
+            CScope_InitScopeSearch(&search.objiter, rightClass->nspace);
         }
         while ((rightConversion = CExpr_ConversionIteratorNext(&search)) != NULL) {
             rightType = ((TypeMemberFunc *)rightConversion->type)->functype;
@@ -1708,7 +1708,7 @@ ENode *CExpr_MakeFunctionCall(ENode *expr, ENodeList *args)
             result->rtype = (Type *)&stsignedlong;
             return result;
         }
-        if ((object = expr->data.overloadCandidates->object.value)->otype == OT_OBJECT) {
+        if ((object = expr->data.overloadCandidates->object)->otype == OT_OBJECT) {
             if (((builtinType = (TypeFunc *)object->type)->flags & FUNC_INTRINSIC) != 0) {
                 value = CodeGen_MakeAltivecCall(object, args);
                 if (value != NULL)
@@ -2009,7 +2009,7 @@ ENode *CExpr_GenericFuncCall(BClassList *scope, ENode *instance, Boolean qualifi
         }
         if (function != NULL) {
             list.next = NULL;
-            list.object.value = function;
+            list.object = function;
             candidates = &list;
         }
         CExpr_FuncArgMatch(candidates, matchContext, arguments, &resolution, instance, extraArguments);
@@ -2134,7 +2134,7 @@ ENode *CExpr_GenericFuncCall(BClassList *scope, ENode *instance, Boolean qualifi
         } else {
             if (formal == NULL) {
                 list.next = NULL;
-                list.object.value = function;
+                list.object = function;
                 CError_FunctionCallError(ERR_FUNCTION_CALL_STAR_DOES_NOT_MATCH, &list, arguments);
             }
             argument->node = CExpr_VarArgPromotion(argument->node, formal == &data_00583098);
@@ -2146,7 +2146,7 @@ ENode *CExpr_GenericFuncCall(BClassList *scope, ENode *instance, Boolean qualifi
         if (formal != &data_00583098 && formal != &data_00584748) {
             if (formal->dexpr == NULL) {
                 list.next = NULL;
-                list.object.value = function;
+                list.object = function;
                 CError_FunctionCallError(ERR_FUNCTION_CALL_STAR_DOES_NOT_MATCH, &list, arguments);
                 formal = NULL;
             }
@@ -2321,7 +2321,7 @@ void CExpr_FuncArgMatch(NameSpaceObjectList *source, void *context, ENodeList *o
     copyEntry = (ObjectList *)CompilerTools_AllocatePool(8);
     copy = copyEntry;
     for (;;) {
-        copyEntry->object.value = (Object *)entry->object;
+        copyEntry->object = (Object *)entry->object;
         if ((entry = entry->next) == NULL) {
             copyEntry->next = NULL;
             break;
@@ -2336,7 +2336,7 @@ void CExpr_FuncArgMatch(NameSpaceObjectList *source, void *context, ENodeList *o
     scan = copy;
     hasFlag = 0;
     while (scan != NULL) {
-        if ((object = scan->object.value)->otype == OT_OBJECT && object->type->type == TYPEFUNC &&
+        if ((object = scan->object)->otype == OT_OBJECT && object->type->type == TYPEFUNC &&
             (exclude == 0 || (object->qual & Q_EXPLICIT) == 0)) {
             if ((((TypeFunc *)object->type)->flags & 1024) == 0) {
                 if (CExpr_GetFuncMatchArgs(object, objects, mode, &result) != 0) {
@@ -2422,7 +2422,7 @@ void match_function_arguments(Object *signature, FuncArg *argument, ENodeList *o
 
 Boolean CExpr_MatchCompare(Object *obj, ArgMatch *dst, ArgMatch *src)
 {
-    MatchLink *link;
+    ObjectList *link;
 
     switch (compare_short_arrays_lexicographically(&src->score1Count, &dst->score1Count, 0)) {
         case -1:
@@ -2440,7 +2440,7 @@ Boolean CExpr_MatchCompare(Object *obj, ArgMatch *dst, ArgMatch *src)
                         if (dst->qualificationPenalty == src->qualificationPenalty && dst->object != NULL) {
                             if (dst->object->datatype == obj->datatype) {
                             insert:
-                                link = (MatchLink *)CompilerTools_AllocatePool(8);
+                                link = (ObjectList *)CompilerTools_AllocatePool(8);
                                 link->next = dst->list;
                                 dst->list = link;
                                 link->object = obj;
@@ -2742,7 +2742,7 @@ ENode *CExpr2_ConvertScalarOperand(ENode *result, Boolean integerOnly, Boolean p
             result = enumOperand(result, type);
             break;
         case TYPECLASS: {
-            ConversionSearchState state;
+            ConversionIterator state;
             TypeClass *classType;
             Boolean found;
             Boolean ambiguous;
@@ -2755,11 +2755,11 @@ ENode *CExpr2_ConvertScalarOperand(ENode *result, Boolean integerOnly, Boolean p
             classType = TYPE_CLASS(result->rtype);
             memclrw(&state, sizeof(state));
             if (classType->flags & CLASS_IS_CONVERTIBLE) {
-                ConvNode *list = &state.iterator;
-                state.iterator.cls = classType;
-                state.current = list;
+                ConIterator *list = &state.myconiter;
+                state.myconiter.tclass = classType;
+                state.coniter = list;
                 build_convertible_bases_tree(list);
-                CScope_InitScopeSearch(&state.scope, classType->nspace);
+                CScope_InitScopeSearch(&state.objiter, classType->nspace);
             }
             while ((conversion = CExpr_ConversionIteratorNext(&state)) != NULL) {
                 functionType = TYPE_FUNC(conversion->type);
@@ -2837,14 +2837,14 @@ static inline ENode *MakeMonadic_470460(ENode *inner, int type)
     return e;
 }
 
-static void InitLookup(ConversionSearchState *lu, TypeClass *tclass)
+static void InitLookup(ConversionIterator *lu, TypeClass *tclass)
 {
     memclrw(lu, 0x20);
     if (tclass->flags & CLASS_IS_CONVERTIBLE) {
-        lu->iterator.cls = tclass;
-        lu->current = &lu->iterator;
-        build_convertible_bases_tree(&lu->iterator);
-        CScope_InitScopeSearch(&lu->scope, tclass->nspace);
+        lu->myconiter.tclass = tclass;
+        lu->coniter = &lu->myconiter;
+        build_convertible_bases_tree(&lu->myconiter);
+        CScope_InitScopeSearch(&lu->objiter, tclass->nspace);
     }
 }
 
@@ -2860,7 +2860,7 @@ SInt16 user_assign_check(ENode *operand, Type *targetType, UInt32 targetQual, Bo
     ENode *constructorArg;
     Boolean hasConversion;
     Boolean hasConstructor;
-    ConversionSearchState lookup;
+    ConversionIterator lookup;
     ComparisonValues best;
     ComparisonValues constructorBest;
     ComparisonValues rank;
@@ -3072,30 +3072,30 @@ SInt16 user_assign_check(ENode *operand, Type *targetType, UInt32 targetQual, Bo
     return 0;
 }
 
-Object *CExpr_ConversionIteratorNext(ConversionSearchState *ctx)
+Object *CExpr_ConversionIteratorNext(ConversionIterator *ctx)
 {
-    ConvNode *current;
+    ConIterator *current;
     Type *foundType;
     Boolean matched;
     Type *candidateType;
-    ConvNode *item;
+    ConIterator *item;
     Type *returnType;
     Type *candidateReturnType;
     Object *candidate;
     Object *found;
 
-    if (ctx->current == NULL)
+    if (ctx->coniter == NULL)
         return NULL;
-    current = ctx->current;
+    current = ctx->coniter;
 
     for (;;) {
-        if ((found = CScope_NextObject(&ctx->scope)) != NULL) {
+        if ((found = CScope_NextObject(&ctx->objiter)) != NULL) {
             if (found->type->type == TYPEFUNC && (TYPE_FUNC(found->type)->flags & FUNC_CONVERSION)) {
-                ScopeSearch local;
+                CScopeObjectIterator local;
                 foundType = found->type;
 
                 for (item = current->parent; item != NULL; item = item->parent) {
-                    CScope_InitScopeSearch(&local, item->cls->nspace);
+                    CScope_InitScopeSearch(&local, item->tclass->nspace);
                     for (;;) {
                         candidate = CScope_NextObject(&local);
                         if (candidate == NULL)
@@ -3127,11 +3127,11 @@ Object *CExpr_ConversionIteratorNext(ConversionSearchState *ctx)
             }
         } else {
             for (;;) {
-                if (current->list != NULL) {
-                    ctx->current = current->list->node;
-                    current->list = current->list->next;
-                    current = ctx->current;
-                    CScope_InitScopeSearch(&ctx->scope, current->cls->nspace);
+                if (current->children != NULL) {
+                    ctx->coniter = current->children->iter;
+                    current->children = current->children->next;
+                    current = ctx->coniter;
+                    CScope_InitScopeSearch(&ctx->objiter, current->tclass->nspace);
                     break;
                 }
                 current = current->parent;
@@ -3142,24 +3142,24 @@ Object *CExpr_ConversionIteratorNext(ConversionSearchState *ctx)
     }
 }
 
-void build_convertible_bases_tree(ConvNode *self)
+void build_convertible_bases_tree(ConIterator *self)
 {
     ClassList *base;
-    ConvItem *item;
-    ConvNode *node;
+    ConIteratorList *item;
+    ConIterator *node;
 
-    for (base = self->cls->bases, item = NULL, node = NULL; base != NULL; base = base->next) {
+    for (base = self->tclass->bases, item = NULL, node = NULL; base != NULL; base = base->next) {
         if (base->base->flags & CLASS_IS_CONVERTIBLE) {
-            node = (ConvNode *)galloc(sizeof(ConvNode));
-            memclrw(node, sizeof(ConvNode));
+            node = (ConIterator *)galloc(sizeof(ConIterator));
+            memclrw(node, sizeof(ConIterator));
             node->parent = self;
-            node->cls = base->base;
+            node->tclass = base->base;
             build_convertible_bases_tree(node);
-            item = (ConvItem *)galloc(sizeof(ConvItem));
-            memclrw(item, sizeof(ConvItem));
-            item->node = node;
-            item->next = self->list;
-            self->list = item;
+            item = (ConIteratorList *)galloc(sizeof(ConIteratorList));
+            memclrw(item, sizeof(ConIteratorList));
+            item->iter = node;
+            item->next = self->children;
+            self->children = item;
         }
     }
 }

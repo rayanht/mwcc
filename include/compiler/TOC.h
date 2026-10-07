@@ -56,7 +56,7 @@ extern void rewrite_compound_assignment(ENode *expr, unsigned char opcode);
 extern void replace_vector_constant_with_objectref(ENode *node);
 extern Object *TOC_CreateSinitObject(void);
 extern void fn_0049d420(Statement *statements);
-extern void add_exception_initial_objects(CException *node);
+extern void add_exception_initial_objects(ExceptionAction *node);
 extern UInt8 TOC_HasObjectReferenceWithoutExpression(Object *key);
 extern void add_toc_reference(Object *id, Object *a, ENode *b, char c);
 extern void fn_0049f4b0(Object *object);

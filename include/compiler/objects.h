@@ -27,10 +27,8 @@ enum {
 };
 #pragma options align = mac68k
 struct ObjectList {
-    ObjectList *next; /* 0x00: CScope_CopyList and parse_protocol_list link entries */
-    struct {
-        Object *value; /* 0x04: CodeGen reads objects; parse_protocol_list stores a cast CRec */
-    } object;
+    ObjectList *next;
+    Object *object;
 };
 #pragma options align = reset
 #pragma options align = mac68k
@@ -149,7 +147,7 @@ struct Object {
         struct {
             struct CInlineInfo *
                 u; /* 0x26: write_object selects inline body when TypeFunc flags & 0x400 is clear and Q_INLINE is set; CInline_0050ee60 stores CInline_SaveInfo output. */
-            struct DefArg *
+            struct DefArgCtorInfo *
                 defargdata; /* 0x2a: make_defarg_function stores the constructor and default expression; make_auto_generated_method tests it before CABI_MakeDefaultArgConstructor. */
             HashNameNode *linkname;
         } func;

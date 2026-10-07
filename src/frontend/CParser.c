@@ -374,7 +374,7 @@ Object *CParser_ParseObject(void)
     NameSpaceObjectList *result;
     Object *object;
     DeclInfo declaration;
-    CScopeParseResult lookupState;
+    NameResult lookupState;
     memclrw(&declaration, sizeof(declaration));
     CParser_GetDeclSpecs(&declaration, 1);
     CDecl_ParseDeclarator(&declaration);
@@ -448,56 +448,56 @@ static inline Boolean CheckClassAccess(void *node)
     return 1;
 }
 
-static void CParser_SaveState(CParseSave *sv)
+static void CParser_SaveState(ParserTryBlock *sv)
 {
-    sv->g24c = currentNameSpace;
-    sv->g040 = data_00588040;
-    sv->g238 = data_00588238;
-    sv->g134 = object_reference_stack;
-    sv->g7ecc = writtenEntry;
-    sv->g4f8 = data_005884f8;
-    sv->g240 = data_00588240;
+    sv->cscope_current = currentNameSpace;
+    sv->cscope_currentclass = data_00588040;
+    sv->cscope_currentfunc = data_00588238;
+    sv->ctempl_curinstance = object_reference_stack;
+    sv->cerror_locktoken = writtenEntry;
+    sv->cscope_is_member_func = data_005884f8;
+    sv->next = data_00588240;
     data_00588240 = sv;
 }
 
-static void CParser_RestoreState(CParseSave *sv)
+static void CParser_RestoreState(ParserTryBlock *sv)
 {
-    currentNameSpace = sv->g24c;
-    data_00588040 = sv->g040;
-    data_00588238 = sv->g238;
-    object_reference_stack = sv->g134;
-    writtenEntry = sv->g7ecc;
-    data_005884f8 = sv->g4f8;
-    data_00588240 = sv->g240;
+    currentNameSpace = sv->cscope_current;
+    data_00588040 = sv->cscope_currentclass;
+    data_00588238 = sv->cscope_currentfunc;
+    object_reference_stack = sv->ctempl_curinstance;
+    writtenEntry = sv->cerror_locktoken;
+    data_005884f8 = sv->cscope_is_member_func;
+    data_00588240 = sv->next;
 }
 
-static void save(CParseSave *s, unsigned char *flag)
+static void save(ParserTryBlock *s, unsigned char *flag)
 {
     NameSpace *x;
     x = currentNameSpace;
-    s->g24c = x;
-    s->g040 = data_00588040;
+    s->cscope_current = x;
+    s->cscope_currentclass = data_00588040;
     *flag = 0;
-    s->g238 = data_00588238;
-    s->g134 = object_reference_stack;
-    s->g7ecc = writtenEntry;
-    s->g4f8 = data_005884f8;
-    s->g240 = data_00588240;
+    s->cscope_currentfunc = data_00588238;
+    s->ctempl_curinstance = object_reference_stack;
+    s->cerror_locktoken = writtenEntry;
+    s->cscope_is_member_func = data_005884f8;
+    s->next = data_00588240;
     data_00588240 = s;
-    (void)s->g24c;
+    (void)s->cscope_current;
 }
 
-static void restore(CParseSave *s)
+static void restore(ParserTryBlock *s)
 {
     TypeClass *t3;
-    t3 = s->g040;
-    currentNameSpace = s->g24c;
+    t3 = s->cscope_currentclass;
+    currentNameSpace = s->cscope_current;
     data_00588040 = t3;
-    data_00588238 = s->g238;
-    object_reference_stack = s->g134;
-    writtenEntry = s->g7ecc;
-    data_005884f8 = s->g4f8;
-    data_00588240 = s->g240;
+    data_00588238 = s->cscope_currentfunc;
+    object_reference_stack = s->ctempl_curinstance;
+    writtenEntry = s->cerror_locktoken;
+    data_005884f8 = s->cscope_is_member_func;
+    data_00588240 = s->next;
 }
 
 static inline Boolean CParser_AlternateFunctionNamesEnabled(void)
@@ -507,15 +507,15 @@ static inline Boolean CParser_AlternateFunctionNamesEnabled(void)
 
 void CParser_CallBackAction(Object *key)
 {
-    struct PendingObjectClass *entry;
+    struct CallbackAction *entry;
     struct ClassTypeLink *node;
     TypeClass *value;
 
     entry = pending_object_classes;
     if (pending_object_classes != NULL) {
         do {
-            if (entry->object == key) {
-                value = entry->theclass;
+            if (entry->obj == key) {
+                value = entry->tclass;
                 node = (struct ClassTypeLink *)galloc(sizeof(struct ClassTypeLink));
                 node->next = class_type_links;
                 node->type = value;
@@ -542,13 +542,13 @@ unsigned int CParser_PrependClassTypeLink(TypeClass *type)
 
 void CParser_NewCallBackAction(Object *object, TypeClass *theclass)
 {
-    struct PendingObjectClass *entry;
-    struct PendingObjectClass *head;
-    entry = (struct PendingObjectClass *)galloc(sizeof(struct PendingObjectClass));
+    struct CallbackAction *entry;
+    struct CallbackAction *head;
+    entry = (struct CallbackAction *)galloc(sizeof(struct CallbackAction));
     head = pending_object_classes;
     entry->next = head;
-    entry->object = object;
-    entry->theclass = theclass;
+    entry->obj = object;
+    entry->tclass = theclass;
     pending_object_classes = entry;
     object->flags |= OBJECT_LAZY;
 }
@@ -702,7 +702,7 @@ void CParser_PrependClassParseRec(TypeClass *type)
 
 void CParser_GetDeclSpecs(DeclInfo *state, Boolean allowObject)
 {
-    CScopeParseResult scope;
+    NameResult scope;
     Type *type;
     SInt16 typeToken;
     int tokenValue;
@@ -988,8 +988,8 @@ void CParser_GetDeclSpecs(DeclInfo *state, Boolean allowObject)
                     }
                 lookup_type:
                     if (CScope_ParseDeclName(&scope)) {
-                        if (scope.type.base != NULL) {
-                            type = scope.type.base;
+                        if (scope.type != NULL) {
+                            type = scope.type;
                             do {
                                 if (type->type == TYPETEMPLATE) {
                                     switch (TYPE_TEMPLATE(type)->dtype) {
@@ -1011,12 +1011,12 @@ void CParser_GetDeclSpecs(DeclInfo *state, Boolean allowObject)
                                     }
                                 }
                             } while (0);
-                            if (scope.type.base->type == TYPECLASS &&
-                                (TYPE_CLASS(scope.type.base)->flags & CLASS_IS_TEMPL) != 0) {
-                                if (!CheckClassAccess(scope.type.base))
-                                    scope.type.base = (Type *)&stsignedint;
+                            if (scope.type->type == TYPECLASS &&
+                                (TYPE_CLASS(scope.type)->flags & CLASS_IS_TEMPL) != 0) {
+                                if (!CheckClassAccess(scope.type))
+                                    scope.type = (Type *)&stsignedint;
                             }
-                            TypedefDeclInfo(state, scope.type.base, scope.qualifiers);
+                            TypedefDeclInfo(state, scope.type, scope.qual);
                             state->isType = scope.is_type;
                             typeToken = -1;
                             tk = CPrepTokenizer_GetNextToken();
@@ -2103,7 +2103,7 @@ Type *CParser_RemoveTopMostQualifiers(Type *type, UInt32 *qual)
 
 Boolean CParser_TryParamList(int parserOption)
 {
-    CParseSave savedState;
+    ParserTryBlock savedState;
     SInt32 state;
     Boolean result = 0;
 
@@ -2116,7 +2116,7 @@ Boolean CParser_TryParamList(int parserOption)
             break;
         default:
             CParser_SaveState(&savedState);
-            if (_Setjmp(savedState.buf) == 0) {
+            if (_Setjmp(savedState.jmpbuf) == 0) {
                 if (CFunc_ParseFakeArgList(parserOption) != 0 || tk == ')') {
                     result = 1;
                 }
@@ -2187,7 +2187,7 @@ unsigned char test_declaration(Boolean parseDeclaration, Boolean requireValue, B
                                short terminator)
 {
     unsigned char result;
-    CParseSave savedState;
+    ParserTryBlock savedState;
     DeclInfo declaration;
     switch ((int)tk) {
         case 262:
@@ -2220,7 +2220,7 @@ unsigned char test_declaration(Boolean parseDeclaration, Boolean requireValue, B
             return 1;
     }
     save(&savedState, &result);
-    if (_Setjmp(savedState.buf) == 0) {
+    if (_Setjmp(savedState.jmpbuf) == 0) {
         memclrw(&declaration, sizeof(declaration));
         CParser_GetDeclSpecs((DeclInfo *)&declaration, 0);
         if (declaration.thetype->type != TYPETEMPLATE || ((TypeIntegral *)declaration.thetype)->integral != IT_CHAR ||
@@ -2727,7 +2727,7 @@ Object *CParser_FindClassMemberOrNamespaceFunctionObject(Type *ownerType, Boolea
 {
     Boolean memberFound = 0;
     Object *object;
-    CScopeParseResult result;
+    NameResult result;
 
     if (!skipLookup && ownerType->type == TYPECLASS) {
         NameSpaceName *name = (useAlternate && CParser_AlternateFunctionNamesEnabled()) ? data_00587e64 : data_00587680;
@@ -2922,7 +2922,7 @@ Object *CParser_NewLocalDataObject(DeclInfo *declaration, unsigned int addToList
     }
     if ((unsigned char)addToList != 0U) {
         entry = (ObjectList *)CompilerTools_AllocatePool(8U);
-        entry->object.value = object;
+        entry->object = object;
         entry->next = locals;
         locals = entry;
     }

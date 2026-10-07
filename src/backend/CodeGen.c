@@ -2182,7 +2182,7 @@ void emit_trailing_object_reg_moves(void)
 
     memclrw(&op, sizeof(op));
     for (elem = gTrailingObjectList_005876a0; elem != NULL; elem = elem->next) {
-        obj = elem->object.value;
+        obj = elem->object;
         info = Registers_GetInfo(obj);
         switch (obj->datatype) {
             case DDATA:
@@ -2361,9 +2361,9 @@ void allocate_registers_and_local_slots(void)
         allocate_saved_vrs();
     }
     for (local = locals; local != NULL; local = local->next) {
-        if ((Registers_GetInfo(local->object.value) != NULL ? Registers_GetInfo(local->object.value)->reg : 0) == 0)
-            StackFrameEABI_AllocateObjectSlot(local->object.value);
-        if ((type = local->object.value->type) != NULL && type->type == TYPEARRAY &&
+        if ((Registers_GetInfo(local->object) != NULL ? Registers_GetInfo(local->object)->reg : 0) == 0)
+            StackFrameEABI_AllocateObjectSlot(local->object);
+        if ((type = local->object->type) != NULL && type->type == TYPEARRAY &&
             (elementType = TYPE_STRUCT(TPTR_TARGET(type)))->type == TYPESTRUCT) {
             SInt32 structKind = elementType->stype;
             if (structKind >= 4 && structKind <= 0xe)
@@ -2385,7 +2385,7 @@ void allocate_saved_vrs(void)
         bestUsage = -1;
         if (!(data_00588224 & 2)) {
             for (list = arguments; list; list = list->next) {
-                object = list->object.value;
+                object = list->object;
                 info = Registers_GetInfo(object);
                 if (!info->reg && info->used && !info->noregister) {
                     if (!IsVolatile(object) && info->usage >= bestUsage && info->usage >= 2 &&
@@ -2400,7 +2400,7 @@ void allocate_saved_vrs(void)
         }
         if (!(data_00588224 & 2)) {
             for (list = locals; list; list = list->next) {
-                object = list->object.value;
+                object = list->object;
                 info = Registers_GetInfo(object);
                 if (!info->reg && info->used && !info->noregister) {
                     if (!IsVolatile(object) && info->usage >= bestUsage && info->usage >= 2 &&
@@ -2437,7 +2437,7 @@ void allocate_saved_fprs(void)
         if ((data_00588224 & 2) == 0) {
             link = arguments;
             while (link != NULL) {
-                object = link->object.value;
+                object = link->object;
                 info = Registers_GetInfo(object);
                 if (info->reg == 0 && info->used != 0 && info->noregister == 0) {
                     if (object->type->type == TYPEPOINTER) {
@@ -2458,7 +2458,7 @@ void allocate_saved_fprs(void)
         if ((data_00588224 & 2) == 0) {
             otherLink = locals;
             while (otherLink != NULL) {
-                otherObject = otherLink->object.value;
+                otherObject = otherLink->object;
                 otherInfo = Registers_GetInfo(otherObject);
                 if (otherInfo->reg == 0 && otherInfo->used != 0 && otherInfo->noregister == 0) {
                     if (otherObject->type->type == TYPEPOINTER) {
@@ -2513,7 +2513,7 @@ void allocate_saved_gprs(void)
         if ((data_00588224 & 2) == 0) {
             entry = arguments;
             while (entry != NULL) {
-                object = entry->object.value;
+                object = entry->object;
                 info = Registers_GetInfo(object);
                 type = object->type;
                 if (info->reg == 0 && info->used != 0 && info->noregister == 0) {
@@ -2540,7 +2540,7 @@ void allocate_saved_gprs(void)
         if ((data_00588224 & 2) == 0) {
             otherEntry = locals;
             while (otherEntry != NULL) {
-                otherObject = otherEntry->object.value;
+                otherObject = otherEntry->object;
                 otherInfo = Registers_GetInfo(otherObject);
                 otherType = otherObject->type;
                 if (otherInfo->reg == 0 && otherInfo->used != 0 && otherInfo->noregister == 0) {
@@ -2567,7 +2567,7 @@ void allocate_saved_gprs(void)
         }
         specialEntry = gTrailingObjectList_005876a0;
         while (specialEntry != NULL) {
-            candidate = specialEntry->object.value;
+            candidate = specialEntry->object;
             specialInfo = Registers_GetInfo(candidate);
             if (specialInfo->reg == 0 && specialInfo->used != 0 && specialInfo->usage >= bestWeight &&
                 specialInfo->usage >= 3) {
@@ -2600,7 +2600,7 @@ void allocate_object_registers(void)
     for (list = gInitialObjectList_005882ac; list != NULL; list = list->next) {
         UInt32 qual;
 
-        object = list->object.value;
+        object = list->object;
         info = Registers_GetInfo(object);
         type = object->type;
         if (info->used != 0 && info->noregister == 0) {
@@ -2630,7 +2630,7 @@ void allocate_object_registers(void)
     for (list = arguments; list != NULL; list = list->next) {
         UInt32 qual;
 
-        object = list->object.value;
+        object = list->object;
         info = Registers_GetInfo(object);
         type = object->type;
         if (info->used != 0 && info->noregister == 0) {
@@ -2660,7 +2660,7 @@ void allocate_object_registers(void)
     for (list = locals; list != NULL; list = list->next) {
         UInt32 qual;
 
-        object = list->object.value;
+        object = list->object;
         if (CParser_IsNullOrAtOrDollarPrefixedName(object->name) == 0) {
             info = Registers_GetInfo(object);
             type = object->type;
@@ -2694,7 +2694,7 @@ void allocate_object_registers(void)
     for (list = locals; list != NULL; list = list->next) {
         UInt32 qual;
 
-        object = list->object.value;
+        object = list->object;
         if (CParser_IsNullOrAtOrDollarPrefixedName(object->name) != 0) {
             info = Registers_GetInfo(object);
             type = object->type;
@@ -2724,7 +2724,7 @@ void allocate_object_registers(void)
     }
 
     for (list = gTrailingObjectList_005876a0; list != NULL; list = list->next) {
-        object = list->object.value;
+        object = list->object;
         info = Registers_GetInfo(object);
         if (info->used != 0 && (SInt32)info->usage > 1)
             Registers_AllocateGPR(object);
@@ -2771,7 +2771,7 @@ void CodeGen_EnumerateArgumentRegisters(void (*callback)(Object *argument, SInt1
     SInt16 vectorRegister = 2;
 
     while (parameter != NULL) {
-        Object *object = parameter->object.value;
+        Object *object = parameter->object;
         argumentType = object->type;
 
         if (((argumentType->type == TYPEINT || argumentType->type == TYPEENUM) && argumentType->size == 8) ||
@@ -2864,7 +2864,7 @@ void CodeGen_AllocateArgumentSlots(Object *function, Boolean isVariadic, Boolean
     ObjectList *arg = arguments;
 
     while (arg != NULL) {
-        obj = arg->object.value;
+        obj = arg->object;
         type = obj->type;
         if (type->type != TYPESTRUCT || (structKind = ((TypeStruct *)type)->stype) < 4 || structKind > 14) {
             useStack = 1;

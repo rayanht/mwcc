@@ -206,7 +206,7 @@ void CPrec_LoadPrecompiledHeader(short file, UInt8 *buffer)
         pending_object_classes = NULL;
     else
         pending_object_classes =
-            (struct PendingObjectClass *)(precompiled_header_base + prec_header->pendingObjectClassesOffset);
+            (struct CallbackAction *)(precompiled_header_base + prec_header->pendingObjectClassesOffset);
 
     if (!prec_header->classPointerTypeOffset)
         class_pointer_type = NULL;
@@ -2513,7 +2513,7 @@ UInt32 serialize_cprec_nodes(CPrecNode *info)
     return result;
 }
 
-unsigned int serialize_pending_object_class_list(struct PendingObjectClass *entry)
+unsigned int serialize_pending_object_class_list(struct CallbackAction *entry)
 {
     SInt32 firstOffset;
     SInt32 valueOffset;
@@ -2532,9 +2532,9 @@ unsigned int serialize_pending_object_class_list(struct PendingObjectClass *entr
             CompilerTools_AppendGListData(&precompiled_buffer, entry, sizeof(*entry));
         }
         prec_position += sizeof(*entry);
-        valueOffset = write_object(entry->object);
+        valueOffset = write_object(entry->obj);
         add_serialized_bucket_entry(recordOffset + 4, valueOffset);
-        valueOffset = write_type((Type *)entry->theclass);
+        valueOffset = write_type((Type *)entry->tclass);
         add_serialized_bucket_entry(recordOffset + 8, valueOffset);
         if (entry->next == NULL)
             break;
@@ -2556,9 +2556,9 @@ PendingBuffer *serialize_pending_buffers(PendingBuffer *item)
 {
     PendingBuffer *first;
     PendingBuffer *current;
-    RelocationList *relocation;
-    RelocationList *currentRelocation;
-    RelocationList *firstRelocation;
+    OLinkList *relocation;
+    OLinkList *currentRelocation;
+    OLinkList *firstRelocation;
     SInt32 size;
     char *buffer;
 
@@ -2577,9 +2577,9 @@ PendingBuffer *serialize_pending_buffers(PendingBuffer *item)
         if ((relocation = item->value)) {
             firstRelocation = currentRelocation = PrecItemAlign();
             while (1) {
-                RelocationList *nextRelocation;
-                PrecItemData(relocation, sizeof(RelocationList));
-                add_serialized_bucket_entry((SInt32)&currentRelocation->object, write_object(relocation->object));
+                OLinkList *nextRelocation;
+                PrecItemData(relocation, sizeof(OLinkList));
+                add_serialized_bucket_entry((SInt32)&currentRelocation->obj, write_object(relocation->obj));
                 if (!relocation->next)
                     break;
                 add_serialized_pointer_entry((SInt32)&currentRelocation->next, nextRelocation = PrecItemAlign());
@@ -2870,7 +2870,7 @@ UInt32 write_object(Object *obj)
         case DFUNC:
         case DVFUNC: {
             Type *type;
-            DefArg *defarg;
+            DefArgCtorInfo *defarg;
             if ((type = obj->type)->type == TYPEFUNC && (((TypeFunc *)type)->flags & 0x400) != 0)
                 add_serialized_bucket_entry(offset + 0x26, (SInt32)write_template_function(obj->u.templateFunction));
             else if ((obj->qual & Q_INLINE) != 0 && obj->u.func.u != NULL)
@@ -2878,8 +2878,8 @@ UInt32 write_object(Object *obj)
             if ((defarg = obj->u.func.defargdata) != NULL) {
                 UInt32 defargOffset = align_to_four_byte_boundary();
                 fn_004e0010(defarg, sizeof(*defarg));
-                add_serialized_bucket_entry(defargOffset, write_object(defarg->obj));
-                add_serialized_bucket_entry(defargOffset + 4, write_enode(defarg->expr));
+                add_serialized_bucket_entry(defargOffset, write_object(defarg->default_func));
+                add_serialized_bucket_entry(defargOffset + 4, write_enode(defarg->default_arg));
                 add_serialized_bucket_entry(offset + 0x2a, defargOffset);
             }
             if ((name = obj->u.func.linkname) != NULL)
@@ -3471,11 +3471,11 @@ unsigned int write_member_func_ref(EMemberInfo *entry)
     return offset;
 }
 
-SInt32 serialize_cpsi_list(CException *item)
+SInt32 serialize_cpsi_list(ExceptionAction *item)
 {
     SInt32 first;
-    CException *current;
-    CException *next;
+    ExceptionAction *current;
+    ExceptionAction *next;
     Object **objects;
     int i;
 
@@ -4376,7 +4376,7 @@ ObjectList *write_object_list(ObjectList *x)
     CPrec_NewAddrPatch(x, first = current = append_zero_bytes_to_align_offset());
     while (1) {
         CPrec_AppendData_004dd4e0(x, sizeof(ObjectList));
-        add_serialized_bucket_entry((SInt32)(&current->object.value), (SInt32)(write_crec((CRec *)x->object.value)));
+        add_serialized_bucket_entry((SInt32)(&current->object), (SInt32)(write_crec((CRec *)x->object)));
         if (!x->next)
             break;
         add_serialized_bucket_entry((SInt32)(&current->next), (SInt32)(next = append_zero_bytes_to_align_offset()));
@@ -5738,7 +5738,7 @@ unsigned int CException_HashType(Type *type)
     return (hash + address.bytes[0] + address.bytes[1] + address.bytes[2] + address.bytes[3]) & 0x3fffU;
 }
 
-void CException_AddPendingBuffer(Object *owner, const void *buffer, RelocationList *value, int entryValue)
+void CException_AddPendingBuffer(Object *owner, const void *buffer, OLinkList *value, int entryValue)
 {
     struct PendingBuffer *entry;
 
@@ -5761,12 +5761,12 @@ void CException_AddPendingBuffer(Object *owner, const void *buffer, RelocationLi
     entry->value = copy_relocation_list(value);
 }
 
-RelocationList *copy_relocation_list(RelocationList *p)
+OLinkList *copy_relocation_list(OLinkList *p)
 {
-    RelocationList *n;
+    OLinkList *n;
     if (p == NULL)
         return NULL;
-    n = galloc(sizeof(RelocationList));
+    n = galloc(sizeof(OLinkList));
     *n = *p;
     n->next = copy_relocation_list(n->next);
     return n;

@@ -20,16 +20,16 @@ struct CParseRec {
 };
 #pragma options align = reset
 /* A parser checkpoint (tentative parsing): the state to restore and where to longjmp when an error is raised while
-   data_00588240 points at it. Each gNNN keeps the global at 0x58NNNN. */
-struct CParseSave {
-    struct CParseSave *g240;
-    jmp_buf buf;
-    NameSpace *g24c;
-    struct TypeClass *g040;
-    Object *g238;
-    struct TemplStack *g134;
-    SInt32 g7ecc;
-    UInt8 g4f8;
+   data_00588240 points at it */
+struct ParserTryBlock {
+    struct ParserTryBlock *next;
+    jmp_buf jmpbuf;
+    NameSpace *cscope_current;
+    struct TypeClass *cscope_currentclass;
+    Object *cscope_currentfunc;
+    struct TemplStack *ctempl_curinstance;
+    SInt32 cerror_locktoken;
+    UInt8 cscope_is_member_func;
 };
 struct ClassTypeLink {
     struct ClassTypeLink *next;
@@ -37,10 +37,10 @@ struct ClassTypeLink {
 };
 #pragma options align = mac68k
 #pragma options align = reset
-struct PendingObjectClass {
-    struct PendingObjectClass *next;
-    struct Object *object;
-    struct TypeClass *theclass;
+struct CallbackAction {
+    struct CallbackAction *next;
+    struct Object *obj;
+    struct TypeClass *tclass;
 };
 extern TypeIntegral stlongdouble;
 extern Type stvoid;
@@ -288,7 +288,7 @@ extern struct Object *cast_member_pointer_func;
 extern struct NameSpaceName *data_00587680;
 extern struct NameSpaceName *data_00587e64;
 extern struct Object *data_00587fd0;
-extern struct PendingObjectClass *pending_object_classes;
+extern struct CallbackAction *pending_object_classes;
 extern struct Object *dynamic_cast_object;
 extern SInt32 data_00588454;
 extern Type data_0058847c;

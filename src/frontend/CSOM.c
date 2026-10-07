@@ -134,8 +134,8 @@ static inline ENode *CSOM_004e38b0_inline1(Type *v4)
     Object *t1;
     v5 = locals;
     while ((int)v5 != 0) {
-        if (v5->object.value->name == csom_blank_name) {
-            return create_objectnode(v5->object.value);
+        if (v5->object->name == csom_blank_name) {
+            return create_objectnode(v5->object);
         }
         v5 = v5->next;
     }
@@ -415,7 +415,7 @@ void CSOM_GenerateSomselfAssignment(TypeClass *tclass, Statement *stmt)
 
     name = GetHashNameNode("__somself");
     for (ivar = locals; ivar; ivar = ivar->next) {
-        if (ivar->object.value->name == name) {
+        if (ivar->object->name == name) {
             somself = CClass_CreateThisSelfExpr();
             CError_ASSERT(1811, somself != NULL);
             expr = create_objectrefnode(tclass->sominfo->classDataObject);
@@ -431,7 +431,7 @@ void CSOM_GenerateSomselfAssignment(TypeClass *tclass, Statement *stmt)
             CError_ASSERT(1761, call->type == EFUNCCALL);
             call->data.funccall.funcref = expr;
             s = CFunc_InsertAfterStatement(4, stmt);
-            s->expr.expression = makediadicnode(create_objectnode(ivar->object.value), call, EASS);
+            s->expr.expression = makediadicnode(create_objectnode(ivar->object), call, EASS);
             break;
         }
     }
@@ -443,8 +443,8 @@ ENode *CSOM_GetOrCreateLocalObjectNode(TypeClass *value)
     ObjectList *node;
 
     for (node = locals; node != NULL; node = node->next) {
-        if (node->object.value->name == csom_blank_name) {
-            object = node->object.value;
+        if (node->object->name == csom_blank_name) {
+            object = node->object;
             return create_objectnode(object);
         }
     }
@@ -459,7 +459,7 @@ ENode *CSOM_GetOrCreateLocalObjectNode(TypeClass *value)
 
 void find_method_vtbl_class_and_offset(TypeClass *cls, Object *method, TypeClass **outcls, SInt32 *outofs)
 {
-    struct ScopeSearch state;
+    struct CScopeObjectIterator state;
     VClassList *vbase;
     Object *found;
     UInt16 vtblIndex;
@@ -754,7 +754,7 @@ Object *CSOM_004e45b0(char *name, char *signature)
     FuncArg *arg;
 
     list = CScope_FindObjectListInNameSpace(registration_context, GetHashNameNode(name));
-    if (list != NULL && (obj = list->object.value)->otype == OT_OBJECT) {
+    if (list != NULL && (obj = list->object)->otype == OT_OBJECT) {
         if (obj->type->type == TYPEFUNC && *signature++ == 'p' && TYPE_FUNC(obj->type)->functype->type == TYPEPOINTER) {
             for (arg = TYPE_FUNC(obj->type)->args; arg != NULL; arg = arg->next) {
                 switch (*signature++) {
@@ -1016,9 +1016,9 @@ void CSOM_BuildClass(TypeClass *func)
 
 void initialize_class_data_object(SOMClassBuildState *methods, TypeClass *tclass)
 {
-    RelocationList *list;
+    OLinkList *list;
     SInt32 offset;
-    RelocationList *init;
+    OLinkList *init;
     SOMEntry *m;
     ENode *buf;
 
@@ -1026,10 +1026,10 @@ void initialize_class_data_object(SOMClassBuildState *methods, TypeClass *tclass
     offset = 0x18;
     for (m = (SOMEntry *)methods->members; m; m = m->next) {
         if (m->kind == 1) {
-            init = (RelocationList *)(CompilerTools_AllocatePool(sizeof(RelocationList)));
+            init = (OLinkList *)(CompilerTools_AllocatePool(sizeof(OLinkList)));
             init->next = list;
             list = init;
-            init->object = m->u.object;
+            init->obj = m->u.object;
             init->offset = offset;
             init->addend = 0;
         }
@@ -1038,9 +1038,9 @@ void initialize_class_data_object(SOMClassBuildState *methods, TypeClass *tclass
 
     memclrw(buf = CompilerTools_AllocatePool(offset), offset);
 
-    init = (RelocationList *)(CompilerTools_AllocatePool(sizeof(RelocationList)));
+    init = (OLinkList *)(CompilerTools_AllocatePool(sizeof(OLinkList)));
     init->next = list;
-    init->object = methods->object;
+    init->obj = methods->object;
     init->offset = 4;
     init->addend = 0;
 
@@ -1054,8 +1054,8 @@ void make_class_descriptor(SOMClassBuildState *record, TypeClass *classType)
     struct SOMDescriptorOutput descriptorText;
     char *className;
     Object *descriptorObject;
-    RelocationList *head;
-    RelocationList *node;
+    OLinkList *head;
+    OLinkList *node;
     SInt32 index;
     SInt32 *baseValues;
     SOMVTable *entry;
@@ -1075,7 +1075,7 @@ void make_class_descriptor(SOMClassBuildState *record, TypeClass *classType)
 
     head = NULL, node = CompilerTools_AllocatePool(sizeof(*node));
     node->next = head;
-    node->object = classType->sominfo->classDataObject;
+    node->obj = classType->sominfo->classDataObject;
     head = node;
     node->offset = 4;
     node->addend = 0;
@@ -1083,7 +1083,7 @@ void make_class_descriptor(SOMClassBuildState *record, TypeClass *classType)
         node = CompilerTools_AllocatePool(sizeof(*node));
         node->next = head;
         head = node;
-        node->object = record->overrideMethodsObject;
+        node->obj = record->overrideMethodsObject;
         node->offset = 8;
         node->addend = 0;
     }
@@ -1091,7 +1091,7 @@ void make_class_descriptor(SOMClassBuildState *record, TypeClass *classType)
         node = CompilerTools_AllocatePool(sizeof(*node));
         node->next = head;
         head = node;
-        node->object = record->ancestorObject;
+        node->obj = record->ancestorObject;
         node->offset = 0xc;
         node->addend = 0;
     }
@@ -1099,7 +1099,7 @@ void make_class_descriptor(SOMClassBuildState *record, TypeClass *classType)
         node = CompilerTools_AllocatePool(sizeof(*node));
         node->next = head;
         head = node;
-        node->object = record->registrationFunction;
+        node->obj = record->registrationFunction;
         node->offset = 0x10;
         node->addend = 0;
     }
@@ -1107,7 +1107,7 @@ void make_class_descriptor(SOMClassBuildState *record, TypeClass *classType)
         node = CompilerTools_AllocatePool(sizeof(*node));
         node->next = head;
         head = node;
-        node->object = record->specialFunctionsObject;
+        node->obj = record->specialFunctionsObject;
         node->offset = 0x14;
         node->addend = 0;
     }
@@ -1116,14 +1116,14 @@ void make_class_descriptor(SOMClassBuildState *record, TypeClass *classType)
     node = CompilerTools_AllocatePool(sizeof(*node));
     node->next = head;
     head = node;
-    node->object = CInit_DeclareString((char *)&descriptorText, sizeof(descriptorText), 0, 0);
+    node->obj = CInit_DeclareString((char *)&descriptorText, sizeof(descriptorText), 0, 0);
     node->offset = 0x34;
     node->addend = 0;
 
     node = CompilerTools_AllocatePool(sizeof(*node));
     node->next = head;
     head = node;
-    node->object = CInit_DeclareString(classType->classname->name, strlen(classType->classname->name) + 1, 0, 0);
+    node->obj = CInit_DeclareString(classType->classname->name, strlen(classType->classname->name) + 1, 0, 0);
     node->offset = 0x38;
     node->addend = 0;
 
@@ -1143,7 +1143,7 @@ void make_class_descriptor(SOMClassBuildState *record, TypeClass *classType)
             baseValues[index++] = CTool_EndianConvertWord32(entry->base->sominfo->descriptorValue1);
         }
     }
-    node->object = CInit_DeclareString((char *)baseValues, size, 0, 0);
+    node->obj = CInit_DeclareString((char *)baseValues, size, 0, 0);
     node->offset = 0x40;
     node->addend = 0;
 
@@ -1151,14 +1151,14 @@ void make_class_descriptor(SOMClassBuildState *record, TypeClass *classType)
         node = CompilerTools_AllocatePool(sizeof(*node));
         node->next = head;
         head = node;
-        node->object = MakeKinds((SOMClassBuildState *)record);
+        node->obj = MakeKinds((SOMClassBuildState *)record);
         node->offset = 0x44;
         node->addend = 0;
 
         node = CompilerTools_AllocatePool(sizeof(*node));
         node->next = head;
         head = node;
-        node->object = MakeOverrides((SOMClassBuildState *)record);
+        node->obj = MakeOverrides((SOMClassBuildState *)record);
         node->offset = 0x48;
         node->addend = 0;
 
@@ -1176,7 +1176,7 @@ void make_class_descriptor(SOMClassBuildState *record, TypeClass *classType)
                 AppendGListName(&data_00583548, memberName->name);
             }
         }
-        node->object = FlushData();
+        node->obj = FlushData();
         node->offset = 0x4c;
         node->addend = 0;
     }
@@ -1185,7 +1185,7 @@ void make_class_descriptor(SOMClassBuildState *record, TypeClass *classType)
         node = CompilerTools_AllocatePool(sizeof(*node));
         node->next = head;
         head = node;
-        node->object = build_base_method_vtbl_index_object(record);
+        node->obj = build_base_method_vtbl_index_object(record);
         node->offset = 0x50;
         node->addend = 0;
     }
@@ -1193,7 +1193,7 @@ void make_class_descriptor(SOMClassBuildState *record, TypeClass *classType)
         node = CompilerTools_AllocatePool(sizeof(*node));
         node->next = head;
         head = node;
-        node->object = MakeWords((SOMClassBuildState *)record);
+        node->obj = MakeWords((SOMClassBuildState *)record);
         node->offset = 0x54;
         node->addend = 0;
     }
@@ -1274,14 +1274,14 @@ void emit_som_kind_nibbles(SOMClassBuildState *info)
 
 void create_special_functions_object(SOMClassBuildState *info, TypeClass *cls)
 {
-    ScopeSearch search;
+    CScopeObjectIterator search;
     char initialData[16];
-    RelocationList *relocations;
+    OLinkList *relocations;
     int dataSize;
     Object *object;
     Object *newOperator;
     Object *deleteOperator;
-    RelocationList *relocation;
+    OLinkList *relocation;
     char *className;
 
     newOperator = deleteOperator = NULL;
@@ -1310,19 +1310,19 @@ void create_special_functions_object(SOMClassBuildState *info, TypeClass *cls)
         relocations = NULL;
         dataSize = 0;
         if (newOperator != NULL) {
-            relocation = (RelocationList *)CompilerTools_AllocatePool(sizeof(RelocationList));
+            relocation = (OLinkList *)CompilerTools_AllocatePool(sizeof(OLinkList));
             relocation->next = relocations;
             relocations = relocation;
-            relocation->object = newOperator;
+            relocation->obj = newOperator;
             relocation->offset = dataSize;
             relocation->addend = 0;
             dataSize += 4;
         }
         if (deleteOperator != NULL) {
-            relocation = (RelocationList *)CompilerTools_AllocatePool(sizeof(RelocationList));
+            relocation = (OLinkList *)CompilerTools_AllocatePool(sizeof(OLinkList));
             relocation->next = relocations;
             relocations = relocation;
-            relocation->object = deleteOperator;
+            relocation->obj = deleteOperator;
             relocation->offset = dataSize;
             relocation->addend = 0;
             dataSize += 4;
@@ -1382,9 +1382,9 @@ void create_override_methods_object(SOMClassBuildState *cls, TypeClass *func)
     char *s;
     SOMSlot *e;
     SOMVTable *b;
-    RelocationList *list;
+    OLinkList *list;
     SInt32 offset;
-    RelocationList *op;
+    OLinkList *op;
     ENode *array;
 
     if (cls->overrideMethodCount) {
@@ -1401,10 +1401,10 @@ void create_override_methods_object(SOMClassBuildState *cls, TypeClass *func)
         for (b = cls->bases; b != NULL; b = b->next) {
             if (b->slots != NULL) {
                 for (e = b->slots; e != NULL; e = e->next) {
-                    op = (RelocationList *)CompilerTools_AllocatePool(0x10);
+                    op = (OLinkList *)CompilerTools_AllocatePool(0x10);
                     op->next = list;
                     list = op;
-                    op->object = e->overrideMethod;
+                    op->obj = e->overrideMethod;
                     op->offset = offset;
                     op->addend = 0;
                     offset += 4;
@@ -1420,7 +1420,7 @@ void create_override_methods_object(SOMClassBuildState *cls, TypeClass *func)
 void create_ancestor_object(SOMClassBuildState *info, TypeClass *cls)
 {
     SOMVTable *base;
-    RelocationList *head;
+    OLinkList *head;
     SInt32 count;
     Object *obj;
 
@@ -1435,10 +1435,10 @@ void create_ancestor_object(SOMClassBuildState *info, TypeClass *cls)
         head = NULL;
         count = 0;
         for (base = info->bases; base != NULL; base = base->next) {
-            RelocationList *n = (RelocationList *)CompilerTools_AllocatePool(0x10);
+            OLinkList *n = (OLinkList *)CompilerTools_AllocatePool(0x10);
             n->next = head;
             head = n;
-            n->object = base->base->sominfo->classDataObject;
+            n->obj = base->base->sominfo->classDataObject;
             n->offset = count;
             n->addend = 0;
             count += 4;
@@ -1462,8 +1462,8 @@ void build_class_vtables_and_members(SOMClassBuildState *layout, TypeClass *cls)
     Object *method;
     VClassList *virtualBase;
     Object *candidate;
-    ScopeSearch classScope;
-    ScopeSearch baseScope;
+    CScopeObjectIterator classScope;
+    CScopeObjectIterator baseScope;
     SOMEntry *newEntry;
     SOMEntry **entryLink;
     SOMSlot *overrideSlot;
@@ -1671,7 +1671,7 @@ void CSOM_CompleteClass(TypeClass *tclass)
     VClassList *base;
     HashNameNode *loadedName;
     Object **numberedEntries;
-    ScopeSearch iterator;
+    CScopeObjectIterator iterator;
     SInt32 count;
 
     if (tclass->sominfo->methodNameList) {
@@ -1811,7 +1811,7 @@ Object **build_vtbl_index_table(TypeClass *theclass, SInt32 *count)
     Boolean eligibleAgain;
     Object **table;
     int tableSize;
-    ScopeSearch scope;
+    CScopeObjectIterator scope;
     TypeMemberFunc *method;
 
     CScope_InitScopeSearch(&scope, theclass->nspace);

@@ -3,6 +3,7 @@
 
 #include "compiler/common.h"
 #include "compiler/CSOM.h"
+#include "compiler/CScope.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -22,7 +23,7 @@ struct ArgMatch {
     SInt16 score4Value2;
     SInt16 score4Value3;
     SInt16 score4Value4;
-    struct MatchLink *list;
+    struct ObjectList *list;
 };
 #pragma options align = reset
 struct ComparisonValues {
@@ -33,32 +34,26 @@ struct ComparisonValues {
     SInt16 qualifierMatches;
 };
 #pragma options align = mac68k
-struct ConvItem {
-    struct ConvItem *next;
-    struct ConvNode *node;
+struct ConIteratorList {
+    struct ConIteratorList *next;
+    struct ConIterator *iter;
 };
 #pragma options align = reset
 #pragma pack(push, 2)
-struct ConvNode {
-    struct ConvNode *parent;
-    struct ConvItem *list;
-    struct TypeClass *cls;
+struct ConIterator {
+    struct ConIterator *parent;
+    struct ConIteratorList *children;
+    struct TypeClass *tclass;
 };
 #pragma pack(pop)
-struct ConvNode;
+struct ConIterator;
 #pragma pack(push, 2)
-struct ConversionSearchState {
-    ScopeSearch scope;
-    struct ConvNode iterator;
-    struct ConvNode *current;
+struct ConversionIterator {
+    CScopeObjectIterator objiter;
+    struct ConIterator myconiter;
+    struct ConIterator *coniter;
 };
 #pragma pack(pop)
-#pragma options align = mac68k
-struct MatchLink {
-    struct MatchLink *next;
-    struct Object *object;
-};
-#pragma options align = reset
 #pragma pack(push, 2)
 struct MemberCallArguments {
     struct ENodeList *arguments;
@@ -94,8 +89,8 @@ extern SInt16 assign_check(ENode *e1, Type *t2, SInt32 a3, Boolean a4, Boolean a
 extern ENode *get_address_of_temp_copy(ENode *expr, char materialize);
 extern void CExpr_CheckArithmConversion(ENode *node, Type *type);
 extern ENode *CExpr2_ConvertScalarOperand(ENode *result, Boolean integerOnly, Boolean preferBool);
-extern Object *CExpr_ConversionIteratorNext(ConversionSearchState *ctx);
-extern void build_convertible_bases_tree(ConvNode *self);
+extern Object *CExpr_ConversionIteratorNext(ConversionIterator *ctx);
+extern void build_convertible_bases_tree(ConIterator *self);
 extern SInt32 check_standard_conversion(ENode *node, Type *ty, Boolean convert, Boolean checkAccess);
 extern ENode *CExpr_ConvertToBool(ENode *node, Boolean flag);
 extern SInt32 match_overloaded_function_pointer(NameSpaceObjectList *list, void *arg2, Type *type, UInt8 flag);

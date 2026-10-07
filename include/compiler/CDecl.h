@@ -69,9 +69,9 @@ struct DeclInfo {
     SInt32 sourceoffset;
 };
 #pragma options align = reset
-struct DefArg {
-    struct Object *obj;
-    struct ENode *expr;
+struct DefArgCtorInfo {
+    struct Object *default_func;
+    struct ENode *default_arg;
 };
 union FunctionTypeBuffer {
     TypeMemberFunc member_function;

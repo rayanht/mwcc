@@ -414,11 +414,11 @@ static inline void CInline_SaveVars(ObjectList *ol, CInlineVar **cursor, UInt8 f
     *cursor = initial;
 
     for (; ol != NULL; ol = ol->next) {
-        if (first || ol->object.value->datatype == DLOCAL) {
-            (*cursor)->name = ol->object.value->name;
-            (*cursor)->type = ol->object.value->type;
-            (*cursor)->qual = ol->object.value->qual;
-            o = ol->object.value;
+        if (first || ol->object->datatype == DLOCAL) {
+            (*cursor)->name = ol->object->name;
+            (*cursor)->type = ol->object->type;
+            (*cursor)->qual = ol->object->qual;
+            o = ol->object;
             switch ((SInt16)o->sclass) {
                 case 0:
                     v = 0;
@@ -480,7 +480,7 @@ static inline SInt32 MapObj(SInt32 arg)
     if (obj != 0) {
         p = arguments, i = 0;
         while (p != NULL) {
-            if ((SInt32)p->object.value == obj) {
+            if ((SInt32)p->object == obj) {
                 data_0058245e[i].used = 1;
                 data_0058245e[i].dirty = 0;
                 return i + 0x80000001;
@@ -491,8 +491,8 @@ static inline SInt32 MapObj(SInt32 arg)
 
         p = locals, i = 0;
         while (p != NULL) {
-            if (p->object.value->datatype == DLOCAL) {
-                if ((SInt32)p->object.value == obj)
+            if (p->object->datatype == DLOCAL) {
+                if ((SInt32)p->object == obj)
                     goto found;
                 i++;
             }
@@ -578,7 +578,7 @@ static void add_chain(ChainRec **head, Statement *node, IStmtRec *ent)
     r->ent = ent;
 }
 
-static inline void CopyStatementExpression(CException *copy, CException *source, char copyExpressions)
+static inline void CopyStatementExpression(ExceptionAction *copy, ExceptionAction *source, char copyExpressions)
 {
     copy->data.slots[0] = CInline_GetObjectByIndex(source->data.operands[0].value, copyExpressions);
     copy->data.slots[1] = source->data.slots[1];
@@ -810,8 +810,8 @@ static inline void inline_local_index(Object *object, int *index)
     ObjectList *local = locals;
     *index = 0;
     while (local != NULL) {
-        if (local->object.value->datatype == DLOCAL) {
-            if (local->object.value == object)
+        if (local->object->datatype == DLOCAL) {
+            if (local->object == object)
                 return;
             (*index)++;
         }
@@ -827,8 +827,8 @@ static inline int FindInlineObjectIndex(void *object)
 
     candidate = locals;
     for (index = 0; candidate != NULL; candidate = candidate->next) {
-        if (candidate->object.value->datatype == DLOCAL) {
-            if (candidate->object.value == object)
+        if (candidate->object->datatype == DLOCAL) {
+            if (candidate->object == object)
                 return index;
             index++;
         }
@@ -961,7 +961,7 @@ Boolean check_statement_count_and_locals_size(Object *func, Statement *stmt)
     }
 
     for (list = locals, size = 0; list != NULL; list = list->next)
-        size += list->object.value->type->size;
+        size += list->object->type->size;
 
     if (size > 0x400)
         return 0;
@@ -1050,7 +1050,7 @@ void CInline_0050f240(Object *object)
 void collect_undefined_function_objects(CInlineInfo *inlineData)
 {
     SInt16 statementIndex;
-    CException *action;
+    ExceptionAction *action;
 
     for (statementIndex = 0; statementIndex < (SInt16)inlineData->nstmts; statementIndex++) {
         switch (inlineData->stmtinfo[statementIndex].type) {
@@ -1085,7 +1085,7 @@ void collect_undefined_function_objects(CInlineInfo *inlineData)
             default:
                 CError_FATAL(3710);
         }
-        for (action = (CException *)inlineData->stmtinfo[statementIndex].exceptionActions; action != NULL;
+        for (action = (ExceptionAction *)inlineData->stmtinfo[statementIndex].exceptionActions; action != NULL;
              action = action->next) {
             switch (action->kind) {
                 case 1:
@@ -1174,7 +1174,7 @@ void forward_objref(ENode *expr)
     add_undefined_function_object(object);
 }
 
-void add_undefined_exception_function_objects(CException *entry)
+void add_undefined_exception_function_objects(ExceptionAction *entry)
 {
     if (entry != NULL) {
         do {
@@ -1366,7 +1366,7 @@ void CInline_ReconstructFunction(Object *function, CInlineInfo *rec, Statement *
         }
         obj = (Object *)galloc(sizeof(Object));
         memclrw(obj, sizeof(Object));
-        node->object.value = obj;
+        node->object = obj;
         node->next = NULL;
         {
             UInt8 flags;
@@ -1411,7 +1411,7 @@ void CInline_ReconstructFunction(Object *function, CInlineInfo *rec, Statement *
         }
         obj = (Object *)galloc(sizeof(Object));
         memclrw(obj, sizeof(Object));
-        node->object.value = obj;
+        node->object = obj;
         node->next = NULL;
         {
             UInt8 flags;
@@ -1576,7 +1576,7 @@ void CInline_SaveInfo(CInlineInfo *out, Statement *list, Object *function)
         CInline_SaveVars(arguments, &savedVar, 1, out->arginfo);
     }
     for (objects = locals, nlocals = 0; objects != NULL; objects = objects->next)
-        if (objects->object.value->datatype == DLOCAL)
+        if (objects->object->datatype == DLOCAL)
             nlocals++;
     out->nlocals = nlocals;
     if (out->nlocals > 0) {
@@ -1645,13 +1645,13 @@ void CInline_SaveInfo(CInlineInfo *out, Statement *list, Object *function)
 
 #pragma opt_lifetimes off
 
-CException *CInline_005102f0(Statement *indexMap, Statement *info)
+ExceptionAction *CInline_005102f0(Statement *indexMap, Statement *info)
 {
-    CException *src = info->dobjstack; /* CInline_005102f0: serialization view of exception actions */
-    CException *dst = NULL;
+    ExceptionAction *src = info->dobjstack; /* CInline_005102f0: serialization view of exception actions */
+    ExceptionAction *dst = NULL;
 
     while (src != NULL) {
-        CException *copy = (CException *)galloc(0x1e);
+        ExceptionAction *copy = (ExceptionAction *)galloc(0x1e);
 
         copy->next = dst;
         dst = copy;
@@ -2218,10 +2218,10 @@ Statement *generate_inline_statements(Object *function, Statement *tail, CInline
         node->flags = entry->flags;
         node->value += (SInt16)entry->value;
         if (entry->exceptionActions != NULL) {
-            CException *list = copy_exception_actions(entry, 1);
+            ExceptionAction *list = copy_exception_actions(entry, 1);
 
             if (node->dobjstack != NULL) {
-                CException *last = list;
+                ExceptionAction *last = list;
 
                 while (last->next != NULL)
                     last = last->next;
@@ -2344,14 +2344,14 @@ Statement *generate_inline_statements(Object *function, Statement *tail, CInline
     return tail;
 }
 
-CException *copy_exception_actions(IStmtRec *parent, char copyExpressions)
+ExceptionAction *copy_exception_actions(IStmtRec *parent, char copyExpressions)
 {
-    CException *source;
-    CException *copy;
-    CException *copies;
+    ExceptionAction *source;
+    ExceptionAction *copy;
+    ExceptionAction *copies;
 
-    for (source = (CException *)parent->exceptionActions, copies = NULL; source != NULL; source = source->next) {
-        copy = galloc(sizeof(CException));
+    for (source = (ExceptionAction *)parent->exceptionActions, copies = NULL; source != NULL; source = source->next) {
+        copy = galloc(sizeof(ExceptionAction));
         copy->next = copies;
         copies = copy;
         copy->kind = source->kind;
@@ -2460,7 +2460,7 @@ Object *CInline_GetObjectByIndex(UInt32 index, char useTable)
                 node = arguments;
                 while (node != NULL) {
                     if (index == 0)
-                        return node->object.value;
+                        return node->object;
                     node = node->next;
                     index--;
                 }
@@ -2476,7 +2476,7 @@ Object *CInline_GetObjectByIndex(UInt32 index, char useTable)
                 localNode = locals;
                 while (localNode != NULL) {
                     if (index == 0)
-                        return localNode->object.value;
+                        return localNode->object;
                     localNode = localNode->next;
                     index--;
                 }
@@ -3295,7 +3295,7 @@ ENode *CInline_00513240(ENode *expr)
                 if (datatype == DDATA)
                     return node;
                 for (objects = arguments, index = 0; objects != NULL; objects = objects->next, index++)
-                    if (objects->object.value == node->data.objref) {
+                    if (objects->object == node->data.objref) {
                         node->type = ETEMP;
                         node->data.longval = index;
                         return node;
@@ -3322,7 +3322,7 @@ ENode *CInline_00513240(ENode *expr)
                         for (objects = arguments, index = 0; objects != NULL; objects = objects->next, index++)
                             if (index == node->data.longval) {
                                 node->type = EOBJREF;
-                                node->data.objref = objects->object.value;
+                                node->data.objref = objects->object;
                                 CError_ASSERT(848, node->data.objref != NULL);
                                 return node;
                             }
@@ -3341,7 +3341,7 @@ ENode *CInline_00513240(ENode *expr)
                         for (; objects != NULL; objects = objects->next, index++)
                             if (index == node->data.longval) {
                                 node->type = EOBJREF;
-                                node->data.objref = objects->object.value;
+                                node->data.objref = objects->object;
                                 CError_ASSERT(868, node->data.objref != NULL);
                                 return node;
                             }
@@ -3516,7 +3516,7 @@ unsigned int CInline_GetObjectIndex(void *object)
     if (object != NULL) {
         entry = arguments;
         for (index = 0; entry != NULL; entry = entry->next, index++) {
-            if (entry->object.value == object) {
+            if (entry->object == object) {
                 data_0058245e[index].used = 1;
                 data_0058245e[index].dirty = 0;
                 return index + 0x80000001U;

@@ -378,25 +378,25 @@ LoopVar *build_array_loopvars(void)
     UInt32 qual;
 
     for (list = locals; list != NULL; list = list->next) {
-        if (list->object.value == NULL)
+        if (list->object == NULL)
             continue;
-        if (list->object.value->type->type == TYPEPOINTER)
-            qual = TYPE_POINTER(list->object.value->type)->qual;
+        if (list->object->type->type == TYPEPOINTER)
+            qual = TYPE_POINTER(list->object->type)->qual;
         else
-            qual = list->object.value->qual;
+            qual = list->object->qual;
         qual = qual & Q_VOLATILE;
         if (qual != 0)
             continue;
-        if (list->object.value->type == NULL)
+        if (list->object->type == NULL)
             continue;
-        if (list->object.value->type->type != TYPEARRAY)
+        if (list->object->type->type != TYPEARRAY)
             continue;
-        if (TYPE_POINTER(list->object.value->type)->target == NULL)
+        if (TYPE_POINTER(list->object->type)->target == NULL)
             continue;
-        if ((SInt8)TYPE_POINTER(list->object.value->type)->target->type >= TYPESTRUCT)
+        if ((SInt8)TYPE_POINTER(list->object->type)->target->type >= TYPESTRUCT)
             continue;
-        arraySize = list->object.value->type->size;
-        elemSize = TYPE_POINTER(list->object.value->type)->target->size;
+        arraySize = list->object->type->size;
+        elemSize = TYPE_POINTER(list->object->type)->target->size;
         count = arraySize / elemSize;
         if (count <= 0)
             continue;
@@ -405,17 +405,17 @@ LoopVar *build_array_loopvars(void)
         node = (LoopVar *)CompilerTools_AllocatePoolMemory(sizeof(LoopVar) + (count - 1) * sizeof(node->values[0]));
         node->next = head;
         head = node;
-        node->object = list->object.value;
+        node->object = list->object;
         node->elemSize = elemSize;
         node->arraySize = arraySize;
         node->count = arraySize / elemSize;
         node->extra = 0;
         node->isgpr = 1;
-        isFloat = !copts.operandsDebug && TYPE_POINTER(list->object.value->type)->target->type == TYPEFLOAT;
+        isFloat = !copts.operandsDebug && TYPE_POINTER(list->object->type)->target->type == TYPEFLOAT;
         node->isfloat = isFloat;
         node->isvalid = 0;
         node->isgpr = 1;
-        if (!node->isfloat && Type_IsUnsigned(TYPE_POINTER(list->object.value->type)->target))
+        if (!node->isfloat && Type_IsUnsigned(TYPE_POINTER(list->object->type)->target))
             node->isgpr = 0;
         for (i = 0; i < count; i++)
             node->values[i] = 0;

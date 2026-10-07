@@ -4225,7 +4225,7 @@ void InstrSelection_EmitSwitchTables(Object *function)
     SInt32 *entry;
     Object *table;
     while (switch_tables != NULL) {
-        table = switch_tables->object.value;
+        table = switch_tables->object;
         entry = table->u.data.u.switchtable.data;
         remaining = table->u.data.u.switchtable.size;
         while (remaining != 0) {

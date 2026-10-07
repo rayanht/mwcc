@@ -51,7 +51,7 @@ void PPCError_FatalError(short diagnostic, ...)
     SInt16 errorCode;
 
     if (data_00588240 != NULL)
-        longjmp(data_00588240->buf, 1);
+        longjmp(data_00588240->jmpbuf, 1);
 
     args = (va_list)&diagnostic + (((va_list)(&diagnostic + 1) - (va_list)&diagnostic + 3) / 4 * 4);
 
@@ -100,7 +100,7 @@ void PPCError_ReportError(SInt32 error, ...)
     SInt16 errorCode;
 
     if (data_00588240 != NULL)
-        longjmp(data_00588240->buf, 1);
+        longjmp(data_00588240->jmpbuf, 1);
 
     args = (char *)&error + (((char *)(&error + 1) - (char *)&error + 3) / 4 * 4);
     diagnosticCode = error;

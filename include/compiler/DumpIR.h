@@ -8,7 +8,7 @@ extern "C" {
 #endif
 
 extern void print_enode_tree(ENode *node, int depth);
-extern void dump_eat_nodes(struct CException *p);
+extern void dump_eat_nodes(struct ExceptionAction *p);
 extern void format_type(Type *type, char *buf);
 extern void fn_004be830(void *arg1, void *arg2);
 extern void fn_004be840(void);

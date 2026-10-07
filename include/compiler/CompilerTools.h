@@ -17,19 +17,19 @@ struct GList {
     SInt32 growsize;
 };
 #pragma options align = reset
-struct Pool {
-    struct PoolNode *head;
-    SInt32 overhead;
-    struct PoolNode *cur;
-    char *ptr;
-    SInt32 free;
+struct HeapMem {
+    struct HeapBlock *blocks;
+    SInt32 allocsize;
+    struct HeapBlock *curblock;
+    char *curfreep;
+    SInt32 curfree;
 };
-struct PoolNode {
-    struct PoolNode *next; /* 0x00: select_or_allocate_pool_node links pool nodes */
-    struct PoolNode *
-        *block;   /* 0x04: select_or_allocate_pool_node dereferences the allocation handle; releaseheaps frees it */
-    SInt32 size;  /* 0x08: select_or_allocate_pool_node stores allocation size */
-    SInt32 avail; /* 0x0c: select_or_allocate_pool_node tracks remaining bytes */
+struct HeapBlock {
+    struct HeapBlock *next; /* 0x00: select_or_allocate_pool_node links pool nodes */
+    struct HeapBlock *
+        *blockhandle; /* 0x04: select_or_allocate_pool_node dereferences the allocation handle; releaseheaps frees it */
+    SInt32 blocksize; /* 0x08: select_or_allocate_pool_node stores allocation size */
+    SInt32 blockfree; /* 0x0c: select_or_allocate_pool_node tracks remaining bytes */
 };
 typedef struct {
     unsigned char byte0; /* 0x00: AppendGListLong copies the first native-order value byte */
@@ -69,7 +69,7 @@ extern void CompilerTools_ClearPoolBlocks(void);
 extern void releaseheaps(void);
 extern SInt16 initheaps(void (*param)());
 extern SInt16 CompilerTools_InitHeaps(void (*param)());
-extern int select_or_allocate_pool_node(Pool *pool, SInt32 size);
+extern int select_or_allocate_pool_node(HeapMem *pool, SInt32 size);
 extern void InitNameHash(void);
 extern HashNameNode *GetHashNameNode(const char *text);
 extern HashNameNode *GetHashNameNodeExport(const char *text);

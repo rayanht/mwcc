@@ -239,18 +239,18 @@ void fn_0049d420(Statement *statements)
     rewrite_indirect_toc_references();
 }
 
-static inline void freeFirstOperand(CException *node)
+static inline void freeFirstOperand(ExceptionAction *node)
 {
     add_initial_object(node->data.slots[0]);
 }
 
-static inline void freeOperandPair(CException *node)
+static inline void freeOperandPair(ExceptionAction *node)
 {
     freeFirstOperand(node);
     add_initial_object(node->data.slots[1]);
 }
 
-void add_exception_initial_objects(CException *node)
+void add_exception_initial_objects(ExceptionAction *node)
 {
     for (; node != NULL; node = node->next) {
         switch (node->kind) {
@@ -1216,13 +1216,13 @@ void add_initial_object(void *object)
     }
     node = gInitialObjectList_005882ac;
     while (node != NULL) {
-        if (node->object.value == object)
+        if (node->object == object)
             return;
         node = node->next;
     }
     node = (ObjectList *)CompilerTools_AllocatePool(sizeof(ObjectList));
     memclrw(node, sizeof(ObjectList));
-    node->object.value = object;
+    node->object = object;
     node->next = gInitialObjectList_005882ac;
     gInitialObjectList_005882ac = node;
 }
@@ -1382,11 +1382,11 @@ Object *TOC_GetFloatObject(Type *type, Float *value)
     entry = float_object_list;
     bits = (Float *)(unsigned long)value;
     while (entry != NULL) {
-        object_type = entry->object.value->type;
-        stored = (Float *)entry->object.value->u.data.u.string;
+        object_type = entry->object->type;
+        stored = (Float *)entry->object->u.data.u.string;
         if (object_type == (Type *)type && stored->data.words[0] == bits->data.words[0] &&
             stored->data.words[1] == bits->data.words[1]) {
-            return entry->object.value;
+            return entry->object;
         }
         entry = entry->next;
     }
@@ -1409,7 +1409,7 @@ Object *TOC_GetFloatObject(Type *type, Float *value)
     *copy = *value;
     new_entry = (ObjectList *)galloc(8);
     memclrw(new_entry, 8);
-    new_entry->object.value = object;
+    new_entry->object = object;
     new_entry->next = float_object_list;
     float_object_list = new_entry;
     if (copts.operandsDebug == 0) {
@@ -1604,7 +1604,7 @@ void fn_0049f4b0(Object *object)
 
     if ((entry = gTrailingObjectList_005876a0) != NULL) {
         do {
-            if (current == entry->object.value)
+            if (current == entry->object)
                 return;
             entry = entry->next;
         } while (entry != NULL);
@@ -1614,7 +1614,7 @@ void fn_0049f4b0(Object *object)
         info->usage = 3;
     new_entry = (ObjectList *)galloc(sizeof(ObjectList));
     memclrw(new_entry, sizeof(ObjectList));
-    new_entry->object.value = current;
+    new_entry->object = current;
     new_entry->next = gTrailingObjectList_005876a0;
     gTrailingObjectList_005876a0 = new_entry;
 }
@@ -1623,7 +1623,7 @@ void Operands_ClearTrailingObjectInfo(void)
 {
     ObjectList *list = gTrailingObjectList_005876a0;
     while (list != NULL) {
-        list->object.value->u.data.info = NULL;
+        list->object->u.data.info = NULL;
         list = list->next;
     }
     toc_references = NULL;

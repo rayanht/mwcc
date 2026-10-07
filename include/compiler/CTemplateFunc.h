@@ -15,7 +15,7 @@ extern Boolean CTemplateFunc_MatchType(Type *pattern, UInt32 patternQual, Type *
 extern Boolean match_args(TypeFunc *a, TypeFunc *b, TemplArg *c, Boolean d);
 extern Boolean match_state_elem_arguments(TemplArg *a, TemplArg *b, TemplArg *r, char flag);
 extern int CTemplateFunc_GetArgumentParameterIndex(TemplArg *argument);
-extern Object *select_unique_undominated_match(Object *func, struct MatchLink *funcs, int arg3);
+extern Object *select_unique_undominated_match(Object *func, struct ObjectList *funcs, int arg3);
 extern unsigned char match_candidate_to_template_args(Object *candidate, Object *templ);
 extern struct TemplFuncInstance *instantiate_accessible_template_for_type(Object *func, Type *ftype, void *args,
                                                                           Object *flags, int arg5);

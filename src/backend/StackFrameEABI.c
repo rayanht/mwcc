@@ -90,7 +90,7 @@ void StackFrame_CheckAltivec(void)
         ObjectList *localEntry;
         Object *object;
         for (localEntry = locals; localEntry != NULL; localEntry = localEntry->next) {
-            object = localEntry->object.value;
+            object = localEntry->object;
             if (StackFrameEABI_GetTypeAlignment(object->type) >= 16) {
                 gHasAltivecFrame = 1;
                 if ((Registers_GetInfo(object) ? Registers_GetInfo(object)->reg : 0) == 0) {
@@ -112,7 +112,7 @@ void StackFrame_CheckAltivec(void)
         Object *object;
         ObjectList *argument;
         for (argument = arguments; argument != NULL; argument = argument->next) {
-            object = argument->object.value;
+            object = argument->object;
             if (StackFrameEABI_GetTypeAlignment(object->type) >= 16) {
                 gHasAltivecFrame = 1;
                 if (object->u.var.info->reg == 0) {

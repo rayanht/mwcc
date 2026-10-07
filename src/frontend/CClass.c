@@ -555,8 +555,8 @@ Object *CClass_ThisSelfObject(void)
             objects = (ObjectList *)arguments;
             if (objects != NULL) {
                 do {
-                    if (objects->object.value->name == this_self_name)
-                        return objects->object.value;
+                    if (objects->object->name == this_self_name)
+                        return objects->object;
                     objects = objects->next;
                 } while (objects != NULL);
             }
@@ -566,8 +566,8 @@ Object *CClass_ThisSelfObject(void)
                 objects = (ObjectList *)arguments;
                 if (objects != NULL) {
                     do {
-                        if (objects->object.value->name == this_arg_name)
-                            return objects->object.value;
+                        if (objects->object->name == this_arg_name)
+                            return objects->object;
                         objects = objects->next;
                     } while (objects != NULL);
                 }
@@ -678,7 +678,7 @@ void CClass_CheckOverrides(TypeClass *cls)
     VClassList *vbase;
     ObjectList *linked;
     int index;
-    ScopeSearch iter;
+    CScopeObjectIterator iter;
 
     index = 0;
     for (base = cls->bases; base != NULL; base = base->next) {
@@ -723,7 +723,7 @@ void CClass_CheckOverrides(TypeClass *cls)
     }
 
     while (linked != NULL) {
-        CScope_AddObject(cls->nspace, linked->object.value->name, (ObjBase *)linked->object.value);
+        CScope_AddObject(cls->nspace, linked->object->name, (ObjBase *)linked->object);
         linked = linked->next;
     }
 
@@ -742,7 +742,7 @@ void check_hidden_inherited_virtual_functions(OverrideClass *layout, OverrideCla
     OverrideFunc *b;
     OverrideClassBase *d;
     Object *obj;
-    ScopeSearch iter;
+    CScopeObjectIterator iter;
 
     if (layout != base) {
         for (b = (OverrideFunc *)base->members; b != NULL; b = b->next) {
@@ -1072,7 +1072,7 @@ ObjectList *prepend_base_method_copies(ObjectList *objects, Object *method, Type
         object->sclass = method->sclass;
         object->u.func.linkname = name;
         entry = (ObjectList *)CompilerTools_AllocatePool(sizeof(ObjectList));
-        entry->object.value = object;
+        entry->object = object;
         entry->next = objects;
         objects = entry;
         base = base->next;
@@ -1082,7 +1082,7 @@ ObjectList *prepend_base_method_copies(ObjectList *objects, Object *method, Type
 
 CClassNode *collect_override_return_class_types(CClassNode *types, TypeClass *tclass, Object *method, Boolean skipClass)
 {
-    ScopeSearch it;
+    CScopeObjectIterator it;
     Object *obj;
     CClassNode *node;
     Type *target;
@@ -1181,7 +1181,7 @@ OverrideClass *create_class_layout(OverrideClass *root, TypeClass *cls, SInt32 o
 {
     OverrideClass *layout;
     ClassList *base;
-    ScopeSearch scope;
+    CScopeObjectIterator scope;
     Object *object;
     OverrideFunc *member;
     OverrideClassBase *derived;

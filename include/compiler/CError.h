@@ -327,7 +327,7 @@ enum {
 };
 
 extern void CError_Warning(SInt32 code, ...);
-extern void CError_OverloadedFunctionError(Object *name, struct MatchLink *names);
+extern void CError_OverloadedFunctionError(Object *name, struct ObjectList *names);
 extern void CError_FunctionCallError(short code, ObjectList *objs, ENodeList *args);
 extern void CError_FatalError(short errorNumber);
 extern void CError_IllegalUseAbstractClass(TypeClass *type);
@@ -357,7 +357,7 @@ extern int data_0058715c;
 extern char data_005830c8[];
 extern jmp_buf error_jmp_buf;
 extern char error_message_buffer[];
-extern struct CParseSave *data_00588240;
+extern struct ParserTryBlock *data_00588240;
 extern char data_005883ec[];
 extern int CError_Internal(const char *file, int line);
 extern void CError_BufferAppendString(StrBuf *eb, const char *str);

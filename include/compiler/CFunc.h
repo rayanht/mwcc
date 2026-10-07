@@ -47,8 +47,8 @@ struct Statement {
         struct SwitchInfo *
             switchDescriptor; /* 0x0e: parse_statement creates kind 5; mark_reachable_statements kind 5 reads cases and defaultlabel; build_linear_from_statements kind 5 reads this descriptor */
     } target;
-    struct CException *dobjstack; /* 0x12: IroFlowgraph_RebuildSuccPred walks active exception scopes */
-    SInt32 sourceoffset;          /* 0x16: CodeGen passes source position to set_block_line_and_execution_weight */
+    struct ExceptionAction *dobjstack; /* 0x12: IroFlowgraph_RebuildSuccPred walks active exception scopes */
+    SInt32 sourceoffset;               /* 0x16: CodeGen passes source position to set_block_line_and_execution_weight */
 };
 #pragma options align = reset
 /* A function queued for code generation after the translation unit has been parsed (list head DAT_005876e8,
@@ -79,30 +79,25 @@ struct CleanNode {
     Object *object;
     Object *dtor;
 };
-#pragma pack(push, 1)
-union CtorInitTarget {
-    struct ClassList *base; /* 0x0a: parse_ctor_initializers kind 0; CABI_InsertConstructorInitialization INIT_BASE */
-    struct VClassList
-        *virtualBase; /* 0x0a: parse_ctor_initializers kind 1; CABI_InsertConstructorInitialization INIT_VBASE */
-    struct ObjMemberVar *
-        member; /* 0x0a: parse_ctor_initializers kind 2; CFunc_00476e70 kind 2; CABI_InsertConstructorInitialization INIT_MEMBER */
+#pragma options align = mac68k
+struct CtorChain {
+    CtorChain *next;
+    UInt8 what;
+    ENode *objexpr;
+    union {
+        ClassList *base;
+        VClassList *vbase;
+        ObjMemberVar *membervar;
+    } u;
 };
-struct CtorInit {
-    struct CtorInit *next; /* 0x00: parse_ctor_initializers links ctor_initializers */
-    UInt8 kind;            /* 0x04: parse_ctor_initializers selects base (0), virtual base (1), member (2) */
-    UInt8 unused; /* 0x05: parse_ctor_initializers allocates sizeof(CtorInit) but never reads or writes this byte */
-    struct ENode *
-        expr; /* 0x06: parse_ctor_initializers builds construction expression; CABI_InsertConstructorInitialization emits it */
-    union CtorInitTarget u; /* 0x0a: parse_ctor_initializers selects target by kind */
-};
-#pragma pack(pop)
+#pragma options align = reset
 /* Inherited statement parsing context, copied for nested loops and switches. */
 struct StatementContext {
-    Type *returnType;
-    UInt32 returnQual;
-    SwitchInfo *switchInfo;
-    CLabel *continueLabel;
-    CLabel *breakLabel;
+    Type *thetype;
+    UInt32 qual;
+    SwitchInfo *switchinfo;
+    CLabel *loopContinue;
+    CLabel *loopBreak;
 };
 #pragma options align = mac68k
 struct SwitchInfo {
@@ -133,7 +128,7 @@ extern ENode *rewrite_cond_with_cleannodes(ENode *node);
 extern ENode *sub_47c050(ENode *node, struct CleanNode *args, Boolean flag);
 extern void generate_conditional_jump(ENode *expr, CLabel *dest, CLabel *other, Boolean sense, Boolean flag);
 extern void setup_function_arguments(Object *function, DeclInfo *body, Statement *state);
-extern void CFunc_00476e70(TypeClass *theclass, struct CtorInit *inits);
+extern void CFunc_00476e70(TypeClass *theclass, struct CtorChain *inits);
 extern void create_local_object_copy(Object *func, TypeIntegral *type, Type *type2, Boolean flag);
 extern void declare_local_object(DeclInfo *declaration, TStreamElement *proto, char flag3, char flag4);
 extern void rewrite_enode_list_nodes(ENodeList *entry);
@@ -152,10 +147,10 @@ extern void CFunc_GenerateSingleExprFunc(Object *func, ENode *expr);
 extern UInt32 statement_sourceoffset;
 extern struct Statement *PTR_00587644;
 extern struct CLabel *clabels;
-extern struct CException *UINT_00587fc4;
+extern struct ExceptionAction *UINT_00587fc4;
 extern SInt32 current_statement_number;
 extern struct HashNameNode *blank_argument_name;
-extern struct CtorInit *ctor_initializers;
+extern struct CtorChain *ctor_initializers;
 extern struct TypeClass *data_00588040;
 extern Object *data_00588238;
 extern ENode *create_temp_node2(Type *type);
@@ -181,14 +176,14 @@ struct Statement;
 extern FileOffsetInfo function_fileinfo;
 
 /* fn_0047cb60 allocates 0xe bytes with CompilerTools_AllocatePool for this saved-state list node. */
-struct SavedGlobalValues {
-    struct SavedGlobalValues *next;
-    struct CException *savedException;
-    struct NameSpace *savedNameSpace;
+struct DeclBlock {
+    struct DeclBlock *next;
+    struct ExceptionAction *dobjstack;
+    struct NameSpace *parent_nspace;
     UInt16 index;
 };
-extern void PPCError_RestoreGlobalValues(const struct SavedGlobalValues *values);
-extern struct SavedGlobalValues *fn_0047cb60(void);
+extern void PPCError_RestoreGlobalValues(const struct DeclBlock *values);
+extern struct DeclBlock *fn_0047cb60(void);
 
 #ifdef __cplusplus
 }

@@ -184,7 +184,7 @@ int compact_exception_scope_entries(void)
     return count;
 }
 
-void Exceptions_AppendScopeEntry(PCodeInstruction *context, CException *elements)
+void Exceptions_AppendScopeEntry(PCodeInstruction *context, ExceptionAction *elements)
 {
     ExceptionScopeEntry *entry;
 
@@ -212,7 +212,7 @@ void Exceptions_AppendScopeEntry(PCodeInstruction *context, CException *elements
     }
 }
 
-void Exceptions_CollectRegisterOperands(CException *node, PCodeOperand *out)
+void Exceptions_CollectRegisterOperands(ExceptionAction *node, PCodeOperand *out)
 {
     int uid;
 
@@ -318,7 +318,7 @@ static inline int Exceptions_BoundObjectCount(Object **objectSlot)
     return 0;
 }
 
-int Exceptions_CountBoundObjectFields(CException *action)
+int Exceptions_CountBoundObjectFields(ExceptionAction *action)
 {
     int count = 0;
 
@@ -423,7 +423,7 @@ void emit_exception_records(ObjectGroup *node)
     ExceptionReferenceTableRecord referenceTable;
     ExceptionByteRecord byteRecord;
     ExceptionShortRecord linkRecord;
-    CException *record;
+    ExceptionAction *record;
     SInt32 recordOffset;
     unsigned int baseOffset;
     SInt32 offset;
@@ -752,7 +752,7 @@ void emit_exception_records(ObjectGroup *node)
     }
 }
 
-struct ObjectGroup *find_or_create_object_group(CException *object)
+struct ObjectGroup *find_or_create_object_group(ExceptionAction *object)
 {
     struct ObjectGroup *node;
     struct ObjectGroup *found;

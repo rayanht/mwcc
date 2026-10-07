@@ -2239,7 +2239,7 @@ void fn_0043be10(void)
                     break;
                 entry = CScope_FindObjectListInNameSpace(scope, data_00587fa0);
                 if (entry != NULL) {
-                    if ((record = entry->object.value)->otype == 5U && record->datatype == 1U) {
+                    if ((record = entry->object)->otype == 5U && record->datatype == 1U) {
                         record->flags |= 1U;
                         if (CPrep_ScanMacroExpandedChar() != 0) {
                             token = CPrepTokenizer_ScanToken();
@@ -2345,11 +2345,11 @@ void apply_pragma_object_flags(unsigned int flags)
             break;
         } else {
             while (node != NULL) {
-                if (node->object.value->otype == 5) {
-                    switch (node->object.value->datatype) {
+                if (node->object->otype == 5) {
+                    switch (node->object->datatype) {
                         case DDATA:
                         case DFUNC:
-                            node->object.value->flags |= flags;
+                            node->object->flags |= flags;
                             break;
                         default:
                             saved = data_005884fd;

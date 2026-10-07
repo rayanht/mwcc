@@ -194,7 +194,7 @@ extern void ObjGen_PPC_EABI_EmitObjectRelocation(Object *object);
 extern ObjGenSection *fn_004892a0(Object *object, int size);
 extern void ObjGen_PPC_EABI_EmitSwitchTable(Object *gl, Object *func);
 extern void ObjGen_PPC_EABI_EmitFloatObject(Object *node);
-extern void emit_object_data_and_relocations(Object *func, const char *data, RelocationList *list, SInt32 size,
+extern void emit_object_data_and_relocations(Object *func, const char *data, OLinkList *list, SInt32 size,
                                              Boolean flag);
 extern void allocate_object_storage(Object *obj, SInt32 size, Boolean flag);
 extern void report_section_permission_conflict(Object *function, ObjGenSection *qualInfo, void *name, UInt32 flags);
@@ -209,9 +209,9 @@ extern Boolean ObjGen_PPC_EABI_0048ac10(Object *obj);
 extern Boolean PCodeUtilities_Require(Object *obj);
 extern SInt32 ObjGen_PPC_EABI_GetSectionAlignmentOrKind(Object *obj);
 extern char *ObjGen_PPC_EABI_GetSectionName(struct ObjGenSection *descriptor);
-extern unsigned int ObjGen_PPC_EABI_EmitObject(Object *object, const void *context, RelocationList *value,
+extern unsigned int ObjGen_PPC_EABI_EmitObject(Object *object, const void *context, OLinkList *value,
                                                unsigned int flags);
-extern void ObjGen_PPC_EABI_EmitObjectWithDebugEntry(Object *object, const void *data, RelocationList *attributes,
+extern void ObjGen_PPC_EABI_EmitObjectWithDebugEntry(Object *object, const void *data, OLinkList *attributes,
                                                      unsigned int alignment);
 extern void ObjGen_PPC_EABI_ClearSectionSymbolLinkValues(void);
 extern void fn_0048b090(HashNameNode *oldid, HashNameNode *newid);

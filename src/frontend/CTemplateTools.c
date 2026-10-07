@@ -703,7 +703,7 @@ ENode *CTemplTool_DeduceExpr(TypeDeduce *ctx, ENode *node)
     Type *type;
     TypeClass *classType;
     TemplClassInst *resolvedObject;
-    CScopeParseResult expression;
+    NameResult expression;
     int savedScope;
     UInt32 qualifiers;
     ENodeList *callArguments;
@@ -797,7 +797,7 @@ ENode *CTemplTool_DeduceExpr(TypeDeduce *ctx, ENode *node)
                         CError_FATAL(1382);
                     }
                     memclrw(&expression, sizeof(expression));
-                    expression.object = (ObjBase *)entry->object.value;
+                    expression.object = (ObjBase *)entry->object;
                     return CExpr_GeneratePointerAndRewriteConst(CExpr_MakeNameLookupResultExpr(&expression));
                 case TDE_SOURCEREF:
                     CError_SaveAndSetWrittenEntry(node->data.templdep.u.sourceref.token, &savedScope);

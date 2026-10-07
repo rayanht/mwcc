@@ -122,7 +122,7 @@ static char *data_00560cb4[75] = {
     "EVECTOR128CONST",
 };
 
-void dump_eat_nodes(CException *p)
+void dump_eat_nodes(ExceptionAction *p)
 {
     char buf[256];
 

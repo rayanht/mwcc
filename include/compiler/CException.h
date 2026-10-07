@@ -15,8 +15,8 @@ union InlineOperand {
     UInt8 byte;
 };
 #pragma options align = mac68k
-struct CException {
-    struct CException *next;
+struct ExceptionAction {
+    struct ExceptionAction *next;
     union {
         struct {
             struct Object *object;
@@ -160,23 +160,23 @@ extern void fn_004e30c0(void);
 extern void CException_PushEntry(void);
 extern ENode *fn_004e1050(ENode *expression);
 extern ENode *rewrite_expr_temporaries(ENode *expr);
-extern void insert_exception_action(Statement *stmt, CException *action);
+extern void insert_exception_action(Statement *stmt, ExceptionAction *action);
 extern void CExcept_RegisterDeleteObject(Statement *expr, Object *first, Object *second);
 extern void CException_RegisterMemberArray(Statement *unused, Object *context, Object *destructor, SInt32 value1,
                                            SInt32 value2);
 extern ENode *CExcept_RegisterDestructorObject(Object *obj, SInt32 value, Object *dtorobj, int flag);
-extern unsigned char CExcept_ActionNeedsDestruction(CException *entry);
+extern unsigned char CExcept_ActionNeedsDestruction(ExceptionAction *entry);
 extern void emit_flagged_class_offsets(TypeClass *type);
 extern void fn_004e2940(TypeClass *exceptionData);
-extern Boolean CExcept_ActionCompare(CException *a, CException *b);
+extern Boolean CExcept_ActionCompare(ExceptionAction *a, ExceptionAction *b);
 extern void update_statement_dobjstacks(Statement *node);
 extern void lower_newexception(ENode *node, Boolean useExpression);
 extern void CExcept_CompareSpecifications(ExceptSpecList *a, ExceptSpecList *b);
-extern void CException_004e35b0(CException *node);
+extern void CException_004e35b0(ExceptionAction *node);
 extern void CExcept_RegisterMemberArray(Statement *stmt, Object *object, SInt32 offset, Object *dtor, SInt32 count,
                                         SInt32 size);
 extern void CExcept_ExceptionTansform(Statement *stmt);
-extern Statement *CExcept_ActionCleanup(CException *input, Statement *statement);
+extern Statement *CExcept_ActionCleanup(ExceptionAction *input, Statement *statement);
 extern unsigned char fn_004e0ab0(Statement *node);
 extern void CExcept_Setup(void);
 extern struct Object *throw_func;
@@ -185,7 +185,7 @@ extern SInt8 data_005884fa;
 extern UInt8 exception_cleanup_registered;
 extern TypeIntegral stchar;
 extern Type exception_temp_object_type;
-struct CException;
+struct ExceptionAction;
 
 #ifdef __cplusplus
 }

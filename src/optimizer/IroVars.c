@@ -61,7 +61,7 @@ static inline int fn_0044a6f0_inline1(VarRecord *a1)
     v11 = (int)a1->object;
     v12 = arguments;
     while ((int)v12 != 0) {
-        if ((int)v12->object.value == v11) {
+        if ((int)v12->object == v11) {
             return 1;
         }
         v12 = v12->next;
@@ -220,7 +220,7 @@ static int IRO_ListHasObject(Object *key)
     ObjectList *a;
 
     for (a = arguments; a != NULL; a = a->next) {
-        if (a->object.value == key) {
+        if (a->object == key) {
             return 1;
         }
     }
@@ -442,16 +442,15 @@ void IroVars_CheckVariablesInitializedBeforeUse(void)
         }
     }
     for (local = locals; local != NULL; local = local->next) {
-        VarRecord *variable = fn_0044ba70(local->object.value, 0, 1);
+        VarRecord *variable = fn_0044ba70(local->object, 0, 1);
         if (variable != NULL) {
             if (IRO_BV_TEST(data_00588018, variable->index)) {
-                VarInfo *info = local->object.value->u.var.info;
-                if (!CParser_IsNullOrAtOrDollarPrefixedName(local->object.value->name) &&
-                    !is_volatile_object(local->object.value) &&
-                    (local->object.value->type->type != TYPECLASS ||
-                     !CClass_IsEmpty((TypeClass *)local->object.value->type))) {
+                VarInfo *info = local->object->u.var.info;
+                if (!CParser_IsNullOrAtOrDollarPrefixedName(local->object->name) &&
+                    !is_volatile_object(local->object) &&
+                    (local->object->type->type != TYPECLASS || !CClass_IsEmpty((TypeClass *)local->object->type))) {
                     CError_SetBufferedToken(&info->deftoken);
-                    CError_Warning(ERR_VARIABLE_NOT_INITIALIZED_BEFORE_BEING_USED, local->object.value->name->name);
+                    CError_Warning(ERR_VARIABLE_NOT_INITIALIZED_BEFORE_BEING_USED, local->object->name->name);
                 }
             }
         }
@@ -800,7 +799,7 @@ void IroVars_BuildVarRecords(void)
    cannot live in a register. */
 void visit_dobjstack_objects(IROLinear *linear)
 {
-    CException *node;
+    ExceptionAction *node;
     node = linear->stmt->dobjstack;
     while (node != NULL) {
         switch (node->kind) {
@@ -910,7 +909,7 @@ IROLinear *IroVars_CreateIntConstant(CInt64 value, Type *type)
     return linear;
 }
 
-void IroVars_VisitExceptionOperands(CException *node, void (*visitOperand)(Object *))
+void IroVars_VisitExceptionOperands(ExceptionAction *node, void (*visitOperand)(Object *))
 {
     for (; node != NULL; node = node->next) {
         switch (node->kind) {

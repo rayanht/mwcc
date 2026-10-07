@@ -78,11 +78,11 @@ struct ObjCParameterNode {
     struct Type *type;
     UInt32 qual;
 };
-struct RelocationList {
-    struct RelocationList *next; /* 0x00: CObjC_GetProtocolInfo links relocations */
-    struct Object *object;       /* 0x04: CObjC_GetProtocolInfo references class, name and method metadata objects */
-    SInt32 offset;               /* 0x08: CObjC_GetProtocolInfo selects offsets 0, 4, 8, 12, 16 in protocol data */
-    SInt32 addend;               /* 0x0c: CObjC_GetProtocolInfo initializes relocation addends to zero */
+struct OLinkList {
+    struct OLinkList *next; /* 0x00: CObjC_GetProtocolInfo links relocations */
+    struct Object *obj;     /* 0x04: CObjC_GetProtocolInfo references class, name and method metadata objects */
+    SInt32 offset;          /* 0x08: CObjC_GetProtocolInfo selects offsets 0, 4, 8, 12, 16 in protocol data */
+    SInt32 addend;          /* 0x0c: CObjC_GetProtocolInfo initializes relocation addends to zero */
 };
 typedef struct ObjCMethodEntry {
     SInt32 selector;       /* 0x00: create_method_list_object selector relocation */

@@ -52,8 +52,8 @@
 static UInt8 data_00581c30;
 static struct TemporaryObject *temporary_object_list;
 static struct Statement *data_00581c36;
-static struct CException *currentDobjstack;
-static struct CException *current_dobjstack;
+static struct ExceptionAction *currentDobjstack;
+static struct ExceptionAction *current_dobjstack;
 #pragma options align = reset
 
 #define CE_ASSERT(c, s)                                                                                                \
@@ -146,17 +146,17 @@ static TemporaryObject *CException_NewTypeNode(void)
     return t;
 }
 
-static CException *CException_NewStmtNode(void)
+static ExceptionAction *CException_NewStmtNode(void)
 {
-    CException *s = CompilerTools_AllocatePool(sizeof(CException));
+    ExceptionAction *s = CompilerTools_AllocatePool(sizeof(ExceptionAction));
     s->next = currentDobjstack;
     currentDobjstack = s;
     return s;
 }
 
-static CException *CException_CopyStmtNode(void)
+static ExceptionAction *CException_CopyStmtNode(void)
 {
-    CException *s = CompilerTools_AllocatePool(sizeof(CException));
+    ExceptionAction *s = CompilerTools_AllocatePool(sizeof(ExceptionAction));
     *s = *currentDobjstack;
     s->next = current_dobjstack;
     current_dobjstack = s;
@@ -244,7 +244,7 @@ static inline Statement *CException_004e2c40_inline2(Statement *p0, ENode *p1)
 
 static Object *CException_StdType(void *name)
 {
-    CScopeParseResult lookup;
+    NameResult lookup;
     NameSpaceObjectList *obj;
     Object *type;
     obj = CScope_FindObjectList(&lookup, GetHashNameNode(name));
@@ -299,17 +299,17 @@ void fn_004e0b20(ENode *expr)
 
 void setup_exception_specification(struct Statement *statements, struct ExceptSpecList *handlers)
 {
-    CException *region;
+    ExceptionAction *region;
     Statement *statement;
     Statement *label_statement;
-    CException *tail;
+    ExceptionAction *tail;
     CLabel *end_label;
     CLabel *start_label;
     Object *object;
     ExceptSpecList *handler;
     SInt32 handler_count;
     SInt32 handler_index;
-    CException *object_region;
+    ExceptionAction *object_region;
     Statement *end_statement;
     Statement *assignment;
     ENode *expression;
@@ -393,7 +393,7 @@ void setup_exception_specification(struct Statement *statements, struct ExceptSp
 void update_statement_dobjstacks(Statement *node)
 {
     Statement *p;
-    CException *info;
+    ExceptionAction *info;
     ENode *e;
     ENodeList *args;
 
@@ -691,8 +691,8 @@ ENode *rewrite_funccall_temporaries(ENode *node, Boolean reverse)
     SInt32 uniqueID;
     SInt32 index;
     SInt32 count;
-    CException *cleanupCopy;
-    CException *cleanup;
+    ExceptionAction *cleanupCopy;
+    ExceptionAction *cleanup;
     Statement *statement;
     ENode *temporaryExpr;
 
@@ -766,14 +766,14 @@ ENode *rewrite_funccall_temporaries(ENode *node, Boolean reverse)
             statement->expr.expression = makediadicnode(create_objectnode(temporary->initializationFlag),
                                                         intconstnode((Type *)&stchar, 0), EASS);
             data_00581c36 = statement;
-            cleanup = CompilerTools_AllocatePool(sizeof(CException));
+            cleanup = CompilerTools_AllocatePool(sizeof(ExceptionAction));
             cleanup->next = currentDobjstack;
             currentDobjstack = cleanup;
             cleanup->kind = 2;
             cleanup->data.local_cond.object = temporary->object;
             cleanup->data.local_cond.dtor = CABI_GetDestructorObject(temporary->classObject, 1);
             cleanup->data.local_cond.cond = temporary->initializationFlag;
-            cleanupCopy = CompilerTools_AllocatePool(sizeof(CException));
+            cleanupCopy = CompilerTools_AllocatePool(sizeof(ExceptionAction));
             *cleanupCopy = *currentDobjstack;
             cleanupCopy->next = current_dobjstack;
             current_dobjstack = cleanupCopy;
@@ -781,13 +781,13 @@ ENode *rewrite_funccall_temporaries(ENode *node, Boolean reverse)
             statement = NewTemporaryStatement();
             statement->expr.expression = node;
             data_00581c36 = statement;
-            cleanup = CompilerTools_AllocatePool(sizeof(CException));
+            cleanup = CompilerTools_AllocatePool(sizeof(ExceptionAction));
             cleanup->next = currentDobjstack;
             currentDobjstack = cleanup;
             cleanup->kind = 1;
             cleanup->data.local.object = temporary->object;
             cleanup->data.local.dtor = CABI_GetDestructorObject(temporary->classObject, 1);
-            cleanupCopy = CompilerTools_AllocatePool(sizeof(CException));
+            cleanupCopy = CompilerTools_AllocatePool(sizeof(ExceptionAction));
             *cleanupCopy = *currentDobjstack;
             cleanupCopy->next = current_dobjstack;
             current_dobjstack = cleanupCopy;
@@ -833,7 +833,7 @@ void lower_newexception(ENode *node, Boolean useExpression)
     Boolean isArgumentObject;
     Object *cleanupFlag;
     CLabel *label;
-    CException *cleanup;
+    ExceptionAction *cleanup;
     ENode *expression;
     ENode *result;
 
@@ -847,7 +847,7 @@ void lower_newexception(ENode *node, Boolean useExpression)
         initialStatement->expr.expression =
             makediadicnode(create_objectnode(cleanupFlag), intconstnode((Type *)&stchar, 0), EASS);
         data_00581c36 = initialStatement;
-        cleanup = (CException *)CompilerTools_AllocatePool(sizeof(CException));
+        cleanup = (ExceptionAction *)CompilerTools_AllocatePool(sizeof(ExceptionAction));
         cleanup->next = currentDobjstack;
         currentDobjstack = cleanup;
         cleanup->kind = 0xc;
@@ -885,7 +885,7 @@ void lower_newexception(ENode *node, Boolean useExpression)
         }
         statement = CFunc_InsertAfterStatement(ST_EXPRESSION, statement);
         statement->expr.expression = node->data.newexception.tryexpr;
-        cleanup = (CException *)CompilerTools_AllocatePool(sizeof(CException));
+        cleanup = (ExceptionAction *)CompilerTools_AllocatePool(sizeof(ExceptionAction));
         cleanup->next = currentDobjstack;
         cleanup->kind = 0xa;
         cleanup->data.delete_pointer.pointer = node->data.newexception.pointertemp;
@@ -910,7 +910,7 @@ ENode *CException_004e1940(ENode *node)
 
     if (node->data.temp.needs_dtor) {
         TemporaryObject *type = CException_NewTypeNode();
-        CException *stmt;
+        ExceptionAction *stmt;
         type->object = obj;
         type->initializationFlag = NULL;
         CError_ASSERT(1643, node->data.objref->otype == OT_OBJECT &&
@@ -959,7 +959,7 @@ void CExcept_ScanTryBlock(void *context, char rethrow)
     CLabel *endLabel;
     ExceptionHandlerRecord *handler;
     Statement *entry;
-    struct SavedGlobalValues *cleanup;
+    struct DeclBlock *cleanup;
     Statement *lastStatement;
     ENode *initializer;
     DeclInfo declaration;
@@ -1130,15 +1130,15 @@ ENode *create_catch_object_init(DeclInfo *info, ExceptionHandlerRecord *args)
 void CException_004e1fb0(Statement *firstScope, Statement *insertionScope, Statement *lastScope,
                          ExceptionHandlerRecord *entries)
 {
-    CException *originalList;
+    ExceptionAction *originalList;
     SInt32 entryValue;
     Boolean hasClassType;
-    CException *firstEntry;
-    CException *replacementList;
-    CException *entry;
+    ExceptionAction *firstEntry;
+    ExceptionAction *replacementList;
+    ExceptionAction *entry;
     ENode *stringNode;
     Statement *scope;
-    CException *current;
+    ExceptionAction *current;
 
     firstEntry = NULL;
     hasClassType = 0;
@@ -1148,8 +1148,8 @@ void CException_004e1fb0(Statement *firstScope, Statement *insertionScope, State
 
     if (entries != NULL) {
         do {
-            entry = (CException *)CompilerTools_AllocatePool(sizeof(CException));
-            memclrw(entry, sizeof(CException));
+            entry = (ExceptionAction *)CompilerTools_AllocatePool(sizeof(ExceptionAction));
+            memclrw(entry, sizeof(ExceptionAction));
             entry->next = replacementList;
             replacementList = entry;
             if (firstEntry == NULL)
@@ -1192,8 +1192,8 @@ void CException_004e1fb0(Statement *firstScope, Statement *insertionScope, State
         if (scope == lastScope)
             break;
         if (scope == insertionScope) {
-            CException *scopeEntry = (CException *)CompilerTools_AllocatePool(sizeof(CException));
-            memclrw(scopeEntry, sizeof(CException));
+            ExceptionAction *scopeEntry = (ExceptionAction *)CompilerTools_AllocatePool(sizeof(ExceptionAction));
+            memclrw(scopeEntry, sizeof(ExceptionAction));
             scopeEntry->next = originalList;
             scopeEntry->kind = 0xe;
             scopeEntry->data.active_catch.info = (Object *)entryValue;
@@ -1521,7 +1521,7 @@ void append_namespace_names(NameSpace *p)
         }
 }
 
-Statement *CExcept_ActionCleanup(CException *cleanup, Statement *statement)
+Statement *CExcept_ActionCleanup(ExceptionAction *cleanup, Statement *statement)
 {
     Object *context;
     ENode *expression;
@@ -1615,10 +1615,10 @@ Statement *CExcept_ActionCleanup(CException *cleanup, Statement *statement)
 void CExcept_RegisterMemberArray(Statement *stmt, Object *object, SInt32 offset, Object *dtor, SInt32 count,
                                  SInt32 size)
 {
-    CException *entry;
+    ExceptionAction *entry;
 
-    entry = (CException *)CompilerTools_AllocatePool(sizeof(CException));
-    memclrw((unsigned char *)entry, sizeof(CException));
+    entry = (ExceptionAction *)CompilerTools_AllocatePool(sizeof(ExceptionAction));
+    memclrw((unsigned char *)entry, sizeof(ExceptionAction));
     entry->kind = 9;
     entry->data.member_array.objectptr = object;
     entry->data.member_array.dtor = CABI_GetDestructorObject(dtor, 1);
@@ -1632,10 +1632,10 @@ void CExcept_RegisterMemberArray(Statement *stmt, Object *object, SInt32 offset,
 void CExcept_RegisterMember(Statement *statement, Object *objectptr, SInt32 offset, Object *destructor,
                             Object *condition, Boolean complete)
 {
-    CException *node;
+    ExceptionAction *node;
 
-    node = (CException *)CompilerTools_AllocatePool(sizeof(CException));
-    memclrw(node, sizeof(CException));
+    node = (ExceptionAction *)CompilerTools_AllocatePool(sizeof(ExceptionAction));
+    memclrw(node, sizeof(ExceptionAction));
     if (condition == NULL) {
         if (complete) {
             node->kind = 7;
@@ -1660,7 +1660,7 @@ void CExcept_RegisterMember(Statement *statement, Object *objectptr, SInt32 offs
 
 void CException_AddStdTypeRecord(void)
 {
-    CException *rec;
+    ExceptionAction *rec;
 
     rec = CompilerTools_AllocatePool(sizeof(*rec));
     memclrw(rec, sizeof(*rec));
@@ -1681,7 +1681,7 @@ void fn_004e30c0(void)
 
 void CException_PushEntry(void)
 {
-    CException *entry;
+    ExceptionAction *entry;
 
     entry = CompilerTools_AllocatePool(30U);
     memclrw(entry, 30U);
@@ -1690,12 +1690,12 @@ void CException_PushEntry(void)
     UINT_00587fc4 = entry;
 }
 
-void insert_exception_action(Statement *stmt, CException *action)
+void insert_exception_action(Statement *stmt, ExceptionAction *action)
 {
-    CException *act;
-    CException *scan;
+    ExceptionAction *act;
+    ExceptionAction *scan;
 
-    for (act = (CException *)stmt->dobjstack; act; act = act->next) {
+    for (act = (ExceptionAction *)stmt->dobjstack; act; act = act->next) {
         switch (act->kind) {
             case 7:
             case 8:
@@ -1710,7 +1710,7 @@ void insert_exception_action(Statement *stmt, CException *action)
     }
     if (!act) {
         for (; stmt; stmt = stmt->next) {
-            if ((scan = (CException *)stmt->dobjstack)) {
+            if ((scan = (ExceptionAction *)stmt->dobjstack)) {
                 for (;;) {
                     if (scan == action)
                         break;
@@ -1721,13 +1721,13 @@ void insert_exception_action(Statement *stmt, CException *action)
                     scan = scan->next;
                 }
             } else {
-                stmt->dobjstack = (CException *)action; /* insert_exception_action: exception action chain */
+                stmt->dobjstack = (ExceptionAction *)action; /* insert_exception_action: exception action chain */
             }
         }
     } else {
         action->next = act;
         for (; stmt; stmt = stmt->next) {
-            if ((scan = (CException *)stmt->dobjstack) != act) {
+            if ((scan = (ExceptionAction *)stmt->dobjstack) != act) {
                 for (;;) {
                     if (scan == action)
                         break;
@@ -1739,7 +1739,7 @@ void insert_exception_action(Statement *stmt, CException *action)
                         CError_FATAL(455);
                 }
             } else {
-                stmt->dobjstack = (CException *)action; /* insert_exception_action: exception action chain */
+                stmt->dobjstack = (ExceptionAction *)action; /* insert_exception_action: exception action chain */
             }
         }
     }
@@ -1747,7 +1747,7 @@ void insert_exception_action(Statement *stmt, CException *action)
 
 void CExcept_RegisterDeleteObject(Statement *expr, Object *first, Object *second)
 {
-    CException *record;
+    ExceptionAction *record;
     record = CompilerTools_AllocatePool(30U);
     memclrw(record, 30U);
     record->next = UINT_00587fc4;
@@ -1760,7 +1760,7 @@ void CExcept_RegisterDeleteObject(Statement *expr, Object *first, Object *second
 
 void CException_RegisterMemberArray(Statement *unused, Object *context, Object *destructor, SInt32 offset, SInt32 count)
 {
-    CException *entry;
+    ExceptionAction *entry;
 
     entry = CompilerTools_AllocatePool(sizeof(*entry));
     memclrw(entry, sizeof(*entry));
@@ -1777,12 +1777,12 @@ void CException_RegisterMemberArray(Statement *unused, Object *context, Object *
 
 ENode *CExcept_RegisterDestructorObject(Object *obj, SInt32 value, Object *dtorobj, int flag)
 {
-    CException *rec;
+    ExceptionAction *rec;
     Object *dtor;
     ENode *result;
 
-    rec = CompilerTools_AllocatePool(sizeof(CException));
-    memclrw(rec, sizeof(CException));
+    rec = CompilerTools_AllocatePool(sizeof(ExceptionAction));
+    memclrw(rec, sizeof(ExceptionAction));
     rec->next = UINT_00587fc4;
     UINT_00587fc4 = rec;
     result = create_objectrefnode(obj);
@@ -1802,7 +1802,7 @@ ENode *CExcept_RegisterDestructorObject(Object *obj, SInt32 value, Object *dtoro
     return result;
 }
 
-unsigned char CExcept_ActionNeedsDestruction(CException *entry)
+unsigned char CExcept_ActionNeedsDestruction(ExceptionAction *entry)
 {
     unsigned char result;
     switch (entry->kind) {
@@ -1830,7 +1830,7 @@ unsigned char CExcept_ActionNeedsDestruction(CException *entry)
     return result;
 }
 
-Boolean CExcept_ActionCompare(CException *left, CException *right)
+Boolean CExcept_ActionCompare(ExceptionAction *left, ExceptionAction *right)
 {
     if (left->kind == right->kind) {
         switch (left->kind) {
@@ -1923,7 +1923,7 @@ void CExcept_CompareSpecifications(ExceptSpecList *firstSpecs, ExceptSpecList *s
     }
 }
 
-void CException_004e35b0(CException *node)
+void CException_004e35b0(ExceptionAction *node)
 {
     while (node != NULL) {
         switch (node->kind) {

@@ -225,24 +225,24 @@ ENode *CObjC_ParseStringConstant(void)
     TypeClass *type;
     ENode *result;
     Object *object;
-    RelocationList *entries;
-    RelocationList *tail;
-    RelocationList *entry;
+    OLinkList *entries;
+    OLinkList *tail;
+    OLinkList *entry;
     UInt32 values[3];
     char name[16];
     tk = CPrepTokenizer_GetNextToken();
     if (tk == TK_STRING) {
         if ((type = fn_00504c90_inline1()) != NULL) {
             values[0] = CTool_EndianConvertWord32(0);
-            tail = entry = (RelocationList *)CompilerTools_AllocatePool(16);
+            tail = entry = (OLinkList *)CompilerTools_AllocatePool(16);
             entry->next = NULL;
-            entry->object = type->objcinfo->classobject;
+            entry->obj = type->objcinfo->classobject;
             entry->offset = 0;
             entry->addend = 0;
             values[1] = CTool_EndianConvertWord32(0);
-            entries = (RelocationList *)CompilerTools_AllocatePool(16);
+            entries = (OLinkList *)CompilerTools_AllocatePool(16);
             entries->next = tail;
-            entries->object = CInit_DeclareString(string_token_data, token_value_kind_or_string_length, 0, 0);
+            entries->obj = CInit_DeclareString(string_token_data, token_value_kind_or_string_length, 0, 0);
             entries->offset = 4;
             entries->addend = 0;
             values[2] = CTool_EndianConvertWord32(token_value_kind_or_string_length - 1);
@@ -546,7 +546,7 @@ ENode *CObjC_MakeMessageSend(ENode *receiver, TypeClass *obj, MessageArgument *a
         if (receiver->rtype->type == TYPEPOINTER && (((TypePointer *)receiver->rtype)->qual & Q_IS_OBJC_ID) != 0) {
             for (protocol = ((TypePointer *)receiver->rtype)->protocols[0]; protocol != NULL;
                  protocol = protocol->next) {
-                method = ((CRec *)protocol->object.value)->methods;
+                method = ((CRec *)protocol->object)->methods;
                 if (method != NULL) {
                     do {
                         if (match_message_arguments(method, arguments, extraArgs != NULL)) {
@@ -781,7 +781,7 @@ void CObjC_ParseProtocol(void)
     if (tk == '<') {
         rec->bases = parse_protocol_list();
         for (base = rec->bases; base != NULL; base = base->next) {
-            protocol = (CRec *)base->object.value; /* parse_protocol_list stores protocol records in ObjectList. */
+            protocol = (CRec *)base->object; /* parse_protocol_list stores protocol records in ObjectList. */
             for (item = protocol->methods; item != NULL; item = item->next) {
                 if (fn_00508940(rec->methods, item, 1, 1) == NULL) {
                     newItem = (MethRec *)galloc(sizeof(MethRec));
@@ -862,7 +862,7 @@ static inline Boolean CObjC_SameMemberList(ObjectList *a, ObjectList *b)
             eq = (b == NULL);
             break;
         }
-        if (b == NULL || a->object.value != b->object.value) {
+        if (b == NULL || a->object != b->object) {
             eq = 0;
             break;
         }
@@ -965,7 +965,7 @@ void parse_class_interface_or_implementation(void)
             objcClass->objcinfo->protocols = protocol;
             for (protocol = objcClass->objcinfo->protocols, methods = &objcClass->objcinfo->methods; protocol != NULL;
                  protocol = protocol->next) {
-                for (protocolMethod = ((CRec *)protocol->object.value)->methods; protocolMethod != NULL;
+                for (protocolMethod = ((CRec *)protocol->object)->methods; protocolMethod != NULL;
                      protocolMethod = protocolMethod->next) {
                     if (fn_00508940(*methods, protocolMethod, 1, 1) == NULL) {
                         MethRec *newMethod = CObjC_NewMemberNode(protocolMethod);
@@ -1209,9 +1209,9 @@ void parse_category_methods_and_check_defined(TypeClass *theclass)
 void create_category_definition(TypeClass *classType, CRec *category)
 {
     Object *categoryObject;
-    RelocationList *relocations;
-    RelocationList *nameRelocation;
-    RelocationList *relocation;
+    OLinkList *relocations;
+    OLinkList *nameRelocation;
+    OLinkList *relocation;
     ObjCDefinition *definition;
     int data[5];
     char *categoryName;
@@ -1226,27 +1226,27 @@ void create_category_definition(TypeClass *classType, CRec *category)
     categoryObject->sclass = TK_STATIC;
     categoryObject->section = 0x16;
     data[0] = CTool_EndianConvertWord32(0);
-    relocation = (RelocationList *)CompilerTools_AllocatePool(sizeof(RelocationList));
+    relocation = (OLinkList *)CompilerTools_AllocatePool(sizeof(OLinkList));
     relocation->next = NULL;
     nameRelocation = relocation;
-    relocation->object = fn_00509c40(category->name->name, 0x13);
+    relocation->obj = fn_00509c40(category->name->name, 0x13);
     relocation->offset = 0;
     relocation->addend = 0;
     data[1] = CTool_EndianConvertWord32(0);
-    relocation = (RelocationList *)CompilerTools_AllocatePool(sizeof(RelocationList));
+    relocation = (OLinkList *)CompilerTools_AllocatePool(sizeof(OLinkList));
     relocation->next = nameRelocation;
     relocations = relocation;
-    relocation->object = fn_00509c40(classType->classname->name, 0x13);
+    relocation->obj = fn_00509c40(classType->classname->name, 0x13);
     relocation->offset = 4;
     relocation->addend = 0;
     data[2] = CTool_EndianConvertWord32(0);
     instanceMethods = create_method_list_object(classType, category, category->methods,
                                                 (UInt8 *)"L_OBJC_CATEGORY_INSTANCE_METHODS_", categoryName, 8, 0);
     if (instanceMethods) {
-        relocation = (RelocationList *)CompilerTools_AllocatePool(sizeof(RelocationList));
+        relocation = (OLinkList *)CompilerTools_AllocatePool(sizeof(OLinkList));
         relocation->next = relocations;
         relocations = relocation;
-        relocation->object = instanceMethods;
+        relocation->obj = instanceMethods;
         relocation->offset = 8;
         relocation->addend = 0;
     }
@@ -1254,19 +1254,19 @@ void create_category_definition(TypeClass *classType, CRec *category)
     classMethods = create_method_list_object(classType, category, category->methods,
                                              (UInt8 *)"L_OBJC_CATEGORY_CLASS_METHODS_", categoryName, 7, 1);
     if (classMethods) {
-        relocation = (RelocationList *)CompilerTools_AllocatePool(sizeof(RelocationList));
+        relocation = (OLinkList *)CompilerTools_AllocatePool(sizeof(OLinkList));
         relocation->next = relocations;
         relocations = relocation;
-        relocation->object = classMethods;
+        relocation->obj = classMethods;
         relocation->offset = 0xc;
         relocation->addend = 0;
     }
     data[4] = CTool_EndianConvertWord32(0);
     if (category->bases) {
-        relocation = (RelocationList *)CompilerTools_AllocatePool(sizeof(RelocationList));
+        relocation = (OLinkList *)CompilerTools_AllocatePool(sizeof(OLinkList));
         relocation->next = relocations;
         relocations = relocation;
-        relocation->object = create_protocol_list(category->bases, categoryName);
+        relocation->obj = create_protocol_list(category->bases, categoryName);
         relocation->offset = 0x10;
         relocation->addend = 0;
     }
@@ -1284,8 +1284,8 @@ void emit_classobject_and_metaclassobject(TypeClass *cls)
     Object *classObject;
     Object *className;
     Object *protocols;
-    RelocationList *relocations;
-    RelocationList *relocation;
+    OLinkList *relocations;
+    OLinkList *relocation;
     Object *metadata;
     UInt32 buffer[10];
 
@@ -1298,23 +1298,23 @@ void emit_classobject_and_metaclassobject(TypeClass *cls)
     buffer[0] = CTool_EndianConvertWord32(0);
     buffer[1] = CTool_EndianConvertWord32(0);
     if (cls->bases != NULL) {
-        relocation = (RelocationList *)CompilerTools_AllocatePool(0x10);
+        relocation = (OLinkList *)CompilerTools_AllocatePool(0x10);
         relocation->next = NULL;
         relocations = relocation;
-        relocation->object = cls->bases->base->objcinfo->metaclassobject;
+        relocation->obj = cls->bases->base->objcinfo->metaclassobject;
         relocation->offset = 4;
         relocation->addend = 0;
     }
-    relocation = (RelocationList *)CompilerTools_AllocatePool(0x10);
+    relocation = (OLinkList *)CompilerTools_AllocatePool(0x10);
     relocation->next = relocations;
-    relocation->object = metaclassObject;
+    relocation->obj = metaclassObject;
     relocation->offset = 0;
     relocation->addend = 0;
     relocations = relocation;
     buffer[2] = CTool_EndianConvertWord32(0);
-    relocation = (RelocationList *)CompilerTools_AllocatePool(0x10);
+    relocation = (OLinkList *)CompilerTools_AllocatePool(0x10);
     relocation->next = relocations;
-    relocation->object = className;
+    relocation->obj = className;
     relocation->offset = 8;
     relocation->addend = 0;
     relocations = relocation;
@@ -1326,19 +1326,19 @@ void emit_classobject_and_metaclassobject(TypeClass *cls)
     metadata = create_method_list_object(cls, NULL, cls->objcinfo->methods, (UInt8 *)"L_OBJC_CLASS_METHODS_",
                                          cls->classname->name, 0x10, 1);
     if (metadata != NULL) {
-        relocation = (RelocationList *)CompilerTools_AllocatePool(0x10);
+        relocation = (OLinkList *)CompilerTools_AllocatePool(0x10);
         relocation->next = relocations;
         relocations = relocation;
-        relocation->object = metadata;
+        relocation->obj = metadata;
         relocation->offset = 0x1c;
         relocation->addend = 0;
     }
     buffer[8] = CTool_EndianConvertWord32(0);
     buffer[9] = CTool_EndianConvertWord32(0);
     if (protocols != NULL) {
-        relocation = (RelocationList *)CompilerTools_AllocatePool(0x10);
+        relocation = (OLinkList *)CompilerTools_AllocatePool(0x10);
         relocation->next = relocations;
-        relocation->object = protocols;
+        relocation->obj = protocols;
         relocation->offset = 0x24;
         relocation->addend = 0;
         relocations = relocation;
@@ -1347,25 +1347,25 @@ void emit_classobject_and_metaclassobject(TypeClass *cls)
     fn_004ceab0(metaclassObject, buffer, relocations, metaclassObject->type->size);
 
     buffer[0] = CTool_EndianConvertWord32(0);
-    relocation = (RelocationList *)CompilerTools_AllocatePool(0x10);
+    relocation = (OLinkList *)CompilerTools_AllocatePool(0x10);
     relocation->next = NULL;
-    relocation->object = metaclassObject;
+    relocation->obj = metaclassObject;
     relocation->offset = 0;
     relocation->addend = 0;
     relocations = relocation;
     buffer[1] = CTool_EndianConvertWord32(0);
     if (cls->bases != NULL) {
-        relocation = (RelocationList *)CompilerTools_AllocatePool(0x10);
+        relocation = (OLinkList *)CompilerTools_AllocatePool(0x10);
         relocation->next = relocations;
         relocations = relocation;
-        relocation->object = cls->bases->base->objcinfo->classobject;
+        relocation->obj = cls->bases->base->objcinfo->classobject;
         relocation->offset = 4;
         relocation->addend = 0;
     }
     buffer[2] = CTool_EndianConvertWord32(0);
-    relocation = (RelocationList *)CompilerTools_AllocatePool(0x10);
+    relocation = (OLinkList *)CompilerTools_AllocatePool(0x10);
     relocation->next = relocations;
-    relocation->object = className;
+    relocation->obj = className;
     relocation->offset = 8;
     relocation->addend = 0;
     relocations = relocation;
@@ -1375,10 +1375,10 @@ void emit_classobject_and_metaclassobject(TypeClass *cls)
     buffer[6] = CTool_EndianConvertWord32(0);
     metadata = create_ivar_list(cls);
     if (metadata != NULL) {
-        relocation = (RelocationList *)CompilerTools_AllocatePool(0x10);
+        relocation = (OLinkList *)CompilerTools_AllocatePool(0x10);
         relocation->next = relocations;
         relocations = relocation;
-        relocation->object = metadata;
+        relocation->obj = metadata;
         relocation->offset = 0x18;
         relocation->addend = 0;
     }
@@ -1386,19 +1386,19 @@ void emit_classobject_and_metaclassobject(TypeClass *cls)
     metadata = create_method_list_object(cls, NULL, cls->objcinfo->methods, (UInt8 *)"L_OBJC_INSTANCE_METHODS_",
                                          cls->classname->name, 0x11, 0);
     if (metadata != NULL) {
-        relocation = (RelocationList *)CompilerTools_AllocatePool(0x10);
+        relocation = (OLinkList *)CompilerTools_AllocatePool(0x10);
         relocation->next = relocations;
         relocations = relocation;
-        relocation->object = metadata;
+        relocation->obj = metadata;
         relocation->offset = 0x1c;
         relocation->addend = 0;
     }
     buffer[8] = CTool_EndianConvertWord32(0);
     buffer[9] = CTool_EndianConvertWord32(0);
     if (protocols != NULL) {
-        relocation = (RelocationList *)CompilerTools_AllocatePool(0x10);
+        relocation = (OLinkList *)CompilerTools_AllocatePool(0x10);
         relocation->next = relocations;
-        relocation->object = protocols;
+        relocation->obj = protocols;
         relocation->offset = 0x24;
         relocation->addend = 0;
         relocations = relocation;
@@ -1417,16 +1417,16 @@ static inline CObjCInfoRec *CObjC_RegisterInfo(TypeClass *i)
     return register_info0(i);
 }
 
-static inline void fillinstance(RelocationList *node, Object *value)
+static inline void fillinstance(OLinkList *node, Object *value)
 {
-    node->object = value;
+    node->obj = value;
     node->offset = 12;
     node->addend = 0;
 }
 
-static inline RelocationList *allocsection(void)
+static inline OLinkList *allocsection(void)
 {
-    RelocationList *n = CompilerTools_AllocatePool(16);
+    OLinkList *n = CompilerTools_AllocatePool(16);
     return n;
 }
 
@@ -1434,22 +1434,22 @@ static inline RelocationList *allocsection(void)
 
 Object *CObjC_GetProtocolInfo(CRec *protocol)
 {
-    RelocationList *previous;
+    OLinkList *previous;
     char *name;
     CObjCInfoRec *registration;
     TypeClass *protocolClass;
     struct {
-        RelocationList *first;
+        OLinkList *first;
         struct CObjCListHead {
-            RelocationList *ptr;
+            OLinkList *ptr;
         } list;
-        RelocationList *last;
+        OLinkList *last;
     } head;
     SInt32 offsets[5];
-    RelocationList *section;
-    RelocationList *node;
+    OLinkList *section;
+    OLinkList *node;
     Object *info;
-    RelocationList *first;
+    OLinkList *first;
     Object *methods;
 
     if (protocol->info == NULL) {
@@ -1466,26 +1466,26 @@ Object *CObjC_GetProtocolInfo(CRec *protocol)
             offsets[0] = CTool_EndianConvertWord32(0);
             first = allocsection();
             first->next = NULL;
-            first->object = protocolClass->objcinfo->classobject;
+            first->obj = protocolClass->objcinfo->classobject;
             first->offset = 0;
             first->addend = 0;
             node = first;
 
             offsets[1] = CTool_EndianConvertWord32(0);
-            section = (RelocationList *)CompilerTools_AllocatePool(sizeof(RelocationList));
+            section = (OLinkList *)CompilerTools_AllocatePool(sizeof(OLinkList));
             section->next = node;
             head.list.ptr = section;
-            section->object = fn_00509c40(protocol->name->name, 0x13);
+            section->obj = fn_00509c40(protocol->name->name, 0x13);
             section->offset = 4;
             section->addend = 0;
 
             offsets[2] = CTool_EndianConvertWord32(0);
             if (protocol->bases != NULL) {
                 name = CObjCModern_ConcatStrings(protocol->name->name, "_PROTOCOLS", NULL);
-                section = (RelocationList *)CompilerTools_AllocatePool(sizeof(RelocationList));
+                section = (OLinkList *)CompilerTools_AllocatePool(sizeof(OLinkList));
                 section->next = head.list.ptr;
                 head.list.ptr = section;
-                section->object = create_protocol_list(protocol->bases, name);
+                section->obj = create_protocol_list(protocol->bases, name);
                 section->offset = 8;
                 section->addend = 0;
             }
@@ -1493,7 +1493,7 @@ Object *CObjC_GetProtocolInfo(CRec *protocol)
             offsets[3] = CTool_EndianConvertWord32(0);
             methods = create_protocol_method_list(protocol, "L_OBJC_PROTOCOL_INSTANCE_METHODS_", 8, 0);
             if (methods != NULL) {
-                node = (RelocationList *)CompilerTools_AllocatePool(sizeof(RelocationList));
+                node = (OLinkList *)CompilerTools_AllocatePool(sizeof(OLinkList));
                 node->next = previous = head.list.ptr;
                 head.list.ptr = node;
                 fillinstance(node, (methods = methods));
@@ -1502,10 +1502,10 @@ Object *CObjC_GetProtocolInfo(CRec *protocol)
             (void)methods;
             offsets[4] = CTool_EndianConvertWord32(0);
             if ((info = create_protocol_method_list(protocol, "L_OBJC_PROTOCOL_CLASS_METHODS_", 7, 1)) != NULL) {
-                section = (RelocationList *)CompilerTools_AllocatePool(sizeof(RelocationList));
+                section = (OLinkList *)CompilerTools_AllocatePool(sizeof(OLinkList));
                 section->next = previous = head.list.ptr;
                 head.list.ptr = section;
-                section->object = info;
+                section->obj = info;
                 section->offset = 16;
                 section->addend = 0;
             }
@@ -1543,9 +1543,9 @@ Object *CObjC_GetProtocolInfo(CRec *protocol)
 Object *create_protocol_method_list(CRec *cls, char *nm, SInt16 val, UInt8 kind)
 {
     SInt32 count;
-    RelocationList *entry;
+    OLinkList *entry;
     char *names;
-    RelocationList *head;
+    OLinkList *head;
     MethRec *member = cls->methods;
     SInt32 size;
     char *className;
@@ -1579,13 +1579,13 @@ Object *create_protocol_method_list(CRec *cls, char *nm, SInt16 val, UInt8 kind)
         if (member != NULL) {
             do {
                 if (kind == member->isinst) {
-                    entry = (RelocationList *)CompilerTools_AllocatePool(0x10);
+                    entry = (OLinkList *)CompilerTools_AllocatePool(0x10);
                     entry->next = head;
                     head = entry;
-                    entry->object = fn_00509c40(member->selector->name->name, 0x15);
+                    entry->obj = fn_00509c40(member->selector->name->name, 0x15);
                     entry->offset = ptr - buffer;
                     entry->addend = 0;
-                    entry = (RelocationList *)CompilerTools_AllocatePool(0x10);
+                    entry = (OLinkList *)CompilerTools_AllocatePool(0x10);
                     entry->next = head;
                     head = entry;
                     data_00588507 = 1;
@@ -1595,7 +1595,7 @@ Object *create_protocol_method_list(CRec *cls, char *nm, SInt16 val, UInt8 kind)
                     names = galloc(data_00583548.size);
                     memcpy(names, *data_00583548.data, data_00583548.size);
                     data_00588507 = 0;
-                    entry->object = fn_00509c40(names, 0x14);
+                    entry->obj = fn_00509c40(names, 0x14);
                     entry->offset = ptr + 4 - buffer;
                     entry->addend = 0;
                     ptr += 8;
@@ -1614,12 +1614,12 @@ Object *create_protocol_list(ObjectList *entries, char *name)
 {
     int count;
     ObjectList *scan;
-    RelocationList *relocations;
+    OLinkList *relocations;
     int size;
     int offset;
     int lastIndex;
     int entriesSize;
-    RelocationList *relocation;
+    OLinkList *relocation;
     char *slot;
     ObjectList *entry;
     Object *object;
@@ -1653,10 +1653,10 @@ Object *create_protocol_list(ObjectList *entries, char *name)
         if (entry) {
             slot = (char *)descriptor;
             do {
-                relocation = (RelocationList *)CompilerTools_AllocatePool(sizeof(*relocation));
+                relocation = (OLinkList *)CompilerTools_AllocatePool(sizeof(*relocation));
                 relocation->next = relocations;
                 relocations = relocation;
-                relocation->object = CObjC_GetProtocolInfo((CRec *)entry->object.value);
+                relocation->obj = CObjC_GetProtocolInfo((CRec *)entry->object);
                 offset = (slot + 8) - (char *)descriptor;
                 slot += sizeof(descriptor->protocols[0]);
                 relocation->offset = offset;
@@ -1681,8 +1681,8 @@ Object *create_method_list_object(TypeClass *owner, CRec *category, MethRec *met
     ObjCMethodList *methodList;
     Object *object;
     Object *result;
-    RelocationList *relocation;
-    RelocationList *relocations;
+    OLinkList *relocation;
+    OLinkList *relocations;
     ObjCMethodEntry *entry;
     char *encoding;
     NameSpace *savedContext;
@@ -1713,14 +1713,14 @@ Object *create_method_list_object(TypeClass *owner, CRec *category, MethRec *met
             do {
                 SInt8 isInstanceMethod = method->isinst;
                 if (methodKind == isInstanceMethod) {
-                    relocation = CompilerTools_AllocatePool(sizeof(RelocationList));
+                    relocation = CompilerTools_AllocatePool(sizeof(OLinkList));
                     relocation->next = relocations;
                     relocations = relocation;
-                    relocation->object = fn_00509c40(method->selector->name->name, 0x15);
+                    relocation->obj = fn_00509c40(method->selector->name->name, 0x15);
                     relocation->offset = (char *)&entry->selector - (char *)methodList;
                     relocation->addend = 0;
 
-                    relocation = CompilerTools_AllocatePool(sizeof(RelocationList));
+                    relocation = CompilerTools_AllocatePool(sizeof(OLinkList));
                     relocation->next = relocations;
                     relocations = relocation;
 
@@ -1732,11 +1732,11 @@ Object *create_method_list_object(TypeClass *owner, CRec *category, MethRec *met
                     memcpy(encoding, *data_00583548.data, data_00583548.size);
                     data_00588507 = 0;
 
-                    relocation->object = fn_00509c40(encoding, 0x14);
+                    relocation->obj = fn_00509c40(encoding, 0x14);
                     relocation->offset = (char *)&entry->encoding - (char *)methodList;
                     relocation->addend = 0;
 
-                    relocation = CompilerTools_AllocatePool(sizeof(RelocationList));
+                    relocation = CompilerTools_AllocatePool(sizeof(OLinkList));
                     relocation->next = relocations;
                     relocations = relocation;
 
@@ -1759,7 +1759,7 @@ Object *create_method_list_object(TypeClass *owner, CRec *category, MethRec *met
                         currentNameSpace = savedContext;
                         copts.cplusplus = savedState;
                     }
-                    relocation->object = method->function;
+                    relocation->obj = method->function;
                     relocation->offset = (char *)&entry->implementation - (char *)methodList;
                     relocation->addend = 0;
                     entry++;
@@ -1777,8 +1777,8 @@ Object *create_method_list_object(TypeClass *owner, CRec *category, MethRec *met
 Object *create_ivar_list(TypeClass *cls)
 {
     char *encoding;
-    RelocationList *relocations;
-    RelocationList *relocation;
+    OLinkList *relocations;
+    OLinkList *relocation;
     ObjMemberVar *scan;
     SInt32 size;
     SInt32 count;
@@ -1812,10 +1812,10 @@ Object *create_ivar_list(TypeClass *cls)
         ivar = cls->ivars;
         entry = (IvarEntry *)(buffer + sizeof(UInt32));
         while (ivar != NULL) {
-            relocation = CompilerTools_AllocatePool(sizeof(RelocationList));
+            relocation = CompilerTools_AllocatePool(sizeof(OLinkList));
             relocation->next = relocations;
             relocations = relocation;
-            relocation->object = fn_00509c40(ivar->name->name, 0x15);
+            relocation->obj = fn_00509c40(ivar->name->name, 0x15);
             relocation->offset = (char *)&entry->name - buffer;
             relocation->addend = 0;
             ivarQualifiers = ivar->qual;
@@ -1825,10 +1825,10 @@ Object *create_ivar_list(TypeClass *cls)
             AppendGListByte(&data_00583548, 0);
             encoding = galloc(data_00583548.size);
             memcpy(encoding, *data_00583548.data, data_00583548.size);
-            relocation = CompilerTools_AllocatePool(sizeof(RelocationList));
+            relocation = CompilerTools_AllocatePool(sizeof(OLinkList));
             relocation->next = relocations;
             relocations = relocation;
-            relocation->object = fn_00509c40(encoding, 0x14);
+            relocation->obj = fn_00509c40(encoding, 0x14);
             relocation->offset = (char *)&entry->typeEncoding - buffer;
             relocation->addend = 0;
             entry->offset = CTool_EndianConvertWord32(ivar->offset);
@@ -2228,7 +2228,7 @@ void parse_category(TypeClass *owner)
     if (tk == '<') {
         category->bases = parse_protocol_list();
         for (base = category->bases; base != NULL; base = base->next) {
-            protocol = (CRec *)base->object.value;
+            protocol = (CRec *)base->object;
             for (method = protocol->methods; method != NULL; method = method->next) {
                 if (fn_00508940(category->methods, method, 1, 1) == NULL) {
                     newMethod = galloc(sizeof(*newMethod));
@@ -2295,7 +2295,7 @@ static inline CRec *FindNamedRec(void *obj, CRec *list)
 static inline ObjectList *FindObject(void *obj, ObjectList *list)
 {
     for (; list != NULL; list = list->next) {
-        if (list->object.value == (Object *)obj)
+        if (list->object == (Object *)obj)
             break;
     }
     return list;
@@ -2443,7 +2443,7 @@ ObjectList *parse_protocol_list(void)
             if (entry == NULL) {
                 entry = (ObjectList *)galloc(sizeof(ObjectList));
                 entry->next = result;
-                entry->object.value = (Object *)protocol;
+                entry->object = (Object *)protocol;
                 result = entry;
             } else {
                 CError_ReportError(ERR_PROTOCOL_ALREADY_PROTOCOL_LIST, data_00587fa0->name);
@@ -2987,9 +2987,9 @@ void CObjCModern_GenerateSymbolTableAndModule(void)
     int count1;
     int size;
     ObjCSymbolTable *symbols;
-    RelocationList *references;
+    OLinkList *references;
     Object *object;
-    RelocationList *reference;
+    OLinkList *reference;
     struct PrecTypeEntry *definition;
     ObjCDefinition *categoryDefinition;
     ObjcModule module;
@@ -3019,10 +3019,10 @@ void CObjCModern_GenerateSymbolTableAndModule(void)
         index = 0;
         definition = class_type_entries;
         while (definition != NULL) {
-            reference = (RelocationList *)CompilerTools_AllocatePool(16);
+            reference = (OLinkList *)CompilerTools_AllocatePool(16);
             reference->next = references;
             references = reference;
-            reference->object = definition->type->objcinfo->classobject;
+            reference->obj = definition->type->objcinfo->classobject;
             reference->offset = (char *)&symbols->definitions[index] - (char *)symbols;
             reference->addend = 0;
             definition = definition->next;
@@ -3030,10 +3030,10 @@ void CObjCModern_GenerateSymbolTableAndModule(void)
         }
         categoryDefinition = category_definitions;
         while (categoryDefinition != NULL) {
-            reference = (RelocationList *)CompilerTools_AllocatePool(16);
+            reference = (OLinkList *)CompilerTools_AllocatePool(16);
             reference->next = references;
             references = reference;
-            reference->object = (Object *)categoryDefinition->value;
+            reference->obj = (Object *)categoryDefinition->value;
             reference->offset = (char *)&symbols->definitions[index] - (char *)symbols;
             reference->addend = 0;
             categoryDefinition = categoryDefinition->next;
@@ -3049,16 +3049,16 @@ void CObjCModern_GenerateSymbolTableAndModule(void)
         module.version = CTool_EndianConvertWord32(5);
         module.size = CTool_EndianConvertWord32(0x10);
         module.name = CTool_EndianConvertWord32(0);
-        reference = (RelocationList *)CompilerTools_AllocatePool(16);
+        reference = (OLinkList *)CompilerTools_AllocatePool(16);
         reference->next = NULL;
         references = reference;
-        reference->object = fn_00509c40(CPrep_GetFileName(NULL, 1, 0), 0x13);
+        reference->obj = fn_00509c40(CPrep_GetFileName(NULL, 1, 0), 0x13);
         reference->offset = 8;
         reference->addend = 0;
         module.symtab = CTool_EndianConvertWord32(0);
-        reference = (RelocationList *)CompilerTools_AllocatePool(16);
+        reference = (OLinkList *)CompilerTools_AllocatePool(16);
         reference->next = references;
-        reference->object = object;
+        reference->obj = object;
         reference->offset = 0xc;
         reference->addend = 0;
         object = CParser_NewCompilerDefDataObject();
@@ -3120,7 +3120,7 @@ Object *CObjCModern_GetOrCreateFunctionObject(char *identifier, char *identifier
     found = CScope_FindObjectListInNameSpace(registration_context, name);
     if (found != NULL) {
         entry = found;
-        object = entry->object.value;
+        object = entry->object;
         if (object->type->type == TYPEFUNC)
             return object;
         CError_ReportError(ERR_IDENTIFIER_REDECLARED, name);

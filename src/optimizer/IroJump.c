@@ -176,8 +176,8 @@ SInt32 IRO_RemoveUnreachable(void)
     SInt32 changed = 0;
     IROLinear *block;
     IROLinear *entry;
-    CException **link;
-    CException *use;
+    ExceptionAction **link;
+    ExceptionAction *use;
 
     IroFlowgraph_RebuildSuccPred();
     IroJump_MarkReachable(iro_flowgraph_head);

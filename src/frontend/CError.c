@@ -1018,7 +1018,7 @@ NameSpaceList *CError_ReportError(int errorNumber, ...)
     va_list args;
 
     if (data_00588240 != NULL)
-        longjmp(data_00588240->buf, 1);
+        longjmp(data_00588240->jmpbuf, 1);
     va_start(args, errorNumber);
     diagnosticCode = errorNumber;
     CompilerTools_GetResourceCString(format, 10000, CError_GetResourceIndex(diagnosticCode));
@@ -1050,7 +1050,7 @@ void CError_ReportErrorAndUpdateToken(int errorNumber, ...)
     int errorCode;
 
     if (data_00588240 != NULL)
-        longjmp(data_00588240->buf, 1);
+        longjmp(data_00588240->jmpbuf, 1);
     va_start(args, errorNumber);
     errorCode = errorNumber;
     CError_GetErrorMessage(message, errorCode);
@@ -1069,7 +1069,7 @@ void CError_FunctionCallError(short errorCode, ObjectList *objects, ENodeList *a
     ENodeList *argument;
 
     if (data_00588240 != NULL)
-        longjmp(data_00588240->buf, 1);
+        longjmp(data_00588240->jmpbuf, 1);
 
     if ((diagnosticCode = errorCode) < 100 || diagnosticCode >= 0x174) {
         CompilerGetCString(5, resourceBuffer);
@@ -1087,17 +1087,16 @@ void CError_FunctionCallError(short errorCode, ObjectList *objects, ENodeList *a
             case 0:
                 break;
             case '*':
-                if (objects->object.value->type->type == TYPEFUNC) {
-                    append_function_name(&message, objects->object.value->nspace, objects->object.value->name,
-                                         objects->object.value->type);
-                    if ((TYPE_METHOD(objects->object.value->type)->flags & FUNC_METHOD) != 0 &&
-                        (TYPE_METHOD(objects->object.value->type)->flags & FUNC_IS_DTOR) != 0 &&
-                        (TYPE_CLASS(TYPE_METHOD(objects->object.value->type)->theclass)->flags & CLASS_HAS_VBASES) !=
-                            0 &&
+                if (objects->object->type->type == TYPEFUNC) {
+                    append_function_name(&message, objects->object->nspace, objects->object->name,
+                                         objects->object->type);
+                    if ((TYPE_METHOD(objects->object->type)->flags & FUNC_METHOD) != 0 &&
+                        (TYPE_METHOD(objects->object->type)->flags & FUNC_IS_DTOR) != 0 &&
+                        (TYPE_CLASS(TYPE_METHOD(objects->object->type)->theclass)->flags & CLASS_HAS_VBASES) != 0 &&
                         arguments != NULL)
                         arguments = arguments->next;
                 } else {
-                    CError_BufferAppendString(&message, objects->object.value->name->name);
+                    CError_BufferAppendString(&message, objects->object->name->name);
                 }
                 CError_BufferAppendChar(&message, '(');
                 argument = arguments;
@@ -1117,10 +1116,10 @@ void CError_FunctionCallError(short errorCode, ObjectList *objects, ENodeList *a
         break;
     }
     for (; objects != NULL; objects = objects->next) {
-        if (objects->object.value->otype == OT_OBJECT) {
+        if (objects->object->otype == OT_OBJECT) {
             CError_BufferAppendChar(&message, '\n');
             CError_BufferAppendChar(&message, '\'');
-            append_object_name(&message, objects->object.value);
+            append_object_name(&message, objects->object);
             CError_BufferAppendChar(&message, '\'');
         }
     }
@@ -1129,13 +1128,13 @@ void CError_FunctionCallError(short errorCode, ObjectList *objects, ENodeList *a
     report_diagnostic(diagnosticCode, message.start, 0, 0);
 }
 
-void CError_OverloadedFunctionError(Object *name, struct MatchLink *names)
+void CError_OverloadedFunctionError(Object *name, struct ObjectList *names)
 {
     StrBuf message;
     char buffer[256];
 
     if (data_00588240 != NULL)
-        longjmp(data_00588240->buf, 1);
+        longjmp(data_00588240->jmpbuf, 1);
     CompilerTools_GetResourceCString(error_message_buffer, 10000, 100);
     message.start = message.cursor = buffer;
     message.avail = 255;

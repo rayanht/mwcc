@@ -481,7 +481,7 @@ void CTemplateNew_InitRegistrationHashTables(void)
     for (registration = registration_entries; registration->name != NULL; registration++) {
         name = GetHashNameNode(registration->name);
         for (list = (ObjectList *)arguments; list != NULL; list = list->next) {
-            record = list->object.value;
+            record = list->object;
             if (record != NULL && record->name == name) {
                 switch (registration->kind) {
                     case 0:
@@ -507,7 +507,7 @@ void CTemplateNew_InitRegistrationHashTables(void)
             }
         }
         for (secondaryList = locals; secondaryList != NULL; secondaryList = secondaryList->next) {
-            secondaryRecord = secondaryList->object.value;
+            secondaryRecord = secondaryList->object;
             if (secondaryRecord != NULL && secondaryRecord->name == name) {
                 switch (registration->kind) {
                     case 0:

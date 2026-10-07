@@ -144,8 +144,8 @@ struct PendingBuffer {
     struct Object *owner; /* 0x04: CException_AddPendingBuffer sets owner; serialize_pending_buffers writes object */
     char *
         buffer; /* 0x08: CException_AddPendingBuffer copies owner->type->size bytes; serialize_pending_buffers reads char data */
-    struct RelocationList *value; /* 0x0c: CException_AddPendingBuffer copies relocation list */
-    int entryValue; /* 0x10: CException_AddPendingBuffer sets entryValue; CPrec passes it to fn_004ceab0 */
+    struct OLinkList *value; /* 0x0c: CException_AddPendingBuffer copies relocation list */
+    int entryValue;          /* 0x10: CException_AddPendingBuffer sets entryValue; CPrec passes it to fn_004ceab0 */
 };
 
 struct PrecTypeEntry {
@@ -192,7 +192,7 @@ extern ObjType *write_objtype(ObjType *x);
 extern SInt32 write_enum_const(ObjEnumConst *p);
 extern UInt32 write_prec_recs(struct IStmtRec *recs, SInt16 count);
 extern SInt32 write_enode(ENode *node);
-extern SInt32 serialize_cpsi_list(struct CException *x);
+extern SInt32 serialize_cpsi_list(struct ExceptionAction *x);
 extern UInt32 write_typeclass(TypeClass *node);
 extern TemplateFunction *write_template_function(struct TemplateFunction *x);
 extern unsigned int write_prec_input_record(struct TemplateFriend *record);
@@ -222,7 +222,7 @@ extern unsigned int align_to_four_byte_boundary(void);
 extern void fn_004e0010(void *data, UInt32 size);
 extern void patch_hash_name_reference(unsigned int value, HashNameNode *record);
 extern void write_serialized_buckets(void);
-extern unsigned int serialize_pending_object_class_list(struct PendingObjectClass *entry);
+extern unsigned int serialize_pending_object_class_list(struct CallbackAction *entry);
 extern unsigned int write_csomrefnode_list(struct CSOMRefNode *record);
 extern unsigned int serialize_reference_type_entries(unsigned int *entries, short count);
 extern unsigned int write_precompiled_expression_record(struct InlineSwitchData *record);
@@ -260,8 +260,8 @@ extern struct Type *sel_type;
 extern char *data_00587e84;
 
 extern unsigned int CException_HashType(Type *a0);
-extern void CException_AddPendingBuffer(Object *owner, const void *buffer, RelocationList *value, int entryValue);
-extern RelocationList *copy_relocation_list(RelocationList *p);
+extern void CException_AddPendingBuffer(Object *owner, const void *buffer, OLinkList *value, int entryValue);
+extern OLinkList *copy_relocation_list(OLinkList *p);
 extern void CExcept_Terminate(void);
 extern void CException_ResetPrecompiledState(UInt8 c);
 

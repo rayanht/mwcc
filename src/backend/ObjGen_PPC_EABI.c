@@ -757,7 +757,7 @@ void ObjGen_PPC_EABI_EmitFloatObject(Object *node)
     object_data_size += object->type->size;
 }
 
-void emit_object_data_and_relocations(Object *func, const char *data, RelocationList *list, SInt32 size, Boolean flag)
+void emit_object_data_and_relocations(Object *func, const char *data, OLinkList *list, SInt32 size, Boolean flag)
 {
     ObjGenSection *buffer;
     Object *object;
@@ -781,7 +781,7 @@ void emit_object_data_and_relocations(Object *func, const char *data, Relocation
     CompilerTools_AppendGListData(&buffer->buffer, data, info->size);
     queue = buffer->relocations;
     while (list != NULL) {
-        object = list->object;
+        object = list->obj;
         queue->relocationCount++;
         node = galloc(0x18);
         node->symbol = BE_symbol_GetOrCreateFunctionObjectSymbol(object);
@@ -1916,7 +1916,7 @@ char *ObjGen_PPC_EABI_GetSectionName(struct ObjGenSection *descriptor)
     return NULL;
 }
 
-unsigned int ObjGen_PPC_EABI_EmitObject(Object *object, const void *context, RelocationList *value, unsigned int flags)
+unsigned int ObjGen_PPC_EABI_EmitObject(Object *object, const void *context, OLinkList *value, unsigned int flags)
 {
     if (copts.filesyminfo != 0 && object->name->name[0] != '@') {
         if (DAT_0058849e == 0) {
@@ -1932,7 +1932,7 @@ unsigned int ObjGen_PPC_EABI_EmitObject(Object *object, const void *context, Rel
         allocate_object_storage(object, flags, 1);
 }
 
-void ObjGen_PPC_EABI_EmitObjectWithDebugEntry(Object *object, const void *data, RelocationList *attributes,
+void ObjGen_PPC_EABI_EmitObjectWithDebugEntry(Object *object, const void *data, OLinkList *attributes,
                                               unsigned int alignment)
 {
     if (copts.filesyminfo) {
@@ -2186,7 +2186,7 @@ void emit_dwarf_arguments_and_locals(void)
     gpr = 3;
     fpr = 1;
     while (entry != NULL) {
-        object = entry->object.value;
+        object = entry->object;
         if (object->u.var.info->used != 0 && object->name->name[0] != '@') {
             onStack = 1;
             type = object->type;
@@ -2227,14 +2227,14 @@ void emit_dwarf_arguments_and_locals(void)
     entry = locals;
     while (entry != NULL) {
         newEntry = (ObjectList *)galloc(sizeof(ObjectList));
-        newEntry->object.value = entry->object.value;
+        newEntry->object = entry->object;
         newEntry->next = reversed;
         reversed = newEntry;
         entry = entry->next;
     }
     localEntry = reversed;
     while (localEntry != NULL) {
-        localObject = localEntry->object.value;
+        localObject = localEntry->object;
         if (localObject->u.var.info->used != 0 && localObject->name->name[0] != '@') {
             DWARF_AddLocalVariable(localObject, fn_004a9f90());
         }

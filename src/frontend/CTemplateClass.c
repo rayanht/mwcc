@@ -72,7 +72,7 @@ unsigned char CTemplateClass_InstantiateClass(TypeClass *theclass)
     struct TemplateAction *declaration;
     TemplClass *templateClass;
     Type *instantiatedType;
-    struct CParseSave *savedState;
+    struct ParserTryBlock *savedState;
     struct DefAction *objectMapping;
     Object *object;
     ENode *initializer;

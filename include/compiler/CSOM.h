@@ -137,12 +137,6 @@ struct SOMVTable {
     UInt8 isDirectBase;
 };
 #pragma options align = reset
-struct ScopeSearch {
-    struct NameSpace *owner;
-    struct NameSpaceName *nextName;
-    struct NameSpaceObjectList *nextObject;
-    SInt32 bucketIndex;
-};
 extern ENode *create_glue_objectrefnode(TypeClass *cls, SInt32 id, Object *obj);
 extern Boolean CSOM_004e3cd0(Type *ftype);
 extern ENode *CSOM_AppendPointerArgCall(ENode *node, ENodeList *spec);

@@ -48,7 +48,7 @@
 #include "compiler/Types.h"
 #include <string.h>
 
-static struct CInit_StrNode *string_cache;
+static struct PooledString *string_cache;
 static struct NameEntry *pooled_strings;
 static struct NameEntry *pooled_wstrings;
 static struct InitListItem *tentative_init_list;
@@ -87,10 +87,9 @@ void fn_004ceab0(Object *object, void *buffer, void *args, SInt32 size)
     emit_object(object, buffer, args, size, 0);
 }
 
-void emit_object(Object *object, const void *buffer, struct RelocationList *args, unsigned int options,
-                 Boolean useAlternate)
+void emit_object(Object *object, const void *buffer, struct OLinkList *args, unsigned int options, Boolean useAlternate)
 {
-    RelocationList *argument;
+    OLinkList *argument;
     unsigned int savedQual = object->qual;
 
     if (cprep_cu[224] == 1U) {
@@ -100,7 +99,7 @@ void emit_object(Object *object, const void *buffer, struct RelocationList *args
     object->flags |= OBJECT_DEFINED;
     if (!func_errors) {
         for (argument = args; argument; argument = argument->next)
-            CInline_0050f240(argument->object);
+            CInline_0050f240(argument->obj);
         if (copts.filesyminfo)
             fn_0043f1f0(&function_fileinfo);
         if (useAlternate)
@@ -290,15 +289,15 @@ NameEntry *CInit_DeclarePooledString(const char *name, SInt32 length, SInt8 unsi
 
 Object *CInit_DeclareString(const char *data, UInt32 length, UInt8 kind1, UInt8 kind2)
 {
-    CInit_StrNode *node;
-    CInit_StrNode *cached;
+    PooledString *node;
+    PooledString *cached;
     Object *object;
 
     if (copts.faf == 0) {
         for (cached = string_cache; cached != NULL; cached = cached->next) {
-            if (cached->length == length && cached->unsignedChar == kind1 && cached->wideChar == kind2) {
+            if (cached->size == length && cached->ispascal == kind1 && cached->iswide == kind2) {
                 if (memcmp(cached->data, data, length) == 0)
-                    return cached->object;
+                    return cached->obj;
             }
         }
     }
@@ -317,14 +316,14 @@ Object *CInit_DeclareString(const char *data, UInt32 length, UInt8 kind1, UInt8 
     else
         emit_object(object, data, NULL, object->type->size, 0);
 
-    node = galloc(sizeof(CInit_StrNode));
+    node = galloc(sizeof(PooledString));
     node->next = string_cache;
     string_cache = node;
-    node->object = object;
-    node->unk08 = 0;
-    node->length = length;
-    node->unsignedChar = kind1;
-    node->wideChar = kind2;
+    node->obj = object;
+    node->offset = 0;
+    node->size = length;
+    node->ispascal = kind1;
+    node->iswide = kind2;
     node->data = galloc(length);
     memcpy(node->data, data, length);
     return object;
@@ -335,11 +334,11 @@ static Boolean needs_init(TypeClass *x)
     return CClass_Constructor(x) || CClass_Destructor(x);
 }
 
-static inline void CInitPushSave(CInitSave *save, Object *obj)
+static inline void CInitPushSave(InitInfo *save, Object *obj)
 {
     memclrw(save, sizeof(*save));
     save->obj = obj;
-    save->previous = cinit_state;
+    save->next = cinit_state;
     cinit_state = save;
 }
 
@@ -354,7 +353,7 @@ void CInit_InitializeData(Object *obj)
     InitListItem *p;
     Boolean flag;
     UInt8 kind;
-    struct CInitSave ctx;
+    struct InitInfo ctx;
     CInt64 v;
 
     if (tk == ':') {
@@ -398,7 +397,7 @@ void CInit_InitializeData(Object *obj)
                 if (b) {
                     CInitPushSave(&ctx, obj);
                     initialize_class_array(obj, a, 1);
-                    cinit_state = ctx.previous;
+                    cinit_state = ctx.next;
                     flag = 1;
                 }
                 fn_00476e60(TYPE_CLASS(a));
@@ -409,7 +408,7 @@ void CInit_InitializeData(Object *obj)
             if (b) {
                 CInitPushSave(&ctx, obj);
                 initialize_class_object(obj, obj->type, NULL, 0, 0);
-                cinit_state = ctx.previous;
+                cinit_state = ctx.next;
                 flag = 1;
             } else {
                 fn_00476e60(TYPE_CLASS(obj->type));
@@ -457,18 +456,18 @@ void CInit_InitializeData(Object *obj)
     if ((ty = obj->type)->type == TYPECLASS && initialize_class_object(obj, ty, NULL, 0, 1)) {
         CanAllocObject(obj->type);
         emit_object(obj, NULL, NULL, obj->type->size, 0);
-        cinit_state = ctx.previous;
+        cinit_state = ctx.next;
         return;
     }
     if (obj->type->type == TYPEPOINTER && (TYPE_POINTER(obj->type)->qual & Q_REFERENCE)) {
         if (initialize_from_assignment(obj, 0)) {
-            cinit_state = ctx.previous;
+            cinit_state = ctx.next;
             return;
         }
     }
     if ((a = obj->type)->size == 0 && a->type != TYPEARRAY) {
         CError_ReportError(ERR_DATA_TYPE_INCOMPLETE);
-        cinit_state = ctx.previous;
+        cinit_state = ctx.next;
         return;
     }
     if (copts.cplusplus != 0)
@@ -482,7 +481,7 @@ void CInit_InitializeData(Object *obj)
             InitExpr_Register(result, obj);
         }
     }
-    cinit_state = ctx.previous;
+    cinit_state = ctx.next;
 }
 
 static inline char classify(Type *type)
@@ -513,7 +512,7 @@ static inline char classify(Type *type)
 }
 void CInit_InitializeStaticData(Object *initObject, void (*output)(ENode *))
 {
-    CInitSave context;
+    InitInfo context;
     InitializerData initializer;
     short needsConstruction;
     char classification;
@@ -557,18 +556,18 @@ void CInit_InitializeStaticData(Object *initObject, void (*output)(ENode *))
     }
     memclrw(&context, 56);
     context.obj = initObject;
-    cinit_state = (context.previous = cinit_state, &context);
+    cinit_state = (context.next = cinit_state, &context);
     context.useEmitCallback = 1;
-    context.emit = output;
+    context.init_expr_register_cb = output;
     if (initObject->type->type == TYPECLASS && initialize_class_object(initObject, initObject->type, NULL, 0, 1) != 0) {
         CanAllocObject(initObject->type);
         emit_object(initObject, NULL, NULL, initObject->type->size, 0);
-        cinit_state = context.previous;
+        cinit_state = context.next;
         return;
     }
     if (initObject->type->type == TYPEPOINTER && (((TypePointer *)initObject->type)->qual & Q_REFERENCE) != 0 &&
         initialize_from_assignment(initObject, 0) != 0) {
-        cinit_state = context.previous;
+        cinit_state = context.next;
         return;
     }
     if (tk != '=' && (tk != '(' || copts.cplusplus == 0)) {
@@ -586,7 +585,7 @@ void CInit_InitializeStaticData(Object *initObject, void (*output)(ENode *))
                         needsConstruction = 0;
                     if ((char)needsConstruction != 0) {
                         initialize_class_array(initObject, arrayElement, 1);
-                        cinit_state = context.previous;
+                        cinit_state = context.next;
                         return;
                     }
                     fn_00476e60(TYPE_CLASS(arrayElement));
@@ -608,18 +607,18 @@ void CInit_InitializeStaticData(Object *initObject, void (*output)(ENode *))
     } else {
         CError_ReportError(ERR_DATA_TYPE_INCOMPLETE);
     }
-    cinit_state = context.previous;
+    cinit_state = context.next;
 }
-static inline void CInit_SetupSave(CInitSave *save, Object *obj, void (*emit)(ENode *),
+static inline void CInit_SetupSave(InitInfo *save, Object *obj, void (*emit)(ENode *),
                                    void (*destruct)(Type *, Object *, SInt32, SInt32))
 {
     memclrw(save, sizeof(*save));
     save->obj = obj;
-    save->previous = cinit_state;
+    save->next = cinit_state;
     cinit_state = save;
     save->emitObject = obj;
-    save->emitNode = emit;
-    save->emitValue = (ENode * (*)(Type *, Object *, SInt32, SInt32)) destruct;
+    save->insert_expr_cb = emit;
+    save->register_object_cb = (ENode * (*)(Type *, Object *, SInt32, SInt32)) destruct;
 }
 
 void CInit_InitializeAutoData(Object *obj, void (*emitInitializer)(ENode *),
@@ -629,7 +628,7 @@ void CInit_InitializeAutoData(Object *obj, void (*emitInitializer)(ENode *),
     Type *elementType;
     Boolean simpleInitialization;
     Boolean hasConstructor;
-    CInitSave save;
+    InitInfo save;
 
     switch ((SInt8)type->type) {
         case TYPESTRUCT:
@@ -672,12 +671,12 @@ void CInit_InitializeAutoData(Object *obj, void (*emitInitializer)(ENode *),
     CInit_SetupSave(&save, obj, emitInitializer, registerDestructor);
 
     if (obj->type->type == TYPECLASS && CInit_004d20e0(obj->type, NULL, 0, 1) != 0) {
-        cinit_state = save.previous;
+        cinit_state = save.next;
         return;
     }
     if ((type = obj->type)->type == TYPEPOINTER && (TYPE_POINTER(type)->qual & Q_REFERENCE) != 0 &&
         initialize_from_assignment(obj, 1) != 0) {
-        cinit_state = save.previous;
+        cinit_state = save.next;
         return;
     }
     if (tk != '=' && (tk != '(' || copts.cplusplus == 0)) {
@@ -689,7 +688,7 @@ void CInit_InitializeAutoData(Object *obj, void (*emitInitializer)(ENode *),
                     CClass_Constructor(TYPE_CLASS(elementType)) || CClass_Destructor((TypeClass *)elementType);
                 if (hasConstructor) {
                     initialize_class_array(obj, elementType, 0);
-                    cinit_state = save.previous;
+                    cinit_state = save.next;
                     return;
                 }
                 fn_00476e60(TYPE_CLASS(elementType));
@@ -713,7 +712,7 @@ void CInit_InitializeAutoData(Object *obj, void (*emitInitializer)(ENode *),
     }
     if (obj->type->type == TYPECLASS && CClass_Destructor((TypeClass *)obj->type) != NULL)
         registerDestructor(obj->type, obj, 0, 0);
-    cinit_state = save.previous;
+    cinit_state = save.next;
 }
 
 void fn_004cfc50(Object *object)
@@ -886,13 +885,13 @@ Boolean initialize_from_assignment(Object *obj, Boolean flag)
                 if (data_00581ba0 != NULL) {
                     CError_ASSERT(3050, data_00581ba4 == 0);
                     temporary = create_temp_object(data_00581ba0->node->data.temp.type);
-                    cinit_state->emitValue(data_00581ba0->node->data.temp.type, temporary, 0, 0);
+                    cinit_state->register_object_cb(data_00581ba0->node->data.temp.type, temporary, 0, 0);
                     data_00581ba0->node = create_objectrefnode(temporary);
                 }
             }
-            cinit_state->emitNode(makediadicnode(CExpr_New_EINDIRECT_Node(obj), initializer, EASS));
+            cinit_state->insert_expr_cb(makediadicnode(CExpr_New_EINDIRECT_Node(obj), initializer, EASS));
         } else {
-            cinit_state->callback = emit_indirect_assignment;
+            cinit_state->expr_cb = emit_indirect_assignment;
             cinit_state->bufferSize = bufferSize = obj->type->size;
             if (bufferSize == 0)
                 bufferSize = 0x200;
@@ -903,10 +902,10 @@ Boolean initialize_from_assignment(Object *obj, Boolean flag)
             memclrw(cinit_state->buffer, bufferSize);
             init_int_or_relocation(obj->type, initializer);
             CError_ASSERT(3091, obj->type->size == cinit_state->bufferSize);
-            if (cinit_state->nodes != NULL || !CInit_IsZero(cinit_state->buffer, obj->type->size)) {
+            if (cinit_state->list != NULL || !CInit_IsZero(cinit_state->buffer, obj->type->size)) {
                 CanAllocObject(obj->type);
                 (void)obj->type->size;
-                emit_object(obj, cinit_state->buffer, cinit_state->nodes, obj->type->size, 0);
+                emit_object(obj, cinit_state->buffer, cinit_state->list, obj->type->size, 0);
             } else {
                 CanAllocObject(obj->type);
                 (void)obj->type->size;
@@ -965,7 +964,7 @@ void emit_indirect_assignment(Type *type, ENode *expr, Boolean flag)
         return;
     }
     TPTR_TARGET(node->rtype) = type;
-    off = cinit_state->offset;
+    off = cinit_state->expr_offset;
     if (off != 0) {
         node = makediadicnode(node, intconstnode((Type *)&stunsignedlong, off), EADD);
     }
@@ -973,7 +972,7 @@ void emit_indirect_assignment(Type *type, ENode *expr, Boolean flag)
     node->rtype = type;
     result = makediadicnode(node, expr, EASS);
     if (cinit_state->useEmitCallback != 0) {
-        cinit_state->emit(result);
+        cinit_state->init_expr_register_cb(result);
     } else {
         InitExpr_Register(result, cinit_state->obj);
     }
@@ -1096,7 +1095,7 @@ void initialize_class_array(Object *obj, Type *type, Boolean staticInit)
                 if (ctor != NULL) {
                     node = CExpr_ConstructObject(type, node, NULL, 0, 1, 0, 1, 1);
                 }
-                cinit_state->emitNode(node);
+                cinit_state->insert_expr_cb(node);
                 if (dtor != NULL) {
                     CExcept_RegisterDestructorObject(obj, offset, dtor, 1);
                 }
@@ -1148,7 +1147,7 @@ void initialize_class_array(Object *obj, Type *type, Boolean staticInit)
                                     create_objectrefnode(registrationObject), NULL);
             }
             if (cinit_state->useEmitCallback != 0) {
-                cinit_state->emit(node);
+                cinit_state->init_expr_register_cb(node);
             } else {
                 InitExpr_Register(node, obj);
             }
@@ -1253,7 +1252,7 @@ ENode *CInit_004d0ae0(Object *obj, Type *type, UInt32 qual, void (*contextOffset
 
     do {
         objectNode = NULL;
-        cinit_state->callback = contextOffset;
+        cinit_state->expr_cb = contextOffset;
         if (tk == '(') {
             if (type->type == TYPEARRAY)
                 CError_ReportError(ERR_ILLEGAL_INITIALIZATION);
@@ -1299,8 +1298,8 @@ ENode *CInit_004d0ae0(Object *obj, Type *type, UInt32 qual, void (*contextOffset
                     initialize_data_by_type(type, obj->qual, 1);
                     if (obj->type->size != (size = cinit_state->bufferSize))
                         CError_FATAL(2567);
-                    if (cinit_state->nodes != NULL || !IsZeroed(cinit_state->buffer, size))
-                        emit_object(obj, cinit_state->buffer, cinit_state->nodes, size = obj->type->size, 0);
+                    if (cinit_state->list != NULL || !IsZeroed(cinit_state->buffer, size))
+                        emit_object(obj, cinit_state->buffer, cinit_state->list, size = obj->type->size, 0);
                     else
                         emit_object(obj, NULL, NULL, size = obj->type->size, 0);
                     return objectNode;
@@ -1391,11 +1390,11 @@ ENode *CInit_004d0ae0(Object *obj, Type *type, UInt32 qual, void (*contextOffset
             CError_FATAL(2684);
         CanAllocObject(obj->type);
         inlineData = !cinit_state->hasRuntimeInitialization && is_const_object(targetObject);
-        if (cinit_state->nodes != NULL || !IsZeroed(cinit_state->buffer, obj->type->size)) {
+        if (cinit_state->list != NULL || !IsZeroed(cinit_state->buffer, obj->type->size)) {
             if (inlineData)
-                emit_object(obj, cinit_state->buffer, cinit_state->nodes, obj->type->size, 1);
+                emit_object(obj, cinit_state->buffer, cinit_state->list, obj->type->size, 1);
             else
-                emit_object(obj, cinit_state->buffer, cinit_state->nodes, obj->type->size, 0);
+                emit_object(obj, cinit_state->buffer, cinit_state->list, obj->type->size, 0);
         } else {
             if (inlineData)
                 emit_object(obj, NULL, NULL, obj->type->size, 1);
@@ -1416,7 +1415,7 @@ void CInit_004d1170(Type *type, ENode *expr, Boolean flag)
     SInt32 offset;
 
     if (flag) {
-        CInit_004d20e0(type, expr, cinit_state->offset, 0);
+        CInit_004d20e0(type, expr, cinit_state->expr_offset, 0);
     } else {
         if (type->type == TYPEARRAY && (type->size & 1)) {
             arrayType = (TypePointer *)galloc(sizeof(TypePointer));
@@ -1430,7 +1429,7 @@ void CInit_004d1170(Type *type, ENode *expr, Boolean flag)
             return;
         }
         TYPE_POINTER(node->rtype)->target = type;
-        offset = cinit_state->offset;
+        offset = cinit_state->expr_offset;
         if (offset != 0) {
             node = makediadicnode(node, intconstnode((Type *)&stunsignedlong, offset), EADD);
         }
@@ -1440,7 +1439,7 @@ void CInit_004d1170(Type *type, ENode *expr, Boolean flag)
         if (copts.cplusplus == 0) {
             CError_ReportError(ERR_ILLEGAL_CONSTANT_EXPRESSION);
         }
-        cinit_state->emitNode(node);
+        cinit_state->insert_expr_cb(node);
     }
 }
 
@@ -1451,7 +1450,7 @@ void initialize_object_at_offset(Type *type, ENode *initializer, Boolean is_clas
 
     cinit_state->hasRuntimeInitialization = 1;
     if (is_class) {
-        initialize_class_object(cinit_state->obj, type, initializer, cinit_state->offset, 0);
+        initialize_class_object(cinit_state->obj, type, initializer, cinit_state->expr_offset, 0);
     } else {
         node = create_objectrefnode(cinit_state->obj);
         if (TYPE(node->rtype)->type != TYPEPOINTER) {
@@ -1459,14 +1458,14 @@ void initialize_object_at_offset(Type *type, ENode *initializer, Boolean is_clas
             return;
         }
         TYPE_POINTER(node->rtype)->target = type;
-        offset = cinit_state->offset;
+        offset = cinit_state->expr_offset;
         if (offset != 0)
             node = makediadicnode(node, intconstnode((Type *)&stunsignedlong, offset), EADD);
         node = makemonadicnode(node, EINDIRECT);
         node->rtype = type;
         node = makediadicnode(node, initializer, EASS);
         if (cinit_state->useEmitCallback != 0)
-            cinit_state->emit(node);
+            cinit_state->init_expr_register_cb(node);
         else
             InitExpr_Register(node, cinit_state->obj);
     }
@@ -1517,7 +1516,7 @@ void initialize_data_by_type(Type *node, UInt32 mode, Boolean flag)
                 ty = TYPE_ENUM(ty)->enumtype;
             n = oldassignmentpromotion(ctx, ty, 0, 1);
             if (n->type == EINTCONST)
-                CInit_004d3620(TYPE_BITFIELD(node), cinit_state->buffer + cinit_state->offset, n->data.intval);
+                CInit_004d3620(TYPE_BITFIELD(node), cinit_state->buffer + cinit_state->expr_offset, n->data.intval);
             else
                 CError_ReportError(ERR_ILLEGAL_CONSTANT_EXPRESSION);
             if (braced) {
@@ -1569,7 +1568,7 @@ void initialize_class_data(Type *t, Boolean flag)
             break;
     if (m == NULL && CClass_Constructor(TYPE_CLASS(t)) == NULL && (CClass_Destructor(TYPE_CLASS(t)) == NULL || brace)) {
         if ((m = TYPE_CLASS(t)->ivars) != NULL) {
-            base = cinit_state->offset;
+            base = cinit_state->expr_offset;
             for (;;) {
                 if (tk == '}')
                     break;
@@ -1577,7 +1576,7 @@ void initialize_class_data(Type *t, Boolean flag)
                     CError_ReportError(ERR_TOO_MANY_INITIALIZERS);
                     break;
                 }
-                cinit_state->offset = base + m->offset;
+                cinit_state->expr_offset = base + m->offset;
                 initialize_data_by_type(m->type, m->qual, 0);
                 if (tk == '}')
                     break;
@@ -1609,7 +1608,7 @@ void initialize_class_data(Type *t, Boolean flag)
             CError_ReportError(ERR_ILLEGAL_INITIALIZATION);
         CInit_004d1d90(t, oldassignmentpromotion(conv_assignment_expression(), t, 0, 1));
     }
-    cinit_state->offset = base + t->size;
+    cinit_state->expr_offset = base + t->size;
     if (tk == '}' && brace)
         tk = CPrepTokenizer_GetNextToken();
 }
@@ -1658,11 +1657,11 @@ void initialize_struct(Type *type, Boolean brace)
         hasBrace = 1;
         tk = CPrepTokenizer_GetNextToken();
     }
-    baseOffset = cinit_state->offset;
+    baseOffset = cinit_state->expr_offset;
     for (;;) {
         if (tk == '}')
             break;
-        cinit_state->offset = baseOffset + member->offset;
+        cinit_state->expr_offset = baseOffset + member->offset;
         if (member->type->size == 0 && member->type->type == TYPEARRAY) {
             CError_ReportError(ERR_TOO_MANY_INITIALIZERS);
             break;
@@ -1690,7 +1689,7 @@ void initialize_struct(Type *type, Boolean brace)
         }
         tk = CPrepTokenizer_GetNextToken();
     }
-    cinit_state->offset = baseOffset + type->size;
+    cinit_state->expr_offset = baseOffset + type->size;
     if (tk == '}' && hasBrace) {
         tk = CPrepTokenizer_GetNextToken();
     }
@@ -1745,12 +1744,13 @@ void initialize_array_data_by_type(TypePointer *tptr, UInt32 mode, Boolean flag)
                     CError_ReportError(ERR_TOO_MANY_INITIALIZERS);
                 token_value_kind_or_string_length = tptr->size;
             }
-            memcpy(cinit_state->buffer + cinit_state->offset, string_token_data, token_value_kind_or_string_length);
-            cinit_state->offset += tptr->size;
+            memcpy(cinit_state->buffer + cinit_state->expr_offset, string_token_data,
+                   token_value_kind_or_string_length);
+            cinit_state->expr_offset += tptr->size;
         } else {
             tptr->size = token_value_kind_or_string_length;
-            write_buffer_at_offset(string_token_data, cinit_state->offset, token_value_kind_or_string_length);
-            cinit_state->offset += token_value_kind_or_string_length;
+            write_buffer_at_offset(string_token_data, cinit_state->expr_offset, token_value_kind_or_string_length);
+            cinit_state->expr_offset += token_value_kind_or_string_length;
         }
         tk = CPrepTokenizer_GetNextToken();
         if (braced) {
@@ -1767,17 +1767,17 @@ void initialize_array_data_by_type(TypePointer *tptr, UInt32 mode, Boolean flag)
         ctor = 1;
     else
         ctor = 0;
-    start = cinit_state->offset, i = 0;
+    start = cinit_state->expr_offset, i = 0;
     for (;;) {
         if (tk == '}') {
         finish:
             if (tptr->size) {
                 if (ctor) {
                     for (; tptr->size > i * elemSize; i++) {
-                        cinit_state->offset = start + i * elemSize;
-                        if ((callback = cinit_state->callback) != NULL) {
+                        cinit_state->expr_offset = start + i * elemSize;
+                        if ((callback = cinit_state->expr_cb) != NULL) {
                             callback(tptr->target, NULL, 1);
-                            cinit_state->callbackInvoked = 1;
+                            cinit_state->expr_cb_called = 1;
                         } else
                             CError_ReportError(ERR_ILLEGAL_INITIALIZATION);
                     }
@@ -1785,18 +1785,18 @@ void initialize_array_data_by_type(TypePointer *tptr, UInt32 mode, Boolean flag)
             } else
                 tptr->size = i * elemSize;
             start += tptr->size;
-            cinit_state->offset = start;
+            cinit_state->expr_offset = start;
             if (braced)
                 tk = CPrepTokenizer_GetNextToken();
             return;
         }
         if (tptr->size == 0) {
-            cinit_state->offset = start + i * elemSize;
-            write_buffer_at_offset(NULL, cinit_state->offset, elemSize);
+            cinit_state->expr_offset = start + i * elemSize;
+            write_buffer_at_offset(NULL, cinit_state->expr_offset, elemSize);
             if (ctor) {
-                if (cinit_state->callback) {
-                    cinit_state->callback(tptr->target, conv_assignment_expression(), 1);
-                    cinit_state->callbackInvoked = 1;
+                if (cinit_state->expr_cb) {
+                    cinit_state->expr_cb(tptr->target, conv_assignment_expression(), 1);
+                    cinit_state->expr_cb_called = 1;
                 } else
                     CError_ReportError(ERR_ILLEGAL_INITIALIZATION);
             } else
@@ -1806,11 +1806,11 @@ void initialize_array_data_by_type(TypePointer *tptr, UInt32 mode, Boolean flag)
                 i--;
                 CError_ReportError(ERR_TOO_MANY_INITIALIZERS);
             }
-            cinit_state->offset = start + i * elemSize;
+            cinit_state->expr_offset = start + i * elemSize;
             if (ctor) {
-                if (cinit_state->callback) {
-                    cinit_state->callback(tptr->target, conv_assignment_expression(), 1);
-                    cinit_state->callbackInvoked = 1;
+                if (cinit_state->expr_cb) {
+                    cinit_state->expr_cb(tptr->target, conv_assignment_expression(), 1);
+                    cinit_state->expr_cb_called = 1;
                 } else
                     CError_ReportError(ERR_ILLEGAL_INITIALIZATION);
             } else
@@ -1833,9 +1833,9 @@ void initialize_array_data_by_type(TypePointer *tptr, UInt32 mode, Boolean flag)
 
 static void CInit_DefaultInit(Type *type, ENode *node)
 {
-    if (cinit_state->callback != NULL) {
-        (*cinit_state->callback)(type, node, 0);
-        cinit_state->callbackInvoked = 1;
+    if (cinit_state->expr_cb != NULL) {
+        (*cinit_state->expr_cb)(type, node, 0);
+        cinit_state->expr_cb_called = 1;
     } else {
         CError_ReportError(ERR_ILLEGAL_CONSTANT_EXPRESSION);
     }
@@ -1850,19 +1850,19 @@ void CInit_004d1d90(Type *type, ENode *node)
 
         case TYPEFLOAT:
             if (node->type == EFLOATCONST)
-                CMach_InitFloatMem(type, node->data.floatval, cinit_state->buffer + cinit_state->offset);
+                CMach_InitFloatMem(type, node->data.floatval, cinit_state->buffer + cinit_state->expr_offset);
             else
                 CInit_DefaultInit(type, node);
-            cinit_state->offset += type->size;
+            cinit_state->expr_offset += type->size;
             return;
 
         case TYPEENUM:
             if (node->type == EINTCONST)
                 CMach_InitIntMem(TYPE_ENUM(type)->enumtype, node->data.intval,
-                                 cinit_state->buffer + cinit_state->offset);
+                                 cinit_state->buffer + cinit_state->expr_offset);
             else
                 CInit_DefaultInit(type, node);
-            cinit_state->offset += type->size;
+            cinit_state->expr_offset += type->size;
             return;
 
         case TYPEPOINTER:
@@ -1871,10 +1871,11 @@ void CInit_004d1d90(Type *type, ENode *node)
 
         case TYPEMEMBERPOINTER:
             if (node->type == EINTCONST)
-                CMach_InitIntMem((Type *)&stsignedlong, node->data.intval, cinit_state->buffer + cinit_state->offset);
+                CMach_InitIntMem((Type *)&stsignedlong, node->data.intval,
+                                 cinit_state->buffer + cinit_state->expr_offset);
             else
                 CInit_DefaultInit(type, node);
-            cinit_state->offset += type->size;
+            cinit_state->expr_offset += type->size;
             return;
 
         case TYPESTRUCT:
@@ -1895,48 +1896,48 @@ void CInit_004d1d90(Type *type, ENode *node)
 void init_int(Type *type, ENode *node)
 {
     if (node->type == EINTCONST) {
-        CMach_InitIntMem(type, node->data.intval, cinit_state->buffer + cinit_state->offset);
+        CMach_InitIntMem(type, node->data.intval, cinit_state->buffer + cinit_state->expr_offset);
     } else if (node->type == ETYPCON && node->data.monadic->rtype->type == TYPEPOINTER &&
                node->rtype->size == stunsignedlong.size &&
                (copts.cplusplus != 0 || copts.rejectZeroLengthArrayMembers == 0)) {
         init_int_or_relocation(node->data.monadic->rtype, node->data.monadic);
     } else {
-        if (cinit_state->callback != NULL) {
-            cinit_state->callback(type, node, 0);
-            cinit_state->callbackInvoked = 1;
+        if (cinit_state->expr_cb != NULL) {
+            cinit_state->expr_cb(type, node, 0);
+            cinit_state->expr_cb_called = 1;
         } else {
             CError_ReportError(ERR_ILLEGAL_CONSTANT_EXPRESSION);
         }
     }
-    cinit_state->offset += type->size;
+    cinit_state->expr_offset += type->size;
 }
 
 void init_int_or_relocation(Type *type, ENode *expression)
 {
-    RelocationList *relocation;
+    OLinkList *relocation;
     Object *object;
     CInt64 value;
 
     if (evaluate_int_or_relocation(expression, &object, &value)) {
         if (object != NULL) {
-            relocation = CompilerTools_AllocatePool(sizeof(RelocationList));
-            relocation->next = cinit_state->nodes;
-            relocation->object = object;
+            relocation = CompilerTools_AllocatePool(sizeof(OLinkList));
+            relocation->next = cinit_state->list;
+            relocation->obj = object;
             relocation->addend = value.lo;
-            relocation->offset = cinit_state->offset;
-            cinit_state->nodes = relocation;
+            relocation->offset = cinit_state->expr_offset;
+            cinit_state->list = relocation;
         } else {
-            CMach_InitIntMem((Type *)&stunsignedlong, value, cinit_state->buffer + cinit_state->offset);
+            CMach_InitIntMem((Type *)&stunsignedlong, value, cinit_state->buffer + cinit_state->expr_offset);
         }
     } else {
-        if (cinit_state->callback != NULL) {
-            cinit_state->callback(type, expression, 0);
-            cinit_state->callbackInvoked = 1;
+        if (cinit_state->expr_cb != NULL) {
+            cinit_state->expr_cb(type, expression, 0);
+            cinit_state->expr_cb_called = 1;
         } else {
             CError_ReportError(ERR_ILLEGAL_CONSTANT_EXPRESSION);
         }
     }
-    cinit_state->offset += 4;
+    cinit_state->expr_offset += 4;
 }
 
 Boolean CInit_004d20e0(Type *type, ENode *initializer, SInt32 offset, char parseArguments)
@@ -1996,7 +1997,7 @@ Boolean CInit_004d20e0(Type *type, ENode *initializer, SInt32 offset, char parse
             if (offset != 0)
                 node = makediadicnode(node, intconstnode((Type *)&stunsignedlong, offset), EADD);
         } else {
-            node = cinit_state->emitValue(type, cinit_state->emitObject, offset, 0);
+            node = cinit_state->register_object_cb(type, cinit_state->emitObject, offset, 0);
         }
         result = CExpr_ConstructObject(type, node, arguments, 0, 1, 0, 1, flag);
         if (result->rtype->type != TYPEPOINTER) {
@@ -2005,13 +2006,13 @@ Boolean CInit_004d20e0(Type *type, ENode *initializer, SInt32 offset, char parse
         }
         node = makemonadicnode(result, EINDIRECT);
         node->rtype = TPTR_TARGET(node->rtype);
-        cinit_state->emitNode(node);
+        cinit_state->insert_expr_cb(node);
     } else {
         if (arguments != NULL)
             CError_ReportError(ERR_ILLEGAL_INITIALIZATION);
         if (classInfo != NULL)
-            node = cinit_state->emitValue(type, cinit_state->emitObject, offset, 0);
-        cinit_state->emitNode(node);
+            node = cinit_state->register_object_cb(type, cinit_state->emitObject, offset, 0);
+        cinit_state->insert_expr_cb(node);
     }
     return 1;
 }
@@ -2075,7 +2076,7 @@ Boolean initialize_class_object(Object *obj, Type *initObject, ENode *expr, SInt
         node = create_destructor_registration_call(initObject, destructor, node);
     }
     if (cinit_state->useEmitCallback != 0) {
-        cinit_state->emit(node);
+        cinit_state->init_expr_register_cb(node);
     } else {
         InitExpr_Register(node, obj);
     }
@@ -2799,7 +2800,7 @@ void initialize_int(InitializerData *stage, ENode *expr, Type *type, UInt32 qual
 
 void initialize_pointer_or_intconst(InitializerData *ctx, ENode *node, Type *ns, UInt32 qual)
 {
-    RelocationList *p;
+    OLinkList *p;
     Object *flag;
     CInt64 val;
 
@@ -2807,9 +2808,9 @@ void initialize_pointer_or_intconst(InitializerData *ctx, ENode *node, Type *ns,
     if (node->rtype->type == TYPEPOINTER || node->type == EINTCONST) {
         if (evaluate_int_or_relocation(node, &flag, &val)) {
             if (flag) {
-                p = (RelocationList *)CompilerTools_AllocatePool(16);
+                p = (OLinkList *)CompilerTools_AllocatePool(16);
                 p->next = ctx->owner->relocations;
-                p->object = flag;
+                p->obj = flag;
                 p->addend = val.lo;
                 p->offset = ctx->offset + ctx->size;
                 ctx->owner->relocations = p;
@@ -3109,7 +3110,7 @@ void write_buffer_at_offset(void *src, SInt32 offset, SInt32 size)
 {
     SInt32 needed = offset + size;
     UInt8 *nb;
-    struct CInitSave *buf;
+    struct InitInfo *buf;
 
     buf = cinit_state;
     if (needed > buf->bufferSize) {
@@ -3119,7 +3120,7 @@ void write_buffer_at_offset(void *src, SInt32 offset, SInt32 size)
     buf = cinit_state;
     if (needed > buf->bufferUsed) {
         Type *tp;
-        struct CInitSave *ctx = cinit_state;
+        struct InitInfo *ctx = cinit_state;
         Object *obj;
         tp = (obj = (ctx = cinit_state)->obj)->type;
         if (tp->size == 0) {
@@ -3133,7 +3134,7 @@ void write_buffer_at_offset(void *src, SInt32 offset, SInt32 size)
         nb = (UInt8 *)CompilerTools_AllocatePool(needed);
         memclrw(nb, needed);
         {
-            struct CInitSave *ctx = cinit_state;
+            struct InitInfo *ctx = cinit_state;
             buf = cinit_state;
             memcpy(nb, (buf = cinit_state)->buffer, (ctx = cinit_state)->bufferUsed);
         }

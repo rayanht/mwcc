@@ -15,11 +15,11 @@ UInt32 low_bit_masks[32] = {0,        0x1,       0x3,       0x7,       0xF,     
                             0xFFFF,   0x1FFFF,   0x3FFFF,   0x7FFFF,   0xFFFFF,   0x1FFFFF,   0x3FFFFF,   0x7FFFFF,
                             0xFFFFFF, 0x1FFFFFF, 0x3FFFFFF, 0x7FFFFFF, 0xFFFFFFF, 0x1FFFFFFF, 0x3FFFFFFF, 0x7FFFFFFF};
 
-static struct Pool galloc_pool;
-static struct Pool data_0057fd84;
-static struct Pool block_pool;
-static struct Pool data_0057fdac;
-static struct Pool heap_pool;
+static struct HeapMem galloc_pool;
+static struct HeapMem data_0057fd84;
+static struct HeapMem block_pool;
+static struct HeapMem data_0057fdac;
+static struct HeapMem heap_pool;
 static void (*data_0057fdd4)();
 static SInt16 data_0057fdd8;
 
@@ -264,49 +264,49 @@ char *ScanDec(char *src, SInt32 *value, Boolean *flag)
 
 void CompilerTools_ResetPool(void)
 {
-    PoolNode *block = data_0057fdac.head;
+    HeapBlock *block = data_0057fdac.blocks;
 
-    data_0057fdac.cur = block;
-    data_0057fdac.ptr = (char *)&block[1];
-    data_0057fdac.free = block->size - sizeof(PoolNode);
+    data_0057fdac.curblock = block;
+    data_0057fdac.curfreep = (char *)&block[1];
+    data_0057fdac.curfree = block->blocksize - sizeof(HeapBlock);
     while (block) {
-        block->avail = block->size - sizeof(PoolNode);
+        block->blockfree = block->blocksize - sizeof(HeapBlock);
         block = block->next;
     }
 }
 
 #pragma sym reset
 
-static inline void reset_pool_block(PoolNode *block)
+static inline void reset_pool_block(HeapBlock *block)
 {
-    block_pool.cur = block;
-    block_pool.ptr = (char *)(block + 1);
-    block_pool.free = block->size - sizeof(PoolNode);
+    block_pool.curblock = block;
+    block_pool.curfreep = (char *)(block + 1);
+    block_pool.curfree = block->blocksize - sizeof(HeapBlock);
 }
 
 void CompilerTools_ResetPoolAvail(void)
 {
-    PoolNode *block;
-    block = block_pool.head;
+    HeapBlock *block;
+    block = block_pool.blocks;
     reset_pool_block(block);
     for (; block; block = block->next)
-        block->avail = block->size - sizeof(PoolNode);
+        block->blockfree = block->blocksize - sizeof(HeapBlock);
 }
 
 #pragma sym off
 
 void freelheap(void)
 {
-    PoolNode *block;
+    HeapBlock *block;
 
     if (data_0057fdd8 == 0) {
-        block = data_0057fd84.head;
-        data_0057fd84.cur = block;
-        data_0057fd84.ptr = (char *)block + sizeof(*block);
-        data_0057fd84.free = block->size - sizeof(PoolNode);
+        block = data_0057fd84.blocks;
+        data_0057fd84.curblock = block;
+        data_0057fd84.curfreep = (char *)block + sizeof(*block);
+        data_0057fd84.curfree = block->blocksize - sizeof(HeapBlock);
 
         while (block != NULL) {
-            block->avail = block->size - sizeof(PoolNode);
+            block->blockfree = block->blocksize - sizeof(HeapBlock);
             block = block->next;
         }
     }
@@ -335,12 +335,12 @@ void *CompilerTools_AllocatePoolMemory(UInt32 requestedSize)
 
     requestedSize = (requestedSize & ~7U) + 8U;
 
-    if (data_0057fdac.free < (SInt32)requestedSize)
+    if (data_0057fdac.curfree < (SInt32)requestedSize)
         select_or_allocate_pool_node(&data_0057fdac, requestedSize);
 
-    data_0057fdac.free -= requestedSize;
-    result = data_0057fdac.ptr;
-    data_0057fdac.ptr += requestedSize;
+    data_0057fdac.curfree -= requestedSize;
+    result = data_0057fdac.curfreep;
+    data_0057fdac.curfreep += requestedSize;
     return result;
 }
 
@@ -348,12 +348,12 @@ void *CompilerTools_AllocateBlock(SInt32 size)
 {
     char *block;
     size = (size & ~7U) + 8U;
-    if (block_pool.free < size) {
+    if (block_pool.curfree < size) {
         select_or_allocate_pool_node(&block_pool, size);
     }
-    block_pool.free -= size;
-    block = block_pool.ptr;
-    block_pool.ptr += size;
+    block_pool.curfree -= size;
+    block = block_pool.curfreep;
+    block_pool.curfreep += size;
     return block;
 }
 
@@ -361,13 +361,13 @@ void *CompilerTools_AllocatePool(unsigned int size)
 {
     char *allocation;
     size = (size & ~7U) + 8U;
-    if (data_0057fd84.free < (SInt32)size) {
-        Pool *pool = &data_0057fd84;
+    if (data_0057fd84.curfree < (SInt32)size) {
+        HeapMem *pool = &data_0057fd84;
         select_or_allocate_pool_node(pool, size);
     }
-    data_0057fd84.free -= size;
-    allocation = data_0057fd84.ptr;
-    data_0057fd84.ptr += size;
+    data_0057fd84.curfree -= size;
+    allocation = data_0057fd84.curfreep;
+    data_0057fd84.curfreep += size;
     return allocation;
 }
 
@@ -376,22 +376,22 @@ void *galloc(SInt32 size)
     char *result;
 
     size = (size & ~7) + 8;
-    if (galloc_pool.free < size) {
+    if (galloc_pool.curfree < size) {
         select_or_allocate_pool_node(&galloc_pool, size);
     }
-    galloc_pool.free -= size;
-    result = galloc_pool.ptr;
-    galloc_pool.ptr += size;
+    galloc_pool.curfree -= size;
+    result = galloc_pool.curfreep;
+    galloc_pool.curfreep += size;
     return result;
 }
 
 void CompilerTools_ClearPoolBlocks(void)
 {
-    PoolNode *link;
+    HeapBlock *link;
 
-    link = galloc_pool.head;
+    link = galloc_pool.blocks;
     while (link != NULL) {
-        PoolNode **block = link->block;
+        HeapBlock **block = link->blockhandle;
         link = link->next;
         fn_00443160(block);
     }
@@ -400,40 +400,40 @@ void CompilerTools_ClearPoolBlocks(void)
 
 void releaseheaps(void)
 {
-    PoolNode *node;
-    PoolNode **block;
+    HeapBlock *node;
+    HeapBlock **block;
 
-    node = galloc_pool.head;
+    node = galloc_pool.blocks;
     while (node != NULL) {
-        block = node->block;
+        block = node->blockhandle;
         node = node->next;
         fn_00443160(block);
     }
     memset(&galloc_pool, 0, sizeof(galloc_pool));
-    node = data_0057fd84.head;
+    node = data_0057fd84.blocks;
     while (node != NULL) {
-        block = node->block;
+        block = node->blockhandle;
         node = node->next;
         fn_00443160(block);
     }
     memset(&data_0057fd84, 0, sizeof(data_0057fd84));
-    node = block_pool.head;
+    node = block_pool.blocks;
     while (node != NULL) {
-        block = node->block;
+        block = node->blockhandle;
         node = node->next;
         fn_00443160(block);
     }
     memset(&block_pool, 0, sizeof(block_pool));
-    node = data_0057fdac.head;
+    node = data_0057fdac.blocks;
     while (node != NULL) {
-        block = node->block;
+        block = node->blockhandle;
         node = node->next;
         fn_00443160(block);
     }
     memset(&data_0057fdac, 0, sizeof(data_0057fdac));
-    node = heap_pool.head;
+    node = heap_pool.blocks;
     while (node != NULL) {
-        block = node->block;
+        block = node->blockhandle;
         node = node->next;
         fn_00443160(block);
     }
@@ -442,7 +442,7 @@ void releaseheaps(void)
 
 SInt16 initheaps(void (*param)())
 {
-    Pool *pool = &galloc_pool;
+    HeapMem *pool = &galloc_pool;
     data_0057fdd4 = NULL;
     data_0057fdd8 = 0;
     memset(&galloc_pool, 0, sizeof(galloc_pool));
@@ -450,11 +450,11 @@ SInt16 initheaps(void (*param)())
     memset(&block_pool, 0, sizeof(block_pool));
     memset(&data_0057fdac, 0, sizeof(data_0057fdac));
     memset(&heap_pool, 0, sizeof(heap_pool));
-    galloc_pool.overhead = 0x38000;
+    galloc_pool.allocsize = 0x38000;
     select_or_allocate_pool_node(pool, 0);
-    galloc_pool.overhead = 0x8000;
+    galloc_pool.allocsize = 0x8000;
     data_0057fdd4 = param;
-    if (galloc_pool.cur == NULL)
+    if (galloc_pool.curblock == NULL)
         return -1;
     return 0;
 }
@@ -468,38 +468,39 @@ SInt16 CompilerTools_InitHeaps(void (*param)())
     memset(&block_pool, 0, 20);
     memset(&data_0057fdac, 0, 20);
     memset(&heap_pool, 0, 20);
-    galloc_pool.overhead = 0x38000;
-    data_0057fd84.overhead = 0x10000;
-    block_pool.overhead = 0x4000;
-    data_0057fdac.overhead = 0x4000;
-    heap_pool.overhead = 0x4000;
+    galloc_pool.allocsize = 0x38000;
+    data_0057fd84.allocsize = 0x10000;
+    block_pool.allocsize = 0x4000;
+    data_0057fdac.allocsize = 0x4000;
+    heap_pool.allocsize = 0x4000;
     select_or_allocate_pool_node(&galloc_pool, 0);
     select_or_allocate_pool_node(&data_0057fd84, 0);
     select_or_allocate_pool_node(&block_pool, 0);
     select_or_allocate_pool_node(&data_0057fdac, 0);
     select_or_allocate_pool_node(&heap_pool, 0);
-    galloc_pool.overhead = 0x8000;
-    data_0057fd84.overhead = 0x8000;
+    galloc_pool.allocsize = 0x8000;
+    data_0057fd84.allocsize = 0x8000;
     data_0057fdd4 = param;
-    if (!(galloc_pool.cur && data_0057fd84.cur && block_pool.cur && data_0057fdac.cur && heap_pool.cur))
+    if (!(galloc_pool.curblock && data_0057fd84.curblock && block_pool.curblock && data_0057fdac.curblock &&
+          heap_pool.curblock))
         return -1;
     return 0;
 }
 
-int select_or_allocate_pool_node(Pool *pool, SInt32 size)
+int select_or_allocate_pool_node(HeapMem *pool, SInt32 size)
 {
-    PoolNode **block;
-    PoolNode *node;
+    HeapBlock **block;
+    HeapBlock *node;
 
-    if ((node = pool->head) != NULL) {
-        pool->cur->avail = pool->free;
+    if ((node = pool->blocks) != NULL) {
+        pool->curblock->blockfree = pool->curfree;
         while (node != NULL) {
-            if (node->avail >= size)
+            if (node->blockfree >= size)
                 goto selected;
             node = node->next;
         }
     }
-    size += pool->overhead;
+    size += pool->allocsize;
     if (!DAT_0054c3d0)
         goto fallback;
     block = CompilerTools_AllocateMemoryIfEnabled(size * 2);
@@ -519,32 +520,32 @@ int select_or_allocate_pool_node(Pool *pool, SInt32 size)
     }
     fn_004431a0(block);
     node = *block;
-    node->next = pool->head;
-    pool->head = node;
-    node->block = block;
-    node->size = size;
-    node->avail = size - sizeof(PoolNode);
+    node->next = pool->blocks;
+    pool->blocks = node;
+    node->blockhandle = block;
+    node->blocksize = size;
+    node->blockfree = size - sizeof(HeapBlock);
 selected:
-    pool->cur = node;
-    pool->free = node->avail;
-    pool->ptr = (char *)node + node->size - node->avail;
+    pool->curblock = node;
+    pool->curfree = node->blockfree;
+    pool->curfreep = (char *)node + node->blocksize - node->blockfree;
 }
 
 int CTool_TotalHeapSize(void)
 {
     unsigned int total = 0;
-    PoolNode *node;
+    HeapBlock *node;
 
-    for (node = galloc_pool.head; node != NULL; node = node->next)
-        total += node->size;
-    for (node = data_0057fd84.head; node != NULL; node = node->next)
-        total += node->size;
-    for (node = block_pool.head; node != NULL; node = node->next)
-        total += node->size;
-    for (node = data_0057fdac.head; node != NULL; node = node->next)
-        total += node->size;
-    for (node = heap_pool.head; node != NULL; node = node->next)
-        total += node->size;
+    for (node = galloc_pool.blocks; node != NULL; node = node->next)
+        total += node->blocksize;
+    for (node = data_0057fd84.blocks; node != NULL; node = node->next)
+        total += node->blocksize;
+    for (node = block_pool.blocks; node != NULL; node = node->next)
+        total += node->blocksize;
+    for (node = data_0057fdac.blocks; node != NULL; node = node->next)
+        total += node->blocksize;
+    for (node = heap_pool.blocks; node != NULL; node = node->next)
+        total += node->blocksize;
 
     return total;
 }
@@ -591,12 +592,12 @@ HashNameNode *GetHashNameNode(const char *text)
     bucket = key & 2047;
     if ((entry = data_00587f88[bucket]) == NULL) {
         int firstAllocationSize = ((strlen(text) + 12) & -8) + 8;
-        if (galloc_pool.free < firstAllocationSize) {
+        if (galloc_pool.curfree < firstAllocationSize) {
             select_or_allocate_pool_node(&galloc_pool, firstAllocationSize);
         }
-        galloc_pool.free -= firstAllocationSize;
-        entry = (HashNameNode *)galloc_pool.ptr;
-        galloc_pool.ptr += firstAllocationSize;
+        galloc_pool.curfree -= firstAllocationSize;
+        entry = (HashNameNode *)galloc_pool.curfreep;
+        galloc_pool.curfreep += firstAllocationSize;
         data_00587f88[bucket] = entry;
         entry->next = NULL;
         entry->id = -1;
@@ -648,12 +649,12 @@ HashNameNode *GetHashNameNodeExport(const char *text)
     hash = length & 2047;
     if ((entry = data_00587f88[hash]) == NULL) {
         firstSize = ((strlen(text) + 12) & -8) + 8;
-        if (galloc_pool.free < firstSize) {
+        if (galloc_pool.curfree < firstSize) {
             select_or_allocate_pool_node(&galloc_pool, firstSize);
         }
-        galloc_pool.free -= firstSize;
-        entry = (HashNameNode *)galloc_pool.ptr;
-        galloc_pool.ptr += firstSize;
+        galloc_pool.curfree -= firstSize;
+        entry = (HashNameNode *)galloc_pool.curfreep;
+        galloc_pool.curfreep += firstSize;
         data_00587f88[bucket = hash] = entry;
         entry->next = NULL;
         entry->id = next_name_id++;

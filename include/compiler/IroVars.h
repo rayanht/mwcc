@@ -90,7 +90,7 @@ extern void IroVars_CheckTimedLongjmp(void);
 extern IROLinear *IroVars_CreateIntConstant(CInt64 value, Type *type);
 extern IROAddrRecord *IroVars_CreateAddrRecord(struct IROLinear *linear);
 extern void visit_dobjstack_objects(IROLinear *linear);
-extern void IroVars_VisitExceptionOperands(CException *node, void (*visitOperand)(Object *));
+extern void IroVars_VisitExceptionOperands(ExceptionAction *node, void (*visitOperand)(Object *));
 extern IROLinear *IroVars_NopOutWithSideEffectsChecking(IROLinear *node);
 extern IROLinear *fn_0044be00(IROLinear *node);
 extern struct VarRecord *var_records;

@@ -614,25 +614,24 @@ struct AggregateRecord *VectorArraysToRegs_BuildAggregateRecords(void)
     records = NULL;
     candidate = locals;
     while (candidate != NULL) {
-        if (candidate->object.value != NULL) {
-            if (candidate->object.value->type->type == TYPEPOINTER) {
-                qualifiers = TYPE_POINTER(candidate->object.value->type)->qual;
+        if (candidate->object != NULL) {
+            if (candidate->object->type->type == TYPEPOINTER) {
+                qualifiers = TYPE_POINTER(candidate->object->type)->qual;
             } else {
-                qualifiers = candidate->object.value->qual;
+                qualifiers = candidate->object->qual;
             }
             qualifiers = qualifiers & Q_VOLATILE;
-            if (qualifiers == 0 && candidate->object.value->type != NULL &&
-                candidate->object.value->type->type == TYPEARRAY &&
-                TYPE_POINTER(candidate->object.value->type)->target->type == TYPESTRUCT &&
-                (int)TYPE_STRUCT(TYPE_POINTER(candidate->object.value->type)->target)->stype >= 4 &&
-                (int)TYPE_STRUCT(TYPE_POINTER(candidate->object.value->type)->target)->stype <= 14) {
-                size = candidate->object.value->type->size;
-                count = candidate->object.value->type->size / 16;
+            if (qualifiers == 0 && candidate->object->type != NULL && candidate->object->type->type == TYPEARRAY &&
+                TYPE_POINTER(candidate->object->type)->target->type == TYPESTRUCT &&
+                (int)TYPE_STRUCT(TYPE_POINTER(candidate->object->type)->target)->stype >= 4 &&
+                (int)TYPE_STRUCT(TYPE_POINTER(candidate->object->type)->target)->stype <= 14) {
+                size = candidate->object->type->size;
+                count = candidate->object->type->size / 16;
                 if (count > 0 && count <= 8) {
                     record = CompilerTools_AllocatePoolMemory(sizeof(*record) + (count - 1) * sizeof(record->slots[0]));
                     record->next = records;
                     records = record;
-                    record->object = candidate->object.value;
+                    record->object = candidate->object;
                     record->size = size;
                     record->count = size / 16;
                     record->index = 0;

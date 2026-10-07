@@ -88,8 +88,8 @@ typedef struct TypeKind {
 #pragma options align = reset
 extern UInt32 encode_type_bits(TypeKind *e);
 extern ENode *scan_vec_step(void);
-extern ENode *CExpr_MakeNameLookupResultExpr(CScopeParseResult *p);
-extern ENode *make_member_function_esetconst(CScopeParseResult *candidates);
+extern ENode *CExpr_MakeNameLookupResultExpr(NameResult *p);
+extern ENode *make_member_function_esetconst(NameResult *candidates);
 extern ENode *scan_explicit_conversion(Type *type, SInt32 qualifiers);
 extern ENode *CExpr_DoExplicitConversion(Type *classType, unsigned long qualifiers, ENodeList *arguments);
 extern ENode *CExpr_AssignmentPromotion(ENode *expression, Type *type, unsigned short qualifiers, int mode);
@@ -133,7 +133,7 @@ extern ENode *checkreference(ENode *e);
 extern ENode *CExpr_RewriteConst(ENode *enode);
 extern ENode *getpointertomemberfunc(ENode *node, Type *targetType, Boolean initialize);
 extern void *make_memberpointer(ENode *node);
-extern ENode *make_scope_parse_result_expr(CScopeParseResult *nameResult, ENode *expr, Boolean allowMemberReference,
+extern ENode *make_scope_parse_result_expr(NameResult *nameResult, ENode *expr, Boolean allowMemberReference,
                                            Boolean allowFunctionCall);
 extern ENode *member_pointer_expression(void);
 extern ENode *do_typecast(ENode *expr, Type *type, UInt32 qual);

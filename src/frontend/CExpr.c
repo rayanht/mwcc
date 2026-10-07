@@ -555,7 +555,7 @@ static inline ENode *dereference_reference_node(ENode *node)
     return node;
 }
 
-static inline char CExpr_IsMemberFunction(CScopeParseResult *candidates)
+static inline char CExpr_IsMemberFunction(NameResult *candidates)
 {
     Object *object = (Object *)candidates->object;
     return OBJECT(candidates->object)->type->type == TYPEFUNC && (((TypeMemberFunc *)object->type)->flags & 1024) != 0;
@@ -3713,7 +3713,7 @@ ENode *getpointertomemberfunc(ENode *node, Type *targetType, Boolean initialize)
     Object *method;
     Object *result;
     BClassList *bases;
-    RelocationList *reference;
+    OLinkList *reference;
     MemberPointerInitializer initializer;
     TypeMemberFunc *functionType;
     ObjectList *methods;
@@ -3734,9 +3734,9 @@ ENode *getpointertomemberfunc(ENode *node, Type *targetType, Boolean initialize)
             if (targetType->type == TYPEMEMBERPOINTER) {
                 Type *functionTarget = ((TypeMemberPointer *)targetType)->ty1;
                 for (candidate = methods; candidate != NULL; candidate = candidate->next) {
-                    if (candidate->object.value->otype == OT_OBJECT &&
-                        is_memberpointerequal(candidate->object.value->type, functionTarget) != 0) {
-                        method = candidate->object.value;
+                    if (candidate->object->otype == OT_OBJECT &&
+                        is_memberpointerequal(candidate->object->type, functionTarget) != 0) {
+                        method = candidate->object;
                         break;
                     }
                 }
@@ -3750,7 +3750,7 @@ ENode *getpointertomemberfunc(ENode *node, Type *targetType, Boolean initialize)
             }
         }
     } else {
-        method = methods->object.value;
+        method = methods->object;
     }
 
     while (method->datatype == DALIAS)
@@ -3795,9 +3795,9 @@ ENode *getpointertomemberfunc(ENode *node, Type *targetType, Boolean initialize)
         } else {
             initializer.index = CTool_EndianConvertWord32(-1);
             initializer.tableSize = CTool_EndianConvertWord32(0);
-            reference = (RelocationList *)galloc(sizeof(*reference));
+            reference = (OLinkList *)galloc(sizeof(*reference));
             reference->next = NULL;
-            reference->object = method;
+            reference->obj = method;
             reference->addend = 0;
             reference->offset = 8;
         }
@@ -3815,8 +3815,8 @@ void make_static_method_setconst(ObjectList *objects)
     matches = NULL;
     if (objects != NULL) {
         do {
-            if (((objects->object.value->otype == OT_OBJECT) &&
-                 ((functionType = (TypeMemberFunc *)objects->object.value->type)->type == TYPEFUNC)) &&
+            if (((objects->object->otype == OT_OBJECT) &&
+                 ((functionType = (TypeMemberFunc *)objects->object->type)->type == TYPEFUNC)) &&
                 ((functionType->flags & FUNC_METHOD) != 0) && (functionType->is_static != 0)) {
                 ObjectList *entry;
                 entry = (ObjectList *)galloc(sizeof(ObjectList));
@@ -3833,7 +3833,7 @@ void make_static_method_setconst(ObjectList *objects)
         return;
     }
     result = CExpr_NewENode(ENEWEXCEPTION);
-    result->rtype = matches->object.value->type;
+    result->rtype = matches->object->type;
     /* This node's object-reference slot holds the matching object list. */
     result->data.overloadCandidates = matches;
 }
@@ -3936,7 +3936,7 @@ ENode *parse_postfix_expression(Boolean allowSpecial)
     SInt8 typeKind;
     ENode *result;
     BinaryOperatorResult overload;
-    CScopeParseResult info;
+    NameResult info;
     DeclInfo declaration;
     StructMember *member;
     TypeClass *classType;
@@ -4219,7 +4219,7 @@ ENode *scan_pseudo_destructor_call(ENode *node)
 {
     DeclInfo decl;
     SInt32 savedPosition;
-    CScopeParseResult lookup;
+    NameResult lookup;
     NameSpace *scope;
 
     CPrep_GetBufferedTokenPosition(&savedPosition);
@@ -4248,7 +4248,7 @@ ENode *scan_pseudo_destructor_call(ENode *node)
                         continue;
                     }
                 } else {
-                    if (lookup.qualifiers != 0 || iscpp_typeequal(lookup.type.base, node->rtype) == 0)
+                    if (lookup.qual != 0 || iscpp_typeequal(lookup.type, node->rtype) == 0)
                         CError_ReportError(ERR_ILLEGAL_TYPE);
                     tk = CPrepTokenizer_GetNextToken();
                     if (tk == TK_COLON_COLON) {
@@ -4336,7 +4336,7 @@ ENode *scan_member_function_pointer_call(ENode *expr)
 
 ENode *parse_primary_expression(Boolean expressionMode)
 {
-    CScopeParseResult lookupResult;
+    NameResult lookupResult;
     ENode *expression;
     ENode *stringNode;
 
@@ -4735,7 +4735,7 @@ ENode *scan_vec_step(void)
     return node;
 }
 
-ENode *make_scope_parse_result_expr(CScopeParseResult *nameResult, ENode *expr, Boolean allowMemberReference,
+ENode *make_scope_parse_result_expr(NameResult *nameResult, ENode *expr, Boolean allowMemberReference,
                                     Boolean allowFunctionCall)
 {
     ENode *result;
@@ -4744,26 +4744,25 @@ ENode *make_scope_parse_result_expr(CScopeParseResult *nameResult, ENode *expr, 
     NameSpaceObjectList *overload;
     UInt8 datatype;
 
-    if (nameResult->type.base) {
+    if (nameResult->type) {
         if (copts.cplusplus) {
-            if (nameResult->type.base->type == TYPETEMPLATE) {
-                if (TYPE_TEMPLATE(nameResult->type.base)->dtype == 0 &&
-                    !TYPE_TEMPLATE(nameResult->type.base)->u.pid.type) {
+            if (nameResult->type->type == TYPETEMPLATE) {
+                if (TYPE_TEMPLATE(nameResult->type)->dtype == 0 && !TYPE_TEMPLATE(nameResult->type)->u.pid.type) {
                     result = CExpr2_NewENEWEXCEPTIONARRAYNode(TDE_PARAM);
-                    result->data.templdep.u.pid = TYPE_TEMPLATE(nameResult->type.base)->u.pid;
+                    result->data.templdep.u.pid = TYPE_TEMPLATE(nameResult->type)->u.pid;
                     tk = CPrepTokenizer_GetNextToken();
                     return result;
                 }
-                if (TYPE_TEMPLATE(nameResult->type.base)->dtype == 1 && !nameResult->is_type) {
+                if (TYPE_TEMPLATE(nameResult->type)->dtype == 1 && !nameResult->is_type) {
                     result = CExpr2_NewENEWEXCEPTIONARRAYNode(TDE_QUALNAME);
-                    result->data.templdep.u.qual.type = TYPE_TEMPLATE(nameResult->type.base)->u.qual.type;
-                    result->data.templdep.u.qual.name = TYPE_TEMPLATE(nameResult->type.base)->u.qual.name;
+                    result->data.templdep.u.qual.type = TYPE_TEMPLATE(nameResult->type)->u.qual.type;
+                    result->data.templdep.u.qual.name = TYPE_TEMPLATE(nameResult->type)->u.qual.name;
                     tk = CPrepTokenizer_GetNextToken();
                     return result;
                 }
             }
             tk = CPrepTokenizer_GetNextToken();
-            scan_explicit_conversion(nameResult->type.base, nameResult->qualifiers);
+            scan_explicit_conversion(nameResult->type, nameResult->qual);
             return;
         }
         CError_ReportErrorAndUpdateToken(ERR_EXPRESSION_SYNTAX_ERROR);
@@ -5035,7 +5034,7 @@ ENode *make_scope_parse_result_expr(CScopeParseResult *nameResult, ENode *expr, 
     return NULL;
 }
 
-ENode *CExpr_MakeNameLookupResultExpr(CScopeParseResult *p)
+ENode *CExpr_MakeNameLookupResultExpr(NameResult *p)
 {
     if (p->object != NULL) {
         switch (p->object->otype) {
@@ -5073,7 +5072,7 @@ ENode *CExpr_MakeNameLookupResultExpr(CScopeParseResult *p)
     return NULL;
 }
 
-ENode *make_member_function_esetconst(CScopeParseResult *candidates)
+ENode *make_member_function_esetconst(NameResult *candidates)
 {
     Type *functionType;
     NameSpaceObjectList *candidate;

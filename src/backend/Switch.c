@@ -217,10 +217,10 @@ Object *create_switchtable(void)
         dst++;
     }
 
-    node->object.value = obj;
+    node->object = obj;
     node->next = switch_tables;
     switch_tables = node;
-    return node->object.value;
+    return node->object;
 }
 
 void emit_case_ranges(ENode *expr)

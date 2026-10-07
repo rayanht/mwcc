@@ -85,7 +85,7 @@ void CDecl_ParseClass(DeclInfo *ctx, SInt16 kind, Boolean advanceToken, UInt8 ex
     Boolean savedContext;
     SInt32 textOffset;
     SInt16 nextToken;
-    CScopeParseResult spec;
+    NameResult spec;
     ClassLayout declarationState;
     CScopeSave scopeSave;
     GList contextSave;
@@ -147,7 +147,7 @@ void CDecl_ParseClass(DeclInfo *ctx, SInt16 kind, Boolean advanceToken, UInt8 ex
                     return;
                 }
                 tk = CPrepTokenizer_GetNextToken();
-                if ((existing = spec.type.base) != NULL)
+                if ((existing = spec.type) != NULL)
                     goto resolveDeclaration;
                 CError_ASSERT(6192, spec.name != NULL);
                 obj = CDecl_DefineClass(CScope_FindNonClassNonTemplNameSpace(currentNameSpace), spec.name, NULL, kind,
@@ -341,7 +341,7 @@ void fill_class_layout_entries(ClassLayout *table, TypeClass *type, ObjBase **en
     int slot;
     int i;
     unsigned int filled;
-    ScopeSearch scope;
+    CScopeObjectIterator scope;
     Object *obj;
 
     if (table->lex_order_count > 32) {
@@ -821,7 +821,7 @@ void make_defarg_function(TypeClass *cls)
     TypeMemberFunc *functionType;
     TypeMemberFunc *memberType;
     FuncArg *virtualBaseArg;
-    DefArg *defaultArgData;
+    DefArgCtorInfo *defaultArgData;
 
     member = CClass_Constructor(cls);
     if (member == NULL)
@@ -858,9 +858,9 @@ void make_defarg_function(TypeClass *cls)
                 function->section = memberObject->section;
                 function->nspace = cls->nspace;
                 function->qual |= Q_INLINE;
-                defaultArgData = (DefArg *)galloc(sizeof(DefArg));
-                defaultArgData->obj = memberObject;
-                defaultArgData->expr = defaultArg->dexpr;
+                defaultArgData = (DefArgCtorInfo *)galloc(sizeof(DefArgCtorInfo));
+                defaultArgData->default_func = memberObject;
+                defaultArgData->default_arg = defaultArg->dexpr;
                 function->u.func.defargdata = defaultArgData;
                 defaultArg->dexpr = NULL;
                 CScope_AddObject(cls->nspace, function->name, (ObjBase *)function);
@@ -880,7 +880,7 @@ void parse_class_bases(TemplClass *classType, short mode, char allowDependent)
     ObjType *typeObject;
     char isVirtual;
     ClassList *base;
-    CScopeParseResult lookup;
+    NameResult lookup;
     defaultMode = mode;
     do {
         if (defaultMode == 2) {
@@ -919,7 +919,7 @@ void parse_class_bases(TemplClass *classType, short mode, char allowDependent)
                 tk = CPrepTokenizer_GetNextToken();
             }
             if (CScope_ParseDeclName(&lookup) != 0) {
-                if (lookup.type.base == NULL) {
+                if (lookup.type == NULL) {
                     if (lookup.name == NULL) {
                         CError_ReportError(ERR_DECLARATION_SYNTAX_ERROR);
                     } else if (tk == TK_IDENTIFIER && lookup.name == data_00587fa0) {
@@ -928,20 +928,20 @@ void parse_class_bases(TemplClass *classType, short mode, char allowDependent)
                     CError_ReportError(ERR_UNDEFINED_IDENTIFIER, data_00587fa0->name);
                     continue;
                 }
-                CDecl_CompleteType(lookup.type.base);
-                if (allowDependent != 0 && CTemplateTools_IsDependentType(lookup.type.base) != 0) {
-                    CTemplateClass_PrependTemplateRecordEntry(classType, lookup.type.base, access, isVirtual);
+                CDecl_CompleteType(lookup.type);
+                if (allowDependent != 0 && CTemplateTools_IsDependentType(lookup.type) != 0) {
+                    CTemplateClass_PrependTemplateRecordEntry(classType, lookup.type, access, isVirtual);
                     if (isVirtual == 0) {
                         continue;
                     }
                     classType->theclass.flags |= CLASS_HAS_VBASES;
                     continue;
                 }
-                if (lookup.type.base->type != TYPECLASS) {
+                if (lookup.type->type != TYPECLASS) {
                     CError_ReportError(ERR_ILLEGAL_STRUCT_UNION_ENUM_CLASS_DEFINITION);
                     continue;
                 }
-                baseType = (TypeClass *)lookup.type.base;
+                baseType = (TypeClass *)lookup.type;
             } else {
             specialBase:;
                 if (memcmp(data_00587fa0->name, "__somobject", 12) == 0) {
@@ -2581,7 +2581,7 @@ static Type *CDecl_LargerType(Type *a, Type *b)
 
 void scanenum(DeclInfo *result)
 {
-    CScopeParseResult info;
+    NameResult info;
     HashNameNode *saved;
     Type *type;
     TypeEnum *decl;
@@ -2624,7 +2624,7 @@ void scanenum(DeclInfo *result)
         }
     }
     if (CScope_ParseElaborateName(&info)) {
-        if ((type = info.type.base) != NULL) {
+        if ((type = info.type) != NULL) {
             if (type->type != TYPEENUM)
                 CError_ReportError(ERR_DECLARATION_SYNTAX_ERROR);
             tk = CPrepTokenizer_GetNextToken();
@@ -3598,13 +3598,13 @@ Object *CDecl_GetFunctionObject(DeclInfo *decl, NameSpace *target_scope, Boolean
             CError_ReportError(ERR_UNDEFINED_IDENTIFIER, decl->name->name);
             return NULL;
         }
-        object = lookup->object.value;
+        object = lookup->object;
         if (object->type->type != TYPEFUNC) {
             CError_ReportError(ERR_IDENTIFIER_REDECLARED_WAS_DECLARED_AS_NOW, CError_GetObjectString(object),
                                object->type, object->qual, decl->thetype, decl->qual);
             return NULL;
         }
-        if (lookup->next && lookup->next->object.value->otype == OT_OBJECT) {
+        if (lookup->next && lookup->next->object->otype == OT_OBJECT) {
             if (decl->has_expltargs) {
                 CError_ReportError(ERR_UNIMPLEMENTED_C_FEATURE);
                 return NULL;
@@ -3676,7 +3676,7 @@ Object *CDecl_GetFunctionObject(DeclInfo *decl, NameSpace *target_scope, Boolean
                 if (target_scope)
                     object->nspace = target_scope;
             } else {
-                object = lookup->object.value;
+                object = lookup->object;
                 if (!iscpp_typeequal(decl->thetype, object->type) ||
                     (decl->qual & (Q_CONST | Q_PASCAL)) != (object->qual & (Q_CONST | Q_PASCAL))) {
                     CError_ReportError(ERR_IDENTIFIER_REDECLARED_WAS_DECLARED_AS_NOW, CError_GetObjectString(object),
@@ -3960,9 +3960,9 @@ Object *find_or_create_function_object(ObjectList *list, DeclInfo *ref, Boolean 
     flag = 0;
     for (l = list; l != NULL; l = l->next) {
         m = mode;
-        if (l->object.value->otype != OT_OBJECT)
+        if (l->object->otype != OT_OBJECT)
             continue;
-        obj = l->object.value;
+        obj = l->object;
         if (obj->type->type != TYPEFUNC)
             continue;
         func = (TypeMemberFunc *)obj->type;
@@ -4043,15 +4043,15 @@ Object *find_or_create_function_object(ObjectList *list, DeclInfo *ref, Boolean 
     if (newfunc->flags & FUNC_PASCAL) {
         TypeMemberFunc *func2;
         for (l = list; l != NULL; l = l->next) {
-            if (l->object.value->otype == OT_OBJECT) {
-                if ((func2 = (TypeMemberFunc *)l->object.value->type)->type == TYPEFUNC && (func2->flags & FUNC_PASCAL))
+            if (l->object->otype == OT_OBJECT) {
+                if ((func2 = (TypeMemberFunc *)l->object->type)->type == TYPEFUNC && (func2->flags & FUNC_PASCAL))
                     CError_ReportError(ERR_PASCAL_FUNCTION_CANNOT_OVERLOADED);
             }
         }
     }
     if (copts.cplusplus != 0 && ref->requireMangledName != 0) {
         for (l = list; l != NULL; l = l->next) {
-            if ((obj = l->object.value)->otype == OT_OBJECT && (obj->qual & Q_MANGLE_NAME) == 0)
+            if ((obj = l->object)->otype == OT_OBJECT && (obj->qual & Q_MANGLE_NAME) == 0)
                 CError_ReportError(ERR_ILLEGAL_FUNCTION_OVERLOADING);
         }
     }
@@ -4065,7 +4065,7 @@ Object *find_or_create_function_object(ObjectList *list, DeclInfo *ref, Boolean 
 void conversion_type_name(DeclInfo *result)
 {
     DeclInfo declaration;
-    CScopeParseResult lookup;
+    NameResult lookup;
 
     memclrw(&declaration, sizeof(DeclInfo));
     CParser_GetDeclSpecs((DeclInfo *)&declaration, 0);
@@ -4096,7 +4096,7 @@ void conversion_type_name(DeclInfo *result)
 
 void CDecl_ParseDeclarator(DeclInfo *decl)
 {
-    CScopeParseResult info;
+    NameResult info;
     NameSpace *nspace;
 
     switch (tk) {
@@ -4124,19 +4124,19 @@ void CDecl_ParseDeclarator(DeclInfo *decl)
                         parse_direct_declarator(decl, info.nspace);
                     return;
                 }
-                if (info.type.base != NULL && info.type.base->type == TYPETEMPLATE) {
+                if (info.type != NULL && info.type->type == TYPETEMPLATE) {
                     if (decl->templateParameters != NULL &&
-                        CTemplateNew_LinkTemplateScope(decl, (TypeTemplDep *)info.type.base, &nspace)) {
+                        CTemplateNew_LinkTemplateScope(decl, (TypeTemplDep *)info.type, &nspace)) {
                         parse_direct_declarator(decl, nspace);
                         return;
                     }
                     if (decl->templateParameters != NULL && tk == TK_OPERATOR) {
-                        decl->templateType = info.type.base;
+                        decl->templateType = info.type;
                         return;
                     }
                     tk = CPrepTokenizer_GetNextToken();
                     if (tk == TK_COLON_COLON && (tk = CPrepTokenizer_GetNextToken()) == 0x2a) {
-                        Type *ownerType = info.type.base;
+                        Type *ownerType = info.type;
                         TypeMemberPointer *memberPointer = (TypeMemberPointer *)galloc(sizeof(TypeMemberPointer));
                         memberPointer->type = TYPEMEMBERPOINTER;
                         if (decl->thetype->type == TYPEFUNC) {
@@ -4153,7 +4153,7 @@ void CDecl_ParseDeclarator(DeclInfo *decl)
                         break;
                     }
                     if (decl->templateParameters != NULL) {
-                        decl->templateType = info.type.base;
+                        decl->templateType = info.type;
                         return;
                     }
                 }
@@ -4174,7 +4174,7 @@ void CDecl_ScanPointer(DeclInfo *declarator, NameSpace *nspace, char finish)
     char kind;
     NameSpace *foundNamespace;
     TypePointer *pointerType;
-    CScopeParseResult lookup;
+    NameResult lookup;
     for (;;) {
         qualifiers = parsePointerQualifiers();
         if ((kind = (type = (TypePointer *)declarator->thetype)->type) == TYPEPOINTER &&
@@ -4226,13 +4226,13 @@ void CDecl_ScanPointer(DeclInfo *declarator, NameSpace *nspace, char finish)
                         continue;
                     break;
                 }
-                if (lookup.type.base != NULL && lookup.type.base->type == TYPETEMPLATE &&
+                if (lookup.type != NULL && lookup.type->type == TYPETEMPLATE &&
                     declarator->templateParameters != NULL) {
-                    if (CTemplateNew_LinkTemplateScope(declarator, (TypeTemplDep *)lookup.type.base, &nspace)) {
+                    if (CTemplateNew_LinkTemplateScope(declarator, (TypeTemplDep *)lookup.type, &nspace)) {
                         parse_direct_declarator(declarator, nspace);
                         return;
                     }
-                    declarator->templateType = lookup.type.base;
+                    declarator->templateType = lookup.type;
                     return;
                 }
                 CError_ReportError(ERR_DECLARATION_SYNTAX_ERROR);

@@ -306,7 +306,7 @@ static void Coloring_BindObjects(ObjectList *item, int reg_class)
         VarInfo *info;
         InterferenceNode *node;
 
-        object = item->object.value;
+        object = item->object;
         info = Registers_GetInfo(object);
         if (info->reg != 0 && Coloring_ObjectBelongsToClass(info, reg_class)) {
             node = gInterferenceGraph[info->reg];
@@ -515,14 +515,14 @@ void Coloring_SetupVRs(void)
         gInterferenceGraph[i]->physical_register = (SInt16)i;
 
     for (list = arguments; list != NULL; list = list->next) {
-        Object *obj = list->object.value;
+        Object *obj = list->object;
         VarInfo *info = Registers_GetInfo(obj);
         if (info->reg != 0 && info->is_vector != 0)
             gInterferenceGraph[info->reg]->object = obj;
     }
 
     for (list = locals; list != NULL; list = list->next) {
-        Object *obj = list->object.value;
+        Object *obj = list->object;
         VarInfo *info = Registers_GetInfo(obj);
         if (info->reg != 0 && info->is_vector != 0)
             gInterferenceGraph[info->reg]->object = obj;
@@ -544,7 +544,7 @@ void Coloring_SetupFPRs(void)
         Object *object;
         VarInfo *info;
 
-        object = item->object.value;
+        object = item->object;
         info = Registers_GetInfo(object);
         if (info->reg != 0 && info->is_fpr) {
             gInterferenceGraph[info->reg]->object = object;
@@ -554,7 +554,7 @@ void Coloring_SetupFPRs(void)
         Object *object;
         VarInfo *info;
 
-        object = item->object.value;
+        object = item->object;
         info = Registers_GetInfo(object);
         if (info->reg != 0 && info->is_fpr) {
             gInterferenceGraph[info->reg]->object = object;
@@ -580,7 +580,7 @@ void Coloring_SetupGPRs(void)
         gInterferenceGraph[reg]->physical_register = reg;
 
     for (entry = arguments; entry != NULL; entry = entry->next) {
-        object = entry->object.value;
+        object = entry->object;
         info = Registers_GetInfo(object);
         if (info->reg != 0 && (info->is_fpr == 0 || copts.operandsDebug != 0)) {
             gInterferenceGraph[info->reg]->object = object;
@@ -594,7 +594,7 @@ void Coloring_SetupGPRs(void)
     }
 
     for (entry = locals; entry != NULL; entry = entry->next) {
-        object = entry->object.value;
+        object = entry->object;
         info = Registers_GetInfo(object);
         if (info->reg != 0 && (info->is_fpr == 0 || copts.operandsDebug != 0)) {
             gInterferenceGraph[info->reg]->object = object;

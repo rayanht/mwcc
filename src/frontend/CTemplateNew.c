@@ -199,7 +199,7 @@ unsigned char instantiate_members(TemplClass *templ, TemplClassInst *state, char
     char functionResult;
     char entryResult;
     char changed;
-    ScopeSearch iterator;
+    CScopeObjectIterator iterator;
     changed = 0;
     if (force == 0 && state->is_extern != 0)
         return (char)0;
@@ -540,7 +540,7 @@ void parse_explicit_template_specialization(void)
 
 static inline HashNameNode *CTempl_FindConversion(TypeClass *tclass, Type *type, UInt32 qual)
 {
-    ScopeSearch iter;
+    CScopeObjectIterator iter;
     Object *obj;
 
     qual &= Q_CV;
@@ -621,7 +621,7 @@ static void *FindInst(TemplClass **p8c, TemplArg **p88)
 
 void parse_explicit_template_instantiation(void)
 {
-    CScopeParseResult lookupResult;
+    NameResult lookupResult;
     DeclInfo declaration;
     TemplClass *templateClass;
     TemplArg *arguments;
@@ -1053,7 +1053,7 @@ void parse_template_member_definition(void *context, TypeClass *template_info, D
             CError_ReportError(ERR_UNDEFINED_IDENTIFIER, declaration->name->name);
             return;
         }
-        object = entry->object.value;
+        object = entry->object;
         if (object->otype != OT_OBJECT) {
             CError_ReportError(ERR_IDENTIFIER_REDECLARED, declaration->name->name);
             return;

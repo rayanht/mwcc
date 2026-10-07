@@ -61,10 +61,10 @@ static int max_padding_size = 128;
 NameSpace *BE_elf_SaveAndSetClassScope(TypeClass *theclass, CScopeSave *save)
 {
     NameSpace *name = currentNameSpace;
-    save->nspace = name;
-    save->theclass = data_00588040;
-    save->function = data_00588238;
-    save->member_context = data_005884f8;
+    save->current = name;
+    save->currentclass = data_00588040;
+    save->currentfunc = data_00588238;
+    save->is_member_func = data_005884f8;
     name = theclass->nspace;
     currentNameSpace = name;
     data_00588040 = theclass;
@@ -78,10 +78,10 @@ void BE_elf_SaveScopeAndEnterClass(TypeClass *theclass, CScopeSave *saved)
     TypeClass *class_type;
     class_type = theclass;
     wrapped_type = currentNameSpace;
-    saved->nspace = wrapped_type;
-    saved->theclass = data_00588040;
-    saved->function = data_00588238;
-    saved->member_context = data_005884f8;
+    saved->current = wrapped_type;
+    saved->currentclass = data_00588040;
+    saved->currentfunc = data_00588238;
+    saved->is_member_func = data_005884f8;
     wrapped_type = class_type->nspace;
     currentNameSpace = wrapped_type;
     data_00588040 = class_type;
@@ -96,10 +96,10 @@ TypeClass *BE_elf_SaveAndSetScope(NameSpace *scope, CScopeSave *save)
     NameSpace *newScope;
     saved = save;
     newScope = scope;
-    saved->nspace = currentNameSpace;
-    saved->theclass = data_00588040;
-    saved->function = data_00588238;
-    saved->member_context = data_005884f8;
+    saved->current = currentNameSpace;
+    saved->currentclass = data_00588040;
+    saved->currentfunc = data_00588238;
+    saved->is_member_func = data_005884f8;
     currentNameSpace = newScope;
     value = newScope->theclass;
     data_00588040 = value;
@@ -110,10 +110,10 @@ TypeClass *BE_elf_SaveAndSetScope(NameSpace *scope, CScopeSave *save)
 
 void BE_elf_SaveScope(CScopeSave *snapshot)
 {
-    snapshot->nspace = currentNameSpace;
-    snapshot->theclass = data_00588040;
-    snapshot->function = data_00588238;
-    snapshot->member_context = data_005884f8;
+    snapshot->current = currentNameSpace;
+    snapshot->currentclass = data_00588040;
+    snapshot->currentfunc = data_00588238;
+    snapshot->is_member_func = data_005884f8;
 }
 
 void fn_0049b7b0(void)

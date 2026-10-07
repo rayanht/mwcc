@@ -271,7 +271,7 @@ void insert_type_nodes_recursive(DWInfo *a, DWInfo *b)
         }
 
         case TYPECLASS: {
-            ScopeSearch save;
+            CScopeObjectIterator save;
             ObjMemberVar *iv;
             ClassList *cb;
             VClassList *vb;
@@ -2131,7 +2131,7 @@ void emit_class_dwarf(TypeClass *cls)
     SInt32 memberLength;
     char *memberName;
     DwarfLocationOperand location;
-    ScopeSearch search;
+    CScopeObjectIterator search;
     Boolean hasChildren;
     Object *entry;
     hasChildren = 0;
