@@ -66,26 +66,24 @@ typedef enum ENodeType {
     EFUNCCALL,
     EFUNCCALLP,
     EOBJREF,
-    EQUALNAME,
     EMFPOINTER,
     ENULLCHECK,
     EPRECOMP,
     ETEMP,
     EARGOBJ,
     ELOCOBJ,
-    ETEMPX,
     ELABEL,
     ESETCONST,
     ENEWEXCEPTION,
     ENEWEXCEPTIONARRAY,
     EOBJLIST,
     EMEMBER,
+    ETEMPLDEP,
     EINSTRUCTION,
     EDEFINE,
     EREUSE,
     EASSBLK,
     EVECTOR128CONST,
-    ESTMT = 76,
 } ENodeType;
 enum {
     ENODE_FLAG_CONST = Q_CONST,
@@ -140,7 +138,7 @@ union ENodeUnion {
     struct {
         ENode *expression;
         struct Operand *cachedValue;
-    } objaccess; /* get_objaccess_cached_value tests EINSTRUCTION before reading this variant */
+    } objaccess; /* get_objaccess_cached_value tests EDEFINE before reading this variant */
     struct {
         ENode *label;
         ENode *expression;

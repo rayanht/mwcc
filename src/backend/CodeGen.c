@@ -2978,7 +2978,7 @@ Boolean IrOptimizer_ConvertToVectorConstant(ENode *expr, union MWVector128 *dst,
         if (expr->rtype->type != TYPESTRUCT) {
             PPCError_ReportError(0x70);
         }
-    } else if (expr->type != EASSBLK) {
+    } else if (expr->type != EVECTOR128CONST) {
         PPCError_ReportError(0x70);
     }
     return result;

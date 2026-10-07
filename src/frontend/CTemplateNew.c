@@ -1458,7 +1458,7 @@ ENode *parse_non_type_template_argument(Type *targetType, unsigned int qualifier
                 }
                 break;
             case EINTCONST:
-            case ENEWEXCEPTION:
+            case EOBJLIST:
                 break;
             default:
                 CError_ReportError(ERR_ILLEGAL_NON_TYPE_TEMPLATE_ARGUMENT);

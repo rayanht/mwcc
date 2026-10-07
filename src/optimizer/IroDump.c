@@ -530,7 +530,7 @@ Object *IroDump_GetObjRef(IROLinear *linear)
 int fn_0044d520(IROLinear *node)
 {
     if (node->type == 1U &&
-        (node->u.node->type == EINTCONST || node->u.node->type == EASSBLK || node->u.node->type == EFLOATCONST))
+        (node->u.node->type == EINTCONST || node->u.node->type == EVECTOR128CONST || node->u.node->type == EFLOATCONST))
         return 1;
     return 0;
 }

@@ -447,7 +447,7 @@ void get_objaccess_cached_value(ENode *node, UInt32 argument2, UInt32 argument3,
     Operand *cachedValue;
 
     objectAccess = node->data.monadic;
-    if (objectAccess->type != EINSTRUCTION) {
+    if (objectAccess->type != EDEFINE) {
         CError_FATAL(231);
     }
     if (objectAccess->data.objaccess.cachedValue == NULL) {

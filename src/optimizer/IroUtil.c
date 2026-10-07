@@ -833,7 +833,7 @@ static inline int IRO_ConstsSame(ENode *a, ENode *b)
                 return 0;
             case EFLOATCONST:
                 return a->data.floatval.data.value == b->data.floatval.data.value;
-            case EASSBLK:
+            case EVECTOR128CONST:
                 return a->data.vector128val.ul[0] == b->data.vector128val.ul[0] &&
                        a->data.vector128val.ul[1] == b->data.vector128val.ul[1] &&
                        a->data.vector128val.ul[2] == b->data.vector128val.ul[2] &&

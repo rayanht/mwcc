@@ -180,7 +180,7 @@ void traverse_expr_postorder(ENode *expr)
             traverse_expr_postorder(expr->data.cond.expr1);
             traverse_expr_postorder(expr->data.cond.expr2);
             break;
-        case EMFPOINTER:
+        case ENULLCHECK:
             traverse_expr_postorder(expr->data.diadic.left);
             traverse_expr_postorder(expr->data.diadic.right);
             break;
@@ -298,7 +298,7 @@ void rewrite_nested_bitwise_expressions(ENode *en)
             rewrite_nested_bitwise_expressions(en->data.cond.expr1);
             rewrite_nested_bitwise_expressions(en->data.cond.expr2);
             break;
-        case EMFPOINTER:
+        case ENULLCHECK:
             rewrite_nested_bitwise_expressions(en->data.diadic.left);
             rewrite_nested_bitwise_expressions(en->data.diadic.right);
             break;

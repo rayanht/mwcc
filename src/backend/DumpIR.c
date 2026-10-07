@@ -218,7 +218,7 @@ void print_enode_tree(ENode *node, int depth)
                 }
                 PrintType(node->rtype);
                 break;
-            case EASSBLK:
+            case EVECTOR128CONST:
                 fprintf(data_005811b0, "[0x%.8lX%.8lX%.8lX%.8lX]", node->data.intval.hi, node->data.intval.lo,
                         ((ENode *)node)->data.vector128val.ul[2], ((ENode *)node)->data.vector128val.ul[3]);
                 PrintType(node->rtype);
@@ -318,34 +318,34 @@ void print_enode_tree(ENode *node, int depth)
                 depth++;
                 node = node->data.monadic;
                 continue;
-            case EQUALNAME:
-                PrintType(node->rtype);
-                print_enode_tree(node->data.diadic.left, depth + 1);
-                node = node->data.diadic.right;
-                depth++;
-                continue;
             case EMFPOINTER:
-                fprintf(data_005811b0, " unique [%ld]", node->data.precomp.labelId);
                 PrintType(node->rtype);
                 print_enode_tree(node->data.diadic.left, depth + 1);
                 node = node->data.diadic.right;
                 depth++;
                 continue;
             case ENULLCHECK:
+                fprintf(data_005811b0, " unique [%ld]", node->data.precomp.labelId);
+                PrintType(node->rtype);
+                print_enode_tree(node->data.diadic.left, depth + 1);
+                node = node->data.diadic.right;
+                depth++;
+                continue;
+            case EPRECOMP:
                 fprintf(data_005811b0, " unique [%ld]", node->data.intval.hi);
                 PrintType(node->rtype);
                 break;
-            case ELOCOBJ:
+            case ELABEL:
                 fprintf(data_005811b0, "[%s]", node->data.memberFunctionPointer->name->name);
                 PrintType(node->rtype);
                 break;
-            case EINSTRUCTION:
+            case EDEFINE:
                 fprintf(data_005811b0, "[%.8lX]", node);
                 PrintTypeLine(node->rtype);
                 depth++;
                 node = node->data.monadic;
                 continue;
-            case EDEFINE:
+            case EREUSE:
                 fprintf(data_005811b0, "[%.8lX]", node->data.intval.hi);
                 PrintTypeLine(node->rtype);
                 break;

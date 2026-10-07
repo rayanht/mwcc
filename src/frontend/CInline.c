@@ -644,7 +644,7 @@ static ENode *CInline_CopyConst(ENode *e)
             r = (ENode *)CompilerTools_AllocatePool(sizeof(ENode));
             *r = *e;
             return r;
-        case EPRECOMP:
+        case ETEMP:
             CError_FATAL(1136);
             break;
     }
@@ -1986,12 +1986,12 @@ void CInline_005114e0(ENode *node)
             case EINTCONST:
             case EFLOATCONST:
             case ESTRINGCONST:
-            case ENULLCHECK:
-            case EMEMBER:
-            case EASSBLK:
+            case EPRECOMP:
+            case EINSTRUCTION:
+            case EVECTOR128CONST:
                 return;
 
-            case ELOCOBJ: {
+            case ELABEL: {
                 InlineMemberPointerTarget *target;
                 if ((target = node->data.memberFunctionPointer->target) != NULL)
                     target->flags |= 1;
@@ -2011,12 +2011,12 @@ void CInline_005114e0(ENode *node)
                 break;
             }
 
-            case EMFPOINTER:
+            case ENULLCHECK:
                 CInline_005114e0(node->data.diadic.left);
                 node = node->data.diadic.right;
                 break;
 
-            case EQUALNAME:
+            case EMFPOINTER:
                 *node = *nullnode();
                 break;
 
@@ -2026,7 +2026,7 @@ void CInline_005114e0(ENode *node)
                 node = node->data.cond.expr2;
                 break;
 
-            case ENEWEXCEPTIONARRAY: {
+            case EMEMBER: {
                 ENode *expression;
                 if ((expression = node->data.emember->expr) != NULL) {
                     *node = *expression;
@@ -2034,7 +2034,7 @@ void CInline_005114e0(ENode *node)
                 }
             }
                 /* fall through */
-            case ENEWEXCEPTION:
+            case EOBJLIST:
                 *node = *nullnode();
                 break;
 
@@ -2577,7 +2577,7 @@ ENode *inline_expression(ENode *node)
                 node = inline_call_expression(node);
             break;
 
-        case EMFPOINTER:
+        case ENULLCHECK:
             node->data.diadic.left = inline_expression(node->data.diadic.left);
             {
                 Boolean save = inline_statement_mode;
@@ -2587,7 +2587,7 @@ ENode *inline_expression(ENode *node)
             }
             break;
 
-        case EQUALNAME:
+        case EMFPOINTER:
             node->data.diadic.left = inline_expression(node->data.diadic.left);
             node->data.diadic.right = inline_expression(node->data.diadic.right);
             break;
@@ -2603,7 +2603,7 @@ ENode *inline_expression(ENode *node)
             }
             break;
 
-        case ENEWEXCEPTIONARRAY:
+        case EMEMBER:
             node = ((ENodeList *)node->data.monadic)->node;
             if (node != NULL)
                 node = inline_expression(node);
@@ -2615,11 +2615,11 @@ ENode *inline_expression(ENode *node)
         case EFLOATCONST:
         case ESTRINGCONST:
         case EOBJREF:
-        case ENULLCHECK:
-        case ELOCOBJ:
-        case ENEWEXCEPTION:
-        case EMEMBER:
-        case EASSBLK:
+        case EPRECOMP:
+        case ELABEL:
+        case EOBJLIST:
+        case EINSTRUCTION:
+        case EVECTOR128CONST:
             break;
 
         default:
@@ -2823,7 +2823,7 @@ ENode *setup_inline_locals_and_arguments(Object *function, CInlineInfo *inlineIn
                         initializers = argument->node;
                     else
                         initializers = makecommaexpression(argument->node, initializers);
-                    if (argument->node->type == ENULLCHECK)
+                    if (argument->node->type == EPRECOMP)
                         CError_FATAL(1283);
                 }
             }
@@ -2854,7 +2854,7 @@ ENode *copy_result_reference(ENode *e)
 
     switch (e->type) {
         case EOBJREF:
-        case EPRECOMP:
+        case ETEMP:
             return CInline_CopyConst(e);
 
         case EFUNCCALL:
@@ -2968,18 +2968,18 @@ void CInline_005130b0(ENode *node, Boolean flag)
 
     for (;;) {
         switch (node->type) {
-            case ETEMP:
+            case EARGOBJ:
                 data_0058245e[node->data.longval].used = 1;
                 data_0058245e[node->data.longval].dirty = 0;
                 return;
 
-            case EARGOBJ:
+            case ELOCOBJ:
                 data_00582462[node->data.longval].used = 1;
                 return;
 
             case EINDIRECT:
                 node = node->data.monadic;
-                if (node->type == ETEMP) {
+                if (node->type == EARGOBJ) {
                     data_0058245e[node->data.longval].used = 1;
                     if (flag)
                         data_0058245e[node->data.longval].dirty = 0;
@@ -3052,14 +3052,14 @@ void CInline_005130b0(ENode *node, Boolean flag)
             case EFLOATCONST:
             case ESTRINGCONST:
             case EOBJREF:
-            case ENULLCHECK:
             case EPRECOMP:
-            case ELOCOBJ:
-            case ENEWEXCEPTION:
-            case EASSBLK:
+            case ETEMP:
+            case ELABEL:
+            case EOBJLIST:
+            case EVECTOR128CONST:
                 return;
 
-            case ENEWEXCEPTIONARRAY:
+            case EMEMBER:
                 node = ((ENodeList *)node->data.monadic)->node;
                 if (node != NULL)
                     CInline_005130b0(node, 0);
@@ -3072,13 +3072,13 @@ void CInline_005130b0(ENode *node, Boolean flag)
                     CInline_005130b0(l->node, 0);
                 return;
 
-            case EMFPOINTER:
+            case ENULLCHECK:
                 CInline_005130b0(node->data.diadic.left, 0);
                 node = node->data.diadic.right;
                 flag = 0;
                 break;
 
-            case EQUALNAME:
+            case EMFPOINTER:
                 CInline_005130b0(node->data.diadic.left, 0);
                 node = node->data.diadic.right;
                 flag = 0;
@@ -3091,7 +3091,7 @@ void CInline_005130b0(ENode *node, Boolean flag)
                 flag = 0;
                 break;
 
-            case EMEMBER:
+            case EINSTRUCTION:
                 return;
 
             default:
@@ -3114,7 +3114,7 @@ ENode *CInline_00513240(ENode *expr)
     for (;;) {
         *node = *expr;
         switch (node->type) {
-            case EOBJLIST:
+            case ETEMPLDEP:
                 switch (node->data.templdep.subtype) {
                     case TDE_CAST: {
                         ENodeList *values = node->data.templdep.u.cast.args;
@@ -3134,11 +3134,11 @@ ENode *CInline_00513240(ENode *expr)
                         CError_FATAL(722);
                 }
                 break;
-            case EPRECOMP:
+            case ETEMP:
                 if (node->data.diadic.right != NULL)
                     node->data.diadic.right = (ENode *)MemoFirst(node->data.diadic.right);
                 break;
-            case ELOCOBJ:
+            case ELABEL:
                 switch (evalMode) {
                     case EM_REG: {
                         SInt16 memberIndex = inline_member_index((SInt32)node->data.memberFunctionPointer->name);
@@ -3216,7 +3216,7 @@ ENode *CInline_00513240(ENode *expr)
                 node->data.cond.expr1 = CInline_00513240(node->data.cond.expr1);
                 node->data.cond.expr2 = CInline_00513240(node->data.cond.expr2);
                 break;
-            case EQUALNAME:
+            case EMFPOINTER:
                 node->data.diadic.left = CInline_00513240(node->data.diadic.left);
                 node->data.diadic.right = CInline_00513240(node->data.diadic.right);
                 break;
@@ -3225,12 +3225,12 @@ ENode *CInline_00513240(ENode *expr)
                 node->data.funccall.funcref = CInline_00513240(node->data.funccall.funcref);
                 node->data.funccall.args = copy_enode_list(node->data.funccall.args);
                 break;
-            case EMFPOINTER:
+            case ENULLCHECK:
                 node->data.cond.expr2 = (ENode *)CInline_Memo(node->data.cond.expr2);
                 node->data.diadic.left = CInline_00513240(node->data.diadic.left);
                 node->data.diadic.right = CInline_00513240(node->data.diadic.right);
                 break;
-            case ENULLCHECK:
+            case EPRECOMP:
                 node->data.monadic = (ENode *)CInline_Memo(node->data.monadic);
                 break;
             case EINDIRECT: {
@@ -3241,7 +3241,7 @@ ENode *CInline_00513240(ENode *expr)
                 ENode *copy;
                 ENode *result;
                 if (evalMode == EM_LOCAL) {
-                    if (node->data.monadic->type == ETEMP) {
+                    if (node->data.monadic->type == EARGOBJ) {
                         if (data_0058245a[node->data.monadic->data.longval].var == NULL) {
                             if (data_0058245a[node->data.monadic->data.longval].expr == NULL)
                                 CError_FATAL(792);
@@ -3279,14 +3279,14 @@ ENode *CInline_00513240(ENode *expr)
                     return node;
                 for (objects = arguments, index = 0; objects != NULL; objects = objects->next, index++)
                     if (objects->object == node->data.objref) {
-                        node->type = ETEMP;
+                        node->type = EARGOBJ;
                         node->data.longval = index;
                         return node;
                     }
                 object = node->data.objref;
                 inline_local_index(object, &index);
                 if (index >= 0) {
-                    node->type = EARGOBJ;
+                    node->type = ELOCOBJ;
                     node->data.longval = index;
                     return node;
                 }
@@ -3294,7 +3294,7 @@ ENode *CInline_00513240(ENode *expr)
                     CError_FATAL(831);
                 break;
             }
-            case ETEMP:
+            case EARGOBJ:
                 switch (evalMode) {
                     case EM_LOCAL:
                         CError_ASSERT(839, data_0058245a[node->data.longval].var != NULL);
@@ -3312,7 +3312,7 @@ ENode *CInline_00513240(ENode *expr)
                         break;
                 }
                 CError_FATAL(853);
-            case EARGOBJ:
+            case ELOCOBJ:
                 switch (evalMode) {
                     case EM_LOCAL:
                         node->type = EOBJREF;
@@ -3332,12 +3332,12 @@ ENode *CInline_00513240(ENode *expr)
                 }
                 CError_FATAL(873);
                 break;
-            case ELABEL:
-            case ESETCONST:
+            case ENEWEXCEPTION:
+            case ENEWEXCEPTIONARRAY:
                 node->data.diadic.left = CInline_00513240(node->data.diadic.left);
                 node->data.diadic.right = CInline_00513240(node->data.diadic.right);
                 break;
-            case ENEWEXCEPTIONARRAY: {
+            case EMEMBER: {
                 EMemberInfo *dst;
                 EMemberInfo *src = node->data.emember;
                 if (alloc_state)
@@ -3355,9 +3355,9 @@ ENode *CInline_00513240(ENode *expr)
             case EINTCONST:
             case EFLOATCONST:
             case ESTRINGCONST:
-            case ENEWEXCEPTION:
-            case EMEMBER:
-            case EASSBLK:
+            case EOBJLIST:
+            case EINSTRUCTION:
+            case EVECTOR128CONST:
                 break;
             default:
                 CError_FATAL(890);
@@ -3403,14 +3403,14 @@ Boolean CInline_00513910(ENode *expr)
             case EINTCONST:
             case EFLOATCONST:
             case EOBJREF:
-            case ETEMP:
             case EARGOBJ:
-            case EASSBLK:
-            case ENEWEXCEPTION:
+            case ELOCOBJ:
+            case EVECTOR128CONST:
+            case EOBJLIST:
                 return 0;
             case ESTRINGCONST:
                 return copts.dont_reuse_strings;
-            case ENEWEXCEPTIONARRAY:
+            case EMEMBER:
                 if (CInline_ArrayInitializer(expr) != NULL)
                     return CInline_00513910(CInline_ArrayInitializer(expr));
                 return 0;
@@ -3438,12 +3438,12 @@ Boolean CInline_00513910(ENode *expr)
             case EORASS:
             case EFUNCCALL:
             case EFUNCCALLP:
-            case EQUALNAME:
             case EMFPOINTER:
             case ENULLCHECK:
             case EPRECOMP:
-            case ELOCOBJ:
-            case EMEMBER:
+            case ETEMP:
+            case ELABEL:
+            case EINSTRUCTION:
                 return 1;
             case EMONMIN:
             case EBINNOT:
@@ -3527,12 +3527,12 @@ ENode *fold_constants(ENode *node)
         case EFLOATCONST:
         case ESTRINGCONST:
         case EOBJREF:
-        case ENULLCHECK:
         case EPRECOMP:
-        case ELOCOBJ:
-        case ENEWEXCEPTION:
-        case EMEMBER:
-        case EASSBLK:
+        case ETEMP:
+        case ELABEL:
+        case EOBJLIST:
+        case EINSTRUCTION:
+        case EVECTOR128CONST:
             return node;
 
         case EMONMIN:
@@ -3785,7 +3785,7 @@ ENode *fold_constants(ENode *node)
             node->data.cond.expr2 = fold_constants(node->data.cond.expr2);
             return node;
 
-        case EQUALNAME:
+        case EMFPOINTER:
             node->data.diadic.left = fold_constants(node->data.diadic.left);
             node->data.diadic.right = fold_constants(node->data.diadic.right);
             return node;
@@ -3797,12 +3797,12 @@ ENode *fold_constants(ENode *node)
                 arg->node = fold_constants(arg->node);
             return node;
 
-        case EMFPOINTER:
+        case ENULLCHECK:
             node->data.diadic.left = fold_constants(node->data.diadic.left);
             node->data.diadic.right = fold_constants(node->data.diadic.right);
             return node;
 
-        case ENEWEXCEPTIONARRAY:
+        case EMEMBER:
             arg = (ENodeList *)node->data.funccall.funcref;
             if ((operand = arg->node) != NULL) {
                 operand = fold_constants(operand);

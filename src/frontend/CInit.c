@@ -136,7 +136,7 @@ static Boolean CInit_IsZero(UInt8 *p, SInt32 n)
 
 static Boolean CInit_IsDtorTemp(ENode *e)
 {
-    return e->type == EPRECOMP && e->data.temp.needs_dtor;
+    return e->type == ETEMP && e->data.temp.needs_dtor;
 }
 
 static Object *CreateTempObject(Type *type)
@@ -1692,7 +1692,7 @@ void initialize_struct(Type *type, Boolean brace)
     }
     if (type->type == TYPESTRUCT && structKind >= 4 && structKind <= 0xe && tk != '{') {
         expression = oldassignmentpromotion(conv_assignment_expression(), type, 0, 1);
-        InitExprWrap(type, expression, expression->type == EASSBLK);
+        InitExprWrap(type, expression, expression->type == EVECTOR128CONST);
         return;
     }
     if (tk != '{') {

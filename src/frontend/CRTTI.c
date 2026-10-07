@@ -635,7 +635,7 @@ ENode *explicit_typecast(register ENode *expr, register Type *type, UInt32 flags
 {
     Boolean err, set, wrap;
 
-    if (expr->type == ENEWEXCEPTION)
+    if (expr->type == EOBJLIST)
         return oldassignmentpromotion(expr, type, flags & 3, 1);
 
     set = wrap = err = 0;

@@ -3264,7 +3264,7 @@ SInt32 write_enode(ENode *node)
     SInt32 stringSize;
     SInt32 offset;
 
-    if (node->type == EOBJLIST && node->data.templdep.subtype == TDE_SOURCEREF)
+    if (node->type == ETEMPLDEP && node->data.templdep.subtype == TDE_SOURCEREF)
         node->data.objlist.templargs = NULL;
 
     offset = PrecompBegin();
@@ -3342,7 +3342,7 @@ SInt32 write_enode(ENode *node)
         case EOBJREF:
             add_serialized_bucket_entry(offset + 10, write_object(node->data.objref));
             break;
-        case ENEWEXCEPTION:
+        case EOBJLIST:
             add_serialized_bucket_entry(offset + 10, write_namespace_object_list(node->data.objlist.list));
             CError_ASSERT(2938, node->data.objlist.templargs == 0);
             if ((name = node->data.objlist.name) != NULL) {
@@ -3350,15 +3350,15 @@ SInt32 write_enode(ENode *node)
                 patch_object_reference(offset + 18, name);
             }
             break;
-        case EQUALNAME:
-            add_serialized_bucket_entry(offset + 10, write_enode(node->data.diadic.left));
-            add_serialized_bucket_entry(offset + 14, write_enode(node->data.diadic.right));
-            break;
         case EMFPOINTER:
             add_serialized_bucket_entry(offset + 10, write_enode(node->data.diadic.left));
             add_serialized_bucket_entry(offset + 14, write_enode(node->data.diadic.right));
             break;
-        case EPRECOMP:
+        case ENULLCHECK:
+            add_serialized_bucket_entry(offset + 10, write_enode(node->data.diadic.left));
+            add_serialized_bucket_entry(offset + 14, write_enode(node->data.diadic.right));
+            break;
+        case ETEMP:
             add_serialized_bucket_entry(offset + 10, write_type(node->data.temp.type));
             break;
         case EFUNCCALL:
@@ -3381,10 +3381,10 @@ SInt32 write_enode(ENode *node)
                 add_serialized_bucket_entry(offset + 14, firstOffset);
             }
             break;
-        case ENEWEXCEPTIONARRAY:
+        case EMEMBER:
             add_serialized_bucket_entry(offset + 10, write_member_func_ref(node->data.emember));
             break;
-        case EOBJLIST:
+        case ETEMPLDEP:
             switch (node->data.templdep.subtype) {
                 case TDE_SIZEOF:
                     add_serialized_bucket_entry(offset + 10, write_type(node->data.templdep.u.typeexpr.type));
@@ -3428,12 +3428,12 @@ SInt32 write_enode(ENode *node)
             break;
         case EINTCONST:
         case EFLOATCONST:
-        case ENULLCHECK:
-        case ETEMP:
+        case EPRECOMP:
         case EARGOBJ:
         case ELOCOBJ:
-        case EMEMBER:
-        case EASSBLK:
+        case ELABEL:
+        case EINSTRUCTION:
+        case EVECTOR128CONST:
             break;
         default:
             CError_FATAL(3031);

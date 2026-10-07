@@ -235,7 +235,7 @@ struct ENode *scandelete(char mode)
         originalExpr = expr;
         expr = CompilerTools_AllocatePool(sizeof(*originalExpr));
         *expr = *originalExpr;
-        expr->type = ENULLCHECK;
+        expr->type = EPRECOMP;
         referenceExpr = CParser_GetUniqueID();
         expr->data.longval = referenceExpr;
         hasReference = TRUE;
@@ -298,7 +298,7 @@ struct ENode *scandelete(char mode)
     }
     if (hasReference) {
         call = CompilerTools_AllocatePool(sizeof(*call));
-        call->type = EMFPOINTER;
+        call->type = ENULLCHECK;
         call->rtype = &stvoid;
         call->cost = 4;
         call->flags = 0;
@@ -617,7 +617,7 @@ ENode *scannew(char global)
             *constructedExpr = *result;
             pointerTemp = create_temp_object((Type *)&void_ptr);
             assignment = mk_diadic(create_objectnode(pointerTemp), result, EASS);
-            constructedExpr->type = ELABEL;
+            constructedExpr->type = ENEWEXCEPTION;
             constructedExpr->data.newexception.initexpr = assignment;
             constructedExpr->data.newexception.tryexpr =
                 CExpr_ConstructObject(type, create_objectnode(pointerTemp), initlist, 0, 1, 1, 1, 1);
@@ -626,12 +626,12 @@ ENode *scannew(char global)
         } else {
             objectExpr = (ENode *)CompilerTools_AllocatePool(sizeof(*objectExpr));
             *objectExpr = *result;
-            objectExpr->type = ENULLCHECK;
+            objectExpr->type = EPRECOMP;
             tempid = CParser_GetUniqueID();
             objectExpr->data.longval = tempid;
             constructedExpr = (ENode *)CompilerTools_AllocatePool(sizeof(*constructedExpr));
             *constructedExpr = *result;
-            constructedExpr->type = EMFPOINTER;
+            constructedExpr->type = ENULLCHECK;
             constructedExpr->cost = 4;
             constructedExpr->data.precomp.label = result;
             constructedExpr->data.precomp.expression = CExpr_ConstructObject(type, objectExpr, initlist, 0, 1, 1, 1, 1);
@@ -752,12 +752,12 @@ ENode *build_array_allocation_expression(Type *type, ENodeList *placement, char 
             ENode *sizeNode;
             ENode *destructorNode;
             ENode *layoutNode;
-            /* ESETCONST's allocation and initialization payload. */
+            /* ENEWEXCEPTIONARRAY's allocation and initialization payload. */
             result = CompilerTools_AllocatePool(0x1a);
             *result = *(ENode *)allocation;
             temporary = create_temp_object((Type *)&void_ptr);
             sizeNode = mk_diadic(create_objectnode(temporary), allocation, EASS);
-            result->type = ESETCONST;
+            result->type = ENEWEXCEPTIONARRAY;
             result->data.argobj.allocationAssignment = sizeNode;
             sizeNode = mk_intconst((Type *)&stunsignedlong, element->size);
             destructorNode = destructor ? create_objectrefnode(destructor) : mk_zero((Type *)&stsignedlong);
@@ -1090,7 +1090,7 @@ Boolean CExpr_CheckOperator(short token, ENode *left, ENode *right, BinaryOperat
 
                 node = (ENode *)CompilerTools_AllocatePool(sizeof(*node));
                 memclrw(node, sizeof(*node));
-                node->type = ENEWEXCEPTIONARRAY;
+                node->type = EMEMBER;
                 node->rtype = &stvoid;
                 node->data.emember = call;
                 tk = (UInt32)CPrepTokenizer_GetNextToken();
@@ -1697,7 +1697,7 @@ ENode *CExpr_MakeFunctionCall(ENode *expr, ENodeList *args)
     TypeFunc *builtinType;
     ENodeList *defaultArg;
 
-    if (expr->type == ENEWEXCEPTION && expr->data.funccall.functype != NULL) {
+    if (expr->type == EOBJLIST && expr->data.funccall.functype != NULL) {
         expr->data.objlist.list =
             CScope_ArgumentDependentNameLookup(expr->data.objlist.list, expr->data.objlist.name, args, 0);
         if (expr->data.funccall.funcref == NULL) {
@@ -1719,7 +1719,7 @@ ENode *CExpr_MakeFunctionCall(ENode *expr, ENodeList *args)
                                      args, 0, 0, 1);
     }
 
-    if (expr->type == ENEWEXCEPTIONARRAY) {
+    if (expr->type == EMEMBER) {
         candidate = expr->data.emember;
         candidateObject = candidate->path;
         candidateExpr = candidate->expr;
@@ -1747,7 +1747,7 @@ ENode *CExpr_MakeFunctionCall(ENode *expr, ENodeList *args)
             return value;
         }
     }
-    if (expr->type == ENEWEXCEPTION) {
+    if (expr->type == EOBJLIST) {
         return CExpr_GenericFuncCall(candidateObject, candidateExpr, flag10, NULL, expr->data.funccall.funcref,
                                      expr->data.objlist.templargs, args, 0, flag12, 1);
     }
@@ -1801,7 +1801,7 @@ ENode *CExpr_MakeFunctionCall(ENode *expr, ENodeList *args)
             }
             defaultArg->next = NULL;
             value = fn_00513040(formal->dexpr, 0);
-            if (value->type == EOBJLIST) {
+            if (value->type == ETEMPLDEP) {
                 if (value->data.templdep.subtype != TDE_CAST)
                     CError_FATAL(3096);
                 value = CExpr_DoExplicitConversion(value->data.templdep.u.cast.type, value->data.templdep.u.cast.qual,
@@ -1833,7 +1833,7 @@ ENode *convert_memberfunc_to_setconst_or_objref(ENode *expr)
     if (expr->data.emember->list->next || expr->data.emember->templargs) {
         node = (ENode *)CompilerTools_AllocatePool(sizeof(ENode));
         memclrw(node, sizeof(ENode));
-        node->type = ENEWEXCEPTION;
+        node->type = EOBJLIST;
         node->rtype = ((Object *)expr->data.emember->list->object)->type;
         node->data.objlist.list = expr->data.emember->list;
         node->data.objlist.templargs = expr->data.emember->templargs;
@@ -2284,7 +2284,7 @@ void make_funccall_with_dexprs(ENode *funcref, ENodeList *args, TypeFunc *ftype,
             }
             node->next = NULL;
             t = fn_00513040(arglist->dexpr, 0);
-            if (t->type == EOBJLIST) {
+            if (t->type == ETEMPLDEP) {
                 CError_ASSERT(3096, t->data.templdep.subtype == TDE_CAST);
                 t = CExpr_DoExplicitConversion(t->data.templdep.u.cast.type, t->data.templdep.u.cast.qual,
                                                t->data.templdep.u.cast.args);
@@ -2549,7 +2549,7 @@ static ENode *CExpr2_0046fde0_inline1(ENode *expr)
     if (!data_0058757c) {
         type = expr->rtype;
         node = (ENode *)CompilerTools_AllocatePool(26);
-        node->type = EPRECOMP;
+        node->type = ETEMP;
         node->cost = 0;
         node->flags = 0;
         node->rtype = (Type *)CDecl_NewPointerType(type);
@@ -2897,7 +2897,7 @@ SInt16 user_assign_check(ENode *operand, Type *targetType, UInt32 targetQual, Bo
             ft = (TypeMemberFunc *)candidate->type;
             call = CompilerTools_AllocatePool(sizeof(*call));
             memclrw(call, sizeof(*call));
-            call->type = EPRECOMP;
+            call->type = ETEMP;
             expr = call;
             call->rtype = ft->functype;
             if (call->rtype->type == TYPEPOINTER && (TYPE_POINTER(call->rtype)->qual & Q_REFERENCE)) {
@@ -4294,7 +4294,7 @@ ENode *CExpr_MakeObjRefNode(Object *obj, Boolean flag)
 static ENode *mkTemp_472ae0(Type *t)
 {
     ENode *n = (ENode *)CompilerTools_AllocatePool(sizeof(ENode));
-    n->type = EPRECOMP;
+    n->type = ETEMP;
     n->cost = 0;
     n->flags = 0;
     n->rtype = CDecl_NewPointerType(t);
@@ -4504,7 +4504,7 @@ Boolean CExpr_IsLValue(ENode *expr)
 
     expr = expr->data.monadic;
     switch (expr->type) {
-        case EPRECOMP:
+        case ETEMP:
             return 0;
         case EFUNCCALL:
             if (TYPE_FUNC(expr->data.funccall.functype)->functype->type != TYPEPOINTER)
@@ -4574,7 +4574,7 @@ ENode *CExpr_TempModifyExpr(ENode *expr)
 
     type = expr->rtype;
     temp = (ENode *)CompilerTools_AllocatePool(sizeof(ENode));
-    temp->type = EPRECOMP;
+    temp->type = ETEMP;
     temp->cost = 0;
     temp->flags = 0;
     temp->rtype = CDecl_NewPointerType(type);
@@ -4854,7 +4854,7 @@ static ENode *mkInd(ENode *src)
 static ENode *mkTemp(Type *t)
 {
     ENode *n = (ENode *)CompilerTools_AllocatePool(sizeof(ENode));
-    n->type = EPRECOMP;
+    n->type = ETEMP;
     n->cost = 0;
     n->flags = 0;
     n->rtype = CDecl_NewPointerType(t);
@@ -4915,7 +4915,7 @@ ENode *CExpr2_NewESCOPEBEGINNode(Type *value, unsigned int withAuxiliary)
     ENode *node;
 
     node = (ENode *)CompilerTools_AllocatePool(sizeof(ENode));
-    node->type = EPRECOMP;
+    node->type = ETEMP;
     node->cost = 0;
     node->flags = 0;
     node->rtype = CDecl_NewPointerType(value);
@@ -4973,7 +4973,7 @@ SInt16 isnotzero(ENode *node)
                 b = TRUE;
             return b;
         case ESTRINGCONST:
-        case EPRECOMP:
+        case ETEMP:
             return TRUE;
         case EOBJREF:
             obj = node->data.addr.objref;
@@ -5151,7 +5151,7 @@ ENode *CExpr_NewTemplDepENode(unsigned int value)
 {
     ENode *node = (ENode *)CompilerTools_AllocatePool(sizeof(ENode));
     memclrw(node, sizeof(ENode));
-    node->type = EOBJLIST;
+    node->type = ETEMPLDEP;
     node->rtype = &data_0055d5c0;
     node->data.templdep.subtype = value;
     return node;
@@ -5265,14 +5265,14 @@ ENode *replace_expr_tree_nodes(ENode *node)
         case EFLOATCONST:
         case ESTRINGCONST:
         case EOBJREF:
-        case ENULLCHECK:
         case EPRECOMP:
         case ETEMP:
         case EARGOBJ:
         case ELOCOBJ:
-        case ENEWEXCEPTIONARRAY:
+        case ELABEL:
         case EMEMBER:
-        case EASSBLK:
+        case EINSTRUCTION:
+        case EVECTOR128CONST:
             return node;
 
         case EFUNCCALL:
@@ -5284,12 +5284,12 @@ ENode *replace_expr_tree_nodes(ENode *node)
             return node;
         }
 
-        case EMFPOINTER:
+        case ENULLCHECK:
             node->data.diadic.left = replace_expr_tree_nodes(node->data.diadic.left);
             node->data.diadic.right = replace_expr_tree_nodes(node->data.diadic.right);
             return node;
 
-        case EQUALNAME:
+        case EMFPOINTER:
             node->data.diadic.left = replace_expr_tree_nodes(node->data.diadic.left);
             node->data.diadic.right = replace_expr_tree_nodes(node->data.diadic.right);
             return node;
@@ -5387,15 +5387,15 @@ void CExpr2_004743d0(ENode *e)
             case EFLOATCONST:
             case ESTRINGCONST:
             case EOBJREF:
-            case ENULLCHECK:
             case EPRECOMP:
             case ETEMP:
             case EARGOBJ:
             case ELOCOBJ:
-            case ENEWEXCEPTION:
-            case ENEWEXCEPTIONARRAY:
+            case ELABEL:
+            case EOBJLIST:
             case EMEMBER:
-            case EASSBLK:
+            case EINSTRUCTION:
+            case EVECTOR128CONST:
                 return;
             case EFUNCCALL:
             case EFUNCCALLP:
@@ -5403,11 +5403,11 @@ void CExpr2_004743d0(ENode *e)
                     CExpr2_004743d0(list->node);
                 e = e->data.funccall.funcref;
                 break;
-            case EMFPOINTER:
+            case ENULLCHECK:
                 CExpr2_004743d0(e->data.monadic);
                 e = e->data.diadic.right;
                 break;
-            case EQUALNAME:
+            case EMFPOINTER:
                 CExpr2_004743d0(e->data.monadic);
                 e = e->data.diadic.right;
                 break;

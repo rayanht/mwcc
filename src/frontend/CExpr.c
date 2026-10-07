@@ -287,12 +287,12 @@ static ENode *CExpr_WrapPrecomp(ENode *n, ENode *r)
 {
     ENode *nw = CompilerTools_AllocatePool(0x1a);
     *nw = *r;
-    nw->type = EMFPOINTER;
+    nw->type = ENULLCHECK;
     nw->data.diadic.left = CompilerTools_AllocatePool(0x1a);
     *nw->data.diadic.left = *n;
     nw->data.diadic.right = r;
     nw->data.precomp.labelId = CParser_GetUniqueID();
-    n->type = ENULLCHECK;
+    n->type = EPRECOMP;
     n->data.longval = nw->data.precomp.labelId;
     return nw;
 }
@@ -344,12 +344,12 @@ static inline UInt32 PreserveEvaluation(ENode *expr, ENode **res)
     if (isnotzero(expr) == 0) {
         ENode *n1 = CompilerTools_AllocatePool(0x1a);
         *n1 = *(*res);
-        n1->type = EMFPOINTER;
+        n1->type = ENULLCHECK;
         n1->data.diadic.left = CompilerTools_AllocatePool(0x1a);
         *n1->data.diadic.left = *expr;
         n1->data.diadic.right = (*res);
         n1->data.precomp.labelId = CParser_GetUniqueID();
-        expr->type = ENULLCHECK;
+        expr->type = EPRECOMP;
         expr->data.longval = n1->data.precomp.labelId;
         (*res) = n1;
     }
@@ -437,15 +437,14 @@ static inline ENode *parse_comma_expression(void)
 static inline ENode *parse_comma_operator_expression(void)
 {
     ENode *e, *a, *b;
-    void *local_14[3];
+    BinaryOperatorResult result;
     e = assignment_expression();
     while (tk == ',') {
         a = CExpr_RewriteConst(pointer_generation(e));
         tk = (SInt16)CPrepTokenizer_GetNextToken();
         b = CExpr_RewriteConst(pointer_generation(assignment_expression()));
-        if (copts.cplusplus != 0 &&
-            CExpr_CheckOperator(0x2c, (ENode *)(a), (ENode *)(b), (BinaryOperatorResult *)(local_14))) {
-            e = (ENode *)local_14[0];
+        if (copts.cplusplus != 0 && CExpr_CheckOperator(0x2c, a, b, &result)) {
+            e = result.expression;
             if (e == NULL)
                 CError_FATAL(6531);
         } else {
@@ -729,12 +728,12 @@ void CExpr_CheckUnusedExpression(ENode *node)
             case EFLOATCONST:
             case ESTRINGCONST:
             case EOBJREF:
-            case EPRECOMP:
             case ETEMP:
             case EARGOBJ:
-            case ENEWEXCEPTION:
-            case ENEWEXCEPTIONARRAY:
-            case EASSBLK:
+            case ELOCOBJ:
+            case EOBJLIST:
+            case EMEMBER:
+            case EVECTOR128CONST:
                 result = 0;
                 break;
             case ETYPCON:
@@ -775,11 +774,11 @@ void CExpr_CheckUnusedExpression(ENode *node)
             case EORASS:
             case EFUNCCALL:
             case EFUNCCALLP:
-            case EQUALNAME:
             case EMFPOINTER:
             case ENULLCHECK:
-            case ELOCOBJ:
-            case EMEMBER:
+            case EPRECOMP:
+            case ELABEL:
+            case EINSTRUCTION:
                 result = 1;
                 break;
             case EMULV:
@@ -789,13 +788,13 @@ void CExpr_CheckUnusedExpression(ENode *node)
             case EBCLR:
             case EBTST:
             case EBSET:
-            case ETEMPX:
-            case ELABEL:
             case ESETCONST:
-            case EOBJLIST:
-            case EINSTRUCTION:
+            case ENEWEXCEPTION:
+            case ENEWEXCEPTIONARRAY:
+            case ETEMPLDEP:
             case EDEFINE:
             case EREUSE:
+            case EASSBLK:
             default:
                 CError_FATAL(6466);
                 result = 0;
@@ -858,12 +857,12 @@ Boolean fn_004f0f40(ENode *node)
         case EFLOATCONST:
         case ESTRINGCONST:
         case EOBJREF:
-        case EPRECOMP:
         case ETEMP:
         case EARGOBJ:
-        case ENEWEXCEPTION:
-        case ENEWEXCEPTIONARRAY:
-        case EASSBLK:
+        case ELOCOBJ:
+        case EOBJLIST:
+        case EMEMBER:
+        case EVECTOR128CONST:
             return 0;
         case ETYPCON:
             return node->rtype->type == TYPEVOID;
@@ -901,11 +900,11 @@ Boolean fn_004f0f40(ENode *node)
         case EORASS:
         case EFUNCCALL:
         case EFUNCCALLP:
-        case EQUALNAME:
         case EMFPOINTER:
         case ENULLCHECK:
-        case ELOCOBJ:
-        case EMEMBER:
+        case EPRECOMP:
+        case ELABEL:
+        case EINSTRUCTION:
             return 1;
         default:
             CError_FATAL(6466);
@@ -1141,7 +1140,7 @@ ENode *parse_assignment_operator(ENode *expr, UInt8 assignmentKind, SInt16 overl
     if (copts.cplusplus != 0 && overloadToken != 0) {
         tk = CPrepTokenizer_GetNextToken();
         right = assignment_expression();
-        if (right->type != ENEWEXCEPTIONARRAY)
+        if (right->type != EMEMBER)
             right = CExpr_RewriteConst(pointer_generation(right));
         if (CExpr_CheckOperator(overloadToken, left, right, &overloadResult) != 0) {
             if (overloadResult.expression == NULL)
@@ -1209,7 +1208,7 @@ ENode *parse_assignment_operator(ENode *expr, UInt8 assignmentKind, SInt16 overl
                 default:
                     CError_FATAL(6042);
             }
-            if (callArguments->node->type == EPRECOMP &&
+            if (callArguments->node->type == ETEMP &&
                 (expr->rtype->type != TYPECLASS || (CClass_Destructor(TYPE_CLASS(expr->rtype)) == NULL &&
                                                     CClass_AssignmentOperator(TYPE_CLASS(expr->rtype)) == NULL))) {
                 callArguments->node = getnodeaddress(expr, 0);
@@ -1394,7 +1393,7 @@ ENode *CExpr_New_ECOND_Node(ENode *condition, ENode *trueExpr, ENode *falseExpr)
         arguments->next = CompilerTools_AllocatePool(sizeof(ENodeList));
         arguments->next->node = falseExpr;
         arguments->next->next = NULL;
-        if (CExpr_CheckOperatorConversion(EMFPOINTER, trueExpr, falseExpr, arguments, &conversion)) {
+        if (CExpr_CheckOperatorConversion(ENULLCHECK, trueExpr, falseExpr, arguments, &conversion)) {
             if (conversion.expression != NULL)
                 CError_FATAL(5726);
             trueExpr = conversion.left;
@@ -1448,12 +1447,12 @@ ENode *CExpr_New_ECOND_Node(ENode *condition, ENode *trueExpr, ENode *falseExpr)
                                 !isnotzero(trueOperand)) {
                                 ENode *copy = CompilerTools_AllocatePool(sizeof(ENode));
                                 *copy = *convertedTrue;
-                                copy->type = EMFPOINTER;
+                                copy->type = ENULLCHECK;
                                 copy->data.precomp.label = CompilerTools_AllocatePool(sizeof(ENode));
                                 *copy->data.precomp.label = *trueOperand;
                                 copy->data.precomp.expression = convertedTrue;
                                 copy->data.precomp.labelId = CParser_GetUniqueID();
-                                trueOperand->type = ENULLCHECK;
+                                trueOperand->type = EPRECOMP;
                                 trueOperand->data.longval = copy->data.precomp.labelId;
                                 convertedTrue = copy;
                             }
@@ -1473,12 +1472,12 @@ ENode *CExpr_New_ECOND_Node(ENode *condition, ENode *trueExpr, ENode *falseExpr)
                                 !isnotzero(falseOperand)) {
                                 falseCopy = CompilerTools_AllocatePool(sizeof(ENode));
                                 *falseCopy = *convertedFalse;
-                                falseCopy->type = EMFPOINTER;
+                                falseCopy->type = ENULLCHECK;
                                 falseCopy->data.precomp.label = CompilerTools_AllocatePool(sizeof(ENode));
                                 *falseCopy->data.precomp.label = *falseOperand;
                                 falseCopy->data.precomp.expression = convertedFalse;
                                 falseCopy->data.precomp.labelId = CParser_GetUniqueID();
-                                falseOperand->type = ENULLCHECK;
+                                falseOperand->type = EPRECOMP;
                                 falseOperand->data.longval = falseCopy->data.precomp.labelId;
                                 convertedFalse = falseCopy;
                             }
@@ -2873,7 +2872,7 @@ ENode *member_pointer_expression(void)
     }
     CError_ASSERT(4082, right->type == EINDIRECT);
     resultNode = CompilerTools_AllocatePool(26);
-    resultNode->type = EQUALNAME;
+    resultNode->type = EMFPOINTER;
     resultNode->cost = 4;
     resultNode->flags = 0;
     resultNode->rtype = &stvoid;
@@ -2934,7 +2933,7 @@ ENode *cast_expression(void)
         success = IrOptimizer_ConvertToVectorConstant(expr, &value.vector128val, TYPE_STRUCT(typeInfo.thetype));
         if (success != 0) {
             node = CompilerTools_AllocatePool(sizeof(ENode));
-            node->type = EASSBLK;
+            node->type = EVECTOR128CONST;
             node->cost = expr->cost;
             if (node->cost == 0)
                 node->cost = 1;
@@ -2976,7 +2975,7 @@ ENode *do_typecast(ENode *expr, Type *type, UInt32 qual)
     UInt32 maskedQual;
     UInt16 nodeQual;
 
-    if (copts.cpp_extensions && iscpp_typeequal(expr->rtype, type) && expr->type != ENEWEXCEPTION) {
+    if (copts.cpp_extensions && iscpp_typeequal(expr->rtype, type) && expr->type != EOBJLIST) {
         expr->rtype = type;
         expr->flags &= ~ENODE_FLAG_QUALS;
         expr->flags |= qual & ENODE_FLAG_QUALS;
@@ -2997,7 +2996,7 @@ ENode *do_typecast(ENode *expr, Type *type, UInt32 qual)
                         if (TYPE_MEMBER_POINTER(type)->ty1->type == TYPEFUNC)
                             memberExpr = create_objectnode(data_00587678);
                         memberExpr->rtype = type;
-                    } else if (expr->type == ENEWEXCEPTIONARRAY)
+                    } else if (expr->type == EMEMBER)
                         memberExpr = getpointertomemberfunc(expr, type, 1);
                     else
                         memberExpr = expr;
@@ -3017,7 +3016,7 @@ ENode *do_typecast(ENode *expr, Type *type, UInt32 qual)
     }
 
     nodeQual = maskedQual = qual & ENODE_FLAG_QUALS;
-    if (expr->type == ENEWEXCEPTION)
+    if (expr->type == EOBJLIST)
         return ((ENode * (*)(ENode *, Type *, int, int)) oldassignmentpromotion)(expr, type, maskedQual, 1);
     if (expr->type == EOBJREF) {
         TypeMemberFunc *func;
@@ -3170,7 +3169,7 @@ ENode *CExpr_MemberPointerConversion(ENode *enode, Type *type, Boolean flag)
             return enode;
         }
     }
-    if (enode->type == ENEWEXCEPTIONARRAY) {
+    if (enode->type == EMEMBER) {
         return getpointertomemberfunc(enode, type, flag);
     }
     return enode;
@@ -3254,12 +3253,12 @@ ENode *CExpr_New_EPRECOMP_Node(ENode *node, ENode *label)
     }
     result = (ENode *)CompilerTools_AllocatePool(sizeof(ENode));
     *result = *node;
-    result->type = EMFPOINTER;
+    result->type = ENULLCHECK;
     result->data.diadic.left = (ENode *)CompilerTools_AllocatePool(sizeof(ENode));
     *result->data.diadic.left = *label;
     result->data.diadic.right = node;
     ((ENode *)result)->data.precomp.labelId = CParser_GetUniqueID();
-    label->type = ENULLCHECK;
+    label->type = EPRECOMP;
     ((ENode *)label)->data.longval = ((ENode *)result)->data.precomp.labelId;
     return result;
 }
@@ -3338,7 +3337,7 @@ ENode *unary_expression(void)
                     case 0x151:
                     case TK_COLON_COLON:
                         operand = parse_postfix_expression(1);
-                        if (operand->type == ENEWEXCEPTIONARRAY)
+                        if (operand->type == EMEMBER)
                             return make_memberpointer(operand);
                         break;
                     default:
@@ -3357,7 +3356,7 @@ ENode *unary_expression(void)
                 operand->type == EINDIRECT) {
                 return CExpr_RewriteConst(pointer_generation(operand));
             }
-            if (operand->type == ENEWEXCEPTION)
+            if (operand->type == EOBJLIST)
                 return operand;
             return getnodeaddress(operand, 1);
         }
@@ -3494,7 +3493,7 @@ ENode *unary_expression(void)
                     return nullnode();
                 }
                 result = (ENode *)CompilerTools_AllocatePool(0x1a);
-                result->type = ELOCOBJ;
+                result->type = ELABEL;
                 result->cost = 0;
                 result->flags = 0;
                 result->rtype = (Type *)&void_ptr;
@@ -3664,7 +3663,7 @@ void *make_memberpointer(ENode *node)
     BClassList *base;
     ObjMemberVar *member;
 
-    CError_ASSERT(3132, node->type == ENEWEXCEPTIONARRAY);
+    CError_ASSERT(3132, node->type == EMEMBER);
     if (node->data.emember->expr != NULL) {
         CError_ReportError(ERR_EXPRESSION_SYNTAX_ERROR);
     }
@@ -3709,7 +3708,7 @@ ENode *getpointertomemberfunc(ENode *node, Type *targetType, Boolean initialize)
     TypeMemberFunc *functionType;
     ObjectList *methods;
 
-    CError_ASSERT(3021, node->type == ENEWEXCEPTIONARRAY);
+    CError_ASSERT(3021, node->type == EMEMBER);
 
     memberRef = node->data.emember;
     if (memberRef->expr != NULL && copts.cpp_extensions == 0)
@@ -3824,7 +3823,7 @@ void make_static_method_setconst(ObjectList *objects)
         nullnode();
         return;
     }
-    result = CExpr_NewENode(ENEWEXCEPTION);
+    result = CExpr_NewENode(EOBJLIST);
     result->rtype = matches->object->type;
     /* This node's object-reference slot holds the matching object list. */
     result->data.overloadCandidates = matches;
@@ -4034,7 +4033,7 @@ ENode *parse_postfix_expression(Boolean allowSpecial)
                             CError_FATAL(2572);
                         continue;
                     }
-                    if (expr->type == EQUALNAME) {
+                    if (expr->type == EMFPOINTER) {
                         result = scan_member_function_pointer_call(expr);
                         expr = unwrap_reference(result);
                         continue;
@@ -4044,7 +4043,7 @@ ENode *parse_postfix_expression(Boolean allowSpecial)
                 operand.list = CExpr_ScanExpressionList(1);
                 if (tk != ')')
                     CError_ReportError(ERR_RPAREN_EXPECTED);
-                if (expr->type == EOBJLIST) {
+                if (expr->type == ETEMPLDEP) {
                     result = CExpr_NewENode(EFUNCCALL);
                     result->rtype = &data_0055d5c0;
                     result->data.funccall.funcref = expr;
@@ -4795,7 +4794,7 @@ ENode *make_scope_parse_result_expr(NameResult *nameResult, ENode *expr, Boolean
                     if (tk == '(' && allowFunctionCall && OBJECT(nameResult->object)->datatype == DFUNC &&
                         copts.cplusplus && !nameResult->is_qualified &&
                         !(TYPE_FUNC(OBJECT(nameResult->object)->type)->flags & FUNC_METHOD)) {
-                        result = CExpr_NewENode(ENEWEXCEPTION);
+                        result = CExpr_NewENode(EOBJLIST);
                         result->rtype = OBJECT(nameResult->object)->type;
                         result->data.objlist.list = galloc(sizeof(NameSpaceObjectList));
                         result->data.objlist.list->next = nameResult->objects;
@@ -4915,7 +4914,7 @@ ENode *make_scope_parse_result_expr(NameResult *nameResult, ENode *expr, Boolean
         memberRef->isambig = nameResult->isambig;
         tk = CPrepTokenizer_GetNextToken();
         if (tk == '<' && (result = make_member_function_esetconst(nameResult))) {
-            if (result->type != ENEWEXCEPTION)
+            if (result->type != EOBJLIST)
                 CError_FATAL(1441);
             memberRef->list = result->data.objlist.list;
             memberRef->templargs = result->data.objlist.templargs;
@@ -4924,7 +4923,7 @@ ENode *make_scope_parse_result_expr(NameResult *nameResult, ENode *expr, Boolean
             memberRef->list->next = NULL;
             memberRef->list->object = nameResult->object;
         }
-        result = CExpr_NewENode(ENEWEXCEPTIONARRAY);
+        result = CExpr_NewENode(EMEMBER);
         result->rtype = &stvoid;
         result->data.emember = memberRef;
         return result;
@@ -4933,7 +4932,7 @@ ENode *make_scope_parse_result_expr(NameResult *nameResult, ENode *expr, Boolean
     if (nameResult->objects) {
         tk = CPrepTokenizer_GetNextToken();
         if (tk == '<' && (result = make_member_function_esetconst(nameResult))) {
-            if (result->type != ENEWEXCEPTION)
+            if (result->type != EOBJLIST)
                 CError_FATAL(1465);
             for (overload = result->data.objlist.list; overload; overload = overload->next) {
                 if (overload->object->otype == OT_OBJECT && OBJECT(overload->object)->type->type == TYPEFUNC &&
@@ -4947,7 +4946,7 @@ ENode *make_scope_parse_result_expr(NameResult *nameResult, ENode *expr, Boolean
                     memberRef->templargs = result->data.objlist.templargs;
                     memberRef->is_qualified = nameResult->is_qualified;
                     memberRef->isambig = nameResult->isambig;
-                    result = CExpr_NewENode(ENEWEXCEPTIONARRAY);
+                    result = CExpr_NewENode(EMEMBER);
                     result->rtype = &stvoid;
                     result->data.emember = memberRef;
                     return result;
@@ -4966,7 +4965,7 @@ ENode *make_scope_parse_result_expr(NameResult *nameResult, ENode *expr, Boolean
                 memberRef->list = nameResult->objects;
                 memberRef->is_qualified = nameResult->is_qualified;
                 memberRef->isambig = nameResult->isambig;
-                result = CExpr_NewENode(ENEWEXCEPTIONARRAY);
+                result = CExpr_NewENode(EMEMBER);
                 result->rtype = &stvoid;
                 result->data.emember = memberRef;
                 return result;
@@ -4974,7 +4973,7 @@ ENode *make_scope_parse_result_expr(NameResult *nameResult, ENode *expr, Boolean
         }
         if (tk == '<' && (result = make_member_function_esetconst(nameResult)))
             return result;
-        result = CExpr_NewENode(ENEWEXCEPTION);
+        result = CExpr_NewENode(EOBJLIST);
         result->rtype = OBJECT(nameResult->objects->object)->type;
         result->data.objlist.list = nameResult->objects;
         if (tk == '(' && copts.cplusplus && allowFunctionCall && !nameResult->is_qualified &&
@@ -4988,7 +4987,7 @@ ENode *make_scope_parse_result_expr(NameResult *nameResult, ENode *expr, Boolean
 
         if (copts.cplusplus && allowFunctionCall) {
             if (CPrepTokenizer_GetNextTokenAndRestorePosition() == '(') {
-                result = CExpr_NewENode(ENEWEXCEPTION);
+                result = CExpr_NewENode(EOBJLIST);
                 result->rtype = &stvoid;
                 result->data.objlist.name = nameResult->name;
                 tk = CPrepTokenizer_GetNextToken();
@@ -5120,7 +5119,7 @@ ENode *make_member_function_esetconst(NameResult *candidates)
             return NULL;
         }
     }
-    expr = CExpr_NewENode(ENEWEXCEPTION);
+    expr = CExpr_NewENode(EOBJLIST);
     expr->rtype = OBJECT(candidate->object)->type;
     expr->data.objlist.list = candidate;
     expr->data.objlist.templargs = CTemplateNew_ParseTemplateArguments(NULL, 0);
@@ -5229,7 +5228,7 @@ ENodeList *CExpr_ScanExpressionList(char parenthesized)
         current->next = NULL;
         expression = assignment_expression();
         current->node = expression;
-        if (current->node->type != ENEWEXCEPTIONARRAY) {
+        if (current->node->type != EMEMBER) {
             converted = pointer_generation(current->node);
             converted = CExpr_RewriteConst(converted);
             current->node = converted;
@@ -5315,7 +5314,7 @@ ENode *oldassignmentpromotion(ENode *e, Type *t, SInt16 sz, SInt32 flag)
         }
     }
 
-    if (e->type == ENEWEXCEPTIONARRAY)
+    if (e->type == EMEMBER)
         e = getpointertomemberfunc(e, t, 1);
 
     if (!isRef)

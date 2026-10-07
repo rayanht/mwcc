@@ -191,7 +191,7 @@ int IroRangePropagation_PropagateRangeInLinear(struct IROLinear *nd)
         case ETYPCON:
         case EBITFIELD:
         case ECOND:
-        case EMFPOINTER:
+        case ENULLCHECK:
             nd->range = NewRange(3);
             nd->range->upper = cint64_max;
             nd->range->lower = cint64_min;

@@ -442,7 +442,7 @@ static inline COptCSE *COpt_VectorConst(ENode *expr)
     COptCSE *cse;
     MWVector128 value;
 
-    for (cse = cse_entries[EASSBLK], value = expr->data.vector128val; cse; cse = cse->next) {
+    for (cse = cse_entries[EVECTOR128CONST], value = expr->data.vector128val; cse; cse = cse->next) {
         if (CMach_CalcVectorDiadicBool((unsigned int)cse->expr->rtype, &cse->expr->data.vector128val, 360, &value) &&
             expr->rtype == cse->expr->rtype)
             return cse;
@@ -455,8 +455,8 @@ static inline COptCSE *COpt_VectorConst(ENode *expr)
     cse->left = NULL;
     cse->right = NULL;
     cse->uses = 1;
-    cse->next = cse_entries[EASSBLK];
-    cse_entries[EASSBLK] = cse;
+    cse->next = cse_entries[EVECTOR128CONST];
+    cse_entries[EVECTOR128CONST] = cse;
     return cse;
 }
 
@@ -675,16 +675,16 @@ void COptimizer_CountExpressionObjectUses(ENode *expression)
                 expression = expression->data.monadic;
                 break;
 
-            case EMFPOINTER:
+            case ENULLCHECK:
                 COptimizer_CountExpressionObjectUses(expression->data.monadic);
                 expression = expression->data.diadic.right;
                 break;
 
             case EINTCONST:
             case EFLOATCONST:
-            case ENULLCHECK:
-            case ELOCOBJ:
-            case EASSBLK:
+            case EPRECOMP:
+            case ELABEL:
+            case EVECTOR128CONST:
                 return;
 
             case ESTRINGCONST:
@@ -1293,7 +1293,7 @@ void mark_dlocal_reference_bits(ENode *node)
                 node = node->data.monadic;
                 break;
 
-            case EMFPOINTER:
+            case ENULLCHECK:
                 mark_dlocal_reference_bits(node->data.diadic.left);
                 node = node->data.diadic.right;
                 break;
@@ -1301,9 +1301,9 @@ void mark_dlocal_reference_bits(ENode *node)
             case EINTCONST:
             case EFLOATCONST:
             case ESTRINGCONST:
-            case ENULLCHECK:
-            case ELOCOBJ:
-            case EASSBLK:
+            case EPRECOMP:
+            case ELABEL:
+            case EVECTOR128CONST:
                 return;
 
             default:
@@ -1447,7 +1447,7 @@ COptCSE *collect_expr_cse(ENode *expr)
             return COpt_IntConst(expr);
         case EFLOATCONST:
             return COpt_FloatConst(expr);
-        case EASSBLK:
+        case EVECTOR128CONST:
             return COpt_VectorConst(expr);
         case EOBJREF:
             return COpt_ObjectRef(expr, cse_entries[EOBJREF]);
@@ -1458,7 +1458,7 @@ COptCSE *collect_expr_cse(ENode *expr)
             collect_expr_cse(expr->data.cond.cond);
             invalidate_expr_cse(NULL);
             return NULL;
-        case EMFPOINTER:
+        case ENULLCHECK:
             collect_expr_cse(expr->data.monadic);
             invalidate_expr_cse(NULL);
             return NULL;
@@ -1467,9 +1467,9 @@ COptCSE *collect_expr_cse(ENode *expr)
             collect_expr_cse(expr->data.diadic.left);
             invalidate_expr_cse(NULL);
             return NULL;
-        case ELOCOBJ:
+        case ELABEL:
             return NULL;
-        case ENULLCHECK:
+        case EPRECOMP:
             CError_FATAL(947);
         default:
             CError_FATAL(950);

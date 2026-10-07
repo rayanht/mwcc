@@ -1321,7 +1321,7 @@ void lower_newexception(ENode *node, Boolean useExpression)
     ENode *expression;
     ENode *result;
 
-    isArgumentObject = (node->type == ESETCONST);
+    isArgumentObject = (node->type == ENEWEXCEPTIONARRAY);
 
     if (useExpression) {
         node->data.newexception.initexpr = rewrite_expr_temporaries(node->data.newexception.initexpr);
@@ -1405,11 +1405,11 @@ ENode *rewrite_funccall_temporaries(ENode *node, Boolean reverse)
 
     temporaryArg = NULL;
     if (node->data.funccall.args != NULL) {
-        if ((temporaryExpr = node->data.funccall.args->node)->type == EPRECOMP) {
+        if ((temporaryExpr = node->data.funccall.args->node)->type == ETEMP) {
             if (temporaryExpr->data.temp.needs_dtor)
                 temporaryArg = node->data.funccall.args;
         } else if (node->data.funccall.args->next != NULL) {
-            if ((temporaryExpr = node->data.funccall.args->next->node)->type == EPRECOMP &&
+            if ((temporaryExpr = node->data.funccall.args->next->node)->type == ETEMP &&
                 temporaryExpr->data.temp.needs_dtor)
                 temporaryArg = node->data.funccall.args->next;
         }
@@ -1536,13 +1536,13 @@ ENode *rewrite_funccall_temporaries(ENode *node, Boolean reverse)
 ENode *rewrite_expr_temporaries(ENode *expr)
 {
     switch (expr->type) {
-        case EPRECOMP:
+        case ETEMP:
             return CException_004e1940(expr);
-        case ELABEL:
-        case ESETCONST:
+        case ENEWEXCEPTION:
+        case ENEWEXCEPTIONARRAY:
             lower_newexception(expr, 1);
             return;
-        case EMFPOINTER:
+        case ENULLCHECK:
             expr->data.diadic.left = rewrite_expr_temporaries(expr->data.diadic.left);
             expr->data.diadic.right = rewrite_expr_temporaries(expr->data.diadic.right);
             return expr;
@@ -1606,10 +1606,10 @@ ENode *rewrite_expr_temporaries(ENode *expr)
         case EFLOATCONST:
         case ESTRINGCONST:
         case EOBJREF:
-        case ENULLCHECK:
-        case ELOCOBJ:
-        case EMEMBER:
-        case EASSBLK:
+        case EPRECOMP:
+        case ELABEL:
+        case EINSTRUCTION:
+        case EVECTOR128CONST:
             return expr;
         default:
             CError_FATAL(2016);
@@ -1620,13 +1620,13 @@ ENode *rewrite_expr_temporaries(ENode *expr)
 ENode *fn_004e1050(ENode *expression)
 {
     switch (expression->type) {
-        case EPRECOMP:
+        case ETEMP:
             return CException_004e1940(expression);
-        case ELABEL:
-        case ESETCONST:
+        case ENEWEXCEPTION:
+        case ENEWEXCEPTIONARRAY:
             lower_newexception(expression, 0);
             return;
-        case EMFPOINTER:
+        case ENULLCHECK:
             expression->data.diadic.left = fn_004e1050(expression->data.diadic.left);
             expression->data.diadic.right = rewrite_expr_temporaries(expression->data.diadic.right);
             return expression;
@@ -1692,13 +1692,13 @@ ENode *fn_004e1050(ENode *expression)
         case EFLOATCONST:
         case ESTRINGCONST:
         case EOBJREF:
-        case EQUALNAME:
-        case ENULLCHECK:
-        case ELOCOBJ:
-        case ENEWEXCEPTION:
-        case ENEWEXCEPTIONARRAY:
+        case EMFPOINTER:
+        case EPRECOMP:
+        case ELABEL:
+        case EOBJLIST:
         case EMEMBER:
-        case EASSBLK:
+        case EINSTRUCTION:
+        case EVECTOR128CONST:
             return expression;
         default:
             CError_FATAL(2127);

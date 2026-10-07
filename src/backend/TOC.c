@@ -369,7 +369,7 @@ void TOC_0049d710(ENode *node, Type *targetType, int ignored)
             node->hascall = 0;
             break;
         }
-        case EASSBLK:
+        case EVECTOR128CONST:
             if (!is_small_splat_or_table_vector((long)&node->data, node->rtype)) {
                 data_00588500 = 1;
                 replace_vector_constant_with_objectref(node);
@@ -810,24 +810,24 @@ void TOC_0049d710(ENode *node, Type *targetType, int ignored)
             TOC_0049d710(operand, NULL, 0);
             node->hascall = operand->hascall;
             break;
-        case EINSTRUCTION:
+        case EDEFINE:
             operand = node->data.diadic.left;
             TOC_0049d710(operand, NULL, 0);
             node->hascall = operand->hascall;
             break;
-        case EDEFINE:
+        case EREUSE:
             operand = node->data.diadic.left;
             node->hascall = operand->hascall;
             break;
-        case EMFPOINTER:
+        case ENULLCHECK:
             TOC_0049d710(node->data.diadic.left, NULL, 0);
             TOC_0049d710(node->data.diadic.right, NULL, 0);
             node->hascall = node->data.diadic.left->hascall | node->data.diadic.right->hascall;
             break;
-        case ENULLCHECK:
+        case EPRECOMP:
             node->hascall = 0;
             break;
-        case ELOCOBJ: {
+        case ELABEL: {
             Object *object = get_or_create_label_object(node->data.label);
             ENode *ref = CompilerTools_AllocatePool(sizeof(ENode));
             memclrw(ref, sizeof(ENode));
@@ -978,11 +978,11 @@ void rewrite_compound_assignment(ENode *expr, unsigned char opcode)
         ENode *temporary;
         temporary = (ENode *)CompilerTools_AllocatePool(sizeof(ENode));
         memclrw(temporary, sizeof(ENode));
-        temporary->type = EINSTRUCTION;
+        temporary->type = EDEFINE;
         temporary->rtype = leftType;
         reference = (ENode *)CompilerTools_AllocatePool(sizeof(ENode));
         memclrw(reference, sizeof(ENode));
-        reference->type = EDEFINE;
+        reference->type = EREUSE;
         reference->rtype = leftType;
         reference->data.diadic.left = temporary;
         if (left->type != EBITFIELD) {

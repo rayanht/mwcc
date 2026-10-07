@@ -1598,7 +1598,7 @@ void check_function_result_automatic_variable(ENode *e)
                 if (e->data.objref->datatype != DLOCAL)
                     break;
                 /* fall through */
-            case EPRECOMP:
+            case ETEMP:
                 CError_Warning(ERR_FUNCTION_RESULT_POINTER_REFERENCE_AUTOMATIC_VARIABLE);
                 break;
             case EADD:
@@ -1628,7 +1628,7 @@ ENode *initialize_argument_object(ENode *initData, Type *type, UInt32 flags)
     object = argument->object;
 
     node = CExpr_IsTempConstruction(initData, type, &local);
-    if (node != NULL && local->type == EPRECOMP) {
+    if (node != NULL && local->type == ETEMP) {
         *local = *create_objectnode(object);
         return node;
     }
@@ -2584,7 +2584,7 @@ void CFunc_WarnUnused(void)
 ENode *sub_47bca0(ENode *node)
 {
     switch (node->type) {
-        case EPRECOMP: {
+        case ETEMP: {
             Object *n = CException_GetTempObject(node);
             if (node->data.temp.needs_dtor) {
                 CleanNode *r = (CleanNode *)CompilerTools_AllocatePool(12);
@@ -2600,7 +2600,7 @@ ENode *sub_47bca0(ENode *node)
             node->data.objref = n;
             return node;
         }
-        case EMFPOINTER:
+        case ENULLCHECK:
             return fn_0047bff0(node);
         case ECOND:
             return rewrite_cond_with_cleannodes(node);
@@ -2659,10 +2659,10 @@ ENode *sub_47bca0(ENode *node)
         case EFLOATCONST:
         case ESTRINGCONST:
         case EOBJREF:
-        case ENULLCHECK:
-        case ELOCOBJ:
-        case EMEMBER:
-        case EASSBLK:
+        case EPRECOMP:
+        case ELABEL:
+        case EINSTRUCTION:
+        case EVECTOR128CONST:
             return node;
         default:
             CError_FATAL(923);

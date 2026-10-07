@@ -206,7 +206,7 @@ Boolean match_template_function_args(Object *obj, DeduceInfo *state, FuncArg *ar
                 if (exprs->node->type == EOBJREF && exprs->node->data.objref->type->type == TYPEFUNC &&
                     (((TypeFunc *)exprs->node->data.objref->type)->flags & 1024))
                     return 0;
-                if (exprs->node->type == ENEWEXCEPTION) {
+                if (exprs->node->type == EOBJLIST) {
                     for (candidate = exprs->node->data.overloadCandidates; candidate; candidate = candidate->next) {
                         if (candidate->object->otype == OT_OBJECT && candidate->object->type->type == TYPEFUNC &&
                             (((TypeFunc *)candidate->object->type)->flags & 1024))

@@ -1689,7 +1689,7 @@ void IroTransform_SimplifyLinear(void)
                 break;
             }
             case IROLinearOperand:
-                if (!(node->flags & IROLF_Reffed) && node->u.node->type != EMEMBER) {
+                if (!(node->flags & IROLF_Reffed) && node->u.node->type != EINSTRUCTION) {
                     node->type = IROLinearNop;
                 }
                 break;
@@ -1950,7 +1950,7 @@ ENode *walk_expr_postorder(ENode *expr)
             walk_expr_postorder(expr->data.cond.expr1);
             walk_expr_postorder(expr->data.cond.expr2);
             break;
-        case EMFPOINTER:
+        case ENULLCHECK:
             walk_expr_postorder(expr->data.diadic.left);
             walk_expr_postorder(expr->data.diadic.right);
             break;

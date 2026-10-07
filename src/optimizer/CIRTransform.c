@@ -325,7 +325,7 @@ ENode *simplify_unused_enode_values(ENode *e, UInt8 flag)
             e->data.cond.expr1 = simplify_unused_enode_values(e->data.cond.expr1, 1);
             e->data.cond.expr2 = simplify_unused_enode_values(e->data.cond.expr2, 1);
             break;
-        case EQUALNAME:
+        case EMFPOINTER:
             e->data.diadic.left = simplify_unused_enode_values(e->data.diadic.left, flag);
             e->data.diadic.right = simplify_unused_enode_values(e->data.diadic.right, flag);
             break;
@@ -341,12 +341,12 @@ ENode *simplify_unused_enode_values(ENode *e, UInt8 flag)
             e->data.funccall.args = head;
             break;
         }
-        case EMFPOINTER:
+        case ENULLCHECK:
             e->data.diadic.left = simplify_unused_enode_values(e->data.diadic.left, 1);
             e->data.diadic.right = simplify_unused_enode_values(e->data.diadic.right, 1);
             break;
-        case ELABEL:
-        case ESETCONST:
+        case ENEWEXCEPTION:
+        case ENEWEXCEPTIONARRAY:
             e->data.diadic.left = simplify_unused_enode_values(e->data.diadic.left, 1);
             e->data.diadic.right = simplify_unused_enode_values(e->data.diadic.right, 1);
             break;
@@ -354,12 +354,12 @@ ENode *simplify_unused_enode_values(ENode *e, UInt8 flag)
         case EFLOATCONST:
         case ESTRINGCONST:
         case EOBJREF:
-        case ENULLCHECK:
         case EPRECOMP:
-        case ELOCOBJ:
-        case ENEWEXCEPTIONARRAY:
+        case ETEMP:
+        case ELABEL:
         case EMEMBER:
-        case EASSBLK:
+        case EINSTRUCTION:
+        case EVECTOR128CONST:
             break;
         default:
             CError_FATAL(1884);

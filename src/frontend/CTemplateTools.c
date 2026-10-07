@@ -624,7 +624,7 @@ void CTemplateTools_00516930(void *context, TemplClass *function, TemplArg *argu
                             CError_ReportError(ERR_TEMPLATE_NON_TYPE_ARGUMENT_OBJECTS_SHALL);
                         break;
                     case EINTCONST:
-                    case ENEWEXCEPTION:
+                    case EOBJLIST:
                         break;
                     default:
                         CError_ReportError(ERR_ILLEGAL_NON_TYPE_TEMPLATE_ARGUMENT);
@@ -714,7 +714,7 @@ ENode *CTemplTool_DeduceExpr(TypeDeduce *ctx, ENode *node)
     }
 
     switch (node->type) {
-        case EOBJLIST:
+        case ETEMPLDEP:
             switch (node->data.templdep.subtype) {
                 case TDE_PARAM:
                     if (ctx->processingArgument != 0 && node->data.templdep.u.pid.nindex == ctx->nindex) {
@@ -1122,7 +1122,7 @@ Boolean CTemplTool_EqualExprTypes(ENode *left, ENode *right)
             return leftObject == rightObject;
         }
 
-        case EOBJLIST:
+        case ETEMPLDEP:
             if (left->data.templdep.subtype != right->data.templdep.subtype)
                 return 0;
             switch (left->data.templdep.subtype) {
@@ -1250,7 +1250,7 @@ UInt8 CTemplTool_IsSameTemplate(TemplParam *parameter, TemplArg *argument)
                 argument->data.typeparam.qual != 0)
                 return 0;
         } else {
-            if (argument->data.paramdecl.expr->type != EOBJLIST ||
+            if (argument->data.paramdecl.expr->type != ETEMPLDEP ||
                 argument->data.paramdecl.expr->data.templdep.subtype != TDE_PARAM ||
                 argument->data.paramdecl.expr->data.templdep.u.pid.nindex != parameter->pid.nindex ||
                 argument->data.paramdecl.expr->data.templdep.u.pid.index != parameter->pid.index)
@@ -1601,7 +1601,7 @@ UInt8 CTemplTool_IsIdenticalTemplArgList(TemplArg *pattern, TemplParam *argument
                 type->u.pid.index != argument->pid.index || type->u.pid.nindex != argument->pid.nindex)
                 return 0;
         } else {
-            if (pattern->data.paramdecl.expr->type != EOBJLIST ||
+            if (pattern->data.paramdecl.expr->type != ETEMPLDEP ||
                 pattern->data.paramdecl.expr->data.templdep.subtype != TDE_PARAM ||
                 pattern->data.paramdecl.expr->data.templdep.u.pid.index != argument->pid.index ||
                 pattern->data.paramdecl.expr->data.templdep.u.pid.nindex != argument->pid.nindex)

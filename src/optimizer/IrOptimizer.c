@@ -1510,7 +1510,7 @@ struct IROLinear *linearize_expression(ENode *expression)
         case EFLOATCONST:
         case ESTRINGCONST:
         case EOBJREF:
-        case EASSBLK: {
+        case EVECTOR128CONST: {
             IROLinear *operand;
             operand = new_linear(1);
             result = operand;
@@ -1749,7 +1749,7 @@ void lower_expression_to_statements(ENode *node, int valueNeeded, int force)
             break;
         }
 
-        case ENULLCHECK: {
+        case EPRECOMP: {
             Object *temporary = LookupTemporary(node);
             node->type = EINDIRECT;
             node->data.monadic = create_objectrefnode(temporary);
@@ -1757,7 +1757,7 @@ void lower_expression_to_statements(ENode *node, int valueNeeded, int force)
             break;
         }
 
-        case EMFPOINTER: {
+        case ENULLCHECK: {
             Statement *statement;
             lower_expression_to_statements(node->data.diadic.left, 1, 0);
             create_temp_object_assignment(node, &nullCheckTemp);
@@ -1814,8 +1814,8 @@ void lower_expression_to_statements(ENode *node, int valueNeeded, int force)
         case EFLOATCONST:
         case ESTRINGCONST:
         case EOBJREF:
-        case ETEMPX:
-        case EASSBLK:
+        case ESETCONST:
+        case EVECTOR128CONST:
             break;
 
         default:
