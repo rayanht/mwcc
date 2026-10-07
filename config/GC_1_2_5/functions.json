@@ -1467,13 +1467,13 @@
     "name": "return_zero",
     "address": "0x0040a6c0",
     "size": 5,
-    "source": "src/driver/CLPlugins.c"
+    "source": "src/driver/CLMain.c"
   },
   {
     "name": "get_data_and_size",
     "address": "0x0040a6d0",
     "size": 25,
-    "source": "src/driver/CLPlugins.c"
+    "source": "src/driver/CLMain.c"
   },
   {
     "name": "copy_global_value_to_address",

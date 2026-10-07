@@ -191,12 +191,12 @@ src/driver/ResourceStrings.c:
 	.bss        start:0x0057D7F8 end:0x0057D8F8
 
 src/driver/CLPlugins.c:
-	.text       start:0x00408D20 end:0x0040A6F0
+	.text       start:0x00408D20 end:0x0040A6C0
 	.data       start:0x00541460 end:0x00541B18
 	.bss        start:0x0057D8F8 end:0x0057D920
 
 src/driver/CLMain.c:
-	.text       start:0x0040A6F0 end:0x0040B6EB
+	.text       start:0x0040A6C0 end:0x0040B6EB
 	.data       start:0x00541B18 end:0x00543380
 	.bss        start:0x0057D920 end:0x0057D938
 

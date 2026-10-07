@@ -72,9 +72,9 @@ void CLTarg_FreeTargets(CLTarget *head)
     }
 }
 
-void CLTarg_AppendEntry(void **link, void *entry)
+void CLTarg_AppendEntry(CLTarget **list, CLTarget *target)
 {
-    for (; *link != NULL; link = (void **)((char *)*link + 0x1d8)) {
+    for (; *list != NULL; list = &(*list)->next) {
     }
-    *link = entry;
+    *list = target;
 }

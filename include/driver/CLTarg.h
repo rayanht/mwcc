@@ -49,7 +49,7 @@ struct CLTarget {
 extern struct CLTarget *CLTarg_CreateTarget(char *targetName, int processor, int operatingSystem, int targetKind);
 extern void free_target(CLTarget *a0);
 extern void CLTarg_FreeTargets(CLTarget *head);
-extern void CLTarg_AppendEntry(void **link, void *entry);
+extern void CLTarg_AppendEntry(CLTarget **list, CLTarget *target);
 
 #ifdef __cplusplus
 }

@@ -1329,6 +1329,7 @@
   "__Environ": "0x587e54",
   "__GetThreadLocalData": "0x4020b0",
   "__HandleTable": "0x584768",
+  "_mainProj": "0x00584b68",
   "__InitializeMainThreadData": "0x402080",
   "__MWCHandler": "0x401070",
   "__RegisterExceptionTables": "0x401110",

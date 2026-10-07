@@ -5,19 +5,19 @@
 #include "driver/CLTarg.h"
 #include "driver/MsDos.h"
 
-unsigned char CLProj_InitializeCWD(char *a0)
+unsigned char CLProj_InitializeCWD(Project *project)
 {
-    *(unsigned int *)a0 = 0;
-    OS_GetCWD(a0 + 4);
-    OS_MakeNameSpec("", a0 + 264);
+    project->targets = NULL;
+    OS_GetCWD(project->projectDirectory.directory.path);
+    OS_MakeNameSpec("", project->projectDirectory.name);
     return 1;
 }
 
-unsigned char CLProj_FreeTargets(void *value)
+unsigned char CLProj_FreeTargets(Project *project)
 {
-    if (value == NULL) {
+    if (project == NULL) {
         CLIO_ReportAssertionFailure("this != NULL", "CLProj.c", 25U);
     }
-    CLTarg_FreeTargets(*(struct CLTarget **)value);
+    CLTarg_FreeTargets(project->targets);
     return 1;
 }

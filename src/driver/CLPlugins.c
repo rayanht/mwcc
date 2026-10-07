@@ -1061,15 +1061,3 @@ short CLPlugins_CallEntry(Plugin *dispatch, CWPluginPrivateContext *argument)
     }
     return 2;
 }
-
-unsigned int __stdcall return_zero(unsigned int unused)
-{
-    return 0U;
-}
-
-unsigned int __stdcall get_data_and_size(unsigned char **data, unsigned int *size)
-{
-    *data = data_00541e1c;
-    *size = 18U;
-    return 0U;
-}

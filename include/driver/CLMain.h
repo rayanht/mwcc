@@ -4,6 +4,7 @@
 #include "compiler/common.h"
 #include "driver/Memory.h"
 #include "driver/MsDos.h"
+#include "driver/CLProj.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -117,7 +118,6 @@ struct CommandParseInfo {
     SInt32 value2;
 };
 extern int CLMain_Initialize(int argc, char **argv);
-extern char data_0057d930[8];
 extern int parse_command_line(void);
 extern SInt32 unique_plugin_name_count;
 extern SInt32 plugin_request_count;
@@ -130,11 +130,11 @@ extern unsigned int __stdcall copy_global_value(unsigned int a0);
 extern int __stdcall fn_0040a730(char **panelData);
 extern unsigned int __stdcall fn_0040a7a0(struct ListLink *link);
 extern unsigned int __stdcall set_listlink_next_to_global(struct ListLink *node);
-extern unsigned char latch_flag(unsigned int a0);
-extern Boolean is_enabled_or_global_nonzero(char enabled);
+extern Boolean latch_flag(Boolean pre, char *argument);
+extern Boolean is_enabled_or_global_nonzero(Boolean pre, char *argument);
 extern unsigned int fn_0040a7c0(void);
 extern unsigned int fn_0040a7d0(void);
-extern unsigned char invoke_if_requested(char shouldInvoke);
+extern Boolean invoke_if_requested(Boolean pre, char *argument);
 extern void consume_driver_command_line_options(int *argc, char ***argv);
 extern void CLMain_AppendEnabledCommandLineOptions(int *first, char ***second);
 extern unsigned int CLMain_FreePlugins(unsigned int result);
@@ -147,29 +147,20 @@ extern int convert_linker_panel_settings(PCmdLineLinker *input, PCmdLineLinker *
 extern unsigned int create_cmdline_data_blocks(void);
 extern int create_default_target(void);
 extern unsigned int check_cmdline_entries(char *context);
-extern char DAT_00541e4c[];
-extern unsigned short DAT_00541e4e;
-extern int DAT_00543148;
-extern char *DAT_0057d920;
-extern char *DAT_0057d924;
-extern char *DAT_0057d928;
-extern void *PTR_DAT_00541b18;
-extern struct DriverCommandLineOption {
+/* An option the driver takes itself: its handler is called with pre set when it is seen, and without to ask whether
+ * to pass it on. */
+struct DriverCommandLineOption {
     char *name;
     char **value;
-    char (*handler)(int, char *);
-} PTR_DAT_00543124[3];
-extern SInt32 data_00541e44;
-extern SInt32 data_00541e48;
-extern unsigned char data_00541ee4[];
-extern unsigned char data_00542f38[];
-extern char *data_00542f3c[];
-extern double data_00543248;
+    Boolean (*handler)(Boolean pre, char *argument);
+};
+extern Project mainProj;
+extern Project *gProj;
+extern unsigned int __stdcall return_zero(unsigned int unused);
+extern unsigned int __stdcall get_data_and_size(unsigned char **data, unsigned int *size);
 extern unsigned int CLMain_InitializeAndParseCommandLine(void);
 extern char input_name[];
 extern char output_name[];
-extern ListLink data_00541edc;
-extern ListLink data_00541eac;
 
 #ifdef __cplusplus
 }

@@ -55,6 +55,7 @@
     "src/driver/CLIO.c",
     "src/driver/CLLicenses.c",
     "src/driver/CLLoadAndCache.c",
+    "src/driver/CLMain.c",
     "src/driver/CLOverlays.c",
     "src/driver/CLPluginRequests.cpp",
     "src/driver/CLPlugins.c",

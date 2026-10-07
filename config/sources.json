@@ -772,8 +772,7 @@
     ],
     "include_dirs": [
       "src/driver"
-    ],
-    "status": "NonMatching"
+    ]
   },
   "src/driver/CLOverlays.c": {
     "compiler": "pro53",

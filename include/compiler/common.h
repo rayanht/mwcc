@@ -188,6 +188,7 @@ typedef struct CLBrowserLookupEntry CLBrowserLookupEntry;
 typedef struct CLOverlayEntry CLOverlayEntry;
 typedef struct CLOverlayValues CLOverlayValues;
 typedef struct CLTarget CLTarget;
+typedef struct Project Project;
 typedef struct CLState CLState;
 typedef struct CLTargetDirectory CLTargetDirectory;
 typedef struct CLabel CLabel;

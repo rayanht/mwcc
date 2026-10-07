@@ -167,9 +167,6 @@ extern int CLPlugins_DispatchArgumentToPlugins(Plugin *node, SInt32 argument, SI
                                                SInt32 secondIdentifier);
 extern int CLPlugins_GetUniquePluginNames(Plugin *nameList, SInt32 *nameCount, char ***nameArray);
 extern short CLPlugins_CallEntry(Plugin *dispatch, CWPluginPrivateContext *argument);
-extern unsigned int __stdcall return_zero(unsigned int a0);
-extern unsigned int __stdcall get_data_and_size(unsigned char **data, unsigned int *size);
-extern unsigned char data_00541e1c[];
 struct Plugin;
 struct Plugin;
 struct PluginDataCallbacks;
