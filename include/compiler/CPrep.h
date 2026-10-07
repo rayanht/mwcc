@@ -36,40 +36,40 @@ struct CNameRef {
 };
 #pragma options align = reset
 #pragma options align = mac68k
-struct COpts {
-    UInt8 nativeByteOrder;
+struct CompilerLinkerOptions {
+    UInt8 littleendian;
     UInt8 pad01[1];
     SInt16 processor;
     SInt8 processorModel; /* 0x04: SetProcessorModel stores model; Scheduler selects target scheduling model */
     UInt8 instructionSchedulingMode; /* 0x05: CodeGen selects Scheduler_Schedule when mode is 2 */
-    unsigned char cOptimizerDumpEnabled;
+    unsigned char debug_listing;
     char emitExtraAssemblyData; /* 0x07: PCodeAssembly_ShouldEmitExtraData */
-    Boolean f08;
+    Boolean disable_registers;
     char
-        debugOptions; /* 0x09: TargetPanels_eabi_ppc_LoadCompilerOptions clears this, then loads the CodeGen panel's fp_contract unless its fpmode is 0 or 1. */
-    Boolean ppcUnrollSpeculative;
+        fp_contract; /* 0x09: TargetPanels_eabi_ppc_LoadCompilerOptions clears this, then loads the CodeGen panel's fp_contract unless its fpmode is 0 or 1. */
+    Boolean unroll_speculative;
     UInt8 pad0b[1];
-    SInt16 ppcUnrollInstructionsLimit;
-    SInt16 ppcUnrollFactorLimit;
-    UInt8 altivecModel;
-    UInt8 altivecVrsave; /* 0x11: CodeGen parses altivec_vrsave; StackFrameEABI gates VRSAVE frame handling */
-    UInt8 codeAlignment; /* 0x12: SetCodeAlignment; BE_symbol assigns default symbol alignment */
-    char emitSerializedAssemblyFormat; /* 0x13: PCodeAssembly_ShouldEmitSerializedFormat */
-    char f14;
+    SInt16 unroll_instr_limit;
+    SInt16 unroll_factor_limit;
+    UInt8 altivec_model;
+    UInt8 altivec_vrsave; /* 0x11: CodeGen parses altivec_vrsave; StackFrameEABI gates VRSAVE frame handling */
+    UInt8 codeAlignment;  /* 0x12: SetCodeAlignment; BE_symbol assigns default symbol alignment */
+    char catssupport;     /* 0x13: PCodeAssembly_ShouldEmitSerializedFormat */
+    char forcecatssupport;
     UInt8 pad15[1];
-    SInt32 smallDataLimit; /* 0x16: ObjGen_PPC_EABI_SetObjectSection tests initialized data size */
-    int smallBSSLimit;     /* 0x1a: ObjGen_PPC_EABI_SetObjectSection tests uninitialized data size */
+    SInt32 nonconstsmalldatathreshold; /* 0x16: ObjGen_PPC_EABI_SetObjectSection tests initialized data size */
+    int constsmalldatathreshold;       /* 0x1a: ObjGen_PPC_EABI_SetObjectSection tests uninitialized data size */
     UInt8 f1e;
-    UInt8 reuseSectionSymbols; /* 0x1f: BE_symbol_004913b0 gates reuse of section symbolLink data */
-    UInt8 f20;
+    UInt8 usedatapool; /* 0x1f: BE_symbol_004913b0 gates reuse of section symbolLink data */
+    UInt8 commonblocks;
     UInt8 pad21[1];
-    UInt8 useRegisterSaveHelpers; /* 0x22: StackFrameEABI selects useSaveHelper for register saves */
+    UInt8 use_lmw_stmw; /* 0x22: StackFrameEABI selects useSaveHelper for register saves */
     char debugEnabled;
     Boolean operandsDebug;
     UInt8 f25;
     UInt8 f26;
     char f27;
-    SInt8 rel109Offset; /* 0x28: CodeGen parses rel109_offset; ObjGen_PPC_EABI adds it to relocation offset */
+    SInt8 rel109_offset; /* 0x28: CodeGen parses rel109_offset; ObjGen_PPC_EABI adds it to relocation offset */
     UInt8 pad29[1];
     struct ObjGenSection
         *textSection; /* 0x2a: ObjGen_PPC_EABI_SetObjectSection selects section for function datatypes */
@@ -81,128 +81,132 @@ struct COpts {
     SInt32 *sectionHeaderTable;
     struct InterruptList *interruptList;
     struct InterruptGenerationRecord *interruptOptions; /* 0x4a: CodeGen_ParsePragma saves active interrupt options */
-    UInt8 f4e;
-    Boolean emitMainFileObject; /* 0x4f: ObjGen_PPC_EABI_FinalizeOutputBuffers gates create_main_file_object */
+    UInt8 incompatible_return_small_structs;
+    Boolean create_file_object; /* 0x4f: ObjGen_PPC_EABI_FinalizeOutputBuffers gates create_main_file_object */
     UInt8
-        returnStructsInMemory; /* 0x50: Type_RequiresMemoryReturn forces memory return even for aggregates of size at most 8 */
-    UInt8 pad51[3];
+        incompatible_sfpe_double_params; /* 0x50: Type_RequiresMemoryReturn forces memory return even for aggregates of size at most 8 */
+    UInt8 rsqrt;
+    UInt8 k63d;
     char *f54;
     SInt16 inlineLimit;
     UInt8 cplusplus;
-    UInt8 f5b;
-    UInt8 f5c;
-    SInt8 f5d;
-    char f5e;
-    char f5f;
-    Boolean f60;
+    UInt8 ecplusplus;
+    UInt8 objective_c;
+    SInt8 objc_strict;
+    char ARM_conform;
+    char ARMscoping;
+    Boolean checkprotos;
     char trigraphs;
-    UInt8 f62;
-    UInt8 f63;
-    UInt8 rejectZeroLengthArrayMembers;
-    UInt8 f65;
-    UInt8 f66;
-    Boolean f67;
-    Boolean f68;
-    UInt8 f69;
-    char rttiEnabled;
-    UInt8 f6b;
-    UInt8 pad6c[2];
-    UInt8 unsignedChar;
-    char f6f;
-    UInt8 f70;
-    UInt8 f71;
-    UInt8 f72;
-    UInt8 f73;
-    UInt8 f74;
-    UInt8 f75;
-    UInt8 pad76[1];
-    UInt8 f77;
-    UInt8 f78;
-    UInt8 pad79[1];
+    UInt8 onlystdkeywords;
+    UInt8 enumsalwaysint;
+    UInt8 ANSIstrict;
+    UInt8 mpwc_relax;
+    UInt8 mpwc_newline;
+    Boolean ignore_oldstyle;
+    Boolean cpp_extensions;
+    UInt8 pointercast_lvalue;
+    char RTTI;
+    UInt8 delete_exception;
+    UInt8 pad6c;
+    UInt8 oldalignment;
+    UInt8 unsigned_char;
+    char multibyteaware;
+    UInt8 auto_inline;
+    UInt8 defer_codegen;
+    UInt8 direct_to_som;
+    UInt8 SOMCheckEnvironment;
+    UInt8 SOMCallOptimization;
+    UInt8 booltruefalse;
+    UInt8 old_enum_mangler;
+    UInt8 longlong;
+    UInt8 longlong_enums;
+    UInt8 no_tfuncinline;
     UInt8 f7a;
-    char f7b;
-    char f7c;
-    char f7d;
-    UInt8 f7e;
-    char f7f;
-    UInt8 f80;
-    char f81;
-    char f82;
-    UInt8 f83;
-    UInt8 f84;
-    Boolean f85;
-    UInt8 f86;
-    UInt8 f87;
-    UInt8 pad88[1];
-    UInt8 f89;
-    volatile char f8a;
-    char f8b;
-    UInt8 f8c;
-    UInt8 pad8d[1];
-    UInt8 f8e;
-    Boolean f8f;
-    UInt8 f90;
-    Boolean f91;
-    Boolean f92;
-    Boolean f93;
-    UInt8 f94;
-    UInt8 pad95[1];
-    UInt8 f96;
-    UInt8 f97;
-    UInt8 pad98[4];
-    char f9c;
-    char f9d;
-    UInt8 f9e;
-    Boolean f9f;
-    UInt8 fa0;
-    Boolean fa1;
-    char fa2;
-    char fa3;
-    UInt8 fa4;
-    Boolean fa5;
-    char fa6;
-    Boolean fa7;
-    UInt8 fa8;
-    SInt8 fa9;
-    Boolean faa;
-    Boolean fab;
-    Boolean fac;
+    char flat_include;
+    char syspath_once;
+    char always_import;
+    UInt8 simple_class_byval;
+    char wchar_type;
+    UInt8 vbase_ctor_offset;
+    char vbase_abi_v2;
+    char def_inherited;
+    UInt8 template_patch;
+    UInt8 template_friends;
+    Boolean faster_pch_gen;
+    UInt8 array_new_delete;
+    UInt8 dollar_identifiers;
+    UInt8 def_inline_tfuncs;
+    UInt8 arg_dep_lookup;
+    volatile char simple_prepdump;
+    char line_prepdump;
+    UInt8 fullpath_prepdump;
+    UInt8 old_mtemplparser;
+    UInt8 suppress_init_code;
+    Boolean reverse_bitfields;
+    UInt8 c9x;
+    Boolean float_constants;
+    Boolean no_static_dtors;
+    Boolean longlong_prepeval;
+    UInt8 const_strings;
+    UInt8 dumpir;
+    UInt8 experimental;
+    UInt8 gcc_extensions;
+    UInt8 stdc_fp_contract;
+    UInt8 stdc_fenv_access;
+    UInt8 stdc_cx_limitedr;
+    UInt8 microsoft_EH;
+    char warningerrors;
+    char extended_errorcheck;
+    UInt8 check_header_flags;
+    Boolean warn_illpragma;
+    UInt8 warn_emptydecl;
+    Boolean warn_possunwant;
+    char warn_unusedvar;
+    char warn_unusedarg;
+    UInt8 warn_extracomma;
+    Boolean warn_hidevirtual;
+    char warn_largeargs;
+    Boolean warn_implicitconv;
+    UInt8 warn_notinlined;
+    SInt8 warn_structclass;
+    Boolean warn_padding;
+    Boolean warn_no_side_effect;
+    Boolean warn_resultnotused;
     signed char structalignment;
-    UInt8 arrayAlignment;
-    SInt8 faf;
-    UInt8 fb0;
-    UInt8 fb1;
-    UInt8 fb2;
-    UInt8 fb3;
+    UInt8 alignarraymembers;
+    SInt8 dont_reuse_strings;
+    UInt8 poolstrings;
+    UInt8 explicit_zero_data;
+    UInt8 readonly_strings;
+    UInt8 exceptions;
     UInt8 padb4[1];
-    UInt8 disableInlining;
-    UInt8 fb6;
+    UInt8 dontinline;
+    UInt8 alwaysinline;
     char
-        peepholeOptimizationEnabled; /* 0xb7: CodeGen gates Peephole_MergeAdjacentBlocks and Peephole_VisitBlocksWithMultipleInstructions */
-    Boolean irOptimizationEnabled;
-    unsigned char fb9;
-    UInt8 fba;
-    UInt8 fbb;
-    UInt8 fbc;
-    UInt8 fbd;
-    UInt8 fbe;
-    char fbf;
-    char fc0;
+        peephole; /* 0xb7: CodeGen gates Peephole_MergeAdjacentBlocks and Peephole_VisitBlocksWithMultipleInstructions */
+    Boolean globaloptimizer;
+    unsigned char sideeffects;
+    UInt8 profile;
+    UInt8 cfm_internal;
+    UInt8 cfm_import;
+    UInt8 cfm_export;
+    UInt8 cfm_lib_export;
+    char nosyminline;
+    char force_active;
     SInt8 deleteDeadInstructions;
-    UInt8 uniformSpillBlockWeight;
+    UInt8 optimizesize;
     UInt8 fc3;
-    UInt8
-        irCommonSubexpressionElimination; /* 0xc4: IRO_Optimizer gates IRO_CommonSubs and available-expression computation */
-    UInt8 fc5;
-    UInt8 irCopyPropagation; /* 0xc6: IRO_CopyPropagationSetting */
-    UInt8 irEliminateUnused; /* 0xc7: IRO_Optimizer passes eliminateUnused to IRO_UseDef */
-    UInt8 fc8;
-    UInt8 fc9;
-    UInt8 irRemoveUnreachable; /* 0xca: IRO_Optimizer gates IRO_RemoveUnreachable */
-    UInt8 fcb;
+    UInt8 commonsubs; /* 0xc4: IRO_Optimizer gates IRO_CommonSubs and available-expression computation */
+    UInt8 loopinvariants;
+    UInt8 propagation; /* 0xc6: IRO_CopyPropagationSetting */
+    UInt8 deadstore;   /* 0xc7: IRO_Optimizer passes eliminateUnused to IRO_UseDef */
+    UInt8 strengthreduction;
+    UInt8 strengthreductionstrict;
+    UInt8 deadcode; /* 0xca: IRO_Optimizer gates IRO_RemoveUnreachable */
+    UInt8 lifetimes;
     UInt8 padcc[1];
-    UInt8 irLoopUnrolling; /* 0xcd: IRO_Optimizer gates IRO_LoopUnroller */
-    Boolean fce;
+    UInt8 unrolling; /* 0xcd: IRO_Optimizer gates IRO_LoopUnroller */
+    Boolean vectorizeloops;
     UInt8 irSecondOptimizationPass; /* 0xcf: IRO_Optimizer selects two passes rather than one */
     signed char unrollOption;
     SInt8 fd1;
@@ -333,7 +337,7 @@ struct CPrepFileInfo {
 #pragma options align = mac68k
 struct PragmaNode {
     struct PragmaNode *next;
-    COpts rec;
+    CompilerLinkerOptions rec;
 };
 #pragma options align = reset
 #pragma options align = mac68k

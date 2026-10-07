@@ -999,7 +999,7 @@ void parse_class_interface_or_implementation(void)
                         if (existing == NULL) {
                             CObjC_PrependMember(objcClass, method);
                             (void)CObjCModern_RegisterMethodSelector(method);
-                        } else if (copts.f5d != 0 || CObjCModern_CompareMethRecs(method, existing) == 0) {
+                        } else if (copts.objc_strict != 0 || CObjCModern_CompareMethRecs(method, existing) == 0) {
                             CError_ReportError(ERR_METHOD_REDECLARED, method);
                         }
                     }
@@ -1170,7 +1170,7 @@ void parse_category_methods_and_check_defined(TypeClass *theclass)
             break;
     }
     if (category == NULL) {
-        if (copts.f5d) {
+        if (copts.objc_strict) {
             CError_Warning(ERR_CATEGORY_UNDEFINED, data_00587fa0->name);
         }
         category = galloc(offsetof(CRec, info));
@@ -1912,7 +1912,7 @@ void CObjC_005074f0(Type *type, UInt32 qual, Boolean flag)
                         AppendGListByte(&data_00583548, 'C');
                         return;
                     case IT_CHAR:
-                        AppendGListByte(&data_00583548, copts.unsignedChar ? 'C' : 'c');
+                        AppendGListByte(&data_00583548, copts.unsigned_char ? 'C' : 'c');
                         return;
                     case IT_UCHAR:
                         AppendGListByte(&data_00583548, 'C');
@@ -2179,7 +2179,7 @@ void parse_method_definition(TypeClass *object, CRec *kind, MethRec **methods)
         }
     }
     if (tk == ';') {
-        if (copts.f5d != 0) {
+        if (copts.objc_strict != 0) {
             CError_Warning(ERR_LBRACE_EXPECTED);
         }
         tk = CPrepTokenizer_GetNextToken();
@@ -2576,7 +2576,7 @@ HashNameNode *CObjC_00508810(TypeClass *obj, CRec *ns, MethRec *info)
 
 static inline Boolean ObjCMethodTypesEqual(Type *type, Type *other)
 {
-    if (copts.f5d == 0 && CObjC_IsIdCompatiblePointerPair(type, other) != 0)
+    if (copts.objc_strict == 0 && CObjC_IsIdCompatiblePointerPair(type, other) != 0)
         return 1;
     return iscpp_typeequal(type, other);
 }
@@ -2994,7 +2994,7 @@ void CObjCModern_GenerateSymbolTableAndModule(void)
     ObjCDefinition *categoryDefinition;
     ObjcModule module;
 
-    if (copts.f5c != 0 || class_type_entries != NULL) {
+    if (copts.objective_c != 0 || class_type_entries != NULL) {
         definition = class_type_entries;
         count1 = 0;
         while (definition != NULL) {
@@ -3093,7 +3093,7 @@ static inline HashEntry *FindHashNode(HashNameNode *name)
 
 static inline Boolean SamePtr(void *x, void *y)
 {
-    if (copts.f5d == 0) {
+    if (copts.objc_strict == 0) {
         if (CObjC_IsIdCompatiblePointerPair(x, y))
             return 1;
     }

@@ -351,8 +351,8 @@ void instantiate_object_type(TypeDeduce *context, TemplateAction *function, ObjB
             CTemplateTools_ResolveType(context, OBJ_MEMBER_VAR(object)->type, &OBJ_MEMBER_VAR(object)->qual);
         if (OBJ_MEMBER_VAR(object)->type->size == 0) {
             CDecl_CompleteType(OBJ_MEMBER_VAR(object)->type);
-            if (!(copts.f96 != 0 && OBJ_MEMBER_VAR(object)->next == NULL && OBJ_MEMBER_VAR(object)->type->size == 0 &&
-                  IS_TYPE_ARRAY(OBJ_MEMBER_VAR(object)->type)))
+            if (!(copts.experimental != 0 && OBJ_MEMBER_VAR(object)->next == NULL &&
+                  OBJ_MEMBER_VAR(object)->type->size == 0 && IS_TYPE_ARRAY(OBJ_MEMBER_VAR(object)->type)))
                 CanAllocObject(OBJ_MEMBER_VAR(object)->type);
         }
         return;

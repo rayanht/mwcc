@@ -213,7 +213,7 @@ Boolean CInline_DispatchNextDeferredNode(void)
             dispatching_deferred_node = 0;
             return 1;
         }
-        if (deferredInlineNodes != NULL && copts.f71 == 0) {
+        if (deferredInlineNodes != NULL && copts.defer_codegen == 0) {
             InlineNode *deferred = deferredInlineNodes;
 
             deferredInlineNodes = deferred->next;
@@ -235,7 +235,7 @@ static inline TemplClassInst *CInline_0050ebf0_inline1(Object *v1)
             if ((v5->flags & CLASS_IS_TEMPL_INST) != 0) {
                 return (TemplClassInst *)v5;
             }
-            if (copts.f83 == 0) {
+            if (copts.template_patch == 0) {
                 break;
             }
             v7 = v5->nspace->parent;
@@ -261,7 +261,7 @@ static inline TemplClassInst *CInline_0050ebf0_inline2(struct CPrecNode *a0)
         if ((v10->flags & CLASS_IS_TEMPL_INST) != 0) {
             return (TemplClassInst *)v10;
         }
-        if (copts.f83 == 0) {
+        if (copts.template_patch == 0) {
             break;
         }
         v12 = v10->nspace->parent;
@@ -894,7 +894,7 @@ void CInline_0050ee60(Statement *stmt, Object *func, Boolean flag)
     isInline = autoInline = 0;
 
     if (!(func->qual & Q_INLINE)) {
-        if (copts.f70 && !copts.disableInlining && fn_00511180(func, stmt->next) &&
+        if (copts.auto_inline && !copts.dontinline && fn_00511180(func, stmt->next) &&
             check_statement_count_and_locals_size(func, stmt->next)) {
             isInline = autoInline = 1;
             TYPE_FUNC(func->type)->flags |= FUNC_IS_CTOR;
@@ -920,7 +920,7 @@ void CInline_0050ee60(Statement *stmt, Object *func, Boolean flag)
     func->flags |= 4;
     undefined_function_objects = NULL;
 
-    if (CInline_Cleanup(stmt) || copts.f71) {
+    if (CInline_Cleanup(stmt) || copts.defer_codegen) {
         CInlineInfo *body;
         InlineNode *node;
 
@@ -1325,7 +1325,7 @@ void generate_inline_code(Object *object, CInlineInfo *input, char mode)
     CFunc_FuncGenSetup(&statement, object);
     CInline_ReconstructFunction(object, input, &statement);
     savedFlag = copts.filesyminfo;
-    if ((copts.fbf != 0) || ((data_00587184 == 0 && (function_token_line == 0)))) {
+    if ((copts.nosyminline != 0) || ((data_00587184 == 0 && (function_token_line == 0)))) {
         copts.filesyminfo = 0;
     }
     inline_statement_list(&statement);
@@ -1850,7 +1850,7 @@ void inline_statement_list(Statement *list)
     Statement *result;
     struct CPrepCU *compilation;
 
-    if (copts.disableInlining == 0 && copts.inlineLimit >= 0) {
+    if (copts.dontinline == 0 && copts.inlineLimit >= 0) {
         data_00582468 = 0;
         do {
             data_00582467 = 0;
@@ -1882,7 +1882,7 @@ void inline_statement_list(Statement *list)
             }
             if (data_00582467 == 0)
                 break;
-            if (copts.fb6 == 0) {
+            if (copts.alwaysinline == 0) {
                 if ((limit = copts.inlineLimit) == 0) {
                     if (data_00582468 >= 3)
                         break;
@@ -2018,7 +2018,7 @@ void CInline_005114e0(ENode *node)
                 for (argument = node->data.funccall.args; argument != NULL; argument = argument->next)
                     CInline_005114e0(argument->node);
                 node = node->data.funccall.funcref;
-                if (copts.fa8 && !copts.disableInlining && node->type == EOBJREF &&
+                if (copts.warn_notinlined && !copts.dontinline && node->type == EOBJREF &&
                     (node->data.objref->qual & Q_INLINE) && node->data.objref->datatype != TYPECLASS &&
                     !CParser_IsVirtualFunction(node->data.objref, &value1, &value2))
                     CError_Warning(ERR_INLINE_FUNCTION_CALL_NOT_INLINED, node->data.objref);
@@ -2653,7 +2653,7 @@ Boolean can_inline(ENode *node)
     if (function->type->type == TYPEFUNC &&
         ((function->qual & Q_INLINE) || (TYPE_METHOD(function->type)->flags & FUNC_IS_CTOR)) &&
         (function->datatype == DFUNC || (function->datatype == DVFUNC && (node->flags & ENODE_FLAG_80)))) {
-        if (copts.fb6 == 0 && data_00582468 > 0 && copts.inlineLimit == 0) {
+        if (copts.alwaysinline == 0 && data_00582468 > 0 && copts.inlineLimit == 0) {
             inlineInfo = function->u.func.u;
             if (inlineInfo == NULL)
                 return 0;
@@ -3426,7 +3426,7 @@ Boolean CInline_00513910(ENode *expr)
             case ENEWEXCEPTION:
                 return 0;
             case ESTRINGCONST:
-                return copts.faf;
+                return copts.dont_reuse_strings;
             case ENEWEXCEPTIONARRAY:
                 if (CInline_ArrayInitializer(expr) != NULL)
                     return CInline_00513910(CInline_ArrayInitializer(expr));

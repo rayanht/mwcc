@@ -102,11 +102,11 @@ ENode *CSOM_MakeMethodReference(BClassList *classPath, Object *method, Boolean p
         result = funccallexpr(resolveFunction, create_objectrefnode(originalClass->sominfo->classDataObject),
                               intconstnode((Type *)&stsignedint, parentIndex), methodRef, NULL);
         result->rtype = methodRef->rtype;
-        if (copts.f73 != 0 && methodClass->sominfo->omitEnvironmentParameter == 0)
+        if (copts.SOMCheckEnvironment != 0 && methodClass->sominfo->omitEnvironmentParameter == 0)
             result->flags |= 0x10;
     } else {
         find_method_vtbl_class_and_offset(targetClass, method, &methodClass, &methodOffset);
-        if (copts.f74 != 0 && CSOM_004e3cd0(method->type) != 0)
+        if (copts.SOMCallOptimization != 0 && CSOM_004e3cd0(method->type) != 0)
             return create_glue_objectrefnode(methodClass, methodOffset, method);
         {
             ENode *classDataRef = create_objectrefnode(methodClass->sominfo->classDataObject);
@@ -114,7 +114,7 @@ ENode *CSOM_MakeMethodReference(BClassList *classPath, Object *method, Boolean p
             result = makemonadicnode(result, EINDIRECT);
         }
         result->rtype = CDecl_NewPointerType(method->type);
-        if (copts.f73 != 0 && methodClass->sominfo->omitEnvironmentParameter == 0)
+        if (copts.SOMCheckEnvironment != 0 && methodClass->sominfo->omitEnvironmentParameter == 0)
             result->flags |= 0x10;
     }
     return result;
@@ -364,7 +364,7 @@ ENode *CSOM_AppendPointerArgCall(ENode *node, ENodeList *spec)
         *pointerExpr = *pointerArg->node;
     }
 
-    if (copts.f74 != 0) {
+    if (copts.SOMCallOptimization != 0) {
         ENode *appendCall;
         appendCall = funccallexpr(DAT_00588278, pointerExpr, NULL, NULL, NULL);
         node = makediadicnode(node, appendCall, ECOMMA);
@@ -664,7 +664,7 @@ static inline void CSOM_SetNibble(UInt8 *bits, int i, int value)
 static void setnumber(int raw, int n)
 {
     Object *item = (Object *)raw;
-    if (n == 0 && copts.f9d != 0)
+    if (n == 0 && copts.extended_errorcheck != 0)
         CError_Warning(ERR_SOM_CLASS_NO_RELEASE_ORDER_LIST);
     ((TypeMemberFunc *)item->type)->vtbl_index = n;
 }
@@ -712,7 +712,7 @@ ENode *CSOM_BuildNewObjectInstance(TypeClass *cls)
         }
     }
 
-    if (copts.f73 == 0 || copts.f74 == 0) {
+    if (copts.SOMCheckEnvironment == 0 || copts.SOMCallOptimization == 0) {
         obj = CSOM_004e45b0("somNewObjectInstance", "ppll");
         if (obj == NULL)
             return nullnode();
@@ -725,7 +725,7 @@ ENode *CSOM_BuildNewObjectInstance(TypeClass *cls)
                             intconstnode((Type *)&stunsignedlong, cls->sominfo->descriptorValue1), NULL);
     callnode->rtype = CDecl_NewPointerType((Type *)cls);
 
-    if (copts.f73 != 0 && copts.f74 == 0) {
+    if (copts.SOMCheckEnvironment != 0 && copts.SOMCallOptimization == 0) {
         temp = CExpr2_RewriteExprToTemp(callnode);
         call2 = funccallexpr(DAT_005876c0, nullnode(), NULL, NULL, NULL);
         monadic = makemonadicnode(callnode, ELOGNOT);

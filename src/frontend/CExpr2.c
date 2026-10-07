@@ -200,7 +200,7 @@ struct ENode *scandelete(char mode)
         build_destructor_aware_call(expr, target, mode);
         return;
     }
-    if (copts.f5c != 0 && CObjC_IsIdOrSelType(expr->rtype) != 0) {
+    if (copts.objective_c != 0 && CObjC_IsIdOrSelType(expr->rtype) != 0) {
         return CObjCModern_MakeDeallocMessage(NULL, expr);
     }
     if (target->type != TYPECLASS) {
@@ -214,7 +214,7 @@ struct ENode *scandelete(char mode)
     if (TYPE_CLASS(target)->objcinfo != NULL) {
         return CObjCModern_MakeDeallocMessage(TYPE_CLASS(target), expr);
     }
-    if ((TYPE_CLASS(target)->flags & CLASS_COMPLETED) == 0 && copts.f9d != 0) {
+    if ((TYPE_CLASS(target)->flags & CLASS_COMPLETED) == 0 && copts.extended_errorcheck != 0) {
         CError_Warning(ERR_ILLEGAL_USE_INCOMPLETE_STRUCT_UNION_CLASS, TYPE_CLASS(target), 0);
     }
     objectOrType = CParser_FindClassMemberOrNamespaceFunctionObject(target, 0, mode);
@@ -611,7 +611,7 @@ ENode *scannew(char global)
             objectExpr->rtype = CDecl_NewPointerType(type);
             return CExpr_ConstructObject(type, objectExpr, initlist, 0, 1, 1, 1, 1);
         }
-        if (data_00588238 && !placement && copts.f6b &&
+        if (data_00588238 && !placement && copts.delete_exception &&
             (deleteFunction = CParser_FindClassMemberOrNamespaceFunctionObject(type, 0, global)) != NULL) {
             constructedExpr = (ENode *)CompilerTools_AllocatePool(sizeof(*constructedExpr));
             *constructedExpr = *result;
@@ -747,7 +747,7 @@ ENode *build_array_allocation_expression(Type *type, ENodeList *placement, char 
         }
         allocation = make_class_member_or_global_call(element, pair, global, 1);
         allocation->rtype = (Type *)pointerType;
-        if (data_00588238 != NULL && placement == NULL && copts.f6b != 0 &&
+        if (data_00588238 != NULL && placement == NULL && copts.delete_exception != 0 &&
             (constructor = CParser_FindClassMemberOrNamespaceFunctionObject(element, 1, global)) != NULL) {
             ENode *sizeNode;
             ENode *destructorNode;
@@ -798,7 +798,7 @@ ENode *build_array_allocation_expression(Type *type, ENodeList *placement, char 
 
 static inline Boolean array_allocation_operators_enabled(void)
 {
-    return copts.f86;
+    return copts.array_new_delete;
 }
 
 static inline NameSpaceName *array_allocation_operator_namespace(void)
@@ -1146,7 +1146,7 @@ Boolean CExpr_CheckOperator(short token, ENode *left, ENode *right, BinaryOperat
     } else
         name.objects = NULL;
 
-    if (copts.f89 != 0)
+    if (copts.arg_dep_lookup != 0)
         name.objects = CScope_ArgumentDependentNameLookup(name.objects, operatorName, args, 1);
 
     if (name.objects != NULL)
@@ -2222,7 +2222,7 @@ ENode *CExpr_VarArgPromotion(ENode *expr, Boolean allowWarning)
     }
     if (CMach_PassResultInHiddenArg(expr->rtype))
         expr = CExpr_AssignmentPromotion(expr, expr->rtype, expr->flags, 1);
-    if (!allowWarning && copts.fa6 &&
+    if (!allowWarning && copts.warn_largeargs &&
         ((expr->rtype->type == 1 && ((TypeIntegral *)expr->rtype)->integral >= 11) || expr->rtype->type == 2))
         CError_Warning(ERR_ASSIGNING_NON_INT_NUMERIC_VALUE_UNPROTOTYPED);
     return expr;
@@ -2497,7 +2497,7 @@ SInt16 assign_check(ENode *operand, Type *targetType, SInt32 targetQual, Boolean
             return 0;
         }
     }
-    if (copts.fa7 && convert && !isExplicit) {
+    if (copts.warn_implicitconv && convert && !isExplicit) {
         if (conversionType->type == TYPEINT || conversionType->type == TYPEFLOAT) {
             if (operand->rtype->type == TYPEINT || operand->rtype->type == TYPEFLOAT)
                 CExpr_CheckArithmConversion(operand, conversionType);
@@ -3320,7 +3320,7 @@ SInt32 check_standard_conversion(ENode *node, Type *ty, Boolean convert, Boolean
                     return match_overloaded_function_pointer(&candidates, NULL, ty, convert);
                 }
             }
-            if (copts.f5c != 0 && CObjC_IsIdCompatiblePointerPair(node->rtype, ty) != 0) {
+            if (copts.objective_c != 0 && CObjC_IsIdCompatiblePointerPair(node->rtype, ty) != 0) {
                 conversion_score = 1;
                 return 3;
             }
@@ -3378,7 +3378,7 @@ SInt32 check_standard_conversion(ENode *node, Type *ty, Boolean convert, Boolean
             case TYPEENUM:
                 if (copts.cplusplus == 0) {
                     if (convert != 0) {
-                        if (copts.f9d != 0)
+                        if (copts.extended_errorcheck != 0)
                             CError_Warning(ERR_ILLEGAL_IMPLICIT_ENUM_CONVERSION_FROM, node->rtype, node->flags & 3, ty,
                                            0);
                         converted_expr = do_typecast(node, ty, 0);
@@ -4344,7 +4344,7 @@ ENode *CExpr_LValue(ENode *expr, Boolean checkConst, Boolean reportError)
         UInt8 objtype = expr->type;
         switch (objtype) {
             case ETYPCON:
-                if ((!copts.f69 && copts.rejectZeroLengthArrayMembers) || expr->rtype->type != TYPEPOINTER ||
+                if ((!copts.pointercast_lvalue && copts.ANSIstrict) || expr->rtype->type != TYPEPOINTER ||
                     expr->data.monadic->rtype->type != TYPEPOINTER)
                     break;
                 switch (expr->data.monadic->type) {

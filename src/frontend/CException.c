@@ -98,7 +98,7 @@ static inline Boolean CException_HasThrow(Statement *s)
 void CExcept_ExceptionTansform(Statement *stmt)
 {
     update_statement_dobjstacks(stmt);
-    if (data_00588238 != NULL && copts.fb3 != 0 && TYPE_FUNC(data_00588238->type)->exspecs != NULL) {
+    if (data_00588238 != NULL && copts.exceptions != 0 && TYPE_FUNC(data_00588238->type)->exspecs != NULL) {
         if (CException_HasThrow(stmt)) {
             setup_exception_specification(stmt, TYPE_FUNC(data_00588238->type)->exspecs);
         }
@@ -340,7 +340,8 @@ void setup_exception_specification(struct Statement *statements, struct ExceptSp
         statement = CFunc_InsertAfterStatement(8, statement);
         statement->expr.expression = NULL;
         statement->dobjstack = NULL;
-        if (TYPE_FUNC(data_00588238->type)->functype != &stvoid && (copts.f9d != 0 || copts.cplusplus != 0)) {
+        if (TYPE_FUNC(data_00588238->type)->functype != &stvoid &&
+            (copts.extended_errorcheck != 0 || copts.cplusplus != 0)) {
             CError_Warning(ERR_RETURN_VALUE_EXPECTED);
         }
     }
@@ -964,7 +965,7 @@ void CExcept_ScanTryBlock(void *context, char rethrow)
     ENode *initializer;
     DeclInfo declaration;
 
-    if (copts.fb3 == 0)
+    if (copts.exceptions == 0)
         CError_ReportError(ERR_EXCEPTION_HANDLING_OPTION_DISABLED);
 
     exceptionObject = create_temp_object(&exception_temp_object_type);
@@ -1218,7 +1219,7 @@ ENode *CExcept_ScanThrowExpression(void)
     Object *obj;
     ENode *node;
 
-    if (!copts.fb3)
+    if (!copts.exceptions)
         CError_ReportError(ERR_EXCEPTION_HANDLING_OPTION_DISABLED);
     tk = CPrepTokenizer_GetNextToken();
     switch (tk) {

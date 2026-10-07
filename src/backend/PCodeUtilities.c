@@ -70,7 +70,7 @@ void PCodeUtilities_LoadImmediate(SInt16 target, SInt32 value)
 
 static inline UInt8 exception_scopes_enabled(void)
 {
-    return copts.fb3;
+    return copts.exceptions;
 }
 
 void fn_004a1cb0(int integerRegisterMask, int floatingRegisterMask, int vectorRegisterMask)
@@ -176,7 +176,7 @@ PCodeInstruction *PCodeUtilities_MakeInstructionWithObject(short opcode, short o
 
 static inline UInt8 PCodeUtilities_ExceptionScopesEnabled(void)
 {
-    return copts.fb3;
+    return copts.exceptions;
 }
 
 static inline UInt8 PCodeUtilities_ShouldSplitObjectInstructionBlock(void)

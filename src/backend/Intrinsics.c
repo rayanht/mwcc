@@ -4623,7 +4623,7 @@ ENode *Intrinsics_MakeAltivecCall(Object *descriptor, ENodeList *args)
     ENode *result = NULL;
     unsigned short intrinsicID;
     int tableIndex;
-    if (copts.altivecModel != 0) {
+    if (copts.altivec_model != 0) {
         switch (tableIndex = (intrinsicID = intrinsic->u.intrinsic)) {
             case 60:
             case 61:

@@ -594,7 +594,7 @@ InlineAsmRegisterEntry *fn_004f06d0(char *name)
         }
     }
     if (found != NULL) {
-        if (copts.fa1)
+        if (copts.warn_possunwant)
             PPCError_ReportDiagnostic(0x75, name);
         return found;
     }
@@ -615,7 +615,7 @@ InlineAsmRegisterEntry *fn_004f06d0(char *name)
 
 static inline Boolean CTemplateNew_ShouldWarnUnsupportedInlineAsmRegister(void)
 {
-    return copts.fa1;
+    return copts.warn_possunwant;
 }
 
 struct InlineAsmRegisterEntry *CTemplateNew_LookupInlineAsmRegister(char *registerName)

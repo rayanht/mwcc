@@ -52,7 +52,7 @@ static unsigned int Swap32(unsigned int x)
 unsigned int CTool_EndianConvertInPlaceWord32Ptr(unsigned int *p)
 {
     unsigned int value = *p;
-    value = copts.nativeByteOrder ? value : Swap32(value);
+    value = copts.littleendian ? value : Swap32(value);
     *p = value;
     value = *p;
     return value;
@@ -62,7 +62,7 @@ short CTool_EndianConvertInPlaceWord16Ptr(short *word)
 {
     short *destination = word;
     short value = *destination;
-    if (copts.nativeByteOrder == 0) {
+    if (copts.littleendian == 0) {
         value = swap16(value);
     }
     *destination = value;
@@ -72,7 +72,7 @@ short CTool_EndianConvertInPlaceWord16Ptr(short *word)
 static UInt32 swap32(UInt32 x)
 {
     UInt32ByteSwapStorage s, d;
-    if (copts.nativeByteOrder)
+    if (copts.littleendian)
         return x;
     s.word = x;
     d.bytes[0] = s.bytes[3];
@@ -86,7 +86,7 @@ void CTool_EndianConvertWord64(CInt64 ci, char *result)
 {
     UInt32 buf[2];
     UInt32 h;
-    if (copts.nativeByteOrder == 0) {
+    if (copts.littleendian == 0) {
         h = ci.hi;
         buf[0] = swap32(h);
         buf[1] = swap32(ci.lo);
@@ -104,7 +104,7 @@ UInt32 CTool_EndianConvertMem(void *buffer, short size)
     unsigned char *back;
     unsigned char saved;
 
-    if (copts.nativeByteOrder != 0)
+    if (copts.littleendian != 0)
         return;
 
     front = buffer;
@@ -127,7 +127,7 @@ unsigned int CTool_EndianConvertWord32(unsigned int value)
         unsigned int words[2];
         unsigned char bytes[8];
     } converted;
-    if (copts.nativeByteOrder != 0) {
+    if (copts.littleendian != 0) {
         return value;
     }
     converted.words[0] = value;
@@ -147,7 +147,7 @@ UInt16 CTool_EndianConvertWord16(UInt16 word)
         } words;
         unsigned char bytes[4];
     } result;
-    if (copts.nativeByteOrder != 0) {
+    if (copts.littleendian != 0) {
         return word;
     }
     result.words.value = word;
@@ -703,7 +703,7 @@ static UInt16 SwapOutputWord(UInt16 x)
         UInt16 w;
         UInt8 b[2];
     } t, r;
-    if (copts.nativeByteOrder)
+    if (copts.littleendian)
         return x;
     t.w = x;
     r.b[0] = t.b[1];
@@ -717,7 +717,7 @@ static UInt32 MaybeSwap32(UInt32 x)
         UInt32 l;
         UInt8 b[4];
     } t, r;
-    if (copts.nativeByteOrder)
+    if (copts.littleendian)
         return x;
     t.l = x;
     r.b[0] = t.b[3];

@@ -316,7 +316,7 @@ void load_argument_registers(ArgumentContext *argument)
                                                         &argument->operand);
                 }
                 Operands_ForceGPRPair(&argument->operand, type, argument->gpr, argument->second_gpr);
-                if (copts.nativeByteOrder != 0) {
+                if (copts.littleendian != 0) {
                     if (argument->second_gpr > 10) {
                         emit_opcode_with_base_offset(PC_STW, argument->operand.regHi, 1, NULL,
                                                      high_word_offset + argument->stack_offset + 8);
@@ -559,7 +559,7 @@ ArgumentContext *assign_argument_locations(ENode *thisArg, ENodeList *args, Func
 
             if (((argType->type == TYPEINT || argType->type == TYPEENUM) && argType->size == 8) ||
                 (copts.operandsDebug && argType->type == TYPEFLOAT && argType->size != 4 &&
-                 copts.returnStructsInMemory == 0)) {
+                 copts.incompatible_sfpe_double_params == 0)) {
                 if (nextGPR % 2 == 0)
                     nextGPR++;
             }
@@ -608,7 +608,7 @@ ArgumentContext *assign_argument_locations(ENode *thisArg, ENodeList *args, Func
                 } else {
                     if (nextGPR < 10) {
                         parm->flags |= 1;
-                        if (copts.nativeByteOrder != 0) {
+                        if (copts.littleendian != 0) {
                             parm->gpr = nextGPR;
                             parm->second_gpr = nextGPR + 1;
                         } else {
@@ -675,7 +675,7 @@ ArgumentContext *assign_argument_locations(ENode *thisArg, ENodeList *args, Func
             } else if ((argType->type == TYPEINT || argType->type == TYPEENUM) && argType->size == 8) {
                 if (nextGPR <= 10) {
                     parm->flags |= 1;
-                    if (copts.nativeByteOrder != 0) {
+                    if (copts.littleendian != 0) {
                         parm->gpr = nextGPR;
                         parm->second_gpr = nextGPR + 1;
                     } else {

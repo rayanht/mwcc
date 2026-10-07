@@ -74,7 +74,7 @@ typedef void (*RegAssignFunc)(Object *, SInt32);
 
 static inline void IrOptimizer_CheckVectorByteConstant(const CInt64 *value, TypeStruct *vectorType)
 {
-    if (copts.f9d) {
+    if (copts.extended_errorcheck) {
         if (vectorType->stype == 4) {
             if (!CInt64_IsInURange(*value, 1))
                 PPCError_ReportDiagnostic(0x71, vectorType, 0);
@@ -87,7 +87,7 @@ static inline void IrOptimizer_CheckVectorByteConstant(const CInt64 *value, Type
 
 static inline void IrOptimizer_CheckVectorShortConstant(const CInt64 *value, TypeStruct *vectorType)
 {
-    if (copts.f9d) {
+    if (copts.extended_errorcheck) {
         SInt32 elementType = vectorType->stype;
         if (elementType == 7 || elementType == 14) {
             if (!CInt64_IsInURange(*value, 2))
@@ -101,7 +101,7 @@ static inline void IrOptimizer_CheckVectorShortConstant(const CInt64 *value, Typ
 
 static inline void IrOptimizer_CheckVectorLongConstant(const CInt64 *value, TypeStruct *vectorType)
 {
-    if (copts.f9d) {
+    if (copts.extended_errorcheck) {
         if (vectorType->stype == 10) {
             if (!CInt64_IsInURange(*value, 4))
                 PPCError_ReportDiagnostic(0x71, vectorType, 0);
@@ -423,7 +423,7 @@ int CodeGen_CheckAltivecStypeMatch(ENode *expr, Type *type, Boolean convert, Boo
     TypeStruct *exprType = TYPE_STRUCT(expr->rtype);
     SInt32 result;
 
-    if (copts.altivecModel != 0 && targetType->type == TYPESTRUCT) {
+    if (copts.altivec_model != 0 && targetType->type == TYPESTRUCT) {
         SInt32 targetStype = targetType->stype;
         if (targetStype >= 4 && targetStype <= 0xe && exprType->type == TYPESTRUCT) {
             SInt32 exprStype = exprType->stype;
@@ -444,7 +444,7 @@ ENode *CodeGen_MakeAltivecStructCast(ENode *a, Type *type, UInt32 qual)
 {
     short q;
 
-    if (copts.altivecModel) {
+    if (copts.altivec_model) {
         q = qual & Q_CV;
         if (type->type == TYPESTRUCT && a->rtype->type == TYPESTRUCT && a->flags == q) {
             switch (TYPE_STRUCT(type)->stype) {
@@ -670,7 +670,7 @@ unsigned int CodeGen_GetMethRecRTypeSize(MethRec *record)
 void CodeGen_SetIROptimizationEnabled(void)
 
 {
-    copts.irOptimizationEnabled = '\0' < copts.deleteDeadInstructions;
+    copts.globaloptimizer = '\0' < copts.deleteDeadInstructions;
     return;
 }
 
@@ -761,9 +761,9 @@ void CodeGen_ParsePragma(HashNameNode *name)
     if (!strcmp(name->name, "ppc_unroll_speculative")) {
         if (CPrepTokenizer_ScanToken() == -3) {
             if (!strcmp(data_00587fa0->name, "off")) {
-                copts.ppcUnrollSpeculative = 0;
+                copts.unroll_speculative = 0;
             } else if (!strcmp(data_00587fa0->name, "on")) {
-                copts.ppcUnrollSpeculative = 1;
+                copts.unroll_speculative = 1;
             } else {
                 CError_ReportError(ERR_ILLEGAL_PRAGMA);
                 return;
@@ -778,15 +778,15 @@ void CodeGen_ParsePragma(HashNameNode *name)
     if (!strcmp(name->name, "ppc_unroll_instructions_limit")) {
         token = CPrepTokenizer_ScanToken();
         if (token == -1) {
-            if ((copts.ppcUnrollInstructionsLimit = intconst_lo) < 0) {
-                copts.ppcUnrollInstructionsLimit = 0;
+            if ((copts.unroll_instr_limit = intconst_lo) < 0) {
+                copts.unroll_instr_limit = 0;
                 CError_ReportError(ERR_ILLEGAL_PRAGMA);
             }
         } else if (token == -3) {
             if (!strcmp(data_00587fa0->name, "off")) {
-                copts.ppcUnrollInstructionsLimit = 0;
+                copts.unroll_instr_limit = 0;
             } else if (!strcmp(data_00587fa0->name, "on")) {
-                copts.ppcUnrollInstructionsLimit = 60;
+                copts.unroll_instr_limit = 60;
             } else {
                 CError_ReportError(ERR_ILLEGAL_PRAGMA);
                 return;
@@ -801,15 +801,15 @@ void CodeGen_ParsePragma(HashNameNode *name)
     if (!strcmp(name->name, "ppc_unroll_factor_limit")) {
         token = CPrepTokenizer_ScanToken();
         if (token == -1) {
-            if ((copts.ppcUnrollFactorLimit = intconst_lo) < 0) {
-                copts.ppcUnrollFactorLimit = 0;
+            if ((copts.unroll_factor_limit = intconst_lo) < 0) {
+                copts.unroll_factor_limit = 0;
                 CError_ReportError(ERR_ILLEGAL_PRAGMA);
             }
         } else if (token == -3) {
             if (!strcmp(data_00587fa0->name, "off")) {
-                copts.ppcUnrollFactorLimit = 0;
+                copts.unroll_factor_limit = 0;
             } else if (!strcmp(data_00587fa0->name, "on")) {
-                copts.ppcUnrollFactorLimit = 10;
+                copts.unroll_factor_limit = 10;
             } else {
                 CError_ReportError(ERR_ILLEGAL_PRAGMA);
                 return;
@@ -824,9 +824,9 @@ void CodeGen_ParsePragma(HashNameNode *name)
     if (!strcmp(name->name, "altivec_model")) {
         if (CPrepTokenizer_ScanToken() == -3) {
             if (!strcmp(data_00587fa0->name, "off")) {
-                copts.altivecModel = 0;
+                copts.altivec_model = 0;
             } else if (!strcmp(data_00587fa0->name, "on")) {
-                copts.altivecModel = 1;
+                copts.altivec_model = 1;
             } else {
                 CError_ReportError(ERR_ILLEGAL_PRAGMA);
                 return;
@@ -906,7 +906,7 @@ void CodeGen_ParsePragma(HashNameNode *name)
                 CheckPragmaEnd();
                 return;
             }
-            copts.rel109Offset = offset;
+            copts.rel109_offset = offset;
             CheckPragmaEnd();
             return;
         }
@@ -982,7 +982,7 @@ void CodeGen_ParsePragma(HashNameNode *name)
         return;
     }
 
-    if (copts.f9f)
+    if (copts.warn_illpragma)
         fn_0043f3b0(0xba);
     SkipPragma();
 }
@@ -1018,7 +1018,7 @@ void CodeGen_004332e0(void)
             CPrep_SaveAndSetOption(5, 2);
             return;
         }
-        if (!copts.altivecModel) {
+        if (!copts.altivec_model) {
             if (memcmp(data_00587fa0->name, "603e", 5) == 0) {
                 CodeGen_SetProcessorOption(5);
                 return;
@@ -1101,7 +1101,7 @@ void CodeGen_004332e0(void)
                 return;
         }
 
-        if (!copts.altivecModel) {
+        if (!copts.altivec_model) {
             CodeGen_SetProcessorOption(processor);
             return;
         } else {
@@ -1109,7 +1109,7 @@ void CodeGen_004332e0(void)
             return;
         }
     } else {
-        if (copts.f9f)
+        if (copts.warn_illpragma)
             fn_0043f3b0(0xba);
     }
 }
@@ -1376,7 +1376,7 @@ void CodeGen_ParseDeclspecSection(HashNameNode *node, DeclInfo *value)
 void CodeGen_EmitLoadAndBranchFunction(Object *function, Object *branchTarget, Object *table, SInt32 offset)
 {
     UInt8 savedFileSymInfo = copts.filesyminfo;
-    char savedFb7 = copts.peepholeOptimizationEnabled;
+    char savedFb7 = copts.peephole;
     char savedF07 = copts.emitExtraAssemblyData;
     Operand operand;
     Object *indirectSymbol;
@@ -1408,11 +1408,11 @@ void CodeGen_EmitLoadAndBranchFunction(Object *function, Object *branchTarget, O
     emit_opcode_with_base_offset(PC_LWZ, 12, 12, NULL, (SInt16)offset);
     PCodeUtilities_EmitInstruction(PC_B, 0, branchTarget);
     copts.filesyminfo = 0;
-    copts.peepholeOptimizationEnabled = 0;
+    copts.peephole = 0;
     copts.emitExtraAssemblyData = 0;
     PCodeAssembly_EmitFunction(function, NULL);
     copts.filesyminfo = savedFileSymInfo;
-    copts.peepholeOptimizationEnabled = savedFb7;
+    copts.peephole = savedFb7;
     copts.emitExtraAssemblyData = savedF07;
 }
 
@@ -1553,7 +1553,7 @@ void CodeGen_GenThunk(Object *stmt, Object *func, SInt32 a, SInt32 flag, SInt32 
     UInt8 save_27;
 
     save_fi = copts.filesyminfo;
-    save_d7 = copts.peepholeOptimizationEnabled;
+    save_d7 = copts.peephole;
     save_27 = copts.emitExtraAssemblyData;
 
     CError_ASSERT(2026, !flag);
@@ -1588,12 +1588,12 @@ void CodeGen_GenThunk(Object *stmt, Object *func, SInt32 a, SInt32 flag, SInt32 
     PCodeUtilities_EmitInstruction(PC_B, 0, func);
 
     copts.filesyminfo = 0;
-    copts.peepholeOptimizationEnabled = 0;
+    copts.peephole = 0;
     copts.emitExtraAssemblyData = 0;
     PCodeAssembly_EmitFunction(stmt, NULL);
 
     copts.filesyminfo = save_fi;
-    copts.peepholeOptimizationEnabled = save_d7;
+    copts.peephole = save_d7;
     copts.emitExtraAssemblyData = save_27;
 }
 
@@ -1615,7 +1615,7 @@ void CodeGen_Generator(Statement *statements, Object *functionObject, Boolean co
     Statement *previousStatement;
     UInt16 initialValue;
 
-    if (copts.nativeByteOrder != 0) {
+    if (copts.littleendian != 0) {
         high_word_offset = 4;
         low_word_offset = 0;
         returnRegHi = 4;
@@ -1663,17 +1663,17 @@ void CodeGen_Generator(Statement *statements, Object *functionObject, Boolean co
     Exceptions_Reset();
     data_0058802c = newlabel();
     return_label = data_0058802c;
-    if (copts.cOptimizerDumpEnabled)
+    if (copts.debug_listing)
         fn_004be830(statements, functionObject);
     statementList = DumpIR_OptimizeStatements(functionObject, statements);
-    if (copts.cOptimizerDumpEnabled)
+    if (copts.debug_listing)
         fn_004be830(statementList, functionObject);
     Operands_ClearTrailingObjectInfo();
     Registers_InitRegisterState();
     fn_0049d420(statementList);
-    if (copts.cOptimizerDumpEnabled)
+    if (copts.debug_listing)
         fn_004be830(statementList, functionObject);
-    if (copts.fba)
+    if (copts.profile)
         data_00588521 = 0;
     PCode_ResetBlocks();
     PCode_ResolveLabel((prologueBlock = PCode_CreateBlock()), (PCode_NewLabel()));
@@ -1707,9 +1707,9 @@ void CodeGen_Generator(Statement *statements, Object *functionObject, Boolean co
     Registers_SetupStackBaseReg();
     allocate_registers_and_local_slots();
     CodeGen_EnumerateArgumentRegisters(&emit_dlocal_initialization);
-    if (copts.instructionSchedulingMode != 0 || copts.altivecModel != 0)
+    if (copts.instructionSchedulingMode != 0 || copts.altivec_model != 0)
         PCodeUtilities_ResolveLabel(PCode_NewLabel());
-    if (copts.fba)
+    if (copts.profile)
         emit_name_string_address(COptimizer_GetFunctionObject(functionObject)->name);
     emit_trailing_object_reg_moves();
     previousStatement = NULL;
@@ -1854,26 +1854,26 @@ void CodeGen_Generator(Statement *statements, Object *functionObject, Boolean co
         CodeGen_DumpPCode_004c4bd0(COptimizer_GetFunctionObject(functionObject)->name, "INITIAL CODE");
     }
     if (copts.instructionSchedulingMode == 2) {
-        if (copts.peepholeOptimizationEnabled)
+        if (copts.peephole)
             Peephole_MergeAdjacentBlocks(functionObject, 0);
-        if (copts.cOptimizerDumpEnabled)
+        if (copts.debug_listing)
             fn_004c4bb0(COptimizer_GetFunctionObject(functionObject)->name, "BEFORE SCHEDULING");
         Scheduler_Schedule(0);
-        if (copts.cOptimizerDumpEnabled)
+        if (copts.debug_listing)
             fn_004c4ba0();
-        if (copts.cOptimizerDumpEnabled)
+        if (copts.debug_listing)
             CodeGen_DumpPCode_004c4bd0(COptimizer_GetFunctionObject(functionObject)->name,
                                        "AFTER INSTRUCTION SCHEDULING");
     }
-    if (copts.peepholeOptimizationEnabled) {
+    if (copts.peephole) {
         if (copts.instructionSchedulingMode == 0 && copts.deleteDeadInstructions > 1)
             Peephole_MergeAdjacentBlocks(functionObject, 0);
         Peephole_VisitBlocksWithMultipleInstructions(functionObject);
-        if (copts.cOptimizerDumpEnabled)
+        if (copts.debug_listing)
             CodeGen_DumpPCode_004c4bd0(COptimizer_GetFunctionObject(functionObject)->name, "AFTER PEEPHOLE FORWARD");
     }
     Coloring_AllocateRegisters(functionObject);
-    if (copts.cOptimizerDumpEnabled)
+    if (copts.debug_listing)
         CodeGen_DumpPCode_004c4bd0(COptimizer_GetFunctionObject(functionObject)->name, "AFTER REGISTER COLORING");
     for (temporaryEntry = temporary_objects; temporaryEntry != NULL; temporaryEntry = temporaryEntry->next)
         StackFrameEABI_AllocateObjectSlot(temporaryEntry->object);
@@ -1884,42 +1884,42 @@ void CodeGen_Generator(Statement *statements, Object *functionObject, Boolean co
     if (hasSentinelArgument) {
         StackFrameEABI_SaveArgumentRegisters(firstEntryBlock, secondEntryBlock, commonEntryBlock, entryLabel);
     }
-    if (copts.fba)
+    if (copts.profile)
         PCodeUtilities_EmitObjectInstructionWithPayload(data_00587c8c, 1, 0, 0, 0);
     StackFrameEABI_MergePrologueEpilogue(gReturnBlock, 1);
-    if (copts.cOptimizerDumpEnabled)
+    if (copts.debug_listing)
         CodeGen_DumpPCode_004c4bd0(COptimizer_GetFunctionObject(functionObject)->name,
                                    "AFTER GENERATING EPILOGUE, PROLOGUE");
-    if (copts.peepholeOptimizationEnabled) {
+    if (copts.peephole) {
         if (copts.instructionSchedulingMode != 0) {
             Peephole_MergeAdjacentBlocks(functionObject, 1);
-            if (copts.cOptimizerDumpEnabled)
+            if (copts.debug_listing)
                 CodeGen_DumpPCode_004c4bd0(COptimizer_GetFunctionObject(functionObject)->name,
                                            "AFTER MERGING EPILOGUE, PROLOGUE");
         }
         Peephole_OptimizeBlocks(functionObject);
-        if (copts.cOptimizerDumpEnabled)
+        if (copts.debug_listing)
             CodeGen_DumpPCode_004c4bd0(COptimizer_GetFunctionObject(functionObject)->name,
                                        "AFTER PEEPHOLE OPTIMIZATION");
     }
     if (copts.instructionSchedulingMode != 0) {
-        if (copts.cOptimizerDumpEnabled)
+        if (copts.debug_listing)
             fn_004c4bb0(COptimizer_GetFunctionObject(functionObject)->name, "BEFORE SCHEDULING");
         Scheduler_Schedule(1);
-        if (copts.cOptimizerDumpEnabled)
+        if (copts.debug_listing)
             fn_004c4ba0();
-        if (copts.cOptimizerDumpEnabled)
+        if (copts.debug_listing)
             CodeGen_DumpPCode_004c4bd0(COptimizer_GetFunctionObject(functionObject)->name,
                                        "FINAL CODE AFTER INSTRUCTION SCHEDULING");
     } else {
-        if (copts.cOptimizerDumpEnabled)
+        if (copts.debug_listing)
             CodeGen_DumpPCode_004c4bd0(COptimizer_GetFunctionObject(functionObject)->name, "FINAL CODE");
     }
     {
         int result = PCodeAssembly_EmitFunction(functionObject, NULL);
         InstrSelection_EmitSwitchTables(functionObject);
         TOC_EnumerateObjectCodeOffsets(functionObject);
-        if (copts.fb3 != 0 && data_00588521 == 0)
+        if (copts.exceptions != 0 && data_00588521 == 0)
             Exceptions_EmitExceptionTable(functionObject, result);
     }
 }
@@ -1932,7 +1932,7 @@ void emit_name_string_address(const char *name)
 
     memclrw(&op, sizeof(op));
 
-    if (copts.fb0 != 0) {
+    if (copts.poolstrings != 0) {
         NameEntry *entry = CInit_DeclarePooledString(name, strlen(name) + 1, 0);
         stringObject = entry->object;
         offset = entry->offset;
@@ -2221,7 +2221,7 @@ void emit_dlocal_initialization(Object *object, SInt16 reg)
             UInt8 use_gpr;
             if ((((typecode = type->type) == TYPEINT || typecode == TYPEENUM) && type->size == 8) ||
                 ((use_gpr = copts.operandsDebug) && typecode == TYPEFLOAT && type->size != 4)) {
-                if (copts.nativeByteOrder != 0) {
+                if (copts.littleendian != 0) {
                     if (registers->reg != reg)
                         PCodeUtilities_EmitInstruction(PC_MR, registers->reg, reg);
                     if (reg < 10) {
@@ -2743,7 +2743,7 @@ void bind_object_register(Object *object, SInt16 reg)
             if (type->size <= 4) {
                 Registers_BindGPR(object, reg);
             } else if (reg < 10) {
-                if (copts.nativeByteOrder != 0) {
+                if (copts.littleendian != 0) {
                     Registers_BindGPRPair(object, reg, reg + 1);
                 } else {
                     Registers_BindGPRPair(object, reg + 1, reg);
@@ -2776,7 +2776,7 @@ void CodeGen_EnumerateArgumentRegisters(void (*callback)(Object *argument, SInt1
 
         if (((argumentType->type == TYPEINT || argumentType->type == TYPEENUM) && argumentType->size == 8) ||
             (copts.operandsDebug != 0 && argumentType->type == TYPEFLOAT && argumentType->size != 4 &&
-             copts.returnStructsInMemory == 0)) {
+             copts.incompatible_sfpe_double_params == 0)) {
             if (generalRegister % 2 == 0)
                 generalRegister++;
         }
@@ -2870,7 +2870,7 @@ void CodeGen_AllocateArgumentSlots(Object *function, Boolean isVariadic, Boolean
             useStack = 1;
             if (((type->type == TYPEINT || type->type == TYPEENUM) && type->size == 8) ||
                 (copts.operandsDebug && type->type == TYPEFLOAT && type->size != 4 &&
-                 copts.returnStructsInMemory == 0)) {
+                 copts.incompatible_sfpe_double_params == 0)) {
                 if ((gpr % 2) == 0) {
                     gpr++;
                 }
@@ -2910,7 +2910,7 @@ void CodeGen_AllocateArgumentSlots(Object *function, Boolean isVariadic, Boolean
                 }
                 obj->u.var.uid = offset;
                 Registers_GetInfo(obj)->in_param_area = 1;
-                if (!copts.nativeByteOrder) {
+                if (!copts.littleendian) {
                     if ((obj->type->type == TYPEINT || obj->type->type == TYPEENUM) && obj->type->size < 4) {
                         obj->u.var.uid += 4 - obj->type->size;
                     }

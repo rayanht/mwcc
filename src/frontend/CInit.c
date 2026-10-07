@@ -112,7 +112,7 @@ void emit_object(Object *object, const void *buffer, struct OLinkList *args, uns
 
 static inline UInt8 CInit_StringEmissionMode(void)
 {
-    return copts.fb2;
+    return copts.readonly_strings;
 }
 
 void CInit_DeclarePooledStrings(void)
@@ -162,7 +162,7 @@ void CInit_RewriteString(ENode *node, SInt32 flag_arg)
 
     flag = (TPTR_TARGET(node->rtype)->size != 1);
 
-    if (copts.fb0 != 0) {
+    if (copts.poolstrings != 0) {
         if (flag)
             res = CInit_DeclarePooledWString(node->data.string.data, node->data.string.size);
         else
@@ -193,7 +193,7 @@ NameEntry *CInit_DeclarePooledWString(char *string, UInt32 length)
     Object *object;
     NameEntry *node;
 
-    if (copts.faf == 0) {
+    if (copts.dont_reuse_strings == 0) {
         for (node = pooled_wstrings; node != NULL; node = node->next) {
             if (node->length == length && memcmp(node->bytes, string, length) == 0)
                 return node;
@@ -239,7 +239,7 @@ NameEntry *CInit_DeclarePooledString(const char *name, SInt32 length, SInt8 unsi
     DeclInfo declaration;
     NameEntry *entry;
 
-    if (copts.faf == 0) {
+    if (copts.dont_reuse_strings == 0) {
         for (entry = pooled_strings; entry != NULL; entry = entry->next) {
             if (entry->length == length && entry->unsignedChar == unsignedChar &&
                 memcmp(entry->bytes, name, length) == 0)
@@ -272,7 +272,7 @@ NameEntry *CInit_DeclarePooledString(const char *name, SInt32 length, SInt8 unsi
         object = CParser_NewObject(&declaration);
         object->nspace = registration_context;
         stringObject = object;
-        ObjGen_PPC_EABI_SetObjectSection(object, 0, copts.fb2);
+        ObjGen_PPC_EABI_SetObjectSection(object, 0, copts.readonly_strings);
         offset = 0;
     }
     entry = galloc(0x16);
@@ -293,7 +293,7 @@ Object *CInit_DeclareString(const char *data, UInt32 length, UInt8 kind1, UInt8 
     PooledString *cached;
     Object *object;
 
-    if (copts.faf == 0) {
+    if (copts.dont_reuse_strings == 0) {
         for (cached = string_cache; cached != NULL; cached = cached->next) {
             if (cached->size == length && cached->ispascal == kind1 && cached->iswide == kind2) {
                 if (memcmp(cached->data, data, length) == 0)
@@ -311,7 +311,7 @@ Object *CInit_DeclareString(const char *data, UInt32 length, UInt8 kind1, UInt8 
     object->sclass = TK_STATIC;
     CScope_AddGlobalObject(object);
 
-    if (copts.fb2)
+    if (copts.readonly_strings)
         emit_object(object, data, NULL, object->type->size, 1);
     else
         emit_object(object, data, NULL, object->type->size, 0);
@@ -755,7 +755,7 @@ ENode *CInit_AutoObject(Object *object, Type *type, UInt32 qualifiers)
     int index;
     int structureKind;
 
-    CInit_004d2700(&initializer, type, qualifiers, copts.cplusplus || copts.f97 || object == NULL);
+    CInit_004d2700(&initializer, type, qualifiers, copts.cplusplus || copts.gcc_extensions || object == NULL);
     if (type->type == TYPESTRUCT && (structureKind = TYPE_STRUCT(type)->stype) >= 4 && structureKind <= 14) {
         switch (structureKind) {
             case 4:
@@ -849,7 +849,7 @@ ENode *CInit_AutoObject(Object *object, Type *type, UInt32 qualifiers)
 static Boolean CInit_IsZero(UInt8 *p, SInt32 n)
 {
     SInt32 i;
-    if (copts.fb1)
+    if (copts.explicit_zero_data)
         return FALSE;
     for (i = 0; i < n; i++)
         if (p[i] != 0)
@@ -1014,7 +1014,7 @@ ENode *create_temp_object_expr(Type *type, Boolean reportError)
 
     if (type->type == TYPECLASS) {
         cls = CClass_Destructor((TypeClass *)type);
-        if (cls != NULL && !copts.f92) {
+        if (cls != NULL && !copts.no_static_dtors) {
             if (reportError) {
                 CError_ReportError(ERR_UNIMPLEMENTED_C_FEATURE);
             }
@@ -1119,7 +1119,7 @@ void initialize_class_array(Object *obj, Type *type, Boolean staticInit)
             node = nullnode();
         }
         if (staticInit != 0) {
-            if (dtor != NULL && copts.f92 == 0) {
+            if (dtor != NULL && copts.no_static_dtors == 0) {
                 arrayDtor = CParser_NewCompilerDefFunctionObject();
                 arrayDtor->name = CParser_AppendUniqueName("__arraydtor");
                 arrayDtor->type = (Type *)&data_0055d5e8;
@@ -1212,7 +1212,7 @@ static Boolean IsZeroed(UInt8 *buf, SInt32 size)
 {
     SInt32 i;
 
-    if (copts.fb1)
+    if (copts.explicit_zero_data)
         return 0;
     for (i = 0; i < size; i++) {
         if (buf[i])
@@ -1898,8 +1898,7 @@ void init_int(Type *type, ENode *node)
     if (node->type == EINTCONST) {
         CMach_InitIntMem(type, node->data.intval, cinit_state->buffer + cinit_state->expr_offset);
     } else if (node->type == ETYPCON && node->data.monadic->rtype->type == TYPEPOINTER &&
-               node->rtype->size == stunsignedlong.size &&
-               (copts.cplusplus != 0 || copts.rejectZeroLengthArrayMembers == 0)) {
+               node->rtype->size == stunsignedlong.size && (copts.cplusplus != 0 || copts.ANSIstrict == 0)) {
         init_int_or_relocation(node->data.monadic->rtype, node->data.monadic);
     } else {
         if (cinit_state->expr_cb != NULL) {
@@ -2090,7 +2089,7 @@ ENode *create_destructor_registration_call(Type *objectType, Object *destructor,
     Type *registrationType;
     DeclInfo declaration;
 
-    if (copts.f92)
+    if (copts.no_static_dtors)
         return objectAddress;
 
     call = CompilerTools_AllocatePool(sizeof(ENode));
@@ -2761,7 +2760,7 @@ void CInit_004d3620(TypeBitfield *bf, unsigned char *ptr, CInt64 value)
     SInt32 n;
     SInt32 inc;
 
-    if (copts.nativeByteOrder != 0) {
+    if (copts.littleendian != 0) {
         i = bf->offset;
         inc = 1;
     } else {
@@ -2770,7 +2769,7 @@ void CInit_004d3620(TypeBitfield *bf, unsigned char *ptr, CInt64 value)
     }
     for (n = 0; n < bf->bitlength; n++, i += inc) {
         if (value.lo & 1) {
-            if (copts.nativeByteOrder != 0) {
+            if (copts.littleendian != 0) {
                 ptr[i >> 3] |= 1 << (i & 7);
             } else {
                 ptr[i >> 3] |= 0x80 >> (i & 7);
@@ -2787,8 +2786,7 @@ void initialize_int(InitializerData *stage, ENode *expr, Type *type, UInt32 qual
         if (expr->type == EINTCONST) {
             CMach_InitIntMem(type, expr->data.intval, stage->buffer + stage->size);
         } else if (expr->type == ETYPCON && expr->data.monadic->rtype->type == TYPEPOINTER &&
-                   expr->rtype->size == stunsignedlong.size &&
-                   (copts.cplusplus || !copts.rejectZeroLengthArrayMembers)) {
+                   expr->rtype->size == stunsignedlong.size && (copts.cplusplus || !copts.ANSIstrict)) {
             initialize_pointer_or_intconst(stage, expr->data.monadic, expr->data.monadic->rtype, qual);
         } else {
             append_initializer_entry(stage, type, expr);

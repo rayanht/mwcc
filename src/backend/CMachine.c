@@ -360,13 +360,13 @@ Boolean Type_RequiresMemoryReturn(Type *type)
             structKind = TYPE_STRUCT(type)->stype;
             if (structKind >= 4 && structKind <= 14)
                 return 0;
-            if (type->size <= 8 && !copts.returnStructsInMemory)
+            if (type->size <= 8 && !copts.incompatible_sfpe_double_params)
                 return 0;
             return 1;
         }
         case TYPECLASS:
             if (type->size <= 8 && (Boolean)(CClass_Constructor(TYPE_CLASS(type)) == NULL) &&
-                !copts.returnStructsInMemory)
+                !copts.incompatible_sfpe_double_params)
                 return 0;
             return 1;
         case TYPEMEMBERPOINTER:
@@ -687,7 +687,7 @@ SInt16 CMachine_GetTypeAlignment(Type *type)
             break;
     }
 
-    arrayAlignment = copts.arrayAlignment;
+    arrayAlignment = copts.alignarraymembers;
 
     for (;;) {
         switch ((SInt8)type->type) {
@@ -803,7 +803,7 @@ UInt16 fn_004a8400(TypeStruct *str)
 
 void CMach_PragmaParams(void)
 {
-    if (copts.f9f != 0) {
+    if (copts.warn_illpragma != 0) {
         CError_Warning(ERR_ILLEGAL_PRAGMA, 0);
     }
     while (CPrep_ScanMacroExpandedChar() != 0) {
@@ -1046,7 +1046,7 @@ void CMachine_InitVectorMem(Type *type, MWVector128 val, void *mem)
                 case 5:
                 case 6:
                     for (i = 0; i < 16; i++) {
-                        if (!copts.nativeByteOrder)
+                        if (!copts.littleendian)
                             uc[i] = val.byteElements[i];
                         else
                             uc[i] = val.byteElements[15 - i];
@@ -1058,7 +1058,7 @@ void CMachine_InitVectorMem(Type *type, MWVector128 val, void *mem)
                 case 9:
                 case 14:
                     for (i = 0; i < 8; i++) {
-                        if (!copts.nativeByteOrder)
+                        if (!copts.littleendian)
                             us[i] = CTool_EndianConvertWord16(val.shortElements[i]);
                         else
                             us[i] = CTool_EndianConvertWord16(val.shortElements[7 - i]);
@@ -1069,7 +1069,7 @@ void CMachine_InitVectorMem(Type *type, MWVector128 val, void *mem)
                 case 11:
                 case 12:
                     for (i = 0; i < 4; i++) {
-                        if (!copts.nativeByteOrder)
+                        if (!copts.littleendian)
                             ul[i] = CTool_EndianConvertWord32(val.longElements[i]);
                         else
                             ul[i] = CTool_EndianConvertWord32(val.longElements[3 - i]);
@@ -1078,7 +1078,7 @@ void CMachine_InitVectorMem(Type *type, MWVector128 val, void *mem)
                     break;
                 case 13:
                     for (i = 0; i < 4; i++) {
-                        if (!copts.nativeByteOrder)
+                        if (!copts.littleendian)
                             f[i] = val.floatElements[i];
                         else
                             f[i] = val.floatElements[3 - i];

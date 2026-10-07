@@ -125,7 +125,7 @@ void CDecl_ParseClass(DeclInfo *ctx, SInt16 kind, Boolean advanceToken, UInt8 ex
                             if (declaredKind != kind) {
                                 int classKind = kind;
                                 if ((classKind == 2 && obj->mode == 0) || (classKind == 0 && obj->mode == 2)) {
-                                    if (copts.fa9 != 0)
+                                    if (copts.warn_structclass != 0)
                                         CError_Warning(ERR_INCONSISTENT_USE_CLASS_STRUCT_KEYWORDS);
                                 } else {
                                     CError_ReportError(ERR_STRUCT_UNION_ENUM_CLASS_TAG_REDEFINED, name);
@@ -277,7 +277,7 @@ TypeClass *CDecl_DefineClass(struct NameSpace *nspace, struct HashNameNode *name
         if (data_00588238 != NULL) {
             classSpace->name = CParser_AppendUniqueNameFile(name->name);
         }
-        if (copts.f72 != 0 && nspace == registration_context) {
+        if (copts.direct_to_som != 0 && nspace == registration_context) {
             if (memcmp(name->name, "SOMObject", 10) == 0) {
                 CSOM_InitSOMInfo(type);
             }
@@ -904,7 +904,7 @@ void parse_class_bases(TemplClass *classType, short mode, char allowDependent)
                 tk = CPrepTokenizer_GetNextToken();
                 break;
             case TK_PROTECTED:
-                if (copts.f5e == 0) {
+                if (copts.ARM_conform == 0) {
                     access = 2;
                     tk = CPrepTokenizer_GetNextToken();
                 }
@@ -981,7 +981,7 @@ void parse_class_bases(TemplClass *classType, short mode, char allowDependent)
     if ((classType->theclass.flags & CLASS_HAS_VBASES) != 0) {
         CDecl_SetVBaseOffsets(&classType->theclass);
     }
-    if (copts.f82 != 0 && classType->theclass.bases != NULL && classType->theclass.bases->next == NULL) {
+    if (copts.def_inherited != 0 && classType->theclass.bases != NULL && classType->theclass.bases->next == NULL) {
         typeObject = galloc(sizeof(ObjType));
         memclrw(typeObject, sizeof(ObjType));
         typeObject->otype = OT_TYPE;
@@ -1030,7 +1030,7 @@ Boolean CDecl_CheckNewBase(TypeClass *cls, TypeClass *base, Boolean flag)
         CError_ReportError(ERR_ILLEGAL_STRUCT_UNION_ENUM_CLASS_DEFINITION);
         return 0;
     }
-    if (copts.f5b && (flag || cls->bases != NULL)) {
+    if (copts.ecplusplus && (flag || cls->bases != NULL)) {
         CError_ReportError(ERR_ILLEGAL_USE_C_FEATURE_EC);
         return 0;
     }
@@ -1061,7 +1061,7 @@ void CDecl_SetVBaseOffsets(TypeClass *cls)
     VClassList *layout;
     SInt32 offset;
 
-    if (copts.f80)
+    if (copts.vbase_ctor_offset)
         cls->flags |= CLASS_SOM_INIT;
 
     base = cls->bases;
@@ -1265,7 +1265,7 @@ void parse_class_members(ClassLayout *decle, TypeClass *tclass, SInt16 mode)
                     t = CPrepTokenizer_GetNextTokenAndRestorePosition();
                     data_00587fa0 = tclass->classname;
                     ctor = 1;
-                    if (copts.f68 && t == 0x174) {
+                    if (copts.cpp_extensions && t == 0x174) {
                         CPrepTokenizer_GetNextToken();
                         if ((tk = CPrepTokenizer_GetNextToken()) == -3)
                             goto identifier;
@@ -1565,7 +1565,7 @@ void parse_class_members(ClassLayout *decle, TypeClass *tclass, SInt16 mode)
                     memberVar->anonunion = 1;
                 for (unionMember = (ObjMemberVar *)((TypeClass *)md.declinfo.thetype)->ivars; unionMember;
                      unionMember = unionMember->next) {
-                    if ((type = unionMember->type)->type == TYPEBITFIELD && copts.f8f) {
+                    if ((type = unionMember->type)->type == TYPEBITFIELD && copts.reverse_bitfields) {
                         copy = galloc(sizeof(TypeBitfield));
                         source = TYPE_BITFIELD(type);
                         *copy = *source;
@@ -2248,7 +2248,7 @@ int parse_struct_members(TypeStruct *obj, Boolean block)
                         break;
                     tk = CPrepTokenizer_GetNextToken();
                 }
-            } else if (copts.rejectZeroLengthArrayMembers == 0 && memberDecl.declinfo.thetype->type == TYPESTRUCT) {
+            } else if (copts.ANSIstrict == 0 && memberDecl.declinfo.thetype->type == TYPESTRUCT) {
                 member = galloc(sizeof(*member));
                 memclrw(member, sizeof(*member));
                 member->type = memberDecl.declinfo.thetype;
@@ -2329,7 +2329,7 @@ void compute_struct_layout(Type *str)
                     member->next = newmember;
                     member = newmember;
                 }
-                if (copts.f8f && member->type->type == TYPEBITFIELD) {
+                if (copts.reverse_bitfields && member->type->type == TYPEBITFIELD) {
                     bitfield = galloc(sizeof(*bitfield));
                     *bitfield = *TYPE_BITFIELD(member->type);
                     CABI_ReverseBitField(bitfield);
@@ -2357,13 +2357,13 @@ void compute_struct_layout(Type *str)
     str->size = maxsize;
     TYPE_STRUCT(str)->align = fn_004a8400(TYPE_STRUCT(str));
     str->size = maxsize + CABI_ComputeAlignmentPadding(str, maxsize);
-    if (copts.f8f) {
+    if (copts.reverse_bitfields) {
         for (member = TYPE_STRUCT(str)->members; member != NULL; member = member->next) {
             if (member->type->type == TYPEBITFIELD)
                 CABI_ReverseBitField(TYPE_BITFIELD(member->type));
         }
     }
-    if (copts.faa && TYPE_STRUCT(str)->stype != 1) {
+    if (copts.warn_padding && TYPE_STRUCT(str)->stype != 1) {
         StructMember *previous;
         previous = NULL;
         for (member = TYPE_STRUCT(str)->members; member != NULL; member = member->next) {
@@ -2404,7 +2404,7 @@ void CDecl_ScanStructDeclarator(BigDeclInfo *member)
                 CError_ReportError(ERR_ILLEGAL_STRUCT_UNION_ENUM_CLASS_DEFINITION);
                 return;
             }
-            if ((copts.rejectZeroLengthArrayMembers == 0 || copts.f90 != 0) && member->declinfo2.thetype->size == 0 &&
+            if ((copts.ANSIstrict == 0 || copts.c9x != 0) && member->declinfo2.thetype->size == 0 &&
                 member->declinfo2.thetype->type == TYPEARRAY) {
                 if (member->declinfo2.storageclass != 0x102) {
                     if (tk != ';' || CPrepTokenizer_GetNextTokenAndRestorePosition() != 0x7d) {
@@ -2436,7 +2436,7 @@ void CDecl_ScanStructDeclarator(BigDeclInfo *member)
                 }
                 CError_ReportError(ERR_ILLEGAL_BITFIELD_DECLARATION);
                 member->declinfo2.thetype = (Type *)&stunsignedint;
-            } else if (copts.rejectZeroLengthArrayMembers != 0 && copts.cplusplus == 0 &&
+            } else if (copts.ANSIstrict != 0 && copts.cplusplus == 0 &&
                        member->declinfo2.thetype != (Type *)&stsignedint &&
                        member->declinfo2.thetype != (Type *)&stunsignedint) {
                 CError_ReportError(ERR_ILLEGAL_BITFIELD_DECLARATION);
@@ -2512,7 +2512,7 @@ static TypeIntegral *SignedIntType(SInt32 size)
         return &stsignedshort;
     if (stsignedint.size == size)
         return &stsignedint;
-    if (stsignedlong.size != size && copts.f77 != 0 && copts.f78 != 0 && stsignedlonglong.size == size)
+    if (stsignedlong.size != size && copts.longlong != 0 && copts.longlong_enums != 0 && stsignedlonglong.size == size)
         return &stsignedlonglong;
     return &stsignedlong;
 }
@@ -2525,7 +2525,8 @@ static Type *UnsignedIntType(SInt32 size)
         return (Type *)&stunsignedshort;
     if (stunsignedint.size == size)
         return (Type *)&stunsignedint;
-    if (stunsignedlong.size != size && copts.f77 != 0 && copts.f78 != 0 && stunsignedlonglong.size == size)
+    if (stunsignedlong.size != size && copts.longlong != 0 && copts.longlong_enums != 0 &&
+        stunsignedlonglong.size == size)
         return (Type *)&stunsignedlonglong;
     return (Type *)&stunsignedlong;
 }
@@ -2550,7 +2551,7 @@ static TypeIntegral *FindSignedType(SInt32 size)
         return &stsignedint;
     if (stsignedlong.size == size)
         return &stsignedlong;
-    if (copts.f77 != 0 && copts.f78 != 0 && stsignedlonglong.size == size)
+    if (copts.longlong != 0 && copts.longlong_enums != 0 && stsignedlonglong.size == size)
         return &stsignedlonglong;
     return &stsignedlong;
 }
@@ -2565,7 +2566,7 @@ static TypeIntegral *FindUnsignedType(SInt32 size)
         return &stunsignedint;
     if (stunsignedlong.size == size)
         return &stunsignedlong;
-    if (copts.f77 != 0 && copts.f78 != 0 && stunsignedlonglong.size == size)
+    if (copts.longlong != 0 && copts.longlong_enums != 0 && stunsignedlonglong.size == size)
         return &stunsignedlonglong;
     return &stunsignedlong;
 }
@@ -2651,7 +2652,7 @@ void scanenum(DeclInfo *result)
 
 static inline UInt8 CDecl_UseIntEnums(void)
 {
-    return copts.f63;
+    return copts.enumsalwaysint;
 }
 
 TypeEnum *parse_enum_definition(TypeEnum *decl, HashNameNode *name)
@@ -2714,7 +2715,7 @@ TypeEnum *parse_enum_definition(TypeEnum *decl, HashNameNode *name)
     if (copts.cplusplus == 0 || tk != '}') {
         for (;;) {
             if (tk != TK_IDENTIFIER) {
-                if (tk != '}' || (copts.f90 == 0 && copts.f68 == 0 && copts.fa4 != 0))
+                if (tk != '}' || (copts.c9x == 0 && copts.cpp_extensions == 0 && copts.warn_extracomma != 0))
                     CError_Warning(ERR_IDENTIFIER_EXPECTED);
                 break;
             }
@@ -2758,7 +2759,7 @@ TypeEnum *parse_enum_definition(TypeEnum *decl, HashNameNode *name)
                     CTemplateClass_AppendEnumConstDeclaration(templateClass, enumerator, NULL);
             }
             if (CDecl_UseIntEnums()) {
-                if (copts.rejectZeroLengthArrayMembers != 0) {
+                if (copts.ANSIstrict != 0) {
                     if (!CInt64_IsInRange(value, stsignedint.size))
                         CError_ReportError(ERR_NUMBER_OUT_RANGE);
                 } else {
@@ -2839,7 +2840,7 @@ void CDecl_ComputeUnderlyingEnumType(TypeEnum *res)
     ObjEnumConst *m;
     Type *t;
 
-    if (copts.f63 == 0) {
+    if (copts.enumsalwaysint == 0) {
         for (n = res->enumlist; n != NULL; n = n->next) {
             if (HighIsNegative(n->val.hi) && !Type_IsUnsigned(n->type))
                 break;
@@ -2864,7 +2865,7 @@ void CDecl_ComputeUnderlyingEnumType(TypeEnum *res)
                 t = (Type *)SignedIntType(2);
             } else if (CInt64_IsInRange(b, 4) && CInt64_IsInRange(a, 4)) {
                 t = (Type *)SignedIntType(4);
-            } else if (copts.rejectZeroLengthArrayMembers == 0 && CInt64_IsInRange(a, 4) && CInt64_IsInURange(b, 4)) {
+            } else if (copts.ANSIstrict == 0 && CInt64_IsInRange(a, 4) && CInt64_IsInURange(b, 4)) {
                 t = (Type *)SignedIntType(4);
             } else {
                 t = (Type *)SignedIntType(8);
@@ -2944,7 +2945,7 @@ void *parse_enum_body(TypeEnum *enumType, HashNameNode *name)
     maximumValue = cint64_zero;
     minimumValue = cint64_zero;
     overflow = 0;
-    if (copts.f63 != 0) {
+    if (copts.enumsalwaysint != 0) {
         underlyingType = &stsignedint;
         isSigned = 1;
     } else {
@@ -2957,9 +2958,9 @@ void *parse_enum_body(TypeEnum *enumType, HashNameNode *name)
         do {
             if (tk != TK_IDENTIFIER) {
                 if (tk == '}') {
-                    if (copts.f68 != 0)
+                    if (copts.cpp_extensions != 0)
                         break;
-                    if (copts.fa4 == 0)
+                    if (copts.warn_extracomma == 0)
                         break;
                 }
                 CError_Warning(ERR_IDENTIFIER_EXPECTED);
@@ -3009,8 +3010,8 @@ void *parse_enum_body(TypeEnum *enumType, HashNameNode *name)
                 }
             }
 
-            if (copts.f63 != 0) {
-                if (copts.rejectZeroLengthArrayMembers != 0) {
+            if (copts.enumsalwaysint != 0) {
+                if (copts.ANSIstrict != 0) {
                     if (CInt64_IsInRange(currentValue, stsignedint.size) == 0)
                         CError_ReportError(ERR_NUMBER_OUT_RANGE);
                 } else {
@@ -3042,7 +3043,7 @@ void *parse_enum_body(TypeEnum *enumType, HashNameNode *name)
                         }
                         underlyingType = FindSignedType(8);
                         if (underlyingType->size != 8) {
-                            if (copts.rejectZeroLengthArrayMembers == 0) {
+                            if (copts.ANSIstrict == 0) {
                                 if (CInt64_IsInRange(minimumValue, 4)) {
                                     if (CInt64_IsInURange(maximumValue, 4))
                                         break;
@@ -3292,10 +3293,10 @@ Boolean CDecl_FunctionDeclarator(DeclInfo *decl, NameSpace *mode, Boolean allow_
 
         if (object->nspace == registration_context && memcmp(object->name->name, "main", 5) == 0) {
             if (object->sclass == TK_STATIC ||
-                (copts.rejectZeroLengthArrayMembers && TYPE_FUNC(object->type)->functype != (Type *)&stsignedint))
+                (copts.ANSIstrict && TYPE_FUNC(object->type)->functype != (Type *)&stsignedint))
                 CError_ReportError(ERR_MAIN_NOT_DEFINED_AS_EXTERNAL_INT);
         } else {
-            if (copts.f60 && needsPrototype && object->sclass != TK_STATIC && (object->qual & Q_INLINE) == 0 &&
+            if (copts.checkprotos && needsPrototype && object->sclass != TK_STATIC && (object->qual & Q_INLINE) == 0 &&
                 !object->nspace->is_unnamed)
                 CError_Warning(ERR_FUNCTION_NO_PROTOTYPE);
         }
@@ -3527,7 +3528,7 @@ void CDecl_TypedefDeclarator(DeclInfo *decl)
             CError_ReportError(ERR_IDENTIFIER_REDECLARED_WAS_DECLARED_AS_NOW, decl->name->name, existingType->type,
                                existingType->qual, decl->thetype, decl->qual);
         } else if (copts.cplusplus == 0) {
-            if ((warnDuplicate = copts.f9d) || copts.rejectZeroLengthArrayMembers) {
+            if ((warnDuplicate = copts.extended_errorcheck) || copts.ANSIstrict) {
                 if (warnDuplicate)
                     CError_Warning(ERR_IDENTIFIER_REDECLARED, decl->name->name);
                 else
@@ -3634,7 +3635,7 @@ Object *CDecl_GetFunctionObject(DeclInfo *decl, NameSpace *target_scope, Boolean
             } else {
                 prepend_class_pointer_argument(TYPE_FUNC(decl->thetype), scope->theclass, 1);
             }
-            if (copts.f68) {
+            if (copts.cpp_extensions) {
                 decl->qual |= object->qual & (Q_CONST | Q_PASCAL);
                 TYPE_FUNC(decl->thetype)->qual |= TYPE_FUNC(object->type)->qual & (Q_CONST | Q_PASCAL);
                 TYPE_FUNC(decl->thetype)->flags |= TYPE_FUNC(object->type)->flags & 0x4010000;
@@ -4207,7 +4208,7 @@ void CDecl_ScanPointer(DeclInfo *declarator, NameSpace *nspace, char finish)
             case TK_IDENTIFIER:
                 if (copts.cplusplus == 0)
                     break;
-                if (copts.f68 != 0 && currentNameSpace->theclass != NULL &&
+                if (copts.cpp_extensions != 0 && currentNameSpace->theclass != NULL &&
                     currentNameSpace->theclass->classname == data_00587fa0 &&
                     CPrepTokenizer_GetNextTokenAndRestorePosition() == 372) {
                     tk = CPrepTokenizer_GetNextToken();
@@ -4964,7 +4965,7 @@ void scandeclarator(DeclInfo *decl)
                     CError_ReportError(ERR_ILLEGAL_CONSTANT_EXPRESSION);
                     count = cint64_one;
                 } else if (CInt64_IsZero(&count)) {
-                    if (copts.rejectZeroLengthArrayMembers == 0 && decl->isStructMemberDeclarator != 0) {
+                    if (copts.ANSIstrict == 0 && decl->isStructMemberDeclarator != 0) {
                         unsized = 1;
                     } else {
                         CError_ReportError(ERR_ILLEGAL_CONSTANT_EXPRESSION);

@@ -155,7 +155,7 @@ void InitExpr_Register(ENode *expr, Object *cls)
         CError_ReportError(ERR_ILLEGAL_USE_PRECOMPILED_HEADER);
         return;
     }
-    if (copts.f8e != 0)
+    if (copts.suppress_init_code != 0)
         return;
     pending = galloc(sizeof(PendingFunction));
     pending->next = NULL;
@@ -289,7 +289,7 @@ void CFunc_ParseFuncDef(Object *func, DeclInfo *definition, TypeClass *scopeObje
             PTR_00587644 = returnStatement;
             returnStatement->dobjstack = NULL;
             PTR_00587644->expr.expression = NULL;
-            if (copts.cplusplus || copts.f90) {
+            if (copts.cplusplus || copts.c9x) {
                 if (memcmp(func->name->name, "main", 5) == 0 &&
                     &TYPE_FUNC(func->type)->functype->type == &stsignedint.type)
                     PTR_00587644->expr.expression = intconstnode((Type *)&stsignedint, 0);
@@ -694,7 +694,7 @@ void setup_function_arguments(Object *function, DeclInfo *body, Statement *state
         result->u.var.info = CPrep_AllocateVarInfo();
         result->u.var.info->func = data_00588238;
         if (result->sclass == TK_REGISTER) {
-            if (copts.uniformSpillBlockWeight == 0) {
+            if (copts.optimizesize == 0) {
                 result->u.var.info->usage = 100;
             } else {
                 result->u.var.info->usage = 5;
@@ -744,7 +744,7 @@ ObjectList *create_arg_object_list(FuncArg *arg)
         obj->u.var.info = CPrep_AllocateVarInfo();
         obj->u.var.info->func = data_00588238;
         if (obj->sclass == TK_REGISTER) {
-            if (copts.uniformSpillBlockWeight == 0) {
+            if (copts.optimizesize == 0) {
                 obj->u.var.info->usage = 100;
             } else {
                 obj->u.var.info->usage = 5;
@@ -780,7 +780,7 @@ void CFunc_SetupNewFuncArgs(Object *func, FuncArg *args)
             obj->u.var.info = CPrep_AllocateVarInfo();
             obj->u.var.info->func = data_00588238;
             if (obj->sclass == TK_REGISTER) {
-                if (copts.uniformSpillBlockWeight == 0)
+                if (copts.optimizesize == 0)
                     obj->u.var.info->usage = 100;
                 else
                     obj->u.var.info->usage = 5;
@@ -792,7 +792,7 @@ void CFunc_SetupNewFuncArgs(Object *func, FuncArg *args)
                 obj->type = CDecl_NewPointerType(obj->type);
                 TYPE_POINTER(obj->type)->qual = Q_REFERENCE;
             }
-            if (obj->name == unnamed_name && copts.rejectZeroLengthArrayMembers != 0 && copts.cplusplus == 0 &&
+            if (obj->name == unnamed_name && copts.ANSIstrict != 0 && copts.cplusplus == 0 &&
                 (func->qual & Q_MANGLE_NAME) == 0)
                 CError_ReportError(ERR_ILLEGAL_FUNCTION_DEFINITION);
             if (arglist != NULL) {
@@ -842,7 +842,7 @@ void create_local_object_copy(Object *func, TypeIntegral *type, Type *type2, Boo
     newfunc->type = type2;
     CFunc_InitVariableInfo(newfunc);
     if (newfunc->sclass == TK_REGISTER) {
-        if (copts.uniformSpillBlockWeight == 0)
+        if (copts.optimizesize == 0)
             newfunc->u.var.info->usage = 100;
         else
             newfunc->u.var.info->usage = 5;
@@ -990,17 +990,17 @@ static void CondJump(ENode *expr, CLabel *truelabel, char a, char b)
 
 static inline char use_legacy_condition_scope(void)
 {
-    return copts.f5f;
+    return copts.ARMscoping;
 }
 
 static inline char warn_missing_return_value(void)
 {
-    return copts.f9d;
+    return copts.extended_errorcheck;
 }
 
 static inline Boolean warn_empty_control_statement(void)
 {
-    return copts.fa1;
+    return copts.warn_possunwant;
 }
 
 void parse_statement(StatementContext *context)
@@ -1144,7 +1144,7 @@ void parse_statement(StatementContext *context)
         case 0x13f:
             tk = CPrepTokenizer_GetNextToken();
             if (tk != TK_IDENTIFIER) {
-                if (tk == '*' && !copts.rejectZeroLengthArrayMembers) {
+                if (tk == '*' && !copts.ANSIstrict) {
                     tk = CPrepTokenizer_GetNextToken();
                     stmt = AppendStmt(0xf);
                     stmt->expr.expression = s_expression();
@@ -1494,7 +1494,7 @@ void parse_statement(StatementContext *context)
         case ';':
             break;
         case TK_ASM:
-            if (copts.cplusplus || !copts.rejectZeroLengthArrayMembers) {
+            if (copts.cplusplus || !copts.ANSIstrict) {
                 tk = CPrepTokenizer_GetNextToken();
                 if (tk == '(') {
                     InlineAsm_ParseAsmStatement();
@@ -1971,7 +1971,7 @@ void declare_local_object(DeclInfo *declaration, TStreamElement *declarationToke
                 object->u.var.info = CPrep_AllocateVarInfo();
                 object->u.var.info->func = data_00588238;
                 if (object->sclass == TK_REGISTER) {
-                    if (copts.uniformSpillBlockWeight == 0)
+                    if (copts.optimizesize == 0)
                         object->u.var.info->usage = 100;
                     else
                         object->u.var.info->usage = 5;
@@ -2563,7 +2563,7 @@ void CFunc_WarnUnused(void)
     ObjectList *local;
     ObjectList *argument;
 
-    if (copts.fa2) {
+    if (copts.warn_unusedvar) {
         for (local = locals; local; local = local->next) {
             if (!(local->object->flags & 1) && !CParser_IsNullOrAtOrDollarPrefixedName(local->object->name) &&
                 !(local->object->qual & Q_INLINE_DATA)) {
@@ -2572,7 +2572,7 @@ void CFunc_WarnUnused(void)
             }
         }
     }
-    if (copts.fa3) {
+    if (copts.warn_unusedarg) {
         for (argument = arguments; argument; argument = argument->next) {
             if (!(argument->object->flags & 1) && !CParser_IsNullOrAtOrDollarPrefixedName(argument->object->name) &&
                 argument->object->name != this_arg_name && argument->object->name != this_self_name) {
@@ -2868,7 +2868,7 @@ Object *create_temp_object(Type *type)
     object->u.var.info = CPrep_AllocateVarInfo();
     object->u.var.info->func = data_00588238;
     if (object->sclass == TK_REGISTER) {
-        if (copts.uniformSpillBlockWeight == 0)
+        if (copts.optimizesize == 0)
             object->u.var.info->usage = 100;
         else
             object->u.var.info->usage = 5;
@@ -3243,7 +3243,7 @@ void CFunc_SetupLocalVarInfo(Object *object)
     object->u.var.info = CPrep_AllocateVarInfo();
     object->u.var.info->func = data_00588238;
     if (object->sclass == 257U) {
-        if (copts.uniformSpillBlockWeight == 0U)
+        if (copts.optimizesize == 0U)
             object->u.var.info->usage = 100;
         else
             object->u.var.info->usage = 5;

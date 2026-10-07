@@ -1324,7 +1324,7 @@ void InstrSelection_004b37b0(short comparison, ENode *input, short sense, Operan
             Operands_ForceGPR(&selected, input->rtype, 0);
         }
     }
-    if (copts.peepholeOptimizationEnabled != 0 && sense == 0 && gCurrentBlock->instruction_count > 0 &&
+    if (copts.peephole != 0 && sense == 0 && gCurrentBlock->instruction_count > 0 &&
         gCurrentBlock->reverse_instructions->opcode != PC_RLWINM &&
         (gCurrentBlock->reverse_instructions->flags & 3585) == 513 &&
         gCurrentBlock->reverse_instructions->operandData.operands[0].value.reg == selected.reg &&
@@ -3103,7 +3103,7 @@ void select_subtraction(ENode *input, int resultReg, int secondaryReg, Operand *
         return;
     }
     if (type->type == TYPEFLOAT) {
-        if (left->type == EMUL && copts.debugOptions != 0) {
+        if (left->type == EMUL && copts.fp_contract != 0) {
             if (type->size == 4) {
                 leftOpcode = 173;
             } else {
@@ -3111,7 +3111,7 @@ void select_subtraction(ENode *input, int resultReg, int secondaryReg, Operand *
             }
             InstrSelection_EmitThreeOperandFPRInstruction(leftOpcode, left->data.diadic.left, left->data.diadic.right,
                                                           right, resultReg, flags);
-        } else if (right->type == EMUL && copts.debugOptions != 0) {
+        } else if (right->type == EMUL && copts.fp_contract != 0) {
             if (type->size == 4) {
                 rightOpcode = 177;
             } else {
@@ -3158,12 +3158,12 @@ void emit_add(ENode *node, SInt16 a, SInt16 b, Operand *c)
         return;
     }
     if (type->type == TYPEFLOAT) {
-        if (left->type == EMUL && copts.debugOptions) {
+        if (left->type == EMUL && copts.fp_contract) {
             SInt16 k;
             k = (type->size == 4) ? 0xab : 0xaa;
             InstrSelection_EmitThreeOperandFPRInstruction(k, left->data.diadic.left, left->data.diadic.right, right, a,
                                                           c);
-        } else if (right->type == EMUL && copts.debugOptions) {
+        } else if (right->type == EMUL && copts.fp_contract) {
             SInt16 k;
             k = (type->size == 4) ? 0xab : 0xaa;
             InstrSelection_EmitThreeOperandFPRInstruction(k, right->data.diadic.left, right->data.diadic.right, left, a,
@@ -3269,8 +3269,8 @@ void generate_modulo(ENode *node, short outputReg, short outputRegHi, Operand *r
         }
     }
 
-    if (copts.uniformSpillBlockWeight == 0 && right->type == EINTCONST &&
-        (divisor = (SInt32)right->data.intval.lo) != 1 && divisor != -1) {
+    if (copts.optimizesize == 0 && right->type == EINTCONST && (divisor = (SInt32)right->data.intval.lo) != 1 &&
+        divisor != -1) {
         (*data_00560648[left->type])(left, 0, 0, &leftOperand);
         if (leftOperand.kind)
             Operands_ForceGPR(&leftOperand, left->rtype, 0);
@@ -3472,7 +3472,7 @@ void generate_division(ENode *node, short reg, short flags, Operand *result)
                     break;
                 }
             }
-            if (copts.uniformSpillBlockWeight == 0 && right->type == EINTCONST && right->data.intval.lo != 1) {
+            if (copts.optimizesize == 0 && right->type == EINTCONST && right->data.intval.lo != 1) {
                 unsignedDivisor = right->data.intval.lo;
                 product = gUsedVirtualRegistersGPR++;
                 multiplier = gUsedVirtualRegistersGPR++;
@@ -3529,7 +3529,7 @@ void generate_division(ENode *node, short reg, short flags, Operand *result)
                     break;
                 }
             }
-            if (copts.uniformSpillBlockWeight == 0 && right->type == EINTCONST && right->data.intval.lo != 1 &&
+            if (copts.optimizesize == 0 && right->type == EINTCONST && right->data.intval.lo != 1 &&
                 (divisor = right->data.intval.lo) != -1) {
                 quotient = gUsedVirtualRegistersGPR++;
                 signedMultiplier = gUsedVirtualRegistersGPR++;
@@ -3892,15 +3892,15 @@ void emit_negation(ENode *node, SInt16 targetReg, SInt16 targetHighReg, Operand 
     }
 
     if (type->type == TYPEFLOAT) {
-        if (expr->type == EADD && expr->data.diadic.left->type == EMUL && copts.debugOptions != 0)
+        if (expr->type == EADD && expr->data.diadic.left->type == EMUL && copts.fp_contract != 0)
             InstrSelection_EmitThreeOperandFPRInstruction(
                 (type->size == 4) ? PC_FNMADDS : PC_FNMADD, expr->data.diadic.left->data.diadic.left,
                 expr->data.diadic.left->data.diadic.right, expr->data.diadic.right, targetReg, out);
-        else if (expr->type == EADD && expr->data.diadic.right->type == EMUL && copts.debugOptions != 0)
+        else if (expr->type == EADD && expr->data.diadic.right->type == EMUL && copts.fp_contract != 0)
             InstrSelection_EmitThreeOperandFPRInstruction(
                 (type->size == 4) ? PC_FNMADDS : PC_FNMADD, expr->data.diadic.right->data.diadic.left,
                 expr->data.diadic.right->data.diadic.right, expr->data.diadic.left, targetReg, out);
-        else if (expr->type == ESUB && expr->data.diadic.left->type == EMUL && copts.debugOptions != 0)
+        else if (expr->type == ESUB && expr->data.diadic.left->type == EMUL && copts.fp_contract != 0)
             InstrSelection_EmitThreeOperandFPRInstruction(
                 (type->size == 4) ? PC_FNMSUBS : PC_FNMSUB, expr->data.diadic.left->data.diadic.left,
                 expr->data.diadic.left->data.diadic.right, expr->data.diadic.right, targetReg, out);

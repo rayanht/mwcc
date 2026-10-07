@@ -87,7 +87,7 @@ Boolean BE_symbol_004913b0(Object *obj)
     data = symbol->sectionData.section;
     CError_ASSERT(499, data != NULL);
 
-    if (copts.reuseSectionSymbols != 0 && data->symbolLink != NULL && data->symbolLink->symbol != NULL &&
+    if (copts.usedatapool != 0 && data->symbolLink != NULL && data->symbolLink->symbol != NULL &&
         (obj->qual & Q_IMPLICIT_WEAK) == 0 && (obj->qual & Q_WEAK) == 0 && !PCodeUtilities_Require(obj) &&
         TOC_HasObjectReferenceWithoutExpression(data->symbolLink->object)) {
         Boolean oldFlag = data->symbolLink->value;
@@ -398,7 +398,7 @@ BE_SymNode *BE_symbol_004918f0(Object *symbol, struct ObjGenSection *value)
     record->alignment = 4;
     record->linkageKind = 0;
     record->linkageFlags = 0;
-    if (copts.fc0 != 0) {
+    if (copts.force_active != 0) {
         record->linkageFlags |= 8;
     }
     return record;
@@ -480,7 +480,7 @@ BE_SymNode *BE_symbol_SetupObjectSymbol(Object *object, int size, ObjGenSection 
         symbol->alignment = copts.codeAlignment;
     symbol->linkageKind = linkageKind;
     symbol->linkageFlags = 0;
-    if (copts.fc0)
+    if (copts.force_active)
         symbol->linkageFlags |= 8;
     binding <<= 4;
     binding += 2;
@@ -599,7 +599,7 @@ BE_SymNode *BE_symbol_DefineObjectSymbol(Object *object, int offset, ObjGenSecti
     }
     symbol->linkageKind = linkageKind;
     symbol->linkageFlags = 0;
-    if (copts.fc0 != 0) {
+    if (copts.force_active != 0) {
         symbol->linkageFlags |= 8;
     }
     return symbol;

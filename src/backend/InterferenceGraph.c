@@ -76,7 +76,7 @@ void SpillCode_BuildInterference(Object *function, int reg_class, int register_c
     SpillCode_InitializeLiveness(function, reg_class, register_count);
     SpillCode_MarkLastUses(reg_class, register_count);
     SpillCode_ConstructInterference(reg_class, register_count);
-    if (copts.cOptimizerDumpEnabled) {
+    if (copts.debug_listing) {
         fn_004c4bc0(SpillCode_RegisterFormat(reg_class), register_count);
     }
     SpillCode_CoalesceCopies(reg_class, register_count);

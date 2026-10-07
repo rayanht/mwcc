@@ -457,7 +457,7 @@ void SpillCode_ComputeSpillCosts(int reg_class)
         PCodeInstruction *instruction;
         int block_weight;
 
-        block_weight = copts.uniformSpillBlockWeight ? 1 : block->execution_weight;
+        block_weight = copts.optimizesize ? 1 : block->execution_weight;
         for (instruction = block->instructions; instruction != NULL; instruction = instruction->next) {
             {
                 PCodeOperand *operand;

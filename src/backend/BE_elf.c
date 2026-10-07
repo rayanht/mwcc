@@ -293,7 +293,7 @@ static void ElfLockSection(ObjGenSection *section)
 
 static int ElfBigEndian(void)
 {
-    return !copts.nativeByteOrder;
+    return !copts.littleendian;
 }
 
 /* Writes the ELF object file: the header, the relocations' symbol indices, the section links, the section-name table,
@@ -447,7 +447,7 @@ void write_codewarrior_version_record(void)
     record.reservedVersion = 0;
     record.versionFormat = 1;
 
-    record.abiOption = copts.reuseSectionSymbols ? 1 : 0;
+    record.abiOption = copts.usedatapool ? 1 : 0;
     if (copts.debugEnabled) {
         if (copts.operandsDebug)
             returnConvention = 1;
@@ -464,9 +464,9 @@ void write_codewarrior_version_record(void)
 
     record.recordSize = sizeof(record);
 
-    if (copts.f4e != 0)
+    if (copts.incompatible_return_small_structs != 0)
         flags++;
-    if (copts.returnStructsInMemory != 0)
+    if (copts.incompatible_sfpe_double_params != 0)
         flags += 2;
     record.options = flags;
 

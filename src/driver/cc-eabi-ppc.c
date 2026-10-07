@@ -128,10 +128,10 @@ void initialize_copts(CPrepCU *source)
                                                   &settingsHandle.frontEnd);
     frontEndPrefs = **settingsHandle.frontEnd;
 
-    copts.nativeByteOrder = 0;
+    copts.littleendian = 0;
     copts.cplusplus = 1;
     extension[0] = 0;
-    copts.f5c = frontEndPrefs.objective_c;
+    copts.objective_c = frontEndPrefs.objective_c;
 
     for (dotPosition = source->mainFile.fileData.file.name[0]; source->mainFile.fileData.file.name[dotPosition] != '.';
          dotPosition--)
@@ -147,60 +147,60 @@ void initialize_copts(CPrepCU *source)
         copts.cplusplus = frontEndPrefs.cplusplus;
     } else if (memcmp(extension, ".m", 3) == 0) {
         copts.cplusplus = frontEndPrefs.cplusplus;
-        copts.f5c = 1;
+        copts.objective_c = 1;
     } else if (memcmp(extension, ".mm", 4) == 0 || memcmp(extension, ".M", 3) == 0) {
         copts.cplusplus = 1;
-        copts.f5c = 1;
+        copts.objective_c = 1;
     }
 
-    copts.f60 = frontEndPrefs.checkprotos;
-    copts.f5e = frontEndPrefs.arm;
-    copts.f5f = frontEndPrefs.arm;
+    copts.checkprotos = frontEndPrefs.checkprotos;
+    copts.ARM_conform = frontEndPrefs.arm;
+    copts.ARMscoping = frontEndPrefs.arm;
     copts.trigraphs = frontEndPrefs.trigraphs;
-    copts.f62 = frontEndPrefs.onlystdkeywords;
-    copts.f63 = frontEndPrefs.enumsalwaysint;
-    copts.f65 = frontEndPrefs.mpwpointerstyle;
-    copts.rejectZeroLengthArrayMembers = frontEndPrefs.ansistrict;
-    copts.f66 = frontEndPrefs.mpwcnewline;
-    copts.fb3 = frontEndPrefs.enableexceptions;
-    copts.faf = frontEndPrefs.dontreusestrings;
-    copts.fb0 = frontEndPrefs.poolstrings;
-    copts.disableInlining = frontEndPrefs.dontinline;
-    copts.rttiEnabled = frontEndPrefs.useRTTI;
+    copts.onlystdkeywords = frontEndPrefs.onlystdkeywords;
+    copts.enumsalwaysint = frontEndPrefs.enumsalwaysint;
+    copts.mpwc_relax = frontEndPrefs.mpwpointerstyle;
+    copts.ANSIstrict = frontEndPrefs.ansistrict;
+    copts.mpwc_newline = frontEndPrefs.mpwcnewline;
+    copts.exceptions = frontEndPrefs.enableexceptions;
+    copts.dont_reuse_strings = frontEndPrefs.dontreusestrings;
+    copts.poolstrings = frontEndPrefs.poolstrings;
+    copts.dontinline = frontEndPrefs.dontinline;
+    copts.RTTI = frontEndPrefs.useRTTI;
     copts.f54 = (char *)frontEndPrefs.prefixname;
-    copts.f6f = frontEndPrefs.multibyteaware;
-    copts.unsignedChar = frontEndPrefs.unsignedchars;
-    copts.f70 = frontEndPrefs.autoinline;
-    copts.f72 = frontEndPrefs.direct_to_som;
-    copts.f73 = frontEndPrefs.som_env_check;
-    copts.f75 = frontEndPrefs.booltruefalse;
-    copts.fb6 = frontEndPrefs.alwaysinline;
+    copts.multibyteaware = frontEndPrefs.multibyteaware;
+    copts.unsigned_char = frontEndPrefs.unsignedchars;
+    copts.auto_inline = frontEndPrefs.autoinline;
+    copts.direct_to_som = frontEndPrefs.direct_to_som;
+    copts.SOMCheckEnvironment = frontEndPrefs.som_env_check;
+    copts.booltruefalse = frontEndPrefs.booltruefalse;
+    copts.alwaysinline = frontEndPrefs.alwaysinline;
     copts.inlineLimit = frontEndPrefs.inlinelevel;
-    copts.f7f = frontEndPrefs.wchar_type;
-    copts.f5b = frontEndPrefs.ecplusplus;
-    copts.f71 = frontEndPrefs.defer_codegen;
+    copts.wchar_type = frontEndPrefs.wchar_type;
+    copts.ecplusplus = frontEndPrefs.ecplusplus;
+    copts.defer_codegen = frontEndPrefs.defer_codegen;
 
     DropInCompilerLinkerPrivate_CallArgumentValue(compiler_plugin_cu.context, "C/C++ Warnings",
                                                   &settingsHandle.warnings);
     warningPrefs = **settingsHandle.warnings;
-    copts.f9f = warningPrefs.warn_illpragma;
-    copts.fa0 = warningPrefs.warn_emptydecl;
-    copts.fa1 = warningPrefs.warn_possunwant;
-    copts.fa2 = warningPrefs.warn_unusedvar;
-    copts.fa3 = warningPrefs.warn_unusedarg;
-    copts.fa4 = warningPrefs.warn_extracomma;
-    copts.f9d = warningPrefs.pedantic;
-    copts.f9c = warningPrefs.warningerrors;
-    copts.fa5 = warningPrefs.warn_hidevirtual;
-    copts.fa7 = warningPrefs.warn_implicitconv;
-    copts.fa8 = warningPrefs.warn_notinlined;
-    copts.fa9 = warningPrefs.warn_structclass;
+    copts.warn_illpragma = warningPrefs.warn_illpragma;
+    copts.warn_emptydecl = warningPrefs.warn_emptydecl;
+    copts.warn_possunwant = warningPrefs.warn_possunwant;
+    copts.warn_unusedvar = warningPrefs.warn_unusedvar;
+    copts.warn_unusedarg = warningPrefs.warn_unusedarg;
+    copts.warn_extracomma = warningPrefs.warn_extracomma;
+    copts.extended_errorcheck = warningPrefs.pedantic;
+    copts.warningerrors = warningPrefs.warningerrors;
+    copts.warn_hidevirtual = warningPrefs.warn_hidevirtual;
+    copts.warn_implicitconv = warningPrefs.warn_implicitconv;
+    copts.warn_notinlined = warningPrefs.warn_notinlined;
+    copts.warn_structclass = warningPrefs.warn_structclass;
 
     DropInCompilerLinkerPrivate_CallArgumentValue(compiler_plugin_cu.context, "EPPC Global Optimizer",
                                                   &settingsHandle.optimizer);
     optimizerPrefs = **settingsHandle.optimizer;
     copts.deleteDeadInstructions = optimizerPrefs.optimizationlevel;
-    copts.uniformSpillBlockWeight = (optimizerPrefs.optfor == 1);
+    copts.optimizesize = (optimizerPrefs.optfor == 1);
     copts.unrollOption = 8;
     copts.fd1 = 100;
     copts.filesyminfo = source->filesyminfo;

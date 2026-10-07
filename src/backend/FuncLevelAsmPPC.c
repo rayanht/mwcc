@@ -84,7 +84,7 @@ void FuncLevelAsmPPC_GenerateFunction(Object *func)
 
     frameFinalized = 0;
 
-    if (copts.nativeByteOrder) {
+    if (copts.littleendian) {
         high_word_offset = 4;
         low_word_offset = 0;
         returnRegHi = 4;
@@ -152,13 +152,13 @@ void FuncLevelAsmPPC_GenerateFunction(Object *func)
 
     data_0058850d = 1;
     data_005884fd = 1;
-    savedOptionC2 = copts.fa2;
-    savedOptionC3 = copts.fa3;
-    copts.fa2 = 0;
-    copts.fa3 = 0;
+    savedOptionC2 = copts.warn_unusedvar;
+    savedOptionC3 = copts.warn_unusedarg;
+    copts.warn_unusedvar = 0;
+    copts.warn_unusedarg = 0;
     InlineAsm_ParseAsmLines(0x7d);
 
-    if (anyerrors == 0 && copts.cOptimizerDumpEnabled != 0)
+    if (anyerrors == 0 && copts.debug_listing != 0)
         fn_004be830(list, func);
 
     data_005884fd = 0;
@@ -171,8 +171,8 @@ void FuncLevelAsmPPC_GenerateFunction(Object *func)
         CodeGen_EnumerateArgumentRegisters(emit_dlocal_initialization);
     PCodeUtilities_ResolveLabel(PCode_NewLabel());
     CodeGen_AssignMissingEntryValues(list->next);
-    copts.fa2 = savedOptionC2;
-    copts.fa3 = savedOptionC3;
+    copts.warn_unusedvar = savedOptionC2;
+    copts.warn_unusedarg = savedOptionC3;
 
     for (node = list->next; node != NULL; node = node->next) {
         switch (node->type) {
@@ -191,10 +191,10 @@ void FuncLevelAsmPPC_GenerateFunction(Object *func)
                             if (func_errors != 0)
                                 return;
                             PCode_BuildPredecessors();
-                            if (copts.cOptimizerDumpEnabled != 0)
+                            if (copts.debug_listing != 0)
                                 CodeGen_DumpPCode_004c4bd0(functionName, "[FUNCTION-LEVEL ASM] INITIAL CODE");
                             Coloring_AllocateRegisters(func);
-                            if (copts.cOptimizerDumpEnabled != 0)
+                            if (copts.debug_listing != 0)
                                 CodeGen_DumpPCode_004c4bd0(functionName,
                                                            "[FUNCTION-LEVEL ASM] AFTER REGISTER COLORING");
                             StackFrameEABI_ClearUnusedStackFrame();
@@ -202,7 +202,7 @@ void FuncLevelAsmPPC_GenerateFunction(Object *func)
                             StackFrameEABI_GeneratePrologueEpilogue(prologueBlock, 0, has_dlocal_initialization);
                             StackFrameEABI_MergePrologueEpilogue(gReturnBlock = gCurrentBlock,
                                                                  data_005882c0.record ? 1 : 0);
-                            if (copts.cOptimizerDumpEnabled != 0)
+                            if (copts.debug_listing != 0)
                                 CodeGen_DumpPCode_004c4bd0(functionName,
                                                            "[FUNCTION-LEVEL ASM] AFTER PROLOGUE/EPILOGUE CREATION");
                             frameFinalized = 1;
@@ -236,13 +236,13 @@ void FuncLevelAsmPPC_GenerateFunction(Object *func)
         PCodeUtilities_ResolveLabel(PCode_NewLabel());
         (gReturnBlock = gCurrentBlock)->flags |= 2;
         PCode_BuildPredecessors();
-        if (copts.cOptimizerDumpEnabled != 0)
+        if (copts.debug_listing != 0)
             CodeGen_DumpPCode_004c4bd0(functionName, "[FUNCTION-LEVEL ASM] INITIAL CODE");
         if (DAT_005884f4 == 0) {
             Coloring_AllocateRegisters(func);
             if (func_errors != 0)
                 return;
-            if (copts.cOptimizerDumpEnabled != 0)
+            if (copts.debug_listing != 0)
                 CodeGen_DumpPCode_004c4bd0(functionName, "[FUNCTION-LEVEL ASM] AFTER REGISTER COLORING");
         }
         StackFrameEABI_ClearUnusedStackFrame();
@@ -255,7 +255,7 @@ void FuncLevelAsmPPC_GenerateFunction(Object *func)
             StackFrameEABI_GeneratePrologueEpilogue(prologueBlock, 0, has_dlocal_initialization);
             StackFrameEABI_MergePrologueEpilogue(gReturnBlock, 1);
         }
-        if (copts.cOptimizerDumpEnabled != 0)
+        if (copts.debug_listing != 0)
             CodeGen_DumpPCode_004c4bd0(functionName, "[FUNCTION-LEVEL ASM] AFTER PROLOGUE/EPILOGUE CREATION");
     }
 
@@ -265,9 +265,9 @@ void FuncLevelAsmPPC_GenerateFunction(Object *func)
     func->section = function_header_index;
     if (copts.filesyminfo != 0)
         function_token_line = CPrep_UpdateTokenLine(&function_fileinfo);
-    copts.peepholeOptimizationEnabled = 0;
+    copts.peephole = 0;
     PCodeAssembly_EmitFunction(func, data_00581c58);
-    if (copts.cOptimizerDumpEnabled != 0)
+    if (copts.debug_listing != 0)
         CodeGen_DumpPCode_004c4bd0(COptimizer_GetFunctionObject(func)->name, "[FUNCTION-LEVEL ASM] FINAL CODE");
     CFunc_WarnUnused();
 }

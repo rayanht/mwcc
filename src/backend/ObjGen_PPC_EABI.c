@@ -473,7 +473,7 @@ void ObjGen_PPC_EABI_EmitDescriptorWithRelocations(Object *obj, SInt32 value, vo
     relocation = galloc(sizeof(*relocation));
     relocation->symbol = BE_symbol_GetOrCreateFunctionObjectSymbol(obj);
     objectAddend = 0;
-    if (copts.reuseSectionSymbols && (link = relocation->symbol->sectionData.section->symbolLink) != NULL &&
+    if (copts.usedatapool && (link = relocation->symbol->sectionData.section->symbolLink) != NULL &&
         link->symbol != NULL && !(obj->qual & Q_IMPLICIT_WEAK) && !(obj->qual & Q_WEAK) && obj->datatype != DFUNC &&
         (UInt8)(obj->datatype - DVFUNC) > DINLINEFUNC - DVFUNC && !PCodeUtilities_Require(obj)) {
         relocation->symbol->flags |= 0x80;
@@ -496,7 +496,7 @@ void ObjGen_PPC_EABI_EmitDescriptorWithRelocations(Object *obj, SInt32 value, vo
         relocation = galloc(sizeof(*relocation));
         relocation->symbol = dataSymbol;
         dataAddend = 0;
-        if (copts.reuseSectionSymbols && (link = relocation->symbol->sectionData.section->symbolLink) != NULL &&
+        if (copts.usedatapool && (link = relocation->symbol->sectionData.section->symbolLink) != NULL &&
             link->symbol != NULL && !(object->qual & Q_IMPLICIT_WEAK) && !(object->qual & Q_WEAK) &&
             object->datatype != DFUNC && (UInt8)(object->datatype - DVFUNC) > DINLINEFUNC - DVFUNC &&
             !PCodeUtilities_Require(object)) {
@@ -577,8 +577,8 @@ void emit_relocation(SInt32 op, SInt32 offset, Object *obj, ObjGenSection *ctx, 
     block->relocationCount++;
     node = galloc(sizeof(ObjGenRelocation));
     node->symbol = BE_symbol_GetOrCreateFunctionObjectSymbol(obj);
-    if (copts.reuseSectionSymbols && (entry = node->symbol->sectionData.section->symbolLink) != NULL &&
-        entry->symbol != NULL && !(obj->qual & Q_IMPLICIT_WEAK) && !(obj->qual & Q_WEAK) && obj->datatype != DFUNC &&
+    if (copts.usedatapool && (entry = node->symbol->sectionData.section->symbolLink) != NULL && entry->symbol != NULL &&
+        !(obj->qual & Q_IMPLICIT_WEAK) && !(obj->qual & Q_WEAK) && obj->datatype != DFUNC &&
         (UInt8)(obj->datatype - DVFUNC) > 1 && PCodeUtilities_Require(obj) == 0 && op != 0xe && op != 0xf &&
         TOC_HasObjectReferenceWithoutExpression(node->symbol->sectionData.section->symbolLink->object) != 0) {
         node->symbol = (BE_SymNode *)node->symbol->sectionData.section->symbolLink->symbol;
@@ -590,10 +590,10 @@ void emit_relocation(SInt32 op, SInt32 offset, Object *obj, ObjGenSection *ctx, 
     if (op == 3) {
         if (ObjGen_PPC_EABI_0048ac10(obj)) {
             node->kind = 0x6d;
-            offset += copts.nativeByteOrder ? 0 : copts.rel109Offset;
+            offset += copts.littleendian ? 0 : copts.rel109_offset;
         } else {
             node->kind = 3;
-            offset += copts.nativeByteOrder ? 0 : 2;
+            offset += copts.littleendian ? 0 : 2;
         }
     } else if (op == 2) {
         node->kind = 10;
@@ -605,7 +605,7 @@ void emit_relocation(SInt32 op, SInt32 offset, Object *obj, ObjGenSection *ctx, 
         node->kind = 7;
     } else if (op == 4) {
         node->kind = 4;
-        offset += copts.nativeByteOrder ? 0 : 2;
+        offset += copts.littleendian ? 0 : 2;
     } else if (op == 9) {
         node->kind = -3;
         CError_FATAL(1824);
@@ -614,19 +614,19 @@ void emit_relocation(SInt32 op, SInt32 offset, Object *obj, ObjGenSection *ctx, 
         CError_FATAL(1827);
     } else if (op == 5) {
         node->kind = 4;
-        offset += copts.nativeByteOrder ? 0 : 2;
+        offset += copts.littleendian ? 0 : 2;
     } else if (op == 6) {
         node->kind = 5;
-        offset += copts.nativeByteOrder ? 0 : 2;
+        offset += copts.littleendian ? 0 : 2;
     } else if (op == 7) {
         node->kind = 6;
-        offset += copts.nativeByteOrder ? 0 : 2;
+        offset += copts.littleendian ? 0 : 2;
     } else if (op == 15) {
         node->kind = 6;
-        offset += copts.nativeByteOrder ? 0 : 2;
+        offset += copts.littleendian ? 0 : 2;
     } else if (op == 14) {
         node->kind = 4;
-        offset += copts.nativeByteOrder ? 0 : 2;
+        offset += copts.littleendian ? 0 : 2;
     } else {
         CError_FATAL(1844);
     }
@@ -666,7 +666,7 @@ ObjGenSection *fn_004892a0(Object *object, int size)
     }
     BE_elf_AlignRecord(&section->buffer, info->alignment);
     info->offset = section->buffer.size;
-    if (copts.emitSerializedAssemblyFormat != '\0') {
+    if (copts.catssupport != '\0') {
         ObjGen_PPC_EABI_AddSectionAttribute(object, 0);
     }
     output_buffer_length = output_buffer_length + size;
@@ -703,7 +703,7 @@ void ObjGen_PPC_EABI_EmitSwitchTable(Object *gl, Object *func)
         list->relocationCount++;
         node = (ObjGenRelocation *)galloc(sizeof(ObjGenRelocation));
         node->symbol = reference;
-        if (copts.reuseSectionSymbols != 0 && node->symbol->sectionData.section->symbolLink != NULL &&
+        if (copts.usedatapool != 0 && node->symbol->sectionData.section->symbolLink != NULL &&
             node->symbol->sectionData.section->symbolLink->symbol != NULL && (func->qual & Q_IMPLICIT_WEAK) == 0 &&
             (func->qual & Q_WEAK) == 0 && func->datatype != DFUNC && (UInt8)(func->datatype - DVFUNC) > 1 &&
             !PCodeUtilities_Require(func)) {
@@ -786,7 +786,7 @@ void emit_object_data_and_relocations(Object *func, const char *data, OLinkList 
         node = galloc(0x18);
         node->symbol = BE_symbol_GetOrCreateFunctionObjectSymbol(object);
         addend = 0;
-        if (copts.reuseSectionSymbols != 0) {
+        if (copts.usedatapool != 0) {
             if (node->symbol->sectionData.section->symbolLink != NULL &&
                 node->symbol->sectionData.section->symbolLink->symbol != NULL &&
                 (object->qual & Q_IMPLICIT_WEAK) == 0 && (object->qual & Q_WEAK) == 0 && object->datatype != DFUNC &&
@@ -860,7 +860,7 @@ void allocate_object_storage(Object *obj, SInt32 size, Boolean flag)
         pendingData->active = 1;
         pendingData->suppressed = 0;
         pending_data_tail = pendingData;
-        if (copts.reuseSectionSymbols > 0 && sec->symbolLink != NULL && sec->symbolLink->symbol != NULL &&
+        if (copts.usedatapool > 0 && sec->symbolLink != NULL && sec->symbolLink->symbol != NULL &&
             (obj->qual & Q_IMPLICIT_WEAK) == 0 && (obj->qual & Q_WEAK) == 0 && obj->datatype != DFUNC &&
             (UInt8)(obj->datatype - DVFUNC) > 1 && !PCodeUtilities_Require(obj)) {
             BE_elf_AlignRecord(&sec->buffer, info->alignment);
@@ -1207,7 +1207,7 @@ void ObjGen_PPC_EABI_SetObjectSection(Object *object, SInt32 size, Boolean isUni
             if (size == 0) {
                 section = ObjGen_PPC_EABI_DefaultBSSSectionIndex();
             } else {
-                smallDataLimit = copts.smallBSSLimit;
+                smallDataLimit = copts.constsmalldatathreshold;
                 if (smallDataLimit != 0 && size <= smallDataLimit) {
                     section = copts.smallBSSSection->header->index;
                 } else {
@@ -1218,7 +1218,7 @@ void ObjGen_PPC_EABI_SetObjectSection(Object *object, SInt32 size, Boolean isUni
             if (size == 0) {
                 section = ObjGen_PPC_EABI_DefaultDataSectionIndex();
             } else {
-                smallDataLimit = copts.smallDataLimit;
+                smallDataLimit = copts.nonconstsmalldatathreshold;
                 if (smallDataLimit != 0 && size <= smallDataLimit) {
                     section = copts.smallDataSection->header->index;
                 } else {
@@ -1343,7 +1343,7 @@ void ObjGen_PPC_EABI_InitSections(void)
 
     defaultDataSection = copts.dataSection;
     associatedRecord = BE_elf_CreateSection("COMM", 0x10, 1, 0, NULL, 3, NULL);
-    if (copts.f20)
+    if (copts.commonblocks)
         dataSection->header->auxiliary = associatedRecord;
     data_section_linked_symbol = dataSection->header->linkedSymbol;
 
@@ -2094,7 +2094,7 @@ void ObjGen_PPC_EABI_FinalizeOutputBuffers(void)
     GList *record;
     CInit_DeclarePooledStrings();
     TOC_EmitMemberPointerConstants();
-    if (copts.emitMainFileObject != 0) {
+    if (copts.create_file_object != 0) {
         create_main_file_object();
     }
     update = pending_buffer_updates;
@@ -2192,7 +2192,7 @@ void emit_dwarf_arguments_and_locals(void)
             type = object->type;
             if ((((type->type == TYPEINT || type->type == TYPEENUM) && type->size == 8 ||
                   copts.operandsDebug != 0 && type->type == TYPEFLOAT && type->size != 4 &&
-                      copts.returnStructsInMemory == 0) &&
+                      copts.incompatible_sfpe_double_params == 0) &&
                  gpr % 2 == 0)) {
                 ++gpr;
             }

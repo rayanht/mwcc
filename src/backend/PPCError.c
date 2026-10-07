@@ -143,7 +143,7 @@ void PPCError_EmitClassTypeUpdate(SInt16 requestedReg, ENode *node, SInt16 flags
     gUsedVirtualRegistersGPR++;
     header.bytes.lowByte = data_00588476 - 2;
     header.bytes.highByte = data_00588478;
-    if (copts.nativeByteOrder != 0)
+    if (copts.littleendian != 0)
         PCodeUtilities_EmitInstruction(PC_LI, valueReg, CTool_EndianConvertWord16(header.packedWord));
     else
         PCodeUtilities_EmitInstruction(PC_LIS, valueReg, 0, CTool_EndianConvertWord16(header.packedWord));

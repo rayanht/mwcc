@@ -175,7 +175,7 @@ void Coloring_AllocateRegisters(Object *function)
         CompilerTools_ResetPool();
     }
     StackFrame_CheckAltivec();
-    if (copts.cOptimizerDumpEnabled && gHasAltivecFrame) {
+    if (copts.debug_listing && gHasAltivecFrame) {
         CodeGen_DumpPCode_004c4bd0(COptimizer_GetFunctionObject(function)->name, "AFTER CHECKING FOR ALTIVEC FRAME");
     }
     Registers_SetupGPRs();

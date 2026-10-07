@@ -663,7 +663,7 @@ int classify_identifier_token(void)
     if (memcmp("__far", data_00587fa0->name, 6) == 0) {
         return TK_UU_FAR;
     }
-    if (copts.f90 != '\0') {
+    if (copts.c9x != '\0') {
         if (memcmp("_Bool", data_00587fa0->name, 6) == 0) {
             return TK_BOOL;
         }
@@ -674,7 +674,7 @@ int classify_identifier_token(void)
             return TK__IMAGINARY;
         }
     }
-    if (copts.altivecModel != '\0') {
+    if (copts.altivec_model != '\0') {
         if (memcmp("__vector", data_00587fa0->name, 9) == 0) {
             return TK_UU_VECTOR;
         }
@@ -715,7 +715,7 @@ int classify_w_keyword(void)
     if (cmpw("while", data_00587fa0->name, 6) == 0) {
         return TK_WHILE;
     }
-    if ((copts.cplusplus != '\0') && (copts.f7f != '\0')) {
+    if ((copts.cplusplus != '\0') && (copts.wchar_type != '\0')) {
         if (cmpw("wchar_t", data_00587fa0->name, 8) == 0) {
             return TK_WCHAR_T;
         }
@@ -764,7 +764,7 @@ int classify_u_keyword(void)
     }
     if (copts.cplusplus != 0) {
         if (memcmp("using", data_00587fa0->name, 6) == 0) {
-            if (copts.f5b)
+            if (copts.ecplusplus)
                 fn_0043f3b0(0x153);
             return TK_USING;
         }
@@ -774,7 +774,7 @@ int classify_u_keyword(void)
 
 static inline void check_extended_cpp_keyword(void)
 {
-    if (copts.f5b)
+    if (copts.ecplusplus)
         fn_0043f3b0(0x153);
 }
 
@@ -789,7 +789,7 @@ SInt32 scan_t_keyword(void)
     if (copts.cplusplus != 0) {
         if (KW("this", 5))
             return TK_THIS;
-        if (copts.f75 != 0 && KW("true", 5))
+        if (copts.booltruefalse != 0 && KW("true", 5))
             return TK_TRUE;
         if (KW("template", 9)) {
             check_extended_cpp_keyword();
@@ -842,7 +842,7 @@ unsigned int tokenize_s_keyword(void)
     }
     if (copts.cplusplus) {
         if (memcmp("static_cast", data_00587fa0->name, 12) == 0) {
-            if (copts.f5b) {
+            if (copts.ecplusplus) {
                 fn_0043f3b0(0x153);
             }
             return TK_STATIC_CAST;
@@ -865,12 +865,12 @@ SInt32 scan_r_keyword(void)
         return TK_RETURN;
     if (copts.cplusplus != 0) {
         if (KW("reinterpret_cast", 17)) {
-            if (copts.f5b)
+            if (copts.ecplusplus)
                 fn_0043f3b0(0x153);
             return TK_REINTERPRET_CAST;
         }
     }
-    if (copts.f90 != 0) {
+    if (copts.c9x != 0) {
         if (KW("restrict", 9))
             return TK_RESTRICT;
     }
@@ -883,7 +883,7 @@ SInt32 scan_identifier(void)
     currentTextPosition = CPrepTokenizer_ScanIdentifier(currentTextPosition - 1);
     if (macrocheck != 0 && CPrep_ExpandMacro() != 0)
         return 0;
-    if (copts.f62 == 0) {
+    if (copts.onlystdkeywords == 0) {
         if (memcmp("pascal", data_00587fa0->name, 7) == 0)
             return TK_PASCAL;
     }
@@ -914,7 +914,7 @@ SInt32 scan_o_keyword(void)
                 return TK_OR_ASSIGN;
         }
     }
-    if (copts.f5c != 0) {
+    if (copts.objective_c != 0) {
         if (memcmp("out", data_00587fa0->name, 4) == 0)
             return TK_OUT;
         if (memcmp("oneway", data_00587fa0->name, 7) == 0)
@@ -935,7 +935,7 @@ SInt32 scan_n_keyword(void)
         if (KW("new", 4))
             return TK_NEW;
         if (KW("namespace", 10)) {
-            if (copts.f5b)
+            if (copts.ecplusplus)
                 fn_0043f3b0(0x153);
             return TK_NAMESPACE;
         }
@@ -958,7 +958,7 @@ int classify_mutable_or_identifier(void)
     }
     if (copts.cplusplus != '\0') {
         if (memcmp("mutable", data_00587fa0->name, 8) == 0) {
-            if (copts.f5b != '\0') {
+            if (copts.ecplusplus != '\0') {
                 fn_0043f3b0(0x153);
             }
             return TK_MUTABLE;
@@ -992,14 +992,14 @@ SInt32 scan_i_keyword(void)
         return TK_IF;
     if (KW("int", 4))
         return TK_INT;
-    if (copts.cplusplus || copts.f90) {
+    if (copts.cplusplus || copts.c9x) {
         if (KW("inline", 7))
             return TK_INLINE;
-    } else if (!copts.f62) {
+    } else if (!copts.onlystdkeywords) {
         if (KW("inline", 7))
             return TK_INLINE;
     }
-    if (copts.f5c != 0) {
+    if (copts.objective_c != 0) {
         if (KW("in", 3))
             return TK_IN;
         if (KW("inout", 6))
@@ -1034,7 +1034,7 @@ unsigned int classify_f_keyword(void)
     if (copts.cplusplus != 0) {
         if (memcmp("friend", data_00587fa0->name, 7) == 0)
             return TK_FRIEND;
-        if (copts.f75 != 0) {
+        if (copts.booltruefalse != 0) {
             if (memcmp("false", data_00587fa0->name, 6) == 0)
                 return TK_FALSE;
         }
@@ -1057,7 +1057,7 @@ int recognize_e_keyword(void)
     if (copts.cplusplus != 0) {
         if (memcmp("explicit", data_00587fa0->name, 9) == 0)
             return TK_EXPLICIT;
-        if (memcmp("export", data_00587fa0->name, 7) == 0 && copts.f5b == 0)
+        if (memcmp("export", data_00587fa0->name, 7) == 0 && copts.ecplusplus == 0)
             return TK_EXPORT;
     }
     return TK_IDENTIFIER;
@@ -1084,7 +1084,7 @@ int scan_d_keyword(void)
             return TK_DELETE;
         }
         if (memcmp("dynamic_cast", data_00587fa0->name, 13) == 0) {
-            if (copts.f5b != '\0') {
+            if (copts.ecplusplus != '\0') {
                 fn_0043f3b0(0x153);
             }
             return TK_DYNAMIC_CAST;
@@ -1095,7 +1095,7 @@ int scan_d_keyword(void)
 
 static inline void CPrepTokenizer_CheckCppExtension(void)
 {
-    if (copts.f5b)
+    if (copts.ecplusplus)
         fn_0043f3b0(0x153);
 }
 
@@ -1141,7 +1141,7 @@ SInt32 scan_b_keyword(void)
     if (memcmp("break", data_00587fa0->name, 6) == 0)
         return TK_BREAK;
     if (copts.cplusplus != 0) {
-        if (copts.f75 != 0) {
+        if (copts.booltruefalse != 0) {
             if (memcmp("bool", data_00587fa0->name, 5) == 0)
                 return TK_BOOL;
         }
@@ -1152,7 +1152,7 @@ SInt32 scan_b_keyword(void)
                 return TK_BITOR;
         }
     }
-    if (copts.f5c != 0) {
+    if (copts.objective_c != 0) {
         if (memcmp("bycopy", data_00587fa0->name, 7) == 0)
             return TK_BYCOPY;
         if (memcmp("byref", data_00587fa0->name, 6) == 0)
@@ -1169,7 +1169,7 @@ int scan_identifier_or_keyword_a(void)
         return 0;
     if (memcmp("auto", data_00587fa0->name, 5) == 0)
         return TK_AUTO;
-    if (copts.cplusplus != 0 || copts.f62 == 0) {
+    if (copts.cplusplus != 0 || copts.onlystdkeywords == 0) {
         if (memcmp("asm", data_00587fa0->name, 4) == 0)
             return TK_ASM;
     }
@@ -1202,7 +1202,7 @@ static short prepnextchar2(void)
 static int IsWide(void)
 {
     int r = 0;
-    if (copts.f7f && copts.cplusplus)
+    if (copts.wchar_type && copts.cplusplus)
         r = 1;
     return r;
 }
@@ -1385,7 +1385,7 @@ unsigned int parse_zero_prefixed_number(SInt16 c)
         cursor = currentTextPosition;
         cursor = CExpr2_ParseHexInt64(&token_integer, cursor, &flag);
         currentTextPosition = cursor;
-    } else if (copts.rejectZeroLengthArrayMembers == 0 && (c == 'b' || c == 'B')) {
+    } else if (copts.ANSIstrict == 0 && (c == 'b' || c == 'B')) {
         cursor = currentTextPosition;
         cursor = parse_binary_digits(&token_integer, cursor, &flag);
         currentTextPosition = cursor;
@@ -1587,7 +1587,7 @@ unsigned int tokenize_percent(void)
 
 static inline UInt8 CPrepTokenizer_ObjectiveCEnabled(void)
 {
-    return copts.f5c;
+    return copts.objective_c;
 }
 
 SInt32 scan_at_token(void)
@@ -1852,7 +1852,7 @@ SInt32 scan_character_constant(short ch)
         character = read_escaped_character();
         if (character == '\'' && data_005884fc == 0)
             break;
-        if (copts.unsignedChar)
+        if (copts.unsigned_char)
             character &= 0xff;
         if (character_count >= 4 || ((character == 0 || character == '\r') && data_005884fc == 0)) {
             CPrep_ReportError(100);
@@ -1924,7 +1924,7 @@ unsigned int return_unsigned_minus_six(void)
 
 static inline void CPrepTokenizer_SkipLineSplices(unsigned char **position)
 {
-    if (copts.f6f != 0) {
+    if (copts.multibyteaware != 0) {
         while (**position == '\\' &&
                CompilerTools_IsByteInDBCSCharacter(findSpliceLineStart((char *)*position), *position) == 0 &&
                (*position)[1] == '\r') {
@@ -1971,7 +1971,7 @@ void CPrepTokenizer_SkipToEndOfLine(void)
             case '/':
                 CPrepTokenizer_SkipLineSplices(&cursor);
                 if (*cursor == '/') {
-                    if (copts.rejectZeroLengthArrayMembers == 0 || copts.cplusplus != 0) {
+                    if (copts.ANSIstrict == 0 || copts.cplusplus != 0) {
                         currentTextPosition = skip_line(cursor + 1);
                         if (data_0058851a == '\r')
                             --currentTextPosition;
@@ -2004,7 +2004,7 @@ void CPrepTokenizer_SkipToEndOfLine(void)
                 }
                 break;
             case '\\':
-                if (copts.f6f != 0) {
+                if (copts.multibyteaware != 0) {
                     spliceLineStart = findSpliceLineStart((char *)cursor - 1);
                     if (CompilerTools_IsByteInDBCSCharacter(spliceLineStart, (unsigned char *)((char *)cursor - 1)) !=
                         0)
@@ -2062,7 +2062,7 @@ Boolean CPrepTokenizer_SkipQuotedLiteral(UInt8 *p, SInt16 quote)
                 }
                 break;
             case '\\':
-                if (copts.f6f != 0) {
+                if (copts.multibyteaware != 0) {
                     f = q = p - 1;
                     if (macro_expansion_depth == 0) {
                         while (*f != '\r' && f > (UInt8 *)PTR_00587fb0)
@@ -2116,7 +2116,7 @@ unsigned char *skip_line(unsigned char *p)
                 data_0058851a = '\r';
                 return p;
             case '\\':
-                if (copts.f6f != 0) {
+                if (copts.multibyteaware != 0) {
                     start = p;
                     back = start;
                     q = --back;
@@ -2277,7 +2277,7 @@ unsigned int read_escaped_character(void)
         mask = 65535;
     data_005884fc = 0;
     ch = fn_00496610(1);
-    if (ch == 92 && (copts.f6f == 0 || !verify(cursor_start()))) {
+    if (ch == 92 && (copts.multibyteaware == 0 || !verify(cursor_start()))) {
         data_005884fc = 1;
         switch (escape = fn_00496610(1)) {
             case 97:
@@ -2291,11 +2291,11 @@ unsigned int read_escaped_character(void)
             case 102:
                 return 12;
             case 110:
-                if (copts.f66 != 0)
+                if (copts.mpwc_newline != 0)
                     return 13;
                 return 10;
             case 114:
-                if (copts.f66 != 0)
+                if (copts.mpwc_newline != 0)
                     return 10;
                 return 13;
             case 101:
@@ -2379,7 +2379,7 @@ SInt16 parse_float_suffix(short suffix)
 
         case 'D':
         case 'd':
-            if (copts.rejectZeroLengthArrayMembers)
+            if (copts.ANSIstrict)
                 break;
             currentTextPosition = (UInt8 *)lookahead_position;
             nextCharacter = *currentTextPosition;
@@ -2390,7 +2390,7 @@ SInt16 parse_float_suffix(short suffix)
             break;
 
         default:
-            if (copts.f91) {
+            if (copts.float_constants) {
                 floatType = 13;
                 if (stfloat.size != stlongdouble.size)
                     token_float = CMachine_RoundFloatToType(TYPE(&stfloat), token_float);
@@ -2448,7 +2448,7 @@ short fn_004961c0(short suffix, int radix)
                 break;
             isLong = 1;
             suffix = CPrep_ReadLookaheadCharacter();
-            if (copts.f77 == 0)
+            if (copts.longlong == 0)
                 break;
             currentTextPosition = (UInt8 *)lookahead_position;
             next = peek();
@@ -2469,14 +2469,14 @@ short fn_004961c0(short suffix, int radix)
                 suffix = CPrep_ReadLookaheadCharacter();
                 break;
             }
-            if (copts.f77 == 0 || (next != 'l' && next != 'L'))
+            if (copts.longlong == 0 || (next != 'l' && next != 'L'))
                 break;
             isLongLong = 1;
             suffix = CPrep_ReadLookaheadCharacter();
             break;
         case 'I':
         case 'i':
-            if (copts.f68 != 0 && copts.rejectZeroLengthArrayMembers == 0 && copts.f77 != 0) {
+            if (copts.cpp_extensions != 0 && copts.ANSIstrict == 0 && copts.longlong != 0) {
                 currentTextPosition = (UInt8 *)lookahead_position;
                 next = peek();
                 suffix = next;
@@ -2497,7 +2497,7 @@ short fn_004961c0(short suffix, int radix)
 
     high = token_integer.hi;
     if (isLongLong != 0 || (isLong == 0 && high != 0)) {
-        if (copts.f77 != 0) {
+        if (copts.longlong != 0) {
             unsignedLongLong = 1;
             if ((high & 0x80000000) == 0 && isUnsigned == 0)
                 unsignedLongLong = 0;
@@ -2551,7 +2551,7 @@ UInt8 *CPrepTokenizer_ScanIdentifier(UInt8 *cursor)
             ++cursor;
         }
         character = *cursor;
-        if (copts.f6f != '\0') {
+        if (copts.multibyteaware != '\0') {
             if (character != '\\')
                 break;
             lineStart = cursor;
@@ -2629,7 +2629,7 @@ short fn_00496610(char report)
                 return ch;
             case '\\':
             processBackslash:
-                if (*cursor == '\r' && (copts.f6f == 0 || CheckEscapedNewline(cursor) == 0)) {
+                if (*cursor == '\r' && (copts.multibyteaware == 0 || CheckEscapedNewline(cursor) == 0)) {
                     if (report != 0)
                         CPrep_IncrementCountersAndUpdateTextOffset();
                     else
@@ -2715,7 +2715,7 @@ static inline unsigned char is_multibyte_trail_before(unsigned char *p)
 
 static inline char multibyte_characters_enabled(void)
 {
-    return copts.f6f;
+    return copts.multibyteaware;
 }
 
 short CPrepTokenizer_NextChar(void)
@@ -2751,7 +2751,7 @@ short CPrepTokenizer_NextChar(void)
                     }
                 }
                 if (*cursor == '/') {
-                    if (copts.rejectZeroLengthArrayMembers == 0 || copts.cplusplus != 0) {
+                    if (copts.ANSIstrict == 0 || copts.cplusplus != 0) {
                         DAT_00588523 = 1;
                         currentTextPosition = skip_line(cursor + 1);
                         return data_0058851a;
@@ -2928,7 +2928,7 @@ short CPrepTokenizer_ScanChar(void)
             case 47:
                 currentTextPosition = cursor;
                 cursor++;
-                if (copts.f6f != 0) {
+                if (copts.multibyteaware != 0) {
                     while (*cursor == '\\' && CPrepTokenizer_CheckSplice(cursor) == 0 && cursor[1] == '\r') {
                         CPrep_IncrementCountersAndUpdateTextOffset();
                         if (cursor[2] == '\n')
@@ -2947,7 +2947,7 @@ short CPrepTokenizer_ScanChar(void)
                 }
                 if (macro_expansion_depth <= 0) {
                     if ((next = *cursor) == '/') {
-                        if (copts.rejectZeroLengthArrayMembers == 0 || copts.cplusplus != 0 || copts.f90 != 0) {
+                        if (copts.ANSIstrict == 0 || copts.cplusplus != 0 || copts.c9x != 0) {
                             DAT_00588523 = 1;
                             commentEnd = skip_line(cursor + 1);
                             lookahead_position = (char *)commentEnd;
@@ -2967,7 +2967,7 @@ short CPrepTokenizer_ScanChar(void)
                                 cursor[-1] = ' ';
                             }
                             if (ch == '*') {
-                                if (copts.f6f != 0) {
+                                if (copts.multibyteaware != 0) {
                                     while (*cursor == '\\' && CPrepTokenizer_CheckSplice(cursor) == 0 &&
                                            cursor[1] == '\r') {
                                         CPrep_IncrementCountersAndUpdateTextOffset();
@@ -3012,7 +3012,7 @@ short CPrepTokenizer_ScanChar(void)
                 cursor++;
             splice:
                 if (*cursor == '\r') {
-                    if (!copts.f6f || !CPrepTokenizer_IsDBCSTrail(cursor)) {
+                    if (!copts.multibyteaware || !CPrepTokenizer_IsDBCSTrail(cursor)) {
                         CPrep_IncrementCountersAndUpdateTextOffset();
                         if (cursor[1] == '\n')
                             cursor += 2;

@@ -58,7 +58,7 @@ void fn_004a9c70(void)
 
 static inline void StackFrame_EmitAltivecStackPointerSave(Boolean restore, SInt16 *savedStackReg)
 {
-    if (data_00588521 == 0 || copts.altivecVrsave == 0)
+    if (data_00588521 == 0 || copts.altivec_vrsave == 0)
         return;
 
     if (restore) {
@@ -80,7 +80,7 @@ void StackFrame_CheckAltivec(void)
     SInt16 savedStackReg;
     Boolean argumentInParamArea;
 
-    if (copts.altivecModel == 0)
+    if (copts.altivec_model == 0)
         return;
     if (Registers_AreNonvolatileVRUsed()) {
         gHasAltivecFrame = 1;
@@ -394,7 +394,7 @@ void emit_stack_frame_allocation(int frame_register)
 
 void save_and_update_vrsave(int a, int argb)
 {
-    if (gHasAltivecFrame && vrsave_mask && copts.altivecVrsave) {
+    if (gHasAltivecFrame && vrsave_mask && copts.altivec_vrsave) {
         SInt32 frame = -(frame_alignment_padding + data_00587638 + stack_frame_adjustment + data_00587634 +
                          data_00588070 + data_0058764c + data_005880d8);
         UInt16 hi = vrsave_mask >> 16;
@@ -656,7 +656,7 @@ void *StackFrameEABI_004aabb0(UInt32 codeOffset, char *name, SInt32 *outSize, Ob
                 vectorArgumentCount++;
         }
         extension->regs = gVRSaveSpan;
-        extension->opt = copts.altivecVrsave;
+        extension->opt = copts.altivec_vrsave;
         extension->var = isVariadic;
         extension->count = vectorArgumentCount;
         extension->other = vrsave_mask ? 1 : 0;
@@ -714,11 +714,11 @@ void restore_gprs(PCodeBlock *func, Boolean a, Boolean b, SInt16 c)
         regcount = stack_frame_size;
     }
 
-    if (a != 0 && (gGPRSaveSpan > 4 || (copts.uniformSpillBlockWeight != 0 && gGPRSaveSpan > 1))) {
+    if (a != 0 && (gGPRSaveSpan > 4 || (copts.optimizesize != 0 && gGPRSaveSpan > 1))) {
         PCodeUtilities_EmitInstruction(PC_LMW, gGPRSaveSpan - 1, 0x20 - gGPRSaveSpan, c, 0,
                                        regcount - (data_00587638 + frame_alignment_padding + data_00587634));
         Operands_AllocateGPR(0x20000);
-    } else if (a == 0 && (gGPRSaveSpan > 4 || (copts.uniformSpillBlockWeight != 0 && gGPRSaveSpan > 2))) {
+    } else if (a == 0 && (gGPRSaveSpan > 4 || (copts.optimizesize != 0 && gGPRSaveSpan > 2))) {
         if (regcount > 0x7fff) {
             CError_FatalError(ERR_LOCAL_DATA_32K);
         }
@@ -766,10 +766,10 @@ void save_gprs(PCodeBlock *func, Boolean a, Boolean b)
         regcount = 0;
     }
 
-    if (a != 0 && (gGPRSaveSpan > 4 || (copts.uniformSpillBlockWeight != 0 && gGPRSaveSpan > 1))) {
+    if (a != 0 && (gGPRSaveSpan > 4 || (copts.optimizesize != 0 && gGPRSaveSpan > 1))) {
         PCodeUtilities_EmitInstruction(PC_STMW, gGPRSaveSpan - 1, 0x20 - gGPRSaveSpan, 1, 0,
                                        regcount - (data_00587638 + frame_alignment_padding + data_00587634));
-    } else if (a == 0 && (gGPRSaveSpan > 4 || (copts.uniformSpillBlockWeight != 0 && gGPRSaveSpan > 2))) {
+    } else if (a == 0 && (gGPRSaveSpan > 4 || (copts.optimizesize != 0 && gGPRSaveSpan > 2))) {
         if (regcount > 0x7fff) {
             CError_FatalError(ERR_LOCAL_DATA_32K);
         }
@@ -816,7 +816,7 @@ void restore_vrs(PCodeBlock *block)
     size = (size + 15) & ~15;
     if (stack_frame_size > 0x7fff)
         CError_FatalError(ERR_LOCAL_DATA_32K);
-    if (copts.uniformSpillBlockWeight == 0 || (gVRSaveSpan <= 3 && data_00588521 != 0) || gVRSaveSpan <= 1) {
+    if (copts.optimizesize == 0 || (gVRSaveSpan <= 3 && data_00588521 != 0) || gVRSaveSpan <= 1) {
         i = 1;
         for (; i <= gVRSaveSpan; i++) {
             offset = size - (i - 1) * 16;
@@ -871,7 +871,7 @@ void emit_restore_fprs(PCodeBlock *func, Boolean flag)
     else
         base = stack_frame_size;
 
-    if (copts.uniformSpillBlockWeight == 0 || ((gFPRSaveSpan <= 3 && data_00588521 != 0) || gFPRSaveSpan <= 1)) {
+    if (copts.optimizesize == 0 || ((gFPRSaveSpan <= 3 && data_00588521 != 0) || gFPRSaveSpan <= 1)) {
         for (i = 1; i <= gFPRSaveSpan; i++) {
             emit_opcode_with_base_offset(PC_LFD, 0x20 - i, stack_base_reg, NULL, base - i * 8);
             Operands_AllocateGPR(0x20000);
@@ -920,7 +920,7 @@ void emit_vr_saves(PCodeBlock *block)
                  (data_00587638 + frame_alignment_padding + data_00587634 + stack_frame_adjustment + data_00588070) -
                  16;
     saveOffset = (saveOffset + 15) & ~15;
-    if (copts.uniformSpillBlockWeight == 0 || (gVRSaveSpan <= 3 && data_00588521 != 0) || gVRSaveSpan <= 1) {
+    if (copts.optimizesize == 0 || (gVRSaveSpan <= 3 && data_00588521 != 0) || gVRSaveSpan <= 1) {
         index = 1;
         for (; index <= gVRSaveSpan; index++) {
             offset = saveOffset - (index - 1) * 16;
@@ -972,7 +972,7 @@ void emit_save_fprs(PCodeBlock *block, Boolean savefpr)
 
     base = savefpr ? stack_frame_size : 0;
 
-    if (copts.uniformSpillBlockWeight == 0 || (gFPRSaveSpan <= 3 && data_00588521 != 0) || gFPRSaveSpan <= 1) {
+    if (copts.optimizesize == 0 || (gFPRSaveSpan <= 3 && data_00588521 != 0) || gFPRSaveSpan <= 1) {
         for (i = 1; i <= gFPRSaveSpan; i++) {
             PCodeUtilities_EmitInstruction(PC_STFD, 0x20 - i, 1, 0, base - 8 * i);
         }
@@ -1007,12 +1007,12 @@ void emit_save_fprs(PCodeBlock *block, Boolean savefpr)
 
 static inline UInt8 StackFrameEABI_LoadMultipleEnabled(void)
 {
-    return copts.useRegisterSaveHelpers;
+    return copts.use_lmw_stmw;
 }
 
 static inline UInt8 StackFrameEABI_VRSAVEEnabled(void)
 {
-    return copts.altivecVrsave;
+    return copts.altivec_vrsave;
 }
 
 void StackFrameEABI_MergePrologueEpilogue(PCodeBlock *block, char emitReturn)
@@ -1029,10 +1029,10 @@ void StackFrameEABI_MergePrologueEpilogue(PCodeBlock *block, char emitReturn)
     largeFrame = (0x7fff < stack_frame_size);
     frameReg = -1;
     savedFrameReg = -1;
-    restoreLR = !data_00588521 || (copts.uniformSpillBlockWeight != 0 && (gFPRSaveSpan > 3 || gVRSaveSpan > 3));
+    restoreLR = !data_00588521 || (copts.optimizesize != 0 && (gFPRSaveSpan > 3 || gVRSaveSpan > 3));
     if (!restoreLR) {
-        if (StackFrameEABI_LoadMultipleEnabled() == 0 || copts.nativeByteOrder != 0) {
-            restoreLR = (gGPRSaveSpan > 4) || (copts.uniformSpillBlockWeight != 0 && gGPRSaveSpan > 2);
+        if (StackFrameEABI_LoadMultipleEnabled() == 0 || copts.littleendian != 0) {
+            restoreLR = (gGPRSaveSpan > 4) || (copts.optimizesize != 0 && gGPRSaveSpan > 2);
         }
     }
     restoreBaseReg = stack_base_reg;
@@ -1098,7 +1098,7 @@ void StackFrameEABI_MergePrologueEpilogue(PCodeBlock *block, char emitReturn)
         restoreBaseReg = 0xc;
     }
     if (gGPRSaveSpan != 0) {
-        restore_gprs(block, (StackFrameEABI_LoadMultipleEnabled() != 0) && !copts.nativeByteOrder, 0, restoreBaseReg);
+        restore_gprs(block, (StackFrameEABI_LoadMultipleEnabled() != 0) && !copts.littleendian, 0, restoreBaseReg);
     }
     if (data_005882c0.record == NULL && stack_frame_size != 0) {
         if (data_0058852d != 0 || largeFrame || gHasAltivecFrame != 0) {
@@ -1137,7 +1137,7 @@ void StackFrameEABI_MergePrologueEpilogue(PCodeBlock *block, char emitReturn)
 
 static inline int NeedGSave(void)
 {
-    return gGPRSaveSpan > 4 || (copts.uniformSpillBlockWeight != 0 && gGPRSaveSpan > 2);
+    return gGPRSaveSpan > 4 || (copts.optimizesize != 0 && gGPRSaveSpan > 2);
 }
 
 void StackFrameEABI_GeneratePrologueEpilogue(PCodeBlock *block, int prologueFlags, int epilogueFlags)
@@ -1155,8 +1155,8 @@ void StackFrameEABI_GeneratePrologueEpilogue(PCodeBlock *block, int prologueFlag
     savedBlock = gCurrentBlock;
     saveLinkRegister = frameAllocated = 0;
     vrsaveRegister = !data_00588521;
-    saveLinkRegister = vrsaveRegister || (copts.uniformSpillBlockWeight != 0 && (gFPRSaveSpan > 3 || gVRSaveSpan > 3));
-    if (!saveLinkRegister && (copts.useRegisterSaveHelpers == 0 || copts.nativeByteOrder != 0)) {
+    saveLinkRegister = vrsaveRegister || (copts.optimizesize != 0 && (gFPRSaveSpan > 3 || gVRSaveSpan > 3));
+    if (!saveLinkRegister && (copts.use_lmw_stmw == 0 || copts.littleendian != 0)) {
         saveLinkRegister = saveGPRs = NeedGSave();
     }
     parameterBaseRegister = -1;
@@ -1167,7 +1167,7 @@ void StackFrameEABI_GeneratePrologueEpilogue(PCodeBlock *block, int prologueFlag
         load = block->instructions;
         if (data_00588521 != 0) {
             parameterBaseRegister = 1;
-            if (copts.altivecVrsave != 0 && block->instructions != NULL && block->instructions->opcode == PC_LWZ) {
+            if (copts.altivec_vrsave != 0 && block->instructions != NULL && block->instructions->opcode == PC_LWZ) {
                 vrsaveRegister = block->instructions->operandData.operands[0].value.reg;
                 PCode_UnlinkInstruction(block->instructions);
                 if (vrsaveRegister == -1)
@@ -1178,7 +1178,7 @@ void StackFrameEABI_GeneratePrologueEpilogue(PCodeBlock *block, int prologueFlag
                 parameterBaseRegister = load->operandData.operands[0].value.reg;
                 PCode_UnlinkInstruction(load);
                 load = block->instructions;
-                if (copts.altivecVrsave != 0 && load != NULL && load->opcode == PC_LWZ) {
+                if (copts.altivec_vrsave != 0 && load != NULL && load->opcode == PC_LWZ) {
                     CError_FATAL(686);
                     vrsaveRegister = load->operandData.operands[0].value.reg;
                     PCode_UnlinkInstruction(load);
@@ -1253,7 +1253,7 @@ void StackFrameEABI_GeneratePrologueEpilogue(PCodeBlock *block, int prologueFlag
     if (gFPRSaveSpan != 0)
         emit_save_fprs(block, frameAllocated);
     if (gGPRSaveSpan != 0) {
-        Boolean useSaveHelper = copts.useRegisterSaveHelpers != 0 && !copts.nativeByteOrder;
+        Boolean useSaveHelper = copts.use_lmw_stmw != 0 && !copts.littleendian;
         save_gprs(block, useSaveHelper, frameAllocated);
     }
     if (stack_frame_size != 0 || data_005884ff != 0)

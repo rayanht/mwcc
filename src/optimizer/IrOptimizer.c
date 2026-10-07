@@ -57,10 +57,10 @@ void fn_0042c920(void)
 
 void IrOptimizer_SetDeleteDeadInstructionsFlags(void)
 {
-    copts.irRemoveUnreachable = copts.deleteDeadInstructions >= 1;
-    copts.irCommonSubexpressionElimination = copts.irCopyPropagation = copts.deleteDeadInstructions >= 2;
-    copts.fc5 = copts.fc8 = copts.fcb = copts.irEliminateUnused = copts.irLoopUnrolling = copts.fce =
-        copts.deleteDeadInstructions >= 3;
+    copts.deadcode = copts.deleteDeadInstructions >= 1;
+    copts.commonsubs = copts.propagation = copts.deleteDeadInstructions >= 2;
+    copts.loopinvariants = copts.strengthreduction = copts.lifetimes = copts.deadstore = copts.unrolling =
+        copts.vectorizeloops = copts.deleteDeadInstructions >= 3;
     copts.irSecondOptimizationPass = copts.deleteDeadInstructions >= 4;
 }
 
@@ -221,7 +221,7 @@ void trav_expr_to_update_flags(IROLinear *expression, unsigned int flag)
 
 static inline UInt8 IRO_CopyPropagationSetting(void)
 {
-    return copts.irCopyPropagation;
+    return copts.propagation;
 }
 
 void *IRO_Optimizer(Object *function, void *incomingBody)
@@ -307,7 +307,7 @@ void *IRO_Optimizer(Object *function, void *incomingBody)
                 IRO_ExpressionPropagation();
             }
             IroDump_DumpFunction("IRO_ExpressionPropagation", 0);
-            if ((eliminateUnused = copts.irEliminateUnused) != 0 || IRO_CopyPropagationSetting() != 0)
+            if ((eliminateUnused = copts.deadstore) != 0 || IRO_CopyPropagationSetting() != 0)
                 IRO_UseDef(eliminateUnused, IRO_CopyPropagationSetting());
             IroDump_DumpFunction("after IRO_UseDef", 0);
             IroVars_BuildNoregisterBitVector();
@@ -316,7 +316,7 @@ void *IRO_Optimizer(Object *function, void *incomingBody)
             IRO_EvaluateConditionals();
             IRO_RemoveUnreachable();
             fn_00454bb0();
-            if (copts.irLoopUnrolling != 0 && copts.uniformSpillBlockWeight == 0 && pass == 0) {
+            if (copts.unrolling != 0 && copts.optimizesize == 0 && pass == 0) {
                 IroDump_DumpFunction("Before IRO_LoopUnroller", 0);
                 IRO_LoopUnroller();
                 IroDump_DumpFunction("After IRO_LoopUnroller", 0);
@@ -330,7 +330,7 @@ void *IRO_Optimizer(Object *function, void *incomingBody)
                 }
             }
             data_0058800c = 0;
-            if (pass == 0 && (copts.fc5 != 0 || copts.fc8 != 0)) {
+            if (pass == 0 && (copts.loopinvariants != 0 || copts.strengthreduction != 0)) {
                 IroDump_DumpFunction("Before IRO_FindLoops", 0);
                 IRO_FindLoops();
                 data_0057f6b5 = 1;
@@ -344,9 +344,9 @@ void *IRO_Optimizer(Object *function, void *incomingBody)
             }
             IroDump_DumpFunction(
                 "Second pass:IRO_CopyAndConstantPropagation,IRO_ConstantFolding,IRO_EvaluateConditionals", 0);
-            if (copts.irCommonSubexpressionElimination != 0)
+            if (copts.commonsubs != 0)
                 IroCSE_ClearExpr();
-            if (copts.irCommonSubexpressionElimination != 0) {
+            if (copts.commonsubs != 0) {
                 IroCSE_ComputeAvailableExpressions();
                 IRO_CommonSubs();
             }
@@ -358,7 +358,7 @@ void *IRO_Optimizer(Object *function, void *incomingBody)
             do {
                 IRO_ExpressionPropagation();
                 changed = 0;
-                if (copts.irRemoveUnreachable != 0)
+                if (copts.deadcode != 0)
                     IRO_RemoveUnreachable();
                 IroDump_DumpFunction("IRO_RemoveUnreachable", 0);
                 changed |= IRO_RemoveRedundantJumps();
@@ -382,7 +382,7 @@ void *IRO_Optimizer(Object *function, void *incomingBody)
                     IRO_ConstantFolding();
                     changed |= data_005880c8;
                 }
-                if ((eliminateUnused = copts.irEliminateUnused) != 0 || IRO_CopyPropagationSetting() != 0)
+                if ((eliminateUnused = copts.deadstore) != 0 || IRO_CopyPropagationSetting() != 0)
                     changed |= IRO_UseDef(eliminateUnused, IRO_CopyPropagationSetting());
                 IroDump_DumpFunction("IRO_UseDef", 0);
                 changed |= IRO_EvaluateConditionals();
@@ -390,7 +390,7 @@ void *IRO_Optimizer(Object *function, void *incomingBody)
             } while (changed != 0);
         }
 
-        if (copts.fcb != 0) {
+        if (copts.lifetimes != 0) {
             IRO_UseDef(0, 0);
             fn_00459420();
         }

@@ -78,7 +78,7 @@ void Scheduler_Schedule(char force)
     PCodeBlock *blk;
     SInt32 tgt;
 
-    if (copts.altivecModel || (tgt = copts.processorModel) == 7)
+    if (copts.altivec_model || (tgt = copts.processorModel) == 7)
         data_00581b80 = &machine7400;
     else if (tgt == 2)
         data_00581b80 = &machine603;

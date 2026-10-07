@@ -120,8 +120,8 @@ void CPrec_LoadPrecompiledHeader(short file, UInt8 *buffer)
     if (prec_header->kind != 2)
         CError_FatalError(ERR_ILLEGAL_PRECOMPILED_HEADER_COMPILER_FLAGS_TARGET);
 
-    copts.f9e = prec_header->flag;
-    copts.f9e != 0;
+    copts.check_header_flags = prec_header->flag;
+    copts.check_header_flags != 0;
     decompress_precompiled_header();
     apply_relocations();
     apply_object_patches();
@@ -581,7 +581,7 @@ SInt16 write_precompiled_file(void)
     prec_header->magic = (SInt32)0xbeefface;
     prec_header->version = 0x412;
     prec_header->kind = 2;
-    prec_header->flag = copts.f9e;
+    prec_header->flag = copts.check_header_flags;
     prec_header->cplusplus = copts.cplusplus;
     prec_header->uniqueID = CParser_GetUniqueID();
     prec_header->selectorReferenceCount = selector_reference_count;
@@ -5070,7 +5070,7 @@ SInt32 write_pointer_type(TypePointer *ptr)
         if (ptr->protocols[0])
             add_serialized_bucket_entry(pos + 14, (SInt32)write_object_list(ptr->protocols[0]));
     } else {
-        if (!copts.f85 && data_00581c28 && ptr->size > 0) {
+        if (!copts.faster_pch_gen && data_00581c28 && ptr->size > 0) {
             hash = hash_pointer_type(ptr);
             for (entry = (CPrecWrittenEntry *)data_00581c02[hash]; entry; entry = entry->next) {
                 TypePointer *type = ptr, *writtenType = (TypePointer *)entry->object;

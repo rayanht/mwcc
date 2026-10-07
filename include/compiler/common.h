@@ -197,7 +197,7 @@ typedef struct OLinkList OLinkList;
 typedef struct COptBlock COptBlock;
 typedef struct COptBlockLink COptBlockLink;
 typedef struct COptCSE COptCSE;
-typedef struct COpts COpts;
+typedef struct CompilerLinkerOptions CompilerLinkerOptions;
 typedef struct ExceptionAction ExceptionAction;
 typedef struct CParseCacheNode CParseCacheNode;
 typedef struct CParseRec CParseRec;

@@ -262,7 +262,7 @@ FuncArg *CTemplateTools_005160b0(TypeDeduce *ctx, FuncArg *args)
         }
         *tail = *args;
         tail->type = resolve_templ_dep_pointer_target(ctx, tail->type, &tail->qual);
-        if (ctx->processingClassTypes == 0 && (copts.f96 == 0 || ctx->processingArgument == 0)) {
+        if (ctx->processingClassTypes == 0 && (copts.experimental == 0 || ctx->processingArgument == 0)) {
             expression = tail->dexpr;
             if (expression == NULL)
                 isDependentExpression = 0;

@@ -304,7 +304,7 @@ Boolean CTemplateNew_InstantiateFunction(TemplateFunction *definition, TemplFunc
     specialization->is_instantiated = 1;
     CPrep_InsertTokenBuffer(&definition->stream, &savedStream);
     savedFileSymbolInfo = copts.filesyminfo;
-    if (copts.fbf != 0 || definition->deftoken.tokenfile == NULL)
+    if (copts.nosyminline != 0 || definition->deftoken.tokenfile == NULL)
         copts.filesyminfo = 0;
     tk = CPrepTokenizer_GetNextToken();
     if (tk != '{' && tk != ':' && tk != TK_TRY)

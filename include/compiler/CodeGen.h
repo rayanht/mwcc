@@ -55,7 +55,7 @@ extern ENode *CodeGen_MakeAltivecCall(Object *object, ENodeList *arguments);
 extern void CodeGen_AllocateArgumentSlots(Object *arg1, Boolean arg2, Boolean arg3);
 extern ENode *CodeGen_MakeAltivecStructCast(ENode *a, Type *type, UInt32 qual);
 extern SInt32 data_00588274;
-extern struct COpts copts;
+extern struct CompilerLinkerOptions copts;
 extern struct Object *data_0058758c;
 extern struct Object *data_005875c8;
 extern struct Object *data_005875d4;

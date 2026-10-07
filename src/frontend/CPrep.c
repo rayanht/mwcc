@@ -233,7 +233,7 @@ static struct CPrep_0043afc0_Entry saved_structalignments[128];
 static SInt16 data_0057fce0;
 static struct PragmaNode *pragma_list;
 static struct IROOptNode *saved_options;
-static struct COpts *data_0057fcea;
+static struct CompilerLinkerOptions *data_0057fcea;
 static UInt8 DAT_0057fcee;
 static GList macro_text;
 static struct StorageHandle *buffered_token_storage;
@@ -402,7 +402,7 @@ void CPrep_ParseDirective(void)
         macrocheck = 1;
         return;
     }
-    if (copts.rejectZeroLengthArrayMembers == 0) {
+    if (copts.ANSIstrict == 0) {
         if (!strcmp("warning", data_00587fa0->name)) {
             save = data_005884fd;
             data_005884fd = 0;
@@ -449,7 +449,7 @@ void CPrep_ParseDirective(void)
         parse_endif_directive();
         return;
     }
-    if (copts.f5c != 0 || copts.rejectZeroLengthArrayMembers == 0) {
+    if (copts.objective_c != 0 || copts.ANSIstrict == 0) {
         if (!strcmp("import", data_00587fa0->name)) {
             CPrep_0043a0a0(1);
             macrocheck = 1;
@@ -604,7 +604,7 @@ int parse_endif_directive(void)
         return;
     }
     macrocheck = 0;
-    if (copts.rejectZeroLengthArrayMembers != '\0') {
+    if (copts.ANSIstrict != '\0') {
         result = CPrep_ScanMacroExpandedChar();
         if (result != 0) {
             savedFlag = data_005884fd;
@@ -661,7 +661,7 @@ void parse_else_directive(void)
         CPrepTokenizer_SkipToEndOfLine();
         return;
     }
-    if (copts.rejectZeroLengthArrayMembers != '\0') {
+    if (copts.ANSIstrict != '\0') {
         if (CPrep_ScanMacroExpandedChar() != 0) {
             savedFlag = data_005884fd;
             data_005884fd = 0;
@@ -1003,7 +1003,7 @@ Boolean is_zero_name_ref(CNameRef *value)
 
 static inline Type *CPrep_IntegerExpressionType(const CPrepValue *value)
 {
-    if (copts.f93 != 0 || copts.f90 != 0)
+    if (copts.longlong_prepeval != 0 || copts.c9x != 0)
         return value->isUnsigned ? (Type *)&stunsignedlonglong : (Type *)&stsignedlonglong;
     return value->isUnsigned ? (Type *)&stunsignedlong : (Type *)&stsignedlong;
 }
@@ -1093,7 +1093,7 @@ static void CPrep_Error_439930(int line)
 
 static inline Type *CPrep_IntegerType(const CPrepValue *value)
 {
-    if (copts.f93 || copts.f90)
+    if (copts.longlong_prepeval || copts.c9x)
         return value->isUnsigned ? (Type *)&stunsignedlonglong : (Type *)&stsignedlonglong;
     else
         return value->isUnsigned ? (Type *)&stunsignedlong : (Type *)&stsignedlong;
@@ -1338,7 +1338,7 @@ void CPrep_0043a0a0(char allowInclude)
     policy.searchLocal = 1;
     if (terminator == '<') {
         terminator = '>';
-        if (copts.f7b == 0)
+        if (copts.flat_include == 0)
             policy.searchLocal = 0;
     }
     count.length = 0;
@@ -1373,7 +1373,7 @@ void CPrep_0043a0a0(char allowInclude)
     if (length > 250)
         length = 250;
     output = key;
-    usePrefix = copts.f7c != 0 && (char)!policy.searchLocal;
+    usePrefix = copts.syspath_once != 0 && (char)!policy.searchLocal;
     if (usePrefix)
         prefix = '$';
     else
@@ -1389,12 +1389,12 @@ void CPrep_0043a0a0(char allowInclude)
     }
     *output = 0;
     if (lookup_available_macro(GetHashNameNode(key)) == 0) {
-        if (allowInclude != 0 || copts.f7d != 0) {
+        if (allowInclude != 0 || copts.always_import != 0) {
             alternateLength = *(unsigned char *)filename;
             if (alternateLength > 250)
                 alternateLength = 250;
             output = alternateKey;
-            useAlternatePrefix = copts.f7c != 0 && (char)!policy.searchLocal;
+            useAlternatePrefix = copts.syspath_once != 0 && (char)!policy.searchLocal;
             if (useAlternatePrefix)
                 alternatePrefix = '$';
             else
@@ -1416,7 +1416,7 @@ void CPrep_0043a0a0(char allowInclude)
                 macro_buckets[name->hashval] = entry;
             }
         }
-        if (copts.f7b != 0) {
+        if (copts.flat_include != 0) {
             for (length = count.length; length > 0; length--) {
                 switch (filename[length]) {
                     case '/':
@@ -1460,7 +1460,7 @@ static inline void CPrep_ParseListingOption(void)
             return;
         }
     }
-    if (copts.f9f) {
+    if (copts.warn_illpragma) {
         saved = data_005884fd;
         data_005884fd = 0;
         DAT_0057f9dc = 1;
@@ -1509,7 +1509,7 @@ void parse_pragma(void)
                 if (length > 0xfa)
                     remaining = 0xfa;
                 dest = macroName;
-                enabled = copts.f7c != 0 && isDefault != 0;
+                enabled = copts.syspath_once != 0 && isDefault != 0;
                 *dest++ = enabled ? 0x24 : (char)0xa4;
                 src = filename + 1;
                 while (remaining-- > 0)
@@ -1642,7 +1642,7 @@ void parse_pragma(void)
             }
         }
     } else {
-        if (copts.f9f) {
+        if (copts.warn_illpragma) {
             savedErrors = data_005884fd;
             data_005884fd = 0;
             DAT_0057f9dc = 1;
@@ -1662,13 +1662,13 @@ done:
         data_005884fd = savedErrors;
         CPrepTokenizer_SkipToEndOfLine();
     }
-    f87_enabled = copts.f87 != 0;
+    f87_enabled = copts.dollar_identifiers != 0;
     macrocheck = 1;
 }
 
 static void CPrep_ErrorBA(void)
 {
-    if (copts.f9f) {
+    if (copts.warn_illpragma) {
         Boolean save = data_005884fd;
         data_005884fd = 0;
         DAT_0057f9dc = 1;
@@ -1747,7 +1747,7 @@ static void CPrep_0043afc0_error(SInt32 code)
 
 static inline void warn_structalignment(void)
 {
-    if (copts.f9f) {
+    if (copts.warn_illpragma) {
         CPrep_0043afc0_error(0xba);
     }
 }
@@ -1905,7 +1905,7 @@ void parse_prep_setting(void)
         CPrepTokenizer_SkipToEndOfLine();
         return;
     }
-    if (copts.f9f != 0) {
+    if (copts.warn_illpragma != 0) {
         EMIT(CError_Warning, 0xba);
     }
     CPrepTokenizer_SkipToEndOfLine();
@@ -1962,7 +1962,7 @@ void parse_unroll_pragma(void)
         CPrepTokenizer_SkipToEndOfLine();
         return;
     }
-    if (copts.f9f != 0) {
+    if (copts.warn_illpragma != 0) {
         saved = data_005884fd;
         data_005884fd = 0;
         DAT_0057f9dc = 1;
@@ -2023,7 +2023,7 @@ void parse_optimization_level_pragma(void)
         CPrepTokenizer_SkipToEndOfLine();
         return;
     }
-    if (copts.f9f != 0) {
+    if (copts.warn_illpragma != 0) {
         saved = data_005884fd;
         data_005884fd = 0;
         DAT_0057f9dc = 1;
@@ -2108,7 +2108,7 @@ void parse_align_pragma(void)
         }
     } else {
     invalid:
-        if (copts.f9f) {
+        if (copts.warn_illpragma) {
             UInt8 savedSetting = data_005884fd;
             data_005884fd = 0;
             DAT_0057f9dc = 1;
@@ -2161,7 +2161,7 @@ void read_pragma_token(void)
         fn_0048b1e0(token);
         return;
     }
-    if (copts.f9f != 0) {
+    if (copts.warn_illpragma != 0) {
         saved = data_005884fd;
         data_005884fd = 0;
         DAT_0057f9dc = 1;
@@ -2214,7 +2214,7 @@ void parse_inline_limit(void)
         }
         return;
     }
-    if (copts.f9f)
+    if (copts.warn_illpragma)
         PREP_ERR(0xba);
 }
 
@@ -2255,7 +2255,7 @@ void fn_0043be10(void)
             } while (scope != NULL);
         }
     }
-    if (copts.f9f != 0U) {
+    if (copts.warn_illpragma != 0U) {
         saved = data_005884fd;
         data_005884fd = 0U;
         DAT_0057f9dc = 1U;
@@ -2322,7 +2322,7 @@ void parse_pragma_option(int directive)
             return;
         }
     }
-    if (copts.f9f != 0) {
+    if (copts.warn_illpragma != 0) {
         savedFlag = data_005884fd;
         data_005884fd = 0;
         DAT_0057f9dc = 1;
@@ -2370,7 +2370,7 @@ void apply_pragma_object_flags(unsigned int flags)
         if (CPrep_ScanMacroExpandedChar() == 0)
             break;
     }
-    if (copts.f9f != 0) {
+    if (copts.warn_illpragma != 0) {
         saved = data_005884fd;
         data_005884fd = 0;
         DAT_0057f9dc = 1;
@@ -2379,8 +2379,8 @@ void apply_pragma_object_flags(unsigned int flags)
     }
 }
 
-/* The option key is a byte offset into COpts, not a fixed member index. */
-/* The option key is a byte offset into COpts, not a fixed member index. */
+/* The option key is a byte offset into CompilerLinkerOptions, not a fixed member index. */
+/* The option key is a byte offset into CompilerLinkerOptions, not a fixed member index. */
 void CPrep_RestoreOption(int optionOffset)
 {
     IROOptNode *entry;
@@ -2820,7 +2820,7 @@ char *expand_builtin_macro(Macro *macro)
             return "199711L";
 
         case 0x10:
-            enabled = copts.fba;
+            enabled = copts.profile;
         bool_ret:
             if (enabled)
                 return "1";
@@ -2832,11 +2832,11 @@ char *expand_builtin_macro(Macro *macro)
             goto bool_ret;
 
         case 0x14:
-            enabled = copts.f72;
+            enabled = copts.direct_to_som;
             goto bool_ret;
 
         case 0x22:
-            enabled = copts.f5b;
+            enabled = copts.ecplusplus;
             goto bool_ret;
 
         default:
@@ -3303,9 +3303,9 @@ static inline void CPrep_WarningName(SInt16 code, char *name)
 static inline void CPrep_MacroRedefError(char *name, Boolean *flag)
 {
     if (!*flag) {
-        if (!copts.f97) {
-            if (copts.f68) {
-                if (copts.f9d)
+        if (!copts.gcc_extensions) {
+            if (copts.cpp_extensions) {
+                if (copts.extended_errorcheck)
                     CPrep_WarningName(0x6c, name);
             } else {
                 CPrep_ErrorName(0x6c, name);
@@ -3380,7 +3380,7 @@ void define_macro(void)
             if (previous) {
                 if ((previous->nargs & 0x7fff) < argumentCount)
                     CPrep_MacroRedefError(name->name, &warned);
-                if (previousArgs[argumentCount - 1] != data_00587fa0 && !copts.f68)
+                if (previousArgs[argumentCount - 1] != data_00587fa0 && !copts.cpp_extensions)
                     CPrep_MacroRedefError(name->name, &warned);
             }
             argumentCount++;
@@ -3463,7 +3463,7 @@ void define_macro(void)
                             }
                         }
                     }
-                    if (copts.rejectZeroLengthArrayMembers)
+                    if (copts.ANSIstrict)
                         remap_and_report_error(0x75);
                     AppendGListByte(&macro_text, '#');
                     currentTextPosition = savedPosition;
@@ -3743,7 +3743,7 @@ unsigned int lookup_available_macro(HashNameNode *name)
             if (node->flag == 0)
                 break;
             if (node == &data_0054fec0) {
-                if (copts.altivecModel == 0)
+                if (copts.altivec_model == 0)
                     return 0;
             }
             if (node == &data_0054fd58) {
@@ -3769,7 +3769,7 @@ Macro *find_macro(void)
     for (entry = macro_buckets[key->hashval]; entry; entry = entry->next) {
         if (entry->name == key) {
             if (entry->flag) {
-                if (entry == &data_0054fec0 && !copts.altivecModel)
+                if (entry == &data_0054fec0 && !copts.altivec_model)
                     return NULL;
                 if (entry == &data_0054fd58 && copts.cplusplus)
                     return NULL;
@@ -3858,13 +3858,13 @@ Macro *lookup_expandable_macro(void)
     while (entry) {
         if (entry->name == name) {
             if (entry->flag) {
-                if (entry == &data_0054fec0 && !copts.altivecModel)
+                if (entry == &data_0054fec0 && !copts.altivec_model)
                     return NULL;
                 if (entry == &data_0054fd58 && copts.cplusplus)
                     return NULL;
                 if (entry == &cplusplus_predefined_macro && !copts.cplusplus)
                     return NULL;
-                if (entry == &data_0054feac && (!copts.cplusplus || !copts.f5b))
+                if (entry == &data_0054feac && (!copts.cplusplus || !copts.ecplusplus))
                     return NULL;
             }
             if (entry->isExpanding) {
@@ -3935,7 +3935,7 @@ UInt8 CPrep_Compile(CPrepCU *cu)
 {
     TStreamElement optionData;
     UInt8 result;
-    COpts *optionSnapshot;
+    CompilerLinkerOptions *optionSnapshot;
     CPrepCU *currentCU;
 
     data_0057fce0 = 0x80;
@@ -3952,17 +3952,17 @@ UInt8 CPrep_Compile(CPrepCU *cu)
     next_scaled_ticks = CompilerTools_GetScaledTicks() + 5;
     result = 0;
 
-    copts.f6b = 1;
-    copts.f74 = 1;
-    copts.f83 = 1;
-    copts.f84 = 1;
-    copts.f7e = 1;
-    copts.f86 = 1;
-    copts.f7c = 1;
-    copts.f89 = 1;
-    copts.f93 = copts.f77 = 1;
-    copts.f80 = 1;
-    copts.f81 = 1;
+    copts.delete_exception = 1;
+    copts.SOMCallOptimization = 1;
+    copts.template_patch = 1;
+    copts.template_friends = 1;
+    copts.simple_class_byval = 1;
+    copts.array_new_delete = 1;
+    copts.syspath_once = 1;
+    copts.arg_dep_lookup = 1;
+    copts.longlong_prepeval = copts.longlong = 1;
+    copts.vbase_ctor_offset = 1;
+    copts.vbase_abi_v2 = 1;
 
     if (CompilerTools_InitHeaps(CError_LongJump) != 0) {
         releaseheaps();
@@ -4168,7 +4168,7 @@ void CPrep_PopFile(void)
         data_0057f9dd = (*(CPrepFileInfo *volatile *)&currentPFile)->hasprepline;
         data_00588524 = 1;
     }
-    if (DAT_0058850f != 0 && copts.f8a == 0)
+    if (DAT_0058850f != 0 && copts.simple_prepdump == 0)
         CPreprocess_EmitLineDirective();
 }
 
@@ -4873,7 +4873,7 @@ unsigned char fn_004401b0(unsigned char *name, unsigned char mode, unsigned char
     currentPFile = data_0057f94a[current_file_index];
     PTR_00587fb0 = currentPFile->textbuffer;
     textend = (UInt8 *)currentPFile->textbuffer + currentPFile->textlength;
-    if (DAT_0058850f != 0 && copts.f8a == 0)
+    if (DAT_0058850f != 0 && copts.simple_prepdump == 0)
         CPreprocess_EmitLineDirective();
     return 1;
 }
@@ -4962,7 +4962,7 @@ int initialize_preprocessor(void)
             break;
     }
     data_0058702f = 1;
-    f87_enabled = (copts.f87 > 0);
+    f87_enabled = (copts.dollar_identifiers > 0);
     if (copts.filesyminfo) {
         DWARF_Init();
     }

@@ -73,7 +73,7 @@ char **load_file_data_and_set_archive_signature(CWFileSpec *name, SInt32 *out1, 
     FileInputNode *rec;
     char buf[256];
 
-    nonNativeByteOrder = (!copts.nativeByteOrder) != 0;
+    nonNativeByteOrder = (!copts.littleendian) != 0;
     limited_diagnostic_count = data_00588228 = 0;
 
     err = 0;
@@ -182,7 +182,7 @@ int __stdcall fn_0041ec70(CWPluginPrivateContext *context)
             if (reference60 != NULL) {
                 block60 = **reference60;
             }
-            copts.nativeByteOrder = !block60.bigendian;
+            copts.littleendian = !block60.bigendian;
             reference116 = NULL;
             DropInCompilerLinkerPrivate_CallArgumentValue(context, "PPC EABI Linker", &reference116);
             if (reference116 != NULL) {
@@ -474,12 +474,12 @@ static inline void ReportUnsupportedKind(char *location, char *name)
 unsigned char fn_0041f430(Elf32Header *record, char *location, char *name)
 {
     if (record->dataEncoding == 1U) {
-        if (copts.nativeByteOrder == 0U) {
+        if (copts.littleendian == 0U) {
             ReportModeError(48U, location, name);
             return 0U;
         }
     } else if (record->dataEncoding == 2U) {
-        if (copts.nativeByteOrder != 0U) {
+        if (copts.littleendian != 0U) {
             ReportModeError(48U, location, name);
             return 0U;
         }

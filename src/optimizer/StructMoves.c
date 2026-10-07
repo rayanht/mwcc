@@ -40,7 +40,7 @@ void StructMoves_EmitCopy(Operand *sourceOperand, Operand *targetOperand, unsign
         emit_load_store_copy(&operandCopy, destination, copySize);
     } else if (copts.debugEnabled != 0 && copts.operandsDebug == 0U && copySize == 8U && alignment == 8U) {
         emit_load_store_copy(&operandCopy, destination, copySize);
-    } else if ((int)copySize <= 16 || (copts.uniformSpillBlockWeight == 0U && (int)copySize <= 64)) {
+    } else if ((int)copySize <= 16 || (copts.optimizesize == 0U && (int)copySize <= 64)) {
         emit_unrolled_copy(&operandCopy, destination, copySize, alignment);
     } else {
         emit_pair_copy_loop(&operandCopy, destination, copySize);

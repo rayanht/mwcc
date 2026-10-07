@@ -121,11 +121,11 @@ void cparser(void)
                 break;
             tk = CPrepTokenizer_GetNextToken();
         } while (tk != 0);
-    } else if (copts.cplusplus == 0 && copts.rejectZeroLengthArrayMembers != 0) {
+    } else if (copts.cplusplus == 0 && copts.ANSIstrict != 0) {
         CError_ReportError(ERR_UNEXPECTED_END_FILE);
     }
     CInit_DefineTentativeData();
-    copts.f71 = 0;
+    copts.defer_codegen = 0;
     fn_0048c220(1);
     if (cprep_cu[0xe0] != 1) {
         CInline_GeneratePendingFunctionBody();
@@ -322,7 +322,7 @@ void parse_linkage_specification(DeclInfo *decl)
             parse_declaration(decl);
         }
     } else {
-        if (tk == TK_EXTERN && copts.f68 && CPrepTokenizer_GetNextTokenAndRestorePosition() == -4) {
+        if (tk == TK_EXTERN && copts.cpp_extensions && CPrepTokenizer_GetNextTokenAndRestorePosition() == -4) {
             tk = CPrepTokenizer_GetNextToken();
             parse_linkage_specification(decl);
             return;
@@ -332,12 +332,12 @@ void parse_linkage_specification(DeclInfo *decl)
         decl->qual = language;
         CParser_GetDeclSpecs(decl, 1);
         if (decl->storageclass != TK_TYPEDEF) {
-            if (decl->storageclass != TK_EOF && copts.f9d)
+            if (decl->storageclass != TK_EOF && copts.extended_errorcheck)
                 CError_Warning(ERR_ILLEGAL_STORAGE_CLASS);
             if (decl->storageclass == TK_EOF)
                 decl->storageclass = TK_EXTERN;
         }
-        if (copts.f68)
+        if (copts.cpp_extensions)
             decl->missingTypeSpecifier = 0;
         if (tk != ';')
             CDecl_ScanDeclarator(decl);
@@ -502,7 +502,7 @@ static void restore(ParserTryBlock *s)
 
 static inline Boolean CParser_AlternateFunctionNamesEnabled(void)
 {
-    return copts.f86;
+    return copts.array_new_delete;
 }
 
 void CParser_CallBackAction(Object *key)
@@ -560,7 +560,7 @@ void CParser_CheckAnonymousUnion(DeclInfo *context, char flag)
     char name2[16];
 
     if (!IsAnonymousUnion(context)) {
-        if (copts.fa0) {
+        if (copts.warn_emptydecl) {
             char type = context->thetype->type;
 
             switch (type) {
@@ -612,7 +612,8 @@ void CParser_CheckAnonymousUnion(DeclInfo *context, char flag)
 Boolean CParser_IsAnonymousClass(Type **ptype, Boolean flag)
 {
     SInt32 result = 0;
-    SInt32 isClass = (*ptype)->type == TYPECLASS && (TYPE_CLASS(*ptype)->mode == 1 || (flag > 0 && copts.f68 != 0));
+    SInt32 isClass =
+        (*ptype)->type == TYPECLASS && (TYPE_CLASS(*ptype)->mode == 1 || (flag > 0 && copts.cpp_extensions != 0));
     if (isClass) {
         HashNameNode *name = TYPE_CLASS(*ptype)->classname;
         Boolean isAnonymous = name == NULL || name->name[0] == '@' || name->name[0] == '$';
@@ -818,7 +819,7 @@ void CParser_GetDeclSpecs(DeclInfo *state, Boolean allowObject)
                 sizeModifier = 1;
                 break;
             case 0x10a:
-                if (copts.f77 != 0) {
+                if (copts.longlong != 0) {
                     if (typeToken != 0 && (tokenValue = typeToken) != TK_INT && tokenValue != TK_DOUBLE)
                         CError_ReportError(ERR_DECLARATION_SYNTAX_ERROR);
                     if (sizeModifier != 0) {
@@ -973,7 +974,7 @@ void CParser_GetDeclSpecs(DeclInfo *state, Boolean allowObject)
                 }
                 break;
             case TK_IDENTIFIER:
-                if (copts.altivecModel != 0 && typeToken == 0 && signModifier == 0 && sizeModifier == 0) {
+                if (copts.altivec_model != 0 && typeToken == 0 && signModifier == 0 && sizeModifier == 0) {
                     if (strcmp(data_00587fa0->name, "vector") == 0) {
                         vectorKeyword = CheckVectorKeyword();
                         if (vectorKeyword)
@@ -981,7 +982,7 @@ void CParser_GetDeclSpecs(DeclInfo *state, Boolean allowObject)
                     }
                 }
                 if (typeToken == 0 && signModifier == 0 && sizeModifier == 0) {
-                    if (copts.f5c && strcmp(data_00587fa0->name, "id") == 0) {
+                    if (copts.objective_c && strcmp(data_00587fa0->name, "id") == 0) {
                         state->thetype = CObjC_ParseIdType();
                         typeToken = -1;
                         goto reset_first_token;
@@ -1020,7 +1021,7 @@ void CParser_GetDeclSpecs(DeclInfo *state, Boolean allowObject)
                             state->isType = scope.is_type;
                             typeToken = -1;
                             tk = CPrepTokenizer_GetNextToken();
-                            if (tk == '<' && copts.f5c != 0 && state->thetype->type == TYPECLASS &&
+                            if (tk == '<' && copts.objective_c != 0 && state->thetype->type == TYPECLASS &&
                                 TYPE_CLASS(state->thetype)->objcinfo != NULL) {
                                 state->thetype = CObjC_ParseProtocolList(state->thetype);
                             }
@@ -1103,7 +1104,7 @@ void CParser_GetDeclSpecs(DeclInfo *state, Boolean allowObject)
                 }
                 return;
             case ';':
-                if (typeToken == 0 && signModifier == 0 && sizeModifier == 0 && copts.fa0 != 0)
+                if (typeToken == 0 && signModifier == 0 && sizeModifier == 0 && copts.warn_emptydecl != 0)
                     CError_Warning(ERR_ILLEGAL_EMPTY_DECLARATION);
                 if (typeToken >= 0)
                     state->thetype = (Type *)select_builtin_type(typeToken, sizeModifier, signModifier);
@@ -2139,7 +2140,7 @@ UInt8 islookaheaddeclaration(void)
     token = tk;
     if ((token < 0x100 || token > 0x131) && token != 0x174 &&
         (tk != TK_IDENTIFIER || CScope_PossibleTypeName(data_00587fa0) == 0)) {
-        if (tk != TK_IDENTIFIER || copts.altivecModel == 0 || memcmp(data_00587fa0->name, "vector", 7) != 0) {
+        if (tk != TK_IDENTIFIER || copts.altivec_model == 0 || memcmp(data_00587fa0->name, "vector", 7) != 0) {
             CPrep_SetPosition(&savedState);
             return 0;
         }
@@ -2165,7 +2166,7 @@ Boolean isdeclaration(Boolean option1, Boolean option2, Boolean option3, short o
     token = tk;
     if (((token < 0x100 || token > 0x131) && token != 0x174) &&
         (tk != TK_IDENTIFIER || CScope_PossibleTypeName(data_00587fa0) == 0)) {
-        if (tk != TK_IDENTIFIER || copts.altivecModel == 0 ||
+        if (tk != TK_IDENTIFIER || copts.altivec_model == 0 ||
             memcmp(data_00587fa0->name, "vector", sizeof("vector")) != 0) {
             return 0;
         }
@@ -2286,7 +2287,7 @@ Boolean Type_IsUnsigned(Type *type)
     if (&type->type == &stunsignedchar.type || &type->type == &stwchar.type || &type->type == &stunsignedshort.type ||
         &type->type == &stunsignedint.type || &type->type == &stunsignedlong.type ||
         &type->type == &stunsignedlonglong.type || (TypeIntegral *)type == &stbool ||
-        (copts.unsignedChar && type == (Type *)&stchar) || type->type == TYPEPOINTER)
+        (copts.unsigned_char && type == (Type *)&stchar) || type->type == TYPEPOINTER)
         return 1;
     return 0;
 }
@@ -2339,7 +2340,7 @@ SInt32 CParser_GetOperator(UInt8 kind)
 
 Type *CParser_GetWCharType(void)
 {
-    if (copts.cplusplus && copts.f7f) {
+    if (copts.cplusplus && copts.wchar_type) {
         return (Type *)&stwchar;
     }
     return (Type *)&stunsignedshort;
@@ -2347,7 +2348,7 @@ Type *CParser_GetWCharType(void)
 
 Type *CParser_GetBoolType(void)
 {
-    if (copts.cplusplus && copts.f75) {
+    if (copts.cplusplus && copts.booltruefalse) {
         return (Type *)&stbool;
     }
     return (Type *)&stsignedint;
@@ -2572,7 +2573,7 @@ SInt16 is_typeequal(Type *leftType, Type *rightType)
 
 SInt16 is_typesame(Type *left, Type *right)
 {
-    SInt8 relaxed = copts.f65;
+    SInt8 relaxed = copts.mpwc_relax;
     SInt8 cplusplus = copts.cplusplus;
     Boolean relaxedTypeChecking = relaxed;
     Boolean cppTypeChecking = cplusplus;
@@ -2608,7 +2609,7 @@ SInt16 is_typesame(Type *left, Type *right)
                 right = TYPE_POINTER(right)->target;
                 break;
             case TYPEFUNC:
-                if (cppTypeChecking || !copts.f68) {
+                if (cppTypeChecking || !copts.cpp_extensions) {
                     if (relaxedTypeChecking && !cppTypeChecking) {
                         if (!is_typesame(TYPE_FUNC(left)->functype, TYPE_FUNC(right)->functype))
                             return 0;
@@ -2682,7 +2683,7 @@ Boolean is_funcarg_list_same(FuncArg *left, FuncArg *right)
         if (right == NULL) {
             return 0;
         }
-        if (copts.f65 != 0 && copts.cplusplus == 0) {
+        if (copts.mpwc_relax != 0 && copts.cplusplus == 0) {
             typesMatch = is_typesame(left->type, right->type);
             if (typesMatch == 0) {
                 return 0;
@@ -2703,7 +2704,7 @@ Boolean is_funcarg_list_same(FuncArg *left, FuncArg *right)
 
 Boolean is_arglist_default_promoted(FuncArg *arg)
 {
-    if (copts.f67)
+    if (copts.ignore_oldstyle)
         return 1;
     while (arg != NULL) {
         if (arg == &data_00583098)
@@ -2959,25 +2960,25 @@ void fn_00490210(Object *object, volatile DeclInfo *record)
         }
     }
     if (object->datatype == DDATA) {
-        if (copts.fbd != 0) {
+        if (copts.cfm_export != 0) {
             object->flags |= OBJECT_EXPORT;
         }
-        if (copts.fbb != 0) {
+        if (copts.cfm_internal != 0) {
             object->flags |= OBJECT_INTERNAL;
         }
         return;
     } else {
-        if (copts.fbb != 0) {
+        if (copts.cfm_internal != 0) {
             object->flags |= OBJECT_INTERNAL;
             return;
         }
-        if (copts.fbc != 0) {
+        if (copts.cfm_import != 0) {
             object->flags |= OBJECT_IMPORT;
         }
-        if (copts.fbd != 0) {
+        if (copts.cfm_export != 0) {
             object->flags |= OBJECT_EXPORT;
         }
-        if (copts.fbe != 0) {
+        if (copts.cfm_lib_export != 0) {
             object->flags |= OBJECT_IMPORT | OBJECT_EXPORT;
         }
     }
@@ -3276,7 +3277,7 @@ void CParser_Setup(void)
     in_parameter_type_list = 0;
     data_00580dc0 = 1;
     DAT_0058852e = 0;
-    copts.fb9 = 1;
+    copts.sideeffects = 1;
     class_type_links = NULL;
     DAT_00587fd8 = NULL;
     pending_object_classes = NULL;

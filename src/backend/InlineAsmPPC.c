@@ -517,7 +517,7 @@ PCodeInstruction *create_pcode_asm_instruction(ParsedAsmInstruction *ia, SInt32 
         extra++;
     if (ia->specialFlags & 2) {
         count = argcount + 49;
-        if (copts.fb3 && gCurrentStatement && !inlineAsmMode)
+        if (copts.exceptions && gCurrentStatement && !inlineAsmMode)
             count += Exceptions_CountBoundObjectFields(gCurrentStatement->dobjstack);
         size = sizeof(*instr) + (count + extra) * sizeof(*out);
         instr = CompilerTools_AllocatePool(size);
@@ -654,7 +654,7 @@ PCodeInstruction *create_pcode_asm_instruction(ParsedAsmInstruction *ia, SInt32 
         }
     if (ia->specialFlags & 2) {
         PCodeUtilities_004a2290((PCodeOperand *)out, 4096, 0, 0);
-        if (copts.fb3 && gCurrentStatement && !inlineAsmMode)
+        if (copts.exceptions && gCurrentStatement && !inlineAsmMode)
             Exceptions_CollectRegisterOperands(gCurrentStatement->dobjstack, (PCodeOperand *)out);
     }
     return instr;
@@ -1055,7 +1055,7 @@ void InlineAsmPPC_Init(char mode)
     void InlineAsmPPC_Initialize(void);
 
     inlineAsmMode = mode;
-    if (copts.emitSerializedAssemblyFormat != '\0' && copts.f14 == '\0') {
+    if (copts.catssupport != '\0' && copts.forcecatssupport == '\0') {
         ObjGen_PPC_EABI_AddSectionAttribute(data_00588238, 1);
     }
     if (inlineAsmMode == '\0') {
@@ -1163,7 +1163,7 @@ void InlineAsmPPC_Initialize(void)
             enabled = 1U;
     }
     inlineAsmPPCEnabled = enabled;
-    if (copts.altivecModel != 0U)
+    if (copts.altivec_model != 0U)
         data_00587128 |= 0x40000000U;
 }
 

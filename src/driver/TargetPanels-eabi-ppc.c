@@ -61,9 +61,9 @@ static inline void SetScheduling(Boolean enabled)
 static inline void SetVRSave(Boolean enabled)
 {
     if (enabled)
-        copts.altivecVrsave = 1;
+        copts.altivec_vrsave = 1;
     else
-        copts.altivecVrsave = 0;
+        copts.altivec_vrsave = 0;
 }
 
 void TargetPanels_eabi_ppc_LoadCompilerOptions(void)
@@ -83,11 +83,11 @@ void TargetPanels_eabi_ppc_LoadCompilerOptions(void)
 
     cprep_cu = (UInt8 *)&compiler_plugin_cu;
     SetCodeAlignment(4);
-    copts.altivecModel = 0;
+    copts.altivec_model = 0;
     SetVRSave(1);
-    copts.emitSerializedAssemblyFormat = 1;
-    copts.nativeByteOrder = !settings.bigendian;
-    copts.fb2 = options.readonlystrings;
+    copts.catssupport = 1;
+    copts.littleendian = !settings.bigendian;
+    copts.readonly_strings = options.readonlystrings;
     SetScheduling(1);
 
     switch (options.version) {
@@ -404,37 +404,37 @@ void TargetPanels_eabi_ppc_LoadCompilerOptions(void)
 
     SetScheduling(options.schedule);
 
-    copts.peepholeOptimizationEnabled = options.peephole;
+    copts.peephole = options.peephole;
     copts.structalignment = options.structalignment;
     SetCodeAlignment(4 << options.funcalign);
-    copts.reuseSectionSymbols = options.pooldata;
-    copts.smallBSSLimit = settings.sdata2threshold;
-    copts.smallDataLimit = settings.sdatathreshold;
+    copts.usedatapool = options.pooldata;
+    copts.constsmalldatathreshold = settings.sdata2threshold;
+    copts.nonconstsmalldatathreshold = settings.sdatathreshold;
     copts.f27 = settings.unk37;
     copts.f1e = 0;
     copts.fd3 = 0;
     copts.fd5 = 1;
     copts.fd4 = 1;
-    copts.f20 = options.common;
+    copts.commonblocks = options.common;
     copts.fd6 = extendedSettings.fullpaths;
-    copts.useRegisterSaveHelpers = options.use_lmw_stmw;
-    copts.rel109Offset = 2;
+    copts.use_lmw_stmw = options.use_lmw_stmw;
+    copts.rel109_offset = 2;
     copts.debugEnabled = 0;
     copts.operandsDebug = 0;
-    copts.debugOptions = 0;
+    copts.fp_contract = 0;
     if (options.fpmode != 0) {
         copts.debugEnabled = 1;
         if (options.fpmode == 1)
             copts.operandsDebug = 1;
         else
-            copts.debugOptions = options.fp_contract;
+            copts.fp_contract = options.fp_contract;
     }
-    copts.altivecModel = options.altivec;
+    copts.altivec_model = options.altivec;
     SetVRSave(options.vrsave);
-    copts.cOptimizerDumpEnabled = 0;
-    copts.ppcUnrollSpeculative = 1;
-    copts.ppcUnrollInstructionsLimit = 100;
-    copts.ppcUnrollFactorLimit = 10;
+    copts.debug_listing = 0;
+    copts.unroll_speculative = 1;
+    copts.unroll_instr_limit = 100;
+    copts.unroll_factor_limit = 10;
 }
 
 void fn_0042c910(void)

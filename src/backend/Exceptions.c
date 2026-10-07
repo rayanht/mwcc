@@ -78,10 +78,10 @@ void Exceptions_EmitExceptionTable(Object *object, int offset)
         }
     }
     header = (ExceptionTableHeader *)(tableCursor = (int)*exception_records.data);
-    if (copts.altivecModel != 0 && gVRSaveSpan != 0) {
+    if (copts.altivec_model != 0 && gVRSaveSpan != 0) {
         header->flags = flags();
         header->flags = (short)(header->flags | 4);
-        if (copts.altivecVrsave != 0)
+        if (copts.altivec_vrsave != 0)
             header->value = CTool_EndianConvertWord16(gVRSaveSpan << 11 | 1024);
         else
             header->value = CTool_EndianConvertWord16(gVRSaveSpan << 11);

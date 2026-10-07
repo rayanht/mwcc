@@ -84,7 +84,7 @@ Statement *DumpIR_OptimizeStatements(Object *object, Statement *statements)
     Statement *statement;
 
     data_00588513 = 1;
-    if (copts.irOptimizationEnabled)
+    if (copts.globaloptimizer)
         statements = IRO_Optimizer(object, statements);
     data_00581300 = 0;
     COptimizer_OptimizeStatementList(object, statements);
@@ -222,7 +222,7 @@ void COptimizer_OptimizeStatementList(Object *unused, Statement *list)
 
 void COptimizer_CheckStmtsForNonVoidFunction(Object *func, Statement *stmt)
 {
-    if ((copts.f9d || copts.cplusplus) && func != NULL && TYPE_FUNC(func->type)->functype != &stvoid)
+    if ((copts.extended_errorcheck || copts.cplusplus) && func != NULL && TYPE_FUNC(func->type)->functype != &stvoid)
         CheckStmts(stmt);
 }
 
@@ -580,7 +580,7 @@ static inline void RecordObjectUse(Object *object, unsigned char direct_referenc
 
     info = object->u.var.info;
     info->used = 1;
-    if (copts.uniformSpillBlockWeight) {
+    if (copts.optimizesize) {
         info->usage++;
     } else {
         info->usage += current_statement_number;
@@ -728,7 +728,7 @@ void COptimizer_RecordObjectUse(Object *object, unsigned char direct_reference)
 
     info = object->u.var.info;
     info->used = 1;
-    if (copts.uniformSpillBlockWeight) {
+    if (copts.optimizesize) {
         info->usage++;
     } else {
         info->usage += current_statement_number;
@@ -948,7 +948,7 @@ void build_opt_blocks(Statement *first)
     int nodeCount;
 
     opt_block_bits_size = (SInt16)((next_varnumber - 1) / 16 * 2 + 2);
-    if (copts.irOptimizationEnabled != 0) {
+    if (copts.globaloptimizer != 0) {
         opt_block_bits_size += 0x20;
         data_005812fc = 0;
     }
@@ -1937,7 +1937,7 @@ int Registers_GetCSEWeight(COptCSE *tree)
             return result;
         }
         weight = 1;
-        if (copts.uniformSpillBlockWeight == 0 &&
+        if (copts.optimizesize == 0 &&
             (tree->expr->type == EMUL || (tree->expr->type == EDIV || tree->expr->type == EMODULO))) {
             weight = 2;
         }

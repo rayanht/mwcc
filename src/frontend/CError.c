@@ -853,7 +853,7 @@ void report_diagnostic(int message, char *argument, char force, char mode)
             data_005805ee = line_count;
             data_005805ec = 0;
         }
-        if (copts.f9c != 0)
+        if (copts.warningerrors != 0)
             mode = 0;
 
         if (buffered_token != 0)

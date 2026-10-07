@@ -58,12 +58,12 @@ static inline int PCodeAssembly_ShouldEmitExtraData(void)
 
 static inline int PCodeAssembly_ShouldOptimizeBranches(void)
 {
-    return copts.peepholeOptimizationEnabled != 0;
+    return copts.peephole != 0;
 }
 
 static inline int PCodeAssembly_ShouldEmitSerializedFormat(void)
 {
-    return copts.emitSerializedAssemblyFormat != 0;
+    return copts.catssupport != 0;
 }
 
 static inline int PCodeAssembly_ShouldEmitDebugInfo(void)

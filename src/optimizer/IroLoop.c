@@ -2792,12 +2792,12 @@ void reduce_strength_and_move_loop_invariants(IRONode *func)
             }
         }
     }
-    if (copts.fc5 != 0 || copts.fc8 != 0) {
+    if (copts.loopinvariants != 0 || copts.strengthreduction != 0) {
         rewrite_selected_monadic_references();
         IroCSE_BuildLoopExprList();
         IroDump_DumpExpressions();
     }
-    if (copts.fc5 != 0) {
+    if (copts.loopinvariants != 0) {
         for (previousExpr = expr_list; previousExpr != NULL; previousExpr = previousExpr->next) {
             if (IN_SET(previousExpr->node->index) && previousExpr->hasSideEffects == 0 &&
                 (previousExpr->mayTrap == 0 || previousExpr->node->mustreach != 0) &&
@@ -2807,7 +2807,7 @@ void reduce_strength_and_move_loop_invariants(IRONode *func)
             }
         }
     }
-    if (copts.uniformSpillBlockWeight == 0 && copts.fc8 != 0) {
+    if (copts.optimizesize == 0 && copts.strengthreduction != 0) {
         for (previousExpr = expr_list; previousExpr != NULL; previousExpr = previousExpr->next) {
             if (IN_SET(previousExpr->node->index) && previousExpr->hasSideEffects == 0 &&
                 (previousExpr->mayTrap == 0 || previousExpr->node->mustreach != 0)) {
@@ -2821,7 +2821,7 @@ void reduce_strength_and_move_loop_invariants(IRONode *func)
             }
         }
     }
-    if (copts.uniformSpillBlockWeight == 0 && copts.fc8 != 0) {
+    if (copts.optimizesize == 0 && copts.strengthreduction != 0) {
         iro_loop_roots = NULL;
         memberUse = expr_list;
         while (memberUse != NULL) {
@@ -2867,7 +2867,7 @@ void reduce_strength_and_move_loop_invariants(IRONode *func)
     iro_loop_roots = NULL;
     available = NULL;
     entry = expr_list;
-    if (copts.fc5 != 0) {
+    if (copts.loopinvariants != 0) {
         for (; entry != NULL; entry = nextEntry) {
             nextEntry = entry->next;
             matched = 0;
@@ -3838,7 +3838,7 @@ int match_induction_expression(IROLinear *node, IROLinear **factor, IROLinear **
     *variable = fn_0044ba70(constant->data.objref, 0, 1);
     if (*variable == NULL || (*variable)->inductionState != 2)
         return 0;
-    if (copts.rejectZeroLengthArrayMembers != 0 || copts.fc9 != 0) {
+    if (copts.ANSIstrict != 0 || copts.strengthreductionstrict != 0) {
         TypeIntegral *variableType = (TypeIntegral *)(*variable)->object->type;
         if ((variableType->integral == IT_UCHAR || variableType->integral == IT_USHORT ||
              variableType->integral == IT_UINT || variableType->integral == IT_ULONG ||

@@ -47,7 +47,7 @@ void assign_object_register(Object *func, SInt16 register_number)
                     physical_register = regs->reg;
                 } else {
                     regs->is_fpr = 1;
-                    if (copts.nativeByteOrder != 0) {
+                    if (copts.littleendian != 0) {
                         regs->reg = register_number;
                         physical_register = regs->reg;
                         regs->regHi = register_number + 1;
@@ -60,7 +60,7 @@ void assign_object_register(Object *func, SInt16 register_number)
                 CTemplateNew_InsertRegisterBinding(func->name->name, 0, physical_register, func);
             } else if ((type->type == TYPEINT || type->type == TYPEENUM) && type->size == 8) {
                 regs->is_fpr = 0;
-                if (copts.nativeByteOrder != 0) {
+                if (copts.littleendian != 0) {
                     regs->regHi = register_number + 1;
                     physical_register = 0;
                     if (register_number < 10) {

@@ -16,12 +16,12 @@
 
 static inline UInt8 CPreprocess_UseC99Keywords(void)
 {
-    return copts.f90;
+    return copts.c9x;
 }
 
 static inline char CPreprocess_SuppressLineBreaks(void)
 {
-    return copts.f8b;
+    return copts.line_prepdump;
 }
 
 static inline void CPreprocess_FinishOutput(void)
@@ -581,7 +581,7 @@ void output_escaped_wide_chars(char *data, SInt16 count)
 
 static inline char CPreprocess_ShouldEmitLineDirectives(void)
 {
-    return copts.f8b;
+    return copts.line_prepdump;
 }
 
 static inline void CPreprocess_AppendLineBreak(void)
@@ -608,7 +608,7 @@ void CPreprocess_EmitLineDirective(void)
             length = sprintf(buffer, "/* #line %ld\t\"", DAT_00587ef0);
         CompilerTools_AppendGListData(&DAT_00586da8.list, buffer, length);
 
-        if (copts.f8c != 0) {
+        if (copts.fullpath_prepdump != 0) {
             CompilerTools_ResolveFileNameToCString(buffer, currentPFile, &fileValue);
             CompilerTools_AppendGListData(&DAT_00586da8.list, buffer, strlen(buffer));
         } else {
@@ -628,7 +628,7 @@ void CPreprocess_EmitLineDirective(void)
 
 void fn_004d6ed0(void)
 {
-    if (copts.f8b != '\0' && DAT_00586da8.handle != NULL && current_file_index >= 0) {
+    if (copts.line_prepdump != '\0' && DAT_00586da8.handle != NULL && current_file_index >= 0) {
         CompilerTools_AppendGListData(&DAT_00586da8.list, "\r\n", 2);
     }
 }

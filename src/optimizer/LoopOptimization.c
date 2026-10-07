@@ -434,7 +434,7 @@ void dispatch_counting_loop_transforms(Loop *loop)
     if (loop->isKnownCountingLoop) {
         if (loop->iterationCount > 0) {
             fn_0052b1a0(loop);
-            if (!copts.uniformSpillBlockWeight && !loop->has_call && !loop->has_memory_barrier) {
+            if (!copts.optimizesize && !loop->has_call && !loop->has_memory_barrier) {
                 if (loop->skip_leaf_pass_4f)
                     unroll_counting_loop(loop);
                 else if (!loop->uses_count_register)
@@ -450,8 +450,8 @@ void dispatch_counting_loop_transforms(Loop *loop)
         gLoopTransformChanged = 1;
     } else if (loop->isUnknownCountingLoop && !loop->uses_count_register && !loop->has_call) {
         convert_loop_to_count_register(loop);
-        if (copts.ppcUnrollSpeculative && !copts.uniformSpillBlockWeight && loop->skip_leaf_pass_4f &&
-            !loop->has_memory_barrier && !loop->has_block_flag_40)
+        if (copts.unroll_speculative && !copts.optimizesize && loop->skip_leaf_pass_4f && !loop->has_memory_barrier &&
+            !loop->has_block_flag_40)
             unroll_ctr_loop(loop);
         gLoopTransformChanged = 1;
     }
@@ -919,9 +919,9 @@ void unroll_ctr_loop(Loop *loop)
     if (loop->bodySize < 4)
         return;
     unrollFactor = 128;
-    while (unrollFactor > copts.ppcUnrollFactorLimit)
+    while (unrollFactor > copts.unroll_factor_limit)
         unrollFactor >>= 1;
-    shift = copts.ppcUnrollInstructionsLimit;
+    shift = copts.unroll_instr_limit;
     while (unrollFactor > 1 && (loop->bodySize - 2) * unrollFactor > shift)
         unrollFactor >>= 1;
     if (unrollFactor < 2)
@@ -1143,9 +1143,9 @@ void unroll_loop_by_factor(Loop *loop)
     pending = NULL;
     made = 0;
     total = 0;
-    factor = copts.ppcUnrollFactorLimit;
+    factor = copts.unroll_factor_limit;
     while (factor > 1) {
-        if (loop->iterationCount % factor == 0 && (loop->bodySize - 2) * factor <= copts.ppcUnrollInstructionsLimit)
+        if (loop->iterationCount % factor == 0 && (loop->bodySize - 2) * factor <= copts.unroll_instr_limit)
             break;
         factor--;
     }
@@ -1366,9 +1366,9 @@ void unroll_counting_loop(Loop *loop)
     int factor;
     int iteration;
 
-    factor = copts.ppcUnrollFactorLimit;
+    factor = copts.unroll_factor_limit;
     while (factor > 1) {
-        limit = copts.ppcUnrollInstructionsLimit;
+        limit = copts.unroll_instr_limit;
         if (!rem(loop->iterationCount, factor) && (loop->bodySize - 2) * factor <= limit)
             break;
         --factor;

@@ -118,7 +118,7 @@ unsigned int Operands_InsertBitField(unsigned short reg, Operand *operand, TypeB
     shift -= record->bitfieldtype->size << 3;
     shift += record->offset;
     width = record->bitlength;
-    if (copts.nativeByteOrder != 0) {
+    if (copts.littleendian != 0) {
         adjusted = *record;
         CABI_ReverseBitField(&adjusted);
         shift = 32 - (adjusted.bitfieldtype->size << 3) + adjusted.offset;
@@ -144,7 +144,7 @@ void Operands_ExtractBitfield(Operand *operand, TypeBitfield *tbitfield, SInt16 
         gUsedVirtualRegistersGPR++;
     }
     regno = resultReg;
-    if (copts.nativeByteOrder != 0) {
+    if (copts.littleendian != 0) {
         reversedType = *tbitfield;
         tbitfield = &reversedType;
         CABI_ReverseBitField(&reversedType);
@@ -232,7 +232,7 @@ void Operands_ConvertIntegerToFloat(struct Operand *result, Boolean useOpcodeA5,
         baseRegister = gUsedVirtualRegistersGPR++;
         firstInstruction = PCodeUtilities_MakeInstructionWithObject(baseRegister, 0, operand, 0, 1);
         secondInstruction = PCodeUtilities_CreateInstructionWithObject(baseRegister, baseRegister, operand, 0, 1);
-        if (copts.reuseSectionSymbols != 0) {
+        if (copts.usedatapool != 0) {
             firstInstruction->operandData.operands[1].flags = 0xb;
             secondInstruction->operandData.operands[2].flags = 0xa;
         }
@@ -286,7 +286,7 @@ void Operands_ConvertSignedIntegerToFloat(struct Operand *operand, char subtract
         baseReg = gUsedVirtualRegistersGPR++;
         firstInfo = PCodeUtilities_MakeInstructionWithObject(baseReg, 0, object, 0, 1);
         secondInfo = PCodeUtilities_CreateInstructionWithObject(baseReg, baseReg, object, 0, 1);
-        if (copts.reuseSectionSymbols != 0) {
+        if (copts.usedatapool != 0) {
             firstInfo->operandData.operands[1].flags = 11;
             secondInfo->operandData.operands[2].flags = 10;
         }
@@ -323,7 +323,7 @@ void Operands_EmitOpcodeWithObjectBaseOffset(short dest, Type *type, Object *obj
         base = gUsedVirtualRegistersGPR++;
         highCode = PCodeUtilities_MakeInstructionWithObject(base, 0, obj, 0, 1);
         lowCode = PCodeUtilities_CreateInstructionWithObject(base, base, obj, 0, 1);
-        if (copts.reuseSectionSymbols) {
+        if (copts.usedatapool) {
             highCode->operandData.operands[1].flags = 0xb;
             lowCode->operandData.operands[2].flags = 0xa;
         }

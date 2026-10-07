@@ -357,7 +357,7 @@ void TOC_0049d710(ENode *node, Type *targetType, int ignored)
                 node->hascall = 0;
                 break;
             }
-            if (copts.reuseSectionSymbols && (entry = BE_symbol_GetFunctionSymbolLinkData(object)) != NULL) {
+            if (copts.usedatapool && (entry = BE_symbol_GetFunctionSymbolLinkData(object)) != NULL) {
                 add_toc_reference(entry, object, node, 1);
             } else {
                 ref = CompilerTools_AllocatePool(sizeof(ENode));
@@ -396,7 +396,7 @@ void TOC_0049d710(ENode *node, Type *targetType, int ignored)
                 data_00588500 = 1;
             if (object->datatype == DDATA) {
                 if (!PCodeUtilities_Require(object)) {
-                    if (copts.reuseSectionSymbols && object->datatype == DDATA) {
+                    if (copts.usedatapool && object->datatype == DDATA) {
                         Object *entry = BE_symbol_GetFunctionSymbolLinkData(object);
                         if (entry) {
                             add_toc_reference(entry, object, node, 0);
@@ -456,7 +456,7 @@ void TOC_0049d710(ENode *node, Type *targetType, int ignored)
                 ENode *function;
                 if (TOC_IsSetjmp(node->data.funccall.funcref)) {
                     data_00588224 |= 1;
-                    if (copts.f08)
+                    if (copts.disable_registers)
                         data_00588224 |= 2;
                 }
                 function = node->data.funccall.funcref;
@@ -1315,7 +1315,7 @@ void replace_vector_constant_with_objectref(ENode *node)
             objectInfo.qual = Q_CONST;
             objectInfo.storageclass = 258;
             objectInfo.requireMangledName = 1;
-            if (copts.smallBSSLimit > 16) {
+            if (copts.constsmalldatathreshold > 16) {
                 objectInfo.section = ObjGen_PPC_EABI_GetHeaderIndex(34);
             } else {
                 objectInfo.section = ObjGen_PPC_EABI_GetHeaderIndex(32);
@@ -1596,7 +1596,7 @@ void fn_0049f4b0(Object *object)
 
     info = Registers_GetInfo(current);
     info->used = 1;
-    if (copts.uniformSpillBlockWeight != 0)
+    if (copts.optimizesize != 0)
         weight = 1;
     else
         weight = current_statement_number;

@@ -204,7 +204,7 @@ static inline char CABI_0050df20_inline1(TypeClass *a1)
 /* Entries and insertion state used while laying out a class vtable. */
 static inline char use_vtable_size_without_vbases(void)
 {
-    return copts.f81;
+    return copts.vbase_abi_v2;
 }
 
 static inline char inherit_vtable_member(TypeClass *classType)
@@ -233,7 +233,7 @@ static inline SInt32 CABI_BaseSize(TypeClass *base, Boolean omitVirtualBases)
 
 static inline char base_layout_mode(void)
 {
-    return copts.f81;
+    return copts.vbase_abi_v2;
 }
 
 Type *CABI_GetSizeTType(void)
@@ -403,7 +403,7 @@ void layout_class_ivars(ClassLayout *member, TypeClass *type)
         type->size = maximumSize;
     else
         type->size = CMach_StructLayoutGetCurSize();
-    if (copts.f8f != 0) {
+    if (copts.reverse_bitfields != 0) {
         for (mem = type->ivars; mem != NULL; mem = mem->next) {
             if (mem->type->type != TYPEBITFIELD)
                 continue;
@@ -642,7 +642,7 @@ int CABI_LayoutClass(struct ClassLayout *members, TypeClass *type)
             virtualSize = type->size;
             while (vbase != NULL) {
                 vbase->offset = CMach_MemberAlignValue(TYPE(vbase->base), virtualSize) + virtualSize;
-                useVirtualOffset = copts.f81;
+                useVirtualOffset = copts.vbase_abi_v2;
                 baseClass = vbase->base;
                 baseClassSize = baseClass->size;
                 if (useVirtualOffset != 0 && baseClass->vbases != NULL) {
@@ -890,7 +890,7 @@ SInt32 CABI_GetCtorOffsetOffset(TypeClass *tclass, TypeClass *baseclass)
     char savealign;
 
     size = tclass->size;
-    if (copts.f81 && tclass->vbases)
+    if (copts.vbase_abi_v2 && tclass->vbases)
         size = tclass->vbases->offset;
     if (baseclass) {
         basesize = CABI_FindNVBase(tclass, baseclass, 0);

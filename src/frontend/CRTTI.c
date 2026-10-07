@@ -241,7 +241,7 @@ ENode *CRTTI_ParseDynamicCast(void)
     expr = parse_cast_type_and_expression(&parsed);
     if (expr == NULL)
         return nullnode();
-    if (copts.rttiEnabled == 0)
+    if (copts.RTTI == 0)
         CError_Warning(ERR_RTTI_OPTION_DISABLED);
     check_constness_casted_away(expr->rtype, expr->flags, parsed.thetype, parsed.qual);
     if (parsed.thetype->type != TYPEPOINTER) {
@@ -378,7 +378,7 @@ ENode *explicit_typecast(register ENode *expr, register Type *type, UInt32 flags
         return expr;
     }
     if (set) {
-        if (wrap && expr->type == EINDIRECT && (copts.f69 != 0 || copts.rejectZeroLengthArrayMembers == 0))
+        if (wrap && expr->type == EINDIRECT && (copts.pointercast_lvalue != 0 || copts.ANSIstrict == 0))
             expr = makemonadicnode(expr, 0x30);
         expr->rtype = type;
         expr->flags = flags & 3;
@@ -515,7 +515,7 @@ ENode *CRTTI_ParseTypeid(void)
     HashNameNode *name;
     DeclInfo typeInfo;
 
-    if (copts.rttiEnabled == 0)
+    if (copts.RTTI == 0)
         CError_Warning(ERR_RTTI_OPTION_DISABLED);
 
     name = GetHashNameNode("std");

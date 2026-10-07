@@ -656,7 +656,7 @@ void CClass_GenerateVTable(TypeClass *cls)
 
         memclrw(data_00581caa, vtable_size);
 
-        if (copts.rttiEnabled && (cls->flags & 0x2010) == 0)
+        if (copts.RTTI && (cls->flags & 0x2010) == 0)
             rtti_offset_table = CRTTI_BuildRTTIOffsetTable(cls, data_00581caa, rtti_offset_table);
 
         CError_ASSERT(2314, cls->vtable->object->type->size == cls->vtable->size);
@@ -700,7 +700,7 @@ void CClass_CheckOverrides(TypeClass *cls)
     if (CClass_004ea020(layout, 0) != NULL) {
         cls->flags |= CLASS_ABSTRACT;
     }
-    if (copts.fa5 != 0) {
+    if (copts.warn_hidevirtual != 0) {
         check_hidden_inherited_virtual_functions(layout, layout);
     }
     if (cls->flags & CLASS_SOM_INIT) {
@@ -1778,7 +1778,7 @@ Boolean CClass_ReferenceArgument(TypeClass *cls)
     if ((cls->flags & (CLASS_COMPLETED | CLASS_IS_TEMPL_INST)) == 0x800)
         CDecl_CompleteType((Type *)cls);
 
-    if (copts.f7e != 0)
+    if (copts.simple_class_byval != 0)
         return (cls->flags & 0x4000) != 0;
 
     obj = CClass_FindFuncObject(cls->nspace, destructor_name);

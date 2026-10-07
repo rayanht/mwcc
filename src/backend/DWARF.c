@@ -2406,7 +2406,7 @@ void DWARF_004b0a80(TypeStruct *type)
             if ((memberType = member->type)->type == TYPEBITFIELD) {
                 bitfield = (TypeBitfield *)memberType;
                 memberInfo = find_or_create_dwinfo(bitfield->bitfieldtype);
-                if (copts.nativeByteOrder) {
+                if (copts.littleendian) {
                     reversedBitfield = *bitfield;
                     bitfield = &reversedBitfield;
                     CABI_ReverseBitField(&reversedBitfield);
