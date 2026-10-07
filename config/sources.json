@@ -1440,8 +1440,22 @@
     ],
     "include_dirs": [
       "src/driver"
+    ]
+  },
+  "src/driver/libimp-eabi-ppc-mw.c": {
+    "compiler": "pro53",
+    "flags": [
+      "-O4,p",
+      "-inline",
+      "auto",
+      "-sym",
+      "on",
+      "-Cpp_exceptions",
+      "off"
     ],
-    "status": "NonMatching"
+    "include_dirs": [
+      "src/driver"
+    ]
   },
   "src/driver/cc-eabi-ppc.c": {
     "compiler": "pro53",

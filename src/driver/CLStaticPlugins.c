@@ -2,6 +2,7 @@
 #include "compiler/common.h"
 #include "driver/CLStaticPlugins.h"
 #include "driver/cc-eabi-ppc-mw.h"
+#include "driver/libimp-eabi-ppc-mw.h"
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>

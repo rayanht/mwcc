@@ -1821,67 +1821,67 @@
     "name": "get_stored_name_and_length",
     "address": "0x0040bfa0",
     "size": 25,
-    "source": "src/driver/cc-eabi-ppc-mw.c"
+    "source": "src/driver/libimp-eabi-ppc-mw.c"
   },
   {
     "name": "fn_0040bfc0",
     "address": "0x0040bfc0",
     "size": 15,
-    "source": "src/driver/cc-eabi-ppc-mw.c"
+    "source": "src/driver/libimp-eabi-ppc-mw.c"
   },
   {
     "name": "get_global_value",
     "address": "0x0040bfd0",
     "size": 17,
-    "source": "src/driver/cc-eabi-ppc-mw.c"
+    "source": "src/driver/libimp-eabi-ppc-mw.c"
   },
   {
     "name": "fn_0040bff0",
     "address": "0x0040bff0",
     "size": 17,
-    "source": "src/driver/cc-eabi-ppc-mw.c"
+    "source": "src/driver/libimp-eabi-ppc-mw.c"
   },
   {
     "name": "fn_0040c010",
     "address": "0x0040c010",
     "size": 15,
-    "source": "src/driver/cc-eabi-ppc-mw.c"
+    "source": "src/driver/libimp-eabi-ppc-mw.c"
   },
   {
     "name": "set_next_from_global",
     "address": "0x0040c020",
     "size": 15,
-    "source": "src/driver/cc-eabi-ppc-mw.c"
+    "source": "src/driver/libimp-eabi-ppc-mw.c"
   },
   {
     "name": "get_buffer",
     "address": "0x0040c030",
     "size": 15,
-    "source": "src/driver/cc-eabi-ppc-mw.c"
+    "source": "src/driver/libimp-eabi-ppc-mw.c"
   },
   {
     "name": "set_list_link_next",
     "address": "0x0040c040",
     "size": 15,
-    "source": "src/driver/cc-eabi-ppc-mw.c"
+    "source": "src/driver/libimp-eabi-ppc-mw.c"
   },
   {
     "name": "fn_0040c050",
     "address": "0x0040c050",
     "size": 15,
-    "source": "src/driver/cc-eabi-ppc-mw.c"
+    "source": "src/driver/libimp-eabi-ppc-mw.c"
   },
   {
     "name": "fn_0040c060",
     "address": "0x0040c060",
     "size": 16,
-    "source": "src/driver/cc-eabi-ppc-mw.c"
+    "source": "src/driver/libimp-eabi-ppc-mw.c"
   },
   {
     "name": "fn_0040c070",
     "address": "0x0040c070",
     "size": 6,
-    "source": "src/driver/cc-eabi-ppc-mw.c"
+    "source": "src/driver/libimp-eabi-ppc-mw.c"
   },
   {
     "name": "find_temp_info",
