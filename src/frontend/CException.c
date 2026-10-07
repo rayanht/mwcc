@@ -1153,7 +1153,7 @@ void CExcept_ScanTryBlock(void *context, char rethrow)
     previous = NULL;
 
     for (;;) {
-        statement_sourceoffset = CPrep_UpdateTokenLine(&function_fileinfo);
+        sourceoffset = CPrep_UpdateTokenLine(&function_fileinfo);
 
         lastStatement = CFunc_AppendStatement(2);
         lastStatement->flags = 1;

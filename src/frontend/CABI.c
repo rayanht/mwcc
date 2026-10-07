@@ -1085,7 +1085,7 @@ void CABI_InsertConstructorInitialization(Object *obj, Statement *stmt, TypeClas
 
             for (virtualBase = tclass->vbases; virtualBase; virtualBase = virtualBase->next) {
                 if (!callback) {
-                    for (initializer = ctor_initializers; initializer; initializer = initializer->next) {
+                    for (initializer = ctor_chain; initializer; initializer = initializer->next) {
                         if (initializer->what == INIT_VBASE && initializer->u.vbase == virtualBase)
                             break;
                     }
@@ -1118,7 +1118,7 @@ void CABI_InsertConstructorInitialization(Object *obj, Statement *stmt, TypeClas
         for (base = tclass->bases; base; base = base->next) {
             if (!base->is_virtual) {
                 if (!callback) {
-                    for (initializer = ctor_initializers; initializer; initializer = initializer->next) {
+                    for (initializer = ctor_chain; initializer; initializer = initializer->next) {
                         if (initializer->what == INIT_BASE && initializer->u.base == base)
                             break;
                     }
@@ -1157,7 +1157,7 @@ void CABI_InsertConstructorInitialization(Object *obj, Statement *stmt, TypeClas
 
     if (!callback) {
         for (member = tclass->ivars; member; member = member->next) {
-            for (initializer = ctor_initializers; initializer; initializer = initializer->next) {
+            for (initializer = ctor_chain; initializer; initializer = initializer->next) {
                 if (initializer->what == INIT_MEMBER && initializer->u.membervar == member)
                     break;
             }
@@ -1266,7 +1266,7 @@ void CABI_GenerateClassFunction(TypeClass *cl, Object *func)
     savesym = copts.filesyminfo;
     copts.filesyminfo = 0;
     CFunc_SetupNewFuncArgs(func, TYPE_FUNC(func->type)->args);
-    ctor_initializers = NULL;
+    ctor_chain = NULL;
 
     if (cl->flags & CLASS_HAS_VBASES) {
         arguments->next->object->name = CParser_GetUniqueName();
@@ -1526,7 +1526,7 @@ void CABI_GenClassFunction(TypeClass *tclass, Object *function)
     savedFileSymInfo = copts.filesyminfo;
     copts.filesyminfo = 0;
     CFunc_SetupNewFuncArgs(function, ((TypeFunc *)function->type)->args);
-    ctor_initializers = NULL;
+    ctor_chain = NULL;
 
     if (tclass->flags & CLASS_HAS_VBASES) {
         HashNameNode *name = CParser_GetUniqueName();
@@ -1573,7 +1573,7 @@ void CABI_MakeDefaultConstructor(TypeClass *cls, Object *func)
     copts.filesyminfo = 0;
     CFunc_SetupNewFuncArgs(func, TYPE_FUNC(func->type)->args);
 
-    acc = data_00587644;
+    acc = curstmt;
     for (vb = cls->vbases; vb != NULL; vb = vb->next)
         acc = make_baseclass_and_ivars_copy_statements(acc, cls, vb->base, vb->offset, 0);
 

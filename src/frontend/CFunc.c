@@ -75,7 +75,7 @@ inline void ScopedBody(StatementContext *ctx)
         while (tk != '}') {
             parse_statement(ctx);
         }
-        statement_sourceoffset = CPrep_UpdateTokenLine(&function_fileinfo);
+        sourceoffset = CPrep_UpdateTokenLine(&function_fileinfo);
         tk = (short)CPrepTokenizer_GetNextToken();
     } else {
         parse_statement(ctx);
@@ -103,12 +103,12 @@ static inline Statement *CFunc_NewStatement(UInt8 kind)
     Statement *stmt = lalloc(sizeof(Statement));
     stmt->next = NULL;
     stmt->type = kind;
-    stmt->value = current_statement_number;
+    stmt->value = curstmtvalue;
     stmt->flags = 0;
-    stmt->sourceoffset = statement_sourceoffset;
+    stmt->sourceoffset = sourceoffset;
     stmt->dobjstack = cexcept_dobjstack;
-    data_00587644->next = stmt;
-    data_00587644 = stmt;
+    curstmt->next = stmt;
+    curstmt = stmt;
     return stmt;
 }
 
@@ -117,12 +117,12 @@ static inline Statement *MakeCaseStatement(void)
     Statement *statement = lalloc(0x1a);
     statement->next = NULL;
     statement->type = ST_LABEL;
-    statement->value = current_statement_number;
+    statement->value = curstmtvalue;
     statement->flags = 0;
-    statement->sourceoffset = statement_sourceoffset;
+    statement->sourceoffset = sourceoffset;
     statement->dobjstack = cexcept_dobjstack;
-    data_00587644->next = statement;
-    data_00587644 = statement;
+    curstmt->next = statement;
+    curstmt = statement;
     return statement;
 }
 
@@ -661,7 +661,7 @@ CLabel *findlabel(void)
 {
     CLabel *label;
 
-    for (label = clabels; label != NULL; label = label->next) {
+    for (label = Labels; label != NULL; label = label->next) {
         if (data_00587fa0 == label->name) {
             return label;
         }
@@ -681,23 +681,18 @@ CLabel *newlabel(void)
 
 Statement *CFunc_AppendStatement(int kind)
 {
-    Statement *record;
-    unsigned short value8;
-    unsigned int value22;
-    struct ExceptionAction *value18;
-    record = (Statement *)lalloc(26U);
-    record->next = NULL;
-    record->type = (unsigned char)kind;
-    value8 = current_statement_number;
-    record->value = value8;
-    record->flags = 0;
-    value22 = statement_sourceoffset;
-    record->sourceoffset = value22;
-    value18 = cexcept_dobjstack;
-    record->dobjstack = value18;
-    data_00587644->next = record;
-    data_00587644 = record;
-    return record;
+    Statement *stmt;
+
+    stmt = (Statement *)lalloc(sizeof(Statement));
+    stmt->next = NULL;
+    stmt->type = kind;
+    stmt->value = curstmtvalue;
+    stmt->flags = 0;
+    stmt->sourceoffset = sourceoffset;
+    stmt->dobjstack = cexcept_dobjstack;
+    curstmt->next = stmt;
+    curstmt = stmt;
+    return stmt;
 }
 
 /* A new statement of kind TYPE after AFTER, at its source position and with its exception actions. */
@@ -719,8 +714,8 @@ void CheckCLabels(void)
 {
     CLabel *label;
 
-    label = clabels;
-    if (clabels != NULL) {
+    label = Labels;
+    if (Labels != NULL) {
         do {
             if (label->stmt == NULL) {
                 CError_ReportError(ERR_UNDEFINED_LABEL, label->name->name);
@@ -1342,12 +1337,12 @@ void append_or_defer_expression_statement(ENode *node)
             record = (struct Statement *)lalloc(sizeof(struct Statement));
             record->next = NULL;
             record->type = 4U;
-            record->value = current_statement_number;
+            record->value = curstmtvalue;
             record->flags = 0U;
-            record->sourceoffset = statement_sourceoffset;
+            record->sourceoffset = sourceoffset;
             record->dobjstack = cexcept_dobjstack;
-            data_00587644->next = record;
-            data_00587644 = record;
+            curstmt->next = record;
+            curstmt = record;
             record->expr = deferred_expression;
         }
         deferred_expression = (ENode *)node;
@@ -1355,12 +1350,12 @@ void append_or_defer_expression_statement(ENode *node)
         record = (struct Statement *)lalloc(sizeof(struct Statement));
         record->next = NULL;
         record->type = 4U;
-        record->value = current_statement_number;
+        record->value = curstmtvalue;
         record->flags = 0U;
-        record->sourceoffset = statement_sourceoffset;
+        record->sourceoffset = sourceoffset;
         record->dobjstack = cexcept_dobjstack;
-        data_00587644->next = record;
-        data_00587644 = record;
+        curstmt->next = record;
+        curstmt = record;
         record->expr = (ENode *)node;
     }
 }
@@ -1491,11 +1486,11 @@ void declare_local_object(DeclInfo *declaration, TStreamElement *declarationToke
                     statement = lalloc(sizeof(Statement));
                     statement->next = NULL;
                     statement->type = ST_EXPRESSION;
-                    statement->value = current_statement_number;
+                    statement->value = curstmtvalue;
                     statement->flags = 0;
-                    statement->sourceoffset = statement_sourceoffset;
-                    statement->dobjstack = cexcept_dobjstack, data_00587644->next = statement;
-                    data_00587644 = statement;
+                    statement->sourceoffset = sourceoffset;
+                    statement->dobjstack = cexcept_dobjstack, curstmt->next = statement;
+                    curstmt = statement;
                     statement->expr = makediadicnode(create_objectnode(localstatic_init_guard),
                                                      intconstnode((Type *)&stsignedchar, 1), EASS);
                     statement = allocate_and_append_statement(2);
@@ -1566,12 +1561,12 @@ static Statement *allocate_and_append_statement(UInt8 type)
     Statement *stmt = (Statement *)lalloc(0x1a);
     stmt->next = NULL;
     stmt->type = type;
-    stmt->value = current_statement_number;
+    stmt->value = curstmtvalue;
     stmt->flags = 0;
-    stmt->sourceoffset = statement_sourceoffset;
+    stmt->sourceoffset = sourceoffset;
     stmt->dobjstack = cexcept_dobjstack;
-    data_00587644->next = stmt;
-    data_00587644 = stmt;
+    curstmt->next = stmt;
+    curstmt = stmt;
     return stmt;
 }
 
@@ -1585,7 +1580,7 @@ ENode *parse_declarations(char mode, int singleDeclaration, char allowEmpty, cha
     deferred_expression = NULL;
     data_00580882 = singleDeclaration;
     while ((char)singleDeclaration != 0 || isdeclaration(copts.cplusplus, 0, 0, 0)) {
-        statement_sourceoffset = CPrep_UpdateTokenLine(&function_fileinfo);
+        sourceoffset = CPrep_UpdateTokenLine(&function_fileinfo);
         memclrw(&declarationState, sizeof(declarationState));
         declarationState.requireMangledName = data_0058088c;
         CParser_GetDeclSpecs(&declarationState, 0);
@@ -1732,12 +1727,12 @@ static Statement *NewStmt(UInt8 type)
 
     stmt->next = NULL;
     stmt->type = type;
-    stmt->value = current_statement_number;
+    stmt->value = curstmtvalue;
     stmt->flags = 0;
-    stmt->sourceoffset = statement_sourceoffset;
+    stmt->sourceoffset = sourceoffset;
     stmt->dobjstack = cexcept_dobjstack;
-    data_00587644->next = stmt;
-    data_00587644 = stmt;
+    curstmt->next = stmt;
+    curstmt = stmt;
     return stmt;
 }
 
@@ -1822,7 +1817,7 @@ void parse_statement(StatementContext *context)
     CLabel *breakLabel;
     CLabel *continueLabel;
 
-    statement_sourceoffset = CPrep_UpdateTokenLine(&function_fileinfo);
+    sourceoffset = CPrep_UpdateTokenLine(&function_fileinfo);
     switch (tk) {
         case TK_RETURN:
             tk = CPrepTokenizer_GetNextToken();
@@ -1959,8 +1954,8 @@ void parse_statement(StatementContext *context)
             stmt->label = FindLabel();
             if (!stmt->label) {
                 stmt->label = NewLabel();
-                stmt->label->next = clabels;
-                clabels = stmt->label;
+                stmt->label->next = Labels;
+                Labels = stmt->label;
                 stmt->label->name = data_00587fa0;
             }
             tk = CPrepTokenizer_GetNextToken();
@@ -2061,13 +2056,13 @@ void parse_statement(StatementContext *context)
                 conditionLabel = stmt->label;
             } else
                 conditionLabel = NewLabel();
-            if (current_statement_number >= 0x1000) {
-                if (current_statement_number >= 0xf000)
-                    current_statement_number++;
+            if (curstmtvalue >= 0x1000) {
+                if (curstmtvalue >= 0xf000)
+                    curstmtvalue++;
                 else
-                    current_statement_number += 0x1000;
+                    curstmtvalue += 0x1000;
             } else
-                current_statement_number <<= 3;
+                curstmtvalue <<= 3;
             stmt = AppendStmt(2);
             stmt->label = NewLabel();
             (topLabel = stmt->label)->stmt = stmt;
@@ -2093,15 +2088,15 @@ void parse_statement(StatementContext *context)
             stmt->label = conditionLabel;
             conditionLabel->stmt = stmt;
             CondJump(testExpr, topLabel, 1, 1);
-            if (current_statement_number > 0x1000) {
-                if (current_statement_number > 0xf000)
-                    current_statement_number--;
+            if (curstmtvalue > 0x1000) {
+                if (curstmtvalue > 0xf000)
+                    curstmtvalue--;
                 else
-                    current_statement_number -= 0x1000;
+                    curstmtvalue -= 0x1000;
             } else
-                current_statement_number >>= 3;
-            if (current_statement_number < 1)
-                current_statement_number = 1;
+                curstmtvalue >>= 3;
+            if (curstmtvalue < 1)
+                curstmtvalue = 1;
             stmt = AppendStmt(2);
             stmt->label = breakLabel;
             breakLabel->stmt = stmt;
@@ -2109,13 +2104,13 @@ void parse_statement(StatementContext *context)
                 RestoreBlock(forScope);
             return;
         case 0x13d:
-            if (current_statement_number >= 0x1000) {
-                if (current_statement_number >= 0xf000)
-                    current_statement_number++;
+            if (curstmtvalue >= 0x1000) {
+                if (curstmtvalue >= 0xf000)
+                    curstmtvalue++;
                 else
-                    current_statement_number += 0x1000;
+                    curstmtvalue += 0x1000;
             } else
-                current_statement_number <<= 3;
+                curstmtvalue <<= 3;
             stmt = AppendStmt(2);
             stmt->label = NewLabel();
             (topLabel = stmt->label)->stmt = stmt;
@@ -2144,15 +2139,15 @@ void parse_statement(StatementContext *context)
             else
                 tk = CPrepTokenizer_GetNextToken();
             CondJump(expr, topLabel, 1, 1);
-            if (current_statement_number > 0x1000) {
-                if (current_statement_number > 0xf000)
-                    current_statement_number--;
+            if (curstmtvalue > 0x1000) {
+                if (curstmtvalue > 0xf000)
+                    curstmtvalue--;
                 else
-                    current_statement_number -= 0x1000;
+                    curstmtvalue -= 0x1000;
             } else
-                current_statement_number >>= 3;
-            if (current_statement_number < 1)
-                current_statement_number = 1;
+                curstmtvalue >>= 3;
+            if (curstmtvalue < 1)
+                curstmtvalue = 1;
             stmt = AppendStmt(2);
             stmt->label = breakLabel;
             breakLabel->stmt = stmt;
@@ -2193,13 +2188,13 @@ void parse_statement(StatementContext *context)
             stmt = AppendStmt(3);
             stmt->label = NewLabel();
             continueLabel = stmt->label;
-            if (current_statement_number >= 0x1000) {
-                if (current_statement_number >= 0xf000)
-                    current_statement_number++;
+            if (curstmtvalue >= 0x1000) {
+                if (curstmtvalue >= 0xf000)
+                    curstmtvalue++;
                 else
-                    current_statement_number += 0x1000;
+                    curstmtvalue += 0x1000;
             } else
-                current_statement_number <<= 3;
+                curstmtvalue <<= 3;
             stmt = AppendStmt(2);
             stmt->label = NewLabel();
             (topLabel = stmt->label)->stmt = stmt;
@@ -2212,15 +2207,15 @@ void parse_statement(StatementContext *context)
             stmt->label = continueLabel;
             continueLabel->stmt = stmt;
             CondJump(expr, topLabel, 1, 1);
-            if (current_statement_number > 0x1000) {
-                if (current_statement_number > 0xf000)
-                    current_statement_number--;
+            if (curstmtvalue > 0x1000) {
+                if (curstmtvalue > 0xf000)
+                    curstmtvalue--;
                 else
-                    current_statement_number -= 0x1000;
+                    curstmtvalue -= 0x1000;
             } else
-                current_statement_number >>= 3;
-            if (current_statement_number < 1)
-                current_statement_number = 1;
+                curstmtvalue >>= 3;
+            if (curstmtvalue < 1)
+                curstmtvalue = 1;
             stmt = AppendStmt(2);
             stmt->label = breakLabel;
             breakLabel->stmt = stmt;
@@ -2353,8 +2348,8 @@ void parse_statement(StatementContext *context)
                         CError_ReportError(ERR_LABEL_REDEFINED, data_00587fa0->name);
                 } else {
                     stmt->label = NewLabel();
-                    stmt->label->next = clabels;
-                    clabels = stmt->label;
+                    stmt->label->next = Labels;
+                    Labels = stmt->label;
                     stmt->label->name = data_00587fa0;
                 }
                 stmt->label->stmt = stmt;
@@ -2397,19 +2392,19 @@ static Statement *AppendStmt(unsigned char kind)
     Statement *s = (Statement *)lalloc(0x1a);
     s->next = NULL;
     s->type = kind;
-    s->value = current_statement_number;
+    s->value = curstmtvalue;
     s->flags = 0;
-    s->sourceoffset = statement_sourceoffset;
+    s->sourceoffset = sourceoffset;
     s->dobjstack = cexcept_dobjstack;
-    data_00587644->next = s;
-    data_00587644 = s;
+    curstmt->next = s;
+    curstmt = s;
     return s;
 }
 
 static CLabel *FindLabel(void)
 {
     CLabel *label;
-    for (label = clabels; label; label = label->next)
+    for (label = Labels; label; label = label->next)
         if ((HashNameNode *)data_00587fa0 == label->name)
             return label;
     return NULL;
@@ -2449,7 +2444,7 @@ void CFunc_CompoundStatement(struct StatementContext *context)
         while (tk != '}') {
             parse_statement(context);
         }
-        statement_sourceoffset = CPrep_UpdateTokenLine(&function_fileinfo);
+        sourceoffset = CPrep_UpdateTokenLine(&function_fileinfo);
         tk = CPrepTokenizer_GetNextToken();
     } else {
         parse_statement(context);
@@ -2524,12 +2519,12 @@ static struct Statement *CFunc_NewAssignmentStatement(void)
     stmt = (struct Statement *)lalloc(sizeof(struct Statement));
     stmt->next = NULL;
     stmt->type = ST_EXPRESSION;
-    stmt->value = current_statement_number;
+    stmt->value = curstmtvalue;
     stmt->flags = 0;
-    stmt->sourceoffset = statement_sourceoffset;
+    stmt->sourceoffset = sourceoffset;
     stmt->dobjstack = cexcept_dobjstack;
-    data_00587644->next = stmt;
-    data_00587644 = stmt;
+    curstmt->next = stmt;
+    curstmt = stmt;
     return stmt;
 }
 
@@ -2768,15 +2763,15 @@ NameSpace *CFunc_FuncGenSetup(Statement *stmt, Object *func)
     cscope_current = scope;
     arguments = NULL;
     locals = NULL;
-    clabels = NULL;
+    Labels = NULL;
     next_varnumber = 0;
     local_name_counter = 0;
     CExcept_Setup();
     memclrw(stmt, sizeof(*stmt));
-    data_00587644 = stmt;
+    curstmt = stmt;
     stmt->type = ST_NOP;
-    current_statement_number = 1;
-    stmt->value = *(UInt16 *)&current_statement_number;
+    curstmtvalue = 1;
+    stmt->value = *(UInt16 *)&curstmtvalue;
     data_00580878 = 0;
     node = lalloc(offsetof(struct DeclBlock, index) + sizeof(node->index));
     memclrw(node, offsetof(struct DeclBlock, index) + sizeof(node->index));
@@ -2860,7 +2855,7 @@ void parse_ctor_initializers(void)
     ENode *expr;
     ObjMemberVar *member;
 
-    ctor_initializers = NULL;
+    ctor_chain = NULL;
     if (tk != ':')
         return;
     do {
@@ -2896,7 +2891,7 @@ void parse_ctor_initializers(void)
                 if (vbase->base == cls)
                     break;
             if (vbase != NULL) {
-                for (previous = ctor_initializers; previous != NULL; previous = previous->next)
+                for (previous = ctor_chain; previous != NULL; previous = previous->next)
                     if (previous->what == 1 && previous->u.vbase == vbase) {
                         CError_ReportError(ERR_ILLEGAL_CTOR_INITIALIZER);
                         return;
@@ -2909,7 +2904,7 @@ void parse_ctor_initializers(void)
                     if (base->base == cls)
                         break;
                 if (base != NULL) {
-                    for (previous = ctor_initializers; previous != NULL; previous = previous->next)
+                    for (previous = ctor_chain; previous != NULL; previous = previous->next)
                         if (previous->what == 0 && previous->u.base == base) {
                             CError_ReportError(ERR_ILLEGAL_CTOR_INITIALIZER);
                             return;
@@ -2928,7 +2923,7 @@ void parse_ctor_initializers(void)
                     break;
             if (member != NULL) {
             member_found:
-                for (previous = ctor_initializers; previous != NULL; previous = previous->next)
+                for (previous = ctor_chain; previous != NULL; previous = previous->next)
                     if (previous->what == 2 && previous->u.membervar == member)
                         CError_ReportError(ERR_ILLEGAL_CTOR_INITIALIZER);
                 entry = lalloc(sizeof(CtorChain));
@@ -2998,8 +2993,8 @@ void parse_ctor_initializers(void)
             default:
                 CError_FATAL(3316);
         }
-        entry->next = ctor_initializers;
-        ctor_initializers = entry;
+        entry->next = ctor_chain;
+        ctor_chain = entry;
         tk = CPrepTokenizer_GetNextToken();
     } while (tk == ',');
 }
@@ -3053,7 +3048,7 @@ void CFunc_ParseFuncDef(Object *func, DeclInfo *definition, TypeClass *scopeObje
     if (TYPE_FUNC(func->type)->functype->type != TYPEVOID)
         CanAllocObject(TYPE_FUNC(func->type)->functype);
     setup_function_arguments(func, definition, &state);
-    state.sourceoffset = function_tokenoffset = statement_sourceoffset = CPrep_UpdateTokenLine(&function_fileinfo);
+    state.sourceoffset = function_tokenoffset = sourceoffset = CPrep_UpdateTokenLine(&function_fileinfo);
     if (definition->oldStyleParameters) {
         argument = arguments;
         while (argument != NULL) {
@@ -3078,7 +3073,7 @@ void CFunc_ParseFuncDef(Object *func, DeclInfo *definition, TypeClass *scopeObje
         if (cscope_currentclass == NULL)
             CError_FATAL(3466);
         parse_ctor_initializers();
-        fn_00476e70(cscope_currentclass, ctor_initializers);
+        fn_00476e70(cscope_currentclass, ctor_chain);
     }
     CPrep_ResetBufferedTokenPosition();
     if (!(func->qual & Q_ASM)) {
@@ -3107,33 +3102,33 @@ void CFunc_ParseFuncDef(Object *func, DeclInfo *definition, TypeClass *scopeObje
                 parse_statement(&gen);
             }
         }
-        if (data_00587644->type != ST_RETURN && data_00587644->type != ST_GOTO) {
-            previousStatement = data_00587644;
-            statement_sourceoffset = CPrep_UpdateTokenLine(&function_fileinfo);
+        if (curstmt->type != ST_RETURN && curstmt->type != ST_GOTO) {
+            previousStatement = curstmt;
+            sourceoffset = CPrep_UpdateTokenLine(&function_fileinfo);
             returnStatement = (Statement *)lalloc(sizeof(*returnStatement));
             returnStatement->next = NULL;
             returnStatement->type = ST_RETURN;
-            returnStatement->value = current_statement_number;
+            returnStatement->value = curstmtvalue;
             returnStatement->flags = 0;
-            returnStatement->sourceoffset = statement_sourceoffset;
+            returnStatement->sourceoffset = sourceoffset;
             returnStatement->dobjstack = cexcept_dobjstack;
-            data_00587644->next = returnStatement;
-            data_00587644 = returnStatement;
+            curstmt->next = returnStatement;
+            curstmt = returnStatement;
             returnStatement->dobjstack = NULL;
-            data_00587644->expr = NULL;
+            curstmt->expr = NULL;
             if (copts.cplusplus || copts.c9x) {
                 if (memcmp(func->name->name, "main", 5) == 0 &&
                     &TYPE_FUNC(func->type)->functype->type == &stsignedint.type)
-                    data_00587644->expr = intconstnode((Type *)&stsignedint, 0);
+                    curstmt->expr = intconstnode((Type *)&stsignedint, 0);
             }
             if (previousStatement->type == ST_EXPRESSION) {
                 ENode *expression;
                 if ((expression = previousStatement->expr)->type == EFUNCCALL && expression->rtype == &stvoid &&
                     (expression->flags & 2))
-                    data_00587644->flags |= 8;
+                    curstmt->flags |= 8;
             }
         }
-        for (label = clabels; label != NULL; label = label->next) {
+        for (label = Labels; label != NULL; label = label->next) {
             if (label->stmt == NULL)
                 CError_ReportError(ERR_UNDEFINED_LABEL, label->name->name);
         }
@@ -3253,12 +3248,12 @@ void CFunc_GenerateSingleExprFunc(Object *func, ENode *expr)
         node = (Statement *)lalloc(0x1a);
         node->next = NULL;
         node->type = ST_EXPRESSION;
-        node->value = current_statement_number;
+        node->value = curstmtvalue;
         node->flags = 0;
-        node->sourceoffset = statement_sourceoffset;
+        node->sourceoffset = sourceoffset;
         node->dobjstack = cexcept_dobjstack;
-        data_00587644->next = node;
-        data_00587644 = node;
+        curstmt->next = node;
+        curstmt = node;
         node->expr = expr;
         if (cscope_currentclass != NULL && cscope_currentclass->sominfo != NULL)
             CSOM_GenerateSomselfAssignment(cscope_currentclass, &stmt);

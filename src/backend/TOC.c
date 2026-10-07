@@ -131,7 +131,7 @@ void fn_0049d420(Statement *statements)
     if (statement != NULL) {
         do {
             unsigned short statementNumber = statement->value;
-            current_statement_number = statementNumber;
+            curstmtvalue = statementNumber;
             if ((statement->flags & 1) != 0) {
                 gRunLevel2Pipeline = 1;
                 data_0058852d = 1;
@@ -1566,7 +1566,7 @@ void fn_0049f4b0(Object *object)
     if (copts.optimizesize != 0)
         weight = 1;
     else
-        weight = current_statement_number;
+        weight = curstmtvalue;
     info->usage += weight;
 
     if ((entry = gTrailingObjectList_005876a0) != NULL) {

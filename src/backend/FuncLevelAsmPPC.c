@@ -195,7 +195,7 @@ void FuncLevelAsmPPC_GenerateFunction(Object *func)
     asm_instruction_count = 0;
     data_00581c58 = NULL;
     assembly_list_tail = &data_00581c58;
-    list = data_00587644;
+    list = curstmt;
     has_dlocal_initialization = 0;
     gHasAltivecFrame = 0;
     data_005884ff = 0;

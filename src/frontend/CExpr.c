@@ -60,7 +60,7 @@ typedef struct _res res;
 
 static __inline CLabel *FindNode(HashNameNode *key)
 {
-    CLabel *p = clabels;
+    CLabel *p = Labels;
     while (p != NULL) {
         if (key == p->name)
             break;
@@ -73,8 +73,8 @@ static __inline CLabel *AddNode(HashNameNode *key)
 {
     CLabel *p = newlabel();
     p->name = key;
-    p->next = clabels;
-    clabels = p;
+    p->next = Labels;
+    Labels = p;
     return p;
 }
 
@@ -3503,8 +3503,8 @@ ENode *unary_expression(void)
                 if (result->data.label == NULL) {
                     result->data.label = newlabel();
                     result->data.label->name = data_00587fa0;
-                    result->data.label->next = clabels;
-                    clabels = result->data.label;
+                    result->data.label->next = Labels;
+                    Labels = result->data.label;
                 }
                 tk = CPrepTokenizer_GetNextToken();
                 return result;

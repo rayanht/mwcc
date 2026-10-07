@@ -56,7 +56,7 @@ static void CheckStmts(Statement *p);
 
 static inline void set_statement_location(Statement *statement)
 {
-    current_statement_number = (UInt16)statement->value; /* set_statement_location: unsigned source-location value */
+    curstmtvalue = (UInt16)statement->value; /* set_statement_location: unsigned source-location value */
 }
 
 static inline void optimize_expression(Statement *statement)
@@ -276,7 +276,7 @@ static inline void RecordObjectUse(Object *object, unsigned char direct_referenc
     if (copts.optimizesize) {
         info->usage++;
     } else {
-        info->usage += current_statement_number;
+        info->usage += curstmtvalue;
     }
     if (direct_reference) {
         info->noregister = 1;
@@ -1559,7 +1559,7 @@ void COptimizer_RecordObjectUse(Object *object, unsigned char direct_reference)
     if (copts.optimizesize) {
         info->usage++;
     } else {
-        info->usage += current_statement_number;
+        info->usage += curstmtvalue;
     }
     if (direct_reference) {
         info->noregister = 1;

@@ -145,8 +145,8 @@ CLabel *IroUtil_NewLabel(void)
     CLabel *node;
     lift_call_0 = newlabel();
     node = lift_call_0;
-    node->next = clabels;
-    clabels = node;
+    node->next = Labels;
+    Labels = node;
     return lift_call_0;
 }
 

@@ -40,7 +40,7 @@ static inline void expectToken(SInt16 tok, SInt16 err)
 
 static __inline CLabel *FindNode(HashNameNode *key)
 {
-    CLabel *p = clabels;
+    CLabel *p = Labels;
     while (p != NULL) {
         if (key == p->name)
             break;
@@ -53,8 +53,8 @@ static __inline CLabel *AddNode(HashNameNode *key)
 {
     CLabel *p = newlabel();
     p->name = key;
-    p->next = clabels;
-    clabels = p;
+    p->next = Labels;
+    Labels = p;
     return p;
 }
 
@@ -93,8 +93,8 @@ CLabel *InlineAsm_CreateLabel(HashNameNode *name)
     CLabel *record;
     record = (CLabel *)newlabel();
     record->name = name;
-    record->next = clabels;
-    clabels = record;
+    record->next = Labels;
+    Labels = record;
     return record;
 }
 
@@ -112,7 +112,7 @@ unsigned char InlineAsm_ResolveOperandName(HashNameNode *name, struct AsmOperand
     operand->label = NULL;
     operand->value = NULL;
     operand->is_register = 0;
-    label = clabels;
+    label = Labels;
     while (label != NULL) {
         if (name == label->name) {
             break;

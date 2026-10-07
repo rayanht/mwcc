@@ -94,7 +94,7 @@ void IroFlowgraph_RebuildSuccPred(void)
     CLabel *target;
     Statement *entryList;
 
-    for (list = clabels; list != NULL; list = list->next)
+    for (list = Labels; list != NULL; list = list->next)
         list->stmt = NULL;
 
     for (scanNode = iro_flowgraph_head; scanNode != NULL; scanNode = scanNode->nextnode) {
@@ -276,7 +276,7 @@ void IRO_BuildflowGraph(IROLinear *source)
     IRONode *block;
     int i;
 
-    for (label = clabels; label != NULL; label = label->next)
+    for (label = Labels; label != NULL; label = label->next)
         label->stmt = NULL;
     iro_node_count = 0;
     iro_flowgraph_head = iroNodeTail = data_00587fac = NULL;
