@@ -172,7 +172,7 @@
     "flags": [
       "-O4,p",
       "-inline",
-      "auto",
+      "on",
       "-sym",
       "on",
       "-Cpp_exceptions",
@@ -180,8 +180,7 @@
     ],
     "include_dirs": [
       "src/backend"
-    ],
-    "status": "NonMatching"
+    ]
   },
   "src/backend/InlineAsmPPC.c": {
     "compiler": "pro53",
@@ -449,8 +448,7 @@
     ],
     "include_dirs": [
       "src/backend"
-    ],
-    "status": "NonMatching"
+    ]
   },
   "src/backend/PCodeUtilities.c": {
     "compiler": "pro53",
@@ -1384,7 +1382,7 @@
     "flags": [
       "-O4,p",
       "-inline",
-      "auto",
+      "auto,deferred",
       "-sym",
       "on",
       "-Cpp_exceptions",
@@ -1392,8 +1390,7 @@
     ],
     "include_dirs": [
       "src/frontend"
-    ],
-    "status": "NonMatching"
+    ]
   },
   "src/frontend/CBrowse.c": {
     "compiler": "pro53",

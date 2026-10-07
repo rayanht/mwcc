@@ -26,6 +26,97 @@
 #include <string.h>
 #include <stdio.h>
 
+/* The condition register bits, and the condition each BO field value tests. */
+static char *data_005621b0[4] = {"lt", "gt", "eq", "un"};
+static char *data_005621e0[31] = {"",   "lgt", "llt", "", "eq", "lge", "lle", "", "gt", "", "", "", "ge", "", "", "",
+                                  "lt", "",    "",    "", "le", "",    "",    "", "ne", "", "", "", "",   "", ""};
+
+static void formatflags(char *buf, UInt32 flags)
+{
+    *buf = 0;
+    if (flags & 1)
+        strcat(buf, "fSpilled");
+    if (flags & 2) {
+        if (*buf)
+            strcat(buf, "|");
+        strcat(buf, "fPushed");
+    }
+    if (flags & 4) {
+        if (*buf)
+            strcat(buf, "|");
+        strcat(buf, "fCoalesced");
+    }
+    if (flags & 8) {
+        if (*buf)
+            strcat(buf, "|");
+        strcat(buf, "fCoalescedInto");
+    }
+    if (flags & 0x10) {
+        if (*buf)
+            strcat(buf, "|");
+        strcat(buf, "fPairHigh");
+    }
+    if (flags & 0x20) {
+        if (*buf)
+            strcat(buf, "|");
+        strcat(buf, "fPairLow");
+    }
+    if (!*buf)
+        strcpy(buf, "no_flags");
+}
+
+static void pclistonoff(int flag)
+{
+    if (flag)
+        fprintf(stdout, "On\n");
+    else
+        fprintf(stdout, "Off\n");
+}
+
+static void pclistblock(PCodeBlock *block)
+{
+    PCodeInstruction *instr;
+    PCodeBlockLink *link;
+
+    fprintf(stdout, ":SRC_LINE=%ld:{%4.4x}::::::::::::::::::::::::::::::::::::::::LOOPWEIGHT=%ld\n", block->line,
+            block->code_offset, block->execution_weight);
+    fprintf(stdout, "B%ld: ", block->index);
+    fprintf(stdout, "Successors = { ");
+    for (link = block->successors; link; link = link->next)
+        fprintf(stdout, "B%ld ", link);
+    fprintf(stdout, "}  ");
+    fprintf(stdout, "Predecessors = { ");
+    for (link = block->predecessors; link; link = link->next)
+        fprintf(stdout, "B%ld ", link);
+    fprintf(stdout, "}  Labels = { ");
+    fprintf(stdout, "L%ld ", block->labels);
+    fprintf(stdout, "}\n\n");
+    for (instr = block->instructions; instr; instr = instr->next)
+        fprintf(stdout, "    %.8lX  %.8lX %4ld    %-7s%c %s\n", instr, block, block->line, "", ' ', "");
+    fprintf(stdout, "............................................................\n");
+}
+
+static inline void formatdataflowset(char *name, UInt32 *vec, UInt32 size)
+{
+    UInt32 i;
+
+    fprintf(stdout, "%s = {", name);
+    for (i = 0; i < size; i++) {
+        if (i && !(i & 7))
+            fprintf(stdout, "\n\t\t");
+        fprintf(stdout, "B%ld ", vec[i]);
+    }
+    fprintf(stdout, " }\n");
+}
+
+void pclistdataflowanalysis(UInt32 *use, UInt32 *def, UInt32 *in, UInt32 *out, UInt32 size)
+{
+    formatdataflowset("use", use, size);
+    formatdataflowset("def", def, size);
+    formatdataflowset("in ", in, size);
+    formatdataflowset("out", out, size);
+}
+
 void fn_004c4ba0(void)
 {
     return;

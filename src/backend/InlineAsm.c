@@ -46,6 +46,10 @@
 #include <string.h>
 #include <setjmp.h>
 #include <stdio.h>
+
+static char inlineasm_instruction_buffer[1024];
+
+SInt32 data_005652f8 = 1;
 typedef struct _res res;
 char *format_inlineasm_instruction(ENode *info)
 {
@@ -258,6 +262,7 @@ static inline void expectToken(SInt16 tok, SInt16 err)
         CError_ReportError(e);
     }
 }
+
 void InlineAsm_ParseAsmStatement(void)
 {
     short endToken;
@@ -272,6 +277,46 @@ void InlineAsm_ParseAsmStatement(void)
     data_005884fd = 0;
     data_0058850d = 0;
 }
+
+static __inline CLabel *FindNode(HashNameNode *key)
+{
+    CLabel *p = clabels;
+    while (p != NULL) {
+        if (key == p->name)
+            break;
+        p = p->next;
+    }
+    return p;
+}
+
+static __inline CLabel *AddNode(HashNameNode *key)
+{
+    CLabel *p = newlabel();
+    p->name = key;
+    p->next = clabels;
+    clabels = p;
+    return p;
+}
+
+static __inline void FindOrAdd(HashNameNode *key)
+{
+    CLabel *node;
+    if ((node = FindNode(key)) == NULL)
+        node = AddNode(key);
+    else if (node->target.stmt != NULL)
+        CError_ReportError(ERR_LABEL_REDEFINED, key->name);
+    {
+        Statement *entry = CFunc_AppendStatement(2);
+        entry->target.label = node;
+        node->target.stmt = entry;
+    }
+}
+
+void InlineAsm_ParseAsmLines(short value)
+{
+    parse_asm_lines(value, 1);
+}
+
 void parse_asm_lines(volatile SInt16 endToken, int parseOption)
 {
     if (setjmp(inlineAsmJmpBuf) != 0) {
@@ -309,40 +354,6 @@ void parse_asm_lines(volatile SInt16 endToken, int parseOption)
     }
 }
 
-static __inline CLabel *FindNode(HashNameNode *key)
-{
-    CLabel *p = clabels;
-    while (p != NULL) {
-        if (key == p->name)
-            break;
-        p = p->next;
-    }
-    return p;
-}
-
-static __inline CLabel *AddNode(HashNameNode *key)
-{
-    CLabel *p = newlabel();
-    p->name = key;
-    p->next = clabels;
-    clabels = p;
-    return p;
-}
-
-static __inline void FindOrAdd(HashNameNode *key)
-{
-    CLabel *node;
-    if ((node = FindNode(key)) == NULL)
-        node = AddNode(key);
-    else if (node->target.stmt != NULL)
-        CError_ReportError(ERR_LABEL_REDEFINED, key->name);
-    {
-        Statement *entry = CFunc_AppendStatement(2);
-        entry->target.label = node;
-        node->target.stmt = entry;
-    }
-}
-
 void parse_label(void)
 {
     if (data_00587fa0->name[0] == '@') {
@@ -359,6 +370,60 @@ void parse_label(void)
         FindOrAdd(data_00587fa0);
         tk = CPrepTokenizer_GetNextToken();
         tk = CPrepTokenizer_GetNextToken();
+    }
+}
+
+unsigned int scan_expression(void)
+{
+    unsigned int result;
+
+    result = scan_unary_expression();
+    if (GetPrec(tk) != 0) {
+        result = evaluate_binary_expression(result);
+    }
+    return result;
+}
+
+SInt32 evaluate_binary_expression(SInt32 left)
+{
+    SInt32 right;
+    SInt32 res;
+    SInt16 op;
+    SInt16 prec;
+    for (;;) {
+        op = tk;
+        tk = CPrepTokenizer_GetNextToken();
+        right = scan_unary_expression();
+        prec = GetPrec(tk);
+        if (prec == 0) {
+            CInt64 rhs, lhs;
+            lhs.lo = left;
+            lhs.hi = (left < 0) ? -1 : 0;
+            rhs.lo = right;
+            rhs.hi = (right < 0) ? -1 : 0;
+            rhs = CMach_CalcIntDiadic((Type *)&stsignedint, lhs, op, rhs);
+            return rhs.lo;
+        }
+        if (GetPrec(op) >= prec) {
+            CInt64 rhs, lhs;
+            lhs.lo = left;
+            lhs.hi = (left < 0) ? -1 : 0;
+            rhs.lo = right;
+            rhs.hi = (right < 0) ? -1 : 0;
+            rhs = CMach_CalcIntDiadic((Type *)&stsignedint, lhs, op, rhs);
+            left = rhs.lo;
+        } else {
+            CInt64 rhs, lhs;
+            right = evaluate_binary_expression(right);
+            lhs.lo = left;
+            lhs.hi = (left < 0) ? -1 : 0;
+            rhs.lo = right;
+            rhs.hi = (right < 0) ? -1 : 0;
+            rhs = CMach_CalcIntDiadic((Type *)&stsignedint, lhs, op, rhs);
+            res = left = rhs.lo;
+            if (GetPrec(tk) == 0)
+                return res;
+        }
     }
 }
 
@@ -437,6 +502,51 @@ int scan_unary_expression(void)
     return 0;
 }
 
+SInt32 InlineAsm_ParseStructOrClassMemberOffset(Type *obj)
+{
+    SInt16 err;
+    SInt32 found;
+    StructMember *smem;
+    NameSpaceObjectList *list;
+    ObjMemberVar *mvar;
+    SInt32 offset;
+    Type *type;
+    Type *search;
+    TypeClass *tclass;
+
+    tk = CPrepTokenizer_GetNextToken();
+    if (tk != TK_IDENTIFIER) {
+        err = 0x6b;
+        if (DAT_00587f18 != 0)
+            longjmp(data_00583a68, 1);
+        if (tk == TK_EOL || tk == ';')
+            err = 0x70;
+        CError_ReportError(err);
+    }
+    if (obj->type == TYPESTRUCT) {
+        search = obj;
+        smem = ismember(search, data_00587fa0);
+        if (smem == NULL)
+            CError_ReportError(ERR_NOT_STRUCT_UNION_CLASS_MEMBER, data_00587fa0->name);
+        offset = smem->offset;
+        type = smem->type;
+    } else {
+        tclass = (TypeClass *)obj;
+        list = CScope_FindName(tclass->nspace, data_00587fa0);
+        found = 0;
+        if (list != NULL && list->object->otype == OT_MEMBERVAR)
+            found = 1;
+        if ((mvar = found ? (ObjMemberVar *)list->object : NULL) == NULL)
+            CError_ReportError(ERR_NOT_STRUCT_UNION_CLASS_MEMBER, data_00587fa0->name);
+        offset = mvar->offset;
+        type = mvar->type;
+    }
+    tk = CPrepTokenizer_GetNextToken();
+    if (tk == '.' || tk == '[')
+        offset = offset + InlineAsm_ParseMemberArrayOffset(type);
+    return offset;
+}
+
 SInt32 InlineAsm_ParseMemberArrayOffset(Type *type)
 {
     SInt32 sum = 0;
@@ -483,115 +593,6 @@ SInt32 InlineAsm_ParseMemberArrayOffset(Type *type)
         if (tk != '.' && tk != '[')
             return sum;
     }
-}
-
-SInt32 evaluate_binary_expression(SInt32 left)
-{
-    SInt32 right;
-    SInt32 res;
-    SInt16 op;
-    SInt16 prec;
-    for (;;) {
-        op = tk;
-        tk = CPrepTokenizer_GetNextToken();
-        right = scan_unary_expression();
-        prec = GetPrec(tk);
-        if (prec == 0) {
-            CInt64 rhs, lhs;
-            lhs.lo = left;
-            lhs.hi = (left < 0) ? -1 : 0;
-            rhs.lo = right;
-            rhs.hi = (right < 0) ? -1 : 0;
-            rhs = CMach_CalcIntDiadic((Type *)&stsignedint, lhs, op, rhs);
-            return rhs.lo;
-        }
-        if (GetPrec(op) >= prec) {
-            CInt64 rhs, lhs;
-            lhs.lo = left;
-            lhs.hi = (left < 0) ? -1 : 0;
-            rhs.lo = right;
-            rhs.hi = (right < 0) ? -1 : 0;
-            rhs = CMach_CalcIntDiadic((Type *)&stsignedint, lhs, op, rhs);
-            left = rhs.lo;
-        } else {
-            CInt64 rhs, lhs;
-            right = evaluate_binary_expression(right);
-            lhs.lo = left;
-            lhs.hi = (left < 0) ? -1 : 0;
-            rhs.lo = right;
-            rhs.hi = (right < 0) ? -1 : 0;
-            rhs = CMach_CalcIntDiadic((Type *)&stsignedint, lhs, op, rhs);
-            res = left = rhs.lo;
-            if (GetPrec(tk) == 0)
-                return res;
-        }
-    }
-}
-
-void InlineAsm_ParseAsmLines(short value)
-{
-    parse_asm_lines(value, 1);
-}
-
-Boolean InlineAsm_ResolveOperandNameDefault(HashNameNode *name, struct AsmOperand *result)
-{
-    return InlineAsm_ResolveOperandName(name, result, '\0');
-}
-
-unsigned int scan_expression(void)
-{
-    unsigned int result;
-
-    result = scan_unary_expression();
-    if (GetPrec(tk) != 0) {
-        result = evaluate_binary_expression(result);
-    }
-    return result;
-}
-
-SInt32 InlineAsm_ParseStructOrClassMemberOffset(Type *obj)
-{
-    SInt16 err;
-    SInt32 found;
-    StructMember *smem;
-    NameSpaceObjectList *list;
-    ObjMemberVar *mvar;
-    SInt32 offset;
-    Type *type;
-    Type *search;
-    TypeClass *tclass;
-
-    tk = CPrepTokenizer_GetNextToken();
-    if (tk != TK_IDENTIFIER) {
-        err = 0x6b;
-        if (DAT_00587f18 != 0)
-            longjmp(data_00583a68, 1);
-        if (tk == TK_EOL || tk == ';')
-            err = 0x70;
-        CError_ReportError(err);
-    }
-    if (obj->type == TYPESTRUCT) {
-        search = obj;
-        smem = ismember(search, data_00587fa0);
-        if (smem == NULL)
-            CError_ReportError(ERR_NOT_STRUCT_UNION_CLASS_MEMBER, data_00587fa0->name);
-        offset = smem->offset;
-        type = smem->type;
-    } else {
-        tclass = (TypeClass *)obj;
-        list = CScope_FindName(tclass->nspace, data_00587fa0);
-        found = 0;
-        if (list != NULL && list->object->otype == OT_MEMBERVAR)
-            found = 1;
-        if ((mvar = found ? (ObjMemberVar *)list->object : NULL) == NULL)
-            CError_ReportError(ERR_NOT_STRUCT_UNION_CLASS_MEMBER, data_00587fa0->name);
-        offset = mvar->offset;
-        type = mvar->type;
-    }
-    tk = CPrepTokenizer_GetNextToken();
-    if (tk == '.' || tk == '[')
-        offset = offset + InlineAsm_ParseMemberArrayOffset(type);
-    return offset;
 }
 
 SInt32 InlineAsm_ParseMemberOffset(Type *type)
@@ -645,6 +646,11 @@ SInt32 InlineAsm_ParseMemberOffset(Type *type)
     } while (tk == '.');
 
     return offset;
+}
+
+Boolean InlineAsm_ResolveOperandNameDefault(HashNameNode *name, struct AsmOperand *result)
+{
+    return InlineAsm_ResolveOperandName(name, result, '\0');
 }
 
 unsigned char InlineAsm_ResolveOperandName(HashNameNode *name, struct AsmOperand *operand, char allow_kind2)
@@ -716,6 +722,16 @@ unsigned char InlineAsm_ResolveOperandName(HashNameNode *name, struct AsmOperand
     return 0;
 }
 
+CLabel *InlineAsm_CreateLabel(HashNameNode *name)
+{
+    CLabel *record;
+    record = (CLabel *)newlabel();
+    record->name = name;
+    record->next = clabels;
+    clabels = record;
+    return record;
+}
+
 void InlineAsm_Error(short errorCode)
 {
     if (DAT_00587f18 != 0) {
@@ -730,14 +746,4 @@ void InlineAsm_Error(short errorCode)
 void InlineAsm_LongJump(void)
 {
     longjmp(inlineAsmJmpBuf, 1);
-}
-
-CLabel *InlineAsm_CreateLabel(HashNameNode *name)
-{
-    CLabel *record;
-    record = (CLabel *)newlabel();
-    record->name = name;
-    record->next = clabels;
-    clabels = record;
-    return record;
 }

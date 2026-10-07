@@ -16,7 +16,6 @@ union SerializedValue {
 };
 #pragma options align = reset
 extern char *format_inlineasm_instruction(ENode *info);
-extern char inlineasm_instruction_buffer[];
 extern SInt32 evaluate_binary_expression(SInt32 left);
 extern SInt32 InlineAsm_ParseStructOrClassMemberOffset(Type *obj);
 extern SInt32 InlineAsm_ParseMemberOffset(Type *type);
