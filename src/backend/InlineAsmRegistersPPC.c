@@ -448,6 +448,149 @@ static char data_00582410[24];
 static InlineAsmRegisterEntry inlineAsmRegisterEntry;
 static InlineAsmRegisterEntry data_00582434;
 
+static inline Boolean CTemplateNew_ShouldWarnUnsupportedInlineAsmRegister(void)
+{
+    return copts.warn_possunwant;
+}
+
+InlineAsmRegisterEntry *CTemplateNew_GetInlineAsmRegisterEntry(HashNameNode *name)
+{
+    Object *object;
+    TypeStruct *type;
+    int stype;
+    InlineAsmRegisterEntry *entry;
+    struct AsmOperand lookup;
+    char *registerName;
+    if (InlineAsm_ResolveOperandNameDefault(name, &lookup) != 0) {
+        if ((object = lookup.object) != NULL && object->sclass == TK_REGISTER) {
+            type = (TypeStruct *)object->type;
+            registerName = name->name;
+            entry = CTemplateNew_LookupInlineAsmRegister(registerName);
+            if (entry != NULL && entry->object == lookup.object)
+                return entry;
+            if (type->type == TYPEFLOAT)
+                CTemplateNew_InsertRegisterBinding(name->name, 1, 0, lookup.object);
+            else if (type->type == TYPESTRUCT && (stype = type->stype) >= 4 && stype <= 14)
+                CTemplateNew_InsertRegisterBinding(name->name, 9, 0, lookup.object);
+            else
+                CTemplateNew_InsertRegisterBinding(name->name, 0, 0, lookup.object);
+        }
+    }
+    registerName = name->name;
+    return CTemplateNew_LookupInlineAsmRegister(registerName);
+}
+
+struct InlineAsmRegisterEntry *CTemplateNew_LookupInlineAsmRegister(char *registerName)
+{
+    char lowercaseName[43];
+    Boolean badRegisterNumber;
+    SInt32 sprNumber;
+    struct InlineAsmRegisterEntry *unsupportedRegister;
+    struct RegistrationHashEntry *hashEntry;
+    struct InlineAsmRegisterEntry *matchingRegister;
+
+    void *(*lookupBinding)(unsigned int *) = find_register_binding_key;
+
+    matchingRegister = (struct InlineAsmRegisterEntry *)lookupBinding((unsigned int *)registerName);
+    if (matchingRegister)
+        return matchingRegister;
+
+    unsupportedRegister = NULL;
+    if (strlen(registerName) < 40) {
+        CToLowercase(registerName, lowercaseName);
+    } else {
+        return NULL;
+    }
+
+    for (hashEntry = inlineAsmRegisterHashTable[CHash(lowercaseName) & 0x3f]; hashEntry; hashEntry = hashEntry->next) {
+        matchingRegister = (struct InlineAsmRegisterEntry *)&hashEntry->name;
+        if (strcmp(hashEntry->name, lowercaseName) != 0)
+            continue;
+        if (data_00587128 == 0xfffff) {
+            unsigned int requiredProcessors = data_00587128 & 0xfffff;
+            if (requiredProcessors == (requiredProcessors & hashEntry->id))
+                return matchingRegister;
+        } else if (hashEntry->id & data_00587128) {
+            return matchingRegister;
+        }
+        unsupportedRegister = matchingRegister;
+    }
+    if (unsupportedRegister) {
+        if (CTemplateNew_ShouldWarnUnsupportedInlineAsmRegister())
+            PPCError_ReportDiagnostic(117, registerName);
+        return unsupportedRegister;
+    }
+    if (strncmp("spr", lowercaseName, 3) == 0) {
+        ScanDec(lowercaseName + 3, &sprNumber, &badRegisterNumber);
+        if (badRegisterNumber != 0 || sprNumber > 0x400U) {
+            PPCError_ReportError(117, registerName);
+            return NULL;
+        }
+        inlineAsmRegisterEntry.name = NULL;
+        inlineAsmRegisterEntry.kind = 2;
+        inlineAsmRegisterEntry.number = sprNumber;
+        inlineAsmRegisterEntry.object = NULL;
+        if (CTemplateNew_ShouldWarnUnsupportedInlineAsmRegister()) {
+            if (data_00587128 == 0xfffff) {
+                if (((data_00587128 & 0xfffff) & inline_asm_register_masks[sprNumber]) != (data_00587128 & 0xfffff))
+                    PPCError_ReportDiagnostic(117, registerName);
+            } else {
+                if ((data_00587128 & inline_asm_register_masks[sprNumber]) == 0)
+                    PPCError_ReportDiagnostic(117, registerName);
+            }
+        }
+        return &inlineAsmRegisterEntry;
+    }
+    return NULL;
+}
+
+InlineAsmRegisterEntry *fn_004f06d0(char *name)
+{
+    char buf[0x2b];
+    Boolean flag;
+    SInt32 value;
+    struct RegistrationHashEntry *entry;
+    InlineAsmRegisterEntry *rec;
+    InlineAsmRegisterEntry *found;
+
+    if (strlen(name) < 0x28)
+        CToLowercase(name, buf);
+    else
+        return NULL;
+    found = NULL;
+    for (entry = secondary_registration_hash[CHash(buf) & 0x3f]; entry != NULL; entry = entry->next) {
+        rec = (InlineAsmRegisterEntry *)&entry->name;
+        if (strcmp(entry->name, buf) == 0) {
+            if (data_00587128 == 0xfffff) {
+                UInt32 mask = data_00587128 & 0xfffff;
+                if ((entry->id & mask) == mask)
+                    return rec;
+            } else if (entry->id & data_00587128) {
+                return rec;
+            }
+            found = rec;
+        }
+    }
+    if (found != NULL) {
+        if (copts.warn_possunwant)
+            PPCError_ReportDiagnostic(0x75, name);
+        return found;
+    }
+    if (strncmp("dcr", buf, 3) == 0) {
+        ScanDec(buf + 3, &value, &flag);
+        if (flag || (UInt32)value > 0x400) {
+            PPCError_ReportError(0x75, name);
+            return NULL;
+        }
+        data_00582434.name = NULL;
+        data_00582434.kind = 4;
+        data_00582434.number = (SInt16)value;
+        data_00582434.object = 0;
+        return &data_00582434;
+    }
+    return NULL;
+}
+
 void CTemplateNew_InitRegistrationHashTables(void)
 {
     long index;
@@ -564,147 +707,4 @@ void CTemplateNew_InitRegistrationHashTables(void)
         secondaryEntry->next = *secondaryBucket;
         *secondaryBucket = secondaryEntry;
     }
-}
-
-InlineAsmRegisterEntry *fn_004f06d0(char *name)
-{
-    char buf[0x2b];
-    Boolean flag;
-    SInt32 value;
-    struct RegistrationHashEntry *entry;
-    InlineAsmRegisterEntry *rec;
-    InlineAsmRegisterEntry *found;
-
-    if (strlen(name) < 0x28)
-        CToLowercase(name, buf);
-    else
-        return NULL;
-    found = NULL;
-    for (entry = secondary_registration_hash[CHash(buf) & 0x3f]; entry != NULL; entry = entry->next) {
-        rec = (InlineAsmRegisterEntry *)&entry->name;
-        if (strcmp(entry->name, buf) == 0) {
-            if (data_00587128 == 0xfffff) {
-                UInt32 mask = data_00587128 & 0xfffff;
-                if ((entry->id & mask) == mask)
-                    return rec;
-            } else if (entry->id & data_00587128) {
-                return rec;
-            }
-            found = rec;
-        }
-    }
-    if (found != NULL) {
-        if (copts.warn_possunwant)
-            PPCError_ReportDiagnostic(0x75, name);
-        return found;
-    }
-    if (strncmp("dcr", buf, 3) == 0) {
-        ScanDec(buf + 3, &value, &flag);
-        if (flag || (UInt32)value > 0x400) {
-            PPCError_ReportError(0x75, name);
-            return NULL;
-        }
-        data_00582434.name = NULL;
-        data_00582434.kind = 4;
-        data_00582434.number = (SInt16)value;
-        data_00582434.object = 0;
-        return &data_00582434;
-    }
-    return NULL;
-}
-
-static inline Boolean CTemplateNew_ShouldWarnUnsupportedInlineAsmRegister(void)
-{
-    return copts.warn_possunwant;
-}
-
-struct InlineAsmRegisterEntry *CTemplateNew_LookupInlineAsmRegister(char *registerName)
-{
-    char lowercaseName[43];
-    Boolean badRegisterNumber;
-    SInt32 sprNumber;
-    struct InlineAsmRegisterEntry *unsupportedRegister;
-    struct RegistrationHashEntry *hashEntry;
-    struct InlineAsmRegisterEntry *matchingRegister;
-
-    void *(*lookupBinding)(unsigned int *) = find_register_binding_key;
-
-    matchingRegister = (struct InlineAsmRegisterEntry *)lookupBinding((unsigned int *)registerName);
-    if (matchingRegister)
-        return matchingRegister;
-
-    unsupportedRegister = NULL;
-    if (strlen(registerName) < 40) {
-        CToLowercase(registerName, lowercaseName);
-    } else {
-        return NULL;
-    }
-
-    for (hashEntry = inlineAsmRegisterHashTable[CHash(lowercaseName) & 0x3f]; hashEntry; hashEntry = hashEntry->next) {
-        matchingRegister = (struct InlineAsmRegisterEntry *)&hashEntry->name;
-        if (strcmp(hashEntry->name, lowercaseName) != 0)
-            continue;
-        if (data_00587128 == 0xfffff) {
-            unsigned int requiredProcessors = data_00587128 & 0xfffff;
-            if (requiredProcessors == (requiredProcessors & hashEntry->id))
-                return matchingRegister;
-        } else if (hashEntry->id & data_00587128) {
-            return matchingRegister;
-        }
-        unsupportedRegister = matchingRegister;
-    }
-    if (unsupportedRegister) {
-        if (CTemplateNew_ShouldWarnUnsupportedInlineAsmRegister())
-            PPCError_ReportDiagnostic(117, registerName);
-        return unsupportedRegister;
-    }
-    if (strncmp("spr", lowercaseName, 3) == 0) {
-        ScanDec(lowercaseName + 3, &sprNumber, &badRegisterNumber);
-        if (badRegisterNumber != 0 || sprNumber > 0x400U) {
-            PPCError_ReportError(117, registerName);
-            return NULL;
-        }
-        inlineAsmRegisterEntry.name = NULL;
-        inlineAsmRegisterEntry.kind = 2;
-        inlineAsmRegisterEntry.number = sprNumber;
-        inlineAsmRegisterEntry.object = NULL;
-        if (CTemplateNew_ShouldWarnUnsupportedInlineAsmRegister()) {
-            if (data_00587128 == 0xfffff) {
-                if (((data_00587128 & 0xfffff) & inline_asm_register_masks[sprNumber]) != (data_00587128 & 0xfffff))
-                    PPCError_ReportDiagnostic(117, registerName);
-            } else {
-                if ((data_00587128 & inline_asm_register_masks[sprNumber]) == 0)
-                    PPCError_ReportDiagnostic(117, registerName);
-            }
-        }
-        return &inlineAsmRegisterEntry;
-    }
-    return NULL;
-}
-
-InlineAsmRegisterEntry *CTemplateNew_GetInlineAsmRegisterEntry(HashNameNode *name)
-{
-    Object *object;
-    TypeStruct *type;
-    int stype;
-    InlineAsmRegisterEntry *entry;
-    struct AsmOperand lookup;
-    char *registerName;
-    if (InlineAsm_ResolveOperandNameDefault(name, &lookup) != 0) {
-        if ((object = lookup.object) != NULL && object->sclass == TK_REGISTER) {
-            type = (TypeStruct *)object->type;
-            registerName = name->name;
-            entry = CTemplateNew_LookupInlineAsmRegister(registerName);
-            if (entry != NULL && entry->object == lookup.object)
-                return entry;
-            if (type->type == TYPEFLOAT)
-                CTemplateNew_InsertRegisterBinding(name->name, 1, 0, lookup.object);
-            else if (type->type == TYPESTRUCT && (stype = type->stype) >= 4 && stype <= 14)
-                CTemplateNew_InsertRegisterBinding(name->name, 9, 0, lookup.object);
-            else
-                CTemplateNew_InsertRegisterBinding(name->name, 0, 0, lookup.object);
-        }
-    }
-    registerName = name->name;
-    return CTemplateNew_LookupInlineAsmRegister(registerName);
 }

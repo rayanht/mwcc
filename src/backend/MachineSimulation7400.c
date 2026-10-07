@@ -519,16 +519,6 @@ static unsigned int pipeline_index;
 static SInt32 simulationWriteIndex;
 static CompletionEntry instruction_queue[8];
 
-int fn_0052f370(PCodeInstruction *instruction)
-{
-    return DAT_00577660[instruction->opcode].kind == '\n';
-}
-
-int lookup_instruction_opcode_entry(PCodeInstruction *instruction)
-{
-    return DAT_00577660[instruction->opcode].opcodeEntryValue;
-}
-
 static void Advance(PCodeInstruction *o, PipelineStage *next, const unsigned char *tab)
 {
     int v;
@@ -536,6 +526,133 @@ static void Advance(PCodeInstruction *o, PipelineStage *next, const unsigned cha
     v = (int)(char)tab[o->opcode * 7];
     next->instr = saved;
     next->remaining = v;
+}
+
+int get_adjusted_opcode_table_value(PCodeInstruction *record)
+{
+    int result;
+
+    result = (SInt8)DAT_00577660[record->opcode].baseLatency;
+    if ((record->flags & fRecordBit) != 0) {
+        result = result + 2;
+    }
+    if ((record->opcode == PC_LMW) || (record->opcode == PC_STMW)) {
+        result = result + (record->operand_count - 2);
+    }
+    return result;
+}
+
+void reset_pipeline_state(void)
+{
+    int slot;
+
+    for (slot = 0; slot < 18; ++slot) {
+        (&pipeline_slots)[slot].instr = NULL;
+    }
+    DAT_00582f98 = 8;
+    queued_instruction_count = 0;
+    pipeline_index = 0;
+    simulationWriteIndex = 0;
+    instruction_queue[0].instr = NULL;
+    instruction_queue[1].instr = NULL;
+    instruction_queue[2].instr = NULL;
+    instruction_queue[3].instr = NULL;
+    instruction_queue[4].instr = NULL;
+    instruction_queue[5].instr = NULL;
+    instruction_queue[6].instr = NULL;
+    instruction_queue[7].instr = NULL;
+    pipelineCompletedInstruction = NULL;
+    pipeline_completed_instruction = NULL;
+}
+
+int can_issue_instruction_in_pipeline_slots(PCodeInstruction *node)
+{
+    int primaryMissing;
+    PCodeInstruction *fourth;
+    PCodeInstruction *first;
+    unsigned firstAbsent;
+    int alternateMissing;
+    PCodeInstruction *second;
+    int secondMissing, thirdMissing;
+    PCodeInstruction *primary;
+    PCodeInstruction *third;
+    PCodeInstruction *other;
+    int fourthMissing;
+    int kind, firstMissing;
+
+    if (DAT_00582f98 == 0)
+        return 0;
+    kind = DAT_00577660[node->opcode].kind;
+    if (kind == 2) {
+        PCodeInstruction *alternate;
+        firstAbsent = firstMissing = !(first = data_00582f08.instr);
+        alternateMissing = !(alternate = data_00582f10.instr);
+        if (!firstMissing) {
+            if (!alternateMissing)
+                return 0;
+        }
+        if (firstAbsent && alternateMissing)
+            return 1;
+        if (firstAbsent)
+            first = alternate;
+        if (Scheduler_ReturnZero(node, first, 0) != 0)
+            return 0;
+        if (Scheduler_ReturnZero(node, pipelineCompletedInstruction, 0) != 0)
+            return 0;
+        if (Scheduler_ReturnZero(node, pipeline_completed_instruction, 0) != 0)
+            return 0;
+    } else if (kind == 14 || kind == 9 || kind == 10 || kind == 11) {
+        primaryMissing = !(primary = data_00582f50.instr);
+        secondMissing = !(second = data_00582f70.instr);
+        thirdMissing = !(third = data_00582f58.instr);
+        fourthMissing = !(fourth = data_00582f48.instr);
+        if (kind == 10) {
+            if (!primaryMissing)
+                return 0;
+            if (secondMissing) {
+                if (!thirdMissing)
+                    second = third;
+                else if (!fourthMissing)
+                    second = fourth;
+                else
+                    second = NULL;
+            }
+            if (Scheduler_ReturnZero(node, second, 9) != 0)
+                return 0;
+        } else {
+            if (!secondMissing || !thirdMissing || !fourthMissing)
+                return 0;
+            if (!primaryMissing && Scheduler_ReturnZero(node, primary, 9) != 0)
+                return 0;
+        }
+    } else if ((&pipeline_slots)[kind].instr != NULL)
+        return 0;
+    if ((node->flags & fIsWrite) != 0) {
+        other = data_00582f20.instr;
+        if (other != NULL && (other->flags & fIsWrite) != 0)
+            return 0;
+    }
+    return 1;
+}
+
+void queue_instruction(PCodeInstruction *obj)
+{ /* signature unknown: cdecl, arguments at [esp+4], [esp+8], ... */
+    SInt32 t;
+    SInt32 c;
+
+    t = DAT_00577660[obj->opcode].kind;
+    c = DAT_00577660[obj->opcode].cost;
+
+    queued_instruction_count++;
+    DAT_00582f98--;
+    instruction_queue[simulationWriteIndex].instr = obj;
+    instruction_queue[simulationWriteIndex].completed = 0;
+    simulationWriteIndex = (simulationWriteIndex + 1) & 7;
+    if (t == 2 && data_00582f08.instr == NULL) {
+        t = 1;
+    }
+    (&pipeline_slots)[t].instr = obj;
+    (&pipeline_slots)[t].remaining = c;
 }
 
 void advance_pipeline(void)
@@ -719,129 +836,12 @@ void advance_pipeline(void)
     }
 }
 
-void queue_instruction(PCodeInstruction *obj)
-{ /* signature unknown: cdecl, arguments at [esp+4], [esp+8], ... */
-    SInt32 t;
-    SInt32 c;
-
-    t = DAT_00577660[obj->opcode].kind;
-    c = DAT_00577660[obj->opcode].cost;
-
-    queued_instruction_count++;
-    DAT_00582f98--;
-    instruction_queue[simulationWriteIndex].instr = obj;
-    instruction_queue[simulationWriteIndex].completed = 0;
-    simulationWriteIndex = (simulationWriteIndex + 1) & 7;
-    if (t == 2 && data_00582f08.instr == NULL) {
-        t = 1;
-    }
-    (&pipeline_slots)[t].instr = obj;
-    (&pipeline_slots)[t].remaining = c;
+int lookup_instruction_opcode_entry(PCodeInstruction *instruction)
+{
+    return DAT_00577660[instruction->opcode].opcodeEntryValue;
 }
 
-int can_issue_instruction_in_pipeline_slots(PCodeInstruction *node)
+int fn_0052f370(PCodeInstruction *instruction)
 {
-    int primaryMissing;
-    PCodeInstruction *fourth;
-    PCodeInstruction *first;
-    unsigned firstAbsent;
-    int alternateMissing;
-    PCodeInstruction *second;
-    int secondMissing, thirdMissing;
-    PCodeInstruction *primary;
-    PCodeInstruction *third;
-    PCodeInstruction *other;
-    int fourthMissing;
-    int kind, firstMissing;
-
-    if (DAT_00582f98 == 0)
-        return 0;
-    kind = DAT_00577660[node->opcode].kind;
-    if (kind == 2) {
-        PCodeInstruction *alternate;
-        firstAbsent = firstMissing = !(first = data_00582f08.instr);
-        alternateMissing = !(alternate = data_00582f10.instr);
-        if (!firstMissing) {
-            if (!alternateMissing)
-                return 0;
-        }
-        if (firstAbsent && alternateMissing)
-            return 1;
-        if (firstAbsent)
-            first = alternate;
-        if (Scheduler_ReturnZero(node, first, 0) != 0)
-            return 0;
-        if (Scheduler_ReturnZero(node, pipelineCompletedInstruction, 0) != 0)
-            return 0;
-        if (Scheduler_ReturnZero(node, pipeline_completed_instruction, 0) != 0)
-            return 0;
-    } else if (kind == 14 || kind == 9 || kind == 10 || kind == 11) {
-        primaryMissing = !(primary = data_00582f50.instr);
-        secondMissing = !(second = data_00582f70.instr);
-        thirdMissing = !(third = data_00582f58.instr);
-        fourthMissing = !(fourth = data_00582f48.instr);
-        if (kind == 10) {
-            if (!primaryMissing)
-                return 0;
-            if (secondMissing) {
-                if (!thirdMissing)
-                    second = third;
-                else if (!fourthMissing)
-                    second = fourth;
-                else
-                    second = NULL;
-            }
-            if (Scheduler_ReturnZero(node, second, 9) != 0)
-                return 0;
-        } else {
-            if (!secondMissing || !thirdMissing || !fourthMissing)
-                return 0;
-            if (!primaryMissing && Scheduler_ReturnZero(node, primary, 9) != 0)
-                return 0;
-        }
-    } else if ((&pipeline_slots)[kind].instr != NULL)
-        return 0;
-    if ((node->flags & fIsWrite) != 0) {
-        other = data_00582f20.instr;
-        if (other != NULL && (other->flags & fIsWrite) != 0)
-            return 0;
-    }
-    return 1;
-}
-
-void reset_pipeline_state(void)
-{
-    int slot;
-
-    for (slot = 0; slot < 18; ++slot) {
-        (&pipeline_slots)[slot].instr = NULL;
-    }
-    DAT_00582f98 = 8;
-    queued_instruction_count = 0;
-    pipeline_index = 0;
-    simulationWriteIndex = 0;
-    instruction_queue[0].instr = NULL;
-    instruction_queue[1].instr = NULL;
-    instruction_queue[2].instr = NULL;
-    instruction_queue[3].instr = NULL;
-    instruction_queue[4].instr = NULL;
-    instruction_queue[5].instr = NULL;
-    instruction_queue[6].instr = NULL;
-    instruction_queue[7].instr = NULL;
-    pipelineCompletedInstruction = NULL;
-    pipeline_completed_instruction = NULL;
-}
-
-int get_adjusted_opcode_table_value(PCodeInstruction *record)
-{
-    int result;
-
-    result = (SInt8)DAT_00577660[record->opcode].baseLatency;
-    if ((record->flags & fRecordBit) != 0) {
-        result = result + 2;
-    }
-    if ((record->opcode == PC_LMW) || (record->opcode == PC_STMW)) {
-        result = result + (record->operand_count - 2);
-    }
-    return result;
+    return DAT_00577660[instruction->opcode].kind == '\n';
 }

@@ -10,11 +10,6 @@
 
 static SInt16 data_0057f6a8;
 
-void fn_0042c0c0(void)
-{
-    return;
-}
-
 static __inline void SetProcessor(short processor)
 {
     copts.processor = processor;
@@ -64,6 +59,11 @@ static inline void SetVRSave(Boolean enabled)
         copts.altivec_vrsave = 1;
     else
         copts.altivec_vrsave = 0;
+}
+
+void fn_0042c910(void)
+{
+    return;
 }
 
 void TargetPanels_eabi_ppc_LoadCompilerOptions(void)
@@ -437,7 +437,7 @@ void TargetPanels_eabi_ppc_LoadCompilerOptions(void)
     copts.unroll_factor_limit = 10;
 }
 
-void fn_0042c910(void)
+void fn_0042c0c0(void)
 {
     return;
 }

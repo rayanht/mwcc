@@ -42,54 +42,6 @@
 #include <string.h>
 #include <stdio.h>
 
-ENode *CObjCModern_MakeDeallocMessage(TypeClass *type, ENode *object)
-{
-    MessageArgument *record;
-
-    record = (MessageArgument *)CompilerTools_AllocatePool(sizeof(MessageArgument));
-    memclrw(record, sizeof(MessageArgument));
-    record->name = GetHashNameNodeExport("dealloc");
-    return CObjC_MakeMessageSend(object, type, record, NULL, 0, '\0');
-}
-
-ENode *CObjCModern_CreateAllocMessage(TypeClass *object)
-{
-    ENode *result;
-    struct MessageArgument *name;
-    name = (struct MessageArgument *)CompilerTools_AllocatePool(12U);
-    memclrw(name, 12U);
-    name->name = GetHashNameNodeExport("alloc");
-    result = create_objectrefnode(object->objcinfo->classobject);
-    return CObjC_MakeMessageSend(result, object, name, NULL, 1, 0);
-}
-
-ENode *CObjCModern_TryParseMethodCall(TypeClass *a, ENode *b)
-{
-    SInt32 state;
-    HashNameNode *name;
-
-    CPrep_GetBufferedTokenPosition(&state);
-    tk = CPrepTokenizer_GetNextToken();
-    CObjC_ConvertKeywordToIdentifier();
-    if (tk == TK_IDENTIFIER) {
-        if (!strcmp(data_00587fa0->name, "super")) {
-            if (CPrepTokenizer_GetNextToken() == 0x174) {
-                tk = CPrepTokenizer_GetNextToken();
-                CObjC_ConvertKeywordToIdentifier();
-                name = data_00587fa0;
-                if (tk == TK_IDENTIFIER && CPrepTokenizer_GetNextToken() == '(')
-                    return CObjCModern_0050a000(a, b, name, 1);
-            }
-        } else {
-            name = data_00587fa0;
-            if (CPrepTokenizer_GetNextToken() == '(')
-                return CObjCModern_0050a000(a, b, name, 0);
-        }
-    }
-    CPrep_SetBufferedTokenPosition(&state);
-    return NULL;
-}
-
 ENode *CObjCModern_0050a000(TypeClass *context, ENode *receiver, HashNameNode *name, char option)
 {
     MessageArgument *args;
@@ -140,4 +92,52 @@ ENode *CObjCModern_0050a000(TypeClass *context, ENode *receiver, HashNameNode *n
     result = CObjC_MakeMessageSend(receiver, context, args, extra, 1, option);
     tk = CPrepTokenizer_GetNextToken();
     return result;
+}
+
+ENode *CObjCModern_TryParseMethodCall(TypeClass *a, ENode *b)
+{
+    SInt32 state;
+    HashNameNode *name;
+
+    CPrep_GetBufferedTokenPosition(&state);
+    tk = CPrepTokenizer_GetNextToken();
+    CObjC_ConvertKeywordToIdentifier();
+    if (tk == TK_IDENTIFIER) {
+        if (!strcmp(data_00587fa0->name, "super")) {
+            if (CPrepTokenizer_GetNextToken() == 0x174) {
+                tk = CPrepTokenizer_GetNextToken();
+                CObjC_ConvertKeywordToIdentifier();
+                name = data_00587fa0;
+                if (tk == TK_IDENTIFIER && CPrepTokenizer_GetNextToken() == '(')
+                    return CObjCModern_0050a000(a, b, name, 1);
+            }
+        } else {
+            name = data_00587fa0;
+            if (CPrepTokenizer_GetNextToken() == '(')
+                return CObjCModern_0050a000(a, b, name, 0);
+        }
+    }
+    CPrep_SetBufferedTokenPosition(&state);
+    return NULL;
+}
+
+ENode *CObjCModern_CreateAllocMessage(TypeClass *object)
+{
+    ENode *result;
+    struct MessageArgument *name;
+    name = (struct MessageArgument *)CompilerTools_AllocatePool(12U);
+    memclrw(name, 12U);
+    name->name = GetHashNameNodeExport("alloc");
+    result = create_objectrefnode(object->objcinfo->classobject);
+    return CObjC_MakeMessageSend(result, object, name, NULL, 1, 0);
+}
+
+ENode *CObjCModern_MakeDeallocMessage(TypeClass *type, ENode *object)
+{
+    MessageArgument *record;
+
+    record = (MessageArgument *)CompilerTools_AllocatePool(sizeof(MessageArgument));
+    memclrw(record, sizeof(MessageArgument));
+    record->name = GetHashNameNodeExport("dealloc");
+    return CObjC_MakeMessageSend(object, type, record, NULL, 0, '\0');
 }

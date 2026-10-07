@@ -68,6 +68,120 @@ static inline void append_assembly(ParsedAsmInstruction *q, PCodeBlock *block)
     block->flags |= 0x20;
 }
 
+void FuncLevelAsmPPC_AllocateLocals(void)
+{
+    Object *obj;
+    Type *type;
+    ObjectList *local;
+    SInt32 reg;
+    VarInfo *info;
+
+    for (local = locals; local != NULL; local = local->next) {
+        info = CPrep_AllocateVarInfo();
+        local->object->u.var.info = info;
+        local->object->flags |= 1;
+        info->used = 1;
+    }
+
+    for (local = locals; local != NULL; local = local->next) {
+        obj = local->object;
+        type = obj->type;
+        if (obj->sclass != TK_REGISTER)
+            continue;
+        {
+            UInt8 use_gpr;
+            UInt8 typecode;
+            SInt32 subtype;
+            if (data_00588521 && !DAT_005884f4)
+                CError_ReportError(ERR_COULD_NOT_ASSIGNED_REGISTER, obj->name->name);
+
+            if ((((typecode = type->type) == TYPEINT || typecode == TYPEENUM) && type->size == 8) ||
+                ((use_gpr = copts.operandsDebug) && typecode == TYPEFLOAT && type->size != 4)) {
+                if (gAvailableSavedGPRs < 2)
+                    CError_ReportError(ERR_COULD_NOT_ASSIGNED_REGISTER, obj->name->name);
+                Registers_AllocateGPRPair(obj);
+                if (Registers_GetInfo(obj))
+                    reg = Registers_GetInfo(obj)->reg;
+                else
+                    reg = 0;
+                if (Registers_GetInfo(obj))
+                    Registers_GetInfo(obj);
+                CTemplateNew_InsertRegisterBinding(obj->name->name, 0, reg, obj);
+            } else if (typecode == TYPEINT || typecode == TYPEENUM || typecode == TYPEPOINTER ||
+                       (typecode == TYPEMEMBERPOINTER && type->size == 4) ||
+                       (use_gpr && typecode == TYPEFLOAT && type->size == 4)) {
+                if (gAvailableSavedGPRs == 0)
+                    CError_ReportError(ERR_COULD_NOT_ASSIGNED_REGISTER, obj->name->name);
+                Registers_AllocateGPR(obj);
+                if (Registers_GetInfo(obj))
+                    reg = Registers_GetInfo(obj)->reg;
+                else
+                    reg = 0;
+                CTemplateNew_InsertRegisterBinding(obj->name->name, 0, reg, obj);
+            } else if (typecode == TYPEFLOAT) {
+                if (gAvailableSavedFPRs == 0)
+                    CError_ReportError(ERR_COULD_NOT_ASSIGNED_REGISTER, obj->name->name);
+                Registers_AllocateFPR(obj);
+                if (Registers_GetInfo(obj))
+                    reg = Registers_GetInfo(obj)->reg;
+                else
+                    reg = 0;
+                CTemplateNew_InsertRegisterBinding(obj->name->name, 1, reg, obj);
+            } else if (typecode == TYPESTRUCT && (subtype = TYPE_STRUCT(type)->stype) >= 4 && subtype <= 0xe) {
+                if (gAvailableSavedVRs == 0)
+                    CError_ReportError(ERR_COULD_NOT_ASSIGNED_REGISTER, obj->name->name);
+                Registers_AllocateVR(obj);
+                if (Registers_GetInfo(obj))
+                    reg = Registers_GetInfo(obj)->reg;
+                else
+                    reg = 0;
+                CTemplateNew_InsertRegisterBinding(obj->name->name, 9, reg, obj);
+            } else {
+                CError_ReportError(ERR_COULD_NOT_ASSIGNED_REGISTER, obj->name->name);
+            }
+        }
+    }
+
+    for (local = locals; local != NULL; local = local->next) {
+        obj = local->object;
+        if (Registers_GetInfo(obj))
+            reg = Registers_GetInfo(obj)->reg;
+        else
+            reg = 0;
+        if (reg == 0)
+            StackFrameEABI_AllocateObjectSlot(obj);
+    }
+}
+
+void fn_004e6e30(void)
+{
+    unsigned char savedFlag;
+    int parseResult;
+    data_005884fd = 1;
+    savedFlag = data_0058850d;
+    data_0058850d = 1;
+    parseResult = _Setjmp(inlineAsmJmpBuf);
+    if (parseResult == 0) {
+        while (tk == TK_IDENTIFIER && (parseResult = InlineAsmPPC_ClassifyIdentifier('\x01')) != 0) {
+            InlineAsmPPC_ParseDirective(parseResult);
+            if ((tk == ';') || (tk == TK_EOL)) {
+                CPrep_ResetBufferedTokenPosition();
+                tk = CPrepTokenizer_GetNextToken();
+            } else {
+                InlineAsm_Error(0x71);
+            }
+            if (parseResult == 2)
+                break;
+            if (parseResult == 3) {
+                DAT_005884f4 = 1;
+                break;
+            }
+        }
+    }
+    data_005884fd = 0;
+    data_0058850d = savedFlag;
+}
+
 void FuncLevelAsmPPC_GenerateFunction(Object *func)
 {
     Statement *list;
@@ -270,118 +384,4 @@ void FuncLevelAsmPPC_GenerateFunction(Object *func)
     if (copts.debug_listing != 0)
         CodeGen_DumpPCode_004c4bd0(COptimizer_GetFunctionObject(func)->name, "[FUNCTION-LEVEL ASM] FINAL CODE");
     CFunc_WarnUnused();
-}
-
-void fn_004e6e30(void)
-{
-    unsigned char savedFlag;
-    int parseResult;
-    data_005884fd = 1;
-    savedFlag = data_0058850d;
-    data_0058850d = 1;
-    parseResult = _Setjmp(inlineAsmJmpBuf);
-    if (parseResult == 0) {
-        while (tk == TK_IDENTIFIER && (parseResult = InlineAsmPPC_ClassifyIdentifier('\x01')) != 0) {
-            InlineAsmPPC_ParseDirective(parseResult);
-            if ((tk == ';') || (tk == TK_EOL)) {
-                CPrep_ResetBufferedTokenPosition();
-                tk = CPrepTokenizer_GetNextToken();
-            } else {
-                InlineAsm_Error(0x71);
-            }
-            if (parseResult == 2)
-                break;
-            if (parseResult == 3) {
-                DAT_005884f4 = 1;
-                break;
-            }
-        }
-    }
-    data_005884fd = 0;
-    data_0058850d = savedFlag;
-}
-
-void FuncLevelAsmPPC_AllocateLocals(void)
-{
-    Object *obj;
-    Type *type;
-    ObjectList *local;
-    SInt32 reg;
-    VarInfo *info;
-
-    for (local = locals; local != NULL; local = local->next) {
-        info = CPrep_AllocateVarInfo();
-        local->object->u.var.info = info;
-        local->object->flags |= 1;
-        info->used = 1;
-    }
-
-    for (local = locals; local != NULL; local = local->next) {
-        obj = local->object;
-        type = obj->type;
-        if (obj->sclass != TK_REGISTER)
-            continue;
-        {
-            UInt8 use_gpr;
-            UInt8 typecode;
-            SInt32 subtype;
-            if (data_00588521 && !DAT_005884f4)
-                CError_ReportError(ERR_COULD_NOT_ASSIGNED_REGISTER, obj->name->name);
-
-            if ((((typecode = type->type) == TYPEINT || typecode == TYPEENUM) && type->size == 8) ||
-                ((use_gpr = copts.operandsDebug) && typecode == TYPEFLOAT && type->size != 4)) {
-                if (gAvailableSavedGPRs < 2)
-                    CError_ReportError(ERR_COULD_NOT_ASSIGNED_REGISTER, obj->name->name);
-                Registers_AllocateGPRPair(obj);
-                if (Registers_GetInfo(obj))
-                    reg = Registers_GetInfo(obj)->reg;
-                else
-                    reg = 0;
-                if (Registers_GetInfo(obj))
-                    Registers_GetInfo(obj);
-                CTemplateNew_InsertRegisterBinding(obj->name->name, 0, reg, obj);
-            } else if (typecode == TYPEINT || typecode == TYPEENUM || typecode == TYPEPOINTER ||
-                       (typecode == TYPEMEMBERPOINTER && type->size == 4) ||
-                       (use_gpr && typecode == TYPEFLOAT && type->size == 4)) {
-                if (gAvailableSavedGPRs == 0)
-                    CError_ReportError(ERR_COULD_NOT_ASSIGNED_REGISTER, obj->name->name);
-                Registers_AllocateGPR(obj);
-                if (Registers_GetInfo(obj))
-                    reg = Registers_GetInfo(obj)->reg;
-                else
-                    reg = 0;
-                CTemplateNew_InsertRegisterBinding(obj->name->name, 0, reg, obj);
-            } else if (typecode == TYPEFLOAT) {
-                if (gAvailableSavedFPRs == 0)
-                    CError_ReportError(ERR_COULD_NOT_ASSIGNED_REGISTER, obj->name->name);
-                Registers_AllocateFPR(obj);
-                if (Registers_GetInfo(obj))
-                    reg = Registers_GetInfo(obj)->reg;
-                else
-                    reg = 0;
-                CTemplateNew_InsertRegisterBinding(obj->name->name, 1, reg, obj);
-            } else if (typecode == TYPESTRUCT && (subtype = TYPE_STRUCT(type)->stype) >= 4 && subtype <= 0xe) {
-                if (gAvailableSavedVRs == 0)
-                    CError_ReportError(ERR_COULD_NOT_ASSIGNED_REGISTER, obj->name->name);
-                Registers_AllocateVR(obj);
-                if (Registers_GetInfo(obj))
-                    reg = Registers_GetInfo(obj)->reg;
-                else
-                    reg = 0;
-                CTemplateNew_InsertRegisterBinding(obj->name->name, 9, reg, obj);
-            } else {
-                CError_ReportError(ERR_COULD_NOT_ASSIGNED_REGISTER, obj->name->name);
-            }
-        }
-    }
-
-    for (local = locals; local != NULL; local = local->next) {
-        obj = local->object;
-        if (Registers_GetInfo(obj))
-            reg = Registers_GetInfo(obj)->reg;
-        else
-            reg = 0;
-        if (reg == 0)
-            StackFrameEABI_AllocateObjectSlot(obj);
-    }
 }

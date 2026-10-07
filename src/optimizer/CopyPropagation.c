@@ -47,80 +47,6 @@ static inline SInt32 CanPropagateCopy(SInt32 copyIndex, CodeMotionListNode *useN
     return 1;
 }
 
-void COpt_CopyPropagation(SInt32 mode)
-{
-    int blockIndex;
-    struct CopyPropagationBitSets *block;
-    SInt32 copyIndex;
-    SInt32 propagate;
-
-    gCopyPropagationChanged = 0;
-    copy_propagation_mode = mode;
-    CopyPropagation_CountBlockCopies();
-    if (copyCount > 0) {
-        COpt_SetLoopCodeMotionMode(0);
-        CopyPropagation_BuildCodeMotionRecords();
-        copyPropagationBitSets = CompilerTools_AllocatePoolMemory(gPCodeBlockCount * sizeof *block);
-        block = copyPropagationBitSets;
-        for (blockIndex = 0; blockIndex < gPCodeBlockCount; blockIndex++) {
-            block->gen = CompilerTools_AllocatePoolMemory(((copyCount + 31) >> 5) * sizeof *block->gen);
-            block->kill = CompilerTools_AllocatePoolMemory(((copyCount + 31) >> 5) * sizeof *block->kill);
-            block->out = CompilerTools_AllocatePoolMemory(((copyCount + 31) >> 5) * sizeof *block->out);
-            block->in = CompilerTools_AllocatePoolMemory(((copyCount + 31) >> 5) * sizeof *block->in);
-            block++;
-        }
-        CopyPropagation_ComputeGenKill();
-        SpillCode_BuildBlockOrder();
-        CopyPropagation_ComputeInOutSets();
-        for (copyIndex = 0; copyIndex < copyCount; copyIndex++) {
-            if (code_motion_records[copyIndex].node->flags & PCodeInstruction_CoalesceDisabled) {
-                propagate = 0;
-            } else {
-                propagate = CanPropagateCopy(copyIndex, code_motion_records[copyIndex].list);
-            }
-            if (propagate)
-                CopyPropagation_ReplaceRegisterUses(copyIndex);
-        }
-    }
-    CompilerTools_ResetPool();
-}
-
-void CopyPropagation_ReplaceRegisterUses(int index)
-{
-    int kind;
-    int sourceRegister;
-    int replacementRegister;
-    CodeMotionRec *entry;
-    int count;
-    PCodeOperand *operand;
-    CodeMotionListNode *use;
-
-    entry = &code_motion_records[index];
-    kind = entry->node->operandData.operands[0].kind;
-    replacementRegister = entry->node->operandData.operands[1].value.reg;
-    sourceRegister = entry->node->operandData.operands[0].value.reg;
-    if (sourceRegister >= 32 && sourceRegister <= gInitialObjectGPRLast) {
-        return;
-    }
-    if (copy_propagation_mode == 0 && replacementRegister < 32) {
-        return;
-    }
-    use = entry->list;
-    while (use != NULL) {
-        operand = cm_entries[use->index].instruction->operandData.operands;
-        count = cm_entries[use->index].instruction->operand_count;
-        while (count--) {
-            if (operand->kind == kind && operand->value.reg == sourceRegister && (operand->flags & 1) != 0) {
-                operand->value.reg = replacementRegister;
-            }
-            operand++;
-        }
-        use = use->next;
-    }
-    PCode_UnlinkInstruction(entry->node);
-    gCopyPropagationChanged = 1;
-}
-
 /* Whether END comes at or after INSTR in its block. */
 static int follows(PCodeInstruction *instr, PCodeInstruction *end)
 {
@@ -132,176 +58,32 @@ static int follows(PCodeInstruction *instr, PCodeInstruction *end)
     return 0;
 }
 
-/* Whether the copy DEF still holds at the use USE: no instruction between them redefines the copy's source register. */
-int can_propagate_copy_to_use(int def, int use)
-{
-    PCodeInstruction *copy;
-    PCodeInstruction *end;
-    PCodeInstruction *p;
-    PCodeOperand *op;
-    unsigned int n;
-    int kind, dst, reg;
-    CodeMotionEntry *entry;
-    PCodeInstruction *stop;
-
-    copy = code_motion_records[def].node;
-    entry = &cm_entries[use];
-    kind = copy->operandData.operands[0].kind;
-    dst = copy->operandData.operands[0].value.reg;
-    reg = copy->operandData.operands[1].value.reg;
-    if (entry->instruction->flags & fIsMove)
-        return 0;
-    if ((end = entry->instruction)->opcode == PC_RLWIMI && end->operandData.operands[0].value.reg == dst)
-        return 0;
-    if (copy->block == end->block && follows(p = copy->next, stop = end)) {
-        while (p && p != end) {
-            unsigned int n;
-            PCodeOperand *op;
-
-            for (op = p->operandData.operands, n = p->operand_count; n--; op++) {
-                if (op->kind == kind && (op->flags & 2) && op->value.reg == reg)
-                    return 0;
-            }
-            p = p->next;
-        }
-    } else {
-        if (!(copyPropagationBitSets[end->block->index].out[def >> 5] & (1UL << (def & 31))))
-            return 0;
-        for (p = end->block->instructions; p; p = p->next) {
-            for (op = p->operandData.operands, n = p->operand_count; n--; op++) {
-                if (op->kind == kind && (op->flags & 2) && op->value.reg == reg)
-                    return 0;
-            }
-            if (p == end)
-                break;
-        }
-    }
-    return 1;
-}
-
 static inline UInt32 *genptr(struct CopyPropagationBitSets *bv)
 {
     return bv->gen;
 }
 
-void CopyPropagation_ComputeInOutSets(void)
+void CopyPropagation_CountBlockCopies(void)
 {
-    SInt32 wordCount;
+    PCodeInstruction *instruction;
     PCodeBlock *block;
-    struct CopyPropagationBitSets *sets;
-    UInt32 *out;
-    SInt32 blockIndex;
-    SInt32 changed;
-    SInt32 value;
-    PCodeBlockLink *predecessor;
-    SInt32 wordIndex;
-    UInt32 *gen;
-    UInt32 *in;
-    UInt32 *kill;
-    UInt32 *predecessorOut;
-
-    wordCount = (copyCount + 31) >> 5;
-    block = gPCodeBlocks;
-    {
-        struct CopyPropagationBitSets *entrySets = &copyPropagationBitSets[block->index];
-        CRTTI_FillWords(entrySets->out, wordIndex = copyCount, 0);
-        CodeMotion_AllocateBits(entrySets->in, entrySets->gen, copyCount);
-    }
-
-    for (block = gPCodeBlocks->next; block != NULL; block = block->next) {
-        UInt32 *initialIn;
-        SInt32 initialWord;
-        sets = &copyPropagationBitSets[block->index];
-        initialIn = sets->in;
-        kill = sets->kill;
-        for (initialWord = 0; initialWord < wordCount; initialWord++)
-            *initialIn++ = ~*kill++;
-    }
-
-    do {
-        changed = 0;
-        blockIndex = 0;
-        if (gPCodeBlockCount > 0)
-            do {
-                if ((block = gPCodeBlockOrder[blockIndex]) == NULL)
-                    continue;
-                sets = &copyPropagationBitSets[block->index];
-                if ((predecessor = block->predecessors) != NULL) {
-                    predecessorOut = sets->out;
-                    CodeMotion_AllocateBits(predecessorOut,
-                                            copyPropagationBitSets[predecessor->payload.block->index].in, copyCount);
-                    for (predecessor = predecessor->next; predecessor != NULL; predecessor = predecessor->next)
-                        CRTTI_IntersectBitVectors(
-                            predecessorOut, copyPropagationBitSets[predecessor->payload.block->index].in, copyCount);
-                }
-                {
-                    wordIndex = 0;
-                    in = sets->in;
-                    out = sets->out;
-                    gen = sets->gen;
-                    kill = sets->kill;
-                    for (; wordIndex < wordCount; wordIndex++, out++, in++, kill++, gen++) {
-                        value = (~*kill & *out) | *gen;
-                        if (value != *in) {
-                            *in = value;
-                            changed = 1;
-                        }
-                    }
-                }
-            } while (++blockIndex < gPCodeBlockCount);
-    } while (changed);
-}
-
-void CopyPropagation_ComputeGenKill(void)
-{
-    PCodeBlock *block = gPCodeBlocks;
-    while (block != NULL) {
-        struct CopyPropagationBitSets *sets;
-        UInt32 *localBits;
-        UInt32 *otherBits;
-        PCodeInstruction *instruction;
-        UInt32 remainingOperands;
-        SInt32 bitIndex;
-        sets = copyPropagationBitSets + block->index;
-        localBits = sets->gen;
-        otherBits = sets->kill;
-        CRTTI_FillWords(localBits, copyCount, 0);
-        CRTTI_FillWords(otherBits, copyCount, 0);
-        bitIndex = blockCopyStartIndices[block->index];
+    int count;
+    block_copy_counts = (UInt32 *)CompilerTools_AllocatePoolMemory(gPCodeBlockCount * sizeof(*block_copy_counts));
+    blockCopyStartIndices =
+        (SInt32 *)CompilerTools_AllocatePoolMemory(gPCodeBlockCount * sizeof(*blockCopyStartIndices));
+    copyCount = 0;
+    for (block = gPCodeBlocks; block != NULL; block = block->next) {
+        blockCopyStartIndices[block->index] = copyCount;
+        count = 0;
         for (instruction = block->instructions; instruction != NULL; instruction = instruction->next) {
-            if ((instruction->flags & PCodeInstruction_SkipCodeMotion) == 0 && instruction->operand_count != 0) {
-                PCodeOperand *operand;
-                CodeMotionRec *entry;
-                SInt32 i;
-                operand = instruction->operandData.operands;
-                remainingOperands = instruction->operand_count;
-                while (remainingOperands--) {
-                    if ((operand->kind == PCOp_GPR || operand->kind == PCOp_FPR || operand->kind == PCOp_VR) &&
-                        ((SInt8)operand->flags & PCodeOperand_Definition)) {
-                        entry = code_motion_records;
-                        for (i = 0; i < copyCount; i++) {
-                            if (entry->node->operandData.operands[0].kind == operand->kind &&
-                                (entry->node->operandData.operands[0].value.reg == operand->value.reg ||
-                                 entry->node->operandData.operands[1].value.reg == operand->value.reg)) {
-                                if (entry->node->block == block) {
-                                    localBits[i >> 5] &= ~(1 << (i & 31));
-                                } else {
-                                    otherBits[i >> 5] |= 1 << i;
-                                }
-                            }
-                            entry++;
-                        }
-                    }
-                    operand++;
-                }
-                if ((instruction->flags & PCodeInstruction_CopySourceExclusion) &&
-                    instruction->operandData.operands[0].value.reg >= 0x20) {
-                    localBits[bitIndex >> 5] |= 1 << bitIndex;
-                    bitIndex++;
-                }
+            if (((instruction->opcode == PC_MR) || (instruction->opcode == PC_FMR) ||
+                 (instruction->opcode == PC_VMR)) &&
+                (0x20 <= instruction->operandData.operands[0].value.reg)) {
+                ++copyCount;
+                ++count;
             }
         }
-        block = block->next;
+        block_copy_counts[block->index] = count;
     }
 }
 
@@ -374,26 +156,244 @@ void CopyPropagation_BuildCodeMotionRecords(void)
     }
 }
 
-void CopyPropagation_CountBlockCopies(void)
+void CopyPropagation_ComputeGenKill(void)
 {
-    PCodeInstruction *instruction;
-    PCodeBlock *block;
-    int count;
-    block_copy_counts = (UInt32 *)CompilerTools_AllocatePoolMemory(gPCodeBlockCount * sizeof(*block_copy_counts));
-    blockCopyStartIndices =
-        (SInt32 *)CompilerTools_AllocatePoolMemory(gPCodeBlockCount * sizeof(*blockCopyStartIndices));
-    copyCount = 0;
-    for (block = gPCodeBlocks; block != NULL; block = block->next) {
-        blockCopyStartIndices[block->index] = copyCount;
-        count = 0;
+    PCodeBlock *block = gPCodeBlocks;
+    while (block != NULL) {
+        struct CopyPropagationBitSets *sets;
+        UInt32 *localBits;
+        UInt32 *otherBits;
+        PCodeInstruction *instruction;
+        UInt32 remainingOperands;
+        SInt32 bitIndex;
+        sets = copyPropagationBitSets + block->index;
+        localBits = sets->gen;
+        otherBits = sets->kill;
+        CRTTI_FillWords(localBits, copyCount, 0);
+        CRTTI_FillWords(otherBits, copyCount, 0);
+        bitIndex = blockCopyStartIndices[block->index];
         for (instruction = block->instructions; instruction != NULL; instruction = instruction->next) {
-            if (((instruction->opcode == PC_MR) || (instruction->opcode == PC_FMR) ||
-                 (instruction->opcode == PC_VMR)) &&
-                (0x20 <= instruction->operandData.operands[0].value.reg)) {
-                ++copyCount;
-                ++count;
+            if ((instruction->flags & PCodeInstruction_SkipCodeMotion) == 0 && instruction->operand_count != 0) {
+                PCodeOperand *operand;
+                CodeMotionRec *entry;
+                SInt32 i;
+                operand = instruction->operandData.operands;
+                remainingOperands = instruction->operand_count;
+                while (remainingOperands--) {
+                    if ((operand->kind == PCOp_GPR || operand->kind == PCOp_FPR || operand->kind == PCOp_VR) &&
+                        ((SInt8)operand->flags & PCodeOperand_Definition)) {
+                        entry = code_motion_records;
+                        for (i = 0; i < copyCount; i++) {
+                            if (entry->node->operandData.operands[0].kind == operand->kind &&
+                                (entry->node->operandData.operands[0].value.reg == operand->value.reg ||
+                                 entry->node->operandData.operands[1].value.reg == operand->value.reg)) {
+                                if (entry->node->block == block) {
+                                    localBits[i >> 5] &= ~(1 << (i & 31));
+                                } else {
+                                    otherBits[i >> 5] |= 1 << i;
+                                }
+                            }
+                            entry++;
+                        }
+                    }
+                    operand++;
+                }
+                if ((instruction->flags & PCodeInstruction_CopySourceExclusion) &&
+                    instruction->operandData.operands[0].value.reg >= 0x20) {
+                    localBits[bitIndex >> 5] |= 1 << bitIndex;
+                    bitIndex++;
+                }
             }
         }
-        block_copy_counts[block->index] = count;
+        block = block->next;
     }
+}
+
+void CopyPropagation_ComputeInOutSets(void)
+{
+    SInt32 wordCount;
+    PCodeBlock *block;
+    struct CopyPropagationBitSets *sets;
+    UInt32 *out;
+    SInt32 blockIndex;
+    SInt32 changed;
+    SInt32 value;
+    PCodeBlockLink *predecessor;
+    SInt32 wordIndex;
+    UInt32 *gen;
+    UInt32 *in;
+    UInt32 *kill;
+    UInt32 *predecessorOut;
+
+    wordCount = (copyCount + 31) >> 5;
+    block = gPCodeBlocks;
+    {
+        struct CopyPropagationBitSets *entrySets = &copyPropagationBitSets[block->index];
+        CRTTI_FillWords(entrySets->out, wordIndex = copyCount, 0);
+        CodeMotion_AllocateBits(entrySets->in, entrySets->gen, copyCount);
+    }
+
+    for (block = gPCodeBlocks->next; block != NULL; block = block->next) {
+        UInt32 *initialIn;
+        SInt32 initialWord;
+        sets = &copyPropagationBitSets[block->index];
+        initialIn = sets->in;
+        kill = sets->kill;
+        for (initialWord = 0; initialWord < wordCount; initialWord++)
+            *initialIn++ = ~*kill++;
+    }
+
+    do {
+        changed = 0;
+        blockIndex = 0;
+        if (gPCodeBlockCount > 0)
+            do {
+                if ((block = gPCodeBlockOrder[blockIndex]) == NULL)
+                    continue;
+                sets = &copyPropagationBitSets[block->index];
+                if ((predecessor = block->predecessors) != NULL) {
+                    predecessorOut = sets->out;
+                    CodeMotion_AllocateBits(predecessorOut,
+                                            copyPropagationBitSets[predecessor->payload.block->index].in, copyCount);
+                    for (predecessor = predecessor->next; predecessor != NULL; predecessor = predecessor->next)
+                        CRTTI_IntersectBitVectors(
+                            predecessorOut, copyPropagationBitSets[predecessor->payload.block->index].in, copyCount);
+                }
+                {
+                    wordIndex = 0;
+                    in = sets->in;
+                    out = sets->out;
+                    gen = sets->gen;
+                    kill = sets->kill;
+                    for (; wordIndex < wordCount; wordIndex++, out++, in++, kill++, gen++) {
+                        value = (~*kill & *out) | *gen;
+                        if (value != *in) {
+                            *in = value;
+                            changed = 1;
+                        }
+                    }
+                }
+            } while (++blockIndex < gPCodeBlockCount);
+    } while (changed);
+}
+
+/* Whether the copy DEF still holds at the use USE: no instruction between them redefines the copy's source register. */
+int can_propagate_copy_to_use(int def, int use)
+{
+    PCodeInstruction *copy;
+    PCodeInstruction *end;
+    PCodeInstruction *p;
+    PCodeOperand *op;
+    unsigned int n;
+    int kind, dst, reg;
+    CodeMotionEntry *entry;
+    PCodeInstruction *stop;
+
+    copy = code_motion_records[def].node;
+    entry = &cm_entries[use];
+    kind = copy->operandData.operands[0].kind;
+    dst = copy->operandData.operands[0].value.reg;
+    reg = copy->operandData.operands[1].value.reg;
+    if (entry->instruction->flags & fIsMove)
+        return 0;
+    if ((end = entry->instruction)->opcode == PC_RLWIMI && end->operandData.operands[0].value.reg == dst)
+        return 0;
+    if (copy->block == end->block && follows(p = copy->next, stop = end)) {
+        while (p && p != end) {
+            unsigned int n;
+            PCodeOperand *op;
+
+            for (op = p->operandData.operands, n = p->operand_count; n--; op++) {
+                if (op->kind == kind && (op->flags & 2) && op->value.reg == reg)
+                    return 0;
+            }
+            p = p->next;
+        }
+    } else {
+        if (!(copyPropagationBitSets[end->block->index].out[def >> 5] & (1UL << (def & 31))))
+            return 0;
+        for (p = end->block->instructions; p; p = p->next) {
+            for (op = p->operandData.operands, n = p->operand_count; n--; op++) {
+                if (op->kind == kind && (op->flags & 2) && op->value.reg == reg)
+                    return 0;
+            }
+            if (p == end)
+                break;
+        }
+    }
+    return 1;
+}
+
+void CopyPropagation_ReplaceRegisterUses(int index)
+{
+    int kind;
+    int sourceRegister;
+    int replacementRegister;
+    CodeMotionRec *entry;
+    int count;
+    PCodeOperand *operand;
+    CodeMotionListNode *use;
+
+    entry = &code_motion_records[index];
+    kind = entry->node->operandData.operands[0].kind;
+    replacementRegister = entry->node->operandData.operands[1].value.reg;
+    sourceRegister = entry->node->operandData.operands[0].value.reg;
+    if (sourceRegister >= 32 && sourceRegister <= gInitialObjectGPRLast) {
+        return;
+    }
+    if (copy_propagation_mode == 0 && replacementRegister < 32) {
+        return;
+    }
+    use = entry->list;
+    while (use != NULL) {
+        operand = cm_entries[use->index].instruction->operandData.operands;
+        count = cm_entries[use->index].instruction->operand_count;
+        while (count--) {
+            if (operand->kind == kind && operand->value.reg == sourceRegister && (operand->flags & 1) != 0) {
+                operand->value.reg = replacementRegister;
+            }
+            operand++;
+        }
+        use = use->next;
+    }
+    PCode_UnlinkInstruction(entry->node);
+    gCopyPropagationChanged = 1;
+}
+
+void COpt_CopyPropagation(SInt32 mode)
+{
+    int blockIndex;
+    struct CopyPropagationBitSets *block;
+    SInt32 copyIndex;
+    SInt32 propagate;
+
+    gCopyPropagationChanged = 0;
+    copy_propagation_mode = mode;
+    CopyPropagation_CountBlockCopies();
+    if (copyCount > 0) {
+        COpt_SetLoopCodeMotionMode(0);
+        CopyPropagation_BuildCodeMotionRecords();
+        copyPropagationBitSets = CompilerTools_AllocatePoolMemory(gPCodeBlockCount * sizeof *block);
+        block = copyPropagationBitSets;
+        for (blockIndex = 0; blockIndex < gPCodeBlockCount; blockIndex++) {
+            block->gen = CompilerTools_AllocatePoolMemory(((copyCount + 31) >> 5) * sizeof *block->gen);
+            block->kill = CompilerTools_AllocatePoolMemory(((copyCount + 31) >> 5) * sizeof *block->kill);
+            block->out = CompilerTools_AllocatePoolMemory(((copyCount + 31) >> 5) * sizeof *block->out);
+            block->in = CompilerTools_AllocatePoolMemory(((copyCount + 31) >> 5) * sizeof *block->in);
+            block++;
+        }
+        CopyPropagation_ComputeGenKill();
+        SpillCode_BuildBlockOrder();
+        CopyPropagation_ComputeInOutSets();
+        for (copyIndex = 0; copyIndex < copyCount; copyIndex++) {
+            if (code_motion_records[copyIndex].node->flags & PCodeInstruction_CoalesceDisabled) {
+                propagate = 0;
+            } else {
+                propagate = CanPropagateCopy(copyIndex, code_motion_records[copyIndex].list);
+            }
+            if (propagate)
+                CopyPropagation_ReplaceRegisterUses(copyIndex);
+        }
+    }
+    CompilerTools_ResetPool();
 }

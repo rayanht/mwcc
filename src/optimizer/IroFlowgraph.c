@@ -37,116 +37,6 @@ static inline void IRO_BitVectorSetBit(UInt32 bit, BitVector *bv)
         CError_Internal("BitVector.h", 47);
 }
 
-void IRO_BuildflowGraph(IROLinear *source)
-{
-    CLabel *label;
-    ExceptionAction *exception;
-    IROLinear *linear;
-    IROLinear *next;
-    IROLinear *record;
-    AsmOut info;
-    int done;
-    IRONode *block;
-    int i;
-
-    for (label = clabels; label != NULL; label = label->next)
-        label->target.node = NULL;
-    iro_node_count = 0;
-    iro_flowgraph_head = iroNodeTail = data_00587fac = NULL;
-    linear = source;
-    while (linear != NULL) {
-        fn_0044a640(linear);
-        if (linear->type == IROLinearLabel)
-            ((CLabel *)linear->u.label)->target.node = iroNodeTail;
-        done = 0;
-        while (!done && (next = linear->next) != NULL && (next->flags & 1) == 0) {
-            switch (linear->type) {
-                case IROLinearGoto:
-                case IROLinearReturn:
-                case IROLinearEntry:
-                case IROLinearExit:
-                case IROLinearEnd:
-                    done = 1;
-                    break;
-                case IROLinearIf:
-                case IROLinearIfNot:
-                case IROLinearSwitch:
-                    done = 1;
-                insert_label:
-                    if (next->type == IROLinearLabel) {
-                        record = IrOptimizer_NewLinear(IROLinearNop);
-                        linear_index_counter++;
-                        record->index = linear_index_counter;
-                        record->next = linear->next;
-                        linear->next = record;
-                    }
-                    break;
-                case IROLinearFunccall:
-                    for (exception = linear->stmt->dobjstack; exception != NULL; exception = exception->next) {
-                        if (exception->kind == 13 || exception->kind == 15) {
-                            done = 1;
-                            goto insert_label;
-                        }
-                    }
-                    break;
-                case IROLinearAsm:
-                    InlineAsmPPC_00462d70(linear->u.asm_stmt, &info);
-                    if (info.numlabels != 0)
-                        done = 1;
-                    break;
-            }
-            if (!done)
-                linear = linear->next;
-        }
-        if (linear->type == IROLinearEnd)
-            data_00587fac = iroNodeTail;
-        iroNodeTail->last = linear;
-        linear = linear->next;
-    }
-    iroNodesByIndex = (IRONode **)CompilerTools_AllocatePoolMemory(iro_node_count * sizeof(*iroNodesByIndex));
-    block = iro_flowgraph_head;
-    for (i = 0; block != NULL; block = block->nextnode) {
-        iroNodesByIndex[i] = block;
-        i++;
-    }
-    IroFlowgraph_RebuildSuccPred();
-    IroFlowgraph_ComputeDom();
-    IroVars_CheckTimedLongjmp();
-}
-
-void IroFlowgraph_ComputeDom(void)
-{
-    BitVector *local;
-    IRONode *p;
-    SInt32 changed;
-    SInt32 i;
-    IroBitVect_AllocateBitVector(&iro_flowgraph_head->dom, iro_node_count);
-    IRO_BitVectorSetBit(iro_flowgraph_head->index, iro_flowgraph_head->dom);
-    for (p = iro_flowgraph_head->nextnode; p != NULL; p = p->nextnode) {
-        IroBitVect_AllocateBitVector(&p->dom, iro_node_count);
-        IroBitVect_SetAllBits(p->dom);
-    }
-    IroBitVect_AllocateBitVector(&local, iro_node_count);
-    do {
-        changed = 0;
-        for (p = iro_flowgraph_head->nextnode; p != NULL; p = p->nextnode) {
-            if (p->numpred > 0) {
-                IroBitVect_SetAllBits(local);
-                for (i = 0; i < p->numpred; i++)
-                    IroBitVect_Intersect(iroNodesByIndex[p->pred[i]]->dom, local);
-                IRO_BitVectorSetBit(p->index, local);
-            } else {
-                IroBitVect_ClearBitVector(local);
-                IRO_BitVectorSetBit(p->index, local);
-            }
-            if (IroBitVect_AreEqual(local, p->dom) == 0) {
-                IroBitVect_CopyBitVector(local, p->dom);
-                changed = 1;
-            }
-        }
-    } while (changed);
-}
-
 static void AddRef(IRONode *node, IRONode *t)
 {
     if (t != NULL) {
@@ -169,6 +59,42 @@ static void AddList(IRONode *node, SwitchInfo *info)
     SwitchCase *it;
     for (it = info->cases; it != NULL; it = it->next)
         AddRef(node, it->label->target.node);
+}
+
+void fn_0044a640(IROLinear *value)
+{
+    IRONode *node;
+    IRONode *tail;
+
+    node = (IRONode *)CompilerTools_AllocatePoolMemory(sizeof(*node));
+    node->index = iro_node_count;
+    node->numsucc = 0U;
+    node->succ = NULL;
+    node->numpred = 0U;
+    node->pred = NULL;
+    node->first = value;
+    node->last = value;
+    node->in = NULL;
+    node->out = NULL;
+    node->gen = NULL;
+    node->kill = NULL;
+    node->x26 = 0;
+    node->copyOut = NULL;
+    node->dom = NULL;
+    node->nextnode = NULL;
+    node->reachable = 0U;
+    node->visited = 0U;
+    node->mustreach = 0U;
+    node->referenced = 0U;
+    node->loopdepth = 0U;
+    iro_node_count += 1U;
+    if (iro_flowgraph_head == NULL)
+        iro_flowgraph_head = node;
+    else {
+        tail = iroNodeTail;
+        tail->nextnode = node;
+    }
+    iroNodeTail = node;
 }
 
 void IroFlowgraph_RebuildSuccPred(void)
@@ -325,38 +251,112 @@ void IroFlowgraph_RebuildSuccPred(void)
     }
 }
 
-void fn_0044a640(IROLinear *value)
+void IroFlowgraph_ComputeDom(void)
 {
-    IRONode *node;
-    IRONode *tail;
-
-    node = (IRONode *)CompilerTools_AllocatePoolMemory(sizeof(*node));
-    node->index = iro_node_count;
-    node->numsucc = 0U;
-    node->succ = NULL;
-    node->numpred = 0U;
-    node->pred = NULL;
-    node->first = value;
-    node->last = value;
-    node->in = NULL;
-    node->out = NULL;
-    node->gen = NULL;
-    node->kill = NULL;
-    node->x26 = 0;
-    node->copyOut = NULL;
-    node->dom = NULL;
-    node->nextnode = NULL;
-    node->reachable = 0U;
-    node->visited = 0U;
-    node->mustreach = 0U;
-    node->referenced = 0U;
-    node->loopdepth = 0U;
-    iro_node_count += 1U;
-    if (iro_flowgraph_head == NULL)
-        iro_flowgraph_head = node;
-    else {
-        tail = iroNodeTail;
-        tail->nextnode = node;
+    BitVector *local;
+    IRONode *p;
+    SInt32 changed;
+    SInt32 i;
+    IroBitVect_AllocateBitVector(&iro_flowgraph_head->dom, iro_node_count);
+    IRO_BitVectorSetBit(iro_flowgraph_head->index, iro_flowgraph_head->dom);
+    for (p = iro_flowgraph_head->nextnode; p != NULL; p = p->nextnode) {
+        IroBitVect_AllocateBitVector(&p->dom, iro_node_count);
+        IroBitVect_SetAllBits(p->dom);
     }
-    iroNodeTail = node;
+    IroBitVect_AllocateBitVector(&local, iro_node_count);
+    do {
+        changed = 0;
+        for (p = iro_flowgraph_head->nextnode; p != NULL; p = p->nextnode) {
+            if (p->numpred > 0) {
+                IroBitVect_SetAllBits(local);
+                for (i = 0; i < p->numpred; i++)
+                    IroBitVect_Intersect(iroNodesByIndex[p->pred[i]]->dom, local);
+                IRO_BitVectorSetBit(p->index, local);
+            } else {
+                IroBitVect_ClearBitVector(local);
+                IRO_BitVectorSetBit(p->index, local);
+            }
+            if (IroBitVect_AreEqual(local, p->dom) == 0) {
+                IroBitVect_CopyBitVector(local, p->dom);
+                changed = 1;
+            }
+        }
+    } while (changed);
+}
+
+void IRO_BuildflowGraph(IROLinear *source)
+{
+    CLabel *label;
+    ExceptionAction *exception;
+    IROLinear *linear;
+    IROLinear *next;
+    IROLinear *record;
+    AsmOut info;
+    int done;
+    IRONode *block;
+    int i;
+
+    for (label = clabels; label != NULL; label = label->next)
+        label->target.node = NULL;
+    iro_node_count = 0;
+    iro_flowgraph_head = iroNodeTail = data_00587fac = NULL;
+    linear = source;
+    while (linear != NULL) {
+        fn_0044a640(linear);
+        if (linear->type == IROLinearLabel)
+            ((CLabel *)linear->u.label)->target.node = iroNodeTail;
+        done = 0;
+        while (!done && (next = linear->next) != NULL && (next->flags & 1) == 0) {
+            switch (linear->type) {
+                case IROLinearGoto:
+                case IROLinearReturn:
+                case IROLinearEntry:
+                case IROLinearExit:
+                case IROLinearEnd:
+                    done = 1;
+                    break;
+                case IROLinearIf:
+                case IROLinearIfNot:
+                case IROLinearSwitch:
+                    done = 1;
+                insert_label:
+                    if (next->type == IROLinearLabel) {
+                        record = IrOptimizer_NewLinear(IROLinearNop);
+                        linear_index_counter++;
+                        record->index = linear_index_counter;
+                        record->next = linear->next;
+                        linear->next = record;
+                    }
+                    break;
+                case IROLinearFunccall:
+                    for (exception = linear->stmt->dobjstack; exception != NULL; exception = exception->next) {
+                        if (exception->kind == 13 || exception->kind == 15) {
+                            done = 1;
+                            goto insert_label;
+                        }
+                    }
+                    break;
+                case IROLinearAsm:
+                    InlineAsmPPC_00462d70(linear->u.asm_stmt, &info);
+                    if (info.numlabels != 0)
+                        done = 1;
+                    break;
+            }
+            if (!done)
+                linear = linear->next;
+        }
+        if (linear->type == IROLinearEnd)
+            data_00587fac = iroNodeTail;
+        iroNodeTail->last = linear;
+        linear = linear->next;
+    }
+    iroNodesByIndex = (IRONode **)CompilerTools_AllocatePoolMemory(iro_node_count * sizeof(*iroNodesByIndex));
+    block = iro_flowgraph_head;
+    for (i = 0; block != NULL; block = block->nextnode) {
+        iroNodesByIndex[i] = block;
+        i++;
+    }
+    IroFlowgraph_RebuildSuccPred();
+    IroFlowgraph_ComputeDom();
+    IroVars_CheckTimedLongjmp();
 }

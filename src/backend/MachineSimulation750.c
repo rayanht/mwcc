@@ -347,9 +347,103 @@ static UInt32 simulation_pipeline_index;
 static UInt32 opt_arg_index;
 static CompletionEntry DAT_00582ed0[6];
 
-int get_opcode_table_first_entry(PCodeInstruction *instruction)
+static inline void record_opt_arg(PCodeInstruction *p)
 {
-    return data_00576f28[instruction->opcode].stageCycles[3];
+    pending_opt_args++;
+    data_00582ec0--;
+    DAT_00582ed0[opt_arg_index].instr = p;
+    DAT_00582ed0[opt_arg_index].completed = 0;
+    opt_arg_index = (opt_arg_index + 1) % 6;
+}
+
+int fn_0052f330(PCodeInstruction *instruction)
+{
+    int count;
+    unsigned int flags;
+
+    flags = instruction->flags;
+    count = data_00576f28[instruction->opcode].latency;
+    if ((flags & PCodeInstruction_CloneExtraOperandExcluded) != 0) {
+        count += 2;
+    }
+    if ((instruction->opcode == PC_LMW) || (instruction->opcode == PC_STMW)) {
+        count += instruction->operand_count - 2;
+    }
+    return count;
+}
+
+void reset_simulation_pipeline(void)
+{
+    int stage;
+
+    for (stage = 0; stage < 9; ++stage) {
+        (&data_00582e70)[stage].instr = NULL;
+    }
+    data_00582ec0 = 6;
+    pending_opt_args = 0;
+    simulation_pipeline_index = 0;
+    opt_arg_index = 0;
+    DAT_00582ed0[0].instr = NULL;
+    DAT_00582ed0[1].instr = NULL;
+    DAT_00582ed0[2].instr = NULL;
+    DAT_00582ed0[3].instr = NULL;
+    DAT_00582ed0[4].instr = NULL;
+    DAT_00582ed0[5].instr = NULL;
+    data_00582eb8 = NULL;
+    data_00582ebc = NULL;
+}
+
+int fn_0052f120(struct PCodeInstruction *instruction)
+{
+    int kind;
+    PCodeInstruction *register1;
+    unsigned int register1Absent;
+    int register2Absent;
+    int firstAbsent;
+    PCodeInstruction *register2;
+    struct PCodeInstruction *other;
+    if (data_00582ec0 == 0)
+        return 0;
+    kind = data_00576f28[instruction->opcode].executionUnit;
+    if (kind == 2) {
+        firstAbsent = 0;
+        if ((register1 = data_00582e78.instr) == NULL)
+            firstAbsent = 1;
+        register1Absent = firstAbsent;
+        register2Absent = 0;
+        if ((register2 = data_00582e80.instr) == NULL)
+            register2Absent = 1;
+        if (firstAbsent == 0 && register2Absent == 0)
+            return 0;
+        if (register1Absent != 0 && register2Absent != 0)
+            return 1;
+        if (register1Absent != 0)
+            register1 = register2;
+        if (Scheduler_ReturnZero(instruction, register1, 0) != 0)
+            return 0;
+        if (Scheduler_ReturnZero(instruction, data_00582eb8, 0) != 0)
+            return 0;
+        if (Scheduler_ReturnZero(instruction, data_00582ebc, 0) != 0)
+            return 0;
+    } else if ((&data_00582e70)[kind].instr != NULL)
+        return 0;
+    if ((instruction->flags & PCodeInstruction_ImplicitDefinition) != 0 && (other = data_00582e90.instr) != NULL &&
+        (other->flags & PCodeInstruction_ImplicitDefinition) != 0)
+        return 0;
+    return 1;
+}
+
+void record_instruction_kind(PCodeInstruction *p)
+{
+    SInt32 kind, value;
+
+    kind = data_00576f28[p->opcode].executionUnit;
+    value = data_00576f28[p->opcode].stageCycles[0];
+    record_opt_arg(p);
+    if (kind == 2 && data_00582e78.instr == NULL)
+        kind = 1;
+    (&data_00582e70)[kind].instr = p;
+    (&data_00582e70)[kind].remaining = value;
 }
 
 void advance_simulation_pipeline(void)
@@ -473,101 +567,7 @@ void advance_simulation_pipeline(void)
     }
 }
 
-static inline void record_opt_arg(PCodeInstruction *p)
+int get_opcode_table_first_entry(PCodeInstruction *instruction)
 {
-    pending_opt_args++;
-    data_00582ec0--;
-    DAT_00582ed0[opt_arg_index].instr = p;
-    DAT_00582ed0[opt_arg_index].completed = 0;
-    opt_arg_index = (opt_arg_index + 1) % 6;
-}
-
-void record_instruction_kind(PCodeInstruction *p)
-{
-    SInt32 kind, value;
-
-    kind = data_00576f28[p->opcode].executionUnit;
-    value = data_00576f28[p->opcode].stageCycles[0];
-    record_opt_arg(p);
-    if (kind == 2 && data_00582e78.instr == NULL)
-        kind = 1;
-    (&data_00582e70)[kind].instr = p;
-    (&data_00582e70)[kind].remaining = value;
-}
-
-int fn_0052f120(struct PCodeInstruction *instruction)
-{
-    int kind;
-    PCodeInstruction *register1;
-    unsigned int register1Absent;
-    int register2Absent;
-    int firstAbsent;
-    PCodeInstruction *register2;
-    struct PCodeInstruction *other;
-    if (data_00582ec0 == 0)
-        return 0;
-    kind = data_00576f28[instruction->opcode].executionUnit;
-    if (kind == 2) {
-        firstAbsent = 0;
-        if ((register1 = data_00582e78.instr) == NULL)
-            firstAbsent = 1;
-        register1Absent = firstAbsent;
-        register2Absent = 0;
-        if ((register2 = data_00582e80.instr) == NULL)
-            register2Absent = 1;
-        if (firstAbsent == 0 && register2Absent == 0)
-            return 0;
-        if (register1Absent != 0 && register2Absent != 0)
-            return 1;
-        if (register1Absent != 0)
-            register1 = register2;
-        if (Scheduler_ReturnZero(instruction, register1, 0) != 0)
-            return 0;
-        if (Scheduler_ReturnZero(instruction, data_00582eb8, 0) != 0)
-            return 0;
-        if (Scheduler_ReturnZero(instruction, data_00582ebc, 0) != 0)
-            return 0;
-    } else if ((&data_00582e70)[kind].instr != NULL)
-        return 0;
-    if ((instruction->flags & PCodeInstruction_ImplicitDefinition) != 0 && (other = data_00582e90.instr) != NULL &&
-        (other->flags & PCodeInstruction_ImplicitDefinition) != 0)
-        return 0;
-    return 1;
-}
-
-void reset_simulation_pipeline(void)
-{
-    int stage;
-
-    for (stage = 0; stage < 9; ++stage) {
-        (&data_00582e70)[stage].instr = NULL;
-    }
-    data_00582ec0 = 6;
-    pending_opt_args = 0;
-    simulation_pipeline_index = 0;
-    opt_arg_index = 0;
-    DAT_00582ed0[0].instr = NULL;
-    DAT_00582ed0[1].instr = NULL;
-    DAT_00582ed0[2].instr = NULL;
-    DAT_00582ed0[3].instr = NULL;
-    DAT_00582ed0[4].instr = NULL;
-    DAT_00582ed0[5].instr = NULL;
-    data_00582eb8 = NULL;
-    data_00582ebc = NULL;
-}
-
-int fn_0052f330(PCodeInstruction *instruction)
-{
-    int count;
-    unsigned int flags;
-
-    flags = instruction->flags;
-    count = data_00576f28[instruction->opcode].latency;
-    if ((flags & PCodeInstruction_CloneExtraOperandExcluded) != 0) {
-        count += 2;
-    }
-    if ((instruction->opcode == PC_LMW) || (instruction->opcode == PC_STMW)) {
-        count += instruction->operand_count - 2;
-    }
-    return count;
+    return data_00576f28[instruction->opcode].stageCycles[3];
 }

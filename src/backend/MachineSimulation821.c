@@ -356,9 +356,75 @@ static CompletionEntry queue_slots[6];
  * lives at 0x1c. */
 
 /* TYPESTRUCT record with the byte classification field at 0x0e. */
-int get_instruction_opcode_table_entry(PCodeInstruction *instruction)
+
+static inline void EnqueueRecord(PCodeInstruction *instr)
 {
-    return DAT_00578e50[instruction->opcode].stageCycles[3];
+    queue_slots[record_enqueue_index].instr = instr;
+    queue_slots[record_enqueue_index].completed = 0;
+    record_enqueue_index = (record_enqueue_index + 1) % 6;
+}
+
+int get_instruction_cost(PCodeInstruction *instruction)
+{
+    int cost = DAT_00578e50[instruction->opcode].latency;
+
+    if (instruction->flags & fRecordBit) {
+        cost += 2;
+    }
+    if (instruction->opcode == PC_LMW || instruction->opcode == PC_STMW) {
+        cost += instruction->operand_count - 2;
+    }
+    return cost;
+}
+
+void reset_spill_state(void)
+{
+    data_00583018.instr = NULL;
+    data_00583020.instr = NULL;
+    data_00583028.instr = NULL;
+    data_00583030.instr = NULL;
+    data_00583038.instr = NULL;
+    data_00583040.instr = NULL;
+    data_00583048 = 6;
+    data_0058304c = 0;
+    data_00583050 = 0;
+    record_enqueue_index = 0;
+    queue_slots[0].instr = NULL;
+    queue_slots[1].instr = NULL;
+    queue_slots[2].instr = NULL;
+    queue_slots[3].instr = NULL;
+    queue_slots[4].instr = NULL;
+    queue_slots[5].instr = NULL;
+}
+
+int fn_005308b0(struct PCodeInstruction *pcode)
+{
+    struct PCodeInstruction *other;
+    if (data_00583048 == 0)
+        return 0;
+    if ((&data_00583018)[DAT_00578e50[pcode->opcode].executionUnit].instr != NULL)
+        return 0;
+    if ((pcode->flags & fIsWrite) != 0) {
+        other = data_00583038.instr;
+        if (other != NULL && (other->flags & fIsWrite) != 0)
+            return 0;
+    }
+    return 1;
+}
+
+void fn_00530830(PCodeInstruction *instr)
+{
+    int slot;
+    int tableOffset;
+
+    tableOffset = instr->opcode;
+    slot = DAT_00578e50[tableOffset].executionUnit;
+
+    data_0058304c = data_0058304c + 1;
+    data_00583048 = data_00583048 - 1;
+    EnqueueRecord(instr);
+    (&data_00583018)[slot].instr = instr;
+    (&data_00583018)[slot].remaining = DAT_00578e50[tableOffset].stageCycles[0];
 }
 
 void fn_00530660(void)
@@ -416,72 +482,7 @@ void fn_00530660(void)
     }
 }
 
-static inline void EnqueueRecord(PCodeInstruction *instr)
+int get_instruction_opcode_table_entry(PCodeInstruction *instruction)
 {
-    queue_slots[record_enqueue_index].instr = instr;
-    queue_slots[record_enqueue_index].completed = 0;
-    record_enqueue_index = (record_enqueue_index + 1) % 6;
-}
-
-void fn_00530830(PCodeInstruction *instr)
-{
-    int slot;
-    int tableOffset;
-
-    tableOffset = instr->opcode;
-    slot = DAT_00578e50[tableOffset].executionUnit;
-
-    data_0058304c = data_0058304c + 1;
-    data_00583048 = data_00583048 - 1;
-    EnqueueRecord(instr);
-    (&data_00583018)[slot].instr = instr;
-    (&data_00583018)[slot].remaining = DAT_00578e50[tableOffset].stageCycles[0];
-}
-
-int fn_005308b0(struct PCodeInstruction *pcode)
-{
-    struct PCodeInstruction *other;
-    if (data_00583048 == 0)
-        return 0;
-    if ((&data_00583018)[DAT_00578e50[pcode->opcode].executionUnit].instr != NULL)
-        return 0;
-    if ((pcode->flags & fIsWrite) != 0) {
-        other = data_00583038.instr;
-        if (other != NULL && (other->flags & fIsWrite) != 0)
-            return 0;
-    }
-    return 1;
-}
-
-void reset_spill_state(void)
-{
-    data_00583018.instr = NULL;
-    data_00583020.instr = NULL;
-    data_00583028.instr = NULL;
-    data_00583030.instr = NULL;
-    data_00583038.instr = NULL;
-    data_00583040.instr = NULL;
-    data_00583048 = 6;
-    data_0058304c = 0;
-    data_00583050 = 0;
-    record_enqueue_index = 0;
-    queue_slots[0].instr = NULL;
-    queue_slots[1].instr = NULL;
-    queue_slots[2].instr = NULL;
-    queue_slots[3].instr = NULL;
-    queue_slots[4].instr = NULL;
-    queue_slots[5].instr = NULL;
-}
-
-int get_instruction_cost(PCodeInstruction *instruction)
-{
-    int cost = DAT_00578e50[instruction->opcode].latency;
-
-    if (instruction->flags & fRecordBit) {
-        cost += 2;
-    }
-    if (instruction->opcode == PC_LMW || instruction->opcode == PC_STMW) {
-        cost += instruction->operand_count - 2;
-    }
-    return cost;
+    return DAT_00578e50[instruction->opcode].stageCycles[3];
 }

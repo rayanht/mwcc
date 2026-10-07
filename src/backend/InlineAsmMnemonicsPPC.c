@@ -1115,24 +1115,6 @@ static AsmOperandPattern asm_operand_patterns[] = {
     {NULL, 0, {0, 0, 0, 0, 0, 0}, 0x00000000, 0x00000000},
 };
 
-AsmOperandPattern *CTemplateNew_FindAsmOperandPattern(char *name)
-{
-    NameLookupLink *link;
-    AsmOperandPattern *record;
-    int comparison;
-
-    link = asmOperandPatternLookup[CHash(name) & 0xff];
-    while (link != NULL) {
-        record = link->record;
-        comparison = strcmp((char *)record->name, name);
-        if (comparison == 0) {
-            return record;
-        }
-        link = link->next;
-    }
-    return NULL;
-}
-
 void CTemplateNew_InitAsmOperandPatternLookup(void)
 {
     int i;
@@ -1159,4 +1141,22 @@ void CTemplateNew_InitAsmOperandPatternLookup(void)
         node->next = *bucket;
         *bucket = node;
     }
+}
+
+AsmOperandPattern *CTemplateNew_FindAsmOperandPattern(char *name)
+{
+    NameLookupLink *link;
+    AsmOperandPattern *record;
+    int comparison;
+
+    link = asmOperandPatternLookup[CHash(name) & 0xff];
+    while (link != NULL) {
+        record = link->record;
+        comparison = strcmp((char *)record->name, name);
+        if (comparison == 0) {
+            return record;
+        }
+        link = link->next;
+    }
+    return NULL;
 }

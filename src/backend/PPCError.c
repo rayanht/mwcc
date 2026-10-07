@@ -43,87 +43,11 @@ typedef void (*PCodeGenFn)(ENode *node, SInt32 a, SInt32 b, Operand *dst);
 
 /* Declarations gathered from the merged files. */
 typedef char *va_list;
-void PPCError_FatalError(short diagnostic, ...)
-{
-    char buffer[256];
-    va_list args;
-    SInt32 diagnosticCode;
-    SInt16 errorCode;
-
-    if (trychain != NULL)
-        longjmp(trychain->jmpbuf, 1);
-
-    args = (va_list)&diagnostic + (((va_list)(&diagnostic + 1) - (va_list)&diagnostic + 3) / 4 * 4);
-
-    diagnosticCode = diagnostic;
-    CError_ASSERT(40, (SInt16)diagnosticCode >= 100 && (SInt16)diagnosticCode < 178);
-
-    errorCode = diagnosticCode;
-
-    COS_GetString(buffer, 10001, errorCode - 99);
-    CError_FormatAndReportDiagnostic(diagnosticCode + 10001, buffer, args, 1, 0);
-
-    if (data_005884fd != 0)
-        InlineAsm_LongJump();
-    longjmp(error_jmp_buf, 1);
-}
 
 static inline void PPCError_CheckDiagnosticCode(SInt16 diagnosticId)
 {
     if (diagnosticId < 100 || diagnosticId >= 178) {
         CError_FATAL(40);
-    }
-}
-
-void PPCError_ReportDiagnostic(SInt32 diagnosticId, ...)
-{
-    char buf[256];
-    va_list args;
-    SInt32 diagnosticCode;
-    SInt16 errorCode;
-
-    if (trychain != NULL) {
-        return;
-    }
-    args = (va_list)&diagnosticId + (((va_list)(&diagnosticId + 1) - (va_list)&diagnosticId) + 3) / 4 * 4;
-    diagnosticCode = diagnosticId;
-    PPCError_CheckDiagnosticCode(diagnosticCode);
-    errorCode = diagnosticCode;
-    COS_GetString(buf, 10001, errorCode - 99);
-    CError_FormatAndReportDiagnostic(diagnosticCode + 10001, buf, args, 0, 1);
-}
-void PPCError_ReportError(SInt32 error, ...)
-{
-    char buffer[256];
-    char *args;
-    SInt32 diagnosticCode;
-    SInt16 errorCode;
-
-    if (trychain != NULL)
-        longjmp(trychain->jmpbuf, 1);
-
-    args = (char *)&error + (((char *)(&error + 1) - (char *)&error + 3) / 4 * 4);
-    diagnosticCode = error;
-    CError_ASSERT(40, (SInt16)diagnosticCode >= 100 && (SInt16)diagnosticCode < 178);
-
-    errorCode = diagnosticCode;
-    COS_GetString(buffer, 10001, errorCode - 99);
-    CError_FormatAndReportDiagnostic(diagnosticCode + 10001, buffer, args, 0, 0);
-
-    if (data_005884fd != 0)
-        InlineAsm_LongJump();
-}
-
-void PPCError_UpdateClassTypeOperands(void)
-{
-    ClassTypeUpdate *update;
-    update = classTypeUpdates;
-    if (classTypeUpdates != NULL) {
-        do {
-            update->first->operandData.operands[2].value.signed_value = fn_004a9f70(0) + data_00588274;
-            update->second->operandData.operands[2].value.signed_value = fn_004a9f90();
-            update = update->next;
-        } while (update != NULL);
     }
 }
 
@@ -162,4 +86,82 @@ void PPCError_EmitClassTypeUpdate(SInt16 requestedReg, ENode *node, SInt16 flags
     result->reg = typeReg;
     update->next = classTypeUpdates;
     classTypeUpdates = update;
+}
+
+void PPCError_UpdateClassTypeOperands(void)
+{
+    ClassTypeUpdate *update;
+    update = classTypeUpdates;
+    if (classTypeUpdates != NULL) {
+        do {
+            update->first->operandData.operands[2].value.signed_value = fn_004a9f70(0) + data_00588274;
+            update->second->operandData.operands[2].value.signed_value = fn_004a9f90();
+            update = update->next;
+        } while (update != NULL);
+    }
+}
+
+void PPCError_ReportError(SInt32 error, ...)
+{
+    char buffer[256];
+    char *args;
+    SInt32 diagnosticCode;
+    SInt16 errorCode;
+
+    if (trychain != NULL)
+        longjmp(trychain->jmpbuf, 1);
+
+    args = (char *)&error + (((char *)(&error + 1) - (char *)&error + 3) / 4 * 4);
+    diagnosticCode = error;
+    CError_ASSERT(40, (SInt16)diagnosticCode >= 100 && (SInt16)diagnosticCode < 178);
+
+    errorCode = diagnosticCode;
+    COS_GetString(buffer, 10001, errorCode - 99);
+    CError_FormatAndReportDiagnostic(diagnosticCode + 10001, buffer, args, 0, 0);
+
+    if (data_005884fd != 0)
+        InlineAsm_LongJump();
+}
+
+void PPCError_ReportDiagnostic(SInt32 diagnosticId, ...)
+{
+    char buf[256];
+    va_list args;
+    SInt32 diagnosticCode;
+    SInt16 errorCode;
+
+    if (trychain != NULL) {
+        return;
+    }
+    args = (va_list)&diagnosticId + (((va_list)(&diagnosticId + 1) - (va_list)&diagnosticId) + 3) / 4 * 4;
+    diagnosticCode = diagnosticId;
+    PPCError_CheckDiagnosticCode(diagnosticCode);
+    errorCode = diagnosticCode;
+    COS_GetString(buf, 10001, errorCode - 99);
+    CError_FormatAndReportDiagnostic(diagnosticCode + 10001, buf, args, 0, 1);
+}
+
+void PPCError_FatalError(short diagnostic, ...)
+{
+    char buffer[256];
+    va_list args;
+    SInt32 diagnosticCode;
+    SInt16 errorCode;
+
+    if (trychain != NULL)
+        longjmp(trychain->jmpbuf, 1);
+
+    args = (va_list)&diagnostic + (((va_list)(&diagnostic + 1) - (va_list)&diagnostic + 3) / 4 * 4);
+
+    diagnosticCode = diagnostic;
+    CError_ASSERT(40, (SInt16)diagnosticCode >= 100 && (SInt16)diagnosticCode < 178);
+
+    errorCode = diagnosticCode;
+
+    COS_GetString(buffer, 10001, errorCode - 99);
+    CError_FormatAndReportDiagnostic(diagnosticCode + 10001, buffer, args, 1, 0);
+
+    if (data_005884fd != 0)
+        InlineAsm_LongJump();
+    longjmp(error_jmp_buf, 1);
 }

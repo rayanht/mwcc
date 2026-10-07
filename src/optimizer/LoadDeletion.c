@@ -39,59 +39,29 @@
 #include "compiler/Switch.h"
 #include "compiler/VectorArraysToRegs.h"
 /* Per-entry storage for the two load-deletion bit sets. */
-void LoadDeletion_BuildLoadLivenessSets(void)
-{
-    PCodeBlock *cb;
-    CBlockData *bd;
-    PCodeInstruction *obj;
-    PCodeInstruction *o;
-    PCodeOperand *rec;
-    E *p;
-    UInt32 *setA;
-    UInt32 *setB;
-    SInt32 num;
-    SInt32 i;
-    SInt32 start;
-    SInt32 n;
 
-    for (cb = gPCodeBlocks; cb != NULL; cb = cb->next) {
-        bd = data_00587c98 + cb->index;
-        setA = bd->generatedLoads;
-        setB = bd->killedLoads;
-        CRTTI_FillWords(setA, data_0058820c, 0);
-        CRTTI_FillWords(setB, data_0058820c, 0);
-        start = load_liveness_record_start[cb->index];
-        for (obj = cb->instructions; obj != NULL; obj = obj->next) {
-            if ((obj->flags & fIsBranch) == 0 && obj->operand_count != 0) {
-                rec = obj->operandData.operands;
-                n = obj->operand_count;
-                while (n--) {
-                    if ((rec->kind == PCOp_GPR || rec->kind == PCOp_VR) && (rec->flags & 2) != 0) {
-                        p = immediateLoadLiveness;
-                        for (i = 0; data_0058820c > i; i++, p++) {
-                            if (((PCodeInstruction *)p->inst)->operandData.operands[0].kind == rec->kind &&
-                                (((PCodeInstruction *)p->inst)->operandData.operands[0].value.reg == rec->value.reg ||
-                                 ((PCodeInstruction *)p->inst)->operandData.operands[1].value.reg == rec->value.reg)) {
-                                if (((PCodeInstruction *)p->inst)->block == cb)
-                                    setA[i >> 5] &= ~(1 << (i & 31));
-                                else
-                                    setB[i >> 5] |= 1 << (i & 31);
-                            }
-                        }
-                    }
-                    rec++;
-                }
-                if (obj->opcode == PC_LI && obj->operandData.operands[0].value.reg >= 0x20) {
-                    setA[start >> 5] |= 1 << (start & 31);
-                    start++;
-                }
-                if ((obj->opcode == PC_VSPLTISB || obj->opcode == PC_VSPLTISH || obj->opcode == PC_VSPLTISW) &&
-                    obj->operandData.operands[0].value.reg >= 0x20) {
-                    setA[start >> 5] |= 1 << (start & 31);
-                    start++;
+void LoadDeletion_InitializeLoadLivenessRecordCounts(void)
+{
+    PCodeBlock *block;
+    PCodeInstruction *instruction;
+    unsigned int count;
+
+    block_record_counts = CompilerTools_AllocatePoolMemory(gPCodeBlockCount * sizeof(*block_record_counts));
+    load_liveness_record_start =
+        CompilerTools_AllocatePoolMemory(gPCodeBlockCount * sizeof(*load_liveness_record_start));
+    data_0058820c = 0;
+    for (block = gPCodeBlocks; block != NULL; block = block->next) {
+        load_liveness_record_start[block->index] = data_0058820c;
+        count = 0;
+        for (instruction = block->instructions; instruction != NULL; instruction = instruction->next) {
+            if (instruction->opcode == PC_LI || (unsigned short)(instruction->opcode - 350) <= 2) {
+                if (instruction->operandData.operands[0].value.reg >= 32) {
+                    ++data_0058820c;
+                    ++count;
                 }
             }
         }
+        block_record_counts[block->index] = count;
     }
 }
 
@@ -206,28 +176,59 @@ void LoadDeletion_RecordImmediateLoadLiveness(void)
     }
 }
 
-void LoadDeletion_InitializeLoadLivenessRecordCounts(void)
+void LoadDeletion_BuildLoadLivenessSets(void)
 {
-    PCodeBlock *block;
-    PCodeInstruction *instruction;
-    unsigned int count;
+    PCodeBlock *cb;
+    CBlockData *bd;
+    PCodeInstruction *obj;
+    PCodeInstruction *o;
+    PCodeOperand *rec;
+    E *p;
+    UInt32 *setA;
+    UInt32 *setB;
+    SInt32 num;
+    SInt32 i;
+    SInt32 start;
+    SInt32 n;
 
-    block_record_counts = CompilerTools_AllocatePoolMemory(gPCodeBlockCount * sizeof(*block_record_counts));
-    load_liveness_record_start =
-        CompilerTools_AllocatePoolMemory(gPCodeBlockCount * sizeof(*load_liveness_record_start));
-    data_0058820c = 0;
-    for (block = gPCodeBlocks; block != NULL; block = block->next) {
-        load_liveness_record_start[block->index] = data_0058820c;
-        count = 0;
-        for (instruction = block->instructions; instruction != NULL; instruction = instruction->next) {
-            if (instruction->opcode == PC_LI || (unsigned short)(instruction->opcode - 350) <= 2) {
-                if (instruction->operandData.operands[0].value.reg >= 32) {
-                    ++data_0058820c;
-                    ++count;
+    for (cb = gPCodeBlocks; cb != NULL; cb = cb->next) {
+        bd = data_00587c98 + cb->index;
+        setA = bd->generatedLoads;
+        setB = bd->killedLoads;
+        CRTTI_FillWords(setA, data_0058820c, 0);
+        CRTTI_FillWords(setB, data_0058820c, 0);
+        start = load_liveness_record_start[cb->index];
+        for (obj = cb->instructions; obj != NULL; obj = obj->next) {
+            if ((obj->flags & fIsBranch) == 0 && obj->operand_count != 0) {
+                rec = obj->operandData.operands;
+                n = obj->operand_count;
+                while (n--) {
+                    if ((rec->kind == PCOp_GPR || rec->kind == PCOp_VR) && (rec->flags & 2) != 0) {
+                        p = immediateLoadLiveness;
+                        for (i = 0; data_0058820c > i; i++, p++) {
+                            if (((PCodeInstruction *)p->inst)->operandData.operands[0].kind == rec->kind &&
+                                (((PCodeInstruction *)p->inst)->operandData.operands[0].value.reg == rec->value.reg ||
+                                 ((PCodeInstruction *)p->inst)->operandData.operands[1].value.reg == rec->value.reg)) {
+                                if (((PCodeInstruction *)p->inst)->block == cb)
+                                    setA[i >> 5] &= ~(1 << (i & 31));
+                                else
+                                    setB[i >> 5] |= 1 << (i & 31);
+                            }
+                        }
+                    }
+                    rec++;
+                }
+                if (obj->opcode == PC_LI && obj->operandData.operands[0].value.reg >= 0x20) {
+                    setA[start >> 5] |= 1 << (start & 31);
+                    start++;
+                }
+                if ((obj->opcode == PC_VSPLTISB || obj->opcode == PC_VSPLTISH || obj->opcode == PC_VSPLTISW) &&
+                    obj->operandData.operands[0].value.reg >= 0x20) {
+                    setA[start >> 5] |= 1 << (start & 31);
+                    start++;
                 }
             }
         }
-        block_record_counts[block->index] = count;
     }
 }
 

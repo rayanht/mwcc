@@ -511,11 +511,6 @@ static UInt32 pending_instruction_retire_index;
 static unsigned int execution_unit_entry_index;
 static CompletionEntry data_00582cf0[5];
 
-int get_opcode_table_entry(PCodeInstruction *instruction)
-{
-    return machine_opcode_info[instruction->opcode].stageCycles[3];
-}
-
 static void RemovePending(PCodeInstruction *instr)
 {
     SInt32 i;
@@ -523,6 +518,72 @@ static void RemovePending(PCodeInstruction *instr)
     for (i = 0; i < 5 && data_00582cf0[i].instr != instr; i++)
         ;
     data_00582cf0[i].completed = 1;
+}
+
+SInt32 get_adjusted_latency(PCodeInstruction *p)
+{
+    SInt32 n = machine_opcode_info[p->opcode].latency;
+    if (p->flags & fRecordBit) {
+        n += 2;
+    }
+    if (p->opcode == 0x27 || p->opcode == 0x36) {
+        n += p->operand_count - 2;
+    }
+    return n;
+}
+
+void fn_0052e000(void)
+{
+    data_00582ca0.instr = NULL;
+    data_00582ca8.instr = NULL;
+    data_00582cb0.instr = NULL;
+    data_00582cb8.instr = NULL;
+    data_00582cc0.instr = NULL;
+    data_00582cc8.instr = NULL;
+    data_00582cd0.instr = NULL;
+    data_00582cd8.instr = NULL;
+    data_00582ce0 = 5;
+    pending_instruction_count = 0;
+    pending_instruction_retire_index = 0;
+    execution_unit_entry_index = 0;
+    data_00582cf0[0].instr = NULL;
+    data_00582cf0[1].instr = NULL;
+    data_00582cf0[2].instr = NULL;
+    data_00582cf0[3].instr = NULL;
+    data_00582cf0[4].instr = NULL;
+}
+
+int fn_0052dfa0(PCodeInstruction *instruction)
+{
+    PCodeInstruction *previousInstruction;
+    if (data_00582ce0 == 0) {
+        return 0;
+    }
+    if ((&data_00582ca0)[machine_opcode_info[instruction->opcode].executionUnit].instr != NULL) {
+        return 0;
+    }
+    if ((instruction->flags & PCodeInstruction_ImplicitDefinition) != 0) {
+        previousInstruction = data_00582cb8.instr;
+        if (previousInstruction != NULL && (previousInstruction->flags & PCodeInstruction_ImplicitDefinition) != 0) {
+            return 0;
+        }
+    }
+    return 1;
+}
+
+void assign_entry_to_execution_unit(PCodeInstruction *instr)
+{
+    int category;
+    int tableIndex;
+
+    tableIndex = instr->opcode;
+    category = machine_opcode_info[tableIndex].executionUnit;
+    ++pending_instruction_count;
+    --data_00582ce0;
+    data_00582cf0[execution_unit_entry_index].completed = (data_00582cf0[execution_unit_entry_index].instr = instr, 0);
+    execution_unit_entry_index = (execution_unit_entry_index + 1) % 5;
+    (&data_00582ca0)[category].instr = instr;
+    (&data_00582ca0)[category].remaining = machine_opcode_info[tableIndex].stageCycles[0];
 }
 
 void retire_and_advance_pending_instructions(void)
@@ -607,68 +668,7 @@ void retire_and_advance_pending_instructions(void)
     }
 }
 
-void assign_entry_to_execution_unit(PCodeInstruction *instr)
+int get_opcode_table_entry(PCodeInstruction *instruction)
 {
-    int category;
-    int tableIndex;
-
-    tableIndex = instr->opcode;
-    category = machine_opcode_info[tableIndex].executionUnit;
-    ++pending_instruction_count;
-    --data_00582ce0;
-    data_00582cf0[execution_unit_entry_index].completed = (data_00582cf0[execution_unit_entry_index].instr = instr, 0);
-    execution_unit_entry_index = (execution_unit_entry_index + 1) % 5;
-    (&data_00582ca0)[category].instr = instr;
-    (&data_00582ca0)[category].remaining = machine_opcode_info[tableIndex].stageCycles[0];
-}
-
-int fn_0052dfa0(PCodeInstruction *instruction)
-{
-    PCodeInstruction *previousInstruction;
-    if (data_00582ce0 == 0) {
-        return 0;
-    }
-    if ((&data_00582ca0)[machine_opcode_info[instruction->opcode].executionUnit].instr != NULL) {
-        return 0;
-    }
-    if ((instruction->flags & PCodeInstruction_ImplicitDefinition) != 0) {
-        previousInstruction = data_00582cb8.instr;
-        if (previousInstruction != NULL && (previousInstruction->flags & PCodeInstruction_ImplicitDefinition) != 0) {
-            return 0;
-        }
-    }
-    return 1;
-}
-
-void fn_0052e000(void)
-{
-    data_00582ca0.instr = NULL;
-    data_00582ca8.instr = NULL;
-    data_00582cb0.instr = NULL;
-    data_00582cb8.instr = NULL;
-    data_00582cc0.instr = NULL;
-    data_00582cc8.instr = NULL;
-    data_00582cd0.instr = NULL;
-    data_00582cd8.instr = NULL;
-    data_00582ce0 = 5;
-    pending_instruction_count = 0;
-    pending_instruction_retire_index = 0;
-    execution_unit_entry_index = 0;
-    data_00582cf0[0].instr = NULL;
-    data_00582cf0[1].instr = NULL;
-    data_00582cf0[2].instr = NULL;
-    data_00582cf0[3].instr = NULL;
-    data_00582cf0[4].instr = NULL;
-}
-
-SInt32 get_adjusted_latency(PCodeInstruction *p)
-{
-    SInt32 n = machine_opcode_info[p->opcode].latency;
-    if (p->flags & fRecordBit) {
-        n += 2;
-    }
-    if (p->opcode == 0x27 || p->opcode == 0x36) {
-        n += p->operand_count - 2;
-    }
-    return n;
+    return machine_opcode_info[instruction->opcode].stageCycles[3];
 }

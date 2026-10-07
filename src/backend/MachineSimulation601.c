@@ -501,9 +501,57 @@ static PipelineStage data_00583000;
 static PipelineStage data_00583008;
 static PipelineStage data_00583010;
 
-Boolean is_execution_unit_seven(int instruction)
+SInt32 get_latency(PCodeInstruction *p)
 {
-    return (int)data_00578340[((PCodeInstruction *)instruction)->opcode].executionUnit == 7;
+    SInt32 n = data_00578340[p->opcode].latency;
+    if (p->flags & fRecordBit) {
+        n += 2;
+    }
+    if (p->opcode == 0x27 || p->opcode == 0x36) {
+        n += p->operand_count - 2;
+    }
+    return n;
+}
+
+void clear_instruction_and_globals(void)
+{
+    data_00582fe8.instr = NULL;
+    data_00582ff0.instr = NULL;
+    data_00582ff8.instr = NULL;
+    data_00583000.instr = NULL;
+    data_00583008.instr = NULL;
+    data_00583010.instr = NULL;
+}
+
+int is_execution_unit_available(PCodeInstruction *instruction)
+{
+    unsigned int kind;
+    PipelineStage *counts;
+
+    kind = data_00578340[instruction->opcode].executionUnit;
+    if (kind == 7)
+        kind = 0;
+    counts = &data_00582fe8;
+    if (counts[kind].instr != NULL)
+        return 0;
+    else
+        return 1;
+}
+
+void set_execution_unit_instruction(PCodeInstruction *instruction)
+{
+    unsigned int entry;
+    int offset;
+    int value;
+
+    offset = instruction->opcode;
+    entry = data_00578340[offset].executionUnit;
+    value = data_00578340[offset].stageCycles[0];
+    if (entry == 7) {
+        entry = 0;
+    }
+    (&data_00582fe8)[entry].instr = instruction;
+    (&data_00582fe8)[entry].remaining = value;
 }
 
 void advance_instruction_pipeline(void)
@@ -551,55 +599,7 @@ void advance_instruction_pipeline(void)
     }
 }
 
-void set_execution_unit_instruction(PCodeInstruction *instruction)
+Boolean is_execution_unit_seven(int instruction)
 {
-    unsigned int entry;
-    int offset;
-    int value;
-
-    offset = instruction->opcode;
-    entry = data_00578340[offset].executionUnit;
-    value = data_00578340[offset].stageCycles[0];
-    if (entry == 7) {
-        entry = 0;
-    }
-    (&data_00582fe8)[entry].instr = instruction;
-    (&data_00582fe8)[entry].remaining = value;
-}
-
-int is_execution_unit_available(PCodeInstruction *instruction)
-{
-    unsigned int kind;
-    PipelineStage *counts;
-
-    kind = data_00578340[instruction->opcode].executionUnit;
-    if (kind == 7)
-        kind = 0;
-    counts = &data_00582fe8;
-    if (counts[kind].instr != NULL)
-        return 0;
-    else
-        return 1;
-}
-
-void clear_instruction_and_globals(void)
-{
-    data_00582fe8.instr = NULL;
-    data_00582ff0.instr = NULL;
-    data_00582ff8.instr = NULL;
-    data_00583000.instr = NULL;
-    data_00583008.instr = NULL;
-    data_00583010.instr = NULL;
-}
-
-SInt32 get_latency(PCodeInstruction *p)
-{
-    SInt32 n = data_00578340[p->opcode].latency;
-    if (p->flags & fRecordBit) {
-        n += 2;
-    }
-    if (p->opcode == 0x27 || p->opcode == 0x36) {
-        n += p->operand_count - 2;
-    }
-    return n;
+    return (int)data_00578340[((PCodeInstruction *)instruction)->opcode].executionUnit == 7;
 }

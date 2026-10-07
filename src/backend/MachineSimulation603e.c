@@ -510,9 +510,95 @@ static unsigned int data_00582d60;
 static unsigned int data_00582d64;
 static CompletionEntry instruction_completion_entries[5];
 
-int get_instruction_opcode_table_value(PCodeInstruction *instruction)
+SInt32 fn_0052e640(PCodeInstruction *p)
 {
-    return machineOpcodeInfo[instruction->opcode].stageCycles[3];
+    SInt32 n = machineOpcodeInfo[p->opcode].latency;
+    if (p->flags & fRecordBit) {
+        n += 2;
+    }
+    if (p->opcode == 0x27 || p->opcode == 0x36) {
+        n += p->operand_count - 2;
+    }
+    return n;
+}
+
+void fn_0052e590(void)
+{
+    instruction_timing_slots.instr = NULL;
+    data_00582d20.instr = NULL;
+    data_00582d28.instr = NULL;
+    data_00582d30.instr = NULL;
+    data_00582d38.instr = NULL;
+    queuedInstruction.instr = NULL;
+    data_00582d48.instr = NULL;
+    data_00582d50.instr = NULL;
+    DAT_00582d58 = 5;
+    DAT_00582d5c = 0;
+    data_00582d60 = 0;
+    data_00582d64 = 0;
+    instruction_completion_entries[0].instr = NULL;
+    instruction_completion_entries[1].instr = NULL;
+    instruction_completion_entries[2].instr = NULL;
+    instruction_completion_entries[3].instr = NULL;
+    instruction_completion_entries[4].instr = NULL;
+}
+
+int is_instruction_issuable(PCodeInstruction *instr)
+{
+    UInt32 unit;
+    PCodeInstruction *list;
+    PCodeInstruction *ref;
+
+    if (!DAT_00582d58)
+        return 0;
+    unit = machineOpcodeInfo[instr->opcode].executionUnit;
+    if ((&instruction_timing_slots)[unit].instr) {
+        if (unit == 1) {
+            switch (instr->opcode) {
+                case PC_ADD:
+                case PC_ADDC:
+                case PC_ADDI:
+                case PC_ADDIS:
+                case PC_CMPI:
+                case PC_CMP:
+                case PC_CMPLI:
+                case PC_CMPL:
+                    list = instr;
+                    ref = data_00582d20.instr;
+                    if (Scheduler_ReturnZero(list, ref, 0))
+                        return 0;
+                    if (!data_00582d50.instr)
+                        return 1;
+                    break;
+            }
+        }
+        return 0;
+    }
+    if ((instr->flags & fIsWrite) && (&instruction_timing_slots)[3].instr &&
+        ((&instruction_timing_slots)[3].instr->flags & fIsWrite))
+        return 0;
+    return 1;
+}
+
+void fn_0052e450(struct PCodeInstruction *instruction)
+{
+    unsigned int kind;
+    int opcodeIndex;
+    int opcodeValue;
+
+    opcodeIndex = instruction->opcode;
+    kind = machineOpcodeInfo[opcodeIndex].executionUnit;
+    opcodeValue = machineOpcodeInfo[opcodeIndex].stageCycles[0];
+    if ((kind == 1) && (data_00582d20.instr != NULL)) {
+        kind = 7;
+    }
+    DAT_00582d5c++;
+    DAT_00582d58--;
+    instruction_completion_entries[data_00582d64].instr = instruction,
+    instruction_completion_entries[data_00582d64].completed = 0;
+    data_00582d64 = (data_00582d64 + 1) % 5;
+    (&instruction_timing_slots)[kind].instr = instruction;
+    (&instruction_timing_slots)[kind].remaining = opcodeValue;
 }
 
 void fn_0052e110(void)
@@ -629,93 +715,7 @@ void fn_0052e110(void)
     }
 }
 
-void fn_0052e450(struct PCodeInstruction *instruction)
+int get_instruction_opcode_table_value(PCodeInstruction *instruction)
 {
-    unsigned int kind;
-    int opcodeIndex;
-    int opcodeValue;
-
-    opcodeIndex = instruction->opcode;
-    kind = machineOpcodeInfo[opcodeIndex].executionUnit;
-    opcodeValue = machineOpcodeInfo[opcodeIndex].stageCycles[0];
-    if ((kind == 1) && (data_00582d20.instr != NULL)) {
-        kind = 7;
-    }
-    DAT_00582d5c++;
-    DAT_00582d58--;
-    instruction_completion_entries[data_00582d64].instr = instruction,
-    instruction_completion_entries[data_00582d64].completed = 0;
-    data_00582d64 = (data_00582d64 + 1) % 5;
-    (&instruction_timing_slots)[kind].instr = instruction;
-    (&instruction_timing_slots)[kind].remaining = opcodeValue;
-}
-
-int is_instruction_issuable(PCodeInstruction *instr)
-{
-    UInt32 unit;
-    PCodeInstruction *list;
-    PCodeInstruction *ref;
-
-    if (!DAT_00582d58)
-        return 0;
-    unit = machineOpcodeInfo[instr->opcode].executionUnit;
-    if ((&instruction_timing_slots)[unit].instr) {
-        if (unit == 1) {
-            switch (instr->opcode) {
-                case PC_ADD:
-                case PC_ADDC:
-                case PC_ADDI:
-                case PC_ADDIS:
-                case PC_CMPI:
-                case PC_CMP:
-                case PC_CMPLI:
-                case PC_CMPL:
-                    list = instr;
-                    ref = data_00582d20.instr;
-                    if (Scheduler_ReturnZero(list, ref, 0))
-                        return 0;
-                    if (!data_00582d50.instr)
-                        return 1;
-                    break;
-            }
-        }
-        return 0;
-    }
-    if ((instr->flags & fIsWrite) && (&instruction_timing_slots)[3].instr &&
-        ((&instruction_timing_slots)[3].instr->flags & fIsWrite))
-        return 0;
-    return 1;
-}
-
-void fn_0052e590(void)
-{
-    instruction_timing_slots.instr = NULL;
-    data_00582d20.instr = NULL;
-    data_00582d28.instr = NULL;
-    data_00582d30.instr = NULL;
-    data_00582d38.instr = NULL;
-    queuedInstruction.instr = NULL;
-    data_00582d48.instr = NULL;
-    data_00582d50.instr = NULL;
-    DAT_00582d58 = 5;
-    DAT_00582d5c = 0;
-    data_00582d60 = 0;
-    data_00582d64 = 0;
-    instruction_completion_entries[0].instr = NULL;
-    instruction_completion_entries[1].instr = NULL;
-    instruction_completion_entries[2].instr = NULL;
-    instruction_completion_entries[3].instr = NULL;
-    instruction_completion_entries[4].instr = NULL;
-}
-
-SInt32 fn_0052e640(PCodeInstruction *p)
-{
-    SInt32 n = machineOpcodeInfo[p->opcode].latency;
-    if (p->flags & fRecordBit) {
-        n += 2;
-    }
-    if (p->opcode == 0x27 || p->opcode == 0x36) {
-        n += p->operand_count - 2;
-    }
-    return n;
+    return machineOpcodeInfo[instruction->opcode].stageCycles[3];
 }

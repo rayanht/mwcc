@@ -511,9 +511,99 @@ static SInt32 instruction_retire_index;
 static unsigned int next_instruction_slot;
 static CompletionEntry instruction_ring[16];
 
-int get_opcode_table_value(PCodeInstruction *instruction)
+static void ZeroStages(PipelineStage *stages, SInt32 n)
 {
-    return machineOpcodeInfo604[instruction->opcode].stageCycles[3];
+    SInt32 i;
+    for (i = 0; i < n; i++)
+        stages[i].instr = NULL;
+}
+
+static void ZeroEntries(CompletionEntry *entries, SInt32 n)
+{
+    SInt32 i;
+    for (i = 0; i < n; i++)
+        entries[i].instr = NULL;
+}
+
+SInt32 get_size_rec_latency(PCodeInstruction *p)
+{
+    SInt32 n = machineOpcodeInfo604[p->opcode].latency;
+    if (p->flags & fRecordBit) {
+        n += 2;
+    }
+    if (p->opcode == 0x27 || p->opcode == 0x36) {
+        n += p->operand_count - 2;
+    }
+    return n;
+}
+
+void fn_0052eb60(void)
+{
+    ZeroStages(&execution_unit_instructions, 9);
+    data_00582de0 = 0x10;
+    DAT_00582de4 = 0;
+    instruction_retire_index = 0;
+    next_instruction_slot = 0;
+    ZeroEntries(instruction_ring, 16);
+    data_00582dd8 = NULL;
+    data_00582ddc = NULL;
+}
+
+int can_issue_instruction(struct PCodeInstruction *instruction)
+{
+    unsigned int category;
+    PCodeInstruction *candidate;
+    PCodeInstruction *ref;
+    int firstMissing;
+    int secondMissing;
+    int noFirst;
+    int enabled;
+    category = machineOpcodeInfo604[(int)instruction->opcode].executionUnit;
+    enabled = data_00582de0;
+    if (enabled == 0)
+        return 0;
+    if (category == 0) {
+        firstMissing = noFirst = !execution_unit_instructions.instr;
+        secondMissing = 0;
+        if ((candidate = data_00582d98.instr) == NULL)
+            secondMissing = 1;
+        if (noFirst == 0 && secondMissing == 0)
+            return 0;
+        if (firstMissing != 0 && secondMissing != 0)
+            return 1;
+        if (firstMissing == 0)
+            candidate = execution_unit_instructions.instr;
+        if (Scheduler_ReturnZero(instruction, candidate, 0) != 0)
+            return 0;
+        ref = data_00582dd8;
+        if (Scheduler_ReturnZero(instruction, ref, 0) != 0)
+            return 0;
+        ref = data_00582ddc;
+        if (Scheduler_ReturnZero(instruction, ref, 0) != 0)
+            return 0;
+    } else if ((&execution_unit_instructions)[category].instr != NULL) {
+        return 0;
+    }
+    return 1;
+}
+
+void assign_instruction_to_execution_unit(struct PCodeInstruction *instruction)
+{
+    unsigned int index;
+    int value;
+    unsigned int opcode = instruction->opcode;
+    index = machineOpcodeInfo604[opcode].executionUnit;
+    value = machineOpcodeInfo604[opcode].stageCycles[0];
+    if ((index == 0) && (execution_unit_instructions.instr != NULL)) {
+        index = 1;
+    }
+    DAT_00582de4 = 1 + DAT_00582de4;
+    data_00582de0 = data_00582de0 + -1;
+    instruction_ring[next_instruction_slot].instr = instruction;
+    instruction_ring[next_instruction_slot].completed = 0;
+    next_instruction_slot = next_instruction_slot + 1 & 0xf;
+    (&execution_unit_instructions)[index].instr = instruction;
+    (&execution_unit_instructions)[index].remaining = value;
 }
 
 void advance_instruction_stages_and_retire(void)
@@ -656,97 +746,7 @@ void advance_instruction_stages_and_retire(void)
     }
 }
 
-void assign_instruction_to_execution_unit(struct PCodeInstruction *instruction)
+int get_opcode_table_value(PCodeInstruction *instruction)
 {
-    unsigned int index;
-    int value;
-    unsigned int opcode = instruction->opcode;
-    index = machineOpcodeInfo604[opcode].executionUnit;
-    value = machineOpcodeInfo604[opcode].stageCycles[0];
-    if ((index == 0) && (execution_unit_instructions.instr != NULL)) {
-        index = 1;
-    }
-    DAT_00582de4 = 1 + DAT_00582de4;
-    data_00582de0 = data_00582de0 + -1;
-    instruction_ring[next_instruction_slot].instr = instruction;
-    instruction_ring[next_instruction_slot].completed = 0;
-    next_instruction_slot = next_instruction_slot + 1 & 0xf;
-    (&execution_unit_instructions)[index].instr = instruction;
-    (&execution_unit_instructions)[index].remaining = value;
-}
-
-static void ZeroStages(PipelineStage *stages, SInt32 n)
-{
-    SInt32 i;
-    for (i = 0; i < n; i++)
-        stages[i].instr = NULL;
-}
-
-static void ZeroEntries(CompletionEntry *entries, SInt32 n)
-{
-    SInt32 i;
-    for (i = 0; i < n; i++)
-        entries[i].instr = NULL;
-}
-
-int can_issue_instruction(struct PCodeInstruction *instruction)
-{
-    unsigned int category;
-    PCodeInstruction *candidate;
-    PCodeInstruction *ref;
-    int firstMissing;
-    int secondMissing;
-    int noFirst;
-    int enabled;
-    category = machineOpcodeInfo604[(int)instruction->opcode].executionUnit;
-    enabled = data_00582de0;
-    if (enabled == 0)
-        return 0;
-    if (category == 0) {
-        firstMissing = noFirst = !execution_unit_instructions.instr;
-        secondMissing = 0;
-        if ((candidate = data_00582d98.instr) == NULL)
-            secondMissing = 1;
-        if (noFirst == 0 && secondMissing == 0)
-            return 0;
-        if (firstMissing != 0 && secondMissing != 0)
-            return 1;
-        if (firstMissing == 0)
-            candidate = execution_unit_instructions.instr;
-        if (Scheduler_ReturnZero(instruction, candidate, 0) != 0)
-            return 0;
-        ref = data_00582dd8;
-        if (Scheduler_ReturnZero(instruction, ref, 0) != 0)
-            return 0;
-        ref = data_00582ddc;
-        if (Scheduler_ReturnZero(instruction, ref, 0) != 0)
-            return 0;
-    } else if ((&execution_unit_instructions)[category].instr != NULL) {
-        return 0;
-    }
-    return 1;
-}
-
-void fn_0052eb60(void)
-{
-    ZeroStages(&execution_unit_instructions, 9);
-    data_00582de0 = 0x10;
-    DAT_00582de4 = 0;
-    instruction_retire_index = 0;
-    next_instruction_slot = 0;
-    ZeroEntries(instruction_ring, 16);
-    data_00582dd8 = NULL;
-    data_00582ddc = NULL;
-}
-
-SInt32 get_size_rec_latency(PCodeInstruction *p)
-{
-    SInt32 n = machineOpcodeInfo604[p->opcode].latency;
-    if (p->flags & fRecordBit) {
-        n += 2;
-    }
-    if (p->opcode == 0x27 || p->opcode == 0x36) {
-        n += p->operand_count - 2;
-    }
-    return n;
+    return machineOpcodeInfo604[instruction->opcode].stageCycles[3];
 }

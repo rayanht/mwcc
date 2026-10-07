@@ -30,6 +30,178 @@ static inline void CPreprocess_FinishOutput(void)
     COS_ResizeHandle(DAT_00586da8.handle, DAT_00586da8.list.size);
 }
 
+// "unknown.c"
+
+static void outchar(char ch)
+{
+    AppendGListByte(&DAT_00586da8.list, ch);
+}
+
+// "CPrec.c"
+
+static inline char CPreprocess_ShouldEmitLineDirectives(void)
+{
+    return copts.line_prepdump;
+}
+
+static inline void CPreprocess_AppendLineBreak(void)
+{
+    if (CPreprocess_ShouldEmitLineDirectives() && DAT_00586da8.handle != NULL && current_file_index >= 0)
+        CompilerTools_AppendGListData(&DAT_00586da8.list, "\r\n", 2);
+}
+
+void fn_004d6ed0(void)
+{
+    if (copts.line_prepdump != '\0' && DAT_00586da8.handle != NULL && current_file_index >= 0) {
+        CompilerTools_AppendGListData(&DAT_00586da8.list, "\r\n", 2);
+    }
+}
+
+void CPreprocess_EmitLineDirective(void)
+{
+    char buffer[512];
+    SInt32 fileValue;
+    NameBuf fileName;
+    UInt16 fileTag;
+    int length;
+
+    if (DAT_00586da8.handle != NULL && current_file_index >= 0) {
+        if (data_00588470 != 0 && DAT_00586da8.list.size > 0)
+            CompilerTools_AppendGListString(&DAT_00586da8.list, "\r\n");
+
+        if (CPreprocess_ShouldEmitLineDirectives())
+            length = sprintf(buffer, "#line %ld\t\"", DAT_00587ef0);
+        else
+            length = sprintf(buffer, "/* #line %ld\t\"", DAT_00587ef0);
+        CompilerTools_AppendGListData(&DAT_00586da8.list, buffer, length);
+
+        if (copts.fullpath_prepdump != 0) {
+            COS_FileGetPathName(buffer, currentPFile, &fileValue);
+            CompilerTools_AppendGListData(&DAT_00586da8.list, buffer, strlen(buffer));
+        } else {
+            COS_FileGetFSSpecInfo(&currentPFile->textfile, &fileTag, &fileValue, &fileName.len);
+            CompilerTools_AppendGListData(&DAT_00586da8.list, fileName.name, fileName.len);
+        }
+
+        length = sprintf(buffer, "\"\t/* stack depth %ld */", current_file_index);
+        CompilerTools_AppendGListData(&DAT_00586da8.list, buffer, length);
+
+        if (CPreprocess_ShouldEmitLineDirectives())
+            CPreprocess_AppendLineBreak();
+
+        data_00588470 = 1;
+    }
+}
+
+void output_escaped_wide_chars(char *data, SInt16 count)
+{
+    UInt16 *p = (UInt16 *)data;
+    SInt32 j, i;
+
+    while (count--) {
+        if (*p < 0x20) {
+            outchar('\\');
+            switch (*p) {
+                case 7:
+                    outchar('a');
+                    break;
+                case 8:
+                    outchar('b');
+                    break;
+                case 27:
+                    outchar('e');
+                    break;
+                case 12:
+                    outchar('f');
+                    break;
+                case 10:
+                    outchar('n');
+                    break;
+                case 13:
+                    outchar('r');
+                    break;
+                case 9:
+                    outchar('t');
+                    break;
+                case 11:
+                    outchar('v');
+                    break;
+                default:
+                    if (*p >= 8)
+                        outchar(*p / 8 + '0');
+                    outchar(*p % 8 + '0');
+                    break;
+            }
+        } else if (*p > 0xff) {
+            outchar('\\');
+            outchar('x');
+            j = 0x1000;
+            i = 0;
+            do {
+                outchar("0123456789ABCDEF"[(*p / j) % 16]);
+                i++;
+                j /= 16;
+            } while (i < 4);
+        } else {
+            switch (*p) {
+                case '"':
+                case '\\':
+                    outchar('\\');
+                    break;
+            }
+            outchar((char)*p);
+        }
+        p++;
+    }
+}
+
+void append_escaped_text(const char *text, UInt16 n)
+{
+    const UInt8 *p = (const UInt8 *)text;
+    while (n--) {
+        if (*p < 0x20) {
+            AppendGListByte(&DAT_00586da8.list, '\\');
+            switch (*p) {
+                case '\a':
+                    AppendGListByte(&DAT_00586da8.list, 'a');
+                    break;
+                case '\b':
+                    AppendGListByte(&DAT_00586da8.list, 'b');
+                    break;
+                case '\f':
+                    AppendGListByte(&DAT_00586da8.list, 'f');
+                    break;
+                case '\n':
+                    AppendGListByte(&DAT_00586da8.list, 'n');
+                    break;
+                case '\r':
+                    AppendGListByte(&DAT_00586da8.list, 'r');
+                    break;
+                case '\t':
+                    AppendGListByte(&DAT_00586da8.list, 't');
+                    break;
+                case '\v':
+                    AppendGListByte(&DAT_00586da8.list, 'v');
+                    break;
+                default:
+                    if (*p >= 8)
+                        AppendGListByte(&DAT_00586da8.list, *p / 8 + '0');
+                    AppendGListByte(&DAT_00586da8.list, (*p % 8) + '0');
+                    break;
+            }
+        } else {
+            switch (*p) {
+                case '"':
+                case '\\':
+                    AppendGListByte(&DAT_00586da8.list, '\\');
+                    break;
+            }
+            AppendGListByte(&DAT_00586da8.list, *p);
+        }
+        p++;
+    }
+}
+
 void CPreprocess_OutputPreprocessedText(void)
 {
     UInt8 *tokenStart;
@@ -462,173 +634,4 @@ void CPreprocess_OutputPreprocessedText(void)
         token = CPrepTokenizer_GetNextToken();
     }
     CPreprocess_FinishOutput();
-}
-void append_escaped_text(const char *text, UInt16 n)
-{
-    const UInt8 *p = (const UInt8 *)text;
-    while (n--) {
-        if (*p < 0x20) {
-            AppendGListByte(&DAT_00586da8.list, '\\');
-            switch (*p) {
-                case '\a':
-                    AppendGListByte(&DAT_00586da8.list, 'a');
-                    break;
-                case '\b':
-                    AppendGListByte(&DAT_00586da8.list, 'b');
-                    break;
-                case '\f':
-                    AppendGListByte(&DAT_00586da8.list, 'f');
-                    break;
-                case '\n':
-                    AppendGListByte(&DAT_00586da8.list, 'n');
-                    break;
-                case '\r':
-                    AppendGListByte(&DAT_00586da8.list, 'r');
-                    break;
-                case '\t':
-                    AppendGListByte(&DAT_00586da8.list, 't');
-                    break;
-                case '\v':
-                    AppendGListByte(&DAT_00586da8.list, 'v');
-                    break;
-                default:
-                    if (*p >= 8)
-                        AppendGListByte(&DAT_00586da8.list, *p / 8 + '0');
-                    AppendGListByte(&DAT_00586da8.list, (*p % 8) + '0');
-                    break;
-            }
-        } else {
-            switch (*p) {
-                case '"':
-                case '\\':
-                    AppendGListByte(&DAT_00586da8.list, '\\');
-                    break;
-            }
-            AppendGListByte(&DAT_00586da8.list, *p);
-        }
-        p++;
-    }
-}
-// "unknown.c"
-
-static void outchar(char ch)
-{
-    AppendGListByte(&DAT_00586da8.list, ch);
-}
-
-void output_escaped_wide_chars(char *data, SInt16 count)
-{
-    UInt16 *p = (UInt16 *)data;
-    SInt32 j, i;
-
-    while (count--) {
-        if (*p < 0x20) {
-            outchar('\\');
-            switch (*p) {
-                case 7:
-                    outchar('a');
-                    break;
-                case 8:
-                    outchar('b');
-                    break;
-                case 27:
-                    outchar('e');
-                    break;
-                case 12:
-                    outchar('f');
-                    break;
-                case 10:
-                    outchar('n');
-                    break;
-                case 13:
-                    outchar('r');
-                    break;
-                case 9:
-                    outchar('t');
-                    break;
-                case 11:
-                    outchar('v');
-                    break;
-                default:
-                    if (*p >= 8)
-                        outchar(*p / 8 + '0');
-                    outchar(*p % 8 + '0');
-                    break;
-            }
-        } else if (*p > 0xff) {
-            outchar('\\');
-            outchar('x');
-            j = 0x1000;
-            i = 0;
-            do {
-                outchar("0123456789ABCDEF"[(*p / j) % 16]);
-                i++;
-                j /= 16;
-            } while (i < 4);
-        } else {
-            switch (*p) {
-                case '"':
-                case '\\':
-                    outchar('\\');
-                    break;
-            }
-            outchar((char)*p);
-        }
-        p++;
-    }
-}
-// "CPrec.c"
-
-static inline char CPreprocess_ShouldEmitLineDirectives(void)
-{
-    return copts.line_prepdump;
-}
-
-static inline void CPreprocess_AppendLineBreak(void)
-{
-    if (CPreprocess_ShouldEmitLineDirectives() && DAT_00586da8.handle != NULL && current_file_index >= 0)
-        CompilerTools_AppendGListData(&DAT_00586da8.list, "\r\n", 2);
-}
-
-void CPreprocess_EmitLineDirective(void)
-{
-    char buffer[512];
-    SInt32 fileValue;
-    NameBuf fileName;
-    UInt16 fileTag;
-    int length;
-
-    if (DAT_00586da8.handle != NULL && current_file_index >= 0) {
-        if (data_00588470 != 0 && DAT_00586da8.list.size > 0)
-            CompilerTools_AppendGListString(&DAT_00586da8.list, "\r\n");
-
-        if (CPreprocess_ShouldEmitLineDirectives())
-            length = sprintf(buffer, "#line %ld\t\"", DAT_00587ef0);
-        else
-            length = sprintf(buffer, "/* #line %ld\t\"", DAT_00587ef0);
-        CompilerTools_AppendGListData(&DAT_00586da8.list, buffer, length);
-
-        if (copts.fullpath_prepdump != 0) {
-            COS_FileGetPathName(buffer, currentPFile, &fileValue);
-            CompilerTools_AppendGListData(&DAT_00586da8.list, buffer, strlen(buffer));
-        } else {
-            COS_FileGetFSSpecInfo(&currentPFile->textfile, &fileTag, &fileValue, &fileName.len);
-            CompilerTools_AppendGListData(&DAT_00586da8.list, fileName.name, fileName.len);
-        }
-
-        length = sprintf(buffer, "\"\t/* stack depth %ld */", current_file_index);
-        CompilerTools_AppendGListData(&DAT_00586da8.list, buffer, length);
-
-        if (CPreprocess_ShouldEmitLineDirectives())
-            CPreprocess_AppendLineBreak();
-
-        data_00588470 = 1;
-    }
-}
-
-void fn_004d6ed0(void)
-{
-    if (copts.line_prepdump != '\0' && DAT_00586da8.handle != NULL && current_file_index >= 0) {
-        CompilerTools_AppendGListData(&DAT_00586da8.list, "\r\n", 2);
-    }
 }
