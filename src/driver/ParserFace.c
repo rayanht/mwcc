@@ -31,7 +31,7 @@
 #define B1(x) (((x) & 0xff00) >> 8)
 #define B0(x) ((x) & 0xff)
 
-const char *DAT_00543380 = NULL;
+const char *data_00543380 = NULL;
 
 static void *xmalloc(const char *what, int size)
 {
@@ -289,8 +289,8 @@ int __stdcall dispatch_plugin_request(struct CWPluginPrivateContext *context)
             case -1:
                 break;
         }
-    } else if (DAT_00543380 && result != 1)
-        fprintf(stderr, "Unexpected error in %s [%d]\n", DAT_00543380, result);
+    } else if (data_00543380 && result != 1)
+        fprintf(stderr, "Unexpected error in %s [%d]\n", data_00543380, result);
     CWPluginsPrivate_ReturnArgument(context, result);
     return result;
 }

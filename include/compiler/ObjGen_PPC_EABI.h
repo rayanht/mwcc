@@ -208,7 +208,7 @@ extern void fn_0048b1e0(HashNameNode *arg1);
 extern void ObjGen_PPC_EABI_SetObjectSectionIndex(Object *object);
 extern void fn_004889b0(ObjGenSection *context, int section, Object *object, UInt8 flags, unsigned int options);
 extern SInt32 output_buffer_length;
-extern UInt8 DAT_0058849e;
+extern UInt8 data_0058849e;
 extern struct CNameNode *data_005870e8;
 extern struct ObjGenRelocation *relocation_list;
 extern struct CNameNode *data_00587ff8;

@@ -220,21 +220,21 @@ static OptionEntry pragma_options[] = {
 static struct CPrepRec data_0057f6c8[64];
 static SInt16 if_depth;
 static struct CPrepFileInfo *data_0057f94a[32];
-static struct PrepNameCacheEntry *DAT_0057f9ca;
+static struct PrepNameCacheEntry *data_0057f9ca;
 static UInt32 next_scaled_ticks;
 static UInt8 data_0057f9d2;
 static UInt8 data_0057f9d3;
 static SInt32 data_0057f9d4;
 static SInt32 text_offset;
-static UInt8 DAT_0057f9dc;
+static UInt8 data_0057f9dc;
 static UInt8 data_0057f9dd;
-static UInt8 DAT_0057f9de;
+static UInt8 data_0057f9de;
 static struct CPrep_0043afc0_Entry saved_structalignments[128];
 static SInt16 data_0057fce0;
 static struct PragmaNode *pragma_list;
 static struct IROOptNode *saved_options;
 static struct CompilerLinkerOptions *data_0057fcea;
-static UInt8 DAT_0057fcee;
+static UInt8 data_0057fcee;
 static GList macro_text;
 static struct StorageHandle *buffered_token_storage;
 static struct TStreamElement *buffered_tokens;
@@ -243,7 +243,7 @@ static SInt32 data_0057fd0c;
 static unsigned char file_cannot_opened_name[64];
 static unsigned int total_heap_size;
 static struct TStreamElement lastBufferedToken;
-static short DAT_0057fd6c;
+static short data_0057fd6c;
 #pragma options align = reset
 
 typedef void (*Callback)(TStreamElement *);
@@ -255,7 +255,7 @@ typedef enum { CPrep_DidPush, CPrep_DidPop } CPrep_DidFlag;
     do {                                                                                                               \
         data_00588470 = 1;                                                                                             \
         data_00588524 = 1;                                                                                             \
-        DAT_00588523 = 1;                                                                                              \
+        data_00588523 = 1;                                                                                             \
     } while (0)
 #define KEYWORD()                                                                                                      \
     if (memcmp("if", NAMEBUF, 3) == 0)                                                                                 \
@@ -349,7 +349,7 @@ void CPrep_ParseDirective(void)
     SInt16 ch;
     Boolean save;
 
-    data_0057fd0c = (char *)currentTextPosition - PTR_00587fb0;
+    data_0057fd0c = (char *)currentTextPosition - data_00587fb0;
     ch = CPrepTokenizer_ScanChar();
     currentTextPosition = (UInt8 *)lookahead_position;
     switch (ch) {
@@ -359,7 +359,7 @@ void CPrep_ParseDirective(void)
             data_005884fd = 0;
             if (macro_expansion_depth > 0 || currentTextPosition < textend)
                 ch = 0x69;
-            DAT_0057f9dc = 1;
+            data_0057f9dc = 1;
             CError_ReportError(ch);
             data_005884fd = save;
         case 13:
@@ -389,7 +389,7 @@ void CPrep_ParseDirective(void)
     if (!strcmp("error", data_00587fa0->name)) {
         save = data_005884fd;
         data_005884fd = 0;
-        DAT_0057f9dc = 1;
+        data_0057f9dc = 1;
         CError_ReportError(ERR_PREPROCESSOR_ERROR_DIRECTIVE);
         data_005884fd = save;
         fn_00449d60();
@@ -406,7 +406,7 @@ void CPrep_ParseDirective(void)
         if (!strcmp("warning", data_00587fa0->name)) {
             save = data_005884fd;
             data_005884fd = 0;
-            DAT_0057f9dc = 1;
+            data_0057f9dc = 1;
             CError_Warning(ERR_PREPROCESSOR_WARNING_DIRECTIVE);
             data_005884fd = save;
             CPrepTokenizer_SkipToEndOfLine();
@@ -458,7 +458,7 @@ void CPrep_ParseDirective(void)
     }
     save = data_005884fd;
     data_005884fd = 0;
-    DAT_0057f9dc = 1;
+    data_0057f9dc = 1;
     CError_ReportError(ERR_UNDEFINED_PREPROCESSOR_DIRECTIVE);
     data_005884fd = save;
     CPrepTokenizer_SkipToEndOfLine();
@@ -472,7 +472,7 @@ static void CPrep_Error(SInt16 code)
     data_005884fd = 0;
     if (code == 0x66 && (macro_expansion_depth > 0 || currentTextPosition < textend))
         code = 0x69;
-    DAT_0057f9dc = 1;
+    data_0057f9dc = 1;
     CError_ReportError(code);
     data_005884fd = save;
 }
@@ -496,9 +496,9 @@ static SInt32 calc_line(CPrepFileInfo *p)
 static inline void process_newline(void)
 {
     if (macro_expansion_depth == 0) {
-        if (DAT_0058850f != 0)
+        if (data_0058850f != 0)
             fn_004d6ed0();
-        DAT_00587ef0++;
+        data_00587ef0++;
         line_count++;
         if (current_file_index <= 0)
             text_offset = calc_line(data_0057f94a[0]);
@@ -539,7 +539,7 @@ void skip_inactive_if_blocks(void)
             continue;                                                                                                  \
         }
                             EOF_PREFIX()
-                            DAT_0057f9dc = 0;
+                            data_0057f9dc = 0;
                             tmp.tokenfile = data_0057f6c8[if_depth - 1].file;
                             tmp.tokenoffset = data_0057f6c8[if_depth - 1].pos;
                             CError_SetBufferedToken(&tmp);
@@ -597,7 +597,7 @@ int parse_endif_directive(void)
     if (if_depth <= 0) {
         savedFlag = data_005884fd;
         data_005884fd = 0;
-        DAT_0057f9dc = 1;
+        data_0057f9dc = 1;
         CError_ReportError(ERR_PRECEDING_IF_MISSING);
         data_005884fd = savedFlag;
         CPrepTokenizer_SkipToEndOfLine();
@@ -609,7 +609,7 @@ int parse_endif_directive(void)
         if (result != 0) {
             savedFlag = data_005884fd;
             data_005884fd = 0;
-            DAT_0057f9dc = 1;
+            data_0057f9dc = 1;
             CError_ReportError(ERR_END_LINE_EXPECTED);
             data_005884fd = savedFlag;
             CPrepTokenizer_SkipToEndOfLine();
@@ -621,7 +621,7 @@ int parse_endif_directive(void)
     if (if_depth <= 0) {
         savedFlag = data_005884fd;
         data_005884fd = 0;
-        DAT_0057f9dc = 1;
+        data_0057f9dc = 1;
         CError_ReportError(ERR_PREPROCESSOR_SYNTAX_ERROR);
         data_005884fd = savedFlag;
     } else {
@@ -655,7 +655,7 @@ void parse_else_directive(void)
     if (((if_depth <= 0) || ((st = data_0057f6c8[if_depth - 1].state) == 2)) || (st == 4)) {
         savedFlag = data_005884fd;
         data_005884fd = 0;
-        DAT_0057f9dc = 1;
+        data_0057f9dc = 1;
         CError_ReportError(ERR_PRECEDING_IF_MISSING);
         data_005884fd = savedFlag;
         CPrepTokenizer_SkipToEndOfLine();
@@ -665,7 +665,7 @@ void parse_else_directive(void)
         if (CPrep_ScanMacroExpandedChar() != 0) {
             savedFlag = data_005884fd;
             data_005884fd = 0;
-            DAT_0057f9dc = 1;
+            data_0057f9dc = 1;
             CError_ReportError(ERR_END_LINE_EXPECTED);
             data_005884fd = savedFlag;
             CPrepTokenizer_SkipToEndOfLine();
@@ -697,7 +697,7 @@ void parse_elif_directive(void)
     if (if_depth <= 0 || (st = data_0057f6c8[if_depth - 1].state) == 2 || st == 4) {
         Boolean saved = data_005884fd;
         data_005884fd = 0;
-        DAT_0057f9dc = 1;
+        data_0057f9dc = 1;
         CError_ReportError(ERR_PRECEDING_IF_MISSING);
         data_005884fd = saved;
         CPrepTokenizer_SkipToEndOfLine();
@@ -732,7 +732,7 @@ void parse_elif_directive(void)
     do {                                                                                                               \
         UInt8 saved_ = data_005884fd;                                                                                  \
         data_005884fd = 0;                                                                                             \
-        DAT_0057f9dc = 1;                                                                                              \
+        data_0057f9dc = 1;                                                                                             \
         CError_ReportError(line);                                                                                      \
         data_005884fd = saved_;                                                                                        \
     } while (0)
@@ -744,7 +744,7 @@ static void CPrep_AddLine(SInt16 kind)
     } else {
         data_0057f6c8[if_depth].state = kind;
         data_0057f6c8[if_depth].file = currentPFile;
-        data_0057f6c8[if_depth].pos = (char *)currentTextPosition - PTR_00587fb0;
+        data_0057f6c8[if_depth].pos = (char *)currentTextPosition - data_00587fb0;
         if_depth++;
     }
 }
@@ -831,13 +831,13 @@ static void CPrep_Push(SInt16 type)
     if (if_depth >= 0x40) {
         save = data_005884fd;
         data_005884fd = 0;
-        DAT_0057f9dc = 1;
+        data_0057f9dc = 1;
         CError_ReportError(ERR_IF_NESTING_OVERFLOW);
         data_005884fd = save;
     } else {
         data_0057f6c8[if_depth].state = type;
         data_0057f6c8[if_depth].file = currentPFile;
-        data_0057f6c8[if_depth].pos = (char *)currentTextPosition - PTR_00587fb0;
+        data_0057f6c8[if_depth].pos = (char *)currentTextPosition - data_00587fb0;
         if_depth++;
     }
 }
@@ -872,26 +872,26 @@ void fn_004392e0(void)
 
     macrocheck = 1;
     data_00588470 = 0;
-    DAT_0057f9de = 1;
+    data_0057f9de = 1;
     savedState = evaluate_conditional_expression_value();
-    if (DAT_0057fd6c != 0) {
+    if (data_0057fd6c != 0) {
         savedFlag = data_005884fd;
         data_005884fd = 0;
-        DAT_0057f9dc = 1;
+        data_0057f9dc = 1;
         CError_ReportError(ERR_EXPRESSION_SYNTAX_ERROR);
         data_005884fd = savedFlag;
     }
-    DAT_0057f9de = 0;
+    data_0057f9de = 0;
     if (data_00588470 != 0) {
         savedFlag = data_005884fd;
         data_005884fd = 0;
-        DAT_0057f9dc = 1;
+        data_0057f9dc = 1;
         CError_ReportError(ERR_UNEXPECTED_END_LINE);
         data_005884fd = savedFlag;
     } else if ((short)CPrep_ScanMacroExpandedChar() != 0) {
         savedFlag = data_005884fd;
         data_005884fd = 0;
-        DAT_0057f9dc = 1;
+        data_0057f9dc = 1;
         CError_ReportError(ERR_END_LINE_EXPECTED);
         data_005884fd = savedFlag;
         CPrepTokenizer_SkipToEndOfLine();
@@ -914,14 +914,14 @@ CNameRef evaluate_conditional_expression_value(void)
     UInt8 savedErrorState;
 
     result = evaluate_binary_expression_value(NULL, -1);
-    if (DAT_0057fd6c == '?') {
+    if (data_0057fd6c == '?') {
         trueCondition = evaluate_binary_expression_value(NULL, -1);
-        if (DAT_0057fd6c == '?') {
+        if (data_0057fd6c == '?') {
             trueBranch = evaluate_conditional_expression_value();
             if (CPrep_ScanMacroExpandedChar() == 0) {
                 CPrep_ReportError(ERR_UNEXPECTED_END_LINE);
                 trueValue = trueCondition;
-            } else if (DAT_0057fd6c != ':') {
+            } else if (data_0057fd6c != ':') {
                 CPrep_ReportError(ERR_COLON_EXPECTED);
                 trueValue = trueCondition;
             } else if (CPrep_ScanMacroExpandedChar() == 0) {
@@ -940,15 +940,15 @@ CNameRef evaluate_conditional_expression_value(void)
         if (CPrep_ScanMacroExpandedChar() == 0) {
             savedErrorState = data_005884fd;
             data_005884fd = 0;
-            DAT_0057f9dc = 1;
+            data_0057f9dc = 1;
             CError_ReportError(ERR_UNEXPECTED_END_LINE);
             data_005884fd = savedErrorState;
             return result;
         }
-        if (DAT_0057fd6c != ':') {
+        if (data_0057fd6c != ':') {
             savedErrorState = data_005884fd;
             data_005884fd = 0;
-            DAT_0057f9dc = 1;
+            data_0057f9dc = 1;
             CError_ReportError(ERR_COLON_EXPECTED);
             data_005884fd = savedErrorState;
             return result;
@@ -956,19 +956,19 @@ CNameRef evaluate_conditional_expression_value(void)
         if (CPrep_ScanMacroExpandedChar() == 0) {
             savedErrorState = data_005884fd;
             data_005884fd = 0;
-            DAT_0057f9dc = 1;
+            data_0057f9dc = 1;
             CError_ReportError(ERR_UNEXPECTED_END_LINE);
             data_005884fd = savedErrorState;
             return result;
         }
 
         falseCondition = evaluate_binary_expression_value(NULL, -1);
-        if (DAT_0057fd6c == '?') {
+        if (data_0057fd6c == '?') {
             nestedTrueValue = evaluate_conditional_expression_value();
             if (CPrep_ScanMacroExpandedChar() == 0) {
                 CPrep_ReportError(ERR_UNEXPECTED_END_LINE);
                 falseValue = falseCondition;
-            } else if (DAT_0057fd6c != ':') {
+            } else if (data_0057fd6c != ':') {
                 CPrep_ReportError(ERR_COLON_EXPECTED);
                 falseValue = falseCondition;
             } else if (CPrep_ScanMacroExpandedChar() == 0) {
@@ -1027,14 +1027,14 @@ struct CNameRef evaluate_binary_expression_value(struct CNameRef *initialOperand
     }
 
     for (;;) {
-        precedence = GetPrec(operation = DAT_0057fd6c);
+        precedence = GetPrec(operation = data_0057fd6c);
         if (precedence == 0) {
             return leftOperand.nameRef;
         }
         if (CPrep_ScanMacroExpandedChar() == 0) {
             savedErrorState = data_005884fd;
             data_005884fd = 0;
-            DAT_0057f9dc = 1;
+            data_0057f9dc = 1;
             CError_ReportError(ERR_UNEXPECTED_END_LINE);
             data_005884fd = savedErrorState;
             return leftOperand.nameRef;
@@ -1043,7 +1043,7 @@ struct CNameRef evaluate_binary_expression_value(struct CNameRef *initialOperand
         rightOperand.nameRef = evaluate_unary_expression_value();
 
         for (;;) {
-            if (DAT_0057fd6c == ')' || CPrep_ScanMacroExpandedChar() == 0) {
+            if (data_0057fd6c == ')' || CPrep_ScanMacroExpandedChar() == 0) {
                 if (leftOperand.prepValue.isUnsigned) {
                     rightOperand.prepValue.isUnsigned = 1;
                 }
@@ -1053,11 +1053,11 @@ struct CNameRef evaluate_binary_expression_value(struct CNameRef *initialOperand
                 return leftOperand.nameRef;
             }
 
-            rightPrecedence = GetPrec(DAT_0057fd6c);
+            rightPrecedence = GetPrec(data_0057fd6c);
             if (rightPrecedence == 0) {
                 savedErrorState = data_005884fd;
                 data_005884fd = 0;
-                DAT_0057f9dc = 1;
+                data_0057f9dc = 1;
                 CError_ReportError(ERR_EXPRESSION_SYNTAX_ERROR);
                 data_005884fd = savedErrorState;
                 return leftOperand.nameRef;
@@ -1086,7 +1086,7 @@ static void CPrep_Error_439930(int line)
     UInt8 save;
     save = data_005884fd;
     data_005884fd = 0;
-    DAT_0057f9dc = 1;
+    data_0057f9dc = 1;
     CError_ReportError(line);
     data_005884fd = save;
 }
@@ -1140,7 +1140,7 @@ struct CNameRef evaluate_unary_expression_value(void)
             }
             case '(':
                 result.ref = evaluate_conditional_expression_value();
-                if (DAT_0057fd6c != ')') {
+                if (data_0057fd6c != ')') {
                     CPrep_Error_439930(0x73);
                     return result.ref;
                 }
@@ -1172,8 +1172,8 @@ struct CNameRef evaluate_unary_expression_value(void)
                     CPrep_Error_439930(0x70);
                     break;
                 }
-                DAT_0057fd6c = CPrepTokenizer_ScanToken();
-                if (DAT_0057fd6c == '(') {
+                data_0057fd6c = CPrepTokenizer_ScanToken();
+                if (data_0057fd6c == '(') {
                     if (CPrep_ScanMacroExpandedChar() == 0) {
                         CPrep_Error_439930(0x70);
                         macrocheck = 1;
@@ -1193,7 +1193,7 @@ struct CNameRef evaluate_unary_expression_value(void)
                     } else if (CPrepTokenizer_ScanToken() != ')') {
                         CPrep_Error_439930(0x73);
                     }
-                } else if (DAT_0057fd6c == -3) {
+                } else if (data_0057fd6c == -3) {
                     if (find_macro() != NULL)
                         result.value.value = cint64_one;
                 } else {
@@ -1204,9 +1204,9 @@ struct CNameRef evaluate_unary_expression_value(void)
         }
     }
     if (CPrep_ScanMacroExpandedChar() != 0)
-        DAT_0057fd6c = CPrepTokenizer_ScanToken();
+        data_0057fd6c = CPrepTokenizer_ScanToken();
     else
-        DAT_0057fd6c = 0;
+        data_0057fd6c = 0;
     return result.ref;
 }
 
@@ -1223,7 +1223,7 @@ void parse_line_directive(void)
     if (CPrep_ScanMacroExpandedChar() == 0) {
         Boolean save = data_005884fd;
         data_005884fd = 0;
-        DAT_0057f9dc = 1;
+        data_0057f9dc = 1;
         CError_ReportError(ERR_UNEXPECTED_END_LINE);
         data_005884fd = save;
         return;
@@ -1231,20 +1231,20 @@ void parse_line_directive(void)
     if (CPrepTokenizer_ScanToken() != -1) {
         Boolean save = data_005884fd;
         data_005884fd = 0;
-        DAT_0057f9dc = 1;
+        data_0057f9dc = 1;
         CError_ReportError(ERR_PREPROCESSOR_SYNTAX_ERROR);
         data_005884fd = save;
         CPrepTokenizer_SkipToEndOfLine();
         return;
     }
-    DAT_00587ef0 = intconst_lo - 1;
+    data_00587ef0 = intconst_lo - 1;
     if (CPrep_ScanMacroExpandedChar() == 0)
         return;
     ch = CPrepTokenizer_NextChar();
     if (ch != '"') {
         Boolean save = data_005884fd;
         data_005884fd = 0;
-        DAT_0057f9dc = 1;
+        data_0057f9dc = 1;
         CError_ReportError(ERR_PREPROCESSOR_SYNTAX_ERROR);
         data_005884fd = save;
         CPrepTokenizer_SkipToEndOfLine();
@@ -1257,7 +1257,7 @@ void parse_line_directive(void)
         if (length > 252) {
             Boolean save = data_005884fd;
             data_005884fd = 0;
-            DAT_0057f9dc = 1;
+            data_0057f9dc = 1;
             CError_ReportError(ERR_STRING_TOO_LONG);
             data_005884fd = save;
             CPrepTokenizer_SkipToEndOfLine();
@@ -1278,7 +1278,7 @@ void parse_line_directive(void)
     if (CPrep_ScanMacroExpandedChar() != 0) {
         Boolean save = data_005884fd;
         data_005884fd = 0;
-        DAT_0057f9dc = 1;
+        data_0057f9dc = 1;
         CError_ReportError(ERR_END_LINE_EXPECTED);
         data_005884fd = save;
         CPrepTokenizer_SkipToEndOfLine();
@@ -1320,7 +1320,7 @@ void CPrep_0043a0a0(char allowInclude)
     if (CPrep_ScanMacroExpandedChar() == 0) {
         savedDiagnostic1 = data_005884fd;
         data_005884fd = 0;
-        DAT_0057f9dc = 1;
+        data_0057f9dc = 1;
         CError_ReportError(ERR_UNEXPECTED_END_LINE);
         data_005884fd = savedDiagnostic1;
         return;
@@ -1329,7 +1329,7 @@ void CPrep_0043a0a0(char allowInclude)
     if (terminator != '"' && terminator != '<') {
         savedDiagnostic2 = data_005884fd;
         data_005884fd = 0;
-        DAT_0057f9dc = 1;
+        data_0057f9dc = 1;
         CError_ReportError(ERR_PREPROCESSOR_SYNTAX_ERROR);
         data_005884fd = savedDiagnostic2;
         CPrepTokenizer_SkipToEndOfLine();
@@ -1347,7 +1347,7 @@ void CPrep_0043a0a0(char allowInclude)
         if ((short)count.length > 254) {
             savedDiagnostic3 = data_005884fd;
             data_005884fd = 0;
-            DAT_0057f9dc = 1;
+            data_0057f9dc = 1;
             CError_ReportError(ERR_STRING_TOO_LONG);
             data_005884fd = savedDiagnostic3;
             CPrepTokenizer_SkipToEndOfLine();
@@ -1364,7 +1364,7 @@ void CPrep_0043a0a0(char allowInclude)
     if (CPrep_ScanMacroExpandedChar() != 0) {
         savedDiagnostic4 = data_005884fd;
         data_005884fd = 0;
-        DAT_0057f9dc = 1;
+        data_0057f9dc = 1;
         CError_ReportError(ERR_END_LINE_EXPECTED);
         data_005884fd = savedDiagnostic4;
         CPrepTokenizer_SkipToEndOfLine();
@@ -1463,7 +1463,7 @@ static inline void CPrep_ParseListingOption(void)
     if (copts.warn_illpragma) {
         saved = data_005884fd;
         data_005884fd = 0;
-        DAT_0057f9dc = 1;
+        data_0057f9dc = 1;
         CError_Warning(ERR_ILLEGAL_PRAGMA);
         data_005884fd = saved;
     }
@@ -1549,7 +1549,7 @@ void parse_pragma(void)
             } else {
                 savedErrors = data_005884fd;
                 data_005884fd = 0;
-                DAT_0057f9dc = 1;
+                data_0057f9dc = 1;
                 CError_ReportError(ERR_PRECEDING_PRAGMA_PUSH_MISSING);
                 data_005884fd = savedErrors;
             }
@@ -1567,20 +1567,20 @@ void parse_pragma(void)
             if (CPrep_ScanMacroExpandedChar() == 0) {
                 savedErrors = data_005884fd;
                 data_005884fd = 0;
-                DAT_0057f9dc = 1;
+                data_0057f9dc = 1;
                 CError_ReportError(ERR_UNEXPECTED_END_LINE);
                 data_005884fd = savedErrors;
             } else if (CPrepTokenizer_ScanToken() != -4) {
                 savedErrors = data_005884fd;
                 data_005884fd = 0;
-                DAT_0057f9dc = 1;
+                data_0057f9dc = 1;
                 CError_ReportError(ERR_PREPROCESSOR_SYNTAX_ERROR);
                 data_005884fd = savedErrors;
                 CPrepTokenizer_SkipToEndOfLine();
-            } else if (DAT_005882de != 0) {
+            } else if (data_005882de != 0) {
                 savedErrors = data_005884fd;
                 data_005884fd = 0;
-                DAT_0057f9dc = 1;
+                data_0057f9dc = 1;
                 CError_ReportError(ERR_ILLEGAL_STRING_CONSTANT);
                 data_005884fd = savedErrors;
                 CPrepTokenizer_SkipToEndOfLine();
@@ -1589,7 +1589,7 @@ void parse_pragma(void)
                 if (CPrep_ScanMacroExpandedChar() != 0) {
                     savedErrors = data_005884fd;
                     data_005884fd = 0;
-                    DAT_0057f9dc = 1;
+                    data_0057f9dc = 1;
                     CError_ReportError(ERR_END_LINE_EXPECTED);
                     data_005884fd = savedErrors;
                     CPrepTokenizer_SkipToEndOfLine();
@@ -1602,13 +1602,13 @@ void parse_pragma(void)
         } else if (memcmp(PN, "opt_unroll_instr_count", 23) == 0) {
             parse_prep_setting();
         } else if (memcmp(PN, "exception_terminate", 20) == 0) {
-            if (!DAT_0058850f)
+            if (!data_0058850f)
                 CException_PushEntry();
         } else if (memcmp(PN, "exception_arrayinit", 20) == 0) {
-            if (!DAT_0058850f)
+            if (!data_0058850f)
                 CException_AddStdTypeRecord();
         } else if (memcmp(PN, "exception_magic", 16) == 0) {
-            if (!DAT_0058850f)
+            if (!data_0058850f)
                 fn_004e30c0();
         } else if (memcmp(PN, "SOMReleaseOrder", 16) == 0) {
             macrocheck = 1;
@@ -1645,7 +1645,7 @@ void parse_pragma(void)
         if (copts.warn_illpragma) {
             savedErrors = data_005884fd;
             data_005884fd = 0;
-            DAT_0057f9dc = 1;
+            data_0057f9dc = 1;
             CError_Warning(ERR_ILLEGAL_PRAGMA);
             data_005884fd = savedErrors;
         }
@@ -1657,7 +1657,7 @@ done:
     if (CPrep_ScanMacroExpandedChar() != 0) {
         savedErrors = data_005884fd;
         data_005884fd = 0;
-        DAT_0057f9dc = 1;
+        data_0057f9dc = 1;
         CError_ReportError(ERR_END_LINE_EXPECTED);
         data_005884fd = savedErrors;
         CPrepTokenizer_SkipToEndOfLine();
@@ -1671,7 +1671,7 @@ static void CPrep_ErrorBA(void)
     if (copts.warn_illpragma) {
         Boolean save = data_005884fd;
         data_005884fd = 0;
-        DAT_0057f9dc = 1;
+        data_0057f9dc = 1;
         CError_Warning(ERR_ILLEGAL_PRAGMA);
         data_005884fd = save;
     }
@@ -1740,7 +1740,7 @@ static void CPrep_0043afc0_error(SInt32 code)
 {
     Boolean saved = data_005884fd;
     data_005884fd = 0;
-    DAT_0057f9dc = 1;
+    data_0057f9dc = 1;
     CError_Warning(code);
     data_005884fd = saved;
 }
@@ -1855,7 +1855,7 @@ void parse_structalignment(void)
     do {                                                                                                               \
         UInt8 saved = data_005884fd;                                                                                   \
         data_005884fd = 0;                                                                                             \
-        DAT_0057f9dc = 1;                                                                                              \
+        data_0057f9dc = 1;                                                                                             \
         fn(line);                                                                                                      \
         data_005884fd = saved;                                                                                         \
     } while (0)
@@ -1942,7 +1942,7 @@ void parse_unroll_pragma(void)
             }
             saved = data_005884fd;
             data_005884fd = 0;
-            DAT_0057f9dc = 1;
+            data_0057f9dc = 1;
             CError_ReportError(ERR_NUMBER_OUT_RANGE);
             data_005884fd = saved;
             CPrepTokenizer_SkipToEndOfLine();
@@ -1956,7 +1956,7 @@ void parse_unroll_pragma(void)
         }
         saved = data_005884fd;
         data_005884fd = 0;
-        DAT_0057f9dc = 1;
+        data_0057f9dc = 1;
         CError_ReportError(ERR_ILLEGAL_TOKEN);
         data_005884fd = saved;
         CPrepTokenizer_SkipToEndOfLine();
@@ -1965,7 +1965,7 @@ void parse_unroll_pragma(void)
     if (copts.warn_illpragma != 0) {
         saved = data_005884fd;
         data_005884fd = 0;
-        DAT_0057f9dc = 1;
+        data_0057f9dc = 1;
         CError_Warning(ERR_ILLEGAL_PRAGMA);
         data_005884fd = saved;
     }
@@ -2003,7 +2003,7 @@ void parse_optimization_level_pragma(void)
             }
             saved = data_005884fd;
             data_005884fd = 0;
-            DAT_0057f9dc = 1;
+            data_0057f9dc = 1;
             CError_ReportError(ERR_NUMBER_OUT_RANGE);
             data_005884fd = saved;
             CPrepTokenizer_SkipToEndOfLine();
@@ -2017,7 +2017,7 @@ void parse_optimization_level_pragma(void)
         }
         saved = data_005884fd;
         data_005884fd = 0;
-        DAT_0057f9dc = 1;
+        data_0057f9dc = 1;
         CError_ReportError(ERR_ILLEGAL_TOKEN);
         data_005884fd = saved;
         CPrepTokenizer_SkipToEndOfLine();
@@ -2026,7 +2026,7 @@ void parse_optimization_level_pragma(void)
     if (copts.warn_illpragma != 0) {
         saved = data_005884fd;
         data_005884fd = 0;
-        DAT_0057f9dc = 1;
+        data_0057f9dc = 1;
         CError_Warning(ERR_ILLEGAL_PRAGMA);
         data_005884fd = saved;
     }
@@ -2049,7 +2049,7 @@ void CPrep_0043b790(void)
         if (obj->sclass != TK_EOF && obj->sclass != TK_EXTERN) {
             saved = data_005884fd;
             data_005884fd = 0;
-            DAT_0057f9dc = 1;
+            data_0057f9dc = 1;
             CError_ReportError(ERR_ILLEGAL_STORAGE_CLASS);
             data_005884fd = saved;
         }
@@ -2057,21 +2057,21 @@ void CPrep_0043b790(void)
     } else {
         saved = data_005884fd;
         data_005884fd = 0;
-        DAT_0057f9dc = 1;
+        data_0057f9dc = 1;
         CError_ReportError(ERR_ILLEGAL_PRAGMA);
         data_005884fd = saved;
     }
     if (data_00588470 != 0) {
         saved = data_005884fd;
         data_005884fd = 0;
-        DAT_0057f9dc = 1;
+        data_0057f9dc = 1;
         CError_ReportError(ERR_UNEXPECTED_END_LINE);
         data_005884fd = saved;
     }
     if (tk != ';') {
         saved = data_005884fd;
         data_005884fd = 0;
-        DAT_0057f9dc = 1;
+        data_0057f9dc = 1;
         CError_ReportError(ERR_SEMICOLON_EXPECTED);
         data_005884fd = saved;
     }
@@ -2111,7 +2111,7 @@ void parse_align_pragma(void)
         if (copts.warn_illpragma) {
             UInt8 savedSetting = data_005884fd;
             data_005884fd = 0;
-            DAT_0057f9dc = 1;
+            data_0057f9dc = 1;
             CError_Warning(ERR_ILLEGAL_PRAGMA);
             data_005884fd = savedSetting;
         }
@@ -2123,7 +2123,7 @@ done:
     if (CPrep_ScanMacroExpandedChar()) {
         UInt8 savedSetting = data_005884fd;
         data_005884fd = 0;
-        DAT_0057f9dc = 1;
+        data_0057f9dc = 1;
         CError_ReportError(ERR_END_LINE_EXPECTED);
         data_005884fd = savedSetting;
         CPrepTokenizer_SkipToEndOfLine();
@@ -2141,9 +2141,9 @@ void read_pragma_token(void)
     if (CPrep_ScanMacroExpandedChar() != 0) {
         length = 0;
         do {
-            DAT_00588523 = 0;
+            data_00588523 = 0;
             ch = CPrepTokenizer_ScanChar();
-            if (DAT_00588523 != 0 || ch <= 32)
+            if (data_00588523 != 0 || ch <= 32)
                 break;
             buffer[length++] = ch;
             currentTextPosition = (UInt8 *)lookahead_position;
@@ -2152,7 +2152,7 @@ void read_pragma_token(void)
         if (length == 0 || length >= 255) {
             saved = data_005884fd;
             data_005884fd = 0;
-            DAT_0057f9dc = 1;
+            data_0057f9dc = 1;
             CError_Warning(ERR_ILLEGAL_PRAGMA);
             data_005884fd = saved;
         }
@@ -2164,7 +2164,7 @@ void read_pragma_token(void)
     if (copts.warn_illpragma != 0) {
         saved = data_005884fd;
         data_005884fd = 0;
-        DAT_0057f9dc = 1;
+        data_0057f9dc = 1;
         CError_Warning(ERR_ILLEGAL_PRAGMA);
         data_005884fd = saved;
     }
@@ -2174,7 +2174,7 @@ void read_pragma_token(void)
     do {                                                                                                               \
         UInt8 saved = data_005884fd;                                                                                   \
         data_005884fd = 0;                                                                                             \
-        DAT_0057f9dc = 1;                                                                                              \
+        data_0057f9dc = 1;                                                                                             \
         CError_Warning(line);                                                                                          \
         data_005884fd = saved;                                                                                         \
     } while (0)
@@ -2258,7 +2258,7 @@ void fn_0043be10(void)
     if (copts.warn_illpragma != 0U) {
         saved = data_005884fd;
         data_005884fd = 0U;
-        DAT_0057f9dc = 1U;
+        data_0057f9dc = 1U;
         CError_Warning(186U);
         data_005884fd = saved;
     }
@@ -2325,7 +2325,7 @@ void parse_pragma_option(int directive)
     if (copts.warn_illpragma != 0) {
         savedFlag = data_005884fd;
         data_005884fd = 0;
-        DAT_0057f9dc = 1;
+        data_0057f9dc = 1;
         CError_Warning(ERR_ILLEGAL_PRAGMA);
         data_005884fd = savedFlag;
     }
@@ -2354,7 +2354,7 @@ void apply_pragma_object_flags(unsigned int flags)
                         default:
                             saved = data_005884fd;
                             data_005884fd = 0;
-                            DAT_0057f9dc = 1;
+                            data_0057f9dc = 1;
                             CError_Warning(ERR_ILLEGAL_PRAGMA);
                             data_005884fd = saved;
                             return;
@@ -2373,7 +2373,7 @@ void apply_pragma_object_flags(unsigned int flags)
     if (copts.warn_illpragma != 0) {
         saved = data_005884fd;
         data_005884fd = 0;
-        DAT_0057f9dc = 1;
+        data_0057f9dc = 1;
         CError_Warning(ERR_ILLEGAL_PRAGMA);
         data_005884fd = saved;
     }
@@ -2436,7 +2436,7 @@ SInt16 CPrep_ExpectEndLine(char suppressDiagnostic)
     if (suppressDiagnostic == '\0') {
         savedFlag = data_005884fd;
         data_005884fd = 0;
-        DAT_0057f9dc = 1;
+        data_0057f9dc = 1;
         CError_ReportError(ERR_END_LINE_EXPECTED);
         data_005884fd = savedFlag;
     }
@@ -2451,12 +2451,12 @@ UInt8 CPrep_ExpandMacro(void)
 
     macro = lookup_expandable_macro();
     if (macro != NULL) {
-        DAT_0057fcee = macrocheck = 0;
-        savedExpansionState = DAT_00588523;
+        data_0057fcee = macrocheck = 0;
+        savedExpansionState = data_00588523;
         expandedText = expand_macro(macro);
         macrocheck = 1;
         if (128 <= macro_expansion_depth) {
-            DAT_0057f9dc = 1;
+            data_0057f9dc = 1;
             CError_FatalError(ERR_MACROS_TOO_COMPLEX);
         } else {
             macro_stack[macro_expansion_depth].pos = (char *)currentTextPosition;
@@ -2466,9 +2466,9 @@ UInt8 CPrep_ExpandMacro(void)
             ++macro_expansion_depth;
         }
         macro_text_start = (char *)(currentTextPosition = token_start = expandedText);
-        DAT_0057fcee = 1;
+        data_0057fcee = 1;
         macrocheck = 0;
-        DAT_00588523 = savedExpansionState;
+        data_00588523 = savedExpansionState;
         return 1;
     }
     return 0;
@@ -2477,7 +2477,7 @@ UInt8 CPrep_ExpandMacro(void)
 static void CPrep_PopState(void)
 {
     macro_expansion_depth--;
-    if (macro_expansion_depth == 0 && DAT_0057fcee)
+    if (macro_expansion_depth == 0 && data_0057fcee)
         CompilerTools_ResetPoolAvail();
     currentTextPosition = (void *)macro_stack[macro_expansion_depth].pos;
     macro_text_start = macro_stack[macro_expansion_depth].macname;
@@ -2529,32 +2529,32 @@ UInt8 *expand_macro(Macro *macro)
                 depth = 0;
                 macro_text.size = 0;
                 for (;;) {
-                    DAT_00588523 = 0;
+                    data_00588523 = 0;
                     for (;;) {
                         token = CPrepTokenizer_NextChar();
                         switch (token) {
                             case 13:
                                 if (macro_expansion_depth == 0) {
-                                    if (DAT_0058850f != 0)
+                                    if (data_0058850f != 0)
                                         fn_004d6ed0();
-                                    DAT_00587ef0++;
+                                    data_00587ef0++;
                                     line_count++;
                                     if (current_file_index <= 0)
                                         text_offset = currentTextPosition - (UInt8 *)data_0057f94a[0]->textbuffer;
                                 }
-                                DAT_00588523 = 1;
+                                data_00588523 = 1;
                                 continue;
                             case 9:
                             case 10:
                             case 11:
                             case 12:
                             case 32:
-                                DAT_00588523 = 1;
+                                data_00588523 = 1;
                                 continue;
                             case 0:
                                 if (macro_expansion_depth != 0) {
                                     CPrep_PopState();
-                                    DAT_00588523 = 1;
+                                    data_00588523 = 1;
                                     continue;
                                 }
                                 CPrep_Error(0x66);
@@ -2596,7 +2596,7 @@ UInt8 *expand_macro(Macro *macro)
                             default:
                                 break;
                         }
-                        if (DAT_00588523 != 0 && !firstToken)
+                        if (data_00588523 != 0 && !firstToken)
                             AppendGListByte(&macro_text, 0x20);
                         AppendGListByte(&macro_text, token);
                         firstToken = 0;
@@ -2743,7 +2743,7 @@ char *expand_builtin_macro(Macro *macro)
 
     switch (*((UInt8 *)macro + 0xe)) {
         case 1:
-            sprintf(buffer, "%ld", DAT_00587ef0);
+            sprintf(buffer, "%ld", data_00587ef0);
         copy_ret:
             {
                 unsigned long textLength;
@@ -2874,7 +2874,7 @@ static void CPrep_Fatal(void)
 {
     UInt8 save = data_005884fd;
     data_005884fd = 0;
-    DAT_0057f9dc = 1;
+    data_0057f9dc = 1;
     CError_ReportError(ERR_MACROS_TOO_COMPLEX);
     data_005884fd = save;
 }
@@ -2893,7 +2893,7 @@ static void CPrep_PushState(void *obj)
 static void pop_macro_state(void)
 {
     macro_expansion_depth--;
-    if (macro_expansion_depth == 0 && DAT_0057fcee != 0)
+    if (macro_expansion_depth == 0 && data_0057fcee != 0)
         CompilerTools_ResetPoolAvail();
     currentTextPosition = (UInt8 *)macro_stack[macro_expansion_depth].pos;
     macro_text_start = macro_stack[macro_expansion_depth].macname;
@@ -2917,7 +2917,7 @@ char *expand_macros_in_text(Macro *state, char *text)
     SInt32 size;
 
     if (macro_expansion_depth >= 0x80) {
-        DAT_0057f9dc = 1;
+        data_0057f9dc = 1;
         CError_FatalError(ERR_MACROS_TOO_COMPLEX);
     } else {
         CPrep_PushState(state);
@@ -2937,7 +2937,7 @@ char *expand_macros_in_text(Macro *state, char *text)
                 AppendGListByte(&macro_text, 4);
                 currentTextPosition++;
                 currentTextPosition = CPrepTokenizer_ScanIdentifier((token = currentTextPosition));
-                if (DAT_0057f9de != 0) {
+                if (data_0057f9de != 0) {
                     if (memcmp(data_00587fa0->name, "defined", 8) == 0) {
                         next = find_identifier_end_after_optional_paren(currentTextPosition);
                         if (next != NULL)
@@ -3009,7 +3009,7 @@ char *expand_macros_in_text(Macro *state, char *text)
             case 'z':
                 currentTextPosition = CPrepTokenizer_ScanIdentifier((token = currentTextPosition));
                 data_0057f9d2 = 0;
-                if (DAT_0057f9de != 0) {
+                if (data_0057f9de != 0) {
                     if (memcmp(data_00587fa0->name, "defined", 8) == 0) {
                         next = find_identifier_end_after_optional_paren(currentTextPosition);
                         if (next != NULL) {
@@ -3113,7 +3113,7 @@ char *expand_macros_in_text(Macro *state, char *text)
         }
         if (macro_expansion_depth >= initialDepth) {
             pop_macro_state();
-            DAT_00588523 = 1;
+            data_00588523 = 1;
         }
     checkDepth:
         if (macro_expansion_depth >= initialDepth)
@@ -3227,7 +3227,7 @@ void undefine_macro(void)
     if (data_00588470 != 0) {
         savedFlag = data_005884fd;
         data_005884fd = 0;
-        DAT_0057f9dc = 1;
+        data_0057f9dc = 1;
         CError_ReportError(ERR_UNEXPECTED_END_LINE);
         data_005884fd = savedFlag;
         CPrepTokenizer_SkipToEndOfLine();
@@ -3236,7 +3236,7 @@ void undefine_macro(void)
     if (token != -3) {
         savedFlag = data_005884fd;
         data_005884fd = 0;
-        DAT_0057f9dc = 1;
+        data_0057f9dc = 1;
         CError_ReportError(ERR_IDENTIFIER_EXPECTED);
         data_005884fd = savedFlag;
         CPrepTokenizer_SkipToEndOfLine();
@@ -3258,7 +3258,7 @@ void undefine_macro(void)
     if (token != 0) {
         savedFlag = data_005884fd;
         data_005884fd = 0;
-        DAT_0057f9dc = 1;
+        data_0057f9dc = 1;
         CError_ReportError(ERR_END_LINE_EXPECTED);
         data_005884fd = savedFlag;
         CPrepTokenizer_SkipToEndOfLine();
@@ -3274,7 +3274,7 @@ static inline void remap_and_report_error(SInt16 code)
     data_005884fd = 0;
     if (code == 0x66 && (macro_expansion_depth > 0 || currentTextPosition < textend))
         code = 0x69;
-    DAT_0057f9dc = 1;
+    data_0057f9dc = 1;
     CError_ReportError(code);
     data_005884fd = save;
 }
@@ -3283,7 +3283,7 @@ static inline void CPrep_ErrorName(SInt16 code, char *name)
 {
     Boolean save = data_005884fd;
     data_005884fd = 0;
-    DAT_0057f9dc = 1;
+    data_0057f9dc = 1;
     CError_ReportError(code, name);
     data_005884fd = save;
 }
@@ -3292,7 +3292,7 @@ static inline void CPrep_WarningName(SInt16 code, char *name)
 {
     Boolean save = data_005884fd;
     data_005884fd = 0;
-    DAT_0057f9dc = 1;
+    data_0057f9dc = 1;
     CError_Warning(code, name);
     data_005884fd = save;
 }
@@ -3430,7 +3430,7 @@ void define_macro(void)
         pasted:
             lastArgument = 0;
             start = currentTextPosition;
-            DAT_00588523 = 0;
+            data_00588523 = 0;
             switch (ch = CPrepTokenizer_NextChar()) {
                 case 0:
                     remap_and_report_error(0x66);
@@ -3497,7 +3497,7 @@ void define_macro(void)
                 goto pasted;
             }
             currentTextPosition = savedPosition;
-            if (DAT_00588523)
+            if (data_00588523)
                 AppendGListByte(&macro_text, ' ');
         }
     }
@@ -3525,7 +3525,7 @@ void define_macro(void)
         definition->next = macro_buckets[definition->name->hashval];
         macro_buckets[definition->name->hashval] = definition;
         if (((struct CPrepCU *)cprep_cu)->browseOptions.browseMacros && currentPFile->recordbrowseinfo) {
-            rangeEnd = (char *)currentTextPosition - PTR_00587fb0 + 1;
+            rangeEnd = (char *)currentTextPosition - data_00587fb0 + 1;
             write_identifier_range_record(definition, currentPFile, data_0057fd0c, rangeEnd);
         }
         if (warned) {
@@ -3556,14 +3556,14 @@ SInt16 CPrep_ScanMacroExpandedChar(void)
             case 0:
                 if (macro_expansion_depth != 0) {
                     macro_expansion_depth--;
-                    if (macro_expansion_depth == 0 && DAT_0057fcee != 0)
+                    if (macro_expansion_depth == 0 && data_0057fcee != 0)
                         CompilerTools_ResetPoolAvail();
                     currentTextPosition = (UInt8 *)macro_stack[macro_expansion_depth].pos;
                     macro_text_start = macro_stack[macro_expansion_depth].macname;
                     if (macro_stack[macro_expansion_depth].macro != NULL)
                         macro_stack[macro_expansion_depth].macro->isExpanding = 0;
                     macrocheck = macro_stack[macro_expansion_depth].macrocheck;
-                    DAT_00588523 = 1;
+                    data_00588523 = 1;
                     break;
                 }
                 /* fall through */
@@ -3574,12 +3574,12 @@ SInt16 CPrep_ScanMacroExpandedChar(void)
                     currentTextPosition = CPrepTokenizer_ScanIdentifier(savedptr = currentTextPosition);
                     e = lookup_expandable_macro();
                     if (e != NULL) {
-                        DAT_0057fcee = macrocheck = 0;
-                        savedbyte = DAT_00588523;
+                        data_0057fcee = macrocheck = 0;
+                        savedbyte = data_00588523;
                         newptr = expand_macro(e);
                         macrocheck = 1;
                         if (macro_expansion_depth >= 0x80) {
-                            DAT_0057f9dc = 1;
+                            data_0057f9dc = 1;
                             CError_FatalError(ERR_MACROS_TOO_COMPLEX);
                         } else {
                             macro_stack[macro_expansion_depth].pos = (char *)currentTextPosition;
@@ -3589,9 +3589,9 @@ SInt16 CPrep_ScanMacroExpandedChar(void)
                             macro_expansion_depth++;
                         }
                         macro_text_start = (char *)(currentTextPosition = token_start = newptr);
-                        DAT_0057fcee = 1;
+                        data_0057fcee = 1;
                         macrocheck = 0;
-                        DAT_00588523 = savedbyte;
+                        data_00588523 = savedbyte;
                         break;
                     }
                     currentTextPosition = savedptr;
@@ -3604,7 +3604,7 @@ SInt16 CPrep_ScanMacroExpandedChar(void)
 static void pop_macro_expansion_state(void)
 {
     macro_expansion_depth--;
-    if (macro_expansion_depth == 0 && DAT_0057fcee != 0)
+    if (macro_expansion_depth == 0 && data_0057fcee != 0)
         CompilerTools_ResetPoolAvail();
     currentTextPosition = (UInt8 *)macro_stack[macro_expansion_depth].pos;
     macro_text_start = macro_stack[macro_expansion_depth].macname;
@@ -3627,7 +3627,7 @@ void skip_line_breaks_and_expand_macros(void)
             case 0:
                 if (macro_expansion_depth != 0) {
                     pop_macro_expansion_state();
-                    DAT_00588523 = 1;
+                    data_00588523 = 1;
                 } else {
                     if (macro_expansion_depth > 0 || currentTextPosition >= textend) {
                         if (current_file_index > 0)
@@ -3641,16 +3641,16 @@ void skip_line_breaks_and_expand_macros(void)
                 break;
             case 13:
                 if (macro_expansion_depth == 0) {
-                    if (DAT_0058850f != 0)
+                    if (data_0058850f != 0)
                         fn_004d6ed0();
-                    DAT_00587ef0++;
+                    data_00587ef0++;
                     line_count++;
                     if (current_file_index <= 0)
                         text_offset = (char *)currentTextPosition - data_0057f94a[0]->textbuffer;
                 }
                 data_00588470 = 1;
                 data_00588524 = 1;
-                DAT_00588523 = 1;
+                data_00588523 = 1;
                 if (COS_GetTicks() > next_scaled_ticks) {
                     struct CPrepCU *compilerUnit = (struct CPrepCU *)cprep_cu;
                     if (CPrep_CallCompilerCallback(compilerUnit->context, line_count))
@@ -3664,12 +3664,12 @@ void skip_line_breaks_and_expand_macros(void)
                     currentTextPosition = CPrepTokenizer_ScanIdentifier(identifierStart = currentTextPosition);
                     macro = lookup_expandable_macro();
                     if (macro != NULL) {
-                        DAT_0057fcee = macrocheck = 0;
-                        savedMacroState = DAT_00588523;
+                        data_0057fcee = macrocheck = 0;
+                        savedMacroState = data_00588523;
                         expandedText = expand_macro(macro);
                         macrocheck = 1;
                         if (macro_expansion_depth >= 0x80) {
-                            DAT_0057f9dc = 1;
+                            data_0057f9dc = 1;
                             CError_FatalError(ERR_MACROS_TOO_COMPLEX);
                         } else {
                             macro_stack[macro_expansion_depth].pos = (char *)currentTextPosition;
@@ -3679,9 +3679,9 @@ void skip_line_breaks_and_expand_macros(void)
                             macro_expansion_depth++;
                         }
                         macro_text_start = (char *)(currentTextPosition = token_start = expandedText);
-                        DAT_0057fcee = 1;
+                        data_0057fcee = 1;
                         macrocheck = 0;
-                        DAT_00588523 = savedMacroState;
+                        data_00588523 = savedMacroState;
                         break;
                     }
                     currentTextPosition = identifierStart;
@@ -3696,16 +3696,16 @@ void fn_0043e8f0(void)
     UInt32 ticks;
 
     if (macro_expansion_depth == 0) {
-        if (DAT_0058850f != 0)
+        if (data_0058850f != 0)
             fn_004d6ed0();
-        DAT_00587ef0 += 1U;
+        data_00587ef0 += 1U;
         line_count += 1U;
         if (current_file_index <= 0)
             text_offset = (char *)currentTextPosition - data_0057f94a[0]->textbuffer;
     }
     data_00588470 = 1;
     data_00588524 = 1;
-    DAT_00588523 = 1;
+    data_00588523 = 1;
     ticks = COS_GetTicks();
     if (ticks > next_scaled_ticks) {
         struct CPrepCU *compilationUnit = (struct CPrepCU *)cprep_cu;
@@ -3720,9 +3720,9 @@ void fn_0043e8f0(void)
 void CPrep_IncrementCountersAndUpdateTextOffset(void)
 {
     if (macro_expansion_depth == 0) {
-        if (DAT_0058850f)
+        if (data_0058850f)
             fn_004d6ed0();
-        DAT_00587ef0++;
+        data_00587ef0++;
         line_count++;
         if (current_file_index <= 0)
             text_offset = (char *)currentTextPosition - data_0057f94a[0]->textbuffer;
@@ -3910,14 +3910,14 @@ Boolean CPrep_0043ecb0(short ch)
 void CPrep_PopMacro(void)
 {
     macro_expansion_depth--;
-    if (macro_expansion_depth == 0 && DAT_0057fcee != 0)
+    if (macro_expansion_depth == 0 && data_0057fcee != 0)
         CompilerTools_ResetPoolAvail();
     currentTextPosition = (UInt8 *)macro_stack[macro_expansion_depth].pos;
     macro_text_start = (char *)macro_stack[macro_expansion_depth].macname;
     if (macro_stack[macro_expansion_depth].macro != NULL)
         macro_stack[macro_expansion_depth].macro->isExpanding = 0;
     macrocheck = macro_stack[macro_expansion_depth].macrocheck;
-    DAT_00588523 = 1;
+    data_00588523 = 1;
 }
 
 UInt8 CPrep_Compile(CPrepCU *cu)
@@ -3929,10 +3929,10 @@ UInt8 CPrep_Compile(CPrepCU *cu)
 
     data_0057fce0 = 0x80;
     data_00588515 = 0;
-    DAT_00588516 = 0;
+    data_00588516 = 0;
     cprep_cu = (UInt8 *)cu;
     currentPFile = NULL;
-    DAT_00587ef0 = line_count = 0;
+    data_00587ef0 = line_count = 0;
     data_0057f9dd = 0;
 
     if (CPrep_CallCompilerCallback(cu->context, 0) != 0)
@@ -3955,7 +3955,7 @@ UInt8 CPrep_Compile(CPrepCU *cu)
 
     if (CompilerTools_InitHeaps(CError_LongJump) != 0) {
         releaseheaps();
-        DAT_00588516 = 1;
+        data_00588516 = 1;
         result = 0xff;
     } else {
         if (_Setjmp(error_jmp_buf) == 0) {
@@ -3977,7 +3977,7 @@ UInt8 CPrep_Compile(CPrepCU *cu)
 
             pragma_list = NULL;
             saved_options = NULL;
-            DAT_0058850f = cu->preprocessOnly;
+            data_0058850f = cu->preprocessOnly;
             if (cu->preprocessOnly != 0)
                 CPreprocess_OutputPreprocessedText();
             else
@@ -3987,10 +3987,10 @@ UInt8 CPrep_Compile(CPrepCU *cu)
                 anyerrors = 1;
 
             if (macro_expansion_depth != 0) {
-                DAT_0057f9dc = 1;
+                data_0057f9dc = 1;
                 CError_FatalError(ERR_UNTERMINATED_IF_MACRO);
             } else if (if_depth != 0) {
-                DAT_0057f9dc = 0;
+                data_0057f9dc = 0;
                 optionData.tokenfile = data_0057f6c8[if_depth - 1].file;
                 optionData.tokenoffset = data_0057f6c8[if_depth - 1].pos;
                 if (if_depth != 0)
@@ -4011,8 +4011,8 @@ UInt8 CPrep_Compile(CPrepCU *cu)
 
             if (cu->preprocessOnly != 0) {
                 currentCU = (CPrepCU *)cprep_cu;
-                currentCU->objectBuffer = (SInt32)DAT_00586da8.handle;
-                DAT_00586da8.handle = NULL;
+                currentCU->objectBuffer = (SInt32)data_00586da8.handle;
+                data_00586da8.handle = NULL;
                 currentCU = (CPrepCU *)cprep_cu;
                 currentCU->browseBuffer = 0;
             }
@@ -4030,7 +4030,7 @@ UInt8 CPrep_Compile(CPrepCU *cu)
     }
 
     cu->lineCount = line_count;
-    if (DAT_00588516 != 0) {
+    if (data_00588516 != 0) {
         CompilerGetCString(7, error_message_buffer);
         currentCU = (CPrepCU *)cprep_cu;
         CWPluginsPrivate_InvokeMessageCallback(currentCU->context, NULL, error_message_buffer, NULL, 2, 0);
@@ -4044,9 +4044,9 @@ void CPrep_GetPosition(CPrepFileInfo **position, SInt32 *offset)
 {
     *position = currentPFile;
     if (macro_expansion_depth > 0)
-        *offset = macro_stack[0].pos - PTR_00587fb0;
+        *offset = macro_stack[0].pos - data_00587fb0;
     else
-        *offset = (char *)currentTextPosition - PTR_00587fb0;
+        *offset = (char *)currentTextPosition - data_00587fb0;
 }
 
 SInt32 CPrep_UpdateTokenLine(FileOffsetInfo *foi)
@@ -4060,8 +4060,8 @@ SInt32 CPrep_UpdateTokenLine(FileOffsetInfo *foi)
         if (line > foi->tokenline)
             foi->tokenline = line;
     } else if (foi->file == data_0057f94a[current_file_index]) {
-        if (DAT_00587ef0 > foi->tokenline)
-            foi->tokenline = DAT_00587ef0;
+        if (data_00587ef0 > foi->tokenline)
+            foi->tokenline = data_00587ef0;
     } else {
         for (i = current_file_index - 1; i >= 0; i--) {
             if (foi->file == data_0057f94a[i]) {
@@ -4082,7 +4082,7 @@ void CPrep_GetFOI(FileOffsetInfo *location, TStreamElement *record)
             location->tokenline = bufferedTokenPosition[-1].tokenline;
         } else {
             location->file = (CPrepFileInfo *)data_0057f94a[current_file_index];
-            location->tokenline = DAT_00587ef0;
+            location->tokenline = data_00587ef0;
         }
     } else {
         location->file = record->tokenfile;
@@ -4102,37 +4102,37 @@ void fn_0043f1f0(FileOffsetInfo *name)
         return;
     }
     if (currentName == (CPrepFileInfo *)data_0057f94a[0]) {
-        if (DAT_005875f8 == NULL) {
+        if (data_005875f8 == NULL) {
             return;
         }
         if (*(cprep_cu + 0xe0) != '\x01') {
             fn_0048b160(NULL, 0, 0);
         }
-        DAT_005875f8 = NULL;
+        data_005875f8 = NULL;
         return;
     }
-    if (DAT_005875f8 == currentName) {
+    if (data_005875f8 == currentName) {
         return;
     }
-    for (entry = DAT_0057f9ca; entry != NULL; entry = entry->next) {
+    for (entry = data_0057f9ca; entry != NULL; entry = entry->next) {
         if (currentName == entry->name) {
             if (*(cprep_cu + 0xe0) != '\x01') {
                 fn_0048b160(entry->value, entry->auxiliaryValue, 0);
             }
-            DAT_005875f8 = name->file;
+            data_005875f8 = name->file;
             return;
         }
     }
     newEntry = galloc(sizeof(PrepNameCacheEntry));
-    newEntry->next = DAT_0057f9ca;
-    DAT_0057f9ca = newEntry;
+    newEntry->next = data_0057f9ca;
+    data_0057f9ca = newEntry;
     newEntry->name = name->file;
     value = fn_00441850(newEntry->name, &newEntry->auxiliaryValue);
     newEntry->value = value;
     if (*(cprep_cu + 0xe0) != '\x01') {
         fn_0048b160(newEntry->value, newEntry->auxiliaryValue, 1);
     }
-    DAT_005875f8 = name->file;
+    data_005875f8 = name->file;
 }
 
 #pragma sym on
@@ -4149,15 +4149,15 @@ void CPrep_PopFile(void)
     --current_file_index;
     if (current_file_index >= 0) {
         input = data_0057f94a[current_file_index];
-        PTR_00587fb0 = (currentPFile = input)->textbuffer;
+        data_00587fb0 = (currentPFile = input)->textbuffer;
         textend = (UInt8 *)((*(CPrepFileInfo *volatile *)&currentPFile)->textbuffer +
                             (*(CPrepFileInfo *volatile *)&currentPFile)->textlength);
-        currentTextPosition = (UInt8 *)(PTR_00587fb0 + input->pos);
-        DAT_00587ef0 = (*(CPrepFileInfo *volatile *)&currentPFile)->linenumber;
+        currentTextPosition = (UInt8 *)(data_00587fb0 + input->pos);
+        data_00587ef0 = (*(CPrepFileInfo *volatile *)&currentPFile)->linenumber;
         data_0057f9dd = (*(CPrepFileInfo *volatile *)&currentPFile)->hasprepline;
         data_00588524 = 1;
     }
-    if (DAT_0058850f != 0 && copts.simple_prepdump == 0)
+    if (data_0058850f != 0 && copts.simple_prepdump == 0)
         CPreprocess_EmitLineDirective();
 }
 
@@ -4167,7 +4167,7 @@ void fn_0043f3b0(short warningCode)
 {
     Boolean savedFlag = data_005884fd;
     data_005884fd = 0;
-    DAT_0057f9dc = 1;
+    data_0057f9dc = 1;
     CError_Warning(warningCode);
     data_005884fd = savedFlag;
 }
@@ -4178,7 +4178,7 @@ void fn_0043f3e0(unsigned int token, char *name)
 
     saved = data_005884fd;
     data_005884fd = 0;
-    DAT_0057f9dc = 1;
+    data_0057f9dc = 1;
     if ((unsigned short)token == 102 && (macro_expansion_depth > 0 || currentTextPosition < textend)) {
         CError_ReportError(105U);
     } else {
@@ -4195,7 +4195,7 @@ NameSpaceList *CPrep_ReportError(short token)
     data_005884fd = 0;
     if (token == 0x66 && (macro_expansion_depth > 0 || currentTextPosition < textend))
         token = 0x69;
-    DAT_0057f9dc = 1;
+    data_0057f9dc = 1;
     result = CError_ReportError(token);
     data_005884fd = savedState;
     return result;
@@ -4229,16 +4229,16 @@ void CPrep_GetTokenLocation(TStreamElement *token, CPrepFileInfo **file, SInt32 
         tok = bufferedTokenPosition - 1;
     if (tok && !tok->tokenfile)
         CError_FATAL(1714);
-    if (DAT_0057f9dc || !tok) {
+    if (data_0057f9dc || !tok) {
         if (!currentPFile)
             CError_DispatchAndLongJump();
         *file = currentPFile;
         if (!macro_expansion_depth) {
-            offset = (char *)currentTextPosition - PTR_00587fb0;
-            if (DAT_0057f9dc && offset > 0)
+            offset = (char *)currentTextPosition - data_00587fb0;
+            if (data_0057f9dc && offset > 0)
                 --offset;
         } else
-            offset = macro_stack[0].pos - PTR_00587fb0;
+            offset = macro_stack[0].pos - data_00587fb0;
         *position = offset;
     } else {
         *file = tok->tokenfile;
@@ -4254,7 +4254,7 @@ void CPrep_GetTokenLocation(TStreamElement *token, CPrepFileInfo **file, SInt32 
             memcpy(file_cannot_opened_name, name + 1, c);
             file_cannot_opened_name[c] = 0;
             if (currentPFile) {
-                DAT_0057f9dc = 1;
+                data_0057f9dc = 1;
                 CError_ReportError(ERR_FILE_CANNOT_OPENED, file_cannot_opened_name);
             } else
                 CError_DispatchAndLongJump();
@@ -4271,7 +4271,7 @@ void CPrep_GetTokenLocation(TStreamElement *token, CPrepFileInfo **file, SInt32 
                 n++;
         *line = n;
     } else
-        *line = lineno = DAT_00587ef0;
+        *line = lineno = data_00587ef0;
     c = CPrep_0043f860(end = base + offset);
     *column = c;
     if (!token && macro_expansion_depth == 1) {
@@ -4318,7 +4318,7 @@ void CPrep_GetTokenLocation(TStreamElement *token, CPrepFileInfo **file, SInt32 
     context[n] = 0;
     if (release)
         fn_0041b7f0(*(CWPluginPrivateContext **)cprep_cu, base);
-    DAT_0057f9dc = 0;
+    data_0057f9dc = 0;
 }
 
 #pragma sym on
@@ -4693,7 +4693,7 @@ static void LogName(const unsigned char *name)
     memcpy(file_cannot_opened_name, (const void *)(name + 1), n);
     file_cannot_opened_name[n] = 0;
     if (currentPFile != NULL) {
-        DAT_0057f9dc = 1;
+        data_0057f9dc = 1;
         CError_ReportError(ERR_FILE_CANNOT_OPENED, file_cannot_opened_name);
     } else {
         CError_DispatchAndLongJump();
@@ -4757,7 +4757,7 @@ unsigned char fn_004401b0(unsigned char *name, unsigned char mode, unsigned char
     int isDefault;
 
     if (current_file_index >= 31) {
-        DAT_0057f9dc = 1;
+        data_0057f9dc = 1;
         CError_FatalError(ERR_INCLUDE_NESTING_OVERFLOW);
         return 0;
     }
@@ -4846,20 +4846,20 @@ unsigned char fn_004401b0(unsigned char *name, unsigned char mode, unsigned char
         node.recordbrowseinfo = CPrep_CurrentCompilationUnit()->compiling;
     }
     if (current_file_index >= 0) {
-        data_0057f94a[current_file_index]->linenumber = DAT_00587ef0;
+        data_0057f94a[current_file_index]->linenumber = data_00587ef0;
         data_0057f94a[current_file_index]->hasprepline = data_0057f9dd;
         data_0057f94a[current_file_index]->pos =
             currentTextPosition - (UInt8 *)data_0057f94a[current_file_index]->textbuffer;
     }
     currentTextPosition = (UInt8 *)node.textbuffer;
-    DAT_00587ef0 = 1;
+    data_00587ef0 = 1;
     data_00588524 = 1;
     data_0057f94a[++current_file_index] = galloc(sizeof(node));
     *data_0057f94a[current_file_index] = node;
     currentPFile = data_0057f94a[current_file_index];
-    PTR_00587fb0 = currentPFile->textbuffer;
+    data_00587fb0 = currentPFile->textbuffer;
     textend = (UInt8 *)currentPFile->textbuffer + currentPFile->textlength;
-    if (DAT_0058850f != 0 && copts.simple_prepdump == 0)
+    if (data_0058850f != 0 && copts.simple_prepdump == 0)
         CPreprocess_EmitLineDirective();
     return 1;
 }
@@ -4873,9 +4873,9 @@ void pop_files_and_release_heaps_and_lists(void)
     }
     total_heap_size = CTool_TotalHeapSize();
     releaseheaps();
-    DAT_00587708 = NULL;
+    data_00587708 = NULL;
     FreeGList(&macro_text);
-    FreeGList(&DAT_00586da8.list);
+    FreeGList(&data_00586da8.list);
     if (string_literal_storage != NULL) {
         COS_FreeHandle(string_literal_storage);
         string_literal_storage = NULL;
@@ -4898,19 +4898,19 @@ int initialize_preprocessor(void)
     data_0057f9d3 = 0;
     data_0058850d = 0;
     data_0058852a = 0;
-    DAT_0057f9de = 0;
+    data_0057f9de = 0;
     current_file_index = -1;
     line_count = next_scaled_ticks = 0;
-    macrocheck = DAT_0057fcee = 1;
+    macrocheck = data_0057fcee = 1;
     string_literal_buffer_size = 0x100;
     macro_expansion_depth = if_depth = 0;
-    DAT_005875f8 = NULL;
-    DAT_0057f9ca = NULL;
-    DAT_0057f9dc = func_errors = anyerrors = 0;
+    data_005875f8 = NULL;
+    data_0057f9ca = NULL;
+    data_0057f9dc = func_errors = anyerrors = 0;
     concatenating_string_tokens = 0;
-    DAT_00587708 = CError_LongJump;
+    data_00587708 = CError_LongJump;
     macro_text.data = NULL;
-    DAT_00586da8.handle = NULL;
+    data_00586da8.handle = NULL;
     if (InitGList(&macro_text, 10000) != 0) {
         CError_LongJump();
     }
@@ -4930,20 +4930,20 @@ int initialize_preprocessor(void)
     memclrw(macro_buckets, 2048 * sizeof(*macro_buckets));
     CPrep_RegisterPredefinedMacros();
     for (character = 0; 256 > character; character++) {
-        DAT_00586fd0[character] = 0;
+        data_00586fd0[character] = 0;
     }
     for (character = 'a';; character++) {
-        DAT_00586fd0[character] = 1;
+        data_00586fd0[character] = 1;
         if (character == 'z')
             break;
     }
     for (character = 'A';; character++) {
-        DAT_00586fd0[character] = 1;
+        data_00586fd0[character] = 1;
         if (character == 'Z')
             break;
     }
     for (character = '0';; character++) {
-        DAT_00586fd0[character] = 2;
+        data_00586fd0[character] = 2;
         if (character == '9')
             break;
     }

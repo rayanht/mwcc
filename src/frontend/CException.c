@@ -1908,7 +1908,7 @@ void setup_exception_specification(struct Statement *statements, struct ExceptSp
             CInit_DeclareString(expression->data.string.data, expression->data.string.size, 0, 0);
     }
     assignment = CFunc_InsertAfterStatement(4, label_statement);
-    assignment->expr.expression = funccallexpr(DAT_00587654, create_objectrefnode(object), NULL, NULL, NULL);
+    assignment->expr.expression = funccallexpr(data_00587654, create_objectrefnode(object), NULL, NULL, NULL);
     object_region = CompilerTools_AllocatePool(sizeof(*object_region));
     memclrw(object_region, sizeof(*object_region));
     object_region->kind = 0x0e;

@@ -140,7 +140,7 @@ extern void InitExpr_Register(ENode *expr, Object *cls);
 extern ENode *append_cleannode_dtors(ENode *left, struct CleanNode *list);
 extern void CFunc_GenerateSingleExprFunc(Object *func, ENode *expr);
 extern UInt32 statement_sourceoffset;
-extern struct Statement *PTR_00587644;
+extern struct Statement *data_00587644;
 extern struct CLabel *clabels;
 extern struct ExceptionAction *UINT_00587fc4;
 extern SInt32 current_statement_number;

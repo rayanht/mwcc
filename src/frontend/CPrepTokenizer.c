@@ -405,7 +405,7 @@ static inline unsigned char *ReadParserState(char *state)
 static inline unsigned char *findSpliceLineStart(char *lineStart)
 {
     if (macro_expansion_depth == 0) {
-        while (*lineStart != 13 && lineStart > PTR_00587fb0)
+        while (*lineStart != 13 && lineStart > data_00587fb0)
             --lineStart;
     } else {
         while (*lineStart != 13 && lineStart > macro_text_start)
@@ -495,7 +495,7 @@ static inline char verify(unsigned char *saved)
 {
     char *v1 = (char *)saved;
     if (macro_expansion_depth == 0) {
-        for (; *v1 != 13 && v1 > PTR_00587fb0; --v1)
+        for (; *v1 != 13 && v1 > data_00587fb0; --v1)
             ;
     } else {
         for (; *v1 != 13 && v1 > macro_text_start; --v1)
@@ -537,7 +537,7 @@ static inline unsigned char CheckEscapedNewline(UInt8 *cursor)
     unsigned char *lineStart;
     lineStart = slash = cursor - 1;
     if (macro_expansion_depth == 0) {
-        while (*lineStart != '\r' && lineStart > (unsigned char *)PTR_00587fb0)
+        while (*lineStart != '\r' && lineStart > (unsigned char *)data_00587fb0)
             --lineStart;
     } else {
         while (*lineStart != '\r' && (char *)lineStart > macro_text_start)
@@ -550,7 +550,7 @@ static unsigned char *find_start(unsigned char *s)
 {
     char *lineStart = (char *)s;
     if (macro_expansion_depth == 0) {
-        while (*lineStart != '\r' && lineStart > PTR_00587fb0)
+        while (*lineStart != '\r' && lineStart > data_00587fb0)
             lineStart--;
     } else {
         while (*lineStart != '\r' && lineStart > macro_text_start)
@@ -565,7 +565,7 @@ static inline unsigned char is_multibyte_trail_before(unsigned char *p)
     unsigned char *q;
     q = (s = p - 1);
     if (macro_expansion_depth == 0) {
-        while (*q != '\r' && q > (unsigned char *)PTR_00587fb0)
+        while (*q != '\r' && q > (unsigned char *)data_00587fb0)
             q--;
     } else {
         while (*q != '\r' && (char *)q > macro_text_start)
@@ -583,7 +583,7 @@ static inline unsigned char CPrepTokenizer_CheckSplice(unsigned char *cursor)
 {
     char *lineStart = (char *)cursor;
     if (macro_expansion_depth == 0) {
-        while (*lineStart != '\r' && lineStart > PTR_00587fb0)
+        while (*lineStart != '\r' && lineStart > data_00587fb0)
             lineStart--;
     } else {
         while (*lineStart != '\r' && lineStart > macro_text_start)
@@ -597,7 +597,7 @@ static inline unsigned char CPrepTokenizer_IsDBCSTrail(unsigned char *cursor)
     unsigned char *backslash = cursor;
     char *lineStart = (char *)--backslash;
     if (macro_expansion_depth == 0) {
-        while (*lineStart != '\r' && lineStart > PTR_00587fb0)
+        while (*lineStart != '\r' && lineStart > data_00587fb0)
             lineStart--;
     } else {
         while (*lineStart != '\r' && lineStart > macro_text_start)
@@ -635,7 +635,7 @@ short CPrepTokenizer_ScanChar(void)
             case 12:
             case 32:
                 cursor++;
-                DAT_00588523 = 1;
+                data_00588523 = 1;
                 continue;
             case 47:
                 currentTextPosition = cursor;
@@ -660,7 +660,7 @@ short CPrepTokenizer_ScanChar(void)
                 if (macro_expansion_depth <= 0) {
                     if ((next = *cursor) == '/') {
                         if (copts.ANSIstrict == 0 || copts.cplusplus != 0 || copts.c9x != 0) {
-                            DAT_00588523 = 1;
+                            data_00588523 = 1;
                             commentEnd = skip_line(cursor + 1);
                             lookahead_position = (char *)commentEnd;
                             return data_0058851a;
@@ -668,7 +668,7 @@ short CPrepTokenizer_ScanChar(void)
                     }
                     if (next == '*') {
                         cursor++;
-                        DAT_00588523 = 1;
+                        data_00588523 = 1;
                         for (;;) {
                             if ((ch = *cursor++) == 0) {
                                 if (macro_expansion_depth > 0 || cursor >= textend) {
@@ -824,14 +824,14 @@ short CPrepTokenizer_NextChar(void)
                 }
                 if (*cursor == '/') {
                     if (copts.ANSIstrict == 0 || copts.cplusplus != 0) {
-                        DAT_00588523 = 1;
+                        data_00588523 = 1;
                         currentTextPosition = skip_line(cursor + 1);
                         return data_0058851a;
                     }
                 }
                 if (*cursor == '*') {
                     cursor++;
-                    DAT_00588523 = 1;
+                    data_00588523 = 1;
                     for (;;) {
                         if ((character = *cursor++) == 0) {
                             if (macro_expansion_depth > 0 || cursor >= textend) {
@@ -1030,7 +1030,7 @@ UInt8 *CPrepTokenizer_ScanIdentifier(UInt8 *cursor)
     length = 0;
     while (1) {
         for (;;) {
-            if (DAT_00586fd0[*cursor] == '\0')
+            if (data_00586fd0[*cursor] == '\0')
                 break;
             if (length < 0xff) {
                 identifier[length] = *cursor;
@@ -1044,7 +1044,7 @@ UInt8 *CPrepTokenizer_ScanIdentifier(UInt8 *cursor)
                 break;
             lineStart = cursor;
             if (macro_expansion_depth == 0) {
-                while ((*lineStart != '\r') && ((char *)lineStart > PTR_00587fb0)) {
+                while ((*lineStart != '\r') && ((char *)lineStart > data_00587fb0)) {
                     lineStart = lineStart - 1;
                 }
             } else {
@@ -1403,7 +1403,7 @@ unsigned char *skip_line(unsigned char *p)
                     q = --back;
                     start = back;
                     if (macro_expansion_depth == 0) {
-                        while (*q != '\r' && q > (unsigned char *)PTR_00587fb0)
+                        while (*q != '\r' && q > (unsigned char *)data_00587fb0)
                             q--;
                     } else {
                         while (*q != '\r' && (char *)q > macro_text_start)
@@ -1452,7 +1452,7 @@ Boolean CPrepTokenizer_SkipQuotedLiteral(UInt8 *p, SInt16 quote)
                 if (copts.multibyteaware != 0) {
                     f = q = p - 1;
                     if (macro_expansion_depth == 0) {
-                        while (*f != '\r' && f > (UInt8 *)PTR_00587fb0)
+                        while (*f != '\r' && f > (UInt8 *)data_00587fb0)
                             f--;
                     } else {
                         while (*f != '\r' && (char *)f > macro_text_start)
@@ -1521,7 +1521,7 @@ void CPrepTokenizer_SkipToEndOfLine(void)
                     break;
                 currentTextPosition = cursor - 1;
                 ++cursor;
-                DAT_00588523 = 1;
+                data_00588523 = 1;
                 for (;;) {
                     if ((ch = *cursor++) == '\0') {
                         if (macro_expansion_depth > 0 || cursor >= textend) {
@@ -1670,7 +1670,7 @@ SInt32 scan_string_literal(short ch)
         return '"';
 
     output = string_literal_storage->data;
-    DAT_005882de = 0;
+    data_005882de = 0;
     length = 0;
     savedPosition = currentTextPosition;
     data_00580dd0 = 0;
@@ -1688,7 +1688,7 @@ SInt32 scan_string_literal(short ch)
             currentTextPosition = (UInt8 *)lookahead_position;
             if (data_00580dd0 != 0)
                 CPrep_IncrementCountersAndUpdateTextOffset();
-            DAT_005882de = 1;
+            data_005882de = 1;
             output++;
         } else {
             currentTextPosition = savedPosition;
@@ -1723,7 +1723,7 @@ SInt32 scan_string_literal(short ch)
             length++;
         }
     }
-    if (DAT_005882de != 0) {
+    if (data_005882de != 0) {
         if (length > 0xff) {
             CPrep_ReportError(0x6a);
             length = 0xff;
@@ -1794,7 +1794,7 @@ unsigned int tokenize_colon(void)
             currentTextPosition = (unsigned char *)lookahead_position;
             return TK_COLON_COLON;
         }
-        if (token == '>' && DAT_0058850f == 0) {
+        if (token == '>' && data_0058850f == 0) {
             currentTextPosition = (unsigned char *)lookahead_position;
             return ']';
         }
@@ -1817,11 +1817,11 @@ short scan_less_token(short ch)
         }
         return TK_SHL;
     }
-    if (ch == '%' && copts.cplusplus && !DAT_0058850f) {
+    if (ch == '%' && copts.cplusplus && !data_0058850f) {
         currentTextPosition = (UInt8 *const)lookahead_position;
         return '{';
     }
-    if (ch == ':' && copts.cplusplus && !DAT_0058850f) {
+    if (ch == ':' && copts.cplusplus && !data_0058850f) {
         currentTextPosition = (UInt8 *const)lookahead_position;
         return '[';
     }
@@ -1917,7 +1917,7 @@ unsigned int tokenize_percent(void)
         currentTextPosition = ReadParserState(lookahead_position);
         return TK_MOD_ASSIGN;
     }
-    if (token == 62 && copts.cplusplus != 0 && DAT_0058850f == 0) {
+    if (token == 62 && copts.cplusplus != 0 && data_0058850f == 0) {
         currentTextPosition = ReadParserState(lookahead_position);
         return '}';
     }
@@ -2233,7 +2233,7 @@ int scan_identifier_or_keyword_a(void)
         if (memcmp("asm", data_00587fa0->name, 4) == 0)
             return TK_ASM;
     }
-    if (copts.cplusplus != 0 && data_005884fd == 0 && DAT_0058850f == 0) {
+    if (copts.cplusplus != 0 && data_005884fd == 0 && data_0058850f == 0) {
         if (memcmp("and", data_00587fa0->name, 4) == 0)
             return TK_LOGICAL_AND;
         if (memcmp("and_eq", data_00587fa0->name, 7) == 0)
@@ -2255,7 +2255,7 @@ SInt32 scan_b_keyword(void)
             if (memcmp("bool", data_00587fa0->name, 5) == 0)
                 return TK_BOOL;
         }
-        if (data_005884fd == 0 && DAT_0058850f == 0) {
+        if (data_005884fd == 0 && data_0058850f == 0) {
             if (memcmp("bitand", data_00587fa0->name, 7) == 0)
                 return TK_BITAND;
             if (memcmp("bitor", data_00587fa0->name, 6) == 0)
@@ -2296,7 +2296,7 @@ SInt32 fn_00493ea0(void)
         }
         if (memcmp("class", data_00587fa0->name, sizeof("class")) == 0)
             return TK_CLASS;
-        if (!data_005884fd && !DAT_0058850f) {
+        if (!data_005884fd && !data_0058850f) {
             if (memcmp("compl", data_00587fa0->name, sizeof("compl")) == 0)
                 return TK_COMPL;
         }
@@ -2464,7 +2464,7 @@ SInt32 scan_n_keyword(void)
                 fn_0043f3b0(0x153);
             return TK_NAMESPACE;
         }
-        if (data_005884fd == 0 && DAT_0058850f == 0) {
+        if (data_005884fd == 0 && data_0058850f == 0) {
             if (KW("not", 4))
                 return TK_NOT;
             if (KW("not_eq", 7))
@@ -2483,7 +2483,7 @@ SInt32 scan_o_keyword(void)
     if (copts.cplusplus != 0) {
         if (memcmp("operator", data_00587fa0->name, 9) == 0)
             return TK_OPERATOR;
-        if (data_005884fd == 0 && DAT_0058850f == 0) {
+        if (data_005884fd == 0 && data_0058850f == 0) {
             if (memcmp("or", data_00587fa0->name, 3) == 0)
                 return TK_LOGICAL_OR;
             if (memcmp("or_eq", data_00587fa0->name, 6) == 0)
@@ -2693,7 +2693,7 @@ int classify_identifier_or_xor_token(void)
     if ((macrocheck != '\0') && (CPrep_ExpandMacro() != '\0')) {
         return 0;
     }
-    if (((copts.cplusplus != '\0') && (data_005884fd == '\0')) && (DAT_0058850f == '\0')) {
+    if (((copts.cplusplus != '\0') && (data_005884fd == '\0')) && (data_0058850f == '\0')) {
         if (memcmp("xor", data_00587fa0->name, 4) == 0) {
             return '^';
         }
@@ -2837,7 +2837,7 @@ void concatenate_string_tokens(char strip_terminator)
 
     original_buffer = string_token_data;
     original_length = token_value_kind_or_string_length;
-    original_flag = DAT_005882de;
+    original_flag = data_005882de;
     concatenating_string_tokens = 1;
     pieces = NULL;
     combined_length = token_value_kind_or_string_length;
@@ -2850,7 +2850,7 @@ void concatenate_string_tokens(char strip_terminator)
         CPrep_SetBufferedTokenPosition(&lexer_state);
 
         if (token != -4 && token != -5) {
-            DAT_005882de = original_flag;
+            data_005882de = original_flag;
             if (pieces != NULL) {
                 buffer = galloc(token_value_kind_or_string_length = combined_length);
                 string_token_data = buffer;
@@ -2873,7 +2873,7 @@ void concatenate_string_tokens(char strip_terminator)
                 record = bufferedTokenPosition - 1;
                 record->data.tkstring.data = buffer;
                 record->data.tkstring.size = combined_length;
-                record->subtype = DAT_005882de;
+                record->subtype = data_005882de;
                 concatenating_string_tokens = 0;
                 return;
             }
@@ -2896,7 +2896,7 @@ void concatenate_string_tokens(char strip_terminator)
         piece->len = token_value_kind_or_string_length - 1;
         piece->off = combined_length - 1;
         pieces = piece;
-        if (DAT_005882de != 0) {
+        if (data_005882de != 0) {
             piece->src++;
         }
         if (original_flag != 0) {
@@ -2939,7 +2939,7 @@ short CPrepTokenizer_GetNextToken(void)
                 case -5:
                     string_token_data = CurrentBufferedToken()->data.tkstring.data;
                     token_value_kind_or_string_length = CurrentBufferedToken()->data.tkstring.size;
-                    DAT_005882de = CurrentBufferedToken()->subtype;
+                    data_005882de = CurrentBufferedToken()->subtype;
                     break;
                 case -7:
                     data_00588470 = 1;
@@ -2962,14 +2962,14 @@ short CPrepTokenizer_GetNextToken(void)
         dispatch_index = CPrepTokenizer_ScanChar();
         CurrentBufferedToken()->tokenfile = currentPFile;
         if (macro_expansion_depth > 0) {
-            source_offset = macro_stack[0].pos - PTR_00587fb0;
+            source_offset = macro_stack[0].pos - data_00587fb0;
             bufferedTokenPosition->tokenoffset = source_offset;
             token_start = currentTextPosition;
         } else {
-            source_offset = (char *)currentTextPosition - PTR_00587fb0;
+            source_offset = (char *)currentTextPosition - data_00587fb0;
             bufferedTokenPosition->tokenoffset = source_offset;
         }
-        CurrentBufferedToken()->tokenline = DAT_00587ef0;
+        CurrentBufferedToken()->tokenline = data_00587ef0;
         currentTextPosition = (UInt8 *)lookahead_position;
         scanned_token = data_0055da98[dispatch_index](dispatch_index);
         do {
@@ -2994,7 +2994,7 @@ short CPrepTokenizer_GetNextToken(void)
                         case -5:
                             CurrentBufferedToken()->data.tkstring.data = string_token_data;
                             CurrentBufferedToken()->data.tkstring.size = token_value_kind_or_string_length;
-                            CurrentBufferedToken()->subtype = DAT_005882de;
+                            CurrentBufferedToken()->subtype = data_005882de;
                             if (concatenating_string_tokens == 0) {
                                 bufferedTokenPosition++;
                                 concatenate_string_tokens(token == -5);

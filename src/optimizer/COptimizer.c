@@ -65,7 +65,7 @@ static char data_005812ff;
 static UInt8 data_00581300;
 static short data_00581302;
 static struct ENode *last_node;
-static int DAT_00581308;
+static int data_00581308;
 #pragma options align = reset
 
 static inline void set_statement_location(Statement *statement)
@@ -1596,9 +1596,9 @@ void invalidate_expr_cse(ENode *expression)
 ENode *fn_004c07c0(ENode *expr)
 {
     last_node = NULL;
-    DAT_00581308 = 0;
+    data_00581308 = 0;
     COptimizer_004c0800(expr);
-    if (DAT_00581308 == 1) {
+    if (data_00581308 == 1) {
         return last_node;
     }
     return NULL;
@@ -1613,7 +1613,7 @@ void COptimizer_004c0800(ENode *n)
                 break;
             case EOBJREF:
                 last_node = n;
-                DAT_00581308++;
+                data_00581308++;
                 return;
             case EADD:
             case ESUB:

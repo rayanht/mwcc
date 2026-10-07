@@ -190,7 +190,7 @@ extern void setup_return_operand(Object *func);
 extern void DWARF_SetSectionAndState(ObjGenSection *value, ObjGenSection *state);
 extern void DWARF_Init(void);
 extern void init_dwarf_state(void);
-extern struct ObjGenSection *DAT_00587698;
+extern struct ObjGenSection *data_00587698;
 extern struct GList *dwarf_info_buffer;
 extern struct DWInfo *dwinfo_buckets[512];
 extern struct PendingObject *pending_objects;

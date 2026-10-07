@@ -65,8 +65,8 @@ static SInt32 object_storage_size;
 static SInt32 object_data_size;
 static SInt32 data_00580da4;
 static SInt32 data_00580da8;
-static int DAT_00580dac;
-static struct ObjGenSection *DAT_00580db0;
+static int data_00580dac;
+static struct ObjGenSection *data_00580db0;
 static SInt32 *data_00580db4;
 static struct BufferUpdate *pending_buffer_updates;
 static struct BufferUpdate *pending_data_tail;
@@ -645,7 +645,7 @@ void ObjGen_PPC_EABI_FinalizeOutputBuffers(void)
 
 void fn_0048b2e0(void)
 {
-    if (DAT_0058849e != '\0') {
+    if (data_0058849e != '\0') {
         fn_004ada90();
     }
     BE_elf_FreeSectionBuffers();
@@ -670,10 +670,10 @@ void ObjGen_PPC_EABI_SetObjectSectionIndex(Object *object)
     ObjGenSection *result;
     SectionSymbolAttributes *name;
 
-    if (DAT_0058849e == 0) {
+    if (data_0058849e == 0) {
         DWARF_SetSectionAndState(dwarf_info_section, dwarf_line_section);
         DWARF_SetupSectionDebugState(BE_elf_FindSection(".text", 0));
-        DAT_0058849e = 1;
+        data_0058849e = 1;
     }
     data_00580da8 = -1;
     if (data_00587ff8 != data_005870e8) {
@@ -784,10 +784,10 @@ void ObjGen_PPC_EABI_EmitObjectWithDebugEntry(Object *object, const void *data, 
     if (copts.filesyminfo) {
         HashNameNode *name = object->name;
         if (name->name[0] != 64) {
-            if (!DAT_0058849e) {
+            if (!data_0058849e) {
                 DWARF_SetSectionAndState(dwarf_info_section, dwarf_line_section);
                 DWARF_SetupSectionDebugState(BE_elf_FindSection(".text", 0));
-                DAT_0058849e = 1;
+                data_0058849e = 1;
             }
             DWARF_CreateObjectDebugEntry(object);
         }
@@ -802,10 +802,10 @@ void ObjGen_PPC_EABI_EmitObjectWithDebugEntry(Object *object, const void *data, 
 unsigned int ObjGen_PPC_EABI_EmitObject(Object *object, const void *context, OLinkList *value, unsigned int flags)
 {
     if (copts.filesyminfo != 0 && object->name->name[0] != '@') {
-        if (DAT_0058849e == 0) {
+        if (data_0058849e == 0) {
             DWARF_SetSectionAndState(dwarf_info_section, dwarf_line_section);
             DWARF_SetupSectionDebugState(BE_elf_FindSection(".text", 0));
-            DAT_0058849e = 1;
+            data_0058849e = 1;
         }
         DWARF_CreateObjectDebugEntry(object);
     }
@@ -1637,7 +1637,7 @@ ObjGenSection *fn_004892a0(Object *object, int size)
     ObjGenSection *section;
 
     section = select_object_section(object, size, 1, 1, 0);
-    DAT_00580db0 = section;
+    data_00580db0 = section;
     if ((section->flags & 4) == 0) {
         report_section_permission_conflict(object, section, "RX", 4);
     }
@@ -1654,7 +1654,7 @@ ObjGenSection *fn_004892a0(Object *object, int size)
         ObjGen_PPC_EABI_AddSectionAttribute(object, 0);
     }
     output_buffer_length = output_buffer_length + size;
-    DAT_00580dac = section->buffer.size;
+    data_00580dac = section->buffer.size;
     return section;
 }
 
@@ -1662,8 +1662,8 @@ void ObjGen_PPC_EABI_SetSymbolOffset(Object *object, int offset)
 {
     BE_SymNode *record;
 
-    record = BE_symbol_004918f0(object, DAT_00580db0);
-    record->offset = DAT_00580dac + offset;
+    record = BE_symbol_004918f0(object, data_00580db0);
+    record->offset = data_00580dac + offset;
 }
 
 /* Serialized relocation record. */
@@ -1689,7 +1689,7 @@ void emit_relocation(SInt32 op, SInt32 offset, Object *obj, ObjGenSection *ctx, 
         node->symbol = (BE_SymNode *)node->symbol->sectionData.section->symbolLink->symbol;
     }
 
-    offset += DAT_00580dac;
+    offset += data_00580dac;
     node->kind = -1;
     record.value = value;
     if (op == 3) {
@@ -1750,10 +1750,10 @@ void ObjGen_PPC_EABI_00488ee0(SInt32 entry, SInt32 value)
         return;
     if (value <= data_00580da8) {
         if (value == data_00580da8)
-            DWARF_ReplaceTrailingLongWordLong(data_00587ff8->flags = entry, value + DAT_00580dac);
+            DWARF_ReplaceTrailingLongWordLong(data_00587ff8->flags = entry, value + data_00580dac);
         return;
     }
-    DWARF_AppendLongWordLong(data_00587ff8->flags = entry, value + DAT_00580dac);
+    DWARF_AppendLongWordLong(data_00587ff8->flags = entry, value + data_00580dac);
     data_00580da8 = value;
 }
 
@@ -1764,7 +1764,7 @@ SInt16 ObjGen_PPC_EABI_SetupFunctionSection(Object *param)
     UInt8 alignment;
 
     buffer = select_object_section(param, 0, 1, 1, 0);
-    DAT_00580db0 = (ObjGenSection *)buffer;
+    data_00580db0 = (ObjGenSection *)buffer;
     if (copts.filesyminfo != 0)
         DWARF_SetupFunctionState(buffer);
     if ((buffer->flags & 4) == 0)
@@ -1772,7 +1772,7 @@ SInt16 ObjGen_PPC_EABI_SetupFunctionSection(Object *param)
     if ((alignment = copts.codeAlignment) > buffer->maximumSize)
         buffer->maximumSize = alignment;
     BE_elf_AlignRecord(&buffer->buffer, copts.codeAlignment);
-    DAT_00580dac = buffer->buffer.size;
+    data_00580dac = buffer->buffer.size;
     if ((index = param->section) < 0)
         index = CodeGen_FindInterruptGenerationRecord(index)->sectionIndex;
     return index;
@@ -2089,10 +2089,10 @@ void create_main_file_object(void)
     copts.filesyminfo = 0;
     size = obj->type->size;
     if (copts.filesyminfo && obj->name->name[0] != '@') {
-        if (!DAT_0058849e) {
+        if (!data_0058849e) {
             DWARF_SetSectionAndState(dwarf_info_section, dwarf_line_section);
             DWARF_SetupSectionDebugState(BE_elf_FindSection(".text", 0));
-            DAT_0058849e = 1;
+            data_0058849e = 1;
         }
         DWARF_CreateObjectDebugEntry(obj);
     }

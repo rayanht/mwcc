@@ -17,7 +17,7 @@
 
 #include <stdio.h>
 
-static char DAT_0057d5f8[256];
+static char data_0057d5f8[256];
 static char diagnostic_message_buffer[256];
 char *fn_004087d0(unsigned int errorCode, char *buffer)
 {
@@ -31,8 +31,8 @@ void format_and_emit_diagnostic(int kind, int messageId, va_list arguments)
     char *message;
     UInt8 diagnosticKind;
 
-    fn_004087d0(messageId, DAT_0057d5f8);
-    message = mvprintf(diagnostic_message_buffer, 0x100, DAT_0057d5f8, arguments);
+    fn_004087d0(messageId, data_0057d5f8);
+    message = mvprintf(diagnostic_message_buffer, 0x100, data_0057d5f8, arguments);
     if (kind == 2) {
         diagnosticKind = 3;
     } else if (kind == 1) {

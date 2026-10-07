@@ -33,7 +33,7 @@ struct MachineInfo machine821 = {
 
 /* Each opcode's execution unit, latency and cycles in each stage of the pipeline; the table ends at PC_VMINFP,
    short of the last AltiVec opcodes. */
-static MachineOpcodeInfo DAT_00578e50[302] = {
+static MachineOpcodeInfo data_00578e50[302] = {
     {0, 0, {0, 0, 0, 0}},   /* PC_B */
     {0, 0, {0, 0, 0, 0}},   /* PC_BL */
     {0, 0, {0, 0, 0, 0}},   /* PC_BC */
@@ -366,7 +366,7 @@ static inline void EnqueueRecord(PCodeInstruction *instr)
 
 int get_instruction_cost(PCodeInstruction *instruction)
 {
-    int cost = DAT_00578e50[instruction->opcode].latency;
+    int cost = data_00578e50[instruction->opcode].latency;
 
     if (instruction->flags & fRecordBit) {
         cost += 2;
@@ -402,7 +402,7 @@ int fn_005308b0(struct PCodeInstruction *pcode)
     struct PCodeInstruction *other;
     if (data_00583048 == 0)
         return 0;
-    if ((&data_00583018)[DAT_00578e50[pcode->opcode].executionUnit].instr != NULL)
+    if ((&data_00583018)[data_00578e50[pcode->opcode].executionUnit].instr != NULL)
         return 0;
     if ((pcode->flags & fIsWrite) != 0) {
         other = data_00583038.instr;
@@ -418,13 +418,13 @@ void fn_00530830(PCodeInstruction *instr)
     int tableOffset;
 
     tableOffset = instr->opcode;
-    slot = DAT_00578e50[tableOffset].executionUnit;
+    slot = data_00578e50[tableOffset].executionUnit;
 
     data_0058304c = data_0058304c + 1;
     data_00583048 = data_00583048 - 1;
     EnqueueRecord(instr);
     (&data_00583018)[slot].instr = instr;
-    (&data_00583018)[slot].remaining = DAT_00578e50[tableOffset].stageCycles[0];
+    (&data_00583018)[slot].remaining = data_00578e50[tableOffset].stageCycles[0];
 }
 
 void fn_00530660(void)
@@ -475,7 +475,7 @@ void fn_00530660(void)
     if (data_00583030.instr != NULL && data_00583030.remaining == 0 && data_00583038.instr == NULL) {
         SInt32 count;
         PCodeInstruction *object;
-        count = DAT_00578e50[(object = data_00583030.instr)->opcode].stageCycles[1];
+        count = data_00578e50[(object = data_00583030.instr)->opcode].stageCycles[1];
         data_00583038.instr = object;
         data_00583038.remaining = count;
         data_00583030.instr = NULL;
@@ -484,5 +484,5 @@ void fn_00530660(void)
 
 int get_instruction_opcode_table_entry(PCodeInstruction *instruction)
 {
-    return DAT_00578e50[instruction->opcode].stageCycles[3];
+    return data_00578e50[instruction->opcode].stageCycles[3];
 }

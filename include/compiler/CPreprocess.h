@@ -20,7 +20,7 @@ extern void fn_004d6ed0(void);
 extern union {
     GList list;
     struct StorageHandle *handle;
-} DAT_00586da8;
+} data_00586da8;
 
 #ifdef __cplusplus
 }

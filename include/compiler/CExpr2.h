@@ -147,7 +147,7 @@ extern void build_destructor_aware_call(ENode *expression, Type *type, Boolean s
 extern ENode *make_call_with_optional_size_arg(Object *func, ENode *arg, Type *argtype);
 extern ENode *scannew(char global);
 extern struct Object *array_allocation_runtime_function;
-extern Boolean (*DAT_00587fd8)(int value, struct Object *object);
+extern Boolean (*data_00587fd8)(int value, struct Object *object);
 extern FuncArg data_00583098;
 extern struct ENode *converted_expr;
 extern UInt8 data_0058850e;

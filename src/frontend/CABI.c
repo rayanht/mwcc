@@ -1514,7 +1514,7 @@ Statement *make_baseclass_and_ivars_copy_statements(Statement *stmt, TypeClass *
                     if (type->size > 1 && ((regions->start & 1) || (type->size & 1))) {
                         stmt = CFunc_InsertAfterStatement(ST_EXPRESSION_0050b120, stmt);
                         stmt->expr.expression =
-                            funccallexpr(DAT_005870d8, CABI_MakeThisExpr(tclass, regions->start),
+                            funccallexpr(data_005870d8, CABI_MakeThisExpr(tclass, regions->start),
                                          getnodeaddress(src, 0), intconstnode(TYPE(&stunsignedlong), type->size), NULL);
                         continue;
                     }
@@ -1605,7 +1605,7 @@ void CABI_MakeDefaultConstructor(TypeClass *cls, Object *func)
     copts.filesyminfo = 0;
     CFunc_SetupNewFuncArgs(func, TYPE_FUNC(func->type)->args);
 
-    acc = PTR_00587644;
+    acc = data_00587644;
     for (vb = cls->vbases; vb != NULL; vb = vb->next)
         acc = make_baseclass_and_ivars_copy_statements(acc, cls, vb->base, vb->offset, 0);
 

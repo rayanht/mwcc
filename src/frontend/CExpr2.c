@@ -255,7 +255,7 @@ struct ENode *scandelete(char mode)
         result->data.funccall.args = CompilerTools_AllocatePool(sizeof(*result->data.funccall.args));
         result->data.funccall.args->next = NULL;
         result->data.funccall.args->node = destructorCall;
-        if (DAT_00587fd8 != NULL && (*DAT_00587fd8)(0, objectOrType) == 0) {
+        if (data_00587fd8 != NULL && (*data_00587fd8)(0, objectOrType) == 0) {
             objectExpr = CompilerTools_AllocatePool(sizeof(*objectExpr));
             memclrw(objectExpr, sizeof(*objectExpr));
             objectExpr->type = EINTCONST;
@@ -393,7 +393,7 @@ ENode *make_call_with_optional_size_arg(Object *func, ENode *arg, Type *argtype)
     call->flags = 0;
     call->rtype = &stvoid;
 
-    if (DAT_00587fd8 != NULL && DAT_00587fd8(0, func) == 0) {
+    if (data_00587fd8 != NULL && data_00587fd8(0, func) == 0) {
         fnref = make_int_node((Type *)&void_ptr, 0);
     } else if (func->sclass == TK_TYPEDEF) {
         CError_ReportError(ERR_EXPRESSION_SYNTAX_ERROR);
@@ -1903,7 +1903,7 @@ ENode *CExpr2_0046e9d0(Object *obj, Type *functype, ENodeList *args)
             arg = NULL;
         }
     }
-    if (DAT_00587fd8 != NULL && DAT_00587fd8(0, obj) == 0) {
+    if (data_00587fd8 != NULL && data_00587fd8(0, obj) == 0) {
         node = CompilerTools_AllocatePool(sizeof(*node));
         memclrw(node, sizeof(*node));
         node->type = EINTCONST;
@@ -2023,7 +2023,7 @@ ENode *CExpr_GenericFuncCall(BClassList *scope, ENode *instance, Boolean qualifi
         function = resolution.object;
     }
 
-    if (DAT_00587fd8 != NULL && DAT_00587fd8(0, function) == 0) {
+    if (data_00587fd8 != NULL && data_00587fd8(0, function) == 0) {
         result = make_voidptr();
     } else if (function->sclass == TK_TYPEDEF) {
         CError_ReportError(ERR_EXPRESSION_SYNTAX_ERROR);
@@ -2055,7 +2055,7 @@ ENode *CExpr_GenericFuncCall(BClassList *scope, ENode *instance, Boolean qualifi
                 path = CClass_GetPathCopy(function->u.alias.member, 0);
             function = function->u.alias.object;
 
-            if (DAT_00587fd8 != NULL && DAT_00587fd8(0, function) == 0) {
+            if (data_00587fd8 != NULL && data_00587fd8(0, function) == 0) {
                 result = make_voidptr();
             } else if (function->sclass == TK_TYPEDEF) {
                 CError_ReportError(ERR_EXPRESSION_SYNTAX_ERROR);
@@ -2593,7 +2593,7 @@ ENode *get_address_of_temp_copy(ENode *expr, char materialize)
                 CMach_InitFloatMem(expr->rtype, expr->data.floatval, buffer);
             }
             fn_004ceab0(object, buffer, NULL, object->type->size);
-            if (DAT_00587fd8 != NULL && DAT_00587fd8(0, object) == 0) {
+            if (data_00587fd8 != NULL && data_00587fd8(0, object) == 0) {
                 result = (ENode *)CompilerTools_AllocatePool(sizeof(ENode));
                 memclrw(result, sizeof(ENode));
                 result->type = EINTCONST;
@@ -3011,7 +3011,7 @@ SInt16 user_assign_check(ENode *operand, Type *targetType, UInt32 targetQual, Bo
                 ft = (TypeMemberFunc *)bestObject->type;
                 if (!(ft->flags & FUNC_METHOD))
                     CError_FATAL(2462);
-                if (DAT_00587fd8 != NULL && (*DAT_00587fd8)(0, bestObject) == 0) {
+                if (data_00587fd8 != NULL && (*data_00587fd8)(0, bestObject) == 0) {
                     node = intconstnode_setlong_470460(TYPE(&void_ptr), 0);
                 } else {
                     if (bestObject->sclass == TK_TYPEDEF) {
@@ -3944,7 +3944,7 @@ ENode *CExpr_FuncCallSix(Object *function, ENode *firstArgument, ENode *secondAr
     call->rtype = TYPE_FUNC(type)->functype;
     call->flags = TYPE_FUNC(type)->qual & Q_CV;
 
-    if (DAT_00587fd8 != NULL && DAT_00587fd8(0, function) == 0) {
+    if (data_00587fd8 != NULL && data_00587fd8(0, function) == 0) {
         functionRef = intconstnode_setlong((Type *)&void_ptr, 0);
     } else if (function->sclass == TK_TYPEDEF) {
         CError_ReportError(ERR_EXPRESSION_SYNTAX_ERROR);
@@ -4002,7 +4002,7 @@ ENode *funccallexpr(Object *func, ENode *firstArgument, ENode *secondArgument, E
     call->rtype = functionType->functype;
     call->flags = functionType->qual & Q_CV;
 
-    if (DAT_00587fd8 != NULL && (*DAT_00587fd8)(0, func) == 0) {
+    if (data_00587fd8 != NULL && (*data_00587fd8)(0, func) == 0) {
         CInt64 *value;
         functionRef = CompilerTools_AllocatePool(sizeof(ENode));
         memclrw(functionRef, sizeof(ENode));
@@ -4205,8 +4205,8 @@ static ENode *mkmono(ENode *inner, UInt8 ty)
 ENode *CExpr_New_EINDIRECT_Node(Object *obj)
 {
     ENode *val;
-    if (DAT_00587fd8 != NULL) {
-        if ((*DAT_00587fd8)(0, obj) == 0)
+    if (data_00587fd8 != NULL) {
+        if ((*data_00587fd8)(0, obj) == 0)
             return mknode0((Type *)&stsignedlong);
     }
     if (obj->sclass == TK_TYPEDEF) {
@@ -4249,8 +4249,8 @@ static ENode *create_objref(Object *obj)
 ENode *create_objectrefnode(Object *obj)
 {
     ENode *val;
-    if (DAT_00587fd8 != NULL) {
-        if ((*DAT_00587fd8)(0, obj) == 0)
+    if (data_00587fd8 != NULL) {
+        if ((*data_00587fd8)(0, obj) == 0)
             return make_null_pointer_const();
     }
     if (obj->sclass == TK_TYPEDEF) {

@@ -121,7 +121,7 @@ void ToolHelpers_cc_SetFileOutputName(int a, short b, char *s)
     int r;
     if (s && *s) {
         if ((r = CWParserPluginsPrivate_CallParserTextCallback(pluginPrivateContext, a, b ? b : 1, s)) != 0) {
-            DAT_00543380 = "CWParserSetFileOutputName";
+            data_00543380 = "CWParserSetFileOutputName";
             longjmp(plugin_request_jmp_buf, r);
         }
     }
@@ -161,7 +161,7 @@ SInt32 ToolHelpers_cc_AddProjectEntry(OSSpec *path, SInt16 mode, char *name, Boo
 
         status = CWPluginsPrivate_OpenFile(pluginPrivateContext, fileSpec, !flag, &options, &fileId);
         if (status != 0) {
-            DAT_00543380 = "CWAddProjectEntry";
+            data_00543380 = "CWAddProjectEntry";
             longjmp(plugin_request_jmp_buf, status);
         }
 
@@ -200,7 +200,7 @@ int ToolHelpers_cc_AddAccessPath(OSPathSpec *path, char use_first, int value, un
                 ((unsigned int(__stdcall *)(CWPluginPrivateContext *, struct QueryValues *))get_opcode_descriptor)(
                     pluginPrivateContext, &values);
             if (query_status != 0) {
-                DAT_00543380 = "CWGetAccessPathListInfo";
+                data_00543380 = "CWGetAccessPathListInfo";
                 longjmp(plugin_request_jmp_buf, query_status);
             }
             if (use_first != 0) {
@@ -221,7 +221,7 @@ int ToolHelpers_cc_AddAccessPath(OSPathSpec *path, char use_first, int value, un
         info.option_a = option;
         update_status = CWParserPluginsPrivate_CallFileOperationCallback(pluginPrivateContext, &info);
         if (update_status != 0) {
-            DAT_00543380 = "CWParserAddAccessPath";
+            data_00543380 = "CWParserAddAccessPath";
             longjmp(plugin_request_jmp_buf, update_status);
         }
         result = 1;
@@ -238,7 +238,7 @@ void ToolHelpers_cc_PassVirtualFileValuePair(char *fileData, struct StorageHandl
         fn_0041bcb0(pluginPrivateContext, *virtualFile, &fileInfo);
         error = CWParserPluginsPrivate_PassValuePair(pluginPrivateContext, fileData, fileInfo);
         if (error != 0) {
-            DAT_00543380 = "CWParserCreateVirtualFile";
+            data_00543380 = "CWParserCreateVirtualFile";
             longjmp(plugin_request_jmp_buf, error);
         }
         Memory_FreeHandle(*virtualFile);
@@ -252,7 +252,7 @@ void ToolHelpers_cc_GetOutputFileDirectory(CWFileSpec *directory)
 
     result = CWPluginsPrivate_GetOutputFileDirectory(pluginPrivateContext, directory);
     if (result != 0) {
-        DAT_00543380 = "CWGetOutputFileDirectory";
+        data_00543380 = "CWGetOutputFileDirectory";
         longjmp(plugin_request_jmp_buf, result);
     }
 }
@@ -266,7 +266,7 @@ void ToolHelpers_cc_CallFileInfoForDirectory(OSSpec *input)
     OS_OSSpec_To_FSSpec(&spec, &body);
     result = CWParserPluginsPrivate_CallFileInfo(pluginPrivateContext, &body);
     if (result != 0U) {
-        DAT_00543380 = "CWParserSetOutputFileDirectory";
+        data_00543380 = "CWParserSetOutputFileDirectory";
         longjmp(plugin_request_jmp_buf, result);
     }
 }
@@ -277,7 +277,7 @@ void ToolHelpers_cc_AddOverlay1Group(char *name, void *address, SInt32 *groupNum
 
     result = CWParserPluginsPrivate_AddOverlay1Group(pluginPrivateContext, name, address, groupNumber);
     if (result != 0) {
-        DAT_00543380 = "CWParserAddOverlay1Group";
+        data_00543380 = "CWParserAddOverlay1Group";
         longjmp(plugin_request_jmp_buf, result);
     }
 }
@@ -288,7 +288,7 @@ void ToolHelpers_cc_AddOverlay1(char *name, SInt32 groupNumber, SInt32 *overlayN
 
     result = CWParserPluginsPrivate_AddOverlay1(pluginPrivateContext, name, groupNumber, overlayNumber);
     if (result != 0) {
-        DAT_00543380 = "CWParserAddOverlay1";
+        data_00543380 = "CWParserAddOverlay1";
         longjmp(plugin_request_jmp_buf, result);
     }
 }
@@ -299,7 +299,7 @@ void ToolHelpers_cc_AddSegment(char *name, short attributes, SInt32 *segmentNumb
 
     result = CWParserPluginsPrivate_AddSegment(pluginPrivateContext, name, attributes, segmentNumber);
     if (result != 0) {
-        DAT_00543380 = "CWParserAddSegment";
+        data_00543380 = "CWParserAddSegment";
         longjmp(plugin_request_jmp_buf, result);
     }
 }
@@ -310,7 +310,7 @@ void ToolHelpers_cc_ChangeSegment(SInt32 segmentNumber, char *name, short attrib
 
     result = CWParserPluginsPrivate_ChangeSegment(pluginPrivateContext, segmentNumber, name, attributes);
     if (result != 0) {
-        DAT_00543380 = "CWParserSetSegment";
+        data_00543380 = "CWParserSetSegment";
         longjmp(plugin_request_jmp_buf, result);
     }
 }

@@ -85,7 +85,7 @@ extern void fn_00442c00(GList *entry);
 extern void FreeGList(GList *storage);
 extern SInt16 InitGList(GList *allocation, SInt32 size);
 extern void CompilerGetCString(short value, char *destination);
-extern void (*DAT_00587708)(void);
+extern void (*data_00587708)(void);
 extern int next_name_id;
 extern struct HashNameNode **data_00587f88;
 

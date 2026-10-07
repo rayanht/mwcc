@@ -270,7 +270,7 @@ void CSOM_GenerateRefNodeCode(void)
         for (entry = somReferences; entry != NULL; entry = entry->next) {
             switch (entry->kind) {
                 case 0:
-                    CodeGen_EmitLoadAndBranchFunction(entry->object, DAT_00588260,
+                    CodeGen_EmitLoadAndBranchFunction(entry->object, data_00588260,
                                                       entry->theclass->sominfo->classDataObject, entry->id);
                     break;
                 case 1:
@@ -1578,7 +1578,7 @@ ENode *CSOM_BuildNewObjectInstance(TypeClass *cls)
         if (obj == NULL)
             return nullnode();
     } else {
-        obj = DAT_00588060;
+        obj = data_00588060;
     }
 
     callnode = funccallexpr(obj, create_objectrefnode(cls->sominfo->classDataObject),
@@ -1588,7 +1588,7 @@ ENode *CSOM_BuildNewObjectInstance(TypeClass *cls)
 
     if (copts.SOMCheckEnvironment != 0 && copts.SOMCallOptimization == 0) {
         temp = CExpr2_RewriteExprToTemp(callnode);
-        call2 = funccallexpr(DAT_005876c0, nullnode(), NULL, NULL, NULL);
+        call2 = funccallexpr(data_005876c0, nullnode(), NULL, NULL, NULL);
         monadic = makemonadicnode(callnode, ELOGNOT);
         monadic->rtype = CParser_GetBoolType();
         callnode = (ENode *)CompilerTools_AllocatePool(sizeof(ENode));
@@ -1803,7 +1803,7 @@ ENode *CSOM_AppendPointerArgCall(ENode *node, ENodeList *spec)
 
     if (copts.SOMCallOptimization != 0) {
         ENode *appendCall;
-        appendCall = funccallexpr(DAT_00588278, pointerExpr, NULL, NULL, NULL);
+        appendCall = funccallexpr(data_00588278, pointerExpr, NULL, NULL, NULL);
         node = makediadicnode(node, appendCall, ECOMMA);
         if (resultExpr != NULL)
             node = makediadicnode(node, resultExpr, ECOMMA);
@@ -1817,7 +1817,7 @@ ENode *CSOM_AppendPointerArgCall(ENode *node, ENodeList *spec)
         *pointerCopy = *pointerExpr;
         pointerValue = makemonadicnode(pointerCopy, EINDIRECT);
         pointerValue->rtype = (Type *)&stsignedlong;
-        appendCall = funccallexpr(DAT_00588278, pointerExpr, NULL, NULL, NULL);
+        appendCall = funccallexpr(data_00588278, pointerExpr, NULL, NULL, NULL);
         conditional = CompilerTools_AllocatePool(sizeof(ENode));
         conditional->type = ECOND;
         conditional->cost = 0;

@@ -71,7 +71,7 @@ extern int __stdcall dispatch_plugin_request(struct CWPluginPrivateContext *cont
 extern PtrList data_00587688[1];
 extern PtrList data_00588044;
 
-extern const char *DAT_00543380;
+extern const char *data_00543380;
 
 #ifdef __cplusplus
 }

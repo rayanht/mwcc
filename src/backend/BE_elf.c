@@ -151,8 +151,8 @@ static inline void ElfAppend(GList *list)
     if (data_00583ae8.buffer.size + src->size > data_00583ae8.buffer.hndlsize) {
         data_00583ae8.buffer.hndlsize += src->size + data_00583ae8.buffer.growsize;
         capacity = data_00583ae8.buffer.hndlsize;
-        if (!COS_ResizeHandle((struct StorageHandle *)data_00583ae8.buffer.data, capacity) && DAT_00587708)
-            DAT_00587708();
+        if (!COS_ResizeHandle((struct StorageHandle *)data_00583ae8.buffer.data, capacity) && data_00587708)
+            data_00587708();
     }
     memcpy(*data_00583ae8.buffer.data + data_00583ae8.buffer.size, *src->data, src->size);
     data_00583ae8.buffer.size += src->size;
@@ -220,7 +220,7 @@ void fn_0049b920(void)
     SInt32 len;
 
     elfBigEndian = ElfBigEndian() != 0;
-    if (DAT_0058849e) {
+    if (data_0058849e) {
         DWARF_WriteDebugInfo();
         if (elfBigEndian) {
             ElfLockSection(ELF_SECTION(dwarf_line_section));
@@ -397,8 +397,8 @@ void BE_elf_AppendGList(GList *dst, GList *src)
 {
     if (dst->size + src->size > dst->hndlsize) {
         dst->hndlsize += src->size + dst->growsize;
-        if (!COS_ResizeHandle((struct StorageHandle *)dst->data, dst->hndlsize) && DAT_00587708)
-            DAT_00587708();
+        if (!COS_ResizeHandle((struct StorageHandle *)dst->data, dst->hndlsize) && data_00587708)
+            data_00587708();
     }
     memcpy(*dst->data + dst->size, *src->data, src->size);
     dst->size += src->size;
@@ -529,7 +529,7 @@ void build_ordered_section_index(void)
     ordered_section_index = (ObjGenSection **)galloc((count + 2) * sizeof(int));
     ordered_section_index[0] = data_005884aa;
     count = 1;
-    if (DAT_0058849e != 0) {
+    if (data_0058849e != 0) {
         initialRecord = findInitialSection();
         initialBinding = BE_symbol_GetSectionSym(initialRecord);
         if (initialRecord->buffer.size == 0) {
@@ -608,7 +608,7 @@ void BE_elf_InitSectionsAndFileSymbol(void)
     BE_SymNode *record;
 
     data_0058847a = 1;
-    memset(&DAT_0058849e, 0, 82);
+    memset(&data_0058849e, 0, 82);
     ObjGen_PPC_EABI_InitSections();
     COS_FileGetFSSpecInfo(&((CPrepCU *)cprep_cu)->mainFile, NULL, NULL, file_name);
     CLIO_ConvertPascalToCString(file_name);

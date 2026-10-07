@@ -20,8 +20,8 @@ static unsigned int next_entry_id = 2;
 static struct NameRegistryEntry *spec_name_registry;
 static struct MacSpecEntry **mac_spec_entries[256];
 static unsigned int directory_count;
-static char DAT_0057e818[64];
-static char DAT_0057e858[520];
+static char data_0057e818[64];
+static char data_0057e858[520];
 static char file_name_buffer[256];
 
 int store_mac_spec_entry(MacSpecEntry *entry)
@@ -292,14 +292,14 @@ DWORD __stdcall fn_00413670(short kind, int value, OSPathSpec *path)
             return result;
         }
     } else {
-        if (build_name_and_backslash_path(kind, value, DAT_0057e818, DAT_0057e858) == 0) {
+        if (build_name_and_backslash_path(kind, value, data_0057e818, data_0057e858) == 0) {
             return 3;
         }
-        directoryLength = strlen(DAT_0057e818);
-        nameLength = strlen(DAT_0057e858);
+        directoryLength = strlen(data_0057e818);
+        nameLength = strlen(data_0057e858);
         if ((int)(directoryLength + nameLength) < 0x104) {
-            memcpy(path->s, DAT_0057e818, directoryLength);
-            memcpy(path->s + directoryLength, DAT_0057e858, 1 + nameLength);
+            memcpy(path->s, data_0057e818, directoryLength);
+            memcpy(path->s + directoryLength, data_0057e858, 1 + nameLength);
         }
     }
     return 0;

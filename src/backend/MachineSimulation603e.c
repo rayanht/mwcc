@@ -504,8 +504,8 @@ static PipelineStage data_00582d38;
 static PipelineStage queuedInstruction;
 static PipelineStage data_00582d48;
 static PipelineStage data_00582d50;
-static int DAT_00582d58;
-static int DAT_00582d5c;
+static int data_00582d58;
+static int data_00582d5c;
 static unsigned int data_00582d60;
 static unsigned int data_00582d64;
 static CompletionEntry instruction_completion_entries[5];
@@ -532,8 +532,8 @@ void fn_0052e590(void)
     queuedInstruction.instr = NULL;
     data_00582d48.instr = NULL;
     data_00582d50.instr = NULL;
-    DAT_00582d58 = 5;
-    DAT_00582d5c = 0;
+    data_00582d58 = 5;
+    data_00582d5c = 0;
     data_00582d60 = 0;
     data_00582d64 = 0;
     instruction_completion_entries[0].instr = NULL;
@@ -549,7 +549,7 @@ int is_instruction_issuable(PCodeInstruction *instr)
     PCodeInstruction *list;
     PCodeInstruction *ref;
 
-    if (!DAT_00582d58)
+    if (!data_00582d58)
         return 0;
     unit = machineOpcodeInfo[instr->opcode].executionUnit;
     if ((&instruction_timing_slots)[unit].instr) {
@@ -592,8 +592,8 @@ void fn_0052e450(struct PCodeInstruction *instruction)
     if ((kind == 1) && (data_00582d20.instr != NULL)) {
         kind = 7;
     }
-    DAT_00582d5c++;
-    DAT_00582d58--;
+    data_00582d5c++;
+    data_00582d58--;
     instruction_completion_entries[data_00582d64].instr = instruction,
     instruction_completion_entries[data_00582d64].completed = 0;
     data_00582d64 = (data_00582d64 + 1) % 5;
@@ -628,15 +628,15 @@ void fn_0052e110(void)
             (&instruction_timing_slots)[slot].remaining -= 1;
         slot++;
     } while (slot < 8);
-    if (DAT_00582d5c != 0 && instruction_completion_entries[data_00582d60].completed != 0) {
+    if (data_00582d5c != 0 && instruction_completion_entries[data_00582d60].completed != 0) {
         instruction_completion_entries[data_00582d60].instr = NULL;
-        DAT_00582d5c -= 1;
-        DAT_00582d58 += 1;
+        data_00582d5c -= 1;
+        data_00582d58 += 1;
         data_00582d60 = (data_00582d60 + 1) % 5;
-        if (DAT_00582d5c != 0 && instruction_completion_entries[data_00582d60].completed != 0) {
+        if (data_00582d5c != 0 && instruction_completion_entries[data_00582d60].completed != 0) {
             instruction_completion_entries[data_00582d60].instr = NULL;
-            DAT_00582d5c -= 1;
-            DAT_00582d58 += 1;
+            data_00582d5c -= 1;
+            data_00582d58 += 1;
             data_00582d60 = (data_00582d60 + 1) % 5;
         }
     }

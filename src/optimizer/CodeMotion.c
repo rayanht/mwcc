@@ -44,7 +44,7 @@
 #include "compiler/StrengthReduction.h"
 #include "compiler/Switch.h"
 
-static struct PCodeInstruction *DAT_00574ce8 = NULL;
+static struct PCodeInstruction *data_00574ce8 = NULL;
 
 #define CM_BIT(set, i) (((UInt32 *)(set))[(i) >> 5] & (1 << (i)))
 
@@ -679,8 +679,8 @@ unsigned int fn_00525fc0(PCodeInstruction *node, Loop *loop, UInt32 *defs)
 {
     PCodeInstruction *next = node->next;
 
-    if (node->opcode == PC_ADDZE && DAT_00574ce8 == node) {
-        DAT_00574ce8 = NULL;
+    if (node->opcode == PC_ADDZE && data_00574ce8 == node) {
+        data_00574ce8 = NULL;
         return 1;
     }
     if (node->opcode == PC_SRAWI && next != NULL && next->opcode == PC_ADDZE &&
@@ -689,12 +689,12 @@ unsigned int fn_00525fc0(PCodeInstruction *node, Loop *loop, UInt32 *defs)
         (node->flags & 0x20460) == 0 && (next->flags & 0x20460) == 0) {
         if (is_loop_invariant(node, loop, defs, 1, 0)) {
             if (CodeMotion_00526070(node, loop)) {
-                DAT_00574ce8 = next;
+                data_00574ce8 = next;
                 return 1;
             }
         }
     }
-    DAT_00574ce8 = NULL;
+    data_00574ce8 = NULL;
     return 0;
 }
 

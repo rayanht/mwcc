@@ -11,7 +11,7 @@ extern void cc_eabi_ppc_ReportCompilingFunction(char *name);
 extern int __stdcall dispatch_compiler_plugin_request(CWPluginPrivateContext *input);
 extern void initialize_copts(CPrepCU *source);
 extern signed char initialize_compiler_plugin_cu(unsigned int input);
-extern Boolean DAT_0054c3d0;
+extern Boolean data_0054c3d0;
 extern int data_00588258;
 extern struct CPrepCU compiler_plugin_cu;
 

@@ -57,7 +57,7 @@ char *CLPlugins_GetName(Plugin *plugin)
 
 UInt8 *get_plugin_result(Plugin *plugin)
 {
-    static UInt8 DAT_00541480[4] = {0};
+    static UInt8 data_00541480[4] = {0};
     short status;
     UInt8 *result;
 
@@ -70,7 +70,7 @@ UInt8 *get_plugin_result(Plugin *plugin)
             return result;
         }
     }
-    return DAT_00541480;
+    return data_00541480;
 }
 
 PluginDesc *CLPlugins_GetPluginDesc(Plugin *provider)
@@ -303,13 +303,13 @@ UInt8 query_plugin(Plugin *plugin, unsigned int queryArgument, char **queryKind)
 
 char *format_plugin_version(Plugin *plugin, char *buffer)
 {
-    static char DAT_0057d90a[18];
+    static char data_0057d90a[18];
     UInt8 *version;
     char *cursor;
 
     version = get_plugin_result(plugin);
     if (buffer == (char *)0x0) {
-        buffer = DAT_0057d90a;
+        buffer = data_0057d90a;
     }
     if (version[0] | version[1] | version[2] | version[3] != 0) {
         cursor = buffer;

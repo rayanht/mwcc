@@ -5525,12 +5525,12 @@ void build_global_pointer_entries(void)
         } else
             count++;
         if (!counting) {
-            entries[index].address = (UInt8 *)DAT_00587ed0;
+            entries[index].address = (UInt8 *)data_00587ed0;
             index++;
         } else
             count++;
         if (!counting) {
-            entries[index].address = (UInt8 *)DAT_005870d8;
+            entries[index].address = (UInt8 *)data_005870d8;
             index++;
         } else
             count++;
@@ -5560,7 +5560,7 @@ void build_global_pointer_entries(void)
         } else
             count++;
         if (!counting) {
-            entries[index].address = (UInt8 *)DAT_0058769c;
+            entries[index].address = (UInt8 *)data_0058769c;
             index++;
         } else
             count++;
@@ -5570,12 +5570,12 @@ void build_global_pointer_entries(void)
         } else
             count++;
         if (!counting) {
-            entries[index].address = (UInt8 *)DAT_00587678;
+            entries[index].address = (UInt8 *)data_00587678;
             index++;
         } else
             count++;
         if (!counting) {
-            entries[index].address = (UInt8 *)DAT_00588260;
+            entries[index].address = (UInt8 *)data_00588260;
             index++;
         } else
             count++;
@@ -5590,22 +5590,22 @@ void build_global_pointer_entries(void)
         } else
             count++;
         if (!counting) {
-            entries[index].address = (UInt8 *)DAT_00588278;
+            entries[index].address = (UInt8 *)data_00588278;
             index++;
         } else
             count++;
         if (!counting) {
-            entries[index].address = (UInt8 *)DAT_00588060;
+            entries[index].address = (UInt8 *)data_00588060;
             index++;
         } else
             count++;
         if (!counting) {
-            entries[index].address = (UInt8 *)DAT_005876c0;
+            entries[index].address = (UInt8 *)data_005876c0;
             index++;
         } else
             count++;
         if (!counting) {
-            entries[index].address = (UInt8 *)DAT_00587f80;
+            entries[index].address = (UInt8 *)data_00587f80;
             index++;
         } else
             count++;
@@ -5650,17 +5650,17 @@ void build_global_pointer_entries(void)
         } else
             count++;
         if (!counting) {
-            entries[index].address = (UInt8 *)DAT_005882a4;
+            entries[index].address = (UInt8 *)data_005882a4;
             index++;
         } else
             count++;
         if (!counting) {
-            entries[index].address = (UInt8 *)DAT_005875a0;
+            entries[index].address = (UInt8 *)data_005875a0;
             index++;
         } else
             count++;
         if (!counting) {
-            entries[index].address = (UInt8 *)DAT_00587654;
+            entries[index].address = (UInt8 *)data_00587654;
             index++;
         } else
             count++;

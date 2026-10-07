@@ -345,14 +345,14 @@ static int data_00582ec0;
 static SInt32 pending_opt_args;
 static UInt32 simulation_pipeline_index;
 static UInt32 opt_arg_index;
-static CompletionEntry DAT_00582ed0[6];
+static CompletionEntry data_00582ed0[6];
 
 static inline void record_opt_arg(PCodeInstruction *p)
 {
     pending_opt_args++;
     data_00582ec0--;
-    DAT_00582ed0[opt_arg_index].instr = p;
-    DAT_00582ed0[opt_arg_index].completed = 0;
+    data_00582ed0[opt_arg_index].instr = p;
+    data_00582ed0[opt_arg_index].completed = 0;
     opt_arg_index = (opt_arg_index + 1) % 6;
 }
 
@@ -383,12 +383,12 @@ void reset_simulation_pipeline(void)
     pending_opt_args = 0;
     simulation_pipeline_index = 0;
     opt_arg_index = 0;
-    DAT_00582ed0[0].instr = NULL;
-    DAT_00582ed0[1].instr = NULL;
-    DAT_00582ed0[2].instr = NULL;
-    DAT_00582ed0[3].instr = NULL;
-    DAT_00582ed0[4].instr = NULL;
-    DAT_00582ed0[5].instr = NULL;
+    data_00582ed0[0].instr = NULL;
+    data_00582ed0[1].instr = NULL;
+    data_00582ed0[2].instr = NULL;
+    data_00582ed0[3].instr = NULL;
+    data_00582ed0[4].instr = NULL;
+    data_00582ed0[5].instr = NULL;
     data_00582eb8 = NULL;
     data_00582ebc = NULL;
 }
@@ -459,13 +459,13 @@ void advance_simulation_pipeline(void)
             (&data_00582e70)[i].remaining--;
         i++;
     } while (i < 9);
-    if (pending_opt_args != 0 && DAT_00582ed0[simulation_pipeline_index].completed != 0) {
-        DAT_00582ed0[simulation_pipeline_index].instr = NULL;
+    if (pending_opt_args != 0 && data_00582ed0[simulation_pipeline_index].completed != 0) {
+        data_00582ed0[simulation_pipeline_index].instr = NULL;
         pending_opt_args--;
         data_00582ec0++;
         simulation_pipeline_index = (simulation_pipeline_index + 1) % 6;
-        if (pending_opt_args != 0 && DAT_00582ed0[simulation_pipeline_index].completed != 0) {
-            DAT_00582ed0[simulation_pipeline_index].instr = NULL;
+        if (pending_opt_args != 0 && data_00582ed0[simulation_pipeline_index].completed != 0) {
+            data_00582ed0[simulation_pipeline_index].instr = NULL;
             pending_opt_args--;
             data_00582ec0++;
             simulation_pipeline_index = (simulation_pipeline_index + 1) % 6;
@@ -475,9 +475,9 @@ void advance_simulation_pipeline(void)
         SInt32 j;
         PCodeInstruction *q;
         q = data_00582e78.instr;
-        for (j = 0; j < 6 && DAT_00582ed0[j].instr != q; j++)
+        for (j = 0; j < 6 && data_00582ed0[j].instr != q; j++)
             ;
-        DAT_00582ed0[j].completed = 1;
+        data_00582ed0[j].completed = 1;
         data_00582e78.instr = NULL;
         data_00582eb8 = q;
     }
@@ -485,45 +485,45 @@ void advance_simulation_pipeline(void)
         SInt32 j;
         PCodeInstruction *q;
         q = data_00582e90.instr;
-        for (j = 0; j < 6 && DAT_00582ed0[j].instr != q; j++)
+        for (j = 0; j < 6 && data_00582ed0[j].instr != q; j++)
             ;
-        DAT_00582ed0[j].completed = 1;
+        data_00582ed0[j].completed = 1;
         data_00582e90.instr = NULL;
     }
     if (data_00582ea8.instr != NULL && data_00582ea8.remaining == 0) {
         SInt32 j;
         PCodeInstruction *q;
         q = data_00582ea8.instr;
-        for (j = 0; j < 6 && DAT_00582ed0[j].instr != q; j++)
+        for (j = 0; j < 6 && data_00582ed0[j].instr != q; j++)
             ;
-        DAT_00582ed0[j].completed = 1;
+        data_00582ed0[j].completed = 1;
         data_00582ea8.instr = NULL;
     }
     if (data_00582eb0.instr != NULL && data_00582eb0.remaining == 0) {
         SInt32 j;
         PCodeInstruction *q;
         q = data_00582eb0.instr;
-        for (j = 0; j < 6 && DAT_00582ed0[j].instr != q; j++)
+        for (j = 0; j < 6 && data_00582ed0[j].instr != q; j++)
             ;
-        DAT_00582ed0[j].completed = 1;
+        data_00582ed0[j].completed = 1;
         data_00582eb0.instr = NULL;
     }
     if (data_00582e70.instr != NULL && data_00582e70.remaining == 0) {
         SInt32 j;
         PCodeInstruction *q;
         q = data_00582e70.instr;
-        for (j = 0; j < 6 && DAT_00582ed0[j].instr != q; j++)
+        for (j = 0; j < 6 && data_00582ed0[j].instr != q; j++)
             ;
-        DAT_00582ed0[j].completed = 1;
+        data_00582ed0[j].completed = 1;
         data_00582e70.instr = NULL;
     }
     if (data_00582e80.instr != NULL && data_00582e80.remaining == 0) {
         SInt32 j;
         PCodeInstruction *q;
         q = data_00582e80.instr;
-        for (j = 0; j < 6 && DAT_00582ed0[j].instr != q; j++)
+        for (j = 0; j < 6 && data_00582ed0[j].instr != q; j++)
             ;
-        DAT_00582ed0[j].completed = 1;
+        data_00582ed0[j].completed = 1;
         data_00582e80.instr = NULL;
         data_00582ebc = q;
     }
@@ -535,9 +535,9 @@ void advance_simulation_pipeline(void)
         if ((p = data_00582e98.instr) != NULL && data_00582e98.remaining == 0 &&
             ((tag = p->opcode) == 0xa8 || tag == 0xa9)) {
             q = data_00582e98.instr;
-            for (j = 0; j < 6 && DAT_00582ed0[j].instr != q; j++)
+            for (j = 0; j < 6 && data_00582ed0[j].instr != q; j++)
                 ;
-            DAT_00582ed0[j].completed = 1;
+            data_00582ed0[j].completed = 1;
             data_00582e98.instr = NULL;
         }
     }

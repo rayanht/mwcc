@@ -3094,7 +3094,7 @@ void mark_nonintersecting_linears(void)
                 do {
                     if ((func->flags & IROLF_Reffed) != 0 && func->type != IROLinearNop) {
                         IroCSE_CollectExpressionVarRefsAndFlags(func);
-                        if (DAT_005880a4 == 0 && IroBitVect_Intersects(data_00552b88, data_0058064c) == 0) {
+                        if (data_005880a4 == 0 && IroBitVect_Intersects(data_00552b88, data_0058064c) == 0) {
                             func->flags = func->flags | 0x100;
                         }
                     }

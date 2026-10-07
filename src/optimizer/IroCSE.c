@@ -349,10 +349,10 @@ void IroCSE_RewriteStatementExpressions(Statement *stmt)
 void IroCSE_0044f6a0(IROLinear *e, SInt32 flag)
 {
     if (e->rtype != NULL && CParser_IsVolatile(e->rtype, e->nodeflags & 3)) {
-        DAT_005880a4 = 1;
-        DAT_00587630 = 1;
+        data_005880a4 = 1;
+        data_00587630 = 1;
     }
-    if (DAT_00587630 != 0)
+    if (data_00587630 != 0)
         return;
 
     switch (e->type) {
@@ -366,13 +366,13 @@ void IroCSE_0044f6a0(IROLinear *e, SInt32 flag)
             q = fn_0044ba70(e->u.node->data.objref, 0, 1);
             if (q) {
                 if (is_volatile_object(q->object)) {
-                    DAT_005880a4 = 1;
-                    DAT_00587630 = 1;
+                    data_005880a4 = 1;
+                    data_00587630 = 1;
                 }
                 v = q->index;
                 BVSET(v);
             } else {
-                DAT_00587630 = 1;
+                data_00587630 = 1;
             }
             break;
         }
@@ -381,7 +381,7 @@ void IroCSE_0044f6a0(IROLinear *e, SInt32 flag)
             IROLinear *p;
             IROAddrRecord *t;
             if (data_00551d6c[e->nodetype] != 0) {
-                DAT_00587630 = 1;
+                data_00587630 = 1;
                 return;
             }
             if (e->nodetype == EINDIRECT) {
@@ -391,12 +391,12 @@ void IroCSE_0044f6a0(IROLinear *e, SInt32 flag)
                         t = IroVars_CreateAddrRecord(p);
                         IroVars_CollectAddrRecordElements(p, t);
                         if (t->numObjRefs != 1) {
-                            DAT_00587e58 = 1;
+                            data_00587e58 = 1;
                             BVSET(0);
                             IroBitVect_Or(noregister_bitvector, data_00552b88);
                         }
                     } else {
-                        DAT_00587e58 = 1;
+                        data_00587e58 = 1;
                         BVSET(0);
                         IroBitVect_Or(noregister_bitvector, data_00552b88);
                     }
@@ -408,13 +408,13 @@ void IroCSE_0044f6a0(IROLinear *e, SInt32 flag)
 
         case IROLinearOp2Arg:
             if (data_00551d6c[e->nodetype] != 0) {
-                DAT_00587630 = 1;
+                data_00587630 = 1;
                 return;
             }
             if ((UInt8)(e->nodetype - 0x0B) <= 1) {
                 if (IroDump_IsType1NodeType50(e->u.diadic.right) == 0 ||
                     CInt64_Equal(e->u.diadic.right->u.node->data.intval, cint64_zero) != 0) {
-                    DAT_00587e58 = 1;
+                    data_00587e58 = 1;
                 }
             }
             IroCSE_0044f6a0(e->u.diadic.left, flag);
@@ -422,7 +422,7 @@ void IroCSE_0044f6a0(IROLinear *e, SInt32 flag)
             break;
 
         case IROLinearFunccall:
-            DAT_00587630 = 1;
+            data_00587630 = 1;
             break;
 
         default:
@@ -433,15 +433,15 @@ void IroCSE_0044f6a0(IROLinear *e, SInt32 flag)
 
 #define BVSET(bit) IRO_BitVectorSet_0044f3d0((bit), data_00552b88)
 
-/* Notes the variables E reads (data_00552b88) and whether it has side effects (DAT_00587630) or reads memory
-   through an unknown address (DAT_00587e58). */
+/* Notes the variables E reads (data_00552b88) and whether it has side effects (data_00587630) or reads memory
+   through an unknown address (data_00587e58). */
 void collect_expression_var_refs_and_flags(IROLinear *e, SInt32 flag)
 {
     int i;
 
     if (e->rtype != NULL && CParser_IsVolatile(e->rtype, e->nodeflags & 3)) {
-        DAT_005880a4 = 1;
-        DAT_00587630 = 1;
+        data_005880a4 = 1;
+        data_00587630 = 1;
     }
 
     switch (e->type) {
@@ -455,13 +455,13 @@ void collect_expression_var_refs_and_flags(IROLinear *e, SInt32 flag)
             q = fn_0044ba70(e->u.node->data.objref, 0, 1);
             if (q) {
                 if (is_volatile_object(q->object)) {
-                    DAT_005880a4 = 1;
-                    DAT_00587630 = 1;
+                    data_005880a4 = 1;
+                    data_00587630 = 1;
                 }
                 v = q->index;
                 BVSET(v);
             } else {
-                DAT_00587630 = 1;
+                data_00587630 = 1;
             }
             break;
         }
@@ -469,7 +469,7 @@ void collect_expression_var_refs_and_flags(IROLinear *e, SInt32 flag)
         case IROLinearOp1Arg: {
             IROLinear *p;
             if (data_00551d6c[e->nodetype] != 0)
-                DAT_00587630 = 1;
+                data_00587630 = 1;
             if (e->nodetype == EINDIRECT) {
                 p = e->u.monadic;
                 if (!(p->type == IROLinearOperand && p->u.node->type == EOBJREF)) {
@@ -477,12 +477,12 @@ void collect_expression_var_refs_and_flags(IROLinear *e, SInt32 flag)
                         data_00587ef4 = 0;
                         fn_0044b4e0(p);
                         if (data_00587ef4 != 1) {
-                            DAT_00587e58 = 1;
+                            data_00587e58 = 1;
                             BVSET(0);
                             IroBitVect_Or(noregister_bitvector, data_00552b88);
                         }
                     } else {
-                        DAT_00587e58 = 1;
+                        data_00587e58 = 1;
                         BVSET(0);
                         IroBitVect_Or(noregister_bitvector, data_00552b88);
                     }
@@ -494,11 +494,11 @@ void collect_expression_var_refs_and_flags(IROLinear *e, SInt32 flag)
 
         case IROLinearOp2Arg:
             if (data_00551d6c[e->nodetype] != 0)
-                DAT_00587630 = 1;
+                data_00587630 = 1;
             if (e->nodetype == EDIV || e->nodetype == EMODULO) {
                 if (IroDump_IsType1NodeType50(e->u.diadic.right) == 0 ||
                     CInt64_Equal(e->u.diadic.right->u.node->data.intval, cint64_zero) != 0) {
-                    DAT_00587e58 = 1;
+                    data_00587e58 = 1;
                 }
             }
             collect_expression_var_refs_and_flags(e->u.diadic.left, flag);
@@ -506,7 +506,7 @@ void collect_expression_var_refs_and_flags(IROLinear *e, SInt32 flag)
             break;
 
         case IROLinearFunccall: {
-            DAT_00587630 = 1;
+            data_00587630 = 1;
             collect_expression_var_refs_and_flags(e->u.funccall.callee, 0);
             IroBitVect_Or(noregister_bitvector, data_00552b88);
             for (i = e->u.funccall.argCount - 1; i >= 0; i--)
@@ -523,17 +523,17 @@ void collect_expression_var_refs_and_flags(IROLinear *e, SInt32 flag)
 void IroCSE_CollectExpressionVarRefsAndFlags(struct IROLinear *input)
 {
     IroBitVect_ClearBitVector(data_00552b88);
-    DAT_00587e58 = 0;
-    DAT_00587630 = 0;
-    DAT_005880a4 = 0;
+    data_00587e58 = 0;
+    data_00587630 = 0;
+    data_005880a4 = 0;
     collect_expression_var_refs_and_flags(input, 0);
 }
 
 void fn_0044f350(IROLinear *expression)
 {
     IroBitVect_AllocateBitVector(&data_00552b88, iroVarCount + 1U);
-    DAT_00587e58 = 0;
-    DAT_00587630 = 0;
+    data_00587e58 = 0;
+    data_00587630 = 0;
     IroCSE_0044f6a0(expression, 0);
 }
 
@@ -565,12 +565,12 @@ void fn_0044f230(IROLinear *expression, IRONode *value)
                 entry->node = value;
                 entry->state = 0;
                 IroBitVect_AllocateBitVector(&data_00552b88, iroVarCount + 1);
-                DAT_00587e58 = 0;
-                DAT_00587630 = 0;
+                data_00587e58 = 0;
+                data_00587630 = 0;
                 IroCSE_0044f6a0(expression, 0);
                 entry->depends = data_00552b88;
-                entry->hasSideEffects = DAT_00587630;
-                entry->mayTrap = DAT_00587e58;
+                entry->hasSideEffects = data_00587630;
+                entry->mayTrap = data_00587e58;
                 entry->next = NULL;
                 entry->use = NULL;
                 if (expr_list != NULL)

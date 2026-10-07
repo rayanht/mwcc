@@ -38,7 +38,7 @@
 #include <string.h>
 #include <stdlib.h>
 
-static char DAT_0057eb68;
+static char data_0057eb68;
 static char data_0057eb69;
 static int data_0057eb6c; /* (its users were stripped) */
 static UInt8 data_0057eb70;
@@ -48,7 +48,7 @@ static OSSpec data_0057ecb6;
 static char specs_equal;
 static char data_0057edfb;
 static char data_0057edfc;
-static char DAT_0057edfd[256];
+static char data_0057edfd[256];
 
 /* The lines written since the last page prompt. */
 static int data_0054b988 = 0;
@@ -73,7 +73,7 @@ void initialize_console(void)
     consoleOutput = GetStdHandle((DWORD)-11);
     handler = (PHANDLER_ROUTINE)report_user_break;
     SetConsoleCtrlHandler(handler, 1);
-    DAT_0057eb68 = 0;
+    data_0057eb68 = 0;
     gotBufferInfo = GetConsoleScreenBufferInfo(consoleOutput, &bufferInfo);
     if (!gotBufferInfo) {
         optsEnvir.rows = 0;
@@ -101,11 +101,11 @@ void CLIO_ExchangeClearGlobal(void)
 
 char CLIO_InitializeStreamBuffering(void)
 {
-    DAT_0057eb68 = 0;
+    data_0057eb68 = 0;
     data_0057eb69 = 0;
     data_0054b988 = 0;
     initialize_console();
-    if (DAT_0057eb68 != 0) {
+    if (data_0057eb68 != 0) {
         setvbuf(stdout, NULL, 2, 4096U);
         setvbuf(stderr, NULL, 2, 4096U);
     } else {
@@ -439,7 +439,7 @@ unsigned int write_text_to_stdout_or_stderr(int unused, short messageType, const
     } else {
         CLIO_ReportAssertionFailure("0", "CLIO.c", 845);
     }
-    if (data_0054b9dc == 0 && DAT_0057eb68 == 0) {
+    if (data_0054b9dc == 0 && data_0057eb68 == 0) {
         data_0054b9dc = 1;
         data_0054b988 = 0;
     }
@@ -506,7 +506,7 @@ char *make_source_position_carets(DiagnosticSourcePosition *sourcePosition)
     int column;
     int length;
 
-    DAT_0057edfd[0] = 0;
+    data_0057edfd[0] = 0;
     column = sourcePosition->column;
     column %= optsEnvir.cols;
     if ((column >= 0) && ((unsigned)column < 0x100)) {
@@ -517,11 +517,11 @@ char *make_source_position_carets(DiagnosticSourcePosition *sourcePosition)
         if (length == 0) {
             length = 1;
         }
-        memset(DAT_0057edfd, ' ', column);
-        memset(DAT_0057edfd + column, '^', length);
-        DAT_0057edfd[column + length] = 0;
+        memset(data_0057edfd, ' ', column);
+        memset(data_0057edfd + column, '^', length);
+        data_0057edfd[column + length] = 0;
     }
-    return DAT_0057edfd;
+    return data_0057edfd;
 }
 
 static inline char *formatDiagnosticPath(const char *path)

@@ -28,7 +28,7 @@
 #include <string.h>
 #include <setjmp.h>
 
-static int (*DAT_005805e0)(const char *, int);
+static int (*data_005805e0)(const char *, int);
 static inline void readhdr(volatile int *out, unsigned int *p, char flag)
 {
     if (flag) {
@@ -106,7 +106,7 @@ void swap_conversion_blocks(char *data, int remainingSize, int (*conversionMode)
     unsigned int *valueAddress;
     short *shortAddress;
 
-    DAT_005805e0 = conversionMode;
+    data_005805e0 = conversionMode;
     offset = 0;
     while (remainingSize != 0) {
         if (readBeforeConversion != '\0') {
@@ -427,13 +427,13 @@ void swap_tagged_records(unsigned char *data, unsigned int size, int (*errorHand
     unsigned int *wordAddress;
     short *shortAddress;
 
-    DAT_005805e0 = errorHandler;
+    data_005805e0 = errorHandler;
     while (offset < size) {
         record.endOffset = offset;
         readheader(&record.length, (unsigned int *)(data + offset), swapBeforeRead);
         if (record.length < 8) {
             if (record.length <= 0)
-                (*DAT_005805e0)("ELF_Endian.c", 0x183);
+                (*data_005805e0)("ELF_Endian.c", 0x183);
             offset += record.length;
         } else {
             if (swapBeforeRead) {

@@ -54,7 +54,7 @@
 #include "compiler/Types.h"
 
 #pragma options align = mac68k
-static void *PTR_00580870;
+static void *data_00580870;
 static struct DeclBlock *saved_global_values_tail;
 static UInt16 data_00580878;
 static struct Object *localstatic_init_guard;
@@ -100,8 +100,8 @@ void CFunc_GenerateSingleExprFunc(Object *func, ENode *expr)
         node->flags = 0;
         node->sourceoffset = statement_sourceoffset;
         node->dobjstack = UINT_00587fc4;
-        PTR_00587644->next = node;
-        PTR_00587644 = node;
+        data_00587644->next = node;
+        data_00587644 = node;
         node->expr.expression = expr;
         if (cscope_currentclass != NULL && cscope_currentclass->sominfo != NULL)
             CSOM_GenerateSomselfAssignment(cscope_currentclass, &stmt);
@@ -275,8 +275,8 @@ void CFunc_ParseFuncDef(Object *func, DeclInfo *definition, TypeClass *scopeObje
                 parse_statement(&gen);
             }
         }
-        if (PTR_00587644->type != ST_RETURN && PTR_00587644->type != ST_GOTO) {
-            previousStatement = PTR_00587644;
+        if (data_00587644->type != ST_RETURN && data_00587644->type != ST_GOTO) {
+            previousStatement = data_00587644;
             statement_sourceoffset = CPrep_UpdateTokenLine(&function_fileinfo);
             returnStatement = (Statement *)CompilerTools_AllocatePool(sizeof(*returnStatement));
             returnStatement->next = NULL;
@@ -285,20 +285,20 @@ void CFunc_ParseFuncDef(Object *func, DeclInfo *definition, TypeClass *scopeObje
             returnStatement->flags = 0;
             returnStatement->sourceoffset = statement_sourceoffset;
             returnStatement->dobjstack = UINT_00587fc4;
-            PTR_00587644->next = returnStatement;
-            PTR_00587644 = returnStatement;
+            data_00587644->next = returnStatement;
+            data_00587644 = returnStatement;
             returnStatement->dobjstack = NULL;
-            PTR_00587644->expr.expression = NULL;
+            data_00587644->expr.expression = NULL;
             if (copts.cplusplus || copts.c9x) {
                 if (memcmp(func->name->name, "main", 5) == 0 &&
                     &TYPE_FUNC(func->type)->functype->type == &stsignedint.type)
-                    PTR_00587644->expr.expression = intconstnode((Type *)&stsignedint, 0);
+                    data_00587644->expr.expression = intconstnode((Type *)&stsignedint, 0);
             }
             if (previousStatement->type == ST_EXPRESSION) {
                 ENode *expression;
                 if ((expression = previousStatement->expr.expression)->type == EFUNCCALL &&
                     expression->rtype == &stvoid && (expression->flags & 2))
-                    PTR_00587644->flags |= 8;
+                    data_00587644->flags |= 8;
             }
         }
         for (label = clabels; label != NULL; label = label->next) {
@@ -576,7 +576,7 @@ NameSpace *CFunc_FuncGenSetup(Statement *stmt, Object *func)
     local_name_counter = 0;
     CExcept_Setup();
     memclrw(stmt, sizeof(*stmt));
-    PTR_00587644 = stmt;
+    data_00587644 = stmt;
     stmt->type = ST_NOP;
     current_statement_number = 1;
     stmt->value = *(UInt16 *)&current_statement_number;
@@ -585,7 +585,7 @@ NameSpace *CFunc_FuncGenSetup(Statement *stmt, Object *func)
     memclrw(node, offsetof(struct DeclBlock, index) + sizeof(node->index));
     node->index = data_00580878++;
     node->parent_nspace = cscope_current;
-    saved_global_values_tail = PTR_00580870 = node;
+    saved_global_values_tail = data_00580870 = node;
     return scope;
 }
 
@@ -824,8 +824,8 @@ static struct Statement *CFunc_NewAssignmentStatement(void)
     stmt->flags = 0;
     stmt->sourceoffset = statement_sourceoffset;
     stmt->dobjstack = UINT_00587fc4;
-    PTR_00587644->next = stmt;
-    PTR_00587644 = stmt;
+    data_00587644->next = stmt;
+    data_00587644 = stmt;
     return stmt;
 }
 
@@ -875,11 +875,11 @@ static void *NewScope(void)
 {
     struct DeclBlock *s = CompilerTools_AllocatePool(0xe);
     NameSpace *ns;
-    if (PTR_00580870) {
+    if (data_00580870) {
         saved_global_values_tail->next = s;
         saved_global_values_tail = s;
     } else {
-        saved_global_values_tail = PTR_00580870 = s;
+        saved_global_values_tail = data_00580870 = s;
     }
     s->index = data_00580878++;
     s->parent_nspace = cscope_current;
@@ -975,8 +975,8 @@ static Statement *AppendStmt(unsigned char kind)
     s->flags = 0;
     s->sourceoffset = statement_sourceoffset;
     s->dobjstack = UINT_00587fc4;
-    PTR_00587644->next = s;
-    PTR_00587644 = s;
+    data_00587644->next = s;
+    data_00587644 = s;
     return s;
 }
 
@@ -1252,9 +1252,9 @@ void parse_statement(StatementContext *context)
                 stepExpr = NULL;
             }
             if (warn_empty_control_statement()) {
-                DAT_00588523 = 0;
+                data_00588523 = 0;
                 tk = CPrepTokenizer_GetNextToken();
-                if (tk == ';' && !DAT_00588523)
+                if (tk == ';' && !data_00588523)
                     CError_Warning(ERR_POSSIBLE_UNWANTED_SEMICOLON);
             } else
                 tk = CPrepTokenizer_GetNextToken();
@@ -1386,9 +1386,9 @@ void parse_statement(StatementContext *context)
                 CError_ReportErrorAndUpdateToken(ERR_RPAREN_EXPECTED);
             else {
                 if (warn_empty_control_statement()) {
-                    DAT_00588523 = 0;
+                    data_00588523 = 0;
                     tk = CPrepTokenizer_GetNextToken();
-                    if (tk == ';' && !DAT_00588523)
+                    if (tk == ';' && !data_00588523)
                         CError_Warning(ERR_POSSIBLE_UNWANTED_SEMICOLON);
                 } else
                     tk = CPrepTokenizer_GetNextToken();
@@ -1457,9 +1457,9 @@ void parse_statement(StatementContext *context)
                 CError_ReportErrorAndUpdateToken(ERR_RPAREN_EXPECTED);
             else {
                 if (warn_empty_control_statement()) {
-                    DAT_00588523 = 0;
+                    data_00588523 = 0;
                     tk = CPrepTokenizer_GetNextToken();
-                    if (tk == ';' && !DAT_00588523)
+                    if (tk == ';' && !data_00588523)
                         CError_Warning(ERR_POSSIBLE_UNWANTED_SEMICOLON);
                 } else
                     tk = CPrepTokenizer_GetNextToken();
@@ -1467,9 +1467,9 @@ void parse_statement(StatementContext *context)
             ScopedBody(context);
             if (tk == TK_ELSE) {
                 if (warn_empty_control_statement()) {
-                    DAT_00588523 = 0;
+                    data_00588523 = 0;
                     tk = CPrepTokenizer_GetNextToken();
-                    if (tk == ';' && !DAT_00588523)
+                    if (tk == ';' && !data_00588523)
                         CError_Warning(ERR_POSSIBLE_UNWANTED_SEMICOLON);
                 } else
                     tk = CPrepTokenizer_GetNextToken();
@@ -1656,8 +1656,8 @@ static Statement *NewStmt(UInt8 type)
     stmt->flags = 0;
     stmt->sourceoffset = statement_sourceoffset;
     stmt->dobjstack = UINT_00587fc4;
-    PTR_00587644->next = stmt;
-    PTR_00587644 = stmt;
+    data_00587644->next = stmt;
+    data_00587644 = stmt;
     return stmt;
 }
 
@@ -1821,8 +1821,8 @@ static Statement *allocate_and_append_statement(UInt8 type)
     stmt->flags = 0;
     stmt->sourceoffset = statement_sourceoffset;
     stmt->dobjstack = UINT_00587fc4;
-    PTR_00587644->next = stmt;
-    PTR_00587644 = stmt;
+    data_00587644->next = stmt;
+    data_00587644 = stmt;
     return stmt;
 }
 
@@ -1950,8 +1950,8 @@ void declare_local_object(DeclInfo *declaration, TStreamElement *declarationToke
                     statement->value = current_statement_number;
                     statement->flags = 0;
                     statement->sourceoffset = statement_sourceoffset;
-                    statement->dobjstack = UINT_00587fc4, PTR_00587644->next = statement;
-                    PTR_00587644 = statement;
+                    statement->dobjstack = UINT_00587fc4, data_00587644->next = statement;
+                    data_00587644 = statement;
                     statement->expr.expression = makediadicnode(create_objectnode(localstatic_init_guard),
                                                                 intconstnode((Type *)&stsignedchar, 1), EASS);
                     statement = allocate_and_append_statement(2);
@@ -2034,8 +2034,8 @@ void append_or_defer_expression_statement(ENode *node)
             record->flags = 0U;
             record->sourceoffset = statement_sourceoffset;
             record->dobjstack = UINT_00587fc4;
-            PTR_00587644->next = record;
-            PTR_00587644 = record;
+            data_00587644->next = record;
+            data_00587644 = record;
             record->expr.expression = deferred_expression;
         }
         deferred_expression = (ENode *)node;
@@ -2047,8 +2047,8 @@ void append_or_defer_expression_statement(ENode *node)
         record->flags = 0U;
         record->sourceoffset = statement_sourceoffset;
         record->dobjstack = UINT_00587fc4;
-        PTR_00587644->next = record;
-        PTR_00587644 = record;
+        data_00587644->next = record;
+        data_00587644 = record;
         record->expr.expression = (ENode *)node;
     }
 }
@@ -2062,8 +2062,8 @@ static inline Statement *CFunc_NewStatement(UInt8 kind)
     stmt->flags = 0;
     stmt->sourceoffset = statement_sourceoffset;
     stmt->dobjstack = UINT_00587fc4;
-    PTR_00587644->next = stmt;
-    PTR_00587644 = stmt;
+    data_00587644->next = stmt;
+    data_00587644 = stmt;
     return stmt;
 }
 
@@ -2112,8 +2112,8 @@ static inline Statement *MakeCaseStatement(void)
     statement->flags = 0;
     statement->sourceoffset = statement_sourceoffset;
     statement->dobjstack = UINT_00587fc4;
-    PTR_00587644->next = statement;
-    PTR_00587644 = statement;
+    data_00587644->next = statement;
+    data_00587644 = statement;
     return statement;
 }
 
@@ -2924,8 +2924,8 @@ Statement *CFunc_AppendStatement(int kind)
     record->sourceoffset = value22;
     value18 = UINT_00587fc4;
     record->dobjstack = value18;
-    PTR_00587644->next = record;
-    PTR_00587644 = record;
+    data_00587644->next = record;
+    data_00587644 = record;
     return record;
 }
 
@@ -3141,10 +3141,10 @@ ENode *CFunc_DefaultArg(Type *destination, SInt32 flags, FuncArg *value)
     ENode *expr;
     ENode *statement;
 
-    DAT_00587fd8 = check_default_argument_reference;
+    data_00587fd8 = check_default_argument_reference;
     default_arg = value;
     expr = conv_assignment_expression();
-    DAT_00587fd8 = NULL;
+    data_00587fd8 = NULL;
 
     if (CTemplTool_IsTypeDepExpr(expr) == 0 && CTemplateTools_IsDependentType(destination) == 0) {
         expr = CExpr_AssignmentPromotion(expr, destination, flags, 1);
@@ -3265,12 +3265,12 @@ struct DeclBlock *fn_0047cb60(void)
     struct NameSpace *obj;
 
     node = (DeclBlock *)CompilerTools_AllocatePool(0xe);
-    if (PTR_00580870 != NULL) {
+    if (data_00580870 != NULL) {
         tail = saved_global_values_tail;
         tail->next = node;
         saved_global_values_tail = node;
     } else {
-        saved_global_values_tail = PTR_00580870 = node;
+        saved_global_values_tail = data_00580870 = node;
     }
     node->index = data_00580878++;
     node->parent_nspace = cscope_current;

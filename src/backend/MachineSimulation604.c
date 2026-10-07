@@ -506,7 +506,7 @@ static PipelineStage data_00582dd0;
 static PCodeInstruction *data_00582dd8;
 static PCodeInstruction *data_00582ddc;
 static int data_00582de0;
-static SInt32 DAT_00582de4;
+static SInt32 data_00582de4;
 static SInt32 instruction_retire_index;
 static unsigned int next_instruction_slot;
 static CompletionEntry instruction_ring[16];
@@ -541,7 +541,7 @@ void fn_0052eb60(void)
 {
     ZeroStages(&execution_unit_instructions, 9);
     data_00582de0 = 0x10;
-    DAT_00582de4 = 0;
+    data_00582de4 = 0;
     instruction_retire_index = 0;
     next_instruction_slot = 0;
     ZeroEntries(instruction_ring, 16);
@@ -597,7 +597,7 @@ void assign_instruction_to_execution_unit(struct PCodeInstruction *instruction)
     if ((index == 0) && (execution_unit_instructions.instr != NULL)) {
         index = 1;
     }
-    DAT_00582de4 = 1 + DAT_00582de4;
+    data_00582de4 = 1 + data_00582de4;
     data_00582de0 = data_00582de0 + -1;
     instruction_ring[next_instruction_slot].instr = instruction;
     instruction_ring[next_instruction_slot].completed = 0;
@@ -625,12 +625,12 @@ void advance_instruction_stages_and_retire(void)
 
     retiredCount = 0;
     do {
-        if (DAT_00582de4 == 0)
+        if (data_00582de4 == 0)
             break;
         if (instruction_ring[instruction_retire_index].completed == 0)
             break;
         instruction_ring[instruction_retire_index].instr = NULL;
-        DAT_00582de4--;
+        data_00582de4--;
         data_00582de0++;
         instruction_retire_index = (instruction_retire_index + 1) & 0xF;
         retiredCount++;

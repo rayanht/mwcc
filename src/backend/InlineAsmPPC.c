@@ -2458,7 +2458,7 @@ void InlineAsmPPC_ParseDirective(int directive)
                 CError_ReportError(ERR_FUNCTION_NO_INITIALIZED_STACKFRAME);
             if (data_00588521 == 0)
                 CError_ReportError(ERR_FUNCTION_ALREADY_STACKFRAME);
-            if (DAT_005884f4 != 0)
+            if (data_005884f4 != 0)
                 CError_ReportError(ERR_FUNCTION_NO_INITIALIZED_STACKFRAME);
             tk = CPrepTokenizer_GetNextToken();
             if (tk != TK_EOL && tk != ';') {
@@ -2510,7 +2510,7 @@ void InlineAsmPPC_ParseDirective(int directive)
             if (asm_instruction_count != 0)
                 CError_ReportError(ERR_FUNCTION_NO_INITIALIZED_STACKFRAME);
             tk = CPrepTokenizer_GetNextToken();
-            DAT_005884f4 = 1;
+            data_005884f4 = 1;
             break;
         }
         case 4: {

@@ -22,7 +22,7 @@ struct MachineInfo machine7400 = {
 };
 
 /* Each opcode's execution unit, latency and cycles in each stage of the pipeline. */
-static struct OpcodeScheduleInfo DAT_00577660[466] = {
+static struct OpcodeScheduleInfo data_00577660[466] = {
     {0, 0, 0, 0, 0, 0, 0},   /* PC_B */
     {0, 0, 0, 0, 0, 0, 0},   /* PC_BL */
     {0, 0, 0, 0, 0, 0, 0},   /* PC_BC */
@@ -513,7 +513,7 @@ static PipelineStage data_00582f80;
 static PipelineStage data_00582f88;
 static PCodeInstruction *pipelineCompletedInstruction;
 static PCodeInstruction *pipeline_completed_instruction;
-static int DAT_00582f98;
+static int data_00582f98;
 static int queued_instruction_count;
 static unsigned int pipeline_index;
 static SInt32 simulationWriteIndex;
@@ -532,7 +532,7 @@ int get_adjusted_opcode_table_value(PCodeInstruction *record)
 {
     int result;
 
-    result = (SInt8)DAT_00577660[record->opcode].baseLatency;
+    result = (SInt8)data_00577660[record->opcode].baseLatency;
     if ((record->flags & fRecordBit) != 0) {
         result = result + 2;
     }
@@ -549,7 +549,7 @@ void reset_pipeline_state(void)
     for (slot = 0; slot < 18; ++slot) {
         (&pipeline_slots)[slot].instr = NULL;
     }
-    DAT_00582f98 = 8;
+    data_00582f98 = 8;
     queued_instruction_count = 0;
     pipeline_index = 0;
     simulationWriteIndex = 0;
@@ -580,9 +580,9 @@ int can_issue_instruction_in_pipeline_slots(PCodeInstruction *node)
     int fourthMissing;
     int kind, firstMissing;
 
-    if (DAT_00582f98 == 0)
+    if (data_00582f98 == 0)
         return 0;
-    kind = DAT_00577660[node->opcode].kind;
+    kind = data_00577660[node->opcode].kind;
     if (kind == 2) {
         PCodeInstruction *alternate;
         firstAbsent = firstMissing = !(first = data_00582f08.instr);
@@ -640,11 +640,11 @@ void queue_instruction(PCodeInstruction *obj)
     SInt32 t;
     SInt32 c;
 
-    t = DAT_00577660[obj->opcode].kind;
-    c = DAT_00577660[obj->opcode].cost;
+    t = data_00577660[obj->opcode].kind;
+    c = data_00577660[obj->opcode].cost;
 
     queued_instruction_count++;
-    DAT_00582f98--;
+    data_00582f98--;
     instruction_queue[simulationWriteIndex].instr = obj;
     instruction_queue[simulationWriteIndex].completed = 0;
     simulationWriteIndex = (simulationWriteIndex + 1) & 7;
@@ -669,12 +669,12 @@ void advance_pipeline(void)
     if ((queued_instruction_count != 0) && (instruction_queue[pipeline_index].completed != 0)) {
         instruction_queue[pipeline_index].instr = NULL;
         --queued_instruction_count;
-        ++DAT_00582f98;
+        ++data_00582f98;
         pipeline_index = (pipeline_index + 1) & 7;
         if ((queued_instruction_count != 0) && (instruction_queue[pipeline_index].completed != 0)) {
             instruction_queue[pipeline_index].instr = NULL;
             --queued_instruction_count;
-            ++DAT_00582f98;
+            ++data_00582f98;
             pipeline_index = (pipeline_index + 1) & 7;
         }
     }
@@ -796,52 +796,52 @@ void advance_pipeline(void)
     }
     if (((data_00582f30.instr != NULL) && (data_00582f30.remaining == 0)) && (data_00582f38.instr == NULL)) {
         PCodeInstruction *instruction;
-        Advance(instruction = data_00582f30.instr, &data_00582f38, &DAT_00577660[0].stage3Latency);
+        Advance(instruction = data_00582f30.instr, &data_00582f38, &data_00577660[0].stage3Latency);
         data_00582f30.instr = NULL;
     }
     if (((data_00582f28.instr != NULL) && (data_00582f28.remaining == 0)) && (data_00582f30.instr == NULL)) {
         PCodeInstruction *instruction;
-        Advance(instruction = data_00582f28.instr, &data_00582f30, &DAT_00577660[0].stage2Latency);
+        Advance(instruction = data_00582f28.instr, &data_00582f30, &data_00577660[0].stage2Latency);
         data_00582f28.instr = NULL;
     }
     if (((data_00582f18.instr != NULL) && (data_00582f18.remaining == 0)) && (data_00582f20.instr == NULL)) {
         PCodeInstruction *instruction;
-        Advance(instruction = data_00582f18.instr, &data_00582f20, &DAT_00577660[0].stage2Latency);
+        Advance(instruction = data_00582f18.instr, &data_00582f20, &data_00577660[0].stage2Latency);
         data_00582f18.instr = NULL;
     }
     if (((data_00582f60.instr != NULL) && (data_00582f60.remaining == 0)) && (data_00582f68.instr == NULL)) {
         PCodeInstruction *instruction;
-        Advance(instruction = data_00582f60.instr, &data_00582f68, &DAT_00577660[0].stage3Latency);
+        Advance(instruction = data_00582f60.instr, &data_00582f68, &data_00577660[0].stage3Latency);
         data_00582f60.instr = NULL;
     }
     if (((data_00582f58.instr != NULL) && (data_00582f58.remaining == 0)) && (data_00582f60.instr == NULL)) {
         PCodeInstruction *instruction;
-        Advance(instruction = data_00582f58.instr, &data_00582f60, &DAT_00577660[0].stage2Latency);
+        Advance(instruction = data_00582f58.instr, &data_00582f60, &data_00577660[0].stage2Latency);
         data_00582f58.instr = NULL;
     }
     if (((data_00582f80.instr != NULL) && (data_00582f80.remaining == 0)) && (data_00582f88.instr == NULL)) {
         PCodeInstruction *instruction;
-        Advance(instruction = data_00582f80.instr, &data_00582f88, &DAT_00577660[0].stage4Latency);
+        Advance(instruction = data_00582f80.instr, &data_00582f88, &data_00577660[0].stage4Latency);
         data_00582f80.instr = NULL;
     }
     if (((data_00582f78.instr != NULL) && (data_00582f78.remaining == 0)) && (data_00582f80.instr == NULL)) {
         PCodeInstruction *instruction;
-        Advance(instruction = data_00582f78.instr, &data_00582f80, &DAT_00577660[0].stage3Latency);
+        Advance(instruction = data_00582f78.instr, &data_00582f80, &data_00577660[0].stage3Latency);
         data_00582f78.instr = NULL;
     }
     if (((data_00582f70.instr != NULL) && (data_00582f70.remaining == 0)) && (data_00582f78.instr == NULL)) {
         PCodeInstruction *instruction;
-        Advance(instruction = data_00582f70.instr, &data_00582f78, &DAT_00577660[0].stage2Latency);
+        Advance(instruction = data_00582f70.instr, &data_00582f78, &data_00577660[0].stage2Latency);
         data_00582f70.instr = NULL;
     }
 }
 
 int lookup_instruction_opcode_entry(PCodeInstruction *instruction)
 {
-    return DAT_00577660[instruction->opcode].opcodeEntryValue;
+    return data_00577660[instruction->opcode].opcodeEntryValue;
 }
 
 int fn_0052f370(PCodeInstruction *instruction)
 {
-    return DAT_00577660[instruction->opcode].kind == '\n';
+    return data_00577660[instruction->opcode].kind == '\n';
 }

@@ -92,7 +92,7 @@ void FuncLevelAsmPPC_AllocateLocals(void)
             UInt8 use_gpr;
             UInt8 typecode;
             SInt32 subtype;
-            if (data_00588521 && !DAT_005884f4)
+            if (data_00588521 && !data_005884f4)
                 CError_ReportError(ERR_COULD_NOT_ASSIGNED_REGISTER, obj->name->name);
 
             if ((((typecode = type->type) == TYPEINT || typecode == TYPEENUM) && type->size == 8) ||
@@ -173,7 +173,7 @@ void fn_004e6e30(void)
             if (parseResult == 2)
                 break;
             if (parseResult == 3) {
-                DAT_005884f4 = 1;
+                data_005884f4 = 1;
                 break;
             }
         }
@@ -216,11 +216,11 @@ void FuncLevelAsmPPC_GenerateFunction(Object *func)
 
     gStackFrameSize = 0;
     data_005882c0.record = NULL;
-    DAT_005884f4 = 0;
+    data_005884f4 = 0;
     asm_instruction_count = 0;
     data_00581c58 = NULL;
     assembly_list_tail = &data_00581c58;
-    list = PTR_00587644;
+    list = data_00587644;
     has_dlocal_initialization = 0;
     gHasAltivecFrame = 0;
     data_005884ff = 0;
@@ -281,7 +281,7 @@ void FuncLevelAsmPPC_GenerateFunction(Object *func)
     func->flags |= OBJECT_DEFINED;
     if (data_005871a0 != 0)
         outgoing_argument_size = data_005871a0;
-    if (DAT_005884f4 == 0)
+    if (data_005884f4 == 0)
         CodeGen_EnumerateArgumentRegisters(emit_dlocal_initialization);
     PCodeUtilities_ResolveLabel(PCode_NewLabel());
     CodeGen_AssignMissingEntryValues(list->next);
@@ -352,7 +352,7 @@ void FuncLevelAsmPPC_GenerateFunction(Object *func)
         PCode_BuildPredecessors();
         if (copts.debug_listing != 0)
             CodeGen_DumpPCode_004c4bd0(functionName, "[FUNCTION-LEVEL ASM] INITIAL CODE");
-        if (DAT_005884f4 == 0) {
+        if (data_005884f4 == 0) {
             Coloring_AllocateRegisters(func);
             if (func_errors != 0)
                 return;
@@ -361,11 +361,11 @@ void FuncLevelAsmPPC_GenerateFunction(Object *func)
         }
         StackFrameEABI_ClearUnusedStackFrame();
         StackFrameEABI_FinalizeLayout(frameBlock);
-        if (DAT_005884f4 != 0)
+        if (data_005884f4 != 0)
             stack_frame_size = 0;
         if (func_errors != 0)
             return;
-        if (DAT_005884f4 == 0) {
+        if (data_005884f4 == 0) {
             StackFrameEABI_GeneratePrologueEpilogue(prologueBlock, 0, has_dlocal_initialization);
             StackFrameEABI_MergePrologueEpilogue(gReturnBlock, 1);
         }

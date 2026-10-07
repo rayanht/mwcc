@@ -102,7 +102,7 @@ static void expect(SInt16 tok, SInt16 err)
 {
     if (tk != tok) {
         SInt16 e = err;
-        if (DAT_00587f18 != 0)
+        if (data_00587f18 != 0)
             longjmp(data_00583a68, 1);
         if (tk == TK_EOL || tk == ';')
             e = 0x70;
@@ -114,7 +114,7 @@ static void expectToken(SInt16 tok, SInt16 err)
 {
     if (tk != tok) {
         SInt16 e = err;
-        if (DAT_00587f18 != 0)
+        if (data_00587f18 != 0)
             longjmp(data_00583a68, 1);
         if (tk == TK_EOL || tk == ';')
             e = 0x70;
@@ -3001,7 +3001,7 @@ ENode *do_typecast(ENode *expr, Type *type, UInt32 qual)
                 if (expr->rtype->type != TYPEMEMBERPOINTER) {
                     if (expr->type == EINTCONST && IsZero_4f5aa0(expr)) {
                         if (TYPE_MEMBER_POINTER(type)->ty1->type == TYPEFUNC)
-                            memberExpr = create_objectnode(DAT_00587678);
+                            memberExpr = create_objectnode(data_00587678);
                         memberExpr->rtype = type;
                     } else if (expr->type == ENEWEXCEPTIONARRAY)
                         memberExpr = getpointertomemberfunc(expr, type, 1);
@@ -3171,7 +3171,7 @@ ENode *CExpr_MemberPointerConversion(ENode *enode, Type *type, Boolean flag)
         Boolean zero = (enode->data.intval.hi == 0 && enode->data.intval.lo == 0);
         if (zero) {
             if (TYPE_POINTER(type)->target->type == TYPEFUNC)
-                enode = create_objectnode(DAT_00587678);
+                enode = create_objectnode(data_00587678);
             enode->rtype = type;
             return enode;
         }
@@ -4379,11 +4379,11 @@ ENode *parse_primary_expression(Boolean expressionMode)
             return expression;
         case TK_STRING:
             expression = CExpr_NewENode(ESTRINGCONST);
-            expression->rtype = CDecl_NewArrayType((DAT_005882de != 0) ? (Type *)&stunsignedchar : (Type *)&stchar,
+            expression->rtype = CDecl_NewArrayType((data_005882de != 0) ? (Type *)&stunsignedchar : (Type *)&stchar,
                                                    token_value_kind_or_string_length);
             expression->data.string.size = token_value_kind_or_string_length;
             expression->data.string.data = string_token_data;
-            expression->data.string.useExplicitSize = DAT_005882de;
+            expression->data.string.useExplicitSize = data_005882de;
             if (copts.const_strings != 0)
                 expression->flags = ENODE_FLAG_CONST;
             expression = makemonadicnode(expression, EINDIRECT);
@@ -4395,7 +4395,7 @@ ENode *parse_primary_expression(Boolean expressionMode)
             stringNode->rtype = CDecl_NewArrayType(CParser_GetWCharType(), token_value_kind_or_string_length);
             stringNode->data.string.size = token_value_kind_or_string_length;
             stringNode->data.string.data = string_token_data;
-            stringNode->data.string.useExplicitSize = DAT_005882de;
+            stringNode->data.string.useExplicitSize = data_005882de;
             if (copts.const_strings != 0)
                 stringNode->flags = ENODE_FLAG_CONST;
             expression = makemonadicnode(stringNode, EINDIRECT);

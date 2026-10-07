@@ -2732,7 +2732,7 @@ Object *CParser_FindClassMemberOrNamespaceFunctionObject(Type *ownerType, Boolea
         } else if (TYPE_CLASS(ownerType)->flags & CLASS_HANDLEOBJECT) {
             if (useAlternate)
                 CError_FATAL(1109);
-            return DAT_00587ed0;
+            return data_00587ed0;
         }
     }
     if (!memberFound) {
@@ -3267,10 +3267,10 @@ void CParser_Setup(void)
     data_005884fd = 0;
     in_parameter_type_list = 0;
     data_00580dc0 = 1;
-    DAT_0058852e = 0;
+    data_0058852e = 0;
     copts.sideeffects = 1;
     class_type_links = NULL;
-    DAT_00587fd8 = NULL;
+    data_00587fd8 = NULL;
     pending_object_classes = NULL;
     pending_functions = NULL;
     single_expr_functions = NULL;
@@ -3281,12 +3281,12 @@ void CParser_Setup(void)
     memclrw(&exception_temp_object_type, sizeof(TypeStruct));
     exception_temp_object_type.type = TYPESTRUCT;
     _DAT_0058843e = 0x18;
-    DAT_0058844a = 0;
+    data_0058844a = 0;
     _DAT_0058844c = 4;
     memclrw(&data_0058847c, sizeof(TypeStruct));
     data_0058847c.type = TYPESTRUCT;
     _DAT_0058847e = 0xc;
-    DAT_0058848a = 0;
+    data_0058848a = 0;
     _DAT_0058848c = 4;
     fn_004a9c70();
     CTemplateNew_Reset();
@@ -3323,24 +3323,24 @@ void initialize_runtime_objects(void)
     CScope_AddGlobalObject(runtimeObject);
 
     newh_func = CParser_NewRTFunc((Type *)&void_ptr, NULL, 0, 1, sizeType);
-    DAT_00587ed0 = CParser_NewRTFunc(&stvoid, NULL, 0, 1, &void_ptr);
+    data_00587ed0 = CParser_NewRTFunc(&stvoid, NULL, 0, 1, &void_ptr);
     typeid_func = CParser_NewRTFunc((Type *)&void_ptr, NULL, 0, 2, &void_ptr, &stsignedlong);
     dynamic_cast_object = CParser_NewRTFunc((Type *)&void_ptr, NULL, 0, 5, &void_ptr, &stsignedlong, &void_ptr,
                                             &void_ptr, &stsignedshort);
-    DAT_005870d8 = CParser_NewRTFunc((Type *)&void_ptr, NULL, 2, 3, &void_ptr, &void_ptr, sizeType);
+    data_005870d8 = CParser_NewRTFunc((Type *)&void_ptr, NULL, 2, 3, &void_ptr, &void_ptr, sizeType);
     cast_member_pointer_func = CParser_NewRTFunc((Type *)&void_ptr, NULL, 2, 3, &stsignedlong, &void_ptr, &void_ptr);
     rt_memberpointercompare = CParser_NewRTFunc((Type *)&stsignedlong, NULL, 2, 2, &void_ptr, &void_ptr);
     memberpointercompare_func = CParser_NewRTFunc((Type *)&stsignedlong, NULL, 2, 1, &void_ptr);
-    DAT_0058769c = CParser_NewRTFunc(&stvoid, NULL, 2, 0);
+    data_0058769c = CParser_NewRTFunc(&stvoid, NULL, 2, 0);
     data_00587fd0 = CParser_NewRTFunc(&stvoid, NULL, 2, 0);
-    DAT_00587f80 = CParser_NewRTFunc(&stvoid, NULL, 2, 0);
+    data_00587f80 = CParser_NewRTFunc(&stvoid, NULL, 2, 0);
     member_function_pointer_call_rtfunc = CParser_NewRTFunc(&stvoid, NULL, 2, 0);
-    DAT_00587678 = CParser_NewObject(NULL);
-    DAT_00587678->type = &stvoid;
-    DAT_00588060 = CParser_NewRTFunc((Type *)&void_ptr, NULL, 2, 3, &void_ptr, &stsignedlong, &stsignedlong);
-    DAT_005876c0 = CParser_NewRTFunc(&stvoid, NULL, 0, 1, &void_ptr);
-    DAT_00588278 = CParser_NewRTFunc(&stvoid, NULL, 0, 1, &void_ptr);
-    DAT_00588260 = CParser_NewRTFunc(&stvoid, NULL, 2, 0);
+    data_00587678 = CParser_NewObject(NULL);
+    data_00587678->type = &stvoid;
+    data_00588060 = CParser_NewRTFunc((Type *)&void_ptr, NULL, 2, 3, &void_ptr, &stsignedlong, &stsignedlong);
+    data_005876c0 = CParser_NewRTFunc(&stvoid, NULL, 0, 1, &void_ptr);
+    data_00588278 = CParser_NewRTFunc(&stvoid, NULL, 0, 1, &void_ptr);
+    data_00588260 = CParser_NewRTFunc(&stvoid, NULL, 2, 0);
     som_ref_node_rtfunc = CParser_NewRTFunc(&stvoid, NULL, 2, 0);
     som_ref_node_runtime_object = CParser_NewRTFunc(&stvoid, NULL, 2, 0);
     class_array_initializer =
@@ -3352,9 +3352,9 @@ void initialize_runtime_objects(void)
     destructor_aware_call_func = CParser_NewRTFunc((Type *)&void_ptr, NULL, 0, 2, &void_ptr, &void_ptr);
     destructor_registration_func = CParser_NewRTFunc((Type *)&void_ptr, NULL, 0, 3, &void_ptr, &void_ptr, &void_ptr);
     throw_func = CParser_NewRTFunc(&stvoid, NULL, 0, 3, &void_ptr, &void_ptr, &void_ptr);
-    DAT_005882a4 = CParser_NewRTFunc(&stvoid, NULL, 0, 1, &void_ptr);
-    DAT_005875a0 = CParser_NewRTFunc(&stvoid, NULL, 0, 1, &void_ptr);
-    DAT_00587654 = CParser_NewRTFunc(&stvoid, NULL, 0, 1, &void_ptr);
+    data_005882a4 = CParser_NewRTFunc(&stvoid, NULL, 0, 1, &void_ptr);
+    data_005875a0 = CParser_NewRTFunc(&stvoid, NULL, 0, 1, &void_ptr);
+    data_00587654 = CParser_NewRTFunc(&stvoid, NULL, 0, 1, &void_ptr);
 
     CodeGen_InitializeLists();
     if (!CParser_ReInitRuntimeObjects(0))
@@ -3372,22 +3372,22 @@ Boolean CParser_ReInitRuntimeObjects(Boolean flag)
     if ((data_00587e64 = CScope_FindNameSpaceName(cscope_root, CMangler_OperatorName(0x183))) == NULL)
         return 0;
     newh_func->name = GetHashNameNode("__new_hdl");
-    DAT_00587ed0->name = GetHashNameNode("__del_hdl");
-    DAT_005870d8->name = GetHashNameNode("__copy");
+    data_00587ed0->name = GetHashNameNode("__del_hdl");
+    data_005870d8->name = GetHashNameNode("__copy");
     typeid_func->name = GetHashNameNode("__get_typeid");
     dynamic_cast_object->name = GetHashNameNode("__dynamic_cast");
     cast_member_pointer_func->name = GetHashNameNode("__ptmf_cast");
     rt_memberpointercompare->name = GetHashNameNode("__ptmf_cmpr");
     memberpointercompare_func->name = GetHashNameNode("__ptmf_test");
-    DAT_0058769c->name = GetHashNameNode("__ptmf_call");
+    data_0058769c->name = GetHashNameNode("__ptmf_call");
     data_00587fd0->name = GetHashNameNode("__ptmf_scall");
-    DAT_00587f80->name = GetHashNameNode("__ptmf_call4");
+    data_00587f80->name = GetHashNameNode("__ptmf_call4");
     member_function_pointer_call_rtfunc->name = GetHashNameNode("__ptmf_scall4");
-    DAT_00587678->name = GetHashNameNode("__ptmf_null");
-    DAT_00588060->name = GetHashNameNode("__som_new");
-    DAT_005876c0->name = GetHashNameNode("__som_check_new");
-    DAT_00588278->name = GetHashNameNode("__som_check_ev");
-    DAT_00588260->name = GetHashNameNode("_som_ptrgl4");
+    data_00587678->name = GetHashNameNode("__ptmf_null");
+    data_00588060->name = GetHashNameNode("__som_new");
+    data_005876c0->name = GetHashNameNode("__som_check_new");
+    data_00588278->name = GetHashNameNode("__som_check_ev");
+    data_00588260->name = GetHashNameNode("_som_ptrgl4");
     som_ref_node_rtfunc->name = GetHashNameNode("_som_ptrgl5");
     som_ref_node_runtime_object->name = GetHashNameNode("_som_ptrgl_");
     class_array_initializer->name = GetHashNameNode("__construct_array");
@@ -3397,9 +3397,9 @@ Boolean CParser_ReInitRuntimeObjects(Boolean flag)
     destructor_aware_call_func->name = GetHashNameNode("__destroy_new_array2");
     destructor_registration_func->name = GetHashNameNode("__register_global_object");
     throw_func->name = GetHashNameNode("__throw");
-    DAT_005882a4->name = GetHashNameNode("__init__catch");
-    DAT_005875a0->name = GetHashNameNode("__end__catch");
-    DAT_00587654->name = GetHashNameNode("__unexpected");
+    data_005882a4->name = GetHashNameNode("__init__catch");
+    data_005875a0->name = GetHashNameNode("__end__catch");
+    data_00587654->name = GetHashNameNode("__unexpected");
     CMangler_Setup();
     unnamed_name = GetHashNameNode("@no_name@");
     blank_argument_name = GetHashNameNode("@temp_ptr@");

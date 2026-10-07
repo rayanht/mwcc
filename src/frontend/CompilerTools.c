@@ -173,8 +173,8 @@ void *CompilerTools_AppendGListData(GList *buffer, const void *source, SInt32 co
     if (buffer->size + count > buffer->hndlsize) {
         buffer->hndlsize += count + buffer->growsize;
         result = COS_ResizeHandle((struct StorageHandle *)buffer->data, buffer->hndlsize);
-        if (result == 0 && DAT_00587708 != NULL) {
-            (*DAT_00587708)();
+        if (result == 0 && data_00587708 != NULL) {
+            (*data_00587708)();
         }
     }
     data = memcpy(*buffer->data + buffer->size, source, count);
@@ -186,8 +186,8 @@ void AppendGListNoData(GList *buffer, SInt32 additionalLength)
 {
     if (buffer->size + additionalLength > buffer->hndlsize) {
         buffer->hndlsize += additionalLength + buffer->growsize;
-        if (!COS_ResizeHandle((struct StorageHandle *)buffer->data, buffer->hndlsize) && DAT_00587708 != NULL) {
-            DAT_00587708();
+        if (!COS_ResizeHandle((struct StorageHandle *)buffer->data, buffer->hndlsize) && data_00587708 != NULL) {
+            data_00587708();
         }
     }
     buffer->size += additionalLength;
@@ -199,8 +199,8 @@ void AppendGListByte(GList *buffer, SInt8 value)
         Boolean success;
         buffer->hndlsize += buffer->growsize + 1;
         success = COS_ResizeHandle((struct StorageHandle *)buffer->data, buffer->hndlsize);
-        if (!success && DAT_00587708 != NULL) {
-            (*DAT_00587708)();
+        if (!success && data_00587708 != NULL) {
+            (*data_00587708)();
         }
     }
     (*buffer->data)[buffer->size++] = value;
@@ -215,8 +215,8 @@ void AppendGListWord(GList *buffer, SInt16 value)
     if (buffer->size + (SInt32)sizeof(value) > buffer->hndlsize) {
         buffer->hndlsize += buffer->growsize + (SInt32)sizeof(value);
         resized = COS_ResizeHandle((struct StorageHandle *)buffer->data, buffer->hndlsize);
-        if (!resized && DAT_00587708) {
-            (*DAT_00587708)();
+        if (!resized && data_00587708) {
+            (*data_00587708)();
         }
     }
     destination = *buffer->data + buffer->size;
@@ -234,8 +234,8 @@ void AppendGListTargetEndianWord(GList *buf, UInt16 word)
     if (buf->size + 2 > buf->hndlsize) {
         buf->hndlsize += buf->growsize + 2;
         if (!COS_ResizeHandle((StorageHandle *)buf->data, buf->hndlsize)) {
-            if (DAT_00587708 != NULL)
-                DAT_00587708();
+            if (data_00587708 != NULL)
+                data_00587708();
         }
     }
     dest = *buf->data + buf->size;
@@ -254,8 +254,8 @@ void AppendGListLong(GList *buffer, SInt32 value)
     if (buffer->size + (SInt32)sizeof(value) > buffer->hndlsize) {
         buffer->hndlsize += buffer->growsize + (SInt32)sizeof(value);
         allocated = COS_ResizeHandle((struct StorageHandle *)buffer->data, buffer->hndlsize);
-        if (!allocated && DAT_00587708 != NULL) {
-            (*DAT_00587708)();
+        if (!allocated && data_00587708 != NULL) {
+            (*data_00587708)();
         }
     }
     destination = *buffer->data + buffer->size;
@@ -272,8 +272,8 @@ void AppendGListTargetEndianLong(GList *buf, UInt32 value)
     if (buf->size + 4 > buf->hndlsize) {
         buf->hndlsize += buf->growsize + 4;
         if (!COS_ResizeHandle((struct StorageHandle *)buf->data, buf->hndlsize)) {
-            if (DAT_00587708 != NULL)
-                DAT_00587708();
+            if (data_00587708 != NULL)
+                data_00587708();
         }
     }
     dest = (UInt8 *)*buf->data + buf->size;
@@ -290,8 +290,8 @@ void AppendGListName(GList *buf, const char *str)
         buf->hndlsize += len + buf->growsize;
         handle = (struct StorageHandle *)buf->data;
         if (!COS_ResizeHandle(handle, buf->hndlsize)) {
-            if (DAT_00587708 != NULL) {
-                DAT_00587708();
+            if (data_00587708 != NULL) {
+                data_00587708();
             }
         }
     }
@@ -304,8 +304,8 @@ void CompilerTools_AppendGListString(GList *buf, const char *str)
     UInt32 len = strlen(str);
     if ((buf->size + len) > (UInt32)buf->hndlsize) {
         buf->hndlsize += len + buf->growsize;
-        if (!COS_ResizeHandle((struct StorageHandle *)buf->data, buf->hndlsize) && DAT_00587708 != NULL)
-            DAT_00587708();
+        if (!COS_ResizeHandle((struct StorageHandle *)buf->data, buf->hndlsize) && data_00587708 != NULL)
+            data_00587708();
     }
     memcpy(*buf->data + buf->size, str, len);
     buf->size += len;
@@ -491,7 +491,7 @@ int select_or_allocate_pool_node(HeapMem *pool, SInt32 size)
         }
     }
     size += pool->allocsize;
-    if (!DAT_0054c3d0)
+    if (!data_0054c3d0)
         goto fallback;
     block = COS_NewOSHandle(size * 2);
     if (block == NULL) {

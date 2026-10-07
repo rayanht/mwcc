@@ -18,7 +18,7 @@ struct NamePiece {
 extern SInt16 CPrepTokenizer_GetToken(void);
 extern SInt16 CPrepTokenizer_ScanToken(void);
 extern char *string_token_data;
-extern char *PTR_00587fb0;
+extern char *data_00587fb0;
 extern struct HashNameNode *data_00587fa0;
 extern UInt8 *textend;
 extern short CPrepTokenizer_GetNextToken(void);
@@ -30,7 +30,7 @@ extern void concatenate_string_tokens(char strip_terminator);
 extern int check_illegal_token(void);
 extern short CPrepTokenizer_PeekNextToken(void);
 extern short CPrepTokenizer_GetNextTokenAndRestorePosition(void);
-extern UInt16 DAT_005882de;
+extern UInt16 data_005882de;
 extern UInt8 concatenating_string_tokens;
 extern int classify_identifier_or_xor_token(void);
 extern int classify_w_keyword(void);

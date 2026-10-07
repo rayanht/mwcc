@@ -17,7 +17,7 @@
 #include <string.h>
 #include <ctype.h>
 
-Boolean DAT_0054c3d0 = 1;
+Boolean data_0054c3d0 = 1;
 
 #pragma options align = mac68k
 static struct {

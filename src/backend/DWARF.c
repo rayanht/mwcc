@@ -158,7 +158,7 @@ void DWARF_SetSectionAndState(ObjGenSection *section, ObjGenSection *state)
     if (copts.f26 == '\0') {
         dwarf_info_buffer = ObjGen_PPC_EABI_GetSectionBuffer(section);
     }
-    DAT_00587698 = (ObjGenSection *)state;
+    data_00587698 = (ObjGenSection *)state;
 }
 
 void DWARF_Init(void)
@@ -552,7 +552,7 @@ static inline UInt8 dwarfZeroRelocationAddends(void)
 
 static inline ObjGenSection *dwarfLineSection(void)
 {
-    return DAT_00587698;
+    return data_00587698;
 }
 
 static inline UInt8 dwarf_zero_addend_mode(void)
@@ -1353,7 +1353,7 @@ SInt32 emit_function_entry(Object *func, SInt32 code_size, SInt32 code_offset,
     if (copts.f26 == 0) {
         if (currentDwarfFunctionState != data_00587168) {
             AppendGListWord(dwarf_info_buffer, 0x106);
-            BE_elf_AddRelocation(dwarf_section, dwarf_info_buffer->size, NULL, DAT_00587698,
+            BE_elf_AddRelocation(dwarf_section, dwarf_info_buffer->size, NULL, data_00587698,
                                  currentDwarfFunctionState->lineSectionOffset, currentDwarfFunctionState->offset);
             AppendGListLong(dwarf_info_buffer,
                             dwarf_uses_zero_addends() ? 0 : currentDwarfFunctionState->lineSectionOffset);
@@ -1361,7 +1361,7 @@ SInt32 emit_function_entry(Object *func, SInt32 code_size, SInt32 code_offset,
         }
         if (currentDwarfFunctionState->lineBaseRelocated == 0) {
             currentDwarfFunctionState->lineBaseRelocated = 1;
-            BE_elf_AddRelocation(DAT_00587698, 4, NULL, currentDwarfFunctionState->section, 0,
+            BE_elf_AddRelocation(data_00587698, 4, NULL, currentDwarfFunctionState->section, 0,
                                  currentDwarfFunctionState->lineSectionOffset);
         }
     }

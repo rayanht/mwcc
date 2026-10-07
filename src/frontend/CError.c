@@ -1205,7 +1205,7 @@ int CError_Internal(const char *file, int line)
 void CError_LongJump(void)
 
 {
-    DAT_00588516 = 1;
+    data_00588516 = 1;
     longjmp(error_jmp_buf, 1);
     return;
 }

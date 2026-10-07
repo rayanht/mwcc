@@ -40,7 +40,7 @@ extern void InlineAsm_RecordObjectUses(Statement *record);
 extern void InlineAsm_CopyInstructionAndResolveOperands(Statement *output, struct CLabel **references, char flag,
                                                         ParsedAsmInstruction *source, SInt32 size);
 extern jmp_buf inlineAsmJmpBuf;
-extern SInt32 DAT_00587f18;
+extern SInt32 data_00587f18;
 extern jmp_buf data_00583a68;
 
 #ifdef __cplusplus

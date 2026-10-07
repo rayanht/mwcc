@@ -1459,7 +1459,7 @@ void CodeGen_Generator(Statement *statements, Object *functionObject, Boolean co
                 ENode *operand = statement->expr.expression;
                 CError_ASSERT(1845, operand->data.objref->datatype == DLOCAL);
                 PCodeUtilities_EmitAddress(3, stack_base_reg, statement->expr.expression->data.objref, 0);
-                PCodeUtilities_EmitObjectInstructionWithPayload(DAT_005875a0, 1, 8, 0, 0);
+                PCodeUtilities_EmitObjectInstructionWithPayload(data_005875a0, 1, 8, 0, 0);
             }
                 /* fall through */
             case ST_ENDCATCH: {
@@ -2448,8 +2448,8 @@ void CodeGen_SetObjectSectionAndInterruptInfo(Object *obj)
 
     if ((SInt16)obj->section <= 0) {
         if (obj->datatype == DDATA) {
-            if (obj == DAT_00587678) {
-                ObjGen_PPC_EABI_SetObjectSection(DAT_00587678, 0xc, 0);
+            if (obj == data_00587678) {
+                ObjGen_PPC_EABI_SetObjectSection(data_00587678, 0xc, 0);
             }
             if (obj->type == NULL) {
                 return;

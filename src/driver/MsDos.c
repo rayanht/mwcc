@@ -35,7 +35,7 @@
 #include "driver/Files.h"
 #include "driver/StringUtils.h"
 static char errtext[256];
-static char DAT_0057e308[260];
+static char data_0057e308[260];
 
 typedef DWORD(__stdcall *PFN1)(HANDLE);
 typedef DWORD(__stdcall *PFN2)(void);
@@ -74,11 +74,11 @@ DWORD __stdcall OS_Create(OSSpec *spec, const unsigned int *options)
     char *pathResult;
     HANDLE file;
 
-    pathResult = OS_SpecToString(spec, DAT_0057e308, 0x104);
+    pathResult = OS_SpecToString(spec, data_0057e308, 0x104);
     if (pathResult == (char *)0) {
         return 0x6f;
     }
-    file = CreateFileA(DAT_0057e308, 0xc0000000, 1, (LPSECURITY_ATTRIBUTES)0, 2, 0x80, (HANDLE)0);
+    file = CreateFileA(data_0057e308, 0xc0000000, 1, (LPSECURITY_ATTRIBUTES)0, 2, 0x80, (HANDLE)0);
     if (file == (HANDLE)-1) {
         return GetLastError();
     }
@@ -91,11 +91,11 @@ DWORD __stdcall OS_Status(OSSpec *spec)
     char *result;
     DWORD attributes;
 
-    result = OS_SpecToString(spec, DAT_0057e308, 0x104);
+    result = OS_SpecToString(spec, data_0057e308, 0x104);
     if (result == NULL) {
         return 0x6f;
     }
-    attributes = GetFileAttributesA(DAT_0057e308);
+    attributes = GetFileAttributesA(data_0057e308);
     if (attributes == 0xffffffff) {
         attributes = GetLastError();
         return attributes;
@@ -186,11 +186,11 @@ DWORD __stdcall OS_Open(OSSpec *path, UInt8 mode, SInt32 *file)
     SInt32 openedFile;
     char *convertedPath;
 
-    convertedPath = OS_SpecToString(path, DAT_0057e308, 0x104);
+    convertedPath = OS_SpecToString(path, data_0057e308, 0x104);
     if (convertedPath == NULL) {
         return 0x6f;
     }
-    openedFile = (SInt32)CreateFileA(DAT_0057e308, open_access_modes[mode], 1, NULL, 3, 0x80, NULL);
+    openedFile = (SInt32)CreateFileA(data_0057e308, open_access_modes[mode], 1, NULL, 3, 0x80, NULL);
     *file = openedFile;
     if ((HANDLE)*file == (HANDLE)0xffffffff) {
         result = GetLastError();
@@ -317,11 +317,11 @@ DWORD __stdcall OS_Delete(OSSpec *fileName)
     BOOL succeeded;
     char *path;
 
-    path = OS_SpecToString(fileName, DAT_0057e308, 0x104);
+    path = OS_SpecToString(fileName, data_0057e308, 0x104);
     if (path == NULL) {
         return 0x6f;
     }
-    succeeded = DeleteFileA(DAT_0057e308);
+    succeeded = DeleteFileA(data_0057e308);
     if (succeeded == 0) {
         error = GetLastError();
         return error;
@@ -332,7 +332,7 @@ DWORD __stdcall OS_Delete(OSSpec *fileName)
 DWORD __stdcall OS_Mkdir(OSSpec *path)
 {
     char *convertedPath;
-    char *destination = DAT_0057e308;
+    char *destination = data_0057e308;
     BOOL created;
     DWORD error;
 
@@ -340,7 +340,7 @@ DWORD __stdcall OS_Mkdir(OSSpec *path)
     if (convertedPath == (char *)0) {
         return 0x6f;
     }
-    created = CreateDirectoryA(DAT_0057e308, (LPSECURITY_ATTRIBUTES)0);
+    created = CreateDirectoryA(data_0057e308, (LPSECURITY_ATTRIBUTES)0);
     if (created == 0) {
         error = GetLastError();
         return error;
@@ -354,11 +354,11 @@ DWORD __stdcall OS_Rmdir(OSSpec *path)
     BOOL created;
     DWORD error;
 
-    convertedPath = OS_PathSpecToString(&path->path, DAT_0057e308, 0x104);
+    convertedPath = OS_PathSpecToString(&path->path, data_0057e308, 0x104);
     if (convertedPath == NULL) {
         return 0x6f;
     }
-    created = RemoveDirectoryA(DAT_0057e308);
+    created = RemoveDirectoryA(data_0057e308);
     if (created == 0) {
         error = GetLastError();
         return error;
@@ -471,9 +471,9 @@ int __stdcall OS_Execute(OSSpec *name, char **args, char **environment, char *in
     memset(&startup, 0, sizeof(startup));
     startup.cb = sizeof(startup);
     startup.lpTitle = "Linking";
-    if (OS_SpecToString(name, DAT_0057e308, 0x104) == NULL)
+    if (OS_SpecToString(name, data_0057e308, 0x104) == NULL)
         return 0x6f;
-    created = CreateProcessA(DAT_0057e308, command, NULL, NULL, 1, 0, NULL, NULL, &startup, &process);
+    created = CreateProcessA(data_0057e308, command, NULL, NULL, 1, 0, NULL, NULL, &startup, &process);
     if (inputFile != NULL)
         SetStdHandle(-11, savedInput);
     if (outputFile != NULL)
@@ -852,12 +852,12 @@ int __stdcall OS_IsDir(OSSpec *spec)
     DWORD attributes;
     int length;
 
-    if (OS_SpecToString(spec, DAT_0057e308, 0x104) == NULL)
+    if (OS_SpecToString(spec, data_0057e308, 0x104) == NULL)
         return 0x6f;
-    length = strlen(DAT_0057e308);
-    if (DAT_0057e308[length - 1] == '\\')
-        DAT_0057e308[length - 1] = 0;
-    attributes = GetFileAttributesA(DAT_0057e308);
+    length = strlen(data_0057e308);
+    if (data_0057e308[length - 1] == '\\')
+        data_0057e308[length - 1] = 0;
+    attributes = GetFileAttributesA(data_0057e308);
     if (attributes == 0xffffffff)
         return 0;
     return (attributes & 0x10) != 0;
@@ -869,15 +869,15 @@ int __stdcall OS_IsFile(OSSpec *spec)
     DWORD attributes;
     char *resolvedPath;
 
-    resolvedPath = OS_SpecToString(spec, DAT_0057e308, 0x104);
+    resolvedPath = OS_SpecToString(spec, data_0057e308, 0x104);
     if (resolvedPath == NULL) {
         return 0x6f;
     }
-    length = strlen(DAT_0057e308);
-    if (DAT_0057e308[length - 1] == '\\') {
-        DAT_0057e308[length - 1] = 0;
+    length = strlen(data_0057e308);
+    if (data_0057e308[length - 1] == '\\') {
+        data_0057e308[length - 1] = 0;
     }
-    attributes = GetFileAttributesA(DAT_0057e308);
+    attributes = GetFileAttributesA(data_0057e308);
     if (attributes == 0xffffffff) {
         return 0;
     }
@@ -1221,11 +1221,11 @@ DWORD __stdcall OS_LoadMacResourceFork(OSSpec *spec, LPVOID *resourceData, DWORD
     HGLOBAL loadedResource;
     LPVOID data;
 
-    convertedPath = OS_SpecToString(spec, DAT_0057e308, 0x104);
+    convertedPath = OS_SpecToString(spec, data_0057e308, 0x104);
     if (convertedPath == NULL) {
         return 0x6f;
     }
-    module = GetModuleHandleA(DAT_0057e308);
+    module = GetModuleHandleA(data_0057e308);
     if (module == NULL) {
         return GetLastError();
     }

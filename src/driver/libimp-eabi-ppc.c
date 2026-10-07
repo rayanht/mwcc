@@ -30,7 +30,7 @@ static struct LibImportCU libimp_cu;
 static UInt8 nonNativeByteOrder;
 
 /* An ELF file's first four bytes. */
-static unsigned int DAT_0054c490 = 0x464C457F;
+static unsigned int data_0054c490 = 0x464C457F;
 
 void format_message_and_longjmp()
 {
@@ -54,7 +54,7 @@ void fn_0041e990(char *name, void *argument)
 #pragma optimization_level 2
 UInt8 fn_0041e9b0(char *data)
 {
-    unsigned int reference = DAT_0054c490;
+    unsigned int reference = data_0054c490;
     int comparison = strncmp(data, (char *)&reference, sizeof(reference));
     if (comparison == 0) {
         return 1;

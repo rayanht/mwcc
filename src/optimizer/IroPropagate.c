@@ -420,7 +420,7 @@ void IroPropagate_PropagateExpressions(void)
                     if (eligibleLocal != 0 && !(node->u.diadic.right->type == IROLinearOperand &&
                                                 node->u.diadic.right->u.node->type == ESTRINGCONST)) {
                         fn_0044f350(node->u.diadic.right);
-                        if (DAT_00587630 != 0) {
+                        if (data_00587630 != 0) {
                             isCandidate = 0;
                         } else {
                             isCandidate = 1;

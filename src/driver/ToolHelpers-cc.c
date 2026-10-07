@@ -63,7 +63,7 @@ int set_output_path(char *name, int unused, char *path)
         output_path_set = 1;
         OS_OSSpec_To_FSSpec(&spec1, &info);
         if ((err = CWParserPluginsPrivate_CallFileInfo(pluginPrivateContext, &info)) != 0) {
-            DAT_00543380 = "CWParserSetOutputFileDirectory";
+            data_00543380 = "CWParserSetOutputFileDirectory";
             longjmp(plugin_request_jmp_buf, err);
         }
         return 1;

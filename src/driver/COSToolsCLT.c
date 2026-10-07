@@ -30,7 +30,7 @@ void *COS_NewOSHandle(SIZE_T size)
     char *allocation;
     short status;
 
-    if (DAT_0054c3d0 != '\0') {
+    if (data_0054c3d0 != '\0') {
         allocation = (char *)fn_00413990(size, &status);
         if (status == 0) {
             return allocation;

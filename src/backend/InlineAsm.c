@@ -54,7 +54,7 @@ static inline void expectToken(SInt16 tok, SInt16 err)
 {
     if (tk != tok) {
         SInt16 e = err;
-        if (DAT_00587f18 != 0)
+        if (data_00587f18 != 0)
             longjmp(data_00583a68, 1);
         if (tk == TK_EOL || tk == ';')
             e = 0x70;
@@ -103,7 +103,7 @@ void InlineAsm_LongJump(void)
 
 void InlineAsm_Error(short errorCode)
 {
-    if (DAT_00587f18 != 0) {
+    if (data_00587f18 != 0) {
         longjmp(data_00583a68, 1);
     }
     if ((tk == TK_EOL) || (tk == ';')) {
@@ -210,7 +210,7 @@ SInt32 InlineAsm_ParseMemberOffset(Type *type)
             tk = CPrepTokenizer_GetNextToken();
             if (tk != TK_IDENTIFIER) {
                 error = 0x6b;
-                if (DAT_00587f18 != 0)
+                if (data_00587f18 != 0)
                     longjmp(data_00583a68, 1);
                 if (tk == TK_EOL || tk == ';')
                     error = 0x70;
@@ -226,7 +226,7 @@ SInt32 InlineAsm_ParseMemberOffset(Type *type)
             tk = CPrepTokenizer_GetNextToken();
             if (tk != TK_IDENTIFIER) {
                 error = 0x6b;
-                if (DAT_00587f18 != 0)
+                if (data_00587f18 != 0)
                     longjmp(data_00583a68, 1);
                 if (tk == TK_EOL || tk == ';')
                     error = 0x70;
@@ -312,7 +312,7 @@ SInt32 InlineAsm_ParseStructOrClassMemberOffset(Type *obj)
     tk = CPrepTokenizer_GetNextToken();
     if (tk != TK_IDENTIFIER) {
         err = 0x6b;
-        if (DAT_00587f18 != 0)
+        if (data_00587f18 != 0)
             longjmp(data_00583a68, 1);
         if (tk == TK_EOL || tk == ';')
             err = 0x70;
@@ -359,7 +359,7 @@ int scan_unary_expression(void)
                     tk = CPrepTokenizer_GetNextToken();
                     if (tk != '.') {
                         s = 0x78;
-                        if (DAT_00587f18)
+                        if (data_00587f18)
                             longjmp(data_00583a68, 1);
                         if (tk == TK_EOL || tk == ';')
                             s = 0x70;
@@ -397,7 +397,7 @@ int scan_unary_expression(void)
             t = scan_expression();
             if (tk != ')') {
                 s = 0x73;
-                if (DAT_00587f18)
+                if (data_00587f18)
                     longjmp(data_00583a68, 1);
                 if (tk == TK_EOL || tk == ';')
                     s = 0x70;
@@ -407,7 +407,7 @@ int scan_unary_expression(void)
             return t;
         default:
             s = 0x78;
-            if (DAT_00587f18)
+            if (data_00587f18)
                 longjmp(data_00583a68, 1);
             if (tk == TK_EOL || tk == ';')
                 s = 0x70;
@@ -507,7 +507,7 @@ void parse_asm_lines(volatile SInt16 endToken, int parseOption)
             tk = CPrepTokenizer_GetNextToken();
     }
     while (tk != 0 && tk != endToken) {
-        DAT_00587f18 = 0;
+        data_00587f18 = 0;
         if (tk == '.') {
             InlineAsmPPC_ParseDirectiveIdentifier();
         } else if (tk == TK_IDENTIFIER) {
