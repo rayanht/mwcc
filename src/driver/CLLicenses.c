@@ -5,11 +5,13 @@
 #include "driver/CLTarg.h"
 #include "driver/MemUtils.h"
 #include "driver/MsDos.h"
-/* Paired values in the license table. */
-
 #include <string.h>
 
+static struct License *data_0057ef08;
 /* An opaque license value paired with its signed identifier. */
+static UInt32 license_slots[32][2];
+static int license_slot_count;
+static int license_id_counter;
 
 int allocate_license_slot(int licenseData, int negateId)
 {
@@ -69,10 +71,10 @@ int get_license_slot_values(int index, unsigned int *firstValue, int *secondValu
 int delete_license(int licenseIndex)
 {
     if (licenseIndex >= 0 && licenseIndex < license_slot_count) {
-        DAT_0057ef10[licenseIndex * 2] = 0;
+        license_slots[licenseIndex][1] = 0;
         license_slots[licenseIndex][0] = 0;
         if (licenseIndex + 1 == license_slot_count) {
-            for (; licenseIndex >= 0 && DAT_0057ef10[licenseIndex * 2] == 0; --licenseIndex) {
+            for (; licenseIndex >= 0 && license_slots[licenseIndex][1] == 0; --licenseIndex) {
                 --license_slot_count;
             }
         }

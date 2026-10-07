@@ -40,12 +40,7 @@ extern int CLLicenses_RequestLicense(int request, int options, int cookieKind, c
 extern void CLLicenses_DeleteLicense(int identifier);
 extern void CLLicenses_ReleaseLicenses(void);
 extern int release_negative_license_values(void);
-extern UInt32 license_slots[32][2];
-extern UInt32 DAT_0057ef10[];
-extern int license_id_counter;
 extern char *license_path;
-extern struct License *data_0057ef08;
-extern int license_slot_count;
 extern OSSpec data_005871d8;
 
 #ifdef __cplusplus
