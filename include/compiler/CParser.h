@@ -28,7 +28,7 @@ struct ParserTryBlock {
     struct TypeClass *cscope_currentclass;
     Object *cscope_currentfunc;
     struct TemplStack *ctempl_curinstance;
-    SInt32 cerror_locktoken;
+    TStreamElement *cerror_locktoken;
     UInt8 cscope_is_member_func;
 };
 struct ClassTypeLink {

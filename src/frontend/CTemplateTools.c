@@ -698,7 +698,7 @@ ENode *CTemplTool_DeduceExpr(TypeDeduce *ctx, ENode *node)
     TypeClass *classType;
     TemplClassInst *resolvedObject;
     NameResult expression;
-    int savedScope;
+    TStreamElement *savedScope;
     UInt32 qualifiers;
     ENodeList *callArguments;
     ENodeList *sourceCallArgument;

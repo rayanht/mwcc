@@ -58,7 +58,7 @@ typedef char *va_list;
 #define va_arg(ap, type) (*(type *)(((ap) += 4) - 4))
 
 #pragma options align = mac68k
-static int buffered_token;
+static TStreamElement *buffered_token;
 static short data_005805ec;
 static int data_005805ee;
 #pragma options align = reset
@@ -145,8 +145,8 @@ void fn_00449dc0(void)
 {
     data_005805ec = 0;
     data_005805ee = -1;
-    buffered_token = 0;
-    cerror_locktoken = 0;
+    buffered_token = NULL;
+    cerror_locktoken = NULL;
     return;
 }
 
@@ -154,20 +154,20 @@ void CError_SetBufferedToken(TStreamElement *entry)
 {
     if (entry) {
         if (entry->tokenfile) {
-            buffered_token = (int)entry;
+            buffered_token = entry;
         }
     }
 }
 
-void CError_SaveAndSetWrittenEntry(TStreamElement *entry, int *savedEntry)
+void CError_SaveAndSetWrittenEntry(TStreamElement *entry, TStreamElement **savedEntry)
 {
     *savedEntry = cerror_locktoken;
     if (entry != NULL && entry->tokenfile != NULL) {
-        cerror_locktoken = (int)entry;
+        cerror_locktoken = entry;
     }
 }
 
-void CError_SetWrittenEntry(int *entry)
+void CError_SetWrittenEntry(TStreamElement **entry)
 {
     cerror_locktoken = *entry;
 }
@@ -821,7 +821,7 @@ char *CError_GetQualifiedHashName(NameSpace *nspace, HashNameNode *nameRef)
 
 void report_diagnostic(int message, char *argument, char force, char mode)
 {
-    int token;
+    TStreamElement *token;
     struct MessageContext *location;
     short errorType;
     struct MessageContext details;
@@ -850,14 +850,14 @@ void report_diagnostic(int message, char *argument, char force, char mode)
         if (copts.warningerrors != 0)
             mode = 0;
 
-        if (buffered_token != 0)
+        if (buffered_token != NULL)
             token = buffered_token;
-        else if (cerror_locktoken != 0)
+        else if (cerror_locktoken != NULL)
             token = cerror_locktoken;
         else
-            token = 0;
+            token = NULL;
 
-        if (token == -1) {
+        if (token == (TStreamElement *)-1) {
             location = NULL;
         } else {
             CPrep_GetTokenLocation(token, &position, &details.auxiliaryD, &value, &details.auxiliaryA, text,
@@ -874,7 +874,7 @@ void report_diagnostic(int message, char *argument, char force, char mode)
                                                    errorType, message) != 0)
             longjmp(error_jmp_buf, 1);
     }
-    buffered_token = 0;
+    buffered_token = NULL;
 }
 
 #pragma opt_lifetimes reset

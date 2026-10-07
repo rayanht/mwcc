@@ -905,7 +905,7 @@ void CTemplateClass_0051cec0(TypeDeduce *context, TemplClass *templateClass)
 void instantiate_bases(TypeDeduce *context, TypeClass *instance, TemplClass *classTemplate)
 {
     ClassList *resolvedTypeData = NULL;
-    int savedEntry;
+    TStreamElement *savedEntry;
     ClassList *base;
     ClassList *current;
     struct TemplateAction *declaration;
@@ -1044,7 +1044,7 @@ void instantiate_enum(TypeDeduce *context, struct TemplateAction *entry)
 
 void initialize_enum_constants(TypeDeduce *context, struct TemplateAction *object, TypeEnum *scope)
 {
-    int savedContext;
+    TStreamElement *savedContext;
     Type *enumType;
     TemplClass *templateClass;
     ObjEnumConst *item;
@@ -1510,7 +1510,7 @@ unsigned char CTemplateClass_InstantiateClass(TypeClass *theclass)
     TemplClass *resolvedTemplate;
     ClassLayout classInfo;
     TypeDeduce instantiation;
-    int sourceSave;
+    TStreamElement *sourceSave;
     TemplArg *resolvedArgs;
     UInt32 typeResult;
     CError_ASSERT(1907, (theclass->flags & CLASS_IS_TEMPL_INST) != 0);
