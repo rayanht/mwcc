@@ -498,8 +498,8 @@ Boolean match_class_args_or_bases(TemplClass *classTemplate, TemplArg *templateA
 
 static SInt32 CTF_GetIndex(TemplArg *a)
 {
-    if (a->data.paramdecl.expr->type == 'E' && a->data.paramdecl.expr->data.templatecomparison.tag == 0)
-        return a->data.paramdecl.expr->data.templatecomparison.u.wb.parameterIndex;
+    if (a->data.paramdecl.expr->type == 'E' && a->data.paramdecl.expr->data.templdep.subtype == TDE_PARAM)
+        return a->data.paramdecl.expr->data.templdep.u.pid.index;
     return -1;
 }
 
@@ -548,8 +548,8 @@ int CTemplateFunc_GetArgumentParameterIndex(TemplArg *argument)
 {
     if (argument->data.paramdecl.expr == NULL)
         CError_FATAL(515);
-    if (argument->data.paramdecl.expr->type == 69U && argument->data.paramdecl.expr->data.templatecomparison.tag == 0U)
-        return argument->data.paramdecl.expr->data.templatecomparison.u.wb.parameterIndex;
+    if (argument->data.paramdecl.expr->type == 69U && argument->data.paramdecl.expr->data.templdep.subtype == TDE_PARAM)
+        return argument->data.paramdecl.expr->data.templdep.u.pid.index;
     return -1;
 }
 

@@ -304,8 +304,6 @@ static inline TemplArg *find(TemplArg *e, TemplParamID pid)
     return NULL;
 }
 
-#define NP(nd) (nd)
-
 static ENode *CloneNode(ENode *src)
 {
     ENode *n = (ENode *)CompilerTools_AllocatePool(sizeof(ENode));
@@ -723,23 +721,22 @@ ENode *CTemplTool_DeduceExpr(TypeDeduce *ctx, ENode *node)
 
     switch (node->type) {
         case EOBJLIST:
-            switch (node->data.templatecomparison.tag) {
-                case 0:
-                    if (ctx->processingArgument != 0 &&
-                        node->data.templatecomparison.u.wb.templateLevel == ctx->nindex) {
+            switch (node->data.templdep.subtype) {
+                case TDE_PARAM:
+                    if (ctx->processingArgument != 0 && node->data.templdep.u.pid.nindex == ctx->nindex) {
                         return CloneNode(node);
                     }
                     for (record = ctx->args; record != NULL; record = record->next) {
-                        if (record->pid.index == node->data.templatecomparison.u.wb.parameterIndex &&
-                            record->pid.nindex == node->data.templatecomparison.u.wb.templateLevel) {
+                        if (record->pid.index == node->data.templdep.u.pid.index &&
+                            record->pid.nindex == node->data.templdep.u.pid.nindex) {
                             CError_ASSERT(1310, record->pid.type == 0 && record->data.typeparam.type != NULL);
                             return CloneRecNode(record);
                         }
                     }
                     for (group = ctx->inst; group != NULL; group = group->parent) {
                         for (outerRecord = group->inst_args; outerRecord != NULL; outerRecord = outerRecord->next) {
-                            if (outerRecord->pid.index == node->data.templatecomparison.u.wb.parameterIndex &&
-                                outerRecord->pid.nindex == node->data.templatecomparison.u.wb.templateLevel) {
+                            if (outerRecord->pid.index == node->data.templdep.u.pid.index &&
+                                outerRecord->pid.nindex == node->data.templdep.u.pid.nindex) {
                                 CError_ASSERT(1323,
                                               outerRecord->pid.type == 0 && outerRecord->data.typeparam.type != NULL);
                                 return CloneRecNode(outerRecord);
@@ -747,16 +744,16 @@ ENode *CTemplTool_DeduceExpr(TypeDeduce *ctx, ENode *node)
                         }
                     }
                     CError_FATAL(1330);
-                case 1:
+                case TDE_SIZEOF:
                     qualifiers = 0;
-                    type = CTemplateTools_ResolveType(ctx, (Type *)NP(node)->data.templatecomparison.u.p0, &qualifiers);
+                    type = CTemplateTools_ResolveType(ctx, node->data.templdep.u.typeexpr.type, &qualifiers);
                     CDecl_CompleteType(type);
                     return intconstnode(CABI_GetSizeTType(), type->size);
-                case 3:
-                    qualifiers = node->data.templatecomparison.qualifiers;
-                    type = CTemplateTools_ResolveType(ctx, (Type *)NP(node)->data.templatecomparison.p4, &qualifiers);
-                    for (sourceArgument = (ENodeList *)NP(node)->data.templatecomparison.u.p0, arguments = NULL;
-                         sourceArgument != NULL; sourceArgument = sourceArgument->next) {
+                case TDE_CAST:
+                    qualifiers = node->data.templdep.u.cast.qual;
+                    type = CTemplateTools_ResolveType(ctx, node->data.templdep.u.cast.type, &qualifiers);
+                    for (sourceArgument = node->data.templdep.u.cast.args, arguments = NULL; sourceArgument != NULL;
+                         sourceArgument = sourceArgument->next) {
                         if (arguments != NULL) {
                             argument->next = (ENodeList *)CompilerTools_AllocatePool(sizeof(ENodeList));
                             argument = argument->next;
@@ -768,46 +765,43 @@ ENode *CTemplTool_DeduceExpr(TypeDeduce *ctx, ENode *node)
                         argument->node = CTemplTool_DeduceExpr(ctx, argument->node);
                     }
                     return CExpr_DoExplicitConversion(type, qualifiers, arguments);
-                case 4:
+                case TDE_QUALNAME:
                     qualifiers = 0;
-                    type = CTemplateTools_ResolveType(ctx, (Type *)NP(node)->data.templatecomparison.u.p0, &qualifiers);
+                    type = CTemplateTools_ResolveType(ctx, TYPE(node->data.templdep.u.qual.type), &qualifiers);
                     if (type->type == TYPECLASS) {
                         CDecl_CompleteType(type);
                         classType = (TypeClass *)type;
-                        if (CScope_FindQualifiedClassMember(&expression, classType,
-                                                            (HashNameNode *)NP(node)->data.templatecomparison.p4)) {
+                        if (CScope_FindQualifiedClassMember(&expression, classType, node->data.templdep.u.qual.name)) {
                             return CExpr_GeneratePointerAndRewriteConst(CExpr_MakeNameLookupResultExpr(&expression));
                         }
-                        CError_ReportError(ERR_NOT_STRUCT_UNION_CLASS_MEMBER,
-                                           ((HashNameNode *)NP(node)->data.templatecomparison.p4)->name);
+                        CError_ReportError(ERR_NOT_STRUCT_UNION_CLASS_MEMBER, (node->data.templdep.u.qual.name)->name);
                     } else {
                         if (type->type == TYPETEMPLATE && ctx->inst == NULL) {
                             result = CloneNode(node);
-                            NP(result)->data.templatecomparison.u.p0 = type;
+                            result->data.templdep.u.qual.type = TYPE_TEMPLATE(type);
                             return result;
                         }
                         CError_ReportError(ERR_ILLEGAL_USE_TEMPLATE_ARGUMENT_DEPENDENT_TYPE,
-                                           ((HashNameNode *)NP(node)->data.templatecomparison.p4)->name);
+                                           (node->data.templdep.u.qual.name)->name);
                     }
                     return nullnode();
-                case 5:
-                    resolvedObject = find_corresponding_instance_class(
-                        ctx, ((TypeClass *)NP(node)->data.templatecomparison.u.p0)->nspace->theclass);
+                case TDE_OBJ:
+                    resolvedObject =
+                        find_corresponding_instance_class(ctx, node->data.templdep.u.obj->nspace->theclass);
                     if (resolvedObject == NULL || resolvedObject->theclass.type != TYPECLASS) {
                         CError_FATAL(1379);
                     }
-                    entry = CScope_FindObjectListInNameSpace(
-                        resolvedObject->theclass.nspace,
-                        ((TypeClass *)NP(node)->data.templatecomparison.u.p0)->classname);
+                    entry = CScope_FindObjectListInNameSpace(resolvedObject->theclass.nspace,
+                                                             node->data.templdep.u.obj->name);
                     if (entry == NULL) {
                         CError_FATAL(1382);
                     }
                     memclrw(&expression, sizeof(expression));
                     expression.object = (ObjBase *)entry->object.value;
                     return CExpr_GeneratePointerAndRewriteConst(CExpr_MakeNameLookupResultExpr(&expression));
-                case 6:
-                    CError_SaveAndSetWrittenEntry((TStreamElement *)NP(node)->data.templatecomparison.p4, &savedScope);
-                    result = CTemplTool_DeduceExpr(ctx, (ENode *)NP(node)->data.templatecomparison.u.p0);
+                case TDE_SOURCEREF:
+                    CError_SaveAndSetWrittenEntry(node->data.templdep.u.sourceref.token, &savedScope);
+                    result = CTemplTool_DeduceExpr(ctx, node->data.templdep.u.sourceref.expr);
                     CError_SetWrittenEntry(&savedScope);
                     return result;
                 default:
@@ -1135,25 +1129,23 @@ Boolean CTemplateTools_00517a40(ENode *left, ENode *right)
         }
 
         case EOBJLIST:
-            if (left->data.templatecomparison.tag != right->data.templatecomparison.tag)
+            if (left->data.templdep.subtype != right->data.templdep.subtype)
                 return 0;
-            switch (left->data.templatecomparison.tag) {
-                case 0:
-                    return left->data.templatecomparison.u.wb.templateLevel ==
-                               right->data.templatecomparison.u.wb.templateLevel &&
-                           left->data.templatecomparison.u.wb.parameterIndex ==
-                               right->data.templatecomparison.u.wb.parameterIndex;
-                case 1:
-                    return iscpp_typeequal(left->data.templatecomparison.u.p0, right->data.templatecomparison.u.p0);
-                case 3:
-                    return iscpp_typeequal(left->data.templatecomparison.p4, right->data.templatecomparison.p4) != 0 &&
-                           left->data.templatecomparison.qualifiers == right->data.templatecomparison.qualifiers;
-                case 4:
-                    return iscpp_typeequal(left->data.templatecomparison.u.p0, right->data.templatecomparison.u.p0) !=
-                               0 &&
-                           left->data.templatecomparison.p4 == right->data.templatecomparison.p4;
-                case 5:
-                    return left->data.templatecomparison.u.d0 == right->data.templatecomparison.u.d0;
+            switch (left->data.templdep.subtype) {
+                case TDE_PARAM:
+                    return left->data.templdep.u.pid.nindex == right->data.templdep.u.pid.nindex &&
+                           left->data.templdep.u.pid.index == right->data.templdep.u.pid.index;
+                case TDE_SIZEOF:
+                    return iscpp_typeequal(left->data.templdep.u.typeexpr.type, right->data.templdep.u.typeexpr.type);
+                case TDE_CAST:
+                    return iscpp_typeequal(left->data.templdep.u.cast.type, right->data.templdep.u.cast.type) != 0 &&
+                           left->data.templdep.u.cast.qual == right->data.templdep.u.cast.qual;
+                case TDE_QUALNAME:
+                    return iscpp_typeequal(TYPE(left->data.templdep.u.qual.type),
+                                           TYPE(right->data.templdep.u.qual.type)) != 0 &&
+                           left->data.templdep.u.qual.name == right->data.templdep.u.qual.name;
+                case TDE_OBJ:
+                    return left->data.templdep.u.obj == right->data.templdep.u.obj;
                 default:
                     CError_FATAL(890);
             }
@@ -1265,9 +1257,9 @@ UInt8 CTemplTool_IsSameTemplate(TemplParam *parameter, TemplArg *argument)
                 return 0;
         } else {
             if (argument->data.paramdecl.expr->type != EOBJLIST ||
-                argument->data.paramdecl.expr->data.templatecomparison.tag != 0 ||
-                argument->data.paramdecl.expr->data.templatecomparison.u.wb.templateLevel != parameter->pid.nindex ||
-                argument->data.paramdecl.expr->data.templatecomparison.u.wb.parameterIndex != parameter->pid.index)
+                argument->data.paramdecl.expr->data.templdep.subtype != TDE_PARAM ||
+                argument->data.paramdecl.expr->data.templdep.u.pid.nindex != parameter->pid.nindex ||
+                argument->data.paramdecl.expr->data.templdep.u.pid.index != parameter->pid.index)
                 return 0;
         }
         argument = argument->next;
@@ -1616,9 +1608,9 @@ UInt8 CTemplTool_IsIdenticalTemplArgList(TemplArg *pattern, TemplParam *argument
                 return 0;
         } else {
             if (pattern->data.paramdecl.expr->type != EOBJLIST ||
-                pattern->data.paramdecl.expr->data.templatecomparison.tag != 0 ||
-                pattern->data.paramdecl.expr->data.templatecomparison.u.wb.parameterIndex != argument->pid.index ||
-                pattern->data.paramdecl.expr->data.templatecomparison.u.wb.templateLevel != argument->pid.nindex)
+                pattern->data.paramdecl.expr->data.templdep.subtype != TDE_PARAM ||
+                pattern->data.paramdecl.expr->data.templdep.u.pid.index != argument->pid.index ||
+                pattern->data.paramdecl.expr->data.templdep.u.pid.nindex != argument->pid.nindex)
                 return 0;
         }
         pattern = pattern->next;

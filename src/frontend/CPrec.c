@@ -3268,7 +3268,7 @@ SInt32 write_enode(ENode *node)
     SInt32 stringSize;
     SInt32 offset;
 
-    if (node->type == EOBJLIST && node->data.templatecomparison.tag == 6)
+    if (node->type == EOBJLIST && node->data.templdep.subtype == TDE_SOURCEREF)
         node->data.objlist.templargs = NULL;
 
     offset = PrecompBegin();
@@ -3389,12 +3389,12 @@ SInt32 write_enode(ENode *node)
             add_serialized_bucket_entry(offset + 10, write_member_func_ref(node->data.emember));
             break;
         case EOBJLIST:
-            switch (node->data.templatecomparison.tag) {
-                case 1:
-                    add_serialized_bucket_entry(offset + 10, write_type(node->data.temp.type));
+            switch (node->data.templdep.subtype) {
+                case TDE_SIZEOF:
+                    add_serialized_bucket_entry(offset + 10, write_type(node->data.templdep.u.typeexpr.type));
                     break;
-                case 3:
-                    if ((list = node->data.explicitconversion.arguments) != NULL) {
+                case TDE_CAST:
+                    if ((list = node->data.templdep.u.cast.args) != NULL) {
                         SInt32 entryOffset, followingOffset, firstEntryOffset;
                         firstEntryOffset = entryOffset = PrecompBegin();
                         for (;;) {
@@ -3409,19 +3409,19 @@ SInt32 write_enode(ENode *node)
                         }
                         add_serialized_bucket_entry(offset + 10, firstEntryOffset);
                     }
-                    add_serialized_bucket_entry(offset + 14, write_type(node->data.explicitconversion.targetType));
+                    add_serialized_bucket_entry(offset + 14, write_type(node->data.templdep.u.cast.type));
                     break;
-                case 4:
-                    templateName = (HashNameNode *)node->data.templatecomparison.p4;
+                case TDE_QUALNAME:
+                    templateName = node->data.templdep.u.qual.name;
                     templateName->id = 1;
                     patch_object_reference(offset + 14, templateName);
-                    add_serialized_bucket_entry(offset + 10, write_type(node->data.temp.type));
+                    add_serialized_bucket_entry(offset + 10, write_type(TYPE(node->data.templdep.u.qual.type)));
                     break;
-                case 5:
-                    add_serialized_bucket_entry(offset + 10, write_object(node->data.objref));
+                case TDE_OBJ:
+                    add_serialized_bucket_entry(offset + 10, write_object(node->data.templdep.u.obj));
                     break;
-                case 6:
-                    add_serialized_bucket_entry(offset + 10, write_enode(node->data.monadic));
+                case TDE_SOURCEREF:
+                    add_serialized_bucket_entry(offset + 10, write_enode(node->data.templdep.u.sourceref.expr));
                     break;
                 case 0:
                     break;

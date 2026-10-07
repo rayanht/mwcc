@@ -95,6 +95,17 @@ enum {
     ENODE_FLAG_QUALS = Q_CONST | Q_VOLATILE,
     ENODE_FLAG_80 = 0x80
 };
+/* data.templdep.subtype of a template-dependent expression */
+typedef enum TemplDepSubType {
+    TDE_PARAM,
+    TDE_SIZEOF,
+    TDE_ALIGNOF,
+    TDE_CAST,
+    TDE_QUALNAME,
+    TDE_OBJ,
+    TDE_SOURCEREF,
+    TDE_ADDRESS_OF
+} TemplDepSubType;
 #pragma options align = mac68k
 struct ENodeList {
     ENodeList *next; /* 0x00: CExpr_MakeFunctionCall traverses and appends call arguments */
@@ -103,10 +114,6 @@ struct ENodeList {
 #pragma options align = reset
 #pragma options align = mac68k
 union ENodeUnion {
-    struct {
-        UInt32 pid;
-        UInt32 name;
-    } templdep;
     CInt64 intval;
     long long bits;
     Float floatval;
@@ -157,22 +164,6 @@ union ENodeUnion {
         TypeFunc *functype;
     } funccall;
     struct {
-        ENodeList *
-            arguments; /* 0x00: scan_explicit_conversion stores arguments; CInline_00513240 copies them for EOBJLIST tag 3 */
-        Type *
-            targetType; /* 0x04: scan_explicit_conversion stores the conversion type; CExpr_MakeFunctionCall reads it for EOBJLIST tag 3 */
-        SInt32
-            qualifiers; /* 0x08: scan_explicit_conversion stores qualifiers; CExpr_MakeFunctionCall passes them to CExpr_DoExplicitConversion for EOBJLIST tag 3 */
-        UInt8
-            tag; /* 0x0c: CExpr_MakeFunctionCall tests EOBJLIST and templatecomparison.tag == 3 before reading this variant */
-    } explicitconversion; /* EOBJLIST with tag 3: dependent explicit conversion, not a function call */
-    struct {
-        ENode *expression; /* 0x00: CFunc_DefaultArg stores the dependent default argument expression */
-        struct TStreamElement *sourcePosition; /* 0x04: CFunc_DefaultArg allocates and copies the last buffered token */
-        UInt8 unk08[4];                        /* 0x08: CExpr2_NewENEWEXCEPTIONARRAYNode clears this unused storage */
-        UInt8 tag; /* 0x0c: CFunc_DefaultArg selects EOBJLIST with tag ST_IFGOTO via CExpr2_NewENEWEXCEPTIONARRAYNode */
-    } defaultargument; /* EOBJLIST, tag ST_IFGOTO: dependent default argument with diagnostic source position */
-    struct {
         Type *type;
         SInt32 uniqueid;
         Boolean needs_dtor;
@@ -205,17 +196,28 @@ union ENodeUnion {
     } argobj;
     struct {
         union {
+            TemplParamID pid;
             struct {
-                UInt16 parameterIndex;
-                UInt8 templateLevel;
-            } wb;
-            void *p0;
-            SInt32 d0;
+                Type *type;
+            } typeexpr;
+            struct {
+                ENodeList *args;
+                Type *type;
+                UInt32 qual;
+            } cast;
+            struct {
+                TypeTemplDep *type;
+                HashNameNode *name;
+            } qual;
+            struct {
+                ENode *expr;
+                TStreamElement *token;
+            } sourceref;
+            ENode *monadic;
+            Object *obj;
         } u;
-        void *p4;
-        SInt32 qualifiers;
-        UInt8 tag;
-    } templatecomparison;
+        UInt8 subtype;
+    } templdep;
 };
 #pragma options align = reset
 /* sizeof(ENode) is 0x1a: every allocation site requests 26 bytes. */

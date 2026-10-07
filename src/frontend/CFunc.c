@@ -3154,10 +3154,10 @@ ENode *CFunc_DefaultArg(Type *destination, SInt32 flags, FuncArg *value)
     } else {
         record = CPrep_GetLastBufferedToken();
         if (record != NULL && record->tokenfile != NULL) {
-            statement = CExpr2_NewENEWEXCEPTIONARRAYNode(ST_IFGOTO);
-            statement->data.defaultargument.expression = expr;
-            statement->data.defaultargument.sourcePosition = galloc(0x18);
-            *statement->data.defaultargument.sourcePosition = *record;
+            statement = CExpr2_NewENEWEXCEPTIONARRAYNode(TDE_SOURCEREF);
+            statement->data.templdep.u.sourceref.expr = expr;
+            statement->data.templdep.u.sourceref.token = galloc(sizeof(TStreamElement));
+            *statement->data.templdep.u.sourceref.token = *record;
             expr = statement;
         }
     }

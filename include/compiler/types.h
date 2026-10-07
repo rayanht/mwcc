@@ -255,13 +255,6 @@ struct TypeMemberPointer {
     UInt32 qual;
 };
 #pragma options align = reset
-#pragma options align = mac68k
-struct TemplParamID {
-    UInt16 index;
-    UInt8 nindex;
-    Boolean type;
-};
-#pragma options align = reset
 /* TypeTemplDep dtype: which arm of u */
 enum { TEMPLDEP_ARGUMENT, TEMPLDEP_QUALNAME, TEMPLDEP_TEMPLATE, TEMPLDEP_ARRAY, TEMPLDEP_QUALTEMPL, TEMPLDEP_BITFIELD };
 #pragma options align = mac68k

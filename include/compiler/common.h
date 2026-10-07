@@ -765,6 +765,13 @@ typedef short wchar_t;
 typedef unsigned short word;
 
 typedef enum AccessType { ACCESSPUBLIC, ACCESSPRIVATE, ACCESSPROTECTED, ACCESSNONE } AccessType;
+#pragma options align = mac68k
+struct TemplParamID {
+    UInt16 index;
+    UInt8 nindex;
+    Boolean type;
+};
+#pragma options align = reset
 /* Object and type qualifiers (Object, DeclInfo and the types' qual). Q_IMPLICIT_WEAK marks what every unit may define
  * (thunks, an inline function's local statics, a static const member initialized in its class): the backend gives it a
  * weak symbol, as it does Q_WEAK. Q_TENTATIVE marks a C tentative definition. Q_ALIGNED_ values are a field, under

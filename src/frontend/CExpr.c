@@ -327,10 +327,10 @@ static inline void SetInt64(CInt64 *arg, int n)
 
 static inline ENode *recovery_construct_4059(ENodeList *arguments, Type *targetType, SInt32 qualifiers)
 {
-    ENode *node = CExpr2_NewENEWEXCEPTIONARRAYNode(3);
-    node->data.explicitconversion.arguments = arguments;
-    node->data.explicitconversion.targetType = targetType;
-    node->data.explicitconversion.qualifiers = qualifiers;
+    ENode *node = CExpr2_NewENEWEXCEPTIONARRAYNode(TDE_CAST);
+    node->data.templdep.u.cast.args = arguments;
+    node->data.templdep.u.cast.type = targetType;
+    node->data.templdep.u.cast.qual = qualifiers;
     return node;
 }
 
@@ -4749,15 +4749,15 @@ ENode *make_scope_parse_result_expr(CScopeParseResult *nameResult, ENode *expr, 
             if (nameResult->type.base->type == TYPETEMPLATE) {
                 if (TYPE_TEMPLATE(nameResult->type.base)->dtype == 0 &&
                     !TYPE_TEMPLATE(nameResult->type.base)->u.pid.type) {
-                    result = CExpr2_NewENEWEXCEPTIONARRAYNode(0);
-                    result->data.templdep.pid = (UInt32)TYPE_TEMPLATE(nameResult->type.base)->u.qual.type;
+                    result = CExpr2_NewENEWEXCEPTIONARRAYNode(TDE_PARAM);
+                    result->data.templdep.u.pid = TYPE_TEMPLATE(nameResult->type.base)->u.pid;
                     tk = CPrepTokenizer_GetNextToken();
                     return result;
                 }
                 if (TYPE_TEMPLATE(nameResult->type.base)->dtype == 1 && !nameResult->is_type) {
-                    result = CExpr2_NewENEWEXCEPTIONARRAYNode(4);
-                    result->data.templdep.pid = (UInt32)TYPE_TEMPLATE(nameResult->type.base)->u.qual.type;
-                    result->data.templdep.name = (UInt32)TYPE_TEMPLATE(nameResult->type.base)->u.qual.name;
+                    result = CExpr2_NewENEWEXCEPTIONARRAYNode(TDE_QUALNAME);
+                    result->data.templdep.u.qual.type = TYPE_TEMPLATE(nameResult->type.base)->u.qual.type;
+                    result->data.templdep.u.qual.name = TYPE_TEMPLATE(nameResult->type.base)->u.qual.name;
                     tk = CPrepTokenizer_GetNextToken();
                     return result;
                 }
@@ -5161,20 +5161,20 @@ ENode *scan_explicit_conversion(Type *type, SInt32 qualifiers)
     tk = (UInt16)CPrepTokenizer_GetNextToken();
 
     if (CTemplateTools_IsDependentType(type)) {
-        ENode *node = CExpr2_NewENEWEXCEPTIONARRAYNode(3);
-        node->data.explicitconversion.arguments = arguments;
-        node->data.explicitconversion.targetType = type;
-        node->data.explicitconversion.qualifiers = qualifiers;
+        ENode *node = CExpr2_NewENEWEXCEPTIONARRAYNode(TDE_CAST);
+        node->data.templdep.u.cast.args = arguments;
+        node->data.templdep.u.cast.type = type;
+        node->data.templdep.u.cast.qual = qualifiers;
         return node;
     }
 
     argument = arguments;
     while (argument != NULL) {
         if (CTemplTool_IsTypeDepExpr(argument->node)) {
-            ENode *node = CExpr2_NewENEWEXCEPTIONARRAYNode(3);
-            node->data.explicitconversion.arguments = arguments;
-            node->data.explicitconversion.targetType = type;
-            node->data.explicitconversion.qualifiers = qualifiers;
+            ENode *node = CExpr2_NewENEWEXCEPTIONARRAYNode(TDE_CAST);
+            node->data.templdep.u.cast.args = arguments;
+            node->data.templdep.u.cast.type = type;
+            node->data.templdep.u.cast.qual = qualifiers;
             return node;
         }
         argument = argument->next;

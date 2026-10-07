@@ -3132,20 +3132,20 @@ ENode *CInline_00513240(ENode *expr)
         *node = *expr;
         switch (node->type) {
             case EOBJLIST:
-                switch (node->data.templatecomparison.tag) {
-                    case 3: {
-                        ENodeList *values = node->data.explicitconversion.arguments;
+                switch (node->data.templdep.subtype) {
+                    case TDE_CAST: {
+                        ENodeList *values = node->data.templdep.u.cast.args;
                         values = copy_enode_list(values);
-                        node->data.explicitconversion.arguments = values;
+                        node->data.templdep.u.cast.args = values;
                         break;
                     }
-                    case 6:
-                        node->data.monadic = CInline_00513240(node->data.monadic);
+                    case TDE_SOURCEREF:
+                        node->data.templdep.u.sourceref.expr = CInline_00513240(node->data.templdep.u.sourceref.expr);
                         break;
-                    case 0:
-                    case 1:
-                    case 4:
-                    case 5:
+                    case TDE_PARAM:
+                    case TDE_SIZEOF:
+                    case TDE_QUALNAME:
+                    case TDE_OBJ:
                         break;
                     default:
                         CError_FATAL(722);

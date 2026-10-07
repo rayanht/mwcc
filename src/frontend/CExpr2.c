@@ -1802,11 +1802,10 @@ ENode *CExpr_MakeFunctionCall(ENode *expr, ENodeList *args)
             defaultArg->next = NULL;
             value = fn_00513040(formal->dexpr, 0);
             if (value->type == EOBJLIST) {
-                if (value->data.templatecomparison.tag != 3)
+                if (value->data.templdep.subtype != TDE_CAST)
                     CError_FATAL(3096);
-                value = CExpr_DoExplicitConversion(value->data.explicitconversion.targetType,
-                                                   value->data.explicitconversion.qualifiers,
-                                                   value->data.explicitconversion.arguments);
+                value = CExpr_DoExplicitConversion(value->data.templdep.u.cast.type, value->data.templdep.u.cast.qual,
+                                                   value->data.templdep.u.cast.args);
             }
             defaultArg->node = value;
             formal = formal->next;
@@ -2285,10 +2284,9 @@ void make_funccall_with_dexprs(ENode *funcref, ENodeList *args, TypeFunc *ftype,
             node->next = NULL;
             t = fn_00513040(arglist->dexpr, 0);
             if (t->type == EOBJLIST) {
-                CError_ASSERT(3096, t->data.templatecomparison.tag == 3);
-                t = CExpr_DoExplicitConversion(t->data.explicitconversion.targetType,
-                                               t->data.explicitconversion.qualifiers,
-                                               t->data.explicitconversion.arguments);
+                CError_ASSERT(3096, t->data.templdep.subtype == TDE_CAST);
+                t = CExpr_DoExplicitConversion(t->data.templdep.u.cast.type, t->data.templdep.u.cast.qual,
+                                               t->data.templdep.u.cast.args);
             }
             node->node = t;
         }
@@ -5157,7 +5155,7 @@ ENode *CExpr2_NewENEWEXCEPTIONARRAYNode(unsigned int value)
     memclrw(node, sizeof(ENode));
     node->type = EOBJLIST;
     node->rtype = &data_0055d5c0;
-    node->data.templatecomparison.tag = value;
+    node->data.templdep.subtype = value;
     return node;
 }
 
