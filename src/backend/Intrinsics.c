@@ -3205,7 +3205,7 @@ SInt32 select_altivec_mangle_result(UInt16 intrinsicCode, ENodeList *arguments, 
 {
     ENode *node = arguments->node;
     SInt32 index = intrinsicCode - 0x2a;
-    MangleEntry *entry = DAT_0055542c[index + 0x182c];
+    MangleEntry *entry = (MangleEntry *)data_0055b4dc[index].op;
     SInt32 value;
     SInt32 result;
 

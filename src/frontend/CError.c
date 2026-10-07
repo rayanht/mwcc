@@ -13,6 +13,7 @@
 #include "compiler/CExpr2.h"
 #include "compiler/CFunc.h"
 #include "compiler/CInline.h"
+#include "compiler/CInt64.h"
 #include "compiler/CMangler.h"
 #include "compiler/CObjC.h"
 #include "compiler/CObjCModern.h"

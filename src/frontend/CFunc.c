@@ -82,23 +82,6 @@ static void SetLong(CInt64 *pN, long n)
     pN->hi = (n < 0) ? 0xFFFFFFFF : 0;
 }
 
-CInt64 CFunc_BitwiseNot(CInt64 input)
-{
-    CInt64 output;
-    output.hi = ~input.hi;
-    output.lo = ~input.lo;
-    return output;
-}
-
-CInt64 CFunc_LogicalNotCInt64(CInt64 input)
-{
-    CInt64 output;
-    long value = (Boolean)(input.hi == 0 && input.lo == 0);
-    output.lo = value;
-    output.hi = value < 0 ? -1 : 0;
-    return output;
-}
-
 void CFunc_GenerateSingleExprFunc(Object *func, ENode *expr)
 {
     Statement stmt;

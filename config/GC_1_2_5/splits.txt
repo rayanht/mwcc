@@ -631,16 +631,20 @@ src/backend/InlineAsmPPC.c:
 	.data       start:0x00554830 end:0x00555090
 
 src/frontend/CExpr2.c:
-	.text       start:0x0046B3F0 end:0x00474E30
-	.data       start:0x00555090 end:0x00555498
-	.bss        start:0x005806A0 end:0x00580870
+	.text       start:0x0046B3F0 end:0x00474490
+	.data       start:0x00555090 end:0x00555418
+	.bss        start:0x005806A0 end:0x00580758
 
 src/frontend/CInt64.c:
-	.text       start:0x00474E30 end:0x00476100
-	.data       start:0x00555498 end:0x00555500
+	.text       start:0x00474490 end:0x00476170
+	.data       start:0x00555418 end:0x00555500
+	.bss        start:0x00580758 end:0x00580868
+
+auto_00580868_bss:
+	.bss        start:0x00580868 end:0x00580870
 
 src/frontend/CFunc.c:
-	.text       start:0x00476100 end:0x0047CBD0
+	.text       start:0x00476170 end:0x0047CBD0
 	.data       start:0x00555500 end:0x005557B8
 	.bss        start:0x00580870 end:0x00580898
 

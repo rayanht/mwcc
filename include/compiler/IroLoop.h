@@ -227,7 +227,6 @@ extern struct IRONode *data_00587c68;
 extern struct IRONode *iro_flowgraph_head;
 extern struct IRONode **iroNodesByIndex;
 extern struct IRONode *data_00587fac;
-extern CInt64 cint64_one;
 static void CInt64_SetLong(CInt64 *pN, SInt32 n)
 {
     pN->lo = n;

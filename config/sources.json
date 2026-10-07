@@ -1602,8 +1602,7 @@
     ],
     "include_dirs": [
       "src/frontend"
-    ],
-    "status": "NonMatching"
+    ]
   },
   "src/frontend/CFunc.c": {
     "compiler": "pro53",

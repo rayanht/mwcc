@@ -25,11 +25,9 @@ extern void simplify_diadic_nodes(IROLinear *nd);
 extern void collect_eadd_terms(ENode *n);
 extern void simplify_same_linears(IROLinear *node);
 extern void simplify_diadic_constants(IROLinear *node);
-extern struct CInt64 qval_zero;
 extern ENodeList *eadd_terms_tail;
 extern struct ENodeList *eadd_terms;
 extern void simplify_diadic_with_monadic_operand(IROLinear *expr);
-extern CInt64 int64_minus_one;
 
 #ifdef __cplusplus
 }

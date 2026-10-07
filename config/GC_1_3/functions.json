@@ -11807,7 +11807,7 @@
     "name": "CExpr2_FormatCInt64Decimal",
     "address": "0x004c17b0",
     "size": 407,
-    "source": "src/frontend/CExpr2.c"
+    "source": "src/frontend/CInt64.c"
   },
   {
     "name": "fn_004c1950",
@@ -11823,19 +11823,19 @@
     "name": "CExpr2_ParseDecimalCInt64",
     "address": "0x004c1ad0",
     "size": 380,
-    "source": "src/frontend/CExpr2.c"
+    "source": "src/frontend/CInt64.c"
   },
   {
     "name": "CExpr2_ParseOctalInt64",
     "address": "0x004c1c50",
     "size": 197,
-    "source": "src/frontend/CExpr2.c"
+    "source": "src/frontend/CInt64.c"
   },
   {
     "name": "CExpr2_ConvertCInt64ToDouble",
     "address": "0x004c1d20",
     "size": 124,
-    "source": "src/frontend/CExpr2.c"
+    "source": "src/frontend/CInt64.c"
   },
   {
     "name": "fn_004c1da0",
@@ -11846,7 +11846,7 @@
     "name": "CExpr2_ConvertDoubleToCInt64",
     "address": "0x004c1e10",
     "size": 136,
-    "source": "src/frontend/CExpr2.c"
+    "source": "src/frontend/CInt64.c"
   },
   {
     "name": "fn_004c1ea0",
@@ -11857,49 +11857,49 @@
     "name": "CExpr2_ConvertCInt64ToUInt8",
     "address": "0x004c1fe0",
     "size": 18,
-    "source": "src/frontend/CExpr2.c"
+    "source": "src/frontend/CInt64.c"
   },
   {
     "name": "CExpr2_SignExtendSignedChar",
     "address": "0x004c2000",
     "size": 37,
-    "source": "src/frontend/CExpr2.c"
+    "source": "src/frontend/CInt64.c"
   },
   {
     "name": "CExpr2_ConvertCInt64ToUnsignedShort",
     "address": "0x004c2030",
     "size": 18,
-    "source": "src/frontend/CExpr2.c"
+    "source": "src/frontend/CInt64.c"
   },
   {
     "name": "CExpr2_SignExtendShort",
     "address": "0x004c2050",
     "size": 37,
-    "source": "src/frontend/CExpr2.c"
+    "source": "src/frontend/CInt64.c"
   },
   {
     "name": "CExpr2_ClearCInt64Hi",
     "address": "0x004c2080",
     "size": 11,
-    "source": "src/frontend/CExpr2.c"
+    "source": "src/frontend/CInt64.c"
   },
   {
     "name": "CExpr2_SignExtendCInt64",
     "address": "0x004c2090",
     "size": 24,
-    "source": "src/frontend/CExpr2.c"
+    "source": "src/frontend/CInt64.c"
   },
   {
     "name": "CExpr2_BitwiseOrCInt64",
     "address": "0x004c20b0",
     "size": 25,
-    "source": "src/frontend/CExpr2.c"
+    "source": "src/frontend/CInt64.c"
   },
   {
     "name": "xor_64",
     "address": "0x004c20d0",
     "size": 25,
-    "source": "src/frontend/CExpr2.c"
+    "source": "src/frontend/CInt64.c"
   },
   {
     "name": "CInt64_And",
@@ -12052,13 +12052,13 @@
     "name": "CFunc_BitwiseNot",
     "address": "0x004c33c0",
     "size": 33,
-    "source": "src/frontend/CFunc.c"
+    "source": "src/frontend/CInt64.c"
   },
   {
     "name": "CFunc_LogicalNotCInt64",
     "address": "0x004c33f0",
     "size": 49,
-    "source": "src/frontend/CFunc.c"
+    "source": "src/frontend/CInt64.c"
   },
   {
     "name": "fn_004c3430",

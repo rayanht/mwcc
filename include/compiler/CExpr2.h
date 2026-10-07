@@ -4,10 +4,6 @@
 #include "compiler/common.h"
 #include "compiler/CSOM.h"
 
-typedef struct {
-    float value; /* 0x00: CExpr2.c power-of-two values */
-} PowerOfTwo;
-
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -156,44 +152,14 @@ extern ENode *CExpr_LValue(ENode *expr, Boolean checkConst, Boolean reportError)
 extern void build_destructor_aware_call(ENode *expression, Type *type, Boolean skipLookup);
 extern ENode *make_call_with_optional_size_arg(Object *func, ENode *arg, Type *argtype);
 extern ENode *scannew(char global);
-extern int CExpr2_FormatCInt64Decimal(char *output, CInt64 num);
-extern char *CExpr2_ParseHexInt64(CInt64 *value, char *p, Boolean *overflow);
-extern UInt8 *CExpr2_ParseDecimalCInt64(CInt64 *v, char *s, Boolean *ovf);
-extern char *CExpr2_ParseOctalInt64(CInt64 *val, char *s, Boolean *overflow);
-extern double CExpr2_ConvertCInt64ToDouble(CInt64 *val);
-extern void CExpr2_ConvertDoubleToCInt64(CInt64 *p, double x);
-extern void CExpr2_ConvertDoubleToUnsignedCInt64(CInt64 *result, double value);
-extern void CExpr2_ConvertCInt64ToUInt8(CInt64 *value);
-extern void CExpr2_SignExtendSignedChar(CInt64 *value);
-extern void CExpr2_ConvertCInt64ToUnsignedShort(CInt64 *value);
-extern void CExpr2_SignExtendShort(register CInt64 *value);
-extern void CExpr2_ClearCInt64Hi(CInt64 *a0);
-extern int CExpr2_SignExtendCInt64(CInt64 *value);
-extern CInt64 CExpr2_BitwiseOrCInt64(CInt64 left, CInt64 right);
 extern struct Object *array_allocation_runtime_function;
 extern Boolean (*DAT_00587fd8)(int value, struct Object *object);
-extern struct FuncArg operator_operand_arg;
-extern struct FuncArg right_operand_arg;
-extern double data_00555480;
-extern SInt32 conversion_score;
-extern void *array_bound;
-extern SInt16 data_005806aa;
-extern SInt16 data_005806ac;
-extern SInt16 data_005806ae;
-extern SInt16 data_005806b0;
-extern UInt8 expr_search_types[];
-extern void (*data_00580748)(ENode *);
-extern SInt32 data_0058074c;
 extern FuncArg data_00583098;
 extern struct ENode *converted_expr;
 extern UInt8 data_0058850e;
 extern UInt8 data_0058852b;
-extern ComparisonValues bestComparison;
 extern TypeIntegral stsignedlong;
 extern struct ENode *scandelete(char mode);
-extern char *parse_binary_digits(CInt64 *value, char *digits, unsigned char *overflow);
-extern double CExpr2_ConvertUnsignedCInt64ToDouble(CInt64 *v);
-extern CInt64 xor_64(CInt64 a0, CInt64 a1);
 struct Type;
 struct Object;
 struct Object;

@@ -30,8 +30,6 @@ extern CInt64 data_00553a10;
 extern CInt64 range_int32_max;
 extern CInt64 type_range_min;
 extern CInt64 data_00553a28;
-extern CInt64 int64_max;
-extern CInt64 cint64_min;
 extern struct ERangeVar *first_range_var;
 
 #ifdef __cplusplus

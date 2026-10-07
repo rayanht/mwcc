@@ -113,8 +113,6 @@ struct SwitchInfo {
 };
 #pragma options align = reset
 extern void CFunc_Gen(Statement *context, Object *object, unsigned int options);
-extern CInt64 CFunc_BitwiseNot(CInt64 input);
-extern CInt64 CFunc_LogicalNotCInt64(CInt64 input);
 extern void parse_ctor_initializers(void);
 extern void fn_00476e60(TypeClass *type);
 extern NameSpace *CFunc_FuncGenSetup(Statement *stmt, Object *func);

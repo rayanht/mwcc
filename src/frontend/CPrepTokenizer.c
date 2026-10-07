@@ -12,6 +12,7 @@
 #include "compiler/CExpr2.h"
 #include "compiler/CFunc.h"
 #include "compiler/CInline.h"
+#include "compiler/CInt64.h"
 #include "compiler/CMachine.h"
 #include "compiler/CPrec.h"
 #include "compiler/CPrep.h"

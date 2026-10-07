@@ -4,6 +4,490 @@
 #include "compiler/IroLoop.h"
 #include "compiler/IroRangePropagation.h"
 
+typedef struct {
+    float value; /* 0x00: CExpr2.c power-of-two values */
+} PowerOfTwo;
+
+CInt64 int64_minus_one = {0xFFFFFFFF, 0xFFFFFFFF};
+CInt64 qval_zero = {0, 0};
+CInt64 cint64_one = {0, 1};
+CInt64 int64_max = {0x7FFFFFFF, 0xFFFFFFFF};
+CInt64 cint64_min = {0x80000000, 0};
+
+#pragma options align = mac68k
+static Boolean data_00580758;
+static float data_0058075a;
+static float data_0058075e[65];
+#pragma options align = reset
+
+static Boolean iszero(const CInt64 *n)
+{
+    return n->hi == 0 && n->lo == 0;
+}
+
+static CInt64 inv(CInt64 input)
+{
+    CInt64 output;
+    output.hi = ~input.hi;
+    output.lo = ~input.lo;
+    return output;
+}
+
+static CInt64 neg(CInt64 input)
+{
+    CInt64 result;
+    result = CInt64_Add(inv(input), cint64_one);
+    return result;
+}
+
+static Boolean isneg(const CInt64 *n)
+{
+    return (n->hi & 0x80000000) != 0;
+}
+
+static CInt64 modu(CInt64 lhs, CInt64 rhs)
+{
+    CInt64 result;
+    CInt64 *a = &lhs;
+    CInt64 *b = &rhs;
+    CInt64 *r = &result;
+    CInt64_DivMod(a, b, NULL, r);
+    return result;
+}
+
+static CInt64 divu(CInt64 lhs, CInt64 rhs)
+{
+    CInt64 result;
+    CInt64 *a = &lhs;
+    CInt64 *b = &rhs;
+    CInt64 *r = &result;
+    CInt64_DivMod(a, b, r, NULL);
+    return result;
+}
+
+int CExpr2_FormatCInt64Decimal(char *output, CInt64 num)
+{
+    int length;
+    CInt64 rem;
+    CInt64 divisor;
+    char buf[32];
+    char *bufp;
+
+    length = 0;
+    if (isneg(&num)) {
+        num = neg(num);
+        *output = '-';
+        output++;
+        length++;
+    }
+
+    if (!iszero(&num)) {
+        divisor.lo = 10;
+        divisor.hi = 0;
+
+        bufp = buf;
+        for (;;) {
+            rem = modu(num, divisor);
+            *(bufp++) = rem.lo + '0';
+            num = divu(num, divisor);
+            if (iszero(&num) != 0)
+                break;
+        }
+
+        while (--bufp >= buf) {
+            *(output++) = *bufp;
+            length++;
+        }
+    } else {
+        *(output++) = '0';
+        length++;
+    }
+
+    *output = 0;
+    return length;
+}
+
+/* The linker stripped the function that used these literals; they stay in the unit's .data. */
+static void CInt64_ScanAsmNumberLiterals(const char **literals)
+{
+    literals[0] = "01";
+    literals[1] = "bB";
+    literals[2] = "234567";
+    literals[3] = "89";
+    literals[4] = "acdefACEDF";
+}
+
+char *parse_binary_digits(CInt64 *value, char *digits, unsigned char *overflow)
+{
+    UInt32 low;
+    Boolean bit;
+    UInt32 high;
+    char digit;
+    *overflow = 0;
+    value->lo = 0;
+    value->hi = 0;
+    do {
+        digit = *digits;
+        if (digit == '0')
+            bit = FALSE;
+        else if (digit == '1')
+            bit = TRUE;
+        else
+            break;
+        high = value->hi;
+        ++digits;
+        low = value->lo;
+        if ((high & 0x80000000) != 0)
+            *overflow = 1;
+        high = high << 1;
+        if ((low & 0x80000000) != 0)
+            high |= 1;
+        value->hi = high;
+        value->lo = low << 1;
+        if (bit == TRUE)
+            *value = CInt64_Add(*value, cint64_one);
+    } while (TRUE);
+    return digits;
+}
+
+char *CExpr2_ParseHexInt64(CInt64 *value, char *p, Boolean *overflow)
+{
+    SInt8 digit;
+    SInt32 n;
+    UInt32 hi, lo;
+    CInt64 d;
+
+    *overflow = 0;
+    value->lo = 0;
+    value->hi = 0;
+    for (;;) {
+        digit = *p;
+        if (digit >= '0' && digit <= '9')
+            digit -= '0';
+        else if (digit >= 'A' && digit <= 'F')
+            digit -= 'A' - 10;
+        else if (digit >= 'a' && digit <= 'f')
+            digit -= 'a' - 10;
+        else
+            break;
+
+        hi = value->hi;
+        p++;
+        lo = value->lo;
+        if (hi & 0xf0000000)
+            *overflow = 1;
+        hi <<= 1;
+        if (lo & 0x80000000)
+            hi |= 1;
+        lo <<= 1;
+        hi <<= 1;
+        if (lo & 0x80000000)
+            hi |= 1;
+        lo <<= 1;
+        hi <<= 1;
+        if (lo & 0x80000000)
+            hi |= 1;
+        lo <<= 1;
+        hi <<= 1;
+        if (lo & 0x80000000)
+            hi |= 1;
+        lo <<= 1;
+        value->hi = hi;
+        value->lo = lo;
+
+        n = digit;
+        d.lo = n;
+        d.hi = n < 0 ? -1 : 0;
+        *value = CInt64_Add(*value, d);
+    }
+    return p;
+}
+
+/* The powers of two from 2^0 to 2^64, built on first use: RESULT = 2^N. */
+#define POWER_OF_TWO(result, n)                                                                                        \
+    do {                                                                                                               \
+        static float one = 1.0f;                                                                                       \
+        int i;                                                                                                         \
+                                                                                                                       \
+        if (!data_00580758) {                                                                                          \
+            data_0058075a = one;                                                                                       \
+            i = 0;                                                                                                     \
+            do {                                                                                                       \
+                data_0058075e[i] = data_0058075a;                                                                      \
+                data_0058075a += data_0058075a;                                                                        \
+            } while (++i < 65);                                                                                        \
+            data_00580758 = 1;                                                                                         \
+        }                                                                                                              \
+        (result) = data_0058075e[(short)(n)];                                                                          \
+    } while (0)
+
+UInt8 *CExpr2_ParseDecimalCInt64(CInt64 *v, char *s, Boolean *ovf)
+{
+    CInt64 t;
+    char c;
+    SInt32 hi;
+    UInt32 lo;
+    *ovf = 0;
+    v->lo = 0;
+    v->hi = 0;
+    while ((c = *s) >= '0' && c <= '9') {
+        hi = v->hi;
+        lo = v->lo;
+        if (hi & 0xe0000000)
+            *ovf = 1;
+        hi <<= 1;
+        if (lo & 0x80000000)
+            hi |= 1;
+        lo <<= 1;
+        t.hi = hi;
+        t.lo = lo;
+        hi <<= 1;
+        if (lo & 0x80000000)
+            hi |= 1;
+        lo <<= 1;
+        hi <<= 1;
+        if (lo & 0x80000000)
+            hi |= 1;
+        lo <<= 1;
+        v->hi = hi;
+        v->lo = lo;
+        if (isneg(v)) {
+            *v = CInt64_Add(*v, t);
+            if (!isneg(v))
+                *ovf = 1;
+        } else {
+            *v = CInt64_Add(*v, t);
+        }
+        t.lo = c - '0';
+        t.hi = c - '0' < 0 ? -1 : 0;
+        if (isneg(v)) {
+            *v = CInt64_Add(*v, t);
+            if (!isneg(v))
+                *ovf = 1;
+        } else {
+            *v = CInt64_Add(*v, t);
+        }
+        s++;
+    }
+    return (UInt8 *)s;
+}
+
+char *CExpr2_ParseOctalInt64(CInt64 *val, char *s, Boolean *overflow)
+{
+    char c;
+    UInt32 hi;
+    UInt32 lo;
+    SInt32 digit;
+    CInt64 d;
+    *overflow = 0;
+    val->lo = 0;
+    val->hi = 0;
+    while (*s >= '0' && *s <= '7') {
+        c = *s;
+        hi = val->hi;
+        lo = val->lo;
+        if (hi & 0xE0000000)
+            *overflow = 1;
+        hi <<= 1;
+        if (lo & 0x80000000)
+            hi |= 1;
+        lo <<= 1;
+        hi <<= 1;
+        if (lo & 0x80000000)
+            hi |= 1;
+        lo <<= 1;
+        hi <<= 1;
+        if (lo & 0x80000000)
+            hi |= 1;
+        lo <<= 1;
+        val->hi = hi;
+        val->lo = lo;
+        digit = c - '0';
+        d.lo = digit;
+        d.hi = digit < 0 ? -1 : 0;
+        *val = CInt64_Add(*val, d);
+        s++;
+    }
+    return s;
+}
+
+double CExpr2_ConvertCInt64ToDouble(CInt64 *val)
+{
+    CInt64 tmp;
+    if (isneg(val)) {
+        tmp = neg(*val);
+        return -CExpr2_ConvertUnsignedCInt64ToDouble(&tmp);
+    }
+    return CExpr2_ConvertUnsignedCInt64ToDouble(val);
+}
+
+double CExpr2_ConvertUnsignedCInt64ToDouble(CInt64 *v)
+{
+    double result;
+    Boolean iszero;
+    static double data_00555460 = 0.0;
+    static double data_00555468 = 0.0;
+    static double data_00555470 = 1.0;
+    static long double data_00555478 = 1.0L;
+    SInt32 word;
+    int i;
+
+    iszero = (v->hi == 0 && v->lo == 0);
+    if (iszero)
+        return data_00555460;
+
+    result = data_00555468;
+
+    word = v->hi;
+    if (word != 0) {
+        i = 0;
+        do {
+            result += result;
+            if (word & 0x80000000)
+                result += data_00555470;
+            i++;
+            word <<= 1;
+        } while (i < 32);
+    }
+
+    word = v->lo;
+    i = 0;
+    do {
+        result += result;
+        if (word & 0x80000000)
+            result = result + data_00555478;
+        i++;
+        word <<= 1;
+    } while (i < 32);
+
+    return result;
+}
+
+void CExpr2_ConvertDoubleToCInt64(CInt64 *p, double x)
+{
+    CInt64 r, w, v;
+    if (x < 0.0) {
+        CExpr2_ConvertDoubleToUnsignedCInt64(p, -x);
+        v = *p;
+        w.hi = ~v.hi, w.lo = ~v.lo;
+        r = CInt64_Add(w, cint64_one);
+        *p = r;
+    } else {
+        CExpr2_ConvertDoubleToUnsignedCInt64(p, x);
+    }
+}
+
+/* VALUE as an unsigned 64-bit integer: 0 at or below zero, all ones from 2^64 up. */
+void CExpr2_ConvertDoubleToUnsignedCInt64(CInt64 *result, double value)
+{
+    static double data_00555488 = 0.0;
+    UInt32 hi, lo;
+    int bit;
+    float limit;
+    PowerOfTwo power, threshold;
+
+    power.value = threshold.value = 0.0;
+    if (value <= data_00555488) {
+        result->hi = 0;
+        result->lo = 0;
+        return;
+    }
+    POWER_OF_TWO(limit, 64);
+    if (value >= limit) {
+        result->hi = 0xffffffff;
+        result->lo = 0xffffffff;
+        return;
+    }
+    hi = lo = 0;
+    bit = 63;
+    do {
+        hi <<= 1;
+        if (lo & 0x80000000)
+            hi |= 1;
+        lo <<= 1;
+        POWER_OF_TWO(threshold.value, bit);
+        power.value = threshold.value;
+        threshold.value = (float)(double)threshold.value;
+        if (threshold.value <= value) {
+            lo |= 1;
+            value -= power.value;
+        }
+    } while (--bit >= 0);
+    result->hi = hi;
+    result->lo = lo;
+}
+
+void CExpr2_ConvertCInt64ToUInt8(CInt64 *value)
+{
+    value->lo = (UInt8)value->lo;
+    value->hi = 0;
+}
+
+void CExpr2_SignExtendSignedChar(CInt64 *value)
+{
+    SInt32 high;
+
+    value->lo = (signed char)value->lo;
+    if ((value->lo & 0x80000000) != 0) {
+        high = -1;
+    } else {
+        high = 0;
+    }
+    value->hi = high;
+}
+
+void CExpr2_ConvertCInt64ToUnsignedShort(CInt64 *value)
+{
+    value->lo = (unsigned short)value->lo;
+    value->hi = 0;
+}
+
+void CExpr2_SignExtendShort(register CInt64 *value)
+{
+    UInt32 high;
+
+    value->lo = (SInt32)(short)value->lo;
+    if ((value->lo & 0x80000000) != 0) {
+        high = 0xffffffff;
+    } else {
+        high = 0;
+    }
+    value->hi = high;
+}
+
+void CExpr2_ClearCInt64Hi(CInt64 *value)
+{
+    value->hi = 0;
+}
+
+int CExpr2_SignExtendCInt64(CInt64 *value)
+{
+    int highWord;
+
+    highWord = value->lo & 0x80000000;
+    if (highWord != 0) {
+        highWord = -1;
+    } else {
+        highWord = 0;
+    }
+    value->hi = highWord;
+    return highWord;
+}
+
+CInt64 CExpr2_BitwiseOrCInt64(CInt64 left, CInt64 right)
+{
+    left.hi |= right.hi;
+    left.lo |= right.lo;
+    return left;
+}
+
+CInt64 xor_64(CInt64 left, CInt64 right)
+{
+    left.hi ^= right.hi;
+    left.lo ^= right.lo;
+    return left;
+}
+
 static float lbl_00555498 = 1.0f;
 
 static CInt64 mask_xor(CInt64 v, CInt64 m)
@@ -435,26 +919,6 @@ CInt64 CInt64_Div(CInt64 dividend, CInt64 divisor)
     }
 }
 
-static Boolean iszero(const CInt64 *n)
-{
-    return n->hi == 0 && n->lo == 0;
-}
-
-static CInt64 inv(CInt64 input)
-{
-    CInt64 output;
-    output.hi = ~input.hi;
-    output.lo = ~input.lo;
-    return output;
-}
-
-static CInt64 neg(CInt64 input)
-{
-    CInt64 result;
-    result = CInt64_Add(inv(input), cint64_one);
-    return result;
-}
-
 static CInt64 sub(CInt64 lhs, CInt64 rhs)
 {
     lhs = CInt64_Add(lhs, neg(rhs));
@@ -521,7 +985,7 @@ void CInt64_DivMod(const CInt64 *lhs, const CInt64 *rhs, CInt64 *pDiv, CInt64 *p
     }
 }
 
-static Boolean isneg(CInt64 x)
+static Boolean isneg_value(CInt64 x)
 {
     return (x.hi & 0x80000000) != 0;
 }
@@ -543,14 +1007,14 @@ static CInt64 lneg(CInt64 x)
 
 CInt64 CInt64_Mul(CInt64 a, CInt64 b)
 {
-    if (isneg(b)) {
-        if (isneg(a)) {
+    if (isneg_value(b)) {
+        if (isneg_value(a)) {
             return CInt64_MulU(lneg(a), lneg(b));
         } else {
             return lneg(CInt64_MulU(a, lneg(b)));
         }
     } else {
-        if (isneg(a)) {
+        if (isneg_value(a)) {
             return lneg(CInt64_MulU(lneg(a), b));
         } else {
             return CInt64_MulU(a, b);
@@ -640,4 +1104,21 @@ CInt64 CInt64_Add(CInt64 a, CInt64 b)
     }
     a.hi += b.hi;
     return a;
+}
+
+CInt64 CFunc_BitwiseNot(CInt64 input)
+{
+    CInt64 output;
+    output.hi = ~input.hi;
+    output.lo = ~input.lo;
+    return output;
+}
+
+CInt64 CFunc_LogicalNotCInt64(CInt64 input)
+{
+    CInt64 output;
+    long value = (Boolean)(input.hi == 0 && input.lo == 0);
+    output.lo = value;
+    output.hi = value < 0 ? -1 : 0;
+    return output;
 }

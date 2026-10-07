@@ -108,6 +108,7 @@
     "src/frontend/CError.c",
     "src/frontend/CException.c",
     "src/frontend/CExpr.c",
+    "src/frontend/CExpr2.c",
     "src/frontend/CFunc.c",
     "src/frontend/CInit.c",
     "src/frontend/CInline.c",

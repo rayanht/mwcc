@@ -86,7 +86,6 @@ extern Type *match_intrinsic_triple(UInt16 id, ENodeList *args, HashNameNode *na
 extern Type *check_binary_intrinsic_args(UInt16 op, ENodeList *args, HashNameNode *opname);
 extern SInt32 select_altivec_mangle_result(UInt16 code, ENodeList *arg2, HashNameNode *nm);
 extern int _DAT_005557c8;
-extern struct MangleEntry *DAT_0055542c[];
 extern short intrinsic_opcodes[];
 extern struct Object *data_00587fc0;
 extern SInt16 gUsedVirtualRegistersVR;
