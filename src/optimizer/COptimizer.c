@@ -1532,10 +1532,6 @@ void eliminate_unreachable_statements(Statement *items)
 /* 0x581304: last node seen */
 /* 0x581308: count */
 
-/* In this build EFUNCCALL is 0x38 (the reconstructed header is two low). */
-#undef EFUNCCALL
-#define EFUNCCALL 0x38
-
 void COptimizer_004c0800(ENode *n)
 {
     for (;;) {
@@ -1543,7 +1539,7 @@ void COptimizer_004c0800(ENode *n)
             case ETYPCON:
                 n = n->data.diadic.left;
                 break;
-            case EFUNCCALL:
+            case EOBJREF:
                 last_node = n;
                 DAT_00581308++;
                 return;

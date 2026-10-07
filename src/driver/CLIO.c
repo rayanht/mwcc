@@ -341,6 +341,11 @@ void fn_004151c0(void)
     return;
 }
 
+void fn_004151d0(int)
+{
+    return;
+}
+
 void fn_004151e0(void)
 {
     return;
@@ -352,9 +357,33 @@ unsigned char fn_004151f0(void)
     return data_00587325;
 }
 
-void fn_004151d0(int)
+void reset_column_and_append_prefix(struct ByteBuffer *node)
 {
-    return;
+    node->column = 0;
+    if ((DAT_00541b3e == '\0') && (node->prefix != NULL)) {
+        append_text(node, node->prefix);
+    }
+}
+
+void append_text(struct ByteBuffer *buffer, char *text)
+{
+    int length;
+    length = strlen(text);
+    if (buffer->size + length >= buffer->capacity) {
+        buffer->capacity = buffer->capacity * 2 + length;
+        if (buffer->callerOwned != 0) {
+            char *oldData = buffer->data;
+            buffer->data = xmalloc("message buffer", buffer->capacity);
+            memcpy(buffer->data, oldData, buffer->size);
+        } else {
+            buffer->data =
+                xrealloc("message buffer", (buffer->callerOwned != 0) ? NULL : buffer->data, buffer->capacity);
+        }
+        buffer->callerOwned = 0;
+    }
+    memcpy(buffer->data + buffer->size, text, length);
+    buffer->size += length;
+    buffer->column += length;
 }
 
 void wrap_line(struct ByteBuffer *p)
@@ -388,6 +417,34 @@ void wrap_line(struct ByteBuffer *p)
         n--;
         append_byte(p, buf[n]);
     }
+}
+
+void append_prefix_separator(struct ByteBuffer *state)
+{
+    if (state->prefix != NULL) {
+        append_byte(state, '\n');
+    } else {
+        append_byte(state, ' ');
+    }
+    reset_column_and_append_prefix(state);
+}
+
+void append_byte(struct ByteBuffer *buffer, char value)
+{
+    char *old_data;
+    if (buffer->size >= buffer->capacity) {
+        buffer->capacity <<= 1;
+        if (buffer->callerOwned) {
+            old_data = buffer->data;
+            buffer->data = xmalloc("message buffer", buffer->capacity);
+            memcpy(buffer->data, old_data, buffer->size);
+        } else {
+            buffer->data = xrealloc("message buffer", buffer->data, buffer->capacity);
+        }
+        buffer->callerOwned = 0;
+    }
+    buffer->data[buffer->size++] = (unsigned char)value;
+    buffer->column++;
 }
 
 /* Growable byte buffer with a count of appended bytes. */
@@ -448,63 +505,6 @@ char *format_prefixed_text(char *output, int remaining, char *prefix, char *form
     }
     append_byte(&state, 0);
     return (char *)state.data;
-}
-
-void append_prefix_separator(struct ByteBuffer *state)
-{
-    if (state->prefix != NULL) {
-        append_byte(state, '\n');
-    } else {
-        append_byte(state, ' ');
-    }
-    reset_column_and_append_prefix(state);
-}
-
-void reset_column_and_append_prefix(struct ByteBuffer *node)
-{
-    node->column = 0;
-    if ((DAT_00541b3e == '\0') && (node->prefix != NULL)) {
-        append_text(node, node->prefix);
-    }
-}
-
-void append_text(struct ByteBuffer *buffer, char *text)
-{
-    int length;
-    length = strlen(text);
-    if (buffer->size + length >= buffer->capacity) {
-        buffer->capacity = buffer->capacity * 2 + length;
-        if (buffer->callerOwned != 0) {
-            char *oldData = buffer->data;
-            buffer->data = xmalloc("message buffer", buffer->capacity);
-            memcpy(buffer->data, oldData, buffer->size);
-        } else {
-            buffer->data =
-                xrealloc("message buffer", (buffer->callerOwned != 0) ? NULL : buffer->data, buffer->capacity);
-        }
-        buffer->callerOwned = 0;
-    }
-    memcpy(buffer->data + buffer->size, text, length);
-    buffer->size += length;
-    buffer->column += length;
-}
-
-void append_byte(struct ByteBuffer *buffer, char value)
-{
-    char *old_data;
-    if (buffer->size >= buffer->capacity) {
-        buffer->capacity <<= 1;
-        if (buffer->callerOwned) {
-            old_data = buffer->data;
-            buffer->data = xmalloc("message buffer", buffer->capacity);
-            memcpy(buffer->data, old_data, buffer->size);
-        } else {
-            buffer->data = xrealloc("message buffer", buffer->data, buffer->capacity);
-        }
-        buffer->callerOwned = 0;
-    }
-    buffer->data[buffer->size++] = (unsigned char)value;
-    buffer->column++;
 }
 
 char *forward_format_arguments(char *output, int size, char *prefix, char *format, ...)
@@ -578,102 +578,101 @@ void update_cached_specs(OSSpec *recordAddress)
     }
 }
 
-void format_and_print_message(Plugin *type, DiagnosticSourcePosition *obj, int messageCode, SInt16 kind,
-                              char *formatFlags, char **formatOptions)
+static inline void emitDiagnosticText(short kind, const char *text)
 {
-    char formattedBuffer[256];
-    char messageBuffer[256];
-    char *formatted;
-    char *message;
-    char *line;
-    char *end;
-
-    if (obj != NULL) {
-        if (kind != 3) {
-            message = mprintf(messageBuffer, sizeof(messageBuffer),
-                              "%s:%d:%s: ", CLProj_MakeRelativePath(&obj->file, NULL, data_005880e0, 0x104), obj->line,
-                              data_0054b9c0[36 + kind]);
-        } else {
-            message = mprintf(messageBuffer, sizeof(messageBuffer),
-                              "%s:%d: ", CLProj_MakeRelativePath(&obj->file, NULL, data_005880e0, 0x104), obj->line);
-        }
-    } else {
-        if (kind != 5) {
-            message = mprintf(messageBuffer, sizeof(messageBuffer), "%s: ", program_name);
-        } else {
-            messageBuffer[0] = 0;
-            message = messageBuffer;
-        }
-    }
-
-    formatted = format_prefixed_text(formattedBuffer, sizeof(formattedBuffer), message, formatFlags, formatOptions);
-    if (message != messageBuffer)
-        free(message);
-
-    line = formatted;
-    while (*line != 0) {
-        end = line;
-        while (*end != 0 && *end != '\n')
-            end++;
-        emit_formatted_message(kind, "%.*s\n", end - line, line);
-        if (*end != 0)
-            end++;
-        line = end;
-    }
-    if (formatted != formattedBuffer)
-        free(formatted);
+    write_text_to_stdout_or_stderr(0, kind, text);
 }
 
-void CLIO_FormatAndDispatchText(char *fmt, ...)
+static inline void formatDiagnosticDetail(char *buffer, const char *format, const char *label, char *location)
 {
-    char buf[256];
-    char *text;
-    va_list args;
-
-    args = (va_list)&fmt + (((va_list)(&fmt + 1) - (va_list)&fmt + 3) / 4 * 4);
-    text = mvprintf(buf, sizeof(buf), fmt, args);
-    write_text_to_stdout_or_stderr(0, 1, text);
-    if (text != buf)
-        free(text);
+    sprintf(buffer, format, label, location);
 }
 
-void CLIO_WriteFormattedText(const char *format, ...)
+char *make_source_position_carets(DiagnosticSourcePosition *sourcePosition)
 {
-    char buffer[256];
-    va_list args;
-    char *text;
+    int column;
+    int length;
 
-    args = (va_list)&format + (((va_list)(&format + 1) - (va_list)&format) + 3) / 4 * 4;
-    text = mvprintf(buffer, sizeof(buffer), format, args);
-    write_text_to_stdout_or_stderr(0, 3, text);
-    if (text != buffer)
-        free(text);
-}
-
-void extract_diagnostic_source_line(DiagnosticSourcePosition *info)
-{
-    char *start, *end;
-    SInt32 len, i;
-    if (info->sourceLine != NULL && *info->sourceLine != '\0') {
-        start = info->sourceLine + info->column;
-        end = info->sourceLine + info->column + info->length - 1;
-        if (end < start)
-            end = start;
-        while (start > info->sourceLine && start[-1] != '\r')
-            start--;
-        while (*end != '\0' && *end != '\r' && *end != '\n')
-            end++;
-        len = end - start;
-        info->sourceLine = xmalloc("text buffer", len + 1);
-        strncpy(info->sourceLine, start, len);
-        info->sourceLine[len] = '\0';
-        for (i = 0; i < len; i++) {
-            if (info->sourceLine[i] < ' ' || info->sourceLine[i] >= 0x7f)
-                info->sourceLine[i] = ' ';
+    DAT_0057edfd[0] = 0;
+    column = sourcePosition->column;
+    column %= data_00541b3a;
+    if ((column >= 0) && ((unsigned)column < 0x100)) {
+        length = (int)sourcePosition->length;
+        if (0x100 < (unsigned)(length + column)) {
+            length = 0x100 - column;
         }
-    } else {
-        info->sourceLine = NULL;
+        if (length == 0) {
+            length = 1;
+        }
+        memset(DAT_0057edfd, ' ', column);
+        memset(DAT_0057edfd + column, '^', length);
+        DAT_0057edfd[column + length] = 0;
     }
+    return DAT_0057edfd;
+}
+
+static inline char *formatDiagnosticPath(const char *path)
+{
+    return CLProj_MakeRelativePath((OSSpec *)path, NULL, data_005880e0, 260);
+}
+
+unsigned char nonmatching_plugin_with_clear_high_bit(Plugin *type)
+{
+    struct CLTarget *entries;
+    struct ObjFlagsData *flags;
+
+    flags = CLPlugins_GetObjectFlags(type);
+    if ((flags->compilerFlags & 0x80000000U) != 0U)
+        return 0;
+
+    entries = default_target;
+
+    if (type == CLPlugins_FindMatchingTargetPlugin(NULL, entries->cpu, entries->os, plugin_type, data_005871d0))
+        return 0;
+    return 1;
+}
+
+char *get_plugin_type_name(Plugin *tool)
+{
+    PluginDesc *identification;
+
+    if (tool != NULL) {
+        identification = CLPlugins_GetPluginDesc(tool);
+        switch (identification->type) {
+            case 'cldr':
+                return "Driver";
+            case 'Pars':
+                return "Usage";
+            case 'Comp':
+                if (identification->lang == 'c++ ' || identification->lang == 'pasc')
+                    return "Compiler";
+                if (identification->lang == 'Asm ')
+                    return "Assembler";
+                if (nonmatching_plugin_with_clear_high_bit(tool) != 0)
+                    return "Importer";
+                return "Compiler";
+            case 'Link':
+                return "Linker";
+        }
+    }
+    return "Driver";
+}
+
+unsigned char *select_plugin_type_data(Plugin *value)
+{
+    PluginDesc *record;
+    if (value != NULL) {
+        record = CLPlugins_GetPluginDesc(value);
+        switch (record->type) {
+            case 0x50617273:
+                return plugin_type_strings;
+            case 0x436F6D70:
+                return compiling_plugin_type;
+            case 0x4C696E6B:
+                return data_0054bab8;
+        }
+    }
+    return data_0054bac0;
 }
 
 void print_diagnostic(Plugin *object, DiagnosticSourcePosition *dump, SInt32 diagnosticCode, SInt16 level,
@@ -706,15 +705,6 @@ void print_diagnostic(Plugin *object, DiagnosticSourcePosition *dump, SInt32 dia
     if (message != buffer) {
         free(message);
     }
-}
-
-static inline void emitDiagnosticText(short kind, const char *text)
-{
-    write_text_to_stdout_or_stderr(0, kind, text);
-}
-static inline void formatDiagnosticDetail(char *buffer, const char *format, const char *label, char *location)
-{
-    sprintf(buffer, format, label, location);
 }
 
 void emit_formatted_diagnostic(Plugin *source, DiagnosticSourcePosition *diagnostic, int unused, short kind,
@@ -773,48 +763,50 @@ void emit_formatted_diagnostic(Plugin *source, DiagnosticSourcePosition *diagnos
     }
 }
 
-char *make_source_position_carets(DiagnosticSourcePosition *sourcePosition)
+void format_and_print_message(Plugin *type, DiagnosticSourcePosition *obj, int messageCode, SInt16 kind,
+                              char *formatFlags, char **formatOptions)
 {
-    int column;
-    int length;
+    char formattedBuffer[256];
+    char messageBuffer[256];
+    char *formatted;
+    char *message;
+    char *line;
+    char *end;
 
-    DAT_0057edfd[0] = 0;
-    column = sourcePosition->column;
-    column %= data_00541b3a;
-    if ((column >= 0) && ((unsigned)column < 0x100)) {
-        length = (int)sourcePosition->length;
-        if (0x100 < (unsigned)(length + column)) {
-            length = 0x100 - column;
+    if (obj != NULL) {
+        if (kind != 3) {
+            message = mprintf(messageBuffer, sizeof(messageBuffer),
+                              "%s:%d:%s: ", CLProj_MakeRelativePath(&obj->file, NULL, data_005880e0, 0x104), obj->line,
+                              data_0054b9c0[36 + kind]);
+        } else {
+            message = mprintf(messageBuffer, sizeof(messageBuffer),
+                              "%s:%d: ", CLProj_MakeRelativePath(&obj->file, NULL, data_005880e0, 0x104), obj->line);
         }
-        if (length == 0) {
-            length = 1;
+    } else {
+        if (kind != 5) {
+            message = mprintf(messageBuffer, sizeof(messageBuffer), "%s: ", program_name);
+        } else {
+            messageBuffer[0] = 0;
+            message = messageBuffer;
         }
-        memset(DAT_0057edfd, ' ', column);
-        memset(DAT_0057edfd + column, '^', length);
-        DAT_0057edfd[column + length] = 0;
     }
-    return DAT_0057edfd;
-}
 
-static inline char *formatDiagnosticPath(const char *path)
-{
-    return CLProj_MakeRelativePath((OSSpec *)path, NULL, data_005880e0, 260);
-}
+    formatted = format_prefixed_text(formattedBuffer, sizeof(formattedBuffer), message, formatFlags, formatOptions);
+    if (message != messageBuffer)
+        free(message);
 
-unsigned char nonmatching_plugin_with_clear_high_bit(Plugin *type)
-{
-    struct CLTarget *entries;
-    struct ObjFlagsData *flags;
-
-    flags = CLPlugins_GetObjectFlags(type);
-    if ((flags->compilerFlags & 0x80000000U) != 0U)
-        return 0;
-
-    entries = default_target;
-
-    if (type == CLPlugins_FindMatchingTargetPlugin(NULL, entries->cpu, entries->os, plugin_type, data_005871d0))
-        return 0;
-    return 1;
+    line = formatted;
+    while (*line != 0) {
+        end = line;
+        while (*end != 0 && *end != '\n')
+            end++;
+        emit_formatted_message(kind, "%.*s\n", end - line, line);
+        if (*end != 0)
+            end++;
+        line = end;
+    }
+    if (formatted != formattedBuffer)
+        free(formatted);
 }
 
 void print_diagnostic_with_details(Plugin *unused, struct DiagnosticDetails *details, int unused2, short diagnostic,
@@ -879,47 +871,56 @@ void emit_formatted_message(short kind, char *format, ...)
         free(message);
 }
 
-char *get_plugin_type_name(Plugin *tool)
+void CLIO_FormatAndDispatchText(char *fmt, ...)
 {
-    PluginDesc *identification;
+    char buf[256];
+    char *text;
+    va_list args;
 
-    if (tool != NULL) {
-        identification = CLPlugins_GetPluginDesc(tool);
-        switch (identification->type) {
-            case 'cldr':
-                return "Driver";
-            case 'Pars':
-                return "Usage";
-            case 'Comp':
-                if (identification->lang == 'c++ ' || identification->lang == 'pasc')
-                    return "Compiler";
-                if (identification->lang == 'Asm ')
-                    return "Assembler";
-                if (nonmatching_plugin_with_clear_high_bit(tool) != 0)
-                    return "Importer";
-                return "Compiler";
-            case 'Link':
-                return "Linker";
-        }
-    }
-    return "Driver";
+    args = (va_list)&fmt + (((va_list)(&fmt + 1) - (va_list)&fmt + 3) / 4 * 4);
+    text = mvprintf(buf, sizeof(buf), fmt, args);
+    write_text_to_stdout_or_stderr(0, 1, text);
+    if (text != buf)
+        free(text);
 }
 
-unsigned char *select_plugin_type_data(Plugin *value)
+void CLIO_WriteFormattedText(const char *format, ...)
 {
-    PluginDesc *record;
-    if (value != NULL) {
-        record = CLPlugins_GetPluginDesc(value);
-        switch (record->type) {
-            case 0x50617273:
-                return plugin_type_strings;
-            case 0x436F6D70:
-                return compiling_plugin_type;
-            case 0x4C696E6B:
-                return data_0054bab8;
+    char buffer[256];
+    va_list args;
+    char *text;
+
+    args = (va_list)&format + (((va_list)(&format + 1) - (va_list)&format) + 3) / 4 * 4;
+    text = mvprintf(buffer, sizeof(buffer), format, args);
+    write_text_to_stdout_or_stderr(0, 3, text);
+    if (text != buffer)
+        free(text);
+}
+
+void extract_diagnostic_source_line(DiagnosticSourcePosition *info)
+{
+    char *start, *end;
+    SInt32 len, i;
+    if (info->sourceLine != NULL && *info->sourceLine != '\0') {
+        start = info->sourceLine + info->column;
+        end = info->sourceLine + info->column + info->length - 1;
+        if (end < start)
+            end = start;
+        while (start > info->sourceLine && start[-1] != '\r')
+            start--;
+        while (*end != '\0' && *end != '\r' && *end != '\n')
+            end++;
+        len = end - start;
+        info->sourceLine = xmalloc("text buffer", len + 1);
+        strncpy(info->sourceLine, start, len);
+        info->sourceLine[len] = '\0';
+        for (i = 0; i < len; i++) {
+            if (info->sourceLine[i] < ' ' || info->sourceLine[i] >= 0x7f)
+                info->sourceLine[i] = ' ';
         }
+    } else {
+        info->sourceLine = NULL;
     }
-    return data_0054bac0;
 }
 
 short CLIO_ReportDiagnostic(Plugin *type, DiagnosticSourcePosition *record, int message, short severity, char *argument,

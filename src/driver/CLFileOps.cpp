@@ -59,7 +59,12 @@ extern "C" {
 #include <stdio.h>
 #include <stdlib.h>
 #define CERROR_FILE "unknown.c"
+}
 
+extern "C" {
+}
+
+extern "C" {
 DWORD __stdcall CLProj_FindFileInSearchPath(char *name, const char *searchPath, OSSpec *result)
 {
     const char *separator;
@@ -130,63 +135,6 @@ int __stdcall CLFileOps_FindExecutable(char *name, void *param2)
     return r;
 }
 
-unsigned int __stdcall set_lookup_paths_name_and_value(unsigned int context, unsigned short recordId, char *text,
-                                                       unsigned short value)
-{
-    struct PayloadWithValue *record;
-    struct CLTarget *state;
-
-    if (default_target->linkage != 1) {
-        return 4;
-    }
-    state = default_target;
-    record = (struct PayloadWithValue *)CLSegs_GetValue(&state->lookupPaths, (&context)[1]);
-    if (record == 0) {
-        return 0x201;
-    }
-    strncpy(record->name, text, 32);
-    record->name[31] = '\0';
-    record->value = value;
-    return 0;
-}
-
-int __stdcall add_overlay_group(CWPluginPrivateContext *object, char *name, CLOverlayValues *value,
-                                unsigned int *result)
-{
-    CLOverlayValues savedValue;
-    int high;
-    CLOverlayEntry *entry;
-    struct CLTarget *context = default_target;
-
-    if (context->linkage != 2)
-        return 4;
-    high = value->second;
-    savedValue.second = high;
-    savedValue.first = value->first;
-    entry = CLOverlays_CreateOverlayEntry(name, savedValue);
-    if (entry == 0)
-        return 2;
-    context = default_target;
-    if (!CLOverlays_AppendGroup(&context->overlays, entry, result))
-        return 2;
-    object->numOverlayGroups++;
-    if (DAT_00541b28 > 2)
-        CLErrors_ForwardMessage(0x4f, name, savedValue.second, savedValue.first);
-    return 0;
-}
-
-unsigned int setup_file_request(DropinFileRecord *context)
-{
-    Boolean result;
-    Plugin *job = (Plugin *)context->selectedPlugin;
-    DropinFileRecord *input = context;
-    result = CLPluginRequests_SetupFileRequest(job, input, 0);
-    if (result == 0) {
-        return 0U;
-    }
-    return 1U;
-}
-
 unsigned int __stdcall CLFileOps_CopyMemBuffer(MemBuffer *source, MemBuffer *destination)
 {
     unsigned int err;
@@ -210,94 +158,6 @@ unsigned int __stdcall CLFileOps_CopyMemBuffer(MemBuffer *source, MemBuffer *des
     return err;
 }
 
-unsigned int __stdcall add_or_copy_pref_panel_storage(unsigned int unused, char *name, StorageHandle *data)
-{
-    NameTableEntry *entry;
-    unsigned int size;
-    entry = CLPrefs_FindNameTableEntry(name);
-    if (entry == 0) {
-        size = Memory_GetHandleSize(data);
-        entry = create_data_block(name, data->data, size);
-        if (entry == 0 || CLPrefs_AddPrefPanel(entry) == 0) {
-            return 2;
-        }
-    } else if (CLPrefs_CopyStorage(entry, data) == 0) {
-        return 2;
-    }
-    if (data_0054bf48 != 0) {
-        (*data_0054bf48)(name);
-    }
-    return 0;
-}
-
-int __stdcall set_output_directory(CWPluginPrivateContext *record, short *input)
-{
-    OSSpec workspace;
-    int result;
-    struct CLTarget *data;
-
-    result = MacSpecs_MakeOSSpec((CWFileSpec *)input, (char *)&workspace);
-    if (result != 0) {
-        record->callbackOSError = OS_OSErrorToMacError(result);
-        return 3;
-    }
-    data = default_target;
-    data->outputDirectory = workspace.directory;
-    record->targetfile = *(CWFileSpec *)input;
-    return 0;
-}
-
-unsigned int CLFileOps_GetScaledTicks(void)
-{
-    unsigned int ticks = OS_GetMilliseconds();
-    ticks *= 60;
-    return ticks / 1000;
-}
-
-unsigned int fn_00419e90(DropinFileRecord *state)
-{
-    unsigned int otherFlags;
-    unsigned int flags;
-    unsigned int initialFlags;
-    initialFlags = (short)state->validatedOutputMask;
-    initialFlags &= 2U;
-    if (initialFlags != 0U)
-        return 1U;
-    if (state->objectData == 0U && state->secondaryReferenceHandle == 0U)
-        return 1U;
-    if (CLFileOps_SetupOutputPath(state, 2)) {
-        flags = state->temporaryOutputMask;
-        otherFlags = state->outputMask;
-        flags |= otherFlags;
-        flags &= 2U;
-        if (flags == 0U)
-            return 1U;
-        if (!fn_00419d80(state) || !write_object_file(state))
-            return 0U;
-        state->validatedOutputMask |= 2U;
-        return 1U;
-    }
-    return 0U;
-}
-
-unsigned short fn_00419620(void)
-{
-    return data_0057f3b0;
-}
-
-unsigned int execute_tool_with_output_path(DropinFileRecord *record, Plugin *tool, unsigned int flags)
-{
-    char outputPath[260];
-    int result;
-    if (record->outputMask & 4) {
-        OS_SpecToString(&record->outputPath, outputPath, sizeof(outputPath));
-        result = CLToolExec_ExecuteLinker(tool, flags, record, (data_00541b22 & 4) ? 0 : outputPath, 0);
-        record->validatedOutputMask |= 4U;
-        return result;
-    }
-    return CLToolExec_ExecuteLinker(tool, flags, record, 0, 0);
-}
-
 static inline int applyClassTypes(DropinFileRecord *request)
 {
     TypeClassTemplate *classInfo;
@@ -315,75 +175,25 @@ static inline int applyClassTypes(DropinFileRecord *request)
     return dispatch_output_storage_by_mask(request, 4, (SInt32)fallbackType, (SInt32)preferredType);
 }
 
-int disassemble_file(DropinFileRecord *request)
+DWORD __stdcall CLFileOps_AppendMemBuffer(void *handle, const void *source, unsigned int size)
 {
-    if (request->configurationReceivedWithoutCapability == 0 && request->configurationReceivedWithCapability == 0) {
-        CLErrors_EmitDiagnostic(56, request->inputName);
-        return 0;
-    }
-    if (CLFileOps_SetupOutputPath(request, 4) == 0) {
-        return 0;
-    }
-    if ((request->compilerCapabilities & 0x02000000) != 0) {
-        if (CLPluginRequests_CallPluginForFile(request->selectedPlugin, request) == 0) {
-            return 0;
-        }
-        if (request->outputStorage != 0) {
-            return applyClassTypes(request);
-        }
-        CLErrors_EmitDiagnostic(96, "disassembling", request->inputName);
-        return 0;
-    }
-    if ((default_target->linkerFlags & 1) != 0 && (default_target->linkerFlags & 0x80000000) == 0) {
-        return execute_tool_with_output_path(request, default_target->linker, default_target->linkerFlags);
-    }
-    if ((default_target->preLinkerFlags & 1) != 0 && (default_target->preLinkerFlags & 0x80000000) == 0) {
-        return execute_tool_with_output_path(request, default_target->preLinker, default_target->preLinkerFlags);
-    }
-    if (default_target->linker != 0 && (default_target->linkerFlags & 0x80000000) == 0) {
-        if (CLPluginRequests_CallPluginForFile(default_target->linker, request) != 0) {
-            if (request->outputStorage != 0 && Memory_GetHandleSize(request->outputStorage) > 0) {
-                return applyClassTypes(request);
-            }
-            CLErrors_EmitDiagnostic(96, "disassembling", request->inputName);
-        }
-        return 0;
-    }
-    if (default_target->preLinker != 0 && (default_target->preLinkerFlags & 0x80000000) == 0) {
-        if (CLPluginRequests_CallPluginForFile(default_target->preLinker, request) != 0) {
-            if (request->outputStorage != 0 && Memory_GetHandleSize(request->outputStorage) > 0) {
-                return applyClassTypes(request);
-            }
-            CLErrors_EmitDiagnostic(96, "disassembling", request->inputName);
-        }
-        return 0;
-    }
-    if (default_target->linker != 0) {
-        CLErrors_EmitDiagnostic(58, CLPlugins_GetName(default_target->linker),
-                                CLPlugins_GetName(request->selectedPlugin), request->inputName);
-    } else {
-        CLErrors_EmitDiagnostic(57, CLPlugins_GetName(request->selectedPlugin), request->inputName);
-    }
-    return 0;
-}
+    DWORD result;
+    char *buffer;
+    DWORD offset;
 
-unsigned int write_object_file(DropinFileRecord *record)
-{
-    TypeMemberFunc *member;
-    SInt32 funcid;
-    SInt32 vtbl_index;
-    member = (TypeMemberFunc *)CLPlugins_GetObjectFlags(record->selectedPlugin);
-    if (record->objectData == 0U)
-        return 1;
-    funcid = data_00541be4;
-    if (!funcid)
-        funcid = member->funcid;
-    vtbl_index = data_00541be0;
-    if (!vtbl_index)
-        vtbl_index = member->vtbl_index;
-    if (CLWriteObjectFile_WriteObjectFile(record, vtbl_index, funcid) == 0U)
-        return 0;
-    return 1;
+    result = OS_GetHandleSize((struct MemBuffer *)handle, &offset);
+    if (result == 0) {
+        result = OS_ResizeHandle((struct MemBuffer *)handle, offset + size);
+        if (result == 0) {
+            buffer = (char *)MsDos_GetValidMemBufferPtr((struct MemBuffer *)handle);
+            if (buffer != 0) {
+                memcpy(buffer + offset, source, size);
+                fn_004129c0((struct MemBuffer *)handle);
+                return 0;
+            }
+        }
+    }
+    return result;
 }
 
 int __stdcall add_access_path(NamespaceOperationContext *context, NamespaceOperationState *state)
@@ -429,6 +239,26 @@ int __stdcall add_access_path(NamespaceOperationContext *context, NamespaceOpera
     return 0;
 }
 
+unsigned int __stdcall add_or_copy_pref_panel_storage(unsigned int unused, char *name, StorageHandle *data)
+{
+    NameTableEntry *entry;
+    unsigned int size;
+    entry = CLPrefs_FindNameTableEntry(name);
+    if (entry == 0) {
+        size = Memory_GetHandleSize(data);
+        entry = create_data_block(name, data->data, size);
+        if (entry == 0 || CLPrefs_AddPrefPanel(entry) == 0) {
+            return 2;
+        }
+    } else if (CLPrefs_CopyStorage(entry, data) == 0) {
+        return 2;
+    }
+    if (data_0054bf48 != 0) {
+        (*data_0054bf48)(name);
+    }
+    return 0;
+}
+
 int __stdcall set_file_output_name_and_kind(int unused, int index, short mode, char *name)
 {
     struct CLTarget *context;
@@ -456,126 +286,46 @@ int __stdcall set_file_output_name_and_kind(int unused, int index, short mode, c
     return 0;
 }
 
-int setup_preprocessing_output(DropinFileRecord *st)
+int __stdcall set_output_directory(CWPluginPrivateContext *record, short *input)
 {
-    if ((st->compilerCapabilities & 0x20000000) == 0) {
-        CLErrors_ForwardMessageArguments(0x35, CLPlugins_GetName(st->selectedPlugin), st->inputName);
-        return 1;
+    OSSpec workspace;
+    int result;
+    struct CLTarget *data;
+
+    result = MacSpecs_MakeOSSpec((CWFileSpec *)input, (char *)&workspace);
+    if (result != 0) {
+        record->callbackOSError = OS_OSErrorToMacError(result);
+        return 3;
     }
-    if (!(Boolean)CLPluginRequests_SetupFileRequest(st->selectedPlugin, st, 1)) {
-        return 0;
-    }
-    if (!CLFileOps_SetupOutputPath(st, 1)) {
-        return 0;
-    }
-    if (st->outputStorage != 0) {
-        Object *o = (Object *)CLPlugins_GetObjectFlags(st->selectedPlugin);
-        HashNameNode *d = data_00541bf4;
-        VarInfo *c;
-        if (d == 0) {
-            d = o->u.data.linkname;
-        }
-        c = data_00541bf0;
-        if (c == 0) {
-            c = o->u.data.info;
-        }
-        return dispatch_output_storage_by_mask(st, 1, (SInt32)c, (SInt32)d);
-    }
-    CLErrors_EmitDiagnostic(0x60, "preprocessing", st->inputName);
+    data = default_target;
+    data->outputDirectory = workspace.directory;
+    record->targetfile = *(CWFileSpec *)input;
     return 0;
 }
 
-unsigned int fn_00419c90(DropinFileRecord *state, unsigned int mode)
+int __stdcall add_overlay_group(CWPluginPrivateContext *object, char *name, CLOverlayValues *value,
+                                unsigned int *result)
 {
-    MemBuffer recovery;
-    TypeClassTemplate *classType;
-    char *argumentOverride;
-    char *parameterOption;
+    CLOverlayValues savedValue;
+    int high;
+    CLOverlayEntry *entry;
+    struct CLTarget *context = default_target;
 
-    classType = static_cast<TypeClassTemplate *>(CLPlugins_GetObjectFlags(state->selectedPlugin));
-    if (!(data_00541b20 & 3) && static_cast<unsigned char>(mode)) {
-        if (!CLPluginRequests_SetupFileRequest(state->selectedPlugin, state, 8))
-            return 0;
-    }
-    if (!CLFileOps_SetupOutputPath(state, 2))
-        return 0;
-    {
-        struct CLTarget *pluginState = default_target;
-        CLDependencies_WriteDependencies(&pluginState->dependencyTable, state, &recovery);
-    }
-    state->outputStorage = Memory_CreateStorageHandle(&recovery);
-    if (!CLFileOps_SetupOutputPath(state, 8))
-        return 0;
-    argumentOverride = data_00541c04;
-    argumentOverride =
-        argumentOverride ? argumentOverride : reinterpret_cast<char *>(classType->templateArgumentOverrides);
-    parameterOption = data_00541c00;
-    parameterOption = parameterOption ? parameterOption : reinterpret_cast<char *>(classType->templateParameters);
-    if (dispatch_output_storage_by_mask(state, 8, (SInt32)parameterOption, (SInt32)argumentOverride))
-        return 1;
+    if (context->linkage != 2)
+        return 4;
+    high = value->second;
+    savedValue.second = high;
+    savedValue.first = value->first;
+    entry = CLOverlays_CreateOverlayEntry(name, savedValue);
+    if (entry == 0)
+        return 2;
+    context = default_target;
+    if (!CLOverlays_AppendGroup(&context->overlays, entry, result))
+        return 2;
+    object->numOverlayGroups++;
+    if (DAT_00541b28 > 2)
+        CLErrors_ForwardMessage(0x4f, name, savedValue.second, savedValue.first);
     return 0;
-}
-
-int setup_compile_file_request(DropinFileRecord *file)
-{
-    SInt32 result = 1;
-    SInt16 optionValue;
-    char path[260];
-    SInt32 status;
-
-    if (!(file->compilerCapabilities & 0x10000000) && (data_00541d0c == 1 || (file->fileFlags & 0x80000000))) {
-        CLErrors_ForwardMessageArguments(0x36, CLPlugins_GetName(file->selectedPlugin), &file->inputName[0]);
-        return 1;
-    }
-    if (data_00541c0a != 0) {
-        memset(file->dependencyState, 1, sizeof(file->dependencyState));
-        OS_SpecToString(&file->inputPath, path, sizeof(path));
-        status = CLBrowser_FindOrAddLookupEntry(&data_00587570, path, &optionValue);
-        if (status == 0)
-            return 0;
-        file->dependencyStatusNegative = (status < 0);
-        file->dependencyOption = optionValue;
-        if (DAT_00541b28 > 1)
-            CLErrors_ForwardMessage(0x16, &file->inputName[0], file->dependencyOption);
-    } else {
-        memset(file->dependencyState, 0, sizeof(file->dependencyState));
-        file->dependencyStatusNegative = 0;
-        file->dependencyStatusNegative = 0;
-        file->dependencyOption = 0;
-    }
-    if ((Boolean)CLPluginRequests_SetupFileRequest(file->selectedPlugin, file, 2)) {
-        if ((file->configurationReceivedWithoutCapability == 0 || file->objectData == 0) &&
-            (file->compilerCapabilities & 0x80000000) && (file->outputArgumentMask & 2)) {
-            CLErrors_EmitDiagnostic(0x60, "compiling", &file->inputName[0]);
-            result = 0;
-        } else if (data_00541b1e == 2 && fn_00419e90(file) == 0) {
-            result = 0;
-        }
-    } else {
-        result = 0;
-    }
-    return result;
-}
-
-DWORD __stdcall CLFileOps_AppendMemBuffer(void *handle, const void *source, unsigned int size)
-{
-    DWORD result;
-    char *buffer;
-    DWORD offset;
-
-    result = OS_GetHandleSize((struct MemBuffer *)handle, &offset);
-    if (result == 0) {
-        result = OS_ResizeHandle((struct MemBuffer *)handle, offset + size);
-        if (result == 0) {
-            buffer = (char *)MsDos_GetValidMemBufferPtr((struct MemBuffer *)handle);
-            if (buffer != 0) {
-                memcpy(buffer + offset, source, size);
-                fn_004129c0((struct MemBuffer *)handle);
-                return 0;
-            }
-        }
-    }
-    return result;
 }
 
 __stdcall int append_file_to_overlay(int unused, const char *fileID, int overlayID, unsigned int *result)
@@ -599,6 +349,87 @@ __stdcall int append_file_to_overlay(int unused, const char *fileID, int overlay
     if (DAT_00541b28 > 2)
         CLErrors_ForwardMessage(0x4e, fileID, entry);
     return 0;
+}
+
+#define CERROR_FILE "DropinFileRecord.c"
+
+static inline UInt8 CLFileOps_Err1(void)
+{
+    if (fn_004151f0())
+        return 2;
+    return 1;
+}
+
+static inline UInt8 CLFileOps_Err0(void)
+{
+    if (fn_004151f0())
+        return 2;
+    return 0;
+}
+
+int __stdcall lookup_path_index(unsigned int context, char *name, UInt16 nameLength, unsigned int *index)
+{
+    struct PayloadWithValue *nameId;
+    Boolean found;
+    UInt16 resolvedIndex;
+    if (default_target->linkage != 1) {
+        return 4;
+    }
+    nameId = CLSegs_CreatePayloadWithValue(name, nameLength);
+    found = CLSegs_AddValue(&default_target->lookupPaths, nameId, &resolvedIndex);
+    if (!found) {
+        return 2;
+    }
+    *index = (unsigned int)resolvedIndex;
+    return 0;
+}
+
+unsigned int __stdcall set_lookup_paths_name_and_value(unsigned int context, unsigned short recordId, char *text,
+                                                       unsigned short value)
+{
+    struct PayloadWithValue *record;
+    struct CLTarget *state;
+
+    if (default_target->linkage != 1) {
+        return 4;
+    }
+    state = default_target;
+    record = (struct PayloadWithValue *)CLSegs_GetValue(&state->lookupPaths, (&context)[1]);
+    if (record == 0) {
+        return 0x201;
+    }
+    strncpy(record->name, text, 32);
+    record->name[31] = '\0';
+    record->value = value;
+    return 0;
+}
+}
+
+PluginB::PluginB() : PluginA(0x50617273, -1)
+{
+    first = 0;
+    second = third = 0;
+    fourth = 0;
+    fifth = 0;
+    sixth = 0;
+    seventh = 0;
+    ninth = 0;
+    eighth = 0;
+    dataReference = &data_0054bf4c;
+}
+
+extern "C" {
+
+unsigned int CLFileOps_GetScaledTicks(void)
+{
+    unsigned int ticks = OS_GetMilliseconds();
+    ticks *= 60;
+    return ticks / 1000;
+}
+
+unsigned short fn_00419620(void)
+{
+    return data_0057f3b0;
 }
 
 SInt32 dispatch_output_storage_by_mask(DropinFileRecord *state, SInt16 mask, SInt32 argument1, SInt32 argument2)
@@ -746,6 +577,256 @@ int CLFileOps_SetupOutputPath(DropinFileRecord *obj, SInt16 mask)
     return 1;
 }
 
+unsigned int setup_file_request(DropinFileRecord *context)
+{
+    Boolean result;
+    Plugin *job = (Plugin *)context->selectedPlugin;
+    DropinFileRecord *input = context;
+    result = CLPluginRequests_SetupFileRequest(job, input, 0);
+    if (result == 0) {
+        return 0U;
+    }
+    return 1U;
+}
+
+int setup_preprocessing_output(DropinFileRecord *st)
+{
+    if ((st->compilerCapabilities & 0x20000000) == 0) {
+        CLErrors_ForwardMessageArguments(0x35, CLPlugins_GetName(st->selectedPlugin), st->inputName);
+        return 1;
+    }
+    if (!(Boolean)CLPluginRequests_SetupFileRequest(st->selectedPlugin, st, 1)) {
+        return 0;
+    }
+    if (!CLFileOps_SetupOutputPath(st, 1)) {
+        return 0;
+    }
+    if (st->outputStorage != 0) {
+        Object *o = (Object *)CLPlugins_GetObjectFlags(st->selectedPlugin);
+        HashNameNode *d = data_00541bf4;
+        VarInfo *c;
+        if (d == 0) {
+            d = o->u.data.linkname;
+        }
+        c = data_00541bf0;
+        if (c == 0) {
+            c = o->u.data.info;
+        }
+        return dispatch_output_storage_by_mask(st, 1, (SInt32)c, (SInt32)d);
+    }
+    CLErrors_EmitDiagnostic(0x60, "preprocessing", st->inputName);
+    return 0;
+}
+
+unsigned int fn_00419c90(DropinFileRecord *state, unsigned int mode)
+{
+    MemBuffer recovery;
+    TypeClassTemplate *classType;
+    char *argumentOverride;
+    char *parameterOption;
+
+    classType = static_cast<TypeClassTemplate *>(CLPlugins_GetObjectFlags(state->selectedPlugin));
+    if (!(data_00541b20 & 3) && static_cast<unsigned char>(mode)) {
+        if (!CLPluginRequests_SetupFileRequest(state->selectedPlugin, state, 8))
+            return 0;
+    }
+    if (!CLFileOps_SetupOutputPath(state, 2))
+        return 0;
+    {
+        struct CLTarget *pluginState = default_target;
+        CLDependencies_WriteDependencies(&pluginState->dependencyTable, state, &recovery);
+    }
+    state->outputStorage = Memory_CreateStorageHandle(&recovery);
+    if (!CLFileOps_SetupOutputPath(state, 8))
+        return 0;
+    argumentOverride = data_00541c04;
+    argumentOverride =
+        argumentOverride ? argumentOverride : reinterpret_cast<char *>(classType->templateArgumentOverrides);
+    parameterOption = data_00541c00;
+    parameterOption = parameterOption ? parameterOption : reinterpret_cast<char *>(classType->templateParameters);
+    if (dispatch_output_storage_by_mask(state, 8, (SInt32)parameterOption, (SInt32)argumentOverride))
+        return 1;
+    return 0;
+}
+
+unsigned int fn_00419d80(DropinFileRecord *input)
+{
+    struct ObjFlagsData *object;
+    unsigned int value;
+    unsigned int info;
+    if ((char)input->dependencyStatusNegative == '\0')
+        return 1;
+    if (input->secondaryReferenceHandle == 0) {
+        CLErrors_EmitDiagnostic(0x65, CLPlugins_GetName(input->selectedPlugin),
+                                CLProj_MakeRelativePath(&input->inputPath, 0, data_005880e0, 0x104));
+        return 0;
+    }
+    if (((data_00541b22 & 2) != 0) && (data_00541c0a != '\0')) {
+        object = (ObjFlagsData *)CLPlugins_GetObjectFlags(input->selectedPlugin);
+        value = DAT_00541bec;
+        if (DAT_00541bec == 0)
+            value = object->creator;
+        info = DAT_00541be8;
+        if (DAT_00541be8 == 0)
+            info = object->fileType;
+        value = fn_004286d0(input, info, value);
+        if (value == 0)
+            return 0;
+    }
+    return 1;
+}
+
+unsigned int write_object_file(DropinFileRecord *record)
+{
+    TypeMemberFunc *member;
+    SInt32 funcid;
+    SInt32 vtbl_index;
+    member = (TypeMemberFunc *)CLPlugins_GetObjectFlags(record->selectedPlugin);
+    if (record->objectData == 0U)
+        return 1;
+    funcid = data_00541be4;
+    if (!funcid)
+        funcid = member->funcid;
+    vtbl_index = data_00541be0;
+    if (!vtbl_index)
+        vtbl_index = member->vtbl_index;
+    if (CLWriteObjectFile_WriteObjectFile(record, vtbl_index, funcid) == 0U)
+        return 0;
+    return 1;
+}
+
+unsigned int fn_00419e90(DropinFileRecord *state)
+{
+    unsigned int otherFlags;
+    unsigned int flags;
+    unsigned int initialFlags;
+    initialFlags = (short)state->validatedOutputMask;
+    initialFlags &= 2U;
+    if (initialFlags != 0U)
+        return 1U;
+    if (state->objectData == 0U && state->secondaryReferenceHandle == 0U)
+        return 1U;
+    if (CLFileOps_SetupOutputPath(state, 2)) {
+        flags = state->temporaryOutputMask;
+        otherFlags = state->outputMask;
+        flags |= otherFlags;
+        flags &= 2U;
+        if (flags == 0U)
+            return 1U;
+        if (!fn_00419d80(state) || !write_object_file(state))
+            return 0U;
+        state->validatedOutputMask |= 2U;
+        return 1U;
+    }
+    return 0U;
+}
+
+int setup_compile_file_request(DropinFileRecord *file)
+{
+    SInt32 result = 1;
+    SInt16 optionValue;
+    char path[260];
+    SInt32 status;
+
+    if (!(file->compilerCapabilities & 0x10000000) && (data_00541d0c == 1 || (file->fileFlags & 0x80000000))) {
+        CLErrors_ForwardMessageArguments(0x36, CLPlugins_GetName(file->selectedPlugin), &file->inputName[0]);
+        return 1;
+    }
+    if (data_00541c0a != 0) {
+        memset(file->dependencyState, 1, sizeof(file->dependencyState));
+        OS_SpecToString(&file->inputPath, path, sizeof(path));
+        status = CLBrowser_FindOrAddLookupEntry(&data_00587570, path, &optionValue);
+        if (status == 0)
+            return 0;
+        file->dependencyStatusNegative = (status < 0);
+        file->dependencyOption = optionValue;
+        if (DAT_00541b28 > 1)
+            CLErrors_ForwardMessage(0x16, &file->inputName[0], file->dependencyOption);
+    } else {
+        memset(file->dependencyState, 0, sizeof(file->dependencyState));
+        file->dependencyStatusNegative = 0;
+        file->dependencyStatusNegative = 0;
+        file->dependencyOption = 0;
+    }
+    if ((Boolean)CLPluginRequests_SetupFileRequest(file->selectedPlugin, file, 2)) {
+        if ((file->configurationReceivedWithoutCapability == 0 || file->objectData == 0) &&
+            (file->compilerCapabilities & 0x80000000) && (file->outputArgumentMask & 2)) {
+            CLErrors_EmitDiagnostic(0x60, "compiling", &file->inputName[0]);
+            result = 0;
+        } else if (data_00541b1e == 2 && fn_00419e90(file) == 0) {
+            result = 0;
+        }
+    } else {
+        result = 0;
+    }
+    return result;
+}
+
+unsigned int execute_tool_with_output_path(DropinFileRecord *record, Plugin *tool, unsigned int flags)
+{
+    char outputPath[260];
+    int result;
+    if (record->outputMask & 4) {
+        OS_SpecToString(&record->outputPath, outputPath, sizeof(outputPath));
+        result = CLToolExec_ExecuteLinker(tool, flags, record, (data_00541b22 & 4) ? 0 : outputPath, 0);
+        record->validatedOutputMask |= 4U;
+        return result;
+    }
+    return CLToolExec_ExecuteLinker(tool, flags, record, 0, 0);
+}
+
+int disassemble_file(DropinFileRecord *request)
+{
+    if (request->configurationReceivedWithoutCapability == 0 && request->configurationReceivedWithCapability == 0) {
+        CLErrors_EmitDiagnostic(56, request->inputName);
+        return 0;
+    }
+    if (CLFileOps_SetupOutputPath(request, 4) == 0) {
+        return 0;
+    }
+    if ((request->compilerCapabilities & 0x02000000) != 0) {
+        if (CLPluginRequests_CallPluginForFile(request->selectedPlugin, request) == 0) {
+            return 0;
+        }
+        if (request->outputStorage != 0) {
+            return applyClassTypes(request);
+        }
+        CLErrors_EmitDiagnostic(96, "disassembling", request->inputName);
+        return 0;
+    }
+    if ((default_target->linkerFlags & 1) != 0 && (default_target->linkerFlags & 0x80000000) == 0) {
+        return execute_tool_with_output_path(request, default_target->linker, default_target->linkerFlags);
+    }
+    if ((default_target->preLinkerFlags & 1) != 0 && (default_target->preLinkerFlags & 0x80000000) == 0) {
+        return execute_tool_with_output_path(request, default_target->preLinker, default_target->preLinkerFlags);
+    }
+    if (default_target->linker != 0 && (default_target->linkerFlags & 0x80000000) == 0) {
+        if (CLPluginRequests_CallPluginForFile(default_target->linker, request) != 0) {
+            if (request->outputStorage != 0 && Memory_GetHandleSize(request->outputStorage) > 0) {
+                return applyClassTypes(request);
+            }
+            CLErrors_EmitDiagnostic(96, "disassembling", request->inputName);
+        }
+        return 0;
+    }
+    if (default_target->preLinker != 0 && (default_target->preLinkerFlags & 0x80000000) == 0) {
+        if (CLPluginRequests_CallPluginForFile(default_target->preLinker, request) != 0) {
+            if (request->outputStorage != 0 && Memory_GetHandleSize(request->outputStorage) > 0) {
+                return applyClassTypes(request);
+            }
+            CLErrors_EmitDiagnostic(96, "disassembling", request->inputName);
+        }
+        return 0;
+    }
+    if (default_target->linker != 0) {
+        CLErrors_EmitDiagnostic(58, CLPlugins_GetName(default_target->linker),
+                                CLPlugins_GetName(request->selectedPlugin), request->inputName);
+    } else {
+        CLErrors_EmitDiagnostic(57, CLPlugins_GetName(request->selectedPlugin), request->inputName);
+    }
+    return 0;
+}
+
 int compile_file(DropinFileRecord *file, char *processed)
 {
     struct CLTarget *totals;
@@ -811,22 +892,6 @@ void set_bytes(unsigned int byteCount, int *value, char **unitName)
 {
     *value = byteCount;
     *unitName = "bytes";
-}
-
-#define CERROR_FILE "DropinFileRecord.c"
-
-static inline UInt8 CLFileOps_Err1(void)
-{
-    if (fn_004151f0())
-        return 2;
-    return 1;
-}
-
-static inline UInt8 CLFileOps_Err0(void)
-{
-    if (fn_004151f0())
-        return 2;
-    return 0;
 }
 
 int CLFileOps_CompileProject(void)
@@ -1070,64 +1135,4 @@ int CLFileOps_LinkProject(void)
 
     return 0;
 }
-
-int __stdcall lookup_path_index(unsigned int context, char *name, UInt16 nameLength, unsigned int *index)
-{
-    struct PayloadWithValue *nameId;
-    Boolean found;
-    UInt16 resolvedIndex;
-    if (default_target->linkage != 1) {
-        return 4;
-    }
-    nameId = CLSegs_CreatePayloadWithValue(name, nameLength);
-    found = CLSegs_AddValue(&default_target->lookupPaths, nameId, &resolvedIndex);
-    if (!found) {
-        return 2;
-    }
-    *index = (unsigned int)resolvedIndex;
-    return 0;
-}
-
-unsigned int fn_00419d80(DropinFileRecord *input)
-{
-    struct ObjFlagsData *object;
-    unsigned int value;
-    unsigned int info;
-    if ((char)input->dependencyStatusNegative == '\0')
-        return 1;
-    if (input->secondaryReferenceHandle == 0) {
-        CLErrors_EmitDiagnostic(0x65, CLPlugins_GetName(input->selectedPlugin),
-                                CLProj_MakeRelativePath(&input->inputPath, 0, data_005880e0, 0x104));
-        return 0;
-    }
-    if (((data_00541b22 & 2) != 0) && (data_00541c0a != '\0')) {
-        object = (ObjFlagsData *)CLPlugins_GetObjectFlags(input->selectedPlugin);
-        value = DAT_00541bec;
-        if (DAT_00541bec == 0)
-            value = object->creator;
-        info = DAT_00541be8;
-        if (DAT_00541be8 == 0)
-            info = object->fileType;
-        value = fn_004286d0(input, info, value);
-        if (value == 0)
-            return 0;
-    }
-    return 1;
-}
-}
-
-extern "C" {
-}
-
-PluginB::PluginB() : PluginA(0x50617273, -1)
-{
-    first = 0;
-    second = third = 0;
-    fourth = 0;
-    fifth = 0;
-    sixth = 0;
-    seventh = 0;
-    ninth = 0;
-    eighth = 0;
-    dataReference = &data_0054bf4c;
 }

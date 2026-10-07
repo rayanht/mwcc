@@ -118,6 +118,7 @@ IROLinear *IroUtil_ReplaceNextReference(IROLinear *obj, IROLinear *newobj)
     }
     return NULL;
 }
+
 /* 0x551f40, file name string */
 
 IROLinear *IroUtil_ReplaceFirstReference(IROLinear *node, IROLinear *newref)
@@ -200,6 +201,62 @@ IROLinear *IroUtil_ReplaceFirstReference(IROLinear *node, IROLinear *newref)
     return NULL;
 }
 
+IROLinear *IroUtil_FindNextUse(IROLinear *self)
+{
+    IROLinear *n;
+    int i;
+    for (n = self->next; n != NULL; n = n->next) {
+        switch (n->type) {
+            case IROLinearIf:
+            case IROLinearIfNot:
+                if (n->u.branch.cond == self)
+                    return n;
+                break;
+            case IROLinearReturn:
+                if (n->u.monadic == self)
+                    return n;
+                break;
+            case IROLinearOp1Arg:
+                if (n->u.monadic == self)
+                    return n;
+                break;
+            case IROLinearSwitch:
+                if (n->u.swtch.cond == self)
+                    return n;
+                break;
+            case IROLinearOp2Arg:
+                if (n->u.diadic.left == self)
+                    return n;
+                if (n->u.diadic.right == self)
+                    return n;
+                break;
+            case IROLinearFunccall:
+                if (n->u.funccall.callee == self)
+                    return n;
+                for (i = 0; i < n->u.funccall.argCount; i++)
+                    if (n->u.funccall.args[i] == self)
+                        return n;
+                break;
+            case IROLinearNop:
+            case IROLinearOperand:
+            case IROLinearGoto:
+            case IROLinearLabel:
+            case IROLinearEntry:
+            case IROLinearExit:
+            case IROLinearBeginCatch:
+            case IROLinearEndCatch:
+            case IROLinearEndCatchDtor:
+            case IROLinearAsm:
+            case IROLinearEnd:
+                break;
+            default:
+                CError_FATAL(1258);
+                break;
+        }
+    }
+    return NULL;
+}
+
 IROLinear *IroUtil_AppendObjectRefAndUse(Object *obj, IROList *list)
 {
     IROLinear *expressionNode;
@@ -239,6 +296,7 @@ IROLinear *IroUtil_AppendObjectRefAndUse(Object *obj, IROList *list)
     expressionNode->next = useNode;
     return useNode;
 }
+
 IROLinear *IroUtil_CopyLinearToList(IROLinear *node, IROList *list)
 {
     IROLinear *newnode;
@@ -293,10 +351,120 @@ IROLinear *IroUtil_CopyLinearToList(IROLinear *node, IROList *list)
 
     return newnode;
 }
+
+void IroUtil_CopyLinearRangeToList(IROLinear *first, IROLinear *last, IROList *argument)
+{
+    IROLinear *record;
+    for (record = first; record; record = record->next) {
+        if (record->type != IROLinearNop && !(record->flags & IROLF_Reffed))
+            IroUtil_CopyLinearToList(record, argument);
+        if (record == last)
+            break;
+    }
+}
+
+IROLinear *IroUtil_FindLabel(CLabel *key, IROLinear *head)
+{
+    IROLinear *entry;
+    for (entry = head; entry; entry = entry->next) {
+        if (entry->type == IROLinearLabel && entry->u.label == key)
+            break;
+    }
+    if (!entry)
+        CError_FATAL(1016);
+    return entry;
+}
+
+void IroUtil_AppendLinear(IROLinear *object, IROList *chain)
+{
+    IROLinear *next;
+    if (chain->head)
+        chain->tail->next = object;
+    else
+        chain->head = object;
+    chain->tail = object;
+    while ((next = chain->tail->next) != NULL)
+        chain->tail = next;
+}
+
 void IroUtil_InitList(IROList *state)
 {
     state->tail = NULL;
     state->head = state->tail;
+}
+
+void IroUtil_MoveExprBefore(IROExpr *object, IROLinear *target)
+{
+    IRONode *node;
+    IROLinear *entry;
+
+    linear_range_start = linear_range_end = object->linear;
+    IroUtil_VisitLinearTree(object->linear, (void (*)(IROLinear *, int))fn_0044c6b0);
+    if (linear_range_start == target)
+        return;
+    remove_linear_range(linear_range_start, linear_range_end);
+    IroUtil_InsertLinearBefore(linear_range_start, linear_range_end, target);
+    node = iro_flowgraph_head;
+    while (node != NULL) {
+        entry = node->first;
+        while (entry != NULL) {
+            if (entry == object->linear) {
+                object->node = node;
+                break;
+            }
+            if (entry == node->last)
+                break;
+            entry = entry->next;
+        }
+        node = node->nextnode;
+    }
+    move_expr_before_node = object->node;
+    IroUtil_VisitLinearTree(object->linear, (void (*)(IROLinear *, int))set_expr_node_if_update_type);
+}
+
+void set_expr_node_if_update_type(IROLinear *linear, unsigned int updateType)
+{
+    if (updateType != 0U) {
+        if (linear->expr != NULL) {
+            linear->expr->node = move_expr_before_node;
+        }
+    }
+}
+
+static int is_int_const(IROLinear *node)
+{
+    if (node->type == IROLinearOperand && node->u.node->type == EINTCONST)
+        return 1;
+    return 0;
+}
+
+static Boolean is_one(CInt64 *val)
+{
+    return val->hi == 0 && val->lo == 1;
+}
+
+void IroUtil_RemoveLinearRange(IROExpr *record)
+{
+    linear_range_start = linear_range_end = record->linear;
+    IroUtil_VisitLinearTree(record->linear, (void (*)(IROLinear *, int))fn_0044c6b0);
+    remove_linear_range(linear_range_start, linear_range_end);
+}
+
+void fn_0044c6b0(IROLinear *object, unsigned int enabled)
+{
+    IROLinear *node;
+    if (enabled != 0) {
+        node = object;
+        do {
+            if (node == linear_range_start) {
+                linear_range_start = object;
+                return;
+            }
+            if (node == linear_range_end)
+                return;
+            node = node->next;
+        } while (node != NULL);
+    }
 }
 
 void IroUtil_InsertLinearRangeAfter(IROLinear *first, IROLinear *replacement, IROLinear *object)
@@ -359,184 +527,6 @@ void IroUtil_InsertLinearBefore(IROLinear *newnode, IROLinear *owner, IROLinear 
     }
 }
 
-void visit_linear_range_trees(IROLinear *node, IROLinear *last, void *ctx)
-{
-    IROLinear *n;
-
-    for (n = node; n != NULL; n = n->next) {
-        switch (n->type) {
-            case IROLinearNop:
-            case IROLinearAsm:
-            case 17:
-            case 18:
-            case IROLinearEnd:
-                break;
-            case IROLinearBeginCatch:
-            case IROLinearEndCatch:
-            case IROLinearEndCatchDtor:
-                IroUtil_VisitLinearTree(n->u.monadic, (void (*)(IROLinear *, int))ctx);
-                break;
-            case IROLinearOperand:
-            case IROLinearOp1Arg:
-            case IROLinearOp2Arg:
-            case IROLinearFunccall:
-                IroUtil_VisitLinearTree(n, (void (*)(IROLinear *, int))ctx);
-                break;
-            case IROLinearIf:
-            case IROLinearIfNot:
-                IroUtil_VisitLinearTree(n->u.branch.cond, (void (*)(IROLinear *, int))ctx);
-                break;
-            case IROLinearReturn:
-                if (n->u.monadic != NULL)
-                    IroUtil_VisitLinearTree(n->u.monadic, (void (*)(IROLinear *, int))ctx);
-                break;
-            case IROLinearSwitch:
-                IroUtil_VisitLinearTree(n->u.swtch.cond, (void (*)(IROLinear *, int))ctx);
-                break;
-        }
-        if (n == last)
-            return;
-    }
-}
-void IroUtil_VisitLinearTree(IROLinear *node, void (*visit)(IROLinear *, int))
-{
-    SInt32 i;
-
-    visit(node, 1);
-    switch (node->type) {
-        case IROLinearOperand:
-            break;
-        case IROLinearOp1Arg:
-            IroUtil_VisitLinearTree(node->u.monadic, visit);
-            break;
-        case IROLinearOp2Arg:
-            IroUtil_VisitLinearTree(node->u.diadic.left, visit);
-            IroUtil_VisitLinearTree(node->u.diadic.right, visit);
-            break;
-        case IROLinearFunccall:
-            IroUtil_VisitLinearTree(node->u.funccall.callee, visit);
-            for (i = 0; i < node->u.funccall.argCount; i++)
-                IroUtil_VisitLinearTree(node->u.funccall.args[i], visit);
-            break;
-    }
-    visit(node, 0);
-}
-void IroUtil_ClearZeroOperands(struct IROLinear *object)
-{
-    IroUtil_VisitLinearTree(object, (void (*)(IROLinear *, int))clear_operand_if_zero);
-}
-
-/* Avoid a collision with the file's existing ObjectList declaration. */
-
-void clear_operand_if_zero(Operand *operand, int value)
-{
-    if (value == 0) {
-        operand->kind = OpndType_GPR;
-        operand->object = NULL;
-    }
-    return;
-}
-
-void IroUtil_AppendLinear(IROLinear *object, IROList *chain)
-{
-    IROLinear *next;
-    if (chain->head)
-        chain->tail->next = object;
-    else
-        chain->head = object;
-    chain->tail = object;
-    while ((next = chain->tail->next) != NULL)
-        chain->tail = next;
-}
-
-void IroUtil_CopyLinearRangeToList(IROLinear *first, IROLinear *last, IROList *argument)
-{
-    IROLinear *record;
-    for (record = first; record; record = record->next) {
-        if (record->type != IROLinearNop && !(record->flags & IROLF_Reffed))
-            IroUtil_CopyLinearToList(record, argument);
-        if (record == last)
-            break;
-    }
-}
-
-IROLinear *IroUtil_FindLabel(CLabel *key, IROLinear *head)
-{
-    IROLinear *entry;
-    for (entry = head; entry; entry = entry->next) {
-        if (entry->type == IROLinearLabel && entry->u.label == key)
-            break;
-    }
-    if (!entry)
-        CError_FATAL(1016);
-    return entry;
-}
-
-IROLinear *IroUtil_FindNextUse(IROLinear *self)
-{
-    IROLinear *n;
-    int i;
-    for (n = self->next; n != NULL; n = n->next) {
-        switch (n->type) {
-            case IROLinearIf:
-            case IROLinearIfNot:
-                if (n->u.branch.cond == self)
-                    return n;
-                break;
-            case IROLinearReturn:
-                if (n->u.monadic == self)
-                    return n;
-                break;
-            case IROLinearOp1Arg:
-                if (n->u.monadic == self)
-                    return n;
-                break;
-            case IROLinearSwitch:
-                if (n->u.swtch.cond == self)
-                    return n;
-                break;
-            case IROLinearOp2Arg:
-                if (n->u.diadic.left == self)
-                    return n;
-                if (n->u.diadic.right == self)
-                    return n;
-                break;
-            case IROLinearFunccall:
-                if (n->u.funccall.callee == self)
-                    return n;
-                for (i = 0; i < n->u.funccall.argCount; i++)
-                    if (n->u.funccall.args[i] == self)
-                        return n;
-                break;
-            case IROLinearNop:
-            case IROLinearOperand:
-            case IROLinearGoto:
-            case IROLinearLabel:
-            case IROLinearEntry:
-            case IROLinearExit:
-            case IROLinearBeginCatch:
-            case IROLinearEndCatch:
-            case IROLinearEndCatchDtor:
-            case IROLinearAsm:
-            case IROLinearEnd:
-                break;
-            default:
-                CError_FATAL(1258);
-                break;
-        }
-    }
-    return NULL;
-}
-
-void set_expr_node_if_update_type(IROLinear *linear, unsigned int updateType)
-{
-    if (updateType != 0U) {
-        if (linear->expr != NULL) {
-            linear->expr->node = move_expr_before_node;
-        }
-    }
-}
-
 void remove_linear_range(IROLinear *first, IROLinear *last)
 {
     IROLinear *node;
@@ -584,45 +574,107 @@ void remove_linear_range(IROLinear *first, IROLinear *last)
         linear_head = last->next;
 }
 
-void IroUtil_MoveExprBefore(IROExpr *object, IROLinear *target)
+void visit_linear_range_trees(IROLinear *node, IROLinear *last, void *ctx)
 {
-    IRONode *node;
-    IROLinear *entry;
+    IROLinear *n;
 
-    linear_range_start = linear_range_end = object->linear;
-    IroUtil_VisitLinearTree(object->linear, (void (*)(IROLinear *, int))fn_0044c6b0);
-    if (linear_range_start == target)
-        return;
-    remove_linear_range(linear_range_start, linear_range_end);
-    IroUtil_InsertLinearBefore(linear_range_start, linear_range_end, target);
-    node = iro_flowgraph_head;
-    while (node != NULL) {
-        entry = node->first;
-        while (entry != NULL) {
-            if (entry == object->linear) {
-                object->node = node;
+    for (n = node; n != NULL; n = n->next) {
+        switch (n->type) {
+            case IROLinearNop:
+            case IROLinearAsm:
+            case 17:
+            case 18:
+            case IROLinearEnd:
                 break;
-            }
-            if (entry == node->last)
+            case IROLinearBeginCatch:
+            case IROLinearEndCatch:
+            case IROLinearEndCatchDtor:
+                IroUtil_VisitLinearTree(n->u.monadic, (void (*)(IROLinear *, int))ctx);
                 break;
-            entry = entry->next;
+            case IROLinearOperand:
+            case IROLinearOp1Arg:
+            case IROLinearOp2Arg:
+            case IROLinearFunccall:
+                IroUtil_VisitLinearTree(n, (void (*)(IROLinear *, int))ctx);
+                break;
+            case IROLinearIf:
+            case IROLinearIfNot:
+                IroUtil_VisitLinearTree(n->u.branch.cond, (void (*)(IROLinear *, int))ctx);
+                break;
+            case IROLinearReturn:
+                if (n->u.monadic != NULL)
+                    IroUtil_VisitLinearTree(n->u.monadic, (void (*)(IROLinear *, int))ctx);
+                break;
+            case IROLinearSwitch:
+                IroUtil_VisitLinearTree(n->u.swtch.cond, (void (*)(IROLinear *, int))ctx);
+                break;
         }
-        node = node->nextnode;
+        if (n == last)
+            return;
     }
-    move_expr_before_node = object->node;
-    IroUtil_VisitLinearTree(object->linear, (void (*)(IROLinear *, int))set_expr_node_if_update_type);
 }
 
-static int is_int_const(IROLinear *node)
+void visit_linear_postorder(IROLinear *node, void (*visit)(IROLinear *, int))
 {
-    if (node->type == IROLinearOperand && node->u.node->type == EINTCONST)
-        return 1;
-    return 0;
+    int i;
+
+    switch (node->type) {
+        case IROLinearOperand:
+            break;
+        case IROLinearOp1Arg:
+            visit_linear_postorder(node->u.monadic, visit);
+            break;
+        case IROLinearOp2Arg:
+            visit_linear_postorder(node->u.diadic.left, visit);
+            visit_linear_postorder(node->u.diadic.right, visit);
+            break;
+        case IROLinearFunccall:
+            visit_linear_postorder(node->u.funccall.callee, visit);
+            for (i = 0; i < node->u.funccall.argCount; ++i)
+                visit_linear_postorder(node->u.funccall.args[i], visit);
+            break;
+    }
+    visit(node, 0);
 }
 
-static Boolean is_one(CInt64 *val)
+void IroUtil_VisitLinearTree(IROLinear *node, void (*visit)(IROLinear *, int))
 {
-    return val->hi == 0 && val->lo == 1;
+    SInt32 i;
+
+    visit(node, 1);
+    switch (node->type) {
+        case IROLinearOperand:
+            break;
+        case IROLinearOp1Arg:
+            IroUtil_VisitLinearTree(node->u.monadic, visit);
+            break;
+        case IROLinearOp2Arg:
+            IroUtil_VisitLinearTree(node->u.diadic.left, visit);
+            IroUtil_VisitLinearTree(node->u.diadic.right, visit);
+            break;
+        case IROLinearFunccall:
+            IroUtil_VisitLinearTree(node->u.funccall.callee, visit);
+            for (i = 0; i < node->u.funccall.argCount; i++)
+                IroUtil_VisitLinearTree(node->u.funccall.args[i], visit);
+            break;
+    }
+    visit(node, 0);
+}
+
+void IroUtil_ClearZeroOperands(struct IROLinear *object)
+{
+    IroUtil_VisitLinearTree(object, (void (*)(IROLinear *, int))clear_operand_if_zero);
+}
+
+/* Avoid a collision with the file's existing ObjectList declaration. */
+
+void clear_operand_if_zero(Operand *operand, int value)
+{
+    if (value == 0) {
+        operand->kind = OpndType_GPR;
+        operand->object = NULL;
+    }
+    return;
 }
 
 short IroUtil_IsOne(IROLinear *node)
@@ -734,52 +786,6 @@ void *IroUtil_MoveLinearRangeBeforeObject(IROLinear *object, IROLinear *first, I
     first->next = next;
     last->next = object;
     return next;
-}
-
-void visit_linear_postorder(IROLinear *node, void (*visit)(IROLinear *, int))
-{
-    int i;
-
-    switch (node->type) {
-        case IROLinearOperand:
-            break;
-        case IROLinearOp1Arg:
-            visit_linear_postorder(node->u.monadic, visit);
-            break;
-        case IROLinearOp2Arg:
-            visit_linear_postorder(node->u.diadic.left, visit);
-            visit_linear_postorder(node->u.diadic.right, visit);
-            break;
-        case IROLinearFunccall:
-            visit_linear_postorder(node->u.funccall.callee, visit);
-            for (i = 0; i < node->u.funccall.argCount; ++i)
-                visit_linear_postorder(node->u.funccall.args[i], visit);
-            break;
-    }
-    visit(node, 0);
-}
-
-void IroUtil_RemoveLinearRange(IROExpr *record)
-{
-    linear_range_start = linear_range_end = record->linear;
-    IroUtil_VisitLinearTree(record->linear, (void (*)(IROLinear *, int))fn_0044c6b0);
-    remove_linear_range(linear_range_start, linear_range_end);
-}
-void fn_0044c6b0(IROLinear *object, unsigned int enabled)
-{
-    IROLinear *node;
-    if (enabled != 0) {
-        node = object;
-        do {
-            if (node == linear_range_start) {
-                linear_range_start = object;
-                return;
-            }
-            if (node == linear_range_end)
-                return;
-            node = node->next;
-        } while (node != NULL);
-    }
 }
 
 IROLinear *IroUtil_GetFirstLinear(IROLinear *p)

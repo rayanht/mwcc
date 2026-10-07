@@ -177,6 +177,39 @@ PCodeInstruction *PCodeUtilities_MakeInstructionWithObject(short opcode, short o
     }
     return result;
 }
+
+static inline UInt8 PCodeUtilities_ExceptionScopesEnabled(void)
+{
+    return copts.fb3;
+}
+
+static inline UInt8 PCodeUtilities_ShouldSplitObjectInstructionBlock(void)
+{
+    return copts.instructionSchedulingMode;
+}
+
+PCodeInstruction *PCodeUtilities_CreateInstructionWithObject(short operand1, short operand2, Object *operand3,
+                                                             short operand4, unsigned char recordInstruction)
+{
+    PCodeInstruction *instruction;
+    if (operand3 == NULL) {
+        CError_FATAL(869);
+    }
+    {
+        short first = operand1;
+        short second = operand2;
+        short fourth = operand4;
+        instruction = PCodeUtilities_CreateInstruction(63, first, second, operand3, fourth);
+    }
+    {
+        unsigned char record = recordInstruction;
+        if (record) {
+            PCode_AppendInstruction(gCurrentBlock, instruction);
+        }
+    }
+    return instruction;
+}
+
 #define CE_ASSERT(c, s)                                                                                                \
     do {                                                                                                               \
         if (c)                                                                                                         \
@@ -213,16 +246,6 @@ void PCodeUtilities_EmitAddress(short resultReg, short baseReg, struct Object *o
         }
     } else
         CE_ASSERT(baseReg == 0, CError_FATAL(848));
-}
-
-static inline UInt8 PCodeUtilities_ExceptionScopesEnabled(void)
-{
-    return copts.fb3;
-}
-
-static inline UInt8 PCodeUtilities_ShouldSplitObjectInstructionBlock(void)
-{
-    return copts.instructionSchedulingMode;
 }
 
 void PCodeUtilities_EmitObjectInstructionWithPayload(Object *operand, SInt16 emitInstruction, SInt32 firstRegisterMask,
@@ -346,6 +369,7 @@ PCodeOperand *PCodeUtilities_004a2290(PCodeOperand *operand, UInt32 gprMask, UIn
     operand++;
     return operand;
 }
+
 void PCodeUtilities_EmitInstructionAndCreateBlock(Object *object)
 {
     PCodeUtilities_EmitInstruction(18, object, 0);
@@ -367,28 +391,6 @@ void PCodeUtilities_EmitBranch(PCodeLabel *target)
     PCodeUtilities_EmitInstruction(0U, target);
     PCode_AddSuccessor(gCurrentBlock, target);
     PCode_CreateBlock();
-}
-
-PCodeInstruction *PCodeUtilities_CreateInstructionWithObject(short operand1, short operand2, Object *operand3,
-                                                             short operand4, unsigned char recordInstruction)
-{
-    PCodeInstruction *instruction;
-    if (operand3 == NULL) {
-        CError_FATAL(869);
-    }
-    {
-        short first = operand1;
-        short second = operand2;
-        short fourth = operand4;
-        instruction = PCodeUtilities_CreateInstruction(63, first, second, operand3, fourth);
-    }
-    {
-        unsigned char record = recordInstruction;
-        if (record) {
-            PCode_AppendInstruction(gCurrentBlock, instruction);
-        }
-    }
-    return instruction;
 }
 
 /* State record referenced by DAT_005880c4; only the trailing value is known. */
@@ -422,6 +424,7 @@ void PCodeUtilities_EmitConditionBranch(SInt16 operand, SInt16 condition, SInt16
     PCode_CreateBlock();
     PCode_ResolveLabel((gCurrentBlock), (fallthroughBlock));
 }
+
 void PCodeUtilities_ResolveLabel(PCodeLabel *data)
 {
     if (gCurrentBlock->instruction_count != 0) {
@@ -486,6 +489,15 @@ PCodeInstruction *PCodeUtilities_EmitInstruction(short opcode, ...)
 {
     va_list arguments = (va_list)&opcode + (((va_list)(&opcode + 1) - (va_list)&opcode + 3) / 4) * 4;
     return PCode_AppendInstruction(gCurrentBlock, create_pcode_instruction(opcode, arguments));
+}
+
+PCodeInstruction *PCodeUtilities_CreateInstruction(UInt16 op, ...)
+{
+    va_list arguments;
+    PCodeInstruction *instruction;
+    arguments = (va_list)&op + (((va_list)(&op + 1) - (va_list)&op + 3) / 4) * 4;
+    instruction = create_pcode_instruction(op, arguments);
+    return instruction;
 }
 
 /* Object cv-qualifier: for pointer types the pointee qualifier lives in the
@@ -721,13 +733,4 @@ PCodeInstruction *create_pcode_instruction(SInt16 opcode, char *args)
         opnd++;
     }
     return inst;
-}
-
-PCodeInstruction *PCodeUtilities_CreateInstruction(UInt16 op, ...)
-{
-    va_list arguments;
-    PCodeInstruction *instruction;
-    arguments = (va_list)&op + (((va_list)(&op + 1) - (va_list)&op + 3) / 4) * 4;
-    instruction = create_pcode_instruction(op, arguments);
-    return instruction;
 }

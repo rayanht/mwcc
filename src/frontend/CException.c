@@ -162,6 +162,197 @@ void CExcept_ExceptionTansform(Statement *stmt)
         }
     }
 }
+
+static inline void reverse_one(ENodeList **arr, SInt32 i, ENodeList *found)
+{
+    if (arr[i] == found)
+        return;
+    {
+        ENode *result = rewrite_expr_temporaries(arr[i]->node);
+        arr[i]->node = result;
+    }
+}
+
+/* Objects and initialization flags registered for temporary cleanup. */
+
+static inline Statement *NewTemporaryStatement(void)
+{
+    Statement *statement = CFunc_InsertAfterStatement(4, data_00581c36);
+    statement->sourceoffset = statement->next->sourceoffset;
+    statement->dobjstack = currentDobjstack;
+    return statement;
+}
+
+static inline Object *findTemporaryObject(SInt32 uniqueID, ENode *temporaryExpr)
+{
+    ECacheNode *cached;
+    for (cached = cached_objects; cached != NULL; cached = cached->next) {
+        if (cached->key == uniqueID)
+            return cached->obj;
+    }
+    cached = galloc(sizeof(ECacheNode));
+    cached->next = cached_objects;
+    cached_objects = cached;
+    cached->key = uniqueID;
+    cached->obj = create_temp_object(temporaryExpr->data.temp.type);
+    return cached->obj;
+}
+
+static TemporaryObject *CException_NewTypeNode(void)
+{
+    TemporaryObject *t = CompilerTools_AllocatePool(sizeof(TemporaryObject));
+    t->next = temporary_object_list;
+    temporary_object_list = t;
+    return t;
+}
+
+static CException *CException_NewStmtNode(void)
+{
+    CException *s = CompilerTools_AllocatePool(sizeof(CException));
+    s->next = currentDobjstack;
+    currentDobjstack = s;
+    return s;
+}
+
+static CException *CException_CopyStmtNode(void)
+{
+    CException *s = CompilerTools_AllocatePool(sizeof(CException));
+    *s = *currentDobjstack;
+    s->next = current_dobjstack;
+    current_dobjstack = s;
+    return s;
+}
+
+static inline Object *CException_CachedObject(ENode *node)
+{
+    SInt32 key;
+    if ((key = node->data.temp.uniqueid)) {
+        ECacheNode *cache = cached_objects;
+        while (cache) {
+            if (cache->key == key)
+                return cache->obj;
+            cache = cache->next;
+        }
+        cache = (ECacheNode *)galloc(sizeof(ECacheNode));
+        cache->next = cached_objects;
+        cached_objects = cache;
+        cache->key = key;
+        cache->obj = create_temp_object(node->data.temp.type);
+        return cache->obj;
+    }
+    return create_temp_object(node->data.temp.type);
+}
+
+static Statement *InsertPrevStatement(int type)
+{
+    Statement *stmt = CFunc_InsertAfterStatement(type, data_00581c36);
+    stmt->sourceoffset = stmt->next->sourceoffset;
+    stmt->dobjstack = currentDobjstack;
+    return stmt;
+}
+
+static inline SInt32 object_statement(Object *o)
+{
+    Statement *n = CFunc_AppendStatement(0xc);
+    n->expr.expression = create_objectrefnode(o);
+    return (SInt32)n;
+}
+
+static inline void finish_label(CLabel *p)
+{
+    Statement *n = CFunc_AppendStatement(2);
+    n->target.label = p;
+    p->target.stmt = (Statement *)n; /* exception statement view */
+}
+
+static Boolean CException_IsClassType(Type *ty)
+{
+    if (ty != NULL) {
+        if (ty->type == TYPECLASS) {
+            if (CClass_Destructor((TypeClass *)ty) != NULL)
+                return 1;
+            return 0;
+        }
+        if (ty->type == TYPEPOINTER) {
+            if ((TYPE_POINTER(ty)->qual & Q_REFERENCE) != 0 && TPTR_TARGET(ty)->type == TYPECLASS)
+                return 1;
+            return 0;
+        }
+        return 0;
+    }
+    return 1;
+}
+
+/* Exception cleanup record for an object or array destructor. */
+
+static inline ENode *CException_004e2c40_inline1(Object *p0, ENode *p1)
+{
+    ENode *v3;
+    v3 = CABI_DestroyObject(p0, p1, 1, 1, 0);
+    CE_ASSERT(v3->type != EFUNCCALL || v3->data.funccall.funcref->type != EOBJREF, CError_FATAL(609));
+    if (v3->data.funccall.funcref->data.objref->datatype == DVFUNC) {
+        v3->data.funccall.funcref->flags |= 128;
+    }
+    return v3;
+}
+
+static inline Statement *CException_004e2c40_inline2(Statement *p0, ENode *p1)
+{
+    Statement *t3;
+    t3 = CFunc_InsertAfterStatement(4, p0);
+    t3->expr.expression = p1;
+    return t3;
+}
+
+static Object *CException_StdType(void *name)
+{
+    CScopeParseResult lookup;
+    NameSpaceObjectList *obj;
+    Object *type;
+    obj = CScope_FindObjectList(&lookup, GetHashNameNode(name));
+    if (obj == NULL || (type = (Object *)obj->object)->otype != 5 || type->datatype != DLOCAL) {
+        CError_FATAL(502);
+        type = NULL;
+    }
+    return type;
+}
+
+unsigned char fn_004e0ab0(Statement *node)
+{
+    data_00581c30 = 0;
+    while (node != NULL) {
+        switch (node->type) {
+            case ST_NOP:
+            case ST_LABEL:
+            case ST_GOTO:
+            case ST_ASM:
+                break;
+            case ST_RETURN:
+                if (node->expr.expression == NULL) {
+                    break;
+                }
+            case ST_EXPRESSION:
+            case ST_SWITCH:
+            case ST_IFGOTO:
+            case ST_IFNGOTO:
+            case ST_BEGINCATCH:
+            case ST_ENDCATCH:
+            case ST_ENDCATCHDTOR:
+            case ST_GOTOEXPR:
+                CExpr_SearchExprTree(node->expr.expression, fn_004e0b20, 2U, 54U, 55U);
+                if (data_00581c30 != 0) {
+                    return 1;
+                }
+                break;
+            default:
+                CError_FATAL(2414);
+                break;
+        }
+        node = node->next;
+    }
+    return 0;
+}
+
 void fn_004e0b20(ENode *expr)
 {
     data_00581c30 = 1U;
@@ -380,38 +571,180 @@ Statement *generate_temporary_object_destruction(Statement *arg)
     }
     return stmt;
 }
-static inline void reverse_one(ENodeList **arr, SInt32 i, ENodeList *found)
+
+/* Expression-node prefix used by exception rewriting. */
+
+ENode *fn_004e1050(ENode *expression)
 {
-    if (arr[i] == found)
-        return;
-    {
-        ENode *result = rewrite_expr_temporaries(arr[i]->node);
-        arr[i]->node = result;
+    switch (expression->type) {
+        case EPRECOMP:
+            return CException_004e1940(expression);
+        case ELABEL:
+        case ESETCONST:
+            lower_newexception(expression, 0);
+            return;
+        case EMFPOINTER:
+            expression->data.diadic.left = fn_004e1050(expression->data.diadic.left);
+            expression->data.diadic.right = rewrite_expr_temporaries(expression->data.diadic.right);
+            return expression;
+        case ECOND:
+            expression->data.diadic.left = fn_004e1050(expression->data.diadic.left);
+            expression->data.diadic.right = rewrite_expr_temporaries(expression->data.diadic.right);
+            expression->data.cond.expr2 = rewrite_expr_temporaries(expression->data.cond.expr2);
+            return expression;
+        case ELAND:
+        case ELOR:
+        case ECOMMA:
+            expression->data.diadic.left = fn_004e1050(expression->data.diadic.left);
+            expression->data.diadic.right = rewrite_expr_temporaries(expression->data.diadic.right);
+            return expression;
+        case EFUNCCALL:
+        case EFUNCCALLP:
+            return rewrite_funccall_temporaries(expression, 0);
+        case EMUL:
+        case EDIV:
+        case EMODULO:
+        case EADD:
+        case ESUB:
+        case ESHL:
+        case ESHR:
+        case ELESS:
+        case EGREATER:
+        case ELESSEQU:
+        case EGREATEREQU:
+        case EEQU:
+        case ENOTEQU:
+        case EAND:
+        case EXOR:
+        case EOR:
+        case EASS:
+        case EMULASS:
+        case EDIVASS:
+        case EMODASS:
+        case EADDASS:
+        case ESUBASS:
+        case ESHLASS:
+        case ESHRASS:
+        case EANDASS:
+        case EXORASS:
+        case EORASS:
+        case EROTL:
+        case EROTR:
+            expression->data.diadic.left = fn_004e1050(expression->data.diadic.left);
+            expression->data.diadic.right = fn_004e1050(expression->data.diadic.right);
+            return expression;
+        case EPOSTINC:
+        case EPOSTDEC:
+        case EPREINC:
+        case EPREDEC:
+        case EINDIRECT:
+        case EMONMIN:
+        case EBINNOT:
+        case ELOGNOT:
+        case ETYPCON:
+        case EBITFIELD:
+            expression->data.diadic.left = fn_004e1050(expression->data.diadic.left);
+            return expression;
+        case EINTCONST:
+        case EFLOATCONST:
+        case ESTRINGCONST:
+        case EOBJREF:
+        case EQUALNAME:
+        case ENULLCHECK:
+        case ELOCOBJ:
+        case ENEWEXCEPTION:
+        case ENEWEXCEPTIONARRAY:
+        case EMEMBER:
+        case EASSBLK:
+            return expression;
+        default:
+            CError_FATAL(2127);
+            return expression;
     }
 }
-/* Objects and initialization flags registered for temporary cleanup. */
 
-static inline Statement *NewTemporaryStatement(void)
+ENode *rewrite_expr_temporaries(ENode *expr)
 {
-    Statement *statement = CFunc_InsertAfterStatement(4, data_00581c36);
-    statement->sourceoffset = statement->next->sourceoffset;
-    statement->dobjstack = currentDobjstack;
-    return statement;
-}
-
-static inline Object *findTemporaryObject(SInt32 uniqueID, ENode *temporaryExpr)
-{
-    ECacheNode *cached;
-    for (cached = cached_objects; cached != NULL; cached = cached->next) {
-        if (cached->key == uniqueID)
-            return cached->obj;
+    switch (expr->type) {
+        case EPRECOMP:
+            return CException_004e1940(expr);
+        case ELABEL:
+        case ESETCONST:
+            lower_newexception(expr, 1);
+            return;
+        case EMFPOINTER:
+            expr->data.diadic.left = rewrite_expr_temporaries(expr->data.diadic.left);
+            expr->data.diadic.right = rewrite_expr_temporaries(expr->data.diadic.right);
+            return expr;
+        case ECOND:
+            expr->data.cond.cond = rewrite_expr_temporaries(expr->data.cond.cond);
+            expr->data.cond.expr1 = rewrite_expr_temporaries(expr->data.cond.expr1);
+            expr->data.cond.expr2 = rewrite_expr_temporaries(expr->data.cond.expr2);
+            return expr;
+        case ELAND:
+        case ELOR:
+            expr->data.diadic.left = rewrite_expr_temporaries(expr->data.diadic.left);
+            expr->data.diadic.right = rewrite_expr_temporaries(expr->data.diadic.right);
+            return expr;
+        case EFUNCCALL:
+        case EFUNCCALLP:
+            return rewrite_funccall_temporaries(expr, 1);
+        case EMUL:
+        case EDIV:
+        case EMODULO:
+        case EADD:
+        case ESUB:
+        case ESHL:
+        case ESHR:
+        case ELESS:
+        case EGREATER:
+        case ELESSEQU:
+        case EGREATEREQU:
+        case EEQU:
+        case ENOTEQU:
+        case EAND:
+        case EXOR:
+        case EOR:
+        case EASS:
+        case EMULASS:
+        case EDIVASS:
+        case EMODASS:
+        case EADDASS:
+        case ESUBASS:
+        case ESHLASS:
+        case ESHRASS:
+        case EANDASS:
+        case EXORASS:
+        case EORASS:
+        case ECOMMA:
+            expr->data.diadic.left = rewrite_expr_temporaries(expr->data.diadic.left);
+            expr->data.diadic.right = rewrite_expr_temporaries(expr->data.diadic.right);
+            return expr;
+        case EPOSTINC:
+        case EPOSTDEC:
+        case EPREINC:
+        case EPREDEC:
+        case EINDIRECT:
+        case EMONMIN:
+        case EBINNOT:
+        case ELOGNOT:
+        case ETYPCON:
+        case EBITFIELD:
+            expr->data.monadic = rewrite_expr_temporaries(expr->data.monadic);
+            return expr;
+        case EINTCONST:
+        case EFLOATCONST:
+        case ESTRINGCONST:
+        case EOBJREF:
+        case ENULLCHECK:
+        case ELOCOBJ:
+        case EMEMBER:
+        case EASSBLK:
+            return expr;
+        default:
+            CError_FATAL(2016);
+            return expr;
     }
-    cached = galloc(sizeof(ECacheNode));
-    cached->next = cached_objects;
-    cached_objects = cached;
-    cached->key = uniqueID;
-    cached->obj = create_temp_object(temporaryExpr->data.temp.type);
-    return cached->obj;
 }
 
 ENode *rewrite_funccall_temporaries(ENode *node, Boolean reverse)
@@ -561,59 +894,6 @@ ENode *rewrite_funccall_temporaries(ENode *node, Boolean reverse)
     return node;
 }
 
-static TemporaryObject *CException_NewTypeNode(void)
-{
-    TemporaryObject *t = CompilerTools_AllocatePool(sizeof(TemporaryObject));
-    t->next = temporary_object_list;
-    temporary_object_list = t;
-    return t;
-}
-
-static CException *CException_NewStmtNode(void)
-{
-    CException *s = CompilerTools_AllocatePool(sizeof(CException));
-    s->next = currentDobjstack;
-    currentDobjstack = s;
-    return s;
-}
-
-static CException *CException_CopyStmtNode(void)
-{
-    CException *s = CompilerTools_AllocatePool(sizeof(CException));
-    *s = *currentDobjstack;
-    s->next = current_dobjstack;
-    current_dobjstack = s;
-    return s;
-}
-
-static inline Object *CException_CachedObject(ENode *node)
-{
-    SInt32 key;
-    if ((key = node->data.temp.uniqueid)) {
-        ECacheNode *cache = cached_objects;
-        while (cache) {
-            if (cache->key == key)
-                return cache->obj;
-            cache = cache->next;
-        }
-        cache = (ECacheNode *)galloc(sizeof(ECacheNode));
-        cache->next = cached_objects;
-        cached_objects = cache;
-        cache->key = key;
-        cache->obj = create_temp_object(node->data.temp.type);
-        return cache->obj;
-    }
-    return create_temp_object(node->data.temp.type);
-}
-
-static Statement *InsertPrevStatement(int type)
-{
-    Statement *stmt = CFunc_InsertAfterStatement(type, data_00581c36);
-    stmt->sourceoffset = stmt->next->sourceoffset;
-    stmt->dobjstack = currentDobjstack;
-    return stmt;
-}
-
 void lower_newexception(ENode *node, Boolean useExpression)
 {
     Statement *initialStatement;
@@ -735,19 +1015,6 @@ Object *CException_GetTempObject(ENode *obj)
         return p->obj;
     }
     return create_temp_object(obj->data.temp.type);
-}
-static inline SInt32 object_statement(Object *o)
-{
-    Statement *n = CFunc_AppendStatement(0xc);
-    n->expr.expression = create_objectrefnode(o);
-    return (SInt32)n;
-}
-
-static inline void finish_label(CLabel *p)
-{
-    Statement *n = CFunc_AppendStatement(2);
-    n->target.label = p;
-    p->target.stmt = (Statement *)n; /* exception statement view */
 }
 
 /* Linked record describing an exception handler. */
@@ -931,24 +1198,6 @@ ENode *create_catch_object_init(DeclInfo *info, ExceptionHandlerRecord *args)
     m = makemonadicnode(monad, EINDIRECT);
     m->rtype = info->dtype;
     return makediadicnode(create_objectnode(obj), m, EASS);
-}
-
-static Boolean CException_IsClassType(Type *ty)
-{
-    if (ty != NULL) {
-        if (ty->type == TYPECLASS) {
-            if (CClass_Destructor((TypeClass *)ty) != NULL)
-                return 1;
-            return 0;
-        }
-        if (ty->type == TYPEPOINTER) {
-            if ((TYPE_POINTER(ty)->qual & Q_REFERENCE) != 0 && TPTR_TARGET(ty)->type == TYPECLASS)
-                return 1;
-            return 0;
-        }
-        return 0;
-    }
-    return 1;
 }
 
 void CException_004e1fb0(Statement *firstScope, Statement *insertionScope, Statement *lastScope,
@@ -1234,6 +1483,27 @@ ENode *create_type_stringconst(Type *type, UInt32 qualifiers, Boolean flag)
     return node;
 }
 
+/* Temporary list produced by exception traversal. */
+
+void emit_flagged_class_offsets(TypeClass *type)
+{
+    char buf[16];
+    ClassNode *node = add_class_and_bases(NULL, type, type, 0U, 0U, 1U);
+    while (node != NULL) {
+        if (node->flagd != 0 && node->flage == 0) {
+            fn_004e2940(node->cls);
+            AppendGListByte(&data_00583548, 33);
+            if ((UInt32)node->offset != 0U) {
+                sprintf(buf, "%ld!", node->offset);
+                CompilerTools_AppendGListString(&data_00583548, buf);
+            } else {
+                AppendGListByte(&data_00583548, 33);
+            }
+        }
+        node = node->next;
+    }
+}
+
 ClassNode *add_class_and_bases(ClassNode *list, TypeClass *mostDerivedClass, TypeClass *cls, SInt32 offset,
                                Boolean isVirtual, Boolean isPublic)
 {
@@ -1294,6 +1564,29 @@ void mark_class_and_bases(ClassNode *list, TypeClass *cls)
         mark_class_and_bases(list, base->base);
 }
 
+/* Records consumed by the exception-name writer. */
+
+void fn_004e2940(TypeClass *exceptionData)
+{
+    NameSpace *entry;
+    char name[64];
+
+    append_namespace_names(exceptionData->nspace->parent);
+    CompilerTools_AppendGListString(&data_00583548, exceptionData->classname->name);
+    entry = exceptionData->nspace->parent;
+    while (entry != NULL) {
+        if (entry->is_global == 0 && entry->is_templ == 0 && entry->name == NULL) {
+            if (data_00588238 == NULL) {
+                CError_FATAL(790);
+            }
+            sprintf(name, "*%lx*%lx*", &data_00588238, (int)&entry);
+            CompilerTools_AppendGListString(&data_00583548, name);
+            break;
+        }
+        entry = entry->parent;
+    }
+}
+
 void append_namespace_names(NameSpace *p)
 {
     for (; p; p = p->parent)
@@ -1303,27 +1596,6 @@ void append_namespace_names(NameSpace *p)
             CompilerTools_AppendGListString(&data_00583548, "::");
             return;
         }
-}
-
-/* Exception cleanup record for an object or array destructor. */
-
-static inline ENode *CException_004e2c40_inline1(Object *p0, ENode *p1)
-{
-    ENode *v3;
-    v3 = CABI_DestroyObject(p0, p1, 1, 1, 0);
-    CE_ASSERT(v3->type != EFUNCCALL || v3->data.funccall.funcref->type != EOBJREF, CError_FATAL(609));
-    if (v3->data.funccall.funcref->data.objref->datatype == DVFUNC) {
-        v3->data.funccall.funcref->flags |= 128;
-    }
-    return v3;
-}
-
-static inline Statement *CException_004e2c40_inline2(Statement *p0, ENode *p1)
-{
-    Statement *t3;
-    t3 = CFunc_InsertAfterStatement(4, p0);
-    t3->expr.expression = p1;
-    return t3;
 }
 
 Statement *CExcept_ActionCleanup(CException *cleanup, Statement *statement)
@@ -1462,18 +1734,6 @@ void CExcept_RegisterMember(Statement *statement, Object *objectptr, SInt32 offs
     insert_exception_action(statement, node);
     statement->flags |= 2;
 }
-static Object *CException_StdType(void *name)
-{
-    CScopeParseResult lookup;
-    NameSpaceObjectList *obj;
-    Object *type;
-    obj = CScope_FindObjectList(&lookup, GetHashNameNode(name));
-    if (obj == NULL || (type = (Object *)obj->object)->otype != 5 || type->datatype != DLOCAL) {
-        CError_FATAL(502);
-        type = NULL;
-    }
-    return type;
-}
 
 void CException_AddStdTypeRecord(void)
 {
@@ -1505,181 +1765,6 @@ void CException_PushEntry(void)
     entry->kind = 16U;
     entry->next = UINT_00587fc4;
     UINT_00587fc4 = entry;
-}
-
-/* Expression-node prefix used by exception rewriting. */
-
-ENode *fn_004e1050(ENode *expression)
-{
-    switch (expression->type) {
-        case EPRECOMP:
-            return CException_004e1940(expression);
-        case ELABEL:
-        case ESETCONST:
-            lower_newexception(expression, 0);
-            return;
-        case EMFPOINTER:
-            expression->data.diadic.left = fn_004e1050(expression->data.diadic.left);
-            expression->data.diadic.right = rewrite_expr_temporaries(expression->data.diadic.right);
-            return expression;
-        case ECOND:
-            expression->data.diadic.left = fn_004e1050(expression->data.diadic.left);
-            expression->data.diadic.right = rewrite_expr_temporaries(expression->data.diadic.right);
-            expression->data.cond.expr2 = rewrite_expr_temporaries(expression->data.cond.expr2);
-            return expression;
-        case ELAND:
-        case ELOR:
-        case ECOMMA:
-            expression->data.diadic.left = fn_004e1050(expression->data.diadic.left);
-            expression->data.diadic.right = rewrite_expr_temporaries(expression->data.diadic.right);
-            return expression;
-        case EFUNCCALL:
-        case EFUNCCALLP:
-            return rewrite_funccall_temporaries(expression, 0);
-        case EMUL:
-        case EDIV:
-        case EMODULO:
-        case EADD:
-        case ESUB:
-        case ESHL:
-        case ESHR:
-        case ELESS:
-        case EGREATER:
-        case ELESSEQU:
-        case EGREATEREQU:
-        case EEQU:
-        case ENOTEQU:
-        case EAND:
-        case EXOR:
-        case EOR:
-        case EASS:
-        case EMULASS:
-        case EDIVASS:
-        case EMODASS:
-        case EADDASS:
-        case ESUBASS:
-        case ESHLASS:
-        case ESHRASS:
-        case EANDASS:
-        case EXORASS:
-        case EORASS:
-        case EROTL:
-        case EROTR:
-            expression->data.diadic.left = fn_004e1050(expression->data.diadic.left);
-            expression->data.diadic.right = fn_004e1050(expression->data.diadic.right);
-            return expression;
-        case EPOSTINC:
-        case EPOSTDEC:
-        case EPREINC:
-        case EPREDEC:
-        case EINDIRECT:
-        case EMONMIN:
-        case EBINNOT:
-        case ELOGNOT:
-        case ETYPCON:
-        case EBITFIELD:
-            expression->data.diadic.left = fn_004e1050(expression->data.diadic.left);
-            return expression;
-        case EINTCONST:
-        case EFLOATCONST:
-        case ESTRINGCONST:
-        case EOBJREF:
-        case EQUALNAME:
-        case ENULLCHECK:
-        case ELOCOBJ:
-        case ENEWEXCEPTION:
-        case ENEWEXCEPTIONARRAY:
-        case EMEMBER:
-        case EASSBLK:
-            return expression;
-        default:
-            CError_FATAL(2127);
-            return expression;
-    }
-}
-
-ENode *rewrite_expr_temporaries(ENode *expr)
-{
-    switch (expr->type) {
-        case EPRECOMP:
-            return CException_004e1940(expr);
-        case ELABEL:
-        case ESETCONST:
-            lower_newexception(expr, 1);
-            return;
-        case EMFPOINTER:
-            expr->data.diadic.left = rewrite_expr_temporaries(expr->data.diadic.left);
-            expr->data.diadic.right = rewrite_expr_temporaries(expr->data.diadic.right);
-            return expr;
-        case ECOND:
-            expr->data.cond.cond = rewrite_expr_temporaries(expr->data.cond.cond);
-            expr->data.cond.expr1 = rewrite_expr_temporaries(expr->data.cond.expr1);
-            expr->data.cond.expr2 = rewrite_expr_temporaries(expr->data.cond.expr2);
-            return expr;
-        case ELAND:
-        case ELOR:
-            expr->data.diadic.left = rewrite_expr_temporaries(expr->data.diadic.left);
-            expr->data.diadic.right = rewrite_expr_temporaries(expr->data.diadic.right);
-            return expr;
-        case EFUNCCALL:
-        case EFUNCCALLP:
-            return rewrite_funccall_temporaries(expr, 1);
-        case EMUL:
-        case EDIV:
-        case EMODULO:
-        case EADD:
-        case ESUB:
-        case ESHL:
-        case ESHR:
-        case ELESS:
-        case EGREATER:
-        case ELESSEQU:
-        case EGREATEREQU:
-        case EEQU:
-        case ENOTEQU:
-        case EAND:
-        case EXOR:
-        case EOR:
-        case EASS:
-        case EMULASS:
-        case EDIVASS:
-        case EMODASS:
-        case EADDASS:
-        case ESUBASS:
-        case ESHLASS:
-        case ESHRASS:
-        case EANDASS:
-        case EXORASS:
-        case EORASS:
-        case ECOMMA:
-            expr->data.diadic.left = rewrite_expr_temporaries(expr->data.diadic.left);
-            expr->data.diadic.right = rewrite_expr_temporaries(expr->data.diadic.right);
-            return expr;
-        case EPOSTINC:
-        case EPOSTDEC:
-        case EPREINC:
-        case EPREDEC:
-        case EINDIRECT:
-        case EMONMIN:
-        case EBINNOT:
-        case ELOGNOT:
-        case ETYPCON:
-        case EBITFIELD:
-            expr->data.monadic = rewrite_expr_temporaries(expr->data.monadic);
-            return expr;
-        case EINTCONST:
-        case EFLOATCONST:
-        case ESTRINGCONST:
-        case EOBJREF:
-        case ENULLCHECK:
-        case ELOCOBJ:
-        case EMEMBER:
-        case EASSBLK:
-            return expr;
-        default:
-            CError_FATAL(2016);
-            return expr;
-    }
 }
 
 void insert_exception_action(Statement *stmt, CException *action)
@@ -1826,86 +1911,6 @@ unsigned char CExcept_ActionNeedsDestruction(CException *entry)
     }
     result = 0;
     return result;
-}
-
-unsigned char fn_004e0ab0(Statement *node)
-{
-    data_00581c30 = 0;
-    while (node != NULL) {
-        switch (node->type) {
-            case ST_NOP:
-            case ST_LABEL:
-            case ST_GOTO:
-            case ST_ASM:
-                break;
-            case ST_RETURN:
-                if (node->expr.expression == NULL) {
-                    break;
-                }
-            case ST_EXPRESSION:
-            case ST_SWITCH:
-            case ST_IFGOTO:
-            case ST_IFNGOTO:
-            case ST_BEGINCATCH:
-            case ST_ENDCATCH:
-            case ST_ENDCATCHDTOR:
-            case ST_GOTOEXPR:
-                CExpr_SearchExprTree(node->expr.expression, fn_004e0b20, 2U, 54U, 55U);
-                if (data_00581c30 != 0) {
-                    return 1;
-                }
-                break;
-            default:
-                CError_FATAL(2414);
-                break;
-        }
-        node = node->next;
-    }
-    return 0;
-}
-
-/* Temporary list produced by exception traversal. */
-
-void emit_flagged_class_offsets(TypeClass *type)
-{
-    char buf[16];
-    ClassNode *node = add_class_and_bases(NULL, type, type, 0U, 0U, 1U);
-    while (node != NULL) {
-        if (node->flagd != 0 && node->flage == 0) {
-            fn_004e2940(node->cls);
-            AppendGListByte(&data_00583548, 33);
-            if ((UInt32)node->offset != 0U) {
-                sprintf(buf, "%ld!", node->offset);
-                CompilerTools_AppendGListString(&data_00583548, buf);
-            } else {
-                AppendGListByte(&data_00583548, 33);
-            }
-        }
-        node = node->next;
-    }
-}
-
-/* Records consumed by the exception-name writer. */
-
-void fn_004e2940(TypeClass *exceptionData)
-{
-    NameSpace *entry;
-    char name[64];
-
-    append_namespace_names(exceptionData->nspace->parent);
-    CompilerTools_AppendGListString(&data_00583548, exceptionData->classname->name);
-    entry = exceptionData->nspace->parent;
-    while (entry != NULL) {
-        if (entry->is_global == 0 && entry->is_templ == 0 && entry->name == NULL) {
-            if (data_00588238 == NULL) {
-                CError_FATAL(790);
-            }
-            sprintf(name, "*%lx*%lx*", &data_00588238, (int)&entry);
-            CompilerTools_AppendGListString(&data_00583548, name);
-            break;
-        }
-        entry = entry->parent;
-    }
 }
 
 Boolean CExcept_ActionCompare(CException *left, CException *right)

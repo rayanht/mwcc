@@ -1162,16 +1162,6 @@ unsigned int parse_zero_prefixed_number(SInt16 c)
     return -1;
 }
 
-short scan_xor_operator(short ch)
-{
-    data_00588524 = 0;
-    if ((ch = prepnextchar2()) == '=') {
-        currentTextPosition = (UInt8 *)lookahead_position;
-        return TK_XOR_ASSIGN;
-    }
-    return '^';
-}
-
 short scan_div_assign(short ch)
 {
     data_00588524 = 0;
@@ -1180,6 +1170,16 @@ short scan_div_assign(short ch)
         return TK_DIV_ASSIGN;
     }
     return '/';
+}
+
+short scan_xor_operator(short ch)
+{
+    data_00588524 = 0;
+    if ((ch = prepnextchar2()) == '=') {
+        currentTextPosition = (UInt8 *)lookahead_position;
+        return TK_XOR_ASSIGN;
+    }
+    return '^';
 }
 
 unsigned int tokenize_and(volatile unsigned short token)
@@ -1937,6 +1937,7 @@ static inline short hex(short input)
         c = -1;
     return c;
 }
+
 static inline short hex2(short c)
 {
     if (c >= 48 && c <= 57)
@@ -1947,6 +1948,7 @@ static inline short hex2(short c)
         return c - 55;
     return -1;
 }
+
 static inline short hexlook(int input)
 {
     short c;
@@ -1960,15 +1962,18 @@ static inline short hexlook(int input)
         c = -1;
     return c;
 }
+
 static inline int complement(int value)
 {
     int mask = ~value;
     return mask;
 }
+
 static inline unsigned char *cursor_start(void)
 {
     return currentTextPosition - 1;
 }
+
 static inline char verify(unsigned char *saved)
 {
     char *v1 = (char *)saved;
@@ -1992,6 +1997,7 @@ static inline short signedpeek(void)
     currentTextPosition = saved;
     return c;
 }
+
 unsigned int read_escaped_character(void)
 {
     short count;

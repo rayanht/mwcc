@@ -91,6 +91,7 @@ static void *registration_find(const char *name)
         return object;
     return NULL;
 }
+
 unsigned char Intrinsics_InitRegistrations(unsigned char active)
 {
     if (active) {
@@ -708,6 +709,699 @@ unsigned char Intrinsics_InitRegistrations(unsigned char active)
             return 0;
     }
     return 1;
+}
+
+static inline void Intrinsics_00486bb0_inline1(ENode *p0, Operand *p1)
+{
+    unsigned char t1;
+    t1 = p0->type;
+    data_00560648[t1](p0, 0, 0, p1);
+    if (p1->kind != OpndType_VR) {
+        Operands_ForceVR(p1, p0->rtype, 0);
+    }
+}
+
+#define CERROR_FILE __FILE__
+
+static inline void Intrinsics_00487090_inline1(ENode *p0, Operand *p1)
+{
+    unsigned char t3;
+    void (*t4)(void *, short, short, void *);
+    t3 = p0->type;
+    t4 = data_00560648[t3];
+    t4(p0, 0, 0, p1);
+    if (p1->kind != OpndType_GPR) {
+        Operands_ForceGPR(p1, p0->rtype, 0);
+    }
+}
+
+void Intrinsics_RegisterIntrinsics(void)
+{
+    unsigned char saved_cplusplus = copts.cplusplus;
+    int i;
+    TypeFunc *function;
+
+    copts.cplusplus = 0;
+    for (i = 0; i < 313; i++)
+        registration_slot_00580898[i] = NULL;
+    registration_slot_00580898[0] = CParser_NewRTFunc(&stvoid, GetHashNameNode("__eieio"), 0, 0);
+    registration_slot_00580898[1] = CParser_NewRTFunc(&stvoid, GetHashNameNode("__sync"), 0, 0);
+    registration_slot_00580898[2] = CParser_NewRTFunc(&stvoid, GetHashNameNode("__isync"), 0, 0);
+    registration_slot_00580898[3] =
+        CParser_NewRTFunc((Type *)&stsignedint, GetHashNameNode("__abs"), 0, 1, &stsignedint);
+    registration_slot_00580898[4] =
+        CParser_NewRTFunc((Type *)&stsignedlong, GetHashNameNode("__labs"), 0, 1, &stsignedlong);
+    registration_slot_00580898[5] = CParser_NewRTFunc((Type *)&stdouble, GetHashNameNode("__fabs"), 0, 1, &stdouble);
+    registration_slot_00580898[6] = CParser_NewRTFunc((Type *)&stdouble, GetHashNameNode("__fnabs"), 0, 1, &stdouble);
+    registration_slot_00580898[7] = CParser_NewRTFunc((Type *)&stdouble, GetHashNameNode("__setflm"), 0, 1, &stdouble);
+    registration_slot_00580898[33] =
+        CParser_NewRTFunc((Type *)&stdouble, GetHashNameNode("__frsqrte"), 0, 1, &stdouble);
+    registration_slot_00580898[8] =
+        CParser_NewRTFunc((Type *)&void_ptr, GetHashNameNode("__alloca"), 0, 1, &stunsignedint);
+    registration_slot_00580898[9] =
+        CParser_NewRTFunc((Type *)&stsignedint, GetHashNameNode("__cntlzw"), 0, 1, &stunsignedint);
+    registration_slot_00580898[10] =
+        CParser_NewRTFunc((Type *)&stunsignedint, GetHashNameNode("__lhbrx"), 0, 2, &void_ptr, &stsignedint);
+    registration_slot_00580898[11] =
+        CParser_NewRTFunc((Type *)&stunsignedint, GetHashNameNode("__lwbrx"), 0, 2, &void_ptr, &stsignedint);
+    registration_slot_00580898[12] =
+        CParser_NewRTFunc(&stvoid, GetHashNameNode("__sthbrx"), 0, 3, &stunsignedshort, &void_ptr, &stsignedint);
+    registration_slot_00580898[13] =
+        CParser_NewRTFunc(&stvoid, GetHashNameNode("__stwbrx"), 0, 3, &stunsignedint, &void_ptr, &stsignedint);
+    registration_slot_00580898[14] =
+        CParser_NewRTFunc(&stvoid, GetHashNameNode("__dcbf"), 0, 2, &void_ptr, &stsignedint);
+    registration_slot_00580898[15] =
+        CParser_NewRTFunc(&stvoid, GetHashNameNode("__dcbt"), 0, 2, &void_ptr, &stsignedint);
+    registration_slot_00580898[16] =
+        CParser_NewRTFunc(&stvoid, GetHashNameNode("__dcbst"), 0, 2, &void_ptr, &stsignedint);
+    registration_slot_00580898[17] =
+        CParser_NewRTFunc(&stvoid, GetHashNameNode("__dcbtst"), 0, 2, &void_ptr, &stsignedint);
+    registration_slot_00580898[18] =
+        CParser_NewRTFunc(&stvoid, GetHashNameNode("__dcbz"), 0, 2, &void_ptr, &stsignedint);
+    registration_slot_00580898[19] =
+        CParser_NewRTFunc((Type *)&stsignedint, GetHashNameNode("__mulhw"), 0, 2, &stsignedint, &stsignedint);
+    registration_slot_00580898[20] =
+        CParser_NewRTFunc((Type *)&stunsignedint, GetHashNameNode("__mulhwu"), 0, 2, &stunsignedint, &stunsignedint);
+    registration_slot_00580898[21] =
+        CParser_NewRTFunc((Type *)&stsignedint, GetHashNameNode("__divw"), 0, 2, &stsignedint, &stsignedint);
+    registration_slot_00580898[22] =
+        CParser_NewRTFunc((Type *)&stsignedint, GetHashNameNode("__divwu"), 0, 2, &stsignedint, &stsignedint);
+    registration_slot_00580898[23] =
+        CParser_NewRTFunc((Type *)&stdouble, GetHashNameNode("__fmadd"), 0, 3, &stdouble, &stdouble, &stdouble);
+    registration_slot_00580898[24] =
+        CParser_NewRTFunc((Type *)&stdouble, GetHashNameNode("__fmsub"), 0, 3, &stdouble, &stdouble, &stdouble);
+    registration_slot_00580898[25] =
+        CParser_NewRTFunc((Type *)&stdouble, GetHashNameNode("__fnmadd"), 0, 3, &stdouble, &stdouble, &stdouble);
+    registration_slot_00580898[26] =
+        CParser_NewRTFunc((Type *)&stdouble, GetHashNameNode("__fnmsub"), 0, 3, &stdouble, &stdouble, &stdouble);
+    registration_slot_00580898[34] =
+        CParser_NewRTFunc((Type *)&stdouble, GetHashNameNode("__fsel"), 0, 3, &stdouble, &stdouble, &stdouble);
+    registration_slot_00580898[27] =
+        CParser_NewRTFunc((Type *)&stfloat, GetHashNameNode("__fmadds"), 0, 3, &stfloat, &stfloat, &stfloat);
+    registration_slot_00580898[28] =
+        CParser_NewRTFunc((Type *)&stfloat, GetHashNameNode("__fmsubs"), 0, 3, &stfloat, &stfloat, &stfloat);
+    registration_slot_00580898[29] =
+        CParser_NewRTFunc((Type *)&stfloat, GetHashNameNode("__fnmadds"), 0, 3, &stfloat, &stfloat, &stfloat);
+    registration_slot_00580898[30] =
+        CParser_NewRTFunc((Type *)&stfloat, GetHashNameNode("__fnmsubs"), 0, 3, &stfloat, &stfloat, &stfloat);
+    registration_slot_00580898[31] = CParser_NewRTFunc((Type *)&stdouble, GetHashNameNode("__mffs"), 0, 0);
+    registration_slot_00580898[32] = CParser_NewRTFunc((Type *)&stfloat, GetHashNameNode("__fres"), 0, 1, &stfloat);
+    registration_slot_00580898[40] = CParser_NewRTFunc((Type *)&stfloat, GetHashNameNode("__fabsf"), 0, 1, &stfloat);
+    registration_slot_00580898[41] = CParser_NewRTFunc((Type *)&stfloat, GetHashNameNode("__fnabsf"), 0, 1, &stfloat);
+    registration_slot_00580898[35] = CParser_NewRTFunc(&initializer_data_0055bb90, GetHashNameNode("__strcpy"), 0, 2,
+                                                       &initializer_data_0055bb90, &initializer_data_0055bb90);
+    function = (TypeFunc *)registration_slot_00580898[35]->type;
+    function->args->next->qual |= Q_CONST;
+    registration_slot_00580898[36] =
+        CParser_NewRTFunc((Type *)&void_ptr, GetHashNameNode("__memcpy"), 0, 3, &void_ptr, &void_ptr, &stunsignedlong);
+    data_00587fc0 = registration_slot_00580898[36];
+    function = (TypeFunc *)registration_slot_00580898[36]->type;
+    function->args->next->qual |= Q_CONST;
+    registration_slot_00580898[37] =
+        CParser_NewRTFunc((Type *)&stsignedint, GetHashNameNode("__rlwimi"), 0, 5, &stsignedint, &stsignedint,
+                          &stsignedint, &stsignedint, &stsignedint);
+    registration_slot_00580898[38] = CParser_NewRTFunc((Type *)&stsignedint, GetHashNameNode("__rlwinm"), 0, 4,
+                                                       &stsignedint, &stsignedint, &stsignedint, &stsignedint);
+    registration_slot_00580898[39] = CParser_NewRTFunc((Type *)&stsignedint, GetHashNameNode("__rlwnm"), 0, 4,
+                                                       &stsignedint, &stsignedint, &stsignedint, &stsignedint);
+    registration_slot_00580898[42] = CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_add"), 0, 2,
+                                                       &initializer_data_0055fbbc, &initializer_data_0055fbbc);
+    registration_slot_00580898[43] = CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_addc"), 0, 2,
+                                                       &initializer_data_0055fbbc, &initializer_data_0055fbbc);
+    registration_slot_00580898[44] = CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_adds"), 0, 2,
+                                                       &initializer_data_0055fbbc, &initializer_data_0055fbbc);
+    registration_slot_00580898[45] = CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_and"), 0, 2,
+                                                       &initializer_data_0055fbbc, &initializer_data_0055fbbc);
+    registration_slot_00580898[46] = CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_andc"), 0, 2,
+                                                       &initializer_data_0055fbbc, &initializer_data_0055fbbc);
+    registration_slot_00580898[47] = CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_avg"), 0, 2,
+                                                       &initializer_data_0055fbbc, &initializer_data_0055fbbc);
+    registration_slot_00580898[48] =
+        CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_ceil"), 0, 1, &initializer_data_0055fbbc);
+    registration_slot_00580898[49] = CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_cmpb"), 0, 2,
+                                                       &initializer_data_0055fbbc, &initializer_data_0055fbbc);
+    registration_slot_00580898[50] = CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_cmpeq"), 0, 2,
+                                                       &initializer_data_0055fbbc, &initializer_data_0055fbbc);
+    registration_slot_00580898[51] = CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_cmpge"), 0, 2,
+                                                       &initializer_data_0055fbbc, &initializer_data_0055fbbc);
+    registration_slot_00580898[52] = CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_cmple"), 0, 2,
+                                                       &initializer_data_0055fbbc, &initializer_data_0055fbbc);
+    registration_slot_00580898[53] = CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_cmpgt"), 0, 2,
+                                                       &initializer_data_0055fbbc, &initializer_data_0055fbbc);
+    registration_slot_00580898[54] = CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_cmplt"), 0, 2,
+                                                       &initializer_data_0055fbbc, &initializer_data_0055fbbc);
+    registration_slot_00580898[55] = CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_ctf"), 0, 2,
+                                                       &initializer_data_0055fbbc, &initializer_data_0055fbbc);
+    registration_slot_00580898[56] = CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_cts"), 0, 2,
+                                                       &initializer_data_0055fbbc, &initializer_data_0055fbbc);
+    registration_slot_00580898[57] = CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_ctu"), 0, 2,
+                                                       &initializer_data_0055fbbc, &initializer_data_0055fbbc);
+    registration_slot_00580898[58] = CParser_NewRTFunc(&stvoid, GetHashNameNode("vec_dss"), 0, 1, &stsignedint);
+    registration_slot_00580898[59] = CParser_NewRTFunc(&stvoid, GetHashNameNode("vec_dssall"), 0, 0);
+    registration_slot_00580898[60] = CParser_NewRTFunc(&stvoid, GetHashNameNode("vec_dst"), 0, 3,
+                                                       &initializer_data_0055fbbc, &stsignedint, &stsignedint);
+    registration_slot_00580898[61] = CParser_NewRTFunc(&stvoid, GetHashNameNode("vec_dstst"), 0, 3,
+                                                       &initializer_data_0055fbbc, &stsignedint, &stsignedint);
+    registration_slot_00580898[62] = CParser_NewRTFunc(&stvoid, GetHashNameNode("vec_dststt"), 0, 3,
+                                                       &initializer_data_0055fbbc, &stsignedint, &stsignedint);
+    registration_slot_00580898[63] = CParser_NewRTFunc(&stvoid, GetHashNameNode("vec_dstt"), 0, 3,
+                                                       &initializer_data_0055fbbc, &stsignedint, &stsignedint);
+    registration_slot_00580898[64] =
+        CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_expte"), 0, 1, &initializer_data_0055fbbc);
+    registration_slot_00580898[65] =
+        CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_floor"), 0, 1, &initializer_data_0055fbbc);
+    registration_slot_00580898[66] = CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_ld"), 0, 2,
+                                                       &initializer_data_0055fbbc, &initializer_data_0055fbbc);
+    registration_slot_00580898[67] = CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_lde"), 0, 2,
+                                                       &initializer_data_0055fbbc, &initializer_data_0055fbbc);
+    registration_slot_00580898[68] = CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_ldl"), 0, 2,
+                                                       &initializer_data_0055fbbc, &initializer_data_0055fbbc);
+    registration_slot_00580898[69] =
+        CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_loge"), 0, 1, &initializer_data_0055fbbc);
+    registration_slot_00580898[70] = CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_lvsl"), 0, 2,
+                                                       &initializer_data_0055fbbc, &initializer_data_0055fbbc);
+    registration_slot_00580898[71] = CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_lvsr"), 0, 2,
+                                                       &initializer_data_0055fbbc, &initializer_data_0055fbbc);
+    registration_slot_00580898[72] =
+        CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_madd"), 0, 3, &initializer_data_0055fbbc,
+                          &initializer_data_0055fbbc, &initializer_data_0055fbbc);
+    registration_slot_00580898[73] =
+        CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_madds"), 0, 3, &initializer_data_0055fbbc,
+                          &initializer_data_0055fbbc, &initializer_data_0055fbbc);
+    registration_slot_00580898[74] = CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_max"), 0, 2,
+                                                       &initializer_data_0055fbbc, &initializer_data_0055fbbc);
+    registration_slot_00580898[75] = CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_mergeh"), 0, 2,
+                                                       &initializer_data_0055fbbc, &initializer_data_0055fbbc);
+    registration_slot_00580898[76] = CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_mergel"), 0, 2,
+                                                       &initializer_data_0055fbbc, &initializer_data_0055fbbc);
+    registration_slot_00580898[77] = CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_mfvscr"), 0, 0);
+    registration_slot_00580898[78] = CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_min"), 0, 2,
+                                                       &initializer_data_0055fbbc, &initializer_data_0055fbbc);
+    registration_slot_00580898[79] =
+        CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_mladd"), 0, 3, &initializer_data_0055fbbc,
+                          &initializer_data_0055fbbc, &initializer_data_0055fbbc);
+    registration_slot_00580898[80] =
+        CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_mradds"), 0, 3, &initializer_data_0055fbbc,
+                          &initializer_data_0055fbbc, &initializer_data_0055fbbc);
+    registration_slot_00580898[81] =
+        CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_msum"), 0, 3, &initializer_data_0055fbbc,
+                          &initializer_data_0055fbbc, &initializer_data_0055fbbc);
+    registration_slot_00580898[82] =
+        CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_msums"), 0, 3, &initializer_data_0055fbbc,
+                          &initializer_data_0055fbbc, &initializer_data_0055fbbc);
+    registration_slot_00580898[83] =
+        CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_mtvscr"), 0, 1, &initializer_data_0055fbbc);
+    registration_slot_00580898[84] = CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_mule"), 0, 2,
+                                                       &initializer_data_0055fbbc, &initializer_data_0055fbbc);
+    registration_slot_00580898[85] = CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_mulo"), 0, 2,
+                                                       &initializer_data_0055fbbc, &initializer_data_0055fbbc);
+    registration_slot_00580898[86] =
+        CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_nmsub"), 0, 2, &initializer_data_0055fbbc,
+                          &initializer_data_0055fbbc, &initializer_data_0055fbbc);
+    registration_slot_00580898[87] = CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_nor"), 0, 2,
+                                                       &initializer_data_0055fbbc, &initializer_data_0055fbbc);
+    registration_slot_00580898[88] = CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_or"), 0, 2,
+                                                       &initializer_data_0055fbbc, &initializer_data_0055fbbc);
+    registration_slot_00580898[89] = CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_pack"), 0, 2,
+                                                       &initializer_data_0055fbbc, &initializer_data_0055fbbc);
+    registration_slot_00580898[90] = CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_packpx"), 0, 2,
+                                                       &initializer_data_0055fbbc, &initializer_data_0055fbbc);
+    registration_slot_00580898[91] = CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_packs"), 0, 2,
+                                                       &initializer_data_0055fbbc, &initializer_data_0055fbbc);
+    registration_slot_00580898[92] = CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_packsu"), 0, 2,
+                                                       &initializer_data_0055fbbc, &initializer_data_0055fbbc);
+    registration_slot_00580898[93] =
+        CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_perm"), 0, 3, &initializer_data_0055fbbc,
+                          &initializer_data_0055fbbc, &initializer_data_0055fbbc);
+    registration_slot_00580898[94] =
+        CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_re"), 0, 1, &initializer_data_0055fbbc);
+    registration_slot_00580898[95] = CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_rl"), 0, 2,
+                                                       &initializer_data_0055fbbc, &initializer_data_0055fbbc);
+    registration_slot_00580898[96] =
+        CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_round"), 0, 1, &initializer_data_0055fbbc);
+    registration_slot_00580898[97] =
+        CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_rsqrte"), 0, 1, &initializer_data_0055fbbc);
+    registration_slot_00580898[98] =
+        CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_sel"), 0, 3, &initializer_data_0055fbbc,
+                          &initializer_data_0055fbbc, &initializer_data_0055fbbc);
+    registration_slot_00580898[99] = CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_sl"), 0, 2,
+                                                       &initializer_data_0055fbbc, &initializer_data_0055fbbc);
+    registration_slot_00580898[100] =
+        CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_sld"), 0, 3, &initializer_data_0055fbbc,
+                          &initializer_data_0055fbbc, &initializer_data_0055fbbc);
+    registration_slot_00580898[101] = CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_sll"), 0, 2,
+                                                        &initializer_data_0055fbbc, &initializer_data_0055fbbc);
+    registration_slot_00580898[102] = CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_slo"), 0, 2,
+                                                        &initializer_data_0055fbbc, &initializer_data_0055fbbc);
+    registration_slot_00580898[103] = CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_splat"), 0, 2,
+                                                        &initializer_data_0055fbbc, &initializer_data_0055fbbc);
+    registration_slot_00580898[104] = CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_splat_s8"), 0,
+                                                        1, &initializer_data_0055fbbc);
+    registration_slot_00580898[105] = CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_splat_s16"), 0,
+                                                        1, &initializer_data_0055fbbc);
+    registration_slot_00580898[106] = CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_splat_s32"), 0,
+                                                        1, &initializer_data_0055fbbc);
+    registration_slot_00580898[107] = CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_splat_u8"), 0,
+                                                        1, &initializer_data_0055fbbc);
+    registration_slot_00580898[108] = CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_splat_u16"), 0,
+                                                        1, &initializer_data_0055fbbc);
+    registration_slot_00580898[109] = CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_splat_u32"), 0,
+                                                        1, &initializer_data_0055fbbc);
+    registration_slot_00580898[110] = CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_sr"), 0, 2,
+                                                        &initializer_data_0055fbbc, &initializer_data_0055fbbc);
+    registration_slot_00580898[111] = CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_sra"), 0, 2,
+                                                        &initializer_data_0055fbbc, &initializer_data_0055fbbc);
+    registration_slot_00580898[112] = CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_srl"), 0, 2,
+                                                        &initializer_data_0055fbbc, &initializer_data_0055fbbc);
+    registration_slot_00580898[113] = CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_sro"), 0, 2,
+                                                        &initializer_data_0055fbbc, &initializer_data_0055fbbc);
+    registration_slot_00580898[114] =
+        CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_st"), 0, 3, &initializer_data_0055fbbc,
+                          &initializer_data_0055fbbc, &initializer_data_0055fbbc);
+    registration_slot_00580898[115] =
+        CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_ste"), 0, 3, &initializer_data_0055fbbc,
+                          &initializer_data_0055fbbc, &initializer_data_0055fbbc);
+    registration_slot_00580898[116] =
+        CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_stl"), 0, 3, &initializer_data_0055fbbc,
+                          &initializer_data_0055fbbc, &initializer_data_0055fbbc);
+    registration_slot_00580898[117] = CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_sub"), 0, 2,
+                                                        &initializer_data_0055fbbc, &initializer_data_0055fbbc);
+    registration_slot_00580898[118] = CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_subc"), 0, 2,
+                                                        &initializer_data_0055fbbc, &initializer_data_0055fbbc);
+    registration_slot_00580898[119] = CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_subs"), 0, 2,
+                                                        &initializer_data_0055fbbc, &initializer_data_0055fbbc);
+    registration_slot_00580898[120] = CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_sum4s"), 0, 2,
+                                                        &initializer_data_0055fbbc, &initializer_data_0055fbbc);
+    registration_slot_00580898[121] = CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_sum2s"), 0, 2,
+                                                        &initializer_data_0055fbbc, &initializer_data_0055fbbc);
+    registration_slot_00580898[122] = CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_sums"), 0, 2,
+                                                        &initializer_data_0055fbbc, &initializer_data_0055fbbc);
+    registration_slot_00580898[123] =
+        CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_trunc"), 0, 1, &initializer_data_0055fbbc);
+    registration_slot_00580898[124] = CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_unpack2sh"), 0,
+                                                        2, &initializer_data_0055fbbc, &initializer_data_0055fbbc);
+    registration_slot_00580898[125] = CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_unpack2sl"), 0,
+                                                        2, &initializer_data_0055fbbc, &initializer_data_0055fbbc);
+    registration_slot_00580898[126] = CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_unpack2uh"), 0,
+                                                        2, &initializer_data_0055fbbc, &initializer_data_0055fbbc);
+    registration_slot_00580898[127] = CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_unpack2ul"), 0,
+                                                        2, &initializer_data_0055fbbc, &initializer_data_0055fbbc);
+    registration_slot_00580898[128] =
+        CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_unpackh"), 0, 1, &initializer_data_0055fbbc);
+    registration_slot_00580898[129] =
+        CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_unpackl"), 0, 1, &initializer_data_0055fbbc);
+    registration_slot_00580898[130] = CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_xor"), 0, 2,
+                                                        &initializer_data_0055fbbc, &initializer_data_0055fbbc);
+    registration_slot_00580898[131] = CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_all_eq"), 0, 2,
+                                                        &initializer_data_0055fbbc, &initializer_data_0055fbbc);
+    registration_slot_00580898[132] = CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_all_ge"), 0, 2,
+                                                        &initializer_data_0055fbbc, &initializer_data_0055fbbc);
+    registration_slot_00580898[133] = CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_all_gt"), 0, 2,
+                                                        &initializer_data_0055fbbc, &initializer_data_0055fbbc);
+    registration_slot_00580898[134] = CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_all_in"), 0, 2,
+                                                        &initializer_data_0055fbbc, &initializer_data_0055fbbc);
+    registration_slot_00580898[135] = CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_all_le"), 0, 2,
+                                                        &initializer_data_0055fbbc, &initializer_data_0055fbbc);
+    registration_slot_00580898[136] = CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_all_lt"), 0, 2,
+                                                        &initializer_data_0055fbbc, &initializer_data_0055fbbc);
+    registration_slot_00580898[137] =
+        CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_all_nan"), 0, 1, &initializer_data_0055fbbc);
+    registration_slot_00580898[138] = CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_all_ne"), 0, 2,
+                                                        &initializer_data_0055fbbc, &initializer_data_0055fbbc);
+    registration_slot_00580898[139] = CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_all_nge"), 0,
+                                                        2, &initializer_data_0055fbbc, &initializer_data_0055fbbc);
+    registration_slot_00580898[140] = CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_all_ngt"), 0,
+                                                        2, &initializer_data_0055fbbc, &initializer_data_0055fbbc);
+    registration_slot_00580898[141] = CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_all_nle"), 0,
+                                                        2, &initializer_data_0055fbbc, &initializer_data_0055fbbc);
+    registration_slot_00580898[142] = CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_all_nlt"), 0,
+                                                        2, &initializer_data_0055fbbc, &initializer_data_0055fbbc);
+    registration_slot_00580898[143] = CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_all_numeric"),
+                                                        0, 1, &initializer_data_0055fbbc);
+    registration_slot_00580898[144] = CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_any_eq"), 0, 2,
+                                                        &initializer_data_0055fbbc, &initializer_data_0055fbbc);
+    registration_slot_00580898[145] = CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_any_ge"), 0, 2,
+                                                        &initializer_data_0055fbbc, &initializer_data_0055fbbc);
+    registration_slot_00580898[146] = CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_any_gt"), 0, 2,
+                                                        &initializer_data_0055fbbc, &initializer_data_0055fbbc);
+    registration_slot_00580898[147] = CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_any_le"), 0, 2,
+                                                        &initializer_data_0055fbbc, &initializer_data_0055fbbc);
+    registration_slot_00580898[148] = CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_any_lt"), 0, 2,
+                                                        &initializer_data_0055fbbc, &initializer_data_0055fbbc);
+    registration_slot_00580898[149] =
+        CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_any_nan"), 0, 1, &initializer_data_0055fbbc);
+    registration_slot_00580898[150] = CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_any_ne"), 0, 2,
+                                                        &initializer_data_0055fbbc, &initializer_data_0055fbbc);
+    registration_slot_00580898[151] = CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_any_nge"), 0,
+                                                        2, &initializer_data_0055fbbc, &initializer_data_0055fbbc);
+    registration_slot_00580898[152] = CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_any_ngt"), 0,
+                                                        2, &initializer_data_0055fbbc, &initializer_data_0055fbbc);
+    registration_slot_00580898[153] = CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_any_nle"), 0,
+                                                        2, &initializer_data_0055fbbc, &initializer_data_0055fbbc);
+    registration_slot_00580898[154] = CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_any_nlt"), 0,
+                                                        2, &initializer_data_0055fbbc, &initializer_data_0055fbbc);
+    registration_slot_00580898[155] = CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_any_numeric"),
+                                                        0, 1, &initializer_data_0055fbbc);
+    registration_slot_00580898[156] = CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_any_out"), 0,
+                                                        2, &initializer_data_0055fbbc, &initializer_data_0055fbbc);
+    registration_slot_00580898[157] = CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_vaddubm"), 0,
+                                                        2, &initializer_data_0055fbbc, &initializer_data_0055fbbc);
+    registration_slot_00580898[158] = CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_vadduhm"), 0,
+                                                        2, &initializer_data_0055fbbc, &initializer_data_0055fbbc);
+    registration_slot_00580898[159] = CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_vadduwm"), 0,
+                                                        2, &initializer_data_0055fbbc, &initializer_data_0055fbbc);
+    registration_slot_00580898[160] = CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_vaddfp"), 0, 2,
+                                                        &initializer_data_0055fbbc, &initializer_data_0055fbbc);
+    registration_slot_00580898[161] = CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_vaddcuw"), 0,
+                                                        2, &initializer_data_0055fbbc, &initializer_data_0055fbbc);
+    registration_slot_00580898[162] = CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_vaddubs"), 0,
+                                                        2, &initializer_data_0055fbbc, &initializer_data_0055fbbc);
+    registration_slot_00580898[163] = CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_vaddsbs"), 0,
+                                                        2, &initializer_data_0055fbbc, &initializer_data_0055fbbc);
+    registration_slot_00580898[164] = CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_vadduhs"), 0,
+                                                        2, &initializer_data_0055fbbc, &initializer_data_0055fbbc);
+    registration_slot_00580898[165] = CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_vaddshs"), 0,
+                                                        2, &initializer_data_0055fbbc, &initializer_data_0055fbbc);
+    registration_slot_00580898[166] = CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_vadduws"), 0,
+                                                        2, &initializer_data_0055fbbc, &initializer_data_0055fbbc);
+    registration_slot_00580898[167] = CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_vaddsws"), 0,
+                                                        2, &initializer_data_0055fbbc, &initializer_data_0055fbbc);
+    registration_slot_00580898[168] = CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_vand"), 0, 2,
+                                                        &initializer_data_0055fbbc, &initializer_data_0055fbbc);
+    registration_slot_00580898[169] = CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_vandc"), 0, 2,
+                                                        &initializer_data_0055fbbc, &initializer_data_0055fbbc);
+    registration_slot_00580898[170] = CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_vavgub"), 0, 2,
+                                                        &initializer_data_0055fbbc, &initializer_data_0055fbbc);
+    registration_slot_00580898[171] = CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_vavgsb"), 0, 2,
+                                                        &initializer_data_0055fbbc, &initializer_data_0055fbbc);
+    registration_slot_00580898[172] = CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_vavguh"), 0, 2,
+                                                        &initializer_data_0055fbbc, &initializer_data_0055fbbc);
+    registration_slot_00580898[173] = CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_vavgsh"), 0, 2,
+                                                        &initializer_data_0055fbbc, &initializer_data_0055fbbc);
+    registration_slot_00580898[174] = CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_vavguw"), 0, 2,
+                                                        &initializer_data_0055fbbc, &initializer_data_0055fbbc);
+    registration_slot_00580898[175] = CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_vavgsw"), 0, 2,
+                                                        &initializer_data_0055fbbc, &initializer_data_0055fbbc);
+    registration_slot_00580898[176] =
+        CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_vrfip"), 0, 1, &initializer_data_0055fbbc);
+    registration_slot_00580898[177] = CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_vcmpbfp"), 0,
+                                                        2, &initializer_data_0055fbbc, &initializer_data_0055fbbc);
+    registration_slot_00580898[178] = CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_vcmpequb"), 0,
+                                                        2, &initializer_data_0055fbbc, &initializer_data_0055fbbc);
+    registration_slot_00580898[179] = CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_vcmpequh"), 0,
+                                                        2, &initializer_data_0055fbbc, &initializer_data_0055fbbc);
+    registration_slot_00580898[180] = CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_vcmpequw"), 0,
+                                                        2, &initializer_data_0055fbbc, &initializer_data_0055fbbc);
+    registration_slot_00580898[181] = CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_vcmpeqfp"), 0,
+                                                        2, &initializer_data_0055fbbc, &initializer_data_0055fbbc);
+    registration_slot_00580898[182] = CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_vcmpgefp"), 0,
+                                                        2, &initializer_data_0055fbbc, &initializer_data_0055fbbc);
+    registration_slot_00580898[183] = CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_vcmpgtub"), 0,
+                                                        2, &initializer_data_0055fbbc, &initializer_data_0055fbbc);
+    registration_slot_00580898[184] = CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_vcmpgtsb"), 0,
+                                                        2, &initializer_data_0055fbbc, &initializer_data_0055fbbc);
+    registration_slot_00580898[185] = CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_vcmpgtuh"), 0,
+                                                        2, &initializer_data_0055fbbc, &initializer_data_0055fbbc);
+    registration_slot_00580898[186] = CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_vcmpgtsh"), 0,
+                                                        2, &initializer_data_0055fbbc, &initializer_data_0055fbbc);
+    registration_slot_00580898[187] = CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_vcmpgtuw"), 0,
+                                                        2, &initializer_data_0055fbbc, &initializer_data_0055fbbc);
+    registration_slot_00580898[188] = CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_vcmpgtsw"), 0,
+                                                        2, &initializer_data_0055fbbc, &initializer_data_0055fbbc);
+    registration_slot_00580898[189] = CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_vcmpgtfp"), 0,
+                                                        2, &initializer_data_0055fbbc, &initializer_data_0055fbbc);
+    registration_slot_00580898[190] = CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_vcfux"), 0, 2,
+                                                        &initializer_data_0055fbbc, &initializer_data_0055fbbc);
+    registration_slot_00580898[191] = CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_vcfsx"), 0, 2,
+                                                        &initializer_data_0055fbbc, &initializer_data_0055fbbc);
+    registration_slot_00580898[192] = CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_vctsxs"), 0, 2,
+                                                        &initializer_data_0055fbbc, &initializer_data_0055fbbc);
+    registration_slot_00580898[193] = CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_vctuxs"), 0, 2,
+                                                        &initializer_data_0055fbbc, &initializer_data_0055fbbc);
+    registration_slot_00580898[194] = CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_vexptefp"), 0,
+                                                        1, &initializer_data_0055fbbc);
+    registration_slot_00580898[195] =
+        CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_vrfim"), 0, 1, &initializer_data_0055fbbc);
+    registration_slot_00580898[196] = CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_lvx"), 0, 2,
+                                                        &initializer_data_0055fbbc, &initializer_data_0055fbbc);
+    registration_slot_00580898[197] = CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_lvebx"), 0, 2,
+                                                        &initializer_data_0055fbbc, &initializer_data_0055fbbc);
+    registration_slot_00580898[198] = CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_lvehx"), 0, 2,
+                                                        &initializer_data_0055fbbc, &initializer_data_0055fbbc);
+    registration_slot_00580898[199] = CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_lvewx"), 0, 2,
+                                                        &initializer_data_0055fbbc, &initializer_data_0055fbbc);
+    registration_slot_00580898[200] = CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_lvxl"), 0, 2,
+                                                        &initializer_data_0055fbbc, &initializer_data_0055fbbc);
+    registration_slot_00580898[201] =
+        CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_vlogefp"), 0, 1, &initializer_data_0055fbbc);
+    registration_slot_00580898[202] =
+        CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_vmaddfp"), 0, 3, &initializer_data_0055fbbc,
+                          &initializer_data_0055fbbc, &initializer_data_0055fbbc);
+    registration_slot_00580898[203] =
+        CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_vmhaddshs"), 0, 3,
+                          &initializer_data_0055fbbc, &initializer_data_0055fbbc, &initializer_data_0055fbbc);
+    registration_slot_00580898[204] = CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_vmaxub"), 0, 2,
+                                                        &initializer_data_0055fbbc, &initializer_data_0055fbbc);
+    registration_slot_00580898[205] = CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_vmaxsb"), 0, 2,
+                                                        &initializer_data_0055fbbc, &initializer_data_0055fbbc);
+    registration_slot_00580898[206] = CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_vmaxuh"), 0, 2,
+                                                        &initializer_data_0055fbbc, &initializer_data_0055fbbc);
+    registration_slot_00580898[207] = CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_vmaxsh"), 0, 2,
+                                                        &initializer_data_0055fbbc, &initializer_data_0055fbbc);
+    registration_slot_00580898[208] = CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_vmaxuw"), 0, 2,
+                                                        &initializer_data_0055fbbc, &initializer_data_0055fbbc);
+    registration_slot_00580898[209] = CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_vmaxsw"), 0, 2,
+                                                        &initializer_data_0055fbbc, &initializer_data_0055fbbc);
+    registration_slot_00580898[210] = CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_vmaxfp"), 0, 2,
+                                                        &initializer_data_0055fbbc, &initializer_data_0055fbbc);
+    registration_slot_00580898[211] = CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_vmrghb"), 0, 2,
+                                                        &initializer_data_0055fbbc, &initializer_data_0055fbbc);
+    registration_slot_00580898[212] = CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_vmrghh"), 0, 2,
+                                                        &initializer_data_0055fbbc, &initializer_data_0055fbbc);
+    registration_slot_00580898[213] = CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_vmrghw"), 0, 2,
+                                                        &initializer_data_0055fbbc, &initializer_data_0055fbbc);
+    registration_slot_00580898[214] = CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_vmrglb"), 0, 2,
+                                                        &initializer_data_0055fbbc, &initializer_data_0055fbbc);
+    registration_slot_00580898[215] = CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_vmrglh"), 0, 2,
+                                                        &initializer_data_0055fbbc, &initializer_data_0055fbbc);
+    registration_slot_00580898[216] = CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_vmrglw"), 0, 2,
+                                                        &initializer_data_0055fbbc, &initializer_data_0055fbbc);
+    registration_slot_00580898[217] = CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_vminub"), 0, 2,
+                                                        &initializer_data_0055fbbc, &initializer_data_0055fbbc);
+    registration_slot_00580898[218] = CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_vminsb"), 0, 2,
+                                                        &initializer_data_0055fbbc, &initializer_data_0055fbbc);
+    registration_slot_00580898[219] = CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_vminuh"), 0, 2,
+                                                        &initializer_data_0055fbbc, &initializer_data_0055fbbc);
+    registration_slot_00580898[220] = CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_vminsh"), 0, 2,
+                                                        &initializer_data_0055fbbc, &initializer_data_0055fbbc);
+    registration_slot_00580898[221] = CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_vminuw"), 0, 2,
+                                                        &initializer_data_0055fbbc, &initializer_data_0055fbbc);
+    registration_slot_00580898[222] = CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_vminsw"), 0, 2,
+                                                        &initializer_data_0055fbbc, &initializer_data_0055fbbc);
+    registration_slot_00580898[223] = CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_vminfp"), 0, 2,
+                                                        &initializer_data_0055fbbc, &initializer_data_0055fbbc);
+    registration_slot_00580898[224] =
+        CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_vmladduhm"), 0, 3,
+                          &initializer_data_0055fbbc, &initializer_data_0055fbbc, &initializer_data_0055fbbc);
+    registration_slot_00580898[225] =
+        CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_vmhraddshs"), 0, 3,
+                          &initializer_data_0055fbbc, &initializer_data_0055fbbc, &initializer_data_0055fbbc);
+    registration_slot_00580898[226] =
+        CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_vmsumubm"), 0, 3, &initializer_data_0055fbbc,
+                          &initializer_data_0055fbbc, &initializer_data_0055fbbc);
+    registration_slot_00580898[227] =
+        CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_vmsumuhm"), 0, 3, &initializer_data_0055fbbc,
+                          &initializer_data_0055fbbc, &initializer_data_0055fbbc);
+    registration_slot_00580898[228] =
+        CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_vmsummbm"), 0, 3, &initializer_data_0055fbbc,
+                          &initializer_data_0055fbbc, &initializer_data_0055fbbc);
+    registration_slot_00580898[229] =
+        CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_vmsumshm"), 0, 3, &initializer_data_0055fbbc,
+                          &initializer_data_0055fbbc, &initializer_data_0055fbbc);
+    registration_slot_00580898[230] =
+        CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_vmsumuhs"), 0, 3, &initializer_data_0055fbbc,
+                          &initializer_data_0055fbbc, &initializer_data_0055fbbc);
+    registration_slot_00580898[231] =
+        CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_vmsumshs"), 0, 3, &initializer_data_0055fbbc,
+                          &initializer_data_0055fbbc, &initializer_data_0055fbbc);
+    registration_slot_00580898[232] = CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_vmuleub"), 0,
+                                                        2, &initializer_data_0055fbbc, &initializer_data_0055fbbc);
+    registration_slot_00580898[233] = CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_vmulesb"), 0,
+                                                        2, &initializer_data_0055fbbc, &initializer_data_0055fbbc);
+    registration_slot_00580898[234] = CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_vmuleuh"), 0,
+                                                        2, &initializer_data_0055fbbc, &initializer_data_0055fbbc);
+    registration_slot_00580898[235] = CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_vmulesh"), 0,
+                                                        2, &initializer_data_0055fbbc, &initializer_data_0055fbbc);
+    registration_slot_00580898[236] = CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_vmuloub"), 0,
+                                                        2, &initializer_data_0055fbbc, &initializer_data_0055fbbc);
+    registration_slot_00580898[237] = CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_vmulosb"), 0,
+                                                        2, &initializer_data_0055fbbc, &initializer_data_0055fbbc);
+    registration_slot_00580898[238] = CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_vmulouh"), 0,
+                                                        2, &initializer_data_0055fbbc, &initializer_data_0055fbbc);
+    registration_slot_00580898[239] = CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_vmulosh"), 0,
+                                                        2, &initializer_data_0055fbbc, &initializer_data_0055fbbc);
+    registration_slot_00580898[240] =
+        CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_vnmsubfp"), 0, 2, &initializer_data_0055fbbc,
+                          &initializer_data_0055fbbc, &initializer_data_0055fbbc);
+    registration_slot_00580898[241] = CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_vnor"), 0, 2,
+                                                        &initializer_data_0055fbbc, &initializer_data_0055fbbc);
+    registration_slot_00580898[242] = CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_vor"), 0, 2,
+                                                        &initializer_data_0055fbbc, &initializer_data_0055fbbc);
+    registration_slot_00580898[243] = CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_vpkuhum"), 0,
+                                                        2, &initializer_data_0055fbbc, &initializer_data_0055fbbc);
+    registration_slot_00580898[244] = CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_vpkuwum"), 0,
+                                                        2, &initializer_data_0055fbbc, &initializer_data_0055fbbc);
+    registration_slot_00580898[245] = CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_vpkpx"), 0, 2,
+                                                        &initializer_data_0055fbbc, &initializer_data_0055fbbc);
+    registration_slot_00580898[246] = CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_vpkuhus"), 0,
+                                                        2, &initializer_data_0055fbbc, &initializer_data_0055fbbc);
+    registration_slot_00580898[247] = CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_vpkshss"), 0,
+                                                        2, &initializer_data_0055fbbc, &initializer_data_0055fbbc);
+    registration_slot_00580898[248] = CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_vpkuwus"), 0,
+                                                        2, &initializer_data_0055fbbc, &initializer_data_0055fbbc);
+    registration_slot_00580898[249] = CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_vpkswss"), 0,
+                                                        2, &initializer_data_0055fbbc, &initializer_data_0055fbbc);
+    registration_slot_00580898[250] = CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_vpkshus"), 0,
+                                                        2, &initializer_data_0055fbbc, &initializer_data_0055fbbc);
+    registration_slot_00580898[251] = CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_vpkswus"), 0,
+                                                        2, &initializer_data_0055fbbc, &initializer_data_0055fbbc);
+    registration_slot_00580898[252] =
+        CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_vperm"), 0, 3, &initializer_data_0055fbbc,
+                          &initializer_data_0055fbbc, &initializer_data_0055fbbc);
+    registration_slot_00580898[253] =
+        CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_vrefp"), 0, 1, &initializer_data_0055fbbc);
+    registration_slot_00580898[254] = CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_vrlb"), 0, 2,
+                                                        &initializer_data_0055fbbc, &initializer_data_0055fbbc);
+    registration_slot_00580898[255] = CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_vrlh"), 0, 2,
+                                                        &initializer_data_0055fbbc, &initializer_data_0055fbbc);
+    registration_slot_00580898[256] = CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_vrlw"), 0, 2,
+                                                        &initializer_data_0055fbbc, &initializer_data_0055fbbc);
+    registration_slot_00580898[257] =
+        CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_vrfin"), 0, 1, &initializer_data_0055fbbc);
+    registration_slot_00580898[258] = CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_vrsqrtefp"), 0,
+                                                        1, &initializer_data_0055fbbc);
+    registration_slot_00580898[259] =
+        CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_vsel"), 0, 3, &initializer_data_0055fbbc,
+                          &initializer_data_0055fbbc, &initializer_data_0055fbbc);
+    registration_slot_00580898[260] = CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_vslb"), 0, 2,
+                                                        &initializer_data_0055fbbc, &initializer_data_0055fbbc);
+    registration_slot_00580898[261] = CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_vslh"), 0, 2,
+                                                        &initializer_data_0055fbbc, &initializer_data_0055fbbc);
+    registration_slot_00580898[262] = CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_vslw"), 0, 2,
+                                                        &initializer_data_0055fbbc, &initializer_data_0055fbbc);
+    registration_slot_00580898[263] =
+        CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_vsldoi"), 0, 3, &initializer_data_0055fbbc,
+                          &initializer_data_0055fbbc, &initializer_data_0055fbbc);
+    registration_slot_00580898[264] = CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_vsl"), 0, 2,
+                                                        &initializer_data_0055fbbc, &initializer_data_0055fbbc);
+    registration_slot_00580898[265] = CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_vslo"), 0, 2,
+                                                        &initializer_data_0055fbbc, &initializer_data_0055fbbc);
+    registration_slot_00580898[266] = CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_vspltb"), 0, 2,
+                                                        &initializer_data_0055fbbc, &initializer_data_0055fbbc);
+    registration_slot_00580898[267] = CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_vsplth"), 0, 2,
+                                                        &initializer_data_0055fbbc, &initializer_data_0055fbbc);
+    registration_slot_00580898[268] = CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_vspltw"), 0, 2,
+                                                        &initializer_data_0055fbbc, &initializer_data_0055fbbc);
+    registration_slot_00580898[269] = CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_vspltisb"), 0,
+                                                        1, &initializer_data_0055fbbc);
+    registration_slot_00580898[270] = CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_vspltish"), 0,
+                                                        1, &initializer_data_0055fbbc);
+    registration_slot_00580898[271] = CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_vspltisw"), 0,
+                                                        1, &initializer_data_0055fbbc);
+    registration_slot_00580898[272] = CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_vsrb"), 0, 2,
+                                                        &initializer_data_0055fbbc, &initializer_data_0055fbbc);
+    registration_slot_00580898[273] = CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_vsrh"), 0, 2,
+                                                        &initializer_data_0055fbbc, &initializer_data_0055fbbc);
+    registration_slot_00580898[274] = CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_vsrw"), 0, 2,
+                                                        &initializer_data_0055fbbc, &initializer_data_0055fbbc);
+    registration_slot_00580898[275] = CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_vsrab"), 0, 2,
+                                                        &initializer_data_0055fbbc, &initializer_data_0055fbbc);
+    registration_slot_00580898[276] = CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_vsrah"), 0, 2,
+                                                        &initializer_data_0055fbbc, &initializer_data_0055fbbc);
+    registration_slot_00580898[277] = CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_vsraw"), 0, 2,
+                                                        &initializer_data_0055fbbc, &initializer_data_0055fbbc);
+    registration_slot_00580898[278] = CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_vsr"), 0, 2,
+                                                        &initializer_data_0055fbbc, &initializer_data_0055fbbc);
+    registration_slot_00580898[279] = CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_vsro"), 0, 2,
+                                                        &initializer_data_0055fbbc, &initializer_data_0055fbbc);
+    registration_slot_00580898[280] =
+        CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_stvx"), 0, 3, &initializer_data_0055fbbc,
+                          &initializer_data_0055fbbc, &initializer_data_0055fbbc);
+    registration_slot_00580898[281] =
+        CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_stvebx"), 0, 3, &initializer_data_0055fbbc,
+                          &initializer_data_0055fbbc, &initializer_data_0055fbbc);
+    registration_slot_00580898[282] =
+        CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_stvehx"), 0, 3, &initializer_data_0055fbbc,
+                          &initializer_data_0055fbbc, &initializer_data_0055fbbc);
+    registration_slot_00580898[283] =
+        CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_stvewx"), 0, 3, &initializer_data_0055fbbc,
+                          &initializer_data_0055fbbc, &initializer_data_0055fbbc);
+    registration_slot_00580898[284] =
+        CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_stvxl"), 0, 3, &initializer_data_0055fbbc,
+                          &initializer_data_0055fbbc, &initializer_data_0055fbbc);
+    registration_slot_00580898[285] = CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_vsububm"), 0,
+                                                        2, &initializer_data_0055fbbc, &initializer_data_0055fbbc);
+    registration_slot_00580898[286] = CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_vsubuhm"), 0,
+                                                        2, &initializer_data_0055fbbc, &initializer_data_0055fbbc);
+    registration_slot_00580898[287] = CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_vsubuwm"), 0,
+                                                        2, &initializer_data_0055fbbc, &initializer_data_0055fbbc);
+    registration_slot_00580898[288] = CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_vsubfp"), 0, 2,
+                                                        &initializer_data_0055fbbc, &initializer_data_0055fbbc);
+    registration_slot_00580898[289] = CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_vsubcuw"), 0,
+                                                        2, &initializer_data_0055fbbc, &initializer_data_0055fbbc);
+    registration_slot_00580898[290] = CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_vsububs"), 0,
+                                                        2, &initializer_data_0055fbbc, &initializer_data_0055fbbc);
+    registration_slot_00580898[291] = CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_vsubsbs"), 0,
+                                                        2, &initializer_data_0055fbbc, &initializer_data_0055fbbc);
+    registration_slot_00580898[292] = CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_vsubuhs"), 0,
+                                                        2, &initializer_data_0055fbbc, &initializer_data_0055fbbc);
+    registration_slot_00580898[293] = CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_vsubshs"), 0,
+                                                        2, &initializer_data_0055fbbc, &initializer_data_0055fbbc);
+    registration_slot_00580898[294] = CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_vsubuws"), 0,
+                                                        2, &initializer_data_0055fbbc, &initializer_data_0055fbbc);
+    registration_slot_00580898[295] = CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_vsubsws"), 0,
+                                                        2, &initializer_data_0055fbbc, &initializer_data_0055fbbc);
+    registration_slot_00580898[296] = CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_vsum4ubs"), 0,
+                                                        2, &initializer_data_0055fbbc, &initializer_data_0055fbbc);
+    registration_slot_00580898[297] = CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_vsum4sbs"), 0,
+                                                        2, &initializer_data_0055fbbc, &initializer_data_0055fbbc);
+    registration_slot_00580898[298] = CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_vsum4shs"), 0,
+                                                        2, &initializer_data_0055fbbc, &initializer_data_0055fbbc);
+    registration_slot_00580898[299] = CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_vsum2sws"), 0,
+                                                        2, &initializer_data_0055fbbc, &initializer_data_0055fbbc);
+    registration_slot_00580898[300] = CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_vsumsws"), 0,
+                                                        2, &initializer_data_0055fbbc, &initializer_data_0055fbbc);
+    registration_slot_00580898[301] =
+        CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_vrfiz"), 0, 1, &initializer_data_0055fbbc);
+    registration_slot_00580898[302] =
+        CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_vupkhsb"), 0, 1, &initializer_data_0055fbbc);
+    registration_slot_00580898[303] =
+        CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_vupklsb"), 0, 1, &initializer_data_0055fbbc);
+    registration_slot_00580898[304] =
+        CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_vupkhpx"), 0, 1, &initializer_data_0055fbbc);
+    registration_slot_00580898[305] =
+        CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_vupklpx"), 0, 1, &initializer_data_0055fbbc);
+    registration_slot_00580898[306] =
+        CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_vupkhsh"), 0, 1, &initializer_data_0055fbbc);
+    registration_slot_00580898[307] =
+        CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_vupklsh"), 0, 1, &initializer_data_0055fbbc);
+    registration_slot_00580898[308] = CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_vxor"), 0, 2,
+                                                        &initializer_data_0055fbbc, &initializer_data_0055fbbc);
+    registration_slot_00580898[309] =
+        CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_abs"), 0, 1, &initializer_data_0055fbbc);
+    registration_slot_00580898[310] =
+        CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_abss"), 0, 1, &initializer_data_0055fbbc);
+    registration_slot_00580898[311] = CParser_NewRTFunc(&stvoid, GetHashNameNode("__va_setup"), 0, 1, &void_ptr);
+    registration_slot_00580898[312] = CParser_NewRTFunc(&stvoid, GetHashNameNode("__builtin_va_info"), 0, 1, &void_ptr);
+    for (i = 0; i < 313; i++) {
+        if (!registration_slot_00580898[i])
+            CError_FATAL(6535);
+        registration_slot_00580898[i]->u.data.u.intconst.hi = i;
+        function = (TypeFunc *)registration_slot_00580898[i]->type;
+        function->flags |= FUNC_INTRINSIC;
+        CScope_AddGlobalObject(registration_slot_00580898[i]);
+    }
+    copts.cplusplus = saved_cplusplus;
 }
 
 void Intrinsics_GenerateIntrinsicCall(ENode *node, short requestedReg, Operand *result)
@@ -2027,16 +2721,6 @@ void fn_00486ad0(ENode *node, short unused, Operand *result, short target, unsig
     result->secondary_reg = secondaryReg;
 }
 
-static inline void Intrinsics_00486bb0_inline1(ENode *p0, Operand *p1)
-{
-    unsigned char t1;
-    t1 = p0->type;
-    data_00560648[t1](p0, 0, 0, p1);
-    if (p1->kind != OpndType_VR) {
-        Operands_ForceVR(p1, p0->rtype, 0);
-    }
-}
-
 void emit_record_form_condition(ENode *left, ENode *right, short unused, Operand *result, int opcode,
                                 unsigned short kind)
 {
@@ -2134,6 +2818,54 @@ void emit_record_form_condition(ENode *left, ENode *right, short unused, Operand
     result->reg = 6;
     result->secondary_reg = conditionCode;
 }
+
+void Intrinsics_00486db0(UInt16 token, ENode *unused, ENode *node, SInt16 requestedReg, Operand *result)
+{
+    IntrinsicVariant *variant;
+    SInt16 zeroReg;
+    SInt16 intermediateReg;
+    SInt16 resultReg;
+    Operand operand;
+    SInt32 index;
+
+    index = token - 0x2a;
+    variant = data_0055b4dc[index].variant;
+    for (; variant->resultType != NULL; variant++) {
+        Type *resultType = node->rtype;
+        Type *variantType = variant->type;
+
+        if (variantType->type == TYPEPOINTER && resultType->type == TYPEPOINTER) {
+            variantType = ((TypePointer *)variantType)->target;
+            resultType = ((TypePointer *)resultType)->target;
+        }
+        if (is_same_type_or_signedint_compatible(variantType, resultType)) {
+            break;
+        }
+    }
+    if (variant->resultType == NULL) {
+        CError_FATAL(4614);
+    }
+
+    zeroReg = gUsedVirtualRegistersVR++;
+    intermediateReg = gUsedVirtualRegistersVR++;
+    if (requestedReg != 0) {
+        resultReg = requestedReg;
+    } else {
+        resultReg = gUsedVirtualRegistersVR++;
+    }
+
+    memclrw(&operand, sizeof(operand));
+    data_00560648[node->type](node, 0, 0, &operand);
+    if (operand.kind != OpndType_VR) {
+        Operands_ForceVR(&operand, node->rtype, 0);
+    }
+    PCodeUtilities_EmitInstruction(PC_VSPLTISB, zeroReg, 0);
+    PCodeUtilities_EmitInstruction(variant->op1, intermediateReg, zeroReg, operand.reg);
+    PCodeUtilities_EmitInstruction(variant->op3, resultReg, operand.reg, intermediateReg);
+    result->kind = OpndType_VR;
+    result->reg = resultReg;
+}
+
 #undef CE_ASSERT
 
 void generate_unary_vector_intrinsic(UInt16 token, ENode *unused, ENode *node, SInt16 requestedReg, Operand *result)
@@ -2188,19 +2920,6 @@ void generate_unary_vector_intrinsic(UInt16 token, ENode *unused, ENode *node, S
     result->kind = OpndType_VR;
     result->reg = resultReg;
 }
-#define CERROR_FILE __FILE__
-
-static inline void Intrinsics_00487090_inline1(ENode *p0, Operand *p1)
-{
-    unsigned char t3;
-    void (*t4)(void *, short, short, void *);
-    t3 = p0->type;
-    t4 = data_00560648[t3];
-    t4(p0, 0, 0, p1);
-    if (p1->kind != OpndType_GPR) {
-        Operands_ForceGPR(p1, p0->rtype, 0);
-    }
-}
 
 void emit_instruction_with_vr_result(ENode *expression, ENode *left, ENode *right, short opcode, Operand *result,
                                      int instruction)
@@ -2228,6 +2947,7 @@ void emit_instruction_with_vr_result(ENode *expression, ENode *left, ENode *righ
     result->kind = OpndType_VR;
     result->reg = value.reg;
 }
+
 #undef CE_ASSERT
 /* Operand/register descriptor filled by the per-enode emit routines. */
 
@@ -2260,6 +2980,7 @@ void emit_two_gpr_immediate_instruction(ENode *destination, ENode *source, ENode
     }
     PCodeUtilities_ResolveLabel(PCode_NewLabel());
 }
+
 void emit_three_vr_instruction(ENode *firstExpression, ENode *secondExpression, ENode *thirdExpression,
                                SInt16 targetReg, Operand *result, SInt16 opcode)
 {
@@ -2291,674 +3012,6 @@ void emit_three_vr_instruction(ENode *firstExpression, ENode *secondExpression, 
 
     result->kind = OpndType_VR;
     result->reg = resultReg;
-}
-void Intrinsics_RegisterIntrinsics(void)
-{
-    unsigned char saved_cplusplus = copts.cplusplus;
-    int i;
-    TypeFunc *function;
-
-    copts.cplusplus = 0;
-    for (i = 0; i < 313; i++)
-        registration_slot_00580898[i] = NULL;
-    registration_slot_00580898[0] = CParser_NewRTFunc(&stvoid, GetHashNameNode("__eieio"), 0, 0);
-    registration_slot_00580898[1] = CParser_NewRTFunc(&stvoid, GetHashNameNode("__sync"), 0, 0);
-    registration_slot_00580898[2] = CParser_NewRTFunc(&stvoid, GetHashNameNode("__isync"), 0, 0);
-    registration_slot_00580898[3] =
-        CParser_NewRTFunc((Type *)&stsignedint, GetHashNameNode("__abs"), 0, 1, &stsignedint);
-    registration_slot_00580898[4] =
-        CParser_NewRTFunc((Type *)&stsignedlong, GetHashNameNode("__labs"), 0, 1, &stsignedlong);
-    registration_slot_00580898[5] = CParser_NewRTFunc((Type *)&stdouble, GetHashNameNode("__fabs"), 0, 1, &stdouble);
-    registration_slot_00580898[6] = CParser_NewRTFunc((Type *)&stdouble, GetHashNameNode("__fnabs"), 0, 1, &stdouble);
-    registration_slot_00580898[7] = CParser_NewRTFunc((Type *)&stdouble, GetHashNameNode("__setflm"), 0, 1, &stdouble);
-    registration_slot_00580898[33] =
-        CParser_NewRTFunc((Type *)&stdouble, GetHashNameNode("__frsqrte"), 0, 1, &stdouble);
-    registration_slot_00580898[8] =
-        CParser_NewRTFunc((Type *)&void_ptr, GetHashNameNode("__alloca"), 0, 1, &stunsignedint);
-    registration_slot_00580898[9] =
-        CParser_NewRTFunc((Type *)&stsignedint, GetHashNameNode("__cntlzw"), 0, 1, &stunsignedint);
-    registration_slot_00580898[10] =
-        CParser_NewRTFunc((Type *)&stunsignedint, GetHashNameNode("__lhbrx"), 0, 2, &void_ptr, &stsignedint);
-    registration_slot_00580898[11] =
-        CParser_NewRTFunc((Type *)&stunsignedint, GetHashNameNode("__lwbrx"), 0, 2, &void_ptr, &stsignedint);
-    registration_slot_00580898[12] =
-        CParser_NewRTFunc(&stvoid, GetHashNameNode("__sthbrx"), 0, 3, &stunsignedshort, &void_ptr, &stsignedint);
-    registration_slot_00580898[13] =
-        CParser_NewRTFunc(&stvoid, GetHashNameNode("__stwbrx"), 0, 3, &stunsignedint, &void_ptr, &stsignedint);
-    registration_slot_00580898[14] =
-        CParser_NewRTFunc(&stvoid, GetHashNameNode("__dcbf"), 0, 2, &void_ptr, &stsignedint);
-    registration_slot_00580898[15] =
-        CParser_NewRTFunc(&stvoid, GetHashNameNode("__dcbt"), 0, 2, &void_ptr, &stsignedint);
-    registration_slot_00580898[16] =
-        CParser_NewRTFunc(&stvoid, GetHashNameNode("__dcbst"), 0, 2, &void_ptr, &stsignedint);
-    registration_slot_00580898[17] =
-        CParser_NewRTFunc(&stvoid, GetHashNameNode("__dcbtst"), 0, 2, &void_ptr, &stsignedint);
-    registration_slot_00580898[18] =
-        CParser_NewRTFunc(&stvoid, GetHashNameNode("__dcbz"), 0, 2, &void_ptr, &stsignedint);
-    registration_slot_00580898[19] =
-        CParser_NewRTFunc((Type *)&stsignedint, GetHashNameNode("__mulhw"), 0, 2, &stsignedint, &stsignedint);
-    registration_slot_00580898[20] =
-        CParser_NewRTFunc((Type *)&stunsignedint, GetHashNameNode("__mulhwu"), 0, 2, &stunsignedint, &stunsignedint);
-    registration_slot_00580898[21] =
-        CParser_NewRTFunc((Type *)&stsignedint, GetHashNameNode("__divw"), 0, 2, &stsignedint, &stsignedint);
-    registration_slot_00580898[22] =
-        CParser_NewRTFunc((Type *)&stsignedint, GetHashNameNode("__divwu"), 0, 2, &stsignedint, &stsignedint);
-    registration_slot_00580898[23] =
-        CParser_NewRTFunc((Type *)&stdouble, GetHashNameNode("__fmadd"), 0, 3, &stdouble, &stdouble, &stdouble);
-    registration_slot_00580898[24] =
-        CParser_NewRTFunc((Type *)&stdouble, GetHashNameNode("__fmsub"), 0, 3, &stdouble, &stdouble, &stdouble);
-    registration_slot_00580898[25] =
-        CParser_NewRTFunc((Type *)&stdouble, GetHashNameNode("__fnmadd"), 0, 3, &stdouble, &stdouble, &stdouble);
-    registration_slot_00580898[26] =
-        CParser_NewRTFunc((Type *)&stdouble, GetHashNameNode("__fnmsub"), 0, 3, &stdouble, &stdouble, &stdouble);
-    registration_slot_00580898[34] =
-        CParser_NewRTFunc((Type *)&stdouble, GetHashNameNode("__fsel"), 0, 3, &stdouble, &stdouble, &stdouble);
-    registration_slot_00580898[27] =
-        CParser_NewRTFunc((Type *)&stfloat, GetHashNameNode("__fmadds"), 0, 3, &stfloat, &stfloat, &stfloat);
-    registration_slot_00580898[28] =
-        CParser_NewRTFunc((Type *)&stfloat, GetHashNameNode("__fmsubs"), 0, 3, &stfloat, &stfloat, &stfloat);
-    registration_slot_00580898[29] =
-        CParser_NewRTFunc((Type *)&stfloat, GetHashNameNode("__fnmadds"), 0, 3, &stfloat, &stfloat, &stfloat);
-    registration_slot_00580898[30] =
-        CParser_NewRTFunc((Type *)&stfloat, GetHashNameNode("__fnmsubs"), 0, 3, &stfloat, &stfloat, &stfloat);
-    registration_slot_00580898[31] = CParser_NewRTFunc((Type *)&stdouble, GetHashNameNode("__mffs"), 0, 0);
-    registration_slot_00580898[32] = CParser_NewRTFunc((Type *)&stfloat, GetHashNameNode("__fres"), 0, 1, &stfloat);
-    registration_slot_00580898[40] = CParser_NewRTFunc((Type *)&stfloat, GetHashNameNode("__fabsf"), 0, 1, &stfloat);
-    registration_slot_00580898[41] = CParser_NewRTFunc((Type *)&stfloat, GetHashNameNode("__fnabsf"), 0, 1, &stfloat);
-    registration_slot_00580898[35] = CParser_NewRTFunc(&initializer_data_0055bb90, GetHashNameNode("__strcpy"), 0, 2,
-                                                       &initializer_data_0055bb90, &initializer_data_0055bb90);
-    function = (TypeFunc *)registration_slot_00580898[35]->type;
-    function->args->next->qual |= Q_CONST;
-    registration_slot_00580898[36] =
-        CParser_NewRTFunc((Type *)&void_ptr, GetHashNameNode("__memcpy"), 0, 3, &void_ptr, &void_ptr, &stunsignedlong);
-    data_00587fc0 = registration_slot_00580898[36];
-    function = (TypeFunc *)registration_slot_00580898[36]->type;
-    function->args->next->qual |= Q_CONST;
-    registration_slot_00580898[37] =
-        CParser_NewRTFunc((Type *)&stsignedint, GetHashNameNode("__rlwimi"), 0, 5, &stsignedint, &stsignedint,
-                          &stsignedint, &stsignedint, &stsignedint);
-    registration_slot_00580898[38] = CParser_NewRTFunc((Type *)&stsignedint, GetHashNameNode("__rlwinm"), 0, 4,
-                                                       &stsignedint, &stsignedint, &stsignedint, &stsignedint);
-    registration_slot_00580898[39] = CParser_NewRTFunc((Type *)&stsignedint, GetHashNameNode("__rlwnm"), 0, 4,
-                                                       &stsignedint, &stsignedint, &stsignedint, &stsignedint);
-    registration_slot_00580898[42] = CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_add"), 0, 2,
-                                                       &initializer_data_0055fbbc, &initializer_data_0055fbbc);
-    registration_slot_00580898[43] = CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_addc"), 0, 2,
-                                                       &initializer_data_0055fbbc, &initializer_data_0055fbbc);
-    registration_slot_00580898[44] = CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_adds"), 0, 2,
-                                                       &initializer_data_0055fbbc, &initializer_data_0055fbbc);
-    registration_slot_00580898[45] = CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_and"), 0, 2,
-                                                       &initializer_data_0055fbbc, &initializer_data_0055fbbc);
-    registration_slot_00580898[46] = CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_andc"), 0, 2,
-                                                       &initializer_data_0055fbbc, &initializer_data_0055fbbc);
-    registration_slot_00580898[47] = CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_avg"), 0, 2,
-                                                       &initializer_data_0055fbbc, &initializer_data_0055fbbc);
-    registration_slot_00580898[48] =
-        CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_ceil"), 0, 1, &initializer_data_0055fbbc);
-    registration_slot_00580898[49] = CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_cmpb"), 0, 2,
-                                                       &initializer_data_0055fbbc, &initializer_data_0055fbbc);
-    registration_slot_00580898[50] = CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_cmpeq"), 0, 2,
-                                                       &initializer_data_0055fbbc, &initializer_data_0055fbbc);
-    registration_slot_00580898[51] = CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_cmpge"), 0, 2,
-                                                       &initializer_data_0055fbbc, &initializer_data_0055fbbc);
-    registration_slot_00580898[52] = CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_cmple"), 0, 2,
-                                                       &initializer_data_0055fbbc, &initializer_data_0055fbbc);
-    registration_slot_00580898[53] = CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_cmpgt"), 0, 2,
-                                                       &initializer_data_0055fbbc, &initializer_data_0055fbbc);
-    registration_slot_00580898[54] = CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_cmplt"), 0, 2,
-                                                       &initializer_data_0055fbbc, &initializer_data_0055fbbc);
-    registration_slot_00580898[55] = CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_ctf"), 0, 2,
-                                                       &initializer_data_0055fbbc, &initializer_data_0055fbbc);
-    registration_slot_00580898[56] = CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_cts"), 0, 2,
-                                                       &initializer_data_0055fbbc, &initializer_data_0055fbbc);
-    registration_slot_00580898[57] = CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_ctu"), 0, 2,
-                                                       &initializer_data_0055fbbc, &initializer_data_0055fbbc);
-    registration_slot_00580898[58] = CParser_NewRTFunc(&stvoid, GetHashNameNode("vec_dss"), 0, 1, &stsignedint);
-    registration_slot_00580898[59] = CParser_NewRTFunc(&stvoid, GetHashNameNode("vec_dssall"), 0, 0);
-    registration_slot_00580898[60] = CParser_NewRTFunc(&stvoid, GetHashNameNode("vec_dst"), 0, 3,
-                                                       &initializer_data_0055fbbc, &stsignedint, &stsignedint);
-    registration_slot_00580898[61] = CParser_NewRTFunc(&stvoid, GetHashNameNode("vec_dstst"), 0, 3,
-                                                       &initializer_data_0055fbbc, &stsignedint, &stsignedint);
-    registration_slot_00580898[62] = CParser_NewRTFunc(&stvoid, GetHashNameNode("vec_dststt"), 0, 3,
-                                                       &initializer_data_0055fbbc, &stsignedint, &stsignedint);
-    registration_slot_00580898[63] = CParser_NewRTFunc(&stvoid, GetHashNameNode("vec_dstt"), 0, 3,
-                                                       &initializer_data_0055fbbc, &stsignedint, &stsignedint);
-    registration_slot_00580898[64] =
-        CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_expte"), 0, 1, &initializer_data_0055fbbc);
-    registration_slot_00580898[65] =
-        CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_floor"), 0, 1, &initializer_data_0055fbbc);
-    registration_slot_00580898[66] = CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_ld"), 0, 2,
-                                                       &initializer_data_0055fbbc, &initializer_data_0055fbbc);
-    registration_slot_00580898[67] = CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_lde"), 0, 2,
-                                                       &initializer_data_0055fbbc, &initializer_data_0055fbbc);
-    registration_slot_00580898[68] = CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_ldl"), 0, 2,
-                                                       &initializer_data_0055fbbc, &initializer_data_0055fbbc);
-    registration_slot_00580898[69] =
-        CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_loge"), 0, 1, &initializer_data_0055fbbc);
-    registration_slot_00580898[70] = CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_lvsl"), 0, 2,
-                                                       &initializer_data_0055fbbc, &initializer_data_0055fbbc);
-    registration_slot_00580898[71] = CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_lvsr"), 0, 2,
-                                                       &initializer_data_0055fbbc, &initializer_data_0055fbbc);
-    registration_slot_00580898[72] =
-        CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_madd"), 0, 3, &initializer_data_0055fbbc,
-                          &initializer_data_0055fbbc, &initializer_data_0055fbbc);
-    registration_slot_00580898[73] =
-        CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_madds"), 0, 3, &initializer_data_0055fbbc,
-                          &initializer_data_0055fbbc, &initializer_data_0055fbbc);
-    registration_slot_00580898[74] = CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_max"), 0, 2,
-                                                       &initializer_data_0055fbbc, &initializer_data_0055fbbc);
-    registration_slot_00580898[75] = CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_mergeh"), 0, 2,
-                                                       &initializer_data_0055fbbc, &initializer_data_0055fbbc);
-    registration_slot_00580898[76] = CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_mergel"), 0, 2,
-                                                       &initializer_data_0055fbbc, &initializer_data_0055fbbc);
-    registration_slot_00580898[77] = CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_mfvscr"), 0, 0);
-    registration_slot_00580898[78] = CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_min"), 0, 2,
-                                                       &initializer_data_0055fbbc, &initializer_data_0055fbbc);
-    registration_slot_00580898[79] =
-        CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_mladd"), 0, 3, &initializer_data_0055fbbc,
-                          &initializer_data_0055fbbc, &initializer_data_0055fbbc);
-    registration_slot_00580898[80] =
-        CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_mradds"), 0, 3, &initializer_data_0055fbbc,
-                          &initializer_data_0055fbbc, &initializer_data_0055fbbc);
-    registration_slot_00580898[81] =
-        CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_msum"), 0, 3, &initializer_data_0055fbbc,
-                          &initializer_data_0055fbbc, &initializer_data_0055fbbc);
-    registration_slot_00580898[82] =
-        CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_msums"), 0, 3, &initializer_data_0055fbbc,
-                          &initializer_data_0055fbbc, &initializer_data_0055fbbc);
-    registration_slot_00580898[83] =
-        CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_mtvscr"), 0, 1, &initializer_data_0055fbbc);
-    registration_slot_00580898[84] = CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_mule"), 0, 2,
-                                                       &initializer_data_0055fbbc, &initializer_data_0055fbbc);
-    registration_slot_00580898[85] = CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_mulo"), 0, 2,
-                                                       &initializer_data_0055fbbc, &initializer_data_0055fbbc);
-    registration_slot_00580898[86] =
-        CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_nmsub"), 0, 2, &initializer_data_0055fbbc,
-                          &initializer_data_0055fbbc, &initializer_data_0055fbbc);
-    registration_slot_00580898[87] = CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_nor"), 0, 2,
-                                                       &initializer_data_0055fbbc, &initializer_data_0055fbbc);
-    registration_slot_00580898[88] = CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_or"), 0, 2,
-                                                       &initializer_data_0055fbbc, &initializer_data_0055fbbc);
-    registration_slot_00580898[89] = CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_pack"), 0, 2,
-                                                       &initializer_data_0055fbbc, &initializer_data_0055fbbc);
-    registration_slot_00580898[90] = CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_packpx"), 0, 2,
-                                                       &initializer_data_0055fbbc, &initializer_data_0055fbbc);
-    registration_slot_00580898[91] = CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_packs"), 0, 2,
-                                                       &initializer_data_0055fbbc, &initializer_data_0055fbbc);
-    registration_slot_00580898[92] = CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_packsu"), 0, 2,
-                                                       &initializer_data_0055fbbc, &initializer_data_0055fbbc);
-    registration_slot_00580898[93] =
-        CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_perm"), 0, 3, &initializer_data_0055fbbc,
-                          &initializer_data_0055fbbc, &initializer_data_0055fbbc);
-    registration_slot_00580898[94] =
-        CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_re"), 0, 1, &initializer_data_0055fbbc);
-    registration_slot_00580898[95] = CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_rl"), 0, 2,
-                                                       &initializer_data_0055fbbc, &initializer_data_0055fbbc);
-    registration_slot_00580898[96] =
-        CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_round"), 0, 1, &initializer_data_0055fbbc);
-    registration_slot_00580898[97] =
-        CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_rsqrte"), 0, 1, &initializer_data_0055fbbc);
-    registration_slot_00580898[98] =
-        CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_sel"), 0, 3, &initializer_data_0055fbbc,
-                          &initializer_data_0055fbbc, &initializer_data_0055fbbc);
-    registration_slot_00580898[99] = CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_sl"), 0, 2,
-                                                       &initializer_data_0055fbbc, &initializer_data_0055fbbc);
-    registration_slot_00580898[100] =
-        CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_sld"), 0, 3, &initializer_data_0055fbbc,
-                          &initializer_data_0055fbbc, &initializer_data_0055fbbc);
-    registration_slot_00580898[101] = CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_sll"), 0, 2,
-                                                        &initializer_data_0055fbbc, &initializer_data_0055fbbc);
-    registration_slot_00580898[102] = CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_slo"), 0, 2,
-                                                        &initializer_data_0055fbbc, &initializer_data_0055fbbc);
-    registration_slot_00580898[103] = CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_splat"), 0, 2,
-                                                        &initializer_data_0055fbbc, &initializer_data_0055fbbc);
-    registration_slot_00580898[104] = CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_splat_s8"), 0,
-                                                        1, &initializer_data_0055fbbc);
-    registration_slot_00580898[105] = CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_splat_s16"), 0,
-                                                        1, &initializer_data_0055fbbc);
-    registration_slot_00580898[106] = CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_splat_s32"), 0,
-                                                        1, &initializer_data_0055fbbc);
-    registration_slot_00580898[107] = CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_splat_u8"), 0,
-                                                        1, &initializer_data_0055fbbc);
-    registration_slot_00580898[108] = CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_splat_u16"), 0,
-                                                        1, &initializer_data_0055fbbc);
-    registration_slot_00580898[109] = CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_splat_u32"), 0,
-                                                        1, &initializer_data_0055fbbc);
-    registration_slot_00580898[110] = CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_sr"), 0, 2,
-                                                        &initializer_data_0055fbbc, &initializer_data_0055fbbc);
-    registration_slot_00580898[111] = CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_sra"), 0, 2,
-                                                        &initializer_data_0055fbbc, &initializer_data_0055fbbc);
-    registration_slot_00580898[112] = CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_srl"), 0, 2,
-                                                        &initializer_data_0055fbbc, &initializer_data_0055fbbc);
-    registration_slot_00580898[113] = CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_sro"), 0, 2,
-                                                        &initializer_data_0055fbbc, &initializer_data_0055fbbc);
-    registration_slot_00580898[114] =
-        CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_st"), 0, 3, &initializer_data_0055fbbc,
-                          &initializer_data_0055fbbc, &initializer_data_0055fbbc);
-    registration_slot_00580898[115] =
-        CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_ste"), 0, 3, &initializer_data_0055fbbc,
-                          &initializer_data_0055fbbc, &initializer_data_0055fbbc);
-    registration_slot_00580898[116] =
-        CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_stl"), 0, 3, &initializer_data_0055fbbc,
-                          &initializer_data_0055fbbc, &initializer_data_0055fbbc);
-    registration_slot_00580898[117] = CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_sub"), 0, 2,
-                                                        &initializer_data_0055fbbc, &initializer_data_0055fbbc);
-    registration_slot_00580898[118] = CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_subc"), 0, 2,
-                                                        &initializer_data_0055fbbc, &initializer_data_0055fbbc);
-    registration_slot_00580898[119] = CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_subs"), 0, 2,
-                                                        &initializer_data_0055fbbc, &initializer_data_0055fbbc);
-    registration_slot_00580898[120] = CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_sum4s"), 0, 2,
-                                                        &initializer_data_0055fbbc, &initializer_data_0055fbbc);
-    registration_slot_00580898[121] = CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_sum2s"), 0, 2,
-                                                        &initializer_data_0055fbbc, &initializer_data_0055fbbc);
-    registration_slot_00580898[122] = CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_sums"), 0, 2,
-                                                        &initializer_data_0055fbbc, &initializer_data_0055fbbc);
-    registration_slot_00580898[123] =
-        CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_trunc"), 0, 1, &initializer_data_0055fbbc);
-    registration_slot_00580898[124] = CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_unpack2sh"), 0,
-                                                        2, &initializer_data_0055fbbc, &initializer_data_0055fbbc);
-    registration_slot_00580898[125] = CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_unpack2sl"), 0,
-                                                        2, &initializer_data_0055fbbc, &initializer_data_0055fbbc);
-    registration_slot_00580898[126] = CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_unpack2uh"), 0,
-                                                        2, &initializer_data_0055fbbc, &initializer_data_0055fbbc);
-    registration_slot_00580898[127] = CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_unpack2ul"), 0,
-                                                        2, &initializer_data_0055fbbc, &initializer_data_0055fbbc);
-    registration_slot_00580898[128] =
-        CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_unpackh"), 0, 1, &initializer_data_0055fbbc);
-    registration_slot_00580898[129] =
-        CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_unpackl"), 0, 1, &initializer_data_0055fbbc);
-    registration_slot_00580898[130] = CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_xor"), 0, 2,
-                                                        &initializer_data_0055fbbc, &initializer_data_0055fbbc);
-    registration_slot_00580898[131] = CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_all_eq"), 0, 2,
-                                                        &initializer_data_0055fbbc, &initializer_data_0055fbbc);
-    registration_slot_00580898[132] = CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_all_ge"), 0, 2,
-                                                        &initializer_data_0055fbbc, &initializer_data_0055fbbc);
-    registration_slot_00580898[133] = CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_all_gt"), 0, 2,
-                                                        &initializer_data_0055fbbc, &initializer_data_0055fbbc);
-    registration_slot_00580898[134] = CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_all_in"), 0, 2,
-                                                        &initializer_data_0055fbbc, &initializer_data_0055fbbc);
-    registration_slot_00580898[135] = CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_all_le"), 0, 2,
-                                                        &initializer_data_0055fbbc, &initializer_data_0055fbbc);
-    registration_slot_00580898[136] = CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_all_lt"), 0, 2,
-                                                        &initializer_data_0055fbbc, &initializer_data_0055fbbc);
-    registration_slot_00580898[137] =
-        CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_all_nan"), 0, 1, &initializer_data_0055fbbc);
-    registration_slot_00580898[138] = CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_all_ne"), 0, 2,
-                                                        &initializer_data_0055fbbc, &initializer_data_0055fbbc);
-    registration_slot_00580898[139] = CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_all_nge"), 0,
-                                                        2, &initializer_data_0055fbbc, &initializer_data_0055fbbc);
-    registration_slot_00580898[140] = CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_all_ngt"), 0,
-                                                        2, &initializer_data_0055fbbc, &initializer_data_0055fbbc);
-    registration_slot_00580898[141] = CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_all_nle"), 0,
-                                                        2, &initializer_data_0055fbbc, &initializer_data_0055fbbc);
-    registration_slot_00580898[142] = CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_all_nlt"), 0,
-                                                        2, &initializer_data_0055fbbc, &initializer_data_0055fbbc);
-    registration_slot_00580898[143] = CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_all_numeric"),
-                                                        0, 1, &initializer_data_0055fbbc);
-    registration_slot_00580898[144] = CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_any_eq"), 0, 2,
-                                                        &initializer_data_0055fbbc, &initializer_data_0055fbbc);
-    registration_slot_00580898[145] = CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_any_ge"), 0, 2,
-                                                        &initializer_data_0055fbbc, &initializer_data_0055fbbc);
-    registration_slot_00580898[146] = CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_any_gt"), 0, 2,
-                                                        &initializer_data_0055fbbc, &initializer_data_0055fbbc);
-    registration_slot_00580898[147] = CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_any_le"), 0, 2,
-                                                        &initializer_data_0055fbbc, &initializer_data_0055fbbc);
-    registration_slot_00580898[148] = CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_any_lt"), 0, 2,
-                                                        &initializer_data_0055fbbc, &initializer_data_0055fbbc);
-    registration_slot_00580898[149] =
-        CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_any_nan"), 0, 1, &initializer_data_0055fbbc);
-    registration_slot_00580898[150] = CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_any_ne"), 0, 2,
-                                                        &initializer_data_0055fbbc, &initializer_data_0055fbbc);
-    registration_slot_00580898[151] = CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_any_nge"), 0,
-                                                        2, &initializer_data_0055fbbc, &initializer_data_0055fbbc);
-    registration_slot_00580898[152] = CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_any_ngt"), 0,
-                                                        2, &initializer_data_0055fbbc, &initializer_data_0055fbbc);
-    registration_slot_00580898[153] = CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_any_nle"), 0,
-                                                        2, &initializer_data_0055fbbc, &initializer_data_0055fbbc);
-    registration_slot_00580898[154] = CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_any_nlt"), 0,
-                                                        2, &initializer_data_0055fbbc, &initializer_data_0055fbbc);
-    registration_slot_00580898[155] = CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_any_numeric"),
-                                                        0, 1, &initializer_data_0055fbbc);
-    registration_slot_00580898[156] = CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_any_out"), 0,
-                                                        2, &initializer_data_0055fbbc, &initializer_data_0055fbbc);
-    registration_slot_00580898[157] = CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_vaddubm"), 0,
-                                                        2, &initializer_data_0055fbbc, &initializer_data_0055fbbc);
-    registration_slot_00580898[158] = CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_vadduhm"), 0,
-                                                        2, &initializer_data_0055fbbc, &initializer_data_0055fbbc);
-    registration_slot_00580898[159] = CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_vadduwm"), 0,
-                                                        2, &initializer_data_0055fbbc, &initializer_data_0055fbbc);
-    registration_slot_00580898[160] = CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_vaddfp"), 0, 2,
-                                                        &initializer_data_0055fbbc, &initializer_data_0055fbbc);
-    registration_slot_00580898[161] = CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_vaddcuw"), 0,
-                                                        2, &initializer_data_0055fbbc, &initializer_data_0055fbbc);
-    registration_slot_00580898[162] = CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_vaddubs"), 0,
-                                                        2, &initializer_data_0055fbbc, &initializer_data_0055fbbc);
-    registration_slot_00580898[163] = CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_vaddsbs"), 0,
-                                                        2, &initializer_data_0055fbbc, &initializer_data_0055fbbc);
-    registration_slot_00580898[164] = CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_vadduhs"), 0,
-                                                        2, &initializer_data_0055fbbc, &initializer_data_0055fbbc);
-    registration_slot_00580898[165] = CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_vaddshs"), 0,
-                                                        2, &initializer_data_0055fbbc, &initializer_data_0055fbbc);
-    registration_slot_00580898[166] = CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_vadduws"), 0,
-                                                        2, &initializer_data_0055fbbc, &initializer_data_0055fbbc);
-    registration_slot_00580898[167] = CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_vaddsws"), 0,
-                                                        2, &initializer_data_0055fbbc, &initializer_data_0055fbbc);
-    registration_slot_00580898[168] = CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_vand"), 0, 2,
-                                                        &initializer_data_0055fbbc, &initializer_data_0055fbbc);
-    registration_slot_00580898[169] = CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_vandc"), 0, 2,
-                                                        &initializer_data_0055fbbc, &initializer_data_0055fbbc);
-    registration_slot_00580898[170] = CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_vavgub"), 0, 2,
-                                                        &initializer_data_0055fbbc, &initializer_data_0055fbbc);
-    registration_slot_00580898[171] = CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_vavgsb"), 0, 2,
-                                                        &initializer_data_0055fbbc, &initializer_data_0055fbbc);
-    registration_slot_00580898[172] = CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_vavguh"), 0, 2,
-                                                        &initializer_data_0055fbbc, &initializer_data_0055fbbc);
-    registration_slot_00580898[173] = CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_vavgsh"), 0, 2,
-                                                        &initializer_data_0055fbbc, &initializer_data_0055fbbc);
-    registration_slot_00580898[174] = CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_vavguw"), 0, 2,
-                                                        &initializer_data_0055fbbc, &initializer_data_0055fbbc);
-    registration_slot_00580898[175] = CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_vavgsw"), 0, 2,
-                                                        &initializer_data_0055fbbc, &initializer_data_0055fbbc);
-    registration_slot_00580898[176] =
-        CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_vrfip"), 0, 1, &initializer_data_0055fbbc);
-    registration_slot_00580898[177] = CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_vcmpbfp"), 0,
-                                                        2, &initializer_data_0055fbbc, &initializer_data_0055fbbc);
-    registration_slot_00580898[178] = CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_vcmpequb"), 0,
-                                                        2, &initializer_data_0055fbbc, &initializer_data_0055fbbc);
-    registration_slot_00580898[179] = CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_vcmpequh"), 0,
-                                                        2, &initializer_data_0055fbbc, &initializer_data_0055fbbc);
-    registration_slot_00580898[180] = CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_vcmpequw"), 0,
-                                                        2, &initializer_data_0055fbbc, &initializer_data_0055fbbc);
-    registration_slot_00580898[181] = CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_vcmpeqfp"), 0,
-                                                        2, &initializer_data_0055fbbc, &initializer_data_0055fbbc);
-    registration_slot_00580898[182] = CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_vcmpgefp"), 0,
-                                                        2, &initializer_data_0055fbbc, &initializer_data_0055fbbc);
-    registration_slot_00580898[183] = CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_vcmpgtub"), 0,
-                                                        2, &initializer_data_0055fbbc, &initializer_data_0055fbbc);
-    registration_slot_00580898[184] = CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_vcmpgtsb"), 0,
-                                                        2, &initializer_data_0055fbbc, &initializer_data_0055fbbc);
-    registration_slot_00580898[185] = CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_vcmpgtuh"), 0,
-                                                        2, &initializer_data_0055fbbc, &initializer_data_0055fbbc);
-    registration_slot_00580898[186] = CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_vcmpgtsh"), 0,
-                                                        2, &initializer_data_0055fbbc, &initializer_data_0055fbbc);
-    registration_slot_00580898[187] = CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_vcmpgtuw"), 0,
-                                                        2, &initializer_data_0055fbbc, &initializer_data_0055fbbc);
-    registration_slot_00580898[188] = CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_vcmpgtsw"), 0,
-                                                        2, &initializer_data_0055fbbc, &initializer_data_0055fbbc);
-    registration_slot_00580898[189] = CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_vcmpgtfp"), 0,
-                                                        2, &initializer_data_0055fbbc, &initializer_data_0055fbbc);
-    registration_slot_00580898[190] = CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_vcfux"), 0, 2,
-                                                        &initializer_data_0055fbbc, &initializer_data_0055fbbc);
-    registration_slot_00580898[191] = CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_vcfsx"), 0, 2,
-                                                        &initializer_data_0055fbbc, &initializer_data_0055fbbc);
-    registration_slot_00580898[192] = CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_vctsxs"), 0, 2,
-                                                        &initializer_data_0055fbbc, &initializer_data_0055fbbc);
-    registration_slot_00580898[193] = CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_vctuxs"), 0, 2,
-                                                        &initializer_data_0055fbbc, &initializer_data_0055fbbc);
-    registration_slot_00580898[194] = CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_vexptefp"), 0,
-                                                        1, &initializer_data_0055fbbc);
-    registration_slot_00580898[195] =
-        CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_vrfim"), 0, 1, &initializer_data_0055fbbc);
-    registration_slot_00580898[196] = CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_lvx"), 0, 2,
-                                                        &initializer_data_0055fbbc, &initializer_data_0055fbbc);
-    registration_slot_00580898[197] = CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_lvebx"), 0, 2,
-                                                        &initializer_data_0055fbbc, &initializer_data_0055fbbc);
-    registration_slot_00580898[198] = CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_lvehx"), 0, 2,
-                                                        &initializer_data_0055fbbc, &initializer_data_0055fbbc);
-    registration_slot_00580898[199] = CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_lvewx"), 0, 2,
-                                                        &initializer_data_0055fbbc, &initializer_data_0055fbbc);
-    registration_slot_00580898[200] = CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_lvxl"), 0, 2,
-                                                        &initializer_data_0055fbbc, &initializer_data_0055fbbc);
-    registration_slot_00580898[201] =
-        CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_vlogefp"), 0, 1, &initializer_data_0055fbbc);
-    registration_slot_00580898[202] =
-        CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_vmaddfp"), 0, 3, &initializer_data_0055fbbc,
-                          &initializer_data_0055fbbc, &initializer_data_0055fbbc);
-    registration_slot_00580898[203] =
-        CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_vmhaddshs"), 0, 3,
-                          &initializer_data_0055fbbc, &initializer_data_0055fbbc, &initializer_data_0055fbbc);
-    registration_slot_00580898[204] = CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_vmaxub"), 0, 2,
-                                                        &initializer_data_0055fbbc, &initializer_data_0055fbbc);
-    registration_slot_00580898[205] = CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_vmaxsb"), 0, 2,
-                                                        &initializer_data_0055fbbc, &initializer_data_0055fbbc);
-    registration_slot_00580898[206] = CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_vmaxuh"), 0, 2,
-                                                        &initializer_data_0055fbbc, &initializer_data_0055fbbc);
-    registration_slot_00580898[207] = CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_vmaxsh"), 0, 2,
-                                                        &initializer_data_0055fbbc, &initializer_data_0055fbbc);
-    registration_slot_00580898[208] = CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_vmaxuw"), 0, 2,
-                                                        &initializer_data_0055fbbc, &initializer_data_0055fbbc);
-    registration_slot_00580898[209] = CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_vmaxsw"), 0, 2,
-                                                        &initializer_data_0055fbbc, &initializer_data_0055fbbc);
-    registration_slot_00580898[210] = CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_vmaxfp"), 0, 2,
-                                                        &initializer_data_0055fbbc, &initializer_data_0055fbbc);
-    registration_slot_00580898[211] = CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_vmrghb"), 0, 2,
-                                                        &initializer_data_0055fbbc, &initializer_data_0055fbbc);
-    registration_slot_00580898[212] = CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_vmrghh"), 0, 2,
-                                                        &initializer_data_0055fbbc, &initializer_data_0055fbbc);
-    registration_slot_00580898[213] = CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_vmrghw"), 0, 2,
-                                                        &initializer_data_0055fbbc, &initializer_data_0055fbbc);
-    registration_slot_00580898[214] = CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_vmrglb"), 0, 2,
-                                                        &initializer_data_0055fbbc, &initializer_data_0055fbbc);
-    registration_slot_00580898[215] = CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_vmrglh"), 0, 2,
-                                                        &initializer_data_0055fbbc, &initializer_data_0055fbbc);
-    registration_slot_00580898[216] = CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_vmrglw"), 0, 2,
-                                                        &initializer_data_0055fbbc, &initializer_data_0055fbbc);
-    registration_slot_00580898[217] = CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_vminub"), 0, 2,
-                                                        &initializer_data_0055fbbc, &initializer_data_0055fbbc);
-    registration_slot_00580898[218] = CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_vminsb"), 0, 2,
-                                                        &initializer_data_0055fbbc, &initializer_data_0055fbbc);
-    registration_slot_00580898[219] = CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_vminuh"), 0, 2,
-                                                        &initializer_data_0055fbbc, &initializer_data_0055fbbc);
-    registration_slot_00580898[220] = CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_vminsh"), 0, 2,
-                                                        &initializer_data_0055fbbc, &initializer_data_0055fbbc);
-    registration_slot_00580898[221] = CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_vminuw"), 0, 2,
-                                                        &initializer_data_0055fbbc, &initializer_data_0055fbbc);
-    registration_slot_00580898[222] = CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_vminsw"), 0, 2,
-                                                        &initializer_data_0055fbbc, &initializer_data_0055fbbc);
-    registration_slot_00580898[223] = CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_vminfp"), 0, 2,
-                                                        &initializer_data_0055fbbc, &initializer_data_0055fbbc);
-    registration_slot_00580898[224] =
-        CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_vmladduhm"), 0, 3,
-                          &initializer_data_0055fbbc, &initializer_data_0055fbbc, &initializer_data_0055fbbc);
-    registration_slot_00580898[225] =
-        CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_vmhraddshs"), 0, 3,
-                          &initializer_data_0055fbbc, &initializer_data_0055fbbc, &initializer_data_0055fbbc);
-    registration_slot_00580898[226] =
-        CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_vmsumubm"), 0, 3, &initializer_data_0055fbbc,
-                          &initializer_data_0055fbbc, &initializer_data_0055fbbc);
-    registration_slot_00580898[227] =
-        CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_vmsumuhm"), 0, 3, &initializer_data_0055fbbc,
-                          &initializer_data_0055fbbc, &initializer_data_0055fbbc);
-    registration_slot_00580898[228] =
-        CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_vmsummbm"), 0, 3, &initializer_data_0055fbbc,
-                          &initializer_data_0055fbbc, &initializer_data_0055fbbc);
-    registration_slot_00580898[229] =
-        CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_vmsumshm"), 0, 3, &initializer_data_0055fbbc,
-                          &initializer_data_0055fbbc, &initializer_data_0055fbbc);
-    registration_slot_00580898[230] =
-        CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_vmsumuhs"), 0, 3, &initializer_data_0055fbbc,
-                          &initializer_data_0055fbbc, &initializer_data_0055fbbc);
-    registration_slot_00580898[231] =
-        CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_vmsumshs"), 0, 3, &initializer_data_0055fbbc,
-                          &initializer_data_0055fbbc, &initializer_data_0055fbbc);
-    registration_slot_00580898[232] = CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_vmuleub"), 0,
-                                                        2, &initializer_data_0055fbbc, &initializer_data_0055fbbc);
-    registration_slot_00580898[233] = CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_vmulesb"), 0,
-                                                        2, &initializer_data_0055fbbc, &initializer_data_0055fbbc);
-    registration_slot_00580898[234] = CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_vmuleuh"), 0,
-                                                        2, &initializer_data_0055fbbc, &initializer_data_0055fbbc);
-    registration_slot_00580898[235] = CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_vmulesh"), 0,
-                                                        2, &initializer_data_0055fbbc, &initializer_data_0055fbbc);
-    registration_slot_00580898[236] = CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_vmuloub"), 0,
-                                                        2, &initializer_data_0055fbbc, &initializer_data_0055fbbc);
-    registration_slot_00580898[237] = CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_vmulosb"), 0,
-                                                        2, &initializer_data_0055fbbc, &initializer_data_0055fbbc);
-    registration_slot_00580898[238] = CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_vmulouh"), 0,
-                                                        2, &initializer_data_0055fbbc, &initializer_data_0055fbbc);
-    registration_slot_00580898[239] = CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_vmulosh"), 0,
-                                                        2, &initializer_data_0055fbbc, &initializer_data_0055fbbc);
-    registration_slot_00580898[240] =
-        CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_vnmsubfp"), 0, 2, &initializer_data_0055fbbc,
-                          &initializer_data_0055fbbc, &initializer_data_0055fbbc);
-    registration_slot_00580898[241] = CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_vnor"), 0, 2,
-                                                        &initializer_data_0055fbbc, &initializer_data_0055fbbc);
-    registration_slot_00580898[242] = CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_vor"), 0, 2,
-                                                        &initializer_data_0055fbbc, &initializer_data_0055fbbc);
-    registration_slot_00580898[243] = CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_vpkuhum"), 0,
-                                                        2, &initializer_data_0055fbbc, &initializer_data_0055fbbc);
-    registration_slot_00580898[244] = CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_vpkuwum"), 0,
-                                                        2, &initializer_data_0055fbbc, &initializer_data_0055fbbc);
-    registration_slot_00580898[245] = CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_vpkpx"), 0, 2,
-                                                        &initializer_data_0055fbbc, &initializer_data_0055fbbc);
-    registration_slot_00580898[246] = CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_vpkuhus"), 0,
-                                                        2, &initializer_data_0055fbbc, &initializer_data_0055fbbc);
-    registration_slot_00580898[247] = CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_vpkshss"), 0,
-                                                        2, &initializer_data_0055fbbc, &initializer_data_0055fbbc);
-    registration_slot_00580898[248] = CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_vpkuwus"), 0,
-                                                        2, &initializer_data_0055fbbc, &initializer_data_0055fbbc);
-    registration_slot_00580898[249] = CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_vpkswss"), 0,
-                                                        2, &initializer_data_0055fbbc, &initializer_data_0055fbbc);
-    registration_slot_00580898[250] = CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_vpkshus"), 0,
-                                                        2, &initializer_data_0055fbbc, &initializer_data_0055fbbc);
-    registration_slot_00580898[251] = CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_vpkswus"), 0,
-                                                        2, &initializer_data_0055fbbc, &initializer_data_0055fbbc);
-    registration_slot_00580898[252] =
-        CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_vperm"), 0, 3, &initializer_data_0055fbbc,
-                          &initializer_data_0055fbbc, &initializer_data_0055fbbc);
-    registration_slot_00580898[253] =
-        CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_vrefp"), 0, 1, &initializer_data_0055fbbc);
-    registration_slot_00580898[254] = CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_vrlb"), 0, 2,
-                                                        &initializer_data_0055fbbc, &initializer_data_0055fbbc);
-    registration_slot_00580898[255] = CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_vrlh"), 0, 2,
-                                                        &initializer_data_0055fbbc, &initializer_data_0055fbbc);
-    registration_slot_00580898[256] = CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_vrlw"), 0, 2,
-                                                        &initializer_data_0055fbbc, &initializer_data_0055fbbc);
-    registration_slot_00580898[257] =
-        CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_vrfin"), 0, 1, &initializer_data_0055fbbc);
-    registration_slot_00580898[258] = CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_vrsqrtefp"), 0,
-                                                        1, &initializer_data_0055fbbc);
-    registration_slot_00580898[259] =
-        CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_vsel"), 0, 3, &initializer_data_0055fbbc,
-                          &initializer_data_0055fbbc, &initializer_data_0055fbbc);
-    registration_slot_00580898[260] = CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_vslb"), 0, 2,
-                                                        &initializer_data_0055fbbc, &initializer_data_0055fbbc);
-    registration_slot_00580898[261] = CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_vslh"), 0, 2,
-                                                        &initializer_data_0055fbbc, &initializer_data_0055fbbc);
-    registration_slot_00580898[262] = CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_vslw"), 0, 2,
-                                                        &initializer_data_0055fbbc, &initializer_data_0055fbbc);
-    registration_slot_00580898[263] =
-        CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_vsldoi"), 0, 3, &initializer_data_0055fbbc,
-                          &initializer_data_0055fbbc, &initializer_data_0055fbbc);
-    registration_slot_00580898[264] = CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_vsl"), 0, 2,
-                                                        &initializer_data_0055fbbc, &initializer_data_0055fbbc);
-    registration_slot_00580898[265] = CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_vslo"), 0, 2,
-                                                        &initializer_data_0055fbbc, &initializer_data_0055fbbc);
-    registration_slot_00580898[266] = CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_vspltb"), 0, 2,
-                                                        &initializer_data_0055fbbc, &initializer_data_0055fbbc);
-    registration_slot_00580898[267] = CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_vsplth"), 0, 2,
-                                                        &initializer_data_0055fbbc, &initializer_data_0055fbbc);
-    registration_slot_00580898[268] = CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_vspltw"), 0, 2,
-                                                        &initializer_data_0055fbbc, &initializer_data_0055fbbc);
-    registration_slot_00580898[269] = CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_vspltisb"), 0,
-                                                        1, &initializer_data_0055fbbc);
-    registration_slot_00580898[270] = CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_vspltish"), 0,
-                                                        1, &initializer_data_0055fbbc);
-    registration_slot_00580898[271] = CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_vspltisw"), 0,
-                                                        1, &initializer_data_0055fbbc);
-    registration_slot_00580898[272] = CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_vsrb"), 0, 2,
-                                                        &initializer_data_0055fbbc, &initializer_data_0055fbbc);
-    registration_slot_00580898[273] = CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_vsrh"), 0, 2,
-                                                        &initializer_data_0055fbbc, &initializer_data_0055fbbc);
-    registration_slot_00580898[274] = CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_vsrw"), 0, 2,
-                                                        &initializer_data_0055fbbc, &initializer_data_0055fbbc);
-    registration_slot_00580898[275] = CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_vsrab"), 0, 2,
-                                                        &initializer_data_0055fbbc, &initializer_data_0055fbbc);
-    registration_slot_00580898[276] = CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_vsrah"), 0, 2,
-                                                        &initializer_data_0055fbbc, &initializer_data_0055fbbc);
-    registration_slot_00580898[277] = CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_vsraw"), 0, 2,
-                                                        &initializer_data_0055fbbc, &initializer_data_0055fbbc);
-    registration_slot_00580898[278] = CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_vsr"), 0, 2,
-                                                        &initializer_data_0055fbbc, &initializer_data_0055fbbc);
-    registration_slot_00580898[279] = CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_vsro"), 0, 2,
-                                                        &initializer_data_0055fbbc, &initializer_data_0055fbbc);
-    registration_slot_00580898[280] =
-        CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_stvx"), 0, 3, &initializer_data_0055fbbc,
-                          &initializer_data_0055fbbc, &initializer_data_0055fbbc);
-    registration_slot_00580898[281] =
-        CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_stvebx"), 0, 3, &initializer_data_0055fbbc,
-                          &initializer_data_0055fbbc, &initializer_data_0055fbbc);
-    registration_slot_00580898[282] =
-        CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_stvehx"), 0, 3, &initializer_data_0055fbbc,
-                          &initializer_data_0055fbbc, &initializer_data_0055fbbc);
-    registration_slot_00580898[283] =
-        CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_stvewx"), 0, 3, &initializer_data_0055fbbc,
-                          &initializer_data_0055fbbc, &initializer_data_0055fbbc);
-    registration_slot_00580898[284] =
-        CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_stvxl"), 0, 3, &initializer_data_0055fbbc,
-                          &initializer_data_0055fbbc, &initializer_data_0055fbbc);
-    registration_slot_00580898[285] = CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_vsububm"), 0,
-                                                        2, &initializer_data_0055fbbc, &initializer_data_0055fbbc);
-    registration_slot_00580898[286] = CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_vsubuhm"), 0,
-                                                        2, &initializer_data_0055fbbc, &initializer_data_0055fbbc);
-    registration_slot_00580898[287] = CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_vsubuwm"), 0,
-                                                        2, &initializer_data_0055fbbc, &initializer_data_0055fbbc);
-    registration_slot_00580898[288] = CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_vsubfp"), 0, 2,
-                                                        &initializer_data_0055fbbc, &initializer_data_0055fbbc);
-    registration_slot_00580898[289] = CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_vsubcuw"), 0,
-                                                        2, &initializer_data_0055fbbc, &initializer_data_0055fbbc);
-    registration_slot_00580898[290] = CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_vsububs"), 0,
-                                                        2, &initializer_data_0055fbbc, &initializer_data_0055fbbc);
-    registration_slot_00580898[291] = CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_vsubsbs"), 0,
-                                                        2, &initializer_data_0055fbbc, &initializer_data_0055fbbc);
-    registration_slot_00580898[292] = CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_vsubuhs"), 0,
-                                                        2, &initializer_data_0055fbbc, &initializer_data_0055fbbc);
-    registration_slot_00580898[293] = CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_vsubshs"), 0,
-                                                        2, &initializer_data_0055fbbc, &initializer_data_0055fbbc);
-    registration_slot_00580898[294] = CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_vsubuws"), 0,
-                                                        2, &initializer_data_0055fbbc, &initializer_data_0055fbbc);
-    registration_slot_00580898[295] = CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_vsubsws"), 0,
-                                                        2, &initializer_data_0055fbbc, &initializer_data_0055fbbc);
-    registration_slot_00580898[296] = CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_vsum4ubs"), 0,
-                                                        2, &initializer_data_0055fbbc, &initializer_data_0055fbbc);
-    registration_slot_00580898[297] = CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_vsum4sbs"), 0,
-                                                        2, &initializer_data_0055fbbc, &initializer_data_0055fbbc);
-    registration_slot_00580898[298] = CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_vsum4shs"), 0,
-                                                        2, &initializer_data_0055fbbc, &initializer_data_0055fbbc);
-    registration_slot_00580898[299] = CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_vsum2sws"), 0,
-                                                        2, &initializer_data_0055fbbc, &initializer_data_0055fbbc);
-    registration_slot_00580898[300] = CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_vsumsws"), 0,
-                                                        2, &initializer_data_0055fbbc, &initializer_data_0055fbbc);
-    registration_slot_00580898[301] =
-        CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_vrfiz"), 0, 1, &initializer_data_0055fbbc);
-    registration_slot_00580898[302] =
-        CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_vupkhsb"), 0, 1, &initializer_data_0055fbbc);
-    registration_slot_00580898[303] =
-        CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_vupklsb"), 0, 1, &initializer_data_0055fbbc);
-    registration_slot_00580898[304] =
-        CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_vupkhpx"), 0, 1, &initializer_data_0055fbbc);
-    registration_slot_00580898[305] =
-        CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_vupklpx"), 0, 1, &initializer_data_0055fbbc);
-    registration_slot_00580898[306] =
-        CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_vupkhsh"), 0, 1, &initializer_data_0055fbbc);
-    registration_slot_00580898[307] =
-        CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_vupklsh"), 0, 1, &initializer_data_0055fbbc);
-    registration_slot_00580898[308] = CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_vxor"), 0, 2,
-                                                        &initializer_data_0055fbbc, &initializer_data_0055fbbc);
-    registration_slot_00580898[309] =
-        CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_abs"), 0, 1, &initializer_data_0055fbbc);
-    registration_slot_00580898[310] =
-        CParser_NewRTFunc(&initializer_data_0055fbbc, GetHashNameNode("vec_abss"), 0, 1, &initializer_data_0055fbbc);
-    registration_slot_00580898[311] = CParser_NewRTFunc(&stvoid, GetHashNameNode("__va_setup"), 0, 1, &void_ptr);
-    registration_slot_00580898[312] = CParser_NewRTFunc(&stvoid, GetHashNameNode("__builtin_va_info"), 0, 1, &void_ptr);
-    for (i = 0; i < 313; i++) {
-        if (!registration_slot_00580898[i])
-            CError_FATAL(6535);
-        registration_slot_00580898[i]->u.data.u.intconst.hi = i;
-        function = (TypeFunc *)registration_slot_00580898[i]->type;
-        function->flags |= FUNC_INTRINSIC;
-        CScope_AddGlobalObject(registration_slot_00580898[i]);
-    }
-    copts.cplusplus = saved_cplusplus;
 }
 
 UInt16 find_intrinsic_triple_code(UInt16 id, ENode *unused, ENode *firstOperand, ENode *secondOperand,
@@ -2997,52 +3050,6 @@ UInt16 find_intrinsic_triple_code(UInt16 id, ENode *unused, ENode *firstOperand,
     if (entry->result == NULL)
         CError_FATAL(4140);
     return entry->code;
-}
-void Intrinsics_00486db0(UInt16 token, ENode *unused, ENode *node, SInt16 requestedReg, Operand *result)
-{
-    IntrinsicVariant *variant;
-    SInt16 zeroReg;
-    SInt16 intermediateReg;
-    SInt16 resultReg;
-    Operand operand;
-    SInt32 index;
-
-    index = token - 0x2a;
-    variant = data_0055b4dc[index].variant;
-    for (; variant->resultType != NULL; variant++) {
-        Type *resultType = node->rtype;
-        Type *variantType = variant->type;
-
-        if (variantType->type == TYPEPOINTER && resultType->type == TYPEPOINTER) {
-            variantType = ((TypePointer *)variantType)->target;
-            resultType = ((TypePointer *)resultType)->target;
-        }
-        if (is_same_type_or_signedint_compatible(variantType, resultType)) {
-            break;
-        }
-    }
-    if (variant->resultType == NULL) {
-        CError_FATAL(4614);
-    }
-
-    zeroReg = gUsedVirtualRegistersVR++;
-    intermediateReg = gUsedVirtualRegistersVR++;
-    if (requestedReg != 0) {
-        resultReg = requestedReg;
-    } else {
-        resultReg = gUsedVirtualRegistersVR++;
-    }
-
-    memclrw(&operand, sizeof(operand));
-    data_00560648[node->type](node, 0, 0, &operand);
-    if (operand.kind != OpndType_VR) {
-        Operands_ForceVR(&operand, node->rtype, 0);
-    }
-    PCodeUtilities_EmitInstruction(PC_VSPLTISB, zeroReg, 0);
-    PCodeUtilities_EmitInstruction(variant->op1, intermediateReg, zeroReg, operand.reg);
-    PCodeUtilities_EmitInstruction(variant->op3, resultReg, operand.reg, intermediateReg);
-    result->kind = OpndType_VR;
-    result->reg = resultReg;
 }
 
 UInt16 find_binary_intrinsic_code(UInt16 id, ENode *unused, ENode *left, ENode *right)

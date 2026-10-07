@@ -20,11 +20,13 @@ static Boolean IsInitTermIdle(CWPluginContext context)
 }
 
 #pragma cplusplus on
+
 Boolean is_valid_plugin_context(struct CWPluginPrivateContext *context)
 {
     return (context && context->shellSignature == 'CWIE') &&
            !(context->request == -2 || context->request == -1 || context->request == -100);
 }
+
 #pragma cplusplus reset
 
 static inline char hasEntrySignature(CWPluginPrivateContext *entry)
@@ -112,6 +114,16 @@ int __stdcall CWPluginsPrivate_GetSourceFile(CWPluginPrivateContext *p, CWFileSp
     return 0;
 }
 
+unsigned int __stdcall CWPluginsPrivate_GetNumFiles(CWPluginPrivateContext *state, long *count)
+{
+    if (is_valid_context(state) || !is_valid_plugin_context(state))
+        return 3U;
+    if (!count)
+        return 3U;
+    *count = state->numFiles;
+    return 0U;
+}
+
 int __stdcall CWPluginsPrivate_InvokeExportedRecordCallback(CWPluginPrivateContext *context, int index, int argument,
                                                             ExportedRecord *info)
 {
@@ -123,16 +135,6 @@ int __stdcall CWPluginsPrivate_InvokeExportedRecordCallback(CWPluginPrivateConte
     }
     return ((int(__stdcall *)(CWPluginPrivateContext *, int, int, ExportedRecord *))context->callbacks[0])(
         context, index, argument, info);
-}
-
-unsigned int __stdcall CWPluginsPrivate_GetNumFiles(CWPluginPrivateContext *state, long *count)
-{
-    if (is_valid_context(state) || !is_valid_plugin_context(state))
-        return 3U;
-    if (!count)
-        return 3U;
-    *count = state->numFiles;
-    return 0U;
 }
 
 unsigned int __stdcall CWPluginsPrivate_CallSignatureCallback(CWPluginPrivateContext *context, const char *signature,

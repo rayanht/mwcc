@@ -172,6 +172,18 @@ int __stdcall Files_DeleteFileFromPath(unsigned short kind, int value, UInt8 *da
     return result;
 }
 
+SInt16 __stdcall Files_GetFileIdentifierInfoFromPath(SInt16 input, SInt32 selector, unsigned char *options,
+                                                     FileIdentifierInfo *destination)
+{
+    CWFileSpec workspace;
+    SInt16 status;
+    status = Files_MakeFileSpecFromPath(input, selector, options, &workspace);
+    if (status != 0 && status != -43) {
+        return status;
+    }
+    return get_file_identifier_info(&workspace, destination);
+}
+
 unsigned int __stdcall Files_CreateFile(CWFileSpec *input, unsigned int secondArgument, unsigned int thirdArgument,
                                         int fourthArgument)
 {
@@ -203,18 +215,6 @@ unsigned int __stdcall Files_CreateFile(CWFileSpec *input, unsigned int secondAr
     recordData.arguments[1] = secondArgument;
     set_record_identifier(input, &recordData.data);
     return 0;
-}
-
-SInt16 __stdcall Files_GetFileIdentifierInfoFromPath(SInt16 input, SInt32 selector, unsigned char *options,
-                                                     FileIdentifierInfo *destination)
-{
-    CWFileSpec workspace;
-    SInt16 status;
-    status = Files_MakeFileSpecFromPath(input, selector, options, &workspace);
-    if (status != 0 && status != -43) {
-        return status;
-    }
-    return get_file_identifier_info(&workspace, destination);
 }
 
 short __stdcall Files_OpenFile(CWFileSpec *file, char mode, short *result)

@@ -152,6 +152,7 @@ Object *BE_symbol_GetFunctionSymbolLinkData(Object *func)
     }
     return NULL;
 }
+
 unsigned int BE_symbol_GetOffset(BE_SymNode *symbol)
 {
     return symbol->offset;
@@ -215,6 +216,7 @@ BE_SymNode *BE_symbol_GetSectionSym(struct ObjGenSection *ctx)
     ctx->sym = node;
     return node;
 }
+
 static BE_SymNode *FindFuncNode(HashNameNode *func, int kind)
 {
     BE_SymNode *p;
@@ -261,10 +263,12 @@ BE_SymNode *BE_symbol_GetOrCreateFunctionObjectSymbol(Object *arg)
     node->sectionData.section = data_005884aa;
     return node;
 }
+
 struct BE_SymNode *BE_symbol_GetSymbolOrderTail(void)
 {
     return symbol_order_tail;
 }
+
 static BE_SymNode *FindSym(int obj, int kind)
 {
     BE_SymNode *p;
@@ -274,6 +278,95 @@ static BE_SymNode *FindSym(int obj, int kind)
         }
     }
     return NULL;
+}
+
+/* Backend symbol output record. */
+
+static inline void FindBackendSymbol(BE_SymNode **result, int key, int symbolCategory)
+{
+    BE_SymNode *symbol;
+    int category;
+    if ((symbol = be_symbol_list) != NULL) {
+        category = (short)symbolCategory;
+        do {
+            if (key == (int)symbol->nameData.hashName && (category == 258) == (symbol->kind == 258)) {
+                *result = (BE_SymNode *)symbol;
+                return;
+            }
+            symbol = symbol->next;
+        } while (symbol != NULL);
+    }
+    *result = NULL;
+}
+
+enum { FuncType = 0x102 };
+static inline short output_type(BE_SymNode *p)
+{
+    return p->kind;
+}
+
+static BE_SymNode *find_output(void *name, short type)
+{
+    BE_SymNode *p;
+    if ((p = be_symbol_list) != NULL)
+        do {
+            if (name == p->nameData.hashName && (output_type(p) == FuncType) == (type == FuncType))
+                return p;
+        } while ((p = p->next) != NULL);
+    return NULL;
+}
+
+static inline BE_SymNode *new_output(void *name, short type)
+{
+    BE_SymNode *p;
+    unsigned char flag;
+    if (type == 0x102)
+        flag = 0;
+    else
+        flag = 1;
+    p = galloc(50);
+    memset(p, 0, 50);
+    p->nameData.hashName = name;
+    if (be_symbol_list)
+        symbol_tail->next = p;
+    else
+        be_symbol_list = p;
+    symbol_tail = p;
+    p->symbolKind = flag << 4;
+    p->kind = type;
+    p->sectionData.section = data_005884aa;
+    return p;
+}
+
+static inline BE_SymNode *get_output(short type, void *name)
+{
+    BE_SymNode *p;
+    if (!(p = find_output(name, type)))
+        p = new_output(name, type);
+    return p;
+}
+
+void BE_symbol_Init(void)
+{
+    memset(&be_symbol_list, 0, 12U);
+    data_0055da80 = NULL;
+}
+
+/* Prefix of a 50-byte symbol record; the remaining fields are not used here. */
+
+BE_SymNode *BE_symbol_CreateSymNode(void *value)
+{
+    BE_SymNode *record;
+
+    record = galloc(50U);
+    memset(record, 0, 50);
+    record->nameData.hashName = value;
+    if (be_symbol_list != NULL)
+        symbol_tail->next = record;
+    else
+        be_symbol_list = record;
+    symbol_tail = record;
+    return record;
 }
 
 /* Backend symbol table entry, linked in insertion order. */
@@ -327,68 +420,6 @@ BE_SymNode *BE_symbol_004918f0(Object *symbol, struct ObjGenSection *value)
     return record;
 }
 
-/* Backend symbol output record. */
-
-static inline void FindBackendSymbol(BE_SymNode **result, int key, int symbolCategory)
-{
-    BE_SymNode *symbol;
-    int category;
-    if ((symbol = be_symbol_list) != NULL) {
-        category = (short)symbolCategory;
-        do {
-            if (key == (int)symbol->nameData.hashName && (category == 258) == (symbol->kind == 258)) {
-                *result = (BE_SymNode *)symbol;
-                return;
-            }
-            symbol = symbol->next;
-        } while (symbol != NULL);
-    }
-    *result = NULL;
-}
-
-enum { FuncType = 0x102 };
-static inline short output_type(BE_SymNode *p)
-{
-    return p->kind;
-}
-static BE_SymNode *find_output(void *name, short type)
-{
-    BE_SymNode *p;
-    if ((p = be_symbol_list) != NULL)
-        do {
-            if (name == p->nameData.hashName && (output_type(p) == FuncType) == (type == FuncType))
-                return p;
-        } while ((p = p->next) != NULL);
-    return NULL;
-}
-static inline BE_SymNode *new_output(void *name, short type)
-{
-    BE_SymNode *p;
-    unsigned char flag;
-    if (type == 0x102)
-        flag = 0;
-    else
-        flag = 1;
-    p = galloc(50);
-    memset(p, 0, 50);
-    p->nameData.hashName = name;
-    if (be_symbol_list)
-        symbol_tail->next = p;
-    else
-        be_symbol_list = p;
-    symbol_tail = p;
-    p->symbolKind = flag << 4;
-    p->kind = type;
-    p->sectionData.section = data_005884aa;
-    return p;
-}
-static inline BE_SymNode *get_output(short type, void *name)
-{
-    BE_SymNode *p;
-    if (!(p = find_output(name, type)))
-        p = new_output(name, type);
-    return p;
-}
 BE_SymNode *BE_symbol_SetupObjectSymbol(Object *object, int size, ObjGenSection *section)
 {
     unsigned char linkageKind;
@@ -598,28 +629,6 @@ BE_SymNode *BE_symbol_AdvanceSymbolTail(void)
     entry = symbol_tail;
     symbol_tail = entry->next;
     return symbol_tail;
-}
-
-void BE_symbol_Init(void)
-{
-    memset(&be_symbol_list, 0, 12U);
-    data_0055da80 = NULL;
-}
-/* Prefix of a 50-byte symbol record; the remaining fields are not used here. */
-
-BE_SymNode *BE_symbol_CreateSymNode(void *value)
-{
-    BE_SymNode *record;
-
-    record = galloc(50U);
-    memset(record, 0, 50);
-    record->nameData.hashName = value;
-    if (be_symbol_list != NULL)
-        symbol_tail->next = record;
-    else
-        be_symbol_list = record;
-    symbol_tail = record;
-    return record;
 }
 
 BE_SymNode *BE_symbol_ResetSymbolTail(void)

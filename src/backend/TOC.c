@@ -813,12 +813,15 @@ void TOC_0049d710(ENode *node, Type *targetType, int ignored)
             break;
     }
 }
+
 static inline long third_word(long p)
 {
     long x = *(int *)p;
     return x;
 }
+
 #pragma opt_strength_reduction off
+
 unsigned char is_small_splat_or_table_vector(long value, Type *type)
 {
     short *halves;
@@ -878,7 +881,9 @@ unsigned char is_small_splat_or_table_vector(long value, Type *type)
     (void)word0;
     return 0;
 }
+
 #pragma opt_strength_reduction reset
+
 void expandpreincdec(ENode *node)
 {
     ENode *constant;
@@ -1062,6 +1067,7 @@ void rewrite_compound_assignment(ENode *expr, unsigned char opcode)
             break;
     }
 }
+
 static Type *Type_IntPromote(Type *t)
 {
     if (t->type == TYPEENUM)
@@ -1128,6 +1134,7 @@ void fn_0049ebb0(ENode *expr)
     expr->data.funccall.args->next->next = list;
     expr->data.funccall.funcref->data.objref = data_00587fc0;
 }
+
 ENode *create_diadic_node_with_constant(ENode *e)
 {
     ENode *n;
@@ -1187,6 +1194,7 @@ void add_initial_object(void *object)
     node->next = gInitialObjectList_005882ac;
     gInitialObjectList_005882ac = node;
 }
+
 void TOC_EnumerateObjectCodeOffsets(void *arg)
 {
     struct TOCNameEntry *node;
@@ -1313,6 +1321,7 @@ void replace_vector_constant_with_objectref(ENode *node)
     node->flags |= 1;
     node->data.monadic = expression;
 }
+
 /* 0x55fb6c, pass by address */
 
 void TOC_EmitMemberPointerConstants(void)
@@ -1392,6 +1401,7 @@ Object *TOC_GetFloatObject(Type *type, Float *value)
     }
     return object;
 }
+
 /* Key referenced by a TOC list entry. */
 
 /* Record used by TOC rewriting; kind selects the pointer at offset 10. */
@@ -1455,6 +1465,50 @@ UInt8 TOC_HasObjectReferenceWithoutExpression(Object *key)
         } while (entry != NULL);
     }
     return '\0';
+}
+
+void add_toc_reference(Object *id, Object *a, ENode *b, char c)
+{
+    TOCReferenceEntry *n;
+    TOCReferenceEntry *first = NULL;
+    TOCReferenceEntry *dup = NULL;
+
+    n = toc_references;
+    while (n != NULL) {
+        if (id == n->object) {
+            if (first != NULL)
+                dup = n;
+            else
+                first = n;
+        }
+        n = n->next;
+    }
+
+    if (dup != NULL) {
+        if (dup->expression != NULL) {
+            Object *object = dup->object;
+            make_objectref_offset(object, dup->lookupObject, dup->expression, dup->makeIndirect);
+            dup->expression = NULL;
+            object = first->object;
+            make_objectref_offset(object, first->lookupObject, first->expression, first->makeIndirect);
+            first->expression = NULL;
+        }
+        {
+            Object *object = id;
+            make_objectref_offset(object, a, b, c);
+        }
+        return;
+    }
+    {
+        TOCReferenceEntry *nn = (TOCReferenceEntry *)galloc(18);
+        memclrw(nn, 18);
+        nn->object = id;
+        nn->lookupObject = a;
+        nn->expression = b;
+        nn->makeIndirect = c;
+        nn->next = toc_references;
+        toc_references = nn;
+    }
 }
 
 void make_objectref_offset(Object *object, Object *lookupObject, ENode *expression, Boolean makeIndirect)
@@ -1551,50 +1605,6 @@ void fn_0049f4b0(Object *object)
     new_entry->object.value = current;
     new_entry->next = gTrailingObjectList_005876a0;
     gTrailingObjectList_005876a0 = new_entry;
-}
-
-void add_toc_reference(Object *id, Object *a, ENode *b, char c)
-{
-    TOCReferenceEntry *n;
-    TOCReferenceEntry *first = NULL;
-    TOCReferenceEntry *dup = NULL;
-
-    n = toc_references;
-    while (n != NULL) {
-        if (id == n->object) {
-            if (first != NULL)
-                dup = n;
-            else
-                first = n;
-        }
-        n = n->next;
-    }
-
-    if (dup != NULL) {
-        if (dup->expression != NULL) {
-            Object *object = dup->object;
-            make_objectref_offset(object, dup->lookupObject, dup->expression, dup->makeIndirect);
-            dup->expression = NULL;
-            object = first->object;
-            make_objectref_offset(object, first->lookupObject, first->expression, first->makeIndirect);
-            first->expression = NULL;
-        }
-        {
-            Object *object = id;
-            make_objectref_offset(object, a, b, c);
-        }
-        return;
-    }
-    {
-        TOCReferenceEntry *nn = (TOCReferenceEntry *)galloc(18);
-        memclrw(nn, 18);
-        nn->object = id;
-        nn->lookupObject = a;
-        nn->expression = b;
-        nn->makeIndirect = c;
-        nn->next = toc_references;
-        toc_references = nn;
-    }
 }
 
 void Operands_ClearTrailingObjectInfo(void)

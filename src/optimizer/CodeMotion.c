@@ -740,69 +740,16 @@ void assign_definition_and_use_starts(int flag)
     }
 }
 
-void COpt_00524b20(Object *object)
-{
-    CodeMotionObjectNode **link = &gCodeMotionObjectTree_005880ac;
-    CodeMotionObjectNode *node;
-
-    while ((node = *link) != NULL) {
-        if (object < node->object) {
-            link = &node->left;
-        } else if (object > node->object) {
-            link = &node->right;
-        } else {
-            return;
-        }
-    }
-
-    node = (CodeMotionObjectNode *)CompilerTools_AllocatePoolMemory(sizeof(CodeMotionObjectNode));
-    node->right = NULL;
-    node->left = node->right;
-    node->object = object;
-    node->definition_entries = NULL;
-    node->use_entries = node->definition_entries;
-    node->allocation_next = gCodeMotionAllocationList_005870fc;
-    gCodeMotionAllocationList_005870fc = node;
-    *link = node;
-}
-
-#pragma auto_inline off
-CodeMotionObjectNode *find_object_node(Object *object)
-{
-    CodeMotionObjectNode *node = gCodeMotionObjectTree_005880ac;
-
-    while (node != NULL) {
-        if (object < node->object) {
-            node = node->left;
-        } else if (object > node->object) {
-            node = node->right;
-        } else {
-            return node;
-        }
-    }
-    return NULL;
-}
-#pragma auto_inline reset
-
-void CodeMotion_VisitLoops(void)
-{
-    gCodeMotionCounter_005880b8 = 0;
-    gCodeMotionChanged = 0;
-    if (data_0058763c != NULL) {
-        visit_loops_postorder(data_0058763c);
-        visit_leaf_loops(data_0058763c);
-    }
-    CompilerTools_ResetPool();
-}
-
 static inline void CodeMotion_ClearBit524d90(UInt32 *bits, int index)
 {
     bits[index >> 5] &= ~(1U << (index & 31));
 }
+
 static inline void CodeMotion_SetBit524d90(UInt32 *bits, int index)
 {
     bits[index >> 5] |= 1U << (index & 31);
 }
+
 static inline int CodeMotion_CanMove524d90(PCodeInstruction *instruction, Loop *node)
 {
     if (is_only_definition_in_loop(instruction, node) == 0)
@@ -816,137 +763,6 @@ static inline int CodeMotion_CanMove524d90(PCodeInstruction *instruction, Loop *
     if (instruction->opcode == PC_LI && node->bodySize > 0x19)
         return 0;
     return 1;
-}
-
-void move_instructions_to_preheader(Loop *node)
-{
-    PCodeBlockLink *block_link;
-    PCodeBlock *block;
-    PCodeInstruction *instruction;
-    PCodeInstruction *next_instruction;
-    UInt32 *available_definitions;
-    const UInt32 *definitions;
-    CodeMotionEntry *entry;
-    CodeMotionEntryLink *link;
-    int definition_index;
-    int changed;
-
-    available_definitions = (UInt32 *)CompilerTools_AllocatePoolMemory(((codeMotionEntryCount + 0x1f) >> 5) << 2);
-    do {
-        changed = 0;
-        for (block_link = node->blocks; block_link != NULL; block_link = block_link->next) {
-            block = block_link->payload.block;
-            definitions = data_00587fe4[block->index].definition_sets[2];
-            CodeMotion_AllocateBits(available_definitions, definitions, codeMotionEntryCount);
-            for (instruction = block->instructions; instruction != NULL; instruction = next_instruction) {
-                next_instruction = instruction->next;
-                if ((instruction->flags & PCodeInstruction_SkipCodeMotion) != 0)
-                    continue;
-                if (instruction->operand_count == 0)
-                    continue;
-                if ((instruction->flags & 0x00020460) == 0 &&
-                    is_loop_invariant(instruction, node, available_definitions, 0, 0) != 0 &&
-                    CodeMotion_CanMove524d90(instruction, node)) {
-                    move_instruction_to_preheader(instruction, node);
-                    changed = 1;
-                } else if (fn_00525fc0(instruction, node, available_definitions) != 0) {
-                    move_instruction_to_preheader(instruction, node);
-                    changed = 1;
-                }
-                for (entry = &code_motion_entries[definition_index = instruction->useStart];
-                     definition_index < codeMotionEntryCount && entry->instruction == instruction;
-                     entry++, definition_index++) {
-                    if (entry->kind == 0) {
-                        for (link = code_motion_register_definition_heads[entry->value.reg]; link != NULL;
-                             link = link->next)
-                            CodeMotion_ClearBit524d90(available_definitions, link->entry_index);
-                    } else if (entry->kind == 1) {
-                        for (link = data_00587f04[entry->value.reg]; link != NULL; link = link->next)
-                            CodeMotion_ClearBit524d90(available_definitions, link->entry_index);
-                    } else if (entry->kind == 9) {
-                        for (link = register_definition_heads[entry->value.reg]; link != NULL; link = link->next)
-                            CodeMotion_ClearBit524d90(available_definitions, link->entry_index);
-                    } else if (entry->is_implicit == 0) {
-                        CodeMotionObjectNode *object_node = find_object_node(entry->value.object);
-
-                        for (link = object_node->definition_entries; link != NULL; link = link->next)
-                            CodeMotion_ClearBit524d90(available_definitions, link->entry_index);
-                    }
-                    CodeMotion_SetBit524d90(available_definitions, definition_index);
-                }
-            }
-        }
-    } while (changed);
-}
-
-void visit_leaf_loops(Loop *p)
-{
-    while (p) {
-        if (p->children)
-            visit_leaf_loops(p->children);
-        else if (!p->skip_leaf_pass_4f)
-            unswitch_loop(p);
-        p = p->sibling;
-    }
-}
-
-void visit_loops_postorder(register Loop *loop)
-{
-    register Loop *child;
-    register Loop *grandchild;
-    register Loop *thirdLevelLoop;
-    register Loop *fourthLevelLoop;
-    register Loop *fifthLevelLoop;
-    register Loop *sixthLevelLoop;
-    register Loop *seventhLevelLoop;
-    for (; loop != NULL; loop = loop->sibling) {
-        if (loop->children != NULL) {
-            for (child = loop->children; child != NULL; child = child->sibling) {
-                if (child->children != NULL) {
-                    for (grandchild = child->children; grandchild != NULL; grandchild = grandchild->sibling) {
-                        if (grandchild->children != NULL) {
-                            for (thirdLevelLoop = grandchild->children; thirdLevelLoop != NULL;
-                                 thirdLevelLoop = thirdLevelLoop->sibling) {
-                                if (thirdLevelLoop->children != NULL) {
-                                    for (fourthLevelLoop = thirdLevelLoop->children; fourthLevelLoop != NULL;
-                                         fourthLevelLoop = fourthLevelLoop->sibling) {
-                                        if (fourthLevelLoop->children != NULL) {
-                                            for (fifthLevelLoop = fourthLevelLoop->children; fifthLevelLoop != NULL;
-                                                 fifthLevelLoop = fifthLevelLoop->sibling) {
-                                                if (fifthLevelLoop->children != NULL) {
-                                                    for (sixthLevelLoop = fifthLevelLoop->children;
-                                                         sixthLevelLoop != NULL;
-                                                         sixthLevelLoop = sixthLevelLoop->sibling) {
-                                                        if (sixthLevelLoop->children != NULL) {
-                                                            for (seventhLevelLoop = sixthLevelLoop->children;
-                                                                 seventhLevelLoop != NULL;
-                                                                 seventhLevelLoop = seventhLevelLoop->sibling) {
-                                                                if (seventhLevelLoop->children != NULL) {
-                                                                    visit_loops_postorder(seventhLevelLoop->children);
-                                                                }
-                                                                move_instructions_to_preheader(seventhLevelLoop);
-                                                            }
-                                                        }
-                                                        move_instructions_to_preheader(sixthLevelLoop);
-                                                    }
-                                                }
-                                                move_instructions_to_preheader(fifthLevelLoop);
-                                            }
-                                        }
-                                        move_instructions_to_preheader(fourthLevelLoop);
-                                    }
-                                }
-                                move_instructions_to_preheader(thirdLevelLoop);
-                            }
-                        }
-                        move_instructions_to_preheader(grandchild);
-                    }
-                }
-                move_instructions_to_preheader(child);
-            }
-        }
-        move_instructions_to_preheader(loop);
-    }
 }
 
 static inline SInt32 CodeMotionStructureKind(TypeStruct *type)
@@ -1061,6 +877,194 @@ int is_object_access_compatible(PCodeInstruction *instruction, Object *object)
 
         default:
             return 1;
+    }
+}
+
+void COpt_00524b20(Object *object)
+{
+    CodeMotionObjectNode **link = &gCodeMotionObjectTree_005880ac;
+    CodeMotionObjectNode *node;
+
+    while ((node = *link) != NULL) {
+        if (object < node->object) {
+            link = &node->left;
+        } else if (object > node->object) {
+            link = &node->right;
+        } else {
+            return;
+        }
+    }
+
+    node = (CodeMotionObjectNode *)CompilerTools_AllocatePoolMemory(sizeof(CodeMotionObjectNode));
+    node->right = NULL;
+    node->left = node->right;
+    node->object = object;
+    node->definition_entries = NULL;
+    node->use_entries = node->definition_entries;
+    node->allocation_next = gCodeMotionAllocationList_005870fc;
+    gCodeMotionAllocationList_005870fc = node;
+    *link = node;
+}
+
+#pragma auto_inline off
+
+CodeMotionObjectNode *find_object_node(Object *object)
+{
+    CodeMotionObjectNode *node = gCodeMotionObjectTree_005880ac;
+
+    while (node != NULL) {
+        if (object < node->object) {
+            node = node->left;
+        } else if (object > node->object) {
+            node = node->right;
+        } else {
+            return node;
+        }
+    }
+    return NULL;
+}
+
+#pragma auto_inline reset
+
+void CodeMotion_VisitLoops(void)
+{
+    gCodeMotionCounter_005880b8 = 0;
+    gCodeMotionChanged = 0;
+    if (data_0058763c != NULL) {
+        visit_loops_postorder(data_0058763c);
+        visit_leaf_loops(data_0058763c);
+    }
+    CompilerTools_ResetPool();
+}
+
+void visit_loops_postorder(register Loop *loop)
+{
+    register Loop *child;
+    register Loop *grandchild;
+    register Loop *thirdLevelLoop;
+    register Loop *fourthLevelLoop;
+    register Loop *fifthLevelLoop;
+    register Loop *sixthLevelLoop;
+    register Loop *seventhLevelLoop;
+    for (; loop != NULL; loop = loop->sibling) {
+        if (loop->children != NULL) {
+            for (child = loop->children; child != NULL; child = child->sibling) {
+                if (child->children != NULL) {
+                    for (grandchild = child->children; grandchild != NULL; grandchild = grandchild->sibling) {
+                        if (grandchild->children != NULL) {
+                            for (thirdLevelLoop = grandchild->children; thirdLevelLoop != NULL;
+                                 thirdLevelLoop = thirdLevelLoop->sibling) {
+                                if (thirdLevelLoop->children != NULL) {
+                                    for (fourthLevelLoop = thirdLevelLoop->children; fourthLevelLoop != NULL;
+                                         fourthLevelLoop = fourthLevelLoop->sibling) {
+                                        if (fourthLevelLoop->children != NULL) {
+                                            for (fifthLevelLoop = fourthLevelLoop->children; fifthLevelLoop != NULL;
+                                                 fifthLevelLoop = fifthLevelLoop->sibling) {
+                                                if (fifthLevelLoop->children != NULL) {
+                                                    for (sixthLevelLoop = fifthLevelLoop->children;
+                                                         sixthLevelLoop != NULL;
+                                                         sixthLevelLoop = sixthLevelLoop->sibling) {
+                                                        if (sixthLevelLoop->children != NULL) {
+                                                            for (seventhLevelLoop = sixthLevelLoop->children;
+                                                                 seventhLevelLoop != NULL;
+                                                                 seventhLevelLoop = seventhLevelLoop->sibling) {
+                                                                if (seventhLevelLoop->children != NULL) {
+                                                                    visit_loops_postorder(seventhLevelLoop->children);
+                                                                }
+                                                                move_instructions_to_preheader(seventhLevelLoop);
+                                                            }
+                                                        }
+                                                        move_instructions_to_preheader(sixthLevelLoop);
+                                                    }
+                                                }
+                                                move_instructions_to_preheader(fifthLevelLoop);
+                                            }
+                                        }
+                                        move_instructions_to_preheader(fourthLevelLoop);
+                                    }
+                                }
+                                move_instructions_to_preheader(thirdLevelLoop);
+                            }
+                        }
+                        move_instructions_to_preheader(grandchild);
+                    }
+                }
+                move_instructions_to_preheader(child);
+            }
+        }
+        move_instructions_to_preheader(loop);
+    }
+}
+
+void move_instructions_to_preheader(Loop *node)
+{
+    PCodeBlockLink *block_link;
+    PCodeBlock *block;
+    PCodeInstruction *instruction;
+    PCodeInstruction *next_instruction;
+    UInt32 *available_definitions;
+    const UInt32 *definitions;
+    CodeMotionEntry *entry;
+    CodeMotionEntryLink *link;
+    int definition_index;
+    int changed;
+
+    available_definitions = (UInt32 *)CompilerTools_AllocatePoolMemory(((codeMotionEntryCount + 0x1f) >> 5) << 2);
+    do {
+        changed = 0;
+        for (block_link = node->blocks; block_link != NULL; block_link = block_link->next) {
+            block = block_link->payload.block;
+            definitions = data_00587fe4[block->index].definition_sets[2];
+            CodeMotion_AllocateBits(available_definitions, definitions, codeMotionEntryCount);
+            for (instruction = block->instructions; instruction != NULL; instruction = next_instruction) {
+                next_instruction = instruction->next;
+                if ((instruction->flags & PCodeInstruction_SkipCodeMotion) != 0)
+                    continue;
+                if (instruction->operand_count == 0)
+                    continue;
+                if ((instruction->flags & 0x00020460) == 0 &&
+                    is_loop_invariant(instruction, node, available_definitions, 0, 0) != 0 &&
+                    CodeMotion_CanMove524d90(instruction, node)) {
+                    move_instruction_to_preheader(instruction, node);
+                    changed = 1;
+                } else if (fn_00525fc0(instruction, node, available_definitions) != 0) {
+                    move_instruction_to_preheader(instruction, node);
+                    changed = 1;
+                }
+                for (entry = &code_motion_entries[definition_index = instruction->useStart];
+                     definition_index < codeMotionEntryCount && entry->instruction == instruction;
+                     entry++, definition_index++) {
+                    if (entry->kind == 0) {
+                        for (link = code_motion_register_definition_heads[entry->value.reg]; link != NULL;
+                             link = link->next)
+                            CodeMotion_ClearBit524d90(available_definitions, link->entry_index);
+                    } else if (entry->kind == 1) {
+                        for (link = data_00587f04[entry->value.reg]; link != NULL; link = link->next)
+                            CodeMotion_ClearBit524d90(available_definitions, link->entry_index);
+                    } else if (entry->kind == 9) {
+                        for (link = register_definition_heads[entry->value.reg]; link != NULL; link = link->next)
+                            CodeMotion_ClearBit524d90(available_definitions, link->entry_index);
+                    } else if (entry->is_implicit == 0) {
+                        CodeMotionObjectNode *object_node = find_object_node(entry->value.object);
+
+                        for (link = object_node->definition_entries; link != NULL; link = link->next)
+                            CodeMotion_ClearBit524d90(available_definitions, link->entry_index);
+                    }
+                    CodeMotion_SetBit524d90(available_definitions, definition_index);
+                }
+            }
+        }
+    } while (changed);
+}
+
+void visit_leaf_loops(Loop *p)
+{
+    while (p) {
+        if (p->children)
+            visit_leaf_loops(p->children);
+        else if (!p->skip_leaf_pass_4f)
+            unswitch_loop(p);
+        p = p->sibling;
     }
 }
 
@@ -1382,6 +1386,7 @@ PCodeBlock *clone_block_with_bridge(Loop *region, PCodeBlock *insertionPoint, PC
 
     return cloneBlock;
 }
+
 void CodeMotion_00525e70(Loop *region, PCodeBlock *block, PCodeInstruction *instruction, PCodeInstruction *replacement,
                          PCodeOperand *argument)
 {
@@ -1405,6 +1410,7 @@ void CodeMotion_00525e70(Loop *region, PCodeBlock *block, PCodeInstruction *inst
     PCode_AppendInstruction(oldRegion, replacement);
     fn_00525f20(oldRegion, block, argument->value.label->target.block);
 }
+
 void fn_00525f20(PCodeBlock *replacement, PCodeBlock *block, PCodeBlock *successor)
 {
     PCodeBlockLink *predecessor;

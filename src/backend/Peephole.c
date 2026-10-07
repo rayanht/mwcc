@@ -653,44 +653,6 @@ SInt32 compute_register_mask(PCodeInstruction *node, SInt16 registerNumber)
     return -1;
 }
 
-int has_register_conflict(UInt32 mask, PCodeInstruction *group, PCodeInstruction *operand, PCodeInstruction *other,
-                          PCodeInstruction *target)
-{
-    PCodeOperand *record;
-    int remaining;
-    PCodeInstruction *link;
-    SInt16 operandId;
-    SInt16 relatedId;
-
-    if ((mask & (1 << target->operandData.operands[0].value.reg)) != 0 &&
-        target->operandData.operands[0].value.reg != group->operandData.operands[0].value.reg &&
-        target->operandData.operands[0].value.reg != operand->operandData.operands[2].value.reg)
-        return 1;
-
-    for (link = group->block->instructions; link != group->block->reverse_instructions; link = link->next) {
-        if (link == operand || link == other || link == target)
-            break;
-    }
-
-    operandId = operand->operandData.operands[1].value.reg;
-    relatedId = target->operandData.operands[1].value.reg;
-    while (link != group) {
-        record = group->operandData.operands;
-        remaining = group->operand_count;
-        while (remaining--) {
-            if (record->kind == PCOp_GPR &&
-                (((record->value.reg == operandId || record->value.reg == relatedId) && (record->flags & 2)) ||
-                 (record->value.reg == target->operandData.operands[0].value.reg && (record->flags & 1)))) {
-                if (link != operand && link != other && link != target)
-                    return 1;
-            }
-            record++;
-        }
-        link = link->next;
-    }
-    return 0;
-}
-
 static inline int has_intervening_definition(PCodeInstruction *instruction, PCodeInstruction *lastDefinition,
                                              PCodeInstruction *definition, short reg)
 {
@@ -707,6 +669,72 @@ static inline int has_intervening_definition(PCodeInstruction *instruction, PCod
         previous = previous->previous;
     }
     return 0;
+}
+
+void peephole_optimize_block(PCodeBlock *scope)
+{
+    UInt32 a, b, c, d;
+    UInt32 i;
+    Boolean flag;
+    PCodeInstruction *block;
+
+    flag = 0;
+    a = register_block_liveness[scope->index].live_out;
+    b = gRegisterBlockLiveness[scope->index].live_out;
+    c = registerBlockLiveness[scope->index].live_out;
+    d = data_005813ac[scope->index].live_out;
+
+    for (block = scope->reverse_instructions; block != NULL; block = block->previous) {
+        PeepHandler *handler;
+        PCodeOperand *p;
+
+        if (fn_004cc040(block, a, b, c, d, flag) != 0) {
+            PCode_UnlinkInstruction(block);
+            continue;
+        }
+        handler = CodeGen_PeepholeHandlers_005813b0[block->opcode];
+        while (handler != NULL) {
+            if (handler->func(block, a, b, c, d) != 0) {
+                if (block->block == NULL)
+                    break;
+                handler = CodeGen_PeepholeHandlers_005813b0[block->opcode];
+            } else {
+                handler = handler->next;
+            }
+        }
+        if (block->block != NULL) {
+            p = block->operandData.operands;
+            i = block->operand_count;
+            while (i--) {
+                if (p->kind == PCOp_GPR && (p->flags & 2))
+                    a &= ~(1 << p->value.reg);
+                else if (p->kind == PCOp_FPR && (p->flags & 2))
+                    b &= ~(1 << p->value.reg);
+                else if (p->kind == PCOp_CRFIELD && (p->flags & 2))
+                    c &= ~(1 << p->value.reg);
+                else if (p->kind == PCOp_VR && (p->flags & 2))
+                    d &= ~(1 << p->value.reg);
+                else if (p->kind == PCOp_SPR && p->value.reg == 0 && (p->flags & 2))
+                    flag = 0;
+                p++;
+            }
+            p = block->operandData.operands;
+            i = block->operand_count;
+            while (i--) {
+                if (p->kind == PCOp_GPR && (p->flags & 1))
+                    a |= 1 << p->value.reg;
+                else if (p->kind == PCOp_FPR && (p->flags & 1))
+                    b |= 1 << p->value.reg;
+                else if (p->kind == PCOp_CRFIELD && (p->flags & 1))
+                    c |= 1 << p->value.reg;
+                else if (p->kind == PCOp_VR && (p->flags & 1))
+                    d |= 1 << p->value.reg;
+                else if (p->kind == PCOp_SPR && p->value.reg == 0 && (p->flags & 1))
+                    flag = 1;
+                p++;
+            }
+        }
+    }
 }
 
 int fold_rlwimi_rlwinm_to_sthbrx(PCodeInstruction *instruction, int mask)
@@ -816,72 +844,6 @@ int fold_rlwimi_rlwinm_to_sthbrx(PCodeInstruction *instruction, int mask)
         return 1;
     }
     return 0;
-}
-
-void peephole_optimize_block(PCodeBlock *scope)
-{
-    UInt32 a, b, c, d;
-    UInt32 i;
-    Boolean flag;
-    PCodeInstruction *block;
-
-    flag = 0;
-    a = register_block_liveness[scope->index].live_out;
-    b = gRegisterBlockLiveness[scope->index].live_out;
-    c = registerBlockLiveness[scope->index].live_out;
-    d = data_005813ac[scope->index].live_out;
-
-    for (block = scope->reverse_instructions; block != NULL; block = block->previous) {
-        PeepHandler *handler;
-        PCodeOperand *p;
-
-        if (fn_004cc040(block, a, b, c, d, flag) != 0) {
-            PCode_UnlinkInstruction(block);
-            continue;
-        }
-        handler = CodeGen_PeepholeHandlers_005813b0[block->opcode];
-        while (handler != NULL) {
-            if (handler->func(block, a, b, c, d) != 0) {
-                if (block->block == NULL)
-                    break;
-                handler = CodeGen_PeepholeHandlers_005813b0[block->opcode];
-            } else {
-                handler = handler->next;
-            }
-        }
-        if (block->block != NULL) {
-            p = block->operandData.operands;
-            i = block->operand_count;
-            while (i--) {
-                if (p->kind == PCOp_GPR && (p->flags & 2))
-                    a &= ~(1 << p->value.reg);
-                else if (p->kind == PCOp_FPR && (p->flags & 2))
-                    b &= ~(1 << p->value.reg);
-                else if (p->kind == PCOp_CRFIELD && (p->flags & 2))
-                    c &= ~(1 << p->value.reg);
-                else if (p->kind == PCOp_VR && (p->flags & 2))
-                    d &= ~(1 << p->value.reg);
-                else if (p->kind == PCOp_SPR && p->value.reg == 0 && (p->flags & 2))
-                    flag = 0;
-                p++;
-            }
-            p = block->operandData.operands;
-            i = block->operand_count;
-            while (i--) {
-                if (p->kind == PCOp_GPR && (p->flags & 1))
-                    a |= 1 << p->value.reg;
-                else if (p->kind == PCOp_FPR && (p->flags & 1))
-                    b |= 1 << p->value.reg;
-                else if (p->kind == PCOp_CRFIELD && (p->flags & 1))
-                    c |= 1 << p->value.reg;
-                else if (p->kind == PCOp_VR && (p->flags & 1))
-                    d |= 1 << p->value.reg;
-                else if (p->kind == PCOp_SPR && p->value.reg == 0 && (p->flags & 1))
-                    flag = 1;
-                p++;
-            }
-        }
-    }
 }
 
 static int fn_004c8010_find(PCodeInstruction *p, PCodeInstruction *limit, PCodeInstruction *ref)
@@ -1162,6 +1124,44 @@ unsigned int fold_to_rlwnm(unsigned int instruction, unsigned int liveRegisters)
             PCode_UnlinkInstruction(shift);
             return 1;
         }
+    }
+    return 0;
+}
+
+int has_register_conflict(UInt32 mask, PCodeInstruction *group, PCodeInstruction *operand, PCodeInstruction *other,
+                          PCodeInstruction *target)
+{
+    PCodeOperand *record;
+    int remaining;
+    PCodeInstruction *link;
+    SInt16 operandId;
+    SInt16 relatedId;
+
+    if ((mask & (1 << target->operandData.operands[0].value.reg)) != 0 &&
+        target->operandData.operands[0].value.reg != group->operandData.operands[0].value.reg &&
+        target->operandData.operands[0].value.reg != operand->operandData.operands[2].value.reg)
+        return 1;
+
+    for (link = group->block->instructions; link != group->block->reverse_instructions; link = link->next) {
+        if (link == operand || link == other || link == target)
+            break;
+    }
+
+    operandId = operand->operandData.operands[1].value.reg;
+    relatedId = target->operandData.operands[1].value.reg;
+    while (link != group) {
+        record = group->operandData.operands;
+        remaining = group->operand_count;
+        while (remaining--) {
+            if (record->kind == PCOp_GPR &&
+                (((record->value.reg == operandId || record->value.reg == relatedId) && (record->flags & 2)) ||
+                 (record->value.reg == target->operandData.operands[0].value.reg && (record->flags & 1)))) {
+                if (link != operand && link != other && link != target)
+                    return 1;
+            }
+            record++;
+        }
+        link = link->next;
     }
     return 0;
 }
@@ -2228,6 +2228,7 @@ SInt32 fold_constant_compare_branch(PCodeInstruction *node)
     }
     return 0;
 }
+
 int eliminate_matching_addi(PCodeInstruction *instruction, UInt32 registerMask)
 {
     PCodeOperand *operand;
@@ -2380,8 +2381,7 @@ int fold_addi_or_mr_reaching_def(PCodeInstruction *pc, UInt32 mask)
             if (pc->operandData.operands[2].value.signed_value == 0 &&
                 def->operandData.operands[0].value.reg == def->operandData.operands[1].value.reg &&
                 !PCode_UsedBetween(pc, def, &def->operandData.operands[0]) &&
-                (!(mask & (1 << def->operandData.operands[0].value.reg)) ||
-                 PCode_LiveAfter(pc))) {
+                (!(mask & (1 << def->operandData.operands[0].value.reg)) || PCode_LiveAfter(pc))) {
                 if (mask & (1 << def->operandData.operands[0].value.reg)) {
                     pc->opcode++;
                     pc->operandData.operands[1].flags |= 2;
@@ -2643,6 +2643,7 @@ int make_record_form_and_unlink_instruction(PCodeInstruction *instruction)
     }
     return 0;
 }
+
 int fn_004cba60(CmpCtx *ctx)
 {
     PCodeInstruction *b = ctx->second;
@@ -2739,6 +2740,17 @@ int unlink_instruction_with_matching_mr_def(PCodeInstruction *p)
     }
     return 0;
 }
+
+int unlink_same_reg_move(PCodeInstruction *instruction)
+{
+    PCodeInstruction *move = instruction;
+    if (move->operandData.operands[0].value.reg == move->operandData.operands[1].value.reg && !(move->flags & 0x80U)) {
+        PCode_UnlinkInstruction(move);
+        return 1;
+    }
+    return 0;
+}
+
 int unlink_same_reg_instruction(PCodeInstruction *object)
 {
     if (object->operandData.operands[0].value.reg == object->operandData.operands[1].value.reg &&
@@ -2748,36 +2760,20 @@ int unlink_same_reg_instruction(PCodeInstruction *object)
     }
     return 0;
 }
-int fn_004cc040(PCodeInstruction *instruction, UInt32 gprMask, UInt32 fprMask, UInt32 crFieldMask, UInt32 vectorMask,
-                Boolean checkSpecialRegisterZero)
+
+unsigned int unlink_equal_reg_instruction(PCodeInstruction *record)
 {
-    PCodeOperand *operand;
-    int remainingOperands;
-
-    if ((instruction->block->flags & 3) != 0)
-        return 0;
-    if ((instruction->flags & 0x20434) != 0)
-        return 0;
-    if (instruction->block->predecessors == NULL)
-        return 1;
-
-    remainingOperands = instruction->operand_count;
-    operand = instruction->operandData.operands;
-    while (remainingOperands--) {
-        if (operand->kind == PCOp_GPR && (operand->flags & 2) && ((1 << operand->value.reg) & gprMask))
-            return 0;
-        if (operand->kind == PCOp_FPR && (operand->flags & 2) && ((1 << operand->value.reg) & fprMask))
-            return 0;
-        if (operand->kind == PCOp_VR && (operand->flags & 2) && ((1 << operand->value.reg) & vectorMask))
-            return 0;
-        if (operand->kind == PCOp_SPR && (operand->flags & 2) && (operand->value.reg != 0 || checkSpecialRegisterZero))
-            return 0;
-        if (operand->kind == PCOp_CRFIELD && (operand->flags & 2) && ((1 << operand->value.reg) & crFieldMask))
-            return 0;
-        operand++;
+    unsigned short second_value = record->operandData.operands[1].value.reg;
+    unsigned short first_value = record->operandData.operands[0].value.reg;
+    if (first_value == second_value) {
+        if (!(record->flags & 128U)) {
+            PCode_UnlinkInstruction(record);
+            return 1;
+        }
     }
-    return 1;
+    return 0;
 }
+
 int fn_004cbe40(PCodeBlock *node, PCodeInstruction *item, int instructionCount, int branchCount, int targetCount,
                 int memoryCount, int specialCount)
 {
@@ -2886,6 +2882,7 @@ int fn_004cbe40(PCodeBlock *node, PCodeInstruction *item, int instructionCount, 
     }
     return 1;
 }
+
 int has_reg_flag_one_before_flag_two(PCodeInstruction *list, int hash)
 {
     PCodeInstruction *node;
@@ -2907,26 +2904,36 @@ int has_reg_flag_one_before_flag_two(PCodeInstruction *list, int hash)
     }
     return 0;
 }
-int unlink_same_reg_move(PCodeInstruction *instruction)
+
+int fn_004cc040(PCodeInstruction *instruction, UInt32 gprMask, UInt32 fprMask, UInt32 crFieldMask, UInt32 vectorMask,
+                Boolean checkSpecialRegisterZero)
 {
-    PCodeInstruction *move = instruction;
-    if (move->operandData.operands[0].value.reg == move->operandData.operands[1].value.reg && !(move->flags & 0x80U)) {
-        PCode_UnlinkInstruction(move);
+    PCodeOperand *operand;
+    int remainingOperands;
+
+    if ((instruction->block->flags & 3) != 0)
+        return 0;
+    if ((instruction->flags & 0x20434) != 0)
+        return 0;
+    if (instruction->block->predecessors == NULL)
         return 1;
+
+    remainingOperands = instruction->operand_count;
+    operand = instruction->operandData.operands;
+    while (remainingOperands--) {
+        if (operand->kind == PCOp_GPR && (operand->flags & 2) && ((1 << operand->value.reg) & gprMask))
+            return 0;
+        if (operand->kind == PCOp_FPR && (operand->flags & 2) && ((1 << operand->value.reg) & fprMask))
+            return 0;
+        if (operand->kind == PCOp_VR && (operand->flags & 2) && ((1 << operand->value.reg) & vectorMask))
+            return 0;
+        if (operand->kind == PCOp_SPR && (operand->flags & 2) && (operand->value.reg != 0 || checkSpecialRegisterZero))
+            return 0;
+        if (operand->kind == PCOp_CRFIELD && (operand->flags & 2) && ((1 << operand->value.reg) & crFieldMask))
+            return 0;
+        operand++;
     }
-    return 0;
-}
-unsigned int unlink_equal_reg_instruction(PCodeInstruction *record)
-{
-    unsigned short second_value = record->operandData.operands[1].value.reg;
-    unsigned short first_value = record->operandData.operands[0].value.reg;
-    if (first_value == second_value) {
-        if (!(record->flags & 128U)) {
-            PCode_UnlinkInstruction(record);
-            return 1;
-        }
-    }
-    return 0;
+    return 1;
 }
 
 void build_reaching_def_table(PCodeBlock *block)

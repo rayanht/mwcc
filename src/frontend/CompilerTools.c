@@ -265,6 +265,7 @@ char *ScanDec(char *src, SInt32 *value, Boolean *flag)
 }
 
 #pragma sym off
+
 void CompilerTools_ResetPool(void)
 {
     PoolNode *block = data_0057fdac.head;
@@ -277,6 +278,7 @@ void CompilerTools_ResetPool(void)
         block = block->next;
     }
 }
+
 #pragma sym reset
 
 static inline void reset_pool_block(PoolNode *block)
@@ -296,6 +298,7 @@ void CompilerTools_ResetPoolAvail(void)
 }
 
 #pragma sym off
+
 void freelheap(void)
 {
     PoolNode *block;
@@ -312,6 +315,7 @@ void freelheap(void)
         }
     }
 }
+
 #pragma sym reset
 
 void CompilerTools_DecrementPositiveCounter(void)
@@ -327,6 +331,48 @@ void fn_00441f10(void)
 {
     data_0057fdd8 += 1;
     return;
+}
+
+void *CompilerTools_AllocatePoolMemory(UInt32 requestedSize)
+{
+    char *result;
+
+    requestedSize = (requestedSize & ~7U) + 8U;
+
+    if (data_0057fdac.free < (SInt32)requestedSize)
+        select_or_allocate_pool_node(&data_0057fdac, requestedSize);
+
+    data_0057fdac.free -= requestedSize;
+    result = data_0057fdac.ptr;
+    data_0057fdac.ptr += requestedSize;
+    return result;
+}
+
+void *CompilerTools_AllocateBlock(SInt32 size)
+{
+    char *block;
+    size = (size & ~7U) + 8U;
+    if (block_pool.free < size) {
+        select_or_allocate_pool_node(&block_pool, size);
+    }
+    block_pool.free -= size;
+    block = block_pool.ptr;
+    block_pool.ptr += size;
+    return block;
+}
+
+void *CompilerTools_AllocatePool(unsigned int size)
+{
+    char *allocation;
+    size = (size & ~7U) + 8U;
+    if (data_0057fd84.free < (SInt32)size) {
+        Pool *pool = &data_0057fd84;
+        select_or_allocate_pool_node(pool, size);
+    }
+    data_0057fd84.free -= size;
+    allocation = data_0057fd84.ptr;
+    data_0057fd84.ptr += size;
+    return allocation;
 }
 
 void *galloc(SInt32 size)
@@ -354,48 +400,6 @@ void CompilerTools_ClearPoolBlocks(void)
         fn_00443160(block);
     }
     memset(&galloc_pool, 0, sizeof(galloc_pool));
-}
-
-void *CompilerTools_AllocatePool(unsigned int size)
-{
-    char *allocation;
-    size = (size & ~7U) + 8U;
-    if (data_0057fd84.free < (SInt32)size) {
-        Pool *pool = &data_0057fd84;
-        select_or_allocate_pool_node(pool, size);
-    }
-    data_0057fd84.free -= size;
-    allocation = data_0057fd84.ptr;
-    data_0057fd84.ptr += size;
-    return allocation;
-}
-
-void *CompilerTools_AllocateBlock(SInt32 size)
-{
-    char *block;
-    size = (size & ~7U) + 8U;
-    if (block_pool.free < size) {
-        select_or_allocate_pool_node(&block_pool, size);
-    }
-    block_pool.free -= size;
-    block = block_pool.ptr;
-    block_pool.ptr += size;
-    return block;
-}
-
-void *CompilerTools_AllocatePoolMemory(UInt32 requestedSize)
-{
-    char *result;
-
-    requestedSize = (requestedSize & ~7U) + 8U;
-
-    if (data_0057fdac.free < (SInt32)requestedSize)
-        select_or_allocate_pool_node(&data_0057fdac, requestedSize);
-
-    data_0057fdac.free -= requestedSize;
-    result = data_0057fdac.ptr;
-    data_0057fdac.ptr += requestedSize;
-    return result;
 }
 
 void releaseheaps(void)
@@ -696,44 +700,6 @@ short CHash(const char *str)
     return len & 0x7ff;
 }
 
-void AppendGListName(GList *buf, const char *str)
-{
-    UInt32 len = strlen(str) + 1;
-    if (buf->size + len > buf->hndlsize) {
-        struct StorageHandle *handle;
-        buf->hndlsize += len + buf->growsize;
-        handle = (struct StorageHandle *)buf->data;
-        if (!fn_00443170(handle, buf->hndlsize)) {
-            if (DAT_00587708 != NULL) {
-                DAT_00587708();
-            }
-        }
-    }
-    memcpy(buf->data[0] + buf->size, str, len);
-    buf->size += len;
-}
-
-void AppendGListWord(GList *buffer, SInt16 value)
-{
-    Boolean resized;
-    char *destination;
-    const char *valueBytes;
-
-    if (buffer->size + (SInt32)sizeof(value) > buffer->hndlsize) {
-        buffer->hndlsize += buffer->growsize + (SInt32)sizeof(value);
-        resized = fn_00443170((struct StorageHandle *)buffer->data, buffer->hndlsize);
-        if (!resized && DAT_00587708) {
-            (*DAT_00587708)();
-        }
-    }
-    destination = *buffer->data + buffer->size;
-    buffer->size += sizeof(value);
-    valueBytes = (const char *)&value;
-    *destination = *valueBytes;
-    valueBytes = (const char *)&value;
-    destination[1] = valueBytes[1];
-}
-
 static UInt16 SwapOutputWord(UInt16 x)
 {
     union {
@@ -746,25 +712,6 @@ static UInt16 SwapOutputWord(UInt16 x)
     r.b[0] = t.b[1];
     r.b[1] = t.b[0];
     return r.w;
-}
-
-void AppendGListTargetEndianWord(GList *buf, UInt16 word)
-{
-    char *dest;
-    const U16Bytes *bytes;
-    if (buf->size + 2 > buf->hndlsize) {
-        buf->hndlsize += buf->growsize + 2;
-        if (!fn_00443170((StorageHandle *)buf->data, buf->hndlsize)) {
-            if (DAT_00587708 != NULL)
-                DAT_00587708();
-        }
-    }
-    dest = *buf->data + buf->size;
-    buf->size += 2;
-    word = SwapOutputWord(word);
-    bytes = (const U16Bytes *)&word;
-    dest[0] = bytes->b[0];
-    dest[1] = ((const U16Bytes *)&word)->b[1];
 }
 
 static UInt32 MaybeSwap32(UInt32 x)
@@ -782,12 +729,42 @@ static UInt32 MaybeSwap32(UInt32 x)
     r.b[3] = t.b[0];
     return r.l;
 }
+
 static inline void CopyFourBytes(UInt8 *dest, const UInt8 *source)
 {
     dest[0] = source[0];
     dest[1] = source[1];
     dest[2] = source[2];
     dest[3] = source[3];
+}
+
+void CompilerTools_AppendGListString(GList *buf, const char *str)
+{
+    UInt32 len = strlen(str);
+    if ((buf->size + len) > (UInt32)buf->hndlsize) {
+        buf->hndlsize += len + buf->growsize;
+        if (!fn_00443170((struct StorageHandle *)buf->data, buf->hndlsize) && DAT_00587708 != NULL)
+            DAT_00587708();
+    }
+    memcpy(*buf->data + buf->size, str, len);
+    buf->size += len;
+}
+
+void AppendGListName(GList *buf, const char *str)
+{
+    UInt32 len = strlen(str) + 1;
+    if (buf->size + len > buf->hndlsize) {
+        struct StorageHandle *handle;
+        buf->hndlsize += len + buf->growsize;
+        handle = (struct StorageHandle *)buf->data;
+        if (!fn_00443170(handle, buf->hndlsize)) {
+            if (DAT_00587708 != NULL) {
+                DAT_00587708();
+            }
+        }
+    }
+    memcpy(buf->data[0] + buf->size, str, len);
+    buf->size += len;
 }
 
 void AppendGListTargetEndianLong(GList *buf, UInt32 value)
@@ -826,16 +803,44 @@ void AppendGListLong(GList *buffer, SInt32 value)
     destination[3] = ((const NativeLongBytes *)&value)->byte3;
 }
 
-void CompilerTools_AppendGListString(GList *buf, const char *str)
+void AppendGListTargetEndianWord(GList *buf, UInt16 word)
 {
-    UInt32 len = strlen(str);
-    if ((buf->size + len) > (UInt32)buf->hndlsize) {
-        buf->hndlsize += len + buf->growsize;
-        if (!fn_00443170((struct StorageHandle *)buf->data, buf->hndlsize) && DAT_00587708 != NULL)
-            DAT_00587708();
+    char *dest;
+    const U16Bytes *bytes;
+    if (buf->size + 2 > buf->hndlsize) {
+        buf->hndlsize += buf->growsize + 2;
+        if (!fn_00443170((StorageHandle *)buf->data, buf->hndlsize)) {
+            if (DAT_00587708 != NULL)
+                DAT_00587708();
+        }
     }
-    memcpy(*buf->data + buf->size, str, len);
-    buf->size += len;
+    dest = *buf->data + buf->size;
+    buf->size += 2;
+    word = SwapOutputWord(word);
+    bytes = (const U16Bytes *)&word;
+    dest[0] = bytes->b[0];
+    dest[1] = ((const U16Bytes *)&word)->b[1];
+}
+
+void AppendGListWord(GList *buffer, SInt16 value)
+{
+    Boolean resized;
+    char *destination;
+    const char *valueBytes;
+
+    if (buffer->size + (SInt32)sizeof(value) > buffer->hndlsize) {
+        buffer->hndlsize += buffer->growsize + (SInt32)sizeof(value);
+        resized = fn_00443170((struct StorageHandle *)buffer->data, buffer->hndlsize);
+        if (!resized && DAT_00587708) {
+            (*DAT_00587708)();
+        }
+    }
+    destination = *buffer->data + buffer->size;
+    buffer->size += sizeof(value);
+    valueBytes = (const char *)&value;
+    *destination = *valueBytes;
+    valueBytes = (const char *)&value;
+    destination[1] = valueBytes[1];
 }
 
 void AppendGListByte(GList *buffer, SInt8 value)
@@ -849,6 +854,33 @@ void AppendGListByte(GList *buffer, SInt8 value)
         }
     }
     (*buffer->data)[buffer->size++] = value;
+}
+
+void AppendGListNoData(GList *buffer, SInt32 additionalLength)
+{
+    if (buffer->size + additionalLength > buffer->hndlsize) {
+        buffer->hndlsize += additionalLength + buffer->growsize;
+        if (!fn_00443170((struct StorageHandle *)buffer->data, buffer->hndlsize) && DAT_00587708 != NULL) {
+            DAT_00587708();
+        }
+    }
+    buffer->size += additionalLength;
+}
+
+void *CompilerTools_AppendGListData(GList *buffer, const void *source, SInt32 count)
+{
+    char *data;
+    Boolean result;
+    if (buffer->size + count > buffer->hndlsize) {
+        buffer->hndlsize += count + buffer->growsize;
+        result = fn_00443170((struct StorageHandle *)buffer->data, buffer->hndlsize);
+        if (result == 0 && DAT_00587708 != NULL) {
+            (*DAT_00587708)();
+        }
+    }
+    data = memcpy(*buffer->data + buffer->size, source, count);
+    buffer->size += count;
+    return data;
 }
 
 void ShrinkGList(GList *list)
@@ -872,22 +904,6 @@ void FreeGList(GList *storage)
     storage->size = storage->hndlsize;
 }
 
-void *CompilerTools_AppendGListData(GList *buffer, const void *source, SInt32 count)
-{
-    char *data;
-    Boolean result;
-    if (buffer->size + count > buffer->hndlsize) {
-        buffer->hndlsize += count + buffer->growsize;
-        result = fn_00443170((struct StorageHandle *)buffer->data, buffer->hndlsize);
-        if (result == 0 && DAT_00587708 != NULL) {
-            (*DAT_00587708)();
-        }
-    }
-    data = memcpy(*buffer->data + buffer->size, source, count);
-    buffer->size += count;
-    return data;
-}
-
 SInt16 InitGList(GList *allocation, SInt32 size)
 {
     allocation->data = CompilerTools_AllocateMemoryIfEnabled(size);
@@ -900,17 +916,6 @@ SInt16 InitGList(GList *allocation, SInt32 size)
     allocation->growsize = (int)size >> 1;
     allocation->hndlsize = size;
     return 0;
-}
-
-void AppendGListNoData(GList *buffer, SInt32 additionalLength)
-{
-    if (buffer->size + additionalLength > buffer->hndlsize) {
-        buffer->hndlsize += additionalLength + buffer->growsize;
-        if (!fn_00443170((struct StorageHandle *)buffer->data, buffer->hndlsize) && DAT_00587708 != NULL) {
-            DAT_00587708();
-        }
-    }
-    buffer->size += additionalLength;
 }
 
 void CompilerTools_ConvertCStringToPString(unsigned char *text)
@@ -938,6 +943,7 @@ void CompilerGetCString(short value, char *destination)
 }
 
 #pragma optimization_level 2
+
 void format_string(char *buf, int size, char *fmt, char *ap)
 {
     char c;
@@ -1008,9 +1014,7 @@ void format_string(char *buf, int size, char *fmt, char *ap)
     }
     *buf = 0;
 }
-#pragma optimization_level reset
 
-#pragma optimization_level 2
 unsigned char CompilerTools_ReportDiagnostic(SInt32 diagnosticCode, ...)
 {
     char message[0x800];
@@ -1025,10 +1029,12 @@ unsigned char CompilerTools_ReportDiagnostic(SInt32 diagnosticCode, ...)
         data_00588228++;
     }
 }
+
 #pragma optimization_level reset
 
 #pragma optimization_level 2
 #pragma sym off
+
 void CompilerTools_ReportLimitedDiagnostic(SInt32 diagnosticCode, ...)
 {
     va_list args;
@@ -1049,10 +1055,12 @@ void CompilerTools_ReportLimitedDiagnostic(SInt32 diagnosticCode, ...)
         limited_diagnostic_count++;
     }
 }
-#pragma optimization_level reset
+
 #pragma sym reset
+#pragma optimization_level reset
 
 #pragma optimization_level 2
+
 void CompilerTools_FormatMessageAndLongjmp(int message, int status)
 {
     va_list args;
@@ -1063,9 +1071,7 @@ void CompilerTools_FormatMessageAndLongjmp(int message, int status)
     format_string(message_buffer, 0x800, buf, args);
     longjmp(file_input_jmpbuf, status);
 }
-#pragma optimization_level reset
 
-#pragma optimization_level 2
 void CompilerTools_DispatchMessageBufferByMode(int mode)
 {
     if (mode != 1) {
@@ -1076,9 +1082,11 @@ void CompilerTools_DispatchMessageBufferByMode(int mode)
         }
     }
 }
+
 #pragma optimization_level reset
 
 #pragma auto_inline off
+
 void copy_pstring(UInt8 *destination, UInt8 *source)
 {
     int remaining;
@@ -1087,6 +1095,7 @@ void copy_pstring(UInt8 *destination, UInt8 *source)
         *destination++ = *source++;
     }
 }
+
 #pragma auto_inline reset
 
 void *fn_00443110(SInt32 size)
@@ -1237,6 +1246,7 @@ void CompilerTools_GetPFileFields(CWFileSpec *record, unsigned short *tag, SInt3
 }
 
 #pragma auto_inline off
+
 void resolve_file_name_to_pascal_string(short category, int recordId, void *inputName)
 {
     CWFileSpec record;
@@ -1250,6 +1260,7 @@ void resolve_file_name_to_pascal_string(short category, int recordId, void *inpu
         CLIO_ConvertToPascalString(inputName);
     }
 }
+
 #pragma auto_inline reset
 
 void CompilerTools_ResolveFileNameToCString(void *destination, PFile *record, SInt32 *result)

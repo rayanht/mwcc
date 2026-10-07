@@ -159,6 +159,7 @@ void emit_vector128_constant(ENode *node, short requestedRegister, short unused,
     } while (patternIndex < 16);
     CError_Internal(instrSelectionFileName, 5481);
 }
+
 /* Instruction-selection operand storage with a register pair. */
 
 enum ETypeCode {
@@ -326,6 +327,7 @@ void generate_gpr_pair_division_or_modulo(ENode *node, SInt16 requestedReg, SInt
     PCodeUtilities_EmitInstruction(PC_MR, result->reg, return_gpr_first);
     PCodeUtilities_EmitInstruction(PC_MR, result->regHi, returnRegHi);
 }
+
 /* Operand storage used by the register-pair shift selector. */
 
 /* Operand storage used by integer-pair instruction selection. */
@@ -384,6 +386,7 @@ void generate_gpr_pair_shift(ENode *node, short outputReg, short outputRegHi, Op
     PCodeUtilities_EmitInstruction(PC_MR, result->reg, return_gpr_first);
     PCodeUtilities_EmitInstruction(PC_MR, result->regHi, returnRegHi);
 }
+
 static inline int fn_004b2500_inline1(ENode *v1)
 {
     int v2;
@@ -994,6 +997,75 @@ void emit_gpr_pair_add(ENode *node, short targetReg, short targetRegHi, Operand 
     out->regHi = resultRegHi;
 }
 
+static inline SInt16 low_word(SInt32 value)
+{
+    return value;
+}
+
+static int SwapOp(int op)
+{
+    int r = op;
+    switch (op) {
+        case ELESS:
+            r = EGREATER;
+            break;
+        case EGREATER:
+            r = ELESS;
+            break;
+        case ELESSEQU:
+            r = EGREATEREQU;
+            break;
+        case EGREATEREQU:
+            r = ELESSEQU;
+            break;
+    }
+    return r;
+}
+
+static int IS_NonVoid(Type *t)
+{
+    int r = 0;
+    if (t->type != TYPEVOID)
+        r = 1;
+    return r;
+}
+
+static int IS_NotIgnored(ENode *e)
+{
+    int r = 0;
+    if (!e->ignored)
+        r = 1;
+    return r;
+}
+
+static void GenOperand(ENode *node, Operand *res)
+{
+    data_00560648[node->type](node, 0, 0, res);
+    if (res->kind != OpndType_FPR)
+        Operands_ForceFPR(res, node->rtype, 0);
+}
+
+static inline void InstrSelection_004b5ae0_inline1(ENode *p0, Operand *p1)
+{
+    unsigned char t1;
+    t1 = p0->type;
+    data_00560648[t1](p0, 0, 0, p1);
+}
+
+void InstrSelection_EmitAddImmediate(SInt16 destReg, SInt16 sourceReg, int immediate)
+{
+    if (immediate != (SInt16)immediate) {
+        SInt16 highImmediate = (immediate >> 16) + ((immediate >> 15) & 1);
+        PCodeUtilities_EmitInstruction(PC_ADDIS, destReg, sourceReg, 0, highImmediate);
+        if ((SInt16)immediate != 0) {
+            SInt16 lowImmediate = immediate;
+            PCodeUtilities_EmitInstruction(PC_ADDI, destReg, destReg, 0, lowImmediate);
+        }
+    } else {
+        PCodeUtilities_EmitInstruction(PC_ADDI, destReg, sourceReg, 0, immediate);
+    }
+}
+
 int InstrSelection_MatchPostIncDecRegister(ENode *node, Operand *info, SInt32 *size)
 {
     Type *rtype;
@@ -1049,9 +1121,40 @@ int InstrSelection_GetMaskRange(UInt32 mask, SInt16 *first, SInt16 *last)
     return 0;
 }
 
-static inline SInt16 low_word(SInt32 value)
+int is_contiguous_mask(unsigned int mask, short *firstBit, short *lastBit)
 {
-    return value;
+    int first;
+    int last;
+    int bit;
+
+    last = -1;
+    bit = 31;
+    first = -1;
+    do {
+        if (mask & 1) {
+            if (first != -1) {
+                return 0;
+            }
+            if (last == -1) {
+                last = bit;
+            }
+        } else {
+            if ((last != -1) && (first == -1)) {
+                first = bit + 1;
+            }
+        }
+        --bit;
+        mask = (int)mask >> 1;
+    } while (bit >= 0);
+    if (last == -1) {
+        return 0;
+    }
+    if (first == -1) {
+        first = 0;
+    }
+    *firstBit = first;
+    *lastBit = last;
+    return 1;
 }
 
 void emit_cmpli_with_addis(SInt16 condition, ENode *node, SInt32 immediate, Operand *result)
@@ -1180,6 +1283,7 @@ void InstrSelection_004b37b0(short comparison, ENode *input, short sense, Operan
     result->reg = 0;
     result->secondary_reg = comparison;
 }
+
 void emit_gpr_comparison(short secondaryReg, ENode *left, ENode *right, Operand *result)
 {
     char isUnsigned;
@@ -1489,26 +1593,6 @@ void generate_comparison_gpr(ENode *expr, Operand *output, short requestedReg)
     output->reg = resultReg;
 }
 
-static int SwapOp(int op)
-{
-    int r = op;
-    switch (op) {
-        case ELESS:
-            r = EGREATER;
-            break;
-        case EGREATER:
-            r = ELESS;
-            break;
-        case ELESSEQU:
-            r = EGREATEREQU;
-            break;
-        case EGREATEREQU:
-            r = ELESSEQU;
-            break;
-    }
-    return r;
-}
-
 void InstrSelection_SelectComparison(ENode *node, void *p)
 {
     ENode *left = node->data.diadic.left;
@@ -1596,6 +1680,22 @@ unsigned int swap_kind_pairs(unsigned int kind)
     }
 }
 
+unsigned char fn_004b4aa0(unsigned char kind)
+{
+    switch (kind) {
+        case 0x13:
+            return 0x16;
+        case 0x14:
+            return 0x15;
+        case 0x15:
+            return 0x14;
+        case 0x16:
+            return 0x13;
+        default:
+            return kind;
+    }
+}
+
 /* Result produced by comparison instruction selection. */
 
 void generate_condition_branches(ENode *expr, PCodeLabel *trueLabel, PCodeLabel *falseLabel,
@@ -1668,19 +1768,16 @@ void generate_condition_branches(ENode *expr, PCodeLabel *trueLabel, PCodeLabel 
     }
 }
 
-static int IS_NonVoid(Type *t)
+void get_function_type_operand(ENode *lookup, short unused1, short unused2, Operand *result)
 {
-    int r = 0;
-    if (t->type != TYPEVOID)
-        r = 1;
-    return r;
-}
-static int IS_NotIgnored(ENode *e)
-{
-    int r = 0;
-    if (!e->ignored)
-        r = 1;
-    return r;
+    struct FunctionCallFrame *entry = function_call_frames;
+
+    while (entry != NULL) {
+        if (entry->functionType == (TypeFunc *)lookup->data.longval)
+            break;
+        entry = entry->next;
+    }
+    *result = entry->operand;
 }
 
 /* Saved operand for a nested function call. */
@@ -1893,13 +1990,6 @@ void generate_comparison(ENode *expr, SInt32 requestedReg, SInt32 requestedRegHi
     generate_comparison_gpr(expr, output, requestedReg);
 }
 
-static void GenOperand(ENode *node, Operand *res)
-{
-    data_00560648[node->type](node, 0, 0, res);
-    if (res->kind != OpndType_FPR)
-        Operands_ForceFPR(res, node->rtype, 0);
-}
-
 void InstrSelection_EmitThreeOperandFPRInstruction(SInt16 opcode, ENode *left, ENode *middle, ENode *right,
                                                    SInt16 targetReg, Operand *result)
 {
@@ -2048,11 +2138,32 @@ void InstrSelection_EmitUnaryGPRInstruction(SInt16 opcode, ENode *expression, SI
     result->reg = reg;
 }
 
-static inline void InstrSelection_004b5ae0_inline1(ENode *p0, Operand *p1)
+void emit_gpr_immediate_instruction(short opcode, ENode *expr, short value, short outputReg, Operand *output)
 {
-    unsigned char t1;
-    t1 = p0->type;
-    data_00560648[t1](p0, 0, 0, p1);
+    Operand input;
+    short allocatedRegister;
+    int destinationRegister;
+
+    memclrw(&input, sizeof(input));
+    data_00560648[expr->type](expr, 0, 0, &input);
+    if (input.kind != OpndType_GPR) {
+        Operands_ForceGPR(&input, expr->rtype, 0);
+    }
+    if (outputReg != 0) {
+        allocatedRegister = outputReg;
+    } else {
+        allocatedRegister = gUsedVirtualRegistersGPR++;
+    }
+    destinationRegister = allocatedRegister;
+    if ((opcode == 0x49) && (value == 0)) {
+        PCodeUtilities_EmitInstruction(PC_LI, destinationRegister, 0);
+    } else if ((opcode == 0x49) && (value == 1)) {
+        PCodeUtilities_EmitInstruction(PC_MR, destinationRegister, input.reg);
+    } else {
+        PCodeUtilities_EmitInstruction(opcode, destinationRegister, input.reg, value);
+    }
+    output->kind = OpndType_GPR;
+    output->reg = destinationRegister;
 }
 
 void InstrSelection_EmitBinaryGPRInstruction(short opcode, ENode *left, ENode *right, short outputReg, Operand *output)
@@ -2126,9 +2237,44 @@ void InstrSelection_EmitBinaryGPRInstruction(short opcode, ENode *left, ENode *r
     output->kind = OpndType_GPR;
     output->reg = emitReg;
 }
+
 unsigned int fn_004b5ce0(void)
 {
     CError_FATAL(2298);
+}
+
+void make_objref_operand(ENode *node, unsigned int unused1, unsigned int unused2, Operand *result)
+{
+    VarInfo *info;
+    Object *object = node->data.objref;
+    int physical_register;
+
+    result->kind = OpndType_Symbol;
+    result->reg = 0;
+    result->object = object;
+    result->displacement = 0;
+    if (object->datatype == DDATA) {
+        info = Registers_GetInfo(object);
+        if (info)
+            physical_register = Registers_GetInfo(object)->reg;
+        else
+            physical_register = 0;
+        if (physical_register) {
+            info = Registers_GetInfo(object);
+            result->kind = OpndType_GPR;
+            result->reg = info->reg;
+            result->object = NULL;
+        }
+    }
+}
+
+unsigned int generate_intrinsic_or_function_call(ENode *value, unsigned int operand, unsigned int unused,
+                                                 Operand *target)
+{
+    if (Intrinsics_IsMonadicObjrefTypeFuncFlag200Set(value))
+        Intrinsics_GenerateIntrinsicCall(value, operand, target);
+    else
+        FunctionCalls_GenerateCall(value, target);
 }
 
 /* 0x58846c, word */
@@ -2279,6 +2425,15 @@ void fn_004b6530(void)
     CError_FATAL(1996);
 }
 
+void load_float_constant(ENode *node, unsigned int regA, unsigned int regB, Operand *out)
+{
+    if (copts.operandsDebug) {
+        SFPE_PPC_EABI_LoadFloatConstant(node, regA, regB, out);
+    } else {
+        CError_FATAL(1982);
+    }
+}
+
 /* 0x560774, "InstrSelection.c" */
 /* Register-pair or pointer result of instruction selection. */
 
@@ -2302,158 +2457,10 @@ void make_intval_operand(ENode *node, SInt16 reg1, SInt16 reg2, Operand *op)
     op->kind = OpndType_Immediate;
     op->immediate = node->data.intval.lo;
 }
+
 void report_fatal_error(void)
 {
     CError_FATAL(1933);
-}
-
-unsigned char fn_004b4aa0(unsigned char kind)
-{
-    switch (kind) {
-        case 0x13:
-            return 0x16;
-        case 0x14:
-            return 0x15;
-        case 0x15:
-            return 0x14;
-        case 0x16:
-            return 0x13;
-        default:
-            return kind;
-    }
-}
-
-unsigned int generate_intrinsic_or_function_call(ENode *value, unsigned int operand, unsigned int unused,
-                                                 Operand *target)
-{
-    if (Intrinsics_IsMonadicObjrefTypeFuncFlag200Set(value))
-        Intrinsics_GenerateIntrinsicCall(value, operand, target);
-    else
-        FunctionCalls_GenerateCall(value, target);
-}
-
-void load_float_constant(ENode *node, unsigned int regA, unsigned int regB, Operand *out)
-{
-    if (copts.operandsDebug) {
-        SFPE_PPC_EABI_LoadFloatConstant(node, regA, regB, out);
-    } else {
-        CError_FATAL(1982);
-    }
-}
-
-void InstrSelection_EmitAddImmediate(SInt16 destReg, SInt16 sourceReg, int immediate)
-{
-    if (immediate != (SInt16)immediate) {
-        SInt16 highImmediate = (immediate >> 16) + ((immediate >> 15) & 1);
-        PCodeUtilities_EmitInstruction(PC_ADDIS, destReg, sourceReg, 0, highImmediate);
-        if ((SInt16)immediate != 0) {
-            SInt16 lowImmediate = immediate;
-            PCodeUtilities_EmitInstruction(PC_ADDI, destReg, destReg, 0, lowImmediate);
-        }
-    } else {
-        PCodeUtilities_EmitInstruction(PC_ADDI, destReg, sourceReg, 0, immediate);
-    }
-}
-
-int is_contiguous_mask(unsigned int mask, short *firstBit, short *lastBit)
-{
-    int first;
-    int last;
-    int bit;
-
-    last = -1;
-    bit = 31;
-    first = -1;
-    do {
-        if (mask & 1) {
-            if (first != -1) {
-                return 0;
-            }
-            if (last == -1) {
-                last = bit;
-            }
-        } else {
-            if ((last != -1) && (first == -1)) {
-                first = bit + 1;
-            }
-        }
-        --bit;
-        mask = (int)mask >> 1;
-    } while (bit >= 0);
-    if (last == -1) {
-        return 0;
-    }
-    if (first == -1) {
-        first = 0;
-    }
-    *firstBit = first;
-    *lastBit = last;
-    return 1;
-}
-
-void get_function_type_operand(ENode *lookup, short unused1, short unused2, Operand *result)
-{
-    struct FunctionCallFrame *entry = function_call_frames;
-
-    while (entry != NULL) {
-        if (entry->functionType == (TypeFunc *)lookup->data.longval)
-            break;
-        entry = entry->next;
-    }
-    *result = entry->operand;
-}
-
-void emit_gpr_immediate_instruction(short opcode, ENode *expr, short value, short outputReg, Operand *output)
-{
-    Operand input;
-    short allocatedRegister;
-    int destinationRegister;
-
-    memclrw(&input, sizeof(input));
-    data_00560648[expr->type](expr, 0, 0, &input);
-    if (input.kind != OpndType_GPR) {
-        Operands_ForceGPR(&input, expr->rtype, 0);
-    }
-    if (outputReg != 0) {
-        allocatedRegister = outputReg;
-    } else {
-        allocatedRegister = gUsedVirtualRegistersGPR++;
-    }
-    destinationRegister = allocatedRegister;
-    if ((opcode == 0x49) && (value == 0)) {
-        PCodeUtilities_EmitInstruction(PC_LI, destinationRegister, 0);
-    } else if ((opcode == 0x49) && (value == 1)) {
-        PCodeUtilities_EmitInstruction(PC_MR, destinationRegister, input.reg);
-    } else {
-        PCodeUtilities_EmitInstruction(opcode, destinationRegister, input.reg, value);
-    }
-    output->kind = OpndType_GPR;
-    output->reg = destinationRegister;
-}
-
-void make_objref_operand(ENode *node, unsigned int unused1, unsigned int unused2, Operand *result)
-{
-    VarInfo *info;
-    Object *object = node->data.objref;
-    int physical_register;
-
-    result->kind = OpndType_Symbol;
-    result->reg = 0;
-    result->object = object;
-    result->displacement = 0;
-    if (object->datatype == DDATA) {
-        info = Registers_GetInfo(object);
-        if (info)
-            physical_register = Registers_GetInfo(object)->reg;
-        else
-            physical_register = 0;
-        if (physical_register) {
-            info = Registers_GetInfo(object);
-            result->kind = OpndType_GPR;
-            result->reg = info->reg;
-            result->object = NULL;
-        }
-    }
 }
 
 enum TypeSubtypeBound { TypeSubtype_Min = 4, TypeSubtype_Max = 0xe };
@@ -3073,6 +3080,7 @@ void select_subtraction(ENode *input, int resultReg, int secondaryReg, Operand *
         InstrSelection_EmitBinaryGPRInstruction(PC_SUBF, right, left, resultReg, flags);
     }
 }
+
 void emit_add(ENode *node, SInt16 a, SInt16 b, Operand *c)
 {
     ENode *left;
@@ -3960,6 +3968,7 @@ static inline void ClearOps(Operand *a, Operand *b, Operand *c)
     memclrw(b, 0x16);
     memclrw(c, 0x16);
 }
+
 static SInt32 InstrSelection_GetVR0(ENode *node)
 {
     if (Registers_GetInfo(node->data.objref) != NULL)
@@ -3971,6 +3980,7 @@ static inline SInt32 InstrSelection_GetVR(ENode *n)
 {
     return InstrSelection_GetVR0(n);
 }
+
 static inline void StoreOp(SInt16 r, Operand *o, Type *t)
 {
     Operands_EmitTypedGPRMemoryInstruction(r, o, t);
@@ -3995,6 +4005,7 @@ static inline int AddOffset2(SInt32 d, Operand *s, SInt32 n)
 {
     return AddOffset(d, s->reg, n);
 }
+
 void generate_postinc_postdec(ENode *expr, SInt32 outputReg, SInt32 outputRegHi, Operand *result)
 {
     SInt32 variableReg;

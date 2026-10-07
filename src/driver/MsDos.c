@@ -1253,6 +1253,30 @@ Boolean __stdcall MacSpecs_IsByteInDBCSCharacter(BYTE *a, BYTE *b)
     return 0;
 }
 
+int store_mac_spec_entry(MacSpecEntry *entry)
+{
+    unsigned int index = entry->index;
+    unsigned int directory = index;
+    unsigned int slot = index & 0xff;
+
+    directory >>= 8;
+    if (directory >= directory_count) {
+        do {
+            if (directory >= 0x100) {
+                fprintf(stderr, "Fatal error:  too many directories referenced, out of memory\n");
+                return 0;
+            }
+            mac_spec_entries[directory] = calloc(sizeof(*mac_spec_entries[directory]), 0x100);
+            if (mac_spec_entries[directory] == NULL) {
+                return 0;
+            }
+            ++directory_count;
+        } while (directory >= directory_count);
+    }
+    mac_spec_entries[directory][slot] = entry;
+    return 1;
+}
+
 struct NameRegistryEntry *find_or_create_name_registry_entry(struct NameRegistryEntry **entries, char *name)
 {
     NameRegistryEntry *entry;
@@ -1283,30 +1307,6 @@ struct NameRegistryEntry *find_or_create_name_registry_entry(struct NameRegistry
     entry->root.next = NULL;
     *entries = entry;
     return entry;
-}
-
-int store_mac_spec_entry(MacSpecEntry *entry)
-{
-    unsigned int index = entry->index;
-    unsigned int directory = index;
-    unsigned int slot = index & 0xff;
-
-    directory >>= 8;
-    if (directory >= directory_count) {
-        do {
-            if (directory >= 0x100) {
-                fprintf(stderr, "Fatal error:  too many directories referenced, out of memory\n");
-                return 0;
-            }
-            mac_spec_entries[directory] = calloc(sizeof(*mac_spec_entries[directory]), 0x100);
-            if (mac_spec_entries[directory] == NULL) {
-                return 0;
-            }
-            ++directory_count;
-        } while (directory >= directory_count);
-    }
-    mac_spec_entries[directory][slot] = entry;
-    return 1;
 }
 
 struct MacSpecEntry *lookup_dir_id(unsigned int dirID)

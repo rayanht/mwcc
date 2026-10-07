@@ -512,6 +512,7 @@ static __inline int IR_Replace(IROLinear **fieldp, IROUse *ctx, ENode *obj, IROL
     }
     return 0;
 }
+
 static __inline int IR_ReplaceArray(IROLinear **fieldp, IROUse *ctx, ENode *obj, IROLinear *newval, Boolean doReplace)
 {
     ENode *r;
@@ -529,6 +530,7 @@ static __inline int IR_ReplaceArray(IROLinear **fieldp, IROUse *ctx, ENode *obj,
     }
     return 0;
 }
+
 static __inline int IR_ReplaceCall(IROLinear **fieldp, IROUse *ctx, ENode *obj, IROLinear *newval, Boolean doReplace)
 {
     ENode *r;
@@ -549,6 +551,7 @@ static __inline int IR_ReplaceCall(IROLinear **fieldp, IROUse *ctx, ENode *obj, 
     }
     return 0;
 }
+
 int replace_pending_reference(IROUse *ctx, ENode *obj, IROLinear *newval, Boolean doReplace)
 {
     int count;
@@ -810,6 +813,68 @@ static inline void ClearReferences(void)
     }
 }
 
+/* error printer */
+/* "IrOptimizer.c" */
+/* "Oh, oh, bad expression type in BuildExpr at: %d\n" */
+
+static ENode *NewNode(UInt8 type)
+{
+    ENode *p;
+    p = (ENode *)CompilerTools_AllocatePool(sizeof(ENode));
+    memset(p, 0, sizeof(ENode));
+    p->type = type;
+    return p;
+}
+
+static IROLinear *NewInsn(UInt8 type)
+{
+    IROLinear *p = (IROLinear *)CompilerTools_AllocatePoolMemory(sizeof(IROLinear));
+    memset(p, 0, sizeof(IROLinear));
+    p->stmt = current_statement;
+    p->nodetype = EPOSTINC;
+    p->next = NULL;
+    p->type = type;
+    p->rtype = NULL;
+    p->flags = 0;
+    p->nodeflags = 0;
+    p->expr = NULL;
+    p->range = NULL;
+    return p;
+}
+
+static void MarkUsedInputs(IROLinear *insn)
+{
+    SInt32 i;
+    for (i = 0; i < insn->u.funccall.argCount; i++)
+        insn->u.funccall.args[i]->flags |= IROLF_Reffed;
+}
+
+static inline void AddLocalUsage(Object *object, int weightIndex)
+{
+    int index = weightIndex;
+    if (index > 3)
+        index = 3;
+    object->u.var.info->usage += ir_size_table[index];
+    object->u.var.info->used = 1;
+}
+
+void add_local_usage_and_set_noregister(IROLinear *node, int weightIndex)
+{
+    Object *object;
+
+    object = node->u.node->data.objref;
+    if (object->datatype == DALIAS)
+        CError_FATAL(2640);
+    if (object->datatype == DLOCAL && object->u.var.info) {
+        AddLocalUsage(object, weightIndex);
+        if ((node->flags & IROLF_Used) && (node->flags & IROLF_Assigned)) {
+            AddLocalUsage(object, weightIndex);
+        }
+        if (!(node->flags & IROLF_Immind))
+            object->u.var.info->noregister = 1;
+    }
+}
+
 Statement *convert_linear_to_statements(void)
 {
     IRONode *block;
@@ -932,19 +997,6 @@ Statement *convert_linear_to_statements(void)
     return nodes.first;
 }
 
-/* error printer */
-/* "IrOptimizer.c" */
-/* "Oh, oh, bad expression type in BuildExpr at: %d\n" */
-
-static ENode *NewNode(UInt8 type)
-{
-    ENode *p;
-    p = (ENode *)CompilerTools_AllocatePool(sizeof(ENode));
-    memset(p, 0, sizeof(ENode));
-    p->type = type;
-    return p;
-}
-
 ENode *IrOptimizer_0042eb40(IROLinear *e)
 {
     ENode *p;
@@ -1026,28 +1078,6 @@ ENode *IrOptimizer_NewENode(UInt8 type)
     memset(node, 0, sizeof(ENode));
     node->type = (UInt8)type;
     return node;
-}
-static IROLinear *NewInsn(UInt8 type)
-{
-    IROLinear *p = (IROLinear *)CompilerTools_AllocatePoolMemory(sizeof(IROLinear));
-    memset(p, 0, sizeof(IROLinear));
-    p->stmt = current_statement;
-    p->nodetype = EPOSTINC;
-    p->next = NULL;
-    p->type = type;
-    p->rtype = NULL;
-    p->flags = 0;
-    p->nodeflags = 0;
-    p->expr = NULL;
-    p->range = NULL;
-    return p;
-}
-
-static void MarkUsedInputs(IROLinear *insn)
-{
-    SInt32 i;
-    for (i = 0; i < insn->u.funccall.argCount; i++)
-        insn->u.funccall.args[i]->flags |= IROLF_Reffed;
 }
 
 void build_linear_from_statements(Statement *node)
@@ -1215,32 +1245,6 @@ void build_linear_from_statements(Statement *node)
         insn = insn->next;
     }
     IroVars_CheckTimedLongjmp();
-}
-
-static inline void AddLocalUsage(Object *object, int weightIndex)
-{
-    int index = weightIndex;
-    if (index > 3)
-        index = 3;
-    object->u.var.info->usage += ir_size_table[index];
-    object->u.var.info->used = 1;
-}
-
-void add_local_usage_and_set_noregister(IROLinear *node, int weightIndex)
-{
-    Object *object;
-
-    object = node->u.node->data.objref;
-    if (object->datatype == DALIAS)
-        CError_FATAL(2640);
-    if (object->datatype == DLOCAL && object->u.var.info) {
-        AddLocalUsage(object, weightIndex);
-        if ((node->flags & IROLF_Used) && (node->flags & IROLF_Assigned)) {
-            AddLocalUsage(object, weightIndex);
-        }
-        if (!(node->flags & IROLF_Immind))
-            object->u.var.info->noregister = 1;
-    }
 }
 
 void mark_referenced_linear_nodes(void)

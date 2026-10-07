@@ -205,6 +205,60 @@ void move_common_sub(IROExpr *group)
     }
 }
 
+static IROLinear *MakeRef(Object *obj, IROLinear *arg3)
+{
+    IROLinear *n1;
+    IROLinear *n2;
+
+    n1 = IrOptimizer_NewLinear(IROLinearOperand);
+    n1->u.node = create_objectrefnode(obj);
+    n1->rtype = n1->u.node->data.objref->type;
+    n1->index = (UInt16)++linear_index_counter;
+    n1->flags |= (IROLF_Reffed | IROLF_Ind);
+    n2 = IrOptimizer_NewLinear(IROLinearOp1Arg);
+    n2->nodetype = EINDIRECT;
+    n2->rtype = obj->type;
+    n2->u.monadic = n1;
+    n2->index = (UInt16)++linear_index_counter;
+    n2->flags |= IROLF_Reffed;
+    n1->next = n2;
+    IroUtil_InsertLinearRangeAfter(n1, n2, arg3);
+    return n2;
+}
+
+static void IRO_BitVectorSet_0044ecc0(UInt32 bit, BitVector *bv)
+{
+    if ((bit >> 5) < bv->size)
+        bv->bits[bit >> 5] |= 1u << bit;
+    else
+        CError_Internal("BitVector.h", 47);
+}
+
+static void IRO_BitVectorSet_0044ef10(UInt32 bit, BitVector *bv)
+{
+    if ((bit >> 5) < bv->size)
+        bv->bits[bit >> 5] |= 1u << bit;
+    else
+        CError_Internal("BitVector.h", 47);
+}
+
+/* (IroUtil_VisitLinearTree visitors) */
+IROLinear *fn_0044e340(IROLinear *node, unsigned int clearBit)
+{
+    if (clearBit != 0U) {
+        node->flags &= ~IROLF_LoopInvariant;
+    }
+    return node;
+}
+
+IROLinear *fn_0044e360(IROLinear *type, unsigned int clearBit)
+{
+    if (clearBit != 0U) {
+        type->flags &= ~8U;
+    }
+    return type;
+}
+
 /* Evaluates REPLACEMENT's expression into a new temporary where it stands. */
 void create_replacement_temp_assignment(IROExpr *replacement)
 {
@@ -235,6 +289,41 @@ void create_replacement_temp_assignment(IROExpr *replacement)
     conversion->next = assignment;
     IroCSE_0044e560(replacement->linear, assignment);
     IroUtil_InsertLinearRangeAfter(reference, assignment, replacement->linear);
+}
+
+/* The assignment of PAIR's temporary to PAIR's expression, inserted before the expression. */
+IROLinear *IroCSE_CreateTempAssignment(IROExpr *pair)
+{
+    IROLinear *value;
+    IROLinear *expression;
+    IROLinear *assignment;
+
+    value = IrOptimizer_NewLinear(IROLinearOperand);
+    value->u.node = create_objectrefnode(pair->temp);
+    value->rtype = value->u.node->data.objref->type;
+    ++linear_index_counter;
+    value->index = linear_index_counter;
+    value->flags |= 0x26U;
+
+    expression = IrOptimizer_NewLinear(IROLinearOp1Arg);
+    expression->nodetype = 4U;
+    expression->rtype = pair->linear->rtype;
+    expression->u.monadic = value;
+    ++linear_index_counter;
+    expression->index = linear_index_counter;
+    expression->flags |= 6U;
+
+    assignment = IrOptimizer_NewLinear(IROLinearOp2Arg);
+    assignment->nodetype = 0x1eU;
+    assignment->u.diadic.left = expression;
+    assignment->u.diadic.right = pair->linear;
+    assignment->rtype = pair->linear->rtype;
+    ++linear_index_counter;
+    assignment->index = linear_index_counter;
+    value->next = expression;
+    expression->next = assignment;
+    IroUtil_InsertLinearRangeAfter(value, assignment, pair->linear);
+    return assignment;
 }
 
 /* Makes EXPRESSION's temporary. */
@@ -346,27 +435,6 @@ void IroCSE_0044e560(IROLinear *from, IROLinear *to)
     IroDump_Print("Oh, oh, did not find reference to replace\n");
 }
 
-static IROLinear *MakeRef(Object *obj, IROLinear *arg3)
-{
-    IROLinear *n1;
-    IROLinear *n2;
-
-    n1 = IrOptimizer_NewLinear(IROLinearOperand);
-    n1->u.node = create_objectrefnode(obj);
-    n1->rtype = n1->u.node->data.objref->type;
-    n1->index = (UInt16)++linear_index_counter;
-    n1->flags |= (IROLF_Reffed | IROLF_Ind);
-    n2 = IrOptimizer_NewLinear(IROLinearOp1Arg);
-    n2->nodetype = EINDIRECT;
-    n2->rtype = obj->type;
-    n2->u.monadic = n1;
-    n2->index = (UInt16)++linear_index_counter;
-    n2->flags |= IROLF_Reffed;
-    n1->next = n2;
-    IroUtil_InsertLinearRangeAfter(n1, n2, arg3);
-    return n2;
-}
-
 /* Replaces the operand TARGET with a load of OBJECT (inserted before REFERENCE). */
 void IroCSE_ReplaceReference(IROLinear *target, Object *object, IROLinear *reference)
 {
@@ -460,14 +528,6 @@ void IroCSE_ReplaceReference(IROLinear *target, Object *object, IROLinear *refer
     IroDump_Print("Oh, oh, did not find reference to replace\n");
 }
 
-static void IRO_BitVectorSet_0044ecc0(UInt32 bit, BitVector *bv)
-{
-    if ((bit >> 5) < bv->size)
-        bv->bits[bit >> 5] |= 1u << bit;
-    else
-        CError_Internal("BitVector.h", 47);
-}
-
 void IroCSE_ComputeAvailableExpressions(void)
 {
     IRONode *blk;
@@ -531,13 +591,6 @@ void IroCSE_ComputeAvailableExpressions(void)
     } while (changed);
 }
 
-static void IRO_BitVectorSet_0044ef10(UInt32 bit, BitVector *bv)
-{
-    if ((bit >> 5) < bv->size)
-        bv->bits[bit >> 5] |= 1u << bit;
-    else
-        CError_Internal("BitVector.h", 47);
-}
 #define SETBIT(n) IRO_BitVectorSet_0044ef10((n), killed_exprs)
 
 /* The expressions NODE kills: their bits in killed_exprs. */
@@ -590,6 +643,31 @@ void mark_dependent_exprs(IROLinear *node)
     } while (0);
 }
 
+/* Removes ENTRY from the candidates. */
+void IroCSE_RemoveExpr(IROExpr *entry)
+{
+    IROExpr *previous;
+    IROExpr *current;
+
+    current = expr_list;
+    previous = NULL;
+    if (expr_list != entry) {
+        do {
+            previous = current;
+            current = current->next;
+            if (current == NULL) {
+                CError_FATAL(470);
+            }
+        } while (current != entry);
+    }
+    entry->linear->expr = NULL;
+    if (previous != NULL) {
+        previous->next = entry->next;
+    } else {
+        expr_list = entry->next;
+    }
+}
+
 void IroCSE_BuildLoopExprList(void)
 {
     IRONode *rec;
@@ -614,6 +692,25 @@ void IroCSE_BuildLoopExprList(void)
             }
         }
     }
+}
+
+void IroCSE_ClearExpr(void)
+{
+    IROLinear *node;
+    IRONode *block;
+
+    expr_list = expr_tail = NULL;
+    expression_count = 0U;
+    for (block = iro_flowgraph_head; block; block = block->nextnode) {
+        for (node = block->first; node;) {
+            node->expr = 0U;
+            fn_0044f230(node, block);
+            if (node == block->last)
+                break;
+            node = node->next;
+        }
+    }
+    IroVars_CheckTimedLongjmp();
 }
 
 /* Records EXPRESSION (in block VALUE) as a candidate common subexpression when it is one. */
@@ -657,13 +754,10 @@ void fn_0044f230(IROLinear *expression, IRONode *value)
     }
 }
 
-void IroCSE_CollectExpressionVarRefsAndFlags(struct IROLinear *input)
+void set_global_if_zero_value_and_flag(IROLinear *type, int value)
 {
-    IroBitVect_ClearBitVector(data_00552b88);
-    DAT_00587e58 = 0;
-    DAT_00587630 = 0;
-    DAT_005880a4 = 0;
-    collect_expression_var_refs_and_flags(input, 0);
+    if (value == 0U && (type->flags & 0x10000U) != 0U)
+        data_005870f8 = 1U;
 }
 
 void fn_0044f350(IROLinear *expression)
@@ -673,105 +767,14 @@ void fn_0044f350(IROLinear *expression)
     DAT_00587630 = 0;
     IroCSE_0044f6a0(expression, 0);
 }
-/* (IroUtil_VisitLinearTree visitors) */
-IROLinear *fn_0044e340(IROLinear *node, unsigned int clearBit)
+
+void IroCSE_CollectExpressionVarRefsAndFlags(struct IROLinear *input)
 {
-    if (clearBit != 0U) {
-        node->flags &= ~IROLF_LoopInvariant;
-    }
-    return node;
-}
-IROLinear *fn_0044e360(IROLinear *type, unsigned int clearBit)
-{
-    if (clearBit != 0U) {
-        type->flags &= ~8U;
-    }
-    return type;
-}
-
-void set_global_if_zero_value_and_flag(IROLinear *type, int value)
-{
-    if (value == 0U && (type->flags & 0x10000U) != 0U)
-        data_005870f8 = 1U;
-}
-
-void IroCSE_ClearExpr(void)
-{
-    IROLinear *node;
-    IRONode *block;
-
-    expr_list = expr_tail = NULL;
-    expression_count = 0U;
-    for (block = iro_flowgraph_head; block; block = block->nextnode) {
-        for (node = block->first; node;) {
-            node->expr = 0U;
-            fn_0044f230(node, block);
-            if (node == block->last)
-                break;
-            node = node->next;
-        }
-    }
-    IroVars_CheckTimedLongjmp();
-}
-
-/* The assignment of PAIR's temporary to PAIR's expression, inserted before the expression. */
-IROLinear *IroCSE_CreateTempAssignment(IROExpr *pair)
-{
-    IROLinear *value;
-    IROLinear *expression;
-    IROLinear *assignment;
-
-    value = IrOptimizer_NewLinear(IROLinearOperand);
-    value->u.node = create_objectrefnode(pair->temp);
-    value->rtype = value->u.node->data.objref->type;
-    ++linear_index_counter;
-    value->index = linear_index_counter;
-    value->flags |= 0x26U;
-
-    expression = IrOptimizer_NewLinear(IROLinearOp1Arg);
-    expression->nodetype = 4U;
-    expression->rtype = pair->linear->rtype;
-    expression->u.monadic = value;
-    ++linear_index_counter;
-    expression->index = linear_index_counter;
-    expression->flags |= 6U;
-
-    assignment = IrOptimizer_NewLinear(IROLinearOp2Arg);
-    assignment->nodetype = 0x1eU;
-    assignment->u.diadic.left = expression;
-    assignment->u.diadic.right = pair->linear;
-    assignment->rtype = pair->linear->rtype;
-    ++linear_index_counter;
-    assignment->index = linear_index_counter;
-    value->next = expression;
-    expression->next = assignment;
-    IroUtil_InsertLinearRangeAfter(value, assignment, pair->linear);
-    return assignment;
-}
-
-/* Removes ENTRY from the candidates. */
-void IroCSE_RemoveExpr(IROExpr *entry)
-{
-    IROExpr *previous;
-    IROExpr *current;
-
-    current = expr_list;
-    previous = NULL;
-    if (expr_list != entry) {
-        do {
-            previous = current;
-            current = current->next;
-            if (current == NULL) {
-                CError_FATAL(470);
-            }
-        } while (current != entry);
-    }
-    entry->linear->expr = NULL;
-    if (previous != NULL) {
-        previous->next = entry->next;
-    } else {
-        expr_list = entry->next;
-    }
+    IroBitVect_ClearBitVector(data_00552b88);
+    DAT_00587e58 = 0;
+    DAT_00587630 = 0;
+    DAT_005880a4 = 0;
+    collect_expression_var_refs_and_flags(input, 0);
 }
 
 /* 0x552b8c: "BitVector.h" */
@@ -873,6 +876,7 @@ void collect_expression_var_refs_and_flags(IROLinear *e, SInt32 flag)
             break;
     }
 }
+
 #undef BVSET
 /* 0x552b8c: "BitVector.h" */
 /* 0x552bbc: "IroCSE.c" */

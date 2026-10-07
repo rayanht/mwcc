@@ -659,6 +659,7 @@ ENode *CObjC_MakeMessageSend(ENode *receiver, TypeClass *obj, MessageArgument *a
     }
     return expression;
 }
+
 #undef MATCH_BODY
 #define MATCH_BODY()                                                                                                   \
     do {                                                                                                               \
@@ -716,6 +717,7 @@ Boolean match_message_arguments(register MethRec *info, MessageArgument *b, Bool
             return 0;
     }
 }
+
 void CObjC_ParseIdentifierList(void)
 
 {
@@ -827,6 +829,7 @@ void CObjC_ParseProtocol(void)
         break;
     }
 }
+
 void fn_00505cb0(void)
 
 {
@@ -1276,6 +1279,7 @@ void create_category_definition(TypeClass *classType, CRec *category)
     definition->next = category_definitions;
     category_definitions = definition;
 }
+
 #define CERROR_FILE ((char *)&cobjc_filename)
 
 void emit_classobject_and_metaclassobject(TypeClass *cls)
@@ -1413,6 +1417,7 @@ static CObjCInfoRec *register_info0(void *i)
 {
     return (CObjCInfoRec *)i;
 }
+
 static CObjCInfoRec *CObjC_RegisterInfo(TypeClass *i)
 {
     return register_info0(i);
@@ -1424,12 +1429,15 @@ static inline void fillinstance(RelocationList *node, Object *value)
     node->offset = 12;
     node->addend = 0;
 }
+
 static inline RelocationList *allocsection(void)
 {
     RelocationList *n = CompilerTools_AllocatePool(16);
     return n;
 }
+
 #pragma opt_propagation off
+
 Object *CObjC_GetProtocolInfo(CRec *protocol)
 {
     RelocationList *previous;
@@ -1535,6 +1543,7 @@ Object *CObjC_GetProtocolInfo(CRec *protocol)
     (void)previous;
     return protocol->info;
 }
+
 #pragma opt_propagation reset
 
 /* memcpy */
@@ -2045,6 +2054,86 @@ void CObjC_005074f0(Type *type, UInt32 qual, Boolean flag)
     }
 }
 
+/* 0x492070, returns the current token */
+/* 0x5882d8, current token */
+
+static inline void CopyItem(MethRec *n, MethRec *e)
+{
+    n->selector = e->selector;
+    n->rtype = e->rtype;
+    n->rqual = e->rqual;
+    n->args = e->args;
+    n->isvararg = e->isvararg;
+    n->isinst = e->isinst;
+    n->defined = 0;
+}
+
+void emit_method_type_encoding(MethRec *p, int b)
+{
+    char buf[16];
+    ObjCParameterNode *n;
+
+    if (p->rqual & Q_IN)
+        AppendGListByte(&data_00583548, 0x6e);
+    if (p->rqual & Q_OUT)
+        AppendGListByte(&data_00583548, 0x6f);
+    if (p->rqual & Q_INOUT)
+        AppendGListByte(&data_00583548, 0x4e);
+    if (p->rqual & Q_BYCOPY)
+        AppendGListByte(&data_00583548, 0x4f);
+    if ((p->rqual & Q_BYREF), (p->rqual & Q_ONEWAY))
+        AppendGListByte(&data_00583548, 0x56);
+
+    if (p->rtype)
+        CObjC_005074f0(p->rtype, 0, b);
+    else
+        AppendGListByte(&data_00583548, 0x40);
+
+    sprintf(buf, "%ld", CodeGen_GetMethRecRtypeAndArgsSize(p));
+    CompilerTools_AppendGListString(&data_00583548, buf);
+
+    AppendGListByte(&data_00583548, 0x40);
+
+    sprintf(buf, "%ld", CodeGen_GetMethRecRTypeSize(p));
+    CompilerTools_AppendGListString(&data_00583548, buf);
+
+    AppendGListByte(&data_00583548, 0x3a);
+
+    sprintf(buf, "%ld", fn_00432480(p));
+    CompilerTools_AppendGListString(&data_00583548, buf);
+
+    for (n = (ObjCParameterNode *)p->args; n != NULL; n = n->next) {
+        if (n->type) {
+            if (n->qual & Q_CONST)
+                AppendGListByte(&data_00583548, 0x72);
+            CObjC_005074f0(n->type, 0, b);
+            sprintf(buf, "%ld", CodeGen_GetObjCParameterOffset(p, n));
+            CompilerTools_AppendGListString(&data_00583548, buf);
+        }
+    }
+}
+
+void encode_class(TypeClass *cls, Boolean flag)
+{
+    ObjMemberVar *iv;
+
+    if (!(cls->flags & 0x4000)) {
+        AppendGListByte(&data_00583548, cls->mode == 1 ? 0x28 : 0x7b);
+        if (data_00588507 != 0)
+            AppendGListByte(&data_00583548, 0x3f);
+        else if (cls->classname != NULL)
+            CompilerTools_AppendGListString(&data_00583548, cls->classname->name);
+        if (flag) {
+            AppendGListByte(&data_00583548, 0x3d);
+            for (iv = cls->ivars; iv != NULL; iv = iv->next)
+                CObjC_005074f0(iv->type, iv->qual, 1);
+        }
+        AppendGListByte(&data_00583548, cls->mode == 1 ? 0x29 : 0x7d);
+    } else {
+        AppendGListByte(&data_00583548, 0x3f);
+    }
+}
+
 /* Objective-C method parameter list entry. */
 /* Objective-C method list entry. */
 
@@ -2117,20 +2206,6 @@ void parse_method_definition(TypeClass *object, CRec *kind, MethRec **methods)
     CFunc_ParseFuncDef(function, &declaration, object, 1, method->isinst, NULL);
     method->defined = 1;
     tk = CPrepTokenizer_GetNextToken();
-}
-
-/* 0x492070, returns the current token */
-/* 0x5882d8, current token */
-
-static inline void CopyItem(MethRec *n, MethRec *e)
-{
-    n->selector = e->selector;
-    n->rtype = e->rtype;
-    n->rqual = e->rqual;
-    n->args = e->args;
-    n->isvararg = e->isvararg;
-    n->isinst = e->isinst;
-    n->defined = 0;
 }
 
 void parse_category(TypeClass *owner)
@@ -2226,72 +2301,6 @@ Type *CObjC_ParseProtocolList(Type *type)
     return type;
 }
 
-void emit_method_type_encoding(MethRec *p, int b)
-{
-    char buf[16];
-    ObjCParameterNode *n;
-
-    if (p->rqual & Q_IN)
-        AppendGListByte(&data_00583548, 0x6e);
-    if (p->rqual & Q_OUT)
-        AppendGListByte(&data_00583548, 0x6f);
-    if (p->rqual & Q_INOUT)
-        AppendGListByte(&data_00583548, 0x4e);
-    if (p->rqual & Q_BYCOPY)
-        AppendGListByte(&data_00583548, 0x4f);
-    if ((p->rqual & Q_BYREF), (p->rqual & Q_ONEWAY))
-        AppendGListByte(&data_00583548, 0x56);
-
-    if (p->rtype)
-        CObjC_005074f0(p->rtype, 0, b);
-    else
-        AppendGListByte(&data_00583548, 0x40);
-
-    sprintf(buf, "%ld", CodeGen_GetMethRecRtypeAndArgsSize(p));
-    CompilerTools_AppendGListString(&data_00583548, buf);
-
-    AppendGListByte(&data_00583548, 0x40);
-
-    sprintf(buf, "%ld", CodeGen_GetMethRecRTypeSize(p));
-    CompilerTools_AppendGListString(&data_00583548, buf);
-
-    AppendGListByte(&data_00583548, 0x3a);
-
-    sprintf(buf, "%ld", fn_00432480(p));
-    CompilerTools_AppendGListString(&data_00583548, buf);
-
-    for (n = (ObjCParameterNode *)p->args; n != NULL; n = n->next) {
-        if (n->type) {
-            if (n->qual & Q_CONST)
-                AppendGListByte(&data_00583548, 0x72);
-            CObjC_005074f0(n->type, 0, b);
-            sprintf(buf, "%ld", CodeGen_GetObjCParameterOffset(p, n));
-            CompilerTools_AppendGListString(&data_00583548, buf);
-        }
-    }
-}
-
-void encode_class(TypeClass *cls, Boolean flag)
-{
-    ObjMemberVar *iv;
-
-    if (!(cls->flags & 0x4000)) {
-        AppendGListByte(&data_00583548, cls->mode == 1 ? 0x28 : 0x7b);
-        if (data_00588507 != 0)
-            AppendGListByte(&data_00583548, 0x3f);
-        else if (cls->classname != NULL)
-            CompilerTools_AppendGListString(&data_00583548, cls->classname->name);
-        if (flag) {
-            AppendGListByte(&data_00583548, 0x3d);
-            for (iv = cls->ivars; iv != NULL; iv = iv->next)
-                CObjC_005074f0(iv->type, iv->qual, 1);
-        }
-        AppendGListByte(&data_00583548, cls->mode == 1 ? 0x29 : 0x7d);
-    } else {
-        AppendGListByte(&data_00583548, 0x3f);
-    }
-}
-
 static CRec *FindNamedRec(void *obj, CRec *list)
 {
     for (; list != NULL; list = list->next) {
@@ -2330,6 +2339,7 @@ inline Type *FindIdType(void)
 }
 
 #pragma opt_propagation off
+
 Type *CObjC_ParseIdType(void)
 {
     Type *type;
@@ -2372,6 +2382,7 @@ Type *CObjC_ParseIdType(void)
     }
     return result;
 }
+
 #pragma opt_propagation reset
 
 static TypeClass *find_objc_class(HashNameNode *name)
@@ -2491,6 +2502,7 @@ static FuncArg *ObjC_NewArg(TypeFunc *f, HashNameNode *name, Type *type, UInt32 
     a->qual = qual;
     return a;
 }
+
 static FuncArg *AppendFirst(TypeFunc *f, Type *type)
 {
     FuncArg *a;
@@ -2509,11 +2521,13 @@ static FuncArg *AppendFirst(TypeFunc *f, Type *type)
     a->qual = 0;
     return a;
 }
+
 static FuncArg *NewFirstArg(TypeFunc *f)
 {
     SInt32 type = (SInt32)GetIdType(1);
     return AppendFirst(f, (Type *)type);
 }
+
 TypeFunc *get_method_ftype(MethRec *spec)
 {
     FuncArg *p;
@@ -2962,6 +2976,7 @@ Boolean CObjC_IsIdOrSelType(Type *ty)
     }
     return FALSE;
 }
+
 #define CERROR_FILE "id" /* source file not inferred: set it from any file-name string the function pushes */
 
 static Type *find_id_type(Boolean required)

@@ -46,11 +46,16 @@ void free_access_path_entry(AccessPathEntry *blocks)
     }
 }
 
-void copy_access_paths_to_file_specs_checked(CWFileSpec *path, AccessPaths *value, short result)
+/* Indexed values and their 16-bit count. */
+
+unsigned char CLAccessPaths_Init(AccessPaths *paths)
 {
-    copy_access_paths_to_file_specs(&path, value, &result);
-    if ((unsigned short)result != 0)
-        CLIO_ReportAssertionFailure("count == 0", "CLAccessPaths.c", 357U);
+    if (paths == NULL) {
+        CLIO_ReportAssertionFailure("paths != NULL", "CLAccessPaths.c", 52U);
+    }
+    memset(paths, 0, sizeof(*paths));
+    paths->items = NULL;
+    return 1;
 }
 
 /* Array of access-path entries and its 16-bit bookkeeping. */
@@ -69,17 +74,127 @@ unsigned char CLAccessPaths_FreeItems(AccessPaths *paths)
     return 1;
 }
 
-/* Indexed values and their 16-bit count. */
-
-unsigned char CLAccessPaths_Init(AccessPaths *paths)
+Boolean allocate_slot(AccessPaths *table, UInt16 *slotIndex)
 {
-    if (paths == NULL) {
-        CLIO_ReportAssertionFailure("paths != NULL", "CLAccessPaths.c", 52U);
+    if (table == NULL) {
+        CLIO_ReportAssertionFailure("paths != NULL", "CLAccessPaths.c", 84U);
     }
-    memset(paths, 0, sizeof(*paths));
-    paths->items = NULL;
+    if (table->count >= table->capacity) {
+        table->capacity += 20U;
+        table->items = xrealloc("access paths", table->items, table->capacity << 2);
+    }
+    *slotIndex = table->count++;
     return 1;
 }
+
+unsigned char CLAccessPaths_StoreItem(AccessPaths *ctx, void *value)
+{
+    UInt16 idx;
+    if (allocate_slot(ctx, &idx)) {
+        ctx->items[idx] = value;
+        return 1;
+    }
+    return 0;
+}
+
+Boolean CLAccessPaths_InsertItem(AccessPaths *paths, UInt16 index, void *value)
+{
+    UInt16 n;
+    if (allocate_slot(paths, &n)) {
+        if (index > n)
+            index = n - 1;
+        memmove(&paths->items[index + 1], &paths->items[index], (UInt32)(paths->count - index) * 4);
+        paths->items[index] = value;
+        return 1;
+    }
+    return 0;
+}
+
+unsigned char remove_access_path(AccessPaths *list, UInt16 index)
+{
+    if (index >= list->count)
+        return 0;
+    free_access_path_entry(list->items[index]);
+    memmove(&list->items[index], &list->items[index + 1], (list->count - index) * sizeof(*list->items));
+    list->count--;
+    return 1;
+}
+
+AccessPathEntry *CLAccessPaths_GetEntry(AccessPaths *table, unsigned short index)
+{
+    if (table == NULL)
+        CLIO_ReportAssertionFailure("paths != NULL", "CLAccessPaths.c", 142U);
+    if ((unsigned short)index < table->count)
+        return table->items[(unsigned short)index];
+    return 0U;
+}
+
+unsigned short CLAccessPaths_GetCount(AccessPaths *table)
+{
+    if (!table) {
+        CLIO_ReportAssertionFailure("paths != NULL", "CLAccessPaths.c", 152U);
+    }
+    return table->count;
+}
+
+/* Records and indexed table used by access-path lookup. */
+
+AccessPathEntry *CLAccessPaths_FindPath(AccessPaths *table, void *value)
+{
+    unsigned int index;
+    AccessPathEntry *entry;
+
+    if (!table)
+        CLIO_ReportAssertionFailure("paths != NULL", "CLAccessPaths.c", 173U);
+    for (index = 0; (unsigned short)index < table->count; ++index) {
+        entry = table->items[(unsigned short)index];
+        if (OS_EqualPathSpec(entry->path, value))
+            return entry;
+    }
+    return NULL;
+}
+
+Boolean add_subdirectory_access_paths(AccessPaths *ctx, AccessPathEntry *param2)
+{
+    struct {
+        DirectorySearch state;
+    } bufA;
+    OSSpec bufB;
+    char bufC[67];
+    Boolean flag;
+    DWORD status;
+    int count = 0;
+    char *name;
+    unsigned short s;
+    AccessPathEntry *ptr;
+
+    if (fn_004151f0())
+        return 1;
+    status = OS_OpenDir(param2->path, &bufA.state);
+    while (status == 0) {
+        status = OS_ReadDir(&bufA.state, &bufB, bufC, &flag);
+        if (status == 0) {
+            if (flag == 0) {
+                ptr = CLAccessPaths_CreateAccessPathEntry(bufB.directory.path);
+                name = CLProj_GetFileName(bufC);
+                if (*name != '(' && name[strlen(name) - 2] != ')') {
+                    if (!CLAccessPaths_StoreItem(ctx, ptr))
+                        break;
+                    s = CLAccessPaths_GetCount(ctx) + 0xFFFF;
+                    if (!add_subdirectory_access_paths(ctx, ptr))
+                        remove_access_path(ctx, s);
+                }
+            } else {
+                count++;
+                if (count % 50 == 0 && fn_004151f0())
+                    return 0;
+            }
+        }
+    }
+    OS_CloseDir(&bufA.state);
+    return count > 0;
+}
+
 /* Indexed entries with a 16-bit count. */
 
 /* Access-path entry holding separately allocated data. */
@@ -138,123 +253,9 @@ void copy_access_paths_to_file_specs(CWFileSpec **destination, AccessPaths *path
     return;
 }
 
-/* Records and indexed table used by access-path lookup. */
-
-AccessPathEntry *CLAccessPaths_FindPath(AccessPaths *table, void *value)
+void copy_access_paths_to_file_specs_checked(CWFileSpec *path, AccessPaths *value, short result)
 {
-    unsigned int index;
-    AccessPathEntry *entry;
-
-    if (!table)
-        CLIO_ReportAssertionFailure("paths != NULL", "CLAccessPaths.c", 173U);
-    for (index = 0; (unsigned short)index < table->count; ++index) {
-        entry = table->items[(unsigned short)index];
-        if (OS_EqualPathSpec(entry->path, value))
-            return entry;
-    }
-    return NULL;
-}
-
-Boolean CLAccessPaths_InsertItem(AccessPaths *paths, UInt16 index, void *value)
-{
-    UInt16 n;
-    if (allocate_slot(paths, &n)) {
-        if (index > n)
-            index = n - 1;
-        memmove(&paths->items[index + 1], &paths->items[index], (UInt32)(paths->count - index) * 4);
-        paths->items[index] = value;
-        return 1;
-    }
-    return 0;
-}
-
-Boolean add_subdirectory_access_paths(AccessPaths *ctx, AccessPathEntry *param2)
-{
-    struct {
-        DirectorySearch state;
-    } bufA;
-    OSSpec bufB;
-    char bufC[67];
-    Boolean flag;
-    DWORD status;
-    int count = 0;
-    char *name;
-    unsigned short s;
-    AccessPathEntry *ptr;
-
-    if (fn_004151f0())
-        return 1;
-    status = OS_OpenDir(param2->path, &bufA.state);
-    while (status == 0) {
-        status = OS_ReadDir(&bufA.state, &bufB, bufC, &flag);
-        if (status == 0) {
-            if (flag == 0) {
-                ptr = CLAccessPaths_CreateAccessPathEntry(bufB.directory.path);
-                name = CLProj_GetFileName(bufC);
-                if (*name != '(' && name[strlen(name) - 2] != ')') {
-                    if (!CLAccessPaths_StoreItem(ctx, ptr))
-                        break;
-                    s = CLAccessPaths_GetCount(ctx) + 0xFFFF;
-                    if (!add_subdirectory_access_paths(ctx, ptr))
-                        remove_access_path(ctx, s);
-                }
-            } else {
-                count++;
-                if (count % 50 == 0 && fn_004151f0())
-                    return 0;
-            }
-        }
-    }
-    OS_CloseDir(&bufA.state);
-    return count > 0;
-}
-
-unsigned short CLAccessPaths_GetCount(AccessPaths *table)
-{
-    if (!table) {
-        CLIO_ReportAssertionFailure("paths != NULL", "CLAccessPaths.c", 152U);
-    }
-    return table->count;
-}
-
-AccessPathEntry *CLAccessPaths_GetEntry(AccessPaths *table, unsigned short index)
-{
-    if (table == NULL)
-        CLIO_ReportAssertionFailure("paths != NULL", "CLAccessPaths.c", 142U);
-    if ((unsigned short)index < table->count)
-        return table->items[(unsigned short)index];
-    return 0U;
-}
-
-unsigned char remove_access_path(AccessPaths *list, UInt16 index)
-{
-    if (index >= list->count)
-        return 0;
-    free_access_path_entry(list->items[index]);
-    memmove(&list->items[index], &list->items[index + 1], (list->count - index) * sizeof(*list->items));
-    list->count--;
-    return 1;
-}
-
-unsigned char CLAccessPaths_StoreItem(AccessPaths *ctx, void *value)
-{
-    UInt16 idx;
-    if (allocate_slot(ctx, &idx)) {
-        ctx->items[idx] = value;
-        return 1;
-    }
-    return 0;
-}
-
-Boolean allocate_slot(AccessPaths *table, UInt16 *slotIndex)
-{
-    if (table == NULL) {
-        CLIO_ReportAssertionFailure("paths != NULL", "CLAccessPaths.c", 84U);
-    }
-    if (table->count >= table->capacity) {
-        table->capacity += 20U;
-        table->items = xrealloc("access paths", table->items, table->capacity << 2);
-    }
-    *slotIndex = table->count++;
-    return 1;
+    copy_access_paths_to_file_specs(&path, value, &result);
+    if ((unsigned short)result != 0)
+        CLIO_ReportAssertionFailure("count == 0", "CLAccessPaths.c", 357U);
 }

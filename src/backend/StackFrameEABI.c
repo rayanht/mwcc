@@ -56,19 +56,6 @@ void fn_004a9c70(void)
     return;
 }
 
-unsigned int fn_004a9f90(void)
-{
-    return data_005880cc + outgoing_argument_size;
-}
-
-int fn_004a9f70(int value)
-{
-    if (value != 0) {
-        return 8;
-    }
-    return stack_frame_size + 8;
-}
-
 static inline void StackFrame_EmitAltivecStackPointerSave(Boolean restore, SInt16 *savedStackReg)
 {
     if (data_00588521 == 0 || copts.altivecVrsave == 0)
@@ -172,6 +159,19 @@ void StackFrame_CheckAltivec(void)
         StackFrame_EmitAltivecStackPointerSave(1, &savedStackReg);
         gCurrentBlock = savedBlock;
     }
+}
+
+int fn_004a9f70(int value)
+{
+    if (value != 0) {
+        return 8;
+    }
+    return stack_frame_size + 8;
+}
+
+unsigned int fn_004a9f90(void)
+{
+    return data_005880cc + outgoing_argument_size;
 }
 
 void emit_restore_special_registers(SInt16 frameRegister)
@@ -360,6 +360,7 @@ void StackFrameEABI_SaveArgumentRegisters(PCodeBlock *entryBlock, PCodeBlock *fp
     }
     gpSaveBlock->flags |= 1;
 }
+
 void fn_004aa580(void)
 {
     gStackFrameSize += 96U;
@@ -1005,6 +1006,7 @@ void emit_save_fprs(PCodeBlock *block, Boolean savefpr)
         PCode_AppendInstruction(block, (PCodeInstruction *)result);
     }
 }
+
 /* Referenced symbols. */
 
 static inline UInt8 StackFrameEABI_LoadMultipleEnabled(void)
@@ -1277,6 +1279,7 @@ void StackFrameEABI_GeneratePrologueEpilogue(PCodeBlock *block, int prologueFlag
 }
 
 #pragma opt_lifetimes off
+
 void StackFrameEABI_FinalizeLayout(struct PCodeBlock *function)
 {
     UInt32 size;
@@ -1403,6 +1406,7 @@ void StackFrameEABI_FinalizeLayout(struct PCodeBlock *function)
     size = stack_frame_size;
     eabi_stack_frame_size = size;
 }
+
 #pragma opt_lifetimes reset
 
 void StackFrameEABI_AllocateObjectSlot(Object *object)

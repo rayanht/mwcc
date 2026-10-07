@@ -2665,6 +2665,7 @@ IROLoop *fn_0045faa0(IRONode *loop)
     }
     return info;
 }
+
 void find_induction_init(struct IROLoop *state, struct IRONode *list)
 {
     IROLinear *item;
@@ -3085,6 +3086,7 @@ void mark_nonintersecting_linears(void)
         }
     }
 }
+
 #define BVTEST(v, idx) ((UInt32)((idx) >> 5) < (v)->size && ((v)->bits[(idx) >> 5] & (UInt32)(1 << ((idx) & 31))) != 0)
 
 static void BVSET(BitVector *bv, UInt32 index)
@@ -3093,6 +3095,45 @@ static void BVSET(BitVector *bv, UInt32 index)
         bv->bits[index >> 5] |= (UInt32)(1 << (index & 31));
     else
         CError_Internal("BitVector.h", 0x2f);
+}
+
+#define BV_TEST(v, bit)                                                                                                \
+    (((UInt32)((bit) >> 5) < (v)->size) && (((v)->bits[(UInt32)((bit) >> 5)] & (1u << ((bit) & 31))) != 0))
+
+static inline void BV_SET(BitVector *v, unsigned int bit)
+{
+    if (((UInt32)(bit)) >> 5 < (v)->size)
+        (v)->bits[((UInt32)(bit)) >> 5] |= 1u << ((bit) & 31);
+    else
+        CError_Internal("BitVector.h", 47);
+}
+
+void fn_00460f70(void)
+{
+    IRONode *node;
+    IROLinear *item;
+
+    IroBitVect_AllocateBitVector(&data_0058064c, iroVarCount + 1);
+    IroBitVect_AllocateBitVector(&data_00588018, iroVarCount + 1);
+    for (node = iro_flowgraph_head; node != NULL; node = node->nextnode) {
+        if ((node->index >> 5) >= IRO_LoopScratchVector_005880dc->size)
+            continue;
+        if (!((1 << node->index) & IRO_LoopScratchVector_005880dc->bits[node->index >> 5]))
+            continue;
+        item = node->first;
+        if (item == NULL)
+            continue;
+        IroBitVect_AllocateBitVector(&node->in, iroVarCount + 1);
+        IroBitVect_AllocateBitVector(&node->gen, iroVarCount + 1);
+        for (;;) {
+            IroBitVect_ClearBitVector(data_00588018);
+            IroVars_0044b2d0(item);
+            IroBitVect_Or(data_00588018, data_0058064c);
+            if (item == node->last)
+                break;
+            item = item->next;
+        }
+    }
 }
 
 void IRO_FindLoops(void)
@@ -3196,16 +3237,6 @@ void split_last_linear_into_new_node(void)
         IroFlowgraph_RebuildSuccPred();
         IroFlowgraph_ComputeDom();
     }
-}
-#define BV_TEST(v, bit)                                                                                                \
-    (((UInt32)((bit) >> 5) < (v)->size) && (((v)->bits[(UInt32)((bit) >> 5)] & (1u << ((bit) & 31))) != 0))
-
-static inline void BV_SET(BitVector *v, unsigned int bit)
-{
-    if (((UInt32)(bit)) >> 5 < (v)->size)
-        (v)->bits[((UInt32)(bit)) >> 5] |= 1u << ((bit) & 31);
-    else
-        CError_Internal("BitVector.h", 47);
 }
 
 void IroLoop_ComputeLoopDepth(void)
@@ -3524,34 +3555,6 @@ void forward_expr_if_check_object(IROLinear *entry, int checkObject)
         IroCSE_RemoveExpr(entry->expr);
     }
     return;
-}
-
-void fn_00460f70(void)
-{
-    IRONode *node;
-    IROLinear *item;
-
-    IroBitVect_AllocateBitVector(&data_0058064c, iroVarCount + 1);
-    IroBitVect_AllocateBitVector(&data_00588018, iroVarCount + 1);
-    for (node = iro_flowgraph_head; node != NULL; node = node->nextnode) {
-        if ((node->index >> 5) >= IRO_LoopScratchVector_005880dc->size)
-            continue;
-        if (!((1 << node->index) & IRO_LoopScratchVector_005880dc->bits[node->index >> 5]))
-            continue;
-        item = node->first;
-        if (item == NULL)
-            continue;
-        IroBitVect_AllocateBitVector(&node->in, iroVarCount + 1);
-        IroBitVect_AllocateBitVector(&node->gen, iroVarCount + 1);
-        for (;;) {
-            IroBitVect_ClearBitVector(data_00588018);
-            IroVars_0044b2d0(item);
-            IroBitVect_Or(data_00588018, data_0058064c);
-            if (item == node->last)
-                break;
-            item = item->next;
-        }
-    }
 }
 
 /* Whether NODE is an address of an induction variable VARIABLE (in EXPRESSION) times FACTOR. */

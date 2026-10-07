@@ -50,60 +50,6 @@
 #define TESTB(a, i) ((a)[(i) >> 5] & ((UInt32)1 << (i)))
 #define bitvectorgetbit(n, bv) ((1 << ((n) & 31)) & (bv)[(n) >> 5])
 
-void LoopDetection_ComputeLoopProperties(Loop *node)
-{
-    PCodeBlockLink *link;
-
-    node->bodySize = 0;
-    node->has_call = 0;
-    node->uses_count_register = 0;
-    node->skip_leaf_pass_4f = 1;
-    node->isKnownCountingLoop = 0;
-    node->isUnknownCountingLoop = 0;
-    node->lowerType = 0;
-    node->upperType = 0;
-    node->iterationCount = -1;
-    node->has_memory_barrier = 0;
-    node->has_block_flag_40 = 0;
-
-    for (link = node->blocks; link != NULL; link = link->next) {
-        PCodeBlock *block = link->payload.block;
-        PCodeInstruction *instruction;
-
-        node->bodySize += block->instruction_count;
-        if (block != node->body && (block->successors->next != NULL || block->predecessors->next != NULL)) {
-            node->skip_leaf_pass_4f = 0;
-        }
-        if ((block->flags & 0x40) == 0x40) {
-            node->has_block_flag_40 = 1;
-        }
-
-        for (instruction = block->instructions; instruction != NULL; instruction = instruction->next) {
-            if ((instruction->flags & fLink) != 0) {
-                node->has_call = 1;
-            }
-            if (instruction->opcode == PC_BCTRL || instruction->opcode == PC_BCTR || instruction->opcode == PC_BCCTR ||
-                instruction->opcode == PC_MTCTR || instruction->opcode == PC_MFCTR) {
-                node->uses_count_register = 1;
-            } else if ((instruction->flags & fIsRead) != 0) {
-                if (instruction->opcode == PC_LBZX || instruction->opcode == PC_LHZX ||
-                    instruction->opcode == PC_LHAX || instruction->opcode == PC_LWZX ||
-                    instruction->opcode == PC_LFSX || instruction->opcode == PC_LFDX) {
-                    node->has_indexed_load = 1;
-                }
-            } else if ((instruction->flags & fIsWrite) != 0) {
-                if (instruction->opcode == PC_STBX || instruction->opcode == PC_STHX ||
-                    instruction->opcode == PC_STWX || instruction->opcode == PC_STFSX ||
-                    instruction->opcode == PC_STFDX) {
-                    node->has_indexed_store = 1;
-                }
-            } else if ((unsigned short)(instruction->opcode - 0x85) <= 2) {
-                node->has_memory_barrier = 1;
-            }
-        }
-    }
-}
-
 void LoopDetection_ComputeLoopPropertiesRecursive(void)
 {
     if (data_0058763c != NULL) {
@@ -170,6 +116,60 @@ void compute_loop_properties_recursive(register Loop *node)
             }
         }
         LoopDetection_ComputeLoopProperties(node);
+    }
+}
+
+void LoopDetection_ComputeLoopProperties(Loop *node)
+{
+    PCodeBlockLink *link;
+
+    node->bodySize = 0;
+    node->has_call = 0;
+    node->uses_count_register = 0;
+    node->skip_leaf_pass_4f = 1;
+    node->isKnownCountingLoop = 0;
+    node->isUnknownCountingLoop = 0;
+    node->lowerType = 0;
+    node->upperType = 0;
+    node->iterationCount = -1;
+    node->has_memory_barrier = 0;
+    node->has_block_flag_40 = 0;
+
+    for (link = node->blocks; link != NULL; link = link->next) {
+        PCodeBlock *block = link->payload.block;
+        PCodeInstruction *instruction;
+
+        node->bodySize += block->instruction_count;
+        if (block != node->body && (block->successors->next != NULL || block->predecessors->next != NULL)) {
+            node->skip_leaf_pass_4f = 0;
+        }
+        if ((block->flags & 0x40) == 0x40) {
+            node->has_block_flag_40 = 1;
+        }
+
+        for (instruction = block->instructions; instruction != NULL; instruction = instruction->next) {
+            if ((instruction->flags & fLink) != 0) {
+                node->has_call = 1;
+            }
+            if (instruction->opcode == PC_BCTRL || instruction->opcode == PC_BCTR || instruction->opcode == PC_BCCTR ||
+                instruction->opcode == PC_MTCTR || instruction->opcode == PC_MFCTR) {
+                node->uses_count_register = 1;
+            } else if ((instruction->flags & fIsRead) != 0) {
+                if (instruction->opcode == PC_LBZX || instruction->opcode == PC_LHZX ||
+                    instruction->opcode == PC_LHAX || instruction->opcode == PC_LWZX ||
+                    instruction->opcode == PC_LFSX || instruction->opcode == PC_LFDX) {
+                    node->has_indexed_load = 1;
+                }
+            } else if ((instruction->flags & fIsWrite) != 0) {
+                if (instruction->opcode == PC_STBX || instruction->opcode == PC_STHX ||
+                    instruction->opcode == PC_STWX || instruction->opcode == PC_STFSX ||
+                    instruction->opcode == PC_STFDX) {
+                    node->has_indexed_store = 1;
+                }
+            } else if ((unsigned short)(instruction->opcode - 0x85) <= 2) {
+                node->has_memory_barrier = 1;
+            }
+        }
     }
 }
 

@@ -3,88 +3,74 @@
 #include "compiler/InlineAsmPPC.h"
 #include "driver/ClientGlue.h"
 #pragma scheduling off
+
 int __stdcall get_name_and_length(char **name, int *length)
 {
     *name = data_005434a8;
     *length = 18;
     return 0;
 }
-#pragma scheduling reset
 
-#pragma scheduling off
 void *__stdcall set_next_to_global(struct ListNodeLink *node)
 {
     node->next = &data_005434c4;
     return NULL;
 }
-#pragma scheduling reset
 
-#pragma scheduling off
 unsigned int __stdcall copy_global_to_value(unsigned int *value)
 {
     *value = data_005434e8;
     return 0U;
 }
-#pragma scheduling reset
 
-#pragma scheduling off
 unsigned int __stdcall get_stored_value(unsigned int *value)
 {
     *value = data_00543500;
     return 0;
 }
-#pragma scheduling reset
-#pragma scheduling off
 
 static void helper(signed char **p)
 {
     *p = data_00543694;
 }
 
-#pragma scheduling reset
-#pragma scheduling off
 int __stdcall fn_0040be10(signed char **arguments)
 {
     helper(arguments);
     return 0;
 }
-#pragma scheduling reset
-#pragma scheduling off
 
-unsigned int __stdcall fn_0040be30(struct ListLink *link)
-{
-    link->next = &data_00543700;
-    return 0;
-}
-#pragma scheduling reset
-#pragma scheduling off
-int __stdcall set_link_next_to_global(struct ListLink *link)
-{
-    link->next = &data_00543774;
-    return 0;
-}
-#pragma scheduling reset
-#pragma scheduling off
-
-void *__stdcall set_listnode_next_to_global(struct ListNode *node)
-{
-    node->next = &data_00543730;
-    return NULL;
-}
 unsigned int __stdcall fn_0040be20(struct ListLink *link)
 {
     link->next = &data_005436f8;
     return 0U;
 }
 
-#pragma scheduling reset
-#pragma scheduling off
+unsigned int __stdcall fn_0040be30(struct ListLink *link)
+{
+    link->next = &data_00543700;
+    return 0;
+}
+
+void *__stdcall set_listnode_next_to_global(struct ListNode *node)
+{
+    node->next = &data_00543730;
+    return NULL;
+}
+
+int __stdcall set_link_next_to_global(struct ListLink *link)
+{
+    link->next = &data_00543774;
+    return 0;
+}
+
 int __stdcall get_global_name_and_length(char **name, int *length)
 {
     *name = global_name;
     *length = 18;
     return 0;
 }
+
 #pragma scheduling reset
 
 unsigned int __stdcall set_data_pointer(unsigned int objectAddress)
@@ -106,7 +92,9 @@ unsigned int __stdcall fn_0040be90(unsigned int objectAddress)
     object = NULL;
     return (unsigned int)object;
 }
+
 #pragma optimization_level 2
+
 unsigned int __stdcall fn_0040bea0(struct ListLink *link)
 {
     link->next = &data_00543830;
@@ -114,20 +102,21 @@ unsigned int __stdcall fn_0040bea0(struct ListLink *link)
 }
 
 #pragma optimization_level reset
+
 #pragma scheduling off
+
 unsigned int __stdcall get_data_pointer(unsigned char **output)
 {
     *output = data_00543840;
     return 0;
 }
-#pragma scheduling reset
 
-#pragma scheduling off
 unsigned int __stdcall set_shared_data(struct SharedDataHeader *header)
 {
     header->data = data_005438f0;
     return 0;
 }
+
 #pragma scheduling reset
 
 unsigned int fn_0040bed0(void)
@@ -140,6 +129,7 @@ unsigned int fn_0040bed0(void)
 }
 
 #pragma scheduling off
+
 unsigned int fn_0040bf10(void)
 {
     unsigned int success;
@@ -164,41 +154,61 @@ unsigned int fn_0040bf10(void)
     return success;
 }
 
-#pragma scheduling reset
-#pragma scheduling off
 int __stdcall get_stored_name_and_length(char **name, int *length)
 {
     *name = data_00549eb0;
     *length = 18;
     return 0;
 }
-#pragma scheduling reset
 
-#pragma scheduling off
 unsigned int __stdcall fn_0040bfc0(unsigned char *volatile *buffer)
 {
     *buffer = data_00549ecc;
     return 0U;
 }
-#pragma scheduling reset
 
-#pragma scheduling off
 unsigned int __stdcall get_global_value(unsigned int *value)
 {
     *value = data_00549ef4;
     return 0U;
 }
-#pragma scheduling reset
 
-#pragma scheduling off
 unsigned int __stdcall fn_0040bff0(unsigned int *value)
 {
     *value = data_00549ef8;
     return 0U;
 }
+
 #pragma scheduling reset
 
 #pragma optimization_level 2
+
+unsigned int __stdcall fn_0040c010(struct ListLink *link)
+{
+    link->next = &data_00549fc4;
+    return 0U;
+}
+
+unsigned int __stdcall set_next_from_global(struct ListLink *node)
+{
+    node->next = data_00549fcc;
+    return 0U;
+}
+
+#pragma optimization_level reset
+
+#pragma scheduling off
+
+unsigned int __stdcall get_buffer(unsigned char **buffer)
+{
+    *buffer = data_00549fd4;
+    return 0;
+}
+
+#pragma scheduling reset
+
+#pragma optimization_level 2
+
 int __stdcall set_list_link_next(struct ListLink *link)
 {
     link->next = data_0054a008;
@@ -206,37 +216,16 @@ int __stdcall set_list_link_next(struct ListLink *link)
 }
 
 #pragma optimization_level reset
+
 #pragma scheduling off
+
 unsigned int __stdcall fn_0040c050(struct ListLink *link)
 {
     link->next = (struct ListLink *)data_0054a014;
     return 0U;
 }
+
 #pragma scheduling reset
-
-#pragma optimization_level 2
-unsigned int __stdcall set_next_from_global(struct ListLink *node)
-{
-    node->next = data_00549fcc;
-    return 0U;
-}
-#pragma optimization_level reset
-
-#pragma scheduling off
-unsigned int __stdcall get_buffer(unsigned char **buffer)
-{
-    *buffer = data_00549fd4;
-    return 0;
-}
-#pragma scheduling reset
-
-#pragma optimization_level 2
-unsigned int __stdcall fn_0040c010(struct ListLink *link)
-{
-    link->next = &data_00549fc4;
-    return 0U;
-}
-#pragma optimization_level reset
 
 int fn_0040c060(void)
 

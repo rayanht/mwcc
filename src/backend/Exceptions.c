@@ -35,6 +35,7 @@
 /* Layouts of the exception scope records used by this routine. */
 
 #pragma opt_lifetimes off
+
 #define CE_ASSERT(c, s)                                                                                                \
     do {                                                                                                               \
         if (c)                                                                                                         \
@@ -45,10 +46,9 @@ static inline unsigned short flags(void)
     return CTool_EndianConvertWord16(gGPRSaveSpan << 11 | (gFPRSaveSpan & 31) << 6 | (data_005883ee != 0) << 5 |
                                      (data_0058852d & 1) << 4 | 8);
 }
+
 /* Exception table entries and the compiler's exception range descriptors. */
 
-#pragma opt_lifetimes reset
-#pragma opt_lifetimes off
 void Exceptions_EmitExceptionTable(Object *object, int offset)
 {
     unsigned long size;
@@ -121,7 +121,66 @@ void Exceptions_EmitExceptionTable(Object *object, int offset)
                                                   exception_table_relocation_requests);
     FreeGList(&exception_records);
 }
+
 #pragma opt_lifetimes reset
+
+static inline int Exceptions_GetBoundUID(void *object)
+{
+    if (!Registers_GetInfo(object))
+        return 0;
+    return Registers_GetInfo(object)->reg;
+}
+
+static void RemoveEntry(ExceptionScopeEntry *e)
+{
+    if (e->previous)
+        e->previous->next = e->next;
+    else
+        exception_scope_entries = e->next;
+    if (e->next)
+        e->next->previous = e->previous;
+}
+
+int compact_exception_scope_entries(void)
+{
+    ExceptionScopeEntry *e;
+    ExceptionScopeEntry *prev;
+    int count;
+
+    if (exception_scope_entries == NULL)
+        return 0;
+
+    for (e = exception_scope_entries; e != NULL; e = e->next) {
+        if (((PCodeInstruction *)e->start)->block->flags & 0x10)
+            RemoveEntry(e);
+    }
+
+    if (exception_scope_entries == NULL)
+        return 0;
+
+    for (e = exception_scope_entries; e != NULL; e = e->next) {
+        e->info = e->elements ? find_or_create_object_group(e->elements) : NULL;
+    }
+
+    prev = exception_scope_entries;
+    for (e = exception_scope_entries->next; e != NULL; e = e->next) {
+        if (e->info == prev->info) {
+            prev->end = e->end;
+            RemoveEntry(e);
+        } else {
+            prev = e;
+        }
+    }
+
+    count = 0;
+    for (e = exception_scope_entries; e != NULL; e = e->next) {
+        if (e->elements == NULL)
+            RemoveEntry(e);
+        else
+            count++;
+    }
+    return count;
+}
 
 void Exceptions_AppendScopeEntry(PCodeInstruction *context, CException *elements)
 {
@@ -149,12 +208,6 @@ void Exceptions_AppendScopeEntry(PCodeInstruction *context, CException *elements
             PCode_AddSuccessor(context->block, elements->data.specification.label->pclabel);
         elements = elements->next;
     }
-}
-static inline int Exceptions_GetBoundUID(void *object)
-{
-    if (!Registers_GetInfo(object))
-        return 0;
-    return Registers_GetInfo(object)->reg;
 }
 
 void Exceptions_CollectRegisterOperands(CException *node, PCodeOperand *out)
@@ -256,69 +309,6 @@ void Exceptions_CollectRegisterOperands(CException *node, PCodeOperand *out)
     }
 }
 
-void Exceptions_Reset(void)
-
-{
-    int i;
-
-    for (i = 0; i < 0x12; i = i + 1) {
-        object_groups[i] = NULL;
-    }
-    exception_scope_entries = last_exception_scope_entry = NULL;
-    exception_table_relocation_requests = relocation_request_tail = NULL;
-    return;
-}
-
-static void RemoveEntry(ExceptionScopeEntry *e)
-{
-    if (e->previous)
-        e->previous->next = e->next;
-    else
-        exception_scope_entries = e->next;
-    if (e->next)
-        e->next->previous = e->previous;
-}
-
-int compact_exception_scope_entries(void)
-{
-    ExceptionScopeEntry *e;
-    ExceptionScopeEntry *prev;
-    int count;
-
-    if (exception_scope_entries == NULL)
-        return 0;
-
-    for (e = exception_scope_entries; e != NULL; e = e->next) {
-        if (((PCodeInstruction *)e->start)->block->flags & 0x10)
-            RemoveEntry(e);
-    }
-
-    if (exception_scope_entries == NULL)
-        return 0;
-
-    for (e = exception_scope_entries; e != NULL; e = e->next) {
-        e->info = e->elements ? find_or_create_object_group(e->elements) : NULL;
-    }
-
-    prev = exception_scope_entries;
-    for (e = exception_scope_entries->next; e != NULL; e = e->next) {
-        if (e->info == prev->info) {
-            prev->end = e->end;
-            RemoveEntry(e);
-        } else {
-            prev = e;
-        }
-    }
-
-    count = 0;
-    for (e = exception_scope_entries; e != NULL; e = e->next) {
-        if (e->elements == NULL)
-            RemoveEntry(e);
-        else
-            count++;
-    }
-    return count;
-}
 static inline int Exceptions_BoundObjectCount(Object **objectSlot)
 {
     if (Registers_GetInfo(*objectSlot))
@@ -374,6 +364,20 @@ int Exceptions_CountBoundObjectFields(CException *action)
     }
     return count;
 }
+
+void Exceptions_Reset(void)
+
+{
+    int i;
+
+    for (i = 0; i < 0x12; i = i + 1) {
+        object_groups[i] = NULL;
+    }
+    exception_scope_entries = last_exception_scope_entry = NULL;
+    exception_table_relocation_requests = relocation_request_tail = NULL;
+    return;
+}
+
 static inline void append_reference(void *obj, SInt32 offset)
 {
     ObjGenRelocationRequest *it;

@@ -305,6 +305,7 @@ Boolean CSOM_004e3cd0(Type *ftype)
     }
     return 1;
 }
+
 /* "CSOM.c" */
 
 /* In this build the temp-node kind byte compared by the original is 0x3c. */
@@ -429,6 +430,7 @@ void CSOM_GenerateSomselfAssignment(TypeClass *tclass, Statement *stmt)
         }
     }
 }
+
 ENode *CSOM_GetOrCreateLocalObjectNode(TypeClass *value)
 {
     Object *object;
@@ -530,6 +532,167 @@ void CSOM_004e4390(Object *obj)
     }
 }
 
+static TypeClass *GetOwner(void)
+{
+    TypeClass *o;
+    if (!(o = currentNameSpace->theclass) || !o->sominfo) {
+        CError_ReportError(ERR_ILLEGAL_USE_PRAGMA_OUTSIDE_SOM_CLASS);
+        o = NULL;
+    }
+    return o;
+}
+
+static inline TypeClass *CSOM_004e4a30_inline1(void)
+{
+    TypeClass *v0;
+    if (((int)(v0 = currentNameSpace->theclass)) == 0 || v0->sominfo == NULL) {
+        CError_ReportError(ERR_ILLEGAL_USE_PRAGMA_OUTSIDE_SOM_CLASS);
+        v0 = (TypeClass *)0;
+    }
+    return v0;
+}
+
+/* 0x441a70, byte-swap 32 (conditional) */
+/* 0x441ab0, byte-swap 16 (conditional) */
+
+/* Host-order SOM descriptor and its serialized representation. */
+
+static inline Object *MakeKinds(SOMClassBuildState *info)
+{
+    SOMEntry *n;
+    int size;
+    UInt8 *bits;
+    UInt8 *p;
+    unsigned int i;
+    int t;
+
+    size = (info->memberCount + 1) / 2;
+    memclrw(bits = (UInt8 *)CompilerTools_AllocatePool(size), size);
+    for (n = (SOMEntry *)info->members, i = 0; n != NULL; n = n->next, i++) {
+        switch (n->kind) {
+            case 0:
+            case 2:
+                t = i;
+                p = bits;
+                p += t >> 1;
+                if (t & 1)
+                    *p = (*p & 0xf0) | 3;
+                else
+                    *p = (*p & 0x0f) | 0x30;
+                break;
+            case 1:
+                t = i;
+                p = bits;
+                p += t >> 1;
+                if (t & 1)
+                    *p = *p & 0xf0;
+                else
+                    *p = *p & 0x0f;
+                break;
+
+            default:
+                CError_FATAL(1048);
+                break;
+        }
+    }
+    return CInit_DeclareString((char *)bits, size, 0, 0);
+}
+
+static Object *FlushData(void)
+{
+    Object *data;
+    fn_00443190(data_00583548.data);
+    data = CInit_DeclareString(*data_00583548.data, data_00583548.size, 0, 0);
+    fn_004431b0(data_00583548.data);
+    return data;
+}
+
+static void *MakeOverrides(SOMClassBuildState *rec)
+{
+    SOMEntry *p;
+    SOMEntry *ps;
+
+    data_00583548.size = 0;
+    p = ps = (SOMEntry *)rec->members;
+    if (ps) {
+        do {
+            if (p->kind == 1)
+                encode_member_function_types(TYPE_METHOD(p->u.object->type), 1);
+        } while ((p = p->next) != NULL);
+    }
+    return FlushData();
+}
+
+static void *MakeWords(SOMClassBuildState *rec)
+{
+    SOMEntry *p;
+    SOMEntry *ps;
+    int i;
+
+    data_00583548.size = 0;
+    p = ps = (SOMEntry *)rec->members;
+    i = 0;
+    if (ps) {
+        do {
+            if (p->kind == 2) {
+                AppendGListWord(&data_00583548, CTool_EndianConvertWord16(p->u.vt.offset));
+                AppendGListWord(&data_00583548, CTool_EndianConvertWord16(p->u.vt.index));
+                AppendGListWord(&data_00583548, CTool_EndianConvertWord16(i));
+            }
+            i++;
+        } while ((p = p->next) != NULL);
+    }
+    return FlushData();
+}
+
+/* The object is a nibble bit-vector builder over a linked list of records
+ * that carry a one-byte kind at +0xc; the record count lives at +0x2a. */
+
+static inline void CSOM_SetNibble(UInt8 *bits, int i, int value)
+{
+    UInt8 *p;
+    p = bits;
+    p += i >> 1;
+    if (i & 1)
+        *p = (*p & 0xf0) | value;
+    else
+        *p = (*p & 0x0f) | (value << 4);
+}
+
+static void setnumber(int raw, int n)
+{
+    Object *item = (Object *)raw;
+    if (n == 0 && copts.f9d != 0)
+        CError_Warning(ERR_SOM_CLASS_NO_RELEASE_ORDER_LIST);
+    ((TypeMemberFunc *)item->type)->vtbl_index = n;
+}
+
+static SOMInfoEntry *listhead(VClassList *v8)
+{
+    struct SOMInfo *p = ((TypeClass *)v8->base)->sominfo;
+    SOMInfoEntry *h = p->methodNameList;
+    (void)h;
+    return h;
+}
+
+static int basehead(TypeClass *p)
+{
+    int h = (int)p->vbases;
+    (void)h;
+    return h;
+}
+
+ENode *CSOM_CallReleaseObjectReference(TypeClass *unused, ENode *argument)
+{
+    Object *object;
+
+    object = CSOM_004e45b0("somReleaseObjectReference", "pp");
+    if (object != NULL) {
+        return funccallexpr(object, argument, NULL, NULL, NULL);
+    }
+    return nullnode();
+}
+
 ENode *CSOM_BuildNewObjectInstance(TypeClass *cls)
 {
     Object *obj;
@@ -628,14 +791,24 @@ Object *CSOM_004e45b0(char *name, char *signature)
     return NULL;
 }
 
-static TypeClass *GetOwner(void)
+void CSOM_PrependTheClassArg(TypeFunc *function)
 {
-    TypeClass *o;
-    if (!(o = currentNameSpace->theclass) || !o->sominfo) {
-        CError_ReportError(ERR_ILLEGAL_USE_PRAGMA_OUTSIDE_SOM_CLASS);
-        o = NULL;
+    Type *type;
+    TypeFunc *func;
+    FuncArg *arg;
+    HashNameNode *name;
+    func = function;
+    arg = CParser_NewFuncArg();
+    arg->name = GetHashNameNode("__theclass");
+    name = GetHashNameNode("SOMClass");
+    type = CScope_FindTagType(currentNameSpace, name);
+    if (type == NULL) {
+        fn_0043f3e0(281U, name->name);
+        type = &stvoid;
     }
-    return o;
+    arg->type = CDecl_NewPointerType(type);
+    arg->next = func->args;
+    func->args = arg;
 }
 
 void set_owner_target_flag(void)
@@ -696,14 +869,44 @@ void CSOM_ParseBaseClass(void)
     }
 }
 
-static inline TypeClass *CSOM_004e4a30_inline1(void)
+void CSOM_ParseDescriptorValues(void)
 {
-    TypeClass *v0;
-    if (((int)(v0 = currentNameSpace->theclass)) == 0 || v0->sominfo == NULL) {
-        CError_ReportError(ERR_ILLEGAL_USE_PRAGMA_OUTSIDE_SOM_CLASS);
-        v0 = (TypeClass *)0;
+    Type *theclass;
+    if (CPrep_ExpectEndLine(0) != '(') {
+        CPrep_ReportError(114);
+        return;
     }
-    return v0;
+    if (CPrep_ExpectEndLine(0) != -3) {
+        CPrep_ReportError(107);
+        return;
+    }
+    theclass = CScope_FindTagType(currentNameSpace, data_00587fa0);
+    if (!theclass || theclass->type != TYPECLASS || !TYPE_CLASS(theclass)->sominfo) {
+        fn_0043f3e0(276, data_00587fa0->name);
+        return;
+    }
+    if (CPrep_ExpectEndLine(0) != ',') {
+        CPrep_ReportError(116);
+        return;
+    }
+    if (CPrep_ExpectEndLine(0) != -1) {
+        CPrep_ReportError(186);
+        return;
+    }
+    TYPE_CLASS(theclass)->sominfo->descriptorValue0 = intconst_lo;
+    if (CPrep_ExpectEndLine(0) != ',') {
+        CPrep_ReportError(116);
+        return;
+    }
+    if (CPrep_ExpectEndLine(0) != -1) {
+        CPrep_ReportError(186);
+        return;
+    }
+    TYPE_CLASS(theclass)->sominfo->descriptorValue1 = intconst_lo;
+    if (CPrep_ExpectEndLine(0) != ')') {
+        CPrep_ReportError(115);
+        return;
+    }
 }
 
 void CSOM_ParseMethodNameList(void)
@@ -841,99 +1044,6 @@ void initialize_class_data_object(SOMClassBuildState *methods, TypeClass *tclass
 
     tclass->sominfo->classDataObject->type->size = offset;
     fn_004ceab0(tclass->sominfo->classDataObject, buf, init, tclass->sominfo->classDataObject->type->size);
-}
-
-/* 0x441a70, byte-swap 32 (conditional) */
-/* 0x441ab0, byte-swap 16 (conditional) */
-
-/* Host-order SOM descriptor and its serialized representation. */
-
-static inline Object *MakeKinds(SOMClassBuildState *info)
-{
-    SOMEntry *n;
-    int size;
-    UInt8 *bits;
-    UInt8 *p;
-    unsigned int i;
-    int t;
-
-    size = (info->memberCount + 1) / 2;
-    memclrw(bits = (UInt8 *)CompilerTools_AllocatePool(size), size);
-    for (n = (SOMEntry *)info->members, i = 0; n != NULL; n = n->next, i++) {
-        switch (n->kind) {
-            case 0:
-            case 2:
-                t = i;
-                p = bits;
-                p += t >> 1;
-                if (t & 1)
-                    *p = (*p & 0xf0) | 3;
-                else
-                    *p = (*p & 0x0f) | 0x30;
-                break;
-            case 1:
-                t = i;
-                p = bits;
-                p += t >> 1;
-                if (t & 1)
-                    *p = *p & 0xf0;
-                else
-                    *p = *p & 0x0f;
-                break;
-
-            default:
-                CError_FATAL(1048);
-                break;
-        }
-    }
-    return CInit_DeclareString((char *)bits, size, 0, 0);
-}
-
-static Object *FlushData(void)
-{
-    Object *data;
-    fn_00443190(data_00583548.data);
-    data = CInit_DeclareString(*data_00583548.data, data_00583548.size, 0, 0);
-    fn_004431b0(data_00583548.data);
-    return data;
-}
-
-static void *MakeOverrides(SOMClassBuildState *rec)
-{
-    SOMEntry *p;
-    SOMEntry *ps;
-
-    data_00583548.size = 0;
-    p = ps = (SOMEntry *)rec->members;
-    if (ps) {
-        do {
-            if (p->kind == 1)
-                encode_member_function_types(TYPE_METHOD(p->u.object->type), 1);
-        } while ((p = p->next) != NULL);
-    }
-    return FlushData();
-}
-
-static void *MakeWords(SOMClassBuildState *rec)
-{
-    SOMEntry *p;
-    SOMEntry *ps;
-    int i;
-
-    data_00583548.size = 0;
-    p = ps = (SOMEntry *)rec->members;
-    i = 0;
-    if (ps) {
-        do {
-            if (p->kind == 2) {
-                AppendGListWord(&data_00583548, CTool_EndianConvertWord16(p->u.vt.offset));
-                AppendGListWord(&data_00583548, CTool_EndianConvertWord16(p->u.vt.index));
-                AppendGListWord(&data_00583548, CTool_EndianConvertWord16(i));
-            }
-            i++;
-        } while ((p = p->next) != NULL);
-    }
-    return FlushData();
 }
 
 /* Data collected while building a SOM class descriptor. */
@@ -1140,20 +1250,6 @@ void build_descriptor_output(SOMClassBuildState *desc, TypeClass *cls, struct SO
     out->overrideBaseCount = CTool_EndianConvertWord16(desc->overrideBaseCount);
     out->inheritedMemberCount = CTool_EndianConvertWord16(desc->inheritedMemberCount);
     out->descriptorAttribute5 = CTool_EndianConvertWord16(desc->descriptorAttribute5);
-}
-
-/* The object is a nibble bit-vector builder over a linked list of records
- * that carry a one-byte kind at +0xc; the record count lives at +0x2a. */
-
-static inline void CSOM_SetNibble(UInt8 *bits, int i, int value)
-{
-    UInt8 *p;
-    p = bits;
-    p += i >> 1;
-    if (i & 1)
-        *p = (*p & 0xf0) | value;
-    else
-        *p = (*p & 0x0f) | (value << 4);
 }
 
 void emit_som_kind_nibbles(SOMClassBuildState *info)
@@ -1560,26 +1656,6 @@ struct SOMVTable *find_or_add_base(SOMClassBuildState *list, TypeClass *unused, 
     return node;
 }
 
-static void setnumber(int raw, int n)
-{
-    Object *item = (Object *)raw;
-    if (n == 0 && copts.f9d != 0)
-        CError_Warning(ERR_SOM_CLASS_NO_RELEASE_ORDER_LIST);
-    ((TypeMemberFunc *)item->type)->vtbl_index = n;
-}
-static SOMInfoEntry *listhead(VClassList *v8)
-{
-    struct SOMInfo *p = ((TypeClass *)v8->base)->sominfo;
-    SOMInfoEntry *h = p->methodNameList;
-    (void)h;
-    return h;
-}
-static int basehead(TypeClass *p)
-{
-    int h = (int)p->vbases;
-    (void)h;
-    return h;
-}
 void CSOM_CompleteClass(TypeClass *tclass)
 {
     NameSpaceObjectList *next;
@@ -1794,42 +1870,6 @@ Object **build_vtbl_index_table(TypeClass *theclass, SInt32 *count)
     return table;
 }
 
-void CSOM_EncodeMemberFunctionTypes(TypeMemberFunc *function)
-{
-    encode_member_function_types(function, 0);
-}
-
-ENode *CSOM_CallReleaseObjectReference(TypeClass *unused, ENode *argument)
-{
-    Object *object;
-
-    object = CSOM_004e45b0("somReleaseObjectReference", "pp");
-    if (object != NULL) {
-        return funccallexpr(object, argument, NULL, NULL, NULL);
-    }
-    return nullnode();
-}
-
-void CSOM_PrependTheClassArg(TypeFunc *function)
-{
-    Type *type;
-    TypeFunc *func;
-    FuncArg *arg;
-    HashNameNode *name;
-    func = function;
-    arg = CParser_NewFuncArg();
-    arg->name = GetHashNameNode("__theclass");
-    name = GetHashNameNode("SOMClass");
-    type = CScope_FindTagType(currentNameSpace, name);
-    if (type == NULL) {
-        fn_0043f3e0(281U, name->name);
-        type = &stvoid;
-    }
-    arg->type = CDecl_NewPointerType(type);
-    arg->next = func->args;
-    func->args = arg;
-}
-
 void CSOM_InitSOMInfo(TypeClass *type)
 {
     ClassList *base;
@@ -1856,44 +1896,10 @@ void CSOM_InitSOMInfo(TypeClass *type)
         info->classDataObject->flags |= OBJECT_EXPORT;
     }
 }
-void CSOM_ParseDescriptorValues(void)
+
+void CSOM_EncodeMemberFunctionTypes(TypeMemberFunc *function)
 {
-    Type *theclass;
-    if (CPrep_ExpectEndLine(0) != '(') {
-        CPrep_ReportError(114);
-        return;
-    }
-    if (CPrep_ExpectEndLine(0) != -3) {
-        CPrep_ReportError(107);
-        return;
-    }
-    theclass = CScope_FindTagType(currentNameSpace, data_00587fa0);
-    if (!theclass || theclass->type != TYPECLASS || !TYPE_CLASS(theclass)->sominfo) {
-        fn_0043f3e0(276, data_00587fa0->name);
-        return;
-    }
-    if (CPrep_ExpectEndLine(0) != ',') {
-        CPrep_ReportError(116);
-        return;
-    }
-    if (CPrep_ExpectEndLine(0) != -1) {
-        CPrep_ReportError(186);
-        return;
-    }
-    TYPE_CLASS(theclass)->sominfo->descriptorValue0 = intconst_lo;
-    if (CPrep_ExpectEndLine(0) != ',') {
-        CPrep_ReportError(116);
-        return;
-    }
-    if (CPrep_ExpectEndLine(0) != -1) {
-        CPrep_ReportError(186);
-        return;
-    }
-    TYPE_CLASS(theclass)->sominfo->descriptorValue1 = intconst_lo;
-    if (CPrep_ExpectEndLine(0) != ')') {
-        CPrep_ReportError(115);
-        return;
-    }
+    encode_member_function_types(function, 0);
 }
 
 void encode_member_function_types(TypeMemberFunc *t, Boolean flag)

@@ -475,8 +475,7 @@
     ],
     "include_dirs": [
       "src/backend"
-    ],
-    "status": "NonMatching"
+    ]
   },
   "src/backend/PPCError.c": {
     "compiler": "pro53",
@@ -732,8 +731,7 @@
     ],
     "include_dirs": [
       "src/driver"
-    ],
-    "status": "NonMatching"
+    ]
   },
   "src/driver/CLIO.c": {
     "compiler": "pro53",
@@ -817,8 +815,7 @@
     ],
     "include_dirs": [
       "src/driver"
-    ],
-    "status": "NonMatching"
+    ]
   },
   "src/driver/CLPlugins.c": {
     "compiler": "pro53",
@@ -875,8 +872,7 @@
     ],
     "include_dirs": [
       "src/driver"
-    ],
-    "status": "NonMatching"
+    ]
   },
   "src/driver/CLStaticMain.c": {
     "compiler": "pro53",
@@ -973,8 +969,7 @@
       "src/driver",
       "include",
       "include/libc"
-    ],
-    "status": "NonMatching"
+    ]
   },
   "src/driver/ClientGlue.c": {
     "compiler": "pro53",
@@ -1508,8 +1503,7 @@
     ],
     "include_dirs": [
       "src/frontend"
-    ],
-    "status": "NonMatching"
+    ]
   },
   "src/frontend/CExpr2.c": {
     "compiler": "pro53",
@@ -1759,7 +1753,7 @@
     "flags": [
       "-O4,p",
       "-inline",
-      "auto",
+      "auto,deferred",
       "-sym",
       "on",
       "-Cpp_exceptions",
@@ -1783,8 +1777,7 @@
     ],
     "include_dirs": [
       "src/frontend"
-    ],
-    "status": "NonMatching"
+    ]
   },
   "src/frontend/CTemplateFunc.c": {
     "compiler": "pro53",
@@ -3206,8 +3199,7 @@
     ],
     "include_dirs": [
       "src/optimizer"
-    ],
-    "status": "NonMatching"
+    ]
   },
   "src/optimizer/StructMoves.c": {
     "compiler": "pro53",

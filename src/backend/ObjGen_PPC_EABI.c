@@ -123,6 +123,29 @@ void ObjGen_PPC_EABI_EmitSerializedFormat(Object *key, int index)
     return;
 }
 
+/* Eight-byte entries accumulated for an output record. */
+
+/* Partial layouts of the output state and its owners. */
+
+void ObjGen_PPC_EABI_AppendOutputEntry(ObjGenSection *context, unsigned int value)
+{
+    SerializedFormat *entries = context->output->sectionData.serialized->format;
+    if (!entries->kind) {
+        if (!entries->last) {
+            entries->last = (SerializedValueList *)galloc(8U);
+            entries->values = entries->last;
+        } else {
+            entries->last->next = (SerializedValueList *)galloc(8U);
+            entries->last = entries->last->next;
+        }
+        memset(entries->last, 0, 8U);
+        entries->last->value = value;
+        if (entries->count > 32767)
+            CError_FATAL(2466);
+        entries->count += 1;
+    }
+}
+
 void ObjGen_PPC_EABI_AddSectionAttribute(Object *object, UInt8 flags)
 {
     ObjGenSection *info;
@@ -222,6 +245,7 @@ InterruptGenerationRecord *ObjGen_PPC_EABI_GetInterruptInfo(Object *obj)
     CError_ASSERT(2333, info != NULL);
     return info;
 }
+
 #define CE_ASSERT(c, s)                                                                                                \
     do {                                                                                                               \
         if (c)                                                                                                         \
@@ -290,16 +314,58 @@ InterruptGenerationRecord *fn_00488750(Object *object, BE_SymNode *linkage)
     return previous;
 }
 
-GList *ObjGen_PPC_EABI_GetSectionBuffer(ObjGenSection *section)
+UInt16 ObjGen_PPC_EABI_GetSectionIndex(short reg)
 {
-    return &section->buffer;
+    InterruptGenerationRecord *object;
+
+    if (reg < 0) {
+        object = CodeGen_FindInterruptGenerationRecord(reg);
+        return object->sectionIndex;
+    }
+    return reg;
 }
+
+void ObjGen_PPC_EABI_EmitObjectRelocation(Object *object)
+{
+    unsigned int header[3];
+    unsigned int value;
+    ObjGenSection *output;
+    ObjGenSection *records;
+    ObjGenRelocation *record;
+    unsigned int position;
+    value = CTool_EndianConvertWord32(0);
+    output = (ObjGenSection *)*(int *)&data_005884ae;
+    if (output == NULL) {
+        CError_FATAL(2219);
+    }
+    position = output->buffer.size;
+    CompilerTools_AppendGListData(&output->buffer, &value, 4);
+    records = output->relocations;
+    records->relocationCount += 1;
+    record = (ObjGenRelocation *)galloc(24);
+    record->symbol = BE_symbol_GetOrCreateFunctionObjectSymbol(object);
+    record->kind = 1;
+    record->section = records;
+    record->index = records->relocationCount - 1;
+    header[0] = position;
+    header[1] = record->kind & 0xff;
+    header[2] = 0;
+    CompilerTools_AppendGListData(&records->buffer, header, 12);
+    record->next = relocation_list;
+    relocation_list = record;
+}
+
 /* State passed through to the PPC object emitter. */
 /* State passed through to the PPC object emitter. */
 
 void fn_004889b0(ObjGenSection *context, int section, Object *object, UInt8 flags, unsigned int options)
 {
     emit_relocation(flags, section, object, context, options);
+}
+
+GList *ObjGen_PPC_EABI_GetSectionBuffer(ObjGenSection *section)
+{
+    return &section->buffer;
 }
 
 /* Object-file section, symbol and relocation bookkeeping. */
@@ -572,75 +638,6 @@ void ObjGen_PPC_EABI_SetSymbolOffset(Object *object, int offset)
     record->offset = DAT_00580dac + offset;
 }
 
-void fn_00489360(Object *object, int size, void *data)
-{
-    CError_FATAL(1686);
-}
-
-UInt16 ObjGen_PPC_EABI_GetSectionIndex(short reg)
-{
-    InterruptGenerationRecord *object;
-
-    if (reg < 0) {
-        object = CodeGen_FindInterruptGenerationRecord(reg);
-        return object->sectionIndex;
-    }
-    return reg;
-}
-
-/* Eight-byte entries accumulated for an output record. */
-
-/* Partial layouts of the output state and its owners. */
-
-void ObjGen_PPC_EABI_AppendOutputEntry(ObjGenSection *context, unsigned int value)
-{
-    SerializedFormat *entries = context->output->sectionData.serialized->format;
-    if (!entries->kind) {
-        if (!entries->last) {
-            entries->last = (SerializedValueList *)galloc(8U);
-            entries->values = entries->last;
-        } else {
-            entries->last->next = (SerializedValueList *)galloc(8U);
-            entries->last = entries->last->next;
-        }
-        memset(entries->last, 0, 8U);
-        entries->last->value = value;
-        if (entries->count > 32767)
-            CError_FATAL(2466);
-        entries->count += 1;
-    }
-}
-
-void ObjGen_PPC_EABI_EmitObjectRelocation(Object *object)
-{
-    unsigned int header[3];
-    unsigned int value;
-    ObjGenSection *output;
-    ObjGenSection *records;
-    ObjGenRelocation *record;
-    unsigned int position;
-    value = CTool_EndianConvertWord32(0);
-    output = (ObjGenSection *)*(int *)&data_005884ae;
-    if (output == NULL) {
-        CError_FATAL(2219);
-    }
-    position = output->buffer.size;
-    CompilerTools_AppendGListData(&output->buffer, &value, 4);
-    records = output->relocations;
-    records->relocationCount += 1;
-    record = (ObjGenRelocation *)galloc(24);
-    record->symbol = BE_symbol_GetOrCreateFunctionObjectSymbol(object);
-    record->kind = 1;
-    record->section = records;
-    record->index = records->relocationCount - 1;
-    header[0] = position;
-    header[1] = record->kind & 0xff;
-    header[2] = 0;
-    CompilerTools_AppendGListData(&records->buffer, header, 12);
-    record->next = relocation_list;
-    relocation_list = record;
-}
-
 /* PPC object output section and allocation bookkeeping. */
 
 ObjGenSection *fn_004892a0(Object *object, int size)
@@ -668,6 +665,11 @@ ObjGenSection *fn_004892a0(Object *object, int size)
     output_buffer_length = output_buffer_length + size;
     DAT_00580dac = section->buffer.size;
     return section;
+}
+
+void fn_00489360(Object *object, int size, void *data)
+{
+    CError_FATAL(1686);
 }
 
 /* References used by the object emitter. */
@@ -930,6 +932,7 @@ static inline void fill_section_table(void)
         }
     }
 }
+
 static inline SectionSymbolAttributes *ObjGen_Lookup(Object *obj)
 {
     SectionSymbolAttributes *p;
@@ -1378,6 +1381,7 @@ void ObjGen_PPC_EABI_InitSections(void)
         build_section_table(sectionHeaderCount);
     }
 }
+
 static inline void *galloc_clear(long size)
 {
     void *p = galloc(size);
@@ -2074,6 +2078,17 @@ void ObjGen_PPC_EABI_SetObjectSectionIndex(Object *object)
         object->extraQualifiers = name->index;
     }
 }
+
+void fn_0048b2c0(void)
+{
+    return;
+}
+
+void fn_0048b2d0(void)
+{
+    return;
+}
+
 void fn_0048b2e0(void)
 {
     if (DAT_0058849e != '\0') {
@@ -2083,6 +2098,42 @@ void fn_0048b2e0(void)
     FreeGList(&data_00583ae8.buffer);
     fn_004be840();
     fn_004c4be0();
+}
+
+void ObjGen_PPC_EABI_FinalizeOutputBuffers(void)
+{
+    BufferUpdate *update;
+    GList *record;
+    CInit_DeclarePooledStrings();
+    TOC_EmitMemberPointerConstants();
+    if (copts.emitMainFileObject != 0) {
+        create_main_file_object();
+    }
+    update = pending_buffer_updates;
+    while (update != NULL) {
+        if (update->active != 0) {
+            if (update->target->sectionData.section != data_005884de && update->suppressed == 0) {
+                record = &update->target->sectionData.section->buffer;
+                BE_elf_AlignRecord(record, update->target->alignment);
+                update->target->offset = update->target->sectionData.section->buffer.size;
+                AppendGListNoData(&update->target->sectionData.section->buffer, update->target->size);
+            }
+        }
+        update = update->next;
+    }
+    pending_buffer_updates = NULL;
+    fn_0049b920();
+    ShrinkGList(&data_00583ae8.buffer);
+    ((CPrepCU *)cprep_cu)->objectBuffer = data_00583ae8.data;
+    data_00583ae8.data = 0;
+    {
+        CPrepCU *unit = (CPrepCU *)cprep_cu;
+        unit->codeSize = output_buffer_length;
+        unit = (CPrepCU *)cprep_cu;
+        unit->udataSize = object_storage_size;
+        unit = (CPrepCU *)cprep_cu;
+        unit->idataSize = object_data_size;
+    }
 }
 
 void fn_0048b3f0(void)
@@ -2126,52 +2177,6 @@ void fn_0048b500(void)
 {
     BE_symbol_Init();
     BE_elf_InitSectionsAndFileSymbol();
-}
-
-void fn_0048b2d0(void)
-{
-    return;
-}
-
-void fn_0048b2c0(void)
-{
-    return;
-}
-
-void ObjGen_PPC_EABI_FinalizeOutputBuffers(void)
-{
-    BufferUpdate *update;
-    GList *record;
-    CInit_DeclarePooledStrings();
-    TOC_EmitMemberPointerConstants();
-    if (copts.emitMainFileObject != 0) {
-        create_main_file_object();
-    }
-    update = pending_buffer_updates;
-    while (update != NULL) {
-        if (update->active != 0) {
-            if (update->target->sectionData.section != data_005884de && update->suppressed == 0) {
-                record = &update->target->sectionData.section->buffer;
-                BE_elf_AlignRecord(record, update->target->alignment);
-                update->target->offset = update->target->sectionData.section->buffer.size;
-                AppendGListNoData(&update->target->sectionData.section->buffer, update->target->size);
-            }
-        }
-        update = update->next;
-    }
-    pending_buffer_updates = NULL;
-    fn_0049b920();
-    ShrinkGList(&data_00583ae8.buffer);
-    ((CPrepCU *)cprep_cu)->objectBuffer = data_00583ae8.data;
-    data_00583ae8.data = 0;
-    {
-        CPrepCU *unit = (CPrepCU *)cprep_cu;
-        unit->codeSize = output_buffer_length;
-        unit = (CPrepCU *)cprep_cu;
-        unit->udataSize = object_storage_size;
-        unit = (CPrepCU *)cprep_cu;
-        unit->idataSize = object_data_size;
-    }
 }
 
 void emit_dwarf_arguments_and_locals(void)

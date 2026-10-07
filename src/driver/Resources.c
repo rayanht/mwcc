@@ -100,225 +100,12 @@ ResType *append_res_type(ResType **link, unsigned int type, ResEntry *entries, R
     return entry;
 }
 
-struct ResFile *find_resfile_by_refnum(short refnum)
-{
-    ResFile *file = resfile_list;
-
-    while (file != NULL) {
-        if (file->refnum == refnum) {
-            return file;
-        }
-        file = file->next;
-    }
-    return NULL;
-}
-
-int count_types(ResFile *chain)
-{
-    ResType *entry;
-    int count;
-
-    count = 0;
-    entry = chain->types;
-    while (entry != NULL) {
-        entry = entry->next;
-        count = count + 1;
-    }
-    return count;
-}
-
-int count_entries(ResType *list)
-{
-    int count = 0;
-    ResEntry *entry;
-
-    for (entry = list->entries; entry != NULL; entry = entry->next) {
-        ++count;
-    }
-    return count;
-}
-
-ResEntry *find_res_entry(ResFile *file, int type, short id)
-{
-    ResType *record = find_res_type(file, type);
-    ResEntry *entry;
-
-    if (record) {
-        entry = record->entries;
-        while (entry) {
-            if (entry->id == id)
-                return entry;
-            entry = entry->next;
-        }
-    }
-    return NULL;
-}
-
-/* Linked list entry indexed by a 32-bit key. */
-Boolean Resources_FindIdentifier(OSSpec *key, SInt32 *value)
-{
-    IdentifierListNode *entry;
-
-    for (entry = identifier_list; entry != NULL; entry = entry->next) {
-        if (OS_EqualSpec(&entry->fileSpec, key) != 0) {
-            *value = entry->id;
-            return 1;
-        }
-    }
-    return 0;
-}
-
 static inline void StoreBigEndian32(UInt8 *bytes, UInt32 value)
 {
     bytes[0] = (UInt8)((value >> 24) & 0xff);
     bytes[1] = (UInt8)((value >> 16) & 0xff);
     bytes[2] = (UInt8)((value >> 8) & 0xff);
     bytes[3] = (UInt8)(value & 0xff);
-}
-
-int Resources_SetFileTimes(unsigned int fileHandle, UInt32 modificationTime, UInt32 creationTime)
-{
-    ResFile *file;
-    UInt32 times[2];
-    DWORD length;
-    int error;
-
-    if (Resources_FindIdentifierById(fileHandle) == NULL) {
-        times[0] = SWAP32(creationTime);
-        times[1] = SWAP32(modificationTime);
-        length = sizeof(times);
-        error = OS_Seek(fileHandle, 1, 0x52);
-        if (error == 0) {
-            error = OS_Write(fileHandle, times, &length);
-            if (error == 0 && length == sizeof(times))
-                error = 0;
-        }
-        return error;
-    }
-
-    file = find_resfile_by_refnum(OS_RefToMac(fileHandle));
-    if (file == NULL)
-        return 2;
-    if ((file->attrs & 0x80) != 0)
-        return 0xc;
-    StoreBigEndian32(&file->data.modificationTime[0], modificationTime);
-    StoreBigEndian32(&file->data.creationTime[0], creationTime);
-    file->attrs |= 0x20;
-    return 0;
-}
-
-SInt32 fn_004083b0(int handle, UInt32 *secondValue, UInt32 *firstValue)
-{
-    UInt32 values[2];
-    SInt32 byteCount;
-    DWORD result;
-    ResFile *record;
-    signed char *bytes;
-
-    if (Resources_FindIdentifierById(handle) == NULL) {
-        byteCount = 8;
-        result = OS_Seek(handle, 1, 0x52);
-        if (result == 0) {
-            result = OS_Read(handle, values, &byteCount);
-            if (result == 0 && byteCount == 8) {
-                result = 0;
-                values[0] = SWAP32(values[0]);
-                values[1] = SWAP32(values[1]);
-                *firstValue = values[0];
-                *secondValue = values[1];
-            }
-        }
-        return result;
-    }
-
-    record = find_resfile_by_refnum(OS_RefToMac(handle));
-    if (record == NULL) {
-        return 2;
-    }
-    bytes = (signed char *)record;
-    *secondValue = (bytes[0x4e] << 24) | (bytes[0x4f] << 16) | (bytes[0x50] << 8) | bytes[0x51];
-    *firstValue = (bytes[0x4a] << 24) | (bytes[0x4b] << 16) | (bytes[0x4c] << 8) | bytes[0x4d];
-    return 0;
-}
-
-void fn_00408510(struct OSSpec *resourceSpec)
-{
-    fn_00411780(resourceSpec);
-}
-
-#pragma options align = mac68k
-short __stdcall open_resource_fork(void *fileSpec, char mode, short *refNum)
-{
-    struct {
-        union {
-            SInt32 first;
-            Type type;
-        } u;
-        unsigned char name[0x42];
-    } resourceFile;
-    char path[sizeof(OSSpec)];
-    union {
-        OSSpec spec;
-        char path[sizeof(OSSpec)];
-    } resourceSpec;
-    Boolean create = (mode != 1);
-    int error;
-    short result;
-
-    error = MacSpecs_MakeOSSpec(fileSpec, path);
-    if (error != 0)
-        return OS_OSErrorToMacError(error);
-
-    error = MacSpecs_MakeResourceForkSpec(path, &resourceSpec.spec, create);
-    if (error != 0)
-        return OS_OSErrorToMacError(error);
-
-    error = MacSpecs_MakeCWFileSpecFromString(resourceSpec.path, (CWFileSpec *)&resourceFile);
-    if (error != 0)
-        return OS_OSErrorToMacError(error);
-
-    if (OS_Status(&resourceSpec.spec) != 0 && create)
-        Files_CallWithFileSpecFromPath(resourceFile.u.first, resourceFile.u.type.size, resourceFile.name, 0x43574945,
-                                       0x72737263);
-
-    result = Files_OpenFileFromPath(resourceFile.u.first, resourceFile.u.type.size, resourceFile.name, mode, refNum);
-    if (result == 0)
-        append_identifier_list_node(short_predecessor(*refNum), &resourceSpec.spec);
-
-    return result;
-}
-#pragma options align = reset
-
-SInt16 __stdcall open_resource_file(void *param1, SInt8 param2)
-{
-    SInt32 kind;
-    SInt16 local;
-    SInt32 local2;
-    SInt8 c;
-
-    kind = param2;
-    if (kind != 1)
-        Files_CreateFile(param1, 0x43574945, 0x54455854, -1);
-    if (kind == 2)
-        c = 3;
-    else
-        c = param2;
-    resource_error = open_resource_fork(param1, c, &local);
-    if (resource_error == 0) {
-        Files_GetSize(local, &local2);
-        if (local2 == 0 && kind != 1)
-            write_default_binary_record(local);
-        read_resource_file(local, param2, NULL, 0);
-        if (resource_error != 0) {
-            Files_Close(local);
-            close_resource_file(local);
-            local = -1;
-        }
-        current_resfile_refnum = local;
-    } else {
-        local = -1;
-    }
-    return local;
 }
 
 struct ResEntry *insert_res_entry(struct ResEntry **listAddress, UInt16 key, UInt32 value, UInt8 *name, UInt8 flag,
@@ -357,6 +144,19 @@ struct ResEntry *insert_res_entry(struct ResEntry **listAddress, UInt16 key, UIn
     }
     *link = entry;
     return entry;
+}
+
+struct ResFile *find_resfile_by_refnum(short refnum)
+{
+    ResFile *file = resfile_list;
+
+    while (file != NULL) {
+        if (file->refnum == refnum) {
+            return file;
+        }
+        file = file->next;
+    }
+    return NULL;
 }
 
 ResFile *find_resfile_with_previous(short value, ResFile **previous)
@@ -641,6 +441,31 @@ unsigned int calculate_resource_sizes(ResFile *root, unsigned int *dataSize, uns
         }
         *typeSize += 8;
     }
+}
+
+int count_types(ResFile *chain)
+{
+    ResType *entry;
+    int count;
+
+    count = 0;
+    entry = chain->types;
+    while (entry != NULL) {
+        entry = entry->next;
+        count = count + 1;
+    }
+    return count;
+}
+
+int count_entries(ResType *list)
+{
+    int count = 0;
+    ResEntry *entry;
+
+    for (entry = list->entries; entry != NULL; entry = entry->next) {
+        ++count;
+    }
+    return count;
 }
 
 #include <stddef.h>
@@ -942,6 +767,22 @@ ResType *find_res_type(ResFile *list, int key)
     return NULL;
 }
 
+ResEntry *find_res_entry(ResFile *file, int type, short id)
+{
+    ResType *record = find_res_type(file, type);
+    ResEntry *entry;
+
+    if (record) {
+        entry = record->entries;
+        while (entry) {
+            if (entry->id == id)
+                return entry;
+            entry = entry->next;
+        }
+    }
+    return NULL;
+}
+
 ResEntry *find_res_entry_in_files(int lookupArg, short lookupKind)
 {
     ResEntry *result;
@@ -976,55 +817,6 @@ void append_identifier_list_node(SInt32 a, OSSpec *b)
     }
 }
 
-void __stdcall Resources_ClearError(void *handle)
-{
-    resource_error = 0;
-    return;
-}
-
-void __stdcall close_resource_file(short param)
-{
-    if (find_resfile_by_refnum(param) != NULL && param != -1) {
-        write_resource_file(param);
-        free_res_file(param);
-        Files_Close(param);
-    }
-    if (resfile_list != NULL)
-        current_resfile_refnum = resfile_list->refnum;
-    else
-        current_resfile_refnum = 0;
-}
-
-IdentifierListNode *Resources_FindIdentifierById(int id)
-{
-    IdentifierListNode *node;
-
-    node = identifier_list;
-    if (node != NULL) {
-        do {
-            if (node->id == id) {
-                return node;
-            }
-            node = node->next;
-        } while (node != NULL);
-    }
-    return NULL;
-}
-
-unsigned char **Resources_GetHand(SInt32 first, SInt16 second)
-{
-    ResEntry *(*lookup)(int, short) = find_res_entry_in_files;
-    ResEntry *argument = lookup(first, second);
-    unsigned int value;
-    if (argument) {
-        resource_error = 0;
-        return (unsigned char **)argument->hand;
-    }
-    value = data_00588525 ? -192U : 0;
-    resource_error = (short)value;
-    return NULL;
-}
-
 void Resources_RemoveIdentifier(unsigned int key)
 {
     struct IdentifierListNode *entry;
@@ -1051,4 +843,214 @@ void Resources_RemoveIdentifier(unsigned int key)
         }
         free(entry);
     }
+}
+
+IdentifierListNode *Resources_FindIdentifierById(int id)
+{
+    IdentifierListNode *node;
+
+    node = identifier_list;
+    if (node != NULL) {
+        do {
+            if (node->id == id) {
+                return node;
+            }
+            node = node->next;
+        } while (node != NULL);
+    }
+    return NULL;
+}
+
+/* Linked list entry indexed by a 32-bit key. */
+Boolean Resources_FindIdentifier(OSSpec *key, SInt32 *value)
+{
+    IdentifierListNode *entry;
+
+    for (entry = identifier_list; entry != NULL; entry = entry->next) {
+        if (OS_EqualSpec(&entry->fileSpec, key) != 0) {
+            *value = entry->id;
+            return 1;
+        }
+    }
+    return 0;
+}
+
+int Resources_SetFileTimes(unsigned int fileHandle, UInt32 modificationTime, UInt32 creationTime)
+{
+    ResFile *file;
+    UInt32 times[2];
+    DWORD length;
+    int error;
+
+    if (Resources_FindIdentifierById(fileHandle) == NULL) {
+        times[0] = SWAP32(creationTime);
+        times[1] = SWAP32(modificationTime);
+        length = sizeof(times);
+        error = OS_Seek(fileHandle, 1, 0x52);
+        if (error == 0) {
+            error = OS_Write(fileHandle, times, &length);
+            if (error == 0 && length == sizeof(times))
+                error = 0;
+        }
+        return error;
+    }
+
+    file = find_resfile_by_refnum(OS_RefToMac(fileHandle));
+    if (file == NULL)
+        return 2;
+    if ((file->attrs & 0x80) != 0)
+        return 0xc;
+    StoreBigEndian32(&file->data.modificationTime[0], modificationTime);
+    StoreBigEndian32(&file->data.creationTime[0], creationTime);
+    file->attrs |= 0x20;
+    return 0;
+}
+
+SInt32 fn_004083b0(int handle, UInt32 *secondValue, UInt32 *firstValue)
+{
+    UInt32 values[2];
+    SInt32 byteCount;
+    DWORD result;
+    ResFile *record;
+    signed char *bytes;
+
+    if (Resources_FindIdentifierById(handle) == NULL) {
+        byteCount = 8;
+        result = OS_Seek(handle, 1, 0x52);
+        if (result == 0) {
+            result = OS_Read(handle, values, &byteCount);
+            if (result == 0 && byteCount == 8) {
+                result = 0;
+                values[0] = SWAP32(values[0]);
+                values[1] = SWAP32(values[1]);
+                *firstValue = values[0];
+                *secondValue = values[1];
+            }
+        }
+        return result;
+    }
+
+    record = find_resfile_by_refnum(OS_RefToMac(handle));
+    if (record == NULL) {
+        return 2;
+    }
+    bytes = (signed char *)record;
+    *secondValue = (bytes[0x4e] << 24) | (bytes[0x4f] << 16) | (bytes[0x50] << 8) | bytes[0x51];
+    *firstValue = (bytes[0x4a] << 24) | (bytes[0x4b] << 16) | (bytes[0x4c] << 8) | bytes[0x4d];
+    return 0;
+}
+
+void fn_00408510(struct OSSpec *resourceSpec)
+{
+    fn_00411780(resourceSpec);
+}
+
+#pragma options align = mac68k
+
+short __stdcall open_resource_fork(void *fileSpec, char mode, short *refNum)
+{
+    struct {
+        union {
+            SInt32 first;
+            Type type;
+        } u;
+        unsigned char name[0x42];
+    } resourceFile;
+    char path[sizeof(OSSpec)];
+    union {
+        OSSpec spec;
+        char path[sizeof(OSSpec)];
+    } resourceSpec;
+    Boolean create = (mode != 1);
+    int error;
+    short result;
+
+    error = MacSpecs_MakeOSSpec(fileSpec, path);
+    if (error != 0)
+        return OS_OSErrorToMacError(error);
+
+    error = MacSpecs_MakeResourceForkSpec(path, &resourceSpec.spec, create);
+    if (error != 0)
+        return OS_OSErrorToMacError(error);
+
+    error = MacSpecs_MakeCWFileSpecFromString(resourceSpec.path, (CWFileSpec *)&resourceFile);
+    if (error != 0)
+        return OS_OSErrorToMacError(error);
+
+    if (OS_Status(&resourceSpec.spec) != 0 && create)
+        Files_CallWithFileSpecFromPath(resourceFile.u.first, resourceFile.u.type.size, resourceFile.name, 0x43574945,
+                                       0x72737263);
+
+    result = Files_OpenFileFromPath(resourceFile.u.first, resourceFile.u.type.size, resourceFile.name, mode, refNum);
+    if (result == 0)
+        append_identifier_list_node(short_predecessor(*refNum), &resourceSpec.spec);
+
+    return result;
+}
+
+#pragma options align = reset
+
+SInt16 __stdcall open_resource_file(void *param1, SInt8 param2)
+{
+    SInt32 kind;
+    SInt16 local;
+    SInt32 local2;
+    SInt8 c;
+
+    kind = param2;
+    if (kind != 1)
+        Files_CreateFile(param1, 0x43574945, 0x54455854, -1);
+    if (kind == 2)
+        c = 3;
+    else
+        c = param2;
+    resource_error = open_resource_fork(param1, c, &local);
+    if (resource_error == 0) {
+        Files_GetSize(local, &local2);
+        if (local2 == 0 && kind != 1)
+            write_default_binary_record(local);
+        read_resource_file(local, param2, NULL, 0);
+        if (resource_error != 0) {
+            Files_Close(local);
+            close_resource_file(local);
+            local = -1;
+        }
+        current_resfile_refnum = local;
+    } else {
+        local = -1;
+    }
+    return local;
+}
+
+unsigned char **Resources_GetHand(SInt32 first, SInt16 second)
+{
+    ResEntry *(*lookup)(int, short) = find_res_entry_in_files;
+    ResEntry *argument = lookup(first, second);
+    unsigned int value;
+    if (argument) {
+        resource_error = 0;
+        return (unsigned char **)argument->hand;
+    }
+    value = data_00588525 ? -192U : 0;
+    resource_error = (short)value;
+    return NULL;
+}
+
+void __stdcall Resources_ClearError(void *handle)
+{
+    resource_error = 0;
+    return;
+}
+
+void __stdcall close_resource_file(short param)
+{
+    if (find_resfile_by_refnum(param) != NULL && param != -1) {
+        write_resource_file(param);
+        free_res_file(param);
+        Files_Close(param);
+    }
+    if (resfile_list != NULL)
+        current_resfile_refnum = resfile_list->refnum;
+    else
+        current_resfile_refnum = 0;
 }

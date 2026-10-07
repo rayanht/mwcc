@@ -595,55 +595,6 @@ void value_number_block(PCodeBlock *block)
     block->flags |= 4;
 }
 
-void invalidate_register_values(PCodeInstruction *obj)
-{
-    SInt32 i = 0;
-    PCodeOperand *e = obj->operandData.operands;
-    while (i < obj->operand_count) {
-        if ((e->kind == PCOp_GPR || e->kind == PCOp_FPR || e->kind == PCOp_VR || e->kind == PCOp_CRFIELD) &&
-            ((SInt8)e->flags & 2) != 0) {
-            RegisterValueState *t;
-            switch (e->kind) {
-                case PCOp_GPR:
-                    t = &register_value_state_array[e->value.reg];
-                    break;
-                case PCOp_FPR:
-                    t = &fpr_value_states[e->value.reg];
-                    break;
-                case PCOp_VR:
-                    t = &gRegisterValueStates[e->value.reg];
-                    break;
-                case PCOp_CRFIELD:
-                    t = &register_value_states[e->value.reg];
-                    break;
-            }
-            if (t->index < value_index_threshold && next_value_index >= value_index_threshold) {
-                ValueUpdate *n = (ValueUpdate *)CompilerTools_AllocatePoolMemory(0x1c);
-                n->next = data_00582c38;
-                data_00582c38 = n;
-                n->descriptor = *e;
-                n->value = *t;
-            }
-            if (t->value != NULL) {
-                ValueRegisterOperand **pp = &t->value->operands;
-                ValueRegisterOperand *n;
-                while ((n = *pp) != NULL) {
-                    if (n->operand.value.reg == e->value.reg)
-                        *pp = n->next;
-                    else
-                        pp = &n->next;
-                }
-            }
-            t->value = NULL;
-            t->index = next_value_index;
-            next_value_index++;
-        }
-        i++;
-        e++;
-    }
-    invalidate_object_indices(NULL, 1);
-}
-
 void invalidate_instruction_register_values(PCodeInstruction *instruction)
 {
     SInt32 operand_index = 0;
@@ -694,6 +645,55 @@ void invalidate_instruction_register_values(PCodeInstruction *instruction)
             next_value_index++;
         }
     }
+}
+
+void invalidate_register_values(PCodeInstruction *obj)
+{
+    SInt32 i = 0;
+    PCodeOperand *e = obj->operandData.operands;
+    while (i < obj->operand_count) {
+        if ((e->kind == PCOp_GPR || e->kind == PCOp_FPR || e->kind == PCOp_VR || e->kind == PCOp_CRFIELD) &&
+            ((SInt8)e->flags & 2) != 0) {
+            RegisterValueState *t;
+            switch (e->kind) {
+                case PCOp_GPR:
+                    t = &register_value_state_array[e->value.reg];
+                    break;
+                case PCOp_FPR:
+                    t = &fpr_value_states[e->value.reg];
+                    break;
+                case PCOp_VR:
+                    t = &gRegisterValueStates[e->value.reg];
+                    break;
+                case PCOp_CRFIELD:
+                    t = &register_value_states[e->value.reg];
+                    break;
+            }
+            if (t->index < value_index_threshold && next_value_index >= value_index_threshold) {
+                ValueUpdate *n = (ValueUpdate *)CompilerTools_AllocatePoolMemory(0x1c);
+                n->next = data_00582c38;
+                data_00582c38 = n;
+                n->descriptor = *e;
+                n->value = *t;
+            }
+            if (t->value != NULL) {
+                ValueRegisterOperand **pp = &t->value->operands;
+                ValueRegisterOperand *n;
+                while ((n = *pp) != NULL) {
+                    if (n->operand.value.reg == e->value.reg)
+                        *pp = n->next;
+                    else
+                        pp = &n->next;
+                }
+            }
+            t->value = NULL;
+            t->index = next_value_index;
+            next_value_index++;
+        }
+        i++;
+        e++;
+    }
+    invalidate_object_indices(NULL, 1);
 }
 
 void fn_0051ee40(PCodeInstruction *instruction)
@@ -796,6 +796,7 @@ static inline ObjectIndexEntry *fn_0051efd0_inline1(PCodeOperand *operand)
     }
     return NULL;
 }
+
 void assign_object_value_index(PCodeInstruction *entry)
 {
     PCodeInstruction *instruction = entry;
@@ -922,6 +923,7 @@ void value_number_instruction(PCodeInstruction *instruction)
         }
     }
 }
+
 static inline ObjectIndexEntry *fn_0051f320_inline1(Object *object)
 {
     ObjectIndexEntry *entry = objectIndex;

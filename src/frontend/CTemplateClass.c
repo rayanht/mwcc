@@ -700,6 +700,7 @@ void instantiate_ivars(TemplateContext *ctx, TypeClass *dst, TypeClassTemplate *
         out = &m->next;
     }
 }
+
 /* Records used by template argument matching. */
 
 void initialize_enum_constants(TemplateContext *context, struct TemplateClassDeclaration *object, TypeEnum *scope)
@@ -887,6 +888,130 @@ void instantiate_bases(TemplateContext *context, TypeClass *instance, TypeClassT
         CDecl_SetVBaseOffsets(instance);
     }
 }
+
+static unsigned char qualtest(unsigned int a, unsigned int b)
+{
+    return (((a & 1) != 0) && ((b & 1) == 0)) || (((a & 2) != 0) && ((b & 2) == 0));
+}
+
+void CTemplateClass_0051cec0(TemplateContext *context, TypeClassTemplate *templateClass)
+{
+    ObjType *reference = galloc(sizeof(ObjNameSpace));
+    memclrw(reference, sizeof(ObjNameSpace));
+    reference->otype = OT_TYPETAG;
+    reference->access = ACCESSPUBLIC;
+    if (templateClass->templateParameters == NULL) {
+        TypeClassExt800 *instance = create_class_template_instance(templateClass, NULL, NULL);
+        instance->relatedClass = (Type *)context->instance;
+        instance->base.nspace->parent = (NameSpace *)context->instance->nspace;
+        reference->type = (Type *)instance; /* OT_TYPETAG carries a class type here. */
+    } else {
+        TypeClassTemplate *instance = galloc(sizeof(TypeClassTemplate));
+        memclrw(instance, sizeof(*instance));
+        instance->next = class_template_list;
+        class_template_list = instance;
+        instance->base = templateClass->base;
+        instance->enclosingTemplate = (TypeClassTemplate *)context->templateClass;
+        instance->relatedClass = (Type *)context->instance;
+        instance->templateParameters = templateClass->templateParameters;
+        instance->templateArgumentOverrides = NULL;
+        instance->instances = NULL;
+        instance->specializations = NULL;
+        instance->declarations = templateClass->declarations;
+        instance->virtualSlotCount = templateClass->virtualSlotCount;
+        instance->structAlignment = templateClass->structAlignment;
+        instance->hasVirtualFunction = templateClass->hasVirtualFunction;
+        reference->type = (Type *)instance; /* OT_TYPETAG carries a class type here. */
+    }
+    CScope_AddObject(context->instance->nspace, templateClass->base.classname, (ObjBase *)reference);
+}
+
+/* Opaque state copied as six words. */
+/* Records manipulated by this routine; intervening bytes are opaque. */
+
+TypeClassTemplate *CTemplateClass_CreateClassTemplateDeclaration(TypeClass *owner, HashNameNode *arg1, short arg2)
+{
+    TypeClassTemplate *object;
+    struct TemplateListRecord *record;
+    struct TemplateListRecord *tail;
+
+    object = (TypeClassTemplate *)galloc(90);
+    memclrw(object, 90);
+    object->next = class_template_list;
+    class_template_list = object;
+    object->enclosingTemplate = (TypeClassTemplate *)owner;
+    object->templateParameters = NULL;
+    CDecl_DefineClass(owner->nspace, arg1, &object->base, arg2, 0, 1);
+    object->base.flags = FUNC_AUTO_GENERATED;
+
+    record = (struct TemplateListRecord *)galloc(40);
+    memclrw(record, 40);
+    record->value_26 = 0;
+    record->object = object;
+    record->state = *CPrep_GetLastBufferedToken();
+
+    if ((tail = (struct TemplateListRecord *)(*(TypeClassTemplate *)owner).declarations) != NULL) {
+        while (tail->next != NULL) {
+            tail = tail->next;
+        }
+        tail->next = record;
+    } else {
+        (*(TypeClassTemplate *)owner).declarations = (struct TemplateClassDeclaration *)record;
+    }
+
+    return object;
+}
+
+/* Template class record in the candidate chain. */
+/* Temporary list of matching candidates. */
+
+char CTemplateClass_SelectSpecialization(CTStateElem *context, TypeClassTemplate **classType, CTStateElem **result)
+{
+    ClassTemplateSpecialization *entry;
+    TemplateClassMatch *match;
+    TemplateClassMatch *matches;
+
+    {
+        TypeClassExt800 *entry;
+        for (entry = (TypeClassExt800 *)(*classType)->instances; entry != NULL; entry = entry->next) {
+            if (((TypeClassExt800 *)entry)->instantiating != 0 ||
+                ((TypeClassExt800 *)entry)->suppressImplicitInstantiation != 0) {
+                CTStateElem *value = ((TypeClassExt800 *)entry)->templateArgumentOverride
+                                         ? ((TypeClassExt800 *)entry)->templateArgumentOverride
+                                         : ((TypeClassExt800 *)entry)->targs;
+                if (CTemplTool_EqualArgs(context, value))
+                    return 0;
+            }
+        }
+    }
+    matches = NULL;
+    for (entry = (*classType)->specializations; entry != NULL; entry = entry->next) {
+        if (match_specialization_arguments(entry, context, 0) != NULL) {
+            match = (TemplateClassMatch *)CompilerTools_AllocatePool(8);
+            match->next = matches;
+            match->candidate = entry;
+            matches = match;
+        }
+    }
+
+    if (matches != NULL) {
+        if (matches->next != NULL) {
+            matches = remove_less_specialized_matches(matches);
+            if (matches->next != NULL)
+                CError_ReportError(ERR_AMBIGUOUS_USE_PARTIAL_SPECIALIZATION);
+        }
+        if (matches->candidate->type->templateParameters == NULL) {
+            *classType = matches->candidate->type;
+            *result = NULL;
+            return 1;
+        }
+        *classType = matches->candidate->type;
+        *result = match_specialization_arguments(matches->candidate, context, 1);
+        return *result != NULL;
+    }
+    return 0;
+}
+
 /* Linked arguments used by template matching. */
 
 struct TemplateClassMatch *remove_less_specialized_matches(struct TemplateClassMatch *list)
@@ -937,11 +1062,6 @@ struct TemplateClassMatch *remove_less_specialized_matches(struct TemplateClassM
         }
     }
     return list;
-}
-
-static unsigned char qualtest(unsigned int a, unsigned int b)
-{
-    return (((a & 1) != 0) && ((b & 1) == 0)) || (((a & 2) != 0) && ((b & 2) == 0));
 }
 
 unsigned char match_template_arguments(ClassTemplateSpecialization *arguments, ClassTemplateSpecialization *pattern)
@@ -1105,6 +1225,7 @@ CTStateElem *match_specialization_arguments(ClassTemplateSpecialization *argumen
         matched = matched + 1;
     }
 }
+
 /* 0x574388: the CERROR_FILE string "CTemplateClass.c" */
 
 struct TemplateComparisonEntry;
@@ -1342,118 +1463,6 @@ void CTemplateClass_ParsePartialSpecialization(TemplateScopeState *scope, struct
     }
 }
 
-TypeClassExt800 *CTemplateClass_GetInstance(TypeClassTemplate *cls, CTStateElem *key, CTStateElem *flag)
-{
-    TypeClassExt800 *instance = cls->instances;
-
-    while (instance != NULL) {
-        if (flag != NULL)
-            CError_FATAL(353);
-        if (CTemplTool_EqualArgs(key, instance->templateArgumentOverride ? instance->templateArgumentOverride
-                                                                         : instance->targs))
-            return instance;
-        instance = instance->next;
-    }
-    return create_class_template_instance(cls, key, flag);
-}
-/* Records used by the template-class state update; intervening data is opaque. */
-
-unsigned char CTemplateClass_CompleteClassLayout(TypeClassTemplate *state, ClassLayoutInput *values)
-{
-    unsigned char byteValue;
-    state->virtualSlotCount = values->count;
-    byteValue = values->hasVirtualFunction;
-    state->hasVirtualFunction = byteValue;
-    state->base.flags |= CLASS_COMPLETED;
-    return byteValue;
-}
-
-/* Opaque state copied as six words. */
-/* Records manipulated by this routine; intervening bytes are opaque. */
-
-TypeClassTemplate *CTemplateClass_CreateClassTemplateDeclaration(TypeClass *owner, HashNameNode *arg1, short arg2)
-{
-    TypeClassTemplate *object;
-    struct TemplateListRecord *record;
-    struct TemplateListRecord *tail;
-
-    object = (TypeClassTemplate *)galloc(90);
-    memclrw(object, 90);
-    object->next = class_template_list;
-    class_template_list = object;
-    object->enclosingTemplate = (TypeClassTemplate *)owner;
-    object->templateParameters = NULL;
-    CDecl_DefineClass(owner->nspace, arg1, &object->base, arg2, 0, 1);
-    object->base.flags = FUNC_AUTO_GENERATED;
-
-    record = (struct TemplateListRecord *)galloc(40);
-    memclrw(record, 40);
-    record->value_26 = 0;
-    record->object = object;
-    record->state = *CPrep_GetLastBufferedToken();
-
-    if ((tail = (struct TemplateListRecord *)(*(TypeClassTemplate *)owner).declarations) != NULL) {
-        while (tail->next != NULL) {
-            tail = tail->next;
-        }
-        tail->next = record;
-    } else {
-        (*(TypeClassTemplate *)owner).declarations = (struct TemplateClassDeclaration *)record;
-    }
-
-    return object;
-}
-
-/* Template class record in the candidate chain. */
-/* Temporary list of matching candidates. */
-
-char CTemplateClass_SelectSpecialization(CTStateElem *context, TypeClassTemplate **classType, CTStateElem **result)
-{
-    ClassTemplateSpecialization *entry;
-    TemplateClassMatch *match;
-    TemplateClassMatch *matches;
-
-    {
-        TypeClassExt800 *entry;
-        for (entry = (TypeClassExt800 *)(*classType)->instances; entry != NULL; entry = entry->next) {
-            if (((TypeClassExt800 *)entry)->instantiating != 0 ||
-                ((TypeClassExt800 *)entry)->suppressImplicitInstantiation != 0) {
-                CTStateElem *value = ((TypeClassExt800 *)entry)->templateArgumentOverride
-                                         ? ((TypeClassExt800 *)entry)->templateArgumentOverride
-                                         : ((TypeClassExt800 *)entry)->targs;
-                if (CTemplTool_EqualArgs(context, value))
-                    return 0;
-            }
-        }
-    }
-    matches = NULL;
-    for (entry = (*classType)->specializations; entry != NULL; entry = entry->next) {
-        if (match_specialization_arguments(entry, context, 0) != NULL) {
-            match = (TemplateClassMatch *)CompilerTools_AllocatePool(8);
-            match->next = matches;
-            match->candidate = entry;
-            matches = match;
-        }
-    }
-
-    if (matches != NULL) {
-        if (matches->next != NULL) {
-            matches = remove_less_specialized_matches(matches);
-            if (matches->next != NULL)
-                CError_ReportError(ERR_AMBIGUOUS_USE_PARTIAL_SPECIALIZATION);
-        }
-        if (matches->candidate->type->templateParameters == NULL) {
-            *classType = matches->candidate->type;
-            *result = NULL;
-            return 1;
-        }
-        *classType = matches->candidate->type;
-        *result = match_specialization_arguments(matches->candidate, context, 1);
-        return *result != NULL;
-    }
-    return 0;
-}
-
 /* Fixed-size hash-name header, without the variable-length name. */
 /* Two-word payload associated with a keyed list entry. */
 
@@ -1482,6 +1491,21 @@ struct KeyedEntry *CTemplateClass_AddTemplateArgumentOverride(TypeClassTemplate 
     entry->name = *name;
     entry->payload = *payload;
     return entry;
+}
+
+TypeClassExt800 *CTemplateClass_GetInstance(TypeClassTemplate *cls, CTStateElem *key, CTStateElem *flag)
+{
+    TypeClassExt800 *instance = cls->instances;
+
+    while (instance != NULL) {
+        if (flag != NULL)
+            CError_FATAL(353);
+        if (CTemplTool_EqualArgs(key, instance->templateArgumentOverride ? instance->templateArgumentOverride
+                                                                         : instance->targs))
+            return instance;
+        instance = instance->next;
+    }
+    return create_class_template_instance(cls, key, flag);
 }
 
 /* Template-class instance and definition records used by this routine. */
@@ -1543,36 +1567,16 @@ TypeClassExt800 *create_class_template_instance(TypeClassTemplate *definition, v
     return instance;
 }
 
-void CTemplateClass_0051cec0(TemplateContext *context, TypeClassTemplate *templateClass)
+/* Records used by the template-class state update; intervening data is opaque. */
+
+unsigned char CTemplateClass_CompleteClassLayout(TypeClassTemplate *state, ClassLayoutInput *values)
 {
-    ObjType *reference = galloc(sizeof(ObjNameSpace));
-    memclrw(reference, sizeof(ObjNameSpace));
-    reference->otype = OT_TYPETAG;
-    reference->access = ACCESSPUBLIC;
-    if (templateClass->templateParameters == NULL) {
-        TypeClassExt800 *instance = create_class_template_instance(templateClass, NULL, NULL);
-        instance->relatedClass = (Type *)context->instance;
-        instance->base.nspace->parent = (NameSpace *)context->instance->nspace;
-        reference->type = (Type *)instance; /* OT_TYPETAG carries a class type here. */
-    } else {
-        TypeClassTemplate *instance = galloc(sizeof(TypeClassTemplate));
-        memclrw(instance, sizeof(*instance));
-        instance->next = class_template_list;
-        class_template_list = instance;
-        instance->base = templateClass->base;
-        instance->enclosingTemplate = (TypeClassTemplate *)context->templateClass;
-        instance->relatedClass = (Type *)context->instance;
-        instance->templateParameters = templateClass->templateParameters;
-        instance->templateArgumentOverrides = NULL;
-        instance->instances = NULL;
-        instance->specializations = NULL;
-        instance->declarations = templateClass->declarations;
-        instance->virtualSlotCount = templateClass->virtualSlotCount;
-        instance->structAlignment = templateClass->structAlignment;
-        instance->hasVirtualFunction = templateClass->hasVirtualFunction;
-        reference->type = (Type *)instance; /* OT_TYPETAG carries a class type here. */
-    }
-    CScope_AddObject(context->instance->nspace, templateClass->base.classname, (ObjBase *)reference);
+    unsigned char byteValue;
+    state->virtualSlotCount = values->count;
+    byteValue = values->hasVirtualFunction;
+    state->hasVirtualFunction = byteValue;
+    state->base.flags |= CLASS_COMPLETED;
+    return byteValue;
 }
 
 /* Template bookkeeping record and the class extension that owns its list. */
@@ -1639,6 +1643,7 @@ void CTemplateClass_AppendEnumConstDeclaration(TypeClassTemplate *self, ObjEnumC
         self->declarations = (struct TemplateClassDeclaration *)r;
     }
 }
+
 /* Saved opaque template context returned by CPrep_GetLastBufferedToken. */
 /* Pending template instantiation, linked in declaration order. */
 
@@ -1660,6 +1665,34 @@ void CTemplateClass_AppendEnumDeclaration(TypeClassTemplate *type, TypeEnum *val
         type->declarations = (struct TemplateClassDeclaration *)record;
     }
 }
+
+/* Private list records and the containing object's unexamined storage. */
+unsigned int CTemplateClass_PrependTemplateRecordEntry(TypeClassTemplate *list, Type *value, unsigned char value24,
+                                                       unsigned char value25)
+{
+    struct ClassList *last;
+    struct TemplateRecordEntry *entry;
+    struct TemplateRecordEntry *oldHead;
+
+    if ((last = list->base.bases) != NULL) {
+        while (last->next != NULL) {
+            last = last->next;
+        }
+    }
+    entry = galloc(sizeof(*entry));
+    memclrw(entry, sizeof(*entry));
+    entry->tag = 4;
+    entry->value = value;
+    entry->lastBase = last;
+    entry->access = value24;
+    entry->is_virtual = value25;
+    entry->sourcePosition = *CPrep_GetLastBufferedToken();
+    oldHead = (struct TemplateRecordEntry *)list->declarations;
+    entry->next = oldHead;
+    list->declarations = (struct TemplateClassDeclaration *)entry;
+    return (unsigned int)oldHead;
+}
+
 void CTemplateClass_AddDeferredFunctionDeclaration(TypeClassTemplate *classTemplate, DeclInfo *declInfo)
 {
     NewFunc *function;
@@ -1698,6 +1731,7 @@ void CTemplateClass_AddDeferredFunctionDeclaration(TypeClassTemplate *classTempl
         classTemplate->declarations = (struct TemplateClassDeclaration *)declaration;
     }
 }
+
 /* Namespace data copied without its trailing status bytes. */
 /* Record in the class's appended instance chain. */
 /* ClassChainEntry is defined in structs/ClassChainEntry.h. */
@@ -1739,33 +1773,6 @@ char *CTemplateClass_ParseDouble(char *value, double *result, char *error)
     *result = strtod(value, &status);
     *error = errno != 0;
     return status;
-}
-
-/* Private list records and the containing object's unexamined storage. */
-unsigned int CTemplateClass_PrependTemplateRecordEntry(TypeClassTemplate *list, Type *value, unsigned char value24,
-                                                       unsigned char value25)
-{
-    struct ClassList *last;
-    struct TemplateRecordEntry *entry;
-    struct TemplateRecordEntry *oldHead;
-
-    if ((last = list->base.bases) != NULL) {
-        while (last->next != NULL) {
-            last = last->next;
-        }
-    }
-    entry = galloc(sizeof(*entry));
-    memclrw(entry, sizeof(*entry));
-    entry->tag = 4;
-    entry->value = value;
-    entry->lastBase = last;
-    entry->access = value24;
-    entry->is_virtual = value25;
-    entry->sourcePosition = *CPrep_GetLastBufferedToken();
-    oldHead = (struct TemplateRecordEntry *)list->declarations;
-    entry->next = oldHead;
-    list->declarations = (struct TemplateClassDeclaration *)entry;
-    return (unsigned int)oldHead;
 }
 
 #pragma opt_propagation reset

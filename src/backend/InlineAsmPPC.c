@@ -770,6 +770,7 @@ void InlineAsmPPC_ParseInstruction(void)
         instruction->branch_flags |= 0x20;
     asm_instruction_count++;
 }
+
 void InlineAsmPPC_ParseDirectiveIdentifier(void)
 {
     int instruction;
@@ -1054,6 +1055,7 @@ void *create_function_asm_directive(HashNameNode *name, Boolean isGlobal)
     }
     return instruction;
 }
+
 void InlineAsmPPC_Init(char mode)
 {
     void InlineAsmPPC_Initialize(void);
@@ -2288,6 +2290,7 @@ void parse_branch_operand(struct ParsedAsmInstruction *stmt, EncodedOperand *out
 }
 
 #pragma sym on
+
 static inline int register_value_zero(void)
 {
     InlineAsmExpression s;
@@ -2321,7 +2324,9 @@ static inline int register_value_zero(void)
     }
     return result;
 }
+
 #pragma sym reset
+
 void parse_register_operand(EncodedOperand *out, int regClass, Boolean isOutput)
 {
     InlineAsmRegisterEntry *entry;
@@ -2465,34 +2470,6 @@ EncodedOperand *parse_displacement_operand(EncodedOperand *operand, struct Parse
     return operand;
 }
 
-Object *get_struct_or_class_pointer_object(void)
-{
-    struct AsmOperand buf;
-    Object *obj;
-    SInt32 v;
-    Type *type;
-    if (tk != TK_IDENTIFIER)
-        return NULL;
-    InlineAsm_ResolveOperandNameDefault(data_00587fa0, &buf);
-    obj = buf.object;
-    if (obj != NULL) {
-        if (obj->datatype != DLOCAL)
-            return NULL;
-        if (Registers_GetInfo(obj) != NULL)
-            v = Registers_GetInfo(obj)->reg;
-        else
-            v = 0;
-        if (v == 0 && obj->sclass != TK_REGISTER)
-            return NULL;
-        if (obj->type->type != TYPEPOINTER)
-            return NULL;
-        if (TPTR_TARGET(obj->type)->type != TYPESTRUCT && TPTR_TARGET(obj->type)->type != TYPECLASS)
-            return NULL;
-        return obj;
-    }
-    return NULL;
-}
-
 void parse_expression_operand(EncodedOperand *dest, struct ParsedAsmInstruction *instruction, Boolean allowAddress)
 {
     InlineAsmExpression info;
@@ -2632,98 +2609,32 @@ void parse_expression_operand(EncodedOperand *dest, struct ParsedAsmInstruction 
     }
 }
 
-int fn_00469d40(void *arg)
+Object *get_struct_or_class_pointer_object(void)
 {
-    InlineAsmExpression expression;
-    int is_constant;
-    int has_no_objects;
-    int result;
-
-    parse_expression(&expression, (int)arg);
-
-    has_no_objects = 0;
-    is_constant = 0;
-    if (expression.object == NULL && expression.object_label == NULL)
-        has_no_objects = 1;
-    if (has_no_objects && expression.label == NULL)
-        is_constant = 1;
-
-    if (!is_constant) {
-        if (expression.object != NULL) {
-            PPCError_ReportError(0x7a, expression.object->name->name);
-        } else if (expression.object_label != NULL) {
-            PPCError_ReportError(0x7a, expression.object_label->name->name);
-        } else if (expression.label != NULL) {
-            PPCError_ReportError(0xa6, expression.label->name->name);
-        }
-        return 0;
+    struct AsmOperand buf;
+    Object *obj;
+    SInt32 v;
+    Type *type;
+    if (tk != TK_IDENTIFIER)
+        return NULL;
+    InlineAsm_ResolveOperandNameDefault(data_00587fa0, &buf);
+    obj = buf.object;
+    if (obj != NULL) {
+        if (obj->datatype != DLOCAL)
+            return NULL;
+        if (Registers_GetInfo(obj) != NULL)
+            v = Registers_GetInfo(obj)->reg;
+        else
+            v = 0;
+        if (v == 0 && obj->sclass != TK_REGISTER)
+            return NULL;
+        if (obj->type->type != TYPEPOINTER)
+            return NULL;
+        if (TPTR_TARGET(obj->type)->type != TYPESTRUCT && TPTR_TARGET(obj->type)->type != TYPECLASS)
+            return NULL;
+        return obj;
     }
-
-    switch (expression.type) {
-        case 8:
-            result = (SInt16)((expression.value >> 16) + ((expression.value >> 15) & 1));
-            break;
-        case 7:
-            result = (SInt16)(expression.value >> 16);
-            break;
-        case 6:
-            result = (SInt16)expression.value;
-            break;
-        default:
-            result = expression.value;
-            break;
-    }
-    return result;
-}
-
-void parse_binary_expression_tail(InlineAsmExpression *result, int parseMode)
-{
-    short token;
-    short nextPrecedence;
-    short precedence;
-    InlineAsmExpression operand;
-    while (1) {
-        token = tk;
-        tk = CPrepTokenizer_GetNextToken();
-        parse_unary_expression(&operand, parseMode);
-        nextPrecedence = GetPrec(tk);
-        if (nextPrecedence == 0) {
-            evaluate_inline_asm_binary_expression(result, token, &operand);
-            return;
-        }
-        precedence = GetPrec(token);
-        if (precedence >= nextPrecedence) {
-            evaluate_inline_asm_binary_expression(result, token, &operand);
-            continue;
-        }
-        parse_binary_expression_tail(&operand, parseMode);
-        evaluate_inline_asm_binary_expression(result, token, &operand);
-        if (GetPrec(tk) == 0)
-            return;
-    }
-}
-
-void parse_expression(InlineAsmExpression *op, int x)
-{
-    parse_unary_expression(op, x);
-    if (GetPrec(tk)) {
-        parse_binary_expression_tail(op, x);
-    }
-    if (GetPrec(tk)) {
-        parse_binary_expression_tail(op, x);
-    }
-    if (op->type == 5 && tk == TK_IDENTIFIER) {
-        if (!strcmp(data_00587fa0->name, "@l")) {
-            op->type = 6;
-            tk = CPrepTokenizer_GetNextToken();
-        } else if (!strcmp(data_00587fa0->name, "@ha")) {
-            op->type = 8;
-            tk = CPrepTokenizer_GetNextToken();
-        } else if (!strcmp(data_00587fa0->name, "@h")) {
-            op->type = 7;
-            tk = CPrepTokenizer_GetNextToken();
-        }
-    }
+    return NULL;
 }
 
 static inline int register_value(void)
@@ -2768,6 +2679,73 @@ int check_register_value_range(void)
     if ((checked = value = register_value()) < 0 || checked > 31)
         CError_ReportError(ERR_NUMBER_OUT_RANGE);
     return value;
+}
+
+int fn_00469d40(void *arg)
+{
+    InlineAsmExpression expression;
+    int is_constant;
+    int has_no_objects;
+    int result;
+
+    parse_expression(&expression, (int)arg);
+
+    has_no_objects = 0;
+    is_constant = 0;
+    if (expression.object == NULL && expression.object_label == NULL)
+        has_no_objects = 1;
+    if (has_no_objects && expression.label == NULL)
+        is_constant = 1;
+
+    if (!is_constant) {
+        if (expression.object != NULL) {
+            PPCError_ReportError(0x7a, expression.object->name->name);
+        } else if (expression.object_label != NULL) {
+            PPCError_ReportError(0x7a, expression.object_label->name->name);
+        } else if (expression.label != NULL) {
+            PPCError_ReportError(0xa6, expression.label->name->name);
+        }
+        return 0;
+    }
+
+    switch (expression.type) {
+        case 8:
+            result = (SInt16)((expression.value >> 16) + ((expression.value >> 15) & 1));
+            break;
+        case 7:
+            result = (SInt16)(expression.value >> 16);
+            break;
+        case 6:
+            result = (SInt16)expression.value;
+            break;
+        default:
+            result = expression.value;
+            break;
+    }
+    return result;
+}
+
+void parse_expression(InlineAsmExpression *op, int x)
+{
+    parse_unary_expression(op, x);
+    if (GetPrec(tk)) {
+        parse_binary_expression_tail(op, x);
+    }
+    if (GetPrec(tk)) {
+        parse_binary_expression_tail(op, x);
+    }
+    if (op->type == 5 && tk == TK_IDENTIFIER) {
+        if (!strcmp(data_00587fa0->name, "@l")) {
+            op->type = 6;
+            tk = CPrepTokenizer_GetNextToken();
+        } else if (!strcmp(data_00587fa0->name, "@ha")) {
+            op->type = 8;
+            tk = CPrepTokenizer_GetNextToken();
+        } else if (!strcmp(data_00587fa0->name, "@h")) {
+            op->type = 7;
+            tk = CPrepTokenizer_GetNextToken();
+        }
+    }
 }
 
 int parse_range_checked_expression(EncodedOperand *out, SInt32 lo, SInt32 hi)
@@ -2816,6 +2794,33 @@ int parse_range_checked_expression(EncodedOperand *out, SInt32 lo, SInt32 hi)
     out->kind = 1;
     out->data.value = value;
     return value;
+}
+
+void parse_binary_expression_tail(InlineAsmExpression *result, int parseMode)
+{
+    short token;
+    short nextPrecedence;
+    short precedence;
+    InlineAsmExpression operand;
+    while (1) {
+        token = tk;
+        tk = CPrepTokenizer_GetNextToken();
+        parse_unary_expression(&operand, parseMode);
+        nextPrecedence = GetPrec(tk);
+        if (nextPrecedence == 0) {
+            evaluate_inline_asm_binary_expression(result, token, &operand);
+            return;
+        }
+        precedence = GetPrec(token);
+        if (precedence >= nextPrecedence) {
+            evaluate_inline_asm_binary_expression(result, token, &operand);
+            continue;
+        }
+        parse_binary_expression_tail(&operand, parseMode);
+        evaluate_inline_asm_binary_expression(result, token, &operand);
+        if (GetPrec(tk) == 0)
+            return;
+    }
 }
 
 void evaluate_inline_asm_binary_expression(InlineAsmExpression *left, short op, InlineAsmExpression *right)
@@ -3201,6 +3206,53 @@ void parse_unary_expression(InlineAsmExpression *expr, int flag)
     IAExpr_Const(expr, 0);
 }
 
+int parse_constant_in_range(int lowerBound, int upperBound)
+{
+    InlineAsmExpression constant;
+    UInt32 isConstant;
+    int result;
+
+    parse_expression(&constant, 0);
+
+    isConstant = (constant.object == NULL && constant.object_label == NULL) && (constant.label == NULL);
+
+    if (!isConstant) {
+        Object *symbol = constant.object;
+        if (symbol)
+            PPCError_ReportError(0x7a, symbol->name->name);
+        else if (constant.object_label) {
+            Object *secondarySymbol = constant.object_label;
+            PPCError_ReportError(0x7a, secondarySymbol->name->name);
+        } else if (constant.label) {
+            struct CLabel *parameter = constant.label;
+            PPCError_ReportError(0xa6, parameter->name->name);
+        }
+        result = 0;
+    } else {
+        switch (constant.type) {
+            case 8:
+                result = (short)((constant.value >> 16) + ((constant.value >> 15) & 1));
+                break;
+            case 7:
+                result = (short)(constant.value >> 16);
+                break;
+            case 6: {
+                SInt16 value = constant.value;
+                result = value;
+                break;
+            }
+            default:
+                result = constant.value;
+                break;
+        }
+    }
+
+    if (result < lowerBound || result > upperBound)
+        CError_ReportError(ERR_NUMBER_OUT_RANGE);
+
+    return result;
+}
+
 void report_register_error(unsigned int value, unsigned char kind)
 {
     char *selectedData;
@@ -3296,51 +3348,4 @@ void report_binary_expression_error(HashNameNode *name1, HashNameNode *name2, SI
     } else {
         PPCError_ReportError(0x76, name1->name, p, name2->name);
     }
-}
-
-int parse_constant_in_range(int lowerBound, int upperBound)
-{
-    InlineAsmExpression constant;
-    UInt32 isConstant;
-    int result;
-
-    parse_expression(&constant, 0);
-
-    isConstant = (constant.object == NULL && constant.object_label == NULL) && (constant.label == NULL);
-
-    if (!isConstant) {
-        Object *symbol = constant.object;
-        if (symbol)
-            PPCError_ReportError(0x7a, symbol->name->name);
-        else if (constant.object_label) {
-            Object *secondarySymbol = constant.object_label;
-            PPCError_ReportError(0x7a, secondarySymbol->name->name);
-        } else if (constant.label) {
-            struct CLabel *parameter = constant.label;
-            PPCError_ReportError(0xa6, parameter->name->name);
-        }
-        result = 0;
-    } else {
-        switch (constant.type) {
-            case 8:
-                result = (short)((constant.value >> 16) + ((constant.value >> 15) & 1));
-                break;
-            case 7:
-                result = (short)(constant.value >> 16);
-                break;
-            case 6: {
-                SInt16 value = constant.value;
-                result = value;
-                break;
-            }
-            default:
-                result = constant.value;
-                break;
-        }
-    }
-
-    if (result < lowerBound || result > upperBound)
-        CError_ReportError(ERR_NUMBER_OUT_RANGE);
-
-    return result;
 }

@@ -335,6 +335,7 @@ void patch_buffered_token_locations(void)
         }
     }
 }
+
 static void read_precompiled_header_data_at_offset(SInt32 offset, void *buffer, SInt32 size)
 {
     if (CompilerTools_SetFilePosition(precompiled_file, offset) != 0 ||
@@ -644,6 +645,7 @@ SInt16 write_precompiled_file(void)
 
     return 0;
 }
+
 #define CPrec_Pad()                                                                                                    \
     do {                                                                                                               \
         if (data_00581c28 != 0) {                                                                                      \
@@ -1033,105 +1035,6 @@ short encode_zero_runs(char *data, int size)
     return 0;
 }
 
-UInt32 serialize_cprec_nodes(CPrecNode *info)
-{
-    CPrecNode *node = info;
-    SInt32 nodeOffset;
-    SInt32 result;
-    SInt32 specializationOffset;
-    SInt32 firstSpecializationOffset;
-    TemplateSpecializationData *specialization;
-    SInt32 nextOffset;
-
-    if (data_00581c28 != 0) {
-        while ((prec_position & 3) != 0) {
-            AppendGListByte(&precompiled_buffer, 0);
-            prec_position++;
-        }
-    }
-    result = nodeOffset = prec_position;
-    for (;;) {
-        if (node->kind == 0) {
-            memclrw(&node->u.k0.location, sizeof(node->u.k0.location));
-        }
-        if (data_00581c28 != 0) {
-            CompilerTools_AppendGListData(&precompiled_buffer, node, sizeof(*node));
-        }
-        prec_position += sizeof(*node);
-        add_serialized_bucket_entry(nodeOffset + 4, write_object(node->obj));
-        switch (node->kind) {
-            case 0:
-                if (node->u.k0.tokenBuffer.tokens != NULL) {
-                    add_serialized_bucket_entry(
-                        nodeOffset + 0x16,
-                        (SInt32)append_saved_prep_tokens(node->u.k0.tokenBuffer.tokens, node->u.k0.tokenBuffer.count));
-                }
-                if (node->u.k0.contextClass != NULL) {
-                    add_serialized_bucket_entry(nodeOffset + 0x1a, write_type((Type *)node->u.k0.contextClass));
-                }
-                break;
-            case 1:
-                add_serialized_bucket_entry(nodeOffset + 8, write_type((Type *)node->u.k1.classTemplate));
-                add_serialized_bucket_entry(nodeOffset + 0xc, write_type((Type *)node->u.k1.context));
-                add_serialized_bucket_entry(nodeOffset + 0x10,
-                                            serialize_prec_records((TemplateSourceRecordTyped *)node->u.k1.source));
-                break;
-            case 2:
-                add_serialized_bucket_entry(nodeOffset + 8, (SInt32)write_template_function(node->u.k2.definition));
-                specialization = node->u.k2.specialization;
-                if (data_00581c28 != 0) {
-                    while ((prec_position & 3) != 0) {
-                        AppendGListByte(&precompiled_buffer, 0);
-                        prec_position++;
-                    }
-                }
-                firstSpecializationOffset = specializationOffset = prec_position;
-                for (;;) {
-                    if (data_00581c28 != 0) {
-                        CompilerTools_AppendGListData(&precompiled_buffer, specialization, sizeof(*specialization));
-                    }
-                    prec_position += sizeof(*specialization);
-                    add_serialized_bucket_entry(specializationOffset + 4, write_object(specialization->object));
-                    add_serialized_bucket_entry(specializationOffset + 8,
-                                                serialize_ct_state_elems(specialization->templateArguments));
-                    if (specialization->next == NULL) {
-                        break;
-                    }
-                    if (data_00581c28 != 0) {
-                        while ((prec_position & 3) != 0) {
-                            AppendGListByte(&precompiled_buffer, 0);
-                            prec_position++;
-                        }
-                    }
-                    nextOffset = prec_position;
-                    add_serialized_bucket_entry(specializationOffset, nextOffset);
-                    specializationOffset = nextOffset;
-                    specialization = specialization->next;
-                }
-                add_serialized_bucket_entry(nodeOffset + 0xc, firstSpecializationOffset);
-                break;
-            case 3:
-                break;
-            default:
-                CError_FATAL(4045);
-        }
-        if (node->next == NULL) {
-            break;
-        }
-        if (data_00581c28 != 0) {
-            while ((prec_position & 3) != 0) {
-                AppendGListByte(&precompiled_buffer, 0);
-                prec_position++;
-            }
-        }
-        specializationOffset = prec_position;
-        add_serialized_bucket_entry(nodeOffset, specializationOffset);
-        nodeOffset = specializationOffset;
-        node = node->next;
-    }
-    return result;
-}
-
 static inline void *PrecItemAlign(void)
 {
     if (data_00581c28) {
@@ -1142,6 +1045,7 @@ static inline void *PrecItemAlign(void)
     }
     return (void *)prec_position;
 }
+
 static inline void PrecItemData(void *data, SInt32 len)
 {
     if (data_00581c28)
@@ -1154,106 +1058,6 @@ static inline int add_serialized_pointer_entry(SInt32 offset, const void *imageP
     return add_serialized_bucket_entry(offset, (SInt32)imagePosition);
 }
 
-PendingBuffer *serialize_pending_buffers(PendingBuffer *item)
-{
-    PendingBuffer *first;
-    PendingBuffer *current;
-    RelocationList *relocation;
-    RelocationList *currentRelocation;
-    RelocationList *firstRelocation;
-    SInt32 size;
-    char *buffer;
-
-    first = current = PrecItemAlign();
-    while (1) {
-        PendingBuffer *next;
-        PrecItemData(item, sizeof(PendingBuffer));
-        add_serialized_bucket_entry((SInt32)&current->owner, write_object(item->owner));
-        if (item->buffer) {
-            char *data = item->buffer;
-            size = item->owner->type->size;
-            buffer = PrecItemAlign();
-            PrecItemData(data, size);
-            add_serialized_pointer_entry((SInt32)&current->buffer, buffer);
-        }
-        if ((relocation = item->value)) {
-            firstRelocation = currentRelocation = PrecItemAlign();
-            while (1) {
-                RelocationList *nextRelocation;
-                PrecItemData(relocation, sizeof(RelocationList));
-                add_serialized_bucket_entry((SInt32)&currentRelocation->object, write_object(relocation->object));
-                if (!relocation->next)
-                    break;
-                add_serialized_pointer_entry((SInt32)&currentRelocation->next, nextRelocation = PrecItemAlign());
-                currentRelocation = nextRelocation;
-                relocation = relocation->next;
-            }
-            add_serialized_pointer_entry((SInt32)&current->value, firstRelocation);
-        }
-        if (!item->next)
-            break;
-        add_serialized_bucket_entry((SInt32)&current->next, (SInt32)(next = PrecItemAlign()));
-        current = next;
-        item = item->next;
-    }
-    return first;
-}
-
-void serialize_namespace_usings_and_hash(void)
-{
-    SInt32 usingsOffset;
-    SInt32 entryOffset;
-    NameSpaceList *usingEntry;
-    SInt32 nextOffset;
-    SInt32 bucket;
-    SInt32 nameOffset;
-
-    CError_ASSERT(3777, registration_context->is_hash);
-
-    if ((usingEntry = registration_context->usings) != NULL) {
-        if (data_00581c28) {
-            while (prec_position & 3) {
-                AppendGListByte(&precompiled_buffer, 0);
-                prec_position++;
-            }
-        }
-        entryOffset = prec_position;
-        usingsOffset = entryOffset;
-        for (;;) {
-            if (data_00581c28)
-                CompilerTools_AppendGListData(&precompiled_buffer, usingEntry, sizeof(*usingEntry));
-            prec_position += sizeof(*usingEntry);
-            add_serialized_bucket_entry(entryOffset + 4, get_namespace_patch(usingEntry->nspace));
-            if (usingEntry->next == NULL)
-                break;
-            if (data_00581c28) {
-                while (prec_position & 3) {
-                    AppendGListByte(&precompiled_buffer, 0);
-                    prec_position++;
-                }
-            }
-            nextOffset = prec_position;
-            add_serialized_bucket_entry(entryOffset, nextOffset);
-            entryOffset = nextOffset;
-            usingEntry = usingEntry->next;
-        }
-        if (data_00581c28)
-            prec_header->usingsOffset = usingsOffset;
-    }
-    if (data_00581c28)
-        prec_header->nameCount = registration_context->names;
-
-    for (bucket = 0; bucket < 0x400; bucket++) {
-        if (registration_context->data.hash[bucket] != NULL) {
-            nameOffset = write_namespace_name(registration_context->data.hash[bucket], 1);
-            if (data_00581c28) {
-                if (data_00581c26 != 0)
-                    return;
-                prec_header->namespaceNameOffsets[bucket] = nameOffset;
-            }
-        }
-    }
-}
 /* writing the image */
 /* image offset */
 /* image buffer handle */
@@ -1335,40 +1139,6 @@ static NameSpaceList *CPrec_GetNSUsingPatch(NameSpaceList *u)
     return first;
 }
 
-SInt32 get_namespace_patch(NameSpace *nspace)
-{
-    NameSpace *image;
-    CPrecWrittenEntry *entry;
-    NameSpaceName **hashtable;
-    SInt32 i;
-
-    if ((entry = CPrec_FindAddrPatch(nspace)))
-        return (SInt32)entry->image_position;
-    CPrec_NewAddrPatch(nspace, image = CPrec_AppendAlign());
-    CPrec_AppendData(nspace, sizeof(NameSpace));
-    if (nspace->parent)
-        add_serialized_bucket_entry((SInt32)&image->parent, get_namespace_patch(nspace->parent));
-    if (nspace->name)
-        CPrec_NamePatch(&image->name, nspace->name);
-    if (nspace->usings)
-        add_serialized_bucket_entry((SInt32)&image->usings, (SInt32)CPrec_GetNSUsingPatch(nspace->usings));
-    if (nspace->theclass)
-        add_serialized_bucket_entry((SInt32)&image->theclass, write_type((Type *)nspace->theclass));
-    if (nspace->is_hash) {
-        hashtable = CPrec_AppendAlign();
-        add_serialized_bucket_entry((SInt32)&image->data.hash, (SInt32)hashtable);
-        CPrec_AppendData(nspace->data.hash, 0x400 * sizeof(*hashtable));
-        for (i = 0; i < 0x400; i++) {
-            if (nspace->data.hash[i])
-                add_serialized_bucket_entry((SInt32)&hashtable[(UInt32)i],
-                                            write_namespace_name(nspace->data.hash[i], 0));
-        }
-    } else if (nspace->data.list) {
-        add_serialized_bucket_entry((SInt32)&image->data.list, write_namespace_name(nspace->data.list, 0));
-    }
-    return (SInt32)image;
-}
-
 /* writing the image */
 /* image offset */
 /* image buffer handle */
@@ -1402,10 +1172,12 @@ static inline unsigned hash_inner(void *p)
     u.p = p;
     return ((unsigned)p + u.b[0] + u.b[1] + u.b[2] + u.b[3]) & 0x3fff;
 }
+
 static inline unsigned hash(void *p)
 {
     return hash_inner(p);
 }
+
 static inline CPrecWrittenEntry *find(void *p)
 {
     CPrecWrittenEntry *n;
@@ -1414,6 +1186,7 @@ static inline CPrecWrittenEntry *find(void *p)
             return n;
     return NULL;
 }
+
 static inline SInt32 alignbuf(void)
 {
     if (data_00581c28)
@@ -1423,6 +1196,7 @@ static inline SInt32 alignbuf(void)
         }
     return prec_position;
 }
+
 static inline void addpatch(void *p, UInt32 off)
 {
     CPrecWrittenEntry **bucket;
@@ -1434,12 +1208,14 @@ static inline void addpatch(void *p, UInt32 off)
     n->next = *bucket;
     *bucket = n;
 }
+
 static inline void append(void *p, int size)
 {
     if (data_00581c28)
         CompilerTools_AppendGListData(&precompiled_buffer, p, size);
     prec_position += size;
 }
+
 static inline SInt16 flush(void)
 {
     SInt16 err;
@@ -1454,6 +1230,7 @@ static inline SInt16 flush(void)
         err = 0;
     return err;
 }
+
 static inline SInt16 checkflush(void)
 {
     SInt16 err;
@@ -1465,40 +1242,6 @@ static inline SInt16 checkflush(void)
             return data_00581c26 = err;
     }
     return 0;
-}
-SInt32 write_namespace_name(NameSpaceName *namespaceName, Boolean allowFlush)
-{
-    CPrecWrittenEntry *entry;
-    SInt32 currentPosition, firstPosition, nextPosition, patchPosition;
-    HashNameNode *name;
-
-    if ((entry = find(namespaceName)) != NULL)
-        return (SInt32)entry->image_position;
-    firstPosition = currentPosition = alignbuf();
-    addpatch(namespaceName, patchPosition = currentPosition);
-    for (;;) {
-        append(namespaceName, sizeof(NameSpaceName));
-        name = namespaceName->name;
-        name->id = 1;
-        patch_object_reference(currentPosition + 4, name);
-        add_serialized_bucket_entry(currentPosition + 12, dispatch_obj_by_otype(namespaceName->first.object));
-        if (namespaceName->first.next)
-            add_serialized_bucket_entry(currentPosition + 8, write_namespace_object_list(namespaceName->first.next));
-        if (!namespaceName->next)
-            break;
-        if ((entry = find(namespaceName->next)) != NULL) {
-            add_serialized_bucket_entry(currentPosition, (SInt32)entry->image_position);
-            break;
-        }
-        patchPosition = nextPosition = alignbuf();
-        add_serialized_bucket_entry(currentPosition, patchPosition = nextPosition);
-        namespaceName = namespaceName->next;
-        currentPosition = nextPosition;
-        addpatch(namespaceName, patchPosition);
-        if (allowFlush && data_00581c28 && checkflush())
-            break;
-    }
-    return firstPosition;
 }
 
 /* writing the image */
@@ -1524,68 +1267,6 @@ static inline void append_prec_data(void *data, SInt32 len)
     if (data_00581c28)
         CompilerTools_AppendGListData(&precompiled_buffer, data, len);
     prec_position += len;
-}
-
-/* CPrec_NamePatch body */
-
-SInt32 write_namespace_object_list(NameSpaceObjectList *x)
-{
-    CPrecWrittenEntry *e;
-    NameSpaceObjectList *first;
-    NameSpaceObjectList *current;
-    NameSpaceObjectList *next;
-    NameSpaceObjectList *value;
-    NameSpaceObjectList *tmp;
-
-    if ((e = CPrec_FindAddrPatch(x)))
-        return (SInt32)e->image_position;
-    CPrec_NewAddrPatch(x, first = current = append_zero_bytes_to_alignment());
-    while (1) {
-        append_prec_data(x, 8);
-        add_serialized_bucket_entry((SInt32)(&current->object), dispatch_obj_by_otype(x->object));
-        if (!x->next)
-            break;
-        if ((e = CPrec_FindAddrPatch(x->next))) {
-            add_serialized_bucket_entry((SInt32)(&current->next), (SInt32)(e->image_position));
-            break;
-        }
-        value = next = append_zero_bytes_to_alignment();
-        add_serialized_bucket_entry((SInt32)(&current->next), (SInt32)(tmp = next));
-        x = x->next;
-        current = next;
-        CPrec_NewAddrPatch(x, value);
-    }
-    return (SInt32)first;
-}
-
-SInt32 dispatch_obj_by_otype(ObjBase *obj)
-{
-    switch (obj->otype) {
-        default:
-            CError_FATAL(3566);
-        case OT_ENUMCONST: {
-            ObjEnumConst *enumobj = (ObjEnumConst *)obj;
-            return write_enum_const(enumobj);
-        }
-        case OT_TYPE: {
-            ObjType *typeobj = (ObjType *)obj;
-            write_objtype(typeobj);
-            return;
-        }
-        case OT_TYPETAG: {
-            ObjType *typeobj = (ObjType *)obj;
-            append_objtype_image(typeobj);
-            return;
-        }
-        case OT_NAMESPACE:
-            return (SInt32)CPrec_GetObjNameSpacePatch((ObjNameSpace *)obj);
-        case OT_MEMBERVAR: {
-            ObjMemberVar *member = (ObjMemberVar *)obj;
-            return serialize_membervars(member);
-        }
-        case OT_OBJECT:
-            return write_object((Object *)obj);
-    }
 }
 
 static int fn_004da6c0_part1(int p)
@@ -1709,6 +1390,1447 @@ static inline void CPrec_Float(Object *obj, UInt32 off)
     append_data_and_count_size(d, 8);
     add_serialized_bucket_entry((SInt32)(off + 0x26), (SInt32)(cur));
 }
+
+static inline BClassList *membervar_alias_bases(ObjMemberVar *member)
+{
+    return ((MemberVarAlias *)member)->bases;
+}
+
+/* writing the image */
+/* image offset */
+/* image buffer handle */
+/* address patch table */
+/* lalloc */
+/* append byte */
+/* append data */
+
+static inline void *append_zero_alignment_padding(void)
+{
+    if (data_00581c28) {
+        while (prec_position & 3) {
+            AppendGListByte(&precompiled_buffer, 0);
+            prec_position++;
+        }
+    }
+    return (void *)prec_position;
+}
+
+static inline void CPrec_AppendData_004da950(void *data, SInt32 len)
+{
+    if (data_00581c28)
+        CompilerTools_AppendGListData(&precompiled_buffer, data, len);
+    prec_position += len;
+}
+
+/* writing the image */
+/* image offset */
+/* image buffer handle */
+/* address patch table */
+/* lalloc */
+/* append byte */
+/* append data */
+
+static inline void *append_zero_padding_to_alignment(void)
+{
+    if (data_00581c28) {
+        while (prec_position & 3) {
+            AppendGListByte(&precompiled_buffer, 0);
+            prec_position++;
+        }
+    }
+    return (void *)prec_position;
+}
+
+static inline void append_data_and_count_length(void *data, SInt32 len)
+{
+    if (data_00581c28)
+        CompilerTools_AppendGListData(&precompiled_buffer, data, len);
+    prec_position += len;
+}
+
+static inline UInt32 hash_pointer_bytes(void *p)
+{
+    union {
+        void *p;
+        UInt8 b[4];
+    } u;
+    u.p = p;
+    return ((UInt32)p + u.b[0] + u.b[1] + u.b[2] + u.b[3]) & 0x3fff;
+}
+
+static inline CPrecWrittenEntry *find_written_entry_by_object(void *p)
+{
+    CPrecWrittenEntry *n;
+    for (n = written_entry_buckets[hash_pointer_bytes(p)]; n; n = n->next)
+        if (n->object == p)
+            return n;
+    return NULL;
+}
+
+static inline SInt32 align_buffer_to_four_bytes(void)
+{
+    if (data_00581c28)
+        while (prec_position & 3) {
+            AppendGListByte(&precompiled_buffer, 0);
+            prec_position++;
+        }
+    return prec_position;
+}
+
+static inline void add(void *p, UInt32 value)
+{
+    CPrecWrittenEntry **bucket;
+    CPrecWrittenEntry *n;
+    bucket = &written_entry_buckets[hash_pointer_bytes(p)];
+    n = (CPrecWrittenEntry *)CompilerTools_AllocatePool(sizeof(CPrecWrittenEntry));
+    n->object = p;
+    n->image_position = (void *)value;
+    n->next = *bucket;
+    *bucket = n;
+}
+
+static inline void append_enum_const(ObjEnumConst *p)
+{
+    if (data_00581c28)
+        CompilerTools_AppendGListData(&precompiled_buffer, p, 22);
+    prec_position += 22;
+}
+
+static UInt32 CPrec_004daf90_Align(void)
+{
+    if (data_00581c28 != 0) {
+        while ((prec_position & 3) != 0) {
+            AppendGListByte(&precompiled_buffer, 0);
+            prec_position++;
+        }
+    }
+    return prec_position;
+}
+
+/* Align the stream to a 4-byte boundary and return the new position. */
+static SInt32 PrecompBegin(void)
+{
+    if (data_00581c28) {
+        while (prec_position & 3) {
+            AppendGListByte(&precompiled_buffer, 0);
+            prec_position++;
+        }
+    }
+    return prec_position;
+}
+
+/* Append raw bytes to the stream. */
+static void PrecompAppend(ENodeList *data, SInt32 size)
+{
+    if (data_00581c28)
+        CompilerTools_AppendGListData(&precompiled_buffer, data, size);
+    prec_position += size;
+}
+
+/* writing the image */
+/* image offset */
+/* image buffer handle */
+/* address patch table */
+/* lalloc */
+/* append byte */
+/* append data */
+
+static inline void *append_glist_alignment_padding(void)
+{
+    if (data_00581c28) {
+        while (prec_position & 3) {
+            AppendGListByte(&precompiled_buffer, 0);
+            prec_position++;
+        }
+    }
+    return (void *)prec_position;
+}
+
+static inline void CPrec_AppendData_004db910(void *data, SInt32 len)
+{
+    if (data_00581c28)
+        CompilerTools_AppendGListData(&precompiled_buffer, data, len);
+    prec_position += len;
+}
+
+static int CPrec_004dbc00_part1(int p)
+{
+    union {
+        int w;
+        unsigned char b[4];
+    } u;
+    u.w = p;
+    return u.b[0] + p + u.b[1] + u.b[2] + u.b[3] & 16383;
+}
+
+static inline ObjectOffsetEntry *CPrec_004dbc00_inline1(Type *a0, long *out)
+{
+    ObjectOffsetEntry *node;
+    int result;
+    int v1s;
+    node = (ObjectOffsetEntry *)(long)(v1s = ((int *)written_entry_buckets)[CPrec_004dbc00_part1((int)a0)]);
+    if (v1s != 0) {
+        do {
+            if ((int)node->object == (int)a0) {
+                goto found;
+            }
+            node = (ObjectOffsetEntry *)((long)node->next);
+        } while (node);
+    }
+    node = NULL;
+found:
+    *out = (long)node;
+    return (ObjectOffsetEntry *)node;
+}
+
+static inline int CPrec_004dbc00_inline2(Type *p0, int p1)
+{
+    int v3;
+    v3 = align_to_four_byte_boundary();
+    add_written_type_entry(p0, v3);
+    fn_004e0010(p0, p1);
+    return v3;
+}
+
+static UInt32 hashptr(void *p)
+{
+    union {
+        void *pp;
+        UInt8 b[4];
+    } u;
+    u.pp = p;
+    return (u.b[0] + (UInt32)p + u.b[1] + u.b[2] + u.b[3]) & 0x3fff;
+}
+
+static UInt32 align_counter_with_zero_padding(void)
+{
+    if (data_00581c28 != 0) {
+        for (; (prec_position & 3) != 0; prec_position++)
+            AppendGListByte(&precompiled_buffer, 0);
+    }
+    return prec_position;
+}
+
+static CPrecWrittenEntry *findentry(void *key)
+{
+    union {
+        void *pp;
+        UInt8 b[4];
+    } u;
+    UInt32 h;
+    CPrecWrittenEntry *e;
+
+    u.pp = key;
+    h = (u.b[0] + (UInt32)key + u.b[1] + u.b[2] + u.b[3]) & 0x3fff;
+    e = ((CPrecWrittenEntry **)(UInt32)written_entry_buckets)[h];
+    while (e != NULL) {
+        if (e->object == key)
+            return e;
+        e = e->next;
+    }
+    e = NULL;
+    return e;
+}
+
+/* writing the image */
+/* image offset */
+/* image buffer handle */
+/* lalloc */
+/* memclrw */
+/* append byte */
+/* append data */
+/* CPrec_NamePatch body */
+
+static inline void CPrec_AppendDatum(PRecData *u, SavedPrepToken *bp)
+{
+    SInt32 size;
+    void *data;
+    void *p;
+
+    size = u->size;
+    data = u->data;
+    p = CPrec_AppendAlign();
+    CPrec_AppendData(data, size);
+    add_serialized_bucket_entry((SInt32)(&bp->value.data), (SInt32)(p));
+}
+
+static void CPrec_MarkSlot(HashNameNode **dst, HashNameNode *src)
+{
+    if (src) {
+        src->id = 1;
+        patch_object_reference((SInt32)(dst), src);
+    }
+}
+
+/* writing the image */
+/* image offset */
+/* image buffer handle */
+/* address patch table */
+/* lalloc */
+/* append byte */
+/* append data */
+
+static inline void insert_written_entry(void *key, void *value)
+{
+    CPrecWrittenEntry *n;
+    CPrecWrittenEntry **bucket;
+
+    bucket = &written_entry_buckets[CPrec_Hash((SInt32)key)];
+    n = (CPrecWrittenEntry *)CompilerTools_AllocatePool(sizeof(CPrecWrittenEntry));
+    n->object = key;
+    n->image_position = value;
+    n->next = *bucket;
+    *bucket = n;
+}
+
+static inline void *pad_to_four_byte_alignment(void)
+{
+    if (data_00581c28) {
+        while (prec_position & 3) {
+            AppendGListByte(&precompiled_buffer, 0);
+            prec_position++;
+        }
+    }
+    return (void *)prec_position;
+}
+
+static inline void forward_data_and_accumulate_length(void *data, SInt32 len)
+{
+    if (data_00581c28)
+        CompilerTools_AppendGListData(&precompiled_buffer, data, len);
+    prec_position += len;
+}
+
+/* writing the image */
+/* image offset */
+/* image buffer handle */
+/* address patch table */
+/* lalloc */
+/* append byte */
+/* append data */
+
+static inline void *append_zero_bytes_to_align_offset(void)
+{
+    if (data_00581c28) {
+        while (prec_position & 3) {
+            AppendGListByte(&precompiled_buffer, 0);
+            prec_position++;
+        }
+    }
+    return (void *)prec_position;
+}
+
+static inline void CPrec_AppendData_004dd4e0(void *data, SInt32 len)
+{
+    if (data_00581c28)
+        CompilerTools_AppendGListData(&precompiled_buffer, data, len);
+    prec_position += len;
+}
+
+static inline void add_written_entry(void *key, void *value)
+{
+    CPrecWrittenEntry **bucket;
+    CPrecWrittenEntry *n;
+    bucket = &written_entry_buckets[CPrec_Hash((SInt32)key)];
+    n = CompilerTools_AllocatePool(sizeof(CPrecWrittenEntry));
+    n->object = key;
+    n->image_position = value;
+    n->next = *bucket;
+    *bucket = n;
+}
+
+static inline void *align_prec_position(void)
+{
+    if (data_00581c28) {
+        while (prec_position & 3) {
+            AppendGListByte(&precompiled_buffer, 0);
+            prec_position++;
+        }
+    }
+    return (void *)prec_position;
+}
+
+static inline void CPrec_AppendData_004dd660(void *data, SInt32 len)
+{
+    if (data_00581c28)
+        CompilerTools_AppendGListData(&precompiled_buffer, data, len);
+    prec_position += len;
+}
+
+static inline void mark_and_patch_name_reference(void *dst, HashNameNode *name)
+{
+    name->id = 1;
+    patch_object_reference((SInt32)(dst), (void *)(name));
+}
+
+/* writing the image */
+/* image offset */
+/* image buffer handle */
+/* lalloc */
+/* append byte */
+/* append data */
+
+static inline CPrecWrittenEntry *find_object_in_written_entry_bucket(void *key)
+{
+    CPrecWrittenEntry *n;
+    for (n = written_entry_buckets[CPrec_Hash((SInt32)key)]; n != NULL; n = n->next)
+        if (n->object == key)
+            return n;
+    return NULL;
+}
+
+static inline void insert_written_entry_by_object(void *key, void *value)
+{
+    CPrecWrittenEntry **bucket;
+    CPrecWrittenEntry *n;
+
+    bucket = &written_entry_buckets[CPrec_Hash((SInt32)key)];
+    n = (CPrecWrittenEntry *)CompilerTools_AllocatePool(sizeof(CPrecWrittenEntry));
+    n->object = key;
+    n->image_position = value;
+    n->next = *bucket;
+    *bucket = n;
+}
+
+static inline void *append_glist_alignment_bytes(void)
+{
+    if (data_00581c28) {
+        while (prec_position & 3) {
+            AppendGListByte(&precompiled_buffer, 0);
+            prec_position++;
+        }
+    }
+    return (void *)prec_position;
+}
+
+static inline void append_data_and_update_length(void *data, SInt32 len)
+{
+    if (data_00581c28)
+        CompilerTools_AppendGListData(&precompiled_buffer, data, len);
+    prec_position += len;
+}
+
+/* writing the image */
+/* image offset */
+/* image buffer handle */
+/* address patch table */
+/* lalloc */
+/* append byte */
+/* append data */
+
+static inline void *align_to_four(void)
+{
+    if (data_00581c28) {
+        while (prec_position & 3) {
+            AppendGListByte(&precompiled_buffer, 0);
+            prec_position++;
+        }
+    }
+    return (void *)prec_position;
+}
+
+static inline void forward_data_and_accumulate_len(void *data, SInt32 len)
+{
+    if (data_00581c28)
+        CompilerTools_AppendGListData(&precompiled_buffer, data, len);
+    prec_position += len;
+}
+
+/* CPrec_NamePatch body */
+
+static inline int add_serialized_method(MethRec **field, MethRec *position)
+{
+    return add_serialized_bucket_entry((SInt32)field, (SInt32)position);
+}
+
+static inline int add_serialized_selector_link(SelectorMethod **field, SelectorMethod *position)
+{
+    return add_serialized_bucket_entry((SInt32)field, (SInt32)position);
+}
+
+static inline int add_serialized_pointer(const void *field, const void *position)
+{
+    return add_serialized_bucket_entry((SInt32)field, (SInt32)position);
+}
+
+/* writing the image */
+/* image offset */
+/* image buffer handle */
+/* address patch table */
+/* lalloc */
+/* append byte */
+/* append data */
+
+static inline void *pad_position_to_alignment(void)
+{
+    if (data_00581c28) {
+        while (prec_position & 3) {
+            AppendGListByte(&precompiled_buffer, 0);
+            prec_position++;
+        }
+    }
+    return (void *)prec_position;
+}
+
+static inline void CPrec_AppendData_004de570(void *data, SInt32 len)
+{
+    if (data_00581c28)
+        CompilerTools_AppendGListData(&precompiled_buffer, data, len);
+    prec_position += len;
+}
+
+/* writing the image */
+/* image offset */
+/* image buffer handle */
+/* address patch table */
+/* lalloc */
+/* append byte */
+/* append data */
+
+static SInt32 hash_value_bytes(SInt32 value)
+{
+    CPrecBytes b;
+    b.value = value;
+    return (b.bytes[0] + value + b.bytes[1] + b.bytes[2] + b.bytes[3]) & 0x3fff;
+}
+
+static void prepend_written_entry_to_hash_bucket(TypeBitfield *key, TypeBitfield *value)
+{
+    CPrecWrittenEntry **bucket;
+    CPrecWrittenEntry *n;
+
+    bucket = &written_entry_buckets[hash_value_bytes((SInt32)key)];
+    n = (CPrecWrittenEntry *)CompilerTools_AllocatePool(sizeof(CPrecWrittenEntry));
+    n->object = key;
+    n->image_position = value;
+    n->next = *bucket;
+    *bucket = n;
+}
+
+static void *pad_precompiled_buffer(void)
+{
+    if (data_00581c28) {
+        while (prec_position & 3) {
+            AppendGListByte(&precompiled_buffer, 0);
+            prec_position++;
+        }
+    }
+    return (void *)prec_position;
+}
+
+static void append_precompiled_data(TypeBitfield *data, SInt32 len)
+{
+    if (data_00581c28)
+        CompilerTools_AppendGListData(&precompiled_buffer, data, len);
+    prec_position += len;
+}
+
+/* writing the image */
+/* image offset */
+/* image buffer handle */
+/* address patch table */
+/* lalloc */
+/* append byte */
+/* append data */
+
+static SInt32 hash_value(SInt32 value)
+{
+    CPrecBytes b;
+    b.value = value;
+    return (b.bytes[0] + value + b.bytes[1] + b.bytes[2] + b.bytes[3]) & 0x3fff;
+}
+
+static void insert_written_entry_by_key(void *key, void *value)
+{
+    CPrecWrittenEntry **bucket;
+    CPrecWrittenEntry *n;
+
+    bucket = &written_entry_buckets[hash_value((SInt32)key)];
+    n = (CPrecWrittenEntry *)CompilerTools_AllocatePool(sizeof(CPrecWrittenEntry));
+    n->object = key;
+    n->image_position = value;
+    n->next = *bucket;
+    *bucket = n;
+}
+
+static void *CPrec_AppendAlign_004de900(void)
+{
+    if (data_00581c28) {
+        while (prec_position & 3) {
+            AppendGListByte(&precompiled_buffer, 0);
+            prec_position++;
+        }
+    }
+    return (void *)prec_position;
+}
+
+static void append_data_and_count_bytes(void *data, SInt32 len)
+{
+    if (data_00581c28)
+        CompilerTools_AppendGListData(&precompiled_buffer, data, len);
+    prec_position += len;
+}
+
+/* writing the image */
+/* image offset */
+/* image buffer handle */
+/* address patch table */
+/* lalloc */
+/* append byte */
+/* append data */
+
+static inline void *append_zero_bytes_to_align_position(void)
+{
+    if (data_00581c28) {
+        while (prec_position & 3) {
+            AppendGListByte(&precompiled_buffer, 0);
+            prec_position++;
+        }
+    }
+    return (void *)prec_position;
+}
+
+static inline void accumulate_data_length_and_forward_data(void *data, SInt32 len)
+{
+    if (data_00581c28)
+        CompilerTools_AppendGListData(&precompiled_buffer, data, len);
+    prec_position += len;
+}
+
+/* CPrec_NamePatch body */
+
+static inline CPrecWrittenEntry *CPrec_FindAddrPatch_004deb20(void *key)
+{
+    CPrecWrittenEntry *n;
+    for (n = written_entry_buckets[CPrec_Hash((SInt32)key)]; n != NULL; n = n->next)
+        if (n->object == key)
+            return n;
+    return NULL;
+}
+
+static inline void prepend_written_entry(void *key, int value)
+{
+    CPrecWrittenEntry **bucket;
+    CPrecWrittenEntry *n;
+    bucket = &written_entry_buckets[CPrec_Hash((SInt32)key)];
+    n = (CPrecWrittenEntry *)CompilerTools_AllocatePool(sizeof(CPrecWrittenEntry));
+    n->object = key;
+    n->image_position = (void *)value;
+    n->next = *bucket;
+    *bucket = n;
+}
+
+static inline void *append_four_byte_alignment_padding(void)
+{
+    if (data_00581c28) {
+        while (prec_position & 3) {
+            AppendGListByte(&precompiled_buffer, 0);
+            prec_position++;
+        }
+    }
+    return (void *)prec_position;
+}
+
+static inline void append_precompiled_buffer_data(void *data, SInt32 len)
+{
+    if (data_00581c28)
+        CompilerTools_AppendGListData(&precompiled_buffer, data, len);
+    prec_position += len;
+}
+
+static inline void set_name_id_and_forward(void *dst, HashNameNode *name)
+{
+    name->id = 1;
+    (void)patch_object_reference((SInt32)(dst), (void *)(name));
+}
+
+/* writing the image */
+/* image offset */
+/* image buffer handle */
+/* address patch table */
+/* lalloc */
+/* append byte */
+/* append data */
+
+static inline void CPrec_AppendData_004dee40(void *data, SInt32 len)
+{
+    if (data_00581c28)
+        CompilerTools_AppendGListData(&precompiled_buffer, data, len);
+    prec_position += len;
+}
+
+/* CPrec_NamePatch body */
+
+static inline void *append_align(void)
+{
+    if (data_00581c28) {
+        while (prec_position & 3) {
+            AppendGListByte(&precompiled_buffer, 0);
+            prec_position++;
+        }
+    }
+    return (void *)prec_position;
+}
+
+/* writing the image */
+/* image offset */
+/* image buffer handle */
+/* address patch table */
+/* lalloc */
+/* append byte */
+/* append data */
+
+static inline void *align_and_return_offset(void)
+{
+    if (data_00581c28) {
+        while (prec_position & 3) {
+            AppendGListByte(&precompiled_buffer, 0);
+            prec_position++;
+        }
+    }
+    return (void *)prec_position;
+}
+
+static inline void CPrec_AppendData_004df0c0(void *data, SInt32 len)
+{
+    if (data_00581c28)
+        CompilerTools_AppendGListData(&precompiled_buffer, data, len);
+    prec_position += len;
+}
+
+/* CPrec_NamePatch body */
+
+#ifndef DEF_fn_004dbf80
+#endif
+#ifndef DEF_fn_004de740
+#endif
+#ifndef DEF_fn_004de900
+#endif
+#ifndef DEF_fn_004de9e0
+#endif
+#ifndef DEF_fn_004dee40
+#endif
+#ifndef DEF_fn_004deff0
+#endif
+#ifndef DEF_fn_004df0c0
+#endif
+#ifndef DEF_fn_004df290
+#endif
+
+static inline SInt32 CPrec_GetTypePatch(Type *type)
+{
+    CPrecWrittenEntry *e;
+
+    if ((e = fn_004e0680(type)))
+        return (SInt32)e->image_position;
+    switch ((SInt8)type->type) {
+        case TYPEARRAY:
+        case TYPEPOINTER: {
+            TypePointer *pointerType = (TypePointer *)type;
+            return write_pointer_type(pointerType);
+        }
+        case TYPEENUM: {
+            TypeEnum *enumType = (TypeEnum *)type;
+            TypeEnum *(*patchEnum)(TypeEnum *) = append_type_enum;
+            TypeEnum *patch = patchEnum(enumType);
+            return (SInt32)patch;
+        }
+        case TYPEBITFIELD: {
+            TypeBitfield *bitfieldType = (TypeBitfield *)type;
+            TypeBitfield *patch = serialize_type_bitfield(bitfieldType);
+            return (SInt32)patch;
+        }
+        case TYPESTRUCT:
+            return (SInt32)append_type_struct((TypeStruct *)type);
+        case TYPEFUNC: {
+            TypeFunc *functionType = (TypeFunc *)type;
+            TypeFunc *functionPatch = copy_type_func(functionType);
+            return (SInt32)functionPatch;
+        }
+        case TYPEMEMBERPOINTER:
+            return (SInt32)append_member_pointer_type((TypeMemberPointer *)type);
+        case TYPETEMPLATE: {
+            TypeTemplDep *templateType = (TypeTemplDep *)type;
+            return write_templdep(templateType);
+        }
+        case TYPECLASS: {
+            TypeClass *classType = (TypeClass *)type;
+            return write_typeclass(classType);
+        }
+        case TYPEVOID:
+        case TYPEINT:
+        case TYPEFLOAT:
+        case TYPELABEL:
+        case TYPEOBJCID:
+        case TYPETEMPLDEPEXPR:
+        default:
+            CError_FATAL(2691);
+            return 0;
+    }
+}
+
+static inline void patch_serialized_field(const void *field, SInt32 index)
+{
+    add_serialized_bucket_entry((SInt32)field, index);
+}
+
+static inline SInt32 AppendAlign(void)
+{
+    if (data_00581c28)
+        while (prec_position & 3) {
+            AppendGListByte(&precompiled_buffer, 0);
+            prec_position++;
+        }
+    return prec_position;
+}
+
+static inline void NewAddrPatch(TypePointer *ptr, SInt32 value)
+{
+    union {
+        TypePointer *ptr;
+        UInt8 bytes[4];
+    } u;
+    CPrecWrittenEntry **bucket;
+    CPrecWrittenEntry *p;
+    u.ptr = ptr;
+    bucket = (CPrecWrittenEntry *
+                  *)&written_entry_buckets[((UInt32)ptr + u.bytes[0] + u.bytes[1] + u.bytes[2] + u.bytes[3]) & 0x3fff];
+    p = (CPrecWrittenEntry *)CompilerTools_AllocatePool(sizeof(CPrecWrittenEntry));
+    p->object = ptr;
+    p->image_position = (void *)value;
+    p->next = *bucket;
+    *bucket = p;
+}
+
+static inline void AppendData(void *ptr, int size)
+{
+    if (data_00581c28)
+        CompilerTools_AppendGListData(&precompiled_buffer, ptr, size);
+    prec_position += size;
+}
+
+/* writing the image */
+/* image offset */
+/* image buffer handle */
+/* address patch table */
+/* lalloc */
+/* append byte */
+/* append data */
+
+static inline SInt32 append_prec_alignment_padding(void)
+{
+    if (data_00581c28) {
+        while (prec_position & 3) {
+            AppendGListByte(&precompiled_buffer, 0);
+            prec_position++;
+        }
+    }
+    return prec_position;
+}
+
+static inline void CPrec_AppendData_004df620(void *data, SInt32 len)
+{
+    if (data_00581c28)
+        CompilerTools_AppendGListData(&precompiled_buffer, data, len);
+    prec_position += len;
+}
+
+static UInt32 CPrec_HashPtr(const void *key)
+{
+    union {
+        UInt8 b[4];
+        const void *p;
+    } u;
+    u.p = key;
+    return ((UInt32)key + u.b[0] + u.b[1] + u.b[2] + u.b[3]) & 0x3fff;
+}
+
+static CPrecWrittenEntry *CPrec_FindRecord(const void *key)
+{
+    CPrecWrittenEntry *r;
+
+    r = written_entry_buckets[CPrec_HashPtr(key)];
+    while (r != NULL) {
+        if (r->object == key)
+            return r;
+        r = r->next;
+    }
+    return NULL;
+}
+
+static inline void CPrec_AddRecord(const void *key, UInt32 pos)
+{
+    CPrecWrittenEntry *r;
+    UInt32 h;
+    CPrecWrittenEntry **slot;
+
+    h = CPrec_HashPtr(key);
+    slot = &written_entry_buckets[h];
+    r = (CPrecWrittenEntry *)CompilerTools_AllocatePool(12);
+    r->object = (void *)key;
+    r->image_position = (void *)pos;
+    r->next = *slot;
+    *slot = r;
+}
+
+static inline UInt32 CPrec_AppendAlign_004df7a0(void)
+{
+    if (data_00581c28) {
+        while (prec_position & 3) {
+            AppendGListByte(&precompiled_buffer, 0);
+            prec_position++;
+        }
+    }
+    return prec_position;
+}
+
+static inline void CPrec_AppendLong(UInt32 v)
+{
+    if (data_00581c28)
+        AppendGListLong(&precompiled_buffer, v);
+    prec_position += 4;
+}
+
+static inline void CPrec_AppendShort(SInt16 v)
+{
+    if (data_00581c28)
+        AppendGListWord(&precompiled_buffer, v);
+    prec_position += 2;
+}
+
+static inline void CPrec_AppendByte(UInt8 v)
+{
+    if (data_00581c28)
+        AppendGListByte(&precompiled_buffer, v);
+    prec_position += 1;
+}
+
+static inline void CPrec_AppendOffset(void *key)
+{
+    CPrecWrittenEntry *r;
+    SerializedBucketEntry *np;
+
+    if (key != NULL) {
+        if ((r = CPrec_FindRecord(key)) == NULL)
+            CError_FATAL(621);
+        if (data_00581c28) {
+            np = (SerializedBucketEntry *)CompilerTools_AllocatePool(8);
+            np->offset = prec_position;
+            np->next = serialized_bucket_entries;
+            serialized_bucket_entries = np;
+            if ((np->offset & 0x80000001) != 0)
+                CError_FATAL(628);
+        }
+        CPrec_AppendLong((UInt32)r->image_position);
+    } else {
+        CPrec_AppendLong(0);
+    }
+}
+
+static inline void CPrec_AppendObj(HashNameNode *key)
+{
+    if (key != NULL) {
+        CPrec_AppendOffset(key);
+        key->id = 1;
+    }
+}
+
+/* writing the image */
+/* image offset */
+/* image buffer handle */
+/* address patch table */
+/* lalloc */
+/* append byte */
+/* append data */
+
+static inline void *append_prec_alignment(void)
+{
+    if (data_00581c28) {
+        while (prec_position & 3) {
+            AppendGListByte(&precompiled_buffer, 0);
+            prec_position++;
+        }
+    }
+    return (void *)prec_position;
+}
+
+/* CPrec_NamePatch body */
+
+static void CPrec_AppendWord32(SInt32 v)
+{
+    if (data_00581c28)
+        AppendGListLong(&precompiled_buffer, v);
+    prec_position += 4;
+}
+
+static void CPrec_AppendWord16(SInt16 v)
+{
+    if (data_00581c28)
+        AppendGListWord(&precompiled_buffer, v);
+    prec_position += 2;
+}
+
+static void CPrec_AppendString(const char *s)
+{
+    SInt32 len = strlen(s) + 1;
+    if (data_00581c28)
+        CompilerTools_AppendGListData(&precompiled_buffer, (void *)s, len);
+    prec_position += len;
+}
+
+/* Linked entries stored in the serialization buckets. */
+
+void write_serialized_buckets(void)
+{
+    SerializedBucketEntry *entry;
+    unsigned int value;
+    int entryCount;
+    int bucketIndex;
+
+    bucketIndex = 0;
+    if (0 < serialized_bucket_count) {
+        do {
+            entryCount = 0;
+            entry = serialized_buckets[bucketIndex].list;
+            while (entry != NULL) {
+                entry = entry->next;
+                entryCount = entryCount + 1;
+            }
+            if (entryCount != 0) {
+                if (data_00581c28 != '\0') {
+                    AppendGListLong(&precompiled_buffer, entryCount);
+                }
+                prec_position += 4;
+                if (data_00581c28 != '\0') {
+                    AppendGListLong(&precompiled_buffer, bucketIndex);
+                }
+                prec_position += 4;
+                for (entry = serialized_buckets[bucketIndex].list; entry != NULL; entry = entry->next) {
+                    value = entry->offset;
+                    if (data_00581c28 != '\0') {
+                        AppendGListLong(&precompiled_buffer, value);
+                    }
+                    prec_position += 4;
+                }
+            }
+            bucketIndex = bucketIndex + 1;
+        } while (bucketIndex < serialized_bucket_count);
+    }
+    if (data_00581c28 != '\0') {
+        AppendGListLong(&precompiled_buffer, 0);
+    }
+    prec_position += 4;
+}
+
+UInt32 serialize_cprec_nodes(CPrecNode *info)
+{
+    CPrecNode *node = info;
+    SInt32 nodeOffset;
+    SInt32 result;
+    SInt32 specializationOffset;
+    SInt32 firstSpecializationOffset;
+    TemplateSpecializationData *specialization;
+    SInt32 nextOffset;
+
+    if (data_00581c28 != 0) {
+        while ((prec_position & 3) != 0) {
+            AppendGListByte(&precompiled_buffer, 0);
+            prec_position++;
+        }
+    }
+    result = nodeOffset = prec_position;
+    for (;;) {
+        if (node->kind == 0) {
+            memclrw(&node->u.k0.location, sizeof(node->u.k0.location));
+        }
+        if (data_00581c28 != 0) {
+            CompilerTools_AppendGListData(&precompiled_buffer, node, sizeof(*node));
+        }
+        prec_position += sizeof(*node);
+        add_serialized_bucket_entry(nodeOffset + 4, write_object(node->obj));
+        switch (node->kind) {
+            case 0:
+                if (node->u.k0.tokenBuffer.tokens != NULL) {
+                    add_serialized_bucket_entry(
+                        nodeOffset + 0x16,
+                        (SInt32)append_saved_prep_tokens(node->u.k0.tokenBuffer.tokens, node->u.k0.tokenBuffer.count));
+                }
+                if (node->u.k0.contextClass != NULL) {
+                    add_serialized_bucket_entry(nodeOffset + 0x1a, write_type((Type *)node->u.k0.contextClass));
+                }
+                break;
+            case 1:
+                add_serialized_bucket_entry(nodeOffset + 8, write_type((Type *)node->u.k1.classTemplate));
+                add_serialized_bucket_entry(nodeOffset + 0xc, write_type((Type *)node->u.k1.context));
+                add_serialized_bucket_entry(nodeOffset + 0x10,
+                                            serialize_prec_records((TemplateSourceRecordTyped *)node->u.k1.source));
+                break;
+            case 2:
+                add_serialized_bucket_entry(nodeOffset + 8, (SInt32)write_template_function(node->u.k2.definition));
+                specialization = node->u.k2.specialization;
+                if (data_00581c28 != 0) {
+                    while ((prec_position & 3) != 0) {
+                        AppendGListByte(&precompiled_buffer, 0);
+                        prec_position++;
+                    }
+                }
+                firstSpecializationOffset = specializationOffset = prec_position;
+                for (;;) {
+                    if (data_00581c28 != 0) {
+                        CompilerTools_AppendGListData(&precompiled_buffer, specialization, sizeof(*specialization));
+                    }
+                    prec_position += sizeof(*specialization);
+                    add_serialized_bucket_entry(specializationOffset + 4, write_object(specialization->object));
+                    add_serialized_bucket_entry(specializationOffset + 8,
+                                                serialize_ct_state_elems(specialization->templateArguments));
+                    if (specialization->next == NULL) {
+                        break;
+                    }
+                    if (data_00581c28 != 0) {
+                        while ((prec_position & 3) != 0) {
+                            AppendGListByte(&precompiled_buffer, 0);
+                            prec_position++;
+                        }
+                    }
+                    nextOffset = prec_position;
+                    add_serialized_bucket_entry(specializationOffset, nextOffset);
+                    specializationOffset = nextOffset;
+                    specialization = specialization->next;
+                }
+                add_serialized_bucket_entry(nodeOffset + 0xc, firstSpecializationOffset);
+                break;
+            case 3:
+                break;
+            default:
+                CError_FATAL(4045);
+        }
+        if (node->next == NULL) {
+            break;
+        }
+        if (data_00581c28 != 0) {
+            while ((prec_position & 3) != 0) {
+                AppendGListByte(&precompiled_buffer, 0);
+                prec_position++;
+            }
+        }
+        specializationOffset = prec_position;
+        add_serialized_bucket_entry(nodeOffset, specializationOffset);
+        nodeOffset = specializationOffset;
+        node = node->next;
+    }
+    return result;
+}
+
+unsigned int serialize_pending_object_class_list(struct PendingObjectClass *entry)
+{
+    SInt32 firstOffset;
+    SInt32 valueOffset;
+    SInt32 recordOffset;
+
+    if (data_00581c28 != '\0') {
+        while ((prec_position & 3) != 0) {
+            AppendGListByte(&precompiled_buffer, 0);
+            prec_position += 1;
+        }
+    }
+    recordOffset = prec_position;
+    firstOffset = prec_position;
+    for (;;) {
+        if (data_00581c28 != '\0') {
+            CompilerTools_AppendGListData(&precompiled_buffer, entry, sizeof(*entry));
+        }
+        prec_position += sizeof(*entry);
+        valueOffset = write_object(entry->object);
+        add_serialized_bucket_entry(recordOffset + 4, valueOffset);
+        valueOffset = write_type((Type *)entry->theclass);
+        add_serialized_bucket_entry(recordOffset + 8, valueOffset);
+        if (entry->next == NULL)
+            break;
+        if (data_00581c28 != '\0') {
+            while ((prec_position & 3) != 0) {
+                AppendGListByte(&precompiled_buffer, 0);
+                prec_position += 1;
+            }
+        }
+        valueOffset = prec_position;
+        add_serialized_bucket_entry(recordOffset, valueOffset);
+        recordOffset = valueOffset;
+        entry = entry->next;
+    }
+    return firstOffset;
+}
+
+PendingBuffer *serialize_pending_buffers(PendingBuffer *item)
+{
+    PendingBuffer *first;
+    PendingBuffer *current;
+    RelocationList *relocation;
+    RelocationList *currentRelocation;
+    RelocationList *firstRelocation;
+    SInt32 size;
+    char *buffer;
+
+    first = current = PrecItemAlign();
+    while (1) {
+        PendingBuffer *next;
+        PrecItemData(item, sizeof(PendingBuffer));
+        add_serialized_bucket_entry((SInt32)&current->owner, write_object(item->owner));
+        if (item->buffer) {
+            char *data = item->buffer;
+            size = item->owner->type->size;
+            buffer = PrecItemAlign();
+            PrecItemData(data, size);
+            add_serialized_pointer_entry((SInt32)&current->buffer, buffer);
+        }
+        if ((relocation = item->value)) {
+            firstRelocation = currentRelocation = PrecItemAlign();
+            while (1) {
+                RelocationList *nextRelocation;
+                PrecItemData(relocation, sizeof(RelocationList));
+                add_serialized_bucket_entry((SInt32)&currentRelocation->object, write_object(relocation->object));
+                if (!relocation->next)
+                    break;
+                add_serialized_pointer_entry((SInt32)&currentRelocation->next, nextRelocation = PrecItemAlign());
+                currentRelocation = nextRelocation;
+                relocation = relocation->next;
+            }
+            add_serialized_pointer_entry((SInt32)&current->value, firstRelocation);
+        }
+        if (!item->next)
+            break;
+        add_serialized_bucket_entry((SInt32)&current->next, (SInt32)(next = PrecItemAlign()));
+        current = next;
+        item = item->next;
+    }
+    return first;
+}
+
+unsigned int write_csomrefnode_list(struct CSOMRefNode *record)
+{
+    unsigned int listOffset;
+    SInt32 offset;
+    SInt32 recordOffset;
+
+    if (data_00581c28 != 0) {
+        while ((prec_position & 3) != 0) {
+            AppendGListByte(&precompiled_buffer, 0);
+            prec_position += 1;
+        }
+    }
+    recordOffset = prec_position;
+    listOffset = prec_position;
+    for (;;) {
+        if (data_00581c28 != 0) {
+            CompilerTools_AppendGListData(&precompiled_buffer, record, 0x12);
+        }
+        prec_position += 0x12;
+        offset = write_object(record->object);
+        add_serialized_bucket_entry(recordOffset + 4, offset);
+        offset = write_type((Type *)record->theclass);
+        add_serialized_bucket_entry(recordOffset + 8, offset);
+        if (record->next == NULL)
+            break;
+        if (data_00581c28 != 0) {
+            while ((prec_position & 3) != 0) {
+                AppendGListByte(&precompiled_buffer, 0);
+                prec_position += 1;
+            }
+        }
+        offset = prec_position;
+        add_serialized_bucket_entry(recordOffset, offset);
+        recordOffset = offset;
+        record = record->next;
+    }
+    return listOffset;
+}
+
+void serialize_namespace_usings_and_hash(void)
+{
+    SInt32 usingsOffset;
+    SInt32 entryOffset;
+    NameSpaceList *usingEntry;
+    SInt32 nextOffset;
+    SInt32 bucket;
+    SInt32 nameOffset;
+
+    CError_ASSERT(3777, registration_context->is_hash);
+
+    if ((usingEntry = registration_context->usings) != NULL) {
+        if (data_00581c28) {
+            while (prec_position & 3) {
+                AppendGListByte(&precompiled_buffer, 0);
+                prec_position++;
+            }
+        }
+        entryOffset = prec_position;
+        usingsOffset = entryOffset;
+        for (;;) {
+            if (data_00581c28)
+                CompilerTools_AppendGListData(&precompiled_buffer, usingEntry, sizeof(*usingEntry));
+            prec_position += sizeof(*usingEntry);
+            add_serialized_bucket_entry(entryOffset + 4, get_namespace_patch(usingEntry->nspace));
+            if (usingEntry->next == NULL)
+                break;
+            if (data_00581c28) {
+                while (prec_position & 3) {
+                    AppendGListByte(&precompiled_buffer, 0);
+                    prec_position++;
+                }
+            }
+            nextOffset = prec_position;
+            add_serialized_bucket_entry(entryOffset, nextOffset);
+            entryOffset = nextOffset;
+            usingEntry = usingEntry->next;
+        }
+        if (data_00581c28)
+            prec_header->usingsOffset = usingsOffset;
+    }
+    if (data_00581c28)
+        prec_header->nameCount = registration_context->names;
+
+    for (bucket = 0; bucket < 0x400; bucket++) {
+        if (registration_context->data.hash[bucket] != NULL) {
+            nameOffset = write_namespace_name(registration_context->data.hash[bucket], 1);
+            if (data_00581c28) {
+                if (data_00581c26 != 0)
+                    return;
+                prec_header->namespaceNameOffsets[bucket] = nameOffset;
+            }
+        }
+    }
+}
+
+SInt32 get_namespace_patch(NameSpace *nspace)
+{
+    NameSpace *image;
+    CPrecWrittenEntry *entry;
+    NameSpaceName **hashtable;
+    SInt32 i;
+
+    if ((entry = CPrec_FindAddrPatch(nspace)))
+        return (SInt32)entry->image_position;
+    CPrec_NewAddrPatch(nspace, image = CPrec_AppendAlign());
+    CPrec_AppendData(nspace, sizeof(NameSpace));
+    if (nspace->parent)
+        add_serialized_bucket_entry((SInt32)&image->parent, get_namespace_patch(nspace->parent));
+    if (nspace->name)
+        CPrec_NamePatch(&image->name, nspace->name);
+    if (nspace->usings)
+        add_serialized_bucket_entry((SInt32)&image->usings, (SInt32)CPrec_GetNSUsingPatch(nspace->usings));
+    if (nspace->theclass)
+        add_serialized_bucket_entry((SInt32)&image->theclass, write_type((Type *)nspace->theclass));
+    if (nspace->is_hash) {
+        hashtable = CPrec_AppendAlign();
+        add_serialized_bucket_entry((SInt32)&image->data.hash, (SInt32)hashtable);
+        CPrec_AppendData(nspace->data.hash, 0x400 * sizeof(*hashtable));
+        for (i = 0; i < 0x400; i++) {
+            if (nspace->data.hash[i])
+                add_serialized_bucket_entry((SInt32)&hashtable[(UInt32)i],
+                                            write_namespace_name(nspace->data.hash[i], 0));
+        }
+    } else if (nspace->data.list) {
+        add_serialized_bucket_entry((SInt32)&image->data.list, write_namespace_name(nspace->data.list, 0));
+    }
+    return (SInt32)image;
+}
+
+SInt32 write_namespace_name(NameSpaceName *namespaceName, Boolean allowFlush)
+{
+    CPrecWrittenEntry *entry;
+    SInt32 currentPosition, firstPosition, nextPosition, patchPosition;
+    HashNameNode *name;
+
+    if ((entry = find(namespaceName)) != NULL)
+        return (SInt32)entry->image_position;
+    firstPosition = currentPosition = alignbuf();
+    addpatch(namespaceName, patchPosition = currentPosition);
+    for (;;) {
+        append(namespaceName, sizeof(NameSpaceName));
+        name = namespaceName->name;
+        name->id = 1;
+        patch_object_reference(currentPosition + 4, name);
+        add_serialized_bucket_entry(currentPosition + 12, dispatch_obj_by_otype(namespaceName->first.object));
+        if (namespaceName->first.next)
+            add_serialized_bucket_entry(currentPosition + 8, write_namespace_object_list(namespaceName->first.next));
+        if (!namespaceName->next)
+            break;
+        if ((entry = find(namespaceName->next)) != NULL) {
+            add_serialized_bucket_entry(currentPosition, (SInt32)entry->image_position);
+            break;
+        }
+        patchPosition = nextPosition = alignbuf();
+        add_serialized_bucket_entry(currentPosition, patchPosition = nextPosition);
+        namespaceName = namespaceName->next;
+        currentPosition = nextPosition;
+        addpatch(namespaceName, patchPosition);
+        if (allowFlush && data_00581c28 && checkflush())
+            break;
+    }
+    return firstPosition;
+}
+
+/* CPrec_NamePatch body */
+
+SInt32 write_namespace_object_list(NameSpaceObjectList *x)
+{
+    CPrecWrittenEntry *e;
+    NameSpaceObjectList *first;
+    NameSpaceObjectList *current;
+    NameSpaceObjectList *next;
+    NameSpaceObjectList *value;
+    NameSpaceObjectList *tmp;
+
+    if ((e = CPrec_FindAddrPatch(x)))
+        return (SInt32)e->image_position;
+    CPrec_NewAddrPatch(x, first = current = append_zero_bytes_to_alignment());
+    while (1) {
+        append_prec_data(x, 8);
+        add_serialized_bucket_entry((SInt32)(&current->object), dispatch_obj_by_otype(x->object));
+        if (!x->next)
+            break;
+        if ((e = CPrec_FindAddrPatch(x->next))) {
+            add_serialized_bucket_entry((SInt32)(&current->next), (SInt32)(e->image_position));
+            break;
+        }
+        value = next = append_zero_bytes_to_alignment();
+        add_serialized_bucket_entry((SInt32)(&current->next), (SInt32)(tmp = next));
+        x = x->next;
+        current = next;
+        CPrec_NewAddrPatch(x, value);
+    }
+    return (SInt32)first;
+}
+
+SInt32 dispatch_obj_by_otype(ObjBase *obj)
+{
+    switch (obj->otype) {
+        default:
+            CError_FATAL(3566);
+        case OT_ENUMCONST: {
+            ObjEnumConst *enumobj = (ObjEnumConst *)obj;
+            return write_enum_const(enumobj);
+        }
+        case OT_TYPE: {
+            ObjType *typeobj = (ObjType *)obj;
+            write_objtype(typeobj);
+            return;
+        }
+        case OT_TYPETAG: {
+            ObjType *typeobj = (ObjType *)obj;
+            append_objtype_image(typeobj);
+            return;
+        }
+        case OT_NAMESPACE:
+            return (SInt32)CPrec_GetObjNameSpacePatch((ObjNameSpace *)obj);
+        case OT_MEMBERVAR: {
+            ObjMemberVar *member = (ObjMemberVar *)obj;
+            return serialize_membervars(member);
+        }
+        case OT_OBJECT:
+            return write_object((Object *)obj);
+    }
+}
+
 UInt32 write_object(Object *obj)
 {
     CPrecWrittenEntry *entry;
@@ -1842,11 +2964,6 @@ UInt32 write_object(Object *obj)
     return offset;
 }
 
-static inline BClassList *membervar_alias_bases(ObjMemberVar *member)
-{
-    return ((MemberVarAlias *)member)->bases;
-}
-
 SInt32 serialize_membervars(ObjMemberVar *object)
 {
     SInt32 offset;
@@ -1923,32 +3040,6 @@ SInt32 serialize_membervars(ObjMemberVar *object)
     return firstOffset;
 }
 
-/* writing the image */
-/* image offset */
-/* image buffer handle */
-/* address patch table */
-/* lalloc */
-/* append byte */
-/* append data */
-
-static inline void *append_zero_alignment_padding(void)
-{
-    if (data_00581c28) {
-        while (prec_position & 3) {
-            AppendGListByte(&precompiled_buffer, 0);
-            prec_position++;
-        }
-    }
-    return (void *)prec_position;
-}
-
-static inline void CPrec_AppendData_004da950(void *data, SInt32 len)
-{
-    if (data_00581c28)
-        CompilerTools_AppendGListData(&precompiled_buffer, data, len);
-    prec_position += len;
-}
-
 /* CPrec_NamePatch body */
 
 ObjType *append_objtype_image(ObjType *x)
@@ -1962,32 +3053,6 @@ ObjType *append_objtype_image(ObjType *x)
     CPrec_AppendData_004da950(x, 6);
     add_serialized_bucket_entry((SInt32)(&p->type), write_type(x->type));
     return p;
-}
-
-/* writing the image */
-/* image offset */
-/* image buffer handle */
-/* address patch table */
-/* lalloc */
-/* append byte */
-/* append data */
-
-static inline void *append_zero_padding_to_alignment(void)
-{
-    if (data_00581c28) {
-        while (prec_position & 3) {
-            AppendGListByte(&precompiled_buffer, 0);
-            prec_position++;
-        }
-    }
-    return (void *)prec_position;
-}
-
-static inline void append_data_and_count_length(void *data, SInt32 len)
-{
-    if (data_00581c28)
-        CompilerTools_AppendGListData(&precompiled_buffer, data, len);
-    prec_position += len;
 }
 
 /* CPrec_NamePatch body */
@@ -2005,49 +3070,6 @@ ObjType *write_objtype(ObjType *x)
     return p;
 }
 
-static inline UInt32 hash_pointer_bytes(void *p)
-{
-    union {
-        void *p;
-        UInt8 b[4];
-    } u;
-    u.p = p;
-    return ((UInt32)p + u.b[0] + u.b[1] + u.b[2] + u.b[3]) & 0x3fff;
-}
-static inline CPrecWrittenEntry *find_written_entry_by_object(void *p)
-{
-    CPrecWrittenEntry *n;
-    for (n = written_entry_buckets[hash_pointer_bytes(p)]; n; n = n->next)
-        if (n->object == p)
-            return n;
-    return NULL;
-}
-static inline SInt32 align_buffer_to_four_bytes(void)
-{
-    if (data_00581c28)
-        while (prec_position & 3) {
-            AppendGListByte(&precompiled_buffer, 0);
-            prec_position++;
-        }
-    return prec_position;
-}
-static inline void add(void *p, UInt32 value)
-{
-    CPrecWrittenEntry **bucket;
-    CPrecWrittenEntry *n;
-    bucket = &written_entry_buckets[hash_pointer_bytes(p)];
-    n = (CPrecWrittenEntry *)CompilerTools_AllocatePool(sizeof(CPrecWrittenEntry));
-    n->object = p;
-    n->image_position = (void *)value;
-    n->next = *bucket;
-    *bucket = n;
-}
-static inline void append_enum_const(ObjEnumConst *p)
-{
-    if (data_00581c28)
-        CompilerTools_AppendGListData(&precompiled_buffer, p, 22);
-    prec_position += 22;
-}
 SInt32 write_enum_const(ObjEnumConst *enumConst)
 {
     HashNameNode *name;
@@ -2119,15 +3141,39 @@ SInt32 serialize_cprec_rec(CInlineInfo *record)
     return base;
 }
 
-static UInt32 CPrec_004daf90_Align(void)
+/* Record whose state is marked before its reference is emitted. */
+
+unsigned int serialize_reference_type_entries(unsigned int *entries, short count)
 {
-    if (data_00581c28 != 0) {
+    unsigned int offset;
+    HashNameNode *reference;
+    unsigned int start;
+    short index;
+
+    if (data_00581c28 != '\0') {
         while ((prec_position & 3) != 0) {
             AppendGListByte(&precompiled_buffer, 0);
-            prec_position++;
+            ++prec_position;
         }
     }
-    return prec_position;
+    start = offset = prec_position;
+    if (data_00581c28 != '\0') {
+        CompilerTools_AppendGListData(&precompiled_buffer, entries, count * 16);
+    }
+    index = 0;
+    prec_position += count * 16;
+    if (count > 0) {
+        do {
+            reference = (HashNameNode *)*entries;
+            reference->id = 1;
+            patch_object_reference(offset, reference);
+            add_serialized_bucket_entry(offset + 4, write_type((Type *)entries[1]));
+            ++index;
+            offset += 16;
+            entries += 4;
+        } while (index < count);
+    }
+    return start;
 }
 
 UInt32 write_prec_recs(IStmtRec *recs, SInt16 count)
@@ -2206,24 +3252,26 @@ UInt32 write_prec_recs(IStmtRec *recs, SInt16 count)
     return start;
 }
 
-/* Align the stream to a 4-byte boundary and return the new position. */
-static SInt32 PrecompBegin(void)
+/* Variable-length record written by the precompiled-header serializer. */
+
+unsigned int write_precompiled_expression_record(InlineSwitchData *record)
 {
+    SInt32 offset;
+    SInt32 size;
     if (data_00581c28) {
         while (prec_position & 3) {
             AppendGListByte(&precompiled_buffer, 0);
-            prec_position++;
+            prec_position += 1;
         }
     }
-    return prec_position;
-}
-
-/* Append raw bytes to the stream. */
-static void PrecompAppend(ENodeList *data, SInt32 size)
-{
+    offset = prec_position;
+    size = (record->caseCount - 1) * 10 + 22;
     if (data_00581c28)
-        CompilerTools_AppendGListData(&precompiled_buffer, data, size);
+        CompilerTools_AppendGListData(&precompiled_buffer, record, size);
     prec_position += size;
+    add_serialized_bucket_entry(offset, write_enode(record->expression));
+    add_serialized_bucket_entry(offset + 4, write_type(record->valueType));
+    return offset;
 }
 
 SInt32 write_enode(ENode *node)
@@ -2416,30 +3464,29 @@ SInt32 write_enode(ENode *node)
     return offset;
 }
 
-/* writing the image */
-/* image offset */
-/* image buffer handle */
-/* address patch table */
-/* lalloc */
-/* append byte */
-/* append data */
-
-static inline void *append_glist_alignment_padding(void)
+unsigned int write_member_func_ref(MemberFuncRef *entry)
 {
+    SInt32 offset;
+
+    CError_FATAL(2848);
     if (data_00581c28) {
         while (prec_position & 3) {
             AppendGListByte(&precompiled_buffer, 0);
-            prec_position++;
+            prec_position += 1;
         }
     }
-    return (void *)prec_position;
-}
-
-static inline void CPrec_AppendData_004db910(void *data, SInt32 len)
-{
+    offset = prec_position;
     if (data_00581c28)
-        CompilerTools_AppendGListData(&precompiled_buffer, data, len);
-    prec_position += len;
+        CompilerTools_AppendGListData(&precompiled_buffer, entry, sizeof(*entry));
+    prec_position += sizeof(*entry);
+    if (entry->bcl)
+        add_serialized_bucket_entry(offset, write_bclass_list(entry->bcl));
+    if (entry->expression)
+        add_serialized_bucket_entry(offset + 4, write_enode(entry->expression));
+    if (entry->templargs)
+        CError_FATAL(2863);
+    add_serialized_bucket_entry(offset + 8, write_namespace_object_list(entry->list));
+    return offset;
 }
 
 /* CPrec_NamePatch body */
@@ -2526,45 +3573,6 @@ SInt32 serialize_cpsi_list(CException *item)
         item = item->next;
     }
     return first;
-}
-
-static int CPrec_004dbc00_part1(int p)
-{
-    union {
-        int w;
-        unsigned char b[4];
-    } u;
-    u.w = p;
-    return u.b[0] + p + u.b[1] + u.b[2] + u.b[3] & 16383;
-}
-
-static inline ObjectOffsetEntry *CPrec_004dbc00_inline1(Type *a0, long *out)
-{
-    ObjectOffsetEntry *node;
-    int result;
-    int v1s;
-    node = (ObjectOffsetEntry *)(long)(v1s = ((int *)written_entry_buckets)[CPrec_004dbc00_part1((int)a0)]);
-    if (v1s != 0) {
-        do {
-            if ((int)node->object == (int)a0) {
-                goto found;
-            }
-            node = (ObjectOffsetEntry *)((long)node->next);
-        } while (node);
-    }
-    node = NULL;
-found:
-    *out = (long)node;
-    return (ObjectOffsetEntry *)node;
-}
-
-static inline int CPrec_004dbc00_inline2(Type *p0, int p1)
-{
-    int v3;
-    v3 = align_to_four_byte_boundary();
-    add_written_type_entry(p0, v3);
-    fn_004e0010(p0, p1);
-    return v3;
 }
 
 /* Hash entry mapping a type to its serialized offset. */
@@ -2717,46 +3725,6 @@ int write_type(Type *type)
             CError_FATAL(2691);
             return 0;
     }
-}
-
-static UInt32 hashptr(void *p)
-{
-    union {
-        void *pp;
-        UInt8 b[4];
-    } u;
-    u.pp = p;
-    return (u.b[0] + (UInt32)p + u.b[1] + u.b[2] + u.b[3]) & 0x3fff;
-}
-
-static UInt32 align_counter_with_zero_padding(void)
-{
-    if (data_00581c28 != 0) {
-        for (; (prec_position & 3) != 0; prec_position++)
-            AppendGListByte(&precompiled_buffer, 0);
-    }
-    return prec_position;
-}
-
-static CPrecWrittenEntry *findentry(void *key)
-{
-    union {
-        void *pp;
-        UInt8 b[4];
-    } u;
-    UInt32 h;
-    CPrecWrittenEntry *e;
-
-    u.pp = key;
-    h = (u.b[0] + (UInt32)key + u.b[1] + u.b[2] + u.b[3]) & 0x3fff;
-    e = ((CPrecWrittenEntry **)(UInt32)written_entry_buckets)[h];
-    while (e != NULL) {
-        if (e->object == key)
-            return e;
-        e = e->next;
-    }
-    e = NULL;
-    return e;
 }
 
 UInt32 write_typeclass(TypeClass *node)
@@ -3082,6 +4050,52 @@ unsigned int write_prec_input_record(TemplateDeclarationData *record)
     return offset;
 }
 
+/* Linked records containing a type and an auxiliary reference. */
+
+unsigned int serialize_reference_entries(ClassTemplateSpecialization *record)
+{
+    SInt32 startOffset;
+    SInt32 targetOffset;
+    SInt32 recordOffset;
+
+    if (data_00581c28 != '\0') {
+        while ((prec_position & 3) != 0) {
+            AppendGListByte(&precompiled_buffer, 0);
+            prec_position += 1;
+        }
+    }
+    recordOffset = prec_position;
+    startOffset = prec_position;
+    while (1) {
+        if (data_00581c28 != '\0') {
+            CompilerTools_AppendGListData(&precompiled_buffer, record, sizeof(*record));
+        }
+        prec_position += sizeof(*record);
+        if (record->type != NULL) {
+            targetOffset = write_type((Type *)record->type);
+            add_serialized_bucket_entry(recordOffset + 4, targetOffset);
+        }
+        if (record->arguments != NULL) {
+            CTStateElem *args = record->arguments;
+            targetOffset = serialize_ct_state_elems(args);
+            add_serialized_bucket_entry(recordOffset + 8, targetOffset);
+        }
+        if (record->next == NULL)
+            break;
+        if (data_00581c28 != '\0') {
+            while ((prec_position & 3) != 0) {
+                AppendGListByte(&precompiled_buffer, 0);
+                prec_position += 1;
+            }
+        }
+        targetOffset = prec_position;
+        add_serialized_bucket_entry(recordOffset, targetOffset);
+        recordOffset = targetOffset;
+        record = record->next;
+    }
+    return startOffset;
+}
+
 #include <stddef.h>
 
 UInt32 serialize_prec_records(TemplateSourceRecordTyped *record)
@@ -3133,28 +4147,6 @@ UInt32 serialize_prec_records(TemplateSourceRecordTyped *record)
         record = record->next;
     }
     return first_offset;
-}
-
-/* writing the image */
-/* image offset */
-/* image buffer handle */
-/* lalloc */
-/* memclrw */
-/* append byte */
-/* append data */
-/* CPrec_NamePatch body */
-
-static inline void CPrec_AppendDatum(PRecData *u, SavedPrepToken *bp)
-{
-    SInt32 size;
-    void *data;
-    void *p;
-
-    size = u->size;
-    data = u->data;
-    p = CPrec_AppendAlign();
-    CPrec_AppendData(data, size);
-    add_serialized_bucket_entry((SInt32)(&bp->value.data), (SInt32)(p));
 }
 
 SavedPrepToken *append_saved_prep_tokens(SavedPrepToken *recs, SInt32 n)
@@ -3376,53 +4368,6 @@ unsigned int serialize_objc_info(struct ObjCInfo *info)
     return infoPosition;
 }
 
-static void CPrec_MarkSlot(HashNameNode **dst, HashNameNode *src)
-{
-    if (src) {
-        src->id = 1;
-        patch_object_reference((SInt32)(dst), src);
-    }
-}
-
-/* writing the image */
-/* image offset */
-/* image buffer handle */
-/* address patch table */
-/* lalloc */
-/* append byte */
-/* append data */
-
-static inline void insert_written_entry(void *key, void *value)
-{
-    CPrecWrittenEntry *n;
-    CPrecWrittenEntry **bucket;
-
-    bucket = &written_entry_buckets[CPrec_Hash((SInt32)key)];
-    n = (CPrecWrittenEntry *)CompilerTools_AllocatePool(sizeof(CPrecWrittenEntry));
-    n->object = key;
-    n->image_position = value;
-    n->next = *bucket;
-    *bucket = n;
-}
-
-static inline void *pad_to_four_byte_alignment(void)
-{
-    if (data_00581c28) {
-        while (prec_position & 3) {
-            AppendGListByte(&precompiled_buffer, 0);
-            prec_position++;
-        }
-    }
-    return (void *)prec_position;
-}
-
-static inline void forward_data_and_accumulate_length(void *data, SInt32 len)
-{
-    if (data_00581c28)
-        CompilerTools_AppendGListData(&precompiled_buffer, data, len);
-    prec_position += len;
-}
-
 /* CPrec_NamePatch body */
 
 CRec *write_crec_list(CRec *record)
@@ -3462,32 +4407,6 @@ CRec *write_crec_list(CRec *record)
     return first;
 }
 
-/* writing the image */
-/* image offset */
-/* image buffer handle */
-/* address patch table */
-/* lalloc */
-/* append byte */
-/* append data */
-
-static inline void *append_zero_bytes_to_align_offset(void)
-{
-    if (data_00581c28) {
-        while (prec_position & 3) {
-            AppendGListByte(&precompiled_buffer, 0);
-            prec_position++;
-        }
-    }
-    return (void *)prec_position;
-}
-
-static inline void CPrec_AppendData_004dd4e0(void *data, SInt32 len)
-{
-    if (data_00581c28)
-        CompilerTools_AppendGListData(&precompiled_buffer, data, len);
-    prec_position += len;
-}
-
 /* CPrec_NamePatch body */
 
 ObjectList *write_object_list(ObjectList *x)
@@ -3510,40 +4429,6 @@ ObjectList *write_object_list(ObjectList *x)
         x = x->next;
     }
     return first;
-}
-
-static inline void add_written_entry(void *key, void *value)
-{
-    CPrecWrittenEntry **bucket;
-    CPrecWrittenEntry *n;
-    bucket = &written_entry_buckets[CPrec_Hash((SInt32)key)];
-    n = CompilerTools_AllocatePool(sizeof(CPrecWrittenEntry));
-    n->object = key;
-    n->image_position = value;
-    n->next = *bucket;
-    *bucket = n;
-}
-static inline void *align_prec_position(void)
-{
-    if (data_00581c28) {
-        while (prec_position & 3) {
-            AppendGListByte(&precompiled_buffer, 0);
-            prec_position++;
-        }
-    }
-    return (void *)prec_position;
-}
-static inline void CPrec_AppendData_004dd660(void *data, SInt32 len)
-{
-    if (data_00581c28)
-        CompilerTools_AppendGListData(&precompiled_buffer, data, len);
-    prec_position += len;
-}
-
-static inline void mark_and_patch_name_reference(void *dst, HashNameNode *name)
-{
-    name->id = 1;
-    patch_object_reference((SInt32)(dst), (void *)(name));
 }
 
 struct CRec *write_crec(struct CRec *record)
@@ -3585,53 +4470,6 @@ struct CRec *write_crec(struct CRec *record)
         saved.value = 0;
     }
     return first;
-}
-
-/* writing the image */
-/* image offset */
-/* image buffer handle */
-/* lalloc */
-/* append byte */
-/* append data */
-
-static inline CPrecWrittenEntry *find_object_in_written_entry_bucket(void *key)
-{
-    CPrecWrittenEntry *n;
-    for (n = written_entry_buckets[CPrec_Hash((SInt32)key)]; n != NULL; n = n->next)
-        if (n->object == key)
-            return n;
-    return NULL;
-}
-
-static inline void insert_written_entry_by_object(void *key, void *value)
-{
-    CPrecWrittenEntry **bucket;
-    CPrecWrittenEntry *n;
-
-    bucket = &written_entry_buckets[CPrec_Hash((SInt32)key)];
-    n = (CPrecWrittenEntry *)CompilerTools_AllocatePool(sizeof(CPrecWrittenEntry));
-    n->object = key;
-    n->image_position = value;
-    n->next = *bucket;
-    *bucket = n;
-}
-
-static inline void *append_glist_alignment_bytes(void)
-{
-    if (data_00581c28) {
-        while (prec_position & 3) {
-            AppendGListByte(&precompiled_buffer, 0);
-            prec_position++;
-        }
-    }
-    return (void *)prec_position;
-}
-
-static inline void append_data_and_update_length(void *data, SInt32 len)
-{
-    if (data_00581c28)
-        CompilerTools_AppendGListData(&precompiled_buffer, data, len);
-    prec_position += len;
 }
 
 /* CPrec_NamePatch body */
@@ -3713,49 +4551,6 @@ HashEntry *write_hash_entry(HashEntry *x)
         insert_written_entry_by_object(x, value);
     }
     return first;
-}
-
-/* writing the image */
-/* image offset */
-/* image buffer handle */
-/* address patch table */
-/* lalloc */
-/* append byte */
-/* append data */
-
-static inline void *align_to_four(void)
-{
-    if (data_00581c28) {
-        while (prec_position & 3) {
-            AppendGListByte(&precompiled_buffer, 0);
-            prec_position++;
-        }
-    }
-    return (void *)prec_position;
-}
-
-static inline void forward_data_and_accumulate_len(void *data, SInt32 len)
-{
-    if (data_00581c28)
-        CompilerTools_AppendGListData(&precompiled_buffer, data, len);
-    prec_position += len;
-}
-
-/* CPrec_NamePatch body */
-
-static inline int add_serialized_method(MethRec **field, MethRec *position)
-{
-    return add_serialized_bucket_entry((SInt32)field, (SInt32)position);
-}
-
-static inline int add_serialized_selector_link(SelectorMethod **field, SelectorMethod *position)
-{
-    return add_serialized_bucket_entry((SInt32)field, (SInt32)position);
-}
-
-static inline int add_serialized_pointer(const void *field, const void *position)
-{
-    return add_serialized_bucket_entry((SInt32)field, (SInt32)position);
 }
 
 SelectorMethod *write_selector_methods(SelectorMethod *method)
@@ -3929,1269 +4724,6 @@ unsigned int write_vtable(VTable *record)
     return recordOffset;
 }
 
-/* writing the image */
-/* image offset */
-/* image buffer handle */
-/* address patch table */
-/* lalloc */
-/* append byte */
-/* append data */
-
-static inline void *pad_position_to_alignment(void)
-{
-    if (data_00581c28) {
-        while (prec_position & 3) {
-            AppendGListByte(&precompiled_buffer, 0);
-            prec_position++;
-        }
-    }
-    return (void *)prec_position;
-}
-
-static inline void CPrec_AppendData_004de570(void *data, SInt32 len)
-{
-    if (data_00581c28)
-        CompilerTools_AppendGListData(&precompiled_buffer, data, len);
-    prec_position += len;
-}
-
-/* CPrec_NamePatch body */
-
-ClassList *write_class_list(ClassList *x)
-{
-    CPrecWrittenEntry *e;
-    ClassList *first;
-    ClassList *current;
-    ClassList *next;
-
-    if ((e = CPrec_FindAddrPatch(x)))
-        return e->image_position;
-    CPrec_NewAddrPatch(x, first = current = pad_position_to_alignment());
-    while (1) {
-        CPrec_AppendData_004de570(x, 0x12);
-        add_serialized_bucket_entry((SInt32)(&current->base), write_type((Type *)x->base));
-        if (!x->next)
-            break;
-        if ((e = CPrec_FindAddrPatch(x->next))) {
-            add_serialized_bucket_entry((SInt32)(&current->next), (SInt32)(e->image_position));
-            break;
-        }
-        add_serialized_bucket_entry((SInt32)(&current->next), (SInt32)(next = pad_position_to_alignment()));
-        current = next;
-        x = x->next;
-    }
-    return first;
-}
-
-/* hash-table / emitter base */
-/* tracing enabled? */
-/* running byte counter */
-
-/* Node the pass walks. kind 0..5, children at +8 / +0xc. */
-
-/* 0x581bf6: bucket array base */
-
-int write_templdep(TypeTemplDep *node)
-{
-    CPrecKey key;
-    CPrecWrittenEntry **bucket;
-    CPrecWrittenEntry *entry;
-    SInt32 position;
-    SInt32 imagePosition;
-    SInt32 reference;
-    HashNameNode *name;
-
-    if (data_00581c28) {
-        for (; prec_position & 3; prec_position++) {
-            AppendGListByte(&precompiled_buffer, 0);
-        }
-    }
-    position = prec_position;
-    imagePosition = prec_position;
-    key.v = (UInt32)node;
-    bucket = &written_entry_buckets[((UInt32)node + key.b[0] + key.b[1] + key.b[2] + key.b[3]) & 0x3fff];
-    entry = (CPrecWrittenEntry *)CompilerTools_AllocatePool(sizeof(CPrecWrittenEntry));
-    entry->object = node;
-    entry->image_position = (TypeTemplDep *)imagePosition;
-    entry->next = *bucket;
-    *bucket = entry;
-    if (data_00581c28) {
-        CompilerTools_AppendGListData(&precompiled_buffer, node, sizeof(*node));
-    }
-    prec_position += sizeof(*node);
-    switch (node->kind) {
-        case 0:
-            break;
-        case 1:
-            reference = write_templdep(node->u.qual.type);
-            add_serialized_bucket_entry(position + 8, reference);
-            name = node->u.qual.name;
-            name->id = 1;
-            patch_object_reference(position + 12, name);
-            break;
-        case 2:
-            reference = write_type((Type *)node->u.templ.templ);
-            add_serialized_bucket_entry(position + 8, reference);
-            reference = serialize_ct_state_elems(node->u.templ.args);
-            add_serialized_bucket_entry(position + 12, reference);
-            break;
-        case 3:
-            reference = write_type((Type *)node->u.array.type);
-            add_serialized_bucket_entry(position + 8, reference);
-            reference = write_enode(node->u.array.index);
-            add_serialized_bucket_entry(position + 12, reference);
-            break;
-        case 4:
-            reference = write_templdep(node->u.qualtempl.type);
-            add_serialized_bucket_entry(position + 8, reference);
-            reference = serialize_ct_state_elems((CTStateElem *)node->u.qualtempl.args);
-            add_serialized_bucket_entry(position + 12, reference);
-            break;
-        case 5:
-            reference = write_type((Type *)node->u.bitfield.type);
-            add_serialized_bucket_entry(position + 8, reference);
-            reference = write_enode(node->u.bitfield.size);
-            add_serialized_bucket_entry(position + 12, reference);
-            break;
-        default:
-            CError_FATAL(1270);
-    }
-    return position;
-}
-
-/* writing the image */
-/* image offset */
-/* image buffer handle */
-/* address patch table */
-/* lalloc */
-/* append byte */
-/* append data */
-
-static SInt32 hash_value_bytes(SInt32 value)
-{
-    CPrecBytes b;
-    b.value = value;
-    return (b.bytes[0] + value + b.bytes[1] + b.bytes[2] + b.bytes[3]) & 0x3fff;
-}
-
-static void prepend_written_entry_to_hash_bucket(TypeBitfield *key, TypeBitfield *value)
-{
-    CPrecWrittenEntry **bucket;
-    CPrecWrittenEntry *n;
-
-    bucket = &written_entry_buckets[hash_value_bytes((SInt32)key)];
-    n = (CPrecWrittenEntry *)CompilerTools_AllocatePool(sizeof(CPrecWrittenEntry));
-    n->object = key;
-    n->image_position = value;
-    n->next = *bucket;
-    *bucket = n;
-}
-
-static void *pad_precompiled_buffer(void)
-{
-    if (data_00581c28) {
-        while (prec_position & 3) {
-            AppendGListByte(&precompiled_buffer, 0);
-            prec_position++;
-        }
-    }
-    return (void *)prec_position;
-}
-
-static void append_precompiled_data(TypeBitfield *data, SInt32 len)
-{
-    if (data_00581c28)
-        CompilerTools_AppendGListData(&precompiled_buffer, data, len);
-    prec_position += len;
-}
-
-/* writing the image */
-/* image offset */
-/* image buffer handle */
-/* address patch table */
-/* lalloc */
-/* append byte */
-/* append data */
-
-static SInt32 hash_value(SInt32 value)
-{
-    CPrecBytes b;
-    b.value = value;
-    return (b.bytes[0] + value + b.bytes[1] + b.bytes[2] + b.bytes[3]) & 0x3fff;
-}
-
-static void insert_written_entry_by_key(void *key, void *value)
-{
-    CPrecWrittenEntry **bucket;
-    CPrecWrittenEntry *n;
-
-    bucket = &written_entry_buckets[hash_value((SInt32)key)];
-    n = (CPrecWrittenEntry *)CompilerTools_AllocatePool(sizeof(CPrecWrittenEntry));
-    n->object = key;
-    n->image_position = value;
-    n->next = *bucket;
-    *bucket = n;
-}
-
-static void *CPrec_AppendAlign_004de900(void)
-{
-    if (data_00581c28) {
-        while (prec_position & 3) {
-            AppendGListByte(&precompiled_buffer, 0);
-            prec_position++;
-        }
-    }
-    return (void *)prec_position;
-}
-
-static void append_data_and_count_bytes(void *data, SInt32 len)
-{
-    if (data_00581c28)
-        CompilerTools_AppendGListData(&precompiled_buffer, data, len);
-    prec_position += len;
-}
-
-/* writing the image */
-/* image offset */
-/* image buffer handle */
-/* address patch table */
-/* lalloc */
-/* append byte */
-/* append data */
-
-static inline void *append_zero_bytes_to_align_position(void)
-{
-    if (data_00581c28) {
-        while (prec_position & 3) {
-            AppendGListByte(&precompiled_buffer, 0);
-            prec_position++;
-        }
-    }
-    return (void *)prec_position;
-}
-
-static inline void accumulate_data_length_and_forward_data(void *data, SInt32 len)
-{
-    if (data_00581c28)
-        CompilerTools_AppendGListData(&precompiled_buffer, data, len);
-    prec_position += len;
-}
-
-/* CPrec_NamePatch body */
-
-static inline CPrecWrittenEntry *CPrec_FindAddrPatch_004deb20(void *key)
-{
-    CPrecWrittenEntry *n;
-    for (n = written_entry_buckets[CPrec_Hash((SInt32)key)]; n != NULL; n = n->next)
-        if (n->object == key)
-            return n;
-    return NULL;
-}
-static inline void prepend_written_entry(void *key, int value)
-{
-    CPrecWrittenEntry **bucket;
-    CPrecWrittenEntry *n;
-    bucket = &written_entry_buckets[CPrec_Hash((SInt32)key)];
-    n = (CPrecWrittenEntry *)CompilerTools_AllocatePool(sizeof(CPrecWrittenEntry));
-    n->object = key;
-    n->image_position = (void *)value;
-    n->next = *bucket;
-    *bucket = n;
-}
-static inline void *append_four_byte_alignment_padding(void)
-{
-    if (data_00581c28) {
-        while (prec_position & 3) {
-            AppendGListByte(&precompiled_buffer, 0);
-            prec_position++;
-        }
-    }
-    return (void *)prec_position;
-}
-static inline void append_precompiled_buffer_data(void *data, SInt32 len)
-{
-    if (data_00581c28)
-        CompilerTools_AppendGListData(&precompiled_buffer, data, len);
-    prec_position += len;
-}
-static inline void set_name_id_and_forward(void *dst, HashNameNode *name)
-{
-    name->id = 1;
-    (void)patch_object_reference((SInt32)(dst), (void *)(name));
-}
-
-FuncArg *write_func_args(FuncArg *arg, Boolean naming)
-{
-    CPrecWrittenEntry *entry;
-    SInt32 position;
-    SInt32 nextPosition;
-    FuncArg *current;
-    UInt32 first;
-    FuncArg *next;
-
-    if ((entry = CPrec_FindAddrPatch_004deb20(arg)))
-        return entry->image_position;
-
-    first = (UInt32)(current = append_four_byte_alignment_padding());
-    while (1) {
-        if (!naming)
-            arg->name = NULL;
-        append_precompiled_buffer_data(arg, sizeof(*arg));
-        if (naming && arg->name)
-            set_name_id_and_forward(&current->name, arg->name);
-        if (arg->dexpr)
-            (void)add_serialized_bucket_entry((SInt32)&current->dexpr, write_enode((ENode *)arg->dexpr));
-        if (arg->type) {
-            add_serialized_bucket_entry((SInt32)&current->type, (SInt32)write_type(arg->type));
-        } else
-            CError_FATAL(1142);
-        if (!arg->next)
-            break;
-        if ((entry = CPrec_FindAddrPatch_004deb20(arg->next))) {
-            add_serialized_bucket_entry((SInt32)&current->next, (SInt32)entry->image_position);
-            break;
-        }
-        position = nextPosition = (SInt32)(next = append_four_byte_alignment_padding());
-        add_serialized_bucket_entry((SInt32)&current->next, nextPosition);
-        current = next;
-        arg = arg->next;
-        prepend_written_entry(arg, position);
-    }
-    return (FuncArg *)first;
-}
-
-/* writing the image */
-/* image offset */
-/* image buffer handle */
-/* address patch table */
-/* lalloc */
-/* append byte */
-/* append data */
-
-static inline void CPrec_AppendData_004dee40(void *data, SInt32 len)
-{
-    if (data_00581c28)
-        CompilerTools_AppendGListData(&precompiled_buffer, data, len);
-    prec_position += len;
-}
-
-/* CPrec_NamePatch body */
-
-static inline void *append_align(void)
-{
-    if (data_00581c28) {
-        while (prec_position & 3) {
-            AppendGListByte(&precompiled_buffer, 0);
-            prec_position++;
-        }
-    }
-    return (void *)prec_position;
-}
-
-TypeStruct *append_type_struct(TypeStruct *tstruct)
-{
-    StructMember *member;
-    TypeStruct *p;
-    StructMember *current;
-    StructMember *next;
-
-    CPrec_NewAddrPatch(tstruct, p = append_align());
-    CPrec_AppendData_004dee40(tstruct, 0x12);
-    if (tstruct->name)
-        CPrec_NamePatch(&p->name, tstruct->name);
-    if ((member = tstruct->members)) {
-        add_serialized_bucket_entry((SInt32)(&p->members), (SInt32)(current = append_align()));
-        while (1) {
-            CPrec_AppendData_004dee40(member, sizeof(StructMember));
-            add_serialized_bucket_entry((SInt32)(&current->type), write_type(member->type));
-            CPrec_NamePatch(&current->name, member->name);
-            if (!member->next)
-                break;
-            add_serialized_bucket_entry((SInt32)(&current->next), (SInt32)(next = append_align()));
-            current = next;
-            member = member->next;
-        }
-    }
-    return p;
-}
-
-/* CPrec_GetTypePatch */
-/* CPrec_NewPointerPatch */
-
-TypeBitfield *serialize_type_bitfield(TypeBitfield *bitfield)
-{
-    TypeBitfield *serialized;
-    prepend_written_entry_to_hash_bucket(bitfield, serialized = pad_precompiled_buffer());
-    append_precompiled_data(bitfield, sizeof(TypeBitfield));
-    {
-        int typeIndex = write_type(bitfield->bitfieldtype);
-        add_serialized_bucket_entry((SInt32)&serialized->bitfieldtype, typeIndex);
-    }
-    return serialized;
-}
-
-/* writing the image */
-/* image offset */
-/* image buffer handle */
-/* address patch table */
-/* lalloc */
-/* append byte */
-/* append data */
-
-static inline void *align_and_return_offset(void)
-{
-    if (data_00581c28) {
-        while (prec_position & 3) {
-            AppendGListByte(&precompiled_buffer, 0);
-            prec_position++;
-        }
-    }
-    return (void *)prec_position;
-}
-
-static inline void CPrec_AppendData_004df0c0(void *data, SInt32 len)
-{
-    if (data_00581c28)
-        CompilerTools_AppendGListData(&precompiled_buffer, data, len);
-    prec_position += len;
-}
-
-/* CPrec_NamePatch body */
-
-#ifndef DEF_fn_004dbf80
-#endif
-#ifndef DEF_fn_004de740
-#endif
-#ifndef DEF_fn_004de900
-#endif
-#ifndef DEF_fn_004de9e0
-#endif
-#ifndef DEF_fn_004dee40
-#endif
-#ifndef DEF_fn_004deff0
-#endif
-#ifndef DEF_fn_004df0c0
-#endif
-#ifndef DEF_fn_004df290
-#endif
-
-static inline SInt32 CPrec_GetTypePatch(Type *type)
-{
-    CPrecWrittenEntry *e;
-
-    if ((e = fn_004e0680(type)))
-        return (SInt32)e->image_position;
-    switch ((SInt8)type->type) {
-        case TYPEARRAY:
-        case TYPEPOINTER: {
-            TypePointer *pointerType = (TypePointer *)type;
-            return write_pointer_type(pointerType);
-        }
-        case TYPEENUM: {
-            TypeEnum *enumType = (TypeEnum *)type;
-            TypeEnum *(*patchEnum)(TypeEnum *) = append_type_enum;
-            TypeEnum *patch = patchEnum(enumType);
-            return (SInt32)patch;
-        }
-        case TYPEBITFIELD: {
-            TypeBitfield *bitfieldType = (TypeBitfield *)type;
-            TypeBitfield *patch = serialize_type_bitfield(bitfieldType);
-            return (SInt32)patch;
-        }
-        case TYPESTRUCT:
-            return (SInt32)append_type_struct((TypeStruct *)type);
-        case TYPEFUNC: {
-            TypeFunc *functionType = (TypeFunc *)type;
-            TypeFunc *functionPatch = copy_type_func(functionType);
-            return (SInt32)functionPatch;
-        }
-        case TYPEMEMBERPOINTER:
-            return (SInt32)append_member_pointer_type((TypeMemberPointer *)type);
-        case TYPETEMPLATE: {
-            TypeTemplDep *templateType = (TypeTemplDep *)type;
-            return write_templdep(templateType);
-        }
-        case TYPECLASS: {
-            TypeClass *classType = (TypeClass *)type;
-            return write_typeclass(classType);
-        }
-        case TYPEVOID:
-        case TYPEINT:
-        case TYPEFLOAT:
-        case TYPELABEL:
-        case TYPEOBJCID:
-        case TYPETEMPLDEPEXPR:
-        default:
-            CError_FATAL(2691);
-            return 0;
-    }
-}
-
-static inline void patch_serialized_field(const void *field, SInt32 index)
-{
-    add_serialized_bucket_entry((SInt32)field, index);
-}
-
-TypeEnum *append_type_enum(TypeEnum *tenum)
-{
-    TypeEnum *offset;
-
-    CPrec_NewAddrPatch(tenum, offset = align_and_return_offset());
-    CPrec_AppendData_004df0c0(tenum, sizeof(*tenum));
-    if (tenum->nspace)
-        patch_serialized_field(&offset->nspace, get_namespace_patch(tenum->nspace));
-    if (tenum->enumlist)
-        patch_serialized_field(&offset->enumlist, write_enum_const(tenum->enumlist));
-    patch_serialized_field(&offset->enumtype, CPrec_GetTypePatch(tenum->enumtype));
-    if (tenum->enumname)
-        CPrec_NamePatch(&offset->enumname, tenum->enumname);
-    return offset;
-}
-
-TypeMemberPointer *append_member_pointer_type(TypeMemberPointer *tmemp)
-{
-    TypeMemberPointer *p;
-
-    insert_written_entry_by_key(tmemp, p = CPrec_AppendAlign_004de900());
-    append_data_and_count_bytes(tmemp, 0x12);
-    add_serialized_bucket_entry((SInt32)(&p->memberType), write_type(tmemp->memberType));
-    add_serialized_bucket_entry((SInt32)(&p->owner.type), write_type(tmemp->owner.type));
-    return p;
-}
-
-TypeFunc *copy_type_func(TypeFunc *tfunc)
-{
-    TypeFunc *copy;
-
-    CPrec_NewAddrPatch(tfunc, copy = append_zero_bytes_to_align_position());
-    accumulate_data_length_and_forward_data(tfunc,
-                                            (tfunc->flags & FUNC_METHOD) ? sizeof(TypeMemberFunc) : sizeof(TypeFunc));
-    add_serialized_bucket_entry((SInt32)&copy->functype, write_type(tfunc->functype));
-    if (tfunc->args)
-        add_serialized_bucket_entry((SInt32)&copy->args,
-                                    (SInt32)write_func_args(tfunc->args, (tfunc->flags & 0x8000400) != 0));
-    if (tfunc->exspecs)
-        add_serialized_bucket_entry((SInt32)&copy->exspecs, write_except_spec_list(tfunc->exspecs));
-    if (tfunc->flags & FUNC_METHOD)
-        add_serialized_bucket_entry((SInt32)&TYPE_METHOD(copy)->theclass,
-                                    write_type((Type *)TYPE_METHOD(tfunc)->theclass));
-    return copy;
-}
-
-static inline SInt32 AppendAlign(void)
-{
-    if (data_00581c28)
-        while (prec_position & 3) {
-            AppendGListByte(&precompiled_buffer, 0);
-            prec_position++;
-        }
-    return prec_position;
-}
-static inline void NewAddrPatch(TypePointer *ptr, SInt32 value)
-{
-    union {
-        TypePointer *ptr;
-        UInt8 bytes[4];
-    } u;
-    CPrecWrittenEntry **bucket;
-    CPrecWrittenEntry *p;
-    u.ptr = ptr;
-    bucket = (CPrecWrittenEntry *
-                  *)&written_entry_buckets[((UInt32)ptr + u.bytes[0] + u.bytes[1] + u.bytes[2] + u.bytes[3]) & 0x3fff];
-    p = (CPrecWrittenEntry *)CompilerTools_AllocatePool(sizeof(CPrecWrittenEntry));
-    p->object = ptr;
-    p->image_position = (void *)value;
-    p->next = *bucket;
-    *bucket = p;
-}
-static inline void AppendData(void *ptr, int size)
-{
-    if (data_00581c28)
-        CompilerTools_AppendGListData(&precompiled_buffer, ptr, size);
-    prec_position += size;
-}
-
-SInt32 write_pointer_type(TypePointer *ptr)
-{
-    SInt32 pos;
-    int hash;
-    CPrecWrittenEntry *entry;
-
-    if (ptr->qual & Q_IS_OBJC_ID) {
-        NewAddrPatch(ptr, pos = AppendAlign());
-        AppendData(ptr, 20);
-        if (ptr->protocols[0])
-            add_serialized_bucket_entry(pos + 14, (SInt32)write_object_list(ptr->protocols[0]));
-    } else {
-        if (!copts.f85 && data_00581c28 && ptr->size > 0) {
-            hash = hash_pointer_type(ptr);
-            for (entry = (CPrecWrittenEntry *)data_00581c02[hash]; entry; entry = entry->next) {
-                TypePointer *type = ptr, *writtenType = (TypePointer *)entry->object;
-                do {
-                    if (type->type != writtenType->type || type->size != writtenType->size ||
-                        type->qual != writtenType->qual)
-                        break;
-                    type = (TypePointer *)type->target;
-                    writtenType = (TypePointer *)writtenType->target;
-                    if (type->type != TYPEPOINTER || type->type != TYPEARRAY) {
-                        if (type == writtenType)
-                            return (SInt32)entry->image_position;
-                        break;
-                    }
-                } while (1);
-            }
-            NewAddrPatch(ptr, pos = AppendAlign());
-            entry = (CPrecWrittenEntry *)CompilerTools_AllocatePool(sizeof(*entry));
-            entry->object = ptr;
-            entry->image_position = (char *)pos;
-            entry->next = (CPrecWrittenEntry *)data_00581c02[hash];
-            data_00581c02[hash] = (CPrecWrittenEntry *)entry;
-        } else {
-            NewAddrPatch(ptr, pos = AppendAlign());
-        }
-        AppendData(ptr, 14);
-    }
-    add_serialized_bucket_entry(pos + 6, write_type(ptr->target));
-    return pos;
-}
-
-int hash_pointer_type(TypePointer *type)
-{
-    Type *base;
-    int hash;
-    FuncArg *arg;
-    Type *returnType;
-    TypePointer *pointerType;
-    hash = type->qual;
-    base = type->target;
-    for (;;) {
-        switch ((signed char)base->type) {
-            case TYPECLASS: {
-                const TypeClass *classType = (const TypeClass *)base;
-                const HashNameNode *className;
-                if ((className = classType->classname) != NULL)
-                    hash += className->hashval;
-                break;
-            }
-            case TYPEENUM:
-                if (((TypeEnum *)base)->enumname != NULL)
-                    hash += ((TypeEnum *)base)->enumname->hashval;
-                hash += TYPEENUM;
-                base = ((TypeEnum *)base)->enumtype;
-            case TYPEINT:
-            case TYPEFLOAT:
-                hash += ((TypeIntegral *)base)->integral;
-                break;
-            case TYPEPOINTER:
-                pointerType = (TypePointer *)base;
-                hash += pointerType->qual;
-                base = pointerType->target;
-                continue;
-            case TYPEARRAY:
-                hash += base->size;
-                base = ((TypePointer *)base)->target;
-                continue;
-            case TYPEFUNC:
-                returnType = ((TypeFunc *)base)->functype;
-                hash += (signed char)returnType->type;
-                hash += returnType->size;
-                arg = ((TypeFunc *)base)->args;
-                if (arg != NULL) {
-                    do {
-                        if (arg->type != NULL) {
-                            hash += (signed char)arg->type->type;
-                            hash += arg->type->size;
-                        }
-                        arg = arg->next;
-                    } while (arg != NULL);
-                }
-                break;
-            default:
-                break;
-        }
-        break;
-    }
-    hash += (signed char)base->type + base->size;
-    return ((hash >> 8) + ((hash >> 24) + hash + (hash >> 16))) & 1023;
-}
-
-/* writing the image */
-/* image offset */
-/* image buffer handle */
-/* address patch table */
-/* lalloc */
-/* append byte */
-/* append data */
-
-static inline SInt32 append_prec_alignment_padding(void)
-{
-    if (data_00581c28) {
-        while (prec_position & 3) {
-            AppendGListByte(&precompiled_buffer, 0);
-            prec_position++;
-        }
-    }
-    return prec_position;
-}
-
-static inline void CPrec_AppendData_004df620(void *data, SInt32 len)
-{
-    if (data_00581c28)
-        CompilerTools_AppendGListData(&precompiled_buffer, data, len);
-    prec_position += len;
-}
-
-/* CPrec_NamePatch body */
-
-SInt32 write_bclass_list(BClassList *classes)
-{
-    CPrecWrittenEntry *entry;
-    SInt32 firstPosition;
-    SInt32 currentPosition;
-    SInt32 nextPosition;
-
-    if ((entry = CPrec_FindAddrPatch(classes)))
-        return (SInt32)entry->image_position;
-
-    CPrec_NewAddrPatch(classes, (BClassList *)(firstPosition = currentPosition = append_prec_alignment_padding()));
-    while (1) {
-        CPrec_AppendData_004df620(classes, sizeof(BClassList));
-        add_serialized_bucket_entry(currentPosition + 4, write_type(classes->type));
-        if (!classes->next)
-            break;
-        nextPosition = append_prec_alignment_padding();
-        add_serialized_bucket_entry(currentPosition, nextPosition);
-        currentPosition = nextPosition;
-        classes = classes->next;
-    }
-    return firstPosition;
-}
-
-static UInt32 CPrec_HashPtr(const void *key)
-{
-    union {
-        UInt8 b[4];
-        const void *p;
-    } u;
-    u.p = key;
-    return ((UInt32)key + u.b[0] + u.b[1] + u.b[2] + u.b[3]) & 0x3fff;
-}
-
-static CPrecWrittenEntry *CPrec_FindRecord(const void *key)
-{
-    CPrecWrittenEntry *r;
-
-    r = written_entry_buckets[CPrec_HashPtr(key)];
-    while (r != NULL) {
-        if (r->object == key)
-            return r;
-        r = r->next;
-    }
-    return NULL;
-}
-
-static inline void CPrec_AddRecord(const void *key, UInt32 pos)
-{
-    CPrecWrittenEntry *r;
-    UInt32 h;
-    CPrecWrittenEntry **slot;
-
-    h = CPrec_HashPtr(key);
-    slot = &written_entry_buckets[h];
-    r = (CPrecWrittenEntry *)CompilerTools_AllocatePool(12);
-    r->object = (void *)key;
-    r->image_position = (void *)pos;
-    r->next = *slot;
-    *slot = r;
-}
-
-static inline UInt32 CPrec_AppendAlign_004df7a0(void)
-{
-    if (data_00581c28) {
-        while (prec_position & 3) {
-            AppendGListByte(&precompiled_buffer, 0);
-            prec_position++;
-        }
-    }
-    return prec_position;
-}
-
-static inline void CPrec_AppendLong(UInt32 v)
-{
-    if (data_00581c28)
-        AppendGListLong(&precompiled_buffer, v);
-    prec_position += 4;
-}
-
-static inline void CPrec_AppendShort(SInt16 v)
-{
-    if (data_00581c28)
-        AppendGListWord(&precompiled_buffer, v);
-    prec_position += 2;
-}
-
-static inline void CPrec_AppendByte(UInt8 v)
-{
-    if (data_00581c28)
-        AppendGListByte(&precompiled_buffer, v);
-    prec_position += 1;
-}
-
-static inline void CPrec_AppendOffset(void *key)
-{
-    CPrecWrittenEntry *r;
-    SerializedBucketEntry *np;
-
-    if (key != NULL) {
-        if ((r = CPrec_FindRecord(key)) == NULL)
-            CError_FATAL(621);
-        if (data_00581c28) {
-            np = (SerializedBucketEntry *)CompilerTools_AllocatePool(8);
-            np->offset = prec_position;
-            np->next = serialized_bucket_entries;
-            serialized_bucket_entries = np;
-            if ((np->offset & 0x80000001) != 0)
-                CError_FATAL(628);
-        }
-        CPrec_AppendLong((UInt32)r->image_position);
-    } else {
-        CPrec_AppendLong(0);
-    }
-}
-
-static inline void CPrec_AppendObj(HashNameNode *key)
-{
-    if (key != NULL) {
-        CPrec_AppendOffset(key);
-        key->id = 1;
-    }
-}
-
-void serialize_macros(void)
-{
-    UInt32 n;
-    Macro *p;
-    SInt32 j;
-    SInt32 i;
-    SInt32 pos;
-    SInt32 start;
-    char *s;
-
-    i = 0;
-    do {
-        for (p = macro_buckets[i]; p != NULL; p = p->next) {
-            if (p->text != NULL) {
-                CPrec_AddRecord(p->text, prec_position);
-                s = p->text;
-                n = strlen(s) + 1;
-                if (data_00581c28)
-                    CompilerTools_AppendGListData(&precompiled_buffer, s, n);
-                prec_position += n;
-            }
-        }
-    } while (++i < 0x800);
-
-    i = 0;
-    do {
-        if ((p = macro_buckets[i]) == NULL)
-            continue;
-        pos = CPrec_AppendAlign_004df7a0();
-        start = pos;
-        if (data_00581c28)
-            prec_header->macroOffsets[i] = pos;
-        for (;;) {
-            CPrec_AppendLong(0);
-
-            CPrec_AppendObj(p->name);
-            CPrec_AppendOffset(p->text);
-
-            CPrec_AppendShort(p->nargs);
-            CPrec_AppendByte(p->flag);
-            CPrec_AppendByte(p->isExpanding);
-
-            for (j = 1; j < (p->nargs & 0x7fff); j++)
-                CPrec_AppendObj(p->args[j - 1]);
-
-            p = p->next;
-            if (p == NULL)
-                break;
-            CPrec_AppendAlign_004df7a0();
-            pos = prec_position;
-            add_serialized_bucket_entry(start, pos);
-            start = pos;
-        }
-    } while (++i < 0x800);
-}
-
-/* writing the image */
-/* image offset */
-/* image buffer handle */
-/* address patch table */
-/* lalloc */
-/* append byte */
-/* append data */
-
-static inline void *append_prec_alignment(void)
-{
-    if (data_00581c28) {
-        while (prec_position & 3) {
-            AppendGListByte(&precompiled_buffer, 0);
-            prec_position++;
-        }
-    }
-    return (void *)prec_position;
-}
-
-/* CPrec_NamePatch body */
-
-static void CPrec_AppendWord32(SInt32 v)
-{
-    if (data_00581c28)
-        AppendGListLong(&precompiled_buffer, v);
-    prec_position += 4;
-}
-static void CPrec_AppendWord16(SInt16 v)
-{
-    if (data_00581c28)
-        AppendGListWord(&precompiled_buffer, v);
-    prec_position += 2;
-}
-static void CPrec_AppendString(const char *s)
-{
-    SInt32 len = strlen(s) + 1;
-    if (data_00581c28)
-        CompilerTools_AppendGListData(&precompiled_buffer, (void *)s, len);
-    prec_position += len;
-}
-
-void append_hash_names(void)
-{
-    HashNameNode *name;
-    int i;
-    HashNameNode *p;
-    HashNameNode *next;
-
-    if (data_00581c28) {
-        i = 0;
-        do {
-            name = data_00587f88[i];
-            while (name && name->id == 0)
-                name = name->next;
-            if (name) {
-                prec_header->hashNameOffsets[i] = (SInt32)(p = append_prec_alignment());
-                while (1) {
-                    CPrec_NewAddrPatch(name, p);
-                    CPrec_AppendWord32(0);
-                    CPrec_AppendWord32(0);
-                    CPrec_AppendWord16(name->hashval);
-                    CPrec_AppendString(name->name);
-                    name = name->next;
-                    while (name && name->id == 0)
-                        name = name->next;
-                    if (!name)
-                        break;
-                    add_serialized_bucket_entry((SInt32)(&p->next), (SInt32)(next = append_prec_alignment()));
-                    p = next;
-                }
-            }
-        } while (++i < 0x800);
-    } else {
-        i = 0;
-        do {
-            if ((name = data_00587f88[i])) {
-                p = append_prec_alignment();
-                while (1) {
-                    CPrec_NewAddrPatch(name, p);
-                    CPrec_AppendWord32(0);
-                    CPrec_AppendWord32(0);
-                    CPrec_AppendWord16(name->hashval);
-                    CPrec_AppendString(name->name);
-                    name = name->next;
-                    if (!name)
-                        break;
-                    add_serialized_bucket_entry((SInt32)(&p->next), (SInt32)(next = append_prec_alignment()));
-                    p = next;
-                }
-            }
-        } while (++i < 0x800);
-    }
-}
-
-unsigned int align_to_four_byte_boundary(void)
-
-{
-    if (data_00581c28 != '\0') {
-        for (; (prec_position & 3) != 0; prec_position += 1) {
-            AppendGListByte(&precompiled_buffer, 0);
-        }
-    }
-    return prec_position;
-}
-
-void fn_004e0010(void *data, UInt32 size)
-{
-    if (data_00581c28 != 0) {
-        CompilerTools_AppendGListData(&precompiled_buffer, data, size);
-    }
-    prec_position += size;
-}
-
-void patch_hash_name_reference(unsigned int value, HashNameNode *record)
-{
-    record->id = 1;
-    patch_object_reference((SInt32)(value), record);
-}
-
-/* Linked entries stored in the serialization buckets. */
-
-void write_serialized_buckets(void)
-{
-    SerializedBucketEntry *entry;
-    unsigned int value;
-    int entryCount;
-    int bucketIndex;
-
-    bucketIndex = 0;
-    if (0 < serialized_bucket_count) {
-        do {
-            entryCount = 0;
-            entry = serialized_buckets[bucketIndex].list;
-            while (entry != NULL) {
-                entry = entry->next;
-                entryCount = entryCount + 1;
-            }
-            if (entryCount != 0) {
-                if (data_00581c28 != '\0') {
-                    AppendGListLong(&precompiled_buffer, entryCount);
-                }
-                prec_position += 4;
-                if (data_00581c28 != '\0') {
-                    AppendGListLong(&precompiled_buffer, bucketIndex);
-                }
-                prec_position += 4;
-                for (entry = serialized_buckets[bucketIndex].list; entry != NULL; entry = entry->next) {
-                    value = entry->offset;
-                    if (data_00581c28 != '\0') {
-                        AppendGListLong(&precompiled_buffer, value);
-                    }
-                    prec_position += 4;
-                }
-            }
-            bucketIndex = bucketIndex + 1;
-        } while (bucketIndex < serialized_bucket_count);
-    }
-    if (data_00581c28 != '\0') {
-        AppendGListLong(&precompiled_buffer, 0);
-    }
-    prec_position += 4;
-}
-
-unsigned int serialize_pending_object_class_list(struct PendingObjectClass *entry)
-{
-    SInt32 firstOffset;
-    SInt32 valueOffset;
-    SInt32 recordOffset;
-
-    if (data_00581c28 != '\0') {
-        while ((prec_position & 3) != 0) {
-            AppendGListByte(&precompiled_buffer, 0);
-            prec_position += 1;
-        }
-    }
-    recordOffset = prec_position;
-    firstOffset = prec_position;
-    for (;;) {
-        if (data_00581c28 != '\0') {
-            CompilerTools_AppendGListData(&precompiled_buffer, entry, sizeof(*entry));
-        }
-        prec_position += sizeof(*entry);
-        valueOffset = write_object(entry->object);
-        add_serialized_bucket_entry(recordOffset + 4, valueOffset);
-        valueOffset = write_type((Type *)entry->theclass);
-        add_serialized_bucket_entry(recordOffset + 8, valueOffset);
-        if (entry->next == NULL)
-            break;
-        if (data_00581c28 != '\0') {
-            while ((prec_position & 3) != 0) {
-                AppendGListByte(&precompiled_buffer, 0);
-                prec_position += 1;
-            }
-        }
-        valueOffset = prec_position;
-        add_serialized_bucket_entry(recordOffset, valueOffset);
-        recordOffset = valueOffset;
-        entry = entry->next;
-    }
-    return firstOffset;
-}
-
-unsigned int write_csomrefnode_list(struct CSOMRefNode *record)
-{
-    unsigned int listOffset;
-    SInt32 offset;
-    SInt32 recordOffset;
-
-    if (data_00581c28 != 0) {
-        while ((prec_position & 3) != 0) {
-            AppendGListByte(&precompiled_buffer, 0);
-            prec_position += 1;
-        }
-    }
-    recordOffset = prec_position;
-    listOffset = prec_position;
-    for (;;) {
-        if (data_00581c28 != 0) {
-            CompilerTools_AppendGListData(&precompiled_buffer, record, 0x12);
-        }
-        prec_position += 0x12;
-        offset = write_object(record->object);
-        add_serialized_bucket_entry(recordOffset + 4, offset);
-        offset = write_type((Type *)record->theclass);
-        add_serialized_bucket_entry(recordOffset + 8, offset);
-        if (record->next == NULL)
-            break;
-        if (data_00581c28 != 0) {
-            while ((prec_position & 3) != 0) {
-                AppendGListByte(&precompiled_buffer, 0);
-                prec_position += 1;
-            }
-        }
-        offset = prec_position;
-        add_serialized_bucket_entry(recordOffset, offset);
-        recordOffset = offset;
-        record = record->next;
-    }
-    return listOffset;
-}
-
-/* Record whose state is marked before its reference is emitted. */
-
-unsigned int serialize_reference_type_entries(unsigned int *entries, short count)
-{
-    unsigned int offset;
-    HashNameNode *reference;
-    unsigned int start;
-    short index;
-
-    if (data_00581c28 != '\0') {
-        while ((prec_position & 3) != 0) {
-            AppendGListByte(&precompiled_buffer, 0);
-            ++prec_position;
-        }
-    }
-    start = offset = prec_position;
-    if (data_00581c28 != '\0') {
-        CompilerTools_AppendGListData(&precompiled_buffer, entries, count * 16);
-    }
-    index = 0;
-    prec_position += count * 16;
-    if (count > 0) {
-        do {
-            reference = (HashNameNode *)*entries;
-            reference->id = 1;
-            patch_object_reference(offset, reference);
-            add_serialized_bucket_entry(offset + 4, write_type((Type *)entries[1]));
-            ++index;
-            offset += 16;
-            entries += 4;
-        } while (index < count);
-    }
-    return start;
-}
-
-/* Variable-length record written by the precompiled-header serializer. */
-
-unsigned int write_precompiled_expression_record(InlineSwitchData *record)
-{
-    SInt32 offset;
-    SInt32 size;
-    if (data_00581c28) {
-        while (prec_position & 3) {
-            AppendGListByte(&precompiled_buffer, 0);
-            prec_position += 1;
-        }
-    }
-    offset = prec_position;
-    size = (record->caseCount - 1) * 10 + 22;
-    if (data_00581c28)
-        CompilerTools_AppendGListData(&precompiled_buffer, record, size);
-    prec_position += size;
-    add_serialized_bucket_entry(offset, write_enode(record->expression));
-    add_serialized_bucket_entry(offset + 4, write_type(record->valueType));
-    return offset;
-}
-
-unsigned int write_member_func_ref(MemberFuncRef *entry)
-{
-    SInt32 offset;
-
-    CError_FATAL(2848);
-    if (data_00581c28) {
-        while (prec_position & 3) {
-            AppendGListByte(&precompiled_buffer, 0);
-            prec_position += 1;
-        }
-    }
-    offset = prec_position;
-    if (data_00581c28)
-        CompilerTools_AppendGListData(&precompiled_buffer, entry, sizeof(*entry));
-    prec_position += sizeof(*entry);
-    if (entry->bcl)
-        add_serialized_bucket_entry(offset, write_bclass_list(entry->bcl));
-    if (entry->expression)
-        add_serialized_bucket_entry(offset + 4, write_enode(entry->expression));
-    if (entry->templargs)
-        CError_FATAL(2863);
-    add_serialized_bucket_entry(offset + 8, write_namespace_object_list(entry->list));
-    return offset;
-}
-
-/* Linked records containing a type and an auxiliary reference. */
-
-unsigned int serialize_reference_entries(ClassTemplateSpecialization *record)
-{
-    SInt32 startOffset;
-    SInt32 targetOffset;
-    SInt32 recordOffset;
-
-    if (data_00581c28 != '\0') {
-        while ((prec_position & 3) != 0) {
-            AppendGListByte(&precompiled_buffer, 0);
-            prec_position += 1;
-        }
-    }
-    recordOffset = prec_position;
-    startOffset = prec_position;
-    while (1) {
-        if (data_00581c28 != '\0') {
-            CompilerTools_AppendGListData(&precompiled_buffer, record, sizeof(*record));
-        }
-        prec_position += sizeof(*record);
-        if (record->type != NULL) {
-            targetOffset = write_type((Type *)record->type);
-            add_serialized_bucket_entry(recordOffset + 4, targetOffset);
-        }
-        if (record->arguments != NULL) {
-            CTStateElem *args = record->arguments;
-            targetOffset = serialize_ct_state_elems(args);
-            add_serialized_bucket_entry(recordOffset + 8, targetOffset);
-        }
-        if (record->next == NULL)
-            break;
-        if (data_00581c28 != '\0') {
-            while ((prec_position & 3) != 0) {
-                AppendGListByte(&precompiled_buffer, 0);
-                prec_position += 1;
-            }
-        }
-        targetOffset = prec_position;
-        add_serialized_bucket_entry(recordOffset, targetOffset);
-        recordOffset = targetOffset;
-        record = record->next;
-    }
-    return startOffset;
-}
-
 /* Linked type entry serialized as two 32-bit fields. */
 
 unsigned int write_prec_type_entries(struct PrecTypeEntry *entry)
@@ -5317,6 +4849,180 @@ unsigned int write_vclasslist(VClassList *record)
     return startOffset;
 }
 
+/* CPrec_NamePatch body */
+
+ClassList *write_class_list(ClassList *x)
+{
+    CPrecWrittenEntry *e;
+    ClassList *first;
+    ClassList *current;
+    ClassList *next;
+
+    if ((e = CPrec_FindAddrPatch(x)))
+        return e->image_position;
+    CPrec_NewAddrPatch(x, first = current = pad_position_to_alignment());
+    while (1) {
+        CPrec_AppendData_004de570(x, 0x12);
+        add_serialized_bucket_entry((SInt32)(&current->base), write_type((Type *)x->base));
+        if (!x->next)
+            break;
+        if ((e = CPrec_FindAddrPatch(x->next))) {
+            add_serialized_bucket_entry((SInt32)(&current->next), (SInt32)(e->image_position));
+            break;
+        }
+        add_serialized_bucket_entry((SInt32)(&current->next), (SInt32)(next = pad_position_to_alignment()));
+        current = next;
+        x = x->next;
+    }
+    return first;
+}
+
+/* hash-table / emitter base */
+/* tracing enabled? */
+/* running byte counter */
+
+/* Node the pass walks. kind 0..5, children at +8 / +0xc. */
+
+/* 0x581bf6: bucket array base */
+
+int write_templdep(TypeTemplDep *node)
+{
+    CPrecKey key;
+    CPrecWrittenEntry **bucket;
+    CPrecWrittenEntry *entry;
+    SInt32 position;
+    SInt32 imagePosition;
+    SInt32 reference;
+    HashNameNode *name;
+
+    if (data_00581c28) {
+        for (; prec_position & 3; prec_position++) {
+            AppendGListByte(&precompiled_buffer, 0);
+        }
+    }
+    position = prec_position;
+    imagePosition = prec_position;
+    key.v = (UInt32)node;
+    bucket = &written_entry_buckets[((UInt32)node + key.b[0] + key.b[1] + key.b[2] + key.b[3]) & 0x3fff];
+    entry = (CPrecWrittenEntry *)CompilerTools_AllocatePool(sizeof(CPrecWrittenEntry));
+    entry->object = node;
+    entry->image_position = (TypeTemplDep *)imagePosition;
+    entry->next = *bucket;
+    *bucket = entry;
+    if (data_00581c28) {
+        CompilerTools_AppendGListData(&precompiled_buffer, node, sizeof(*node));
+    }
+    prec_position += sizeof(*node);
+    switch (node->kind) {
+        case 0:
+            break;
+        case 1:
+            reference = write_templdep(node->u.qual.type);
+            add_serialized_bucket_entry(position + 8, reference);
+            name = node->u.qual.name;
+            name->id = 1;
+            patch_object_reference(position + 12, name);
+            break;
+        case 2:
+            reference = write_type((Type *)node->u.templ.templ);
+            add_serialized_bucket_entry(position + 8, reference);
+            reference = serialize_ct_state_elems(node->u.templ.args);
+            add_serialized_bucket_entry(position + 12, reference);
+            break;
+        case 3:
+            reference = write_type((Type *)node->u.array.type);
+            add_serialized_bucket_entry(position + 8, reference);
+            reference = write_enode(node->u.array.index);
+            add_serialized_bucket_entry(position + 12, reference);
+            break;
+        case 4:
+            reference = write_templdep(node->u.qualtempl.type);
+            add_serialized_bucket_entry(position + 8, reference);
+            reference = serialize_ct_state_elems((CTStateElem *)node->u.qualtempl.args);
+            add_serialized_bucket_entry(position + 12, reference);
+            break;
+        case 5:
+            reference = write_type((Type *)node->u.bitfield.type);
+            add_serialized_bucket_entry(position + 8, reference);
+            reference = write_enode(node->u.bitfield.size);
+            add_serialized_bucket_entry(position + 12, reference);
+            break;
+        default:
+            CError_FATAL(1270);
+    }
+    return position;
+}
+
+TypeMemberPointer *append_member_pointer_type(TypeMemberPointer *tmemp)
+{
+    TypeMemberPointer *p;
+
+    insert_written_entry_by_key(tmemp, p = CPrec_AppendAlign_004de900());
+    append_data_and_count_bytes(tmemp, 0x12);
+    add_serialized_bucket_entry((SInt32)(&p->memberType), write_type(tmemp->memberType));
+    add_serialized_bucket_entry((SInt32)(&p->owner.type), write_type(tmemp->owner.type));
+    return p;
+}
+
+TypeFunc *copy_type_func(TypeFunc *tfunc)
+{
+    TypeFunc *copy;
+
+    CPrec_NewAddrPatch(tfunc, copy = append_zero_bytes_to_align_position());
+    accumulate_data_length_and_forward_data(tfunc,
+                                            (tfunc->flags & FUNC_METHOD) ? sizeof(TypeMemberFunc) : sizeof(TypeFunc));
+    add_serialized_bucket_entry((SInt32)&copy->functype, write_type(tfunc->functype));
+    if (tfunc->args)
+        add_serialized_bucket_entry((SInt32)&copy->args,
+                                    (SInt32)write_func_args(tfunc->args, (tfunc->flags & 0x8000400) != 0));
+    if (tfunc->exspecs)
+        add_serialized_bucket_entry((SInt32)&copy->exspecs, write_except_spec_list(tfunc->exspecs));
+    if (tfunc->flags & FUNC_METHOD)
+        add_serialized_bucket_entry((SInt32)&TYPE_METHOD(copy)->theclass,
+                                    write_type((Type *)TYPE_METHOD(tfunc)->theclass));
+    return copy;
+}
+
+FuncArg *write_func_args(FuncArg *arg, Boolean naming)
+{
+    CPrecWrittenEntry *entry;
+    SInt32 position;
+    SInt32 nextPosition;
+    FuncArg *current;
+    UInt32 first;
+    FuncArg *next;
+
+    if ((entry = CPrec_FindAddrPatch_004deb20(arg)))
+        return entry->image_position;
+
+    first = (UInt32)(current = append_four_byte_alignment_padding());
+    while (1) {
+        if (!naming)
+            arg->name = NULL;
+        append_precompiled_buffer_data(arg, sizeof(*arg));
+        if (naming && arg->name)
+            set_name_id_and_forward(&current->name, arg->name);
+        if (arg->dexpr)
+            (void)add_serialized_bucket_entry((SInt32)&current->dexpr, write_enode((ENode *)arg->dexpr));
+        if (arg->type) {
+            add_serialized_bucket_entry((SInt32)&current->type, (SInt32)write_type(arg->type));
+        } else
+            CError_FATAL(1142);
+        if (!arg->next)
+            break;
+        if ((entry = CPrec_FindAddrPatch_004deb20(arg->next))) {
+            add_serialized_bucket_entry((SInt32)&current->next, (SInt32)entry->image_position);
+            break;
+        }
+        position = nextPosition = (SInt32)(next = append_four_byte_alignment_padding());
+        add_serialized_bucket_entry((SInt32)&current->next, nextPosition);
+        current = next;
+        arg = arg->next;
+        prepend_written_entry(arg, position);
+    }
+    return (FuncArg *)first;
+}
+
 unsigned int write_except_spec_list(ExceptSpecList *record)
 {
     SInt32 startOffset;
@@ -5355,6 +5061,328 @@ unsigned int write_except_spec_list(ExceptSpecList *record)
         } while (record != NULL);
     }
     return startOffset;
+}
+
+TypeStruct *append_type_struct(TypeStruct *tstruct)
+{
+    StructMember *member;
+    TypeStruct *p;
+    StructMember *current;
+    StructMember *next;
+
+    CPrec_NewAddrPatch(tstruct, p = append_align());
+    CPrec_AppendData_004dee40(tstruct, 0x12);
+    if (tstruct->name)
+        CPrec_NamePatch(&p->name, tstruct->name);
+    if ((member = tstruct->members)) {
+        add_serialized_bucket_entry((SInt32)(&p->members), (SInt32)(current = append_align()));
+        while (1) {
+            CPrec_AppendData_004dee40(member, sizeof(StructMember));
+            add_serialized_bucket_entry((SInt32)(&current->type), write_type(member->type));
+            CPrec_NamePatch(&current->name, member->name);
+            if (!member->next)
+                break;
+            add_serialized_bucket_entry((SInt32)(&current->next), (SInt32)(next = append_align()));
+            current = next;
+            member = member->next;
+        }
+    }
+    return p;
+}
+
+/* CPrec_GetTypePatch */
+/* CPrec_NewPointerPatch */
+
+TypeBitfield *serialize_type_bitfield(TypeBitfield *bitfield)
+{
+    TypeBitfield *serialized;
+    prepend_written_entry_to_hash_bucket(bitfield, serialized = pad_precompiled_buffer());
+    append_precompiled_data(bitfield, sizeof(TypeBitfield));
+    {
+        int typeIndex = write_type(bitfield->bitfieldtype);
+        add_serialized_bucket_entry((SInt32)&serialized->bitfieldtype, typeIndex);
+    }
+    return serialized;
+}
+
+TypeEnum *append_type_enum(TypeEnum *tenum)
+{
+    TypeEnum *offset;
+
+    CPrec_NewAddrPatch(tenum, offset = align_and_return_offset());
+    CPrec_AppendData_004df0c0(tenum, sizeof(*tenum));
+    if (tenum->nspace)
+        patch_serialized_field(&offset->nspace, get_namespace_patch(tenum->nspace));
+    if (tenum->enumlist)
+        patch_serialized_field(&offset->enumlist, write_enum_const(tenum->enumlist));
+    patch_serialized_field(&offset->enumtype, CPrec_GetTypePatch(tenum->enumtype));
+    if (tenum->enumname)
+        CPrec_NamePatch(&offset->enumname, tenum->enumname);
+    return offset;
+}
+
+SInt32 write_pointer_type(TypePointer *ptr)
+{
+    SInt32 pos;
+    int hash;
+    CPrecWrittenEntry *entry;
+
+    if (ptr->qual & Q_IS_OBJC_ID) {
+        NewAddrPatch(ptr, pos = AppendAlign());
+        AppendData(ptr, 20);
+        if (ptr->protocols[0])
+            add_serialized_bucket_entry(pos + 14, (SInt32)write_object_list(ptr->protocols[0]));
+    } else {
+        if (!copts.f85 && data_00581c28 && ptr->size > 0) {
+            hash = hash_pointer_type(ptr);
+            for (entry = (CPrecWrittenEntry *)data_00581c02[hash]; entry; entry = entry->next) {
+                TypePointer *type = ptr, *writtenType = (TypePointer *)entry->object;
+                do {
+                    if (type->type != writtenType->type || type->size != writtenType->size ||
+                        type->qual != writtenType->qual)
+                        break;
+                    type = (TypePointer *)type->target;
+                    writtenType = (TypePointer *)writtenType->target;
+                    if (type->type != TYPEPOINTER || type->type != TYPEARRAY) {
+                        if (type == writtenType)
+                            return (SInt32)entry->image_position;
+                        break;
+                    }
+                } while (1);
+            }
+            NewAddrPatch(ptr, pos = AppendAlign());
+            entry = (CPrecWrittenEntry *)CompilerTools_AllocatePool(sizeof(*entry));
+            entry->object = ptr;
+            entry->image_position = (char *)pos;
+            entry->next = (CPrecWrittenEntry *)data_00581c02[hash];
+            data_00581c02[hash] = (CPrecWrittenEntry *)entry;
+        } else {
+            NewAddrPatch(ptr, pos = AppendAlign());
+        }
+        AppendData(ptr, 14);
+    }
+    add_serialized_bucket_entry(pos + 6, write_type(ptr->target));
+    return pos;
+}
+
+int hash_pointer_type(TypePointer *type)
+{
+    Type *base;
+    int hash;
+    FuncArg *arg;
+    Type *returnType;
+    TypePointer *pointerType;
+    hash = type->qual;
+    base = type->target;
+    for (;;) {
+        switch ((signed char)base->type) {
+            case TYPECLASS: {
+                const TypeClass *classType = (const TypeClass *)base;
+                const HashNameNode *className;
+                if ((className = classType->classname) != NULL)
+                    hash += className->hashval;
+                break;
+            }
+            case TYPEENUM:
+                if (((TypeEnum *)base)->enumname != NULL)
+                    hash += ((TypeEnum *)base)->enumname->hashval;
+                hash += TYPEENUM;
+                base = ((TypeEnum *)base)->enumtype;
+            case TYPEINT:
+            case TYPEFLOAT:
+                hash += ((TypeIntegral *)base)->integral;
+                break;
+            case TYPEPOINTER:
+                pointerType = (TypePointer *)base;
+                hash += pointerType->qual;
+                base = pointerType->target;
+                continue;
+            case TYPEARRAY:
+                hash += base->size;
+                base = ((TypePointer *)base)->target;
+                continue;
+            case TYPEFUNC:
+                returnType = ((TypeFunc *)base)->functype;
+                hash += (signed char)returnType->type;
+                hash += returnType->size;
+                arg = ((TypeFunc *)base)->args;
+                if (arg != NULL) {
+                    do {
+                        if (arg->type != NULL) {
+                            hash += (signed char)arg->type->type;
+                            hash += arg->type->size;
+                        }
+                        arg = arg->next;
+                    } while (arg != NULL);
+                }
+                break;
+            default:
+                break;
+        }
+        break;
+    }
+    hash += (signed char)base->type + base->size;
+    return ((hash >> 8) + ((hash >> 24) + hash + (hash >> 16))) & 1023;
+}
+
+/* CPrec_NamePatch body */
+
+SInt32 write_bclass_list(BClassList *classes)
+{
+    CPrecWrittenEntry *entry;
+    SInt32 firstPosition;
+    SInt32 currentPosition;
+    SInt32 nextPosition;
+
+    if ((entry = CPrec_FindAddrPatch(classes)))
+        return (SInt32)entry->image_position;
+
+    CPrec_NewAddrPatch(classes, (BClassList *)(firstPosition = currentPosition = append_prec_alignment_padding()));
+    while (1) {
+        CPrec_AppendData_004df620(classes, sizeof(BClassList));
+        add_serialized_bucket_entry(currentPosition + 4, write_type(classes->type));
+        if (!classes->next)
+            break;
+        nextPosition = append_prec_alignment_padding();
+        add_serialized_bucket_entry(currentPosition, nextPosition);
+        currentPosition = nextPosition;
+        classes = classes->next;
+    }
+    return firstPosition;
+}
+
+void serialize_macros(void)
+{
+    UInt32 n;
+    Macro *p;
+    SInt32 j;
+    SInt32 i;
+    SInt32 pos;
+    SInt32 start;
+    char *s;
+
+    i = 0;
+    do {
+        for (p = macro_buckets[i]; p != NULL; p = p->next) {
+            if (p->text != NULL) {
+                CPrec_AddRecord(p->text, prec_position);
+                s = p->text;
+                n = strlen(s) + 1;
+                if (data_00581c28)
+                    CompilerTools_AppendGListData(&precompiled_buffer, s, n);
+                prec_position += n;
+            }
+        }
+    } while (++i < 0x800);
+
+    i = 0;
+    do {
+        if ((p = macro_buckets[i]) == NULL)
+            continue;
+        pos = CPrec_AppendAlign_004df7a0();
+        start = pos;
+        if (data_00581c28)
+            prec_header->macroOffsets[i] = pos;
+        for (;;) {
+            CPrec_AppendLong(0);
+
+            CPrec_AppendObj(p->name);
+            CPrec_AppendOffset(p->text);
+
+            CPrec_AppendShort(p->nargs);
+            CPrec_AppendByte(p->flag);
+            CPrec_AppendByte(p->isExpanding);
+
+            for (j = 1; j < (p->nargs & 0x7fff); j++)
+                CPrec_AppendObj(p->args[j - 1]);
+
+            p = p->next;
+            if (p == NULL)
+                break;
+            CPrec_AppendAlign_004df7a0();
+            pos = prec_position;
+            add_serialized_bucket_entry(start, pos);
+            start = pos;
+        }
+    } while (++i < 0x800);
+}
+
+void append_hash_names(void)
+{
+    HashNameNode *name;
+    int i;
+    HashNameNode *p;
+    HashNameNode *next;
+
+    if (data_00581c28) {
+        i = 0;
+        do {
+            name = data_00587f88[i];
+            while (name && name->id == 0)
+                name = name->next;
+            if (name) {
+                prec_header->hashNameOffsets[i] = (SInt32)(p = append_prec_alignment());
+                while (1) {
+                    CPrec_NewAddrPatch(name, p);
+                    CPrec_AppendWord32(0);
+                    CPrec_AppendWord32(0);
+                    CPrec_AppendWord16(name->hashval);
+                    CPrec_AppendString(name->name);
+                    name = name->next;
+                    while (name && name->id == 0)
+                        name = name->next;
+                    if (!name)
+                        break;
+                    add_serialized_bucket_entry((SInt32)(&p->next), (SInt32)(next = append_prec_alignment()));
+                    p = next;
+                }
+            }
+        } while (++i < 0x800);
+    } else {
+        i = 0;
+        do {
+            if ((name = data_00587f88[i])) {
+                p = append_prec_alignment();
+                while (1) {
+                    CPrec_NewAddrPatch(name, p);
+                    CPrec_AppendWord32(0);
+                    CPrec_AppendWord32(0);
+                    CPrec_AppendWord16(name->hashval);
+                    CPrec_AppendString(name->name);
+                    name = name->next;
+                    if (!name)
+                        break;
+                    add_serialized_bucket_entry((SInt32)(&p->next), (SInt32)(next = append_prec_alignment()));
+                    p = next;
+                }
+            }
+        } while (++i < 0x800);
+    }
+}
+
+void fn_004e0010(void *data, UInt32 size)
+{
+    if (data_00581c28 != 0) {
+        CompilerTools_AppendGListData(&precompiled_buffer, data, size);
+    }
+    prec_position += size;
+}
+
+unsigned int align_to_four_byte_boundary(void)
+
+{
+    if (data_00581c28 != '\0') {
+        for (; (prec_position & 3) != 0; prec_position += 1) {
+            AppendGListByte(&precompiled_buffer, 0);
+        }
+    }
+    return prec_position;
+}
+
+void patch_hash_name_reference(unsigned int value, HashNameNode *record)
+{
+    record->id = 1;
+    patch_object_reference((SInt32)(value), record);
 }
 
 /* 0x441fa0, size in the caller's push */

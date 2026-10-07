@@ -10,6 +10,7 @@
 #include "driver/StringUtils.h"
 #include <string.h>
 #pragma optimization_level 2
+
 int TargetOptimizer_ppc_eabi_SetOption(short option, char enabled)
 {
     switch (option) {
@@ -30,7 +31,71 @@ int TargetOptimizer_ppc_eabi_SetOption(short option, char enabled)
     }
     return 1;
 }
+
 #pragma optimization_level reset
+
+#pragma scheduling off
+
+unsigned int TargetOptimizer_ppc_eabi_ReportScheduling(struct StorageHandle *argument)
+{
+    int setting;
+    unsigned char *message;
+
+    if (data_00537a63 == 0)
+        HPrintF(argument, "\t- no instruction scheduling\n");
+    else {
+        if ((setting = data_00537a68) == 20)
+            message = generic_ppc_message;
+        else if (setting == 0)
+            message = data_0054c5d0;
+        else if (setting == 1)
+            message = data_0054c5d4;
+        else if (setting == 2)
+            message = data_0054c5d8;
+        else if (setting == 3)
+            message = data_0054c5dc;
+        else if (setting == 4)
+            message = data_0054c5e0;
+        else if (setting == 5)
+            message = data_0054c5e4;
+        else if (setting == 6)
+            message = data_0054c5e8;
+        else if (setting == 7)
+            message = data_0054c5ec;
+        else if (setting == 8)
+            message = data_0054c5f0;
+        else if (setting == 9)
+            message = data_0054c5f8;
+        else if (setting == 10)
+            message = data_0054c5fc;
+        else if (setting == 11)
+            message = data_0054c604;
+        else if (setting == 12)
+            message = data_0054c608;
+        else if (setting == 13)
+            message = data_0054c60c;
+        else if (setting == 14)
+            message = data_0054c610;
+        else if (setting == 15)
+            message = data_0054c614;
+        else if (setting == 16)
+            message = data_0054c618;
+        else if (setting == 19)
+            message = data_0054c61c;
+        else if (setting == 17)
+            message = (unsigned char *)data_0054c624;
+        else
+            message = data_0054c628;
+
+        HPrintF(argument, "\t- schedule for %s\n", message);
+    }
+}
+
+#pragma scheduling reset
+
+void fn_00420700(void)
+{
+}
 
 unsigned int fn_00420710(OperationRecord *context)
 {
@@ -157,65 +222,4 @@ unsigned int __stdcall TargetOptimizer_ppc_eabi_UnloadOperationRecord(struct Ope
         return result;
     record->loaded = 0U;
     return 0U;
-}
-
-#pragma scheduling off
-unsigned int TargetOptimizer_ppc_eabi_ReportScheduling(struct StorageHandle *argument)
-{
-    int setting;
-    unsigned char *message;
-
-    if (data_00537a63 == 0)
-        HPrintF(argument, "\t- no instruction scheduling\n");
-    else {
-        if ((setting = data_00537a68) == 20)
-            message = generic_ppc_message;
-        else if (setting == 0)
-            message = data_0054c5d0;
-        else if (setting == 1)
-            message = data_0054c5d4;
-        else if (setting == 2)
-            message = data_0054c5d8;
-        else if (setting == 3)
-            message = data_0054c5dc;
-        else if (setting == 4)
-            message = data_0054c5e0;
-        else if (setting == 5)
-            message = data_0054c5e4;
-        else if (setting == 6)
-            message = data_0054c5e8;
-        else if (setting == 7)
-            message = data_0054c5ec;
-        else if (setting == 8)
-            message = data_0054c5f0;
-        else if (setting == 9)
-            message = data_0054c5f8;
-        else if (setting == 10)
-            message = data_0054c5fc;
-        else if (setting == 11)
-            message = data_0054c604;
-        else if (setting == 12)
-            message = data_0054c608;
-        else if (setting == 13)
-            message = data_0054c60c;
-        else if (setting == 14)
-            message = data_0054c610;
-        else if (setting == 15)
-            message = data_0054c614;
-        else if (setting == 16)
-            message = data_0054c618;
-        else if (setting == 19)
-            message = data_0054c61c;
-        else if (setting == 17)
-            message = (unsigned char *)data_0054c624;
-        else
-            message = data_0054c628;
-
-        HPrintF(argument, "\t- schedule for %s\n", message);
-    }
-}
-#pragma scheduling reset
-
-void fn_00420700(void)
-{
 }

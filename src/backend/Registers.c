@@ -85,6 +85,7 @@ static void Registers_SaveClassState(const unsigned char *used, short save_span)
     gSaveSpan = save_span;
     memcpy(gSavedUsedPhysicalRegisters, used, 32);
 }
+
 Boolean Registers_ContainsCOptCSE(COptCSE *target, COptCSE *node)
 {
     if (target == node)
@@ -175,6 +176,7 @@ static void Registers_Require(int condition, int line)
         CError_Internal("Registers.c", line);
     }
 }
+
 SInt32 fn_004c15f0(void)
 {
     SInt16 i;
@@ -398,6 +400,62 @@ static int Registers_CountFree(const unsigned char *used)
     return count;
 }
 
+/* 0x5619b8, the "Registers.c" file name */
+
+static void Registers_MarkFPRUsed(SInt16 regnum)
+{
+    SInt32 avail;
+    SInt32 start;
+    SInt32 i;
+
+    start = 0x20;
+    avail = 0;
+    gUsedPhysicalFPR[regnum] = 1;
+    i = 0x1f;
+    do {
+        if (gUsedPhysicalFPR[i] == 1) {
+            start = i;
+        }
+        if (i > 0x11 && gUsedPhysicalFPR[i] == 0) {
+            avail++;
+        }
+    } while (--i >= 0xe);
+    gFPRSaveSpan = 0x20 - start;
+    gAvailableSavedFPRs = avail;
+}
+
+static SInt16 Registers_FindFreeGPR(void)
+{
+    SInt32 i = 31;
+    do {
+        if (gUsedPhysicalGPR[i] == 0) {
+            Registers_BindGPR(NULL, i);
+            return (SInt16)i;
+        }
+        i--;
+    } while (i >= 14);
+    return -1;
+}
+
+static VarInfo *Registers_NewInfo(void)
+{
+    VarInfo *p = (VarInfo *)galloc(sizeof(VarInfo));
+    memclrw(p, sizeof(VarInfo));
+    return p;
+}
+
+unsigned char Registers_AreNonvolatileVRUsed(void)
+{
+    int reg;
+
+    for (reg = 31; reg >= 20; --reg) {
+        if (gUsedPhysicalVR[reg] != 0) {
+            return 1;
+        }
+    }
+    return 0;
+}
+
 short Coloring_ClaimVRColor(void)
 {
     int color;
@@ -522,29 +580,6 @@ void Registers_BindVR(Object *obj, short vr)
         regs->reg = vr;
     }
 }
-/* 0x5619b8, the "Registers.c" file name */
-
-static void Registers_MarkFPRUsed(SInt16 regnum)
-{
-    SInt32 avail;
-    SInt32 start;
-    SInt32 i;
-
-    start = 0x20;
-    avail = 0;
-    gUsedPhysicalFPR[regnum] = 1;
-    i = 0x1f;
-    do {
-        if (gUsedPhysicalFPR[i] == 1) {
-            start = i;
-        }
-        if (i > 0x11 && gUsedPhysicalFPR[i] == 0) {
-            avail++;
-        }
-    } while (--i >= 0xe);
-    gFPRSaveSpan = 0x20 - start;
-    gAvailableSavedFPRs = avail;
-}
 
 void Registers_BindFPR(Object *obj, SInt16 regnum)
 {
@@ -633,6 +668,63 @@ void Registers_BindGPRPair(Object *obj, SInt16 reg0, SInt16 reg1)
         info->is_vector = 0;
         info->reg = reg0;
         info->regHi = reg1;
+        if (copts.operandsDebug && obj->type->type == TYPEFLOAT)
+            info->is_fpr = 1;
+    }
+}
+
+void Registers_BindGPR(Object *obj, SInt16 reg)
+{
+    SInt32 i;
+    SInt32 maxreg;
+    SInt32 avail;
+    VarInfo *info;
+
+    if (gUsedPhysicalGPR[reg] == 0) {
+        maxreg = 32;
+        avail = 0;
+        gUsedPhysicalGPR[reg] = 1;
+        i = 31;
+        do {
+            if (gUsedPhysicalGPR[i] == 1)
+                maxreg = i;
+            if (i > 15 && gUsedPhysicalGPR[i] == 0)
+                avail++;
+        } while (--i >= 14);
+        gGPRSaveSpan = (SInt16)(32 - maxreg);
+        gAvailableSavedGPRs = (SInt16)avail;
+    }
+
+    if (obj != NULL) {
+        switch (obj->datatype) {
+            case DDATA:
+                if (obj->u.data.info == NULL) {
+                    info = (VarInfo *)galloc(sizeof(VarInfo));
+                    memclrw(info, sizeof(VarInfo));
+                    obj->u.data.info = info;
+                }
+                info = obj->u.data.info;
+                break;
+            case DLOCAL:
+                CError_ASSERT(745, obj->u.var.info != NULL);
+                info = obj->u.var.info;
+                break;
+            case DABSOLUTE:
+                if (obj->u.data.info == NULL) {
+                    info = (VarInfo *)galloc(sizeof(VarInfo));
+                    memclrw(info, sizeof(VarInfo));
+                    obj->u.data.info = info;
+                }
+                info = obj->u.data.info;
+                break;
+            default:
+                CError_FATAL(758);
+                info = NULL;
+        }
+
+        info->is_fpr = 0;
+        info->is_vector = 0;
+        info->reg = reg;
         if (copts.operandsDebug && obj->type->type == TYPEFLOAT)
             info->is_fpr = 1;
     }
@@ -754,26 +846,6 @@ void Registers_AllocateFPR(Object *obj)
     info->is_vector = 0;
     if (reg > 0)
         info->reg = reg;
-}
-
-static SInt16 Registers_FindFreeGPR(void)
-{
-    SInt32 i = 31;
-    do {
-        if (gUsedPhysicalGPR[i] == 0) {
-            Registers_BindGPR(NULL, i);
-            return (SInt16)i;
-        }
-        i--;
-    } while (i >= 14);
-    return -1;
-}
-
-static VarInfo *Registers_NewInfo(void)
-{
-    VarInfo *p = (VarInfo *)galloc(sizeof(VarInfo));
-    memclrw(p, sizeof(VarInfo));
-    return p;
 }
 
 void Registers_AllocateGPRPair(Object *obj)
@@ -924,73 +996,4 @@ void Registers_InitRegisterState(void)
         gUseVirtualRegisterNumbers_00587f00 = usevrs;
     }
     gVirtualRegistersActive = 1;
-}
-
-unsigned char Registers_AreNonvolatileVRUsed(void)
-{
-    int reg;
-
-    for (reg = 31; reg >= 20; --reg) {
-        if (gUsedPhysicalVR[reg] != 0) {
-            return 1;
-        }
-    }
-    return 0;
-}
-
-void Registers_BindGPR(Object *obj, SInt16 reg)
-{
-    SInt32 i;
-    SInt32 maxreg;
-    SInt32 avail;
-    VarInfo *info;
-
-    if (gUsedPhysicalGPR[reg] == 0) {
-        maxreg = 32;
-        avail = 0;
-        gUsedPhysicalGPR[reg] = 1;
-        i = 31;
-        do {
-            if (gUsedPhysicalGPR[i] == 1)
-                maxreg = i;
-            if (i > 15 && gUsedPhysicalGPR[i] == 0)
-                avail++;
-        } while (--i >= 14);
-        gGPRSaveSpan = (SInt16)(32 - maxreg);
-        gAvailableSavedGPRs = (SInt16)avail;
-    }
-
-    if (obj != NULL) {
-        switch (obj->datatype) {
-            case DDATA:
-                if (obj->u.data.info == NULL) {
-                    info = (VarInfo *)galloc(sizeof(VarInfo));
-                    memclrw(info, sizeof(VarInfo));
-                    obj->u.data.info = info;
-                }
-                info = obj->u.data.info;
-                break;
-            case DLOCAL:
-                CError_ASSERT(745, obj->u.var.info != NULL);
-                info = obj->u.var.info;
-                break;
-            case DABSOLUTE:
-                if (obj->u.data.info == NULL) {
-                    info = (VarInfo *)galloc(sizeof(VarInfo));
-                    memclrw(info, sizeof(VarInfo));
-                    obj->u.data.info = info;
-                }
-                info = obj->u.data.info;
-                break;
-            default:
-                CError_FATAL(758);
-                info = NULL;
-        }
-
-        info->is_fpr = 0;
-        info->is_vector = 0;
-        info->reg = reg;
-        if (copts.operandsDebug && obj->type->type == TYPEFLOAT)
-            info->is_fpr = 1;
-    }
 }

@@ -344,6 +344,7 @@ void insert_type_nodes_recursive(DWInfo *a, DWInfo *b)
             break;
     }
 }
+
 #define CERROR_FILE dwarf_filename
 
 void create_type_node(DWInfo *typeLink)
@@ -452,6 +453,172 @@ void insert_type_node_before(DWInfo *before, DWInfo *info)
     owner->typeNode = node;
 }
 
+/* 0x586fc0, 16 bytes */
+
+static void SetScope(DwarfFunctionState *obj)
+{
+    currentDwarfFunctionState = obj;
+    if (copts.f26 != 0) {
+        dwarf_info_buffer = &obj->info;
+        dwarf_depth_ptr = &obj->depth;
+        dwarf_entry_offsets = obj->offsets;
+        data_005604a4 = obj->entries;
+        data_005604a8 = &obj->pending;
+    }
+    dwarf_lines = &obj->lines;
+    section_buffer = ObjGen_PPC_EABI_GetSectionBuffer(obj->section);
+}
+
+static void InitOffsets(int offset)
+{
+    currentDwarfFunctionState->offset = 0;
+    currentDwarfFunctionState->lineSectionOffset = offset;
+}
+
+static void WritePadding(int amount)
+{
+    AppendGListLong(dwarf_info_buffer, amount);
+    amount -= 4;
+    if (amount >= 2) {
+        AppendGListWord(dwarf_info_buffer, 0);
+        amount -= 2;
+    }
+    if (amount == 1)
+        AppendGListByte(dwarf_info_buffer, 0);
+}
+
+static long ReadPosition(void)
+{
+    return *(long *)*dwarf_lines->data;
+}
+
+static void WritePosition(long pos)
+{
+    *(long *)*dwarf_lines->data = pos;
+}
+
+/* sizeof == 0x1cc */
+
+/* Private per-function DWARF state; buffers are opaque. */
+
+/* Opaque function data followed by its DWARF state pointer. */
+
+static inline UInt8 DWARF_FullDebugEnabled(void)
+{
+    return copts.f26;
+}
+
+static inline void DWARF_ActivateFunctionState(struct ObjGenSection *section)
+{
+    DwarfFunctionState *functionState = section->debugState;
+    currentDwarfFunctionState = functionState;
+    if (DWARF_FullDebugEnabled() != 0) {
+        dwarf_info_buffer = &functionState->info;
+        dwarf_depth_ptr = &functionState->depth;
+        dwarf_entry_offsets = functionState->offsets;
+        data_005604a4 = functionState->entries;
+        data_005604a8 = &functionState->pending;
+    }
+    dwarf_lines = &functionState->lines;
+    section_buffer = ObjGen_PPC_EABI_GetSectionBuffer(functionState->section);
+}
+
+static inline UInt8 dwarf_uses_zero_addends(void)
+{
+    return copts.fd5;
+}
+
+#define data_00560530 (dwarf_filename + 0x80)
+
+static inline char *dwarfFileName(char *path, Boolean fullPath)
+{
+    SInt32 i;
+    if (fullPath == 0) {
+        for (i = (SInt32)strlen(path); i >= 0; i--) {
+            if (path[i] == '\\' || path[i] == '/')
+                return &path[i + 1];
+        }
+    }
+    return path;
+}
+
+static inline UInt8 dwarfZeroRelocationAddends(void)
+{
+    return copts.fd5;
+}
+
+static inline ObjGenSection *dwarfLineSection(void)
+{
+    return DAT_00587698;
+}
+
+static inline UInt8 dwarf_zero_addend_mode(void)
+{
+    return copts.fd5;
+}
+
+#pragma opt_propagation off
+
+static inline UInt8 NextQual(UInt16 *q)
+{
+    UInt32 v = (UInt16)*q;
+
+    if (v & Q_REFERENCE) {
+        *q -= Q_REFERENCE;
+        return 2;
+    }
+    if (v & Q_CONST) {
+        *q -= Q_CONST;
+        return 3;
+    }
+    if (v & Q_INLINE_DATA) {
+        return 3;
+    }
+    if (v & Q_VOLATILE) {
+        *q -= Q_VOLATILE;
+        return 4;
+    }
+    return 0;
+}
+
+#pragma opt_propagation reset
+
+void DWARF_CreateObjectDebugEntry(Object *object)
+{
+    DWInfo *typeEntry;
+    DwarfNode *entry;
+
+    if (copts.filesyminfo == 0)
+        return;
+    if (object->name->name[0] == '@')
+        return;
+    if (object->debugInfo.entry != NULL)
+        return;
+
+    typeEntry = find_or_create_dwinfo(object->type);
+    if (typeEntry->typeNode == NULL)
+        create_type_node(typeEntry);
+
+    currentDwarfNode->next = (DwarfNode *)galloc(sizeof(DwarfNode));
+    memclrw(currentDwarfNode->next, sizeof(DwarfNode));
+    currentDwarfNode->next->prev = currentDwarfNode;
+    currentDwarfNode = currentDwarfNode->next;
+    currentDwarfNode->scope = currentDwarfFunctionState;
+
+    entry = currentDwarfNode;
+    object->debugInfo.entry = entry;
+    if (object->dwarfLinks.pendingEntry != NULL) {
+        CError_Internal(dwarf_filename, 0x7f5);
+        object->dwarfLinks.pendingEntry->u.sym.replacement = entry;
+    }
+
+    entry->kind = 7;
+    entry->type = typeEntry;
+    entry->u.block.object = object;
+    entry->u.block.codeSize = 0;
+    entry->u.block.codeOffset = 0;
+}
+
 void emit_variable_entry(struct DwarfSym *sym, Object *obj, DWInfo *arg)
 {
     SInt32 size;
@@ -551,6 +718,7 @@ void DWARF_AddVar(Object *record, SInt32 offset)
     }
     node->u.var.name = record->name;
 }
+
 void DWARF_004ad260(DWInfo *ptype, union DwarfNodePayload *info)
 {
     Type *type = ptype->type;
@@ -630,6 +798,38 @@ void DWARF_004ad260(DWInfo *ptype, union DwarfNodePayload *info)
     length += emit_location_attribute(&location, 0x23, 0);
     *(SInt32 *)(*dwarf_info_buffer->data + entryOffset) = length;
 }
+
+void DWARF_AddLocalVariable(Object *parameter, int offset)
+{
+    VarInfo *registers;
+    DWInfo *type;
+    DwarfNode *location;
+
+    registers = parameter->u.var.info;
+    if (parameter->datatype != DLOCAL)
+        return;
+    type = find_or_create_dwinfo(parameter->type);
+    if (type->typeNode == NULL)
+        create_type_node(type);
+    currentDwarfNode->next = (DwarfNode *)galloc(sizeof(DwarfNode));
+    memclrw(currentDwarfNode->next, sizeof(DwarfNode));
+    currentDwarfNode->next->prev = currentDwarfNode;
+    currentDwarfNode = currentDwarfNode->next;
+    currentDwarfNode->scope = currentDwarfFunctionState;
+    location = currentDwarfNode;
+    currentDwarfNode->kind = 0xc;
+    location->type = type;
+    location->u.var.offset = parameter->u.var.uid + offset;
+    location->u.var.flags = parameter->qual;
+    location->u.var.reg = registers->reg;
+    if (registers->reg != 0) {
+        if ((copts.operandsDebug != 0 && parameter->type->type == TYPEFLOAT && parameter->type->size != 4) ||
+            ((parameter->type->type == TYPEINT || parameter->type->type == TYPEENUM) && parameter->type->size == 8))
+            location->u.var.reg2 = registers->regHi;
+    }
+    location->u.var.name = parameter->name;
+}
+
 void DWARF_004ad570(DWInfo *ptype, union DwarfNodePayload *info)
 {
     Type *type = ptype->type;
@@ -809,56 +1009,14 @@ SInt32 emit_dwarf_ref(DWInfo *info)
     }
     return size;
 }
+
 void fn_004ada90(void)
 {
     return;
 }
 
-/* 0x586fc0, 16 bytes */
-
-static void SetScope(DwarfFunctionState *obj)
-{
-    currentDwarfFunctionState = obj;
-    if (copts.f26 != 0) {
-        dwarf_info_buffer = &obj->info;
-        dwarf_depth_ptr = &obj->depth;
-        dwarf_entry_offsets = obj->offsets;
-        data_005604a4 = obj->entries;
-        data_005604a8 = &obj->pending;
-    }
-    dwarf_lines = &obj->lines;
-    section_buffer = ObjGen_PPC_EABI_GetSectionBuffer(obj->section);
-}
-
-static void InitOffsets(int offset)
-{
-    currentDwarfFunctionState->offset = 0;
-    currentDwarfFunctionState->lineSectionOffset = offset;
-}
-
-static void WritePadding(int amount)
-{
-    AppendGListLong(dwarf_info_buffer, amount);
-    amount -= 4;
-    if (amount >= 2) {
-        AppendGListWord(dwarf_info_buffer, 0);
-        amount -= 2;
-    }
-    if (amount == 1)
-        AppendGListByte(dwarf_info_buffer, 0);
-}
-
-static long ReadPosition(void)
-{
-    return *(long *)*dwarf_lines->data;
-}
-
-static void WritePosition(long pos)
-{
-    *(long *)*dwarf_lines->data = pos;
-}
-
 #pragma sym on
+
 void DWARF_WriteDebugInfo(void)
 {
     DWInfo *entryData;
@@ -1008,7 +1166,37 @@ void DWARF_WriteDebugInfo(void)
         }
     }
 }
+
 #pragma sym reset
+
+unsigned int DWARF_RestoreFunctionState(void)
+{
+    DwarfFunctionState *A;
+    GList *r;
+
+    currentDwarfNode->next = (DwarfNode *)galloc(38U);
+    memclrw(currentDwarfNode->next, 38U);
+    currentDwarfNode->next->prev = currentDwarfNode;
+    currentDwarfNode = currentDwarfNode->next;
+    currentDwarfNode->scope = currentDwarfFunctionState;
+    currentDwarfNode->kind = 0x4080U;
+    currentDwarfScope = 0U;
+    A = data_00587168;
+    currentDwarfFunctionState = A;
+    if (copts.f26 != 0U) {
+        dwarf_info_buffer = &A->info;
+        dwarf_depth_ptr = &A->depth;
+        dwarf_entry_offsets = A->offsets;
+        data_005604a4 = A->entries;
+        data_005604a8 = &A->pending;
+    }
+    dwarf_lines = &A->lines;
+    r = ObjGen_PPC_EABI_GetSectionBuffer(A->section);
+    section_buffer = r;
+    if (--data_005604ac == -1)
+        current_block_node = 0U;
+    return (unsigned int)r;
+}
 
 int DWARF_CreateBlockNode(Object *object, SInt32 codeSize, SInt32 codeOffset, ObjGenSection *section)
 {
@@ -1054,32 +1242,6 @@ int DWARF_CreateBlockNode(Object *object, SInt32 codeSize, SInt32 codeOffset, Ob
     return 1;
 }
 
-/* sizeof == 0x1cc */
-
-/* Private per-function DWARF state; buffers are opaque. */
-
-/* Opaque function data followed by its DWARF state pointer. */
-
-static inline UInt8 DWARF_FullDebugEnabled(void)
-{
-    return copts.f26;
-}
-
-static inline void DWARF_ActivateFunctionState(struct ObjGenSection *section)
-{
-    DwarfFunctionState *functionState = section->debugState;
-    currentDwarfFunctionState = functionState;
-    if (DWARF_FullDebugEnabled() != 0) {
-        dwarf_info_buffer = &functionState->info;
-        dwarf_depth_ptr = &functionState->depth;
-        dwarf_entry_offsets = functionState->offsets;
-        data_005604a4 = functionState->entries;
-        data_005604a8 = &functionState->pending;
-    }
-    dwarf_lines = &functionState->lines;
-    section_buffer = ObjGen_PPC_EABI_GetSectionBuffer(functionState->section);
-}
-
 void DWARF_SetupFunctionState(struct ObjGenSection *functionSection)
 {
     if (functionSection->debugState == NULL) {
@@ -1105,11 +1267,6 @@ void DWARF_SetupFunctionState(struct ObjGenSection *functionSection)
     } else {
         DWARF_ActivateFunctionState(functionSection);
     }
-}
-
-static inline UInt8 dwarf_uses_zero_addends(void)
-{
-    return copts.fd5;
 }
 
 SInt32 emit_function_entry(Object *func, SInt32 code_size, SInt32 code_offset,
@@ -1364,16 +1521,6 @@ void emit_function_type(DwarfFixup **fixups, DWInfo *function)
     --*dwarf_depth_ptr;
     *data_005604a8 = 0;
 }
-void DWARF_AppendLongWordLong(unsigned int firstValue, unsigned int secondValue)
-{
-    int outputPosition;
-
-    outputPosition = *(int *)*dwarf_lines->data;
-    AppendGListLong(dwarf_lines, firstValue);
-    AppendGListWord(dwarf_lines, 0xffffffff);
-    AppendGListLong(dwarf_lines, secondValue);
-    *(int *)*dwarf_lines->data = outputPosition + 10;
-}
 
 void DWARF_ReplaceTrailingLongWordLong(unsigned int firstValue, unsigned int secondValue)
 {
@@ -1389,28 +1536,15 @@ void DWARF_ReplaceTrailingLongWordLong(unsigned int firstValue, unsigned int sec
     *(int *)*dwarf_lines->data = savedCount + 10;
 }
 
-#define data_00560530 (dwarf_filename + 0x80)
-
-static inline char *dwarfFileName(char *path, Boolean fullPath)
+void DWARF_AppendLongWordLong(unsigned int firstValue, unsigned int secondValue)
 {
-    SInt32 i;
-    if (fullPath == 0) {
-        for (i = (SInt32)strlen(path); i >= 0; i--) {
-            if (path[i] == '\\' || path[i] == '/')
-                return &path[i + 1];
-        }
-    }
-    return path;
-}
+    int outputPosition;
 
-static inline UInt8 dwarfZeroRelocationAddends(void)
-{
-    return copts.fd5;
-}
-
-static inline ObjGenSection *dwarfLineSection(void)
-{
-    return DAT_00587698;
+    outputPosition = *(int *)*dwarf_lines->data;
+    AppendGListLong(dwarf_lines, firstValue);
+    AppendGListWord(dwarf_lines, 0xffffffff);
+    AppendGListLong(dwarf_lines, secondValue);
+    *(int *)*dwarf_lines->data = outputPosition + 10;
 }
 
 void emit_compile_unit(struct ObjGenSection *section, UInt8 language)
@@ -1550,11 +1684,6 @@ SInt32 emit_entry_header(SInt16 value)
     return 12;
 }
 
-static inline UInt8 dwarf_zero_addend_mode(void)
-{
-    return copts.fd5;
-}
-
 int emit_location_attribute(DwarfLocationOperand *location, UInt16 attribute, unsigned char shouldDereference)
 {
     int attributeSize;
@@ -1689,6 +1818,7 @@ DwarfRef get_type_dwarf_ref(DWInfo *info, UInt16 a, Boolean b)
     }
     return info->rec;
 }
+
 struct DWInfo *find_or_create_dwinfo(struct Type *type)
 {
     unsigned short low, high, middleLow, middleHigh;
@@ -1791,30 +1921,6 @@ void set_type_dwarf_ref(Type *p, UInt16 x, Boolean flag, DwarfRef *out)
 
 #pragma opt_propagation off
 
-static inline UInt8 NextQual(UInt16 *q)
-{
-    UInt32 v = (UInt16)*q;
-
-    if (v & Q_REFERENCE) {
-        *q -= Q_REFERENCE;
-        return 2;
-    }
-    if (v & Q_CONST) {
-        *q -= Q_CONST;
-        return 3;
-    }
-    if (v & Q_INLINE_DATA) {
-        return 3;
-    }
-    if (v & Q_VOLATILE) {
-        *q -= Q_VOLATILE;
-        return 4;
-    }
-    return 0;
-}
-
-#pragma opt_propagation reset
-#pragma opt_propagation off
 DwarfRef create_type_dwarf_ref(Type *type, UInt16 qual, Boolean isArgument)
 {
     UInt8 pointerKind;
@@ -1885,6 +1991,7 @@ DwarfRef create_type_dwarf_ref(Type *type, UInt16 qual, Boolean isArgument)
     }
     return result;
 }
+
 #pragma opt_propagation reset
 
 UInt16 get_integral_type_code(Type *type)
@@ -1926,101 +2033,6 @@ UInt16 get_integral_type_code(Type *type)
         default:
             return 0U;
     }
-}
-void DWARF_CreateObjectDebugEntry(Object *object)
-{
-    DWInfo *typeEntry;
-    DwarfNode *entry;
-
-    if (copts.filesyminfo == 0)
-        return;
-    if (object->name->name[0] == '@')
-        return;
-    if (object->debugInfo.entry != NULL)
-        return;
-
-    typeEntry = find_or_create_dwinfo(object->type);
-    if (typeEntry->typeNode == NULL)
-        create_type_node(typeEntry);
-
-    currentDwarfNode->next = (DwarfNode *)galloc(sizeof(DwarfNode));
-    memclrw(currentDwarfNode->next, sizeof(DwarfNode));
-    currentDwarfNode->next->prev = currentDwarfNode;
-    currentDwarfNode = currentDwarfNode->next;
-    currentDwarfNode->scope = currentDwarfFunctionState;
-
-    entry = currentDwarfNode;
-    object->debugInfo.entry = entry;
-    if (object->dwarfLinks.pendingEntry != NULL) {
-        CError_Internal(dwarf_filename, 0x7f5);
-        object->dwarfLinks.pendingEntry->u.sym.replacement = entry;
-    }
-
-    entry->kind = 7;
-    entry->type = typeEntry;
-    entry->u.block.object = object;
-    entry->u.block.codeSize = 0;
-    entry->u.block.codeOffset = 0;
-}
-
-void DWARF_AddLocalVariable(Object *parameter, int offset)
-{
-    VarInfo *registers;
-    DWInfo *type;
-    DwarfNode *location;
-
-    registers = parameter->u.var.info;
-    if (parameter->datatype != DLOCAL)
-        return;
-    type = find_or_create_dwinfo(parameter->type);
-    if (type->typeNode == NULL)
-        create_type_node(type);
-    currentDwarfNode->next = (DwarfNode *)galloc(sizeof(DwarfNode));
-    memclrw(currentDwarfNode->next, sizeof(DwarfNode));
-    currentDwarfNode->next->prev = currentDwarfNode;
-    currentDwarfNode = currentDwarfNode->next;
-    currentDwarfNode->scope = currentDwarfFunctionState;
-    location = currentDwarfNode;
-    currentDwarfNode->kind = 0xc;
-    location->type = type;
-    location->u.var.offset = parameter->u.var.uid + offset;
-    location->u.var.flags = parameter->qual;
-    location->u.var.reg = registers->reg;
-    if (registers->reg != 0) {
-        if ((copts.operandsDebug != 0 && parameter->type->type == TYPEFLOAT && parameter->type->size != 4) ||
-            ((parameter->type->type == TYPEINT || parameter->type->type == TYPEENUM) && parameter->type->size == 8))
-            location->u.var.reg2 = registers->regHi;
-    }
-    location->u.var.name = parameter->name;
-}
-
-unsigned int DWARF_RestoreFunctionState(void)
-{
-    DwarfFunctionState *A;
-    GList *r;
-
-    currentDwarfNode->next = (DwarfNode *)galloc(38U);
-    memclrw(currentDwarfNode->next, 38U);
-    currentDwarfNode->next->prev = currentDwarfNode;
-    currentDwarfNode = currentDwarfNode->next;
-    currentDwarfNode->scope = currentDwarfFunctionState;
-    currentDwarfNode->kind = 0x4080U;
-    currentDwarfScope = 0U;
-    A = data_00587168;
-    currentDwarfFunctionState = A;
-    if (copts.f26 != 0U) {
-        dwarf_info_buffer = &A->info;
-        dwarf_depth_ptr = &A->depth;
-        dwarf_entry_offsets = A->offsets;
-        data_005604a4 = A->entries;
-        data_005604a8 = &A->pending;
-    }
-    dwarf_lines = &A->lines;
-    r = ObjGen_PPC_EABI_GetSectionBuffer(A->section);
-    section_buffer = r;
-    if (--data_005604ac == -1)
-        current_block_node = 0U;
-    return (unsigned int)r;
 }
 
 void emit_array_type(Type *type)

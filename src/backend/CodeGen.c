@@ -465,6 +465,96 @@ ENode *CodeGen_MakeAltivecCall(Object *object, ENodeList *arguments)
     return Intrinsics_MakeAltivecCall(object, arguments);
 }
 
+static inline void CheckPragmaEnd(void)
+{
+    SInt16 t;
+
+    if (CPrepTokenizer_ScanToken() != -7) {
+        CPrep_ReportError(0x71);
+        do {
+            t = CPrepTokenizer_ScanToken();
+        } while (t != -7 && t);
+    }
+}
+
+static inline void SkipPragma(void)
+{
+    SInt16 t;
+
+    if (CPrepTokenizer_ScanToken() != -7) {
+        do {
+            t = CPrepTokenizer_ScanToken();
+        } while (t != -7 && t);
+    }
+}
+
+static inline void CodeGen_SetProcessorOption(UInt8 processor)
+{
+    CPrep_SaveAndSetOption(4, processor);
+    if (!copts.instructionSchedulingMode)
+        CPrep_SaveAndSetOption(5, 2);
+}
+
+static inline void initialize_codegen_list(Object **list)
+{
+    *list = CParser_NewRTFunc(&stvoid, NULL, 2, 0);
+}
+
+static inline HashNameNode *InternCodeGenName(char *text)
+{
+    return GetHashNameNode(text);
+}
+
+/* 0x5842f2, byte global */
+/* 0x5842d7, byte global */
+/* 0x584227, byte global */
+/* 0x54f6b4, filename string */
+
+static UInt8 CodeGen_00435040_kind(Type *ftype)
+{
+    if (Type_RequiresMemoryReturn(ftype))
+        return 4;
+    return 3;
+}
+
+static inline void emit_block(CLabel *block)
+{
+    if (block->pclabel == NULL)
+        block->pclabel = PCode_NewLabel();
+    if (block->pclabel->resolved == 0)
+        PCodeUtilities_ResolveLabel(block->pclabel);
+}
+
+static inline void branch_block(CLabel *block)
+{
+    if (block->pclabel == NULL)
+        block->pclabel = PCode_NewLabel();
+    PCodeUtilities_EmitBranch(block->pclabel);
+}
+
+static inline Boolean is_tail(Statement *node)
+{
+    for (node = node->next; node; node = node->next)
+        if (node->type > 2)
+            return 0;
+    return 1;
+}
+
+/* Entry in the linked key table. */
+
+InterruptGenerationRecord *CodeGen_FindInterruptGenerationRecord(SInt16 key)
+{
+    InterruptGenerationRecord *entry = interrupt_generation_records;
+    while (entry) {
+        if (entry->id == (unsigned short)key)
+            break;
+        entry = entry->next;
+    }
+    if (!entry)
+        CError_FATAL(3429);
+    return entry;
+}
+
 SInt32 CodeGen_GetMethRecRtypeAndArgsSize(MethRec *p)
 {
     ObjCParameterNode *n;
@@ -495,34 +585,92 @@ SInt32 CodeGen_GetMethRecRtypeAndArgsSize(MethRec *p)
     return size;
 }
 
+enum { STRUCT_VECTOR_FIRST = 4, STRUCT_VECTOR_LAST = 14 };
+
+static int IsVolatile(Object *obj)
+{
+    if (obj->type->type == TYPEPOINTER)
+        return ((TypePointer *)obj->type)->qual & Q_VOLATILE;
+    return obj->qual & Q_VOLATILE;
+}
+
+/* Function metadata used to compute argument offsets. */
+
+unsigned int CodeGen_GetObjCParameterOffset(MethRec *function, ObjCParameterNode *argument)
+{
+    unsigned int offset;
+    ObjCParameterNode *arg;
+
+    if (function->rtype == NULL)
+        offset = 4;
+    else if (function->rtype->type == TYPEARRAY || (unsigned char)(function->rtype->type - TYPESTRUCT) <= 1 ||
+             (function->rtype->type == TYPEMEMBERPOINTER && function->rtype->size == 12))
+        offset = 8;
+    else
+        offset = function->rtype->size;
+    if (offset == 0)
+        offset = 1;
+    offset = (offset + 3) & ~3U;
+    offset = (offset + 7) & ~3U;
+    offset += 4;
+    arg = function->args;
+    while (arg != NULL) {
+        if (arg == argument)
+            return offset;
+        if (arg->type == NULL)
+            offset += 4;
+        else
+            offset += arg->type->size;
+        offset = (offset + 3) & ~3U;
+        arg = arg->next;
+    }
+    return 0;
+}
+
+/* Record containing the type used for size calculation. */
+
+int fn_00432480(MethRec *record)
+{
+    int size;
+    if (!record->rtype)
+        size = 4;
+    else if (record->rtype->type == TYPEARRAY || record->rtype->type == TYPESTRUCT ||
+             record->rtype->type == TYPECLASS ||
+             (record->rtype->type == TYPEMEMBERPOINTER && record->rtype->size == 12))
+        size = 8;
+    else
+        size = record->rtype->size;
+    if (size == 0)
+        size = 1;
+    return (((size + 3) & ~3) + 7) & ~3;
+}
+
+/* Type-bearing record used by the code generator; preceding fields are unknown. */
+
+unsigned int CodeGen_GetMethRecRTypeSize(MethRec *record)
+{
+    unsigned int size;
+
+    if (!record->rtype) {
+        size = 4;
+    } else {
+        Type *type = record->rtype;
+        if (type->type == TYPEARRAY || (unsigned char)(type->type - TYPESTRUCT) <= TYPECLASS - TYPESTRUCT ||
+            (type->type == TYPEMEMBERPOINTER && type->size == 12))
+            size = 8;
+        else
+            size = type->size;
+    }
+    if (!size)
+        size = 1;
+    return (size + 3) & ~3U;
+}
+
 void CodeGen_SetIROptimizationEnabled(void)
 
 {
     copts.irOptimizationEnabled = '\0' < copts.deleteDeadInstructions;
     return;
-}
-
-static inline void CheckPragmaEnd(void)
-{
-    SInt16 t;
-
-    if (CPrepTokenizer_ScanToken() != -7) {
-        CPrep_ReportError(0x71);
-        do {
-            t = CPrepTokenizer_ScanToken();
-        } while (t != -7 && t);
-    }
-}
-
-static inline void SkipPragma(void)
-{
-    SInt16 t;
-
-    if (CPrepTokenizer_ScanToken() != -7) {
-        do {
-            t = CPrepTokenizer_ScanToken();
-        } while (t != -7 && t);
-    }
 }
 
 void CodeGen_SetObjectSectionAndInterruptInfo(Object *obj)
@@ -836,13 +984,6 @@ void CodeGen_ParsePragma(HashNameNode *name)
     if (copts.f9f)
         fn_0043f3b0(0xba);
     SkipPragma();
-}
-
-static inline void CodeGen_SetProcessorOption(UInt8 processor)
-{
-    CPrep_SaveAndSetOption(4, processor);
-    if (!copts.instructionSchedulingMode)
-        CPrep_SaveAndSetOption(5, 2);
 }
 
 void CodeGen_004332e0(void)
@@ -1273,81 +1414,10 @@ void CodeGen_EmitLoadAndBranchFunction(Object *function, Object *branchTarget, O
     copts.peepholeOptimizationEnabled = savedFb7;
     copts.emitExtraAssemblyData = savedF07;
 }
+
 char CodeGen_IsRegisteredObject(ObjBase *object)
 {
     return Intrinsics_IsRegisteredObject(object);
-}
-
-static inline void initialize_codegen_list(Object **list)
-{
-    *list = CParser_NewRTFunc(&stvoid, NULL, 2, 0);
-}
-
-void CodeGen_InitializeLists(void)
-{
-    fn_0049f560();
-    initialize_codegen_list(&data_00587640);
-    initialize_codegen_list(&data_0058758c);
-    initialize_codegen_list(&data_00588054);
-    initialize_codegen_list(&data_00587c8c);
-    initialize_codegen_list(&data_0058803c);
-    initialize_codegen_list(&data_00588038);
-    initialize_codegen_list(&data_0058808c);
-    initialize_codegen_list(&data_00588078);
-    initialize_codegen_list(&data_00587ff4);
-    initialize_codegen_list(&data_00587ff0);
-    initialize_codegen_list(&data_00587fec);
-    initialize_codegen_list(&data_00587eb4);
-    initialize_codegen_list(&data_00587ee4);
-    initialize_codegen_list(&data_00587eac);
-    initialize_codegen_list(&data_00587edc);
-    initialize_codegen_list(&data_00587e68);
-    initialize_codegen_list(&data_005875e0);
-    initialize_codegen_list(&data_005875f4);
-    initialize_codegen_list(&data_00587584);
-    initialize_codegen_list(&data_0058762c);
-    initialize_codegen_list(&data_0058761c);
-    initialize_codegen_list(&data_0058760c);
-    initialize_codegen_list(&data_00587604);
-    initialize_codegen_list(&data_00587618);
-    initialize_codegen_list(&data_00587610);
-    initialize_codegen_list(&data_005875fc);
-    initialize_codegen_list(&data_00587628);
-    initialize_codegen_list(&data_00587e9c);
-    initialize_codegen_list(&data_00587ea4);
-    initialize_codegen_list(&data_00587e94);
-    initialize_codegen_list(&data_0058823c);
-    initialize_codegen_list(&data_00588068);
-    initialize_codegen_list(&data_00587e90);
-    initialize_codegen_list(&data_00587e5c);
-    initialize_codegen_list(&data_00588250);
-    initialize_codegen_list(&data_00587f50);
-    initialize_codegen_list(&data_00587614);
-    initialize_codegen_list(&data_005875bc);
-    initialize_codegen_list(&data_005875ac);
-    initialize_codegen_list(&data_005875f0);
-    initialize_codegen_list(&data_005875e8);
-    initialize_codegen_list(&data_005875d8);
-    initialize_codegen_list(&data_005875d4);
-    initialize_codegen_list(&data_005875e4);
-    initialize_codegen_list(&data_005875dc);
-    initialize_codegen_list(&data_005875c8);
-    initialize_codegen_list(&data_005875ec);
-    initialize_codegen_list(&data_00587e6c);
-    initialize_codegen_list(&data_00587e7c);
-    initialize_codegen_list(&data_00587e80);
-    initialize_codegen_list(&data_00588214);
-    initialize_codegen_list(&data_00588020);
-    initialize_codegen_list(&data_00587ec0);
-    initialize_codegen_list(&data_00587e34);
-    initialize_codegen_list(&data_00588210);
-    initialize_codegen_list(&data_00587f9c);
-    Intrinsics_RegisterIntrinsics();
-}
-
-static inline HashNameNode *InternCodeGenName(char *text)
-{
-    return GetHashNameNode(text);
 }
 
 void fn_00434660(Boolean initializationOptions)
@@ -1413,16 +1483,66 @@ void fn_00434660(Boolean initializationOptions)
     Intrinsics_InitRegistrations(initializationOptions);
 }
 
-/* 0x5842f2, byte global */
-/* 0x5842d7, byte global */
-/* 0x584227, byte global */
-/* 0x54f6b4, filename string */
-
-static UInt8 CodeGen_00435040_kind(Type *ftype)
+void CodeGen_InitializeLists(void)
 {
-    if (Type_RequiresMemoryReturn(ftype))
-        return 4;
-    return 3;
+    fn_0049f560();
+    initialize_codegen_list(&data_00587640);
+    initialize_codegen_list(&data_0058758c);
+    initialize_codegen_list(&data_00588054);
+    initialize_codegen_list(&data_00587c8c);
+    initialize_codegen_list(&data_0058803c);
+    initialize_codegen_list(&data_00588038);
+    initialize_codegen_list(&data_0058808c);
+    initialize_codegen_list(&data_00588078);
+    initialize_codegen_list(&data_00587ff4);
+    initialize_codegen_list(&data_00587ff0);
+    initialize_codegen_list(&data_00587fec);
+    initialize_codegen_list(&data_00587eb4);
+    initialize_codegen_list(&data_00587ee4);
+    initialize_codegen_list(&data_00587eac);
+    initialize_codegen_list(&data_00587edc);
+    initialize_codegen_list(&data_00587e68);
+    initialize_codegen_list(&data_005875e0);
+    initialize_codegen_list(&data_005875f4);
+    initialize_codegen_list(&data_00587584);
+    initialize_codegen_list(&data_0058762c);
+    initialize_codegen_list(&data_0058761c);
+    initialize_codegen_list(&data_0058760c);
+    initialize_codegen_list(&data_00587604);
+    initialize_codegen_list(&data_00587618);
+    initialize_codegen_list(&data_00587610);
+    initialize_codegen_list(&data_005875fc);
+    initialize_codegen_list(&data_00587628);
+    initialize_codegen_list(&data_00587e9c);
+    initialize_codegen_list(&data_00587ea4);
+    initialize_codegen_list(&data_00587e94);
+    initialize_codegen_list(&data_0058823c);
+    initialize_codegen_list(&data_00588068);
+    initialize_codegen_list(&data_00587e90);
+    initialize_codegen_list(&data_00587e5c);
+    initialize_codegen_list(&data_00588250);
+    initialize_codegen_list(&data_00587f50);
+    initialize_codegen_list(&data_00587614);
+    initialize_codegen_list(&data_005875bc);
+    initialize_codegen_list(&data_005875ac);
+    initialize_codegen_list(&data_005875f0);
+    initialize_codegen_list(&data_005875e8);
+    initialize_codegen_list(&data_005875d8);
+    initialize_codegen_list(&data_005875d4);
+    initialize_codegen_list(&data_005875e4);
+    initialize_codegen_list(&data_005875dc);
+    initialize_codegen_list(&data_005875c8);
+    initialize_codegen_list(&data_005875ec);
+    initialize_codegen_list(&data_00587e6c);
+    initialize_codegen_list(&data_00587e7c);
+    initialize_codegen_list(&data_00587e80);
+    initialize_codegen_list(&data_00588214);
+    initialize_codegen_list(&data_00588020);
+    initialize_codegen_list(&data_00587ec0);
+    initialize_codegen_list(&data_00587e34);
+    initialize_codegen_list(&data_00588210);
+    initialize_codegen_list(&data_00587f9c);
+    Intrinsics_RegisterIntrinsics();
 }
 
 void CodeGen_GenThunk(Object *stmt, Object *func, SInt32 a, SInt32 flag, SInt32 b)
@@ -1476,26 +1596,6 @@ void CodeGen_GenThunk(Object *stmt, Object *func, SInt32 a, SInt32 flag, SInt32 
     copts.emitExtraAssemblyData = save_27;
 }
 
-static inline void emit_block(CLabel *block)
-{
-    if (block->pclabel == NULL)
-        block->pclabel = PCode_NewLabel();
-    if (block->pclabel->resolved == 0)
-        PCodeUtilities_ResolveLabel(block->pclabel);
-}
-static inline void branch_block(CLabel *block)
-{
-    if (block->pclabel == NULL)
-        block->pclabel = PCode_NewLabel();
-    PCodeUtilities_EmitBranch(block->pclabel);
-}
-static inline Boolean is_tail(Statement *node)
-{
-    for (node = node->next; node; node = node->next)
-        if (node->type > 2)
-            return 0;
-    return 1;
-}
 /* Expression record used by the code-generation dispatch table. */
 
 enum { PCodeInstruction_CoalesceDisabled_00432310 = 0x0400 };
@@ -1825,264 +1925,6 @@ void CodeGen_Generator(Statement *statements, Object *functionObject, Boolean co
     }
 }
 
-/* 0x5842d0, byte-sized */
-
-/* stunsignedlong / stunsignedlonglong are declared by the headers. */
-
-/* Partial view of the objects reset after return-value generation. */
-
-/* Entries in the return cleanup list. */
-
-/* Expression node dispatcher: one generator per ENode kind. */
-
-/* Branch-generation context; preceding context data is opaque here. */
-
-/* Entries whose per-object value is cleared after branch generation. */
-
-void generate_comparison_branch(ENode *enode, CLabel *context, SInt32 flag)
-{
-    Operand operand;
-    Operand discardedResult;
-    TemporaryObjectEntry *entry;
-
-    memclrw(&operand, sizeof(operand));
-    while (enode->type == EFORCELOAD || enode->type == ETYPCON || enode->type == ECOMMA) {
-        if (!(enode->rtype->type == TYPEINT || enode->rtype->type == TYPEENUM || enode->rtype->type == TYPEPOINTER ||
-              (enode->rtype->type == TYPEMEMBERPOINTER && enode->rtype->size == 4)))
-            break;
-        if (enode->type == ECOMMA) {
-            memclrw(&discardedResult, sizeof(discardedResult));
-            (*data_00560648[enode->data.diadic.left->type])(enode->data.diadic.left, 0, 0, &discardedResult);
-            enode = enode->data.diadic.right;
-        } else {
-            enode = enode->data.monadic;
-        }
-    }
-    if (context->pclabel == NULL)
-        context->pclabel = PCode_NewLabel();
-    {
-        if ((copts.operandsDebug && enode->data.diadic.right->rtype->type == TYPEFLOAT) ||
-            (copts.operandsDebug && enode->data.diadic.left->rtype->type == TYPEFLOAT)) {
-            SFPE_PPC_EABI_GenerateComparison(enode, &operand, 0);
-        } else if (((enode->data.diadic.right->rtype->type == TYPEINT ||
-                     enode->data.diadic.right->rtype->type == TYPEENUM) &&
-                    enode->data.diadic.right->rtype->size == 8) ||
-                   ((enode->data.diadic.left->rtype->type == TYPEINT ||
-                     enode->data.diadic.left->rtype->type == TYPEENUM) &&
-                    enode->data.diadic.left->rtype->size == 8)) {
-            InstrSelection_GenerateLongLongComparison(enode, &operand, 0);
-        } else {
-            InstrSelection_SelectComparison(enode, &operand);
-        }
-    }
-    PCodeUtilities_EmitConditionBranch(operand.reg, operand.secondary_reg, flag, context->pclabel);
-    for (entry = temporary_objects; entry != NULL; entry = entry->next)
-        entry->object->u.var.uid = 0;
-}
-
-/* Block state used by this routine; the two word fields have no known names. */
-
-void set_block_line_and_execution_weight(SInt32 value, unsigned int initial_value, unsigned int set_flag)
-{
-    PCodeBlock *block;
-    PCodeLabel *new_value;
-    block = gCurrentBlock;
-    data_00587ffc = initial_value;
-    if (gCurrentBlock->instruction_count == 0)
-        block->execution_weight = initial_value;
-    if (copts.filesyminfo != 0) {
-        if (block->instruction_count > 0 && copts.instructionSchedulingMode == 0 &&
-            (signed char)copts.deleteDeadInstructions < 3) {
-            new_value = PCode_NewLabel();
-            PCodeUtilities_ResolveLabel(new_value);
-            block = gCurrentBlock;
-        }
-        if (block->line == -1 || block->instruction_count == 0)
-            block->line = value;
-    }
-    if (block->instruction_count > 100) {
-        new_value = PCode_NewLabel();
-        PCodeUtilities_ResolveLabel(new_value);
-    }
-    if (set_flag != 0)
-        block->flags |= 64U;
-}
-
-/* Entry in the linked key table. */
-
-InterruptGenerationRecord *CodeGen_FindInterruptGenerationRecord(SInt16 key)
-{
-    InterruptGenerationRecord *entry = interrupt_generation_records;
-    while (entry) {
-        if (entry->id == (unsigned short)key)
-            break;
-        entry = entry->next;
-    }
-    if (!entry)
-        CError_FATAL(3429);
-    return entry;
-}
-
-void CodeGen_AssignMissingEntryValues(Statement *entry)
-{
-    Statement *previous;
-    PCodeLabel *value;
-
-    previous = NULL;
-    if (entry != NULL) {
-        do {
-            if ((entry->type == ST_LABEL) && (entry->target.label->pclabel == NULL)) {
-                if ((previous != NULL) && (previous->type == ST_LABEL)) {
-                    entry->target.label->pclabel = previous->target.label->pclabel;
-                } else {
-                    value = PCode_NewLabel();
-                    entry->target.label->pclabel = value;
-                }
-            }
-            previous = entry;
-            entry = entry->next;
-        } while (entry != NULL);
-    }
-}
-
-void fn_00436390(ENode *expression)
-{
-    Operand result;
-    Type *type;
-    int subtype;
-
-    memclrw(&result, sizeof(result));
-    data_00560648[expression->type](expression, 0, 0, &result);
-    if ((expression->type == EINDIRECT) && ((result.flags & fIsVolatile) != 0)) {
-        type = expression->rtype;
-        if ((type->type == TYPEINT) || (type->type == TYPEENUM) || (type->type == TYPEPOINTER) ||
-            ((type->type == TYPEMEMBERPOINTER) && (type->size == 4)) ||
-            ((copts.operandsDebug != 0) && (type->type == TYPEFLOAT) && (type->size == 4))) {
-            if (result.kind != OpndType_GPR) {
-                Operands_ForceGPR(&result, type, 0);
-            }
-        } else if (type->type == TYPEFLOAT) {
-            if (result.kind != OpndType_FPR) {
-                Operands_ForceFPR(&result, type, 0);
-            }
-        } else if (type->type == TYPESTRUCT) {
-            TypeStruct *structType = (TypeStruct *)type;
-            if ((subtype = structType->stype) >= 4 && subtype <= 14 && result.kind != OpndType_VR) {
-                Operands_ForceVR(&result, type, 0);
-            }
-        }
-    }
-}
-
-void emit_trailing_object_reg_moves(void)
-{
-    Operand op;
-    ObjectList *elem;
-    VarInfo *info;
-    Object *obj;
-
-    memclrw(&op, sizeof(op));
-    for (elem = gTrailingObjectList_005876a0; elem != NULL; elem = elem->next) {
-        obj = elem->object.value;
-        info = Registers_GetInfo(obj);
-        switch (obj->datatype) {
-            case DDATA:
-                if (info->reg != 0) {
-                    op.kind = OpndType_IndirectSymbol;
-                    op.object = obj;
-                    Operands_Normalize(&op);
-                    if (op.reg != info->reg)
-                        PCodeUtilities_EmitInstruction(PC_MR, info->reg, op.reg);
-                }
-                break;
-        }
-    }
-}
-void allocate_registers_and_local_slots(void)
-{
-    ObjectList *local;
-    Type *type;
-    TypeStruct *elementType;
-
-    gVectorArrayConversion = 0;
-    if (data_00588521 > 0 && gUseVirtualRegisterNumbers_00587f00 == 0)
-        CodeGen_EnumerateArgumentRegisters(bind_object_register);
-    if (gUseVirtualRegisterNumbers_00587f00 != 0) {
-        allocate_object_registers();
-    } else {
-        allocate_saved_gprs();
-        if (copts.operandsDebug == 0)
-            allocate_saved_fprs();
-        allocate_saved_vrs();
-    }
-    for (local = locals; local != NULL; local = local->next) {
-        if ((Registers_GetInfo(local->object.value) != NULL ? Registers_GetInfo(local->object.value)->reg : 0) == 0)
-            StackFrameEABI_AllocateObjectSlot(local->object.value);
-        if ((type = local->object.value->type) != NULL && type->type == TYPEARRAY &&
-            (elementType = TYPE_STRUCT(TPTR_TARGET(type)))->type == TYPESTRUCT) {
-            SInt32 structKind = elementType->stype;
-            if (structKind >= 4 && structKind <= 0xe)
-                gVectorArrayConversion = 1;
-        }
-    }
-}
-
-enum { STRUCT_VECTOR_FIRST = 4, STRUCT_VECTOR_LAST = 14 };
-
-static int IsVolatile(Object *obj)
-{
-    if (obj->type->type == TYPEPOINTER)
-        return ((TypePointer *)obj->type)->qual & Q_VOLATILE;
-    return obj->qual & Q_VOLATILE;
-}
-
-void allocate_saved_vrs(void)
-{
-    ObjectList *list;
-    Object *object;
-    Object *best;
-    SInt32 bestUsage;
-    VarInfo *info;
-
-    while (gAvailableSavedVRs) {
-        best = NULL;
-        bestUsage = -1;
-        if (!(data_00588224 & 2)) {
-            for (list = arguments; list; list = list->next) {
-                object = list->object.value;
-                info = Registers_GetInfo(object);
-                if (!info->reg && info->used && !info->noregister) {
-                    if (!IsVolatile(object) && info->usage >= bestUsage && info->usage >= 2 &&
-                        object->type->type == TYPESTRUCT &&
-                        ((TypeStruct *)object->type)->stype >= STRUCT_VECTOR_FIRST &&
-                        ((TypeStruct *)object->type)->stype <= STRUCT_VECTOR_LAST) {
-                        best = object;
-                        bestUsage = info->usage;
-                    }
-                }
-            }
-        }
-        if (!(data_00588224 & 2)) {
-            for (list = locals; list; list = list->next) {
-                object = list->object.value;
-                info = Registers_GetInfo(object);
-                if (!info->reg && info->used && !info->noregister) {
-                    if (!IsVolatile(object) && info->usage >= bestUsage && info->usage >= 2 &&
-                        object->type->type == TYPESTRUCT &&
-                        ((TypeStruct *)object->type)->stype >= STRUCT_VECTOR_FIRST &&
-                        ((TypeStruct *)object->type)->stype <= STRUCT_VECTOR_LAST) {
-                        best = object;
-                        bestUsage = info->usage;
-                    }
-                }
-            }
-        }
-        if (!best)
-            break;
-        Registers_AllocateVR(best);
-    }
-}
-
 /* Objects considered for register allocation. */
 
 void emit_name_string_address(const char *name)
@@ -2212,6 +2054,165 @@ void generate_return(ENode *enode, Boolean flag)
             TemporaryObjectEntry *entry;
             for (entry = temporary_objects; entry != NULL; entry = entry->next)
                 entry->object->u.var.uid = 0;
+        }
+    }
+}
+
+/* 0x5842d0, byte-sized */
+
+/* stunsignedlong / stunsignedlonglong are declared by the headers. */
+
+/* Partial view of the objects reset after return-value generation. */
+
+/* Entries in the return cleanup list. */
+
+/* Expression node dispatcher: one generator per ENode kind. */
+
+/* Branch-generation context; preceding context data is opaque here. */
+
+/* Entries whose per-object value is cleared after branch generation. */
+
+void generate_comparison_branch(ENode *enode, CLabel *context, SInt32 flag)
+{
+    Operand operand;
+    Operand discardedResult;
+    TemporaryObjectEntry *entry;
+
+    memclrw(&operand, sizeof(operand));
+    while (enode->type == EFORCELOAD || enode->type == ETYPCON || enode->type == ECOMMA) {
+        if (!(enode->rtype->type == TYPEINT || enode->rtype->type == TYPEENUM || enode->rtype->type == TYPEPOINTER ||
+              (enode->rtype->type == TYPEMEMBERPOINTER && enode->rtype->size == 4)))
+            break;
+        if (enode->type == ECOMMA) {
+            memclrw(&discardedResult, sizeof(discardedResult));
+            (*data_00560648[enode->data.diadic.left->type])(enode->data.diadic.left, 0, 0, &discardedResult);
+            enode = enode->data.diadic.right;
+        } else {
+            enode = enode->data.monadic;
+        }
+    }
+    if (context->pclabel == NULL)
+        context->pclabel = PCode_NewLabel();
+    {
+        if ((copts.operandsDebug && enode->data.diadic.right->rtype->type == TYPEFLOAT) ||
+            (copts.operandsDebug && enode->data.diadic.left->rtype->type == TYPEFLOAT)) {
+            SFPE_PPC_EABI_GenerateComparison(enode, &operand, 0);
+        } else if (((enode->data.diadic.right->rtype->type == TYPEINT ||
+                     enode->data.diadic.right->rtype->type == TYPEENUM) &&
+                    enode->data.diadic.right->rtype->size == 8) ||
+                   ((enode->data.diadic.left->rtype->type == TYPEINT ||
+                     enode->data.diadic.left->rtype->type == TYPEENUM) &&
+                    enode->data.diadic.left->rtype->size == 8)) {
+            InstrSelection_GenerateLongLongComparison(enode, &operand, 0);
+        } else {
+            InstrSelection_SelectComparison(enode, &operand);
+        }
+    }
+    PCodeUtilities_EmitConditionBranch(operand.reg, operand.secondary_reg, flag, context->pclabel);
+    for (entry = temporary_objects; entry != NULL; entry = entry->next)
+        entry->object->u.var.uid = 0;
+}
+
+void fn_00436390(ENode *expression)
+{
+    Operand result;
+    Type *type;
+    int subtype;
+
+    memclrw(&result, sizeof(result));
+    data_00560648[expression->type](expression, 0, 0, &result);
+    if ((expression->type == EINDIRECT) && ((result.flags & fIsVolatile) != 0)) {
+        type = expression->rtype;
+        if ((type->type == TYPEINT) || (type->type == TYPEENUM) || (type->type == TYPEPOINTER) ||
+            ((type->type == TYPEMEMBERPOINTER) && (type->size == 4)) ||
+            ((copts.operandsDebug != 0) && (type->type == TYPEFLOAT) && (type->size == 4))) {
+            if (result.kind != OpndType_GPR) {
+                Operands_ForceGPR(&result, type, 0);
+            }
+        } else if (type->type == TYPEFLOAT) {
+            if (result.kind != OpndType_FPR) {
+                Operands_ForceFPR(&result, type, 0);
+            }
+        } else if (type->type == TYPESTRUCT) {
+            TypeStruct *structType = (TypeStruct *)type;
+            if ((subtype = structType->stype) >= 4 && subtype <= 14 && result.kind != OpndType_VR) {
+                Operands_ForceVR(&result, type, 0);
+            }
+        }
+    }
+}
+
+/* Block state used by this routine; the two word fields have no known names. */
+
+void set_block_line_and_execution_weight(SInt32 value, unsigned int initial_value, unsigned int set_flag)
+{
+    PCodeBlock *block;
+    PCodeLabel *new_value;
+    block = gCurrentBlock;
+    data_00587ffc = initial_value;
+    if (gCurrentBlock->instruction_count == 0)
+        block->execution_weight = initial_value;
+    if (copts.filesyminfo != 0) {
+        if (block->instruction_count > 0 && copts.instructionSchedulingMode == 0 &&
+            (signed char)copts.deleteDeadInstructions < 3) {
+            new_value = PCode_NewLabel();
+            PCodeUtilities_ResolveLabel(new_value);
+            block = gCurrentBlock;
+        }
+        if (block->line == -1 || block->instruction_count == 0)
+            block->line = value;
+    }
+    if (block->instruction_count > 100) {
+        new_value = PCode_NewLabel();
+        PCodeUtilities_ResolveLabel(new_value);
+    }
+    if (set_flag != 0)
+        block->flags |= 64U;
+}
+
+void CodeGen_AssignMissingEntryValues(Statement *entry)
+{
+    Statement *previous;
+    PCodeLabel *value;
+
+    previous = NULL;
+    if (entry != NULL) {
+        do {
+            if ((entry->type == ST_LABEL) && (entry->target.label->pclabel == NULL)) {
+                if ((previous != NULL) && (previous->type == ST_LABEL)) {
+                    entry->target.label->pclabel = previous->target.label->pclabel;
+                } else {
+                    value = PCode_NewLabel();
+                    entry->target.label->pclabel = value;
+                }
+            }
+            previous = entry;
+            entry = entry->next;
+        } while (entry != NULL);
+    }
+}
+
+void emit_trailing_object_reg_moves(void)
+{
+    Operand op;
+    ObjectList *elem;
+    VarInfo *info;
+    Object *obj;
+
+    memclrw(&op, sizeof(op));
+    for (elem = gTrailingObjectList_005876a0; elem != NULL; elem = elem->next) {
+        obj = elem->object.value;
+        info = Registers_GetInfo(obj);
+        switch (obj->datatype) {
+            case DDATA:
+                if (info->reg != 0) {
+                    op.kind = OpndType_IndirectSymbol;
+                    op.object = obj;
+                    Operands_Normalize(&op);
+                    if (op.reg != info->reg)
+                        PCodeUtilities_EmitInstruction(PC_MR, info->reg, op.reg);
+                }
+                break;
         }
     }
 }
@@ -2358,6 +2359,82 @@ void emit_dlocal_initialization(Object *object, SInt16 reg)
                     break;
             }
         }
+    }
+}
+
+void allocate_registers_and_local_slots(void)
+{
+    ObjectList *local;
+    Type *type;
+    TypeStruct *elementType;
+
+    gVectorArrayConversion = 0;
+    if (data_00588521 > 0 && gUseVirtualRegisterNumbers_00587f00 == 0)
+        CodeGen_EnumerateArgumentRegisters(bind_object_register);
+    if (gUseVirtualRegisterNumbers_00587f00 != 0) {
+        allocate_object_registers();
+    } else {
+        allocate_saved_gprs();
+        if (copts.operandsDebug == 0)
+            allocate_saved_fprs();
+        allocate_saved_vrs();
+    }
+    for (local = locals; local != NULL; local = local->next) {
+        if ((Registers_GetInfo(local->object.value) != NULL ? Registers_GetInfo(local->object.value)->reg : 0) == 0)
+            StackFrameEABI_AllocateObjectSlot(local->object.value);
+        if ((type = local->object.value->type) != NULL && type->type == TYPEARRAY &&
+            (elementType = TYPE_STRUCT(TPTR_TARGET(type)))->type == TYPESTRUCT) {
+            SInt32 structKind = elementType->stype;
+            if (structKind >= 4 && structKind <= 0xe)
+                gVectorArrayConversion = 1;
+        }
+    }
+}
+
+void allocate_saved_vrs(void)
+{
+    ObjectList *list;
+    Object *object;
+    Object *best;
+    SInt32 bestUsage;
+    VarInfo *info;
+
+    while (gAvailableSavedVRs) {
+        best = NULL;
+        bestUsage = -1;
+        if (!(data_00588224 & 2)) {
+            for (list = arguments; list; list = list->next) {
+                object = list->object.value;
+                info = Registers_GetInfo(object);
+                if (!info->reg && info->used && !info->noregister) {
+                    if (!IsVolatile(object) && info->usage >= bestUsage && info->usage >= 2 &&
+                        object->type->type == TYPESTRUCT &&
+                        ((TypeStruct *)object->type)->stype >= STRUCT_VECTOR_FIRST &&
+                        ((TypeStruct *)object->type)->stype <= STRUCT_VECTOR_LAST) {
+                        best = object;
+                        bestUsage = info->usage;
+                    }
+                }
+            }
+        }
+        if (!(data_00588224 & 2)) {
+            for (list = locals; list; list = list->next) {
+                object = list->object.value;
+                info = Registers_GetInfo(object);
+                if (!info->reg && info->used && !info->noregister) {
+                    if (!IsVolatile(object) && info->usage >= bestUsage && info->usage >= 2 &&
+                        object->type->type == TYPESTRUCT &&
+                        ((TypeStruct *)object->type)->stype >= STRUCT_VECTOR_FIRST &&
+                        ((TypeStruct *)object->type)->stype <= STRUCT_VECTOR_LAST) {
+                        best = object;
+                        bestUsage = info->usage;
+                    }
+                }
+            }
+        }
+        if (!best)
+            break;
+        Registers_AllocateVR(best);
     }
 }
 
@@ -2700,76 +2777,6 @@ void bind_object_register(Object *object, SInt16 reg)
                 Registers_BindVR(object, reg);
         }
     }
-}
-/* Function metadata used to compute argument offsets. */
-
-unsigned int CodeGen_GetObjCParameterOffset(MethRec *function, ObjCParameterNode *argument)
-{
-    unsigned int offset;
-    ObjCParameterNode *arg;
-
-    if (function->rtype == NULL)
-        offset = 4;
-    else if (function->rtype->type == TYPEARRAY || (unsigned char)(function->rtype->type - TYPESTRUCT) <= 1 ||
-             (function->rtype->type == TYPEMEMBERPOINTER && function->rtype->size == 12))
-        offset = 8;
-    else
-        offset = function->rtype->size;
-    if (offset == 0)
-        offset = 1;
-    offset = (offset + 3) & ~3U;
-    offset = (offset + 7) & ~3U;
-    offset += 4;
-    arg = function->args;
-    while (arg != NULL) {
-        if (arg == argument)
-            return offset;
-        if (arg->type == NULL)
-            offset += 4;
-        else
-            offset += arg->type->size;
-        offset = (offset + 3) & ~3U;
-        arg = arg->next;
-    }
-    return 0;
-}
-/* Record containing the type used for size calculation. */
-
-int fn_00432480(MethRec *record)
-{
-    int size;
-    if (!record->rtype)
-        size = 4;
-    else if (record->rtype->type == TYPEARRAY || record->rtype->type == TYPESTRUCT ||
-             record->rtype->type == TYPECLASS ||
-             (record->rtype->type == TYPEMEMBERPOINTER && record->rtype->size == 12))
-        size = 8;
-    else
-        size = record->rtype->size;
-    if (size == 0)
-        size = 1;
-    return (((size + 3) & ~3) + 7) & ~3;
-}
-
-/* Type-bearing record used by the code generator; preceding fields are unknown. */
-
-unsigned int CodeGen_GetMethRecRTypeSize(MethRec *record)
-{
-    unsigned int size;
-
-    if (!record->rtype) {
-        size = 4;
-    } else {
-        Type *type = record->rtype;
-        if (type->type == TYPEARRAY || (unsigned char)(type->type - TYPESTRUCT) <= TYPECLASS - TYPESTRUCT ||
-            (type->type == TYPEMEMBERPOINTER && type->size == 12))
-            size = 8;
-        else
-            size = type->size;
-    }
-    if (!size)
-        size = 1;
-    return (size + 3) & ~3U;
 }
 
 enum { STRUCT_VEC_FIRST = 4, STRUCT_VEC_LAST = 14 };

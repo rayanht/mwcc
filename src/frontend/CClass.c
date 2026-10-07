@@ -220,6 +220,7 @@ void narrow_bitfield_type(Type **type, int *displacement)
         return;
     }
 }
+
 #undef CE_ASSERT
 
 Type *copy_pointer_array_type(Type *type)
@@ -235,6 +236,128 @@ Type *copy_pointer_array_type(Type *type)
             return (Type *)copy;
         default:
             return type;
+    }
+}
+
+#define FT_PTR(o) TYPE_POINTER(((TypeMemberFunc *)(o)->type)->functype)
+
+#define CE_ASSERT(c, s)                                                                                                \
+    do {                                                                                                               \
+        if (c)                                                                                                         \
+            s;                                                                                                         \
+    } while (0)
+
+static TypeMemberFunc *copyMemberFunction(TypeMemberFunc *type)
+{
+    TypeMemberFunc *copy = (TypeMemberFunc *)galloc(sizeof(TypeMemberFunc));
+    *copy = *type;
+    return copy;
+}
+
+/* 0x14-byte node: linked list of member objects. */
+
+/* 0x0a-byte node: base-class layout link. */
+
+/* 0x16-byte layout record. */
+
+static SInt32 CL_FindOffset(TypeClass *base)
+{
+    VClassList *p;
+    for (p = current_class->vbases; p != NULL; p = p->next)
+        if (p->base == base)
+            return p->offset;
+    CError_FATAL(1182);
+    return 0;
+}
+
+static SInt32 CL_FindVOffset(TypeClass *base)
+{
+    VClassList *p;
+    for (p = current_class->vbases; p != NULL; p = p->next)
+        if (p->base == base)
+            return p->voffset;
+    CError_FATAL(1199);
+    return 0;
+}
+
+static SInt32 CClass_GetVBaseOffset(TypeClass *base)
+{
+    VClassList *v;
+
+    for (v = base_path_class->vbases; v != NULL; v = v->next) {
+        if (v->base == base)
+            return v->offset;
+    }
+    CError_FATAL(1182);
+    return 0;
+}
+
+static inline Boolean CClass_ShouldReplacePath(BClassList *current, BClassList *candidate)
+{
+    switch (get_path_access(current)) {
+        case 0:
+            return 0;
+        case 3:
+            return 1;
+        default:
+            CError_FATAL(800);
+        case 2:
+            switch (get_path_access(candidate)) {
+                case 0:
+                    return 1;
+                case 1:
+                case 2:
+                case 3:
+                    return 0;
+                default:
+                    CError_FATAL(809);
+            }
+        case 1:
+            switch (get_path_access(candidate)) {
+                case 0:
+                case 2:
+                    return 1;
+                case 1:
+                case 3:
+                    return 0;
+                default:
+                    CError_FATAL(819);
+                    return 0;
+            }
+    }
+}
+
+void CClass_CheckEnumAccess(BClassList *bases, ObjBase *object)
+{
+    UInt8 accessible;
+    TypeEnum *enumType;
+    if (bases != NULL) {
+        bases = deduplicate_and_select_base_path_suffix(bases, NULL);
+        if (bases != NULL) {
+            accessible = check_base_path_access(bases, object->access);
+            if (accessible == '\0') {
+                CError_ReportError(ERR_ILLEGAL_ACCESS_PROTECTED_PRIVATE_MEMBER);
+            }
+            return;
+        }
+    }
+    if (((ObjEnumConst *)object)->access != '\0' &&
+        (enumType = (TypeEnum *)((ObjEnumConst *)object)->type)->type == TYPEENUM && enumType->nspace != NULL &&
+        enumType->nspace->theclass != NULL) {
+        CClass_CheckStaticAccess(NULL, enumType->nspace->theclass, object->access);
+    }
+}
+
+void CClass_CheckObjectAccess(BClassList *bases, Object *reference)
+{
+    SInt16 lookup_result;
+    Boolean lookup_flags;
+
+    if (reference->nspace != NULL && reference->nspace->theclass != NULL) {
+        if (bases == NULL && data_00588040 != NULL) {
+            bases = CClass_GetBasePath(data_00588040, reference->nspace->theclass, &lookup_result, &lookup_flags);
+        }
+        CClass_CheckStaticAccess(bases, reference->nspace->theclass, reference->access);
     }
 }
 
@@ -303,6 +426,16 @@ BClassList *deduplicate_and_select_base_path_suffix(BClassList *p, TypeClass *ba
         } else {
             p->next = node->next;
         }
+    }
+}
+
+void CClass_CheckBaseAccess(BClassList *bases, char access)
+{
+    Boolean result;
+
+    result = check_base_path_access(bases, access);
+    if (result == '\0') {
+        CError_ReportError(ERR_ILLEGAL_ACCESS_PROTECTED_PRIVATE_MEMBER);
     }
 }
 
@@ -383,6 +516,55 @@ Boolean check_base_path_access(BClassList *cl, UInt8 acc)
     return 0;
 }
 
+ENode *CClass_CreateThisSelfExpr(void)
+{
+    ENode *expr;
+    ENode *result;
+    Object *parsedType;
+
+    parsedType = CClass_ThisSelfObject();
+    if (!parsedType)
+        return NULL;
+
+    expr = create_objectrefnode(parsedType);
+    expr->rtype = (Type *)CDecl_NewPointerType((Type *)data_00588040);
+    result = makemonadicnode(expr, EINDIRECT);
+    result->data.monadic->rtype = (Type *)CDecl_NewPointerType(result->rtype);
+    return result;
+}
+
+Object *CClass_ThisSelfObject(void)
+{
+    ObjectList *objects;
+    if (data_00588238 != NULL && data_00588040 != NULL) {
+        if (data_00588040->objcinfo != NULL) {
+            objects = (ObjectList *)arguments;
+            if (objects != NULL) {
+                do {
+                    if (objects->object.value->name == this_self_name)
+                        return objects->object.value;
+                    objects = objects->next;
+                } while (objects != NULL);
+            }
+            CError_ReportError(ERR_ILLEGAL_USE_SELF);
+        } else {
+            if (data_005884f8 != 0) {
+                objects = (ObjectList *)arguments;
+                if (objects != NULL) {
+                    do {
+                        if (objects->object.value->name == this_arg_name)
+                            return objects->object.value;
+                        objects = objects->next;
+                    } while (objects != NULL);
+                }
+            }
+            CError_ReportError(ERR_ILLEGAL_USE_THIS);
+        }
+    }
+    CError_ReportError((unsigned short)(copts.cplusplus != 0 ? 189 : 301));
+    return NULL;
+}
+
 void CClass_MemberDef(Object *object, TypeClass *cls)
 {
     switch ((SInt8)cls->state) {
@@ -416,6 +598,11 @@ void CClass_MemberDef(Object *object, TypeClass *cls)
             CError_FATAL(2523);
             return;
     }
+}
+
+Object *CClass_CheckPures(TypeClass *type)
+{
+    return create_root_class_layout(type);
 }
 
 void CClass_MakeStaticActionClass(TypeClass *theclass)
@@ -564,6 +751,58 @@ void check_hidden_inherited_virtual_functions(ClassLayout *layout, ClassLayout *
         check_hidden_inherited_virtual_functions(layout, d->layout);
 }
 
+void mark_vbases_has_override(ClassLayout *root, ClassLayout *node, unsigned char mark)
+{
+    ClassLayoutMember *entry;
+    ClassLayoutBase *link;
+    VClassList *item;
+
+    if (mark != 0) {
+        for (entry = (ClassLayoutMember *)node->members; entry != NULL; entry = entry->next) {
+            if (entry->selected == NULL)
+                continue;
+            virtual_base_layout = NULL;
+            if (!contains_base_layout(node, entry->selectedClass))
+                CError_FATAL(1880);
+            if (virtual_base_layout == NULL)
+                continue;
+            for (item = root->theclass->vbases; item != NULL; item = item->next) {
+                if (item->base == virtual_base_layout->theclass)
+                    break;
+            }
+            if (item == NULL)
+                CError_FATAL(1887);
+            item->has_override = 1;
+        }
+    }
+    for (link = (ClassLayoutBase *)node->children; link != NULL; link = link->next) {
+        mark_vbases_has_override(root, link->layout, (mark != 0) || (link->is_virtual != 0));
+    }
+}
+
+Object *create_root_class_layout(TypeClass *type)
+{
+    ClassLayout *object;
+
+    current_class = type;
+    object = create_class_layout(NULL, type, 0, 0);
+    root_class_layout = object;
+    select_layout_member_overrides(object);
+    return CClass_004ea020(object, 0);
+}
+
+void build_class_layout(TypeClass *type)
+{
+    ClassLayout *object;
+
+    current_class = type;
+    object = create_class_layout(NULL, type, 0, 0);
+    root_class_layout = object;
+    select_layout_member_overrides(object);
+    CClass_004ea020(object, '\x01');
+    build_virtual_function_entries(object);
+}
+
 /* Recovered record shapes (Mac 68k packing). */
 
 Object *CClass_004ea020(ClassLayout *record, char report)
@@ -659,6 +898,104 @@ void build_virtual_function_entries(ClassLayout *ctx)
         build_virtual_function_entries(child->layout);
 }
 
+/* 0x565260, "CClass.c" */
+
+static SInt32 vbase_offset(TypeClass *tclass, TypeClass *baseclass)
+{
+    VClassList *vbase;
+
+    for (vbase = tclass->vbases; vbase != NULL; vbase = vbase->next) {
+        if (vbase->base == baseclass)
+            return vbase->offset;
+    }
+    CError_FATAL(1182);
+    return 0;
+}
+
+static inline Object *FindFunctionObject(TypeClass *type)
+{
+    NameSpaceObjectList *entry;
+    Object *object;
+
+    entry = CScope_FindName(type->nspace, destructor_name);
+    while (entry) {
+        if ((object = (Object *)entry->object)->otype == OT_OBJECT && object->type->type == TYPEFUNC)
+            return object;
+        entry = entry->next;
+    }
+    return NULL;
+}
+
+static Object *CClass_FindFuncObject(NameSpace *nspace, HashNameNode *name)
+{
+    NameSpaceObjectList *list;
+
+    for (list = CScope_FindName(nspace, name); list != NULL; list = list->next) {
+        if (((Object *)list->object)->otype == OT_OBJECT && ((Object *)list->object)->type->type == TYPEFUNC)
+            return (Object *)list->object;
+    }
+    return NULL;
+}
+
+/* Nodes and links used by the recursive list traversal. */
+
+void select_layout_member_overrides(ClassLayout *node)
+{
+    ClassLayoutMember *entry;
+    ClassLayoutBase *child;
+    ClassLayout *childNode;
+    ClassLayoutMember *childEntry;
+    ClassLayoutBase *grandchild;
+    ClassLayoutMember *grandchildEntry;
+    ClassLayout *grandchildNode;
+    ClassLayoutBase *greatGrandchild;
+    ClassLayout *greatGrandchildNode;
+    ClassLayoutMember *greatGrandchildEntry;
+    ClassLayoutBase *descendant;
+    ClassLayout *root;
+
+    if (root_class_layout != node) {
+        for (entry = node->members; entry != NULL; entry = entry->next) {
+            root = root_class_layout;
+            select_member_override(root, node, entry);
+        }
+    }
+    for (child = node->children; child != NULL; child = child->next) {
+        childNode = child->layout;
+        if (root_class_layout != childNode) {
+            for (childEntry = childNode->members; childEntry != NULL; childEntry = childEntry->next) {
+                root = root_class_layout;
+                select_member_override(root, childNode, childEntry);
+            }
+        }
+        for (grandchild = childNode->children; grandchild != NULL; grandchild = grandchild->next) {
+            grandchildNode = grandchild->layout;
+            if (root_class_layout != grandchildNode) {
+                for (grandchildEntry = grandchildNode->members; grandchildEntry != NULL;
+                     grandchildEntry = grandchildEntry->next) {
+                    root = root_class_layout;
+                    select_member_override(root, grandchildNode, grandchildEntry);
+                }
+            }
+            for (greatGrandchild = grandchildNode->children; greatGrandchild != NULL;
+                 greatGrandchild = greatGrandchild->next) {
+                greatGrandchildNode = greatGrandchild->layout;
+                if (root_class_layout != greatGrandchildNode) {
+                    for (greatGrandchildEntry = greatGrandchildNode->members; greatGrandchildEntry != NULL;
+                         greatGrandchildEntry = greatGrandchildEntry->next) {
+                        root = root_class_layout;
+                        select_member_override(root, greatGrandchildNode, greatGrandchildEntry);
+                    }
+                }
+                for (descendant = greatGrandchildNode->children; descendant != NULL; descendant = descendant->next) {
+                    select_layout_member_overrides(descendant->layout);
+                }
+            }
+        }
+    }
+    return;
+}
+
 /* Forward declarations for the helpers (real signatures recovered from the
  * caller's pushes / field accesses). */
 
@@ -689,21 +1026,6 @@ void CClass_DefineCovariantFuncs(Object *func, CInlineInfo *inlineInfo)
         CFunc_Gen(&body, member, 0);
         currentNameSpace = functionScope->parent;
     }
-}
-
-#define FT_PTR(o) TYPE_POINTER(((TypeMemberFunc *)(o)->type)->functype)
-
-#define CE_ASSERT(c, s)                                                                                                \
-    do {                                                                                                               \
-        if (c)                                                                                                         \
-            s;                                                                                                         \
-    } while (0)
-
-static TypeMemberFunc *copyMemberFunction(TypeMemberFunc *type)
-{
-    TypeMemberFunc *copy = (TypeMemberFunc *)galloc(sizeof(TypeMemberFunc));
-    *copy = *type;
-    return copy;
 }
 
 ObjectList *prepend_base_method_copies(ObjectList *objects, Object *method, TypeClass *theclass)
@@ -849,32 +1171,6 @@ Boolean contains_base_layout(ClassLayout *identity, ClassLayout *sub)
     return 0;
 }
 
-/* 0x14-byte node: linked list of member objects. */
-
-/* 0x0a-byte node: base-class layout link. */
-
-/* 0x16-byte layout record. */
-
-static SInt32 CL_FindOffset(TypeClass *base)
-{
-    VClassList *p;
-    for (p = current_class->vbases; p != NULL; p = p->next)
-        if (p->base == base)
-            return p->offset;
-    CError_FATAL(1182);
-    return 0;
-}
-
-static SInt32 CL_FindVOffset(TypeClass *base)
-{
-    VClassList *p;
-    for (p = current_class->vbases; p != NULL; p = p->next)
-        if (p->base == base)
-            return p->voffset;
-    CError_FATAL(1199);
-    return 0;
-}
-
 /* Class layout records: the fields used while building the inheritance tree. */
 
 ClassLayout *create_class_layout(ClassLayout *root, TypeClass *cls, SInt32 offset, SInt32 voffset)
@@ -970,6 +1266,34 @@ unsigned char CClass_OverridesBaseMember(TypeClass *theclass, HashNameNode *name
         } while (base != NULL);
     }
     return found;
+}
+
+unsigned int CClass_VirtualBaseVTableOffset(TypeClass *type, TypeClass *base)
+{
+    VClassList *classes = type->vbases;
+
+    while (classes) {
+        if (classes->base == base)
+            return classes->voffset;
+        classes = classes->next;
+    }
+
+    CError_FATAL(1199);
+    return 0;
+}
+
+/* Linked class-to-offset lookup entries. */
+
+SInt32 CClass_FindVBaseOffset(TypeClass *cls, TypeClass *base)
+{
+    VClassList *entry = (VClassList *)cls->vbases;
+    while (entry != NULL) {
+        if (entry->base == base)
+            return entry->offset;
+        entry = entry->next;
+    }
+    CError_FATAL(1182);
+    return 0;
 }
 
 /* Recursive base-class query. */
@@ -1149,53 +1473,6 @@ BClassList *CClass_GetBasePath(TypeClass *type, TypeClass *target, SInt16 *flags
     }
 }
 
-static SInt32 CClass_GetVBaseOffset(TypeClass *base)
-{
-    VClassList *v;
-
-    for (v = base_path_class->vbases; v != NULL; v = v->next) {
-        if (v->base == base)
-            return v->offset;
-    }
-    CError_FATAL(1182);
-    return 0;
-}
-
-static inline Boolean CClass_ShouldReplacePath(BClassList *current, BClassList *candidate)
-{
-    switch (get_path_access(current)) {
-        case 0:
-            return 0;
-        case 3:
-            return 1;
-        default:
-            CError_FATAL(800);
-        case 2:
-            switch (get_path_access(candidate)) {
-                case 0:
-                    return 1;
-                case 1:
-                case 2:
-                case 3:
-                    return 0;
-                default:
-                    CError_FATAL(809);
-            }
-        case 1:
-            switch (get_path_access(candidate)) {
-                case 0:
-                case 2:
-                    return 1;
-                case 1:
-                case 3:
-                    return 0;
-                default:
-                    CError_FATAL(819);
-                    return 0;
-            }
-    }
-}
-
 BClassList *find_target_base_path(TypeClass *cls, TypeClass *target, SInt32 offset, SInt16 level)
 {
     BClassList *result;
@@ -1240,213 +1517,6 @@ BClassList *find_target_base_path(TypeClass *cls, TypeClass *target, SInt32 offs
         }
     }
     return result;
-}
-
-SInt16 CClass_GetBasePathLevel(void)
-{
-    return base_path_level;
-}
-
-void CClass_Init(void)
-{
-    base_path_depth = 0;
-    base_path_level = 0;
-    return;
-}
-void CClass_CheckBaseAccess(BClassList *bases, char access)
-{
-    Boolean result;
-
-    result = check_base_path_access(bases, access);
-    if (result == '\0') {
-        CError_ReportError(ERR_ILLEGAL_ACCESS_PROTECTED_PRIVATE_MEMBER);
-    }
-}
-
-Object *CClass_CheckPures(TypeClass *type)
-{
-    return create_root_class_layout(type);
-}
-
-Object *create_root_class_layout(TypeClass *type)
-{
-    ClassLayout *object;
-
-    current_class = type;
-    object = create_class_layout(NULL, type, 0, 0);
-    root_class_layout = object;
-    select_layout_member_overrides(object);
-    return CClass_004ea020(object, 0);
-}
-
-void build_class_layout(TypeClass *type)
-{
-    ClassLayout *object;
-
-    current_class = type;
-    object = create_class_layout(NULL, type, 0, 0);
-    root_class_layout = object;
-    select_layout_member_overrides(object);
-    CClass_004ea020(object, '\x01');
-    build_virtual_function_entries(object);
-}
-
-UInt8 CClass_FindBasePath(TypeClass *sourceClass, TypeClass *targetClass, char option1, char option2)
-{
-    UInt8 result;
-
-    if ((sourceClass->flags & (0x800 | CLASS_COMPLETED)) == 0x800) {
-        CDecl_CompleteType((Type *)sourceClass);
-    }
-    if ((targetClass->flags & (0x800 | CLASS_COMPLETED)) == 0x800) {
-        CDecl_CompleteType((Type *)targetClass);
-    }
-    base_path_level = 0;
-    base_path_class = sourceClass;
-    base_path_offset = -1;
-    base_path_status = 0;
-    result = find_base_path(sourceClass, targetClass, 0, option1, option2);
-    return result;
-}
-
-void CClass_CheckEnumAccess(BClassList *bases, ObjBase *object)
-{
-    UInt8 accessible;
-    TypeEnum *enumType;
-    if (bases != NULL) {
-        bases = deduplicate_and_select_base_path_suffix(bases, NULL);
-        if (bases != NULL) {
-            accessible = check_base_path_access(bases, object->access);
-            if (accessible == '\0') {
-                CError_ReportError(ERR_ILLEGAL_ACCESS_PROTECTED_PRIVATE_MEMBER);
-            }
-            return;
-        }
-    }
-    if (((ObjEnumConst *)object)->access != '\0' &&
-        (enumType = (TypeEnum *)((ObjEnumConst *)object)->type)->type == TYPEENUM && enumType->nspace != NULL &&
-        enumType->nspace->theclass != NULL) {
-        CClass_CheckStaticAccess(NULL, enumType->nspace->theclass, object->access);
-    }
-}
-
-void CClass_CheckObjectAccess(BClassList *bases, Object *reference)
-{
-    SInt16 lookup_result;
-    Boolean lookup_flags;
-
-    if (reference->nspace != NULL && reference->nspace->theclass != NULL) {
-        if (bases == NULL && data_00588040 != NULL) {
-            bases = CClass_GetBasePath(data_00588040, reference->nspace->theclass, &lookup_result, &lookup_flags);
-        }
-        CClass_CheckStaticAccess(bases, reference->nspace->theclass, reference->access);
-    }
-}
-
-ENode *CClass_CreateThisSelfExpr(void)
-{
-    ENode *expr;
-    ENode *result;
-    Object *parsedType;
-
-    parsedType = CClass_ThisSelfObject();
-    if (!parsedType)
-        return NULL;
-
-    expr = create_objectrefnode(parsedType);
-    expr->rtype = (Type *)CDecl_NewPointerType((Type *)data_00588040);
-    result = makemonadicnode(expr, EINDIRECT);
-    result->data.monadic->rtype = (Type *)CDecl_NewPointerType(result->rtype);
-    return result;
-}
-
-Object *CClass_ThisSelfObject(void)
-{
-    ObjectList *objects;
-    if (data_00588238 != NULL && data_00588040 != NULL) {
-        if (data_00588040->objcinfo != NULL) {
-            objects = (ObjectList *)arguments;
-            if (objects != NULL) {
-                do {
-                    if (objects->object.value->name == this_self_name)
-                        return objects->object.value;
-                    objects = objects->next;
-                } while (objects != NULL);
-            }
-            CError_ReportError(ERR_ILLEGAL_USE_SELF);
-        } else {
-            if (data_005884f8 != 0) {
-                objects = (ObjectList *)arguments;
-                if (objects != NULL) {
-                    do {
-                        if (objects->object.value->name == this_arg_name)
-                            return objects->object.value;
-                        objects = objects->next;
-                    } while (objects != NULL);
-                }
-            }
-            CError_ReportError(ERR_ILLEGAL_USE_THIS);
-        }
-    }
-    CError_ReportError((unsigned short)(copts.cplusplus != 0 ? 189 : 301));
-    return NULL;
-}
-
-void mark_vbases_has_override(ClassLayout *root, ClassLayout *node, unsigned char mark)
-{
-    ClassLayoutMember *entry;
-    ClassLayoutBase *link;
-    VClassList *item;
-
-    if (mark != 0) {
-        for (entry = (ClassLayoutMember *)node->members; entry != NULL; entry = entry->next) {
-            if (entry->selected == NULL)
-                continue;
-            virtual_base_layout = NULL;
-            if (!contains_base_layout(node, entry->selectedClass))
-                CError_FATAL(1880);
-            if (virtual_base_layout == NULL)
-                continue;
-            for (item = root->theclass->vbases; item != NULL; item = item->next) {
-                if (item->base == virtual_base_layout->theclass)
-                    break;
-            }
-            if (item == NULL)
-                CError_FATAL(1887);
-            item->has_override = 1;
-        }
-    }
-    for (link = (ClassLayoutBase *)node->children; link != NULL; link = link->next) {
-        mark_vbases_has_override(root, link->layout, (mark != 0) || (link->is_virtual != 0));
-    }
-}
-
-unsigned int CClass_VirtualBaseVTableOffset(TypeClass *type, TypeClass *base)
-{
-    VClassList *classes = type->vbases;
-
-    while (classes) {
-        if (classes->base == base)
-            return classes->voffset;
-        classes = classes->next;
-    }
-
-    CError_FATAL(1199);
-    return 0;
-}
-
-/* Linked class-to-offset lookup entries. */
-
-SInt32 CClass_FindVBaseOffset(TypeClass *cls, TypeClass *base)
-{
-    VClassList *entry = (VClassList *)cls->vbases;
-    while (entry != NULL) {
-        if (entry->base == base)
-            return entry->offset;
-        entry = entry->next;
-    }
-    CError_FATAL(1182);
-    return 0;
 }
 
 unsigned char CClass_IsMoreAccessiblePath(BClassList *path, BClassList *otherPath)
@@ -1531,6 +1601,36 @@ UInt8 get_path_access(BClassList *path)
     return access;
 }
 
+SInt16 CClass_GetBasePathLevel(void)
+{
+    return base_path_level;
+}
+
+UInt8 CClass_FindBasePath(TypeClass *sourceClass, TypeClass *targetClass, char option1, char option2)
+{
+    UInt8 result;
+
+    if ((sourceClass->flags & (0x800 | CLASS_COMPLETED)) == 0x800) {
+        CDecl_CompleteType((Type *)sourceClass);
+    }
+    if ((targetClass->flags & (0x800 | CLASS_COMPLETED)) == 0x800) {
+        CDecl_CompleteType((Type *)targetClass);
+    }
+    base_path_level = 0;
+    base_path_class = sourceClass;
+    base_path_offset = -1;
+    base_path_status = 0;
+    result = find_base_path(sourceClass, targetClass, 0, option1, option2);
+    return result;
+}
+
+void CClass_Init(void)
+{
+    base_path_depth = 0;
+    base_path_level = 0;
+    return;
+}
+
 /* 0x58354c base; entries land on 0x583554/0x583558 */
 
 Boolean find_virtual_base_path(register TypeClass *cls, register TypeClass *target)
@@ -1554,20 +1654,6 @@ Boolean find_virtual_base_path(register TypeClass *cls, register TypeClass *targ
         }
         base_path_depth--;
     }
-    return 0;
-}
-
-/* 0x565260, "CClass.c" */
-
-static SInt32 vbase_offset(TypeClass *tclass, TypeClass *baseclass)
-{
-    VClassList *vbase;
-
-    for (vbase = tclass->vbases; vbase != NULL; vbase = vbase->next) {
-        if (vbase->base == baseclass)
-            return vbase->offset;
-    }
-    CError_FATAL(1182);
     return 0;
 }
 
@@ -1650,20 +1736,6 @@ BClassList *CClass_GetPathCopy(BClassList *list, Boolean global)
     return first;
 }
 
-static inline Object *FindFunctionObject(TypeClass *type)
-{
-    NameSpaceObjectList *entry;
-    Object *object;
-
-    entry = CScope_FindName(type->nspace, destructor_name);
-    while (entry) {
-        if ((object = (Object *)entry->object)->otype == OT_OBJECT && object->type->type == TYPEFUNC)
-            return object;
-        entry = entry->next;
-    }
-    return NULL;
-}
-
 void fn_004ebae0(TypeClass *type)
 {
     Object *found;
@@ -1696,17 +1768,6 @@ void fn_004ebae0(TypeClass *type)
             member = member->next;
         }
     }
-}
-
-static Object *CClass_FindFuncObject(NameSpace *nspace, HashNameNode *name)
-{
-    NameSpaceObjectList *list;
-
-    for (list = CScope_FindName(nspace, name); list != NULL; list = list->next) {
-        if (((Object *)list->object)->otype == OT_OBJECT && ((Object *)list->object)->type->type == TYPEFUNC)
-            return (Object *)list->object;
-    }
-    return NULL;
 }
 
 Boolean CClass_ReferenceArgument(TypeClass *cls)
@@ -1785,65 +1846,6 @@ NameSpaceObjectList *CClass_MemberObject(TypeClass *type, HashNameNode *name)
         return objects;
     }
     return NULL;
-}
-
-/* Nodes and links used by the recursive list traversal. */
-
-void select_layout_member_overrides(ClassLayout *node)
-{
-    ClassLayoutMember *entry;
-    ClassLayoutBase *child;
-    ClassLayout *childNode;
-    ClassLayoutMember *childEntry;
-    ClassLayoutBase *grandchild;
-    ClassLayoutMember *grandchildEntry;
-    ClassLayout *grandchildNode;
-    ClassLayoutBase *greatGrandchild;
-    ClassLayout *greatGrandchildNode;
-    ClassLayoutMember *greatGrandchildEntry;
-    ClassLayoutBase *descendant;
-    ClassLayout *root;
-
-    if (root_class_layout != node) {
-        for (entry = node->members; entry != NULL; entry = entry->next) {
-            root = root_class_layout;
-            select_member_override(root, node, entry);
-        }
-    }
-    for (child = node->children; child != NULL; child = child->next) {
-        childNode = child->layout;
-        if (root_class_layout != childNode) {
-            for (childEntry = childNode->members; childEntry != NULL; childEntry = childEntry->next) {
-                root = root_class_layout;
-                select_member_override(root, childNode, childEntry);
-            }
-        }
-        for (grandchild = childNode->children; grandchild != NULL; grandchild = grandchild->next) {
-            grandchildNode = grandchild->layout;
-            if (root_class_layout != grandchildNode) {
-                for (grandchildEntry = grandchildNode->members; grandchildEntry != NULL;
-                     grandchildEntry = grandchildEntry->next) {
-                    root = root_class_layout;
-                    select_member_override(root, grandchildNode, grandchildEntry);
-                }
-            }
-            for (greatGrandchild = grandchildNode->children; greatGrandchild != NULL;
-                 greatGrandchild = greatGrandchild->next) {
-                greatGrandchildNode = greatGrandchild->layout;
-                if (root_class_layout != greatGrandchildNode) {
-                    for (greatGrandchildEntry = greatGrandchildNode->members; greatGrandchildEntry != NULL;
-                         greatGrandchildEntry = greatGrandchildEntry->next) {
-                        root = root_class_layout;
-                        select_member_override(root, greatGrandchildNode, greatGrandchildEntry);
-                    }
-                }
-                for (descendant = greatGrandchildNode->children; descendant != NULL; descendant = descendant->next) {
-                    select_layout_member_overrides(descendant->layout);
-                }
-            }
-        }
-    }
-    return;
 }
 
 Object *CClass_CopyConstructor(TypeClass *cls)
@@ -1932,6 +1934,7 @@ static Boolean has_qual(UInt32 a, UInt32 b)
 {
     return ((b & 1) && (a & 1) == 0) || ((b & 2) && (a & 2) == 0);
 }
+
 static Boolean simple_base(TypeClass *a, TypeClass *b)
 {
     for (;;) {
@@ -1942,6 +1945,7 @@ static Boolean simple_base(TypeClass *a, TypeClass *b)
         a = a->bases->base;
     }
 }
+
 static inline CovarianceKind covariance(Type *a, UInt32 aq, Type *b, UInt32 bq, Boolean errorflag)
 {
     TypeClass *ca, *cb;
@@ -1967,6 +1971,7 @@ static inline CovarianceKind covariance(Type *a, UInt32 aq, Type *b, UInt32 bq, 
     }
     return OV_NONE;
 }
+
 UInt8 CClass_GetOverrideKind(TypeFunc *a, TypeFunc *b, Boolean errorflag)
 {
     if (!a->args || !b->args)
@@ -2025,12 +2030,6 @@ Object *get_or_create_thunk_object(Object *source, SInt32 firstArgument, SInt32 
     return object;
 }
 
-void CClass_ResetPendingThunks(void)
-{
-    pending_thunks = NULL;
-    return;
-}
-
 void CClass_GenThunks(void)
 {
     PendingThunk *p;
@@ -2039,4 +2038,10 @@ void CClass_GenThunks(void)
         p->thunkObject->flags |= OBJECT_DEFINED;
         CodeGen_GenThunk(p->thunkObject, p->functionObject, p->b, p->c, p->d);
     }
+}
+
+void CClass_ResetPendingThunks(void)
+{
+    pending_thunks = NULL;
+    return;
 }

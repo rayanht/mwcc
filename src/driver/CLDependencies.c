@@ -138,144 +138,6 @@ unsigned char find_access_path_entry(AccessPathEntry *entry, char *comparison, A
     return 0;
 }
 
-AccessPathEntry *get_access_path_entry(void)
-{
-    return data_0054d898;
-}
-
-UInt8 contains_dependency(DependencyCollection *collection, int key)
-{
-    int index;
-    Deps *table;
-    index = 0;
-    while (index < collection->count) {
-        table = &default_target->dependencyTable;
-        if (dep_records_equal(table, collection->entries[index], key) != 0) {
-            return 1;
-        }
-        index = index + 1;
-    }
-    return 0;
-}
-
-void append_dependency_entry(DependencyCollection *v, int x, signed char flag)
-{
-    if (v->count >= v->capacity) {
-        v->capacity += 16;
-        v->entries = xrealloc("dependency list", v->entries, v->capacity * 4);
-    }
-    v->entries[v->count++] = x;
-}
-
-void CLDependencies_InsertDependencyIfAbsent(DependencyCollection *collection, SInt32 index, OSSpec *name,
-                                             unsigned char flags, signed char entryFlag, char *result)
-{
-    UInt8 matched;
-    unsigned int alternateMatch;
-
-    if (index < 0) {
-        append_dep_record(&default_target->dependencyTable, OS_SpecToString(name, data_005880e0, 0x104), 0, NULL, NULL,
-                          NULL, &index);
-    }
-    matched = contains_dependency(collection, index);
-    if (!matched) {
-        if (DAT_00541c0b) {
-            alternateMatch = get_record_flag(collection->dependencyTable, index);
-        } else {
-            alternateMatch = 0;
-        }
-        if ((unsigned char)alternateMatch == 0) {
-            append_dependency_entry(collection, index, entryFlag);
-        }
-    }
-    if (result) {
-        *result = matched;
-    }
-}
-
-char *escape_spaces(char escapeSpaces, char *destination, char *source)
-{
-    char *result;
-
-    if (!escapeSpaces) {
-        return source;
-    }
-    result = destination;
-    while (*source) {
-        if (*source == ' ') {
-            *destination++ = '\\';
-        }
-        *destination++ = *source++;
-    }
-    *destination = '\0';
-    return result;
-}
-
-void CLDependencies_WriteDependencies(Deps *ctx, DropinFileRecord *file, MemBuffer *stream)
-{
-    struct Deps *table = ctx;
-    struct OSSpec *source;
-    SInt32 remaining;
-    char line[520];
-    char target[260];
-    char dependency[260];
-    char escaped[324];
-    char path[324];
-    Boolean hasSpace;
-    SInt32 i;
-    int *items;
-    char *separator;
-
-    do {
-        if (OS_NewHandle(0, stream) != 0) {
-            break;
-        }
-        remaining = file->dependencies.count;
-        source = &file->outputPath;
-        CLProj_MakeRelativePath(source, NULL, target, 0x104);
-        if (target[0] != 0) {
-            hasSpace = (strchr(target, ' ') != NULL);
-            sprintf(line, "%s%s%s%s ", hasSpace ? EMPTYS : EMPTYS, escape_spaces(hasSpace, escaped, target),
-                    hasSpace ? EMPTYS : EMPTYS, ":");
-            if (CLFileOps_AppendMemBuffer(stream, line, strlen(line)) != 0) {
-                break;
-            }
-            hasSpace = (strchr(file->inputName, ' ') != NULL);
-            separator = remaining ? "\\" : EMPTYS;
-            sprintf(line, "%s%s%s %s\n", hasSpace ? EMPTYS : EMPTYS, escape_spaces(hasSpace, escaped, file->inputName),
-                    hasSpace ? EMPTYS : EMPTYS, separator);
-            if (CLFileOps_AppendMemBuffer(stream, line, strlen(line)) != 0) {
-                break;
-            }
-        } else {
-            hasSpace = (strchr(file->inputName, ' ') != NULL);
-            separator = remaining ? "\\" : EMPTYS;
-            sprintf(line, "%s%s%s%s %s\n", hasSpace ? EMPTYS : EMPTYS,
-                    escape_spaces(hasSpace, escaped, file->inputName), hasSpace ? EMPTYS : EMPTYS, ":", separator);
-            if (CLFileOps_AppendMemBuffer(stream, line, strlen(line)) != 0) {
-                break;
-            }
-        }
-        for (i = 0; i < file->dependencies.count; i++) {
-            remaining--;
-            items = file->dependencies.entries;
-            make_dependency_osspec(table, items[i], path);
-            OS_SpecToString((OSSpec *)path, dependency, 0x104);
-            hasSpace = (strchr(dependency, ' ') != NULL);
-            separator = remaining ? "\\" : EMPTYS;
-            sprintf(line, "\t%s%s%s %s\n", hasSpace ? EMPTYS : EMPTYS, escape_spaces(hasSpace, escaped, dependency),
-                    hasSpace ? EMPTYS : EMPTYS, separator);
-            if (CLFileOps_AppendMemBuffer(stream, line, strlen(line)) != 0) {
-                goto out_of_memory;
-            }
-        }
-        return;
-    } while (0);
-out_of_memory:
-    CLIO_FormatAndDispatchText("\nOut of memory\n");
-    longjmp(driver_jmp_buf, 1);
-}
-
 Boolean find_dependency_access_path_entry(AccessPaths *dependencies, char *comparison, AccessPathEntry **result,
                                           char *path)
 {
@@ -448,4 +310,142 @@ SInt32 CLDependencies_SetAccessPath(OSSpec *name, Boolean flag)
         CLErrors_ForwardMessage(0x69, fn_00412340(path, data_005880e0, 0x104));
     }
     return 1;
+}
+
+AccessPathEntry *get_access_path_entry(void)
+{
+    return data_0054d898;
+}
+
+UInt8 contains_dependency(DependencyCollection *collection, int key)
+{
+    int index;
+    Deps *table;
+    index = 0;
+    while (index < collection->count) {
+        table = &default_target->dependencyTable;
+        if (dep_records_equal(table, collection->entries[index], key) != 0) {
+            return 1;
+        }
+        index = index + 1;
+    }
+    return 0;
+}
+
+void append_dependency_entry(DependencyCollection *v, int x, signed char flag)
+{
+    if (v->count >= v->capacity) {
+        v->capacity += 16;
+        v->entries = xrealloc("dependency list", v->entries, v->capacity * 4);
+    }
+    v->entries[v->count++] = x;
+}
+
+void CLDependencies_InsertDependencyIfAbsent(DependencyCollection *collection, SInt32 index, OSSpec *name,
+                                             unsigned char flags, signed char entryFlag, char *result)
+{
+    UInt8 matched;
+    unsigned int alternateMatch;
+
+    if (index < 0) {
+        append_dep_record(&default_target->dependencyTable, OS_SpecToString(name, data_005880e0, 0x104), 0, NULL, NULL,
+                          NULL, &index);
+    }
+    matched = contains_dependency(collection, index);
+    if (!matched) {
+        if (DAT_00541c0b) {
+            alternateMatch = get_record_flag(collection->dependencyTable, index);
+        } else {
+            alternateMatch = 0;
+        }
+        if ((unsigned char)alternateMatch == 0) {
+            append_dependency_entry(collection, index, entryFlag);
+        }
+    }
+    if (result) {
+        *result = matched;
+    }
+}
+
+char *escape_spaces(char escapeSpaces, char *destination, char *source)
+{
+    char *result;
+
+    if (!escapeSpaces) {
+        return source;
+    }
+    result = destination;
+    while (*source) {
+        if (*source == ' ') {
+            *destination++ = '\\';
+        }
+        *destination++ = *source++;
+    }
+    *destination = '\0';
+    return result;
+}
+
+void CLDependencies_WriteDependencies(Deps *ctx, DropinFileRecord *file, MemBuffer *stream)
+{
+    struct Deps *table = ctx;
+    struct OSSpec *source;
+    SInt32 remaining;
+    char line[520];
+    char target[260];
+    char dependency[260];
+    char escaped[324];
+    char path[324];
+    Boolean hasSpace;
+    SInt32 i;
+    int *items;
+    char *separator;
+
+    do {
+        if (OS_NewHandle(0, stream) != 0) {
+            break;
+        }
+        remaining = file->dependencies.count;
+        source = &file->outputPath;
+        CLProj_MakeRelativePath(source, NULL, target, 0x104);
+        if (target[0] != 0) {
+            hasSpace = (strchr(target, ' ') != NULL);
+            sprintf(line, "%s%s%s%s ", hasSpace ? EMPTYS : EMPTYS, escape_spaces(hasSpace, escaped, target),
+                    hasSpace ? EMPTYS : EMPTYS, ":");
+            if (CLFileOps_AppendMemBuffer(stream, line, strlen(line)) != 0) {
+                break;
+            }
+            hasSpace = (strchr(file->inputName, ' ') != NULL);
+            separator = remaining ? "\\" : EMPTYS;
+            sprintf(line, "%s%s%s %s\n", hasSpace ? EMPTYS : EMPTYS, escape_spaces(hasSpace, escaped, file->inputName),
+                    hasSpace ? EMPTYS : EMPTYS, separator);
+            if (CLFileOps_AppendMemBuffer(stream, line, strlen(line)) != 0) {
+                break;
+            }
+        } else {
+            hasSpace = (strchr(file->inputName, ' ') != NULL);
+            separator = remaining ? "\\" : EMPTYS;
+            sprintf(line, "%s%s%s%s %s\n", hasSpace ? EMPTYS : EMPTYS,
+                    escape_spaces(hasSpace, escaped, file->inputName), hasSpace ? EMPTYS : EMPTYS, ":", separator);
+            if (CLFileOps_AppendMemBuffer(stream, line, strlen(line)) != 0) {
+                break;
+            }
+        }
+        for (i = 0; i < file->dependencies.count; i++) {
+            remaining--;
+            items = file->dependencies.entries;
+            make_dependency_osspec(table, items[i], path);
+            OS_SpecToString((OSSpec *)path, dependency, 0x104);
+            hasSpace = (strchr(dependency, ' ') != NULL);
+            separator = remaining ? "\\" : EMPTYS;
+            sprintf(line, "\t%s%s%s %s\n", hasSpace ? EMPTYS : EMPTYS, escape_spaces(hasSpace, escaped, dependency),
+                    hasSpace ? EMPTYS : EMPTYS, separator);
+            if (CLFileOps_AppendMemBuffer(stream, line, strlen(line)) != 0) {
+                goto out_of_memory;
+            }
+        }
+        return;
+    } while (0);
+out_of_memory:
+    CLIO_FormatAndDispatchText("\nOut of memory\n");
+    longjmp(driver_jmp_buf, 1);
 }

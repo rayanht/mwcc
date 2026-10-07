@@ -8,6 +8,54 @@
 /* Paired values in the license table. */
 
 #include <string.h>
+
+/* An opaque license value paired with its signed identifier. */
+
+int allocate_license_slot(int licenseData, int negateId)
+{
+    int slot;
+
+    slot = 0;
+    if (0 < license_slot_count) {
+        do {
+            if (license_slots[slot][1] == 0)
+                break;
+            slot = slot + 1;
+        } while (slot < license_slot_count);
+    }
+    if (slot >= 0x20) {
+        release_negative_license_values();
+        slot = license_slot_count;
+    }
+    if (slot < 0x20) {
+        license_id_counter = license_id_counter + 1;
+        license_slots[slot][0] = licenseData;
+        license_slots[slot][1] = (negateId != 0) ? -license_id_counter : license_id_counter;
+        if (slot >= license_slot_count) {
+            license_slot_count = license_slot_count + 1;
+        }
+        return license_id_counter;
+    }
+    CLErrors_ReportInternalError("CLLicenses.c", 0x5b, "Out of license space");
+    return 0;
+}
+
+/* A license value paired with its lookup identifier. */
+
+int find_license(unsigned int identifier, unsigned int *license)
+{
+    int index;
+
+    for (index = 0; index < license_slot_count; ++index) {
+        if (identifier == license_slots[index][1] || identifier == -license_slots[index][1]) {
+            *license = license_slots[index][0];
+            return index;
+        }
+    }
+    CLErrors_ReportInternalError("CLLicenses.c", 111, "Searched license not found");
+    return -1;
+}
+
 int get_license_slot_values(int index, unsigned int *firstValue, int *secondValue)
 {
     if (((0 <= index) && (index < license_slot_count)) && (license_slots[index][1] != 0)) {
@@ -17,6 +65,7 @@ int get_license_slot_values(int index, unsigned int *firstValue, int *secondValu
     }
     return 0;
 }
+
 int delete_license(int licenseIndex)
 {
     if (licenseIndex >= 0 && licenseIndex < license_slot_count) {
@@ -129,53 +178,6 @@ void CLLicenses_DeleteLicense(int identifier)
             lp_checkin(license);
         }
     }
-}
-
-/* A license value paired with its lookup identifier. */
-
-int find_license(unsigned int identifier, unsigned int *license)
-{
-    int index;
-
-    for (index = 0; index < license_slot_count; ++index) {
-        if (identifier == license_slots[index][1] || identifier == -license_slots[index][1]) {
-            *license = license_slots[index][0];
-            return index;
-        }
-    }
-    CLErrors_ReportInternalError("CLLicenses.c", 111, "Searched license not found");
-    return -1;
-}
-
-/* An opaque license value paired with its signed identifier. */
-
-int allocate_license_slot(int licenseData, int negateId)
-{
-    int slot;
-
-    slot = 0;
-    if (0 < license_slot_count) {
-        do {
-            if (license_slots[slot][1] == 0)
-                break;
-            slot = slot + 1;
-        } while (slot < license_slot_count);
-    }
-    if (slot >= 0x20) {
-        release_negative_license_values();
-        slot = license_slot_count;
-    }
-    if (slot < 0x20) {
-        license_id_counter = license_id_counter + 1;
-        license_slots[slot][0] = licenseData;
-        license_slots[slot][1] = (negateId != 0) ? -license_id_counter : license_id_counter;
-        if (slot >= license_slot_count) {
-            license_slot_count = license_slot_count + 1;
-        }
-        return license_id_counter;
-    }
-    CLErrors_ReportInternalError("CLLicenses.c", 0x5b, "Out of license space");
-    return 0;
 }
 
 static inline int license_count(void)

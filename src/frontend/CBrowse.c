@@ -394,6 +394,76 @@ void CBrowse_RecordNameRange(NameSpace *nameSpace, HashNameNode *hn, PFile *star
         }
     }
 }
+
+/* Source file metadata used by browser records. */
+
+static inline void writeBrowseLine(GList *stream, unsigned int line)
+{
+    AppendGListLong(stream, line);
+}
+
+static inline void reportBrowseError(unsigned int line)
+{
+    CError_Internal(cbrowse_filename, line);
+}
+
+static inline void writeBrowseRecordKind(GList *stream, SInt8 kind)
+{
+    AppendGListByte(stream, kind);
+}
+
+void CBrowse_WriteNameLineRange(NameSpace *names, HashNameNode *name, PFile *file, PFile *endFile, int firstLine,
+                                int lastLine)
+{
+    char *qualifiedName;
+    int nameId;
+    int endFileId;
+    int fileId;
+
+    if (!file || !file->recordbrowseinfo)
+        reportBrowseError(616);
+
+    if (endFile && endFile->fileID && firstLine > 0 && lastLine >= firstLine) {
+        qualifiedName = CError_GetQualifiedName(names, name);
+        nameId = name->id;
+        endFileId = endFile->fileID;
+        fileId = file->fileID;
+        if (!name->name)
+            reportBrowseError(582);
+
+        writeBrowseRecordKind(&data_00581ba8.buffer, 5);
+        AppendGListWord(&data_00581ba8.buffer, fileId);
+        AppendGListWord(&data_00581ba8.buffer, endFileId);
+        writeBrowseLine(&data_00581ba8.buffer, firstLine - 1);
+        writeBrowseLine(&data_00581ba8.buffer, lastLine - 1);
+        writeBrowseLine(&data_00581ba8.buffer, 0);
+        write_text_or_name_id(&data_00581ba8.buffer, name->name, nameId);
+        if (qualifiedName && qualifiedName != name->name)
+            write_text_or_name_id(&data_00581ba8.buffer, qualifiedName, -1);
+        else
+            AppendGListWord(&data_00581ba8.buffer, 0);
+    }
+}
+
+void CBrowse_FlushAndRestoreMemberList(SInt32 value, GList *state)
+{
+    unsigned int offset;
+    if (state == NULL) {
+        CError_Internal(cbrowse_filename, 556U);
+    }
+    if (browse_member_list.data != NULL) {
+        if (value > 0 && browse_member_list.size > 0) {
+            memcpy(*browse_member_list.data + 9, &value, sizeof(value));
+            offset = data_00581ba8.buffer.size;
+            AppendGListNoData(&data_00581ba8.buffer, browse_member_list.size);
+            memcpy(*data_00581ba8.buffer.data + offset, *browse_member_list.data, browse_member_list.size);
+            AppendGListByte(&data_00581ba8.buffer, -1);
+        }
+        FreeGList(&browse_member_list);
+    }
+    browse_member_list = *state;
+}
+
 void CBrowse_WriteStructMember(StructMember *param0, SInt32 param1, SInt32 param2)
 {
     SInt16 len;
@@ -411,6 +481,7 @@ void CBrowse_WriteStructMember(StructMember *param0, SInt32 param1, SInt32 param
         CompilerTools_AppendGListData(&browse_member_list, param0->name->name, len + 1);
     }
 }
+
 /* Global 16-byte browse/line state at 0x581bb8 (four dwords). */
 
 /* Sub-record reached through obj->f50 / obj->f54. */
@@ -451,6 +522,28 @@ void CBrowse_BuildTypeStructBrowseInfo(DeclInfo *obj, TypeStruct *info, GList *o
     AppendGListLong(&browse_member_list, 0);
     AppendGListByte(&browse_member_list, 0);
 }
+
+void CBrowse_RestoreScope(SInt32 statementOffset, GList *savedScope)
+{
+    UInt32 outputOffset;
+
+    if (savedScope == NULL)
+        CError_Internal(cbrowse_filename, 451U);
+    if (browse_member_list.data != NULL) {
+        if (browse_member_list.size > 0) {
+            if (tk == ';')
+                statementOffset++;
+            memcpy(*browse_member_list.data + 9, &statementOffset, sizeof(statementOffset));
+            outputOffset = data_00581ba8.buffer.size;
+            AppendGListNoData(&data_00581ba8.buffer, browse_member_list.size);
+            memcpy((*data_00581ba8.buffer.data + outputOffset), *browse_member_list.data, browse_member_list.size);
+            AppendGListByte(&data_00581ba8.buffer, -1);
+        }
+        FreeGList(&browse_member_list);
+    }
+    browse_member_list = *savedScope;
+}
+
 /* 0x563344; table sits 4 bytes before it */
 
 void CBrowse_RecordDataObject(Object *obj, SInt32 param2, SInt32 param3)
@@ -514,6 +607,7 @@ void CBrowse_RecordFunction(Object *obj, SInt32 start, SInt32 end)
         }
     }
 }
+
 void CBrowse_WriteObjMemberVar(ObjMemberVar *rec, SInt32 start, SInt32 end)
 {
     SInt16 len;
@@ -643,95 +737,6 @@ void CBrowse_FreeLists(struct CPrepCU *cu)
     FreeGList(&browse_function_buffer.buffer);
 }
 
-void CBrowse_FlushAndRestoreMemberList(SInt32 value, GList *state)
-{
-    unsigned int offset;
-    if (state == NULL) {
-        CError_Internal(cbrowse_filename, 556U);
-    }
-    if (browse_member_list.data != NULL) {
-        if (value > 0 && browse_member_list.size > 0) {
-            memcpy(*browse_member_list.data + 9, &value, sizeof(value));
-            offset = data_00581ba8.buffer.size;
-            AppendGListNoData(&data_00581ba8.buffer, browse_member_list.size);
-            memcpy(*data_00581ba8.buffer.data + offset, *browse_member_list.data, browse_member_list.size);
-            AppendGListByte(&data_00581ba8.buffer, -1);
-        }
-        FreeGList(&browse_member_list);
-    }
-    browse_member_list = *state;
-}
-
-void CBrowse_RestoreScope(SInt32 statementOffset, GList *savedScope)
-{
-    UInt32 outputOffset;
-
-    if (savedScope == NULL)
-        CError_Internal(cbrowse_filename, 451U);
-    if (browse_member_list.data != NULL) {
-        if (browse_member_list.size > 0) {
-            if (tk == ';')
-                statementOffset++;
-            memcpy(*browse_member_list.data + 9, &statementOffset, sizeof(statementOffset));
-            outputOffset = data_00581ba8.buffer.size;
-            AppendGListNoData(&data_00581ba8.buffer, browse_member_list.size);
-            memcpy((*data_00581ba8.buffer.data + outputOffset), *browse_member_list.data, browse_member_list.size);
-            AppendGListByte(&data_00581ba8.buffer, -1);
-        }
-        FreeGList(&browse_member_list);
-    }
-    browse_member_list = *savedScope;
-}
-/* Source file metadata used by browser records. */
-
-static inline void writeBrowseLine(GList *stream, unsigned int line)
-{
-    AppendGListLong(stream, line);
-}
-
-static inline void reportBrowseError(unsigned int line)
-{
-    CError_Internal(cbrowse_filename, line);
-}
-
-static inline void writeBrowseRecordKind(GList *stream, SInt8 kind)
-{
-    AppendGListByte(stream, kind);
-}
-
-void CBrowse_WriteNameLineRange(NameSpace *names, HashNameNode *name, PFile *file, PFile *endFile, int firstLine,
-                                int lastLine)
-{
-    char *qualifiedName;
-    int nameId;
-    int endFileId;
-    int fileId;
-
-    if (!file || !file->recordbrowseinfo)
-        reportBrowseError(616);
-
-    if (endFile && endFile->fileID && firstLine > 0 && lastLine >= firstLine) {
-        qualifiedName = CError_GetQualifiedName(names, name);
-        nameId = name->id;
-        endFileId = endFile->fileID;
-        fileId = file->fileID;
-        if (!name->name)
-            reportBrowseError(582);
-
-        writeBrowseRecordKind(&data_00581ba8.buffer, 5);
-        AppendGListWord(&data_00581ba8.buffer, fileId);
-        AppendGListWord(&data_00581ba8.buffer, endFileId);
-        writeBrowseLine(&data_00581ba8.buffer, firstLine - 1);
-        writeBrowseLine(&data_00581ba8.buffer, lastLine - 1);
-        writeBrowseLine(&data_00581ba8.buffer, 0);
-        write_text_or_name_id(&data_00581ba8.buffer, name->name, nameId);
-        if (qualifiedName && qualifiedName != name->name)
-            write_text_or_name_id(&data_00581ba8.buffer, qualifiedName, -1);
-        else
-            AppendGListWord(&data_00581ba8.buffer, 0);
-    }
-}
-
 /* Arguments and result for the browse-data callback. */
 
 void CBrowse_StoreBrowseData(CPrepCU *arguments)
@@ -760,6 +765,7 @@ void CBrowse_StoreBrowseData(CPrepCU *arguments)
         }
     }
 }
+
 /* Fixed-size browse stream header. */
 
 void CBrowse_InitBrowseData(CPrepCU *classes)

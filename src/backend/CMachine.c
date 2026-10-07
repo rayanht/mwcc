@@ -176,69 +176,23 @@ Float CMach_FloatReciprocal(Float value)
     return value;
 }
 
-Boolean CMach_PassResultInHiddenArg(Type *type)
-{
-    switch ((char)type->type) {
-        case 4:
-            if ((char)type->type == 4 && TYPE_STRUCT(type)->stype >= TYPESTRUCT &&
-                TYPE_STRUCT(type)->stype <= TYPETEMPLDEPEXPR)
-                return 0;
-            /* fall through */
-        case 5:
-            return 1;
-        case 10:
-            if (type->size == 4)
-                return 0;
-            return 1;
-        default:
-            return 0;
-    }
-}
-Boolean Type_RequiresMemoryReturn(Type *type)
-{
-    SInt32 structKind;
-    switch ((char)type->type) {
-        case TYPESTRUCT: {
-            structKind = TYPE_STRUCT(type)->stype;
-            if (structKind >= 4 && structKind <= 14)
-                return 0;
-            if (type->size <= 8 && !copts.returnStructsInMemory)
-                return 0;
-            return 1;
-        }
-        case TYPECLASS:
-            if (type->size <= 8 && (Boolean)(CClass_Constructor(TYPE_CLASS(type)) == NULL) &&
-                !copts.returnStructsInMemory)
-                return 0;
-            return 1;
-        case TYPEMEMBERPOINTER:
-            if (type->size == 4)
-                return 0;
-            return 1;
-        default:
-            return 0;
-    }
-}
+static double data_0055fd18 = 0.0;
+static double double_four = 1.0;
+static double data_0055fd28 = -1.0;
+static double data_0055fd30 = 0.5;
+static double data_0055fd38 = -0.5;
+static double data_0055fd40 = 2.0;
+static double data_0055fd48 = -2.0;
+static double data_0055fd50 = 4.0;
+static double data_0055fd58 = -4.0;
+static double data_0055fd60 = 8.0;
 
-Boolean CMachine_FunctionRequiresMemoryReturn(TypeFunc *functype)
+Boolean CMach_FloatIsPowerOf2(Float f)
 {
-    SInt8 type = functype->functype->type;
-    switch (type) {
-        case TYPESTRUCT: {
-            if (functype->functype->type == TYPESTRUCT) {
-                SInt32 structKind = TYPE_STRUCT(functype->functype)->stype;
-                if (structKind >= 4 && structKind <= 14)
-                    return 0;
-            }
-        }
-        case TYPECLASS:
-        case TYPEMEMBERPOINTER:
-            if (Type_RequiresMemoryReturn(functype->functype))
-                return 1;
-            return 0;
-        default:
-            return 0;
-    }
+    return f.data.value == data_0055fd18 || f.data.value == double_four || f.data.value == data_0055fd28 ||
+           f.data.value == data_0055fd30 || f.data.value == data_0055fd38 || f.data.value == data_0055fd40 ||
+           f.data.value == data_0055fd48 || f.data.value == data_0055fd50 || f.data.value == data_0055fd58 ||
+           f.data.value == data_0055fd60;
 }
 
 const char *CMach_GetCPU(void)
@@ -293,23 +247,70 @@ const char *CMach_GetCPU(void)
     }
 }
 
-static double data_0055fd18 = 0.0;
-static double double_four = 1.0;
-static double data_0055fd28 = -1.0;
-static double data_0055fd30 = 0.5;
-static double data_0055fd38 = -0.5;
-static double data_0055fd40 = 2.0;
-static double data_0055fd48 = -2.0;
-static double data_0055fd50 = 4.0;
-static double data_0055fd58 = -4.0;
-static double data_0055fd60 = 8.0;
-
-Boolean CMach_FloatIsPowerOf2(Float f)
+Boolean CMach_PassResultInHiddenArg(Type *type)
 {
-    return f.data.value == data_0055fd18 || f.data.value == double_four || f.data.value == data_0055fd28 ||
-           f.data.value == data_0055fd30 || f.data.value == data_0055fd38 || f.data.value == data_0055fd40 ||
-           f.data.value == data_0055fd48 || f.data.value == data_0055fd50 || f.data.value == data_0055fd58 ||
-           f.data.value == data_0055fd60;
+    switch ((char)type->type) {
+        case 4:
+            if ((char)type->type == 4 && TYPE_STRUCT(type)->stype >= TYPESTRUCT &&
+                TYPE_STRUCT(type)->stype <= TYPETEMPLDEPEXPR)
+                return 0;
+            /* fall through */
+        case 5:
+            return 1;
+        case 10:
+            if (type->size == 4)
+                return 0;
+            return 1;
+        default:
+            return 0;
+    }
+}
+
+Boolean Type_RequiresMemoryReturn(Type *type)
+{
+    SInt32 structKind;
+    switch ((char)type->type) {
+        case TYPESTRUCT: {
+            structKind = TYPE_STRUCT(type)->stype;
+            if (structKind >= 4 && structKind <= 14)
+                return 0;
+            if (type->size <= 8 && !copts.returnStructsInMemory)
+                return 0;
+            return 1;
+        }
+        case TYPECLASS:
+            if (type->size <= 8 && (Boolean)(CClass_Constructor(TYPE_CLASS(type)) == NULL) &&
+                !copts.returnStructsInMemory)
+                return 0;
+            return 1;
+        case TYPEMEMBERPOINTER:
+            if (type->size == 4)
+                return 0;
+            return 1;
+        default:
+            return 0;
+    }
+}
+
+Boolean CMachine_FunctionRequiresMemoryReturn(TypeFunc *functype)
+{
+    SInt8 type = functype->functype->type;
+    switch (type) {
+        case TYPESTRUCT: {
+            if (functype->functype->type == TYPESTRUCT) {
+                SInt32 structKind = TYPE_STRUCT(functype->functype)->stype;
+                if (structKind >= 4 && structKind <= 14)
+                    return 0;
+            }
+        }
+        case TYPECLASS:
+        case TYPEMEMBERPOINTER:
+            if (Type_RequiresMemoryReturn(functype->functype))
+                return 1;
+            return 0;
+        default:
+            return 0;
+    }
 }
 
 long CMach_StructLayoutBitfield(TypeBitfield *field, int alignmentKind)
@@ -435,20 +436,6 @@ long CMach_StructLayoutGetOffset(Type *type, int flags)
     return offset;
 }
 
-void CMach_StructLayoutInitOffset(unsigned int offset)
-{
-    structLayoutOffset = offset;
-    data_00580fa0 = 0;
-    bitfield_storage_size = 0;
-    data_00580fa4 = 0;
-}
-
-void CMachine_ResetMaximumAlignment(void)
-{
-    maximumAlignment = 0;
-    return;
-}
-
 static inline SInt16 cm_min(SInt32 index, SInt16 b)
 {
     SInt32 a;
@@ -463,10 +450,12 @@ static inline SInt16 cm_min(SInt32 index, SInt16 b)
         return b;
     return r;
 }
+
 static inline SInt32 cm_loadalign(UInt32 index)
 {
     return loadalign_table[index];
 }
+
 static inline UInt16 cm_classmin(SInt16 b, SInt32 index)
 {
     SInt32 a;
@@ -480,14 +469,17 @@ static inline UInt16 cm_classmin(SInt16 b, SInt32 index)
         return b;
     return r;
 }
+
 static inline SInt16 cm_structalign(SInt32 index, TypeStruct *type)
 {
     return cm_min(index, type->align);
 }
+
 static inline SInt16 cm_classalign(UInt32 index, SInt16 b)
 {
     return cm_classmin(b, index);
 }
+
 static inline SInt32 cm_sizealign(Type *type, SInt32 alignment)
 {
     SInt32 index = alignment - 3;
@@ -500,6 +492,87 @@ static inline SInt32 cm_sizealign(Type *type, SInt32 alignment)
 static inline SInt32 cm_alignment(void)
 {
     return copts.structalignment;
+}
+
+int CMach_StructLayoutGetCurSize(void)
+{
+    int alignment = 0;
+    int padding;
+
+    if (data_00580fa0 != 0) {
+        switch (copts.structalignment) {
+            case 3:
+            case 8:
+                alignment = 8;
+                break;
+            case 0:
+            case 4:
+                alignment = 16;
+                break;
+        }
+        if (alignment != 0) {
+            padding = bitfield_storage_size * 8 - data_00580fa0;
+            if (padding > 0) {
+                structLayoutOffset -= padding / alignment;
+            }
+        }
+        data_00580fa0 = 0;
+    }
+    return structLayoutOffset;
+}
+
+void CMach_StructLayoutInitOffset(unsigned int offset)
+{
+    structLayoutOffset = offset;
+    data_00580fa0 = 0;
+    bitfield_storage_size = 0;
+    data_00580fa4 = 0;
+}
+
+void CMachine_ResetMaximumAlignment(void)
+{
+    maximumAlignment = 0;
+    return;
+}
+
+SInt16 CMach_MemberAlignValue(Type *type, SInt32 offset)
+{
+    SInt16 alignment = get_type_align(type);
+    if ((SInt32)alignment <= 1)
+        return 0;
+    return (alignment - (offset & (alignment - 1U))) & (alignment - 1U);
+}
+
+SInt16 get_type_align(Type *type)
+{
+    SInt32 alignment;
+    alignment = CMachine_GetTypeAlignment(type);
+    if (alignment <= 1) {
+        return 1;
+    }
+    if (type->type == TYPESTRUCT) {
+        TypeStruct *structType = (TypeStruct *)type;
+        SInt32 structKind = structType->stype;
+        if (structKind >= 4 && structKind <= 14) {
+            return 16;
+        }
+    }
+    switch (copts.structalignment) {
+        case 8:
+            alignment = 1;
+            break;
+        case 0:
+            if (alignment > 2) {
+                alignment = 2;
+            }
+            break;
+        case 1:
+            if (alignment > 4) {
+                alignment = 4;
+            }
+            break;
+    }
+    return alignment;
 }
 
 SInt16 CMachine_GetTypeAlignment(Type *type)
@@ -616,80 +689,6 @@ SInt16 CMachine_GetTypeAlignment(Type *type)
     }
 }
 
-UInt16 fn_004a8400(TypeStruct *str)
-{
-    unsigned int lift_value_0;
-    lift_value_0 = maximumAlignment;
-    maximumAlignment = 0;
-    return lift_value_0;
-}
-SInt16 CMach_MemberAlignValue(Type *type, SInt32 offset)
-{
-    SInt16 alignment = get_type_align(type);
-    if ((SInt32)alignment <= 1)
-        return 0;
-    return (alignment - (offset & (alignment - 1U))) & (alignment - 1U);
-}
-
-int CMach_StructLayoutGetCurSize(void)
-{
-    int alignment = 0;
-    int padding;
-
-    if (data_00580fa0 != 0) {
-        switch (copts.structalignment) {
-            case 3:
-            case 8:
-                alignment = 8;
-                break;
-            case 0:
-            case 4:
-                alignment = 16;
-                break;
-        }
-        if (alignment != 0) {
-            padding = bitfield_storage_size * 8 - data_00580fa0;
-            if (padding > 0) {
-                structLayoutOffset -= padding / alignment;
-            }
-        }
-        data_00580fa0 = 0;
-    }
-    return structLayoutOffset;
-}
-
-SInt16 get_type_align(Type *type)
-{
-    SInt32 alignment;
-    alignment = CMachine_GetTypeAlignment(type);
-    if (alignment <= 1) {
-        return 1;
-    }
-    if (type->type == TYPESTRUCT) {
-        TypeStruct *structType = (TypeStruct *)type;
-        SInt32 structKind = structType->stype;
-        if (structKind >= 4 && structKind <= 14) {
-            return 16;
-        }
-    }
-    switch (copts.structalignment) {
-        case 8:
-            alignment = 1;
-            break;
-        case 0:
-            if (alignment > 2) {
-                alignment = 2;
-            }
-            break;
-        case 1:
-            if (alignment > 4) {
-                alignment = 4;
-            }
-            break;
-    }
-    return alignment;
-}
-
 /* Records and links used by the maximum-value scan. */
 
 short CMach_GetClassAlign(TypeClass *list)
@@ -708,6 +707,14 @@ short CMach_GetClassAlign(TypeClass *list)
         node = node->next;
     }
     return maximum;
+}
+
+UInt16 fn_004a8400(TypeStruct *str)
+{
+    unsigned int lift_value_0;
+    lift_value_0 = maximumAlignment;
+    maximumAlignment = 0;
+    return lift_value_0;
 }
 
 void CMach_PragmaParams(void)
@@ -769,6 +776,7 @@ void CMach_InitFloatMem(Type *type, Float value, unsigned char *dest)
     }
     CError_FATAL(779);
 }
+
 UInt8 CMach_FloatIsNegOne(double value)
 {
     return value == negative_one;
@@ -802,6 +810,7 @@ Float CMachine_RoundFloatToType(Type *type, Float value)
     }
     return value;
 }
+
 /* 0x474a30, signed 64 -> double */
 /* 0x474ab0, unsigned 64 -> double */
 

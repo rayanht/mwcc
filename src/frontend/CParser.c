@@ -61,6 +61,134 @@
 
 #include "compiler/CDecl.h"
 
+static int IsTempName(HashNameNode *name)
+{
+    return name == NULL || name->name[0] == '@';
+}
+
+static Boolean IsAnonymousName(HashNameNode *name)
+{
+    return IsTempName(name) || name->name[0] == '$';
+}
+
+static int IsUnionType(DeclInfo *context)
+{
+    return context->dtype->type == TYPECLASS && ((TypeClass *)context->dtype)->mode == 1;
+}
+
+static Boolean IsAnonymousUnion(DeclInfo *context)
+{
+    return IsUnionType(context) && IsAnonymousName(((TypeClass *)context->dtype)->classname);
+}
+
+static inline Object *fn_0048be40_inline1(TypeFunc *functionType, NameSpaceObjectList *result)
+{
+    NameSpaceObjectList *candidate = result;
+    while (candidate != NULL) {
+        if (candidate->object->otype == OT_OBJECT && ((Object *)candidate->object)->type->type == TYPEFUNC &&
+            CParser_CompareArgLists(functionType->args, ((TypeFunc *)((Object *)candidate->object)->type)->args) == 1)
+            return (Object *)candidate->object;
+        candidate = candidate->next;
+    }
+    return NULL;
+}
+
+void cparser(void)
+{
+    DeclInfo local;
+
+    tk = CPrepTokenizer_GetNextToken();
+    if (tk != 0) {
+        do {
+            CPrep_GetFOI(&function_fileinfo, NULL);
+            data_00587184 = data_00588454;
+            declaration_token = *CPrep_GetLastBufferedToken();
+            memclrw(&local, sizeof(local));
+            parse_declaration(&local);
+            if (tk == 0)
+                break;
+            tk = CPrepTokenizer_GetNextToken();
+        } while (tk != 0);
+    } else if (copts.cplusplus == 0 && copts.rejectZeroLengthArrayMembers != 0) {
+        CError_ReportError(ERR_UNEXPECTED_END_FILE);
+    }
+    CInit_DefineTentativeData();
+    copts.f71 = 0;
+    fn_0048c220(1);
+    if (cprep_cu[0xe0] != 1) {
+        CInline_GeneratePendingFunctionBody();
+        fn_0048c220(1);
+    }
+    CClass_GenThunks();
+    if (cprep_cu[0xe0] != 1) {
+        CObjCModern_GenerateSymbolTableAndModule();
+    }
+    CSOM_GenerateRefNodeCode();
+    CInit_DefineTentativeData();
+}
+
+void parse_declaration(DeclInfo *p)
+{
+    switch (tk) {
+        case TK_AT_INTERFACE:
+            fn_00505cc0();
+            return;
+        case TK_AT_IMPLEMENTATION:
+            fn_00505cb0();
+            return;
+        case TK_AT_PROTOCOL:
+            CObjC_ParseProtocol();
+            return;
+        case TK_AT_CLASS:
+            CObjC_ParseIdentifierList();
+            return;
+        case TK_NAMESPACE:
+            parse_namespace_declaration(p);
+            return;
+        case TK_EXPORT:
+            CError_ReportError(ERR_UNIMPLEMENTED_C_FEATURE);
+            tk = CPrepTokenizer_GetNextToken();
+            if (tk != TK_TEMPLATE) {
+                CError_ReportError(ERR_DECLARATION_SYNTAX_ERROR);
+                return;
+            }
+        case TK_TEMPLATE:
+            CTemplateNew_ParseTemplateDeclaration(NULL);
+            return;
+        case TK_USING:
+            tk = CPrepTokenizer_GetNextToken();
+            if (tk == TK_NAMESPACE) {
+                tk = CPrepTokenizer_GetNextToken();
+                CScope_ParseUsingDirective(currentNameSpace);
+            } else {
+                CScope_ParseUsingDeclaration(currentNameSpace, ACCESSPUBLIC, 0);
+            }
+            return;
+        case TK_EXTERN:
+            if (copts.cplusplus != 0) {
+                p->storage = TK_EXTERN;
+                tk = CPrepTokenizer_GetNextToken();
+                if (tk == TK_STRING) {
+                    parse_linkage_specification(p);
+                    return;
+                }
+            }
+        default:
+            CParser_GetDeclSpecs(p, 1);
+            if ((SInt32)p->storage == TK_REGISTER || (SInt32)p->storage == TK_AUTO) {
+                CError_ReportError(ERR_ILLEGAL_STORAGE_CLASS);
+                p->storage = TK_EOF;
+            }
+            if (tk != ';') {
+                CDecl_ScanDeclarator(p);
+            } else {
+                CParser_CheckAnonymousUnion(p, 0);
+            }
+            fn_0048c220(0);
+            return;
+    }
+}
+
 void parse_namespace_declaration(void *declarationData)
 {
     DeclInfo *declaration = declarationData;
@@ -143,25 +271,6 @@ void parse_namespace_declaration(void *declarationData)
     CScope_RestoreScope(&save);
 }
 
-static int IsTempName(HashNameNode *name)
-{
-    return name == NULL || name->name[0] == '@';
-}
-
-static Boolean IsAnonymousName(HashNameNode *name)
-{
-    return IsTempName(name) || name->name[0] == '$';
-}
-
-static int IsUnionType(DeclInfo *context)
-{
-    return context->dtype->type == TYPECLASS && ((TypeClass *)context->dtype)->mode == 1;
-}
-
-static Boolean IsAnonymousUnion(DeclInfo *context)
-{
-    return IsUnionType(context) && IsAnonymousName(((TypeClass *)context->dtype)->classname);
-}
 void parse_linkage_specification(DeclInfo *decl)
 {
     UInt8 linkageFlag;
@@ -223,16 +332,28 @@ void parse_linkage_specification(DeclInfo *decl)
     }
 }
 
-static inline Object *fn_0048be40_inline1(TypeFunc *functionType, NameSpaceObjectList *result)
+void CParser_ParseGlobalDeclaration(void)
 {
-    NameSpaceObjectList *candidate = result;
-    while (candidate != NULL) {
-        if (candidate->object->otype == OT_OBJECT && ((Object *)candidate->object)->type->type == TYPEFUNC &&
-            CParser_CompareArgLists(functionType->args, ((TypeFunc *)((Object *)candidate->object)->type)->args) == 1)
-            return (Object *)candidate->object;
-        candidate = candidate->next;
+    DeclInfo buf;
+
+    if (tk != 0) {
+        CPrep_GetFOI(&function_fileinfo, NULL);
+        data_00587184 = data_00588454;
+        declaration_token = *CPrep_GetLastBufferedToken();
+        memclrw(&buf, sizeof(buf));
+        CParser_GetDeclSpecs(&buf, 1);
+        if ((SInt32)buf.storage == 0x101 || (SInt32)buf.storage == 0x100) {
+            CError_ReportError(ERR_ILLEGAL_STORAGE_CLASS);
+            buf.storage = 0;
+        }
+        if (tk != ';')
+            CDecl_ScanDeclarator(&buf);
+        else
+            CParser_CheckAnonymousUnion(&buf, 0);
+        tk = CPrepTokenizer_GetNextToken();
+    } else {
+        CError_ReportError(ERR_UNEXPECTED_END_FILE);
     }
-    return NULL;
 }
 
 Object *CParser_ParseObject(void)
@@ -264,124 +385,170 @@ Object *CParser_ParseObject(void)
     return NULL;
 }
 
-void cparser(void)
-{
-    DeclInfo local;
+/* Parser declaration-specifier state block.  Field offsets are the
+ * authoritative ones observed in the disassembly. */
 
-    tk = CPrepTokenizer_GetNextToken();
-    if (tk != 0) {
-        do {
-            CPrep_GetFOI(&function_fileinfo, NULL);
-            data_00587184 = data_00588454;
-            declaration_token = *CPrep_GetLastBufferedToken();
-            memclrw(&local, sizeof(local));
-            parse_declaration(&local);
-            if (tk == 0)
+/* Result record filled by CScope_ParseDeclName. */
+
+static inline Boolean CheckVectorKeyword(void)
+{
+    HashNameNode *savedid;
+    SInt16 t;
+    Boolean bVar3;
+    savedid = data_00587fa0;
+    t = CPrepTokenizer_GetNextTokenAndRestorePosition();
+    switch (t) {
+        case 0x107:
+        case 0x108:
+        case 0x109:
+        case 0x10a:
+        case 0x10b:
+        case 0x10d:
+        case 0x10e:
+        case 0x11c:
+            bVar3 = 1;
+            break;
+        case -3:
+            if (strcmp(data_00587fa0->name, "bool") == 0 || strcmp(data_00587fa0->name, "pixel") == 0 ||
+                strcmp(data_00587fa0->name, "__pixel") == 0) {
+                bVar3 = 1;
                 break;
-            tk = CPrepTokenizer_GetNextToken();
-        } while (tk != 0);
-    } else if (copts.cplusplus == 0 && copts.rejectZeroLengthArrayMembers != 0) {
-        CError_ReportError(ERR_UNEXPECTED_END_FILE);
-    }
-    CInit_DefineTentativeData();
-    copts.f71 = 0;
-    fn_0048c220(1);
-    if (cprep_cu[0xe0] != 1) {
-        CInline_GeneratePendingFunctionBody();
-        fn_0048c220(1);
-    }
-    CClass_GenThunks();
-    if (cprep_cu[0xe0] != 1) {
-        CObjCModern_GenerateSymbolTableAndModule();
-    }
-    CSOM_GenerateRefNodeCode();
-    CInit_DefineTentativeData();
-}
-
-void CParser_ParseGlobalDeclaration(void)
-{
-    DeclInfo buf;
-
-    if (tk != 0) {
-        CPrep_GetFOI(&function_fileinfo, NULL);
-        data_00587184 = data_00588454;
-        declaration_token = *CPrep_GetLastBufferedToken();
-        memclrw(&buf, sizeof(buf));
-        CParser_GetDeclSpecs(&buf, 1);
-        if ((SInt32)buf.storage == 0x101 || (SInt32)buf.storage == 0x100) {
-            CError_ReportError(ERR_ILLEGAL_STORAGE_CLASS);
-            buf.storage = 0;
-        }
-        if (tk != ';')
-            CDecl_ScanDeclarator(&buf);
-        else
-            CParser_CheckAnonymousUnion(&buf, 0);
-        tk = CPrepTokenizer_GetNextToken();
-    } else {
-        CError_ReportError(ERR_UNEXPECTED_END_FILE);
-    }
-}
-
-void parse_declaration(DeclInfo *p)
-{
-    switch (tk) {
-        case TK_AT_INTERFACE:
-            fn_00505cc0();
-            return;
-        case TK_AT_IMPLEMENTATION:
-            fn_00505cb0();
-            return;
-        case TK_AT_PROTOCOL:
-            CObjC_ParseProtocol();
-            return;
-        case TK_AT_CLASS:
-            CObjC_ParseIdentifierList();
-            return;
-        case TK_NAMESPACE:
-            parse_namespace_declaration(p);
-            return;
-        case TK_EXPORT:
-            CError_ReportError(ERR_UNIMPLEMENTED_C_FEATURE);
-            tk = CPrepTokenizer_GetNextToken();
-            if (tk != TK_TEMPLATE) {
-                CError_ReportError(ERR_DECLARATION_SYNTAX_ERROR);
-                return;
-            }
-        case TK_TEMPLATE:
-            CTemplateNew_ParseTemplateDeclaration(NULL);
-            return;
-        case TK_USING:
-            tk = CPrepTokenizer_GetNextToken();
-            if (tk == TK_NAMESPACE) {
-                tk = CPrepTokenizer_GetNextToken();
-                CScope_ParseUsingDirective(currentNameSpace);
-            } else {
-                CScope_ParseUsingDeclaration(currentNameSpace, ACCESSPUBLIC, 0);
-            }
-            return;
-        case TK_EXTERN:
-            if (copts.cplusplus != 0) {
-                p->storage = TK_EXTERN;
-                tk = CPrepTokenizer_GetNextToken();
-                if (tk == TK_STRING) {
-                    parse_linkage_specification(p);
-                    return;
-                }
             }
         default:
-            CParser_GetDeclSpecs(p, 1);
-            if ((SInt32)p->storage == TK_REGISTER || (SInt32)p->storage == TK_AUTO) {
-                CError_ReportError(ERR_ILLEGAL_STORAGE_CLASS);
-                p->storage = TK_EOF;
-            }
-            if (tk != ';') {
-                CDecl_ScanDeclarator(p);
-            } else {
-                CParser_CheckAnonymousUnion(p, 0);
-            }
-            fn_0048c220(0);
-            return;
+            data_00587fa0 = savedid;
+            bVar3 = 0;
     }
+    return bVar3;
+}
+
+static inline Boolean CheckClassAccess(void *node)
+{
+    TypeClassTemplate *templateClass = node;
+    NameSpace *qv;
+    if (templateClass->templateParameters != NULL) {
+        for (qv = currentNameSpace;; qv = qv->parent) {
+            if (qv == NULL) {
+                CError_ReportError(ERR_LESS_EXPECTED);
+                return 0;
+            }
+            if (qv->theclass == node)
+                break;
+        }
+    }
+    return 1;
+}
+
+static void CParser_SaveState(CParseSave *sv)
+{
+    sv->g24c = currentNameSpace;
+    sv->g040 = data_00588040;
+    sv->g238 = data_00588238;
+    sv->g134 = object_reference_stack;
+    sv->g7ecc = writtenEntry;
+    sv->g4f8 = data_005884f8;
+    sv->g240 = data_00588240;
+    data_00588240 = sv;
+}
+
+static void CParser_RestoreState(CParseSave *sv)
+{
+    currentNameSpace = sv->g24c;
+    data_00588040 = sv->g040;
+    data_00588238 = sv->g238;
+    object_reference_stack = sv->g134;
+    writtenEntry = sv->g7ecc;
+    data_005884f8 = sv->g4f8;
+    data_00588240 = sv->g240;
+}
+
+static void save(CParseSave *s, unsigned char *flag)
+{
+    NameSpace *x;
+    x = currentNameSpace;
+    s->g24c = x;
+    s->g040 = data_00588040;
+    *flag = 0;
+    s->g238 = data_00588238;
+    s->g134 = object_reference_stack;
+    s->g7ecc = writtenEntry;
+    s->g4f8 = data_005884f8;
+    s->g240 = data_00588240;
+    data_00588240 = s;
+    (void)s->g24c;
+}
+
+static void restore(CParseSave *s)
+{
+    TypeClass *t3;
+    t3 = s->g040;
+    currentNameSpace = s->g24c;
+    data_00588040 = t3;
+    data_00588238 = s->g238;
+    object_reference_stack = s->g134;
+    writtenEntry = s->g7ecc;
+    data_005884f8 = s->g4f8;
+    data_00588240 = s->g240;
+}
+
+static inline Boolean CParser_AlternateFunctionNamesEnabled(void)
+{
+    return copts.f86;
+}
+
+/* Maps a key to a value for the parser. */
+
+/* Linked values queued by the parser. */
+
+void CParser_CallBackAction(Object *key)
+{
+    struct PendingObjectClass *entry;
+    struct ClassTypeLink *node;
+    TypeClass *value;
+
+    entry = pending_object_classes;
+    if (pending_object_classes != NULL) {
+        do {
+            if (entry->object == key) {
+                value = entry->theclass;
+                node = (struct ClassTypeLink *)galloc(sizeof(struct ClassTypeLink));
+                node->next = class_type_links;
+                node->type = value;
+                class_type_links = node;
+                return;
+            }
+            entry = entry->next;
+        } while (entry != NULL);
+    }
+    CError_FATAL(3854);
+}
+
+/* A link holding a class type in the parser's list. */
+
+unsigned int CParser_PrependClassTypeLink(TypeClass *type)
+{
+    struct ClassTypeLink *link;
+    struct ClassTypeLink *head;
+    link = (struct ClassTypeLink *)galloc(8U);
+    head = class_type_links;
+    link->next = head;
+    link->type = type;
+    class_type_links = link;
+    return (unsigned int)link;
+}
+
+/* Pending object and class pair. */
+
+void CParser_NewCallBackAction(Object *object, TypeClass *theclass)
+{
+    struct PendingObjectClass *entry;
+    struct PendingObjectClass *head;
+    entry = (struct PendingObjectClass *)galloc(sizeof(struct PendingObjectClass));
+    head = pending_object_classes;
+    entry->next = head;
+    entry->object = object;
+    entry->theclass = theclass;
+    pending_object_classes = entry;
+    object->flags |= OBJECT_LAZY;
 }
 
 void CParser_CheckAnonymousUnion(DeclInfo *context, char flag)
@@ -452,6 +619,36 @@ Boolean CParser_IsAnonymousClass(Type **ptype, Boolean flag)
     }
     return result;
 }
+
+/* Pending parser input, linked in processing order. */
+
+void fn_0048c220(char processInput)
+{
+    Boolean repeat;
+    struct ClassTypeLink *input;
+
+    do {
+        CParser_Cleanup();
+        repeat = 0;
+        if (processInput != 0) {
+            freelheap();
+            if (class_type_links != NULL) {
+                input = class_type_links;
+                CClass_GenerateVTable(input->type);
+                input = class_type_links;
+                class_type_links = input->next;
+                repeat = 1;
+            } else if (CTemplateNew_InstantiatePendingTemplates() != 0) {
+                repeat = 1;
+            }
+        }
+        while (CInline_DispatchNextDeferredNode() != 0) {
+            CParser_Cleanup();
+            repeat = 1;
+        }
+    } while (repeat);
+}
+
 /* 0x580dcc: linked list of records with two pointer payloads. */
 
 /* 0x580dc8: linked list whose payload points at a structure holding a
@@ -482,57 +679,29 @@ void CParser_Cleanup(void)
     freelheap();
 }
 
-/* Parser declaration-specifier state block.  Field offsets are the
- * authoritative ones observed in the disassembly. */
+/* List of objects paired with expressions. */
 
-/* Result record filled by CScope_ParseDeclName. */
-
-static inline Boolean CheckVectorKeyword(void)
+void CParser_RegisterSingleExprFunction(Object *object, ENode *expr)
 {
-    HashNameNode *savedid;
-    SInt16 t;
-    Boolean bVar3;
-    savedid = data_00587fa0;
-    t = CPrepTokenizer_GetNextTokenAndRestorePosition();
-    switch (t) {
-        case 0x107:
-        case 0x108:
-        case 0x109:
-        case 0x10a:
-        case 0x10b:
-        case 0x10d:
-        case 0x10e:
-        case 0x11c:
-            bVar3 = 1;
-            break;
-        case -3:
-            if (strcmp(data_00587fa0->name, "bool") == 0 || strcmp(data_00587fa0->name, "pixel") == 0 ||
-                strcmp(data_00587fa0->name, "__pixel") == 0) {
-                bVar3 = 1;
-                break;
-            }
-        default:
-            data_00587fa0 = savedid;
-            bVar3 = 0;
-    }
-    return bVar3;
+    CParseCacheNode *entry;
+    CParseCacheNode *previous;
+    entry = (CParseCacheNode *)CompilerTools_AllocatePool(sizeof(CParseCacheNode));
+    previous = single_expr_functions;
+    entry->next = previous;
+    entry->object = object;
+    entry->expr = expr;
+    single_expr_functions = entry;
 }
 
-static inline Boolean CheckClassAccess(void *node)
+void CParser_PrependClassParseRec(TypeClass *type)
 {
-    TypeClassTemplate *templateClass = node;
-    NameSpace *qv;
-    if (templateClass->templateParameters != NULL) {
-        for (qv = currentNameSpace;; qv = qv->parent) {
-            if (qv == NULL) {
-                CError_ReportError(ERR_LESS_EXPECTED);
-                return 0;
-            }
-            if (qv->theclass == node)
-                break;
-        }
-    }
-    return 1;
+    CParseRec *entry;
+    CParseRec *previous;
+    entry = (CParseRec *)CompilerTools_AllocatePool(8U);
+    previous = class_parse_recs;
+    entry->next = previous;
+    entry->listOwner = type;
+    class_parse_recs = entry;
 }
 
 /* Results of a parser scope lookup. */
@@ -1720,27 +1889,231 @@ TypeIntegral *select_builtin_type(SInt16 token, SInt16 lengthModifier, SInt16 si
     }
 }
 
-static void CParser_SaveState(CParseSave *sv)
+Boolean is_pascal_object(Object *object)
 {
-    sv->g24c = currentNameSpace;
-    sv->g040 = data_00588040;
-    sv->g238 = data_00588238;
-    sv->g134 = object_reference_stack;
-    sv->g7ecc = writtenEntry;
-    sv->g4f8 = data_005884f8;
-    sv->g240 = data_00588240;
-    data_00588240 = sv;
+    unsigned int isPascal;
+    isPascal = 0U;
+    if (object->type->type == TYPEFUNC) {
+        if (((TypeFunc *)object->type)->flags & FUNC_PASCAL) {
+            isPascal = 1U;
+        }
+    }
+    return isPascal;
 }
 
-static void CParser_RestoreState(CParseSave *sv)
+Boolean CParser_IsVirtualFunction(Object *object, TypeClass **firstValue, UInt32 *secondValue)
 {
-    currentNameSpace = sv->g24c;
-    data_00588040 = sv->g040;
-    data_00588238 = sv->g238;
-    object_reference_stack = sv->g134;
-    writtenEntry = sv->g7ecc;
-    data_005884f8 = sv->g4f8;
-    data_00588240 = sv->g240;
+    if (object->datatype == DVFUNC) {
+        *firstValue = ((TypeMemberFunc *)object->type)->theclass;
+        *secondValue = ((TypeMemberFunc *)object->type)->vtbl_index;
+        return 1;
+    }
+    return 0;
+}
+
+char CParser_HasInternalLinkage(Object *obj)
+{
+    if (obj->nspace != NULL) {
+        if (obj->nspace->is_unnamed != 0) {
+            return 1;
+        }
+    }
+    if ((obj->qual & 0x60000U) != 0) {
+        return 0;
+    }
+    if (obj->sclass == TK_STATIC) {
+        return 1;
+    }
+    if ((obj->qual & 0x10U) != 0) {
+        obj->qual |= 0x20000U;
+    }
+    return 0;
+}
+
+UInt8 CParserIsVolatileExpr(ENode *node)
+{
+    unsigned int qualifiers;
+    Type *type;
+
+    qualifiers = node->flags & (Q_CONST | Q_VOLATILE);
+    type = node->rtype;
+    while (type->type == TYPEARRAY)
+        type = ((TypePointer *)type)->target;
+    switch ((char)type->type) {
+        case TYPEPOINTER:
+            qualifiers = ((TypePointer *)type)->qual;
+            break;
+        case TYPEMEMBERPOINTER:
+            qualifiers = ((TypeMemberPointer *)type)->qual;
+            break;
+    }
+    return (qualifiers & Q_VOLATILE) != 0;
+}
+
+/* Layout view of the type records used to obtain qualifiers. */
+
+Boolean CParserIsConstExpr(ENode *expr)
+{
+    Type *type;
+    unsigned int qualifiers;
+    char kind;
+
+    qualifiers = expr->flags & ENODE_FLAG_QUALS;
+    type = expr->rtype;
+    while ((kind = type->type) == 12)
+        type = ((TypePointer *)type)->target;
+    switch (kind) {
+        case 11:
+            qualifiers = ((TypePointer *)type)->qual;
+            break;
+        case 10:
+            qualifiers = ((TypeMemberPointer *)type)->qual;
+            break;
+    }
+    return (qualifiers & ENODE_FLAG_CONST) != 0;
+}
+
+UInt8 is_volatile_object(Object *object)
+{
+    char kind;
+    UInt32 qualifiers;
+    Type *type;
+
+    qualifiers = object->qual;
+    type = object->type;
+    while (type->type == '\f') {
+        type = ((Type *)type)->array[0].element;
+    }
+    kind = type->type;
+    switch (kind) {
+        case '\v':
+            qualifiers = TYPE_POINTER(type)->qual;
+            break;
+        case '\n':
+            qualifiers = TYPE_MEMBER_POINTER(type)->qual;
+            break;
+    }
+    return (qualifiers & Q_VOLATILE) != 0;
+}
+
+Boolean is_const_object(Object *object)
+{
+    Type *type;
+    char kind;
+    UInt32 qual;
+
+    qual = object->qual;
+    type = object->type;
+    while ((kind = type->type) == 12) {
+        type = TYPE_POINTER(type)->target;
+    }
+    switch (kind) {
+        case 11:
+            qual = TYPE_POINTER(type)->qual;
+            break;
+        case 10:
+            qual = TYPE_MEMBER_POINTER(type)->qual;
+            break;
+    }
+    return (qual & Q_CONST) != 0;
+}
+
+UInt8 CParser_IsVolatile(Type *type, unsigned int qualifiers)
+{
+    char kind;
+    while ((kind = type->type) == TYPEARRAY)
+        type = ((TypeMemberPointer *)type)->memberType;
+    switch (kind) {
+        case TYPEPOINTER:
+            qualifiers = ((TypePointer *)type)->qual;
+            break;
+        case TYPEMEMBERPOINTER:
+            qualifiers = ((TypeMemberPointer *)type)->qual;
+            break;
+    }
+    return (qualifiers & Q_VOLATILE) != 0;
+}
+
+UInt8 CParser_IsConst(Type *type, unsigned int qual)
+{
+    char kind;
+
+    while ((kind = type->type) == TYPEARRAY) {
+        type = ((TypePointer *)type)->target;
+    }
+    switch (kind) {
+        case TYPEPOINTER:
+            qual = ((TypePointer *)type)->qual;
+            break;
+        case TYPEMEMBERPOINTER:
+            qual = ((TypeMemberPointer *)type)->qual;
+            break;
+    }
+    return (qual & Q_CONST) != 0;
+}
+
+/* Shared target/qualifier prefix of array and pointer type records. */
+
+UInt32 CParser_GetCVTypeQualifiers(Type *type, SInt32 qual)
+{
+    while (type->type == TYPEARRAY)
+        type = ((TypePointer *)type)->target;
+    switch ((signed char)type->type) {
+        case TYPEPOINTER:
+            qual = ((TypePointer *)type)->qual;
+            break;
+        case TYPEMEMBERPOINTER:
+            qual = ((TypeMemberPointer *)type)->qual;
+            break;
+    }
+    return qual & Q_CV;
+}
+
+unsigned int CParser_GetTypeQualifiers(Type *type, unsigned int qual)
+{
+    signed char kind;
+    while ((kind = (signed char)type->type) == TYPEARRAY) {
+        type = ((TypePointer *)type)->target;
+    }
+    switch (kind) {
+        case TYPEPOINTER:
+            qual = ((TypePointer *)type)->qual;
+            break;
+        case TYPEMEMBERPOINTER:
+            qual = ((TypeMemberPointer *)type)->qual;
+            break;
+    }
+    return qual;
+}
+
+/* Layouts of the type records copied by this routine. */
+Type *CParser_RemoveTopMostQualifiers(Type *type, UInt32 *qual)
+{
+    Type *copy;
+    switch ((signed char)type->type) {
+        case TYPEARRAY:
+            type->array[0].element = CParser_RemoveTopMostQualifiers(type->array[0].element, qual);
+            return type;
+        case TYPEPOINTER:
+            if (((TypePointer *)type)->qual & Q_CONST) {
+                copy = galloc(sizeof(TypePointer));
+                *(TypePointer *)copy = *(TypePointer *)type;
+                ((TypePointer *)copy)->qual = 0;
+                return copy;
+            }
+            return type;
+        case TYPEMEMBERPOINTER:
+            if (((TypeMemberPointer *)type)->qual & Q_CONST) {
+                copy = galloc(sizeof(TypeMemberPointer));
+                *(TypeMemberPointer *)copy = *(TypeMemberPointer *)type;
+                ((TypeMemberPointer *)copy)->qual = 0;
+                return copy;
+            }
+            return type;
+        default:
+            *qual = 0;
+            return type;
+    }
 }
 
 Boolean CParser_TryParamList(int parserOption)
@@ -1768,35 +2141,6 @@ Boolean CParser_TryParamList(int parserOption)
     }
     CPrep_SetPosition(&state);
     return result;
-}
-
-static void save(CParseSave *s, unsigned char *flag)
-{
-    NameSpace *x;
-    x = currentNameSpace;
-    s->g24c = x;
-    s->g040 = data_00588040;
-    *flag = 0;
-    s->g238 = data_00588238;
-    s->g134 = object_reference_stack;
-    s->g7ecc = writtenEntry;
-    s->g4f8 = data_005884f8;
-    s->g240 = data_00588240;
-    data_00588240 = s;
-    (void)s->g24c;
-}
-
-static void restore(CParseSave *s)
-{
-    TypeClass *t3;
-    t3 = s->g040;
-    currentNameSpace = s->g24c;
-    data_00588040 = t3;
-    data_00588238 = s->g238;
-    object_reference_stack = s->g134;
-    writtenEntry = s->g7ecc;
-    data_005884f8 = s->g4f8;
-    data_00588240 = s->g240;
 }
 
 UInt8 islookaheaddeclaration(void)
@@ -1932,6 +2276,23 @@ void appendmember(TypeStruct *s, StructMember *m)
     p->next = m;
 }
 
+StructMember *ismember(Type *type, HashNameNode *name)
+{
+    StructMember *member;
+    HashNameNode *target;
+    TypeStruct *owner;
+    owner = (TypeStruct *)type;
+    owner = (TypeStruct *)owner->members;
+    target = name;
+    member = (StructMember *)owner;
+    while (member) {
+        if (member->name == target)
+            return member;
+        member = member->next;
+    }
+    return NULL;
+}
+
 /* 0x58428e, read as a byte */
 
 Boolean Type_IsUnsigned(Type *type)
@@ -1945,6 +2306,68 @@ Boolean Type_IsUnsigned(Type *type)
         (copts.unsignedChar && type == (Type *)&stchar) || type->type == TYPEPOINTER)
         return 1;
     return 0;
+}
+
+SInt32 CParser_GetOperator(UInt8 kind)
+{
+    switch ((unsigned char)kind) {
+        default:
+            CError_FATAL(1587);
+        case 5:
+            return 45U;
+        case 6:
+            return 126U;
+        case 7:
+            return 33U;
+        case 15:
+            return 43U;
+        case 16:
+            return 45U;
+        case 9:
+            return 42U;
+        case 11:
+            return 47U;
+        case 12:
+            return 37U;
+        case 25:
+            return 38U;
+        case 26:
+            return 94U;
+        case 27:
+            return 124U;
+        case 17:
+            return 364U;
+        case 18:
+            return 365U;
+        case 19:
+            return 60U;
+        case 20:
+            return 62U;
+        case 21:
+            return 362U;
+        case 22:
+            return 363U;
+        case 23:
+            return 360U;
+        case 24:
+            return 361U;
+    }
+}
+
+Type *CParser_GetWCharType(void)
+{
+    if (copts.cplusplus && copts.f7f) {
+        return (Type *)&stwchar;
+    }
+    return (Type *)&stunsignedshort;
+}
+
+Type *CParser_GetBoolType(void)
+{
+    if (copts.cplusplus && copts.f75) {
+        return (Type *)&stbool;
+    }
+    return (Type *)&stsignedint;
 }
 
 SInt16 iscpp_typeequal(Type *leftType, Type *rightType)
@@ -1972,7 +2395,8 @@ SInt16 iscpp_typeequal(Type *leftType, Type *rightType)
             case TYPESTRUCT:
                 return leftType == rightType;
             case TYPEPOINTER:
-                if ((TYPE_POINTER(leftType)->qual & (Q_CV | Q_REFERENCE | Q_RESTRICT)) != (TYPE_POINTER(rightType)->qual & (Q_CV | Q_REFERENCE | Q_RESTRICT)))
+                if ((TYPE_POINTER(leftType)->qual & (Q_CV | Q_REFERENCE | Q_RESTRICT)) !=
+                    (TYPE_POINTER(rightType)->qual & (Q_CV | Q_REFERENCE | Q_RESTRICT)))
                     return 0;
                 leftType = TYPE_POINTER(leftType)->target;
                 rightType = TYPE_POINTER(rightType)->target;
@@ -2112,6 +2536,7 @@ SInt16 CParser_CompareArgLists(FuncArg *a, FuncArg *b)
         return 2;
     return 1;
 }
+
 #define TYPE_ARRAY(ty) ((Type *)(ty))
 SInt16 is_typeequal(Type *leftType, Type *rightType)
 {
@@ -2166,6 +2591,7 @@ SInt16 is_typeequal(Type *leftType, Type *rightType)
         }
     }
 }
+
 SInt16 is_typesame(Type *left, Type *right)
 {
     SInt8 relaxed = copts.f65;
@@ -2221,995 +2647,6 @@ SInt16 is_typesame(Type *left, Type *right)
                 CError_FATAL(1276);
                 return 0;
         }
-    }
-}
-static inline Boolean CParser_AlternateFunctionNamesEnabled(void)
-{
-    return copts.f86;
-}
-
-Object *CParser_FindClassMemberOrNamespaceFunctionObject(Type *ownerType, Boolean useAlternate, Boolean skipLookup)
-{
-    Boolean memberFound = 0;
-    Object *object;
-    CScopeParseResult result;
-
-    if (!skipLookup && ownerType->type == TYPECLASS) {
-        NameSpaceName *name = (useAlternate && CParser_AlternateFunctionNamesEnabled()) ? data_00587e64 : data_00587680;
-        if (CScope_FindClassMemberObject(TYPE_CLASS(ownerType), &result, name->name)) {
-            if ((object = (Object *)result.object) == NULL) {
-                CError_ASSERT(1100, result.objects != NULL);
-                object = (Object *)result.objects->object;
-            }
-            memberFound = 1;
-        } else if (TYPE_CLASS(ownerType)->flags & CLASS_HANDLEOBJECT) {
-            if (useAlternate)
-                CError_FATAL(1109);
-            return DAT_00587ed0;
-        }
-    }
-    if (!memberFound) {
-        NameSpaceName *name;
-        if (useAlternate && CParser_AlternateFunctionNamesEnabled())
-            name = data_00587e64;
-        else
-            name = data_00587680;
-        object = (Object *)name->first.object;
-    }
-    CError_ASSERT(1130, object != NULL && object->otype == OT_OBJECT && object->type->type == TYPEFUNC &&
-                            TYPE_FUNC(object->type)->args != NULL &&
-                            iscpp_typeequal(TYPE_FUNC(object->type)->args->type, (Type *)&void_ptr));
-    return object;
-}
-
-TypeIntegral *atomtype(void)
-{
-    switch (token_value_kind_or_string_length) {
-        default:
-            CError_FATAL(1060);
-        case 1:
-            return (TypeIntegral *)&stvoid;
-        case 2:
-            return &stchar;
-        case 4:
-            return &stwchar;
-        case 3:
-            return &stunsignedchar;
-        case 5:
-            return &stsignedshort;
-        case 6:
-            return &stunsignedshort;
-        case 7:
-            return &stsignedint;
-        case 8:
-            return &stunsignedint;
-        case 9:
-            return &stsignedlong;
-        case 10:
-            return &stunsignedlong;
-        case 11:
-            return &stsignedlonglong;
-        case 12:
-            return &stunsignedlonglong;
-        case 13:
-            return &stfloat;
-        case 14:
-            return &stshortdouble;
-        case 15:
-            return &stdouble;
-        case 16:
-            return &stlongdouble;
-    }
-}
-
-Object *CParser_NewFunctionObject(volatile DeclInfo *decl)
-{
-    Object *obj;
-
-    obj = (Object *)galloc(sizeof(Object));
-    memclrw(obj, sizeof(Object));
-    obj->otype = OT_OBJECT;
-    obj->access = ACCESSPUBLIC;
-    obj->extraQualifiers = 0;
-    obj->datatype = DFUNC;
-    obj->nspace = currentNameSpace;
-    if (decl != NULL) {
-        obj->type = decl->dtype;
-        obj->name = decl->name;
-        obj->qual = decl->qual;
-        obj->sclass = decl->storage;
-        if (copts.cplusplus && decl->requireMangledName == 0)
-            obj->qual |= Q_MANGLE_NAME;
-    }
-    if (decl != NULL) {
-        if (decl->extraQualifiers != 0)
-            obj->extraQualifiers = decl->extraQualifiers;
-    }
-    fn_00490210(obj, decl);
-    CodeGen_SetObjectSectionAndInterruptInfo(obj);
-    return obj;
-}
-
-/* Qualifier view used when reading the declaration's qualifier word. */
-
-/* Declaration data used when creating an object; unknown fields are retained. */
-
-Object *CParser_NewObject(DeclInfo *declaration)
-{
-    Object *object;
-    volatile DeclInfo *alignmentDeclaration = declaration;
-
-    object = (Object *)galloc(sizeof(Object));
-    memclrw(object, sizeof(Object));
-    object->otype = OT_OBJECT;
-    object->access = ACCESSPUBLIC;
-    object->extraQualifiers = 0;
-    object->datatype = DDATA;
-    object->nspace = currentNameSpace;
-    if (declaration != NULL) {
-        object->type = declaration->dtype;
-        object->name = declaration->name;
-        object->qual = declaration->qual;
-        object->sclass = declaration->storage;
-        if (copts.cplusplus && !declaration->requireMangledName) {
-            object->qual |= Q_MANGLE_NAME;
-        }
-    }
-    if (declaration != NULL && declaration->extraQualifiers != 0) {
-        object->extraQualifiers = alignmentDeclaration->extraQualifiers;
-    }
-    fn_00490210(object, declaration);
-    CodeGen_SetObjectSectionAndInterruptInfo(object);
-    return object;
-}
-
-/* Declaration details used while creating an object. */
-
-Object *CParser_NewLocalDataObject(DeclInfo *declaration, unsigned int addToList)
-{
-    Object *object;
-    ObjectList *entry;
-    object = (Object *)CompilerTools_AllocatePool(54U);
-    memclrw(object, 54U);
-    object->otype = OT_OBJECT;
-    object->access = 0U;
-    object->datatype = DLOCAL;
-    if (declaration != NULL) {
-        object->type = declaration->dtype;
-        object->name = declaration->name;
-        object->qual = declaration->qual;
-        object->sclass = declaration->storage;
-    }
-    if ((unsigned char)addToList != 0U) {
-        entry = (ObjectList *)CompilerTools_AllocatePool(8U);
-        entry->object.value = object;
-        entry->next = locals;
-        locals = entry;
-    }
-    return object;
-}
-
-HashNameNode *CParser_AppendUniqueNameFile(char *prefix)
-{
-    int i;
-    char *d;
-    int len;
-    char *p_s;
-    int n;
-    int v;
-    int id;
-    char c;
-    char *p;
-    char name[256];
-    char buf[256];
-    char num[16];
-    char *q;
-
-    d = buf;
-    len = 0;
-    while (*prefix != 0 && len < 200) {
-        *d++ = *prefix++;
-        len++;
-    }
-    *d++ = '$';
-    q = d;
-    p = num;
-    id = data_00580dc0++;
-    v = id;
-    while (v) {
-        *p++ = v % 10 + '0';
-        v /= 10;
-    }
-    while (p > num)
-        *q++ = *--p;
-    *q = 0;
-    while (*d != 0) {
-        d++;
-        len++;
-    }
-    CompilerTools_GetPFileFields(&((CPrepCU *)cprep_cu)->mainFile, NULL, NULL, (UInt8 *)name);
-    n = (UInt8)name[0];
-    p_s = name + 1;
-    i = 0;
-    while (i < n && len < 0xff) {
-        c = *p_s++;
-        if (!((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9')))
-            c = '_';
-        *d++ = c;
-        i++;
-        len++;
-    }
-    *d = 0;
-    return GetHashNameNode(buf);
-}
-
-HashNameNode *CParser_AppendUniqueName(char *name)
-{
-    char buf[256];
-    char tmp[16];
-    char *q;
-    char *p;
-    long n;
-    long id;
-    int i;
-    char c;
-
-    p = buf;
-    for (i = 0; (c = *name) != 0 && i < 0xf0; i++) {
-        *p = c;
-        name++;
-        p++;
-    }
-    *p = '$';
-    p++;
-    q = tmp;
-    id = data_00580dc0++;
-    n = id;
-    while (n) {
-        *q++ = '0' + n % 10;
-        n /= 10;
-    }
-    while (q > tmp)
-        *p++ = *--q;
-    *p = 0;
-    return GetHashNameNode(buf);
-}
-
-HashNameNode *CParser_GetUniqueName(void)
-{
-    char buf[16];
-    char tmp[16];
-    char *q;
-    char *p;
-    SInt32 n;
-    SInt32 id;
-
-    buf[0] = '@';
-    p = buf;
-    q = tmp;
-    p++;
-    id = data_00580dc0++;
-    n = id;
-    while (n) {
-        *q++ = '0' + n % 10;
-        n /= 10;
-    }
-    while (q > tmp)
-        *p++ = *--q;
-    *p = 0;
-    return GetHashNameNode(buf);
-}
-
-unsigned int fn_004905c0(unsigned int value)
-{
-    data_00580dc0 = value;
-    return value;
-}
-
-void CParser_PrintUniqueID(char *p)
-{
-    char tmp[16];
-    char *q;
-    long n;
-    long id;
-
-    q = tmp;
-    id = data_00580dc0++;
-    n = id;
-    while (n) {
-        *q++ = '0' + n % 10;
-        n /= 10;
-    }
-    while (q > tmp)
-        *p++ = *--q;
-    *p = 0;
-}
-
-SInt32 CParser_GetUniqueID(void)
-{
-    SInt32 lift_value_0;
-    lift_value_0 = data_00580dc0;
-    data_00580dc0 += 1;
-    return lift_value_0;
-}
-
-Type *CParser_GetWCharType(void)
-{
-    if (copts.cplusplus && copts.f7f) {
-        return (Type *)&stwchar;
-    }
-    return (Type *)&stunsignedshort;
-}
-
-Type *CParser_GetBoolType(void)
-{
-    if (copts.cplusplus && copts.f75) {
-        return (Type *)&stbool;
-    }
-    return (Type *)&stsignedint;
-}
-
-FuncArg *CParser_NewFuncArg(void)
-{
-    FuncArg *storage;
-
-    storage = galloc(24);
-    memclrw(storage, 24);
-    return storage;
-}
-
-/* Workspace filled by conversion_type_name for operator-name construction. */
-
-Boolean CParser_00490660(SInt16 *operatorToken, Boolean allowConversion)
-{
-    HashNameNode *name;
-    DeclInfo nameData;
-
-    tk = CPrepTokenizer_GetNextToken();
-    switch (tk) {
-        case TK_DELETE:
-        case TK_NEW:
-            if (CPrepTokenizer_GetNextTokenAndRestorePosition() == 0x5b) {
-                CPrepTokenizer_GetNextToken();
-                if (CPrepTokenizer_GetNextToken() != 0x5d)
-                    CError_ReportError(ERR_RBRACKET_EXPECTED);
-                tk = (tk == TK_NEW) ? 0x182 : 0x183;
-            }
-            break;
-        case '(':
-            tk = CPrepTokenizer_GetNextToken();
-            if (tk != ')') {
-                CError_ReportError(ERR_ILLEGAL_OPERATOR);
-                return 0;
-            }
-            tk = '(';
-            break;
-        case '[':
-            tk = CPrepTokenizer_GetNextToken();
-            if (tk != ']') {
-                CError_ReportError(ERR_ILLEGAL_OPERATOR);
-                return 0;
-            }
-            tk = '[';
-            break;
-    }
-    name = CMangler_OperatorName(tk);
-    if (name != NULL) {
-        if (operatorToken != NULL)
-            *operatorToken = tk;
-        tk = CPrepTokenizer_GetNextToken();
-        data_00587fa0 = name;
-        return 1;
-    }
-    if (allowConversion) {
-        memclrw(&nameData, sizeof(nameData));
-        conversion_type_name(&nameData);
-        data_00587fa0 = CMangler_ConversionFuncName(nameData.dtype, nameData.qual);
-        if (operatorToken != NULL)
-            *operatorToken = 0;
-        return 1;
-    }
-    CError_ReportError(ERR_ILLEGAL_OPERATOR);
-    return 0;
-}
-
-void fn_004908d0(void)
-
-{
-    fn_004f0000();
-    fn_0051b800();
-    fn_00509df0();
-    fn_0049b7b0();
-    FreeGList(&data_00583548);
-    return;
-}
-
-/* A link holding a class type in the parser's list. */
-
-unsigned int CParser_PrependClassTypeLink(TypeClass *type)
-{
-    struct ClassTypeLink *link;
-    struct ClassTypeLink *head;
-    link = (struct ClassTypeLink *)galloc(8U);
-    head = class_type_links;
-    link->next = head;
-    link->type = type;
-    class_type_links = link;
-    return (unsigned int)link;
-}
-
-/* Pending object and class pair. */
-
-void CParser_NewCallBackAction(Object *object, TypeClass *theclass)
-{
-    struct PendingObjectClass *entry;
-    struct PendingObjectClass *head;
-    entry = (struct PendingObjectClass *)galloc(sizeof(struct PendingObjectClass));
-    head = pending_object_classes;
-    entry->next = head;
-    entry->object = object;
-    entry->theclass = theclass;
-    pending_object_classes = entry;
-    object->flags |= OBJECT_LAZY;
-}
-
-/* List of objects paired with expressions. */
-
-void CParser_RegisterSingleExprFunction(Object *object, ENode *expr)
-{
-    CParseCacheNode *entry;
-    CParseCacheNode *previous;
-    entry = (CParseCacheNode *)CompilerTools_AllocatePool(sizeof(CParseCacheNode));
-    previous = single_expr_functions;
-    entry->next = previous;
-    entry->object = object;
-    entry->expr = expr;
-    single_expr_functions = entry;
-}
-
-void CParser_PrependClassParseRec(TypeClass *type)
-{
-    CParseRec *entry;
-    CParseRec *previous;
-    entry = (CParseRec *)CompilerTools_AllocatePool(8U);
-    previous = class_parse_recs;
-    entry->next = previous;
-    entry->listOwner = type;
-    class_parse_recs = entry;
-}
-
-Object *CParser_NewCompilerDefFunctionObject(void)
-{
-    Object *object;
-
-    object = (Object *)galloc(sizeof(Object));
-    memclrw(object, sizeof(Object));
-    object->otype = OT_OBJECT;
-    object->access = ACCESSPUBLIC;
-    object->extraQualifiers = 0;
-    object->datatype = DFUNC;
-    object->nspace = registration_context;
-    return object;
-}
-
-Object *CParser_NewCompilerDefDataObject(void)
-{
-    Object *object;
-
-    object = (Object *)galloc(sizeof(Object));
-    memclrw(object, sizeof(Object));
-    object->otype = OT_OBJECT;
-    object->access = ACCESSPUBLIC;
-    object->extraQualifiers = 0;
-    object->datatype = DDATA;
-    object->nspace = registration_context;
-    return object;
-}
-
-Object *CParser_CreateObject(struct DeclInfo *record)
-{
-    Object *object;
-
-    object = (Object *)galloc(sizeof(*object));
-    memclrw(object, sizeof(*object));
-    fn_00490210(object, record);
-    object->otype = OT_OBJECT;
-    object->access = ACCESSPUBLIC;
-    object->extraQualifiers = 0;
-    return object;
-}
-
-void CParser_Setup(void)
-{
-    BE_elf_CreateGlobalNameSpace();
-    data_00583548.data = NULL;
-    if (InitGList(&data_00583548, 0x100) != 0) {
-        CError_LongJump();
-    }
-    fn_00449dc0();
-    CInit_Init();
-    CClass_ResetPendingThunks();
-    fn_0051b810();
-    CObjCModern_ResetGlobals();
-    fn_00514220();
-    data_005884fd = 0;
-    in_parameter_type_list = 0;
-    data_00580dc0 = 1;
-    DAT_0058852e = 0;
-    copts.fb9 = 1;
-    class_type_links = NULL;
-    DAT_00587fd8 = NULL;
-    pending_object_classes = NULL;
-    pending_functions = NULL;
-    single_expr_functions = NULL;
-    data_00588240 = NULL;
-    cached_objects = NULL;
-    class_parse_recs = NULL;
-    memclrw(&function_fileinfo, sizeof(function_fileinfo));
-    memclrw(&exception_temp_object_type, sizeof(TypeStruct));
-    exception_temp_object_type.type = TYPESTRUCT;
-    _DAT_0058843e = 0x18;
-    DAT_0058844a = 0;
-    _DAT_0058844c = 4;
-    memclrw(&data_0058847c, sizeof(TypeStruct));
-    data_0058847c.type = TYPESTRUCT;
-    _DAT_0058847e = 0xc;
-    DAT_0058848a = 0;
-    _DAT_0058848c = 4;
-    fn_004a9c70();
-    CTemplateNew_Reset();
-    non_type_template_argument_mode = 0;
-    initialize_runtime_objects();
-}
-
-Boolean CParser_IsNullOrAtOrDollarPrefixedName(HashNameNode *name)
-{
-    unsigned int result = 1U;
-    unsigned int matches = result;
-    if (name && name->name[0] != 64)
-        matches = 0U;
-    if (!matches && name->name[0] != 36)
-        result = 0U;
-    return result;
-}
-
-/* Maps a key to a value for the parser. */
-
-/* Linked values queued by the parser. */
-
-void CParser_CallBackAction(Object *key)
-{
-    struct PendingObjectClass *entry;
-    struct ClassTypeLink *node;
-    TypeClass *value;
-
-    entry = pending_object_classes;
-    if (pending_object_classes != NULL) {
-        do {
-            if (entry->object == key) {
-                value = entry->theclass;
-                node = (struct ClassTypeLink *)galloc(sizeof(struct ClassTypeLink));
-                node->next = class_type_links;
-                node->type = value;
-                class_type_links = node;
-                return;
-            }
-            entry = entry->next;
-        } while (entry != NULL);
-    }
-    CError_FATAL(3854);
-}
-
-char CParser_HasInternalLinkage(Object *obj)
-{
-    if (obj->nspace != NULL) {
-        if (obj->nspace->is_unnamed != 0) {
-            return 1;
-        }
-    }
-    if ((obj->qual & 0x60000U) != 0) {
-        return 0;
-    }
-    if (obj->sclass == TK_STATIC) {
-        return 1;
-    }
-    if ((obj->qual & 0x10U) != 0) {
-        obj->qual |= 0x20000U;
-    }
-    return 0;
-}
-
-UInt8 is_volatile_object(Object *object)
-{
-    char kind;
-    UInt32 qualifiers;
-    Type *type;
-
-    qualifiers = object->qual;
-    type = object->type;
-    while (type->type == '\f') {
-        type = ((Type *)type)->array[0].element;
-    }
-    kind = type->type;
-    switch (kind) {
-        case '\v':
-            qualifiers = TYPE_POINTER(type)->qual;
-            break;
-        case '\n':
-            qualifiers = TYPE_MEMBER_POINTER(type)->qual;
-            break;
-    }
-    return (qualifiers & Q_VOLATILE) != 0;
-}
-
-UInt8 CParser_IsVolatile(Type *type, unsigned int qualifiers)
-{
-    char kind;
-    while ((kind = type->type) == TYPEARRAY)
-        type = ((TypeMemberPointer *)type)->memberType;
-    switch (kind) {
-        case TYPEPOINTER:
-            qualifiers = ((TypePointer *)type)->qual;
-            break;
-        case TYPEMEMBERPOINTER:
-            qualifiers = ((TypeMemberPointer *)type)->qual;
-            break;
-    }
-    return (qualifiers & Q_VOLATILE) != 0;
-}
-
-StructMember *ismember(Type *type, HashNameNode *name)
-{
-    StructMember *member;
-    HashNameNode *target;
-    TypeStruct *owner;
-    owner = (TypeStruct *)type;
-    owner = (TypeStruct *)owner->members;
-    target = name;
-    member = (StructMember *)owner;
-    while (member) {
-        if (member->name == target)
-            return member;
-        member = member->next;
-    }
-    return NULL;
-}
-
-Object *CParser_NewAliasObject(Object *object, int offset)
-{
-    Object *alias;
-
-    alias = (Object *)galloc(sizeof(Object));
-    *alias = *object;
-    alias->datatype = DALIAS;
-    alias->u.alias.object = object;
-    alias->u.alias.member = NULL;
-    alias->u.alias.offset = offset;
-    CScope_AddObject(currentNameSpace, alias->name, (ObjBase *)alias);
-    return alias;
-}
-
-Boolean CParser_IsVirtualFunction(Object *object, TypeClass **firstValue, UInt32 *secondValue)
-{
-    if (object->datatype == DVFUNC) {
-        *firstValue = ((TypeMemberFunc *)object->type)->theclass;
-        *secondValue = ((TypeMemberFunc *)object->type)->vtbl_index;
-        return 1;
-    }
-    return 0;
-}
-
-/* Shared target/qualifier prefix of array and pointer type records. */
-
-UInt32 CParser_GetCVTypeQualifiers(Type *type, SInt32 qual)
-{
-    while (type->type == TYPEARRAY)
-        type = ((TypePointer *)type)->target;
-    switch ((signed char)type->type) {
-        case TYPEPOINTER:
-            qual = ((TypePointer *)type)->qual;
-            break;
-        case TYPEMEMBERPOINTER:
-            qual = ((TypeMemberPointer *)type)->qual;
-            break;
-    }
-    return qual & Q_CV;
-}
-
-/* Record carrying the value copied to Object::unk04. */
-
-void CParser_UpdateObject(Object *object, volatile DeclInfo *record)
-{
-    if (record && record->extraQualifiers)
-        object->extraQualifiers = record->extraQualifiers;
-    fn_00490210(object, record);
-    CodeGen_SetObjectSectionAndInterruptInfo(object);
-}
-
-/* Flag byte supplied by the parser's auxiliary record. */
-
-void fn_00490210(Object *object, volatile DeclInfo *record)
-{
-    if (record != NULL) {
-        UInt8 attributes = record->declarationAttributes;
-        if (attributes != 0) {
-            object->flags |= attributes;
-        }
-    }
-    if (object->datatype == DDATA) {
-        if (copts.fbd != 0) {
-            object->flags |= OBJECT_EXPORT;
-        }
-        if (copts.fbb != 0) {
-            object->flags |= OBJECT_INTERNAL;
-        }
-        return;
-    } else {
-        if (copts.fbb != 0) {
-            object->flags |= OBJECT_INTERNAL;
-            return;
-        }
-        if (copts.fbc != 0) {
-            object->flags |= OBJECT_IMPORT;
-        }
-        if (copts.fbd != 0) {
-            object->flags |= OBJECT_EXPORT;
-        }
-        if (copts.fbe != 0) {
-            object->flags |= OBJECT_IMPORT | OBJECT_EXPORT;
-        }
-    }
-}
-
-SInt16 GetPrec(short token)
-{
-    switch (token) {
-        case '%':
-        case '*':
-        case '/':
-            return 11;
-        case '+':
-        case '-':
-            return 10;
-        case 0x16c:
-        case 0x16d:
-            return 9;
-        case '<':
-        case '>':
-        case 0x16a:
-        case 0x16b:
-            return 8;
-        case 0x168:
-        case 0x169:
-            return 7;
-        case '&':
-            return 6;
-        case '^':
-            return 5;
-        case '|':
-            return 4;
-        case 0x167:
-            return 3;
-        case 0x166:
-            return 2;
-    }
-    return 0;
-}
-
-/* Pending parser input, linked in processing order. */
-
-void fn_0048c220(char processInput)
-{
-    Boolean repeat;
-    struct ClassTypeLink *input;
-
-    do {
-        CParser_Cleanup();
-        repeat = 0;
-        if (processInput != 0) {
-            freelheap();
-            if (class_type_links != NULL) {
-                input = class_type_links;
-                CClass_GenerateVTable(input->type);
-                input = class_type_links;
-                class_type_links = input->next;
-                repeat = 1;
-            } else if (CTemplateNew_InstantiatePendingTemplates() != 0) {
-                repeat = 1;
-            }
-        }
-        while (CInline_DispatchNextDeferredNode() != 0) {
-            CParser_Cleanup();
-            repeat = 1;
-        }
-    } while (repeat);
-}
-
-Boolean is_pascal_object(Object *object)
-{
-    unsigned int isPascal;
-    isPascal = 0U;
-    if (object->type->type == TYPEFUNC) {
-        if (((TypeFunc *)object->type)->flags & FUNC_PASCAL) {
-            isPascal = 1U;
-        }
-    }
-    return isPascal;
-}
-
-UInt8 CParserIsVolatileExpr(ENode *node)
-{
-    unsigned int qualifiers;
-    Type *type;
-
-    qualifiers = node->flags & (Q_CONST | Q_VOLATILE);
-    type = node->rtype;
-    while (type->type == TYPEARRAY)
-        type = ((TypePointer *)type)->target;
-    switch ((char)type->type) {
-        case TYPEPOINTER:
-            qualifiers = ((TypePointer *)type)->qual;
-            break;
-        case TYPEMEMBERPOINTER:
-            qualifiers = ((TypeMemberPointer *)type)->qual;
-            break;
-    }
-    return (qualifiers & Q_VOLATILE) != 0;
-}
-
-/* Layout view of the type records used to obtain qualifiers. */
-
-Boolean CParserIsConstExpr(ENode *expr)
-{
-    Type *type;
-    unsigned int qualifiers;
-    char kind;
-
-    qualifiers = expr->flags & ENODE_FLAG_QUALS;
-    type = expr->rtype;
-    while ((kind = type->type) == 12)
-        type = ((TypePointer *)type)->target;
-    switch (kind) {
-        case 11:
-            qualifiers = ((TypePointer *)type)->qual;
-            break;
-        case 10:
-            qualifiers = ((TypeMemberPointer *)type)->qual;
-            break;
-    }
-    return (qualifiers & ENODE_FLAG_CONST) != 0;
-}
-
-Boolean is_const_object(Object *object)
-{
-    Type *type;
-    char kind;
-    UInt32 qual;
-
-    qual = object->qual;
-    type = object->type;
-    while ((kind = type->type) == 12) {
-        type = TYPE_POINTER(type)->target;
-    }
-    switch (kind) {
-        case 11:
-            qual = TYPE_POINTER(type)->qual;
-            break;
-        case 10:
-            qual = TYPE_MEMBER_POINTER(type)->qual;
-            break;
-    }
-    return (qual & Q_CONST) != 0;
-}
-
-UInt8 CParser_IsConst(Type *type, unsigned int qual)
-{
-    char kind;
-
-    while ((kind = type->type) == TYPEARRAY) {
-        type = ((TypePointer *)type)->target;
-    }
-    switch (kind) {
-        case TYPEPOINTER:
-            qual = ((TypePointer *)type)->qual;
-            break;
-        case TYPEMEMBERPOINTER:
-            qual = ((TypeMemberPointer *)type)->qual;
-            break;
-    }
-    return (qual & Q_CONST) != 0;
-}
-
-unsigned int CParser_GetTypeQualifiers(Type *type, unsigned int qual)
-{
-    signed char kind;
-    while ((kind = (signed char)type->type) == TYPEARRAY) {
-        type = ((TypePointer *)type)->target;
-    }
-    switch (kind) {
-        case TYPEPOINTER:
-            qual = ((TypePointer *)type)->qual;
-            break;
-        case TYPEMEMBERPOINTER:
-            qual = ((TypeMemberPointer *)type)->qual;
-            break;
-    }
-    return qual;
-}
-
-/* Layouts of the type records copied by this routine. */
-Type *CParser_RemoveTopMostQualifiers(Type *type, UInt32 *qual)
-{
-    Type *copy;
-    switch ((signed char)type->type) {
-        case TYPEARRAY:
-            type->array[0].element = CParser_RemoveTopMostQualifiers(type->array[0].element, qual);
-            return type;
-        case TYPEPOINTER:
-            if (((TypePointer *)type)->qual & Q_CONST) {
-                copy = galloc(sizeof(TypePointer));
-                *(TypePointer *)copy = *(TypePointer *)type;
-                ((TypePointer *)copy)->qual = 0;
-                return copy;
-            }
-            return type;
-        case TYPEMEMBERPOINTER:
-            if (((TypeMemberPointer *)type)->qual & Q_CONST) {
-                copy = galloc(sizeof(TypeMemberPointer));
-                *(TypeMemberPointer *)copy = *(TypeMemberPointer *)type;
-                ((TypeMemberPointer *)copy)->qual = 0;
-                return copy;
-            }
-            return type;
-        default:
-            *qual = 0;
-            return type;
-    }
-}
-
-SInt32 CParser_GetOperator(UInt8 kind)
-{
-    switch ((unsigned char)kind) {
-        default:
-            CError_FATAL(1587);
-        case 5:
-            return 45U;
-        case 6:
-            return 126U;
-        case 7:
-            return 33U;
-        case 15:
-            return 43U;
-        case 16:
-            return 45U;
-        case 9:
-            return 42U;
-        case 11:
-            return 47U;
-        case 12:
-            return 37U;
-        case 25:
-            return 38U;
-        case 26:
-            return 94U;
-        case 27:
-            return 124U;
-        case 17:
-            return 364U;
-        case 18:
-            return 365U;
-        case 19:
-            return 60U;
-        case 20:
-            return 62U;
-        case 21:
-            return 362U;
-        case 22:
-            return 363U;
-        case 23:
-            return 360U;
-        case 24:
-            return 361U;
     }
 }
 
@@ -3309,6 +2746,373 @@ Boolean is_arglist_default_promoted(FuncArg *arg)
     return 1;
 }
 
+Object *CParser_FindClassMemberOrNamespaceFunctionObject(Type *ownerType, Boolean useAlternate, Boolean skipLookup)
+{
+    Boolean memberFound = 0;
+    Object *object;
+    CScopeParseResult result;
+
+    if (!skipLookup && ownerType->type == TYPECLASS) {
+        NameSpaceName *name = (useAlternate && CParser_AlternateFunctionNamesEnabled()) ? data_00587e64 : data_00587680;
+        if (CScope_FindClassMemberObject(TYPE_CLASS(ownerType), &result, name->name)) {
+            if ((object = (Object *)result.object) == NULL) {
+                CError_ASSERT(1100, result.objects != NULL);
+                object = (Object *)result.objects->object;
+            }
+            memberFound = 1;
+        } else if (TYPE_CLASS(ownerType)->flags & CLASS_HANDLEOBJECT) {
+            if (useAlternate)
+                CError_FATAL(1109);
+            return DAT_00587ed0;
+        }
+    }
+    if (!memberFound) {
+        NameSpaceName *name;
+        if (useAlternate && CParser_AlternateFunctionNamesEnabled())
+            name = data_00587e64;
+        else
+            name = data_00587680;
+        object = (Object *)name->first.object;
+    }
+    CError_ASSERT(1130, object != NULL && object->otype == OT_OBJECT && object->type->type == TYPEFUNC &&
+                            TYPE_FUNC(object->type)->args != NULL &&
+                            iscpp_typeequal(TYPE_FUNC(object->type)->args->type, (Type *)&void_ptr));
+    return object;
+}
+
+TypeIntegral *atomtype(void)
+{
+    switch (token_value_kind_or_string_length) {
+        default:
+            CError_FATAL(1060);
+        case 1:
+            return (TypeIntegral *)&stvoid;
+        case 2:
+            return &stchar;
+        case 4:
+            return &stwchar;
+        case 3:
+            return &stunsignedchar;
+        case 5:
+            return &stsignedshort;
+        case 6:
+            return &stunsignedshort;
+        case 7:
+            return &stsignedint;
+        case 8:
+            return &stunsignedint;
+        case 9:
+            return &stsignedlong;
+        case 10:
+            return &stunsignedlong;
+        case 11:
+            return &stsignedlonglong;
+        case 12:
+            return &stunsignedlonglong;
+        case 13:
+            return &stfloat;
+        case 14:
+            return &stshortdouble;
+        case 15:
+            return &stdouble;
+        case 16:
+            return &stlongdouble;
+    }
+}
+
+FuncArg *CParser_NewFuncArg(void)
+{
+    FuncArg *storage;
+
+    storage = galloc(24);
+    memclrw(storage, 24);
+    return storage;
+}
+
+Object *CParser_NewAliasObject(Object *object, int offset)
+{
+    Object *alias;
+
+    alias = (Object *)galloc(sizeof(Object));
+    *alias = *object;
+    alias->datatype = DALIAS;
+    alias->u.alias.object = object;
+    alias->u.alias.member = NULL;
+    alias->u.alias.offset = offset;
+    CScope_AddObject(currentNameSpace, alias->name, (ObjBase *)alias);
+    return alias;
+}
+
+Object *CParser_NewCompilerDefFunctionObject(void)
+{
+    Object *object;
+
+    object = (Object *)galloc(sizeof(Object));
+    memclrw(object, sizeof(Object));
+    object->otype = OT_OBJECT;
+    object->access = ACCESSPUBLIC;
+    object->extraQualifiers = 0;
+    object->datatype = DFUNC;
+    object->nspace = registration_context;
+    return object;
+}
+
+Object *CParser_NewFunctionObject(volatile DeclInfo *decl)
+{
+    Object *obj;
+
+    obj = (Object *)galloc(sizeof(Object));
+    memclrw(obj, sizeof(Object));
+    obj->otype = OT_OBJECT;
+    obj->access = ACCESSPUBLIC;
+    obj->extraQualifiers = 0;
+    obj->datatype = DFUNC;
+    obj->nspace = currentNameSpace;
+    if (decl != NULL) {
+        obj->type = decl->dtype;
+        obj->name = decl->name;
+        obj->qual = decl->qual;
+        obj->sclass = decl->storage;
+        if (copts.cplusplus && decl->requireMangledName == 0)
+            obj->qual |= Q_MANGLE_NAME;
+    }
+    if (decl != NULL) {
+        if (decl->extraQualifiers != 0)
+            obj->extraQualifiers = decl->extraQualifiers;
+    }
+    fn_00490210(obj, decl);
+    CodeGen_SetObjectSectionAndInterruptInfo(obj);
+    return obj;
+}
+
+Object *CParser_NewCompilerDefDataObject(void)
+{
+    Object *object;
+
+    object = (Object *)galloc(sizeof(Object));
+    memclrw(object, sizeof(Object));
+    object->otype = OT_OBJECT;
+    object->access = ACCESSPUBLIC;
+    object->extraQualifiers = 0;
+    object->datatype = DDATA;
+    object->nspace = registration_context;
+    return object;
+}
+
+/* Qualifier view used when reading the declaration's qualifier word. */
+
+/* Declaration data used when creating an object; unknown fields are retained. */
+
+Object *CParser_NewObject(DeclInfo *declaration)
+{
+    Object *object;
+    volatile DeclInfo *alignmentDeclaration = declaration;
+
+    object = (Object *)galloc(sizeof(Object));
+    memclrw(object, sizeof(Object));
+    object->otype = OT_OBJECT;
+    object->access = ACCESSPUBLIC;
+    object->extraQualifiers = 0;
+    object->datatype = DDATA;
+    object->nspace = currentNameSpace;
+    if (declaration != NULL) {
+        object->type = declaration->dtype;
+        object->name = declaration->name;
+        object->qual = declaration->qual;
+        object->sclass = declaration->storage;
+        if (copts.cplusplus && !declaration->requireMangledName) {
+            object->qual |= Q_MANGLE_NAME;
+        }
+    }
+    if (declaration != NULL && declaration->extraQualifiers != 0) {
+        object->extraQualifiers = alignmentDeclaration->extraQualifiers;
+    }
+    fn_00490210(object, declaration);
+    CodeGen_SetObjectSectionAndInterruptInfo(object);
+    return object;
+}
+
+/* Declaration details used while creating an object. */
+
+Object *CParser_NewLocalDataObject(DeclInfo *declaration, unsigned int addToList)
+{
+    Object *object;
+    ObjectList *entry;
+    object = (Object *)CompilerTools_AllocatePool(54U);
+    memclrw(object, 54U);
+    object->otype = OT_OBJECT;
+    object->access = 0U;
+    object->datatype = DLOCAL;
+    if (declaration != NULL) {
+        object->type = declaration->dtype;
+        object->name = declaration->name;
+        object->qual = declaration->qual;
+        object->sclass = declaration->storage;
+    }
+    if ((unsigned char)addToList != 0U) {
+        entry = (ObjectList *)CompilerTools_AllocatePool(8U);
+        entry->object.value = object;
+        entry->next = locals;
+        locals = entry;
+    }
+    return object;
+}
+
+Object *CParser_CreateObject(struct DeclInfo *record)
+{
+    Object *object;
+
+    object = (Object *)galloc(sizeof(*object));
+    memclrw(object, sizeof(*object));
+    fn_00490210(object, record);
+    object->otype = OT_OBJECT;
+    object->access = ACCESSPUBLIC;
+    object->extraQualifiers = 0;
+    return object;
+}
+
+/* Record carrying the value copied to Object::unk04. */
+
+void CParser_UpdateObject(Object *object, volatile DeclInfo *record)
+{
+    if (record && record->extraQualifiers)
+        object->extraQualifiers = record->extraQualifiers;
+    fn_00490210(object, record);
+    CodeGen_SetObjectSectionAndInterruptInfo(object);
+}
+
+/* Flag byte supplied by the parser's auxiliary record. */
+
+void fn_00490210(Object *object, volatile DeclInfo *record)
+{
+    if (record != NULL) {
+        UInt8 attributes = record->declarationAttributes;
+        if (attributes != 0) {
+            object->flags |= attributes;
+        }
+    }
+    if (object->datatype == DDATA) {
+        if (copts.fbd != 0) {
+            object->flags |= OBJECT_EXPORT;
+        }
+        if (copts.fbb != 0) {
+            object->flags |= OBJECT_INTERNAL;
+        }
+        return;
+    } else {
+        if (copts.fbb != 0) {
+            object->flags |= OBJECT_INTERNAL;
+            return;
+        }
+        if (copts.fbc != 0) {
+            object->flags |= OBJECT_IMPORT;
+        }
+        if (copts.fbd != 0) {
+            object->flags |= OBJECT_EXPORT;
+        }
+        if (copts.fbe != 0) {
+            object->flags |= OBJECT_IMPORT | OBJECT_EXPORT;
+        }
+    }
+}
+
+Boolean CParser_IsNullOrAtOrDollarPrefixedName(HashNameNode *name)
+{
+    unsigned int result = 1U;
+    unsigned int matches = result;
+    if (name && name->name[0] != 64)
+        matches = 0U;
+    if (!matches && name->name[0] != 36)
+        result = 0U;
+    return result;
+}
+
+HashNameNode *CParser_AppendUniqueNameFile(char *prefix)
+{
+    int i;
+    char *d;
+    int len;
+    char *p_s;
+    int n;
+    int v;
+    int id;
+    char c;
+    char *p;
+    char name[256];
+    char buf[256];
+    char num[16];
+    char *q;
+
+    d = buf;
+    len = 0;
+    while (*prefix != 0 && len < 200) {
+        *d++ = *prefix++;
+        len++;
+    }
+    *d++ = '$';
+    q = d;
+    p = num;
+    id = data_00580dc0++;
+    v = id;
+    while (v) {
+        *p++ = v % 10 + '0';
+        v /= 10;
+    }
+    while (p > num)
+        *q++ = *--p;
+    *q = 0;
+    while (*d != 0) {
+        d++;
+        len++;
+    }
+    CompilerTools_GetPFileFields(&((CPrepCU *)cprep_cu)->mainFile, NULL, NULL, (UInt8 *)name);
+    n = (UInt8)name[0];
+    p_s = name + 1;
+    i = 0;
+    while (i < n && len < 0xff) {
+        c = *p_s++;
+        if (!((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9')))
+            c = '_';
+        *d++ = c;
+        i++;
+        len++;
+    }
+    *d = 0;
+    return GetHashNameNode(buf);
+}
+
+HashNameNode *CParser_AppendUniqueName(char *name)
+{
+    char buf[256];
+    char tmp[16];
+    char *q;
+    char *p;
+    long n;
+    long id;
+    int i;
+    char c;
+
+    p = buf;
+    for (i = 0; (c = *name) != 0 && i < 0xf0; i++) {
+        *p = c;
+        name++;
+        p++;
+    }
+    *p = '$';
+    p++;
+    q = tmp;
+    id = data_00580dc0++;
+    n = id;
+    while (n) {
+        *q++ = '0' + n % 10;
+        n /= 10;
+    }
+    while (q > tmp)
+        *p++ = *--q;
+    *p = 0;
+    return GetHashNameNode(buf);
+}
+
 HashNameNode *CParser_NameConcat(char *first, char *second)
 {
     char buffer[256];
@@ -3329,6 +3133,208 @@ HashNameNode *CParser_NameConcat(char *first, char *second)
     *dest = 0;
 
     return GetHashNameNode(name);
+}
+
+HashNameNode *CParser_GetUniqueName(void)
+{
+    char buf[16];
+    char tmp[16];
+    char *q;
+    char *p;
+    SInt32 n;
+    SInt32 id;
+
+    buf[0] = '@';
+    p = buf;
+    q = tmp;
+    p++;
+    id = data_00580dc0++;
+    n = id;
+    while (n) {
+        *q++ = '0' + n % 10;
+        n /= 10;
+    }
+    while (q > tmp)
+        *p++ = *--q;
+    *p = 0;
+    return GetHashNameNode(buf);
+}
+
+unsigned int fn_004905c0(unsigned int value)
+{
+    data_00580dc0 = value;
+    return value;
+}
+
+void CParser_PrintUniqueID(char *p)
+{
+    char tmp[16];
+    char *q;
+    long n;
+    long id;
+
+    q = tmp;
+    id = data_00580dc0++;
+    n = id;
+    while (n) {
+        *q++ = '0' + n % 10;
+        n /= 10;
+    }
+    while (q > tmp)
+        *p++ = *--q;
+    *p = 0;
+}
+
+SInt32 CParser_GetUniqueID(void)
+{
+    SInt32 lift_value_0;
+    lift_value_0 = data_00580dc0;
+    data_00580dc0 += 1;
+    return lift_value_0;
+}
+
+/* Workspace filled by conversion_type_name for operator-name construction. */
+
+Boolean CParser_00490660(SInt16 *operatorToken, Boolean allowConversion)
+{
+    HashNameNode *name;
+    DeclInfo nameData;
+
+    tk = CPrepTokenizer_GetNextToken();
+    switch (tk) {
+        case TK_DELETE:
+        case TK_NEW:
+            if (CPrepTokenizer_GetNextTokenAndRestorePosition() == 0x5b) {
+                CPrepTokenizer_GetNextToken();
+                if (CPrepTokenizer_GetNextToken() != 0x5d)
+                    CError_ReportError(ERR_RBRACKET_EXPECTED);
+                tk = (tk == TK_NEW) ? 0x182 : 0x183;
+            }
+            break;
+        case '(':
+            tk = CPrepTokenizer_GetNextToken();
+            if (tk != ')') {
+                CError_ReportError(ERR_ILLEGAL_OPERATOR);
+                return 0;
+            }
+            tk = '(';
+            break;
+        case '[':
+            tk = CPrepTokenizer_GetNextToken();
+            if (tk != ']') {
+                CError_ReportError(ERR_ILLEGAL_OPERATOR);
+                return 0;
+            }
+            tk = '[';
+            break;
+    }
+    name = CMangler_OperatorName(tk);
+    if (name != NULL) {
+        if (operatorToken != NULL)
+            *operatorToken = tk;
+        tk = CPrepTokenizer_GetNextToken();
+        data_00587fa0 = name;
+        return 1;
+    }
+    if (allowConversion) {
+        memclrw(&nameData, sizeof(nameData));
+        conversion_type_name(&nameData);
+        data_00587fa0 = CMangler_ConversionFuncName(nameData.dtype, nameData.qual);
+        if (operatorToken != NULL)
+            *operatorToken = 0;
+        return 1;
+    }
+    CError_ReportError(ERR_ILLEGAL_OPERATOR);
+    return 0;
+}
+
+SInt16 GetPrec(short token)
+{
+    switch (token) {
+        case '%':
+        case '*':
+        case '/':
+            return 11;
+        case '+':
+        case '-':
+            return 10;
+        case 0x16c:
+        case 0x16d:
+            return 9;
+        case '<':
+        case '>':
+        case 0x16a:
+        case 0x16b:
+            return 8;
+        case 0x168:
+        case 0x169:
+            return 7;
+        case '&':
+            return 6;
+        case '^':
+            return 5;
+        case '|':
+            return 4;
+        case 0x167:
+            return 3;
+        case 0x166:
+            return 2;
+    }
+    return 0;
+}
+
+void fn_004908d0(void)
+
+{
+    fn_004f0000();
+    fn_0051b800();
+    fn_00509df0();
+    fn_0049b7b0();
+    FreeGList(&data_00583548);
+    return;
+}
+
+void CParser_Setup(void)
+{
+    BE_elf_CreateGlobalNameSpace();
+    data_00583548.data = NULL;
+    if (InitGList(&data_00583548, 0x100) != 0) {
+        CError_LongJump();
+    }
+    fn_00449dc0();
+    CInit_Init();
+    CClass_ResetPendingThunks();
+    fn_0051b810();
+    CObjCModern_ResetGlobals();
+    fn_00514220();
+    data_005884fd = 0;
+    in_parameter_type_list = 0;
+    data_00580dc0 = 1;
+    DAT_0058852e = 0;
+    copts.fb9 = 1;
+    class_type_links = NULL;
+    DAT_00587fd8 = NULL;
+    pending_object_classes = NULL;
+    pending_functions = NULL;
+    single_expr_functions = NULL;
+    data_00588240 = NULL;
+    cached_objects = NULL;
+    class_parse_recs = NULL;
+    memclrw(&function_fileinfo, sizeof(function_fileinfo));
+    memclrw(&exception_temp_object_type, sizeof(TypeStruct));
+    exception_temp_object_type.type = TYPESTRUCT;
+    _DAT_0058843e = 0x18;
+    DAT_0058844a = 0;
+    _DAT_0058844c = 4;
+    memclrw(&data_0058847c, sizeof(TypeStruct));
+    data_0058847c.type = TYPESTRUCT;
+    _DAT_0058847e = 0xc;
+    DAT_0058848a = 0;
+    _DAT_0058848c = 4;
+    fn_004a9c70();
+    CTemplateNew_Reset();
+    non_type_template_argument_mode = 0;
+    initialize_runtime_objects();
 }
 
 void initialize_runtime_objects(void)

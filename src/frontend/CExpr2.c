@@ -499,6 +499,7 @@ static inline ENode *NewIndirect(ENode *inner)
     e->data.monadic = inner;
     return e;
 }
+
 #include <string.h>
 
 ENode *scannew(char global)
@@ -831,6 +832,7 @@ ENode *make_class_member_or_global_call(Type *classType, ENodeList *arguments, c
     }
     return CExpr_GenericFuncCall(NULL, NULL, 0, function, overloads, NULL, arguments, 0, 0, 1);
 }
+
 /* Entry and result buffer returned by CScope_ParseQualifiedScope. */
 
 void parse_pointer_and_array_declarator(Type **type, char allowNonconstant)
@@ -2566,6 +2568,7 @@ SInt16 assign_check(ENode *operand, Type *targetType, SInt32 targetQual, Boolean
     }
     return result;
 }
+
 static ENode *CExpr2_0046fde0_inline1(ENode *expr)
 {
     ENode *node;
@@ -2820,6 +2823,7 @@ ENode *CExpr2_ConvertScalarOperand(ENode *result, Boolean integerOnly, Boolean p
     }
     return result;
 }
+
 static ENode *intconstnode_setlong_470460(Type *type, SInt32 value)
 {
     CInt64 *iv;
@@ -3650,6 +3654,7 @@ ENode *CExpr2_004719c0(BClassList *scope, BClassList *baseList, ENode *node, UIn
     }
     return node;
 }
+
 static ENode *NewIntConst(Type *type, SInt32 value)
 {
     ENode *n = (ENode *)CompilerTools_AllocatePool(0x1a);
@@ -4326,6 +4331,7 @@ ENode *CExpr_MakeObjRefNode(Object *obj, Boolean flag)
         obj->flags |= OBJECT_USED;
     return node;
 }
+
 #define MAX_COST 200
 
 static ENode *mkTemp_472ae0(Type *t)
@@ -5645,6 +5651,96 @@ char *CExpr2_ParseHexInt64(CInt64 *value, char *p, Boolean *overflow)
     return p;
 }
 
+/* The powers of two from 2^0 to 2^64, built on first use. */
+Boolean data_00580758;
+float data_0058075a;
+float data_0058075e[65];
+
+static inline float power_of_two(short n)
+{
+    static float data_00555490 = 1.0f;
+    int i;
+
+    if (!data_00580758) {
+        data_0058075a = data_00555490;
+        i = 0;
+        do {
+            data_0058075e[i] = data_0058075a;
+            data_0058075a += data_0058075a;
+        } while (++i < 65);
+        data_00580758 = 1;
+    }
+    return data_0058075e[n];
+}
+
+static inline void get_power_of_two(PowerOfTwo *result, short n)
+{
+    static float data_00555494 = 1.0f;
+    int i;
+
+    if (!data_00580758) {
+        data_0058075a = data_00555494;
+        i = 0;
+        do {
+            data_0058075e[i] = data_0058075a;
+            data_0058075a += data_0058075a;
+        } while (++i < 65);
+        data_00580758 = 1;
+    }
+    result->value = data_0058075e[n];
+}
+
+UInt8 *CExpr2_ParseDecimalCInt64(CInt64 *v, char *s, Boolean *ovf)
+{
+    CInt64 t;
+    char c;
+    SInt32 hi;
+    UInt32 lo;
+    *ovf = 0;
+    v->lo = 0;
+    v->hi = 0;
+    while ((c = *s) >= '0' && c <= '9') {
+        hi = v->hi;
+        lo = v->lo;
+        if (hi & 0xe0000000)
+            *ovf = 1;
+        hi <<= 1;
+        if (lo & 0x80000000)
+            hi |= 1;
+        lo <<= 1;
+        t.hi = hi;
+        t.lo = lo;
+        hi <<= 1;
+        if (lo & 0x80000000)
+            hi |= 1;
+        lo <<= 1;
+        hi <<= 1;
+        if (lo & 0x80000000)
+            hi |= 1;
+        lo <<= 1;
+        v->hi = hi;
+        v->lo = lo;
+        if (isneg(v)) {
+            *v = CInt64_Add(*v, t);
+            if (!isneg(v))
+                *ovf = 1;
+        } else {
+            *v = CInt64_Add(*v, t);
+        }
+        t.lo = c - '0';
+        t.hi = c - '0' < 0 ? -1 : 0;
+        if (isneg(v)) {
+            *v = CInt64_Add(*v, t);
+            if (!isneg(v))
+                *ovf = 1;
+        } else {
+            *v = CInt64_Add(*v, t);
+        }
+        s++;
+    }
+    return (UInt8 *)s;
+}
+
 char *CExpr2_ParseOctalInt64(CInt64 *val, char *s, Boolean *overflow)
 {
     char c;
@@ -5693,6 +5789,7 @@ double CExpr2_ConvertCInt64ToDouble(CInt64 *val)
     }
     return CExpr2_ConvertUnsignedCInt64ToDouble(val);
 }
+
 double CExpr2_ConvertUnsignedCInt64ToDouble(CInt64 *v)
 {
     double result;
@@ -5747,45 +5844,6 @@ void CExpr2_ConvertDoubleToCInt64(CInt64 *p, double x)
     } else {
         CExpr2_ConvertDoubleToUnsignedCInt64(p, x);
     }
-}
-
-/* The powers of two from 2^0 to 2^64, built on first use. */
-Boolean data_00580758;
-float data_0058075a;
-float data_0058075e[65];
-
-static inline float power_of_two(short n)
-{
-    static float data_00555490 = 1.0f;
-    int i;
-
-    if (!data_00580758) {
-        data_0058075a = data_00555490;
-        i = 0;
-        do {
-            data_0058075e[i] = data_0058075a;
-            data_0058075a += data_0058075a;
-        } while (++i < 65);
-        data_00580758 = 1;
-    }
-    return data_0058075e[n];
-}
-
-static inline void get_power_of_two(PowerOfTwo *result, short n)
-{
-    static float data_00555494 = 1.0f;
-    int i;
-
-    if (!data_00580758) {
-        data_0058075a = data_00555494;
-        i = 0;
-        do {
-            data_0058075e[i] = data_0058075a;
-            data_0058075a += data_0058075a;
-        } while (++i < 65);
-        data_00580758 = 1;
-    }
-    result->value = data_0058075e[n];
 }
 
 /* VALUE as an unsigned 64-bit integer: 0 at or below zero, all ones from 2^64 up. */
@@ -5843,57 +5901,6 @@ void CExpr2_SignExtendSignedChar(CInt64 *value)
         high = 0;
     }
     value->hi = high;
-}
-
-UInt8 *CExpr2_ParseDecimalCInt64(CInt64 *v, char *s, Boolean *ovf)
-{
-    CInt64 t;
-    char c;
-    SInt32 hi;
-    UInt32 lo;
-    *ovf = 0;
-    v->lo = 0;
-    v->hi = 0;
-    while ((c = *s) >= '0' && c <= '9') {
-        hi = v->hi;
-        lo = v->lo;
-        if (hi & 0xe0000000)
-            *ovf = 1;
-        hi <<= 1;
-        if (lo & 0x80000000)
-            hi |= 1;
-        lo <<= 1;
-        t.hi = hi;
-        t.lo = lo;
-        hi <<= 1;
-        if (lo & 0x80000000)
-            hi |= 1;
-        lo <<= 1;
-        hi <<= 1;
-        if (lo & 0x80000000)
-            hi |= 1;
-        lo <<= 1;
-        v->hi = hi;
-        v->lo = lo;
-        if (isneg(v)) {
-            *v = CInt64_Add(*v, t);
-            if (!isneg(v))
-                *ovf = 1;
-        } else {
-            *v = CInt64_Add(*v, t);
-        }
-        t.lo = c - '0';
-        t.hi = c - '0' < 0 ? -1 : 0;
-        if (isneg(v)) {
-            *v = CInt64_Add(*v, t);
-            if (!isneg(v))
-                *ovf = 1;
-        } else {
-            *v = CInt64_Add(*v, t);
-        }
-        s++;
-    }
-    return (UInt8 *)s;
 }
 
 void CExpr2_ConvertCInt64ToUnsignedShort(CInt64 *value)

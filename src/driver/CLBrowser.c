@@ -157,6 +157,82 @@ int CLBrowser_FindOrAddLookupEntry(MemBuffer *browser, char *name, short *result
     }
     return 1;
 }
+
+static inline struct BrowserCacheEntry *fn_00428e00_inline1(void)
+{
+    struct BrowserCacheEntry *cursor;
+    struct BrowserCacheEntry *entry;
+    entry = NULL;
+    cursor = browser_cache_entries;
+    while (cursor != NULL) {
+        if (cursor->inUse == 0 && (entry == NULL || (unsigned int)cursor->lastUsed < (unsigned int)entry->lastUsed))
+            entry = cursor;
+        cursor = cursor->next;
+    }
+    return entry;
+}
+
+static inline void fn_00428e00_unlink(struct BrowserCacheEntry *entry)
+{
+    void (*unlinkEntry)(struct BrowserCacheEntry *) = unlink_browser_cache_entry;
+    unlinkEntry(entry);
+}
+
+static inline void fn_00428e00_inline2(struct BrowserCacheEntry *entry)
+{
+    Memory_FreeHandle(entry->buffer);
+    cache_free_size += entry->size;
+    fn_00428e00_unlink(entry);
+    entry->next = browser_cache_free_list;
+    browser_cache_free_list = entry;
+}
+
+static inline void fn_00428e00_inline3(struct OSSpec *path, struct StorageHandle *buffer, unsigned char flag, int size)
+{
+    BrowserCacheEntry *newEntry;
+    BrowserCacheEntry *(*allocateEntry)(void) = allocate_browser_cache_entry;
+    void (*linkEntry)(struct BrowserCacheEntry *) = prepend_browser_cache_entry;
+    newEntry = allocateEntry();
+    newEntry->inUse = 1;
+    newEntry->flag = flag;
+    newEntry->path = *path;
+    newEntry->buffer = buffer;
+    newEntry->size = size;
+    newEntry->lastUsed = OS_GetMilliseconds();
+    linkEntry(newEntry);
+    cache_free_size -= size;
+}
+
+unsigned int calculate_lookup_entries_size(CLBrowserLookupEntry *entries, unsigned int count)
+{
+    unsigned int total = 0;
+    while (count--) {
+        const char *name = entries->name;
+        total += 16U;
+        total += (strlen(name) + 7U) & ~7U;
+        ++entries;
+    }
+    return total;
+}
+
+int write_lookup_entries(CLBrowserLookupEntry *entries, DstRec *output, UInt32 count)
+{
+    SInt32 nameLength;
+    SInt32 paddedLength;
+    while (count--) {
+        output->id = entries->value;
+        memset(&output->id + 1, 0, 3 * sizeof(UInt32));
+        nameLength = strlen(entries->name);
+        paddedLength = (nameLength + 7) & ~7;
+        output->len = nameLength;
+        memset(output->data, 0, paddedLength);
+        strncpy(output->data, entries->name, nameLength);
+        entries++;
+        output = (DstRec *)(output->data + paddedLength);
+    }
+    return 1;
+}
+
 /* Serialized browser file header. */
 
 /* Opaque two-word allocation handle. */
@@ -291,47 +367,6 @@ void CLBrowser_FreeCacheEntries(void)
     CLBrowser_InitCache();
 }
 
-static inline struct BrowserCacheEntry *fn_00428e00_inline1(void)
-{
-    struct BrowserCacheEntry *cursor;
-    struct BrowserCacheEntry *entry;
-    entry = NULL;
-    cursor = browser_cache_entries;
-    while (cursor != NULL) {
-        if (cursor->inUse == 0 && (entry == NULL || (unsigned int)cursor->lastUsed < (unsigned int)entry->lastUsed))
-            entry = cursor;
-        cursor = cursor->next;
-    }
-    return entry;
-}
-static inline void fn_00428e00_unlink(struct BrowserCacheEntry *entry)
-{
-    void (*unlinkEntry)(struct BrowserCacheEntry *) = unlink_browser_cache_entry;
-    unlinkEntry(entry);
-}
-static inline void fn_00428e00_inline2(struct BrowserCacheEntry *entry)
-{
-    Memory_FreeHandle(entry->buffer);
-    cache_free_size += entry->size;
-    fn_00428e00_unlink(entry);
-    entry->next = browser_cache_free_list;
-    browser_cache_free_list = entry;
-}
-static inline void fn_00428e00_inline3(struct OSSpec *path, struct StorageHandle *buffer, unsigned char flag, int size)
-{
-    BrowserCacheEntry *newEntry;
-    BrowserCacheEntry *(*allocateEntry)(void) = allocate_browser_cache_entry;
-    void (*linkEntry)(struct BrowserCacheEntry *) = prepend_browser_cache_entry;
-    newEntry = allocateEntry();
-    newEntry->inUse = 1;
-    newEntry->flag = flag;
-    newEntry->path = *path;
-    newEntry->buffer = buffer;
-    newEntry->size = size;
-    newEntry->lastUsed = OS_GetMilliseconds();
-    linkEntry(newEntry);
-    cache_free_size -= size;
-}
 void CLBrowser_CacheFileText(struct OSSpec *path, struct StorageHandle *buffer, unsigned char flag)
 {
     int size;
@@ -383,34 +418,4 @@ void CLBrowser_ReleaseBuffer(StorageHandle *value)
         }
     }
     Memory_FreeHandle(value);
-}
-
-int write_lookup_entries(CLBrowserLookupEntry *entries, DstRec *output, UInt32 count)
-{
-    SInt32 nameLength;
-    SInt32 paddedLength;
-    while (count--) {
-        output->id = entries->value;
-        memset(&output->id + 1, 0, 3 * sizeof(UInt32));
-        nameLength = strlen(entries->name);
-        paddedLength = (nameLength + 7) & ~7;
-        output->len = nameLength;
-        memset(output->data, 0, paddedLength);
-        strncpy(output->data, entries->name, nameLength);
-        entries++;
-        output = (DstRec *)(output->data + paddedLength);
-    }
-    return 1;
-}
-
-unsigned int calculate_lookup_entries_size(CLBrowserLookupEntry *entries, unsigned int count)
-{
-    unsigned int total = 0;
-    while (count--) {
-        const char *name = entries->name;
-        total += 16U;
-        total += (strlen(name) + 7U) & ~7U;
-        ++entries;
-    }
-    return total;
 }

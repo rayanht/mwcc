@@ -48,6 +48,17 @@ void StrengthReduction_RunLoopPasses(void)
     return;
 }
 
+int visit_code_motion_searches(Loop *p)
+{
+    while (p) {
+        if (p->children)
+            visit_code_motion_searches(p->children);
+        if (p->codeMotionSearches)
+            fn_00527290(p);
+        p = p->sibling;
+    }
+}
+
 void fn_00527290(Loop *holder)
 {
     CMRegisterNode *node;
@@ -93,17 +104,6 @@ void fn_00527290(Loop *holder)
                 }
             }
         }
-    }
-}
-
-int visit_code_motion_searches(Loop *p)
-{
-    while (p) {
-        if (p->children)
-            visit_code_motion_searches(p->children);
-        if (p->codeMotionSearches)
-            fn_00527290(p);
-        p = p->sibling;
     }
 }
 
@@ -853,33 +853,6 @@ void find_addi_code_motion_candidates(Loop *cm)
     }
 }
 
-PCodeInstruction *fn_005288e0(Loop *search, SInt16 reg)
-{
-    PCodeInstruction *found;
-    PCodeInstruction *instruction;
-    UInt32 *definitions;
-    struct CodeMotionEntryLink *definition;
-    definitions = data_00587fe4[search->body->index].definition_sets[2];
-    found = NULL;
-    definition = code_motion_register_definition_heads[reg];
-    while (definition != NULL) {
-        instruction = code_motion_entries[definition->entry_index].instruction;
-        if ((search->memberblocks[instruction->block->index >> 5] & (1 << (instruction->block->index & 31))) == 0) {
-            if (definitions[definition->entry_index >> 5] & (1 << (definition->entry_index & 31))) {
-                if (found != NULL)
-                    return NULL;
-                found = instruction;
-            }
-        }
-        definition = definition->next;
-    }
-    if (found != NULL) {
-        if (found->opcode == PC_LI || found->opcode == PC_ADDI || found->opcode == PC_ADD)
-            return found;
-    }
-    return NULL;
-}
-
 void add_code_motion_search(Loop *block, SInt16 reg, SInt32 increment)
 {
     CMRegisterNode *node;
@@ -914,4 +887,31 @@ void add_code_motion_search(Loop *block, SInt16 reg, SInt32 increment)
     }
 
     node->reachingDefinition = fn_005288e0(block, reg);
+}
+
+PCodeInstruction *fn_005288e0(Loop *search, SInt16 reg)
+{
+    PCodeInstruction *found;
+    PCodeInstruction *instruction;
+    UInt32 *definitions;
+    struct CodeMotionEntryLink *definition;
+    definitions = data_00587fe4[search->body->index].definition_sets[2];
+    found = NULL;
+    definition = code_motion_register_definition_heads[reg];
+    while (definition != NULL) {
+        instruction = code_motion_entries[definition->entry_index].instruction;
+        if ((search->memberblocks[instruction->block->index >> 5] & (1 << (instruction->block->index & 31))) == 0) {
+            if (definitions[definition->entry_index >> 5] & (1 << (definition->entry_index & 31))) {
+                if (found != NULL)
+                    return NULL;
+                found = instruction;
+            }
+        }
+        definition = definition->next;
+    }
+    if (found != NULL) {
+        if (found->opcode == PC_LI || found->opcode == PC_ADDI || found->opcode == PC_ADD)
+            return found;
+    }
+    return NULL;
 }

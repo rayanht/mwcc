@@ -54,12 +54,14 @@
 #include "compiler/ENode.h"
 
 #pragma auto_inline off
+
 SInt16 CInline_ReturnZero(Type *type)
 {
     return 0;
 }
 
 #pragma auto_inline reset
+
 void CInline_GeneratePendingFunctionBody(void)
 {
     Statement body;
@@ -195,6 +197,7 @@ Boolean CInline_DispatchNextDeferredNode(void)
     }
     return 0;
 }
+
 static inline TypeClassExt800 *CInline_0050ebf0_inline1(Object *v1)
 {
     TypeClass *v5s;
@@ -248,6 +251,412 @@ static inline TypeClassExt800 *CInline_0050ebf0_inline2(struct CPrecNode *a0)
     return NULL;
 }
 
+static Boolean CInline_Cleanup(Statement *stmt)
+{
+    struct InlineObjectEntry *list;
+    while (stmt != NULL) {
+        if (stmt->dobjstack != NULL)
+            add_undefined_exception_function_objects(stmt->dobjstack);
+        switch (stmt->type) {
+            case ST_NOP:
+            case ST_LABEL:
+            case ST_GOTO:
+            case ST_BEGINCATCH:
+            case ST_ENDCATCH:
+            case ST_ENDCATCHDTOR:
+            case ST_ASM:
+                break;
+            case ST_RETURN:
+                if (stmt->expr.expression == NULL)
+                    break;
+                /* fall through */
+            case ST_EXPRESSION:
+            case ST_SWITCH:
+            case ST_IFGOTO:
+            case ST_IFNGOTO:
+            case ST_GOTOEXPR:
+                CExpr_SearchExprTree(stmt->expr.expression, forward_objref, 1, 0x38);
+                break;
+            default:
+                CError_FATAL(3658);
+        }
+        stmt = stmt->next;
+    }
+    list = undefined_function_objects;
+    return CInline_0050f120(list);
+}
+
+#define CERROR_FILE ("CInline.c")
+
+static inline void CInline_EnsurePending(Object *obj)
+{
+    CPrecNode *p;
+    for (p = pending_prec_nodes; p != NULL; p = p->next) {
+        if (p->obj == obj)
+            return;
+    }
+    p = (CPrecNode *)galloc(0x20);
+    memclrw(p, 0x20);
+    p->kind = 3;
+    p->obj = obj;
+    p->next = pending_prec_nodes;
+    pending_prec_nodes = p;
+}
+
+static inline void CInline_MovePending(Object *obj)
+{
+    CPrecNode **prev = &pendingInlineWork;
+    CPrecNode *node;
+    for (; (node = *prev) != NULL; prev = &node->next) {
+        if (obj == node->obj) {
+            *prev = node->next;
+            ((CPrecNode *)node)->next = pending_prec_nodes;
+            pending_prec_nodes = (CPrecNode *)node;
+            TYPE_FUNC(obj->type)->flags &= ~0x800000;
+            return;
+        }
+    }
+    CError_FATAL(3789);
+}
+
+static inline void CInline_0050f240_inline1(Object *a0)
+{
+    CPrecNode *v4;
+    CPrecNode *t2;
+    v4 = pending_prec_nodes;
+    while ((int)v4 != 0) {
+        if (v4->obj == a0) {
+            return;
+        }
+        v4 = v4->next;
+    }
+    t2 = (CPrecNode *)galloc(32);
+    memclrw(t2, 32);
+    t2->kind = 3;
+    t2->obj = a0;
+    t2->next = pending_prec_nodes;
+    pending_prec_nodes = t2;
+    return;
+}
+
+static inline void CInline_0050f240_inline2(Object *a0)
+{
+    CPrecNode **link;
+    CPrecNode *v6;
+    link = &pendingInlineWork;
+    while ((v6 = *link) != NULL) {
+        if (a0 == v6->obj) {
+            *link = v6->next;
+            ((CPrecNode *)v6)->next = pending_prec_nodes;
+            pending_prec_nodes = (CPrecNode *)v6;
+            ((TypeFunc *)a0->type)->flags &= 0xff7fffff;
+            return;
+        }
+        link = &v6->next;
+    }
+    CError_FATAL(3789);
+    return;
+}
+
+/* 0x573204: file name string */
+
+static inline SInt32 CInline_FindIndex(UInt32 target, Statement **list)
+{
+    SInt32 i;
+    Statement *p;
+    UInt32 t = target;
+
+    i = 0;
+    p = *list;
+    while (p) {
+        if ((UInt32)p == t)
+            return i;
+        p = p->next;
+        i++;
+    }
+    CError_FATAL(2820);
+    return 0;
+}
+
+static inline void CInline_StoreIndex(IStmtRec *sp, Statement **list, Statement *target)
+{
+    sp->data.targetIndex = (SInt16)CInline_FindIndex((UInt32)target, list);
+}
+
+static inline void CInline_SaveVars(ObjectList *ol, CInlineVar **cursor, UInt8 first, CInlineVar *initial)
+{
+    Object *o;
+    UInt8 v;
+    *cursor = initial;
+
+    for (; ol != NULL; ol = ol->next) {
+        if (first || ol->object.value->datatype == DLOCAL) {
+            (*cursor)->name = ol->object.value->name;
+            (*cursor)->type = ol->object.value->type;
+            (*cursor)->qual = ol->object.value->qual;
+            o = ol->object.value;
+            switch ((SInt16)o->sclass) {
+                case 0:
+                    v = 0;
+                    break;
+                case 0x101:
+                    v = 1;
+                    break;
+                case 0x100:
+                    v = 2;
+                    break;
+                default:
+                    CError_FATAL(1068);
+            }
+            if (o->flags & 2)
+                v |= 0x80;
+            (*cursor)->storageFlags = v;
+            (*cursor)->used = 0;
+            (*cursor)->dirty = first;
+            (*cursor)++;
+        }
+    }
+}
+
+static inline ENode *CInline_GetName0(ENode *name)
+{
+    evalMode = 2;
+    memo_list = NULL;
+    alloc_state = 1;
+    return CInline_00513240(name);
+}
+
+static inline ENode *CInline_GetName(ENode *name)
+{
+    return CInline_GetName0(name);
+}
+
+static inline void SaveName(IStmtRec *sp, ENode *name)
+{
+    ENode *str = CInline_GetName(name);
+    CInline_005130b0(str, 0);
+    sp->data.operand = str;
+}
+
+#pragma opt_lifetimes off
+
+/* 0x573204, "CInline.c" */
+/* 0x58245e, register record array pointer */
+/* 0x582462, register record array pointer */
+
+/* Map an object reference to its scope slot.  Objects still bound to the
+ * argument list come back as negative (0x80000000 | (i+1)) indices. */
+static inline SInt32 MapObj(SInt32 arg)
+{
+    SInt32 obj;
+    SInt32 i;
+    ObjectList *p;
+
+    obj = arg;
+    if (obj != 0) {
+        p = arguments, i = 0;
+        while (p != NULL) {
+            if ((SInt32)p->object.value == obj) {
+                data_0058245e[i].used = 1;
+                data_0058245e[i].dirty = 0;
+                return i + 0x80000001;
+            }
+            p = p->next;
+            i++;
+        }
+
+        p = locals, i = 0;
+        while (p != NULL) {
+            if (p->object.value->datatype == DLOCAL) {
+                if ((SInt32)p->object.value == obj)
+                    goto found;
+                i++;
+            }
+            p = p->next;
+        }
+        i = -1;
+    found:
+        CError_ASSERT(455, i >= 0);
+        data_00582462[i].used = 1;
+        return i + 1;
+    }
+    return 0;
+}
+
+/* Index of a node inside the inline argument list. */
+static inline SInt32 FindIndex(Statement *listp, SInt32 target)
+{
+    SInt16 i = 0;
+    Statement *p = listp->next;
+
+    while (p != NULL) {
+        if ((SInt32)p == target)
+            goto done;
+        p = p->next;
+        i++;
+    }
+    CError_FATAL(2820);
+    i = 0;
+done:
+    return i;
+}
+
+#pragma opt_lifetimes reset
+
+/* 0x5824b2 (its -64 preimage is the table at 0x582472) */
+#define CERROR_FILE ("CInline.c")
+
+static Object *CInline_MakeTemp(Type *t)
+{
+    Object *o;
+    o = CParser_NewLocalDataObject(NULL, 1);
+    o->name = CParser_GetUniqueName();
+    o->type = t;
+    o->qual = 0;
+    set_object_sclass(o, 0);
+    CFunc_SetupLocalVarInfo(o);
+    return o;
+}
+
+static ENode *gen_expr(void *x)
+{
+    evalMode = 4;
+    memo_list = NULL;
+    alloc_state = 0;
+    return fold_constants(CInline_00513240(x));
+}
+
+static ENode *gen_expr_save(void *x)
+{
+    UInt8 v1;
+    UInt8 v0;
+    struct MemoNode *v2;
+
+    v1 = alloc_state;
+    alloc_state = 1;
+    v0 = evalMode;
+    evalMode = 4;
+    v2 = memo_list;
+    memo_list = NULL;
+    x = CInline_00513240(x);
+    alloc_state = v1;
+    evalMode = v0;
+    memo_list = v2;
+    return (ENode *)x;
+}
+
+static void add_chain(ChainRec **head, Statement *node, IStmtRec *ent)
+{
+    ChainRec *r = (ChainRec *)CompilerTools_AllocatePool(12);
+    r->next = *head;
+    *head = r;
+    r->node = node;
+    r->ent = ent;
+}
+
+/* 0x58246a, fixup list head */
+
+static inline void CopyStatementExpression(CException *copy, CException *source, char copyExpressions)
+{
+    copy->data.slots[0] = CInline_GetObjectByIndex(source->data.operands[0].value, copyExpressions);
+    copy->data.slots[1] = source->data.slots[1];
+}
+
+/* 0x582468, 16-bit counter */
+/* 0x584278, 16-bit flag */
+/* 0x5842d6, byte flag */
+
+static inline SInt16 inline_statement_count(const CInlineInfo *info)
+{
+    return info->nstmts;
+}
+
+static inline ENode *InlineArgument(ENode *expr)
+{
+    char savedFlag = alloc_state;
+    char savedMode;
+    struct MemoNode *savedState;
+    ENode *result;
+    alloc_state = 1;
+    savedMode = evalMode;
+    evalMode = 4;
+    savedState = memo_list;
+    memo_list = NULL;
+    result = CInline_00513240(expr);
+    alloc_state = savedFlag;
+    evalMode = savedMode;
+    memo_list = savedState;
+    return result;
+}
+
+static inline ENode *InlineWrapResult(ENode *expr)
+{
+    ENode *wrapped;
+    if (expr->type == EFORCELOAD) {
+        wrapped = expr;
+    } else {
+        data_005824c3 = 0;
+        CExpr_SearchExprTree(expr, fn_005129f0, 3, 4, 54, 55);
+        if (data_005824c3 == 0) {
+            wrapped = expr;
+        } else {
+            wrapped = (ENode *)CompilerTools_AllocatePool(sizeof(ENode));
+            *wrapped = *expr;
+            wrapped->type = EFORCELOAD;
+            wrapped->data.monadic = expr;
+        }
+    }
+    return wrapped;
+}
+
+/* 0x573204, "CInline.c" */
+
+/* Create the Object representing one inlined variable. */
+static Object *NewInlineVar(Type *type, SInt16 offset, UInt8 info)
+{
+    Object *obj = CParser_NewLocalDataObject(NULL, 1);
+
+    obj->name = CParser_GetUniqueName();
+    obj->type = type;
+    obj->qual = offset;
+    set_object_sclass(obj, info);
+    CFunc_SetupLocalVarInfo(obj);
+    return obj;
+}
+
+/* 0x573204, "CInline.c" */
+
+/* Copy the node if it is a constant object reference. */
+static ENode *CInline_CopyConst(ENode *e)
+{
+    ENode *r;
+
+    switch (e->type) {
+        case EOBJREF:
+            r = (ENode *)CompilerTools_AllocatePool(sizeof(ENode));
+            *r = *e;
+            return r;
+        case EPRECOMP:
+            CError_FATAL(1136);
+            break;
+    }
+    return NULL;
+}
+
+unsigned char fn_0050ebc0(void)
+{
+    CPrecNode *node;
+
+    if (anyerrors == 0U) {
+        for (node = pending_prec_nodes; node != NULL; node = node->next) {
+            if (node->kind == 0U) {
+                return 0;
+            }
+        }
+    }
+    return 1;
+}
+
 void parse_inline_definition(struct CPrecNode *inlineInfo)
 {
     Object *object;
@@ -290,39 +699,173 @@ void parse_inline_definition(struct CPrecNode *inlineInfo)
     }
     CPrep_RemoveBufferedTokens(&inlineInfo->u.k0.tokenBuffer.count, &inputState);
 }
-static Boolean CInline_Cleanup(Statement *stmt)
+
+static SInt16 CIB_FindIndex(Statement *p, Statement *target)
 {
-    struct InlineObjectEntry *list;
-    while (stmt != NULL) {
-        if (stmt->dobjstack != NULL)
-            add_undefined_exception_function_objects(stmt->dobjstack);
-        switch (stmt->type) {
-            case ST_NOP:
-            case ST_LABEL:
-            case ST_GOTO:
-            case ST_BEGINCATCH:
-            case ST_ENDCATCH:
-            case ST_ENDCATCHDTOR:
-            case ST_ASM:
-                break;
-            case ST_RETURN:
-                if (stmt->expr.expression == NULL)
-                    break;
-                /* fall through */
-            case ST_EXPRESSION:
-            case ST_SWITCH:
-            case ST_IFGOTO:
-            case ST_IFNGOTO:
-            case ST_GOTOEXPR:
-                CExpr_SearchExprTree(stmt->expr.expression, forward_objref, 1, 0x38);
-                break;
-            default:
-                CError_FATAL(3658);
-        }
-        stmt = stmt->next;
+    SInt16 i = 0;
+    while (p != NULL) {
+        if (p == target)
+            return i;
+        p = p->next;
+        i++;
     }
-    list = undefined_function_objects;
-    return CInline_0050f120(list);
+    CError_FATAL(2820);
+    return 0;
+}
+
+static ENode *gen_name(ENode *x)
+{
+    evalMode = 2;
+    memo_list = NULL;
+    alloc_state = 1;
+    return CInline_00513240(x);
+}
+
+static SInt32 CInline_Memo(ENode *key)
+{
+    ENode *k;
+    MemoNode *m;
+    k = key, m = memo_list;
+    for (; m != NULL; m = m->next)
+        if (m->key == k)
+            return m->val;
+    (m = (MemoNode *)CompilerTools_AllocatePool(12))->next = memo_list;
+    memo_list = m;
+    m->key = key;
+    m->val = CParser_GetUniqueID();
+    {
+        SInt32 result = m->val;
+        return result;
+    }
+}
+
+static SInt32 MemoFirst(ENode *key)
+{
+    MemoNode *fresh;
+    MemoNode *m;
+    ENode *k;
+    k = key, m = memo_list;
+    for (; m; m = m->next)
+        if (m->key == k)
+            return m->val;
+    fresh = (MemoNode *)CompilerTools_AllocatePool(12);
+    fresh->next = memo_list;
+    memo_list = fresh;
+    fresh->key = key;
+    fresh->val = CParser_GetUniqueID();
+    return fresh->val;
+}
+
+static ENode *get_input(SInt32 index)
+{
+    return data_0058245a[index].expr;
+}
+
+static ENode *adjust(ENode *f, ENode *e)
+{
+    Type *et;
+    Type *ft;
+    ENode *r = f;
+    ft = f->rtype;
+    et = e->rtype;
+    if (ft != et) {
+        if (ft->type == TYPEINT && et->type == TYPEINT)
+            r = makemonadicnode(r, 0x30);
+        r->rtype = e->rtype;
+    }
+    return r;
+}
+
+/* Payload copied by the ENEWEXCEPTIONARRAY expression case. */
+
+static inline SInt16 inline_member_index(SInt32 key)
+{
+    Statement *entry = inline_statements;
+    SInt16 index = 0;
+    for (; entry != NULL; entry = entry->next, index++)
+        if (entry->type == ST_LABEL && ((SInt32 *)entry->target.label)[2] == key)
+            return index;
+    CError_FATAL(629);
+    return 0;
+}
+
+static inline void inline_local_index(Object *object, int *index)
+{
+    ObjectList *local = locals;
+    *index = 0;
+    while (local != NULL) {
+        if (local->object.value->datatype == DLOCAL) {
+            if (local->object.value == object)
+                return;
+            (*index)++;
+        }
+        local = local->next;
+    }
+    *index = -1;
+}
+
+static inline int FindInlineObjectIndex(void *object)
+{
+    ObjectList *candidate;
+    int index;
+
+    candidate = locals;
+    for (index = 0; candidate != NULL; candidate = candidate->next) {
+        if (candidate->object.value->datatype == DLOCAL) {
+            if (candidate->object.value == object)
+                return index;
+            index++;
+        }
+    }
+    return -1;
+}
+
+static inline Boolean InlineObjectModifiable(Object *obj)
+{
+    if (obj->datatype == DLOCAL && !(obj->flags & 2))
+        return 0;
+    if ((signed char)obj->type->type >= 11) {
+        if (((TypePointer *)obj->type)->qual & Q_CONST)
+            return 0;
+    } else if (obj->qual & Q_CONST)
+        return 0;
+    return 1;
+}
+
+static inline ENode *CInline_ArrayInitializer(ENode *expr)
+{
+    return ((ENodeList *)expr->data.newexception.initexpr)->node;
+}
+
+void make_auto_generated_method(Object *func)
+{
+    TypeClass *tclass;
+
+    CError_ASSERT(4062, TYPE_METHOD(func->type)->flags & FUNC_AUTO_GENERATED);
+    CError_ASSERT(4063, TYPE_METHOD(func->type)->flags & FUNC_METHOD);
+
+    tclass = TYPE_METHOD(func->type)->theclass;
+
+    if (func == CClass_DefaultConstructor(tclass)) {
+        if (func->u.func.defargdata != NULL)
+            CABI_MakeDefaultArgConstructor(tclass, func);
+        else
+            CABI_GenerateClassFunction(tclass, func);
+        return;
+    }
+    if (func == CClass_CopyConstructor(tclass)) {
+        CABI_GenClassFunction(tclass, func);
+        return;
+    }
+    if (func == CClass_AssignmentOperator(tclass)) {
+        CABI_MakeDefaultConstructor(tclass, func);
+        return;
+    }
+    if (func == CClass_Destructor(tclass)) {
+        CABI_MakeDefaultDestructor(tclass, func);
+        return;
+    }
+    CError_FATAL(4097);
 }
 
 void CInline_0050ee60(Statement *stmt, Object *func, Boolean flag)
@@ -408,37 +951,6 @@ Boolean check_statement_count_and_locals_size(Object *func, Statement *stmt)
         return 0;
     return 1;
 }
-#define CERROR_FILE ("CInline.c")
-
-static inline void CInline_EnsurePending(Object *obj)
-{
-    CPrecNode *p;
-    for (p = pending_prec_nodes; p != NULL; p = p->next) {
-        if (p->obj == obj)
-            return;
-    }
-    p = (CPrecNode *)galloc(0x20);
-    memclrw(p, 0x20);
-    p->kind = 3;
-    p->obj = obj;
-    p->next = pending_prec_nodes;
-    pending_prec_nodes = p;
-}
-static inline void CInline_MovePending(Object *obj)
-{
-    CPrecNode **prev = &pendingInlineWork;
-    CPrecNode *node;
-    for (; (node = *prev) != NULL; prev = &node->next) {
-        if (obj == node->obj) {
-            *prev = node->next;
-            ((CPrecNode *)node)->next = pending_prec_nodes;
-            pending_prec_nodes = (CPrecNode *)node;
-            TYPE_FUNC(obj->type)->flags &= ~0x800000;
-            return;
-        }
-    }
-    CError_FATAL(3789);
-}
 
 Boolean CInline_0050f120(struct InlineObjectEntry *list)
 {
@@ -466,44 +978,6 @@ Boolean CInline_0050f120(struct InlineObjectEntry *list)
         list = list->next;
     }
     return result;
-}
-static inline void CInline_0050f240_inline1(Object *a0)
-{
-    CPrecNode *v4;
-    CPrecNode *t2;
-    v4 = pending_prec_nodes;
-    while ((int)v4 != 0) {
-        if (v4->obj == a0) {
-            return;
-        }
-        v4 = v4->next;
-    }
-    t2 = (CPrecNode *)galloc(32);
-    memclrw(t2, 32);
-    t2->kind = 3;
-    t2->obj = a0;
-    t2->next = pending_prec_nodes;
-    pending_prec_nodes = t2;
-    return;
-}
-
-static inline void CInline_0050f240_inline2(Object *a0)
-{
-    CPrecNode **link;
-    CPrecNode *v6;
-    link = &pendingInlineWork;
-    while ((v6 = *link) != NULL) {
-        if (a0 == v6->obj) {
-            *link = v6->next;
-            ((CPrecNode *)v6)->next = pending_prec_nodes;
-            pending_prec_nodes = (CPrecNode *)v6;
-            ((TypeFunc *)a0->type)->flags &= 0xff7fffff;
-            return;
-        }
-        link = &v6->next;
-    }
-    CError_FATAL(3789);
-    return;
 }
 
 /* An inline function awaiting expansion. */
@@ -679,6 +1153,96 @@ void forward_statement_objrefs(Statement *stmt)
     }
 }
 
+void forward_objref(ENode *expr)
+{
+    Object *object;
+    object = expr->data.objref;
+    add_undefined_function_object(object);
+}
+
+/* Linked entries visited by the inline traversal. */
+
+void add_undefined_exception_function_objects(CException *entry)
+{
+    if (entry != NULL) {
+        do {
+            switch (entry->kind) {
+                case 1:
+                    add_undefined_function_object(entry->data.local.dtor);
+                    break;
+                case 2:
+                    add_undefined_function_object(entry->data.local_cond.dtor);
+                    break;
+                case 3:
+                    add_undefined_function_object(entry->data.local.dtor);
+                    break;
+                case 4:
+                    add_undefined_function_object((Object *)entry->data.slots[1]);
+                    break;
+                case 5:
+                    add_undefined_function_object((Object *)entry->data.slots[1]);
+                    break;
+                case 6:
+                    add_undefined_function_object((Object *)entry->data.slots[2]);
+                    break;
+                case 7:
+                case 17:
+                    add_undefined_function_object((Object *)entry->data.slots[1]);
+                    break;
+                case 8:
+                    add_undefined_function_object((Object *)entry->data.slots[2]);
+                    break;
+                case 9:
+                    add_undefined_function_object((Object *)entry->data.slots[1]);
+                    break;
+                case 10:
+                case 11:
+                    add_undefined_function_object((Object *)entry->data.slots[1]);
+                    break;
+                case 12:
+                    add_undefined_function_object((Object *)entry->data.slots[1]);
+                    break;
+                case 13:
+                case 14:
+                case 15:
+                case 16:
+                    break;
+                default:
+                    CError_FATAL(3597);
+            }
+            entry = entry->next;
+        } while (entry != NULL);
+    }
+}
+
+/* Objects queued for inline processing. */
+
+void add_undefined_function_object(Object *object)
+{
+    InlineObjectEntry *entry;
+    InlineObjectEntry *newEntry;
+    if (!(((object->datatype == DFUNC) || (object->datatype == DVFUNC)) && ((object->flags & OBJECT_DEFINED) == 0) &&
+          ((object->type->type != TYPEFUNC) || ((((TypeFunc *)object->type)->flags & 0x400) == 0)))) {
+        return;
+    }
+    entry = undefined_function_objects;
+    if (undefined_function_objects != NULL) {
+        do {
+            if (entry->object == object) {
+                return;
+            }
+            entry = entry->next;
+        } while (entry != NULL);
+    }
+    newEntry = (InlineObjectEntry *)CompilerTools_AllocatePool(sizeof(InlineObjectEntry));
+    newEntry->object = object;
+    newEntry->next = undefined_function_objects;
+    undefined_function_objects = newEntry;
+    if ((object->qual & Q_INLINE) != 0 && (object->u.func.u != NULL)) {
+        collect_undefined_function_objects(object->u.func.u);
+    }
+}
+
 /* Record allocated by the original: 0x20 bytes, fields at 0x00 (next),
  * 0x04 (function object), 0x08 / 0x0c (two stored pointers) and a byte
  * state at 0x1e. */
@@ -734,84 +1298,35 @@ void CInline_AddFunctionPrecNode(Object *func, TypeClass *value, FOI *key, PrepT
     }
 }
 
-/* 0x573204: file name string */
-
-static inline SInt32 CInline_FindIndex(UInt32 target, Statement **list)
+void generate_inline_code(Object *object, CInlineInfo *input, char mode)
 {
-    SInt32 i;
-    Statement *p;
-    UInt32 t = target;
+    char savedFlag;
+    Statement statement;
+    CScopeSave savedScope;
 
-    i = 0;
-    p = *list;
-    while (p) {
-        if ((UInt32)p == t)
-            return i;
-        p = p->next;
-        i++;
+    if (cprep_cu[0xe0] == 1) {
+        return;
     }
-    CError_FATAL(2820);
-    return 0;
-}
-
-static inline void CInline_StoreIndex(IStmtRec *sp, Statement **list, Statement *target)
-{
-    sp->data.targetIndex = (SInt16)CInline_FindIndex((UInt32)target, list);
-}
-
-static inline void CInline_SaveVars(ObjectList *ol, CInlineVar **cursor, UInt8 first, CInlineVar *initial)
-{
-    Object *o;
-    UInt8 v;
-    *cursor = initial;
-
-    for (; ol != NULL; ol = ol->next) {
-        if (first || ol->object.value->datatype == DLOCAL) {
-            (*cursor)->name = ol->object.value->name;
-            (*cursor)->type = ol->object.value->type;
-            (*cursor)->qual = ol->object.value->qual;
-            o = ol->object.value;
-            switch ((SInt16)o->sclass) {
-                case 0:
-                    v = 0;
-                    break;
-                case 0x101:
-                    v = 1;
-                    break;
-                case 0x100:
-                    v = 2;
-                    break;
-                default:
-                    CError_FATAL(1068);
-            }
-            if (o->flags & 2)
-                v |= 0x80;
-            (*cursor)->storageFlags = v;
-            (*cursor)->used = 0;
-            (*cursor)->dirty = first;
-            (*cursor)++;
+    if (input == NULL) {
+        return;
+    }
+    fn_0048b2c0();
+    CScope_SetFunctionScope(object, &savedScope);
+    CFunc_FuncGenSetup(&statement, object);
+    CInline_ReconstructFunction(object, input, &statement);
+    savedFlag = copts.filesyminfo;
+    if ((copts.fbf != 0) || ((data_00587184 == 0 && (function_token_line == 0)))) {
+        copts.filesyminfo = 0;
+    }
+    inline_statement_list(&statement);
+    if (anyerrors == 0) {
+        if (copts.filesyminfo != 0) {
+            fn_0043f1f0(&function_fileinfo);
         }
+        CodeGen_Generator(&statement, object, mode, 0);
     }
-}
-
-static inline ENode *CInline_GetName0(ENode *name)
-{
-    evalMode = 2;
-    memo_list = NULL;
-    alloc_state = 1;
-    return CInline_00513240(name);
-}
-
-static inline ENode *CInline_GetName(ENode *name)
-{
-    return CInline_GetName0(name);
-}
-
-static inline void SaveName(IStmtRec *sp, ENode *name)
-{
-    ENode *str = CInline_GetName(name);
-    CInline_005130b0(str, 0);
-    sp->data.operand = str;
+    CScope_RestoreScope(&savedScope);
+    copts.filesyminfo = savedFlag;
 }
 
 void CInline_ReconstructFunction(Object *function, CInlineInfo *rec, Statement *out)
@@ -1120,67 +1635,6 @@ void CInline_SaveInfo(CInlineInfo *out, Statement *list, Object *function)
 
 #pragma opt_lifetimes off
 
-/* 0x573204, "CInline.c" */
-/* 0x58245e, register record array pointer */
-/* 0x582462, register record array pointer */
-
-/* Map an object reference to its scope slot.  Objects still bound to the
- * argument list come back as negative (0x80000000 | (i+1)) indices. */
-static inline SInt32 MapObj(SInt32 arg)
-{
-    SInt32 obj;
-    SInt32 i;
-    ObjectList *p;
-
-    obj = arg;
-    if (obj != 0) {
-        p = arguments, i = 0;
-        while (p != NULL) {
-            if ((SInt32)p->object.value == obj) {
-                data_0058245e[i].used = 1;
-                data_0058245e[i].dirty = 0;
-                return i + 0x80000001;
-            }
-            p = p->next;
-            i++;
-        }
-
-        p = locals, i = 0;
-        while (p != NULL) {
-            if (p->object.value->datatype == DLOCAL) {
-                if ((SInt32)p->object.value == obj)
-                    goto found;
-                i++;
-            }
-            p = p->next;
-        }
-        i = -1;
-    found:
-        CError_ASSERT(455, i >= 0);
-        data_00582462[i].used = 1;
-        return i + 1;
-    }
-    return 0;
-}
-
-/* Index of a node inside the inline argument list. */
-static inline SInt32 FindIndex(Statement *listp, SInt32 target)
-{
-    SInt16 i = 0;
-    Statement *p = listp->next;
-
-    while (p != NULL) {
-        if ((SInt32)p == target)
-            goto done;
-        p = p->next;
-        i++;
-    }
-    CError_FATAL(2820);
-    i = 0;
-done:
-    return i;
-}
-
 /* Inline records carry kind-dependent object, value, and index operands. */
 
 CException *CInline_005102f0(Statement *indexMap, Statement *info)
@@ -1284,6 +1738,104 @@ CException *CInline_005102f0(Statement *indexMap, Statement *info)
 }
 
 #pragma opt_lifetimes reset
+
+unsigned char fn_00511180(Object *function, Statement *statement)
+{
+    FuncArg *arg;
+    Boolean status;
+    unsigned char result;
+
+    status = CMachine_FunctionRequiresMemoryReturn((TypeFunc *)function->type);
+    if (status != 0) {
+        if (status != 1 || (((TypeFunc *)function->type)->functype->type == TYPECLASS &&
+                            CClass_Destructor((TypeClass *)((TypeFunc *)function->type)->functype) != NULL))
+            return 0;
+    }
+    for (arg = ((TypeFunc *)function->type)->args; arg != NULL; arg = arg->next) {
+        if (arg == &data_00583098)
+            return 0;
+        if (arg == &data_00584748)
+            break;
+        if (arg->type->type == TYPECLASS) {
+            if (CClass_Destructor((TypeClass *)arg->type) != NULL)
+                return 0;
+        }
+    }
+    result = 6;
+    for (; statement != NULL; statement = statement->next) {
+        if (statement->dobjstack != NULL)
+            return 3;
+        switch (statement->type) {
+            case ST_EXPRESSION:
+                break;
+            case ST_RETURN:
+                if (statement->next == NULL) {
+                    if (statement->expr.expression != NULL)
+                        break;
+                    if (((TypeFunc *)function->type)->functype == &stvoid)
+                        break;
+                }
+            default:
+                result = 3;
+                break;
+        }
+    }
+    return result;
+}
+
+void *create_inline_switch_data(Statement *base, Statement *classInfo)
+{
+    SwitchInfo *list;
+    ENode *name;
+    SwitchCase *node;
+    InlineSwitchData *result;
+    SInt16 count;
+
+    list =
+        classInfo->target.switchDescriptor /* create_inline_switch_data: ST_SWITCH stores its switch descriptor here */;
+
+    count = 0;
+    for (node = list->cases; node != NULL; node = node->next)
+        count++;
+
+    result = (InlineSwitchData *)galloc(count * 10 + 12);
+
+    name = gen_name(classInfo->expr.expression);
+    CInline_005130b0(name, 0);
+    result->expression = name;
+
+    result->defaultStatementIndex = CIB_FindIndex(base, list->defaultlabel->target.stmt);
+    result->valueType = list->sizetype;
+    result->caseCount = count;
+
+    count = 0;
+    for (node = list->cases; node != NULL; node = node->next) {
+        result->entries[count].statementIndex = CIB_FindIndex(base, node->label->target.stmt);
+        result->entries[count].caseValue = node->min;
+        count++;
+    }
+    return result;
+}
+
+/* Link used to traverse the inline list. */
+
+SInt16 CInline_GetStatementIndex(Statement *link, Statement *target)
+{
+    UInt16 index;
+
+    index = 0;
+    if (link != NULL) {
+        do {
+            if (link == target) {
+                return index;
+            }
+            link = link->next;
+            index = index + 1;
+        } while (link != NULL);
+    }
+    CError_FATAL(2820);
+    return 0;
+}
 
 void inline_statement_list(Statement *list)
 {
@@ -1505,21 +2057,6 @@ void CInline_005114e0(ENode *node)
     }
 }
 
-/* 0x5824b2 (its -64 preimage is the table at 0x582472) */
-#define CERROR_FILE ("CInline.c")
-
-static Object *CInline_MakeTemp(Type *t)
-{
-    Object *o;
-    o = CParser_NewLocalDataObject(NULL, 1);
-    o->name = CParser_GetUniqueName();
-    o->type = t;
-    o->qual = 0;
-    set_object_sclass(o, 0);
-    CFunc_SetupLocalVarInfo(o);
-    return o;
-}
-
 Statement *inline_statement(Statement *statement)
 {
     ENode *expression;
@@ -1611,6 +2148,7 @@ Statement *expand_inline_calls(Statement *stmt)
     }
     return stmt;
 }
+
 Statement *try_inline_statement(Statement *obj, char *flag)
 {
     CInlineInfo *rec;
@@ -1637,42 +2175,6 @@ Statement *try_inline_statement(Statement *obj, char *flag)
     }
     *flag = 1;
     return generate_inline_statements(t, obj, rec, obj->expr.expression, v, NULL, 0);
-}
-
-static ENode *gen_expr(void *x)
-{
-    evalMode = 4;
-    memo_list = NULL;
-    alloc_state = 0;
-    return fold_constants(CInline_00513240(x));
-}
-
-static ENode *gen_expr_save(void *x)
-{
-    UInt8 v1;
-    UInt8 v0;
-    struct MemoNode *v2;
-
-    v1 = alloc_state;
-    alloc_state = 1;
-    v0 = evalMode;
-    evalMode = 4;
-    v2 = memo_list;
-    memo_list = NULL;
-    x = CInline_00513240(x);
-    alloc_state = v1;
-    evalMode = v0;
-    memo_list = v2;
-    return (ENode *)x;
-}
-
-static void add_chain(ChainRec **head, Statement *node, IStmtRec *ent)
-{
-    ChainRec *r = (ChainRec *)CompilerTools_AllocatePool(12);
-    r->next = *head;
-    *head = r;
-    r->node = node;
-    r->ent = ent;
 }
 
 Statement *generate_inline_statements(Object *function, Statement *tail, CInlineInfo *args, ENode *result,
@@ -1840,14 +2342,6 @@ Statement *generate_inline_statements(Object *function, Statement *tail, CInline
     return tail;
 }
 
-/* 0x58246a, fixup list head */
-
-static inline void CopyStatementExpression(CException *copy, CException *source, char copyExpressions)
-{
-    copy->data.slots[0] = CInline_GetObjectByIndex(source->data.operands[0].value, copyExpressions);
-    copy->data.slots[1] = source->data.slots[1];
-}
-
 CException *copy_exception_actions(IStmtRec *parent, char copyExpressions)
 {
     CException *source;
@@ -1947,6 +2441,48 @@ CException *copy_exception_actions(IStmtRec *parent, char copyExpressions)
         }
     }
     return copies;
+}
+
+Object *CInline_GetObjectByIndex(UInt32 index, char useTable)
+{
+    ObjectList *node;
+    ObjectList *localNode;
+    if (index != 0) {
+        if (index & 0x80000000u) {
+            index = (index & 0x7fffffffu) - 1;
+            if ((unsigned char)useTable != 0) {
+                if (data_0058245a[index].var == NULL)
+                    CError_FATAL(2085);
+                return data_0058245a[index].var;
+            } else {
+                node = arguments;
+                while (node != NULL) {
+                    if (index == 0)
+                        return node->object.value;
+                    node = node->next;
+                    index--;
+                }
+                CError_FATAL(2089);
+            }
+        } else {
+            index--;
+            if ((unsigned char)useTable != 0) {
+                if (data_00582456[index] == NULL)
+                    CError_FATAL(2096);
+                return data_00582456[index];
+            } else {
+                localNode = locals;
+                while (localNode != NULL) {
+                    if (index == 0)
+                        return localNode->object.value;
+                    localNode = localNode->next;
+                    index--;
+                }
+                CError_FATAL(2100);
+            }
+        }
+    }
+    return NULL;
 }
 
 void reconstruct_switch_info(Statement *statement, IStmtRec *record, CLabel **labelTable)
@@ -2107,15 +2643,6 @@ ENode *inline_expression(ENode *node)
     return node;
 }
 
-/* 0x582468, 16-bit counter */
-/* 0x584278, 16-bit flag */
-/* 0x5842d6, byte flag */
-
-static inline SInt16 inline_statement_count(const CInlineInfo *info)
-{
-    return info->nstmts;
-}
-
 Boolean can_inline(ENode *node)
 {
     Object *function = node->data.objref;
@@ -2138,44 +2665,6 @@ Boolean can_inline(ENode *node)
         return 1;
     }
     return 0;
-}
-
-static inline ENode *InlineArgument(ENode *expr)
-{
-    char savedFlag = alloc_state;
-    char savedMode;
-    struct MemoNode *savedState;
-    ENode *result;
-    alloc_state = 1;
-    savedMode = evalMode;
-    evalMode = 4;
-    savedState = memo_list;
-    memo_list = NULL;
-    result = CInline_00513240(expr);
-    alloc_state = savedFlag;
-    evalMode = savedMode;
-    memo_list = savedState;
-    return result;
-}
-
-static inline ENode *InlineWrapResult(ENode *expr)
-{
-    ENode *wrapped;
-    if (expr->type == EFORCELOAD) {
-        wrapped = expr;
-    } else {
-        data_005824c3 = 0;
-        CExpr_SearchExprTree(expr, fn_005129f0, 3, 4, 54, 55);
-        if (data_005824c3 == 0) {
-            wrapped = expr;
-        } else {
-            wrapped = (ENode *)CompilerTools_AllocatePool(sizeof(ENode));
-            *wrapped = *expr;
-            wrapped->type = EFORCELOAD;
-            wrapped->data.monadic = expr;
-        }
-    }
-    return wrapped;
 }
 
 ENode *inline_call_expression(ENode *expr)
@@ -2267,27 +2756,6 @@ void fn_005129f0(ENode *expr)
 {
     data_005824c3 = 1U;
     return;
-}
-void forward_objref(ENode *expr)
-{
-    Object *object;
-    object = expr->data.objref;
-    add_undefined_function_object(object);
-}
-
-/* 0x573204, "CInline.c" */
-
-/* Create the Object representing one inlined variable. */
-static Object *NewInlineVar(Type *type, SInt16 offset, UInt8 info)
-{
-    Object *obj = CParser_NewLocalDataObject(NULL, 1);
-
-    obj->name = CParser_GetUniqueName();
-    obj->type = type;
-    obj->qual = offset;
-    set_object_sclass(obj, info);
-    CFunc_SetupLocalVarInfo(obj);
-    return obj;
 }
 
 ENode *setup_inline_locals_and_arguments(Object *function, CInlineInfo *inlineInfo, ENodeList *arguments)
@@ -2391,25 +2859,6 @@ ENode *setup_inline_locals_and_arguments(Object *function, CInlineInfo *inlineIn
     return initializers;
 }
 
-/* 0x573204, "CInline.c" */
-
-/* Copy the node if it is a constant object reference. */
-static ENode *CInline_CopyConst(ENode *e)
-{
-    ENode *r;
-
-    switch (e->type) {
-        case EOBJREF:
-            r = (ENode *)CompilerTools_AllocatePool(sizeof(ENode));
-            *r = *e;
-            return r;
-        case EPRECOMP:
-            CError_FATAL(1136);
-            break;
-    }
-    return NULL;
-}
-
 ENode *copy_result_reference(ENode *e)
 {
     ENodeList *args;
@@ -2484,6 +2933,27 @@ Object *create_local_object(Type *type, unsigned int qual, unsigned int storageC
     return object;
 }
 
+void set_object_sclass(Object *object, UInt8 kind)
+{
+    if (kind & 0x80) {
+        object->flags |= OBJECT_FLAGS_2;
+        kind &= 0x7f;
+    }
+    switch (kind) {
+        case 0:
+            object->sclass = TK_EOF;
+            break;
+        case 1:
+            object->sclass = TK_REGISTER;
+            break;
+        case 2:
+            object->sclass = TK_AUTO;
+            break;
+        default:
+            CError_FATAL(1093);
+    }
+}
+
 ENode *fn_00513040(ENode *expr, UInt8 mode)
 {
     evalMode = mode;
@@ -2505,316 +2975,6 @@ ENode *fn_00513040(ENode *expr, UInt8 mode)
             CInline_005130b0(expr, 0);
     }
     return expr;
-}
-
-unsigned char fn_0050ebc0(void)
-{
-    CPrecNode *node;
-
-    if (anyerrors == 0U) {
-        for (node = pending_prec_nodes; node != NULL; node = node->next) {
-            if (node->kind == 0U) {
-                return 0;
-            }
-        }
-    }
-    return 1;
-}
-
-/* Linked entries visited by the inline traversal. */
-
-void add_undefined_exception_function_objects(CException *entry)
-{
-    if (entry != NULL) {
-        do {
-            switch (entry->kind) {
-                case 1:
-                    add_undefined_function_object(entry->data.local.dtor);
-                    break;
-                case 2:
-                    add_undefined_function_object(entry->data.local_cond.dtor);
-                    break;
-                case 3:
-                    add_undefined_function_object(entry->data.local.dtor);
-                    break;
-                case 4:
-                    add_undefined_function_object((Object *)entry->data.slots[1]);
-                    break;
-                case 5:
-                    add_undefined_function_object((Object *)entry->data.slots[1]);
-                    break;
-                case 6:
-                    add_undefined_function_object((Object *)entry->data.slots[2]);
-                    break;
-                case 7:
-                case 17:
-                    add_undefined_function_object((Object *)entry->data.slots[1]);
-                    break;
-                case 8:
-                    add_undefined_function_object((Object *)entry->data.slots[2]);
-                    break;
-                case 9:
-                    add_undefined_function_object((Object *)entry->data.slots[1]);
-                    break;
-                case 10:
-                case 11:
-                    add_undefined_function_object((Object *)entry->data.slots[1]);
-                    break;
-                case 12:
-                    add_undefined_function_object((Object *)entry->data.slots[1]);
-                    break;
-                case 13:
-                case 14:
-                case 15:
-                case 16:
-                    break;
-                default:
-                    CError_FATAL(3597);
-            }
-            entry = entry->next;
-        } while (entry != NULL);
-    }
-}
-
-/* Objects queued for inline processing. */
-
-void add_undefined_function_object(Object *object)
-{
-    InlineObjectEntry *entry;
-    InlineObjectEntry *newEntry;
-    if (!(((object->datatype == DFUNC) || (object->datatype == DVFUNC)) && ((object->flags & OBJECT_DEFINED) == 0) &&
-          ((object->type->type != TYPEFUNC) || ((((TypeFunc *)object->type)->flags & 0x400) == 0)))) {
-        return;
-    }
-    entry = undefined_function_objects;
-    if (undefined_function_objects != NULL) {
-        do {
-            if (entry->object == object) {
-                return;
-            }
-            entry = entry->next;
-        } while (entry != NULL);
-    }
-    newEntry = (InlineObjectEntry *)CompilerTools_AllocatePool(sizeof(InlineObjectEntry));
-    newEntry->object = object;
-    newEntry->next = undefined_function_objects;
-    undefined_function_objects = newEntry;
-    if ((object->qual & Q_INLINE) != 0 && (object->u.func.u != NULL)) {
-        collect_undefined_function_objects(object->u.func.u);
-    }
-}
-
-void generate_inline_code(Object *object, CInlineInfo *input, char mode)
-{
-    char savedFlag;
-    Statement statement;
-    CScopeSave savedScope;
-
-    if (cprep_cu[0xe0] == 1) {
-        return;
-    }
-    if (input == NULL) {
-        return;
-    }
-    fn_0048b2c0();
-    CScope_SetFunctionScope(object, &savedScope);
-    CFunc_FuncGenSetup(&statement, object);
-    CInline_ReconstructFunction(object, input, &statement);
-    savedFlag = copts.filesyminfo;
-    if ((copts.fbf != 0) || ((data_00587184 == 0 && (function_token_line == 0)))) {
-        copts.filesyminfo = 0;
-    }
-    inline_statement_list(&statement);
-    if (anyerrors == 0) {
-        if (copts.filesyminfo != 0) {
-            fn_0043f1f0(&function_fileinfo);
-        }
-        CodeGen_Generator(&statement, object, mode, 0);
-    }
-    CScope_RestoreScope(&savedScope);
-    copts.filesyminfo = savedFlag;
-}
-
-unsigned char fn_00511180(Object *function, Statement *statement)
-{
-    FuncArg *arg;
-    Boolean status;
-    unsigned char result;
-
-    status = CMachine_FunctionRequiresMemoryReturn((TypeFunc *)function->type);
-    if (status != 0) {
-        if (status != 1 || (((TypeFunc *)function->type)->functype->type == TYPECLASS &&
-                            CClass_Destructor((TypeClass *)((TypeFunc *)function->type)->functype) != NULL))
-            return 0;
-    }
-    for (arg = ((TypeFunc *)function->type)->args; arg != NULL; arg = arg->next) {
-        if (arg == &data_00583098)
-            return 0;
-        if (arg == &data_00584748)
-            break;
-        if (arg->type->type == TYPECLASS) {
-            if (CClass_Destructor((TypeClass *)arg->type) != NULL)
-                return 0;
-        }
-    }
-    result = 6;
-    for (; statement != NULL; statement = statement->next) {
-        if (statement->dobjstack != NULL)
-            return 3;
-        switch (statement->type) {
-            case ST_EXPRESSION:
-                break;
-            case ST_RETURN:
-                if (statement->next == NULL) {
-                    if (statement->expr.expression != NULL)
-                        break;
-                    if (((TypeFunc *)function->type)->functype == &stvoid)
-                        break;
-                }
-            default:
-                result = 3;
-                break;
-        }
-    }
-    return result;
-}
-
-static SInt16 CIB_FindIndex(Statement *p, Statement *target)
-{
-    SInt16 i = 0;
-    while (p != NULL) {
-        if (p == target)
-            return i;
-        p = p->next;
-        i++;
-    }
-    CError_FATAL(2820);
-    return 0;
-}
-
-static ENode *gen_name(ENode *x)
-{
-    evalMode = 2;
-    memo_list = NULL;
-    alloc_state = 1;
-    return CInline_00513240(x);
-}
-
-void *create_inline_switch_data(Statement *base, Statement *classInfo)
-{
-    SwitchInfo *list;
-    ENode *name;
-    SwitchCase *node;
-    InlineSwitchData *result;
-    SInt16 count;
-
-    list =
-        classInfo->target.switchDescriptor /* create_inline_switch_data: ST_SWITCH stores its switch descriptor here */;
-
-    count = 0;
-    for (node = list->cases; node != NULL; node = node->next)
-        count++;
-
-    result = (InlineSwitchData *)galloc(count * 10 + 12);
-
-    name = gen_name(classInfo->expr.expression);
-    CInline_005130b0(name, 0);
-    result->expression = name;
-
-    result->defaultStatementIndex = CIB_FindIndex(base, list->defaultlabel->target.stmt);
-    result->valueType = list->sizetype;
-    result->caseCount = count;
-
-    count = 0;
-    for (node = list->cases; node != NULL; node = node->next) {
-        result->entries[count].statementIndex = CIB_FindIndex(base, node->label->target.stmt);
-        result->entries[count].caseValue = node->min;
-        count++;
-    }
-    return result;
-}
-
-/* Link used to traverse the inline list. */
-
-SInt16 CInline_GetStatementIndex(Statement *link, Statement *target)
-{
-    UInt16 index;
-
-    index = 0;
-    if (link != NULL) {
-        do {
-            if (link == target) {
-                return index;
-            }
-            link = link->next;
-            index = index + 1;
-        } while (link != NULL);
-    }
-    CError_FATAL(2820);
-    return 0;
-}
-
-Object *CInline_GetObjectByIndex(UInt32 index, char useTable)
-{
-    ObjectList *node;
-    ObjectList *localNode;
-    if (index != 0) {
-        if (index & 0x80000000u) {
-            index = (index & 0x7fffffffu) - 1;
-            if ((unsigned char)useTable != 0) {
-                if (data_0058245a[index].var == NULL)
-                    CError_FATAL(2085);
-                return data_0058245a[index].var;
-            } else {
-                node = arguments;
-                while (node != NULL) {
-                    if (index == 0)
-                        return node->object.value;
-                    node = node->next;
-                    index--;
-                }
-                CError_FATAL(2089);
-            }
-        } else {
-            index--;
-            if ((unsigned char)useTable != 0) {
-                if (data_00582456[index] == NULL)
-                    CError_FATAL(2096);
-                return data_00582456[index];
-            } else {
-                localNode = locals;
-                while (localNode != NULL) {
-                    if (index == 0)
-                        return localNode->object.value;
-                    localNode = localNode->next;
-                    index--;
-                }
-                CError_FATAL(2100);
-            }
-        }
-    }
-    return NULL;
-}
-
-void set_object_sclass(Object *object, UInt8 kind)
-{
-    if (kind & 0x80) {
-        object->flags |= OBJECT_FLAGS_2;
-        kind &= 0x7f;
-    }
-    switch (kind) {
-        case 0:
-            object->sclass = TK_EOF;
-            break;
-        case 1:
-            object->sclass = TK_REGISTER;
-            break;
-        case 2:
-            object->sclass = TK_AUTO;
-            break;
-        default:
-            CError_FATAL(1093);
-    }
 }
 
 void CInline_005130b0(ENode *node, Boolean flag)
@@ -2953,87 +3113,6 @@ void CInline_005130b0(ENode *node, Boolean flag)
                 CError_FATAL(1021);
         }
     }
-}
-
-static SInt32 CInline_Memo(ENode *key)
-{
-    ENode *k;
-    MemoNode *m;
-    k = key, m = memo_list;
-    for (; m != NULL; m = m->next)
-        if (m->key == k)
-            return m->val;
-    (m = (MemoNode *)CompilerTools_AllocatePool(12))->next = memo_list;
-    memo_list = m;
-    m->key = key;
-    m->val = CParser_GetUniqueID();
-    {
-        SInt32 result = m->val;
-        return result;
-    }
-}
-
-static SInt32 MemoFirst(ENode *key)
-{
-    MemoNode *fresh;
-    MemoNode *m;
-    ENode *k;
-    k = key, m = memo_list;
-    for (; m; m = m->next)
-        if (m->key == k)
-            return m->val;
-    fresh = (MemoNode *)CompilerTools_AllocatePool(12);
-    fresh->next = memo_list;
-    memo_list = fresh;
-    fresh->key = key;
-    fresh->val = CParser_GetUniqueID();
-    return fresh->val;
-}
-static ENode *get_input(SInt32 index)
-{
-    return data_0058245a[index].expr;
-}
-static ENode *adjust(ENode *f, ENode *e)
-{
-    Type *et;
-    Type *ft;
-    ENode *r = f;
-    ft = f->rtype;
-    et = e->rtype;
-    if (ft != et) {
-        if (ft->type == TYPEINT && et->type == TYPEINT)
-            r = makemonadicnode(r, 0x30);
-        r->rtype = e->rtype;
-    }
-    return r;
-}
-
-/* Payload copied by the ENEWEXCEPTIONARRAY expression case. */
-
-static inline SInt16 inline_member_index(SInt32 key)
-{
-    Statement *entry = inline_statements;
-    SInt16 index = 0;
-    for (; entry != NULL; entry = entry->next, index++)
-        if (entry->type == ST_LABEL && ((SInt32 *)entry->target.label)[2] == key)
-            return index;
-    CError_FATAL(629);
-    return 0;
-}
-
-static inline void inline_local_index(Object *object, int *index)
-{
-    ObjectList *local = locals;
-    *index = 0;
-    while (local != NULL) {
-        if (local->object.value->datatype == DLOCAL) {
-            if (local->object.value == object)
-                return;
-            (*index)++;
-        }
-        local = local->next;
-    }
-    *index = -1;
 }
 
 ENode *CInline_00513240(ENode *expr)
@@ -3331,39 +3410,6 @@ ENodeList *copy_enode_list(ENodeList *values)
     return head;
 }
 
-static inline int FindInlineObjectIndex(void *object)
-{
-    ObjectList *candidate;
-    int index;
-
-    candidate = locals;
-    for (index = 0; candidate != NULL; candidate = candidate->next) {
-        if (candidate->object.value->datatype == DLOCAL) {
-            if (candidate->object.value == object)
-                return index;
-            index++;
-        }
-    }
-    return -1;
-}
-
-static inline Boolean InlineObjectModifiable(Object *obj)
-{
-    if (obj->datatype == DLOCAL && !(obj->flags & 2))
-        return 0;
-    if ((signed char)obj->type->type >= 11) {
-        if (((TypePointer *)obj->type)->qual & Q_CONST)
-            return 0;
-    } else if (obj->qual & Q_CONST)
-        return 0;
-    return 1;
-}
-
-static inline ENode *CInline_ArrayInitializer(ENode *expr)
-{
-    return ((ENodeList *)expr->data.newexception.initexpr)->node;
-}
-
 Boolean CInline_00513910(ENode *expr)
 {
     Object *object;
@@ -3482,36 +3528,6 @@ unsigned int CInline_GetObjectIndex(void *object)
         return index + 1;
     }
     return 0;
-}
-void make_auto_generated_method(Object *func)
-{
-    TypeClass *tclass;
-
-    CError_ASSERT(4062, TYPE_METHOD(func->type)->flags & FUNC_AUTO_GENERATED);
-    CError_ASSERT(4063, TYPE_METHOD(func->type)->flags & FUNC_METHOD);
-
-    tclass = TYPE_METHOD(func->type)->theclass;
-
-    if (func == CClass_DefaultConstructor(tclass)) {
-        if (func->u.func.defargdata != NULL)
-            CABI_MakeDefaultArgConstructor(tclass, func);
-        else
-            CABI_GenerateClassFunction(tclass, func);
-        return;
-    }
-    if (func == CClass_CopyConstructor(tclass)) {
-        CABI_GenClassFunction(tclass, func);
-        return;
-    }
-    if (func == CClass_AssignmentOperator(tclass)) {
-        CABI_MakeDefaultConstructor(tclass, func);
-        return;
-    }
-    if (func == CClass_Destructor(tclass)) {
-        CABI_MakeDefaultDestructor(tclass, func);
-        return;
-    }
-    CError_FATAL(4097);
 }
 
 ENode *fold_constants(ENode *node)

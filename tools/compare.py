@@ -236,7 +236,18 @@ def resolve_function(symbols, sections, symbol_name, target_address, addresses, 
                              and s["value"] > dest["value"]), default=len(literal))
             text = literal[dest["value"]:following].split(b"\0", 1)[0]
             own = bool(text) and all(32 <= c < 127 for c in text) and not pe.contains(addresses[dest["name"]], text)
-        if dest["name"] in addresses and not own:
+        # (a string can occur more than once: of this object's, the copy the original's own instruction refers to,
+        # when the string is there)
+        referred = None
+        if (dest["storage"] == 3 and dest["section"] > 0 and not sections[dest["section"] - 1].get("code") and kind == 6
+                and target_size and local + 4 <= len(original)):
+            text = sections[dest["section"] - 1]["data"][dest["value"]:].split(b"\0", 1)[0]
+            there = (struct.unpack_from("<I", original, local)[0] - addend) & 0xFFFFFFFF
+            if text and all(c in (9, 10, 13) or 32 <= c < 127 for c in text) and pe.contains(there, text + b"\0"):
+                referred = there
+        if referred is not None:
+            address = referred
+        elif dest["name"] in addresses and not own:
             address = addresses[dest["name"]]
         elif c_symbol(dest["name"]) in addresses and not own:
             address = addresses[c_symbol(dest["name"])]

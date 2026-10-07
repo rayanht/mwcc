@@ -28,61 +28,16 @@ static inline ByteQuad *fileCodeValue(unsigned char (*fileCode)[4])
     return (ByteQuad *)fileCode;
 }
 
-int set_file_code(FTYPE_T *opt, char *arg)
+int return_true(void)
 {
-    ByteQuad fileCode = {' ', ' ', ' ', ' '};
-    ByteQuad current, value;
-    int length = 0;
-    char *originalArg = arg;
-
-    while (*arg && length < 4) {
-        length++;
-        fileCode.bytes[4 - length] = *arg;
-        arg++;
-    }
-    if (*arg) {
-        Parameter_ForwardVarArgs(8, originalArg);
-        return 0;
-    }
-    current.bytes[0] = fileCodeStorage(opt)->bytes[0];
-    current.bytes[1] = fileCodeStorage(opt)->bytes[1];
-    current.bytes[2] = fileCodeStorage(opt)->bytes[2];
-    current.bytes[3] = fileCodeStorage(opt)->bytes[3];
-    value.bytes[0] = fileCodeValue(&fileCode.bytes)->bytes[0];
-    value.bytes[1] = fileCodeValue(&fileCode.bytes)->bytes[1];
-    value.bytes[2] = fileCodeValue(&fileCode.bytes)->bytes[2];
-    value.bytes[3] = fileCodeValue(&fileCode.bytes)->bytes[3];
-    current = value;
-    fileCodeStorage(opt)->bytes[0] = current.bytes[0];
-    fileCodeStorage(opt)->bytes[1] = current.bytes[1];
-    fileCodeStorage(opt)->bytes[2] = current.bytes[2];
-    fileCodeStorage(opt)->bytes[3] = current.bytes[3];
     return 1;
 }
 
-unsigned int fn_004296d1(void)
+void fn_00428f61(unsigned int context, void **firstList, void **secondList, void **thirdList)
 {
-    return 0U;
-}
-
-int validate_id_arg(STRING_T *parm, char *arg, int x)
-{
-    char *s;
-    const char *extra;
-    if (copy_idparm_arg(parm, arg, x)) {
-        if (parm->base.which == 5)
-            extra = "$_";
-        else if (parm->base.which == 6)
-            extra = "_.$@?#";
-        for (s = arg; *s; s++) {
-            if (s == arg && Utils_IsDigit(*s))
-                forward_stack_varargs(10, arg);
-            if (!Utils_IsAlnum(*s) && !strchr(extra, *s))
-                forward_stack_varargs(11, arg, *s);
-        }
-        return 1;
-    }
-    return 0;
+    *firstList = NULL;
+    *secondList = NULL;
+    *thirdList = NULL;
 }
 
 unsigned int return_unsigned_zero(void)
@@ -90,224 +45,54 @@ unsigned int return_unsigned_zero(void)
     return 0U;
 }
 
-void get_on_off_option_info(OnOff *opt, char **name, int *flags, char **value)
+void format_num_parm(NumParm *parm, char **name, char **help, char **value)
 {
-    if (opt->name)
-        *name = opt->name;
-    else
-        *name = "off|on";
-    *flags = 0;
-    if (!opt->var)
+    unsigned long v;
+    unsigned short w;
+    *name = (char *)(v = 0);
+    if (parm->name)
+        *name = parm->name;
+    if (parm->size == 1) {
+        unsigned char c;
+        if (!*name)
+            *name = "byte";
+        if (parm->var)
+            c = *parm->var;
+        v = c;
+    } else if (parm->size == 2) {
+        if (!*name)
+            *name = "short";
+        if (parm->var) {
+            ((unsigned char *)&w)[0] = parm->var[0];
+            ((unsigned char *)&w)[1] = parm->var[1];
+        }
+        v = w;
+    } else if (parm->size == 4) {
+        if (!*name)
+            *name = "long";
+        if (parm->var) {
+            ((unsigned char *)&v)[0] = parm->var[0];
+            ((unsigned char *)&v)[1] = parm->var[1];
+            ((unsigned char *)&v)[2] = parm->var[2];
+            ((unsigned char *)&v)[3] = parm->var[3];
+        }
+    }
+    if (parm->size == 4) {
+        if (parm->lo != parm->hi)
+            sprintf(parm_help_buffer, "range 0x%x - 0x%x", parm->lo, parm->hi);
+        *help = parm_help_buffer;
+        v <= 0x10000 ? (void)sprintf(parm_format_buffer, "%u", v) : (void)sprintf(parm_format_buffer, "0x%x", v);
+    } else {
+        if (parm->lo != parm->hi)
+            sprintf(parm_help_buffer, "range %u - %u", parm->lo, parm->hi);
+        *help = parm_help_buffer;
+        sprintf(parm_format_buffer, "%u", v);
+    }
+    *value = parm_format_buffer;
+    if (!parm->var)
         *value = NULL;
-    else {
-        char c;
-        if (opt->var)
-            c = *opt->var;
-        if (!c)
-            *value = "on";
-        else
-            *value = "off";
-    }
-}
-
-void fn_0042a312(DumpTextRecord *record, char **firstOutput, char **secondOutput, int *status)
-{
-    char *firstText = NULL;
-    int secondText = 0;
-    int firstBody = 0;
-    int secondBody = 0;
-    int firstSuffix = 0;
-    int secondSuffix = 0;
-    char firstBuffer[1024];
-    char secondBuffer[1024];
-    char *firstCursor = firstBuffer;
-    char *secondCursor = secondBuffer;
-    int written;
-    char *lineEnd;
-
-    *firstCursor = 0;
-    *secondCursor = 0;
-    if (record->firstInput != NULL)
-        Parameter_DispatchByWhich(record->firstInput, (int *)&firstText, &firstBody, &firstSuffix);
-    if (record->secondInput != NULL)
-        Parameter_DispatchByWhich(record->secondInput, &secondText, &secondBody, &secondSuffix);
-
-    if (record->firstDetail != NULL && record->secondDetail != NULL) {
-        if (firstSuffix != 0) {
-            written = sprintf(secondCursor, "%s (default is %s), else %s", record->firstDetail, firstSuffix,
-                              record->secondDetail);
-            secondCursor += written;
-        } else {
-            written = sprintf(secondCursor, "%s, else %s", record->firstDetail, record->secondDetail);
-            secondCursor += written;
-        }
-    } else if (record->firstDetail != NULL) {
-        secondCursor += sprintf(secondCursor, "%s", record->firstDetail);
-        if (firstSuffix != 0)
-            secondCursor += sprintf(secondCursor, "; default is %s", firstSuffix);
-    } else if (record->secondDetail != NULL) {
-        secondCursor += sprintf(secondCursor, "nothing, else %s", record->secondDetail);
-    }
-
-    if (firstText != NULL) {
-        if (record->firstLabel != NULL) {
-            written = sprintf(firstCursor, "[%s]", record->firstLabel ? record->firstLabel : "param");
-            firstCursor += written;
-        } else if (firstBody != 0) {
-            lineEnd = strchr(firstText, '\n');
-            if (lineEnd == NULL)
-                lineEnd = firstText + strlen(firstText);
-            written = sprintf(firstCursor, "[%.*s]", lineEnd - firstText, firstText);
-            firstCursor += written;
-        } else {
-            written = sprintf(firstCursor, "[%s]", firstText);
-            firstCursor += written;
-            firstText = NULL;
-        }
-    }
-
-    if (firstBody != 0 || secondBody != 0) {
-        written = sprintf(firstCursor, "\n\t");
-        firstCursor += written;
-        written = sprintf(secondCursor, "\n\t");
-        secondCursor += written;
-        if (firstBody != 0) {
-            if (firstText != NULL) {
-                written = sprintf(firstCursor, "%s", firstText);
-                firstCursor += written;
-            }
-            if (firstBody != 0) {
-                written = sprintf(secondCursor, "%s", firstBody);
-                secondCursor += written;
-            }
-            if (secondBody != 0) {
-                written = sprintf(firstCursor, data_0054dbc4);
-                firstCursor += written;
-                written = sprintf(secondCursor, data_0054dbc4);
-                secondCursor += written;
-            }
-        }
-
-        if (secondBody != 0) {
-            if (secondText != 0)
-                written = sprintf(firstCursor, "%s", secondText);
-            else
-                written = sprintf(firstCursor, "(if blank)", secondText);
-            firstCursor += written;
-            if (secondBody != 0) {
-                written = sprintf(secondCursor, "%s", secondBody);
-                secondCursor += written;
-            }
-            written = sprintf(firstCursor, "\n");
-            firstCursor += written;
-            written = sprintf(secondCursor, "\n");
-            secondCursor += written;
-        }
-
-        written = sprintf(firstCursor, data_0054dbd8);
-        firstCursor += written;
-        written = sprintf(secondCursor, data_0054dbd8);
-        secondCursor += written;
-    }
-
-    if (firstCursor != firstBuffer) {
-        strcpy(data_0054da38, firstBuffer);
-        *firstOutput = data_0054da38;
-    } else {
-        *firstOutput = NULL;
-    }
-    if (secondCursor != secondBuffer) {
-        strcpy(parm_help_buffer, secondBuffer);
-        *secondOutput = parm_help_buffer;
-    } else {
-        *secondOutput = NULL;
-    }
-    *status = 0;
-}
-
-void push_argument_option(char *argument)
-{
-    Option_Push(4, argument, NULL);
-}
-
-int is_mask_entry_unchanged(MaskEntry *entry)
-{
-    if (entry->width == 1) {
-        unsigned char value = entry->value.b;
-        unsigned char mask = entry->mask.b;
-        unsigned char current;
-        if (entry->addr)
-            current = *entry->addr;
-        return current == ((current & ~mask) | value);
-    } else if (entry->width == 2) {
-        unsigned short value = entry->value.w;
-        unsigned short mask = entry->mask.w;
-        union {
-            unsigned short word;
-            unsigned char bytes[2];
-        } current;
-        if (entry->addr) {
-            ((BytePair *)current.bytes)->bytes[0] = entry->addr[0];
-            ((BytePair *)current.bytes)->bytes[1] = entry->addr[1];
-        }
-        return current.word == ((current.word & ~mask) | value);
-    } else {
-        unsigned long value = entry->value.l;
-        unsigned long mask = entry->mask.l;
-        union {
-            unsigned long word;
-            unsigned char bytes[4];
-        } current;
-        if (entry->addr) {
-            ((ByteQuad *)current.bytes)->bytes[0] = entry->addr[0];
-            ((ByteQuad *)current.bytes)->bytes[1] = entry->addr[1];
-            ((ByteQuad *)current.bytes)->bytes[2] = entry->addr[2];
-            ((ByteQuad *)current.bytes)->bytes[3] = entry->addr[3];
-        }
-        return current.word == ((~mask & current.word) | value);
-    }
-}
-
-int xor_const_dest(ConstRec *constant)
-{
-    if (constant->kind == 1) {
-        UInt8 mask = (UInt8)constant->val.w;
-        constant->dest[0] ^= mask;
-    } else if (constant->kind == 2) {
-        typedef union {
-            SInt16 word;
-            UInt8 bytes[2];
-        } WordBytes;
-        SInt16 value = constant->val.w;
-        WordBytes destination, mask;
-        destination.bytes[0] = constant->dest[0];
-        destination.bytes[1] = constant->dest[1];
-        mask.bytes[0] = ((WordBytes *)&value)->bytes[0];
-        mask.bytes[1] = ((WordBytes *)&value)->bytes[1];
-        destination.word ^= mask.word;
-        constant->dest[0] = destination.bytes[0];
-        constant->dest[1] = destination.bytes[1];
-    } else {
-        typedef union {
-            SInt32 word;
-            UInt8 bytes[4];
-        } LongBytes;
-        LongBytes destination, mask;
-        destination.bytes[0] = constant->dest[0];
-        destination.bytes[1] = constant->dest[1];
-        destination.bytes[2] = constant->dest[2];
-        destination.bytes[3] = constant->dest[3];
-        mask.bytes[0] = ((LongBytes *)&constant->val)->bytes[0];
-        mask.bytes[1] = ((LongBytes *)&constant->val)->bytes[1];
-        mask.bytes[2] = ((LongBytes *)&constant->val)->bytes[2];
-        mask.bytes[3] = ((LongBytes *)&constant->val)->bytes[3];
-        destination.word ^= mask.word;
-        constant->dest[0] = destination.bytes[0];
-        constant->dest[1] = destination.bytes[1];
-        constant->dest[2] = destination.bytes[2];
-        constant->dest[3] = destination.bytes[3];
-    }
-    return 1;
+    if (parm->lo == parm->hi)
+        *help = NULL;
 }
 
 unsigned int fn_0042910d(void)
@@ -451,234 +236,66 @@ int fn_00429110(NumParm *record, char *cursor)
     return 1;
 }
 
-void fn_00428f61(unsigned int context, void **firstList, void **secondList, void **thirdList)
+void format_filecode_option(FTYPE_T *opt, char **name, int *flags, char **value)
 {
-    *firstList = NULL;
-    *secondList = NULL;
-    *thirdList = NULL;
-}
-
-int copy_idparm_arg(STRING_T *parm, char *arg, int x)
-{
-    int len = strlen(arg);
-    strncpy(parm->str, arg, parm->maxlen - 1);
-    if (parm->pstring)
-        CLIO_ConvertToPascalString(parm->str);
-    if (len > parm->maxlen) {
-        Parameter_ForwardVarArgs(9, arg, arg + len - 5, parm->maxlen - 1);
-        return 0;
-    }
-    return 1;
-}
-void zero_unsigned_outputs(int mode, unsigned int *firstOutput, unsigned int *secondOutput, unsigned int *thirdOutput)
-{
-    *secondOutput = 0U;
-    *firstOutput = 0U;
-    *thirdOutput = 0U;
-}
-void get_option_val_count_state(register OnOff *p, register char **out_val, register SInt32 *out_count,
-                                register char **out_state)
-{
-    char cc;
-    if (p->name != NULL)
-        *out_val = p->name;
+    if (opt->base.myname)
+        *name = opt->base.myname;
+    else if (opt->iscreator)
+        *name = "creator";
     else
-        *out_val = "on|off";
-    *out_count = 0;
-    if (p->var == NULL) {
-        *out_state = NULL;
-    } else {
-        if (p->var != NULL)
-            cc = *p->var;
-        if (cc != 0)
-            *out_state = "on";
-        else
-            *out_state = "off";
-    }
-}
-
-void zero_outputs(int selector, unsigned int *firstOutput, unsigned int *secondOutput, unsigned int *thirdOutput)
-{
-    *secondOutput = 0U;
-    *firstOutput = 0U;
-    *thirdOutput = 0U;
-}
-
-unsigned int get_unsigned_zero(void)
-{
-    return 0U;
-}
-
-unsigned int fn_0042a192(void)
-{
-    return 0U;
-}
-
-void invoke_float_parameter_callback(FloatParameterCallback *rec, float a, float b)
-{
-    rec->handler(&option_name, rec->arg, a, b);
-}
-
-unsigned int fn_00429896(void)
-{
-    return 0U;
-}
-int evaluate_conditional_branch(struct PARAM_Conditional *expr, char *a, int b)
-{
-    if (a)
-        return dispatch_param_by_which(expr->iftrue, a, b);
-    else if (expr->iffalse)
-        return dispatch_param_by_which(expr->iffalse, a, b);
-    return 1;
-}
-
-int dispatch_param_by_which(PARAM_T *param, char *a, int b)
-{
-    int result = 0;
-    if (!param)
-        Targets_ForwardVarArgsAndLongjmp("PARAM_T is NULL");
-    if (param->which >= 0 && param->which < 16)
-        result = data_0054dbdc[param->which](param, (int)a, b);
+        *name = "type";
+    if (!opt->fileCode)
+        *value = NULL;
     else {
-        Targets_ForwardVarArgsAndLongjmp("Unhandled PARAM_T (%d)", param->which);
-        result = 0;
+        char *p = parm_format_buffer;
+        unsigned int v = *opt->fileCode;
+        int i = 0;
+        *p++ = '\'';
+        for (; i < 4; i++) {
+            *p++ = v >> 24;
+            v <<= 8;
+        }
+        *p++ = '\'';
+        *p = 0;
+        *value = parm_format_buffer;
     }
-    return result;
 }
 
-unsigned int fn_004297bf(void)
+unsigned int fn_00429462(void)
 {
     return 0U;
 }
 
-int is_dest_unchanged_by_val_xor(ConstRec *parameter)
+int set_file_code(FTYPE_T *opt, char *arg)
 {
-    struct ValueBytes {
-        unsigned char low;
-        unsigned char high;
-    };
-    if (parameter->kind == 1) {
-        unsigned char mask = parameter->val.b;
-        unsigned char current;
-        if (parameter->dest)
-            current = *parameter->dest;
-        return current == (current ^ mask);
-    } else if (parameter->kind == 2) {
-        unsigned short mask = parameter->val.w;
-        unsigned short current;
-        if (parameter->dest) {
-            ((struct ValueBytes *)&current)->low = parameter->dest[0];
-            ((struct ValueBytes *)&current)->high = parameter->dest[1];
-        }
-        return current == (current ^ mask);
-    } else {
-        unsigned long mask = parameter->val.dw;
-        unsigned long current;
-        if (parameter->dest) {
-            ((struct ValueBytes *)&current)->low = parameter->dest[0];
-            ((struct ValueBytes *)&current)->high = parameter->dest[1];
-        }
-        return current == (current ^ mask);
-    }
-}
+    ByteQuad fileCode = {' ', ' ', ' ', ' '};
+    ByteQuad current, value;
+    int length = 0;
+    char *originalArg = arg;
 
-int const_matches_dest(ConstRec *constant)
-{
-    if (constant->kind == 1) {
-        unsigned char value = constant->val.b;
-        unsigned char current;
-        if (constant->dest)
-            current = *constant->dest;
-        return value == current;
-    } else if (constant->kind == 2) {
-        unsigned short value = constant->val.w;
-        struct WordBytes {
-            unsigned char low, high;
-        };
-        unsigned short current;
-        if (constant->dest) {
-            ((struct WordBytes *)&current)->low = constant->dest[0];
-            ((struct WordBytes *)&current)->high = constant->dest[1];
-        }
-        return value == current;
-    } else {
-        unsigned long value = constant->val.dw;
-        struct LongBytes {
-            unsigned char first, second, third, fourth;
-        };
-        unsigned long current;
-        if (constant->dest) {
-            ((struct LongBytes *)&current)->first = constant->dest[0];
-            ((struct LongBytes *)&current)->second = constant->dest[1];
-            ((struct LongBytes *)&current)->third = constant->dest[2];
-            ((struct LongBytes *)&current)->fourth = constant->dest[3];
-        }
-        return value == current;
+    while (*arg && length < 4) {
+        length++;
+        fileCode.bytes[4 - length] = *arg;
+        arg++;
     }
-}
-
-int set_on_off(OnOff *opt, char *arg, int flags)
-{
-    unsigned char on = (flags & 8) == 0;
-    if (!ClientGlue_CompareLowercaseStrings(arg, "off"))
-        *opt->var = on;
-    else if (!ClientGlue_CompareLowercaseStrings(arg, "on"))
-        *opt->var = !on;
-    else {
-        Parameter_ForwardVarArgs(12, arg);
+    if (*arg) {
+        Parameter_ForwardVarArgs(8, originalArg);
         return 0;
     }
+    current.bytes[0] = fileCodeStorage(opt)->bytes[0];
+    current.bytes[1] = fileCodeStorage(opt)->bytes[1];
+    current.bytes[2] = fileCodeStorage(opt)->bytes[2];
+    current.bytes[3] = fileCodeStorage(opt)->bytes[3];
+    value.bytes[0] = fileCodeValue(&fileCode.bytes)->bytes[0];
+    value.bytes[1] = fileCodeValue(&fileCode.bytes)->bytes[1];
+    value.bytes[2] = fileCodeValue(&fileCode.bytes)->bytes[2];
+    value.bytes[3] = fileCodeValue(&fileCode.bytes)->bytes[3];
+    current = value;
+    fileCodeStorage(opt)->bytes[0] = current.bytes[0];
+    fileCodeStorage(opt)->bytes[1] = current.bytes[1];
+    fileCodeStorage(opt)->bytes[2] = current.bytes[2];
+    fileCodeStorage(opt)->bytes[3] = current.bytes[3];
     return 1;
-}
-
-void format_num_parm(NumParm *parm, char **name, char **help, char **value)
-{
-    unsigned long v;
-    unsigned short w;
-    *name = (char *)(v = 0);
-    if (parm->name)
-        *name = parm->name;
-    if (parm->size == 1) {
-        unsigned char c;
-        if (!*name)
-            *name = "byte";
-        if (parm->var)
-            c = *parm->var;
-        v = c;
-    } else if (parm->size == 2) {
-        if (!*name)
-            *name = "short";
-        if (parm->var) {
-            ((unsigned char *)&w)[0] = parm->var[0];
-            ((unsigned char *)&w)[1] = parm->var[1];
-        }
-        v = w;
-    } else if (parm->size == 4) {
-        if (!*name)
-            *name = "long";
-        if (parm->var) {
-            ((unsigned char *)&v)[0] = parm->var[0];
-            ((unsigned char *)&v)[1] = parm->var[1];
-            ((unsigned char *)&v)[2] = parm->var[2];
-            ((unsigned char *)&v)[3] = parm->var[3];
-        }
-    }
-    if (parm->size == 4) {
-        if (parm->lo != parm->hi)
-            sprintf(parm_help_buffer, "range 0x%x - 0x%x", parm->lo, parm->hi);
-        *help = parm_help_buffer;
-        v <= 0x10000 ? (void)sprintf(parm_format_buffer, "%u", v) : (void)sprintf(parm_format_buffer, "0x%x", v);
-    } else {
-        if (parm->lo != parm->hi)
-            sprintf(parm_help_buffer, "range %u - %u", parm->lo, parm->hi);
-        *help = parm_help_buffer;
-        sprintf(parm_format_buffer, "%u", v);
-    }
-    *value = parm_format_buffer;
-    if (!parm->var)
-        *value = NULL;
-    if (parm->lo == parm->hi)
-        *help = NULL;
 }
 
 void format_string_name_help_value(STRING_T *parm, char **name, char **help, char **value)
@@ -701,15 +318,19 @@ void format_string_name_help_value(STRING_T *parm, char **name, char **help, cha
     }
 }
 
-int parse_on_off(OnOff *opt, char *arg, int flags)
+unsigned int fn_004295ca(void)
 {
-    unsigned char on = (flags & 8) == 0;
-    if (!ClientGlue_CompareLowercaseStrings(arg, "on"))
-        *opt->var = on;
-    else if (!ClientGlue_CompareLowercaseStrings(arg, "off"))
-        *opt->var = !on;
-    else {
-        Parameter_ForwardVarArgs(12, arg);
+    return 0U;
+}
+
+int copy_idparm_arg(STRING_T *parm, char *arg, int x)
+{
+    int len = strlen(arg);
+    strncpy(parm->str, arg, parm->maxlen - 1);
+    if (parm->pstring)
+        CLIO_ConvertToPascalString(parm->str);
+    if (len > parm->maxlen) {
+        Parameter_ForwardVarArgs(9, arg, arg + len - 5, parm->maxlen - 1);
         return 0;
     }
     return 1;
@@ -737,16 +358,197 @@ void get_string_name_help_value(STRING_T *parm, char **name, char **help, char *
     }
 }
 
-void format_setting_help(Setting *opt, char **help, int *a, int *b)
+unsigned int fn_004296d1(void)
 {
-    char *p = data_0054da38;
-    p += sprintf(p, "%s", opt->name ? opt->name : "var");
-    if ((opt->flags & 3) != 1)
-        p += sprintf(p, "%s=%s%s", (opt->flags & 2) ? "[" : "", opt->valuename ? opt->valuename : "...",
-                     (opt->flags & 2) ? "]" : "");
-    *help = data_0054da38;
-    *a = 0;
-    *b = 0;
+    return 0U;
+}
+
+int validate_id_arg(STRING_T *parm, char *arg, int x)
+{
+    char *s;
+    const char *extra;
+    if (copy_idparm_arg(parm, arg, x)) {
+        if (parm->base.which == 5)
+            extra = "$_";
+        else if (parm->base.which == 6)
+            extra = "_.$@?#";
+        for (s = arg; *s; s++) {
+            if (s == arg && Utils_IsDigit(*s))
+                forward_stack_varargs(10, arg);
+            if (!Utils_IsAlnum(*s) && !strchr(extra, *s))
+                forward_stack_varargs(11, arg, *s);
+        }
+        return 1;
+    }
+    return 0;
+}
+
+void get_option_val_count_state(register OnOff *p, register char **out_val, register SInt32 *out_count,
+                                register char **out_state)
+{
+    char cc;
+    if (p->name != NULL)
+        *out_val = p->name;
+    else
+        *out_val = "on|off";
+    *out_count = 0;
+    if (p->var == NULL) {
+        *out_state = NULL;
+    } else {
+        if (p->var != NULL)
+            cc = *p->var;
+        if (cc != 0)
+            *out_state = "on";
+        else
+            *out_state = "off";
+    }
+}
+
+unsigned int fn_004297bf(void)
+{
+    return 0U;
+}
+
+int parse_on_off(OnOff *opt, char *arg, int flags)
+{
+    unsigned char on = (flags & 8) == 0;
+    if (!ClientGlue_CompareLowercaseStrings(arg, "on"))
+        *opt->var = on;
+    else if (!ClientGlue_CompareLowercaseStrings(arg, "off"))
+        *opt->var = !on;
+    else {
+        Parameter_ForwardVarArgs(12, arg);
+        return 0;
+    }
+    return 1;
+}
+
+void get_on_off_option_info(OnOff *opt, char **name, int *flags, char **value)
+{
+    if (opt->name)
+        *name = opt->name;
+    else
+        *name = "off|on";
+    *flags = 0;
+    if (!opt->var)
+        *value = NULL;
+    else {
+        char c;
+        if (opt->var)
+            c = *opt->var;
+        if (!c)
+            *value = "on";
+        else
+            *value = "off";
+    }
+}
+
+unsigned int fn_00429896(void)
+{
+    return 0U;
+}
+
+int set_on_off(OnOff *opt, char *arg, int flags)
+{
+    unsigned char on = (flags & 8) == 0;
+    if (!ClientGlue_CompareLowercaseStrings(arg, "off"))
+        *opt->var = on;
+    else if (!ClientGlue_CompareLowercaseStrings(arg, "on"))
+        *opt->var = !on;
+    else {
+        Parameter_ForwardVarArgs(12, arg);
+        return 0;
+    }
+    return 1;
+}
+
+void get_filepath_name_flags_value(FILEPATH_T *opt, char **name, int *flags, int *value)
+{
+    char *unused = parm_help_buffer;
+    if (opt->base.myname)
+        *name = opt->base.myname;
+    else
+        *name = "filepath";
+    *flags = 0;
+    *value = (int)opt->defaultstr;
+}
+
+unsigned int fn_0042994d(void)
+{
+    return 0U;
+}
+
+int set_filepath(FILEPATH_T *parm, char *arg)
+{
+    OSSpec spec;
+    char path[0x104];
+    SInt32 err;
+    int len;
+    if (!*arg) {
+        *parm->filename = 0;
+        return 1;
+    }
+    if ((err = OS_MakeFileSpec(arg, &spec)) != 0) {
+        Parameter_ForwardVarArgs(0x12, arg, OS_GetErrText(err));
+        return 0;
+    }
+    OS_SpecToString(&spec, path, 0x104);
+    if (parm->fflags & 1) {
+        c2pstrcpy((unsigned char *)parm->filename, path);
+        return 1;
+    }
+    if ((len = strlen(path)) > parm->maxlen) {
+        Parameter_ForwardVarArgs(0xd, path + len - 32, path);
+        return 0;
+    }
+    strcpy(parm->filename, path);
+    return 1;
+}
+
+void zero_unsigned_int_outputs(int unused, unsigned int *firstOutput, unsigned int *secondOutput,
+                               unsigned int *thirdOutput)
+{
+    *secondOutput = 0U;
+    *firstOutput = 0U;
+    *thirdOutput = 0U;
+}
+
+int is_mask_entry_unchanged(MaskEntry *entry)
+{
+    if (entry->width == 1) {
+        unsigned char value = entry->value.b;
+        unsigned char mask = entry->mask.b;
+        unsigned char current;
+        if (entry->addr)
+            current = *entry->addr;
+        return current == ((current & ~mask) | value);
+    } else if (entry->width == 2) {
+        unsigned short value = entry->value.w;
+        unsigned short mask = entry->mask.w;
+        union {
+            unsigned short word;
+            unsigned char bytes[2];
+        } current;
+        if (entry->addr) {
+            ((BytePair *)current.bytes)->bytes[0] = entry->addr[0];
+            ((BytePair *)current.bytes)->bytes[1] = entry->addr[1];
+        }
+        return current.word == ((current.word & ~mask) | value);
+    } else {
+        unsigned long value = entry->value.l;
+        unsigned long mask = entry->mask.l;
+        union {
+            unsigned long word;
+            unsigned char bytes[4];
+        } current;
+        if (entry->addr) {
+            ((ByteQuad *)current.bytes)->bytes[0] = entry->addr[0];
+            ((ByteQuad *)current.bytes)->bytes[1] = entry->addr[1];
+            ((ByteQuad *)current.bytes)->bytes[2] = entry->addr[2];
+            ((ByteQuad *)current.bytes)->bytes[3] = entry->addr[3];
+        }
+        return current.word == ((~mask & current.word) | value);
+    }
 }
 
 int apply_mask_entry(MaskEntry *entry, int unused, int flags)
@@ -824,187 +626,119 @@ void clear_unsigned_outputs(int unused, unsigned int *firstOutput, unsigned int 
     *thirdOutput = 0U;
 }
 
-int fn_0042a266(HANDLER_T *h, char *arg, int x)
+int is_dest_unchanged_by_val_xor(ConstRec *parameter)
 {
-    char buf[0x100];
-    char *value;
-    short *tok;
-    Boolean hasvalue = 0;
-    if (!arg) {
-        Parameter_ForwardVarArgs(0x28);
-        return 0;
-    }
-    strncpy(buf, arg, 0x100);
-    tok = (short *)fn_0040f969();
-    if (tok && *tok == 4) {
-        Targets_AdvanceArgument();
-        hasvalue = 1;
-        if (!parse_parameter_value(&h->base, &value, x))
-            return 0;
-    } else
-        value = NULL;
-    if (!value && hasvalue)
-        value = "";
-    return h->func(buf, value);
-}
-
-unsigned int fn_0042a263(void)
-{
-    return 0U;
-}
-
-int return_true(void)
-{
-    return 1;
-}
-
-unsigned int fn_004295ca(void)
-{
-    return 0U;
-}
-
-int compare_setstring_value(SETSTRING_T *parm)
-{
-    if (parm->pstring)
-        return !pstrcmp((unsigned char *)parm->var, parm->value);
-    else
-        return !strcmp((char *)parm->var, parm->value);
-}
-
-unsigned int fn_0042994d(void)
-{
-    return 0U;
-}
-
-int set_filepath(FILEPATH_T *parm, char *arg)
-{
-    OSSpec spec;
-    char path[0x104];
-    SInt32 err;
-    int len;
-    if (!*arg) {
-        *parm->filename = 0;
-        return 1;
-    }
-    if ((err = OS_MakeFileSpec(arg, &spec)) != 0) {
-        Parameter_ForwardVarArgs(0x12, arg, OS_GetErrText(err));
-        return 0;
-    }
-    OS_SpecToString(&spec, path, 0x104);
-    if (parm->fflags & 1) {
-        c2pstrcpy((unsigned char *)parm->filename, path);
-        return 1;
-    }
-    if ((len = strlen(path)) > parm->maxlen) {
-        Parameter_ForwardVarArgs(0xd, path + len - 32, path);
-        return 0;
-    }
-    strcpy(parm->filename, path);
-    return 1;
-}
-
-void format_filecode_option(FTYPE_T *opt, char **name, int *flags, char **value)
-{
-    if (opt->base.myname)
-        *name = opt->base.myname;
-    else if (opt->iscreator)
-        *name = "creator";
-    else
-        *name = "type";
-    if (!opt->fileCode)
-        *value = NULL;
-    else {
-        char *p = parm_format_buffer;
-        unsigned int v = *opt->fileCode;
-        int i = 0;
-        *p++ = '\'';
-        for (; i < 4; i++) {
-            *p++ = v >> 24;
-            v <<= 8;
+    struct ValueBytes {
+        unsigned char low;
+        unsigned char high;
+    };
+    if (parameter->kind == 1) {
+        unsigned char mask = parameter->val.b;
+        unsigned char current;
+        if (parameter->dest)
+            current = *parameter->dest;
+        return current == (current ^ mask);
+    } else if (parameter->kind == 2) {
+        unsigned short mask = parameter->val.w;
+        unsigned short current;
+        if (parameter->dest) {
+            ((struct ValueBytes *)&current)->low = parameter->dest[0];
+            ((struct ValueBytes *)&current)->high = parameter->dest[1];
         }
-        *p++ = '\'';
-        *p = 0;
-        *value = parm_format_buffer;
+        return current == (current ^ mask);
+    } else {
+        unsigned long mask = parameter->val.dw;
+        unsigned long current;
+        if (parameter->dest) {
+            ((struct ValueBytes *)&current)->low = parameter->dest[0];
+            ((struct ValueBytes *)&current)->high = parameter->dest[1];
+        }
+        return current == (current ^ mask);
     }
 }
 
-int set_string(SETSTRING_T *arguments)
+int xor_const_dest(ConstRec *constant)
 {
-    SETSTRING_T *parameter = arguments;
-
-    if (parameter->pstring) {
-        memcpy(parameter->var, parameter->value, *parameter->value);
+    if (constant->kind == 1) {
+        UInt8 mask = (UInt8)constant->val.w;
+        constant->dest[0] ^= mask;
+    } else if (constant->kind == 2) {
+        typedef union {
+            SInt16 word;
+            UInt8 bytes[2];
+        } WordBytes;
+        SInt16 value = constant->val.w;
+        WordBytes destination, mask;
+        destination.bytes[0] = constant->dest[0];
+        destination.bytes[1] = constant->dest[1];
+        mask.bytes[0] = ((WordBytes *)&value)->bytes[0];
+        mask.bytes[1] = ((WordBytes *)&value)->bytes[1];
+        destination.word ^= mask.word;
+        constant->dest[0] = destination.bytes[0];
+        constant->dest[1] = destination.bytes[1];
     } else {
-        strcpy((char *)parameter->var, parameter->value);
+        typedef union {
+            SInt32 word;
+            UInt8 bytes[4];
+        } LongBytes;
+        LongBytes destination, mask;
+        destination.bytes[0] = constant->dest[0];
+        destination.bytes[1] = constant->dest[1];
+        destination.bytes[2] = constant->dest[2];
+        destination.bytes[3] = constant->dest[3];
+        mask.bytes[0] = ((LongBytes *)&constant->val)->bytes[0];
+        mask.bytes[1] = ((LongBytes *)&constant->val)->bytes[1];
+        mask.bytes[2] = ((LongBytes *)&constant->val)->bytes[2];
+        mask.bytes[3] = ((LongBytes *)&constant->val)->bytes[3];
+        destination.word ^= mask.word;
+        constant->dest[0] = destination.bytes[0];
+        constant->dest[1] = destination.bytes[1];
+        constant->dest[2] = destination.bytes[2];
+        constant->dest[3] = destination.bytes[3];
     }
     return 1;
 }
 
-unsigned int fn_00429462(void)
-{
-    return 0U;
-}
-
-void zero_unsigned_int_outputs(int unused, unsigned int *firstOutput, unsigned int *secondOutput,
-                               unsigned int *thirdOutput)
+void zero_unsigned_outputs(int mode, unsigned int *firstOutput, unsigned int *secondOutput, unsigned int *thirdOutput)
 {
     *secondOutput = 0U;
     *firstOutput = 0U;
     *thirdOutput = 0U;
 }
 
-void get_filepath_name_flags_value(FILEPATH_T *opt, char **name, int *flags, int *value)
+int const_matches_dest(ConstRec *constant)
 {
-    char *unused = parm_help_buffer;
-    if (opt->base.myname)
-        *name = opt->base.myname;
-    else
-        *name = "filepath";
-    *flags = 0;
-    *value = (int)opt->defaultstr;
-}
-
-void Parameter_DispatchByWhich(PARAM_T *param, int *a, int *b, int *c)
-{
-    *a = 0;
-    *b = 0;
-    *c = 0;
-    if (!param)
-        Targets_ForwardVarArgsAndLongjmp("PARAM_T is NULL");
-    else if (param->which >= 0 && param->which < 16)
-        data_0054dc44[param->which](param, a, b, c);
-    else
-        Targets_ForwardVarArgsAndLongjmp("Unhandled PARAM_T (%d)", param->which);
-}
-
-unsigned char Parameter_DispatchParam(PARAM_T *param)
-{
-    if (!param)
-        Targets_ForwardVarArgsAndLongjmp("PARAM_T is NULL");
-    if (param->which >= 0 && param->which < 16)
-        return data_0054dc84[param->which](param);
-    Targets_ForwardVarArgsAndLongjmp("Unhandled PARAM_T (%d)", param->which);
-    {
-        int result = 0;
-        return result;
+    if (constant->kind == 1) {
+        unsigned char value = constant->val.b;
+        unsigned char current;
+        if (constant->dest)
+            current = *constant->dest;
+        return value == current;
+    } else if (constant->kind == 2) {
+        unsigned short value = constant->val.w;
+        struct WordBytes {
+            unsigned char low, high;
+        };
+        unsigned short current;
+        if (constant->dest) {
+            ((struct WordBytes *)&current)->low = constant->dest[0];
+            ((struct WordBytes *)&current)->high = constant->dest[1];
+        }
+        return value == current;
+    } else {
+        unsigned long value = constant->val.dw;
+        struct LongBytes {
+            unsigned char first, second, third, fourth;
+        };
+        unsigned long current;
+        if (constant->dest) {
+            ((struct LongBytes *)&current)->first = constant->dest[0];
+            ((struct LongBytes *)&current)->second = constant->dest[1];
+            ((struct LongBytes *)&current)->third = constant->dest[2];
+            ((struct LongBytes *)&current)->fourth = constant->dest[3];
+        }
+        return value == current;
     }
-}
-
-void fn_0042a797(void)
-{
-    Option_PopStack(4);
-}
-
-void get_setting_name_value(Setting *opt, char **name, int *value, int *flags)
-{
-    if (opt->name)
-        *name = opt->name;
-    else if ((opt->flags & 3) != 1)
-        *name = "xxx";
-    else
-        *name = NULL;
-    *value = opt->value;
-    *flags = 0;
 }
 
 Boolean store_constrec_val(ConstRec *rec, void *unused, UInt32 flags)
@@ -1060,6 +794,275 @@ Boolean store_constrec_val(ConstRec *rec, void *unused, UInt32 flags)
         rec->dest[3] = output.bytes[3];
     }
     return 1;
+}
+
+void zero_outputs(int selector, unsigned int *firstOutput, unsigned int *secondOutput, unsigned int *thirdOutput)
+{
+    *secondOutput = 0U;
+    *firstOutput = 0U;
+    *thirdOutput = 0U;
+}
+
+int compare_setstring_value(SETSTRING_T *parm)
+{
+    if (parm->pstring)
+        return !pstrcmp((unsigned char *)parm->var, parm->value);
+    else
+        return !strcmp((char *)parm->var, parm->value);
+}
+
+int set_string(SETSTRING_T *arguments)
+{
+    SETSTRING_T *parameter = arguments;
+
+    if (parameter->pstring) {
+        memcpy(parameter->var, parameter->value, *parameter->value);
+    } else {
+        strcpy((char *)parameter->var, parameter->value);
+    }
+    return 1;
+}
+
+void get_setting_name_value(Setting *opt, char **name, int *value, int *flags)
+{
+    if (opt->name)
+        *name = opt->name;
+    else if ((opt->flags & 3) != 1)
+        *name = "xxx";
+    else
+        *name = NULL;
+    *value = opt->value;
+    *flags = 0;
+}
+
+unsigned int fn_0042a192(void)
+{
+    return 0U;
+}
+
+void invoke_float_parameter_callback(FloatParameterCallback *rec, float a, float b)
+{
+    rec->handler(&option_name, rec->arg, a, b);
+}
+
+void format_setting_help(Setting *opt, char **help, int *a, int *b)
+{
+    char *p = data_0054da38;
+    p += sprintf(p, "%s", opt->name ? opt->name : "var");
+    if ((opt->flags & 3) != 1)
+        p += sprintf(p, "%s=%s%s", (opt->flags & 2) ? "[" : "", opt->valuename ? opt->valuename : "...",
+                     (opt->flags & 2) ? "]" : "");
+    *help = data_0054da38;
+    *a = 0;
+    *b = 0;
+}
+
+unsigned int fn_0042a263(void)
+{
+    return 0U;
+}
+
+int fn_0042a266(HANDLER_T *h, char *arg, int x)
+{
+    char buf[0x100];
+    char *value;
+    short *tok;
+    Boolean hasvalue = 0;
+    if (!arg) {
+        Parameter_ForwardVarArgs(0x28);
+        return 0;
+    }
+    strncpy(buf, arg, 0x100);
+    tok = (short *)fn_0040f969();
+    if (tok && *tok == 4) {
+        Targets_AdvanceArgument();
+        hasvalue = 1;
+        if (!parse_parameter_value(&h->base, &value, x))
+            return 0;
+    } else
+        value = NULL;
+    if (!value && hasvalue)
+        value = "";
+    return h->func(buf, value);
+}
+
+void fn_0042a312(DumpTextRecord *record, char **firstOutput, char **secondOutput, int *status)
+{
+    char *firstText = NULL;
+    int secondText = 0;
+    int firstBody = 0;
+    int secondBody = 0;
+    int firstSuffix = 0;
+    int secondSuffix = 0;
+    char firstBuffer[1024];
+    char secondBuffer[1024];
+    char *firstCursor = firstBuffer;
+    char *secondCursor = secondBuffer;
+    int written;
+    char *lineEnd;
+
+    *firstCursor = 0;
+    *secondCursor = 0;
+    if (record->firstInput != NULL)
+        Parameter_DispatchByWhich(record->firstInput, (int *)&firstText, &firstBody, &firstSuffix);
+    if (record->secondInput != NULL)
+        Parameter_DispatchByWhich(record->secondInput, &secondText, &secondBody, &secondSuffix);
+
+    if (record->firstDetail != NULL && record->secondDetail != NULL) {
+        if (firstSuffix != 0) {
+            written = sprintf(secondCursor, "%s (default is %s), else %s", record->firstDetail, firstSuffix,
+                              record->secondDetail);
+            secondCursor += written;
+        } else {
+            written = sprintf(secondCursor, "%s, else %s", record->firstDetail, record->secondDetail);
+            secondCursor += written;
+        }
+    } else if (record->firstDetail != NULL) {
+        secondCursor += sprintf(secondCursor, "%s", record->firstDetail);
+        if (firstSuffix != 0)
+            secondCursor += sprintf(secondCursor, "; default is %s", firstSuffix);
+    } else if (record->secondDetail != NULL) {
+        secondCursor += sprintf(secondCursor, "nothing, else %s", record->secondDetail);
+    }
+
+    if (firstText != NULL) {
+        if (record->firstLabel != NULL) {
+            written = sprintf(firstCursor, "[%s]", record->firstLabel ? record->firstLabel : "param");
+            firstCursor += written;
+        } else if (firstBody != 0) {
+            lineEnd = strchr(firstText, '\n');
+            if (lineEnd == NULL)
+                lineEnd = firstText + strlen(firstText);
+            written = sprintf(firstCursor, "[%.*s]", lineEnd - firstText, firstText);
+            firstCursor += written;
+        } else {
+            written = sprintf(firstCursor, "[%s]", firstText);
+            firstCursor += written;
+            firstText = NULL;
+        }
+    }
+
+    if (firstBody != 0 || secondBody != 0) {
+        written = sprintf(firstCursor, "\n\t");
+        firstCursor += written;
+        written = sprintf(secondCursor, "\n\t");
+        secondCursor += written;
+        if (firstBody != 0) {
+            if (firstText != NULL) {
+                written = sprintf(firstCursor, "%s", firstText);
+                firstCursor += written;
+            }
+            if (firstBody != 0) {
+                written = sprintf(secondCursor, "%s", firstBody);
+                secondCursor += written;
+            }
+            if (secondBody != 0) {
+                written = sprintf(firstCursor, data_0054dbc4);
+                firstCursor += written;
+                written = sprintf(secondCursor, data_0054dbc4);
+                secondCursor += written;
+            }
+        }
+
+        if (secondBody != 0) {
+            if (secondText != 0)
+                written = sprintf(firstCursor, "%s", secondText);
+            else
+                written = sprintf(firstCursor, "(if blank)", secondText);
+            firstCursor += written;
+            if (secondBody != 0) {
+                written = sprintf(secondCursor, "%s", secondBody);
+                secondCursor += written;
+            }
+            written = sprintf(firstCursor, "\n");
+            firstCursor += written;
+            written = sprintf(secondCursor, "\n");
+            secondCursor += written;
+        }
+
+        written = sprintf(firstCursor, data_0054dbd8);
+        firstCursor += written;
+        written = sprintf(secondCursor, data_0054dbd8);
+        secondCursor += written;
+    }
+
+    if (firstCursor != firstBuffer) {
+        strcpy(data_0054da38, firstBuffer);
+        *firstOutput = data_0054da38;
+    } else {
+        *firstOutput = NULL;
+    }
+    if (secondCursor != secondBuffer) {
+        strcpy(parm_help_buffer, secondBuffer);
+        *secondOutput = parm_help_buffer;
+    } else {
+        *secondOutput = NULL;
+    }
+    *status = 0;
+}
+
+unsigned int get_unsigned_zero(void)
+{
+    return 0U;
+}
+
+int evaluate_conditional_branch(struct PARAM_Conditional *expr, char *a, int b)
+{
+    if (a)
+        return dispatch_param_by_which(expr->iftrue, a, b);
+    else if (expr->iffalse)
+        return dispatch_param_by_which(expr->iffalse, a, b);
+    return 1;
+}
+
+int dispatch_param_by_which(PARAM_T *param, char *a, int b)
+{
+    int result = 0;
+    if (!param)
+        Targets_ForwardVarArgsAndLongjmp("PARAM_T is NULL");
+    if (param->which >= 0 && param->which < 16)
+        result = data_0054dbdc[param->which](param, (int)a, b);
+    else {
+        Targets_ForwardVarArgsAndLongjmp("Unhandled PARAM_T (%d)", param->which);
+        result = 0;
+    }
+    return result;
+}
+
+void Parameter_DispatchByWhich(PARAM_T *param, int *a, int *b, int *c)
+{
+    *a = 0;
+    *b = 0;
+    *c = 0;
+    if (!param)
+        Targets_ForwardVarArgsAndLongjmp("PARAM_T is NULL");
+    else if (param->which >= 0 && param->which < 16)
+        data_0054dc44[param->which](param, a, b, c);
+    else
+        Targets_ForwardVarArgsAndLongjmp("Unhandled PARAM_T (%d)", param->which);
+}
+
+unsigned char Parameter_DispatchParam(PARAM_T *param)
+{
+    if (!param)
+        Targets_ForwardVarArgsAndLongjmp("PARAM_T is NULL");
+    if (param->which >= 0 && param->which < 16)
+        return data_0054dc84[param->which](param);
+    Targets_ForwardVarArgsAndLongjmp("Unhandled PARAM_T (%d)", param->which);
+    {
+        int result = 0;
+        return result;
+    }
+}
+
+void push_argument_option(char *argument)
+{
+    Option_Push(4, argument, NULL);
+}
+
+void fn_0042a797(void)
+{
+    Option_PopStack(4);
 }
 
 Boolean is_non_text_file(char *name, Boolean flag)

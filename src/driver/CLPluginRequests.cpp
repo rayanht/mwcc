@@ -33,7 +33,9 @@ extern "C" {
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+}
 
+extern "C" {
 void initialize_plugin_request(Plugin *owner, int phase)
 {
     PluginOutputItem *item;
@@ -268,16 +270,6 @@ Boolean CLPluginRequests_UpdateTargetSettings(Plugin *record, UInt32 flags, stru
         return (result == 0);
     }
 }
-
-void CLPluginRequests_AppendMacFileTypesTable(struct MacFileTypeNode **firstArgument, SInt32 secondArgument)
-{
-    MacFileTypes_AppendTable(firstArgument, secondArgument);
-}
-}
-
-extern "C" {
-}
-extern "C" {
 }
 
 UInt8 CLPluginRequests_CallPluginForFile(Plugin *plugin, DropinFileRecord *context)
@@ -348,4 +340,12 @@ extern "C" int fn_00417440(Plugin *plugin, Boolean initialize)
             release_negative_license_values();
     }
     return result == 0;
+}
+
+extern "C" {
+
+void CLPluginRequests_AppendMacFileTypesTable(struct MacFileTypeNode **firstArgument, SInt32 secondArgument)
+{
+    MacFileTypes_AppendTable(firstArgument, secondArgument);
+}
 }

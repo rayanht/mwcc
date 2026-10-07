@@ -145,6 +145,7 @@ void CPrep_GetBrowseFilePosition(PFile **file, SInt32 *ppos)
 }
 
 #pragma sym on
+
 SInt32 CPrep_GetCurrentTextOffset(void)
 {
     if (buffered_tokens < bufferedTokenPosition) {
@@ -155,6 +156,7 @@ SInt32 CPrep_GetCurrentTextOffset(void)
     }
     return currentTextPosition - (unsigned char *)data_0057f94a[current_file_index]->textstart;
 }
+
 #pragma sym reset
 
 void CPrep_ParseDirective(void)
@@ -325,6 +327,7 @@ static inline void process_newline(void)
 }
 
 #pragma sym on
+
 void skip_inactive_if_blocks(void)
 {
     SInt16 tok;
@@ -398,6 +401,7 @@ void skip_inactive_if_blocks(void)
     }
 }
 }
+
 #pragma sym reset
 
 int parse_endif_directive(void)
@@ -683,6 +687,7 @@ void parse_if_directive(void)
         CPrep_Push(0);
     }
 }
+
 void fn_004392e0(void)
 {
     CNameRef savedState;
@@ -920,6 +925,7 @@ static inline Type *CPrep_IntegerType(const CPrepValue *value)
 }
 
 #pragma sym on
+
 struct CNameRef evaluate_unary_expression_value(void)
 {
     union {
@@ -1028,9 +1034,7 @@ struct CNameRef evaluate_unary_expression_value(void)
         DAT_0057fd6c = 0;
     return result.ref;
 }
-#pragma sym reset
 
-#pragma sym on
 void parse_line_directive(void)
 {
     unsigned char filename[256];
@@ -1105,11 +1109,9 @@ void parse_line_directive(void)
         CPrepTokenizer_SkipToEndOfLine();
     }
 }
-#pragma sym reset
 
 /* Hash-bucket link for an include name. */
 
-#pragma sym on
 void CPrep_0043a0a0(char allowInclude)
 {
     short length;
@@ -1264,6 +1266,7 @@ void CPrep_0043a0a0(char allowInclude)
                                                                                                      allowInclude);
     }
 }
+
 #pragma sym reset
 
 #pragma sym on
@@ -1295,6 +1298,7 @@ static inline void CPrep_ParseListingOption(void)
 
 #pragma sym reset
 #pragma sym reset
+
 void parse_pragma(void)
 {
     char filename[256];
@@ -2153,6 +2157,7 @@ void parse_pragma_option(int directive)
         data_005884fd = savedFlag;
     }
 }
+
 void apply_pragma_object_flags(unsigned int flags)
 {
     unsigned char saved;
@@ -2297,6 +2302,7 @@ UInt8 CPrep_ExpandMacro(void)
     }
     return 0;
 }
+
 static void CPrep_PopState(void)
 {
     macro_expansion_depth--;
@@ -2551,6 +2557,7 @@ UInt8 *expand_macro(Macro *macro)
     memcpy(result, *macro_text.data, macro_text.size);
     return (UInt8 *)expand_macros_in_text(macro, result);
 }
+
 char *expand_builtin_macro(Macro *macro)
 {
     char buffer[256];
@@ -3140,6 +3147,7 @@ static inline void CPrep_MacroRedefError(char *name, Boolean *flag)
 }
 
 #pragma sym on
+
 void define_macro(void)
 {
     Macro *definition;
@@ -3366,6 +3374,7 @@ void define_macro(void)
         }
     }
 }
+
 #pragma sym reset
 
 SInt16 CPrep_ScanMacroExpandedChar(void)
@@ -3559,6 +3568,7 @@ void CPrep_IncrementCountersAndUpdateTextOffset(void)
 }
 
 #pragma sym on
+
 unsigned int lookup_available_macro(HashNameNode *name)
 {
     Macro *node;
@@ -3585,9 +3595,10 @@ unsigned int lookup_available_macro(HashNameNode *name)
     return (unsigned int)node;
 }
 
+#pragma sym reset
+
 /* IntrinsicBinaryEntry in the preprocessor name table. */
 
-#pragma sym reset
 Macro *find_macro(void)
 {
     HashNameNode *key = (HashNameNode *)data_00587fa0;
@@ -3748,9 +3759,10 @@ Boolean CPrep_0043ecb0(short ch)
     }
 }
 
+#pragma sym on
+
 /* 0x583af8, stride 0xe */
 
-#pragma sym on
 void CPrep_PopMacro(void)
 {
     macro_expansion_depth--;
@@ -3764,11 +3776,8 @@ void CPrep_PopMacro(void)
     DAT_00588523 = 1;
 }
 
-#pragma sym reset
-
 /* Opaque saved preprocessor option data. */
 
-#pragma sym on
 UInt8 CPrep_Compile(CPrepCU *cu)
 {
     BufferedToken optionData;
@@ -3886,6 +3895,7 @@ UInt8 CPrep_Compile(CPrepCU *cu)
     }
     return result;
 }
+
 #pragma sym reset
 
 void CPrep_GetPosition(PFile **position, SInt32 *offset)
@@ -3989,6 +3999,7 @@ void fn_0043f1f0(FOI *name)
 }
 
 #pragma sym on
+
 void CPrep_PopFile(void)
 {
     PFile *input;
@@ -4014,6 +4025,7 @@ void CPrep_PopFile(void)
 }
 
 #pragma sym reset
+
 void fn_0043f3b0(short warningCode)
 {
     Boolean savedFlag = data_005884fd;
@@ -4173,6 +4185,7 @@ void CPrep_GetTokenLocation(BufferedToken *token, PFile **file, SInt32 *position
 }
 
 #pragma sym on
+
 BufferedToken *CPrep_GetLastBufferedToken(void)
 {
     if (buffered_tokens < bufferedTokenPosition)
@@ -4181,6 +4194,7 @@ BufferedToken *CPrep_GetLastBufferedToken(void)
 }
 
 #pragma sym reset
+
 int CPrep_0043f860(char *p)
 {
     int len;
@@ -4285,9 +4299,10 @@ void CPrep_ResetBufferedTokenPosition(void)
     return;
 }
 
+#pragma sym on
+
 /* Opaque 24-byte entries in the compacted table. */
 
-#pragma sym on
 void CPrep_RemoveBufferedTokens(int *entryCount, SInt32 *firstIndex)
 {
     int remainingCount;
@@ -4306,6 +4321,7 @@ void CPrep_RemoveBufferedTokens(int *entryCount, SInt32 *firstIndex)
         remainingBufferedTokenCount = remainingCount;
     }
 }
+
 #pragma sym reset
 
 void CPrep_InsertTokenBuffer(PrepTokenBuffer *arg, SInt32 *result)
@@ -4541,6 +4557,7 @@ void CPrep_UngetToken(void)
 }
 
 #pragma sym on
+
 static void LogName(const unsigned char *name)
 {
     short n;
@@ -4558,12 +4575,46 @@ static void LogName(const unsigned char *name)
 }
 
 #pragma sym reset
+
 static inline CPrepCU *CPrep_CurrentCompilationUnit(void)
 {
     return (CPrepCU *)cprep_cu;
 }
 
+void CPrep_SetBufferedTokenPosition(SInt32 *count)
+{
+    SInt32 value = *count;
+    struct BufferedToken *top = bufferedTokenPosition;
+    struct BufferedToken *next;
+    remainingBufferedTokenCount += (top - buffered_tokens) - value;
+    value = *count;
+    next = buffered_tokens + value;
+    bufferedTokenPosition = next;
+}
+
+void CPrep_GetBufferedTokenPosition(SInt32 *count)
+{
+    *count = bufferedTokenPosition - buffered_tokens;
+}
+
 #pragma sym on
+
+void CPrep_GrowBufferedTokenBuffer(SInt32 n)
+{
+    SInt32 count = bufferedTokenPosition - buffered_tokens;
+    char *tokenData;
+
+    fn_004431b0(buffered_token_storage);
+    if (!fn_00443170(buffered_token_storage, (buffered_token_capacity + n) * 24))
+        CError_LongJump();
+    fn_004431a0(buffered_token_storage);
+    buffered_token_capacity += n;
+    tokenData = buffered_token_storage->data;
+    buffered_tokens = (struct BufferedToken *)tokenData;
+    buffered_token_buffer_end = &buffered_tokens[buffered_token_capacity - 1];
+    bufferedTokenPosition = buffered_tokens + count;
+}
+
 unsigned char fn_004401b0(unsigned char *name, unsigned char mode, unsigned char skip)
 {
     PFile node;
@@ -4686,6 +4737,7 @@ unsigned char fn_004401b0(unsigned char *name, unsigned char mode, unsigned char
         CPreprocess_EmitLineDirective();
     return 1;
 }
+
 #pragma sym reset
 
 void pop_files_and_release_heaps_and_lists(void)
@@ -4709,41 +4761,8 @@ void pop_files_and_release_heaps_and_lists(void)
     buffered_tokens = buffered_token_buffer_end = bufferedTokenPosition = NULL;
 }
 
-void CPrep_SetBufferedTokenPosition(SInt32 *count)
-{
-    SInt32 value = *count;
-    struct BufferedToken *top = bufferedTokenPosition;
-    struct BufferedToken *next;
-    remainingBufferedTokenCount += (top - buffered_tokens) - value;
-    value = *count;
-    next = buffered_tokens + value;
-    bufferedTokenPosition = next;
-}
-
-void CPrep_GetBufferedTokenPosition(SInt32 *count)
-{
-    *count = bufferedTokenPosition - buffered_tokens;
-}
-
 #pragma sym on
-void CPrep_GrowBufferedTokenBuffer(SInt32 n)
-{
-    SInt32 count = bufferedTokenPosition - buffered_tokens;
-    char *tokenData;
 
-    fn_004431b0(buffered_token_storage);
-    if (!fn_00443170(buffered_token_storage, (buffered_token_capacity + n) * 24))
-        CError_LongJump();
-    fn_004431a0(buffered_token_storage);
-    buffered_token_capacity += n;
-    tokenData = buffered_token_storage->data;
-    buffered_tokens = (struct BufferedToken *)tokenData;
-    buffered_token_buffer_end = &buffered_tokens[buffered_token_capacity - 1];
-    bufferedTokenPosition = buffered_tokens + count;
-}
-#pragma sym reset
-
-#pragma sym on
 int initialize_preprocessor(void)
 {
     SInt32 character;
@@ -4810,6 +4829,7 @@ int initialize_preprocessor(void)
     fn_0048b500();
     return 0;
 }
+
 #pragma sym reset
 
 unsigned int *CPrep_RemoveFlaggedMacros(void)
@@ -4866,6 +4886,7 @@ void __stdcall CPrep_RegisterPredefinedMacros(void)
 }
 
 #pragma auto_inline off
+
 CWPluginPrivateContext *validate_context_signature(CWPluginPrivateContext *record)
 {
     if (record && ((long)record->contextSignature == 'Comp' || (long)record->contextSignature == 'Link')) {
@@ -4873,6 +4894,7 @@ CWPluginPrivateContext *validate_context_signature(CWPluginPrivateContext *recor
     }
     return NULL;
 }
+
 #pragma auto_inline reset
 
 int __stdcall CPrep_GetEnabled(int key, unsigned char *value)
@@ -4965,6 +4987,7 @@ unsigned int __stdcall CPrep_GetDependencyState(CWPluginPrivateContext *context,
 }
 
 #pragma sym on
+
 SInt32 __stdcall CPrep_GetTargetSettings(CWPluginPrivateContext *context, TgtRec *target)
 {
     CWPluginPrivateContext *plugin;
@@ -4998,7 +5021,38 @@ SInt32 __stdcall CPrep_GetTargetSettings(CWPluginPrivateContext *context, TgtRec
     }
     return 0;
 }
+
 #pragma sym reset
+
+unsigned int __stdcall CPrep_GetFileIndex(CWPluginPrivateContext *key, unsigned int *value)
+{
+    CWPluginPrivateContext *record;
+
+    if (value == NULL) {
+        return 3;
+    }
+    record = validate_context_signature(key);
+    if (record == NULL) {
+        return 4;
+    }
+    *value = record->requestData.fileIndex;
+    return 0;
+}
+
+unsigned int __stdcall CPrep_GetDependencyOption(int lookupKey, unsigned short *value)
+{
+    CWPluginPrivateContext *record;
+
+    if (value == NULL) {
+        return 3;
+    }
+    record = validate_context_signature((CWPluginPrivateContext *)lookupKey);
+    if (record == NULL) {
+        return 4;
+    }
+    *value = record->dependencyOption;
+    return 0;
+}
 
 int __stdcall CPrep_GetContextPayload(CWPluginPrivateContext *handle, CWFileSpec *destination)
 {
@@ -5010,38 +5064,6 @@ int __stdcall CPrep_GetContextPayload(CWPluginPrivateContext *handle, CWFileSpec
         return 4;
     *destination = storage->contextData.payload;
     return 0;
-}
-
-unsigned int __stdcall call_compiler_callback(CWPluginPrivateContext *object_id, void *argument, unsigned int result)
-{
-    CWPluginPrivateContext *object;
-    if (argument == NULL) {
-        return 3;
-    }
-    if (result == 0) {
-        return 3;
-    }
-    object = validate_context_signature(object_id);
-    if (object == NULL) {
-        return 4;
-    }
-    return (*(unsigned int(__stdcall **)(CWPluginPrivateContext *, void *, unsigned int))object->compilerCallbacks)(
-        object, argument, result);
-}
-
-unsigned int __stdcall CPrep_InvokeCompilerCallback(CWPluginPrivateContext *instance_id,
-                                                    struct FileProcessingInfo *argument, const char *value)
-{
-    CWPluginPrivateContext *instance;
-
-    if (argument == NULL) {
-        return 3;
-    }
-    instance = (CWPluginPrivateContext *)validate_context_signature(instance_id);
-    if (instance == NULL) {
-        return 4;
-    }
-    return instance->compilerCallbacks->invoke(instance, argument, value);
 }
 
 unsigned int __stdcall CPrep_GetResultValues(CWPluginPrivateContext *handle, UInt32 *first_value, UInt32 *second_value)
@@ -5100,34 +5122,36 @@ SInt32 __stdcall CPrep_CallCompilerCallback(void *objectId, SInt32 argument)
     return object->compilerCallbacks->callback(object, argument);
 }
 
-unsigned int __stdcall CPrep_GetDependencyOption(int lookupKey, unsigned short *value)
+unsigned int __stdcall call_compiler_callback(CWPluginPrivateContext *object_id, void *argument, unsigned int result)
 {
-    CWPluginPrivateContext *record;
-
-    if (value == NULL) {
+    CWPluginPrivateContext *object;
+    if (argument == NULL) {
         return 3;
     }
-    record = validate_context_signature((CWPluginPrivateContext *)lookupKey);
-    if (record == NULL) {
+    if (result == 0) {
+        return 3;
+    }
+    object = validate_context_signature(object_id);
+    if (object == NULL) {
         return 4;
     }
-    *value = record->dependencyOption;
-    return 0;
+    return (*(unsigned int(__stdcall **)(CWPluginPrivateContext *, void *, unsigned int))object->compilerCallbacks)(
+        object, argument, result);
 }
 
-unsigned int __stdcall CPrep_GetFileIndex(CWPluginPrivateContext *key, unsigned int *value)
+unsigned int __stdcall CPrep_InvokeCompilerCallback(CWPluginPrivateContext *instance_id,
+                                                    struct FileProcessingInfo *argument, const char *value)
 {
-    CWPluginPrivateContext *record;
+    CWPluginPrivateContext *instance;
 
-    if (value == NULL) {
+    if (argument == NULL) {
         return 3;
     }
-    record = validate_context_signature(key);
-    if (record == NULL) {
+    instance = (CWPluginPrivateContext *)validate_context_signature(instance_id);
+    if (instance == NULL) {
         return 4;
     }
-    *value = record->requestData.fileIndex;
-    return 0;
+    return instance->compilerCallbacks->invoke(instance, argument, value);
 }
 
 int CPrep_AppendStringBounded(char *dst, char *src, int size)

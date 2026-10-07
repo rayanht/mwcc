@@ -69,120 +69,6 @@ HashNameNode *COptimizer_GetFunctionObject(Object *obj)
             return NULL;
     }
 }
-HashNameNode *CMangler_GetLinkName(Object *obj)
-{
-    NameSpace *nspace;
-    HashNameNode *result;
-
-    nspace = obj->nspace;
-    while (nspace != NULL && nspace->name == NULL)
-        nspace = nspace->parent;
-    data_00583548.size = 0;
-    if (is_pascal_object(obj) && (nspace == NULL || nspace->theclass == NULL))
-        return obj->name;
-    if ((obj->qual & Q_MANGLE_NAME) != 0 &&
-        (memcmp("main", obj->name->name, 5) != 0 || obj->nspace != registration_context)) {
-        mangle_function_name(obj->name, nspace, obj->type);
-        AppendGListByte(&data_00583548, 0);
-    } else {
-        return obj->name;
-    }
-    fn_00443190(data_00583548.data);
-    result = GetHashNameNode(*data_00583548.data);
-    fn_004431b0(data_00583548.data);
-    return (HashNameNode *)result;
-}
-
-void mangle_function_name(HashNameNode *name, NameSpace *chain, Type *func)
-{
-    TypeClass *cls;
-    FuncArg *arg;
-    UInt32 qual;
-
-    CompilerTools_AppendGListString(&data_00583548, name->name);
-    CompilerTools_AppendGListString(&data_00583548, "__");
-
-    while (chain != NULL && chain->name == NULL)
-        chain = chain->parent;
-
-    if (chain != NULL) {
-        mangle_qualified_name(chain->parent, chain->name->name);
-        if ((cls = chain->theclass) != NULL) {
-            if (name == destructor_name) {
-                CompilerTools_AppendGListString(&data_00583548, "Fv");
-                return;
-            }
-
-            if ((arg = TYPE_FUNC(func)->args) != NULL) {
-                if (name == constructor_name) {
-                    arg = arg->next;
-                    if (arg != NULL && (cls->flags & CLASS_HAS_VBASES) != 0)
-                        arg = arg->next;
-                } else if ((TYPE_FUNC(func)->flags & FUNC_METHOD) != 0 && !TYPE_METHOD(func)->is_static) {
-                    qual = arg->qual;
-                    if (qual & Q_CONST)
-                        AppendGListByte(&data_00583548, 'C');
-                    if (qual & Q_VOLATILE)
-                        AppendGListByte(&data_00583548, 'V');
-                    arg = arg->next;
-                }
-                AppendGListByte(&data_00583548, 'F');
-                mangle_args(arg);
-                return;
-            }
-        }
-    }
-
-    AppendGListByte(&data_00583548, 'F');
-    mangle_args(TYPE_FUNC(func)->args);
-}
-void mangle_args(FuncArg *args)
-{
-    TypePointer tptr;
-
-    if (args != NULL) {
-        if (args->type != NULL) {
-            while (args != NULL) {
-                if (args != &data_00583098 && args != &data_00584748) {
-                    if (args->type->type == TYPEPOINTER) {
-                        tptr = *TYPE_POINTER(args->type);
-                        tptr.qual &= ~Q_CV;
-                        mangle_type(TYPE(&tptr), args->qual);
-                    } else {
-                        mangle_type(args->type, 0);
-                    }
-                } else {
-                    AppendGListByte(&data_00583548, 0x65);
-                }
-                args = args->next;
-            }
-        } else {
-            AppendGListByte(&data_00583548, 0x65);
-        }
-    } else {
-        AppendGListByte(&data_00583548, 0x76);
-    }
-}
-void fn_004c2ac0(Type *type, SInt32 flag)
-{
-    data_00583548.size = 0;
-    mangle_type(type, flag);
-}
-
-HashNameNode *CMangler_ConversionFuncName(Type *type, UInt32 qual)
-{
-    char **buffer;
-    HashNameNode *name;
-    data_00583548.size = 0;
-    CompilerTools_AppendGListString(&data_00583548, "__op");
-    mangle_type(type, qual);
-    AppendGListByte(&data_00583548, 0);
-    fn_00443190(data_00583548.data);
-    buffer = data_00583548.data;
-    name = GetHashNameNode(*buffer);
-    fn_004431b0(data_00583548.data);
-    return name;
-}
 
 static inline void appendObjectName(const void *name)
 {
@@ -270,6 +156,123 @@ HashNameNode *CMangler_GetCovariantFunctionName(Object *object, Type *type)
     result = GetHashNameNode(*buffer);
     fn_004431b0(data_00583548.data);
     return result;
+}
+
+HashNameNode *CMangler_GetLinkName(Object *obj)
+{
+    NameSpace *nspace;
+    HashNameNode *result;
+
+    nspace = obj->nspace;
+    while (nspace != NULL && nspace->name == NULL)
+        nspace = nspace->parent;
+    data_00583548.size = 0;
+    if (is_pascal_object(obj) && (nspace == NULL || nspace->theclass == NULL))
+        return obj->name;
+    if ((obj->qual & Q_MANGLE_NAME) != 0 &&
+        (memcmp("main", obj->name->name, 5) != 0 || obj->nspace != registration_context)) {
+        mangle_function_name(obj->name, nspace, obj->type);
+        AppendGListByte(&data_00583548, 0);
+    } else {
+        return obj->name;
+    }
+    fn_00443190(data_00583548.data);
+    result = GetHashNameNode(*data_00583548.data);
+    fn_004431b0(data_00583548.data);
+    return (HashNameNode *)result;
+}
+
+HashNameNode *CMangler_ConversionFuncName(Type *type, UInt32 qual)
+{
+    char **buffer;
+    HashNameNode *name;
+    data_00583548.size = 0;
+    CompilerTools_AppendGListString(&data_00583548, "__op");
+    mangle_type(type, qual);
+    AppendGListByte(&data_00583548, 0);
+    fn_00443190(data_00583548.data);
+    buffer = data_00583548.data;
+    name = GetHashNameNode(*buffer);
+    fn_004431b0(data_00583548.data);
+    return name;
+}
+
+void mangle_function_name(HashNameNode *name, NameSpace *chain, Type *func)
+{
+    TypeClass *cls;
+    FuncArg *arg;
+    UInt32 qual;
+
+    CompilerTools_AppendGListString(&data_00583548, name->name);
+    CompilerTools_AppendGListString(&data_00583548, "__");
+
+    while (chain != NULL && chain->name == NULL)
+        chain = chain->parent;
+
+    if (chain != NULL) {
+        mangle_qualified_name(chain->parent, chain->name->name);
+        if ((cls = chain->theclass) != NULL) {
+            if (name == destructor_name) {
+                CompilerTools_AppendGListString(&data_00583548, "Fv");
+                return;
+            }
+
+            if ((arg = TYPE_FUNC(func)->args) != NULL) {
+                if (name == constructor_name) {
+                    arg = arg->next;
+                    if (arg != NULL && (cls->flags & CLASS_HAS_VBASES) != 0)
+                        arg = arg->next;
+                } else if ((TYPE_FUNC(func)->flags & FUNC_METHOD) != 0 && !TYPE_METHOD(func)->is_static) {
+                    qual = arg->qual;
+                    if (qual & Q_CONST)
+                        AppendGListByte(&data_00583548, 'C');
+                    if (qual & Q_VOLATILE)
+                        AppendGListByte(&data_00583548, 'V');
+                    arg = arg->next;
+                }
+                AppendGListByte(&data_00583548, 'F');
+                mangle_args(arg);
+                return;
+            }
+        }
+    }
+
+    AppendGListByte(&data_00583548, 'F');
+    mangle_args(TYPE_FUNC(func)->args);
+}
+
+void mangle_args(FuncArg *args)
+{
+    TypePointer tptr;
+
+    if (args != NULL) {
+        if (args->type != NULL) {
+            while (args != NULL) {
+                if (args != &data_00583098 && args != &data_00584748) {
+                    if (args->type->type == TYPEPOINTER) {
+                        tptr = *TYPE_POINTER(args->type);
+                        tptr.qual &= ~Q_CV;
+                        mangle_type(TYPE(&tptr), args->qual);
+                    } else {
+                        mangle_type(args->type, 0);
+                    }
+                } else {
+                    AppendGListByte(&data_00583548, 0x65);
+                }
+                args = args->next;
+            }
+        } else {
+            AppendGListByte(&data_00583548, 0x65);
+        }
+    } else {
+        AppendGListByte(&data_00583548, 0x76);
+    }
+}
+
+void fn_004c2ac0(Type *type, SInt32 flag)
+{
+    data_00583548.size = 0;
+    mangle_type(type, flag);
 }
 
 static void MangleQualifiers(UInt32 q)
@@ -477,6 +480,7 @@ void mangle_type(Type *type, UInt32 flags)
             return;
     }
 }
+
 void mangle_qualified_name(NameSpace *nameSpace, const char *name)
 {
     NameSpace *scope;
@@ -512,6 +516,7 @@ void mangle_qualified_name(NameSpace *nameSpace, const char *name)
         CompilerTools_AppendGListString(&data_00583548, part);
     }
 }
+
 /* Compute (and cache) the link name of an object, following aliases. */
 static HashNameNode *CMangler_LinkName(Object *obj)
 {
@@ -606,6 +611,7 @@ HashNameNode *CMangler_TemplateInstanceName(HashNameNode *name, CTStateElem *lis
     fn_004431b0(data_00583548.data);
     return result;
 }
+
 HashNameNode *CMangler_ThunkName(Object *input, int offset, int adjustment, int index)
 {
     Object *object = input;
@@ -697,6 +703,97 @@ HashNameNode *CMangler_VTableName(TypeClass *entry)
     resultBuffer = data_00583548.data;
     fn_004431b0(resultBuffer);
     return name;
+}
+
+HashNameNode *CMangler_OperatorName(short token)
+{
+    switch (token) {
+        case 0x147:
+            return GetHashNameNode(operator_new_name);
+        case 0x145:
+            return GetHashNameNode(delete_operator_name);
+        case 0x182:
+            return GetHashNameNode("__nwa");
+        case 0x183:
+            return GetHashNameNode("__dla");
+        case 0x2b:
+            return GetHashNameNode(plus_operator_code);
+        case 0x2d:
+            return GetHashNameNode(minus_operator_name);
+        case 0x2a:
+            return GetHashNameNode(operator_code_ml);
+        case 0x2f:
+            return GetHashNameNode(operator_dv_name);
+        case 0x25:
+            return GetHashNameNode(md_operator_code);
+        case 0x5e:
+            return GetHashNameNode(operator_er_code);
+        case 0x26:
+            return GetHashNameNode(data_00561cc0);
+        case 0x7c:
+            return GetHashNameNode(operator_or_code);
+        case 0x7e:
+            return GetHashNameNode(co_operator_code);
+        case 0x21:
+            return GetHashNameNode(operator_nt_code);
+        case 0x3d:
+            return assignment_operator_name;
+        case 0x3c:
+            return GetHashNameNode(lt_operator_name);
+        case 0x3e:
+            return GetHashNameNode(gt_operator_name);
+        case 0x15f:
+            return GetHashNameNode("__apl");
+        case 0x160:
+            return GetHashNameNode("__ami");
+        case 0x15c:
+            return GetHashNameNode("__amu");
+        case 0x15d:
+            return GetHashNameNode("__adv");
+        case 0x15e:
+            return GetHashNameNode("__amd");
+        case 0x164:
+            return GetHashNameNode("__aer");
+        case 0x163:
+            return GetHashNameNode("__aad");
+        case 0x165:
+            return GetHashNameNode("__aor");
+        case 0x16c:
+            return GetHashNameNode(operator_ls);
+        case 0x16d:
+            return GetHashNameNode(operator_rs_code);
+        case 0x161:
+            return GetHashNameNode("__als");
+        case 0x162:
+            return GetHashNameNode("__ars");
+        case 0x168:
+            return GetHashNameNode(eq_operator_name);
+        case 0x169:
+            return GetHashNameNode(operator_ne_code);
+        case 0x16a:
+            return GetHashNameNode(operator_le_name);
+        case 0x16b:
+            return GetHashNameNode(ge_operator_code);
+        case 0x167:
+            return GetHashNameNode(data_00561d70);
+        case 0x166:
+            return GetHashNameNode(operator_name_code);
+        case 0x16e:
+            return GetHashNameNode(operator_names);
+        case 0x16f:
+            return GetHashNameNode(operator_name_mm);
+        case 0x2c:
+            return GetHashNameNode(data_00561d90);
+        case 0x173:
+            return GetHashNameNode(operator_rm_code);
+        case 0x170:
+            return GetHashNameNode(operator_code_rf);
+        case 0x28:
+            return GetHashNameNode(operator_call_code);
+        case 0x5b:
+            return GetHashNameNode(operator_vc_name);
+    }
+    return NULL;
 }
 
 char *CMangler_GetOperator(HashNameNode *name)
@@ -830,97 +927,6 @@ char *CMangler_GetOperator(HashNameNode *name)
         return "operator[]";
     }
     return (char *)0;
-}
-
-HashNameNode *CMangler_OperatorName(short token)
-{
-    switch (token) {
-        case 0x147:
-            return GetHashNameNode(operator_new_name);
-        case 0x145:
-            return GetHashNameNode(delete_operator_name);
-        case 0x182:
-            return GetHashNameNode("__nwa");
-        case 0x183:
-            return GetHashNameNode("__dla");
-        case 0x2b:
-            return GetHashNameNode(plus_operator_code);
-        case 0x2d:
-            return GetHashNameNode(minus_operator_name);
-        case 0x2a:
-            return GetHashNameNode(operator_code_ml);
-        case 0x2f:
-            return GetHashNameNode(operator_dv_name);
-        case 0x25:
-            return GetHashNameNode(md_operator_code);
-        case 0x5e:
-            return GetHashNameNode(operator_er_code);
-        case 0x26:
-            return GetHashNameNode(data_00561cc0);
-        case 0x7c:
-            return GetHashNameNode(operator_or_code);
-        case 0x7e:
-            return GetHashNameNode(co_operator_code);
-        case 0x21:
-            return GetHashNameNode(operator_nt_code);
-        case 0x3d:
-            return assignment_operator_name;
-        case 0x3c:
-            return GetHashNameNode(lt_operator_name);
-        case 0x3e:
-            return GetHashNameNode(gt_operator_name);
-        case 0x15f:
-            return GetHashNameNode("__apl");
-        case 0x160:
-            return GetHashNameNode("__ami");
-        case 0x15c:
-            return GetHashNameNode("__amu");
-        case 0x15d:
-            return GetHashNameNode("__adv");
-        case 0x15e:
-            return GetHashNameNode("__amd");
-        case 0x164:
-            return GetHashNameNode("__aer");
-        case 0x163:
-            return GetHashNameNode("__aad");
-        case 0x165:
-            return GetHashNameNode("__aor");
-        case 0x16c:
-            return GetHashNameNode(operator_ls);
-        case 0x16d:
-            return GetHashNameNode(operator_rs_code);
-        case 0x161:
-            return GetHashNameNode("__als");
-        case 0x162:
-            return GetHashNameNode("__ars");
-        case 0x168:
-            return GetHashNameNode(eq_operator_name);
-        case 0x169:
-            return GetHashNameNode(operator_ne_code);
-        case 0x16a:
-            return GetHashNameNode(operator_le_name);
-        case 0x16b:
-            return GetHashNameNode(ge_operator_code);
-        case 0x167:
-            return GetHashNameNode(data_00561d70);
-        case 0x166:
-            return GetHashNameNode(operator_name_code);
-        case 0x16e:
-            return GetHashNameNode(operator_names);
-        case 0x16f:
-            return GetHashNameNode(operator_name_mm);
-        case 0x2c:
-            return GetHashNameNode(data_00561d90);
-        case 0x173:
-            return GetHashNameNode(operator_rm_code);
-        case 0x170:
-            return GetHashNameNode(operator_code_rf);
-        case 0x28:
-            return GetHashNameNode(operator_call_code);
-        case 0x5b:
-            return GetHashNameNode(operator_vc_name);
-    }
-    return NULL;
 }
 
 void CMangler_Setup(void)

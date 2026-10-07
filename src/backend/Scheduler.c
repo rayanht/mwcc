@@ -98,58 +98,6 @@ static inline SInt32 CountScheduled(CColoringList *list)
     return count;
 }
 
-struct CColoringNode *select_ready_coloring_node(struct CColoringNode *list, UInt16 id)
-{
-    CColoringNode *best;
-    CColoringNode *candidate;
-    SInt32 candidateCount;
-    SInt32 bestCount;
-
-    best = list;
-    while (best) {
-        if (best->flag == 0 && best->earliestCycle <= id && data_00581b80->check(best->obj))
-            break;
-        best = best->prev;
-    }
-    if (best == NULL)
-        return NULL;
-    for (candidate = best->prev; candidate; candidate = candidate->prev) {
-        if (candidate->flag != 0)
-            continue;
-        if (candidate->earliestCycle > id)
-            continue;
-        if (!data_00581b80->check(candidate->obj))
-            continue;
-        if (best->latestCycle > id || candidate->latestCycle <= id) {
-            if (!(best->latestCycle > id && candidate->latestCycle <= id)) {
-                candidateCount = CountScheduled(candidate->conflicts);
-                bestCount = CountScheduled(best->conflicts);
-                if (bestCount > candidateCount)
-                    ;
-                else if (bestCount < candidateCount)
-                    best = candidate;
-                else if (best->height > candidate->height)
-                    ;
-                else if (best->height < candidate->height)
-                    best = candidate;
-                else if (gVirtualRegistersActive != 0) {
-                    if (gPCodeOpcodeDescriptors[best->obj->opcode].rank <
-                        gPCodeOpcodeDescriptors[candidate->obj->opcode].rank)
-                        ;
-                    else if (gPCodeOpcodeDescriptors[best->obj->opcode].rank <=
-                             gPCodeOpcodeDescriptors[candidate->obj->opcode].rank)
-                        ;
-                    else
-                        best = candidate;
-                }
-            } else {
-                best = candidate;
-            }
-        }
-    }
-    return best;
-}
-
 void schedule_block(PCodeBlock *function)
 {
     CColoringNode *cursor;
@@ -223,6 +171,58 @@ void schedule_block(PCodeBlock *function)
         iteration++;
     }
     CompilerTools_ResetPool();
+}
+
+struct CColoringNode *select_ready_coloring_node(struct CColoringNode *list, UInt16 id)
+{
+    CColoringNode *best;
+    CColoringNode *candidate;
+    SInt32 candidateCount;
+    SInt32 bestCount;
+
+    best = list;
+    while (best) {
+        if (best->flag == 0 && best->earliestCycle <= id && data_00581b80->check(best->obj))
+            break;
+        best = best->prev;
+    }
+    if (best == NULL)
+        return NULL;
+    for (candidate = best->prev; candidate; candidate = candidate->prev) {
+        if (candidate->flag != 0)
+            continue;
+        if (candidate->earliestCycle > id)
+            continue;
+        if (!data_00581b80->check(candidate->obj))
+            continue;
+        if (best->latestCycle > id || candidate->latestCycle <= id) {
+            if (!(best->latestCycle > id && candidate->latestCycle <= id)) {
+                candidateCount = CountScheduled(candidate->conflicts);
+                bestCount = CountScheduled(best->conflicts);
+                if (bestCount > candidateCount)
+                    ;
+                else if (bestCount < candidateCount)
+                    best = candidate;
+                else if (best->height > candidate->height)
+                    ;
+                else if (best->height < candidate->height)
+                    best = candidate;
+                else if (gVirtualRegistersActive != 0) {
+                    if (gPCodeOpcodeDescriptors[best->obj->opcode].rank <
+                        gPCodeOpcodeDescriptors[candidate->obj->opcode].rank)
+                        ;
+                    else if (gPCodeOpcodeDescriptors[best->obj->opcode].rank <=
+                             gPCodeOpcodeDescriptors[candidate->obj->opcode].rank)
+                        ;
+                    else
+                        best = candidate;
+                }
+            } else {
+                best = candidate;
+            }
+        }
+    }
+    return best;
 }
 
 void build_sched_dependencies(CColoringNode *list, CColoringNode *blk)

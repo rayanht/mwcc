@@ -600,19 +600,19 @@ static CInt64 not64(CInt64 v)
     return t;
 }
 
-CInt64 CInt64_Inv(CInt64 x)
-{
-    CInt64 r;
-    r = CInt64_Add(not64(x), cint64_one);
-    return r;
-}
-
 CInt64 CInt64_Sub(CInt64 lhs, CInt64 rhs)
 {
     CInt64 t;
     t = CInt64_Add(inv(rhs), cint64_one);
     lhs = CInt64_Add(lhs, t);
     return lhs;
+}
+
+CInt64 CInt64_Inv(CInt64 x)
+{
+    CInt64 r;
+    r = CInt64_Add(not64(x), cint64_one);
+    return r;
 }
 
 CInt64 CInt64_Add(CInt64 a, CInt64 b)

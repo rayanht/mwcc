@@ -506,6 +506,7 @@ void declare_auto_generated_destructor(ClassLayoutInput *type, TypeClass *cls)
         declare_member_function(type, cls, &spec, access, 1, 0, 0, 0);
     }
 }
+
 void generate_copy_constructor(ClassLayoutInput *type, TypeClass *cls)
 {
     DeclInfo decl;
@@ -3883,6 +3884,25 @@ static inline unsigned char checkObjectType(TypeClass *type)
     return 1;
 }
 
+void CheckDefaultArgs(FuncArg *args)
+{
+    FuncArg *arg = args;
+    while (arg && !arg->dexpr)
+        arg = arg->next;
+    while (arg && arg != &data_00583098 && arg != &data_00584748) {
+        if (!arg->dexpr) {
+            arg = args;
+            while (arg) {
+                arg->dexpr = NULL;
+                arg = arg->next;
+            }
+            CError_ReportError(205U);
+            return;
+        }
+        arg = arg->next;
+    }
+}
+
 /* Object lookup result and the remaining lookup state. */
 void MergeDefaultArgs(FuncArg *args, FuncArg *otherArgs)
 {
@@ -4070,25 +4090,6 @@ Object *find_or_create_function_object(ObjectList *list, DeclInfo *ref, Boolean 
         CTemplateTools_IsDependentType(ref->dtype))
         CTemplateClass_AppendObjectDeclaration((TypeClassTemplate *)currentNameSpace->theclass, result);
     return result;
-}
-
-void CheckDefaultArgs(FuncArg *args)
-{
-    FuncArg *arg = args;
-    while (arg && !arg->dexpr)
-        arg = arg->next;
-    while (arg && arg != &data_00583098 && arg != &data_00584748) {
-        if (!arg->dexpr) {
-            arg = args;
-            while (arg) {
-                arg->dexpr = NULL;
-                arg = arg->next;
-            }
-            CError_ReportError(205U);
-            return;
-        }
-        arg = arg->next;
-    }
 }
 
 void conversion_type_name(DeclInfo *result)
