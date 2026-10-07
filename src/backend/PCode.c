@@ -29,6 +29,11 @@
 #include "compiler/PCodeUtilities.h"
 #include "compiler/Switch.h"
 
+#pragma options align = mac68k
+static short next_label_number;
+static SInt32 pcodeBlockOrderIndex;
+#pragma options align = reset
+
 enum {
     OperandKind_GPR = 0,
     OperandKind_Address = 1,

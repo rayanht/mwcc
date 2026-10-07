@@ -638,9 +638,7 @@ extern void PCode_InsertInstructionBefore(PCodeInstruction *h, PCodeInstruction 
 extern PCodeInstruction *PCode_CloneInstruction(PCodeInstruction *instr);
 extern PCodeLabel *PCode_NewLabel(void);
 extern void PCode_ResetBlocks(void);
-extern short next_label_number;
 extern void SpillCode_BuildBlockOrder(void);
-extern SInt32 pcodeBlockOrderIndex;
 extern struct PCodeBlock **gPCodeBlockOrder;
 
 #ifdef __cplusplus

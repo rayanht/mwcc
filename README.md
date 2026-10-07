@@ -67,8 +67,8 @@ Project structure
 =================
 
 - `config/sources.json`: each source's compiler, flags and status (Matching or NonMatching)
-- `config/<version>/config.json`: the original executable and its SHA-1; for 1.3, the compilers that replace Pro 5
-  and 5.3 and the sources Matching in that version
+- `config/<version>/config.json`: the original executable and its SHA-1; for 1.2.5n and 1.3, the sources Matching in
+  that version, and for 1.3 the compilers that replace Pro 5 and 5.3
 - `config/<version>/symbols.txt`, `splits.txt` (1.2.5, 1.2.5n): the original's symbols and its translation units,
   in decomp-toolkit's formats
 - `config/<version>/functions.json`: each function's address, size and source (none yet for a function not

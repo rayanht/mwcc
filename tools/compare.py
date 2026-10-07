@@ -298,7 +298,8 @@ def resolve_function(symbols, sections, symbol_name, target_address, addresses, 
             # Verify the entire literal up to the next COFF data symbol, not
             # unrelated literals that happen to share its section. Every entry
             # in this range must resolve and occur together in the original.
-            matches = locate(bytes(payload)) if payload else []
+            # (uninitialized data has no contents to find it by: only the original's own reference places it)
+            matches = locate(bytes(payload)) if payload and not literal.get("flags", 0) & 0x80 else []
             if len(matches) == 1:
                 address = matches[0]
             else:

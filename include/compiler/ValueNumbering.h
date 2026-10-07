@@ -88,18 +88,6 @@ extern void value_number_instruction(PCodeInstruction *obj);
 extern void invalidate_object_indices(Type *unused, int mode);
 extern SInt32 invalidate_register_value(PCodeOperand *sp);
 extern void fn_0051ffc0(void);
-extern void *data_00582c38;
-extern struct RegisterValueRecord *register_values_by_opcode[466];
-extern struct RegisterValueState *register_value_state_array;
-extern struct RegisterValueState *fpr_value_states;
-extern struct RegisterValueState *gRegisterValueStates;
-extern struct RegisterValueState *register_value_states;
-extern SInt32 next_value_index;
-extern SInt32 value_index_threshold;
-extern struct Object *data_00582c44;
-extern unsigned int data_00582c48;
-extern struct ObjectIndexEntry *objectIndex;
-extern struct ObjectIndexEntry *object_indices;
 extern void fn_0051fd70(ValueUpdate *update);
 extern void create_register_value_record(PCodeInstruction *instruction);
 

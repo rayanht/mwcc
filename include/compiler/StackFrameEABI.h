@@ -73,7 +73,6 @@ extern UInt8 gHasAltivecFrame;
 extern short gVRSaveSpan;
 extern void StackFrameEABI_AllocateObjectSlot(Object *object);
 extern void StackFrameEABI_Initialize(void);
-extern Object *data_00580fa8;
 extern void StackFrameEABI_FinalizeLayout(struct PCodeBlock *function);
 extern int outgoing_argument_size;
 extern int data_005876a8;

@@ -32,6 +32,12 @@
 #include "compiler/Registers.h"
 #include "compiler/StackFrameEABI.h"
 #include "compiler/Switch.h"
+
+static struct ExceptionScopeEntry *exception_scope_entries;
+static struct ExceptionScopeEntry *last_exception_scope_entry;
+static GList exception_records;
+static struct ObjGenRelocationRequest *exception_table_relocation_requests;
+static struct ObjGenRelocationRequest *relocation_request_tail;
 /* Layouts of the exception scope records used by this routine. */
 
 #pragma opt_lifetimes off

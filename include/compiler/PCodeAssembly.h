@@ -36,7 +36,6 @@ struct PCodeAssemblyEntry {
 };
 extern int PCodeAssembly_EmitFunction(Object *object, struct PCodeAssemblyEntry *entries);
 extern int optimize_branches(int arg);
-extern int assembly_buffer_offset;
 
 #ifdef __cplusplus
 }

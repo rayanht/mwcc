@@ -155,8 +155,7 @@
     ],
     "include_dirs": [
       "src/backend"
-    ],
-    "status": "NonMatching"
+    ]
   },
   "src/backend/FuncLevelAsmPPC.c": {
     "compiler": "pro53",
@@ -171,8 +170,7 @@
     ],
     "include_dirs": [
       "src/backend"
-    ],
-    "status": "NonMatching"
+    ]
   },
   "src/backend/InlineAsm.c": {
     "compiler": "pro53",
@@ -427,8 +425,7 @@
     ],
     "include_dirs": [
       "src/backend"
-    ],
-    "status": "NonMatching"
+    ]
   },
   "src/backend/PCodeAssembly.c": {
     "compiler": "pro53",
@@ -443,8 +440,7 @@
     ],
     "include_dirs": [
       "src/backend"
-    ],
-    "status": "NonMatching"
+    ]
   },
   "src/backend/PCodeListing.c": {
     "compiler": "pro53",
@@ -582,8 +578,7 @@
     ],
     "include_dirs": [
       "src/backend"
-    ],
-    "status": "NonMatching"
+    ]
   },
   "src/backend/Switch.c": {
     "compiler": "pro53",
@@ -760,8 +755,7 @@
       "src/driver",
       "include",
       "include/libc"
-    ],
-    "status": "NonMatching"
+    ]
   },
   "src/driver/CLLoadAndCache.c": {
     "compiler": "pro53",
@@ -842,8 +836,7 @@
     ],
     "include_dirs": [
       "src/driver"
-    ],
-    "status": "NonMatching"
+    ]
   },
   "src/driver/CLProj.c": {
     "compiler": "pro53",
@@ -1066,8 +1059,7 @@
     ],
     "include_dirs": [
       "src/driver"
-    ],
-    "status": "NonMatching"
+    ]
   },
   "src/driver/MsDos.c": {
     "compiler": "pro53",
@@ -3185,8 +3177,7 @@
     ],
     "include_dirs": [
       "src/optimizer"
-    ],
-    "status": "NonMatching"
+    ]
   },
   "src/optimizer/StrengthReduction.c": {
     "compiler": "pro53",
@@ -3231,8 +3222,7 @@
     ],
     "include_dirs": [
       "src/optimizer"
-    ],
-    "status": "NonMatching"
+    ]
   },
   "src/optimizer/VectorArraysToRegs.c": {
     "compiler": "pro53",

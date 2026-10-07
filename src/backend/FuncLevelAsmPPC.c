@@ -53,6 +53,9 @@
 #include <string.h>
 #include <setjmp.h>
 
+static struct PCodeAssemblyEntry *data_00581c58;
+static struct PCodeAssemblyEntry **assembly_list_tail;
+
 static inline void append_assembly(ParsedAsmInstruction *q, PCodeBlock *block)
 {
     PCodeAssemblyEntry *n = (PCodeAssemblyEntry *)CompilerTools_AllocatePool(12);

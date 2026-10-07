@@ -21,7 +21,6 @@ struct StorageHandle {
 };
 struct StorageHandle;
 struct StorageHandle;
-extern unsigned short memory_error;
 extern MemBuffer *Memory_GetSizeAddress(void *a0);
 extern unsigned int set_storage_handle_data(StorageHandle *a0, char *a1);
 extern unsigned short Memory_GetError(void);

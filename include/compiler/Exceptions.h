@@ -112,11 +112,6 @@ extern int Exceptions_CountBoundObjectFields(CException *action);
 extern void emit_exception_records(ObjectGroup *node);
 extern void Exceptions_CollectRegisterOperands(CException *node, PCodeOperand *out);
 extern struct ObjectGroup *find_or_create_object_group(CException *object);
-extern struct ObjGenRelocationRequest *relocation_request_tail;
-extern struct ExceptionScopeEntry *exception_scope_entries;
-extern struct ExceptionScopeEntry *last_exception_scope_entry;
-extern GList exception_records;
-extern struct ObjGenRelocationRequest *exception_table_relocation_requests;
 extern void *object_groups[];
 
 #ifdef __cplusplus

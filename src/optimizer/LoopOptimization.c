@@ -46,6 +46,10 @@
 #include "compiler/StrengthReduction.h"
 #include "compiler/Switch.h"
 
+static UInt32 *registers_used_outside_loop;
+static UInt32 *self_addi_candidate_regs;
+static SInt32 data_00582c70;
+
 #define NULL 0
 
 #define CE_ASSERT(c, s)                                                                                                \
@@ -1075,7 +1079,8 @@ static inline int bit_set(UInt32 *bits, int bit)
 
 /* After unrolling: each original block whose branch led back to the loop body is unlinked from the body (its label
    operand is written through CLONE, the last branch cloned, as the original does). */
-static inline void unroll_retarget_branches(Loop *loop, PCodeBlock **orig, SInt32 n, PCodeInstruction *clone, PCodeBlock **all)
+static inline void unroll_retarget_branches(Loop *loop, PCodeBlock **orig, SInt32 n, PCodeInstruction *clone,
+                                            PCodeBlock **all)
 {
     PCodeInstruction *pc;
     SInt32 i;

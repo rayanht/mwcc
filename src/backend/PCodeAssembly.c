@@ -40,6 +40,8 @@
 #include "compiler/StackFrameEABI.h"
 #include "compiler/Switch.h"
 #include "driver/Files.h"
+
+static int assembly_buffer_offset;
 typedef void (*ExpressionGenerator)(ENode *, short, short, Operand *);
 static PCodeInstruction *first_instr(struct PCodeLabel *q)
 {

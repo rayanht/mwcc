@@ -183,17 +183,17 @@ src/driver/Resources.c:
 src/driver/CLErrors.c:
 	.text       start:0x004087D0 end:0x00408BA0
 	.data       start:0x00541248 end:0x005413E0
-	.bss        start:0x0057D5F8 end:0x0057D700
+	.bss        start:0x0057D5F8 end:0x0057D7F8
 
 src/driver/ResourceStrings.c:
 	.text       start:0x00408BA0 end:0x00408D20
 	.data       start:0x005413E0 end:0x00541460
-	.bss        start:0x0057D700 end:0x0057D8C0
+	.bss        start:0x0057D7F8 end:0x0057D8F8
 
 src/driver/CLPlugins.c:
 	.text       start:0x00408D20 end:0x0040A6F0
 	.data       start:0x00541460 end:0x00541B18
-	.bss        start:0x0057D8C0 end:0x0057D920
+	.bss        start:0x0057D8F8 end:0x0057D920
 
 src/driver/CLMain.c:
 	.text       start:0x0040A6F0 end:0x0040B6EB
@@ -228,7 +228,7 @@ src/msl/file_io.c:
 src/driver/ParserHelpers.c:
 	.text       start:0x0040C8B0 end:0x0040D360 align:1
 	.data       start:0x0054A0B8 end:0x0054A180
-	.bss        start:0x0057DA58 end:0x0057DA60
+	.bss        start:0x0057DA58 end:0x0057DB60
 
 src/driver/ParserHelpers-cc.c:
 	.text       start:0x0040D360 end:0x0040D8C0 align:1
@@ -249,12 +249,12 @@ src/driver/ToolHelpers-cc.c:
 src/driver/StringUtils.c:
 	.text       start:0x0040E8A0 end:0x0040EB76
 	.data       start:0x0054A9D8 end:0x0054AA60
-	.bss        start:0x0057DA60 end:0x0057DB68
+	.bss        start:0x0057DB60 end:0x0057DC60
 
 src/driver/Targets.c:
 	.text       start:0x0040EB76 end:0x0040FE30 align:1
 	.data       start:0x0054AA60 end:0x0054AC28
-	.bss        start:0x0057DB68 end:0x0057E1E0
+	.bss        start:0x0057DC60 end:0x0057E1E0
 
 src/msl/misc_io.c:
 	.text       start:0x0040FE30 end:0x0040FE50
@@ -279,11 +279,11 @@ src/msl/wctype.c:
 src/driver/MsDos.c:
 	.text       start:0x00411130 end:0x004138A0
 	.data       start:0x0054B650 end:0x0054B8F8
-	.bss        start:0x0057E208 end:0x0057EA68
+	.bss        start:0x0057E208 end:0x0057EB60
 
 src/driver/Memory.c:
 	.text       start:0x004138A0 end:0x00413B80
-	.bss        start:0x0057EA68 end:0x0057EB68
+	.bss        start:0x0057EB60 end:0x0057EB68
 
 src/driver/Files.c:
 	.text       start:0x00413B80 end:0x00414A90
@@ -292,12 +292,12 @@ src/driver/Files.c:
 src/driver/CLIO.c:
 	.text       start:0x00414A90 end:0x00416770
 	.data       start:0x0054B928 end:0x0054BC58
-	.bss        start:0x0057EB68 end:0x0057EE00
+	.bss        start:0x0057EB68 end:0x0057EF00
 
 src/driver/CLPrefs.c:
 	.text       start:0x00416770 end:0x004169A0
 	.data       start:0x0054BC58 end:0x0054BCA0
-	.bss        start:0x0057EE00 end:0x0057EF08
+	.bss        start:0x0057EF00 end:0x0057EF08
 
 src/driver/MemUtils.c:
 	.text       start:0x004169A0 end:0x00416B40
@@ -319,12 +319,12 @@ src/driver/CLToolExec.c:
 src/driver/CLProj.c:
 	.text       start:0x00418350 end:0x00418CF0
 	.data       start:0x0054BEE8 end:0x0054BF20
-	.bss        start:0x0057F018 end:0x0057F370
+	.bss        start:0x0057F018 end:0x0057F3B0
 
 src/driver/CLFileOps.cpp:
 	.text       start:0x00418CF0 end:0x0041B140
 	.data       start:0x0054BF20 end:0x0054C0F8
-	.bss        start:0x0057F370 end:0x0057F3B8
+	.bss        start:0x0057F3B0 end:0x0057F3B8
 
 src/driver/CLTarg.c:
 	.text       start:0x0041B140 end:0x0041B370
@@ -449,22 +449,22 @@ src/driver/Parameter.c:
 src/driver/Help.c:
 	.text       start:0x0042ACB0 end:0x0042C0C0 align:1
 	.data       start:0x0054DCF8 end:0x0054E840
-	.bss        start:0x0057F5A8 end:0x0057F5B0
+	.bss        start:0x0057F5A8 end:0x0057F6A8
 
 src/driver/TargetPanels-eabi-ppc.c:
 	.text       start:0x0042C0C0 end:0x0042C920
 	.data       start:0x0054E840 end:0x0054EA28
-	.bss        start:0x0057F5B0 end:0x0057F6B0
+	.bss        start:0x0057F6A8 end:0x0057F6B0
 
 src/optimizer/IrOptimizer.c:
 	.text       start:0x0042C920 end:0x004317B0
 	.data       start:0x0054EA28 end:0x0054F5A0
-	.bss        start:0x0057F6B0 end:0x0057F6B8
+	.bss        start:0x0057F6B0 end:0x0057F6C0
 
 src/backend/CodeGen.c:
 	.text       start:0x004317B0 end:0x00437D90
 	.data       start:0x0054F5A0 end:0x0054FD08
-	.bss        start:0x0057F6B8 end:0x0057F6C8
+	.bss        start:0x0057F6C0 end:0x0057F6C8
 
 src/frontend/CPrep.c:
 	.text       start:0x00437D90 end:0x00441890
@@ -474,12 +474,12 @@ src/frontend/CPrep.c:
 src/frontend/CompilerTools.c:
 	.text       start:0x00441890 end:0x004434E0
 	.data       start:0x00551100 end:0x00551208
-	.bss        start:0x0057FD70 end:0x0057FDE8
+	.bss        start:0x0057FD70 end:0x005805E0
 
 src/backend/ELF_Endian.c:
 	.text       start:0x004434E0 end:0x00443F10
 	.data       start:0x00551208 end:0x00551410
-	.bss        start:0x0057FDE8 end:0x005805E8
+	.bss        start:0x005805E0 end:0x005805E8
 
 src/msl/wcstold.c:
 	.text       start:0x00443F10 end:0x00444570
@@ -505,7 +505,7 @@ src/runtime/NewHand.cpp:
 src/frontend/CError.c:
 	.text       start:0x00445200 end:0x00449E30
 	.data       start:0x00551508 end:0x00551C80
-	.bss        start:0x005805E8 end:0x005805F0
+	.bss        start:0x005805E8 end:0x005805F8
 
 src/optimizer/IroFlowgraph.c:
 	.text       start:0x00449E30 end:0x0044A6F0
@@ -514,7 +514,7 @@ src/optimizer/IroFlowgraph.c:
 src/optimizer/IroVars.c:
 	.text       start:0x0044A6F0 end:0x0044BF20
 	.data       start:0x00551D20 end:0x00551F40
-	.bss        start:0x005805F0 end:0x00580600
+	.bss        start:0x005805F8 end:0x00580600
 
 src/optimizer/IroUtil.c:
 	.text       start:0x0044BF20 end:0x0044D4B0
@@ -558,7 +558,7 @@ src/optimizer/IROUseDef.c:
 src/optimizer/IroLoop.c:
 	.text       start:0x0045ADC0 end:0x004629F0
 	.data       start:0x00553E90 end:0x00554820
-	.bss        start:0x00580640 end:0x00580680
+	.bss        start:0x00580640 end:0x005806A0
 
 src/optimizer/IroBitVect.c:
 	.text       start:0x004629F0 end:0x00462CA0
@@ -571,7 +571,7 @@ src/backend/InlineAsmPPC.c:
 src/frontend/CExpr2.c:
 	.text       start:0x0046B3F0 end:0x00474E30
 	.data       start:0x00555090 end:0x00555498
-	.bss        start:0x00580680 end:0x00580760
+	.bss        start:0x005806A0 end:0x00580870
 
 src/frontend/CInt64.c:
 	.text       start:0x00474E30 end:0x00476100
@@ -580,7 +580,7 @@ src/frontend/CInt64.c:
 src/frontend/CFunc.c:
 	.text       start:0x00476100 end:0x0047CB40
 	.data       start:0x00555500 end:0x005557B8
-	.bss        start:0x00580760 end:0x00580898
+	.bss        start:0x00580870 end:0x00580898
 
 src/backend/PPCError.c:
 	.text       start:0x0047CB40 end:0x0047D000
@@ -618,11 +618,11 @@ src/frontend/CScope.c:
 src/backend/BE_elf.c:
 	.text       start:0x0049B6A0 end:0x0049CE40
 	.data       start:0x0055E520 end:0x0055E598
-	.bss        start:0x00580DF0 end:0x00580F78
+	.bss        start:0x00580DF0 end:0x00580F80
 
 src/backend/PCode.c:
 	.text       start:0x0049CE40 end:0x0049D330
-	.bss        start:0x00580F78 end:0x00580F88
+	.bss        start:0x00580F80 end:0x00580F88
 
 src/backend/TOC.c:
 	.text       start:0x0049D330 end:0x0049F5D0
@@ -688,7 +688,7 @@ src/optimizer/COptimizer.c:
 src/backend/Registers.c:
 	.text       start:0x004C10B0 end:0x004C2560
 	.data       start:0x005619B8 end:0x00561A30
-	.bss        start:0x00581310 end:0x00581378
+	.bss        start:0x00581310 end:0x005813A0
 
 src/frontend/CMangler.c:
 	.text       start:0x004C2560 end:0x004C4430
@@ -704,7 +704,7 @@ src/backend/PCodeListing.c:
 
 src/backend/Peephole.c:
 	.text       start:0x004C60B0 end:0x004CCA50
-	.bss        start:0x00581378 end:0x00581B00
+	.bss        start:0x005813A0 end:0x00581B00
 
 src/backend/Scheduler.c:
 	.text       start:0x004CCA50 end:0x004CDEF0
@@ -738,12 +738,12 @@ src/frontend/CPrec.c:
 src/frontend/CException.c:
 	.text       start:0x004E06E0 end:0x004E36D0
 	.data       start:0x005641D0 end:0x005646A0
-	.bss        start:0x00581C30 end:0x00581C40
+	.bss        start:0x00581C30 end:0x00581C48
 
 src/frontend/CSOM.c:
 	.text       start:0x004E36D0 end:0x004E67C0
 	.data       start:0x005646A0 end:0x005648F8
-	.bss        start:0x00581C40 end:0x00581C58
+	.bss        start:0x00581C48 end:0x00581C58
 
 src/backend/FuncLevelAsmPPC.c:
 	.text       start:0x004E67C0 end:0x004E71A0
@@ -757,17 +757,17 @@ src/frontend/Unmangle.c:
 src/frontend/CClass.c:
 	.text       start:0x004E8FC0 end:0x004EC390
 	.data       start:0x005651C0 end:0x005652F8
-	.bss        start:0x00581C60 end:0x00581CC8
+	.bss        start:0x00581C60 end:0x00581CE0
 
 src/backend/InlineAsm.c:
 	.text       start:0x004EC390 end:0x004ED690
 	.data       start:0x005652F8 end:0x005653E0
-	.bss        start:0x00581CC8 end:0x00581CE8
+	.bss        start:0x00581CE0 end:0x005820E0
 
 src/frontend/CTemplateNew.c:
 	.text       start:0x004ED690 end:0x004F0B00
 	.data       start:0x005653E0 end:0x005723A8
-	.bss        start:0x00581CE8 end:0x00582440
+	.bss        start:0x005820E0 end:0x00582440
 
 src/frontend/CExpr.c:
 	.text       start:0x004F0B00 end:0x004FB5B0
@@ -799,7 +799,7 @@ src/frontend/CInline.c:
 src/frontend/CTemplateFunc.c:
 	.text       start:0x00514220 end:0x005159A0
 	.data       start:0x00573D80 end:0x00573E28
-	.bss        start:0x005824C8 end:0x005824D0
+	.bss        start:0x005824C8 end:0x005824D8
 
 src/frontend/CTemplateTools.c:
 	.text       start:0x005159A0 end:0x00518A60
@@ -827,7 +827,7 @@ src/msl/qsort.c:
 src/optimizer/ValueNumbering.c:
 	.text       start:0x0051E590 end:0x00520230
 	.data       start:0x00574418 end:0x00574CC0
-	.bss        start:0x005824D0 end:0x00582C50
+	.bss        start:0x005824D8 end:0x00582C50
 
 src/optimizer/CopyPropagation.c:
 	.text       start:0x00520230 end:0x00520BF0
@@ -876,11 +876,11 @@ src/backend/MachineSimulation603e.c:
 
 src/backend/MachineSimulation604.c:
 	.text       start:0x0052E680 end:0x0052ECD0
-	.bss        start:0x00582D90 end:0x00582DF8
+	.bss        start:0x00582D90 end:0x00582E70
 
 src/backend/MachineSimulation750.c:
 	.text       start:0x0052ECD0 end:0x0052F370
-	.bss        start:0x00582DF8 end:0x00582F00
+	.bss        start:0x00582E70 end:0x00582F00
 
 src/backend/MachineSimulation7400.c:
 	.text       start:0x0052F370 end:0x0052FDD0

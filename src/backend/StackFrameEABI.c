@@ -46,6 +46,8 @@
 #include <string.h>
 #include <stdio.h>
 
+static Object *data_00580fa8;
+
 /* Declarations gathered from the merged files. */
 
 enum { STRUCT_KIND_4 = 4, STRUCT_KIND_14 = 14 };

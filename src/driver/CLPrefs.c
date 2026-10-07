@@ -25,6 +25,8 @@
 #pragma auto_inline off
 #include <ctype.h>
 
+static NameTableEntry *name_table_entries;
+
 #pragma auto_inline reset
 
 StorageHandle *CLPrefs_CopyDestinationToTemporary(NameTableEntry *preferences)

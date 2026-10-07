@@ -8,6 +8,8 @@
 #include <string.h>
 #include <stdlib.h>
 #include <stdio.h>
+
+static unsigned short memory_error;
 MemBuffer *Memory_GetSizeAddress(void *allocation)
 {
     MemBuffer *buffer = (MemBuffer *)allocation;
