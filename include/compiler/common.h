@@ -405,6 +405,7 @@ typedef struct IntrinsicBinaryEntry IntrinsicBinaryEntry;
 typedef struct IntrinsicTripleEntry IntrinsicTripleEntry;
 typedef struct IntrinsicTypeEntry IntrinsicTypeEntry;
 typedef struct IntrinsicVariant IntrinsicVariant;
+typedef struct SimpleEntry SimpleEntry;
 typedef struct IROUse IROUse;
 typedef struct IrNodeList IrNodeList;
 typedef struct ParsedAsmInstruction ParsedAsmInstruction;

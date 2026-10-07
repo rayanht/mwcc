@@ -20,6 +20,7 @@
     "src/backend/InlineAsmRegistersPPC.c",
     "src/backend/InstrSelection.c",
     "src/backend/InterferenceGraph.c",
+    "src/backend/Intrinsics.c",
     "src/backend/LiveVariables.c",
     "src/backend/MachineSimulation601.c",
     "src/backend/MachineSimulation603.c",
