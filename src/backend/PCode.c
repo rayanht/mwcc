@@ -59,6 +59,48 @@ enum {
     PCode_LFD = 0x92,
     PCode_LFDX = 0x94
 };
+
+void SpillCode_BuildBlockOrder(void)
+{
+    PCodeBlock *block;
+    PCodeBlock *successor;
+    int depth;
+    BlockOrderEntry *stack;
+    PCodeBlockLink *link;
+    PCodeBlock *current;
+
+    gPCodeBlockOrder = CompilerTools_AllocatePool(gPCodeBlockCount * sizeof(*gPCodeBlockOrder));
+    pcodeBlockOrderIndex = gPCodeBlockCount;
+    for (current = gPCodeBlocks; current != NULL; current = current->next) {
+        current->flags &= ~4;
+    }
+    stack = (struct BlockOrderEntry *)CompilerTools_AllocatePoolMemory(gPCodeBlockCount * sizeof(*stack));
+    gPCodeBlocks->flags |= 4;
+    depth = 0;
+    stack[0].block = gPCodeBlocks;
+    stack[0].cursor = gPCodeBlocks->successors;
+    depth++;
+    while (depth != 0) {
+        if ((link = stack[depth - 1].cursor) != NULL) {
+            stack[depth - 1].cursor = link->next;
+            successor = link->payload.block;
+            if (!((block = successor)->flags & 4)) {
+                block->flags |= 4;
+                stack[depth].block = block;
+                stack[depth].cursor = block->successors;
+                depth++;
+            }
+        } else {
+            block = stack[--depth].block;
+            gPCodeBlockOrder[--pcodeBlockOrderIndex] = block;
+        }
+    }
+    while (pcodeBlockOrderIndex != 0) {
+        pcodeBlockOrderIndex--;
+        gPCodeBlockOrder[pcodeBlockOrderIndex] = NULL;
+    }
+}
+
 unsigned int PCode_SetCodeOffsets(void)
 {
     unsigned int total = 0;

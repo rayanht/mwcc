@@ -975,19 +975,6 @@
       "src/driver"
     ]
   },
-  "src/driver/LicenseImports.c": {
-    "compiler": "pro53",
-    "flags": [
-      "-O4,p",
-      "-sym",
-      "off",
-      "-Cpp_exceptions",
-      "off"
-    ],
-    "include_dirs": [
-      "src/driver"
-    ]
-  },
   "src/driver/MacFileTypes.c": {
     "compiler": "pro53",
     "flags": [
@@ -3141,7 +3128,9 @@
       "-sym",
       "off",
       "-Cpp_exceptions",
-      "on"
+      "on",
+      "-RTTI",
+      "off"
     ],
     "system_include_dirs": [
       "lib/extra",
@@ -3163,7 +3152,9 @@
       "-sym",
       "off",
       "-Cpp_exceptions",
-      "on"
+      "on",
+      "-RTTI",
+      "off"
     ],
     "system_include_dirs": [
       "lib/extra",
@@ -3185,7 +3176,9 @@
       "-sym",
       "off",
       "-Cpp_exceptions",
-      "on"
+      "on",
+      "-RTTI",
+      "off"
     ],
     "system_include_dirs": [
       "lib/extra",
@@ -3207,7 +3200,9 @@
       "-sym",
       "off",
       "-Cpp_exceptions",
-      "on"
+      "on",
+      "-RTTI",
+      "off"
     ],
     "system_include_dirs": [
       "lib/extra",
@@ -3229,7 +3224,9 @@
       "-sym",
       "off",
       "-Cpp_exceptions",
-      "on"
+      "on",
+      "-RTTI",
+      "off"
     ],
     "system_include_dirs": [
       "lib/extra",
@@ -3251,7 +3248,9 @@
       "-sym",
       "off",
       "-Cpp_exceptions",
-      "on"
+      "on",
+      "-RTTI",
+      "off"
     ],
     "system_include_dirs": [
       "lib/extra",
@@ -3273,7 +3272,9 @@
       "-sym",
       "off",
       "-Cpp_exceptions",
-      "on"
+      "on",
+      "-RTTI",
+      "off"
     ],
     "system_include_dirs": [
       "lib/extra",
@@ -3295,7 +3296,9 @@
       "-sym",
       "off",
       "-Cpp_exceptions",
-      "on"
+      "on",
+      "-RTTI",
+      "off"
     ],
     "system_include_dirs": [
       "lib/extra",
@@ -3317,7 +3320,9 @@
       "-sym",
       "off",
       "-Cpp_exceptions",
-      "on"
+      "on",
+      "-RTTI",
+      "off"
     ],
     "system_include_dirs": [
       "lib/extra",
@@ -3339,7 +3344,9 @@
       "-sym",
       "off",
       "-Cpp_exceptions",
-      "on"
+      "on",
+      "-RTTI",
+      "off"
     ],
     "system_include_dirs": [
       "lib/extra",
@@ -3361,7 +3368,9 @@
       "-sym",
       "off",
       "-Cpp_exceptions",
-      "on"
+      "on",
+      "-RTTI",
+      "off"
     ],
     "system_include_dirs": [
       "lib/extra",
@@ -3383,7 +3392,9 @@
       "-sym",
       "off",
       "-Cpp_exceptions",
-      "on"
+      "on",
+      "-RTTI",
+      "off"
     ],
     "system_include_dirs": [
       "lib/extra",
@@ -3405,7 +3416,9 @@
       "-sym",
       "off",
       "-Cpp_exceptions",
-      "on"
+      "on",
+      "-RTTI",
+      "off"
     ],
     "system_include_dirs": [
       "lib/runtime53",
@@ -3428,7 +3441,9 @@
       "-sym",
       "off",
       "-Cpp_exceptions",
-      "on"
+      "on",
+      "-RTTI",
+      "off"
     ],
     "system_include_dirs": [
       "lib/extra",

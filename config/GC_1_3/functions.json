@@ -2534,7 +2534,7 @@
     "source": "src/msl/wctype.c"
   },
   {
-    "name": "towlower",
+    "name": "towupper",
     "address": "0x004118e0",
     "size": 22,
     "source": "src/msl/wctype.c"
@@ -5375,17 +5375,17 @@
     "size": 444
   },
   {
-    "name": "fn_0042885c",
+    "name": "lp_checkout",
     "address": "0x0042885c",
     "size": 6
   },
   {
-    "name": "fn_00428862",
+    "name": "lp_checkin",
     "address": "0x00428862",
     "size": 6
   },
   {
-    "name": "fn_00428868",
+    "name": "lp_errstring",
     "address": "0x00428868",
     "size": 6
   },

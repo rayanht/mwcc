@@ -8,6 +8,12 @@
 extern "C" {
 #endif
 
+#pragma pack(push, 1)
+struct BlockOrderEntry {
+    struct PCodeBlock *block;
+    struct PCodeBlockLink *cursor;
+};
+#pragma pack(pop)
 #pragma pack(push, 2)
 union PCodeOperandValue {
     struct PCodeLabel *label;
@@ -633,6 +639,9 @@ extern PCodeInstruction *PCode_CloneInstruction(PCodeInstruction *instr);
 extern PCodeLabel *PCode_NewLabel(void);
 extern void PCode_ResetBlocks(void);
 extern short next_label_number;
+extern void SpillCode_BuildBlockOrder(void);
+extern SInt32 pcodeBlockOrderIndex;
+extern struct PCodeBlock **gPCodeBlockOrder;
 
 #ifdef __cplusplus
 }

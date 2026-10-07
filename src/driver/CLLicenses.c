@@ -3,7 +3,6 @@
 #include "driver/CLLicenses.h"
 #include "driver/CLErrors.h"
 #include "driver/CLTarg.h"
-#include "driver/LicenseImports.h"
 #include "driver/MemUtils.h"
 #include "driver/MsDos.h"
 /* Paired values in the license table. */
@@ -103,17 +102,17 @@ int CLLicenses_RequestLicense(int request, int options, int cookieKind, char *er
     }
     licenseInfo.license = data_0057ef08;
     licenseInfo.vendor = "metrowks";
-    status = fn_004270ba(&licenseInfo, 0x101, request, options, 1, licensePath, &licenseHandle);
+    status = lp_checkout(&licenseInfo, 0x101, request, options, 1, licensePath, &licenseHandle);
     strcpy(errorMessage, "No failure");
     if (status == 0) {
         result = allocate_license_slot(licenseHandle, cookieKind);
         if (result == 0) {
             strcpy(errorMessage, "Memory error:  Could not store license cookie");
-            fn_004270c0(licenseHandle);
+            lp_checkin(licenseHandle);
         }
     } else {
-        strcpy(errorMessage, fn_004270c6(licenseHandle));
-        fn_004270c0(licenseHandle);
+        strcpy(errorMessage, lp_errstring(licenseHandle));
+        lp_checkin(licenseHandle);
     }
     return result;
 }
@@ -127,7 +126,7 @@ void CLLicenses_DeleteLicense(int identifier)
         licenseIndex = find_license(identifier, &license);
         if (licenseIndex >= 0) {
             delete_license(licenseIndex);
-            fn_004270c0(license);
+            lp_checkin(license);
         }
     }
 }

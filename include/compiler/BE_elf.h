@@ -8,12 +8,6 @@
 extern "C" {
 #endif
 
-#pragma pack(push, 1)
-struct BlockOrderEntry {
-    struct PCodeBlock *block;
-    struct PCodeBlockLink *cursor;
-};
-#pragma pack(pop)
 /* An ELF relocation with addend: BE_elf_AddRelocation appends them to a relocation section; fn_0049b920 sets each one's
    symbol index when the object file is written. */
 struct Elf32Rela {
@@ -112,9 +106,6 @@ extern struct ObjGenSection *data_005884da;
 extern struct ObjGenSection *data_005884de;
 extern struct ObjGenSection *data_005884e2;
 extern UInt16 data_005884ee;
-extern void SpillCode_BuildBlockOrder(void);
-extern SInt32 pcodeBlockOrderIndex;
-extern struct PCodeBlock **gPCodeBlockOrder;
 extern NameSpace *BE_elf_SaveAndSetClassScope(TypeClass *theclass, CScopeSave *save);
 extern void BE_elf_SaveScopeAndEnterClass(TypeClass *theclass, CScopeSave *saved);
 extern TypeClass *BE_elf_SaveAndSetScope(NameSpace *scope, CScopeSave *save);

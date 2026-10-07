@@ -24,8 +24,12 @@ struct License {
 };
 struct MWInfo {
     struct License *license; /* 0x00: CLLicenses_RequestLicense assigns data_0057ef08 */
-    char *vendor;            /* 0x04: CLLicenses_RequestLicense assigns "metrowks" for fn_004270ba */
+    char *vendor;            /* 0x04: CLLicenses_RequestLicense assigns "metrowks" for lp_checkout */
 };
+/* The FLEXlm client library's (LMGR326B.dll, through its import library). */
+extern int lp_checkout(struct MWInfo *info, int version, int request, int options, int flag, char *path, int *handle);
+extern void lp_checkin(int handle);
+extern char *lp_errstring(int handle);
 extern int get_license_slot_values(int index, unsigned int *firstValue, int *secondValue);
 extern int delete_license(int licenseIndex);
 extern int find_license(unsigned int identifier, unsigned int *license);

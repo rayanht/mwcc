@@ -2658,7 +2658,7 @@
     "source": "src/msl/wctype.c"
   },
   {
-    "name": "towlower",
+    "name": "towupper",
     "address": "0x00411110",
     "size": 22,
     "source": "src/msl/wctype.c"
@@ -5622,22 +5622,19 @@
     "source": "src/driver/CLCompilerLinkerDropin_V10.cpp"
   },
   {
-    "name": "fn_004270ba",
+    "name": "lp_checkout",
     "address": "0x004270ba",
-    "size": 6,
-    "source": "src/driver/LicenseImports.c"
+    "size": 6
   },
   {
-    "name": "fn_004270c0",
+    "name": "lp_checkin",
     "address": "0x004270c0",
-    "size": 6,
-    "source": "src/driver/LicenseImports.c"
+    "size": 6
   },
   {
-    "name": "fn_004270c6",
+    "name": "lp_errstring",
     "address": "0x004270c6",
-    "size": 6,
-    "source": "src/driver/LicenseImports.c"
+    "size": 6
   },
   {
     "name": "init_access_path_entry",
@@ -12837,7 +12834,7 @@
     "name": "SpillCode_BuildBlockOrder",
     "address": "0x0049ce40",
     "size": 244,
-    "source": "src/backend/BE_elf.c"
+    "source": "src/backend/PCode.c"
   },
   {
     "name": "PCode_SetCodeOffsets",
