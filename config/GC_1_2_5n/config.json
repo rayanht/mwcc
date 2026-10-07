@@ -114,6 +114,7 @@
     "src/frontend/CMangler.c",
     "src/frontend/CObjCModern.c",
     "src/frontend/CParser.c",
+    "src/frontend/CPrec.c",
     "src/frontend/CPrepTokenizer.c",
     "src/frontend/CRTTI.c",
     "src/frontend/CSOM.c",

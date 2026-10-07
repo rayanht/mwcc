@@ -16407,19 +16407,19 @@
     "name": "CException_HashType",
     "address": "0x0051e190",
     "size": 48,
-    "source": "src/frontend/CException.c"
+    "source": "src/frontend/CPrec.c"
   },
   {
     "name": "CException_AddPendingBuffer",
     "address": "0x0051e1c0",
     "size": 140,
-    "source": "src/frontend/CException.c"
+    "source": "src/frontend/CPrec.c"
   },
   {
     "name": "copy_relocation_list",
     "address": "0x0051e250",
     "size": 438,
-    "source": "src/frontend/CException.c"
+    "source": "src/frontend/CPrec.c"
   },
   {
     "name": "fn_0051e410",

@@ -1741,8 +1741,7 @@
     ],
     "include_dirs": [
       "src/frontend"
-    ],
-    "status": "NonMatching"
+    ]
   },
   "src/frontend/CPrep.c": {
     "compiler": "pro53",

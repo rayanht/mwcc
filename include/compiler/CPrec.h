@@ -278,34 +278,22 @@ extern SInt16 serialize_precompiled_data(Boolean writePositions);
 extern void build_global_pointer_entries(void);
 extern void add_written_type_entry(Type *key, int value);
 extern CPrecWrittenEntry *fn_004e0680(void *key);
-extern SInt32 *global_pointer_entries;
-extern SInt32 serialized_bucket_count;
-extern unsigned char data_00563e40[];
-extern SInt16 precompiled_file;
-extern GList precompiled_buffer;
-extern struct CPrecHeader *prec_header;
-extern struct CPrecWrittenEntry **written_entry_buckets;
-extern struct SerializedBucketEntry *serialized_bucket_entries;
-extern struct CPrecElem *serialized_buckets;
-extern CPrecWrittenEntry **data_00581c02;
-extern struct SavedPrepTokenList *saved_prep_tokens;
-extern SInt32 prec_position;
-extern SInt32 flushed_size;
-extern union CPrecInputPointer {
+union CPrecInputPointer {
     UInt8 *bytes;
     SInt32 *words;
-} data_00581c1e;
-extern UInt8 *precompiled_header_base;
-extern struct PendingBuffer *pending_buffers;
-extern SInt16 data_00581c26;
-extern UInt8 data_00581c28;
-extern SInt32 data_00581c2a;
+};
 extern struct TemplateFunction *templateFunctions;
 extern struct PendingFunction *pending_functions;
 extern SInt32 data_00587f6c;
 extern int objc_string_constant_count;
 extern struct Type *sel_type;
 extern char *data_00587e84;
+
+extern unsigned int CException_HashType(Type *a0);
+extern void CException_AddPendingBuffer(Object *owner, const void *buffer, RelocationList *value, int entryValue);
+extern RelocationList *copy_relocation_list(RelocationList *p);
+extern void CExcept_Terminate(void);
+extern void CException_ResetPrecompiledState(UInt8 c);
 
 #ifdef __cplusplus
 }

@@ -793,12 +793,12 @@ src/frontend/CPreprocess.c:
 	.data       start:0x00563350 end:0x00563E38
 
 src/frontend/CPrec.c:
-	.text       start:0x004D6F10 end:0x004E06E0
+	.text       start:0x004D6F10 end:0x004E09F0
 	.data       start:0x00563E38 end:0x005641D0
 	.bss        start:0x00581BE0 end:0x00581C30
 
 src/frontend/CException.c:
-	.text       start:0x004E06E0 end:0x004E36D0
+	.text       start:0x004E09F0 end:0x004E36D0
 	.data       start:0x005641D0 end:0x005646A0
 	.bss        start:0x00581C30 end:0x00581C48
 

@@ -63,6 +63,27 @@
 
 typedef enum { PRECFLAG_OFF = 0, PRECFLAG_ON = 1 } PrecFlag;
 
+#pragma options align = mac68k
+static SInt16 precompiled_file;
+static GList precompiled_buffer;
+static struct CPrecHeader *prec_header;
+static struct CPrecWrittenEntry **written_entry_buckets;
+static struct SerializedBucketEntry *serialized_bucket_entries;
+static struct CPrecElem *serialized_buckets;
+static CPrecWrittenEntry **data_00581c02;
+static struct PendingBuffer *pending_buffers;
+static struct SavedPrepTokenList *saved_prep_tokens;
+static SInt32 *global_pointer_entries;
+static SInt32 serialized_bucket_count;
+static SInt32 prec_position;
+static SInt32 flushed_size;
+static UInt8 *data_00581c1e;
+static UInt8 *precompiled_header_base;
+static SInt16 data_00581c26;
+static UInt8 data_00581c28;
+static SInt32 data_00581c2a;
+#pragma options align = reset
+
 void CPrec_LoadPrecompiledHeader(short file, UInt8 *buffer)
 {
     struct CPrecHeader *header;
@@ -76,19 +97,19 @@ void CPrec_LoadPrecompiledHeader(short file, UInt8 *buffer)
     PendingBuffer *record;
 
     precompiled_file = file;
-    data_00581c1e.bytes = buffer;
+    data_00581c1e = buffer;
     CPrep_RemoveFlaggedMacros();
     if (!CScope_IsEmptySymTable())
         CError_FatalError(ERR_ILLEGAL_USE_PRECOMPILED_HEADER);
 
-    if (data_00581c1e.bytes == NULL) {
+    if (data_00581c1e == NULL) {
         prec_header = galloc(sizeof(struct CPrecHeader));
         header = prec_header;
         if (CompilerTools_SetFilePosition(precompiled_file, 0) != 0 ||
             CompilerTools_ReadFile(precompiled_file, header, sizeof(*header)) != 0)
             CError_FatalError(ERR_ILLEGAL_DATA_PRECOMPILED_HEADER);
     } else {
-        header = (struct CPrecHeader *)data_00581c1e.bytes;
+        header = (struct CPrecHeader *)data_00581c1e;
         prec_header = header;
     }
 
@@ -314,11 +335,11 @@ void patch_buffered_token_locations(void)
     if (prec_header->sourcePatchSize != 0) {
         CPrep_GetPosition(&currentFile, &currentOffset);
 
-        if (data_00581c1e.bytes == NULL) {
+        if (data_00581c1e == NULL) {
             patchCursor = CompilerTools_AllocatePool(prec_header->sourcePatchSize);
             CPrec_ReadData(prec_header->sourcePatchOffset, patchCursor, prec_header->sourcePatchSize);
         } else {
-            input.bytes = data_00581c1e.bytes + prec_header->sourcePatchOffset;
+            input.bytes = data_00581c1e + prec_header->sourcePatchOffset;
             patchCursor = input.words;
         }
 
@@ -354,11 +375,11 @@ UInt8 *apply_object_patches(void)
 
     if (prec_header->objectPatchSize != 0) {
         build_global_pointer_entries();
-        if (data_00581c1e.bytes == NULL) {
+        if (data_00581c1e == NULL) {
             p = CompilerTools_AllocatePool(prec_header->objectPatchSize);
             read_precompiled_header_data_at_offset(prec_header->objectPatchOffset, p, prec_header->objectPatchSize);
         } else {
-            input.bytes = data_00581c1e.bytes + prec_header->objectPatchOffset;
+            input.bytes = data_00581c1e + prec_header->objectPatchOffset;
             p = input.words;
         }
 
@@ -393,11 +414,11 @@ void apply_relocations(void)
 
     remaining = prec_header->relocationCount;
     if (remaining != 0) {
-        if (data_00581c1e.bytes == NULL) {
+        if (data_00581c1e == NULL) {
             relocations = CompilerTools_AllocatePool(prec_header->relocationSize);
             read_precompiled_header_data(prec_header->relocationOffset, relocations, prec_header->relocationSize);
         } else {
-            relocations = data_00581c1e.bytes + prec_header->relocationOffset;
+            relocations = data_00581c1e + prec_header->relocationOffset;
         }
         offset = 0;
         cursor = relocations;
@@ -435,7 +456,7 @@ void decompress_precompiled_header(void)
     UInt32 size;
     UInt32 csize;
 
-    if (data_00581c1e.bytes == NULL) {
+    if (data_00581c1e == NULL) {
         size = prec_header->fileSize;
         size = (size >> 7) + size + 0x40;
         dst = galloc(size);
@@ -448,7 +469,7 @@ void decompress_precompiled_header(void)
     } else {
         dst = galloc(prec_header->fileSize);
         precompiled_header_base = dst;
-        src = data_00581c1e.bytes + prec_header->dataOffset;
+        src = data_00581c1e + prec_header->dataOffset;
     }
     end = src + prec_header->compressedSize;
     while (src < end) {
@@ -543,7 +564,7 @@ SInt16 write_precompiled_file(void)
         CError_LongJump();
 
     CompilerGetCString(10, message);
-    fn_0041b8d0(compiler_plugin_cu.context, message, &data_00563e40);
+    fn_0041b8d0(compiler_plugin_cu.context, message, "");
     CPrep_RemoveFlaggedMacros();
 
     bucket = 0;
@@ -557,7 +578,7 @@ SInt16 write_precompiled_file(void)
         return error;
 
     CompilerGetCString(11, message);
-    fn_0041b8d0(compiler_plugin_cu.context, message, &data_00563e40);
+    fn_0041b8d0(compiler_plugin_cu.context, message, "");
 
     prec_header = galloc(0x50e8);
     memclrw(prec_header, 0x50e8);
@@ -5792,4 +5813,71 @@ CPrecWrittenEntry *fn_004e0680(void *key)
         entry = entry->next;
     }
     return NULL;
+}
+
+unsigned int CException_HashType(Type *type)
+{
+    union {
+        unsigned int value;
+        unsigned char bytes[4];
+    } address;
+
+    unsigned int hash = (unsigned int)type;
+    address.value = hash;
+    return (hash + address.bytes[0] + address.bytes[1] + address.bytes[2] + address.bytes[3]) & 0x3fffU;
+}
+
+void CException_AddPendingBuffer(Object *owner, const void *buffer, RelocationList *value, int entryValue)
+{
+    struct PendingBuffer *entry;
+
+    if (owner->sclass != TK_STATIC && (owner->qual & (Q_IMPLICIT_WEAK | Q_WEAK)) == 0)
+        CError_ReportError(ERR_ILLEGAL_USE_PRECOMPILED_HEADER);
+
+    entry = (struct PendingBuffer *)galloc(sizeof(struct PendingBuffer));
+    entry->owner = owner;
+    entry->entryValue = entryValue;
+    entry->next = pending_buffers;
+    pending_buffers = entry;
+
+    if (buffer != NULL) {
+        entry->buffer = galloc(owner->type->size);
+        memcpy(entry->buffer, buffer, owner->type->size);
+    } else {
+        entry->buffer = NULL;
+    }
+
+    entry->value = copy_relocation_list(value);
+}
+
+RelocationList *copy_relocation_list(RelocationList *p)
+{
+    RelocationList *n;
+    if (p == NULL)
+        return NULL;
+    n = galloc(sizeof(RelocationList));
+    *n = *p;
+    n->next = copy_relocation_list(n->next);
+    return n;
+}
+
+void CExcept_Terminate(void)
+{
+    if (precompiled_file != 0) {
+        CompilerTools_CloseFile(precompiled_file);
+        precompiled_file = 0;
+    }
+    if (precompiled_buffer.data != NULL) {
+        FreeGList(&precompiled_buffer);
+    }
+}
+
+void CException_ResetPrecompiledState(UInt8 c)
+{
+    precompiled_file = 0;
+    precompiled_buffer.data = NULL;
+    prec_header = NULL;
+    pending_buffers = NULL;
+    data_00581c26 = 0;
+    return;
 }
