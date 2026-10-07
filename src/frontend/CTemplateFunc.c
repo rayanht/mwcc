@@ -52,15 +52,6 @@ static char lbl_005824cf[9];
             s;                                                                                                         \
     } while (0)
 
-void fn_00514220(void)
-{
-    deferredInlineNodes = NULL;
-    pending_prec_nodes = NULL;
-    pendingInlineWork = NULL;
-    dispatching_deferred_node = 0;
-    return;
-}
-
 static inline char CTemplateFunc_MatchesSpecialization(Object *candidate, Type *value, CTStateElem *context)
 {
     int index;

@@ -54,6 +54,30 @@
 
 #include "compiler/ENode.h"
 
+#pragma options align = mac68k
+static EvalMode evalMode;
+static AllocState alloc_state;
+static struct MemoNode *memo_list;
+static Object **data_00582456;
+static struct InlineSlot *data_0058245a;
+static struct CInlineVar *data_0058245e;
+static struct CInlineVar *data_00582462;
+static char inline_call_seen;
+static char data_00582467;
+static SInt16 data_00582468;
+static struct IFixup *fixup_list;
+static struct Statement *inline_statements;
+static struct ENode *inline_call_expressions[16];
+static short inline_call_count;
+static char inline_statement_mode;
+static char data_005824b5;
+static struct InlineNode *deferredInlineNodes;
+static struct CPrecNode *pending_prec_nodes;
+static struct InlineObjectEntry *undefined_function_objects;
+static Boolean dispatching_deferred_node;
+static char data_005824c3;
+#pragma options align = reset
+
 #pragma auto_inline off
 
 SInt16 CInline_ReturnZero(Type *type)
@@ -3831,4 +3855,13 @@ ENode *fold_constants(ENode *node)
             CError_FATAL(411);
             return node;
     }
+}
+
+void fn_00514220(void)
+{
+    deferredInlineNodes = NULL;
+    pending_prec_nodes = NULL;
+    pendingInlineWork = NULL;
+    dispatching_deferred_node = 0;
+    return;
 }

@@ -1650,8 +1650,7 @@
     "include_dirs": [
       "src/frontend",
       "include"
-    ],
-    "status": "NonMatching"
+    ]
   },
   "src/frontend/CInt64.c": {
     "compiler": "pro53",

@@ -862,12 +862,12 @@ src/frontend/CABI.c:
 	.bss        start:0x00582448 end:0x00582450
 
 src/frontend/CInline.c:
-	.text       start:0x0050E840 end:0x00514220
+	.text       start:0x0050E840 end:0x00514250
 	.data       start:0x005731F8 end:0x00573D80
 	.bss        start:0x00582450 end:0x005824C8
 
 src/frontend/CTemplateFunc.c:
-	.text       start:0x00514220 end:0x005159A0
+	.text       start:0x00514250 end:0x005159A0
 	.data       start:0x00573D80 end:0x00573E28
 	.bss        start:0x005824C8 end:0x005824D8
 

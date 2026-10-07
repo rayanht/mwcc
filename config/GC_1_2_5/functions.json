@@ -19548,7 +19548,7 @@
     "name": "fn_00514220",
     "address": "0x00514220",
     "size": 38,
-    "source": "src/frontend/CTemplateFunc.c"
+    "source": "src/frontend/CInline.c"
   },
   {
     "name": "CTemplateFunc_FindSpecializationObject",

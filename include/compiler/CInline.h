@@ -197,31 +197,11 @@ extern void *create_inline_switch_data(Statement *base, Statement *classInfo);
 extern SInt16 CInline_ReturnZero(Type *type);
 extern void CInline_GeneratePendingFunctionBody(void);
 extern PendingFunction *generate_guarded_initializers(PendingFunction *pending);
-extern struct InlineObjectEntry *undefined_function_objects;
 extern UInt32 function_token_line;
-extern struct MemoNode *memo_list;
-extern Object **data_00582456;
-extern struct InlineSlot *data_0058245a;
-extern struct CInlineVar *data_0058245e;
-extern struct CInlineVar *data_00582462;
-extern char inline_call_seen;
-extern char data_00582467;
-extern SInt16 data_00582468;
-extern struct IFixup *fixup_list;
-extern struct Statement *inline_statements;
-extern struct ENode *inline_call_expressions[];
-extern short inline_call_count;
-extern char inline_statement_mode;
-extern char data_005824b5;
-extern struct InlineNode *deferredInlineNodes;
-extern struct CPrecNode *pending_prec_nodes;
-extern Boolean dispatching_deferred_node;
-extern char data_005824c3;
 extern struct CPrecNode *pendingInlineWork;
+extern void fn_00514220(void);
 extern UInt32 function_tokenoffset;
 extern SInt32 data_00587184;
-extern EvalMode evalMode;
-extern AllocState alloc_state;
 
 #ifdef __cplusplus
 }

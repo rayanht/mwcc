@@ -45,7 +45,6 @@ extern Boolean match_class_args_or_bases(struct TypeClassTemplate *p1, CTStateEl
                                          Boolean p5);
 extern struct TemplateSpecializationData *find_or_create_template_specialization(Object *func, CTStateElem *args,
                                                                                  Object *premade);
-extern void fn_00514220(void);
 extern void fn_00514380(ObjectList *list, void *ptype, ENodeList *args, struct ArgMatch *ctx, ENode *flag);
 extern Boolean match_template_function_args(Object *obj, TemplateMatchState *state, FuncArg *arg, ENodeList *exprs,
                                             ArgMatch *ctx);
