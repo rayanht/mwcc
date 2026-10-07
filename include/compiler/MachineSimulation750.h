@@ -7,16 +7,6 @@
 extern "C" {
 #endif
 
-struct OptPair {
-    struct PCodeInstruction
-        *instruction; /* 0x00: record_opt_arg stores p; advance_simulation_pipeline matches completed instructions */
-    SInt32
-        completed; /* 0x04: record_opt_arg clears; advance_simulation_pipeline sets on completion and tests before retirement */
-};
-struct PoolEntry {
-    struct PCodeInstruction *obj;
-    SInt32 cnt;
-};
 extern int get_opcode_table_first_entry(PCodeInstruction *instruction);
 extern void advance_simulation_pipeline(void);
 extern void record_instruction_kind(PCodeInstruction *p);

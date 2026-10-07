@@ -10,7 +10,7 @@
 #include "compiler/Scheduler.h"
 #include <string.h>
 
-struct Checker machine7400 = {
+struct MachineInfo machine7400 = {
     2,
     1,
     (SInt32 (*)(void *))get_adjusted_opcode_table_value,
@@ -493,31 +493,31 @@ static struct OpcodeScheduleInfo DAT_00577660[466] = {
 
 /* The instruction in each of the eighteen execution stages and the cycles it has left there: eighteen statics in a
    row, which the code also indexes from the first. */
-static CountedSlot pipeline_slots;
-static CountedSlot data_00582f08;
-static CountedSlot data_00582f10;
-static CountedSlot data_00582f18;
-static CountedSlot data_00582f20;
-static CountedSlot data_00582f28;
-static CountedSlot data_00582f30;
-static CountedSlot data_00582f38;
-static CountedSlot data_00582f40;
-static CountedSlot data_00582f48;
-static CountedSlot data_00582f50;
-static CountedSlot data_00582f58;
-static CountedSlot data_00582f60;
-static CountedSlot data_00582f68;
-static CountedSlot data_00582f70;
-static CountedSlot data_00582f78;
-static CountedSlot data_00582f80;
-static CountedSlot data_00582f88;
+static PipelineStage pipeline_slots;
+static PipelineStage data_00582f08;
+static PipelineStage data_00582f10;
+static PipelineStage data_00582f18;
+static PipelineStage data_00582f20;
+static PipelineStage data_00582f28;
+static PipelineStage data_00582f30;
+static PipelineStage data_00582f38;
+static PipelineStage data_00582f40;
+static PipelineStage data_00582f48;
+static PipelineStage data_00582f50;
+static PipelineStage data_00582f58;
+static PipelineStage data_00582f60;
+static PipelineStage data_00582f68;
+static PipelineStage data_00582f70;
+static PipelineStage data_00582f78;
+static PipelineStage data_00582f80;
+static PipelineStage data_00582f88;
 static PCodeInstruction *pipelineCompletedInstruction;
 static PCodeInstruction *pipeline_completed_instruction;
 static int DAT_00582f98;
 static int queued_instruction_count;
 static unsigned int pipeline_index;
 static SInt32 simulationWriteIndex;
-static CountedSlot instruction_queue[8];
+static CompletionEntry instruction_queue[8];
 
 int fn_0052f370(PCodeInstruction *instruction)
 {
@@ -529,13 +529,13 @@ int lookup_instruction_opcode_entry(PCodeInstruction *instruction)
     return DAT_00577660[instruction->opcode].opcodeEntryValue;
 }
 
-static void Advance(PCodeInstruction *o, CountedSlot *next, const unsigned char *tab)
+static void Advance(PCodeInstruction *o, PipelineStage *next, const unsigned char *tab)
 {
     int v;
     PCodeInstruction *saved = o;
     v = (int)(char)tab[o->opcode * 7];
-    next->instruction = saved;
-    next->status = v;
+    next->instr = saved;
+    next->remaining = v;
 }
 
 void advance_pipeline(void)
@@ -545,177 +545,177 @@ void advance_pipeline(void)
     pipelineCompletedInstruction = NULL;
     pipeline_completed_instruction = NULL;
     for (stageIndex = 0; stageIndex < 18; stageIndex++) {
-        if (((&pipeline_slots)[stageIndex].instruction != NULL) && ((&pipeline_slots)[stageIndex].status != 0)) {
-            --(&pipeline_slots)[stageIndex].status;
+        if (((&pipeline_slots)[stageIndex].instr != NULL) && ((&pipeline_slots)[stageIndex].remaining != 0)) {
+            --(&pipeline_slots)[stageIndex].remaining;
         }
     }
-    if ((queued_instruction_count != 0) && (instruction_queue[pipeline_index].status != 0)) {
-        instruction_queue[pipeline_index].instruction = NULL;
+    if ((queued_instruction_count != 0) && (instruction_queue[pipeline_index].completed != 0)) {
+        instruction_queue[pipeline_index].instr = NULL;
         --queued_instruction_count;
         ++DAT_00582f98;
         pipeline_index = (pipeline_index + 1) & 7;
-        if ((queued_instruction_count != 0) && (instruction_queue[pipeline_index].status != 0)) {
-            instruction_queue[pipeline_index].instruction = NULL;
+        if ((queued_instruction_count != 0) && (instruction_queue[pipeline_index].completed != 0)) {
+            instruction_queue[pipeline_index].instr = NULL;
             --queued_instruction_count;
             ++DAT_00582f98;
             pipeline_index = (pipeline_index + 1) & 7;
         }
     }
-    if ((data_00582f08.instruction != NULL) && (data_00582f08.status == 0)) {
+    if ((data_00582f08.instr != NULL) && (data_00582f08.remaining == 0)) {
         int slotIndex;
         PCodeInstruction *completedInstruction;
-        completedInstruction = data_00582f08.instruction;
-        for (slotIndex = 0; (slotIndex < 8) && (instruction_queue[slotIndex].instruction != completedInstruction);
+        completedInstruction = data_00582f08.instr;
+        for (slotIndex = 0; (slotIndex < 8) && (instruction_queue[slotIndex].instr != completedInstruction);
              slotIndex++) {
         }
-        instruction_queue[slotIndex].status = 1;
-        data_00582f08.instruction = NULL;
+        instruction_queue[slotIndex].completed = 1;
+        data_00582f08.instr = NULL;
         pipelineCompletedInstruction = completedInstruction;
     }
-    if ((data_00582f50.instruction != NULL) && (data_00582f50.status == 0)) {
+    if ((data_00582f50.instr != NULL) && (data_00582f50.remaining == 0)) {
         int slotIndex;
         PCodeInstruction *completedInstruction;
-        completedInstruction = data_00582f50.instruction;
-        for (slotIndex = 0; (slotIndex < 8) && (instruction_queue[slotIndex].instruction != completedInstruction);
+        completedInstruction = data_00582f50.instr;
+        for (slotIndex = 0; (slotIndex < 8) && (instruction_queue[slotIndex].instr != completedInstruction);
              slotIndex++) {
         }
-        instruction_queue[slotIndex].status = 1;
-        data_00582f50.instruction = NULL;
+        instruction_queue[slotIndex].completed = 1;
+        data_00582f50.instr = NULL;
     }
-    if ((data_00582f20.instruction != NULL) && (data_00582f20.status == 0)) {
+    if ((data_00582f20.instr != NULL) && (data_00582f20.remaining == 0)) {
         int slotIndex;
         PCodeInstruction *completedInstruction;
-        completedInstruction = data_00582f20.instruction;
-        for (slotIndex = 0; (slotIndex < 8) && (instruction_queue[slotIndex].instruction != completedInstruction);
+        completedInstruction = data_00582f20.instr;
+        for (slotIndex = 0; (slotIndex < 8) && (instruction_queue[slotIndex].instr != completedInstruction);
              slotIndex++) {
         }
-        instruction_queue[slotIndex].status = 1;
-        data_00582f20.instruction = NULL;
+        instruction_queue[slotIndex].completed = 1;
+        data_00582f20.instr = NULL;
     }
-    if ((data_00582f38.instruction != NULL) && (data_00582f38.status == 0)) {
+    if ((data_00582f38.instr != NULL) && (data_00582f38.remaining == 0)) {
         int slotIndex;
         PCodeInstruction *completedInstruction;
-        completedInstruction = data_00582f38.instruction;
-        for (slotIndex = 0; (slotIndex < 8) && (instruction_queue[slotIndex].instruction != completedInstruction);
+        completedInstruction = data_00582f38.instr;
+        for (slotIndex = 0; (slotIndex < 8) && (instruction_queue[slotIndex].instr != completedInstruction);
              slotIndex++) {
         }
-        instruction_queue[slotIndex].status = 1;
-        data_00582f38.instruction = NULL;
+        instruction_queue[slotIndex].completed = 1;
+        data_00582f38.instr = NULL;
     }
-    if ((data_00582f40.instruction != NULL) && (data_00582f40.status == 0)) {
+    if ((data_00582f40.instr != NULL) && (data_00582f40.remaining == 0)) {
         int slotIndex;
         PCodeInstruction *completedInstruction;
-        completedInstruction = data_00582f40.instruction;
-        for (slotIndex = 0; (slotIndex < 8) && (instruction_queue[slotIndex].instruction != completedInstruction);
+        completedInstruction = data_00582f40.instr;
+        for (slotIndex = 0; (slotIndex < 8) && (instruction_queue[slotIndex].instr != completedInstruction);
              slotIndex++) {
         }
-        instruction_queue[slotIndex].status = 1;
-        data_00582f40.instruction = NULL;
+        instruction_queue[slotIndex].completed = 1;
+        data_00582f40.instr = NULL;
     }
-    if ((pipeline_slots.instruction != NULL) && (pipeline_slots.status == 0)) {
+    if ((pipeline_slots.instr != NULL) && (pipeline_slots.remaining == 0)) {
         int slotIndex;
         PCodeInstruction *completedInstruction;
-        completedInstruction = pipeline_slots.instruction;
-        for (slotIndex = 0; (slotIndex < 8) && (instruction_queue[slotIndex].instruction != completedInstruction);
+        completedInstruction = pipeline_slots.instr;
+        for (slotIndex = 0; (slotIndex < 8) && (instruction_queue[slotIndex].instr != completedInstruction);
              slotIndex++) {
         }
-        instruction_queue[slotIndex].status = 1;
-        pipeline_slots.instruction = NULL;
+        instruction_queue[slotIndex].completed = 1;
+        pipeline_slots.instr = NULL;
     }
-    if ((data_00582f48.instruction != NULL) && (data_00582f48.status == 0)) {
+    if ((data_00582f48.instr != NULL) && (data_00582f48.remaining == 0)) {
         int slotIndex;
         PCodeInstruction *completedInstruction;
-        completedInstruction = data_00582f48.instruction;
-        for (slotIndex = 0; (slotIndex < 8) && (instruction_queue[slotIndex].instruction != completedInstruction);
+        completedInstruction = data_00582f48.instr;
+        for (slotIndex = 0; (slotIndex < 8) && (instruction_queue[slotIndex].instr != completedInstruction);
              slotIndex++) {
         }
-        instruction_queue[slotIndex].status = 1;
-        data_00582f48.instruction = NULL;
+        instruction_queue[slotIndex].completed = 1;
+        data_00582f48.instr = NULL;
     }
-    if ((data_00582f68.instruction != NULL) && (data_00582f68.status == 0)) {
+    if ((data_00582f68.instr != NULL) && (data_00582f68.remaining == 0)) {
         int slotIndex;
         PCodeInstruction *completedInstruction;
-        completedInstruction = data_00582f68.instruction;
-        for (slotIndex = 0; (slotIndex < 8) && (instruction_queue[slotIndex].instruction != completedInstruction);
+        completedInstruction = data_00582f68.instr;
+        for (slotIndex = 0; (slotIndex < 8) && (instruction_queue[slotIndex].instr != completedInstruction);
              slotIndex++) {
         }
-        instruction_queue[slotIndex].status = 1;
-        data_00582f68.instruction = NULL;
+        instruction_queue[slotIndex].completed = 1;
+        data_00582f68.instr = NULL;
     }
-    if ((data_00582f88.instruction != NULL) && (data_00582f88.status == 0)) {
+    if ((data_00582f88.instr != NULL) && (data_00582f88.remaining == 0)) {
         int slotIndex;
         PCodeInstruction *completedInstruction;
-        completedInstruction = data_00582f88.instruction;
-        for (slotIndex = 0; (slotIndex < 8) && (instruction_queue[slotIndex].instruction != completedInstruction);
+        completedInstruction = data_00582f88.instr;
+        for (slotIndex = 0; (slotIndex < 8) && (instruction_queue[slotIndex].instr != completedInstruction);
              slotIndex++) {
         }
-        instruction_queue[slotIndex].status = 1;
-        data_00582f88.instruction = NULL;
+        instruction_queue[slotIndex].completed = 1;
+        data_00582f88.instr = NULL;
     }
-    if ((data_00582f10.instruction != NULL) && (data_00582f10.status == 0)) {
+    if ((data_00582f10.instr != NULL) && (data_00582f10.remaining == 0)) {
         int slotIndex;
         PCodeInstruction *completedInstruction;
-        completedInstruction = data_00582f10.instruction;
-        for (slotIndex = 0; (slotIndex < 8) && (instruction_queue[slotIndex].instruction != completedInstruction);
+        completedInstruction = data_00582f10.instr;
+        for (slotIndex = 0; (slotIndex < 8) && (instruction_queue[slotIndex].instr != completedInstruction);
              slotIndex++) {
         }
-        instruction_queue[slotIndex].status = 1;
-        data_00582f10.instruction = NULL;
+        instruction_queue[slotIndex].completed = 1;
+        data_00582f10.instr = NULL;
         pipeline_completed_instruction = completedInstruction;
     }
     {
-        PCodeInstruction *instruction = data_00582f28.instruction;
-        if ((instruction != NULL) && (data_00582f28.status == 0) &&
+        PCodeInstruction *instruction = data_00582f28.instr;
+        if ((instruction != NULL) && (data_00582f28.remaining == 0) &&
             ((instruction->opcode == PC_FDIV) || (instruction->opcode == PC_FDIVS))) {
             int slotIndex;
             PCodeInstruction *completedInstruction;
-            completedInstruction = data_00582f28.instruction;
-            for (slotIndex = 0; (slotIndex < 8) && (instruction_queue[slotIndex].instruction != completedInstruction);
+            completedInstruction = data_00582f28.instr;
+            for (slotIndex = 0; (slotIndex < 8) && (instruction_queue[slotIndex].instr != completedInstruction);
                  slotIndex++) {
             }
-            instruction_queue[slotIndex].status = 1;
-            data_00582f28.instruction = NULL;
+            instruction_queue[slotIndex].completed = 1;
+            data_00582f28.instr = NULL;
         }
     }
-    if (((data_00582f30.instruction != NULL) && (data_00582f30.status == 0)) && (data_00582f38.instruction == NULL)) {
+    if (((data_00582f30.instr != NULL) && (data_00582f30.remaining == 0)) && (data_00582f38.instr == NULL)) {
         PCodeInstruction *instruction;
-        Advance(instruction = data_00582f30.instruction, &data_00582f38, &DAT_00577660[0].stage3Latency);
-        data_00582f30.instruction = NULL;
+        Advance(instruction = data_00582f30.instr, &data_00582f38, &DAT_00577660[0].stage3Latency);
+        data_00582f30.instr = NULL;
     }
-    if (((data_00582f28.instruction != NULL) && (data_00582f28.status == 0)) && (data_00582f30.instruction == NULL)) {
+    if (((data_00582f28.instr != NULL) && (data_00582f28.remaining == 0)) && (data_00582f30.instr == NULL)) {
         PCodeInstruction *instruction;
-        Advance(instruction = data_00582f28.instruction, &data_00582f30, &DAT_00577660[0].stage2Latency);
-        data_00582f28.instruction = NULL;
+        Advance(instruction = data_00582f28.instr, &data_00582f30, &DAT_00577660[0].stage2Latency);
+        data_00582f28.instr = NULL;
     }
-    if (((data_00582f18.instruction != NULL) && (data_00582f18.status == 0)) && (data_00582f20.instruction == NULL)) {
+    if (((data_00582f18.instr != NULL) && (data_00582f18.remaining == 0)) && (data_00582f20.instr == NULL)) {
         PCodeInstruction *instruction;
-        Advance(instruction = data_00582f18.instruction, &data_00582f20, &DAT_00577660[0].stage2Latency);
-        data_00582f18.instruction = NULL;
+        Advance(instruction = data_00582f18.instr, &data_00582f20, &DAT_00577660[0].stage2Latency);
+        data_00582f18.instr = NULL;
     }
-    if (((data_00582f60.instruction != NULL) && (data_00582f60.status == 0)) && (data_00582f68.instruction == NULL)) {
+    if (((data_00582f60.instr != NULL) && (data_00582f60.remaining == 0)) && (data_00582f68.instr == NULL)) {
         PCodeInstruction *instruction;
-        Advance(instruction = data_00582f60.instruction, &data_00582f68, &DAT_00577660[0].stage3Latency);
-        data_00582f60.instruction = NULL;
+        Advance(instruction = data_00582f60.instr, &data_00582f68, &DAT_00577660[0].stage3Latency);
+        data_00582f60.instr = NULL;
     }
-    if (((data_00582f58.instruction != NULL) && (data_00582f58.status == 0)) && (data_00582f60.instruction == NULL)) {
+    if (((data_00582f58.instr != NULL) && (data_00582f58.remaining == 0)) && (data_00582f60.instr == NULL)) {
         PCodeInstruction *instruction;
-        Advance(instruction = data_00582f58.instruction, &data_00582f60, &DAT_00577660[0].stage2Latency);
-        data_00582f58.instruction = NULL;
+        Advance(instruction = data_00582f58.instr, &data_00582f60, &DAT_00577660[0].stage2Latency);
+        data_00582f58.instr = NULL;
     }
-    if (((data_00582f80.instruction != NULL) && (data_00582f80.status == 0)) && (data_00582f88.instruction == NULL)) {
+    if (((data_00582f80.instr != NULL) && (data_00582f80.remaining == 0)) && (data_00582f88.instr == NULL)) {
         PCodeInstruction *instruction;
-        Advance(instruction = data_00582f80.instruction, &data_00582f88, &DAT_00577660[0].stage4Latency);
-        data_00582f80.instruction = NULL;
+        Advance(instruction = data_00582f80.instr, &data_00582f88, &DAT_00577660[0].stage4Latency);
+        data_00582f80.instr = NULL;
     }
-    if (((data_00582f78.instruction != NULL) && (data_00582f78.status == 0)) && (data_00582f80.instruction == NULL)) {
+    if (((data_00582f78.instr != NULL) && (data_00582f78.remaining == 0)) && (data_00582f80.instr == NULL)) {
         PCodeInstruction *instruction;
-        Advance(instruction = data_00582f78.instruction, &data_00582f80, &DAT_00577660[0].stage3Latency);
-        data_00582f78.instruction = NULL;
+        Advance(instruction = data_00582f78.instr, &data_00582f80, &DAT_00577660[0].stage3Latency);
+        data_00582f78.instr = NULL;
     }
-    if (((data_00582f70.instruction != NULL) && (data_00582f70.status == 0)) && (data_00582f78.instruction == NULL)) {
+    if (((data_00582f70.instr != NULL) && (data_00582f70.remaining == 0)) && (data_00582f78.instr == NULL)) {
         PCodeInstruction *instruction;
-        Advance(instruction = data_00582f70.instruction, &data_00582f78, &DAT_00577660[0].stage2Latency);
-        data_00582f70.instruction = NULL;
+        Advance(instruction = data_00582f70.instr, &data_00582f78, &DAT_00577660[0].stage2Latency);
+        data_00582f70.instr = NULL;
     }
 }
 
@@ -729,14 +729,14 @@ void queue_instruction(PCodeInstruction *obj)
 
     queued_instruction_count++;
     DAT_00582f98--;
-    instruction_queue[simulationWriteIndex].instruction = obj;
-    instruction_queue[simulationWriteIndex].status = 0;
+    instruction_queue[simulationWriteIndex].instr = obj;
+    instruction_queue[simulationWriteIndex].completed = 0;
     simulationWriteIndex = (simulationWriteIndex + 1) & 7;
-    if (t == 2 && data_00582f08.instruction == NULL) {
+    if (t == 2 && data_00582f08.instr == NULL) {
         t = 1;
     }
-    (&pipeline_slots)[t].instruction = obj;
-    (&pipeline_slots)[t].status = c;
+    (&pipeline_slots)[t].instr = obj;
+    (&pipeline_slots)[t].remaining = c;
 }
 
 int can_issue_instruction_in_pipeline_slots(PCodeInstruction *node)
@@ -759,8 +759,8 @@ int can_issue_instruction_in_pipeline_slots(PCodeInstruction *node)
     kind = DAT_00577660[node->opcode].kind;
     if (kind == 2) {
         PCodeInstruction *alternate;
-        firstAbsent = firstMissing = !(first = data_00582f08.instruction);
-        alternateMissing = !(alternate = data_00582f10.instruction);
+        firstAbsent = firstMissing = !(first = data_00582f08.instr);
+        alternateMissing = !(alternate = data_00582f10.instr);
         if (!firstMissing) {
             if (!alternateMissing)
                 return 0;
@@ -776,10 +776,10 @@ int can_issue_instruction_in_pipeline_slots(PCodeInstruction *node)
         if (Scheduler_ReturnZero(node, pipeline_completed_instruction, 0) != 0)
             return 0;
     } else if (kind == 14 || kind == 9 || kind == 10 || kind == 11) {
-        primaryMissing = !(primary = data_00582f50.instruction);
-        secondMissing = !(second = data_00582f70.instruction);
-        thirdMissing = !(third = data_00582f58.instruction);
-        fourthMissing = !(fourth = data_00582f48.instruction);
+        primaryMissing = !(primary = data_00582f50.instr);
+        secondMissing = !(second = data_00582f70.instr);
+        thirdMissing = !(third = data_00582f58.instr);
+        fourthMissing = !(fourth = data_00582f48.instr);
         if (kind == 10) {
             if (!primaryMissing)
                 return 0;
@@ -799,10 +799,10 @@ int can_issue_instruction_in_pipeline_slots(PCodeInstruction *node)
             if (!primaryMissing && Scheduler_ReturnZero(node, primary, 9) != 0)
                 return 0;
         }
-    } else if ((&pipeline_slots)[kind].instruction != NULL)
+    } else if ((&pipeline_slots)[kind].instr != NULL)
         return 0;
     if ((node->flags & fIsWrite) != 0) {
-        other = data_00582f20.instruction;
+        other = data_00582f20.instr;
         if (other != NULL && (other->flags & fIsWrite) != 0)
             return 0;
     }
@@ -814,20 +814,20 @@ void reset_pipeline_state(void)
     int slot;
 
     for (slot = 0; slot < 18; ++slot) {
-        (&pipeline_slots)[slot].instruction = NULL;
+        (&pipeline_slots)[slot].instr = NULL;
     }
     DAT_00582f98 = 8;
     queued_instruction_count = 0;
     pipeline_index = 0;
     simulationWriteIndex = 0;
-    instruction_queue[0].instruction = NULL;
-    instruction_queue[1].instruction = NULL;
-    instruction_queue[2].instruction = NULL;
-    instruction_queue[3].instruction = NULL;
-    instruction_queue[4].instruction = NULL;
-    instruction_queue[5].instruction = NULL;
-    instruction_queue[6].instruction = NULL;
-    instruction_queue[7].instruction = NULL;
+    instruction_queue[0].instr = NULL;
+    instruction_queue[1].instr = NULL;
+    instruction_queue[2].instr = NULL;
+    instruction_queue[3].instr = NULL;
+    instruction_queue[4].instr = NULL;
+    instruction_queue[5].instr = NULL;
+    instruction_queue[6].instr = NULL;
+    instruction_queue[7].instr = NULL;
     pipelineCompletedInstruction = NULL;
     pipeline_completed_instruction = NULL;
 }

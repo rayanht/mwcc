@@ -27,6 +27,16 @@ struct CColoringNode {
     UInt16 flag;
 };
 #pragma options align = reset
+/* An instruction in one of a machine model's pipeline stages and the cycles it has left there. */
+struct PipelineStage {
+    struct PCodeInstruction *instr;
+    SInt32 remaining;
+};
+/* An instruction in a machine model's completion queue, until it retires. */
+struct CompletionEntry {
+    struct PCodeInstruction *instr;
+    SInt32 completed;
+};
 /* One opcode's entry in a machine model's table: its class there, and its length. */
 struct MachineOpcodeInfo {
     UInt8 executionUnit;
@@ -34,7 +44,7 @@ struct MachineOpcodeInfo {
     SInt8 stageCycles[4];
 };
 #pragma options align = mac68k
-struct Checker {
+struct MachineInfo {
     SInt32 count; /* 0x00: schedule_block limits issue slots */
     SInt32
         omitRegisterAntiDependencyLatency; /* 0x04: fn_004cd7c0 tests this flag to suppress register anti-dependency latency */
@@ -79,13 +89,13 @@ extern void fn_004cd7c0(int kind, CColoringNode *value, struct DependencyEntry *
                         struct DependencyEntry **secondList, int useSecondList);
 extern SInt32 gVirtualRegistersActive;
 extern void Scheduler_Schedule(char force);
-extern struct Checker machine603;
-extern struct Checker machine603e;
-extern struct Checker machine604;
-extern struct Checker machine750;
-extern struct Checker machine7400;
-extern struct Checker machine601;
-extern struct Checker machine821;
+extern struct MachineInfo machine603;
+extern struct MachineInfo machine603e;
+extern struct MachineInfo machine604;
+extern struct MachineInfo machine750;
+extern struct MachineInfo machine7400;
+extern struct MachineInfo machine601;
+extern struct MachineInfo machine821;
 extern int Scheduler_ReturnZero(PCodeInstruction *list, PCodeInstruction *ref, char c);
 struct CColoringNode;
 

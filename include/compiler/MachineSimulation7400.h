@@ -7,12 +7,6 @@
 extern "C" {
 #endif
 
-struct CountedSlot {
-    PCodeInstruction
-        *instruction; /* 0x00: queue_instruction stores obj; advance_pipeline retrieves completedInstruction */
-    SInt32
-        status; /* 0x04: queue_instruction sets pipeline cost or queue completion flag; advance_pipeline decrements pipeline countdown and marks queue completion */
-};
 extern int fn_0052f370(PCodeInstruction *instruction);
 extern int lookup_instruction_opcode_entry(PCodeInstruction *instruction);
 extern void advance_pipeline(void);

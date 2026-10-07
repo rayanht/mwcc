@@ -9,13 +9,9 @@ extern "C" {
 
 extern int get_opcode_table_entry(PCodeInstruction *instruction);
 extern void retire_and_advance_pending_instructions(void);
-extern void assign_entry_to_execution_unit(short *entry);
+extern void assign_entry_to_execution_unit(PCodeInstruction *instr);
 extern int fn_0052dfa0(PCodeInstruction *instruction);
 extern void fn_0052e000(void);
-struct PipelineStage {
-    PCodeInstruction *instruction;
-    int value;
-};
 extern SInt32 get_adjusted_latency(struct PCodeInstruction *p);
 
 #ifdef __cplusplus

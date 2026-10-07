@@ -8,14 +8,6 @@
 extern "C" {
 #endif
 
-struct InstructionCompletionEntry {
-    struct PCodeInstruction *instruction;
-    int completed;
-};
-struct InstructionTimingSlot {
-    struct PCodeInstruction *instruction;
-    int cycles;
-};
 extern void fn_0052e110(void);
 extern int get_instruction_opcode_table_value(PCodeInstruction *instruction);
 extern void fn_0052e590(void);

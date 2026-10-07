@@ -49,7 +49,7 @@ static struct DependencyEntry *memory_dependency_list;
 static struct DependencyEntry *dependency_entry_list;
 static struct SchedEntry *sched_entry_list;
 static void *data_00581b7c;
-static struct Checker *data_00581b80;
+static struct MachineInfo *data_00581b80;
 static UInt16 max_height;
 
 int Scheduler_ReturnZero(PCodeInstruction *list, PCodeInstruction *ref, char c)

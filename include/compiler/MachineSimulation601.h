@@ -14,10 +14,6 @@ extern void advance_instruction_pipeline(void);
 extern void set_execution_unit_instruction(PCodeInstruction *instruction);
 extern int is_execution_unit_available(PCodeInstruction *instruction);
 extern void clear_instruction_and_globals(void);
-struct InstructionCountdown {
-    PCodeInstruction *instruction;
-    unsigned int count;
-};
 
 #ifdef __cplusplus
 }

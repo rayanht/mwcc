@@ -13,7 +13,7 @@
 #include "compiler/Scheduler.h"
 #include <string.h>
 
-struct Checker machine603e = {
+struct MachineInfo machine603e = {
     2,
     1,
     (SInt32 (*)(void *))fn_0052e640,
@@ -496,19 +496,19 @@ static MachineOpcodeInfo machineOpcodeInfo[466] = {
 
 /* The instruction in each of the eight execution stages and the cycles it has left there: eight statics in a row,
    which the code also indexes from the first. */
-static struct InstructionTimingSlot instruction_timing_slots;
-static struct InstructionTimingSlot data_00582d20;
-static struct InstructionTimingSlot data_00582d28;
-static struct InstructionTimingSlot data_00582d30;
-static struct InstructionTimingSlot data_00582d38;
-static struct InstructionTimingSlot queuedInstruction;
-static struct InstructionTimingSlot data_00582d48;
-static struct InstructionTimingSlot data_00582d50;
+static PipelineStage instruction_timing_slots;
+static PipelineStage data_00582d20;
+static PipelineStage data_00582d28;
+static PipelineStage data_00582d30;
+static PipelineStage data_00582d38;
+static PipelineStage queuedInstruction;
+static PipelineStage data_00582d48;
+static PipelineStage data_00582d50;
 static int DAT_00582d58;
 static int DAT_00582d5c;
 static unsigned int data_00582d60;
 static unsigned int data_00582d64;
-static InstructionCompletionEntry instruction_completion_entries[5];
+static CompletionEntry instruction_completion_entries[5];
 
 int get_instruction_opcode_table_value(PCodeInstruction *instruction)
 {
@@ -538,93 +538,94 @@ void fn_0052e110(void)
     struct PCodeInstruction *queued28;
     slot = 0;
     do {
-        if ((&instruction_timing_slots)[slot].instruction != NULL && (&instruction_timing_slots)[slot].cycles != 0)
-            (&instruction_timing_slots)[slot].cycles -= 1;
+        if ((&instruction_timing_slots)[slot].instr != NULL && (&instruction_timing_slots)[slot].remaining != 0)
+            (&instruction_timing_slots)[slot].remaining -= 1;
         slot++;
     } while (slot < 8);
     if (DAT_00582d5c != 0 && instruction_completion_entries[data_00582d60].completed != 0) {
-        instruction_completion_entries[data_00582d60].instruction = NULL;
+        instruction_completion_entries[data_00582d60].instr = NULL;
         DAT_00582d5c -= 1;
         DAT_00582d58 += 1;
         data_00582d60 = (data_00582d60 + 1) % 5;
         if (DAT_00582d5c != 0 && instruction_completion_entries[data_00582d60].completed != 0) {
-            instruction_completion_entries[data_00582d60].instruction = NULL;
+            instruction_completion_entries[data_00582d60].instr = NULL;
             DAT_00582d5c -= 1;
             DAT_00582d58 += 1;
             data_00582d60 = (data_00582d60 + 1) % 5;
         }
     }
-    if (data_00582d20.instruction != NULL && data_00582d20.cycles == 0) {
-        pending20 = data_00582d20.instruction;
+    if (data_00582d20.instr != NULL && data_00582d20.remaining == 0) {
+        pending20 = data_00582d20.instr;
         index20 = 0;
-        while (index20 < 5 && instruction_completion_entries[index20].instruction != pending20) {
+        while (index20 < 5 && instruction_completion_entries[index20].instr != pending20) {
             index20 = index20 + 1;
         }
         instruction_completion_entries[index20].completed = 1;
-        data_00582d20.instruction = NULL;
+        data_00582d20.instr = NULL;
     }
-    if (data_00582d30.instruction != NULL && data_00582d30.cycles == 0) {
-        pending30 = data_00582d30.instruction;
+    if (data_00582d30.instr != NULL && data_00582d30.remaining == 0) {
+        pending30 = data_00582d30.instr;
         index30 = 0;
-        while (index30 < 5 && instruction_completion_entries[index30].instruction != pending30) {
+        while (index30 < 5 && instruction_completion_entries[index30].instr != pending30) {
             index30 = index30 + 1;
         }
         instruction_completion_entries[index30].completed = 1;
-        data_00582d30.instruction = NULL;
+        data_00582d30.instr = NULL;
     }
-    if (data_00582d48.instruction != NULL && data_00582d48.cycles == 0) {
-        pending48 = data_00582d48.instruction;
+    if (data_00582d48.instr != NULL && data_00582d48.remaining == 0) {
+        pending48 = data_00582d48.instr;
         index48 = 0;
-        while (index48 < 5 && instruction_completion_entries[index48].instruction != pending48) {
+        while (index48 < 5 && instruction_completion_entries[index48].instr != pending48) {
             index48 = index48 + 1;
         }
         instruction_completion_entries[index48].completed = 1;
-        data_00582d48.instruction = NULL;
+        data_00582d48.instr = NULL;
     }
-    if (data_00582d50.instruction != NULL && data_00582d50.cycles == 0) {
-        pending50 = data_00582d50.instruction;
+    if (data_00582d50.instr != NULL && data_00582d50.remaining == 0) {
+        pending50 = data_00582d50.instr;
         index50 = 0;
-        while (index50 < 5 && instruction_completion_entries[index50].instruction != pending50) {
+        while (index50 < 5 && instruction_completion_entries[index50].instr != pending50) {
             index50 = index50 + 1;
         }
         instruction_completion_entries[index50].completed = 1;
-        data_00582d50.instruction = NULL;
+        data_00582d50.instr = NULL;
     }
-    if (instruction_timing_slots.instruction != NULL && instruction_timing_slots.cycles == 0) {
-        struct PCodeInstruction *pending18 = instruction_timing_slots.instruction;
+    if (instruction_timing_slots.instr != NULL && instruction_timing_slots.remaining == 0) {
+        struct PCodeInstruction *pending18 = instruction_timing_slots.instr;
         index18 = 0;
-        while (index18 < 5 && instruction_completion_entries[index18].instruction != pending18)
+        while (index18 < 5 && instruction_completion_entries[index18].instr != pending18)
             index18++;
         instruction_completion_entries[index18].completed = 1;
-        instruction_timing_slots.instruction = NULL;
+        instruction_timing_slots.instr = NULL;
     }
-    instruction = data_00582d38.instruction;
-    if (instruction != NULL && data_00582d38.cycles == 0 && ((opcode = instruction->opcode) == 168 || opcode == 169)) {
-        pending38 = data_00582d38.instruction;
+    instruction = data_00582d38.instr;
+    if (instruction != NULL && data_00582d38.remaining == 0 &&
+        ((opcode = instruction->opcode) == 168 || opcode == 169)) {
+        pending38 = data_00582d38.instr;
         index38 = 0;
-        while (index38 < 5 && instruction_completion_entries[index38].instruction != pending38) {
+        while (index38 < 5 && instruction_completion_entries[index38].instr != pending38) {
             index38 = index38 + 1;
         }
         instruction_completion_entries[index38].completed = 1;
-        data_00582d38.instruction = NULL;
+        data_00582d38.instr = NULL;
     }
-    if (queuedInstruction.instruction != NULL && queuedInstruction.cycles == 0 && data_00582d48.instruction == NULL) {
-        cycles40 = machineOpcodeInfo[(queued = queuedInstruction.instruction)->opcode].stageCycles[2];
-        data_00582d48.instruction = queued;
-        data_00582d48.cycles = cycles40;
-        queuedInstruction.instruction = NULL;
+    if (queuedInstruction.instr != NULL && queuedInstruction.remaining == 0 && data_00582d48.instr == NULL) {
+        cycles40 = machineOpcodeInfo[(queued = queuedInstruction.instr)->opcode].stageCycles[2];
+        data_00582d48.instr = queued;
+        data_00582d48.remaining = cycles40;
+        queuedInstruction.instr = NULL;
     }
-    if (data_00582d38.instruction != NULL && data_00582d38.cycles == 0 && queuedInstruction.instruction == NULL) {
-        cycles38 = machineOpcodeInfo[(queued = data_00582d38.instruction)->opcode].stageCycles[1];
-        queuedInstruction.instruction = queued;
-        queuedInstruction.cycles = cycles38;
-        data_00582d38.instruction = NULL;
+    if (data_00582d38.instr != NULL && data_00582d38.remaining == 0 && queuedInstruction.instr == NULL) {
+        cycles38 = machineOpcodeInfo[(queued = data_00582d38.instr)->opcode].stageCycles[1];
+        queuedInstruction.instr = queued;
+        queuedInstruction.remaining = cycles38;
+        data_00582d38.instr = NULL;
     }
-    if (data_00582d28.instruction != NULL && data_00582d28.cycles == 0 && data_00582d30.instruction == NULL) {
-        cycles28 = machineOpcodeInfo[(queued28 = data_00582d28.instruction)->opcode].stageCycles[1];
-        data_00582d30.instruction = queued28;
-        data_00582d30.cycles = cycles28;
-        data_00582d28.instruction = NULL;
+    if (data_00582d28.instr != NULL && data_00582d28.remaining == 0 && data_00582d30.instr == NULL) {
+        cycles28 = machineOpcodeInfo[(queued28 = data_00582d28.instr)->opcode].stageCycles[1];
+        data_00582d30.instr = queued28;
+        data_00582d30.remaining = cycles28;
+        data_00582d28.instr = NULL;
     }
 }
 
@@ -637,16 +638,16 @@ void fn_0052e450(struct PCodeInstruction *instruction)
     opcodeIndex = instruction->opcode;
     kind = machineOpcodeInfo[opcodeIndex].executionUnit;
     opcodeValue = machineOpcodeInfo[opcodeIndex].stageCycles[0];
-    if ((kind == 1) && (data_00582d20.instruction != NULL)) {
+    if ((kind == 1) && (data_00582d20.instr != NULL)) {
         kind = 7;
     }
     DAT_00582d5c++;
     DAT_00582d58--;
-    instruction_completion_entries[data_00582d64].instruction = instruction,
+    instruction_completion_entries[data_00582d64].instr = instruction,
     instruction_completion_entries[data_00582d64].completed = 0;
     data_00582d64 = (data_00582d64 + 1) % 5;
-    (&instruction_timing_slots)[kind].instruction = instruction;
-    (&instruction_timing_slots)[kind].cycles = opcodeValue;
+    (&instruction_timing_slots)[kind].instr = instruction;
+    (&instruction_timing_slots)[kind].remaining = opcodeValue;
 }
 
 int is_instruction_issuable(PCodeInstruction *instr)
@@ -658,7 +659,7 @@ int is_instruction_issuable(PCodeInstruction *instr)
     if (!DAT_00582d58)
         return 0;
     unit = machineOpcodeInfo[instr->opcode].executionUnit;
-    if ((&instruction_timing_slots)[unit].instruction) {
+    if ((&instruction_timing_slots)[unit].instr) {
         if (unit == 1) {
             switch (instr->opcode) {
                 case PC_ADD:
@@ -670,41 +671,41 @@ int is_instruction_issuable(PCodeInstruction *instr)
                 case PC_CMPLI:
                 case PC_CMPL:
                     list = instr;
-                    ref = data_00582d20.instruction;
+                    ref = data_00582d20.instr;
                     if (Scheduler_ReturnZero(list, ref, 0))
                         return 0;
-                    if (!data_00582d50.instruction)
+                    if (!data_00582d50.instr)
                         return 1;
                     break;
             }
         }
         return 0;
     }
-    if ((instr->flags & fIsWrite) && (&instruction_timing_slots)[3].instruction &&
-        ((&instruction_timing_slots)[3].instruction->flags & fIsWrite))
+    if ((instr->flags & fIsWrite) && (&instruction_timing_slots)[3].instr &&
+        ((&instruction_timing_slots)[3].instr->flags & fIsWrite))
         return 0;
     return 1;
 }
 
 void fn_0052e590(void)
 {
-    instruction_timing_slots.instruction = NULL;
-    data_00582d20.instruction = NULL;
-    data_00582d28.instruction = NULL;
-    data_00582d30.instruction = NULL;
-    data_00582d38.instruction = NULL;
-    queuedInstruction.instruction = NULL;
-    data_00582d48.instruction = NULL;
-    data_00582d50.instruction = NULL;
+    instruction_timing_slots.instr = NULL;
+    data_00582d20.instr = NULL;
+    data_00582d28.instr = NULL;
+    data_00582d30.instr = NULL;
+    data_00582d38.instr = NULL;
+    queuedInstruction.instr = NULL;
+    data_00582d48.instr = NULL;
+    data_00582d50.instr = NULL;
     DAT_00582d58 = 5;
     DAT_00582d5c = 0;
     data_00582d60 = 0;
     data_00582d64 = 0;
-    instruction_completion_entries[0].instruction = NULL;
-    instruction_completion_entries[1].instruction = NULL;
-    instruction_completion_entries[2].instruction = NULL;
-    instruction_completion_entries[3].instruction = NULL;
-    instruction_completion_entries[4].instruction = NULL;
+    instruction_completion_entries[0].instr = NULL;
+    instruction_completion_entries[1].instr = NULL;
+    instruction_completion_entries[2].instr = NULL;
+    instruction_completion_entries[3].instr = NULL;
+    instruction_completion_entries[4].instr = NULL;
 }
 
 SInt32 fn_0052e640(PCodeInstruction *p)

@@ -11,7 +11,7 @@
 #include "compiler/PCodeAssembly.h"
 #include "compiler/Scheduler.h"
 
-struct Checker machine604 = {
+struct MachineInfo machine604 = {
     4,
     1,
     (SInt32 (*)(void *))get_size_rec_latency,
@@ -494,22 +494,22 @@ static MachineOpcodeInfo machineOpcodeInfo604[466] = {
 
 /* The instruction in each of the nine execution stages and the cycles it has left there: nine statics in a row,
    which the code also indexes from the first. */
-static InstructionValueEntry execution_unit_instructions;
-static InstructionValueEntry data_00582d98;
-static InstructionValueEntry data_00582da0;
-static InstructionValueEntry data_00582da8;
-static InstructionValueEntry data_00582db0;
-static InstructionValueEntry data_00582db8;
-static InstructionValueEntry data_00582dc0;
-static InstructionValueEntry data_00582dc8;
-static InstructionValueEntry data_00582dd0;
+static PipelineStage execution_unit_instructions;
+static PipelineStage data_00582d98;
+static PipelineStage data_00582da0;
+static PipelineStage data_00582da8;
+static PipelineStage data_00582db0;
+static PipelineStage data_00582db8;
+static PipelineStage data_00582dc0;
+static PipelineStage data_00582dc8;
+static PipelineStage data_00582dd0;
 static PCodeInstruction *data_00582dd8;
 static PCodeInstruction *data_00582ddc;
 static int data_00582de0;
 static SInt32 DAT_00582de4;
 static SInt32 instruction_retire_index;
 static unsigned int next_instruction_slot;
-static InstructionValueEntry instruction_ring[16];
+static CompletionEntry instruction_ring[16];
 
 int get_opcode_table_value(PCodeInstruction *instruction)
 {
@@ -527,9 +527,9 @@ void advance_instruction_stages_and_retire(void)
 
     slotIndex = 0;
     do {
-        if ((&execution_unit_instructions)[slotIndex].instruction != NULL &&
-            (&execution_unit_instructions)[slotIndex].value != 0)
-            (&execution_unit_instructions)[slotIndex].value--;
+        if ((&execution_unit_instructions)[slotIndex].instr != NULL &&
+            (&execution_unit_instructions)[slotIndex].remaining != 0)
+            (&execution_unit_instructions)[slotIndex].remaining--;
         slotIndex++;
     } while (slotIndex < 9);
 
@@ -537,122 +537,122 @@ void advance_instruction_stages_and_retire(void)
     do {
         if (DAT_00582de4 == 0)
             break;
-        if (instruction_ring[instruction_retire_index].value == 0)
+        if (instruction_ring[instruction_retire_index].completed == 0)
             break;
-        instruction_ring[instruction_retire_index].instruction = NULL;
+        instruction_ring[instruction_retire_index].instr = NULL;
         DAT_00582de4--;
         data_00582de0++;
         instruction_retire_index = (instruction_retire_index + 1) & 0xF;
         retiredCount++;
     } while (retiredCount < 5);
 
-    if (execution_unit_instructions.instruction != NULL && execution_unit_instructions.value == 0) {
+    if (execution_unit_instructions.instr != NULL && execution_unit_instructions.remaining == 0) {
         SInt32 ringIndex;
         PCodeInstruction *object;
-        object = execution_unit_instructions.instruction;
+        object = execution_unit_instructions.instr;
         ringIndex = 0;
-        while (ringIndex < 16 && instruction_ring[ringIndex].instruction != object)
+        while (ringIndex < 16 && instruction_ring[ringIndex].instr != object)
             ringIndex++;
-        instruction_ring[ringIndex].value = 1;
-        execution_unit_instructions.instruction = NULL;
+        instruction_ring[ringIndex].completed = 1;
+        execution_unit_instructions.instr = NULL;
         data_00582dd8 = object;
     }
 
-    if (data_00582d98.instruction != NULL && data_00582d98.value == 0) {
+    if (data_00582d98.instr != NULL && data_00582d98.remaining == 0) {
         SInt32 ringIndex;
         PCodeInstruction *object;
-        object = data_00582d98.instruction;
+        object = data_00582d98.instr;
         ringIndex = 0;
-        while (ringIndex < 16 && instruction_ring[ringIndex].instruction != object)
+        while (ringIndex < 16 && instruction_ring[ringIndex].instr != object)
             ringIndex++;
-        instruction_ring[ringIndex].value = 1;
-        data_00582d98.instruction = NULL;
+        instruction_ring[ringIndex].completed = 1;
+        data_00582d98.instr = NULL;
         data_00582ddc = object;
     }
 
-    if (data_00582da0.instruction != NULL && data_00582da0.value == 0) {
+    if (data_00582da0.instr != NULL && data_00582da0.remaining == 0) {
         SInt32 ringIndex;
         PCodeInstruction *object;
-        object = data_00582da0.instruction;
+        object = data_00582da0.instr;
         ringIndex = 0;
-        while (ringIndex < 16 && instruction_ring[ringIndex].instruction != object)
+        while (ringIndex < 16 && instruction_ring[ringIndex].instr != object)
             ringIndex++;
-        instruction_ring[ringIndex].value = 1;
-        data_00582da0.instruction = NULL;
+        instruction_ring[ringIndex].completed = 1;
+        data_00582da0.instr = NULL;
     }
 
-    if (data_00582dc8.instruction != NULL && data_00582dc8.value == 0) {
+    if (data_00582dc8.instr != NULL && data_00582dc8.remaining == 0) {
         SInt32 ringIndex;
         PCodeInstruction *object;
-        object = data_00582dc8.instruction;
+        object = data_00582dc8.instr;
         ringIndex = 0;
-        while (ringIndex < 16 && instruction_ring[ringIndex].instruction != object)
+        while (ringIndex < 16 && instruction_ring[ringIndex].instr != object)
             ringIndex++;
-        instruction_ring[ringIndex].value = 1;
-        data_00582dc8.instruction = NULL;
+        instruction_ring[ringIndex].completed = 1;
+        data_00582dc8.instr = NULL;
     }
 
-    if (data_00582db8.instruction != NULL && data_00582db8.value == 0) {
+    if (data_00582db8.instr != NULL && data_00582db8.remaining == 0) {
         SInt32 ringIndex;
         PCodeInstruction *object;
-        object = data_00582db8.instruction;
+        object = data_00582db8.instr;
         ringIndex = 0;
-        while (ringIndex < 16 && instruction_ring[ringIndex].instruction != object)
+        while (ringIndex < 16 && instruction_ring[ringIndex].instr != object)
             ringIndex++;
-        instruction_ring[ringIndex].value = 1;
-        data_00582db8.instruction = NULL;
+        instruction_ring[ringIndex].completed = 1;
+        data_00582db8.instr = NULL;
     }
 
-    if (data_00582dd0.instruction != NULL && data_00582dd0.value == 0) {
+    if (data_00582dd0.instr != NULL && data_00582dd0.remaining == 0) {
         SInt32 ringIndex;
         PCodeInstruction *object;
-        object = data_00582dd0.instruction;
+        object = data_00582dd0.instr;
         ringIndex = 0;
-        while (ringIndex < 16 && instruction_ring[ringIndex].instruction != object)
+        while (ringIndex < 16 && instruction_ring[ringIndex].instr != object)
             ringIndex++;
-        instruction_ring[ringIndex].value = 1;
-        data_00582dd0.instruction = NULL;
+        instruction_ring[ringIndex].completed = 1;
+        data_00582dd0.instr = NULL;
     }
 
     {
         SInt32 ringIndex;
         PCodeInstruction *object;
-        if ((object = data_00582da8.instruction) != NULL && data_00582da8.value == 0 &&
+        if ((object = data_00582da8.instr) != NULL && data_00582da8.remaining == 0 &&
             (object->opcode == 0xa8 || object->opcode == 0xa9)) {
             PCodeInstruction *slotObject;
-            slotObject = data_00582da8.instruction;
+            slotObject = data_00582da8.instr;
             ringIndex = 0;
-            while (ringIndex < 16 && instruction_ring[ringIndex].instruction != slotObject)
+            while (ringIndex < 16 && instruction_ring[ringIndex].instr != slotObject)
                 ringIndex++;
-            instruction_ring[ringIndex].value = 1;
-            data_00582da8.instruction = NULL;
+            instruction_ring[ringIndex].completed = 1;
+            data_00582da8.instr = NULL;
         }
     }
 
-    if (data_00582db0.instruction != NULL && data_00582db0.value == 0 && data_00582db8.instruction == NULL) {
+    if (data_00582db0.instr != NULL && data_00582db0.remaining == 0 && data_00582db8.instr == NULL) {
         SInt32 count;
         PCodeInstruction *object;
-        count = machineOpcodeInfo604[(object = data_00582db0.instruction)->opcode].stageCycles[2];
-        data_00582db8.instruction = object;
-        data_00582db8.value = count;
-        data_00582db0.instruction = NULL;
+        count = machineOpcodeInfo604[(object = data_00582db0.instr)->opcode].stageCycles[2];
+        data_00582db8.instr = object;
+        data_00582db8.remaining = count;
+        data_00582db0.instr = NULL;
     }
 
-    if (data_00582da8.instruction != NULL && data_00582da8.value == 0 && data_00582db0.instruction == NULL) {
+    if (data_00582da8.instr != NULL && data_00582da8.remaining == 0 && data_00582db0.instr == NULL) {
         PCodeInstruction *object;
-        count = machineOpcodeInfo604[(object = data_00582da8.instruction)->opcode].stageCycles[1];
-        data_00582db0.instruction = object;
-        data_00582db0.value = count;
-        data_00582da8.instruction = NULL;
+        count = machineOpcodeInfo604[(object = data_00582da8.instr)->opcode].stageCycles[1];
+        data_00582db0.instr = object;
+        data_00582db0.remaining = count;
+        data_00582da8.instr = NULL;
     }
 
-    if (data_00582dc0.instruction != NULL && data_00582dc0.value == 0 && data_00582dc8.instruction == NULL) {
+    if (data_00582dc0.instr != NULL && data_00582dc0.remaining == 0 && data_00582dc8.instr == NULL) {
         SInt32 count;
         PCodeInstruction *object;
-        count = machineOpcodeInfo604[(object = data_00582dc0.instruction)->opcode].stageCycles[1];
-        data_00582dc8.instruction = object;
-        data_00582dc8.value = count;
-        data_00582dc0.instruction = NULL;
+        count = machineOpcodeInfo604[(object = data_00582dc0.instr)->opcode].stageCycles[1];
+        data_00582dc8.instr = object;
+        data_00582dc8.remaining = count;
+        data_00582dc0.instr = NULL;
     }
 }
 
@@ -663,31 +663,30 @@ void assign_instruction_to_execution_unit(struct PCodeInstruction *instruction)
     unsigned int opcode = instruction->opcode;
     index = machineOpcodeInfo604[opcode].executionUnit;
     value = machineOpcodeInfo604[opcode].stageCycles[0];
-    if ((index == 0) && (execution_unit_instructions.instruction != NULL)) {
+    if ((index == 0) && (execution_unit_instructions.instr != NULL)) {
         index = 1;
     }
     DAT_00582de4 = 1 + DAT_00582de4;
     data_00582de0 = data_00582de0 + -1;
-    instruction_ring[next_instruction_slot].instruction = instruction;
-    instruction_ring[next_instruction_slot].value = 0;
+    instruction_ring[next_instruction_slot].instr = instruction;
+    instruction_ring[next_instruction_slot].completed = 0;
     next_instruction_slot = next_instruction_slot + 1 & 0xf;
-    (&execution_unit_instructions)[index].instruction = instruction;
-    (&execution_unit_instructions)[index].value = value;
+    (&execution_unit_instructions)[index].instr = instruction;
+    (&execution_unit_instructions)[index].remaining = value;
 }
 
-static void ZeroArray(InstructionValueEntry *arr, SInt32 n)
-{
-    SInt32 i;
-
-    for (i = 0; i < n; i++)
-        arr[i].instruction = NULL;
-}
-
-static void ZeroInstructions(InstructionValueEntry *arr, SInt32 n)
+static void ZeroStages(PipelineStage *stages, SInt32 n)
 {
     SInt32 i;
     for (i = 0; i < n; i++)
-        arr[i].instruction = NULL;
+        stages[i].instr = NULL;
+}
+
+static void ZeroEntries(CompletionEntry *entries, SInt32 n)
+{
+    SInt32 i;
+    for (i = 0; i < n; i++)
+        entries[i].instr = NULL;
 }
 
 int can_issue_instruction(struct PCodeInstruction *instruction)
@@ -704,16 +703,16 @@ int can_issue_instruction(struct PCodeInstruction *instruction)
     if (enabled == 0)
         return 0;
     if (category == 0) {
-        firstMissing = noFirst = !execution_unit_instructions.instruction;
+        firstMissing = noFirst = !execution_unit_instructions.instr;
         secondMissing = 0;
-        if ((candidate = data_00582d98.instruction) == NULL)
+        if ((candidate = data_00582d98.instr) == NULL)
             secondMissing = 1;
         if (noFirst == 0 && secondMissing == 0)
             return 0;
         if (firstMissing != 0 && secondMissing != 0)
             return 1;
         if (firstMissing == 0)
-            candidate = execution_unit_instructions.instruction;
+            candidate = execution_unit_instructions.instr;
         if (Scheduler_ReturnZero(instruction, candidate, 0) != 0)
             return 0;
         ref = data_00582dd8;
@@ -722,7 +721,7 @@ int can_issue_instruction(struct PCodeInstruction *instruction)
         ref = data_00582ddc;
         if (Scheduler_ReturnZero(instruction, ref, 0) != 0)
             return 0;
-    } else if ((&execution_unit_instructions)[category].instruction != NULL) {
+    } else if ((&execution_unit_instructions)[category].instr != NULL) {
         return 0;
     }
     return 1;
@@ -730,12 +729,12 @@ int can_issue_instruction(struct PCodeInstruction *instruction)
 
 void fn_0052eb60(void)
 {
-    ZeroInstructions(&execution_unit_instructions, 9);
+    ZeroStages(&execution_unit_instructions, 9);
     data_00582de0 = 0x10;
     DAT_00582de4 = 0;
     instruction_retire_index = 0;
     next_instruction_slot = 0;
-    ZeroInstructions(instruction_ring, 16);
+    ZeroEntries(instruction_ring, 16);
     data_00582dd8 = NULL;
     data_00582ddc = NULL;
 }

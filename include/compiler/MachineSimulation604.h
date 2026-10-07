@@ -8,10 +8,6 @@
 extern "C" {
 #endif
 
-struct InstructionValueEntry {
-    struct PCodeInstruction *instruction;
-    int value;
-};
 extern int get_opcode_table_value(PCodeInstruction *instruction);
 extern void advance_instruction_stages_and_retire(void);
 extern void assign_instruction_to_execution_unit(struct PCodeInstruction *instruction);

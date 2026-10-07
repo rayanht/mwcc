@@ -11,7 +11,7 @@
 #include "compiler/Scheduler.h"
 #include <string.h>
 
-struct Checker machine601 = {
+struct MachineInfo machine601 = {
     2,
     0,
     (SInt32 (*)(void *))get_latency,
@@ -494,12 +494,12 @@ static MachineOpcodeInfo data_00578340[466] = {
 
 /* The instruction in each of the pipeline's six stages and the cycles it has left there: six statics in a row,
    which the code also indexes from the first. */
-static struct InstructionCountdown data_00582fe8;
-static struct InstructionCountdown data_00582ff0;
-static struct InstructionCountdown data_00582ff8;
-static struct InstructionCountdown data_00583000;
-static struct InstructionCountdown data_00583008;
-static struct InstructionCountdown data_00583010;
+static PipelineStage data_00582fe8;
+static PipelineStage data_00582ff0;
+static PipelineStage data_00582ff8;
+static PipelineStage data_00583000;
+static PipelineStage data_00583008;
+static PipelineStage data_00583010;
 
 Boolean is_execution_unit_seven(int instruction)
 {
@@ -511,43 +511,43 @@ void advance_instruction_pipeline(void)
     int i;
 
     for (i = 0; i < 6; i++) {
-        if ((&data_00582fe8)[i].instruction != NULL && (&data_00582fe8)[i].count != 0) {
-            (&data_00582fe8)[i].count--;
+        if ((&data_00582fe8)[i].instr != NULL && (&data_00582fe8)[i].remaining != 0) {
+            (&data_00582fe8)[i].remaining--;
         }
     }
 
-    if (data_00582fe8.instruction != NULL && data_00582fe8.count == 0) {
-        data_00582fe8.instruction = NULL;
+    if (data_00582fe8.instr != NULL && data_00582fe8.remaining == 0) {
+        data_00582fe8.instr = NULL;
     }
-    if (data_00583008.instruction != NULL && data_00583008.count == 0) {
-        data_00583008.instruction = NULL;
+    if (data_00583008.instr != NULL && data_00583008.remaining == 0) {
+        data_00583008.instr = NULL;
     }
-    if (data_00583010.instruction != NULL && data_00583010.count == 0) {
-        data_00583010.instruction = NULL;
+    if (data_00583010.instr != NULL && data_00583010.remaining == 0) {
+        data_00583010.instr = NULL;
     }
-    if (data_00583000.instruction != NULL && data_00583000.count == 0 && data_00583008.instruction == NULL) {
+    if (data_00583000.instr != NULL && data_00583000.remaining == 0 && data_00583008.instr == NULL) {
         SInt32 v;
         PCodeInstruction *instruction;
-        v = data_00578340[(instruction = data_00583000.instruction)->opcode].stageCycles[3];
-        data_00583008.instruction = instruction;
-        data_00583008.count = v;
-        data_00583000.instruction = NULL;
+        v = data_00578340[(instruction = data_00583000.instr)->opcode].stageCycles[3];
+        data_00583008.instr = instruction;
+        data_00583008.remaining = v;
+        data_00583000.instr = NULL;
     }
-    if (data_00582ff8.instruction != NULL && data_00582ff8.count == 0 && data_00583000.instruction == NULL) {
+    if (data_00582ff8.instr != NULL && data_00582ff8.remaining == 0 && data_00583000.instr == NULL) {
         SInt32 v;
         PCodeInstruction *instruction;
-        v = data_00578340[(instruction = data_00582ff8.instruction)->opcode].stageCycles[2];
-        data_00583000.instruction = instruction;
-        data_00583000.count = v;
-        data_00582ff8.instruction = NULL;
+        v = data_00578340[(instruction = data_00582ff8.instr)->opcode].stageCycles[2];
+        data_00583000.instr = instruction;
+        data_00583000.remaining = v;
+        data_00582ff8.instr = NULL;
     }
-    if (data_00582ff0.instruction != NULL && data_00582ff0.count == 0 && data_00582ff8.instruction == NULL) {
+    if (data_00582ff0.instr != NULL && data_00582ff0.remaining == 0 && data_00582ff8.instr == NULL) {
         SInt32 v;
         PCodeInstruction *instruction;
-        v = data_00578340[(instruction = data_00582ff0.instruction)->opcode].stageCycles[1];
-        data_00582ff8.instruction = instruction;
-        data_00582ff8.count = v;
-        data_00582ff0.instruction = NULL;
+        v = data_00578340[(instruction = data_00582ff0.instr)->opcode].stageCycles[1];
+        data_00582ff8.instr = instruction;
+        data_00582ff8.remaining = v;
+        data_00582ff0.instr = NULL;
     }
 }
 
@@ -563,20 +563,20 @@ void set_execution_unit_instruction(PCodeInstruction *instruction)
     if (entry == 7) {
         entry = 0;
     }
-    (&data_00582fe8)[entry].instruction = instruction;
-    (&data_00582fe8)[entry].count = value;
+    (&data_00582fe8)[entry].instr = instruction;
+    (&data_00582fe8)[entry].remaining = value;
 }
 
 int is_execution_unit_available(PCodeInstruction *instruction)
 {
     unsigned int kind;
-    struct InstructionCountdown *counts;
+    PipelineStage *counts;
 
     kind = data_00578340[instruction->opcode].executionUnit;
     if (kind == 7)
         kind = 0;
     counts = &data_00582fe8;
-    if (counts[kind].instruction != NULL)
+    if (counts[kind].instr != NULL)
         return 0;
     else
         return 1;
@@ -584,12 +584,12 @@ int is_execution_unit_available(PCodeInstruction *instruction)
 
 void clear_instruction_and_globals(void)
 {
-    data_00582fe8.instruction = NULL;
-    data_00582ff0.instruction = NULL;
-    data_00582ff8.instruction = NULL;
-    data_00583000.instruction = NULL;
-    data_00583008.instruction = NULL;
-    data_00583010.instruction = NULL;
+    data_00582fe8.instr = NULL;
+    data_00582ff0.instr = NULL;
+    data_00582ff8.instr = NULL;
+    data_00583000.instr = NULL;
+    data_00583008.instr = NULL;
+    data_00583010.instr = NULL;
 }
 
 SInt32 get_latency(PCodeInstruction *p)
