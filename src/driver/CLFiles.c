@@ -1,6 +1,7 @@
 #include "compiler/common.h"
 #include "driver/CLFiles.h"
 #include "compiler/InlineAsmPPC.h"
+#include "driver/AssertionFailure.h"
 #include "driver/CLFileOps.h"
 #include "driver/CLIO.h"
 #include "driver/CLOverlays.h"

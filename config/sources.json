@@ -695,6 +695,32 @@
       "src/driver"
     ]
   },
+  "src/driver/AssertionFailure.c": {
+    "compiler": "pro53",
+    "flags": [
+      "-O4,p",
+      "-sym",
+      "off",
+      "-Cpp_exceptions",
+      "off"
+    ],
+    "include_dirs": [
+      "src/driver"
+    ]
+  },
+  "src/driver/TextUtils.c": {
+    "compiler": "pro53",
+    "flags": [
+      "-O4,p",
+      "-sym",
+      "off",
+      "-Cpp_exceptions",
+      "off"
+    ],
+    "include_dirs": [
+      "src/driver"
+    ]
+  },
   "src/driver/CLIO.c": {
     "compiler": "pro53",
     "flags": [
@@ -706,8 +732,7 @@
     ],
     "include_dirs": [
       "src/driver"
-    ],
-    "status": "NonMatching"
+    ]
   },
   "src/driver/CLLicenses.c": {
     "compiler": "pro53",

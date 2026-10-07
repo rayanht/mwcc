@@ -3,6 +3,7 @@
 #include "compiler/objects.h"
 #include "compiler/scopes.h"
 #include "compiler/win32.h"
+#include "driver/AssertionFailure.h"
 #include "driver/CLIO.h"
 #include "driver/Memory.h"
 #include <string.h>

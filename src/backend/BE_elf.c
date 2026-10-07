@@ -42,6 +42,7 @@
 #include "driver/Files.h"
 #include "driver/Memory.h"
 #include "driver/TargetPanels-eabi-ppc.h"
+#include "driver/TextUtils.h"
 #include "driver/libimp-eabi-ppc.h"
 #include <string.h>
 

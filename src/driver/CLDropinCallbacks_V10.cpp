@@ -8,6 +8,7 @@
 #include "compiler/CExpr2.h"
 #include "compiler/CPrep.h"
 #include "compiler/InlineAsmPPC.h"
+#include "driver/AssertionFailure.h"
 #include "driver/CLAccessPaths.h"
 #include "driver/CLBrowser.h"
 #include "driver/CLCompilerLinkerDropin_V10.h"

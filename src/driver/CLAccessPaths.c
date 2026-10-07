@@ -1,6 +1,7 @@
 #include "compiler/common.h"
 #include "driver/CLAccessPaths.h"
 #include "compiler/win32.h"
+#include "driver/AssertionFailure.h"
 #include "driver/CLDependencies.h"
 #include "driver/CLIO.h"
 #include "driver/CLPluginRequests.h"

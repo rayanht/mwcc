@@ -1,5 +1,6 @@
 #include "compiler/common.h"
 #include "driver/CLProj.h"
+#include "driver/AssertionFailure.h"
 #include "driver/CLIO.h"
 #include "driver/CLTarg.h"
 #include "driver/MsDos.h"

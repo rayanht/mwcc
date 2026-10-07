@@ -4,6 +4,7 @@
 #include "compiler/scopes.h"
 #include "compiler/win32.h"
 #include "compiler/CError.h"
+#include "driver/AssertionFailure.h"
 #include "driver/CLFileOps.h"
 #include "driver/CLIO.h"
 #include "driver/CLMain.h"
@@ -20,6 +21,7 @@
 #include "driver/ParserFace.h"
 #include "driver/Projects.h"
 #include "driver/TargetOptimizer-ppc-eabi.h"
+#include "driver/TextUtils.h"
 #include <stdio.h>
 #include <setjmp.h>
 #include <stdio.h>

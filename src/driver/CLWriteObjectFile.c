@@ -1,6 +1,7 @@
 #define CERROR_FILE "unknown.c"
 #include "compiler/common.h"
 #include "driver/CLWriteObjectFile.h"
+#include "driver/AssertionFailure.h"
 #include "driver/CLDependencies.h"
 #include "driver/CLDropinCallbacks_V10.h"
 #include "driver/CLErrors.h"

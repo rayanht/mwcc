@@ -2,6 +2,7 @@
 #include "compiler/common.h"
 #include "driver/CLTarg.h"
 #include "compiler/InlineAsmPPC.h"
+#include "driver/AssertionFailure.h"
 #include "driver/CLAccessPaths.h"
 #include "driver/CLDependencies.h"
 #include "driver/CLFiles.h"

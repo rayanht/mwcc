@@ -3,6 +3,7 @@
 
 #include "compiler/common.h"
 #include "driver/CLPluginRequests.h"
+#include "driver/AssertionFailure.h"
 #include "driver/CLCompilerLinkerDropin_V10.h"
 #include "driver/CLDropinCallbacks_V10.h"
 #include "driver/CLErrors.h"

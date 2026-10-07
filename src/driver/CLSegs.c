@@ -1,5 +1,6 @@
 #include "compiler/common.h"
 #include "driver/CLSegs.h"
+#include "driver/AssertionFailure.h"
 #include "driver/CLIO.h"
 #include "driver/MemUtils.h"
 #include <stdlib.h>

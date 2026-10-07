@@ -5,6 +5,7 @@
 #include "compiler/scopes.h"
 #include "compiler/win32.h"
 #include "compiler/CPrep.h"
+#include "driver/AssertionFailure.h"
 #include "driver/CLIO.h"
 #include "driver/CLMain.h"
 #include "driver/CLPluginRequests.h"

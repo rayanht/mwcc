@@ -2,6 +2,7 @@
 #include "compiler/common.h"
 #include "driver/CLPlugins.h"
 #include "compiler/CPrep.h"
+#include "driver/AssertionFailure.h"
 #include "driver/CLCompilerLinkerDropin_V10.h"
 #include "driver/CLErrors.h"
 #include "driver/CLFileOps.h"

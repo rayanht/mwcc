@@ -1,5 +1,6 @@
 #include "compiler/common.h"
 #include "driver/ParserHelpers-cc.h"
+#include "driver/AssertionFailure.h"
 #include "driver/CLIO.h"
 #include "driver/CWParserPluginsPrivate.h"
 #include "driver/CWPluginsPrivate.h"

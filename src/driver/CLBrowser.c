@@ -3,6 +3,7 @@
 #include "driver/CLBrowser.h"
 #include "compiler/win32.h"
 #include "compiler/CPrep.h"
+#include "driver/AssertionFailure.h"
 #include "driver/CLDropinCallbacks_V10.h"
 #include "driver/CLErrors.h"
 #include "driver/CLFileOps.h"

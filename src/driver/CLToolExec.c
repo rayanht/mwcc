@@ -3,6 +3,7 @@
 #include "driver/CLToolExec.h"
 #include "compiler/objects.h"
 #include "compiler/scopes.h"
+#include "driver/AssertionFailure.h"
 #include "driver/CLAccessPaths.h"
 #include "driver/CLDependencies.h"
 #include "driver/CLDropinCallbacks_V10.h"

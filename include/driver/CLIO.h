@@ -9,11 +9,6 @@
 extern "C" {
 #endif
 
-struct StringListHeader {
-    unsigned char countHigh; /* 0x00: CLIO_GetResourceString reads the high byte of the big-endian STR# string count */
-    unsigned char countLow;  /* 0x01: CLIO_GetResourceString reads the low byte of the STR# string count */
-};
-
 struct ByteBuffer {
     char *data;
     int size;
@@ -46,10 +41,6 @@ struct DiagnosticSourcePosition {
 #pragma pack(pop)
 
 extern char data_005880e0[];
-extern void __stdcall CLIO_GetResourceString(unsigned char *output, short resourceID, short stringIndex);
-extern void CLIO_ReportAssertionFailure(char *a, char *b, unsigned int c);
-extern char *__stdcall CLIO_ConvertPascalToCString(char *p);
-extern char *CLIO_ConvertToPascalString(char *string);
 extern Boolean write_text_buffer(struct _FILE *fp, StorageHandle *bufp, SInt32 len);
 extern unsigned char CLIO_WriteStorageToStdout(StorageHandle *first, SInt32 second, unsigned int reset);
 extern Boolean CLIO_WriteTextFile(OSSpec *fileRef, StorageHandle *text, SInt32 textLength, SInt32 fileType,
@@ -72,11 +63,7 @@ extern char DAT_00541b3e;
 extern SInt8 no_wrap;
 extern char data_00541b35;
 extern SInt16 data_00541b3a;
-extern int data_0054b988;
-extern const char *data_0054b9c0[];
-extern char data_0054b9dc;
 extern char data_00587325;
-extern void __stdcall CLIO_GetResourceCString(char *a0, int a1, int a2);
 extern int report_user_break(unsigned int value);
 extern void initialize_console(void);
 extern void clear_global(void);
@@ -85,8 +72,6 @@ extern char CLIO_InitializeStreamBuffering(void);
 extern unsigned char fn_00414e20(void);
 extern unsigned char clear_global_byte(void);
 extern short consoleBufferHeight;
-extern char DAT_0057eb68;
-extern char data_0057eb69;
 extern short CLIO_ReportDiagnostic(Plugin *type, DiagnosticSourcePosition *record, int message, short severity,
                                    char *argument, ...);
 extern char data_00541b2c;
@@ -114,18 +99,9 @@ extern void print_diagnostic(Plugin *object, DiagnosticSourcePosition *dump, SIn
                              char *messageArg1, char **messageArg2);
 extern void CLIO_FormatAndDispatchText(char *fmt, ...);
 extern void extract_diagnostic_source_line(DiagnosticSourcePosition *info);
-extern char DAT_0057edfd[];
-extern char *diagnostic_level_names[];
-extern UInt8 data_0057eb70;
-extern UInt8 data_0057eb71;
-extern char specs_equal;
-extern char data_0057edfb;
-extern char data_0057edfc;
 extern char *program_name;
 extern int CLIO_CompareStringsIgnoreCase(char *left, char *right);
 extern NameTableEntry *create_data_block(char *name, const void *source, unsigned int size);
-extern OSSpec cachedRecordSpec;
-extern OSSpec data_0057ecb6;
 
 #ifdef __cplusplus
 }

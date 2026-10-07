@@ -1,5 +1,6 @@
 #include "compiler/common.h"
 #include "driver/CLOverlays.h"
+#include "driver/AssertionFailure.h"
 #include "driver/CLDropinCallbacks_V10.h"
 #include "driver/CLErrors.h"
 #include "driver/CLFiles.h"

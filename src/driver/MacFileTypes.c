@@ -2,6 +2,7 @@
 #include "compiler/common.h"
 #include "driver/MacFileTypes.h"
 #include "compiler/win32.h"
+#include "driver/AssertionFailure.h"
 #include "driver/CLIO.h"
 #include "driver/CLTarg.h"
 #include "driver/Files.h"

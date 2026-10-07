@@ -7,6 +7,7 @@
 #include "compiler/CExpr2.h"
 #include "compiler/CPrep.h"
 #include "compiler/InlineAsmPPC.h"
+#include "driver/AssertionFailure.h"
 #include "driver/CLIO.h"
 #include "driver/CWParserPluginsPrivate.h"
 #include "driver/Files.h"

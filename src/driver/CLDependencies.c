@@ -8,6 +8,7 @@
 #include "compiler/DWARF.h"
 #include "compiler/ELF_Endian.h"
 #include "compiler/ObjGen_PPC_EABI.h"
+#include "driver/AssertionFailure.h"
 #include "driver/CLAccessPaths.h"
 #include "driver/CLBrowser.h"
 #include "driver/CLDropinCallbacks_V10.h"

@@ -3169,13 +3169,13 @@
     "name": "CLIO_ConvertToPascalString",
     "address": "0x00415630",
     "size": 58,
-    "source": "src/driver/CLIO.c"
+    "source": "src/driver/TextUtils.c"
   },
   {
     "name": "CLIO_ConvertPascalToCString",
     "address": "0x00415670",
     "size": 34,
-    "source": "src/driver/CLIO.c"
+    "source": "src/driver/TextUtils.c"
   },
   {
     "name": "fn_004156a0",
@@ -3186,7 +3186,7 @@
     "name": "CLIO_GetResourceCString",
     "address": "0x00415820",
     "size": 31,
-    "source": "src/driver/CLIO.c"
+    "source": "src/driver/TextUtils.c"
   },
   {
     "name": "fn_00415840",

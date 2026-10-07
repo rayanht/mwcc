@@ -3,6 +3,7 @@
 #include "driver/Parameter.h"
 #include "compiler/objects.h"
 #include "compiler/scopes.h"
+#include "driver/AssertionFailure.h"
 #include "driver/CLIO.h"
 #include "driver/ClientGlue.h"
 #include "driver/Help.h"
@@ -13,6 +14,7 @@
 #include "driver/ParserGlue-eabi-ppc-cc.h"
 #include "driver/StringUtils.h"
 #include "driver/Targets.h"
+#include "driver/TextUtils.h"
 #include "driver/Utils.h"
 #include <string.h>
 

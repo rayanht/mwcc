@@ -6,6 +6,7 @@
 #include "compiler/win32.h"
 #include "compiler/CExpr2.h"
 #include "compiler/CPrep.h"
+#include "driver/AssertionFailure.h"
 #include "driver/CLAccessPaths.h"
 #include "driver/CLBrowser.h"
 #include "driver/CLDependencies.h"
@@ -36,108 +37,20 @@
 #include <string.h>
 #include <stdlib.h>
 
-/* "\r\n" */
+static char DAT_0057eb68;
+static char data_0057eb69;
+static int data_0057eb6c; /* (its users were stripped) */
+static UInt8 data_0057eb70;
+static UInt8 data_0057eb71;
+static OSSpec cachedRecordSpec;
+static OSSpec data_0057ecb6;
+static char specs_equal;
+static char data_0057edfb;
+static char data_0057edfc;
+static char DAT_0057edfd[256];
 
-void CLIO_ReportAssertionFailure(char *message, char *file, unsigned int line)
-{
-    fprintf(stderr, "Assertion (%s) failed in \"%s\" on line %d\n", message, file, line);
-    abort();
-}
-
-char *CLIO_ConvertToPascalString(char *string)
-{
-    unsigned int length;
-
-    length = strlen(string);
-    if (length > 255) {
-        length = 255;
-    }
-    memmove(string + 1, string, length);
-    *string = (char)length;
-    return string;
-}
-
-char *__stdcall CLIO_ConvertPascalToCString(char *string)
-{
-    unsigned int length = (unsigned char)*string;
-    memmove(string, string + 1, length);
-    string[length] = '\0';
-    return string;
-}
-
-void __stdcall CLIO_GetResourceString(unsigned char *output, short resourceID, short stringIndex)
-{
-    unsigned char *cursor;
-    unsigned char *end;
-    short remaining;
-    char *message;
-    struct StorageHandle *resource;
-    short stringCount;
-    unsigned char *dest;
-    int resourceSize;
-    unsigned char length;
-    unsigned char buffer[256];
-
-    message = ResourceStrings_GetString(resourceID, stringIndex);
-    if (message != NULL) {
-        strcpy((char *)buffer, message);
-        CLIO_ConvertToPascalString((char *)buffer);
-    } else {
-        sprintf((char *)buffer, "[Resource string id=%d index=%d not found]", resourceID, stringIndex);
-        CLIO_ConvertToPascalString((char *)buffer);
-        resource = (struct StorageHandle *)Resources_GetHand(1398034979, resourceID);
-        if (resource != NULL) {
-            {
-                struct StringListHeader *header = (struct StringListHeader *)resource->data;
-                stringCount = header->countLow + (header->countHigh << 8);
-            }
-            if (stringIndex > 0 && stringIndex <= stringCount) {
-                unsigned char *strings;
-                resourceSize = Memory_GetHandleSize(resource);
-                fn_00413a00(resource);
-                strings = (unsigned char *)resource->data;
-                cursor = strings + sizeof(struct StringListHeader);
-                end = strings + resourceSize;
-                remaining = stringIndex;
-                while (cursor < end && --remaining != 0) {
-                    length = *cursor;
-                    cursor += length + 1;
-                }
-                if (cursor < strings + resourceSize) {
-                    _pstrcpy(buffer, cursor);
-                }
-                fn_00413a50(resource);
-            }
-        }
-    }
-    cursor = buffer + 1;
-    dest = output + 1;
-    while (cursor <= buffer + buffer[0]) {
-        if (*cursor == 0xD4) {
-            *dest = '`';
-        } else if (*cursor == 0xD5) {
-            *dest = '\'';
-        } else if (*cursor == 0xD2 || *cursor == 0xD3) {
-            *dest = '"';
-        } else if (*cursor == 0xC9 && dest - output < 253) {
-            *dest = '.';
-            dest[1] = '.';
-            dest += 2;
-            *dest = '.';
-        } else {
-            *dest = *cursor;
-        }
-        ++cursor;
-        ++dest;
-    }
-    *output = dest - output - 1;
-}
-
-void __stdcall CLIO_GetResourceCString(char *output, int resourceID, int stringIndex)
-{
-    CLIO_GetResourceString((unsigned char *)output, resourceID, stringIndex);
-    CLIO_ConvertPascalToCString(output);
-}
+/* The lines written since the last page prompt. */
+static int data_0054b988 = 0;
 
 int report_user_break(unsigned int value)
 {
@@ -269,20 +182,18 @@ Boolean write_text_buffer(struct _FILE *fp, StorageHandle *bufp, SInt32 len)
     return ok;
 }
 
+static const char *data_0054b9c0 = "===============\n";
+
 unsigned char CLIO_WriteStorageToStdout(StorageHandle *first, SInt32 second, unsigned int reset)
 {
     FILE *state;
-    if ((unsigned char)reset) {
-        const char **previousState = data_0054b9c0;
-        fprintf(stdout, *previousState);
-    }
+    if ((unsigned char)reset)
+        fprintf(stdout, data_0054b9c0);
     if (!write_text_buffer(state = stdout, first, second)) {
         return 0;
     }
-    if ((unsigned char)reset) {
-        const char **previousState = data_0054b9c0;
-        fprintf(state, *previousState);
-    }
+    if ((unsigned char)reset)
+        fprintf(state, data_0054b9c0);
     fflush(state);
     return 1;
 }
@@ -513,6 +424,9 @@ char *forward_format_arguments(char *output, int size, char *prefix, char *forma
     return format_prefixed_text(output, size, prefix, format, arguments);
 }
 
+static char data_0054b9dc = 0;
+static char *data_0054ba14 = "\n[Press enter for next page, 'q'+enter to quit]\r"; /* (its users were stripped) */
+
 unsigned int write_text_to_stdout_or_stderr(int unused, short messageType, const char *textAddress)
 {
     FILE *output;
@@ -552,6 +466,8 @@ unsigned int write_text_to_stdout_or_stderr(int unused, short messageType, const
     }
     return (unsigned int)cursor;
 }
+
+static char *diagnostic_level_names[] = {"", "Note", "Warning", "Error", "Alert", "Status"};
 
 void update_cached_specs(OSSpec *recordAddress)
 {
@@ -777,7 +693,7 @@ void format_and_print_message(Plugin *type, DiagnosticSourcePosition *obj, int m
         if (kind != 3) {
             message = mprintf(messageBuffer, sizeof(messageBuffer),
                               "%s:%d:%s: ", CLProj_MakeRelativePath(&obj->file, NULL, data_005880e0, 0x104), obj->line,
-                              data_0054b9c0[36 + kind]);
+                              diagnostic_level_names[kind]);
         } else {
             message = mprintf(messageBuffer, sizeof(messageBuffer),
                               "%s:%d: ", CLProj_MakeRelativePath(&obj->file, NULL, data_005880e0, 0x104), obj->line);
@@ -1012,6 +928,14 @@ int CLIO_CompareStringsIgnoreCase(char *left, char *right)
         }
     } while (*left++ != '\0');
     return 0;
+}
+
+static int data_0054bc34 = 0; /* (its users were stripped) */
+
+/* The linker stripped the function that used these literals; they stay in the unit's .data. */
+static void CLIO_StrippedLiterals(char *buffer, char *text)
+{
+    sprintf(buffer, "%s%s", " ... ", text);
 }
 
 NameTableEntry *create_data_block(char *name, const void *source, unsigned int size)

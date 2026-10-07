@@ -301,9 +301,17 @@ src/driver/Files.c:
 	.text       start:0x00413B80 end:0x00414A90
 	.data       start:0x0054B8F8 end:0x0054B928
 
+src/driver/AssertionFailure.c:
+	.text       start:0x00414A90 end:0x00414AC0
+	.data       start:0x0054B928 end:0x0054B958
+
+src/driver/TextUtils.c:
+	.text       start:0x00414AC0 end:0x00414CD0
+	.data       start:0x0054B958 end:0x0054B988
+
 src/driver/CLIO.c:
-	.text       start:0x00414A90 end:0x00416770
-	.data       start:0x0054B928 end:0x0054BC58
+	.text       start:0x00414CD0 end:0x00416770
+	.data       start:0x0054B988 end:0x0054BC58
 	.bss        start:0x0057EB68 end:0x0057EF00
 
 src/driver/CLPrefs.c:

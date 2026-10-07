@@ -24,6 +24,7 @@
 #include "compiler/IroVars.h"
 #include "compiler/ObjGen_PPC_EABI.h"
 #include "compiler/Registers.h"
+#include "driver/AssertionFailure.h"
 #include "driver/CLAccessPaths.h"
 #include "driver/CLBrowser.h"
 #include "driver/CLDependencies.h"

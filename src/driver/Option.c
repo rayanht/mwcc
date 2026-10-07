@@ -1,6 +1,7 @@
 #define CERROR_FILE "Option.c"
 #include "compiler/common.h"
 #include "driver/Option.h"
+#include "driver/AssertionFailure.h"
 #include "driver/CLIO.h"
 #include "driver/ClientGlue.h"
 #include "driver/Help.h"

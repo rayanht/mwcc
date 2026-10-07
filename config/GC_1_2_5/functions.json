@@ -3327,31 +3327,31 @@
     "name": "CLIO_ReportAssertionFailure",
     "address": "0x00414a90",
     "size": 39,
-    "source": "src/driver/CLIO.c"
+    "source": "src/driver/AssertionFailure.c"
   },
   {
     "name": "CLIO_ConvertToPascalString",
     "address": "0x00414ac0",
     "size": 60,
-    "source": "src/driver/CLIO.c"
+    "source": "src/driver/TextUtils.c"
   },
   {
     "name": "CLIO_ConvertPascalToCString",
     "address": "0x00414b00",
     "size": 34,
-    "source": "src/driver/CLIO.c"
+    "source": "src/driver/TextUtils.c"
   },
   {
     "name": "CLIO_GetResourceString",
     "address": "0x00414b30",
     "size": 374,
-    "source": "src/driver/CLIO.c"
+    "source": "src/driver/TextUtils.c"
   },
   {
     "name": "CLIO_GetResourceCString",
     "address": "0x00414cb0",
     "size": 31,
-    "source": "src/driver/CLIO.c"
+    "source": "src/driver/TextUtils.c"
   },
   {
     "name": "report_user_break",

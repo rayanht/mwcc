@@ -3,6 +3,7 @@
 #include "driver/MsDos.h"
 #include "compiler/win32.h"
 #include "compiler/CTemplateNew.h"
+#include "driver/AssertionFailure.h"
 #include "driver/CLAccessPaths.h"
 #include "driver/CLIO.h"
 #include "driver/CLTarg.h"

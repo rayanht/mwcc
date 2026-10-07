@@ -8,6 +8,7 @@
 #include "compiler/win32.h"
 #include "compiler/CError.h"
 #include "compiler/CPrep.h"
+#include "driver/AssertionFailure.h"
 #include "driver/CLBrowser.h"
 #include "driver/CLDependencies.h"
 #include "driver/CLDropinCallbacks_V10.h"
