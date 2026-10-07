@@ -42,6 +42,7 @@
 #include "compiler/PCode.h"
 #include "compiler/PPCError.h"
 #include "compiler/Switch.h"
+#include "driver/COSToolsCLT.h"
 #include "driver/Files.h"
 #include <string.h>
 #include <stdio.h>

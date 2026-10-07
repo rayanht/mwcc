@@ -47,6 +47,7 @@
 #include "compiler/PCode.h"
 #include "compiler/StackFrameEABI.h"
 #include "compiler/Switch.h"
+#include "driver/COSToolsCLT.h"
 #include "driver/Files.h"
 #include <setjmp.h>
 #include <string.h>

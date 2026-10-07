@@ -45,6 +45,7 @@
 #include "compiler/PCode.h"
 #include "compiler/Registers.h"
 #include "compiler/Switch.h"
+#include "driver/COSToolsCLT.h"
 #include "driver/CWPluginsPrivate.h"
 #include "driver/Files.h"
 #include "driver/cc-eabi-ppc.h"

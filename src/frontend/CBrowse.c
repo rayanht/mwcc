@@ -32,6 +32,7 @@
 #include "compiler/Switch.h"
 #include "compiler/Unmangle.h"
 #include "driver/CLPluginRequests.h"
+#include "driver/COSToolsCLT.h"
 #include "driver/CWParserPluginsPrivate.h"
 #include "driver/CWPluginsPrivate.h"
 #include "driver/DropInCompilerLinkerPrivate.h"

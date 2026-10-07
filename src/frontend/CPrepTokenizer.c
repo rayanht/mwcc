@@ -29,6 +29,7 @@
 #include "compiler/ObjGen_PPC_EABI.h"
 #include "compiler/PCode.h"
 #include "compiler/Switch.h"
+#include "driver/COSToolsCLT.h"
 #include "driver/Files.h"
 #include "driver/Memory.h"
 /* Buffered lexical item and its associated value. */

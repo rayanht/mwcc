@@ -38,6 +38,7 @@
 #include "compiler/PPCError.h"
 #include "compiler/Switch.h"
 #include "driver/CLIO.h"
+#include "driver/COSToolsCLT.h"
 #include "driver/Files.h"
 #include "driver/Memory.h"
 #include "driver/TargetPanels-eabi-ppc.h"

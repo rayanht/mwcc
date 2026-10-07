@@ -46,6 +46,7 @@
 #include "compiler/Registers.h"
 #include "compiler/StackFrameEABI.h"
 #include "compiler/Switch.h"
+#include "driver/COSToolsCLT.h"
 #include "driver/Files.h"
 #include <string.h>
 #include "compiler/ENode.h"

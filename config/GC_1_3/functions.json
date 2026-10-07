@@ -7261,7 +7261,7 @@
     "name": "format_string",
     "address": "0x00441df0",
     "size": 326,
-    "source": "src/frontend/CompilerTools.c"
+    "source": "src/driver/LibImportMessages.c"
   },
   {
     "name": "fn_00441f40",
@@ -7282,13 +7282,13 @@
     "name": "CompilerTools_DispatchMessageBufferByMode",
     "address": "0x00442170",
     "size": 48,
-    "source": "src/frontend/CompilerTools.c"
+    "source": "src/driver/LibImportMessages.c"
   },
   {
     "name": "copy_pstring",
     "address": "0x004421a0",
     "size": 33,
-    "source": "src/frontend/CompilerTools.c"
+    "source": "src/driver/COSToolsCLT.c"
   },
   {
     "name": "fn_004421d0",
@@ -7299,7 +7299,7 @@
     "name": "CompilerTools_AllocateMemoryIfEnabled",
     "address": "0x004421e0",
     "size": 54,
-    "source": "src/frontend/CompilerTools.c"
+    "source": "src/driver/COSToolsCLT.c"
   },
   {
     "name": "fn_00442220",
@@ -7310,7 +7310,7 @@
     "name": "fn_00443170",
     "address": "0x00442230",
     "size": 30,
-    "source": "src/frontend/CompilerTools.c"
+    "source": "src/driver/COSToolsCLT.c"
   },
   {
     "name": "fn_00442250",
@@ -7336,7 +7336,7 @@
     "name": "CompilerTools_GetResourceCString",
     "address": "0x00442290",
     "size": 29,
-    "source": "src/frontend/CompilerTools.c"
+    "source": "src/driver/COSToolsCLT.c"
   },
   {
     "name": "fn_004422b0",
@@ -7347,19 +7347,19 @@
     "name": "fn_00443200",
     "address": "0x004422c0",
     "size": 80,
-    "source": "src/frontend/CompilerTools.c"
+    "source": "src/driver/COSToolsCLT.c"
   },
   {
     "name": "fn_00443250",
     "address": "0x00442310",
     "size": 29,
-    "source": "src/frontend/CompilerTools.c"
+    "source": "src/driver/COSToolsCLT.c"
   },
   {
     "name": "CompilerTools_GetFileType",
     "address": "0x00442330",
     "size": 45,
-    "source": "src/frontend/CompilerTools.c"
+    "source": "src/driver/COSToolsCLT.c"
   },
   {
     "name": "fn_00442360",
@@ -7385,7 +7385,7 @@
     "name": "CompilerTools_SetFilePosition",
     "address": "0x004423c0",
     "size": 18,
-    "source": "src/frontend/CompilerTools.c"
+    "source": "src/driver/COSToolsCLT.c"
   },
   {
     "name": "fn_004423e0",
@@ -7396,7 +7396,7 @@
     "name": "CompilerTools_GetPFileFields",
     "address": "0x004423f0",
     "size": 56,
-    "source": "src/frontend/CompilerTools.c"
+    "source": "src/driver/COSToolsCLT.c"
   },
   {
     "name": "fn_00442430",
@@ -7407,7 +7407,7 @@
     "name": "CompilerTools_ResolveFileNameToCString",
     "address": "0x004424a0",
     "size": 128,
-    "source": "src/frontend/CompilerTools.c"
+    "source": "src/driver/COSToolsCLT.c"
   },
   {
     "name": "fn_00442520",

@@ -40,6 +40,7 @@
 #include "compiler/PCode.h"
 #include "compiler/Switch.h"
 #include "compiler/Unmangle.h"
+#include "driver/COSToolsCLT.h"
 #include "driver/CWParserPluginsPrivate.h"
 #include "driver/CWPluginsPrivate.h"
 #include "driver/Files.h"

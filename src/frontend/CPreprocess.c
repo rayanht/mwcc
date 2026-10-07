@@ -7,6 +7,7 @@
 #include "compiler/CPrepTokenizer.h"
 #include "compiler/CodeGen.h"
 #include "compiler/CompilerTools.h"
+#include "driver/COSToolsCLT.h"
 #include "driver/Files.h"
 #include "driver/Memory.h"
 #include <string.h>

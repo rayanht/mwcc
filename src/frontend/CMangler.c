@@ -35,6 +35,7 @@
 #include "compiler/Registers.h"
 #include "compiler/StrengthReduction.h"
 #include "compiler/Switch.h"
+#include "driver/COSToolsCLT.h"
 #include "driver/Files.h"
 #include <string.h>
 #include <stdio.h>

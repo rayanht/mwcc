@@ -1849,8 +1849,33 @@
     ],
     "include_dirs": [
       "src/frontend"
+    ]
+  },
+  "src/driver/LibImportMessages.c": {
+    "compiler": "pro53",
+    "flags": [
+      "-O2,p",
+      "-sym",
+      "off",
+      "-Cpp_exceptions",
+      "off"
     ],
-    "status": "NonMatching"
+    "include_dirs": [
+      "src/driver"
+    ]
+  },
+  "src/driver/COSToolsCLT.c": {
+    "compiler": "pro53",
+    "flags": [
+      "-O4,p",
+      "-sym",
+      "on",
+      "-Cpp_exceptions",
+      "off"
+    ],
+    "include_dirs": [
+      "src/driver"
+    ]
   },
   "src/frontend/Unmangle.c": {
     "compiler": "pro53",

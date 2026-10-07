@@ -44,6 +44,7 @@
 #include "compiler/StackFrameEABI.h"
 #include "compiler/Switch.h"
 #include "compiler/TOC.h"
+#include "driver/COSToolsCLT.h"
 #include "driver/Files.h"
 #include <ctype.h>
 #include <stdio.h>

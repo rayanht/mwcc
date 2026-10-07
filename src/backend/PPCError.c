@@ -36,6 +36,7 @@
 #include "compiler/Registers.h"
 #include "compiler/StackFrameEABI.h"
 #include "compiler/Switch.h"
+#include "driver/COSToolsCLT.h"
 #include <setjmp.h>
 
 typedef void (*PCodeGenFn)(ENode *node, SInt32 a, SInt32 b, Operand *dst);
