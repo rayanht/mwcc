@@ -9,7 +9,15 @@
 #include "compiler/PCode.h"
 #include "compiler/PCodeAssembly.h"
 #include <string.h>
-/* Record used to index the seven-byte entries in DAT_00577661. */
+
+/* The instruction in each of the pipeline's six stages and the cycles it has left there: six statics in a row,
+   which the code also indexes from the first. */
+static struct InstructionCountdown data_00582fe8;
+static struct InstructionCountdown data_00582ff0;
+static struct InstructionCountdown data_00582ff8;
+static struct InstructionCountdown data_00583000;
+static struct InstructionCountdown data_00583008;
+static struct InstructionCountdown data_00583010;
 
 Boolean is_execution_unit_seven(int instruction)
 {
@@ -21,43 +29,43 @@ void advance_instruction_pipeline(void)
     int i;
 
     for (i = 0; i < 6; i++) {
-        if (data_00582fe8[i].instruction != NULL && data_00582fe8[i].count != 0) {
-            data_00582fe8[i].count--;
+        if ((&data_00582fe8)[i].instruction != NULL && (&data_00582fe8)[i].count != 0) {
+            (&data_00582fe8)[i].count--;
         }
     }
 
-    if (data_00582fe8[0].instruction != NULL && data_00582fe8[0].count == 0) {
-        data_00582fe8[0].instruction = NULL;
+    if (data_00582fe8.instruction != NULL && data_00582fe8.count == 0) {
+        data_00582fe8.instruction = NULL;
     }
-    if (data_00583008 != 0 && data_0058300c == 0) {
-        data_00583008 = 0;
+    if (data_00583008.instruction != NULL && data_00583008.count == 0) {
+        data_00583008.instruction = NULL;
     }
-    if (data_00583010 != 0 && data_00583014 == 0) {
-        data_00583010 = 0;
+    if (data_00583010.instruction != NULL && data_00583010.count == 0) {
+        data_00583010.instruction = NULL;
     }
-    if (data_00583000 != NULL && data_00583004 == 0 && data_00583008 == 0) {
+    if (data_00583000.instruction != NULL && data_00583000.count == 0 && data_00583008.instruction == NULL) {
         SInt32 v;
-        FuncArg *arg;
-        v = sclass_pipeline_table[(arg = data_00583000)->sclass * 6 + 3];
-        data_00583008 = (SInt32)arg;
-        data_0058300c = v;
-        data_00583000 = NULL;
+        PCodeInstruction *instruction;
+        v = sclass_pipeline_table[(instruction = data_00583000.instruction)->opcode * 6 + 3];
+        data_00583008.instruction = instruction;
+        data_00583008.count = v;
+        data_00583000.instruction = NULL;
     }
-    if (data_00582ff8 != 0 && data_00582ffc == 0 && data_00583000 == NULL) {
+    if (data_00582ff8.instruction != NULL && data_00582ff8.count == 0 && data_00583000.instruction == NULL) {
         SInt32 v;
-        FuncArg *arg = (FuncArg *)data_00582ff8;
-        v = sclass_pipeline_table[arg->sclass * 6 + 2];
-        data_00583000 = arg;
-        data_00583004 = v;
-        data_00582ff8 = 0;
+        PCodeInstruction *instruction;
+        v = sclass_pipeline_table[(instruction = data_00582ff8.instruction)->opcode * 6 + 2];
+        data_00583000.instruction = instruction;
+        data_00583000.count = v;
+        data_00582ff8.instruction = NULL;
     }
-    if (data_00582ff0 != 0 && data_00582ff4 == 0 && data_00582ff8 == 0) {
+    if (data_00582ff0.instruction != NULL && data_00582ff0.count == 0 && data_00582ff8.instruction == NULL) {
         SInt32 v;
-        FuncArg *arg = (FuncArg *)data_00582ff0;
-        v = sclass_pipeline_table[arg->sclass * 6 + 1];
-        data_00582ff8 = (SInt32)arg;
-        data_00582ffc = v;
-        data_00582ff0 = 0;
+        PCodeInstruction *instruction;
+        v = sclass_pipeline_table[(instruction = data_00582ff0.instruction)->opcode * 6 + 1];
+        data_00582ff8.instruction = instruction;
+        data_00582ff8.count = v;
+        data_00582ff0.instruction = NULL;
     }
 }
 
@@ -73,8 +81,8 @@ void set_execution_unit_instruction(PCodeInstruction *instruction)
     if (entry == 7) {
         entry = 0;
     }
-    data_00582fe8[entry].instruction = instruction;
-    data_00582fe8[entry].count = value;
+    (&data_00582fe8)[entry].instruction = instruction;
+    (&data_00582fe8)[entry].count = value;
 }
 
 int is_execution_unit_available(PCodeInstruction *instruction)
@@ -85,7 +93,7 @@ int is_execution_unit_available(PCodeInstruction *instruction)
     kind = data_00578340[instruction->opcode].executionUnit;
     if (kind == 7)
         kind = 0;
-    counts = data_00582fe8;
+    counts = &data_00582fe8;
     if (counts[kind].instruction != NULL)
         return 0;
     else
@@ -94,12 +102,12 @@ int is_execution_unit_available(PCodeInstruction *instruction)
 
 void clear_instruction_and_globals(void)
 {
-    data_00582fe8[0].instruction = NULL;
-    data_00582ff0 = 0;
-    data_00582ff8 = 0;
-    data_00583000 = NULL;
-    data_00583008 = 0;
-    data_00583010 = 0;
+    data_00582fe8.instruction = NULL;
+    data_00582ff0.instruction = NULL;
+    data_00582ff8.instruction = NULL;
+    data_00583000.instruction = NULL;
+    data_00583008.instruction = NULL;
+    data_00583010.instruction = NULL;
 }
 
 SInt32 get_latency(PCodeInstruction *p)

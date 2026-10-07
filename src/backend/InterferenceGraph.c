@@ -349,24 +349,6 @@ static void SpillCode_AddGPRConstraints(PCodeInstruction *instruction)
     }
 }
 
-static inline long RecordValue(IndexedRecord *record)
-{
-    return (int)record;
-}
-
-static inline void EnqueueRecord(IndexedRecord *record)
-{
-    data_00583018[record_enqueue_index * 2 + 16] = RecordValue(record);
-    data_00583018[record_enqueue_index * 2 + 17] = 0;
-    record_enqueue_index = (record_enqueue_index + 1) % 6;
-}
-
-static inline void SetSpillWord(void *storage, unsigned int value)
-{
-    unsigned int *word = storage;
-    *word = value;
-}
-
 static void SpillCode_CollectSuccessorLiveIn(PCodeBlock *block, UInt32 *live_out, int register_count)
 {
     PCodeBlockLink *successor;
