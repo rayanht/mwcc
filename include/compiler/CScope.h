@@ -15,7 +15,6 @@ struct CScopeSave {
     struct TypeClass *currentclass;
     struct Object *currentfunc;
     UInt8 is_member_func;
-    UInt8 trailingPadding[3];
 };
 #pragma options align = reset
 #pragma options align = mac68k

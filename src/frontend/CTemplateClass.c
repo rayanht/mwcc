@@ -1446,7 +1446,7 @@ void instantiate_friend_declaration(TypeDeduce *ctx, struct TemplateFriend *decl
 {
     DeclInfo instance;
     TemplArg *parameter;
-    void *savedScope[3];
+    CScopeSave savedScope;
     Boolean result;
     NameSpace *scope;
     Object *object;
@@ -1471,9 +1471,9 @@ void instantiate_friend_declaration(TypeDeduce *ctx, struct TemplateFriend *decl
     }
     if (instance.thetype->type == TYPEFUNC) {
         scope = CScope_FindGlobalNS(TYPE_CLASS(ctx->inst)->nspace);
-        CScope_SetNameSpaceScope(scope, (CScopeSave *)&savedScope); /* original stack-slot view */
+        CScope_SetNameSpaceScope(scope, &savedScope);
         object = CDecl_GetFunctionObject(&instance, NULL, &result, 0);
-        CScope_RestoreScope((CScopeSave *)&savedScope); /* original stack-slot view */
+        CScope_RestoreScope(&savedScope);
         if (object != NULL) {
             CDecl_AddFriend(TYPE_CLASS(ctx->inst), object, NULL);
             if (declaration->stream.tokens)
