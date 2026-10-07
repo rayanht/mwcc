@@ -310,8 +310,8 @@ unsigned int Help_FormatOption(OptionList *scope, Option *pragma, unsigned int f
         if (pragma->help != NULL)
             append_formatted_text(&third_help_column, "%s", pragma->help);
 
-        if (pragma->args != NULL && (pragma->avail & 0x800) == 0) {
-            for (arg = pragma->args, firstArg = NULL; arg != NULL; lastArg = arg, arg = arg->next) {
+        if (pragma->param != NULL && (pragma->avail & 0x800) == 0) {
+            for (arg = pragma->param, firstArg = NULL; arg != NULL; lastArg = arg, arg = arg->next) {
                 if ((arg->flags & 3) == 1)
                     continue;
                 currentArg = arg;
@@ -373,7 +373,7 @@ unsigned int Help_FormatOption(OptionList *scope, Option *pragma, unsigned int f
                 }
             }
             if (noArguments != 0 && (pragma->avail & 0x2000) == 0) {
-                checkArg = pragma->args;
+                checkArg = pragma->param;
                 allArgsMatch = checkArg != NULL;
                 for (; checkArg != NULL && allArgsMatch != 0; checkArg = checkArg->next)
                     allArgsMatch &= Parameter_DispatchParam(checkArg);
@@ -385,7 +385,7 @@ unsigned int Help_FormatOption(OptionList *scope, Option *pragma, unsigned int f
         if ((pragma->avail & 0x800000) != 0)
             append_formatted_text(&third_help_column, "; meaningless for this target");
 
-        if ((pragma->avail & 0x8000) != 0 && pragma->def != NULL) {
+        if ((pragma->avail & 0x8000) != 0 && pragma->sub != NULL) {
             if (noArguments == 0) {
                 append_formatted_text(&firstHelpColumn, "%s",
                                       (pragma->avail & 0x10000) != 0 ? ((lastArg->flags & 8) ? "[=" : "[,")
@@ -410,11 +410,11 @@ unsigned int Help_FormatOption(OptionList *scope, Option *pragma, unsigned int f
                     }
                 }
             }
-            append_formatted_text(&firstHelpColumn, "%s%s%s", pragma->def->text ? pragma->def->text : "keyword",
-                                  (pragma->def->flags & 1) ? "" : "[,...]", (pragma->avail & 0x10000) != 0 ? "]" : "");
+            append_formatted_text(&firstHelpColumn, "%s%s%s", pragma->sub->help ? pragma->sub->help : "keyword",
+                                  (pragma->sub->flags & 1) ? "" : "[,...]", (pragma->avail & 0x10000) != 0 ? "]" : "");
             append_formatted_text(&firstHelpColumn, "\t");
             append_formatted_text(&third_help_column, "\t");
-            Help_PrintOptionList(pragma->def, 1, "");
+            Help_PrintOptionList(pragma->sub, 1, "");
             append_formatted_text(&third_help_column, "\b");
             append_formatted_text(&firstHelpColumn, "\b");
         } else {
@@ -428,7 +428,7 @@ unsigned int Help_FormatOption(OptionList *scope, Option *pragma, unsigned int f
 
 void Help_PrintOptionList(OptionList *list, int subprint, char *filter)
 {
-    struct Option **opts = list->options;
+    struct Option **opts = list->list;
     int flag = 0;
     unsigned char show;
     if (fn_0041c8ba() == 0x100)
@@ -441,9 +441,9 @@ void Help_PrintOptionList(OptionList *list, int subprint, char *filter)
         if ((data_00587ce0 & 0xc00) == 0x800 && ((list->flags & 0x700) == flag || !(list->flags & 0x700)))
             return;
     }
-    if (list->text && !subprint && *opts) {
+    if (list->help && !subprint && *opts) {
         Help_PrintRepeatedCharLine('-');
-        append_formatted_text(&helpTextColumn, "%s", list->text);
+        append_formatted_text(&helpTextColumn, "%s", list->help);
         drain_column(&helpTextColumn);
         Help_PrintRepeatedCharLine('-');
     }

@@ -8,18 +8,20 @@ extern "C" {
 #endif
 
 /* plugin option tables of the driver. */
+/* An option: its names, where it is available, its parameters, its sub-options, the options it conflicts with and
+ * its help. */
 struct Option {
     char *names;
     int avail;
-    struct PARAM_T *args;
-    struct OptionList *def;
-    struct OptionList *group;
+    struct PARAM_T *param;
+    struct OptionList *sub;
+    struct OptionList *conflicts;
     char *help;
 };
 struct OptionList {
-    char *text;
+    char *help;
     int flags;
-    Option **options;
+    Option **list;
 };
 struct OStack {
     char *name; /* 0x00: Option_Push stores context; format_ostack reads name when flags & 4 */

@@ -162,9 +162,9 @@ void Option_ResetOptionLists(void)
     option_list_count = 0;
     option_capacity = 0;
     option_count = 0;
-    if (optionList.options)
-        free(optionList.options);
-    optionList.options = NULL;
+    if (optionList.list)
+        free(optionList.list);
+    optionList.list = NULL;
     optionList.flags = ((fn_0041c8ba() & 0x100) ? 0x100 : 0) | ((fn_0041c8ba() & 0x40) ? 0x200 : 0) |
                        ((fn_0041c8ba() & 0x80) ? 0x400 : 0);
     fn_0041c1e2();
@@ -182,20 +182,20 @@ void add_option(Option *option)
     Option *tmp;
     if (option_count >= option_capacity) {
         option_capacity += 32;
-        optionList.options = ToolHelpers_ResizeBuffer("options", optionList.options, (option_capacity + 1) * 4);
+        optionList.list = ToolHelpers_ResizeBuffer("options", optionList.list, (option_capacity + 1) * 4);
     }
-    optionList.options[option_count] = opt;
+    optionList.list[option_count] = opt;
     if (opt->avail & 6) {
-        for (i = 0; i < option_count && (optionList.options[i]->avail & 6); i++)
+        for (i = 0; i < option_count && (optionList.list[i]->avail & 6); i++)
             ;
         if (i < option_count) {
-            tmp = optionList.options[i];
-            optionList.options[i] = optionList.options[option_count];
-            optionList.options[option_count] = tmp;
+            tmp = optionList.list[i];
+            optionList.list[i] = optionList.list[option_count];
+            optionList.list[option_count] = tmp;
         }
     }
     option_count++;
-    optionList.options[option_count] = NULL;
+    optionList.list[option_count] = NULL;
 }
 
 int Option_RegisterOptionList(OptionList *list)
@@ -205,14 +205,14 @@ int Option_RegisterOptionList(OptionList *list)
         Targets_ForwardVarArgsAndLongjmp("Too many option lists defined!");
     option_lists[option_list_count] = list;
     option_list_count++;
-    for (option = list->options; *option; option++)
+    for (option = list->list; *option; option++)
         add_option(*option);
     return 1;
 }
 
 void clear_option_avail_high_bits(OptionList *options)
 {
-    Option **entry = options->options;
+    Option **entry = options->list;
     if (entry != NULL) {
         while (*entry != NULL) {
             (*entry)->avail &= 1073741823U;
@@ -223,7 +223,7 @@ void clear_option_avail_high_bits(OptionList *options)
 
 void format_option_list(char *buf, OptionList *list, int flags)
 {
-    Option **opts = list->options;
+    Option **opts = list->list;
     unsigned char first = 1;
     char name[0x100];
     int count = 0;
@@ -378,15 +378,15 @@ int parse_option(Option *option, int flags)
             if ((option->avail & 0x80000000) != 0 && (option->avail & 0x20000) != 0) {
                 Option_ForwardVarArgs(0x1e);
             } else if (option->avail & 0x40000) {
-                Option **entry = option->group->options;
+                Option **entry = option->conflicts->list;
                 while (*entry != NULL && (*entry == option || ((*entry)->avail & 0x80000000) == 0)) {
                     entry++;
                 }
                 if (*entry != NULL && *entry != option) {
                     (*entry)->avail &= 0x7fffffff;
-                    format_option_list(buf, option->group, flags);
-                    if (option->group->text != NULL) {
-                        Option_ForwardVarArgs(0x20, (*entry)->names, buf, option->group->text);
+                    format_option_list(buf, option->conflicts, flags);
+                    if (option->conflicts->help != NULL) {
+                        Option_ForwardVarArgs(0x20, (*entry)->names, buf, option->conflicts->help);
                     } else {
                         Option_ForwardVarArgs(0x1f, (*entry)->names, buf);
                     }
@@ -443,7 +443,7 @@ int parse_option(Option *option, int flags)
         }
         option->avail |= 0x80000000;
         if (option->avail & 0x40000) {
-            Option **entry = option->group->options;
+            Option **entry = option->conflicts->list;
             option->avail |= 0x40000000;
             while (*entry != NULL) {
                 (*entry)->avail |= 0x40000000;
@@ -455,8 +455,8 @@ int parse_option(Option *option, int flags)
     }
     if (result != 0) {
         SInt32 flag8000 = option->avail & 0x8000;
-        if (option->args != NULL) {
-            result = Parameter_CheckParameters(option->args, parseFlags | (flag8000 ? 0x20 : 0));
+        if (option->param != NULL) {
+            result = Parameter_CheckParameters(option->param, parseFlags | (flag8000 ? 0x20 : 0));
         } else {
             short *token = (short *)fn_0040f969();
             if (token != NULL && *token == 4) {
@@ -470,7 +470,7 @@ int parse_option(Option *option, int flags)
                 SInt32 flag16 = flag2 ? 0x10 : 0;
                 SInt32 skipFlag = (parseFlags & 1) ? 0x40 : 0;
                 flag4 = (option->avail & 0x10000) ? 4 : 0;
-                if (Option_ParseOptionList(option->def, (flags & 0xfffffffb) | 2 | skipFlag | flag16 | flag4) != 0) {
+                if (Option_ParseOptionList(option->sub, (flags & 0xfffffffb) | 2 | skipFlag | flag16 | flag4) != 0) {
                     nextResult = 1;
                 }
             }
@@ -544,7 +544,7 @@ int match_option_names(char *names, char *arg, int flags, int *result)
 
 Option *find_matching_option(OptionList *list, int x, int *result)
 {
-    Option **opts = list->options;
+    Option **opts = list->list;
     Option *best = NULL;
     int flags = *result;
     if (opts) {
@@ -977,7 +977,7 @@ int print_option_help(char *filter)
             OptionList *list = option_lists[i];
             if (list) {
                 if (data_00587ce0 & 0x8000) {
-                    if (filter && *filter && list->text && strstr(list->text, filter))
+                    if (filter && *filter && list->help && strstr(list->help, filter))
                         Help_PrintOptionList(list, 0, "");
                 } else
                     Help_PrintOptionList(list, 0, filter);
