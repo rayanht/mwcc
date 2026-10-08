@@ -62,9 +62,6 @@ static long ReadPosition(void);
 static void WritePadding(int amount);
 static void InitOffsets(int offset);
 static void SetScope(DwarfFunctionState *obj);
-#if VERSION < VERSION_GC_1_2_5
-static inline DWInfo *find_or_create_dwinfo(Type *type);
-#endif
 
 static inline UInt8 DWARF_FullDebugEnabled(void)
 {
@@ -360,17 +357,15 @@ void fn_004b0a80(TypeStruct *type)
 
 void emit_class_dwarf(TypeClass *cls)
 {
+    ClassList *base;
     SInt32 recordPos;
-    SInt32 memberPos;
     ObjMemberVar *member;
     DWInfo *typeInfo;
-    DwarfFixup *fixup;
     char *name;
     SInt32 length;
     SInt32 tag;
     SInt32 classMode;
     SInt8 mode;
-    SInt32 memberLength;
     char *memberName;
     DwarfLocationOperand location;
     CScopeObjectIterator search;
@@ -381,13 +376,7 @@ void emit_class_dwarf(TypeClass *cls)
     typeInfo = find_or_create_dwinfo((Type *)cls);
     if (typeInfo->typeNode == NULL)
         CError_FATAL(LINE(408));
-    for (fixup = typeInfo->typeNode->u.fixups; fixup != NULL; fixup = fixup->next) {
-        if (copts.fd5 != 0)
-            BE_elf_SetRelocationValue(fixup->reference, recordPos);
-        else
-            PatchDwarfLength(fixup->offset, recordPos);
-    }
-    typeInfo->typeNode->u.fixups = fixup;
+    typeInfo->typeNode->u.fixups = ResolveFixups(typeInfo->typeNode->u.fixups, recordPos);
     mode = cls->mode;
     classMode = mode;
     if (classMode == 2)
@@ -401,50 +390,47 @@ void emit_class_dwarf(TypeClass *cls)
     length = emit_entry_header(tag);
     if (cls->classname != NULL) {
         length += DW_Word(0x38);
-        name = cls->classname->name;
-        length += DW_String(name);
+        length += DW_String(cls->classname->name);
     }
-    AppendGListWord(dwarf_info_buffer, 0xb6);
+    length += DW_Word(0xb6);
     AppendGListLong(dwarf_info_buffer, cls->size);
-    length += 6;
+    length += 4;
     PatchDwarfLength(recordPos, length);
     CError_ASSERT(LINE(430), ++*dwarf_depth_ptr < 0x32);
     dwarf_entry_offsets[*dwarf_depth_ptr] = 0;
     if (cls->bases != NULL) {
-        ClassList *base;
         for (base = cls->bases; base != NULL; base = base->next) {
-            DWInfo *baseType;
             hasChildren = 1;
-            memberPos = dwarf_info_buffer->size;
-            memberLength = emit_entry_header(0x1c);
-            memberLength += DW_Word(0x38);
+            recordPos = dwarf_info_buffer->size;
+            length = emit_entry_header(0x1c);
+            length += DW_Word(0x38);
             memberName = base->base->classname->name;
-            memberLength += DW_String(memberName);
-            baseType = find_or_create_dwinfo((Type *)base->base);
-            get_type_dwarf_ref(baseType, 0, 1);
-            memberLength += emit_dwarf_ref(baseType);
+            length += DW_String(memberName);
+            typeInfo = find_or_create_dwinfo((Type *)base->base);
+            get_type_dwarf_ref(typeInfo, 0, 1);
+            length += emit_dwarf_ref(typeInfo);
             switch (base->access) {
                 case ACCESSPUBLIC:
-                    memberLength += DW_Word(0x288);
-                    memberLength += DW_String("");
+                    length += DW_Word(0x288);
+                    length += DW_String("");
                     break;
                 case ACCESSPRIVATE:
-                    memberLength += DW_Word(0x248);
-                    memberLength += DW_String("");
+                    length += DW_Word(0x248);
+                    length += DW_String("");
                     break;
                 case ACCESSPROTECTED:
-                    memberLength += DW_Word(0x268);
-                    memberLength += DW_String("");
+                    length += DW_Word(0x268);
+                    length += DW_String("");
                     break;
             }
             if (base->is_virtual != 0) {
-                memberLength += DW_Word(0x308);
-                memberLength += DW_String("");
+                length += DW_Word(0x308);
+                length += DW_String("");
             }
             location.kind = 9;
             location.operand.value = base->offset;
-            memberLength += emit_location_attribute(&location, 0x23, 0);
-            PatchDwarfLength(memberPos, memberLength);
+            length += emit_location_attribute(&location, 0x23, 0);
+            PatchDwarfLength(recordPos, length);
         }
     }
     for (member = cls->ivars; member != NULL; member = member->next) {
@@ -458,38 +444,38 @@ void emit_class_dwarf(TypeClass *cls)
             bitfield = NULL;
         }
         get_type_dwarf_ref(typeInfo, member->qual, 1);
-        memberPos = dwarf_info_buffer->size;
-        memberLength = emit_entry_header(0xd);
-        memberLength += DW_Word(0x38);
+        recordPos = dwarf_info_buffer->size;
+        length = emit_entry_header(0xd);
+        length += DW_Word(0x38);
         memberName = member->name->name;
-        memberLength += DW_String(memberName);
-        memberLength += emit_dwarf_ref(typeInfo);
+        length += DW_String(memberName);
+        length += emit_dwarf_ref(typeInfo);
         switch (member->access) {
             case ACCESSPUBLIC:
-                memberLength += DW_Word(0x288);
-                memberLength += DW_String("");
+                length += DW_Word(0x288);
+                length += DW_String("");
                 break;
             case ACCESSPRIVATE:
-                memberLength += DW_Word(0x248);
-                memberLength += DW_String("");
+                length += DW_Word(0x248);
+                length += DW_String("");
                 break;
             case ACCESSPROTECTED:
-                memberLength += DW_Word(0x268);
-                memberLength += DW_String("");
+                length += DW_Word(0x268);
+                length += DW_String("");
                 break;
         }
         if (bitfield != NULL) {
-            memberLength += DW_Word(0xc5);
+            length += DW_Word(0xc5);
             AppendGListWord(dwarf_info_buffer, bitfield->offset);
-            memberLength += 2;
-            memberLength += DW_Word(0xd6);
+            length += 2;
+            length += DW_Word(0xd6);
             AppendGListLong(dwarf_info_buffer, bitfield->bitlength);
-            memberLength += 4;
+            length += 4;
         }
         location.kind = 9;
         location.operand.value = member->offset;
-        memberLength += emit_location_attribute(&location, 0x23, 0);
-        PatchDwarfLength(memberPos, memberLength);
+        length += emit_location_attribute(&location, 0x23, 0);
+        PatchDwarfLength(recordPos, length);
     }
     CScope_InitObjectIterator(&search, cls->nspace);
     for (;;) {
@@ -504,49 +490,49 @@ void emit_class_dwarf(TypeClass *cls)
                 typeInfo = find_or_create_dwinfo(entry->type);
             }
             hasChildren = 1;
-            memberPos = dwarf_info_buffer->size;
-            memberLength = emit_entry_header(6);
-            memberLength += DW_Word(0x38);
-            memberLength += DW_String(entry->name->name);
+            recordPos = dwarf_info_buffer->size;
+            length = emit_entry_header(6);
+            length += DW_Word(0x38);
+            length += DW_String(entry->name->name);
             name = COptimizer_GetFunctionObject(entry)->name;
             if (entry->name->name != name) {
-                memberLength += DW_Word(0x2008);
-                memberLength += DW_String(name);
+                length += DW_Word(0x2008);
+                length += DW_String(name);
             }
             switch (entry->access) {
                 case ACCESSPUBLIC:
-                    memberLength += DW_Word(0x288);
-                    memberLength += DW_String("");
+                    length += DW_Word(0x288);
+                    length += DW_String("");
                     break;
                 case ACCESSPRIVATE:
-                    memberLength += DW_Word(0x248);
-                    memberLength += DW_String("");
+                    length += DW_Word(0x248);
+                    length += DW_String("");
                     break;
                 case ACCESSPROTECTED:
-                    memberLength += DW_Word(0x268);
-                    memberLength += DW_String("");
+                    length += DW_Word(0x268);
+                    length += DW_String("");
                     break;
             }
             if (entry->datatype == DVFUNC) {
                 location.kind = 0xb;
                 location.operand.value = ((TypeMemberFunc *)entry->type)->vtbl_index;
                 location.metadata.value = cls->vtable->offset;
-                memberLength += emit_location_attribute(&location, (cls->flags & CLASS_ABSTRACT) ? 0x293 : 0x303, 0);
+                length += emit_location_attribute(&location, (cls->flags & CLASS_ABSTRACT) ? 0x293 : 0x303, 0);
             }
             get_type_dwarf_ref(typeInfo, entry->qual, 1);
-            memberLength += emit_dwarf_ref(typeInfo);
-            PatchDwarfLength(memberPos, memberLength);
+            length += emit_dwarf_ref(typeInfo);
+            PatchDwarfLength(recordPos, length);
         } else if (entry->datatype == DDATA) {
             hasChildren = 1;
-            memberPos = dwarf_info_buffer->size;
-            memberLength = emit_entry_header(0x16);
-            memberLength += DW_Word(0x38);
+            recordPos = dwarf_info_buffer->size;
+            length = emit_entry_header(0x16);
+            length += DW_Word(0x38);
             memberName = entry->name->name;
-            memberLength += DW_String(memberName);
+            length += DW_String(memberName);
             typeInfo = find_or_create_dwinfo(entry->type);
             get_type_dwarf_ref(typeInfo, entry->qual, 1);
-            memberLength += emit_dwarf_ref(typeInfo);
-            PatchDwarfLength(memberPos, memberLength);
+            length += emit_dwarf_ref(typeInfo);
+            PatchDwarfLength(recordPos, length);
         }
     }
     if (copts.fd4 != 0 && hasChildren) {
@@ -817,7 +803,7 @@ struct DWInfo *find_or_create_dwinfo(struct Type *type)
     return newRecord;
 }
 #else
-static inline DWInfo *find_or_create_dwinfo(Type *type)
+DWInfo *find_or_create_dwinfo(Type *type)
 {
     DWInfo *record;
 

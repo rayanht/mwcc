@@ -161,9 +161,7 @@ extern void DWARF_AppendLongWordLong(unsigned int firstValue, unsigned int secon
 extern void DWARF_ReplaceTrailingLongWordLong(unsigned int firstValue, unsigned int secondValue);
 extern void emit_compile_unit(struct ObjGenSection *file, UInt8 flag);
 extern SInt32 emit_entry_header(SInt16 value);
-#if VERSION >= VERSION_GC_1_2_5
 extern struct DWInfo *find_or_create_dwinfo(struct Type *type);
-#endif
 extern DwarfRef get_type_dwarf_ref(DWInfo *info, UInt16 a, Boolean b);
 extern int emit_location_attribute(DwarfLocationOperand *op, UInt16 attribute, unsigned char dereference);
 extern UInt16 get_integral_type_code(Type *type);
