@@ -116,7 +116,8 @@ def main():
         + ": download",
         "  tool = compilers",
     ]
-    out += ["build lib/ok: download", "  tool = lib"]
+    # (the libraries' objects the link takes as they ship come with them)
+    out += [f"build lib/ok {' '.join(LIBRARY_OBJECTS.values())} lib/win32sdk/KERNEL32.LIB: download", "  tool = lib"]
     # (a version built with other compilers or options maps the sources' to its own: config/<version>/config.json
     # "compilers", and "flags", option by option)
     host = lambda settings: config.get("compilers", {}).get(settings["compiler"], settings["compiler"])
