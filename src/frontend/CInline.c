@@ -1989,7 +1989,7 @@ Statement *generate_inline_statements(Object *function, Statement *tail, CInline
                     last = last->next;
                 last->next = node->dobjstack;
             }
-            node->dobjstack = list; /* generate_inline_statements: copied exception actions */
+            node->dobjstack = list;
         }
         switch (node->type) {
             case ST_EXPRESSION:
@@ -2461,8 +2461,7 @@ void *create_inline_switch_data(Statement *base, Statement *classInfo)
     InlineSwitchData *result;
     SInt16 count;
 
-    list =
-        ((SwitchInfo *)classInfo->label) /* create_inline_switch_data: ST_SWITCH stores its switch descriptor here */;
+    list = (SwitchInfo *)classInfo->label;
 
     count = 0;
     for (node = list->cases; node != NULL; node = node->next)

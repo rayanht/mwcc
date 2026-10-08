@@ -211,7 +211,6 @@ union ENodeUnion {
     } templdep;
 };
 #pragma options align = reset
-/* sizeof(ENode) is 0x1a: every allocation site requests 26 bytes. */
 #pragma options align = mac68k
 struct ENode {
     UInt8 type;

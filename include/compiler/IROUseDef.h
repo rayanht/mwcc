@@ -21,7 +21,7 @@ struct IRODef {
     UInt8 definite;
 };
 #pragma options align = reset
-/* A use of a variable (build_use_def_records, 0x1e bytes; chained from allocated_uses). */
+/* A use of a variable. */
 #pragma options align = mac68k
 struct IROUse {
     int index;

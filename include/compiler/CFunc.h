@@ -158,7 +158,6 @@ extern void CFunc_SetupLocalVarInfo(Object *object);
 extern unsigned char in_parameter_type_list;
 extern FileOffsetInfo function_fileinfo;
 
-/* CFunc_NewDeclBlock allocates 0xe bytes with lalloc for this saved-state list node. */
 struct DeclBlock {
     struct DeclBlock *next;
     struct ExceptionAction *dobjstack;

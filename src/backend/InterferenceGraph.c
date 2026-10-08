@@ -823,10 +823,6 @@ void SpillCode_MarkLastUses(SInt32 var, UInt32 count)
     }
 }
 
-/* PCodeBlock: the object a liveness entry is indexed by; its block number
- * lives at 0x1c. */
-
-/* TYPESTRUCT record with the byte classification field at 0x0e. */
 void SpillCode_BuildInterference(Object *function, int reg_class, int register_count)
 {
     SpillCode_InitializeLiveness(function, reg_class, register_count);

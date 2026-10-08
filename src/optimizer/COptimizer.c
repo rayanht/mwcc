@@ -54,7 +54,7 @@ static void CheckStmts(Statement *p);
 
 static inline void set_statement_location(Statement *statement)
 {
-    curstmtvalue = (UInt16)statement->value; /* set_statement_location: unsigned source-location value */
+    curstmtvalue = (UInt16)statement->value;
 }
 
 static inline void optimize_expression(Statement *statement)

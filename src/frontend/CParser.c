@@ -1333,7 +1333,6 @@ StructMember *ismember(Type *type, HashNameNode *name)
     return NULL;
 }
 
-/* probe: bare while loop, caller does the null check elsewhere */
 void appendmember(TypeStruct *s, StructMember *m)
 {
     StructMember *p;

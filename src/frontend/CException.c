@@ -481,7 +481,7 @@ void insert_exception_action(Statement *stmt, ExceptionAction *action)
                     scan = scan->next;
                 }
             } else {
-                stmt->dobjstack = (ExceptionAction *)action; /* insert_exception_action: exception action chain */
+                stmt->dobjstack = (ExceptionAction *)action;
             }
         }
     } else {
@@ -499,7 +499,7 @@ void insert_exception_action(Statement *stmt, ExceptionAction *action)
                         CError_FATAL(455);
                 }
             } else {
-                stmt->dobjstack = (ExceptionAction *)action; /* insert_exception_action: exception action chain */
+                stmt->dobjstack = (ExceptionAction *)action;
             }
         }
     }

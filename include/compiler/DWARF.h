@@ -66,7 +66,6 @@ struct DwarfLocationOperand {
 #pragma options align = reset
 #pragma pack(push, 1)
 struct DwarfSym {
-    /* Allocation: DWARF_CreateObjectDebugEntry galloc(sizeof(DwarfNode)), 0x26 bytes; embedded payload, not separately allocated. */
     struct Object *object;
     struct DwarfFixup *fixups;
     SInt32 offset;

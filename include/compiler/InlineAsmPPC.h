@@ -67,9 +67,7 @@ struct InlineAsmExpression {
 };
 #pragma options align = reset
 #pragma pack(push, 1)
-/* create_function_asm_directive allocates 0x10 for directives; parse_asm_instruction_operands allocates the 0x08 prefix plus operands. */
 struct ParsedAsmInstruction {
-    /* create_function_asm_directive: lalloc(0x10) allocation; parse_asm_instruction_operands allocates offsetof(ParsedAsmInstruction, data) + operand_count * sizeof(EncodedOperand). */
     unsigned int opcode;
     unsigned char specialFlags;
     unsigned char branch_flags;

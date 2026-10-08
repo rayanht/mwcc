@@ -110,9 +110,6 @@ void SpillCode_SolveLiveness(UInt32 nbits)
     } while (changed);
 }
 
-/* PCodeBlock: the object a liveness entry is indexed by; its block number
- * lives at 0x1c. */
-
 void SpillCode_InitializeLiveness(Object *func, SInt32 mode, UInt32 nbits)
 {
     Type *returnType;
