@@ -797,7 +797,7 @@ void split_last_linear_into_new_node(void)
 
     if (data_00587fac != NULL && data_00587fac->last != NULL && data_00587fac->last->type == IROLinearEnd) {
         label = IroUtil_NewLabel();
-        node = CError_NewIRONode();
+        node = IroFlowgraph_NewNode();
 
         iroNodeTail->nextnode = node;
         label->stmt = (Statement *)node;
@@ -2484,30 +2484,30 @@ void unroll_loop(int factor, struct IRONode *header)
                     nextnode = pred->nextnode;
                     oldlast = pred->last;
                     pred->last = cond;
-                    node1 = CError_NewIRONode();
+                    node1 = IroFlowgraph_NewNode();
                     node1->first = preFirst;
                     node1->last = preLast;
                     pred->nextnode = node1;
-                    node2 = CError_NewIRONode();
+                    node2 = IroFlowgraph_NewNode();
                     node2->first = testLast;
                     node2->last = bodyLast;
                     ((CLabel *)testLast->u.label)->stmt = (Statement *)node2;
                     node1->nextnode = node2;
-                    node3 = CError_NewIRONode();
+                    node3 = IroFlowgraph_NewNode();
                     node3->first = gotoNd;
                     node3->last = gotoNd;
                     node2->nextnode = node3;
-                    node4 = CError_NewIRONode();
+                    node4 = IroFlowgraph_NewNode();
                     node4->first = exitFirst;
                     node4->last = exitLast;
                     ((CLabel *)exitFirst->u.label)->stmt = (Statement *)node4;
                     node3->nextnode = node4;
-                    node5 = CError_NewIRONode();
+                    node5 = IroFlowgraph_NewNode();
                     node5->first = lab2;
                     node5->last = remLast;
                     ((CLabel *)lab2->u.label)->stmt = (Statement *)node5;
                     node4->nextnode = node5;
-                    node6 = CError_NewIRONode();
+                    node6 = IroFlowgraph_NewNode();
                     node6->first = oldlast;
                     node6->last = oldlast;
                     node5->nextnode = node6;
@@ -2665,15 +2665,15 @@ void unroll_loop(int factor, struct IRONode *header)
                     nextnode = pred->nextnode;
                     oldlast = pred->last;
                     pred->last = cond;
-                    node1 = CError_NewIRONode();
+                    node1 = IroFlowgraph_NewNode();
                     node1->first = preFirst;
                     node1->last = preLast;
                     pred->nextnode = node1;
-                    node2 = CError_NewIRONode();
+                    node2 = IroFlowgraph_NewNode();
                     node2->first = gotoNd;
                     node2->last = gotoNd;
                     node1->nextnode = node2;
-                    node3 = CError_NewIRONode();
+                    node3 = IroFlowgraph_NewNode();
                     node3->first = exitFirst;
                     node3->last = exitLast;
                     ((CLabel *)exitFirst->u.label)->stmt = (Statement *)node3;
@@ -2681,12 +2681,12 @@ void unroll_loop(int factor, struct IRONode *header)
                         node2->nextnode = node3;
                     else
                         node1->nextnode = node3;
-                    node4 = CError_NewIRONode();
+                    node4 = IroFlowgraph_NewNode();
                     node4->first = lab2;
                     node4->last = eremLast;
                     ((CLabel *)lab2->u.label)->stmt = (Statement *)node4;
                     node3->nextnode = node4;
-                    node5 = CError_NewIRONode();
+                    node5 = IroFlowgraph_NewNode();
                     node5->first = oldlast;
                     node5->last = oldlast;
                     node4->nextnode = node5;

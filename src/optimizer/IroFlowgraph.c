@@ -16,6 +16,7 @@
 #include "compiler/IroLoop.h"
 #include "compiler/IroVars.h"
 #include "compiler/Switch.h"
+#include <string.h>
 
 struct IRONode *iroNodeTail;
 
@@ -341,4 +342,17 @@ void IRO_BuildflowGraph(IROLinear *source)
     IroFlowgraph_RebuildSuccPred();
     IroFlowgraph_ComputeDom();
     IroVars_CheckTimedLongjmp();
+}
+
+struct IRONode *IroFlowgraph_NewNode(void)
+{
+    IRONode *record;
+    UInt16 number;
+    record = (IRONode *)oalloc(60U);
+    memset(record, 0, 60U);
+    number = iro_node_count;
+    record->index = number;
+    iro_node_count += 1U;
+    record->nextnode = 0U;
+    return record;
 }

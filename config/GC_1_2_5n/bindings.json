@@ -3559,7 +3559,7 @@
   "_CError_SaveAndSetWrittenEntry": "0x00449d80",
   "_CError_SetBufferedToken": "0x00449da0",
   "_fn_00449dc0": "0x00449dc0",
-  "_CError_NewIRONode": "0x00449df0",
+  "_IroFlowgraph_NewNode": "0x00449df0",
   "_IroFlowgraph_ComputeDom": "0x00449fd0",
   "_IroFlowgraph_RebuildSuccPred": "0x0044a180",
   "_fn_0044a640": "0x0044a640",

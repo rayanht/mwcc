@@ -136,19 +136,6 @@ static inline int CError_GetResourceIndex(SInt16 errorNumber)
     return errorNumber - 99;
 }
 
-struct IRONode *CError_NewIRONode(void)
-{
-    IRONode *record;
-    UInt16 number;
-    record = (IRONode *)oalloc(60U);
-    memset(record, 0, 60U);
-    number = iro_node_count;
-    record->index = number;
-    iro_node_count += 1U;
-    record->nextnode = 0U;
-    return record;
-}
-
 void fn_00449dc0(void)
 {
     data_005805ec = 0;

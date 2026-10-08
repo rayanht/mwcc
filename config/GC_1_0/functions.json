@@ -8860,10 +8860,9 @@
     "size": 16
   },
   {
-    "name": "newconstant",
+    "name": "fn_00447ea0",
     "address": "0x00447ea0",
-    "size": 41,
-    "source": "src/optimizer/IroLoop.c"
+    "size": 41
   },
   {
     "name": "fn_00447ed0",
@@ -10146,10 +10145,10 @@
     "source": "src/optimizer/IroFlowgraph.c"
   },
   {
-    "name": "CError_NewIRONode",
+    "name": "IroFlowgraph_NewNode",
     "address": "0x004575f0",
     "size": 49,
-    "source": "src/frontend/CError.c"
+    "source": "src/optimizer/IroFlowgraph.c"
   },
   {
     "name": "fn_00457630",
@@ -10715,22 +10714,19 @@
     "size": 1481
   },
   {
-    "name": "NewRange",
+    "name": "fn_0045e720",
     "address": "0x0045e720",
-    "size": 15,
-    "source": "src/optimizer/IroRangePropagation.c"
+    "size": 15
   },
   {
-    "name": "AddVar",
+    "name": "fn_0045e730",
     "address": "0x0045e730",
-    "size": 50,
-    "source": "src/optimizer/IroRangePropagation.c"
+    "size": 50
   },
   {
-    "name": "FindVar",
+    "name": "fn_0045e770",
     "address": "0x0045e770",
-    "size": 28,
-    "source": "src/optimizer/IroRangePropagation.c"
+    "size": 28
   },
   {
     "name": "fn_0045e790",
@@ -21277,10 +21273,9 @@
     "source": "src/optimizer/StructMoves.c"
   },
   {
-    "name": "NewParm",
+    "name": "fn_004ede30",
     "address": "0x004ede30",
-    "size": 65,
-    "source": "src/optimizer/FunctionCalls.c"
+    "size": 65
   },
   {
     "name": "fn_004ede80",

@@ -8333,10 +8333,10 @@
     "source": "src/frontend/CError.c"
   },
   {
-    "name": "CError_NewIRONode",
+    "name": "IroFlowgraph_NewNode",
     "address": "0x00449de0",
     "size": 49,
-    "source": "src/frontend/CError.c"
+    "source": "src/optimizer/IroFlowgraph.c"
   },
   {
     "name": "IRO_BuildflowGraph",
