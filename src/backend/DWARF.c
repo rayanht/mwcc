@@ -55,8 +55,8 @@ typedef struct DwarfSym DwarfSym;
 #define LINE(line) ((line) <= 840 ? (line) - 1 : (line) - 10)
 #endif
 
-static SInt32 DW_String(char *name);
-static SInt32 EmitName(char *s);
+static SInt32 DW_Word(SInt16 value);
+static SInt32 DW_String(char *s);
 static void WritePosition(long pos);
 static long ReadPosition(void);
 static void WritePadding(int amount);
@@ -158,10 +158,8 @@ static inline void patch_dwarf_info_length(SInt32 offset, SInt32 length)
     *(SInt32 *)(*dwarf_info_buffer->data + offset) = length;
 }
 
-static void ResolveFixups(DWInfo *info, SInt32 offset)
+static DwarfFixup *ResolveFixups(DwarfFixup *fixup, SInt32 offset)
 {
-    DwarfFixup *fixup = info->typeNode->u.fixups;
-
     while (fixup != NULL) {
         if (copts.fd5 != 0)
             BE_elf_SetRelocationValue(fixup->reference, offset);
@@ -169,7 +167,7 @@ static void ResolveFixups(DWInfo *info, SInt32 offset)
             *(SInt32 *)(*dwarf_info_buffer->data + fixup->offset) = offset;
         fixup = fixup->next;
     }
-    info->typeNode->u.fixups = fixup;
+    return fixup;
 }
 
 void emit_enum_type(Type *type)
@@ -184,11 +182,10 @@ void emit_enum_type(Type *type)
     startOffset = dwarf_info_buffer->size;
     entry = find_or_create_dwinfo(type);
     CError_ASSERT(LINE(246), entry->typeNode != NULL);
-    ResolveFixups(entry, startOffset);
+    entry->typeNode->u.fixups = ResolveFixups(entry->typeNode->u.fixups, startOffset);
     entrySize = emit_entry_header(4);
     if (TYPE_ENUM(type)->enumname != NULL) {
-        AppendGListWord(dwarf_info_buffer, 0x38);
-        entrySize += 2;
+        entrySize += DW_Word(0x38);
         entrySize += DW_String(TYPE_ENUM(type)->enumname->name);
     }
     AppendGListWord(dwarf_info_buffer, 0xb6);
@@ -239,17 +236,17 @@ static DwarfNode *InsertDwarfNode(void)
     return currentDwarfScope;
 }
 
-static SInt32 DW_String(char *name)
+static SInt32 DW_Word(SInt16 value)
 {
-    SInt32 i;
-    char c;
-    char *str = name;
+    AppendGListWord(dwarf_info_buffer, value);
+    return 2;
+}
 
-    i = 0;
-    while ((c = str[i]) != 0) {
-        AppendGListByte(dwarf_info_buffer, c);
-        i++;
-    }
+static SInt32 DW_String(char *s)
+{
+    SInt32 i = 0;
+    for (; s[i] != 0; i++)
+        AppendGListByte(dwarf_info_buffer, s[i]);
     AppendGListByte(dwarf_info_buffer, 0);
     return i + 1;
 }
@@ -272,7 +269,7 @@ void fn_004b0a80(TypeStruct *type)
     entryOffset = buffer->size;
     info = find_or_create_dwinfo((Type *)type);
     CError_ASSERT(LINE(289), info->typeNode != NULL);
-    ResolveFixups(info, entryOffset);
+    info->typeNode->u.fixups = ResolveFixups(info->typeNode->u.fixups, entryOffset);
     switch (type->stype) {
         case STRUCT_TYPE_STRUCT:
         case STRUCT_VECTOR_UCHAR:
@@ -296,8 +293,7 @@ void fn_004b0a80(TypeStruct *type)
     }
     length = emit_entry_header(tag);
     if (type->name != NULL) {
-        AppendGListWord(dwarf_info_buffer, 0x38);
-        length += 2;
+        length += DW_Word(0x38);
         length += DW_String(type->name->name);
     }
     AppendGListWord(dwarf_info_buffer, 0xb6);
@@ -325,8 +321,7 @@ void fn_004b0a80(TypeStruct *type)
             get_type_dwarf_ref(memberInfo, member->qual, 1);
             entryOffset = dwarf_info_buffer->size;
             length = emit_entry_header(0xd);
-            AppendGListWord(dwarf_info_buffer, 0x38);
-            length += 2;
+            length += DW_Word(0x38);
             length += DW_String(member->name->name);
             length += emit_dwarf_ref(memberInfo);
             if (bitfield != NULL) {
@@ -405,10 +400,9 @@ void emit_class_dwarf(TypeClass *cls)
         CError_FATAL(LINE(418));
     length = emit_entry_header(tag);
     if (cls->classname != NULL) {
-        AppendGListWord(dwarf_info_buffer, 0x38);
-        length += 2;
+        length += DW_Word(0x38);
         name = cls->classname->name;
-        length += EmitName(name);
+        length += DW_String(name);
     }
     AppendGListWord(dwarf_info_buffer, 0xb6);
     AppendGListLong(dwarf_info_buffer, cls->size);
@@ -423,34 +417,29 @@ void emit_class_dwarf(TypeClass *cls)
             hasChildren = 1;
             memberPos = dwarf_info_buffer->size;
             memberLength = emit_entry_header(0x1c);
-            AppendGListWord(dwarf_info_buffer, 0x38);
-            memberLength += 2;
+            memberLength += DW_Word(0x38);
             memberName = base->base->classname->name;
-            memberLength += EmitName(memberName);
+            memberLength += DW_String(memberName);
             baseType = find_or_create_dwinfo((Type *)base->base);
             get_type_dwarf_ref(baseType, 0, 1);
             memberLength += emit_dwarf_ref(baseType);
             switch (base->access) {
                 case ACCESSPUBLIC:
-                    AppendGListWord(dwarf_info_buffer, 0x288);
-                    memberLength += 2;
-                    memberLength += EmitName("");
+                    memberLength += DW_Word(0x288);
+                    memberLength += DW_String("");
                     break;
                 case ACCESSPRIVATE:
-                    AppendGListWord(dwarf_info_buffer, 0x248);
-                    memberLength += 2;
-                    memberLength += EmitName("");
+                    memberLength += DW_Word(0x248);
+                    memberLength += DW_String("");
                     break;
                 case ACCESSPROTECTED:
-                    AppendGListWord(dwarf_info_buffer, 0x268);
-                    memberLength += 2;
-                    memberLength += EmitName("");
+                    memberLength += DW_Word(0x268);
+                    memberLength += DW_String("");
                     break;
             }
             if (base->is_virtual != 0) {
-                AppendGListWord(dwarf_info_buffer, 0x308);
-                memberLength += 2;
-                memberLength += EmitName("");
+                memberLength += DW_Word(0x308);
+                memberLength += DW_String("");
             }
             location.kind = 9;
             location.operand.value = base->offset;
@@ -471,34 +460,31 @@ void emit_class_dwarf(TypeClass *cls)
         get_type_dwarf_ref(typeInfo, member->qual, 1);
         memberPos = dwarf_info_buffer->size;
         memberLength = emit_entry_header(0xd);
-        AppendGListWord(dwarf_info_buffer, 0x38);
-        memberLength += 2;
+        memberLength += DW_Word(0x38);
         memberName = member->name->name;
-        memberLength += EmitName(memberName);
+        memberLength += DW_String(memberName);
         memberLength += emit_dwarf_ref(typeInfo);
         switch (member->access) {
             case ACCESSPUBLIC:
-                AppendGListWord(dwarf_info_buffer, 0x288);
-                memberLength += 2;
-                memberLength += EmitName("");
+                memberLength += DW_Word(0x288);
+                memberLength += DW_String("");
                 break;
             case ACCESSPRIVATE:
-                AppendGListWord(dwarf_info_buffer, 0x248);
-                memberLength += 2;
-                memberLength += EmitName("");
+                memberLength += DW_Word(0x248);
+                memberLength += DW_String("");
                 break;
             case ACCESSPROTECTED:
-                AppendGListWord(dwarf_info_buffer, 0x268);
-                memberLength += 2;
-                memberLength += EmitName("");
+                memberLength += DW_Word(0x268);
+                memberLength += DW_String("");
                 break;
         }
         if (bitfield != NULL) {
-            AppendGListWord(dwarf_info_buffer, 0xc5);
+            memberLength += DW_Word(0xc5);
             AppendGListWord(dwarf_info_buffer, bitfield->offset);
-            AppendGListWord(dwarf_info_buffer, 0xd6);
+            memberLength += 2;
+            memberLength += DW_Word(0xd6);
             AppendGListLong(dwarf_info_buffer, bitfield->bitlength);
-            memberLength += 0xa;
+            memberLength += 4;
         }
         location.kind = 9;
         location.operand.value = member->offset;
@@ -520,30 +506,25 @@ void emit_class_dwarf(TypeClass *cls)
             hasChildren = 1;
             memberPos = dwarf_info_buffer->size;
             memberLength = emit_entry_header(6);
-            AppendGListWord(dwarf_info_buffer, 0x38);
-            memberLength += 2;
-            memberLength += EmitName(entry->name->name);
+            memberLength += DW_Word(0x38);
+            memberLength += DW_String(entry->name->name);
             name = COptimizer_GetFunctionObject(entry)->name;
             if (entry->name->name != name) {
-                AppendGListWord(dwarf_info_buffer, 0x2008);
-                memberLength += 2;
-                memberLength += EmitName(name);
+                memberLength += DW_Word(0x2008);
+                memberLength += DW_String(name);
             }
             switch (entry->access) {
                 case ACCESSPUBLIC:
-                    AppendGListWord(dwarf_info_buffer, 0x288);
-                    memberLength += 2;
-                    memberLength += EmitName("");
+                    memberLength += DW_Word(0x288);
+                    memberLength += DW_String("");
                     break;
                 case ACCESSPRIVATE:
-                    AppendGListWord(dwarf_info_buffer, 0x248);
-                    memberLength += 2;
-                    memberLength += EmitName("");
+                    memberLength += DW_Word(0x248);
+                    memberLength += DW_String("");
                     break;
                 case ACCESSPROTECTED:
-                    AppendGListWord(dwarf_info_buffer, 0x268);
-                    memberLength += 2;
-                    memberLength += EmitName("");
+                    memberLength += DW_Word(0x268);
+                    memberLength += DW_String("");
                     break;
             }
             if (entry->datatype == DVFUNC) {
@@ -559,10 +540,9 @@ void emit_class_dwarf(TypeClass *cls)
             hasChildren = 1;
             memberPos = dwarf_info_buffer->size;
             memberLength = emit_entry_header(0x16);
-            AppendGListWord(dwarf_info_buffer, 0x38);
-            memberLength += 2;
+            memberLength += DW_Word(0x38);
             memberName = entry->name->name;
-            memberLength += EmitName(memberName);
+            memberLength += DW_String(memberName);
             typeInfo = find_or_create_dwinfo(entry->type);
             get_type_dwarf_ref(typeInfo, entry->qual, 1);
             memberLength += emit_dwarf_ref(typeInfo);
@@ -576,15 +556,6 @@ void emit_class_dwarf(TypeClass *cls)
     --*dwarf_depth_ptr;
     if (!hasChildren)
         patch_dwarf_sibling();
-}
-
-static SInt32 EmitName(char *s)
-{
-    SInt32 i = 0;
-    for (; s[i] != 0; i++)
-        AppendGListByte(dwarf_info_buffer, s[i]);
-    AppendGListByte(dwarf_info_buffer, 0);
-    return i + 1;
 }
 
 void emit_array_type(Type *type)
@@ -604,12 +575,11 @@ void emit_array_type(Type *type)
     if (arrayInfo->typeNode == NULL)
         CError_FATAL(LINE(629));
 
-    ResolveFixups(arrayInfo, entryOffset);
+    arrayInfo->typeNode->u.fixups = ResolveFixups(arrayInfo->typeNode->u.fixups, entryOffset);
 
     get_type_dwarf_ref(elementInfo, 0, 1);
     entrySize = emit_entry_header(1);
-    AppendGListWord(dwarf_info_buffer, 0xa3);
-    entrySize += 2;
+    entrySize += DW_Word(0xa3);
     blockLengthOffset = dwarf_info_buffer->size;
     AppendGListWord(dwarf_info_buffer, 0);
     attributeSize = 2;
@@ -1094,14 +1064,12 @@ void emit_compile_unit(struct ObjGenSection *section, UInt8 language)
     languageValue = language;
     recordOffset = dwarf_info_buffer->size;
     recordSize = emit_entry_header(0x11);
-    AppendGListWord(dwarf_info_buffer, 600);
-    recordSize += 2;
+    recordSize += DW_Word(600);
     for (nameLength = 0; DWARF_PRODUCER[nameLength] != 0; nameLength++)
         AppendGListByte(dwarf_info_buffer, DWARF_PRODUCER[nameLength]);
     AppendGListByte(dwarf_info_buffer, 0);
     recordSize += nameLength + 1;
-    AppendGListWord(dwarf_info_buffer, 0x38);
-    recordSize += 2;
+    recordSize += DW_Word(0x38);
     sourceName = ObjGen_PPC_EABI_GetSectionName(section);
     strncpy(sourcePath, sourceName, sizeof(sourcePath));
     sourceName = dwarfFileName(sourcePath, copts.fd6);
@@ -1161,21 +1129,13 @@ void emit_function_type(DwarfFixup **fixups, DWInfo *function)
 {
     SInt32 offset;
     TypeFunc *type;
-    DwarfFixup *fixup;
     FuncArg *argument;
     DWInfo *typeRecord;
     SInt32 size;
 
     type = TYPE_FUNC(function->type);
     offset = dwarf_info_buffer->size;
-    for (fixup = *fixups; fixup != NULL; fixup = fixup->next) {
-        if (copts.fd5 != 0) {
-            BE_elf_SetRelocationValue(fixup->reference, offset);
-        } else {
-            *(SInt32 *)(*dwarf_info_buffer->data + fixup->offset) = offset;
-        }
-    }
-    *fixups = fixup;
+    *fixups = ResolveFixups(*fixups, offset);
     get_type_dwarf_ref(function, 0, 0);
     size = emit_entry_header(0x15);
     if (type->functype != NULL) {
@@ -1222,7 +1182,6 @@ void emit_function_type(DwarfFixup **fixups, DWInfo *function)
 void emit_member_pointer_type(DwarfFixup **references, DWInfo *type)
 {
     TypeMemberPointer *entry;
-    DwarfFixup *reference;
     SInt32 offset;
     DwarfRef saved;
     DWInfo *record;
@@ -1230,16 +1189,7 @@ void emit_member_pointer_type(DwarfFixup **references, DWInfo *type)
 
     entry = (TypeMemberPointer *)type->type;
     offset = dwarf_info_buffer->size;
-    reference = *references;
-    while (reference != NULL) {
-        if (copts.fd5 != 0) {
-            BE_elf_SetRelocationValue(reference->reference, offset);
-        } else {
-            *(SInt32 *)(*dwarf_info_buffer->data + reference->offset) = offset;
-        }
-        reference = reference->next;
-    }
-    *references = reference;
+    *references = ResolveFixups(*references, offset);
     get_type_dwarf_ref(type, 0, 0);
     size = emit_entry_header(0x1f);
     if (entry->ty1 != NULL) {
@@ -1271,14 +1221,12 @@ SInt32 emit_function_entry(Object *func, SInt32 code_size, SInt32 code_offset,
     else
         entry_size = emit_entry_header(6);
 
-    AppendGListWord(dwarf_info_buffer, 0x38);
-    entry_size += 2;
+    entry_size += DW_Word(0x38);
     entry_size += DW_String(func->name->name);
 
     if (copts.cplusplus != 0) {
         if (func->name->name != COptimizer_GetFunctionObject(func)->name) {
-            AppendGListWord(dwarf_info_buffer, 0x2008);
-            entry_size += 2;
+            entry_size += DW_Word(0x2008);
             entry_size += DW_String(COptimizer_GetFunctionObject(func)->name);
         }
     }
@@ -1363,8 +1311,7 @@ SInt32 emit_function_entry(Object *func, SInt32 code_size, SInt32 code_offset,
                 entry_size += 6;
             } else {
                 CError_FATAL(LINE(1394));
-                AppendGListWord(dwarf_info_buffer, 0x2038);
-                entry_size += 2;
+                entry_size += DW_Word(0x2038);
                 entry_size += DW_String(COptimizer_GetFunctionObject(variable->object)->name);
             }
             variable = variable->next;
@@ -1653,8 +1600,7 @@ SInt32 emit_dwarf_ref(DWInfo *info)
             size = 2;
             lengthOffset = dwarf_info_buffer->size;
             qualifierCount = 0;
-            AppendGListWord(dwarf_info_buffer, 0);
-            size += 2;
+            size += DW_Word(0);
             while (qualifier != NULL) {
                 AppendGListByte(dwarf_info_buffer, qualifier->type);
                 qualifier = qualifier->next;
@@ -1686,8 +1632,7 @@ SInt32 emit_dwarf_ref(DWInfo *info)
             size = 2;
             lengthOffset = dwarf_info_buffer->size;
             qualifierCount = 0;
-            AppendGListWord(dwarf_info_buffer, 0);
-            size += 2;
+            size += DW_Word(0);
             while (qualifier != NULL) {
                 AppendGListByte(dwarf_info_buffer, qualifier->type);
                 qualifier = qualifier->next;
@@ -1749,8 +1694,7 @@ void fn_004ad570(DWInfo *ptype, union DwarfNodePayload *info)
 
     get_type_dwarf_ref(ptype, info->var.flags, 1);
     len = emit_entry_header(12);
-    AppendGListWord(dwarf_info_buffer, 0x38);
-    len += 2;
+    len += DW_Word(0x38);
     for (nameLength = 0; name->name[nameLength] != 0; nameLength++)
         AppendGListByte(dwarf_info_buffer, name->name[nameLength]);
     AppendGListByte(dwarf_info_buffer, 0);
@@ -1856,8 +1800,7 @@ void fn_004ad260(DWInfo *ptype, union DwarfNodePayload *info)
 
     get_type_dwarf_ref(ptype, info->var.flags, 1);
     length = emit_entry_header(5);
-    AppendGListWord(dwarf_info_buffer, 0x38);
-    length += 2;
+    length += DW_Word(0x38);
     for (nameLength = 0; name->name[nameLength] != 0; nameLength++)
         AppendGListByte(dwarf_info_buffer, name->name[nameLength]);
     AppendGListByte(dwarf_info_buffer, 0);
@@ -1968,8 +1911,7 @@ void emit_variable_entry(struct DwarfSym *sym, Object *obj, DWInfo *arg)
 
     get_type_dwarf_ref(arg, obj->qual, 1);
     size = emit_entry_header(CParser_HasInternalLinkage(obj) ? 12 : 7);
-    AppendGListWord(dwarf_info_buffer, 0x38);
-    size += 2;
+    size += DW_Word(0x38);
     name = obj->name->name;
     length = 0;
     while (name[length] != 0) {
@@ -1981,8 +1923,7 @@ void emit_variable_entry(struct DwarfSym *sym, Object *obj, DWInfo *arg)
     size += length;
     if (copts.cplusplus != 0) {
         if (obj->name->name != COptimizer_GetFunctionObject(obj)->name) {
-            AppendGListWord(dwarf_info_buffer, 0x2008);
-            size += 2;
+            size += DW_Word(0x2008);
             name = COptimizer_GetFunctionObject(obj)->name;
             length = 0;
             while (name[length] != 0) {
