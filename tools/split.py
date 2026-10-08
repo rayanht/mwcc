@@ -236,11 +236,12 @@ def mwld_hash(name):
 
 
 def common_layout(entries, start):
-    """The addresses the linker gives COMMON symbols [(name, size)] from START: by size, the largest first, then by
-    hash."""
+    """The addresses the linker gives COMMON symbols [(name, size)] from START: by the alignment their sizes give them
+    (the largest power of two dividing the size, at most 8), the largest first, then by hash."""
     layout, cursor = {}, start
-    for name, size in sorted(entries, key=lambda entry: (-entry[1], mwld_hash(entry[0]))):
-        align = min(1 << (size.bit_length() - 1), 8)
+    alignment = lambda size: min(size & -size, 8)
+    for name, size in sorted(entries, key=lambda entry: (-alignment(entry[1]), mwld_hash(entry[0]))):
+        align = alignment(size)
         cursor = (cursor + align - 1) & ~(align - 1)
         layout[name] = cursor
         cursor += size
