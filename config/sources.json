@@ -1754,9 +1754,9 @@
     "flags": [
       "-O4,p",
       "-inline",
-      "auto",
+      "auto,deferred",
       "-sym",
-      "off",
+      "on",
       "-Cpp_exceptions",
       "off"
     ],
