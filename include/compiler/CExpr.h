@@ -57,7 +57,7 @@ extern ENode *CExpr_New_EGREATER_Node(ENode *left, ENode *right);
 extern ENode *CExpr_New_ELESSEQU_Node(ENode *left, ENode *right);
 extern ENode *CExpr_New_ELESS_Node(ENode *left, ENode *right);
 extern ENode *simplify_unsigned_zero_comparison(ENode *node, Boolean flag1, Boolean flag2);
-extern void make_pointer_comparison(UInt8 op, ENode *n1, ENode *n2);
+extern ENode *make_pointer_comparison(UInt8 op, ENode *left, ENode *right);
 extern ENode *CExpr_New_ESHR_Node(ENode *left, ENode *right);
 extern ENode *CExpr_New_ESHL_Node(ENode *left, ENode *right);
 extern ENode *CExpr_New_EMODULO_Node(ENode *left, ENode *right, Boolean suppressWarning);
@@ -69,7 +69,7 @@ extern ENode *CExpr_New_ELOGNOT_Node(ENode *expr);
 extern ENode *parse_postfix_expression(Boolean allowSpecial);
 extern ENode *scan_pseudo_destructor_call(ENode *node);
 extern ENode *parse_primary_expression(Boolean expressionMode);
-extern int fn_004f8a40(Type *p);
+extern SInt32 fn_004f8a40(Type *type);
 /* a type seen through its integral code or enumeration payload, as encode_type_bits reads it */
 #pragma options align = mac68k
 typedef struct TypeKind {
@@ -95,7 +95,7 @@ extern ENode *argumentpromotion(ENode *expression, Type *type, unsigned short qu
 extern ENode *oldassignmentpromotion(ENode *e, Type *t, SInt16 sz, SInt32 flag);
 extern void check_implicit_pointer_qual_conversion(ENode *a, Type *b, SInt16 c);
 extern ENode *CExpr_GeneratePointerAndRewriteConst(ENode *expr);
-extern unsigned int fn_004f8ae0(const signed char *kind);
+extern SInt32 fn_004f8ae0(Type *type);
 extern unsigned int encode_kind(unsigned char kind);
 extern ENode *CExpr_IntegralConstOrDepExpr(void);
 extern ENode *s_expression(void);
