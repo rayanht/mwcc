@@ -13791,7 +13791,7 @@
     "source": "src/backend/DWARF.c"
   },
   {
-    "name": "fn_004ac900",
+    "name": "insert_type_nodes_recursive",
     "address": "0x004ac900",
     "size": 1536,
     "source": "src/backend/DWARF.c"

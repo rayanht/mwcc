@@ -2125,6 +2125,7 @@
   "_dwarf_lines": "0x00588a1c",
   "_dwarf_section": "0x00588460",
   "_dwarf_state_list_tail": "0x00588acc",
+  "_dwinfo_list": "0x00588a38",
   "_dynamic_cast_object": "0x005889e8",
   "_eabi_stack_frame_size": "0x005879b4",
   "_eadd_terms": "0x00587914",

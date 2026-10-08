@@ -48,6 +48,13 @@ typedef struct DwarfSym DwarfSym;
 #define DWARF_PRODUCER "MW EABI PPC C-Compiler"
 #define S dwarf_info_buffer
 
+/* The source line an assertion reports: 1.1's file is a line shorter before find_or_create_dwinfo, ten after it. */
+#if VERSION >= VERSION_GC_1_2_5
+#define LINE(line) (line)
+#else
+#define LINE(line) ((line) <= 840 ? (line) - 1 : (line) - 10)
+#endif
+
 static SInt32 DW_String(char *name);
 static SInt32 EmitName(char *s);
 static void WritePosition(long pos);
@@ -55,6 +62,9 @@ static long ReadPosition(void);
 static void WritePadding(int amount);
 static void InitOffsets(int offset);
 static void SetScope(DwarfFunctionState *obj);
+#if VERSION < VERSION_GC_1_2_5
+static inline DWInfo *find_or_create_dwinfo(Type *type);
+#endif
 
 static inline UInt8 DWARF_FullDebugEnabled(void)
 {
@@ -148,6 +158,20 @@ static inline void patch_dwarf_info_length(SInt32 offset, SInt32 length)
     *(SInt32 *)(*dwarf_info_buffer->data + offset) = length;
 }
 
+static void ResolveFixups(DWInfo *info, SInt32 offset)
+{
+    DwarfFixup *fixup = info->typeNode->u.fixups;
+
+    while (fixup != NULL) {
+        if (copts.fd5 != 0)
+            BE_elf_SetRelocationValue(fixup->reference, offset);
+        else
+            *(SInt32 *)(*dwarf_info_buffer->data + fixup->offset) = offset;
+        fixup = fixup->next;
+    }
+    info->typeNode->u.fixups = fixup;
+}
+
 void emit_enum_type(Type *type)
 {
     SInt32 constantsSize;
@@ -155,24 +179,12 @@ void emit_enum_type(Type *type)
     SInt32 startOffset;
     SInt32 constantsOffset;
     DWInfo *entry;
-    DwarfFixup *fixup;
     ObjEnumConst *constant;
 
     startOffset = dwarf_info_buffer->size;
     entry = find_or_create_dwinfo(type);
-    CError_ASSERT(246, entry->typeNode != NULL);
-    fixup = entry->typeNode->u.fixups;
-    if (fixup != NULL) {
-        do {
-            if (copts.fd5) {
-                BE_elf_SetRelocationValue(fixup->reference, startOffset);
-            } else {
-                patch_dwarf_info_length(fixup->offset, startOffset);
-            }
-            fixup = fixup->next;
-        } while (fixup != NULL);
-    }
-    entry->typeNode->u.fixups = fixup;
+    CError_ASSERT(LINE(246), entry->typeNode != NULL);
+    ResolveFixups(entry, startOffset);
     entrySize = emit_entry_header(4);
     if (TYPE_ENUM(type)->enumname != NULL) {
         AppendGListWord(dwarf_info_buffer, 0x38);
@@ -203,6 +215,30 @@ void emit_enum_type(Type *type)
     patch_dwarf_info_length(startOffset, entrySize);
 }
 
+static DwarfNode *NewDwarfNode(void)
+{
+    currentDwarfNode->next = galloc(sizeof(DwarfNode));
+    memclrw(currentDwarfNode->next, sizeof(DwarfNode));
+    currentDwarfNode->next->prev = currentDwarfNode;
+    currentDwarfNode = currentDwarfNode->next;
+    currentDwarfNode->scope = currentDwarfFunctionState;
+    return currentDwarfNode;
+}
+
+static DwarfNode *InsertDwarfNode(void)
+{
+    DwarfNode *next = currentDwarfScope->next;
+    currentDwarfScope->next = galloc(sizeof(DwarfNode));
+    memclrw(currentDwarfScope->next, sizeof(DwarfNode));
+    currentDwarfScope->next->prev = currentDwarfScope;
+    currentDwarfScope = currentDwarfScope->next;
+    currentDwarfScope->scope = currentDwarfFunctionState;
+    currentDwarfScope->next = next;
+    if (next == NULL)
+        currentDwarfNode = currentDwarfScope;
+    return currentDwarfScope;
+}
+
 static SInt32 DW_String(char *name)
 {
     SInt32 i;
@@ -222,33 +258,21 @@ void fn_004b0a80(TypeStruct *type)
 {
     SInt32 entryOffset;
     SInt32 length;
-    SInt32 nameLength;
     SInt32 tag;
     TypeBitfield *bitfield;
     DWInfo *memberInfo;
     StructMember *member;
     DWInfo *info;
     Type *memberType;
-    DwarfFixup *fixup, *fixupHead;
     Boolean hasMembers;
     DwarfLocationOperand location;
     TypeBitfield reversedBitfield;
-    char *name;
     GList *buffer = dwarf_info_buffer;
     hasMembers = 0;
     entryOffset = buffer->size;
     info = find_or_create_dwinfo((Type *)type);
-    CError_ASSERT(289, info->typeNode != NULL);
-    fixup = fixupHead = info->typeNode->u.fixups;
-    if (fixupHead != NULL)
-        do {
-            if (copts.fd5)
-                BE_elf_SetRelocationValue(fixup->reference, entryOffset);
-            else
-                *(SInt32 *)(*dwarf_info_buffer->data + fixup->offset) = entryOffset;
-            fixup = fixup->next;
-        } while (fixup != NULL);
-    info->typeNode->u.fixups = fixup;
+    CError_ASSERT(LINE(289), info->typeNode != NULL);
+    ResolveFixups(info, entryOffset);
     switch (type->stype) {
         case STRUCT_TYPE_STRUCT:
         case STRUCT_VECTOR_UCHAR:
@@ -268,23 +292,19 @@ void fn_004b0a80(TypeStruct *type)
             tag = 0x17;
             break;
         default:
-            CError_FATAL(314);
+            CError_FATAL(LINE(314));
     }
     length = emit_entry_header(tag);
     if (type->name != NULL) {
         AppendGListWord(dwarf_info_buffer, 0x38);
         length += 2;
-        name = type->name->name;
-        for (nameLength = 0; name[nameLength] != 0; nameLength++)
-            AppendGListByte(dwarf_info_buffer, name[nameLength]);
-        AppendGListByte(dwarf_info_buffer, 0);
-        length += nameLength + 1;
+        length += DW_String(type->name->name);
     }
     AppendGListWord(dwarf_info_buffer, 0xb6);
     AppendGListLong(dwarf_info_buffer, type->size);
     *(SInt32 *)(*dwarf_info_buffer->data + entryOffset) = 6 + length;
     if (++*dwarf_depth_ptr >= 0x32)
-        CError_FATAL(325);
+        CError_FATAL(LINE(325));
     dwarf_entry_offsets[*dwarf_depth_ptr] = 0;
     member = type->members;
     if (member != NULL)
@@ -307,11 +327,7 @@ void fn_004b0a80(TypeStruct *type)
             length = emit_entry_header(0xd);
             AppendGListWord(dwarf_info_buffer, 0x38);
             length += 2;
-            name = member->name->name;
-            for (nameLength = 0; name[nameLength] != 0; nameLength++)
-                AppendGListByte(dwarf_info_buffer, name[nameLength]);
-            AppendGListByte(dwarf_info_buffer, 0);
-            length += nameLength + 1;
+            length += DW_String(member->name->name);
             length += emit_dwarf_ref(memberInfo);
             if (bitfield != NULL) {
                 AppendGListWord(dwarf_info_buffer, 0xc5);
@@ -369,7 +385,7 @@ void emit_class_dwarf(TypeClass *cls)
     recordPos = dwarf_info_buffer->size;
     typeInfo = find_or_create_dwinfo((Type *)cls);
     if (typeInfo->typeNode == NULL)
-        CError_FATAL(408);
+        CError_FATAL(LINE(408));
     for (fixup = typeInfo->typeNode->u.fixups; fixup != NULL; fixup = fixup->next) {
         if (copts.fd5 != 0)
             BE_elf_SetRelocationValue(fixup->reference, recordPos);
@@ -386,7 +402,7 @@ void emit_class_dwarf(TypeClass *cls)
     else if (classMode == 1)
         tag = 0x17;
     else
-        CError_FATAL(418);
+        CError_FATAL(LINE(418));
     length = emit_entry_header(tag);
     if (cls->classname != NULL) {
         AppendGListWord(dwarf_info_buffer, 0x38);
@@ -398,7 +414,7 @@ void emit_class_dwarf(TypeClass *cls)
     AppendGListLong(dwarf_info_buffer, cls->size);
     length += 6;
     PatchDwarfLength(recordPos, length);
-    CError_ASSERT(430, ++*dwarf_depth_ptr < 0x32);
+    CError_ASSERT(LINE(430), ++*dwarf_depth_ptr < 0x32);
     dwarf_entry_offsets[*dwarf_depth_ptr] = 0;
     if (cls->bases != NULL) {
         ClassList *base;
@@ -574,30 +590,21 @@ static SInt32 EmitName(char *s)
 void emit_array_type(Type *type)
 {
     SInt32 entryOffset;
-    DWInfo *elementInfo;
-    DwarfFixup *fixup;
-    DWInfo *arrayInfo;
-    SInt16 attributeSize;
     SInt32 blockLengthOffset;
-    SInt32 upperBound;
     SInt32 entrySize;
+    SInt16 attributeSize;
+    DWInfo *elementInfo;
+    DWInfo *arrayInfo;
+    SInt32 upperBound;
 
     entryOffset = dwarf_info_buffer->size;
     elementInfo = find_or_create_dwinfo(TPTR_TARGET(type));
     arrayInfo = find_or_create_dwinfo(type);
 
     if (arrayInfo->typeNode == NULL)
-        CError_FATAL(629);
+        CError_FATAL(LINE(629));
 
-    fixup = arrayInfo->typeNode->u.fixups;
-    while (fixup != NULL) {
-        if (copts.fd5 != 0)
-            BE_elf_SetRelocationValue(fixup->reference, entryOffset);
-        else
-            *(SInt32 *)(*dwarf_info_buffer->data + fixup->offset) = entryOffset;
-        fixup = fixup->next;
-    }
-    arrayInfo->typeNode->u.fixups = fixup;
+    ResolveFixups(arrayInfo, entryOffset);
 
     get_type_dwarf_ref(elementInfo, 0, 1);
     entrySize = emit_entry_header(1);
@@ -805,10 +812,11 @@ void set_type_dwarf_ref(Type *p, UInt16 x, Boolean flag, DwarfRef *out)
             }
             return;
         default:
-            CError_FATAL(840);
+            CError_FATAL(LINE(840));
     }
 }
 
+#if VERSION >= VERSION_GC_1_2_5
 struct DWInfo *find_or_create_dwinfo(struct Type *type)
 {
     unsigned short low, high, middleLow, middleHigh;
@@ -838,6 +846,23 @@ struct DWInfo *find_or_create_dwinfo(struct Type *type)
     newRecord->type = type;
     return newRecord;
 }
+#else
+static inline DWInfo *find_or_create_dwinfo(Type *type)
+{
+    DWInfo *record;
+
+    for (record = dwinfo_list; record != NULL; record = record->next) {
+        if (record->type == type)
+            return record;
+    }
+    record = galloc(sizeof(DWInfo));
+    memclrw(record, sizeof(DWInfo));
+    record->next = dwinfo_list;
+    dwinfo_list = record;
+    record->type = type;
+    return record;
+}
+#endif
 
 DwarfRef get_type_dwarf_ref(DWInfo *info, UInt16 a, Boolean b)
 {
@@ -965,7 +990,7 @@ int emit_location_attribute(DwarfLocationOperand *location, UInt16 attribute, un
             expressionSize += 5;
             break;
         default:
-            CError_Internal(CERROR_FILE, 1011);
+            CError_Internal(CERROR_FILE, LINE(1011));
             break;
     }
 
@@ -1103,7 +1128,7 @@ void emit_compile_unit(struct ObjGenSection *section, UInt8 language)
     if (copts.f26 == 0)
         currentDwarfFunctionState->lineBaseRelocated = 1;
     if (++(*dwarf_depth_ptr) >= 50)
-        CError_Internal(CERROR_FILE, 0x49b);
+        CError_Internal(CERROR_FILE, LINE(0x49b));
     dwarf_entry_offsets[*dwarf_depth_ptr] = 0;
 }
 
@@ -1134,13 +1159,12 @@ void DWARF_ReplaceTrailingLongWordLong(unsigned int firstValue, unsigned int sec
 
 void emit_function_type(DwarfFixup **fixups, DWInfo *function)
 {
+    SInt32 offset;
     TypeFunc *type;
     DwarfFixup *fixup;
     FuncArg *argument;
-    DwarfNode *savedNext;
     DWInfo *typeRecord;
     SInt32 size;
-    SInt32 offset;
 
     type = TYPE_FUNC(function->type);
     offset = dwarf_info_buffer->size;
@@ -1159,27 +1183,19 @@ void emit_function_type(DwarfFixup **fixups, DWInfo *function)
         get_type_dwarf_ref(typeRecord, 0, 1);
         size += emit_dwarf_ref(typeRecord);
     }
-    CError_ASSERT(1230, function->typeNode != NULL);
+    CError_ASSERT(LINE(1230), function->typeNode != NULL);
     currentDwarfScope = function->typeNode;
     *data_005604a8 = 0;
     argument = type->args;
     if (argument != NULL && copts.cplusplus != 0 && (type->flags & FUNC_METHOD) != 0)
         argument = argument->next;
     *(SInt32 *)(*dwarf_info_buffer->data + offset) = size;
-    CError_ASSERT(1239, ++*dwarf_depth_ptr < 0x32);
+    CError_ASSERT(LINE(1239), ++*dwarf_depth_ptr < 0x32);
     dwarf_entry_offsets[*dwarf_depth_ptr] = 0;
     for (; argument != NULL; argument = argument->next) {
         if (argument->type != NULL) {
             currentDwarfNode = currentDwarfScope;
-            savedNext = currentDwarfScope->next;
-            currentDwarfScope->next = (DwarfNode *)galloc(sizeof(DwarfNode));
-            memclrw(currentDwarfScope->next, sizeof(DwarfNode));
-            currentDwarfScope->next->prev = currentDwarfScope;
-            currentDwarfScope = currentDwarfScope->next;
-            currentDwarfScope->scope = currentDwarfFunctionState;
-            currentDwarfScope->next = savedNext;
-            if (savedNext == NULL)
-                currentDwarfNode = currentDwarfScope;
+            InsertDwarfNode();
             offset = dwarf_info_buffer->size;
             size = emit_entry_header(5);
             typeRecord = find_or_create_dwinfo(argument->type);
@@ -1257,26 +1273,13 @@ SInt32 emit_function_entry(Object *func, SInt32 code_size, SInt32 code_offset,
 
     AppendGListWord(dwarf_info_buffer, 0x38);
     entry_size += 2;
-    {
-        char *name = func->name->name;
-        SInt32 length;
-        for (length = 0; name[length] != 0; length++)
-            AppendGListByte(dwarf_info_buffer, name[length]);
-        AppendGListByte(dwarf_info_buffer, 0);
-        entry_size += length + 1;
-    }
+    entry_size += DW_String(func->name->name);
 
     if (copts.cplusplus != 0) {
         if (func->name->name != COptimizer_GetFunctionObject(func)->name) {
-            char *name;
-            SInt32 length;
             AppendGListWord(dwarf_info_buffer, 0x2008);
             entry_size += 2;
-            name = COptimizer_GetFunctionObject(func)->name;
-            for (length = 0; name[length] != 0; length++)
-                AppendGListByte(dwarf_info_buffer, name[length]);
-            AppendGListByte(dwarf_info_buffer, 0);
-            entry_size += length + 1;
+            entry_size += DW_String(COptimizer_GetFunctionObject(func)->name);
         }
     }
 
@@ -1290,7 +1293,7 @@ SInt32 emit_function_entry(Object *func, SInt32 code_size, SInt32 code_offset,
         reference = BE_elf_AddRelocation(dwarf_section, dwarf_info_buffer->size, NULL, dwarf_section,
                                          class_reference.num, currentDwarfFunctionState->offset);
         if (class_reference.valid == 0) {
-            CError_ASSERT(1337, symbol->typeNode != 0);
+            CError_ASSERT(LINE(1337), symbol->typeNode != 0);
             fixup = galloc(sizeof(DwarfFixup));
             fixup->reference = reference;
             fixup->offset = dwarf_info_buffer->size;
@@ -1359,16 +1362,10 @@ SInt32 emit_function_entry(Object *func, SInt32 code_size, SInt32 code_offset,
                 AppendGListLong(dwarf_info_buffer, dwarf_uses_zero_addends() ? 0 : symbol->u.offset);
                 entry_size += 6;
             } else {
-                char *name;
-                SInt32 length;
-                CError_FATAL(1394);
+                CError_FATAL(LINE(1394));
                 AppendGListWord(dwarf_info_buffer, 0x2038);
                 entry_size += 2;
-                name = COptimizer_GetFunctionObject(variable->object)->name;
-                for (length = 0; name[length] != 0; length++)
-                    AppendGListByte(dwarf_info_buffer, name[length]);
-                AppendGListByte(dwarf_info_buffer, 0);
-                entry_size += length + 1;
+                entry_size += DW_String(COptimizer_GetFunctionObject(variable->object)->name);
             }
             variable = variable->next;
         }
@@ -1376,7 +1373,7 @@ SInt32 emit_function_entry(Object *func, SInt32 code_size, SInt32 code_offset,
 
     *(SInt32 *)(*dwarf_info_buffer->data + start_offset) = entry_size;
 
-    CError_ASSERT(1401, ++*dwarf_depth_ptr < 0x32);
+    CError_ASSERT(LINE(1401), ++*dwarf_depth_ptr < 0x32);
     dwarf_entry_offsets[*dwarf_depth_ptr] = 0;
     *data_005604a8 = 0;
     return start_offset;
@@ -1416,12 +1413,7 @@ int DWARF_CreateBlockNode(Object *object, SInt32 codeSize, SInt32 codeOffset, Ob
 
     DWARF_SetupFunctionState(section);
     setup_return_operand(object);
-    currentDwarfNode->next = galloc(sizeof(DwarfNode));
-    memclrw(currentDwarfNode->next, sizeof(DwarfNode));
-    currentDwarfNode->next->prev = currentDwarfNode;
-    currentDwarfNode = currentDwarfNode->next;
-    currentDwarfNode->scope = currentDwarfFunctionState;
-    node = currentDwarfNode;
+    node = NewDwarfNode();
     if (++data_005604ac == 0)
         current_block_node = node;
     node->kind = 0x14;
@@ -1458,12 +1450,7 @@ unsigned int DWARF_RestoreFunctionState(void)
     DwarfFunctionState *A;
     GList *r;
 
-    currentDwarfNode->next = (DwarfNode *)galloc(38U);
-    memclrw(currentDwarfNode->next, 38U);
-    currentDwarfNode->next->prev = currentDwarfNode;
-    currentDwarfNode = currentDwarfNode->next;
-    currentDwarfNode->scope = currentDwarfFunctionState;
-    currentDwarfNode->kind = 0x4080U;
+    NewDwarfNode()->kind = 0x4080U;
     currentDwarfScope = 0U;
     A = data_00587168;
     currentDwarfFunctionState = A;
@@ -1585,7 +1572,7 @@ void DWARF_WriteDebugInfo(void)
                         case 0xffff:
                             break;
                         default:
-                            CError_Internal(CERROR_FILE, 0x66d);
+                            CError_Internal(CERROR_FILE, LINE(0x66d));
                             break;
                     }
                 }
@@ -1679,7 +1666,7 @@ SInt32 emit_dwarf_ref(DWInfo *info)
             typeInfo = ref->typeInfo;
             if (!typeInfo->rec.valid) {
                 DwarfFixup *fixup;
-                CError_ASSERT(1728, typeInfo->typeNode != NULL);
+                CError_ASSERT(LINE(1728), typeInfo->typeNode != NULL);
                 fixup = (DwarfFixup *)galloc(sizeof(DwarfFixup));
                 fixup->reference = relocation;
                 fixup->offset = dwarf_info_buffer->size;
@@ -1723,7 +1710,7 @@ SInt32 emit_dwarf_ref(DWInfo *info)
                                               currentDwarfFunctionState->offset);
             if (!ref->valid) {
                 DwarfFixup *fixup;
-                CError_ASSERT(1758, typeInfo->typeNode != NULL);
+                CError_ASSERT(LINE(1758), typeInfo->typeNode != NULL);
                 fixup = (DwarfFixup *)galloc(sizeof(DwarfFixup));
                 fixup->reference = relocation;
                 fixup->offset = dwarf_info_buffer->size;
@@ -1735,7 +1722,7 @@ SInt32 emit_dwarf_ref(DWInfo *info)
             break;
         }
         default:
-            CError_FATAL(1768);
+            CError_FATAL(LINE(1768));
             break;
     }
     return size;
@@ -1834,12 +1821,7 @@ void DWARF_AddLocalVariable(Object *parameter, int offset)
     type = find_or_create_dwinfo(parameter->type);
     if (type->typeNode == NULL)
         create_type_node(type);
-    currentDwarfNode->next = (DwarfNode *)galloc(sizeof(DwarfNode));
-    memclrw(currentDwarfNode->next, sizeof(DwarfNode));
-    currentDwarfNode->next->prev = currentDwarfNode;
-    currentDwarfNode = currentDwarfNode->next;
-    currentDwarfNode->scope = currentDwarfFunctionState;
-    location = currentDwarfNode;
+    location = NewDwarfNode();
     currentDwarfNode->kind = 0xc;
     location->type = type;
     location->u.var.offset = parameter->u.var.uid + offset;
@@ -1944,23 +1926,9 @@ void DWARF_AddVar(Object *record, SInt32 offset)
         create_type_node(debugType);
 
     if (currentDwarfScope != NULL) {
-        DwarfNode *previous = currentDwarfScope->next;
-        currentDwarfScope->next = (DwarfNode *)galloc(sizeof(DwarfNode));
-        memclrw(currentDwarfScope->next, sizeof(DwarfNode));
-        currentDwarfScope->next->prev = currentDwarfScope;
-        currentDwarfScope = currentDwarfScope->next;
-        currentDwarfScope->scope = currentDwarfFunctionState;
-        currentDwarfScope->next = previous;
-        if (previous == NULL)
-            currentDwarfNode = currentDwarfScope;
-        node = currentDwarfScope;
+        node = InsertDwarfNode();
     } else {
-        currentDwarfNode->next = (DwarfNode *)galloc(sizeof(DwarfNode));
-        memclrw(currentDwarfNode->next, sizeof(DwarfNode));
-        currentDwarfNode->next->prev = currentDwarfNode;
-        currentDwarfNode = currentDwarfNode->next;
-        currentDwarfNode->scope = currentDwarfFunctionState;
-        node = currentDwarfNode;
+        node = NewDwarfNode();
     }
 
     node->kind = 5;
@@ -2050,16 +2018,10 @@ void DWARF_CreateObjectDebugEntry(Object *object)
     if (typeEntry->typeNode == NULL)
         create_type_node(typeEntry);
 
-    currentDwarfNode->next = (DwarfNode *)galloc(sizeof(DwarfNode));
-    memclrw(currentDwarfNode->next, sizeof(DwarfNode));
-    currentDwarfNode->next->prev = currentDwarfNode;
-    currentDwarfNode = currentDwarfNode->next;
-    currentDwarfNode->scope = currentDwarfFunctionState;
-
-    entry = currentDwarfNode;
+    entry = NewDwarfNode();
     object->debugInfo.entry = entry;
     if (object->dwarfLinks.pendingEntry != NULL) {
-        CError_Internal(CERROR_FILE, 0x7f5);
+        CError_Internal(CERROR_FILE, LINE(0x7f5));
         object->dwarfLinks.pendingEntry->u.sym.replacement = entry;
     }
 
@@ -2122,7 +2084,7 @@ void insert_type_node_before(DWInfo *before, DWInfo *info)
 
     type = info->type;
     if (before == NULL)
-        CError_FATAL(2124);
+        CError_FATAL(LINE(2124));
     switch ((SInt8)type->type) {
         case TYPEENUM:
         case TYPESTRUCT:
@@ -2138,20 +2100,20 @@ void insert_type_node_before(DWInfo *before, DWInfo *info)
             kind = 0x4081;
             break;
         case TYPETEMPLATE:
-            CError_FATAL(2141);
+            CError_FATAL(LINE(2141));
             break;
         default:
             return;
     }
     list = before->typeNode;
     if (list == NULL)
-        CError_FATAL(2106);
+        CError_FATAL(LINE(2106));
     node = galloc(sizeof(*node));
     memclrw(node, sizeof(*node));
     node->next = list;
     node->prev = list->prev;
     if (node->prev == NULL)
-        CError_FATAL(2110);
+        CError_FATAL(LINE(2110));
     list->prev = node;
     node->prev->next = node;
     node->scope = data_00587168;
@@ -2184,27 +2146,22 @@ void create_type_node(DWInfo *typeLink)
             kind = 0x4081;
             break;
         case TYPETEMPLATE:
-            CError_FATAL(2175);
+            CError_FATAL(LINE(2175));
             break;
         default:
             return;
     }
     if (current_block_node == NULL) {
-        currentDwarfNode->next = (DwarfNode *)galloc(sizeof(DwarfNode));
-        memclrw(currentDwarfNode->next, sizeof(DwarfNode));
-        currentDwarfNode->next->prev = currentDwarfNode;
-        currentDwarfNode = currentDwarfNode->next;
-        currentDwarfNode->scope = currentDwarfFunctionState;
-        node = currentDwarfNode;
+        node = NewDwarfNode();
         node->scope = data_00587168;
     } else {
         current = current_block_node;
-        CError_ASSERT(2106, current != NULL);
+        CError_ASSERT(LINE(2106), current != NULL);
         newNode = (DwarfNode *)galloc(sizeof(DwarfNode));
         memclrw(newNode, sizeof(DwarfNode));
         newNode->next = current;
         newNode->prev = current->prev;
-        CError_ASSERT(2110, newNode->prev != NULL);
+        CError_ASSERT(LINE(2110), newNode->prev != NULL);
         current->prev = newNode;
         newNode->prev->next = newNode;
         newNode->scope = data_00587168;
@@ -2221,15 +2178,15 @@ void create_type_node(DWInfo *typeLink)
 void insert_type_nodes_recursive(DWInfo *a, DWInfo *b)
 {
     Type *t = b->type;
+    DWInfo *e;
 
     b->marked = 1;
     switch ((SInt8)t->type) {
         case TYPETEMPLATE:
-            CError_FATAL(2211);
+            CError_FATAL(LINE(2211));
             break;
 
         case TYPEBITFIELD: {
-            DWInfo *e;
             if (b->typeNode == NULL)
                 insert_type_node_before(a, b);
             e = find_or_create_dwinfo(TYPE_BITFIELD(t)->bitfieldtype);
@@ -2248,7 +2205,7 @@ void insert_type_nodes_recursive(DWInfo *a, DWInfo *b)
             if (b->typeNode == NULL)
                 insert_type_node_before(a, b);
             for (m = TYPE_STRUCT(t)->members; m != NULL; m = m->next) {
-                DWInfo *e = find_or_create_dwinfo(m->type);
+                e = find_or_create_dwinfo(m->type);
                 if (e->marked == 0)
                     insert_type_nodes_recursive(b, e);
             }
@@ -2256,7 +2213,6 @@ void insert_type_nodes_recursive(DWInfo *a, DWInfo *b)
         }
 
         case TYPEPOINTER: {
-            DWInfo *e;
             if (b->typeNode == NULL)
                 insert_type_node_before(a, b);
             e = find_or_create_dwinfo(TPTR_TARGET(t));
@@ -2266,7 +2222,6 @@ void insert_type_nodes_recursive(DWInfo *a, DWInfo *b)
         }
 
         case TYPEARRAY: {
-            DWInfo *e;
             if (b->typeNode == NULL)
                 insert_type_node_before(a, b);
             e = find_or_create_dwinfo(TPTR_TARGET(t));
@@ -2286,18 +2241,18 @@ void insert_type_nodes_recursive(DWInfo *a, DWInfo *b)
 
             if (TYPE_CLASS(t)->vbases != NULL)
                 for (vb = TYPE_CLASS(t)->vbases; vb != NULL; vb = vb->next) {
-                    DWInfo *e = find_or_create_dwinfo((Type *)vb->base);
+                    e = find_or_create_dwinfo((Type *)vb->base);
                     if (e->marked == 0)
                         insert_type_nodes_recursive(b, e);
                 }
             if (TYPE_CLASS(t)->bases != NULL)
                 for (cb = TYPE_CLASS(t)->bases; cb != NULL; cb = cb->next) {
-                    DWInfo *e = find_or_create_dwinfo((Type *)cb->base);
+                    e = find_or_create_dwinfo((Type *)cb->base);
                     if (e->marked == 0)
                         insert_type_nodes_recursive(b, e);
                 }
             for (iv = TYPE_CLASS(t)->ivars; iv != NULL; iv = iv->next) {
-                DWInfo *e = find_or_create_dwinfo(iv->type);
+                e = find_or_create_dwinfo(iv->type);
                 if (e->marked == 0)
                     insert_type_nodes_recursive(b, e);
             }
@@ -2305,7 +2260,6 @@ void insert_type_nodes_recursive(DWInfo *a, DWInfo *b)
             CScope_InitObjectIterator(&save, TYPE_CLASS(t)->nspace);
             for (;;) {
                 Object *obj = CScope_NextObjectIteratorObject(&save);
-                DWInfo *e;
 
                 if (obj == NULL)
                     break;
@@ -2329,12 +2283,12 @@ void insert_type_nodes_recursive(DWInfo *a, DWInfo *b)
                 insert_type_node_before(a, b);
             b->typeNode->kind = 0x1f;
             if (TYPE_MEMBER_POINTER(t)->ty1 != NULL) {
-                DWInfo *e = find_or_create_dwinfo(TYPE_MEMBER_POINTER(t)->ty1);
+                e = find_or_create_dwinfo(TYPE_MEMBER_POINTER(t)->ty1);
                 if (e->marked == 0)
                     insert_type_nodes_recursive(b, e);
             }
             if (TYPE_MEMBER_POINTER(t)->ty2 != NULL) {
-                DWInfo *e = find_or_create_dwinfo(TYPE_MEMBER_POINTER(t)->ty2);
+                e = find_or_create_dwinfo(TYPE_MEMBER_POINTER(t)->ty2);
                 if (e->marked == 0)
                     insert_type_nodes_recursive(b, e);
             }
@@ -2346,13 +2300,13 @@ void insert_type_nodes_recursive(DWInfo *a, DWInfo *b)
                 insert_type_node_before(a, b);
             b->typeNode->kind = 0x15;
             if (TYPE_FUNC(t)->functype != NULL) {
-                DWInfo *e = find_or_create_dwinfo(TYPE_FUNC(t)->functype);
+                e = find_or_create_dwinfo(TYPE_FUNC(t)->functype);
                 if (e->marked == 0)
                     insert_type_nodes_recursive(b, e);
             }
             for (arg = TYPE_FUNC(t)->args; arg != NULL; arg = arg->next) {
                 if (arg->type != NULL) {
-                    DWInfo *e = find_or_create_dwinfo(arg->type);
+                    e = find_or_create_dwinfo(arg->type);
                     if (e->marked == 0)
                         insert_type_nodes_recursive(b, e);
                 }
@@ -2394,7 +2348,11 @@ void init_dwarf_state(void)
 
     *dwarf_depth_ptr = -1;
     *data_005604a8 = 0;
+#if VERSION >= VERSION_GC_1_2_5
     memset(dwinfo_buckets, 0, sizeof(dwinfo_buckets));
+#else
+    dwinfo_list = NULL;
+#endif
 
     pending_objects = NULL;
     dwarf_node_head = currentDwarfNode = currentDwarfScope = NULL;
