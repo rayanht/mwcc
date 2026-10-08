@@ -4,6 +4,7 @@ links the executable (config/VERSION/splits.txt) must also have every function o
 linked or not, or for a version that lists its Matching sources (config.json "matching"), of those; another compares
 each function with the original's."""
 import json
+import math
 import subprocess
 import sys
 from pathlib import Path
@@ -36,10 +37,10 @@ for version in [*(v for v in VERSIONS if v != PRIMARY), PRIMARY]:
                      for function in unit.get("functions", [])
                      if function.get("fuzzy_match_percent", 0) < 100 and function["name"].lstrip("_") not in patched]
         measures = report["measures"]
-        print(f"  code {measures.get('matched_code_percent', 0):.2f}% matched, "
-              f"{measures.get('complete_code_percent', 0):.2f}% linked; "
-              f"data {measures.get('matched_data_percent', 0):.2f}% matched, "
-              f"{measures.get('complete_data_percent', 0):.2f}% linked")
+        # (truncated, not rounded: 99.999% is not 100.00%)
+        percent = lambda name: f"{math.floor(measures.get(name, 0) * 100) / 100:.2f}%"
+        print(f"  code {percent('matched_code_percent')} matched, {percent('complete_code_percent')} linked; "
+              f"data {percent('matched_data_percent')} matched, {percent('complete_data_percent')} linked")
         for name in differing:
             print(f"  differs: {name}")
         ok &= not differing
