@@ -15,8 +15,10 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent / "tools"))
 from split import read_splits
 
-# (the index is VERSION in include/version.h)
-VERSIONS = ["GC_1_2_5", "GC_1_2_5n", "GC_1_3"]
+# (in release order: the index is VERSION in include/version.h)
+VERSIONS = ["GC_1_0", "GC_1_1", "GC_1_1p1", "GC_1_2_5", "GC_1_2_5n", "GC_1_3"]
+# (the version the build is configured for unless one is named)
+PRIMARY = "GC_1_2_5"
 # (units the runtime library ships as objects)
 LIBRARY_OBJECTS = {"cexc.obj": "lib/runtime/cexc.obj", "ccinit.obj": "lib/runtime/ccinit.obj"}
 
@@ -73,7 +75,7 @@ def objdiff(version, config, sources, units):
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--version", choices=VERSIONS, default=VERSIONS[0])
+    parser.add_argument("--version", choices=VERSIONS, default=PRIMARY)
     version = parser.parse_args().version
     config = json.loads(Path(f"config/{version}/config.json").read_text())
     sources = json.loads(Path("config/sources.json").read_text())
@@ -109,20 +111,23 @@ def main():
         "  tool = objdiff-cli",
         "build build/tools/wibo: download",
         "  tool = wibo",
-        "build build/compilers/ok build/compilers/GC/1.2.5/mwcceppc.exe build/compilers/GC/1.2.5n/mwcceppc.exe"
-        " build/compilers/GC/1.3/mwcceppc.exe: download",
+        "build build/compilers/ok "
+        + " ".join(json.loads(Path(f"config/{v}/config.json").read_text())["original"] for v in VERSIONS)
+        + ": download",
         "  tool = compilers",
     ]
     out += ["build lib/ok: download", "  tool = lib"]
-    # (a version built with other compilers maps the sources' to its own: config/<version>/config.json "compilers")
+    # (a version built with other compilers or options maps the sources' to its own: config/<version>/config.json
+    # "compilers", and "flags", option by option)
     host = lambda settings: config.get("compilers", {}).get(settings["compiler"], settings["compiler"])
+    flag = lambda option: config.get("flags", {}).get(option, option)
     for compiler in sorted({host(s) for s in sources.values()}):
         out += [f"build build/compilers/{compiler}/mwcc.exe: download", f"  tool = {compiler}"]
     objects = []
     for source, settings in sources.items():
         obj = f"build/{version}/compiled/{source}.obj"
         compiler = f"build/compilers/{host(settings)}/mwcc.exe"
-        args = ["-c", *settings["flags"], f"-DVERSION={VERSIONS.index(version)}",
+        args = ["-c", *map(flag, settings["flags"]), f"-DVERSION={VERSIONS.index(version)}",
                 *(f"-I{d}" for d in settings.get("include_dirs", [])), "-Iinclude", "-i-",
                 *(f"-I{d}" for d in settings.get("system_include_dirs", [])), "-Iinclude/libc"]
         if host(settings) == "pro4":
