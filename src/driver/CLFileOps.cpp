@@ -29,6 +29,8 @@ extern "C" {
 #include <stdio.h>
 #include <stdlib.h>
 
+struct CLTarget *default_target;
+
 static SInt16 data_0057f3b0;
 #define CERROR_FILE "unknown.c"
 }

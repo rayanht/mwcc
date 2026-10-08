@@ -12,6 +12,11 @@
 #include "driver/Projects.h"
 #include <string.h>
 #include "driver/CLDropinCallbacks_V10.h"
+
+char data_00587d04[256];
+Boolean output_path_set;
+Boolean data_0058851d;
+
 int set_output_path(char *name, int unused, char *path)
 {
     OSSpec spec1;

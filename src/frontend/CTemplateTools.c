@@ -16,6 +16,8 @@
 #include "compiler/CodeGen.h"
 #include <string.h>
 
+SInt16 ctempl_instdepth;
+
 typedef struct TemplateComparisonEntry TemplateComparisonEntry;
 
 static void CTemplateTools_SetFirstArgName(TypeMemberFunc *f);

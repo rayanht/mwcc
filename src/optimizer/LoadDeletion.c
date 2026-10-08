@@ -13,6 +13,12 @@
 #include "compiler/InterferenceGraph.h"
 #include "compiler/LoopDetection.h"
 #include "compiler/PCode.h"
+
+int *block_record_counts;
+struct E *immediateLoadLiveness;
+SInt32 *load_liveness_record_start;
+int data_0058820c;
+
 /* Per-entry storage for the two load-deletion bit sets. */
 
 void LoadDeletion_InitializeLoadLivenessRecordCounts(void)

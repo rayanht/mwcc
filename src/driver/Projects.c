@@ -20,6 +20,17 @@
 #include "driver/Targets.h"
 #include <stdio.h>
 #include <setjmp.h>
+
+jmp_buf plugin_request_jmp_buf;
+struct CWPluginPrivateContext *pluginPrivateContext;
+int data_00587e04;
+int data_00587e08;
+int data_00587e0c;
+char data_00587e22;
+UInt8 data_00587e26;
+UInt8 data_00587e27;
+UInt8 data_00587e28;
+
 void ToolHelpers_cc_CallValuePairCallback(char *key, struct StorageHandle *value)
 {
     long result;

@@ -30,6 +30,16 @@
 
 #include <stdio.h>
 
+struct ObjectList *float_object_list;
+struct ObjectList *data_00587660;
+SInt32 data_00588200;
+struct MemberPointerConstant *member_pointer_constants;
+struct TOCNameEntry *toc_name_entries;
+struct ObjectList *gInitialObjectList_005882ac;
+unsigned char data_005883f0[10];
+Boolean data_00588500;
+UInt8 data_00588508;
+
 #pragma opt_strength_reduction off
 
 static CInt64 data_0055e598 = {0, 0};

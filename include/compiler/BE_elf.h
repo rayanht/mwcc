@@ -106,7 +106,7 @@ extern struct ObjGenSection *data_005884b6;
 extern struct ObjGenSection *data_005884ba;
 extern struct ObjGenSection *dwarf_info_section;
 extern struct ObjGenSection *dwarf_line_section;
-extern union {
+extern union ElfDataBuffer {
     GList buffer;
     SInt32 data;
 } data_00583ae8;

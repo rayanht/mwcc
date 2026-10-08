@@ -15,6 +15,15 @@
 #include "compiler/InterferenceGraph.h"
 #include "compiler/LoopDetection.h"
 #include "compiler/PCode.h"
+
+int *add_propagation_entry_counts;
+struct AddPropagationEntry *add_propagation_entries;
+struct CodeBits *addPropagationBlockBits;
+SInt32 add_propagation_entry_count;
+SInt32 gAddPropagationChanged;
+SInt32 addPropagationChanged;
+int *add_propagation_block_bit_indices;
+
 static int COpt_AllLinked(SInt32 j, CodeMotionEntryLink *p)
 {
     for (; p != NULL; p = p->next)

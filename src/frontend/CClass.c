@@ -19,6 +19,10 @@
 #include "compiler/CompilerTools.h"
 #include "compiler/Exceptions.h"
 
+struct ClassList *base_path[64];
+SInt16 base_path_depth;
+SInt16 base_path_level;
+
 typedef struct CClassObj CClassObj;
 
 typedef enum OverrideKind { OVERRIDE_NONE, OVERRIDE_1, OVERRIDE_2 } OverrideKind;

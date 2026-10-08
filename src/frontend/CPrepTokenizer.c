@@ -16,6 +16,25 @@
 /* Buffered lexical item and its associated value. */
 #include <string.h>
 
+CInt64 token_integer;
+struct Float token_float;
+Boolean data_00587010;
+SInt32 string_literal_buffer_size;
+char *lookahead_position;
+UInt8 *currentTextPosition;
+struct HashNameNode *data_00587fa0;
+char *data_00587fb0;
+UInt8 *textend;
+SInt32 token_value_kind_or_string_length;
+char *string_token_data;
+struct StorageHandle *string_literal_storage;
+UInt16 data_005882de;
+UInt8 data_005884fc;
+UInt8 data_00588515;
+unsigned char data_0058851a;
+UInt8 concatenating_string_tokens;
+unsigned char data_00588524;
+
 static UInt8 data_00580dd0;
 
 typedef int (*TokenScanner)(short);

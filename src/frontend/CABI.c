@@ -18,6 +18,9 @@
 #include "compiler/CodeGen.h"
 #include "compiler/CompilerTools.h"
 
+struct HashNameNode *vtable_name;
+struct Object *newh_func;
+
 static void *trans_vtboffsets;
 static Object *CABI_ThisArg(void);
 

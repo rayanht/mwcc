@@ -14,6 +14,8 @@
 /* A browser table entry associates a value with a name. */
 #include <stdlib.h>
 
+jmp_buf driver_jmp_buf;
+
 static struct BrowserCacheEntry *browser_cache_entries;
 static struct BrowserCacheEntry *browser_cache_free_list;
 static unsigned int cache_free_size;

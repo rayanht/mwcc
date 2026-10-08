@@ -23,6 +23,19 @@
 #include "version.h"
 #include <string.h>
 
+struct IROElmList *iro_elm_list_head;
+struct LoopCandidate *loop_candidates;
+int linear_index_counter;
+struct BitVector *data_005876bc;
+struct IROElmList *elm_list_tail;
+struct IRONode *data_00587c68;
+struct IRONode *iro_flowgraph_head;
+struct IRONode **iroNodesByIndex;
+struct IRONode *data_00587fac;
+struct BitVector *IRO_LoopScratchVector_005880dc;
+UInt16 iro_node_count;
+UInt8 data_0058851c;
+
 static char lbl_00580640[4];
 static struct IROLoopInd *induction_variables;
 static struct IROExpr *iro_loop_roots;

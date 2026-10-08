@@ -6,6 +6,8 @@
 #include "driver/CLMain.h"
 #include <string.h>
 
+char *license_path;
+
 static struct License *data_0057ef08;
 /* An opaque license value paired with its signed identifier. */
 static UInt32 license_slots[32][2];

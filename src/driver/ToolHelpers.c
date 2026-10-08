@@ -7,6 +7,9 @@
 #include "driver/ParserGlue-eabi-ppc-cc.h"
 #include "driver/Projects.h"
 
+UInt8 data_00587e1c;
+Boolean targets_value_null_or_zero;
+
 static inline short *driverStatus(void)
 {
     return &pCmdLine.state;

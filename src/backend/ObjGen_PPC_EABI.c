@@ -29,6 +29,15 @@
 
 #include <string.h>
 
+struct CNameNode *data_005870e8;
+SInt32 output_buffer_length;
+struct ObjGenRelocation *relocation_list;
+struct CNameNode *data_00587ff8;
+UInt8 data_0058849e;
+short sectionHeaderCount;
+struct ObjGenSection *data_section_linked_symbol;
+struct SectionSymbolAttributes *section_symbol_attributes;
+
 #pragma options align = mac68k
 static Boolean data_00580d80;
 static struct ObjGenSection *default_code_section;

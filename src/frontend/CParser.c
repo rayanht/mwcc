@@ -24,6 +24,50 @@
 #include "compiler/StackFrameEABI.h"
 #include "driver/COSToolsCLT.h"
 #include <string.h>
+
+struct TStreamElement declaration_token;
+FuncArg oldstyle;
+struct Object *data_005870d8;
+struct TemplStack *ctempl_curinstance;
+struct Object *data_0058717c;
+struct Object *destructor_aware_call_rtfunc;
+struct Object *data_005875a0;
+struct Object *member_function_pointer_call_rtfunc;
+struct Object *data_00587654;
+struct Object *data_00587678;
+struct Object *cast_member_pointer_func;
+struct NameSpaceName *data_00587680;
+struct Object *rt_memberpointercompare;
+struct Object *data_0058769c;
+struct Object *data_005876c0;
+struct Object *memberpointercompare_func;
+struct NameSpaceName *data_00587e64;
+struct Object *class_array_initializer;
+struct Object *data_00587ed0;
+struct Object *typeid_func;
+NameSpaceName *runtime_operator_namespace_name;
+struct Object *data_00587f80;
+struct Object *data_00587fd0;
+NameSpaceName *data_00588008;
+struct Object *data_00588060;
+struct Object *destructor_aware_call_func;
+struct CallbackAction *pending_object_classes;
+struct Object *dynamic_cast_object;
+struct Object *data_00588260;
+struct Object *som_ref_node_rtfunc;
+struct Object *som_ref_node_runtime_object;
+struct Object *data_00588278;
+struct Object *data_005882a4;
+SInt16 tk;
+unsigned int _DAT_0058843e;
+unsigned char data_0058844a;
+unsigned short _DAT_0058844c;
+SInt32 data_00588454;
+Type data_0058847c;
+unsigned int _DAT_0058847e;
+unsigned char data_0058848a;
+unsigned short _DAT_0058848c;
+
 #define va_start(ap, last) (ap = (va_list)((char *)&(last) + (((char *)(&(last) + 1) - (char *)&(last)) + 3) / 4 * 4))
 #define va_arg(ap, type) (*(type *)((ap += sizeof(type)) - sizeof(type)))
 

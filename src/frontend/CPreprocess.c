@@ -10,6 +10,8 @@
 
 #include <stdio.h>
 
+union PreprocessedText data_00586da8;
+
 static inline UInt8 CPreprocess_UseC99Keywords(void)
 {
     return copts.c9x;

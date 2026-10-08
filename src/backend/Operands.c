@@ -18,6 +18,9 @@
 #include "compiler/PPCError.h"
 #include "compiler/TOC.h"
 
+short low_word_offset;
+short high_word_offset;
+
 /* Target doubles, high word first; ObjGen_PPC_EABI rewrites them in host order. */
 Float float_one = {{0x3ff00000, 0}};
 static Float lbl_0055e9e0 = {{0x3f800000, 0}};

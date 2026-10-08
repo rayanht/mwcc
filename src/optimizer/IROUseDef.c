@@ -19,6 +19,11 @@
 #include "compiler/IroUtil.h"
 #include "compiler/IroVars.h"
 
+struct BitVector *data_0058711c;
+struct BitVector *data_00587174;
+struct BitVector *data_00587f70;
+struct BitVector *connected_defs_and_uses_bits;
+
 static SInt32 def_count;
 static struct IRODef *def_list;
 static struct IRODef *global_def_tail;

@@ -35,6 +35,9 @@
 #include "compiler/PCode.h"
 #include "compiler/Switch.h"
 
+struct ERangeVar *range_vars;
+struct ERangeVar *first_range_var;
+
 /* The bounds of the integral types. */
 CInt64 signed_char_max = {0, 0x7F};
 CInt64 type_range_minimum = {-1, 0xFFFFFF80};

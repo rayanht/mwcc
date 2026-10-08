@@ -18,6 +18,28 @@
 #include "driver/TextUtils.h"
 #include <string.h>
 
+union ElfDataBuffer data_00583ae8;
+SInt32 data_005876b4;
+struct ElfHeader elf_header;
+void *symbol_order_tail;
+UInt16 data_0058847a;
+SInt32 data_005884a0;
+struct ObjGenSection *section_list;
+struct ObjGenSection *data_005884ae;
+struct ObjGenSection *data_005884b2;
+struct ObjGenSection *data_005884b6;
+struct ObjGenSection *data_005884ba;
+struct ObjGenSection *dwarf_info_section;
+struct ObjGenSection *dwarf_line_section;
+struct ObjGenSection *data_005884ca;
+struct ObjGenSection *data_005884ce;
+struct ObjGenSection *symbol_string_table_section;
+struct ObjGenSection *shstrtab_section;
+struct ObjGenSection *data_005884da;
+struct ObjGenSection *data_005884de;
+struct ObjGenSection *data_005884e2;
+UInt16 data_005884ee;
+
 #pragma options align = mac68k
 static UInt8 elfBigEndian;
 static SInt32 symbol_order_count;

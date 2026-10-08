@@ -18,6 +18,9 @@
 #include "compiler/CodeGen.h"
 #include <string.h>
 
+SInt32 source_line;
+char template_recordbrowseinfo;
+
 static jmp_buf template_declaration_jmpbuf;
 static Boolean data_00582108;
 

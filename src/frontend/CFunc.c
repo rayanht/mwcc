@@ -27,6 +27,21 @@
 #include <string.h>
 #include <stdio.h>
 
+SInt32 curstmtvalue;
+struct HashNameNode *blank_argument_name;
+ENode *(*data_0058757c)(Type *, UInt8);
+struct Statement *curstmt;
+struct CtorChain *ctor_chain;
+ObjectList *locals;
+struct ExceptionAction *cexcept_dobjstack;
+struct TypeClass *cscope_currentclass;
+ObjectList *arguments;
+UInt32 sourceoffset;
+struct CLabel *Labels;
+Object *cscope_currentfunc;
+FileOffsetInfo function_fileinfo;
+unsigned char in_parameter_type_list;
+
 #pragma options align = mac68k
 static UInt8 data_00580868[8];
 static void *data_00580870;

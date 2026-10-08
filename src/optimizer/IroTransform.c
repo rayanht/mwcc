@@ -17,6 +17,10 @@
 #include "compiler/IroLoop.h"
 #include "compiler/IroUtil.h"
 #include "compiler/IroVars.h"
+
+struct ENodeList *eadd_terms;
+ENodeList *eadd_terms_tail;
+
 /* Links in the expression work list. */
 
 /* The compound assignment of each binary operator; 0 for none. */

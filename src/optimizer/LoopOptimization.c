@@ -46,6 +46,10 @@
 #include "compiler/StrengthReduction.h"
 #include "compiler/Switch.h"
 
+int gArrayToRegisterEnabled;
+int gArrayToRegisterChanged;
+int gLoopTransformChanged;
+
 static UInt32 *registers_used_outside_loop;
 static UInt32 *self_addi_candidate_regs;
 static SInt32 data_00582c70;

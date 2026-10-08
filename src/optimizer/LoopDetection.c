@@ -17,6 +17,9 @@
 #include "compiler/PCodeUtilities.h"
 #include "compiler/TOC.h"
 
+int gPCodeBlockCount;
+signed long data_005871a4;
+
 static UInt32 **dominators;
 static struct SelectedNode *selected_nodes;
 static SInt32 predecessor_bitset_node_count;

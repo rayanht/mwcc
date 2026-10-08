@@ -17,7 +17,7 @@ extern void append_escaped_text(const char *text, UInt16 n);
 extern void output_escaped_wide_chars(char *data, SInt16 count);
 extern void CPreprocess_EmitLineDirective(void);
 extern void fn_004d6ed0(void);
-extern union {
+extern union PreprocessedText {
     GList list;
     struct StorageHandle *handle;
 } data_00586da8;

@@ -13,6 +13,10 @@
 #include "compiler/InstrSelection.h"
 #include "compiler/ObjGen_PPC_EABI.h"
 #include "compiler/PCode.h"
+
+struct Statement *gCurrentStatement;
+struct PCodeBlock *gCurrentBlock;
+
 enum { Register2 = 2, Register13 = 13 };
 
 static inline SInt16 lowHalf(SInt32 value)

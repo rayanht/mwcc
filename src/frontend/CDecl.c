@@ -23,6 +23,14 @@
 #include "compiler/CodeGen.h"
 #include <string.h>
 
+struct HashNameNode *destructor_name;
+struct HashNameNode *constructor_name;
+struct HashNameNode *this_arg_name;
+struct HashNameNode *unnamed_name;
+struct NameSpace *cscope_current;
+struct FileOffsetInfo member_foi;
+UInt8 member_access;
+
 typedef enum { bt_false, bt_true } btype;
 
 static inline void begin_class_instantiation(TemplClassInst *instance, const DeclInfo *ctx)

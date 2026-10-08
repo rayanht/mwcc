@@ -27,6 +27,13 @@
 #include <setjmp.h>
 #include <string.h>
 
+int data_005876ac;
+char *data_00587eb0;
+char argument_space;
+char argument_space_char;
+char data_00588505;
+char data_00588519;
+
 char data_0054aa78 = 0;
 
 static struct TokenText *token_texts;

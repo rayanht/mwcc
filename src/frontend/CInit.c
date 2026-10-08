@@ -22,6 +22,9 @@
 #include "compiler/ObjGen_PPC_EABI.h"
 #include <string.h>
 
+struct InitInfo *cinit_state;
+struct Object *destructor_registration_func;
+
 static struct PooledString *string_cache;
 static struct NameEntry *pooled_strings;
 static struct NameEntry *pooled_wstrings;

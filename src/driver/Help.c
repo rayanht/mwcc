@@ -13,6 +13,15 @@
 #include <stdio.h>
 #include <string.h>
 
+struct HelpColumn helpTextColumn;
+struct HelpColumn firstHelpColumn;
+struct HelpColumn third_help_column;
+void *help_output;
+int data_00587ce0;
+unsigned short help_width;
+unsigned char data_00587e23;
+char *help_option_separator;
+
 static char help_line[256];
 
 void append_formatted_text(HelpColumn *buf, char *format, ...)

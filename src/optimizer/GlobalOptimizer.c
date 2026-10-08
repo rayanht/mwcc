@@ -16,6 +16,12 @@
 #include "compiler/ValueNumbering.h"
 #include "compiler/VectorArraysToRegs.h"
 
+int gCodeMotionChanged;
+SInt32 gValueNumberingChanged;
+int gCopyPropagationChanged;
+struct Loop *data_0058763c;
+SInt32 gStrengthReductionChanged;
+
 static inline void COptimizer_DumpStage(Object *function, const char *stage)
 {
     Object *obj = function;

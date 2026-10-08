@@ -15,6 +15,16 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+char option_name[1024];
+int data_00587594;
+char data_00587ca0[64];
+int data_00587e10;
+char data_00587e2a;
+int option_list_count;
+char *data_00587eec;
+int option_count;
+int option_capacity;
+
 static struct OptionList *option_lists[32];
 static OptionList optionList;
 

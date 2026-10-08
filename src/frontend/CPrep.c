@@ -33,6 +33,33 @@
 #include <string.h>
 #include <ctype.h>
 #include <stdio.h>
+
+MacroStack macro_stack[128];
+UInt32 intconst_lo;
+UInt8 data_00586fd0[256];
+UInt8 f87_enabled;
+UInt8 data_0058702f;
+struct Macro **macro_buckets;
+CPrepFileInfo *data_005875f8;
+SInt32 line_count;
+struct TStreamElement *buffered_token_buffer_end;
+struct TStreamElement *bufferedTokenPosition;
+int data_00587ef0;
+UInt8 *token_start;
+struct CPrepFileInfo *currentPFile;
+UInt8 *cprep_cu;
+char *macro_text_start;
+int remainingBufferedTokenCount;
+SInt16 macro_expansion_depth;
+short current_file_index;
+SInt16 data_00588470;
+Boolean data_005884fd;
+UInt8 data_0058850d;
+UInt8 data_0058850f;
+UInt8 data_00588516;
+UInt8 data_00588523;
+UInt8 data_0058852a;
+
 #pragma sym off
 
 static Macro data_0054fd08 = {NULL, NULL, NULL, 0, 1, 0, {NULL}};

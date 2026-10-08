@@ -20,6 +20,15 @@
 #include "driver/cc-eabi-ppc-mw.h"
 #include <string.h>
 
+char input_name[32];
+char output_name[32];
+SInt32 unique_plugin_name_count;
+SInt32 plugin_request_count;
+char **unique_plugin_names;
+struct ToolArgumentSet *file_argument_sets;
+struct PluginRequest *plugin_requests;
+struct ToolArgumentSet *tool_argument_sets;
+
 Project mainProj;
 Project *gProj = &mainProj;
 PCmdLine optsCmdLine = {0x1002};

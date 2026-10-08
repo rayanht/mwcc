@@ -17,6 +17,8 @@
 #include "compiler/IroVars.h"
 #include "compiler/Switch.h"
 
+struct IRONode *iroNodeTail;
+
 static void AddRef(IRONode *node, IRONode *t)
 {
     if (t != NULL) {

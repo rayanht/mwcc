@@ -35,6 +35,8 @@
 #include "compiler/Registers.h"
 #include "compiler/Switch.h"
 
+SInt32 gVirtualRegistersActive;
+
 static struct DependencyEntry **data_00581b00;
 static struct DependencyEntry **gpr_owner_lists;
 static struct DependencyEntry **data_00581b08;

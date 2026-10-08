@@ -16,6 +16,10 @@
 #include "compiler/TOC.h"
 #include <string.h>
 
+struct BE_SymNode *be_symbol_list;
+struct BE_SymNode *symbol_tail;
+struct ObjGenSection *data_005884aa;
+
 static struct BE_SymNode *data_0055da80 = NULL;
 
 static inline void BE_symbol_FindFunction(HashNameNode *obj, SInt16 kind, BE_SymNode **result)

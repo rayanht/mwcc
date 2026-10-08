@@ -19,6 +19,8 @@
 
 #include <string.h>
 
+struct PCodeBlock *gReturnBlock;
+
 static struct RegisterBlockLiveness *register_block_liveness;
 static struct RegisterBlockLiveness *gRegisterBlockLiveness;
 static struct RegisterBlockLiveness *registerBlockLiveness;

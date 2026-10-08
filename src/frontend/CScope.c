@@ -16,6 +16,8 @@
 #include "compiler/CompilerTools.h"
 #include <string.h>
 
+UInt8 cscope_is_member_func;
+
 static struct TypeClass *class_path_base;
 static struct HashNameNode *class_member_name;
 static struct TypeClass *found_class;

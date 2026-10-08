@@ -20,6 +20,8 @@
 #include "compiler/SpillCode.h"
 #include "compiler/StackFrameEABI.h"
 
+struct InterferenceNode **gInterferenceGraph;
+
 static short gColoringRegisterCount;
 
 /* Register record returned by the binding lookup: word register number at

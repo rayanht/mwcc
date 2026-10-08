@@ -33,6 +33,11 @@
 #include "version.h"
 #include <string.h>
 
+unsigned int data_00587128;
+SInt32 asm_instruction_count;
+char inlineAsmMode;
+UInt8 inlineAsmPPCEnabled;
+
 /* Copies an asm statement and the instruction its expr slot holds. */
 typedef enum RegClass { RC_GPR = 0, RC_FPR = 1, RC_SPR = 2, RC_CRFIELD = 3, RC_CRFIELDBIT = 8, RC_VR = 9 } RegClass;
 

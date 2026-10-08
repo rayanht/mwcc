@@ -9,6 +9,8 @@
 #include <stdlib.h>
 #include <string.h>
 
+int(__stdcall *data_00587e70)();
+
 static struct MacFileTypeNode *defaultlist = NULL;
 static struct MacFileTypeNode **mac_file_types = &defaultlist;
 

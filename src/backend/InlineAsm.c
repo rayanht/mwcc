@@ -21,6 +21,10 @@
 #include <string.h>
 #include <stdio.h>
 
+jmp_buf data_00583a68;
+jmp_buf inlineAsmJmpBuf;
+SInt32 data_00587f18;
+
 static char inlineasm_instruction_buffer[1024];
 
 SInt32 data_005652f8 = 1;

@@ -19,6 +19,8 @@
 #include <errno.h>
 #include <stdlib.h>
 
+struct TemplClass *class_template_list;
+
 typedef struct TCtx TCtx;
 
 struct S2;

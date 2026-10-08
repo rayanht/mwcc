@@ -24,6 +24,13 @@
 #include <string.h>
 #include <stdio.h>
 
+struct TemplateFunction *templateFunctions;
+struct PendingFunction *pending_functions;
+char *data_00587e84;
+SInt32 data_00587f6c;
+int objc_string_constant_count;
+struct Type *sel_type;
+
 /* Calls deferred until the precompiled data has been loaded. */
 
 typedef enum { PRECFLAG_OFF = 0, PRECFLAG_ON = 1 } PrecFlag;

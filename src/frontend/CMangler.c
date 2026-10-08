@@ -15,6 +15,9 @@
 #include <string.h>
 #include <stdio.h>
 
+GList data_00583548;
+struct HashNameNode *assignment_operator_name;
+
 static SInt32 ElemSize(TypePointer *t);
 
 static void MangleQualifiers(UInt32 q);

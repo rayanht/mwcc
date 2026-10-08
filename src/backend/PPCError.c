@@ -17,6 +17,8 @@
 #include "compiler/StackFrameEABI.h"
 #include "driver/COSToolsCLT.h"
 
+struct ClassTypeUpdate *classTypeUpdates;
+
 typedef void (*PCodeGenFn)(ENode *node, SInt32 a, SInt32 b, Operand *dst);
 
 typedef char *va_list;

@@ -51,6 +51,14 @@
 #include <stdlib.h>
 #include <setjmp.h>
 
+char data_005830c8[32];
+jmp_buf error_jmp_buf;
+char error_message_buffer[256];
+int data_0058715c;
+TStreamElement *cerror_locktoken;
+struct ParserTryBlock *trychain;
+char data_005883ec[2];
+
 typedef char *va_list;
 
 #define va_start(ap, last)                                                                                             \

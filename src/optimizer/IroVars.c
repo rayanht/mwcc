@@ -25,6 +25,16 @@
 #include "driver/CWPluginsPrivate.h"
 #include "driver/cc-eabi-ppc.h"
 
+struct VarRecord *var_records;
+SInt32 data_00587ef4;
+unsigned int iroVarCount;
+struct VarRecord *var_records_tail;
+struct IROVarPart *var_part_use_tail;
+unsigned int data_00588234;
+struct IROVarPart *class_data_parts;
+struct BitVector *noregister_bitvector;
+UInt8 data_00588510;
+
 static struct IROLinear *saved_node;
 
 /* Flags of each ENode type. */

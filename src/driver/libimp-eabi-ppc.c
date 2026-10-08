@@ -15,6 +15,13 @@
 #include <string.h>
 #include <stdio.h>
 
+jmp_buf file_input_jmpbuf;
+SInt32 section_size_total;
+SInt32 accumulated_section_size;
+char data_0058770c[588];
+SInt32 accumulated_section_sizes;
+char data_00588517;
+
 typedef char **Handle;
 
 static struct LibImportCU libimp_cu;

@@ -24,6 +24,17 @@
 #include <string.h>
 #include <stdio.h>
 
+struct HashEntry **selector_hash;
+struct TypeClass *data_00587140;
+struct PrecTypeEntry *class_type_entries;
+struct HashNameNode *this_self_name;
+struct NameSpace *cscope_root;
+struct Type *class_pointer_type;
+CRec *data_00588064;
+SInt32 selector_reference_count;
+struct Type *id_type;
+UInt8 data_00588507;
+
 #define MATCH_BODY()                                                                                                   \
     do {                                                                                                               \
         MessageArgument *matchedArgument;                                                                              \

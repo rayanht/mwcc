@@ -23,6 +23,13 @@
 #include "compiler/CompilerTools.h"
 #include "compiler/PPCError.h"
 
+FuncArg elipsis;
+struct Object *array_allocation_runtime_function;
+struct ENode *converted_expr;
+Boolean (*data_00587fd8)(int value, struct Object *object);
+UInt8 data_0058850e;
+UInt8 data_0058852b;
+
 typedef enum { ENX_A = 1 } ENodeTypeX;
 
 typedef enum RegClass { RC_GPR = 0, RC_FPR = 1, RC_SPR = 2, RC_CRFIELD = 3, RC_CRFIELDBIT = 8, RC_VR = 9 } RegClass;

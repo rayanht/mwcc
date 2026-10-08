@@ -23,6 +23,35 @@
 #include <string.h>
 #include <stdio.h>
 
+int outgoing_argument_size;
+SInt32 stack_frame_adjustment;
+int stack_frame_padding;
+SInt32 eabi_stack_frame_size;
+SInt32 data_00587634;
+SInt32 data_00587638;
+int data_0058764c;
+int data_005876a8;
+SInt32 gStackFrameSize;
+unsigned long data_00587e40;
+SInt32 special_register_save_offset;
+SInt32 frame_alignment_padding;
+SInt32 r12_save_offset;
+int interrupt_register_save_mask;
+UInt32 vrsave_mask;
+SInt32 data_00588070;
+unsigned int data_005880cc;
+int data_005880d8;
+SInt32 data_00588204;
+SInt32 stack_frame_size;
+union StackFrameInterruptValue data_005882c0;
+short gVRSaveSpan;
+SInt16 data_005883ee;
+short gFPRSaveSpan;
+SInt16 gGPRSaveSpan;
+UInt8 gHasAltivecFrame;
+UInt8 data_005884ff;
+UInt8 data_00588521;
+
 static Object *data_00580fa8;
 
 typedef enum { kMergeTag = 0x1f } MergeTag;

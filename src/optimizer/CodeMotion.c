@@ -21,6 +21,21 @@
 #include "compiler/PCodeUtilities.h"
 #include "compiler/Registers.h"
 
+struct CodeMotionObjectNode *gCodeMotionAllocationList_005870fc;
+struct CodeMotionEntry *code_motion_entries;
+struct CodeMotionEntry *cm_entries;
+struct CodeMotionEntryLink **register_definition_heads;
+struct CodeMotionEntryLink **register_use_entry_heads;
+int data_00587e38;
+SInt32 codeMotionEntryCount;
+struct CodeMotionEntryLink **code_motion_register_definition_heads;
+struct CodeMotionEntryLink **codeMotionUseEntryHeads;
+struct CodeMotionEntryLink **data_00587f04;
+struct CodeMotionEntryLink **code_motion_register_use_heads;
+struct CodeMotionDataflowState *data_00587fe4;
+struct CodeMotionObjectNode *gCodeMotionObjectTree_005880ac;
+int gCodeMotionCounter_005880b8;
+
 static struct PCodeInstruction *data_00574ce8 = NULL;
 
 #define CM_BIT(set, i) (((UInt32 *)(set))[(i) >> 5] & (1 << (i)))

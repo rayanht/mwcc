@@ -22,6 +22,8 @@
 #include <string.h>
 #include <stdlib.h>
 
+char data_005880e0[260];
+
 static char data_0057eb68;
 static char data_0057eb69;
 static int data_0057eb6c; /* (its users were stripped) */

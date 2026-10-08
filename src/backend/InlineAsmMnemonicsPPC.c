@@ -9,6 +9,8 @@
 
 #include <string.h>
 
+struct NameLookupLink *asmOperandPatternLookup[256];
+
 #pragma pool_strings on
 
 /* The mnemonics: name, opcode, operand kinds, processors and instruction bits. */

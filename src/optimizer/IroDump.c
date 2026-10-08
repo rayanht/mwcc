@@ -32,6 +32,9 @@
 #include "driver/Files.h"
 #include <stdio.h>
 
+Object *data_005875b8;
+int INT_005882b8;
+
 static struct _FILE *iro_dump_output;
 
 /* The name of each ENode type. */

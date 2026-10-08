@@ -55,6 +55,12 @@
 
 #include "compiler/ENode.h"
 
+struct CPrecNode *pendingInlineWork;
+SInt32 data_00587184;
+UInt32 function_tokenoffset;
+UInt32 function_token_line;
+Boolean anyerrors;
+
 #pragma options align = mac68k
 static EvalMode evalMode;
 static AllocState alloc_state;

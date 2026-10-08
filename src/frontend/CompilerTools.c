@@ -10,6 +10,10 @@
 #include <string.h>
 #include <ctype.h>
 
+void (*data_00587708)(void);
+int next_name_id;
+struct HashNameNode **data_00587f88;
+
 UInt32 low_bit_masks[32] = {0,        0x1,       0x3,       0x7,       0xF,       0x1F,       0x3F,       0x7F,
                             0xFF,     0x1FF,     0x3FF,     0x7FF,     0xFFF,     0x1FFF,     0x3FFF,     0x7FFF,
                             0xFFFF,   0x1FFFF,   0x3FFFF,   0x7FFFF,   0xFFFFF,   0x1FFFFF,   0x3FFFFF,   0x7FFFFF,

@@ -15,6 +15,9 @@
 #include <string.h>
 #include <ctype.h>
 
+int data_00588258;
+struct CPrepCU compiler_plugin_cu;
+
 Boolean data_0054c3d0 = 1;
 
 #pragma options align = mac68k

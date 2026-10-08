@@ -16,6 +16,11 @@
 #include <stdlib.h>
 #include "driver/CLDropinCallbacks_V10.h"
 
+int data_00587e14;
+int data_00587e18;
+Boolean data_00587e20;
+char data_0058851b;
+
 short data_0054a0b8 = 0;
 
 #define va_start(ap, parm) ap = (char *)&parm + ((((long)((char *)&parm + 2) - (long)&parm) + 3) / 4 * 4)

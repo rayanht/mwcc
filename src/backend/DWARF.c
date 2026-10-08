@@ -18,6 +18,25 @@
 #include "compiler/SFPE_PPC_EABI.h"
 
 #include <string.h>
+
+DwarfLocationOperand return_operand;
+struct PendingObject *pending_objects;
+struct DwarfFunctionState *data_00587168;
+struct GList *section_buffer;
+struct DwarfFunctionState *currentDwarfFunctionState;
+struct ObjGenSection *data_00587698;
+struct GList *dwarf_info_buffer;
+struct ObjGenSection *dwarf_section;
+struct DwarfStateList *data_00587ea8;
+struct DwarfNode *current_block_node;
+struct GList *dwarf_lines;
+struct DwarfStateList *dwarf_state_list_tail;
+#if VERSION >= VERSION_GC_1_2_5
+struct DWInfo *dwinfo_buckets[512];
+#else
+struct DWInfo *dwinfo_list;
+#endif
+
 #pragma sym off
 
 /* The compiler walks a type graph, marking each type record it visits.

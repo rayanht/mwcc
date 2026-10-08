@@ -14,6 +14,8 @@
 #include "compiler/Registers.h"
 #include "compiler/StackFrameEABI.h"
 
+void *object_groups[18];
+
 static struct ExceptionScopeEntry *exception_scope_entries;
 static struct ExceptionScopeEntry *last_exception_scope_entry;
 static GList exception_records;

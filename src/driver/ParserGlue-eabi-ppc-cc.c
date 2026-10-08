@@ -18,6 +18,10 @@
 #include "driver/ToolHelpers.h"
 #include "driver/WarningHelpers.h"
 
+char output_path;
+struct PtrList data_005876fc[1];
+struct StorageHandle *directive_storage;
+
 /* The C/C++ parser's preference panels, the options that set them, and the tool they describe. */
 
 PCmdLine pCmdLine = {0x1002, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2};

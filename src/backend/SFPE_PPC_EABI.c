@@ -16,6 +16,15 @@
 #include "compiler/PPCError.h"
 #include "compiler/Registers.h"
 
+struct Object *data_00587584;
+struct Object *data_005875ac;
+struct Object *data_005875bc;
+struct Object *data_005875f4;
+short return_gpr_first;
+SInt16 sfpe_right_operand_reg;
+short returnRegHi;
+SInt16 sfpe_right_operand_reg_hi;
+
 /* r3, where a runtime routine takes its argument and returns its result */
 enum { RESULT_GPR = 3 };
 

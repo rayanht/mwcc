@@ -23,6 +23,8 @@
 
 #include <string.h>
 
+struct CSOMRefNode *somReferences;
+
 static FuncArg lbl_005646a0 = {NULL, NULL, NULL, TYPE(&void_ptr), 0, 0, 0};
 static TypeFunc data_005646b8 = {TYPEFUNC, 0, &lbl_005646a0, NULL, TYPE(&void_ptr), 0, 0};
 

@@ -17,6 +17,8 @@
 #include "compiler/PCodeUtilities.h"
 #include "compiler/Peephole.h"
 
+struct PCodeLiveness *gPCodeBlockLiveness;
+
 
 void SpillCode_BuildLocalLiveness(int reg_class)
 {

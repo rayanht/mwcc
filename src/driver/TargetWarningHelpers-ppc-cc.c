@@ -2,6 +2,8 @@
 #include "driver/TargetWarningHelpers-ppc-cc.h"
 #include "driver/StringUtils.h"
 
+char data_00588528;
+
 Pragma data_0054a690[] = {
     {&data_00588528, "warn_largeargs", 0},
     {0, 0, 0},

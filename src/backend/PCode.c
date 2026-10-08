@@ -10,6 +10,9 @@
 #include "compiler/LoopDetection.h"
 #include "compiler/PCodeUtilities.h"
 
+struct PCodeBlock **gPCodeBlockOrder;
+unsigned int data_00587ffc;
+
 #pragma options align = mac68k
 static short next_label_number;
 static SInt32 pcodeBlockOrderIndex;

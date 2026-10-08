@@ -7,6 +7,10 @@
 #include "driver/libimp-eabi-ppc.h"
 #include <stdio.h>
 
+SInt32 limited_diagnostic_count;
+char data_00587958;
+SInt32 data_00588228;
+
 #define VA_ARG(ap, T) (*(T *)((ap += 4) - 4))
 
 SInt16 limited_diagnostic_limit = 100;

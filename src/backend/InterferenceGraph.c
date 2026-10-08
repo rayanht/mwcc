@@ -25,6 +25,11 @@
 #include "compiler/SpillCode.h"
 #include "compiler/StackFrameEABI.h"
 
+struct PCodeBlock *gPCodeBlocks;
+short gGPRCoalesceFirst;
+short gFPRCoalesceFirst;
+short gVRCoalesceFirst;
+
 
 static UInt32 *gInterferenceBits;
 static short *gCoalescedRegisters;

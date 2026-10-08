@@ -16,6 +16,13 @@
 #include "compiler/LoopDetection.h"
 #include "compiler/PCode.h"
 
+struct CopyPropagationBitSets *copyPropagationBitSets;
+UInt32 *block_copy_counts;
+SInt32 copyCount;
+struct CodeMotionRec *code_motion_records;
+SInt32 *blockCopyStartIndices;
+short gInitialObjectGPRLast;
+
 static SInt32 copy_propagation_mode;
 
 static inline SInt32 CanPropagateCopy(SInt32 copyIndex, CodeMotionListNode *useNode)

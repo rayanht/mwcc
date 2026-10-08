@@ -56,6 +56,8 @@
 #include <string.h>
 #include "compiler/ENode.h"
 
+char non_type_template_argument_mode;
+
 typedef struct _res res;
 
 #define D0(e) ((e)->data.diadic.left)

@@ -15,6 +15,8 @@
 #include "driver/DropInCompilerLinkerPrivate.h"
 #include <string.h>
 
+UInt8 data_005884f5;
+
 /* The browser's access code of each access type. */
 static UInt8 data_00563340[4] = {4, 1, 2, 0};
 

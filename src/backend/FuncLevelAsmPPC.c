@@ -28,6 +28,11 @@
 #include "compiler/StackFrameEABI.h"
 #include "driver/cc-eabi-ppc.h"
 
+SInt32 data_005871a0;
+UInt16 function_header_index;
+UInt8 data_005884f4;
+UInt8 func_errors;
+
 static struct PCodeAssemblyEntry *data_00581c58;
 static struct PCodeAssemblyEntry **assembly_list_tail;
 

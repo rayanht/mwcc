@@ -21,6 +21,20 @@
 #include "compiler/IroUtil.h"
 #include "compiler/IroVars.h"
 
+CInt64 data_005834f8;
+unsigned int expression_count;
+unsigned int data_005870f8;
+int data_005871b8;
+unsigned int data_00587630;
+struct IROExpr *expr_tail;
+struct IROExpr *expr_list;
+int data_00587e58;
+SInt32 data_005880a4;
+ENode *data_005881ec;
+BitVector *killed_exprs;
+char nested_bitwise_expressions_rewritten;
+UInt8 nested_bitwise_type;
+
 struct BitVector *data_00552b88 = NULL;
 
 static IROLinear *MakeRef(Object *obj, IROLinear *arg3)

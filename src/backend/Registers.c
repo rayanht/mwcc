@@ -17,6 +17,18 @@
 #include "compiler/StackFrameEABI.h"
 #include <string.h>
 
+SInt32 gUseVirtualRegisterNumbers_00587f00;
+short gFPRCoalesceLast;
+short gGPRCoalesceLast;
+short gInitialObjectVRLast;
+short gVRCounterCheckpoint;
+short gInitialObjectFPRLast;
+short gAvailableSavedFPRs;
+short gVRCoalesceLast;
+short gFPRCounterCheckpoint;
+short gGPRCounterCheckpoint;
+SInt16 gAvailableSavedVRs;
+
 static UInt8 gUsedPhysicalGPR[32];
 static unsigned char gUsedPhysicalFPR[32];
 static UInt8 gUsedPhysicalVR[32];

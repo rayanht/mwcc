@@ -21,6 +21,13 @@
 #include "compiler/IroUtil.h"
 #include "compiler/IroVars.h"
 #include "compiler/Registers.h"
+
+SInt32 propagationIndex;
+struct ReplacementCandidate *replacementCandidateTail;
+struct ReplacementCandidate *replacementCandidate;
+struct BitVector *data_00588018;
+struct BitVector *availableExpressions;
+
 #define BVGet(bv, i)                                                                                                   \
     (((UInt32)((SInt32)(i) >> 5) < (bv)->size) && (((bv)->bits[(i) >> 5] & ((UInt32)1 << ((i) & 31)))) != 0)
 #define BVTEST(bv, i)                                                                                                  \

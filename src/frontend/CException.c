@@ -21,6 +21,12 @@
 #include <string.h>
 #include <stdio.h>
 
+struct Object *throw_func;
+struct ECacheNode *cached_objects;
+Type exception_temp_object_type;
+SInt8 cexcept_magic;
+UInt8 exception_cleanup_registered;
+
 #pragma options align = mac68k
 static UInt8 data_00581c30;
 static struct TemporaryObject *temporary_object_list;

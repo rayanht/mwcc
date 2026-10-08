@@ -22,6 +22,11 @@
 #include "compiler/TOC.h"
 #include <stdlib.h>
 
+struct FunctionCallFrame *function_call_frames;
+struct ObjectList *switch_tables;
+short gUsedVirtualRegistersFPR;
+SInt16 gUsedVirtualRegistersGPR;
+
 typedef void (*DispatchHandler)(unsigned char *input, int argument2, int argument3, struct DispatchResult *output);
 typedef void (*OperandGenFunc)(ENode *node, int a, int b, Operand *out);
 

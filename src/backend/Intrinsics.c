@@ -20,6 +20,9 @@
 #include "compiler/StackFrameEABI.h"
 #include "compiler/StructMoves.h"
 
+struct Object *data_00587fc0;
+SInt16 gUsedVirtualRegistersVR;
+
 #define false 0
 #define true 1
 
