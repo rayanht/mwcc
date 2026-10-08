@@ -11,7 +11,7 @@ extern "C" {
 union InlineOperand {
     SInt32 value;
     struct Object *object;
-    struct InlineIndexReference *reference;
+    struct CLabel *label;
     UInt8 byte;
 };
 /* ExceptionAction kinds, as DumpIR names them. */
@@ -140,10 +140,6 @@ struct ExceptionHandlerRecord {
     struct Statement *handlerEnd;
     struct Type *exceptionType;
     UInt32 declarationData;
-};
-struct InlineIndexReference {
-    SInt32 value;
-    SInt32 index;
 };
 #pragma options align = mac68k
 struct TemporaryObject {

@@ -65,7 +65,6 @@ struct HINSTANCE__;
 struct HRSRC__;
 struct InlineSwitchData;
 struct IStmtRec;
-struct InlineIndexReference;
 struct InlineSlot;
 struct IntrinsicOperation;
 struct License;
