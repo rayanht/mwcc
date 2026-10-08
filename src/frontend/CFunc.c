@@ -28,6 +28,7 @@
 #include <stdio.h>
 
 #pragma options align = mac68k
+static UInt8 data_00580868[8];
 static void *data_00580870;
 static struct DeclBlock *saved_global_values_tail;
 static UInt16 data_00580878;

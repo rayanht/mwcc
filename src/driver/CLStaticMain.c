@@ -18,7 +18,7 @@ int main(int argc, char **argv)
     SInt32 primaryPluginIdentifier, secondaryPluginIdentifier;
     SInt32 result;
 
-    if (ClientGlue_SetNamesAndRun(argc, argv, data_0053601c, data_0053600c) != 0)
+    if (ClientGlue_SetNamesAndRun(argc, argv, build_date, build_time) != 0)
         exit(1);
 
     if (!fn_0040535e() || !fn_004053f0()) {

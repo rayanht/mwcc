@@ -17,8 +17,8 @@ extern int __stdcall ClientGlue_AddResourceStrings(char *arg1, SInt16 arg2, char
 extern void __stdcall ClientGlue_AddPlugin(PluginRequiredInputRecord *a0);
 extern int __stdcall ClientGlue_CreateAndAddPlugin(void *a0, void *a1);
 extern void __stdcall fn_00405280(PluginRequiredInputRecord *a0, PluginQueryTable *a1);
-extern unsigned int __stdcall ClientGlue_SetNamesAndRun(unsigned int argumentCount, char **arguments,
-                                                        unsigned int inputName, unsigned int outputName);
+extern unsigned int __stdcall ClientGlue_SetNamesAndRun(unsigned int argumentCount, char **arguments, char *buildDate,
+                                                        char *buildTime);
 extern int ClientGlue_InitializeAndParseCommandLine(void);
 extern void __stdcall fn_004052a0(unsigned int a0, unsigned int a1);
 extern unsigned int __stdcall fn_004052c0(unsigned int a0);

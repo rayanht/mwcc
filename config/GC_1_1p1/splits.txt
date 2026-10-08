@@ -8,7 +8,7 @@ Sections:
 	.tls        type:data align:4
 	.bss        type:bss align:8
 
-auto_00537000_data:
+src/driver/BuildDate.c:
 	.data       start:0x00537000 end:0x00537020
 
 src/runtime/maincrt.c:
@@ -301,7 +301,7 @@ src/msl/wctype.c:
 	.text       start:0x004110E0 end:0x00411130
 	.data       start:0x0054C008 end:0x0054C64B
 
-auto_0054C650_data:
+src/msl/wstring.c:
 	.data       start:0x0054C650 end:0x0054C750
 
 src/driver/MsDos.c:
@@ -531,8 +531,6 @@ src/driver/LibImportMessages.c:
 
 src/driver/COSToolsCLT.c:
 	.text       start:0x004430D0 end:0x004434D0
-
-auto_00552228_data:
 	.data       start:0x00552228 end:0x005523B8
 
 src/backend/ELF_Endian.c:
@@ -644,13 +642,10 @@ src/frontend/CInt64.c:
 	.data       start:0x00556418 end:0x005564FC
 	.bss        start:0x00581758 end:0x00581868
 
-auto_00581868_bss:
-	.bss        start:0x00581868 end:0x00581870
-
 src/frontend/CFunc.c:
 	.text       start:0x00476100 end:0x0047CB60
 	.data       start:0x00556500 end:0x005567B4
-	.bss        start:0x00581870 end:0x00581898
+	.bss        start:0x00581868 end:0x00581898
 
 src/backend/PPCError.c:
 	.text       start:0x0047CB60 end:0x0047CF90

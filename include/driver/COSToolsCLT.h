@@ -17,6 +17,8 @@ extern void COS_LockHandle(void *handle);
 extern void COS_LockHandleHi(void *handle);
 extern void COS_UnlockHandle(void *entry);
 extern UInt32 COS_GetTicks(void);
+extern void COS_DateString(UInt32 seconds, SInt16 form, char *text);
+extern void COS_TimeString(UInt32 seconds, Boolean wantSeconds, char *text);
 extern void COS_GetString(char *buffer, SInt16 id, SInt16 arg);
 extern unsigned char COS_IsMultiByte(unsigned char *textStart, unsigned char *bytePosition);
 extern int COS_FileNew(CWFileSpec *record, short *output, unsigned int argument4, unsigned int argument5);

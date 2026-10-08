@@ -119,11 +119,11 @@ void __stdcall fn_004052d0(unsigned int a0, unsigned int a1)
     return;
 }
 
-unsigned int __stdcall ClientGlue_SetNamesAndRun(unsigned int argumentCount, char **arguments, unsigned int inputName,
-                                                 unsigned int outputName)
+unsigned int __stdcall ClientGlue_SetNamesAndRun(unsigned int argumentCount, char **arguments, char *buildDate,
+                                                 char *buildTime)
 {
-    strncpy(input_name, (char *)inputName, 32U);
-    strncpy(output_name, (char *)outputName, 32U);
+    strncpy(input_name, buildDate, 32U);
+    strncpy(output_name, buildTime, 32U);
     return CLMain_Initialize(argumentCount, arguments);
 }
 

@@ -895,6 +895,19 @@
       "src/driver"
     ]
   },
+  "src/driver/BuildDate.c": {
+    "compiler": "pro53",
+    "flags": [
+      "-O4,p",
+      "-sym",
+      "off",
+      "-Cpp_exceptions",
+      "off"
+    ],
+    "include_dirs": [
+      "src/driver"
+    ]
+  },
   "src/driver/CLStaticPlugins.c": {
     "compiler": "pro53",
     "flags": [
@@ -2983,6 +2996,30 @@
     ]
   },
   "src/msl/wscanf.c": {
+    "compiler": "pro5",
+    "flags": [
+      "-O4,p",
+      "-Cpp_exceptions",
+      "off",
+      "-sym",
+      "on",
+      "-align",
+      "8"
+    ],
+    "system_include_dirs": [
+      "lib/extra",
+      "lib/runtime",
+      "lib/msl/MSL_Cpp/MSL_Common/Include",
+      "lib/msl/MSL_Win32/Include",
+      "lib/msl/MSL_Common/Include",
+      "lib/msl/MSL_Common/Src",
+      "lib/msl/MSL_X86",
+      "lib/msl/MSL_Win32/Src",
+      "lib/msl/win32sdk",
+      "lib/msl/win32sdk/sys"
+    ]
+  },
+  "src/msl/wstring.c": {
     "compiler": "pro5",
     "flags": [
       "-O4,p",

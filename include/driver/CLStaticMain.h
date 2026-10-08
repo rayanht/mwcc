@@ -9,8 +9,8 @@ extern "C" {
 #endif
 
 extern int main(int argc, char **argv);
-extern SInt32 data_0053600c;
-extern SInt32 data_0053601c;
+extern char *build_time;
+extern char *build_date;
 
 #ifdef __cplusplus
 }
