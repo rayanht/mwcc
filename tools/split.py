@@ -226,6 +226,39 @@ class Coff:
         return f"/{offset}".encode().ljust(8, b"\0")
 
 
+def mwld_hash(name):
+    """The hash the linker orders COMMON symbols of one size by (of the C name)."""
+    x = 0
+    for c in name.removeprefix("_").encode("latin-1"):
+        x = (x << 1) ^ c
+        x = (x & 0xFFF) ^ (x >> 12)
+    return x
+
+
+def common_layout(entries, start):
+    """The addresses the linker gives COMMON symbols [(name, size)] from START: by size, the largest first, then by
+    hash."""
+    layout, cursor = {}, start
+    for name, size in sorted(entries, key=lambda entry: (-entry[1], mwld_hash(entry[0]))):
+        align = min(1 << (size.bit_length() - 1), 8)
+        cursor = (cursor + align - 1) & ~(align - 1)
+        layout[name] = cursor
+        cursor += size
+    return layout
+
+
+def common_names(count):
+    """COUNT names for one-byte COMMON symbols the linker places in their order (increasing hashes)."""
+    names, last = [], -1
+    for i in range(count):
+        suffix = 0
+        while mwld_hash(name := f"_common_{i}_{suffix}") <= last:
+            suffix += 1
+        names.append(name)
+        last = mwld_hash(name)
+    return names
+
+
 def split(version):
     config, pe = original(version)
     symbols = read_symbols(f"config/{version}/symbols.txt")
@@ -285,9 +318,18 @@ def split(version):
         for section, start, end, options in ranges:
             if options.get("common"):
                 # (left to the linker's COMMON allocation, as the original's last variables were)
-                for name, sec, address, symbol_options in symbols:
-                    if sec == section and start <= address < end:
-                        local[(name, address)] = coff.add_symbol(name, int(symbol_options["size"], 16), 0, 0, 2)
+                tail = [(name, address, int(symbol_options["size"], 16)) for name, sec, address, symbol_options in symbols
+                        if sec == section and start <= address < end]
+                if all(common_layout([(n, size) for n, _, size in tail], start)[n] == a for n, a, _ in tail):
+                    for name, address, size in tail:
+                        local[(name, address)] = coff.add_symbol(name, size, 0, 0, 2)
+                else:
+                    # (names that the linker would order otherwise than the original's were: a one-byte COMMON per byte,
+                    # named to keep their order, and each name a weak external aliasing its byte)
+                    slots = [coff.add_symbol(name, 1, 0, 0, 2) for name in common_names(end - start)]
+                    for name, address, _ in tail:
+                        local[(name, address)] = coff.index[name] = coff.add_symbol(
+                            name, 0, 0, 0, 105, struct.pack("<II10x", slots[address - start], 3))
                 continue
             kind = options.get("type", sections[section].get("type"))
             align = int(options.get("align", sections[section].get("align", "4")))

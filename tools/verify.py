@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 """python tools/verify.py: build every version and check it, leaving the build configured for the primary one. A version that
 links the executable (config/VERSION/splits.txt) must also have every function of a source match in objdiff's report,
-linked or not; another compares each function with the original's."""
+linked or not, or for a version that lists its Matching sources (config.json "matching"), of those; another compares
+each function with the original's."""
 import json
 import subprocess
 import sys
@@ -27,8 +28,11 @@ for version in [*(v for v in VERSIONS if v != PRIMARY), PRIMARY]:
         patched = {f["name"] for f in json.loads(Path(f"config/{version}/functions.json").read_text())
                    if f.get("binary_patch")}
         report = json.loads(Path(f"build/{version}/report.json").read_text())
+        # (another version's sources are the primary's: only those it links from source are its code)
+        listed = json.loads(Path(f"config/{version}/config.json").read_text()).get("matching")
         differing = [f"{unit['name']}/{function['name']}" for unit in report["units"]
                      if unit.get("metadata", {}).get("source_path")
+                     and (listed is None or unit["metadata"]["source_path"] in listed)
                      for function in unit.get("functions", [])
                      if function.get("fuzzy_match_percent", 0) < 100 and function["name"].lstrip("_") not in patched]
         measures = report["measures"]
