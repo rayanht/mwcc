@@ -8416,9 +8416,10 @@
     "size": 47
   },
   {
-    "name": "fn_00443560",
+    "name": "IRO_ListHasObject",
     "address": "0x00443560",
-    "size": 41
+    "size": 41,
+    "source": "src/optimizer/IroVars.c"
   },
   {
     "name": "fn_00443590",
@@ -8697,9 +8698,10 @@
     "size": 56
   },
   {
-    "name": "fn_00445500",
+    "name": "IsLabel",
     "address": "0x00445500",
-    "size": 50
+    "size": 50,
+    "source": "src/frontend/CFunc.c"
   },
   {
     "name": "fn_00445540",
@@ -8858,9 +8860,10 @@
     "size": 16
   },
   {
-    "name": "fn_00447ea0",
+    "name": "newconstant",
     "address": "0x00447ea0",
-    "size": 41
+    "size": 41,
+    "source": "src/optimizer/IroLoop.c"
   },
   {
     "name": "fn_00447ed0",
@@ -9336,9 +9339,10 @@
     "size": 60
   },
   {
-    "name": "fn_0044e3e0",
+    "name": "CError_BufferInit",
     "address": "0x0044e3e0",
-    "size": 33
+    "size": 33,
+    "source": "src/frontend/CError.c"
   },
   {
     "name": "CError_BufferGrow",
@@ -9347,9 +9351,10 @@
     "source": "src/frontend/CError.c"
   },
   {
-    "name": "fn_0044e450",
+    "name": "CError_BufferAppendChar",
     "address": "0x0044e450",
-    "size": 45
+    "size": 45,
+    "source": "src/frontend/CError.c"
   },
   {
     "name": "CError_BufferAppendString",
@@ -9647,9 +9652,10 @@
     "source": "src/frontend/CInt64.c"
   },
   {
-    "name": "fn_00450a10",
+    "name": "CInt64_SignedCompare",
     "address": "0x00450a10",
-    "size": 98
+    "size": 98,
+    "source": "src/frontend/CInt64.c"
   },
   {
     "name": "fn_00450a80",
@@ -9770,9 +9776,10 @@
     "source": "src/frontend/CInt64.c"
   },
   {
-    "name": "fn_00450e70",
+    "name": "CInt64_PowerOfTwo",
     "address": "0x00450e70",
-    "size": 77
+    "size": 77,
+    "source": "src/frontend/CInt64.c"
   },
   {
     "name": "CInt64_ConvertUFromLongDouble",
@@ -10101,9 +10108,10 @@
     "source": "src/optimizer/IroFlowgraph.c"
   },
   {
-    "name": "fn_00456ee0",
+    "name": "AddNext",
     "address": "0x00456ee0",
-    "size": 36
+    "size": 36,
+    "source": "src/optimizer/IroFlowgraph.c"
   },
   {
     "name": "fn_00456f10",
@@ -10357,9 +10365,10 @@
     "source": "src/optimizer/IroTransform.c"
   },
   {
-    "name": "fn_004591e0",
+    "name": "swapkids",
     "address": "0x004591e0",
-    "size": 17
+    "size": 17,
+    "source": "src/optimizer/IroTransform.c"
   },
   {
     "name": "fn_00459200",
@@ -10684,9 +10693,10 @@
     "size": 214
   },
   {
-    "name": "fn_0045d780",
+    "name": "NeedProp",
     "address": "0x0045d780",
-    "size": 67
+    "size": 67,
+    "source": "src/optimizer/IroPropagate.c"
   },
   {
     "name": "fn_0045d7d0",
@@ -10705,19 +10715,22 @@
     "size": 1481
   },
   {
-    "name": "fn_0045e720",
+    "name": "NewRange",
     "address": "0x0045e720",
-    "size": 15
+    "size": 15,
+    "source": "src/optimizer/IroRangePropagation.c"
   },
   {
-    "name": "fn_0045e730",
+    "name": "AddVar",
     "address": "0x0045e730",
-    "size": 50
+    "size": 50,
+    "source": "src/optimizer/IroRangePropagation.c"
   },
   {
-    "name": "fn_0045e770",
+    "name": "FindVar",
     "address": "0x0045e770",
-    "size": 28
+    "size": 28,
+    "source": "src/optimizer/IroRangePropagation.c"
   },
   {
     "name": "fn_0045e790",
@@ -10834,9 +10847,10 @@
     "source": "src/optimizer/IROUseDef.c"
   },
   {
-    "name": "fn_00460e20",
+    "name": "visit_connected_use",
     "address": "0x00460e20",
-    "size": 181
+    "size": 181,
+    "source": "src/optimizer/IROUseDef.c"
   },
   {
     "name": "visit_connected_defs_and_uses",
@@ -11013,29 +11027,34 @@
     "source": "src/optimizer/IroLoop.c"
   },
   {
-    "name": "fn_00466ea0",
+    "name": "NewCondLinear",
     "address": "0x00466ea0",
-    "size": 59
+    "size": 59,
+    "source": "src/optimizer/IroLoop.c"
   },
   {
-    "name": "fn_00466ee0",
+    "name": "NewTypedLinear",
     "address": "0x00466ee0",
-    "size": 50
+    "size": 50,
+    "source": "src/optimizer/IroLoop.c"
   },
   {
-    "name": "fn_00466f20",
+    "name": "compute_loop_count",
     "address": "0x00466f20",
-    "size": 842
+    "size": 842,
+    "source": "src/optimizer/IroLoop.c"
   },
   {
-    "name": "fn_00467270",
+    "name": "compute_positive_addr_record_difference",
     "address": "0x00467270",
-    "size": 434
+    "size": 434,
+    "source": "src/optimizer/IroLoop.c"
   },
   {
-    "name": "fn_00467430",
+    "name": "NopOutBlock",
     "address": "0x00467430",
-    "size": 33
+    "size": 33,
+    "source": "src/optimizer/IroLoop.c"
   },
   {
     "name": "fn_0045c520",
@@ -11044,9 +11063,10 @@
     "source": "src/optimizer/IroLoop.c"
   },
   {
-    "name": "fn_004675c0",
+    "name": "create_loop_iteration_count",
     "address": "0x004675c0",
-    "size": 941
+    "size": 941,
+    "source": "src/optimizer/IroLoop.c"
   },
   {
     "name": "create_cond_left_add_assignment",
@@ -11352,14 +11372,16 @@
     "source": "src/frontend/CParser.c"
   },
   {
-    "name": "fn_0046ac10",
+    "name": "CParser_SaveState",
     "address": "0x0046ac10",
-    "size": 72
+    "size": 72,
+    "source": "src/frontend/CParser.c"
   },
   {
-    "name": "fn_0046ac60",
+    "name": "CParser_RestoreState",
     "address": "0x0046ac60",
-    "size": 60
+    "size": 60,
+    "source": "src/frontend/CParser.c"
   },
   {
     "name": "fn_0046aca0",
@@ -13412,9 +13434,10 @@
     "source": "src/frontend/CInit.c"
   },
   {
-    "name": "fn_00488560",
+    "name": "CInit_IsDtorTemp",
     "address": "0x00488560",
-    "size": 19
+    "size": 19,
+    "source": "src/frontend/CInit.c"
   },
   {
     "name": "find_dtor_temp_arg",
@@ -13805,9 +13828,10 @@
     "source": "src/backend/ObjGen_PPC_EABI.c"
   },
   {
-    "name": "fn_0048ca00",
+    "name": "ResolveFixups",
     "address": "0x0048ca00",
-    "size": 65
+    "size": 65,
+    "source": "src/backend/DWARF.c"
   },
   {
     "name": "fn_0048ca50",
@@ -13815,19 +13839,22 @@
     "size": 287
   },
   {
-    "name": "fn_0048cb70",
+    "name": "fn_004b0a80",
     "address": "0x0048cb70",
-    "size": 869
+    "size": 869,
+    "source": "src/backend/DWARF.c"
   },
   {
-    "name": "fn_0048cee0",
+    "name": "emit_class_dwarf",
     "address": "0x0048cee0",
-    "size": 1717
+    "size": 1717,
+    "source": "src/backend/DWARF.c"
   },
   {
-    "name": "fn_0048d5a0",
+    "name": "emit_array_type",
     "address": "0x0048d5a0",
-    "size": 337
+    "size": 337,
+    "source": "src/backend/DWARF.c"
   },
   {
     "name": "get_integral_type_code",
@@ -13851,9 +13878,10 @@
     "size": 399
   },
   {
-    "name": "fn_0048db30",
+    "name": "find_or_create_dwinfo",
     "address": "0x0048db30",
-    "size": 71
+    "size": 71,
+    "source": "src/backend/DWARF.c"
   },
   {
     "name": "get_type_dwarf_ref",
@@ -13872,14 +13900,16 @@
     "size": 350
   },
   {
-    "name": "fn_0048e1a0",
+    "name": "DW_Word",
     "address": "0x0048e1a0",
-    "size": 24
+    "size": 24,
+    "source": "src/backend/DWARF.c"
   },
   {
-    "name": "fn_0048e1c0",
+    "name": "DW_String",
     "address": "0x0048e1c0",
-    "size": 59
+    "size": 59,
+    "source": "src/backend/DWARF.c"
   },
   {
     "name": "fn_0048e200",
@@ -13928,9 +13958,10 @@
     "size": 237
   },
   {
-    "name": "fn_0048ee10",
+    "name": "DWARF_CreateBlockNode",
     "address": "0x0048ee10",
-    "size": 284
+    "size": 284,
+    "source": "src/backend/DWARF.c"
   },
   {
     "name": "fn_0048ef30",
@@ -13978,9 +14009,10 @@
     "size": 458
   },
   {
-    "name": "fn_0048fbf0",
+    "name": "DWARF_AddVar",
     "address": "0x0048fbf0",
-    "size": 160
+    "size": 160,
+    "source": "src/backend/DWARF.c"
   },
   {
     "name": "fn_0048fc90",
@@ -13998,9 +14030,10 @@
     "size": 47
   },
   {
-    "name": "fn_0048fe60",
+    "name": "NewDwarfNode",
     "address": "0x0048fe60",
-    "size": 76
+    "size": 76,
+    "source": "src/backend/DWARF.c"
   },
   {
     "name": "fn_0048feb0",
@@ -14008,9 +14041,10 @@
     "size": 74
   },
   {
-    "name": "fn_0048ff00",
+    "name": "InsertDwarfNode",
     "address": "0x0048ff00",
-    "size": 108
+    "size": 108,
+    "source": "src/backend/DWARF.c"
   },
   {
     "name": "fn_0048ff70",
@@ -14033,14 +14067,16 @@
     "size": 715
   },
   {
-    "name": "fn_004903d0",
+    "name": "init_dwarf_state",
     "address": "0x004903d0",
-    "size": 283
+    "size": 283,
+    "source": "src/backend/DWARF.c"
   },
   {
-    "name": "fn_004904f0",
+    "name": "SetScope",
     "address": "0x004904f0",
-    "size": 93
+    "size": 93,
+    "source": "src/backend/DWARF.c"
   },
   {
     "name": "fn_00490550",
@@ -14443,9 +14479,10 @@
     "source": "src/backend/Exceptions.c"
   },
   {
-    "name": "fn_0049b190",
+    "name": "RemoveEntry",
     "address": "0x0049b190",
-    "size": 37
+    "size": 37,
+    "source": "src/backend/Exceptions.c"
   },
   {
     "name": "compact_exception_scope_entries",
@@ -14466,9 +14503,10 @@
     "source": "src/backend/DumpIR.c"
   },
   {
-    "name": "fn_0049b660",
+    "name": "WriteString",
     "address": "0x0049b660",
-    "size": 40
+    "size": 40,
+    "source": "src/backend/DumpIR.c"
   },
   {
     "name": "fn_0049b690",
@@ -14502,9 +14540,10 @@
     "size": 820
   },
   {
-    "name": "fn_0049c3d0",
+    "name": "COpt_NewCSE",
     "address": "0x0049c3d0",
-    "size": 61
+    "size": 61,
+    "source": "src/optimizer/COptimizer.c"
   },
   {
     "name": "fn_0049c410",
@@ -14550,14 +14589,16 @@
     "size": 749
   },
   {
-    "name": "fn_0049c960",
+    "name": "COpt_IntConst",
     "address": "0x0049c960",
-    "size": 93
+    "size": 93,
+    "source": "src/optimizer/COptimizer.c"
   },
   {
-    "name": "fn_0049c9c0",
+    "name": "COpt_FloatConst",
     "address": "0x0049c9c0",
-    "size": 128
+    "size": 128,
+    "source": "src/optimizer/COptimizer.c"
   },
   {
     "name": "fn_0049ca40",
@@ -14823,9 +14864,10 @@
     "size": 41
   },
   {
-    "name": "fn_0049f470",
+    "name": "MangleQualifiers",
     "address": "0x0049f470",
-    "size": 53
+    "size": 53,
+    "source": "src/frontend/CMangler.c"
   },
   {
     "name": "fn_0049f4b0",
@@ -14966,14 +15008,16 @@
     "source": "src/backend/Peephole.c"
   },
   {
-    "name": "fn_004a25b0",
+    "name": "PCode_DefinedBetween",
     "address": "0x004a25b0",
-    "size": 118
+    "size": 118,
+    "source": "src/backend/Peephole.c"
   },
   {
-    "name": "fn_004a2630",
+    "name": "PCode_UsedBetween",
     "address": "0x004a2630",
-    "size": 118
+    "size": 118,
+    "source": "src/backend/Peephole.c"
   },
   {
     "name": "has_reg_flag_one_before_flag_two",
@@ -14987,9 +15031,10 @@
     "size": 131
   },
   {
-    "name": "fn_004a27c0",
+    "name": "canmergemasks",
     "address": "0x004a27c0",
-    "size": 250
+    "size": 250,
+    "source": "src/backend/Peephole.c"
   },
   {
     "name": "fn_004cbe40",
@@ -14998,9 +15043,10 @@
     "source": "src/backend/Peephole.c"
   },
   {
-    "name": "fn_004a2a40",
+    "name": "PCode_LiveAfter",
     "address": "0x004a2a40",
-    "size": 30
+    "size": 30,
+    "source": "src/backend/Peephole.c"
   },
   {
     "name": "fn_004a2a60",
@@ -15201,9 +15247,10 @@
     "source": "src/backend/Peephole.c"
   },
   {
-    "name": "fn_004a5900",
+    "name": "masks_disjoint",
     "address": "0x004a5900",
-    "size": 56
+    "size": 56,
+    "source": "src/backend/Peephole.c"
   },
   {
     "name": "optimize_rlwinm_and_addi",
@@ -15466,9 +15513,10 @@
     "size": 36
   },
   {
-    "name": "fn_004aacc0",
+    "name": "IsFunc",
     "address": "0x004aacc0",
-    "size": 21
+    "size": 21,
+    "source": "src/frontend/CScope.c"
   },
   {
     "name": "CScope_IsEmptySymTable",
@@ -15483,9 +15531,10 @@
     "source": "src/frontend/CScope.c"
   },
   {
-    "name": "fn_004aad90",
+    "name": "CScope_AmbigNameError",
     "address": "0x004aad90",
-    "size": 78
+    "size": 78,
+    "source": "src/frontend/CScope.c"
   },
   {
     "name": "CScope_FindName",
@@ -15645,9 +15694,10 @@
     "size": 167
   },
   {
-    "name": "fn_004ac0f0",
+    "name": "CScope_NSIteratorFind",
     "address": "0x004ac0f0",
-    "size": 99
+    "size": 99,
+    "source": "src/frontend/CScope.c"
   },
   {
     "name": "set_parse_result_from_objects",
@@ -16482,9 +16532,10 @@
     "source": "src/backend/BE_symbol.c"
   },
   {
-    "name": "fn_004b5040",
+    "name": "find_output",
     "address": "0x004b5040",
-    "size": 76
+    "size": 76,
+    "source": "src/backend/BE_symbol.c"
   },
   {
     "name": "fn_004b5090",
@@ -16612,14 +16663,16 @@
     "source": "src/frontend/CPrec.c"
   },
   {
-    "name": "fn_004b5ba0",
+    "name": "put",
     "address": "0x004b5ba0",
-    "size": 33
+    "size": 33,
+    "source": "src/frontend/CPrec.c"
   },
   {
-    "name": "fn_004b5bd0",
+    "name": "CPrec_AppendWord16",
     "address": "0x004b5bd0",
-    "size": 34
+    "size": 34,
+    "source": "src/frontend/CPrec.c"
   },
   {
     "name": "fn_004b5c00",
@@ -16642,9 +16695,10 @@
     "size": 25
   },
   {
-    "name": "fn_004b5d00",
+    "name": "CPrec_AppendString",
     "address": "0x004b5d00",
-    "size": 56
+    "size": 56,
+    "source": "src/frontend/CPrec.c"
   },
   {
     "name": "fn_004e0010",
@@ -17504,9 +17558,10 @@
     "source": "src/frontend/CException.c"
   },
   {
-    "name": "fn_004bf8a0",
+    "name": "InsertPrevStatement",
     "address": "0x004bf8a0",
-    "size": 37
+    "size": 37,
+    "source": "src/frontend/CException.c"
   },
   {
     "name": "CException_GetTempObject",
@@ -17832,9 +17887,10 @@
     "source": "src/frontend/CSOM.c"
   },
   {
-    "name": "fn_004c3050",
+    "name": "CSOM_CopyName",
     "address": "0x004c3050",
-    "size": 31
+    "size": 31,
+    "source": "src/frontend/CSOM.c"
   },
   {
     "name": "fn_004c3070",
@@ -17970,9 +18026,10 @@
     "size": 68
   },
   {
-    "name": "fn_004c4b90",
+    "name": "simple_base",
     "address": "0x004c4b90",
-    "size": 37
+    "size": 37,
+    "source": "src/frontend/CClass.c"
   },
   {
     "name": "fn_004c4bc0",
@@ -18483,9 +18540,10 @@
     "size": 60
   },
   {
-    "name": "fn_004c8080",
+    "name": "IsClassEnumOrRef",
     "address": "0x004c8080",
-    "size": 60
+    "size": 60,
+    "source": "src/frontend/CDecl.c"
   },
   {
     "name": "fn_004c80c0",
@@ -18596,9 +18654,10 @@
     "size": 1866
   },
   {
-    "name": "fn_004caa60",
+    "name": "CDecl_LargerType",
     "address": "0x004caa60",
-    "size": 36
+    "size": 36,
+    "source": "src/frontend/CDecl.c"
   },
   {
     "name": "fn_004caa90",
@@ -19036,9 +19095,10 @@
     "source": "src/frontend/CExpr.c"
   },
   {
-    "name": "fn_004d1b10",
+    "name": "scan_builtin",
     "address": "0x004d1b10",
-    "size": 57
+    "size": 57,
+    "source": "src/frontend/CExpr.c"
   },
   {
     "name": "fn_004d1b50",
@@ -19327,9 +19387,10 @@
     "size": 396
   },
   {
-    "name": "fn_004d8170",
+    "name": "AdjustBoolAssign",
     "address": "0x004d8170",
-    "size": 85
+    "size": 85,
+    "source": "src/frontend/CExpr.c"
   },
   {
     "name": "assignment_expression",
@@ -19437,9 +19498,10 @@
     "source": "src/frontend/CTemplateTools.c"
   },
   {
-    "name": "fn_004d8ea0",
+    "name": "CTemplateTools_FirstArg",
     "address": "0x004d8ea0",
-    "size": 101
+    "size": 101,
+    "source": "src/frontend/CTemplateTools.c"
   },
   {
     "name": "fn_004d8f10",
@@ -19677,9 +19739,10 @@
     "size": 214
   },
   {
-    "name": "fn_004dbba0",
+    "name": "gen_expr_save",
     "address": "0x004dbba0",
-    "size": 90
+    "size": 90,
+    "source": "src/frontend/CInline.c"
   },
   {
     "name": "fn_004dbc00",
@@ -19731,14 +19794,16 @@
     "source": "src/frontend/CInline.c"
   },
   {
-    "name": "fn_004dc510",
+    "name": "NewInlineVar",
     "address": "0x004dc510",
-    "size": 61
+    "size": 61,
+    "source": "src/frontend/CInline.c"
   },
   {
-    "name": "fn_004dc550",
+    "name": "CInline_CopyConst",
     "address": "0x004dc550",
-    "size": 71
+    "size": 71,
+    "source": "src/frontend/CInline.c"
   },
   {
     "name": "copy_result_reference",
@@ -21212,9 +21277,10 @@
     "source": "src/optimizer/StructMoves.c"
   },
   {
-    "name": "fn_004ede30",
+    "name": "NewParm",
     "address": "0x004ede30",
-    "size": 65
+    "size": 65,
+    "source": "src/optimizer/FunctionCalls.c"
   },
   {
     "name": "fn_004ede80",
@@ -21818,9 +21884,10 @@
     "source": "src/optimizer/CodeMotion.c"
   },
   {
-    "name": "fn_004f6190",
+    "name": "remove_block",
     "address": "0x004f6190",
-    "size": 156
+    "size": 156,
+    "source": "src/optimizer/CodeMotion.c"
   },
   {
     "name": "replace_successor",
@@ -21886,9 +21953,10 @@
     "source": "src/optimizer/StrengthReduction.c"
   },
   {
-    "name": "fn_004f7280",
+    "name": "StrengthDefsValid",
     "address": "0x004f7280",
-    "size": 144
+    "size": 144,
+    "source": "src/optimizer/StrengthReduction.c"
   },
   {
     "name": "add_code_motion_search",
@@ -22635,9 +22703,10 @@
     "source": "src/backend/MachineSimulation821.c"
   },
   {
-    "name": "fn_004ffe20",
+    "name": "Coalesce_AddInterference",
     "address": "0x004ffe20",
-    "size": 84
+    "size": 84,
+    "source": "src/backend/InterferenceGraph.c"
   },
   {
     "name": "fn_004ffe80",
@@ -22650,9 +22719,10 @@
     "size": 791
   },
   {
-    "name": "fn_00500210",
+    "name": "Coalesce_Find",
     "address": "0x00500210",
-    "size": 28
+    "size": 28,
+    "source": "src/backend/InterferenceGraph.c"
   },
   {
     "name": "fn_00500230",
