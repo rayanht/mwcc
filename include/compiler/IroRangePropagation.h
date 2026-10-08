@@ -9,10 +9,9 @@ extern "C" {
 
 #pragma options align = mac68k
 struct ERangeVar {
-    struct Object *object; /* 0x00: IroRangePropagation_PropagateRangeInLinear passes objref to FindVar and AddVar */
-    struct ERange
-        *range; /* 0x04: AddVar stores the object's range; IroRangePropagation_PropagateRangeInLinear updates it */
-    struct ERangeVar *next; /* 0x08: AddVar links range_vars; FindVar traverses it */
+    struct Object *object;
+    struct ERange *range;
+    struct ERangeVar *next;
 };
 #pragma options align = reset
 extern int IroRangePropagation_PropagateRangeInLinear(struct IROLinear *nd);
@@ -30,8 +29,6 @@ extern CInt64 data_00553a10;
 extern CInt64 range_int32_max;
 extern CInt64 type_range_min;
 extern CInt64 data_00553a28;
-extern CInt64 int64_max;
-extern CInt64 cint64_min;
 extern struct ERangeVar *first_range_var;
 
 #ifdef __cplusplus

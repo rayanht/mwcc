@@ -1,26 +1,39 @@
 #define CERROR_FILE "Option.c"
 #include "compiler/common.h"
 #include "driver/Option.h"
-#include "driver/CLIO.h"
+#include "driver/Arguments.h"
+#include "driver/AssertionFailure.h"
 #include "driver/ClientGlue.h"
 #include "driver/Help.h"
 #include "driver/Parameter.h"
+#include "driver/ParserErrors.h"
+#include "driver/ParserFace.h"
 #include "driver/ParserGlue-eabi-ppc-cc.h"
-#include "driver/Targets.h"
-#include "driver/ToolHelpers-cc.h"
-#include "driver/ToolHelpers.h"
+#include "driver/Projects.h"
 #include "driver/Utils.h"
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
+
+char option_name[1024];
+int data_00587594;
+char data_00587ca0[64];
+int data_00587e10;
+char data_00587e2a;
+int option_list_count;
+char *data_00587eec;
+int option_count;
+int option_capacity;
+
+static struct OptionList *option_lists[32];
+static OptionList optionList;
 
 #define oStack data_00586d20
 #define oStackPtr data_00587594
 
 #define MAXSTACK 8
 #define OPTION_ASSERT(cond, line) ((cond) ? (void)0 : CLIO_ReportAssertionFailure(#cond, "Option.c", line))
-/* Declarations gathered from the merged files. */
-OStack data_00586d20[180];
+OStack data_00586d20[MAXSTACK];
 
 void push_option(void *a)
 {
@@ -156,11 +169,11 @@ void Option_ResetOptionLists(void)
     option_list_count = 0;
     option_capacity = 0;
     option_count = 0;
-    if (data_0057f440)
-        free(data_0057f440);
-    data_0057f440 = NULL;
-    data_0057f43c = ((fn_0041c8ba() & 0x100) ? 0x100 : 0) | ((fn_0041c8ba() & 0x40) ? 0x200 : 0) |
-                    ((fn_0041c8ba() & 0x80) ? 0x400 : 0);
+    if (optionList.list)
+        free(optionList.list);
+    optionList.list = NULL;
+    optionList.flags = ((fn_0041c8ba() & 0x100) ? 0x100 : 0) | ((fn_0041c8ba() & 0x40) ? 0x200 : 0) |
+                       ((fn_0041c8ba() & 0x80) ? 0x400 : 0);
     fn_0041c1e2();
 }
 
@@ -176,20 +189,20 @@ void add_option(Option *option)
     Option *tmp;
     if (option_count >= option_capacity) {
         option_capacity += 32;
-        data_0057f440 = ToolHelpers_ResizeBuffer("options", data_0057f440, (option_capacity + 1) * 4);
+        optionList.list = ToolHelpers_ResizeBuffer("options", optionList.list, (option_capacity + 1) * 4);
     }
-    data_0057f440[option_count] = opt;
+    optionList.list[option_count] = opt;
     if (opt->avail & 6) {
-        for (i = 0; i < option_count && (data_0057f440[i]->avail & 6); i++)
+        for (i = 0; i < option_count && (optionList.list[i]->avail & 6); i++)
             ;
         if (i < option_count) {
-            tmp = data_0057f440[i];
-            data_0057f440[i] = data_0057f440[option_count];
-            data_0057f440[option_count] = tmp;
+            tmp = optionList.list[i];
+            optionList.list[i] = optionList.list[option_count];
+            optionList.list[option_count] = tmp;
         }
     }
     option_count++;
-    data_0057f440[option_count] = NULL;
+    optionList.list[option_count] = NULL;
 }
 
 int Option_RegisterOptionList(OptionList *list)
@@ -199,16 +212,14 @@ int Option_RegisterOptionList(OptionList *list)
         Targets_ForwardVarArgsAndLongjmp("Too many option lists defined!");
     option_lists[option_list_count] = list;
     option_list_count++;
-    for (option = list->options; *option; option++)
+    for (option = list->list; *option; option++)
         add_option(*option);
     return 1;
 }
 
-/* Entries whose second word contains flags; the holder owns a null-terminated entry array. */
-
 void clear_option_avail_high_bits(OptionList *options)
 {
-    Option **entry = options->options;
+    Option **entry = options->list;
     if (entry != NULL) {
         while (*entry != NULL) {
             (*entry)->avail &= 1073741823U;
@@ -217,11 +228,9 @@ void clear_option_avail_high_bits(OptionList *options)
     }
 }
 
-/* Two-word option data; the second word contains the flag mask. */
-
 void format_option_list(char *buf, OptionList *list, int flags)
 {
-    Option **opts = list->options;
+    Option **opts = list->list;
     unsigned char first = 1;
     char name[0x100];
     int count = 0;
@@ -272,7 +281,7 @@ unsigned int fn_0041c8ba(void)
 {
     unsigned int optionValue;
 
-    if (driverTool[0] == 0x436f6d70) {
+    if (pTool->tool == 'Comp') {
         optionValue = 0x100;
     } else {
         optionValue = 0x40;
@@ -292,6 +301,9 @@ unsigned int fn_0041c913(Option *option)
         result = 1U;
     return result;
 }
+
+/* The token kinds that end an option at each nesting level. */
+static Triple option_kind_triples[5] = {{0, 0, 0}, {1, 5, 3}, {5, 0, 0}, {4, 0, 0}, {0, 0, 0}};
 
 Boolean token_matches_kind(int kind, TokenText *tok)
 {
@@ -373,15 +385,15 @@ int parse_option(Option *option, int flags)
             if ((option->avail & 0x80000000) != 0 && (option->avail & 0x20000) != 0) {
                 Option_ForwardVarArgs(0x1e);
             } else if (option->avail & 0x40000) {
-                Option **entry = option->group->options;
+                Option **entry = option->conflicts->list;
                 while (*entry != NULL && (*entry == option || ((*entry)->avail & 0x80000000) == 0)) {
                     entry++;
                 }
                 if (*entry != NULL && *entry != option) {
                     (*entry)->avail &= 0x7fffffff;
-                    format_option_list(buf, option->group, flags);
-                    if (option->group->text != NULL) {
-                        Option_ForwardVarArgs(0x20, (*entry)->names, buf, option->group->text);
+                    format_option_list(buf, option->conflicts, flags);
+                    if (option->conflicts->help != NULL) {
+                        Option_ForwardVarArgs(0x20, (*entry)->names, buf, option->conflicts->help);
                     } else {
                         Option_ForwardVarArgs(0x1f, (*entry)->names, buf);
                     }
@@ -438,7 +450,7 @@ int parse_option(Option *option, int flags)
         }
         option->avail |= 0x80000000;
         if (option->avail & 0x40000) {
-            Option **entry = option->group->options;
+            Option **entry = option->conflicts->list;
             option->avail |= 0x40000000;
             while (*entry != NULL) {
                 (*entry)->avail |= 0x40000000;
@@ -450,8 +462,8 @@ int parse_option(Option *option, int flags)
     }
     if (result != 0) {
         SInt32 flag8000 = option->avail & 0x8000;
-        if (option->args != NULL) {
-            result = Parameter_CheckParameters(option->args, parseFlags | (flag8000 ? 0x20 : 0));
+        if (option->param != NULL) {
+            result = Parameter_CheckParameters(option->param, parseFlags | (flag8000 ? 0x20 : 0));
         } else {
             short *token = (short *)fn_0040f969();
             if (token != NULL && *token == 4) {
@@ -465,7 +477,7 @@ int parse_option(Option *option, int flags)
                 SInt32 flag16 = flag2 ? 0x10 : 0;
                 SInt32 skipFlag = (parseFlags & 1) ? 0x40 : 0;
                 flag4 = (option->avail & 0x10000) ? 4 : 0;
-                if (Option_ParseOptionList(option->def, (flags & 0xfffffffb) | 2 | skipFlag | flag16 | flag4) != 0) {
+                if (Option_ParseOptionList(option->sub, (flags & 0xfffffffb) | 2 | skipFlag | flag16 | flag4) != 0) {
                     nextResult = 1;
                 }
             }
@@ -539,7 +551,7 @@ int match_option_names(char *names, char *arg, int flags, int *result)
 
 Option *find_matching_option(OptionList *list, int x, int *result)
 {
-    Option **opts = list->options;
+    Option **opts = list->list;
     Option *best = NULL;
     int flags = *result;
     if (opts) {
@@ -866,6 +878,25 @@ unsigned int Option_ParseOptionList(OptionList *holder, unsigned int flags)
     return result;
 }
 
+int Option_ParseDefaultOption(OptionList *options)
+{
+    Option *option;
+    int result;
+    int flags;
+
+    strcpy(option_name, "defaultoptions");
+    flags = 0;
+    option = find_matching_option(options, 0, &flags);
+    if (option == NULL) {
+        Targets_ForwardVarArgsAndLongjmp("Default options not defined");
+        return 1;
+    }
+    push_option(option);
+    result = parse_option(option, 0);
+    pop_option_stack();
+    return result;
+}
+
 void Option_FormatMessageWithOptionContext(SInt32 id, char *arg)
 {
     char buf[0x1000];
@@ -953,7 +984,7 @@ int print_option_help(char *filter)
             OptionList *list = option_lists[i];
             if (list) {
                 if (data_00587ce0 & 0x8000) {
-                    if (filter && *filter && list->text && strstr(list->text, filter))
+                    if (filter && *filter && list->help && strstr(list->help, filter))
                         Help_PrintOptionList(list, 0, "");
                 } else
                     Help_PrintOptionList(list, 0, filter);

@@ -7,8 +7,6 @@
 extern "C" {
 #endif
 
-extern unsigned char temporary_output_message[];
-extern unsigned char browse_file_message[];
 extern UInt32 CLWriteObjectFile_WriteObjectFile(struct DropinFileRecord *self, unsigned int option1,
                                                 unsigned int option2);
 

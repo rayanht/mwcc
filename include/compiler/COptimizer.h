@@ -9,13 +9,11 @@ extern "C" {
 
 #pragma options align = mac68k
 struct COptBlockLink {
-    struct COptBlockLink *next; /* 0x00: add_succ and build_opt_blocks link successor/predecessor edges */
+    struct COptBlockLink *next;
     union {
-        struct COptBlock *
-            block; /* 0x04: build_opt_blocks resolution phase installs blocks; propagate_bit_to_preds reads resolved edges */
-        struct Statement *
-            statement; /* 0x04: add_succ and build_opt_blocks construction phase store statements before the final resolution loop */
-    } target; /* 0x04: build_opt_blocks changes statement targets to block targets in its final loop */
+        struct COptBlock *block;
+        struct Statement *statement;
+    } target;
 };
 #pragma options align = reset
 #pragma options align = mac68k
@@ -24,11 +22,9 @@ struct COptBlock {
     COptBlockLink *pred;
     COptBlockLink *succ;
     struct Statement *items;
-    SInt16 *
-        referenceBits; /* 0x10: mark_dlocal_reference_bits marks indirect reads; propagate_bit_to_preds propagates them backward */
-    SInt16 *
-        referenceBarrierBits; /* 0x14: mark_dlocal_reference_bits marks assignments/direct references before reads; propagate_bit_to_preds stops at these bits */
-    SInt32 unused;            /* 0x18: new_block and new_block2 initialize to zero; no other uses */
+    SInt16 *referenceBits;
+    SInt16 *referenceBarrierBits;
+    SInt32 unused;
     SInt16 count;
     UInt8 flag;
 };
@@ -59,15 +55,15 @@ extern void COptimizer_RecordObjectUse(Object *object, unsigned char direct_refe
 extern void COptimizer_CountExpressionObjectUses(ENode *expression);
 extern void simplify_statement_branches(Statement *stmt);
 extern void follow_switch_labels_and_fold_constant(Statement *self);
-extern void COptimizer_004bf980(void);
+extern void fn_004bf980(void);
 extern void mark_dlocal_reference_bits(ENode *node);
 extern void set_bit(SInt16 *p, SInt16 n);
 extern UInt16 test_bit(const SInt16 *words, short bit);
-extern void COptimizer_004c0470(ENode *node);
+extern void fn_004c0470(ENode *node);
 extern void invalidate_expr_cse(ENode *expression);
 extern ENode *fn_004c07c0(ENode *expr);
 extern void eliminate_unreachable_statements(Statement *items);
-extern void COptimizer_004c0800(ENode *n);
+extern void fn_004c0800(ENode *n);
 extern COptCSE *find_or_create_commutative_cse(ENode *expr, COptCSE *left, COptCSE *right);
 extern void eliminate_common_subexpressions(void);
 extern COptCSE *collect_expr_cse(ENode *expr);
@@ -82,22 +78,15 @@ extern void build_opt_blocks(Statement *first);
 extern COptCSE *find_or_create_cse(ENode *expr, COptCSE *left, COptCSE *right);
 extern COptCSE *find_or_create_unary_cse(ENode *expr, COptCSE *left);
 extern void mark_and_propagate_dlocal_reference_bits(void);
-extern struct ENode *last_node;
-extern int DAT_00581308;
-extern SInt16 data_005614f0[];
-extern Boolean optimizer_changed;
-extern struct ENode *current_cse_expr;
-extern SInt16 opt_block_bits_size;
-extern struct COptCSE *cse_entries[75];
-extern struct COptCSE *cse_list;
-extern struct OptimizerOccurrence *occurrence_list;
-extern short data_005812fc;
-extern char data_005812fe;
-extern char data_005812ff;
-extern short data_00581302;
 extern struct CLabel *data_0058802c;
-extern struct COptBlock *current_opt_block;
 extern struct COptBlock *opt_blocks;
+
+extern Statement *DumpIR_OptimizeStatements(Object *object, Statement *statements);
+extern void DumpIR_OptimizeStatementList(Object *object, Statement *statements);
+extern int Registers_GetCSEWeight(COptCSE *tree);
+extern Boolean Registers_ContainsCOptCSE(COptCSE *target, COptCSE *node);
+extern void Registers_DivideUses(COptCSE *node, SInt16 divisor);
+extern void Registers_InvalidateCSE(COptCSE *node);
 
 #ifdef __cplusplus
 }

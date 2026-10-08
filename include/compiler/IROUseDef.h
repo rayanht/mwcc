@@ -15,14 +15,13 @@ struct IRODef {
     VarRecord *var;
     struct IRODef *globalnext;
     struct IRODef *varnext;
-    UInt16 useCount; /* 0x14: IROUseDef.c increments for reaching uses; propagate_inc_dec compares live uses */
+    UInt16 useCount;
     UInt8 global;
-    UInt8
-        noregister; /* 0x17: create_def_record copies var->noregister; IROUseDef.c preserves definitions visible at calls */
+    UInt8 noregister;
     UInt8 definite;
 };
 #pragma options align = reset
-/* A use of a variable (build_use_def_records, 0x1e bytes; chained from allocated_uses). */
+/* A use of a variable. */
 #pragma options align = mac68k
 struct IROUse {
     int index;
@@ -31,10 +30,8 @@ struct IROUse {
     VarRecord *var;
     struct IROUse *globalnext;
     struct IROUse *varnext;
-    struct BitVector
-        *reachingDefs; /* 0x18: IROUseDef.c sets reaching definition indices; propagate_inc_dec tests def->index */
-    UInt16
-        reachingDefCount; /* 0x1c: IROUseDef.c increments for each reaching definition; propagate_inc_dec requires exactly one */
+    struct BitVector *reachingDefs;
+    UInt16 reachingDefCount;
 };
 #pragma options align = reset
 extern void fn_00459420(void);
@@ -49,20 +46,11 @@ extern void mark_var_used_at_call(Object *obj);
 extern IROLinear *find_type_one_linear(IROLinear *e);
 extern void build_use_def_records(void);
 extern void create_def_record(VarRecord *var, struct IROLinear *linear, unsigned char definite);
-extern struct IRODef *def_list;
-extern struct IRODef *global_def_tail;
-extern SInt32 def_count;
-extern int data_00580624;
-extern struct IROUse *allocated_uses;
-extern struct IROUse *global_use_tail;
-extern struct BitVector *use_def_in;
-extern struct BitVector *used_defs_bitvector;
 extern struct BitVector *data_0058711c;
 extern struct BitVector *data_00587174;
 extern struct BitVector *data_00587f70;
 extern struct BitVector *connected_defs_and_uses_bits;
 extern void fn_0045ac60(IROLinear *p, int flag);
-extern SInt32 data_00580638;
 
 #ifdef __cplusplus
 }

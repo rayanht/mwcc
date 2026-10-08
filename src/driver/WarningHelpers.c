@@ -1,12 +1,11 @@
 #include "compiler/common.h"
 #include "driver/WarningHelpers.h"
-#include "driver/CWPluginsPrivate.h"
 #include "driver/Memory.h"
+#include "driver/ParserErrors.h"
+#include "driver/ParserFace.h"
+#include "driver/Projects.h"
 #include "driver/StringUtils.h"
-#include "driver/Targets.h"
-#include "driver/ToolHelpers-cc.h"
-#include "driver/ToolHelpers.h"
-#include <setjmp.h>
+#include "driver/TargetWarningHelpers-ppc-cc.h"
 
 int parse_warning_settings(int option, char *settings, int argument, int flags)
 {
@@ -33,19 +32,19 @@ int parse_warning_settings(int option, char *settings, int argument, int flags)
         } else {
             optionCode = cursor[1] | *cursor << 8;
             if (enabled)
-                data_00537770 = 0;
+                pCmdLine.noWarnings = 0;
             switch (optionCode) {
                 case 0x4e77:
-                    data_00537770 = enabled;
+                    pCmdLine.noWarnings = enabled;
                     break;
                 case 0x4177:
                     set_warning_option(optionCode, enabled);
                     break;
                 case 0x4377:
-                    data_0053777a = !enabled;
+                    pCmdLine.noCmdLineWarnings = !enabled;
                     break;
                 case 0x5765:
-                    data_00537771 = enabled;
+                    pCmdLine.warningsAreErrors = enabled;
                     set_warning_option(optionCode, enabled);
                     break;
                 default:
@@ -70,79 +69,21 @@ unsigned int print_command_line_warning_options(void)
         longjmp(plugin_request_jmp_buf, 7);
     }
     HPrintF(output, "Command-line warning options:\n");
-    if (data_0053777a != '\0') {
+    if (pCmdLine.noCmdLineWarnings != '\0') {
         HPrintF(output, "\t- no command-line warnings\n");
     } else {
         HPrintF(output, "\t- command-line warnings\n");
     }
-    if (data_00537771 != '\0') {
+    if (pCmdLine.warningsAreErrors != '\0') {
         HPrintF(output, "\t- warnings are errors\n");
     } else {
         HPrintF(output, "\t- warnings are not errors\n");
     }
-    if (data_00537770 != '\0') {
+    if (pCmdLine.noWarnings != '\0') {
         HPrintF(output, "\t- no warnings at all\n");
     }
     ToolHelpers_cc_PrintCLanguageWarningOptions(output);
     ToolHelpers_cc_CallValuePairCallback(NULL, output);
     Memory_FreeHandle(output);
-    return 1;
-}
-
-int set_warning_option(short option, char enabled)
-{
-    char mode;
-
-    switch (option) {
-        case 18800:
-            data_00540b16 = enabled;
-            break;
-        case 17764:
-            data_00540b17 = enabled;
-            break;
-        case 20597:
-            data_00540b18 = enabled;
-            break;
-        case 21878:
-            data_00540b19 = enabled;
-            break;
-        case 21857:
-            data_00540b1a = enabled;
-            break;
-        case 17763:
-            data_00540b1b = enabled;
-            break;
-        case 20580:
-            data_00540b1c = enabled;
-            break;
-        case 18550:
-            data_00540b1e = enabled;
-            break;
-        case 18787:
-            data_00540b1f = enabled;
-            break;
-        case 20073:
-            data_00540b20 = enabled;
-            break;
-        case 21347:
-            data_00540b21 = enabled;
-            break;
-        case 19553:
-            if (enabled != 0) {
-                mode = 1;
-            } else {
-                mode = 2;
-            }
-            data_00588528 = mode;
-            break;
-        case 22373:
-            data_00540b1d = enabled;
-            break;
-        case 17264:
-            data_00540ad7 = enabled;
-            break;
-        default:
-            return 0;
-    }
     return 1;
 }

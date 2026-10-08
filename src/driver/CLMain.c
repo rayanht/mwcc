@@ -3,111 +3,274 @@
 #include "driver/CLMain.h"
 #include "compiler/objects.h"
 #include "compiler/scopes.h"
-#include "compiler/win32.h"
-#include "compiler/CPrep.h"
-#include "compiler/InlineAsmPPC.h"
-#include "driver/CLAccessPaths.h"
 #include "driver/CLBrowser.h"
-#include "driver/CLCompilerLinkerDropin_V10.h"
-#include "driver/CLDependencies.h"
-#include "driver/CLDropinCallbacks_V10.h"
 #include "driver/CLErrors.h"
 #include "driver/CLFileOps.h"
-#include "driver/CLFiles.h"
 #include "driver/CLIO.h"
 #include "driver/CLLicenses.h"
 #include "driver/CLPluginRequests.h"
 #include "driver/CLPlugins.h"
 #include "driver/CLPrefs.h"
-#include "driver/CLProj.h"
-#include "driver/CLSegs.h"
-#include "driver/CLTarg.h"
 #include "driver/CLToolExec.h"
-#include "driver/CWParserPluginsPrivate.h"
-#include "driver/CWPluginsPrivate.h"
 #include "driver/ClientGlue.h"
-#include "driver/Files.h"
+#include "driver/Generic.h"
 #include "driver/MemUtils.h"
-#include "driver/Memory.h"
-#include "driver/MsDos.h"
 #include "driver/Resources.h"
+#include "driver/StringExtras.h"
 #include "driver/cc-eabi-ppc-mw.h"
 #include <string.h>
+
+char input_name[32];
+char output_name[32];
+SInt32 unique_plugin_name_count;
+SInt32 plugin_request_count;
+char **unique_plugin_names;
+struct ToolArgumentSet *file_argument_sets;
+struct PluginRequest *plugin_requests;
+struct ToolArgumentSet *tool_argument_sets;
+
+Project mainProj;
+Project *gProj = &mainProj;
+PCmdLine optsCmdLine = {0x1002};
+PCmdLineEnvir optsEnvir = {0x1000};
+PCmdLineCompiler optsCompiler = {0x1004};
+PCmdLineLinker optsLinker = {0x1002};
+CLState clState;
+
+/* The driver is itself a plugin ('cldr'): its descriptions are its getters' data. */
+
+unsigned int __stdcall return_zero(unsigned int unused)
+{
+    return 0U;
+}
+
+static PluginDesc driver_flags = {2, 'cldr', 7, 0, 0, 11};
+
+unsigned int __stdcall get_data_and_size(unsigned char **data, unsigned int *size)
+{
+    *data = (unsigned char *)&driver_flags;
+    *size = 18U;
+    return 0U;
+}
+
+static const char *driver_name = "Command-Line Driver";
+
 unsigned int __stdcall copy_global_value_to_address(unsigned int destinationAddress)
 {
-    *(SInt32 *)destinationAddress = data_00541e44;
+    *(const char **)destinationAddress = driver_name;
     return 0;
 }
+
+static const char *driver_display_name = "Command-Line Driver";
 
 unsigned int __stdcall copy_global_value(unsigned int valueAddress)
 {
-    *(SInt32 *)valueAddress = data_00541e48;
+    *(const char **)valueAddress = driver_display_name;
     return 0;
 }
+
+static const char *panel_names[4];
+static PluginDirectoryList panel_list = {1, 4, (char **)panel_names};
 
 int __stdcall fn_0040a730(char **panelData)
 {
-    if (plugin_type == 0x436f6d70) {
-        DAT_0057d920 = "CmdLine Panel";
-        DAT_0057d924 = "CmdLine Compiler Panel";
-        DAT_0057d928 = "CmdLine Linker Panel";
-        DAT_00541e4e = 3;
+    if (clState.plugintype == 'Comp') {
+        panel_names[0] = "CmdLine Panel";
+        panel_names[1] = "CmdLine Compiler Panel";
+        panel_names[2] = "CmdLine Linker Panel";
+        panel_list.count = 3;
     } else {
-        DAT_0057d920 = "CmdLine Panel";
-        DAT_0057d924 = "CmdLine Linker Panel";
-        DAT_00541e4e = 2;
+        panel_names[0] = "CmdLine Panel";
+        panel_names[1] = "CmdLine Linker Panel";
+        panel_list.count = 2;
     }
-    *panelData = DAT_00541e4c;
+    *panelData = (char *)&panel_list;
     return 0;
 }
 
+static UInt32 target_cpu = '****';
+static UInt32 target_os = '****';
+static TargetInfo target_list = {1, 1, &target_cpu, 1, &target_os};
+
+static PluginVersion driver_version = {3, 0, 0, 0};
+
 unsigned int __stdcall fn_0040a7a0(struct ListLink *link)
 {
-    link->next = &data_00541eac;
+    link->next = (struct ListLink *)&driver_version;
     return 0U;
 }
+
+static FileSignature file_signatures[2] = {{'Brws', "DubL", 4, 0}, {'MMPr', "looc", 4, 0}};
+static FileSignatureList file_signature_list = {2, file_signatures};
 
 unsigned int __stdcall set_listlink_next_to_global(struct ListLink *node)
 {
-    node->next = &data_00541edc;
+    node->next = (struct ListLink *)&file_signature_list;
     return 0U;
 }
 
+static void *driver_callbacks[9] = {(void *)return_zero,
+                                    (void *)get_data_and_size,
+                                    (void *)copy_global_value,
+                                    (void *)copy_global_value_to_address,
+                                    (void *)fn_0040a730,
+                                    NULL,
+                                    NULL,
+                                    (void *)fn_0040a7a0,
+                                    (void *)set_listlink_next_to_global};
+
 unsigned int fn_0040a7c0(void)
 {
-    ClientGlue_AddPlugin((PluginRequiredInputRecord *)data_00541ee4);
+    ClientGlue_AddPlugin((PluginRequiredInputRecord *)driver_callbacks);
 }
+
+/* The "Command-line strings" (12000) the driver's messages index. */
+static char *command_line_strings[107] = {
+    "Could not get current working directory",
+    "Cannot find my executable '%s'",
+    "Could not initialize plugin '%s'",
+    "The %s '%s' requires functionality not present in the command-line driver.",
+    "The command-line parser does not support these panels:",
+    "\t%s\n",
+    "Compiling function: '%s'",
+    "Could not write file '%s'",
+    "Could not write file '%s' in directory '%s'",
+    "Write error on output (errno=%ld)",
+    "Current working directory is too long",
+    "Unknown filetype '%c%c%c%c', defaulting to '%s'",
+    "%s:\ttype %s",
+    "Storing output for '%s' in '%s'",
+    "Writing text file '%s'",
+    "Writing %sobject file '%s'",
+    "Writing browse data '%s'",
+    "Could not write %s '%s' (error %ld)",
+    "Deleting temporary file '%s'",
+    "Could not resolve alias for '%s' (error %ld)",
+    "%s:\t'%s'%s",
+    "File '%s' has browse fileID %d",
+    "Can't locate directory '%s'",
+    "  %8.2f seconds to %s %s%s%s",
+    "  %8d lines compiled",
+    "  %8d %s code\n  %8d %s init'd data\n  %8d %s uninit'd data",
+    "  %8d total %s code\n  %8d total %s init'd data\n  %8d total %s uninit'd data",
+    "File '%s' is not compilable source, target object data, or command file; ignoring",
+    "All specified files were ignored",
+    "Compiling: '%s'",
+    "Compiling: '%s' with '%s'",
+    "Precompiling: '%s'",
+    "Precompiling: '%s' with '%s'",
+    "Preprocessing: '%s'",
+    "Preprocessing: '%s' with '%s'",
+    "Finding dependencies: '%s'",
+    "Finding dependencies: '%s' with '%s'",
+    "Importing: '%s'",
+    "Importing: '%s' with '%s'",
+    "Linking project",
+    "Linking project with '%s'",
+    "Pre-linking project",
+    "Pre-linking project with '%s'",
+    "Post-linking project",
+    "Post-linking project with '%s'",
+    "Disassembling: '%s'",
+    "Disassembling: '%s' with '%s'",
+    "Syntax checking: '%s'",
+    "Syntax checking: '%s' with '%s'",
+    "Getting target info from '%s'",
+    "Initializing '%s'",
+    "Terminating '%s'",
+    "'%s' cannot preprocess, skipping '%s'",
+    "'%s' cannot precompile, skipping '%s'",
+    "'%s' cannot generate code, skipping '%s'",
+    "'%s' has no object code to disassemble",
+    "'%s' cannot disassemble, skipping '%s'",
+    "Neither '%s' nor '%s' can disassemble, skipping '%s'",
+    "No precompiled header name given, '%s' assumed",
+    "Precompile target '%s' given on command line; source-specified name '%s' ignored",
+    "Writing precompiled %s file '%s'",
+    "Reading precompiled %s file '%s'",
+    "Cannot %s memory for %s",
+    "Files/directories must have length <= %ld characters;\n'%s' not accepted",
+    "Guessed linker name '%s' from compiler name '%s'",
+    "Can't find %s '%s' in path",
+    "Calling %s '%s'",
+    "Can't execute %s '%s' (%s)",
+    "%s '%s' returned with exit code %d",
+    "Too many errors printed, aborting program",
+    "Too many errors printed, suppressing errors for current file",
+    "Too many warnings printed, suppressing warnings for current file",
+    "No %s mapping matches '%s' (unrecognized file contents or filename extension); treating as source text",
+    "No plugin or target matches the file '%s', ignoring",
+    "File '%s' cannot be handled by this tool, ignoring",
+    "File '%s' does not match the active target",
+    "Adding%s:\t'%s'",
+    "Creating new overlay '%s' in group '%s'",
+    "Creating new overlay group '%s' at addr %08X:%08X",
+    "File '%s' cannot be added to overlay group; define an overlay in the group first",
+    "Cannot create virtual export file '%s' (from '-export name,...')",
+    "Too many %s defined; at most %d%s is allowed",
+    "Loading preference panel '%s'",
+    "%s:",
+    "\t%s%s",
+    "Already defined %s search path; '%s' added after other paths",
+    "License check failed: %s",
+    "The plugin '%s' (version '%s') cannot be used:\n%s",
+    "Plugin '%s' has already been registered",
+    "Preferences for '%s' have already been registered",
+    "Preferences for '%s' not found",
+    "Some preferences needed by the plugin '%s' have not been registered",
+    "Could not load file '%s'",
+    "Could not find change current working directory to '%s'",
+    "Out of memory",
+    "The tool did not produce any output while %s the file '%s'",
+    "The filename '%s' is invalid",
+    "The %slinker for this target was not found",
+    "%s\n%s (OS error %d)",
+    "%s\n%s (error %d)",
+    "Note:  '%s' did not generate any browse information \nfor '%s'; no browser output generated",
+    "Source and specified output for the file '%s' are identical; no output will be generated",
+    "More than one output filename specified for '%s'; ignoring '%s'",
+    "Pref panel data for '%s' is out-of-date or invalid",
+    "Changing primary user access path to '%s'",
+    "",
+    NULL};
 
 unsigned int fn_0040a7d0(void)
 {
-    return ClientGlue_AddResourceStrings("Command-line strings", 12000, data_00542f3c);
+    return ClientGlue_AddResourceStrings("Command-line strings", 12000, command_line_strings);
 }
 
-unsigned char invoke_if_requested(char shouldInvoke)
+Boolean invoke_if_requested(Boolean pre, char *argument)
 {
-    if (shouldInvoke != '\0') {
+    if (pre) {
         CLIO_ExchangeClearGlobal();
         return 1;
     }
     return 0;
 }
 
-unsigned char latch_flag(unsigned int flag)
+Boolean latch_flag(Boolean pre, char *argument)
 {
-    if ((unsigned char)flag != 0) {
-        DAT_00587324 = 1;
+    if (pre) {
+        clState.pluginDebug = 1;
         return 1;
     }
-    return DAT_00587324;
+    return clState.pluginDebug;
 }
 
-Boolean is_enabled_or_global_nonzero(char enabled)
+Boolean is_enabled_or_global_nonzero(Boolean pre, char *argument)
 {
-    if (enabled != '\0') {
+    if (pre) {
         return 1;
     }
     return license_path != NULL;
 }
+
+/* The options the driver takes before its parser sees the command line; the first is named at run time. */
+static struct DriverCommandLineOption driver_options[3] = {
+    {"", NULL, invoke_if_requested},
+    {"--use-license-file", &license_path, is_enabled_or_global_nonzero},
+    {"--plugin-debug", NULL, latch_flag},
+};
 
 void consume_driver_command_line_options(int *argc, char ***argv)
 {
@@ -119,7 +282,7 @@ void consume_driver_command_line_options(int *argc, char ***argv)
     }
     do {
         optionIndex = 0;
-        option = PTR_DAT_00543124;
+        option = driver_options;
         do {
             if (strcmp(option->name, (*argv)[1]) == 0) {
                 if (option->value != NULL) {
@@ -152,7 +315,7 @@ void CLMain_AppendEnabledCommandLineOptions(int *first, char ***second)
     struct DriverCommandLineOption *entry;
 
     index = 0;
-    entry = PTR_DAT_00543124;
+    entry = driver_options;
     do {
         enabled = entry->handler(0, NULL);
         if (enabled != '\0') {
@@ -166,29 +329,27 @@ void CLMain_AppendEnabledCommandLineOptions(int *first, char ***second)
     } while (index < 3);
 }
 
+static int did_init = 0;
+
 int CLMain_Initialize(int argc, char **argv)
 {
+    static char secret[8];
     char buf[260];
-    char *path;
-    CommandParseInfo *commandLine;
 
-    fn_004111c0(&argc, &argv);
-    memset(&data_005871bc, 0,
-           sizeof(CommandParseInfo) + 4 * sizeof(SInt32) + 2 * sizeof(OSSpec) + sizeof(program_name) +
-               2 * sizeof(short) + 4 * sizeof(Boolean) + sizeof(CLTargetDirectory) + sizeof(MemBuffer));
-    PTR_DAT_00543124[0].name = data_0057d930;
-    data_0057d930[7] = 0;
-    data_0057d930[4] = 'b';
-    data_0057d930[1] = '-';
-    data_0057d930[5] = 'u';
-    data_0057d930[2] = 'd';
-    data_0057d930[0] = '-';
-    data_0057d930[3] = 'e';
-    data_0057d930[6] = 'g';
+    OS_InitProgram(&argc, &argv);
+    memset(&clState, 0, sizeof(clState));
+    driver_options[0].name = secret;
+    secret[7] = 0;
+    secret[4] = 'b';
+    secret[1] = '-';
+    secret[5] = 'u';
+    secret[2] = 'd';
+    secret[0] = '-';
+    secret[3] = 'e';
+    secret[6] = 'g';
     consume_driver_command_line_options(&argc, &argv);
-    data_005871bc = argc;
-    commandLine = (CommandParseInfo *)&data_005871bc;
-    commandLine->argv = argv;
+    clState.argc = argc;
+    clState.argv = argv;
 
     CLProj_CopyStringBounded(buf, *argv, strlen(*argv), sizeof(buf));
     buf[sizeof(buf) - 1] = 0;
@@ -197,33 +358,32 @@ int CLMain_Initialize(int argc, char **argv)
 
     CLIO_InitializeStreamBuffering();
     fn_004098d0();
-    CLProj_InitializeCWD(PTR_DAT_00541b18);
+    CLProj_InitializeCWD(gProj);
     if (fn_0040a7d0() == 0)
         CLErrors_FatalError("Could not initialize resource strings");
     if (fn_0040a7c0() == 0)
         CLErrors_FatalError("Could not initialize built-in plugins");
-    if (MsDos_IsAbsolutePath(*argv) == 0)
-        program_name = *argv;
+    if (OS_IsFullPath(*argv) == 0)
+        clState.programName = *argv;
     else
-        program_name = CLProj_GetFileName(*argv);
+        clState.programName = OS_GetFileNamePtr(*argv);
 
-    path = data_005871d8.directory.path;
-    if (CLFileOps_FindExecutable(buf, path) != 0)
+    if (OS_FindProgram(buf, clState.programSpec.path.s) != 0)
         CLErrors_EmitDiagnostic(2, buf);
-    Resources_OpenResourceFile(path);
+    Resources_OpenResourceFile(&clState.programSpec);
     fn_00417750();
-    DAT_00543148 = 1;
+    did_init = 1;
     return 0;
 }
 
 unsigned int CLMain_FreePlugins(unsigned int result)
 {
-    if (DAT_00543148 != 0) {
+    if (did_init != 0) {
         CLPlugins_FreePlugins();
         CLLicenses_ReleaseLicenses();
-        CLProj_FreeTargets(PTR_DAT_00541b18);
+        CLProj_FreeTargets(gProj);
         fn_00414e20();
-        DAT_00543148 = 0;
+        did_init = 0;
     }
     return result;
 }
@@ -245,13 +405,14 @@ int parse_command_line(void)
 
     env = default_target;
     requests = plugin_requests;
-    parser = CLPlugins_SelectPluginByRequestsAndValues(NULL, data_005871d4, plugin_request_count, requests, env->cpu,
-                                                       env->os, unique_plugin_name_count, unique_plugin_names);
+    parser =
+        CLPlugins_SelectPluginByRequestsAndValues(NULL, clState.parserplugin, plugin_request_count, requests, env->cpu,
+                                                  env->os, unique_plugin_name_count, unique_plugin_names);
     if (parser == NULL)
         CLErrors_FatalError("Could not find a command-line parser!");
 
-    info.argc = data_005871bc;
-    info.argv = (char **)data_005871c0;
+    info.argc = clState.argc;
+    info.argv = clState.argv;
     info.value2 = 0;
     env = default_target;
     if (!CLPluginRequests_ParseCommandLine(parser, env, &info, env->cpu, env->os, plugin_request_count, plugin_requests,
@@ -265,7 +426,7 @@ int parse_command_line(void)
         return status;
     }
 
-    if (DAT_00587324 != 0) {
+    if (clState.pluginDebug != 0) {
         for (fileIndex = 0; fileIndex < unique_plugin_name_count; fileIndex++) {
             CLIO_WriteFormattedText("Outgoing args for '%s':  ", unique_plugin_names[fileIndex]);
             for (argumentIndex = 0; argumentIndex < file_argument_sets[fileIndex].count; argumentIndex++)
@@ -294,30 +455,24 @@ int parse_command_line(void)
 int delete_file_and_make_path_spec(void)
 {
     DWORD error;
-    UInt8 *firstName;
-    OSSpec *resolvedName;
-    char *secondName;
 
     data_0054bf48(NULL);
-    if (DAT_00541c0c != '\0') {
-        resolvedName = &DAT_00587328;
-        firstName = &DAT_00541c0c;
-        error = OS_MakeFileSpec((const char *)firstName, resolvedName);
+    if (optsCompiler.outMakefile[0] != '\0') {
+        error = OS_MakeFileSpec(optsCompiler.outMakefile, &clState.makefileSpec);
         if (error > 0) {
-            CLErrors_ReportOSError(8, error, firstName);
+            CLErrors_ReportOSError(8, error, optsCompiler.outMakefile);
             return 1;
         }
-        OS_Delete(resolvedName);
+        OS_Delete(&clState.makefileSpec);
     }
-    if (data_00541d10[0] != '\0') {
-        secondName = data_00541d10;
-        error = OS_MakePathSpec(NULL, secondName, precompiled_unit_directory.path);
+    if (optsCompiler.sbmPath[0] != '\0') {
+        error = OS_MakePathSpec(NULL, optsCompiler.sbmPath, &clState.sbmPathSpec);
         if (error > 0) {
-            CLErrors_ReportOSError(0x17, error, secondName);
+            CLErrors_ReportOSError(0x17, error, optsCompiler.sbmPath);
             return 1;
         }
     } else {
-        OS_GetCWD(precompiled_unit_directory.path);
+        OS_GetCWD(&clState.sbmPathSpec);
     }
     return 0;
 }
@@ -328,49 +483,48 @@ SInt32 fn_0040aed0(void)
     SInt32 end;
     SInt32 r;
 
-    if (+data_00541b1e == 0 || +data_00541b1e == 1)
+    if (+optsCmdLine.state == 0 || +optsCmdLine.state == 1)
         return 0;
     start = CLFileOps_GetScaledTicks();
     r = CLFileOps_CompileProject();
     if (r != 0)
         return r;
-    if (data_00541b1e == 3) {
+    if (optsCmdLine.state == 3) {
         r = CLFileOps_LinkProject();
         if (r != 0)
             return r;
     }
     end = CLFileOps_GetScaledTicks();
-    if (data_00541b2b != 0)
-        CLErrors_ForwardMessage(0x18, (double)(end - start) * data_00543248, &data_00543240, &data_00542f38,
-                                &data_00543238, &data_00542f38);
+    if (optsCmdLine.timeWorking != 0)
+        CLErrors_ForwardMessage(0x18, (end - start) / 60.0, "resolve", "", "project", "");
     return 0;
 }
 
-int fn_0040af70(struct MessageRecord *message, struct MessageRecord *result)
+int fn_0040af70(PCmdLine *message, PCmdLine *result)
 {
-    if (message->tag == 0x1002) {
+    if (message->version == 0x1002) {
         *result = *message;
         return 1;
     }
-    if (message->tag == 0x1001) {
+    if (message->version == 0x1001) {
         CLErrors_ForwardMessageArguments(0x68, "CmdLine Panel");
         *result = *message;
-        result->attributes[2] = 0;
+        result->noCmdLineWarnings = 0;
         return 1;
     }
-    if (message->tag == 0x1000) {
+    if (message->version == 0x1000) {
         CLErrors_ForwardMessageArguments(0x68, "CmdLine Panel");
         *result = *message;
-        result->attributes[1] = 1;
+        result->stderr2stdout = 1;
         return 1;
     }
     CLErrors_EmitDiagnostic(0x68, "CmdLine Panel");
     return 0;
 }
 
-unsigned int copy_environment_code_record(struct CodeRecord *record, struct CodeRecord *result)
+unsigned int copy_environment_code_record(PCmdLineEnvir *record, PCmdLineEnvir *result)
 {
-    if (record->code == 4096U) {
+    if (record->version == 4096U) {
         *result = *record;
         return 1U;
     }
@@ -378,69 +532,68 @@ unsigned int copy_environment_code_record(struct CodeRecord *record, struct Code
     return 0U;
 }
 
-int convert_command_line_panel_settings(struct CommandLinePanelSettings *source,
-                                        struct CommandLinePanelSettings *destination)
+int convert_command_line_panel_settings(PCmdLineCompiler *source, PCmdLineCompiler *destination)
 {
     if (source->version == 0x1004) {
         *destination = *source;
         return 1;
     }
     if (source->version == 0x1003) {
-        if (DAT_00587324)
+        if (clState.pluginDebug)
             CLErrors_ForwardMessageArguments(0x68, "CmdLine Panel");
         *destination = *source;
-        destination->version1004Option = 1;
+        destination->canonicalIncludes = 1;
         return 1;
     }
     if (source->version == 0x1002) {
-        if (DAT_00587324)
+        if (clState.pluginDebug)
             CLErrors_ForwardMessageArguments(0x68, "CmdLine Panel");
         *destination = *source;
-        destination->version1003Option1 = 0;
-        destination->version1003Option2 = 0;
+        destination->sbmState = 0;
+        destination->sbmPath[0] = 0;
         return 1;
     }
     if (source->version == 0x1001) {
-        if (DAT_00587324)
+        if (clState.pluginDebug)
             CLErrors_ForwardMessageArguments(0x68, "CmdLine Panel");
         *destination = *source;
-        destination->version1002Option1 = 0;
-        destination->version1002Option2 = 0;
-        destination->version1003Option1 = 0;
-        destination->version1003Option2 = 0;
+        destination->ignoreMissingFiles = 0;
+        destination->printHeaderNames = 0;
+        destination->sbmState = 0;
+        destination->sbmPath[0] = 0;
         return 1;
     }
     if (source->version == 0x1000) {
         CLErrors_ForwardMessageArguments(0x68, "CmdLine Panel");
         *destination = *source;
-        destination->version1001Option = 0;
-        destination->version1002Option1 = 0;
-        destination->version1002Option2 = 0;
-        destination->version1003Option1 = 0;
-        destination->version1003Option2 = 0;
+        destination->forcePrecompile = 0;
+        destination->ignoreMissingFiles = 0;
+        destination->printHeaderNames = 0;
+        destination->sbmState = 0;
+        destination->sbmPath[0] = 0;
         return 1;
     }
     CLErrors_EmitDiagnostic(0x68, "CmdLine Compiler Panel");
     return 0;
 }
 
-int convert_linker_panel_settings(LinkerPanelSettings *input, LinkerPanelSettings *output)
+int convert_linker_panel_settings(PCmdLineLinker *input, PCmdLineLinker *output)
 {
-    if (input->kind == 0x1002) {
+    if (input->version == 0x1002) {
         *output = *input;
         return 1;
     }
-    if (input->kind == 0x1001) {
+    if (input->version == 0x1001) {
         *output = *input;
-        output->flag5 = 1;
+        output->callLinker = 1;
         return 1;
     }
-    if (input->kind == 0x1000) {
+    if (input->version == 0x1000) {
         *output = *input;
-        output->flag2 = 1;
-        output->flag3 = 1;
-        output->flag4 = 1;
-        output->flag5 = 1;
+        output->callPreLinker = 1;
+        output->callPostLinker = 1;
+        output->keepLinkerOutput = 1;
+        output->callLinker = 1;
         return 1;
     }
     CLErrors_EmitDiagnostic(0x68, "CmdLine Linker Panel");
@@ -454,8 +607,7 @@ unsigned int check_cmdline_entries(char *context)
     if (!context || !ClientGlue_CompareLowercaseStrings(context, "CmdLine Panel")) {
         entry = CLPrefs_FindNameTableEntry("CmdLine Panel");
         if (entry && (handle = CLPrefs_CopyDestinationToTemporary(entry)) != NULL) {
-            if (context &&
-                !((int (*)(void *, void *))fn_0040af70)((struct MessageRecord *)handle->data, &data_00541b1c))
+            if (context && !((int (*)(void *, void *))fn_0040af70)((PCmdLine *)handle->data, &optsCmdLine))
                 return 0;
         } else {
             CLErrors_EmitDiagnostic(91, "CmdLine Panel");
@@ -465,8 +617,8 @@ unsigned int check_cmdline_entries(char *context)
     if (!context || !ClientGlue_CompareLowercaseStrings(context, "CmdLine Environment")) {
         entry = CLPrefs_FindNameTableEntry("CmdLine Environment");
         if (entry && (handle = CLPrefs_CopyDestinationToTemporary(entry)) != NULL) {
-            if (context && !((int (*)(void *, void *))copy_environment_code_record)((struct CodeRecord *)handle->data,
-                                                                                    &cmdline_code_record))
+            if (context &&
+                !((int (*)(void *, void *))copy_environment_code_record)((PCmdLineEnvir *)handle->data, &optsEnvir))
                 return 0;
         } else {
             CLErrors_EmitDiagnostic(91, "CmdLine Environment");
@@ -477,7 +629,7 @@ unsigned int check_cmdline_entries(char *context)
         entry = CLPrefs_FindNameTableEntry("CmdLine Compiler Panel");
         if (entry && (handle = CLPrefs_CopyDestinationToTemporary(entry)) != NULL) {
             if (context && !((int (*)(void *, void *))convert_command_line_panel_settings)(
-                               (CommandLinePanelSettings *)handle->data, &data_00541b40))
+                               (PCmdLineCompiler *)handle->data, &optsCompiler))
                 return 0;
         } else {
             CLErrors_EmitDiagnostic(91, "CmdLine Compiler Panel");
@@ -487,8 +639,8 @@ unsigned int check_cmdline_entries(char *context)
     if (!context || !ClientGlue_CompareLowercaseStrings(context, "CmdLine Linker Panel")) {
         entry = CLPrefs_FindNameTableEntry("CmdLine Linker Panel");
         if (entry && (handle = CLPrefs_CopyDestinationToTemporary(entry)) != NULL) {
-            if (context && !((int (*)(void *, void *))convert_linker_panel_settings)(
-                               (LinkerPanelSettings *)handle->data, &linker_panel_settings))
+            if (context &&
+                !((int (*)(void *, void *))convert_linker_panel_settings)((PCmdLineLinker *)handle->data, &optsLinker))
                 return 0;
         } else {
             CLErrors_EmitDiagnostic(91, "CmdLine Linker Panel");
@@ -507,7 +659,7 @@ unsigned int create_cmdline_data_blocks(void)
     NameTableEntry *entry;
 
     data_0054bf48 = check_cmdline_entries;
-    entry = create_data_block("CmdLine Environment", &cmdline_code_record, 8U);
+    entry = create_data_block("CmdLine Environment", &optsEnvir, 8U);
     result = CLPrefs_AddPrefPanel(entry);
     combined = result;
     enabled = 0U;
@@ -529,8 +681,8 @@ unsigned int create_cmdline_data_blocks(void)
 
 int create_default_target(void)
 {
-    default_target = CLTarg_CreateTarget("default", data_005871c4, data_005871c8, data_005871d0);
-    CLTarg_AppendEntry(PTR_DAT_00541b18, default_target);
+    default_target = CLTarg_CreateTarget("default", clState.cpu, clState.os, clState.language);
+    CLTarg_AppendEntry(&gProj->targets, default_target);
 
     CLPlugins_DispatchArgumentToPlugins(NULL, 0, default_target->cpu, default_target->os);
 
@@ -561,7 +713,7 @@ int create_default_target(void)
         default_target->postLinkerFlags = 0;
     }
 
-    if (plugin_type == 0x4c696e6b && default_target->preLinker == NULL && default_target->linker == NULL &&
+    if (clState.plugintype == 0x4c696e6b && default_target->preLinker == NULL && default_target->linker == NULL &&
         default_target->postLinker == NULL)
         CLErrors_FatalError("The linker plugin was not found!");
 
@@ -573,7 +725,7 @@ unsigned int CLMain_InitializeAndParseCommandLine(void)
 {
     unsigned int result;
 
-    result = fn_0041b370(driver_jmp_buf);
+    result = setjmp(driver_jmp_buf);
     if (!result) {
         if (!create_cmdline_data_blocks())
             CLErrors_FatalError("Could not initialize preferences");
@@ -585,5 +737,3 @@ unsigned int CLMain_InitializeAndParseCommandLine(void)
     }
     return result;
 }
-
-#pragma auto_inline reset

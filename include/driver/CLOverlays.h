@@ -33,7 +33,7 @@ struct Overlays {
     struct CLOverlayEntry *lastgrp;
     SInt32 numgrps;
 };
-extern Boolean CLOverlays_Init(Overlays *this_);
+extern Boolean Overlays_Initialize(Overlays *this_);
 extern struct CLOverlayEntry *CLOverlays_GetGroupByIndex(struct Overlays *list, int index);
 extern unsigned int CLOverlays_CountGroups(struct Overlays *list);
 extern struct OverlayAllocation *CLOverlays_GetAllocationByGroupIndex(Overlays *overlay, int name, int value);
@@ -51,11 +51,8 @@ extern CLOverlayEntry *CLOverlays_CreateOverlayEntry(const char *name, CLOverlay
 extern UInt8 CLOverlays_AppendEntry(struct OverlayAllocation *table, SInt32 entry, SInt32 *entryIndex);
 extern char CLOverlays_AppendOverlay(CLOverlayEntry *self, struct OverlayAllocation *overlay, unsigned int *index);
 extern void free_overlay_allocations(CLOverlayEntry *list);
-extern unsigned char overlay_group_string[];
-extern unsigned char overlay_string[];
 extern void CLOverlays_ConvertTimestampTo1904EpochSeconds(SInt32 timestamp, int *result);
 extern void CLOverlays_ConvertSecondsToTimestamp(unsigned int seconds, struct PackedConversionResult *result);
-extern long days_in_month[];
 
 #ifdef __cplusplus
 }

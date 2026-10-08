@@ -3,23 +3,17 @@
 #include "driver/Files.h"
 #include "compiler/objects.h"
 #include "compiler/scopes.h"
-#include "compiler/win32.h"
-#include "compiler/CPrep.h"
-#include "driver/CLIO.h"
-#include "driver/CLMain.h"
-#include "driver/CLPluginRequests.h"
-#include "driver/CLTarg.h"
-#include "driver/CWParserPluginsPrivate.h"
+#include "driver/AssertionFailure.h"
 #include "driver/MacFileTypes.h"
 #include "driver/MacSpecs.h"
-#include "driver/Memory.h"
-#include "driver/MsDos.h"
 #include "driver/Resources.h"
 #include "driver/StringUtils.h"
 #include <string.h>
 
 #include <stdio.h>
-#include <stdlib.h>
+/* Data of the original file that none of its linked code uses. */
+static char lbl_0054B8F8[] = "%*.*s";
+
 int get_file_query_info_and_identifiers(OSSpec *path, FileQueryInfo *info, FileIdentifierInfo *identifiers)
 {
     FILETIME firstTimestamp;
@@ -51,7 +45,7 @@ int get_file_query_info_and_identifiers(OSSpec *path, FileQueryInfo *info, FileI
     if (OS_Read(handle, typeBuffer, &typeLength) != 0)
         typeLength = 0;
     if (info != NULL) {
-        info->attributes = OS_IsDir(path->directory.path) ? 0x10 : 0;
+        info->attributes = OS_IsDir(path) ? 0x10 : 0;
         OS_GetSize(handle, &dataSize);
         info->dataSize = info->dataAllocatedSize = dataSize;
         info->dataReserved = 0;
@@ -59,7 +53,7 @@ int get_file_query_info_and_identifiers(OSSpec *path, FileQueryInfo *info, FileI
     OS_Close(handle);
     MacFileTypes_MatchBytes(typeBuffer, typeLength, &fileType);
     creator = 0x43574945;
-    if (fn_00406610() && MacSpecs_MakeResourceForkSpec(path->directory.path, &auxiliaryPath, 0) == 0 &&
+    if (fn_00406610() && MacSpecs_MakeResourceForkSpec(path, &auxiliaryPath, 0) == 0 &&
         OS_Status(&auxiliaryPath) == 0) {
         alreadyOpen = Resources_FindIdentifier(&auxiliaryPath, &handle);
         if (alreadyOpen || OS_Open(&auxiliaryPath, 0, &handle) == 0) {
@@ -79,7 +73,7 @@ int get_file_query_info_and_identifiers(OSSpec *path, FileQueryInfo *info, FileI
     }
     identifiers->type = fileType;
     identifiers->creator = creator;
-    identifiers->flags = MsDos_ReturnZero(path->directory.path) ? 0x8000 : 0;
+    identifiers->flags = OS_IsLink(path) ? 0x8000 : 0;
     identifiers->reserved1 = 0;
     identifiers->reserved2 = 0;
     identifiers->reserved3 = 0;
@@ -102,7 +96,7 @@ int set_file_and_resource_fork_times(OSSpec *path, DWORD *timeValues, DWORD *met
     fn_00421af0(path, *metadataValues);
     enabled = fn_00406610();
     if (enabled != '\0') {
-        result = MacSpecs_MakeResourceForkSpec(path->directory.path, &resolvedPath, '\0');
+        result = MacSpecs_MakeResourceForkSpec(path, &resolvedPath, '\0');
         if (result == 0) {
             result = OS_Status(&resolvedPath);
             if (result == 0) {
@@ -172,6 +166,18 @@ int __stdcall Files_DeleteFileFromPath(unsigned short kind, int value, UInt8 *da
     return result;
 }
 
+SInt16 __stdcall Files_GetFileIdentifierInfoFromPath(SInt16 input, SInt32 selector, unsigned char *options,
+                                                     FileIdentifierInfo *destination)
+{
+    CWFileSpec workspace;
+    SInt16 status;
+    status = Files_MakeFileSpecFromPath(input, selector, options, &workspace);
+    if (status != 0 && status != -43) {
+        return status;
+    }
+    return get_file_identifier_info(&workspace, destination);
+}
+
 unsigned int __stdcall Files_CreateFile(CWFileSpec *input, unsigned int secondArgument, unsigned int thirdArgument,
                                         int fourthArgument)
 {
@@ -186,7 +192,7 @@ unsigned int __stdcall Files_CreateFile(CWFileSpec *input, unsigned int secondAr
     unsigned int status;
     int result;
 
-    result = MacSpecs_MakeOSSpec(input, path.bytes);
+    result = MacSpecs_MakeOSSpec(input, &path.spec);
     if (result != 0) {
         return OS_OSErrorToMacError(result);
     }
@@ -205,31 +211,20 @@ unsigned int __stdcall Files_CreateFile(CWFileSpec *input, unsigned int secondAr
     return 0;
 }
 
-SInt16 __stdcall Files_GetFileIdentifierInfoFromPath(SInt16 input, SInt32 selector, unsigned char *options,
-                                                     FileIdentifierInfo *destination)
-{
-    CWFileSpec workspace;
-    SInt16 status;
-    status = Files_MakeFileSpecFromPath(input, selector, options, &workspace);
-    if (status != 0 && status != -43) {
-        return status;
-    }
-    return get_file_identifier_info(&workspace, destination);
-}
-
 short __stdcall Files_OpenFile(CWFileSpec *file, char mode, short *result)
 {
+    static unsigned char os_open_modes[5] = {2, 0, 1, 2, 2};
     OSSpec path;
     SInt32 handle;
     unsigned int status;
     DWORD openStatus;
 
     *result = 0;
-    status = MacSpecs_MakeOSSpec(file, path.directory.path);
+    status = MacSpecs_MakeOSSpec(file, &path);
     if (status != 0) {
         return OS_OSErrorToMacError(status);
     }
-    if (OS_IsDir(path.directory.path) != 0) {
+    if (OS_IsDir(&path) != 0) {
         return 0xffffff88;
     }
     openStatus = OS_Open(&path, os_open_modes[mode], &handle);
@@ -250,12 +245,12 @@ DWORD __stdcall Files_DeleteFile(CWFileSpec *input)
     OSSpec firstBuffer;
     OSSpec secondBuffer;
 
-    status = MacSpecs_MakeOSSpec(input, firstBuffer.directory.path);
+    status = MacSpecs_MakeOSSpec(input, &firstBuffer);
     if (status != 0) {
         return OS_OSErrorToMacError(status);
     }
     result = OS_Delete(&firstBuffer);
-    conversionStatus = MacSpecs_MakeResourceForkSpec(firstBuffer.directory.path, &secondBuffer, 0);
+    conversionStatus = MacSpecs_MakeResourceForkSpec(&firstBuffer, &secondBuffer, 0);
     if (conversionStatus == 0) {
         result = OS_Delete(&secondBuffer);
         fn_00408510(&secondBuffer);
@@ -269,7 +264,7 @@ int __stdcall get_file_identifier_info(CWFileSpec *input, FileIdentifierInfo *re
     OSSpec buffer;
     FileIdentifierInfo output;
 
-    error = MacSpecs_MakeOSSpec(input, buffer.directory.path);
+    error = MacSpecs_MakeOSSpec(input, &buffer);
     if (error)
         return OS_OSErrorToMacError(error);
     error = get_file_query_info_and_identifiers(&buffer, NULL, &output);
@@ -284,9 +279,9 @@ void __stdcall set_record_identifier(CWFileSpec *input, RecordData *data)
     RecordQuery record;
     UInt8 name[256];
 
-    _pstrcpy(name, input->fileData.file.name);
-    record.kind = input->fileData.file.volumeRef;
-    record.value = input->fileData.file.directoryId;
+    _pstrcpy(name, input->name);
+    record.kind = input->vRefNum;
+    record.value = input->parID;
     record.name = name;
     record.flags = 0;
     if (Files_UpdateRecordQuery(&record) == 0) {
@@ -300,7 +295,7 @@ SInt16 __stdcall Files_Read(SInt16 file, SInt32 *byteCount, void *buffer)
     if (file == 0) {
         return -51;
     }
-    return OS_OSErrorToMacError(OS_Read(short_predecessor(file), buffer, byteCount));
+    return OS_OSErrorToMacError(OS_Read(OS_MacToRef(file), buffer, byteCount));
 }
 
 SInt16 __stdcall Files_Write(SInt16 refNum, SInt32 *size, void *buffer)
@@ -308,7 +303,7 @@ SInt16 __stdcall Files_Write(SInt16 refNum, SInt32 *size, void *buffer)
     if (refNum == 0) {
         return -51;
     }
-    return OS_OSErrorToMacError(OS_Write(short_predecessor(refNum), buffer, (DWORD *)size));
+    return OS_OSErrorToMacError(OS_Write(OS_MacToRef(refNum), buffer, (DWORD *)size));
 }
 
 DWORD __stdcall Files_Close(short handleIndex)
@@ -322,7 +317,7 @@ DWORD __stdcall Files_Close(short handleIndex)
     if (handleIndex == 0) {
         return 0xffffffcd;
     }
-    handle = short_predecessor(handleIndex);
+    handle = OS_MacToRef(handleIndex);
     buffer = &Resources_FindIdentifierById(handle)->fileSpec;
     if (buffer != NULL) {
         status = OS_GetSize(handle, &value);
@@ -344,7 +339,7 @@ short __stdcall Files_GetSize(short predecessor, SInt32 *result)
         return -51;
     {
         short value = predecessor;
-        return OS_OSErrorToMacError(OS_GetSize(short_predecessor(value), result));
+        return OS_OSErrorToMacError(OS_GetSize(OS_MacToRef(value), result));
     }
 }
 
@@ -353,7 +348,7 @@ SInt16 __stdcall Files_SetSize(SInt16 handleId, SInt32 size)
     if (handleId == 0) {
         return -51;
     }
-    return OS_OSErrorToMacError(OS_SetSize(short_predecessor(handleId), size));
+    return OS_OSErrorToMacError(OS_SetSize(OS_MacToRef(handleId), size));
 }
 
 DWORD __stdcall Files_Tell(unsigned short identifier, long *result)
@@ -361,7 +356,7 @@ DWORD __stdcall Files_Tell(unsigned short identifier, long *result)
     if (identifier == 0) {
         return 0xffffffcd;
     }
-    return OS_OSErrorToMacError(OS_Tell(short_predecessor(identifier), result));
+    return OS_OSErrorToMacError(OS_Tell(OS_MacToRef(identifier), result));
 }
 
 int __stdcall Files_SetPosition(short refNum, short posMode, SInt32 posOff)
@@ -373,7 +368,7 @@ int __stdcall Files_SetPosition(short refNum, short posMode, SInt32 posOff)
     UInt32 err;
     int mode;
 
-    h = short_predecessor(refNum);
+    h = OS_MacToRef(refNum);
     if (!refNum)
         return -51;
     posMode &= 3;
@@ -426,10 +421,10 @@ short __stdcall Files_UpdateRecordQuery(RecordQuery *record)
     if (updatedRecord.flags != -1)
         nameSpace = updatedRecord.name;
     else
-        nameSpace = name_space;
+        nameSpace = (unsigned char *)"";
     result = Files_MakeFileSpecFromPath(updatedRecord.kind, updatedRecord.value, nameSpace, &resolvedFile);
     if ((short)result == 0) {
-        if (MacSpecs_MakeOSSpec(&resolvedFile, fileHandle.directory.path) == 0) {
+        if (MacSpecs_MakeOSSpec(&resolvedFile, &fileHandle) == 0) {
             get_file_query_info_and_identifiers(&fileHandle, &query.info, &identifier);
             updatedRecord.queryValue0 = query.values.value0;
             updatedRecord.result = query.values.value1;
@@ -448,6 +443,8 @@ short __stdcall Files_UpdateRecordQuery(RecordQuery *record)
     return result;
 }
 
+static unsigned char lbl_0054B90C[] = {1, 1, 2};
+
 UInt16 __stdcall fn_00414710(RecordQuery *record)
 {
     RecordQuery copy;
@@ -463,7 +460,7 @@ UInt16 __stdcall fn_00414710(RecordQuery *record)
     memcpy(&copy, record, sizeof(copy));
     result = Files_MakeFileSpecFromPath(copy.kind, copy.value, copy.name, &argumentBuffer);
     if (result == 0) {
-        output = MacSpecs_MakeOSSpec(&argumentBuffer, workBuffer.directory.path);
+        output = MacSpecs_MakeOSSpec(&argumentBuffer, &workBuffer);
         if (output == 0) {
             memcpy(&callBlock, savedBlock, sizeof(callBlock));
             memset(blockWords, 0, sizeof(blockWords));
@@ -490,28 +487,28 @@ int __stdcall Files_MakeFileSpecFromPath(short volume, int directory, unsigned c
     CWFileSpec base;
     char volumeName[volumeNameCapacity];
 
-    result->fileData.file.volumeRef = 0;
-    result->fileData.file.directoryId = 0;
+    result->vRefNum = 0;
+    result->parID = 0;
     if (volume == 0 && directory == 0) {
-        error = OS_GetCWD(location.directory.path);
+        error = OS_GetCWD(&location.path);
         if (error != 0) {
-            result->fileData.file.name[0] = 0;
+            result->name[0] = 0;
             return OS_OSErrorToMacError(error);
         }
-        fn_00412340(location.directory.path, fullPath, sizeof(fullPath));
+        OS_PathSpecToString(&location.path, fullPath, sizeof(fullPath));
     } else {
         if (volume == 0) {
             CLIO_ReportAssertionFailure("vRefNum!=0", "Files.c", 839);
         }
-        base.fileData.file.volumeRef = volume;
-        base.fileData.file.directoryId = directory == 0 ? 2 : directory;
-        base.fileData.file.name[0] = 0;
-        error = MacSpecs_MakeOSSpec(&base, location.directory.path);
+        base.vRefNum = volume;
+        base.parID = directory == 0 ? 2 : directory;
+        base.name[0] = 0;
+        error = MacSpecs_MakeOSSpec(&base, &location);
         if (error != 0) {
-            result->fileData.file.name[0] = 0;
+            result->name[0] = 0;
             return OS_OSErrorToMacError(error);
         }
-        fn_00412340(location.directory.path, fullPath, sizeof(fullPath));
+        OS_PathSpecToString(&location.path, fullPath, sizeof(fullPath));
     }
     if (pstrchr(path, ':') != 0) {
         index = 1;
@@ -523,16 +520,16 @@ int __stdcall Files_MakeFileSpecFromPath(short volume, int directory, unsigned c
                 volumeName[index - 1] = character;
                 index++;
                 if (index >= volumeNameCapacity) {
-                    result->fileData.file.name[0] = 0;
+                    result->name[0] = 0;
                     return -35;
                 }
             }
             volumeName[index - 1] = 0;
             index++;
-            if (OS_MakePathSpec(volumeName, NULL, location.directory.path) == 0) {
-                fn_00412340(location.directory.path, fullPath, sizeof(fullPath));
+            if (OS_MakePathSpec(volumeName, NULL, &location.path) == 0) {
+                OS_PathSpecToString(&location.path, fullPath, sizeof(fullPath));
             } else {
-                c2pstrcpy(result->fileData.file.name, volumeName);
+                c2pstrcpy(result->name, volumeName);
                 return -35;
             }
         }
@@ -559,11 +556,11 @@ int __stdcall Files_MakeFileSpecFromPath(short volume, int directory, unsigned c
     } else {
         p2cstrcpy(fullPath + strlen(fullPath), path);
     }
-    error = make_osspec_from_path(fullPath, &location, NULL);
+    error = OS_MakeSpec(fullPath, &location, NULL);
     if (error == 0) {
-        MacSpecs_MakeCWFileSpecFromString(location.directory.path, result);
+        OS_OSSpec_To_FSSpec(&location, result);
         return OS_OSErrorToMacError(OS_Status(&location));
     }
-    result->fileData.file.name[0] = 0;
+    result->name[0] = 0;
     return OS_OSErrorToMacError(error);
 }

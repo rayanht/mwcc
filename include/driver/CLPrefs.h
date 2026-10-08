@@ -27,7 +27,6 @@ extern int CLPrefs_CopyStorage(NameTableEntry *storage, StorageHandle *source);
 extern Boolean CLPrefs_AddPrefPanel(NameTableEntry *entry);
 extern NameTableEntry *CLPrefs_FindNameTableEntry(char *name);
 extern unsigned int CLPrefs_ConvertLoneLFToCR(StorageHandle *buffer);
-extern NameTableEntry *name_table_entries;
 
 #ifdef __cplusplus
 }

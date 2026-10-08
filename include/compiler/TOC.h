@@ -8,11 +8,10 @@ extern "C" {
 #endif
 
 struct MemberPointerConstant {
-    struct MemberPointerConstant
-        *next;             /* 0x00: replace_vector_constant_with_objectref links member_pointer_constants */
-    struct Object *object; /* 0x04: replace_vector_constant_with_objectref references the shared vector object */
-    int offset;            /* 0x08: TOC_EmitMemberPointerConstants copies the vector at this byte offset */
-    MWVector128 *value;    /* 0x0c: replace_vector_constant_with_objectref interns CMachine_InitVectorMem output */
+    struct MemberPointerConstant *next;
+    struct Object *object;
+    int offset;
+    MWVector128 *value;
 };
 #pragma options align = mac68k
 
@@ -25,9 +24,9 @@ struct TOCEntry {
 };
 #pragma pack(push, 1)
 struct TOCNameEntry {
-    struct TOCNameEntry *next; /* 0x00: get_or_create_label_object links toc_name_entries */
-    struct Object *object;     /* 0x04: get_or_create_label_object caches the label object */
-    struct CLabel *label;      /* 0x08: CodeGen_Generator adds the label as an indirect branch successor */
+    struct TOCNameEntry *next;
+    struct Object *object;
+    struct CLabel *label;
 };
 #pragma pack(pop)
 #pragma pack(push, 1)
@@ -39,7 +38,7 @@ struct TOCReferenceEntry {
     char makeIndirect;
 };
 #pragma pack(pop)
-extern void TOC_0049d710(ENode *node, Type *targetType, int ignored);
+extern void fn_0049d710(ENode *node, Type *targetType, int ignored);
 extern unsigned char is_small_splat_or_table_vector(long value, Type *type);
 extern void TOC_EmitMemberPointerConstants(void);
 extern Object *TOC_GetFloatObject(Type *type, Float *value);
@@ -56,12 +55,12 @@ extern void rewrite_compound_assignment(ENode *expr, unsigned char opcode);
 extern void replace_vector_constant_with_objectref(ENode *node);
 extern Object *TOC_CreateSinitObject(void);
 extern void fn_0049d420(Statement *statements);
-extern void add_exception_initial_objects(CException *node);
+extern void add_exception_initial_objects(ExceptionAction *node);
 extern UInt8 TOC_HasObjectReferenceWithoutExpression(Object *key);
 extern void add_toc_reference(Object *id, Object *a, ENode *b, char c);
 extern void fn_0049f4b0(Object *object);
-extern CInt64 data_0055e598;
-extern struct TOCReferenceEntry *toc_references;
+extern char vector128_patterns[256];
+extern MWVector128 alternate_vector_patterns[16];
 extern struct ObjectList *float_object_list;
 extern struct MemberPointerConstant *member_pointer_constants;
 extern struct TOCNameEntry *toc_name_entries;

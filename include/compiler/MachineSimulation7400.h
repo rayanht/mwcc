@@ -7,83 +7,22 @@
 extern "C" {
 #endif
 
-struct CountedSlot {
-    PCodeInstruction
-        *instruction; /* 0x00: queue_instruction stores obj; advance_pipeline retrieves completedInstruction */
-    SInt32
-        status; /* 0x04: queue_instruction sets pipeline cost or queue completion flag; advance_pipeline decrements pipeline countdown and marks queue completion */
-};
-extern signed char DAT_00577661[];
 extern int fn_0052f370(PCodeInstruction *instruction);
 extern int lookup_instruction_opcode_entry(PCodeInstruction *instruction);
 extern void advance_pipeline(void);
 extern void queue_instruction(PCodeInstruction *obj);
 extern void reset_pipeline_state(void);
 extern int can_issue_instruction_in_pipeline_slots(PCodeInstruction *node);
-extern struct OpcodeScheduleInfo {
-    UInt8 kind; /* 0x00: can_issue_instruction_in_pipeline_slots selects the execution slot by opcode kind */
-    UInt8
-        baseLatency; /* 0x01: get_adjusted_opcode_table_value reads DAT_00577661 at opcode * 7 and adds flag and multiple-register adjustments */
-    SInt8 cost;      /* 0x02: queue_instruction initializes the execution slot countdown */
-    UInt8 stage2Latency;    /* 0x03: advance_pipeline / Advance initializes the second pipeline stage countdown */
-    UInt8 stage3Latency;    /* 0x04: advance_pipeline / Advance initializes the third pipeline stage countdown */
-    UInt8 stage4Latency;    /* 0x05: advance_pipeline / Advance initializes the fourth pipeline stage countdown */
-    SInt8 opcodeEntryValue; /* 0x06: lookup_instruction_opcode_entry returns this opcode's signed table entry */
-} DAT_00577660[];
-extern const unsigned char DAT_00577663[];
-extern const unsigned char DAT_00577664[];
-extern unsigned char DAT_00577665[];
-extern char DAT_00577666[];
-extern struct PCodeInstruction *DAT_00582f08;
-extern int DAT_00582f0c;
-extern struct PCodeInstruction *DAT_00582f10;
-extern int DAT_00582f14;
-extern struct PCodeInstruction *DAT_00582f18;
-extern int DAT_00582f1c;
-extern struct PCodeInstruction *DAT_00582f20;
-extern int DAT_00582f24;
-extern struct PCodeInstruction *DAT_00582f28;
-extern int DAT_00582f2c;
-extern struct PCodeInstruction *DAT_00582f30;
-extern int DAT_00582f34;
-extern struct PCodeInstruction *DAT_00582f38;
-extern int DAT_00582f3c;
-extern struct PCodeInstruction *DAT_00582f40;
-extern int DAT_00582f44;
-extern PCodeInstruction *DAT_00582f48;
-extern int DAT_00582f4c;
-extern PCodeInstruction *primary_instruction;
-extern int DAT_00582f54;
-extern struct PCodeInstruction *DAT_00582f58;
-extern int DAT_00582f5c;
-extern struct PCodeInstruction *DAT_00582f60;
-extern int DAT_00582f64;
-extern PCodeInstruction *completed_instruction;
-extern int DAT_00582f6c;
-extern PCodeInstruction *DAT_00582f70;
-extern int DAT_00582f74;
-extern PCodeInstruction *DAT_00582f78;
-extern int DAT_00582f7c;
-extern PCodeInstruction *DAT_00582f80;
-extern int DAT_00582f84;
-extern struct PCodeInstruction *DAT_00582f88;
-extern int DAT_00582f8c;
-extern PCodeInstruction *pipelineCompletedInstruction;
-extern PCodeInstruction *pipeline_completed_instruction;
-extern int DAT_00582f98;
-extern int queued_instruction_count;
-extern unsigned int pipeline_index;
-extern SInt32 simulationWriteIndex;
-extern unsigned int _DAT_00582fb0;
-extern unsigned int _DAT_00582fb8;
-extern unsigned int _DAT_00582fc0;
-extern unsigned int _DAT_00582fc8;
-extern unsigned int _DAT_00582fd0;
-extern unsigned int _DAT_00582fd8;
-extern unsigned int _DAT_00582fe0;
+struct OpcodeScheduleInfo {
+    UInt8 kind;
+    UInt8 baseLatency;
+    SInt8 cost;
+    UInt8 stage2Latency;
+    UInt8 stage3Latency;
+    UInt8 stage4Latency;
+    SInt8 opcodeEntryValue;
+};
 extern int get_adjusted_opcode_table_value(PCodeInstruction *record);
-extern CountedSlot instruction_queue[8];
-extern CountedSlot pipeline_slots[18];
 
 #ifdef __cplusplus
 }

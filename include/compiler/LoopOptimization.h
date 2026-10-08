@@ -36,13 +36,9 @@ extern void fn_005289b0(void);
 extern void remove_unused_self_addi(Loop *loop);
 extern void mark_registers_used_outside_loop(Loop *state);
 extern void walk_loop_children_postorder(register Loop *loop);
-extern UInt32 *registers_used_outside_loop;
-extern UInt32 *self_addi_candidate_regs;
-extern SInt32 data_00582c70;
 extern int gArrayToRegisterChanged;
 extern int gArrayToRegisterEnabled;
 extern int gLoopTransformChanged;
-extern void COpt_ConstantPropagation(void);
 struct PCodeBlock;
 
 #ifdef __cplusplus

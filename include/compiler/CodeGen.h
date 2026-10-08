@@ -10,7 +10,7 @@ extern "C" {
 #pragma options align = mac68k
 struct InterruptList {
     struct InterruptList *next;
-    struct InterruptGenerationRecord *info; /* 0x04: CodeGen_ParsePragma saves interrupt options on the pragma stack */
+    struct InterruptGenerationRecord *info;
 };
 #pragma options align = reset
 #pragma pack(push, 1)
@@ -23,11 +23,11 @@ extern SInt32 CodeGen_GetMethRecRtypeAndArgsSize(MethRec *p);
 extern void CodeGen_SetIROptimizationEnabled(void);
 extern void CodeGen_SetObjectSectionAndInterruptInfo(Object *obj);
 extern void CodeGen_ParsePragma(HashNameNode *name);
-extern void CodeGen_004332e0(void);
+extern void fn_004332e0(void);
 extern void parse_section_pragma(void);
 extern void CodeGen_ParseDeclspecSection(HashNameNode *node, DeclInfo *value);
-extern void CodeGen_EmitLoadAndBranchFunction(Object *a1, Object *a2, Object *a3, SInt32 a4);
-extern char CodeGen_IsRegisteredObject(ObjBase *a0);
+extern void CodeGen_EmitLoadAndBranchFunction(Object *function, Object *branchTarget, Object *table, SInt32 offset);
+extern char CodeGen_IsRegisteredObject(ObjBase *object);
 extern void CodeGen_InitializeLists(void);
 extern void fn_00434660(Boolean initializationOptions);
 extern void CodeGen_GenThunk(Object *stmt, Object *func, SInt32 a, SInt32 flag, SInt32 b);
@@ -48,15 +48,14 @@ extern void allocate_object_registers(void);
 extern unsigned int CodeGen_GetObjCParameterOffset(MethRec *function, ObjCParameterNode *argument);
 extern int fn_00432480(MethRec *record);
 extern unsigned int CodeGen_GetMethRecRTypeSize(MethRec *record);
-extern void bind_object_register(Object *a0, SInt16 a1);
+extern void bind_object_register(Object *object, SInt16 reg);
 extern void fn_00436390(ENode *expression);
 extern void CodeGen_EnumerateArgumentRegisters(void (*cb)(Object *, SInt16));
 extern ENode *CodeGen_MakeAltivecCall(Object *object, ENodeList *arguments);
 extern void CodeGen_AllocateArgumentSlots(Object *arg1, Boolean arg2, Boolean arg3);
 extern ENode *CodeGen_MakeAltivecStructCast(ENode *a, Type *type, UInt32 qual);
-extern struct TemporaryObjectEntry *temporary_objects;
 extern SInt32 data_00588274;
-extern struct COpts copts;
+extern struct CompilerLinkerOptions copts;
 extern struct Object *data_0058758c;
 extern struct Object *data_005875c8;
 extern struct Object *data_005875d4;

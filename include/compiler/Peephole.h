@@ -12,10 +12,10 @@ extern "C" {
 #pragma options align = reset
 #pragma options align = mac68k
 struct CmpCtx {
-    struct PCodeInstruction *first;  /* 0x00: fn_004cba60 checks the first instruction */
-    struct PCodeInstruction *second; /* 0x04: fn_004cba60 checks the second instruction */
-    UInt8 unusedBytes[0x0c];         /* 0x08: Peephole.c has no reads or writes of these bytes */
-    UInt16 errorCode;                /* 0x14: fn_004cba60 sets diagnostic 0x18f on failure */
+    struct PCodeInstruction *first;
+    struct PCodeInstruction *second;
+    UInt8 unusedBytes[0x0c];
+    UInt16 errorCode;
 };
 #pragma options align = reset
 #pragma options align = mac68k
@@ -82,16 +82,10 @@ extern int fold_lhz_lhzx_mask(PCodeInstruction *instruction, int register_mask);
 extern int bypass_extsh_for_rotated_mask(struct PCodeInstruction *pattern, int registerMask);
 extern int bypass_extsb_for_low_byte_rotated_mask(PCodeInstruction *instruction, int register_mask);
 extern void initialize_register_block_liveness(void);
-extern struct PCodeInstruction **CodeGen_ReachingDefTable_00581af8;
 extern int fold_addi_or_mr_reaching_def(PCodeInstruction *pc, UInt32 mask);
-extern struct RegisterBlockLiveness *register_block_liveness;
-extern struct RegisterBlockLiveness *gRegisterBlockLiveness;
-extern struct RegisterBlockLiveness *registerBlockLiveness;
-extern struct RegisterBlockLiveness *data_005813ac;
 extern int rewrite_as_addi(PCodeInstruction *record);
 extern void register_peephole_rules(void);
 extern void Peephole_VisitBlocksWithMultipleInstructions(void *arg1);
-extern struct PeepHandler *CodeGen_PeepholeHandlers_005813b0[];
 extern void optimize_rlwinm_and_addi(PCodeBlock *block);
 extern unsigned int make_contiguous_mask(unsigned int value);
 extern SInt32 compute_register_mask(PCodeInstruction *node, SInt16 registerNumber);

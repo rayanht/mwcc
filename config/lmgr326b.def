@@ -1,0 +1,6 @@
+; The FLEXlm client library the compiler's license checks call, which it imports by ordinal
+LIBRARY LMGR326B.dll
+EXPORTS
+	lp_checkin @189 NONAME
+	lp_checkout @190 NONAME
+	lp_errstring @191 NONAME

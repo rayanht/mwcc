@@ -57,8 +57,6 @@ struct DivisionParameters {
     int addIndicator;
     int shift;
 };
-struct Operand;
-struct Operand;
 struct FunctionCallFrame {
     struct FunctionCallFrame *next;
     TypeFunc *functionType;
@@ -72,7 +70,7 @@ extern void InstrSelection_SelectComparison(ENode *n, void *p);
 extern unsigned int swap_kind_pairs(unsigned int kind);
 extern void generate_condition_branches(ENode *expr, PCodeLabel *trueLabel, PCodeLabel *falseLabel,
                                         PCodeLabel *fallthroughLabel);
-extern void generate_comparison(ENode *e, SInt32 a2, SInt32 a3, Operand *out);
+extern void generate_comparison(ENode *expr, SInt32 requestedReg, SInt32 requestedRegHi, Operand *output);
 extern void InstrSelection_EmitUnaryFPRInstruction(SInt16 opcode, ENode *node, SInt16 reg, Operand *res);
 extern void emit_gpr_immediate_operation(SInt16 opcode, ENode *expr, SInt32 value, SInt16 outputReg, Operand *output);
 extern unsigned int fn_004b5ce0(void);
@@ -82,8 +80,8 @@ extern void report_fatal_error(void);
 extern unsigned char fn_004b4aa0(unsigned char kind);
 extern unsigned int generate_intrinsic_or_function_call(ENode *value, unsigned int operand, unsigned int unused,
                                                         Operand *target);
-extern void load_float_constant(ENode *a0, unsigned int a1, unsigned int a2, Operand *a3);
-extern void InstrSelection_EmitAddImmediate(SInt16 a0, SInt16 a1, int a2);
+extern void load_float_constant(ENode *node, unsigned int regA, unsigned int regB, Operand *out);
+extern void InstrSelection_EmitAddImmediate(SInt16 destReg, SInt16 sourceReg, int immediate);
 extern int is_contiguous_mask(unsigned int mask, short *firstBit, short *lastBit);
 extern void emit_gpr_immediate_instruction(short opcode, ENode *expr, short value, short outputReg, Operand *output);
 extern void make_objref_operand(ENode *node, unsigned int unused1, unsigned int unused2, Operand *result);
@@ -104,9 +102,9 @@ extern void emit_gpr_pair_subtraction(ENode *node, SInt16 reg1, SInt16 reg2, Ope
 extern void emit_gpr_pair_add(ENode *node, short a, short b, Operand *out);
 extern void gen_xor_reg_pair(ENode *node, SInt16 reg1, SInt16 reg2, Operand *result);
 extern void emit_cmpli_with_addis(SInt16 p1, ENode *node, SInt32 p3, Operand *res);
-extern void InstrSelection_004b37b0(short comparison, ENode *input, short sense, Operand *result);
+extern void fn_004b37b0(short comparison, ENode *input, short sense, Operand *result);
 extern void emit_binary_fpr_instruction(short op, ENode *n1, ENode *n2, SInt16 reg, Operand *dst);
-extern void emit_conditional_funccall(ENode *e, SInt32 a2, SInt32 a3, struct Operand *out);
+extern void emit_conditional_funccall(ENode *expr, SInt32 requestedReg, SInt32 requestedRegHi, struct Operand *out);
 extern void emit_multiply(ENode *node, SInt16 dstreg, SInt16 src, Operand *result);
 extern void generate_assignment(ENode *node, SInt16 requestedRegister, SInt16 flags, Operand *out);
 extern void force_monadic_operand_register(ENode *expr, short outputReg, short outputRegHi, Operand *output);
@@ -137,19 +135,14 @@ extern void generate_type_conversion(ENode *node, short outputReg, short outputR
 extern void get_objaccess_cached_value(ENode *node, UInt32 argument2, UInt32 argument3, Operand *result,
                                        UInt32 argument5);
 extern void (*data_00560648[])(void *, short, short, void *);
-extern Float float_one;
-extern char instrSelectionFileName[];
 extern struct FunctionCallFrame *function_call_frames;
 extern short gUsedVirtualRegistersFPR;
 extern SInt16 gUsedVirtualRegistersGPR;
 extern void get_dispatch_result(struct DeferredDispatch *dispatch, unsigned int argument2, unsigned int argument3,
                                 struct DispatchResult *output);
-extern void InstrSelection_EmitSwitchTables(Object *a0);
+extern void InstrSelection_EmitSwitchTables(Object *function);
 extern struct ObjectList *switch_tables;
 struct PCodeLabel;
-struct PCodeLabel;
-extern char vector128_patterns[];
-extern MWVector128 alternate_vector_patterns[];
 extern TypeIntegral stunsignedlonglong;
 
 #ifdef __cplusplus

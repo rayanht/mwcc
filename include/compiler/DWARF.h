@@ -3,6 +3,7 @@
 
 #include "compiler/common.h"
 #include "compiler/CompilerTools.h"
+#include "version.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -23,13 +24,11 @@ struct DwarfFunctionState {
     SInt32 offset;
     SInt32 lineSectionOffset;
     UInt8 lineBaseRelocated;
-    UInt8
-        lineAlignmentPadding; /* 0x2d: DWARF.c uses only lineBaseRelocated at 0x2c; padding aligns pendingReference to mac68k's two-byte boundary. */
+    UInt8 lineAlignmentPadding;
     struct ObjGenRelocation *pendingReference;
     SInt32 pendingPosition;
     UInt8 pending;
-    UInt8
-        entryAlignmentPadding; /* 0x37: DWARF.c takes the pending byte's address; padding aligns offsets to mac68k's two-byte boundary. */
+    UInt8 entryAlignmentPadding;
     SInt32 offsets[50];
     struct ObjGenRelocation *entries[50];
     SInt32 depth;
@@ -68,19 +67,17 @@ struct DwarfLocationOperand {
 #pragma options align = reset
 #pragma pack(push, 1)
 struct DwarfSym {
-    /* Allocation: DWARF_CreateObjectDebugEntry galloc(sizeof(DwarfNode)), 0x26 bytes; embedded payload, not separately allocated. */
     struct Object *object;
     struct DwarfFixup *fixups;
     SInt32 offset;
-    struct DwarfNode *
-        replacement; /* 0x0c: DWARF_CreateObjectDebugEntry resolves object->dwarfLinks.pendingEntry at node offset 0x1e */
+    struct DwarfNode *replacement;
 };
 #pragma pack(pop)
 #pragma options align = mac68k
 struct DwarfNode {
     struct DwarfNode *next;
     struct DwarfNode *prev;
-    struct DWInfo *type; /* 0x08: create_type_node, DWARF_AddVar */
+    struct DWInfo *type;
     struct DwarfFunctionState *scope;
     UInt16 kind;
     union DwarfNodePayload {
@@ -89,20 +86,20 @@ struct DwarfNode {
             UInt16 reg2;
             SInt16 flags;
             SInt32 offset;
-            struct HashNameNode *name; /* 0x1c: DWARF_AddVar, DWARF_004ad570 */
+            struct HashNameNode *name;
             UInt32 f20;
             UInt16 f24;
-        } var; /* 0x12: DWARF_WriteDebugInfo kinds 5, 0xc; kind 0x13 uses flags */
+        } var;
         struct {
             struct Object *object;
             SInt32 codeSize;
             SInt32 codeOffset;
-            struct DwarfLocationOperand *returnOperand; /* 0x1e: DWARF_CreateBlockNode, emit_function_entry */
+            struct DwarfLocationOperand *returnOperand;
             struct PendingObject *pendingObjects;
-        } block;                   /* 0x12: DWARF_WriteDebugInfo kinds 6, 0x14 */
-        struct DwarfSym sym;       /* 0x12: DWARF_WriteDebugInfo kind 7 */
-        UInt8 regByte;             /* 0x12: DWARF_WriteDebugInfo kind 0x11 */
-        struct DwarfFixup *fixups; /* 0x12: DWARF_WriteDebugInfo kinds 0x15, 0x1f */
+        } block;
+        struct DwarfSym sym;
+        UInt8 regByte;
+        struct DwarfFixup *fixups;
     } u;
 };
 #pragma options align = reset
@@ -123,8 +120,7 @@ struct DWInfo {
     DwarfRef rec;
     struct DWInfo *next;
     UInt8 marked;
-    UInt8
-        typeNodeAlignmentPadding; /* 0x19: DWARF.c uses marked at 0x18 and typeNode at 0x1a; unused byte aligns typeNode to the two-byte boundary. */
+    UInt8 typeNodeAlignmentPadding;
     struct DwarfNode *typeNode;
 };
 #pragma options align = reset
@@ -156,8 +152,8 @@ struct QualNode {
     UInt8 type;
 };
 extern void DWARF_AddVar(Object *record, SInt32 offset);
-extern void DWARF_004ad260(DWInfo *ptype, union DwarfNodePayload *info);
-extern void DWARF_004ad570(DWInfo *ptype, union DwarfNodePayload *info);
+extern void fn_004ad260(DWInfo *ptype, union DwarfNodePayload *info);
+extern void fn_004ad570(DWInfo *ptype, union DwarfNodePayload *info);
 extern void fn_004ada90(void);
 extern void DWARF_WriteDebugInfo(void);
 extern int DWARF_CreateBlockNode(Object *object, SInt32 value2, SInt32 value3, ObjGenSection *value4);
@@ -179,7 +175,7 @@ extern void insert_type_nodes_recursive(DWInfo *a, DWInfo *b);
 extern void emit_member_pointer_type(DwarfFixup **references, DWInfo *type);
 extern void emit_function_type(DwarfFixup **fixups, DWInfo *function);
 extern void emit_array_type(Type *ty);
-extern void DWARF_004b0a80(TypeStruct *arg);
+extern void fn_004b0a80(TypeStruct *arg);
 extern void DWARF_SetupFunctionState(struct ObjGenSection *func);
 extern void DWARF_SetupSectionDebugState(struct ObjGenSection *input);
 extern SInt32 emit_dwarf_ref(DWInfo *arg);
@@ -194,23 +190,13 @@ extern void setup_return_operand(Object *func);
 extern void DWARF_SetSectionAndState(ObjGenSection *value, ObjGenSection *state);
 extern void DWARF_Init(void);
 extern void init_dwarf_state(void);
-extern struct ObjGenSection *DAT_00587698;
+extern struct ObjGenSection *data_00587698;
 extern struct GList *dwarf_info_buffer;
-extern SInt32 data_00560498;
-extern SInt32 *dwarf_depth_ptr;
-extern SInt32 *dwarf_entry_offsets;
-extern struct ObjGenRelocation **data_005604a4;
-extern UInt8 *data_005604a8;
-extern SInt32 data_005604ac;
-extern char dwarf_filename[];
-extern SInt32 data_00580fb0[50];
-extern struct ObjGenRelocation *data_00581078[50];
-extern UInt8 data_00581140;
-extern struct DwarfNode *dwarf_node_head;
-extern struct DwarfNode *currentDwarfNode;
-extern struct DwarfNode *currentDwarfScope;
-extern UInt8 data_0058114e;
+#if VERSION >= VERSION_GC_1_2_5
 extern struct DWInfo *dwinfo_buckets[512];
+#else
+extern struct DWInfo *dwinfo_list;
+#endif
 extern struct PendingObject *pending_objects;
 extern struct DwarfFunctionState *data_00587168;
 extern struct GList *section_buffer;
@@ -221,10 +207,6 @@ extern struct DwarfNode *current_block_node;
 extern struct GList *dwarf_lines;
 extern struct DwarfStateList *dwarf_state_list_tail;
 extern DwarfLocationOperand return_operand;
-struct DwarfFunctionState;
-struct DwarfFunctionState;
-struct DwarfFixup;
-struct DwarfFixup;
 
 #ifdef __cplusplus
 }

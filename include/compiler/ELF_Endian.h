@@ -19,12 +19,12 @@ struct ConversionBlockHeader {
     unsigned int value;
 };
 struct ElfSymbolRecord {
-    unsigned int name;           /* 0x00: ELF_Endian_ConvertSymbolRecord converts symbol name index */
-    unsigned int value;          /* 0x04: ELF_Endian_ConvertSymbolRecord converts symbol value */
-    unsigned int size;           /* 0x08: ELF_Endian_ConvertSymbolRecord converts symbol size */
-    unsigned char info;          /* 0x0c: ELF_Endian_ConvertSymbolRecord leaves ELF symbol info byte unchanged */
-    unsigned char other;         /* 0x0d: ELF_Endian_ConvertSymbolRecord leaves ELF symbol other byte unchanged */
-    unsigned short sectionIndex; /* 0x0e: ELF_Endian_ConvertSymbolRecord converts and returns section index */
+    unsigned int name;
+    unsigned int value;
+    unsigned int size;
+    unsigned char info;
+    unsigned char other;
+    unsigned short sectionIndex;
 };
 struct RecordBounds {
     int length;
@@ -32,7 +32,6 @@ struct RecordBounds {
 };
 extern void swap_tagged_records(unsigned char *data, unsigned int size, int (*errorHandler)(const char *, int),
                                 char swapBeforeRead);
-extern int (*DAT_005805e0)(const char *, int);
 extern long double read_double(UInt8 *bytes, char flag);
 extern void swap_conversion_blocks(char *data, int remainingSize, int (*conversionMode)(const char *, int),
                                    char readBeforeConversion);

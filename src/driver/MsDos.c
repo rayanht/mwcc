@@ -1,17 +1,19 @@
 #define CERROR_FILE "unknown.c"
 #include "compiler/common.h"
 #include "driver/MsDos.h"
-#include "compiler/win32.h"
-#include "compiler/CTemplateNew.h"
-#include "driver/CLAccessPaths.h"
-#include "driver/CLIO.h"
-#include "driver/CLProj.h"
-#include "driver/CLTarg.h"
+#include "driver/AssertionFailure.h"
+#include "driver/Generic.h"
 #include "driver/Memory.h"
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <msl_internal.h>
+#include "compiler/enode.h"
+#include "compiler/objects.h"
+#include "compiler/scopes.h"
+#include "compiler/types.h"
+static char errtext[256];
+static char data_0057e308[260];
+
 typedef DWORD(__stdcall *PFN1)(HANDLE);
 typedef DWORD(__stdcall *PFN2)(void);
 
@@ -33,7 +35,13 @@ char *__stdcall OS_GetErrText(DWORD errorCode)
     return errtext;
 }
 
-unsigned int __stdcall fn_004111c0(int *argc, char ***argv)
+unsigned int data_0054b770 = 0;
+static DWORD open_access_modes[4] = {0x80000000, 0x40000000, 0xC0000000, 0x40000000};
+/* The zeros OS_Write writes to extend a file to its position. */
+static char zero_fill[32] = {0};
+static DWORD seek_origins[3] = {1, 0, 2};
+
+unsigned int __stdcall OS_InitProgram(int *argc, char ***argv)
 {
     return 0U;
 }
@@ -43,16 +51,16 @@ DWORD __stdcall OS_Create(OSSpec *spec, const unsigned int *options)
     char *pathResult;
     HANDLE file;
 
-    pathResult = OS_SpecToString(spec, DAT_0057e308, 0x104);
+    pathResult = OS_SpecToString(spec, data_0057e308, 0x104);
     if (pathResult == (char *)0) {
         return 0x6f;
     }
-    file = CreateFileA(DAT_0057e308, 0xc0000000, 1, (LPSECURITY_ATTRIBUTES)0, 2, 0x80, (HANDLE)0);
+    file = CreateFileA(data_0057e308, 0xc0000000, 1, (LPSECURITY_ATTRIBUTES)0, 2, 0x80, (HANDLE)0);
     if (file == (HANDLE)-1) {
         return GetLastError();
     }
     CloseHandle(file);
-    return fn_00411290(spec, options);
+    return OS_SetFileType(spec, options);
 }
 
 DWORD __stdcall OS_Status(OSSpec *spec)
@@ -60,11 +68,11 @@ DWORD __stdcall OS_Status(OSSpec *spec)
     char *result;
     DWORD attributes;
 
-    result = OS_SpecToString(spec, DAT_0057e308, 0x104);
+    result = OS_SpecToString(spec, data_0057e308, 0x104);
     if (result == NULL) {
         return 0x6f;
     }
-    attributes = GetFileAttributesA(DAT_0057e308);
+    attributes = GetFileAttributesA(data_0057e308);
     if (attributes == 0xffffffff) {
         attributes = GetLastError();
         return attributes;
@@ -72,7 +80,7 @@ DWORD __stdcall OS_Status(OSSpec *spec)
     return 0;
 }
 
-unsigned int __stdcall fn_00411290(const void *spec, const unsigned int *type)
+unsigned int __stdcall OS_SetFileType(const void *spec, const unsigned int *type)
 {
     return 0U;
 }
@@ -155,11 +163,11 @@ DWORD __stdcall OS_Open(OSSpec *path, UInt8 mode, SInt32 *file)
     SInt32 openedFile;
     char *convertedPath;
 
-    convertedPath = OS_SpecToString(path, DAT_0057e308, 0x104);
+    convertedPath = OS_SpecToString(path, data_0057e308, 0x104);
     if (convertedPath == NULL) {
         return 0x6f;
     }
-    openedFile = (SInt32)CreateFileA(DAT_0057e308, open_access_modes[mode], 1, NULL, 3, 0x80, NULL);
+    openedFile = (SInt32)CreateFileA(data_0057e308, open_access_modes[mode], 1, NULL, 3, 0x80, NULL);
     *file = openedFile;
     if ((HANDLE)*file == (HANDLE)0xffffffff) {
         result = GetLastError();
@@ -197,7 +205,7 @@ int __stdcall OS_Write(unsigned int handle, LPCVOID buffer, DWORD *size)
         }
         while (position > end) {
             chunkSize = position - end > 32 ? 32 : FileOffsetDifference(position, end);
-            if (WriteFile((HANDLE)handle, "", chunkSize, &bytesWritten, NULL) == 0) {
+            if (WriteFile((HANDLE)handle, zero_fill, chunkSize, &bytesWritten, NULL) == 0) {
                 return GetLastError();
             }
             if (bytesWritten < chunkSize) {
@@ -286,11 +294,11 @@ DWORD __stdcall OS_Delete(OSSpec *fileName)
     BOOL succeeded;
     char *path;
 
-    path = OS_SpecToString(fileName, DAT_0057e308, 0x104);
+    path = OS_SpecToString(fileName, data_0057e308, 0x104);
     if (path == NULL) {
         return 0x6f;
     }
-    succeeded = DeleteFileA(DAT_0057e308);
+    succeeded = DeleteFileA(data_0057e308);
     if (succeeded == 0) {
         error = GetLastError();
         return error;
@@ -301,7 +309,7 @@ DWORD __stdcall OS_Delete(OSSpec *fileName)
 DWORD __stdcall OS_Mkdir(OSSpec *path)
 {
     char *convertedPath;
-    char *destination = DAT_0057e308;
+    char *destination = data_0057e308;
     BOOL created;
     DWORD error;
 
@@ -309,7 +317,7 @@ DWORD __stdcall OS_Mkdir(OSSpec *path)
     if (convertedPath == (char *)0) {
         return 0x6f;
     }
-    created = CreateDirectoryA(DAT_0057e308, (LPSECURITY_ATTRIBUTES)0);
+    created = CreateDirectoryA(data_0057e308, (LPSECURITY_ATTRIBUTES)0);
     if (created == 0) {
         error = GetLastError();
         return error;
@@ -317,17 +325,17 @@ DWORD __stdcall OS_Mkdir(OSSpec *path)
     return 0;
 }
 
-DWORD __stdcall fn_00411780(OSSpec *path)
+DWORD __stdcall OS_Rmdir(OSSpec *path)
 {
     char *convertedPath;
     BOOL created;
     DWORD error;
 
-    convertedPath = fn_00412340(path->directory.path, DAT_0057e308, 0x104);
+    convertedPath = OS_PathSpecToString(&path->path, data_0057e308, 0x104);
     if (convertedPath == NULL) {
         return 0x6f;
     }
-    created = RemoveDirectoryA(DAT_0057e308);
+    created = RemoveDirectoryA(data_0057e308);
     if (created == 0) {
         error = GetLastError();
         return error;
@@ -344,16 +352,16 @@ void ensure_trailing_backslash(char *path)
     }
 }
 
-DWORD __stdcall OS_GetCWD(char *text)
+DWORD __stdcall OS_GetCWD(OSPathSpec *spec)
 {
     DWORD result;
 
-    result = GetCurrentDirectoryA(0x104, text);
+    result = GetCurrentDirectoryA(0x104, spec->s);
     if (result == 0) {
         result = GetLastError();
         return result;
     }
-    ensure_trailing_backslash(text);
+    ensure_trailing_backslash(spec->s);
     return 0;
 }
 
@@ -440,9 +448,9 @@ int __stdcall OS_Execute(OSSpec *name, char **args, char **environment, char *in
     memset(&startup, 0, sizeof(startup));
     startup.cb = sizeof(startup);
     startup.lpTitle = "Linking";
-    if (OS_SpecToString(name, DAT_0057e308, 0x104) == NULL)
+    if (OS_SpecToString(name, data_0057e308, 0x104) == NULL)
         return 0x6f;
-    created = CreateProcessA(DAT_0057e308, command, NULL, NULL, 1, 0, NULL, NULL, &startup, &process);
+    created = CreateProcessA(data_0057e308, command, NULL, NULL, 1, 0, NULL, NULL, &startup, &process);
     if (inputFile != NULL)
         SetStdHandle(-11, savedInput);
     if (outputFile != NULL)
@@ -519,7 +527,7 @@ unsigned int OS_CanonPath(const char *src, char *dst)
     return 0;
 }
 
-unsigned int __stdcall MsDos_IsAbsolutePath(char *path)
+unsigned int __stdcall OS_IsFullPath(char *path)
 {
     unsigned int isAbsolute;
     int hasDriveRoot;
@@ -563,7 +571,7 @@ int __stdcall OS_EqualPath(const char *left, const char *right)
     return equal;
 }
 
-int __stdcall make_osspec_from_path(const char *path, OSSpec *output, Boolean *is_file)
+int __stdcall OS_MakeSpec(const char *path, OSSpec *output, Boolean *is_file)
 {
     unsigned int error;
     char *last_char;
@@ -626,17 +634,17 @@ int __stdcall make_osspec_from_path(const char *path, OSSpec *output, Boolean *i
     }
     length = filename - resolved_path;
     if (length >= 260) {
-        output->directory.path[0] = 0;
+        output->path.s[0] = 0;
         return 111;
     }
-    memcpy(output->directory.path, resolved_path, length);
-    output->directory.path[length] = 0;
+    memcpy(output->path.s, resolved_path, length);
+    output->path.s[length] = 0;
     name_length = strlen(filename);
     if (name_length >= 64) {
-        output->name[0] = 0;
+        output->name.s[0] = 0;
         return 111;
     }
-    memcpy(output->name, filename, name_length + 1);
+    memcpy(output->name.s, filename, name_length + 1);
     return 0;
 }
 
@@ -646,7 +654,7 @@ SInt32 __stdcall OS_MakeFileSpec(const char *input, OSSpec *output)
     Boolean status;
     const char *path = input;
 
-    result = make_osspec_from_path(path, output, &status);
+    result = OS_MakeSpec(path, output, &status);
     if (result > 0) {
         return result;
     }
@@ -656,7 +664,7 @@ SInt32 __stdcall OS_MakeFileSpec(const char *input, OSSpec *output)
     return 0;
 }
 
-__stdcall UInt32 OS_MakePathSpec(char *directory, char *path, char *spec)
+__stdcall UInt32 OS_MakePathSpec(char *directory, char *path, OSPathSpec *spec)
 {
     OSSpec name;
     Boolean flag;
@@ -685,8 +693,8 @@ __stdcall UInt32 OS_MakePathSpec(char *directory, char *path, char *spec)
         else
             strcpy(buffer, ".");
     }
-    status = make_osspec_from_path(buffer, &name, &flag);
-    strcpy(spec, (char *)&name);
+    status = OS_MakeSpec(buffer, &name, &flag);
+    strcpy(spec->s, name.path.s);
     if (status == 0 && OS_Status(&name) != 0) {
         status = 3;
         flag = 0;
@@ -698,7 +706,7 @@ __stdcall UInt32 OS_MakePathSpec(char *directory, char *path, char *spec)
     return 0;
 }
 
-int __stdcall OS_MakeNameSpec(const char *name, char *destination)
+int __stdcall OS_MakeNameSpec(const char *name, OSNameSpec *spec)
 {
     int length;
 
@@ -712,7 +720,7 @@ int __stdcall OS_MakeNameSpec(const char *name, char *destination)
     if (strpbrk(name, "<>:\"/\\|") != NULL) {
         return 0x7b;
     }
-    memcpy(destination, name, length + 1);
+    memcpy(spec->s, name, length + 1);
     return 0;
 }
 
@@ -722,7 +730,7 @@ char *__stdcall OS_SpecToString(OSSpec *spec, char *destination, int capacity)
     int pathLength;
 
     if (capacity == 0) {
-        capacity = sizeof(spec->directory.path);
+        capacity = sizeof(spec->path.s);
     }
     if (destination == NULL) {
         destination = (char *)malloc(capacity);
@@ -730,8 +738,8 @@ char *__stdcall OS_SpecToString(OSSpec *spec, char *destination, int capacity)
             return NULL;
         }
     }
-    pathLength = strlen(spec->directory.path);
-    nameLength = strlen(spec->name);
+    pathLength = strlen(spec->path.s);
+    nameLength = strlen(spec->name.s);
     if (pathLength + nameLength >= capacity) {
         if (pathLength >= capacity) {
             nameLength = 0;
@@ -740,13 +748,13 @@ char *__stdcall OS_SpecToString(OSSpec *spec, char *destination, int capacity)
             nameLength = (capacity - pathLength) - 1;
         }
     }
-    memcpy(destination, spec->directory.path, pathLength);
-    memcpy(destination + pathLength, spec->name, nameLength);
+    memcpy(destination, spec->path.s, pathLength);
+    memcpy(destination + pathLength, spec->name.s, nameLength);
     destination[pathLength + nameLength] = 0;
     return destination;
 }
 
-char *__stdcall fn_00412340(char *source, char *destination, unsigned int capacity)
+char *__stdcall OS_PathSpecToString(const OSPathSpec *spec, char *destination, unsigned int capacity)
 {
     int length;
 
@@ -759,16 +767,16 @@ char *__stdcall fn_00412340(char *source, char *destination, unsigned int capaci
             return NULL;
         }
     }
-    length = strlen(source);
+    length = strlen(spec->s);
     if (length >= (int)capacity) {
         length = capacity - 1;
     }
-    memcpy(destination, source, length);
+    memcpy(destination, spec->s, length);
     destination[length] = 0;
     return destination;
 }
 
-char *__stdcall MsDos_CopyStringToBuffer(char *source, char *buffer, unsigned int capacity)
+char *__stdcall OS_NameSpecToString(const OSNameSpec *spec, char *buffer, unsigned int capacity)
 {
     int length;
 
@@ -781,11 +789,11 @@ char *__stdcall MsDos_CopyStringToBuffer(char *source, char *buffer, unsigned in
             return NULL;
         }
     }
-    length = strlen(source);
+    length = strlen(spec->s);
     if (length >= (int)capacity) {
         length = capacity - 1;
     }
-    memcpy(buffer, source, length);
+    memcpy(buffer, spec->s, length);
     buffer[length] = 0;
     return buffer;
 }
@@ -796,9 +804,9 @@ int __stdcall OS_EqualSpec(const struct OSSpec *first, const struct OSSpec *seco
     int matches;
 
     matches = 0;
-    comparisonResult = OS_EqualPathSpec(first->directory.path, second->directory.path);
+    comparisonResult = OS_EqualPathSpec(&first->path, &second->path);
     if (comparisonResult != 0) {
-        comparisonResult = equal_path(first->name, second->name);
+        comparisonResult = OS_EqualNameSpec(&first->name, &second->name);
         if (comparisonResult != 0) {
             matches = 1;
         }
@@ -806,27 +814,27 @@ int __stdcall OS_EqualSpec(const struct OSSpec *first, const struct OSSpec *seco
     return matches;
 }
 
-unsigned int __stdcall OS_EqualPathSpec(const char *left, const char *right)
+unsigned int __stdcall OS_EqualPathSpec(const OSPathSpec *left, const OSPathSpec *right)
 {
-    return OS_EqualPath(left, right);
+    return OS_EqualPath(left->s, right->s);
 }
 
-unsigned int __stdcall equal_path(const char *left, const char *right)
+unsigned int __stdcall OS_EqualNameSpec(const OSNameSpec *left, const OSNameSpec *right)
 {
-    return OS_EqualPath(left, right);
+    return OS_EqualPath(left->s, right->s);
 }
 
-int __stdcall OS_IsDir(char *path)
+int __stdcall OS_IsDir(OSSpec *spec)
 {
     DWORD attributes;
     int length;
 
-    if (OS_SpecToString((OSSpec *)path, DAT_0057e308, 0x104) == NULL)
+    if (OS_SpecToString(spec, data_0057e308, 0x104) == NULL)
         return 0x6f;
-    length = strlen(DAT_0057e308);
-    if (DAT_0057e308[length - 1] == '\\')
-        DAT_0057e308[length - 1] = 0;
-    attributes = GetFileAttributesA(DAT_0057e308);
+    length = strlen(data_0057e308);
+    if (data_0057e308[length - 1] == '\\')
+        data_0057e308[length - 1] = 0;
+    attributes = GetFileAttributesA(data_0057e308);
     if (attributes == 0xffffffff)
         return 0;
     return (attributes & 0x10) != 0;
@@ -838,34 +846,34 @@ int __stdcall OS_IsFile(OSSpec *spec)
     DWORD attributes;
     char *resolvedPath;
 
-    resolvedPath = OS_SpecToString(spec, DAT_0057e308, 0x104);
+    resolvedPath = OS_SpecToString(spec, data_0057e308, 0x104);
     if (resolvedPath == NULL) {
         return 0x6f;
     }
-    length = strlen(DAT_0057e308);
-    if (DAT_0057e308[length - 1] == '\\') {
-        DAT_0057e308[length - 1] = 0;
+    length = strlen(data_0057e308);
+    if (data_0057e308[length - 1] == '\\') {
+        data_0057e308[length - 1] = 0;
     }
-    attributes = GetFileAttributesA(DAT_0057e308);
+    attributes = GetFileAttributesA(data_0057e308);
     if (attributes == 0xffffffff) {
         return 0;
     }
     return (attributes & 0x10) == 0;
 }
 
-int __stdcall MsDos_ReturnZero(char *argument)
+int __stdcall OS_IsLink(OSSpec *spec)
 {
     return 0;
 }
 
-int __stdcall fn_004125b0(const OSSpec *source, OSSpec *destination)
+int __stdcall OS_ResolveLink(const OSSpec *source, OSSpec *destination)
 {
     const OSSpec *sourceSpec = source;
     *destination = *sourceSpec;
     return 0;
 }
 
-DWORD __stdcall OS_OpenDir(char *path, struct DirectorySearch *directory)
+DWORD __stdcall OS_OpenDir(OSPathSpec *spec, struct DirectorySearch *directory)
 {
     LPWIN32_FIND_DATAA findData;
     HANDLE handle;
@@ -877,9 +885,9 @@ DWORD __stdcall OS_OpenDir(char *path, struct DirectorySearch *directory)
     if (directory->findData == NULL) {
         return 8;
     }
-    directory->path = *(OSPathBuffer *)path;
-    strcpy(pattern, path);
-    strcat(pattern, DAT_0054b80c.pattern);
+    directory->path = *spec;
+    strcpy(pattern, spec->s);
+    strcat(pattern, "*");
     handle = FindFirstFileA(pattern, directory->findData);
     directory->handle = handle;
     if (directory->handle == (HANDLE)-1) {
@@ -910,10 +918,10 @@ UInt32 __stdcall OS_ReadDir(DirectorySearch *state, OSSpec *spec, char *filename
             continue;
         if (memcmp(name, "..", 3) == 0)
             continue;
-        if (strlen(state->path.path) + strlen(name) >= 0x104)
+        if (strlen(state->path.s) + strlen(name) >= 0x104)
             continue;
-        len = strlen(state->path.path);
-        strncpy(path, state->path.path, 0x103);
+        len = strlen(state->path.s);
+        strncpy(path, state->path.s, 0x103);
         if (len < 0x104) {
             strncpy(path + len, name, 0x103 - len);
             path[0x103] = 0;
@@ -922,7 +930,7 @@ UInt32 __stdcall OS_ReadDir(DirectorySearch *state, OSSpec *spec, char *filename
         }
         strncpy(filename, name, 0x3f);
         filename[0x3f] = 0;
-        return make_osspec_from_path(path, spec, isdir);
+        return OS_MakeSpec(path, spec, isdir);
     }
 }
 
@@ -962,70 +970,70 @@ void __stdcall OS_GetTime(_FILETIME *fileTime)
     *fileTime = *(_FILETIME *)convertedTime;
 }
 
-DWORD __stdcall OS_NewHandle(SIZE_T size, MemBuffer *block)
+DWORD __stdcall OS_NewHandle(SIZE_T size, OSHandle *block)
 {
-    block->ptr = GlobalAlloc(0, size);
+    block->addr = GlobalAlloc(0, size);
     block->size = size;
-    if (block->ptr == NULL)
+    if (block->addr == NULL)
         return GetLastError();
-    memset(block->ptr, 0, size);
+    memset(block->addr, 0, size);
     return 0;
 }
 
-UInt32 __stdcall OS_ResizeHandle(MemBuffer *buf, UInt32 newsize)
+UInt32 __stdcall OS_ResizeHandle(OSHandle *buf, UInt32 newsize)
 {
     HGLOBAL newHandle;
 
-    newHandle = GlobalReAlloc(buf->ptr, newsize, 2);
+    newHandle = GlobalReAlloc(buf->addr, newsize, 2);
     if (newHandle == NULL) {
-        buf->ptr = NULL;
+        buf->addr = NULL;
         buf->size = 0;
         return GetLastError();
     }
     if (newsize > buf->size) {
         memset((char *)newHandle + buf->size, 0, newsize - buf->size);
     }
-    buf->ptr = newHandle;
+    buf->addr = newHandle;
     buf->size = newsize;
     return 0;
 }
 
-HGLOBAL __stdcall MsDos_GetValidMemBufferPtr(MemBuffer *handle)
+HGLOBAL __stdcall OS_LockHandle(OSHandle *handle)
 {
     UINT flags;
 
-    flags = GlobalFlags(handle->ptr);
+    flags = GlobalFlags(handle->addr);
     if (flags != 0x8000) {
-        return handle->ptr;
+        return handle->addr;
     }
     return NULL;
 }
 
-void __stdcall fn_004129c0(MemBuffer *buffer)
+void __stdcall OS_UnlockHandle(OSHandle *buffer)
 {
     return;
 }
 
-DWORD __stdcall OS_FreeHandle(MemBuffer *handle)
+DWORD __stdcall OS_FreeHandle(OSHandle *handle)
 {
     HGLOBAL remainingHandle;
     DWORD error;
 
-    remainingHandle = GlobalFree(handle->ptr);
+    remainingHandle = GlobalFree(handle->addr);
     if (remainingHandle != NULL) {
         error = GetLastError();
         return error;
     }
-    handle->ptr = NULL;
+    handle->addr = NULL;
     handle->size = 0;
     return 0;
 }
 
-unsigned int __stdcall OS_GetHandleSize(MemBuffer *entry, DWORD *value)
+unsigned int __stdcall OS_GetHandleSize(OSHandle *entry, DWORD *value)
 {
     UINT flags;
 
-    flags = GlobalFlags(entry->ptr);
+    flags = GlobalFlags(entry->addr);
     if (flags != 0x8000) {
         *value = entry->size;
         return 0;
@@ -1034,15 +1042,15 @@ unsigned int __stdcall OS_GetHandleSize(MemBuffer *entry, DWORD *value)
     return 8;
 }
 
-void __stdcall OS_InvalidateHandle(MemBuffer *buffer)
+void __stdcall OS_InvalidateHandle(OSHandle *buffer)
 {
-    buffer->ptr = NULL;
+    buffer->addr = NULL;
     buffer->size = 0;
 }
 
-unsigned char __stdcall OS_ValidHandle(MemBuffer *value)
+unsigned char __stdcall OS_ValidHandle(OSHandle *value)
 {
-    return value != NULL && value->ptr != NULL;
+    return value != NULL && value->addr != NULL;
 }
 
 int __stdcall OS_OSErrorToMacError(int errorCode)
@@ -1095,6 +1103,8 @@ int __stdcall OS_OSErrorToMacError(int errorCode)
     return errorCode | 0xffff8000;
 }
 
+static SInt32 month_days[12] = {31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31};
+
 void __stdcall OS_TimeToMac(FILETIME time, int *result)
 {
     SYSTEMTIME st;
@@ -1111,15 +1121,15 @@ void __stdcall OS_TimeToMac(FILETIME time, int *result)
     days += (year + 3) / 4 - (year + 4) / 100 + (year - 296) / 400;
 
     if (st.wYear % 4 == 0 && (st.wYear % 100 != 0 || st.wYear % 400 == 0))
-        february_days = 29;
+        month_days[1] = 29;
     else
-        february_days = 28;
+        month_days[1] = 28;
 
     if (st.wMonth > 12 || st.wMonth == 0)
         st.wMonth = 1;
 
     while (--st.wMonth != 0)
-        days += DAT_0054b80c.monthDays[st.wMonth];
+        days += month_days[st.wMonth - 1];
 
     days += st.wDay - 1;
     *result = days * 86400 + st.wHour * 3600 + st.wMinute * 60 + st.wSecond;
@@ -1147,11 +1157,11 @@ void __stdcall OS_MacToTime(unsigned long secs, FILETIME *ft)
     gregorianYears = year - 296;
     dayOfYear -= (year + 3) / 4 - (year + 4) / 100 + gregorianYears / 400;
     if (st.wYear % 4)
-        february_days = 28;
+        month_days[1] = 28;
     else
-        february_days = 29;
-    for (month = 0; dayOfYear >= (&february_days)[month - 1]; month++)
-        dayOfYear -= (&february_days)[month - 1];
+        month_days[1] = 29;
+    for (month = 0; dayOfYear >= month_days[month]; month++)
+        dayOfYear -= month_days[month];
     st.wMonth = month + 1;
     st.wDay = dayOfYear + 1;
     SystemTimeToFileTime(&st, ft);
@@ -1167,4 +1177,64 @@ unsigned int __stdcall OS_RefToMac(unsigned int value)
             CLIO_ReportAssertionFailure("(long)ref < 0xffff", "MsDos.c", 1560U);
     }
     return value + 1U;
+}
+
+
+int OS_MacToRef(short value)
+{
+    if (value != 0) {
+        return value - 1;
+    }
+    return -1;
+}
+
+DWORD __stdcall OS_LoadMacResourceFork(OSSpec *spec, LPVOID *resourceData, DWORD *resourceSize)
+{
+    char *convertedPath;
+    HMODULE module;
+    HRSRC resource;
+    HGLOBAL loadedResource;
+    LPVOID data;
+
+    convertedPath = OS_SpecToString(spec, data_0057e308, 0x104);
+    if (convertedPath == NULL) {
+        return 0x6f;
+    }
+    module = GetModuleHandleA(data_0057e308);
+    if (module == NULL) {
+        return GetLastError();
+    }
+    resource = FindResourceA(module, "#101", "MACRSRC");
+    if (resource == NULL) {
+        return GetLastError();
+    }
+    loadedResource = LoadResource(module, resource);
+    if (loadedResource == NULL) {
+        return GetLastError();
+    }
+    data = LockResource(loadedResource);
+    if (data == NULL) {
+        return GetLastError();
+    }
+    *resourceData = data;
+    *resourceSize = SizeofResource(module, resource);
+    return 0;
+}
+
+Boolean __stdcall MacSpecs_IsByteInDBCSCharacter(BYTE *a, BYTE *b)
+{
+    BYTE *p = a;
+    while (p <= b) {
+        Boolean c = IsDBCSLeadByte(*p);
+        if (c == 0 && GetLastError() == 0x57)
+            return 0;
+        if (c != 0) {
+            if (p == b || p + 1 == b)
+                return 1;
+            p += 2;
+        } else {
+            p += 1;
+        }
+    }
+    return 0;
 }

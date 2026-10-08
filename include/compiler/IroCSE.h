@@ -16,11 +16,9 @@ struct IROExpr {
     struct BitVector *depends;
     struct IROExpr *use;
     UInt8 state;
-    UInt8
-        mayTrap; /* 0x17: fn_0044f230 copies DAT_00587e58 from IroCSE_0044f6a0 (unknown indirection or possibly zero divisor); IroLoop requires mustreach before hoisting */
-    UInt8
-        hasSideEffects; /* 0x18: fn_0044f230 copies DAT_00587630 from IroCSE_0044f6a0 (volatile access, effectful operator or call); IroCSE excludes these candidates */
-    UInt8 alignmentPadding; /* 0x19: fn_0044f230 leaves this byte unused; alignment before factor. */
+    UInt8 mayTrap;
+    UInt8 hasSideEffects;
+    UInt8 alignmentPadding;
     struct IROLinear *factor;
     struct VarRecord *var;
     struct IROLinear *expr;
@@ -56,12 +54,12 @@ extern void IroCSE_ClearExpr(void);
 extern IROLinear *IroCSE_CreateTempAssignment(IROExpr *pair);
 extern void IroCSE_RemoveExpr(IROExpr *entry);
 extern void collect_expression_var_refs_and_flags(IROLinear *e, SInt32 flag);
-extern void IroCSE_0044e560(IROLinear *from, IROLinear *to);
+extern void fn_0044e560(IROLinear *from, IROLinear *to);
 extern void IroCSE_ReplaceReference(IROLinear *target, Object *object, IROLinear *reference);
-extern void IroCSE_0044f6a0(IROLinear *e, SInt32 flag);
-extern unsigned int DAT_00587630;
-extern int DAT_00587e58;
-extern SInt32 DAT_005880a4;
+extern void fn_0044f6a0(IROLinear *e, SInt32 flag);
+extern unsigned int data_00587630;
+extern int data_00587e58;
+extern SInt32 data_005880a4;
 extern struct BitVector *data_00552b88;
 extern unsigned int expression_count;
 extern unsigned int data_005870f8;

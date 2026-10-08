@@ -5,45 +5,49 @@
 #include "compiler/AddPropagation.h"
 #include "compiler/CExpr2.h"
 #include "compiler/CMangler.h"
-#include "compiler/CPrec.h"
-#include "compiler/CPrep.h"
 #include "compiler/CodeGen.h"
 #include "compiler/CodeMotion.h"
 #include "compiler/ConstantPropagation.h"
-#include "compiler/DWARF.h"
-#include "compiler/LoadDeletion.h"
+#include "compiler/CopyPropagation.h"
 #include "compiler/LoopDetection.h"
 #include "compiler/LoopOptimization.h"
 #include "compiler/PCodeListing.h"
 #include "compiler/StrengthReduction.h"
 #include "compiler/ValueNumbering.h"
+#include "compiler/VectorArraysToRegs.h"
 
-static void COptimizer_DumpStage(Object *function, const char *stage)
+int gCodeMotionChanged;
+SInt32 gValueNumberingChanged;
+int gCopyPropagationChanged;
+struct Loop *data_0058763c;
+SInt32 gStrengthReductionChanged;
+
+static inline void COptimizer_DumpStage(Object *function, const char *stage)
 {
     Object *obj = function;
-    CodeGen_DumpPCode_004c4bd0(COptimizer_GetFunctionObject(obj)->name, stage);
+    fn_004c4bd0(COptimizer_GetFunctionObject(obj)->name, stage);
 }
 
-static void COptimizer_DumpIfChanged(Object *function, int changed, const char *stage)
+static inline void COptimizer_DumpIfChanged(Object *function, int changed, const char *stage)
 {
-    if (changed && copts.cOptimizerDumpEnabled) {
+    if (changed && copts.debug_listing) {
         COptimizer_DumpStage(function, stage);
     }
 }
 
-static void COptimizer_RunCopyPropagation(Object *function, int mode)
+static inline void COptimizer_RunCopyPropagation(Object *function, int mode)
 {
     COpt_CopyPropagation(mode);
     COptimizer_DumpIfChanged(function, gCopyPropagationChanged, "AFTER COPY PROPAGATION");
 }
 
-static void COptimizer_RunAddPropagation(Object *function)
+static inline void COptimizer_RunAddPropagation(Object *function)
 {
     COpt_AddPropagation();
     COptimizer_DumpIfChanged(function, gAddPropagationChanged, "AFTER ADD PROPAGATION");
 }
 
-static void COptimizer_RunLoopPasses(Object *function)
+static inline void COptimizer_RunLoopPasses(Object *function)
 {
     LoopDetection_DetectLoops();
     if (data_0058763c != NULL) {
@@ -57,7 +61,7 @@ static void COptimizer_RunLoopPasses(Object *function)
         StrengthReduction_RunLoopPasses();
         if (gStrengthReductionChanged) {
             COpt_CopyPropagation(1);
-            if (copts.cOptimizerDumpEnabled) {
+            if (copts.debug_listing) {
                 COptimizer_DumpStage(function, "AFTER STRENGTH REDUCTION");
             }
         }
@@ -66,7 +70,7 @@ static void COptimizer_RunLoopPasses(Object *function)
         if (gLoopTransformChanged) {
             COpt_CopyPropagation(1);
             COpt_AddPropagation();
-            if (copts.cOptimizerDumpEnabled) {
+            if (copts.debug_listing) {
                 COptimizer_DumpStage(function, "AFTER LOOP TRANSFORMATIONS");
             }
         }
@@ -74,26 +78,6 @@ static void COptimizer_RunLoopPasses(Object *function)
 
     if (!gCopyPropagationChanged) {
         COptimizer_RunCopyPropagation(function, 1);
-    }
-}
-
-void COptimizer_Optimize(Object *function)
-{
-    char level;
-
-    if (copts.cOptimizerDumpEnabled) {
-        COptimizer_DumpStage(function, "BEFORE GLOBAL OPTIMIZATION");
-    }
-
-    if ((level = copts.deleteDeadInstructions) == 2 || (gRunLevel2Pipeline && level > 2)) {
-        ValueNumbering_PerformValueNumbering(1);
-        COptimizer_DumpIfChanged(function, gValueNumberingChanged, "AFTER CSE");
-        COptimizer_RunCopyPropagation(function, 1);
-        COptimizer_RunAddPropagation(function);
-    } else if (level == 3) {
-        COptimizer_Level3(function);
-    } else if (level == 4) {
-        COptimizer_Level4(function);
     }
 }
 
@@ -120,7 +104,7 @@ void COptimizer_Level3(Object *function)
             StrengthReduction_RunLoopPasses();
             if (gStrengthReductionChanged) {
                 COpt_CopyPropagation(1);
-                if (copts.cOptimizerDumpEnabled) {
+                if (copts.debug_listing) {
                     COptimizer_DumpStage(recovery_inline_5167_0, "AFTER STRENGTH REDUCTION");
                 }
             }
@@ -129,7 +113,7 @@ void COptimizer_Level3(Object *function)
             if (gLoopTransformChanged) {
                 COpt_CopyPropagation(1);
                 COpt_AddPropagation();
-                if (copts.cOptimizerDumpEnabled) {
+                if (copts.debug_listing) {
                     COptimizer_DumpStage(recovery_inline_5167_0, "AFTER LOOP TRANSFORMATIONS");
                 }
             }
@@ -142,7 +126,7 @@ void COptimizer_Level3(Object *function)
 
     COpt_ConstantPropagation();
     if (gConstantPropagationChanged) {
-        if (copts.cOptimizerDumpEnabled) {
+        if (copts.debug_listing) {
             COptimizer_DumpStage(function, "AFTER CONSTANT PROPAGATION");
         }
         COpt_LoadDeletion();
@@ -153,7 +137,7 @@ void COptimizer_Level3(Object *function)
     ValueNumbering_PerformValueNumbering(1);
     if (gValueNumberingChanged) {
         COpt_CopyPropagation(1);
-        if (copts.cOptimizerDumpEnabled) {
+        if (copts.debug_listing) {
             COptimizer_DumpStage(function, "AFTER VALUE NUMBERING 2");
         }
     }
@@ -182,7 +166,7 @@ void COptimizer_Level4(Object *function)
             StrengthReduction_RunLoopPasses();
             if (gStrengthReductionChanged) {
                 COpt_CopyPropagation(1);
-                if (copts.cOptimizerDumpEnabled) {
+                if (copts.debug_listing) {
                     COptimizer_DumpStage(recovery_inline_6220_0, "AFTER STRENGTH REDUCTION");
                 }
             }
@@ -191,7 +175,7 @@ void COptimizer_Level4(Object *function)
             if (gLoopTransformChanged) {
                 COpt_CopyPropagation(1);
                 COpt_AddPropagation();
-                if (copts.cOptimizerDumpEnabled) {
+                if (copts.debug_listing) {
                     COptimizer_DumpStage(recovery_inline_6220_0, "AFTER LOOP TRANSFORMATIONS");
                 }
             }
@@ -204,7 +188,7 @@ void COptimizer_Level4(Object *function)
 
     COpt_ConstantPropagation();
     if (gConstantPropagationChanged) {
-        if (copts.cOptimizerDumpEnabled) {
+        if (copts.debug_listing) {
             COptimizer_DumpStage(function, "AFTER CONSTANT PROPAGATION");
         }
         COpt_LoadDeletion();
@@ -217,13 +201,13 @@ void COptimizer_Level4(Object *function)
 
         if (gArrayToRegisterEnabled) {
             COpt_ArrayToRegister();
-            if (gArrayToRegisterChanged && copts.cOptimizerDumpEnabled) {
+            if (gArrayToRegisterChanged && copts.debug_listing) {
                 COptimizer_DumpStage(function, "AFTER ARRAY => REGISTER TRANSFORM");
                 COpt_ConstantPropagation();
                 if (gConstantPropagationChanged) {
                     COpt_CopyPropagation(1);
                 }
-                if (copts.cOptimizerDumpEnabled) {
+                if (copts.debug_listing) {
                     COptimizer_DumpStage(function, "AFTER CONSTANT PROPAGATION 2");
                 }
             }
@@ -233,7 +217,7 @@ void COptimizer_Level4(Object *function)
     ValueNumbering_PerformValueNumbering(1);
     if (gValueNumberingChanged) {
         COpt_CopyPropagation(1);
-        if (copts.cOptimizerDumpEnabled) {
+        if (copts.debug_listing) {
             COptimizer_DumpStage(function, "AFTER VALUE NUMBERING 2");
         }
     }
@@ -241,7 +225,7 @@ void COptimizer_Level4(Object *function)
     if (gVectorArrayConversion && fn_0052ce10()) {
         COpt_CopyPropagation(0);
         COpt_CopyPropagation(1);
-        if (copts.cOptimizerDumpEnabled) {
+        if (copts.debug_listing) {
             COptimizer_DumpStage(function, "AFTER VECTOR ARRAY CONVERSION");
         }
     }
@@ -259,8 +243,28 @@ void COptimizer_Level4(Object *function)
     ValueNumbering_PerformValueNumbering(1);
     if (gValueNumberingChanged) {
         COpt_CopyPropagation(1);
-        if (copts.cOptimizerDumpEnabled) {
+        if (copts.debug_listing) {
             COptimizer_DumpStage(function, "AFTER VALUE NUMBERING 3");
         }
+    }
+}
+
+void COptimizer_Optimize(Object *function)
+{
+    char level;
+
+    if (copts.debug_listing) {
+        COptimizer_DumpStage(function, "BEFORE GLOBAL OPTIMIZATION");
+    }
+
+    if ((level = copts.deleteDeadInstructions) == 2 || (gRunLevel2Pipeline && level > 2)) {
+        ValueNumbering_PerformValueNumbering(1);
+        COptimizer_DumpIfChanged(function, gValueNumberingChanged, "AFTER CSE");
+        COptimizer_RunCopyPropagation(function, 1);
+        COptimizer_RunAddPropagation(function);
+    } else if (level == 3) {
+        COptimizer_Level3(function);
+    } else if (level == 4) {
+        COptimizer_Level4(function);
     }
 }

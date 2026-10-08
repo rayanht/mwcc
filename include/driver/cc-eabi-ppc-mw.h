@@ -2,11 +2,42 @@
 #define DRIVER_CC_EABI_PPC_MW_H
 
 #include "compiler/common.h"
+#include "version.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
+#pragma options align = mac68k
+typedef struct PluginVersion PluginVersion;
+typedef struct FileSignature FileSignature;
+typedef struct FileSignatureList FileSignatureList;
+struct PluginVersion {
+    UInt8 major;
+    UInt8 minor;
+    UInt8 bugfix;
+    UInt8 build;
+};
+/* The build number of the release's plugins. */
+#if VERSION == VERSION_GC_1_0
+#define PLUGIN_BUILD 0x90
+#elif VERSION < VERSION_GC_1_2_5
+#define PLUGIN_BUILD 0x9F
+#else
+#define PLUGIN_BUILD 0xA3
+#endif
+/* A file type a plugin recognizes by the bytes at its start. */
+struct FileSignature {
+    UInt32 type;
+    char *bytes;
+    SInt32 length;
+    SInt16 offset;
+};
+struct FileSignatureList {
+    SInt16 count;
+    struct FileSignature *signatures;
+};
+#pragma options align = reset
 struct DataPointerObject {
     unsigned char *data;
 };
@@ -25,73 +56,23 @@ struct SharedDataHeader {
 struct TableObject {
     unsigned char *table;
 };
-extern int __stdcall get_name_and_length(char **a0, int *a1);
-extern char data_005434a8[];
+extern int __stdcall get_name_and_length(char **name, int *length);
 extern void *__stdcall set_next_to_global(struct ListNodeLink *node);
-extern unsigned int __stdcall copy_global_to_value(unsigned int *a0);
-extern unsigned int data_005434e8;
-extern unsigned int __stdcall get_stored_value(unsigned int *a0);
-extern unsigned int data_00543500;
-extern int __stdcall fn_0040be10(signed char **a0);
-extern signed char data_00543694[];
+extern unsigned int __stdcall copy_global_to_value(unsigned int *value);
+extern unsigned int __stdcall get_stored_value(unsigned int *value);
+extern int __stdcall fn_0040be10(signed char **arguments);
 extern unsigned int __stdcall fn_0040be20(struct ListLink *link);
 extern unsigned int __stdcall fn_0040be30(struct ListLink *link);
 extern void *__stdcall set_listnode_next_to_global(struct ListNode *node);
 extern int __stdcall set_link_next_to_global(struct ListLink *link);
-extern int __stdcall get_global_name_and_length(char **a0, int *a1);
-extern char global_name[];
+extern int __stdcall get_global_name_and_length(char **name, int *length);
 extern unsigned int __stdcall set_data_pointer(unsigned int objectAddress);
-extern unsigned char data_005437e8[];
 extern unsigned int __stdcall fn_0040be90(unsigned int objectAddress);
-extern unsigned char data_005437f0[];
 extern unsigned int __stdcall fn_0040bea0(struct ListLink *link);
-extern unsigned int __stdcall get_data_pointer(unsigned char **a0);
-extern unsigned char data_00543840[];
+extern unsigned int __stdcall get_data_pointer(unsigned char **output);
 extern unsigned int __stdcall set_shared_data(struct SharedDataHeader *header);
-extern unsigned char data_005438f0[];
 extern unsigned int fn_0040bf10(void);
-extern char *data_00545f68[];
-extern char *data_00546598[];
-extern char *data_00547a34[];
-extern char *data_00549c44[];
-extern int __stdcall get_stored_name_and_length(char **a0, int *a1);
-extern char data_00549eb0[];
-extern unsigned int __stdcall fn_0040bfc0(unsigned char *volatile *a0);
-extern unsigned char data_00549ecc[];
-extern unsigned int __stdcall get_global_value(unsigned int *a0);
-extern unsigned int data_00549ef4;
-extern unsigned int __stdcall fn_0040bff0(unsigned int *a0);
-extern unsigned int data_00549ef8;
-extern unsigned int __stdcall fn_0040c010(struct ListLink *link);
-extern unsigned int __stdcall set_next_from_global(struct ListLink *node);
-extern unsigned int __stdcall get_buffer(unsigned char **a0);
-extern unsigned char data_00549fd4[];
-extern int __stdcall set_list_link_next(struct ListLink *link);
-extern unsigned int __stdcall fn_0040c050(struct ListLink *link);
-extern unsigned char data_0054a014[];
-extern unsigned int fn_0040c070(void);
-extern struct DriverLookupEntry *find_driver_lookup_entry(int key);
 extern unsigned int fn_0040bed0(void);
-extern int fn_0040c060(void);
-extern struct DriverLookupEntry {
-    int key;
-    int data;
-} DAT_0057d938[0x23];
-extern unsigned char PTR_fn_0054a05c[];
-extern unsigned char PTR_fn_0054a080[];
-extern unsigned char data_00543738[];
-extern unsigned char data_005437bc[];
-extern unsigned char data_005438f8[];
-extern unsigned char data_0054391c[];
-extern ListLink data_00543774;
-extern ListLink data_0054a008[];
-extern struct ListLink data_00543830;
-extern struct ListLink data_00543700;
-extern ListLink data_005436f8;
-extern struct ListLink data_00549fcc[1];
-extern struct ListLink data_00549fc4;
-extern struct ListNode data_00543730;
-extern struct ListNodeLink data_005434c4;
 
 #ifdef __cplusplus
 }

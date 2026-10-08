@@ -1,23 +1,15 @@
 #define CERROR_FILE "CLPlugins.c"
 #include "compiler/common.h"
 #include "driver/CLPlugins.h"
-#include "compiler/CPrep.h"
-#include "driver/CLCompilerLinkerDropin_V10.h"
+#include "driver/AssertionFailure.h"
 #include "driver/CLErrors.h"
-#include "driver/CLFileOps.h"
 #include "driver/CLIO.h"
 #include "driver/CLPluginRequests.h"
 #include "driver/CLPrefs.h"
-#include "driver/CLTarg.h"
-#include "driver/CWParserPluginsPrivate.h"
-#include "driver/CWPluginsPrivate.h"
 #include "driver/ClientGlue.h"
-#include "driver/Files.h"
-#include "driver/MacFileTypes.h"
 #include "driver/MacSpecs.h"
 #include "driver/MemUtils.h"
-#include "driver/Memory.h"
-#include "driver/MsDos.h"
+#include "driver/CLMain.h"
 
 #include <string.h>
 #include <stdio.h>
@@ -29,15 +21,9 @@ typedef short(__stdcall *cb_t)(char **);
 
 typedef unsigned short(__stdcall *pfn_t)(void *);
 
-/* Declarations gathered from the merged files. */
-
 typedef SInt16(__stdcall *CLPluginFunc)(PluginRequest *, SInt32, SInt32, Boolean *);
 
 typedef struct PlugAux PlugAux;
-
-/* Information returned by the plugin fallback query. */
-
-/* Declarations gathered from the merged files. */
 
 typedef short(__stdcall *PluginInputCallback)(int, short *, unsigned int, int, int);
 typedef short(__stdcall *PluginResultCallback)(unsigned int *);
@@ -61,6 +47,7 @@ char *CLPlugins_GetName(Plugin *plugin)
 
 UInt8 *get_plugin_result(Plugin *plugin)
 {
+    static UInt8 data_00541480[4] = {0};
     short status;
     UInt8 *result;
 
@@ -73,11 +60,12 @@ UInt8 *get_plugin_result(Plugin *plugin)
             return result;
         }
     }
-    return DAT_00541480;
+    return data_00541480;
 }
 
 PluginDesc *CLPlugins_GetPluginDesc(Plugin *provider)
 {
+    static PluginDesc plugin_desc;
     unsigned int *data;
     unsigned int size;
 
@@ -107,17 +95,18 @@ unsigned int CLPlugins_GetType(Plugin *type)
 
 TargetInfo *get_target_info(Plugin *entry)
 {
+    static TargetInfo target_info = {1};
     short status;
     unsigned char *result;
 
     if (entry == NULL) {
         CLIO_ReportAssertionFailure("pl", "CLPlugins.c", 115);
     }
-    if (((Plugin *)entry)->targetCallbacks == NULL) {
+    if (((Plugin *)entry)->cl_cb == NULL) {
         CLIO_ReportAssertionFailure("pl->cl_cb != NULL", "CLPlugins.c", 116);
     }
-    if (((Plugin *)entry)->targetCallbacks->getTargetInfo != NULL) {
-        status = ((Plugin *)entry)->targetCallbacks->getTargetInfo(&result);
+    if (((Plugin *)entry)->cl_cb->getTargetInfo != NULL) {
+        status = ((Plugin *)entry)->cl_cb->getTargetInfo(&result);
         if (status == 0) {
             return (TargetInfo *)result;
         }
@@ -127,6 +116,7 @@ TargetInfo *get_target_info(Plugin *entry)
 
 void *get_plugin_directory_list(Plugin *plugin)
 {
+    static struct PluginDirectoryList plugin_directory_list = {1, 0, NULL};
     struct PluginDirectoryList *directoryList;
     SInt16 status;
     if (plugin == NULL)
@@ -141,16 +131,17 @@ void *get_plugin_directory_list(Plugin *plugin)
 
 FileMapInfo *get_file_map(Plugin *context)
 {
+    static FileMapInfo file_map = {1};
     FileMapInfo *result;
 
     if (context == NULL) {
         CLIO_ReportAssertionFailure("pl", "CLPlugins.c", 0x9e);
     }
-    if (context->targetCallbacks == NULL) {
+    if (context->cl_cb == NULL) {
         CLIO_ReportAssertionFailure("pl->cl_cb != NULL", "CLPlugins.c", 0x9f);
     }
-    if (context->targetCallbacks->getFileMap != NULL) {
-        if ((*context->targetCallbacks->getFileMap)(&result) == 0) {
+    if (context->cl_cb->getFileMap != NULL) {
+        if ((*context->cl_cb->getFileMap)(&result) == 0) {
             return result;
         }
     }
@@ -175,19 +166,20 @@ unsigned int get_callback_result(void *input)
     return 0;
 }
 
-void *CLPlugins_GetObjectFlags(Plugin *plugin)
+const CWObjectFlags *CLPlugins_GetObjectFlags(Plugin *plugin)
 {
-    unsigned char *flags;
+    static CWObjectFlags object_flags = {2, 0, "", "", "", "", "", ""};
+    const CWObjectFlags *flags;
     PluginDesc *info;
 
     if (plugin == NULL) {
         CLIO_ReportAssertionFailure("pl", "CLPlugins.c", 0xbf);
     }
-    if (plugin->targetCallbacks == NULL) {
+    if (plugin->cl_cb == NULL) {
         CLIO_ReportAssertionFailure("pl->cl_cb != NULL", "CLPlugins.c", 0xc0);
     }
-    if (plugin->targetCallbacks->getObjectFlags != NULL) {
-        if (plugin->targetCallbacks->getObjectFlags(&flags) == 0) {
+    if (plugin->cl_cb->getObjectFlags != NULL) {
+        if (plugin->cl_cb->getObjectFlags(&flags) == 0) {
             return flags;
         }
     }
@@ -195,7 +187,7 @@ void *CLPlugins_GetObjectFlags(Plugin *plugin)
     if (info->type == 0x436f6d70) {
         return NULL;
     }
-    return object_flags;
+    return &object_flags;
 }
 
 Boolean plugin_name_matches(Plugin *plugin, char *name)
@@ -207,8 +199,6 @@ Boolean plugin_name_matches(Plugin *plugin, char *name)
     comparison = strcmp(pluginName, name);
     return comparison == 0;
 }
-
-/* Pair of identifier lists returned by the plug-in query. */
 
 char CLPlugins_MatchTarget(Plugin *plugin, int firstIdentifier, int secondIdentifier, int flag)
 {
@@ -233,8 +223,6 @@ char CLPlugins_MatchTarget(Plugin *plugin, int firstIdentifier, int secondIdenti
     }
     return 0;
 }
-
-/* Numeric reference followed by its name. */
 
 char file_map_matches(FileMap *reference, int value, char *name, char flag)
 {
@@ -275,10 +263,10 @@ Boolean call_query_callback(Plugin *p, PluginRequest *a, SInt32 b, SInt32 c)
     CLPluginFunc f;
     Boolean result;
 
-    if (p->queryCallbacks == NULL) {
+    if (p->pr_cb == NULL) {
         CLIO_ReportAssertionFailure("pl->pr_cb != NULL", "CLPlugins.c", 0x143);
     }
-    if ((f = *(CLPluginFunc *)p->queryCallbacks) != NULL) {
+    if ((f = *(CLPluginFunc *)p->pr_cb) != NULL) {
         if (f(a, b, c, &result) == 0) {
             return result;
         }
@@ -286,30 +274,16 @@ Boolean call_query_callback(Plugin *p, PluginRequest *a, SInt32 b, SInt32 c)
     return 0;
 }
 
-/* Interface layout used to retrieve a plugin's name. */
-
-/* Plugin data callback interface; the first table entry is not used here. */
-
-/* Callback entry; the first word is not used by this accessor. */
-
-/* A callback-table record. */
-
-/* Callback dispatch record and its owning context. */
-
-/* Callback interface used by the plugin query wrapper. */
-
-/* Plugin query ABI: a header followed by its callback table. */
-
 UInt8 query_plugin(Plugin *plugin, unsigned int queryArgument, char **queryKind)
 {
     short status;
     UInt8 result;
 
-    if (plugin->queryCallbacks == NULL) {
+    if (plugin->pr_cb == NULL) {
         CLIO_ReportAssertionFailure("pl->pr_cb != NULL", "CLPlugins.c", 0x14f);
     }
-    if (plugin->queryCallbacks->query != NULL) {
-        status = plugin->queryCallbacks->query(queryArgument, queryKind, &result);
+    if (plugin->pr_cb->query != NULL) {
+        status = plugin->pr_cb->query(queryArgument, queryKind, &result);
         if (status == 0) {
             return result;
         }
@@ -319,12 +293,13 @@ UInt8 query_plugin(Plugin *plugin, unsigned int queryArgument, char **queryKind)
 
 char *format_plugin_version(Plugin *plugin, char *buffer)
 {
+    static char data_0057d90a[18];
     UInt8 *version;
     char *cursor;
 
     version = get_plugin_result(plugin);
     if (buffer == (char *)0x0) {
-        buffer = DAT_0057d90a;
+        buffer = data_0057d90a;
     }
     if (version[0] | version[1] | version[2] | version[3] != 0) {
         cursor = buffer;
@@ -341,22 +316,20 @@ char *format_plugin_version(Plugin *plugin, char *buffer)
     return "(unknown)";
 }
 
-/* Callback record fields preceding this callback are not used here. */
-
 /* Callback table with five preceding entries. */
 /* Plugin value and callback table. */
 
-UInt8 CLPlugins_WriteObjectFile(Plugin *plugin, struct CWFileSpec *context, struct CWFileSpec *input,
-                                unsigned int objectFlags, int option, int objectHandle)
+UInt8 CLPlugins_WriteObjectFile(Plugin *plugin, CWFileSpec *context, CWFileSpec *input, unsigned int objectFlags,
+                                int option, int objectHandle)
 {
     int validInput;
     int validContext;
     UInt8 result;
     short callbackResult;
-    MemBuffer *objectBuffer;
+    OSHandle *objectBuffer;
     struct OSSpec outputSpec;
 
-    if (plugin->targetCallbacks == NULL) {
+    if (plugin->cl_cb == NULL) {
         CLIO_ReportAssertionFailure("pl->cl_cb != NULL", "CLPlugins.c", 0x173);
     }
     validInput = 0;
@@ -370,19 +343,15 @@ UInt8 CLPlugins_WriteObjectFile(Plugin *plugin, struct CWFileSpec *context, stru
     if (!validInput) {
         CLIO_ReportAssertionFailure("data != NULL && srcfss != NULL && outfss != NULL", "CLPlugins.c", 0x174);
     }
-    if (plugin->targetCallbacks->writeObjectFile != NULL) {
-        callbackResult = (*plugin->targetCallbacks->writeObjectFile)(context, input, objectFlags, option, objectHandle);
+    if (plugin->cl_cb->writeObjectFile != NULL) {
+        callbackResult = (*plugin->cl_cb->writeObjectFile)(context, input, objectFlags, option, objectHandle);
         return callbackResult == 0;
     }
-    MacSpecs_MakeOSSpec(input, outputSpec.directory.path);
+    MacSpecs_MakeOSSpec(input, &outputSpec);
     objectBuffer = Memory_GetSizeAddress((struct StorageHandle *)objectHandle);
     result = fn_00415090(&outputSpec, objectFlags, option, objectBuffer);
     return result;
 }
-
-/* Records returned by the plugin lookup routine. */
-
-/* Plugin matching data followed by the value returned for a match. */
 
 UInt8 CLPlugins_FindFileMapValue(Plugin *plugin, int mode, char *name, unsigned int *result)
 {
@@ -411,13 +380,15 @@ UInt8 CLPlugins_FindFileMapValue(Plugin *plugin, int mode, char *name, unsigned 
 }
 Boolean validate_plugin(Plugin *plug, const char **errmsg)
 {
+    /* the size of each version of DropInFlags */
+    static SInt32 dropin_flags_size[3] = {0, 16, 18};
     PluginDesc *flags;
     unsigned int size;
 
     *errmsg = "";
 
     if (plug->callbacks->getData == NULL) {
-        *errmsg = data_00541578.message;
+        *errmsg = "GetDropInFlags callback not found";
         return 0;
     }
     if (plug->callbacks->getData((unsigned int **)&flags, &size) != 0) {
@@ -433,11 +404,11 @@ Boolean validate_plugin(Plugin *plug, const char **errmsg)
         *errmsg = "The plugin's earliest compatible API version is too new for this driver";
         return 0;
     }
-    if (flags->api1 > 1 && flags->api2 < 10 && DAT_00587324) {
+    if (flags->api1 > 1 && flags->api2 < 10 && clState.pluginDebug) {
         CLIO_WriteFormattedText("%s's newest compatible API version is probably too old for this driver\n",
                                 CLPlugins_GetName(plug));
     }
-    if (size != data_00541578.sizes[flags->descriptorVersion - 3]) {
+    if (size != dropin_flags_size[flags->descriptorVersion]) {
         *errmsg = "The plugin's DropInFlags has an unexpected size";
         return 0;
     }
@@ -449,23 +420,21 @@ Boolean validate_plugin(Plugin *plug, const char **errmsg)
         *errmsg = "The executable tool stub has an entry point";
         return 0;
     }
-    if (plug->targetCallbacks != NULL) {
-        ObjFlagsData *objectFlags;
+    if (plug->cl_cb != NULL) {
+        const CWObjectFlags *objectFlags;
 
-        if (plug->targetCallbacks->getObjectFlags == NULL && flags->type == 'Comp') {
+        if (plug->cl_cb->getObjectFlags == NULL && flags->type == 'Comp') {
             *errmsg = "GetObjectFlags callback not found in compiler plugin";
             return 0;
         }
         objectFlags = CLPlugins_GetObjectFlags(plug);
-        if (objectFlags->version < 2 || (objectFlags->compilerFlags & 0x7fffffff) != 0) {
+        if (objectFlags->version < 2 || (objectFlags->flags & 0x7fffffff) != 0) {
             *errmsg = "The object flags data is out-of-date or invalid";
             return 0;
         }
     }
     return 1;
 }
-
-/* Callback table and directory list supplied by the plugin. */
 
 Boolean fn_00409700(Plugin *plugin)
 {
@@ -489,8 +458,6 @@ Boolean fn_00409700(Plugin *plugin)
     return (Boolean)(!hasMissingDirectory);
 }
 
-/* Fixed-size records copied into a plugin data bundle. */
-
 Plugin *CLPlugins_CreatePluginDataCopy(PluginRequiredInputRecord *record36, PluginOptionalData *record24,
                                        PluginQueryTable *record8)
 {
@@ -508,21 +475,21 @@ Plugin *CLPlugins_CreatePluginDataCopy(PluginRequiredInputRecord *record36, Plug
         return NULL;
     *(PluginRequiredInputRecord *)copy->callbacks = *record36;
     if (record24) {
-        copy->targetCallbacks = xmalloc(0U, 24U);
-        if (!copy->targetCallbacks)
+        copy->cl_cb = xmalloc(0U, 24U);
+        if (!copy->cl_cb)
             return NULL;
-        *(PluginOptionalData *)copy->targetCallbacks = *record24;
+        *(PluginOptionalData *)copy->cl_cb = *record24;
     } else {
-        copy->targetCallbacks = NULL;
+        copy->cl_cb = NULL;
     }
     if (source8) {
-        copy->queryCallbacks = xmalloc(0U, 8U);
-        if (!copy->queryCallbacks)
+        copy->pr_cb = xmalloc(0U, 8U);
+        if (!copy->pr_cb)
             return NULL;
-        copy8 = copy->queryCallbacks;
+        copy8 = copy->pr_cb;
         *copy8 = *source8;
     } else {
-        copy->queryCallbacks = NULL;
+        copy->pr_cb = NULL;
     }
     copy->object = 0U;
     copy->next = 0U;
@@ -535,11 +502,11 @@ void free_plugin(Plugin *allocations)
         if (allocations->callbacks != NULL) {
             free(allocations->callbacks);
         }
-        if (allocations->targetCallbacks != NULL) {
-            free(allocations->targetCallbacks);
+        if (allocations->cl_cb != NULL) {
+            free(allocations->cl_cb);
         }
-        if (allocations->queryCallbacks != NULL) {
-            free(allocations->queryCallbacks);
+        if (allocations->pr_cb != NULL) {
+            free(allocations->pr_cb);
         }
         free(allocations);
     }
@@ -554,15 +521,13 @@ Boolean fn_004098a0(Plugin *input)
     return 1;
 }
 
+static Plugin *data_0057d91c;
+
 void fn_004098d0(void)
 {
     data_0057d91c = NULL;
     return;
 }
-
-/* List of fixed-size records visited by file_map_matches. */
-
-/* Three owned allocations released with their container. */
 
 void CLPlugins_FreePlugins(void)
 {
@@ -618,7 +583,7 @@ int CLPlugins_AddPlugin(void *pluginHandle)
         CLErrors_EmitDiagnostic(4, "linker", name);
     }
 
-    if (DAT_00587324) {
+    if (clState.pluginDebug) {
         lang = desc->lang;
         if (lang == 0)
             lang = 0x2d2d2d2d;
@@ -628,7 +593,7 @@ int CLPlugins_AddPlugin(void *pluginHandle)
                                    (desc->type & 0xff00) >> 8, desc->type & 0xff, (lang & 0xff000000) >> 24,
                                    (lang & 0xff0000) >> 16, (lang & 0xff00) >> 8, lang & 0xff, desc->api1, desc->api2);
 
-        if (plugin->targetCallbacks != NULL) {
+        if (plugin->cl_cb != NULL) {
             ti = get_target_info(plugin);
             CLIO_FormatAndDispatchText("Target CPUs: ");
             for (i = 0; i < ti->ncpu; i++) {
@@ -731,16 +696,13 @@ int CLPlugins_AddPlugin(void *pluginHandle)
     return 1;
 }
 
-/* 0x57d91c, list head */
-
 Plugin *CLPlugins_FindMatchingTargetPlugin(Plugin *node, SInt32 a, SInt32 b, SInt32 c, SInt32 d)
 {
     Plugin *obj = node ? node : data_0057d91c;
     Plugin *result = NULL;
 
     while (obj != NULL) {
-        if (obj->targetCallbacks != NULL && CLPlugins_MatchTarget(obj, a, b, 0) &&
-            matches_plugin_type_lang(obj, c, d, 0)) {
+        if (obj->cl_cb != NULL && CLPlugins_MatchTarget(obj, a, b, 0) && matches_plugin_type_lang(obj, c, d, 0)) {
             result = obj;
             if (CLPlugins_MatchTarget(obj, a, b, 1) && matches_plugin_type_lang(obj, c, d, 1))
                 break;
@@ -749,14 +711,6 @@ Plugin *CLPlugins_FindMatchingTargetPlugin(Plugin *node, SInt32 a, SInt32 b, SIn
     }
     return result;
 }
-
-/* Table with an optional callback in slot 7. */
-
-/* Plugin callback table; the final callback supplies a result pointer. */
-
-/* Callback table supplied by a plugin; earlier entries are unused here. */
-
-/* Linked entries inspected by plugin selection. */
 
 Plugin *CLPlugins_FindTargetPluginBySelectorOptionName(Plugin *first, int selector, int optionKind, int optionValue,
                                                        int nameKind, char *name, int selectorValue)
@@ -769,8 +723,7 @@ Plugin *CLPlugins_FindTargetPluginBySelectorOptionName(Plugin *first, int select
     match = NULL;
     while (candidate != NULL) {
         if ((matches_plugin_type_lang(candidate, selector, selectorValue, '\x01') != '\0') &&
-            (candidate->targetCallbacks != NULL) &&
-            (CLPlugins_MatchTarget(candidate, optionKind, optionValue, '\0') != '\0') &&
+            (candidate->cl_cb != NULL) && (CLPlugins_MatchTarget(candidate, optionKind, optionValue, '\0') != '\0') &&
             ((nameMatch = plugin_file_map_matches(candidate, nameKind, name, '\0')) != 0)) {
             match = candidate;
             if ((CLPlugins_MatchTarget(candidate, optionKind, optionValue, '\x01') != '\0') &&
@@ -782,10 +735,6 @@ Plugin *CLPlugins_FindTargetPluginBySelectorOptionName(Plugin *first, int select
     }
     return match;
 }
-/* A plugin registration in the linked registry. */
-
-/* The leading words of a plugin's capability record. */
-
 Plugin *CLPlugins_FindLinkerPlugin(Plugin *start, int kind, int variant)
 {
     Plugin *plugin;
@@ -808,10 +757,6 @@ Plugin *CLPlugins_FindLinkerPlugin(Plugin *start, int kind, int variant)
     return candidate;
 }
 
-/* Plugin registry records; the leading metadata is not used here. */
-
-/* Plugin descriptor metadata followed by its flags. */
-
 Plugin *CLPlugins_FindLinkPluginForTarget(Plugin *plugins, unsigned int kind, unsigned int subtype)
 {
     Plugin *plugin = plugins ? plugins : data_0057d91c;
@@ -831,12 +776,6 @@ Plugin *CLPlugins_FindLinkPluginForTarget(Plugin *plugins, unsigned int kind, un
     return result;
 }
 
-/* Record returned by the plugin lookup helper. */
-
-/* Plugin-list entry: four metadata words followed by the next entry. */
-
-/* Information returned for a plugin, including its flag word. */
-
 Plugin *CLPlugins_FindMatchingLinkPlugin(Plugin *plugins, int kind, int selector)
 {
     Plugin *plugin = plugins ? plugins : data_0057d91c;
@@ -855,8 +794,6 @@ Plugin *CLPlugins_FindMatchingLinkPlugin(Plugin *plugins, int kind, int selector
     }
     return match;
 }
-
-/* Plugin chain entry; metadata is opaque here. */
 
 Plugin *CLPlugins_SelectPluginByRequestsAndValues(Plugin *plugins, int selector, int request_count,
                                                   PluginRequest *requests, int option4, int option5, int value_count,
@@ -1032,8 +969,7 @@ int CLPlugins_DispatchArgumentToPlugins(Plugin *node, SInt32 argument, SInt32 fi
         node = data_0057d91c;
     }
     while (node != NULL) {
-        if ((node->targetCallbacks == NULL) ||
-            (CLPlugins_MatchTarget(node, firstIdentifier, secondIdentifier, 0) != 0)) {
+        if ((node->cl_cb == NULL) || (CLPlugins_MatchTarget(node, firstIdentifier, secondIdentifier, 0) != 0)) {
             fn_0040a610(node, argument);
         }
         node = node->next;
@@ -1047,16 +983,4 @@ short CLPlugins_CallEntry(Plugin *dispatch, CWPluginPrivateContext *argument)
         return dispatch->callbacks->entry((unsigned int)argument);
     }
     return 2;
-}
-
-unsigned int __stdcall return_zero(unsigned int unused)
-{
-    return 0U;
-}
-
-unsigned int __stdcall get_data_and_size(unsigned char **data, unsigned int *size)
-{
-    *data = data_00541e1c;
-    *size = 18U;
-    return 0U;
 }

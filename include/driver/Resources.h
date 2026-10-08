@@ -36,24 +36,21 @@ struct RefEntry {
 #pragma pack(pop)
 #pragma pack(push, 2)
 struct ResData {
-    UInt16 preservedPrefix
-        [0x21]; /* 0x00: read_resource_file reads resource-file data before timestamps; write_resource_file preserves it verbatim */
-    UInt8 creationTime[4]; /* 0x42: Resources_SetFileTimes stores big-endian creation time; fn_004083b0 reads it */
-    UInt8 modificationTime
-        [4]; /* 0x46: Resources_SetFileTimes stores big-endian modification time; fn_004083b0 reads it */
-    UInt16 preservedSuffix
-        [0x53]; /* 0x4a: read_resource_file reads resource-file data after timestamps; write_resource_file preserves it verbatim */
+    UInt16 preservedPrefix[0x21];
+    UInt8 creationTime[4];
+    UInt8 modificationTime[4];
+    UInt16 preservedSuffix[0x53];
 };
 #pragma pack(pop)
 struct ResEntry {
-    UInt16 id;                    /* 0x00: find_res_entry matches resource ID */
-    UInt16 resourceTypeAlignment; /* 0x02: insert_res_entry leaves alignment before resourceType uninitialized */
-    UInt32 resourceType;          /* 0x04: read_resource_file passes types[count].type to insert_res_entry */
-    unsigned char *name;          /* 0x08: write_resource_file writes Pascal resource name */
-    UInt8 attrs;                  /* 0x0c: write_resource_file writes reference.attributes */
-    UInt8 handleAlignment[3];     /* 0x0d: insert_res_entry leaves alignment before hand uninitialized */
-    struct StorageHandle *hand;   /* 0x10: free_res_file frees handle; write_resource_file reads handle data and size */
-    struct ResEntry *next;        /* 0x14: count_entries traverses resource entries */
+    UInt16 id;
+    UInt16 resourceTypeAlignment;
+    UInt32 resourceType;
+    unsigned char *name;
+    UInt8 attrs;
+    UInt8 handleAlignment[3];
+    struct StorageHandle *hand;
+    struct ResEntry *next;
 };
 #pragma pack(push, 2)
 struct ResFile {
@@ -103,14 +100,13 @@ struct ResourceTypeEntry {
 };
 #pragma pack(pop)
 extern void write_resource_file(short refnum);
-extern short resource_error;
 extern struct ResEntry *insert_res_entry(struct ResEntry **listAddress, UInt16 key, UInt32 value, UInt8 *name,
                                          UInt8 flag, void **extra);
 extern void read_resource_file(short refnum, char readonly, unsigned char *buf, SInt32 size);
 extern void write_default_binary_record(SInt16 file);
 extern ResEntry *find_res_entry_in_files(int lookupArg, short lookupKind);
 extern int Resources_SetFileTimes(unsigned int a, UInt32 b, UInt32 c);
-extern short __stdcall open_resource_fork(void *a1, char a2, short *a3);
+extern short __stdcall open_resource_fork(void *fileSpec, char mode, short *refNum);
 extern unsigned char fn_00406610(void);
 extern struct ResFile *find_resfile_by_refnum(short value);
 extern ResFile *find_resfile_with_previous(short value, ResFile **previous);
@@ -119,7 +115,7 @@ extern int count_entries(ResType *list);
 extern ResType *find_res_type(ResFile *list, int key);
 extern IdentifierListNode *Resources_FindIdentifierById(int id);
 extern void __stdcall Resources_ClearError(void *handle);
-extern unsigned int Resources_OpenResourceFile(char *path);
+extern unsigned int Resources_OpenResourceFile(OSSpec *path);
 extern struct ResFile *create_resfile(short value0, int value2, int value4, int value8);
 extern ResType *append_res_type(ResType **link, unsigned int value1, ResEntry *value2, ResType *next);
 extern void free_res_file(short key);
@@ -128,18 +124,13 @@ extern unsigned int calculate_resource_sizes(ResFile *root, unsigned int *pa1, u
 extern void append_identifier_list_node(SInt32 a, OSSpec *b);
 extern void Resources_RemoveIdentifier(unsigned int key);
 extern Boolean Resources_FindIdentifier(OSSpec *key, SInt32 *value);
-extern void fn_00408510(struct OSSpec *a0);
+extern void fn_00408510(struct OSSpec *resourceSpec);
 extern SInt16 __stdcall open_resource_file(void *param1, SInt8 param2);
 extern unsigned char **Resources_GetHand(SInt32 first, SInt16 second);
 extern void __stdcall close_resource_file(short param);
 extern ResEntry *find_res_entry(ResFile *key, int index, short value);
 extern SInt32 fn_004083b0(int handle, UInt32 *secondValue, UInt32 *firstValue);
-extern struct IdentifierListNode *identifier_list;
-extern SInt16 current_resfile_refnum;
-extern UInt8 data_00541170;
-extern struct ResFile *resfile_list;
 extern UInt8 data_00588525;
-extern struct IdentifierListNode *identifier_list_tail;
 
 #ifdef __cplusplus
 }

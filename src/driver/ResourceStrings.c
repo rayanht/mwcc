@@ -1,10 +1,10 @@
 #define CERROR_FILE "unknown.c"
 #include "compiler/common.h"
 #include "driver/ResourceStrings.h"
-#include <stdlib.h>
 #include <stdio.h>
 
-#include <stdio.h>
+static ResourceRegistration resourceRegistrations[16];
+static char resource_string_buffer[64];
 
 int ResourceStrings_AddResource(char *resourceData, short resourceId, char **resourceValue)
 {

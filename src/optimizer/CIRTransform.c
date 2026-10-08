@@ -5,35 +5,163 @@
 #include "compiler/objects.h"
 #include "compiler/scopes.h"
 #include "compiler/types.h"
-#include "compiler/BE_symbol.h"
 #include "compiler/CDecl.h"
 #include "compiler/CError.h"
-#include "compiler/CException.h"
-#include "compiler/CExpr.h"
 #include "compiler/CExpr2.h"
 #include "compiler/CFunc.h"
-#include "compiler/CInline.h"
 #include "compiler/CObjC.h"
-#include "compiler/CParser.h"
-#include "compiler/CPrec.h"
-#include "compiler/CPrep.h"
-#include "compiler/CTemplateFunc.h"
-#include "compiler/CTemplateTools.h"
 #include "compiler/CompilerTools.h"
-#include "compiler/DWARF.h"
-#include "compiler/IROUseDef.h"
-#include "compiler/InlineAsmPPC.h"
-#include "compiler/IroBitVect.h"
-#include "compiler/IroCSE.h"
-#include "compiler/IroJump.h"
-#include "compiler/IroLoop.h"
-#include "compiler/IroVars.h"
-#include "compiler/ObjGen_PPC_EABI.h"
-#include "compiler/PCode.h"
-#include "compiler/Switch.h"
-#include "driver/Files.h"
-#include "compiler/ENode.h"
-/* Declarations gathered from the merged files. */
+
+static TypeFunc data_005741b0 = {TYPEFUNC, 0, NULL, NULL, TYPE(&stsignedshort), 0, 0};
+static TypeFunc data_005741cc = {TYPEFUNC, 0, NULL, NULL, TYPE(&stunsignedlong), 0, 0};
+static TypeFunc data_005741e8 = {TYPEFUNC, 0, NULL, NULL, TYPE(&void_ptr), 0, 0};
+
+Object *get_or_create_type_name_object(CIRTypeName *entry, Type *ty)
+{
+    Object *obj;
+
+    if ((obj = entry->object) == NULL) {
+        obj = CParser_NewFunctionObject(NULL);
+        entry->object = obj;
+        obj->nspace = cscope_root;
+        obj->name = GetHashNameNode(entry->name);
+        obj->flags = OBJECT_INTERNAL;
+        if (ty) {
+            switch (ty->size) {
+                case 2:
+                    obj->type = TYPE(&data_005741b0);
+                    break;
+                case 4:
+                    obj->type = TYPE(&data_005741cc);
+                    break;
+                case 8:
+                    obj->type = TYPE(&data_005741e8);
+                    break;
+                default:
+                    CError_FATAL(423);
+            }
+        } else {
+            obj->type = TYPE(&data_005741e8);
+        }
+    }
+    return obj;
+}
+
+ENode *expand_compound_assignment(ENode *expr)
+{
+    ENode *left;
+    ENode *target;
+    ENode *address;
+    ENode *value;
+    ENode *converted;
+    ENode *operation;
+    ENode *storeAddress;
+    ENode *storeTarget;
+    ENode *assignment;
+    ENode *result;
+    struct {
+        ENode *direct;
+        Object *temporary;
+        ENode *setup;
+        Type *type;
+        Type *qualifiedType;
+    } state;
+    left = expr->data.diadic.left;
+    memclrw(&state, sizeof(state));
+    state.type = left->rtype;
+    if (left->type != EINDIRECT) {
+        CError_FATAL(518);
+    }
+    target = left->data.diadic.left;
+    target->rtype = CDecl_NewPointerType(state.type);
+    if (target->type == EOBJREF) {
+        state.direct = target->data.diadic.left;
+    } else {
+        if (target->type == EBITFIELD) {
+            state.qualifiedType = target->rtype;
+            target = target->data.diadic.left;
+        }
+        state.temporary = create_temp_object(target->rtype);
+        state.setup = ((ENode * (*)(ENode *, ENode *, UInt8))
+                           makediadicnode)(((ENode * (*)(Object *)) create_objectnode)(state.temporary), target, 30);
+    }
+    if (state.direct == NULL) {
+        address = ((ENode * (*)(Object *)) create_objectnode)(state.temporary);
+        if (state.qualifiedType != NULL) {
+            address = makemonadicnode(address, 49);
+            address->rtype = state.qualifiedType;
+        }
+        value = makemonadicnode(address, 4);
+    } else {
+        value = ((ENode * (*)(ENode *)) create_objectnode)(state.direct);
+    }
+    converted = value;
+    value->rtype = state.type;
+    if (expr->data.diadic.left->rtype != expr->data.diadic.right->rtype) {
+        converted = makemonadicnode(value, 48);
+        converted->rtype = expr->data.diadic.right->rtype;
+    }
+    operation = ((ENode * (*)(ENode *, ENode *, UInt8)) makediadicnode)(converted, expr->data.diadic.right, 41);
+    switch (expr->type) {
+        case EMULASS:
+            operation->type = EMUL;
+            break;
+        case EDIVASS:
+            operation->type = EDIV;
+            break;
+        case EMODASS:
+            operation->type = EMODULO;
+            break;
+        case EADDASS:
+            operation->type = EADD;
+            break;
+        case ESUBASS:
+            operation->type = ESUB;
+            break;
+        case ESHLASS:
+            operation->type = ESHL;
+            break;
+        case ESHRASS:
+            operation->type = ESHR;
+            break;
+        case EANDASS:
+            operation->type = EAND;
+            break;
+        case EXORASS:
+            operation->type = EXOR;
+            break;
+        case EORASS:
+            operation->type = EOR;
+            break;
+        default:
+            CError_FATAL(618);
+    }
+    if (expr->data.diadic.left->rtype != expr->data.diadic.right->rtype) {
+        operation = ((ENode * (*)(ENode *, UInt8)) makemonadicnode)(operation, 48);
+        operation->rtype = expr->data.diadic.left->rtype;
+    }
+    if (operation->rtype->type == TYPEFLOAT) {
+        operation = CExpr_BinaryFloatExpression(operation);
+    }
+    if (state.direct == NULL) {
+        storeAddress = ((ENode * (*)(Object *)) create_objectnode)(state.temporary);
+        if (state.qualifiedType != NULL) {
+            storeAddress = ((ENode * (*)(ENode *, UInt8)) makemonadicnode)(storeAddress, 49);
+            storeAddress->rtype = state.qualifiedType;
+        }
+        storeTarget = ((ENode * (*)(ENode *, UInt8)) makemonadicnode)(storeAddress, 4);
+    } else {
+        storeTarget = ((ENode * (*)(ENode *)) create_objectnode)(state.direct);
+    }
+    storeTarget->rtype = state.type;
+    assignment = ((ENode * (*)(ENode *, ENode *, UInt8)) makediadicnode)(storeTarget, operation, 30);
+    result = assignment;
+    if (state.setup != NULL) {
+        result = ((ENode * (*)(ENode *, ENode *, UInt8)) makediadicnode)(state.setup, assignment, 41);
+        result->rtype = result->data.diadic.right->rtype;
+    }
+    return result;
+}
 
 ENode *simplify_unused_enode_values(ENode *e, UInt8 flag)
 {
@@ -174,7 +302,7 @@ ENode *simplify_unused_enode_values(ENode *e, UInt8 flag)
             e->data.cond.expr1 = simplify_unused_enode_values(e->data.cond.expr1, 1);
             e->data.cond.expr2 = simplify_unused_enode_values(e->data.cond.expr2, 1);
             break;
-        case EQUALNAME:
+        case EMFPOINTER:
             e->data.diadic.left = simplify_unused_enode_values(e->data.diadic.left, flag);
             e->data.diadic.right = simplify_unused_enode_values(e->data.diadic.right, flag);
             break;
@@ -190,12 +318,12 @@ ENode *simplify_unused_enode_values(ENode *e, UInt8 flag)
             e->data.funccall.args = head;
             break;
         }
-        case EMFPOINTER:
+        case ENULLCHECK:
             e->data.diadic.left = simplify_unused_enode_values(e->data.diadic.left, 1);
             e->data.diadic.right = simplify_unused_enode_values(e->data.diadic.right, 1);
             break;
-        case ELABEL:
-        case ESETCONST:
+        case ENEWEXCEPTION:
+        case ENEWEXCEPTIONARRAY:
             e->data.diadic.left = simplify_unused_enode_values(e->data.diadic.left, 1);
             e->data.diadic.right = simplify_unused_enode_values(e->data.diadic.right, 1);
             break;
@@ -203,163 +331,16 @@ ENode *simplify_unused_enode_values(ENode *e, UInt8 flag)
         case EFLOATCONST:
         case ESTRINGCONST:
         case EOBJREF:
-        case ENULLCHECK:
         case EPRECOMP:
-        case ELOCOBJ:
-        case ENEWEXCEPTIONARRAY:
+        case ETEMP:
+        case ELABEL:
         case EMEMBER:
-        case EASSBLK:
+        case EINSTRUCTION:
+        case EVECTOR128CONST:
             break;
         default:
             CError_FATAL(1884);
             break;
     }
     return e;
-}
-
-ENode *expand_compound_assignment(ENode *expr)
-{
-    ENode *left;
-    ENode *target;
-    ENode *address;
-    ENode *value;
-    ENode *converted;
-    ENode *operation;
-    ENode *storeAddress;
-    ENode *storeTarget;
-    ENode *assignment;
-    ENode *result;
-    struct {
-        ENode *direct;
-        Object *temporary;
-        ENode *setup;
-        Type *type;
-        Type *qualifiedType;
-    } state;
-    left = expr->data.diadic.left;
-    memclrw(&state, sizeof(state));
-    state.type = left->rtype;
-    if (left->type != EINDIRECT) {
-        CError_FATAL(518);
-    }
-    target = left->data.diadic.left;
-    target->rtype = CDecl_NewPointerType(state.type);
-    if (target->type == EOBJREF) {
-        state.direct = target->data.diadic.left;
-    } else {
-        if (target->type == EBITFIELD) {
-            state.qualifiedType = target->rtype;
-            target = target->data.diadic.left;
-        }
-        state.temporary = create_temp_object(target->rtype);
-        state.setup = ((ENode * (*)(ENode *, ENode *, UInt8))
-                           makediadicnode)(((ENode * (*)(Object *)) create_objectnode)(state.temporary), target, 30);
-    }
-    if (state.direct == NULL) {
-        address = ((ENode * (*)(Object *)) create_objectnode)(state.temporary);
-        if (state.qualifiedType != NULL) {
-            address = makemonadicnode(address, 49);
-            address->rtype = state.qualifiedType;
-        }
-        value = makemonadicnode(address, 4);
-    } else {
-        value = ((ENode * (*)(ENode *)) create_objectnode)(state.direct);
-    }
-    converted = value;
-    value->rtype = state.type;
-    if (expr->data.diadic.left->rtype != expr->data.diadic.right->rtype) {
-        converted = makemonadicnode(value, 48);
-        converted->rtype = expr->data.diadic.right->rtype;
-    }
-    operation = ((ENode * (*)(ENode *, ENode *, UInt8)) makediadicnode)(converted, expr->data.diadic.right, 41);
-    switch (expr->type) {
-        case EMULASS:
-            operation->type = EMUL;
-            break;
-        case EDIVASS:
-            operation->type = EDIV;
-            break;
-        case EMODASS:
-            operation->type = EMODULO;
-            break;
-        case EADDASS:
-            operation->type = EADD;
-            break;
-        case ESUBASS:
-            operation->type = ESUB;
-            break;
-        case ESHLASS:
-            operation->type = ESHL;
-            break;
-        case ESHRASS:
-            operation->type = ESHR;
-            break;
-        case EANDASS:
-            operation->type = EAND;
-            break;
-        case EXORASS:
-            operation->type = EXOR;
-            break;
-        case EORASS:
-            operation->type = EOR;
-            break;
-        default:
-            CError_FATAL(618);
-    }
-    if (expr->data.diadic.left->rtype != expr->data.diadic.right->rtype) {
-        operation = ((ENode * (*)(ENode *, UInt8)) makemonadicnode)(operation, 48);
-        operation->rtype = expr->data.diadic.left->rtype;
-    }
-    if (operation->rtype->type == TYPEFLOAT) {
-        operation = CExpr2_ReturnNode(operation);
-    }
-    if (state.direct == NULL) {
-        storeAddress = ((ENode * (*)(Object *)) create_objectnode)(state.temporary);
-        if (state.qualifiedType != NULL) {
-            storeAddress = ((ENode * (*)(ENode *, UInt8)) makemonadicnode)(storeAddress, 49);
-            storeAddress->rtype = state.qualifiedType;
-        }
-        storeTarget = ((ENode * (*)(ENode *, UInt8)) makemonadicnode)(storeAddress, 4);
-    } else {
-        storeTarget = ((ENode * (*)(ENode *)) create_objectnode)(state.direct);
-    }
-    storeTarget->rtype = state.type;
-    assignment = ((ENode * (*)(ENode *, ENode *, UInt8)) makediadicnode)(storeTarget, operation, 30);
-    result = assignment;
-    if (state.setup != NULL) {
-        result = ((ENode * (*)(ENode *, ENode *, UInt8)) makediadicnode)(state.setup, assignment, 41);
-        result->rtype = result->data.diadic.right->rtype;
-    }
-    return result;
-}
-
-Object *get_or_create_type_name_object(CIRTypeName *entry, Type *ty)
-{
-    Object *obj;
-
-    if ((obj = entry->object) == NULL) {
-        obj = CParser_NewFunctionObject(NULL);
-        entry->object = obj;
-        obj->nspace = registration_context;
-        obj->name = GetHashNameNode(entry->name);
-        obj->flags = OBJECT_INTERNAL;
-        if (ty) {
-            switch (ty->size) {
-                case 2:
-                    obj->type = &data_005741b0;
-                    break;
-                case 4:
-                    obj->type = &data_005741cc;
-                    break;
-                case 8:
-                    obj->type = &data_005741e8;
-                    break;
-                default:
-                    CError_FATAL(423);
-            }
-        } else {
-            obj->type = &data_005741e8;
-        }
-    }
-    return obj;
 }

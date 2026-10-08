@@ -11,12 +11,31 @@ extern "C" {
 union InlineOperand {
     SInt32 value;
     struct Object *object;
-    struct InlineIndexReference *reference;
+    struct CLabel *label;
     UInt8 byte;
 };
+/* ExceptionAction kinds, as DumpIR names them. */
+enum {
+    EAT_DESTROYLOCAL = 1,
+    EAT_DESTROYLOCALCOND = 2,
+    EAT_DESTROYLOCALOFFSET = 3,
+    EAT_DESTROYLOCALPOINTER = 4,
+    EAT_DESTROYLOCALARRAY = 5,
+    EAT_DESTROYMEMBER = 7,
+    EAT_DESTROYMEMBERCOND = 8,
+    EAT_DESTROYMEMBERARRAY = 9,
+    EAT_DELETEPOINTER = 10,
+    EAT_DELETELOCALPOINTER = 11,
+    EAT_DELETEPOINTERCOND = 12,
+    EAT_CATCHBLOCK = 13,
+    EAT_ACTIVECATCHBLOCK = 14,
+    EAT_SPECIFICATION = 15,
+    EAT_TERMINATE = 16,
+    EAT_DESTROYBASE = 17
+};
 #pragma options align = mac68k
-struct CException {
-    struct CException *next;
+struct ExceptionAction {
+    struct ExceptionAction *next;
     union {
         struct {
             struct Object *object;
@@ -35,8 +54,7 @@ struct CException {
         struct {
             struct Object *context;
             struct Object *dtor;
-            struct Object *
-                value1; /* 0x0c: Exceptions_CollectRegisterOperands reads kind 12 condition object; other kinds encode offsets */
+            struct Object *value1;
             void *value2;
         } call;
         struct {
@@ -123,10 +141,6 @@ struct ExceptionHandlerRecord {
     struct Type *exceptionType;
     UInt32 declarationData;
 };
-struct InlineIndexReference {
-    SInt32 value;
-    SInt32 index;
-};
 #pragma options align = mac68k
 struct TemporaryObject {
     struct TemporaryObject *next;
@@ -140,64 +154,51 @@ extern void setup_exception_specification(struct Statement *statements, struct E
 extern void insert_temporary_object_destruction(Statement *statement, char flag1, char flag2);
 extern Statement *generate_temporary_object_destruction(Statement *arg);
 extern ENode *rewrite_funccall_temporaries(ENode *node, Boolean reverse);
-extern ENode *CException_004e1940(ENode *node);
+extern ENode *fn_004e1940(ENode *node);
 extern Object *CException_GetTempObject(ENode *obj);
 extern void CExcept_ScanTryBlock(void *context, char flag);
 extern ENode *create_catch_object_init(DeclInfo *info, ExceptionHandlerRecord *args);
-extern void CException_004e1fb0(Statement *firstScope, Statement *insertionScope, Statement *lastScope,
-                                ExceptionHandlerRecord *entries);
+extern void fn_004e1fb0(Statement *firstScope, Statement *insertionScope, Statement *lastScope,
+                        ExceptionHandlerRecord *entries);
 extern ENode *CExcept_ScanThrowExpression(void);
 extern ENode *create_call_with_arg_and_default_args(Object *func, TypeClass *cls, ENode *which, ENode *arg);
 extern void CExcept_ScanExceptionSpecification(TypeFunc *func);
-extern ENode *create_type_stringconst(Type *type, UInt32 a2, Boolean flag);
+extern ENode *create_type_stringconst(Type *type, UInt32 qualifiers, Boolean flag);
 extern ClassNode *add_class_and_bases(ClassNode *list, TypeClass *ctx, TypeClass *cls, SInt32 offset, Boolean a,
                                       Boolean b);
 extern void mark_class_and_bases(ClassNode *list, TypeClass *cls);
 extern void append_namespace_names(NameSpace *p);
 extern void CExcept_RegisterMember(Statement *p1, Object *p2, SInt32 p3, Object *p4, Object *p5, Boolean p6);
-extern void CException_AddStdTypeRecord(void);
-extern void fn_004e30c0(void);
-extern void CException_PushEntry(void);
+extern void CExcept_ArrayInit(void);
+extern void CExcept_Magic(void);
+extern void CExcept_Terminate(void);
 extern ENode *fn_004e1050(ENode *expression);
 extern ENode *rewrite_expr_temporaries(ENode *expr);
-extern void insert_exception_action(Statement *stmt, CException *action);
+extern void insert_exception_action(Statement *stmt, ExceptionAction *action);
 extern void CExcept_RegisterDeleteObject(Statement *expr, Object *first, Object *second);
-extern void CException_RegisterMemberArray(Statement *unused, Object *context, Object *destructor, SInt32 value1,
-                                           SInt32 value2);
+extern void CExcept_RegisterLocalArray(Statement *unused, Object *context, Object *destructor, SInt32 value1,
+                                       SInt32 value2);
 extern ENode *CExcept_RegisterDestructorObject(Object *obj, SInt32 value, Object *dtorobj, int flag);
-extern unsigned char CExcept_ActionNeedsDestruction(CException *entry);
+extern unsigned char CExcept_ActionNeedsDestruction(ExceptionAction *entry);
 extern void emit_flagged_class_offsets(TypeClass *type);
 extern void fn_004e2940(TypeClass *exceptionData);
-extern Boolean CExcept_ActionCompare(CException *a, CException *b);
+extern Boolean CExcept_ActionCompare(ExceptionAction *a, ExceptionAction *b);
 extern void update_statement_dobjstacks(Statement *node);
 extern void lower_newexception(ENode *node, Boolean useExpression);
 extern void CExcept_CompareSpecifications(ExceptSpecList *a, ExceptSpecList *b);
-extern void CException_004e35b0(CException *node);
+extern void CExcept_CheckStackRefs(ExceptionAction *node);
 extern void CExcept_RegisterMemberArray(Statement *stmt, Object *object, SInt32 offset, Object *dtor, SInt32 count,
                                         SInt32 size);
 extern void CExcept_ExceptionTansform(Statement *stmt);
-extern Statement *CExcept_ActionCleanup(CException *input, Statement *statement);
+extern Statement *CExcept_ActionCleanup(ExceptionAction *input, Statement *statement);
 extern unsigned char fn_004e0ab0(Statement *node);
 extern void CExcept_Setup(void);
 extern struct Object *throw_func;
 extern struct ECacheNode *cached_objects;
-extern char dtor_type_name[];
-extern char size_type_name[];
-extern UInt8 data_00581c30;
-extern struct TemporaryObject *temporary_object_list;
-extern struct Statement *data_00581c36;
-extern struct CException *currentDobjstack;
-extern struct CException *current_dobjstack;
-extern SInt8 data_005884fa;
+extern SInt8 cexcept_magic;
 extern UInt8 exception_cleanup_registered;
-extern unsigned int CException_HashType(Type *a0);
-extern void CException_AddPendingBuffer(Object *owner, const void *buffer, RelocationList *value, int entryValue);
-extern RelocationList *copy_relocation_list(RelocationList *p);
-extern void CExcept_Terminate(void);
-extern void CException_ResetPrecompiledState(UInt8 c);
 extern TypeIntegral stchar;
 extern Type exception_temp_object_type;
-struct CException;
 
 #ifdef __cplusplus
 }

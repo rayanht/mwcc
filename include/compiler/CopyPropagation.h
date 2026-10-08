@@ -37,9 +37,10 @@ extern void CopyPropagation_ComputeGenKill(void);
 extern UInt32 *block_copy_counts;
 extern SInt32 copyCount;
 extern SInt32 *blockCopyStartIndices;
-extern SInt32 copy_propagation_mode;
 extern struct CodeMotionRec *code_motion_records;
 extern struct CopyPropagationBitSets *copyPropagationBitSets;
+
+extern void COpt_CopyPropagation(SInt32 mode);
 
 #ifdef __cplusplus
 }

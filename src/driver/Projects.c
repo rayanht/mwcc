@@ -1,0 +1,327 @@
+#define CERROR_FILE "unknown.c"
+#include "compiler/common.h"
+#include "driver/Projects.h"
+#include "compiler/InlineAsmPPC.h"
+#include "driver/CLAccessPaths.h"
+#include "driver/CLIO.h"
+#include "driver/CLMain.h"
+#include "driver/CLTarg.h"
+#include "driver/CWParserPluginsPrivate.h"
+#include "driver/CWPluginsPrivate.h"
+#include "driver/DropInCompilerLinkerPrivate.h"
+#include "driver/Files.h"
+#include "driver/Generic.h"
+#include "driver/MacSpecs.h"
+#include "driver/Memory.h"
+#include "driver/MsDos.h"
+#include "driver/ParserErrors.h"
+#include "driver/ParserFace.h"
+#include "driver/StringUtils.h"
+#include "driver/Targets.h"
+#include <stdio.h>
+#include <setjmp.h>
+
+jmp_buf plugin_request_jmp_buf;
+struct CWPluginPrivateContext *pluginPrivateContext;
+int data_00587e04;
+int data_00587e08;
+int data_00587e0c;
+char data_00587e22;
+UInt8 data_00587e26;
+UInt8 data_00587e27;
+UInt8 data_00587e28;
+
+void ToolHelpers_cc_CallValuePairCallback(char *key, struct StorageHandle *value)
+{
+    long result;
+
+    if (value != NULL) {
+        if (key != NULL) {
+            Targets_FormatAndForwardMessage(0x47, key);
+        }
+        fn_0041bcb0(pluginPrivateContext, value, &result);
+        CWParserPluginsPrivate_CallValuePairCallback(pluginPrivateContext, key, result);
+    }
+}
+
+char *format_version(unsigned int version, char *buf)
+{
+    char *p = buf;
+    unsigned char minor;
+    unsigned char build;
+    p += sprintf(p, "%u.%u", (version >> 24) & 0xff, (version >> 16) & 0xff);
+    minor = (version >> 8) & 0xff;
+    build = version & 0xff;
+    if (minor)
+        p += sprintf(p, ".%u", minor);
+    if (build)
+        p += sprintf(p, " build %u", build);
+    return buf;
+}
+
+static inline char *initZero(void)
+{
+    char *z = NULL;
+    return z;
+}
+
+void ToolHelpers_cc_PrintVersion(char includeValue)
+{
+    char *compilerVersion;
+    char *parserVersion;
+    struct StorageHandle *output;
+    int index;
+    char *matchingVersion;
+    char *alternateVersion;
+    char parserBuffer[16], matchingBuffer[16], alternateBuffer[16], compilerBuffer[16];
+    unsigned int parserValue1, parserValue2;
+    compilerVersion = NULL;
+    matchingVersion = NULL;
+    alternateVersion = NULL;
+    parserVersion = initZero();
+    if (data_00587e22 == 0) {
+        output = (struct StorageHandle *)Memory_NewHandle(0);
+        if (output == NULL) {
+            Targets_ForwardVarArgsAndLongjmp("Out of memory");
+            longjmp(plugin_request_jmp_buf, 7);
+        }
+        for (index = 0; index < num_panels; index++) {
+            if (data_00587cf0[index].type == 1668047986) {
+                compilerVersion = format_version(data_00587cf0[index].version, compilerBuffer);
+            } else if (data_00587cf0[index].type == 1348563571) {
+                parserVersion = format_version(data_00587cf0[index].version, parserBuffer);
+            } else if (pTool->tool == data_00587cf0[index].type) {
+                if (matchingVersion == NULL && pTool->lang == data_00587cf0[index].creator) {
+                    matchingVersion = format_version(data_00587cf0[index].version, matchingBuffer);
+                } else {
+                    alternateVersion = format_version(data_00587cf0[index].version, alternateBuffer);
+                }
+            }
+        }
+        CWParserPluginsPrivate_GetParserValues(pluginPrivateContext, &parserValue1, &parserValue2);
+        HPrintF(output, "\n");
+        if (matchingVersion == NULL) {
+            if (alternateVersion == NULL)
+                alternateVersion = "???";
+            matchingVersion = alternateVersion;
+        }
+        HPrintF(output,
+                "%s.\nCopyright (c)%s Metrowerks, Inc.\nAll rights reserved.\nVersion %s\nRuntime Built: %s %s\n",
+                pTool->toolInfo, pTool->copyright, matchingVersion, parserValue1, parserValue2);
+        HPrintF(output, "\n");
+        if (includeValue != 0) {
+            HPrintF(output, "Please enter '%s %chelp' for information about options.\n\n",
+                    OS_GetFileNamePtr(*cmdline_environment->argv), *data_00587eec);
+        }
+        ToolHelpers_cc_CallValuePairCallback(NULL, output);
+        Memory_FreeHandle(output);
+        data_00587e22 = 1;
+    }
+}
+
+int ToolHelpers_cc_GetNumFiles(void)
+{
+    long count;
+
+    CWPluginsPrivate_GetNumFiles(pluginPrivateContext, &count);
+    return count;
+}
+
+void ToolHelpers_cc_SetFileOutputName(int a, short b, char *s)
+{
+    int r;
+    if (s && *s) {
+        if ((r = CWParserPluginsPrivate_CallParserTextCallback(pluginPrivateContext, a, b ? b : 1, s)) != 0) {
+            data_00543380 = "CWParserSetFileOutputName";
+            longjmp(plugin_request_jmp_buf, r);
+        }
+    }
+}
+
+SInt32 ToolHelpers_cc_AddProjectEntry(OSSpec *path, SInt16 mode, char *name, Boolean flag, SInt32 fileId)
+{
+    SInt32 status;
+    SInt32 result;
+    CWFileSpec fileSpec[1];
+    FileOpenOptions options;
+    long *link;
+    int error;
+
+    error = OS_OSSpec_To_FSSpec(path, fileSpec);
+    if (error != 0) {
+        Targets_ReportOperatingSystemError(0x2c, error, OS_SpecToStringRelative(path, NULL, data_005880e0, 0x104));
+        result = 0;
+    } else {
+        if (fileId == -2)
+            options.fileIndex = 0;
+        else if (fileId == -1) {
+            link = &options.fileIndex;
+            CWPluginsPrivate_GetNumFiles(pluginPrivateContext, link);
+        } else if (fileId == 0)
+            options.fileIndex = -1;
+        else
+            options.fileIndex = fileId;
+
+        options.lookupPathIndex = data_00587e04;
+        options.overlayIndex = data_00587e08;
+        options.overlayTableIndex = data_00587e0c;
+        options.auxiliaryValue = 0;
+        options.flag1 = data_00587e28;
+        options.flag2 = data_00587e27;
+        options.flag3 = data_00587e26;
+
+        status = CWPluginsPrivate_OpenFile(pluginPrivateContext, fileSpec, !flag, &options, &fileId);
+        if (status != 0) {
+            data_00543380 = "CWAddProjectEntry";
+            longjmp(plugin_request_jmp_buf, status);
+        }
+
+        data_00587e28 = data_00587e27 = data_00587e26 = 0;
+
+        ToolHelpers_cc_SetFileOutputName(fileId, mode, name);
+        result = 1;
+    }
+    return result;
+}
+
+int ToolHelpers_cc_AddAccessPath(OSPathSpec *path, char use_first, int value, unsigned char option)
+{
+    int status;
+    int result;
+    int selected_value;
+    unsigned int query_status;
+    char option_b;
+    unsigned int update_status;
+    FileOperationInfo info;
+    OSSpec spec;
+    struct QueryValues values;
+    OS_MakeSpecWithPath(path, NULL, 0, &spec);
+    status = OS_OSSpec_To_FSSpec(&spec, &info.file.fileReference);
+    if (status != 0) {
+        Targets_ReportOperatingSystemError(45, status, OS_PathSpecToString(&spec.path, data_005880e0, 260));
+        result = 0;
+    } else {
+        if (value == -2) {
+            selected_value = 0;
+            info.file.selection.value = selected_value;
+        } else if ((unsigned int)(value + 1) <= 1) {
+            info.file.selection.value = -1;
+        } else if (value == -1) {
+            query_status =
+                ((unsigned int(__stdcall *)(CWPluginPrivateContext *, struct QueryValues *))get_opcode_descriptor)(
+                    pluginPrivateContext, &values);
+            if (query_status != 0) {
+                data_00543380 = "CWGetAccessPathListInfo";
+                longjmp(plugin_request_jmp_buf, query_status);
+            }
+            if (use_first != 0) {
+                selected_value = values.firstValue;
+            } else {
+                selected_value = values.secondValue;
+            }
+            info.file.selection.value = selected_value;
+        } else {
+            info.file.selection.value = value;
+        }
+        if (use_first != 0) {
+            option_b = 0;
+        } else {
+            option_b = 1;
+        }
+        info.useSecondValue = option_b;
+        info.option_a = option;
+        update_status = CWParserPluginsPrivate_CallFileOperationCallback(pluginPrivateContext, &info);
+        if (update_status != 0) {
+            data_00543380 = "CWParserAddAccessPath";
+            longjmp(plugin_request_jmp_buf, update_status);
+        }
+        result = 1;
+    }
+    return result;
+}
+
+void ToolHelpers_cc_PassVirtualFileValuePair(char *fileData, struct StorageHandle **virtualFile)
+{
+    long fileInfo;
+    int error;
+
+    if (*virtualFile != NULL) {
+        fn_0041bcb0(pluginPrivateContext, *virtualFile, &fileInfo);
+        error = CWParserPluginsPrivate_PassValuePair(pluginPrivateContext, fileData, fileInfo);
+        if (error != 0) {
+            data_00543380 = "CWParserCreateVirtualFile";
+            longjmp(plugin_request_jmp_buf, error);
+        }
+        Memory_FreeHandle(*virtualFile);
+        *virtualFile = NULL;
+    }
+}
+
+void ToolHelpers_cc_GetOutputFileDirectory(CWFileSpec *directory)
+{
+    int result;
+
+    result = CWPluginsPrivate_GetOutputFileDirectory(pluginPrivateContext, directory);
+    if (result != 0) {
+        data_00543380 = "CWGetOutputFileDirectory";
+        longjmp(plugin_request_jmp_buf, result);
+    }
+}
+
+void ToolHelpers_cc_CallFileInfoForDirectory(OSSpec *input)
+{
+    CWFileSpec body;
+    OSSpec spec;
+    int result;
+    spec.path = input->path;
+    OS_OSSpec_To_FSSpec(&spec, &body);
+    result = CWParserPluginsPrivate_CallFileInfo(pluginPrivateContext, &body);
+    if (result != 0U) {
+        data_00543380 = "CWParserSetOutputFileDirectory";
+        longjmp(plugin_request_jmp_buf, result);
+    }
+}
+
+void ToolHelpers_cc_AddOverlay1Group(char *name, void *address, SInt32 *groupNumber)
+{
+    int result;
+
+    result = CWParserPluginsPrivate_AddOverlay1Group(pluginPrivateContext, name, address, groupNumber);
+    if (result != 0) {
+        data_00543380 = "CWParserAddOverlay1Group";
+        longjmp(plugin_request_jmp_buf, result);
+    }
+}
+
+void ToolHelpers_cc_AddOverlay1(char *name, SInt32 groupNumber, SInt32 *overlayNumber)
+{
+    int result;
+
+    result = CWParserPluginsPrivate_AddOverlay1(pluginPrivateContext, name, groupNumber, overlayNumber);
+    if (result != 0) {
+        data_00543380 = "CWParserAddOverlay1";
+        longjmp(plugin_request_jmp_buf, result);
+    }
+}
+
+void ToolHelpers_cc_AddSegment(char *name, short attributes, SInt32 *segmentNumber)
+{
+    int result;
+
+    result = CWParserPluginsPrivate_AddSegment(pluginPrivateContext, name, attributes, segmentNumber);
+    if (result != 0) {
+        data_00543380 = "CWParserAddSegment";
+        longjmp(plugin_request_jmp_buf, result);
+    }
+}
+
+void ToolHelpers_cc_ChangeSegment(SInt32 segmentNumber, char *name, short attributes)
+{
+    int result;
+
+    result = CWParserPluginsPrivate_ChangeSegment(pluginPrivateContext, segmentNumber, name, attributes);
+    if (result != 0) {
+        data_00543380 = "CWParserSetSegment";
+        longjmp(plugin_request_jmp_buf, result);
+    }
+}

@@ -9,11 +9,9 @@ extern "C" {
 #endif
 
 struct DropinCallbackData {
-    const char *name; /* 0x00: create_new_text_document selects stdout or names a project entry */
-    struct StorageHandle
-        *storage; /* 0x04: create_new_text_document; CLDropinCallbacks_V10_SetStorageHandle forwards this handle */
-    char
-        addToProject; /* 0x08: create_new_text_document creates and appends a chain record and calls add_project_entry when set */
+    const char *name;
+    struct StorageHandle *storage;
+    char addToProject;
     UInt8 unk09[19];
     unsigned char payload[12];
     unsigned int kind;
@@ -33,13 +31,13 @@ struct CallbackOverlayRecord {
 struct CallbackPathEntry {
     CWFileSpec file;
     char hasChildren;
-    char alignmentPadding[1]; /* 0x47: count_access_paths_recursive */
+    char alignmentPadding[1];
     int childCount;
     CWFileSpec *childFiles;
 };
 struct CallbackRecord {
-    char name[32];        /* 0x00: lookup_callback_record copies the segment name from CLSegs_GetValue. */
-    unsigned short value; /* 0x20: lookup_callback_record copies found->value from CLSegs_GetValue. */
+    char name[32];
+    unsigned short value;
 };
 struct DiagnosticContext {
     char reserved0[8];
@@ -53,8 +51,8 @@ struct DiagnosticLocation {
     int line;
     short column;
     short length;
-    int selectionOffset;   /* 0x4E: report_message copies to record.selectionOffset */
-    short selectionLength; /* 0x52: report_message copies to record.selectionLength */
+    int selectionOffset;
+    short selectionLength;
 };
 #pragma options align = reset
 #pragma options align = mac68k
@@ -68,10 +66,8 @@ struct DropinFileCallback {
     signed char searchOption;
     long fileKey;
     char suppressFileReferenceLookup;
-    char unusedByte
-        [1]; /* 0x07: lookup_file and lookup_dependency_file leave this byte unused between suppressFileReferenceLookup and fileReference. */
-    char *
-        fileReference; /* 0x08: lookup_file copies file bytes; insert_dependency_from_path sets xstrdup(""); UCBLookUpUnit interprets precompiled bytes when referenceKind == 2. */
+    char unusedByte[1];
+    char *fileReference;
     unsigned int referenceValue;
     short referenceKind;
     short lookupResult;
@@ -113,8 +109,8 @@ struct ExportedRecord {
     char stringEnd;
     short code;
     char flag, optionH;
-    int fileType;    /* 0x7a: ParserHelpers-cc.c reads the file-info callback result and tests 'TEXT'. */
-    int secondValue; /* 0x7e: get_file_info exports the second value. */
+    int fileType;
+    int secondValue;
     char optionI, optionG;
     int finalValue;
 };
@@ -146,107 +142,63 @@ struct StoredRecord {
     int firstValue, secondValue;
 };
 #pragma options align = reset
-extern int __stdcall get_file_info(int unused, int key, int unusedFlags, struct ExportedRecord *result);
+extern int __stdcall UCBGetFileInfo(int unused, int key, int unusedFlags, struct ExportedRecord *result);
 extern Boolean lookup_file(DropinRequest *unused, char *key, DropinFileCallback *output, OSSpec *argument,
                            Boolean *found);
 extern Boolean lookup_dependency_file(DropinRequest *state, char *request, DropinFileCallback *flags, OSSpec *text,
                                       Boolean *arg5);
 extern Boolean insert_dependency_from_path(DropinRequest *descriptor, char *argument, DropinFileCallback *state,
                                            OSSpec *context, Boolean *changed);
-extern SInt32 __stdcall CLDropinCallbacks_V10_FindAndLoadFile(DropinRequest *dropin, char *inputPath,
-                                                              DropinFileCallback *parameters);
-extern int __stdcall CLDropinCallbacks_V10_GetFileText(void *context, CWFileSpec *file, void **result1,
-                                                       unsigned int *result2, SInt16 *status);
-extern int __stdcall report_message(struct DiagnosticContext *context, struct DiagnosticLocation *location,
-                                    char *message, char *detail, short kind, int argument);
-extern int __stdcall emit_alert_messages(DropinContext *ctx, char *message1, char *message2, char *message3,
-                                         char *message4);
-extern int __stdcall set_mod_date(int a1, char *name, SInt32 *tp, int a4);
-extern __stdcall SInt32 add_project_entry(DropinRequest *context, CWFileSpec *file, UInt8 flag,
-                                          struct FileOpenOptions *args, UInt32 *objectId);
-extern int __stdcall create_new_text_document(DropinRequest *request, struct DropinCallbackData *descriptor);
-extern unsigned int __stdcall fn_00425a00(unsigned int a0, unsigned int a1, unsigned int a2, unsigned int a3);
-extern unsigned int __stdcall report_store_plugin_data_not_implemented(unsigned int arg0, unsigned int arg1,
-                                                                       unsigned int arg2, unsigned int arg3);
-extern unsigned int __stdcall fn_00424660(unsigned int a0, unsigned int a1, unsigned int a2, unsigned int a3);
-extern unsigned int __stdcall free_callback_argument(unsigned int unused1, unsigned int callbackArgument,
-                                                     unsigned int unused2);
-extern unsigned int __stdcall fn_004252a0(unsigned int a0, unsigned int a1, unsigned int a2, void *a3);
-extern unsigned int __stdcall fn_00425430(unsigned int unused, unsigned int value);
-extern unsigned int __stdcall log_callback_string(unsigned int argument);
-extern unsigned int __stdcall log_callback_above_threshold(unsigned int argument);
-extern unsigned int __stdcall fn_004254e0(unsigned int a0, unsigned int a1);
-extern unsigned int __stdcall fn_00425520(unsigned int a0, unsigned int a1);
-extern unsigned int __stdcall CLDropinCallbacks_V10_StoreValue(unsigned int unused, unsigned int value,
-                                                               void *resultAddress);
-extern unsigned int __stdcall CLDropinCallbacks_V10_SetStorageHandle(unsigned int unused, unsigned int value,
-                                                                     void *resultAddress);
-extern unsigned int __stdcall copy_value_to_result(unsigned int unused, unsigned int value, unsigned int *result);
-extern unsigned int __stdcall forward_nonzero_value(unsigned int unused, unsigned int value);
-extern unsigned int __stdcall CLDropinCallbacks_V10_FreeMemory(struct DropinRequest *a0, void *a1);
-extern unsigned int __stdcall allocate_memory(unsigned int unused0, unsigned int value, unsigned int unused2,
-                                              unsigned int *result);
-extern unsigned int __stdcall copy_command_line_target(unsigned int unused, unsigned int value, unsigned int kind);
-extern unsigned int __stdcall get_storage_handle_data(unsigned int unused0, struct StorageHandle *args,
-                                                      unsigned int unused2, char **destination);
-extern unsigned int __stdcall fn_00424540(unsigned int argument);
-extern unsigned int __stdcall get_overlay_group_info(unsigned int callback, int index,
-                                                     struct CallbackOverlayRecord *record);
-extern unsigned int __stdcall lookup_overlay_allocation(unsigned int unused, unsigned int arg1, unsigned int arg2,
-                                                        struct DropinResultStorage *result);
-extern unsigned int __stdcall fn_004252f0(unsigned int callback, int callbackIndex);
-extern int __stdcall fn_00425340(unsigned int argument1, unsigned int argument2, unsigned int *result);
-extern unsigned int __stdcall call_overlays_and_translate_status(unsigned int unused, unsigned int arg1,
-                                                                 unsigned int arg2, unsigned int arg3,
-                                                                 unsigned int *result);
-extern unsigned int __stdcall copy_named_destination_to_temporary(unsigned int context, char *name,
-                                                                  unsigned int *result);
-extern unsigned int __stdcall resize_mem_handle(unsigned int callback, int argument, unsigned int size);
-extern unsigned int __stdcall request_license(unsigned int unused0, unsigned int arg1, unsigned int arg2,
-                                              unsigned int flags, unsigned int unused4, unsigned int *result);
-extern int __stdcall cache_access_path_list(CWPluginPrivateContext *request);
-extern unsigned int __stdcall lookup_callback_record(unsigned int unused, unsigned int key, CallbackRecord *record);
-extern unsigned int __stdcall report_message_detail(CWPluginPrivateContext *callback, char *message, char *detail);
-extern short DAT_00541b28;
-extern char data_00541b42;
-extern UInt8 data_00541c08;
-extern UInt8 data_00541d0c;
-extern char data_00541d0d;
-extern UInt8 data_00541d0e;
-extern unsigned char data_0054cb54[];
-extern unsigned char ucb_get_segment_info_text[];
-extern unsigned char data_0054cb94[];
-extern unsigned char data_0054cbac[];
-extern char *data_0054cbdc[];
-extern char *data_0054cbec[4];
-extern unsigned char ucb_show_status_text[];
-extern unsigned char data_0054cc40[];
-extern unsigned char data_0054cc50[];
-extern unsigned char data_0054cc68[];
-extern unsigned char ucb_get_plugin_data_text[];
-extern unsigned char ucbAllocateMemoryText[];
-extern unsigned char ucb_free_memory_text[];
-extern unsigned char data_0054ce2c[];
-extern char data_0054ce40[];
-extern unsigned char data_0054ce54[];
-extern unsigned char data_0054ce7c[];
-extern unsigned char data_0054ce90[];
-extern unsigned char ucb_get_target_name_text[];
-extern unsigned char ucb_pre_dialog_string[];
-extern unsigned char ucb_post_dialog_name[];
-extern unsigned char ucb_pre_file_action_name[];
-extern unsigned char data_0054cf24[];
-extern unsigned char data_0054cf8c[];
-extern unsigned char data_0054cfa4[];
-extern unsigned char data_0054cfbc[];
-extern unsigned char data_0054cfd0[];
-extern unsigned char data_0054cffc[];
-extern unsigned char data_0054d050[];
-extern unsigned char data_0054d0fc[];
-extern char data_00541c0a;
-extern SInt32 data_005871d0;
-extern MemBuffer data_00587570;
-extern struct MessageRecord data_00541b1c;
+extern SInt32 __stdcall UCBFindAndLoadFile(DropinRequest *dropin, char *inputPath, DropinFileCallback *parameters);
+extern int __stdcall UCBGetFileText(void *context, CWFileSpec *file, void **result1, unsigned int *result2,
+                                    SInt16 *status);
+extern int __stdcall UCBReportMessage(struct DiagnosticContext *context, struct DiagnosticLocation *location,
+                                      char *message, char *detail, short kind, int argument);
+extern int __stdcall UCBAlert(DropinContext *ctx, char *message1, char *message2, char *message3, char *message4);
+extern int __stdcall UCBSetModDate(int callbackContext, char *name, SInt32 *modificationDate, int reserved);
+extern __stdcall SInt32 UCBAddProjectEntry(DropinRequest *context, CWFileSpec *file, UInt8 flag,
+                                           struct FileOpenOptions *args, UInt32 *objectId);
+extern int __stdcall UCBCreateNewTextDocument(DropinRequest *request, struct DropinCallbackData *descriptor);
+extern unsigned int __stdcall UCBResolveRelativePath(unsigned int clientContext, unsigned int basePath,
+                                                     unsigned int relativePath, unsigned int resolvedPath);
+extern unsigned int __stdcall UCBStorePluginData(unsigned int arg0, unsigned int arg1, unsigned int arg2,
+                                                 unsigned int arg3);
+extern unsigned int __stdcall UCBGetPluginData(unsigned int context, unsigned int plugin, unsigned int data,
+                                               unsigned int size);
+extern unsigned int __stdcall UCBFreeMemory(unsigned int unused1, unsigned int callbackArgument, unsigned int unused2);
+extern unsigned int __stdcall UCBAllocMemHandle(unsigned int unused, unsigned int size, unsigned int reserved,
+                                                void *result);
+extern unsigned int __stdcall UCBUnlockMemHandle(unsigned int unused, unsigned int value);
+extern unsigned int __stdcall UCBPreDialog(unsigned int argument);
+extern unsigned int __stdcall UCBPostDialog(unsigned int argument);
+extern unsigned int __stdcall UCBPreFileAction(unsigned int action, unsigned int fileReference);
+extern unsigned int __stdcall UCBPostFileAction(unsigned int file, unsigned int action);
+extern unsigned int __stdcall UCBSecretAttachHandle(unsigned int unused, unsigned int value, void *resultAddress);
+extern unsigned int __stdcall UCBSecretDetachHandle(unsigned int unused, unsigned int value, void *resultAddress);
+extern unsigned int __stdcall UCBSecretPeekHandle(unsigned int unused, unsigned int value, unsigned int *result);
+extern unsigned int __stdcall UCBCheckinLicense(unsigned int unused, unsigned int value);
+extern unsigned int __stdcall UCBReleaseFileText(struct DropinRequest *request, void *memory);
+extern unsigned int __stdcall UCBAllocateMemory(unsigned int unused0, unsigned int value, unsigned int unused2,
+                                                unsigned int *result);
+extern unsigned int __stdcall UCBGetTargetName(unsigned int unused, unsigned int value, unsigned int kind);
+extern unsigned int __stdcall UCBLockMemHandle(unsigned int unused0, struct StorageHandle *args, unsigned int unused2,
+                                               char **destination);
+extern unsigned int __stdcall UCBUserBreak(unsigned int argument);
+extern unsigned int __stdcall UCBGetOverlay1GroupInfo(unsigned int callback, int index,
+                                                      struct CallbackOverlayRecord *record);
+extern unsigned int __stdcall UCBGetOverlay1Info(unsigned int unused, unsigned int arg1, unsigned int arg2,
+                                                 struct DropinResultStorage *result);
+extern unsigned int __stdcall UCBFreeMemHandle(unsigned int callback, int callbackIndex);
+extern int __stdcall UCBGetMemHandleSize(unsigned int argument1, unsigned int argument2, unsigned int *result);
+extern unsigned int __stdcall UCBGetOverlay1FileInfo(unsigned int unused, unsigned int arg1, unsigned int arg2,
+                                                     unsigned int arg3, unsigned int *result);
+extern unsigned int __stdcall UCBGetNamedPreferences(unsigned int context, char *name, unsigned int *result);
+extern unsigned int __stdcall UCBResizeMemHandle(unsigned int callback, int argument, unsigned int size);
+extern unsigned int __stdcall UCBCheckoutLicense(unsigned int unused0, unsigned int arg1, unsigned int arg2,
+                                                 unsigned int flags, unsigned int unused4, unsigned int *result);
+extern int __stdcall UCBCacheAccessPathList(CWPluginPrivateContext *request);
+extern unsigned int __stdcall UCBGetSegmentInfo(unsigned int unused, unsigned int key, CallbackRecord *record);
+extern unsigned int __stdcall UCBShowStatus(CWPluginPrivateContext *callback, char *message, char *detail);
 
 #ifdef __cplusplus
 }

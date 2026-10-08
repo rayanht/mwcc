@@ -5,38 +5,16 @@
 #include "compiler/objects.h"
 #include "compiler/scopes.h"
 #include "compiler/types.h"
-#include "compiler/BE_symbol.h"
 #include "compiler/CError.h"
-#include "compiler/CException.h"
-#include "compiler/CExpr.h"
 #include "compiler/CExpr2.h"
 #include "compiler/CFunc.h"
-#include "compiler/CInline.h"
 #include "compiler/CMangler.h"
-#include "compiler/CObjC.h"
-#include "compiler/CObjCModern.h"
 #include "compiler/CParser.h"
-#include "compiler/CPrec.h"
-#include "compiler/CPrep.h"
 #include "compiler/CPrepTokenizer.h"
-#include "compiler/CTemplateFunc.h"
-#include "compiler/CTemplateNew.h"
-#include "compiler/CTemplateTools.h"
 #include "compiler/CodeGen.h"
 #include "compiler/Coloring.h"
-#include "compiler/CompilerTools.h"
-#include "compiler/DWARF.h"
 #include "compiler/DumpIR.h"
-#include "compiler/IROUseDef.h"
-#include "compiler/InlineAsm.h"
-#include "compiler/InlineAsmPPC.h"
-#include "compiler/InstrSelection.h"
-#include "compiler/IroBitVect.h"
-#include "compiler/IroCSE.h"
-#include "compiler/IroJump.h"
-#include "compiler/IroLoop.h"
-#include "compiler/IroVars.h"
-#include "compiler/LoopOptimization.h"
+#include "compiler/InlineAsmRegisters.h"
 #include "compiler/ObjGen_PPC_EABI.h"
 #include "compiler/Operands.h"
 #include "compiler/PCode.h"
@@ -48,20 +26,140 @@
 #include "compiler/Registers.h"
 #include "compiler/SFPE_PPC_EABI.h"
 #include "compiler/StackFrameEABI.h"
-#include "compiler/Switch.h"
 #include "driver/cc-eabi-ppc.h"
-#include <string.h>
-#include <setjmp.h>
+
+SInt32 data_005871a0;
+UInt16 function_header_index;
+UInt8 data_005884f4;
+UInt8 func_errors;
+
+static struct PCodeAssemblyEntry *data_00581c58;
+static struct PCodeAssemblyEntry **assembly_list_tail;
 
 static inline void append_assembly(ParsedAsmInstruction *q, PCodeBlock *block)
 {
-    PCodeAssemblyEntry *n = (PCodeAssemblyEntry *)CompilerTools_AllocatePool(12);
+    PCodeAssemblyEntry *n = (PCodeAssemblyEntry *)lalloc(12);
     memclrw(n, 12);
     n->object = q->data.directive.object;
     n->block = block;
     *assembly_list_tail = n;
     assembly_list_tail = &n->next;
     block->flags |= 0x20;
+}
+
+void FuncLevelAsmPPC_AllocateLocals(void)
+{
+    Object *obj;
+    Type *type;
+    ObjectList *local;
+    SInt32 reg;
+    VarInfo *info;
+
+    for (local = locals; local != NULL; local = local->next) {
+        info = CPrep_AllocateVarInfo();
+        local->object->u.var.info = info;
+        local->object->flags |= 1;
+        info->used = 1;
+    }
+
+    for (local = locals; local != NULL; local = local->next) {
+        obj = local->object;
+        type = obj->type;
+        if (obj->sclass != TK_REGISTER)
+            continue;
+        {
+            UInt8 use_gpr;
+            UInt8 typecode;
+            SInt32 subtype;
+            if (data_00588521 && !data_005884f4)
+                CError_ReportError(ERR_COULD_NOT_ASSIGNED_REGISTER, obj->name->name);
+
+            if ((((typecode = type->type) == TYPEINT || typecode == TYPEENUM) && type->size == 8) ||
+                ((use_gpr = copts.operandsDebug) && typecode == TYPEFLOAT && type->size != 4)) {
+                if (gAvailableSavedGPRs < 2)
+                    CError_ReportError(ERR_COULD_NOT_ASSIGNED_REGISTER, obj->name->name);
+                Registers_AllocateGPRPair(obj);
+                if (Registers_GetInfo(obj))
+                    reg = Registers_GetInfo(obj)->reg;
+                else
+                    reg = 0;
+                if (Registers_GetInfo(obj))
+                    Registers_GetInfo(obj);
+                CTemplateNew_InsertRegisterBinding(obj->name->name, 0, reg, obj);
+            } else if (typecode == TYPEINT || typecode == TYPEENUM || typecode == TYPEPOINTER ||
+                       (typecode == TYPEMEMBERPOINTER && type->size == 4) ||
+                       (use_gpr && typecode == TYPEFLOAT && type->size == 4)) {
+                if (gAvailableSavedGPRs == 0)
+                    CError_ReportError(ERR_COULD_NOT_ASSIGNED_REGISTER, obj->name->name);
+                Registers_AllocateGPR(obj);
+                if (Registers_GetInfo(obj))
+                    reg = Registers_GetInfo(obj)->reg;
+                else
+                    reg = 0;
+                CTemplateNew_InsertRegisterBinding(obj->name->name, 0, reg, obj);
+            } else if (typecode == TYPEFLOAT) {
+                if (gAvailableSavedFPRs == 0)
+                    CError_ReportError(ERR_COULD_NOT_ASSIGNED_REGISTER, obj->name->name);
+                Registers_AllocateFPR(obj);
+                if (Registers_GetInfo(obj))
+                    reg = Registers_GetInfo(obj)->reg;
+                else
+                    reg = 0;
+                CTemplateNew_InsertRegisterBinding(obj->name->name, 1, reg, obj);
+            } else if (typecode == TYPESTRUCT && (subtype = TYPE_STRUCT(type)->stype) >= STRUCT_VECTOR_UCHAR &&
+                       subtype <= STRUCT_VECTOR_PIXEL) {
+                if (gAvailableSavedVRs == 0)
+                    CError_ReportError(ERR_COULD_NOT_ASSIGNED_REGISTER, obj->name->name);
+                Registers_AllocateVR(obj);
+                if (Registers_GetInfo(obj))
+                    reg = Registers_GetInfo(obj)->reg;
+                else
+                    reg = 0;
+                CTemplateNew_InsertRegisterBinding(obj->name->name, 9, reg, obj);
+            } else {
+                CError_ReportError(ERR_COULD_NOT_ASSIGNED_REGISTER, obj->name->name);
+            }
+        }
+    }
+
+    for (local = locals; local != NULL; local = local->next) {
+        obj = local->object;
+        if (Registers_GetInfo(obj))
+            reg = Registers_GetInfo(obj)->reg;
+        else
+            reg = 0;
+        if (reg == 0)
+            StackFrameEABI_AllocateObjectSlot(obj);
+    }
+}
+
+void fn_004e6e30(void)
+{
+    unsigned char savedFlag;
+    int parseResult;
+    data_005884fd = 1;
+    savedFlag = data_0058850d;
+    data_0058850d = 1;
+    parseResult = _Setjmp(inlineAsmJmpBuf);
+    if (parseResult == 0) {
+        while (tk == TK_IDENTIFIER && (parseResult = InlineAsmPPC_ClassifyIdentifier('\x01')) != 0) {
+            InlineAsmPPC_ParseDirective(parseResult);
+            if ((tk == ';') || (tk == TK_EOL)) {
+                CPrep_ResetBufferedTokenPosition();
+                tk = CPrepTokenizer_GetNextToken();
+            } else {
+                InlineAsm_Error(0x71);
+            }
+            if (parseResult == 2)
+                break;
+            if (parseResult == 3) {
+                data_005884f4 = 1;
+                break;
+            }
+        }
+    }
+    data_005884fd = 0;
+    data_0058850d = savedFlag;
 }
 
 void FuncLevelAsmPPC_GenerateFunction(Object *func)
@@ -80,7 +178,7 @@ void FuncLevelAsmPPC_GenerateFunction(Object *func)
 
     frameFinalized = 0;
 
-    if (copts.nativeByteOrder) {
+    if (copts.littleendian) {
         high_word_offset = 4;
         low_word_offset = 0;
         returnRegHi = 4;
@@ -98,11 +196,11 @@ void FuncLevelAsmPPC_GenerateFunction(Object *func)
 
     gStackFrameSize = 0;
     data_005882c0.record = NULL;
-    DAT_005884f4 = 0;
+    data_005884f4 = 0;
     asm_instruction_count = 0;
     data_00581c58 = NULL;
     assembly_list_tail = &data_00581c58;
-    list = PTR_00587644;
+    list = curstmt;
     has_dlocal_initialization = 0;
     gHasAltivecFrame = 0;
     data_005884ff = 0;
@@ -148,13 +246,13 @@ void FuncLevelAsmPPC_GenerateFunction(Object *func)
 
     data_0058850d = 1;
     data_005884fd = 1;
-    savedOptionC2 = copts.fa2;
-    savedOptionC3 = copts.fa3;
-    copts.fa2 = 0;
-    copts.fa3 = 0;
+    savedOptionC2 = copts.warn_unusedvar;
+    savedOptionC3 = copts.warn_unusedarg;
+    copts.warn_unusedvar = 0;
+    copts.warn_unusedarg = 0;
     InlineAsm_ParseAsmLines(0x7d);
 
-    if (anyerrors == 0 && copts.cOptimizerDumpEnabled != 0)
+    if (anyerrors == 0 && copts.debug_listing != 0)
         fn_004be830(list, func);
 
     data_005884fd = 0;
@@ -163,23 +261,23 @@ void FuncLevelAsmPPC_GenerateFunction(Object *func)
     func->flags |= OBJECT_DEFINED;
     if (data_005871a0 != 0)
         outgoing_argument_size = data_005871a0;
-    if (DAT_005884f4 == 0)
+    if (data_005884f4 == 0)
         CodeGen_EnumerateArgumentRegisters(emit_dlocal_initialization);
     PCodeUtilities_ResolveLabel(PCode_NewLabel());
     CodeGen_AssignMissingEntryValues(list->next);
-    copts.fa2 = savedOptionC2;
-    copts.fa3 = savedOptionC3;
+    copts.warn_unusedvar = savedOptionC2;
+    copts.warn_unusedarg = savedOptionC3;
 
     for (node = list->next; node != NULL; node = node->next) {
         switch (node->type) {
             case ST_ASM:
-                item.assembly = (ParsedAsmInstruction *)node->expr.asmInstruction;
+                item.assembly = (ParsedAsmInstruction *)node->expr;
                 if (item.assembly != NULL) {
                     if ((item.assembly->specialFlags & 1) != 0) {
                         if (item.assembly->opcode == 1) {
                             PCodeUtilities_ResolveLabel(PCode_NewLabel());
                             gCurrentBlock->line = node->sourceoffset;
-                            append_assembly((ParsedAsmInstruction *)node->expr.asmInstruction, gCurrentBlock);
+                            append_assembly((ParsedAsmInstruction *)node->expr, gCurrentBlock);
                         } else if (item.assembly->opcode == 4) {
                             PCodeUtilities_ResolveLabel(PCode_NewLabel());
                             (gReturnBlock = gCurrentBlock)->flags |= 2;
@@ -187,20 +285,18 @@ void FuncLevelAsmPPC_GenerateFunction(Object *func)
                             if (func_errors != 0)
                                 return;
                             PCode_BuildPredecessors();
-                            if (copts.cOptimizerDumpEnabled != 0)
-                                CodeGen_DumpPCode_004c4bd0(functionName, "[FUNCTION-LEVEL ASM] INITIAL CODE");
+                            if (copts.debug_listing != 0)
+                                fn_004c4bd0(functionName, "[FUNCTION-LEVEL ASM] INITIAL CODE");
                             Coloring_AllocateRegisters(func);
-                            if (copts.cOptimizerDumpEnabled != 0)
-                                CodeGen_DumpPCode_004c4bd0(functionName,
-                                                           "[FUNCTION-LEVEL ASM] AFTER REGISTER COLORING");
+                            if (copts.debug_listing != 0)
+                                fn_004c4bd0(functionName, "[FUNCTION-LEVEL ASM] AFTER REGISTER COLORING");
                             StackFrameEABI_ClearUnusedStackFrame();
                             StackFrameEABI_FinalizeLayout(frameBlock);
                             StackFrameEABI_GeneratePrologueEpilogue(prologueBlock, 0, has_dlocal_initialization);
                             StackFrameEABI_MergePrologueEpilogue(gReturnBlock = gCurrentBlock,
                                                                  data_005882c0.record ? 1 : 0);
-                            if (copts.cOptimizerDumpEnabled != 0)
-                                CodeGen_DumpPCode_004c4bd0(functionName,
-                                                           "[FUNCTION-LEVEL ASM] AFTER PROLOGUE/EPILOGUE CREATION");
+                            if (copts.debug_listing != 0)
+                                fn_004c4bd0(functionName, "[FUNCTION-LEVEL ASM] AFTER PROLOGUE/EPILOGUE CREATION");
                             frameFinalized = 1;
                         }
                     } else {
@@ -212,7 +308,7 @@ void FuncLevelAsmPPC_GenerateFunction(Object *func)
                 break;
 
             case ST_LABEL:
-                if ((item.label = node->target.label->pclabel)->resolved == 0)
+                if ((item.label = node->label->pclabel)->resolved == 0)
                     PCodeUtilities_ResolveLabel(item.label);
                 break;
 
@@ -232,152 +328,38 @@ void FuncLevelAsmPPC_GenerateFunction(Object *func)
         PCodeUtilities_ResolveLabel(PCode_NewLabel());
         (gReturnBlock = gCurrentBlock)->flags |= 2;
         PCode_BuildPredecessors();
-        if (copts.cOptimizerDumpEnabled != 0)
-            CodeGen_DumpPCode_004c4bd0(functionName, "[FUNCTION-LEVEL ASM] INITIAL CODE");
-        if (DAT_005884f4 == 0) {
+        if (copts.debug_listing != 0)
+            fn_004c4bd0(functionName, "[FUNCTION-LEVEL ASM] INITIAL CODE");
+        if (data_005884f4 == 0) {
             Coloring_AllocateRegisters(func);
             if (func_errors != 0)
                 return;
-            if (copts.cOptimizerDumpEnabled != 0)
-                CodeGen_DumpPCode_004c4bd0(functionName, "[FUNCTION-LEVEL ASM] AFTER REGISTER COLORING");
+            if (copts.debug_listing != 0)
+                fn_004c4bd0(functionName, "[FUNCTION-LEVEL ASM] AFTER REGISTER COLORING");
         }
         StackFrameEABI_ClearUnusedStackFrame();
         StackFrameEABI_FinalizeLayout(frameBlock);
-        if (DAT_005884f4 != 0)
+        if (data_005884f4 != 0)
             stack_frame_size = 0;
         if (func_errors != 0)
             return;
-        if (DAT_005884f4 == 0) {
+        if (data_005884f4 == 0) {
             StackFrameEABI_GeneratePrologueEpilogue(prologueBlock, 0, has_dlocal_initialization);
             StackFrameEABI_MergePrologueEpilogue(gReturnBlock, 1);
         }
-        if (copts.cOptimizerDumpEnabled != 0)
-            CodeGen_DumpPCode_004c4bd0(functionName, "[FUNCTION-LEVEL ASM] AFTER PROLOGUE/EPILOGUE CREATION");
+        if (copts.debug_listing != 0)
+            fn_004c4bd0(functionName, "[FUNCTION-LEVEL ASM] AFTER PROLOGUE/EPILOGUE CREATION");
     }
 
     if (func_errors != 0)
         return;
 
-    func->extraQualifiers = function_header_index;
+    func->section = function_header_index;
     if (copts.filesyminfo != 0)
         function_token_line = CPrep_UpdateTokenLine(&function_fileinfo);
-    copts.peepholeOptimizationEnabled = 0;
+    copts.peephole = 0;
     PCodeAssembly_EmitFunction(func, data_00581c58);
-    if (copts.cOptimizerDumpEnabled != 0)
-        CodeGen_DumpPCode_004c4bd0(COptimizer_GetFunctionObject(func)->name, "[FUNCTION-LEVEL ASM] FINAL CODE");
+    if (copts.debug_listing != 0)
+        fn_004c4bd0(COptimizer_GetFunctionObject(func)->name, "[FUNCTION-LEVEL ASM] FINAL CODE");
     CFunc_WarnUnused();
-}
-
-void fn_004e6e30(void)
-{
-    unsigned char savedFlag;
-    int parseResult;
-    data_005884fd = 1;
-    savedFlag = data_0058850d;
-    data_0058850d = 1;
-    parseResult = _Setjmp(inlineAsmJmpBuf);
-    if (parseResult == 0) {
-        while (tk == TK_IDENTIFIER && (parseResult = InlineAsmPPC_ClassifyIdentifier('\x01')) != 0) {
-            InlineAsmPPC_ParseDirective(parseResult);
-            if ((tk == ';') || (tk == TK_EOL)) {
-                CPrep_ResetBufferedTokenPosition();
-                tk = CPrepTokenizer_GetNextToken();
-            } else {
-                InlineAsm_Error(0x71);
-            }
-            if (parseResult == 2)
-                break;
-            if (parseResult == 3) {
-                DAT_005884f4 = 1;
-                break;
-            }
-        }
-    }
-    data_005884fd = 0;
-    data_0058850d = savedFlag;
-}
-
-void FuncLevelAsmPPC_AllocateLocals(void)
-{
-    Object *obj;
-    Type *type;
-    ObjectList *local;
-    SInt32 reg;
-    VarInfo *info;
-
-    for (local = locals; local != NULL; local = local->next) {
-        info = CPrep_AllocateVarInfo();
-        local->object.value->u.var.info = info;
-        local->object.value->flags |= 1;
-        info->used = 1;
-    }
-
-    for (local = locals; local != NULL; local = local->next) {
-        obj = local->object.value;
-        type = obj->type;
-        if (obj->sclass != TK_REGISTER)
-            continue;
-        {
-            UInt8 use_gpr;
-            UInt8 typecode;
-            SInt32 subtype;
-            if (data_00588521 && !DAT_005884f4)
-                CError_ReportError(ERR_COULD_NOT_ASSIGNED_REGISTER, obj->name->name);
-
-            if ((((typecode = type->type) == TYPEINT || typecode == TYPEENUM) && type->size == 8) ||
-                ((use_gpr = copts.operandsDebug) && typecode == TYPEFLOAT && type->size != 4)) {
-                if (gAvailableSavedGPRs < 2)
-                    CError_ReportError(ERR_COULD_NOT_ASSIGNED_REGISTER, obj->name->name);
-                Registers_AllocateGPRPair(obj);
-                if (Registers_GetInfo(obj))
-                    reg = Registers_GetInfo(obj)->reg;
-                else
-                    reg = 0;
-                if (Registers_GetInfo(obj))
-                    Registers_GetInfo(obj);
-                CTemplateNew_InsertRegisterBinding(obj->name->name, 0, reg, obj);
-            } else if (typecode == TYPEINT || typecode == TYPEENUM || typecode == TYPEPOINTER ||
-                       (typecode == TYPEMEMBERPOINTER && type->size == 4) ||
-                       (use_gpr && typecode == TYPEFLOAT && type->size == 4)) {
-                if (gAvailableSavedGPRs == 0)
-                    CError_ReportError(ERR_COULD_NOT_ASSIGNED_REGISTER, obj->name->name);
-                Registers_AllocateGPR(obj);
-                if (Registers_GetInfo(obj))
-                    reg = Registers_GetInfo(obj)->reg;
-                else
-                    reg = 0;
-                CTemplateNew_InsertRegisterBinding(obj->name->name, 0, reg, obj);
-            } else if (typecode == TYPEFLOAT) {
-                if (gAvailableSavedFPRs == 0)
-                    CError_ReportError(ERR_COULD_NOT_ASSIGNED_REGISTER, obj->name->name);
-                Registers_AllocateFPR(obj);
-                if (Registers_GetInfo(obj))
-                    reg = Registers_GetInfo(obj)->reg;
-                else
-                    reg = 0;
-                CTemplateNew_InsertRegisterBinding(obj->name->name, 1, reg, obj);
-            } else if (typecode == TYPESTRUCT && (subtype = TYPE_STRUCT(type)->stype) >= 4 && subtype <= 0xe) {
-                if (gAvailableSavedVRs == 0)
-                    CError_ReportError(ERR_COULD_NOT_ASSIGNED_REGISTER, obj->name->name);
-                Registers_AllocateVR(obj);
-                if (Registers_GetInfo(obj))
-                    reg = Registers_GetInfo(obj)->reg;
-                else
-                    reg = 0;
-                CTemplateNew_InsertRegisterBinding(obj->name->name, 9, reg, obj);
-            } else {
-                CError_ReportError(ERR_COULD_NOT_ASSIGNED_REGISTER, obj->name->name);
-            }
-        }
-    }
-
-    for (local = locals; local != NULL; local = local->next) {
-        obj = local->object.value;
-        if (Registers_GetInfo(obj))
-            reg = Registers_GetInfo(obj)->reg;
-        else
-            reg = 0;
-        if (reg == 0)
-            StackFrameEABI_AllocateObjectSlot(obj);
-    }
 }

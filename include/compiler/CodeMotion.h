@@ -43,15 +43,15 @@ struct CodeMotionObjectNode {
 };
 #pragma options align = mac68k
 struct CMDefInfo {
-    UInt8 kind;        /* 0x00: move_instruction_to_preheader views CodeMotionEntry.kind */
-    UInt8 is_implicit; /* 0x01: move_instruction_to_preheader views CodeMotionEntry.is_implicit */
+    UInt8 kind;
+    UInt8 is_implicit;
     union {
-        SInt16 reg;            /* 0x02: move_instruction_to_preheader, kind 0, 1 or 9 indexes register heads */
-        struct Object *object; /* 0x02: fn_00526950, other kinds pass object to find_object_node */
-    } u;                       /* 0x02: move_instruction_to_preheader selects by definition kind */
+        SInt16 reg;
+        struct Object *object;
+    } u;
 };
 #pragma options align = reset
-extern int COpt_005266e0(int definitionIndex, Loop *ctx);
+extern int fn_005266e0(int definitionIndex, Loop *ctx);
 extern void unswitch_loop(Loop *context);
 extern PCodeBlock *clone_block_with_bridge(Loop *region, PCodeBlock *insertionPoint, PCodeBlock *source,
                                            PCodeBlock *destination);
@@ -60,9 +60,8 @@ extern void CodeMotion_00525e70(Loop *region, PCodeBlock *block, PCodeInstructio
 extern void fn_00525f20(PCodeBlock *replacement, PCodeBlock *block, PCodeBlock *successor);
 extern void replace_successor(PCodeBlock *block, PCodeBlock *oldSuccessor, PCodeBlock *newSuccessor);
 extern unsigned int fn_00525fc0(PCodeInstruction *node, Loop *arg2, UInt32 *arg3);
-extern SInt32 CodeMotion_00526070(PCodeInstruction *definition, Loop *context);
+extern SInt32 fn_00526070(PCodeInstruction *definition, Loop *context);
 extern PCodeBlockLink *collect_single_successor_memberblocks(Loop *cm, PCodeBlock *cur);
-extern struct PCodeInstruction *DAT_00574ce8;
 extern void propagate_use_sets(void);
 extern void solve_definition_sets(void);
 extern void compute_block_definition_and_use_sets(void);

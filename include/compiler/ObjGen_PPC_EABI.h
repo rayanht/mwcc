@@ -28,12 +28,9 @@ struct BufferUpdate {
 };
 #pragma options align = mac68k
 struct CGList {
-    struct SectionAttributeNode
-        *head; /* 0x00: ObjGen_PPC_EABI_AddSectionAttribute initializes the attribute list head */
-    struct SectionAttributeNode
-        *tail; /* 0x04: ObjGen_PPC_EABI_AddSectionAttribute appends nodes and merges the last object's flags */
-    struct ObjGenSection *
-        sourceSection; /* 0x08: ObjGen_PPC_EABI_AddSectionAttribute stores the object's section; ElfLinkSection reads its ELF index */
+    struct SectionAttributeNode *head;
+    struct SectionAttributeNode *tail;
+    struct ObjGenSection *sourceSection;
 };
 #pragma options align = reset
 struct CNameNode {
@@ -85,26 +82,22 @@ struct ObjGenSection {
     SInt32 info;
     UInt32 maximumSize;
     SInt32 entrySize;
-    struct ObjGenSection *relocations; /* 0x58: BE_elf_AddRelocation writes relocation entries to this section */
+    struct ObjGenSection *relocations;
     struct DwarfFunctionState *debugState;
-    struct ObjGenSection *context; /* 0x60: BE_elf_0049c540 stores the section context; findInitialSection tests it */
+    struct ObjGenSection *context;
     struct BE_SymNode *sym;
     struct ObjGenSection *output;
     union {
-        struct CGList *
-            attributes; /* 0x6c: kind == 9 in ElfLinkSection; ObjGen_PPC_EABI_AddSectionAttribute creates the attribute list */
-        struct SerializedFormatLink
-            *serialized; /* 0x6c: ObjGen_PPC_EABI_EmitSerializedFormat reads the serialized-format output section */
+        struct CGList *attributes;
+        struct SerializedFormatLink *serialized;
     } sectionData;
 };
 #pragma options align = reset
 #pragma pack(push, 1)
 struct ObjGenSymbolLink {
-    struct Object *
-        object; /* 0x00: BE_symbol_GetFunctionSymbolLinkData returns this Object; TOC_HasObjectReferenceWithoutExpression reads it */
-    struct BE_SymNode *symbol; /* 0x04: ObjGen_PPC_EABI.c uses this as the section symbol for relocations */
-    UInt8
-        value; /* 0x08: BE_symbol.c tests and sets this flag; ObjGen_PPC_EABI_ClearSectionSymbolLinkValues clears it */
+    struct Object *object;
+    struct BE_SymNode *symbol;
+    UInt8 value;
 };
 #pragma pack(pop)
 struct OutputBufferState {
@@ -138,17 +131,14 @@ struct SectionSymbolAttributes {
 };
 struct SerializedFormat {
     char reserved0[8];
-    struct SerializedValueList *
-        values; /* 0x08: ObjGen_PPC_EABI_EmitSerializedFormat traverses values for wide output; short output reads them as SerializedValueList. */
-    struct SerializedValueList
-        *last; /* 0x0c: ObjGen_PPC_EABI_AppendOutputEntry appends after the last value and updates the tail. */
-    int count; /* 0x10: ObjGen_PPC_EABI_EmitSerializedFormat writes the serialized entry count. */
-    char kind; /* 0x14: ObjGen_PPC_EABI_EmitSerializedFormat emits only kind == 0. */
+    struct SerializedValueList *values;
+    struct SerializedValueList *last;
+    int count;
+    char kind;
 };
 struct SerializedFormatLink {
     char reserved0[4];
-    struct SerializedFormat *
-        format; /* 0x04: ObjGen_PPC_EABI_EmitSerializedFormat reads the format; ObjGen_PPC_EABI_AppendOutputEntry appends its values. */
+    struct SerializedFormat *format;
 };
 struct SerializedLocation {
     int offset;
@@ -163,9 +153,8 @@ struct SerializedShortHeader {
 };
 
 struct SerializedValueList {
-    struct SerializedValueList
-        *next; /* 0x00: ObjGen_PPC_EABI_EmitSerializedFormat traverses the value list in both output widths. */
-    int value; /* 0x04: ObjGen_PPC_EABI_EmitSerializedFormat emits the value as a long or its low short as a word. */
+    struct SerializedValueList *next;
+    int value;
 };
 struct SerializedWideHeader {
     char kind;
@@ -174,17 +163,16 @@ struct SerializedWideHeader {
     int index;
     int reserved;
 };
-struct InterruptGenerationRecord;
 extern void ObjGen_PPC_EABI_AddSectionAttribute(Object *a, UInt8 b);
 extern void create_main_file_object(void);
 extern InterruptGenerationRecord *ObjGen_PPC_EABI_GetInterruptInfo(Object *obj);
 extern InterruptGenerationRecord *fn_00488750(Object *object, BE_SymNode *linkage);
-extern GList *ObjGen_PPC_EABI_GetSectionBuffer(ObjGenSection *a0);
+extern GList *ObjGen_PPC_EABI_GetSectionBuffer(ObjGenSection *section);
 extern void ObjGen_PPC_EABI_EmitDescriptorWithRelocations(Object *obj, SInt32 value, void *data, UInt32 size,
                                                           ObjGenRelocationRequest *list);
 extern void ObjGen_PPC_EABI_RestoreFunctionState(void);
 extern SInt16 ObjGen_PPC_EABI_SetupFunctionSection(Object *param);
-extern void ObjGen_PPC_EABI_00488ee0(SInt32 entry, SInt32 value);
+extern void fn_00488ee0(SInt32 entry, SInt32 value);
 extern void emit_relocation(SInt32 op, SInt32 offset, Object *obj, ObjGenSection *ctx, SInt32 value);
 extern void ObjGen_PPC_EABI_SetSymbolOffset(Object *object, int offset);
 extern void fn_00489360(Object *arg1, int arg2, void *arg3);
@@ -194,7 +182,7 @@ extern void ObjGen_PPC_EABI_EmitObjectRelocation(Object *object);
 extern ObjGenSection *fn_004892a0(Object *object, int size);
 extern void ObjGen_PPC_EABI_EmitSwitchTable(Object *gl, Object *func);
 extern void ObjGen_PPC_EABI_EmitFloatObject(Object *node);
-extern void emit_object_data_and_relocations(Object *func, const char *data, RelocationList *list, SInt32 size,
+extern void emit_object_data_and_relocations(Object *func, const char *data, OLinkList *list, SInt32 size,
                                              Boolean flag);
 extern void allocate_object_storage(Object *obj, SInt32 size, Boolean flag);
 extern void report_section_permission_conflict(Object *function, ObjGenSection *qualInfo, void *name, UInt32 flags);
@@ -209,9 +197,9 @@ extern Boolean ObjGen_PPC_EABI_0048ac10(Object *obj);
 extern Boolean PCodeUtilities_Require(Object *obj);
 extern SInt32 ObjGen_PPC_EABI_GetSectionAlignmentOrKind(Object *obj);
 extern char *ObjGen_PPC_EABI_GetSectionName(struct ObjGenSection *descriptor);
-extern unsigned int ObjGen_PPC_EABI_EmitObject(Object *object, const void *context, RelocationList *value,
+extern unsigned int ObjGen_PPC_EABI_EmitObject(Object *object, const void *context, OLinkList *value,
                                                unsigned int flags);
-extern void ObjGen_PPC_EABI_EmitObjectWithDebugEntry(Object *object, const void *data, RelocationList *attributes,
+extern void ObjGen_PPC_EABI_EmitObjectWithDebugEntry(Object *object, const void *data, OLinkList *attributes,
                                                      unsigned int alignment);
 extern void ObjGen_PPC_EABI_ClearSectionSymbolLinkValues(void);
 extern void fn_0048b090(HashNameNode *oldid, HashNameNode *newid);
@@ -219,31 +207,14 @@ extern void fn_0048b160(HashNameNode *key, int param_2, int param_3);
 extern void fn_0048b1e0(HashNameNode *arg1);
 extern void ObjGen_PPC_EABI_SetObjectSectionIndex(Object *object);
 extern void fn_004889b0(ObjGenSection *context, int section, Object *object, UInt8 flags, unsigned int options);
-extern char DAT_0055d48c[];
-extern int DAT_00580dac;
-extern struct ObjGenSection *DAT_00580db0;
 extern SInt32 output_buffer_length;
-extern UInt8 DAT_0058849e;
-extern char rw_section_permissions[];
-extern Boolean data_00580d80;
-extern struct ObjGenSection *default_code_section;
-extern struct ObjGenSection *defaultDataSection;
-extern struct ObjGenSection *default_f32_section;
-extern struct ObjGenSection *savedDefaultDataSection;
-extern struct ObjGenSection *default_data_section;
-extern UInt8 section_table_dirty;
-extern SInt32 uid_counter;
-extern SInt32 object_data_size;
-extern SInt32 data_00580da8;
-extern SInt32 *data_00580db4;
+extern UInt8 data_0058849e;
 extern struct CNameNode *data_005870e8;
 extern struct ObjGenRelocation *relocation_list;
 extern struct CNameNode *data_00587ff8;
 extern short sectionHeaderCount;
 extern struct ObjGenSection *data_section_linked_symbol;
 extern struct SectionSymbolAttributes *section_symbol_attributes;
-extern struct BufferUpdate *pending_data_tail;
-extern struct BufferUpdate *pending_buffer_updates;
 extern ObjGenSection *select_object_section(Object *obj, SInt32 section, Boolean usePrimary, Boolean force,
                                             Boolean options);
 extern void ObjGen_PPC_EABI_SetSectionOptions(SectionRec *section);
@@ -256,12 +227,6 @@ extern void fn_0048b500(void);
 extern void emit_dwarf_arguments_and_locals(void);
 extern void ObjGen_PPC_EABI_FinalizeOutputBuffers(void);
 extern void fn_0048b3f0(void);
-extern unsigned long data_0055e9e8[2];
-extern SInt32 object_storage_size;
-extern SInt32 data_00580da4;
-struct ObjGenRelocation;
-struct ObjGenRelocation;
-struct ObjGenSection;
 
 #ifdef __cplusplus
 }

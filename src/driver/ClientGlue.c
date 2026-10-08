@@ -3,17 +3,13 @@
 #include "driver/ClientGlue.h"
 #include "compiler/objects.h"
 #include "compiler/scopes.h"
-#include "driver/CLDropinCallbacks_V10.h"
 #include "driver/CLErrors.h"
-#include "driver/CLFileOps.h"
 #include "driver/CLMain.h"
 #include "driver/CLPlugins.h"
 #include "driver/ResourceStrings.h"
 #include "driver/Resources.h"
 #include <string.h>
-#include <stdio.h>
 #include <stdlib.h>
-#include <msl_internal.h>
 #include <ctype.h>
 int fn_004050e0(char *left, char *right, int count)
 {
@@ -105,33 +101,38 @@ void __stdcall fn_00405280(PluginRequiredInputRecord *a0, PluginQueryTable *a1)
 
 void __stdcall fn_004052a0(unsigned int a0, unsigned int a1)
 {
-    data_005871c4 = a0;
-    data_005871c8 = a1;
+    clState.cpu = a0;
+    clState.os = a1;
     return;
 }
 
 unsigned int __stdcall fn_004052c0(unsigned int a0)
 {
-    data_005871d4 = a0;
+    clState.parserplugin = a0;
     return a0;
 }
 
 void __stdcall fn_004052d0(unsigned int a0, unsigned int a1)
 {
-    data_005871d0 = a0;
-    plugin_type = a1;
+    clState.language = a0;
+    clState.plugintype = a1;
     return;
 }
 
-unsigned int __stdcall ClientGlue_SetNamesAndRun(unsigned int argumentCount, char **arguments, unsigned int inputName,
-                                                 unsigned int outputName)
+unsigned int __stdcall ClientGlue_SetNamesAndRun(unsigned int argumentCount, char **arguments, char *buildDate,
+                                                 char *buildTime)
 {
-    strncpy(input_name, (char *)inputName, 32U);
-    strncpy(output_name, (char *)outputName, 32U);
+    strncpy(input_name, buildDate, 32U);
+    strncpy(output_name, buildTime, 32U);
     return CLMain_Initialize(argumentCount, arguments);
 }
 
 int ClientGlue_InitializeAndParseCommandLine(void)
 {
     return CLMain_InitializeAndParseCommandLine();
+}
+
+unsigned int __stdcall fn_00405340(unsigned int result)
+{
+    return CLMain_FreePlugins(result);
 }

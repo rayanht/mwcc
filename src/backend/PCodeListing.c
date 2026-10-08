@@ -5,68 +5,29 @@
 #include "compiler/objects.h"
 #include "compiler/scopes.h"
 #include "compiler/types.h"
-#include "compiler/BE_symbol.h"
 #include "compiler/CError.h"
-#include "compiler/CException.h"
-#include "compiler/CFunc.h"
-#include "compiler/CInline.h"
 #include "compiler/CMangler.h"
 #include "compiler/CPrec.h"
-#include "compiler/CPrep.h"
-#include "compiler/CTemplateFunc.h"
-#include "compiler/CTemplateTools.h"
-#include "compiler/DWARF.h"
-#include "compiler/InlineAsmPPC.h"
-#include "compiler/IroJump.h"
-#include "compiler/IroLoop.h"
-#include "compiler/IroVars.h"
-#include "compiler/ObjGen_PPC_EABI.h"
 #include "compiler/PCode.h"
-#include "compiler/PCodeAssembly.h"
 #include <string.h>
 #include <stdio.h>
 
-void fn_004c4ba0(void)
-{
-    return;
-}
+/* The condition register bits, and the condition each BO field value tests. */
+static char *data_005621b0[4] = {"lt", "gt", "eq", "un"};
+static char *data_005621e0[31] = {"",   "lgt", "llt", "", "eq", "lge", "lle", "", "gt", "", "", "", "ge", "", "", "",
+                                  "lt", "",    "",    "", "le", "",    "",    "", "ne", "", "", "", "",   "", ""};
 
-void fn_004c4bb0(char *listing, char *filename)
+static inline void formatdataflowset(char *name, UInt32 *vec, UInt32 size)
 {
-}
+    UInt32 i;
 
-void fn_004c4bc0(const char *format, int register_count)
-{
-    return;
-}
-
-void CodeGen_DumpPCode_004c4bd0(const char *function_name, const char *stage)
-{
-    return;
-}
-
-void fn_004c4be0(void)
-{
-    return;
-}
-
-static void PrintOp0(PCodeInstruction *p, char *out)
-{
-    unsigned char t = p->operandData.operands[0].kind;
-    const char *sign;
-    int *q;
-    if (t == 5) {
-        sprintf(out, "%.200s", COptimizer_GetFunctionObject(p->operandData.operands[0].object)->name);
-    } else if (t != 6) {
-        sign = p->operandData.operands[0].value.signed_value >= 0 ? "+" : "";
-        sprintf(out, "*%s%ld", sign, p->operandData.operands[0].value.signed_value);
-    } else {
-        q = (int *)((int *)p->operandData.operands[0].value.signed_value)[1];
-        if (q == NULL)
-            sprintf(out, "B<unknown>");
-        else
-            sprintf(out, "B%ld", q[7]);
+    fprintf(stdout, "%s = {", name);
+    for (i = 0; i < size; i++) {
+        if (i && !(i & 7))
+            fprintf(stdout, "\n\t\t");
+        fprintf(stdout, "B%ld ", vec[i]);
     }
+    fprintf(stdout, " }\n");
 }
 
 /* Instruction data consumed by the PowerPC instruction formatter. */
@@ -89,6 +50,42 @@ static inline void FormatFirstOperand(PCodeInstruction *instruction, char *out)
             else
                 sprintf(out, "B%ld", symbol[7]);
         }
+    }
+}
+
+void format_operand(PCodeOperand *n, char *ctx)
+{
+    char buf[20];
+
+    if (n->kind == 7) {
+        if (((struct PCodeLabelDifference *)n)->negate == 1)
+            CPrep_AppendStringBounded(ctx, "-", 300);
+        CPrep_AppendStringBounded(ctx, "(B", 300);
+        if (((struct PCodeLabelDifference *)n)->subtractLabel->target.block == NULL)
+            CPrep_AppendStringBounded(ctx, "<unknown>-B", 300);
+        else {
+            sprintf(buf, "%ld-B", ((struct PCodeLabelDifference *)n)->subtractLabel->target.block->index);
+            CPrep_AppendStringBounded(ctx, buf, 300);
+        }
+        if (((struct PCodeLabelDifference *)n)->addLabel->target.block == NULL)
+            CPrep_AppendStringBounded(ctx, "<unknown>+", 300);
+        else {
+            sprintf(buf, "%ld+", ((struct PCodeLabelDifference *)n)->addLabel->target.block->index);
+            CPrep_AppendStringBounded(ctx, buf, 300);
+        }
+        sprintf(buf, "%ld)", ((struct PCodeLabelDifference *)n)->addend);
+        CPrep_AppendStringBounded(ctx, buf, 300);
+    } else if (n->kind == 4) {
+        sprintf(buf, "%ld", n->value.immediate_value);
+        CPrep_AppendStringBounded(ctx, buf, 300);
+        if (n->object != NULL) {
+            CPrep_AppendStringBounded(ctx, "{", 300);
+            CPrep_AppendStringBounded(ctx, COptimizer_GetFunctionObject(n->object)->name, 300);
+            CPrep_AppendStringBounded(ctx, "}", 300);
+        }
+    } else {
+        sprintf(buf, "?unknown operand kind=%d", n->kind);
+        CPrep_AppendStringBounded(ctx, buf, 300);
     }
 }
 
@@ -1100,38 +1097,118 @@ void fn_004c4bf0(PCodeInstruction *instruction, char *out)
         strcat(out, "; fIsPtrOp");
 }
 
-void format_operand(PCodeOperand *n, char *ctx)
+static void PrintOp0(PCodeInstruction *p, char *out)
 {
-    char buf[20];
-
-    if (n->kind == 7) {
-        if (((struct PCodeLabelDifference *)n)->negate == 1)
-            CPrep_AppendStringBounded(ctx, "-", 300);
-        CPrep_AppendStringBounded(ctx, "(B", 300);
-        if (((struct PCodeLabelDifference *)n)->subtractLabel->target.block == NULL)
-            CPrep_AppendStringBounded(ctx, "<unknown>-B", 300);
-        else {
-            sprintf(buf, "%ld-B", ((struct PCodeLabelDifference *)n)->subtractLabel->target.block->index);
-            CPrep_AppendStringBounded(ctx, buf, 300);
-        }
-        if (((struct PCodeLabelDifference *)n)->addLabel->target.block == NULL)
-            CPrep_AppendStringBounded(ctx, "<unknown>+", 300);
-        else {
-            sprintf(buf, "%ld+", ((struct PCodeLabelDifference *)n)->addLabel->target.block->index);
-            CPrep_AppendStringBounded(ctx, buf, 300);
-        }
-        sprintf(buf, "%ld)", ((struct PCodeLabelDifference *)n)->addend);
-        CPrep_AppendStringBounded(ctx, buf, 300);
-    } else if (n->kind == 4) {
-        sprintf(buf, "%ld", n->value.immediate_value);
-        CPrep_AppendStringBounded(ctx, buf, 300);
-        if (n->object != NULL) {
-            CPrep_AppendStringBounded(ctx, "{", 300);
-            CPrep_AppendStringBounded(ctx, COptimizer_GetFunctionObject(n->object)->name, 300);
-            CPrep_AppendStringBounded(ctx, "}", 300);
-        }
+    unsigned char t = p->operandData.operands[0].kind;
+    const char *sign;
+    int *q;
+    if (t == 5) {
+        sprintf(out, "%.200s", COptimizer_GetFunctionObject(p->operandData.operands[0].object)->name);
+    } else if (t != 6) {
+        sign = p->operandData.operands[0].value.signed_value >= 0 ? "+" : "";
+        sprintf(out, "*%s%ld", sign, p->operandData.operands[0].value.signed_value);
     } else {
-        sprintf(buf, "?unknown operand kind=%d", n->kind);
-        CPrep_AppendStringBounded(ctx, buf, 300);
+        q = (int *)((int *)p->operandData.operands[0].value.signed_value)[1];
+        if (q == NULL)
+            sprintf(out, "B<unknown>");
+        else
+            sprintf(out, "B%ld", q[7]);
     }
+}
+
+void fn_004c4be0(void)
+{
+    return;
+}
+
+void fn_004c4bd0(const char *function_name, const char *stage)
+{
+    return;
+}
+
+void fn_004c4bc0(const char *format, int register_count)
+{
+    return;
+}
+
+void fn_004c4bb0(char *listing, char *filename)
+{
+}
+
+void fn_004c4ba0(void)
+{
+    return;
+}
+
+void pclistdataflowanalysis(UInt32 *use, UInt32 *def, UInt32 *in, UInt32 *out, UInt32 size)
+{
+    formatdataflowset("use", use, size);
+    formatdataflowset("def", def, size);
+    formatdataflowset("in ", in, size);
+    formatdataflowset("out", out, size);
+}
+
+static void pclistblock(PCodeBlock *block)
+{
+    PCodeInstruction *instr;
+    PCodeBlockLink *link;
+
+    fprintf(stdout, ":SRC_LINE=%ld:{%4.4x}::::::::::::::::::::::::::::::::::::::::LOOPWEIGHT=%ld\n", block->line,
+            block->code_offset, block->execution_weight);
+    fprintf(stdout, "B%ld: ", block->index);
+    fprintf(stdout, "Successors = { ");
+    for (link = block->successors; link; link = link->next)
+        fprintf(stdout, "B%ld ", link);
+    fprintf(stdout, "}  ");
+    fprintf(stdout, "Predecessors = { ");
+    for (link = block->predecessors; link; link = link->next)
+        fprintf(stdout, "B%ld ", link);
+    fprintf(stdout, "}  Labels = { ");
+    fprintf(stdout, "L%ld ", block->labels);
+    fprintf(stdout, "}\n\n");
+    for (instr = block->instructions; instr; instr = instr->next)
+        fprintf(stdout, "    %.8lX  %.8lX %4ld    %-7s%c %s\n", instr, block, block->line, "", ' ', "");
+    fprintf(stdout, "............................................................\n");
+}
+
+static void pclistonoff(int flag)
+{
+    if (flag)
+        fprintf(stdout, "On\n");
+    else
+        fprintf(stdout, "Off\n");
+}
+
+static void formatflags(char *buf, UInt32 flags)
+{
+    *buf = 0;
+    if (flags & 1)
+        strcat(buf, "fSpilled");
+    if (flags & 2) {
+        if (*buf)
+            strcat(buf, "|");
+        strcat(buf, "fPushed");
+    }
+    if (flags & 4) {
+        if (*buf)
+            strcat(buf, "|");
+        strcat(buf, "fCoalesced");
+    }
+    if (flags & 8) {
+        if (*buf)
+            strcat(buf, "|");
+        strcat(buf, "fCoalescedInto");
+    }
+    if (flags & 0x10) {
+        if (*buf)
+            strcat(buf, "|");
+        strcat(buf, "fPairHigh");
+    }
+    if (flags & 0x20) {
+        if (*buf)
+            strcat(buf, "|");
+        strcat(buf, "fPairLow");
+    }
+    if (!*buf)
+        strcpy(buf, "no_flags");
 }

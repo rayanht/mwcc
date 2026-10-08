@@ -12,12 +12,12 @@
 extern "C" {
 #endif
 
-struct ClassLayoutInput {
-    struct Object **entries;
-    struct ObjMemberVar *vtableMember;
-    unsigned short count;
-    unsigned short firstVirtualSlot;
-    char hasVirtualFunction;
+struct ClassLayout {
+    ObjBase **objlist;
+    ObjMemberVar *vtable_ivar;
+    UInt16 lex_order_count;
+    UInt16 firstVirtualSlot;
+    Boolean has_vtable;
 };
 /* A declaration's storage class (DeclInfo.storage): the keyword's token. An enumeration: CFunc compares the storage with these
  * enumerators, which compiles differently from a comparison with the numbers. */
@@ -25,28 +25,24 @@ enum { STORAGE_AUTO = TK_AUTO, STORAGE_REGISTER = TK_REGISTER, STORAGE_STATIC = 
 
 #pragma options align = mac68k
 struct DeclInfo {
-    Type
-        *dtype; /* 0x00: CParser_GetDeclSpecs supplies the declaration type; CClass_GetQualifiedClass tests TYPECLASS */
+    Type *thetype;
     UInt32 qual;
     struct NameSpace *nspace;
     HashNameNode *name;
-    struct ObjBase *resolvedObject; /* 0x10: parse_resolved_member_function_decl casts the resolved symbol to Object */
-    struct NameSpaceObjectList
-        *resolvedObjects; /* 0x14: parse_resolved_member_function_decl reads the namespace object list's object */
+    struct ObjBase *resolvedObject;
+    struct NameSpaceObjectList *resolvedObjects;
     struct FuncArg *parameterNames;
     struct NameSpace *parameterScope;
     Type *templateType;
     ENode *arrayBound;
     struct TypeClass *pendingClass;
-    struct CTStateElem *
-        parsedData; /* 0x2c: CTemplateNew_ParseTemplateArguments supplies the list; CDecl_CopyDeclInfoToNewFunc copies it with CTemplateTools_CopyCTStateElemList */
-    struct TemplateParameterRecord *
-        templateParameters; /* 0x30: parse_function_template_declaration assigns its TemplateParameterRecord *params before CDecl_ParseDeclarator */
+    struct TemplArg *expltargs;
+    struct TemplParam *templateParameters;
     struct TemplateScopeState *templateScope;
-    SInt16 operatorToken;
-    SInt16 storage;
-    SInt16 extraQualifiers;
-    UInt8 declarationAttributes;
+    SInt16 operator_token;
+    SInt16 storageclass;
+    SInt16 section;
+    UInt8 exportflags;
     UInt8 hasParameterNames;
     UInt8 oldStyleParameters;
     UInt8 isNewExpression;
@@ -56,76 +52,59 @@ struct DeclInfo {
     Boolean parserOption;
     Boolean isConstructor;
     Boolean allowForeignNamespace;
-    Boolean isFriendDeclaration; /* 0x48: parse_friend_declaration sets this flag before CDecl_ParseDeclarator */
+    Boolean in_friend_decl;
     UInt8 requireMangledName;
     UInt8 isNewTypeId;
     UInt8 requireTemplateClassMember;
     UInt8 isStructMemberDeclarator;
     Boolean allowTemplateArguments;
-    Boolean hasTemplateArguments;
+    Boolean has_expltargs;
     UInt8 hasTypename;
-    struct PFile *browseFile;
-    struct PFile *sourceFile;
-    SInt32 sourceLine;
+    struct CPrepFileInfo *file;
+    struct CPrepFileInfo *file2;
+    SInt32 sourceoffset;
 };
 #pragma options align = reset
-struct DefArg {
-    struct Object *obj;
-    struct ENode *expr;
+struct DefArgCtorInfo {
+    struct Object *default_func;
+    struct ENode *default_arg;
 };
 union FunctionTypeBuffer {
     TypeMemberFunc member_function;
     TypeFunc function;
 };
 #pragma pack(push, 1)
-struct MemberDecl {
-    DeclInfo declarationSpecifiers; /* 0x00: CParser_GetDeclSpecs in CDecl.c */
-    DeclInfo declarator;            /* 0x5c: CDecl_ScanStructDeclarator */
-    UInt8 unused;                   /* 0xb8: CDecl.c clears the whole MemberDecl; no member reads or writes */
-    Boolean valid;                  /* 0xb9: CDecl_ScanStructDeclarator sets declaration validity */
-};
-#pragma pack(pop)
-#pragma pack(push, 1)
-struct TemplateDeclarationData {
-    Type *dtype;              /* 0x00: CDecl_InitDeclInfoFromTemplateDeclarationData copies DeclInfo.dtype */
-    UInt32 qual;              /* 0x04: CDecl_InitDeclInfoFromTemplateDeclarationData copies DeclInfo.qual */
-    struct NameSpace *nspace; /* 0x08: CDecl_InitDeclInfoFromTemplateDeclarationData copies DeclInfo.nspace */
-    HashNameNode *name;       /* 0x0c: CDecl_InitDeclInfoFromTemplateDeclarationData copies DeclInfo.name */
-    struct CTStateElem *
-        parsedData; /* 0x10: CDecl_InitDeclInfoFromTemplateDeclarationData copies DeclInfo.parsedData, copied by CTemplateTools_CopyCTStateElemList */
-    SInt16 storage; /* 0x14: CDecl_InitDeclInfoFromTemplateDeclarationData */
-    SInt16 extraQualifiers;            /* 0x16: CDecl_InitDeclInfoFromTemplateDeclarationData */
-    SInt8 declarationAttributes;       /* 0x18: CDecl_InitDeclInfoFromTemplateDeclarationData */
-    SInt8 hasTemplateArguments;        /* 0x19: CDecl_InitDeclInfoFromTemplateDeclarationData */
-    FOI inlineLocation;                /* 0x1a: CTemplateClass.c passes to CInline_AddFunctionPrecNode */
-    PrepTokenBuffer inlineTokenBuffer; /* 0x24: CTemplateClass.c passes to CInline_AddFunctionPrecNode */
+struct BigDeclInfo {
+    DeclInfo declinfo;
+    DeclInfo declinfo2;
+    UInt8 unused;
+    Boolean valid;
 };
 #pragma pack(pop)
 extern TypeIntegral stunsignedint;
-struct ClassLayoutInput;
-extern UInt8 CDecl_ParseDeclarationAttributeFlags(void);
+extern UInt8 CDecl_ParseClassDeclSpec(void);
 extern TypeClass *CDecl_DefineClass(struct NameSpace *nspace, struct HashNameNode *name, struct TypeClass *type,
                                     short mode, char flag4, char flag5);
-extern void CDecl_CompleteClass(ClassLayoutInput *ctx, TypeClass *cls);
-extern void fill_class_layout_entries(ClassLayoutInput *table, TypeClass *type, Object **entries);
-extern void declare_auto_generated_destructor(ClassLayoutInput *type, TypeClass *cls);
-extern void generate_copy_constructor(ClassLayoutInput *type, TypeClass *cls);
-extern void declare_default_copy_constructor(ClassLayoutInput *decl, TypeClass *type);
+extern void CDecl_CompleteClass(ClassLayout *ctx, TypeClass *cls);
+extern void fill_class_layout_entries(ClassLayout *table, TypeClass *type, ObjBase **entries);
+extern void declare_auto_generated_destructor(ClassLayout *type, TypeClass *cls);
+extern void generate_copy_constructor(ClassLayout *type, TypeClass *cls);
+extern void declare_default_copy_constructor(ClassLayout *decl, TypeClass *type);
 extern TypeMemberFunc *CDecl_MakeDefaultDtorType(TypeClass *theclass, char is_const);
-extern void make_auto_generated_dtor(ClassLayoutInput *context, TypeClass *cls);
+extern void make_auto_generated_dtor(ClassLayout *context, TypeClass *cls);
 extern void make_defarg_function(TypeClass *cls);
-extern void parse_class_bases(struct TypeClassTemplate *classType, short mode, char allowDependent);
+extern void parse_class_bases(struct TemplClass *classType, short mode, char allowDependent);
 extern Boolean CDecl_CheckNewBase(TypeClass *cls, TypeClass *base, Boolean flag);
-extern void CDecl_SetVBaseOffsets(TypeClass *cls);
+extern void CDecl_MakeVBaseList(TypeClass *cls);
 extern VClassList *append_unique_vbase(TypeClass *cls, TypeClass *base);
-extern ObjMemberVar *add_member_var(ClassLayoutInput *declaration, TypeClass *cls, Type *type, UInt32 qual,
+extern ObjMemberVar *add_member_var(ClassLayout *declaration, TypeClass *cls, Type *type, UInt32 qual,
                                     HashNameNode *name, AccessType access);
-extern void parse_friend_declaration(struct TypeClassTemplate *cls);
-extern void CDecl_AddFriend(TypeClass *typeClass, Object *object, Type *type);
-extern void CDecl_InitDeclInfoFromTemplateDeclarationData(DeclInfo *dst, TemplateDeclarationData *src);
-extern unsigned char CDecl_CopyDeclInfoToNewFunc(NewFunc *destination, DeclInfo *source);
+extern void parse_friend_declaration(struct TemplClass *cls);
+extern void CDecl_AddFriend(TypeClass *typeClass, Object *object, TypeClass *type);
+extern void CDecl_UnpackDeclInfo(DeclInfo *dst, PackedDeclInfo *src);
+extern unsigned char CDecl_PackDeclInfo(PackedDeclInfo *destination, DeclInfo *source);
 extern Boolean check_qualified_identifier_or_operator(TypeClass *tclass, AccessType access);
-extern TypeMemberFunc *CDecl_NewTypeMemberFunc(TypeFunc *type, TypeClass *theclass, Boolean is_static, Boolean arg);
+extern TypeMemberFunc *CDecl_MakeTypeMemberFunc(TypeFunc *type, TypeClass *theclass, Boolean is_static, Boolean arg);
 extern void scan_inline_definition(Object *object, TypeClass *classType);
 extern int parse_struct_members(TypeStruct *obj, Boolean block);
 extern void scanenum(DeclInfo *result);
@@ -134,7 +113,7 @@ extern Boolean CDecl_FunctionDeclarator(DeclInfo *decl, NameSpace *mode, Boolean
 extern void compute_struct_layout(Type *str);
 extern TypeEnum *parse_enum_definition(TypeEnum *decl, HashNameNode *name);
 extern void scanstruct(DeclInfo *state, SInt16 spec);
-extern void declare_member_function(ClassLayoutInput *gen, TypeClass *cls, struct DeclInfo *info, UInt8 access,
+extern void declare_member_function(ClassLayout *gen, TypeClass *cls, struct DeclInfo *info, UInt8 access,
                                     UInt8 allowPure, UInt8 specialMember, UInt8 parseBody, UInt8 declarationOnly);
 extern void declare_object(DeclInfo *d, UInt8 b, Boolean c);
 extern void CDecl_ComputeUnderlyingEnumType(TypeEnum *res);
@@ -142,10 +121,10 @@ extern Object *CDecl_GetFunctionObject(DeclInfo *decl, NameSpace *nspace, Boolea
 extern void CDecl_TypedefDeclarator(DeclInfo *decl);
 extern void CDecl_ScanDeclarator(DeclInfo *p);
 extern void parse_resolved_member_function_decl(DeclInfo *di, Boolean define);
-extern void CDecl_ScanStructDeclarator(MemberDecl *p);
+extern void CDecl_ScanStructDeclarator(BigDeclInfo *p);
 extern struct HashNameNode *unnamed_name;
-extern struct NameSpace *currentNameSpace;
-extern struct FOI member_foi;
+extern struct NameSpace *cscope_current;
+extern struct FileOffsetInfo member_foi;
 extern TypeIntegral stunsignedshort;
 extern TypeIntegral stunsignedchar;
 extern void CDecl_ParseClass(DeclInfo *ctx, SInt16 kind, Boolean advanceToken, UInt8 extraFlags);
@@ -153,12 +132,12 @@ extern void CheckDefaultArgs(FuncArg *args);
 extern void MergeDefaultArgs(FuncArg *args, FuncArg *otherArgs);
 extern Object *find_or_create_function_object(ObjectList *list, DeclInfo *ref, Boolean *found, UInt8 mode,
                                               Boolean conv);
-extern void parse_class_members(ClassLayoutInput *decle, TypeClass *tclass, SInt16 mode);
+extern void parse_class_members(ClassLayout *decle, TypeClass *tclass, SInt16 mode);
 extern struct HashNameNode *destructor_name;
 extern UInt8 member_access;
 extern void conversion_type_name(DeclInfo *result);
-extern void CDecl_ParseDeclarator(DeclInfo *p);
-extern void CDecl_MakeMemberPointerType(Type **result, TypeClass *owner, unsigned int value);
+extern void scandeclarator(DeclInfo *p);
+extern void makememberpointertype(Type **result, TypeClass *owner, unsigned int value);
 extern void parse_direct_declarator(DeclInfo *state, NameSpace *function);
 extern Boolean check_operator_declaration(DeclInfo *declaration, Boolean isMember);
 extern unsigned int parse_parenthesized_declarator(DeclInfo *args);
@@ -169,8 +148,8 @@ extern Boolean check_function_return_type(Type *type);
 extern Boolean CDecl_CheckArrayIntegr(Type *type);
 extern void CDecl_PrependFuncArg(TypeFunc *type, TypeIntegral *argtype);
 extern void CDecl_MakePTMFuncType(TypeFunc *func);
-extern void prepend_class_pointer_argument(TypeFunc *owner, TypeClass *classType, char parseModifiers);
-extern void CDecl_WrapTypePointer(Type **type, unsigned int flags);
+extern void CDecl_AddThisPointerArgument(TypeFunc *owner, TypeClass *classType, char parseModifiers);
+extern void makethetypepointer(Type **type, unsigned int flags);
 extern Boolean check_object_creation_type(Type *type);
 extern unsigned char CDecl_CheckObjectType(Type *type);
 extern Boolean CanCreateObject(Type *tc);
@@ -181,7 +160,7 @@ extern void CDecl_ScanPointer(DeclInfo *declarator, NameSpace *nspace, char fini
 extern void replace_type_placeholder(Type *type, Type *ctype);
 extern Type type_placeholder;
 extern struct HashNameNode *this_arg_name;
-extern void scandeclarator(DeclInfo *decl);
+extern void scandirectdecl1(DeclInfo *decl);
 extern TypeTemplDep *CDecl_NewTemplDepType(UInt8 templateKind);
 extern Type *CDecl_NewPointerType(Type *targetType);
 extern Type *CDecl_NewArrayType(Type *elementType, SInt32 size);

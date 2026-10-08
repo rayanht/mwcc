@@ -32,10 +32,8 @@ extern void SpillCode_MarkLastUses(SInt32 var, UInt32 count);
 extern void SpillCode_MaterializeGraph(UInt32 count);
 extern void SpillCode_CoalesceCopies(SInt32 regclass, UInt32 numRegs);
 extern void SpillCode_ConstructInterference(SInt32 registerClass, UInt32 registerCount);
-extern short *gCoalescedRegisters;
 extern short gFPRCoalesceFirst;
 extern short gGPRCoalesceFirst;
-extern UInt32 *gInterferenceBits;
 extern struct PCodeBlock *gPCodeBlocks;
 extern short gVRCoalesceFirst;
 

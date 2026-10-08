@@ -27,24 +27,39 @@ struct CColoringNode {
     UInt16 flag;
 };
 #pragma options align = reset
+/* An instruction in one of a machine model's pipeline stages and the cycles it has left there. */
+struct PipelineStage {
+    struct PCodeInstruction *instr;
+    SInt32 remaining;
+};
+/* An instruction in a machine model's completion queue, until it retires. */
+struct CompletionEntry {
+    struct PCodeInstruction *instr;
+    SInt32 completed;
+};
+/* One opcode's entry in a machine model's table: its class there, and its length. */
+struct MachineOpcodeInfo {
+    UInt8 executionUnit;
+    SInt8 latency;
+    SInt8 stageCycles[4];
+};
 #pragma options align = mac68k
-struct Checker {
-    SInt32 count; /* 0x00: schedule_block limits issue slots */
-    SInt32
-        omitRegisterAntiDependencyLatency; /* 0x04: fn_004cd7c0 tests this flag to suppress register anti-dependency latency */
-    SInt32 (*getLatency)(void *);          /* 0x08: Scheduler.c initializes node height */
-    void (*beginScheduling)(void);         /* 0x0c: schedule_block initializes simulation */
-    SInt32 (*check)(void *);               /* 0x10: select_ready_coloring_node tests issue eligibility */
-    void (*issueInstruction)(void *); /* 0x14: schedule_block issues selected instruction */
-    void (*advanceCycle)(void);       /* 0x18: schedule_block advances simulation */
-    SInt32 (*checkLate)(void *);      /* 0x1c: Scheduler.c tests late instruction eligibility */
+struct MachineInfo {
+    SInt32 count;
+    SInt32 omitRegisterAntiDependencyLatency;
+    SInt32 (*getLatency)(void *);
+    void (*beginScheduling)(void);
+    SInt32 (*check)(void *);
+    void (*issueInstruction)(void *);
+    void (*advanceCycle)(void);
+    SInt32 (*checkLate)(void *);
 };
 #pragma options align = reset
 #pragma options align = mac68k
 struct DependencyEntry {
-    struct DependencyEntry *next; /* 0x00: fn_004cd7c0 links and traverses register owner lists */
-    struct CColoringNode *owner;  /* 0x04: fn_004cd7c0 adds dependencies on this owner */
-    struct Object *object;        /* 0x08: fn_004cd7c0 initializes register entries to NULL */
+    struct DependencyEntry *next;
+    struct CColoringNode *owner;
+    struct Object *object;
 };
 #pragma options align = reset
 
@@ -62,7 +77,6 @@ struct SchedEntry {
 };
 #pragma options align = reset
 extern void schedule_block(PCodeBlock *function);
-extern void *data_00581b7c;
 extern struct CColoringNode *select_ready_coloring_node(struct CColoringNode *list, UInt16 id);
 extern void build_sched_dependencies(CColoringNode *list, CColoringNode *blk);
 extern void add_memory_dependencies(CColoringNode *owner, int mode, int arg3);
@@ -72,50 +86,16 @@ extern void init_register_owner_lists(void);
 extern void fn_004cd650(void *object, Object *key, SInt16 useList74);
 extern void fn_004cd7c0(int kind, CColoringNode *value, struct DependencyEntry **firstList,
                         struct DependencyEntry **secondList, int useSecondList);
-extern int DAT_00581b1c;
-extern int DAT_00581b20;
-extern int DAT_00581b28;
-extern int DAT_00581b2c;
-extern int DAT_00581b34;
-extern int DAT_00581b38;
-extern int DAT_00581b3c;
-extern int DAT_00581b40;
-extern int DAT_00581b44;
-extern int DAT_00581b48;
-extern int DAT_00581b4c;
-extern int DAT_00581b54;
-extern int DAT_00581b58;
-extern int DAT_00581b5c;
-extern int DAT_00581b60;
-extern int DAT_00581b64;
-extern int DAT_00581b68;
-extern int DAT_00581b6c;
-extern struct DependencyEntry *memory_dependency_list;
-extern struct DependencyEntry *dependency_entry_list;
-extern struct DependencyEntry **data_00581b00;
-extern struct DependencyEntry **gpr_owner_lists;
-extern struct DependencyEntry **data_00581b08;
-extern struct DependencyEntry **fpr_owner_lists;
-extern struct DependencyEntry **virtual_register_owner_lists;
-extern struct DependencyEntry **register_owner_lists;
-extern struct DependencyEntry *data_00581b18[3];
-extern struct DependencyEntry *data_00581b24[3];
-extern struct DependencyEntry *data_00581b30[8];
-extern struct DependencyEntry *data_00581b50[8];
-extern struct SchedEntry *sched_entry_list;
-extern UInt16 max_height;
 extern SInt32 gVirtualRegistersActive;
 extern void Scheduler_Schedule(char force);
-extern struct Checker checkers[];
-extern struct Checker scheduler_checkers[];
-extern struct Checker data_005763f8[];
-extern struct Checker data_00576f08[];
-extern struct Checker data_00577640[];
-extern struct Checker scheduler_checker_array[];
-extern struct Checker data_00578e30[];
-extern struct Checker *data_00581b80;
+extern struct MachineInfo machine603;
+extern struct MachineInfo machine603e;
+extern struct MachineInfo machine604;
+extern struct MachineInfo machine750;
+extern struct MachineInfo machine7400;
+extern struct MachineInfo machine601;
+extern struct MachineInfo machine821;
 extern int Scheduler_ReturnZero(PCodeInstruction *list, PCodeInstruction *ref, char c);
-struct CColoringNode;
 
 #ifdef __cplusplus
 }

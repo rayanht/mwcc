@@ -17,9 +17,8 @@ extern "C" {
 #define TYPE_BITFIELD(ty) ((TypeBitfield *)(ty))
 #define TYPE_MEMBER_POINTER(ty) ((TypeMemberPointer *)(ty))
 #define TYPE_POINTER(ty) ((TypePointer *)(ty))
+#define TYPE_TEMPLATE(ty) ((TypeTemplDep *)(ty))
 #define TPTR_TARGET(ty) (TYPE_POINTER(ty)->target)
-/* Single-byte enumeration in this build: TYPEPOINTER is 11, verified by
- * the argument check in CABI_ThisArg. */
 enum {
     TYPEVOID = 0,
     TYPEINT = 1,
@@ -61,6 +60,9 @@ enum {
 #define IS_TYPE_ARRAY(ty) ((ty)->type == TYPEARRAY)
 #define IS_TYPE_BITFIELD(ty) ((ty)->type == TYPEBITFIELD)
 #define IS_TYPE_MEMBERPOINTER(ty) ((ty)->type == TYPEMEMBERPOINTER)
+#define IS_TYPESTRUCT_VECTOR(ty) ((ty)->stype >= STRUCT_VECTOR_UCHAR && (ty)->stype <= STRUCT_VECTOR_PIXEL)
+#define IS_TYPE_VECTOR(ty) ((ty)->type == TYPESTRUCT && IS_TYPESTRUCT_VECTOR(TYPE_STRUCT(ty)))
+#define IS_TYPE_NONVECTOR_STRUCT(ty) ((ty)->type == TYPESTRUCT && !IS_TYPESTRUCT_VECTOR(TYPE_STRUCT(ty)))
 enum {
     IT_BOOL,
     IT_CHAR,
@@ -92,31 +94,15 @@ enum {
 enum { CLASS_EFLAGS_INTERNAL = 1, CLASS_EFLAGS_IMPORT = 2, CLASS_EFLAGS_EXPORT = 4, CLASS_EFLAGS_F0 = 0xF0 };
 #pragma options align = mac68k
 struct Type {
-    UInt8 type;  /* 0x00: TypedefDeclInfo tests TYPEPOINTER and TYPEARRAY; type-kind discriminator */
-    SInt32 size; /* 0x02: scandeclarator sets total array byte size; emit_array_type reads it */
-    struct {
-        union {
-            struct {                    /* TYPEENUM: TypeEnum payload, not an array payload */
-                NameSpace *nspace;      /* 0x06: CDecl.c sets the TYPEENUM namespace */
-                ObjEnumConst *enumlist; /* 0x0a: emit_enum_type iterates TYPEENUM constants */
-                Type *enumtype;         /* 0x0e: DWARF.c reads the TYPEENUM underlying integral type */
-                HashNameNode *enumname; /* 0x12: emit_enum_type emits the TYPEENUM name */
-            };
-            UInt8 integral;    /* 0x06: DWARF.c reads the TYPEINT or TYPEFLOAT integral code */
-            struct {           /* TYPEARRAY: scandeclarator constructs; TypedefDeclInfo copies as TypePointer */
-                Type *element; /* 0x06: scandeclarator sets elementType; emit_array_type reads element size */
-                UInt32
-                    qual; /* 0x0a: scandeclarator clears; TypedefDeclInfo copies the TYPEARRAY payload as TypePointer, including qual */
-            };
-        };
-    } array[0]; /* 0x06: kind-selected extension; common Type prefix remains six bytes */
+    UInt8 type;
+    SInt32 size;
 };
 #pragma options align = reset
 #pragma options align = mac68k
 struct TypeIntegral {
-    UInt8 type;     /* 0x00: CMachine.c tests TYPEFLOAT for stshortdouble */
-    SInt32 size;    /* 0x02: SignedIntType selects the integral type by byte size */
-    UInt8 integral; /* 0x06: get_integral_type_code and DumpIR.c decode the IT_* integral or floating-point code */
+    UInt8 type;
+    SInt32 size;
+    UInt8 integral;
 };
 #pragma options align = reset
 #pragma options align = mac68k
@@ -138,16 +124,31 @@ struct StructMember {
     UInt32 qual;
 };
 #pragma options align = reset
+enum {
+    STRUCT_TYPE_STRUCT = 0,
+    STRUCT_TYPE_UNION = 1,
+    STRUCT_TYPE_CLASS = 2,
+    STRUCT_TYPE_MAX = 3,
+    STRUCT_VECTOR_UCHAR = 4,
+    STRUCT_VECTOR_SCHAR = 5,
+    STRUCT_VECTOR_BCHAR = 6,
+    STRUCT_VECTOR_USHORT = 7,
+    STRUCT_VECTOR_SSHORT = 8,
+    STRUCT_VECTOR_BSHORT = 9,
+    STRUCT_VECTOR_UINT = 10,
+    STRUCT_VECTOR_SINT = 11,
+    STRUCT_VECTOR_BINT = 12,
+    STRUCT_VECTOR_FLOAT = 13,
+    STRUCT_VECTOR_PIXEL = 14
+};
 #pragma options align = mac68k
 struct TypeStruct {
-    UInt8 type;            /* 0x00: CDecl_NewStructType sets TYPESTRUCT */
-    SInt32 size;           /* 0x02: CDecl_NewStructType sets byte size */
-    HashNameNode *name;    /* 0x06: DWARF_004b0a80 emits name */
-    StructMember *members; /* 0x0a: DWARF_004b0a80 iterates members */
-    SInt8 stype;           /* 0x0e: DWARF_004b0a80 selects structure or union tag */
-    UInt8
-        alignmentPadding; /* 0x0f: CDecl_NewStructType clears the 18-byte record; unused byte between stype and the two-byte-aligned align member. */
-    SInt16 align;         /* 0x10: CDecl_NewStructType sets alignment */
+    UInt8 type;
+    SInt32 size;
+    HashNameNode *name;
+    StructMember *members;
+    SInt8 stype;
+    SInt16 align;
 };
 #pragma options align = reset
 #pragma options align = mac68k
@@ -185,11 +186,7 @@ struct VTable {
     int size;
 };
 #pragma options align = reset
-/* Class records come in three sizes: write_typeclass copies 0x32 bytes for an ordinary class, 0x4a when
- * flags & 0x800 and 0x5a when flags & 0x100 (TypeClassExt800 / TypeClassTemplate below begin at 0x32). The
- * 0x2c..0x31 bytes are split by CClass (state at 0x2d), StackFrameEABI (align at 0x2e) and the CObjC views. */
-/* A class template (its record is a TypeClassTemplate: write_typeclass copies 0x5a bytes) and a class instantiated from one
- * (a TypeClassExt800: 0x4a bytes). */
+/* TypeClass flags: a TemplClass, a TemplClassInst */
 #define CLASS_IS_TEMPL 0x100
 #define CLASS_IS_TEMPL_INST 0x800
 
@@ -202,40 +199,17 @@ struct TypeClass {
     ClassList *bases;
     VClassList *vbases;
     ObjMemberVar *ivars;
-    struct CFriend *friends; /* 0x1a: CClass_CheckStaticAccess traverses the friend list and tests is_class */
+    struct ClassFriend *friends;
     VTable *vtable;
     SOMInfo *sominfo;
     ObjCInfo *objcinfo;
     UInt16 flags;
     UInt8 mode;
-    UInt8 state;
+    UInt8 action;
     SInt16 align;
     UInt8 eflags;
-    UInt8
-        alignmentPadding; /* 0x31: CDecl_DefineClass clears sizeof(*type); unused trailing byte rounds the class header to its two-byte alignment. */
 };
 #pragma options align = reset
-/* flags & 0x800: 0x4a bytes (CTemplateNew reads flags and the byte at 0x47 of these). Members at 0x36 and 0x3a
- * are written through the type writer, 0x3e and 0x42 through the list writer serialize_ct_state_elems. */
-#pragma options align = mac68k
-struct TypeClassExt800 {
-    TypeClass base; /* 0x00: create_class_template_instance initializes the instantiated class header */
-    TypeClassExt800 *
-        next; /* 0x32: create_class_template_instance links definition->instances; CTemplateClass_GetInstance walks instances */
-    Type *relatedClass;  /* 0x36: create_class_template_instance copies definition->relatedClass */
-    Type *classTemplate; /* 0x3a: create_class_template_instance stores the defining class template */
-    struct CTStateElem
-        *targs; /* 0x3e: CTemplateClass_GetInstance compares template arguments with CTemplTool_EqualArgs */
-    struct CTStateElem *
-        templateArgumentOverride; /* 0x42: CTemplateClass_GetInstance selects alternate arguments for CTemplTool_EqualArgs */
-    UInt8 instantiating;          /* 0x46: CDecl marks an instance being instantiated */
-    UInt8
-        suppressImplicitInstantiation; /* 0x47: CBrowse_GenerateClassRecord tests suppression before following classTemplate */
-    UInt8 memberInstantiationState
-        [2]; /* 0x48: instantiate_members tests member instantiation state and marks data members processed */
-};
-#pragma options align = reset
-/* flags & 0x100: 0x5a bytes; every pointer from 0x36 on is relocated by write_typeclass. */
 #pragma options align = mac68k
 struct ExceptSpecList {
     ExceptSpecList *next;
@@ -282,42 +256,30 @@ struct TypeMemberFunc {
 #pragma options align = reset
 #pragma options align = mac68k
 struct TypeBitfield {
-    UInt8 type;             /* 0x00: CDecl_ScanStructDeclarator sets bitfield kind 7 */
-    SInt32 size;            /* 0x02: CDecl_ScanStructDeclarator copies underlying type size */
-    Type *bitfieldtype;     /* 0x06: CDecl_ScanStructDeclarator sets underlying declarator type */
-    char offset;            /* 0x0a: CDecl_ScanStructDeclarator initially clears with memclrw */
-    char bitlength;         /* 0x0b: CDecl_ScanStructDeclarator sets constant bit width */
-    char suppressAlignment; /* 0x0c: CDecl_ScanStructDeclarator sets for unnamed bitfields */
-    char
-        alignmentPadding; /* 0x0d: CDecl_ScanStructDeclarator and make_bitfield_type clear the whole 0x0e-byte record; no member access, trailing byte after suppressAlignment at 0x0c. */
+    UInt8 type;
+    SInt32 size;
+    Type *bitfieldtype;
+    char offset;
+    char bitlength;
+    char suppressAlignment;
 };
 #pragma options align = reset
 #pragma options align = mac68k
 struct TypeMemberPointer {
     UInt8 type;
     SInt32 size;
-    Type *memberType;
-    union {
-        Type *type;
-        TypeClass *classType;
-    } owner;
+    Type *ty1;
+    Type *ty2;
     UInt32 qual;
 };
 #pragma options align = reset
-#pragma options align = mac68k
-struct TemplParamID {
-    UInt16 index;
-    UInt8 nindex;
-    Boolean type;
-};
-#pragma options align = reset
-/* A template-dependent type (TYPETEMPLATE); dtype selects the union member: 0 argument, 1 qualified name, 2 template,
- * 3 array, 4 qualified template, 5 bitfield. */
+/* TypeTemplDep dtype: which arm of u */
+enum { TEMPLDEP_ARGUMENT, TEMPLDEP_QUALNAME, TEMPLDEP_TEMPLATE, TEMPLDEP_ARRAY, TEMPLDEP_QUALTEMPL, TEMPLDEP_BITFIELD };
 #pragma options align = mac68k
 struct TypeTemplDep {
     UInt8 type;
     SInt32 size;
-    UInt8 kind;
+    UInt8 dtype;
     union {
         TemplParamID pid;
         struct {
@@ -325,9 +287,8 @@ struct TypeTemplDep {
             HashNameNode *name;
         } qual;
         struct {
-            struct TypeClassTemplate
-                *templ; /* 0x08: CTemplTool_IsTemplate, kind == 2, reads templateParameters and specializations */
-            struct CTStateElem *args; /* 0x0c: write_templdep, kind == 2, serialize_ct_state_elems */
+            struct TemplClass *templ;
+            struct TemplArg *args;
         } templ;
         struct {
             Type *type;
@@ -335,7 +296,7 @@ struct TypeTemplDep {
         } array;
         struct {
             struct TypeTemplDep *type;
-            struct CTStateElem *args;
+            struct TemplArg *args;
         } qualtempl;
         struct {
             Type *type;
@@ -370,6 +331,18 @@ extern TypeIntegral stfloat;
 extern TypeIntegral stshortdouble;
 extern TypeIntegral stdouble;
 extern TypeIntegral stlongdouble;
+extern TypeStruct stvectorunsignedchar;
+extern TypeStruct stvectorsignedchar;
+extern TypeStruct stvectorboolchar;
+extern TypeStruct stvectorunsignedshort;
+extern TypeStruct stvectorsignedshort;
+extern TypeStruct stvectorboolshort;
+extern TypeStruct stvectorunsignedlong;
+extern TypeStruct stvectorsignedlong;
+extern TypeStruct stvectorboollong;
+extern TypeStruct stvectorfloat;
+extern TypeStruct stvectorpixel;
+extern TypeStruct stvector;
 extern Type stvoid;
 extern TypePointer void_ptr;
 

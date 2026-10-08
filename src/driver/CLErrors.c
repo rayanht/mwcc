@@ -10,12 +10,15 @@
 #include "driver/CLStaticMain.h"
 #include "driver/MsDos.h"
 #include "driver/StringUtils.h"
-#include "msl/string.h"
+#include "driver/TextUtils.h"
 #include <string.h>
 #include <stdlib.h>
 #define va_start(ap, last) ((ap) = (char *)&(last) + (((char *)(&(last) + 1) - (char *)&(last) + 3) / 4 * 4))
 
 #include <stdio.h>
+
+static char data_0057d5f8[256];
+static char diagnostic_message_buffer[256];
 char *fn_004087d0(unsigned int errorCode, char *buffer)
 {
     CLIO_GetResourceCString(buffer, 12000U, errorCode);
@@ -28,8 +31,8 @@ void format_and_emit_diagnostic(int kind, int messageId, va_list arguments)
     char *message;
     UInt8 diagnosticKind;
 
-    fn_004087d0(messageId, DAT_0057d5f8);
-    message = mvprintf(diagnostic_message_buffer, 0x100, DAT_0057d5f8, arguments);
+    fn_004087d0(messageId, data_0057d5f8);
+    message = mvprintf(diagnostic_message_buffer, 0x100, data_0057d5f8, arguments);
     if (kind == 2) {
         diagnosticKind = 3;
     } else if (kind == 1) {
@@ -91,7 +94,7 @@ void CLErrors_ReportFormattedOSError(SInt32 diagnosticCode, SInt32 osError, ...)
     va_start(args, osError);
     message = mvprintf(messageBuffer, sizeof(messageBuffer), fn_004087d0(diagnosticCode, formatBuffer), args);
     {
-        int errorMessage = get_strerror(osError);
+        char *errorMessage = strerror(osError);
         CLErrors_EmitDiagnostic(100, message, errorMessage, osError);
     }
     if (message != messageBuffer)

@@ -16,21 +16,11 @@ struct PCodeOpcodeDescriptor {
     const char *mnemonic;
     const char *operand_format;
     unsigned char operand_count;
-    unsigned char rank; /* 0x09: select_ready_coloring_node compares opcode scheduling ranks at 0x5654b9 */
+    unsigned char rank;
     unsigned short flags;
-    unsigned int encoding;
+    SInt32 encoding;
 };
 #pragma pack(pop)
-#pragma options align = mac68k
-struct AsmEntry {
-    UInt8 operand_count;  /* 0x00: InlineAsmPPC_GenerateAsmInstruction passes count to create_pcode_asm_instruction */
-    UInt8 rank;           /* 0x01: select_ready_coloring_node compares opcode scheduling ranks */
-    UInt16 flags;         /* 0x02: create_pcode_asm_instruction copies descriptor flags */
-    SInt32 encoding;      /* 0x04: InlineAsmPPC_GenerateAsmInstruction extracts the primary opcode */
-    char *mnemonic;       /* 0x08: InlineAsmPPC_GetOpcodeMnemonic reads mnemonic strings */
-    char *operand_format; /* 0x0c: parse_asm_instruction_operands uses opcode operand formats */
-};
-#pragma options align = reset
 #pragma options align = mac68k
 struct AsmOperand {
     struct HashNameNode *name;
@@ -50,9 +40,8 @@ struct EncodedOperand {
         struct CLabel *label;
     } data;
     union {
-        struct Object *
-            object; /* 0x06: format_inlineasm_instruction and InlineAsmPPC_ReplaceObjectReferenceArguments kinds 2-4 reference an object; ReplaceArg replaces it */
-        struct CLabel *label; /* 0x06: format_inlineasm_instruction kind 6 references the second label */
+        struct Object *object;
+        struct CLabel *label;
     } target;
     union {
         int value;
@@ -78,28 +67,23 @@ struct InlineAsmExpression {
 };
 #pragma options align = reset
 #pragma pack(push, 1)
-/* create_function_asm_directive allocates 0x10 for directives; parse_asm_instruction_operands allocates the 0x08 prefix plus operands. */
 struct ParsedAsmInstruction {
-    /* create_function_asm_directive: CompilerTools_AllocatePool(0x10) allocation; parse_asm_instruction_operands allocates offsetof(ParsedAsmInstruction, data) + operand_count * sizeof(EncodedOperand). */
-    unsigned int opcode; /* 0x00: parse_asm_instruction_operands opcode; FuncLevelAsmPPC directive kind */
-    unsigned char
-        specialFlags; /* 0x04: create_function_asm_directive sets directive bit 1; create_pcode_asm_instruction tests bit 2 */
-    unsigned char branch_flags; /* 0x05: InlineAsmPPC_GenerateAsmInstruction tests instruction flags */
-    short operand_count;        /* 0x06: parse_asm_instruction_operands counts operands */
+    unsigned int opcode;
+    unsigned char specialFlags;
+    unsigned char branch_flags;
+    short operand_count;
     union {
-        EncodedOperand operands
-            [1]; /* 0x08: CodeGen dispatch with !(specialFlags & 1) calls InlineAsmPPC_GenerateAsmInstruction, create_pcode_asm_instruction */
+        EncodedOperand operands[1];
         struct {
-            struct Object *
-                object; /* 0x08: specialFlags & 1 selects directive; create_function_asm_directive sets object, append_assembly reads it */
-            SInt32 size; /* 0x0c: specialFlags & 1 selects directive; create_function_asm_directive sets byte size */
+            struct Object *object;
+            SInt32 size;
         } directive;
-    } data; /* 0x08: specialFlags & 1 selects directive, otherwise create_pcode_asm_instruction reads operands */
+    } data;
 };
 #pragma pack(pop)
 
-extern void InlineAsmPPC_00462d70(Statement *stmt, AsmOut *out);
-extern SInt32 InlineAsmPPC_004631f0(ParsedAsmInstruction *operand);
+extern void fn_00462d70(Statement *stmt, AsmOut *out);
+extern SInt32 fn_004631f0(ParsedAsmInstruction *operand);
 extern void InlineAsmPPC_GenerateAsmInstruction(Statement *o);
 extern void InlineAsmPPC_ParseInstruction(void);
 extern void InlineAsmPPC_ParseDirectiveIdentifier(void);
@@ -112,12 +96,6 @@ extern const char *InlineAsmPPC_GetOpcodeMnemonic(struct ParsedAsmInstruction *i
 extern void encode_expression_operand(EncodedOperand *operand, int minimum, int maximum, char negative);
 extern void parse_branch_operand(struct ParsedAsmInstruction *stmt, EncodedOperand *out, Boolean wide, Boolean absolute,
                                  Boolean link);
-extern char machine_keyword[];
-extern char entry_keyword[];
-extern char fralloc_keyword[];
-extern char nofralloc_keyword[];
-extern char frfree_identifier[];
-extern char smclass_keyword[];
 extern SInt32 data_005652f8;
 extern unsigned int data_00587128;
 extern SInt32 asm_instruction_count;

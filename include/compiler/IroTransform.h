@@ -7,6 +7,9 @@
 extern "C" {
 #endif
 
+extern void fold_nested_diadic_intval(ENode *node);
+extern ENode *walk_expr_postorder(ENode *expr);
+extern ENode *canonicalize_diadic_expression(ENode *expression);
 extern ENode *IroTransform_CombineEAddTerms(ENode *expression);
 extern void IroTransform_SimplifyLinear(void);
 extern void remove_redundant_monadic_ops(IROLinear *expression);
@@ -22,15 +25,9 @@ extern void simplify_diadic_nodes(IROLinear *nd);
 extern void collect_eadd_terms(ENode *n);
 extern void simplify_same_linears(IROLinear *node);
 extern void simplify_diadic_constants(IROLinear *node);
-extern UInt8 nodetype_map[];
-extern UInt8 data_00552d8c[];
-extern unsigned char data_00552dd0[];
-extern char reverse_op_format[];
-extern struct CInt64 qval_zero;
 extern ENodeList *eadd_terms_tail;
 extern struct ENodeList *eadd_terms;
 extern void simplify_diadic_with_monadic_operand(IROLinear *expr);
-extern CInt64 int64_minus_one;
 
 #ifdef __cplusplus
 }

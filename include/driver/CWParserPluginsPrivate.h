@@ -32,12 +32,12 @@ struct IntegerSequenceResult {
 };
 #pragma options align = mac68k
 struct PanelEntry {
-    UInt32 type;            /* 0x00: ToolHelpers-cc.c selects compiler, parser and driver tool versions */
-    UInt32 creator;         /* 0x04: ToolHelpers-cc.c matches driverTool creator */
-    UInt32 flags;           /* 0x08: ToolHelpers.c selects linker flags */
-    UInt32 version;         /* 0x0c: ToolHelpers-cc.c passes to format_version */
-    UInt8 enabled;          /* 0x10: initialize_cmdline_environment tests panel availability */
-    UInt8 alignmentPadding; /* 0x11: ToolHelpers.c panel array stride includes unused trailing alignment byte */
+    UInt32 type;
+    UInt32 creator;
+    UInt32 flags;
+    UInt32 version;
+    UInt8 enabled;
+    UInt8 alignmentPadding;
 };
 #pragma options align = reset
 struct ValuePairState {
@@ -65,8 +65,14 @@ extern int __stdcall CWParserPluginsPrivate_PassValuePair(CWPluginPrivateContext
                                                           unsigned int secondValue);
 extern void __stdcall CWParserPluginsPrivate_CallValuePairCallback(CWPluginPrivateContext *target, char *firstValue,
                                                                    unsigned int secondValue);
-struct PanelEntry;
-struct IntegerSequenceResult;
+extern int __stdcall CWParserPluginsPrivate_AddOverlay1Group(CWPluginPrivateContext *context, char *name, void *address,
+                                                             SInt32 *groupNumber);
+extern int __stdcall CWParserPluginsPrivate_AddOverlay1(CWPluginPrivateContext *context, char *name, SInt32 groupNumber,
+                                                        SInt32 *overlayNumber);
+extern int __stdcall CWParserPluginsPrivate_AddSegment(CWPluginPrivateContext *context, char *name, short attributes,
+                                                       SInt32 *segmentNumber);
+extern int __stdcall CWParserPluginsPrivate_SetSegment(CWPluginPrivateContext *context, SInt32 segmentNumber,
+                                                       char *name, short attributes);
 
 #ifdef __cplusplus
 }

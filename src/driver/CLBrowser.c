@@ -1,60 +1,57 @@
 #define CERROR_FILE "CLBrowser.c"
 #include "compiler/common.h"
 #include "driver/CLBrowser.h"
-#include "compiler/win32.h"
-#include "compiler/CPrep.h"
-#include "driver/CLDropinCallbacks_V10.h"
+#include "driver/AssertionFailure.h"
 #include "driver/CLErrors.h"
 #include "driver/CLFileOps.h"
-#include "driver/CLFiles.h"
 #include "driver/CLIO.h"
+#include "driver/CLMain.h"
 #include "driver/CLPlugins.h"
-#include "driver/CLProj.h"
-#include "driver/CLTarg.h"
-#include "driver/Files.h"
+#include "driver/Generic.h"
 #include "driver/MemUtils.h"
-#include "driver/Memory.h"
-#include "driver/MsDos.h"
-#include <setjmp.h>
 #include <string.h>
-
-/* An entry in the browser's name table. */
 
 /* A browser table entry associates a value with a name. */
 #include <stdlib.h>
+
+jmp_buf driver_jmp_buf;
+
+static struct BrowserCacheEntry *browser_cache_entries;
+static struct BrowserCacheEntry *browser_cache_free_list;
+static unsigned int cache_free_size;
 int fn_004286d0(DropinFileRecord *input, unsigned int processingMode, unsigned int processingFlags)
 {
-    MemBuffer lookupResult;
+    OSHandle lookupResult;
     OSSpec state;
-    OutputSuffixes *type;
-    char *extension;
+    const CWObjectFlags *objectFlags;
+    const char *extension;
 
-    type = CLPlugins_GetObjectFlags(input->selectedPlugin);
+    objectFlags = CLPlugins_GetObjectFlags(input->selectedPlugin);
     state = input->outputPath;
-    if (data_00541b95[0] != 0)
-        extension = data_00541b95;
+    if (optsCompiler.browseFileExt[0] != 0)
+        extension = optsCompiler.browseFileExt;
     else
-        extension = type->suffix0;
-    CLProj_ChangeFileExtension(state.name, extension);
-    if (DAT_00541b28 != 0) {
-        char *result = CLProj_MakeRelativePath(&state, NULL, data_005880e0, 260);
+        extension = objectFlags->brsFileExt;
+    OS_NameSpecSetExtension(&state.name, extension);
+    if (optsCmdLine.verbose != 0) {
+        char *result = OS_SpecToStringRelative(&state, NULL, data_005880e0, 260);
         CLErrors_ForwardMessage(17, result);
     }
-    if (build_browser_file_buffer(input->secondaryReferenceHandle, &data_00587570, &lookupResult) == 0)
+    if (build_browser_file_buffer(input->secondaryReferenceHandle, &clState.browseTableHandle, &lookupResult) == 0)
         return 0;
     if (fn_00415090(&state, processingMode, processingFlags, &lookupResult) == 0)
         return 0;
     return 1;
 }
 
-void fn_004287c0(MemBuffer *value, struct CLBrowserLookupEntry **result, unsigned int *shifted_value,
+void fn_004287c0(OSHandle *value, struct CLBrowserLookupEntry **result, unsigned int *shifted_value,
                  unsigned int *raw_value)
 {
     DWORD extracted_value;
 
     OS_GetHandleSize(value, &extracted_value);
     if (result != NULL) {
-        *result = MsDos_GetValidMemBufferPtr(value);
+        *result = OS_LockHandle(value);
     }
     if (shifted_value != NULL) {
         *shifted_value = extracted_value >> 3;
@@ -64,17 +61,17 @@ void fn_004287c0(MemBuffer *value, struct CLBrowserLookupEntry **result, unsigne
     }
 }
 
-unsigned int CLBrowser_InitMemBuffer(MemBuffer *buffer)
+unsigned int CLBrowser_InitMemBuffer(OSHandle *buffer)
 {
     unsigned int error = OS_NewHandle(0U, buffer);
     if (error != 0U) {
-        CLErrors_ReportOSError(63, error, data_0054d9c4, browse_file_table_string);
+        CLErrors_ReportOSError(63, error, (unsigned char *)"allocate", (unsigned char *)"browse file table");
         return 0U;
     }
     return 1U;
 }
 
-unsigned int free_lookup_entries(MemBuffer *container)
+unsigned int free_lookup_entries(OSHandle *container)
 {
     struct CLBrowserLookupEntry *entry;
     unsigned int count;
@@ -84,11 +81,11 @@ unsigned int free_lookup_entries(MemBuffer *container)
         free(entry->name);
         entry++;
     }
-    fn_004129c0(container);
+    OS_UnlockHandle(container);
     return 1;
 }
 
-unsigned int CLBrowser_FreeMemBuffer(MemBuffer *value)
+unsigned int CLBrowser_FreeMemBuffer(OSHandle *value)
 {
     if (!free_lookup_entries(value))
         return 0U;
@@ -106,7 +103,7 @@ int CLBrowser_LookupValue(void *table, char *name, short *value)
     unsigned int tableInfo;
 
     found = 0;
-    index = MsDos_IsAbsolutePath(name);
+    index = OS_IsFullPath(name);
     if (index == 0) {
         CLIO_ReportAssertionFailure("OS_IsFullPath(fullpath)", "CLBrowser.c", 0x73);
     }
@@ -131,11 +128,11 @@ int CLBrowser_LookupValue(void *table, char *name, short *value)
     } else {
         *value = 0;
     }
-    fn_004129c0(table);
+    OS_UnlockHandle(table);
     return found;
 }
 
-int CLBrowser_FindOrAddLookupEntry(MemBuffer *browser, char *name, short *result)
+int CLBrowser_FindOrAddLookupEntry(OSHandle *browser, char *name, short *result)
 {
     CLBrowserLookupEntry *entry;
     unsigned int count, offset;
@@ -143,27 +140,97 @@ int CLBrowser_FindOrAddLookupEntry(MemBuffer *browser, char *name, short *result
     if (CLBrowser_LookupValue(browser, name, result) == 0) {
         savedName = xstrdup(name);
         fn_004287c0(browser, &entry, &count, &offset);
-        fn_004129c0(browser);
+        OS_UnlockHandle(browser);
         if (OS_ResizeHandle(browser, (count + 1) << 3) != 0) {
             CLIO_FormatAndDispatchText("\nOut of memory\n");
             longjmp(driver_jmp_buf, 1);
         }
-        entry = (CLBrowserLookupEntry *)((char *)MsDos_GetValidMemBufferPtr(browser) + offset);
+        entry = (CLBrowserLookupEntry *)((char *)OS_LockHandle(browser) + offset);
         entry->name = savedName;
         entry->value = count + 1;
-        fn_004129c0(browser);
+        OS_UnlockHandle(browser);
         *result = entry->value;
         return -1;
     }
     return 1;
 }
-/* Serialized browser file header. */
 
-/* Opaque two-word allocation handle. */
+static inline struct BrowserCacheEntry *fn_00428e00_inline1(void)
+{
+    struct BrowserCacheEntry *cursor;
+    struct BrowserCacheEntry *entry;
+    entry = NULL;
+    cursor = browser_cache_entries;
+    while (cursor != NULL) {
+        if (cursor->inUse == 0 && (entry == NULL || (unsigned int)cursor->lastUsed < (unsigned int)entry->lastUsed))
+            entry = cursor;
+        cursor = cursor->next;
+    }
+    return entry;
+}
 
-/* Count returned as a word, serialized as a short. */
+static inline void fn_00428e00_unlink(struct BrowserCacheEntry *entry)
+{
+    void (*unlinkEntry)(struct BrowserCacheEntry *) = unlink_browser_cache_entry;
+    unlinkEntry(entry);
+}
 
-unsigned int build_browser_file_buffer(struct StorageHandle *dataHandle, void *indexHandle, MemBuffer *result)
+static inline void fn_00428e00_inline2(struct BrowserCacheEntry *entry)
+{
+    Memory_FreeHandle(entry->buffer);
+    cache_free_size += entry->size;
+    fn_00428e00_unlink(entry);
+    entry->next = browser_cache_free_list;
+    browser_cache_free_list = entry;
+}
+
+static inline void fn_00428e00_inline3(struct OSSpec *path, struct StorageHandle *buffer, unsigned char flag, int size)
+{
+    BrowserCacheEntry *newEntry;
+    BrowserCacheEntry *(*allocateEntry)(void) = allocate_browser_cache_entry;
+    void (*linkEntry)(struct BrowserCacheEntry *) = prepend_browser_cache_entry;
+    newEntry = allocateEntry();
+    newEntry->inUse = 1;
+    newEntry->flag = flag;
+    newEntry->path = *path;
+    newEntry->buffer = buffer;
+    newEntry->size = size;
+    newEntry->lastUsed = OS_GetMilliseconds();
+    linkEntry(newEntry);
+    cache_free_size -= size;
+}
+
+unsigned int calculate_lookup_entries_size(CLBrowserLookupEntry *entries, unsigned int count)
+{
+    unsigned int total = 0;
+    while (count--) {
+        const char *name = entries->name;
+        total += 16U;
+        total += (strlen(name) + 7U) & ~7U;
+        ++entries;
+    }
+    return total;
+}
+
+int write_lookup_entries(CLBrowserLookupEntry *entries, DstRec *output, UInt32 count)
+{
+    SInt32 nameLength;
+    SInt32 paddedLength;
+    while (count--) {
+        output->id = entries->value;
+        memset(&output->id + 1, 0, 3 * sizeof(UInt32));
+        nameLength = strlen(entries->name);
+        paddedLength = (nameLength + 7) & ~7;
+        output->len = nameLength;
+        memset(output->data, 0, paddedLength);
+        strncpy(output->data, entries->name, nameLength);
+        entries++;
+        output = (DstRec *)(output->data + paddedLength);
+    }
+    return 1;
+}
+
+unsigned int build_browser_file_buffer(struct StorageHandle *dataHandle, void *indexHandle, OSHandle *result)
 {
     int totalSize;
     int indexOffset;
@@ -172,7 +239,7 @@ unsigned int build_browser_file_buffer(struct StorageHandle *dataHandle, void *i
     DstRec *indexBuffer;
     int dataSize;
     unsigned int indexSize;
-    MemBuffer output;
+    OSHandle output;
     struct BrowserFileHeader header;
     CLBrowserLookupEntry *indexData;
     unsigned int itemCount;
@@ -188,7 +255,7 @@ unsigned int build_browser_file_buffer(struct StorageHandle *dataHandle, void *i
     indexOffset = (dataSize + sizeof(header) + 7) & -8;
     fn_004287c0(indexHandle, &indexData, &itemCount, NULL);
     indexSize = calculate_lookup_entries_size(indexData, itemCount);
-    fn_004129c0(indexHandle);
+    OS_UnlockHandle(indexHandle);
     totalSize = indexSize + indexOffset;
     memcpy(header.signature, "DubL", sizeof(header.signature));
     header.version = 1;
@@ -205,7 +272,7 @@ unsigned int build_browser_file_buffer(struct StorageHandle *dataHandle, void *i
         CLIO_FormatAndDispatchText("\nOut of memory\n");
         longjmp(driver_jmp_buf, 1);
     }
-    buffer = MsDos_GetValidMemBufferPtr(&output);
+    buffer = OS_LockHandle(&output);
     memcpy(buffer, &header, sizeof(header));
     fn_00413a00(dataHandle);
     memcpy(buffer + sizeof(header), dataHandle->data, dataSize);
@@ -215,8 +282,8 @@ unsigned int build_browser_file_buffer(struct StorageHandle *dataHandle, void *i
     indexBuffer = (DstRec *)(buffer + indexOffset);
     write_lookup_entries(indexData, indexBuffer, itemCount);
     memset(buffer + indexOffset + indexSize, 0, totalSize - indexOffset - indexSize);
-    fn_004129c0(indexHandle);
-    fn_004129c0(&output);
+    OS_UnlockHandle(indexHandle);
+    OS_UnlockHandle(&output);
     return 1;
 }
 
@@ -291,47 +358,6 @@ void CLBrowser_FreeCacheEntries(void)
     CLBrowser_InitCache();
 }
 
-static inline struct BrowserCacheEntry *fn_00428e00_inline1(void)
-{
-    struct BrowserCacheEntry *cursor;
-    struct BrowserCacheEntry *entry;
-    entry = NULL;
-    cursor = browser_cache_entries;
-    while (cursor != NULL) {
-        if (cursor->inUse == 0 && (entry == NULL || (unsigned int)cursor->lastUsed < (unsigned int)entry->lastUsed))
-            entry = cursor;
-        cursor = cursor->next;
-    }
-    return entry;
-}
-static inline void fn_00428e00_unlink(struct BrowserCacheEntry *entry)
-{
-    void (*unlinkEntry)(struct BrowserCacheEntry *) = unlink_browser_cache_entry;
-    unlinkEntry(entry);
-}
-static inline void fn_00428e00_inline2(struct BrowserCacheEntry *entry)
-{
-    Memory_FreeHandle(entry->buffer);
-    cache_free_size += entry->size;
-    fn_00428e00_unlink(entry);
-    entry->next = browser_cache_free_list;
-    browser_cache_free_list = entry;
-}
-static inline void fn_00428e00_inline3(struct OSSpec *path, struct StorageHandle *buffer, unsigned char flag, int size)
-{
-    BrowserCacheEntry *newEntry;
-    BrowserCacheEntry *(*allocateEntry)(void) = allocate_browser_cache_entry;
-    void (*linkEntry)(struct BrowserCacheEntry *) = prepend_browser_cache_entry;
-    newEntry = allocateEntry();
-    newEntry->inUse = 1;
-    newEntry->flag = flag;
-    newEntry->path = *path;
-    newEntry->buffer = buffer;
-    newEntry->size = size;
-    newEntry->lastUsed = OS_GetMilliseconds();
-    linkEntry(newEntry);
-    cache_free_size -= size;
-}
 void CLBrowser_CacheFileText(struct OSSpec *path, struct StorageHandle *buffer, unsigned char flag)
 {
     int size;
@@ -383,34 +409,4 @@ void CLBrowser_ReleaseBuffer(StorageHandle *value)
         }
     }
     Memory_FreeHandle(value);
-}
-
-int write_lookup_entries(CLBrowserLookupEntry *entries, DstRec *output, UInt32 count)
-{
-    SInt32 nameLength;
-    SInt32 paddedLength;
-    while (count--) {
-        output->id = entries->value;
-        memset(&output->id + 1, 0, 3 * sizeof(UInt32));
-        nameLength = strlen(entries->name);
-        paddedLength = (nameLength + 7) & ~7;
-        output->len = nameLength;
-        memset(output->data, 0, paddedLength);
-        strncpy(output->data, entries->name, nameLength);
-        entries++;
-        output = (DstRec *)(output->data + paddedLength);
-    }
-    return 1;
-}
-
-unsigned int calculate_lookup_entries_size(CLBrowserLookupEntry *entries, unsigned int count)
-{
-    unsigned int total = 0;
-    while (count--) {
-        const char *name = entries->name;
-        total += 16U;
-        total += (strlen(name) + 7U) & ~7U;
-        ++entries;
-    }
-    return total;
 }

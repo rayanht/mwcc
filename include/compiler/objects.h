@@ -13,8 +13,6 @@ extern "C" {
 #define OBJ_MEMBER_VAR(obj) ((ObjMemberVar *)(obj))
 #define OBJECT(obj) ((Object *)(obj))
 enum { OT_ENUMCONST, OT_TYPE, OT_TYPETAG, OT_NAMESPACE, OT_MEMBERVAR, OT_OBJECT, OT_ILLEGAL };
-/* Single-byte enumeration; DALIAS is 6 in this build (CMangler_GetLinkName
- * follows the alias chain on 6) and DFUNC/DVFUNC are 3/4. */
 enum { DDATA, DLOCAL, DABSOLUTE, DFUNC, DVFUNC, DINLINEFUNC, DALIAS, DEXPR, DUNUSED };
 enum {
     OBJECT_USED = 1,
@@ -27,17 +25,15 @@ enum {
 };
 #pragma options align = mac68k
 struct ObjectList {
-    ObjectList *next; /* 0x00: CScope_CopyList and parse_protocol_list link entries */
-    struct {
-        Object *value; /* 0x04: CodeGen reads objects; parse_protocol_list stores a cast CRec */
-    } object;
+    ObjectList *next;
+    Object *object;
 };
 #pragma options align = reset
 #pragma options align = mac68k
 /* Common prefix: otype selects the concrete object payload. */
 struct ObjBase {
-    UInt8 otype;  /* 0x00: InlineAsm_ResolveOperandName switches on the concrete object kind. */
-    UInt8 access; /* 0x01: CClass_CheckEnumAccess checks accessibility. */
+    UInt8 otype;
+    UInt8 access;
 };
 #pragma options align = reset
 #pragma options align = mac68k
@@ -78,6 +74,19 @@ struct ObjMemberVar {
     UInt32 qual;
     UInt32 offset;
 };
+/* An ObjMemberVar with has_path set: one reached through base classes */
+struct ObjMemberVarPath {
+    UInt8 otype;
+    UInt8 access;
+    Boolean anonunion;
+    Boolean has_path;
+    ObjMemberVar *next;
+    HashNameNode *name;
+    Type *type;
+    UInt32 qual;
+    UInt32 offset;
+    BClassList *path;
+};
 #pragma options align = reset
 /* An inline function's cross-references to one object: numxrefs (offset, varoffset) pairs. */
 #pragma options align = mac68k
@@ -92,18 +101,12 @@ struct InlineXRef {
     } xref[1];
 };
 #pragma options align = reset
-/* sizeof(Object) is 0x36: every allocation site requests 54 bytes, so the
- * union at 0x26 is 16 bytes wide. Field positions verified in this build:
- * datatype 0x02, nspace 0x06, name 0x0a, type 0x0e, qual 0x12, flags 0x18,
- * union 0x26. The remaining positions follow the reference order and still
- * need confirmation. */
 #pragma options align = mac68k
 struct Object {
     UInt8 otype;
     UInt8 access;
     UInt8 datatype;
-    UInt8 unk03;
-    UInt16 extraQualifiers;
+    UInt16 section;
     NameSpace *nspace;
     HashNameNode *name;
     Type *type;
@@ -140,10 +143,8 @@ struct Object {
             HashNameNode *linkname;
         } data;
         struct {
-            struct CInlineInfo *
-                u; /* 0x26: write_object selects inline body when TypeFunc flags & 0x400 is clear and Q_INLINE is set; CInline_0050ee60 stores CInline_SaveInfo output. */
-            struct DefArg *
-                defargdata; /* 0x2a: make_defarg_function stores the constructor and default expression; make_auto_generated_method tests it before CABI_MakeDefaultArgConstructor. */
+            struct CInlineInfo *u;
+            struct DefArgCtorInfo *defargdata;
             HashNameNode *linkname;
         } func;
         struct {
@@ -151,8 +152,7 @@ struct Object {
             SInt32 uid;
         } var;
         struct {
-            UInt8 *
-                data; /* 0x26: write_object selects DINLINEFUNC (datatype 5) and copies size bytes from this inline machine-code buffer through unsigned char *data. */
+            UInt8 *data;
             SInt32 size;
             InlineXRef *xrefs;
         } ifunc;
@@ -161,14 +161,15 @@ struct Object {
             BClassList *member;
             SInt32 offset;
         } alias;
-        struct TemplateFunction *
-            templateFunction; /* 0x26: write_object and instantiate_object_type select this arm when TypeFunc flags & 0x400; parse_function_template_declaration sets that flag and stores templ. */
+        struct TemplateFunction *templateFunction;
         SInt16 intrinsic;
         ENode *expr;
     } u;
-    struct {
-        SInt32 templateArgumentKey;
-    } templateMember[0];
+};
+/* An object instantiated from a class template's member (Q_IS_TEMPLATED): the member it came from */
+struct ObjectTemplated {
+    Object object;
+    Object *parent;
 };
 #pragma options align = reset
 

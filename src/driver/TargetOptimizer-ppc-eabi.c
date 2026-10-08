@@ -1,36 +1,100 @@
 #define CERROR_FILE "unknown.c"
 #include "compiler/common.h"
 #include "driver/TargetOptimizer-ppc-eabi.h"
-#include "compiler/win32.h"
-#include "driver/CLFileOps.h"
-#include "driver/Files.h"
-#include "driver/Memory.h"
-#include "driver/MsDos.h"
+#include "driver/Generic.h"
 #include "driver/ParserGlue-eabi-ppc-cc.h"
 #include "driver/StringUtils.h"
-#include <string.h>
+
+/* Data of the original file that none of its linked code uses. */
+static char lbl_0054C5A0 = 5;
+
 #pragma optimization_level 2
+
 int TargetOptimizer_ppc_eabi_SetOption(short option, char enabled)
 {
     switch (option) {
         case 20581:
-            data_00537a60 = enabled;
+            pBackEnd.peephole = enabled;
             break;
         case 19831:
-            data_00537a67 = enabled;
+            pBackEnd.use_lmw_stmw = enabled;
             break;
         case 21358:
-            data_00537a63 = 0;
+            pBackEnd.schedule = 0;
             break;
         case 21352:
-            data_00537a63 = enabled;
+            pBackEnd.schedule = enabled;
             break;
         default:
             return 0;
     }
     return 1;
 }
+
 #pragma optimization_level reset
+
+#pragma scheduling off
+
+unsigned int TargetOptimizer_ppc_eabi_ReportScheduling(struct StorageHandle *argument)
+{
+    int setting;
+    unsigned char *message;
+
+    if (pBackEnd.schedule == 0)
+        HPrintF(argument, "\t- no instruction scheduling\n");
+    else {
+        if ((setting = pBackEnd.processor) == 20)
+            message = (unsigned char *)"generic PPC";
+        else if (setting == 0)
+            message = (unsigned char *)"401";
+        else if (setting == 1)
+            message = (unsigned char *)"403";
+        else if (setting == 2)
+            message = (unsigned char *)"505";
+        else if (setting == 3)
+            message = (unsigned char *)"509";
+        else if (setting == 4)
+            message = (unsigned char *)"555";
+        else if (setting == 5)
+            message = (unsigned char *)"601";
+        else if (setting == 6)
+            message = (unsigned char *)"602";
+        else if (setting == 7)
+            message = (unsigned char *)"603";
+        else if (setting == 8)
+            message = (unsigned char *)"603e";
+        else if (setting == 9)
+            message = (unsigned char *)"604";
+        else if (setting == 10)
+            message = (unsigned char *)"604e";
+        else if (setting == 11)
+            message = (unsigned char *)"740";
+        else if (setting == 12)
+            message = (unsigned char *)"750";
+        else if (setting == 13)
+            message = (unsigned char *)"801";
+        else if (setting == 14)
+            message = (unsigned char *)"821";
+        else if (setting == 15)
+            message = (unsigned char *)"823";
+        else if (setting == 16)
+            message = (unsigned char *)"850";
+        else if (setting == 19)
+            message = (unsigned char *)"8260";
+        else if (setting == 17)
+            message = (unsigned char *)(signed char *)"860";
+        else
+            message = (unsigned char *)"???";
+
+        HPrintF(argument, "\t- schedule for %s\n", message);
+    }
+}
+
+#pragma scheduling reset
+
+void fn_00420700(void)
+{
+}
 
 unsigned int fn_00420710(OperationRecord *context)
 {
@@ -51,13 +115,13 @@ unsigned int fn_00420710(OperationRecord *context)
             if (error)
                 break;
 
-            handle = MsDos_GetValidMemBufferPtr(&context->buffer);
+            handle = OS_LockHandle(&context->buffer);
             error = OS_Read(operation, handle, &value);
             if (!error) {
                 context->loaded = 1;
                 context->dirty = 0;
             }
-            fn_004129c0(&context->buffer);
+            OS_UnlockHandle(&context->buffer);
         } while (0);
 
         OS_Close(operation);
@@ -82,12 +146,12 @@ DWORD write_file_buffer(struct OperationRecord *file)
         if (error == 0) {
             error = OS_GetHandleSize(&file->buffer, &size);
             if (error == 0) {
-                contents = MsDos_GetValidMemBufferPtr(&file->buffer);
+                contents = OS_LockHandle(&file->buffer);
                 error = OS_Write(handle, contents, &size);
                 if (error == 0) {
                     file->dirty = 0;
                 }
-                fn_004129c0(&file->buffer);
+                OS_UnlockHandle(&file->buffer);
                 OS_Close(handle);
             }
         }
@@ -95,7 +159,7 @@ DWORD write_file_buffer(struct OperationRecord *file)
     return error;
 }
 
-unsigned int __stdcall TargetOptimizer_ppc_eabi_InitOperationRecord(OSSpec *source, MemBuffer *argument,
+unsigned int __stdcall TargetOptimizer_ppc_eabi_InitOperationRecord(OSSpec *source, OSHandle *argument,
                                                                     unsigned char flag, OperationRecord *state)
 {
     DWORD result;
@@ -114,7 +178,7 @@ unsigned int __stdcall TargetOptimizer_ppc_eabi_InitOperationRecord(OSSpec *sour
             result = fn_00420710(context);
         }
     } else {
-        result = CLFileOps_CopyMemBuffer(argument, &state->buffer);
+        result = OS_CopyHandle(argument, &state->buffer);
         if (result != 0U) {
             return result;
         }
@@ -128,15 +192,15 @@ int __stdcall TargetOptimizer_ppc_eabi_GetMemBufferPtrAndSize(unsigned char *sta
                                                               int *secondResult)
 {
     HGLOBAL result;
-    MemBuffer *buffer = (MemBuffer *)(state + 324);
+    OSHandle *buffer = (OSHandle *)(state + 324);
     *secondResult = 0;
     if (!OS_ValidHandle(buffer)) {
         return 8;
     }
-    result = MsDos_GetValidMemBufferPtr((MemBuffer *)(state + 324));
+    result = OS_LockHandle((OSHandle *)(state + 324));
     *firstResult = result;
     {
-        MemBuffer *sizeBuffer = (MemBuffer *)(state + 324);
+        OSHandle *sizeBuffer = (OSHandle *)(state + 324);
         OS_GetHandleSize(sizeBuffer, (DWORD *)secondResult);
     }
     return 0;
@@ -157,65 +221,4 @@ unsigned int __stdcall TargetOptimizer_ppc_eabi_UnloadOperationRecord(struct Ope
         return result;
     record->loaded = 0U;
     return 0U;
-}
-
-#pragma scheduling off
-unsigned int TargetOptimizer_ppc_eabi_ReportScheduling(struct StorageHandle *argument)
-{
-    int setting;
-    unsigned char *message;
-
-    if (data_00537a63 == 0)
-        HPrintF(argument, "\t- no instruction scheduling\n");
-    else {
-        if ((setting = data_00537a68) == 20)
-            message = generic_ppc_message;
-        else if (setting == 0)
-            message = data_0054c5d0;
-        else if (setting == 1)
-            message = data_0054c5d4;
-        else if (setting == 2)
-            message = data_0054c5d8;
-        else if (setting == 3)
-            message = data_0054c5dc;
-        else if (setting == 4)
-            message = data_0054c5e0;
-        else if (setting == 5)
-            message = data_0054c5e4;
-        else if (setting == 6)
-            message = data_0054c5e8;
-        else if (setting == 7)
-            message = data_0054c5ec;
-        else if (setting == 8)
-            message = data_0054c5f0;
-        else if (setting == 9)
-            message = data_0054c5f8;
-        else if (setting == 10)
-            message = data_0054c5fc;
-        else if (setting == 11)
-            message = data_0054c604;
-        else if (setting == 12)
-            message = data_0054c608;
-        else if (setting == 13)
-            message = data_0054c60c;
-        else if (setting == 14)
-            message = data_0054c610;
-        else if (setting == 15)
-            message = data_0054c614;
-        else if (setting == 16)
-            message = data_0054c618;
-        else if (setting == 19)
-            message = data_0054c61c;
-        else if (setting == 17)
-            message = (unsigned char *)data_0054c624;
-        else
-            message = data_0054c628;
-
-        HPrintF(argument, "\t- schedule for %s\n", message);
-    }
-}
-#pragma scheduling reset
-
-void fn_00420700(void)
-{
 }

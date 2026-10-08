@@ -147,10 +147,15 @@ def read_object(path):
         off = 20 + i * 40
         rawsize, rawoff, reloff = struct.unpack_from("<III", data, off + 16)
         nrel = struct.unpack_from("<H", data, off + 32)[0]
+        flags = struct.unpack_from("<I", data, off + 36)[0]
         sections.append(
             dict(
-                code=bool(struct.unpack_from("<I", data, off + 36)[0] & 0x20),
-                data=data[rawoff : rawoff + rawsize] if rawoff else bytes(rawsize),
+                name=data[off:off + 8].rstrip(b"\0").decode("latin-1"),
+                flags=flags,
+                code=bool(flags & 0x20),
+                # (an uninitialized-data section has no contents, whatever its raw data pointer says: Pro 5 points it
+                # at the next section's)
+                data=data[rawoff : rawoff + rawsize] if rawoff and not flags & 0x80 else bytes(rawsize),
                 relocs=[
                     struct.unpack_from("<IIH", data, reloff + j * 10)
                     for j in range(nrel)
@@ -222,9 +227,35 @@ def resolve_function(symbols, sections, symbol_name, target_address, addresses, 
             raise ValueError("relocation crosses function boundary")
         dest = symbols[index]
         addend = struct.unpack_from("<I", body, local)[0]
-        if dest["name"] in addresses:
+        # (a binding names a static of this object only when the bound address holds its contents: literal numbers
+        # are per translation unit)
+        own = dest["storage"] == 3 and dest["section"] > 0 and not sections[dest["section"] - 1].get("code")
+        if own and dest["name"] in addresses:
+            literal = sections[dest["section"] - 1]["data"]
+            following = min((s["value"] for s in symbols.values() if s["section"] == dest["section"]
+                             and s["value"] > dest["value"]), default=len(literal))
+            text = literal[dest["value"]:following].split(b"\0", 1)[0]
+            if text:
+                own = all(32 <= c < 127 for c in text) and not pe.contains(addresses[dest["name"]], text)
+            else:
+                # (an empty string's only when the bound address does not hold its terminator)
+                own = (not sections[dest["section"] - 1].get("flags", 0) & 0x80
+                       and literal[dest["value"]:dest["value"] + 1] == b"\0"
+                       and not pe.contains(addresses[dest["name"]], b"\0"))
+        # (a string can occur more than once: of this object's, the copy the original's own instruction refers to,
+        # when the string is there)
+        referred = None
+        if (dest["storage"] == 3 and dest["section"] > 0 and not sections[dest["section"] - 1].get("code") and kind == 6
+                and target_size and local + 4 <= len(original)):
+            text = sections[dest["section"] - 1]["data"][dest["value"]:].split(b"\0", 1)[0]
+            there = (struct.unpack_from("<I", original, local)[0] - addend) & 0xFFFFFFFF
+            if text and all(c in (8, 9, 10, 13) or 32 <= c < 127 for c in text) and pe.contains(there, text + b"\0"):
+                referred = there
+        if referred is not None:
+            address = referred
+        elif dest["name"] in addresses and not own:
             address = addresses[dest["name"]]
-        elif c_symbol(dest["name"]) in addresses:
+        elif c_symbol(dest["name"]) in addresses and not own:
             address = addresses[c_symbol(dest["name"])]
         elif dest["section"] == section_index and begin <= dest["value"] < end:
             address = target_address + dest["value"] - begin
@@ -273,7 +304,8 @@ def resolve_function(symbols, sections, symbol_name, target_address, addresses, 
             # Verify the entire literal up to the next COFF data symbol, not
             # unrelated literals that happen to share its section. Every entry
             # in this range must resolve and occur together in the original.
-            matches = locate(bytes(payload)) if payload else []
+            # (uninitialized data has no contents to find it by: only the original's own reference places it)
+            matches = locate(bytes(payload)) if payload and not literal.get("flags", 0) & 0x80 else []
             if len(matches) == 1:
                 address = matches[0]
             else:
@@ -283,7 +315,7 @@ def resolve_function(symbols, sections, symbol_name, target_address, addresses, 
                 stop = tail.find(b"\0")
                 string = tail[: stop + 1] if stop > 0 else b""
                 printable = string and all(
-                    c in (9, 10, 13) or 32 <= c < 127 for c in string[:-1]
+                    c in (8, 9, 10, 13) or 32 <= c < 127 for c in string[:-1]
                 )
                 hits = (
                     locate(string, addend)
@@ -309,6 +341,21 @@ def resolve_function(symbols, sections, symbol_name, target_address, addresses, 
                             there = bytes(len(payload))
                         if there == bytes(payload):
                             hits = [derived + addend]
+                if len(hits) != 1 and kind == 6 and target_size and local + 4 <= len(original):
+                    # (or the item the reference selects holds what the original's reference does, where the
+                    # section's start differs: other data of the object is laid out otherwise)
+                    raw = struct.unpack_from("<I", original, local)[0]
+                    start = dest["value"] + addend
+                    item_end = min((s["value"] for s in symbols.values() if s["section"] == dest["section"]
+                                    and s["value"] > start), default=len(literal["data"]))
+                    item = literal["data"][start:item_end]
+                    relocated = any(start <= off + k < item_end for off, _, _ in literal["relocs"] for k in range(4))
+                    try:
+                        there = pe.read(raw, len(item)) if item and not relocated else None
+                    except ValueError:
+                        there = None
+                    if there == item:
+                        hits = [raw]
                 if len(hits) != 1:
                     raise ValueError(
                         f"unbound literal: {dest['name']} ({len(matches)} retail blocks, {len(hits)} strings)"
@@ -332,6 +379,7 @@ def resolve_function(symbols, sections, symbol_name, target_address, addresses, 
             dict(
                 offset=local,
                 symbol=dest["name"],
+                index=index,
                 address=address,
                 kind=kind,
                 addend=addend,
@@ -374,6 +422,11 @@ def check(version):
     fixups = base_relocations(pe)
     addresses = {name: int(value, 0) for name, value in json.loads(Path(f"config/{version}/bindings.json").read_text()).items()}
     addresses.update({r["symbol"]: r["address"] for r in rows if "symbol" in r})
+    # (a static function is its own source's: the same name can be static in several)
+    own = {}
+    for r in rows:
+        if "symbol" in r:
+            own.setdefault(r.get("source"), {})[r["symbol"]] = r["address"]
     objects, results = {}, {}
     for row in rows:
         if "source" not in row:
@@ -381,8 +434,8 @@ def check(version):
         if row["source"] not in objects:
             objects[row["source"]] = read_object(Path(f"build/{version}/compiled/{row['source']}.obj"))
         try:
-            body, resolutions = resolve_function(*objects[row["source"]], row["symbol"], row["address"], addresses, pe,
-                                                 row["size"])
+            body, resolutions = resolve_function(*objects[row["source"]], row["symbol"], row["address"],
+                                                 {**addresses, **own[row["source"]]}, pe, row["size"])
         except ValueError:
             results[row["name"]] = (None, False)
             continue

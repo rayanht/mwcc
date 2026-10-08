@@ -1,18 +1,28 @@
 #define CERROR_FILE "unknown.c"
 #include "compiler/common.h"
 #include "driver/Help.h"
+#include "driver/Arguments.h"
 #include "driver/Memory.h"
 #include "driver/Option.h"
 #include "driver/Parameter.h"
+#include "driver/ParserErrors.h"
+#include "driver/ParserFace.h"
+#include "driver/Projects.h"
 #include "driver/StringUtils.h"
-#include "driver/Targets.h"
-#include "driver/ToolHelpers-cc.h"
-#include "driver/ToolHelpers.h"
 #include "driver/Utils.h"
 #include <stdio.h>
 #include <string.h>
-#include <setjmp.h>
-#include "compiler/win32.h"
+
+struct HelpColumn helpTextColumn;
+struct HelpColumn firstHelpColumn;
+struct HelpColumn third_help_column;
+void *help_output;
+int data_00587ce0;
+unsigned short help_width;
+unsigned char data_00587e23;
+char *help_option_separator;
+
+static char help_line[256];
 
 void append_formatted_text(HelpColumn *buf, char *format, ...)
 {
@@ -184,6 +194,7 @@ void append_columns_newline(void)
 
 unsigned int Help_FormatOption(OptionList *scope, Option *pragma, unsigned int formatMode, char *nameFilter)
 {
+    static struct FlagTextBuffer data_0054dd04 = {""};
     char formatFlags;
     const char normalFormat = 1;
     const char alternateFormat = 2;
@@ -305,8 +316,8 @@ unsigned int Help_FormatOption(OptionList *scope, Option *pragma, unsigned int f
         if (pragma->help != NULL)
             append_formatted_text(&third_help_column, "%s", pragma->help);
 
-        if (pragma->args != NULL && (pragma->avail & 0x800) == 0) {
-            for (arg = pragma->args, firstArg = NULL; arg != NULL; lastArg = arg, arg = arg->next) {
+        if (pragma->param != NULL && (pragma->avail & 0x800) == 0) {
+            for (arg = pragma->param, firstArg = NULL; arg != NULL; lastArg = arg, arg = arg->next) {
                 if ((arg->flags & 3) == 1)
                     continue;
                 currentArg = arg;
@@ -368,7 +379,7 @@ unsigned int Help_FormatOption(OptionList *scope, Option *pragma, unsigned int f
                 }
             }
             if (noArguments != 0 && (pragma->avail & 0x2000) == 0) {
-                checkArg = pragma->args;
+                checkArg = pragma->param;
                 allArgsMatch = checkArg != NULL;
                 for (; checkArg != NULL && allArgsMatch != 0; checkArg = checkArg->next)
                     allArgsMatch &= Parameter_DispatchParam(checkArg);
@@ -380,7 +391,7 @@ unsigned int Help_FormatOption(OptionList *scope, Option *pragma, unsigned int f
         if ((pragma->avail & 0x800000) != 0)
             append_formatted_text(&third_help_column, "; meaningless for this target");
 
-        if ((pragma->avail & 0x8000) != 0 && pragma->def != NULL) {
+        if ((pragma->avail & 0x8000) != 0 && pragma->sub != NULL) {
             if (noArguments == 0) {
                 append_formatted_text(&firstHelpColumn, "%s",
                                       (pragma->avail & 0x10000) != 0 ? ((lastArg->flags & 8) ? "[=" : "[,")
@@ -405,13 +416,13 @@ unsigned int Help_FormatOption(OptionList *scope, Option *pragma, unsigned int f
                     }
                 }
             }
-            append_formatted_text(&firstHelpColumn, "%s%s%s", pragma->def->text ? pragma->def->text : "keyword",
-                                  (pragma->def->flags & 1) ? "" : "[,...]", (pragma->avail & 0x10000) != 0 ? "]" : "");
+            append_formatted_text(&firstHelpColumn, "%s%s%s", pragma->sub->help ? pragma->sub->help : "keyword",
+                                  (pragma->sub->flags & 1) ? "" : "[,...]", (pragma->avail & 0x10000) != 0 ? "]" : "");
             append_formatted_text(&firstHelpColumn, "\t");
             append_formatted_text(&third_help_column, "\t");
-            Help_PrintOptionList(pragma->def, 1, "");
-            append_formatted_text(&third_help_column, data_0054ded8);
-            append_formatted_text(&firstHelpColumn, data_0054ded8);
+            Help_PrintOptionList(pragma->sub, 1, "");
+            append_formatted_text(&third_help_column, "\b");
+            append_formatted_text(&firstHelpColumn, "\b");
         } else {
             append_formatted_text(&firstHelpColumn, "\n");
             append_formatted_text(&third_help_column, "\n");
@@ -423,7 +434,7 @@ unsigned int Help_FormatOption(OptionList *scope, Option *pragma, unsigned int f
 
 void Help_PrintOptionList(OptionList *list, int subprint, char *filter)
 {
-    struct Option **opts = list->options;
+    struct Option **opts = list->list;
     int flag = 0;
     unsigned char show;
     if (fn_0041c8ba() == 0x100)
@@ -436,9 +447,9 @@ void Help_PrintOptionList(OptionList *list, int subprint, char *filter)
         if ((data_00587ce0 & 0xc00) == 0x800 && ((list->flags & 0x700) == flag || !(list->flags & 0x700)))
             return;
     }
-    if (list->text && !subprint && *opts) {
+    if (list->help && !subprint && *opts) {
         Help_PrintRepeatedCharLine('-');
-        append_formatted_text(&helpTextColumn, "%s", list->text);
+        append_formatted_text(&helpTextColumn, "%s", list->help);
         drain_column(&helpTextColumn);
         Help_PrintRepeatedCharLine('-');
     }
@@ -477,14 +488,21 @@ void Help_PrintOptionUsageNotes(void)
 {
     const char *s;
 
-    append_formatted_text(&helpTextColumn, option_usage_notes);
+    append_formatted_text(
+        &helpTextColumn,
+        "\tGuide to help:\b\tWhen an option is specified as '~~xxx | yy[y] | zzz', then either '~~xxx', '~~yy', '~~yyy', or '~~zzz' matches the option.\b\tAn option given as '~~[no]xxx' may be given as '~~xxx' or '~~noxxx'; '~~noxxx' reverses the meaning of the option.\b");
     drain_column(&helpTextColumn);
     if (data_0054aa78 != 1)
         s = "";
     else
         s = "colon or ";
-    append_formatted_text(&helpTextColumn, option_usage_notes_format, s);
-    append_formatted_text(&helpTextColumn, data_0054e0bc);
+    append_formatted_text(
+        &helpTextColumn,
+        "\tFor most options, the option and the parameters are separated by a %sspace.  When the option's name is '~~xxx+', however, the parameter must directly follow the option, without the '+' (as in '~~xxx45').\b",
+        s);
+    append_formatted_text(
+        &helpTextColumn,
+        "\tA parameter included in brackets '[]' is optional. An ellipsis '...' indicates that the previous type of parameter may be repeated as a list.\b");
     drain_column(&helpTextColumn);
     if (data_0054aa78 != 1)
         s = "-- \"cased\" indicates that the option is case-sensitive.  By default, no options are case-sensitive.\r";
@@ -495,18 +513,27 @@ void Help_PrintOptionUsageNotes(void)
         "\t%s-- \"compatability\" indicates that the option is borrowed from another vendor's tool and may only approximate its counterpart.\r-- \"global\" indicates that the option has an effect over the entire command line and is parsed before any other options.  When several global options are specified, they are interpreted in order.\r-- \"deprecated\" indicates that the option will be eliminated in the future and should not be used any longer.  An alternative form is supplied.\r",
         s);
     drain_column(&helpTextColumn);
-    append_formatted_text(&helpTextColumn, data_0054e38c);
+    append_formatted_text(
+        &helpTextColumn,
+        "-- \"ignored\" means the option will be accepted but has no effect on the tool.\r-- \"meaningless\" means the option is accepted but probably has no meaning for the target OS.\r-- \"obsolete\" means the option was once deprecated and is now gone.\r-- \"substituted\" means the option has the same effect as another. This points out a preferred form and prevents confusion when similar options appear in the help.\r-- \"default\" in the help text indicates that the given value or variation of an option will be used unless otherwise overridden. \b");
     drain_column(&helpTextColumn);
     if (data_0054aa78 != 1)
         s = "and '='";
     else
         s = ", ':', and '='";
-    append_formatted_text(&helpTextColumn, option_usage_notes_text, s);
+    append_formatted_text(
+        &helpTextColumn,
+        "\tThe symbols ',' %s separate options and parameters unconditionally; to include one of these symbols in a parameter or filename, escape it (e.g., as '\\,' in mwcc file.c\\,v).\b\n",
+        s);
     drain_column(&helpTextColumn);
-    if (data_00587e23 && driverTool[0] == 0x436f6d70)
-        append_formatted_text(&helpTextColumn, data_0054e66c);
+    if (data_00587e23 && pTool->tool == 'Comp')
+        append_formatted_text(
+            &helpTextColumn,
+            "\tThis tool calls the linker (unless a compiler option such as ~~c prevents it) and understands linker options -- use '~~help tool=other' to see them.  Options marked \"passed to linker\" are used by the compiler and the linker; options marked \"for linker\" are used only by the linker. When using the compiler and linker separately, you must pass the common options to both.\b\n");
     drain_column(&helpTextColumn);
 }
+
+static char lbl_0054e7e4[] = "%s [options, filenames...]\n\nExecute '%s %shelp' for more information.";
 
 void Help_InitColumns(void)
 {

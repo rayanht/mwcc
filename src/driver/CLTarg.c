@@ -1,17 +1,9 @@
 #define CERROR_FILE "unknown.c"
 #include "compiler/common.h"
 #include "driver/CLTarg.h"
-#include "compiler/InlineAsmPPC.h"
-#include "driver/CLAccessPaths.h"
-#include "driver/CLDependencies.h"
-#include "driver/CLFiles.h"
+#include "driver/AssertionFailure.h"
 #include "driver/CLIO.h"
-#include "driver/CLOverlays.h"
-#include "driver/CLPlugins.h"
-#include "driver/CLSegs.h"
-#include "driver/Files.h"
 #include "driver/MemUtils.h"
-#include "driver/MsDos.h"
 // "CLTarg.c"
 #include <string.h>
 
@@ -28,10 +20,10 @@ struct CLTarget *CLTarg_CreateTarget(char *targetName, int processor, int operat
     target->cpu = processor;
     target->os = operatingSystem;
     target->targetKind = targetKind;
-    OS_GetCWD(target->outputDirectory.path);
-    if (!CLSegs_InitSegments(&target->lookupPaths))
+    OS_GetCWD(&target->outputDirectory);
+    if (!Segments_Initialize(&target->lookupPaths))
         CLIO_ReportAssertionFailure("Segments_Initialize(&targ->linkage.segs)", "CLTarg.c", 25);
-    if (!CLOverlays_Init(&target->overlays))
+    if (!Overlays_Initialize(&target->overlays))
         CLIO_ReportAssertionFailure("Overlays_Initialize(&targ->linkage.overlays)", "CLTarg.c", 28);
     initialized = CLFiles_AssertNonNullIndexedListLink(&target->files) &&
                   CLFiles_AssertNonNullIndexedListLink(&target->generatedFiles) &&
@@ -71,9 +63,9 @@ void CLTarg_FreeTargets(CLTarget *head)
     }
 }
 
-void CLTarg_AppendEntry(void **link, void *entry)
+void CLTarg_AppendEntry(CLTarget **list, CLTarget *target)
 {
-    for (; *link != NULL; link = (void **)((char *)*link + 0x1d8)) {
+    for (; *list != NULL; list = &(*list)->next) {
     }
-    *link = entry;
+    *list = target;
 }

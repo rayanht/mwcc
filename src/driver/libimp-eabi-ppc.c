@@ -1,27 +1,34 @@
 #define CERROR_FILE "unknown.c"
 #include "compiler/common.h"
 #include "driver/libimp-eabi-ppc.h"
-#include "compiler/CError.h"
-#include "compiler/CPrep.h"
+#include "driver/PrefPanels.h"
 #include "compiler/CodeGen.h"
 #include "compiler/CompilerTools.h"
 #include "compiler/ELF_Endian.h"
-#include "driver/CWParserPluginsPrivate.h"
+#include "driver/COSToolsCLT.h"
 #include "driver/CWPluginsPrivate.h"
 #include "driver/DropInCompilerLinkerPrivate.h"
-#include "driver/Files.h"
-#include "driver/MacFileTypes.h"
+#include "driver/LibImportMessages.h"
 #include "driver/Memory.h"
 #include "driver/MsDos.h"
 #include "driver/StringUtils.h"
-#include "driver/Targets.h"
-#include <ctype.h>
-#include <stdlib.h>
-#include <setjmp.h>
 #include <string.h>
 #include <stdio.h>
 
+jmp_buf file_input_jmpbuf;
+SInt32 section_size_total;
+SInt32 accumulated_section_size;
+char data_0058770c[588];
+SInt32 accumulated_section_sizes;
+char data_00588517;
+
 typedef char **Handle;
+
+static struct LibImportCU libimp_cu;
+static UInt8 nonNativeByteOrder;
+
+/* An ELF file's first four bytes. */
+static unsigned int data_0054c490 = 0x464C457F;
 
 void format_message_and_longjmp()
 {
@@ -31,21 +38,21 @@ void format_message_and_longjmp()
 #pragma optimization_level 2
 void fn_0041e970(char *name, void *argument)
 {
-    CWPluginsPrivate_InvokeMessageCallback(plugin_context, NULL, name, (char *)argument, 2, 0);
+    CWPluginsPrivate_InvokeMessageCallback(libimp_cu.context, NULL, name, (char *)argument, 2, 0);
 }
 #pragma optimization_level reset
 
 #pragma optimization_level 2
 void fn_0041e990(char *name, void *argument)
 {
-    CWPluginsPrivate_InvokeMessageCallback(plugin_context, NULL, name, argument, 1, 0);
+    CWPluginsPrivate_InvokeMessageCallback(libimp_cu.context, NULL, name, argument, 1, 0);
 }
 #pragma optimization_level reset
 
 #pragma optimization_level 2
 UInt8 fn_0041e9b0(char *data)
 {
-    unsigned int reference = DAT_0054c490;
+    unsigned int reference = data_0054c490;
     int comparison = strncmp(data, (char *)&reference, sizeof(reference));
     if (comparison == 0) {
         return 1;
@@ -64,39 +71,39 @@ char **load_file_data_and_set_archive_signature(CWFileSpec *name, SInt32 *out1, 
     FileInputNode *rec;
     char buf[256];
 
-    nonNativeByteOrder = (!copts.nativeByteOrder) != 0;
+    nonNativeByteOrder = (!copts.littleendian) != 0;
     limited_diagnostic_count = data_00588228 = 0;
 
     err = 0;
     rec = read_file_into_input_nodes(name, &err);
     if (err != 0 || rec == NULL) {
-        CompilerTools_ReportLimitedDiagnostic(0x1d, name->fileData.file.name);
+        CompilerTools_ReportLimitedDiagnostic(0x1d, name->name);
         if (rec != NULL)
             clear_file_input_data_handles(rec);
         return NULL;
     }
     if (rec->kind == 0) {
-        CompilerTools_ReportLimitedDiagnostic(0x1e, name->fileData.file.name);
+        CompilerTools_ReportLimitedDiagnostic(0x1e, name->name);
         clear_file_input_data_handles(rec);
         return NULL;
     }
     accumulated_section_size = 0;
     accumulated_section_sizes = 0;
     section_size_total = 0;
-    p2cstrcpy(buf, name->fileData.file.name);
+    p2cstrcpy(buf, name->name);
     if (initheaps(format_message_and_longjmp) != 0) {
         format_message_and_longjmp();
         clear_file_input_data_handles(rec);
         return NULL;
     }
     err = dispatch_file_input_by_kind(rec, buf);
-    CompilerTools_ClearPoolBlocks();
+    releasegheap();
     if (err != 0) {
         clear_file_input_data_handles(rec);
         return NULL;
     }
-    if (!fn_00443170(contents = contents = (StorageHandle *)rec->dataHandle, length = 8)) {
-        CompilerTools_ReportLimitedDiagnostic(0x1d, name->fileData.file.name);
+    if (!COS_ResizeHandle(contents = contents = (StorageHandle *)rec->dataHandle, length = 8)) {
+        CompilerTools_ReportLimitedDiagnostic(0x1d, name->name);
         clear_file_input_data_handles(rec);
         return NULL;
     }
@@ -115,13 +122,13 @@ char **load_file_data_and_set_archive_signature(CWFileSpec *name, SInt32 *out1, 
 #pragma scheduling off
 char initialize_plugin_context(CWPluginPrivateContext *handle)
 {
-    plugin_context = handle;
-    memset(data_0057f48c, 0, sizeof(unsigned int[12]));
-    if (CPrep_GetFileIndex(handle, &file_index) != 0)
+    libimp_cu.context = handle;
+    memset(&libimp_cu.objectData, 0, sizeof(unsigned int[12]));
+    if (CPrep_GetFileIndex(handle, (unsigned int *)&libimp_cu.mainFileNumber) != 0)
         return 0;
-    if (CPrep_GetContextPayload(handle, (CWFileSpec *)data_0057f51c) != 0)
+    if (CPrep_GetContextPayload(handle, &libimp_cu.mainFile) != 0)
         return 0;
-    if (CPrep_GetSetting(handle, data_0057f56f) != 0)
+    if (CPrep_GetSetting(handle, &libimp_cu.filesyminfo) != 0)
         return 0;
     return 1;
 }
@@ -130,13 +137,14 @@ char initialize_plugin_context(CWPluginPrivateContext *handle)
 #pragma scheduling off
 unsigned int fn_0041ec20(void)
 {
-    unsigned int value = data_0057f4bc;
-    if (value != 0U) {
-        value = fn_0041bcb0(plugin_context, (struct StorageHandle *)value, data_0057f48c);
+    unsigned int value;
+    if ((value = libimp_cu.objectBuffer) != 0U) {
+        value = fn_0041bcb0(libimp_cu.context, (struct StorageHandle *)value, (long *)&libimp_cu.objectData);
         if (value != 0U)
             return value;
     }
-    value = CPrep_CallCompilerCallbackWithValue(plugin_context, file_index, data_0057f48c);
+    value =
+        CPrep_CallCompilerCallbackWithValue(libimp_cu.context, libimp_cu.mainFileNumber, (long *)&libimp_cu.objectData);
     if (value != 0U)
         return value;
     return value;
@@ -150,9 +158,9 @@ int __stdcall fn_0041ec70(CWPluginPrivateContext *context)
     int result;
     char **status;
     long mode;
-    struct ConfigurationBlock60 block60;
+    PProject block60;
     struct ConfigurationBlock116 block116;
-    struct ConfigurationBlock60 **reference60;
+    PProject **reference60;
     struct ConfigurationBlock116 **reference116;
 
     result = 0;
@@ -172,7 +180,7 @@ int __stdcall fn_0041ec70(CWPluginPrivateContext *context)
             if (reference60 != NULL) {
                 block60 = **reference60;
             }
-            copts.nativeByteOrder = !block60.flag_2c;
+            copts.littleendian = !block60.bigendian;
             reference116 = NULL;
             DropInCompilerLinkerPrivate_CallArgumentValue(context, "PPC EABI Linker", &reference116);
             if (reference116 != NULL) {
@@ -181,11 +189,11 @@ int __stdcall fn_0041ec70(CWPluginPrivateContext *context)
             data_00587958 = block116.flag_05;
             data_00588517 = 0;
             initialize_plugin_context(context);
-            data_0057f4c0 = 0;
-            data_0057f4a4 = 0;
-            status = load_file_data_and_set_archive_signature((CWFileSpec *)data_0057f51c, &data_0057f498,
-                                                              &data_0057f49c, &data_0057f4a0);
-            data_0057f4bc = (unsigned int)status;
+            libimp_cu.browseBuffer = 0;
+            libimp_cu.lineCount = 0;
+            status = load_file_data_and_set_archive_signature(&libimp_cu.mainFile, &libimp_cu.codeSize,
+                                                              &libimp_cu.udataSize, &libimp_cu.idataSize);
+            libimp_cu.objectBuffer = (unsigned int)status;
             if (status != NULL) {
                 result = fn_0041ec20();
             } else {
@@ -203,27 +211,32 @@ int __stdcall fn_0041ec70(CWPluginPrivateContext *context)
 
 void fn_0041ede0(char *value)
 {
-    CWPluginsPrivate_CallCallback9(plugin_context, value, NULL, NULL, 0);
+    CWPluginsPrivate_CallCallback9(libimp_cu.context, value, NULL, NULL, 0);
 }
 
 #pragma optimization_level reset
 #pragma optimization_level 2
 void fn_0041ee00(void *argument, short request)
 {
-    CWPluginsPrivate_InvokeMessageCallback((struct DispatchObject_0041b830 *)plugin_context, NULL, argument, NULL, 2,
+    CWPluginsPrivate_InvokeMessageCallback((struct DispatchObject_0041b830 *)libimp_cu.context, NULL, argument, NULL, 2,
                                            request);
 }
 #pragma optimization_level reset
 
+/* The ticks before the importer next lets the IDE break in. */
+static SInt32 data_0054c4d0 = 0;
+
 void check_ticks_and_longjmp(void)
 {
     if (CompilerTools_GetTicks() > data_0054c4d0) {
-        if (fn_0041b910(plugin_context) == 1U)
+        if (fn_0041b910(libimp_cu.context) == 1U)
             longjmp(file_input_jmpbuf, 1U);
         data_0054c4d0 = CompilerTools_GetTicks() + 15U;
     }
 }
 #pragma optimization_level 2
+
+static char data_0054c4d4[] = "mw";
 
 unsigned char classify_file_header(CWFileSpec *input)
 {
@@ -246,7 +259,7 @@ unsigned char classify_file_header(CWFileSpec *input)
         if (strncmp(value.data, "!<arch>\n", 8) == 0) {
             return 1;
         }
-        if (value.word0 == file_header_magic_first_byte && value.word1 == data_0054c4d5) {
+        if (value.word0 == data_0054c4d4[0] && value.word1 == data_0054c4d4[1]) {
             return 0;
         }
     }
@@ -269,16 +282,16 @@ char **read_file_into_buffer(CWFileSpec *file, short *error, int extraBytes)
             Files_Close(fileRef);
             return NULL;
         }
-        buffer = CompilerTools_AllocateMemoryIfEnabled(fileSize + extraBytes);
+        buffer = COS_NewOSHandle(fileSize + extraBytes);
         if (buffer == NULL) {
-            buffer = fn_00443110(fileSize + extraBytes);
+            buffer = COS_NewHandle(fileSize + extraBytes);
             if (buffer == NULL) {
                 Files_Close(fileRef);
                 *error = -108;
                 return NULL;
             }
         }
-        fn_00443190(buffer);
+        COS_LockHandle(buffer);
         bytesRead = fileSize;
         *error = Files_Read(fileRef, &bytesRead, *buffer);
         if (*error != 0 || bytesRead != fileSize) {
@@ -289,7 +302,7 @@ char **read_file_into_buffer(CWFileSpec *file, short *error, int extraBytes)
         if (extraBytes != 0) {
             (*buffer)[fileSize] = 0;
         }
-        fn_004431b0(buffer);
+        COS_UnlockHandle(buffer);
         Files_Close(fileRef);
         return buffer;
     }
@@ -373,9 +386,9 @@ FileInputNode *read_file_into_input_nodes(CWFileSpec *name, SInt16 *err)
             header = member->archiveMemberHeader;
             position += 0x3c;
             sscanf(header + 0x30, "%ld", &length);
-            data = CompilerTools_AllocateMemoryIfEnabled(length);
+            data = COS_NewOSHandle(length);
             if (data == NULL) {
-                data = fn_00443110(length);
+                data = COS_NewHandle(length);
                 if (data == NULL) {
                     Files_Close(handle);
                     *err = -0x6c;
@@ -386,7 +399,7 @@ FileInputNode *read_file_into_input_nodes(CWFileSpec *name, SInt16 *err)
                 }
             }
             member->dataHandle = data;
-            fn_00443190(member->dataHandle);
+            COS_LockHandle(member->dataHandle);
             count = length;
             *err = Files_Read(handle, &count, *member->dataHandle);
             if (*err != 0 || count != length) {
@@ -409,7 +422,7 @@ FileInputNode *read_file_into_input_nodes(CWFileSpec *name, SInt16 *err)
                 }
                 position++;
             }
-            fn_004431b0(member->dataHandle);
+            COS_UnlockHandle(member->dataHandle);
             if (last != NULL)
                 last->next = member;
             last = member;
@@ -451,7 +464,7 @@ static inline void ReportInvalidKind(unsigned int error, char *subject, const vo
 static inline void ReportUnsupportedKind(char *location, char *name)
 {
     ReportInvalidKind(54U, *name ? name : location, *name ? " of archive '" : "", *name ? location : "",
-                      *name ? "'" : "", powerpc_name);
+                      *name ? "'" : "", (unsigned char *)"PowerPC");
 }
 
 #pragma optimization_level reset
@@ -459,17 +472,17 @@ static inline void ReportUnsupportedKind(char *location, char *name)
 unsigned char fn_0041f430(Elf32Header *record, char *location, char *name)
 {
     if (record->dataEncoding == 1U) {
-        if (copts.nativeByteOrder == 0U) {
+        if (copts.littleendian == 0U) {
             ReportModeError(48U, location, name);
             return 0U;
         }
     } else if (record->dataEncoding == 2U) {
-        if (copts.nativeByteOrder != 0U) {
+        if (copts.littleendian != 0U) {
             ReportModeError(48U, location, name);
             return 0U;
         }
     } else {
-        ReportInvalidMode(46U, ei_data, location, name);
+        ReportInvalidMode(46U, (unsigned char *)"EI_DATA", location, name);
         return 0U;
     }
 
@@ -484,7 +497,7 @@ unsigned char fn_0041f430(Elf32Header *record, char *location, char *name)
             return 0U;
         }
     } else {
-        ReportInvalidMode(46U, ei_class_name, location, name);
+        ReportInvalidMode(46U, (signed char *)"EI_CLASS", location, name);
         return 0U;
     }
 
@@ -503,7 +516,7 @@ void accumulate_section_sizes(FileInputNode *input, char *option1, char *option2
     Elf32Section *section;
     int section_index;
     char *image;
-    fn_004431a0(input->dataHandle);
+    COS_LockHandleHi(input->dataHandle);
     image = (char *)*input->dataHandle;
     check_ticks_and_longjmp();
     header = (Elf32Header *)image;
@@ -527,7 +540,7 @@ void accumulate_section_sizes(FileInputNode *input, char *option1, char *option2
             }
         }
     }
-    fn_004431b0(input->dataHandle);
+    COS_UnlockHandle(input->dataHandle);
 }
 #pragma optimization_level reset
 
@@ -601,7 +614,7 @@ void classify_archive_members(FileInputNode *list, char *arg)
         }
         if (!memcmp(name, "//", 3)) {
             longNames = data;
-            fn_004431a0(data);
+            COS_LockHandleHi(data);
             terminate_slash_newline_sequences(data, Memory_GetHandleSize((struct StorageHandle *)data));
             node->kind = 3;
         }
@@ -611,7 +624,7 @@ void classify_archive_members(FileInputNode *list, char *arg)
         accumulate_section_sizes(node, arg, name);
     }
     if (longNames)
-        fn_004431b0(longNames);
+        COS_UnlockHandle(longNames);
 }
 #pragma optimization_level reset
 #pragma optimization_level 2

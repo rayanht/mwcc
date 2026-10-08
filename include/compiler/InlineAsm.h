@@ -16,7 +16,6 @@ union SerializedValue {
 };
 #pragma options align = reset
 extern char *format_inlineasm_instruction(ENode *info);
-extern char inlineasm_instruction_buffer[];
 extern SInt32 evaluate_binary_expression(SInt32 left);
 extern SInt32 InlineAsm_ParseStructOrClassMemberOffset(Type *obj);
 extern SInt32 InlineAsm_ParseMemberOffset(Type *type);
@@ -41,7 +40,7 @@ extern void InlineAsm_RecordObjectUses(Statement *record);
 extern void InlineAsm_CopyInstructionAndResolveOperands(Statement *output, struct CLabel **references, char flag,
                                                         ParsedAsmInstruction *source, SInt32 size);
 extern jmp_buf inlineAsmJmpBuf;
-extern SInt32 DAT_00587f18;
+extern SInt32 data_00587f18;
 extern jmp_buf data_00583a68;
 
 #ifdef __cplusplus

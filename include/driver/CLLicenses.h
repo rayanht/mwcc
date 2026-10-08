@@ -23,9 +23,13 @@ struct License {
     char blob[5];
 };
 struct MWInfo {
-    struct License *license; /* 0x00: CLLicenses_RequestLicense assigns data_0057ef08 */
-    char *vendor;            /* 0x04: CLLicenses_RequestLicense assigns "metrowks" for fn_004270ba */
+    struct License *license;
+    char *vendor;
 };
+/* The FLEXlm client library's (LMGR326B.dll, through its import library). */
+extern int lp_checkout(struct MWInfo *info, int version, int request, int options, int flag, char *path, int *handle);
+extern void lp_checkin(int handle);
+extern char *lp_errstring(int handle);
 extern int get_license_slot_values(int index, unsigned int *firstValue, int *secondValue);
 extern int delete_license(int licenseIndex);
 extern int find_license(unsigned int identifier, unsigned int *license);
@@ -36,13 +40,7 @@ extern int CLLicenses_RequestLicense(int request, int options, int cookieKind, c
 extern void CLLicenses_DeleteLicense(int identifier);
 extern void CLLicenses_ReleaseLicenses(void);
 extern int release_negative_license_values(void);
-extern UInt32 license_slots[32][2];
-extern UInt32 DAT_0057ef10[];
-extern int license_id_counter;
 extern char *license_path;
-extern struct License *data_0057ef08;
-extern int license_slot_count;
-extern OSSpec data_005871d8;
 
 #ifdef __cplusplus
 }

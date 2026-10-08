@@ -11,21 +11,18 @@ extern "C" {
 struct Loop {
     struct Loop *parent;
     struct Loop *sibling;
-    struct Loop *children; /* 0x08: hoist_child_code_motion_instructions visits child counting loops */
-    struct PCodeBlock
-        *body; /* 0x0c: hoist_child_code_motion_instructions tests child body index in backedge_dominators */
+    struct Loop *children;
+    struct PCodeBlock *body;
     struct PCodeBlock *preheader;
     struct PCodeBlock *footer;
-    struct PCodeInstruction *
-        inductionUpdate; /* 0x18: LoopDetection.c stores found2, the add-immediate instruction supplying the induction step */
-    struct PCodeBlockLink *blocks; /* 0x1c: matches_redundancy_without_prior_reg_use scans loop block instructions */
+    struct PCodeInstruction *inductionUpdate;
+    struct PCodeBlockLink *blocks;
     UInt32 *memberblocks;
     UInt32 *exitblocks;
     UInt32 *block_membership;
-    UInt32 *backedge_dominators; /* 0x2c: hoist_child_code_motion_instructions tests child body membership */
-    struct CMRegisterNode
-        *codeMotionSearches; /* 0x30: fn_00527290 traverses CMRegisterNode next, head and definition */
-    int execution_weight; /* 0x34: create_loops copies body execution_weight; LoopDetection_CreatePreheader assigns parent weight to newBlock */
+    UInt32 *backedge_dominators;
+    struct CMRegisterNode *codeMotionSearches;
+    int execution_weight;
     SInt32 bodySize;
     SInt32 iterationCount;
     SInt32 lower;
@@ -68,13 +65,8 @@ extern void LoopDetection_AddBlock(Loop *loop, PCodeBlock *block);
 extern struct SelectedNode *collect_nodes_in_predecessor_bitsets(void);
 extern void compute_dominators(void);
 extern void traverse_loops_postorder(register Loop *node);
-extern UInt32 **dominators;
-extern SInt32 predecessor_bitset_node_count;
 extern signed long data_005871a4;
-extern struct PCodeBlock **data_00582c64;
-extern struct SelectedNode *selected_nodes;
 extern int gPCodeBlockCount;
-struct Loop;
 
 #ifdef __cplusplus
 }

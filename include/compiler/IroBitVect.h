@@ -9,10 +9,8 @@ extern "C" {
 
 #pragma pack(push, 2)
 struct BitVector {
-    UInt32
-        size; /* 0x00: IroBitVect_AllocateBitVector sets the number of 32-bit words; IRO_BitVectorSet bounds-checks it. */
-    UInt32 bits
-        [1]; /* 0x04: IroBitVect_AllocateBitVector clears words; IroVars_CheckVariablesInitializedBeforeUse tests and sets variable-index bits. */
+    UInt32 size;
+    UInt32 bits[1];
 };
 #pragma pack(pop)
 extern void IroBitVect_ClearBitVector(BitVector *vector);

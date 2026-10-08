@@ -31,24 +31,15 @@ enum {
 };
 #pragma options align = mac68k
 struct Statement {
-    Statement *next; /* 0x00: CodeGen traverses the statement list */
-    UInt8 type;      /* 0x04: CodeGen selects the statement kind */
-    UInt8 marked;    /* 0x05: COptimizer marks visited statements */
-    UInt8 flags;     /* 0x06: CodeGen tests source-location flags */
-    UInt8 unk07;
-    SInt16 value; /* 0x08: CodeGen passes this to set_block_line_and_execution_weight */
-    union {
-        ENode *expression; /* 0x0a: CodeGen kinds 4, 6, 7, 8 and 15 evaluate expressions */
-        struct ParsedAsmInstruction
-            *asmInstruction; /* 0x0a: CodeGen kind 16; InlineAsmPPC_00462d70 reads opcode and operands */
-    } expr;
-    union {
-        struct CLabel *label; /* 0x0e: CodeGen kinds 2, 3, 6 and 7 use a label */
-        struct SwitchInfo *
-            switchDescriptor; /* 0x0e: parse_statement creates kind 5; mark_reachable_statements kind 5 reads cases and defaultlabel; build_linear_from_statements kind 5 reads this descriptor */
-    } target;
-    struct CException *dobjstack; /* 0x12: IroFlowgraph_RebuildSuccPred walks active exception scopes */
-    SInt32 sourceoffset;          /* 0x16: CodeGen passes source position to set_block_line_and_execution_weight */
+    Statement *next;
+    UInt8 type;
+    UInt8 marked;
+    UInt8 flags;
+    SInt16 value;
+    ENode *expr;
+    struct CLabel *label;
+    struct ExceptionAction *dobjstack;
+    SInt32 sourceoffset;
 };
 #pragma options align = reset
 /* A function queued for code generation after the translation unit has been parsed (list head DAT_005876e8,
@@ -62,12 +53,7 @@ struct PendingFunction {
 #pragma options align = mac68k
 struct CLabel {
     struct CLabel *next;
-    union {
-        struct Statement
-            *stmt; /* 0x04: frontend statement-label variant, used by COptimizer before IRO_BuildflowGraph */
-        struct IRONode *
-            node; /* 0x04: IRO_BuildflowGraph and IroFlowgraph_RebuildSuccPred select the flowgraph variant for IROLinearLabel; unroll_loop installs basic blocks */
-    } target;
+    struct Statement *stmt;
     struct HashNameNode *uniquename;
     struct HashNameNode *name;
     struct PCodeLabel *pclabel;
@@ -79,51 +65,43 @@ struct CleanNode {
     Object *object;
     Object *dtor;
 };
-#pragma pack(push, 1)
-union CtorInitTarget {
-    struct ClassList *base; /* 0x0a: parse_ctor_initializers kind 0; CABI_InsertConstructorInitialization INIT_BASE */
-    struct VClassList
-        *virtualBase; /* 0x0a: parse_ctor_initializers kind 1; CABI_InsertConstructorInitialization INIT_VBASE */
-    struct ObjMemberVar *
-        member; /* 0x0a: parse_ctor_initializers kind 2; CFunc_00476e70 kind 2; CABI_InsertConstructorInitialization INIT_MEMBER */
+#pragma options align = mac68k
+struct CtorChain {
+    CtorChain *next;
+    UInt8 what;
+    ENode *objexpr;
+    union {
+        ClassList *base;
+        VClassList *vbase;
+        ObjMemberVar *membervar;
+    } u;
 };
-struct CtorInit {
-    struct CtorInit *next; /* 0x00: parse_ctor_initializers links ctor_initializers */
-    UInt8 kind;            /* 0x04: parse_ctor_initializers selects base (0), virtual base (1), member (2) */
-    UInt8 unused; /* 0x05: parse_ctor_initializers allocates sizeof(CtorInit) but never reads or writes this byte */
-    struct ENode *
-        expr; /* 0x06: parse_ctor_initializers builds construction expression; CABI_InsertConstructorInitialization emits it */
-    union CtorInitTarget u; /* 0x0a: parse_ctor_initializers selects target by kind */
-};
-#pragma pack(pop)
+#pragma options align = reset
 /* Inherited statement parsing context, copied for nested loops and switches. */
 struct StatementContext {
-    Type *returnType;
-    UInt32 returnQual;
-    SwitchInfo *switchInfo;
-    CLabel *continueLabel;
-    CLabel *breakLabel;
+    Type *thetype;
+    UInt32 qual;
+    SwitchInfo *switchinfo;
+    CLabel *loopContinue;
+    CLabel *loopBreak;
 };
 #pragma options align = mac68k
 struct SwitchInfo {
-    struct SwitchCase *cases; /* 0x00: parse_statement initializes cases; Switch_GenerateSwitch traverses case labels */
-    struct CLabel
-        *defaultlabel; /* 0x04: parse_statement initializes defaultlabel; Switch_GenerateSwitch reads default target */
-    Type *sizetype;    /* 0x08: parse_statement stores expression rtype; CFunc converts case values */
+    struct SwitchCase *cases;
+    struct CLabel *defaultlabel;
+    Type *sizetype;
 };
 #pragma options align = reset
 extern void CFunc_Gen(Statement *context, Object *object, unsigned int options);
-extern CInt64 CFunc_BitwiseNot(CInt64 input);
-extern CInt64 CFunc_LogicalNotCInt64(CInt64 input);
 extern void parse_ctor_initializers(void);
-extern void fn_00476e60(TypeClass *type);
+extern void CFunc_CheckClassCtors(TypeClass *type);
 extern NameSpace *CFunc_FuncGenSetup(Statement *stmt, Object *func);
 extern ObjectList *create_arg_object_list(FuncArg *arg);
 extern void CFunc_SetupNewFuncArgs(Object *func, FuncArg *args);
-extern void CFunc_ParseScopedStatement(struct StatementContext *context);
+extern void CFunc_CompoundStatement(struct StatementContext *context);
 extern ENode *initialize_argument_object(ENode *initData, Type *type, UInt32 flags);
 extern ENode *parse_declarations(char mode, int singleDeclaration, char allowEmpty, char stopAfterDeclaration);
-extern void register_destructor_object(Type *a1, Object *a2, long a3, long a4);
+extern void register_destructor_object(Type *type, Object *object, long offset, long flags);
 extern void append_localstatic_init_expr(ENode *expr);
 extern void CFunc_CodeCleanup(Statement *stmt);
 extern ENode *sub_47bca0(ENode *node);
@@ -135,41 +113,31 @@ extern ENode *rewrite_cond_with_cleannodes(ENode *node);
 extern ENode *sub_47c050(ENode *node, struct CleanNode *args, Boolean flag);
 extern void generate_conditional_jump(ENode *expr, CLabel *dest, CLabel *other, Boolean sense, Boolean flag);
 extern void setup_function_arguments(Object *function, DeclInfo *body, Statement *state);
-extern void CFunc_00476e70(TypeClass *theclass, struct CtorInit *inits);
+extern void fn_00476e70(TypeClass *theclass, struct CtorChain *inits);
 extern void create_local_object_copy(Object *func, TypeIntegral *type, Type *type2, Boolean flag);
-extern void declare_local_object(DeclInfo *declaration, BufferedToken *proto, char flag3, char flag4);
+extern void declare_local_object(DeclInfo *declaration, TStreamElement *proto, char flag3, char flag4);
 extern void rewrite_enode_list_nodes(ENodeList *entry);
 extern void parse_statement(struct StatementContext *context);
 extern void CFunc_ParseFuncDef(Object *func, DeclInfo *definition, TypeClass *scopeObject, Boolean isMember,
                                unsigned char scopeFlag, NameSpace *scope);
 extern void parse_case_statement(struct StatementContext *context);
 extern void check_function_result_automatic_variable(ENode *e);
-extern void CFunc_0047b9a0(Statement *statement, Statement *expression);
+extern void fn_0047b9a0(Statement *statement, Statement *expression);
 extern Statement *insert_conditional_goto_cleanup(Statement *statement);
 extern void CFunc_DestructorCleanup(Statement *first);
 extern void CFunc_GenerateDummyFunction(Object *functionObject);
 extern void InitExpr_Register(ENode *expr, Object *cls);
 extern ENode *append_cleannode_dtors(ENode *left, struct CleanNode *list);
 extern void CFunc_GenerateSingleExprFunc(Object *func, ENode *expr);
-extern UInt32 statement_sourceoffset;
-extern void *PTR_00580870;
-extern struct SavedGlobalValues *saved_global_values_tail;
-extern struct Statement *PTR_00587644;
-extern struct CLabel *clabels;
-extern struct CException *UINT_00587fc4;
-extern UInt16 data_00580878;
-extern struct Object *localstatic_init_guard;
-extern unsigned char data_00580882;
-extern struct ENode *deferred_expression;
-extern UInt8 data_0058088c;
-extern SInt16 local_name_counter;
-extern struct CleanNode *data_00580890;
-extern SInt32 current_statement_number;
+extern UInt32 sourceoffset;
+extern struct Statement *curstmt;
+extern struct CLabel *Labels;
+extern struct ExceptionAction *cexcept_dobjstack;
+extern SInt32 curstmtvalue;
 extern struct HashNameNode *blank_argument_name;
-extern struct CtorInit *ctor_initializers;
-extern struct TypeClass *data_00588040;
-extern Object *data_00588238;
-extern struct CLabel *data_0058087e;
+extern struct CtorChain *ctor_chain;
+extern struct TypeClass *cscope_currentclass;
+extern Object *cscope_currentfunc;
 extern ENode *create_temp_node2(Type *type);
 extern ENode *create_temp_node(Type *type);
 extern Object *create_temp_object(Type *type);
@@ -187,11 +155,17 @@ extern Boolean check_default_argument_reference(int value, Object *object);
 extern void parse_old_style_parameter_names(DeclInfo *scope);
 extern void fn_0047ca70(Type **pt);
 extern void CFunc_SetupLocalVarInfo(Object *object);
-extern struct FuncArg *default_arg;
 extern unsigned char in_parameter_type_list;
-struct CLabel;
-struct Statement;
-extern FOI function_fileinfo;
+extern FileOffsetInfo function_fileinfo;
+
+struct DeclBlock {
+    struct DeclBlock *next;
+    struct ExceptionAction *dobjstack;
+    struct NameSpace *parent_nspace;
+    UInt16 index;
+};
+extern void CFunc_RestoreBlock(const struct DeclBlock *values);
+extern struct DeclBlock *CFunc_NewDeclBlock(void);
 
 #ifdef __cplusplus
 }

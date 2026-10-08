@@ -9,15 +9,10 @@ extern "C" {
 #endif
 
 #pragma options align = mac68k
-struct CWFileSpec {
-    struct {
-        struct {
-            UInt16 volumeRef;
-            UInt32 directoryId;
-            UInt8 name[62];
-        } file;
-    } fileData;
-    UInt16 tail;
+struct FSSpec {
+    SInt16 vRefNum;
+    SInt32 parID;
+    Str63 name;
 };
 #pragma options align = reset
 struct FileIdentifierInfo {
@@ -48,7 +43,7 @@ struct RecordData {
 struct RecordQuery {
     UInt8 reserved[0x10];
     SInt16 status;
-    UInt8 *name; /* 0x12: set_record_identifier stores the Pascal filename; Files_MakeFileSpecFromPath reads it */
+    UInt8 *name;
     UInt16 kind;
     UInt16 reserved18;
     UInt16 options;
@@ -84,16 +79,13 @@ extern SInt16 __stdcall Files_GetFileIdentifierInfoFromPath(SInt16 input, SInt32
                                                             FileIdentifierInfo *destination);
 extern unsigned int __stdcall Files_CreateFile(CWFileSpec *input, unsigned int secondArgument,
                                                unsigned int thirdArgument, int fourthArgument);
-extern SInt16 __stdcall Files_Read(SInt16 a0, SInt32 *a1, void *a2);
+extern SInt16 __stdcall Files_Read(SInt16 file, SInt32 *byteCount, void *buffer);
 extern DWORD __stdcall Files_Close(short handleIndex);
 extern short __stdcall Files_GetSize(short predecessor, SInt32 *result);
 extern SInt16 __stdcall Files_SetSize(SInt16 handleId, SInt32 size);
 extern int __stdcall Files_SetPosition(short refNum, short posMode, SInt32 posOff);
 extern short __stdcall Files_UpdateRecordQuery(RecordQuery *record);
-extern unsigned char os_open_modes[];
-extern unsigned int data_0054b770;
-extern unsigned char name_space[];
-extern SInt16 __stdcall Files_Write(SInt16 a0, SInt32 *a1, void *a2);
+extern SInt16 __stdcall Files_Write(SInt16 refNum, SInt32 *size, void *buffer);
 extern UInt16 __stdcall fn_00414710(RecordQuery *record);
 extern int __stdcall Files_MakeFileSpecFromPath(short volume, int directory, unsigned char *path, CWFileSpec *result);
 

@@ -1,11 +1,7 @@
 #define CERROR_FILE "unknown.c"
 #include "compiler/common.h"
 #include "driver/CLStaticPlugins.h"
-#include "driver/cc-eabi-ppc-mw.h"
-#include <string.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <msl_internal.h>
+#include "driver/libimp-eabi-ppc-mw.h"
 
 unsigned int CLStaticPlugins_SetIdentifiers(SInt32 *architectureIdentifier, SInt32 *abiIdentifier)
 {

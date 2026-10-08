@@ -24,30 +24,19 @@ enum PCodeInstructionFlags {
 };
 #pragma options align = mac68k
 struct CBlockData {
-    UInt32 *
-        generatedLoads; /* 0x00: LoadDeletion_BuildLoadLivenessSets sets local immediate loads and clears overwritten ones. */
-    UInt32 *
-        killedLoads; /* 0x04: LoadDeletion_BuildLoadLivenessSets marks other blocks' loads whose registers are overwritten. */
-    UInt32 unusedStorage
-        [2]; /* 0x08: COpt_LoadDeletion allocates a 0x10-byte block entry; neither it nor LoadDeletion_BuildLoadLivenessSets accesses this trailing storage. */
+    UInt32 *generatedLoads;
+    UInt32 *killedLoads;
+    UInt32 unusedStorage[2];
 };
 #pragma options align = reset
 extern void ConstantPropagation_PropagateConstantsInBlock(struct PCodeBlock *block);
 extern struct PCodeInstruction *find_dlocal_addi(PCodeOperand *operand, SInt16 *size_out, SInt16 displacement);
 extern void ConstantPropagation_FindUniqueDefinitions(struct PCodeBlock *state);
-extern unsigned short constant_propagation_clear_mask;
-extern unsigned short DAT_005659aa;
-extern unsigned short DAT_00565a3a;
-extern unsigned short DAT_00565a8a;
-extern unsigned short DAT_00565d6a;
-extern unsigned short opcode_flags[][8];
-extern int constantPropagationChanged;
 extern int gConstantPropagationChanged;
-extern struct PCodeInstruction **virtual_register_definitions;
-extern struct PCodeInstruction **unique_definitions;
 extern void COpt_LoadDeletion(void);
 extern int gLoadDeletionChanged;
 extern struct CBlockData *data_00587c98;
+extern void COpt_ConstantPropagation(void);
 
 #ifdef __cplusplus
 }

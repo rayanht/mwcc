@@ -1,17 +1,15 @@
 #define CERROR_FILE "unknown.c"
 #include "compiler/common.h"
 #include "driver/Memory.h"
-#include "compiler/win32.h"
-#include "compiler/CPrep.h"
 #include "driver/CLFileOps.h"
-#include "driver/MsDos.h"
-#include <string.h>
+#include "driver/Generic.h"
 #include <stdlib.h>
-#include <stdio.h>
-MemBuffer *Memory_GetSizeAddress(void *allocation)
+
+static unsigned short memory_error;
+OSHandle *Memory_GetSizeAddress(void *allocation)
 {
-    MemBuffer *buffer = (MemBuffer *)allocation;
-    return (MemBuffer *)&buffer->size;
+    OSHandle *buffer = (OSHandle *)allocation;
+    return (OSHandle *)&buffer->size;
 }
 
 unsigned int set_storage_handle_data(StorageHandle *handle, char *data)
@@ -20,7 +18,7 @@ unsigned int set_storage_handle_data(StorageHandle *handle, char *data)
     return (unsigned int)data;
 }
 
-StorageHandle *Memory_CreateStorageHandle(MemBuffer *input)
+StorageHandle *Memory_CreateStorageHandle(OSHandle *input)
 {
     StorageHandle *record;
     record = malloc(sizeof(*record));
@@ -30,25 +28,25 @@ StorageHandle *Memory_CreateStorageHandle(MemBuffer *input)
     }
     record->buffer = *input;
     OS_InvalidateHandle(input);
-    record->data = (char *)MsDos_GetValidMemBufferPtr(&record->buffer);
-    fn_004129c0(&record->buffer);
+    record->data = (char *)OS_LockHandle(&record->buffer);
+    OS_UnlockHandle(&record->buffer);
     return record;
 }
 
-void Memory_ExtractMemBuffer(void *input, MemBuffer *result)
+void Memory_ExtractMemBuffer(void *input, OSHandle *result)
 {
-    MemBuffer *buffer;
+    OSHandle *buffer;
     char *data;
-    MemBuffer *destination;
+    OSHandle *destination;
     StorageHandle *handle;
     StorageHandle *argument;
     handle = input;
     destination = result;
     argument = handle;
     buffer = Memory_GetSizeAddress(argument);
-    data = buffer->ptr;
-    buffer = (MemBuffer *)buffer->size;
-    destination->ptr = data;
+    data = buffer->addr;
+    buffer = (OSHandle *)buffer->size;
+    destination->addr = data;
     destination->size = (UInt32)buffer;
     argument = handle;
     free(argument);
@@ -61,7 +59,7 @@ unsigned short Memory_GetError(void)
 
 unsigned int Memory_NewHandle(unsigned int input)
 {
-    MemBuffer recovery;
+    OSHandle recovery;
     DWORD result = OS_NewHandle(input, &recovery);
     if (result != 0U) {
         memory_error = OS_OSErrorToMacError(result);
@@ -97,7 +95,7 @@ void __stdcall Memory_FreeHandle(StorageHandle *record)
 void __stdcall fn_00413a00(struct StorageHandle *data)
 {
     if (data != NULL) {
-        HGLOBAL result = MsDos_GetValidMemBufferPtr(&data->buffer);
+        HGLOBAL result = OS_LockHandle(&data->buffer);
         set_storage_handle_data(data, result);
         memory_error = 0U;
     } else {
@@ -115,7 +113,7 @@ void __stdcall fn_00413a50(void *entry)
     StorageHandle *record = entry;
     if (record) {
         memory_error = 0;
-        fn_004129c0(&record->buffer);
+        OS_UnlockHandle(&record->buffer);
     } else {
         memory_error = -109;
     }
@@ -137,19 +135,19 @@ SInt32 __stdcall Memory_GetHandleSize(struct StorageHandle *handle)
 
 void __stdcall Memory_ResizeStorageHandle(StorageHandle *handle, unsigned int size)
 {
-    MemBuffer *buffer;
+    OSHandle *buffer;
     memory_error = OS_OSErrorToMacError(OS_ResizeHandle(buffer = &handle->buffer, size));
-    set_storage_handle_data(handle, MsDos_GetValidMemBufferPtr(buffer));
-    fn_004129c0(buffer);
+    set_storage_handle_data(handle, OS_LockHandle(buffer));
+    OS_UnlockHandle(buffer);
 }
 
 unsigned short __stdcall Memory_AppendStorageHandle(const void *data, StorageHandle *handle, int size)
 {
     int result;
-    MemBuffer *buffer;
-    result = OS_OSErrorToMacError(CLFileOps_AppendMemBuffer(buffer = &handle->buffer, data, size));
-    set_storage_handle_data(handle, MsDos_GetValidMemBufferPtr(buffer));
-    fn_004129c0(buffer);
+    OSHandle *buffer;
+    result = OS_OSErrorToMacError(OS_AppendHandle(buffer = &handle->buffer, data, size));
+    set_storage_handle_data(handle, OS_LockHandle(buffer));
+    OS_UnlockHandle(buffer);
     return result;
 }
 

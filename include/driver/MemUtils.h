@@ -10,7 +10,7 @@ extern "C" {
 
 extern void *xmalloc(const char *text, unsigned int size);
 extern void *xcalloc(const char *pool, unsigned int size);
-extern void *xrealloc(const char *detail, void *a1, unsigned int size);
+extern void *xrealloc(const char *detail, void *block, unsigned int size);
 extern char *xstrdup(const char *s);
 extern int __stdcall MemUtils_CallPluginEntry(Plugin *entry);
 

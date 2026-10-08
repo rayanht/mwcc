@@ -20,16 +20,16 @@ struct CParseRec {
 };
 #pragma options align = reset
 /* A parser checkpoint (tentative parsing): the state to restore and where to longjmp when an error is raised while
-   data_00588240 points at it. Each gNNN keeps the global at 0x58NNNN. */
-struct CParseSave {
-    struct CParseSave *g240;
-    jmp_buf buf;
-    NameSpace *g24c;
-    struct TypeClass *g040;
-    Object *g238;
-    struct ObjectReferenceEntry *g134;
-    SInt32 g7ecc;
-    UInt8 g4f8;
+   trychain points at it */
+struct ParserTryBlock {
+    struct ParserTryBlock *next;
+    jmp_buf jmpbuf;
+    NameSpace *cscope_current;
+    struct TypeClass *cscope_currentclass;
+    Object *cscope_currentfunc;
+    struct TemplStack *ctempl_curinstance;
+    TStreamElement *cerror_locktoken;
+    UInt8 cscope_is_member_func;
 };
 struct ClassTypeLink {
     struct ClassTypeLink *next;
@@ -37,13 +37,14 @@ struct ClassTypeLink {
 };
 #pragma options align = mac68k
 #pragma options align = reset
-struct PendingObjectClass {
-    struct PendingObjectClass *next;
-    struct Object *object;
-    struct TypeClass *theclass;
+struct CallbackAction {
+    struct CallbackAction *next;
+    struct Object *obj;
+    struct TypeClass *tclass;
 };
 extern TypeIntegral stlongdouble;
 extern Type stvoid;
+extern TypeFunc data_0055d5e8;
 /* The tokens the lexer returns in tk: a character is its own token, the rest are these (keywords as the lexer names them,
  * operators in the lexer's order); numbers, as tk is a short. */
 #define TK_EOF 0
@@ -176,8 +177,8 @@ extern SInt16 tk;
 extern NameSpaceName *runtime_operator_namespace_name;
 extern NameSpaceName *data_00588008;
 extern void CParser_CheckAnonymousUnion(DeclInfo *context, char flag);
-extern Boolean CParser_IsAnonymousClass(Type **ptype, Boolean flag);
-extern void CParser_Cleanup(void);
+extern Boolean CParser_IsAnonymousUnion(Type **ptype, Boolean flag);
+extern void fn_0048c290(void);
 extern void CParser_GetDeclSpecs(DeclInfo *state, Boolean allowObject);
 extern unsigned char CParser_CheckTemplateClassScope(Type *type);
 extern int parse_dtype_specifiers(DeclInfo *state);
@@ -191,32 +192,32 @@ extern Boolean isdeclaration(Boolean option1, Boolean option2, Boolean option3, 
 extern unsigned char test_declaration(Boolean parseDeclaration, Boolean requireValue, Boolean declarationFlag,
                                       short terminator);
 extern void appendmember(TypeStruct *s, StructMember *m);
-extern Boolean Type_IsUnsigned(Type *type);
+extern Boolean is_unsigned(Type *type);
 extern SInt16 iscpp_typeequal(Type *t1, Type *t2);
 extern Boolean is_arglistsame(FuncArg *a, FuncArg *b);
 extern SInt16 CParser_CompareArgLists(FuncArg *a, FuncArg *b);
 extern SInt16 is_typeequal(Type *t1, Type *t2);
 extern Boolean is_arglist_default_promoted(FuncArg *arg);
-extern Object *CParser_FindClassMemberOrNamespaceFunctionObject(Type *type, Boolean useAlternate, Boolean skipLookup);
+extern Object *CParser_FindDeallocationObject(Type *type, Boolean useAlternate, Boolean skipLookup);
 extern TypeIntegral *atomtype(void);
 extern Object *CParser_NewFunctionObject(volatile DeclInfo *param);
-extern Object *CParser_NewObject(DeclInfo *declaration);
+extern Object *CParser_NewGlobalDataObject(DeclInfo *declaration);
 extern Object *CParser_NewLocalDataObject(DeclInfo *declaration, unsigned int addToList);
 extern HashNameNode *CParser_AppendUniqueNameFile(char *prefix);
 extern HashNameNode *CParser_AppendUniqueName(char *name);
 extern HashNameNode *CParser_GetUniqueName(void);
-extern unsigned int fn_004905c0(unsigned int a0);
+extern unsigned int CParser_SetUniqueID(unsigned int value);
 extern void CParser_PrintUniqueID(char *p);
 extern SInt32 CParser_GetUniqueID(void);
 extern Type *CParser_GetWCharType(void);
 extern Type *CParser_GetBoolType(void);
 extern FuncArg *CParser_NewFuncArg(void);
-extern Boolean CParser_00490660(SInt16 *operatorToken, Boolean allowConversion);
-extern void fn_004908d0(void);
-extern unsigned int CParser_PrependClassTypeLink(TypeClass *type);
+extern Boolean CParser_ParseOperatorName(SInt16 *operatorToken, Boolean allowConversion);
+extern void CParser_Cleanup(void);
+extern unsigned int CParser_NewClassAction(TypeClass *type);
 extern void CParser_NewCallBackAction(Object *object, TypeClass *theclass);
 extern void CParser_RegisterSingleExprFunction(Object *object, ENode *expr);
-extern void CParser_PrependClassParseRec(TypeClass *type);
+extern void CParser_RegisterNonGlobalClass(TypeClass *type);
 extern Object *CParser_NewCompilerDefFunctionObject(void);
 extern Object *CParser_NewCompilerDefDataObject(void);
 extern void CParser_Setup(void);
@@ -243,8 +244,8 @@ extern unsigned short is_memberpointerequal(Type *type, Type *other);
 extern Boolean is_funcarg_list_same(FuncArg *left, FuncArg *right);
 extern HashNameNode *CParser_NameConcat(char *first, char *second);
 extern void initialize_runtime_objects(void);
-extern Object *CParser_CreateObject(struct DeclInfo *record);
-extern Object *CParser_NewAliasObject(Object *a0, int a1);
+extern Object *CParser_NewObject(struct DeclInfo *record);
+extern Object *CParser_NewAliasObject(Object *object, int offset);
 extern void fn_00490210(Object *object, volatile DeclInfo *record);
 extern SInt16 is_typesame(Type *e1, Type *e2);
 extern void cparser(void);
@@ -255,57 +256,42 @@ extern void CParser_ParseGlobalDeclaration(void);
 extern Object *CParser_ParseObject(void);
 extern Boolean CParser_ReInitRuntimeObjects(Boolean flag);
 extern Object *CParser_NewRTFunc(Type *returnType, HashNameNode *name, char mangleName, int argumentCount, ...);
-extern struct Object *DAT_005870d8;
+extern struct Object *data_005870d8;
 extern struct Object *destructor_aware_call_rtfunc;
-extern struct Object *DAT_005875a0;
-extern struct Object *DAT_00587654;
-extern struct Object *DAT_00587678;
+extern struct Object *data_005875a0;
+extern struct Object *data_00587654;
+extern struct Object *data_00587678;
 extern struct Object *rt_memberpointercompare;
-extern struct Object *DAT_0058769c;
-extern struct Object *DAT_005876c0;
+extern struct Object *data_0058769c;
+extern struct Object *data_005876c0;
 extern struct Object *memberpointercompare_func;
 extern struct Object *class_array_initializer;
-extern struct Object *DAT_00587ed0;
+extern struct Object *data_00587ed0;
 extern struct Object *typeid_func;
-extern struct Object *DAT_00587f80;
-extern struct Object *DAT_00588060;
+extern struct Object *data_00587f80;
+extern struct Object *data_00588060;
 extern struct Object *destructor_aware_call_func;
-extern struct Object *DAT_00588260;
+extern struct Object *data_00588260;
 extern struct Object *som_ref_node_rtfunc;
 extern struct Object *som_ref_node_runtime_object;
-extern struct Object *DAT_00588278;
-extern struct Object *DAT_005882a4;
-extern unsigned char DAT_0058844a;
-extern unsigned char DAT_0058848a;
-extern unsigned char DAT_0058852e;
-extern Type data_0055fae0;
-extern Type data_0055faf4;
-extern Type data_0055fb08;
-extern Type data_0055fb1c;
-extern Type data_0055fb30;
-extern Type data_0055fb44;
-extern Type data_0055fb58;
-extern Type pass_by_address_type;
-extern Type data_0055fb80;
-extern Type data_0055fba8;
-extern struct BufferedToken declaration_token;
-extern int data_00580dc0;
-extern struct ClassTypeLink *class_type_links;
-extern struct CParseRec *class_parse_recs;
-extern struct CParseCacheNode *single_expr_functions;
-extern FuncArg data_00584748;
-extern struct ObjectReferenceEntry *object_reference_stack;
+extern struct Object *data_00588278;
+extern struct Object *data_005882a4;
+extern unsigned char data_0058844a;
+extern unsigned char data_0058848a;
+extern unsigned char data_0058852e;
+extern struct TStreamElement declaration_token;
+extern FuncArg oldstyle;
+extern struct TemplStack *ctempl_curinstance;
 extern struct Object *data_0058717c;
 extern struct Object *member_function_pointer_call_rtfunc;
 extern struct Object *cast_member_pointer_func;
 extern struct NameSpaceName *data_00587680;
 extern struct NameSpaceName *data_00587e64;
 extern struct Object *data_00587fd0;
-extern struct PendingObjectClass *pending_object_classes;
+extern struct CallbackAction *pending_object_classes;
 extern struct Object *dynamic_cast_object;
 extern SInt32 data_00588454;
 extern Type data_0058847c;
-extern char s_vector_0055d638[7];
 extern unsigned short _DAT_0058844c;
 extern unsigned short _DAT_0058848c;
 extern unsigned int _DAT_0058843e;

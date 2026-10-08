@@ -13,7 +13,7 @@ extern "C" {
 struct IROAddrRecord {
     struct IROLinear *linear;
     UInt8 x4;
-    UInt8 alignmentPadding; /* 0x05: IroVars_CreateAddrRecord leaves this byte unused before numObjRefs */
+    UInt8 alignmentPadding;
     SInt16 numObjRefs;
     IROElmList *objRefs;
     SInt16 numMisc;
@@ -74,34 +74,34 @@ struct IROLinear {
     struct IROExpr *expr;
     struct ERange *range;
     union {
-        struct IROLinear *monadic;  /* 0x1a: ClearReferences Op1Arg, Return and catch kinds */
-        ENode *node;                /* 0x1a: IrOptimizer_0042eb40 Operand */
-        struct CLabel *label;       /* 0x1a: NewLabelLinear IROLinearLabel; convert_linear_to_statements label kinds */
-        struct Statement *asm_stmt; /* 0x1a: build_linear_from_statements kind 16 preserves the asm statement */
+        struct IROLinear *monadic;
+        ENode *node;
+        struct CLabel *label;
+        struct Statement *asm_stmt;
         struct {
-            struct CLabel *label; /* 0x1a: convert_linear_to_statements If/IfNot use target.label */
+            struct CLabel *label;
             struct IROLinear *cond;
         } branch;
         struct {
             struct SwitchInfo *info;
             struct IROLinear *cond;
-        } swtch; /* 0x1a: ClearReferences Switch */
+        } swtch;
         struct {
             struct IROLinear *left;
             struct IROLinear *right;
-        } diadic; /* 0x1a: ClearReferences Op2Arg */
+        } diadic;
         struct {
             struct IROLinear *a;
             struct IROLinear *b;
             struct IROLinear *c;
-        } args3; /* 0x1a: build_linear_from_statements BeginCatch (13) initializes three operands */
+        } args3;
         struct {
             char ispure;
             SInt16 argCount;
             struct IROLinear **args;
             struct IROLinear *callee;
             struct TypeFunc *functype;
-        } funccall; /* 0x1a: ClearReferences Funccall */
+        } funccall;
     } u;
     struct IROLinear *next;
 };
@@ -187,15 +187,15 @@ extern void fn_00461dc0(IROLinear *type, unsigned int enabled);
 extern void forward_expr_if_check_object(IROLinear *entry, int checkObject);
 extern void fn_00460f70(void);
 extern void unroll_loop(int factor, struct IRONode *header);
-extern void IRO_CollectLoopBlocks_004614f0(IRONode *lp);
-extern void IroLoop_0045c520(IROLoop *p1, CInt64 *p2, int *p3, int *p4, int *p5, int *p6);
+extern void fn_004614f0(IRONode *lp);
+extern void fn_0045c520(IROLoop *p1, CInt64 *p2, int *p3, int *p4, int *p5, int *p6);
 extern int compute_loop_count(IROLoop *loop, CInt64 *count);
 extern int is_loop_unrollable(IROLoop *loop);
 extern int compute_positive_addr_record_difference(IROAddrRecord *first, IROAddrRecord *second, int context,
                                                    CInt64 *difference);
 extern void find_induction_init(struct IROLoop *state, struct IRONode *list);
 extern void reduce_strength_and_move_loop_invariants(IRONode *func);
-extern IROExpr *IroLoop_00461860(IROExpr *root, IROLinear *initial, IROLinear *step, IROLoopInd *context, SInt32 mode);
+extern IROExpr *fn_00461860(IROExpr *root, IROLinear *initial, IROLinear *step, IROLoopInd *context, SInt32 mode);
 extern IRONode *insert_loop_preheader(IRONode *p1, IRONode *p2);
 extern IROLoop *fn_0045faa0(IRONode *loop);
 extern int match_induction_expression(IROLinear *node, IROLinear **factor, IROLinear **expression,
@@ -216,10 +216,6 @@ extern int is_value_preserving_integral_conversion(IROLinear *op);
 extern void compute_mustreach(void);
 extern void flatten_linear_to_elm_list(IROLinear *n);
 extern struct BitVector *IRO_LoopScratchVector_005880dc;
-extern struct BitVector *data_0058064c;
-extern unsigned char data_0058066a;
-extern signed int data_00580674;
-extern struct IROLinear *loop_candidate_last;
 extern struct IROElmList *iro_elm_list_head;
 extern struct LoopCandidate *loop_candidates;
 extern int linear_index_counter;
@@ -227,19 +223,10 @@ extern struct BitVector *data_005876bc;
 extern struct IROElmList *elm_list_tail;
 extern UInt16 iro_node_count;
 extern UInt8 data_0058851c;
-extern struct IROExpr *iro_loop_roots;
 extern struct IRONode *data_00587c68;
-extern struct IROLoopInd *induction_variables;
 extern struct IRONode *iro_flowgraph_head;
 extern struct IRONode **iroNodesByIndex;
 extern struct IRONode *data_00587fac;
-extern CInt64 cint64_one;
-extern struct IRONode *loop_header;
-static void CInt64_SetLong(CInt64 *pN, SInt32 n)
-{
-    pN->lo = n;
-    pN->hi = (n < 0) ? -1 : 0;
-}
 
 #ifdef __cplusplus
 }

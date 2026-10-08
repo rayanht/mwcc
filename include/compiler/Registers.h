@@ -12,7 +12,7 @@ extern "C" {
 struct VarInfo {
     struct Object *func;
     SInt32 usage;
-    struct BufferedToken deftoken;
+    struct TStreamElement deftoken;
     SInt16 varnumber;
     UInt8 noregister;
     UInt8 used;
@@ -21,8 +21,7 @@ struct VarInfo {
     UInt8 is_fpr;
     UInt8 in_param_area;
     UInt8 is_vector;
-    UInt8
-        alignmentPadding; /* 0x2b: Registers_GetInfo allocates and clears 44 bytes; unused trailing alignment byte after is_vector. */
+    UInt8 alignmentPadding;
 };
 #pragma options align = reset
 extern void Registers_BindVR(Object *obj, short vr);
@@ -62,8 +61,6 @@ extern unsigned char Registers_AreNonvolatileVRUsed(void);
 extern void Registers_BindGPR(Object *obj, SInt16 reg);
 extern void Registers_SetupStackBaseReg(void);
 extern SInt32 fn_004c15f0(void);
-extern short gSaveSpan;
-extern unsigned char gSavedUsedPhysicalRegisters[32];
 extern short gFPRCoalesceLast;
 extern short gFPRCounterCheckpoint;
 extern short gGPRCoalesceLast;
@@ -71,17 +68,10 @@ extern short gGPRCounterCheckpoint;
 extern short gInitialObjectFPRLast;
 extern short gInitialObjectVRLast;
 extern SInt32 gUseVirtualRegisterNumbers_00587f00;
-extern unsigned char gUsedPhysicalFPR[32];
-extern UInt8 gUsedPhysicalGPR[];
-extern UInt8 gUsedPhysicalVR[];
 extern short gVRCoalesceLast;
 extern short gVRCounterCheckpoint;
 extern void Registers_InitRegisterState(void);
 extern UInt32 Registers_GetOperandRegMask(PCodeBlock *list);
-extern void Registers_InvalidateCSE(COptCSE *node);
-extern int Registers_GetCSEWeight(COptCSE *tree);
-extern Boolean Registers_ContainsCOptCSE(COptCSE *target, COptCSE *node);
-extern void Registers_DivideUses(COptCSE *node, SInt16 divisor);
 
 #ifdef __cplusplus
 }

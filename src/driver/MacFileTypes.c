@@ -1,17 +1,18 @@
 #define CERROR_FILE "unknown.c"
 #include "compiler/common.h"
 #include "driver/MacFileTypes.h"
-#include "compiler/win32.h"
+#include "driver/AssertionFailure.h"
 #include "driver/CLIO.h"
-#include "driver/CLTarg.h"
-#include "driver/Files.h"
 #include "driver/MacSpecs.h"
-#include "driver/MsDos.h"
 /* A file-type list node: 8 bytes, payload at 0x00 and link at 0x04. */
 
 #include <stdlib.h>
-#include <setjmp.h>
 #include <string.h>
+
+int(__stdcall *data_00587e70)();
+
+static struct MacFileTypeNode *defaultlist = NULL;
+static struct MacFileTypeNode **mac_file_types = &defaultlist;
 
 void __stdcall MacFileTypes_AppendTable(struct MacFileTypeNode **list, SInt32 value)
 {
@@ -58,7 +59,7 @@ void __stdcall fn_00421af0(OSSpec *value, DWORD input)
     unsigned int result;
 
     fn_00421a80(input, &result);
-    fn_00411290(value, &result);
+    OS_SetFileType(value, &result);
 }
 
 unsigned char __stdcall MacFileTypes_MatchBytes(void *bytes, int length, UInt32 *mnemonic)
@@ -113,7 +114,7 @@ SInt32 __stdcall MacFileTypes_GetFileType(OSSpec *path, UInt32 *fileType)
 
     if (data_00587e70 == NULL || data_00587e70(path, fileType) == 0) {
         if (fileFlags == 0) {
-            result = MacSpecs_MakeResourceForkSpec(path->directory.path, &resolvedPath, 0);
+            result = MacSpecs_MakeResourceForkSpec(path, &resolvedPath, 0);
             if (result == 0) {
                 result = OS_Open(&resolvedPath, 0, &resolvedFile);
                 if (result == 0) {

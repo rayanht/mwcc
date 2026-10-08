@@ -31,7 +31,6 @@ union Val {
 #pragma options align = reset
 extern int IRO_ConstantFolding(void);
 extern void convert_cint64_to_bitfield(CInt64 *val, Type *type, TypeBitfield *type2);
-extern UInt8 data_005536f0[];
 extern int IRO_EvaluateConditionals(void);
 extern Type *get_unsigned_type(Type *type);
 extern int fn_00454bb0(void);

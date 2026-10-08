@@ -2,13 +2,61 @@
 #include "compiler/common.h"
 #include "driver/CLLicenses.h"
 #include "driver/CLErrors.h"
-#include "driver/CLTarg.h"
-#include "driver/LicenseImports.h"
 #include "driver/MemUtils.h"
-#include "driver/MsDos.h"
-/* Paired values in the license table. */
-
+#include "driver/CLMain.h"
 #include <string.h>
+
+char *license_path;
+
+static struct License *data_0057ef08;
+/* An opaque license value paired with its signed identifier. */
+static UInt32 license_slots[32][2];
+static int license_slot_count;
+static int license_id_counter;
+
+int allocate_license_slot(int licenseData, int negateId)
+{
+    int slot;
+
+    slot = 0;
+    if (0 < license_slot_count) {
+        do {
+            if (license_slots[slot][1] == 0)
+                break;
+            slot = slot + 1;
+        } while (slot < license_slot_count);
+    }
+    if (slot >= 0x20) {
+        release_negative_license_values();
+        slot = license_slot_count;
+    }
+    if (slot < 0x20) {
+        license_id_counter = license_id_counter + 1;
+        license_slots[slot][0] = licenseData;
+        license_slots[slot][1] = (negateId != 0) ? -license_id_counter : license_id_counter;
+        if (slot >= license_slot_count) {
+            license_slot_count = license_slot_count + 1;
+        }
+        return license_id_counter;
+    }
+    CLErrors_ReportInternalError("CLLicenses.c", 0x5b, "Out of license space");
+    return 0;
+}
+
+int find_license(unsigned int identifier, unsigned int *license)
+{
+    int index;
+
+    for (index = 0; index < license_slot_count; ++index) {
+        if (identifier == license_slots[index][1] || identifier == -license_slots[index][1]) {
+            *license = license_slots[index][0];
+            return index;
+        }
+    }
+    CLErrors_ReportInternalError("CLLicenses.c", 111, "Searched license not found");
+    return -1;
+}
+
 int get_license_slot_values(int index, unsigned int *firstValue, int *secondValue)
 {
     if (((0 <= index) && (index < license_slot_count)) && (license_slots[index][1] != 0)) {
@@ -18,13 +66,14 @@ int get_license_slot_values(int index, unsigned int *firstValue, int *secondValu
     }
     return 0;
 }
+
 int delete_license(int licenseIndex)
 {
     if (licenseIndex >= 0 && licenseIndex < license_slot_count) {
-        DAT_0057ef10[licenseIndex * 2] = 0;
+        license_slots[licenseIndex][1] = 0;
         license_slots[licenseIndex][0] = 0;
         if (licenseIndex + 1 == license_slot_count) {
-            for (; licenseIndex >= 0 && DAT_0057ef10[licenseIndex * 2] == 0; --licenseIndex) {
+            for (; licenseIndex >= 0 && license_slots[licenseIndex][1] == 0; --licenseIndex) {
                 --license_slot_count;
             }
         }
@@ -77,11 +126,11 @@ int CLLicenses_RequestLicense(int request, int options, int cookieKind, char *er
         strcpy(licensePath, license_path);
     } else {
         OSSpec *defaultPath;
-        fn_00412340((defaultPath = &data_005871d8)->directory.path, licensePath, sizeof(defaultPath->directory.path));
+        OS_PathSpecToString(&(defaultPath = &clState.programSpec)->path, licensePath, sizeof(defaultPath->path.s));
         strcat(licensePath, "license.dat");
         if (OS_MakeFileSpec(licensePath, &alternatePath) != 0 || OS_Status(&alternatePath) != 0) {
-            if (fn_004125b0(defaultPath, &alternatePath) == 0) {
-                fn_00412340(alternatePath.directory.path, licensePath, sizeof(alternatePath.directory.path));
+            if (OS_ResolveLink(defaultPath, &alternatePath) == 0) {
+                OS_PathSpecToString(&alternatePath.path, licensePath, sizeof(alternatePath.path.s));
                 strcat(licensePath, "license.dat");
             }
         }
@@ -103,17 +152,17 @@ int CLLicenses_RequestLicense(int request, int options, int cookieKind, char *er
     }
     licenseInfo.license = data_0057ef08;
     licenseInfo.vendor = "metrowks";
-    status = fn_004270ba(&licenseInfo, 0x101, request, options, 1, licensePath, &licenseHandle);
+    status = lp_checkout(&licenseInfo, 0x101, request, options, 1, licensePath, &licenseHandle);
     strcpy(errorMessage, "No failure");
     if (status == 0) {
         result = allocate_license_slot(licenseHandle, cookieKind);
         if (result == 0) {
             strcpy(errorMessage, "Memory error:  Could not store license cookie");
-            fn_004270c0(licenseHandle);
+            lp_checkin(licenseHandle);
         }
     } else {
-        strcpy(errorMessage, fn_004270c6(licenseHandle));
-        fn_004270c0(licenseHandle);
+        strcpy(errorMessage, lp_errstring(licenseHandle));
+        lp_checkin(licenseHandle);
     }
     return result;
 }
@@ -127,56 +176,9 @@ void CLLicenses_DeleteLicense(int identifier)
         licenseIndex = find_license(identifier, &license);
         if (licenseIndex >= 0) {
             delete_license(licenseIndex);
-            fn_004270c0(license);
+            lp_checkin(license);
         }
     }
-}
-
-/* A license value paired with its lookup identifier. */
-
-int find_license(unsigned int identifier, unsigned int *license)
-{
-    int index;
-
-    for (index = 0; index < license_slot_count; ++index) {
-        if (identifier == license_slots[index][1] || identifier == -license_slots[index][1]) {
-            *license = license_slots[index][0];
-            return index;
-        }
-    }
-    CLErrors_ReportInternalError("CLLicenses.c", 111, "Searched license not found");
-    return -1;
-}
-
-/* An opaque license value paired with its signed identifier. */
-
-int allocate_license_slot(int licenseData, int negateId)
-{
-    int slot;
-
-    slot = 0;
-    if (0 < license_slot_count) {
-        do {
-            if (license_slots[slot][1] == 0)
-                break;
-            slot = slot + 1;
-        } while (slot < license_slot_count);
-    }
-    if (slot >= 0x20) {
-        release_negative_license_values();
-        slot = license_slot_count;
-    }
-    if (slot < 0x20) {
-        license_id_counter = license_id_counter + 1;
-        license_slots[slot][0] = licenseData;
-        license_slots[slot][1] = (negateId != 0) ? -license_id_counter : license_id_counter;
-        if (slot >= license_slot_count) {
-            license_slot_count = license_slot_count + 1;
-        }
-        return license_id_counter;
-    }
-    CLErrors_ReportInternalError("CLLicenses.c", 0x5b, "Out of license space");
-    return 0;
 }
 
 static inline int license_count(void)

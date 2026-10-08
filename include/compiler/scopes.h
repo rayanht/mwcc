@@ -32,8 +32,8 @@ struct NameSpaceList {
 #pragma options align = reset
 #pragma options align = mac68k
 struct NameSpaceObjectList {
-    NameSpaceObjectList *next; /* 0x00: CScope_AddObject links candidates with the same name */
-    ObjBase *object; /* 0x04: find_class_member_path tests otype to select namespace, type or object candidates */
+    NameSpaceObjectList *next;
+    ObjBase *object;
 };
 #pragma options align = reset
 #pragma options align = mac68k

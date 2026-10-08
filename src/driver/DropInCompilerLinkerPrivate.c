@@ -1,7 +1,6 @@
 #include "compiler/common.h"
 #include "driver/DropInCompilerLinkerPrivate.h"
 #include "driver/CWPluginsPrivate.h"
-#include "driver/Memory.h"
 /* Object record with an opaque prefix and a validation tag. */
 
 unsigned char has_valid_shell_signature(CWPluginPrivateContext *object)

@@ -16,7 +16,6 @@ extern void __stdcall c2pstrcpy(unsigned char *dst, const char *src);
 extern void __stdcall p2cstrcpy(char *destination, UInt8 *source);
 extern int HPrintF(struct StorageHandle *output, char *format, ...);
 extern char *mprintf(char *argument, int kind, char *format, ...);
-extern char hprintf_buffer[];
 
 #ifdef __cplusplus
 }

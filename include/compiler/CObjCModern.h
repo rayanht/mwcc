@@ -36,7 +36,7 @@ struct ObjcModule {
     int symtab;
 };
 #pragma options align = reset
-extern ENode *CObjCModern_0050a000(TypeClass *context, ENode *receiver, HashNameNode *name, char option);
+extern ENode *fn_0050a000(TypeClass *context, ENode *receiver, HashNameNode *name, char option);
 extern ENode *CObjCModern_CreateAllocMessage(TypeClass *object);
 extern ENode *CObjCModern_TryParseMethodCall(TypeClass *a, ENode *b);
 extern void CObjCModern_GenerateSymbolTableAndModule(void);
@@ -50,10 +50,7 @@ extern void fn_00509df0(void);
 extern void CObjCModern_ResetGlobals(void);
 extern ENode *CObjCModern_MakeDeallocMessage(TypeClass *type, ENode *object);
 extern HashEntry *CObjCModern_FindMessageArgumentHashEntry(struct MessageArgument *p);
-extern struct ObjCDefinition *category_definitions;
-extern struct NamedObjectCacheEntry *named_object_cache;
 extern struct HashEntry **selector_hash;
-struct HashEntry;
 extern struct PrecTypeEntry *class_type_entries;
 extern SInt32 selector_reference_count;
 

@@ -15,7 +15,7 @@ struct BE_SymNode {
     struct {
         struct ObjGenSection *section;
     } sectionData;
-    UInt32 stringOffset; /* 0x08: BE_elf.c string-table builder stores offset; write_sym_nodes emits ELF st_name */
+    UInt32 stringOffset;
     SInt32 offset;
     SInt32 size;
     UInt8 symbolKind;
@@ -33,9 +33,9 @@ struct BE_SymNode {
 };
 #pragma options align = reset
 extern BE_SymNode *BE_symbol_SetupObjectSymbol(Object *object, int size, ObjGenSection *section);
-extern Boolean BE_symbol_004913b0(Object *obj);
+extern Boolean fn_004913b0(Object *obj);
 extern Object *BE_symbol_GetFunctionSymbolLinkData(Object *func);
-extern unsigned int BE_symbol_GetOffset(BE_SymNode *a0);
+extern unsigned int BE_symbol_GetOffset(BE_SymNode *symbol);
 extern unsigned int BE_symbol_CreateSectionSymbol(ObjGenSection *input);
 extern BE_SymNode *BE_symbol_GetOrCreateFunctionObjectSymbol(Object *arg);
 extern struct BE_SymNode *BE_symbol_GetSymbolOrderTail(void);
@@ -44,11 +44,10 @@ extern BE_SymNode *BE_symbol_AdvanceSymbolTail(void);
 extern void BE_symbol_Init(void);
 extern BE_SymNode *BE_symbol_CreateSymNode(void *value);
 extern BE_SymNode *BE_symbol_GetSectionSym(struct ObjGenSection *ctx);
-extern BE_SymNode *BE_symbol_004918f0(Object *symbol, struct ObjGenSection *value);
+extern BE_SymNode *fn_004918f0(Object *symbol, struct ObjGenSection *value);
 extern struct BE_SymNode *be_symbol_list;
 extern struct BE_SymNode *symbol_tail;
 extern struct ObjGenSection *data_005884aa;
-extern struct BE_SymNode *data_0055da80;
 extern BE_SymNode *BE_symbol_ResetSymbolTail(void);
 
 #ifdef __cplusplus

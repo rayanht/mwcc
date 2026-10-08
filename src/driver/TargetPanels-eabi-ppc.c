@@ -1,16 +1,12 @@
 #include "compiler/common.h"
 #include "driver/TargetPanels-eabi-ppc.h"
+#include "driver/PrefPanels.h"
 #include "compiler/CPrep.h"
 #include "compiler/CodeGen.h"
-#include "driver/CWPluginsPrivate.h"
 #include "driver/DropInCompilerLinkerPrivate.h"
 #include "driver/cc-eabi-ppc.h"
-#include <string.h>
 
-void fn_0042c0c0(void)
-{
-    return;
-}
+static SInt16 data_0057f6a8;
 
 static __inline void SetProcessor(short processor)
 {
@@ -22,19 +18,19 @@ static __inline void LoadPreferenceResource(const void *name, void ***resource)
     DropInCompilerLinkerPrivate_CallArgumentValue(compiler_plugin_cu.context, (const char *)name, resource);
 }
 
-static __inline struct CompilerOptions ReadCompilerOptions(void **resource)
+static __inline PBackEnd ReadCodeGenPrefs(void **resource)
 {
-    return *(struct CompilerOptions *)*resource;
+    return *(PBackEnd *)*resource;
 }
 
-static __inline CompilerSettings ReadCompilerSettings(void **resource)
+static __inline PProject ReadProjectPrefs(void **resource)
 {
-    return *(CompilerSettings *)*resource;
+    return *(PProject *)*resource;
 }
 
-static __inline ExtendedCompilerSettings ReadExtendedCompilerSettings(void **resource)
+static __inline PLinker ReadLinkerPrefs(void **resource)
 {
-    return *(ExtendedCompilerSettings *)*resource;
+    return *(PLinker *)*resource;
 }
 
 static inline void SetProcessorModel(SInt8 model)
@@ -47,7 +43,7 @@ static inline void SetCodeAlignment(UInt8 alignment)
     copts.codeAlignment = alignment;
 }
 
-static inline void SetFloatingPointSupport(Boolean enabled)
+static inline void SetScheduling(Boolean enabled)
 {
     if (enabled)
         copts.instructionSchedulingMode = 2;
@@ -55,39 +51,44 @@ static inline void SetFloatingPointSupport(Boolean enabled)
         copts.instructionSchedulingMode = 0;
 }
 
-static inline void SetTargetFeatureEnabled(Boolean enabled)
+static inline void SetVRSave(Boolean enabled)
 {
     if (enabled)
-        copts.altivecVrsave = 1;
+        copts.altivec_vrsave = 1;
     else
-        copts.altivecVrsave = 0;
+        copts.altivec_vrsave = 0;
+}
+
+void fn_0042c910(void)
+{
+    return;
 }
 
 void TargetPanels_eabi_ppc_LoadCompilerOptions(void)
 {
-    struct CompilerOptions options;
-    CompilerSettings settings;
-    ExtendedCompilerSettings extendedSettings;
+    PBackEnd options;
+    PProject settings;
+    PLinker extendedSettings;
     void **resource;
 
-    LoadPreferenceResource(ppc_eabi_codegen_resource_name, &resource);
-    options = ReadCompilerOptions(resource);
-    data_0057f6a8 = options.formatVersion;
-    LoadPreferenceResource(ppc_eabi_preference_resource_name, &resource);
-    settings = ReadCompilerSettings(resource);
-    LoadPreferenceResource(linkerPreferenceResourceName, &resource);
-    extendedSettings = ReadExtendedCompilerSettings(resource);
+    LoadPreferenceResource((unsigned char *)"PPC EABI CodeGen", &resource);
+    options = ReadCodeGenPrefs(resource);
+    data_0057f6a8 = options.version;
+    LoadPreferenceResource((unsigned char *)"PPC EABI Project", &resource);
+    settings = ReadProjectPrefs(resource);
+    LoadPreferenceResource((unsigned char *)"PPC EABI Linker", &resource);
+    extendedSettings = ReadLinkerPrefs(resource);
 
     cprep_cu = (UInt8 *)&compiler_plugin_cu;
     SetCodeAlignment(4);
-    copts.altivecModel = 0;
-    SetTargetFeatureEnabled(1);
-    copts.emitSerializedAssemblyFormat = 1;
-    copts.nativeByteOrder = !settings.reverseByteOrder;
-    copts.fb2 = options.unk03;
-    SetFloatingPointSupport(1);
+    copts.altivec_model = 0;
+    SetVRSave(1);
+    copts.catssupport = 1;
+    copts.littleendian = !settings.bigendian;
+    copts.readonly_strings = options.readonlystrings;
+    SetScheduling(1);
 
-    switch (options.formatVersion) {
+    switch (options.version) {
         case 6:
         case 7:
         case 8:
@@ -399,42 +400,42 @@ void TargetPanels_eabi_ppc_LoadCompilerOptions(void)
             break;
     }
 
-    SetFloatingPointSupport(options.floatingPointSupportEnabled);
+    SetScheduling(options.schedule);
 
-    copts.peepholeOptimizationEnabled = options.unk08;
-    copts.structalignment = options.structAlignment;
-    SetCodeAlignment(4 << options.powerOfTwoShift);
-    copts.reuseSectionSymbols = options.reuseSectionSymbols;
-    copts.smallBSSLimit = settings.smallBSSLimit;
-    copts.smallDataLimit = settings.smallDataLimit;
+    copts.peephole = options.peephole;
+    copts.structalignment = options.structalignment;
+    SetCodeAlignment(4 << options.funcalign);
+    copts.usedatapool = options.pooldata;
+    copts.constsmalldatathreshold = settings.sdata2threshold;
+    copts.nonconstsmalldatathreshold = settings.sdatathreshold;
     copts.f27 = settings.unk37;
     copts.f1e = 0;
     copts.fd3 = 0;
     copts.fd5 = 1;
     copts.fd4 = 1;
-    copts.f20 = options.unk0d;
-    copts.fd6 = extendedSettings.preferenceData[3];
-    copts.useRegisterSaveHelpers = options.useRegisterSaveHelpers;
-    copts.rel109Offset = 2;
+    copts.commonblocks = options.common;
+    copts.fd6 = extendedSettings.fullpaths;
+    copts.use_lmw_stmw = options.use_lmw_stmw;
+    copts.rel109_offset = 2;
     copts.debugEnabled = 0;
     copts.operandsDebug = 0;
-    copts.debugOptions = 0;
-    if (options.debugMode != 0) {
+    copts.fp_contract = 0;
+    if (options.fpmode != 0) {
         copts.debugEnabled = 1;
-        if (options.debugMode == 1)
+        if (options.fpmode == 1)
             copts.operandsDebug = 1;
         else
-            copts.debugOptions = options.debugOptions;
+            copts.fp_contract = options.fp_contract;
     }
-    copts.altivecModel = options.builtinStructConversionsEnabled;
-    SetTargetFeatureEnabled(options.targetFeatureEnabled);
-    copts.cOptimizerDumpEnabled = 0;
-    copts.ppcUnrollSpeculative = 1;
-    copts.ppcUnrollInstructionsLimit = 100;
-    copts.ppcUnrollFactorLimit = 10;
+    copts.altivec_model = options.altivec;
+    SetVRSave(options.vrsave);
+    copts.debug_listing = 0;
+    copts.unroll_speculative = 1;
+    copts.unroll_instr_limit = 100;
+    copts.unroll_factor_limit = 10;
 }
 
-void fn_0042c910(void)
+void fn_0042c0c0(void)
 {
     return;
 }

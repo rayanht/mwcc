@@ -36,9 +36,9 @@ struct TgtRec {
 #pragma options align = reset
 #pragma options align = mac68k
 struct ToolArgumentSet {
-    int count;                   /* 0x00: parse_command_line iterates outgoing arguments by plugin name or request */
-    char **arguments;            /* 0x04: parse_command_line prints each outgoing argument */
-    char **additional_arguments; /* 0x08: CLPluginRequests_ParseCommandLine argument-set storage */
+    int count;
+    char **arguments;
+    char **additional_arguments;
 };
 #pragma options align = reset
 extern Boolean CLPluginRequests_InitializeTargetSettings(CLTarget *input, Plugin *plugin, UInt32 flags);
@@ -51,10 +51,8 @@ extern Boolean CLPluginRequests_ParseCommandLine(Plugin *func, struct CLTarget *
                                                  struct ToolArgumentSet *value8, struct ToolArgumentSet *value9,
                                                  void *value10, void *value11);
 extern Boolean CLPluginRequests_SetupFileRequest(Plugin *job, DropinFileRecord *input, short flags);
-extern unsigned char data_00541b27;
 extern Boolean CLPluginRequests_UpdateTargetSettings(Plugin *record, UInt32 flags, struct TgtRec *snapshot);
 extern int fn_00417440(Plugin *obj, Boolean flag);
-struct TgtRec;
 
 #ifdef __cplusplus
 }

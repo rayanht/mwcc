@@ -1,17 +1,13 @@
 #define CERROR_FILE "unknown.c"
 #include "compiler/common.h"
 #include "driver/CLLoadAndCache.h"
-#include "compiler/win32.h"
-#include "compiler/CPrep.h"
 #include "driver/CLBrowser.h"
 #include "driver/CLIO.h"
 #include "driver/CLPrefs.h"
 #include "driver/MacFileTypes.h"
 #include "driver/MemUtils.h"
 #include "driver/Memory.h"
-#include "driver/MsDos.h"
 #include <string.h>
-#include <setjmp.h>
 #pragma auto_inline off
 
 #pragma auto_inline reset

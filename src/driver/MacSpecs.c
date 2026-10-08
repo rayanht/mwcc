@@ -3,92 +3,47 @@
 #include "driver/MacSpecs.h"
 #include "compiler/enode.h"
 #include "compiler/objects.h"
-#include "compiler/scopes.h"
-#include "compiler/types.h"
-#include "compiler/win32.h"
-#include "compiler/CException.h"
-#include "compiler/CExpr.h"
-#include "compiler/CFunc.h"
-#include "compiler/CInline.h"
-#include "compiler/CPrec.h"
-#include "compiler/CTemplateFunc.h"
-#include "compiler/CTemplateTools.h"
-#include "compiler/DWARF.h"
-#include "compiler/IROUseDef.h"
-#include "compiler/IroCSE.h"
-#include "compiler/IroLoop.h"
-#include "compiler/IroVars.h"
-#include "compiler/ObjGen_PPC_EABI.h"
-#include "compiler/PCode.h"
-#include "compiler/Switch.h"
+#include "driver/AssertionFailure.h"
 #include "driver/CLIO.h"
-#include "driver/CLProj.h"
 #include "driver/Files.h"
-#include "driver/Memory.h"
-#include "driver/MsDos.h"
+#include "driver/Generic.h"
 #include "driver/StringUtils.h"
 #include <string.h>
-#include <stdlib.h>
 #include <stdio.h>
+#include <stdlib.h>
 
-int short_predecessor(short value)
+static unsigned int next_entry_index = 3;
+static unsigned int next_entry_id = 2;
+
+static struct NameRegistryEntry *spec_name_registry;
+static struct MacSpecEntry **mac_spec_entries[256];
+static unsigned int directory_count;
+static char data_0057e818[64];
+static char data_0057e858[520];
+static char file_name_buffer[256];
+
+int store_mac_spec_entry(MacSpecEntry *entry)
 {
-    if (value != 0) {
-        return value - 1;
-    }
-    return -1;
-}
+    unsigned int index = entry->index;
+    unsigned int directory = index;
+    unsigned int slot = index & 0xff;
 
-DWORD __stdcall MacSpecs_LoadMacResource(char *path, LPVOID *resourceData, DWORD *resourceSize)
-{
-    OSSpec *spec = (OSSpec *)path;
-    char *convertedPath;
-    HMODULE module;
-    HRSRC resource;
-    HGLOBAL loadedResource;
-    LPVOID data;
-
-    convertedPath = OS_SpecToString(spec, DAT_0057e308, 0x104);
-    if (convertedPath == NULL) {
-        return 0x6f;
+    directory >>= 8;
+    if (directory >= directory_count) {
+        do {
+            if (directory >= 0x100) {
+                fprintf(stderr, "Fatal error:  too many directories referenced, out of memory\n");
+                return 0;
+            }
+            mac_spec_entries[directory] = calloc(sizeof(*mac_spec_entries[directory]), 0x100);
+            if (mac_spec_entries[directory] == NULL) {
+                return 0;
+            }
+            ++directory_count;
+        } while (directory >= directory_count);
     }
-    module = GetModuleHandleA(DAT_0057e308);
-    if (module == NULL) {
-        return GetLastError();
-    }
-    resource = FindResourceA(module, "#101", "MACRSRC");
-    if (resource == NULL) {
-        return GetLastError();
-    }
-    loadedResource = LoadResource(module, resource);
-    if (loadedResource == NULL) {
-        return GetLastError();
-    }
-    data = LockResource(loadedResource);
-    if (data == NULL) {
-        return GetLastError();
-    }
-    *resourceData = data;
-    *resourceSize = SizeofResource(module, resource);
-    return 0;
-}
-
-Boolean __stdcall MacSpecs_IsByteInDBCSCharacter(BYTE *a, BYTE *b)
-{
-    BYTE *p = a;
-    while (p <= b) {
-        Boolean c = IsDBCSLeadByte(*p);
-        if (c == 0 && GetLastError() == 0x57)
-            return 0;
-        if (c != 0) {
-            if (p == b || p + 1 == b)
-                return 1;
-            p += 2;
-        } else {
-            p += 1;
-        }
-    }
-    return 0;
+    mac_spec_entries[directory][slot] = entry;
+    return 1;
 }
 
 struct NameRegistryEntry *find_or_create_name_registry_entry(struct NameRegistryEntry **entries, char *name)
@@ -121,30 +76,6 @@ struct NameRegistryEntry *find_or_create_name_registry_entry(struct NameRegistry
     entry->root.next = NULL;
     *entries = entry;
     return entry;
-}
-
-int store_mac_spec_entry(MacSpecEntry *entry)
-{
-    unsigned int index = entry->index;
-    unsigned int directory = index;
-    unsigned int slot = index & 0xff;
-
-    directory >>= 8;
-    if (directory >= directory_count) {
-        do {
-            if (directory >= 0x100) {
-                fprintf(stderr, "Fatal error:  too many directories referenced, out of memory\n");
-                return 0;
-            }
-            mac_spec_entries[directory] = calloc(sizeof(*mac_spec_entries[directory]), 0x100);
-            if (mac_spec_entries[directory] == NULL) {
-                return 0;
-            }
-            ++directory_count;
-        } while (directory >= directory_count);
-    }
-    mac_spec_entries[directory][slot] = entry;
-    return 1;
 }
 
 struct MacSpecEntry *lookup_dir_id(unsigned int dirID)
@@ -197,7 +128,7 @@ MacSpecEntry *find_or_create_child_entry(MacSpecEntry *table, char *name)
     return entry;
 }
 
-int find_or_create_spec_entry(char *spec, unsigned int *typePtr, unsigned int *offsetPtr)
+int find_or_create_spec_entry(OSPathSpec *spec, unsigned int *typePtr, unsigned int *offsetPtr)
 {
     char str[0x104];
     char name[0x40];
@@ -208,7 +139,7 @@ int find_or_create_spec_entry(char *spec, unsigned int *typePtr, unsigned int *o
     MacSpecEntry *rec;
     char *tok;
 
-    if (!fn_00412340(spec, buf, 0x104))
+    if (!OS_PathSpecToString(spec, buf, 0x104))
         return 0;
     end = OS_GetDirPtr(buf);
     strncpy(name, buf, end - buf);
@@ -264,7 +195,7 @@ void lookup_spec_and_advance_parent(int *id, int *kind, unsigned int **result)
     }
 }
 
-int find_or_create_spec_entry_negated(char *input, unsigned int *firstResult, unsigned int *secondResult)
+int find_or_create_spec_entry_negated(OSPathSpec *input, unsigned int *firstResult, unsigned int *secondResult)
 {
     if (find_or_create_spec_entry(input, firstResult, secondResult) != 0) {
         *firstResult = -*firstResult;
@@ -313,7 +244,7 @@ int build_name_and_backslash_path(int a, int b, void *buffer1, void *buffer2)
     return 1;
 }
 
-int __stdcall parse_value_and_offset(char *text, unsigned short *value, unsigned int *offset)
+int __stdcall parse_value_and_offset(OSPathSpec *text, unsigned short *value, unsigned int *offset)
 {
     unsigned int parsedValue;
     unsigned int parsedOffset;
@@ -328,26 +259,26 @@ int __stdcall parse_value_and_offset(char *text, unsigned short *value, unsigned
     return 3;
 }
 
-int __stdcall MacSpecs_MakeCWFileSpecFromString(char *input, CWFileSpec *output)
+int __stdcall OS_OSSpec_To_FSSpec(OSSpec *input, CWFileSpec *output)
 {
     UInt16 volumeRef;
     unsigned int directoryId;
     int status;
 
-    status = parse_value_and_offset(input, &volumeRef, &directoryId);
-    output->fileData.file.volumeRef = volumeRef;
-    output->fileData.file.directoryId = directoryId;
+    status = parse_value_and_offset(&input->path, &volumeRef, &directoryId);
+    output->vRefNum = volumeRef;
+    output->parID = directoryId;
     if (status != 0) {
         return status;
     }
-    if (MsDos_CopyStringToBuffer(input + 0x104, file_name_buffer, 0x40) == NULL) {
+    if (OS_NameSpecToString(&input->name, file_name_buffer, 0x40) == NULL) {
         return 0x6f;
     }
-    c2pstrcpy(output->fileData.file.name, file_name_buffer);
+    c2pstrcpy(output->name, file_name_buffer);
     return 0;
 }
 
-DWORD __stdcall fn_00413670(short kind, int value, char *path)
+DWORD __stdcall fn_00413670(short kind, int value, OSPathSpec *path)
 {
     unsigned int directoryLength;
     unsigned int nameLength;
@@ -359,38 +290,38 @@ DWORD __stdcall fn_00413670(short kind, int value, char *path)
             return result;
         }
     } else {
-        if (build_name_and_backslash_path(kind, value, DAT_0057e818, DAT_0057e858) == 0) {
+        if (build_name_and_backslash_path(kind, value, data_0057e818, data_0057e858) == 0) {
             return 3;
         }
-        directoryLength = strlen(DAT_0057e818);
-        nameLength = strlen(DAT_0057e858);
+        directoryLength = strlen(data_0057e818);
+        nameLength = strlen(data_0057e858);
         if ((int)(directoryLength + nameLength) < 0x104) {
-            memcpy(path, DAT_0057e818, directoryLength);
-            memcpy(path + directoryLength, DAT_0057e858, 1 + nameLength);
+            memcpy(path->s, data_0057e818, directoryLength);
+            memcpy(path->s + directoryLength, data_0057e858, 1 + nameLength);
         }
     }
     return 0;
 }
 
 /* Unused lookup request declaration removed: no accesses or allocations. */
-int __stdcall MacSpecs_MakeOSSpec(CWFileSpec *record, char *buffer)
+int __stdcall MacSpecs_MakeOSSpec(CWFileSpec *record, OSSpec *spec)
 {
-    int result = fn_00413670(record->fileData.file.volumeRef, record->fileData.file.directoryId, buffer);
+    int result = fn_00413670(record->vRefNum, record->parID, &spec->path);
     if (result != 0) {
         return result;
     }
-    p2cstrcpy(file_name_buffer, record->fileData.file.name);
-    return OS_MakeNameSpec(file_name_buffer, buffer + 0x104);
+    p2cstrcpy(file_name_buffer, record->name);
+    return OS_MakeNameSpec(file_name_buffer, &spec->name);
 }
 
-int __stdcall MacSpecs_MakeResourceForkSpec(char *source, OSSpec *destination, char retryOnError)
+int __stdcall MacSpecs_MakeResourceForkSpec(OSSpec *source, OSSpec *destination, char retryOnError)
 {
     char pathBuffer[0x104];
     DWORD error;
 
-    fn_00412340(source, pathBuffer, 0x104);
+    OS_PathSpecToString(&source->path, pathBuffer, 0x104);
 
-    error = CLProj_MakeOSSpecFromDirectoryAndFilename(pathBuffer, "RESOURCE.FRK", destination);
+    error = OS_MakeSpec2(pathBuffer, "RESOURCE.FRK", destination);
     if (error != 0)
         return error;
 
@@ -404,7 +335,7 @@ int __stdcall MacSpecs_MakeResourceForkSpec(char *source, OSSpec *destination, c
         } else {
             return error;
         }
-        error = CLProj_MakeOSSpecFromDirectoryAndFilename(pathBuffer, "RESOURCE.FRK", destination);
+        error = OS_MakeSpec2(pathBuffer, "RESOURCE.FRK", destination);
         if (error != 0)
             return error;
     } else {
@@ -412,7 +343,7 @@ int __stdcall MacSpecs_MakeResourceForkSpec(char *source, OSSpec *destination, c
             return 0x10b;
     }
 
-    error = OS_MakeNameSpec(MsDos_CopyStringToBuffer(source + 0x104, data_005880e0, 0x104), destination->name);
+    error = OS_MakeNameSpec(OS_NameSpecToString(&source->name, data_005880e0, 0x104), &destination->name);
     if (error != 0)
         return error;
     return 0;

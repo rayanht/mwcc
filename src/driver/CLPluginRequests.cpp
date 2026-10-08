@@ -3,43 +3,32 @@
 
 #include "compiler/common.h"
 #include "driver/CLPluginRequests.h"
-#include "driver/CLCompilerLinkerDropin_V10.h"
+#include "driver/AssertionFailure.h"
 #include "driver/CLDropinCallbacks_V10.h"
 #include "driver/CLErrors.h"
 #include "driver/CLFileOps.h"
-#include "driver/CLFiles.h"
-#include "driver/CLIO.h"
 #include "driver/CLLicenses.h"
 #include "driver/CLMain.h"
-#include "driver/CLOverlays.h"
 #include "driver/CLPlugins.h"
-#include "driver/CLProj.h"
-#include "driver/CLTarg.h"
-#include "driver/CWParserPluginsPrivate.h"
 #include "driver/CWPluginsPrivate.h"
-#include "driver/Files.h"
+#include "driver/Generic.h"
 #include "driver/MacFileTypes.h"
 #include "driver/MacSpecs.h"
 #include "driver/MemUtils.h"
-#include "driver/Memory.h"
-#include "driver/MsDos.h"
 extern "C" {
 
 #include "mwcc/Plugins.h"
 
 #include <string.h>
-#include <ctype.h>
-#include <setjmp.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
+}
 
+extern "C" {
 void initialize_plugin_request(Plugin *owner, int phase)
 {
     PluginOutputItem *item;
     struct CLTarget *target;
     OSSpec text;
-    char name[260];
+    OSPathSpec name;
 
     item = (PluginOutputItem *)owner->object->shellContext;
     item->owner = owner;
@@ -49,15 +38,15 @@ void initialize_plugin_request(Plugin *owner, int phase)
     owner->object->apiVersion = 11;
     owner->object->pluginStorage = 0;
     OS_MakeFileSpec("Project.mcp", &text);
-    MacSpecs_MakeCWFileSpecFromString(text.directory.path, &owner->object->sourcefile);
+    OS_OSSpec_To_FSSpec(&text, &owner->object->sourcefile);
     if (default_target != 0) {
         target = default_target;
-        CLProj_MakeOSSpecFromPath(target->outputDirectory.path, 0, 0, &text);
-        MacSpecs_MakeCWFileSpecFromString(text.directory.path, &owner->object->targetfile);
+        OS_MakeSpecWithPath(&target->outputDirectory, 0, 0, &text);
+        OS_OSSpec_To_FSSpec(&text, &owner->object->targetfile);
     } else {
-        OS_GetCWD(name);
-        CLProj_MakeOSSpecFromPath(name, 0, 0, &text);
-        MacSpecs_MakeCWFileSpecFromString(text.directory.path, &owner->object->targetfile);
+        OS_GetCWD(&name);
+        OS_MakeSpecWithPath(&name, 0, 0, &text);
+        OS_OSSpec_To_FSSpec(&text, &owner->object->targetfile);
     }
     owner->object->shellSignature = 0x43574945;
     owner->object->contextSignature = (void *)CLPlugins_GetPluginDesc(owner)->type;
@@ -137,7 +126,7 @@ Boolean CLPluginRequests_SetupFileRequest(Plugin *job, DropinFileRecord *input, 
     CWPluginPrivateContext *ctx;
     if (mode) {
         unsigned char setting;
-        if ((setting = data_00541d0c) == 1)
+        if ((setting = optsCompiler.forcePrecompile) == 1)
             enabled = 1;
         else if (setting == 2)
             enabled = 0;
@@ -145,9 +134,9 @@ Boolean CLPluginRequests_SetupFileRequest(Plugin *job, DropinFileRecord *input, 
             enabled = (input->fileFlags & 0x80000000) != 0;
     } else
         enabled = 0;
-    if (DAT_00541b28) {
+    if (optsCmdLine.verbose) {
         char *messageArgument = CLPlugins_GetName(job);
-        int extra = DAT_00541b28 > 1;
+        int extra = optsCmdLine.verbose > 1;
         if (operationFlags & 1)
             CLErrors_ForwardMessage(extra + 34, input->inputName, messageArgument);
         else if (mode) {
@@ -167,12 +156,11 @@ Boolean CLPluginRequests_SetupFileRequest(Plugin *job, DropinFileRecord *input, 
     initialize_plugin_request(job, 0);
     ctx = job->object;
     *ctx->targetSettings = *default_target->settings;
-    MacSpecs_MakeCWFileSpecFromString(input->inputPath.directory.path, &ctx->contextData.payload);
-    if (CLDropinCallbacks_V10_GetFileText(ctx, &ctx->contextData.payload, &ctx->callbackValue, &ctx->callbackFlags,
-                                          &result))
+    OS_OSSpec_To_FSSpec(&input->inputPath, &ctx->contextData.payload);
+    if (UCBGetFileText(ctx, &ctx->contextData.payload, &ctx->callbackValue, &ctx->callbackFlags, &result))
         return 0;
     ctx->requestData.fileIndex = input->listEntry.index;
-    ctx->setting = data_00541b27;
+    ctx->setting = optsCmdLine.debugInfo;
     ctx->dependencyStatusNegative = input->dependencyStatusNegative;
     ctx->dependencyOption = input->dependencyOption;
     memcpy(&ctx->dependencyState, &input->dependencyState, sizeof(ctx->dependencyState));
@@ -207,7 +195,7 @@ Boolean CLPluginRequests_InitializeTargetSettings(CLTarget *input, Plugin *plugi
     if (plugin != 0 && (flags & 1) == 0) {
         CWPluginPrivateContext *pluginData;
 
-        if (DAT_00541b28 > 1) {
+        if (optsCmdLine.verbose > 1) {
             char *pluginValue = CLPlugins_GetName(plugin);
             CLErrors_ForwardMessage(0x32, pluginValue);
         }
@@ -225,7 +213,7 @@ Boolean CLPluginRequests_InitializeTargetSettings(CLTarget *input, Plugin *plugi
         *(struct TgtRec *)requestInput->settings = *pluginData->targetSettings;
     } else {
         OS_MakeFileSpec("(unknown file)", &path);
-        MacSpecs_MakeCWFileSpecFromString(path.directory.path, &file);
+        OS_OSSpec_To_FSSpec(&path, &file);
         ((struct TgtRec *)requestInput->settings)->head.tag = 1;
         ((struct TgtRec *)requestInput->settings)->head.firstFile = file;
         ((struct TgtRec *)requestInput->settings)->head.secondFile = file;
@@ -246,9 +234,9 @@ Boolean CLPluginRequests_InitializeTargetSettings(CLTarget *input, Plugin *plugi
 
 Boolean CLPluginRequests_UpdateTargetSettings(Plugin *record, UInt32 flags, struct TgtRec *snapshot)
 {
-    if (DAT_00541b28 != 0) {
+    if (optsCmdLine.verbose != 0) {
         char *diagnosticArg = CLPlugins_GetName(record);
-        SInt32 diagnosticVariant = (DAT_00541b28 > 1);
+        SInt32 diagnosticVariant = (optsCmdLine.verbose > 1);
         if (flags & 0x40000000)
             CLErrors_ForwardMessage(diagnosticVariant + 0x2c, diagnosticArg);
         else if (flags & 0x8000000)
@@ -268,16 +256,6 @@ Boolean CLPluginRequests_UpdateTargetSettings(Plugin *record, UInt32 flags, stru
         return (result == 0);
     }
 }
-
-void CLPluginRequests_AppendMacFileTypesTable(struct MacFileTypeNode **firstArgument, SInt32 secondArgument)
-{
-    MacFileTypes_AppendTable(firstArgument, secondArgument);
-}
-}
-
-extern "C" {
-}
-extern "C" {
 }
 
 UInt8 CLPluginRequests_CallPluginForFile(Plugin *plugin, DropinFileRecord *context)
@@ -290,8 +268,8 @@ UInt8 CLPluginRequests_CallPluginForFile(Plugin *plugin, DropinFileRecord *conte
     } else {
         selectedPlugin = plugin;
     }
-    if (DAT_00541b28 != 0) {
-        CLErrors_ForwardMessage((1 < DAT_00541b28) + 0x2e, context->inputName, CLPlugins_GetName(plugin));
+    if (optsCmdLine.verbose != 0) {
+        CLErrors_ForwardMessage((1 < optsCmdLine.verbose) + 0x2e, context->inputName, CLPlugins_GetName(plugin));
     }
     if ((UInt8)fn_004098a0(selectedPlugin) == 0) {
         return 0;
@@ -312,7 +290,7 @@ extern "C" int fn_00417440(Plugin *plugin, Boolean initialize)
 {
     int result = 2;
     if (plugin != NULL) {
-        if (DAT_00587324 != 0) {
+        if (clState.pluginDebug != 0) {
             UInt8 message;
             if (initialize)
                 message = 0x33;
@@ -348,4 +326,12 @@ extern "C" int fn_00417440(Plugin *plugin, Boolean initialize)
             release_negative_license_values();
     }
     return result == 0;
+}
+
+extern "C" {
+
+void CLPluginRequests_AppendMacFileTypesTable(struct MacFileTypeNode **firstArgument, SInt32 secondArgument)
+{
+    MacFileTypes_AppendTable(firstArgument, secondArgument);
+}
 }

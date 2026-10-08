@@ -2,12 +2,13 @@
 #include "driver/StringUtils.h"
 #include "compiler/objects.h"
 #include "compiler/scopes.h"
-#include "compiler/win32.h"
-#include "driver/CLIO.h"
+#include "driver/AssertionFailure.h"
 #include "driver/Memory.h"
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
+
+static char hprintf_buffer[256];
 
 #define va_start(ap, last)                                                                                             \
     ((ap) = (char *)&(last) + (((int)((char *)&(last) + sizeof(last)) - (int)(char *)&(last) + 3) / 4) * 4)

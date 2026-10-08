@@ -1,11 +1,7 @@
 #define CERROR_FILE "unknown.c"
 #include "compiler/common.h"
 #include "driver/CWPluginsPrivate.h"
-#include "compiler/CError.h"
 #include "compiler/InlineAsmPPC.h"
-#include "driver/CWParserPluginsPrivate.h"
-#include "driver/Files.h"
-#include "driver/CLDropinCallbacks_V10.h"
 typedef unsigned int __stdcall ContextArgumentCallback(CWPluginPrivateContext *context, unsigned int argument);
 typedef unsigned int(__stdcall *ValuePairCallback)(CWPluginPrivateContext *, struct ValuePairState *);
 typedef SInt32(__stdcall *DispatchOperation)(CWPluginPrivateContext *, void *, int, void *, void *);
@@ -20,11 +16,13 @@ static Boolean IsInitTermIdle(CWPluginContext context)
 }
 
 #pragma cplusplus on
+
 Boolean is_valid_plugin_context(struct CWPluginPrivateContext *context)
 {
     return (context && context->shellSignature == 'CWIE') &&
            !(context->request == -2 || context->request == -1 || context->request == -100);
 }
+
 #pragma cplusplus reset
 
 static inline char hasEntrySignature(CWPluginPrivateContext *entry)
@@ -112,6 +110,26 @@ int __stdcall CWPluginsPrivate_GetSourceFile(CWPluginPrivateContext *p, CWFileSp
     return 0;
 }
 
+int __stdcall CWPluginsPrivate_GetOutputFileDirectory(CWPluginPrivateContext *context, CWFileSpec *directory)
+{
+    if (is_valid_context(context) || !is_valid_plugin_context(context))
+        return 3;
+    if (directory == NULL)
+        return 3;
+    *directory = context->targetfile;
+    return 0;
+}
+
+unsigned int __stdcall CWPluginsPrivate_GetNumFiles(CWPluginPrivateContext *state, long *count)
+{
+    if (is_valid_context(state) || !is_valid_plugin_context(state))
+        return 3U;
+    if (!count)
+        return 3U;
+    *count = state->numFiles;
+    return 0U;
+}
+
 int __stdcall CWPluginsPrivate_InvokeExportedRecordCallback(CWPluginPrivateContext *context, int index, int argument,
                                                             ExportedRecord *info)
 {
@@ -123,16 +141,6 @@ int __stdcall CWPluginsPrivate_InvokeExportedRecordCallback(CWPluginPrivateConte
     }
     return ((int(__stdcall *)(CWPluginPrivateContext *, int, int, ExportedRecord *))context->callbacks[0])(
         context, index, argument, info);
-}
-
-unsigned int __stdcall CWPluginsPrivate_GetNumFiles(CWPluginPrivateContext *state, long *count)
-{
-    if (is_valid_context(state) || !is_valid_plugin_context(state))
-        return 3U;
-    if (!count)
-        return 3U;
-    *count = state->numFiles;
-    return 0U;
 }
 
 unsigned int __stdcall CWPluginsPrivate_CallSignatureCallback(CWPluginPrivateContext *context, const char *signature,
@@ -224,13 +232,13 @@ int __stdcall fn_0041b7f0(CWPluginPrivateContext *object, void *argument)
 }
 
 unsigned int __stdcall CWPluginsPrivate_InvokeMessageCallback(void *object, struct MessageContext *argument1,
-                                                              char *argument2, char *argument3, unsigned int argument4,
+                                                              char *argument2, char *argument3, short argument4,
                                                               unsigned int argument5)
 {
     if (!is_valid_plugin_context(object)) {
         return 3;
     }
-    return ((unsigned int(__stdcall *)(CWPluginPrivateContext *, struct MessageContext *, char *, char *, unsigned int,
+    return ((unsigned int(__stdcall *)(CWPluginPrivateContext *, struct MessageContext *, char *, char *, short,
                                        unsigned int))((CWPluginPrivateContext *)object)
                 ->callbacks[8])(object, argument1, argument2, argument3, argument4, argument5);
 }

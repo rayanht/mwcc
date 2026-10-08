@@ -17,10 +17,9 @@ struct SOMInfo {
     SInt32 descriptorValue0;
     SInt32 descriptorValue1;
     UInt8 omitEnvironmentParameter;
-    char alignmentPadding[3]; /* 0x15: CSOM_InitSOMInfo clears byte 0x15; no named uses, padding before specialfunc */
+    char alignmentPadding[3];
     struct Object *specialfunc;
-    char unusedTail
-        [40]; /* 0x1c: CSOM_InitSOMInfo allocates only 22 bytes; write_som_info serializes only 0x16, this tail is unused */
+    char unusedTail[40];
     UInt8 has_assign;
     UInt8 has_other;
 };
@@ -34,12 +33,12 @@ struct CSOMRefNode {
 #pragma pack(push, 1)
 struct SOMClassBuildState {
     struct SOMEntry *members;
-    struct SOMVTable *bases; /* 0x04: build_base_method_vtbl_index_object traverses SOMVTable groups */
+    struct SOMVTable *bases;
     struct Object *object;
-    struct Object *ancestorObject;         /* 0x0c: create_ancestor_object stores ClassAncestors data object */
-    struct Object *overrideMethodsObject;  /* 0x10: create_override_methods_object stores OverrideProcs data object */
-    struct Object *registrationFunction;   /* 0x14: CSOM_BuildClass stores compiler-defined DLLD function object */
-    struct Object *specialFunctionsObject; /* 0x18: create_special_functions_object stores SpecialProcs data object */
+    struct Object *ancestorObject;
+    struct Object *overrideMethodsObject;
+    struct Object *registrationFunction;
+    struct Object *specialFunctionsObject;
     UInt32 descriptorValues[2];
     UInt32 descriptorFlags;
     SInt16 alignmentKind;
@@ -51,32 +50,28 @@ struct SOMClassBuildState {
     SInt16 descriptorAttribute5;
     char pad36[0x0a];
     SInt32 overrideMethodCount;
-    UInt8 hasNewOperator;    /* 0x44: create_special_functions_object finds TK_NEW */
-    UInt8 hasDeleteOperator; /* 0x45: create_special_functions_object finds TK_DELETE */
+    UInt8 hasNewOperator;
+    UInt8 hasDeleteOperator;
 };
 #pragma pack(pop)
 /* SOM class descriptor image; pointer slots are supplied by relocations. */
 struct SOMClassDescriptor {
     UInt32 value0;
-    struct SOMClassData *
-        classData; /* 0x04: make_class_descriptor relocates classDataObject; initialize_class_data_object emits descriptor and method slots */
+    struct SOMClassData *classData;
     void *overrideMethods;
-    struct SOMClassData **ancestors; /* 0x0c: create_ancestor_object emits an array of base classDataObject addresses */
-    void (*registrationFunction)(
-        void); /* 0x10: CSOM_BuildClass creates a void, no-argument DLLD function; make_class_descriptor relocates it */
+    struct SOMClassData **ancestors;
+    void (*registrationFunction)(void);
     void *specialFunctions;
     UInt32 values24[7];
-    struct SOMDescriptorOutput
-        *descriptorText; /* 0x34: make_class_descriptor relocates the build_descriptor_output image */
-    char *className;     /* 0x38: make_class_descriptor relocates the NUL-terminated classname string */
+    struct SOMDescriptorOutput *descriptorText;
+    char *className;
     UInt32 classSize;
-    SInt32 *baseValues;     /* 0x40: make_class_descriptor emits pairs of endian-converted base descriptor values */
-    UInt8 *memberKinds;     /* 0x44: make_class_descriptor relocates MakeKinds packed nibble bytes */
-    UInt8 *memberOverrides; /* 0x48: MakeOverrides emits encode_member_function_types byte sequences */
-    char *memberNames;      /* 0x4c: make_class_descriptor emits AppendGListName strings */
-    UInt16
-        *overrideMethodIndices; /* 0x50: build_base_method_vtbl_index_object emits group, count and vtbl_index words */
-    UInt16 *words;              /* 0x54: MakeWords emits offset, index and member ordinal words */
+    SInt32 *baseValues;
+    UInt8 *memberKinds;
+    UInt8 *memberOverrides;
+    char *memberNames;
+    UInt16 *overrideMethodIndices;
+    UInt16 *words;
     UInt32 value88;
     UInt32 values92[5];
 };
@@ -93,9 +88,8 @@ struct SOMDescriptorOutput {
     UInt8 reserved[0x0a];
 };
 struct SOMEntry {
-    SOMEntry *
-        next; /* 0x00: build_class_vtables_and_members links entries; MakeKinds and emit_som_kind_nibbles traverse them */
-    HashNameNode *key; /* 0x04: build_class_vtables_and_members stores the method name */
+    SOMEntry *next;
+    HashNameNode *key;
     union {
         Object *object;
         struct {
@@ -103,19 +97,16 @@ struct SOMEntry {
             UInt16 index;
         } vt;
     } u;
-    UInt8
-        kind; /* 0x0c: build_class_vtables_and_members sets method kind; MakeKinds and emit_som_kind_nibbles encode cases 0, 2 and 1 */
+    UInt8 kind;
     UInt8 flag;
 };
 #pragma pack(push, 2)
 struct SOMInfoEntry {
-    SOMInfoEntry *next; /* 0x00: CSOM_ParseMethodNameList links method names; write_som_info serializes the chain */
-    HashNameNode *name; /* 0x04: CSOM_ParseMethodNameList sets the name; write_som_info marks name->id */
-    UInt8 kind;         /* 0x08: CSOM member construction switches on infoEntry->kind */
-    UInt8
-        serializedPadding; /* 0x09: write_som_info copies 10 bytes; CSOM_ParseMethodNameList allocates 10 bytes, leaving this trailing byte unused */
-    UInt8 alignmentPadding
-        [2]; /* 0x0a: CSOM_ParseMethodNameList allocates only 10 bytes and write_som_info serializes only 10; remaining bytes are alignment padding */
+    SOMInfoEntry *next;
+    HashNameNode *name;
+    UInt8 kind;
+    UInt8 serializedPadding;
+    UInt8 alignmentPadding[2];
 };
 #pragma pack(pop)
 #pragma pack(push, 1)
@@ -137,21 +128,15 @@ struct SOMVTable {
     UInt8 isDirectBase;
 };
 #pragma options align = reset
-struct ScopeSearch {
-    struct NameSpace *owner;
-    struct NameSpaceName *nextName;
-    struct NameSpaceObjectList *nextObject;
-    SInt32 bucketIndex;
-};
 extern ENode *create_glue_objectrefnode(TypeClass *cls, SInt32 id, Object *obj);
-extern Boolean CSOM_004e3cd0(Type *ftype);
+extern Boolean fn_004e3cd0(Type *ftype);
 extern ENode *CSOM_AppendPointerArgCall(ENode *node, ENodeList *spec);
 extern void CSOM_GenerateSomselfAssignment(TypeClass *tclass, Statement *stmt);
 extern ENode *CSOM_GetOrCreateLocalObjectNode(TypeClass *value);
 extern void find_method_vtbl_class_and_offset(TypeClass *cls, Object *method, TypeClass **outcls, SInt32 *outofs);
-extern void CSOM_004e4390(Object *obj);
+extern void fn_004e4390(Object *obj);
 extern ENode *CSOM_BuildNewObjectInstance(TypeClass *cls);
-extern Object *CSOM_004e45b0(char *name, char *signature);
+extern Object *fn_004e45b0(char *name, char *signature);
 extern void set_owner_target_flag(void);
 extern void CSOM_ParseBaseClass(void);
 extern void CSOM_ParseMethodNameList(void);
@@ -179,20 +164,9 @@ extern Object *build_base_method_vtbl_index_object(SOMClassBuildState *groups);
 extern ENode *CSOM_MakeMethodReference(BClassList *node, Object *obj, Boolean flag);
 extern ENode *CSOM_CreateMemberAccessExpr(BClassList *classList, ObjMemberVar *request, ENode *expr);
 extern void emit_som_kind_nibbles(struct SOMClassBuildState *info);
-extern Type data_005646b8;
-extern struct HashNameNode *data_00581c48;
-extern struct HashNameNode *space_name;
-extern struct HashNameNode *spaces_name;
-extern struct HashNameNode *csom_blank_name;
 extern struct CSOMRefNode *somReferences;
 extern void fn_004e67a0(void);
 extern void CSOM_NoOp(void);
-struct SOMEntry;
-/* CSOM_CreateMemberAccessExpr: access the extension only after testing ObjMemberVar::has_path. */
-static inline struct BClassList *MemberVarAlias_GetBases(ObjMemberVar *member)
-{
-    return ((MemberVarAlias *)member)->bases;
-}
 
 #ifdef __cplusplus
 }

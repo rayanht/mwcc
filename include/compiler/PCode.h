@@ -8,6 +8,12 @@
 extern "C" {
 #endif
 
+#pragma pack(push, 1)
+struct BlockOrderEntry {
+    struct PCodeBlock *block;
+    struct PCodeBlockLink *cursor;
+};
+#pragma pack(pop)
 #pragma pack(push, 2)
 union PCodeOperandValue {
     struct PCodeLabel *label;
@@ -39,11 +45,11 @@ struct PCodeOperand {
 };
 /* Operand kind 7: label difference, as format_operand tests before reading it. */
 struct PCodeLabelDifference {
-    UInt8 kind;                       /* 0x00: format_operand kind == 7 */
-    UInt8 negate;                     /* 0x01: format_operand tests negate == 1 */
-    SInt16 addend;                    /* 0x02: format_operand prints addend */
-    struct PCodeLabel *subtractLabel; /* 0x04: format_operand prints subtracted block */
-    struct PCodeLabel *addLabel;      /* 0x08: format_operand prints added block */
+    UInt8 kind;
+    UInt8 negate;
+    SInt16 addend;
+    struct PCodeLabel *subtractLabel;
+    struct PCodeLabel *addLabel;
 };
 #pragma pack(pop)
 /* The PCode opcodes, as the opcode table (gPCodeOpcodeDescriptors) names them; defined as numbers: a short compared with an
@@ -581,26 +587,24 @@ struct PCodeInstruction {
 #pragma pack(pop)
 #pragma pack(push, 2)
 union PCodeBlockTarget {
-    struct PCodeBlock *block; /* 0x00: PCode_AddSuccessor resolved != 0; PCode_ResolveLabel resolves to target */
-    struct PCodeBlockLink *
-        pendingLinks; /* 0x00: PCode_AddSuccessor resolved == 0; PCode_ResolveLabel walks unresolved successor fixups */
+    struct PCodeBlock *block;
+    struct PCodeBlockLink *pendingLinks;
 };
 struct PCodeBlockLink {
-    struct PCodeBlockLink *next; /* 0x00: PCode_AddSuccessor successor list */
-    union PCodeBlockTarget
-        payload; /* 0x04: PCode_AddSuccessor copies label state; PCode_ResolveLabel resolves pending links */
+    struct PCodeBlockLink *next;
+    union PCodeBlockTarget payload;
 };
 #pragma pack(pop)
 #pragma pack(push, 2)
 struct PCodeBlock {
     struct PCodeBlock *next;
     struct PCodeBlock *prev;
-    struct PCodeLabel *labels; /* 0x08: PCode_ResolveLabel prepends entry to target's label list */
+    struct PCodeLabel *labels;
     PCodeBlockLink *predecessors;
     PCodeBlockLink *successors;
     PCodeInstruction *instructions;
     PCodeInstruction *reverse_instructions;
-    int index; /* 0x1c: format_operand prints the label target's block index as B%ld */
+    int index;
     int line;
     int code_offset;
     int execution_weight;
@@ -611,8 +615,7 @@ struct PCodeBlock {
 #pragma options align = mac68k
 struct PCodeLabel {
     struct PCodeLabel *next;
-    union PCodeBlockTarget
-        target; /* 0x04: PCode_AddSuccessor resolved selects block or pendingLinks; PCode_ResolveLabel resolves label */
+    union PCodeBlockTarget target;
     UInt16 resolved;
     UInt16 number;
 };
@@ -632,7 +635,8 @@ extern void PCode_InsertInstructionBefore(PCodeInstruction *h, PCodeInstruction 
 extern PCodeInstruction *PCode_CloneInstruction(PCodeInstruction *instr);
 extern PCodeLabel *PCode_NewLabel(void);
 extern void PCode_ResetBlocks(void);
-extern short next_label_number;
+extern void SpillCode_BuildBlockOrder(void);
+extern struct PCodeBlock **gPCodeBlockOrder;
 
 #ifdef __cplusplus
 }

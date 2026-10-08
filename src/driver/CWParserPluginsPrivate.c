@@ -2,13 +2,16 @@
 #include "driver/CWParserPluginsPrivate.h"
 #include "compiler/objects.h"
 #include "compiler/scopes.h"
-#include "driver/CLPluginRequests.h"
 #include "driver/CWPluginsPrivate.h"
-#include "driver/Files.h"
 typedef int(__stdcall *ParserTextCallback)(CWPluginPrivateContext *context, int argument2, int argument3, char *text);
 
 typedef int(__stdcall *FileInfoMethod)(CWPluginPrivateContext *, CWFileSpec *);
 typedef unsigned int(__stdcall *fnptr_std)(CWPluginPrivateContext *, FileOperationInfo *);
+
+typedef int(__stdcall *AddOverlay1GroupCallback)(CWPluginPrivateContext *, char *, void *, SInt32 *);
+typedef int(__stdcall *AddOverlay1Callback)(CWPluginPrivateContext *, char *, SInt32, SInt32 *);
+typedef int(__stdcall *AddSegmentCallback)(CWPluginPrivateContext *, char *, short, SInt32 *);
+typedef int(__stdcall *SetSegmentCallback)(CWPluginPrivateContext *, SInt32, char *, short);
 
 typedef struct PanelEntry PanelEntry;
 
@@ -215,3 +218,65 @@ void __stdcall CWParserPluginsPrivate_CallValuePairCallback(CWPluginPrivateConte
 }
 
 #pragma auto_inline reset
+
+int __stdcall CWParserPluginsPrivate_AddOverlay1Group(CWPluginPrivateContext *context, char *name, void *address,
+                                                      SInt32 *groupNumber)
+{
+    CWPluginPrivateContext *object;
+
+    object = validate_parser_context(context);
+    if (object == NULL) {
+        return 4;
+    }
+    if (name == NULL || address == NULL || groupNumber == NULL) {
+        return 3;
+    }
+    return ((AddOverlay1GroupCallback)object->contextData.parser.parserCallbacks[4])(object, name, address,
+                                                                                     groupNumber);
+}
+
+int __stdcall CWParserPluginsPrivate_AddOverlay1(CWPluginPrivateContext *context, char *name, SInt32 groupNumber,
+                                                 SInt32 *overlayNumber)
+{
+    CWPluginPrivateContext *object;
+
+    object = validate_parser_context(context);
+    if (object == NULL) {
+        return 4;
+    }
+    if (name == NULL || overlayNumber == NULL) {
+        return 3;
+    }
+    return ((AddOverlay1Callback)object->contextData.parser.parserCallbacks[5])(object, name, groupNumber,
+                                                                                overlayNumber);
+}
+
+int __stdcall CWParserPluginsPrivate_AddSegment(CWPluginPrivateContext *context, char *name, short attributes,
+                                                SInt32 *segmentNumber)
+{
+    CWPluginPrivateContext *object;
+
+    object = validate_parser_context(context);
+    if (object == NULL) {
+        return 4;
+    }
+    if (name == NULL || segmentNumber == NULL) {
+        return 3;
+    }
+    return ((AddSegmentCallback)object->contextData.parser.parserCallbacks[6])(object, name, attributes, segmentNumber);
+}
+
+int __stdcall CWParserPluginsPrivate_SetSegment(CWPluginPrivateContext *context, SInt32 segmentNumber, char *name,
+                                                short attributes)
+{
+    CWPluginPrivateContext *object;
+
+    object = validate_parser_context(context);
+    if (object == NULL) {
+        return 4;
+    }
+    if (name == NULL) {
+        return 3;
+    }
+    return ((SetSegmentCallback)object->contextData.parser.parserCallbacks[7])(object, segmentNumber, name, attributes);
+}
