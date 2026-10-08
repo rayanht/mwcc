@@ -567,12 +567,12 @@ src/driver/ErrMgr.c:
 	.data       start:0x00552510 end:0x00552914
 
 src/frontend/CError.c:
-	.text       start:0x004454A0 end:0x00449E20
+	.text       start:0x004454A0 end:0x00449DE0
 	.data       start:0x00552918 end:0x00552C80
 	.bss        start:0x005815E8 end:0x005815F8
 
 src/optimizer/IroFlowgraph.c:
-	.text       start:0x00449E20 end:0x0044A6E0
+	.text       start:0x00449DE0 end:0x0044A6E0
 	.data       start:0x00552C80 end:0x00552D20
 
 src/optimizer/IroVars.c:
