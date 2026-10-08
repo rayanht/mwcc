@@ -253,17 +253,16 @@ void fn_004b0a80(TypeStruct *type)
     SInt32 entryOffset;
     SInt32 length;
     SInt32 tag;
+    StructMember *member;
     TypeBitfield *bitfield;
     DWInfo *memberInfo;
-    StructMember *member;
+    SInt32 memberLength;
     DWInfo *info;
-    Type *memberType;
     Boolean hasMembers;
     DwarfLocationOperand location;
     TypeBitfield reversedBitfield;
-    GList *buffer = dwarf_info_buffer;
     hasMembers = 0;
-    entryOffset = buffer->size;
+    entryOffset = dwarf_info_buffer->size;
     info = find_or_create_dwinfo((Type *)type);
     CError_ASSERT(LINE(289), info->typeNode != NULL);
     info->typeNode->u.fixups = ResolveFixups(info->typeNode->u.fixups, entryOffset);
@@ -293,9 +292,10 @@ void fn_004b0a80(TypeStruct *type)
         length += DW_Word(0x38);
         length += DW_String(type->name->name);
     }
-    AppendGListWord(dwarf_info_buffer, 0xb6);
+    length += DW_Word(0xb6);
     AppendGListLong(dwarf_info_buffer, type->size);
-    *(SInt32 *)(*dwarf_info_buffer->data + entryOffset) = 6 + length;
+    length += 4;
+    *(SInt32 *)(*dwarf_info_buffer->data + entryOffset) = length;
     if (++*dwarf_depth_ptr >= 0x32)
         CError_FATAL(LINE(325));
     dwarf_entry_offsets[*dwarf_depth_ptr] = 0;
@@ -303,8 +303,8 @@ void fn_004b0a80(TypeStruct *type)
     if (member != NULL)
         do {
             hasMembers = 1;
-            if ((memberType = member->type)->type == TYPEBITFIELD) {
-                bitfield = (TypeBitfield *)memberType;
+            if (member->type->type == TYPEBITFIELD) {
+                bitfield = (TypeBitfield *)member->type;
                 memberInfo = find_or_create_dwinfo(bitfield->bitfieldtype);
                 if (copts.littleendian) {
                     reversedBitfield = *bitfield;
@@ -312,28 +312,30 @@ void fn_004b0a80(TypeStruct *type)
                     CABI_ReverseBitField(&reversedBitfield);
                 }
             } else {
-                memberInfo = find_or_create_dwinfo(memberType);
+                memberInfo = find_or_create_dwinfo(member->type);
                 bitfield = NULL;
             }
             get_type_dwarf_ref(memberInfo, member->qual, 1);
             entryOffset = dwarf_info_buffer->size;
-            length = emit_entry_header(0xd);
-            length += DW_Word(0x38);
-            length += DW_String(member->name->name);
-            length += emit_dwarf_ref(memberInfo);
+            memberLength = emit_entry_header(0xd);
+            memberLength += DW_Word(0x38);
+            memberLength += DW_String(member->name->name);
+            memberLength += emit_dwarf_ref(memberInfo);
             if (bitfield != NULL) {
-                AppendGListWord(dwarf_info_buffer, 0xc5);
+                memberLength += DW_Word(0xc5);
                 AppendGListWord(dwarf_info_buffer, bitfield->offset);
-                AppendGListWord(dwarf_info_buffer, 0xd6);
+                memberLength += 2;
+                memberLength += DW_Word(0xd6);
                 AppendGListLong(dwarf_info_buffer, bitfield->bitlength);
-                AppendGListWord(dwarf_info_buffer, 0xb6);
+                memberLength += 4;
+                memberLength += DW_Word(0xb6);
                 AppendGListLong(dwarf_info_buffer, bitfield->bitfieldtype->size);
-                length += 0x10;
+                memberLength += 4;
             }
             location.kind = 9;
             location.operand.value = member->offset;
-            length += emit_location_attribute(&location, 0x23, 0);
-            *(SInt32 *)(*dwarf_info_buffer->data + entryOffset) = length;
+            memberLength += emit_location_attribute(&location, 0x23, 0);
+            *(SInt32 *)(*dwarf_info_buffer->data + entryOffset) = memberLength;
         } while ((member = member->next) != NULL);
     if (copts.fd4 && hasMembers) {
         if (copts.fd5)
@@ -366,7 +368,6 @@ void emit_class_dwarf(TypeClass *cls)
     SInt32 tag;
     SInt32 classMode;
     SInt8 mode;
-    char *memberName;
     DwarfLocationOperand location;
     CScopeObjectIterator search;
     Boolean hasChildren;
@@ -404,8 +405,7 @@ void emit_class_dwarf(TypeClass *cls)
             recordPos = dwarf_info_buffer->size;
             length = emit_entry_header(0x1c);
             length += DW_Word(0x38);
-            memberName = base->base->classname->name;
-            length += DW_String(memberName);
+            length += DW_String(base->base->classname->name);
             typeInfo = find_or_create_dwinfo((Type *)base->base);
             get_type_dwarf_ref(typeInfo, 0, 1);
             length += emit_dwarf_ref(typeInfo);
@@ -447,8 +447,7 @@ void emit_class_dwarf(TypeClass *cls)
         recordPos = dwarf_info_buffer->size;
         length = emit_entry_header(0xd);
         length += DW_Word(0x38);
-        memberName = member->name->name;
-        length += DW_String(memberName);
+        length += DW_String(member->name->name);
         length += emit_dwarf_ref(typeInfo);
         switch (member->access) {
             case ACCESSPUBLIC:
@@ -527,8 +526,7 @@ void emit_class_dwarf(TypeClass *cls)
             recordPos = dwarf_info_buffer->size;
             length = emit_entry_header(0x16);
             length += DW_Word(0x38);
-            memberName = entry->name->name;
-            length += DW_String(memberName);
+            length += DW_String(entry->name->name);
             typeInfo = find_or_create_dwinfo(entry->type);
             get_type_dwarf_ref(typeInfo, entry->qual, 1);
             length += emit_dwarf_ref(typeInfo);
@@ -2106,6 +2104,7 @@ void insert_type_nodes_recursive(DWInfo *a, DWInfo *b)
 {
     Type *t = b->type;
     DWInfo *e;
+    Type *target;
 
     b->marked = 1;
     switch ((SInt8)t->type) {
@@ -2142,7 +2141,8 @@ void insert_type_nodes_recursive(DWInfo *a, DWInfo *b)
         case TYPEPOINTER: {
             if (b->typeNode == NULL)
                 insert_type_node_before(a, b);
-            e = find_or_create_dwinfo(TPTR_TARGET(t));
+            target = TPTR_TARGET(t);
+            e = find_or_create_dwinfo(target);
             if (e->marked == 0)
                 insert_type_nodes_recursive(b, e);
             break;
@@ -2151,7 +2151,8 @@ void insert_type_nodes_recursive(DWInfo *a, DWInfo *b)
         case TYPEARRAY: {
             if (b->typeNode == NULL)
                 insert_type_node_before(a, b);
-            e = find_or_create_dwinfo(TPTR_TARGET(t));
+            target = TPTR_TARGET(t);
+            e = find_or_create_dwinfo(target);
             if (e->marked == 0)
                 insert_type_nodes_recursive(b, e);
             break;
