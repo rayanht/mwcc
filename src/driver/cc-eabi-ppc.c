@@ -10,6 +10,7 @@
 #include "driver/CWPluginsPrivate.h"
 #include "driver/DropInCompilerLinkerPrivate.h"
 #include "driver/TargetPanels-eabi-ppc.h"
+#include "version.h"
 #include <stdio.h>
 #include <string.h>
 #include <ctype.h>
@@ -192,12 +193,16 @@ int __stdcall dispatch_compiler_plugin_request(CWPluginPrivateContext *input)
     CWPluginsPrivate_GetRequest(input, &classification);
     switch (classification) {
         case -2:
+#if VERSION >= VERSION_GC_1_2_5
             compiler_plugin_cu.context = input;
+#endif
             data_00588258 = 0;
             fn_0042c920();
             break;
         case -1:
+#if VERSION >= VERSION_GC_1_2_5
             compiler_plugin_cu.context = input;
+#endif
             fn_0042c910();
             if (data_00588258 != 0 && data_0057f486 != 0) {
                 fn_0041bc50(compiler_plugin_cu.context, data_00588258);

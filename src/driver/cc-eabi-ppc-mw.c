@@ -78,7 +78,7 @@ unsigned int __stdcall fn_0040be20(struct ListLink *link)
     return 0U;
 }
 
-static PluginVersion data_00543700 = {2, 3, 3, 0xA3};
+static PluginVersion data_00543700 = {2, 3, 3, PLUGIN_BUILD};
 
 unsigned int __stdcall fn_0040be30(struct ListLink *link)
 {

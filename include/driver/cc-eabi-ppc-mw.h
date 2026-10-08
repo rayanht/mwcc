@@ -2,6 +2,7 @@
 #define DRIVER_CC_EABI_PPC_MW_H
 
 #include "compiler/common.h"
+#include "version.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -17,6 +18,14 @@ struct PluginVersion {
     UInt8 bugfix;
     UInt8 build;
 };
+/* The build number of the release's plugins. */
+#if VERSION == VERSION_GC_1_0
+#define PLUGIN_BUILD 0x90
+#elif VERSION < VERSION_GC_1_2_5
+#define PLUGIN_BUILD 0x9F
+#else
+#define PLUGIN_BUILD 0xA3
+#endif
 /* A file type a plugin recognizes by the bytes at its start. */
 struct FileSignature {
     UInt32 type;

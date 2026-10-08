@@ -20,6 +20,7 @@
 #include "compiler/IroUtil.h"
 #include "compiler/IroVars.h"
 #include "compiler/Switch.h"
+#include "version.h"
 #include <string.h>
 
 static char lbl_00580640[4];
@@ -2890,11 +2891,13 @@ int compute_loop_count(IROLoop *loop, CInt64 *count)
     limitTerms = IroVars_CreateAddrRecord(limit);
     if (start->type == IROLinearOp2Arg && start->nodetype == EADD) {
         IroVars_CollectAddrRecordElements(start, startTerms);
+#if VERSION >= VERSION_GC_1_2_5
     } else if (IroDump_IsType1NodeType50(start) != 0) {
         startTerms->numInts += 1;
         IroVars_PrependElmList(start, &startTerms->ints);
         startTerms->numObjRefs = 0;
         startTerms->numMisc = 0;
+#endif
     } else {
         startTerms->numMisc += 1;
         IroVars_PrependElmList(start, &startTerms->misc);
@@ -2903,11 +2906,13 @@ int compute_loop_count(IROLoop *loop, CInt64 *count)
     }
     if (limit->type == IROLinearOp2Arg && limit->nodetype == EADD) {
         IroVars_CollectAddrRecordElements(limit, limitTerms);
+#if VERSION >= VERSION_GC_1_2_5
     } else if (IroDump_IsType1NodeType50(limit) != 0) {
         limitTerms->numInts += 1;
         IroVars_PrependElmList(limit, &limitTerms->ints);
         limitTerms->numObjRefs = 0;
         limitTerms->numMisc = 0;
+#endif
     } else {
         limitTerms->numMisc += 1;
         IroVars_PrependElmList(limit, &limitTerms->misc);
@@ -2943,7 +2948,11 @@ int compute_positive_addr_record_difference(IROAddrRecord *first, IROAddrRecord 
             if (IroUtil_LinearConstantTreesSame(first->misc->element, second->misc->element) == 0)
                 return 0;
         }
+#if VERSION >= VERSION_GC_1_2_5
     } else if (second->numMisc != first->numMisc) {
+#else
+    } else if (second->numObjRefs != first->numObjRefs) {
+#endif
         return 0;
     }
 
@@ -3048,8 +3057,13 @@ struct IROLinear *create_loop_iteration_count(struct IROList *context, struct IR
         type = statement->cond->u.diadic.left->rtype;
     }
 
+#if VERSION >= VERSION_GC_1_2_5
     CError_ASSERT(10087, statement->induction != 0);
     CError_ASSERT(10092, statement->induction->addConst != 0);
+#else
+    CError_ASSERT(10070, statement->induction != 0);
+    CError_ASSERT(10075, statement->induction->addConst != 0);
+#endif
 
     stepNode = IrOptimizer_NewLinear(IROLinearOperand);
     linear_index_counter++;

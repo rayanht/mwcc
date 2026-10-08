@@ -65,7 +65,7 @@ unsigned int __stdcall set_next_from_global(struct ListLink *node)
 
 #pragma optimization_level reset
 
-static PluginVersion data_00549fd4 = {2, 3, 3, 0xA3};
+static PluginVersion data_00549fd4 = {2, 3, 3, PLUGIN_BUILD};
 
 #pragma scheduling off
 

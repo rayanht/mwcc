@@ -30,6 +30,7 @@
 #include "compiler/TOC.h"
 #include "compiler/Unmangle.h"
 #include "driver/TargetPanels-eabi-ppc.h"
+#include "version.h"
 #include <string.h>
 
 /* Copies an asm statement and the instruction its expr slot holds. */
@@ -2801,7 +2802,11 @@ PCodeInstruction *create_pcode_asm_instruction(ParsedAsmInstruction *ia, SInt32 
                     out->kind = operand->modifier.reg.register_class;
                     if (operand->target.object) {
                         registerFlags = operand->modifier.reg.flags;
+#if VERSION >= VERSION_GC_1_2_5
                         if (registerFlags & 4) {
+#else
+                        if (registerFlags == 4) {
+#endif
                             out->data.reg.reg = InlineAsm_RegisterHi(operand);
                             operand->modifier.reg.flags &= ~4;
                         } else
