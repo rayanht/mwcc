@@ -169,7 +169,15 @@ def pro53_updater(root, files=(), flatten=False):
     """The directory of ROOT the Pro 5.3 updater's Win32 C/C++ files (FILES: all when empty; FLATTEN: without their
     directories) are unpacked into: the updater is an InstallShield executable whose data1.cab/data1.hdr are deflated
     ZIP members at these offsets; unshield unpacks the cabinet."""
-    updater = fetch(PRO53_UPDATER)
+    # (lib and mwld both unpack it, one after the other in the download pool: fetched once)
+    kept = Path("build/downloads") / PRO53_UPDATER.rsplit("/", 1)[1]
+    if kept.exists():
+        updater = kept.read_bytes()
+    else:
+        updater = fetch(PRO53_UPDATER)
+        kept.parent.mkdir(parents=True, exist_ok=True)
+        kept.with_suffix(".part").write_bytes(updater)
+        kept.with_suffix(".part").replace(kept)
     for offset in (100746, 40487531):
         _, _, _, _, _, _, packed, _, length, extra = struct.unpack_from("<5H3I2H", updater, offset + 4)
         name = updater[offset + 30:offset + 30 + length].decode()
