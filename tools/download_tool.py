@@ -13,6 +13,7 @@
                 (OUTPUT: lib/ok)
 """
 import io
+import http.client
 import json
 import platform
 import re
@@ -43,8 +44,9 @@ def get(url, headers=None):
         try:
             with urllib.request.urlopen(urllib.request.Request(url, headers=headers or {}), timeout=300) as response:
                 return response.read()
-        except (urllib.error.URLError, TimeoutError) as error:
-            # (the Internet Archive answers 500 now and then: retry server errors, not client ones)
+        except (urllib.error.URLError, TimeoutError, ConnectionError, http.client.HTTPException) as error:
+            # (the Internet Archive answers 500 now and then, or drops the connection while it unpacks an archive's
+            # member: retry those, not client errors)
             if attempt == 5 or isinstance(error, urllib.error.HTTPError) and error.code < 500:
                 raise
             print(f"{url}: {error}; retrying", file=sys.stderr)
