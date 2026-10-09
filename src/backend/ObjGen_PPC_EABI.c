@@ -1,5 +1,6 @@
 #define CERROR_FILE "ObjGen_PPC_EABI.c"
 #include "compiler/common.h"
+#include "version.h"
 #include "compiler/ObjGen_PPC_EABI.h"
 #include "compiler/enode.h"
 #include "compiler/objects.h"
@@ -2024,7 +2025,7 @@ InterruptGenerationRecord *ObjGen_PPC_EABI_GetInterruptInfo(Object *obj)
 {
     BE_SymNode *node;
     InterruptGenerationRecord *info = (node = BE_symbol_GetOrCreateFunctionObjectSymbol(obj))->interruptInfo;
-    CError_ASSERT(2333, info != NULL);
+    CError_ASSERT(VERSION > VERSION_GC_1_0 ? 2333 : 2332, info != NULL);
     return info;
 }
 
@@ -2134,7 +2135,7 @@ void ObjGen_PPC_EABI_AppendOutputEntry(ObjGenSection *context, unsigned int valu
         memset(entries->last, 0, 8U);
         entries->last->value = value;
         if (entries->count > 32767)
-            CError_FATAL(2466);
+            CError_FATAL(VERSION > VERSION_GC_1_0 ? 2466 : 2465);
         entries->count += 1;
     }
 }

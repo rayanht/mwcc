@@ -1,5 +1,6 @@
 #define CERROR_FILE "CodeGen.c"
 #include "compiler/common.h"
+#include "version.h"
 #include "compiler/CodeGen.h"
 #include "compiler/enode.h"
 #include "compiler/objects.h"
@@ -1275,7 +1276,7 @@ void emit_name_string_address(const char *name)
         Operands_ForceGPR(&op, (Type *)&void_ptr, 3);
 
     if (op.kind > 0) {
-        CError_FATAL(1535);
+        CError_FATAL(VERSION > VERSION_GC_1_0 ? 1535 : 1504);
     } else {
         SInt32 reg = op.reg;
         if (reg != 3) {
@@ -1809,7 +1810,7 @@ void CodeGen_EmitLoadAndBranchFunction(Object *function, Object *branchTarget, O
     SInt32 reg;
 
     memclrw(&operand, sizeof(operand));
-    CError_ASSERT(2283, offset <= 0x7fff);
+    CError_ASSERT(VERSION > VERSION_GC_1_0 ? 2283 : 2240, offset <= 0x7fff);
     PCode_ResetBlocks();
     PCode_CreateBlock();
     table->section = ObjGen_PPC_EABI_GetHeaderIndex(2);
@@ -1825,7 +1826,7 @@ void CodeGen_EmitLoadAndBranchFunction(Object *function, Object *branchTarget, O
         Operands_ForceGPR(&operand, (Type *)&void_ptr, 12);
     }
     if (operand.kind != OpndType_GPR) {
-        CError_FATAL(2316);
+        CError_FATAL(VERSION > VERSION_GC_1_0 ? 2316 : 2273);
     } else {
         reg = operand.reg;
         if (reg != 12)
@@ -2653,7 +2654,7 @@ InterruptGenerationRecord *CodeGen_FindInterruptGenerationRecord(SInt16 key)
         entry = entry->next;
     }
     if (!entry)
-        CError_FATAL(3429);
+        CError_FATAL(VERSION > VERSION_GC_1_0 ? 3429 : 3386);
     return entry;
 }
 

@@ -1,5 +1,6 @@
 #define CERROR_FILE "CMachine.c"
 #include "compiler/common.h"
+#include "version.h"
 #include "compiler/CMachine.h"
 #include "compiler/enode.h"
 #include "compiler/objects.h"
@@ -851,7 +852,7 @@ void CMach_InitFloatMem(Type *type, Float value, unsigned char *dest)
             }
         }
     }
-    CError_FATAL(779);
+    CError_FATAL(VERSION > VERSION_GC_1_0 ? 779 : 767);
 }
 
 void CMach_PrintFloat(char *output, Float value)

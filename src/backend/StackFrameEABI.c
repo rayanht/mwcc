@@ -1,5 +1,6 @@
 #define CERROR_FILE "StackFrameEABI.c"
 #include "compiler/common.h"
+#include "version.h"
 #include "compiler/StackFrameEABI.h"
 #include "compiler/enode.h"
 #include "compiler/objects.h"
@@ -970,7 +971,7 @@ SInt32 StackFrameEABI_GetTypeAlignment(Type *type)
                 return 4;
 
             default:
-                CError_FATAL(1753);
+                CError_FATAL(VERSION > VERSION_GC_1_0 ? 1753 : 1696);
                 return 1;
         }
     }

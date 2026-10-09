@@ -2991,7 +2991,7 @@ void InlineAsmPPC_GenerateAsmInstruction(Statement *o)
                     found = instr->operandData.operands[0].value.label;
                 break;
             default:
-                CError_FATAL(3664);
+                CError_FATAL(VERSION > VERSION_GC_1_0 ? 3664 : 3657);
         }
         if (found != NULL) {
             PCode_AddSuccessor(gCurrentBlock, found);

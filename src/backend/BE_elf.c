@@ -1,5 +1,6 @@
 #define CERROR_FILE "BE_elf.c"
 #include "compiler/common.h"
+#include "version.h"
 #include "compiler/BE_elf.h"
 #include "compiler/enode.h"
 #include "compiler/objects.h"
@@ -529,7 +530,7 @@ void BE_elf_SetDeclSection(char *name, DeclInfo *declaration)
     UInt16 targetIndex;
 
     if (declaration->section != 0) {
-        CError_FATAL(489);
+        CError_FATAL(VERSION > VERSION_GC_1_0 ? 489 : 477);
     } else {
         record = galloc(sizeof(*record));
         memclrw(record, sizeof(*record));

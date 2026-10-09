@@ -1,5 +1,6 @@
 #define CERROR_FILE "SFPE_PPC_EABI.c"
 #include "compiler/common.h"
+#include "version.h"
 #include "compiler/SFPE_PPC_EABI.h"
 #include "compiler/enode.h"
 #include "compiler/objects.h"
@@ -500,14 +501,14 @@ void SFPE_PPC_EABI_GenerateMonadicOperand(ENode *input, short firstRegister, sho
                 result->object = NULL;
             }
         } else {
-            CError_FATAL(662);
+            CError_FATAL(VERSION > VERSION_GC_1_0 ? 662 : 778);
             result->kind = OpndType_GPRPair;
             result->reg = registerInfo->reg;
             result->regHi = registerInfo->regHi;
             result->object = NULL;
         }
     } else if (expression->type == EBITFIELD) {
-        CError_FATAL(674);
+        CError_FATAL(VERSION > VERSION_GC_1_0 ? 674 : 790);
     } else if (InstrSelection_MatchPostIncDecRegister(expression, &temporary, &value) &&
                (type->type == TYPEINT || type->type == TYPEENUM || type->type == TYPEPOINTER ||
                 (type->type == TYPEMEMBERPOINTER && type->size == 4) || type->type == TYPEFLOAT)) {

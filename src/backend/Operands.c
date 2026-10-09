@@ -1,5 +1,6 @@
 #define CERROR_FILE "Operands.c"
 #include "compiler/common.h"
+#include "version.h"
 #include "compiler/Operands.h"
 #include "compiler/enode.h"
 #include "compiler/objects.h"
@@ -1178,6 +1179,6 @@ void Operands_EmitAddress(SInt16 reg, Operand *operand)
     } else if (operand->kind == OpndType_IndirectGPR_Indexed) {
         PCodeUtilities_EmitInstruction(PC_ADD, reg, operand->reg, operand->secondary_reg);
     } else {
-        CError_FATAL(1369);
+        CError_FATAL(VERSION > VERSION_GC_1_0 ? 1369 : 1387);
     }
 }

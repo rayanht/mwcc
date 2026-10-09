@@ -1,5 +1,6 @@
 #define CERROR_FILE "CExpr.c"
 #include "compiler/common.h"
+#include "version.h"
 #include "compiler/CExpr.h"
 #include "compiler/enode.h"
 #include "compiler/objects.h"
@@ -3712,8 +3713,8 @@ ENode *CExpr_New_ELESS_Node(ENode *left, ENode *right)
         if (CExpr_CheckOperator(60, (ENode *)(left), (ENode *)(right), &fold)) {
             if (fold.expression != NULL)
                 return fold.expression;
-            CError_ASSERT(4452, (left = fold.left));
-            CError_ASSERT(4453, (right = fold.right));
+            CError_ASSERT(VERSION > VERSION_GC_1_0 ? 4452 : 4453, (left = fold.left));
+            CError_ASSERT(VERSION > VERSION_GC_1_0 ? 4453 : 4454, (right = fold.right));
         }
     }
 
@@ -3754,8 +3755,8 @@ ENode *CExpr_New_ELESSEQU_Node(ENode *left, ENode *right)
         if (CExpr_CheckOperator(362, (ENode *)(left), (ENode *)(right), &fold)) {
             if (fold.expression != NULL)
                 return fold.expression;
-            CError_ASSERT(4496, (left = fold.left));
-            CError_ASSERT(4497, (right = fold.right));
+            CError_ASSERT(VERSION > VERSION_GC_1_0 ? 4496 : 4497, (left = fold.left));
+            CError_ASSERT(VERSION > VERSION_GC_1_0 ? 4497 : 4498, (right = fold.right));
         }
     }
     if ((SInt8)left->rtype->type >= TYPEPOINTER || (SInt8)right->rtype->type >= TYPEPOINTER) {
@@ -3794,8 +3795,8 @@ ENode *CExpr_New_EGREATER_Node(ENode *left, ENode *right)
         if (CExpr_CheckOperator(62, (ENode *)(left), (ENode *)(right), &fold)) {
             if (fold.expression != NULL)
                 return fold.expression;
-            CError_ASSERT(4540, (left = fold.left));
-            CError_ASSERT(4541, (right = fold.right));
+            CError_ASSERT(VERSION > VERSION_GC_1_0 ? 4540 : 4541, (left = fold.left));
+            CError_ASSERT(VERSION > VERSION_GC_1_0 ? 4541 : 4542, (right = fold.right));
         }
     }
 
@@ -3838,8 +3839,8 @@ ENode *CExpr_New_EGREATEREQU_Node(ENode *left, ENode *right)
         if (CExpr_CheckOperator(0x16b, (ENode *)(left), (ENode *)(right), &fold)) {
             if (fold.expression != NULL)
                 return fold.expression;
-            CError_ASSERT(4584, (left = fold.left));
-            CError_ASSERT(4585, (right = fold.right));
+            CError_ASSERT(VERSION > VERSION_GC_1_0 ? 4584 : 4585, (left = fold.left));
+            CError_ASSERT(VERSION > VERSION_GC_1_0 ? 4585 : 4586, (right = fold.right));
         }
     }
 
@@ -5352,7 +5353,7 @@ Boolean fn_004f0f40(ENode *node)
         case EINSTRUCTION:
             return 1;
         default:
-            CError_FATAL(6466);
+            CError_FATAL(VERSION > VERSION_GC_1_0 ? 6466 : 6467);
             return 0;
     }
 }
