@@ -24987,7 +24987,7 @@
     "source": "src/frontend/CRTTI.c"
   },
   {
-    "name": "fn_005044f0",
+    "name": "find_type_info_class",
     "address": "0x005044f0",
     "size": 120,
     "source": "src/frontend/CRTTI.c"
@@ -24999,7 +24999,7 @@
     "source": "src/frontend/CRTTI.c"
   },
   {
-    "name": "fn_00504710",
+    "name": "check_qualifiers_casted_away",
     "address": "0x00504710",
     "size": 56,
     "source": "src/frontend/CRTTI.c"
@@ -25017,7 +25017,7 @@
     "source": "src/frontend/CRTTI.c"
   },
   {
-    "name": "fn_005048f0",
+    "name": "complete_class_type",
     "address": "0x005048f0",
     "size": 60,
     "source": "src/frontend/CRTTI.c"

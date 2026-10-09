@@ -16,35 +16,13 @@
 #include "compiler/CPrepTokenizer.h"
 #include "compiler/CodeGen.h"
 #include "compiler/CompilerTools.h"
+#include "version.h"
 
 /* One entry in the RTTI offset table. */
 #include <string.h>
 
 static struct RTTIVTableOffsetNode *rtti_vtable_offset_list;
 static struct RData *rtti_offset_table_head;
-
-static inline Boolean IsSameType(Type *a, Type *b)
-{
-    for (;;) {
-        if (a->type != b->type)
-            return 0;
-        switch ((SInt8)a->type) {
-            case TYPEVOID:
-                return 1;
-            case TYPEINT:
-            case TYPEFLOAT:
-            case TYPEENUM:
-            case TYPESTRUCT:
-                return a == b;
-            case TYPEPOINTER:
-                a = TPTR_TARGET(a);
-                b = TPTR_TARGET(b);
-                continue;
-            default:
-                return iscpp_typeequal(a, b);
-        }
-    }
-}
 
 static inline Boolean IsZero(CInt64 *v)
 {
@@ -368,37 +346,37 @@ RData *CRTTI_BuildRTTIOffsetTable(TypeClass *classType, unsigned char *tableName
     return rtti_offset_table_head;
 }
 
-ENode *CRTTI_ParseTypeid(void)
+static Type *find_type_info_class(void)
 {
-    Type *classType;
-    Type *type;
-    UInt32 qualifiers;
     NameSpace *nspace;
     NameSpaceObjectList *objects;
-    ENode *expr;
-    HashNameNode *name;
-    DeclInfo typeInfo;
+    Type *type;
 
-    if (copts.RTTI == 0)
-        CError_Warning(ERR_RTTI_OPTION_DISABLED);
-
-    name = GetHashNameNode("std");
-    objects = CScope_FindName(cscope_root, name);
+    objects = CScope_FindName(cscope_root, GetHashNameNode("std"));
     if (objects != NULL && objects->object->otype == OT_NAMESPACE)
         nspace = ((ObjNameSpace *)objects->object)->nspace;
     else
         nspace = cscope_root;
 
-    name = GetHashNameNode("type_info");
-    {
-        Type *foundType = CScope_GetLocalTagType(nspace, name);
-        if (foundType != NULL && foundType->type == TYPECLASS && foundType->size != 0)
-            classType = foundType;
-        else {
-            CError_ReportError(ERR_UNDEFINED_IDENTIFIER, "::std::type_info");
-            classType = (Type *)&stchar;
-        }
-    }
+    type = CScope_GetLocalTagType(nspace, GetHashNameNode("type_info"));
+    if (type != NULL && type->type == TYPECLASS && type->size != 0)
+        return type;
+    CError_ReportError(ERR_UNDEFINED_IDENTIFIER, "::std::type_info");
+    return (Type *)&stchar;
+}
+
+ENode *CRTTI_ParseTypeid(void)
+{
+    Type *classType;
+    ENode *expr;
+    Type *type;
+    UInt32 qualifiers;
+    DeclInfo typeInfo;
+
+    if (copts.RTTI == 0)
+        CError_Warning(ERR_RTTI_OPTION_DISABLED);
+
+    classType = find_type_info_class();
 
     if ((SInt16)CPrepTokenizer_GetNextToken() != '(') {
         CError_ReportError(ERR_LPAREN_EXPECTED);
@@ -446,6 +424,13 @@ ENode *CRTTI_ParseTypeid(void)
     }
 }
 
+static void check_qualifiers_casted_away(UInt32 sourceQualifiers, UInt32 targetQualifiers)
+{
+    if (((sourceQualifiers & Q_CONST) && !(targetQualifiers & Q_CONST)) ||
+        ((sourceQualifiers & Q_VOLATILE) && !(targetQualifiers & Q_VOLATILE)))
+        CError_ReportError(ERR_CONSTNESS_CASTED_AWAY);
+}
+
 void check_constness_casted_away(Type *sourceType, int sourceQualifiers, Type *targetType, int targetQualifiers)
 {
     UInt8 skipOuterQualifiers = 1;
@@ -459,25 +444,16 @@ void check_constness_casted_away(Type *sourceType, int sourceQualifiers, Type *t
             break;
         switch ((SInt8)sourceType->type) {
             case TYPEPOINTER:
-                if (!skipOuterQualifiers) {
-                    UInt32 sourcePointerQualifiers = TYPE_POINTER(sourceType)->qual;
-                    UInt32 targetPointerQualifiers = TYPE_POINTER(targetType)->qual;
-                    if (((sourcePointerQualifiers & Q_CONST) && !(targetPointerQualifiers & Q_CONST)) ||
-                        ((sourcePointerQualifiers & Q_VOLATILE) && !(targetPointerQualifiers & Q_VOLATILE)))
-                        CError_ReportError(ERR_CONSTNESS_CASTED_AWAY);
-                }
+                if (!skipOuterQualifiers)
+                    check_qualifiers_casted_away(TYPE_POINTER(sourceType)->qual, TYPE_POINTER(targetType)->qual);
                 sourceType = TPTR_TARGET(sourceType);
                 targetType = TPTR_TARGET(targetType);
                 skipOuterQualifiers = 0;
                 continue;
             case TYPEMEMBERPOINTER:
-                if (!skipOuterQualifiers) {
-                    UInt32 sourceMemberQualifiers = TYPE_MEMBER_POINTER(sourceType)->qual;
-                    UInt32 targetMemberQualifiers = TYPE_MEMBER_POINTER(targetType)->qual;
-                    if (((sourceMemberQualifiers & Q_CONST) && !(targetMemberQualifiers & Q_CONST)) ||
-                        ((sourceMemberQualifiers & Q_VOLATILE) && !(targetMemberQualifiers & Q_VOLATILE)))
-                        CError_ReportError(ERR_CONSTNESS_CASTED_AWAY);
-                }
+                if (!skipOuterQualifiers)
+                    check_qualifiers_casted_away(TYPE_MEMBER_POINTER(sourceType)->qual,
+                                                 TYPE_MEMBER_POINTER(targetType)->qual);
                 sourceType = TYPE_MEMBER_POINTER(sourceType)->ty1;
                 targetType = TYPE_MEMBER_POINTER(targetType)->ty1;
                 skipOuterQualifiers = 0;
@@ -487,13 +463,9 @@ void check_constness_casted_away(Type *sourceType, int sourceQualifiers, Type *t
         }
         break;
     }
-    if (!skipOuterQualifiers) {
-        UInt32 targetCVQualifiers = CParser_GetCVTypeQualifiers(targetType, targetQualifiers);
-        UInt32 sourceCVQualifiers = CParser_GetCVTypeQualifiers(sourceType, sourceQualifiers);
-        if (((sourceCVQualifiers & Q_CONST) && !(targetCVQualifiers & Q_CONST)) ||
-            ((sourceCVQualifiers & Q_VOLATILE) && !(targetCVQualifiers & Q_VOLATILE)))
-            CError_ReportError(ERR_CONSTNESS_CASTED_AWAY);
-    }
+    if (!skipOuterQualifiers)
+        check_qualifiers_casted_away(CParser_GetCVTypeQualifiers(sourceType, sourceQualifiers),
+                                     CParser_GetCVTypeQualifiers(targetType, targetQualifiers));
 }
 
 ENode *parse_cast_type_and_expression(DeclInfo *typeSpec)
@@ -540,6 +512,17 @@ ENode *parse_cast_type_and_expression(DeclInfo *typeSpec)
     return expression;
 }
 
+static void complete_class_type(Type *type)
+{
+    if (type->type == TYPEPOINTER)
+        type = TPTR_TARGET(type);
+    if (type->type == TYPECLASS && type->size == 0) {
+        CDecl_CompleteType(type);
+        if ((TYPE_CLASS(type)->flags & CLASS_COMPLETED) == 0)
+            CError_ReportError(ERR_ILLEGAL_USE_INCOMPLETE_STRUCT_UNION_CLASS, type, 0);
+    }
+}
+
 Boolean types_equal(Type *left, Type *right)
 {
     for (;;) {
@@ -575,7 +558,7 @@ ENode *explicit_typecast(register ENode *expr, register Type *type, UInt32 flags
     switch ((SInt8)type->type) {
         case TYPEPOINTER:
             if (TYPE_POINTER(type)->qual & Q_REFERENCE) {
-                if (IsSameType(TPTR_TARGET(type), expr->rtype))
+                if (types_equal(TPTR_TARGET(type), expr->rtype))
                     break;
                 if (mode != 2)
                     break;
@@ -585,8 +568,11 @@ ENode *explicit_typecast(register ENode *expr, register Type *type, UInt32 flags
                     if (CClass_FindBasePath((TypeClass *)expr->rtype, (TypeClass *)TPTR_TARGET(type), 0, 1))
                         break;
                 }
+#if VERSION == VERSION_GC_1_0
+                err = 1;
+#endif
             } else if (expr->rtype->type == TYPEPOINTER) {
-                if (mode == 3 || IsSameType(type, expr->rtype) || TPTR_TARGET(type)->type == TYPEVOID ||
+                if (mode == 3 || types_equal(type, expr->rtype) || TPTR_TARGET(type)->type == TYPEVOID ||
                     TPTR_TARGET(expr->rtype)->type == TYPEVOID) {
                     set = wrap = 1;
                     break;
@@ -601,6 +587,9 @@ ENode *explicit_typecast(register ENode *expr, register Type *type, UInt32 flags
                                             1))
                         break;
                 }
+#if VERSION == VERSION_GC_1_0
+                err = 1;
+#endif
             } else {
                 if (expr->rtype->type == TYPEENUM)
                     expr->rtype = TYPE_ENUM(expr->rtype)->enumtype;
@@ -614,8 +603,13 @@ ENode *explicit_typecast(register ENode *expr, register Type *type, UInt32 flags
                 }
                 if (expr->rtype->type == TYPECLASS && mode == 2)
                     break;
+#if VERSION == VERSION_GC_1_0
+                err = 1;
+#endif
             }
+#if VERSION > VERSION_GC_1_0
             err = 1;
+#endif
     }
     if (err) {
         CError_ReportError(ERR_ILLEGAL_EXPLICIT_CONVERSION_FROM, expr->rtype, expr->flags & 3, type, flags);
@@ -726,7 +720,6 @@ ENode *CRTTI_ParseDynamicCast(void)
 ENode *CRTTI_ParseExplicitTypecast(void)
 {
     struct ENode *expr;
-    Type *conversionType;
     DeclInfo conversion;
     expr = parse_cast_type_and_expression(&conversion);
     if (expr == NULL) {
@@ -734,26 +727,8 @@ ENode *CRTTI_ParseExplicitTypecast(void)
     }
     check_constness_casted_away(expr->rtype, expr->flags, conversion.thetype, conversion.qual);
     if (conversion.thetype->type != TYPEVOID) {
-        conversionType = conversion.thetype;
-        if (conversion.thetype->type == TYPEPOINTER) {
-            conversionType = ((TypePointer *)conversionType)->target;
-        }
-        if ((conversionType->type == TYPECLASS) && (conversionType->size == 0)) {
-            CDecl_CompleteType(conversionType);
-            if ((((TypeClass *)conversionType)->flags & CLASS_COMPLETED) == 0) {
-                CError_ReportError(ERR_ILLEGAL_USE_INCOMPLETE_STRUCT_UNION_CLASS, conversionType, 0);
-            }
-        }
-        conversionType = expr->rtype;
-        if (conversionType->type == TYPEPOINTER) {
-            conversionType = ((TypePointer *)conversionType)->target;
-        }
-        if ((conversionType->type == TYPECLASS) && (conversionType->size == 0)) {
-            CDecl_CompleteType(conversionType);
-            if ((((TypeClass *)conversionType)->flags & CLASS_COMPLETED) == 0) {
-                CError_ReportError(ERR_ILLEGAL_USE_INCOMPLETE_STRUCT_UNION_CLASS, conversionType, 0);
-            }
-        }
+        complete_class_type(conversion.thetype);
+        complete_class_type(expr->rtype);
     }
     return explicit_typecast(expr, conversion.thetype, conversion.qual, '\x02');
 }

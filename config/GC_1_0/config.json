@@ -102,6 +102,7 @@
     "src/frontend/CMangler.c",
     "src/frontend/CObjCModern.c",
     "src/frontend/CPreprocess.c",
+    "src/frontend/CRTTI.c",
     "src/frontend/ParseDouble.c",
     "src/msl/ThreadLocalData.c",
     "src/msl/abort_exit.c",
