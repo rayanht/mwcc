@@ -949,7 +949,7 @@ src/optimizer/UseDefChains.c:
 
 src/optimizer/CodeMotion.c:
 	.text       start:0x004F4FE0 end:0x004F71B0
-	.data       start:0x00545B20 end:0x00545B60
+	.data       start:0x00545B20 end:0x00545B5C
 
 src/optimizer/StrengthReduction.c:
 	.text       start:0x004F71B0 end:0x004F85D0

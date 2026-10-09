@@ -143,6 +143,7 @@
     "src/msl/wctype.c",
     "src/msl/wscanf.c",
     "src/optimizer/AddPropagation.c",
+    "src/optimizer/CodeMotion.c",
     "src/optimizer/ConstantPropagation.c",
     "src/optimizer/CopyPropagation.c",
     "src/optimizer/GlobalOptimizer.c",

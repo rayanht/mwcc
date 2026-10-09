@@ -36,8 +36,6 @@ struct CodeMotionDataflowState *data_00587fe4;
 struct CodeMotionObjectNode *gCodeMotionObjectTree_005880ac;
 int gCodeMotionCounter_005880b8;
 
-static struct PCodeInstruction *data_00574ce8 = NULL;
-
 #define CM_BIT(set, i) (((UInt32 *)(set))[(i) >> 5] & (1 << (i)))
 
 typedef struct CMOState CMOState;
@@ -45,45 +43,6 @@ typedef struct CMOState CMOState;
 #define CM_SET(bv, n) ((bv)[(n) >> 5] |= 1 << (n))
 #define CM_CLR(bv, n) ((bv)[(n) >> 5] &= ~(1 << ((n) & 31)))
 #define CM_TEST(bv, n) ((1 << ((n) & 31)) & (bv)[(n) >> 5])
-static int CodeMotion_TestBit(const UInt32 *bits, int index)
-{
-    return (bits[index >> 5] & (1U << (31 & index))) != 0;
-}
-
-static int CodeMotion_CanMove(PCodeInstruction *instruction, Loop *node)
-{
-    if (is_only_definition_in_loop(instruction, node) == 0)
-        return 0;
-    if (fn_005266e0(instruction->useStart, node) == 0)
-        return 0;
-    if (!CodeMotion_TestBit(node->block_membership, instruction->block->index) &&
-        has_use_outside_loop_in_preheader_set((PCodeOperand *)&code_motion_entries[instruction->useStart].kind, node) !=
-            0)
-        return 0;
-    if (instruction->opcode == PC_LI && node->bodySize > 0x19)
-        return 0;
-    return 1;
-}
-
-static void remove_block(Loop *co, PCodeBlock *nb)
-{
-    PCodeBlockLink **pp;
-    PCodeBlockLink *l;
-
-    CM_CLR(co->memberblocks, nb->index);
-    CM_CLR(co->exitblocks, nb->index);
-    CM_CLR(co->block_membership, nb->index);
-    CM_CLR(co->backedge_dominators, nb->index);
-    co->bodySize -= nb->instruction_count;
-    pp = &co->blocks;
-    while ((l = *pp) != NULL) {
-        if (l->payload.block == nb)
-            *pp = l->next;
-        else
-            pp = &l->next;
-    }
-}
-
 static inline void CodeMotion_ClearBit524d90(UInt32 *bits, int index)
 {
     bits[index >> 5] &= ~(1U << (index & 31));
@@ -92,21 +51,6 @@ static inline void CodeMotion_ClearBit524d90(UInt32 *bits, int index)
 static inline void CodeMotion_SetBit524d90(UInt32 *bits, int index)
 {
     bits[index >> 5] |= 1U << (index & 31);
-}
-
-static inline int CodeMotion_CanMove524d90(PCodeInstruction *instruction, Loop *node)
-{
-    if (is_only_definition_in_loop(instruction, node) == 0)
-        return 0;
-    if (fn_005266e0(instruction->useStart, node) == 0)
-        return 0;
-    if (!(node->block_membership[instruction->block->index >> 5] & (1U << (instruction->block->index & 31))) &&
-        has_use_outside_loop_in_preheader_set((PCodeOperand *)&code_motion_entries[instruction->useStart].kind, node) !=
-            0)
-        return 0;
-    if (instruction->opcode == PC_LI && node->bodySize > 0x19)
-        return 0;
-    return 1;
 }
 
 static inline struct CodeMotionEntryLink *fn_00526950_inline1(struct CodeMotionEntryLink *a3x, int a0,
@@ -397,6 +341,27 @@ int has_use_outside_loop_in_preheader_set(PCodeOperand *ref, Loop *info)
     return 0;
 }
 
+/* (whether the instruction's block is in the loop's block_membership set) */
+static int CodeMotion_TestBit(PCodeInstruction *instruction, Loop *node)
+{
+    return node->block_membership[instruction->block->index >> 5] & (1 << instruction->block->index);
+}
+
+static int CodeMotion_CanMove(PCodeInstruction *instruction, Loop *node)
+{
+    if (is_only_definition_in_loop(instruction, node) == 0)
+        return 0;
+    if (fn_005266e0(instruction->useStart, node) == 0)
+        return 0;
+    if (!CodeMotion_TestBit(instruction, node) &&
+        has_use_outside_loop_in_preheader_set((PCodeOperand *)&code_motion_entries[instruction->useStart].kind, node) !=
+            0)
+        return 0;
+    if (instruction->opcode == PC_LI && node->bodySize > 0x19)
+        return 0;
+    return 1;
+}
+
 void move_instruction_to_preheader(PCodeInstruction *instruction, Loop *region)
 {
     CMDefInfo *info;
@@ -515,18 +480,18 @@ SInt32 fn_00526070(PCodeInstruction *definition, Loop *context)
     }
     if (fn_005266e0(definition->useStart, context) == 0)
         return 0;
-    bit = definition->block->index;
-    if (((1 << (bit & 0x1f)) & context->block_membership[bit >> 5]) == 0 &&
+    if (!CodeMotion_TestBit(definition, context) &&
         has_use_outside_loop_in_preheader_set((PCodeOperand *)&code_motion_entries[definition->useStart].kind,
                                               context) != 0)
         return 0;
-    bit = (relatedDefinition = definition->next)->block->index;
-    if (((1 << (bit & 0x1f)) & context->block_membership[bit >> 5]) == 0 &&
+    if (!CodeMotion_TestBit(relatedDefinition = definition->next, context) &&
         has_use_outside_loop_in_preheader_set((PCodeOperand *)&code_motion_entries[definition->next->useStart].kind,
                                               context) != 0)
         return 0;
     return 1;
 }
+
+static struct PCodeInstruction *data_00574ce8 = NULL;
 
 unsigned int fn_00525fc0(PCodeInstruction *node, Loop *loop, UInt32 *defs)
 {
@@ -549,6 +514,25 @@ unsigned int fn_00525fc0(PCodeInstruction *node, Loop *loop, UInt32 *defs)
     }
     data_00574ce8 = NULL;
     return 0;
+}
+
+static void remove_block(Loop *co, PCodeBlock *nb)
+{
+    PCodeBlockLink **pp;
+    PCodeBlockLink *l;
+
+    CM_CLR(co->memberblocks, nb->index);
+    CM_CLR(co->exitblocks, nb->index);
+    CM_CLR(co->block_membership, nb->index);
+    CM_CLR(co->backedge_dominators, nb->index);
+    co->bodySize -= nb->instruction_count;
+    pp = &co->blocks;
+    while ((l = *pp) != NULL) {
+        if (l->payload.block == nb)
+            *pp = l->next;
+        else
+            pp = &l->next;
+    }
 }
 
 void replace_successor(PCodeBlock *block, PCodeBlock *oldSuccessor, PCodeBlock *newSuccessor)
@@ -980,7 +964,7 @@ void move_instructions_to_preheader(Loop *node)
                     continue;
                 if ((instruction->flags & 0x00020460) == 0 &&
                     is_loop_invariant(instruction, node, available_definitions, 0, 0) != 0 &&
-                    CodeMotion_CanMove524d90(instruction, node)) {
+                    CodeMotion_CanMove(instruction, node)) {
                     move_instruction_to_preheader(instruction, node);
                     changed = 1;
                 } else if (fn_00525fc0(instruction, node, available_definitions) != 0) {
@@ -1013,61 +997,11 @@ void move_instructions_to_preheader(Loop *node)
     } while (changed);
 }
 
-void visit_loops_postorder(register Loop *loop)
+void visit_loops_postorder(Loop *loop)
 {
-    register Loop *child;
-    register Loop *grandchild;
-    register Loop *thirdLevelLoop;
-    register Loop *fourthLevelLoop;
-    register Loop *fifthLevelLoop;
-    register Loop *sixthLevelLoop;
-    register Loop *seventhLevelLoop;
-    for (; loop != NULL; loop = loop->sibling) {
-        if (loop->children != NULL) {
-            for (child = loop->children; child != NULL; child = child->sibling) {
-                if (child->children != NULL) {
-                    for (grandchild = child->children; grandchild != NULL; grandchild = grandchild->sibling) {
-                        if (grandchild->children != NULL) {
-                            for (thirdLevelLoop = grandchild->children; thirdLevelLoop != NULL;
-                                 thirdLevelLoop = thirdLevelLoop->sibling) {
-                                if (thirdLevelLoop->children != NULL) {
-                                    for (fourthLevelLoop = thirdLevelLoop->children; fourthLevelLoop != NULL;
-                                         fourthLevelLoop = fourthLevelLoop->sibling) {
-                                        if (fourthLevelLoop->children != NULL) {
-                                            for (fifthLevelLoop = fourthLevelLoop->children; fifthLevelLoop != NULL;
-                                                 fifthLevelLoop = fifthLevelLoop->sibling) {
-                                                if (fifthLevelLoop->children != NULL) {
-                                                    for (sixthLevelLoop = fifthLevelLoop->children;
-                                                         sixthLevelLoop != NULL;
-                                                         sixthLevelLoop = sixthLevelLoop->sibling) {
-                                                        if (sixthLevelLoop->children != NULL) {
-                                                            for (seventhLevelLoop = sixthLevelLoop->children;
-                                                                 seventhLevelLoop != NULL;
-                                                                 seventhLevelLoop = seventhLevelLoop->sibling) {
-                                                                if (seventhLevelLoop->children != NULL) {
-                                                                    visit_loops_postorder(seventhLevelLoop->children);
-                                                                }
-                                                                move_instructions_to_preheader(seventhLevelLoop);
-                                                            }
-                                                        }
-                                                        move_instructions_to_preheader(sixthLevelLoop);
-                                                    }
-                                                }
-                                                move_instructions_to_preheader(fifthLevelLoop);
-                                            }
-                                        }
-                                        move_instructions_to_preheader(fourthLevelLoop);
-                                    }
-                                }
-                                move_instructions_to_preheader(thirdLevelLoop);
-                            }
-                        }
-                        move_instructions_to_preheader(grandchild);
-                    }
-                }
-                move_instructions_to_preheader(child);
-            }
-        }
+    for (; loop; loop = loop->sibling) {
+        if (loop->children)
+            visit_loops_postorder(loop->children);
         move_instructions_to_preheader(loop);
     }
 }
