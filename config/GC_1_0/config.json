@@ -157,6 +157,7 @@
     "src/optimizer/IroBitVect.c",
     "src/optimizer/IroCSE.c",
     "src/optimizer/IroDump.c",
+    "src/optimizer/IroEval.c",
     "src/optimizer/IroFlowgraph.c",
     "src/optimizer/IroJump.c",
     "src/optimizer/IroSubable.c",

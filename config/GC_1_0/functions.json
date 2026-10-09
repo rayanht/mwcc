@@ -11163,19 +11163,19 @@
     "source": "src/optimizer/IroEval.c"
   },
   {
-    "name": "fn_0045c660",
+    "name": "is_constant_compare",
     "address": "0x0045c660",
     "size": 47,
     "source": "src/optimizer/IroEval.c"
   },
   {
-    "name": "fn_0045c690",
+    "name": "get_key",
     "address": "0x0045c690",
     "size": 36,
     "source": "src/optimizer/IroEval.c"
   },
   {
-    "name": "fn_0045c6c0",
+    "name": "IsAdjacent",
     "address": "0x0045c6c0",
     "size": 118,
     "source": "src/optimizer/IroEval.c"
@@ -11205,7 +11205,7 @@
     "source": "src/optimizer/IroEval.c"
   },
   {
-    "name": "fn_0045c930",
+    "name": "get_matching_cond_objref",
     "address": "0x0045c930",
     "size": 54,
     "source": "src/optimizer/IroEval.c"
