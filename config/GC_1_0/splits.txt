@@ -735,7 +735,7 @@ src/backend/DumpIR.c:
 
 src/optimizer/COptimizer.c:
 	.text       start:0x0049C3D0 end:0x0049E390
-	.data       start:0x00531A90 end:0x00531F48
+	.data       start:0x00531A90 end:0x00531F44
 	.bss        start:0x005520A8 end:0x005521F8
 
 src/frontend/CMangler.c:

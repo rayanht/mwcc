@@ -590,87 +590,64 @@ void BE_elf_FreeSectionBuffers(void)
 void build_ordered_section_index(void)
 {
     int count;
-    BE_SymNode *binding;
-    ObjGenSection *middleHead;
-    BE_SymNode *initialBinding;
-    ObjGenSection *lastRecord;
-    ObjGenSection *middleRecord;
-    ObjGenSection *firstHead;
-    ObjGenSection *firstRecord;
-    ObjGenSection *lastHead;
-    ObjGenSection *record;
+    ObjGenSection *section;
+    UInt8 kind;
     ObjGenSection *head;
-    ObjGenSection *initialRecord;
+    BE_SymNode *sym;
 
     count = 1;
-    head = (ObjGenSection *)(unsigned long)section_list;
-    record = head;
-    if (head != NULL) {
+    section = head = section_list;
+    if (head) {
         do {
-            record->index = 0;
-            if (record->kind < 12 && record->buffer.size != 0)
+            section->index = 0;
+            if ((kind = section->kind) < 12 && section->buffer.size != 0)
                 ++count;
-            if (record->kind >= 12 && record->kind < 16)
+            if (kind >= 12 && kind < 16)
                 ++count;
-            record = record->next;
-        } while (record != NULL);
+            section = section->next;
+        } while (section);
     }
     ordered_section_index = (ObjGenSection **)galloc((count + 2) * sizeof(int));
     ordered_section_index[0] = data_005884aa;
     count = 1;
     if (data_0058849e != 0) {
-        initialRecord = BE_elf_FindSection(".text", 0);
-        initialBinding = BE_symbol_GetSectionSym(initialRecord);
-        if (initialRecord->buffer.size == 0) {
+        section = BE_elf_FindSection(".text", 0);
+        sym = BE_symbol_GetSectionSym(section);
+        if (section->buffer.size == 0) {
             ++count;
-            ordered_section_index[1] = initialRecord;
-            initialRecord->index = 1;
-            initialBinding->symbolKind = 3;
-            initialBinding->sectionData.section = initialRecord;
-            initialBinding->alignment = initialRecord->maximumSize;
-            initialBinding->kind = 258;
+            ordered_section_index[1] = section;
+            section->index = 1;
+            sym->symbolKind = 3;
+            sym->sectionData.section = section;
+            sym->alignment = section->maximumSize;
+            sym->kind = 258;
         }
     }
-    firstHead = section_list->next;
-    firstRecord = firstHead;
-    if (firstHead != NULL) {
-        do {
-            if (firstRecord->kind < 10 && firstRecord->buffer.size != 0) {
-                ordered_section_index[count] = firstRecord;
-                firstRecord->index = count;
-                ++count;
-                binding = BE_symbol_GetSectionSym(firstRecord);
-                binding->symbolKind = 3;
-                binding->sectionData.section = firstRecord;
-                binding->alignment = firstRecord->maximumSize;
-                binding->kind = 258;
-            }
-            firstRecord = firstRecord->next;
-        } while (firstRecord != NULL);
+    for (section = section_list->next; section != NULL; section = section->next) {
+        if (section->kind < 10 && section->buffer.size != 0) {
+            ordered_section_index[count] = section;
+            section->index = count;
+            ++count;
+            sym = BE_symbol_GetSectionSym(section);
+            sym->symbolKind = 3;
+            sym->sectionData.section = section;
+            sym->alignment = section->maximumSize;
+            sym->kind = 258;
+        }
     }
-    middleHead = section_list->next;
-    middleRecord = middleHead;
-    if (middleHead != NULL) {
-        do {
-            if (middleRecord->kind >= 10 && middleRecord->kind < 12 && middleRecord->buffer.size != 0) {
-                ordered_section_index[count] = middleRecord;
-                middleRecord->index = count;
-                ++count;
-            }
-            middleRecord = middleRecord->next;
-        } while (middleRecord != NULL);
+    for (section = section_list->next; section != NULL; section = section->next) {
+        if (section->kind >= 10 && section->kind < 12 && section->buffer.size != 0) {
+            ordered_section_index[count] = section;
+            section->index = count;
+            ++count;
+        }
     }
-    lastHead = section_list->next;
-    lastRecord = lastHead;
-    if (lastHead != NULL) {
-        do {
-            if (lastRecord->kind >= 12 && lastRecord->kind < 16) {
-                ordered_section_index[count] = lastRecord;
-                lastRecord->index = count;
-                ++count;
-            }
-            lastRecord = lastRecord->next;
-        } while (lastRecord != NULL);
+    for (section = section_list->next; section != NULL; section = section->next) {
+        if (section->kind >= 12 && section->kind < 16) {
+            ordered_section_index[count] = section;
+            section->index = count;
+            ++count;
+        }
     }
     ordered_section_index[count] = NULL;
     data_005884de->index = -14;
@@ -874,14 +851,6 @@ static inline SInt32 ElfIndex(ObjGenSection *section)
     return ElfSectionIndex(section);
 }
 
-static inline void ElfLinkSymbolTable(ObjGenSection *section)
-{
-    SInt32 index = ElfIndex(symbol_string_table_section);
-
-    section->link = index;
-    section->info = symbol_order_count + 1;
-}
-
 static inline void ElfLinkSection(ObjGenSection *section)
 {
     SInt32 link, info;
@@ -901,7 +870,8 @@ static void link_sections(void)
     ObjGenSection *s;
 
     s = ELF_SECTION(data_005884ce);
-    ElfLinkSymbolTable(s);
+    s->link = ElfIndex(symbol_string_table_section);
+    s->info = symbol_order_count + 1;
     s = section_list->next;
     while (s) {
         ElfLinkSection(s);

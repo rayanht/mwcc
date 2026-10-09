@@ -44,139 +44,9 @@ static struct ENode *last_node;
 static int data_00581308;
 #pragma options align = reset
 
-static void COpt_IncDecTarget(ENode *expr);
-static COptCSE *COpt_ObjectRef(ENode *expr, COptCSE *cse);
-static COptCSE *COpt_FloatConst(ENode *expr);
-static COptCSE *COpt_IntConst(ENode *expr);
-static inline COptCSE *COpt_AddOccurrence(ENode *expr, COptCSE *cse);
-static COptCSE *COpt_NewCSE(ENode *expr);
-static inline CLabel *COpt_Follow(Statement *self, CLabel *node);
-static inline void CheckStmts(Statement *p);
-
 static inline void set_statement_location(Statement *statement)
 {
     curstmtvalue = (UInt16)statement->value;
-}
-
-static inline void optimize_expression(Statement *statement)
-{
-    set_statement_location(statement);
-    COptimizer_CountExpressionObjectUses(statement->expr);
-}
-
-static inline void COpt_Pass(Statement *stmt)
-{
-    Statement *p;
-    Statement *u;
-
-    remove_unreferenced_labels(stmt);
-    for (p = stmt; p != NULL; p = p->next) {
-        switch (p->type) {
-            case ST_GOTO:
-                for (u = p->next; u != NULL; u = u->next) {
-                    if (p->label->stmt == u) {
-                        p->type = ST_NOP;
-                        optimizer_changed = 1;
-                        goto next;
-                    }
-                    if (u->type > 2)
-                        break;
-                }
-                p->label = COpt_Follow(p, p->label);
-                break;
-            case ST_IFGOTO:
-            case ST_IFNGOTO:
-                fold_and_invert_conditional_branch(p);
-                break;
-            case ST_SWITCH:
-                follow_switch_labels_and_fold_constant(p);
-                break;
-        }
-    next:;
-    }
-}
-
-static inline void COptimizer_SimplifyBranch(Statement *stmt)
-{
-    Statement *node;
-    for (node = stmt->next; node != NULL; node = node->next) {
-        if (stmt->label->stmt == node) {
-            stmt->type = ST_NOP;
-            optimizer_changed = 1;
-            return;
-        }
-        if (node->type > 2)
-            break;
-    }
-    stmt->label = COpt_Follow(stmt, stmt->label);
-}
-
-static inline CLabel *COFindOwner(Statement *s)
-{
-    Statement *q;
-    UInt8 kind;
-    SInt32 saved = (SInt32)s->label;
-    CLabel *owner = (CLabel *)saved;
-    for (q = ((CLabel *)saved)->stmt; q != NULL; q = q->next) {
-        if ((kind = q->type) <= 2)
-            continue;
-        if (q != s && kind == 3) {
-            if (q->label != owner)
-                optimizer_changed = 1;
-            return q->label;
-        } else {
-            return owner;
-        }
-    }
-    return owner;
-}
-
-static inline CLabel *COFindOwnerPlain(Statement *s)
-{
-    SInt32 saved = (SInt32)s->label;
-    CLabel *owner = (CLabel *)saved;
-    Statement *q;
-    for (q = ((CLabel *)saved)->stmt; q != NULL; q = q->next) {
-        if (q->type <= 2)
-            continue;
-        if (q != s && q->type == ST_GOTO) {
-            if (q->label != owner)
-                optimizer_changed = 1;
-            return q->label;
-        } else {
-            return owner;
-        }
-    }
-    return owner;
-}
-
-static inline void clear_words(COptBlock *p, SInt16 i)
-{
-    SInt16 *lo, *hi;
-    lo = p->referenceBits;
-    lo[i] = 0;
-    (hi = p->referenceBarrierBits)[i] = 0;
-}
-
-static inline COptBlock *new_block(void)
-{
-    COptBlock *p;
-    SInt16 i, n;
-
-    p = (COptBlock *)lalloc(opt_block_bits_size * 2 + 0x20);
-    p->flag = 0;
-    p->next = NULL;
-    p->pred = NULL;
-    p->succ = NULL;
-    p->unused = 0;
-    p->referenceBits = (SInt16 *)(p + 1);
-    p->referenceBarrierBits = (SInt16 *)((UInt8 *)p + opt_block_bits_size + 0x20);
-    i = 0;
-    n = opt_block_bits_size / 2;
-    for (; i < n; i++) {
-        clear_words(p, i);
-    }
-    return p;
 }
 
 static inline void add_succ(COptBlock *b, CLabel *owner)
@@ -189,35 +59,6 @@ static inline void add_succ(COptBlock *b, CLabel *owner)
     e->target.statement = owner->stmt;
 }
 
-static inline void clear_words2(COptBlock *p, SInt16 i)
-{
-    SInt16 *lo, *hi;
-    lo = p->referenceBits;
-    lo[i] = 0;
-    hi = p->referenceBarrierBits;
-    hi[i] = 0;
-}
-
-static inline COptBlock *new_block2(void)
-{
-    COptBlock *p;
-    SInt16 i, n;
-    p = (COptBlock *)lalloc(opt_block_bits_size * 2 + 0x20);
-    p->flag = 0;
-    p->next = NULL;
-    p->pred = NULL;
-    p->succ = NULL;
-    p->unused = 0;
-    p->referenceBits = (SInt16 *)(p + 1);
-    p->referenceBarrierBits = (SInt16 *)((UInt8 *)p + opt_block_bits_size + 0x20);
-    i = 0;
-    n = opt_block_bits_size / 2;
-    for (; i < n; i++) {
-        clear_words2(p, i);
-    }
-    return p;
-}
-
 static inline short tbit(short *p, int w, int b)
 {
     return bit_masks[b] & p[w];
@@ -228,29 +69,6 @@ static inline void sbit(short *p, int w, int b)
     p[w] |= bit_masks[b];
 }
 
-static inline COptCSE *COpt_VectorConst(ENode *expr)
-{
-    COptCSE *cse;
-    MWVector128 value;
-
-    for (cse = cse_entries[EVECTOR128CONST], value = expr->data.vector128val; cse; cse = cse->next) {
-        if (CMach_CalcVectorDiadicBool((unsigned int)cse->expr->rtype, &cse->expr->data.vector128val, 360, &value) &&
-            expr->rtype == cse->expr->rtype)
-            return cse;
-    }
-    cse = (COptCSE *)oalloc(30);
-    cse->expr = expr;
-    cse->replacement = NULL;
-    cse->block = current_opt_block;
-    cse->last = current_cse_expr;
-    cse->left = NULL;
-    cse->right = NULL;
-    cse->uses = 1;
-    cse->next = cse_entries[EVECTOR128CONST];
-    cse_entries[EVECTOR128CONST] = cse;
-    return cse;
-}
-
 static inline void clearEntries(int count)
 {
     int index;
@@ -258,28 +76,30 @@ static inline void clearEntries(int count)
         cse_entries[(short)index] = NULL;
 }
 
-/* COptimizer_CountExpressionObjectUses inlines this; COptimizer_RecordObjectUse, defined after it, has the same body. */
-static inline void RecordObjectUse(Object *object, unsigned char direct_reference)
+static COptCSE *COpt_NewCSE(ENode *expr)
 {
-    VarInfo *info;
+    COptCSE *cse;
 
-    if (object->datatype == DALIAS) {
-        CError_FATAL(1850);
-    }
-    if (object->datatype != DLOCAL) {
-        return;
-    }
+    (cse = (COptCSE *)oalloc(30))->expr = expr;
+    cse->replacement = NULL;
+    cse->block = current_opt_block;
+    cse->last = current_cse_expr;
+    cse->left = NULL;
+    cse->right = NULL;
+    cse->uses = 1;
+    return cse;
+}
 
-    info = object->u.var.info;
-    info->used = 1;
-    if (copts.optimizesize) {
-        info->usage++;
-    } else {
-        info->usage += curstmtvalue;
-    }
-    if (direct_reference) {
-        info->noregister = 1;
-    }
+/* Records an occurrence of a common subexpression: the expression and the CSE it computes. */
+static COptCSE *COpt_AddOccurrence(COptCSE *cse, ENode *expr)
+{
+    OptimizerOccurrence *occ = (OptimizerOccurrence *)oalloc(12);
+
+    occ->next = occurrence_list;
+    occurrence_list = occ;
+    occ->group = cse;
+    occ->expression = expr;
+    return cse;
 }
 
 void Registers_InvalidateCSE(COptCSE *node)
@@ -319,6 +139,27 @@ void Registers_DivideUses(COptCSE *node, SInt16 divisor)
         Registers_DivideUses(node->right, divisor);
 }
 
+static void replace_occurrences(ENode *replacement, COptCSE *cse)
+{
+    OptimizerOccurrence *occurrence;
+
+    for (occurrence = occurrence_list; occurrence != NULL; occurrence = occurrence->next) {
+        if (occurrence->group == cse) {
+            *occurrence->expression = *replacement;
+            data_00581302 += 1;
+            occurrence->group = NULL;
+            occurrence->expression = NULL;
+        }
+    }
+}
+
+static int is_memory_object(Object *object)
+{
+    if (object->datatype == DLOCAL && object->u.var.info->noregister == 0)
+        return 0;
+    return 1;
+}
+
 Boolean Registers_ContainsCOptCSE(COptCSE *target, COptCSE *node)
 {
     if (target == node)
@@ -334,8 +175,6 @@ Boolean Registers_ContainsCOptCSE(COptCSE *target, COptCSE *node)
    of variables that cannot live in a register. */
 int Registers_GetCSEWeight(COptCSE *tree)
 {
-    Object *object;
-    int result;
     int weight;
     if (tree != NULL) {
         while (tree->expr->type == ETYPCON && tree->expr->rtype->type == tree->expr->data.monadic->rtype->type &&
@@ -343,13 +182,7 @@ int Registers_GetCSEWeight(COptCSE *tree)
             tree = tree->left;
         }
         if (tree->expr->type == EINDIRECT && tree->expr->data.monadic->type == EOBJREF) {
-            object = tree->expr->data.monadic->data.objref;
-            if (object->datatype == DLOCAL && object->u.var.info->noregister == 0) {
-                result = 0;
-            } else {
-                result = 1;
-            }
-            return result;
+            return is_memory_object(tree->expr->data.monadic->data.objref);
         }
         weight = 1;
         if (copts.optimizesize == 0 &&
@@ -363,26 +196,23 @@ int Registers_GetCSEWeight(COptCSE *tree)
 
 void eliminate_common_subexpressions(void)
 {
-    COptCSE *group;
-    int kind;
-    ENode *reference;
-    short cost;
-    OptimizerOccurrence *occurrence;
-    ENode *replacement;
-    ENode *saved;
-    OptimizerOccurrence *scan;
-    int bestCost;
-    int index;
     OptimizerOccurrence *update;
-    COptCSE *bucket;
+    short cost;
+    int kind;
+    ENode *oldLast;
+    int index;
     ENode *objectExpression;
-    ObjectList *objectLink;
-    VarInfo *registerInfo;
+    int bestCost;
     Object *object;
+    COptCSE *group;
+    ENode *reference;
     char changed;
+    VarInfo *registerInfo;
+    COptCSE *bucket;
     COptCSE *best;
     ENode *assignment;
-    ENode *oldLast;
+    ENode *saved;
+    ObjectList *objectLink;
 
     for (;;) {
         index = 0;
@@ -406,17 +236,7 @@ void eliminate_common_subexpressions(void)
                     if (cost > 4) {
                         if (group->replacement != NULL) {
                             data_00581302 = 0;
-                            occurrence = occurrence_list;
-                            replacement = group->replacement;
-                            while (occurrence != NULL) {
-                                if (occurrence->group == group) {
-                                    *occurrence->expression = *replacement;
-                                    data_00581302 += 1;
-                                    occurrence->group = NULL;
-                                    occurrence->expression = NULL;
-                                }
-                                occurrence = occurrence->next;
-                            }
+                            replace_occurrences(group->replacement, group);
                             if (data_00581302 < 1)
                                 CError_FATAL(348);
                             data_005812fe = 1;
@@ -428,8 +248,7 @@ void eliminate_common_subexpressions(void)
                         }
                     }
                 }
-                group = group->next;
-            } while (group != NULL);
+            } while ((group = group->next) != NULL);
         }
         if (changed != 0)
             continue;
@@ -471,16 +290,7 @@ void eliminate_common_subexpressions(void)
         *assignment->data.diadic.right = *best->expr;
         best->expr = assignment->data.diadic.right;
         data_00581302 = 0;
-        scan = occurrence_list;
-        while (scan != NULL) {
-            if (scan->group == best) {
-                *scan->expression = *reference;
-                data_00581302 += 1;
-                scan->group = NULL;
-                scan->expression = NULL;
-            }
-            scan = scan->next;
-        }
+        replace_occurrences(reference, best);
         best->replacement = reference;
         if (data_00581302 < 2)
             CError_FATAL(390);
@@ -511,6 +321,70 @@ void eliminate_common_subexpressions(void)
     }
 }
 
+static COptCSE *COpt_IntConst(ENode *expr)
+{
+    COptCSE *cse;
+    ENode *node;
+
+    for (cse = cse_entries[EINTCONST]; cse; cse = cse->next) {
+        if (expr->rtype == (node = cse->expr)->rtype && CInt64_Equal(node->data.intval, expr->data.intval))
+            return cse;
+    }
+    cse = COpt_NewCSE(expr);
+    cse->next = cse_entries[EINTCONST];
+    cse_entries[EINTCONST] = cse;
+    return cse;
+}
+
+static COptCSE *COpt_FloatConst(ENode *expr)
+{
+    COptCSE *cse;
+    ENode *node;
+    Float value;
+
+    for (cse = cse_entries[EFLOATCONST], value = expr->data.floatval; cse; cse = cse->next) {
+        node = cse->expr;
+        if (CMach_CalcFloatDiadicBool(node->rtype, node->data.floatval.data.value, 360, value.data.value) &&
+            expr->rtype == cse->expr->rtype)
+            return cse;
+    }
+    cse = COpt_NewCSE(expr);
+    cse->next = cse_entries[EFLOATCONST];
+    cse_entries[EFLOATCONST] = cse;
+    return cse;
+}
+
+static COptCSE *COpt_VectorConst(ENode *expr)
+{
+    COptCSE *cse;
+    MWVector128 value;
+
+    for (cse = cse_entries[EVECTOR128CONST], value = expr->data.vector128val; cse; cse = cse->next) {
+        if (CMach_CalcVectorDiadicBool((unsigned int)cse->expr->rtype, &cse->expr->data.vector128val, 360, &value) &&
+            expr->rtype == cse->expr->rtype)
+            return cse;
+    }
+    cse = COpt_NewCSE(expr);
+    cse->next = cse_entries[EVECTOR128CONST];
+    cse_entries[EVECTOR128CONST] = cse;
+    return cse;
+}
+
+static COptCSE *COpt_ObjectRef(ENode *expr)
+{
+    COptCSE *cse = cse_entries[EOBJREF];
+    Object *obj = expr->data.objref;
+
+    for (; cse; cse = cse->next) {
+        if (cse->expr->data.objref == obj)
+            return cse;
+    }
+    cse = COpt_NewCSE(expr);
+    cse->next = cse_entries[EOBJREF];
+    cse_entries[EOBJREF] = cse;
+    return cse;
+}
+
 COptCSE *find_or_create_left_cse(ENode *expr, COptCSE *left)
 {
     COptCSE *entry;
@@ -527,14 +401,7 @@ COptCSE *find_or_create_left_cse(ENode *expr, COptCSE *left)
         }
         entry = entry->next;
     }
-    new_entry = (COptCSE *)oalloc(0x1e);
-    new_entry->expr = expr;
-    new_entry->replacement = NULL;
-    new_entry->block = current_opt_block;
-    new_entry->last = current_cse_expr;
-    new_entry->left = NULL;
-    new_entry->right = NULL;
-    new_entry->uses = 1;
+    new_entry = COpt_NewCSE(expr);
     new_entry->next = cse_entries[expr->type];
     cse_entries[expr->type] = new_entry;
     new_entry->left = left;
@@ -556,14 +423,7 @@ COptCSE *find_or_create_unary_cse(ENode *expr, COptCSE *left)
         }
         entry = entry->next;
     }
-    entry = (COptCSE *)oalloc(30);
-    entry->expr = expr;
-    entry->replacement = NULL;
-    entry->block = current_opt_block;
-    entry->last = current_cse_expr;
-    entry->left = NULL;
-    entry->right = NULL;
-    entry->uses = 1;
+    entry = COpt_NewCSE(expr);
     entry->next = cse_entries[expr->type];
     cse_entries[expr->type] = entry;
     entry->left = left;
@@ -586,14 +446,7 @@ COptCSE *find_or_create_cse(ENode *expr, COptCSE *left, COptCSE *right)
         }
         entry = entry->next;
     }
-    entry = (COptCSE *)oalloc(30);
-    entry->expr = expr;
-    entry->replacement = NULL;
-    entry->block = current_opt_block;
-    entry->last = current_cse_expr;
-    entry->left = NULL;
-    entry->right = NULL;
-    entry->uses = 1;
+    entry = COpt_NewCSE(expr);
     entry->next = cse_entries[expr->type];
     cse_entries[expr->type] = entry;
     entry->left = left;
@@ -617,14 +470,7 @@ COptCSE *find_or_create_commutative_cse(ENode *expr, COptCSE *left, COptCSE *rig
         }
     }
 
-    entry = (COptCSE *)oalloc(30);
-    entry->expr = expr;
-    entry->replacement = NULL;
-    entry->block = current_opt_block;
-    entry->last = current_cse_expr;
-    entry->left = NULL;
-    entry->right = NULL;
-    entry->uses = 1;
+    entry = COpt_NewCSE(expr);
     entry->next = cse_entries[expr->type];
     cse_entries[expr->type] = entry;
     entry->left = left;
@@ -665,16 +511,28 @@ ENode *fn_004c07c0(ENode *expr)
     return NULL;
 }
 
+static void invalidate_memory_cses(void)
+{
+    COptCSE *cse;
+    Object *object;
+
+    for (cse = cse_entries[EINDIRECT]; cse != NULL; cse = cse->next) {
+        if (cse->expr->data.monadic->type == EOBJREF) {
+            object = cse->expr->data.monadic->data.objref;
+            CError_ASSERT(672, object->datatype != DALIAS);
+            if (object->datatype == DLOCAL && object->u.var.info->noregister == 0)
+                continue;
+        }
+        Registers_InvalidateCSE(cse);
+    }
+}
+
 void invalidate_expr_cse(ENode *expression)
 {
     ENode *result;
     Object *identity;
-    Object *object;
     ENode *candidate;
     COptCSE *entry;
-    COptCSE *remaining;
-    Object *remainingObject;
-    COptCSE *allEntries;
     COptCSE *head;
     if (expression == NULL) {
         eliminate_common_subexpressions();
@@ -702,20 +560,7 @@ void invalidate_expr_cse(ENode *expression)
                 }
                 result = fn_004c07c0(expression->data.monadic);
                 if (result == NULL) {
-                    head = cse_entries[4];
-                    remaining = head;
-                    if (head != NULL) {
-                        do {
-                            if (remaining->expr->data.monadic->type == EOBJREF) {
-                                object = remaining->expr->data.monadic->data.objref;
-                                if (object->datatype == DALIAS)
-                                    CError_FATAL(672);
-                                if (object->datatype == DLOCAL && object->u.var.info->noregister == 0)
-                                    continue;
-                            }
-                            Registers_InvalidateCSE(remaining);
-                        } while ((remaining = remaining->next) != NULL);
-                    }
+                    invalidate_memory_cses();
                     return;
                 }
             } while (identity != result->data.objref);
@@ -723,20 +568,19 @@ void invalidate_expr_cse(ENode *expression)
         }
     }
     eliminate_common_subexpressions();
-    head = cse_entries[4];
-    allEntries = head;
-    if (head != NULL) {
-        do {
-            if (allEntries->expr->data.monadic->type == EOBJREF) {
-                remainingObject = allEntries->expr->data.monadic->data.objref;
-                if (remainingObject->datatype == DALIAS)
-                    CError_FATAL(672);
-                if (remainingObject->datatype == DLOCAL && remainingObject->u.var.info->noregister == 0)
-                    continue;
-            }
-            Registers_InvalidateCSE(allEntries);
-        } while ((allEntries = allEntries->next) != NULL);
-    }
+    invalidate_memory_cses();
+}
+
+static void collect_funccall_cse(ENode *expr)
+{
+    ENodeList *arg;
+
+    for (arg = expr->data.funccall.args; arg != NULL; arg = arg->next)
+        collect_expr_cse(arg->node);
+    if (expr->type == EFUNCCALLP)
+        collect_expr_cse(expr->data.funccall.funcref);
+    eliminate_common_subexpressions();
+    invalidate_memory_cses();
 }
 
 Boolean traverse_node_list_reverse(ENodeList *node, FuncArg *value)
@@ -754,28 +598,11 @@ Boolean traverse_node_list_reverse(ENodeList *node, FuncArg *value)
 
 void fn_004c0470(ENode *node)
 {
-    Object *obj;
-    COptCSE *entry;
-    COptCSE *entries;
-
     if (traverse_node_list_reverse(node->data.funccall.args, node->data.funccall.functype->args)) {
         if (node->type == EFUNCCALL)
             collect_expr_cse(node->data.funccall.funcref);
         eliminate_common_subexpressions();
-        entry = entries = cse_entries[4];
-        if (entries) {
-            do {
-                if (entry->expr->data.monadic->type == EOBJREF) {
-                    obj = entry->expr->data.monadic->data.addr.objref;
-                    CError_ASSERT(672, obj->datatype != DALIAS);
-                    if (obj->datatype != DLOCAL || obj->u.var.info->noregister != 0)
-                        Registers_InvalidateCSE(entry);
-                } else {
-                    Registers_InvalidateCSE(entry);
-                }
-                entry = entry->next;
-            } while (entry);
-        }
+        invalidate_memory_cses();
     } else {
         invalidate_expr_cse(NULL);
     }
@@ -785,13 +612,9 @@ void fn_004c0470(ENode *node)
    occurrence recorded; assignments and calls end the subexpressions they may change. */
 COptCSE *collect_expr_cse(ENode *expr)
 {
-    COptCSE *list;
-    OptimizerOccurrence *occ;
-    ENodeList *arg;
     COptCSE *cse;
     COptCSE *left;
     ENode *saved;
-    Object *obj;
     UInt8 type;
 
     switch (type = expr->type) {
@@ -799,20 +622,7 @@ COptCSE *collect_expr_cse(ENode *expr)
             fn_004c0470(expr);
             return NULL;
         case EFUNCCALLP:
-            for (arg = expr->data.funccall.args; arg; arg = arg->next)
-                collect_expr_cse(arg->node);
-            if (expr->type == EFUNCCALLP)
-                collect_expr_cse(expr->data.funccall.funcref);
-            eliminate_common_subexpressions();
-            for (cse = list = cse_entries[4]; list; cse = cse->next, list = cse) {
-                if (cse->expr->data.monadic->type == EOBJREF) {
-                    obj = cse->expr->data.monadic->data.objref;
-                    CError_ASSERT(672, obj->datatype != DALIAS);
-                    if (obj->datatype == DLOCAL && !obj->u.var.info->noregister)
-                        continue;
-                }
-                Registers_InvalidateCSE(cse);
-            }
+            collect_funccall_cse(expr);
             return NULL;
         case EPOSTINC:
         case EPOSTDEC:
@@ -822,7 +632,8 @@ COptCSE *collect_expr_cse(ENode *expr)
             current_cse_expr = expr;
             if (expr->data.monadic->type != EINDIRECT)
                 CError_FATAL(816);
-            COpt_IncDecTarget(expr);
+            collect_expr_cse(expr->data.monadic->data.monadic);
+            invalidate_expr_cse(expr->data.monadic);
             current_cse_expr = saved;
             return NULL;
         case EINDIRECT:
@@ -830,11 +641,11 @@ COptCSE *collect_expr_cse(ENode *expr)
         case EBINNOT:
         case ELOGNOT:
         case EFORCELOAD:
-            cse = find_or_create_left_cse(expr, collect_expr_cse(expr->data.monadic));
-            return COpt_AddOccurrence(expr, cse);
+            left = collect_expr_cse(expr->data.monadic);
+            return COpt_AddOccurrence(find_or_create_left_cse(expr, left), expr);
         case ETYPCON:
-            left = find_or_create_unary_cse(expr, collect_expr_cse(expr->data.monadic));
-            return COpt_AddOccurrence(expr, left);
+            left = collect_expr_cse(expr->data.monadic);
+            return COpt_AddOccurrence(find_or_create_unary_cse(expr, left), expr);
         case EMUL:
         case EMULV:
         case EADDV:
@@ -845,8 +656,8 @@ COptCSE *collect_expr_cse(ENode *expr)
         case EXOR:
         case EOR:
             if ((left = collect_expr_cse(expr->data.diadic.left)), expr->type == type) {
-                cse = find_or_create_commutative_cse(expr, left, collect_expr_cse(expr->data.diadic.right));
-                return COpt_AddOccurrence(expr, cse);
+                cse = collect_expr_cse(expr->data.diadic.right);
+                return COpt_AddOccurrence(find_or_create_commutative_cse(expr, left, cse), expr);
             }
             return NULL;
         case EDIV:
@@ -865,8 +676,8 @@ COptCSE *collect_expr_cse(ENode *expr)
         case EBTST:
             left = collect_expr_cse(expr->data.diadic.left);
             if (expr->type == type) {
-                left = find_or_create_cse(expr, left, collect_expr_cse(expr->data.diadic.right));
-                return COpt_AddOccurrence(expr, left);
+                cse = collect_expr_cse(expr->data.diadic.right);
+                return COpt_AddOccurrence(find_or_create_cse(expr, left, cse), expr);
             }
             return NULL;
         case EASS:
@@ -908,7 +719,7 @@ COptCSE *collect_expr_cse(ENode *expr)
         case EVECTOR128CONST:
             return COpt_VectorConst(expr);
         case EOBJREF:
-            return COpt_ObjectRef(expr, cse_entries[EOBJREF]);
+            return COpt_ObjectRef(expr);
         case EBITFIELD:
             invalidate_expr_cse(NULL);
             return NULL;
@@ -945,29 +756,64 @@ void set_bit(SInt16 *p, SInt16 n)
     p[n >> 4] |= bit_masks[n & 0xf];
 }
 
+static inline void clear_words(COptBlock *p, SInt16 i)
+{
+    p->referenceBits[i] = 0;
+    p->referenceBarrierBits[i] = 0;
+}
+
+static COptBlock *new_block(void)
+{
+    COptBlock *p;
+    SInt16 i, n;
+
+    p = (COptBlock *)lalloc(opt_block_bits_size * 2 + 0x20);
+    p->flag = 0;
+    p->next = NULL;
+    p->pred = NULL;
+    p->succ = NULL;
+    p->unused = 0;
+    p->referenceBits = (SInt16 *)(p + 1);
+    p->referenceBarrierBits = (SInt16 *)((UInt8 *)p + opt_block_bits_size + 0x20);
+    i = 0;
+    n = opt_block_bits_size / 2;
+    for (; i < n; i++) {
+        clear_words(p, i);
+    }
+    return p;
+}
+
+static void mark_object_reference(Object *object, Boolean barrier)
+{
+    VarInfo *info;
+
+    if (object->datatype != DLOCAL)
+        return;
+    info = object->u.var.info;
+    if (!barrier) {
+        set_bit(current_opt_block->referenceBits, info->varnumber);
+        return;
+    }
+    if (test_bit((const SInt16 *)current_opt_block->referenceBits, info->varnumber))
+        return;
+    set_bit(current_opt_block->referenceBarrierBits, info->varnumber);
+}
+
 void mark_dlocal_reference_bits(ENode *node)
 {
     for (;;) {
         switch (node->type) {
             case EINDIRECT:
                 if (node->data.monadic->type == EOBJREF) {
-                    Object *obj = node->data.monadic->data.objref;
-                    if (obj->datatype == DLOCAL)
-                        set_bit(current_opt_block->referenceBits, obj->u.var.info->varnumber);
+                    mark_object_reference(node->data.monadic->data.objref, 0);
                     return;
                 }
                 node = node->data.monadic;
                 break;
 
-            case EOBJREF: {
-                Object *obj = node->data.objref;
-                if (obj->datatype == DLOCAL) {
-                    VarInfo *info = obj->u.var.info;
-                    if (!test_bit((const SInt16 *)current_opt_block->referenceBits, info->varnumber))
-                        set_bit(current_opt_block->referenceBarrierBits, info->varnumber);
-                }
+            case EOBJREF:
+                mark_object_reference(node->data.objref, 1);
                 return;
-            }
 
             case EFUNCCALL:
             case EFUNCCALLP: {
@@ -990,15 +836,8 @@ void mark_dlocal_reference_bits(ENode *node)
             case EASS:
                 if (node->data.diadic.left->type == EINDIRECT &&
                     node->data.diadic.left->data.monadic->type == EOBJREF) {
-                    VarInfo *info;
-                    Object *obj;
                     mark_dlocal_reference_bits(node->data.diadic.right);
-                    obj = node->data.diadic.left->data.monadic->data.objref;
-                    if (obj->datatype == DLOCAL) {
-                        info = obj->u.var.info;
-                        if (!test_bit((const SInt16 *)current_opt_block->referenceBits, info->varnumber))
-                            set_bit(current_opt_block->referenceBarrierBits, info->varnumber);
-                    }
+                    mark_object_reference(node->data.diadic.left->data.monadic->data.objref, 1);
                     return;
                 }
                 /* fallthrough */
@@ -1101,8 +940,8 @@ loop:
 
 void mark_and_propagate_dlocal_reference_bits(void)
 {
-    SInt16 i;
     Statement *item;
+    SInt16 i;
     COptBlock *node;
 
     current_opt_block = opt_blocks;
@@ -1176,23 +1015,21 @@ void build_opt_blocks(Statement *first)
         opt_block_bits_size += 0x20;
         data_005812fc = 0;
     }
-    target = new_block();
-    opt_blocks = block = target;
-    target->items = NULL;
-    target->count = 0;
+    opt_blocks = block = new_block();
+    block->items = NULL;
+    block->count = 0;
     if (first != NULL) {
         successor = lalloc(sizeof(*successor));
         successor->next = NULL;
-        target->succ = successor;
+        block->succ = successor;
         successor->target.statement = first;
     }
     for (objectEntry = arguments; objectEntry != NULL; objectEntry = objectEntry->next) {
-        reg = objectEntry->object->u.var.info->varnumber;
-        target->referenceBarrierBits[reg >> 4] |= bit_masks[reg & 0xf];
+        set_bit(block->referenceBarrierBits, objectEntry->object->u.var.info->varnumber);
     }
     if (first != NULL) {
         for (;;) {
-            block = block->next = new_block2();
+            block = block->next = new_block();
             block->items = first;
             nodeCount = 1;
             for (;;) {
@@ -1302,103 +1139,128 @@ void build_opt_blocks(Statement *first)
     mark_and_propagate_dlocal_reference_bits();
 }
 
+static CLabel *COpt_Follow(CLabel *node, Statement *self)
+{
+    Statement *q;
+
+    for (q = node->stmt; q != NULL; q = q->next) {
+        if (q->type <= 2)
+            continue;
+        if (q == self)
+            return node;
+        if (q->type == ST_GOTO) {
+            if (q->label != node)
+                optimizer_changed = 1;
+            return q->label;
+        }
+        return node;
+    }
+    return node;
+}
+
+static void COptimizer_SimplifyBranch(Statement *stmt)
+{
+    Statement *node;
+    for (node = stmt->next; node != NULL; node = node->next) {
+        if (stmt->label->stmt == node) {
+            stmt->type = ST_NOP;
+            optimizer_changed = 1;
+            return;
+        }
+        if (node->type > 2)
+            break;
+    }
+    stmt->label = COpt_Follow(stmt->label, stmt);
+}
+
+static void fold_constant_branch(Statement *s, Boolean value)
+{
+    Statement *q;
+
+    if ((s->type == ST_IFGOTO && value) || (s->type == ST_IFNGOTO && !value)) {
+        q = lalloc(sizeof(Statement));
+        *q = *s;
+        q->type = ST_GOTO;
+        s->next = q;
+    }
+    s->type = ST_EXPRESSION;
+    optimizer_changed = 1;
+}
+
 void fold_and_invert_conditional_branch(Statement *s)
 {
     Boolean seen;
     Statement *prev;
     Statement *q;
-    Statement *allocated;
     UInt8 kind;
-    Statement *head;
 
     if (iszero(s->expr)) {
-        if (s->type == ST_IFNGOTO) {
-            q = lalloc(sizeof(Statement));
-            *q = *s;
-            q->type = ST_GOTO;
-            s->next = q;
-        }
-        s->type = ST_EXPRESSION;
-        optimizer_changed = 1;
+        fold_constant_branch(s, 0);
         return;
     }
     if (isnotzero(s->expr)) {
-        do {
-            if (s->type != ST_IFGOTO) {
-                if (s->type != ST_IFNGOTO)
-                    break;
-            } else {
-                allocated = lalloc(sizeof(Statement));
-                *allocated = *s;
-                allocated->type = ST_GOTO;
-                s->next = allocated;
-            }
-        } while (0);
-        s->type = ST_EXPRESSION;
-        optimizer_changed = 1;
+        fold_constant_branch(s, 1);
         return;
     }
     seen = 0;
-    q = head = s->next;
-    if (head)
-        do {
-            if ((kind = q->type) > 2) {
-                if (kind == 3) {
-                    if (q->label == s->label) {
-                        s->type = ST_EXPRESSION;
-                        optimizer_changed = 1;
-                        return;
-                    }
-                    if (seen)
-                        break;
-                    prev = q;
-                    for (q = q->next; q != NULL; q = q->next) {
-                        if (q->type > 2)
-                            break;
-                        if (s->label->stmt == q) {
-                            s->label = prev->label;
-                            prev->type = ST_NOP;
-                            if (s->type == ST_IFGOTO)
-                                s->type = ST_IFNGOTO;
-                            else
-                                s->type = ST_IFGOTO;
-                            optimizer_changed = 1;
-                            s->label = COFindOwner(s);
-                            return;
-                        }
-                    }
-                    break;
-                } else if (kind == 8 && q->expr == NULL && data_00581300 == 0 && !seen) {
-                    prev = q;
-                    for (q = q->next; q != NULL; q = q->next) {
-                        if (q->type > 2)
-                            break;
-                        if (s->label->stmt == q) {
-                            s->label = data_0058802c;
-                            data_0058851f = 1;
-                            prev->type = ST_NOP;
-                            if (s->type == ST_IFGOTO)
-                                s->type = ST_IFNGOTO;
-                            else
-                                s->type = ST_IFGOTO;
-                            optimizer_changed = 1;
-                            return;
-                        }
-                    }
-                    break;
-                } else
-                    break;
-            } else {
-                if (kind == 2)
-                    seen = 1;
-                if (s->label->stmt == q) {
+    for (q = s->next; q != NULL; q = q->next) {
+        if ((kind = q->type) > 2) {
+            if (kind == 3) {
+                if (q->label == s->label) {
                     s->type = ST_EXPRESSION;
                     optimizer_changed = 1;
                     return;
                 }
+                if (seen)
+                    break;
+                prev = q;
+                for (q = q->next; q != NULL; q = q->next) {
+                    if (q->type > 2)
+                        break;
+                    if (s->label->stmt == q) {
+                        s->label = prev->label;
+                        prev->type = ST_NOP;
+                        if (s->type == ST_IFGOTO)
+                            s->type = ST_IFNGOTO;
+                        else
+                            s->type = ST_IFGOTO;
+                        optimizer_changed = 1;
+                        s->label = COpt_Follow(s->label, s);
+                        return;
+                    }
+                }
+                break;
+            } else if (kind == 8 && q->expr == NULL && data_00581300 == 0 && !seen) {
+                prev = q;
+                for (q = q->next; q != NULL; q = q->next) {
+                    if (q->type > 2)
+                        break;
+                    if (s->label->stmt == q) {
+                        s->label = data_0058802c;
+                        data_0058851f = 1;
+                        prev->type = ST_NOP;
+                        if (s->type == ST_IFGOTO)
+                            s->type = ST_IFNGOTO;
+                        else
+                            s->type = ST_IFGOTO;
+                        optimizer_changed = 1;
+                        return;
+                    }
+                }
+                break;
+            } else
+                break;
+        } else {
+            if (kind == 2)
+                seen = 1;
+            if (s->label->stmt == q) {
+                s->type = ST_EXPRESSION;
+                optimizer_changed = 1;
+                return;
             }
-        } while ((q = q->next) != NULL);
-    s->label = COFindOwnerPlain(s);
+        }
+    }
+    s->label = COpt_Follow(s->label, s);
 }
 
 void follow_switch_labels_and_fold_constant(Statement *self)
@@ -1408,9 +1270,9 @@ void follow_switch_labels_and_fold_constant(Statement *self)
 
     CError_ASSERT(1731, (b = (SwitchInfo *)self->label) != NULL && b->cases != NULL && b->defaultlabel != NULL);
 
-    b->defaultlabel = COpt_Follow(self, b->defaultlabel);
+    b->defaultlabel = COpt_Follow(b->defaultlabel, self);
     for (p = b->cases; p != NULL; p = p->next)
-        p->label = COpt_Follow(self, p->label);
+        p->label = COpt_Follow(p->label, self);
 
     if (self->expr->type == EINTCONST) {
         for (p = b->cases; p != NULL; p = p->next) {
@@ -1533,12 +1395,12 @@ void COptimizer_CountExpressionObjectUses(ENode *expression)
     for (;;) {
         switch (expression->type) {
             case EOBJREF:
-                RecordObjectUse(expression->data.objref, 1);
+                COptimizer_RecordObjectUse(expression->data.objref, 1);
                 return;
 
             case EINDIRECT:
                 if (expression->data.monadic->type == EOBJREF) {
-                    RecordObjectUse(expression->data.monadic->data.objref, 0);
+                    COptimizer_RecordObjectUse(expression->data.monadic->data.objref, 0);
                     return;
                 }
                 expression = expression->data.monadic;
@@ -1639,6 +1501,21 @@ void COptimizer_CountExpressionObjectUses(ENode *expression)
     }
 }
 
+static void count_statement_object_uses(Statement *list)
+{
+    Statement *statement;
+
+    for (statement = list; statement; statement = statement->next) {
+        if (statement->type >= ST_EXPRESSION && statement->type <= 15 && statement->expr) {
+            set_statement_location(statement);
+            COptimizer_CountExpressionObjectUses(statement->expr);
+        } else if (statement->type == ST_ASM) {
+            set_statement_location(statement);
+            InlineAsm_RecordObjectUses(statement);
+        }
+    }
+}
+
 void mark_reachable_statements(Statement *input)
 {
     Statement *node = input;
@@ -1710,85 +1587,21 @@ void eliminate_unreachable_statements(Statement *items)
     }
 }
 
-static void COpt_IncDecTarget(ENode *expr)
+static inline void CheckStmts(Statement *p)
 {
-    ENode *target = expr->data.monadic;
-
-    collect_expr_cse(target->data.monadic);
-    invalidate_expr_cse(expr->data.monadic);
-}
-
-static COptCSE *COpt_ObjectRef(ENode *expr, COptCSE *cse)
-{
-    Object *obj = expr->data.objref;
-
-    for (; cse; cse = cse->next) {
-        if (cse->expr->data.objref == obj)
-            return cse;
+    if (p) {
+        do {
+            if (p->next == NULL && p->type != ST_GOTO && p->type != ST_RETURN) {
+                CError_Warning(ERR_RETURN_VALUE_EXPECTED);
+                break;
+            }
+            if (p->type == ST_RETURN && p->expr == NULL && !(p->flags & 8)) {
+                CError_Warning(ERR_RETURN_VALUE_EXPECTED);
+                break;
+            }
+            p = p->next;
+        } while (p != NULL);
     }
-    cse = COpt_NewCSE(expr);
-    cse->next = cse_entries[EOBJREF];
-    cse_entries[EOBJREF] = cse;
-    return cse;
-}
-
-static COptCSE *COpt_FloatConst(ENode *expr)
-{
-    COptCSE *cse;
-    ENode *node;
-    Float value;
-
-    for (cse = cse_entries[EFLOATCONST], value = expr->data.floatval; cse; cse = cse->next) {
-        node = cse->expr;
-        if (CMach_CalcFloatDiadicBool(node->rtype, node->data.floatval.data.value, 360, value.data.value) &&
-            expr->rtype == cse->expr->rtype)
-            return cse;
-    }
-    cse = COpt_NewCSE(expr);
-    cse->next = cse_entries[EFLOATCONST];
-    cse_entries[EFLOATCONST] = cse;
-    return cse;
-}
-
-static COptCSE *COpt_IntConst(ENode *expr)
-{
-    COptCSE *cse;
-    ENode *node;
-
-    for (cse = cse_entries[EINTCONST]; cse; cse = cse->next) {
-        if (expr->rtype == (node = cse->expr)->rtype && CInt64_Equal(node->data.intval, expr->data.intval))
-            return cse;
-    }
-    cse = COpt_NewCSE(expr);
-    cse->next = cse_entries[EINTCONST];
-    cse_entries[EINTCONST] = cse;
-    return cse;
-}
-
-/* Records an occurrence of a common subexpression: the expression and the CSE it computes. */
-static inline COptCSE *COpt_AddOccurrence(ENode *expr, COptCSE *cse)
-{
-    OptimizerOccurrence *occ = (OptimizerOccurrence *)oalloc(12);
-
-    occ->next = occurrence_list;
-    occurrence_list = occ;
-    occ->group = cse;
-    occ->expression = expr;
-    return cse;
-}
-
-static COptCSE *COpt_NewCSE(ENode *expr)
-{
-    COptCSE *cse;
-
-    (cse = (COptCSE *)oalloc(30))->expr = expr;
-    cse->replacement = NULL;
-    cse->block = current_opt_block;
-    cse->last = current_cse_expr;
-    cse->left = NULL;
-    cse->right = NULL;
-    cse->uses = 1;
-    return cse;
 }
 
 #pragma auto_inline off
@@ -1806,7 +1619,7 @@ void COptimizer_OptimizeStatementList(Object *unused, Statement *list)
 
     do {
         optimizer_changed = 0;
-        COpt_Pass(list->next);
+        simplify_statement_branches(list->next);
         eliminate_unreachable_statements(list->next);
     } while (optimizer_changed);
 
@@ -1816,40 +1629,6 @@ void COptimizer_OptimizeStatementList(Object *unused, Statement *list)
             *pp = p->next;
         else
             pp = &p->next;
-    }
-}
-
-static inline CLabel *COpt_Follow(Statement *self, CLabel *node)
-{
-    Statement *q;
-
-    for (q = node->stmt; q != NULL; q = q->next) {
-        if (q->type > 2) {
-            if (q != self && q->type == ST_GOTO) {
-                if (q->label != node)
-                    optimizer_changed = 1;
-                return q->label;
-            }
-            return node;
-        }
-    }
-    return node;
-}
-
-static inline void CheckStmts(Statement *p)
-{
-    if (p) {
-        do {
-            if (p->next == NULL && p->type != ST_GOTO && p->type != ST_RETURN) {
-                CError_Warning(ERR_RETURN_VALUE_EXPECTED);
-                break;
-            }
-            if (p->type == ST_RETURN && p->expr == NULL && !(p->flags & 8)) {
-                CError_Warning(ERR_RETURN_VALUE_EXPECTED);
-                break;
-            }
-            p = p->next;
-        } while (p != NULL);
     }
 }
 
@@ -1888,8 +1667,6 @@ void DumpIR_OptimizeStatementList(Object *object, Statement *statements)
 
 Statement *DumpIR_OptimizeStatements(Object *object, Statement *statements)
 {
-    Statement *statement;
-
     data_00588513 = 1;
     if (copts.globaloptimizer)
         statements = IRO_Optimizer(object, statements);
@@ -1897,13 +1674,6 @@ Statement *DumpIR_OptimizeStatements(Object *object, Statement *statements)
     COptimizer_OptimizeStatementList(object, statements);
     if (object && !(object->qual & Q_INLINE))
         COptimizer_CheckStmtsForNonVoidFunction(object, statements);
-    for (statement = statements->next; statement; statement = statement->next) {
-        if (statement->type >= ST_EXPRESSION && statement->type <= 15 && statement->expr) {
-            optimize_expression(statement);
-        } else if (statement->type == ST_ASM) {
-            set_statement_location(statement);
-            InlineAsm_RecordObjectUses(statement);
-        }
-    }
+    count_statement_object_uses(statements->next);
     return statements;
 }

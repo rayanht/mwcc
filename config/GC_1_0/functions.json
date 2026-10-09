@@ -15483,7 +15483,7 @@
     "source": "src/optimizer/COptimizer.c"
   },
   {
-    "name": "fn_0049c410",
+    "name": "COpt_AddOccurrence",
     "address": "0x0049c410",
     "size": 40,
     "source": "src/optimizer/COptimizer.c"
@@ -15501,13 +15501,13 @@
     "source": "src/optimizer/COptimizer.c"
   },
   {
-    "name": "fn_0049c500",
+    "name": "replace_occurrences",
     "address": "0x0049c500",
     "size": 75,
     "source": "src/optimizer/COptimizer.c"
   },
   {
-    "name": "fn_0049c550",
+    "name": "is_memory_object",
     "address": "0x0049c550",
     "size": 28,
     "source": "src/optimizer/COptimizer.c"
@@ -15543,7 +15543,7 @@
     "source": "src/optimizer/COptimizer.c"
   },
   {
-    "name": "fn_0049ca40",
+    "name": "COpt_VectorConst",
     "address": "0x0049ca40",
     "size": 123,
     "source": "src/optimizer/COptimizer.c"
@@ -15591,7 +15591,7 @@
     "source": "src/optimizer/COptimizer.c"
   },
   {
-    "name": "fn_0049cdd0",
+    "name": "invalidate_memory_cses",
     "address": "0x0049cdd0",
     "size": 86,
     "source": "src/optimizer/COptimizer.c"
@@ -15603,7 +15603,7 @@
     "source": "src/optimizer/COptimizer.c"
   },
   {
-    "name": "COpt_IncDecTarget",
+    "name": "collect_funccall_cse",
     "address": "0x0049cf00",
     "size": 60,
     "source": "src/optimizer/COptimizer.c"
@@ -15639,13 +15639,13 @@
     "source": "src/optimizer/COptimizer.c"
   },
   {
-    "name": "fn_0049d2c0",
+    "name": "new_block",
     "address": "0x0049d2c0",
     "size": 324,
     "source": "src/optimizer/COptimizer.c"
   },
   {
-    "name": "fn_0049d410",
+    "name": "mark_object_reference",
     "address": "0x0049d410",
     "size": 104,
     "source": "src/optimizer/COptimizer.c"
@@ -15681,19 +15681,19 @@
     "source": "src/optimizer/COptimizer.c"
   },
   {
-    "name": "fn_0049da30",
+    "name": "COpt_Follow",
     "address": "0x0049da30",
     "size": 61,
     "source": "src/optimizer/COptimizer.c"
   },
   {
-    "name": "fn_0049da70",
+    "name": "COptimizer_SimplifyBranch",
     "address": "0x0049da70",
     "size": 66,
     "source": "src/optimizer/COptimizer.c"
   },
   {
-    "name": "fn_0049dac0",
+    "name": "fold_constant_branch",
     "address": "0x0049dac0",
     "size": 73,
     "source": "src/optimizer/COptimizer.c"
@@ -15729,13 +15729,13 @@
     "source": "src/optimizer/COptimizer.c"
   },
   {
-    "name": "fn_0049df10",
+    "name": "COptimizer_CountExpressionObjectUses",
     "address": "0x0049df10",
     "size": 236,
     "source": "src/optimizer/COptimizer.c"
   },
   {
-    "name": "COptimizer_CountExpressionObjectUses",
+    "name": "count_statement_object_uses",
     "address": "0x0049e000",
     "size": 81,
     "source": "src/optimizer/COptimizer.c"

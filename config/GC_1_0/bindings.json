@@ -2731,5 +2731,8 @@
   "_elf_header": "0x0055871c",
   "_shstrtab_section": "0x00558cce",
   "_symbol_string_table_section": "0x00558cca",
-  "_data_005884a0": "0x00558c98"
+  "_data_005884a0": "0x00558c98",
+  "_data_005884ca": "0x00558cc2",
+  "_data_00588513": "0x00558d07",
+  "_data_0058851f": "0x00558d13"
 }

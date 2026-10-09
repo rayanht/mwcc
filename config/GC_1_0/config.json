@@ -5,6 +5,7 @@
     "auto,deferred": "on"
   },
   "matching": [
+    "src/backend/BE_elf.c",
     "src/backend/BE_symbol.c",
     "src/backend/BitVectors.c",
     "src/backend/Coloring.c",
@@ -158,6 +159,7 @@
     "src/msl/wscanf.c",
     "src/optimizer/AddPropagation.c",
     "src/optimizer/CIRTransform.c",
+    "src/optimizer/COptimizer.c",
     "src/optimizer/CodeMotion.c",
     "src/optimizer/ConstantPropagation.c",
     "src/optimizer/CopyPropagation.c",
