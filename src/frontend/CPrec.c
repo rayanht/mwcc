@@ -90,7 +90,9 @@ static inline SInt32 hash_cprec_bytes(SInt32 value);
 static void CPrec_AppendString(const char *s);
 static void CPrec_AppendWord16(SInt16 v);
 static void CPrec_AppendWord32(SInt32 v);
-static CPrecWrittenEntry *CPrec_FindRecord(const void *key);
+static void append_image_word(UInt32 v);
+static void CPrec_FindRecord(HashNameNode *key);
+static void append_object_offset(void *key);
 static inline UInt32 CPrec_HashPtr(const void *key);
 static inline void append_data_and_count_bytes(void *data, SInt32 len);
 static inline void *CPrec_AppendAlign_004de900(void);
@@ -118,24 +120,10 @@ static ObjNameSpace *CPrec_GetObjNameSpacePatch(ObjNameSpace *obj);
 static NameSpaceList *CPrec_GetNSUsingPatch(NameSpaceList *u);
 static inline void putlong(SInt32 value);
 static void put(UInt8 c);
-static inline SInt16 CPrec_Flush(void);
-static inline void read_precompiled_header_data(SInt32 offset, void *buffer, SInt32 size);
+static SInt16 CPrec_Flush(void);
 static void read_precompiled_header_data_at_offset(SInt32 offset, void *buffer, SInt32 size);
-static inline void CPrec_ReadData(SInt32 offset, void *buffer, SInt32 size);
 
-static inline SInt16 align_output(SInt16 handle, SInt32 *position)
-{
-    char padding[8];
-    SInt32 count;
-    SInt16 result;
-    if ((*position & 7) == 0)
-        return 0;
-    count = 8 - (*position & 7);
-    memclrw(padding, 8);
-    result = COS_FileWrite(handle, padding, count);
-    *position += count;
-    return result;
-}
+static SInt16 align_output(SInt16 handle, SInt32 *position);
 
 static inline SInt32 CPrec_AlignedPosition(void)
 {
@@ -353,33 +341,7 @@ static inline void append(void *p, int size)
     prec_position += size;
 }
 
-static inline SInt16 flush(void)
-{
-    SInt16 err;
-    if (data_00581c28) {
-        alignbuf();
-        flushed_size += precompiled_buffer.size;
-        COS_LockHandle(precompiled_buffer.data);
-        err = encode_zero_runs(*precompiled_buffer.data, precompiled_buffer.size);
-        COS_UnlockHandle(precompiled_buffer.data);
-        precompiled_buffer.size = 0;
-    } else
-        err = 0;
-    return err;
-}
-
-static inline SInt16 checkflush(void)
-{
-    SInt16 err;
-    SInt32 size;
-    if ((size = precompiled_buffer.size) > data_00581c2a)
-        data_00581c2a = size;
-    if (precompiled_buffer.size > 10000) {
-        if ((err = flush()) != 0)
-            return data_00581c26 = err;
-    }
-    return 0;
-}
+static SInt16 checkflush(void);
 
 /* writing the image */
 /* image offset */
@@ -1123,57 +1085,6 @@ static inline UInt32 CPrec_AppendAlign_004df7a0(void)
     return prec_position;
 }
 
-static inline void CPrec_AppendLong(UInt32 v)
-{
-    if (data_00581c28)
-        AppendGListLong(&precompiled_buffer, v);
-    prec_position += 4;
-}
-
-static inline void CPrec_AppendShort(SInt16 v)
-{
-    if (data_00581c28)
-        AppendGListWord(&precompiled_buffer, v);
-    prec_position += 2;
-}
-
-static inline void CPrec_AppendByte(UInt8 v)
-{
-    if (data_00581c28)
-        AppendGListByte(&precompiled_buffer, v);
-    prec_position += 1;
-}
-
-static inline void CPrec_AppendOffset(void *key)
-{
-    CPrecWrittenEntry *r;
-    SerializedBucketEntry *np;
-
-    if (key != NULL) {
-        if ((r = CPrec_FindRecord(key)) == NULL)
-            CError_FATAL(621);
-        if (data_00581c28) {
-            np = (SerializedBucketEntry *)lalloc(8);
-            np->offset = prec_position;
-            np->next = serialized_bucket_entries;
-            serialized_bucket_entries = np;
-            if ((np->offset & 0x80000001) != 0)
-                CError_FATAL(628);
-        }
-        CPrec_AppendLong((UInt32)r->image_position);
-    } else {
-        CPrec_AppendLong(0);
-    }
-}
-
-static inline void CPrec_AppendObj(HashNameNode *key)
-{
-    if (key != NULL) {
-        CPrec_AppendOffset(key);
-        key->id = 1;
-    }
-}
-
 /* writing the image */
 /* image offset */
 /* image buffer handle */
@@ -1248,6 +1159,18 @@ void CException_AddPendingBuffer(Object *owner, const void *buffer, OLinkList *v
     entry->value = copy_relocation_list(value);
 }
 
+static void initialize_written_entry_buckets(void)
+{
+    written_entry_buckets = (CPrecWrittenEntry **)lalloc(0x4000 * sizeof(*written_entry_buckets));
+    memclrw(written_entry_buckets, 0x4000 * sizeof(*written_entry_buckets));
+}
+
+static void initialize_pointer_type_buckets(void)
+{
+    data_00581c02 = (CPrecWrittenEntry **)lalloc(0x400 * sizeof(CPrecWrittenEntry *));
+    memclrw(data_00581c02, 0x400 * sizeof(CPrecWrittenEntry *));
+}
+
 #pragma auto_inline off
 unsigned int CException_HashType(Type *type)
 {
@@ -1306,6 +1229,28 @@ void add_written_type_entry(Type *key, int imagePosition)
     *slot = entry;
 }
 #pragma auto_inline reset
+
+static CPrecWrittenEntry *CPrec_Find(SInt32 id)
+{
+    CPrecWrittenEntry *n;
+    for (n = ((CPrecWrittenEntry **)written_entry_buckets)[hash_cprec_bytes(id)]; n != NULL; n = n->next)
+        if (n->object == (void *)id)
+            return n;
+    return NULL;
+}
+
+static void prepend_written_entry_to_hash_bucket(TypeBitfield *key, TypeBitfield *value)
+{
+    CPrecWrittenEntry **bucket;
+    CPrecWrittenEntry *n;
+
+    bucket = &written_entry_buckets[hash_value_bytes((SInt32)key)];
+    n = (CPrecWrittenEntry *)lalloc(sizeof(CPrecWrittenEntry));
+    n->object = key;
+    n->image_position = value;
+    n->next = *bucket;
+    *bucket = n;
+}
 
 void build_global_pointer_entries(void)
 {
@@ -1650,15 +1595,6 @@ int patch_object_reference(SInt32 location, HashNameNode *object)
 }
 #pragma auto_inline reset
 
-static CPrecWrittenEntry *CPrec_Find(SInt32 id)
-{
-    CPrecWrittenEntry *n;
-    for (n = ((CPrecWrittenEntry **)written_entry_buckets)[hash_cprec_bytes(id)]; n != NULL; n = n->next)
-        if (n->object == (void *)id)
-            return n;
-    return NULL;
-}
-
 static inline SInt32 hash_cprec_bytes(SInt32 value)
 {
     CPrecBytes b;
@@ -1686,6 +1622,72 @@ unsigned int align_to_four_byte_boundary(void)
     return prec_position;
 }
 #pragma auto_inline reset
+
+static void put(UInt8 c)
+{
+    if (data_00581c28 != 0)
+        AppendGListByte(&precompiled_buffer, c);
+    prec_position++;
+}
+
+static void CPrec_AppendWord16(SInt16 v)
+{
+    if (data_00581c28)
+        AppendGListWord(&precompiled_buffer, v);
+    prec_position += 2;
+}
+
+static void append_image_word(UInt32 v)
+{
+    if (data_00581c28)
+        AppendGListLong(&precompiled_buffer, v);
+    prec_position += 4;
+}
+
+static void CPrec_AppendWord32(SInt32 v)
+{
+    if (data_00581c28)
+        AppendGListLong(&precompiled_buffer, v);
+    prec_position += 4;
+}
+
+static void append_object_offset(void *key)
+{
+    CPrecWrittenEntry *r;
+    SerializedBucketEntry *np;
+
+    if (key != NULL) {
+        if ((r = CPrec_Find((SInt32)key)) == NULL)
+            CError_FATAL(621);
+        if (data_00581c28) {
+            np = (SerializedBucketEntry *)lalloc(8);
+            np->offset = prec_position;
+            np->next = serialized_bucket_entries;
+            serialized_bucket_entries = np;
+            if ((np->offset & 0x80000001) != 0)
+                CError_FATAL(628);
+        }
+        CPrec_AppendWord32((UInt32)r->image_position);
+    } else {
+        CPrec_AppendWord32(0);
+    }
+}
+
+static void CPrec_FindRecord(HashNameNode *key)
+{
+    if (key != NULL) {
+        append_object_offset(key);
+        key->id = 1;
+    }
+}
+
+static void CPrec_AppendString(const char *s)
+{
+    SInt32 len = strlen(s) + 1;
+    if (data_00581c28)
+        AppendGListData(&precompiled_buffer, (void *)s, len);
+    prec_position += len;
+}
 
 #pragma auto_inline off
 void fn_004e0010(void *data, UInt32 size)
@@ -1783,17 +1785,17 @@ void serialize_macros(void)
         if (data_00581c28)
             prec_header->macroOffsets[i] = pos;
         for (;;) {
-            CPrec_AppendLong(0);
+            CPrec_AppendWord32(0);
 
-            CPrec_AppendObj(p->name);
-            CPrec_AppendOffset(p->text);
+            CPrec_FindRecord(p->name);
+            append_object_offset(p->text);
 
-            CPrec_AppendShort(p->nargs);
-            CPrec_AppendByte(p->flag);
-            CPrec_AppendByte(p->isExpanding);
+            CPrec_AppendWord16(p->nargs);
+            put(p->flag);
+            put(p->isExpanding);
 
             for (j = 1; j < (p->nargs & 0x7fff); j++)
-                CPrec_AppendObj(p->args[j - 1]);
+                CPrec_FindRecord(p->args[j - 1]);
 
             p = p->next;
             if (p == NULL)
@@ -3967,6 +3969,19 @@ ObjType *append_objtype_image(ObjType *x)
 }
 #pragma auto_inline reset
 
+static ObjNameSpace *CPrec_GetObjNameSpacePatch(ObjNameSpace *obj)
+{
+    CPrecWrittenEntry *e;
+    ObjNameSpace *p;
+
+    if ((e = CPrec_FindAddrPatch(obj)))
+        return e->image_position;
+    CPrec_NewAddrPatch(obj, p = CPrec_AppendAlign());
+    CPrec_AppendData(obj, 6);
+    add_serialized_bucket_entry((SInt32)(&p->nspace), get_namespace_patch(obj->nspace));
+    return p;
+}
+
 SInt32 serialize_membervars(ObjMemberVar *object)
 {
     SInt32 offset;
@@ -4265,10 +4280,31 @@ SInt32 write_namespace_name(NameSpaceName *namespaceName, Boolean allowFlush)
         namespaceName = namespaceName->next;
         currentPosition = nextPosition;
         addpatch(namespaceName, patchPosition);
-        if (allowFlush && data_00581c28 && checkflush())
-            break;
+        if (allowFlush && data_00581c28) {
+            if (checkflush())
+                break;
+        }
     }
     return firstPosition;
+}
+
+static NameSpaceList *CPrec_GetNSUsingPatch(NameSpaceList *u)
+{
+    NameSpaceList *first;
+    NameSpaceList *current;
+    NameSpaceList *next;
+
+    first = current = CPrec_AppendAlign();
+    while (1) {
+        CPrec_AppendData(u, sizeof(NameSpaceList));
+        add_serialized_bucket_entry((SInt32)(&current->nspace), get_namespace_patch(u->nspace));
+        if (!u->next)
+            break;
+        add_serialized_bucket_entry((SInt32)(&current->next), (SInt32)(next = CPrec_AppendAlign()));
+        current = next;
+        u = u->next;
+    }
+    return first;
 }
 
 SInt32 get_namespace_patch(NameSpace *nspace)
@@ -4599,64 +4635,17 @@ void write_serialized_buckets(void)
                 entryCount = entryCount + 1;
             }
             if (entryCount != 0) {
-                if (data_00581c28 != '\0') {
-                    AppendGListLong(&precompiled_buffer, entryCount);
-                }
-                prec_position += 4;
-                if (data_00581c28 != '\0') {
-                    AppendGListLong(&precompiled_buffer, bucketIndex);
-                }
-                prec_position += 4;
+                append_image_word(entryCount);
+                append_image_word(bucketIndex);
                 for (entry = serialized_buckets[bucketIndex].list; entry != NULL; entry = entry->next) {
                     value = entry->offset;
-                    if (data_00581c28 != '\0') {
-                        AppendGListLong(&precompiled_buffer, value);
-                    }
-                    prec_position += 4;
+                    append_image_word(value);
                 }
             }
             bucketIndex = bucketIndex + 1;
         } while (bucketIndex < serialized_bucket_count);
     }
-    if (data_00581c28 != '\0') {
-        AppendGListLong(&precompiled_buffer, 0);
-    }
-    prec_position += 4;
-}
-
-static void CPrec_AppendString(const char *s)
-{
-    SInt32 len = strlen(s) + 1;
-    if (data_00581c28)
-        AppendGListData(&precompiled_buffer, (void *)s, len);
-    prec_position += len;
-}
-
-static void CPrec_AppendWord16(SInt16 v)
-{
-    if (data_00581c28)
-        AppendGListWord(&precompiled_buffer, v);
-    prec_position += 2;
-}
-
-static void CPrec_AppendWord32(SInt32 v)
-{
-    if (data_00581c28)
-        AppendGListLong(&precompiled_buffer, v);
-    prec_position += 4;
-}
-
-static CPrecWrittenEntry *CPrec_FindRecord(const void *key)
-{
-    CPrecWrittenEntry *r;
-
-    r = written_entry_buckets[CPrec_HashPtr(key)];
-    while (r != NULL) {
-        if (r->object == key)
-            return r;
-        r = r->next;
-    }
-    return NULL;
+    append_image_word(0);
 }
 
 static inline UInt32 CPrec_HashPtr(const void *key)
@@ -4731,19 +4720,6 @@ static inline void *pad_precompiled_buffer(void)
         }
     }
     return (void *)prec_position;
-}
-
-static void prepend_written_entry_to_hash_bucket(TypeBitfield *key, TypeBitfield *value)
-{
-    CPrecWrittenEntry **bucket;
-    CPrecWrittenEntry *n;
-
-    bucket = &written_entry_buckets[hash_value_bytes((SInt32)key)];
-    n = (CPrecWrittenEntry *)lalloc(sizeof(CPrecWrittenEntry));
-    n->object = key;
-    n->image_position = value;
-    n->next = *bucket;
-    *bucket = n;
 }
 
 /* writing the image */
@@ -4916,36 +4892,15 @@ static inline int fn_004da6c0_part1(int p)
 /* append byte */
 /* append data */
 
-static ObjNameSpace *CPrec_GetObjNameSpacePatch(ObjNameSpace *obj)
+static void write_saved_token_patches(void)
 {
-    CPrecWrittenEntry *e;
-    ObjNameSpace *p;
+    SavedPrepTokenList *node;
 
-    if ((e = CPrec_FindAddrPatch(obj)))
-        return e->image_position;
-    CPrec_NewAddrPatch(obj, p = CPrec_AppendAlign());
-    CPrec_AppendData(obj, 6);
-    add_serialized_bucket_entry((SInt32)(&p->nspace), get_namespace_patch(obj->nspace));
-    return p;
-}
-
-static NameSpaceList *CPrec_GetNSUsingPatch(NameSpaceList *u)
-{
-    NameSpaceList *first;
-    NameSpaceList *current;
-    NameSpaceList *next;
-
-    first = current = CPrec_AppendAlign();
-    while (1) {
-        CPrec_AppendData(u, sizeof(NameSpaceList));
-        add_serialized_bucket_entry((SInt32)(&current->nspace), get_namespace_patch(u->nspace));
-        if (!u->next)
-            break;
-        add_serialized_bucket_entry((SInt32)(&current->next), (SInt32)(next = CPrec_AppendAlign()));
-        current = next;
-        u = u->next;
+    for (node = saved_prep_tokens; node != NULL; node = node->next) {
+        append_image_word((UInt32)node->offset);
+        append_image_word(node->count);
     }
-    return first;
+    append_image_word(0);
 }
 
 short encode_zero_runs(char *data, int size)
@@ -4995,6 +4950,46 @@ short encode_zero_runs(char *data, int size)
     return 0;
 }
 
+static SInt16 CPrec_Flush(void)
+{
+    if (data_00581c28 != 0) {
+        SInt16 r;
+        char **buffer;
+        CPrec_Pad();
+        flushed_size += precompiled_buffer.size;
+        COS_LockHandle(precompiled_buffer.data);
+        buffer = precompiled_buffer.data;
+        r = encode_zero_runs(*buffer, precompiled_buffer.size);
+        COS_UnlockHandle(precompiled_buffer.data);
+        precompiled_buffer.size = 0;
+        return r;
+    }
+    return 0;
+}
+
+static inline void putlong(SInt32 value)
+{
+    BVWord u;
+    u.l = value;
+    put(u.b[3]);
+    put(u.b[2]);
+    put(u.b[1]);
+    put(u.b[0]);
+}
+
+static SInt16 checkflush(void)
+{
+    SInt16 err;
+    SInt32 size;
+    if ((size = precompiled_buffer.size) > data_00581c2a)
+        data_00581c2a = size;
+    if (precompiled_buffer.size > 10000) {
+        if ((err = CPrec_Flush()) != 0)
+            return data_00581c26 = err;
+    }
+    return 0;
+}
+
 SInt32 write_serialized_bucket_offsets(void)
 {
     SerializedBucketEntry *p;
@@ -5022,33 +5017,14 @@ SInt32 write_serialized_bucket_offsets(void)
     return count;
 }
 
-static inline void putlong(SInt32 value)
-{
-    BVWord u;
-    u.l = value;
-    put(u.b[3]);
-    put(u.b[2]);
-    put(u.b[1]);
-    put(u.b[0]);
-}
-
-static void put(UInt8 c)
-{
-    if (data_00581c28 != 0)
-        AppendGListByte(&precompiled_buffer, c);
-    prec_position++;
-}
-
 /* Returns an error code. */
 SInt16 serialize_precompiled_data(Boolean writePositions)
 {
     SInt32 blockPosition;
 
     freelheap();
-    written_entry_buckets = (CPrecWrittenEntry **)lalloc(0x4000 * sizeof(*written_entry_buckets));
-    memclrw(written_entry_buckets, 0x4000 * sizeof(*written_entry_buckets));
-    data_00581c02 = (CPrecWrittenEntry **)lalloc(0x400 * sizeof(CPrecWrittenEntry *));
-    memclrw(data_00581c02, 0x400 * sizeof(CPrecWrittenEntry *));
+    initialize_written_entry_buckets();
+    initialize_pointer_type_buckets();
     serialized_bucket_entries = NULL;
     saved_prep_tokens = NULL;
     prec_position = 0;
@@ -5232,21 +5208,18 @@ SInt16 serialize_precompiled_data(Boolean writePositions)
     return 0;
 }
 
-static inline SInt16 CPrec_Flush(void)
+static SInt16 align_output(SInt16 handle, SInt32 *position)
 {
-    if (data_00581c28 != 0) {
-        SInt16 r;
-        char **buffer;
-        CPrec_Pad();
-        flushed_size += precompiled_buffer.size;
-        COS_LockHandle(precompiled_buffer.data);
-        buffer = precompiled_buffer.data;
-        r = encode_zero_runs(*buffer, precompiled_buffer.size);
-        COS_UnlockHandle(precompiled_buffer.data);
-        precompiled_buffer.size = 0;
-        return r;
-    }
-    return 0;
+    char padding[8];
+    SInt32 count;
+    SInt16 result;
+    if ((*position & 7) == 0)
+        return 0;
+    count = 8 - (*position & 7);
+    memclrw(padding, 8);
+    result = COS_FileWrite(handle, padding, count);
+    *position += count;
+    return result;
 }
 
 SInt16 write_precompiled_file(void)
@@ -5254,10 +5227,8 @@ SInt16 write_precompiled_file(void)
     SInt32 position;
     char message[128];
     HashNameNode *node;
-    SavedPrepTokenList *patchNode;
     SInt32 bucket;
     SInt16 error;
-    SInt32 value;
 
     if (InitGList(&precompiled_buffer, 0x40000))
         CError_LongJump();
@@ -5335,19 +5306,7 @@ SInt16 write_precompiled_file(void)
 
     if (saved_prep_tokens != NULL) {
         precompiled_buffer.size = 0;
-        for (patchNode = saved_prep_tokens; patchNode != NULL; patchNode = patchNode->next) {
-            value = (SInt32)patchNode->offset;
-            if (data_00581c28)
-                AppendGListLong(&precompiled_buffer, value);
-            prec_position += 4;
-            value = patchNode->count;
-            if (data_00581c28)
-                AppendGListLong(&precompiled_buffer, value);
-            prec_position += 4;
-        }
-        if (data_00581c28)
-            AppendGListLong(&precompiled_buffer, 0);
-        prec_position += 4;
+        write_saved_token_patches();
         prec_header->sourcePatchSize = precompiled_buffer.size;
         prec_header->sourcePatchOffset = position;
         error = COS_FileWrite(precompiled_file, *precompiled_buffer.data, precompiled_buffer.size);
@@ -5390,13 +5349,7 @@ int CPrec_WritePrecompiledFile(void)
         messageKind = 4;
         error = write_precompiled_file();
     }
-    if (precompiled_file != 0) {
-        COS_FileClose(precompiled_file);
-        precompiled_file = 0;
-    }
-    if (precompiled_buffer.data != NULL) {
-        FreeGList(&precompiled_buffer);
-    }
+    fn_004e0970();
     if (error != 0) {
         CompilerGetCString(messageKind, message);
         sprintf(error_message_buffer, message, error);
@@ -5408,6 +5361,12 @@ int CPrec_WritePrecompiledFile(void)
         context = (CPrepCU *)cprep_cu;
         CWPluginsPrivate_CallFileProcessingCallback(context->context, &fileInfo, (void **)&fileHandle, 1);
     }
+}
+
+static void read_precompiled_header_data_at_offset(SInt32 offset, void *buffer, SInt32 size)
+{
+    if (COS_FileSetPos(precompiled_file, offset) != 0 || COS_FileRead(precompiled_file, buffer, size) != 0)
+        CError_FatalError(ERR_ILLEGAL_DATA_PRECOMPILED_HEADER);
 }
 
 void decompress_precompiled_header(void)
@@ -5426,9 +5385,7 @@ void decompress_precompiled_header(void)
         precompiled_header_base = dst;
         src = dst + size - prec_header->compressedSize;
         csize = prec_header->compressedSize;
-        if (COS_FileSetPos(precompiled_file, prec_header->dataOffset) != 0 ||
-            COS_FileRead(precompiled_file, src, csize) != 0)
-            CError_FatalError(ERR_ILLEGAL_DATA_PRECOMPILED_HEADER);
+        read_precompiled_header_data_at_offset(prec_header->dataOffset, src, csize);
     } else {
         dst = galloc(prec_header->fileSize);
         precompiled_header_base = dst;
@@ -5465,7 +5422,7 @@ void apply_relocations(void)
     if (remaining != 0) {
         if (data_00581c1e == NULL) {
             relocations = lalloc(prec_header->relocationSize);
-            read_precompiled_header_data(prec_header->relocationOffset, relocations, prec_header->relocationSize);
+            read_precompiled_header_data_at_offset(prec_header->relocationOffset, relocations, prec_header->relocationSize);
         } else {
             relocations = data_00581c1e + prec_header->relocationOffset;
         }
@@ -5494,12 +5451,6 @@ void apply_relocations(void)
         if (cursor != relocations)
             CError_FatalError(ERR_ILLEGAL_DATA_PRECOMPILED_HEADER);
     }
-}
-
-static inline void read_precompiled_header_data(SInt32 offset, void *buffer, SInt32 size)
-{
-    if (COS_FileSetPos(precompiled_file, offset) != 0 || COS_FileRead(precompiled_file, buffer, size) != 0)
-        CError_FatalError(ERR_ILLEGAL_DATA_PRECOMPILED_HEADER);
 }
 
 UInt8 *apply_object_patches(void)
@@ -5533,12 +5484,6 @@ UInt8 *apply_object_patches(void)
     return base;
 }
 
-static void read_precompiled_header_data_at_offset(SInt32 offset, void *buffer, SInt32 size)
-{
-    if (COS_FileSetPos(precompiled_file, offset) != 0 || COS_FileRead(precompiled_file, buffer, size) != 0)
-        CError_FatalError(ERR_ILLEGAL_DATA_PRECOMPILED_HEADER);
-}
-
 void patch_buffered_token_locations(void)
 {
     TStreamElement *token;
@@ -5556,7 +5501,7 @@ void patch_buffered_token_locations(void)
 
         if (data_00581c1e == NULL) {
             patchCursor = lalloc(prec_header->sourcePatchSize);
-            CPrec_ReadData(prec_header->sourcePatchOffset, patchCursor, prec_header->sourcePatchSize);
+            read_precompiled_header_data_at_offset(prec_header->sourcePatchOffset, patchCursor, prec_header->sourcePatchSize);
         } else {
             input.bytes = data_00581c1e + prec_header->sourcePatchOffset;
             patchCursor = input.words;
@@ -5575,12 +5520,6 @@ void patch_buffered_token_locations(void)
             }
         }
     }
-}
-
-static inline void CPrec_ReadData(SInt32 offset, void *buffer, SInt32 size)
-{
-    if (COS_FileSetPos(precompiled_file, offset) != 0 || COS_FileRead(precompiled_file, buffer, size) != 0)
-        CError_FatalError(ERR_ILLEGAL_DATA_PRECOMPILED_HEADER);
 }
 
 void restore_macro_lists(void)
@@ -5627,17 +5566,58 @@ void restore_macro_lists(void)
     } while (list_index < 2048);
 }
 
+static void restore_pointer_offsets(SInt32 *offsets, SInt32 count, CPrecPtrU *entries)
+{
+    SInt32 index;
+    UInt8 *base;
+    SInt32 offset;
+
+    base = precompiled_header_base;
+    for (index = 0; index < count; index++) {
+        if ((offset = *offsets) != 0)
+            entries->address = base + offset;
+        else
+            entries->address = NULL;
+        offsets++;
+        entries++;
+    }
+}
+
+static void restore_root_namespace(void)
+{
+    CError_ASSERT(4845, cscope_root->is_hash != 0);
+    cscope_root->names = prec_header->nameCount;
+    restore_pointer_offsets(prec_header->namespaceNameOffsets, 0x400, (CPrecPtrU *)cscope_root->data.hash);
+}
+
+static void reset_loaded_hash_name_ids(void)
+{
+    HashNameNode *name;
+    SInt32 bucket;
+    bucket = 0;
+    do {
+        name = data_00587f88[bucket];
+        if (name) {
+            do {
+                name->id = -1;
+                name = name->next;
+            } while (name != NULL);
+        }
+    } while (++bucket < 0x800);
+}
+
+static void declare_pending_buffers(void)
+{
+    PendingBuffer *record;
+    record = pending_buffers;
+    pending_buffers = NULL;
+    for (; record != NULL; record = record->next)
+        CInit_DeclareData(record->owner, record->buffer, record->value, record->entryValue);
+}
+
 void CPrec_LoadPrecompiledHeader(short file, UInt8 *buffer)
 {
     struct CPrecHeader *header;
-    SInt32 offset;
-    UInt8 *base;
-    SInt32 index;
-    SInt32 bucket;
-    HashNameNode *name;
-    SInt32 *offsets;
-    HashNameNode **hashEntries;
-    PendingBuffer *record;
 
     precompiled_file = file;
     data_00581c1e = buffer;
@@ -5648,8 +5628,7 @@ void CPrec_LoadPrecompiledHeader(short file, UInt8 *buffer)
     if (data_00581c1e == NULL) {
         prec_header = galloc(sizeof(struct CPrecHeader));
         header = prec_header;
-        if (COS_FileSetPos(precompiled_file, 0) != 0 || COS_FileRead(precompiled_file, header, sizeof(*header)) != 0)
-            CError_FatalError(ERR_ILLEGAL_DATA_PRECOMPILED_HEADER);
+        read_precompiled_header_data_at_offset(0, header, sizeof(*header));
     } else {
         header = (struct CPrecHeader *)data_00581c1e;
         prec_header = header;
@@ -5668,56 +5647,14 @@ void CPrec_LoadPrecompiledHeader(short file, UInt8 *buffer)
     apply_relocations();
     apply_object_patches();
 
-    offsets = prec_header->hashNameOffsets;
-    hashEntries = data_00587f88;
-    base = precompiled_header_base;
-    index = 0;
-    do {
-        offset = *offsets;
-        if (offset != 0)
-            *hashEntries = (HashNameNode *)(base + offset);
-        else
-            *hashEntries = NULL;
-        offsets++;
-        hashEntries++;
-    } while (++index < 0x800);
+    restore_pointer_offsets(prec_header->hashNameOffsets, 0x800, (CPrecPtrU *)data_00587f88);
 
-    bucket = 0;
-    do {
-        name = data_00587f88[bucket];
-        if (name) {
-            do {
-                name->id = -1;
-                name = name->next;
-            } while (name != NULL);
-        }
-    } while (++bucket < 0x800);
+    reset_loaded_hash_name_ids();
 
     restore_macro_lists();
     patch_buffered_token_locations();
 
-    CError_ASSERT(4845, cscope_root->is_hash != 0);
-    {
-        SInt32 namespaceOffset;
-        UInt8 *namespaceBase;
-        SInt32 namespaceIndex;
-        SInt32 *namespaceOffsets;
-        NameSpaceName **namespaceEntries;
-
-        cscope_root->names = prec_header->nameCount, namespaceEntries = cscope_root->data.hash;
-        namespaceOffsets = prec_header->namespaceNameOffsets;
-        namespaceBase = precompiled_header_base;
-        namespaceIndex = 0;
-        do {
-            namespaceOffset = *namespaceOffsets;
-            if (namespaceOffset != 0)
-                *namespaceEntries = (NameSpaceName *)(namespaceBase + namespaceOffset);
-            else
-                *namespaceEntries = NULL;
-            namespaceOffsets++;
-            namespaceEntries++;
-        } while (++namespaceIndex < 0x400);
-    }
+    restore_root_namespace();
 
     if (!prec_header->usingsOffset)
         cscope_root->usings = NULL;
@@ -5796,17 +5733,13 @@ void CPrec_LoadPrecompiledHeader(short file, UInt8 *buffer)
     objc_string_constant_count = prec_header->objcStringConstantCount;
 
     precompiled_file = 0;
-    if (precompiled_buffer.data != NULL)
-        FreeGList(&precompiled_buffer);
+    fn_004e0970();
     cscope_current = cscope_root;
     if (!CParser_ReInitRuntimeObjects(1))
         CError_FatalError(ERR_ILLEGAL_DATA_PRECOMPILED_HEADER);
     CPrep_RegisterPredefinedMacros();
 
     if (cprep_cu[0xe0] != 1) {
-        record = pending_buffers;
-        pending_buffers = NULL;
-        for (; record != NULL; record = record->next)
-            CInit_DeclareData(record->owner, record->buffer, record->value, record->entryValue);
+        declare_pending_buffers();
     }
 }

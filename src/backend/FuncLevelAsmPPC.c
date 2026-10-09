@@ -269,9 +269,12 @@ void fn_004e6e30(void)
 
 static void append_assembly(Statement *stmt, PCodeBlock *block)
 {
-    ParsedAsmInstruction *q = (ParsedAsmInstruction *)stmt->expr;
-    PCodeAssemblyEntry *n = (PCodeAssemblyEntry *)lalloc(12);
-    memclrw(n, 12);
+    ParsedAsmInstruction *q;
+    PCodeAssemblyEntry *n;
+
+    q = (ParsedAsmInstruction *)stmt->expr;
+    n = (PCodeAssemblyEntry *)lalloc(sizeof(*n));
+    memclrw(n, sizeof(PCodeAssemblyEntry));
     n->object = q->data.directive.object;
     n->block = block;
     *assembly_list_tail = n;
@@ -283,14 +286,11 @@ void FuncLevelAsmPPC_GenerateFunction(Object *func)
 {
     Statement *list;
     Statement *node;
-    union {
-        ParsedAsmInstruction *assembly;
-        PCodeLabel *label;
-    } item;
+    ParsedAsmInstruction *assembly;
     const char *functionName;
     UInt8 frameFinalized;
-    UInt8 savedOptionC2;
     PCodeBlock *frameBlock;
+    UInt8 savedOptionC2;
     UInt8 savedOptionC3;
 #if VERSION == VERSION_GC_1_0
     PCodeBlock *prologueBlock;
@@ -392,15 +392,15 @@ void FuncLevelAsmPPC_GenerateFunction(Object *func)
 
     for (node = list->next; node != NULL; node = node->next) {
         switch (node->type) {
-            case ST_ASM:
-                item.assembly = (ParsedAsmInstruction *)node->expr;
-                if (item.assembly != NULL) {
-                    if ((item.assembly->specialFlags & 1) != 0) {
-                        if (item.assembly->opcode == 1) {
+            case ST_ASM: {
+                assembly = (ParsedAsmInstruction *)node->expr;
+                if (assembly != NULL) {
+                    if ((assembly->specialFlags & 1) != 0) {
+                        if (assembly->opcode == 1) {
                             PCodeUtilities_ResolveLabel(PCode_NewLabel());
                             gCurrentBlock->line = node->sourceoffset;
                             append_assembly(node, gCurrentBlock);
-                        } else if (item.assembly->opcode == 4) {
+                        } else if (assembly->opcode == 4) {
                             PCodeUtilities_ResolveLabel(PCode_NewLabel());
                             (gReturnBlock = gCurrentBlock)->flags |= 2;
                             CheckCLabels();
@@ -433,14 +433,15 @@ void FuncLevelAsmPPC_GenerateFunction(Object *func)
                     }
                 }
                 break;
+            }
 
             case ST_LABEL:
-                if ((item.label = node->label->pclabel)->resolved == 0)
-                    PCodeUtilities_ResolveLabel(item.label);
+                if (node->label->pclabel->resolved == 0)
+                    PCodeUtilities_ResolveLabel(node->label->pclabel);
                 break;
 
             default:
-                CError_FATAL(597);
+                CError_FATAL(VERSION == VERSION_GC_1_0 ? 575 : 597);
         }
     }
 

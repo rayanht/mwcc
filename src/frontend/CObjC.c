@@ -35,151 +35,8 @@ SInt32 selector_reference_count;
 struct Type *id_type;
 UInt8 data_00588507;
 
-#define MATCH_BODY()                                                                                                   \
-    do {                                                                                                               \
-        MessageArgument *matchedArgument;                                                                              \
-        ObjCParameterNode *matchedParameter;                                                                           \
-        ENodeList *extra;                                                                                              \
-        extra = extraArgs;                                                                                             \
-        if (arguments->expression != 0) {                                                                              \
-            matchedParameter = method->args;                                                                           \
-            matchedArgument = arguments;                                                                               \
-            for (;;) {                                                                                                 \
-                matchedArgument->expression =                                                                          \
-                    argumentpromotion(matchedArgument->expression, matchedParameter->type, matchedParameter->qual, 1); \
-                matchedArgument = matchedArgument->next;                                                               \
-                if (matchedArgument == 0)                                                                              \
-                    break;                                                                                             \
-                matchedParameter = matchedParameter->next;                                                             \
-                if (matchedParameter == 0)                                                                             \
-                    CError_FATAL(2998);                                                                                \
-            }                                                                                                          \
-        }                                                                                                              \
-        while (extra != 0) {                                                                                           \
-            extra->node = CExpr_VarArgPromotion(extra->node, 1);                                                       \
-            extra = extra->next;                                                                                       \
-        }                                                                                                              \
-    } while (0)
-
 static struct ObjCDefinition *category_definitions;
 static struct NamedObjectCacheEntry *named_object_cache;
-
-static inline Type *FindNamedPointerType(char *name, Boolean required)
-{
-    NameSpaceObjectList *node;
-    Type *t;
-
-    node = CScope_FindName(cscope_root, GetHashNameNode(name));
-    if (node != NULL && node->object->otype == OT_TYPE) {
-        if ((t = OBJ_TYPE(node->object)->type)->type == TYPEPOINTER)
-            return t;
-        CError_ReportError(ERR_OBJECTIVE_C_TYPE_UNEXPECTED_TYPE, name);
-    } else if (required) {
-        CError_ReportError(ERR_OBJECTIVE_C_TYPE_UNDEFINED_SHOULD_DEFINED, name);
-    }
-    return NULL;
-}
-
-static inline Type *GetSelType(Boolean required)
-{
-    Type *t;
-
-    if (sel_type)
-        return sel_type;
-    if ((t = FindNamedPointerType("SEL", required)) == NULL)
-        return (Type *)&void_ptr;
-    return sel_type = t;
-}
-
-static inline CRec *FindProtocol(HashNameNode *name)
-{
-    CRec *p;
-
-    for (p = data_00588064; p; p = p->next) {
-        if (p->name == name)
-            break;
-    }
-    return p;
-}
-
-static inline TypeClass *fn_00504c90_inline1(void)
-{
-    HashNameNode *v0;
-    NameSpaceObjectList *v1;
-    TypeClass *v3;
-    v0 = GetHashNameNode("NSConstantString");
-    v1 = CScope_FindName(cscope_root, v0);
-    if ((int)v1 != 0 && ((ObjType *)v1->object)->otype == 1) {
-        if ((v3 = (TypeClass *)((ObjType *)v1->object)->type)->type == 5 && v3->objcinfo != NULL) {
-            return v3;
-        }
-    }
-    CError_ReportError(ERR_NOT_OBJECTIVE_C_CLASS, v0->name);
-    return NULL;
-}
-
-static inline Type *FindNamedPointerType_504fb0(char *name, Boolean required)
-{
-    NameSpaceObjectList *node;
-    Type *t;
-
-    node = CScope_FindName(cscope_root, GetHashNameNode(name));
-    if (node != NULL && node->object->otype == OT_TYPE) {
-        if ((t = OBJ_TYPE(node->object)->type)->type == TYPEPOINTER)
-            return t;
-        CError_ReportError(ERR_OBJECTIVE_C_TYPE_UNEXPECTED_TYPE, name);
-    } else if (required) {
-        CError_ReportError(ERR_OBJECTIVE_C_TYPE_UNDEFINED_SHOULD_DEFINED, name);
-    }
-    return NULL;
-}
-
-static inline Type *GetIdType_504fb0(Boolean required)
-{
-    Type *t;
-
-    if (class_pointer_type)
-        return id_type;
-    if ((t = FindNamedPointerType_504fb0("id", required)) == NULL)
-        return (Type *)&void_ptr;
-    return id_type = t;
-}
-
-static inline Type *GetClassType_504fb0(Boolean required)
-{
-    Type *t;
-
-    if (class_pointer_type)
-        return class_pointer_type;
-    if ((t = FindNamedPointerType_504fb0("Class", required)) == NULL)
-        return (Type *)&void_ptr;
-    return class_pointer_type = t;
-}
-
-static inline Boolean IsIdType_504fb0(Type *ty)
-{
-    if (ty->type == TYPEPOINTER) {
-        if (&ty->type == &void_ptr.type)
-            return 0;
-        ty = TPTR_TARGET(ty);
-        if (ty == TPTR_TARGET(GetIdType_504fb0(0)))
-            return 1;
-        if (ty == TPTR_TARGET(GetClassType_504fb0(0)))
-            return 1;
-    }
-    return 0;
-}
-
-static inline CRec *FindRec(HashNameNode *nm)
-{
-    CRec *q;
-
-    for (q = data_00588064; q != NULL; q = q->next) {
-        if (q->name == nm)
-            break;
-    }
-    return q;
-}
 
 static inline void CopyInheritedItem(MethRec *dest, MethRec *src)
 {
@@ -189,18 +46,6 @@ static inline void CopyInheritedItem(MethRec *dest, MethRec *src)
     dest->args = src->args;
     dest->isvararg = src->isvararg;
     dest->isinst = src->isinst;
-}
-
-static inline TypeClass *CObjC_FindClass(NameSpaceObjectList *nsol, HashNameNode *nm)
-{
-    TypeClass *theclass;
-
-    if (nsol == NULL || OBJ_BASE(nsol->object)->otype != OT_TYPE ||
-        (theclass = (TypeClass *)OBJ_TYPE(nsol->object)->type)->type != TYPECLASS || theclass->objcinfo == NULL) {
-        CError_ReportError(ERR_NOT_OBJECTIVE_C_CLASS, nm->name);
-        theclass = NULL;
-    }
-    return theclass;
 }
 
 static inline Boolean CObjC_SameMemberList(ObjectList *a, ObjectList *b)
@@ -242,60 +87,6 @@ static inline void CObjC_PrependMember(TypeClass *cls, MethRec *member)
     cls->objcinfo->methods = member;
 }
 
-static inline Type *GetIdType(Boolean required)
-{
-    Type *t;
-
-    if (class_pointer_type)
-        return id_type;
-    if ((t = FindNamedPointerType("id", required)) == NULL)
-        return (Type *)&void_ptr;
-    return id_type = t;
-}
-
-static inline Type *GetClassType(Boolean required)
-{
-    Type *t;
-
-    if (class_pointer_type)
-        return class_pointer_type;
-    if ((t = FindNamedPointerType("Class", required)) == NULL)
-        return (Type *)&void_ptr;
-    return class_pointer_type = t;
-}
-
-static inline Boolean IsIdType(Type *ty)
-{
-    if (ty->type == TYPEPOINTER) {
-        if (&ty->type == &void_ptr.type)
-            return 0;
-        ty = TPTR_TARGET(ty);
-        if (ty == TPTR_TARGET(GetIdType(0)))
-            return 1;
-        if (ty == TPTR_TARGET(GetClassType(0)))
-            return 1;
-    }
-    return 0;
-}
-
-static inline Type *GetSelTypeWrapper(Boolean required)
-{
-    return GetSelType(required);
-}
-
-static inline Boolean IsSelType(Type *ty)
-{
-    Type *t;
-    Type *sel;
-
-    if (ty->type != TYPEPOINTER)
-        return 0;
-    t = TPTR_TARGET(ty);
-    sel = (struct Type *)(SInt32)GetSelTypeWrapper(1);
-    CError_ASSERT(844, sel->type == TYPEPOINTER);
-    return t == TPTR_TARGET((Type *)sel);
-}
-
 static inline void CopyItem(MethRec *n, MethRec *e)
 {
     n->selector = e->selector;
@@ -307,15 +98,6 @@ static inline void CopyItem(MethRec *n, MethRec *e)
     n->defined = 0;
 }
 
-static inline CRec *FindNamedRec(void *obj, CRec *list)
-{
-    for (; list != NULL; list = list->next) {
-        if (list->name == (HashNameNode *)obj)
-            break;
-    }
-    return list;
-}
-
 static inline ObjectList *FindObject(void *obj, ObjectList *list)
 {
     for (; list != NULL; list = list->next) {
@@ -325,181 +107,44 @@ static inline ObjectList *FindObject(void *obj, ObjectList *list)
     return list;
 }
 
-static inline TypeClass *find_objc_class(HashNameNode *name)
-{
-    NameSpaceObjectList *list;
-    TypeClass *type;
-
-    list = CScope_FindName(cscope_root, name);
-    if (list != NULL && OBJ_BASE(list->object)->otype == OT_TYPE &&
-        (type = (TypeClass *)OBJ_TYPE(list->object)->type)->type == TYPECLASS && type->objcinfo != NULL)
-        return type;
-    CError_ReportError(ERR_NOT_OBJECTIVE_C_CLASS, name->name);
-    return NULL;
-}
-
-static inline FuncArg *ObjC_NewArg(TypeFunc *f, HashNameNode *name, Type *type, UInt32 qual)
-{
-    FuncArg *a;
-    if ((a = f->args) != NULL) {
-        while (a->next != NULL)
-            a = a->next;
-        a->next = CParser_NewFuncArg();
-        a = a->next;
-    } else {
-        f->args = CParser_NewFuncArg();
-        a = f->args;
-    }
-    a->name = name;
-    a->type = type;
-    a->qual = qual;
-    return a;
-}
-
-static inline FuncArg *AppendFirst(TypeFunc *f, Type *type)
-{
-    FuncArg *a;
-    HashNameNode *name = this_self_name;
-    if ((a = f->args) != NULL) {
-        while (a->next != NULL)
-            a = a->next;
-        a->next = CParser_NewFuncArg();
-        a = a->next;
-    } else {
-        f->args = CParser_NewFuncArg();
-        a = f->args;
-    }
-    a->name = name;
-    a->type = type;
-    a->qual = 0;
-    return a;
-}
-
-static inline FuncArg *NewFirstArg(TypeFunc *f)
-{
-    SInt32 type = (SInt32)GetIdType(1);
-    return AppendFirst(f, (Type *)type);
-}
-
-static inline Boolean ObjCMethodTypesEqual(Type *type, Type *other)
-{
-    if (copts.objc_strict == 0 && CObjC_IsIdCompatiblePointerPair(type, other) != 0)
-        return 1;
-    return iscpp_typeequal(type, other);
-}
-
 /* "id" */
 
-static inline Type *find_named_pointer_type(char *name, Boolean required)
-{
-    NameSpaceObjectList *node;
-    Type *t;
-
-    node = CScope_FindName(cscope_root, GetHashNameNode(name));
-    if (node != NULL && node->object->otype == OT_TYPE) {
-        if ((t = OBJ_TYPE(node->object)->type)->type == TYPEPOINTER)
-            return t;
-        CError_ReportError(ERR_OBJECTIVE_C_TYPE_UNEXPECTED_TYPE, name);
-    } else if (required) {
-        CError_ReportError(ERR_OBJECTIVE_C_TYPE_UNDEFINED_SHOULD_DEFINED, name);
-    }
-    return NULL;
-}
-
-static inline Type *get_id_type(Boolean required)
-{
-    Type *t;
-
-    if (class_pointer_type)
-        return id_type;
-    if ((t = find_named_pointer_type("id", required)) == NULL)
-        return (Type *)&void_ptr;
-    return id_type = t;
-}
-
-static inline Type *lookup_named_pointer_type(char *name, Boolean required)
-{
-    NameSpaceObjectList *node;
-    Type *t;
-
-    node = CScope_FindName(cscope_root, GetHashNameNode(name));
-    if (node != NULL && node->object->otype == OT_TYPE) {
-        if ((t = OBJ_TYPE(node->object)->type)->type == TYPEPOINTER)
-            return t;
-        CError_ReportError(ERR_OBJECTIVE_C_TYPE_UNEXPECTED_TYPE, name);
-    } else if (required) {
-        CError_ReportError(ERR_OBJECTIVE_C_TYPE_UNDEFINED_SHOULD_DEFINED, name);
-    }
-    return NULL;
-}
-
-static inline Type *lookup_id_type(Boolean required)
-{
-    Type *t;
-
-    if (class_pointer_type)
-        return id_type;
-    if ((t = lookup_named_pointer_type("id", required)) == NULL)
-        return (Type *)&void_ptr;
-    return id_type = t;
-}
-
-static inline Type *get_class_pointer_type(Boolean required)
-{
-    Type *t;
-
-    if (class_pointer_type)
-        return class_pointer_type;
-    if ((t = lookup_named_pointer_type("Class", required)) == NULL)
-        return (Type *)&void_ptr;
-    return class_pointer_type = t;
-}
-
-static inline Type *find_id_type(Boolean required)
-{
-    NameSpaceObjectList *node;
-    Type *t;
-
-    node = CScope_FindName(cscope_root, GetHashNameNode("id"));
-    if (node != NULL && node->object->otype == OT_TYPE) {
-        if ((t = OBJ_TYPE(node->object)->type)->type == TYPEPOINTER)
-            return t;
-        CError_ReportError(ERR_OBJECTIVE_C_TYPE_UNEXPECTED_TYPE, "id");
-    } else if (required) {
-        CError_ReportError(ERR_OBJECTIVE_C_TYPE_UNDEFINED_SHOULD_DEFINED, "id");
-    }
-    return NULL;
-}
-
 /* Data of the original file that none of its linked code uses. */
-
-static inline HashEntry *FindHashNode(HashNameNode *name)
-{
-    struct HashEntry *rec;
-
-    if (selector_hash == NULL)
-        return NULL;
-    rec = selector_hash[name->hashval & 0x3ff];
-    while (rec != NULL) {
-        if (rec->name == name)
-            break;
-        rec = rec->next;
-    }
-    return (HashEntry *)rec;
-}
-
-static inline Boolean SamePtr(void *x, void *y)
-{
-    if (copts.objc_strict == 0) {
-        if (CObjC_IsIdCompatiblePointerPair(x, y))
-            return 1;
-    }
-    return iscpp_typeequal(x, y);
-}
 
 static inline void clear_word(unsigned char *storage)
 {
     *(unsigned int *)storage = 0;
+}
+
+static inline CRec *FindProtocol(HashNameNode *name)
+{
+    CRec *p;
+
+    for (p = data_00588064; p; p = p->next) {
+        if (p->name == name)
+            break;
+    }
+    return p;
+}
+
+static inline CRec *FindRec(HashNameNode *nm)
+{
+    CRec *q;
+
+    for (q = data_00588064; q != NULL; q = q->next) {
+        if (q->name == nm)
+            break;
+    }
+    return q;
+}
+
+static inline CRec *FindNamedRec(void *obj, CRec *list)
+{
+    for (; list != NULL; list = list->next) {
+        if (list->name == (HashNameNode *)obj)
+            break;
+    }
+    return list;
 }
 
 void CObjCModern_ResetGlobals(void)
@@ -522,6 +167,11 @@ void CObjCModern_ResetGlobals(void)
 void fn_00509df0(void)
 {
     return;
+}
+
+static HashNameNode *ObjC_GetSelfName(void)
+{
+    return this_self_name;
 }
 
 char *CObjCModern_ConcatStrings(char *first, char *second, char *third)
@@ -591,6 +241,40 @@ Object *fn_00509c40(char *name, short kind)
     return entry->object;
 }
 
+static HashEntry *FindHashNode(HashNameNode *name)
+{
+    struct HashEntry *rec;
+
+    if (selector_hash == NULL)
+        return NULL;
+    rec = selector_hash[name->hashval & 0x3ff];
+    while (rec != NULL) {
+        if (rec->name == name)
+            break;
+        rec = rec->next;
+    }
+    return (HashEntry *)rec;
+}
+
+static HashEntry *ObjC_NewSelector(HashNameNode *name)
+{
+    HashEntry *record;
+    HashEntry **bucket;
+
+    if (selector_hash == NULL) {
+        selector_hash = galloc(1024 * sizeof(*selector_hash));
+        memclrw(selector_hash, 1024 * sizeof(*selector_hash));
+    }
+    record = galloc(sizeof(HashEntry));
+    record->obj = NULL;
+    record->name = name;
+    record->methods = NULL;
+    bucket = &selector_hash[name->hashval & 0x3ff];
+    record->next = *bucket;
+    *bucket = record;
+    return record;
+}
+
 HashEntry *CObjCModern_FindMessageArgumentHashEntry(struct MessageArgument *p)
 {
     HashNameNode *node;
@@ -612,17 +296,17 @@ HashEntry *CObjCModern_FindMessageArgumentHashEntry(struct MessageArgument *p)
         COS_UnlockHandle(data_00583548.data);
     }
 
-    if (selector_hash == NULL) {
-        e = NULL;
-    } else {
-        e = selector_hash[node->hashval & 0x3ff];
-        while (e != NULL) {
-            if (e->name == node)
-                break;
-            e = e->next;
-        }
-    }
+    e = FindHashNode(node);
     return e;
+}
+
+static Boolean ObjC_TypesEqual(Type *x, Type *y)
+{
+    if (copts.objc_strict == 0) {
+        if (CObjC_IsIdCompatiblePointerPair(x, y))
+            return 1;
+    }
+    return iscpp_typeequal(x, y);
 }
 
 Boolean CObjCModern_CompareMethRecs(struct MethRec *left, struct MethRec *right)
@@ -630,7 +314,7 @@ Boolean CObjCModern_CompareMethRecs(struct MethRec *left, struct MethRec *right)
     ObjCParameterNode *leftEntry;
     ObjCParameterNode *rightEntry;
 
-    if (SamePtr(left->rtype, right->rtype) && left->rqual == right->rqual && left->isvararg == right->isvararg) {
+    if (ObjC_TypesEqual(left->rtype, right->rtype) && left->rqual == right->rqual && left->isvararg == right->isvararg) {
         leftEntry = left->args;
         rightEntry = right->args;
         for (;;) {
@@ -641,7 +325,7 @@ Boolean CObjCModern_CompareMethRecs(struct MethRec *left, struct MethRec *right)
             if (leftEntry->selectorName != rightEntry->selectorName || leftEntry->qual != rightEntry->qual)
                 return 0;
             if (leftEntry->type != NULL) {
-                if (rightEntry->type == NULL || !SamePtr(rightEntry->type, rightEntry->type))
+                if (rightEntry->type == NULL || !ObjC_TypesEqual(rightEntry->type, rightEntry->type))
                     return 0;
             } else if (rightEntry->type != NULL) {
                 return 0;
@@ -658,7 +342,6 @@ HashEntry *CObjCModern_RegisterMethodSelector(MethRec *method)
     ObjCParameterNode *parameter;
     HashNameNode *name;
     HashEntry *record;
-    HashEntry **bucket;
     SelectorMethod *methodNode;
 
     if (method->args->next == NULL && method->args->type == NULL) {
@@ -677,23 +360,11 @@ HashEntry *CObjCModern_RegisterMethodSelector(MethRec *method)
     }
 
     if ((record = FindHashNode(name)) == NULL) {
-        HashEntry *newRecord;
         methodNode = galloc(sizeof(SelectorMethod));
         methodNode->next = NULL;
         methodNode->method = method;
-        if (selector_hash == NULL) {
-            selector_hash = galloc(1024 * sizeof(*selector_hash));
-            memclrw(selector_hash, 1024 * sizeof(*selector_hash));
-        }
-        newRecord = galloc(sizeof(HashEntry));
-        newRecord->obj = NULL;
-        newRecord->name = name;
-        newRecord->methods = NULL;
-        bucket = &selector_hash[name->hashval & 0x3ff];
-        newRecord->next = *bucket;
-        *bucket = newRecord;
-        record = newRecord;
-        newRecord->methods = methodNode;
+        record = ObjC_NewSelector(name);
+        record->methods = methodNode;
     } else {
         for (methodNode = record->methods; methodNode != NULL; methodNode = methodNode->next) {
             if (CObjCModern_CompareMethRecs(methodNode->method, method))
@@ -742,6 +413,16 @@ Object *CObjCModern_GetSelectorReference(HashEntry *p)
     return p->obj;
 }
 
+static Object *CObjC_MakeObject(char *name1, char *name2, SInt32 size)
+{
+    Object *object = CParser_NewCompilerDefDataObject();
+
+    object->name = CParser_NameConcat(name1, name2);
+    object->type = CDecl_NewStructType(size, 4);
+    CScope_AddObject(object->nspace, object->name, (ObjBase *)object);
+    return object;
+}
+
 Object *CObjCModern_GetOrCreateFunctionObject(char *identifier, char *identifier2)
 {
     UInt8 savedState;
@@ -773,6 +454,21 @@ Object *CObjCModern_GetOrCreateFunctionObject(char *identifier, char *identifier
         CScope_AddObject(cscope_root, name, (ObjBase *)newObject);
     copts.cplusplus = savedState;
     return newObject;
+}
+
+static Object *ObjC_GetMessageSendFunction(Boolean isSuper, Boolean structureResult)
+{
+    if (isSuper) {
+        if (structureResult)
+            return CObjCModern_GetOrCreateFunctionObject("objc_msgSendSuper_stret", "objc_msgSendSuper_stret");
+        else
+            return CObjCModern_GetOrCreateFunctionObject("objc_msgSendSuper", "objc_msgSendSuper");
+    } else {
+        if (structureResult)
+            return CObjCModern_GetOrCreateFunctionObject("objc_msgSend_stret", "objc_msgSend_stret");
+        else
+            return CObjCModern_GetOrCreateFunctionObject("objc_msgSend", "objc_msgSend");
+    }
 }
 
 /* The linker stripped the function that used these literals; they stay in the unit's .data. */
@@ -840,10 +536,7 @@ void CObjCModern_GenerateSymbolTableAndModule(void)
             categoryDefinition = categoryDefinition->next;
             index++;
         }
-        object = CParser_NewCompilerDefDataObject();
-        object->name = CParser_NameConcat("", "L_OBJC_SYMBOLS");
-        object->type = CDecl_NewStructType(size, 4);
-        CScope_AddObject(object->nspace, object->name, (ObjBase *)object);
+        object = CObjC_MakeObject("", "L_OBJC_SYMBOLS", size);
         object->sclass = TK_STATIC;
         object->section = 0x1a;
         CInit_DeclareData(object, symbols, references, object->type->size);
@@ -862,14 +555,53 @@ void CObjCModern_GenerateSymbolTableAndModule(void)
         reference->obj = object;
         reference->offset = 0xc;
         reference->addend = 0;
-        object = CParser_NewCompilerDefDataObject();
-        object->name = CParser_NameConcat("", "L_OBJC_MODULES");
-        object->type = CDecl_NewStructType(0x10, 4);
-        CScope_AddObject(object->nspace, object->name, (ObjBase *)object);
+        object = CObjC_MakeObject("", "L_OBJC_MODULES", 0x10);
         object->sclass = TK_STATIC;
         object->section = 0x19;
         CInit_DeclareData(object, &module, reference, object->type->size);
     }
+}
+
+static TypeClass *ObjC_FindClass(HashNameNode *name, Boolean required)
+{
+    NameSpaceObjectList *list;
+    TypeClass *type;
+
+    list = CScope_FindName(cscope_root, name);
+    if (list == NULL || list->object->otype != OT_TYPE ||
+        (type = TYPE_CLASS(OBJ_TYPE(list->object)->type))->type != TYPECLASS || type->objcinfo == NULL) {
+        if (list != NULL || required)
+            CError_ReportError(ERR_NOT_OBJECTIVE_C_CLASS, name->name);
+        return NULL;
+    }
+    return type;
+}
+
+static Type *FindNamedPointerType(char *name, Boolean required)
+{
+    NameSpaceObjectList *node;
+    Type *t;
+
+    node = CScope_FindName(cscope_root, GetHashNameNode(name));
+    if (node != NULL && node->object->otype == OT_TYPE) {
+        if ((t = OBJ_TYPE(node->object)->type)->type == TYPEPOINTER)
+            return t;
+        CError_ReportError(ERR_OBJECTIVE_C_TYPE_UNEXPECTED_TYPE, name);
+    } else if (required) {
+        CError_ReportError(ERR_OBJECTIVE_C_TYPE_UNDEFINED_SHOULD_DEFINED, name);
+    }
+    return NULL;
+}
+
+static Type *GetClassType(Boolean required)
+{
+    Type *t;
+
+    if (class_pointer_type)
+        return class_pointer_type;
+    if ((t = FindNamedPointerType("Class", required)) == NULL)
+        return (Type *)&void_ptr;
+    return class_pointer_type = t;
 }
 
 Type *CObjC_GetIdType(Boolean required)
@@ -878,9 +610,23 @@ Type *CObjC_GetIdType(Boolean required)
 
     if (class_pointer_type)
         return id_type;
-    if ((t = find_id_type(required)) == NULL)
+    if ((t = FindNamedPointerType("id", required)) == NULL)
         return (Type *)&void_ptr;
     return id_type = t;
+}
+
+Boolean IsIdType(Type *ty)
+{
+    if (ty->type == TYPEPOINTER) {
+        if (&ty->type == &void_ptr.type)
+            return 0;
+        ty = TPTR_TARGET(ty);
+        if (ty == TPTR_TARGET(CObjC_GetIdType(0)))
+            return 1;
+        if (ty == TPTR_TARGET(GetClassType(0)))
+            return 1;
+    }
+    return 0;
 }
 
 Boolean CObjC_IsIdOrSelType(Type *ty)
@@ -889,9 +635,9 @@ Boolean CObjC_IsIdOrSelType(Type *ty)
         if (ty == (Type *)&void_ptr)
             return FALSE;
         ty = TPTR_TARGET(ty);
-        if (ty == TPTR_TARGET(lookup_id_type(0)))
+        if (ty == TPTR_TARGET(CObjC_GetIdType(0)))
             return TRUE;
-        if (ty == TPTR_TARGET(get_class_pointer_type(0)))
+        if (ty == TPTR_TARGET(GetClassType(0)))
             return TRUE;
     }
     return FALSE;
@@ -917,6 +663,29 @@ Boolean CObjC_IsIdCompatiblePointerPair(Type *leftType, Type *rightType)
     return 0;
 }
 
+static Type *GetSelType(void)
+{
+    Type *t;
+
+    if (sel_type)
+        return sel_type;
+    if ((t = FindNamedPointerType("SEL", 1)) == NULL)
+        return (Type *)&void_ptr;
+    return sel_type = t;
+}
+
+static Boolean IsSelType(Type *ty)
+{
+    TypePointer *sel;
+
+    if (ty->type != TYPEPOINTER)
+        return 0;
+    ty = TPTR_TARGET(ty);
+    sel = TYPE_POINTER(GetSelType());
+    CError_ASSERT(844, sel->type == TYPEPOINTER);
+    return ty == sel->target;
+}
+
 TypeClass *find_or_create_objc_class(HashNameNode *name)
 {
     TypeClass *classType;
@@ -938,20 +707,32 @@ TypeClass *find_or_create_objc_class(HashNameNode *name)
         classType = CDecl_DefineClass(cscope_root, name, NULL, 2, 1, 1);
         classType->flags |= CLASS_SINGLE_OBJECT;
         classType->objcinfo = info;
-        classObject = CParser_NewCompilerDefDataObject();
-        classObject->name = CParser_NameConcat("L_OBJC_CLASS_", name->name);
-        classObject->type = CDecl_NewStructType(0x28, 4);
-        CScope_AddObject(classObject->nspace, classObject->name, (ObjBase *)classObject);
+        classObject = CObjC_MakeObject("L_OBJC_CLASS_", name->name, 0x28);
         info->classobject = classObject;
         info->classobject->section = 0xe;
-        metaclassObject = CParser_NewCompilerDefDataObject();
-        metaclassObject->name = CParser_NameConcat("L_OBJC_METACLASS_", name->name);
-        metaclassObject->type = CDecl_NewStructType(0x28, 4);
-        CScope_AddObject(metaclassObject->nspace, metaclassObject->name, (ObjBase *)metaclassObject);
+        metaclassObject = CObjC_MakeObject("L_OBJC_METACLASS_", name->name, 0x28);
         info->metaclassobject = metaclassObject;
         info->metaclassobject->section = 0xf;
         return classType;
     }
+}
+
+static void ObjC_ParseParenthesizedType(Type **type, UInt32 *qual)
+{
+    DeclInfo decl;
+
+    tk = CPrepTokenizer_GetNextToken();
+    memclrw(&decl, sizeof(decl));
+    CParser_GetDeclSpecs(&decl, 0);
+    scandeclarator(&decl);
+    if (tk != ')')
+        CError_ReportErrorAndUpdateToken(ERR_RPAREN_EXPECTED);
+    else
+        tk = CPrepTokenizer_GetNextToken();
+    if (decl.name != NULL)
+        CError_ReportError(ERR_DECLARATION_SYNTAX_ERROR);
+    *type = decl.parserOption ? CObjC_GetIdType(1) : decl.thetype;
+    *qual = decl.qual;
 }
 
 void CObjC_ConvertKeywordToIdentifier(void)
@@ -992,8 +773,6 @@ MethRec *parse_method_declaration(char useGlobalAllocation)
     MethRec *method;
     ObjCParameterNode *argument;
     ObjCParameterNode **argumentLink;
-    DeclInfo returnType;
-    DeclInfo argumentType;
     Boolean firstArgument;
 
     if (useGlobalAllocation) {
@@ -1015,21 +794,10 @@ MethRec *parse_method_declaration(char useGlobalAllocation)
     }
     tk = CPrepTokenizer_GetNextToken();
     if (tk == '(') {
-        tk = CPrepTokenizer_GetNextToken();
-        memclrw(&returnType, sizeof(returnType));
-        CParser_GetDeclSpecs(&returnType, 0);
-        scandeclarator(&returnType);
-        if (tk != ')')
-            CError_ReportErrorAndUpdateToken(ERR_RPAREN_EXPECTED);
-        else
-            tk = CPrepTokenizer_GetNextToken();
-        if (returnType.name != NULL)
-            CError_ReportError(ERR_DECLARATION_SYNTAX_ERROR);
-        method->rtype = returnType.parserOption ? CObjC_GetIdType(1) : returnType.thetype;
-        method->rqual = returnType.qual;
+        ObjC_ParseParenthesizedType(&method->rtype, &method->rqual);
         CError_ReportIllegalFlags(method->rqual & ~(Q_CV | Q_BYCOPY | Q_BYREF | Q_ONEWAY));
     } else {
-        method->rtype = get_id_type(1);
+        method->rtype = CObjC_GetIdType(1);
     }
     argumentLink = &method->args;
     firstArgument = 1;
@@ -1060,25 +828,14 @@ MethRec *parse_method_declaration(char useGlobalAllocation)
         }
         tk = CPrepTokenizer_GetNextToken();
         if (tk == '(') {
-            tk = CPrepTokenizer_GetNextToken();
-            memclrw(&argumentType, sizeof(argumentType));
-            CParser_GetDeclSpecs(&argumentType, 0);
-            scandeclarator(&argumentType);
-            if (tk != ')')
-                CError_ReportErrorAndUpdateToken(ERR_RPAREN_EXPECTED);
-            else
-                tk = CPrepTokenizer_GetNextToken();
-            if (argumentType.name != NULL)
-                CError_ReportError(ERR_DECLARATION_SYNTAX_ERROR);
-            argument->type = argumentType.parserOption ? CObjC_GetIdType(1) : argumentType.thetype;
-            argument->qual = argumentType.qual;
+            ObjC_ParseParenthesizedType(&argument->type, &argument->qual);
             if (argument->type->type == TYPEARRAY)
                 argument->type = CDecl_NewPointerType(TYPE_POINTER(argument->type)->target);
             CError_ReportIllegalFlags(argument->qual & ~(Q_CV | Q_IN | Q_OUT | Q_INOUT | Q_BYCOPY | Q_BYREF));
             if ((argument->qual & (Q_OUT | Q_INOUT)) != 0 && argument->type->type != TYPEPOINTER)
                 CError_ReportIllegalFlags(argument->qual & (Q_OUT | Q_INOUT));
         } else {
-            argument->type = get_id_type(1);
+            argument->type = CObjC_GetIdType(1);
         }
         if (tk != TK_IDENTIFIER) {
             CObjC_ConvertKeywordToIdentifier();
@@ -1140,7 +897,7 @@ MethRec *fn_00508940(MethRec *methods, MethRec *method, char check_types, char a
                                 if ((candidate_type = candidate_argument->type) == NULL) {
                                     break;
                                 }
-                                compatible = ObjCMethodTypesEqual(argument_type, candidate_type);
+                                compatible = ObjC_TypesEqual(argument_type, candidate_type);
                                 if (compatible == 0) {
                                     break;
                                 }
@@ -1155,7 +912,7 @@ MethRec *fn_00508940(MethRec *methods, MethRec *method, char check_types, char a
                             method->rqual == candidate->rqual) {
                             candidate_return_type = candidate->rtype;
                             return_type = method->rtype;
-                            return_compatible = ObjCMethodTypesEqual(return_type, candidate_return_type);
+                            return_compatible = ObjC_TypesEqual(return_type, candidate_return_type);
                             if (return_compatible == 0) {
                                 CError_ReportError(ERR_METHOD_REDECLARED, candidate);
                             }
@@ -1179,6 +936,49 @@ MethRec *fn_00508940(MethRec *methods, MethRec *method, char check_types, char a
         CError_ReportError(ERR_UNDEFINED_METHOD, method);
     }
     return NULL;
+}
+
+static inline FuncArg *ObjC_NewArg(TypeFunc *f, HashNameNode *name, Type *type, UInt32 qual)
+{
+    FuncArg *a;
+    if ((a = f->args) != NULL) {
+        while (a->next != NULL)
+            a = a->next;
+        a->next = CParser_NewFuncArg();
+        a = a->next;
+    } else {
+        f->args = CParser_NewFuncArg();
+        a = f->args;
+    }
+    a->name = name;
+    a->type = type;
+    a->qual = qual;
+    return a;
+}
+
+static inline FuncArg *AppendFirst(TypeFunc *f, Type *type)
+{
+    FuncArg *a;
+    HashNameNode *name = this_self_name;
+    if ((a = f->args) != NULL) {
+        while (a->next != NULL)
+            a = a->next;
+        a->next = CParser_NewFuncArg();
+        a = a->next;
+    } else {
+        f->args = CParser_NewFuncArg();
+        a = f->args;
+    }
+    a->name = name;
+    a->type = type;
+    a->qual = 0;
+    return a;
+}
+
+static inline FuncArg *NewFirstArg(TypeFunc *f)
+{
+    SInt32 type = (SInt32)CObjC_GetIdType(1);
+    return AppendFirst(f, (Type *)type);
 }
 
 HashNameNode *fn_00508810(TypeClass *obj, CRec *ns, MethRec *info)
@@ -1227,7 +1027,7 @@ TypeFunc *get_method_ftype(MethRec *spec)
         f->flags = 0x8000;
         fn_00504240(f);
         NewFirstArg(f);
-        ObjC_NewArg(f, GetHashNameNode("_cmd"), GetSelType(1), 0);
+        ObjC_NewArg(f, GetHashNameNode("_cmd"), GetSelType(), 0);
         for (a = (ObjCParameterNode *)spec->args; a != NULL; a = a->next) {
             if (a->type != NULL)
                 ObjC_NewArg(f, a->name, a->type, a->qual);
@@ -1245,6 +1045,30 @@ TypeFunc *get_method_ftype(MethRec *spec)
         spec->ftype = f;
     }
     return spec->ftype;
+}
+
+static Object *ObjC_GetMethodFunction(TypeClass *owner, CRec *category, MethRec *method)
+{
+    UInt8 savedState;
+    Object *function;
+    NameSpace *savedContext;
+
+    if (method->function == NULL) {
+        savedState = copts.cplusplus;
+        copts.cplusplus = 0;
+        savedContext = cscope_current;
+        cscope_current = cscope_root;
+        function = CParser_NewFunctionObject(NULL);
+        function->nspace = owner->nspace;
+        function->type = (Type *)get_method_ftype(method);
+        function->name = fn_00508810(owner, category, method);
+        function->u.func.linkname = function->name;
+        function->sclass = TK_STATIC;
+        method->function = function;
+        cscope_current = savedContext;
+        copts.cplusplus = savedState;
+    }
+    return method->function;
 }
 
 ObjectList *parse_protocol_list(void)
@@ -1313,7 +1137,7 @@ void fn_005082b0(TypeStruct *classInfo)
     if (tk == '(') {
         tk = CPrepTokenizer_GetNextToken();
         if (tk == TK_IDENTIFIER) {
-            if ((baseClass = find_objc_class(data_00587fa0)) != NULL) {
+            if ((baseClass = ObjC_FindClass(data_00587fa0, 1)) != NULL) {
                 if (baseClass->flags & CLASS_COMPLETED) {
                     classInfo->size = baseClass->size;
                     classInfo->align = baseClass->align;
@@ -1475,23 +1299,7 @@ void parse_method_definition(TypeClass *object, CRec *kind, MethRec **methods)
     if (method->defined != 0) {
         CError_ReportError(ERR_METHOD_REDEFINED, method);
     }
-    if (method->function == NULL) {
-        savedCPlusPlus = copts.cplusplus;
-        copts.cplusplus = 0;
-        savedNameSpace = cscope_current;
-        cscope_current = cscope_root;
-        newFunction = CParser_NewFunctionObject(NULL);
-        newFunction->nspace = object->nspace;
-        functionType = get_method_ftype(method);
-        newFunction->type = (Type *)functionType;
-        newFunction->name = fn_00508810(object, kind, method);
-        newFunction->u.func.linkname = newFunction->name;
-        newFunction->sclass = TK_STATIC;
-        method->function = newFunction;
-        cscope_current = savedNameSpace;
-        copts.cplusplus = savedCPlusPlus;
-    }
-    function = method->function;
+    function = ObjC_GetMethodFunction(object, kind, method);
     CError_ASSERT(1631, function->type->type == TYPEFUNC);
     argument = arguments = ((TypeFunc *)function->type)->args;
     if (arguments != NULL) {
@@ -1515,6 +1323,23 @@ void parse_method_definition(TypeClass *object, CRec *kind, MethRec **methods)
     CFunc_ParseFuncDef(function, &declaration, object, 1, method->isinst, NULL);
     method->defined = 1;
     tk = CPrepTokenizer_GetNextToken();
+}
+
+static void ObjC_EncodeStruct(TypeStruct *type, Boolean includeMembers)
+{
+    StructMember *member;
+
+    AppendGListByte(&data_00583548, type->stype == STRUCT_TYPE_UNION ? '(' : '{');
+    if (data_00588507 != 0)
+        AppendGListByte(&data_00583548, '?');
+    else if (type->name != NULL)
+        AppendGListName(&data_00583548, type->name->name);
+    if (includeMembers) {
+        AppendGListByte(&data_00583548, '=');
+        for (member = type->members; member != NULL; member = member->next)
+            fn_005074f0(member->type, member->qual, 1);
+    }
+    AppendGListByte(&data_00583548, type->stype == STRUCT_TYPE_UNION ? ')' : '}');
 }
 
 void encode_class(TypeClass *cls, Boolean flag)
@@ -1690,23 +1515,7 @@ void fn_005074f0(Type *type, UInt32 qual, Boolean flag)
                 AppendGListName(&data_00583548, buf);
                 return;
             case TYPESTRUCT:
-                AppendGListByte(&data_00583548, TYPE_STRUCT(type)->stype == STRUCT_TYPE_UNION ? '(' : '{');
-                if (data_00588507 != 0) {
-                    AppendGListByte(&data_00583548, '?');
-                } else if (TYPE_STRUCT(type)->name != NULL) {
-                    AppendGListName(&data_00583548, TYPE_STRUCT(type)->name->name);
-                }
-                if (flag) {
-                    AppendGListByte(&data_00583548, '=');
-                    {
-                        StructMember *member = TYPE_STRUCT(type)->members;
-                        while (member != NULL) {
-                            fn_005074f0(member->type, member->qual, 1);
-                            member = member->next;
-                        }
-                    }
-                }
-                AppendGListByte(&data_00583548, TYPE_STRUCT(type)->stype == STRUCT_TYPE_UNION ? ')' : '}');
+                ObjC_EncodeStruct(TYPE_STRUCT(type), flag);
                 return;
             case TYPECLASS:
                 encode_class(TYPE_CLASS(type), flag);
@@ -1721,6 +1530,32 @@ void fn_005074f0(Type *type, UInt32 qual, Boolean flag)
                 return;
         }
     }
+}
+
+static char *ObjC_MethodEncoding(MethRec *method, Boolean includeNames)
+{
+    char *encoding;
+
+    data_00588507 = 1;
+    data_00583548.size = 0;
+    emit_method_type_encoding(method, 1);
+    AppendGListByte(&data_00583548, 0);
+    encoding = galloc(data_00583548.size);
+    memcpy(encoding, *data_00583548.data, data_00583548.size);
+    data_00588507 = 0;
+    return encoding;
+}
+
+static char *ObjC_TypeEncoding(Type *type, UInt32 qual)
+{
+    char *encoding;
+
+    data_00583548.size = 0;
+    fn_005074f0(type, qual, 1);
+    AppendGListByte(&data_00583548, 0);
+    encoding = galloc(data_00583548.size);
+    memcpy(encoding, *data_00583548.data, data_00583548.size);
+    return encoding;
 }
 
 Object *create_ivar_list(TypeClass *cls)
@@ -1749,10 +1584,7 @@ Object *create_ivar_list(TypeClass *cls)
         buffer = lalloc(size);
         memclrw(buffer, size);
         className = cls->classname->name;
-        object = CParser_NewCompilerDefDataObject();
-        object->name = CParser_NameConcat("L_OBJC_INSTANCE_VARIABLES_", className);
-        object->type = CDecl_NewStructType(size, 4);
-        CScope_AddObject(object->nspace, object->name, (ObjBase *)object);
+        object = CObjC_MakeObject("L_OBJC_INSTANCE_VARIABLES_", className, size);
         result = object;
         object->sclass = TK_STATIC;
         object->section = 0x18;
@@ -1769,11 +1601,7 @@ Object *create_ivar_list(TypeClass *cls)
             relocation->addend = 0;
             ivarQualifiers = ivar->qual;
             ivarType = ivar->type;
-            data_00583548.size = 0;
-            fn_005074f0(ivarType, ivarQualifiers, 1);
-            AppendGListByte(&data_00583548, 0);
-            encoding = galloc(data_00583548.size);
-            memcpy(encoding, *data_00583548.data, data_00583548.size);
+            encoding = ObjC_TypeEncoding(ivarType, ivarQualifiers);
             relocation = lalloc(sizeof(OLinkList));
             relocation->next = relocations;
             relocations = relocation;
@@ -1803,7 +1631,6 @@ Object *create_method_list_object(TypeClass *owner, CRec *category, MethRec *met
     OLinkList *relocation;
     OLinkList *relocations;
     ObjCMethodEntry *entry;
-    char *encoding;
     NameSpace *savedContext;
     UInt8 savedState;
 
@@ -1817,10 +1644,7 @@ Object *create_method_list_object(TypeClass *owner, CRec *category, MethRec *met
         size = (count - 1) * sizeof(ObjCMethodEntry) + sizeof(ObjCMethodList);
         methodList = lalloc(size);
         memclrw(methodList, size);
-        object = CParser_NewCompilerDefDataObject();
-        object->name = CParser_NameConcat((char *)namePrefix, nameSuffix);
-        object->type = CDecl_NewStructType(size, 4);
-        CScope_AddObject(object->nspace, object->name, (ObjBase *)object);
+        object = CObjC_MakeObject((char *)namePrefix, nameSuffix, size);
         result = object;
         object->sclass = TK_STATIC;
         relocations = NULL;
@@ -1843,15 +1667,7 @@ Object *create_method_list_object(TypeClass *owner, CRec *category, MethRec *met
                     relocation->next = relocations;
                     relocations = relocation;
 
-                    data_00588507 = 1;
-                    data_00583548.size = 0;
-                    emit_method_type_encoding(method, 1);
-                    AppendGListByte(&data_00583548, 0);
-                    encoding = galloc(data_00583548.size);
-                    memcpy(encoding, *data_00583548.data, data_00583548.size);
-                    data_00588507 = 0;
-
-                    relocation->obj = fn_00509c40(encoding, 0x14);
+                    relocation->obj = fn_00509c40(ObjC_MethodEncoding(method, 0), 0x14);
                     relocation->offset = (char *)&entry->encoding - (char *)methodList;
                     relocation->addend = 0;
 
@@ -1859,26 +1675,7 @@ Object *create_method_list_object(TypeClass *owner, CRec *category, MethRec *met
                     relocation->next = relocations;
                     relocations = relocation;
 
-                    if (method->function == NULL) {
-                        Object *function;
-                        TypeFunc *functionType;
-
-                        savedState = copts.cplusplus;
-                        copts.cplusplus = 0;
-                        savedContext = cscope_current;
-                        cscope_current = cscope_root;
-                        function = CParser_NewFunctionObject(NULL);
-                        function->nspace = owner->nspace;
-                        functionType = get_method_ftype(method);
-                        function->type = (Type *)functionType;
-                        function->name = fn_00508810(owner, category, method);
-                        function->u.func.linkname = function->name;
-                        function->sclass = TK_STATIC;
-                        method->function = function;
-                        cscope_current = savedContext;
-                        copts.cplusplus = savedState;
-                    }
-                    relocation->obj = method->function;
+                    relocation->obj = ObjC_GetMethodFunction(owner, category, method);
                     relocation->offset = (char *)&entry->implementation - (char *)methodList;
                     relocation->addend = 0;
                     entry++;
@@ -1922,10 +1719,7 @@ Object *create_protocol_list(ObjectList *entries, char *name)
         entriesSize = lastIndex * sizeof(descriptor->protocols[0]);
         descriptor = (struct ObjCProtocolList *)lalloc(size = entriesSize + sizeof(*descriptor));
         memclrw(descriptor, size);
-        object = CParser_NewCompilerDefDataObject();
-        object->name = CParser_NameConcat("L_OBJC_PROTOCOLS_", name);
-        object->type = CDecl_NewStructType(size, 4);
-        CScope_AddObject(object->nspace, object->name, (ObjBase *)object);
+        object = CObjC_MakeObject("L_OBJC_PROTOCOLS_", name, size);
         result = object;
         object->sclass = TK_STATIC;
         relocations = NULL;
@@ -1959,7 +1753,6 @@ Object *create_protocol_method_list(CRec *cls, char *nm, SInt16 val, UInt8 kind)
 {
     SInt32 count;
     OLinkList *entry;
-    char *names;
     OLinkList *head;
     MethRec *member = cls->methods;
     SInt32 size;
@@ -1980,10 +1773,7 @@ Object *create_protocol_method_list(CRec *cls, char *nm, SInt16 val, UInt8 kind)
         buffer = (char *)lalloc(size);
         memclrw(buffer, size);
         className = cls->name->name;
-        obj = CParser_NewCompilerDefDataObject();
-        obj->name = CParser_NameConcat(nm, className);
-        obj->type = CDecl_NewStructType(size, 4);
-        CScope_AddObject(obj->nspace, obj->name, (ObjBase *)obj);
+        obj = CObjC_MakeObject(nm, className, size);
         result = obj;
         obj->sclass = TK_STATIC;
         obj->section = val;
@@ -2003,14 +1793,7 @@ Object *create_protocol_method_list(CRec *cls, char *nm, SInt16 val, UInt8 kind)
                     entry = (OLinkList *)lalloc(0x10);
                     entry->next = head;
                     head = entry;
-                    data_00588507 = 1;
-                    data_00583548.size = 0;
-                    emit_method_type_encoding(member, 1);
-                    AppendGListByte(&data_00583548, 0);
-                    names = galloc(data_00583548.size);
-                    memcpy(names, *data_00583548.data, data_00583548.size);
-                    data_00588507 = 0;
-                    entry->obj = fn_00509c40(names, 0x14);
+                    entry->obj = fn_00509c40(ObjC_MethodEncoding(member, 0), 0x14);
                     entry->offset = ptr + 4 - buffer;
                     entry->addend = 0;
                     ptr += 8;
@@ -2023,16 +1806,6 @@ Object *create_protocol_method_list(CRec *cls, char *nm, SInt16 val, UInt8 kind)
         result = NULL;
     }
     return result;
-}
-
-static Object *CObjC_MakeObject(char *name1, char *name2, SInt32 size)
-{
-    Object *object = CParser_NewCompilerDefDataObject();
-
-    object->name = CParser_NameConcat(name1, name2);
-    object->type = CDecl_NewStructType(size, 4);
-    CScope_AddObject(object->nspace, object->name, (ObjBase *)object);
-    return object;
 }
 
 Object *CObjC_GetProtocolInfo(CRec *protocol)
@@ -2048,7 +1821,7 @@ Object *CObjC_GetProtocolInfo(CRec *protocol)
     if (protocol->info == NULL) {
         HashNameNode *protocolName = GetHashNameNode("Protocol");
 
-        if ((protocolClass = CObjC_FindClass(CScope_FindName(cscope_root, protocolName), protocolName)) != NULL) {
+        if ((protocolClass = ObjC_FindClass(protocolName, 1)) != NULL) {
             data[0] = CTool_EndianConvertWord32(0);
             refs = NULL;
             ref = (OLinkList *)lalloc(sizeof(OLinkList));
@@ -2530,8 +2303,7 @@ void parse_class_interface_or_implementation(void)
             return;
         }
         name = data_00587fa0;
-        lookup = CScope_FindName(cscope_root, name);
-        if ((superclass = CObjC_FindClass(lookup, name)) != NULL) {
+        if ((superclass = ObjC_FindClass(name, 1)) != NULL) {
             if (superclass->flags & CLASS_COMPLETED) {
                 if (!isComplete) {
                     base = (ClassList *)galloc(sizeof(*base));
@@ -2730,6 +2502,28 @@ void CObjC_ParseIdentifierList(void)
     return;
 }
 
+static void ObjC_PromoteMessageArguments(MethRec *method, MessageArgument *arguments, ENodeList *extra)
+{
+    ObjCParameterNode *parameter;
+    MessageArgument *argument;
+
+    if (arguments->expression != NULL) {
+        parameter = method->args;
+        argument = arguments;
+        for (;;) {
+            argument->expression = argumentpromotion(argument->expression, parameter->type, parameter->qual, 1);
+            if ((argument = argument->next) == NULL)
+                break;
+            if ((parameter = parameter->next) == NULL)
+                CError_Internal(CERROR_FILE, 2998);
+        }
+    }
+    while (extra != NULL) {
+        extra->node = CExpr_VarArgPromotion(extra->node, 1);
+        extra = extra->next;
+    }
+}
+
 Boolean match_message_arguments(register MethRec *info, MessageArgument *b, Boolean flag)
 {
     ObjCParameterNode *p;
@@ -2780,8 +2574,6 @@ ENode *CObjC_MakeMessageSend(ENode *receiver, TypeClass *obj, MessageArgument *a
     ENodeList *firstArg;
     ENodeList *tail;
     MethRec *method;
-    MessageArgument *matchedArgument;
-    ObjCParameterNode *matchedParameter;
     ObjectList *protocol;
 
     method = NULL;
@@ -2804,7 +2596,7 @@ ENode *CObjC_MakeMessageSend(ENode *receiver, TypeClass *obj, MessageArgument *a
                             break;
                     }
                     if (match_message_arguments(method, arguments, extraArgs != NULL)) {
-                        MATCH_BODY();
+                        ObjC_PromoteMessageArguments(method, arguments, extraArgs);
                         selector = CObjCModern_RegisterMethodSelector(method);
                         break;
                     }
@@ -2818,7 +2610,7 @@ ENode *CObjC_MakeMessageSend(ENode *receiver, TypeClass *obj, MessageArgument *a
             if (method != NULL) {
                 do {
                     if (match_message_arguments(method, arguments, extraArgs != NULL)) {
-                        MATCH_BODY();
+                        ObjC_PromoteMessageArguments(method, arguments, extraArgs);
                         selector = CObjCModern_RegisterMethodSelector(method);
                         break;
                     }
@@ -2842,7 +2634,7 @@ ENode *CObjC_MakeMessageSend(ENode *receiver, TypeClass *obj, MessageArgument *a
                 if (method != NULL) {
                     do {
                         if (match_message_arguments(method, arguments, extraArgs != NULL)) {
-                            MATCH_BODY();
+                            ObjC_PromoteMessageArguments(method, arguments, extraArgs);
                             selector = CObjCModern_RegisterMethodSelector(method);
                             break;
                         }
@@ -2876,7 +2668,7 @@ ENode *CObjC_MakeMessageSend(ENode *receiver, TypeClass *obj, MessageArgument *a
                     if (candidate != NULL)
                         CError_Warning(ERR_AMBIGUOUS_MESSAGE_SELECTOR_USED_ALSO_HAD, method, candidate->method);
                     if (match_message_arguments(method, arguments, extraArgs != NULL)) {
-                        MATCH_BODY();
+                        ObjC_PromoteMessageArguments(method, arguments, extraArgs);
                     } else {
                         CError_Warning(ERR_RECEIVER_CANNOT_HANDLE_MESSAGE);
                     }
@@ -2891,17 +2683,7 @@ ENode *CObjC_MakeMessageSend(ENode *receiver, TypeClass *obj, MessageArgument *a
     if (method != NULL) {
         functionType = get_method_ftype(method);
         resultKind = CMach_GetFunctionResultClass(functionType) != 0;
-        if (flag != 0) {
-            if (resultKind)
-                callee = CObjCModern_GetOrCreateFunctionObject("objc_msgSendSuper_stret", "objc_msgSendSuper_stret");
-            else
-                callee = CObjCModern_GetOrCreateFunctionObject("objc_msgSendSuper", "objc_msgSendSuper");
-        } else {
-            if (resultKind)
-                callee = CObjCModern_GetOrCreateFunctionObject("objc_msgSend_stret", "objc_msgSend_stret");
-            else
-                callee = CObjCModern_GetOrCreateFunctionObject("objc_msgSend", "objc_msgSend");
-        }
+        callee = ObjC_GetMessageSendFunction(flag, resultKind);
         if (flag != 0) {
             temporary = CExpr_NewETEMPNode(CDecl_NewStructType(8, 4), 1);
             expression = makemonadicnode(temporary, EINDIRECT);
@@ -2991,7 +2773,7 @@ ENode *CObjC_ParseMessageExpression(void)
             receiverClass = NULL;
         default:
             receiver = s_expression();
-            if (IsIdType_504fb0(receiver->rtype)) {
+            if (IsIdType(receiver->rtype)) {
                 receiverMode = 2;
             } else {
                 if (receiver->rtype->type != TYPEPOINTER || TPTR_TARGET(receiver->rtype)->type != TYPECLASS ||
@@ -3050,11 +2832,9 @@ ENode *CObjC_ParseMessageExpression(void)
 
 ENode *CObjC_ParseEncodeExpression(void)
 {
-    DeclInfo decl;
     ENode *stringNode;
     ENode *indirectNode;
     char *encoding;
-    char **encodingHandle;
     Type *type;
     UInt32 qualifiers;
 
@@ -3063,26 +2843,8 @@ ENode *CObjC_ParseEncodeExpression(void)
         CError_ReportError(ERR_LPAREN_EXPECTED);
         return nullnode();
     }
-    tk = CPrepTokenizer_GetNextToken();
-    memclrw(&decl, sizeof(decl));
-    CParser_GetDeclSpecs(&decl, 0);
-    scandeclarator(&decl);
-    if (tk != ')') {
-        CError_ReportErrorAndUpdateToken(ERR_RPAREN_EXPECTED);
-    } else {
-        tk = CPrepTokenizer_GetNextToken();
-    }
-    if (decl.name != NULL) {
-        CError_ReportError(ERR_DECLARATION_SYNTAX_ERROR);
-    }
-    type = decl.parserOption ? CObjC_GetIdType(1) : decl.thetype;
-    qualifiers = decl.qual;
-    data_00583548.size = 0;
-    fn_005074f0(type, qualifiers, 1);
-    AppendGListByte(&data_00583548, 0);
-    encoding = galloc(data_00583548.size);
-    encodingHandle = data_00583548.data;
-    memcpy(encoding, *encodingHandle, data_00583548.size);
+    ObjC_ParseParenthesizedType(&type, &qualifiers);
+    encoding = ObjC_TypeEncoding(type, qualifiers);
     stringNode = lalloc(sizeof(ENode));
     stringNode->type = ESTRINGCONST;
     stringNode->cost = 0;
@@ -3108,7 +2870,7 @@ ENode *CObjC_ParseStringConstant(void)
     char name[16];
     tk = CPrepTokenizer_GetNextToken();
     if (tk == TK_STRING) {
-        if ((type = fn_00504c90_inline1()) != NULL) {
+        if ((type = ObjC_FindClass(GetHashNameNode("NSConstantString"), 1)) != NULL) {
             values[0] = CTool_EndianConvertWord32(0);
             tail = entry = (OLinkList *)lalloc(16);
             entry->next = NULL;
@@ -3174,7 +2936,6 @@ ENode *CDecl_ParseSelectorExpression(void)
 {
     HashNameNode *name;
     HashEntry *entry;
-    HashEntry **slot;
     ENode *node;
 
     tk = CPrepTokenizer_GetNextToken();
@@ -3204,31 +2965,10 @@ ENode *CDecl_ParseSelectorExpression(void)
         name = GetHashNameNode(*data_00583548.data);
         COS_UnlockHandle(data_00583548.data);
 
-        if (selector_hash == NULL)
-            entry = NULL;
-        else {
-            entry = selector_hash[name->hashval & 0x3ff];
-            while (entry != NULL) {
-                if (entry->name == name)
-                    break;
-                entry = entry->next;
-            }
-        }
-        if (entry == NULL) {
-            if (selector_hash == NULL) {
-                selector_hash = galloc(1024 * sizeof(*selector_hash));
-                memclrw(selector_hash, 1024 * sizeof(*selector_hash));
-            }
-            entry = galloc(sizeof(*entry));
-            entry->obj = NULL;
-            entry->name = name;
-            entry->methods = NULL;
-            slot = &selector_hash[name->hashval & 0x3ff];
-            entry->next = *slot;
-            *slot = entry;
-        }
+        if ((entry = FindHashNode(name)) == NULL)
+            entry = ObjC_NewSelector(name);
         node = create_objectnode(CObjCModern_GetSelectorReference(entry));
-        node->rtype = GetSelType(1);
+        node->rtype = GetSelType();
         return node;
     } else {
         CError_ReportError(ERR_LPAREN_EXPECTED);

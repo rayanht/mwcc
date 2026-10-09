@@ -2552,33 +2552,31 @@ static TypePointer stchar_ptr = {TYPEPOINTER, 4, TYPE(&stchar)};
 
 static inline int OpIndex(UInt16 token);
 static void *registration_find(const char *name);
-static void GenVR(UInt8 *node, Operand *op);
-static inline void GenFPR(UInt8 *node, Operand *op);
-static void GenGPR(UInt8 *node, Operand *op);
 
-static inline void Intrinsics_00486bb0_inline1(ENode *p0, Operand *p1)
+static inline void GenFPR(UInt8 *node, Operand *op);
+
+static inline void evaluate_vr(UInt8 *node, Operand *op)
 {
-    unsigned char t1;
-    t1 = p0->type;
-    data_00560648[t1](p0, 0, 0, p1);
-    if (p1->kind != OpndType_VR) {
-        Operands_ForceVR(p1, p0->rtype, 0);
-    }
+    data_00560648[*node](node, 0, 0, op);
+    if (op->kind != '\x06')
+        Operands_ForceVR(op, ((ENode *)node)->rtype, 0);
+}
+
+static inline void evaluate_gpr(UInt8 *node, Operand *op)
+{
+    data_00560648[*node](node, 0, 0, op);
+    if (op->kind != OpndType_GPR)
+        Operands_ForceGPR(op, ((ENode *)node)->rtype, 0);
+}
+
+static inline void GenFPR(UInt8 *node, Operand *op)
+{
+    data_00560648[*node](node, 0, 0, op);
+    if (op->kind != '\x05')
+        Operands_ForceFPR(op, ((ENode *)node)->rtype, 0);
 }
 
 #define CERROR_FILE __FILE__
-
-static inline void Intrinsics_00487090_inline1(ENode *p0, Operand *p1)
-{
-    unsigned char t3;
-    void (*t4)(void *, short, short, void *);
-    t3 = p0->type;
-    t4 = data_00560648[t3];
-    t4(p0, 0, 0, p1);
-    if (p1->kind != OpndType_GPR) {
-        Operands_ForceGPR(p1, p0->rtype, 0);
-    }
-}
 
 static inline void unwrapIntrinsicPointerTypes(Type **expected, Type **actual)
 {
@@ -2588,17 +2586,12 @@ static inline void unwrapIntrinsicPointerTypes(Type **expected, Type **actual)
     }
 }
 
-static inline void fn_00487de0_inline1(ENode *p0, Operand *p1)
+static inline int OpIndex(UInt16 token)
 {
-    unsigned char t3;
-    void (*t4)(void *, short, short, void *);
-    t3 = p0->type;
-    t4 = data_00560648[t3];
-    t4(p0, 0, 0, p1);
-    if (p1->kind != OpndType_GPR) {
-        Operands_ForceGPR(p1, p0->rtype, 0);
-    }
+    return token - 0x2a;
 }
+
+/* Operand/register descriptor filled by the per-enode emit routines. */
 
 unsigned int Intrinsics_IsMonadicObjrefTypeFuncFlag200Set(ENode *expression)
 {
@@ -2708,11 +2701,30 @@ void emit_operation_from_nodes(short operation, ENode *leftNode, ENode *rightNod
             PCodeUtilities_EmitInstruction(operation, 0, leftOperand.reg);
         }
     } else {
-        fn_00487de0_inline1(leftNode, &leftOperand);
-        fn_00487de0_inline1(rightNode, &rightOperand);
+        evaluate_gpr((UInt8 *)leftNode, &leftOperand);
+        evaluate_gpr((UInt8 *)rightNode, &rightOperand);
         PCodeUtilities_EmitInstruction(operation, leftOperand.reg, rightOperand.reg);
     }
     PCodeUtilities_ResolveLabel(PCode_NewLabel());
+}
+
+static void emit_memory_copy(ENode *destination, ENode *source, UInt32 length, int ignored, Operand *result)
+{
+    Operand destinationOperand;
+    Operand sourceOperand;
+    SInt32 alignment;
+    memclrw(&destinationOperand, sizeof(destinationOperand));
+    memclrw(&sourceOperand, sizeof(sourceOperand));
+    data_00560648[source->type](source, 0, 0, &sourceOperand);
+    Operands_MakeIndirect(&sourceOperand, source);
+    data_00560648[destination->type](destination, 0, 0, result);
+    destinationOperand = *result;
+    Operands_MakeIndirect(&destinationOperand, destination);
+    if (destination->rtype != NULL)
+        alignment = StackFrameEABI_GetTypeAlignment(destination->rtype);
+    else
+        alignment = 1;
+    StructMoves_EmitCopy(&destinationOperand, &sourceOperand, length, alignment);
 }
 
 void emit_rlwimi(ENode *destination, ENode *source, ENode *shift, ENode *maskBegin, ENode *maskEnd, short unused,
@@ -2735,6 +2747,22 @@ void emit_rlwimi(ENode *destination, ENode *source, ENode *shift, ENode *maskBeg
                                    maskBegin->data.intval.lo, maskEnd->data.intval.lo);
     result->kind = OpndType_GPR;
     result->reg = destinationOperand.reg;
+}
+
+static void emit_rlwinm(ENode *value, ENode *shift, ENode *maskBegin, ENode *maskEnd, SInt16 requestedReg, Operand *result)
+{
+    Operand operand;
+    SInt16 selected;
+    memclrw(&operand, sizeof(operand));
+    if (shift->type != EINTCONST || maskBegin->type != EINTCONST || maskEnd->type != EINTCONST)
+        CError_FatalError(ERR_ILLEGAL_OPERAND);
+    data_00560648[value->type](value, 0, 0, &operand);
+    if (operand.kind != OpndType_GPR)
+        Operands_ForceGPR(&operand, value->rtype, 0);
+    selected = requestedReg ? requestedReg : gUsedVirtualRegistersGPR++;
+    PCodeUtilities_EmitInstruction(PC_RLWINM, selected, operand.reg, shift->data.intval.lo, maskBegin->data.intval.lo, maskEnd->data.intval.lo);
+    result->kind = OpndType_GPR;
+    result->reg = selected;
 }
 
 void emit_rlwnm(ENode *value, ENode *shift, ENode *maskBegin, ENode *maskEnd, short targetReg, Operand *result)
@@ -2809,11 +2837,6 @@ Type *find_matching_op_result(UInt16 token, ENodeList *args, HashNameNode *name)
         return NULL;
     }
     return entry->result;
-}
-
-static inline int OpIndex(UInt16 token)
-{
-    return token - 0x2a;
 }
 
 SInt32 select_altivec_mangle_result(UInt16 intrinsicCode, ENodeList *arguments, HashNameNode *name)
@@ -3003,6 +3026,12 @@ Type *match_intrinsic_triple(UInt16 id, ENodeList *args, HashNameNode *name)
     return entry->result;
 }
 
+static UInt16 simple_intrinsic_code(UInt16 token, ENode *unused)
+{
+    int index = token - 0x2a;
+    return intrinsic_tables[index].simple->code;
+}
+
 UInt16 find_unary_intrinsic_code(UInt16 id, ENode *unused, ENode *expression)
 {
     IntrinsicTypeEntry *entry;
@@ -3090,6 +3119,124 @@ UInt16 find_intrinsic_triple_code(UInt16 id, ENode *unused, ENode *firstOperand,
     return entry->code;
 }
 
+static void emit_simple_instruction(UInt16 opcode)
+{
+    PCodeUtilities_EmitInstruction(opcode);
+}
+
+static void GenVR(SInt16 requestedReg, UInt16 opcode, Operand *result)
+{
+    SInt16 resultReg;
+    resultReg = requestedReg ? requestedReg : gUsedVirtualRegistersVR++;
+    PCodeUtilities_EmitInstruction(opcode, resultReg);
+    result->kind = OpndType_VR;
+    result->reg = resultReg;
+}
+
+static void emit_unary_vr_instruction(ENode *node, SInt16 requestedReg, Operand *result, UInt16 opcode)
+{
+    Operand operand;
+    SInt16 selected;
+    memclrw(&operand, sizeof(operand));
+    evaluate_vr((UInt8 *)node, &operand);
+    selected = requestedReg ? requestedReg : gUsedVirtualRegistersVR++;
+    PCodeUtilities_EmitInstruction(opcode, selected, operand.reg);
+    result->kind = OpndType_VR;
+    result->reg = selected;
+}
+
+static void emit_signed_vector_splat(ENode *node, SInt16 requestedReg, Operand *result, UInt16 opcode)
+{
+    Operand operand;
+    SInt16 selected;
+    memclrw(&operand, sizeof(operand));
+    CError_ASSERT(4202, node->type == EINTCONST);
+    data_00560648[node->type](node, 0, 0, &operand);
+    selected = requestedReg ? requestedReg : gUsedVirtualRegistersVR++;
+    PCodeUtilities_EmitInstruction(opcode, selected, operand.immediate);
+    result->kind = OpndType_VR;
+    result->reg = selected;
+}
+
+static void emit_unsigned_byte_splat(ENode *node, SInt16 requestedReg, Operand *result, UInt16 opcode)
+{
+    Operand operand;
+    SInt16 selected;
+    memclrw(&operand, sizeof(operand));
+    CError_ASSERT(4226, node->type == EINTCONST);
+    data_00560648[node->type](node, 0, 0, &operand);
+    selected = requestedReg ? requestedReg : gUsedVirtualRegistersVR++;
+    PCodeUtilities_EmitInstruction(opcode, selected, operand.immediate);
+    result->kind = OpndType_VR;
+    result->reg = selected;
+}
+
+static void emit_unsigned_short_splat(ENode *node, SInt16 requestedReg, Operand *result, UInt16 opcode)
+{
+    Operand operand;
+    SInt16 selected;
+    memclrw(&operand, sizeof(operand));
+    CError_ASSERT(4250, node->type == EINTCONST);
+    data_00560648[node->type](node, 0, 0, &operand);
+    selected = requestedReg ? requestedReg : gUsedVirtualRegistersVR++;
+    PCodeUtilities_EmitInstruction(opcode, selected, operand.immediate);
+    result->kind = OpndType_VR;
+    result->reg = selected;
+}
+
+static void emit_unsigned_long_splat(ENode *node, SInt16 requestedReg, Operand *result, UInt16 opcode)
+{
+    Operand operand;
+    SInt16 selected;
+    memclrw(&operand, sizeof(operand));
+    CError_ASSERT(4274, node->type == EINTCONST);
+    data_00560648[node->type](node, 0, 0, &operand);
+    selected = requestedReg ? requestedReg : gUsedVirtualRegistersVR++;
+    PCodeUtilities_EmitInstruction(opcode, selected, operand.immediate);
+    result->kind = OpndType_VR;
+    result->reg = selected;
+}
+
+static void emit_data_stream_stop(ENode *node, SInt16 requestedReg, Operand *result)
+{
+    Operand operand;
+    memclrw(&operand, sizeof(operand));
+    CError_ASSERT(4297, node->type == EINTCONST);
+    data_00560648[node->type](node, 0, 0, &operand);
+    PCodeUtilities_EmitInstruction(PC_DSS, operand.immediate, 0);
+}
+
+static void emit_binary_vr_instruction(ENode *left, ENode *right, SInt16 requestedReg, Operand *result, UInt16 opcode)
+{
+    Operand leftOperand;
+    Operand rightOperand;
+    SInt16 selected;
+    memclrw(&leftOperand, sizeof(leftOperand));
+    memclrw(&rightOperand, sizeof(rightOperand));
+    evaluate_vr((UInt8 *)left, &leftOperand);
+    evaluate_vr((UInt8 *)right, &rightOperand);
+    selected = requestedReg ? requestedReg : gUsedVirtualRegistersVR++;
+    PCodeUtilities_EmitInstruction(opcode, selected, leftOperand.reg, rightOperand.reg);
+    result->kind = OpndType_VR;
+    result->reg = selected;
+}
+
+static void emit_vr_immediate_instruction(ENode *left, ENode *right, SInt16 requestedReg, Operand *result, UInt16 opcode)
+{
+    Operand leftOperand;
+    Operand rightOperand;
+    SInt16 selected;
+    memclrw(&leftOperand, sizeof(leftOperand));
+    memclrw(&rightOperand, sizeof(rightOperand));
+    CError_ASSERT(4342, right->type == EINTCONST);
+    evaluate_vr((UInt8 *)left, &leftOperand);
+    data_00560648[right->type](right, 0, 0, &rightOperand);
+    selected = requestedReg ? requestedReg : gUsedVirtualRegistersVR++;
+    PCodeUtilities_EmitInstruction(opcode, selected, leftOperand.reg, rightOperand.immediate);
+    result->kind = OpndType_VR;
+    result->reg = selected;
+}
+
 void emit_three_vr_instruction(ENode *firstExpression, ENode *secondExpression, ENode *thirdExpression,
                                SInt16 targetReg, Operand *result, SInt16 opcode)
 {
@@ -3123,8 +3270,6 @@ void emit_three_vr_instruction(ENode *firstExpression, ENode *secondExpression, 
     result->reg = resultReg;
 }
 
-/* Operand/register descriptor filled by the per-enode emit routines. */
-
 void emit_two_gpr_immediate_instruction(ENode *destination, ENode *source, ENode *immediate, SInt16 op)
 {
     Operand destinationOperand;
@@ -3155,6 +3300,37 @@ void emit_two_gpr_immediate_instruction(ENode *destination, ENode *source, ENode
     PCodeUtilities_ResolveLabel(PCode_NewLabel());
 }
 
+static void emit_vr_pair_immediate_instruction(ENode *left, ENode *right, ENode *immediate, SInt16 requestedReg, Operand *result, UInt16 opcode)
+{
+    Operand leftOperand;
+    Operand rightOperand;
+    SInt16 selected;
+    memclrw(&leftOperand, sizeof(leftOperand));
+    memclrw(&rightOperand, sizeof(rightOperand));
+    CError_ASSERT(4435, immediate->type == EINTCONST);
+    evaluate_vr((UInt8 *)left, &leftOperand);
+    evaluate_vr((UInt8 *)right, &rightOperand);
+    selected = requestedReg ? requestedReg : gUsedVirtualRegistersVR++;
+    PCodeUtilities_EmitInstruction(opcode, selected, leftOperand.reg, rightOperand.reg, immediate->data.intval.lo);
+    result->kind = OpndType_VR;
+    result->reg = selected;
+}
+
+static void emit_gpr_pair_vr_instruction(ENode *left, ENode *right, SInt16 requestedReg, Operand *result, UInt16 opcode)
+{
+    Operand leftOperand;
+    Operand rightOperand;
+    SInt16 selected;
+    memclrw(&leftOperand, sizeof(leftOperand));
+    memclrw(&rightOperand, sizeof(rightOperand));
+    evaluate_gpr((UInt8 *)left, &leftOperand);
+    evaluate_gpr((UInt8 *)right, &rightOperand);
+    selected = requestedReg ? requestedReg : gUsedVirtualRegistersVR++;
+    PCodeUtilities_EmitInstruction(opcode, selected, leftOperand.reg, rightOperand.reg);
+    result->kind = OpndType_VR;
+    result->reg = selected;
+}
+
 void emit_instruction_with_vr_result(ENode *expression, ENode *left, ENode *right, short opcode, Operand *result,
                                      int instruction)
 {
@@ -3174,8 +3350,8 @@ void emit_instruction_with_vr_result(ENode *expression, ENode *left, ENode *righ
     if (value.kind != OpndType_VR) {
         Operands_ForceVR(&value, expression->rtype, 0);
     }
-    Intrinsics_00487090_inline1(left, &leftValue.legacy);
-    Intrinsics_00487090_inline1(right, &rightValue.legacy);
+    evaluate_gpr((UInt8 *)left, &leftValue.legacy);
+    evaluate_gpr((UInt8 *)right, &rightValue.legacy);
     ((unsigned int (*)(unsigned int, int, int, int))PCodeUtilities_EmitInstruction)(
         instruction, value.reg, leftValue.operand.reg, rightValue.operand.reg);
     result->kind = OpndType_VR;
@@ -3282,6 +3458,14 @@ void fn_00486db0(UInt16 token, ENode *unused, ENode *node, SInt16 requestedReg, 
     result->reg = resultReg;
 }
 
+static void emit_vr_operand_instruction(ENode *node, Operand *result, UInt16 opcode)
+{
+    Operand operand;
+    memclrw(&operand, sizeof(operand));
+    evaluate_vr((UInt8 *)node, &operand);
+    PCodeUtilities_EmitInstruction(opcode, operand.reg);
+}
+
 void emit_record_form_condition(ENode *left, ENode *right, short unused, Operand *result, int opcode,
                                 unsigned short kind)
 {
@@ -3299,8 +3483,8 @@ void emit_record_form_condition(ENode *left, ENode *right, short unused, Operand
 
     memclrw(&leftOperand, sizeof(Operand));
     memclrw(&rightOperand, sizeof(Operand));
-    Intrinsics_00486bb0_inline1(left, &leftOperand.storage);
-    Intrinsics_00486bb0_inline1(right, &rightOperand.storage);
+    evaluate_vr((UInt8 *)left, &leftOperand.storage);
+    evaluate_vr((UInt8 *)right, &rightOperand.storage);
     conditionRegister = gUsedVirtualRegistersVR++;
     firstRegister = leftRegister = leftOperand.operand.reg;
     secondRegister = rightRegister = rightOperand.operand.reg;
@@ -3944,7 +4128,7 @@ void Intrinsics_GenerateIntrinsicCall(ENode *node, short requestedReg, Operand *
                 int temporaryReg;
                 expr = (unsigned char *)args->node;
                 memclrw(&operand, sizeof(operand));
-                GenGPR(expr, &operand);
+                evaluate_gpr(expr, &operand);
                 temporaryReg = gUsedVirtualRegistersGPR++;
                 PCodeUtilities_EmitInstruction(PC_SRAWI, temporaryReg, operand.reg, 0x1f);
                 selected = (short)(requestedReg ? requestedReg : gUsedVirtualRegistersGPR++);
@@ -4009,7 +4193,7 @@ void Intrinsics_GenerateIntrinsicCall(ENode *node, short requestedReg, Operand *
                     selected = (short)(requestedReg ? requestedReg : gUsedVirtualRegistersGPR++);
                     StackFrameEABI_EmitFrameAllocation(1, selected, ((ENode *)expr)->data.intval.lo);
                 } else {
-                    GenGPR(expr, &operand);
+                    evaluate_gpr(expr, &operand);
                     selected = (short)(requestedReg ? requestedReg : gUsedVirtualRegistersGPR++);
                     PCodeUtilities_EmitInstruction(PC_NEG, selected, operand.reg);
                     PCodeUtilities_EmitInstruction(PC_RLWINM, selected, selected, 0, 0, 0x1b);
@@ -4072,8 +4256,10 @@ void Intrinsics_GenerateIntrinsicCall(ENode *node, short requestedReg, Operand *
                 (node->data.funccall.funcref->type == '8')) {
                 PPCError_FatalError(0x83, COptimizer_GetFunctionObject(intrinsics[intrinsic])->name);
             } else {
+                SInt16 selected;
                 PCodeUtilities_ResolveLabel(PCode_NewLabel());
-                result[0].reg = requestedReg ? requestedReg : gUsedVirtualRegistersFPR++;
+                selected = requestedReg ? requestedReg : gUsedVirtualRegistersFPR++;
+                result[0].reg = selected;
                 PCodeUtilities_EmitInstruction(PC_MFFS, result[0].reg);
                 result[0].kind = OpndType_FPR;
                 PCodeUtilities_ResolveLabel(PCode_NewLabel());
@@ -4082,67 +4268,20 @@ void Intrinsics_GenerateIntrinsicCall(ENode *node, short requestedReg, Operand *
         case 35:
             FunctionCalls_GenerateCall(node, result);
             break;
-        case 36: {
-            ENode *sourceExpr;
-            ENode *destExpr;
-            if (*(char *)args->next->next->node == '2') {
-                Operand destOperand;
-                Operand sourceOperand;
-                SInt32 alignment;
-                unsigned int length;
-                length = ((void)(unsigned int)node->ignored,
-                          (unsigned int)((ENode *)args->next->next->node)->data.intval.lo);
-                sourceExpr = args->next->node;
-                destExpr = args->node;
-                memclrw(&sourceOperand, sizeof(sourceOperand));
-                memclrw(&destOperand, sizeof(destOperand));
-                data_00560648[sourceExpr->type](sourceExpr, 0, 0, &destOperand);
-                Operands_MakeIndirect(&destOperand, sourceExpr);
-                data_00560648[destExpr->type](destExpr, 0, 0, result);
-                sourceOperand = result[0];
-                Operands_MakeIndirect(&sourceOperand, destExpr);
-                if (destExpr->rtype != NULL) {
-                    alignment = StackFrameEABI_GetTypeAlignment(destExpr->rtype);
-                } else {
-                    alignment = 1;
-                }
-                StructMoves_EmitCopy(&sourceOperand, &destOperand, length, alignment);
+        case 36:
+            if (args->next->next->node->type == EINTCONST) {
+                emit_memory_copy(args->node, args->next->node, args->next->next->node->data.intval.lo, node->ignored, result);
             } else {
                 FunctionCalls_GenerateCall(node, result);
             }
             break;
-        }
         case 37:
             emit_rlwimi(args->node, args->next->node, args->next->next->node, args->next->next->next->node,
                         args->next->next->next->next->node, requestedReg, result);
             break;
-        case 38: {
-            short selected;
-            {
-                Operand operand;
-                char *shiftExpr;
-                ENodeList *maskArgs;
-                char *beginExpr;
-                unsigned char *expr;
-                char *endExpr;
-                maskArgs = args->next->next;
-                endExpr = (char *)maskArgs->next->node;
-                beginExpr = (char *)maskArgs->node;
-                shiftExpr = (char *)(int)args->next->node;
-                expr = (unsigned char *)args->node;
-                memclrw(&operand, sizeof(operand));
-                if (*shiftExpr != '2' || *beginExpr != '2' || *endExpr != '2') {
-                    CError_FatalError(ERR_ILLEGAL_OPERAND);
-                }
-                GenGPR(expr, &operand);
-                selected = requestedReg ? requestedReg : gUsedVirtualRegistersGPR++;
-                PCodeUtilities_EmitInstruction(PC_RLWINM, selected, operand.reg, ((ENode *)shiftExpr)->data.intval.lo,
-                                               ((ENode *)beginExpr)->data.intval.lo,
-                                               ((ENode *)endExpr)->data.intval.lo),
-                    result[0].kind = OpndType_GPR, result[0].reg = selected;
-            }
+        case 38:
+            emit_rlwinm(args->node, args->next->node, args->next->next->node, args->next->next->next->node, requestedReg, result);
             break;
-        }
         case 39:
             emit_rlwnm(args->node, args->next->node, args->next->next->node, args->next->next->next->node, requestedReg,
                        result);
@@ -4176,28 +4315,9 @@ void Intrinsics_GenerateIntrinsicCall(ENode *node, short requestedReg, Operand *
         } break;
         case 100:
         case 0x107: {
-            short selected;
-            unsigned char *leftExpr;
-            unsigned char *rightExpr;
-            Operand rightOperand;
-            Operand leftOperand;
             UInt16 opcode;
-            char *immediateExpr;
             opcode = find_intrinsic_triple_code(intrinsic, node, args->node, args->next->node, args->next->next->node);
-            rightExpr = (unsigned char *)args->next->node;
-            immediateExpr = (char *)args->next->next->node;
-            leftExpr = (unsigned char *)args->node;
-            memclrw(&leftOperand, sizeof(leftOperand));
-            memclrw(&rightOperand, sizeof(rightOperand));
-            if (*immediateExpr != '2') {
-                CError_FATAL(4435);
-            }
-            GenVR(leftExpr, &leftOperand);
-            GenVR(rightExpr, &rightOperand);
-            selected = requestedReg ? requestedReg : gUsedVirtualRegistersVR++;
-            PCodeUtilities_EmitInstruction(opcode, selected, leftOperand.reg, rightOperand.reg,
-                                           ((ENode *)immediateExpr)->data.intval.lo),
-                result[0].kind = OpndType_VR, result[0].reg = selected;
+            emit_vr_pair_immediate_instruction(args->node, args->next->node, args->next->next->node, requestedReg, result, opcode);
         } break;
         case 0x2a:
         case 0x2b:
@@ -4344,25 +4464,9 @@ void Intrinsics_GenerateIntrinsicCall(ENode *node, short requestedReg, Operand *
         case 299:
         case 300:
         case 0x134: {
-            short selected;
-            unsigned char *rightExpr;
-            unsigned char *leftExpr;
-            {
-                Operand rightOperand;
-                Operand leftOperand;
-                UInt16 opcode;
-                opcode = find_binary_intrinsic_code(intrinsic, node, args->node, args->next->node);
-                rightExpr = (unsigned char *)args->next->node;
-                leftExpr = (unsigned char *)args->node;
-                memclrw(&leftOperand, sizeof(leftOperand));
-                memclrw(&rightOperand, sizeof(rightOperand));
-
-                GenVR(leftExpr, &leftOperand);
-                GenVR(rightExpr, &rightOperand);
-                selected = requestedReg ? requestedReg : gUsedVirtualRegistersVR++;
-                PCodeUtilities_EmitInstruction(opcode, selected, leftOperand.reg, rightOperand.reg),
-                    result[0].kind = OpndType_VR, result[0].reg = selected;
-            }
+            UInt16 opcode;
+            opcode = find_binary_intrinsic_code(intrinsic, node, args->node, args->next->node);
+            emit_binary_vr_instruction(args->node, args->next->node, requestedReg, result, opcode);
         } break;
         case 0x30:
         case 0x40:
@@ -4388,19 +4492,9 @@ void Intrinsics_GenerateIntrinsicCall(ENode *node, short requestedReg, Operand *
         case 0x131:
         case 0x132:
         case 0x133: {
-            short selected;
-            unsigned char *expr;
-            {
-                Operand operand;
-                UInt16 opcode;
-                opcode = find_unary_intrinsic_code(intrinsic, node, args->node);
-                expr = (unsigned char *)args->node;
-                memclrw(&operand, sizeof(operand));
-                GenVR(expr, &operand);
-                selected = requestedReg ? requestedReg : gUsedVirtualRegistersVR++;
-                PCodeUtilities_EmitInstruction(opcode, selected, operand.reg), result[0].kind = OpndType_VR,
-                                                                               result[0].reg = selected;
-            }
+            UInt16 opcode;
+            opcode = find_unary_intrinsic_code(intrinsic, node, args->node);
+            emit_unary_vr_instruction(args->node, requestedReg, result, opcode);
         } break;
         case 0x37:
         case 0x38:
@@ -4413,27 +4507,9 @@ void Intrinsics_GenerateIntrinsicCall(ENode *node, short requestedReg, Operand *
         case 0x10a:
         case 0x10b:
         case 0x10c: {
-            short selected;
-            unsigned char *rightExpr;
-            unsigned char *leftExpr;
-            {
-                Operand rightOperand;
-                Operand leftOperand;
-                UInt16 opcode;
-                opcode = find_binary_intrinsic_code(intrinsic, node, args->node, args->next->node);
-                rightExpr = (unsigned char *)args->next->node;
-                leftExpr = (unsigned char *)args->node;
-                memclrw(&leftOperand, sizeof(leftOperand));
-                memclrw(&rightOperand, sizeof(rightOperand));
-                if (*rightExpr != 0x32) {
-                    CError_FATAL(4342);
-                }
-                GenVR(leftExpr, &leftOperand);
-                data_00560648[*rightExpr](rightExpr, 0, 0, &rightOperand);
-                selected = requestedReg ? requestedReg : gUsedVirtualRegistersVR++;
-                PCodeUtilities_EmitInstruction(opcode, selected, leftOperand.reg, rightOperand.immediate),
-                    result[0].kind = OpndType_VR, result[0].reg = selected;
-            }
+            UInt16 opcode;
+            opcode = find_binary_intrinsic_code(intrinsic, node, args->node, args->next->node);
+            emit_vr_immediate_instruction(args->node, args->next->node, requestedReg, result, opcode);
         } break;
         case 0x68:
         case 0x69:
@@ -4441,111 +4517,40 @@ void Intrinsics_GenerateIntrinsicCall(ENode *node, short requestedReg, Operand *
         case 0x10d:
         case 0x10e:
         case 0x10f: {
-            short selected;
-            unsigned char *expr;
-            {
-                Operand operand;
-                UInt16 opcode;
-                opcode = find_unary_intrinsic_code(intrinsic, node, args->node);
-                expr = (unsigned char *)args->node;
-                memclrw(&operand, sizeof(operand));
-                if (*expr != 0x32) {
-                    CError_FATAL(4202);
-                }
-                data_00560648[*expr](expr, 0, 0, &operand);
-                selected = requestedReg ? requestedReg : gUsedVirtualRegistersVR++;
-                PCodeUtilities_EmitInstruction(opcode, selected, operand.immediate), result[0].kind = OpndType_VR,
-                                                                                     result[0].reg = selected;
-            }
+            UInt16 opcode;
+            opcode = find_unary_intrinsic_code(intrinsic, node, args->node);
+            emit_signed_vector_splat(args->node, requestedReg, result, opcode);
         } break;
         case 0x6b: {
-            short selected;
-            unsigned char *expr;
-            {
-                Operand operand;
-                UInt16 opcode;
-                opcode = find_unary_intrinsic_code(intrinsic, node, args->node);
-                expr = (unsigned char *)args->node;
-                memclrw(&operand, sizeof(operand));
-                if (*expr != 0x32) {
-                    CError_FATAL(4226);
-                }
-                data_00560648[*expr](expr, 0, 0, &operand);
-                selected = requestedReg ? requestedReg : gUsedVirtualRegistersVR++;
-                PCodeUtilities_EmitInstruction(opcode, selected, operand.immediate), result[0].kind = OpndType_VR,
-                                                                                     result[0].reg = selected;
-            }
+            UInt16 opcode;
+            opcode = find_unary_intrinsic_code(intrinsic, node, args->node);
+            emit_unsigned_byte_splat(args->node, requestedReg, result, opcode);
         } break;
         case 0x6c: {
-            short selected;
-            unsigned char *expr;
-            {
-                Operand operand;
-                UInt16 opcode;
-                opcode = find_unary_intrinsic_code(intrinsic, node, args->node);
-                expr = (unsigned char *)args->node;
-                memclrw(&operand, sizeof(operand));
-                if (*expr != 0x32) {
-                    CError_FATAL(4250);
-                }
-                data_00560648[*expr](expr, 0, 0, &operand);
-                selected = requestedReg ? requestedReg : gUsedVirtualRegistersVR++;
-                PCodeUtilities_EmitInstruction(opcode, selected, operand.immediate), result[0].kind = OpndType_VR,
-                                                                                     result[0].reg = selected;
-            }
+            UInt16 opcode;
+            opcode = find_unary_intrinsic_code(intrinsic, node, args->node);
+            emit_unsigned_short_splat(args->node, requestedReg, result, opcode);
         } break;
         case 0x6d: {
-            short selected;
-            unsigned char *expr;
-            {
-                Operand operand;
-                UInt16 opcode;
-                opcode = find_unary_intrinsic_code(intrinsic, node, args->node);
-                expr = (unsigned char *)args->node;
-                memclrw(&operand, sizeof(operand));
-                if (*expr != 0x32) {
-                    CError_FATAL(4274);
-                }
-                data_00560648[*expr](expr, 0, 0, &operand);
-                selected = requestedReg ? requestedReg : gUsedVirtualRegistersVR++;
-                PCodeUtilities_EmitInstruction(opcode, selected, operand.immediate), result[0].kind = OpndType_VR,
-                                                                                     result[0].reg = selected;
-            }
+            UInt16 opcode;
+            opcode = find_unary_intrinsic_code(intrinsic, node, args->node);
+            emit_unsigned_long_splat(args->node, requestedReg, result, opcode);
         } break;
-        case 0x53: {
-            unsigned char *expr;
-            {
-                Operand operand;
-                expr = (unsigned char *)args->node;
-                memclrw(&operand, sizeof(operand));
-                GenVR(expr, &operand);
-                PCodeUtilities_EmitInstruction(PC_MTVSCR, operand.reg);
-            }
-        } break;
+        case 0x53:
+            emit_vr_operand_instruction(args->node, result, PC_MTVSCR);
+            break;
         case 0x4d: {
-            short selected;
-            unsigned short opcode;
-            opcode = intrinsic_tables[(unsigned int)(intrinsic - 0x2a)].simple->code;
-            selected = requestedReg ? requestedReg : gUsedVirtualRegistersVR++;
-            PCodeUtilities_EmitInstruction(opcode, selected), result[0].kind = OpndType_VR, result[0].reg = selected;
+            UInt16 opcode;
+            opcode = simple_intrinsic_code(intrinsic, node);
+            GenVR(requestedReg, opcode, result);
         } break;
-        case 0x3a: {
-            unsigned char *expr;
-            {
-                Operand operand;
-                expr = (unsigned char *)args->node;
-                memclrw(&operand, sizeof(operand));
-                if (*expr != 0x32) {
-                    CError_FATAL(4297);
-                }
-                data_00560648[*expr](expr, 0, 0, &operand);
-                PCodeUtilities_EmitInstruction(PC_DSS, operand.immediate, 0);
-            }
-        } break;
+        case 0x3a:
+            emit_data_stream_stop(args->node, requestedReg, result);
+            break;
         case 0x3b: {
-            unsigned short opcode;
-            opcode = intrinsic_tables[(unsigned int)(intrinsic - 0x2a)].simple->code;
-            PCodeUtilities_EmitInstruction(opcode);
+            UInt16 opcode;
+            opcode = simple_intrinsic_code(intrinsic, node);
+            emit_simple_instruction(opcode);
         } break;
         case 0x3c:
         case 0x3d:
@@ -4578,25 +4583,9 @@ void Intrinsics_GenerateIntrinsicCall(ENode *node, short requestedReg, Operand *
         case 0xc6:
         case 199:
         case 200: {
-            short selected;
-            unsigned char *rightExpr;
-            unsigned char *leftExpr;
-            {
-                Operand rightOperand;
-                Operand leftOperand;
-                UInt16 opcode;
-                opcode = find_binary_intrinsic_code(intrinsic, node, args->node, args->next->node);
-                rightExpr = (unsigned char *)args->next->node;
-                leftExpr = (unsigned char *)args->node;
-                memclrw(&leftOperand, sizeof(leftOperand));
-                memclrw(&rightOperand, sizeof(rightOperand));
-
-                GenGPR(leftExpr, &leftOperand);
-                GenGPR(rightExpr, &rightOperand);
-                selected = requestedReg ? requestedReg : gUsedVirtualRegistersVR++;
-                PCodeUtilities_EmitInstruction(opcode, selected, leftOperand.reg, rightOperand.reg),
-                    result[0].kind = OpndType_VR, result[0].reg = selected;
-            }
+            UInt16 opcode;
+            opcode = find_binary_intrinsic_code(intrinsic, node, args->node, args->next->node);
+            emit_gpr_pair_vr_instruction(args->node, args->next->node, requestedReg, result, opcode);
         } break;
         case 0x72:
         case 0x73:
@@ -4655,25 +4644,9 @@ void Intrinsics_GenerateIntrinsicCall(ENode *node, short requestedReg, Operand *
             break;
         case 0x34:
         case 0x36: {
-            short selected;
-            unsigned char *rightExpr;
-            unsigned char *leftExpr;
-            {
-                Operand rightOperand;
-                Operand leftOperand;
-                UInt16 opcode;
-                opcode = find_binary_intrinsic_code(intrinsic, node, args->node, args->next->node);
-                leftExpr = (unsigned char *)args->node;
-                rightExpr = (unsigned char *)args->next->node;
-                memclrw(&leftOperand, sizeof(leftOperand));
-                memclrw(&rightOperand, sizeof(rightOperand));
-
-                GenVR(rightExpr, &leftOperand);
-                GenVR(leftExpr, &rightOperand);
-                selected = requestedReg ? requestedReg : gUsedVirtualRegistersVR++;
-                PCodeUtilities_EmitInstruction(opcode, selected, leftOperand.reg, rightOperand.reg),
-                    result[0].kind = OpndType_VR, result[0].reg = selected;
-            }
+            UInt16 opcode;
+            opcode = find_binary_intrinsic_code(intrinsic, node, args->node, args->next->node);
+            emit_binary_vr_instruction(args->next->node, args->node, requestedReg, result, opcode);
         } break;
         case 0x137:
         case 0x138:
@@ -5270,6 +5243,14 @@ void Intrinsics_RegisterIntrinsics(void)
     copts.cplusplus = saved_cplusplus;
 }
 
+static void *registration_find(const char *name)
+{
+    NameSpaceName *r = CScope_FindNameSpaceName(cscope_root, GetHashNameNode(name));
+    void *object = NULL;
+    if (r && (object = ((NameSpaceName *)r)[0].first.object) && !((NameSpaceName *)r)[0].first.next)
+        return object;
+    return NULL;
+}
 unsigned char Intrinsics_InitRegistrations(unsigned char active)
 {
     if (active) {
@@ -5887,36 +5868,6 @@ unsigned char Intrinsics_InitRegistrations(unsigned char active)
             return 0;
     }
     return 1;
-}
-
-static void *registration_find(const char *name)
-{
-    NameSpaceName *r = CScope_FindNameSpaceName(cscope_root, GetHashNameNode(name));
-    void *object = NULL;
-    if (r && (object = ((NameSpaceName *)r)[0].first.object) && !((NameSpaceName *)r)[0].first.next)
-        return object;
-    return NULL;
-}
-
-static void GenVR(UInt8 *node, Operand *op)
-{
-    data_00560648[*node](node, 0, 0, op);
-    if (op->kind != '\x06')
-        Operands_ForceVR(op, ((ENode *)node)->rtype, 0);
-}
-
-static inline void GenFPR(UInt8 *node, Operand *op)
-{
-    data_00560648[*node](node, 0, 0, op);
-    if (op->kind != '\x05')
-        Operands_ForceFPR(op, ((ENode *)node)->rtype, 0);
-}
-
-static void GenGPR(UInt8 *node, Operand *op)
-{
-    data_00560648[*node](node, 0, 0, op);
-    if (op->kind != '\0')
-        Operands_ForceGPR(op, ((ENode *)node)->rtype, 0);
 }
 
 char Intrinsics_IsRegisteredObject(ObjBase *object)

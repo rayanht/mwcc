@@ -780,7 +780,7 @@ Boolean CMach_CalcFloatDiadicBool(Type *self, volatile double a, SInt16 op, vola
         case 0x3c:
             return a < b;
         default:
-            CError_Internal("CMachine.c", 0x273);
+            CError_FATAL(VERSION > VERSION_GC_1_0 ? 627 : 615);
             return 0;
     }
 }
@@ -796,7 +796,7 @@ unsigned char CMach_CalcVectorDiadicBool(unsigned int context, const union MWVec
             return left->ul[0] != right->ul[0] && left->ul[1] != right->ul[1] && left->ul[2] != right->ul[2] &&
                    left->ul[3] != right->ul[3];
         default:
-            CError_Internal("CMachine.c", 653);
+            CError_FATAL(VERSION > VERSION_GC_1_0 ? 653 : 641);
             return 0;
     }
 }
@@ -846,7 +846,7 @@ Float CMachine_RoundFloatToType(Type *type, Float value)
         case 12:
             break;
         default:
-            CError_Internal("CMachine.c", 714);
+            CError_FATAL(VERSION > VERSION_GC_1_0 ? 714 : 702);
     }
     return value;
 }
@@ -984,24 +984,18 @@ static inline SInt32 cm_loadalign(UInt32 index)
 
 static SInt32 cm_sizealign(Type *type)
 {
-    SInt32 limit = cm_loadalign(copts.structalignment - 3);
-    if (type->size >= limit)
-        return limit;
-    return *(volatile SInt32 *)&type->size;
+    SInt32 alignment = cm_loadalign(cm_alignment() - 3);
+    if (type->size < alignment)
+        alignment = *(volatile SInt32 *)&type->size;
+    return alignment;
 }
 
-static SInt16 cm_alignmin(SInt16 b)
+static SInt16 cm_alignmin(SInt16 alignment)
 {
-    SInt32 a;
-    SInt16 r;
-    SInt32 limit;
-    a = copts.structalignment - 3;
-    a = cm_loadalign(a);
-    r = a;
-    limit = b;
-    if (a >= limit)
-        return b;
-    return r;
+    SInt32 limit = cm_loadalign(cm_alignment() - 3);
+    if (limit < alignment)
+        alignment = limit;
+    return alignment;
 }
 
 #define SIZE_ALIGN(type) cm_sizealign(type)
@@ -1071,7 +1065,7 @@ SInt16 CMachine_GetTypeAlignment(Type *type)
                             return 8;
                         return 4;
                     default:
-                        CError_FATAL(1173);
+                        CError_FATAL(VERSION > VERSION_GC_1_0 ? 1173 : 1150);
                 }
                 /* fall through */
             case TYPEMEMBERPOINTER:
@@ -1117,7 +1111,7 @@ SInt16 CMachine_GetTypeAlignment(Type *type)
                 return 1;
             case TYPELABEL:
             default:
-                CError_FATAL(1218);
+                CError_FATAL(VERSION > VERSION_GC_1_0 ? 1218 : 1195);
                 return 0;
         }
     }
@@ -1272,7 +1266,7 @@ long CMach_StructLayoutBitfield(TypeBitfield *field, int alignmentKind)
             storageBits = 32;
             break;
         default:
-            CError_Internal("CMachine.c", 1437);
+            CError_FATAL(VERSION > VERSION_GC_1_0 ? 1437 : 1414);
     }
     switch (copts.structalignment) {
         case 3:

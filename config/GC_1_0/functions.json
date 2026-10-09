@@ -6897,7 +6897,7 @@
     "source": "src/driver/TargetPanels-eabi-ppc.c"
   },
   {
-    "name": "fn_0042e130",
+    "name": "append_linear",
     "address": "0x0042e130",
     "size": 52,
     "source": "src/optimizer/IrOptimizer.c"
@@ -6933,13 +6933,13 @@
     "source": "src/optimizer/IrOptimizer.c"
   },
   {
-    "name": "fn_0042e430",
+    "name": "mark_address",
     "address": "0x0042e430",
     "size": 112,
     "source": "src/optimizer/IrOptimizer.c"
   },
   {
-    "name": "fn_0042e4a0",
+    "name": "insert_left_expression",
     "address": "0x0042e4a0",
     "size": 114,
     "source": "src/optimizer/IrOptimizer.c"
@@ -6963,25 +6963,25 @@
     "source": "src/optimizer/IrOptimizer.c"
   },
   {
-    "name": "fn_0042e8e0",
+    "name": "insert_conditional_branch",
     "address": "0x0042e8e0",
     "size": 132,
     "source": "src/optimizer/IrOptimizer.c"
   },
   {
-    "name": "fn_0042e970",
+    "name": "insert_end_branch",
     "address": "0x0042e970",
     "size": 120,
     "source": "src/optimizer/IrOptimizer.c"
   },
   {
-    "name": "fn_0042e9f0",
+    "name": "record_temporary",
     "address": "0x0042e9f0",
     "size": 57,
     "source": "src/optimizer/IrOptimizer.c"
   },
   {
-    "name": "fn_0042ea30",
+    "name": "LookupTemporary",
     "address": "0x0042ea30",
     "size": 58,
     "source": "src/optimizer/IrOptimizer.c"
@@ -7011,7 +7011,7 @@
     "source": "src/optimizer/IrOptimizer.c"
   },
   {
-    "name": "fn_0042ee60",
+    "name": "insert_label",
     "address": "0x0042ee60",
     "size": 119,
     "source": "src/optimizer/IrOptimizer.c"
@@ -7029,7 +7029,7 @@
     "source": "src/optimizer/IrOptimizer.c"
   },
   {
-    "name": "fn_0042f070",
+    "name": "insert_and_branch",
     "address": "0x0042f070",
     "size": 132,
     "source": "src/optimizer/IrOptimizer.c"
@@ -7041,7 +7041,7 @@
     "source": "src/optimizer/IrOptimizer.c"
   },
   {
-    "name": "fn_0042f310",
+    "name": "insert_or_branch",
     "address": "0x0042f310",
     "size": 132,
     "source": "src/optimizer/IrOptimizer.c"
@@ -7131,7 +7131,7 @@
     "source": "src/optimizer/IrOptimizer.c"
   },
   {
-    "name": "fn_00430b20",
+    "name": "renumber_linear_nodes",
     "address": "0x00430b20",
     "size": 56,
     "source": "src/optimizer/IrOptimizer.c"
@@ -7197,13 +7197,13 @@
     "source": "src/backend/CodeGen.c"
   },
   {
-    "name": "fn_004319e0",
+    "name": "release_temporary_objects",
     "address": "0x004319e0",
     "size": 33,
     "source": "src/backend/CodeGen.c"
   },
   {
-    "name": "fn_00431a10",
+    "name": "allocate_temporary_slots",
     "address": "0x00431a10",
     "size": 34,
     "source": "src/backend/CodeGen.c"
@@ -7257,7 +7257,7 @@
     "source": "src/backend/CodeGen.c"
   },
   {
-    "name": "fn_00432870",
+    "name": "emit_dlocal_initialization",
     "address": "0x00432870",
     "size": 1439,
     "source": "src/backend/CodeGen.c"
@@ -7269,7 +7269,7 @@
     "source": "src/backend/CodeGen.c"
   },
   {
-    "name": "fn_00432e90",
+    "name": "is_variadic_function",
     "address": "0x00432e90",
     "size": 43,
     "source": "src/backend/CodeGen.c"
@@ -7281,7 +7281,7 @@
     "source": "src/backend/CodeGen.c"
   },
   {
-    "name": "fn_00432f10",
+    "name": "is_tail",
     "address": "0x00432f10",
     "size": 41,
     "source": "src/backend/CodeGen.c"
@@ -7299,19 +7299,19 @@
     "source": "src/backend/CodeGen.c"
   },
   {
-    "name": "fn_004330b0",
+    "name": "emit_block",
     "address": "0x004330b0",
     "size": 43,
     "source": "src/backend/CodeGen.c"
   },
   {
-    "name": "fn_004330e0",
+    "name": "branch_block",
     "address": "0x004330e0",
     "size": 36,
     "source": "src/backend/CodeGen.c"
   },
   {
-    "name": "fn_00433110",
+    "name": "generate_indirect_branch",
     "address": "0x00433110",
     "size": 156,
     "source": "src/backend/CodeGen.c"
@@ -7329,13 +7329,13 @@
     "source": "src/backend/CodeGen.c"
   },
   {
-    "name": "fn_004335a0",
+    "name": "generate_begin_catch",
     "address": "0x004335a0",
     "size": 76,
     "source": "src/backend/CodeGen.c"
   },
   {
-    "name": "fn_004335f0",
+    "name": "generate_end_catch",
     "address": "0x004335f0",
     "size": 134,
     "source": "src/backend/CodeGen.c"
@@ -7347,7 +7347,7 @@
     "source": "src/backend/CodeGen.c"
   },
   {
-    "name": "fn_004337e0",
+    "name": "emit_profile_exit",
     "address": "0x004337e0",
     "size": 23,
     "source": "src/backend/CodeGen.c"
@@ -7395,7 +7395,7 @@
     "source": "src/backend/CodeGen.c"
   },
   {
-    "name": "fn_00434eb0",
+    "name": "CheckPragmaEnd",
     "address": "0x00434eb0",
     "size": 36,
     "source": "src/backend/CodeGen.c"
@@ -7407,7 +7407,7 @@
     "source": "src/backend/CodeGen.c"
   },
   {
-    "name": "fn_004357d0",
+    "name": "CodeGen_SetProcessorOption",
     "address": "0x004357d0",
     "size": 35,
     "source": "src/backend/CodeGen.c"
@@ -7497,13 +7497,13 @@
     "source": "src/frontend/CPrep.c"
   },
   {
-    "name": "fn_00437600",
+    "name": "insert_macro",
     "address": "0x00437600",
     "size": 43,
     "source": "src/frontend/CPrep.c"
   },
   {
-    "name": "fn_00437630",
+    "name": "register_predefined_macro",
     "address": "0x00437630",
     "size": 28,
     "source": "src/frontend/CPrep.c"
@@ -7521,7 +7521,7 @@
     "source": "src/frontend/CPrep.c"
   },
   {
-    "name": "fn_00437830",
+    "name": "update_identifier_options",
     "address": "0x00437830",
     "size": 21,
     "source": "src/frontend/CPrep.c"
@@ -7659,7 +7659,7 @@
     "source": "src/frontend/CPrep.c"
   },
   {
-    "name": "fn_00438d60",
+    "name": "warn_macro_name",
     "address": "0x00438d60",
     "size": 47,
     "source": "src/frontend/CPrep.c"
@@ -7773,13 +7773,13 @@
     "source": "src/frontend/CPrep.c"
   },
   {
-    "name": "fn_004399d0",
+    "name": "warn_macro_redefinition",
     "address": "0x004399d0",
     "size": 66,
     "source": "src/frontend/CPrep.c"
   },
   {
-    "name": "fn_00439a20",
+    "name": "expect_directive_end",
     "address": "0x00439a20",
     "size": 24,
     "source": "src/frontend/CPrep.c"
@@ -7833,7 +7833,7 @@
     "source": "src/frontend/CPrep.c"
   },
   {
-    "name": "fn_0043b420",
+    "name": "begin_macro_expansion",
     "address": "0x0043b420",
     "size": 97,
     "source": "src/frontend/CPrep.c"
@@ -7911,7 +7911,7 @@
     "source": "src/frontend/CPrep.c"
   },
   {
-    "name": "fn_0043bc60",
+    "name": "read_pragma_token",
     "address": "0x0043bc60",
     "size": 158,
     "source": "src/frontend/CPrep.c"
@@ -7923,13 +7923,13 @@
     "source": "src/frontend/CPrep.c"
   },
   {
-    "name": "fn_0043bf50",
+    "name": "push_pragma_options",
     "address": "0x0043bf50",
     "size": 49,
     "source": "src/frontend/CPrep.c"
   },
   {
-    "name": "fn_0043bf90",
+    "name": "pop_pragma_options",
     "address": "0x0043bf90",
     "size": 70,
     "source": "src/frontend/CPrep.c"
@@ -7989,7 +7989,7 @@
     "source": "src/frontend/CPrep.c"
   },
   {
-    "name": "fn_0043d120",
+    "name": "CPrep_IntegerType",
     "address": "0x0043d120",
     "size": 58,
     "source": "src/frontend/CPrep.c"
@@ -8019,25 +8019,25 @@
     "source": "src/frontend/CPrep.c"
   },
   {
-    "name": "fn_0043d890",
+    "name": "CPrep_Push",
     "address": "0x0043d890",
     "size": 81,
     "source": "src/frontend/CPrep.c"
   },
   {
-    "name": "fn_0043d8f0",
+    "name": "pop_if_state",
     "address": "0x0043d8f0",
     "size": 129,
     "source": "src/frontend/CPrep.c"
   },
   {
-    "name": "fn_0043d980",
+    "name": "push_active_if",
     "address": "0x0043d980",
     "size": 9,
     "source": "src/frontend/CPrep.c"
   },
   {
-    "name": "fn_0043d990",
+    "name": "push_conditional_if",
     "address": "0x0043d990",
     "size": 31,
     "source": "src/frontend/CPrep.c"
@@ -8859,13 +8859,13 @@
     "source": "src/frontend/CFunc.c"
   },
   {
-    "name": "fn_004437b0",
+    "name": "find_argument_object",
     "address": "0x004437b0",
     "size": 41,
     "source": "src/frontend/CFunc.c"
   },
   {
-    "name": "fn_004437e0",
+    "name": "append_func_arg",
     "address": "0x004437e0",
     "size": 35,
     "source": "src/frontend/CFunc.c"
@@ -8967,7 +8967,7 @@
     "source": "src/frontend/CFunc.c"
   },
   {
-    "name": "fn_00444040",
+    "name": "rewrite_temp_node",
     "address": "0x00444040",
     "size": 101,
     "source": "src/frontend/CFunc.c"
@@ -9015,25 +9015,25 @@
     "source": "src/frontend/CFunc.c"
   },
   {
-    "name": "fn_00444410",
+    "name": "CFunc_AnyCleanup",
     "address": "0x00444410",
     "size": 47,
     "source": "src/frontend/CFunc.c"
   },
   {
-    "name": "fn_00444440",
+    "name": "CFunc_EmitCleanups",
     "address": "0x00444440",
     "size": 40,
     "source": "src/frontend/CFunc.c"
   },
   {
-    "name": "fn_00444470",
+    "name": "CFunc_NeedsCleanup",
     "address": "0x00444470",
     "size": 79,
     "source": "src/frontend/CFunc.c"
   },
   {
-    "name": "fn_004444c0",
+    "name": "CFunc_CommonScope",
     "address": "0x004444c0",
     "size": 56,
     "source": "src/frontend/CFunc.c"
@@ -9051,13 +9051,13 @@
     "source": "src/frontend/CFunc.c"
   },
   {
-    "name": "fn_00444660",
+    "name": "CFunc_ScopeContains",
     "address": "0x00444660",
     "size": 32,
     "source": "src/frontend/CFunc.c"
   },
   {
-    "name": "fn_00444680",
+    "name": "CFunc_CheckJump",
     "address": "0x00444680",
     "size": 72,
     "source": "src/frontend/CFunc.c"
@@ -9075,19 +9075,19 @@
     "source": "src/frontend/CFunc.c"
   },
   {
-    "name": "fn_00444a20",
+    "name": "name_local_static",
     "address": "0x00444a20",
     "size": 169,
     "source": "src/frontend/CFunc.c"
   },
   {
-    "name": "fn_00444ad0",
+    "name": "append_localstatic_init_expr",
     "address": "0x00444ad0",
     "size": 144,
     "source": "src/frontend/CFunc.c"
   },
   {
-    "name": "fn_00444b60",
+    "name": "append_or_defer_expression_statement",
     "address": "0x00444b60",
     "size": 61,
     "source": "src/frontend/CFunc.c"
@@ -9129,7 +9129,7 @@
     "source": "src/frontend/CFunc.c"
   },
   {
-    "name": "fn_00445540",
+    "name": "check_scalar_condition",
     "address": "0x00445540",
     "size": 36,
     "source": "src/frontend/CFunc.c"
@@ -9219,7 +9219,7 @@
     "source": "src/frontend/CFunc.c"
   },
   {
-    "name": "fn_00447450",
+    "name": "mark_function_defined",
     "address": "0x00447450",
     "size": 75,
     "source": "src/frontend/CFunc.c"
@@ -9237,7 +9237,7 @@
     "source": "src/frontend/CFunc.c"
   },
   {
-    "name": "fn_004479e0",
+    "name": "generate_dummy_function",
     "address": "0x004479e0",
     "size": 99,
     "source": "src/frontend/CFunc.c"
@@ -9309,7 +9309,7 @@
     "source": "src/frontend/CExpr2.c"
   },
   {
-    "name": "fn_00447ed0",
+    "name": "forceintegral",
     "address": "0x00447ed0",
     "size": 41,
     "source": "src/frontend/CExpr2.c"
@@ -9369,7 +9369,7 @@
     "source": "src/frontend/CExpr2.c"
   },
   {
-    "name": "fn_004482e0",
+    "name": "integralpromote",
     "address": "0x004482e0",
     "size": 55,
     "source": "src/frontend/CExpr2.c"
@@ -9399,7 +9399,7 @@
     "source": "src/frontend/CExpr2.c"
   },
   {
-    "name": "fn_00448660",
+    "name": "CExpr_TempModifyExpr",
     "address": "0x00448660",
     "size": 196,
     "source": "src/frontend/CExpr2.c"
@@ -9417,7 +9417,7 @@
     "source": "src/frontend/CExpr2.c"
   },
   {
-    "name": "fn_00448b70",
+    "name": "CExpr_MakeObjRefNode",
     "address": "0x00448b70",
     "size": 124,
     "source": "src/frontend/CExpr2.c"
@@ -9525,7 +9525,7 @@
     "source": "src/frontend/CExpr2.c"
   },
   {
-    "name": "fn_0044a060",
+    "name": "conversion_return_types_equal",
     "address": "0x0044a060",
     "size": 54,
     "source": "src/frontend/CExpr2.c"
@@ -9543,7 +9543,7 @@
     "source": "src/frontend/CExpr2.c"
   },
   {
-    "name": "fn_0044a160",
+    "name": "conversion_is_hidden",
     "address": "0x0044a160",
     "size": 170,
     "source": "src/frontend/CExpr2.c"
@@ -9603,7 +9603,7 @@
     "source": "src/frontend/CExpr2.c"
   },
   {
-    "name": "fn_0044b300",
+    "name": "copy_object_list",
     "address": "0x0044b300",
     "size": 59,
     "source": "src/frontend/CExpr2.c"
@@ -9615,7 +9615,7 @@
     "source": "src/frontend/CExpr2.c"
   },
   {
-    "name": "fn_0044b430",
+    "name": "convert_default_argument",
     "address": "0x0044b430",
     "size": 71,
     "source": "src/frontend/CExpr2.c"
@@ -9675,13 +9675,13 @@
     "source": "src/frontend/CExpr2.c"
   },
   {
-    "name": "fn_0044c0b0",
+    "name": "convert_class_operand",
     "address": "0x0044c0b0",
     "size": 69,
     "source": "src/frontend/CExpr2.c"
   },
   {
-    "name": "fn_0044c100",
+    "name": "convert_class_binary_operands",
     "address": "0x0044c100",
     "size": 377,
     "source": "src/frontend/CExpr2.c"
@@ -9699,19 +9699,19 @@
     "source": "src/frontend/CExpr2.c"
   },
   {
-    "name": "fn_0044c5b0",
+    "name": "match_left_operator_conversions",
     "address": "0x0044c5b0",
     "size": 189,
     "source": "src/frontend/CExpr2.c"
   },
   {
-    "name": "fn_0044c670",
+    "name": "match_right_operator_conversions",
     "address": "0x0044c670",
     "size": 189,
     "source": "src/frontend/CExpr2.c"
   },
   {
-    "name": "fn_0044c730",
+    "name": "match_binary_operator_conversions",
     "address": "0x0044c730",
     "size": 224,
     "source": "src/frontend/CExpr2.c"
@@ -9735,13 +9735,13 @@
     "source": "src/frontend/CExpr2.c"
   },
   {
-    "name": "fn_0044d030",
+    "name": "needs_destructor_cleanup",
     "address": "0x0044d030",
     "size": 81,
     "source": "src/frontend/CExpr2.c"
   },
   {
-    "name": "fn_0044d090",
+    "name": "scan_new_parenthesized_type",
     "address": "0x0044d090",
     "size": 82,
     "source": "src/frontend/CExpr2.c"
@@ -9759,7 +9759,7 @@
     "source": "src/frontend/CExpr2.c"
   },
   {
-    "name": "fn_0044d370",
+    "name": "scan_new_type_id",
     "address": "0x0044d370",
     "size": 58,
     "source": "src/frontend/CExpr2.c"
@@ -12351,7 +12351,7 @@
     "source": "src/backend/StackFrameEABI.c"
   },
   {
-    "name": "fn_0046fd10",
+    "name": "save_interrupt_gprs",
     "address": "0x0046fd10",
     "size": 163,
     "source": "src/backend/StackFrameEABI.c"
@@ -12381,7 +12381,7 @@
     "source": "src/backend/StackFrameEABI.c"
   },
   {
-    "name": "fn_00470270",
+    "name": "needs_link_register_save",
     "address": "0x00470270",
     "size": 142,
     "source": "src/backend/StackFrameEABI.c"
@@ -15045,7 +15045,7 @@
     "source": "src/backend/Intrinsics.c"
   },
   {
-    "name": "fn_00490e80",
+    "name": "emit_memory_copy",
     "address": "0x00490e80",
     "size": 197,
     "source": "src/backend/Intrinsics.c"
@@ -15057,7 +15057,7 @@
     "source": "src/backend/Intrinsics.c"
   },
   {
-    "name": "fn_00491050",
+    "name": "emit_rlwinm",
     "address": "0x00491050",
     "size": 201,
     "source": "src/backend/Intrinsics.c"
@@ -15117,7 +15117,7 @@
     "source": "src/backend/Intrinsics.c"
   },
   {
-    "name": "fn_004918c0",
+    "name": "simple_intrinsic_code",
     "address": "0x004918c0",
     "size": 20,
     "source": "src/backend/Intrinsics.c"
@@ -15141,7 +15141,7 @@
     "source": "src/backend/Intrinsics.c"
   },
   {
-    "name": "fn_00491ae0",
+    "name": "emit_simple_instruction",
     "address": "0x00491ae0",
     "size": 12,
     "source": "src/backend/Intrinsics.c"
@@ -15153,49 +15153,49 @@
     "source": "src/backend/Intrinsics.c"
   },
   {
-    "name": "fn_00491b30",
+    "name": "emit_unary_vr_instruction",
     "address": "0x00491b30",
     "size": 140,
     "source": "src/backend/Intrinsics.c"
   },
   {
-    "name": "fn_00491bc0",
+    "name": "emit_signed_vector_splat",
     "address": "0x00491bc0",
     "size": 134,
     "source": "src/backend/Intrinsics.c"
   },
   {
-    "name": "fn_00491c50",
+    "name": "emit_unsigned_byte_splat",
     "address": "0x00491c50",
     "size": 134,
     "source": "src/backend/Intrinsics.c"
   },
   {
-    "name": "fn_00491ce0",
+    "name": "emit_unsigned_short_splat",
     "address": "0x00491ce0",
     "size": 134,
     "source": "src/backend/Intrinsics.c"
   },
   {
-    "name": "fn_00491d70",
+    "name": "emit_unsigned_long_splat",
     "address": "0x00491d70",
     "size": 134,
     "source": "src/backend/Intrinsics.c"
   },
   {
-    "name": "fn_00491e00",
+    "name": "emit_data_stream_stop",
     "address": "0x00491e00",
     "size": 90,
     "source": "src/backend/Intrinsics.c"
   },
   {
-    "name": "fn_00491e60",
+    "name": "emit_binary_vr_instruction",
     "address": "0x00491e60",
     "size": 218,
     "source": "src/backend/Intrinsics.c"
   },
   {
-    "name": "fn_00491f40",
+    "name": "emit_vr_immediate_instruction",
     "address": "0x00491f40",
     "size": 209,
     "source": "src/backend/Intrinsics.c"
@@ -15213,13 +15213,13 @@
     "source": "src/backend/Intrinsics.c"
   },
   {
-    "name": "fn_00492290",
+    "name": "emit_vr_pair_immediate_instruction",
     "address": "0x00492290",
     "size": 248,
     "source": "src/backend/Intrinsics.c"
   },
   {
-    "name": "fn_00492390",
+    "name": "emit_gpr_pair_vr_instruction",
     "address": "0x00492390",
     "size": 218,
     "source": "src/backend/Intrinsics.c"
@@ -15243,7 +15243,7 @@
     "source": "src/backend/Intrinsics.c"
   },
   {
-    "name": "fn_00492860",
+    "name": "emit_vr_operand_instruction",
     "address": "0x00492860",
     "size": 93,
     "source": "src/backend/Intrinsics.c"
@@ -16017,7 +16017,7 @@
     "source": "src/backend/Peephole.c"
   },
   {
-    "name": "fn_004a2730",
+    "name": "RotatedMask",
     "address": "0x004a2730",
     "size": 131,
     "source": "src/backend/Peephole.c"
@@ -16065,7 +16065,7 @@
     "source": "src/backend/Peephole.c"
   },
   {
-    "name": "fn_004a2b50",
+    "name": "unlink_instruction_for_unmatched_fmr",
     "address": "0x004a2b50",
     "size": 87,
     "source": "src/backend/Peephole.c"
@@ -16083,31 +16083,31 @@
     "source": "src/backend/Peephole.c"
   },
   {
-    "name": "fn_004a2d20",
+    "name": "make_record_form_and_unlink_instruction",
     "address": "0x004a2d20",
     "size": 184,
     "source": "src/backend/Peephole.c"
   },
   {
-    "name": "fn_004a2de0",
+    "name": "bypass_extsb_for_low_byte_rotated_mask",
     "address": "0x004a2de0",
     "size": 171,
     "source": "src/backend/Peephole.c"
   },
   {
-    "name": "fn_004a2e90",
+    "name": "bypass_extsh_for_rotated_mask",
     "address": "0x004a2e90",
     "size": 171,
     "source": "src/backend/Peephole.c"
   },
   {
-    "name": "fn_004a2f40",
+    "name": "fold_lbz_lbzx_mask",
     "address": "0x004a2f40",
     "size": 181,
     "source": "src/backend/Peephole.c"
   },
   {
-    "name": "fn_004a3000",
+    "name": "fold_lhz_lhzx_mask",
     "address": "0x004a3000",
     "size": 181,
     "source": "src/backend/Peephole.c"
@@ -16119,7 +16119,7 @@
     "source": "src/backend/Peephole.c"
   },
   {
-    "name": "fn_004a3200",
+    "name": "fold_li_operand",
     "address": "0x004a3200",
     "size": 184,
     "source": "src/backend/Peephole.c"
@@ -16131,7 +16131,7 @@
     "source": "src/backend/Peephole.c"
   },
   {
-    "name": "fn_004a3550",
+    "name": "fold_reaching_addi",
     "address": "0x004a3550",
     "size": 199,
     "source": "src/backend/Peephole.c"
@@ -16167,13 +16167,13 @@
     "source": "src/backend/Peephole.c"
   },
   {
-    "name": "fn_004a3ab0",
+    "name": "replace_with_reaching_li",
     "address": "0x004a3ab0",
     "size": 151,
     "source": "src/backend/Peephole.c"
   },
   {
-    "name": "fn_004a3b50",
+    "name": "merge_reaching_def_instruction",
     "address": "0x004a3b50",
     "size": 152,
     "source": "src/backend/Peephole.c"
@@ -16191,19 +16191,19 @@
     "source": "src/backend/Peephole.c"
   },
   {
-    "name": "fn_004a3d10",
+    "name": "eliminate_redundant_store",
     "address": "0x004a3d10",
     "size": 1309,
     "source": "src/backend/Peephole.c"
   },
   {
-    "name": "fn_004a4230",
+    "name": "fold_rlwinm_or_mr_reaching_def",
     "address": "0x004a4230",
     "size": 482,
     "source": "src/backend/Peephole.c"
   },
   {
-    "name": "fn_004a4420",
+    "name": "combine_mulli",
     "address": "0x004a4420",
     "size": 182,
     "source": "src/backend/Peephole.c"
@@ -16233,7 +16233,7 @@
     "source": "src/backend/Peephole.c"
   },
   {
-    "name": "fn_004a4810",
+    "name": "fold_to_rlwnm",
     "address": "0x004a4810",
     "size": 1307,
     "source": "src/backend/Peephole.c"
@@ -16245,7 +16245,7 @@
     "source": "src/backend/Peephole.c"
   },
   {
-    "name": "fn_004a5060",
+    "name": "fold_rlwimi_rlwinm_to_sthbrx",
     "address": "0x004a5060",
     "size": 706,
     "source": "src/backend/Peephole.c"
@@ -17751,13 +17751,13 @@
     "source": "src/frontend/CPrec.c"
   },
   {
-    "name": "fn_004b5480",
+    "name": "initialize_written_entry_buckets",
     "address": "0x004b5480",
     "size": 30,
     "source": "src/frontend/CPrec.c"
   },
   {
-    "name": "fn_004b54a0",
+    "name": "initialize_pointer_type_buckets",
     "address": "0x004b54a0",
     "size": 30,
     "source": "src/frontend/CPrec.c"
@@ -17829,7 +17829,7 @@
     "source": "src/frontend/CPrec.c"
   },
   {
-    "name": "fn_004b5c00",
+    "name": "append_image_word",
     "address": "0x004b5c00",
     "size": 34,
     "source": "src/frontend/CPrec.c"
@@ -17841,7 +17841,7 @@
     "source": "src/frontend/CPrec.c"
   },
   {
-    "name": "fn_004b5c60",
+    "name": "append_object_offset",
     "address": "0x004b5c60",
     "size": 122,
     "source": "src/frontend/CPrec.c"
@@ -18291,7 +18291,7 @@
     "source": "src/frontend/CPrec.c"
   },
   {
-    "name": "fn_004b93f0",
+    "name": "write_saved_token_patches",
     "address": "0x004b93f0",
     "size": 52,
     "source": "src/frontend/CPrec.c"
@@ -18303,13 +18303,13 @@
     "source": "src/frontend/CPrec.c"
   },
   {
-    "name": "fn_004b9500",
+    "name": "CPrec_Flush",
     "address": "0x004b9500",
     "size": 92,
     "source": "src/frontend/CPrec.c"
   },
   {
-    "name": "fn_004b9560",
+    "name": "checkflush",
     "address": "0x004b9560",
     "size": 58,
     "source": "src/frontend/CPrec.c"
@@ -18327,7 +18327,7 @@
     "source": "src/frontend/CPrec.c"
   },
   {
-    "name": "fn_004b9980",
+    "name": "align_output",
     "address": "0x004b9980",
     "size": 83,
     "source": "src/frontend/CPrec.c"
@@ -18381,25 +18381,25 @@
     "source": "src/frontend/CPrec.c"
   },
   {
-    "name": "fn_004ba2b0",
+    "name": "restore_pointer_offsets",
     "address": "0x004ba2b0",
     "size": 70,
     "source": "src/frontend/CPrec.c"
   },
   {
-    "name": "fn_004ba300",
+    "name": "restore_root_namespace",
     "address": "0x004ba300",
     "size": 81,
     "source": "src/frontend/CPrec.c"
   },
   {
-    "name": "fn_004ba360",
+    "name": "reset_loaded_hash_name_ids",
     "address": "0x004ba360",
     "size": 39,
     "source": "src/frontend/CPrec.c"
   },
   {
-    "name": "fn_004ba390",
+    "name": "declare_pending_buffers",
     "address": "0x004ba390",
     "size": 53,
     "source": "src/frontend/CPrec.c"
@@ -18933,19 +18933,19 @@
     "source": "src/frontend/CSOM.c"
   },
   {
-    "name": "fn_004c08e0",
+    "name": "som_method_name",
     "address": "0x004c08e0",
     "size": 33,
     "source": "src/frontend/CSOM.c"
   },
   {
-    "name": "fn_004c0910",
+    "name": "lookup_som_type",
     "address": "0x004c0910",
     "size": 50,
     "source": "src/frontend/CSOM.c"
   },
   {
-    "name": "fn_004c0950",
+    "name": "method_vtbl_offset",
     "address": "0x004c0950",
     "size": 57,
     "source": "src/frontend/CSOM.c"
@@ -18969,7 +18969,7 @@
     "source": "src/frontend/CSOM.c"
   },
   {
-    "name": "fn_004c0c70",
+    "name": "create_som_data_object",
     "address": "0x004c0c70",
     "size": 66,
     "source": "src/frontend/CSOM.c"
@@ -19035,7 +19035,7 @@
     "source": "src/frontend/CSOM.c"
   },
   {
-    "name": "fn_004c1890",
+    "name": "create_registration_function",
     "address": "0x004c1890",
     "size": 131,
     "source": "src/frontend/CSOM.c"
@@ -19047,19 +19047,19 @@
     "source": "src/frontend/CSOM.c"
   },
   {
-    "name": "fn_004c1a60",
+    "name": "make_base_descriptor_values",
     "address": "0x004c1a60",
     "size": 129,
     "source": "src/frontend/CSOM.c"
   },
   {
-    "name": "fn_004c1af0",
+    "name": "CSOM_SetNibble",
     "address": "0x004c1af0",
     "size": 55,
     "source": "src/frontend/CSOM.c"
   },
   {
-    "name": "fn_004c1b30",
+    "name": "MakeKinds",
     "address": "0x004c1b30",
     "size": 147,
     "source": "src/frontend/CSOM.c"
@@ -19071,7 +19071,7 @@
     "source": "src/frontend/CSOM.c"
   },
   {
-    "name": "fn_004c1c40",
+    "name": "make_member_names",
     "address": "0x004c1c40",
     "size": 118,
     "source": "src/frontend/CSOM.c"
@@ -19143,7 +19143,7 @@
     "source": "src/frontend/CSOM.c"
   },
   {
-    "name": "fn_004c2820",
+    "name": "make_conditional_sequence",
     "address": "0x004c2820",
     "size": 121,
     "source": "src/frontend/CSOM.c"
@@ -19173,7 +19173,7 @@
     "source": "src/frontend/CSOM.c"
   },
   {
-    "name": "fn_004c2be0",
+    "name": "make_somself_call",
     "address": "0x004c2be0",
     "size": 178,
     "source": "src/frontend/CSOM.c"
@@ -19215,7 +19215,7 @@
     "source": "src/frontend/CSOM.c"
   },
   {
-    "name": "fn_004c3280",
+    "name": "CSOM_CreateMemberAccessExpr",
     "address": "0x004c3280",
     "size": 244,
     "source": "src/frontend/CSOM.c"
@@ -19785,7 +19785,7 @@
     "source": "src/frontend/CDecl.c"
   },
   {
-    "name": "fn_004c7510",
+    "name": "make_reference_type",
     "address": "0x004c7510",
     "size": 49,
     "source": "src/frontend/CDecl.c"
@@ -19797,7 +19797,7 @@
     "source": "src/frontend/CDecl.c"
   },
   {
-    "name": "fn_004c7580",
+    "name": "finalize_function_type",
     "address": "0x004c7580",
     "size": 1,
     "source": "src/frontend/CDecl.c"
@@ -19863,7 +19863,7 @@
     "source": "src/frontend/CDecl.c"
   },
   {
-    "name": "fn_004c79d0",
+    "name": "check_function_return_type",
     "address": "0x004c79d0",
     "size": 56,
     "source": "src/frontend/CDecl.c"
@@ -19887,7 +19887,7 @@
     "source": "src/frontend/CDecl.c"
   },
   {
-    "name": "fn_004c7d70",
+    "name": "replace_nested_type",
     "address": "0x004c7d70",
     "size": 268,
     "source": "src/frontend/CDecl.c"
@@ -19905,7 +19905,7 @@
     "source": "src/frontend/CDecl.c"
   },
   {
-    "name": "fn_004c8040",
+    "name": "parse_operator_name",
     "address": "0x004c8040",
     "size": 60,
     "source": "src/frontend/CDecl.c"
@@ -19941,7 +19941,7 @@
     "source": "src/frontend/CDecl.c"
   },
   {
-    "name": "fn_004c8a00",
+    "name": "make_dependent_member_pointer",
     "address": "0x004c8a00",
     "size": 79,
     "source": "src/frontend/CDecl.c"
@@ -19977,7 +19977,7 @@
     "source": "src/frontend/CDecl.c"
   },
   {
-    "name": "fn_004c91a0",
+    "name": "update_function_declaration",
     "address": "0x004c91a0",
     "size": 121,
     "source": "src/frontend/CDecl.c"
@@ -20031,7 +20031,7 @@
     "source": "src/frontend/CDecl.c"
   },
   {
-    "name": "fn_004ca310",
+    "name": "parse_enum_body",
     "address": "0x004ca310",
     "size": 1866,
     "source": "src/frontend/CDecl.c"
@@ -20079,7 +20079,7 @@
     "source": "src/frontend/CDecl.c"
   },
   {
-    "name": "fn_004cbd80",
+    "name": "make_struct_tag",
     "address": "0x004cbd80",
     "size": 117,
     "source": "src/frontend/CDecl.c"
@@ -20097,7 +20097,7 @@
     "source": "src/frontend/CDecl.c"
   },
   {
-    "name": "fn_004cc0f0",
+    "name": "inherit_export_flags",
     "address": "0x004cc0f0",
     "size": 51,
     "source": "src/frontend/CDecl.c"
@@ -20109,7 +20109,7 @@
     "source": "src/frontend/CDecl.c"
   },
   {
-    "name": "fn_004cc190",
+    "name": "make_virtual_member",
     "address": "0x004cc190",
     "size": 58,
     "source": "src/frontend/CDecl.c"
@@ -20187,13 +20187,13 @@
     "source": "src/frontend/CDecl.c"
   },
   {
-    "name": "fn_004ce030",
+    "name": "combine_member_access",
     "address": "0x004ce030",
     "size": 39,
     "source": "src/frontend/CDecl.c"
   },
   {
-    "name": "fn_004ce060",
+    "name": "make_default_constructor_type",
     "address": "0x004ce060",
     "size": 98,
     "source": "src/frontend/CDecl.c"
@@ -20205,7 +20205,7 @@
     "source": "src/frontend/CDecl.c"
   },
   {
-    "name": "fn_004ce1c0",
+    "name": "declare_generated_member",
     "address": "0x004ce1c0",
     "size": 70,
     "source": "src/frontend/CDecl.c"
@@ -20229,7 +20229,7 @@
     "source": "src/frontend/CDecl.c"
   },
   {
-    "name": "fn_004ce550",
+    "name": "make_assignment_type",
     "address": "0x004ce550",
     "size": 113,
     "source": "src/frontend/CDecl.c"
@@ -20241,7 +20241,7 @@
     "source": "src/frontend/CDecl.c"
   },
   {
-    "name": "fn_004ce740",
+    "name": "make_destructor_type",
     "address": "0x004ce740",
     "size": 94,
     "source": "src/frontend/CDecl.c"
@@ -20307,7 +20307,7 @@
     "source": "src/frontend/CExpr.c"
   },
   {
-    "name": "fn_004cf720",
+    "name": "replace_with_constant",
     "address": "0x004cf720",
     "size": 119,
     "source": "src/frontend/CExpr.c"
@@ -20433,7 +20433,7 @@
     "source": "src/frontend/CExpr.c"
   },
   {
-    "name": "fn_004d0a10",
+    "name": "make_dependent_cast",
     "address": "0x004d0a10",
     "size": 30,
     "source": "src/frontend/CExpr.c"
@@ -20445,13 +20445,13 @@
     "source": "src/frontend/CExpr.c"
   },
   {
-    "name": "fn_004d0b10",
+    "name": "make_member_access",
     "address": "0x004d0b10",
     "size": 137,
     "source": "src/frontend/CExpr.c"
   },
   {
-    "name": "fn_004d0ba0",
+    "name": "is_member_function",
     "address": "0x004d0ba0",
     "size": 27,
     "source": "src/frontend/CExpr.c"
@@ -20529,7 +20529,7 @@
     "source": "src/frontend/CExpr.c"
   },
   {
-    "name": "fn_004d2140",
+    "name": "scan_builtin_conversion",
     "address": "0x004d2140",
     "size": 80,
     "source": "src/frontend/CExpr.c"
@@ -20553,7 +20553,7 @@
     "source": "src/frontend/CExpr.c"
   },
   {
-    "name": "fn_004d2d70",
+    "name": "scan_sizeof_expression",
     "address": "0x004d2d70",
     "size": 110,
     "source": "src/frontend/CExpr.c"
@@ -20565,7 +20565,7 @@
     "source": "src/frontend/CExpr.c"
   },
   {
-    "name": "fn_004d2e00",
+    "name": "set_comparison_result_type",
     "address": "0x004d2e00",
     "size": 40,
     "source": "src/frontend/CExpr.c"
@@ -20625,7 +20625,7 @@
     "source": "src/frontend/CExpr.c"
   },
   {
-    "name": "fn_004d3c80",
+    "name": "cast_class_pointer",
     "address": "0x004d3c80",
     "size": 61,
     "source": "src/frontend/CExpr.c"
@@ -20643,7 +20643,7 @@
     "source": "src/frontend/CExpr.c"
   },
   {
-    "name": "fn_004d3f20",
+    "name": "cast_member_pointer",
     "address": "0x004d3f20",
     "size": 82,
     "source": "src/frontend/CExpr.c"
@@ -20667,13 +20667,13 @@
     "source": "src/frontend/CExpr.c"
   },
   {
-    "name": "fn_004d49c0",
+    "name": "make_multiplication",
     "address": "0x004d49c0",
     "size": 178,
     "source": "src/frontend/CExpr.c"
   },
   {
-    "name": "fn_004d4a80",
+    "name": "make_division",
     "address": "0x004d4a80",
     "size": 184,
     "source": "src/frontend/CExpr.c"
@@ -20685,13 +20685,13 @@
     "source": "src/frontend/CExpr.c"
   },
   {
-    "name": "fn_004d4d30",
+    "name": "make_addition",
     "address": "0x004d4d30",
     "size": 178,
     "source": "src/frontend/CExpr.c"
   },
   {
-    "name": "fn_004d4df0",
+    "name": "make_subtraction",
     "address": "0x004d4df0",
     "size": 178,
     "source": "src/frontend/CExpr.c"
@@ -20787,7 +20787,7 @@
     "source": "src/frontend/CExpr.c"
   },
   {
-    "name": "fn_004d69b0",
+    "name": "CExpr_New_ELOR_Node",
     "address": "0x004d69b0",
     "size": 606,
     "source": "src/frontend/CExpr.c"
@@ -21201,7 +21201,7 @@
     "source": "src/frontend/CInline.c"
   },
   {
-    "name": "fn_004db370",
+    "name": "make_not_not",
     "address": "0x004db370",
     "size": 85,
     "source": "src/frontend/CInline.c"
@@ -21219,7 +21219,7 @@
     "source": "src/frontend/CInline.c"
   },
   {
-    "name": "fn_004dba70",
+    "name": "InlineObjectModifiable",
     "address": "0x004dba70",
     "size": 67,
     "source": "src/frontend/CInline.c"
@@ -21243,7 +21243,7 @@
     "source": "src/frontend/CInline.c"
   },
   {
-    "name": "fn_004dbc50",
+    "name": "inline_member_index",
     "address": "0x004dbc50",
     "size": 61,
     "source": "src/frontend/CInline.c"
@@ -21255,7 +21255,7 @@
     "source": "src/frontend/CInline.c"
   },
   {
-    "name": "fn_004dbd00",
+    "name": "copy_member_info",
     "address": "0x004dbd00",
     "size": 98,
     "source": "src/frontend/CInline.c"
@@ -21279,7 +21279,7 @@
     "source": "src/frontend/CInline.c"
   },
   {
-    "name": "fn_004dc450",
+    "name": "get_storage_flags",
     "address": "0x004dc450",
     "size": 84,
     "source": "src/frontend/CInline.c"
@@ -21291,7 +21291,7 @@
     "source": "src/frontend/CInline.c"
   },
   {
-    "name": "NewInlineVar",
+    "name": "create_local_object",
     "address": "0x004dc510",
     "size": 61,
     "source": "src/frontend/CInline.c"
@@ -21321,13 +21321,13 @@
     "source": "src/frontend/CInline.c"
   },
   {
-    "name": "fn_004dc9f0",
+    "name": "InlineWrapResult",
     "address": "0x004dc9f0",
     "size": 94,
     "source": "src/frontend/CInline.c"
   },
   {
-    "name": "fn_004dca50",
+    "name": "inline_return_argument",
     "address": "0x004dca50",
     "size": 56,
     "source": "src/frontend/CInline.c"
@@ -21447,7 +21447,7 @@
     "source": "src/frontend/CInline.c"
   },
   {
-    "name": "fn_004dea00",
+    "name": "CInline_EnsurePending",
     "address": "0x004dea00",
     "size": 73,
     "source": "src/frontend/CInline.c"
@@ -21483,7 +21483,7 @@
     "source": "src/frontend/CInline.c"
   },
   {
-    "name": "fn_004ded20",
+    "name": "forward_expression_objrefs",
     "address": "0x004ded20",
     "size": 23,
     "source": "src/frontend/CInline.c"
@@ -21501,7 +21501,7 @@
     "source": "src/frontend/CInline.c"
   },
   {
-    "name": "fn_004def30",
+    "name": "CInline_MovePending",
     "address": "0x004def30",
     "size": 77,
     "source": "src/frontend/CInline.c"
@@ -21537,7 +21537,7 @@
     "source": "src/frontend/CInline.c"
   },
   {
-    "name": "fn_004df3d0",
+    "name": "find_template_class_inst",
     "address": "0x004df3d0",
     "size": 78,
     "source": "src/frontend/CInline.c"
@@ -21603,7 +21603,7 @@
     "source": "src/frontend/CABI.c"
   },
   {
-    "name": "fn_004df970",
+    "name": "CABI_BaseSize",
     "address": "0x004df970",
     "size": 33,
     "source": "src/frontend/CABI.c"
@@ -21615,13 +21615,13 @@
     "source": "src/frontend/CABI.c"
   },
   {
-    "name": "fn_004dfa30",
+    "name": "layout_virtual_base_pointers",
     "address": "0x004dfa30",
     "size": 68,
     "source": "src/frontend/CABI.c"
   },
   {
-    "name": "fn_004dfa80",
+    "name": "find_union_member_offset",
     "address": "0x004dfa80",
     "size": 59,
     "source": "src/frontend/CABI.c"
@@ -21633,13 +21633,13 @@
     "source": "src/frontend/CABI.c"
   },
   {
-    "name": "fn_004dfc90",
+    "name": "layout_virtual_bases",
     "address": "0x004dfc90",
     "size": 97,
     "source": "src/frontend/CABI.c"
   },
   {
-    "name": "fn_004dfd00",
+    "name": "inherit_vtable_member",
     "address": "0x004dfd00",
     "size": 59,
     "source": "src/frontend/CABI.c"
@@ -21669,7 +21669,7 @@
     "source": "src/frontend/CABI.c"
   },
   {
-    "name": "fn_004dfe70",
+    "name": "CABI_ApplyClassFlags",
     "address": "0x004dfe70",
     "size": 51,
     "source": "src/frontend/CABI.c"
@@ -21705,31 +21705,31 @@
     "source": "src/frontend/CABI.c"
   },
   {
-    "name": "fn_004e04e0",
+    "name": "CABI_FlagArg",
     "address": "0x004e04e0",
     "size": 60,
     "source": "src/frontend/CABI.c"
   },
   {
-    "name": "fn_004e0520",
+    "name": "CABI_MakeFlagExpr",
     "address": "0x004e0520",
     "size": 13,
     "source": "src/frontend/CABI.c"
   },
   {
-    "name": "fn_004e0530",
+    "name": "CABI_SourceArg",
     "address": "0x004e0530",
     "size": 138,
     "source": "src/frontend/CABI.c"
   },
   {
-    "name": "fn_004e05c0",
+    "name": "build_vbase_ptr_initializers",
     "address": "0x004e05c0",
     "size": 205,
     "source": "src/frontend/CABI.c"
   },
   {
-    "name": "fn_004e0690",
+    "name": "CABI_InitVBasePtrs",
     "address": "0x004e0690",
     "size": 92,
     "source": "src/frontend/CABI.c"
@@ -21741,7 +21741,7 @@
     "source": "src/frontend/CABI.c"
   },
   {
-    "name": "fn_004e07b0",
+    "name": "make_virtual_base_pointer",
     "address": "0x004e07b0",
     "size": 121,
     "source": "src/frontend/CABI.c"
@@ -21771,13 +21771,13 @@
     "source": "src/frontend/CABI.c"
   },
   {
-    "name": "fn_004e0bf0",
+    "name": "CABI_IsOperatorNew",
     "address": "0x004e0bf0",
     "size": 98,
     "source": "src/frontend/CABI.c"
   },
   {
-    "name": "fn_004e0c60",
+    "name": "CABI_ConstructorCallsNew",
     "address": "0x004e0c60",
     "size": 141,
     "source": "src/frontend/CABI.c"
@@ -21795,7 +21795,7 @@
     "source": "src/frontend/CABI.c"
   },
   {
-    "name": "fn_004e1580",
+    "name": "make_class_assignment",
     "address": "0x004e1580",
     "size": 94,
     "source": "src/frontend/CABI.c"
@@ -22161,7 +22161,7 @@
     "source": "src/frontend/CObjC.c"
   },
   {
-    "name": "fn_004e4c80",
+    "name": "ObjC_GetSelfName",
     "address": "0x004e4c80",
     "size": 6,
     "source": "src/frontend/CObjC.c"
@@ -22185,13 +22185,13 @@
     "source": "src/frontend/CObjC.c"
   },
   {
-    "name": "fn_004e4e60",
+    "name": "FindHashNode",
     "address": "0x004e4e60",
     "size": 52,
     "source": "src/frontend/CObjC.c"
   },
   {
-    "name": "fn_004e4ea0",
+    "name": "ObjC_NewSelector",
     "address": "0x004e4ea0",
     "size": 95,
     "source": "src/frontend/CObjC.c"
@@ -22203,7 +22203,7 @@
     "source": "src/frontend/CObjC.c"
   },
   {
-    "name": "fn_004e4f90",
+    "name": "ObjC_TypesEqual",
     "address": "0x004e4f90",
     "size": 49,
     "source": "src/frontend/CObjC.c"
@@ -22239,7 +22239,7 @@
     "source": "src/frontend/CObjC.c"
   },
   {
-    "name": "fn_004e5390",
+    "name": "ObjC_GetMessageSendFunction",
     "address": "0x004e5390",
     "size": 98,
     "source": "src/frontend/CObjC.c"
@@ -22251,19 +22251,19 @@
     "source": "src/frontend/CObjC.c"
   },
   {
-    "name": "fn_004e5630",
+    "name": "ObjC_FindClass",
     "address": "0x004e5630",
     "size": 84,
     "source": "src/frontend/CObjC.c"
   },
   {
-    "name": "fn_004e5690",
+    "name": "FindNamedPointerType",
     "address": "0x004e5690",
     "size": 80,
     "source": "src/frontend/CObjC.c"
   },
   {
-    "name": "fn_004e56e0",
+    "name": "GetClassType",
     "address": "0x004e56e0",
     "size": 54,
     "source": "src/frontend/CObjC.c"
@@ -22275,7 +22275,7 @@
     "source": "src/frontend/CObjC.c"
   },
   {
-    "name": "fn_004e5760",
+    "name": "IsIdType",
     "address": "0x004e5760",
     "size": 69,
     "source": "src/frontend/CObjC.c"
@@ -22287,13 +22287,13 @@
     "source": "src/frontend/CObjC.c"
   },
   {
-    "name": "fn_004e5820",
+    "name": "GetSelType",
     "address": "0x004e5820",
     "size": 46,
     "source": "src/frontend/CObjC.c"
   },
   {
-    "name": "fn_004e5850",
+    "name": "IsSelType",
     "address": "0x004e5850",
     "size": 62,
     "source": "src/frontend/CObjC.c"
@@ -22305,7 +22305,7 @@
     "source": "src/frontend/CObjC.c"
   },
   {
-    "name": "fn_004e5950",
+    "name": "ObjC_ParseParenthesizedType",
     "address": "0x004e5950",
     "size": 146,
     "source": "src/frontend/CObjC.c"
@@ -22359,7 +22359,7 @@
     "source": "src/frontend/CObjC.c"
   },
   {
-    "name": "fn_004e6100",
+    "name": "ObjC_GetMethodFunction",
     "address": "0x004e6100",
     "size": 138,
     "source": "src/frontend/CObjC.c"
@@ -22419,7 +22419,7 @@
     "source": "src/frontend/CObjC.c"
   },
   {
-    "name": "fn_004e6790",
+    "name": "ObjC_EncodeStruct",
     "address": "0x004e6790",
     "size": 181,
     "source": "src/frontend/CObjC.c"
@@ -22443,13 +22443,13 @@
     "source": "src/frontend/CObjC.c"
   },
   {
-    "name": "fn_004e6e80",
+    "name": "ObjC_MethodEncoding",
     "address": "0x004e6e80",
     "size": 95,
     "source": "src/frontend/CObjC.c"
   },
   {
-    "name": "fn_004e6ee0",
+    "name": "ObjC_TypeEncoding",
     "address": "0x004e6ee0",
     "size": 87,
     "source": "src/frontend/CObjC.c"
@@ -22545,7 +22545,7 @@
     "source": "src/frontend/CObjC.c"
   },
   {
-    "name": "fn_004e84c0",
+    "name": "ObjC_PromoteMessageArguments",
     "address": "0x004e84c0",
     "size": 122,
     "source": "src/frontend/CObjC.c"
@@ -23049,7 +23049,7 @@
     "source": "src/optimizer/ValueNumbering.c"
   },
   {
-    "name": "fn_004ef730",
+    "name": "allocate_value_states",
     "address": "0x004ef730",
     "size": 80,
     "source": "src/optimizer/ValueNumbering.c"
@@ -23061,25 +23061,25 @@
     "source": "src/optimizer/ValueNumbering.c"
   },
   {
-    "name": "fn_004ef900",
+    "name": "add_value_operand",
     "address": "0x004ef900",
     "size": 41,
     "source": "src/optimizer/ValueNumbering.c"
   },
   {
-    "name": "fn_004ef930",
+    "name": "remove_value_operand",
     "address": "0x004ef930",
     "size": 46,
     "source": "src/optimizer/ValueNumbering.c"
   },
   {
-    "name": "fn_004ef960",
+    "name": "save_register_value",
     "address": "0x004ef960",
     "size": 58,
     "source": "src/optimizer/ValueNumbering.c"
   },
   {
-    "name": "fn_004ef9a0",
+    "name": "save_object_index",
     "address": "0x004ef9a0",
     "size": 50,
     "source": "src/optimizer/ValueNumbering.c"
@@ -23097,13 +23097,13 @@
     "source": "src/optimizer/ValueNumbering.c"
   },
   {
-    "name": "fn_004efb20",
+    "name": "invalidate_register_value",
     "address": "0x004efb20",
     "size": 150,
     "source": "src/optimizer/ValueNumbering.c"
   },
   {
-    "name": "fn_004efbc0",
+    "name": "invalidate_object_value",
     "address": "0x004efbc0",
     "size": 72,
     "source": "src/optimizer/ValueNumbering.c"
@@ -23127,7 +23127,7 @@
     "source": "src/optimizer/ValueNumbering.c"
   },
   {
-    "name": "fn_004effa0",
+    "name": "copy_value_signature",
     "address": "0x004effa0",
     "size": 70,
     "source": "src/optimizer/ValueNumbering.c"
@@ -23145,7 +23145,7 @@
     "source": "src/optimizer/ValueNumbering.c"
   },
   {
-    "name": "fn_004f02b0",
+    "name": "create_register_move",
     "address": "0x004f02b0",
     "size": 117,
     "source": "src/optimizer/ValueNumbering.c"
@@ -23175,7 +23175,7 @@
     "source": "src/optimizer/ValueNumbering.c"
   },
   {
-    "name": "fn_004f04a0",
+    "name": "assign_object_value_index",
     "address": "0x004f04a0",
     "size": 116,
     "source": "src/optimizer/ValueNumbering.c"
@@ -23199,7 +23199,7 @@
     "source": "src/optimizer/ValueNumbering.c"
   },
   {
-    "name": "fn_004f0550",
+    "name": "invalidate_memory_values",
     "address": "0x004f0550",
     "size": 12,
     "source": "src/optimizer/ValueNumbering.c"
@@ -23241,7 +23241,7 @@
     "source": "src/optimizer/ValueNumbering.c"
   },
   {
-    "name": "fn_004f0850",
+    "name": "begin_value_scope",
     "address": "0x004f0850",
     "size": 20,
     "source": "src/optimizer/ValueNumbering.c"
@@ -24609,85 +24609,85 @@
     "source": "src/backend/SpillCode.c"
   },
   {
-    "name": "fn_00500a00",
+    "name": "SpillCode_CreateSpillObject",
     "address": "0x00500a00",
     "size": 66,
     "source": "src/backend/SpillCode.c"
   },
   {
-    "name": "fn_00500a50",
+    "name": "spill_load",
     "address": "0x00500a50",
     "size": 210,
     "source": "src/backend/SpillCode.c"
   },
   {
-    "name": "fn_00500b30",
+    "name": "SpillCode_CreateFPRLoad",
     "address": "0x00500b30",
     "size": 104,
     "source": "src/backend/SpillCode.c"
   },
   {
-    "name": "fn_00500ba0",
+    "name": "SpillCode_InsertVRLoad",
     "address": "0x00500ba0",
     "size": 122,
     "source": "src/backend/SpillCode.c"
   },
   {
-    "name": "fn_00500c20",
+    "name": "spill_store",
     "address": "0x00500c20",
     "size": 97,
     "source": "src/backend/SpillCode.c"
   },
   {
-    "name": "fn_00500c90",
+    "name": "SpillCode_CreateFPRStore",
     "address": "0x00500c90",
     "size": 55,
     "source": "src/backend/SpillCode.c"
   },
   {
-    "name": "fn_00500cd0",
+    "name": "SpillCode_InsertVRStore",
     "address": "0x00500cd0",
     "size": 118,
     "source": "src/backend/SpillCode.c"
   },
   {
-    "name": "fn_00500d50",
+    "name": "SpillCode_InsertGPRSpillCode",
     "address": "0x00500d50",
     "size": 289,
     "source": "src/backend/SpillCode.c"
   },
   {
-    "name": "fn_00500e80",
+    "name": "SpillCode_RewriteSpilledFPRs",
     "address": "0x00500e80",
     "size": 289,
     "source": "src/backend/SpillCode.c"
   },
   {
-    "name": "fn_00500fb0",
+    "name": "SpillCode_RewriteSpilledVR",
     "address": "0x00500fb0",
     "size": 277,
     "source": "src/backend/SpillCode.c"
   },
   {
-    "name": "fn_005010d0",
+    "name": "SpillCode_RewriteSpilledRegisterMove",
     "address": "0x005010d0",
     "size": 142,
     "source": "src/backend/SpillCode.c"
   },
   {
-    "name": "fn_00501160",
+    "name": "SpillCode_ReplaceInstructionWithFPRSpillCode",
     "address": "0x00501160",
     "size": 142,
     "source": "src/backend/SpillCode.c"
   },
   {
-    "name": "fn_005011f0",
+    "name": "SpillCode_EmitOperandSpills",
     "address": "0x005011f0",
     "size": 137,
     "source": "src/backend/SpillCode.c"
   },
   {
-    "name": "fn_00501280",
+    "name": "SpillCode_RemoveFixedRangeSpills",
     "address": "0x00501280",
     "size": 117,
     "source": "src/backend/SpillCode.c"
