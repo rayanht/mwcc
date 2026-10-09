@@ -1476,13 +1476,13 @@
     "source": "src/driver/CLMain.c"
   },
   {
-    "name": "fn_0040a6f0",
+    "name": "copy_global_value_to_address",
     "address": "0x0040a6f0",
     "size": 17,
     "source": "src/driver/CLMain.c"
   },
   {
-    "name": "fn_0040a710",
+    "name": "copy_global_value",
     "address": "0x0040a710",
     "size": 17,
     "source": "src/driver/CLMain.c"
@@ -1818,19 +1818,19 @@
     "source": "src/driver/cc-eabi-ppc-mw.c"
   },
   {
-    "name": "fn_0040bfa0",
+    "name": "get_stored_name_and_length",
     "address": "0x0040bfa0",
     "size": 25,
     "source": "src/driver/libimp-eabi-ppc-mw.c"
   },
   {
-    "name": "fn_0040bfc0",
+    "name": "set_list_link_next",
     "address": "0x0040bfc0",
     "size": 15,
     "source": "src/driver/libimp-eabi-ppc-mw.c"
   },
   {
-    "name": "fn_0040bfd0",
+    "name": "get_global_value",
     "address": "0x0040bfd0",
     "size": 17,
     "source": "src/driver/libimp-eabi-ppc-mw.c"
@@ -1848,13 +1848,13 @@
     "source": "src/driver/libimp-eabi-ppc-mw.c"
   },
   {
-    "name": "fn_0040c020",
+    "name": "set_next_from_global",
     "address": "0x0040c020",
     "size": 15,
     "source": "src/driver/libimp-eabi-ppc-mw.c"
   },
   {
-    "name": "fn_0040c030",
+    "name": "get_buffer",
     "address": "0x0040c030",
     "size": 15,
     "source": "src/driver/libimp-eabi-ppc-mw.c"
@@ -6915,7 +6915,7 @@
     "source": "src/optimizer/IrOptimizer.c"
   },
   {
-    "name": "fn_0042e2e0",
+    "name": "return_zero_for_irolinear",
     "address": "0x0042e2e0",
     "size": 3,
     "source": "src/optimizer/IrOptimizer.c"
@@ -12657,7 +12657,7 @@
     "source": "src/backend/TOC.c"
   },
   {
-    "name": "fn_004715f0",
+    "name": "TOC_IsSetjmp",
     "address": "0x004715f0",
     "size": 150,
     "source": "src/backend/TOC.c"
@@ -12753,7 +12753,7 @@
     "source": "src/backend/TOC.c"
   },
   {
-    "name": "fn_00472050",
+    "name": "TOC_WrapMemoryReturnCall",
     "address": "0x00472050",
     "size": 75,
     "source": "src/backend/TOC.c"
@@ -16971,13 +16971,13 @@
     "source": "src/frontend/CScope.c"
   },
   {
-    "name": "fn_004aec70",
+    "name": "PPCError_GetErrorString",
     "address": "0x004aec70",
     "size": 57,
     "source": "src/backend/PPCError.c"
   },
   {
-    "name": "fn_004aecb0",
+    "name": "PPCError_Message",
     "address": "0x004aecb0",
     "size": 80,
     "source": "src/backend/PPCError.c"
@@ -18687,7 +18687,7 @@
     "source": "src/frontend/CException.c"
   },
   {
-    "name": "fn_004be540",
+    "name": "CExcept_Terminate",
     "address": "0x004be540",
     "size": 40,
     "source": "src/frontend/CException.c"
@@ -20481,7 +20481,7 @@
     "source": "src/frontend/CExpr.c"
   },
   {
-    "name": "fn_004d1780",
+    "name": "builtin_align",
     "address": "0x004d1780",
     "size": 15,
     "source": "src/frontend/CExpr.c"
@@ -22785,13 +22785,13 @@
     "source": "src/frontend/CTemplateNew.c"
   },
   {
-    "name": "fn_004ebdb0",
+    "name": "register_hash_entry",
     "address": "0x004ebdb0",
     "size": 79,
     "source": "src/backend/InlineAsmRegistersPPC.c"
   },
   {
-    "name": "fn_004ebe00",
+    "name": "register_secondary_hash_entry",
     "address": "0x004ebe00",
     "size": 79,
     "source": "src/backend/InlineAsmRegistersPPC.c"
