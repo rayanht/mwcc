@@ -4,6 +4,7 @@
 #include <setjmp.h>
 #include "compiler/common.h"
 #include "compiler/win32.h"
+#include "version.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -57,6 +58,9 @@ extern int CTool_TotalHeapSize(void);
 extern short CHash(const char *str);
 extern void CTool_CtoPstr(unsigned char *text);
 extern unsigned int CTool_EndianConvertInPlaceWord32Ptr(unsigned int *p);
+#if VERSION == VERSION_GC_1_0
+extern void CTool_EndianConvertVector128(MWVector128 *vector);
+#endif
 extern UInt16 CTool_EndianConvertWord16(UInt16 word);
 extern void CToLowercase(char *src, char *dst);
 extern char *ScanDec(char *src, SInt32 *value, Boolean *flag);

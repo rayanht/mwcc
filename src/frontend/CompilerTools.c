@@ -7,6 +7,7 @@
 #include "compiler/CodeGen.h"
 #include "driver/COSToolsCLT.h"
 #include "driver/cc-eabi-ppc.h"
+#include "version.h"
 #include <string.h>
 #include <ctype.h>
 
@@ -26,32 +27,6 @@ static struct HeapMem data_0057fdac;
 static struct HeapMem heap_pool;
 static void (*data_0057fdd4)();
 static SInt16 data_0057fdd8;
-
-static inline unsigned short swap16(unsigned short x)
-{
-    union {
-        unsigned short w;
-        unsigned char b[2];
-    } in, out;
-    in.w = x;
-    out.b[0] = in.b[1];
-    out.b[1] = in.b[0];
-    return out.w;
-}
-
-static inline unsigned int Swap32(unsigned int x)
-{
-    union {
-        unsigned int w;
-        unsigned char b[4];
-    } in, out;
-    in.w = x;
-    out.b[0] = in.b[3];
-    out.b[1] = in.b[2];
-    out.b[2] = in.b[1];
-    out.b[3] = in.b[0];
-    return out.w;
-}
 
 static inline void reset_pool_block(HeapBlock *block)
 {
@@ -90,6 +65,12 @@ void CTool_CtoPstr(unsigned char *text)
         } while (shifted < length);
     }
     *text = length;
+}
+
+static void call_memory_error_handler(void)
+{
+    if (data_00587708 != NULL)
+        data_00587708();
 }
 
 SInt16 InitGList(GList *allocation, SInt32 size)
@@ -134,9 +115,8 @@ void *AppendGListData(GList *buffer, const void *source, SInt32 count)
     if (buffer->size + count > buffer->hndlsize) {
         buffer->hndlsize += count + buffer->growsize;
         result = COS_ResizeHandle((struct StorageHandle *)buffer->data, buffer->hndlsize);
-        if (result == 0 && data_00587708 != NULL) {
-            (*data_00587708)();
-        }
+        if (result == 0)
+            call_memory_error_handler();
     }
     data = memcpy(*buffer->data + buffer->size, source, count);
     buffer->size += count;
@@ -147,9 +127,8 @@ void AppendGListNoData(GList *buffer, SInt32 additionalLength)
 {
     if (buffer->size + additionalLength > buffer->hndlsize) {
         buffer->hndlsize += additionalLength + buffer->growsize;
-        if (!COS_ResizeHandle((struct StorageHandle *)buffer->data, buffer->hndlsize) && data_00587708 != NULL) {
-            data_00587708();
-        }
+        if (!COS_ResizeHandle((struct StorageHandle *)buffer->data, buffer->hndlsize))
+            call_memory_error_handler();
     }
     buffer->size += additionalLength;
 }
@@ -160,9 +139,8 @@ void AppendGListByte(GList *buffer, SInt8 value)
         Boolean success;
         buffer->hndlsize += buffer->growsize + 1;
         success = COS_ResizeHandle((struct StorageHandle *)buffer->data, buffer->hndlsize);
-        if (!success && data_00587708 != NULL) {
-            (*data_00587708)();
-        }
+        if (!success)
+            call_memory_error_handler();
     }
     (*buffer->data)[buffer->size++] = value;
 }
@@ -176,9 +154,8 @@ void AppendGListWord(GList *buffer, SInt16 value)
     if (buffer->size + (SInt32)sizeof(value) > buffer->hndlsize) {
         buffer->hndlsize += buffer->growsize + (SInt32)sizeof(value);
         resized = COS_ResizeHandle((struct StorageHandle *)buffer->data, buffer->hndlsize);
-        if (!resized && data_00587708) {
-            (*data_00587708)();
-        }
+        if (!resized)
+            call_memory_error_handler();
     }
     destination = *buffer->data + buffer->size;
     buffer->size += sizeof(value);
@@ -194,10 +171,8 @@ void AppendGListTargetEndianWord(GList *buf, UInt16 word)
     const U16Bytes *bytes;
     if (buf->size + 2 > buf->hndlsize) {
         buf->hndlsize += buf->growsize + 2;
-        if (!COS_ResizeHandle((StorageHandle *)buf->data, buf->hndlsize)) {
-            if (data_00587708 != NULL)
-                data_00587708();
-        }
+        if (!COS_ResizeHandle((StorageHandle *)buf->data, buf->hndlsize))
+            call_memory_error_handler();
     }
     dest = *buf->data + buf->size;
     buf->size += 2;
@@ -215,9 +190,8 @@ void AppendGListLong(GList *buffer, SInt32 value)
     if (buffer->size + (SInt32)sizeof(value) > buffer->hndlsize) {
         buffer->hndlsize += buffer->growsize + (SInt32)sizeof(value);
         allocated = COS_ResizeHandle((struct StorageHandle *)buffer->data, buffer->hndlsize);
-        if (!allocated && data_00587708 != NULL) {
-            (*data_00587708)();
-        }
+        if (!allocated)
+            call_memory_error_handler();
     }
     destination = *buffer->data + buffer->size;
     buffer->size += sizeof(value);
@@ -232,10 +206,8 @@ void AppendGListTargetEndianLong(GList *buf, UInt32 value)
     UInt8 *dest;
     if (buf->size + 4 > buf->hndlsize) {
         buf->hndlsize += buf->growsize + 4;
-        if (!COS_ResizeHandle((struct StorageHandle *)buf->data, buf->hndlsize)) {
-            if (data_00587708 != NULL)
-                data_00587708();
-        }
+        if (!COS_ResizeHandle((struct StorageHandle *)buf->data, buf->hndlsize))
+            call_memory_error_handler();
     }
     dest = (UInt8 *)*buf->data + buf->size;
     buf->size += 4;
@@ -250,11 +222,8 @@ void AppendGListID(GList *buf, const char *str)
         struct StorageHandle *handle;
         buf->hndlsize += len + buf->growsize;
         handle = (struct StorageHandle *)buf->data;
-        if (!COS_ResizeHandle(handle, buf->hndlsize)) {
-            if (data_00587708 != NULL) {
-                data_00587708();
-            }
-        }
+        if (!COS_ResizeHandle(handle, buf->hndlsize))
+            call_memory_error_handler();
     }
     memcpy(buf->data[0] + buf->size, str, len);
     buf->size += len;
@@ -265,8 +234,8 @@ void AppendGListName(GList *buf, const char *str)
     UInt32 len = strlen(str);
     if ((buf->size + len) > (UInt32)buf->hndlsize) {
         buf->hndlsize += len + buf->growsize;
-        if (!COS_ResizeHandle((struct StorageHandle *)buf->data, buf->hndlsize) && data_00587708 != NULL)
-            data_00587708();
+        if (!COS_ResizeHandle((struct StorageHandle *)buf->data, buf->hndlsize))
+            call_memory_error_handler();
     }
     memcpy(*buf->data + buf->size, str, len);
     buf->size += len;
@@ -288,36 +257,12 @@ short CHash(const char *str)
 
 HashNameNode *GetHashNameNodeExport(const char *text)
 {
-    short hash;
-    int bucket;
-    unsigned char checksum;
-    const char *cursor = text;
-    short remaining;
     HashNameNode *entry;
-    short length = strlen(text) & 255;
-    int allocationSize;
-    int firstSize;
-    HashNameNode *newEntry;
+    short hash;
 
-    if (length != 0) {
-        remaining = length;
-        checksum = 0;
-        while (remaining > 0) {
-            remaining--;
-            checksum = ((checksum >> 3) | (checksum << 5)) + *cursor++;
-        }
-        length = checksum | (length << 8);
-    }
-    hash = length & 2047;
-    if ((entry = data_00587f88[hash]) == NULL) {
-        firstSize = ((strlen(text) + 12) & -8) + 8;
-        if (galloc_pool.curfree < firstSize) {
-            select_or_allocate_pool_node(&galloc_pool, firstSize);
-        }
-        galloc_pool.curfree -= firstSize;
-        entry = (HashNameNode *)galloc_pool.curfreep;
-        galloc_pool.curfreep += firstSize;
-        data_00587f88[bucket = hash] = entry;
+    hash = CHash(text);
+    if ((entry = data_00587f88[(int)hash]) == NULL) {
+        data_00587f88[hash] = entry = (HashNameNode *)galloc(strlen(text) + 12);
         entry->next = NULL;
         entry->id = next_name_id++;
         entry->hashval = hash;
@@ -326,15 +271,12 @@ HashNameNode *GetHashNameNodeExport(const char *text)
     }
     for (;; entry = entry->next) {
         if (strcmp(text, entry->name) == 0) {
-            if (entry->id < 0) {
+            if (entry->id < 0)
                 entry->id = next_name_id++;
-            }
             return entry;
         }
         if (entry->next == NULL) {
-            allocationSize = strlen(text) + 12;
-            newEntry = galloc(allocationSize);
-            entry->next = newEntry;
+            entry->next = galloc(strlen(text) + 12);
             entry = entry->next;
             entry->next = NULL;
             entry->id = next_name_id++;
@@ -347,58 +289,30 @@ HashNameNode *GetHashNameNodeExport(const char *text)
 
 HashNameNode *GetHashNameNode(const char *text)
 {
-    short bucket;
-    unsigned char hash;
-    const char *cursor;
-    short remaining;
     HashNameNode *entry;
-    short key;
-    int allocationSize;
-    HashNameNode *storage;
-    HashNameNode *tailEntry;
+    short hash;
 
-    cursor = text;
-    key = strlen(text) & 255;
-    if (key != 0) {
-        remaining = key;
-        hash = 0;
-        while (remaining > 0) {
-            --remaining;
-            hash = ((hash >> 3) | (hash << 5)) + *cursor;
-            cursor = cursor + 1;
-        }
-        key = hash | (key << 8);
-    }
-    bucket = key & 2047;
-    if ((entry = data_00587f88[bucket]) == NULL) {
-        int firstAllocationSize = ((strlen(text) + 12) & -8) + 8;
-        if (galloc_pool.curfree < firstAllocationSize) {
-            select_or_allocate_pool_node(&galloc_pool, firstAllocationSize);
-        }
-        galloc_pool.curfree -= firstAllocationSize;
-        entry = (HashNameNode *)galloc_pool.curfreep;
-        galloc_pool.curfreep += firstAllocationSize;
-        data_00587f88[bucket] = entry;
+    hash = CHash(text);
+    if ((entry = data_00587f88[(int)hash]) == NULL) {
+        entry = galloc(strlen(text) + 12);
+        data_00587f88[hash] = entry;
         entry->next = NULL;
         entry->id = -1;
-        entry->hashval = bucket;
+        entry->hashval = hash;
         strcpy(entry->name, text);
         return entry;
     }
     for (;;) {
-        if (strcmp(text, entry->name) == 0) {
+        if (strcmp(text, entry->name) == 0)
             return entry;
-        }
         if (entry->next == NULL) {
-            allocationSize = strlen(text) + 12;
-            storage = galloc(allocationSize);
-            entry->next = storage;
-            tailEntry = entry->next;
-            tailEntry->next = NULL;
-            tailEntry->id = -1;
-            tailEntry->hashval = bucket;
-            strcpy(tailEntry->name, text);
-            return tailEntry;
+            entry->next = galloc(strlen(text) + 12);
+            entry = entry->next;
+            entry->next = NULL;
+            entry->id = -1;
+            entry->hashval = hash;
+            strcpy(entry->name, text);
+            return entry;
         }
         entry = entry->next;
     }
@@ -406,17 +320,13 @@ HashNameNode *GetHashNameNode(const char *text)
 
 void InitNameHash(void)
 {
-    HashNameNode *(*buckets)[2048];
-
-    {
-        int *active;
-
-        buckets = galloc(8192);
-        active = &next_name_id;
-        data_00587f88 = (HashNameNode **)buckets;
-        memset(data_00587f88, 0, sizeof(*buckets));
-        *active = 1;
-    }
+#if VERSION == VERSION_GC_1_0
+    data_00587f88 = galloc(2048 * sizeof(HashNameNode *));
+    memclrw(data_00587f88, 2048 * sizeof(HashNameNode *));
+#else
+    memclrw(data_00587f88 = galloc(2048 * sizeof(HashNameNode *)), 2048 * sizeof(HashNameNode *));
+#endif
+    next_name_id = 1;
 }
 
 int CTool_TotalHeapSize(void)
@@ -486,11 +396,11 @@ SInt16 CompilerTools_InitHeaps(void (*param)())
 {
     data_0057fdd4 = NULL;
     data_0057fdd8 = 0;
-    memset(&galloc_pool, 0, 20);
-    memset(&data_0057fd84, 0, 20);
-    memset(&block_pool, 0, 20);
-    memset(&data_0057fdac, 0, 20);
-    memset(&heap_pool, 0, 20);
+    memclrw(&galloc_pool, sizeof(HeapMem));
+    memclrw(&data_0057fd84, sizeof(HeapMem));
+    memclrw(&block_pool, sizeof(HeapMem));
+    memclrw(&data_0057fdac, sizeof(HeapMem));
+    memclrw(&heap_pool, sizeof(HeapMem));
     galloc_pool.allocsize = 0x38000;
     data_0057fd84.allocsize = 0x10000;
     block_pool.allocsize = 0x4000;
@@ -512,16 +422,15 @@ SInt16 CompilerTools_InitHeaps(void (*param)())
 
 SInt16 initheaps(void (*param)())
 {
-    HeapMem *pool = &galloc_pool;
     data_0057fdd4 = NULL;
     data_0057fdd8 = 0;
-    memset(&galloc_pool, 0, sizeof(galloc_pool));
-    memset(&data_0057fd84, 0, sizeof(data_0057fd84));
-    memset(&block_pool, 0, sizeof(block_pool));
-    memset(&data_0057fdac, 0, sizeof(data_0057fdac));
-    memset(&heap_pool, 0, sizeof(heap_pool));
+    memclrw(&galloc_pool, sizeof(HeapMem));
+    memclrw(&data_0057fd84, sizeof(HeapMem));
+    memclrw(&block_pool, sizeof(HeapMem));
+    memclrw(&data_0057fdac, sizeof(HeapMem));
+    memclrw(&heap_pool, sizeof(HeapMem));
     galloc_pool.allocsize = 0x38000;
-    select_or_allocate_pool_node(pool, 0);
+    select_or_allocate_pool_node(&galloc_pool, 0);
     galloc_pool.allocsize = 0x8000;
     data_0057fdd4 = param;
     if (galloc_pool.curblock == NULL)
@@ -529,59 +438,32 @@ SInt16 initheaps(void (*param)())
     return 0;
 }
 
+static void release_heap(HeapMem *heap)
+{
+    HeapBlock *block;
+    HeapBlock **handle;
+
+    block = heap->blocks;
+    while (block != NULL) {
+        handle = block->blockhandle;
+        block = block->next;
+        COS_FreeHandle(handle);
+    }
+    memclrw(heap, sizeof(HeapMem));
+}
+
 void releaseheaps(void)
 {
-    HeapBlock *node;
-    HeapBlock **block;
-
-    node = galloc_pool.blocks;
-    while (node != NULL) {
-        block = node->blockhandle;
-        node = node->next;
-        COS_FreeHandle(block);
-    }
-    memset(&galloc_pool, 0, sizeof(galloc_pool));
-    node = data_0057fd84.blocks;
-    while (node != NULL) {
-        block = node->blockhandle;
-        node = node->next;
-        COS_FreeHandle(block);
-    }
-    memset(&data_0057fd84, 0, sizeof(data_0057fd84));
-    node = block_pool.blocks;
-    while (node != NULL) {
-        block = node->blockhandle;
-        node = node->next;
-        COS_FreeHandle(block);
-    }
-    memset(&block_pool, 0, sizeof(block_pool));
-    node = data_0057fdac.blocks;
-    while (node != NULL) {
-        block = node->blockhandle;
-        node = node->next;
-        COS_FreeHandle(block);
-    }
-    memset(&data_0057fdac, 0, sizeof(data_0057fdac));
-    node = heap_pool.blocks;
-    while (node != NULL) {
-        block = node->blockhandle;
-        node = node->next;
-        COS_FreeHandle(block);
-    }
-    memset(&heap_pool, 0, sizeof(heap_pool));
+    release_heap(&galloc_pool);
+    release_heap(&data_0057fd84);
+    release_heap(&block_pool);
+    release_heap(&data_0057fdac);
+    release_heap(&heap_pool);
 }
 
 void releasegheap(void)
 {
-    HeapBlock *link;
-
-    link = galloc_pool.blocks;
-    while (link != NULL) {
-        HeapBlock **block = link->blockhandle;
-        link = link->next;
-        COS_FreeHandle(block);
-    }
-    memset(&galloc_pool, 0, sizeof(galloc_pool));
+    release_heap(&galloc_pool);
 }
 
 void *galloc(SInt32 size)
@@ -863,12 +745,14 @@ void CTool_EndianConvertWord64(CInt64 ci, char *result)
 {
     UInt32 buf[2];
     UInt32 h;
+    UInt32 lo = ci.lo;
+
     if (copts.littleendian == 0) {
         h = ci.hi;
         buf[0] = CTool_EndianConvertWord32(h);
-        buf[1] = CTool_EndianConvertWord32(ci.lo);
+        buf[1] = CTool_EndianConvertWord32(lo);
     } else {
-        buf[0] = CTool_EndianConvertWord32(ci.lo);
+        buf[0] = CTool_EndianConvertWord32(lo);
         h = ci.hi;
         buf[1] = CTool_EndianConvertWord32(h);
     }
@@ -877,23 +761,32 @@ void CTool_EndianConvertWord64(CInt64 ci, char *result)
 
 short CTool_EndianConvertInPlaceWord16Ptr(short *word)
 {
-    short *destination = word;
-    short value = *destination;
-    if (copts.littleendian == 0) {
-        value = swap16(value);
-    }
-    *destination = value;
-    return *destination;
+    *word = CTool_EndianConvertWord16(*word);
+    return *word;
 }
 
 unsigned int CTool_EndianConvertInPlaceWord32Ptr(unsigned int *p)
 {
-    unsigned int value = *p;
-    value = copts.littleendian ? value : Swap32(value);
-    *p = value;
-    value = *p;
-    return value;
+    *p = CTool_EndianConvertWord32(*p);
+    return *p;
 }
+
+#if VERSION == VERSION_GC_1_0
+void CTool_EndianConvertVector128(MWVector128 *vector)
+{
+    MWVector128 in;
+    MWVector128 out;
+
+    if (copts.littleendian == 0)
+        return;
+    memcpy(&in, vector, sizeof(in));
+    out.ul[0] = in.ul[3];
+    out.ul[1] = in.ul[2];
+    out.ul[2] = in.ul[1];
+    out.ul[3] = in.ul[0];
+    memcpy(vector, &out, sizeof(out));
+}
+#endif
 
 /* The linker stripped the functions that used these literals; they stay in the unit's .data. */
 static void CompilerTools_NameLiterals(const char **literals)

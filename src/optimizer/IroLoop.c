@@ -73,12 +73,8 @@ typedef enum NodeKind { NK0 } NodeKind;
 #define BitVector_Test(v, id) (((id) >> 5) < (v)->size && ((v)->bits[(id) >> 5] & (1u << ((id) & 31))))
 
 static void NopOutBlock(IRONode *node);
-static IROLinear *NewLabelLinear(IROList *list);
 static IROLinear *NewTypedLinear(UInt8 type, IROList *list);
 static IROLinear *NewCondLinear(UInt8 type, IROList *list);
-static inline IROLinear *constantref(Type *ty, long n);
-static inline ENode *newconstant(Type *ty, long n);
-static inline void visit(IROLinear *p, IROList *b);
 
 static inline IROLinear *MakeSequenceNode(IROLinear *left, IROLinear *right, IROList *context, int storeRight)
 {
@@ -734,6 +730,16 @@ IRONode *insert_loop_preheader(IRONode *loopHead, IRONode *predecessor)
     return preheader;
 }
 
+static void increment_loop_depths(void)
+{
+    IRONode *p;
+
+    for (p = iro_flowgraph_head; p != NULL; p = p->nextnode) {
+        if (BVTEST(IRO_LoopScratchVector_005880dc, p->index))
+            p->loopdepth++;
+    }
+}
+
 void fn_004614f0(IRONode *lp)
 {
     SInt32 i;
@@ -748,13 +754,33 @@ void fn_004614f0(IRONode *lp)
     }
 }
 
+static void remove_nop_expressions(void)
+{
+    IROExpr *node;
+    IROExpr *prev;
+
+    node = expr_list;
+    prev = NULL;
+    while (node != NULL) {
+        /* candidates whose expression was removed */
+        if (node->linear->type == IROLinearNop) {
+            if (prev != NULL)
+                prev->next = node->next;
+            else
+                expr_list = node->next;
+        } else {
+            prev = node;
+        }
+        node = node->next;
+    }
+}
+
 void IroLoop_ComputeLoopDepth(void)
 {
     UInt16 i;
     SInt32 flag;
     IRONode *bb;
     IRONode *q;
-    IRONode *p;
 
     for (bb = iro_flowgraph_head; bb != NULL; bb = bb->nextnode)
         bb->loopdepth = 0;
@@ -775,13 +801,8 @@ void IroLoop_ComputeLoopDepth(void)
                     fn_004614f0(q);
             }
         }
-        if ((SInt16)flag) {
-            for (p = iro_flowgraph_head; p != NULL; p = p->nextnode) {
-                if (((p->index >> 5) < IRO_LoopScratchVector_005880dc->size &&
-                     (IRO_LoopScratchVector_005880dc->bits[p->index >> 5] & (1u << (p->index & 31))) != 0))
-                    p->loopdepth++;
-            }
-        }
+        if ((SInt16)flag)
+            increment_loop_depths();
     }
 
     IroVars_CheckTimedLongjmp();
@@ -834,11 +855,8 @@ void IRO_FindLoops(void)
 {
     IRONode *loop;
     IRONode *block;
-    IRONode *p;
     UInt16 i;
     UInt16 found;
-    IROExpr *prev;
-    IROExpr *node;
 
     loop = iro_flowgraph_head;
     while (loop != NULL) {
@@ -858,27 +876,11 @@ void IRO_FindLoops(void)
             }
         }
         if (found) {
-            for (p = iro_flowgraph_head; p != NULL; p = p->nextnode) {
-                if (BVTEST(IRO_LoopScratchVector_005880dc, p->index))
-                    p->loopdepth++;
-            }
+            increment_loop_depths();
             IroDump_Print("IRO_FindLoops:Found loop with header %d\n", loop->index);
             IroDump_PrintBitSet("Loop includes: ", IRO_LoopScratchVector_005880dc);
             reduce_strength_and_move_loop_invariants(loop);
-            node = expr_list;
-            prev = NULL;
-            while (node != NULL) {
-                /* candidates whose expression was removed */
-                if (node->linear->type == IROLinearNop) {
-                    if (prev != NULL)
-                        prev->next = node->next;
-                    else
-                        expr_list = node->next;
-                } else {
-                    prev = node;
-                }
-                node = node->next;
-            }
+            remove_nop_expressions();
             IRO_ExpressionPropagation();
             IroVars_BuildNoregisterBitVector();
         }
@@ -1347,6 +1349,11 @@ void find_induction_init(struct IROLoop *state, struct IRONode *list)
 
 /* Analyses the loop whose test ends LOOP. */
 
+static void count_loop_linear(IROLoop *loop, IROLinear *linear)
+{
+    loop->count++;
+}
+
 IROLoop *fn_0045faa0(IRONode *loop)
 {
     IROLinear *condition;
@@ -1658,7 +1665,7 @@ IROLoop *fn_0045faa0(IRONode *loop)
                                 }
                             }
                         }
-                        info->count++;
+                        count_loop_linear(info, linear);
                         if (linear == block->last) {
                             break;
                         }
@@ -1694,6 +1701,16 @@ IROLoop *fn_0045faa0(IRONode *loop)
     return info;
 }
 
+static CLabel *NewLabelLinear(IROList *list)
+{
+    IROLinear *lab = IrOptimizer_NewLinear(IROLinearLabel);
+    lab->index = linear_index_counter++;
+    lab->u.label = IroUtil_NewLabel();
+    lab->flags |= 1;
+    IroUtil_AppendLinear(lab, list);
+    return lab->u.label;
+}
+
 void IRO_LoopUnroller(void)
 
 {
@@ -1706,6 +1723,13 @@ void IRO_LoopUnroller(void)
 /* The linker stripped the function that used these literals; they stay in the unit's .data. */
 static void IroLoop_StrippedLiterals2(const char **literals)
 {
+#if VERSION == VERSION_GC_1_0
+    literals[13] = "Store at %d and Store at %d Cannot Vectorize\n";
+    literals[14] = "Store at %d and Store at %d Can Vectorize\n";
+    literals[10] = "Store at %d and Load at %d weak dependence\n";
+    literals[11] = "Store at %d and Load at %d Cannot Vectorize\n";
+    literals[12] = "Store at %d and Load at %d Can Vectorize\n";
+#endif
     literals[0] = "\nVector StatementNum = %d Int Num= %d Partition = %d";
     literals[1] = "<ST_OPS_PASS>";
     literals[2] = "<ST_OPS_FAIL>";
@@ -1716,11 +1740,13 @@ static void IroLoop_StrippedLiterals2(const char **literals)
     literals[7] = "Dependency List:";
     literals[8] = "%d:";
     literals[9] = "Weak Dependency List:";
+#if VERSION > VERSION_GC_1_0
     literals[10] = "Store at %d and Load at %d weak dependence\n";
     literals[11] = "Store at %d and Load at %d Cannot Vectorize\n";
     literals[12] = "Store at %d and Load at %d Can Vectorize\n";
     literals[13] = "Store at %d and Store at %d Cannot Vectorize\n";
     literals[14] = "Store at %d and Store at %d Can Vectorize\n";
+#endif
 }
 
 unsigned int IRO_FindLoops_Unroll(void)
@@ -2234,8 +2260,7 @@ void unroll_loop(int factor, struct IRONode *header)
                     preLast = list.tail;
 
                     IroUtil_InitList(&list);
-                    lab = NewLabelLinear(&list);
-                    limit = (IROLinear *)lab->u.label;
+                    limit = (IROLinear *)NewLabelLinear(&list);
                     IroUtil_InsertLinearBefore(list.head, list.tail, pred->last);
                     testLast = list.head;
 
@@ -2296,8 +2321,7 @@ void unroll_loop(int factor, struct IRONode *header)
                     IroUtil_InsertLinearBefore(list.head, list.tail, pred->last);
 
                     IroUtil_InitList(&list);
-                    lab = NewLabelLinear(&list);
-                    object = (Object *)lab->u.label;
+                    object = (Object *)NewLabelLinear(&list);
                     IroUtil_InsertLinearBefore(list.head, list.tail, pred->last);
                     exitFirst = list.head;
 
@@ -2587,8 +2611,7 @@ void unroll_loop(int factor, struct IRONode *header)
                     IroUtil_InsertLinearBefore(list.head, list.tail, pred->last);
 
                     IroUtil_InitList(&list);
-                    lab = NewLabelLinear(&list);
-                    right1 = (IROLinear *)lab->u.label;
+                    right1 = (IROLinear *)NewLabelLinear(&list);
                     IroUtil_InsertLinearBefore(list.head, list.tail, pred->last);
                     exitFirst = list.head;
 
@@ -2841,6 +2864,27 @@ int is_loop_unrollable(IROLoop *loop)
     return 1;
 }
 
+static IROLinear *NewCondLinear(UInt8 type, IROList *list)
+{
+    IROLinear *nd = IrOptimizer_NewLinear(IROLinearOp1Arg);
+    nd->index = ++linear_index_counter;
+    if (type == 5)
+        nd->type = IROLinearIfNot;
+    else
+        nd->type = IROLinearIf;
+    IroUtil_AppendLinear(nd, list);
+    return nd;
+}
+
+static IROLinear *NewTypedLinear(UInt8 type, IROList *list)
+{
+    IROLinear *nd = IrOptimizer_NewLinear(IROLinearOp1Arg);
+    nd->index = ++linear_index_counter;
+    nd->type = type;
+    IroUtil_AppendLinear(nd, list);
+    return nd;
+}
+
 /* The loop's iteration count, when its bounds differ by a constant. */
 int compute_loop_count(IROLoop *loop, CInt64 *count)
 {
@@ -2989,6 +3033,17 @@ int compute_positive_addr_record_difference(IROAddrRecord *first, IROAddrRecord 
         return 1;
     }
     return 0;
+}
+
+static void NopOutBlock(IRONode *node)
+{
+    IROLinear *nd = node->first;
+    IROLinear *last = node->last;
+    for (; nd; nd = nd->next) {
+        nd->type = IROLinearNop;
+        if (nd == last)
+            break;
+    }
 }
 
 void fn_0045c520(IROLoop *loop, CInt64 *iterationCount, int *unrollFactor, int *remainderLoop, int *unrollLoop,
@@ -3179,48 +3234,6 @@ struct IROLinear *create_loop_iteration_count(struct IROList *context, struct IR
     return assignment->u.diadic.left;
 }
 
-static void NopOutBlock(IRONode *node)
-{
-    IROLinear *nd = node->first;
-    IROLinear *last = node->last;
-    for (; nd; nd = nd->next) {
-        nd->type = IROLinearNop;
-        if (nd == last)
-            break;
-    }
-}
-
-static IROLinear *NewLabelLinear(IROList *list)
-{
-    IROLinear *lab = IrOptimizer_NewLinear(IROLinearLabel);
-    lab->index = linear_index_counter++;
-    lab->u.label = IroUtil_NewLabel();
-    lab->flags |= 1;
-    IroUtil_AppendLinear(lab, list);
-    return lab;
-}
-
-static IROLinear *NewTypedLinear(UInt8 type, IROList *list)
-{
-    IROLinear *nd = IrOptimizer_NewLinear(IROLinearOp1Arg);
-    nd->index = ++linear_index_counter;
-    nd->type = type;
-    IroUtil_AppendLinear(nd, list);
-    return nd;
-}
-
-static IROLinear *NewCondLinear(UInt8 type, IROList *list)
-{
-    IROLinear *nd = IrOptimizer_NewLinear(IROLinearOp1Arg);
-    nd->index = ++linear_index_counter;
-    if (type == 5)
-        nd->type = IROLinearIfNot;
-    else
-        nd->type = IROLinearIf;
-    IroUtil_AppendLinear(nd, list);
-    return nd;
-}
-
 /* Appends to LIST a temporary = the test's left operand + 1, and returns the temporary's reference. */
 IROLinear *create_cond_left_add_assignment(IROList *list, IROLoop *holder)
 {
@@ -3327,6 +3340,40 @@ IROLinear *create_bound_offset_temporary(IROLinear *object, int multiplier, IROL
     return result->u.diadic.left;
 }
 
+static inline ENode *newconstant(Type *ty, long n)
+{
+    ENode *p;
+    long hi;
+    p = IrOptimizer_NewENode(50);
+    p->rtype = ty;
+    p->data.intval.lo = n;
+    hi = n < 0 ? -1 : 0;
+    p->data.intval.hi = hi;
+    return p;
+}
+
+static inline IROLinear *constantref(Type *ty, long n)
+{
+    IROLinear *p;
+    ENode *c;
+    p = IrOptimizer_NewLinear(IROLinearOperand);
+    linear_index_counter += 1;
+    p->index = linear_index_counter;
+    p->rtype = ty;
+    c = newconstant(ty, n);
+    p->u.node = c;
+    return p;
+}
+
+static inline void visit(IROLinear *p, IROList *b)
+{
+    if (p->type == IROLinearOp1Arg) {
+        IroUtil_CopyLinearToList(p->u.monadic, b);
+        return;
+    }
+    IroUtil_CopyLinearToList(p->u.diadic.left, b);
+}
+
 /* Appends to CHAIN a temporary = (the induction variable / VALUE + 1) * VALUE, and returns the temporary's
    reference. */
 IROLinear *create_loop_ind_temporary(IROLoopInd *loop, long value, IROList *chain)
@@ -3406,40 +3453,6 @@ IROLinear *create_loop_ind_temporary(IROLoopInd *loop, long value, IROList *chai
     assignment->rtype = type;
     IroUtil_AppendLinear(assignment, chain);
     return assignment->u.diadic.left;
-}
-
-static inline IROLinear *constantref(Type *ty, long n)
-{
-    IROLinear *p;
-    ENode *c;
-    p = IrOptimizer_NewLinear(IROLinearOperand);
-    linear_index_counter += 1;
-    p->index = linear_index_counter;
-    p->rtype = ty;
-    c = newconstant(ty, n);
-    p->u.node = c;
-    return p;
-}
-
-static inline ENode *newconstant(Type *ty, long n)
-{
-    ENode *p;
-    long hi;
-    p = IrOptimizer_NewENode(50);
-    p->rtype = ty;
-    p->data.intval.lo = n;
-    hi = n < 0 ? -1 : 0;
-    p->data.intval.hi = hi;
-    return p;
-}
-
-static inline void visit(IROLinear *p, IROList *b)
-{
-    if (p->type == IROLinearOp1Arg) {
-        IroUtil_CopyLinearToList(p->u.monadic, b);
-        return;
-    }
-    IroUtil_CopyLinearToList(p->u.diadic.left, b);
 }
 
 /* Appends to LIST a temporary = OBJECT * step + the induction variable, and returns the temporary's reference. */

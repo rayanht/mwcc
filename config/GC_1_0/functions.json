@@ -6591,7 +6591,7 @@
     "source": "src/frontend/CompilerTools.c"
   },
   {
-    "name": "fn_0042c740",
+    "name": "call_memory_error_handler",
     "address": "0x0042c740",
     "size": 16,
     "source": "src/frontend/CompilerTools.c"
@@ -6723,7 +6723,7 @@
     "source": "src/frontend/CompilerTools.c"
   },
   {
-    "name": "fn_0042d0c0",
+    "name": "release_heap",
     "address": "0x0042d0c0",
     "size": 45,
     "source": "src/frontend/CompilerTools.c"
@@ -6855,7 +6855,7 @@
     "source": "src/frontend/CompilerTools.c"
   },
   {
-    "name": "fn_0042d7c0",
+    "name": "CTool_EndianConvertVector128",
     "address": "0x0042d7c0",
     "size": 80,
     "source": "src/frontend/CompilerTools.c"
@@ -11541,7 +11541,7 @@
     "source": "src/optimizer/IroLoop.c"
   },
   {
-    "name": "fn_004626c0",
+    "name": "increment_loop_depths",
     "address": "0x004626c0",
     "size": 65,
     "source": "src/optimizer/IroLoop.c"
@@ -11553,7 +11553,7 @@
     "source": "src/optimizer/IroLoop.c"
   },
   {
-    "name": "fn_004627b0",
+    "name": "remove_nop_expressions",
     "address": "0x004627b0",
     "size": 58,
     "source": "src/optimizer/IroLoop.c"
@@ -11607,7 +11607,7 @@
     "source": "src/optimizer/IroLoop.c"
   },
   {
-    "name": "fn_004639d0",
+    "name": "count_loop_linear",
     "address": "0x004639d0",
     "size": 8,
     "source": "src/optimizer/IroLoop.c"
