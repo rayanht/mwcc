@@ -1285,6 +1285,7 @@ void COpt_ArrayToRegister(void)
 {
     PCodeInstruction *newpc;
     LoopVar *head = NULL;
+    long remaining;
     PCodeInstruction *pc;
     PCodeBlock *block;
     LoopVar *best;
@@ -1304,9 +1305,7 @@ void COpt_ArrayToRegister(void)
         for (block = gPCodeBlocks; block; block = block->next) {
             for (pc = block->instructions; pc; pc = pc->next) {
                 if (!(pc->flags & fIsBranch) && pc->operand_count) {
-                    op = pc->operandData.operands;
-                    j = pc->operand_count;
-                    while (j--) {
+                    for (op = pc->operandData.operands, remaining = pc->operand_count; remaining--; op++) {
                         if (op->kind == PCOp_MEMORY && op->flags == 1) {
                             a = findarray(head, op->object);
                             if (a && !a->isvalid) {
@@ -1344,7 +1343,6 @@ void COpt_ArrayToRegister(void)
                                     a->isvalid = 1;
                             }
                         }
-                        op++;
                     }
                 }
             }
@@ -1452,9 +1450,9 @@ void COpt_ArrayToRegister(void)
                         pc->operandData.operands[2].kind == PCOp_MEMORY && pc->operandData.operands[2].flags == 1) {
                         a = findarray(head, pc->operandData.operands[2].object);
                         if (a && !a->isvalid) {
-                            src = pc->operandData.operands[0].value.reg;
                             reg = a->values[pc->operandData.operands[2].value.signed_value / a->elemSize];
                             newpc = NULL;
+                            src = pc->operandData.operands[0].value.reg;
                             switch (pc->opcode) {
                                 case PC_LBZ:
                                     if (a->isgpr)

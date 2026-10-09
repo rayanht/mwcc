@@ -831,10 +831,9 @@ void generate_modulo(ENode *node, short outputReg, short outputRegHi, Operand *r
 {
     ENode *left;
     ENode *right;
-    SInt32 shift;
-    SInt32 quotient, unsignedResult, unsignedDividend, signedDividend;
+    SInt32 quotient, unsignedResult, signedDividend, unsignedDividend;
     SInt32 signBit, correctedQuotient, signedProduct, unsignedProduct, divisor;
-    SInt32 difference, halfDifference, sum, adjustedQuotient;
+    SInt32 shift, difference, halfDifference, sum, adjustedQuotient;
     SInt32 signedResult, multiplier, signedQuotient, unsignedMultiplier;
     SInt32 adjustment, subtraction, productReg, divisionReg, resultReg;
     Operand leftOperand, rightOperand;
@@ -866,9 +865,8 @@ void generate_modulo(ENode *node, short outputReg, short outputRegHi, Operand *r
     if (copts.optimizesize == 0 && right->type == EINTCONST && (divisor = (SInt32)right->data.intval.lo) != 1 &&
         divisor != -1) {
         (*data_00560648[left->type])(left, 0, 0, &leftOperand);
-        if (leftOperand.kind) {
+        if (leftOperand.kind)
             Operands_ForceGPR(&leftOperand, left->rtype, 0);
-        }
 
         if (is_unsigned(node->rtype)) {
             unsignedDividend = leftOperand.reg;

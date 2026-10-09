@@ -555,7 +555,11 @@ void CBrowse_WriteObjectBrowseInfo(Object *object, CPrepFileInfo *metadata, CPre
     Boolean isFunction;
     SInt32 flags = 0;
     HashNameNode *linkname;
+#if VERSION > VERSION_GC_1_0
     SInt32 linkId;
+    SInt32 nameId;
+    char *name;
+#endif
 
     isFunction = is_const_object(object);
     CError_ASSERT(910, metadata != NULL && metadata->recordbrowseinfo != 0);
@@ -566,9 +570,16 @@ void CBrowse_WriteObjectBrowseInfo(Object *object, CPrepFileInfo *metadata, CPre
         linkname = GetLinkName(object);
         if (object->name != linkname)
             alternateName = linkname->name;
-        linkId = linkname->id;
+#if VERSION == VERSION_GC_1_0
         EmitStandardData(isFunction ? BrowseType_Constant : BrowseType_Global, metadata->fileID, endMetadata->fileID,
-                         start, end, object->name->name, object->name->id, alternateName, linkId);
+                         start, end, object->name->name, object->name->id, alternateName, linkname->id);
+#else
+        linkId = linkname->id;
+        nameId = object->name->id;
+        name = object->name->name;
+        EmitStandardData(isFunction ? BrowseType_Constant : BrowseType_Global, metadata->fileID, endMetadata->fileID,
+                         start, end, name, nameId, alternateName, linkId);
+#endif
         if (!isFunction) {
             if (object->sclass == TK_STATIC)
                 flags |= 2;

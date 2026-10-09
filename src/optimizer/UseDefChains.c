@@ -316,8 +316,8 @@ void build_use_definition_entries(int include_implicit)
     CodeMotionEntryLink *link;
     unsigned int use_index;
     unsigned int definition_index;
-    int count;
     PCodeOperand *operand;
+    int count;
 
     CMInit();
     for (block = gPCodeBlocks; block != NULL; block = block->next) {
@@ -360,14 +360,12 @@ void build_use_definition_entries(int include_implicit)
                         if (operand->kind == PCOp_GPR) {
                             link->next = code_motion_register_definition_heads[operand->value.reg];
                             code_motion_register_definition_heads[operand->value.reg] = link;
+                        } else if (operand->kind == PCOp_VR) {
+                            link->next = register_definition_heads[operand->value.reg];
+                            register_definition_heads[operand->value.reg] = link;
                         } else {
-                            if (operand->kind == PCOp_VR) {
-                                link->next = register_definition_heads[operand->value.reg];
-                                register_definition_heads[operand->value.reg] = link;
-                            } else {
-                                link->next = data_00587f04[operand->value.reg];
-                                data_00587f04[operand->value.reg] = link;
-                            }
+                            link->next = data_00587f04[operand->value.reg];
+                            data_00587f04[operand->value.reg] = link;
                         }
                         definition_entry++;
                         definition_index++;
@@ -506,7 +504,6 @@ void compute_block_definition_and_use_sets(void)
     struct CodeMotionEntryLink *link;
     CodeMotionObjectNode *objectNode;
     int useIndex, definitionIndex;
-    int entryIndex;
 
     block = gPCodeBlocks;
     while (block != NULL) {
@@ -524,95 +521,101 @@ void compute_block_definition_and_use_sets(void)
         BitVectors_FillWords(state->use_sets[2], data_00587e38, 0);
         BitVectors_FillWords(state->use_sets[3], data_00587e38, 0);
         for (instruction = block->instructions; instruction != NULL; instruction = instruction->next) {
-            if (instruction->flags & fIsBranch)
-                continue;
-            if (instruction->operand_count == 0)
-                continue;
-            for (use = &cm_entries[useIndex = instruction->definitionStart];
-                 useIndex < data_00587e38 && use->instruction == instruction; use++, useIndex++) {
-                exposedUses[useIndex >> 5] |= 1u << useIndex;
-                if (use->kind == 0) {
-                    for (link = code_motion_register_definition_heads[use->value.reg]; link != NULL;
-                         link = link->next) {
-                        entryIndex = link->entry_index;
-                        if (generatedDefinitions[entryIndex >> 5] & (1u << entryIndex))
-                            exposedUses[useIndex >> 5] &= ~(1u << useIndex);
-                    }
-                } else if (use->kind == 1) {
-                    for (link = data_00587f04[use->value.reg]; link != NULL; link = link->next) {
-                        entryIndex = link->entry_index;
-                        if (generatedDefinitions[entryIndex >> 5] & (1u << entryIndex))
-                            exposedUses[useIndex >> 5] &= ~(1u << useIndex);
-                    }
-                } else if (use->kind == 9) {
-                    for (link = register_definition_heads[use->value.reg]; link != NULL; link = link->next) {
-                        entryIndex = link->entry_index;
-                        if (generatedDefinitions[entryIndex >> 5] & (1u << entryIndex))
-                            exposedUses[useIndex >> 5] &= ~(1u << useIndex);
-                    }
-                } else {
-                    objectNode = find_object_node(use->value.object);
-                    for (link = objectNode->definition_entries; link != NULL; link = link->next) {
-                        if (code_motion_entries[link->entry_index].is_implicit == 0 &&
-                            (generatedDefinitions[link->entry_index >> 5] & (1u << link->entry_index)))
-                            exposedUses[useIndex >> 5] &= ~(1u << useIndex);
-                    }
-                }
-            }
-            for (definition = &code_motion_entries[definitionIndex = instruction->useStart];
-                 definitionIndex < codeMotionEntryCount && definition->instruction == instruction;
-                 definition++, definitionIndex++) {
-                if (definition->kind == 0) {
-                    for (link = code_motion_register_use_heads[definition->value.reg]; link != NULL;
-                         link = link->next) {
-                        if (cm_entries[link->entry_index].instruction->block != block)
-                            killedUses[link->entry_index >> 5] |= 1u << link->entry_index;
-                    }
-                    for (link = code_motion_register_definition_heads[definition->value.reg]; link != NULL;
-                         link = link->next) {
-                        if (code_motion_entries[link->entry_index].instruction->block != block)
-                            killedDefinitions[link->entry_index >> 5] |= 1u << link->entry_index;
-                        else
-                            generatedDefinitions[link->entry_index >> 5] &= ~(1u << (link->entry_index & 31));
-                    }
-                } else if (definition->kind == 1) {
-                    for (link = codeMotionUseEntryHeads[definition->value.reg]; link != NULL; link = link->next) {
-                        if (cm_entries[link->entry_index].instruction->block != block)
-                            killedUses[link->entry_index >> 5] |= 1u << link->entry_index;
-                    }
-                    for (link = data_00587f04[definition->value.reg]; link != NULL; link = link->next) {
-                        if (code_motion_entries[link->entry_index].instruction->block != block)
-                            killedDefinitions[link->entry_index >> 5] |= 1u << link->entry_index;
-                        else
-                            generatedDefinitions[link->entry_index >> 5] &= ~(1u << (link->entry_index & 31));
-                    }
-                } else if (definition->kind == 9) {
-                    for (link = register_use_entry_heads[definition->value.reg]; link != NULL; link = link->next) {
-                        if (cm_entries[link->entry_index].instruction->block != block)
-                            killedUses[link->entry_index >> 5] |= 1u << link->entry_index;
-                    }
-                    for (link = register_definition_heads[definition->value.reg]; link != NULL; link = link->next) {
-                        if (code_motion_entries[link->entry_index].instruction->block != block)
-                            killedDefinitions[link->entry_index >> 5] |= 1u << link->entry_index;
-                        else
-                            generatedDefinitions[link->entry_index >> 5] &= ~(1u << (link->entry_index & 31));
-                    }
-                } else {
-                    if (definition->is_implicit == 0) {
-                        objectNode = find_object_node(definition->value.object);
-                        for (link = objectNode->use_entries; link != NULL; link = link->next) {
-                                if (cm_entries[link->entry_index].instruction->block != block)
-                                killedUses[link->entry_index >> 5] |= 1u << link->entry_index;
+            if ((instruction->flags & fIsBranch) == 0 && instruction->operand_count != 0) {
+                for (use = &cm_entries[useIndex = instruction->definitionStart];
+                     useIndex < data_00587e38 && use->instruction == instruction; use++, useIndex++) {
+                    exposedUses[useIndex >> 5] |= 1u << useIndex;
+                    if (use->kind == 0) {
+                        for (link = code_motion_register_definition_heads[use->value.reg]; link != NULL;
+                             link = link->next) {
+                            int entryIndex = link->entry_index;
+                            if (generatedDefinitions[entryIndex >> 5] & (1u << entryIndex))
+                                exposedUses[useIndex >> 5] &= ~(1u << useIndex);
                         }
+                    } else if (use->kind == 1) {
+                        for (link = data_00587f04[use->value.reg]; link != NULL; link = link->next) {
+                            int entryIndex = link->entry_index;
+                            if (generatedDefinitions[entryIndex >> 5] & (1u << entryIndex))
+                                exposedUses[useIndex >> 5] &= ~(1u << useIndex);
+                        }
+                    } else if (use->kind == 9) {
+                        for (link = register_definition_heads[use->value.reg]; link != NULL; link = link->next) {
+                            int entryIndex = link->entry_index;
+                            if (generatedDefinitions[entryIndex >> 5] & (1u << entryIndex))
+                                exposedUses[useIndex >> 5] &= ~(1u << useIndex);
+                        }
+                    } else {
+                        objectNode = find_object_node(use->value.object);
                         for (link = objectNode->definition_entries; link != NULL; link = link->next) {
-                                if (code_motion_entries[link->entry_index].instruction->block != block)
-                                killedDefinitions[link->entry_index >> 5] |= 1u << link->entry_index;
-                            else
-                                generatedDefinitions[link->entry_index >> 5] &= ~(1u << (link->entry_index & 31));
+                            if (code_motion_entries[link->entry_index].is_implicit == 0 &&
+                                (generatedDefinitions[link->entry_index >> 5] & (1u << link->entry_index)))
+                                exposedUses[useIndex >> 5] &= ~(1u << useIndex);
                         }
                     }
                 }
-                generatedDefinitions[definitionIndex >> 5] |= 1u << definitionIndex;
+                for (definition = &code_motion_entries[definitionIndex = instruction->useStart];
+                     definitionIndex < codeMotionEntryCount && definition->instruction == instruction;
+                     definition++, definitionIndex++) {
+                    if (definition->kind == 0) {
+                        for (link = code_motion_register_use_heads[definition->value.reg]; link != NULL;
+                             link = link->next) {
+                            int entryIndex = link->entry_index;
+                            if (cm_entries[entryIndex].instruction->block != block)
+                                killedUses[entryIndex >> 5] |= 1u << entryIndex;
+                        }
+                        for (link = code_motion_register_definition_heads[definition->value.reg]; link != NULL;
+                             link = link->next) {
+                            int entryIndex = link->entry_index;
+                            if (code_motion_entries[entryIndex].instruction->block != block)
+                                killedDefinitions[entryIndex >> 5] |= 1u << entryIndex;
+                            else
+                                generatedDefinitions[entryIndex >> 5] &= ~(1u << (entryIndex & 31));
+                        }
+                    } else if (definition->kind == 1) {
+                        for (link = codeMotionUseEntryHeads[definition->value.reg]; link != NULL; link = link->next) {
+                            int entryIndex = link->entry_index;
+                            if (cm_entries[entryIndex].instruction->block != block)
+                                killedUses[entryIndex >> 5] |= 1u << entryIndex;
+                        }
+                        for (link = data_00587f04[definition->value.reg]; link != NULL; link = link->next) {
+                            int entryIndex = link->entry_index;
+                            if (code_motion_entries[entryIndex].instruction->block != block)
+                                killedDefinitions[entryIndex >> 5] |= 1u << entryIndex;
+                            else
+                                generatedDefinitions[entryIndex >> 5] &= ~(1u << (entryIndex & 31));
+                        }
+                    } else if (definition->kind == 9) {
+                        for (link = register_use_entry_heads[definition->value.reg]; link != NULL; link = link->next) {
+                            int entryIndex = link->entry_index;
+                            if (cm_entries[entryIndex].instruction->block != block)
+                                killedUses[entryIndex >> 5] |= 1u << entryIndex;
+                        }
+                        for (link = register_definition_heads[definition->value.reg]; link != NULL; link = link->next) {
+                            int entryIndex = link->entry_index;
+                            if (code_motion_entries[entryIndex].instruction->block != block)
+                                killedDefinitions[entryIndex >> 5] |= 1u << entryIndex;
+                            else
+                                generatedDefinitions[entryIndex >> 5] &= ~(1u << (entryIndex & 31));
+                        }
+                    } else {
+                        if (definition->is_implicit == 0) {
+                            objectNode = find_object_node(definition->value.object);
+                            for (link = objectNode->use_entries; link != NULL; link = link->next) {
+                                int entryIndex = link->entry_index;
+                                if (cm_entries[entryIndex].instruction->block != block)
+                                    killedUses[entryIndex >> 5] |= 1u << entryIndex;
+                            }
+                            for (link = objectNode->definition_entries; link != NULL; link = link->next) {
+                                int entryIndex = link->entry_index;
+                                if (code_motion_entries[entryIndex].instruction->block != block)
+                                    killedDefinitions[entryIndex >> 5] |= 1u << entryIndex;
+                                else
+                                    generatedDefinitions[entryIndex >> 5] &= ~(1u << (entryIndex & 31));
+                            }
+                        }
+                    }
+                    generatedDefinitions[definitionIndex >> 5] |= 1u << definitionIndex;
+                }
             }
         }
         block = block->next;

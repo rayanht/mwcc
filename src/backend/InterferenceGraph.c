@@ -60,12 +60,18 @@ static int test_interference(UInt32 a, UInt32 b)
 
 #define SC_Clear(n, bits) ((bits)[(SInt16)(n) >> 5] &= ~(1 << ((UInt32)(SInt16)(n) & 31)))
 #define SC_Test(n, bits) ((bits)[(SInt16)(n) >> 5] & (1 << ((UInt32)(SInt16)(n) & 31)))
+static inline void SC_Add(SInt16 n, UInt32 *bits)
+{
+    int v = n;
+    bits[v >> 5] |= 1 << ((UInt32)v & 31);
+}
+
 void SpillCode_ConstructInterference(SInt32 registerClass, UInt32 registerCount)
 {
+    UInt32 *bits;
     PCodeBlock *block;
     PCodeInstruction *instruction;
     PCodeOperand *operand;
-    UInt32 *bits;
     SInt16 reg;
     UInt32 i;
     UInt32 j;
@@ -95,11 +101,11 @@ void SpillCode_ConstructInterference(SInt32 registerClass, UInt32 registerCount)
                     }
                 }
             }
-            for (operand = instruction->operandData.operands, j = instruction->operand_count; j--; operand++) {
+            for (j = instruction->operand_count, operand = instruction->operandData.operands; j--; operand++) {
                 if (operand->kind == registerClass && (operand->flags & 1)) {
                     if (!SC_Test(reg = operand->value.reg, bits))
                         operand->flags |= 4;
-                    bits[reg >> 5] |= 1 << (reg & 31);
+                    SC_Add(reg, bits);
                 }
             }
             if (registerClass == 0) {
@@ -118,11 +124,13 @@ void SpillCode_ConstructInterference(SInt32 registerClass, UInt32 registerCount)
                 }
             }
             if (registerClass == 0 && (instruction->flags & 0x20)) {
-                for (k = 0x32, operand = &instruction->operandData.operands[k]; k < instruction->operand_count;
-                     k++, operand++) {
-                    Coalesce_AddInterference(reg = operand->value.reg, 0);
+                PCodeOperand *extraOperand;
+                for (k = 0x32, extraOperand = &instruction->operandData.operands[k]; k < instruction->operand_count;
+                     k++, extraOperand++) {
+                    SInt16 tailReg;
+                    Coalesce_AddInterference(tailReg = extraOperand->value.reg, 0);
                     for (i = 3; i <= 0xc; i++)
-                        Coalesce_AddInterference(reg, i);
+                        Coalesce_AddInterference(tailReg, i);
                 }
             }
         }
@@ -131,7 +139,7 @@ void SpillCode_ConstructInterference(SInt32 registerClass, UInt32 registerCount)
 
 static SInt16 Coalesce_Find(SInt16 r)
 {
-    while (r != gCoalescedRegisters[r])
+    while (gCoalescedRegisters[r] != r)
         r = gCoalescedRegisters[r];
     return r;
 }
@@ -217,21 +225,22 @@ void SpillCode_CoalesceCopies(SInt32 regclass, UInt32 numRegs)
 
 void SpillCode_MaterializeGraph(UInt32 count)
 {
-    InterferenceNode *node;
     SInt16 *neighbors;
+    InterferenceNode *node;
     UInt32 register_index;
     UInt32 neighbor_index;
     UInt32 neighbor_count;
+    SInt16 representative;
     SInt16 *destination;
     SInt16 *source;
     UInt32 copied;
+    int root;
 
     gInterferenceGraph = oalloc(count * sizeof(*gInterferenceGraph));
     neighbors = oalloc(count * sizeof(*neighbors));
     for (register_index = 0; register_index < count; register_index++) {
-        neighbor_index = 0;
         neighbor_count = 0;
-        for (; neighbor_index < count; neighbor_index++) {
+        for (neighbor_index = 0; neighbor_index < count; neighbor_index++) {
             if (test_interference(register_index, neighbor_index)) {
                 neighbors[neighbor_count] = neighbor_index;
                 neighbor_count++;
@@ -252,9 +261,12 @@ void SpillCode_MaterializeGraph(UInt32 count)
             *destination++ = *source++;
         if (register_index != gCoalescedRegisters[register_index]) {
             node->flags |= 4;
-            neighbor_index = Coalesce_Find(register_index);
-            gInterferenceGraph[neighbor_index]->flags |= 8;
-            node->physical_register = neighbor_index;
+            representative = register_index;
+            while (representative != gCoalescedRegisters[representative])
+                representative = gCoalescedRegisters[representative];
+            root = representative;
+            gInterferenceGraph[root]->flags |= 8;
+            node->physical_register = root;
         }
     }
 }

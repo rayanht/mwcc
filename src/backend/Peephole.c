@@ -34,9 +34,53 @@ static const int kNumRegs = 32;
 static int PCode_LiveAfter(PCodeInstruction *instr);
 static int PCode_DefinedBetween(PCodeInstruction *instr, PCodeInstruction *def, PCodeOperand *arg);
 static int PCode_UsedBetween(PCodeInstruction *instr, PCodeInstruction *def, PCodeOperand *arg);
+static inline int PCode_InstUses(PCodeInstruction *inst, PCodeInstruction *stop, PCodeInstruction *p);
+static inline int HasDef(PCodeInstruction *r, PCodeInstruction *stop, PCodeOperand *target, UInt8 mask);
+static inline SInt32 FindOp(PCodeInstruction *first, PCodeInstruction *last, PCodeInstruction *inst, SInt32 bit);
+static inline int Contains(PCodeInstruction *start, PCodeInstruction *stop, PCodeOperand *ref, UInt32 flag);
+static inline int FindMember(PCodeInstruction *t, PCodeInstruction *stop, PCodeInstruction *target, SInt32 flag);
+static inline UInt32 PCode_RangeMask(SInt32 lo, SInt32 hi);
+static inline SInt32 PCode_FindOperand2(PCodeInstruction *from, PCodeInstruction *stop, PCodeOperand *ref, UInt8 flag);
+static inline SInt32 PCode_FindOperand(PCodeInstruction *from, PCodeInstruction *stop, PCodeOperand *ref, UInt8 flag);
+static inline int PCode_FindUse(PCodeInstruction *p, PCodeInstruction *end, PCodeOperand *arg, SInt32 flag);
+static inline int find_in_list(PCodeInstruction *list, PCodeInstruction *sent);
+static inline int fn_004c8010_find(PCodeInstruction *p, PCodeInstruction *limit, PCodeInstruction *ref);
 static int masks_disjoint(PCodeInstruction *instr, PCodeInstruction *scan, SInt16 reg);
 static int canmergemasks(SInt32 b1, SInt32 e1, SInt32 shift, SInt32 b2, SInt32 e2, SInt16 *first, SInt16 *last);
-static struct PeepHandler *AddPeepholeRule(SInt16 opcode, void *handler);
+static struct PeepHandler *AddPeepholeRule(struct PeepHandler **list, void *handler);
+
+static inline int has_intervening_definition(PCodeInstruction *instruction, PCodeInstruction *lastDefinition,
+                                             PCodeInstruction *definition, short reg)
+{
+    PCodeInstruction *previous = instruction->previous;
+    while (previous != lastDefinition) {
+        PCodeOperand *operand = previous->operandData.operands;
+        int operandCount = (int)previous->operand_count;
+        while (operandCount--) {
+            if (operand->kind == definition->operandData.operands[1].kind && operand->value.reg == reg &&
+                ((int)(signed char)operand->flags & PCodeOperand_Definition) != 0)
+                return 1;
+            operand++;
+        }
+        previous = previous->previous;
+    }
+    return 0;
+}
+
+static inline int fn_004c8f00_inline1(PCodeInstruction *cursor, PCodeInstruction *end, PCodeOperand *operand, int mask)
+{
+    while (cursor != end) {
+        PCodeOperand *p = cursor->operandData.operands;
+        int count = cursor->operand_count;
+        while (count--) {
+            if (p->kind == operand->kind && p->value.reg == operand->value.reg && (p->flags & mask) != 0)
+                return 1;
+            p++;
+        }
+        cursor = cursor->previous;
+    }
+    return 0;
+}
 
 static inline int scan(PCodeInstruction *p, PCodeInstruction *end, PCodeInstruction *in, int which, SInt16 val)
 {
@@ -67,6 +111,43 @@ static inline int scan2(PCodeInstruction *p, PCodeInstruction *end, PCodeInstruc
                 op->value.reg == val && ((SInt8)op->flags & 2))
                 return 1;
         }
+    }
+    return 0;
+}
+
+static inline int fn_004c9e70_inline1(PCodeInstruction *instruction, PCodeInstruction *next)
+{
+    PCodeInstruction *scan = instruction->previous;
+    while (scan != next) {
+        PCodeOperand *operand = scan->operandData.operands;
+        int count = scan->operand_count;
+        while (count--) {
+            if (operand->kind == next->operandData.operands[0].kind &&
+                operand->value.reg == next->operandData.operands[0].value.reg && (operand->flags & 1) != 0)
+                return 1;
+            operand++;
+        }
+        scan = scan->previous;
+    }
+    return 0;
+}
+
+static inline int fn_004c9f80_inline1(PCodeInstruction *instruction, PCodeInstruction *definition)
+{
+    PCodeInstruction *scan;
+    PCodeOperand *operand;
+    int count;
+    scan = instruction->previous;
+    while (scan != definition) {
+        operand = scan->operandData.operands;
+        count = scan->operand_count;
+        while (count--) {
+            if (operand->kind == definition->operandData.operands[0].kind &&
+                operand->value.reg == definition->operandData.operands[0].value.reg && (operand->flags & 1) != 0)
+                return 1;
+            operand++;
+        }
+        scan = scan->previous;
     }
     return 0;
 }
@@ -117,18 +198,172 @@ static inline int fn_004cad40_inline1(PCodeInstruction *instruction, PCodeInstru
     return 0;
 }
 
-/* An addi whose base register comes from another addi (or an li/la-style definition): the two offsets folded into
-   one instruction on the first's base, or the first removed when its result is dead. */
-
-/* Whether a register written by INSTR is still live after it. */
-
-/* Whether an instruction between INSTR and DEF (both exclusive) defines ARG's register. */
-
-/* Whether an instruction between INSTR and DEF (both exclusive) uses ARG's register. */
-
-static void PCode_Remove(PCodeInstruction *instr)
+static inline int fn_004cad40_scan(PCodeInstruction *instruction, PCodeInstruction *definition, int mask)
 {
-    PCode_UnlinkInstruction(instr);
+    PCodeInstruction *cursor;
+    PCodeOperand *operand;
+    int count;
+    cursor = instruction->previous;
+    while (cursor != definition) {
+        operand = cursor->operandData.operands;
+        count = cursor->operand_count;
+        while (count--) {
+            if (operand->kind == definition->operandData.operands[0].kind &&
+                operand->value.reg == definition->operandData.operands[0].value.reg && (operand->flags & mask) != 0)
+                return 1;
+            operand++;
+        }
+        cursor = cursor->previous;
+    }
+    return 0;
+}
+
+static inline int fn_004ca790_inline1(PCodeInstruction *current, PCodeInstruction *previous)
+{
+    PCodeOperand *operand;
+    int count;
+    PCodeInstruction *scan;
+    scan = current->previous;
+    while (scan != previous) {
+        operand = scan->operandData.operands;
+        count = scan->operand_count;
+        while (count--) {
+            if (operand->kind == previous->operandData.operands[0].kind &&
+                operand->value.reg == previous->operandData.operands[0].value.reg && (operand->flags & 1) != 0)
+                return 1;
+            operand++;
+        }
+        scan = scan->previous;
+    }
+    return 0;
+}
+
+static inline int fn_004cb330_inline1(PCodeInstruction *l20, PCodeInstruction *v1, PCodeOperand *v1p, int k3)
+{
+    PCodeInstruction *v2;
+    PCodeOperand *v3;
+    int v4;
+    v2 = (PCodeInstruction *)l20;
+    while ((int)v2 != (int)v1) {
+        v3 = (PCodeOperand *)((int)&v2->operandData.operands[0]);
+        v4 = (int)v2->operand_count;
+        while (v4--) {
+            if (v3->kind == v1p->kind && v3->value.reg == (short)v1p->value.reg && ((int)v3->flags & k3) != 0) {
+                return 1;
+            }
+            v3++;
+        }
+        v2 = (PCodeInstruction *)v2->previous;
+    }
+    return 0;
+}
+
+static inline int fn_004cb190_inline1(PCodeInstruction *start, PCodeInstruction *end, PCodeOperand *operand, int mask)
+{
+    PCodeInstruction *scan = start;
+    while (scan != end) {
+        PCodeOperand *current = scan->operandData.operands;
+        int count = scan->operand_count;
+        while (count--) {
+            if (current->kind == operand->kind && current->value.reg == operand->value.reg &&
+                (current->flags & mask) != 0)
+                return 1;
+            current++;
+        }
+        scan = scan->previous;
+    }
+    return 0;
+}
+
+static inline int fn_004cb890_inline1(int l20, PCodeInstruction *v1, PCodeOperand *v1p, int k3)
+{
+    PCodeInstruction *v2;
+    PCodeOperand *v3;
+    int v4;
+    v2 = (PCodeInstruction *)l20;
+    while ((int)v2 != (int)v1) {
+        v3 = (PCodeOperand *)((int)&v2->operandData.operands[0]);
+        v4 = (int)v2->operand_count;
+        while (v4--) {
+            if (v3->kind == v1p->kind && v3->value.reg == (short)v1p->value.reg && ((int)v3->flags & k3) != 0) {
+                return 1;
+            }
+            v3++;
+        }
+        v2 = (PCodeInstruction *)v2->previous;
+    }
+    return 0;
+}
+
+static inline int fn_004cb4d0_inline1(struct PCodeInstruction *l20, struct PCodeInstruction *v1, PCodeOperand *v1p,
+                                      int k3)
+{
+    struct PCodeInstruction *v2;
+    PCodeOperand *v3;
+    int v4;
+    v2 = l20;
+    while (v2 != v1) {
+        v3 = v2->operandData.operands;
+        v4 = (int)v2->operand_count;
+        while (v4--) {
+            if (v3->kind == v1p->kind && v3->value.reg == v1p->value.reg && ((int)(signed char)v3->flags & k3) != 0) {
+                return 1;
+            }
+            v3++;
+        }
+        v2 = v2->previous;
+    }
+    return 0;
+}
+
+static inline unsigned int RotatedMask(struct PCodeInstruction *pc)
+{
+    int sh;
+    int mb;
+    int me;
+    unsigned int m;
+    sh = pc->operandData.operands[2].value.signed_value;
+    mb = pc->operandData.operands[3].value.signed_value;
+    me = pc->operandData.operands[4].value.signed_value;
+    if (mb <= me)
+        m = ((mb > 31) ? 0 : (0xFFFFFFFF >> mb)) & ~(((me + 1) > 31) ? 0 : (0xFFFFFFFF >> (me + 1)));
+    else
+        m = ((mb > 31) ? 0 : (0xFFFFFFFF >> mb)) | ~(((me + 1) > 31) ? 0 : (0xFFFFFFFF >> (me + 1)));
+    return (m >> sh) | (m << (32 - sh));
+}
+
+static inline int fn_004cb6b0_inline1(PCodeInstruction *cursor, PCodeInstruction *end, PCodeOperand *operand, int mask)
+{
+    while (cursor != end) {
+        PCodeOperand *p = cursor->operandData.operands;
+        int count = cursor->operand_count;
+        while (count--) {
+            if (p->kind == operand->kind && p->value.reg == operand->value.reg && (p->flags & mask) != 0)
+                return 1;
+            p++;
+        }
+        cursor = cursor->previous;
+    }
+    return 0;
+}
+
+static inline int HasMatchingEntry(PCodeInstruction *p, PCodeInstruction *s)
+{
+    PCodeInstruction *l;
+    PCodeOperand *e;
+    int i;
+
+    for (l = p->previous; l != s; l = l->previous) {
+        e = l->operandData.operands;
+        i = l->operand_count;
+        while (i--) {
+            if (e->kind == p->operandData.operands[0].kind && e->value.reg == p->operandData.operands[0].value.reg &&
+                (e->flags & 2))
+                return 1;
+            e++;
+        }
+    }
+    return 0;
 }
 
 void initialize_register_block_liveness(void)
@@ -387,36 +622,6 @@ int fn_004cc040(PCodeInstruction *instruction, UInt32 gprMask, UInt32 fprMask, U
     return 1;
 }
 
-static int PCode_DefinedBetween(PCodeInstruction *instr, PCodeInstruction *def, PCodeOperand *arg)
-{
-    PCodeInstruction *scan;
-    PCodeOperand *op;
-    UInt32 n;
-
-    for (scan = instr->previous; scan != def; scan = scan->previous) {
-        for (op = scan->operandData.operands, n = scan->operand_count; n--; op++) {
-            if (op->kind == arg->kind && op->value.reg == arg->value.reg && (op->flags & 2))
-                return 1;
-        }
-    }
-    return 0;
-}
-
-static int PCode_UsedBetween(PCodeInstruction *instr, PCodeInstruction *def, PCodeOperand *arg)
-{
-    PCodeInstruction *scan;
-    PCodeOperand *op;
-    UInt32 n;
-
-    for (scan = instr->previous; scan != def; scan = scan->previous) {
-        for (op = scan->operandData.operands, n = scan->operand_count; n--; op++) {
-            if (op->kind == arg->kind && op->value.reg == arg->value.reg && (op->flags & 1))
-                return 1;
-        }
-    }
-    return 0;
-}
-
 int has_reg_flag_one_before_flag_two(PCodeInstruction *list, int hash)
 {
     PCodeInstruction *node;
@@ -437,40 +642,6 @@ int has_reg_flag_one_before_flag_two(PCodeInstruction *list, int hash)
         } while (node != NULL);
     }
     return 0;
-}
-
-static unsigned int RotatedMask(struct PCodeInstruction *pc)
-{
-    int sh;
-    int mb;
-    int me;
-    unsigned int m;
-    sh = pc->operandData.operands[2].value.signed_value;
-    mb = pc->operandData.operands[3].value.signed_value;
-    me = pc->operandData.operands[4].value.signed_value;
-    if (mb <= me)
-        m = ((mb > 31) ? 0 : (0xFFFFFFFF >> mb)) & ~(((me + 1) > 31) ? 0 : (0xFFFFFFFF >> (me + 1)));
-    else
-        m = ((mb > 31) ? 0 : (0xFFFFFFFF >> mb)) | ~(((me + 1) > 31) ? 0 : (0xFFFFFFFF >> (me + 1)));
-    return (m >> sh) | (m << (32 - sh));
-}
-
-static int canmergemasks(SInt32 b1, SInt32 e1, SInt32 shift, SInt32 b2, SInt32 e2, SInt16 *first, SInt16 *last)
-{
-    UInt32 mask1;
-    UInt32 mask2;
-
-    if (b1 <= e1)
-        mask1 = ((b1 > 31) ? 0 : (0xFFFFFFFF >> b1)) & ~(((int)(e1 + 1) > 31) ? 0 : (0xFFFFFFFF >> (e1 + 1)));
-    else
-        mask1 = ((b1 > 31) ? 0 : (0xFFFFFFFF >> b1)) | ~(((int)(e1 + 1) > 31) ? 0 : (0xFFFFFFFF >> (e1 + 1)));
-
-    if (b2 <= e2)
-        mask2 = ((b2 > 31) ? 0 : (0xFFFFFFFF >> b2)) & ~(((int)(e2 + 1) > 31) ? 0 : (0xFFFFFFFF >> (e2 + 1)));
-    else
-        mask2 = ((b2 > 31) ? 0 : (0xFFFFFFFF >> b2)) | ~(((int)(e2 + 1) > 31) ? 0 : (0xFFFFFFFF >> (e2 + 1)));
-
-    return InstrSelection_GetMaskRange(((mask1 << shift) | (mask1 >> (32 - shift))) & mask2, first, last);
 }
 
 int fn_004cbe40(PCodeBlock *node, PCodeInstruction *item, int instructionCount, int branchCount, int targetCount,
@@ -582,11 +753,6 @@ int fn_004cbe40(PCodeBlock *node, PCodeInstruction *item, int instructionCount, 
     return 1;
 }
 
-static int PCode_LiveAfter(PCodeInstruction *instr)
-{
-    return fn_004cbe40(instr->block, instr->next, 0, 0, 0, 0, 0);
-}
-
 unsigned int unlink_equal_reg_instruction(PCodeInstruction *record)
 {
     unsigned short second_value = record->operandData.operands[1].value.reg;
@@ -629,7 +795,7 @@ int unlink_instruction_with_matching_mr_def(PCodeInstruction *p)
     def = tbl[p->useStart + 1];
 
     if (def->opcode == PC_MR && p->operandData.operands[0].value.reg == def->operandData.operands[1].value.reg &&
-        !PCode_DefinedBetween(p, def, &p->operandData.operands[0]) && !(p->flags & fRecordBit)) {
+        !PCode_InstUses(p->previous, def, p) && !(p->flags & fRecordBit)) {
         PCode_UnlinkInstruction(p);
         return 1;
     }
@@ -647,7 +813,7 @@ int unlink_instruction_for_unmatched_fmr(PCodeInstruction *p)
     s = table[idx + 1];
     if (s->opcode == PC_FMR && p->operandData.operands[0].value.reg == s->operandData.operands[1].value.reg &&
         (p->flags & fRecordBit) == 0) {
-        if (!PCode_DefinedBetween(p, s, &p->operandData.operands[0])) {
+        if (!HasMatchingEntry(p, s)) {
             PCode_UnlinkInstruction(p);
             return 1;
         }
@@ -665,7 +831,7 @@ int unlink_instruction_matching_vmr_source(PCodeInstruction *p)
 
     if (def->opcode == PC_VMR && p->operandData.operands[0].value.reg == def->operandData.operands[1].value.reg &&
         !(p->flags & fRecordBit)) {
-        if (!PCode_DefinedBetween(p, def, &p->operandData.operands[0])) {
+        if (!PCode_InstUses(p->previous, def, p)) {
             PCode_UnlinkInstruction(p);
             return 1;
         }
@@ -719,6 +885,7 @@ int fn_004cba60(CmpCtx *ctx)
 
 int make_record_form_and_unlink_instruction(PCodeInstruction *instruction)
 {
+    int position;
     int firstMatch;
     int secondMatch;
     int specialMatch;
@@ -728,17 +895,18 @@ int make_record_form_and_unlink_instruction(PCodeInstruction *instruction)
     record = CodeGen_ReachingDefTable_00581af8[instruction->useStart + 1];
     if (instruction->operandData.operands[0].value.reg == 0 &&
         instruction->operandData.operands[2].value.signed_value == 0 && (record->flags & 0x601) == 0x201) {
-        firstMatch = PCode_UsedBetween(instruction, record, &instruction->operandData.operands[0]);
+        firstMatch = fn_004cb890_inline1((int)instruction->previous, record, &instruction->operandData.operands[0], 1);
         if (firstMatch == 0) {
             secondMatch =
-                PCode_DefinedBetween(instruction, record, &instruction->operandData.operands[0]);
+                fn_004cb890_inline1((int)instruction->previous, record, &instruction->operandData.operands[0], 2);
             if (secondMatch == 0) {
                 if (record->opcode == PC_ADDI) {
+                    position = (int)instruction->previous;
                     (void)operand;
                     operand.kind = PCOp_SPR;
                     operand.value.reg = 0;
                     operand.flags = 3;
-                    specialMatch = PCode_UsedBetween(instruction, record, &operand);
+                    specialMatch = fn_004cb890_inline1(position, record, &operand, 1);
                     if (specialMatch != 0)
                         return 0;
                 }
@@ -759,8 +927,8 @@ int bypass_extsb_for_low_byte_rotated_mask(PCodeInstruction *instruction, int re
         ((short)previous->operandData.operands[0].value.reg == instruction->operandData.operands[0].value.reg ||
          (register_mask & (1 << (short)previous->operandData.operands[0].value.reg)) == 0) &&
         (previous->flags & PCodeInstruction_CloneExtraOperandExcluded) == 0 &&
-        PCode_DefinedBetween(instruction, previous, &previous->operandData.operands[1]) == 0 &&
-        PCode_UsedBetween(instruction, previous, &previous->operandData.operands[0]) == 0 &&
+        fn_004cb6b0_inline1(instruction->previous, previous, &previous->operandData.operands[1], 2) == 0 &&
+        fn_004cb6b0_inline1(instruction->previous, previous, &previous->operandData.operands[0], 1) == 0 &&
         (RotatedMask(instruction) & 0xFFFFFF00) == 0) {
         instruction->operandData.operands[1].value.reg = previous->operandData.operands[1].value.reg;
         CodeGen_ReachingDefTable_00581af8[instruction->useStart + 1] =
@@ -779,8 +947,8 @@ int bypass_extsh_for_rotated_mask(struct PCodeInstruction *pattern, int register
         (instruction->operandData.operands[0].value.reg == pattern->operandData.operands[0].value.reg ||
          ((1 << instruction->operandData.operands[0].value.reg) & registerMask) == 0) &&
         (instruction->flags & fRecordBit) == 0 &&
-        PCode_DefinedBetween(pattern, instruction, &instruction->operandData.operands[1]) == 0 &&
-        PCode_UsedBetween(pattern, instruction, &instruction->operandData.operands[0]) == 0 &&
+        fn_004cb4d0_inline1(pattern->previous, instruction, &instruction->operandData.operands[1], 2) == 0 &&
+        fn_004cb4d0_inline1(pattern->previous, instruction, &instruction->operandData.operands[0], 1) == 0 &&
         (RotatedMask(pattern) & 0xFFFF0000) == 0) {
         pattern->operandData.operands[1].value.reg = instruction->operandData.operands[1].value.reg;
         CodeGen_ReachingDefTable_00581af8[pattern->useStart + 1] =
@@ -803,9 +971,12 @@ int fold_lbz_lbzx_mask(PCodeInstruction *instruction, int register_mask)
         (((PCodeInstruction *)instruction)->flags & fRecordBit) == 0) {
         if (previous_instruction->operandData.operands[0].value.reg == instruction->operandData.operands[0].value.reg ||
             ((1 << previous_instruction->operandData.operands[0].value.reg) & register_mask) == 0) {
-            if (PCode_UsedBetween(instruction, previous_instruction, &previous_instruction->operandData.operands[0]) == 0 &&
-                PCode_DefinedBetween(instruction, previous_instruction, &instruction->operandData.operands[0]) == 0 &&
-                PCode_UsedBetween(instruction, previous_instruction, &instruction->operandData.operands[0]) == 0) {
+            if (fn_004cb330_inline1(instruction->previous, previous_instruction,
+                                    &previous_instruction->operandData.operands[0], 1) == 0 &&
+                fn_004cb330_inline1(instruction->previous, previous_instruction, &instruction->operandData.operands[0],
+                                    2) == 0 &&
+                fn_004cb330_inline1(instruction->previous, previous_instruction, &instruction->operandData.operands[0],
+                                    1) == 0) {
                 previous_instruction->operandData.operands[0].value.reg =
                     instruction->operandData.operands[0].value.reg;
                 PCode_UnlinkInstruction(instruction);
@@ -825,9 +996,9 @@ int fold_lhz_lhzx_mask(PCodeInstruction *instruction, int register_mask)
         instruction->operandData.operands[4].value.signed_value == 31 && (instruction->flags & fRecordBit) == 0 &&
         (producer->operandData.operands[0].value.reg == instruction->operandData.operands[0].value.reg ||
          ((1 << producer->operandData.operands[0].value.reg) & register_mask) == 0) &&
-        PCode_UsedBetween(instruction, producer, &producer->operandData.operands[0]) == 0 &&
-        PCode_DefinedBetween(instruction, producer, &instruction->operandData.operands[0]) == 0 &&
-        PCode_UsedBetween(instruction, producer, &instruction->operandData.operands[0]) == 0) {
+        fn_004cb190_inline1(instruction->previous, producer, &producer->operandData.operands[0], 1) == 0 &&
+        fn_004cb190_inline1(instruction->previous, producer, &instruction->operandData.operands[0], 2) == 0 &&
+        fn_004cb190_inline1(instruction->previous, producer, &instruction->operandData.operands[0], 1) == 0) {
         producer->operandData.operands[0].value.reg = instruction->operandData.operands[0].value.reg;
         PCode_UnlinkInstruction(instruction);
         return 1;
@@ -844,9 +1015,9 @@ int fold_reaching_lha_or_extsb(PCodeInstruction *p, UInt32 mask)
     if (q->opcode == PC_LHA && (p->flags & fRecordBit) == 0) {
         if (q->operandData.operands[0].value.reg == p->operandData.operands[0].value.reg ||
             (mask & (1 << q->operandData.operands[0].value.reg)) == 0) {
-            if (!PCode_UsedBetween(p, q, &q->operandData.operands[0])) {
-                if (!PCode_DefinedBetween(p, q, &p->operandData.operands[0])) {
-                    if (!PCode_UsedBetween(p, q, &p->operandData.operands[0])) {
+            if (!HasDef(p->previous, q, &q->operandData.operands[0], 1)) {
+                if (!HasDef(p->previous, q, &p->operandData.operands[0], 2)) {
+                    if (!HasDef(p->previous, q, &p->operandData.operands[0], 1)) {
                         q->operandData.operands[0].value.reg = p->operandData.operands[0].value.reg;
                         PCode_UnlinkInstruction(p);
                         return 1;
@@ -859,14 +1030,14 @@ int fold_reaching_lha_or_extsb(PCodeInstruction *p, UInt32 mask)
     if (q->opcode == PC_EXTSB && (p->flags & fRecordBit) == 0) {
         if (q->operandData.operands[0].value.reg == q->operandData.operands[1].value.reg) {
             if ((mask & (1 << q->operandData.operands[0].value.reg)) == 0) {
-                if (!PCode_UsedBetween(p, q, &q->operandData.operands[0])) {
+                if (!HasDef(p->previous, q, &q->operandData.operands[0], 1)) {
                     p->opcode = PC_EXTSB;
                     PCode_UnlinkInstruction(q);
                     return 1;
                 }
             }
         } else {
-            if (!PCode_DefinedBetween(p, q, &q->operandData.operands[1])) {
+            if (!HasDef(p->previous, q, &q->operandData.operands[1], 2)) {
                 p->opcode = PC_EXTSB;
                 p->operandData.operands[1] = q->operandData.operands[1];
             } else {
@@ -889,13 +1060,13 @@ int fold_li_operand(PCodeInstruction *instruction, int register_mask)
         instruction->operandData.operands[2].kind == PCOp_IMMEDIATE &&
         instruction->operandData.operands[2].value.signed_value == 0 &&
         previous->operandData.operands[0].value.reg == instruction->operandData.operands[1].value.reg) {
-        result = PCode_DefinedBetween(instruction, previous, &previous->operandData.operands[0]);
+        result = fn_004cad40_scan(instruction, previous, 2);
         if (result == 0) {
             instruction->operandData.operands[1].value.reg = 0;
             instruction->operandData.operands[2] = previous->operandData.operands[1];
             CodeGen_ReachingDefTable_00581af8[instruction->useStart + 1] =
                 CodeGen_ReachingDefTable_00581af8[previous->useStart + 1];
-            second_result = PCode_UsedBetween(instruction, previous, &previous->operandData.operands[0]);
+            second_result = fn_004cad40_scan(instruction, previous, 1);
             if (second_result == 0 && (1 << previous->operandData.operands[0].value.reg & register_mask) == 0) {
                 PCode_UnlinkInstruction(previous);
             }
@@ -905,6 +1076,8 @@ int fold_li_operand(PCodeInstruction *instruction, int register_mask)
     return 0;
 }
 
+/* An addi whose base register comes from another addi (or an li/la-style definition): the two offsets folded into
+   one instruction on the first's base, or the first removed when its result is dead. */
 int fold_addi_or_mr_reaching_def(PCodeInstruction *pc, UInt32 mask)
 {
     PCodeInstruction *def;
@@ -987,20 +1160,65 @@ int fold_addi_or_mr_reaching_def(PCodeInstruction *pc, UInt32 mask)
     return 0;
 }
 
+/* Whether a register written by INSTR is still live after it. */
+static int PCode_LiveAfter(PCodeInstruction *instr)
+{
+    return fn_004cbe40(instr->block, instr->next, 0, 0, 0, 0, 0);
+}
+
+/* Whether an instruction between INSTR and DEF (both exclusive) defines ARG's register. */
+static int PCode_DefinedBetween(PCodeInstruction *instr, PCodeInstruction *def, PCodeOperand *arg)
+{
+    PCodeInstruction *scan;
+    PCodeOperand *op;
+    UInt32 n;
+
+    for (scan = instr->previous; scan != def; scan = scan->previous) {
+        for (op = scan->operandData.operands, n = scan->operand_count; n--; op++) {
+            if (op->kind == arg->kind && op->value.reg == arg->value.reg && (op->flags & 2))
+                return 1;
+        }
+    }
+    return 0;
+}
+
+/* Whether an instruction between INSTR and DEF (both exclusive) uses ARG's register. */
+static int PCode_UsedBetween(PCodeInstruction *instr, PCodeInstruction *def, PCodeOperand *arg)
+{
+    PCodeInstruction *scan;
+    PCodeOperand *op;
+    UInt32 n;
+
+    for (scan = instr->previous; scan != def; scan = scan->previous) {
+        for (op = scan->operandData.operands, n = scan->operand_count; n--; op++) {
+            if (op->kind == arg->kind && op->value.reg == arg->value.reg && (op->flags & 1))
+                return 1;
+        }
+    }
+    return 0;
+}
+
+static void PCode_Remove(PCodeInstruction *instr)
+{
+    PCode_UnlinkInstruction(instr);
+}
+
 int fold_reaching_addi(PCodeInstruction *current)
 {
     PCodeInstruction *previous;
+    unsigned char kind;
     PCodeInstruction **table;
     unsigned long combined;
 
+    kind = current->operandData.operands[2].kind;
     table = CodeGen_ReachingDefTable_00581af8;
     previous = table[current->useStart + 1];
-    if (current->operandData.operands[2].kind == PCOp_IMMEDIATE && previous->operandData.operands[2].kind == PCOp_IMMEDIATE &&
+    if (kind == PCOp_IMMEDIATE && previous->operandData.operands[2].kind == PCOp_IMMEDIATE &&
         previous->opcode == PC_ADDI &&
         previous->operandData.operands[0].value.reg == previous->operandData.operands[1].value.reg &&
         (current->operandData.operands[0].kind != current->operandData.operands[1].kind ||
          current->operandData.operands[0].value.reg != current->operandData.operands[1].value.reg)) {
-        if (PCode_UsedBetween(current, previous, &previous->operandData.operands[0]) == 0) {
+        if (fn_004ca790_inline1(current, previous) == 0) {
             if (current->operandData.operands[2].value.signed_value +
                     previous->operandData.operands[2].value.signed_value ==
                 (short)(current->operandData.operands[2].value.signed_value +
@@ -1036,7 +1254,7 @@ int eliminate_matching_addi(PCodeInstruction *instruction, UInt32 registerMask)
     if (instruction->operandData.operands[2].kind != PCOp_IMMEDIATE)
         return 0;
     sourceRegister = instruction->operandData.operands[1].value.reg;
-    if (PCode_LiveAfter(instruction) == 0)
+    if (fn_004cbe40(instruction->block, instruction->next, 0, 0, 0, 0, 0) == 0)
         return 0;
     nextInstruction = instruction->next;
     while (nextInstruction != NULL) {
@@ -1136,8 +1354,8 @@ SInt32 bypass_cmpli_zero(PCodeInstruction *p)
                 if (inst->operandData.operands[2].value.signed_value == 0) {
                     src = CodeGen_ReachingDefTable_00581af8[inst->useStart + 1];
                     if ((src->flags & 0x601) == 0x201) {
-                        if (!PCode_UsedBetween(inst, src, &inst->operandData.operands[0])) {
-                            if (!PCode_DefinedBetween(inst, src, &inst->operandData.operands[0])) {
+                        if (!FindOp(inst->previous, src, inst, 1)) {
+                            if (!FindOp(inst->previous, src, inst, 2)) {
                                 PCodeUtilities_MakeRecordForm(src);
                                 CodeGen_ReachingDefTable_00581af8[p->useStart] =
                                     CodeGen_ReachingDefTable_00581af8[inst->useStart + 1];
@@ -1167,9 +1385,9 @@ int remove_redundant_extsb(PCodeInstruction *self, UInt32 mask)
             if (signExtend->opcode == PC_EXTSB) {
                 if (CodeGen_ReachingDefTable_00581af8[signExtend->useStart + 1]->opcode == PC_LBZ &&
                     !((1 << signExtend->operandData.operands[0].value.reg) & mask)) {
-                    if (!PCode_UsedBetween(self, compare, &signExtend->operandData.operands[0]) &&
-                        !PCode_UsedBetween(compare, signExtend, &signExtend->operandData.operands[0]) &&
-                        !PCode_DefinedBetween(compare, signExtend, &signExtend->operandData.operands[1])) {
+                    if (!Contains(self->previous, compare, &signExtend->operandData.operands[0], 1) &&
+                        !Contains(compare->previous, signExtend, &signExtend->operandData.operands[0], 1) &&
+                        !Contains(compare->previous, signExtend, &signExtend->operandData.operands[1], 2)) {
                         compare->operandData.operands[1].value.reg = signExtend->operandData.operands[1].value.reg;
                         CodeGen_ReachingDefTable_00581af8[compare->useStart + 1] =
                             CodeGen_ReachingDefTable_00581af8[signExtend->useStart + 1];
@@ -1194,8 +1412,8 @@ unsigned int fold_not_into_andc(PCodeInstruction *pc, UInt32 mask)
         if ((def->operandData.operands[0].value.reg) == pc->operandData.operands[0].value.reg ||
             !(mask & (1 << (def->operandData.operands[0].value.reg)))) {
             if (!(def->flags & fRecordBit)) {
-                if (!PCode_DefinedBetween(pc, def, &def->operandData.operands[1]) &&
-                    !PCode_UsedBetween(pc, def, &def->operandData.operands[0])) {
+                if (!PCode_FindUse(pc->previous, def, &def->operandData.operands[1], 2) &&
+                    !PCode_FindUse(pc->previous, def, &def->operandData.operands[0], 1)) {
                     pc->operandData.operands[2].value.reg = def->operandData.operands[1].value.reg;
                     table = CodeGen_ReachingDefTable_00581af8;
                     source = CodeGen_ReachingDefTable_00581af8;
@@ -1220,7 +1438,7 @@ int replace_with_reaching_li(PCodeInstruction *instruction, int register_mask)
         (previous->operandData.operands[0].value.reg == instruction->operandData.operands[0].value.reg ||
          ((1 << previous->operandData.operands[0].value.reg) & register_mask) == 0) &&
         (instruction->flags & PCodeInstruction_CloneExtraOperandExcluded) == 0) {
-        result = PCode_UsedBetween(instruction, previous, &previous->operandData.operands[0]);
+        result = fn_004c9f80_inline1(instruction, previous);
         if (result == 0) {
             instruction->opcode = PC_LI;
             instruction->operandData.operands[1] = previous->operandData.operands[1];
@@ -1243,7 +1461,7 @@ int merge_reaching_def_instruction(PCodeInstruction *instruction, int operand1, 
         (next->operandData.operands[0].value.reg == instruction->operandData.operands[0].value.reg ||
          ((1 << next->operandData.operands[0].value.reg) & registerMask) == 0) &&
         (instruction->flags & fRecordBit) == 0) {
-        if (PCode_UsedBetween(instruction, next, &next->operandData.operands[0]) == 0) {
+        if (fn_004c9e70_inline1(instruction, next) == 0) {
             instruction->opcode = opcode;
             instruction->operandData.operands[1] = next->operandData.operands[1];
             CodeGen_ReachingDefTable_00581af8[instruction->useStart + 1] =
@@ -1263,9 +1481,9 @@ unsigned int retarget_reaching_def_register(PCodeInstruction *instruction, UInt3
     if (reachingDef->flags & fIsRead) {
         if (((1 << reachingDef->operandData.operands[0].value.reg) & unavailableRegisters) == 0) {
             if ((instruction->flags & fRecordBit) == 0) {
-                if (!PCode_UsedBetween(instruction, reachingDef, &reachingDef->operandData.operands[0])) {
-                    if (!PCode_UsedBetween(instruction, reachingDef, &instruction->operandData.operands[0])) {
-                        if (!PCode_DefinedBetween(instruction, reachingDef, &instruction->operandData.operands[0])) {
+                if (!FindMember(instruction->previous, reachingDef, reachingDef, 1)) {
+                    if (!FindMember(instruction->previous, reachingDef, instruction, 1)) {
+                        if (!FindMember(instruction->previous, reachingDef, instruction, 2)) {
                             reachingDef->operandData.operands[0].value.reg =
                                 instruction->operandData.operands[0].value.reg;
                             PCode_UnlinkInstruction(instruction);
@@ -1286,9 +1504,9 @@ unsigned int rewrite_reaching_def_reg(PCodeInstruction *instruction, SInt32 regi
     if (definition->flags & fIsRead) {
         if (((1 << definition->operandData.operands[0].value.reg) & unavailableRegisters) == 0) {
             if ((instruction->flags & fRecordBit) == 0) {
-                if (!PCode_UsedBetween(instruction, definition, &definition->operandData.operands[0])) {
-                    if (!PCode_UsedBetween(instruction, definition, &instruction->operandData.operands[0])) {
-                        if (!PCode_DefinedBetween(instruction, definition, &instruction->operandData.operands[0])) {
+                if (!FindMember(instruction->previous, definition, definition, 1)) {
+                    if (!FindMember(instruction->previous, definition, instruction, 1)) {
+                        if (!FindMember(instruction->previous, definition, instruction, 2)) {
                             definition->operandData.operands[0].value.reg =
                                 instruction->operandData.operands[0].value.reg;
                             PCode_UnlinkInstruction(instruction);
@@ -1507,21 +1725,26 @@ int eliminate_redundant_store(PCodeInstruction *in)
 int fold_rlwinm_or_mr_reaching_def(PCodeInstruction *pc, UInt32 mask)
 {
     SInt16 maskStart, maskEnd;
+    SInt32 shift;
+    UInt32 rotatedMask, currentMask, sourceMask;
     PCodeInstruction *def;
 
     def = CodeGen_ReachingDefTable_00581af8[pc->useStart + 1];
     if (def->opcode == PC_RLWINM && (def->flags & fRecordBit) == 0 &&
-        !PCode_DefinedBetween(pc, def, &def->operandData.operands[1]) &&
+        !PCode_FindOperand(pc->previous, def, &def->operandData.operands[1], 2) &&
         (def->operandData.operands[0].value.reg != def->operandData.operands[1].value.reg ||
          ((def->operandData.operands[0].value.reg == pc->operandData.operands[0].value.reg ||
            (mask & (1 << def->operandData.operands[0].value.reg)) == 0) &&
-          !PCode_UsedBetween(pc, def, &def->operandData.operands[0])))) {
+          !PCode_FindOperand(pc->previous, def, &def->operandData.operands[0], 1)))) {
+        SInt32 end = pc->operandData.operands[4].value.signed_value;
+        SInt32 start = pc->operandData.operands[3].value.signed_value;
+        shift = pc->operandData.operands[2].value.signed_value;
+        sourceMask = PCode_RangeMask(def->operandData.operands[3].value.signed_value,
+                                     def->operandData.operands[4].value.signed_value);
+        currentMask = PCode_RangeMask(start, end);
+        rotatedMask = (sourceMask << shift) | (sourceMask >> (32 - shift));
 
-        if (canmergemasks(def->operandData.operands[3].value.signed_value,
-                          def->operandData.operands[4].value.signed_value,
-                          pc->operandData.operands[2].value.signed_value,
-                          pc->operandData.operands[3].value.signed_value,
-                          pc->operandData.operands[4].value.signed_value, &maskStart, &maskEnd)) {
+        if (InstrSelection_GetMaskRange(rotatedMask & currentMask, &maskStart, &maskEnd) != 0) {
             if (pc->opcode == PC_RLWIMI && (maskStart != pc->operandData.operands[3].value.signed_value ||
                                             maskEnd != pc->operandData.operands[4].value.signed_value))
                 return 0;
@@ -1534,7 +1757,7 @@ int fold_rlwinm_or_mr_reaching_def(PCodeInstruction *pc, UInt32 mask)
             pc->operandData.operands[4].value.signed_value = maskEnd;
             if (def->operandData.operands[0].value.reg == pc->operandData.operands[0].value.reg ||
                 (mask & (1 << def->operandData.operands[0].value.reg)) == 0) {
-                if (!PCode_UsedBetween(pc, def, &def->operandData.operands[0]))
+                if (!PCode_FindOperand(pc->previous, def, &def->operandData.operands[0], 1))
                     PCode_UnlinkInstruction(def);
             }
             return 1;
@@ -1542,13 +1765,13 @@ int fold_rlwinm_or_mr_reaching_def(PCodeInstruction *pc, UInt32 mask)
     }
 
     if (def->opcode == PC_MR && pc->opcode == PC_RLWINM) {
-        if (!PCode_DefinedBetween(pc, def, &def->operandData.operands[1])) {
+        if (!PCode_FindOperand2(pc->previous, def, &def->operandData.operands[1], 2)) {
             pc->operandData.operands[1].value.reg = def->operandData.operands[1].value.reg;
             CodeGen_ReachingDefTable_00581af8[pc->useStart + 1] = CodeGen_ReachingDefTable_00581af8[def->useStart + 1];
             if ((def->operandData.operands[0].value.reg == pc->operandData.operands[0].value.reg ||
                  (mask & (1 << def->operandData.operands[0].value.reg)) == 0) &&
                 (def->flags & fRecordBit) == 0) {
-                if (!PCode_UsedBetween(pc, def, &def->operandData.operands[0]))
+                if (!PCode_FindOperand2(pc->previous, def, &def->operandData.operands[0], 1))
                     PCode_UnlinkInstruction(def);
             }
             return 1;
@@ -1568,9 +1791,11 @@ int combine_mulli(struct PCodeInstruction *state, int register_mask)
         if ((instruction->operandData.operands[0].value.reg == rewrite->operandData.operands[0].value.reg ||
              (1 << instruction->operandData.operands[0].value.reg & register_mask) == 0) &&
             (instruction->flags & PCodeInstruction_CloneExtraOperandExcluded) == 0) {
-            result = PCode_DefinedBetween(state, instruction, &instruction->operandData.operands[1]);
+            result = fn_004c8f00_inline1(state->previous, instruction, &instruction->operandData.operands[1],
+                                         PCodeOperand_Definition);
             if (result == 0) {
-                source_result = PCode_UsedBetween(state, instruction, &instruction->operandData.operands[0]);
+                source_result = fn_004c8f00_inline1(state->previous, instruction, &instruction->operandData.operands[0],
+                                                    PCodeOperand_Use);
                 if (source_result == 0 && state->operandData.operands[2].value.signed_value *
                                                   instruction->operandData.operands[2].value.signed_value ==
                                               (short)(state->operandData.operands[2].value.signed_value *
@@ -1590,6 +1815,136 @@ int combine_mulli(struct PCodeInstruction *state, int register_mask)
     return 0;
 }
 
+static inline int PCode_InstUses(PCodeInstruction *inst, PCodeInstruction *stop, PCodeInstruction *p)
+{
+    PCodeOperand *op;
+    SInt16 reg;
+    UInt32 n;
+
+    while (inst != stop) {
+        op = inst->operandData.operands;
+        n = (UInt32)inst->operand_count;
+        while (n--) {
+            if (op->kind == p->operandData.operands[0].kind && op->value.reg == p->operandData.operands[0].value.reg &&
+                (op->flags & 2))
+                return 1;
+            op++;
+        }
+        inst = inst->previous;
+    }
+    return 0;
+}
+
+static inline int HasDef(PCodeInstruction *r, PCodeInstruction *stop, PCodeOperand *target, UInt8 mask)
+{
+    PCodeOperand *e;
+    int i;
+    for (; r != stop; r = r->previous) {
+        for (i = r->operand_count, e = r->operandData.operands; i--; e++) {
+            if (e->kind == target->kind && e->value.reg == target->value.reg && (e->flags & mask) != 0)
+                return 1;
+        }
+    }
+    return 0;
+}
+
+static inline SInt32 FindOp(PCodeInstruction *first, PCodeInstruction *last, PCodeInstruction *inst, SInt32 bit)
+{
+    PCodeOperand *op;
+    SInt32 n;
+
+    for (; first != last; first = first->previous) {
+        for (op = &first->operandData.operands[0], n = first->operand_count; n--; op++) {
+            if (op->kind == inst->operandData.operands[0].kind &&
+                op->value.reg == inst->operandData.operands[0].value.reg && (op->flags & bit))
+                return 1;
+        }
+    }
+    return 0;
+}
+
+static inline int Contains(PCodeInstruction *start, PCodeInstruction *stop, PCodeOperand *ref, UInt32 flag)
+{
+    PCodeInstruction *q;
+    PCodeOperand *e;
+    SInt32 n;
+
+    for (q = start; q != stop; q = q->previous) {
+        e = q->operandData.operands;
+        n = q->operand_count;
+        while (n--) {
+            if (e->kind == ref->kind && e->value.reg == ref->value.reg && ((SInt8)e->flags & flag))
+                return 1;
+            e++;
+        }
+    }
+    return 0;
+}
+
+static inline int FindMember(PCodeInstruction *t, PCodeInstruction *stop, PCodeInstruction *target, SInt32 flag)
+{
+    PCodeOperand *m;
+    SInt32 i;
+    while (t != stop) {
+        m = t->operandData.operands;
+        for (i = t->operand_count; i--; m++) {
+            if (m->kind == target->operandData.operands[0].kind &&
+                m->value.reg == target->operandData.operands[0].value.reg && (m->flags & flag))
+                return 1;
+        }
+        t = t->previous;
+    }
+    return 0;
+}
+
+static inline UInt32 PCode_RangeMask(SInt32 lo, SInt32 hi)
+{
+    UInt32 hiMask;
+    UInt32 loMask;
+    if (lo <= hi) {
+        hiMask = (hi + 1 > 31) ? 0 : (0xFFFFFFFFu >> (hi + 1));
+        loMask = (lo > 31) ? 0 : (0xFFFFFFFFu >> lo);
+        return ~hiMask & loMask;
+    }
+    hiMask = (hi + 1 > 31) ? 0 : (0xFFFFFFFFu >> (hi + 1));
+    loMask = (lo > 31) ? 0 : (0xFFFFFFFFu >> lo);
+    return ~hiMask | loMask;
+}
+
+static inline SInt32 PCode_FindOperand2(PCodeInstruction *from, PCodeInstruction *stop, PCodeOperand *ref, UInt8 flag)
+{
+    PCodeInstruction *q;
+    PCodeOperand *op;
+    UInt32 n;
+    for (q = from; q != stop; q = q->previous) {
+        op = q->operandData.operands;
+        n = q->operand_count;
+        while (n--) {
+            if (op->kind == ref->kind && op->value.reg == ref->value.reg && ((SInt8)op->flags & flag) != 0)
+                return 1;
+            op++;
+        }
+    }
+    return 0;
+}
+
+static inline SInt32 PCode_FindOperand(PCodeInstruction *from, PCodeInstruction *stop, PCodeOperand *ref, UInt8 flag)
+{
+    PCodeOperand *op;
+    UInt32 n;
+    PCodeInstruction *q;
+    for (q = from; q != stop; q = q->previous) {
+        op = q->operandData.operands;
+        n = q->operand_count;
+        while (n--) {
+            if (op->kind == ref->kind && op->value.reg == ref->value.reg && ((SInt8)op->flags & flag) != 0)
+                return 1;
+            op++;
+        }
+    }
+    return 0;
+}
+
 unsigned int combine_addi(PCodeInstruction *pc, UInt32 mask)
 {
     PCodeInstruction *def;
@@ -1602,8 +1957,8 @@ unsigned int combine_addi(PCodeInstruction *pc, UInt32 mask)
         if ((def->operandData.operands[0].value.reg) == pc->operandData.operands[0].value.reg ||
             !(mask & (1 << (def->operandData.operands[0].value.reg)))) {
             if (!(def->flags & fRecordBit)) {
-                if (!PCode_DefinedBetween(pc, def, &def->operandData.operands[1])) {
-                    if (!PCode_UsedBetween(pc, def, &def->operandData.operands[0])) {
+                if (!PCode_FindUse(pc->previous, def, &def->operandData.operands[1], 2)) {
+                    if (!PCode_FindUse(pc->previous, def, &def->operandData.operands[0], 1)) {
                         if (pc->operandData.operands[2].kind == PCOp_IMMEDIATE &&
                             def->operandData.operands[2].kind == PCOp_IMMEDIATE &&
                             (pc->operandData.operands[2].value.signed_value +
@@ -1640,8 +1995,8 @@ unsigned int combine_srawi(PCodeInstruction *pc, UInt32 mask)
         if (def->operandData.operands[0].value.reg == pc->operandData.operands[0].value.reg ||
             !(mask & (1 << def->operandData.operands[0].value.reg))) {
             if (!(def->flags & fRecordBit)) {
-                if (!PCode_DefinedBetween(pc, def, &def->operandData.operands[1])) {
-                    if (!PCode_UsedBetween(pc, def, &def->operandData.operands[0])) {
+                if (!PCode_FindUse(pc->previous, def, &def->operandData.operands[1], 2)) {
+                    if (!PCode_FindUse(pc->previous, def, &def->operandData.operands[0], 1)) {
                         if (pc->operandData.operands[2].kind == PCOp_IMMEDIATE &&
                             def->operandData.operands[2].kind == PCOp_IMMEDIATE &&
                             pc->operandData.operands[2].value.signed_value +
@@ -1662,6 +2017,23 @@ unsigned int combine_srawi(PCodeInstruction *pc, UInt32 mask)
                     }
                 }
             }
+        }
+    }
+    return 0;
+}
+
+static inline int PCode_FindUse(PCodeInstruction *p, PCodeInstruction *end, PCodeOperand *arg, SInt32 flag)
+{
+    PCodeOperand *e;
+    UInt32 n;
+
+    for (; p != end; p = p->previous) {
+        n = p->operand_count;
+        e = p->operandData.operands;
+        while (n--) {
+            if (e->kind == arg->kind && e->value.reg == arg->value.reg && (e->flags & flag))
+                return 1;
+            e++;
         }
     }
     return 0;
@@ -1732,6 +2104,8 @@ unsigned int fold_to_rlwnm(unsigned int instruction, unsigned int liveRegisters)
     PCodeInstruction *second;
     int index;
     PCodeInstruction *shift;
+    short firstOpcode;
+    short secondOpcode;
 
     index = ((PCodeInstruction *)instruction)->useStart;
     first = CodeGen_ReachingDefTable_00581af8[index + 1];
@@ -1749,17 +2123,17 @@ unsigned int fold_to_rlwnm(unsigned int instruction, unsigned int liveRegisters)
             ((PCodeInstruction *)instruction)->operandData.operands[0].value.reg)
         return 0;
 
-    if (first->opcode != 0x6b && first->opcode != 0x6a)
+    if ((firstOpcode = first->opcode) != 0x6b && firstOpcode != 0x6a)
         return 0;
-    if (second->opcode != 0x6b && second->opcode != 0x6a)
-        return 0;
-
-    if (PCode_UsedBetween((PCodeInstruction *)instruction, first, &first->operandData.operands[0]))
-        return 0;
-    if (PCode_UsedBetween((PCodeInstruction *)instruction, second, &second->operandData.operands[0]))
+    if ((secondOpcode = second->opcode) != 0x6b && secondOpcode != 0x6a)
         return 0;
 
-    if (first->opcode == 0x6b && second->opcode == 0x6a &&
+    if (find_in_list(((PCodeInstruction *)instruction)->previous, first))
+        return 0;
+    if (find_in_list(((PCodeInstruction *)instruction)->previous, second))
+        return 0;
+
+    if (firstOpcode == 0x6b && secondOpcode == 0x6a &&
         first->operandData.operands[1].value.reg == second->operandData.operands[1].value.reg) {
         shift = CodeGen_ReachingDefTable_00581af8[first->useStart + 2];
         if (shift->opcode == PC_SUBFIC &&
@@ -1808,7 +2182,7 @@ unsigned int fold_to_rlwnm(unsigned int instruction, unsigned int liveRegisters)
             PCode_UnlinkInstruction(second);
             return 1;
         }
-    } else if (first->opcode == 0x6a && second->opcode == 0x6b &&
+    } else if (firstOpcode == 0x6a && secondOpcode == 0x6b &&
                first->operandData.operands[1].value.reg == second->operandData.operands[1].value.reg) {
         shift = CodeGen_ReachingDefTable_00581af8[first->useStart + 2];
         if (shift->opcode == PC_SUBFIC &&
@@ -1856,6 +2230,23 @@ unsigned int fold_to_rlwnm(unsigned int instruction, unsigned int liveRegisters)
             PCode_UnlinkInstruction(second);
             PCode_UnlinkInstruction(shift);
             return 1;
+        }
+    }
+    return 0;
+}
+
+static inline int find_in_list(PCodeInstruction *list, PCodeInstruction *sent)
+{
+    PCodeInstruction *p;
+    PCodeOperand *e;
+    int n;
+    for (p = list; p != sent; p = p->previous) {
+        e = p->operandData.operands, n = p->operand_count;
+        while (n--) {
+            if (e->kind == sent->operandData.operands[0].kind &&
+                e->value.reg == sent->operandData.operands[0].value.reg && (e->flags & 1) != 0)
+                return 1;
+            e++;
         }
     }
     return 0;
@@ -1921,7 +2312,7 @@ SInt32 fold_rlwimi_store_to_stwbrx(PCodeInstruction *node, UInt32 mask)
         i++;
     } while (i < 4);
 
-    if (PCode_DefinedBetween(node, nodes[3], &nodes[0]->operandData.operands[1]))
+    if (fn_004c8010_find(node->previous, nodes[3], nodes[0]))
         return 0;
 
     if (node->opcode == PC_STWX) {
@@ -1971,6 +2362,24 @@ SInt32 fold_rlwimi_store_to_stwbrx(PCodeInstruction *node, UInt32 mask)
         return 0;
 }
 
+static inline int fn_004c8010_find(PCodeInstruction *p, PCodeInstruction *limit, PCodeInstruction *ref)
+{
+    PCodeOperand *r;
+    SInt32 c;
+    while (p != limit) {
+        c = p->operand_count;
+        r = p->operandData.operands;
+        while (c--) {
+            if (r->kind == ref->operandData.operands[1].kind &&
+                r->value.reg == ref->operandData.operands[1].value.reg && ((SInt8)r->flags & 2))
+                return 1;
+            r++;
+        }
+        p = p->previous;
+    }
+    return 0;
+}
+
 int fold_rlwimi_rlwinm_to_sthbrx(PCodeInstruction *instruction, int mask)
 {
     PCodeInstruction *definition;
@@ -1981,11 +2390,15 @@ int fold_rlwimi_rlwinm_to_sthbrx(PCodeInstruction *instruction, int mask)
     PCodeOperand *operand;
     int hasDefinition;
     long immediate;
+    PCodeInstruction *thirdOperand;
     PCodeInstruction *lastDefinition;
     PCodeInstruction *definitions[2];
+    short opcode;
+    short reg;
     matched = 0;
-    if (instruction->opcode == PC_STH) {
-        if (instruction->operandData.operands[2].kind != PCOp_IMMEDIATE)
+    if ((opcode = instruction->opcode) == 44) {
+        thirdOperand = instruction;
+        if (thirdOperand->operandData.operands[2].kind != PCOp_IMMEDIATE)
             return 0;
     }
     index = 0;
@@ -1996,7 +2409,7 @@ int fold_rlwimi_rlwinm_to_sthbrx(PCodeInstruction *instruction, int mask)
         else
             definitions[index] = CodeGen_ReachingDefTable_00581af8[definition->useStart];
         definition = definitions[index];
-        if (definitions[0]->operandData.operands[1].value.reg !=
+        if ((reg = definitions[0]->operandData.operands[1].value.reg) !=
             definitions[index]->operandData.operands[1].value.reg)
             return 0;
         if (index < 1) {
@@ -2026,19 +2439,18 @@ int fold_rlwimi_rlwinm_to_sthbrx(PCodeInstruction *instruction, int mask)
         }
         return 0;
     } while (++index < 2);
-    second = definitions[1];
-    hasDefinition = PCode_DefinedBetween(instruction, second, &definitions[0]->operandData.operands[1]);
-    lastDefinition = definitions[1];
+    second = (lastDefinition = definitions[1]);
+    hasDefinition = has_intervening_definition(instruction, second, definitions[0], reg);
     if (hasDefinition != 0)
         return 0;
-    if (instruction->opcode == PC_STHX) {
+    if (opcode == 46) {
         instruction->opcode = PC_STHBRX;
         instruction->operandData.operands[0] = definitions[0]->operandData.operands[1];
         CodeGen_ReachingDefTable_00581af8[instruction->useStart] =
             CodeGen_ReachingDefTable_00581af8[lastDefinition->useStart + 1];
         return 1;
     }
-    if (instruction->opcode == PC_STH) {
+    if (opcode == 44) {
         immediate = instruction->operandData.operands[2].value.signed_value;
         if (immediate != 0 && ((1 << definitions[0]->operandData.operands[0].value.reg) & mask) != 0)
             return 0;
@@ -2294,14 +2706,6 @@ unsigned int make_contiguous_mask(unsigned int value)
     return result;
 }
 
-static int masks_disjoint(PCodeInstruction *instr, PCodeInstruction *scan, SInt16 reg)
-{
-    UInt32 mask;
-
-    mask = make_contiguous_mask(compute_register_mask(instr, instr->operandData.operands[0].value.reg));
-    return (compute_register_mask(scan, reg) & mask) == 0;
-}
-
 void optimize_rlwinm_and_addi(PCodeBlock *block)
 {
     PCodeInstruction *instr;
@@ -2528,13 +2932,30 @@ void optimize_rlwinm_and_addi(PCodeBlock *block)
     }
 }
 
-static struct PeepHandler *AddPeepholeRule(SInt16 opcode, void *handler)
+static int masks_disjoint(PCodeInstruction *instr, PCodeInstruction *scan, SInt16 reg)
 {
-    struct PeepHandler *rule = (struct PeepHandler *)lalloc(8);
-    rule->func = handler;
-    rule->next = CodeGen_PeepholeHandlers_005813b0[opcode];
-    CodeGen_PeepholeHandlers_005813b0[opcode] = rule;
-    return rule;
+    UInt32 mask;
+
+    mask = make_contiguous_mask(compute_register_mask(instr, instr->operandData.operands[0].value.reg));
+    return (compute_register_mask(scan, reg) & mask) == 0;
+}
+
+static int canmergemasks(SInt32 b1, SInt32 e1, SInt32 shift, SInt32 b2, SInt32 e2, SInt16 *first, SInt16 *last)
+{
+    UInt32 mask1;
+    UInt32 mask2;
+
+    if (b1 <= e1)
+        mask1 = ((b1 > 31) ? 0 : (0xFFFFFFFF >> b1)) & ~(((int)(e1 + 1) > 31) ? 0 : (0xFFFFFFFF >> (e1 + 1)));
+    else
+        mask1 = ((b1 > 31) ? 0 : (0xFFFFFFFF >> b1)) | ~(((int)(e1 + 1) > 31) ? 0 : (0xFFFFFFFF >> (e1 + 1)));
+
+    if (b2 <= e2)
+        mask2 = ((b2 > 31) ? 0 : (0xFFFFFFFF >> b2)) & ~(((int)(e2 + 1) > 31) ? 0 : (0xFFFFFFFF >> (e2 + 1)));
+    else
+        mask2 = ((b2 > 31) ? 0 : (0xFFFFFFFF >> b2)) | ~(((int)(e2 + 1) > 31) ? 0 : (0xFFFFFFFF >> (e2 + 1)));
+
+    return InstrSelection_GetMaskRange(((mask1 << shift) | (mask1 >> (32 - shift))) & mask2, first, last);
 }
 
 void register_peephole_rules(void)
@@ -2543,96 +2964,96 @@ void register_peephole_rules(void)
     for (opcode = 0; opcode < 466; opcode++)
         CodeGen_PeepholeHandlers_005813b0[opcode] = NULL;
 
-    AddPeepholeRule(92, (PeepholeRuleProc)fold_not_into_andc);
-    AddPeepholeRule(139, (PeepholeRuleProc)replace_with_reaching_li);
-    AddPeepholeRule(139, (PeepholeRuleProc)retarget_reaching_def_register);
-    AddPeepholeRule(158, (PeepholeRuleProc)rewrite_reaching_def_reg);
-    AddPeepholeRule(139, (PeepholeRuleProc)unlink_instruction_with_matching_mr_def);
-    AddPeepholeRule(139, (PeepholeRuleProc)unlink_equal_reg_instruction);
-    AddPeepholeRule(158, (PeepholeRuleProc)unlink_instruction_for_unmatched_fmr);
-    AddPeepholeRule(158, (PeepholeRuleProc)unlink_same_reg_instruction);
-    AddPeepholeRule(398, (PeepholeRuleProc)fn_004cba60);
-    AddPeepholeRule(398, (PeepholeRuleProc)unlink_instruction_matching_vmr_source);
-    AddPeepholeRule(398, (PeepholeRuleProc)unlink_same_reg_move);
-    AddPeepholeRule(398, (PeepholeRuleProc)merge_reaching_def_instruction);
-    AddPeepholeRule(82, (PeepholeRuleProc)make_record_form_and_unlink_instruction);
-    AddPeepholeRule(105, (PeepholeRuleProc)fold_rlwinm_or_mr_reaching_def);
-    AddPeepholeRule(103, (PeepholeRuleProc)fold_rlwinm_or_mr_reaching_def);
-    AddPeepholeRule(103, (PeepholeRuleProc)bypass_extsb_for_low_byte_rotated_mask);
-    AddPeepholeRule(103, bypass_extsh_for_rotated_mask);
-    AddPeepholeRule(103, (PeepholeRuleProc)fold_lbz_lbzx_mask);
-    AddPeepholeRule(103, (PeepholeRuleProc)fold_lhz_lhzx_mask);
-    AddPeepholeRule(101, (PeepholeRuleProc)fold_reaching_lha_or_extsb);
-    AddPeepholeRule(49, fold_rlwimi_store_to_stwbrx);
-    AddPeepholeRule(51, fold_rlwimi_store_to_stwbrx);
-    AddPeepholeRule(44, (PeepholeRuleProc)fold_rlwimi_rlwinm_to_sthbrx);
-    AddPeepholeRule(46, (PeepholeRuleProc)fold_rlwimi_rlwinm_to_sthbrx);
-    AddPeepholeRule(21, (PeepholeRuleProc)fold_li_operand);
-    AddPeepholeRule(25, (PeepholeRuleProc)fold_li_operand);
-    AddPeepholeRule(29, (PeepholeRuleProc)fold_li_operand);
-    AddPeepholeRule(34, (PeepholeRuleProc)fold_li_operand);
-    AddPeepholeRule(40, (PeepholeRuleProc)fold_li_operand);
-    AddPeepholeRule(44, (PeepholeRuleProc)fold_li_operand);
-    AddPeepholeRule(49, (PeepholeRuleProc)fold_li_operand);
-    AddPeepholeRule(142, (PeepholeRuleProc)fold_li_operand);
-    AddPeepholeRule(146, (PeepholeRuleProc)fold_li_operand);
-    AddPeepholeRule(150, (PeepholeRuleProc)fold_li_operand);
-    AddPeepholeRule(154, (PeepholeRuleProc)fold_li_operand);
-    AddPeepholeRule(21, (PeepholeRuleProc)fold_addi_or_mr_reaching_def);
-    AddPeepholeRule(25, (PeepholeRuleProc)fold_addi_or_mr_reaching_def);
-    AddPeepholeRule(29, (PeepholeRuleProc)fold_addi_or_mr_reaching_def);
-    AddPeepholeRule(34, (PeepholeRuleProc)fold_addi_or_mr_reaching_def);
-    AddPeepholeRule(40, (PeepholeRuleProc)fold_addi_or_mr_reaching_def);
-    AddPeepholeRule(44, (PeepholeRuleProc)fold_addi_or_mr_reaching_def);
-    AddPeepholeRule(49, (PeepholeRuleProc)fold_addi_or_mr_reaching_def);
-    AddPeepholeRule(142, (PeepholeRuleProc)fold_addi_or_mr_reaching_def);
-    AddPeepholeRule(146, (PeepholeRuleProc)fold_addi_or_mr_reaching_def);
-    AddPeepholeRule(150, (PeepholeRuleProc)fold_addi_or_mr_reaching_def);
-    AddPeepholeRule(154, (PeepholeRuleProc)fold_addi_or_mr_reaching_def);
-    AddPeepholeRule(22, (PeepholeRuleProc)fold_reaching_addi);
-    AddPeepholeRule(26, (PeepholeRuleProc)fold_reaching_addi);
-    AddPeepholeRule(30, (PeepholeRuleProc)fold_reaching_addi);
-    AddPeepholeRule(35, (PeepholeRuleProc)fold_reaching_addi);
-    AddPeepholeRule(41, (PeepholeRuleProc)fold_reaching_addi);
-    AddPeepholeRule(45, (PeepholeRuleProc)fold_reaching_addi);
-    AddPeepholeRule(50, (PeepholeRuleProc)fold_reaching_addi);
-    AddPeepholeRule(143, (PeepholeRuleProc)fold_reaching_addi);
-    AddPeepholeRule(147, (PeepholeRuleProc)fold_reaching_addi);
-    AddPeepholeRule(151, (PeepholeRuleProc)fold_reaching_addi);
-    AddPeepholeRule(155, (PeepholeRuleProc)fold_reaching_addi);
-    AddPeepholeRule(21, (PeepholeRuleProc)eliminate_matching_addi);
-    AddPeepholeRule(25, (PeepholeRuleProc)eliminate_matching_addi);
-    AddPeepholeRule(29, (PeepholeRuleProc)eliminate_matching_addi);
-    AddPeepholeRule(34, (PeepholeRuleProc)eliminate_matching_addi);
-    AddPeepholeRule(40, (PeepholeRuleProc)eliminate_matching_addi);
-    AddPeepholeRule(44, (PeepholeRuleProc)eliminate_matching_addi);
-    AddPeepholeRule(49, (PeepholeRuleProc)eliminate_matching_addi);
-    AddPeepholeRule(142, (PeepholeRuleProc)eliminate_matching_addi);
-    AddPeepholeRule(146, (PeepholeRuleProc)eliminate_matching_addi);
-    AddPeepholeRule(150, (PeepholeRuleProc)eliminate_matching_addi);
-    AddPeepholeRule(154, (PeepholeRuleProc)eliminate_matching_addi);
-    AddPeepholeRule(40, (PeepholeRuleProc)eliminate_redundant_store);
-    AddPeepholeRule(44, (PeepholeRuleProc)eliminate_redundant_store);
-    AddPeepholeRule(49, (PeepholeRuleProc)eliminate_redundant_store);
-    AddPeepholeRule(150, (PeepholeRuleProc)eliminate_redundant_store);
-    AddPeepholeRule(154, (PeepholeRuleProc)eliminate_redundant_store);
-    AddPeepholeRule(42, (PeepholeRuleProc)eliminate_redundant_store);
-    AddPeepholeRule(46, (PeepholeRuleProc)eliminate_redundant_store);
-    AddPeepholeRule(51, (PeepholeRuleProc)eliminate_redundant_store);
-    AddPeepholeRule(152, (PeepholeRuleProc)eliminate_redundant_store);
-    AddPeepholeRule(156, (PeepholeRuleProc)eliminate_redundant_store);
-    AddPeepholeRule(5, remove_redundant_extsb);
-    AddPeepholeRule(8, remove_redundant_extsb);
-    AddPeepholeRule(5, (PeepholeRuleProc)bypass_cmpli_zero);
-    AddPeepholeRule(8, (PeepholeRuleProc)bypass_cmpli_zero);
-    AddPeepholeRule(5, fold_constant_compare_branch);
-    AddPeepholeRule(8, fold_constant_compare_branch);
-    AddPeepholeRule(103, (PeepholeRuleProc)fold_rlwinm_or_mr_reaching_def);
-    AddPeepholeRule(73, (PeepholeRuleProc)combine_mulli);
-    AddPeepholeRule(63, (PeepholeRuleProc)combine_addi);
-    AddPeepholeRule(108, (PeepholeRuleProc)combine_srawi);
-    AddPeepholeRule(139, (PeepholeRuleProc)rewrite_as_addi);
-    AddPeepholeRule(93, (PeepholeRuleProc)fold_to_rlwnm);
+    AddPeepholeRule(&CodeGen_PeepholeHandlers_005813b0[92], (PeepholeRuleProc)fold_not_into_andc);
+    AddPeepholeRule(&CodeGen_PeepholeHandlers_005813b0[139], (PeepholeRuleProc)replace_with_reaching_li);
+    AddPeepholeRule(&CodeGen_PeepholeHandlers_005813b0[139], (PeepholeRuleProc)retarget_reaching_def_register);
+    AddPeepholeRule(&CodeGen_PeepholeHandlers_005813b0[158], (PeepholeRuleProc)rewrite_reaching_def_reg);
+    AddPeepholeRule(&CodeGen_PeepholeHandlers_005813b0[139], (PeepholeRuleProc)unlink_instruction_with_matching_mr_def);
+    AddPeepholeRule(&CodeGen_PeepholeHandlers_005813b0[139], (PeepholeRuleProc)unlink_equal_reg_instruction);
+    AddPeepholeRule(&CodeGen_PeepholeHandlers_005813b0[158], (PeepholeRuleProc)unlink_instruction_for_unmatched_fmr);
+    AddPeepholeRule(&CodeGen_PeepholeHandlers_005813b0[158], (PeepholeRuleProc)unlink_same_reg_instruction);
+    AddPeepholeRule(&CodeGen_PeepholeHandlers_005813b0[398], (PeepholeRuleProc)fn_004cba60);
+    AddPeepholeRule(&CodeGen_PeepholeHandlers_005813b0[398], (PeepholeRuleProc)unlink_instruction_matching_vmr_source);
+    AddPeepholeRule(&CodeGen_PeepholeHandlers_005813b0[398], (PeepholeRuleProc)unlink_same_reg_move);
+    AddPeepholeRule(&CodeGen_PeepholeHandlers_005813b0[398], (PeepholeRuleProc)merge_reaching_def_instruction);
+    AddPeepholeRule(&CodeGen_PeepholeHandlers_005813b0[82], (PeepholeRuleProc)make_record_form_and_unlink_instruction);
+    AddPeepholeRule(&CodeGen_PeepholeHandlers_005813b0[105], (PeepholeRuleProc)fold_rlwinm_or_mr_reaching_def);
+    AddPeepholeRule(&CodeGen_PeepholeHandlers_005813b0[103], (PeepholeRuleProc)fold_rlwinm_or_mr_reaching_def);
+    AddPeepholeRule(&CodeGen_PeepholeHandlers_005813b0[103], (PeepholeRuleProc)bypass_extsb_for_low_byte_rotated_mask);
+    AddPeepholeRule(&CodeGen_PeepholeHandlers_005813b0[103], bypass_extsh_for_rotated_mask);
+    AddPeepholeRule(&CodeGen_PeepholeHandlers_005813b0[103], (PeepholeRuleProc)fold_lbz_lbzx_mask);
+    AddPeepholeRule(&CodeGen_PeepholeHandlers_005813b0[103], (PeepholeRuleProc)fold_lhz_lhzx_mask);
+    AddPeepholeRule(&CodeGen_PeepholeHandlers_005813b0[101], (PeepholeRuleProc)fold_reaching_lha_or_extsb);
+    AddPeepholeRule(&CodeGen_PeepholeHandlers_005813b0[49], fold_rlwimi_store_to_stwbrx);
+    AddPeepholeRule(&CodeGen_PeepholeHandlers_005813b0[51], fold_rlwimi_store_to_stwbrx);
+    AddPeepholeRule(&CodeGen_PeepholeHandlers_005813b0[44], (PeepholeRuleProc)fold_rlwimi_rlwinm_to_sthbrx);
+    AddPeepholeRule(&CodeGen_PeepholeHandlers_005813b0[46], (PeepholeRuleProc)fold_rlwimi_rlwinm_to_sthbrx);
+    AddPeepholeRule(&CodeGen_PeepholeHandlers_005813b0[21], (PeepholeRuleProc)fold_li_operand);
+    AddPeepholeRule(&CodeGen_PeepholeHandlers_005813b0[25], (PeepholeRuleProc)fold_li_operand);
+    AddPeepholeRule(&CodeGen_PeepholeHandlers_005813b0[29], (PeepholeRuleProc)fold_li_operand);
+    AddPeepholeRule(&CodeGen_PeepholeHandlers_005813b0[34], (PeepholeRuleProc)fold_li_operand);
+    AddPeepholeRule(&CodeGen_PeepholeHandlers_005813b0[40], (PeepholeRuleProc)fold_li_operand);
+    AddPeepholeRule(&CodeGen_PeepholeHandlers_005813b0[44], (PeepholeRuleProc)fold_li_operand);
+    AddPeepholeRule(&CodeGen_PeepholeHandlers_005813b0[49], (PeepholeRuleProc)fold_li_operand);
+    AddPeepholeRule(&CodeGen_PeepholeHandlers_005813b0[142], (PeepholeRuleProc)fold_li_operand);
+    AddPeepholeRule(&CodeGen_PeepholeHandlers_005813b0[146], (PeepholeRuleProc)fold_li_operand);
+    AddPeepholeRule(&CodeGen_PeepholeHandlers_005813b0[150], (PeepholeRuleProc)fold_li_operand);
+    AddPeepholeRule(&CodeGen_PeepholeHandlers_005813b0[154], (PeepholeRuleProc)fold_li_operand);
+    AddPeepholeRule(&CodeGen_PeepholeHandlers_005813b0[21], (PeepholeRuleProc)fold_addi_or_mr_reaching_def);
+    AddPeepholeRule(&CodeGen_PeepholeHandlers_005813b0[25], (PeepholeRuleProc)fold_addi_or_mr_reaching_def);
+    AddPeepholeRule(&CodeGen_PeepholeHandlers_005813b0[29], (PeepholeRuleProc)fold_addi_or_mr_reaching_def);
+    AddPeepholeRule(&CodeGen_PeepholeHandlers_005813b0[34], (PeepholeRuleProc)fold_addi_or_mr_reaching_def);
+    AddPeepholeRule(&CodeGen_PeepholeHandlers_005813b0[40], (PeepholeRuleProc)fold_addi_or_mr_reaching_def);
+    AddPeepholeRule(&CodeGen_PeepholeHandlers_005813b0[44], (PeepholeRuleProc)fold_addi_or_mr_reaching_def);
+    AddPeepholeRule(&CodeGen_PeepholeHandlers_005813b0[49], (PeepholeRuleProc)fold_addi_or_mr_reaching_def);
+    AddPeepholeRule(&CodeGen_PeepholeHandlers_005813b0[142], (PeepholeRuleProc)fold_addi_or_mr_reaching_def);
+    AddPeepholeRule(&CodeGen_PeepholeHandlers_005813b0[146], (PeepholeRuleProc)fold_addi_or_mr_reaching_def);
+    AddPeepholeRule(&CodeGen_PeepholeHandlers_005813b0[150], (PeepholeRuleProc)fold_addi_or_mr_reaching_def);
+    AddPeepholeRule(&CodeGen_PeepholeHandlers_005813b0[154], (PeepholeRuleProc)fold_addi_or_mr_reaching_def);
+    AddPeepholeRule(&CodeGen_PeepholeHandlers_005813b0[22], (PeepholeRuleProc)fold_reaching_addi);
+    AddPeepholeRule(&CodeGen_PeepholeHandlers_005813b0[26], (PeepholeRuleProc)fold_reaching_addi);
+    AddPeepholeRule(&CodeGen_PeepholeHandlers_005813b0[30], (PeepholeRuleProc)fold_reaching_addi);
+    AddPeepholeRule(&CodeGen_PeepholeHandlers_005813b0[35], (PeepholeRuleProc)fold_reaching_addi);
+    AddPeepholeRule(&CodeGen_PeepholeHandlers_005813b0[41], (PeepholeRuleProc)fold_reaching_addi);
+    AddPeepholeRule(&CodeGen_PeepholeHandlers_005813b0[45], (PeepholeRuleProc)fold_reaching_addi);
+    AddPeepholeRule(&CodeGen_PeepholeHandlers_005813b0[50], (PeepholeRuleProc)fold_reaching_addi);
+    AddPeepholeRule(&CodeGen_PeepholeHandlers_005813b0[143], (PeepholeRuleProc)fold_reaching_addi);
+    AddPeepholeRule(&CodeGen_PeepholeHandlers_005813b0[147], (PeepholeRuleProc)fold_reaching_addi);
+    AddPeepholeRule(&CodeGen_PeepholeHandlers_005813b0[151], (PeepholeRuleProc)fold_reaching_addi);
+    AddPeepholeRule(&CodeGen_PeepholeHandlers_005813b0[155], (PeepholeRuleProc)fold_reaching_addi);
+    AddPeepholeRule(&CodeGen_PeepholeHandlers_005813b0[21], (PeepholeRuleProc)eliminate_matching_addi);
+    AddPeepholeRule(&CodeGen_PeepholeHandlers_005813b0[25], (PeepholeRuleProc)eliminate_matching_addi);
+    AddPeepholeRule(&CodeGen_PeepholeHandlers_005813b0[29], (PeepholeRuleProc)eliminate_matching_addi);
+    AddPeepholeRule(&CodeGen_PeepholeHandlers_005813b0[34], (PeepholeRuleProc)eliminate_matching_addi);
+    AddPeepholeRule(&CodeGen_PeepholeHandlers_005813b0[40], (PeepholeRuleProc)eliminate_matching_addi);
+    AddPeepholeRule(&CodeGen_PeepholeHandlers_005813b0[44], (PeepholeRuleProc)eliminate_matching_addi);
+    AddPeepholeRule(&CodeGen_PeepholeHandlers_005813b0[49], (PeepholeRuleProc)eliminate_matching_addi);
+    AddPeepholeRule(&CodeGen_PeepholeHandlers_005813b0[142], (PeepholeRuleProc)eliminate_matching_addi);
+    AddPeepholeRule(&CodeGen_PeepholeHandlers_005813b0[146], (PeepholeRuleProc)eliminate_matching_addi);
+    AddPeepholeRule(&CodeGen_PeepholeHandlers_005813b0[150], (PeepholeRuleProc)eliminate_matching_addi);
+    AddPeepholeRule(&CodeGen_PeepholeHandlers_005813b0[154], (PeepholeRuleProc)eliminate_matching_addi);
+    AddPeepholeRule(&CodeGen_PeepholeHandlers_005813b0[40], (PeepholeRuleProc)eliminate_redundant_store);
+    AddPeepholeRule(&CodeGen_PeepholeHandlers_005813b0[44], (PeepholeRuleProc)eliminate_redundant_store);
+    AddPeepholeRule(&CodeGen_PeepholeHandlers_005813b0[49], (PeepholeRuleProc)eliminate_redundant_store);
+    AddPeepholeRule(&CodeGen_PeepholeHandlers_005813b0[150], (PeepholeRuleProc)eliminate_redundant_store);
+    AddPeepholeRule(&CodeGen_PeepholeHandlers_005813b0[154], (PeepholeRuleProc)eliminate_redundant_store);
+    AddPeepholeRule(&CodeGen_PeepholeHandlers_005813b0[42], (PeepholeRuleProc)eliminate_redundant_store);
+    AddPeepholeRule(&CodeGen_PeepholeHandlers_005813b0[46], (PeepholeRuleProc)eliminate_redundant_store);
+    AddPeepholeRule(&CodeGen_PeepholeHandlers_005813b0[51], (PeepholeRuleProc)eliminate_redundant_store);
+    AddPeepholeRule(&CodeGen_PeepholeHandlers_005813b0[152], (PeepholeRuleProc)eliminate_redundant_store);
+    AddPeepholeRule(&CodeGen_PeepholeHandlers_005813b0[156], (PeepholeRuleProc)eliminate_redundant_store);
+    AddPeepholeRule(&CodeGen_PeepholeHandlers_005813b0[5], remove_redundant_extsb);
+    AddPeepholeRule(&CodeGen_PeepholeHandlers_005813b0[8], remove_redundant_extsb);
+    AddPeepholeRule(&CodeGen_PeepholeHandlers_005813b0[5], (PeepholeRuleProc)bypass_cmpli_zero);
+    AddPeepholeRule(&CodeGen_PeepholeHandlers_005813b0[8], (PeepholeRuleProc)bypass_cmpli_zero);
+    AddPeepholeRule(&CodeGen_PeepholeHandlers_005813b0[5], fold_constant_compare_branch);
+    AddPeepholeRule(&CodeGen_PeepholeHandlers_005813b0[8], fold_constant_compare_branch);
+    AddPeepholeRule(&CodeGen_PeepholeHandlers_005813b0[103], (PeepholeRuleProc)fold_rlwinm_or_mr_reaching_def);
+    AddPeepholeRule(&CodeGen_PeepholeHandlers_005813b0[73], (PeepholeRuleProc)combine_mulli);
+    AddPeepholeRule(&CodeGen_PeepholeHandlers_005813b0[63], (PeepholeRuleProc)combine_addi);
+    AddPeepholeRule(&CodeGen_PeepholeHandlers_005813b0[108], (PeepholeRuleProc)combine_srawi);
+    AddPeepholeRule(&CodeGen_PeepholeHandlers_005813b0[139], (PeepholeRuleProc)rewrite_as_addi);
+    AddPeepholeRule(&CodeGen_PeepholeHandlers_005813b0[93], (PeepholeRuleProc)fold_to_rlwnm);
 }
 
 void Peephole_VisitBlocksWithMultipleInstructions(void *context)
@@ -2721,6 +3142,15 @@ void Peephole_MergeAdjacentBlocks(Object *object, Boolean mergePrologue)
     }
 }
 
+static struct PeepHandler *AddPeepholeRule(struct PeepHandler **list, void *handler)
+{
+    struct PeepHandler *rule = (struct PeepHandler *)lalloc(8);
+    rule->func = handler;
+    rule->next = *list;
+    *list = rule;
+    return rule;
+}
+
 void Peephole_OptimizeBlocks(Object *object)
 {
     PCodeBlock *block;
@@ -2735,4 +3165,3 @@ void Peephole_OptimizeBlocks(Object *object)
         }
     }
 }
-

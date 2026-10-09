@@ -66,8 +66,9 @@ static UInt8 data_0057f6b4;
 static UInt8 data_0057f6b5;
 static char lbl_0057f6b6[10];
 
+static inline Statement *NewIRStat(UInt8 type);
 static inline void MarkUsedInputs(IROLinear *insn);
-static Statement *NewIrNode(IROLinear *src, UInt8 type);
+static Statement *NewIrNode(UInt8 type, IROLinear *src);
 static inline SInt32 IrSize(SInt32 cls);
 
 static inline void IRO_MarkExpressionOperands(IROLinear *expression)
@@ -155,6 +156,15 @@ static inline void RecordObject(Object *object, SInt32 depth, IROLinear *node)
     }
 }
 
+static inline void IrOptimizer_RecordUsage(Object *obj, int level)
+{
+    int index = level;
+    if (index > 3)
+        index = 3;
+    obj->u.var.info->usage += ir_size_table[index];
+    obj->u.var.info->used = 1;
+}
+
 static inline void ClearReferences(void)
 {
     IROLinear *item;
@@ -217,12 +227,55 @@ static inline void AddLocalUsage(Object *object, int weightIndex)
     object->u.var.info->used = 1;
 }
 
-static inline Statement *NewIRStat(UInt8 type)
+static inline IROLinear *new_linear(int type)
 {
-    Statement *n = (Statement *)lalloc(0x1a);
-    memset(n, 0, 0x1a);
-    n->type = type;
-    return n;
+    IROLinear *node = (IROLinear *)oalloc(sizeof(IROLinear));
+    memset(node, 0, sizeof(IROLinear));
+    node->stmt = current_statement;
+    node->nodetype = EPOSTINC;
+    node->next = NULL;
+    node->type = type;
+    node->rtype = NULL;
+    node->flags = 0;
+    node->nodeflags = 0;
+    node->expr = NULL;
+    node->range = NULL;
+    return node;
+}
+
+static inline void append_linear(IROLinear *node)
+{
+    node->index = linear_index_counter;
+    linear_index_counter++;
+    if (linear_head != NULL)
+        last_linear->next = node;
+    else
+        linear_head = node;
+    last_linear = node;
+}
+
+static inline void mark_address(IROLinear *operand)
+{
+    if (operand->type == IROLinearOp2Arg && operand->nodetype == EADD) {
+        IROAddrRecord *operands;
+        IROLinear *left;
+        if ((left = operand->u.diadic.left)->type == EPOSTDEC && left->u.node->type == EOBJREF &&
+            operand->u.diadic.right->type == EPOSTDEC && operand->u.diadic.right->u.node->type == EINTCONST)
+            left->flags |= IROLF_Ind;
+        operands = IroVars_CreateAddrRecord(operand);
+        IroVars_CollectAddrRecordElements(operand, operands);
+        if (operands->numObjRefs == 1 && (left = operand->u.diadic.left)->type == EPOSTDEC &&
+            left->u.node->type == EOBJREF)
+            operands->objRefs->element->flags |= IROLF_Ind;
+    }
+}
+
+static inline Statement *NewStmt(UInt8 type)
+{
+    Statement *s = (Statement *)lalloc(0x1a);
+    memset(s, 0, 0x1a);
+    s->type = type;
+    return s;
 }
 
 static inline void AppendStmt(Statement *s)
@@ -236,15 +289,16 @@ static inline void AppendStmt(Statement *s)
     statement_insertion_point = s;
 }
 
-static void append_linear(IROLinear *node)
+static inline Object *LookupTemporary(ENode *node)
 {
-    node->index = linear_index_counter;
-    linear_index_counter++;
-    if (linear_head != NULL)
-        last_linear->next = node;
-    else
-        linear_head = node;
-    last_linear = node;
+    List12 *p = temporary_list;
+    while (p != NULL) {
+        if (p->nullCheckExpression == node->data.monadic)
+            break;
+        p = p->next;
+    }
+    CError_ASSERT(809, p != NULL);
+    return p->temporary;
 }
 
 IROLinear *IrOptimizer_NewLinear(unsigned char kind)
@@ -380,39 +434,6 @@ void mark_node_and_operand_flags(IROLinear *node, int flag)
     }
 }
 
-static void mark_address(IROLinear *operand)
-{
-    if (operand->type == IROLinearOp2Arg && operand->nodetype == EADD) {
-        IROAddrRecord *operands;
-        IROLinear *left;
-        if ((left = operand->u.diadic.left)->type == EPOSTDEC && left->u.node->type == EOBJREF &&
-            operand->u.diadic.right->type == EPOSTDEC && operand->u.diadic.right->u.node->type == EINTCONST)
-            left->flags |= IROLF_Ind;
-        operands = IroVars_CreateAddrRecord(operand);
-        IroVars_CollectAddrRecordElements(operand, operands);
-        if (operands->numObjRefs == 1 && (left = operand->u.diadic.left)->type == EPOSTDEC &&
-            left->u.node->type == EOBJREF)
-            operands->objRefs->element->flags |= IROLF_Ind;
-    }
-}
-
-static void insert_left_expression(ENode *node)
-{
-    Statement *statement;
-
-    statement = (Statement *)lalloc(sizeof(Statement));
-    memset(statement, 0, sizeof(Statement));
-    statement->type = ST_EXPRESSION;
-    statement->expr = node->data.diadic.left;
-    statement->dobjstack = current_optimizer_statement->dobjstack;
-    statement->sourceoffset = current_optimizer_statement->sourceoffset;
-    statement->value = current_optimizer_statement->value;
-    statement->flags = current_optimizer_statement->flags;
-    statement->next = statement_insertion_point->next;
-    statement_insertion_point->next = statement;
-    statement_insertion_point = statement;
-}
-
 void extract_right_operand_to_statement(ENode *node, int force)
 {
     Object *obj;
@@ -538,48 +559,20 @@ void insert_intconst_assignment(ENode *expr, Object **out)
     statement_insertion_point = statement;
 }
 
-static void insert_conditional_branch(ENode *node, CLabel **label)
+void create_temp_object_assignment(ENode *expression, Object **tempObject)
 {
+    Object *object;
+    List12 *entry;
+    ENode *reference;
     Statement *statement;
 
-    *label = IroUtil_NewLabel();
+    if (expression->rtype->type != TYPEVOID)
+        *tempObject = create_temp_object(expression->rtype);
+    else
+        *tempObject = create_temp_object(expression->data.monadic->rtype);
 
-    statement = (Statement *)lalloc(sizeof(Statement));
-    memset(statement, 0, sizeof(Statement));
-    statement->type = ST_IFNGOTO;
-    statement->expr = node->data.cond.cond;
-    statement->label = *label;
-    statement->dobjstack = current_optimizer_statement->dobjstack;
-    statement->sourceoffset = current_optimizer_statement->sourceoffset;
-    statement->value = current_optimizer_statement->value;
-    statement->flags = current_optimizer_statement->flags;
-    statement->next = statement_insertion_point->next;
-    statement_insertion_point->next = statement;
-    statement_insertion_point = statement;
-}
-
-static void insert_end_branch(ENode *node, CLabel **label)
-{
-    Statement *statement;
-
-    *label = IroUtil_NewLabel();
-
-    statement = (Statement *)lalloc(sizeof(Statement));
-    memset(statement, 0, sizeof(Statement));
-    statement->type = ST_GOTO;
-    statement->label = *label;
-    statement->dobjstack = current_optimizer_statement->dobjstack;
-    statement->sourceoffset = current_optimizer_statement->sourceoffset;
-    statement->value = current_optimizer_statement->value;
-    statement->flags = current_optimizer_statement->flags;
-    statement->next = statement_insertion_point->next;
-    statement_insertion_point->next = statement;
-    statement_insertion_point = statement;
-}
-
-static void record_temporary(ENode *expression, Object *object)
-{
-    List12 *entry = (List12 *)lalloc(sizeof(List12));
+    object = *tempObject;
+    entry = (List12 *)lalloc(sizeof(List12));
     entry->nullCheckExpression = (ENode *)expression->data.funccall.functype;
     entry->temporary = object;
     entry->next = NULL;
@@ -589,31 +582,6 @@ static void record_temporary(ENode *expression, Object *object)
     } else {
         temporary_list = entry;
     }
-}
-
-static Object *LookupTemporary(ENode *node)
-{
-    List12 *p = temporary_list;
-    while (p != NULL) {
-        if (p->nullCheckExpression == node->data.monadic)
-            break;
-        p = p->next;
-    }
-    CError_ASSERT(809, p != NULL);
-    return p->temporary;
-}
-
-void create_temp_object_assignment(ENode *expression, Object **tempObject)
-{
-    ENode *reference;
-    Statement *statement;
-
-    if (expression->rtype->type != TYPEVOID)
-        *tempObject = create_temp_object(expression->rtype);
-    else
-        *tempObject = create_temp_object(expression->data.monadic->rtype);
-
-    record_temporary(expression, *tempObject);
 
     reference = IrOptimizer_NewENode(EINDIRECT);
     reference->data.monadic = create_objectrefnode(*tempObject);
@@ -654,9 +622,7 @@ void fn_00430e60(ENode *e, Object **pp)
         CError_ASSERT(877, e->rtype->type != TYPEVOID);
     }
 
-    n = (Statement *)lalloc(sizeof(Statement));
-    memset(n, 0, sizeof(Statement));
-    n->type = 4;
+    n = NewIRStat(4);
     if (e->rtype->type != TYPEVOID) {
         n->expr = IrOptimizer_NewENode(EASS);
         n->expr->data.diadic.left = ref;
@@ -686,9 +652,7 @@ void append_cond_expr2_statement(ENode *e, Object **pp)
         CError_ASSERT(923, e->rtype->type != TYPEVOID);
     }
 
-    n = (Statement *)lalloc(sizeof(Statement));
-    memset(n, 0, sizeof(Statement));
-    n->type = 4;
+    n = NewIRStat(4);
     if (e->rtype->type != TYPEVOID) {
         n->expr = IrOptimizer_NewENode(EASS);
         n->expr->data.diadic.left = ref;
@@ -719,9 +683,7 @@ void lower_monadic_expression_to_statement(ENode *e, Object **pp)
         CError_ASSERT(970, e->rtype->type != TYPEVOID);
     }
 
-    n = (Statement *)lalloc(sizeof(Statement));
-    memset(n, 0, sizeof(Statement));
-    n->type = 4;
+    n = NewIRStat(4);
     if (e->rtype->type != TYPEVOID) {
         n->expr = IrOptimizer_NewENode(EASS);
         n->expr->data.diadic.left = ref;
@@ -739,30 +701,14 @@ void lower_monadic_expression_to_statement(ENode *e, Object **pp)
     statement_insertion_point = n;
 }
 
-static void insert_label(CLabel **label)
-{
-    Statement *statement;
-
-    statement = (Statement *)lalloc(sizeof(Statement));
-    memset(statement, 0, sizeof(Statement));
-    statement->type = ST_LABEL;
-    statement->label = *label;
-    statement->label->stmt = statement;
-    statement->dobjstack = current_optimizer_statement->dobjstack;
-    statement->sourceoffset = current_optimizer_statement->sourceoffset;
-    statement->value = current_optimizer_statement->value;
-    statement->flags = current_optimizer_statement->flags;
-    statement->next = statement_insertion_point->next;
-    statement_insertion_point->next = statement;
-    statement_insertion_point = statement;
-}
-
 void insert_indirect_statement_with_label(ENode *node, Object **object, struct CLabel **label)
 {
     Statement *statement;
     ENode *indirect;
 
-    indirect = IrOptimizer_NewENode(EINDIRECT);
+    indirect = (ENode *)lalloc(sizeof(ENode));
+    memset(indirect, 0, sizeof(ENode));
+    indirect->type = EINDIRECT;
     indirect->data.monadic = create_objectrefnode(*object);
     if (node->rtype->type == TYPEVOID)
         indirect->rtype = node->data.monadic->rtype;
@@ -787,10 +733,13 @@ void insert_indirect_statement_with_label(ENode *node, Object **object, struct C
 
 void fn_00430a60(ENode *p, Object **objp)
 {
+    ENode *c;
     Statement *b;
     ENode *a;
 
-    a = IrOptimizer_NewENode(EINDIRECT);
+    a = (ENode *)lalloc(sizeof(ENode));
+    memset(a, 0, sizeof(ENode));
+    a->type = EINDIRECT;
     a->data.diadic.left = create_objectrefnode(*objp);
     if (p->rtype->type)
         a->rtype = p->rtype;
@@ -801,7 +750,10 @@ void fn_00430a60(ENode *p, Object **objp)
     memset(b, 0, sizeof(Statement));
     b->type = ST_EXPRESSION;
 
-    b->expr = IrOptimizer_NewENode(EASS);
+    c = (ENode *)lalloc(sizeof(ENode));
+    memset(c, 0, sizeof(ENode));
+    c->type = EASS;
+    b->expr = c;
     b->expr->data.diadic.left = a;
     b->expr->data.diadic.right = p->data.diadic.right;
     if (p->rtype->type)
@@ -817,26 +769,6 @@ void fn_00430a60(ENode *p, Object **objp)
     b->next = statement_insertion_point->next;
     statement_insertion_point->next = b;
     statement_insertion_point = b;
-}
-
-static void insert_and_branch(ENode *node, Object **object, CLabel **label)
-{
-    Statement *statement;
-
-    *label = IroUtil_NewLabel();
-
-    statement = (Statement *)lalloc(sizeof(Statement));
-    memset(statement, 0, sizeof(Statement));
-    statement->type = ST_IFNGOTO;
-    statement->expr = node->data.diadic.left;
-    statement->label = *label;
-    statement->dobjstack = current_optimizer_statement->dobjstack;
-    statement->sourceoffset = current_optimizer_statement->sourceoffset;
-    statement->value = current_optimizer_statement->value;
-    statement->flags = current_optimizer_statement->flags;
-    statement->next = statement_insertion_point->next;
-    statement_insertion_point->next = statement;
-    statement_insertion_point = statement;
 }
 
 void fn_00430820(ENode *e, Object **pp, CLabel **lab)
@@ -898,26 +830,6 @@ void fn_00430820(ENode *e, Object **pp, CLabel **lab)
     CError_ASSERT(1212, e->rtype->type != TYPEVOID);
 }
 
-static void insert_or_branch(ENode *node, Object **object, CLabel **label)
-{
-    Statement *statement;
-
-    *label = IroUtil_NewLabel();
-
-    statement = (Statement *)lalloc(sizeof(Statement));
-    memset(statement, 0, sizeof(Statement));
-    statement->type = ST_IFGOTO;
-    statement->expr = node->data.diadic.left;
-    statement->label = *label;
-    statement->dobjstack = current_optimizer_statement->dobjstack;
-    statement->sourceoffset = current_optimizer_statement->sourceoffset;
-    statement->value = current_optimizer_statement->value;
-    statement->flags = current_optimizer_statement->flags;
-    statement->next = statement_insertion_point->next;
-    statement_insertion_point->next = statement;
-    statement_insertion_point = statement;
-}
-
 void fn_004305e0(ENode *e, Object **pp, CLabel **lab)
 {
     Statement *s;
@@ -977,6 +889,14 @@ void fn_004305e0(ENode *e, Object **pp, CLabel **lab)
     CError_ASSERT(1328, e->rtype->type != TYPEVOID);
 }
 
+static inline Statement *NewIRStat(UInt8 type)
+{
+    Statement *n = (Statement *)lalloc(0x1a);
+    memset(n, 0, 0x1a);
+    n->type = type;
+    return n;
+}
+
 void lower_expression_to_statements(ENode *node, int valueNeeded, int force)
 {
     UInt8 type = node->type;
@@ -985,8 +905,6 @@ void lower_expression_to_statements(ENode *node, int valueNeeded, int force)
     Object *andResult;
     CLabel *orEndLabel;
     Object *orResult;
-    CLabel *elseLabel;
-    CLabel *endLabel;
     Object *conditionalResult;
     CLabel *nullCheckEndLabel;
     Object *nullCheckTemp;
@@ -1036,9 +954,11 @@ void lower_expression_to_statements(ENode *node, int valueNeeded, int force)
         case EROTL:
         case EROTR:
         case EBTST: {
+            Statement *statement;
             if (node->type == ECOMMA && data_00587f08 == 0) {
                 lower_expression_to_statements(node->data.diadic.left, 0, 1);
-                insert_left_expression(node);
+                statement = NewStmt(4);
+                statement->expr = node->data.diadic.left, AppendStmt(statement);
                 lower_expression_to_statements(node->data.diadic.right, valueNeeded, 0);
                 extract_right_operand_to_statement(node, force);
             } else {
@@ -1073,30 +993,50 @@ void lower_expression_to_statements(ENode *node, int valueNeeded, int force)
         case ELAND:
         case ELOR:
             if (node->type == ELAND) {
+                Statement *statement;
                 create_zero_initialized_temp_object(node, &andResult);
                 lower_expression_to_statements(node->data.diadic.left, 1, 0);
-                insert_and_branch(node, &andResult, &andEndLabel);
+                andEndLabel = IroUtil_NewLabel();
+                statement = NewStmt(7);
+                statement->expr = node->data.diadic.left;
+                statement->label = andEndLabel, AppendStmt(statement);
                 lower_expression_to_statements(node->data.diadic.right, 1, 0);
                 fn_00430820(node, &andResult, &andEndLabel);
             } else if (node->type == ELOR) {
+                Statement *statement;
                 insert_intconst_assignment(node, &orResult);
                 lower_expression_to_statements(node->data.diadic.left, 1, 0);
-                insert_or_branch(node, &orResult, &orEndLabel);
+                orEndLabel = IroUtil_NewLabel();
+                statement = NewStmt(6);
+                statement->expr = node->data.diadic.left;
+                statement->label = orEndLabel, AppendStmt(statement);
                 lower_expression_to_statements(node->data.diadic.right, 1, 0);
                 fn_004305e0(node, &orResult, &orEndLabel);
             }
             break;
 
         case ECOND: {
+            Statement *statement;
+            CLabel *elseLabel;
+            CLabel *endLabel;
             lower_expression_to_statements(node->data.cond.cond, 1, 0);
-            insert_conditional_branch(node, &elseLabel);
+            elseLabel = IroUtil_NewLabel();
+            statement = NewStmt(7);
+            statement->expr = node->data.cond.cond;
+            statement->label = elseLabel, AppendStmt(statement);
             lower_expression_to_statements(node->data.cond.expr1, 1, 0);
             fn_00430e60(node, &conditionalResult);
-            insert_end_branch(node, &endLabel);
-            insert_label(&elseLabel);
+            endLabel = IroUtil_NewLabel();
+            statement = NewStmt(3);
+            statement->label = endLabel, AppendStmt(statement);
+            statement = NewStmt(2);
+            statement->label = elseLabel;
+            statement->label->stmt = statement, AppendStmt(statement);
             lower_expression_to_statements(node->data.cond.expr2, 1, 0);
             append_cond_expr2_statement(node, &conditionalResult);
-            insert_label(&endLabel);
+            statement = NewStmt(2);
+            statement->label = endLabel;
+            statement->label->stmt = statement, AppendStmt(statement);
             if (node->rtype->type != TYPEVOID) {
                 node->type = EINDIRECT;
                 node->data.cond.cond = create_objectrefnode(conditionalResult);
@@ -1117,12 +1057,15 @@ void lower_expression_to_statements(ENode *node, int valueNeeded, int force)
         }
 
         case ENULLCHECK: {
+            Statement *statement;
             lower_expression_to_statements(node->data.diadic.left, 1, 0);
             create_temp_object_assignment(node, &nullCheckTemp);
             insert_indirect_statement_with_label(node, &nullCheckTemp, &nullCheckEndLabel);
             lower_expression_to_statements(node->data.diadic.right, 1, 0);
             fn_00430a60(node, &nullCheckTemp);
-            insert_label(&nullCheckEndLabel);
+            statement = NewStmt(2);
+            statement->label = nullCheckEndLabel;
+            statement->label->stmt = statement, AppendStmt(statement);
             if (node->rtype->type != TYPEVOID) {
                 node->type = EINDIRECT;
                 node->data.diadic.left = create_objectrefnode(nullCheckTemp);
@@ -1198,19 +1141,21 @@ struct IROLinear *linearize_expression(ENode *expression)
         case EFORCELOAD:
         case ETYPCON:
         case EBITFIELD: {
+            IROLinear *node;
 
-            result = IrOptimizer_NewLinear(2);
-            result->u.diadic.left = linearize_expression(expression->data.monadic);
-            result->nodetype = expression->type;
-            result->rtype = expression->rtype;
-            result->nodeflags = expression->flags;
-            if (data_00551d6c[result->nodetype] != 0)
-                set_monadic_addr_flags(result->u.diadic.left, 1);
-            if (result->nodetype == EINDIRECT) {
-                mark_address(result->u.diadic.left);
-                result->u.diadic.left->flags |= (IROLF_Ind | IROLF_Immind);
-                if (result->u.diadic.left->type == IROLinearOp2Arg && result->u.diadic.left->nodetype == EADD)
-                    fn_004315b0(result->u.diadic.left);
+            node = new_linear(2);
+            result = node;
+            node->u.diadic.left = linearize_expression(expression->data.monadic);
+            node->nodetype = expression->type;
+            node->rtype = expression->rtype;
+            node->nodeflags = expression->flags;
+            if (data_00551d6c[node->nodetype] != 0)
+                set_monadic_addr_flags(node->u.diadic.left, 1);
+            if (node->nodetype == EINDIRECT) {
+                mark_address(node->u.diadic.left);
+                node->u.diadic.left->flags |= (IROLF_Ind | IROLF_Immind);
+                if (node->u.diadic.left->type == IROLinearOp2Arg && node->u.diadic.left->nodetype == EADD)
+                    fn_004315b0(node->u.diadic.left);
             }
             break;
         }
@@ -1239,22 +1184,24 @@ struct IROLinear *linearize_expression(ENode *expression)
         case EROTL:
         case EROTR:
         case EBTST: {
+            IROLinear *node;
 
-            result = IrOptimizer_NewLinear(3);
-            result->nodeflags = expression->flags;
+            node = new_linear(3);
+            result = node;
+            node->nodeflags = expression->flags;
             if (expression->type != ECOMMA &&
                 expression->data.diadic.right->cost >= expression->data.diadic.left->cost) {
-                result->u.diadic.right = linearize_expression(expression->data.diadic.right);
-                result->u.diadic.left = linearize_expression(expression->data.diadic.left);
-                result->flags |= 0x8000;
+                node->u.diadic.right = linearize_expression(expression->data.diadic.right);
+                node->u.diadic.left = linearize_expression(expression->data.diadic.left);
+                node->flags |= 0x8000;
             } else {
-                result->u.diadic.left = linearize_expression(expression->data.diadic.left);
-                result->u.diadic.right = linearize_expression(expression->data.diadic.right);
+                node->u.diadic.left = linearize_expression(expression->data.diadic.left);
+                node->u.diadic.right = linearize_expression(expression->data.diadic.right);
             }
-            result->nodetype = expression->type;
-            result->rtype = expression->rtype;
-            if (data_00551d6c[result->nodetype] != 0)
-                set_monadic_addr_flags(result->u.diadic.left, monadic_addr_flags_by_nodetype[result->nodetype]);
+            node->nodetype = expression->type;
+            node->rtype = expression->rtype;
+            if (data_00551d6c[node->nodetype] != 0)
+                set_monadic_addr_flags(node->u.diadic.left, monadic_addr_flags_by_nodetype[node->nodetype]);
             break;
         }
 
@@ -1271,15 +1218,17 @@ struct IROLinear *linearize_expression(ENode *expression)
         case EORASS:
         case EBCLR:
         case EBSET: {
+            IROLinear *node;
 
-            result = IrOptimizer_NewLinear(3);
-            result->nodeflags = expression->flags;
-            result->u.diadic.right = linearize_expression(expression->data.diadic.right);
-            result->u.diadic.left = linearize_expression(expression->data.diadic.left);
-            result->flags |= 0x8000;
-            result->nodetype = expression->type;
-            result->rtype = expression->rtype;
-            set_monadic_addr_flags(result->u.diadic.left, monadic_addr_flags_by_nodetype[result->nodetype]);
+            node = new_linear(3);
+            result = node;
+            node->nodeflags = expression->flags;
+            node->u.diadic.right = linearize_expression(expression->data.diadic.right);
+            node->u.diadic.left = linearize_expression(expression->data.diadic.left);
+            node->flags |= 0x8000;
+            node->nodetype = expression->type;
+            node->rtype = expression->rtype;
+            set_monadic_addr_flags(node->u.diadic.left, monadic_addr_flags_by_nodetype[node->nodetype]);
             break;
         }
 
@@ -1288,21 +1237,25 @@ struct IROLinear *linearize_expression(ENode *expression)
         case ESTRINGCONST:
         case EOBJREF:
         case EVECTOR128CONST: {
-            result = IrOptimizer_NewLinear(1);
-            result->nodeflags = expression->flags;
-            result->u.node = expression;
-            result->rtype = expression->rtype;
+            IROLinear *operand;
+            operand = new_linear(1);
+            result = operand;
+            operand->nodeflags = expression->flags;
+            operand->u.node = expression;
+            operand->rtype = expression->rtype;
             break;
         }
 
         case EFUNCCALL:
         case EFUNCCALLP: {
+            IROLinear *node;
             ENodeList *cursor;
             SInt32 argumentCount;
 
-            result = IrOptimizer_NewLinear(10);
-            result->nodeflags = expression->flags;
-            result->u.funccall.ispure = (expression->type == EFUNCCALLP);
+            node = new_linear(10);
+            result = node;
+            node->nodeflags = expression->flags;
+            node->u.funccall.ispure = (expression->type == EFUNCCALLP);
             argumentCount = 0;
             for (cursor = expression->data.funccall.args; cursor != NULL; cursor = cursor->next)
                 argumentCount++;
@@ -1321,11 +1274,11 @@ struct IROLinear *linearize_expression(ENode *expression)
                     mark_node_and_operand_flags(arguments[argumentOrder[argumentIndex]], 1);
                 }
             }
-            result->u.funccall.argCount = argumentCount;
-            result->u.funccall.args = arguments;
-            result->u.funccall.callee = linearize_expression(expression->data.funccall.funcref);
-            result->u.funccall.functype = expression->data.funccall.functype;
-            result->rtype = expression->rtype;
+            node->u.funccall.argCount = argumentCount;
+            node->u.funccall.args = arguments;
+            node->u.funccall.callee = linearize_expression(expression->data.funccall.funcref);
+            node->u.funccall.functype = expression->data.funccall.functype;
+            node->rtype = expression->rtype;
             break;
         }
 
@@ -1540,13 +1493,23 @@ void build_linear_from_statements(Statement *node)
                 break;
         }
         if (insn != NULL) {
-            append_linear(insn);
+            insn->index = linear_index_counter++;
+            if (linear_head != NULL)
+                last_linear->next = insn;
+            else
+                linear_head = insn;
+            last_linear = insn;
         }
         node = node->next;
     }
     insn = IrOptimizer_NewLinear(IROLinearEnd);
     insn->flags |= 1;
-    append_linear(insn);
+    insn->index = linear_index_counter++;
+    if (linear_head != NULL)
+        last_linear->next = insn;
+    else
+        linear_head = insn;
+    last_linear = insn;
 
     insn = linear_head;
     while (insn != NULL) {
@@ -1602,25 +1565,6 @@ void build_linear_from_statements(Statement *node)
         insn = insn->next;
     }
     IroVars_CheckTimedLongjmp();
-}
-
-static Statement *NewIrNode(IROLinear *src, UInt8 type)
-{
-    Statement *n;
-
-    n = (Statement *)lalloc(sizeof(Statement));
-    memset(n, 0, sizeof(Statement));
-    n->type = type;
-    n->value = 1;
-    if (src->stmt != NULL) {
-        n->dobjstack = src->stmt->dobjstack;
-        n->sourceoffset = src->stmt->sourceoffset;
-        n->value = src->stmt->value;
-        n->flags = src->stmt->flags;
-    } else {
-        n->sourceoffset = -1;
-    }
-    return n;
 }
 
 ENode *IrOptimizer_NewENode(UInt8 type)
@@ -1724,7 +1668,7 @@ Statement *convert_linear_to_statements(void)
                 switch (item->type) {
                     case IROLinearNop:
                         if (block == iro_flowgraph_head) {
-                            node = NewIrNode(item, 1);
+                            node = NewIrNode(1, item);
                         } else {
                             node = NULL;
                         }
@@ -1733,15 +1677,15 @@ Statement *convert_linear_to_statements(void)
                     case IROLinearOp1Arg:
                     case IROLinearOp2Arg:
                     case IROLinearFunccall:
-                        node = NewIrNode(item, 4);
+                        node = NewIrNode(4, item);
                         node->expr = fn_0042eb40(item);
                         break;
                     case IROLinearGoto:
-                        node = NewIrNode(item, 3);
+                        node = NewIrNode(3, item);
                         node->label = item->u.label;
                         break;
                     case IROLinearExit:
-                        node = NewIrNode(item, 0x0a);
+                        node = NewIrNode(0x0a, item);
                         node->label = item->u.label;
                         break;
                     case IROLinearIf:
@@ -1752,43 +1696,43 @@ Statement *convert_linear_to_statements(void)
                         } else {
                             nodeType = 7;
                         }
-                        node = NewIrNode(item, nodeType);
+                        node = NewIrNode(nodeType, item);
                         node->label = item->u.branch.label;
                         node->expr = fn_0042eb40(item->u.branch.cond);
                         break;
                     }
                     case IROLinearReturn:
-                        node = NewIrNode(item, 8);
+                        node = NewIrNode(8, item);
                         if (item->u.monadic != NULL) {
                             node->expr = fn_0042eb40(item->u.monadic);
                         }
                         break;
                     case IROLinearLabel:
-                        node = NewIrNode(item, 2);
+                        node = NewIrNode(2, item);
                         node->label = item->u.label;
                         node->label->stmt = node;
                         break;
                     case IROLinearEntry:
-                        node = NewIrNode(item, 0x0b);
+                        node = NewIrNode(0x0b, item);
                         node->label = item->u.label;
                         node->label->stmt = node;
                         break;
                     case IROLinearSwitch:
-                        node = NewIrNode(item, 5);
+                        node = NewIrNode(5, item);
                         node->expr = fn_0042eb40(item->u.swtch.cond);
                         /* a switch statement's label slot holds its SwitchInfo */
                         node->label = (CLabel *)item->u.swtch.info;
                         break;
                     case IROLinearBeginCatch:
-                        node = NewIrNode(item, 0x0c);
+                        node = NewIrNode(0x0c, item);
                         node->expr = fn_0042eb40(item->u.monadic);
                         break;
                     case IROLinearEndCatch:
-                        node = NewIrNode(item, 0x0d);
+                        node = NewIrNode(0x0d, item);
                         node->expr = fn_0042eb40(item->u.monadic);
                         break;
                     case IROLinearEndCatchDtor:
-                        node = NewIrNode(item, 0x0e);
+                        node = NewIrNode(0x0e, item);
                         node->expr = fn_0042eb40(item->u.monadic);
                         break;
                     case IROLinearAsm:
@@ -1828,22 +1772,6 @@ Statement *convert_linear_to_statements(void)
     return nodes.first;
 }
 
-static inline void MarkUsedInputs(IROLinear *insn)
-{
-    SInt32 i;
-    for (i = 0; i < insn->u.funccall.argCount; i++)
-        insn->u.funccall.args[i]->flags |= IROLF_Reffed;
-}
-
-static inline void IrOptimizer_RecordUsage(Object *obj, int level)
-{
-    int index = level;
-    if (index > 3)
-        index = 3;
-    obj->u.var.info->usage += ir_size_table[index];
-    obj->u.var.info->used = 1;
-}
-
 #pragma auto_inline off
 void add_local_usage_and_set_noregister(IROLinear *node, int weightIndex)
 {
@@ -1862,6 +1790,32 @@ void add_local_usage_and_set_noregister(IROLinear *node, int weightIndex)
     }
 }
 #pragma auto_inline reset
+
+static inline void MarkUsedInputs(IROLinear *insn)
+{
+    SInt32 i;
+    for (i = 0; i < insn->u.funccall.argCount; i++)
+        insn->u.funccall.args[i]->flags |= IROLF_Reffed;
+}
+
+static Statement *NewIrNode(UInt8 type, IROLinear *src)
+{
+    Statement *n;
+
+    n = (Statement *)lalloc(sizeof(Statement));
+    memset(n, 0, sizeof(Statement));
+    n->type = type;
+    n->value = 1;
+    if (src->stmt != NULL) {
+        n->dobjstack = src->stmt->dobjstack;
+        n->sourceoffset = src->stmt->sourceoffset;
+        n->value = src->stmt->value;
+        n->flags = src->stmt->flags;
+    } else {
+        n->sourceoffset = -1;
+    }
+    return n;
+}
 
 void fn_0042e200(IROLinear *node, int level)
 {
@@ -1964,18 +1918,6 @@ static inline SInt32 IrSize(SInt32 cls)
     if (cls > 3)
         n = 3;
     return ir_size_table[n];
-}
-
-static void renumber_linear_nodes(void)
-{
-    IROLinear *node = linear_head;
-    linear_index_counter = 0;
-    if (linear_head != NULL) {
-        do {
-            node->index = linear_index_counter;
-            linear_index_counter++;
-        } while ((node = node->next) != NULL);
-    }
 }
 
 int replace_pending_reference(IROUse *ctx, ENode *obj, IROLinear *newval, Boolean doReplace)
@@ -2218,7 +2160,14 @@ void *IRO_Optimizer(Object *function, void *incomingBody)
                 IroDump_DumpFunction("Before IRO_LoopUnroller", 0);
                 IRO_LoopUnroller();
                 IroDump_DumpFunction("After IRO_LoopUnroller", 0);
-                renumber_linear_nodes();
+                node = linear_head;
+                linear_index_counter = 0;
+                if (linear_head != NULL) {
+                    do {
+                        node->index = linear_index_counter;
+                        linear_index_counter++;
+                    } while ((node = node->next) != NULL);
+                }
             }
             data_0058800c = 0;
             if (pass == 0 && (copts.loopinvariants != 0 || copts.strengthreduction != 0)) {
@@ -2259,7 +2208,14 @@ void *IRO_Optimizer(Object *function, void *incomingBody)
                 changed |= IRO_DoJumpChaining();
                 IroDump_DumpFunction("IRO_DoJumpChaining", 0);
                 if (IRO_CopyPropagationSetting() != 0) {
-                    renumber_linear_nodes();
+                    node = linear_head;
+                    linear_index_counter = 0;
+                    if (linear_head != NULL) {
+                        do {
+                            node->index = linear_index_counter;
+                            linear_index_counter++;
+                        } while ((node = node->next) != NULL);
+                    }
                     IroDump_DumpFunction("Before IRO_CopyAndConstantPropagation", 0);
                     IRO_CopyAndConstantPropagation();
                     IroDump_DumpFunction("After IRO_CopyAndConstantPropagation", 0);
@@ -2282,7 +2238,14 @@ void *IRO_Optimizer(Object *function, void *incomingBody)
         IroDump_DumpFunction("Before RebuildCondExpressions", 0);
     }
 
-    renumber_linear_nodes();
+    node = linear_head;
+    linear_index_counter = 0;
+    if (linear_head != NULL) {
+        do {
+            node->index = linear_index_counter;
+            linear_index_counter++;
+        } while ((node = node->next) != NULL);
+    }
     IroDump_DumpFunction("before RewriteBitFieldTemps", 0);
     RewriteBitFieldTemps();
     IroDump_DumpFunction("After RewriteBitFieldTemps", 0);
@@ -2296,6 +2259,8 @@ void *IRO_Optimizer(Object *function, void *incomingBody)
 
 void trav_expr_to_update_flags(IROLinear *expression, unsigned int flag)
 {
+    IROLinear *operand;
+    IROAddrRecord *auxiliary;
     SInt32 index;
 
     expression->flags &= 0xffffc683;
@@ -2308,7 +2273,17 @@ void trav_expr_to_update_flags(IROLinear *expression, unsigned int flag)
             if (data_00551d6c[expression->nodetype] != 0)
                 set_monadic_addr_flags(expression->u.diadic.left, 1);
             if (expression->nodetype == EINDIRECT) {
-                mark_address(expression->u.diadic.left);
+                operand = expression->u.diadic.left;
+                if (operand->type == IROLinearOp2Arg && operand->nodetype == EADD) {
+                    if (operand->u.diadic.left->type == EPOSTDEC && operand->u.diadic.left->u.node->type == EOBJREF &&
+                        operand->u.diadic.right->type == EPOSTDEC && operand->u.diadic.right->u.node->type == EINTCONST)
+                        operand->u.diadic.left->flags |= IROLF_Ind;
+                    auxiliary = IroVars_CreateAddrRecord(operand);
+                    IroVars_CollectAddrRecordElements(operand, auxiliary);
+                    if (auxiliary->numObjRefs == 1 && operand->u.diadic.left->type == IROLinearOperand &&
+                        operand->u.diadic.left->u.node->type == EOBJREF)
+                        auxiliary->objRefs->element->flags |= IROLF_Ind;
+                }
                 expression->u.diadic.left->flags |= (IROLF_Ind | IROLF_Immind);
                 if (expression->u.diadic.left->type == IROLinearOp2Arg && expression->u.diadic.left->nodetype == EADD)
                     fn_004315b0(expression->u.diadic.left);

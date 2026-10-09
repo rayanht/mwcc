@@ -23,6 +23,63 @@
 
 short spill_address_register = 0;
 
+static inline void EmitSpill(PCodeInstruction *op, InterferenceNode *node, short reg, int opcode);
+
+static inline void SC_InsertLoad(PCodeInstruction *instruction, InterferenceNode *node, short replacement_register)
+{
+    PCodeInstruction *load;
+    PCodeInstruction *load_address;
+    CError_ASSERT(184, node->object->datatype == DLOCAL);
+    load_address = PCodeUtilities_CreateInstruction(63, spill_address_register, stack_base_reg, node->object, 0);
+    load = PCodeUtilities_CreateInstruction(247, replacement_register, 0, spill_address_register);
+    PCode_InsertInstructionBefore(instruction, load_address);
+    PCode_InsertInstructionAfter(load_address, load);
+}
+
+static inline PCodeInstruction *spill_load(short reg, InterferenceNode *node)
+{
+    Operand operand;
+    short opcode;
+    Type *type;
+    type = node->object->type;
+    opcode = type->size == 1 ? 21 : type->size == 2 ? (is_unsigned(type) ? 25 : 29) : 34;
+    memclrw(&operand, 22);
+    operand.kind = OpndType_Symbol;
+    operand.object = node->object;
+    if (node->object->datatype != DLOCAL)
+        CError_FATAL(130);
+    Operands_Normalize(&operand);
+    if (operand.kind != OpndType_GPR_ImmOffset)
+        CError_FATAL(140);
+    return PCodeUtilities_CreateInstruction(opcode, reg, operand.reg, node->object,
+                                            (node->flags & 32) ? low_word_offset
+                                                               : ((node->flags & 16) ? high_word_offset : 0));
+}
+
+static inline PCodeInstruction *spill_store(short reg, InterferenceNode *node)
+{
+    int flags;
+    Type *type;
+    short opcode;
+    type = node->object->type;
+    flags = (node->flags & 32) ? low_word_offset : ((node->flags & 16) ? high_word_offset : 0);
+    if (type->size == 1)
+        opcode = 40;
+    else if (type->size == 2)
+        opcode = 44;
+    else
+        opcode = 49;
+    return PCodeUtilities_CreateInstruction(opcode, reg, stack_base_reg, node->object, flags);
+}
+
+static inline void SpillCode_SetAddress(Operand *address, InterferenceNode *node)
+{
+    address->kind = OpndType_Symbol;
+    address->object = node->object;
+    if (node->object->datatype != DLOCAL)
+        CError_FATAL(130);
+}
+
 void SpillCode_ComputeSpillCosts(int reg_class)
 {
     PCodeBlock *block;
@@ -59,100 +116,6 @@ void SpillCode_ComputeSpillCosts(int reg_class)
     }
 }
 
-static inline int SpillCode_GetWordOffset(InterferenceNode *node)
-{
-    return (node->flags & 32) ? low_word_offset : ((node->flags & 16) ? high_word_offset : 0);
-}
-
-static Object *SpillCode_CreateSpillObject(Type *type)
-{
-    Object *object;
-    object = (Object *)lalloc(sizeof(Object));
-    memclrw(object, sizeof(Object));
-    object->otype = OT_OBJECT;
-    object->access = ACCESSPUBLIC;
-    object->datatype = DLOCAL;
-    object->type = type;
-    object->name = CParser_GetUniqueName();
-    object->u.var.info = CodeGen_AllocateVarInfo();
-    object->u.var.uid = 0;
-    return object;
-}
-
-static PCodeInstruction *spill_load(short reg, InterferenceNode *node)
-{
-    Operand operand;
-    short opcode;
-    Type *type;
-    type = node->object->type;
-    opcode = type->size == 1 ? 21 : type->size == 2 ? (is_unsigned(type) ? 25 : 29) : 34;
-    memclrw(&operand, sizeof(operand));
-    operand.kind = OpndType_Symbol;
-    operand.object = node->object;
-    if (node->object->datatype != DLOCAL)
-        CError_FATAL(130);
-    Operands_Normalize(&operand);
-    if (operand.kind != OpndType_GPR_ImmOffset)
-        CError_FATAL(140);
-    return PCodeUtilities_CreateInstruction(opcode, reg, operand.reg, node->object,
-                                            SpillCode_GetWordOffset(node));
-}
-
-static PCodeInstruction *SpillCode_CreateFPRLoad(short reg, InterferenceNode *node)
-{
-    Type *type;
-    type = node->object->type;
-    CError_ASSERT(165, node->object->datatype == DLOCAL);
-    return PCodeUtilities_CreateInstruction(type->size == 8 ? 146 : 142, reg, stack_base_reg,
-        node->object, SpillCode_GetWordOffset(node));
-}
-
-static void SpillCode_InsertVRLoad(PCodeInstruction *instruction, short replacement_register, InterferenceNode *node)
-{
-    PCodeInstruction *load_address;
-    PCodeInstruction *load;
-    CError_ASSERT(184, node->object->datatype == DLOCAL);
-    load_address = PCodeUtilities_CreateInstruction(63, spill_address_register, stack_base_reg, node->object, 0);
-    load = PCodeUtilities_CreateInstruction(247, replacement_register, 0, spill_address_register);
-    PCode_InsertInstructionBefore(instruction, load_address);
-    PCode_InsertInstructionAfter(load_address, load);
-}
-
-static PCodeInstruction *spill_store(short reg, InterferenceNode *node)
-{
-    int flags;
-    Type *type;
-    short opcode;
-    type = node->object->type;
-    flags = SpillCode_GetWordOffset(node);
-    if (type->size == 1)
-        opcode = 40;
-    else if (type->size == 2)
-        opcode = 44;
-    else
-        opcode = 49;
-    return PCodeUtilities_CreateInstruction(opcode, reg, stack_base_reg, node->object, flags);
-}
-
-static PCodeInstruction *SpillCode_CreateFPRStore(short reg, InterferenceNode *node)
-{
-    return PCodeUtilities_CreateInstruction(node->object->type->size == 8 ? 154 : 150,
-        reg, stack_base_reg, node->object, 0);
-}
-
-static void SpillCode_InsertVRStore(PCodeInstruction *instruction, Boolean before, short reg, InterferenceNode *node)
-{
-    PCodeInstruction *store_address;
-    PCodeInstruction *store;
-    store_address = PCodeUtilities_CreateInstruction(63, spill_address_register, stack_base_reg, node->object, 0);
-    store = PCodeUtilities_CreateInstruction(252, reg, 0, spill_address_register);
-    if (before)
-        PCode_InsertInstructionBefore(instruction, store_address);
-    else
-        PCode_InsertInstructionAfter(instruction, store_address);
-    PCode_InsertInstructionAfter(store_address, store);
-}
-
 void SpillCode_InsertGPRSpillCode(PCodeBlock *block, PCodeInstruction *instruction)
 {
     int register_limit;
@@ -164,7 +127,11 @@ void SpillCode_InsertGPRSpillCode(PCodeBlock *block, PCodeInstruction *instructi
     PCodeOperand *other;
     int other_index;
     int original_register;
+    Type *type;
+    int opcode;
     int spill_register;
+    int base_register;
+    Operand address;
 
     operand_index = 0;
     register_limit = gUsedVirtualRegistersGPR;
@@ -189,10 +156,50 @@ void SpillCode_InsertGPRSpillCode(PCodeBlock *block, PCodeInstruction *instructi
                 other_index++;
                 other++;
             }
-            if (uses != 0)
-                PCode_InsertInstructionBefore(instruction, spill_load(spill_register, node));
-            if (definitions != 0)
-                PCode_InsertInstructionAfter(instruction, spill_store(spill_register, node));
+            if (uses != 0) {
+                type = node->object->type;
+                if (type->size == 1)
+                    opcode = 21;
+                else if (type->size == 2) {
+                    if (is_unsigned(type) != 0)
+                        opcode = 25;
+                    else
+                        opcode = 29;
+                } else
+                    opcode = 34;
+                memclrw(&address, sizeof(address));
+                SpillCode_SetAddress(&address, node);
+                Operands_Normalize(&address);
+                if (address.kind != OpndType_GPR_ImmOffset)
+                    CError_FATAL(140);
+                if (node->flags & 32)
+                    base_register = low_word_offset;
+                else if (node->flags & 16)
+                    base_register = high_word_offset;
+                else
+                    base_register = 0;
+                PCode_InsertInstructionBefore(
+                    instruction, PCodeUtilities_CreateInstruction(opcode, (short)spill_register, address.reg,
+                                                                  node->object, base_register));
+            }
+            if (definitions != 0) {
+                type = node->object->type;
+                if (node->flags & 32)
+                    base_register = low_word_offset;
+                else if (node->flags & 16)
+                    base_register = high_word_offset;
+                else
+                    base_register = 0;
+                if (type->size == 1)
+                    opcode = 40;
+                else if (type->size == 2)
+                    opcode = 44;
+                else
+                    opcode = 49;
+                PCode_InsertInstructionAfter(
+                    instruction, PCodeUtilities_CreateInstruction(opcode, (short)spill_register, stack_base_reg,
+                                                                  node->object, base_register));
+            }
         }
         operand_index++;
         operand++;
@@ -206,6 +213,8 @@ void SpillCode_RewriteSpilledFPRs(PCodeBlock *unused, PCodeInstruction *instruct
     int scan_index;
     long original_register;
     int matching_register;
+    Type *type;
+    int base_register;
     int use_count;
     int definition_count;
     PCodeOperand *operand;
@@ -237,10 +246,26 @@ void SpillCode_RewriteSpilledFPRs(PCodeBlock *unused, PCodeInstruction *instruct
                             matching_operand->value.reg = spill_register;
                         }
                     }
-                    if (use_count)
-                        PCode_InsertInstructionBefore(instruction, SpillCode_CreateFPRLoad(spill_register, node));
-                    if (definition_count)
-                        PCode_InsertInstructionAfter(instruction, SpillCode_CreateFPRStore(spill_register, node));
+                    if (use_count) {
+                        type = node->object->type;
+                        CError_ASSERT(165, node->object->datatype == DLOCAL);
+                        if (node->flags & 32)
+                            base_register = low_word_offset;
+                        else if (node->flags & 16)
+                            base_register = high_word_offset;
+                        else
+                            base_register = 0;
+                        PCode_InsertInstructionBefore(
+                            instruction,
+                            PCodeUtilities_CreateInstruction(type->size == 8 ? 146 : 142, (short)spill_register,
+                                                             stack_base_reg, node->object, base_register));
+                    }
+                    if (definition_count) {
+                        PCode_InsertInstructionAfter(
+                            instruction,
+                            PCodeUtilities_CreateInstruction(node->object->type->size == 8 ? 154 : 150,
+                                                             (short)spill_register, stack_base_reg, node->object, 0));
+                    }
                 }
             }
         }
@@ -249,23 +274,34 @@ void SpillCode_RewriteSpilledFPRs(PCodeBlock *unused, PCodeInstruction *instruct
 
 void SpillCode_RewriteSpilledVR(PCodeBlock *block, PCodeInstruction *instruction)
 {
+    struct RegisterOperand {
+        char kind;
+        signed char flags;
+        short virtual_register;
+        char operand_data[8];
+    };
     int original_register_count;
-    PCodeOperand *scan;
+    struct RegisterOperand *scan;
     int scan_index;
     int spilled_register;
+    PCodeInstruction *load;
+    PCodeInstruction *load_address;
+    PCodeInstruction *store;
+    PCodeInstruction *store_address;
     InterferenceNode *node;
-    PCodeOperand *operand;
+    struct RegisterOperand *operand;
     int operand_index;
     int new_register;
     short replacement_register;
     int uses;
     int definitions;
+    operand = (struct RegisterOperand *)instruction;
     operand_index = 0;
     original_register_count = gUsedVirtualRegistersVR;
-    operand = instruction->operandData.operands;
+    operand = (struct RegisterOperand *)instruction->operandData.operands;
     while (operand_index < instruction->operand_count) {
-        if (operand->kind == 9 && operand->value.reg < original_register_count) {
-            node = gInterferenceGraph[spilled_register = operand->value.reg];
+        if (operand->kind == 9 && operand->virtual_register < original_register_count) {
+            node = gInterferenceGraph[spilled_register = operand->virtual_register];
             if ((node->flags & 1) != 0) {
                 new_register = gUsedVirtualRegistersVR++;
                 replacement_register = new_register;
@@ -274,23 +310,27 @@ void SpillCode_RewriteSpilledVR(PCodeBlock *block, PCodeInstruction *instruction
                 scan_index = operand_index;
                 scan = operand;
                 while (scan_index < instruction->operand_count) {
-                    if (scan->kind == 9 && scan->value.reg == spilled_register) {
+                    if (scan->kind == 9 && scan->virtual_register == spilled_register) {
                         if ((scan->flags & 1) != 0) {
                             uses++;
                         }
                         if ((scan->flags & 2) != 0) {
                             definitions++;
                         }
-                        scan->value.reg = replacement_register;
+                        scan->virtual_register = replacement_register;
                     }
                     scan_index++;
                     scan++;
                 }
                 if (uses != 0) {
-                    SpillCode_InsertVRLoad(instruction, replacement_register, node);
+                    SC_InsertLoad(instruction, node, replacement_register);
                 }
                 if (definitions != 0) {
-                    SpillCode_InsertVRStore(instruction, 0, replacement_register, node);
+                    store_address =
+                        PCodeUtilities_CreateInstruction(63, spill_address_register, stack_base_reg, node->object, 0);
+                    store = PCodeUtilities_CreateInstruction(252, replacement_register, 0, spill_address_register);
+                    PCode_InsertInstructionAfter(instruction, store_address);
+                    PCode_InsertInstructionAfter(store_address, store);
                 }
             }
         }
@@ -325,30 +365,61 @@ void SpillCode_RewriteSpilledRegisterMove(void *unused, PCodeInstruction *pc)
     PCode_UnlinkInstruction(pc);
 }
 
-void SpillCode_ReplaceInstructionWithFPRSpillCode(PCodeBlock *unused, PCodeInstruction *pc)
+void SpillCode_ReplaceInstructionWithFPRSpillCode(PCodeBlock *block, PCodeInstruction *instruction)
 {
-    int temp;
+    int temporaryRegister;
+    InterferenceNode *destination;
     InterferenceNode *source;
-    InterferenceNode *target;
-    PCodeInstruction *insn;
-    source = gInterferenceGraph[pc->operandData.operands[1].value.reg];
-    target = gInterferenceGraph[pc->operandData.operands[0].value.reg];
-    if ((source->flags & 1) != 0) {
-        if ((target->flags & 1) != 0) {
-            temp = gUsedVirtualRegistersFPR++;
-            insn = SpillCode_CreateFPRLoad(temp, source);
-            PCode_InsertInstructionBefore(pc, insn);
-            insn = SpillCode_CreateFPRStore(temp, target);
-            PCode_InsertInstructionBefore(pc, insn);
+    Type *destinationType;
+    int destinationOffset;
+    Type *reloadType;
+    int reloadOffset;
+    short sourceRegister;
+
+    destination = gInterferenceGraph[instruction->operandData.operands[1].value.reg];
+    source = gInterferenceGraph[sourceRegister = instruction->operandData.operands[0].value.reg];
+    if ((destination->flags & 1) != 0) {
+        if ((source->flags & 1) != 0) {
+            temporaryRegister = gUsedVirtualRegistersFPR;
+            gUsedVirtualRegistersFPR++;
+            destinationType = destination->object->type;
+            CError_ASSERT(165, destination->object->datatype == DLOCAL);
+            if ((destination->flags & 32) != 0) {
+                destinationOffset = low_word_offset;
+            } else if ((destination->flags & 16) != 0) {
+                destinationOffset = high_word_offset;
+            } else {
+                destinationOffset = 0;
+            }
+            PCode_InsertInstructionBefore(instruction,
+                                          PCodeUtilities_CreateInstruction(destinationType->size == 8 ? 146 : 142,
+                                                                           (short)temporaryRegister, stack_base_reg,
+                                                                           destination->object, destinationOffset));
+            PCode_InsertInstructionBefore(instruction,
+                                          PCodeUtilities_CreateInstruction(source->object->type->size == 8 ? 154 : 150,
+                                                                           (short)temporaryRegister, stack_base_reg,
+                                                                           source->object, 0));
         } else {
-            insn = SpillCode_CreateFPRLoad(pc->operandData.operands[0].value.reg, source);
-            PCode_InsertInstructionBefore(pc, insn);
+            reloadType = destination->object->type;
+            CError_ASSERT(165, destination->object->datatype == DLOCAL);
+            if ((destination->flags & 32) != 0) {
+                reloadOffset = low_word_offset;
+            } else if ((destination->flags & 16) != 0) {
+                reloadOffset = high_word_offset;
+            } else {
+                reloadOffset = 0;
+            }
+            PCode_InsertInstructionBefore(
+                instruction, PCodeUtilities_CreateInstruction(reloadType->size == 8 ? 146 : 142, sourceRegister,
+                                                              stack_base_reg, destination->object, reloadOffset));
         }
     } else {
-        insn = SpillCode_CreateFPRStore(pc->operandData.operands[1].value.reg, target);
-        PCode_InsertInstructionBefore(pc, insn);
+        PCode_InsertInstructionBefore(instruction,
+                                      PCodeUtilities_CreateInstruction(source->object->type->size == 8 ? 154 : 150,
+                                                                       instruction->operandData.operands[1].value.reg,
+                                                                       stack_base_reg, source->object, 0));
     }
-    PCode_UnlinkInstruction(pc);
+    PCode_UnlinkInstruction(instruction);
 }
 
 void SpillCode_EmitOperandSpills(PCodeBlock *unused, PCodeInstruction *op)
@@ -369,48 +440,42 @@ void SpillCode_EmitOperandSpills(PCodeBlock *unused, PCodeInstruction *op)
         if (destinationNode->flags & 1) {
             int spillReg = gUsedVirtualRegistersVR;
             gUsedVirtualRegistersVR++;
-            SpillCode_InsertVRLoad(op, spillReg, sourceNode);
-            SpillCode_InsertVRStore(op, 1, spillReg, destinationNode);
+            CError_ASSERT(184, sourceNode->object->datatype == DLOCAL);
+            EmitSpill(op, sourceNode, spillReg, 0xf7);
+            EmitSpill(op, destinationNode, spillReg, 0xfc);
         } else {
-            SpillCode_InsertVRLoad(op, destinationReg, sourceNode);
+            CError_ASSERT(184, sourceNode->object->datatype == DLOCAL);
+            EmitSpill(op, sourceNode, destinationReg, 0xf7);
         }
     } else {
-        SpillCode_InsertVRStore(op, 1, sourceReg, destinationNode);
+        EmitSpill(op, destinationNode, sourceReg, 0xfc);
     }
     PCode_UnlinkInstruction(op);
 }
 
-static void SpillCode_RemoveFixedRangeSpills(PCodeBlock *unused, PCodeInstruction *instruction)
+static inline void EmitSpill(PCodeInstruction *op, InterferenceNode *node, short reg, int opcode)
 {
-    int original_count;
-    int operand_index;
-    const PCodeOperand *source_operand;
-    PCodeOperand *destination;
-    original_count = instruction->operand_count;
-    operand_index = 50;
-    destination = &instruction->operandData.operands[operand_index];
-    source_operand = destination;
-    while (operand_index < original_count) {
-        if (source_operand->kind == PCOp_GPR &&
-            (gInterferenceGraph[source_operand->value.reg]->flags & 1) != 0) {
-            instruction->operand_count -= 1;
-        } else {
-            *destination = *source_operand;
-            destination++;
-        }
-        operand_index++;
-        source_operand = source_operand + 1;
-    }
+    PCodeInstruction *t1;
+    PCodeInstruction *t2;
+    t1 = PCodeUtilities_CreateInstruction(0x3f, spill_address_register, stack_base_reg, node->object, 0);
+    t2 = PCodeUtilities_CreateInstruction(opcode, reg, 0, spill_address_register);
+    PCode_InsertInstructionBefore(op, t1);
+    PCode_InsertInstructionAfter(t1, t2);
 }
 
 void SpillCode_SpillRegisters(int reg_class, int register_count)
 {
+    PCodeOperand *destination;
     InterferenceNode *node;
     PCodeInstruction *instruction;
+    const PCodeOperand *source_operand;
     PCodeOperand *operand;
     int needs_spill;
     Type *type;
     int operand_count;
+    Object *object;
+    int operand_index;
+    int original_count;
     unsigned int register_index;
     PCodeBlock *block;
     PCodeInstruction *next_instruction;
@@ -427,7 +492,16 @@ void SpillCode_SpillRegisters(int reg_class, int register_count)
                 } else {
                     type = TYPE(&stvectorunsignedchar);
                 }
-                node->object = SpillCode_CreateSpillObject(type);
+                object = (Object *)lalloc(sizeof(Object));
+                memclrw(object, sizeof(Object));
+                object->otype = OT_OBJECT;
+                object->access = ACCESSPUBLIC;
+                object->datatype = DLOCAL;
+                object->type = type;
+                object->name = CParser_GetUniqueName();
+                object->u.var.info = CodeGen_AllocateVarInfo();
+                object->u.var.uid = 0;
+                node->object = object;
             }
             if (node->object->datatype == DLOCAL && Registers_GetInfo(node->object)->in_param_area == 0) {
                 StackFrameEABI_AllocateObjectSlot(node->object);
@@ -463,7 +537,21 @@ void SpillCode_SpillRegisters(int reg_class, int register_count)
                 } else if (instruction->opcode == PC_VMR) {
                     SpillCode_EmitOperandSpills(block, instruction);
                 } else if ((instruction->flags & PCodeInstruction_GPRFixedRange) != 0) {
-                    SpillCode_RemoveFixedRangeSpills(block, instruction);
+                    original_count = instruction->operand_count;
+                    operand_index = 50;
+                    destination = &instruction->operandData.operands[operand_index];
+                    source_operand = destination;
+                    while (operand_index < original_count) {
+                        if (source_operand->kind == PCOp_GPR &&
+                            (gInterferenceGraph[source_operand->value.reg]->flags & 1) != 0) {
+                            instruction->operand_count -= 1;
+                        } else {
+                            *destination = *source_operand;
+                            destination++;
+                        }
+                        operand_index++;
+                        source_operand = source_operand + 1;
+                    }
                 } else if (reg_class == 0) {
                     SpillCode_InsertGPRSpillCode(block, instruction);
                 } else if (reg_class == 1) {

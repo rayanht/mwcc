@@ -561,9 +561,9 @@ void evaluate_hascall_arguments_reverse(ArgumentContext *x)
 void FunctionCalls_GenerateCall(ENode *item, Operand *result)
 {
     ENode *expr;
-    Type *returnType;
-    ENode *alternateExpr;
     ArgumentContext *arguments;
+    ENode *alternateExpr;
+    Type *returnType;
     Boolean hasSpecialArgument;
     unsigned int argumentFlags;
     ArgumentContext *argument;
