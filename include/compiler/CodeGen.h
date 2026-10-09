@@ -2,6 +2,7 @@
 #define COMPILER_CODEGEN_H
 
 #include "compiler/common.h"
+#include "version.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -108,7 +109,9 @@ extern struct Object *data_0058808c;
 extern struct Object *data_00588210;
 extern struct Object *data_00588214;
 extern SInt32 data_00588224;
+#if VERSION > VERSION_GC_1_0
 extern struct PCodeBlock *prologueBlock;
+#endif
 extern struct Object *data_0058823c;
 extern struct Object *data_00588250;
 extern void *interrupt_generation_records;

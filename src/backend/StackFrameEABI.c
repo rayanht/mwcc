@@ -1315,7 +1315,11 @@ int fn_004a9f70(int value)
     return stack_frame_size + 8;
 }
 
+#if VERSION > VERSION_GC_1_0
 void StackFrame_CheckAltivec(void)
+#else
+void StackFrame_CheckAltivec(PCodeBlock *prologueBlock)
+#endif
 {
     PCodeBlock *savedBlock;
     int frameReg;

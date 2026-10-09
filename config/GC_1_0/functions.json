@@ -12291,7 +12291,7 @@
     "source": "src/backend/StackFrameEABI.c"
   },
   {
-    "name": "fn_0046eaa0",
+    "name": "StackFrameEABI_MergePrologueEpilogue",
     "address": "0x0046eaa0",
     "size": 679,
     "source": "src/backend/StackFrameEABI.c"
@@ -12429,7 +12429,7 @@
     "source": "src/backend/StackFrameEABI.c"
   },
   {
-    "name": "fn_00470850",
+    "name": "StackFrame_CheckAltivec",
     "address": "0x00470850",
     "size": 333,
     "source": "src/backend/StackFrameEABI.c"

@@ -60,11 +60,14 @@ void assign_object_register(Object *func, SInt16 register_number)
                     physical_register = regs->reg;
                 } else {
                     regs->is_fpr = 1;
+#if VERSION > VERSION_GC_1_0
                     if (copts.littleendian != 0) {
                         regs->reg = register_number;
                         physical_register = regs->reg;
                         regs->regHi = register_number + 1;
-                    } else {
+                    } else
+#endif
+                    {
                         regs->reg = register_number + 1;
                         physical_register = regs->reg;
                         regs->regHi = register_number;
@@ -73,6 +76,7 @@ void assign_object_register(Object *func, SInt16 register_number)
                 CTemplateNew_InsertRegisterBinding(func->name->name, 0, physical_register, func);
             } else if ((type->type == TYPEINT || type->type == TYPEENUM) && type->size == 8) {
                 regs->is_fpr = 0;
+#if VERSION > VERSION_GC_1_0
                 if (copts.littleendian != 0) {
                     regs->regHi = register_number + 1;
                     physical_register = 0;
@@ -80,7 +84,9 @@ void assign_object_register(Object *func, SInt16 register_number)
                         regs->reg = register_number;
                         physical_register = regs->reg;
                     }
-                } else {
+                } else
+#endif
+                {
                     regs->reg = register_number + 1;
                     physical_register = regs->reg;
                     if (register_number < 10) {
@@ -261,8 +267,9 @@ void fn_004e6e30(void)
     data_0058850d = savedFlag;
 }
 
-static void append_assembly(ParsedAsmInstruction *q, PCodeBlock *block)
+static void append_assembly(Statement *stmt, PCodeBlock *block)
 {
+    ParsedAsmInstruction *q = (ParsedAsmInstruction *)stmt->expr;
     PCodeAssemblyEntry *n = (PCodeAssemblyEntry *)lalloc(12);
     memclrw(n, 12);
     n->object = q->data.directive.object;
@@ -285,6 +292,9 @@ void FuncLevelAsmPPC_GenerateFunction(Object *func)
     UInt8 savedOptionC2;
     PCodeBlock *frameBlock;
     UInt8 savedOptionC3;
+#if VERSION == VERSION_GC_1_0
+    PCodeBlock *prologueBlock;
+#endif
 
     frameFinalized = 0;
 
@@ -389,7 +399,7 @@ void FuncLevelAsmPPC_GenerateFunction(Object *func)
                         if (item.assembly->opcode == 1) {
                             PCodeUtilities_ResolveLabel(PCode_NewLabel());
                             gCurrentBlock->line = node->sourceoffset;
-                            append_assembly((ParsedAsmInstruction *)node->expr, gCurrentBlock);
+                            append_assembly(node, gCurrentBlock);
                         } else if (item.assembly->opcode == 4) {
                             PCodeUtilities_ResolveLabel(PCode_NewLabel());
                             (gReturnBlock = gCurrentBlock)->flags |= 2;
@@ -399,6 +409,11 @@ void FuncLevelAsmPPC_GenerateFunction(Object *func)
                             PCode_BuildPredecessors();
                             if (copts.debug_listing != 0)
                                 fn_004c4bd0(functionName, "[FUNCTION-LEVEL ASM] INITIAL CODE");
+#if VERSION == VERSION_GC_1_0
+                            StackFrame_CheckAltivec(prologueBlock);
+                            if (copts.debug_listing != 0)
+                                fn_004c4bd0(functionName, "[FUNCTION-LEVEL ASM] AFTER CHECKING FOR ALTIVEC FRAME");
+#endif
                             Coloring_AllocateRegisters(func);
                             if (copts.debug_listing != 0)
                                 fn_004c4bd0(functionName, "[FUNCTION-LEVEL ASM] AFTER REGISTER COLORING");
@@ -443,6 +458,11 @@ void FuncLevelAsmPPC_GenerateFunction(Object *func)
         if (copts.debug_listing != 0)
             fn_004c4bd0(functionName, "[FUNCTION-LEVEL ASM] INITIAL CODE");
         if (data_005884f4 == 0) {
+#if VERSION == VERSION_GC_1_0
+            StackFrame_CheckAltivec(prologueBlock);
+            if (gHasAltivecFrame && copts.debug_listing != 0)
+                fn_004c4bd0(functionName, "[FUNCTION-LEVEL ASM] AFTER CHECKING FOR ALTIVEC FRAME");
+#endif
             Coloring_AllocateRegisters(func);
             if (func_errors != 0)
                 return;

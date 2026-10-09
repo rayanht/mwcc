@@ -2,6 +2,7 @@
 #define COMPILER_STACKFRAMEEABI_H
 
 #include "compiler/common.h"
+#include "version.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -79,7 +80,11 @@ extern int data_005876a8;
 extern SInt32 gStackFrameSize;
 extern unsigned int data_005880cc;
 extern unsigned long data_00587e40;
+#if VERSION > VERSION_GC_1_0
 extern void StackFrame_CheckAltivec(void);
+#else
+extern void StackFrame_CheckAltivec(PCodeBlock *prologueBlock);
+#endif
 extern void fn_004a9c70(void);
 extern int fn_004a9f70(int value);
 extern unsigned int fn_004a9f90(void);

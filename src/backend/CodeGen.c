@@ -97,7 +97,9 @@ struct Object *data_0058808c;
 struct Object *data_00588210;
 struct Object *data_00588214;
 SInt32 data_00588224;
+#if VERSION > VERSION_GC_1_0
 struct PCodeBlock *prologueBlock;
+#endif
 struct Object *data_0058823c;
 struct Object *data_00588250;
 SInt32 data_00588274;
@@ -1310,6 +1312,9 @@ void CodeGen_Generator(Statement *statements, Object *functionObject, Boolean co
     Boolean hasSentinelArgument;
     PCodeLabel *entryLabel;
     PCodeBlock *firstEntryBlock, *secondEntryBlock, *commonEntryBlock;
+#if VERSION == VERSION_GC_1_0
+    PCodeBlock *prologueBlock;
+#endif
     Operand operandBuffer;
     Statement *statement;
     Statement *previousStatement;
