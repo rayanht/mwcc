@@ -2,6 +2,7 @@
 #define COMPILER_BE_ELF_H
 
 #include "compiler/common.h"
+#include "version.h"
 #include "compiler/CompilerTools.h"
 
 #ifdef __cplusplus
@@ -58,6 +59,9 @@ union U16Bytes {
 };
 #pragma pack(pop)
 extern void BE_elf_SetDeclSection(char *name, DeclInfo *file);
+#if VERSION == VERSION_GC_1_0
+extern void fn_004b4ce0(void *list);
+#endif
 extern void fn_0049c510(char *value1, UInt8 value2, SInt8 value3, SInt32 value4);
 extern ObjGenSection *fn_0049c540(ObjGenSection *input, SInt32 context);
 extern SectionRec *BE_elf_CreateSectionRec(char *nspace, char *name, unsigned int datatype, unsigned int unk03,

@@ -5,6 +5,7 @@
     "auto,deferred": "on"
   },
   "matching": [
+    "src/backend/BE_symbol.c",
     "src/backend/BitVectors.c",
     "src/backend/Coloring.c",
     "src/backend/DumpIR.c",
