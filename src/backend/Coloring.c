@@ -1,5 +1,6 @@
 #define CERROR_FILE "Coloring.c"
 #include "compiler/common.h"
+#include "version.h"
 #include "compiler/Coloring.h"
 #include "compiler/enode.h"
 #include "compiler/objects.h"
@@ -433,10 +434,12 @@ void Coloring_AllocateRegisters(Object *function)
             Coloring_CommitAssignments(9, gUsedVirtualRegistersVR);
         freeoheap();
     }
+#if VERSION > VERSION_GC_1_0
     StackFrame_CheckAltivec();
     if (copts.debug_listing && gHasAltivecFrame) {
         fn_004c4bd0(COptimizer_GetFunctionObject(function)->name, "AFTER CHECKING FOR ALTIVEC FRAME");
     }
+#endif
     Registers_SetupGPRs();
     gColoringRegisterCount = gUsedVirtualRegistersGPR;
     if (gUsedVirtualRegistersGPR > 0x20 && Registers_AvailableGPRs() <= 0) {

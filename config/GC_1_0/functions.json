@@ -12423,9 +12423,10 @@
     "source": "src/backend/Registers.c"
   },
   {
-    "name": "fn_00471410",
+    "name": "Registers_SetupGPRs",
     "address": "0x00471410",
-    "size": 33
+    "size": 33,
+    "source": "src/backend/Registers.c"
   },
   {
     "name": "Registers_SetupFPRs",
