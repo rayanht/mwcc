@@ -17,6 +17,63 @@ static struct _FILE *data_005811b0;
 static char lbl_005811b4[4];
 static int enode_tree_depth_index;
 
+static void PrintType(Type *type);
+
+static inline void PrintTypeLine(Type *type)
+{
+    PrintType(type);
+    fprintf(data_005811b0, "\r\n");
+}
+
+static inline void PrintTypeEnd(Type *type)
+{
+    PrintType(type);
+    fputs("\r\n", data_005811b0);
+}
+
+void write_escaped_string(void *stream, char *string, SInt32 length)
+{
+    FILE *output = stream;
+    while (length--) {
+        switch (*string) {
+            case '\0':
+                fputs("\\x00", output);
+                break;
+            case '\a':
+                fputs("\\a", output);
+                break;
+            case '\b':
+                fputs("\\b", output);
+                break;
+            case '\f':
+                fputs("\\f", output);
+                break;
+            case '\n':
+                fputs("\\n", output);
+                break;
+            case '\r':
+                fputs("\\r", output);
+                break;
+            case '\t':
+                fputs("\\t", output);
+                break;
+            case '\v':
+                fputs("\\v", output);
+                break;
+            case '"':
+            case '\'':
+            case '?':
+            case '\\':
+                fputc('\\', output);
+                /* fallthrough */
+            default:
+                fputc(*string, output);
+                break;
+        }
+        string++;
+    }
+}
+
 /* The name of each ENode type. */
 static char *data_00560cb4[75] = {
     "EPOSTINC",
@@ -96,51 +153,9 @@ static char *data_00560cb4[75] = {
     "EVECTOR128CONST",
 };
 
-static inline void PrintTypeLine(Type *type);
-static void PrintType(Type *type);
-static void WriteString(void *file, char *str);
-
-void write_escaped_string(void *stream, char *string, SInt32 length)
+static void WriteString(void *file, char *str)
 {
-    FILE *output = stream;
-    while (length--) {
-        switch (*string) {
-            case '\0':
-                fputs("\\x00", output);
-                break;
-            case '\a':
-                fputs("\\a", output);
-                break;
-            case '\b':
-                fputs("\\b", output);
-                break;
-            case '\f':
-                fputs("\\f", output);
-                break;
-            case '\n':
-                fputs("\\n", output);
-                break;
-            case '\r':
-                fputs("\\r", output);
-                break;
-            case '\t':
-                fputs("\\t", output);
-                break;
-            case '\v':
-                fputs("\\v", output);
-                break;
-            case '"':
-            case '\'':
-            case '?':
-            case '\\':
-                fputc('\\', output);
-                /* fallthrough */
-            default:
-                fputc(*string, output);
-                break;
-        }
-        string++;
-    }
+    write_escaped_string(file, str, strlen(str));
 }
 
 void fn_004be840(void)
@@ -173,12 +188,12 @@ void print_enode_tree(ENode *node, int depth)
                     fprintf(data_005811b0, "[0x%.8lX%.8lX]", node->data.intval.hi, node->data.intval.lo);
                 else
                     fprintf(data_005811b0, "[%ld]", node->data.intval.lo);
-                PrintType(node->rtype);
+                PrintTypeLine(node->rtype);
                 break;
             case EFLOATCONST:
                 CMach_PrintFloat(buffer, ((ENode *)node)->data.floatval);
                 fprintf(data_005811b0, "[%s]", (unsigned int)buffer);
-                PrintType(node->rtype);
+                PrintTypeLine(node->rtype);
                 break;
             case ESTRINGCONST:
                 if (((ENode *)node)->data.string.useExplicitSize != 0) {
@@ -190,15 +205,15 @@ void print_enode_tree(ENode *node, int depth)
                     WriteString(data_005811b0, node->data.string.data);
                     fputs("\"]", data_005811b0);
                 }
-                PrintType(node->rtype);
+                PrintTypeLine(node->rtype);
                 break;
             case EVECTOR128CONST:
                 fprintf(data_005811b0, "[0x%.8lX%.8lX%.8lX%.8lX]", node->data.intval.hi, node->data.intval.lo,
                         ((ENode *)node)->data.vector128val.ul[2], ((ENode *)node)->data.vector128val.ul[3]);
-                PrintType(node->rtype);
+                PrintTypeLine(node->rtype);
                 break;
             case ECOND:
-                PrintType(node->rtype);
+                PrintTypeLine(node->rtype);
                 print_enode_tree(node->data.cond.cond, depth + 1);
                 print_enode_tree(node->data.cond.expr1, depth + 1);
                 node = node->data.cond.expr2;
@@ -206,7 +221,7 @@ void print_enode_tree(ENode *node, int depth)
                 continue;
             case EFUNCCALL:
             case EFUNCCALLP:
-                PrintType(node->rtype);
+                PrintTypeLine(node->rtype);
                 print_enode_tree(node->data.funccall.funcref, depth + 1);
                 for (arg = node->data.funccall.args; arg != NULL; arg = arg->next)
                     print_enode_tree(arg->node, depth + 1);
@@ -231,7 +246,7 @@ void print_enode_tree(ENode *node, int depth)
                         fprintf(data_005811b0, "[%s]", name);
                         break;
                 }
-                PrintType(node->rtype);
+                PrintTypeLine(node->rtype);
                 break;
             case EMUL:
             case EMULV:
@@ -272,7 +287,7 @@ void print_enode_tree(ENode *node, int depth)
             case EBCLR:
             case EBTST:
             case EBSET:
-                PrintType(node->rtype);
+                PrintTypeLine(node->rtype);
                 print_enode_tree(node->data.diadic.left, depth + 1);
                 node = node->data.diadic.right;
                 depth++;
@@ -288,40 +303,40 @@ void print_enode_tree(ENode *node, int depth)
             case EFORCELOAD:
             case ETYPCON:
             case EBITFIELD:
-                PrintType(node->rtype);
+                PrintTypeLine(node->rtype);
                 depth++;
                 node = node->data.monadic;
                 continue;
             case EMFPOINTER:
-                PrintType(node->rtype);
+                PrintTypeLine(node->rtype);
                 print_enode_tree(node->data.diadic.left, depth + 1);
                 node = node->data.diadic.right;
                 depth++;
                 continue;
             case ENULLCHECK:
                 fprintf(data_005811b0, " unique [%ld]", node->data.precomp.labelId);
-                PrintType(node->rtype);
+                PrintTypeLine(node->rtype);
                 print_enode_tree(node->data.diadic.left, depth + 1);
                 node = node->data.diadic.right;
                 depth++;
                 continue;
             case EPRECOMP:
                 fprintf(data_005811b0, " unique [%ld]", node->data.intval.hi);
-                PrintType(node->rtype);
+                PrintTypeLine(node->rtype);
                 break;
             case ELABEL:
                 fprintf(data_005811b0, "[%s]", node->data.memberFunctionPointer->name->name);
-                PrintType(node->rtype);
+                PrintTypeLine(node->rtype);
                 break;
             case EDEFINE:
                 fprintf(data_005811b0, "[%.8lX]", node);
-                PrintTypeLine(node->rtype);
+                PrintTypeEnd(node->rtype);
                 depth++;
                 node = node->data.monadic;
                 continue;
             case EREUSE:
                 fprintf(data_005811b0, "[%.8lX]", node->data.intval.hi);
-                PrintTypeLine(node->rtype);
+                PrintTypeEnd(node->rtype);
                 break;
             default:
                 break;
@@ -330,12 +345,11 @@ void print_enode_tree(ENode *node, int depth)
     }
 }
 
-static inline void PrintTypeLine(Type *type)
+/* The linker stripped the function that used these literals; they stay in the unit's .data. */
+static void DumpIR_StrippedLiterals(const char **literals)
 {
-    char buf[256];
-    format_type(type, buf);
-    fprintf(data_005811b0, " (%s)", (unsigned int)buf);
-    fputs("\r\n", data_005811b0);
+    literals[0] = "\t\t%11s: %s\r\n";
+    literals[1] = "\t\t    default: %s\r\n";
 }
 
 static void PrintType(Type *type)
@@ -343,19 +357,6 @@ static void PrintType(Type *type)
     char buf[256];
     format_type(type, buf);
     fprintf(data_005811b0, " (%s)", (unsigned int)buf);
-    fprintf(data_005811b0, "\r\n");
-}
-
-static void WriteString(void *file, char *str)
-{
-    write_escaped_string(file, str, strlen(str));
-}
-
-/* The linker stripped the function that used these literals; they stay in the unit's .data. */
-static void DumpIR_StrippedLiterals(const char **literals)
-{
-    literals[0] = "\t\t%11s: %s\r\n";
-    literals[1] = "\t\t    default: %s\r\n";
 }
 
 void format_type(Type *type, char *buf)
@@ -529,8 +530,6 @@ void format_type(Type *type, char *buf)
 
 void dump_eat_nodes(ExceptionAction *p)
 {
-    char buf[256];
-
     while (p != NULL) {
         fprintf(data_005811b0, "\t\t:");
         switch (p->kind) {
@@ -592,8 +591,7 @@ void dump_eat_nodes(ExceptionAction *p)
                     } else {
                         fprintf(data_005811b0, "[]");
                     }
-                    format_type(p->data.catch_block.exceptionType, buf);
-                    fprintf(data_005811b0, " (%s)", buf);
+                    PrintType(p->data.catch_block.exceptionType);
                 } else {
                     fprintf(data_005811b0, "[...] ");
                 }
