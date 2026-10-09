@@ -1315,6 +1315,7 @@ void CodeGen_Generator(Statement *statements, Object *functionObject, Boolean co
     Statement *previousStatement;
     UInt16 initialValue;
 
+#if VERSION > VERSION_GC_1_0
     if (copts.littleendian != 0) {
         high_word_offset = 4;
         low_word_offset = 0;
@@ -1330,6 +1331,7 @@ void CodeGen_Generator(Statement *statements, Object *functionObject, Boolean co
         sfpe_right_operand_reg_hi = 5;
         sfpe_right_operand_reg = 6;
     }
+#endif
     has_dlocal_initialization = 0;
     gHasAltivecFrame = 0;
     data_005884ff = 0;

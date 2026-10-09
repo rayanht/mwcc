@@ -2,6 +2,7 @@
 #define COMPILER_OPERANDS_H
 
 #include "compiler/common.h"
+#include "version.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -27,8 +28,15 @@ extern void Operands_ForceFPR(Operand *operand, Type *type, short requestedReg);
 extern void Operands_ForceVR(Operand *operand, Type *type, short targetReg);
 extern void Operands_ForceGPR(Operand *node, Type *type, SInt16 reg);
 extern void Operands_ForceGPRPair(Operand *op, Type *type, SInt16 first, SInt16 second);
+#if VERSION > VERSION_GC_1_0
 extern short low_word_offset;
 extern short high_word_offset;
+#else
+/* (1.0 has no such globals: a register pair's halves lie big-endian, and each conversion of Operands.c works out
+ * where a double's halves lie from the target's byte order in a local of this name) */
+enum { high_word_offset = 0 };
+#define low_word_offset (4 - high_word_offset)
+#endif
 extern Float float_one;
 extern Float data_0055e9e8;
 extern Float data_0055e9f0;

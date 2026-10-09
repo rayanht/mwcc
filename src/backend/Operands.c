@@ -19,8 +19,10 @@
 #include "compiler/PPCError.h"
 #include "compiler/TOC.h"
 
+#if VERSION > VERSION_GC_1_0
 short low_word_offset;
 short high_word_offset;
+#endif
 
 /* Target doubles, high word first; ObjGen_PPC_EABI rewrites them in host order. */
 Float float_one = {{0x3ff00000, 0}};
@@ -43,24 +45,6 @@ static inline int fpr(Object *x)
 static inline SInt16 gpr(void)
 {
     return gUsedVirtualRegistersGPR++;
-}
-
-static inline Object *start(Float *blk)
-{
-    Type *type = (Type *)&stdouble;
-    Object *x = CodeGen_AllocateTemporaryObject(type);
-    blk->data.words[0] = data_0055e9f0.data.words[0];
-    blk->data.words[1] = data_0055e9f0.data.words[1];
-    return x;
-}
-
-static inline Object *prelude(Float *p)
-{
-    Type *type = (Type *)&stdouble;
-    Object *r = CodeGen_AllocateTemporaryObject(type);
-    p->data.words[0] = data_0055e9e8.data.words[0];
-    p->data.words[1] = data_0055e9e8.data.words[1];
-    return r;
 }
 
 static inline SInt16 Operands_SignedLowHalf(SInt32 value)
@@ -94,14 +78,9 @@ static __inline SInt32 Operands_GetOpcode(Type *type, SInt32 base, SInt32 line)
 /* Operand record of the PPC code generator: byte kind, word register,
  * word low half of the constant, qual flags, 32-bit value, spare. */
 
-static inline void Operands_SetKind(Operand *op, UInt8 kind)
-{
-    op->kind = kind;
-    CError_ASSERT(92, op != NULL);
-}
-
 static void Operands_SetQual(Operand *op, ENode *e)
 {
+    CError_ASSERT(92, op != NULL);
     if (e != NULL) {
         if (e->type == EINTCONST) {
             op->flags = 0;
@@ -133,11 +112,11 @@ void Operands_MakeIndirect(Operand *op, ENode *e)
             op->displacement = 0;
             op->object = NULL;
         case OpndType_GPR_ImmOffset:
-            Operands_SetKind(op, OpndType_IndirectGPR_ImmOffset);
+            op->kind = OpndType_IndirectGPR_ImmOffset;
             Operands_SetQual(op, e);
             break;
         case OpndType_GPR_Indexed:
-            Operands_SetKind(op, OpndType_IndirectGPR_Indexed);
+            op->kind = OpndType_IndirectGPR_Indexed;
             Operands_SetQual(op, e);
             break;
         case OpndType_Immediate:
@@ -150,11 +129,11 @@ void Operands_MakeIndirect(Operand *op, ENode *e)
                 op->displacement = op->immediate;
             }
             op->object = NULL;
-            Operands_SetKind(op, OpndType_IndirectGPR_ImmOffset);
+            op->kind = OpndType_IndirectGPR_ImmOffset;
             Operands_SetQual(op, e);
             break;
         case OpndType_Symbol:
-            Operands_SetKind(op, OpndType_IndirectSymbol);
+            op->kind = OpndType_IndirectSymbol;
             Operands_SetQual(op, e);
             break;
         default:
@@ -612,10 +591,17 @@ void Operands_ForceGPRPair(Operand *op, Type *type, SInt16 first, SInt16 second)
             else
                 targetRegister = gUsedVirtualRegistersGPR++;
             secondRegister = targetRegister;
+#if VERSION == VERSION_GC_1_0
+            if (is_unsigned(type) || value >= 0)
+                PCodeUtilities_LoadImmediate(targetRegister, 0);
+            else
+                PCodeUtilities_LoadImmediate(targetRegister, -1);
+#else
             if (is_unsigned(type) || value >= 0)
                 PCodeUtilities_EmitInstruction(PC_LI, targetRegister, 0);
             else
                 PCodeUtilities_EmitInstruction(PC_LI, targetRegister, -1);
+#endif
             break;
         }
         case OpndType_IndirectGPR_ImmOffset: {
@@ -993,37 +979,24 @@ void Operands_EmitOpcodeWithObjectBaseOffset(short dest, Type *type, Object *obj
 void Operands_ConvertSignedIntegerToFloat(struct Operand *operand, char subtract, short resultReg)
 {
     long immediateReg;
-    short selectedReg;
-    int outputReg;
-    int allocatedFPR;
     short constantReg;
     int constantFPR;
-    int loadFPR;
     int valueFPR;
+    int outputReg;
     Float conversionConstant;
-    short baseReg;
     Object *stackBase;
-    PCodeInstruction *firstInfo;
-    PCodeInstruction *secondInfo;
-    int loadResult;
-    Object *object;
     int integerReg;
+#if VERSION == VERSION_GC_1_0
+    int high_word_offset;
+#endif
 
-    stackBase = prelude(&conversionConstant);
-    object = TOC_GetFloatObject(TYPE(&stdouble), &conversionConstant);
-    allocatedFPR = loadFPR = constantFPR = gUsedVirtualRegistersFPR++;
-    baseReg = 2;
-    if (object->datatype == DDATA && PCodeUtilities_Require(object) == 0) {
-        baseReg = gUsedVirtualRegistersGPR++;
-        firstInfo = PCodeUtilities_MakeInstructionWithObject(baseReg, 0, object, 0, 1);
-        secondInfo = PCodeUtilities_CreateInstructionWithObject(baseReg, baseReg, object, 0, 1);
-        if (copts.usedatapool != 0) {
-            firstInfo->operandData.operands[1].flags = 11;
-            secondInfo->operandData.operands[2].flags = 10;
-        }
-        object = NULL;
-    }
-    emit_opcode_with_base_offset(stdouble.size == 4 ? 142 : 146, loadFPR, baseReg, object, 0);
+    stackBase = CodeGen_AllocateTemporaryObject(TYPE(&stdouble));
+#if VERSION == VERSION_GC_1_0
+    high_word_offset = copts.littleendian ? 4 : 0;
+#endif
+    conversionConstant = data_0055e9e8;
+    Operands_EmitOpcodeWithObjectBaseOffset(constantFPR = gUsedVirtualRegistersFPR++, TYPE(&stdouble),
+                                            TOC_GetFloatObject(TYPE(&stdouble), &conversionConstant));
     integerReg = gUsedVirtualRegistersGPR++;
     PCodeUtilities_EmitInstruction(PC_XORIS, integerReg, operand->reg, 32768);
     emit_opcode_with_base_offset(PC_STW, integerReg, stack_base_reg, stackBase, low_word_offset);
@@ -1031,13 +1004,8 @@ void Operands_ConvertSignedIntegerToFloat(struct Operand *operand, char subtract
     immediateReg = constantReg;
     PCodeUtilities_EmitInstruction(PC_LIS, immediateReg, 0, 17200);
     emit_opcode_with_base_offset(PC_STW, immediateReg, stack_base_reg, stackBase, high_word_offset);
-    emit_opcode_with_base_offset(PC_LFD, loadResult = valueFPR = gUsedVirtualRegistersFPR++, stack_base_reg, stackBase,
-                                 0);
-    if (resultReg)
-        selectedReg = resultReg;
-    else
-        selectedReg = gUsedVirtualRegistersFPR++;
-    outputReg = selectedReg;
+    emit_opcode_with_base_offset(PC_LFD, valueFPR = gUsedVirtualRegistersFPR++, stack_base_reg, stackBase, 0);
+    outputReg = resultReg ? resultReg : gUsedVirtualRegistersFPR++;
     PCodeUtilities_EmitInstruction(subtract != 0 ? 165 : 164, outputReg, valueFPR, constantFPR);
     operand->kind = OpndType_FPR;
     operand->reg = outputReg;
@@ -1047,30 +1015,20 @@ void Operands_ConvertIntegerToFloat(struct Operand *result, Boolean useOpcodeA5,
 {
     Object *storage;
     Float block;
-    SInt16 baseRegister;
     SInt32 integerRegister;
-    SInt32 loadedRegister;
-    PCodeInstruction *firstInstruction;
-    Object *operand;
-    PCodeInstruction *secondInstruction;
     SInt32 constantRegister;
-    SInt32 memoryRegister;
+    SInt32 loadedRegister;
     SInt32 resultRegister;
-    storage = start(&block);
-    operand = TOC_GetFloatObject(TYPE(&stdouble), &block);
-    memoryRegister = constantRegister = gUsedVirtualRegistersFPR++;
-    baseRegister = 2;
-    if (operand->datatype == DDATA && PCodeUtilities_Require(operand) == 0) {
-        baseRegister = gUsedVirtualRegistersGPR++;
-        firstInstruction = PCodeUtilities_MakeInstructionWithObject(baseRegister, 0, operand, 0, 1);
-        secondInstruction = PCodeUtilities_CreateInstructionWithObject(baseRegister, baseRegister, operand, 0, 1);
-        if (copts.usedatapool != 0) {
-            firstInstruction->operandData.operands[1].flags = 0xb;
-            secondInstruction->operandData.operands[2].flags = 0xa;
-        }
-        operand = NULL;
-    }
-    emit_opcode_with_base_offset(stdouble.size == 4 ? 0x8e : 0x92, memoryRegister, baseRegister, operand, 0);
+#if VERSION == VERSION_GC_1_0
+    int high_word_offset;
+#endif
+    storage = CodeGen_AllocateTemporaryObject(TYPE(&stdouble));
+#if VERSION == VERSION_GC_1_0
+    high_word_offset = copts.littleendian ? 4 : 0;
+#endif
+    block = data_0055e9f0;
+    Operands_EmitOpcodeWithObjectBaseOffset(constantRegister = gUsedVirtualRegistersFPR++, TYPE(&stdouble),
+                                            TOC_GetFloatObject(TYPE(&stdouble), &block));
     emit_opcode_with_base_offset(PC_STW, result->reg, stack_base_reg, storage, low_word_offset);
     integerRegister = gpr();
     PCodeUtilities_EmitInstruction(PC_LIS, integerRegister, 0, 0x4330);
@@ -1084,12 +1042,18 @@ void Operands_ConvertIntegerToFloat(struct Operand *result, Boolean useOpcodeA5,
 
 void Operands_ConvertFloatToInteger(Operand *operand, SInt16 reg)
 {
-    int resultReg;
     Object *temporary;
+    int resultReg;
     int floatReg;
+#if VERSION == VERSION_GC_1_0
+    int high_word_offset;
+#endif
 
     Type *type = (Type *)&stdouble;
     temporary = CodeGen_AllocateTemporaryObject(type);
+#if VERSION == VERSION_GC_1_0
+    high_word_offset = copts.littleendian ? 4 : 0;
+#endif
     floatReg = gUsedVirtualRegistersFPR++;
     PCodeUtilities_EmitInstruction(PC_FCTIWZ, floatReg, operand->reg);
     emit_opcode_with_base_offset(PC_STFD, floatReg, stack_base_reg, temporary, 0);

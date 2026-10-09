@@ -1,5 +1,6 @@
 #define CERROR_FILE "FuncLevelAsmPPC.c"
 #include "compiler/common.h"
+#include "version.h"
 #include "compiler/FuncLevelAsmPPC.h"
 #include "compiler/enode.h"
 #include "compiler/objects.h"
@@ -178,6 +179,7 @@ void FuncLevelAsmPPC_GenerateFunction(Object *func)
 
     frameFinalized = 0;
 
+#if VERSION > VERSION_GC_1_0
     if (copts.littleendian) {
         high_word_offset = 4;
         low_word_offset = 0;
@@ -193,6 +195,7 @@ void FuncLevelAsmPPC_GenerateFunction(Object *func)
         sfpe_right_operand_reg_hi = 5;
         sfpe_right_operand_reg = 6;
     }
+#endif
 
     gStackFrameSize = 0;
     data_005882c0.record = NULL;
