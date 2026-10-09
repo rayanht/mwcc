@@ -495,40 +495,34 @@ HashNameNode *CParser_AppendUniqueName(char *name)
 
 HashNameNode *CParser_AppendUniqueNameFile(char *prefix)
 {
-    char *d;
-    int len;
-    char *p_s;
+    unsigned char filename[256];
+    char buf[256];
+    char *src;
+    char *dst;
     char c;
     int i;
-    int n;
-    char name[256];
-    char buf[256];
+    int j;
+    int len;
 
-    d = buf;
-    len = 0;
-    while (*prefix != 0 && len < 200) {
-        *d++ = *prefix++;
-        len++;
-    }
-    *d++ = '$';
-    CParser_PrintUniqueID(d);
-    while (*d != 0) {
-        d++;
-        len++;
-    }
-    COS_FileGetFSSpecInfo(&((CPrepCU *)cprep_cu)->mainFile, NULL, NULL, (UInt8 *)name);
-    n = (UInt8)name[0];
-    p_s = name + 1;
-    i = 0;
-    while (i < n && len < 0xff) {
-        c = *p_s++;
-        if (!((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9')))
-            c = '_';
-        *d++ = c;
+    dst = buf;
+    for (i = 0; *prefix && i < 200; i++)
+        *(dst++) = *(prefix++);
+    *(dst++) = '$';
+    CParser_PrintUniqueID(dst);
+    while (*dst) {
+        dst++;
         i++;
-        len++;
     }
-    *d = 0;
+    COS_FileGetFSSpecInfo(&((CPrepCU *)cprep_cu)->mainFile, NULL, NULL, filename);
+    src = (char *)&filename[1];
+    len = filename[0];
+    for (j = 0; j < len && i < 255; j++, i++) {
+        c = *(src++);
+        if (!(c >= 'a' && c <= 'z') && !(c >= 'A' && c <= 'Z') && !(c >= '0' && c <= '9'))
+            c = '_';
+        *(dst++) = c;
+    }
+    *dst = 0;
     return GetHashNameNode(buf);
 }
 
