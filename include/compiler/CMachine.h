@@ -31,7 +31,7 @@ extern void *CMach_FloatScan(char *arg1, Float *out, char *flag);
 extern unsigned char CMach_CalcVectorDiadicBool(unsigned int context, const union MWVector128 *left,
                                                 unsigned int operation, const union MWVector128 *right);
 extern Boolean CMach_CalcFloatDiadicBool(Type *self, volatile double a, SInt16 op, volatile double b);
-extern Float CMach_CalcFloatMonadic(Type *type, short op, double value);
+extern Float CMach_CalcFloatMonadic(Type *type, short op, Float value);
 extern Float CMach_CalcFloatDiadic(Type *type, Float left, short op, Float right);
 extern void CMach_InitVectorMem(Type *type, MWVector128 val, void *mem);
 extern void CMach_InitIntMem(Type *type, CInt64 val, void *mem);

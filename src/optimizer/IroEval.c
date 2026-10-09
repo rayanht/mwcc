@@ -208,7 +208,7 @@ int IRO_ConstantFolding(void)
                                 long long ll;
                             } negated;
                             negated.f = CMach_CalcFloatMonadic(node->u.diadic.right->rtype, '-',
-                                                               node->u.diadic.right->u.node->data.floatval.data.value);
+                                                               node->u.diadic.right->u.node->data.floatval);
                             node->u.diadic.right->u.node->data.floatval = negated.f;
                         }
                     }

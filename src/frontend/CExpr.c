@@ -809,7 +809,7 @@ ENode *CExpr_New_ESUB_Node(ENode *left, ENode *right)
             return right;
         }
         if (right->type == EFLOATCONST) {
-            right->data.floatval = CMach_CalcFloatMonadic(right->rtype, '-', right->data.floatval.data.value);
+            right->data.floatval = CMach_CalcFloatMonadic(right->rtype, '-', right->data.floatval);
             return right;
         }
         return CExpr_UnaryFloatExpression(makemonadicnode(right, EMONMIN));
@@ -2676,7 +2676,6 @@ ENode *CExpr_New_ELOGNOT_Node(ENode *expr)
     return set_comparison_result_type(expr);
 }
 
-
 ENode *CExpr_New_EMONMIN_Node(ENode *ene)
 {
     ENode *node;
@@ -2709,7 +2708,7 @@ ENode *CExpr_New_EMONMIN_Node(ENode *ene)
         case TYPEFLOAT:
             if (node->type == EFLOATCONST) {
                 ENode *floating = (ENode *)node;
-                floating->data.floatval = CMach_CalcFloatMonadic(node->rtype, 0x2d, floating->data.floatval.data.value);
+                floating->data.floatval = CMach_CalcFloatMonadic(node->rtype, 0x2d, floating->data.floatval);
                 return (ENode *)floating;
             }
             return CExpr_UnaryFloatExpression(makemonadicnode(node, 5));
@@ -2952,7 +2951,6 @@ ENode *unary_expression(void)
             return parse_postfix_expression(0);
     }
 }
-
 
 ENode *do_castnullcheck(ENode *node, ENode *label)
 {
@@ -4010,7 +4008,7 @@ ENode *CExpr_New_ENOTEQU_Node(ENode *left, ENode *right)
         left->rtype = CParser_GetBoolType();
     } else if (left->type == EFLOATCONST && right->type == EFLOATCONST) {
         CInt64_SetLong(&left->data.intval, CMach_CalcFloatDiadicBool(left->rtype, left->data.floatval.data.value, 0x169,
-                                                              right->data.floatval.data.value));
+                                                                     right->data.floatval.data.value));
         left->type = EINTCONST;
         left->rtype = CParser_GetBoolType();
     } else {
@@ -5746,4 +5744,3 @@ static void expect(SInt16 tok, SInt16 err)
         CError_ReportError(e);
     }
 }
-

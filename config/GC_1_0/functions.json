@@ -13815,13 +13815,13 @@
     "source": "src/backend/CMachine.c"
   },
   {
-    "name": "fn_00483ad0",
+    "name": "cm_sizealign",
     "address": "0x00483ad0",
     "size": 31,
     "source": "src/backend/CMachine.c"
   },
   {
-    "name": "fn_00483af0",
+    "name": "cm_alignmin",
     "address": "0x00483af0",
     "size": 38,
     "source": "src/backend/CMachine.c"
@@ -13845,7 +13845,7 @@
     "source": "src/backend/CMachine.c"
   },
   {
-    "name": "fn_00483e70",
+    "name": "struct_layout_align",
     "address": "0x00483e70",
     "size": 64,
     "source": "src/backend/CMachine.c"
@@ -13881,7 +13881,7 @@
     "source": "src/backend/CMachine.c"
   },
   {
-    "name": "fn_00484290",
+    "name": "has_no_constructor",
     "address": "0x00484290",
     "size": 22,
     "source": "src/backend/CMachine.c"

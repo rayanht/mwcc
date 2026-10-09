@@ -499,7 +499,7 @@ ENode *fold_constants(ENode *node)
                         }
                     } else {
                         operand->data.floatval = CMach_CalcFloatMonadic(node->rtype, CParser_GetOperator(node->type),
-                                                                        operand->data.floatval.data.value);
+                                                                        operand->data.floatval);
                     }
                     operand->rtype = node->rtype;
                     return operand;
