@@ -147,6 +147,7 @@
     "src/optimizer/ConstantPropagation.c",
     "src/optimizer/CopyPropagation.c",
     "src/optimizer/GlobalOptimizer.c",
+    "src/optimizer/IROUseDef.c",
     "src/optimizer/IroBitVect.c",
     "src/optimizer/IroCSE.c",
     "src/optimizer/IroDump.c",

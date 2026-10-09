@@ -11403,7 +11403,7 @@
     "source": "src/optimizer/IROUseDef.c"
   },
   {
-    "name": "fn_0045fd20",
+    "name": "AddUse",
     "address": "0x0045fd20",
     "size": 101,
     "source": "src/optimizer/IROUseDef.c"
@@ -11475,13 +11475,13 @@
     "source": "src/optimizer/IROUseDef.c"
   },
   {
-    "name": "fn_00460fa0",
+    "name": "replace_definition_object",
     "address": "0x00460fa0",
     "size": 71,
     "source": "src/optimizer/IROUseDef.c"
   },
   {
-    "name": "fn_00460ff0",
+    "name": "replace_use_object",
     "address": "0x00460ff0",
     "size": 88,
     "source": "src/optimizer/IROUseDef.c"
