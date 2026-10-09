@@ -10,7 +10,7 @@ unsigned int IroBitVect_AllocateBitVector(BitVector **vector, unsigned int bitCo
     bitCount = (bitCount >> 5) + 1U;
     *vector = oalloc(bitCount * sizeof((*vector)->bits[0]) + sizeof((*vector)->size));
     (*vector)->size = bitCount;
-    memset((*vector)->bits, 0, (*vector)->size * sizeof((*vector)->bits[0]));
+    IroBitVect_ClearBitVector(*vector);
 }
 
 void IroBitVect_ClearBit(UInt32 bit, BitVector *vector)

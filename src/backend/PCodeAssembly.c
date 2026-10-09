@@ -1,5 +1,6 @@
 #define CERROR_FILE "SFPE_PPC_EABI.c"
 #include "compiler/common.h"
+#include "version.h"
 #include "compiler/PCodeAssembly.h"
 #include "compiler/enode.h"
 #include "compiler/objects.h"
@@ -1785,9 +1786,11 @@ int PCodeAssembly_EmitFunction(Object *object, struct PCodeAssemblyEntry *symbol
     struct PCodeAssemblyEntry *entry;
 
     size = PCode_SetCodeOffsets();
+#if VERSION > VERSION_GC_1_0
     if (size <= 0) {
         PPCError_ReportError(177, object->name->name);
     }
+#endif
     if (PCodeAssembly_ShouldOptimizeBranches()) {
         size = optimize_branches(size);
     }
