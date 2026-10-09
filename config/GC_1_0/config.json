@@ -11,6 +11,7 @@
     "src/backend/DumpIR.c",
     "src/backend/ELF_Endian.c",
     "src/backend/Exceptions.c",
+    "src/backend/InlineAsm.c",
     "src/backend/InlineAsmMnemonicsPPC.c",
     "src/backend/InlineAsmRegisters.c",
     "src/backend/InlineAsmRegistersPPC.c",

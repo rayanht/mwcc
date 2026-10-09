@@ -863,7 +863,7 @@ src/frontend/CABI.c:
 
 src/backend/InlineAsm.c:
 	.text       start:0x004E2550 end:0x004E3530
-	.data       start:0x00537CD0 end:0x00537DB8
+	.data       start:0x00537CD0 end:0x00537DB4
 	.bss        start:0x00552D60 end:0x00553160
 
 src/frontend/CTemplateFunc.c:

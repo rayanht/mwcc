@@ -169,7 +169,7 @@
     "flags": [
       "-O4,p",
       "-inline",
-      "on,deferred",
+      "auto,deferred",
       "-sym",
       "on",
       "-Cpp_exceptions",

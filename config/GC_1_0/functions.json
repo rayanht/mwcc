@@ -21879,7 +21879,7 @@
     "source": "src/backend/InlineAsm.c"
   },
   {
-    "name": "fn_004e25b0",
+    "name": "find_label",
     "address": "0x004e25b0",
     "size": 28,
     "source": "src/backend/InlineAsm.c"
@@ -21891,7 +21891,7 @@
     "source": "src/backend/InlineAsm.c"
   },
   {
-    "name": "fn_004e25f0",
+    "name": "define_label",
     "address": "0x004e25f0",
     "size": 71,
     "source": "src/backend/InlineAsm.c"
@@ -21909,7 +21909,7 @@
     "source": "src/backend/InlineAsm.c"
   },
   {
-    "name": "fn_004e2780",
+    "name": "find_member_var",
     "address": "0x004e2780",
     "size": 51,
     "source": "src/backend/InlineAsm.c"
@@ -21933,7 +21933,7 @@
     "source": "src/backend/InlineAsm.c"
   },
   {
-    "name": "fn_004e2ac0",
+    "name": "calc_int",
     "address": "0x004e2ac0",
     "size": 103,
     "source": "src/backend/InlineAsm.c"
@@ -21969,7 +21969,7 @@
     "source": "src/backend/InlineAsm.c"
   },
   {
-    "name": "fn_004e3020",
+    "name": "parse_asm_statement_lines",
     "address": "0x004e3020",
     "size": 15,
     "source": "src/backend/InlineAsm.c"
