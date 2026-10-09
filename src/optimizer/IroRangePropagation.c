@@ -1,5 +1,6 @@
 #define CERROR_FILE "IRO_RangePropagateInFNode.c"
 #include "compiler/common.h"
+#include "version.h"
 #include "compiler/IroRangePropagation.h"
 #include "compiler/enode.h"
 #include "compiler/objects.h"
@@ -62,14 +63,6 @@ static ERange *NewRange(UInt8 type)
     return range;
 }
 
-static ERangeVar *FindVar(Object *key)
-{
-    ERangeVar *var;
-    for (var = range_vars; var && key != var->object; var = var->next)
-        ;
-    return var;
-}
-
 static void AddVar(Object *key, ERange *range)
 {
     ERangeVar *var = (void *)oalloc(sizeof(ERangeVar));
@@ -81,11 +74,127 @@ static void AddVar(Object *key, ERange *range)
         first_range_var = var;
 }
 
+static ERangeVar *FindVar(Object *key)
+{
+    ERangeVar *var;
+    for (var = range_vars; var && key != var->object; var = var->next)
+        ;
+    return var;
+}
+
+static inline IROLinear *FirstOperand(IROLinear *nd)
+{
+    IROLinear *operand = NULL;
+    if (!(nd->type != IROLinearOp2Arg && nd->type != IROLinearOp1Arg))
+        operand = nd->u.diadic.left;
+    return operand;
+}
+
+static int mask_covers_range(ERange *range, CInt64 val)
+{
+    UInt16 count;
+    CInt64 mask;
+    CInt64 x;
+
+    count = 0;
+    x = range->upper;
+    while (CInt64_NotEqual(x = CInt64_ShrU(x, cint64_one), cint64_zero))
+        count++;
+    if (CInt64_NotEqual(range->upper, cint64_zero))
+        count++;
+    x.hi = 0;
+    x.lo = count;
+    mask = CInt64_Sub(CInt64_Shl(cint64_one, x), cint64_one);
+    if (CInt64_NotEqual(cint64_zero, CInt64_And(CInt64_Inv(val), mask)))
+        return 0;
+    return 1;
+}
+
 static int IsUnsignedType(Type *type)
 {
-    return &type->type == &stunsignedchar.type || &type->type == &stunsignedshort.type ||
-           &type->type == &stunsignedint.type || type == (Type *)&stunsignedlong ||
-           &type->type == &stunsignedlonglong.type;
+    TypeIntegral *t = (TypeIntegral *)type;
+    return t == &stunsignedchar || t == &stunsignedshort || t == &stunsignedint || t == &stunsignedlong ||
+           t == &stunsignedlonglong;
+}
+
+#if VERSION == VERSION_GC_1_0
+void check_range_for_type(ERange *p, Type *type)
+{
+    TypeIntegral *t = (TypeIntegral *)type;
+
+    if (p == NULL) {
+        return;
+    }
+    if (type->type != TYPEINT) {
+        p->type = 3;
+        return;
+    }
+    if (t == &stchar || t == &stsignedchar) {
+        if (CInt64_Greater(p->upper, signed_char_max) || CInt64_Less(p->lower, type_range_minimum)) {
+            p->type = 3;
+        }
+    } else if (t == &stunsignedchar) {
+        if (CInt64_GreaterU(p->upper, data_005539c8)) {
+            p->type = 3;
+        }
+    } else if (t == &stsignedshort) {
+        if (CInt64_Greater(p->upper, int16_max) || CInt64_Less(p->lower, data_005539d8)) {
+            p->type = 3;
+        }
+    } else if (t == &stunsignedshort) {
+        if (CInt64_GreaterU(p->upper, data_005539e0)) {
+            p->type = 3;
+        }
+    } else if (t == &stsignedint) {
+        if (CInt64_Greater(p->upper, int32_max) || CInt64_Less(p->lower, type_range_lower_bound)) {
+            p->type = 3;
+        }
+    } else if (t == &stunsignedint) {
+        if (CInt64_GreaterU(p->upper, data_00553a10)) {
+            p->type = 3;
+        }
+    } else if (t == &stsignedlong) {
+        if (CInt64_Greater(p->upper, range_int32_max) || CInt64_Less(p->lower, type_range_min)) {
+            p->type = 3;
+        }
+    } else if (t == &stunsignedlong) {
+        if (CInt64_GreaterU(p->upper, data_00553a28)) {
+            p->type = 3;
+        }
+    } else if (t == &stsignedlonglong || t == &stunsignedlonglong) {
+        p->type = 3;
+    }
+}
+#endif
+
+static void invalidate_range_vars(void)
+{
+    ERangeVar *var;
+
+    for (var = range_vars; var != NULL; var = var->next)
+        var->range->type = 3;
+}
+
+#if VERSION == VERSION_GC_1_0
+int initialize_node_range(IROLinear *nd)
+#else
+static inline int initialize_node_range(IROLinear *nd)
+#endif
+{
+    switch (nd->u.node->type) {
+        case EOBJREF:
+            nd->range = NULL;
+            break;
+        case EINTCONST:
+            nd->range = NewRange(0);
+            nd->range->upper = nd->range->lower = nd->u.node->data.intval;
+            break;
+        case EFLOATCONST:
+        case ESTRINGCONST:
+            nd->range = NewRange(0);
+            break;
+    }
+    return 1;
 }
 
 int IroRangePropagation_PropagateRangeInLinear(struct IROLinear *nd)
@@ -96,9 +205,6 @@ int IroRangePropagation_PropagateRangeInLinear(struct IROLinear *nd)
     ERangeVar *var;
     Object *obj;
     CInt64 val;
-    CInt64 x;
-    CInt64 mask;
-    UInt16 count;
 
     switch (nd->nodetype) {
         case EINDIRECT:
@@ -141,17 +247,7 @@ int IroRangePropagation_PropagateRangeInLinear(struct IROLinear *nd)
                 range = nd->u.diadic.left->range;
                 if (range && range->type != 3 && CInt64_LessEqualU(range->upper, val) &&
                     CInt64_LessEqualU(range->lower, val)) {
-                    count = 0;
-                    x = range->upper;
-                    while (CInt64_NotEqual(x = CInt64_ShrU(x, cint64_one), cint64_zero))
-                        count++;
-                    if (CInt64_NotEqual(range->upper, cint64_zero))
-                        count++;
-                    x.hi = 0;
-                    x.lo = count;
-                    mask = CInt64_Sub(CInt64_Shl(cint64_one, x), cint64_one);
-                    if ((CInt64_NotEqual(cint64_zero, CInt64_And(CInt64_Inv(val), mask)) ? 0 : 1) &&
-                        !fn_0044be00(nd->u.diadic.left)) {
+                    if (mask_covers_range(range, val) && !fn_0044be00(nd->u.diadic.left)) {
                         IroUtil_ClearZeroOperands(nd->u.diadic.right);
                         nd->type = IROLinearNop;
                         nd->expr = NULL;
@@ -438,13 +534,10 @@ int IroRangePropagation_PropagateRangeInLinear(struct IROLinear *nd)
 
     if ((nd->type == IROLinearOp1Arg || nd->type == IROLinearOp2Arg) && data_00551d6c[nd->nodetype] && nd->range &&
         nd->rtype->type == TYPEINT) {
-        left = NULL;
-        if (!(nd->type != IROLinearOp2Arg && nd->type != IROLinearOp1Arg))
-            left = nd->u.diadic.left;
+        left = FirstOperand(nd);
         if (left->type == IROLinearOp1Arg && left->nodetype == EINDIRECT &&
             (left->u.monadic->nodetype == EINDIRECT || left->u.monadic->nodetype == EADD)) {
-            for (var = range_vars; var; var = var->next)
-                var->range->type = 3;
+            invalidate_range_vars();
             nd->range = NewRange(3);
         } else {
             obj = NULL;
@@ -466,41 +559,17 @@ int IroRangePropagation_PropagateRangeInLinear(struct IROLinear *nd)
 
 int initialize_linear_range(IROLinear *nd)
 {
-    struct ERangeVar *rec;
-    ERange *v;
-
     nd->range = NULL;
     switch (nd->type) {
         case IROLinearOperand:
-            switch (nd->u.node->type) {
-                case EOBJREF:
-                    nd->range = NULL;
-                    break;
-                case EINTCONST:
-                    v = (ERange *)oalloc(sizeof(ERange));
-                    v->type = 0;
-                    nd->range = v;
-                    nd->range->upper = nd->range->lower = nd->u.node->data.intval;
-                    break;
-                case EFLOATCONST:
-                case ESTRINGCONST:
-                    v = (ERange *)oalloc(sizeof(ERange));
-                    v->type = 0;
-                    nd->range = v;
-                    break;
-                case ECOND:
-                case EFUNCCALL:
-                case EFUNCCALLP:
-                    break;
-            }
+            initialize_node_range(nd);
             break;
         case IROLinearOp1Arg:
         case IROLinearOp2Arg:
             IroRangePropagation_PropagateRangeInLinear(nd);
             break;
         case IROLinearFunccall:
-            for (rec = range_vars; rec; rec = rec->next)
-                rec->range->type = 3;
+            invalidate_range_vars();
             break;
         case IROLinearNop:
         case IROLinearGoto:
@@ -528,82 +597,13 @@ SInt32 IRO_RangePropagateInFNode(void)
     Boolean changed;
     IRONode *ns;
     IROLinear *nd;
-    struct ERangeVar *t;
 
     for (ns = iro_flowgraph_head; ns != NULL; ns = ns->nextnode) {
         range_vars = first_range_var = NULL;
-        for (nd = ns->first; nd != ns->last; nd = nd->next) {
-            nd->range = NULL;
-            switch (nd->type) {
-                case IROLinearOperand:
-                    switch (nd->u.node->type) {
-                        case EOBJREF:
-                            nd->range = NULL;
-                            break;
-                        case EINTCONST: {
-                            ERange *r = (ERange *)oalloc(0x12);
-                            r->type = 0;
-                            nd->range = r;
-                            nd->range->upper = nd->range->lower = nd->u.node->data.intval;
-                            break;
-                        }
-                        case EFLOATCONST:
-                        case ESTRINGCONST: {
-                            ERange *r = (ERange *)oalloc(0x12);
-                            r->type = 0;
-                            nd->range = r;
-                            break;
-                        }
-                    }
-                    break;
-                case IROLinearOp1Arg:
-                case IROLinearOp2Arg:
-                    IroRangePropagation_PropagateRangeInLinear(nd);
-                    break;
-                case IROLinearFunccall:
-                    for (t = range_vars; t != NULL; t = t->next)
-                        t->range->type = 3;
-                    break;
-                case IROLinearNop:
-                case IROLinearEnd:
-                    break;
-            }
-        }
-        nd->range = NULL;
-        switch (nd->type) {
-            case IROLinearOperand:
-                switch (nd->u.node->type) {
-                    case EOBJREF:
-                        nd->range = NULL;
-                        break;
-                    case EINTCONST: {
-                        ERange *r = (ERange *)oalloc(0x12);
-                        r->type = 0;
-                        nd->range = r;
-                        nd->range->upper = nd->range->lower = nd->u.node->data.intval;
-                        break;
-                    }
-                    case EFLOATCONST:
-                    case ESTRINGCONST: {
-                        ERange *r = (ERange *)oalloc(0x12);
-                        r->type = 0;
-                        nd->range = r;
-                        break;
-                    }
-                }
-                break;
-            case IROLinearOp1Arg:
-            case IROLinearOp2Arg:
-                IroRangePropagation_PropagateRangeInLinear(nd);
-                break;
-            case IROLinearFunccall:
-                for (t = range_vars; t != NULL; t = t->next)
-                    t->range->type = 3;
-                break;
-            case IROLinearNop:
-            case IROLinearEnd:
-                break;
-        }
+        for (nd = ns->first; nd != ns->last; nd = nd->next)
+            initialize_linear_range(nd);
+        if (initialize_linear_range(nd))
+            changed = 1;
     }
     if (changed) {
         IroFlowgraph_RebuildSuccPred();

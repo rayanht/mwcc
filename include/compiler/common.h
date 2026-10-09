@@ -526,7 +526,6 @@ typedef struct SavedPrepTokenList SavedPrepTokenList;
 typedef struct ValueUpdate ValueUpdate;
 typedef struct ScaleTarget ScaleTarget;
 typedef struct ScaleTargetGroup ScaleTargetGroup;
-typedef struct SchedEntry SchedEntry;
 typedef struct NameSpaceLookupList NameSpaceLookupList;
 typedef struct CScopeObjectIterator CScopeObjectIterator;
 typedef struct Scratch Scratch;

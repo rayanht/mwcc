@@ -11301,7 +11301,7 @@
     "source": "src/optimizer/IroPropagate.c"
   },
   {
-    "name": "fn_0045d7d0",
+    "name": "IsPropagatableExpression",
     "address": "0x0045d7d0",
     "size": 125,
     "source": "src/optimizer/IroPropagate.c"
@@ -11319,70 +11319,70 @@
     "source": "src/optimizer/IroPropagate.c"
   },
   {
-    "name": "fn_0045e720",
+    "name": "NewRange",
     "address": "0x0045e720",
     "size": 15,
-    "source": "src/optimizer/IroPropagate.c"
+    "source": "src/optimizer/IroRangePropagation.c"
   },
   {
-    "name": "fn_0045e730",
+    "name": "AddVar",
     "address": "0x0045e730",
     "size": 50,
-    "source": "src/optimizer/IroPropagate.c"
+    "source": "src/optimizer/IroRangePropagation.c"
   },
   {
-    "name": "fn_0045e770",
+    "name": "FindVar",
     "address": "0x0045e770",
     "size": 28,
-    "source": "src/optimizer/IroPropagate.c"
+    "source": "src/optimizer/IroRangePropagation.c"
   },
   {
-    "name": "fn_0045e790",
+    "name": "mask_covers_range",
     "address": "0x0045e790",
     "size": 306,
-    "source": "src/optimizer/IroPropagate.c"
+    "source": "src/optimizer/IroRangePropagation.c"
   },
   {
-    "name": "fn_0045e8d0",
+    "name": "IsUnsignedType",
     "address": "0x0045e8d0",
     "size": 84,
-    "source": "src/optimizer/IroPropagate.c"
+    "source": "src/optimizer/IroRangePropagation.c"
   },
   {
     "name": "check_range_for_type",
     "address": "0x0045e930",
     "size": 573,
-    "source": "src/optimizer/IroPropagate.c"
+    "source": "src/optimizer/IroRangePropagation.c"
   },
   {
-    "name": "fn_0045eb70",
+    "name": "invalidate_range_vars",
     "address": "0x0045eb70",
     "size": 30,
-    "source": "src/optimizer/IroPropagate.c"
+    "source": "src/optimizer/IroRangePropagation.c"
   },
   {
-    "name": "fn_0045eb90",
+    "name": "initialize_node_range",
     "address": "0x0045eb90",
     "size": 105,
-    "source": "src/optimizer/IroPropagate.c"
+    "source": "src/optimizer/IroRangePropagation.c"
   },
   {
-    "name": "fn_0045ec00",
+    "name": "IroRangePropagation_PropagateRangeInLinear",
     "address": "0x0045ec00",
     "size": 3838,
-    "source": "src/optimizer/IroPropagate.c"
+    "source": "src/optimizer/IroRangePropagation.c"
   },
   {
-    "name": "fn_0045fb00",
+    "name": "initialize_linear_range",
     "address": "0x0045fb00",
     "size": 56,
-    "source": "src/optimizer/IroPropagate.c"
+    "source": "src/optimizer/IroRangePropagation.c"
   },
   {
-    "name": "fn_0045fb40",
+    "name": "IRO_RangePropagateInFNode",
     "address": "0x0045fb40",
     "size": 109,
-    "source": "src/optimizer/IroPropagate.c"
+    "source": "src/optimizer/IroRangePropagation.c"
   },
   {
     "name": "has_side_effect",
@@ -13329,7 +13329,7 @@
     "source": "src/backend/InstrSelection.c"
   },
   {
-    "name": "fn_0047abf0",
+    "name": "is_narrow_integer_cast",
     "address": "0x0047abf0",
     "size": 138,
     "source": "src/backend/InstrSelection.c"
@@ -13359,7 +13359,7 @@
     "source": "src/backend/InstrSelection.c"
   },
   {
-    "name": "fn_0047b070",
+    "name": "emit_shift_left_immediate",
     "address": "0x0047b070",
     "size": 186,
     "source": "src/backend/InstrSelection.c"
@@ -13371,7 +13371,7 @@
     "source": "src/backend/InstrSelection.c"
   },
   {
-    "name": "signed_div_negpow2",
+    "name": "signed_div_pow2",
     "address": "0x0047b210",
     "size": 172,
     "source": "src/backend/InstrSelection.c"
@@ -13491,7 +13491,7 @@
     "source": "src/backend/InstrSelection.c"
   },
   {
-    "name": "fn_0047d540",
+    "name": "emit_rotate_and_mask",
     "address": "0x0047d540",
     "size": 154,
     "source": "src/backend/InstrSelection.c"
@@ -13509,7 +13509,7 @@
     "source": "src/backend/InstrSelection.c"
   },
   {
-    "name": "fn_0047d720",
+    "name": "power_of_two_shift",
     "address": "0x0047d720",
     "size": 35,
     "source": "src/backend/InstrSelection.c"
@@ -13521,7 +13521,7 @@
     "source": "src/backend/InstrSelection.c"
   },
   {
-    "name": "fn_0047d910",
+    "name": "make_gpr_pair_intval_operand",
     "address": "0x0047d910",
     "size": 113,
     "source": "src/backend/InstrSelection.c"
@@ -13557,13 +13557,13 @@
     "source": "src/backend/InstrSelection.c"
   },
   {
-    "name": "fn_0047e2a0",
+    "name": "emit_gpr_pair_not",
     "address": "0x0047e2a0",
     "size": 199,
     "source": "src/backend/InstrSelection.c"
   },
   {
-    "name": "fn_0047e370",
+    "name": "emit_gpr_pair_negation",
     "address": "0x0047e370",
     "size": 199,
     "source": "src/backend/InstrSelection.c"
@@ -16317,31 +16317,31 @@
     "source": "src/backend/Scheduler.c"
   },
   {
-    "name": "fn_004a6e40",
+    "name": "new_coloring_node",
     "address": "0x004a6e40",
     "size": 85,
     "source": "src/backend/Scheduler.c"
   },
   {
-    "name": "fn_004a6ea0",
+    "name": "append_coloring_node",
     "address": "0x004a6ea0",
     "size": 18,
     "source": "src/backend/Scheduler.c"
   },
   {
-    "name": "fn_004a6ec0",
+    "name": "remove_coloring_node",
     "address": "0x004a6ec0",
     "size": 40,
     "source": "src/backend/Scheduler.c"
   },
   {
-    "name": "fn_004a6ef0",
+    "name": "add_dependency_entry",
     "address": "0x004a6ef0",
     "size": 35,
     "source": "src/backend/Scheduler.c"
   },
   {
-    "name": "fn_004a6f20",
+    "name": "new_dependency_entry",
     "address": "0x004a6f20",
     "size": 29,
     "source": "src/backend/Scheduler.c"
@@ -16353,13 +16353,13 @@
     "source": "src/backend/Scheduler.c"
   },
   {
-    "name": "fn_004a7000",
+    "name": "add_dependencies_on_previous",
     "address": "0x004a7000",
     "size": 37,
     "source": "src/backend/Scheduler.c"
   },
   {
-    "name": "fn_004a7030",
+    "name": "add_sched_entry_dependencies",
     "address": "0x004a7030",
     "size": 44,
     "source": "src/backend/Scheduler.c"
@@ -16395,13 +16395,13 @@
     "source": "src/backend/Scheduler.c"
   },
   {
-    "name": "fn_004a79a0",
+    "name": "compute_latest_cycles",
     "address": "0x004a79a0",
     "size": 37,
     "source": "src/backend/Scheduler.c"
   },
   {
-    "name": "fn_004a79d0",
+    "name": "count_scheduled_successors",
     "address": "0x004a79d0",
     "size": 34,
     "source": "src/backend/Scheduler.c"
@@ -16413,7 +16413,7 @@
     "source": "src/backend/Scheduler.c"
   },
   {
-    "name": "fn_004a7b10",
+    "name": "hold_off_successors",
     "address": "0x004a7b10",
     "size": 54,
     "source": "src/backend/Scheduler.c"

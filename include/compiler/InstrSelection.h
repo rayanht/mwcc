@@ -132,7 +132,7 @@ extern void select_indirect_operand(ENode *expression, int targetReg, int flags,
 extern void emit_vector128_constant(ENode *node, short requestedRegister, short unused, Operand *result);
 extern void get_function_type_operand(ENode *lookup, short unused1, short unused2, Operand *result);
 extern void generate_type_conversion(ENode *node, short outputReg, short outputRegHi, Operand *result);
-extern void get_objaccess_cached_value(ENode *node, UInt32 argument2, UInt32 argument3, Operand *result,
+extern void get_objaccess_cached_value(ENode *node, UInt32 argument2, UInt32 argument3, struct DispatchResult *result,
                                        UInt32 argument5);
 extern void (*data_00560648[])(void *, short, short, void *);
 extern struct FunctionCallFrame *function_call_frames;

@@ -49,20 +49,10 @@ static struct DependencyEntry *data_00581b30[8];
 static struct DependencyEntry *data_00581b50[8];
 static struct DependencyEntry *memory_dependency_list;
 static struct DependencyEntry *dependency_entry_list;
-static struct SchedEntry *sched_entry_list;
+static struct DependencyEntry *sched_entry_list;
 static void *data_00581b7c;
 static struct MachineInfo *data_00581b80;
 static UInt16 max_height;
-
-static inline SInt32 CountScheduled(CColoringList *list)
-{
-    SInt32 count = 0;
-    CColoringList *entry;
-    for (entry = list; entry; entry = entry->next)
-        if (entry->owner->flag == 1)
-            count++;
-    return count;
-}
 
 static inline void CheckSpillNode(CColoringNode *a1, Object *a2, DependencyEntry *p)
 {
@@ -73,15 +63,6 @@ static inline void CheckSpillNode(CColoringNode *a1, Object *a2, DependencyEntry
                                                     (a2->type->type == TYPEMEMBERPOINTER && a2->type->size == 12)))))) {
         add_dependency(a1, p->owner, 1);
     }
-}
-
-static inline DependencyEntry *NewSpillNode(CColoringNode *obj)
-{
-    DependencyEntry *node = (DependencyEntry *)oalloc(sizeof(DependencyEntry));
-    node->next = NULL;
-    node->owner = obj;
-    node->object = NULL;
-    return node;
 }
 
 static inline void UpdateDependencyHeight(CColoringNode *owner, CColoringNode *dependency, CColoringList *node)
@@ -140,6 +121,58 @@ void init_register_owner_lists(void)
     max_height = 0;
 }
 
+static CColoringNode *new_coloring_node(PCodeInstruction *object)
+{
+    CColoringNode *node = (CColoringNode *)oalloc(sizeof(CColoringNode));
+    node->prev = NULL;
+    node->next = NULL;
+    node->conflicts = NULL;
+    node->obj = object;
+    node->height = data_00581b80->getLatency(object);
+    node->latency = node->height;
+    node->earliestCycle = 0;
+    node->latestCycle = 0;
+    node->flag = 0;
+    return node;
+}
+
+static CColoringNode *append_coloring_node(CColoringNode *tail, CColoringNode *node)
+{
+    if (tail != NULL)
+        tail->next = node;
+    node->prev = tail;
+    return node;
+}
+
+static CColoringNode *remove_coloring_node(CColoringNode *tail, CColoringNode *node)
+{
+    if (node->next != NULL)
+        node->next->prev = node->prev;
+    else
+        tail = node->prev;
+    if (node->prev != NULL)
+        node->prev->next = node->next;
+    return tail;
+}
+
+static void add_dependency_entry(DependencyEntry **list, CColoringNode *owner, Object *object)
+{
+    DependencyEntry *entry = (DependencyEntry *)oalloc(sizeof(DependencyEntry));
+    entry->owner = owner;
+    entry->object = object;
+    entry->next = *list;
+    *list = entry;
+}
+
+static DependencyEntry *new_dependency_entry(CColoringNode *owner)
+{
+    DependencyEntry *entry = (DependencyEntry *)oalloc(sizeof(DependencyEntry));
+    entry->next = NULL;
+    entry->owner = owner;
+    entry->object = NULL;
+    return entry;
+}
+
 void add_dependency(CColoringNode *owner, CColoringNode *dependency, Boolean hasLatency)
 {
     CColoringList *node;
@@ -173,6 +206,22 @@ void add_dependency(CColoringNode *owner, CColoringNode *dependency, Boolean has
     UpdateDependencyHeight(owner, dependency, node);
 }
 
+static void add_dependencies_on_previous(CColoringNode *list, CColoringNode *blk)
+{
+    CColoringNode *p;
+
+    for (p = list; p != NULL; p = p->prev)
+        add_dependency(blk, p, 0);
+}
+
+static void add_sched_entry_dependencies(CColoringNode *blk, DependencyEntry *list)
+{
+    for (; list != NULL; list = list->next) {
+        if (list->owner != blk)
+            add_dependency(blk, list->owner, 0);
+    }
+}
+
 void fn_004cd7c0(int kind, CColoringNode *value, DependencyEntry **firstList, DependencyEntry **secondList,
                  int useSecondList)
 {
@@ -202,10 +251,7 @@ void fn_004cd7c0(int kind, CColoringNode *value, DependencyEntry **firstList, De
                 first = first->next;
             } while (first != NULL);
         }
-        entry = (DependencyEntry *)oalloc(sizeof(DependencyEntry));
-        entry->next = NULL;
-        entry->owner = value;
-        entry->object = NULL;
+        entry = new_dependency_entry(value);
         entry->next = (DependencyEntry *)*firstList;
         *firstList = (DependencyEntry *)entry;
     } else {
@@ -220,10 +266,7 @@ void fn_004cd7c0(int kind, CColoringNode *value, DependencyEntry **firstList, De
                 other = other->next;
             } while (other != NULL);
         }
-        entry = (DependencyEntry *)oalloc(sizeof(DependencyEntry));
-        entry->next = NULL;
-        entry->owner = value;
-        entry->object = NULL;
+        entry = new_dependency_entry(value);
         entry->next = (DependencyEntry *)*secondList;
         *secondList = (DependencyEntry *)entry;
     }
@@ -262,18 +305,12 @@ void fn_004cd650(void *object, Object *key, SInt16 useList74)
             add_dependency(object, node->owner, 1);
     }
     if (useList74 != 0) {
-        node = (DependencyEntry *)oalloc(sizeof(DependencyEntry));
-        node->next = NULL;
-        node->owner = object;
-        node->object = NULL;
+        node = new_dependency_entry(object);
         node->object = key;
         node->next = dependency_entry_list;
         dependency_entry_list = node;
     } else {
-        node = (DependencyEntry *)oalloc(sizeof(DependencyEntry));
-        node->next = NULL;
-        node->owner = object;
-        node->object = NULL;
+        node = new_dependency_entry(object);
         node->object = key;
         node->next = memory_dependency_list;
         memory_dependency_list = node;
@@ -292,7 +329,7 @@ void check_and_add_spill_node(CColoringNode *ownerObject, Object *object, SInt16
         for (spill = dependency_entry_list; spill != NULL; spill = spill->next) {
             CheckSpillNode(ownerObject, object, spill);
         }
-        newSpill = NewSpillNode(ownerObject);
+        newSpill = new_dependency_entry(ownerObject);
         newSpill->object = object;
         newSpill->next = dependency_entry_list;
         dependency_entry_list = newSpill;
@@ -300,7 +337,7 @@ void check_and_add_spill_node(CColoringNode *ownerObject, Object *object, SInt16
         for (spill = dependency_entry_list; spill != NULL; spill = spill->next) {
             CheckSpillNode(ownerObject, object, spill);
         }
-        newSpill = NewSpillNode(ownerObject);
+        newSpill = new_dependency_entry(ownerObject);
         newSpill->object = object;
         newSpill->next = memory_dependency_list;
         memory_dependency_list = newSpill;
@@ -327,10 +364,7 @@ void add_memory_dependencies(CColoringNode *owner, int mode, int flags)
                   (node->object->type->type == TYPEMEMBERPOINTER && node->object->type->size == 12))))
                 add_dependency(owner, node->owner, 1);
         }
-        node = (DependencyEntry *)oalloc(sizeof(DependencyEntry));
-        node->next = NULL;
-        node->owner = owner;
-        node->object = NULL;
+        node = new_dependency_entry(owner);
         node->object = NULL;
         node->next = dependency_entry_list;
         dependency_entry_list = node;
@@ -343,10 +377,7 @@ void add_memory_dependencies(CColoringNode *owner, int mode, int flags)
                   (node->object->type->type == TYPEMEMBERPOINTER && node->object->type->size == 12))))
                 add_dependency(owner, node->owner, 1);
         }
-        node = (DependencyEntry *)oalloc(sizeof(DependencyEntry));
-        node->next = NULL;
-        node->owner = owner;
-        node->object = NULL;
+        node = new_dependency_entry(owner);
         node->object = NULL;
         node->next = memory_dependency_list;
         memory_dependency_list = node;
@@ -357,14 +388,11 @@ void build_sched_dependencies(CColoringNode *list, CColoringNode *blk)
 {
     PCodeInstruction *body;
     PCodeOperand *item;
-    SchedEntry *n;
-    CColoringNode *p;
     SInt32 i;
     SInt32 reg;
 
     body = blk->obj;
-    item = body->operandData.operands;
-    for (i = 0; i < body->operand_count; i++, item++) {
+    for (i = 0, item = body->operandData.operands; i < body->operand_count; i++, item++) {
         switch (item->kind) {
             case PCOp_GPR:
                 CError_ASSERT(600,
@@ -420,25 +448,35 @@ void build_sched_dependencies(CColoringNode *list, CColoringNode *blk)
         add_memory_dependencies(blk, body->flags & fIsWrite, body->flags & fIsVolatile);
 
     if ((body->flags & 0x420) != 0 || data_00581b80->checkLate(body) != 0) {
-        for (p = list; p != NULL; p = p->prev)
-            add_dependency(blk, p, 0);
-        n = (struct SchedEntry *)oalloc(sizeof(*n));
-        n->blk = blk;
-        n->zero = 0;
-        n->next = sched_entry_list;
-        sched_entry_list = n;
+        add_dependencies_on_previous(list, blk);
+        add_dependency_entry(&sched_entry_list, blk, NULL);
     }
 
-    if (sched_entry_list != NULL) {
-        for (n = sched_entry_list; n != NULL; n = n->next) {
-            if (n->blk != blk)
-                add_dependency(blk, n->blk, 0);
-        }
-    }
+    if (sched_entry_list != NULL)
+        add_sched_entry_dependencies(blk, sched_entry_list);
     if (blk->conflicts == NULL && data_00581b7c != NULL)
         add_dependency(blk, data_00581b7c, 0);
     if (blk->height > max_height)
         max_height = blk->height;
+}
+
+static void compute_latest_cycles(CColoringNode *list)
+{
+    CColoringNode *cursor;
+
+    for (cursor = list; cursor != NULL; cursor = cursor->prev)
+        cursor->latestCycle = max_height - cursor->height;
+}
+
+static SInt32 count_scheduled_successors(CColoringNode *node)
+{
+    SInt32 count = 0;
+    CColoringList *entry;
+
+    for (entry = node->conflicts; entry != NULL; entry = entry->next)
+        if (entry->owner->flag == 1)
+            count++;
+    return count;
 }
 
 struct CColoringNode *select_ready_coloring_node(struct CColoringNode *list, UInt16 id)
@@ -465,8 +503,8 @@ struct CColoringNode *select_ready_coloring_node(struct CColoringNode *list, UIn
             continue;
         if (best->latestCycle > id || candidate->latestCycle <= id) {
             if (!(best->latestCycle > id && candidate->latestCycle <= id)) {
-                candidateCount = CountScheduled(candidate->conflicts);
-                bestCount = CountScheduled(best->conflicts);
+                candidateCount = count_scheduled_successors(candidate);
+                bestCount = count_scheduled_successors(best);
                 if (bestCount > candidateCount)
                     ;
                 else if (bestCount < candidateCount)
@@ -493,42 +531,40 @@ struct CColoringNode *select_ready_coloring_node(struct CColoringNode *list, UIn
     return best;
 }
 
+static void hold_off_successors(CColoringNode *node, UInt16 cycle)
+{
+    CColoringList *conflict;
+    CColoringNode *neighbor;
+
+    for (conflict = node->conflicts; conflict != NULL; conflict = conflict->next) {
+        neighbor = conflict->owner;
+        neighbor->flag--;
+        if (neighbor->earliestCycle < conflict->value + cycle)
+            neighbor->earliestCycle = conflict->value + cycle;
+    }
+}
+
 void schedule_block(PCodeBlock *function)
 {
-    CColoringNode *cursor;
-    CColoringNode *neighbor;
-    PCodeInstruction *selectedObject;
     UInt16 slot;
     UInt16 iteration;
-    PCodeInstruction *object;
-    CColoringNode *selected;
     CColoringNode *node;
     CColoringNode *tail;
+    PCodeInstruction *selectedObject;
+    CColoringNode *selected;
+    PCodeInstruction *object;
 
     init_register_owner_lists();
     data_00581b7c = NULL;
     tail = NULL;
     for (object = function->reverse_instructions; object != NULL; object = object->previous) {
-        node = (CColoringNode *)oalloc(sizeof(CColoringNode));
-        node->prev = NULL;
-        node->next = NULL;
-        node->conflicts = NULL;
-        node->obj = object;
-        node->height = data_00581b80->getLatency(object);
-        node->latency = node->height;
-        node->earliestCycle = 0;
-        node->latestCycle = 0;
-        node->flag = 0;
+        node = new_coloring_node(object);
         build_sched_dependencies(tail, node);
         if (object->flags & fIsBranch)
             data_00581b7c = node;
-        if (tail != NULL)
-            tail->next = node;
-        node->prev = tail;
-        tail = node;
+        tail = append_coloring_node(tail, node);
     }
-    for (cursor = tail; cursor != NULL; cursor = cursor->prev)
-        cursor->latestCycle = max_height - cursor->height;
+    compute_latest_cycles(tail);
     function->reverse_instructions = NULL;
     function->instructions = function->reverse_instructions;
     function->instruction_count = 0;
@@ -537,29 +573,17 @@ void schedule_block(PCodeBlock *function)
     while (tail != NULL) {
         slot = 0;
         while (slot < data_00581b80->count) {
-            CColoringList *conflict;
             if (tail == NULL)
                 break;
             selected = select_ready_coloring_node(tail, iteration);
             if (selected == NULL)
                 break;
             selectedObject = selected->obj;
-            if (selected->conflicts != NULL) {
-                for (conflict = selected->conflicts; conflict != NULL; conflict = conflict->next) {
-                    neighbor = conflict->owner;
-                    neighbor->flag--;
-                    if (neighbor->earliestCycle < conflict->value + iteration)
-                        neighbor->earliestCycle = conflict->value + iteration;
-                }
-            }
+            if (selected->conflicts != NULL)
+                hold_off_successors(selected, iteration);
             PCode_AppendInstruction(function, selectedObject);
             data_00581b80->issueInstruction(selectedObject);
-            if (selected->next != NULL)
-                selected->next->prev = selected->prev;
-            else
-                tail = selected->prev;
-            if (selected->prev != NULL)
-                selected->prev->next = selected->next;
+            tail = remove_coloring_node(tail, selected);
             slot++;
         }
         data_00581b80->advanceCycle();

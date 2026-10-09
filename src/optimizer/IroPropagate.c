@@ -1,5 +1,6 @@
 #define CERROR_FILE "IroPropagate.c"
 #include "compiler/common.h"
+#include "version.h"
 #include "compiler/IroPropagate.h"
 #include "compiler/IroRangePropagation.h"
 #include "compiler/CInt64.h"
@@ -34,17 +35,6 @@ struct BitVector *availableExpressions;
     (((UInt32)((SInt32)(i) >> 5) < (bv)->size) &&                                                                      \
      (((bv)->bits[(UInt32)((SInt32)(i) >> 5)] & ((UInt32)1 << ((i) & 31)))) != 0)
 
-static int NeedProp(IROLinear *instr)
-{
-    if (instr->type == IROLinearFunccall)
-        return 1;
-    if (data_00551d6c[instr->nodetype] && (instr->type == IROLinearOp1Arg || instr->type == IROLinearOp2Arg))
-        return 1;
-    if (instr->type == IROLinearAsm)
-        return 1;
-    return 0;
-}
-
 /* Whether OBJECT is a local that may live in a register. */
 unsigned int IroPropagate_IsRegisterEligible(Object *object)
 {
@@ -63,8 +53,6 @@ int fn_004592e0(IROLinear *node)
 {
     Object *left;
     Object *right;
-    int leftFlag;
-    int rightFlag;
     IROLinear *record;
     IROLinear *reference;
     Object *object;
@@ -85,30 +73,44 @@ int fn_004592e0(IROLinear *node)
                     if (!is_volatile_object(object)) {
                         if (IroUtil_AreTypesEqual(left->type, node->rtype) != 0) {
                             if (node->u.diadic.right->u.monadic->u.node->data.objref->datatype != DDATA) {
-                                if (left->datatype == DLOCAL && left->u.var.info != NULL) {
-                                    leftFlag = 0;
-                                    if (left->u.var.info->noregister == 0)
-                                        leftFlag = 1;
-                                } else {
-                                    leftFlag = 0;
-                                }
-                                if (leftFlag) {
-                                    if (right->datatype == DLOCAL && right->u.var.info != NULL) {
-                                        rightFlag = 0;
-                                        if (right->u.var.info->noregister == 0)
-                                            rightFlag = 1;
-                                    } else {
-                                        rightFlag = 0;
-                                    }
-                                    if (!rightFlag)
-                                        return 0;
-                                }
+                                if (IroPropagate_IsRegisterEligible(left) && !IroPropagate_IsRegisterEligible(right))
+                                    return 0;
                                 return 1;
                             }
                         }
                     }
                 }
             }
+        }
+    }
+    return 0;
+}
+
+static int NeedProp(IROLinear *instr)
+{
+    if (instr->type == IROLinearFunccall)
+        return 1;
+    if (data_00551d6c[instr->nodetype] && (instr->type == IROLinearOp1Arg || instr->type == IROLinearOp2Arg))
+        return 1;
+    if (instr->type == IROLinearAsm)
+        return 1;
+    return 0;
+}
+
+static int IsPropagatableExpression(IROLinear *node, IROList *list)
+{
+    Object *object;
+
+    if (node->type == IROLinearOp2Arg && node->nodetype == EASS && (node->flags & IROLF_Reffed) == 0) {
+        object = IroUtil_GetObjRef(node->u.diadic.left);
+        if (object != NULL && !is_volatile_object(object)) {
+            if (!IroPropagate_IsRegisterEligible(object))
+                return 0;
+            if (node->u.diadic.right->type == IROLinearOperand && node->u.diadic.right->u.node->type == ESTRINGCONST)
+                return 0;
+            fn_0044f350(node->u.diadic.right);
+            if (data_00587630 == 0)
+                return 1;
         }
     }
     return 0;
@@ -347,8 +349,6 @@ void IroPropagate_PropagateExpressions(void)
 {
     int wordIndex;
     IROLinear *node, *currentNode;
-    int eligibleLocal, isCandidate;
-    Object *localObject;
     ReplacementCandidate *matchingCandidate;
     VarRecord *localRegister;
     ReplacementCandidate *candidateToMark, *candidateToInvalidate;
@@ -356,7 +356,6 @@ void IroPropagate_PropagateExpressions(void)
     ReplacementCandidate *newCandidate, *previousCandidate;
     char replacementKind;
     IROLinear *record;
-    int invalidatesCandidates;
     Object *referencedObject;
     unsigned int intersects;
     VarRecord *objectRegister;
@@ -376,35 +375,7 @@ void IroPropagate_PropagateExpressions(void)
             if (node == NULL)
                 break;
             IroUtil_InitList(&initialRange);
-            if (node->type == IROLinearOp2Arg && node->nodetype == EASS && (node->flags & IROLF_Reffed) == 0) {
-                localObject = IroUtil_GetObjRef(node->u.diadic.left);
-                if (localObject != NULL && is_volatile_object(localObject) == 0) {
-                    if (localObject->datatype == DLOCAL && localObject->u.var.info != NULL) {
-                        eligibleLocal = 0;
-                        if (localObject->u.var.info->noregister == 0) {
-                            eligibleLocal = eligibleLocal + 1;
-                        }
-                    } else {
-                        eligibleLocal = 0;
-                    }
-                    if (eligibleLocal != 0 && !(node->u.diadic.right->type == IROLinearOperand &&
-                                                node->u.diadic.right->u.node->type == ESTRINGCONST)) {
-                        fn_0044f350(node->u.diadic.right);
-                        if (data_00587630 != 0) {
-                            isCandidate = 0;
-                        } else {
-                            isCandidate = 1;
-                        }
-                    } else {
-                        isCandidate = 0;
-                    }
-                } else {
-                    isCandidate = 0;
-                }
-            } else {
-                isCandidate = 0;
-            }
-            if (isCandidate != 0) {
+            if (IsPropagatableExpression(node, &initialRange)) {
                 candidateRegister = IroVars_GetOperandVarRecord(node);
                 if (candidateRegister != NULL) {
                     IroDump_Print("Found propagatable expression assignment at: %d\n", node->index);
@@ -508,17 +479,7 @@ void IroPropagate_PropagateExpressions(void)
                 }
             }
             if (currentNode->type != IROLinearNop) {
-                if (currentNode->type == IROLinearFunccall) {
-                    invalidatesCandidates = 1;
-                } else if (data_00551d6c[currentNode->nodetype] != 0 &&
-                           (currentNode->type == IROLinearOp1Arg || currentNode->type == IROLinearOp2Arg)) {
-                    invalidatesCandidates = 1;
-                } else if (currentNode->type == IROLinearAsm) {
-                    invalidatesCandidates = 1;
-                } else {
-                    invalidatesCandidates = 0;
-                }
-                if (invalidatesCandidates != 0) {
+                if (NeedProp(currentNode)) {
                     IroBitVect_ClearBitVector(data_00588018);
                     fn_0044b2d0(currentNode);
                     candidateToInvalidate = replacementCandidate;
@@ -572,6 +533,7 @@ void IroPropagate_PropagateExpressions(void)
     IroVars_CheckTimedLongjmp();
 }
 
+#if VERSION > VERSION_GC_1_0
 void check_range_for_type(ERange *p, Type *type)
 {
     TypeIntegral *t = (TypeIntegral *)type;
@@ -649,3 +611,4 @@ int initialize_node_range(IROLinear *record)
     }
     return 1;
 }
+#endif
