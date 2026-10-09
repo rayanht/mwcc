@@ -1,5 +1,6 @@
 #define CERROR_FILE "unknown.c"
 #include "compiler/common.h"
+#include "version.h"
 #include "driver/Parameter.h"
 #include "compiler/objects.h"
 #include "compiler/scopes.h"
@@ -502,7 +503,37 @@ int set_filepath(FILEPATH_T *parm, char *arg)
     }
     OS_SpecToString(&spec, path, 0x104);
     if (parm->fflags & 1) {
+#if VERSION == VERSION_GC_1_0
+        char *p = path;
+        UInt8 *out = (UInt8 *)parm->filename;
+
+        out[0] = 0;
+        if (OS_IsFullPath(p)) {
+            while (*p == '\\')
+                p++;
+        } else {
+            pstrcharcat(out, ':');
+        }
+        while (*p) {
+            if (p[0] == '.' && p[1] == '.' && p[2] == '\\') {
+                pstrcharcat(out, ':');
+                p += 3;
+            } else if (p[0] == '.' && p[1] == '\\') {
+                p += 2;
+            } else if (p[0] == '\\') {
+                pstrcharcat(out, ':');
+                p++;
+            } else {
+                while (*p && *p != '\\')
+                    pstrcharcat(out, *p++);
+                if (path[1] == ':' && p == path + 2 && out[out[0]] == ':')
+                    out[0]--;
+            }
+        }
+        out = NULL;
+#else
         c2pstrcpy((unsigned char *)parm->filename, path);
+#endif
         return 1;
     }
     if ((len = strlen(path)) > parm->maxlen) {
@@ -1165,7 +1196,7 @@ int parse_parameter_value(PARAM_T *parameter, char **value, UInt32 flags)
 
     token = (TokenText *)fn_0040f969();
     if (token == NULL)
-        CLIO_ReportAssertionFailure("tok", "Parameter.c", 0x5bb);
+        CLIO_ReportAssertionFailure("tok", "Parameter.c", VERSION > VERSION_GC_1_0 ? 0x5bb : 0x5b7);
 
     if ((parameter->flags & 3) == 0) {
         if (token->kind == separator || token->kind == 4)

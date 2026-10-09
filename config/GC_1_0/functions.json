@@ -2238,7 +2238,7 @@
     "source": "src/driver/StringUtils.c"
   },
   {
-    "name": "fn_0040e8c0",
+    "name": "pstrcharcat",
     "address": "0x0040e8c0",
     "size": 22,
     "source": "src/driver/StringUtils.c"

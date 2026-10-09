@@ -175,26 +175,8 @@ void emit_unrolled_copy(Operand *dest, Operand *src, SInt32 size, SInt32 align)
     SInt32 offset = 0;
     SInt32 firstReg, secondReg;
 
-    if (dest->kind == OpndType_IndirectSymbol)
-        Operands_Normalize(dest);
-    if (dest->kind != OpndType_IndirectGPR_ImmOffset || dest->displacement + size > 0x7fff) {
-        firstReg = gUsedVirtualRegistersGPR++;
-        Operands_EmitAddress(firstReg, dest);
-        dest->kind = OpndType_IndirectGPR_ImmOffset;
-        dest->reg = firstReg;
-        dest->object = NULL;
-        dest->displacement = 0;
-    }
-    if (src->kind == OpndType_IndirectSymbol)
-        Operands_Normalize(src);
-    if (src->kind != OpndType_IndirectGPR_ImmOffset || src->displacement + size > 0x7fff) {
-        firstReg = gUsedVirtualRegistersGPR++;
-        Operands_EmitAddress(firstReg, src);
-        src->kind = OpndType_IndirectGPR_ImmOffset;
-        src->reg = firstReg;
-        src->object = NULL;
-        src->displacement = 0;
-    }
+    StructMoves_PrepareOperandForOffset(dest, size, 0);
+    StructMoves_PrepareOperandForOffset(src, size, 0);
     if (copts.debugEnabled != 0 && copts.operandsDebug == 0 && align % 8 == 0 && size >= 16) {
         do {
             firstReg = gUsedVirtualRegistersFPR++;

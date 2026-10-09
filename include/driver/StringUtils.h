@@ -10,6 +10,7 @@ extern "C" {
 
 extern char *mvprintf(char *buffer, unsigned int size, const char *format, va_list args);
 extern UInt8 *_pstrcpy(UInt8 *destination, UInt8 *string);
+extern void pstrcharcat(UInt8 *string, char character);
 extern unsigned int pstrcmp(UInt8 *left, char *right);
 extern int pstrchr(UInt8 *characters, char character);
 extern void __stdcall c2pstrcpy(unsigned char *dst, const char *src);

@@ -1,4 +1,5 @@
 #include "compiler/common.h"
+#include "version.h"
 #include "driver/StringUtils.h"
 #include "compiler/objects.h"
 #include "compiler/scopes.h"
@@ -20,6 +21,16 @@ UInt8 *_pstrcpy(UInt8 *destination, UInt8 *string)
     return destination;
 }
 
+#if VERSION == VERSION_GC_1_0
+void pstrcharcat(UInt8 *string, char character)
+{
+    if (*string < 255) {
+        (*string)++;
+        string[*string] = character;
+    }
+}
+
+#endif
 unsigned int pstrcmp(UInt8 *left, char *right)
 {
     int length;

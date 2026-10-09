@@ -304,8 +304,8 @@ void SFPE_PPC_EABI_GenerateAssignment(ENode *g, SInt16 requestedRegister, SInt16
                 res->regHi = info->regHi;
             }
         } else {
-            PPCError_ReportError(0x82, CERROR_FILE, 0x177);
-            CError_FATAL(376);
+            PPCError_ReportError(0x82, CERROR_FILE, VERSION > VERSION_GC_1_0 ? 375 : 462);
+            CError_FATAL(VERSION > VERSION_GC_1_0 ? 376 : 464);
             Operands_ForceGPRPair(&valueLoc, valueType, info->reg, info->regHi);
             if (valueLoc.reg != info->reg)
                 PCodeUtilities_EmitInstruction(PC_MR, info->reg, valueLoc.reg);
@@ -333,7 +333,7 @@ void SFPE_PPC_EABI_GenerateAssignment(ENode *g, SInt16 requestedRegister, SInt16
             res->reg = valueLoc.reg;
         } else {
             Operands_ForceGPRPair(&valueLoc, value->rtype, 0, 0);
-            CError_ASSERT(413, destination->type != EBITFIELD);
+            CError_ASSERT(VERSION > VERSION_GC_1_0 ? 413 : 501, destination->type != EBITFIELD);
             if (InstrSelection_MatchPostIncDecRegister(destination, &destinationLoc, &adjustment) != 0) {
                 Operands_MakeIndirect(&destinationLoc, destination);
                 Operands_StoreGPRPair(valueLoc.reg, valueLoc.regHi, &destinationLoc, valueType);
@@ -349,11 +349,11 @@ void SFPE_PPC_EABI_GenerateAssignment(ENode *g, SInt16 requestedRegister, SInt16
         }
     } else if (typeKind == TYPEINT || typeKind == TYPEENUM || typeKind == TYPEPOINTER ||
                (typeKind == TYPEMEMBERPOINTER && valueType->size == 4)) {
-        CError_FATAL(437);
+        CError_FATAL(VERSION > VERSION_GC_1_0 ? 437 : 525);
         data_00560648[value->type](value, 0, 0, &valueLoc);
         Operands_ForceGPRPair(&valueLoc, value->rtype, 0, 0);
         if (destination->type == EBITFIELD) {
-            CError_FATAL(442);
+            CError_FATAL(VERSION > VERSION_GC_1_0 ? 442 : 530);
         } else {
             data_00560648[destination->type](destination, 0, 0, &destinationLoc);
             Operands_MakeIndirect(&destinationLoc, destination);
