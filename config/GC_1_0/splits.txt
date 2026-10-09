@@ -814,7 +814,7 @@ src/frontend/CBrowse.c:
 
 src/frontend/CException.c:
 	.text       start:0x004BDF70 end:0x004C07C0
-	.data       start:0x005357C8 end:0x00535C58
+	.data       start:0x005357C8 end:0x00535C54
 	.bss        start:0x00552C38 end:0x00552C50
 
 src/frontend/CSOM.c:

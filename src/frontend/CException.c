@@ -18,6 +18,7 @@
 #include "compiler/CPrepTokenizer.h"
 #include "compiler/CodeGen.h"
 #include "compiler/CompilerTools.h"
+#include "version.h"
 #include <string.h>
 #include <stdio.h>
 
@@ -34,72 +35,6 @@ static struct Statement *data_00581c36;
 static struct ExceptionAction *currentDobjstack;
 static struct ExceptionAction *current_dobjstack;
 #pragma options align = reset
-
-static inline Boolean CException_HasThrow(Statement *s)
-{
-    data_00581c30 = 0;
-    for (; s != NULL; s = s->next) {
-        switch (s->type) {
-            case ST_RETURN:
-                if (s->expr == NULL)
-                    break;
-                /* fallthrough */
-            case ST_EXPRESSION:
-            case ST_SWITCH:
-            case ST_IFGOTO:
-            case ST_IFNGOTO:
-            case ST_BEGINCATCH:
-            case ST_ENDCATCH:
-            case ST_ENDCATCHDTOR:
-            case ST_GOTOEXPR:
-                CExpr_SearchExprTree(s->expr, fn_004e0b20, 2, 0x36, 0x37);
-                if (data_00581c30 != 0)
-                    return 1;
-                break;
-            case ST_NOP:
-            case ST_LABEL:
-            case ST_GOTO:
-            case ST_ASM:
-                break;
-            default:
-                CError_FATAL(2414);
-        }
-    }
-    return 0;
-}
-
-static inline void reverse_one(ENodeList **arr, SInt32 i, ENodeList *found)
-{
-    if (arr[i] == found)
-        return;
-    {
-        ENode *result = rewrite_expr_temporaries(arr[i]->node);
-        arr[i]->node = result;
-    }
-}
-
-static inline Statement *NewTemporaryStatement(void)
-{
-    Statement *statement = CFunc_InsertAfterStatement(4, data_00581c36);
-    statement->sourceoffset = statement->next->sourceoffset;
-    statement->dobjstack = currentDobjstack;
-    return statement;
-}
-
-static inline Object *findTemporaryObject(SInt32 uniqueID, ENode *temporaryExpr)
-{
-    ECacheNode *cached;
-    for (cached = cached_objects; cached != NULL; cached = cached->next) {
-        if (cached->key == uniqueID)
-            return cached->obj;
-    }
-    cached = galloc(sizeof(ECacheNode));
-    cached->next = cached_objects;
-    cached_objects = cached;
-    cached->key = uniqueID;
-    cached->obj = create_temp_object(temporaryExpr->data.temp.type);
-    return cached->obj;
-}
 
 static inline TemporaryObject *CException_NewTypeNode(void)
 {
@@ -126,25 +61,22 @@ static inline ExceptionAction *CException_CopyStmtNode(void)
     return s;
 }
 
-static inline Object *CException_CachedObject(ENode *node)
+#if VERSION > VERSION_GC_1_0
+static inline Object *findTemporaryObject(SInt32 uniqueID, ENode *temporaryExpr)
 {
-    SInt32 key;
-    if ((key = node->data.temp.uniqueid)) {
-        ECacheNode *cache = cached_objects;
-        while (cache) {
-            if (cache->key == key)
-                return cache->obj;
-            cache = cache->next;
-        }
-        cache = (ECacheNode *)galloc(sizeof(ECacheNode));
-        cache->next = cached_objects;
-        cached_objects = cache;
-        cache->key = key;
-        cache->obj = create_temp_object(node->data.temp.type);
-        return cache->obj;
+    ECacheNode *cached;
+    for (cached = cached_objects; cached != NULL; cached = cached->next) {
+        if (cached->key == uniqueID)
+            return cached->obj;
     }
-    return create_temp_object(node->data.temp.type);
+    cached = galloc(sizeof(ECacheNode));
+    cached->next = cached_objects;
+    cached_objects = cached;
+    cached->key = uniqueID;
+    cached->obj = create_temp_object(temporaryExpr->data.temp.type);
+    return cached->obj;
 }
+#endif
 
 static Statement *InsertPrevStatement(int type)
 {
@@ -172,50 +104,28 @@ static Boolean CException_IsClassType(Type *ty)
 {
     if (ty != NULL) {
         if (ty->type == TYPECLASS) {
-            if (CClass_Destructor((TypeClass *)ty) != NULL)
-                return 1;
+            if (CClass_Destructor((TypeClass *)ty) == NULL)
+                return 0;
+        } else if (ty->type == TYPEPOINTER) {
+            if ((TYPE_POINTER(ty)->qual & Q_REFERENCE) == 0 || TPTR_TARGET(ty)->type != TYPECLASS)
+                return 0;
+        } else {
             return 0;
         }
-        if (ty->type == TYPEPOINTER) {
-            if ((TYPE_POINTER(ty)->qual & Q_REFERENCE) != 0 && TPTR_TARGET(ty)->type == TYPECLASS)
-                return 1;
-            return 0;
-        }
-        return 0;
     }
     return 1;
-}
-
-static inline ENode *CException_004e2c40_inline1(Object *p0, ENode *p1)
-{
-    ENode *v3;
-    v3 = CABI_DestroyObject(p0, p1, 1, 1, 0);
-    CError_ASSERT(609, !(v3->type != EFUNCCALL || v3->data.funccall.funcref->type != EOBJREF));
-    if (v3->data.funccall.funcref->data.objref->datatype == DVFUNC) {
-        v3->data.funccall.funcref->flags |= 128;
-    }
-    return v3;
-}
-
-static inline Statement *CException_004e2c40_inline2(Statement *p0, ENode *p1)
-{
-    Statement *t3;
-    t3 = CFunc_InsertAfterStatement(4, p0);
-    t3->expr = p1;
-    return t3;
 }
 
 static Object *CException_StdType(void *name)
 {
     NameResult lookup;
     NameSpaceObjectList *obj;
-    Object *type;
+
     obj = CScope_FindObjectList(&lookup, GetHashNameNode(name));
-    if (obj == NULL || (type = (Object *)obj->object)->otype != 5 || type->datatype != DLOCAL) {
-        CError_FATAL(502);
-        type = NULL;
-    }
-    return type;
+    if (obj != NULL && obj->object->otype == 5 && ((Object *)obj->object)->datatype == DLOCAL)
+        return (Object *)obj->object;
+    CError_FATAL(502);
+    return NULL;
 }
 
 void CExcept_Setup(void)
@@ -589,76 +499,85 @@ void CExcept_RegisterMemberArray(Statement *stmt, Object *object, SInt32 offset,
     stmt->flags |= 2;
 }
 
+static Statement *CExcept_DestroyLocal(ExceptionAction *action, Statement *stmt, Object *object, Object *dtor,
+                                       SInt32 offset)
+{
+    ENode *expr;
+    Statement *newStmt;
+
+    expr = create_objectrefnode(object);
+    if (offset != 0)
+        expr = makediadicnode(expr, intconstnode((Type *)&stunsignedlong, offset), EADD);
+    expr = CABI_DestroyObject(dtor, expr, 1, 1, 0);
+    CError_ASSERT(609, expr->type == EFUNCCALL && expr->data.funccall.funcref->type == EOBJREF);
+    if (expr->data.funccall.funcref->data.objref->datatype == DVFUNC)
+        expr->data.funccall.funcref->flags |= 128;
+    newStmt = CFunc_InsertAfterStatement(4, stmt);
+    newStmt->expr = expr;
+    newStmt->dobjstack = action->next;
+    return newStmt;
+}
+
+static Statement *CExcept_DestroyLocalPointer(ExceptionAction *action, Statement *stmt, Object *object,
+                                              Object *deletefunc)
+{
+    Statement *newStmt;
+
+    newStmt = CFunc_InsertAfterStatement(4, stmt);
+    newStmt->expr = funccallexpr(deletefunc, create_objectnode2(object), NULL, NULL, NULL);
+    newStmt->dobjstack = action->next;
+    return newStmt;
+}
+
+static Statement *CExcept_DestroyLocalArray(ExceptionAction *action, Statement *stmt, Object *object, Object *dtor,
+                                            SInt32 size, SInt32 count)
+{
+    Statement *newStmt;
+    ENode *dtorExpr;
+
+    newStmt = CFunc_InsertAfterStatement(4, stmt);
+    dtorExpr = dtor ? create_objectrefnode(CABI_GetDestructorObject(dtor, 1)) : nullnode();
+    newStmt->expr =
+        funccallexpr(data_0058717c, create_objectrefnode(object), dtorExpr,
+                     intconstnode((Type *)&stunsignedlong, count), intconstnode((Type *)&stunsignedlong, size));
+    newStmt->dobjstack = action->next;
+    return newStmt;
+}
+
+static Statement *CExcept_EndCatch(ExceptionAction *action, Statement *stmt)
+{
+    Statement *newStmt;
+
+    newStmt = CFunc_InsertAfterStatement(14, stmt);
+    newStmt->expr = create_objectrefnode(action->data.active_catch.info);
+    newStmt->dobjstack = action->next;
+    if (action->data.active_catch.call_dtor == 0)
+        newStmt->type = ST_ENDCATCH;
+    return newStmt;
+}
+
 Statement *CExcept_ActionCleanup(ExceptionAction *cleanup, Statement *statement)
 {
-    Object *context;
-    ENode *expression;
-    ENode *localDtorCall;
-    Object *arrayDtor;
-    ENode *memberDtorCall;
-    ENode *dtorExpression;
-    ENode *localObjectExpression;
-    Object *localDtor;
-    Object *deleteObject;
-    Statement *localStatement;
-    Statement *memberStatement;
-    SInt32 offset;
-    Object *deleteFunc;
-    Object *memberDtor;
-    SInt32 value1;
-    SInt32 value2;
-
     switch (cleanup->kind) {
         case EAT_DESTROYLOCAL:
-            localDtor = cleanup->data.local.dtor;
-            localObjectExpression = create_objectrefnode(cleanup->data.local.object);
-            localDtorCall = CException_004e2c40_inline1(localDtor, localObjectExpression);
-            localStatement = CException_004e2c40_inline2(statement, localDtorCall);
-            statement = localStatement;
-            localStatement->dobjstack = cleanup->next;
+            statement =
+                CExcept_DestroyLocal(cleanup, statement, cleanup->data.local.object, cleanup->data.local.dtor, 0);
             break;
         case EAT_DESTROYLOCALOFFSET:
-            offset = cleanup->data.member.offset;
-            memberDtor = cleanup->data.member.dtor;
-            expression = create_objectrefnode(cleanup->data.member.objectptr);
-            if (offset != 0) {
-                expression = makediadicnode(expression, intconstnode((Type *)&stunsignedlong, offset), EADD);
-            }
-            memberDtorCall = CException_004e2c40_inline1(memberDtor, expression);
-            memberStatement = CException_004e2c40_inline2(statement, memberDtorCall);
-            statement = memberStatement;
-            memberStatement->dobjstack = cleanup->next;
+            statement = CExcept_DestroyLocal(cleanup, statement, cleanup->data.member.objectptr,
+                                             cleanup->data.member.dtor, cleanup->data.member.offset);
             break;
         case EAT_DELETELOCALPOINTER:
-            deleteFunc = cleanup->data.local.dtor;
-            deleteObject = cleanup->data.local.object;
-            statement = CFunc_InsertAfterStatement(4, statement);
-            statement->expr = funccallexpr(deleteFunc, create_objectnode2(deleteObject), NULL, NULL, NULL);
-            statement->dobjstack = cleanup->next;
+            statement =
+                CExcept_DestroyLocalPointer(cleanup, statement, cleanup->data.local.object, cleanup->data.local.dtor);
             break;
         case EAT_DESTROYLOCALARRAY:
-            value2 = (SInt32)cleanup->data.member_array.count;
-            value1 = (SInt32)cleanup->data.member_array.offset;
-            arrayDtor = cleanup->data.member_array.dtor;
-            context = cleanup->data.member_array.objectptr;
-            statement = CFunc_InsertAfterStatement(4, statement);
-            if (arrayDtor != NULL) {
-                dtorExpression = create_objectrefnode(CABI_GetDestructorObject(arrayDtor, 1));
-            } else {
-                dtorExpression = nullnode();
-            }
-            statement->expr = funccallexpr(data_0058717c, create_objectrefnode(context), dtorExpression,
-                                           intconstnode((Type *)&stunsignedlong, value2),
-                                           intconstnode((Type *)&stunsignedlong, value1));
-            statement->dobjstack = cleanup->next;
+            statement = CExcept_DestroyLocalArray(cleanup, statement, cleanup->data.member_array.objectptr,
+                                                  cleanup->data.member_array.dtor, cleanup->data.member_array.offset,
+                                                  (SInt32)cleanup->data.member_array.count);
             break;
         case EAT_ACTIVECATCHBLOCK:
-            statement = CFunc_InsertAfterStatement(14, statement);
-            statement->expr = create_objectrefnode(cleanup->data.active_catch.info);
-            statement->dobjstack = cleanup->next;
-            if (cleanup->data.active_catch.call_dtor == 0) {
-                statement->type = ST_ENDCATCH;
-            }
+            statement = CExcept_EndCatch(cleanup, statement);
             break;
         default:
             CError_FATAL(749);
@@ -839,6 +758,15 @@ ENode *create_type_stringconst(Type *type, UInt32 qualifiers, Boolean flag)
     return node;
 }
 
+static Object *CExcept_TypeID(Type *type, UInt32 qual)
+{
+    ENode *expr;
+
+    expr = create_type_stringconst(type, qual, 0);
+    CError_ASSERT(1009, expr->type == ESTRINGCONST);
+    return CInit_DeclareString(expr->data.string.data, expr->data.string.size, 0, 0);
+}
+
 void CExcept_ScanExceptionSpecification(TypeFunc *func)
 {
     ExceptSpecList *list;
@@ -990,20 +918,30 @@ ENode *CExcept_ScanThrowExpression(void)
 void fn_004e1fb0(Statement *firstScope, Statement *insertionScope, Statement *lastScope,
                  ExceptionHandlerRecord *entries)
 {
+#if VERSION == VERSION_GC_1_0
+    SInt32 entryValue;
+    Boolean hasClassType;
+    ExceptionAction *firstEntry;
+    ExceptionAction *entry;
+    ExceptionAction *originalList;
+    ExceptionAction *replacementList;
+    ExceptionAction *current;
+    Statement *scope;
+#else
     ExceptionAction *originalList;
     SInt32 entryValue;
     Boolean hasClassType;
     ExceptionAction *firstEntry;
     ExceptionAction *replacementList;
     ExceptionAction *entry;
-    ENode *stringNode;
     Statement *scope;
     ExceptionAction *current;
+#endif
 
-    firstEntry = NULL;
     hasClassType = 0;
     entryValue = (SInt32)entries->exceptionObject;
     originalList = firstScope->dobjstack;
+    firstEntry = NULL;
     replacementList = originalList;
 
     if (entries != NULL) {
@@ -1017,12 +955,8 @@ void fn_004e1fb0(Statement *firstScope, Statement *insertionScope, Statement *la
             entry->kind = EAT_CATCHBLOCK;
             entry->data.catch_block.object = (Object *)entries->catchObject;
             entry->data.catch_block.label = entries->handlerEntry->label;
-            if (entries->exceptionType != NULL) {
-                stringNode = create_type_stringconst(entries->exceptionType, entries->declarationData, 0);
-                CError_ASSERT(1009, stringNode->type == ESTRINGCONST);
-                entry->data.catch_block.typeInfo =
-                    CInit_DeclareString(stringNode->data.string.data, stringNode->data.string.size, 0, 0);
-            }
+            if (entries->exceptionType != NULL)
+                entry->data.catch_block.typeInfo = CExcept_TypeID(entries->exceptionType, entries->declarationData);
             entry->data.catch_block.info = (Object *)entryValue;
             if (!hasClassType && CException_IsClassType(entries->exceptionType))
                 hasClassType = 1;
@@ -1268,7 +1202,7 @@ Object *CException_GetTempObject(ENode *obj)
 ENode *fn_004e1940(ENode *node)
 {
     Object *obj;
-    obj = CException_CachedObject(node);
+    obj = CException_GetTempObject(node);
 
     if (node->data.temp.needs_dtor) {
         TemporaryObject *type = CException_NewTypeNode();
@@ -1292,10 +1226,10 @@ ENode *fn_004e1940(ENode *node)
 void lower_newexception(ENode *node, Boolean useExpression)
 {
     Statement *initialStatement;
-    Statement *statement;
     Boolean isArgumentObject;
     Object *cleanupFlag;
     CLabel *label;
+    Statement *statement;
     ExceptionAction *cleanup;
     ENode *expression;
     ENode *result;
@@ -1374,7 +1308,9 @@ ENode *rewrite_funccall_temporaries(ENode *node, Boolean reverse)
     Type *resultType;
     ENode *result;
     TemporaryObject *temporary;
+#if VERSION > VERSION_GC_1_0
     SInt32 uniqueID;
+#endif
     SInt32 index;
     SInt32 count;
     ExceptionAction *cleanupCopy;
@@ -1411,7 +1347,8 @@ ENode *rewrite_funccall_temporaries(ENode *node, Boolean reverse)
             }
             while (index > 0) {
                 index--;
-                reverse_one(reverseArgs, index, temporaryArg);
+                if (reverseArgs[index] != temporaryArg)
+                    reverseArgs[index]->node = rewrite_expr_temporaries(reverseArgs[index]->node);
             }
         } else {
             for (argument = node->data.funccall.args; argument != NULL; argument = argument->next) {
@@ -1423,12 +1360,16 @@ ENode *rewrite_funccall_temporaries(ENode *node, Boolean reverse)
         temporary->next = temporary_object_list;
         temporary_object_list = temporary;
 
+#if VERSION == VERSION_GC_1_0
+        temporary->object = CException_GetTempObject(temporaryExpr);
+#else
         uniqueID = temporaryExpr->data.temp.uniqueid;
         if (uniqueID != 0) {
             temporary->object = findTemporaryObject(uniqueID, temporaryExpr);
         } else {
             temporary->object = create_temp_object(temporaryExpr->data.temp.type);
         }
+#endif
         temporary->initializationFlag = NULL;
         if (temporaryExpr->data.temp.type->type == TYPECLASS) {
             temporary->classObject = CClass_Destructor((TypeClass *)temporaryExpr->data.temp.type);
@@ -1448,7 +1389,7 @@ ENode *rewrite_funccall_temporaries(ENode *node, Boolean reverse)
                                   ECOMMA);
             result = makediadicnode(node, create_objectrefnode(temporary->object), ECOMMA);
             result->rtype = resultType;
-            statement = NewTemporaryStatement();
+            statement = InsertPrevStatement(ST_EXPRESSION);
             statement->expr = makediadicnode(create_objectnode(temporary->initializationFlag),
                                              intconstnode((Type *)&stchar, 0), EASS);
             data_00581c36 = statement;
@@ -1464,7 +1405,7 @@ ENode *rewrite_funccall_temporaries(ENode *node, Boolean reverse)
             cleanupCopy->next = current_dobjstack;
             current_dobjstack = cleanupCopy;
         } else {
-            statement = NewTemporaryStatement();
+            statement = InsertPrevStatement(ST_EXPRESSION);
             statement->expr = node;
             data_00581c36 = statement;
             cleanup = lalloc(sizeof(ExceptionAction));
@@ -1872,11 +1813,7 @@ void setup_exception_specification(struct Statement *statements, struct ExceptSp
     region->data.specification.label = label_statement->label;
     region->data.specification.info = object;
     for (handler = handlers; handler != NULL; handler = handler->next) {
-        expression = create_type_stringconst(handler->type, handler->qual, 0);
-        if (expression->type != ESTRINGCONST)
-            CError_FATAL(1009);
-        region->data.specification.ids[handler_index++] =
-            CInit_DeclareString(expression->data.string.data, expression->data.string.size, 0, 0);
+        region->data.specification.ids[handler_index++] = CExcept_TypeID(handler->type, handler->qual);
     }
     assignment = CFunc_InsertAfterStatement(4, label_statement);
     assignment->expr = funccallexpr(data_00587654, create_objectrefnode(object), NULL, NULL, NULL);
@@ -1941,7 +1878,7 @@ void CExcept_ExceptionTansform(Statement *stmt)
 {
     update_statement_dobjstacks(stmt);
     if (cscope_currentfunc != NULL && copts.exceptions != 0 && TYPE_FUNC(cscope_currentfunc->type)->exspecs != NULL) {
-        if (CException_HasThrow(stmt)) {
+        if (fn_004e0ab0(stmt)) {
             setup_exception_specification(stmt, TYPE_FUNC(cscope_currentfunc->type)->exspecs);
         }
     }

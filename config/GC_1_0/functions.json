@@ -18789,7 +18789,7 @@
     "source": "src/frontend/CException.c"
   },
   {
-    "name": "fn_004bed90",
+    "name": "CExcept_TypeID",
     "address": "0x004bed90",
     "size": 67,
     "source": "src/frontend/CException.c"
