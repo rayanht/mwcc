@@ -30,392 +30,19 @@ short gGPRCoalesceFirst;
 short gFPRCoalesceFirst;
 short gVRCoalesceFirst;
 
-
 static UInt32 *gInterferenceBits;
 static short *gCoalescedRegisters;
 
-static inline void SC_Interfere(unsigned int a, unsigned int b);
-
-static inline const char *SpillCode_RegisterFormat(int reg_class)
+static void Coalesce_AddInterference(UInt32 r1, UInt32 r2)
 {
-    if (reg_class == 0) {
-        return " r%ld";
-    }
-    if (reg_class == 1) {
-        return " f%ld";
-    }
-    return " vr%ld";
-}
+    UInt32 bit;
 
-static inline void SpillCode_ClearLive(UInt32 *live, short reg)
-{
-    live[reg >> 5] &= ~(1U << (reg & 31));
-}
-
-static inline int SpillCode_IsLive(UInt32 *live, short reg)
-{
-    return (live[reg >> 5] & (1U << (reg & 31))) != 0;
-}
-
-static inline void SpillCode_SetLive(UInt32 *live, short reg)
-{
-    live[reg >> 5] |= 1U << (reg & 31);
-}
-
-static inline int SpillCode_WordCount(int register_count)
-{
-    return (register_count + 31) >> 5;
-}
-
-static inline void SpillCode_CopyBits(UInt32 *destination, const UInt32 *source, int bit_count)
-{
-    int word;
-
-    for (word = 0; word < SpillCode_WordCount(bit_count); word++) {
-        destination[word] = source[word];
-    }
-}
-
-static inline void SpillCode_OrBits(UInt32 *destination, const UInt32 *source, int bit_count)
-{
-    int word;
-
-    for (word = 0; word < SpillCode_WordCount(bit_count); word++) {
-        destination[word] |= source[word];
-    }
-}
-
-static unsigned int *SpillCode_AllocateEmptyBits(int register_count)
-{
-    unsigned int *bits;
-    int word;
-
-    bits = (void *)oalloc(SpillCode_WordCount(register_count) * sizeof(*bits));
-    for (word = 0; word < SpillCode_WordCount(register_count); word++) {
-        bits[word] = 0;
-    }
-    return bits;
-}
-
-static inline void SpillCode_AddBlockUse(PCodeBlock *block, short reg)
-{
-    if (block != NULL) {
-        SpillCode_SetLive(gPCodeBlockLiveness[block->index].use, reg);
-    }
-}
-
-static inline int SpillCode_IsDirectGPRScalar(const Type *type)
-{
-    return type->type == TYPEINT || type->type == TYPEENUM || type->type == TYPEPOINTER ||
-           (type->type == TYPEMEMBERPOINTER && type->size == 4);
-}
-
-static inline void SpillCode_SeedGPRReturn(Type *type)
-{
-    if (SpillCode_IsDirectGPRScalar(type)) {
-        SpillCode_AddBlockUse(gReturnBlock, 3);
-        if ((type->type == TYPEINT || type->type == TYPEENUM) && type->size == 8) {
-            SpillCode_AddBlockUse(gCurrentBlock, 4);
-        }
-    } else if ((type->type == TYPESTRUCT || type->type == TYPECLASS) && !Type_RequiresMemoryReturn(type)) {
-        SpillCode_AddBlockUse(gReturnBlock, 3);
-        if (type->size > 4) {
-            SpillCode_AddBlockUse(gCurrentBlock, 4);
-        }
-    } else if (copts.operandsDebug && type->type == TYPEFLOAT) {
-        SpillCode_AddBlockUse(gReturnBlock, 3);
-        if (type->size == 8) {
-            SpillCode_AddBlockUse(gCurrentBlock, 4);
-        }
-    }
-}
-
-static void SpillCode_SeedReturnRegisters(Type *type, int reg_class)
-{
-    if (reg_class == 0) {
-        SpillCode_SeedGPRReturn(type);
-    } else if (reg_class == 1 && type->type == TYPEFLOAT) {
-        SpillCode_AddBlockUse(gReturnBlock, 1);
-    } else if (reg_class == 9 && type->type == TYPESTRUCT && TYPE_STRUCT(type)->stype >= 4 &&
-               TYPE_STRUCT(type)->stype <= 14) {
-        SpillCode_AddBlockUse(gReturnBlock, 2);
-    }
-}
-
-static int SpillCode_DefinitionBlocksRemoval(PCodeOperand *operand, int reg_class, UInt32 *live)
-{
-    if ((operand->flags & PCodeOperand_Definition) == 0) {
-        return 0;
-    }
-    if (operand->kind == PCOp_GPR) {
-        return reg_class != 0 || SpillCode_IsLive(live, operand->value.reg);
-    }
-    if (operand->kind == PCOp_FPR) {
-        return reg_class != 1 || SpillCode_IsLive(live, operand->value.reg);
-    }
-    if (operand->kind == PCOp_VR) {
-        return reg_class != 9 || SpillCode_IsLive(live, operand->value.reg);
-    }
-    return operand->kind == PCOp_SPR || operand->kind == PCOp_CRFIELD;
-}
-
-static inline unsigned int SpillCode_MatrixIndex(int first, int second)
-{
-    unsigned int index;
-    int larger;
-    int smaller;
-
-    if (first == second) {
-        return (unsigned int)((first * first) / 2);
-    }
-    if (first > second) {
-        larger = first;
-        smaller = second;
-    } else {
-        larger = second;
-        smaller = first;
-    }
-    index = (unsigned int)((larger * larger) / 2 + smaller);
-    return index;
-}
-
-static inline int SpillCode_Interferes(int first, int second)
-{
-    unsigned int index;
-
-    if (first == second) {
-        return 0;
-    }
-    index = SpillCode_MatrixIndex(first, second);
-    return (gInterferenceBits[index >> 5] & (1U << (index & 31))) != 0;
-}
-
-static inline void SpillCode_SetMatrixBit(int first, int second)
-{
-    unsigned int index;
-
-    index = SpillCode_MatrixIndex(first, second);
-    gInterferenceBits[index >> 5] |= 1U << (index & 31);
-}
-
-static inline void SpillCode_SetInterference(int first, int second)
-{
-    if (first != second) {
-        SpillCode_SetMatrixBit(first, second);
-    }
-}
-
-static void SpillCode_ClearWords(unsigned int *bits, int bit_count)
-{
-    int word;
-    int word_count;
-
-    word_count = SpillCode_WordCount(bit_count);
-    for (word = 0; word < word_count; word++) {
-        bits[word] = 0;
-    }
-}
-
-static void SpillCode_PrecolorPhysicalRegisters(void)
-{
-    int first;
-    int second;
-
-    for (first = 0; first < 32; first++) {
-        for (second = 0; second < 32; second++) {
-            SpillCode_SetInterference(first, second);
-        }
-    }
-}
-
-static inline int SpillCode_CopySourceExcluded(PCodeInstruction *instruction, int reg)
-{
-    return (instruction->flags & PCodeInstruction_CopySourceExclusion) != 0 &&
-           instruction->operandData.operands[1].value.reg == reg;
-}
-
-static void SpillCode_AddDefinitionEdges(PCodeInstruction *instruction, int reg_class, UInt32 *live, int register_count)
-{
-    int index;
-
-    for (index = 0; index < instruction->operand_count; index++) {
-        PCodeOperand *operand;
-        int other;
-
-        operand = &instruction->operandData.operands[index];
-        if (operand->kind != reg_class || (operand->flags & PCodeOperand_Definition) == 0) {
-            continue;
-        }
-
-        SpillCode_ClearLive(live, operand->value.reg);
-        for (other = 0; other < register_count; other++) {
-            if (SpillCode_IsLive(live, (short)other) && !SpillCode_CopySourceExcluded(instruction, other)) {
-                SpillCode_SetInterference(operand->value.reg, other);
-            }
-        }
-    }
-}
-
-static void SpillCode_AddUses(PCodeInstruction *instruction, int reg_class, UInt32 *live)
-{
-    int index;
-
-    for (index = 0; index < instruction->operand_count; index++) {
-        PCodeOperand *operand;
-
-        operand = &instruction->operandData.operands[index];
-        if (operand->kind == reg_class && (operand->flags & PCodeOperand_Use) != 0) {
-            if (!SpillCode_IsLive(live, operand->value.reg)) {
-                operand->flags |= PCodeOperand_LastUse;
-            }
-            SpillCode_SetLive(live, operand->value.reg);
-        }
-    }
-}
-
-static inline void SpillCode_MarkConstrainedRegister(short reg)
-{
-    if (reg >= 32) {
-        SpillCode_SetMatrixBit(reg, reg);
-    }
-}
-
-static void SpillCode_AddGPRConstraints(PCodeInstruction *instruction)
-{
-    if ((instruction->flags & PCodeInstruction_GPRResultMask) != 0) {
-        SpillCode_MarkConstrainedRegister(instruction->operandData.operands[1].value.reg);
-        if ((instruction->flags & PCodeInstruction_GPRPairInterference) != 0) {
-            SpillCode_SetInterference(instruction->operandData.operands[0].value.reg,
-                                      instruction->operandData.operands[1].value.reg);
-        }
-    } else if (instruction->opcode == PC_ADDI || instruction->opcode == PC_ADDIS) {
-        SpillCode_MarkConstrainedRegister(instruction->operandData.operands[1].value.reg);
-    } else if (instruction->opcode >= 0x37 && instruction->opcode <= 0x3b) {
-        SpillCode_MarkConstrainedRegister(instruction->operandData.operands[0].value.reg);
-    }
-
-    if ((instruction->flags & PCodeInstruction_GPRFixedRange) != 0) {
-        int index;
-
-        for (index = 50; index < instruction->operand_count; index++) {
-            int physical;
-            short reg;
-
-            reg = instruction->operandData.operands[index].value.reg;
-            SpillCode_MarkConstrainedRegister(reg);
-            for (physical = 3; physical <= 12; physical++) {
-                SpillCode_SetInterference(reg, physical);
-            }
-        }
-    }
-}
-
-static void SpillCode_CollectSuccessorLiveIn(PCodeBlock *block, UInt32 *live_out, int register_count)
-{
-    PCodeBlockLink *successor;
-
-    successor = block->successors;
-    if (successor == NULL) {
-        return;
-    }
-    SpillCode_CopyBits(live_out, gPCodeBlockLiveness[successor->payload.block->index].livein, register_count);
-    for (successor = successor->next; successor != NULL; successor = successor->next) {
-        SpillCode_OrBits(live_out, gPCodeBlockLiveness[successor->payload.block->index].livein, register_count);
-    }
-}
-
-static int SpillCode_UpdateLiveIn(PCodeBlockLiveness *liveness, int register_count)
-{
-    int changed;
-    int word;
-
-    changed = 0;
-    for (word = 0; word < SpillCode_WordCount(register_count); word++) {
-        unsigned int live_in;
-
-        live_in = (~liveness->def[word] & liveness->live_out[word]) | liveness->use[word];
-        if (live_in != liveness->live_in[word]) {
-            liveness->live_in[word] = live_in;
-            changed = 1;
-        }
-    }
-    return changed;
-}
-
-static short SpillCode_CoalesceRoot(short reg)
-{
-    short parent;
-
-    do {
-        parent = gCoalescedRegisters[reg];
-        if (parent == reg) {
-            return reg;
-        }
-        reg = parent;
-    } while (1);
-}
-
-static short SpillCode_CopyOpcode(int reg_class)
-{
-    if (reg_class == 0) {
-        return 0x8b;
-    }
-    if (reg_class == 1) {
-        return 0x9e;
-    }
-    return 0x18e;
-}
-
-static inline int SpillCode_CoalesceEligible(int reg_class, short reg)
-{
-    if (reg_class == 0) {
-        return reg >= gGPRCoalesceFirst && reg <= gGPRCoalesceLast;
-    }
-    if (reg_class == 1) {
-        return reg >= gFPRCoalesceFirst && reg <= gFPRCoalesceLast;
-    }
-    return reg >= gVRCoalesceFirst && reg <= gVRCoalesceLast;
-}
-
-static int SpillCode_CanCoalesce(int reg_class, short first, short second)
-{
-    if (SpillCode_Interferes(first, second)) {
-        return 0;
-    }
-    if (first < 32 || second < 32) {
-        return 1;
-    }
-    return SpillCode_CoalesceEligible(reg_class, first) && SpillCode_CoalesceEligible(reg_class, second);
-}
-
-static void SpillCode_MergeCoalesceRoots(short first, short second, int register_count)
-{
-    short root;
-    short child;
-    int reg;
-
-    root = first < second ? first : second;
-    child = first < second ? second : first;
-    gCoalescedRegisters[child] = root;
-    for (reg = 0; reg < register_count; reg++) {
-        if (SpillCode_Interferes(child, reg)) {
-            SpillCode_SetInterference(root, reg);
-        }
-    }
-}
-
-static void SpillCode_AddOperandCosts(PCodeInstruction *instruction, int reg_class, int block_weight,
-                                      unsigned char flag, int multiplier)
-{
-    int index;
-
-    for (index = 0; index < instruction->operand_count; index++) {
-        PCodeOperand *operand;
-
-        operand = &instruction->operandData.operands[index];
-        if (operand->kind == reg_class && (operand->flags & flag) != 0) {
-            gInterferenceGraph[operand->value.reg]->spill_cost += block_weight * multiplier;
-        }
+    if (r1 < r2) {
+        bit = (r2 * r2 >> 1) + r1;
+        gInterferenceBits[bit >> 5] |= 1 << bit;
+    } else if (r1 > r2) {
+        bit = (r1 * r1 >> 1) + r2;
+        gInterferenceBits[bit >> 5] |= 1 << bit;
     }
 }
 
@@ -431,66 +58,12 @@ static int test_interference(UInt32 a, UInt32 b)
     return 0;
 }
 
-static void Coalesce_AddInterference(UInt32 r1, UInt32 r2)
-{
-    UInt32 bit;
-
-    if (r1 < r2) {
-        bit = (r2 * r2 >> 1) + r1;
-        gInterferenceBits[bit >> 5] |= 1 << bit;
-    } else if (r1 > r2) {
-        bit = (r1 * r1 >> 1) + r2;
-        gInterferenceBits[bit >> 5] |= 1 << bit;
-    }
-}
-
-static SInt16 Coalesce_Find(SInt16 r)
-{
-    while (gCoalescedRegisters[r] != r)
-        r = gCoalescedRegisters[r];
-    return r;
-}
-
-static inline void Coalesce_FindNext(PCodeOperand *sig)
-{
-    SInt16 r;
-
-    r = sig->value.reg;
-    if (gCoalescedRegisters[r] != r) {
-        while (gCoalescedRegisters[r] != r)
-            r = gCoalescedRegisters[r];
-        sig->value.reg = r;
-    }
-}
-
-static inline int Coalesce_InRange(SInt16 r, SInt32 regclass)
-{
-    if (regclass == 0)
-        return r >= gGPRCoalesceFirst && r <= gGPRCoalesceLast;
-    if (regclass == 1)
-        return r >= gFPRCoalesceFirst && r <= gFPRCoalesceLast;
-    return r >= gVRCoalesceFirst && r <= gVRCoalesceLast;
-}
-
 #define SC_Clear(n, bits) ((bits)[(SInt16)(n) >> 5] &= ~(1 << ((UInt32)(SInt16)(n) & 31)))
 #define SC_Test(n, bits) ((bits)[(SInt16)(n) >> 5] & (1 << ((UInt32)(SInt16)(n) & 31)))
 static inline void SC_Add(SInt16 n, UInt32 *bits)
 {
     int v = n;
     bits[v >> 5] |= 1 << ((UInt32)v & 31);
-}
-
-static inline void SC_SetBit(UInt32 n)
-{
-    gInterferenceBits[n >> 5] |= 1 << (n & 0x1f);
-}
-
-static inline void SC_Interfere(unsigned int a, unsigned int b)
-{
-    if (a < b)
-        SC_SetBit(b * b / 2 + a);
-    else if (a > b)
-        SC_SetBit(a * a / 2 + b);
 }
 
 void SpillCode_ConstructInterference(SInt32 registerClass, UInt32 registerCount)
@@ -500,13 +73,15 @@ void SpillCode_ConstructInterference(SInt32 registerClass, UInt32 registerCount)
     PCodeInstruction *instruction;
     PCodeOperand *operand;
     SInt16 reg;
-    UInt32 i, j, k;
+    UInt32 i;
+    UInt32 j;
+    UInt32 k;
     gInterferenceBits = (UInt32 *)oalloc(((registerCount * registerCount / 2 + 0x1f) >> 5) << 2);
     BitVectors_FillWords(gInterferenceBits, registerCount * registerCount / 2, 0);
     for (i = 0; i < 0x20; i++) {
         for (j = 0; j < 0x20; j++) {
             if (i != j)
-                SC_Interfere(i, j);
+                Coalesce_AddInterference(i, j);
         }
     }
     bits = (UInt32 *)oalloc(((registerCount + 0x1f) >> 5) << 2);
@@ -520,7 +95,7 @@ void SpillCode_ConstructInterference(SInt32 registerClass, UInt32 registerCount)
                         if (bits[j >> 5] & (1 << (j & 0x1f))) {
                             if (!(instruction->flags & fIsMove) ||
                                 instruction->operandData.operands[1].value.reg != j) {
-                                SC_Interfere(reg, j);
+                                Coalesce_AddInterference(reg, j);
                             }
                         }
                     }
@@ -536,16 +111,16 @@ void SpillCode_ConstructInterference(SInt32 registerClass, UInt32 registerCount)
             if (registerClass == 0) {
                 if (instruction->flags & (fIsRead | fIsWrite)) {
                     if (instruction->operandData.operands[1].value.reg >= 0x20)
-                        SC_Interfere(0, instruction->operandData.operands[1].value.reg);
+                        Coalesce_AddInterference(0, instruction->operandData.operands[1].value.reg);
                     if (instruction->flags & 0x8000)
-                        SC_Interfere(instruction->operandData.operands[0].value.reg,
-                                     instruction->operandData.operands[1].value.reg);
+                        Coalesce_AddInterference(instruction->operandData.operands[0].value.reg,
+                                                 instruction->operandData.operands[1].value.reg);
                 } else if (instruction->opcode == PC_ADDI || instruction->opcode == PC_ADDIS) {
                     if (instruction->operandData.operands[1].value.reg >= 0x20)
-                        SC_Interfere(0, instruction->operandData.operands[1].value.reg);
+                        Coalesce_AddInterference(0, instruction->operandData.operands[1].value.reg);
                 } else if (instruction->opcode >= 0x37 && instruction->opcode <= 0x3b) {
                     if (instruction->operandData.operands[0].value.reg >= 0x20)
-                        SC_Interfere(0, instruction->operandData.operands[0].value.reg);
+                        Coalesce_AddInterference(0, instruction->operandData.operands[0].value.reg);
                 }
             }
             if (registerClass == 0 && (instruction->flags & 0x20)) {
@@ -553,13 +128,38 @@ void SpillCode_ConstructInterference(SInt32 registerClass, UInt32 registerCount)
                 for (k = 0x32, extraOperand = &instruction->operandData.operands[k]; k < instruction->operand_count;
                      k++, extraOperand++) {
                     SInt16 tailReg;
-                    SC_Interfere(tailReg = extraOperand->value.reg, 0);
+                    Coalesce_AddInterference(tailReg = extraOperand->value.reg, 0);
                     for (i = 3; i <= 0xc; i++)
-                        SC_Interfere(tailReg, i);
+                        Coalesce_AddInterference(tailReg, i);
                 }
             }
         }
     }
+}
+
+static SInt16 Coalesce_Find(SInt16 r)
+{
+    while (gCoalescedRegisters[r] != r)
+        r = gCoalescedRegisters[r];
+    return r;
+}
+
+static inline void Coalesce_FindNext(PCodeOperand *sig)
+{
+    SInt16 r;
+
+    r = sig->value.reg;
+    if (gCoalescedRegisters[r] != r)
+        sig->value.reg = Coalesce_Find(r);
+}
+
+static inline int Coalesce_InRange(SInt16 r, SInt32 regclass)
+{
+    if (regclass == 0)
+        return r >= gGPRCoalesceFirst && r <= gGPRCoalesceLast;
+    if (regclass == 1)
+        return r >= gFPRCoalesceFirst && r <= gFPRCoalesceLast;
+    return r >= gVRCoalesceFirst && r <= gVRCoalesceLast;
 }
 
 void SpillCode_CoalesceCopies(SInt32 regclass, UInt32 numRegs)
@@ -708,6 +308,17 @@ void SpillCode_MarkLastUses(SInt32 var, UInt32 count)
             }
         }
     }
+}
+
+static inline const char *SpillCode_RegisterFormat(int reg_class)
+{
+    if (reg_class == 0) {
+        return " r%ld";
+    }
+    if (reg_class == 1) {
+        return " f%ld";
+    }
+    return " vr%ld";
 }
 
 void SpillCode_BuildInterference(Object *function, int reg_class, int register_count)
