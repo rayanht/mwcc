@@ -194,6 +194,11 @@ static inline Float CMach_CalcFloatConvert(Type *type, Float value)
     return value;
 }
 
+void fn_004a9c70(void)
+{
+    return;
+}
+
 int CMach_GetQUALalign(int qualifiers)
 {
     int alignment = 0;

@@ -715,12 +715,12 @@ src/backend/SFPE_PPC_EABI.c:
 	.data       start:0x0055F598 end:0x0055F5A8
 
 src/backend/CMachine.c:
-	.text       start:0x004A7480 end:0x004A9C70
+	.text       start:0x004A7480 end:0x004A9C80
 	.data       start:0x0055F5A8 end:0x005601DC
 	.bss        start:0x00580F98 end:0x00580FA8
 
 src/backend/StackFrameEABI.c:
-	.text       start:0x004A9C70 end:0x004AC5D0
+	.text       start:0x004A9C80 end:0x004AC5D0
 	.data       start:0x005601E0 end:0x00560494
 	.bss        start:0x00580FA8 end:0x00580FB0
 

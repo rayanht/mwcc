@@ -13617,16 +13617,16 @@
     "source": "src/backend/InstrSelection.c"
   },
   {
-    "name": "fn_0047fcc0",
+    "name": "move_register_pair",
     "address": "0x0047fcc0",
     "size": 121,
-    "source": "src/backend/InstrSelection.c"
+    "source": "src/backend/SFPE_PPC_EABI.c"
   },
   {
-    "name": "fn_0047fd40",
+    "name": "load_argument_pairs",
     "address": "0x0047fd40",
     "size": 340,
-    "source": "src/backend/InstrSelection.c"
+    "source": "src/backend/SFPE_PPC_EABI.c"
   },
   {
     "name": "SFPE_PPC_EABI_GenerateDiadicArithmetic",
@@ -13683,10 +13683,10 @@
     "source": "src/backend/SFPE_PPC_EABI.c"
   },
   {
-    "name": "fn_00482360",
+    "name": "fn_004a9c70",
     "address": "0x00482360",
     "size": 1,
-    "source": "src/backend/SFPE_PPC_EABI.c"
+    "source": "src/backend/CMachine.c"
   },
   {
     "name": "CMach_GetQUALalign",

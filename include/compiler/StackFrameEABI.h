@@ -85,7 +85,6 @@ extern void StackFrame_CheckAltivec(void);
 #else
 extern void StackFrame_CheckAltivec(PCodeBlock *prologueBlock);
 #endif
-extern void fn_004a9c70(void);
 extern int fn_004a9f70(int value);
 extern unsigned int fn_004a9f90(void);
 extern UInt8 data_005884ff;

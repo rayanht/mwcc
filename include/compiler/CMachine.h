@@ -4,6 +4,7 @@
 #include "compiler/common.h"
 
 #ifdef __cplusplus
+extern void fn_004a9c70(void);
 extern "C" {
 #endif
 

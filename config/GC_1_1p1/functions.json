@@ -13598,7 +13598,7 @@
     "name": "fn_004a9c70",
     "address": "0x004a9c00",
     "size": 1,
-    "source": "src/backend/StackFrameEABI.c"
+    "source": "src/backend/CMachine.c"
   },
   {
     "name": "StackFrame_CheckAltivec",

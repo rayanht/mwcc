@@ -22,6 +22,7 @@
 #include "compiler/CTemplateFunc.h"
 #include "compiler/CodeGen.h"
 #include "compiler/StackFrameEABI.h"
+#include "compiler/CMachine.h"
 #include "driver/COSToolsCLT.h"
 #include <string.h>
 

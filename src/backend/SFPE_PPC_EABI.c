@@ -21,10 +21,12 @@ struct Object *data_00587584;
 struct Object *data_005875ac;
 struct Object *data_005875bc;
 struct Object *data_005875f4;
+#if VERSION > VERSION_GC_1_0
 short return_gpr_first;
 SInt16 sfpe_right_operand_reg;
 short returnRegHi;
 SInt16 sfpe_right_operand_reg_hi;
+#endif
 
 /* r3, where a runtime routine takes its argument and returns its result */
 enum { RESULT_GPR = 3 };
@@ -37,6 +39,63 @@ typedef enum ConversionTypeKind {
     ConversionTypeKind3 = TYPEENUM,
     ConversionTypeKind11 = TYPEPOINTER
 } ConversionTypeKind;
+
+#if VERSION == VERSION_GC_1_0
+/* Moves srcA into dstA and srcB into dstB, first copying srcB elsewhere when the move into dstA would overwrite it;
+ * returns where srcB ends up. */
+static SInt16 move_register_pair(SInt16 srcA, SInt16 dstA, SInt16 srcB, SInt16 dstB)
+{
+    SInt16 temporary;
+
+    if (srcA != dstA) {
+        if (srcB == dstA) {
+            temporary = gUsedVirtualRegistersGPR++;
+            PCodeUtilities_EmitInstruction(PC_MR, temporary, srcB);
+            srcB = temporary;
+        }
+        PCodeUtilities_EmitInstruction(PC_MR, dstA, srcA);
+    }
+    if (srcB != dstB)
+        PCodeUtilities_EmitInstruction(PC_MR, dstB, srcB);
+    return srcB;
+}
+
+/* Puts the left pair in r3:r4 and the right pair in r5:r6, the arguments of a double runtime routine. */
+static void load_argument_pairs(Operand *left, Operand *right)
+{
+    SInt16 temporary;
+
+    if (left->regHi != 3) {
+        if (left->reg == 3) {
+            temporary = gUsedVirtualRegistersGPR++;
+            PCodeUtilities_EmitInstruction(PC_MR, temporary, left->reg);
+            left->reg = temporary;
+        } else if (right->reg == 3) {
+            temporary = gUsedVirtualRegistersGPR++;
+            PCodeUtilities_EmitInstruction(PC_MR, temporary, right->reg);
+            right->reg = temporary;
+        } else if (right->regHi == 3) {
+            temporary = gUsedVirtualRegistersGPR++;
+            PCodeUtilities_EmitInstruction(PC_MR, temporary, right->regHi);
+            right->regHi = temporary;
+        }
+        PCodeUtilities_EmitInstruction(PC_MR, 3, left->regHi);
+    }
+    if (left->reg != 4) {
+        if (right->reg == 4) {
+            temporary = gUsedVirtualRegistersGPR++;
+            PCodeUtilities_EmitInstruction(PC_MR, temporary, right->reg);
+            right->reg = temporary;
+        } else if (right->regHi == 4) {
+            temporary = gUsedVirtualRegistersGPR++;
+            PCodeUtilities_EmitInstruction(PC_MR, temporary, right->regHi);
+            right->regHi = temporary;
+        }
+        PCodeUtilities_EmitInstruction(PC_MR, 4, left->reg);
+    }
+    right->reg = move_register_pair(right->regHi, 5, right->reg, 6);
+}
+#endif
 
 static inline void lift_result(Operand *op, int kind)
 {
@@ -121,6 +180,9 @@ void SFPE_PPC_EABI_GenerateDiadicArithmetic(ENode *node, SInt16 requestedReg, SI
             Operands_ForceGPR(&leftOperand, left->rtype, 0);
         CError_ASSERT(136, leftOperand.kind == OpndType_GPR);
 
+#if VERSION == VERSION_GC_1_0
+        rightOperand.reg = move_register_pair(leftOperand.reg, 3, rightOperand.reg, 4);
+#else
         {
             SInt32 reg = leftOperand.reg;
             if (reg != 3)
@@ -131,6 +193,7 @@ void SFPE_PPC_EABI_GenerateDiadicArithmetic(ENode *node, SInt16 requestedReg, SI
             if (reg != 4)
                 PCodeUtilities_EmitInstruction(PC_MR, 4, reg);
         }
+#endif
 
         if (node->type == EADD) {
             PCodeUtilities_EmitObjectInstructionWithPayload(data_005875bc, 0, 0x18, 0, 0);
@@ -153,6 +216,11 @@ void SFPE_PPC_EABI_GenerateDiadicArithmetic(ENode *node, SInt16 requestedReg, SI
         CError_ASSERT(174, rightOperand.kind == OpndType_GPRPair);
 
         data_00560648[left->type](left, 0, 0, &leftOperand);
+#if VERSION == VERSION_GC_1_0
+        Operands_ForceGPRPair(&leftOperand, left->rtype, 4, 3);
+        CError_ASSERT(181, leftOperand.kind == OpndType_GPRPair);
+        load_argument_pairs(&leftOperand, &rightOperand);
+#else
         Operands_ForceGPRPair(&leftOperand, left->rtype, 0, 0);
         CError_ASSERT(181, leftOperand.kind == OpndType_GPRPair);
 
@@ -164,6 +232,7 @@ void SFPE_PPC_EABI_GenerateDiadicArithmetic(ENode *node, SInt16 requestedReg, SI
             PCodeUtilities_EmitInstruction(PC_MR, sfpe_right_operand_reg_hi, rightOperand.regHi);
         if (rightOperand.reg != sfpe_right_operand_reg)
             PCodeUtilities_EmitInstruction(PC_MR, sfpe_right_operand_reg, rightOperand.reg);
+#endif
 
         if (node->type == EADD) {
             PCodeUtilities_EmitObjectInstructionWithPayload(data_005875f4, 0, 0x78, 0, 0);
@@ -222,8 +291,16 @@ void SFPE_PPC_EABI_LoadFloatConstant(ENode *node, SInt16 regA, SInt16 regB, Oper
         else
             reg2 = gUsedVirtualRegistersGPR++;
         v = node->data.intval;
-        PCodeUtilities_EmitLoadImmediate(reg2, v.lo);
-        PCodeUtilities_EmitLoadImmediate(reg1, v.hi);
+#if VERSION == VERSION_GC_1_0
+        if (copts.littleendian) {
+            PCodeUtilities_EmitLoadImmediate(reg2, v.hi);
+            PCodeUtilities_EmitLoadImmediate(reg1, v.lo);
+        } else
+#endif
+        {
+            PCodeUtilities_EmitLoadImmediate(reg2, v.lo);
+            PCodeUtilities_EmitLoadImmediate(reg1, v.hi);
+        }
         out->kind = OpndType_GPRPair;
         out->reg = reg1;
         out->regHi = reg2;

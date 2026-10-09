@@ -1407,11 +1407,6 @@ void StackFrame_CheckAltivec(PCodeBlock *prologueBlock)
     }
 }
 
-void fn_004a9c70(void)
-{
-    return;
-}
-
 static inline unsigned int ReadFrameWord(const unsigned char *storage)
 {
     return *(const unsigned int *)storage;
