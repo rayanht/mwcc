@@ -16,6 +16,16 @@ static TypeFunc data_005741b0 = {TYPEFUNC, 0, NULL, NULL, TYPE(&stsignedshort), 
 static TypeFunc data_005741cc = {TYPEFUNC, 0, NULL, NULL, TYPE(&stunsignedlong), 0, 0};
 static TypeFunc data_005741e8 = {TYPEFUNC, 0, NULL, NULL, TYPE(&void_ptr), 0, 0};
 
+void fn_0051b810(void)
+{
+    return;
+}
+
+void fn_0051b800(void)
+{
+    return;
+}
+
 Object *get_or_create_type_name_object(CIRTypeName *entry, Type *ty)
 {
     Object *obj;

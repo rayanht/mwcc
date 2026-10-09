@@ -36,46 +36,6 @@ static int GetSync(int index, short *out, short *typeout);
 static int GetConst(int index, short *out);
 static void SetType(PCodeInstruction *p, short t);
 
-void COpt_LoadDeletion(void)
-{
-    int blockIndex;
-    CBlockData *sets;
-    int instructionIndex;
-    struct E *entry;
-    int k;
-    UInt32 *secondSet;
-
-    gLoadDeletionChanged = 0;
-    LoadDeletion_InitializeLoadLivenessRecordCounts();
-    if (data_0058820c > 0) {
-        COpt_SetLoopCodeMotionMode(0);
-        LoadDeletion_RecordImmediateLoadLiveness();
-        data_00587c98 = (CBlockData *)oalloc(gPCodeBlockCount * sizeof(CBlockData));
-        blockIndex = 0;
-        sets = data_00587c98;
-        while (blockIndex < gPCodeBlockCount) {
-            sets->generatedLoads = (UInt32 *)oalloc(((data_0058820c + 31) >> 5) * sizeof(UInt32));
-            secondSet = (UInt32 *)oalloc(((data_0058820c + 31) >> 5) * sizeof(UInt32));
-            blockIndex++;
-            sets->killedLoads = secondSet;
-            sets++;
-        }
-        LoadDeletion_BuildLoadLivenessSets();
-        for (instructionIndex = 0; instructionIndex < data_0058820c; instructionIndex++) {
-            k = 0;
-            entry = &immediateLoadLiveness[instructionIndex];
-            (void)((int)entry * k);
-            if (entry->flag != 0)
-                continue;
-            if ((entry->inst->flags & fSideEffects) != 0)
-                continue;
-            PCode_UnlinkInstruction(entry->inst);
-            gLoadDeletionChanged = 1;
-        }
-    }
-    freeoheap();
-}
-
 void ConstantPropagation_FindUniqueDefinitions(struct PCodeBlock *state)
 {
     SInt32 i;

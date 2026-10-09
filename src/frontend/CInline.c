@@ -49,6 +49,7 @@
 #include "driver/CLPluginRequests.h"
 #include "driver/CLPlugins.h"
 #include "driver/CWParserPluginsPrivate.h"
+#include "driver/CWCompilerLinkerPrivate.h"
 #include "driver/CWPluginsPrivate.h"
 #include "driver/Files.h"
 #include <string.h>
@@ -2411,7 +2412,7 @@ void inline_statement_list(Statement *list)
                 }
             }
             compilation = (struct CPrepCU *)cprep_cu;
-            if (CPrep_CallCompilerCallback(compilation->context, line_count) != 0)
+            if (CWCompilerLinkerPrivate_CallCompilerCallback(compilation->context, line_count) != 0)
                 CError_Longjmp();
             data_00582468++;
         } while (1);

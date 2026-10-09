@@ -300,7 +300,7 @@ void add_constant_to_next_use(IROLinear *expression, CInt64 value, Type *type)
                 }
                 break;
             case IROLinearOp2Arg:
-                if (IroDump_IsType1NodeType50(node->u.diadic.right) != 0) {
+                if (IroUtil_IsType1NodeType50(node->u.diadic.right) != 0) {
                     switch (node->nodetype) {
                         case EADD:
                         case EADDASS: {
@@ -370,7 +370,7 @@ Boolean propagate_inc_dec(void)
                 if ((UInt32)(def->index >> 5) < use->reachingDefs->size &&
                     ((1u << (def->index & 31)) & use->reachingDefs->bits[def->index >> 5])) {
                     if (use->reachingDefCount != 1 || use->linear->type != IROLinearOperand ||
-                        (parent = IroUtil_FindNextUse(use->linear)) == NULL || !IroDump_GetObjRef(parent) ||
+                        (parent = IroUtil_FindNextUse(use->linear)) == NULL || !IroUtil_GetObjRef(parent) ||
                         !IroUtil_AreTypesEqual(def->linear->rtype, parent->rtype) ||
                         ((use->linear->flags & IROLF_Assigned) &&
                          ((ancestor = IroUtil_FindNextUse(parent)) == NULL || !IRO_NodeKind(ancestor) ||
@@ -425,7 +425,7 @@ static Boolean IRO_NodeKind(IROLinear *n)
                 return 0;
             return 1;
         case IROLinearOp2Arg:
-            if ((n->nodetype == EADDASS || n->nodetype == ESUBASS) && IroDump_IsType1NodeType50(n->u.diadic.right) &&
+            if ((n->nodetype == EADDASS || n->nodetype == ESUBASS) && IroUtil_IsType1NodeType50(n->u.diadic.right) &&
                 !(n->u.diadic.left->flags & 0x80000))
                 return 1;
             return 0;
@@ -533,7 +533,7 @@ SInt32 IRO_UseDef(UInt8 eliminateUnused, UInt8 simplifyUses)
             }
             if (currentNode->type == IROLinearFunccall ||
                 (currentNode->type == IROLinearOp1Arg && currentNode->nodetype == EINDIRECT &&
-                 IroDump_GetObjRef(currentNode) == NULL)) {
+                 IroUtil_GetObjRef(currentNode) == NULL)) {
                 IroBitVect_CopyBitVector(use_def_in, usedDefs);
                 IroBitVect_Intersect(callDefs, usedDefs);
                 IroBitVect_Or(usedDefs, used_defs_bitvector);

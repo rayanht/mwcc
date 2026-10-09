@@ -67,7 +67,6 @@ extern UInt8 CTemplTool_EqualArgs(TemplArg *left, TemplArg *right);
 extern Boolean CTemplTool_InitDeduceInfo(DeduceInfo *info, TemplParam *params, TemplArg *args, Boolean flag);
 extern Type *CTemplTool_DeduceTypeCopy(TypeDeduce *ctx, Type *type, UInt32 *qual);
 extern struct TemplClass *fn_00516b50(TemplateLookupContext *context, struct TemplClass *record);
-extern Boolean CTemplateTools_MatchTypeAndCheckBoundSlots(Object *obj, Type *name, void *arg3);
 extern Boolean CTemplTool_IsSameTemplateType(TypeClass *type, TypeTemplDep *templateType);
 extern Type *CTemplTool_ResolveMemberSelfRefs(struct TemplClass *tclass, Type *type, UInt32 *qualifiers);
 extern SInt16 ctempl_instdepth;

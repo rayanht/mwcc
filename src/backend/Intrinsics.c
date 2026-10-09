@@ -20,6 +20,8 @@
 #include "compiler/StackFrameEABI.h"
 #include "compiler/StructMoves.h"
 
+struct ClassTypeUpdate *classTypeUpdates;
+
 struct Object *data_00587fc0;
 SInt16 gUsedVirtualRegistersVR;
 
@@ -4675,7 +4677,7 @@ void Intrinsics_GenerateIntrinsicCall(ENode *node, short requestedReg, Operand *
         } break;
         case 0x137:
         case 0x138:
-            PPCError_EmitClassTypeUpdate(intrinsic_opcodes[intrinsic], args->node, requestedReg, result);
+            Intrinsics_EmitClassTypeUpdate(intrinsic_opcodes[intrinsic], args->node, requestedReg, result);
             break;
         default:
             CError_FATAL(6087);
@@ -5925,4 +5927,54 @@ char Intrinsics_IsRegisteredObject(ObjBase *object)
             return 1;
     }
     return 0;
+}
+
+void Intrinsics_EmitClassTypeUpdate(SInt16 requestedReg, ENode *node, SInt16 flags, Operand *result)
+{
+    SInt32 valueReg, typeReg;
+    ClassTypeUpdate *update;
+    Operand object;
+    ClassTypeHeaderBytes header;
+
+    update = (ClassTypeUpdate *)lalloc(sizeof(*update));
+    memclrw(&object, sizeof(object));
+    data_00560648[node->type](node, 0, 0, &object);
+    if (object.kind)
+        Operands_ForceGPR(&object, node->rtype, 0);
+    valueReg = gUsedVirtualRegistersGPR;
+    gUsedVirtualRegistersGPR++;
+    header.bytes.lowByte = data_00588476 - 2;
+    header.bytes.highByte = data_00588478;
+    if (copts.littleendian != 0)
+        PCodeUtilities_EmitInstruction(PC_LI, valueReg, CTool_EndianConvertWord16(header.packedWord));
+    else
+        PCodeUtilities_EmitInstruction(PC_LIS, valueReg, 0, CTool_EndianConvertWord16(header.packedWord));
+    PCodeUtilities_EmitInstruction(PC_STW, valueReg, object.reg, 0, 0);
+    valueReg = gUsedVirtualRegistersGPR;
+    gUsedVirtualRegistersGPR++;
+    PCodeUtilities_EmitAddress(valueReg, 1, NULL, 0x15);
+    update->first = gCurrentBlock->reverse_instructions;
+    PCodeUtilities_EmitInstruction(PC_STW, valueReg, object.reg, 0, 4);
+    typeReg = gUsedVirtualRegistersGPR;
+    gUsedVirtualRegistersGPR++;
+    PCodeUtilities_EmitAddress(typeReg, 1, NULL, 0xb);
+    update->second = gCurrentBlock->reverse_instructions;
+    PCodeUtilities_EmitInstruction(PC_STW, typeReg, object.reg, 0, 8);
+    result->kind = OpndType_GPR;
+    result->reg = typeReg;
+    update->next = classTypeUpdates;
+    classTypeUpdates = update;
+}
+
+void Intrinsics_UpdateClassTypeOperands(void)
+{
+    ClassTypeUpdate *update;
+    update = classTypeUpdates;
+    if (classTypeUpdates != NULL) {
+        do {
+            update->first->operandData.operands[2].value.signed_value = fn_004a9f70(0) + data_00588274;
+            update->second->operandData.operands[2].value.signed_value = fn_004a9f90();
+            update = update->next;
+        } while (update != NULL);
+    }
 }

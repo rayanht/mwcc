@@ -729,7 +729,7 @@ void RewriteBitFieldTemps(void)
     IROLinear *temp = linear_head;
 
     while (temp != NULL) {
-        Object *type = IroDump_GetObjRef(temp);
+        Object *type = IroUtil_GetObjRef(temp);
         if (type != NULL && (temp->flags & 0x80000) != 0) {
             VarRecord *p = fn_0044ba70(type, 0, 1);
             IROLinear *q;

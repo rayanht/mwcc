@@ -544,7 +544,7 @@ void InterferenceGraph_SpillRegisters(int reg_class, int register_count)
                 object->datatype = DLOCAL;
                 object->type = type;
                 object->name = CParser_GetUniqueName();
-                object->u.var.info = CPrep_AllocateVarInfo();
+                object->u.var.info = CodeGen_AllocateVarInfo();
                 object->u.var.uid = 0;
                 node->object = object;
             }
@@ -620,7 +620,7 @@ void SpillCode_ConstructInterference(SInt32 registerClass, UInt32 registerCount)
     SInt16 reg;
     UInt32 i, j, k;
     gInterferenceBits = (UInt32 *)oalloc(((registerCount * registerCount / 2 + 0x1f) >> 5) << 2);
-    CRTTI_FillWords(gInterferenceBits, registerCount * registerCount / 2, 0);
+    BitVectors_FillWords(gInterferenceBits, registerCount * registerCount / 2, 0);
     for (i = 0; i < 0x20; i++) {
         for (j = 0; j < 0x20; j++) {
             if (i != j)

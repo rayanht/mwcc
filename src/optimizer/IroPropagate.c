@@ -71,7 +71,7 @@ int fn_004592e0(IROLinear *node)
 
     if (node->type == IROLinearOp2Arg && node->nodetype == EASS) {
         record = node->u.diadic.left;
-        left = IroDump_GetObjRef(record);
+        left = IroUtil_GetObjRef(record);
         if (left != NULL && left->type == node->rtype) {
             object = left;
             if (!is_volatile_object(object)) {
@@ -79,7 +79,7 @@ int fn_004592e0(IROLinear *node)
                 if (fn_0044d520(reference) != 0)
                     return 1;
                 record = node->u.diadic.right;
-                right = IroDump_GetObjRef(record);
+                right = IroUtil_GetObjRef(record);
                 if (right != NULL) {
                     object = right;
                     if (!is_volatile_object(object)) {
@@ -156,7 +156,7 @@ void IRO_CopyAndConstantPropagation(void)
                     definition->uvarIndex = variableId->index;
                     definition->value = instruction->u.diadic.right;
                     definition->var = NULL;
-                    definition->object = IroDump_GetObjRef(instruction->u.diadic.right);
+                    definition->object = IroUtil_GetObjRef(instruction->u.diadic.right);
                     definition->block = block;
                     if (definition->object != NULL)
                         definition->var = fn_0044ba70(definition->object, 0, 1);
@@ -253,7 +253,7 @@ void IRO_CopyAndConstantPropagation(void)
         for (;;) {
             if (instruction == NULL)
                 break;
-            if (IroDump_GetObjRef(instruction) != NULL && (instruction->flags & IROLF_Assigned) == 0 &&
+            if (IroUtil_GetObjRef(instruction) != NULL && (instruction->flags & IROLF_Assigned) == 0 &&
                 (instruction->flags & 0x4000) == 0) {
                 operand = instruction->u.monadic;
                 expression = operand->u.node;
@@ -271,7 +271,7 @@ void IRO_CopyAndConstantPropagation(void)
                             constant = IrOptimizer_NewENode(node->value->u.node->type);
                             *constant = *node->value->u.node;
                             if (constant->type == EINTCONST) {
-                                IroJump_ConvertCInt64ToType(&constant->data.intval, instruction->rtype);
+                                IroEval_ConvertCInt64ToType(&constant->data.intval, instruction->rtype);
                                 constant->rtype = instruction->rtype;
                             }
                             instruction->u.monadic->type = IROLinearNop;
@@ -377,7 +377,7 @@ void IroPropagate_PropagateExpressions(void)
                 break;
             IroUtil_InitList(&initialRange);
             if (node->type == IROLinearOp2Arg && node->nodetype == EASS && (node->flags & IROLF_Reffed) == 0) {
-                localObject = IroDump_GetObjRef(node->u.diadic.left);
+                localObject = IroUtil_GetObjRef(node->u.diadic.left);
                 if (localObject != NULL && is_volatile_object(localObject) == 0) {
                     if (localObject->datatype == DLOCAL && localObject->u.var.info != NULL) {
                         eligibleLocal = 0;
@@ -429,7 +429,7 @@ void IroPropagate_PropagateExpressions(void)
                     replacementCandidateTail = newCandidate;
                 }
             }
-            if (IroDump_GetObjRef(node) != NULL && (node->flags & IROLF_Assigned) == 0) {
+            if (IroUtil_GetObjRef(node) != NULL && (node->flags & IROLF_Assigned) == 0) {
                 localRegister = fn_0044ba70(node->u.monadic->u.node->data.objref, 0, 1);
                 if (localRegister != NULL) {
                     previousCandidate = replacementCandidateTail;
@@ -450,7 +450,7 @@ void IroPropagate_PropagateExpressions(void)
         for (;;) {
             if (currentNode == NULL)
                 break;
-            if (IroDump_GetObjRef(currentNode) != NULL && (currentNode->flags & IROLF_Assigned) == 0 &&
+            if (IroUtil_GetObjRef(currentNode) != NULL && (currentNode->flags & IROLF_Assigned) == 0 &&
                 (currentNode->flags & 16384) == 0) {
                 if ((currentRegister = fn_0044ba70(currentNode->u.monadic->u.node->data.objref, 0, 1)) != NULL) {
                     matchingCandidate = replacementCandidate;
@@ -465,7 +465,7 @@ void IroPropagate_PropagateExpressions(void)
                                 replacement = IrOptimizer_NewENode(matchingCandidate->value->u.node->type);
                                 *replacement = *matchingCandidate->value->u.node;
                                 if ((replacementKind = replacement->type) == EINTCONST) {
-                                    IroJump_ConvertCInt64ToType(&replacement->data.intval, currentNode->rtype);
+                                    IroEval_ConvertCInt64ToType(&replacement->data.intval, currentNode->rtype);
                                     replacement->rtype = currentNode->rtype;
                                 } else if (replacementKind == EOBJREF) {
                                     record = IroUtil_FindNextUse(currentNode);
@@ -476,7 +476,7 @@ void IroPropagate_PropagateExpressions(void)
                                 currentNode->u.monadic->type = IROLinearNop;
                                 currentNode->type = IROLinearOperand;
                                 currentNode->u.node = replacement;
-                            } else if (IroDump_GetObjRef(matchingCandidate->value) != NULL &&
+                            } else if (IroUtil_GetObjRef(matchingCandidate->value) != NULL &&
                                        IroUtil_IsTypeSame(currentNode->rtype, matchingCandidate->node->rtype) != 0) {
                                 currentNode->u.monadic->u.node =
                                     create_objectrefnode(matchingCandidate->value->u.monadic->u.node->data.objref);
@@ -528,7 +528,7 @@ void IroPropagate_PropagateExpressions(void)
                             (1 << registerIndex & data_00588018->bits[registerIndex >> 5]) != 0) {
                             IroBitVect_ClearBit(candidateToInvalidate->index, availableExpressions);
                         }
-                        if ((referencedObject = IroDump_GetObjRef(candidateToInvalidate->node->u.diadic.right)) !=
+                        if ((referencedObject = IroUtil_GetObjRef(candidateToInvalidate->node->u.diadic.right)) !=
                             NULL) {
                             objectRegister = fn_0044ba70(referencedObject, 0, 1);
                             if (objectRegister == NULL)

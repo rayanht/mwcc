@@ -19,7 +19,6 @@
 
 struct PCodeLiveness *gPCodeBlockLiveness;
 
-
 void SpillCode_BuildLocalLiveness(int reg_class)
 {
     PCodeBlock *block;
@@ -91,7 +90,8 @@ void SpillCode_SolveLiveness(UInt32 nbits)
                 live_out = live->liveout;
                 CodeMotion_AllocateBits(live_out, gPCodeBlockLiveness[successor->payload.block->index].livein, nbits);
                 for (successor = successor->next; successor != NULL; successor = successor->next)
-                    CRTTI_OrBitVector(live_out, gPCodeBlockLiveness[successor->payload.block->index].livein, nbits);
+                    BitVectors_OrBitVector(live_out, gPCodeBlockLiveness[successor->payload.block->index].livein,
+                                           nbits);
             }
             live_out = live->liveout;
             live_in = live->livein;
@@ -125,10 +125,10 @@ void SpillCode_InitializeLiveness(Object *func, SInt32 mode, UInt32 nbits)
     liveness = gPCodeBlockLiveness;
 
     for (blockIndex = 0; blockIndex < gPCodeBlockCount; blockIndex++) {
-        CRTTI_FillWords(liveness->use = oalloc(((nbits + 31) >> 5) << 2), nbits, 0);
-        CRTTI_FillWords(liveness->def = oalloc(((nbits + 31) >> 5) << 2), nbits, 0);
-        CRTTI_FillWords(liveness->livein = oalloc(((nbits + 31) >> 5) << 2), nbits, 0);
-        CRTTI_FillWords(liveness->liveout = oalloc(((nbits + 31) >> 5) << 2), nbits, 0);
+        BitVectors_FillWords(liveness->use = oalloc(((nbits + 31) >> 5) << 2), nbits, 0);
+        BitVectors_FillWords(liveness->def = oalloc(((nbits + 31) >> 5) << 2), nbits, 0);
+        BitVectors_FillWords(liveness->livein = oalloc(((nbits + 31) >> 5) << 2), nbits, 0);
+        BitVectors_FillWords(liveness->liveout = oalloc(((nbits + 31) >> 5) << 2), nbits, 0);
         liveness++;
     }
 

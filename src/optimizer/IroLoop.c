@@ -217,12 +217,12 @@ int match_induction_expression(IROLinear *node, IROLinear **factor, IROLinear **
                 rightFlag100 = (right->flags & IROLF_LoopInvariant) != 0;
                 right = right->u.monadic;
             }
-            if (((left->flags & IROLF_LoopInvariant) != 0 || leftFlag100 != 0) && IroDump_GetObjRef(right) != NULL) {
+            if (((left->flags & IROLF_LoopInvariant) != 0 || leftFlag100 != 0) && IroUtil_GetObjRef(right) != NULL) {
                 if (leftFlag100 != 0 ||
-                    (((value = IroDump_GetObjRef(left)) == NULL || IroPropagate_IsRegisterEligible(value) == 0) &&
+                    (((value = IroUtil_GetObjRef(left)) == NULL || IroPropagate_IsRegisterEligible(value) == 0) &&
                      fn_0044d520(left) == 0)) {
                     if (left->type == IROLinearOp2Arg && left->nodetype == EADD) {
-                        value = IroDump_GetObjRef(left->u.diadic.left);
+                        value = IroUtil_GetObjRef(left->u.diadic.left);
                         if (value != NULL) {
                             if (IroPropagate_IsRegisterEligible(value) != 0) {
                                 if (fn_0044d520(left->u.diadic.right) != 0)
@@ -258,14 +258,14 @@ int match_induction_expression(IROLinear *node, IROLinear **factor, IROLinear **
                             CInt64_Shl(cint64_one, right->u.diadic.right->u.node->data.intval);
                     }
                     if (right->u.diadic.left->type == IROLinearOp1Arg) {
-                        if (IroDump_GetObjRef(right->u.diadic.left) != NULL) {
+                        if (IroUtil_GetObjRef(right->u.diadic.left) != NULL) {
                             *expression = right->u.diadic.left;
                             variableNode = right->u.diadic.left;
                             *factor = right->u.diadic.right;
                             break;
                         }
                         if (right->u.diadic.left->nodetype == ETYPCON &&
-                            IroDump_GetObjRef(right->u.diadic.left->u.monadic) != NULL) {
+                            IroUtil_GetObjRef(right->u.diadic.left->u.monadic) != NULL) {
                             if (is_value_preserving_integral_conversion(right->u.diadic.left) == 0)
                                 return 0;
                             *expression = right->u.diadic.left;
@@ -289,14 +289,14 @@ int match_induction_expression(IROLinear *node, IROLinear **factor, IROLinear **
                             CInt64_Shl(cint64_one, left->u.diadic.right->u.node->data.intval);
                     }
                     if (left->u.diadic.left->type == IROLinearOp1Arg) {
-                        if (IroDump_GetObjRef(left->u.diadic.left) != NULL) {
+                        if (IroUtil_GetObjRef(left->u.diadic.left) != NULL) {
                             *expression = left->u.diadic.left;
                             variableNode = left->u.diadic.left;
                             *factor = left->u.diadic.right;
                             break;
                         }
                         if (left->u.diadic.left->nodetype == ETYPCON &&
-                            IroDump_GetObjRef(left->u.diadic.left->u.monadic) != NULL) {
+                            IroUtil_GetObjRef(left->u.diadic.left->u.monadic) != NULL) {
                             if (is_value_preserving_integral_conversion(left->u.diadic.left) == 0)
                                 return 0;
                             *expression = left->u.diadic.left;
@@ -311,12 +311,12 @@ int match_induction_expression(IROLinear *node, IROLinear **factor, IROLinear **
                 return 0;
             }
 
-            if (((right->flags & IROLF_LoopInvariant) != 0 || rightFlag100 != 0) && IroDump_GetObjRef(left) != NULL) {
+            if (((right->flags & IROLF_LoopInvariant) != 0 || rightFlag100 != 0) && IroUtil_GetObjRef(left) != NULL) {
                 if (rightFlag100 != 0 ||
-                    (((value = IroDump_GetObjRef(right)) == NULL || IroPropagate_IsRegisterEligible(value) == 0) &&
+                    (((value = IroUtil_GetObjRef(right)) == NULL || IroPropagate_IsRegisterEligible(value) == 0) &&
                      fn_0044d520(right) == 0)) {
                     if (right->type == IROLinearOp2Arg && right->nodetype == EADD) {
-                        value = IroDump_GetObjRef(right->u.diadic.left);
+                        value = IroUtil_GetObjRef(right->u.diadic.left);
                         if (value != NULL) {
                             if (IroPropagate_IsRegisterEligible(value) != 0) {
                                 if (fn_0044d520(right->u.diadic.right) != 0)
@@ -349,14 +349,14 @@ int match_induction_expression(IROLinear *node, IROLinear **factor, IROLinear **
             node->rtype->size <= 4 && (node->rtype->type == TYPEINT || node->rtype->type == TYPEPOINTER)) {
             right = node->u.diadic.right;
             left = node->u.diadic.left;
-            if (fn_0044d520(right) != 0 && IroDump_GetObjRef(left) != NULL) {
+            if (fn_0044d520(right) != 0 && IroUtil_GetObjRef(left) != NULL) {
                 *expression = left;
                 variableNode = left;
                 *factor = right;
                 break;
             }
             if (fn_0044d520(node->u.diadic.right) != 0 && left->type == IROLinearOp1Arg && left->nodetype == ETYPCON &&
-                IroDump_GetObjRef(left->u.monadic) != NULL) {
+                IroUtil_GetObjRef(left->u.monadic) != NULL) {
                 if (is_value_preserving_integral_conversion(left) == 0)
                     return 0;
                 *expression = left;
@@ -367,14 +367,14 @@ int match_induction_expression(IROLinear *node, IROLinear **factor, IROLinear **
             if (node->type == IROLinearOp2Arg && node->nodetype == ESHL)
                 return 0;
             if ((node->u.diadic.right->flags & IROLF_LoopInvariant) != 0) {
-                if (IroDump_GetObjRef(left) != NULL) {
+                if (IroUtil_GetObjRef(left) != NULL) {
                     *expression = left;
                     variableNode = left;
                     *factor = right;
                     break;
                 }
                 if (left->type == IROLinearOp1Arg && left->nodetype == ETYPCON &&
-                    IroDump_GetObjRef(left->u.monadic) != NULL) {
+                    IroUtil_GetObjRef(left->u.monadic) != NULL) {
                     if (is_value_preserving_integral_conversion(left) == 0)
                         return 0;
                     *expression = left;
@@ -385,14 +385,14 @@ int match_induction_expression(IROLinear *node, IROLinear **factor, IROLinear **
                 return 0;
             }
             if ((node->u.diadic.left->flags & IROLF_LoopInvariant) != 0) {
-                if (IroDump_GetObjRef(right) != NULL) {
+                if (IroUtil_GetObjRef(right) != NULL) {
                     *expression = right;
                     variableNode = right;
                     *factor = left;
                     break;
                 }
                 if (right->type == IROLinearOp1Arg && right->nodetype == ETYPCON &&
-                    IroDump_GetObjRef(right->u.monadic) != NULL && node->type == IROLinearOp2Arg &&
+                    IroUtil_GetObjRef(right->u.monadic) != NULL && node->type == IROLinearOp2Arg &&
                     node->nodetype == EMUL) {
                     if (is_value_preserving_integral_conversion(right) == 0)
                         return 0;
@@ -408,7 +408,7 @@ int match_induction_expression(IROLinear *node, IROLinear **factor, IROLinear **
 
         if (nodeKind == IROLinearOp2Arg && (node->nodetype == EDIV || node->nodetype == ESHR) &&
             node->rtype->size <= 4 && node->rtype->type == TYPEINT) {
-            if (IroDump_GetObjRef(node->u.diadic.left) != NULL && fn_0044d520(node->u.diadic.right) != 0) {
+            if (IroUtil_GetObjRef(node->u.diadic.left) != NULL && fn_0044d520(node->u.diadic.right) != 0) {
                 constant = node->u.diadic.right->u.node;
                 divisor = constant->data.intval;
                 if (node->type == IROLinearOp2Arg && node->nodetype == ESHR) {
@@ -980,7 +980,7 @@ void find_induction_variables(void)
                     isInduction = 0;
                     if ((stmt->type == IROLinearOp2Arg && stmt->rtype->size <= 4 &&
                          (stmt->nodetype == EADDASS || stmt->nodetype == ESUBASS) &&
-                         (target = IroDump_GetObjRef(stmt->u.diadic.left)) != NULL &&
+                         (target = IroUtil_GetObjRef(stmt->u.diadic.left)) != NULL &&
                          target->type->size == stmt->rtype->size && target->type->type == TYPEINT &&
                          ((fn_0044d520(stmt->u.diadic.right) != 0 &&
                            stmt->u.diadic.right->u.node->data.intval.lo != 0) ||
@@ -988,19 +988,19 @@ void find_induction_variables(void)
                         (stmt->type == IROLinearOp1Arg && stmt->rtype->size <= 4 &&
                          (stmt->nodetype == EPOSTINC || stmt->nodetype == EPOSTDEC || stmt->nodetype == EPREINC ||
                           stmt->nodetype == EPREDEC) &&
-                         (target = IroDump_GetObjRef(stmt->u.diadic.left)) != NULL &&
+                         (target = IroUtil_GetObjRef(stmt->u.diadic.left)) != NULL &&
                          target->type->size == stmt->rtype->size && target->type->type == TYPEINT)) {
                         isInduction = 1;
                     } else if (stmt->type == IROLinearOp2Arg && stmt->rtype->size <= 4 && stmt->nodetype == EASS &&
-                               (target = IroDump_GetObjRef(stmt->u.diadic.left)) != NULL &&
+                               (target = IroUtil_GetObjRef(stmt->u.diadic.left)) != NULL &&
                                target->type->size == stmt->rtype->size && target->type->type == TYPEINT &&
                                stmt->u.diadic.right->type == IROLinearOp2Arg &&
                                (stmt->u.diadic.right->nodetype == EADD || stmt->u.diadic.right->nodetype == ESUB)) {
                         Object *left;
                         Object *right;
                         if (stmt->u.diadic.right->nodetype == EADD) {
-                            left = IroDump_GetObjRef(stmt->u.diadic.right->u.diadic.left);
-                            right = IroDump_GetObjRef(stmt->u.diadic.right->u.diadic.right);
+                            left = IroUtil_GetObjRef(stmt->u.diadic.right->u.diadic.left);
+                            right = IroUtil_GetObjRef(stmt->u.diadic.right->u.diadic.right);
                             if (left == target && right != target &&
                                 (stmt->u.diadic.right->u.diadic.right->flags & IROLF_LoopInvariant))
                                 isInduction = 1;
@@ -1013,8 +1013,8 @@ void find_induction_variables(void)
                                 stmt->u.diadic.right->u.diadic.right = temp;
                             }
                         } else {
-                            left = IroDump_GetObjRef(stmt->u.diadic.right->u.diadic.left);
-                            right = IroDump_GetObjRef(stmt->u.diadic.right->u.diadic.right);
+                            left = IroUtil_GetObjRef(stmt->u.diadic.right->u.diadic.left);
+                            right = IroUtil_GetObjRef(stmt->u.diadic.right->u.diadic.right);
                             if (left == target && right != target &&
                                 (stmt->u.diadic.right->u.diadic.right->flags & IROLF_LoopInvariant))
                                 isInduction = 1;
@@ -1389,7 +1389,7 @@ IROLoop *fn_0045faa0(IRONode *loop)
         found = NULL;
         left = condition->u.diadic.left;
         right = condition->u.diadic.right;
-        testResult = IroDump_GetObjRef(left);
+        testResult = IroUtil_GetObjRef(left);
         if (testResult != NULL) {
             lookupResult = fn_0044ba70(left->u.monadic->u.node->data.objref, 0, 1);
             if (lookupResult != NULL) {
@@ -1404,7 +1404,7 @@ IROLoop *fn_0045faa0(IRONode *loop)
                 }
             }
         }
-        testResult = IroDump_GetObjRef(right);
+        testResult = IroUtil_GetObjRef(right);
         if (testResult != NULL) {
             lookupResult = fn_0044ba70(right->u.monadic->u.node->data.objref, 0, 1);
             if (lookupResult != NULL) {
@@ -1462,7 +1462,7 @@ IROLoop *fn_0045faa0(IRONode *loop)
     } else {
         if (condition->type == IROLinearOp1Arg && condition->rtype->type == TYPEINT) {
             if (condition->nodetype == EPREINC || condition->nodetype == EPREDEC || condition->nodetype <= EPOSTDEC) {
-                testResult = IroDump_GetObjRef(condition->u.monadic);
+                testResult = IroUtil_GetObjRef(condition->u.monadic);
                 if (testResult != NULL) {
                     lookupResult = fn_0044ba70(condition->u.monadic->u.monadic->u.node->data.objref, 0, 1);
                     if (lookupResult != NULL) {
@@ -1631,8 +1631,8 @@ IROLoop *fn_0045faa0(IRONode *loop)
                                 }
                             }
                             if (linear->type == IROLinearOp2Arg && linear->nodetype == ESHR &&
-                                (assignmentObject = IroDump_GetObjRef(linear->u.diadic.left)) != NULL &&
-                                IroDump_IsType1NodeType50(linear->u.diadic.right) != 0) {
+                                (assignmentObject = IroUtil_GetObjRef(linear->u.diadic.left)) != NULL &&
+                                IroUtil_IsType1NodeType50(linear->u.diadic.right) != 0) {
                                 for (assignmentInduction = induction_variables; assignmentInduction != NULL;
                                      assignmentInduction = assignmentInduction->next) {
                                     if (assignmentInduction->var->object == assignmentObject) {
@@ -1645,8 +1645,8 @@ IROLoop *fn_0045faa0(IRONode *loop)
                                 Object *comparisonObject;
                                 IROLoopInd *comparisonInduction;
                                 if (linear->type == IROLinearOp2Arg && linear->nodetype == EAND &&
-                                    (comparisonObject = IroDump_GetObjRef(linear->u.diadic.left)) != NULL &&
-                                    IroDump_IsType1NodeType50(linear->u.diadic.right) != 0) {
+                                    (comparisonObject = IroUtil_GetObjRef(linear->u.diadic.left)) != NULL &&
+                                    IroUtil_IsType1NodeType50(linear->u.diadic.right) != 0) {
                                     comparisonInduction = induction_variables;
                                     while (comparisonInduction != NULL && comparisonObject != NULL) {
                                         if (comparisonInduction->var->object == comparisonObject) {
@@ -2074,7 +2074,7 @@ void unroll_loop(int factor, struct IRONode *header)
                                                     addressLinear->nodetype == EADD) {
                                                     base = addressLinear->u.diadic.left;
                                                     type = addressLinear->rtype;
-                                                    if (IroDump_GetObjRef(base)) {
+                                                    if (IroUtil_GetObjRef(base)) {
                                                         mulNd = addressLinear->u.diadic.right;
                                                         if (mulNd->type == IROLinearOp2Arg && mulNd->nodetype == ESHL &&
                                                             fn_0044d520(mulNd->u.diadic.right)) {
@@ -2144,8 +2144,8 @@ void unroll_loop(int factor, struct IRONode *header)
                                             if (limit->type == IROLinearOp2Arg && limit->nodetype == EAND &&
                                                 addNd->type == IROLinearOp2Arg && addNd->nodetype == ESHR) {
                                                 left2 = limit->u.diadic.left;
-                                                object = IroDump_GetObjRef(addNd->u.diadic.left);
-                                                otherObject = IroDump_GetObjRef(left2);
+                                                object = IroUtil_GetObjRef(addNd->u.diadic.left);
+                                                otherObject = IroUtil_GetObjRef(left2);
                                                 if (object == otherObject && object == ind->var->object) {
                                                     right1 = addNd->u.diadic.right;
                                                     right2 = limit->u.diadic.right;
@@ -2783,7 +2783,7 @@ int is_loop_unrollable(IROLoop *loop)
 
     if (!(loop->flags & 0x10000)) {
         operand = loop->cond->u.diadic.right;
-        if (IroDump_IsType1NodeType50(loop->cond->u.diadic.right) == 0 && (operand->flags & IROLF_LoopInvariant) == 0) {
+        if (IroUtil_IsType1NodeType50(loop->cond->u.diadic.right) == 0 && (operand->flags & IROLF_LoopInvariant) == 0) {
             IroDump_Print("IsLoopUnrollable:No because Loop Upper Bound is Variant in the loop\n");
             return 0;
         }
@@ -2791,7 +2791,7 @@ int is_loop_unrollable(IROLoop *loop)
             IroDump_Print("IsLoopUnrollable:No because there is no initialization of loop index in PreHeader\n");
             return 0;
         }
-        if (IroDump_GetObjRef(loop->init->u.diadic.left) == NULL) {
+        if (IroUtil_GetObjRef(loop->init->u.diadic.left) == NULL) {
             IroDump_Print("IsLoopUnrollable:No because initial value of induction stored thru pointer\n");
             return 0;
         }
@@ -2799,7 +2799,7 @@ int is_loop_unrollable(IROLoop *loop)
         if (initializationType->integral == IT_CHAR || initializationType->integral == IT_SHORT ||
             initializationType->integral == IT_INT || initializationType->integral == IT_LONG ||
             initializationType->integral == IT_LONGLONG) {
-            if (IroDump_IsType1NodeType50(loop->init->u.diadic.right) != 0) {
+            if (IroUtil_IsType1NodeType50(loop->init->u.diadic.right) != 0) {
                 ENode *literal = loop->init->u.diadic.right->u.node;
                 if (!CInt64_GreaterEqual(literal->data.intval, cint64_zero)) {
                     IroDump_Print("IsLoopUnrollable:No because initial value of induction is signed but > 0\n");
@@ -2870,7 +2870,7 @@ int compute_loop_count(IROLoop *loop, CInt64 *count)
         integralType->integral == IT_UINT || integralType->integral == IT_ULONG ||
         integralType->integral == IT_ULONGLONG)
         isUnsigned = 1;
-    if (IroDump_IsType1NodeType50(start) != 0 && IroDump_IsType1NodeType50(limit) != 0) {
+    if (IroUtil_IsType1NodeType50(start) != 0 && IroUtil_IsType1NodeType50(limit) != 0) {
         startValue = start->u.node->data.intval;
         limitValue = limit->u.node->data.intval;
         if (isUnsigned != 0) {
@@ -2905,7 +2905,7 @@ int compute_loop_count(IROLoop *loop, CInt64 *count)
     if (start->type == IROLinearOp2Arg && start->nodetype == EADD) {
         IroVars_CollectAddrRecordElements(start, startTerms);
 #if VERSION >= VERSION_GC_1_2_5
-    } else if (IroDump_IsType1NodeType50(start) != 0) {
+    } else if (IroUtil_IsType1NodeType50(start) != 0) {
         startTerms->numInts += 1;
         IroVars_PrependElmList(start, &startTerms->ints);
         startTerms->numObjRefs = 0;
@@ -2920,7 +2920,7 @@ int compute_loop_count(IROLoop *loop, CInt64 *count)
     if (limit->type == IROLinearOp2Arg && limit->nodetype == EADD) {
         IroVars_CollectAddrRecordElements(limit, limitTerms);
 #if VERSION >= VERSION_GC_1_2_5
-    } else if (IroDump_IsType1NodeType50(limit) != 0) {
+    } else if (IroUtil_IsType1NodeType50(limit) != 0) {
         limitTerms->numInts += 1;
         IroVars_PrependElmList(limit, &limitTerms->ints);
         limitTerms->numObjRefs = 0;
@@ -3057,7 +3057,7 @@ struct IROLinear *create_loop_iteration_count(struct IROList *context, struct IR
 
     unitBound = 0;
     bound = statement->init->u.diadic.right;
-    if (IroDump_IsType1NodeType50(bound) && CInt64_Equal(bound->u.node->data.intval, cint64_zero))
+    if (IroUtil_IsType1NodeType50(bound) && CInt64_Equal(bound->u.node->data.intval, cint64_zero))
         unitBound = 1;
     if (!unitBound)
         bound = IroUtil_CopyLinearToList((bound), (context));
@@ -3141,7 +3141,7 @@ struct IROLinear *create_loop_iteration_count(struct IROList *context, struct IR
     if (CInt64_Equal(stepNode->u.node->data.intval, cint64_one))
         quotient = sum;
     else {
-        if (stepNode->rtype->size <= 4 && stepNode->rtype->type == TYPEINT && IroDump_IsPowerOfTwo(stepNode, &shift)) {
+        if (stepNode->rtype->size <= 4 && stepNode->rtype->type == TYPEINT && IroUtil_IsPowerOfTwo(stepNode, &shift)) {
             quotient = IrOptimizer_NewLinear(IROLinearOp2Arg);
             linear_index_counter++;
             quotient->index = linear_index_counter;
@@ -3686,7 +3686,7 @@ void add_const_to_induction_var_references(IROLinear *first, IROLinear *last, SI
 
     for (scan = first; scan != NULL; scan = next) {
         next = scan->next;
-        if ((object = IroDump_GetObjRef(scan)) != NULL && loop->induction->var->object == object) {
+        if ((object = IroUtil_GetObjRef(scan)) != NULL && loop->induction->var->object == object) {
             offsetOperand = IrOptimizer_NewLinear(IROLinearOperand);
             offsetOperand->index = ++linear_index_counter;
             offsetOperand->rtype = type;
@@ -3713,7 +3713,7 @@ void add_const_to_induction_var_references(IROLinear *first, IROLinear *last, SI
             adjustedAfterScale = 0;
             if (canScale && scaledUse != NULL && scaledUse->type == IROLinearOp2Arg &&
                 (scaledUse->nodetype == ESHL || scaledUse->nodetype == EMUL) &&
-                IroDump_IsType1NodeType50(scaledUse->u.diadic.right)) {
+                IroUtil_IsType1NodeType50(scaledUse->u.diadic.right)) {
                 addressUse = IroUtil_FindNextUse(scaledUse);
                 if (addressUse != NULL && addressUse->type == IROLinearOp2Arg && addressUse->nodetype == EADD &&
                     addressUse->u.diadic.right == scaledUse) {
@@ -3883,7 +3883,7 @@ IROLinear *reorder_sequence_by_flags_and_type50(IROLinear *tree, IROList *contex
     if (entry != NULL) {
         do {
             node = entry->element;
-            if (IroDump_IsType1NodeType50(node) == 0 && (node->flags & IROLF_LoopInvariant) != 0) {
+            if (IroUtil_IsType1NodeType50(node) == 0 && (node->flags & IROLF_LoopInvariant) != 0) {
                 if (result != NULL) {
                     combinedNode = MakeSequenceNode(result, node, context, 0);
                     combinedNode->flags |= IROLF_LoopInvariant;
@@ -3908,7 +3908,7 @@ IROLinear *reorder_sequence_by_flags_and_type50(IROLinear *tree, IROList *contex
     if (entry != NULL) {
         do {
             node = entry->element;
-            if (IroDump_IsType1NodeType50(node) == 0) {
+            if (IroUtil_IsType1NodeType50(node) == 0) {
                 if (result != NULL) {
                     IROLinear *sequenceNode;
                     sequenceNode = MakeSequenceNode(result, node, context, 0);

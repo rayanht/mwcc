@@ -85,6 +85,41 @@ MWVector128 alternate_vector_patterns[16] = {
 
 static Type *Type_IntPromote(Type *t);
 
+int fn_0049f630(ENode *expr)
+{
+    while (expr->type == EFORCELOAD || expr->type == ETYPCON || expr->type == ECOMMA) {
+        if (!(expr->rtype->type == TYPEINT || expr->rtype->type == TYPEENUM || expr->rtype->type == TYPEPOINTER ||
+              (expr->rtype->type == TYPEMEMBERPOINTER && expr->rtype->size == 4)))
+            break;
+        if (expr->type == ECOMMA)
+            expr = expr->data.diadic.right;
+        else
+            expr = expr->data.monadic;
+    }
+    if (expr->type >= 0x13 && expr->type <= 0x18)
+        return 1;
+    return 0;
+}
+
+int TOC_IsLogicalExpression(ENode *enode)
+{
+    UInt8 type;
+
+    while ((type = enode->type) == EFORCELOAD || type == ETYPCON || type == ECOMMA) {
+        if (enode->rtype->type == TYPEINT || enode->rtype->type == TYPEENUM || enode->rtype->type == TYPEPOINTER ||
+            (enode->rtype->type == TYPEMEMBERPOINTER && enode->rtype->size == 4)) {
+            if (type == ECOMMA)
+                enode = enode->data.diadic.right;
+            else
+                enode = enode->data.monadic;
+        } else
+            break;
+    }
+    if (type == ELOGNOT || type == ELAND || type == ELOR)
+        return 1;
+    return 0;
+}
+
 static inline char TOC_RegisterClass(const EncodedOperand *operand)
 {
     return operand->modifier.reg.register_class;
@@ -992,7 +1027,7 @@ void fn_0049d710(ENode *node, Type *targetType, int ignored)
             break;
         }
         case ECOND:
-            if (!Operands_IsLogicalExpression(node->data.diadic.left)) {
+            if (!TOC_IsLogicalExpression(node->data.diadic.left)) {
                 if (!fn_0049f630(node->data.diadic.left)) {
                     node->data.diadic.left = create_diadic_node_with_constant(node->data.diadic.left);
                 }
@@ -1076,12 +1111,12 @@ void fn_0049d710(ENode *node, Type *targetType, int ignored)
             break;
         case ELAND:
         case ELOR:
-            if (!Operands_IsLogicalExpression(node->data.diadic.left)) {
+            if (!TOC_IsLogicalExpression(node->data.diadic.left)) {
                 if (!fn_0049f630(node->data.diadic.left)) {
                     node->data.diadic.left = create_diadic_node_with_constant(node->data.diadic.left);
                 }
             }
-            if (!Operands_IsLogicalExpression(node->data.diadic.right)) {
+            if (!TOC_IsLogicalExpression(node->data.diadic.right)) {
                 if (!fn_0049f630(node->data.diadic.right)) {
                     node->data.diadic.right = create_diadic_node_with_constant(node->data.diadic.right);
                 }
@@ -1360,7 +1395,7 @@ void fn_0049d710(ENode *node, Type *targetType, int ignored)
             rewrite_compound_assignment(node, ESUB);
             goto assignment;
         case ELOGNOT:
-            if (!Operands_IsLogicalExpression(node->data.diadic.left)) {
+            if (!TOC_IsLogicalExpression(node->data.diadic.left)) {
                 if (!fn_0049f630(node->data.diadic.left)) {
                     node->data.diadic.left = create_diadic_node_with_constant(node->data.diadic.left);
                 }

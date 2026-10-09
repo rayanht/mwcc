@@ -43,6 +43,7 @@ extern int get_matching_cond_objref(Object *expectedResult, IROLinear *cond);
 extern SInt32 has_label_successor(void *id, IRONode *node);
 extern int starts_with_branch_cond(IRONode *node);
 extern IROLinear *find_leftmost_leaf(IROLinear *p);
+extern void IroEval_ConvertCInt64ToType(CInt64 *value, Type *type);
 
 #ifdef __cplusplus
 }

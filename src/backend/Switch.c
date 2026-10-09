@@ -38,7 +38,6 @@
 #include "compiler/TOC.h"
 #include "driver/Files.h"
 #include "compiler/ENode.h"
-static CInt64 data_005608f8 = {0, 3};
 
 static struct SwitchCase **data_00581150;
 static struct CaseRange *case_ranges;
@@ -421,6 +420,8 @@ Object *create_switchtable(void)
     return node->object;
 }
 
+static CInt64 data_005608f8 = {0, 3};
+
 void generate_switchtable_dispatch(ENode *node, SwitchInfo *cases)
 {
     Object *obj;
@@ -543,4 +544,25 @@ void Switch_GenerateSwitch(ENode *expression, SwitchInfo *cases)
         emit_case_ranges(expression);
     else
         generate_switchtable_dispatch(expression, cases);
+}
+
+void Switch_EmitSwitchTables(Object *function)
+{
+    int remaining;
+    SInt32 *entry;
+    Object *table;
+    while (switch_tables != NULL) {
+        table = switch_tables->object;
+        entry = table->u.data.u.switchtable.data;
+        remaining = table->u.data.u.switchtable.size;
+        while (remaining != 0) {
+            PCodeLabel *label = (PCodeLabel *)*entry;
+            PCodeBlock *block = label->target.block;
+            *entry = CTool_EndianConvertWord32(block->code_offset);
+            remaining--;
+            entry++;
+        }
+        ObjGen_PPC_EABI_EmitSwitchTable(table, function);
+        switch_tables = switch_tables->next;
+    }
 }

@@ -165,8 +165,8 @@ void fn_00521480(void)
 
         local = vectors->gen;
         external = vectors->kill;
-        CRTTI_FillWords(local, add_propagation_entry_count, 0);
-        CRTTI_FillWords(external, add_propagation_entry_count, 0);
+        BitVectors_FillWords(local, add_propagation_entry_count, 0);
+        BitVectors_FillWords(external, add_propagation_entry_count, 0);
         bitIndex = add_propagation_block_bit_indices[block->index];
         for (instruction = (PCodeInstruction *)block->instructions; instruction != NULL;
              instruction = instruction->next) {
@@ -234,7 +234,7 @@ void compute_add_propagation_in_out(void)
     words = (add_propagation_entry_count + 0x1f) >> 5;
 
     rec = &addPropagationBlockBits[gPCodeBlocks->index];
-    CRTTI_FillWords(rec->in, add_propagation_entry_count, 0);
+    BitVectors_FillWords(rec->in, add_propagation_entry_count, 0);
     CodeMotion_AllocateBits(rec->out, rec->gen, add_propagation_entry_count);
 
     for (b = gPCodeBlocks->next; b != NULL; b = b->next) {
@@ -255,8 +255,8 @@ void compute_add_propagation_in_out(void)
                     CodeMotion_AllocateBits(in, addPropagationBlockBits[e->payload.block->index].out,
                                             add_propagation_entry_count);
                     for (e = e->next; e != NULL; e = e->next)
-                        CRTTI_IntersectBitVectors(in, addPropagationBlockBits[e->payload.block->index].out,
-                                                  add_propagation_entry_count);
+                        BitVectors_IntersectBitVectors(in, addPropagationBlockBits[e->payload.block->index].out,
+                                                       add_propagation_entry_count);
                 }
                 out = rec->out;
                 in = rec->in;

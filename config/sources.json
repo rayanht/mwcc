@@ -960,6 +960,19 @@
       "src/driver"
     ]
   },
+  "src/driver/CWCompilerLinkerPrivate.c": {
+    "compiler": "pro53",
+    "flags": [
+      "-O4,p",
+      "-sym",
+      "on",
+      "-Cpp_exceptions",
+      "off"
+    ],
+    "include_dirs": [
+      "src/driver"
+    ]
+  },
   "src/driver/CWParserPluginsPrivate.c": {
     "compiler": "pro53",
     "flags": [
@@ -2028,6 +2041,21 @@
     ],
     "include_dirs": [
       "src/driver"
+    ]
+  },
+  "src/frontend/ParseDouble.c": {
+    "compiler": "pro53",
+    "flags": [
+      "-O4,p",
+      "-inline",
+      "auto,deferred",
+      "-sym",
+      "on",
+      "-Cpp_exceptions",
+      "off"
+    ],
+    "include_dirs": [
+      "src/frontend"
     ]
   },
   "src/frontend/Unmangle.c": {

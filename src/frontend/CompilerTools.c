@@ -951,3 +951,30 @@ static void CompilerTools_NameLiterals(const char **literals)
     literals[2] = "(void)";
     literals[3] = "(...)";
 }
+
+HashNameNode *fn_00441850(CPrepFileInfo *file, SInt32 *position)
+{
+    char fileName[256];
+    COS_FileGetPathName(fileName, file, position);
+    return GetHashNameNode(fileName);
+}
+
+int CTool_AppendStringBounded(char *dst, char *src, int size)
+{
+    int len = strlen(dst);
+
+    dst += len;
+    size -= len;
+    if (size < 0)
+        return 1;
+    while (size) {
+        if ((*dst++ = *src++) == '\0')
+            break;
+        size--;
+    }
+    if (size == 0 && dst[-1] != '\0') {
+        dst[-1] = '\0';
+        return 1;
+    }
+    return 0;
+}

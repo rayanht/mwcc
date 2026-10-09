@@ -174,8 +174,8 @@ void LoadDeletion_BuildLoadLivenessSets(void)
         bd = data_00587c98 + cb->index;
         setA = bd->generatedLoads;
         setB = bd->killedLoads;
-        CRTTI_FillWords(setA, data_0058820c, 0);
-        CRTTI_FillWords(setB, data_0058820c, 0);
+        BitVectors_FillWords(setA, data_0058820c, 0);
+        BitVectors_FillWords(setB, data_0058820c, 0);
         start = load_liveness_record_start[cb->index];
         for (obj = cb->instructions; obj != NULL; obj = obj->next) {
             if ((obj->flags & fIsBranch) == 0 && obj->operand_count != 0) {
@@ -213,3 +213,43 @@ void LoadDeletion_BuildLoadLivenessSets(void)
 
 /* Class and allocation-entry list used by the allocation pass. */
 /* Pointer at the beginning of a ten-byte table entry. */
+
+void COpt_LoadDeletion(void)
+{
+    int blockIndex;
+    CBlockData *sets;
+    int instructionIndex;
+    struct E *entry;
+    int k;
+    UInt32 *secondSet;
+
+    gLoadDeletionChanged = 0;
+    LoadDeletion_InitializeLoadLivenessRecordCounts();
+    if (data_0058820c > 0) {
+        COpt_SetLoopCodeMotionMode(0);
+        LoadDeletion_RecordImmediateLoadLiveness();
+        data_00587c98 = (CBlockData *)oalloc(gPCodeBlockCount * sizeof(CBlockData));
+        blockIndex = 0;
+        sets = data_00587c98;
+        while (blockIndex < gPCodeBlockCount) {
+            sets->generatedLoads = (UInt32 *)oalloc(((data_0058820c + 31) >> 5) * sizeof(UInt32));
+            secondSet = (UInt32 *)oalloc(((data_0058820c + 31) >> 5) * sizeof(UInt32));
+            blockIndex++;
+            sets->killedLoads = secondSet;
+            sets++;
+        }
+        LoadDeletion_BuildLoadLivenessSets();
+        for (instructionIndex = 0; instructionIndex < data_0058820c; instructionIndex++) {
+            k = 0;
+            entry = &immediateLoadLiveness[instructionIndex];
+            (void)((int)entry * k);
+            if (entry->flag != 0)
+                continue;
+            if ((entry->inst->flags & fSideEffects) != 0)
+                continue;
+            PCode_UnlinkInstruction(entry->inst);
+            gLoadDeletionChanged = 1;
+        }
+    }
+    freeoheap();
+}

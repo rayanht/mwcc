@@ -88,6 +88,8 @@ extern void CompilerGetCString(short value, char *destination);
 extern void (*data_00587708)(void);
 extern int next_name_id;
 extern struct HashNameNode **data_00587f88;
+extern HashNameNode *fn_00441850(CPrepFileInfo *file, SInt32 *position);
+extern int CTool_AppendStringBounded(char *dst, char *src, int size);
 
 #ifdef __cplusplus
 }

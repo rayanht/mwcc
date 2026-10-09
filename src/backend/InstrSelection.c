@@ -390,27 +390,6 @@ static inline int AddOffset2(SInt32 d, Operand *s, SInt32 n)
     return AddOffset(d, s->reg, n);
 }
 
-void InstrSelection_EmitSwitchTables(Object *function)
-{
-    int remaining;
-    SInt32 *entry;
-    Object *table;
-    while (switch_tables != NULL) {
-        table = switch_tables->object;
-        entry = table->u.data.u.switchtable.data;
-        remaining = table->u.data.u.switchtable.size;
-        while (remaining != 0) {
-            PCodeLabel *label = (PCodeLabel *)*entry;
-            PCodeBlock *block = label->target.block;
-            *entry = CTool_EndianConvertWord32(block->code_offset);
-            remaining--;
-            entry++;
-        }
-        ObjGen_PPC_EABI_EmitSwitchTable(table, function);
-        switch_tables = switch_tables->next;
-    }
-}
-
 void get_dispatch_result(struct DeferredDispatch *dispatch, unsigned int argument2, unsigned int argument3,
                          struct DispatchResult *output)
 {

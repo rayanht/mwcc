@@ -1036,16 +1036,17 @@ void unswitch_loop(Loop *loop)
         newLoop->inductionUpdate = NULL;
         newLoop->execution_weight = loop->execution_weight;
 
-        CRTTI_FillWords(newLoop->memberblocks = lalloc(((data_005871a4 + 31) >> 5) * sizeof(*newLoop->memberblocks)),
-                        data_005871a4, 0);
-        CRTTI_FillWords(newLoop->exitblocks = lalloc(((data_005871a4 + 31) >> 5) * sizeof(*newLoop->exitblocks)),
-                        data_005871a4, 0);
-        CRTTI_FillWords(newLoop->block_membership =
-                            lalloc(((data_005871a4 + 31) >> 5) * sizeof(*newLoop->block_membership)),
-                        data_005871a4, 0);
-        CRTTI_FillWords(newLoop->backedge_dominators =
-                            lalloc(((data_005871a4 + 31) >> 5) * sizeof(*newLoop->backedge_dominators)),
-                        data_005871a4, 0);
+        BitVectors_FillWords(newLoop->memberblocks =
+                                 lalloc(((data_005871a4 + 31) >> 5) * sizeof(*newLoop->memberblocks)),
+                             data_005871a4, 0);
+        BitVectors_FillWords(newLoop->exitblocks = lalloc(((data_005871a4 + 31) >> 5) * sizeof(*newLoop->exitblocks)),
+                             data_005871a4, 0);
+        BitVectors_FillWords(newLoop->block_membership =
+                                 lalloc(((data_005871a4 + 31) >> 5) * sizeof(*newLoop->block_membership)),
+                             data_005871a4, 0);
+        BitVectors_FillWords(newLoop->backedge_dominators =
+                                 lalloc(((data_005871a4 + 31) >> 5) * sizeof(*newLoop->backedge_dominators)),
+                             data_005871a4, 0);
 
         remove_block(loop, newLoop->body);
 
@@ -1631,14 +1632,14 @@ void compute_block_definition_and_use_sets(void)
         killedDefinitions = state->definition_sets[1];
         exposedUses = state->use_sets[0];
         killedUses = state->use_sets[1];
-        CRTTI_FillWords(generatedDefinitions, codeMotionEntryCount, 0);
-        CRTTI_FillWords(killedDefinitions, codeMotionEntryCount, 0);
-        CRTTI_FillWords(exposedUses, data_00587e38, 0);
-        CRTTI_FillWords(killedUses, data_00587e38, 0);
-        CRTTI_FillWords(state->definition_sets[2], codeMotionEntryCount, 0);
-        CRTTI_FillWords(state->definition_sets[3], codeMotionEntryCount, 0);
-        CRTTI_FillWords(state->use_sets[2], data_00587e38, 0);
-        CRTTI_FillWords(state->use_sets[3], data_00587e38, 0);
+        BitVectors_FillWords(generatedDefinitions, codeMotionEntryCount, 0);
+        BitVectors_FillWords(killedDefinitions, codeMotionEntryCount, 0);
+        BitVectors_FillWords(exposedUses, data_00587e38, 0);
+        BitVectors_FillWords(killedUses, data_00587e38, 0);
+        BitVectors_FillWords(state->definition_sets[2], codeMotionEntryCount, 0);
+        BitVectors_FillWords(state->definition_sets[3], codeMotionEntryCount, 0);
+        BitVectors_FillWords(state->use_sets[2], data_00587e38, 0);
+        BitVectors_FillWords(state->use_sets[3], data_00587e38, 0);
         for (instruction = block->instructions; instruction != NULL; instruction = instruction->next) {
             if ((instruction->flags & fIsBranch) == 0 && instruction->operand_count != 0) {
                 for (use = &cm_entries[useIndex = instruction->definitionStart];
@@ -1769,9 +1770,9 @@ void solve_definition_sets(void)
                                             data_00587fe4[predecessor->payload.block->index].definition_sets[3],
                                             codeMotionEntryCount);
                     for (predecessor = predecessor->next; predecessor != NULL; predecessor = predecessor->next) {
-                        CRTTI_OrBitVector(mergedBits,
-                                          data_00587fe4[predecessor->payload.block->index].definition_sets[3],
-                                          codeMotionEntryCount);
+                        BitVectors_OrBitVector(mergedBits,
+                                               data_00587fe4[predecessor->payload.block->index].definition_sets[3],
+                                               codeMotionEntryCount);
                     }
                 }
                 outgoing = state->definition_sets[3];
@@ -1824,7 +1825,8 @@ void propagate_use_sets(void)
                     srcstate = &data_00587fe4[range->payload.block->index];
                     CodeMotion_AllocateBits(dst, srcstate->use_sets[2], data_00587e38);
                     for (range = range->next; range != NULL; range = range->next)
-                        CRTTI_OrBitVector(dst, data_00587fe4[range->payload.block->index].use_sets[2], data_00587e38);
+                        BitVectors_OrBitVector(dst, data_00587fe4[range->payload.block->index].use_sets[2],
+                                               data_00587e38);
                 }
                 def = state->use_sets[3];
                 out = state->use_sets[2];

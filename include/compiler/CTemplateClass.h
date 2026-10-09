@@ -62,7 +62,6 @@ extern void CTemplateClass_AddDeferredFunctionDeclaration(struct TemplClass *p1,
 extern void fn_0051b800(void);
 extern void fn_0051b810(void);
 extern struct TemplClass *class_template_list;
-extern char *CTemplateClass_ParseDouble(char *value, double *result, char *error);
 struct TemplClass;
 
 #ifdef __cplusplus

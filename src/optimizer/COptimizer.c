@@ -445,7 +445,7 @@ void eliminate_common_subexpressions(void)
         object->name = CParser_GetUniqueName();
         object->type = best->expr->rtype;
         object->datatype = DLOCAL;
-        registerInfo = CPrep_AllocateVarInfo();
+        registerInfo = CodeGen_AllocateVarInfo();
         object->u.var.info = registerInfo;
         objectLink = (ObjectList *)lalloc(sizeof(ObjectList));
         objectLink->object = object;

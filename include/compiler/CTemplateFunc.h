@@ -27,6 +27,7 @@ extern void fn_00514380(ObjectList *list, void *ptype, ENodeList *args, struct A
 extern Boolean match_template_function_args(Object *obj, DeduceInfo *state, FuncArg *arg, ENodeList *exprs,
                                             ArgMatch *ctx);
 extern Object *CTemplateFunc_FindSpecializationObject(DeclInfo *search, ObjectList *candidates);
+extern Boolean CTemplateFunc_MatchTypeAndCheckBoundSlots(Object *obj, Type *name, void *arg3);
 
 #ifdef __cplusplus
 }

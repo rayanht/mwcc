@@ -276,30 +276,3 @@ int IRO_RemoveLabels(void)
     IroVars_CheckTimedLongjmp();
     return changed;
 }
-
-void IroJump_ConvertCInt64ToType(CInt64 *value, Type *type)
-{
-    if (is_unsigned(type)) {
-        switch (type->size) {
-            case 1:
-                CInt64_ConvertUInt8(value);
-                break;
-            case 2:
-                CInt64_ConvertUInt16(value);
-                break;
-            case 4:
-                CInt64_ConvertUInt32(value);
-        }
-    } else {
-        switch (type->size) {
-            case 1:
-                CInt64_ConvertInt8(value);
-                break;
-            case 2:
-                CInt64_ConvertInt16(value);
-                break;
-            case 4:
-                CInt64_ConvertInt32(value);
-        }
-    }
-}

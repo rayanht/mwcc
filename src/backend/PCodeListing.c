@@ -59,33 +59,33 @@ void format_operand(PCodeOperand *n, char *ctx)
 
     if (n->kind == 7) {
         if (((struct PCodeLabelDifference *)n)->negate == 1)
-            CPrep_AppendStringBounded(ctx, "-", 300);
-        CPrep_AppendStringBounded(ctx, "(B", 300);
+            CTool_AppendStringBounded(ctx, "-", 300);
+        CTool_AppendStringBounded(ctx, "(B", 300);
         if (((struct PCodeLabelDifference *)n)->subtractLabel->target.block == NULL)
-            CPrep_AppendStringBounded(ctx, "<unknown>-B", 300);
+            CTool_AppendStringBounded(ctx, "<unknown>-B", 300);
         else {
             sprintf(buf, "%ld-B", ((struct PCodeLabelDifference *)n)->subtractLabel->target.block->index);
-            CPrep_AppendStringBounded(ctx, buf, 300);
+            CTool_AppendStringBounded(ctx, buf, 300);
         }
         if (((struct PCodeLabelDifference *)n)->addLabel->target.block == NULL)
-            CPrep_AppendStringBounded(ctx, "<unknown>+", 300);
+            CTool_AppendStringBounded(ctx, "<unknown>+", 300);
         else {
             sprintf(buf, "%ld+", ((struct PCodeLabelDifference *)n)->addLabel->target.block->index);
-            CPrep_AppendStringBounded(ctx, buf, 300);
+            CTool_AppendStringBounded(ctx, buf, 300);
         }
         sprintf(buf, "%ld)", ((struct PCodeLabelDifference *)n)->addend);
-        CPrep_AppendStringBounded(ctx, buf, 300);
+        CTool_AppendStringBounded(ctx, buf, 300);
     } else if (n->kind == 4) {
         sprintf(buf, "%ld", n->value.immediate_value);
-        CPrep_AppendStringBounded(ctx, buf, 300);
+        CTool_AppendStringBounded(ctx, buf, 300);
         if (n->object != NULL) {
-            CPrep_AppendStringBounded(ctx, "{", 300);
-            CPrep_AppendStringBounded(ctx, COptimizer_GetFunctionObject(n->object)->name, 300);
-            CPrep_AppendStringBounded(ctx, "}", 300);
+            CTool_AppendStringBounded(ctx, "{", 300);
+            CTool_AppendStringBounded(ctx, COptimizer_GetFunctionObject(n->object)->name, 300);
+            CTool_AppendStringBounded(ctx, "}", 300);
         }
     } else {
         sprintf(buf, "?unknown operand kind=%d", n->kind);
-        CPrep_AppendStringBounded(ctx, buf, 300);
+        CTool_AppendStringBounded(ctx, buf, 300);
     }
 }
 
@@ -271,7 +271,7 @@ void fn_004c4bf0(PCodeInstruction *instruction, char *out)
                     case PC_PSQ_STUX:
                         sprintf(extraOperands, ",%d,%d", instruction->operandData.operands[3].value.unsigned_value,
                                 instruction->operandData.operands[4].value.unsigned_value);
-                        CPrep_AppendStringBounded(out, extraOperands, 300);
+                        CTool_AppendStringBounded(out, extraOperands, 300);
                         break;
                     default:
                         break;
@@ -280,7 +280,7 @@ void fn_004c4bf0(PCodeInstruction *instruction, char *out)
                 sprintf(out, "r%d,", instruction->operandData.operands[0].value.reg);
                 format_operand((PCodeOperand *)&instruction->operandData.operands[2], out);
                 sprintf(operandSuffix, "(r%d)", instruction->operandData.operands[1].value.reg);
-                CPrep_AppendStringBounded(out, operandSuffix, 300);
+                CTool_AppendStringBounded(out, operandSuffix, 300);
             }
             break;
         case PC_LBZX:
@@ -636,7 +636,7 @@ void fn_004c4bf0(PCodeInstruction *instruction, char *out)
                 sprintf(out, "f%d,", instruction->operandData.operands[0].value.reg);
                 format_operand((PCodeOperand *)&instruction->operandData.operands[2], out);
                 sprintf(addressSuffix, "(r%d)", instruction->operandData.operands[1].value.reg);
-                CPrep_AppendStringBounded(out, addressSuffix, 300);
+                CTool_AppendStringBounded(out, addressSuffix, 300);
             }
             break;
         case PC_LFSX:

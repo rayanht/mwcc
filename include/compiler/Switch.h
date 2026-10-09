@@ -33,6 +33,7 @@ extern void emit_case_range_binary_tree(unsigned int firstCase, int lastCase);
 extern void emit_case_range_binary_search(int a, int b);
 extern int compare_switch_case_min(const void *a, const void *b);
 extern void build_case_ranges(Type *type, SwitchCase *list, CLabel *defaultCase);
+extern void Switch_EmitSwitchTables(Object *function);
 
 #ifdef __cplusplus
 }

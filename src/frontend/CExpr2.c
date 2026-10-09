@@ -2204,7 +2204,7 @@ SInt32 match_overloaded_function_pointer(NameSpaceObjectList *list, void *templa
         if ((object = (Object *)list->object)->otype == OT_OBJECT) {
             if (object->type->type == TYPEFUNC && (((TypeFunc *)object->type)->flags & 0x400)) {
                 if (!haveNonTemplateMatch) {
-                    if (CTemplateTools_MatchTypeAndCheckBoundSlots(object, type, templateArguments)) {
+                    if (CTemplateFunc_MatchTypeAndCheckBoundSlots(object, type, templateArguments)) {
                         specialization =
                             instantiate_accessible_template_for_type(object, type, templateArguments, NULL, 0);
                         if (specialization == NULL)

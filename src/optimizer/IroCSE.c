@@ -21,19 +21,14 @@
 #include "compiler/IroUtil.h"
 #include "compiler/IroVars.h"
 
-CInt64 data_005834f8;
 unsigned int expression_count;
 unsigned int data_005870f8;
-int data_005871b8;
 unsigned int data_00587630;
 struct IROExpr *expr_tail;
 struct IROExpr *expr_list;
 int data_00587e58;
 SInt32 data_005880a4;
-ENode *data_005881ec;
 BitVector *killed_exprs;
-char nested_bitwise_expressions_rewritten;
-UInt8 nested_bitwise_type;
 
 struct BitVector *data_00552b88 = NULL;
 
@@ -56,243 +51,6 @@ static IROLinear *MakeRef(Object *obj, IROLinear *arg3)
     n1->next = n2;
     IroUtil_InsertLinearRangeAfter(n1, n2, arg3);
     return n2;
-}
-
-void traverse_expr_postorder(ENode *expr)
-{
-    switch (expr->type) {
-        case EPOSTINC:
-        case EPOSTDEC:
-        case EPREINC:
-        case EPREDEC:
-        case EINDIRECT:
-        case EMONMIN:
-        case EBINNOT:
-        case ELOGNOT:
-        case EFORCELOAD:
-        case ETYPCON:
-        case EBITFIELD:
-            traverse_expr_postorder(expr->data.monadic);
-            break;
-        case EMUL:
-        case EMULV:
-        case EDIV:
-        case EMODULO:
-        case EADDV:
-        case ESUBV:
-        case EADD:
-        case ESUB:
-        case ESHL:
-        case ESHR:
-        case ELESS:
-        case EGREATER:
-        case ELESSEQU:
-        case EGREATEREQU:
-        case EEQU:
-        case ENOTEQU:
-        case EAND:
-        case EXOR:
-        case EOR:
-        case ELAND:
-        case ELOR:
-        case EASS:
-        case EMULASS:
-        case EDIVASS:
-        case EMODASS:
-        case EADDASS:
-        case ESUBASS:
-        case ESHLASS:
-        case ESHRASS:
-        case EANDASS:
-        case EXORASS:
-        case EORASS:
-        case ECOMMA:
-        case EPMODULO:
-        case EROTL:
-        case EROTR:
-        case EBCLR:
-        case EBTST:
-        case EBSET:
-            traverse_expr_postorder(expr->data.diadic.left);
-            traverse_expr_postorder(expr->data.diadic.right);
-            break;
-        case EFUNCCALL:
-        case EFUNCCALLP: {
-            ENodeList *arg;
-            traverse_expr_postorder(expr->data.funccall.funcref);
-            arg = expr->data.funccall.args;
-            while (arg) {
-                traverse_expr_postorder(arg->node);
-                arg = arg->next;
-            }
-            break;
-        }
-        case ECOND:
-            traverse_expr_postorder(expr->data.cond.cond);
-            traverse_expr_postorder(expr->data.cond.expr1);
-            traverse_expr_postorder(expr->data.cond.expr2);
-            break;
-        case ENULLCHECK:
-            traverse_expr_postorder(expr->data.diadic.left);
-            traverse_expr_postorder(expr->data.diadic.right);
-            break;
-    }
-    fold_nested_diadic_intval(expr);
-}
-
-int fn_0044fad0(ENode *node)
-{
-    ENode *expression = node;
-    if (expression->type == nested_bitwise_type) {
-        unsigned char left;
-        unsigned char right;
-        left = fn_0044fad0(expression->data.diadic.left);
-        right = fn_0044fad0(expression->data.diadic.right);
-        return left & right;
-    } else if (expression->type == EINDIRECT) {
-        if (expression->data.monadic->type == EOBJREF) {
-            ENode *operand = expression->data.monadic;
-            if (data_005871b8 == 0) {
-                data_005871b8 = (int)operand->data.objref;
-                data_005881ec = expression;
-                return 1;
-            }
-            if (operand->data.objref != (Object *)data_005871b8) {
-                return 0;
-            }
-            return 1;
-        }
-        return 0;
-    } else if (expression->type == EINTCONST) {
-        if (nested_bitwise_expressions_rewritten != 0) {
-            data_005834f8 = expression->data.intval;
-            nested_bitwise_expressions_rewritten = 0;
-        } else if (nested_bitwise_type == EAND) {
-            data_005834f8 = CInt64_And(expression->data.intval, data_005834f8);
-        } else if (nested_bitwise_type == EOR) {
-            data_005834f8 = CInt64_Or(expression->data.intval, data_005834f8);
-        } else if (nested_bitwise_type == EXOR) {
-            data_005834f8 = CInt64_Xor(expression->data.intval, data_005834f8);
-        }
-        return 1;
-    }
-    return 0;
-}
-
-void rewrite_nested_bitwise_expressions(ENode *en)
-{
-    ENodeList *arg;
-
-    switch ((SInt32)en->type) {
-        case EPOSTINC:
-        case EPOSTDEC:
-        case EPREINC:
-        case EPREDEC:
-        case EINDIRECT:
-        case EMONMIN:
-        case EBINNOT:
-        case ELOGNOT:
-        case EFORCELOAD:
-        case ETYPCON:
-        case EBITFIELD:
-            rewrite_nested_bitwise_expressions(en->data.diadic.left);
-            break;
-        case EMUL:
-        case EMULV:
-        case EDIV:
-        case EMODULO:
-        case EADDV:
-        case ESUBV:
-        case EADD:
-        case ESUB:
-        case ESHL:
-        case ESHR:
-        case ELESS:
-        case EGREATER:
-        case ELESSEQU:
-        case EGREATEREQU:
-        case EEQU:
-        case ENOTEQU:
-        case EAND:
-        case EXOR:
-        case EOR:
-        case ELAND:
-        case ELOR:
-        case EASS:
-        case EMULASS:
-        case EDIVASS:
-        case EMODASS:
-        case EADDASS:
-        case ESUBASS:
-        case ESHLASS:
-        case ESHRASS:
-        case EANDASS:
-        case EXORASS:
-        case EORASS:
-        case ECOMMA:
-        case EPMODULO:
-        case EROTL:
-        case EROTR:
-        case EBCLR:
-        case EBTST:
-        case EBSET:
-            rewrite_nested_bitwise_expressions(en->data.diadic.left);
-            rewrite_nested_bitwise_expressions(en->data.diadic.right);
-            break;
-        case EFUNCCALL:
-        case EFUNCCALLP:
-            rewrite_nested_bitwise_expressions(en->data.funccall.funcref);
-            for (arg = en->data.funccall.args; arg != NULL; arg = arg->next)
-                rewrite_nested_bitwise_expressions(arg->node);
-            break;
-        case ECOND:
-            rewrite_nested_bitwise_expressions(en->data.cond.cond);
-            rewrite_nested_bitwise_expressions(en->data.cond.expr1);
-            rewrite_nested_bitwise_expressions(en->data.cond.expr2);
-            break;
-        case ENULLCHECK:
-            rewrite_nested_bitwise_expressions(en->data.diadic.left);
-            rewrite_nested_bitwise_expressions(en->data.diadic.right);
-            break;
-    }
-
-    if ((en->type == EAND || en->type == EXOR || en->type == EOR) &&
-        (en->type == en->data.diadic.left->type || en->type == en->data.diadic.right->type)) {
-        data_005871b8 = 0;
-        nested_bitwise_type = en->type;
-        nested_bitwise_expressions_rewritten = 1;
-        data_005881ec = NULL;
-        if (fn_0044fad0(en)) {
-            en->data.diadic.left = data_005881ec;
-            en->data.diadic.right->type = EINTCONST;
-            en->data.diadic.right->data.intval = data_005834f8;
-        }
-    }
-}
-
-void IroCSE_RewriteStatementExpressions(Statement *stmt)
-{
-    Statement *s = stmt;
-    Statement *next;
-
-    while (s != NULL) {
-        next = s->next;
-        switch (s->type) {
-            case ST_EXPRESSION:
-            case ST_SWITCH:
-            case ST_IFGOTO:
-            case ST_IFNGOTO:
-            case ST_RETURN:
-                if (s->expr != NULL) {
-                    s->expr = walk_expr_postorder(s->expr);
-                    rewrite_nested_bitwise_expressions(s->expr);
-                    traverse_expr_postorder(s->expr);
-                }
-                break;
-        }
-        s = next;
-    }
-    IroVars_CheckTimedLongjmp();
 }
 
 /* As collect_expression_var_refs_and_flags, for a candidate common subexpression (stopping at the first side effect). */
@@ -362,7 +120,7 @@ void fn_0044f6a0(IROLinear *e, SInt32 flag)
                 return;
             }
             if ((UInt8)(e->nodetype - 0x0B) <= 1) {
-                if (IroDump_IsType1NodeType50(e->u.diadic.right) == 0 ||
+                if (IroUtil_IsType1NodeType50(e->u.diadic.right) == 0 ||
                     CInt64_Equal(e->u.diadic.right->u.node->data.intval, cint64_zero) != 0) {
                     data_00587e58 = 1;
                 }
@@ -444,7 +202,7 @@ void collect_expression_var_refs_and_flags(IROLinear *e, SInt32 flag)
             if (data_00551d6c[e->nodetype] != 0)
                 data_00587630 = 1;
             if (e->nodetype == EDIV || e->nodetype == EMODULO) {
-                if (IroDump_IsType1NodeType50(e->u.diadic.right) == 0 ||
+                if (IroUtil_IsType1NodeType50(e->u.diadic.right) == 0 ||
                     CInt64_Equal(e->u.diadic.right->u.node->data.intval, cint64_zero) != 0) {
                     data_00587e58 = 1;
                 }

@@ -26,6 +26,57 @@ static int IRO_TypesEqual(Type *a, Type *b);
 static Boolean is_one(CInt64 *val);
 static int is_int_const(IROLinear *node);
 
+Object *IroUtil_GetObjRef(IROLinear *linear)
+{
+    if (linear->type == IROLinearOp1Arg && linear->nodetype == EINDIRECT &&
+        linear->u.monadic->type == IROLinearOperand && linear->u.monadic->u.node->type == EOBJREF)
+        return linear->u.monadic->u.node->data.objref;
+    return NULL;
+}
+
+int fn_0044d520(IROLinear *node)
+{
+    if (node->type == 1U &&
+        (node->u.node->type == EINTCONST || node->u.node->type == EVECTOR128CONST || node->u.node->type == EFLOATCONST))
+        return 1;
+    return 0;
+}
+
+SInt32 IroUtil_IsPowerOfTwo(IROLinear *node, SInt32 *bit)
+{
+    SInt32 value;
+    SInt32 mask;
+    UInt32 index;
+    ENode *expr;
+
+    *bit = -1;
+    if (node->type == IROLinearOperand) {
+        if ((expr = node->u.node)->type == EINTCONST) {
+            if (expr->data.intval.hi != 0)
+                return 0;
+            value = expr->data.intval.lo;
+            mask = 1;
+            index = 0;
+            do {
+                if (mask == value) {
+                    *bit = index;
+                    return 1;
+                }
+                index++;
+                mask += mask;
+            } while (index < 31);
+        }
+    }
+    return 0;
+}
+
+unsigned int IroUtil_IsType1NodeType50(IROLinear *linear)
+{
+    if (linear->type == IROLinearOperand && linear->u.node->type == 50U)
+        return 1U;
+    return 0U;
+}
+
 static inline int IRO_ConstsSame(ENode *a, ENode *b)
 {
     if (a->type == b->type) {

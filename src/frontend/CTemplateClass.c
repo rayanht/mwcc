@@ -16,7 +16,6 @@
 #include "compiler/CPrepTokenizer.h"
 #include "compiler/CTemplateFunc.h"
 #include "compiler/CodeGen.h"
-#include <errno.h>
 #include <stdlib.h>
 
 struct TemplClass *class_template_list;
@@ -29,16 +28,6 @@ struct S3;
 static unsigned char qualtest(unsigned int a, unsigned int b)
 {
     return (((a & 1) != 0) && ((b & 1) == 0)) || (((a & 2) != 0) && ((b & 2) == 0));
-}
-
-char *CTemplateClass_ParseDouble(char *value, double *result, char *error)
-{
-    char *status;
-
-    errno = 0;
-    *result = strtod(value, &status);
-    *error = errno != 0;
-    return status;
 }
 
 TemplClass *CTemplateClass_ResolveRelatedClass(TemplClass *record)
@@ -1647,16 +1636,6 @@ unsigned char CTemplateClass_InstantiateClass(TypeClass *theclass)
     CScope_RestoreScope(&scopeSave);
     trychain = savedState;
     return 1;
-}
-
-void fn_0051b810(void)
-{
-    return;
-}
-
-void fn_0051b800(void)
-{
-    return;
 }
 
 #pragma opt_propagation reset

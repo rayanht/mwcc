@@ -68,10 +68,10 @@ void compute_dominators(void)
 
     bits = (UInt32 *)oalloc(((count + 0x1f) >> 5) << 2);
 
-    CRTTI_FillWords(dominators[gPCodeBlocks->index], count, 0);
+    BitVectors_FillWords(dominators[gPCodeBlocks->index], count, 0);
     dominators[gPCodeBlocks->index][0] |= 1;
     for (block = gPCodeBlocks->next; block != NULL; block = block->next)
-        CRTTI_FillWords(dominators[block->index], count, -1);
+        BitVectors_FillWords(dominators[block->index], count, -1);
 
     SpillCode_BuildBlockOrder();
 
@@ -81,7 +81,7 @@ void compute_dominators(void)
             if ((block = gPCodeBlockOrder[i]) != NULL && block->index != gPCodeBlocks->index) {
                 CodeMotion_AllocateBits(bits, dominators[block->predecessors->payload.block->index], count);
                 for (node = block->predecessors->next; node != NULL; node = node->next)
-                    CRTTI_IntersectBitVectors(bits, dominators[node->payload.block->index], count);
+                    BitVectors_IntersectBitVectors(bits, dominators[node->payload.block->index], count);
                 bits[block->index >> 5] |= 1 << block->index;
                 if (BitVectors_CopyAndCheckChanged(dominators[block->index], bits, count))
                     changed = 1;
@@ -224,10 +224,10 @@ void create_loops(void)
         block->footer = NULL;
         block->inductionUpdate = NULL;
         block->execution_weight = block->body->execution_weight;
-        CRTTI_FillWords(block->memberblocks = lalloc(((data_005871a4 + 31) >> 5) << 2), data_005871a4, 0);
-        CRTTI_FillWords(block->exitblocks = lalloc(((data_005871a4 + 31) >> 5) << 2), data_005871a4, 0);
-        CRTTI_FillWords(block->block_membership = lalloc(((data_005871a4 + 31) >> 5) << 2), data_005871a4, 0);
-        CRTTI_FillWords(block->backedge_dominators = lalloc(((data_005871a4 + 31) >> 5) << 2), data_005871a4, 0);
+        BitVectors_FillWords(block->memberblocks = lalloc(((data_005871a4 + 31) >> 5) << 2), data_005871a4, 0);
+        BitVectors_FillWords(block->exitblocks = lalloc(((data_005871a4 + 31) >> 5) << 2), data_005871a4, 0);
+        BitVectors_FillWords(block->block_membership = lalloc(((data_005871a4 + 31) >> 5) << 2), data_005871a4, 0);
+        BitVectors_FillWords(block->backedge_dominators = lalloc(((data_005871a4 + 31) >> 5) << 2), data_005871a4, 0);
         compute_loop_block_sets(block);
         fn_00523000(block, &data_0058763c);
         selected_nodes = selected_nodes->next;

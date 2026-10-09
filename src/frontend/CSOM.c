@@ -209,16 +209,6 @@ static int basehead(TypeClass *p)
     return h;
 }
 
-void CSOM_NoOp(void)
-{
-    return;
-}
-
-void fn_004e67a0(void)
-{
-    return;
-}
-
 void CSOM_Init(char flag)
 {
     if (flag == '\0') {

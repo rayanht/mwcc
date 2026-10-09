@@ -120,6 +120,23 @@ typedef void (*CGGenFunc)(ENode *enode, SInt32 a, SInt32 b, Operand *dest);
 
 typedef void (*RegAssignFunc)(Object *, SInt32);
 
+VarInfo *CodeGen_AllocateVarInfo(void)
+{
+    VarInfo *info;
+    info = (VarInfo *)lalloc(sizeof(VarInfo));
+    memclrw(info, sizeof(VarInfo));
+    info->usage = 0;
+    info->deftoken = *CPrep_GetLastBufferedToken();
+    info->varnumber = next_varnumber;
+    next_varnumber++;
+    info->noregister = 0;
+    info->used = 0;
+    info->reg = 0;
+    info->regHi = 0;
+    info->in_param_area = 0;
+    return info;
+}
+
 static inline void IrOptimizer_CheckVectorByteConstant(const CInt64 *value, TypeStruct *vectorType)
 {
     if (copts.extended_errorcheck) {
@@ -1612,7 +1629,7 @@ void CodeGen_Generator(Statement *statements, Object *functionObject, Boolean co
     }
     {
         int result = PCodeAssembly_EmitFunction(functionObject, NULL);
-        InstrSelection_EmitSwitchTables(functionObject);
+        Switch_EmitSwitchTables(functionObject);
         TOC_EnumerateObjectCodeOffsets(functionObject);
         if (copts.exceptions != 0 && data_00588521 == 0)
             Exceptions_EmitExceptionTable(functionObject, result);

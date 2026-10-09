@@ -33,7 +33,6 @@ extern Float float_one;
 extern Float data_0055e9e8;
 extern Float data_0055e9f0;
 extern void Operands_ClearTrailingObjectInfo(void);
-extern int Operands_IsLogicalExpression(ENode *enode);
 extern int fn_0049f630(ENode *expr);
 extern void fn_0049f560(void);
 extern struct ObjectList *data_00587660;

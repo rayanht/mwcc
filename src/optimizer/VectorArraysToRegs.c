@@ -284,8 +284,8 @@ void VectorArraysToRegs_ComputeGenKill(struct AggregateRecord *entries)
         block_data = codeMotionBits + block->index;
         local_bits = block_data->gen;
         incoming_bits = block_data->kill;
-        CRTTI_FillWords(local_bits, load_index_count, 0);
-        CRTTI_FillWords(incoming_bits, load_index_count, 0);
+        BitVectors_FillWords(local_bits, load_index_count, 0);
+        BitVectors_FillWords(incoming_bits, load_index_count, 0);
         object_index = block_entry_start[block->index];
         instruction = block->instructions;
         while (instruction != NULL) {
@@ -348,7 +348,7 @@ void VectorArraysToRegs_ComputeInOutBits(void)
     SInt32 changed;
     nwords = (load_index_count + 0x1f) >> 5;
     bits = &codeMotionBits[gPCodeBlocks->index];
-    CRTTI_FillWords(bits->in, load_index_count, 0);
+    BitVectors_FillWords(bits->in, load_index_count, 0);
     CodeMotion_AllocateBits(bits->out, bits->gen, load_index_count);
     for (blk = gPCodeBlocks->next; blk != NULL; blk = blk->next) {
         bits = &codeMotionBits[blk->index];
@@ -366,7 +366,8 @@ void VectorArraysToRegs_ComputeInOutBits(void)
                     ip = bits->in;
                     CodeMotion_AllocateBits(ip, codeMotionBits[node->payload.block->index].out, load_index_count);
                     for (node = node->next; node != NULL; node = node->next)
-                        CRTTI_IntersectBitVectors(ip, codeMotionBits[node->payload.block->index].out, load_index_count);
+                        BitVectors_IntersectBitVectors(ip, codeMotionBits[node->payload.block->index].out,
+                                                       load_index_count);
                 }
                 dp = bits->out;
                 ip = bits->in;

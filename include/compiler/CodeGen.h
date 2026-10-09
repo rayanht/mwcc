@@ -125,6 +125,7 @@ extern UInt8 gVectorArrayConversion;
 extern Object *CodeGen_AllocateTemporaryObject(Type *type);
 extern int CodeGen_CheckAltivecStypeMatch(ENode *a, Type *type, Boolean convert, Boolean checkAccess);
 extern SInt16 next_varnumber;
+extern VarInfo *CodeGen_AllocateVarInfo(void);
 
 #ifdef __cplusplus
 }

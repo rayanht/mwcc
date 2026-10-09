@@ -6,6 +6,7 @@
 #include "compiler/CompilerTools.h"
 #include "compiler/ELF_Endian.h"
 #include "driver/COSToolsCLT.h"
+#include "driver/CWCompilerLinkerPrivate.h"
 #include "driver/CWPluginsPrivate.h"
 #include "driver/DropInCompilerLinkerPrivate.h"
 #include "driver/LibImportMessages.h"
@@ -124,11 +125,11 @@ char initialize_plugin_context(CWPluginPrivateContext *handle)
 {
     libimp_cu.context = handle;
     memset(&libimp_cu.objectData, 0, sizeof(unsigned int[12]));
-    if (CPrep_GetFileIndex(handle, (unsigned int *)&libimp_cu.mainFileNumber) != 0)
+    if (CWCompilerLinkerPrivate_GetFileIndex(handle, (unsigned int *)&libimp_cu.mainFileNumber) != 0)
         return 0;
-    if (CPrep_GetContextPayload(handle, &libimp_cu.mainFile) != 0)
+    if (CWCompilerLinkerPrivate_GetContextPayload(handle, &libimp_cu.mainFile) != 0)
         return 0;
-    if (CPrep_GetSetting(handle, &libimp_cu.filesyminfo) != 0)
+    if (CWCompilerLinkerPrivate_GetSetting(handle, &libimp_cu.filesyminfo) != 0)
         return 0;
     return 1;
 }
@@ -143,8 +144,8 @@ unsigned int fn_0041ec20(void)
         if (value != 0U)
             return value;
     }
-    value =
-        CPrep_CallCompilerCallbackWithValue(libimp_cu.context, libimp_cu.mainFileNumber, (long *)&libimp_cu.objectData);
+    value = CWCompilerLinkerPrivate_CallCompilerCallbackWithValue(libimp_cu.context, libimp_cu.mainFileNumber,
+                                                                  (long *)&libimp_cu.objectData);
     if (value != 0U)
         return value;
     return value;

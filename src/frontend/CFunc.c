@@ -367,7 +367,7 @@ void CFunc_RestoreBlock(const struct DeclBlock *values)
 #pragma auto_inline off
 void CFunc_SetupLocalVarInfo(Object *object)
 {
-    object->u.var.info = CPrep_AllocateVarInfo();
+    object->u.var.info = CodeGen_AllocateVarInfo();
     object->u.var.info->func = cscope_currentfunc;
     if (object->sclass == 257U) {
         if (copts.optimizesize == 0U)
@@ -742,7 +742,7 @@ Object *create_temp_object(Type *type)
     object = CParser_NewLocalDataObject(NULL, 1);
     object->name = CParser_GetUniqueName();
     object->type = type;
-    object->u.var.info = CPrep_AllocateVarInfo();
+    object->u.var.info = CodeGen_AllocateVarInfo();
     object->u.var.info->func = cscope_currentfunc;
     if (object->sclass == TK_REGISTER) {
         if (copts.optimizesize == 0)
@@ -1518,7 +1518,7 @@ void declare_local_object(DeclInfo *declaration, TStreamElement *declarationToke
             if (CDecl_CheckObjectType(declaration->thetype) != 0) {
                 CError_ReportIllegalFlags(declaration->qual & ~(Q_CV | Q_PASCAL | Q_ALIGNED_MASK));
                 object->datatype = DLOCAL;
-                object->u.var.info = CPrep_AllocateVarInfo();
+                object->u.var.info = CodeGen_AllocateVarInfo();
                 object->u.var.info->func = cscope_currentfunc;
                 if (object->sclass == TK_REGISTER) {
                     if (copts.optimizesize == 0)
@@ -2541,7 +2541,7 @@ static struct Statement *CFunc_NewAssignmentStatement(void)
 
 static void CFunc_InitVariableInfo(Object *obj)
 {
-    obj->u.var.info = CPrep_AllocateVarInfo();
+    obj->u.var.info = CodeGen_AllocateVarInfo();
     obj->u.var.info->func = cscope_currentfunc;
 }
 
@@ -2562,7 +2562,7 @@ void CFunc_SetupNewFuncArgs(Object *func, FuncArg *args)
             obj->type = args->type;
             obj->qual = args->qual;
             obj->sclass = args->sclass;
-            obj->u.var.info = CPrep_AllocateVarInfo();
+            obj->u.var.info = CodeGen_AllocateVarInfo();
             obj->u.var.info->func = cscope_currentfunc;
             if (obj->sclass == TK_REGISTER) {
                 if (copts.optimizesize == 0)
@@ -2612,7 +2612,7 @@ ObjectList *create_arg_object_list(FuncArg *arg)
         obj->type = arg->type;
         obj->qual = arg->qual;
         obj->sclass = arg->sclass;
-        obj->u.var.info = CPrep_AllocateVarInfo();
+        obj->u.var.info = CodeGen_AllocateVarInfo();
         obj->u.var.info->func = cscope_currentfunc;
         if (obj->sclass == TK_REGISTER) {
             if (copts.optimizesize == 0) {
@@ -2733,7 +2733,7 @@ void setup_function_arguments(Object *function, DeclInfo *body, Statement *state
         result = CParser_NewLocalDataObject(NULL, 0);
         result->name = blank_argument_name;
         result->type = (Type *)CDecl_NewPointerType(((TypeFunc *)function->type)->functype);
-        result->u.var.info = CPrep_AllocateVarInfo();
+        result->u.var.info = CodeGen_AllocateVarInfo();
         result->u.var.info->func = cscope_currentfunc;
         if (result->sclass == TK_REGISTER) {
             if (copts.optimizesize == 0) {

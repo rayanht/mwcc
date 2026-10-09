@@ -128,15 +128,15 @@ void mark_registers_used_outside_loop(Loop *state)
     PCodeBlockLink *objectUse;
     SInt32 registerNumber;
 
-    CRTTI_FillWords(useMap = (UInt32 *)oalloc(((data_00587e38 + 31) >> 5) << 2), data_00587e38, 0);
+    BitVectors_FillWords(useMap = (UInt32 *)oalloc(((data_00587e38 + 31) >> 5) << 2), data_00587e38, 0);
 
     for (objectUse = state->blocks; objectUse != NULL; objectUse = objectUse->next) {
         SInt32 objectRegister = objectUse->payload.block->index;
         if (state->exitblocks[objectRegister >> 5] & (1 << objectRegister))
-            CRTTI_OrBitVector(useMap, data_00587fe4[objectRegister].use_sets[3], data_00587e38);
+            BitVectors_OrBitVector(useMap, data_00587fe4[objectRegister].use_sets[3], data_00587e38);
     }
 
-    CRTTI_FillWords(registers_used_outside_loop, data_00582c70, 0);
+    BitVectors_FillWords(registers_used_outside_loop, data_00582c70, 0);
 
     for (registerNumber = 32; registerNumber < data_00582c70; registerNumber++) {
         CodeMotionEntryLink *use;
@@ -171,7 +171,7 @@ void remove_unused_self_addi(Loop *loop)
     int candidateReg;
     PCodeBlockLink *scan;
 
-    CRTTI_FillWords(self_addi_candidate_regs, data_00582c70, -1);
+    BitVectors_FillWords(self_addi_candidate_regs, data_00582c70, -1);
     scan = loop->blocks;
     while (scan != NULL) {
         instruction = scan->payload.block->instructions;

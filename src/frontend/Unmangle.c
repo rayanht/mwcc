@@ -15,7 +15,6 @@
 
 #include <string.h>
 
-static char data_005649b8 = 0;
 #define false 0
 #define true 1
 
@@ -1138,6 +1137,8 @@ void Unmangle_UnmangleName(char *name, char *out, UInt32 size)
     strncpy(out, name, size);
     out[size - 1] = 0;
 }
+
+static char data_005649b8 = 0;
 
 void Unmangle_UnmangleSymbolName(char *name, char *output, int outputSize)
 {

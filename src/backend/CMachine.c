@@ -11,6 +11,7 @@
 #include "compiler/CInt64.h"
 #include "compiler/CParser.h"
 #include "compiler/CPrepTokenizer.h"
+#include "compiler/ParseDouble.h"
 #include "compiler/CodeGen.h"
 #include "compiler/CompilerTools.h"
 #include <string.h>
@@ -772,7 +773,7 @@ void *CMach_FloatScan(char *text, Float *result, char *flag)
     double value;
     char *end;
 
-    if (!(end = CTemplateClass_ParseDouble(text, &value, flag)))
+    if (!(end = ParseDouble(text, &value, flag)))
         CError_FatalError(ERR_NUMBER_OUT_RANGE);
     if (*flag)
         result->data.value = 0.0;

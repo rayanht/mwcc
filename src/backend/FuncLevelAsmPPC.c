@@ -56,7 +56,7 @@ void FuncLevelAsmPPC_AllocateLocals(void)
     VarInfo *info;
 
     for (local = locals; local != NULL; local = local->next) {
-        info = CPrep_AllocateVarInfo();
+        info = CodeGen_AllocateVarInfo();
         local->object->u.var.info = info;
         local->object->flags |= 1;
         info->used = 1;
@@ -362,4 +362,14 @@ void FuncLevelAsmPPC_GenerateFunction(Object *func)
     if (copts.debug_listing != 0)
         fn_004c4bd0(COptimizer_GetFunctionObject(func)->name, "[FUNCTION-LEVEL ASM] FINAL CODE");
     CFunc_WarnUnused();
+}
+
+void FuncLevelAsmPPC_NoOp(void)
+{
+    return;
+}
+
+void fn_004e67a0(void)
+{
+    return;
 }

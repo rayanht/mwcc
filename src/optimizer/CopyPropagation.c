@@ -154,8 +154,8 @@ void CopyPropagation_ComputeGenKill(void)
         sets = copyPropagationBitSets + block->index;
         localBits = sets->gen;
         otherBits = sets->kill;
-        CRTTI_FillWords(localBits, copyCount, 0);
-        CRTTI_FillWords(otherBits, copyCount, 0);
+        BitVectors_FillWords(localBits, copyCount, 0);
+        BitVectors_FillWords(otherBits, copyCount, 0);
         bitIndex = blockCopyStartIndices[block->index];
         for (instruction = block->instructions; instruction != NULL; instruction = instruction->next) {
             if ((instruction->flags & PCodeInstruction_SkipCodeMotion) == 0 && instruction->operand_count != 0) {
@@ -214,7 +214,7 @@ void CopyPropagation_ComputeInOutSets(void)
     block = gPCodeBlocks;
     {
         struct CopyPropagationBitSets *entrySets = &copyPropagationBitSets[block->index];
-        CRTTI_FillWords(entrySets->out, wordIndex = copyCount, 0);
+        BitVectors_FillWords(entrySets->out, wordIndex = copyCount, 0);
         CodeMotion_AllocateBits(entrySets->in, entrySets->gen, copyCount);
     }
 
@@ -241,7 +241,7 @@ void CopyPropagation_ComputeInOutSets(void)
                     CodeMotion_AllocateBits(predecessorOut,
                                             copyPropagationBitSets[predecessor->payload.block->index].in, copyCount);
                     for (predecessor = predecessor->next; predecessor != NULL; predecessor = predecessor->next)
-                        CRTTI_IntersectBitVectors(
+                        BitVectors_IntersectBitVectors(
                             predecessorOut, copyPropagationBitSets[predecessor->payload.block->index].in, copyCount);
                 }
                 {

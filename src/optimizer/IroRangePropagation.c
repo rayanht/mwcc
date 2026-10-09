@@ -133,7 +133,7 @@ int IroRangePropagation_PropagateRangeInLinear(struct IROLinear *nd)
             break;
         case EAND:
         case EANDASS:
-            if (IroDump_IsType1NodeType50(nd->u.diadic.right)) {
+            if (IroUtil_IsType1NodeType50(nd->u.diadic.right)) {
                 val = nd->u.diadic.right->u.node->data.intval;
                 nd->range = NewRange(1);
                 nd->range->upper = val;
@@ -159,7 +159,7 @@ int IroRangePropagation_PropagateRangeInLinear(struct IROLinear *nd)
                         nd->u.diadic.left = nd->u.diadic.right;
                         if (!IroUtil_ReplaceFirstReference(nd, saved)) {
                             saved->flags &= ~IROLF_Reffed;
-                            if (IroDump_GetObjRef(saved))
+                            if (IroUtil_GetObjRef(saved))
                                 IroUtil_ClearZeroOperands(saved);
                         }
                     }
@@ -449,7 +449,7 @@ int IroRangePropagation_PropagateRangeInLinear(struct IROLinear *nd)
         } else {
             obj = NULL;
             if (left)
-                obj = IroDump_GetObjRef(left);
+                obj = IroUtil_GetObjRef(left);
             if (!obj)
                 return 0;
             range = nd->range;

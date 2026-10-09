@@ -166,7 +166,6 @@ extern ENode *CSOM_CreateMemberAccessExpr(BClassList *classList, ObjMemberVar *r
 extern void emit_som_kind_nibbles(struct SOMClassBuildState *info);
 extern struct CSOMRefNode *somReferences;
 extern void fn_004e67a0(void);
-extern void CSOM_NoOp(void);
 
 #ifdef __cplusplus
 }

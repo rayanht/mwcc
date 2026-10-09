@@ -491,6 +491,21 @@ static MachineOpcodeInfo data_00578340[466] = {
 /* The instruction in each of the pipeline's six stages and the cycles it has left there. */
 static PipelineStage pipeline[6];
 
+static void advance_stage(int first, unsigned int from, int to)
+{
+    PCodeInstruction *instruction;
+    SInt32 v;
+    v = data_00578340[(instruction = pipeline[from].instr)->opcode].stageCycles[to - first];
+    pipeline[to].instr = instruction;
+    pipeline[to].remaining = v;
+    pipeline[from].instr = NULL;
+}
+
+static void complete_stage(int stage)
+{
+    pipeline[stage].instr = NULL;
+}
+
 SInt32 get_latency(PCodeInstruction *p)
 {
     SInt32 n = data_00578340[p->opcode].latency;
@@ -542,21 +557,6 @@ void set_execution_unit_instruction(PCodeInstruction *instruction)
     }
     pipeline[entry].instr = instruction;
     pipeline[entry].remaining = value;
-}
-
-static void advance_stage(int first, unsigned int from, int to)
-{
-    PCodeInstruction *instruction;
-    SInt32 v;
-    v = data_00578340[(instruction = pipeline[from].instr)->opcode].stageCycles[to - first];
-    pipeline[to].instr = instruction;
-    pipeline[to].remaining = v;
-    pipeline[from].instr = NULL;
-}
-
-static void complete_stage(int stage)
-{
-    pipeline[stage].instr = NULL;
 }
 
 void advance_instruction_pipeline(void)

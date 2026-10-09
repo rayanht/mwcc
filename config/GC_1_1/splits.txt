@@ -500,27 +500,30 @@ src/driver/Help.c:
 	.bss        start:0x005805A8 end:0x005806A8
 
 src/driver/TargetPanels-eabi-ppc.c:
-	.text       start:0x0042C0B0 end:0x0042C910
+	.text       start:0x0042C0B0 end:0x0042C920
 	.data       start:0x0054F840 end:0x0054FA28
 	.bss        start:0x005806A8 end:0x005806B0
 
 src/optimizer/IrOptimizer.c:
-	.text       start:0x0042C910 end:0x004317A0
+	.text       start:0x0042C920 end:0x004317A0
 	.data       start:0x0054FA28 end:0x0055059C
 	.bss        start:0x005806B0 end:0x005806C0
 
 src/backend/CodeGen.c:
-	.text       start:0x004317A0 end:0x00437D80
+	.text       start:0x004317A0 end:0x00437DE0
 	.data       start:0x005505A0 end:0x00550D04
 	.bss        start:0x005806C0 end:0x005806C8
 
 src/frontend/CPrep.c:
-	.text       start:0x00437D80 end:0x00441880
+	.text       start:0x00437DE0 end:0x00441290
 	.data       start:0x00550D08 end:0x005520FC
 	.bss        start:0x005806C8 end:0x00580D70
 
+src/driver/CWCompilerLinkerPrivate.c:
+	.text       start:0x00441290 end:0x004417D0
+
 src/frontend/CompilerTools.c:
-	.text       start:0x00441880 end:0x00442CD0
+	.text       start:0x004417D0 end:0x00442CD0
 	.data       start:0x00552100 end:0x005521B0
 	.bss        start:0x00580D70 end:0x00580DE0
 
@@ -581,30 +584,30 @@ src/optimizer/IroVars.c:
 	.bss        start:0x005815F8 end:0x00581600
 
 src/optimizer/IroUtil.c:
-	.text       start:0x0044BF10 end:0x0044D4A0
+	.text       start:0x0044BF10 end:0x0044D570
 	.data       start:0x00552F40 end:0x005533B8
 	.bss        start:0x00581600 end:0x00581610
 
 src/optimizer/IroDump.c:
-	.text       start:0x0044D4A0 end:0x0044DEF0
+	.text       start:0x0044D570 end:0x0044DEF0
 	.data       start:0x005533B8 end:0x00553B88
 	.bss        start:0x00581610 end:0x00581618
 
 src/optimizer/IroCSE.c:
-	.text       start:0x0044DEF0 end:0x0044FCD0
+	.text       start:0x0044DEF0 end:0x0044F940
 	.data       start:0x00553B88 end:0x00553D48
 
 src/optimizer/IroTransform.c:
-	.text       start:0x0044FCD0 end:0x00454BA0
+	.text       start:0x0044F940 end:0x00454BA0
 	.data       start:0x00553D48 end:0x005546EC
 
 src/optimizer/IroEval.c:
-	.text       start:0x00454BA0 end:0x00456580
-	.data       start:0x005546F0 end:0x005548A8
+	.text       start:0x00454BA0 end:0x00456610
+	.data       start:0x005546F0 end:0x005548C8
 
 src/optimizer/IroJump.c:
-	.text       start:0x00456580 end:0x00456B90
-	.data       start:0x005548A8 end:0x005549B4
+	.text       start:0x00456610 end:0x00456B90
+	.data       start:0x005548C8 end:0x005549B4
 
 src/optimizer/IroRangePropagation.c:
 	.text       start:0x00456B90 end:0x00458020
@@ -648,11 +651,11 @@ src/frontend/CFunc.c:
 	.bss        start:0x00581868 end:0x00581898
 
 src/backend/PPCError.c:
-	.text       start:0x0047CB60 end:0x0047CF90
+	.text       start:0x0047CB60 end:0x0047CDD0
 	.data       start:0x005567B8 end:0x005567C4
 
 src/backend/Intrinsics.c:
-	.text       start:0x0047CF90 end:0x004881F0
+	.text       start:0x0047CDD0 end:0x004881F0
 	.data       start:0x005567C8 end:0x0055E460
 	.bss        start:0x00581898 end:0x00581D80
 
@@ -690,12 +693,12 @@ src/backend/PCode.c:
 	.bss        start:0x00581F80 end:0x00581F88
 
 src/backend/TOC.c:
-	.text       start:0x0049D2C0 end:0x0049F560
+	.text       start:0x0049D2C0 end:0x0049F620
 	.data       start:0x0055F598 end:0x0055F9D8
 	.bss        start:0x00581F88 end:0x00581F90
 
 src/backend/Operands.c:
-	.text       start:0x0049F560 end:0x004A1B30
+	.text       start:0x0049F620 end:0x004A1B30
 	.data       start:0x0055F9D8 end:0x0055FBF8
 
 src/backend/PCodeUtilities.c:
@@ -727,11 +730,11 @@ src/backend/DWARF.c:
 	.bss        start:0x00581FB0 end:0x00582150
 
 src/backend/InstrSelection.c:
-	.text       start:0x004B1790 end:0x004BB320
+	.text       start:0x004B1790 end:0x004BB2C0
 	.data       start:0x00561648 end:0x005618F8
 
 src/backend/Switch.c:
-	.text       start:0x004BB320 end:0x004BC7B0
+	.text       start:0x004BB2C0 end:0x004BC7B0
 	.data       start:0x005618F8 end:0x0056190C
 	.bss        start:0x00582150 end:0x00582190
 
@@ -806,12 +809,12 @@ src/frontend/CException.c:
 	.bss        start:0x00582C30 end:0x00582C48
 
 src/frontend/CSOM.c:
-	.text       start:0x004E3DE0 end:0x004E6ED0
+	.text       start:0x004E3DE0 end:0x004E6EB0
 	.data       start:0x005656A0 end:0x005658F8
 	.bss        start:0x00582C48 end:0x00582C58
 
 src/backend/FuncLevelAsmPPC.c:
-	.text       start:0x004E6ED0 end:0x004E78B0
+	.text       start:0x004E6EB0 end:0x004E78B0
 	.data       start:0x005658F8 end:0x005659B8
 	.bss        start:0x00582C58 end:0x00582C60
 
@@ -876,11 +879,11 @@ src/frontend/CObjC.c:
 	.bss        start:0x00583440 end:0x00583448
 
 src/frontend/CObjCModern.c:
-	.text       start:0x0050A590 end:0x0050A870
+	.text       start:0x0050A590 end:0x0050A970
 	.data       start:0x00574178 end:0x005741A0
 
 src/frontend/CABI.c:
-	.text       start:0x0050A870 end:0x0050EF50
+	.text       start:0x0050A970 end:0x0050EF50
 	.data       start:0x005741A0 end:0x005741F8
 	.bss        start:0x00583448 end:0x00583450
 
@@ -890,12 +893,12 @@ src/frontend/CInline.c:
 	.bss        start:0x00583450 end:0x005834C8
 
 src/frontend/CTemplateFunc.c:
-	.text       start:0x00514960 end:0x005160B0
+	.text       start:0x00514960 end:0x00516150
 	.data       start:0x00574D80 end:0x00574E28
 	.bss        start:0x005834C8 end:0x005834D8
 
 src/frontend/CTemplateTools.c:
-	.text       start:0x005160B0 end:0x005191C0
+	.text       start:0x00516150 end:0x005191C0
 	.data       start:0x00574E28 end:0x00575168
 
 src/optimizer/FunctionCalls.c:
@@ -907,12 +910,15 @@ src/optimizer/StructMoves.c:
 	.data       start:0x00575180 end:0x005751AC
 
 src/optimizer/CIRTransform.c:
-	.text       start:0x0051B730 end:0x0051BF10
+	.text       start:0x0051B730 end:0x0051BF30
 	.data       start:0x005751B0 end:0x00575384
 
 src/frontend/CTemplateClass.c:
-	.text       start:0x0051BF10 end:0x0051EB40
+	.text       start:0x0051BF30 end:0x0051EAF0
 	.data       start:0x00575388 end:0x00575414
+
+src/frontend/ParseDouble.c:
+	.text       start:0x0051EAF0 end:0x0051EB40
 
 src/msl/qsort.c:
 	.text       start:0x0051EB40 end:0x0051ECA0
@@ -949,11 +955,11 @@ src/optimizer/LoopOptimization.c:
 	.bss        start:0x00583C68 end:0x00583C78
 
 src/optimizer/ConstantPropagation.c:
-	.text       start:0x0052BC40 end:0x0052CF80
+	.text       start:0x0052BC40 end:0x0052CE90
 	.bss        start:0x00583C78 end:0x00583C88
 
 src/optimizer/LoadDeletion.c:
-	.text       start:0x0052CF80 end:0x0052D520
+	.text       start:0x0052CE90 end:0x0052D520
 
 src/optimizer/VectorArraysToRegs.c:
 	.text       start:0x0052D520 end:0x0052E2D0
@@ -1008,12 +1014,12 @@ src/backend/SpillCode.c:
 	.data       start:0x0057A580 end:0x0057A590
 
 src/frontend/CRTTI.c:
-	.text       start:0x00532FB0 end:0x005345A0
+	.text       start:0x00532FB0 end:0x005344F0
 	.data       start:0x0057A590 end:0x0057A678
 	.bss        start:0x00584090 end:0x00584098
 
 src/backend/BitVectors.c:
-	.text       start:0x005345A0 end:0x00534611
+	.text       start:0x005344F0 end:0x00534611
 
 common:
 	.bss        start:0x00584098 end:0x00588D30

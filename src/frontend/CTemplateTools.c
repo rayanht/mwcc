@@ -1734,20 +1734,3 @@ Boolean CTemplTool_IsSameTemplateType(TypeClass *type, TypeTemplDep *templateTyp
     foundClass = CTemplTool_GetSelfRefTemplate(templateType);
     return &foundClass->theclass == type;
 }
-
-Boolean CTemplateTools_MatchTypeAndCheckBoundSlots(Object *obj, Type *type, void *templateArgs)
-{
-    DeduceInfo matchState;
-    SInt32 slotIndex;
-
-    if (CTemplTool_InitDeduceInfo(&matchState, CTemplTool_GetFuncTempl(obj)->params, (TemplArg *)templateArgs, 0)) {
-        if (CTemplateFunc_MatchType(obj->type, 0, type, 0, matchState.args, 1)) {
-            for (slotIndex = 0; slotIndex < matchState.maxCount; slotIndex++) {
-                if (matchState.args[slotIndex].is_deduced == 0)
-                    return 0;
-            }
-            return 1;
-        }
-    }
-    return 0;
-}

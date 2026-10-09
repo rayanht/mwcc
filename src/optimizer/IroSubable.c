@@ -4,6 +4,7 @@
 #include "compiler/objects.h"
 #include "compiler/types.h"
 #include "compiler/IroDump.h"
+#include "compiler/IroUtil.h"
 #include "compiler/IroLoop.h"
 #include "compiler/IroPropagate.h"
 #include "compiler/Registers.h"
@@ -14,6 +15,11 @@ static char data_00565458[76] = {
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
 };
 
+static int fn_004ec750(IROLinear *node)
+{
+    return 0;
+}
+
 unsigned int fn_004f0040(IROLinear *node)
 {
     Object *localObject;
@@ -23,7 +29,7 @@ unsigned int fn_004f0040(IROLinear *node)
     switch (node->type) {
         case 3:
             if ((node->nodetype == 15 || node->nodetype == 16) && fn_0044d520(node->u.diadic.right) != 0) {
-                localObject = IroDump_GetObjRef(node->u.diadic.left);
+                localObject = IroUtil_GetObjRef(node->u.diadic.left);
                 if (localObject != NULL && localObject->datatype == DLOCAL) {
                     registerInfo = localObject->u.var.info;
                     if (registerInfo != NULL && registerInfo->noregister == 0) {
@@ -31,10 +37,10 @@ unsigned int fn_004f0040(IROLinear *node)
                     }
                 }
             }
-            enabled = !!data_00565458[node->nodetype];
+            enabled = data_00565458[node->nodetype] && !fn_004ec750(node);
             return enabled;
         case 2:
-            if (data_00565458[node->nodetype] != 0) {
+            if (data_00565458[node->nodetype] != 0 && !fn_004ec750(node)) {
                 return 1;
             }
             if (node->nodetype == 4 && (node->flags & IROLF_Assigned) == 0) {
@@ -50,7 +56,7 @@ unsigned int fn_004f0040(IROLinear *node)
                     }
                     return 1;
                 }
-                if (IroDump_GetObjRef(node) != NULL &&
+                if (IroUtil_GetObjRef(node) != NULL &&
                     IroPropagate_IsRegisterEligible(node->u.monadic->u.node->data.objref) != 0) {
                     return 0;
                 }

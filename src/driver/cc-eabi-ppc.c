@@ -7,6 +7,7 @@
 #include "compiler/IrOptimizer.h"
 #include "driver/CLPluginRequests.h"
 #include "driver/CWParserPluginsPrivate.h"
+#include "driver/CWCompilerLinkerPrivate.h"
 #include "driver/CWPluginsPrivate.h"
 #include "driver/DropInCompilerLinkerPrivate.h"
 #include "driver/TargetPanels-eabi-ppc.h"
@@ -51,35 +52,36 @@ signed char initialize_compiler_plugin_cu(unsigned int input)
     if (CWPluginsPrivate_GetNumFiles(context, &compiler_plugin_cu.projectFileCount))
         return 0;
     context = (CWPluginPrivateContext *)input;
-    if (CPrep_GetFileIndex(context, (unsigned int *)&compiler_plugin_cu.mainFileNumber))
+    if (CWCompilerLinkerPrivate_GetFileIndex(context, (unsigned int *)&compiler_plugin_cu.mainFileNumber))
         return 0;
     context = (CWPluginPrivateContext *)input;
-    if (CPrep_GetContextPayload(context, &compiler_plugin_cu.mainFile))
+    if (CWCompilerLinkerPrivate_GetContextPayload(context, &compiler_plugin_cu.mainFile))
         return 0;
     context = (CWPluginPrivateContext *)input;
-    if (CPrep_GetResultValues(context, &compiler_plugin_cu.mainFileOffset, &compiler_plugin_cu.mainFileLength))
+    if (CWCompilerLinkerPrivate_GetResultValues(context, &compiler_plugin_cu.mainFileOffset,
+                                                &compiler_plugin_cu.mainFileLength))
         return 0;
-    if (CPrep_GetEnabled(input, &compiler_plugin_cu.precompiling))
+    if (CWCompilerLinkerPrivate_GetEnabled(input, &compiler_plugin_cu.precompiling))
         return 0;
-    if (CPrep_GetActive(input, &compiler_plugin_cu.active))
+    if (CWCompilerLinkerPrivate_GetActive(input, &compiler_plugin_cu.active))
         return 0;
-    if (CPrep_GetOperation(input, &compiler_plugin_cu.preprocessOnly))
-        return 0;
-    context = (CWPluginPrivateContext *)input;
-    if (CPrep_GetSetting(context, &compiler_plugin_cu.filesyminfo))
-        return 0;
-    if (CPrep_GetReserved15d(input, &compiler_plugin_cu.useMappedPrecompiledHeaders))
+    if (CWCompilerLinkerPrivate_GetOperation(input, &compiler_plugin_cu.preprocessOnly))
         return 0;
     context = (CWPluginPrivateContext *)input;
-    if (CPrep_GetDependencyState(context, &compiler_plugin_cu.browseOptions))
+    if (CWCompilerLinkerPrivate_GetSetting(context, &compiler_plugin_cu.filesyminfo))
+        return 0;
+    if (CWCompilerLinkerPrivate_GetReserved15d(input, &compiler_plugin_cu.useMappedPrecompiledHeaders))
+        return 0;
+    context = (CWPluginPrivateContext *)input;
+    if (CWCompilerLinkerPrivate_GetDependencyState(context, &compiler_plugin_cu.browseOptions))
         return 0;
 
     compiler_plugin_cu.compiling = !compiler_plugin_cu.preprocessOnly;
-    if (CPrep_GetDependencyOption(input, &compiler_plugin_cu.mainFileAttributes))
+    if (CWCompilerLinkerPrivate_GetDependencyOption(input, &compiler_plugin_cu.mainFileAttributes))
         return 0;
 
     context = (CWPluginPrivateContext *)input;
-    if (CPrep_GetTargetSettings(context, &readBuffer))
+    if (CWCompilerLinkerPrivate_GetTargetSettings(context, &readBuffer))
         return 0;
     compiler_plugin_cu.platformCode1 = readBuffer.head.platformCodes[1];
     compiler_plugin_cu.platformCode0 = readBuffer.head.platformCodes[0];
@@ -246,9 +248,9 @@ int __stdcall dispatch_compiler_plugin_request(CWPluginPrivateContext *input)
                             result = CWPluginsPrivate_CallValuePairCallback(compiler_plugin_cu.context, &output);
                         }
                     } else {
-                        result = CPrep_CallCompilerCallbackWithValue(compiler_plugin_cu.context,
-                                                                     compiler_plugin_cu.mainFileNumber,
-                                                                     &compiler_plugin_cu.objectData);
+                        result = CWCompilerLinkerPrivate_CallCompilerCallbackWithValue(
+                            compiler_plugin_cu.context, compiler_plugin_cu.mainFileNumber,
+                            &compiler_plugin_cu.objectData);
                     }
                     status = result;
                 } else {

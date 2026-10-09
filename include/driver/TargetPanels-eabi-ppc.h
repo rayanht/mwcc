@@ -9,6 +9,7 @@ extern "C" {
 
 extern void TargetPanels_eabi_ppc_LoadCompilerOptions(void);
 extern void fn_0042c0c0(void);
+extern void fn_0042c920(void);
 extern void fn_0042c910(void);
 
 #ifdef __cplusplus

@@ -100,6 +100,21 @@ extern TypeIntegral stsignedint;
 extern unsigned int Intrinsics_IsMonadicObjrefTypeFuncFlag200Set(ENode *expression);
 extern TypeIntegral stdouble;
 extern TypeIntegral stfloat;
+union ClassTypeHeaderBytes {
+    struct {
+        UInt8 lowByte;
+        UInt8 highByte;
+    } bytes;
+    UInt16 packedWord;
+};
+struct ClassTypeUpdate {
+    struct ClassTypeUpdate *next;
+    struct PCodeInstruction *first;
+    struct PCodeInstruction *second;
+};
+extern struct ClassTypeUpdate *classTypeUpdates;
+extern void Intrinsics_EmitClassTypeUpdate(SInt16 p1, ENode *node, SInt16 p3, Operand *res);
+extern void Intrinsics_UpdateClassTypeOperands(void);
 
 #ifdef __cplusplus
 }

@@ -14,6 +14,7 @@
 #include "compiler/ConstantPropagation.h"
 #include "compiler/InstrSelection.h"
 #include "compiler/InterferenceGraph.h"
+#include "compiler/Intrinsics.h"
 #include "compiler/ObjGen_PPC_EABI.h"
 #include "compiler/PCode.h"
 #include "compiler/PCodeUtilities.h"
@@ -149,7 +150,7 @@ void StackFrameEABI_Initialize(void)
         object->otype = OT_OBJECT;
         data_00580fa8->name = GetHashNameNodeExport("<dummy>");
         data_00580fa8->datatype = DLOCAL;
-        data_00580fa8->u.var.info = CPrep_AllocateVarInfo();
+        data_00580fa8->u.var.info = CodeGen_AllocateVarInfo();
     }
 }
 
@@ -1142,7 +1143,7 @@ void StackFrameEABI_SaveArgumentRegisters(PCodeBlock *entryBlock, PCodeBlock *fp
     short fpRegister;
     short gpRegister;
     if (classTypeUpdates != NULL)
-        PPCError_UpdateClassTypeOperands();
+        Intrinsics_UpdateClassTypeOperands();
     if (fpSaveBlock != NULL) {
         instruction = PCodeUtilities_CreateInstruction(8, 1, 2, operand);
         PCode_AppendInstruction(entryBlock, instruction);

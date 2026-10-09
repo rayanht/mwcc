@@ -46,6 +46,35 @@ static UInt8 data_005536f0[75] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 1, 0, 1
 
 static int IsAdjacent(CInt64 d);
 
+void IroEval_ConvertCInt64ToType(CInt64 *value, Type *type)
+{
+    if (is_unsigned(type)) {
+        switch (type->size) {
+            case 1:
+                CInt64_ConvertUInt8(value);
+                break;
+            case 2:
+                CInt64_ConvertUInt16(value);
+                break;
+            case 4:
+                CInt64_ConvertUInt32(value);
+                break;
+        }
+    } else {
+        switch (type->size) {
+            case 1:
+                CInt64_ConvertInt8(value);
+                break;
+            case 2:
+                CInt64_ConvertInt16(value);
+                break;
+            case 4:
+                CInt64_ConvertInt32(value);
+                break;
+        }
+    }
+}
+
 static inline Object *get_key(IROLinear *cond)
 {
     SInt32 hasKey = 0, t = 0;
@@ -54,10 +83,10 @@ static inline Object *get_key(IROLinear *cond)
             t++;
     }
     if (t != 0) {
-        if (IroDump_IsType1NodeType50(cond->u.diadic.right) != 0)
+        if (IroUtil_IsType1NodeType50(cond->u.diadic.right) != 0)
             hasKey = 1;
     }
-    return hasKey ? IroDump_GetObjRef(cond->u.diadic.left) : NULL;
+    return hasKey ? IroUtil_GetObjRef(cond->u.diadic.left) : NULL;
 }
 
 void convert_cint64_to_bitfield(CInt64 *val, Type *type, TypeBitfield *type2)
@@ -132,7 +161,7 @@ int IRO_ConstantFolding(void)
     for (node = linear_head; node != NULL; node = node->next) {
         switch (node->type) {
             case IROLinearOp1Arg:
-                if (IroDump_IsType1NodeType50(node->u.monadic)) {
+                if (IroUtil_IsType1NodeType50(node->u.monadic)) {
                     ENode *constant;
                     constant = NULL;
                     folded = 0;
@@ -160,7 +189,7 @@ int IRO_ConstantFolding(void)
                                 break;
                         }
                         if (folded) {
-                            IroJump_ConvertCInt64ToType(&value.i, node->rtype);
+                            IroEval_ConvertCInt64ToType(&value.i, node->rtype);
                             constant = IrOptimizer_NewENode(EINTCONST);
                             constant->rtype = node->rtype;
                             constant->data.intval = value.i;
@@ -174,17 +203,17 @@ int IRO_ConstantFolding(void)
                 }
                 break;
             case IROLinearOp2Arg:
-                if (IroDump_IsType1NodeType50(node->u.diadic.left)) {
-                    if (!IroDump_IsType1NodeType50(node->u.diadic.right) && data_005536f0[node->nodetype]) {
+                if (IroUtil_IsType1NodeType50(node->u.diadic.left)) {
+                    if (!IroUtil_IsType1NodeType50(node->u.diadic.right) && data_005536f0[node->nodetype]) {
                         IROLinear *operand = node->u.diadic.right;
                         node->u.diadic.right = node->u.diadic.left;
                         node->u.diadic.left = operand;
                     }
                 }
-                if (IroDump_IsType1NodeType50(node->u.diadic.right)) {
+                if (IroUtil_IsType1NodeType50(node->u.diadic.right)) {
                     if (node->nodetype == ESUB) {
                         node->nodetype = EADD;
-                        if (IroDump_IsType1NodeType50(node->u.diadic.right)) {
+                        if (IroUtil_IsType1NodeType50(node->u.diadic.right)) {
                             CInt64 negated;
                             negated = CInt64_Neg(node->u.diadic.right->u.node->data.intval);
                             node->u.diadic.right->u.node->data.intval = negated;
@@ -199,10 +228,10 @@ int IRO_ConstantFolding(void)
                         }
                     }
                 }
-                if (IroDump_IsType1NodeType50(node->u.diadic.right) && data_005536f0[node->nodetype] &&
+                if (IroUtil_IsType1NodeType50(node->u.diadic.right) && data_005536f0[node->nodetype] &&
                     node->u.diadic.left->type == IROLinearOp2Arg && node->u.diadic.left->nodetype == node->nodetype &&
                     node->u.diadic.left->rtype == node->rtype &&
-                    IroDump_IsType1NodeType50(node->u.diadic.left->u.diadic.right) &&
+                    IroUtil_IsType1NodeType50(node->u.diadic.left->u.diadic.right) &&
                     node->u.diadic.left->u.diadic.right->rtype == node->u.diadic.right->rtype) {
                     IROLinear *nested = node->u.diadic.left;
                     node->u.diadic.left = nested->u.diadic.left;
@@ -212,7 +241,7 @@ int IRO_ConstantFolding(void)
                     node->u.diadic.right = nested;
                     node = nested;
                 }
-                if (IroDump_IsType1NodeType50(node->u.diadic.left) && IroDump_IsType1NodeType50(node->u.diadic.right)) {
+                if (IroUtil_IsType1NodeType50(node->u.diadic.left) && IroUtil_IsType1NodeType50(node->u.diadic.right)) {
                     union {
                         long long ll;
                         CInt64 i;
@@ -312,7 +341,7 @@ int IRO_ConstantFolding(void)
                     }
                     if (folded) {
                         ENode *constant;
-                        IroJump_ConvertCInt64ToType(&value.i, node->rtype);
+                        IroEval_ConvertCInt64ToType(&value.i, node->rtype);
                         constant = IrOptimizer_NewENode(EINTCONST);
                         constant->rtype = node->rtype;
                         constant->data.intval = value.i;
@@ -390,7 +419,7 @@ int IRO_ConstantFolding(void)
                     if (folded) {
                         ENode *constant;
                         if (integerResult) {
-                            IroJump_ConvertCInt64ToType(&value.i, node->rtype);
+                            IroEval_ConvertCInt64ToType(&value.i, node->rtype);
                             constant = IrOptimizer_NewENode(EINTCONST);
                             constant->rtype = node->rtype;
                             constant->data.intval = value.i;
@@ -429,7 +458,7 @@ int IRO_EvaluateConditionals(void)
             case IROLinearIf:
             case IROLinearIfNot:
                 type = s->u.branch.cond;
-                if (IroDump_IsType1NodeType50(type) != 0) {
+                if (IroUtil_IsType1NodeType50(type) != 0) {
                     Boolean flag = CInt64_IsZero(&s->u.branch.cond->u.node->data.intval);
                     IroUtil_ClearZeroOperands(s->u.branch.cond);
                     if ((!flag != 0) == (s->type == IROLinearIf))
@@ -441,7 +470,7 @@ int IRO_EvaluateConditionals(void)
                 break;
             case IROLinearSwitch:
                 type = s->u.swtch.cond;
-                if (IroDump_IsType1NodeType50(type) != 0) {
+                if (IroUtil_IsType1NodeType50(type) != 0) {
                     v = s->u.swtch.cond->u.node->data.intval;
                     g = s->u.swtch.info;
                     p = g->cases;
@@ -565,11 +594,11 @@ int get_matching_cond_objref(Object *expectedResult, IROLinear *cond)
     if (cond != NULL && cond->nodetype == EEQU)
         kindMatches = 1;
     if (kindMatches) {
-        if (IroDump_IsType1NodeType50(cond->u.diadic.right) != 0)
+        if (IroUtil_IsType1NodeType50(cond->u.diadic.right) != 0)
             payloadMatches = 1;
     }
     if (payloadMatches)
-        result = IroDump_GetObjRef(cond->u.diadic.left);
+        result = IroUtil_GetObjRef(cond->u.diadic.left);
     else
         result = NULL;
     if (expectedResult == NULL || expectedResult == result) {
@@ -588,11 +617,11 @@ int fn_00455350(IRONode *left, IRONode *right)
         unsigned int matches = 0;
         int is_kind_17 = (node != NULL && node->nodetype == EEQU);
         if (is_kind_17) {
-            if (IroDump_IsType1NodeType50(node->u.diadic.right))
+            if (IroUtil_IsType1NodeType50(node->u.diadic.right))
                 matches = 1;
         }
         if (matches)
-            result = IroDump_GetObjRef(node->u.diadic.left);
+            result = IroUtil_GetObjRef(node->u.diadic.left);
         else
             result = NULL;
         if (fn_0044be00(node))
@@ -602,7 +631,7 @@ int fn_00455350(IRONode *left, IRONode *right)
         int matches;
         IROLinear *node = left->last;
         CLabel *label = (CLabel *)node->u.branch.label;
-        Object *object = IroDump_GetObjRef(node->u.branch.cond->u.diadic.left);
+        Object *object = IroUtil_GetObjRef(node->u.branch.cond->u.diadic.left);
         int result = 0;
         matches = 0;
 

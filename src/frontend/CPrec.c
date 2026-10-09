@@ -19,6 +19,7 @@
 #include "compiler/CodeGen.h"
 #include "compiler/CompilerTools.h"
 #include "driver/COSToolsCLT.h"
+#include "driver/CWCompilerLinkerPrivate.h"
 #include "driver/CWPluginsPrivate.h"
 #include "driver/cc-eabi-ppc.h"
 #include <string.h>
@@ -5378,7 +5379,7 @@ int CPrec_WritePrecompiledFile(void)
 
     fileInfo.info = ((CPrepCU *)cprep_cu)->mainFile;
     context = (CPrepCU *)cprep_cu;
-    status = CPrep_InvokeCompilerCallback(context->context, &fileInfo, data_00587e84);
+    status = CWCompilerLinkerPrivate_InvokeCompilerCallback(context->context, &fileInfo, data_00587e84);
     if (status != 0) {
         return status;
     }

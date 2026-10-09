@@ -1878,7 +1878,7 @@ void fn_0042e200(IROLinear *node, int level)
     IROLinear *operand;
     IROLinear *child;
 
-    if (IroDump_GetObjRef(node)) {
+    if (IroUtil_GetObjRef(node)) {
         operand = node->u.monadic;
         obj = operand->u.node->data.objref;
         CError_ASSERT(2640, obj->datatype != DALIAS);
@@ -1892,25 +1892,25 @@ void fn_0042e200(IROLinear *node, int level)
         }
     } else if (node->type == IROLinearOp2Arg && node->nodetype == EADD) {
         child = node->u.diadic.left;
-        if (IroDump_GetObjRef(child)) {
+        if (IroUtil_GetObjRef(child)) {
             add_local_usage_and_set_noregister(child->u.monadic, level);
         } else if (child->type == IROLinearOp2Arg) {
             if (child->nodetype == EADD) {
                 fn_0042e200(child->u.diadic.left, level);
                 fn_0042e200(child->u.diadic.right, level);
-            } else if (return_zero_for_irolinear(child) && IroDump_GetObjRef(child->u.diadic.left)) {
+            } else if (return_zero_for_irolinear(child) && IroUtil_GetObjRef(child->u.diadic.left)) {
                 add_local_usage_and_set_noregister(child->u.diadic.left->u.monadic, level);
             }
         }
 
         child = node->u.diadic.right;
-        if (IroDump_GetObjRef(child)) {
+        if (IroUtil_GetObjRef(child)) {
             add_local_usage_and_set_noregister(child->u.monadic, level);
         } else if (child->type == IROLinearOp2Arg) {
             if (child->nodetype == EADD) {
                 fn_0042e200(child->u.diadic.left, level);
                 fn_0042e200(child->u.diadic.right, level);
-            } else if (return_zero_for_irolinear(child) && IroDump_GetObjRef(child->u.diadic.left)) {
+            } else if (return_zero_for_irolinear(child) && IroUtil_GetObjRef(child->u.diadic.left)) {
                 add_local_usage_and_set_noregister(child->u.diadic.left->u.monadic, level);
             }
         }
@@ -2144,7 +2144,7 @@ void *IRO_Optimizer(Object *function, void *incomingBody)
     if (data_005876e4 != 0)
         visit_statement_expressions(body);
     if (copts.deleteDeadInstructions > 0)
-        IroCSE_RewriteStatementExpressions(body);
+        IroTransform_RewriteStatementExpressions(body);
 
     data_00587e50 = 0;
     data_0058800c = 0;
@@ -2467,9 +2467,4 @@ void IrOptimizer_SetDeleteDeadInstructionsFlags(void)
     copts.loopinvariants = copts.strengthreduction = copts.lifetimes = copts.deadstore = copts.unrolling =
         copts.vectorizeloops = copts.deleteDeadInstructions >= 3;
     copts.irSecondOptimizationPass = copts.deleteDeadInstructions >= 4;
-}
-
-void fn_0042c920(void)
-{
-    return;
 }

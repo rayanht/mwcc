@@ -15,6 +15,57 @@
 #include "compiler/CompilerTools.h"
 #include <string.h>
 
+MessageArgument *CObjCModern_SplitNameIntoMessageArguments(HashNameNode *hname, char *flag)
+{
+    char *separator;
+    MessageArgument *argument;
+    char *segment;
+    MessageArgument *tail;
+    MessageArgument *head;
+    segment = hname->name;
+    head = NULL;
+    for (;;) {
+        separator = segment;
+        while (*separator != '_') {
+            if (*separator == 0) {
+                if (head == NULL) {
+                    argument = (MessageArgument *)lalloc(sizeof(MessageArgument));
+                    memclrw(argument, sizeof(MessageArgument));
+                    argument->name = hname;
+                    *flag = 1;
+                    return argument;
+                }
+                tail->next = (MessageArgument *)lalloc(sizeof(MessageArgument));
+                tail = tail->next;
+                tail->next = NULL;
+                tail->name = GetHashNameNodeExport(segment);
+                tail->expression = NULL;
+                *flag = 0;
+                return head;
+            }
+            separator++;
+        }
+        if (head != NULL) {
+            tail->next = (MessageArgument *)lalloc(sizeof(MessageArgument));
+            tail = tail->next;
+        } else {
+            tail = (MessageArgument *)lalloc(sizeof(MessageArgument));
+            head = tail;
+        }
+        *separator = 0;
+        tail->next = NULL;
+        tail->name = GetHashNameNodeExport(segment);
+        tail->expression = NULL;
+        *separator = '_';
+        if (separator[1] == 0) {
+            *flag = 0;
+            return head;
+        }
+        separator++;
+        segment = separator;
+    }
+}
+
 ENode *fn_0050a000(TypeClass *context, ENode *receiver, HashNameNode *name, char option)
 {
     MessageArgument *args;
@@ -25,7 +76,7 @@ ENode *fn_0050a000(TypeClass *context, ENode *receiver, HashNameNode *name, char
 
     CError_ASSERT(89, receiver->type == EINDIRECT);
     receiver = receiver->data.monadic;
-    args = CABI_SplitNameIntoMessageArguments(name, &argumentFlag);
+    args = CObjCModern_SplitNameIntoMessageArguments(name, &argumentFlag);
     tk = CPrepTokenizer_GetNextToken();
     if (tk == ')') {
         if (argumentFlag == 0) {
