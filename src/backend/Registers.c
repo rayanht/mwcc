@@ -1,5 +1,6 @@
 #define CERROR_FILE "Registers.c"
 #include "compiler/common.h"
+#include "version.h"
 #include "compiler/Registers.h"
 #include "compiler/enode.h"
 #include "compiler/objects.h"
@@ -34,7 +35,9 @@ static unsigned char gUsedPhysicalFPR[32];
 static UInt8 gUsedPhysicalVR[32];
 static short gSaveSpan;
 static unsigned char gSavedUsedPhysicalRegisters[32];
+#if VERSION > VERSION_GC_1_0
 static char lbl_00581392[14];
+#endif
 
 static void Registers_RestoreClassState(unsigned char *used, short *save_span)
 {
@@ -127,35 +130,6 @@ static inline int Registers_CountFree(const unsigned char *used)
     return count;
 }
 
-static inline void Registers_MarkFPRUsed(SInt16 regnum)
-{
-    SInt32 avail;
-    SInt32 start;
-    SInt32 i;
-
-    start = 0x20;
-    avail = 0;
-    gUsedPhysicalFPR[regnum] = 1;
-    i = 0x1f;
-    do {
-        if (gUsedPhysicalFPR[i] == 1) {
-            start = i;
-        }
-        if (i > 0x11 && gUsedPhysicalFPR[i] == 0) {
-            avail++;
-        }
-    } while (--i >= 0xe);
-    gFPRSaveSpan = 0x20 - start;
-    gAvailableSavedFPRs = avail;
-}
-
-static VarInfo *Registers_NewInfo(void)
-{
-    VarInfo *p = (VarInfo *)galloc(sizeof(VarInfo));
-    memclrw(p, sizeof(VarInfo));
-    return p;
-}
-
 void Registers_InitRegisterState(void)
 {
     SInt16 i;
@@ -206,48 +180,12 @@ void Registers_AllocateGPR(Object *obj)
     SInt16 reg;
     SInt32 i;
 
-    switch (obj->datatype) {
-        case DDATA:
-            if (obj->u.data.info == NULL) {
-                VarInfo *v = (VarInfo *)galloc(sizeof(VarInfo));
-                memclrw(v, sizeof(VarInfo));
-                obj->u.data.info = v;
-            }
-            info = obj->u.data.info;
-            break;
-        case DLOCAL:
-            CError_ASSERT(745, obj->u.var.info);
-            info = obj->u.var.info;
-            break;
-        case DABSOLUTE:
-            if (obj->u.data.info == NULL) {
-                info = (VarInfo *)galloc(sizeof(VarInfo));
-                memclrw(info, sizeof(VarInfo));
-                obj->u.data.info = info;
-            }
-            info = obj->u.data.info;
-            break;
-        default:
-            CError_FATAL(758);
-            info = NULL;
-            break;
-    }
+    info = Registers_GetInfo(obj);
 
     if (gUseVirtualRegisterNumbers_00587f00 != 0) {
         reg = gUsedVirtualRegistersGPR++;
     } else {
-        i = 0x1f;
-        for (;;) {
-            if (gUsedPhysicalGPR[i] == 0) {
-                Registers_BindGPR(NULL, i);
-                break;
-            }
-            if (--i < 0xe) {
-                i = -1;
-                break;
-            }
-        }
-        reg = (SInt16)i;
+        reg = Coloring_ClaimGPRColor();
     }
 
     info->is_fpr = 0;
@@ -260,30 +198,11 @@ void Registers_AllocateGPR(Object *obj)
 
 void Registers_AllocateGPRPair(Object *obj)
 {
+    VarInfo *info;
     SInt16 reg1;
     SInt16 reg2;
-    VarInfo *info;
 
-    switch (obj->datatype) {
-        case DDATA:
-            if (obj->u.data.info == NULL)
-                obj->u.data.info = Registers_NewInfo();
-            info = obj->u.data.info;
-            break;
-        case DLOCAL:
-            CError_ASSERT(745, obj->u.var.info != NULL);
-            info = obj->u.var.info;
-            break;
-        case DABSOLUTE:
-            if (obj->u.data.info == NULL)
-                obj->u.data.info = Registers_NewInfo();
-            info = obj->u.data.info;
-            break;
-        default:
-            CError_FATAL(758);
-            info = NULL;
-            break;
-    }
+    info = Registers_GetInfo(obj);
 
     if (gUseVirtualRegisterNumbers_00587f00) {
         reg1 = gUsedVirtualRegistersGPR++;
@@ -310,51 +229,12 @@ void Registers_AllocateFPR(Object *obj)
     SInt32 i;
     VarInfo *info;
 
-    switch (obj->datatype) {
-        case DDATA:
-            if (obj->u.data.info == NULL) {
-                VarInfo *p = (VarInfo *)galloc(sizeof(VarInfo));
-                memclrw(p, sizeof(VarInfo));
-                obj->u.data.info = p;
-            }
-            info = obj->u.data.info;
-            break;
-
-        case DLOCAL:
-            CError_ASSERT(745, obj->u.var.info != NULL);
-            info = obj->u.var.info;
-            break;
-
-        case DABSOLUTE:
-            if (obj->u.data.info == NULL) {
-                VarInfo *p = (VarInfo *)galloc(sizeof(VarInfo));
-                memclrw(p, sizeof(VarInfo));
-                obj->u.data.info = p;
-            }
-            info = obj->u.data.info;
-            break;
-
-        default:
-            CError_FATAL(758);
-            info = NULL;
-            break;
-    }
+    info = Registers_GetInfo(obj);
 
     if (gUseVirtualRegisterNumbers_00587f00) {
         reg = gUsedVirtualRegistersFPR++;
     } else {
-        i = 31;
-        for (;;) {
-            if (gUsedPhysicalFPR[i] == 0) {
-                Registers_BindFPR(NULL, i);
-                reg = (SInt16)i;
-                break;
-            }
-            if (--i < 14) {
-                reg = -1;
-                break;
-            }
-        }
+        reg = Coloring_ClaimFPRColor();
     }
 
     info->is_fpr = 1;
@@ -369,50 +249,13 @@ void Registers_AllocateVR(Object *obj)
     SInt32 i;
     VarInfo *vr;
 
-    switch (obj->datatype) {
-        case DDATA:
-            if (obj->u.data.info == NULL) {
-                vr = (VarInfo *)galloc(sizeof(*vr));
-                memclrw(vr, sizeof(*vr));
-                obj->u.data.info = vr;
-            }
-            vr = obj->u.data.info;
-            break;
-        case DLOCAL:
-            if (obj->u.var.info == NULL)
-                CError_FATAL(745);
-            vr = obj->u.var.info;
-            break;
-        case DABSOLUTE:
-            if (obj->u.data.info == NULL) {
-                vr = (VarInfo *)galloc(sizeof(*vr));
-                memclrw(vr, sizeof(*vr));
-                obj->u.data.info = vr;
-            }
-            vr = obj->u.data.info;
-            break;
-        default:
-            CError_FATAL(758);
-            vr = NULL;
-    }
+    vr = Registers_GetInfo(obj);
 
     if (gUseVirtualRegisterNumbers_00587f00 != 0) {
         reg = gUsedVirtualRegistersVR;
         gUsedVirtualRegistersVR++;
     } else {
-        i = 31;
-        for (;;) {
-            if (gUsedPhysicalVR[i] == 0) {
-                Registers_BindVR(NULL, i);
-                reg = (SInt16)i;
-                break;
-            }
-            i--;
-            if (i < 20) {
-                reg = -1;
-                break;
-            }
-        }
+        reg = Coloring_ClaimVRColor();
     }
     vr->is_fpr = 0;
     vr->is_vector = 1;
@@ -443,31 +286,7 @@ void Registers_BindGPR(Object *obj, SInt16 reg)
     }
 
     if (obj != NULL) {
-        switch (obj->datatype) {
-            case DDATA:
-                if (obj->u.data.info == NULL) {
-                    info = (VarInfo *)galloc(sizeof(VarInfo));
-                    memclrw(info, sizeof(VarInfo));
-                    obj->u.data.info = info;
-                }
-                info = obj->u.data.info;
-                break;
-            case DLOCAL:
-                CError_ASSERT(745, obj->u.var.info != NULL);
-                info = obj->u.var.info;
-                break;
-            case DABSOLUTE:
-                if (obj->u.data.info == NULL) {
-                    info = (VarInfo *)galloc(sizeof(VarInfo));
-                    memclrw(info, sizeof(VarInfo));
-                    obj->u.data.info = info;
-                }
-                info = obj->u.data.info;
-                break;
-            default:
-                CError_FATAL(758);
-                info = NULL;
-        }
+        info = Registers_GetInfo(obj);
 
         info->is_fpr = 0;
         info->is_vector = 0;
@@ -484,33 +303,7 @@ void Registers_BindGPRPair(Object *obj, SInt16 reg0, SInt16 reg1)
     Registers_BindGPR(NULL, reg0);
     Registers_BindGPR(NULL, reg1);
     if (obj != NULL) {
-        switch (obj->datatype) {
-            case DDATA:
-                if (obj->u.data.info == NULL) {
-                    VarInfo *vi = (VarInfo *)galloc(sizeof(VarInfo));
-                    memclrw(vi, sizeof(VarInfo));
-                    obj->u.data.info = vi;
-                }
-                info = obj->u.data.info;
-                break;
-            case DLOCAL:
-                if (obj->u.var.info == NULL)
-                    CError_FATAL(745);
-                info = obj->u.var.info;
-                break;
-            case DABSOLUTE:
-                if (obj->u.data.info == NULL) {
-                    VarInfo *vi = (VarInfo *)galloc(sizeof(VarInfo));
-                    memclrw(vi, sizeof(VarInfo));
-                    obj->u.data.info = vi;
-                }
-                info = obj->u.data.info;
-                break;
-            default:
-                CError_FATAL(758);
-                info = NULL;
-                break;
-        }
+        info = Registers_GetInfo(obj);
         info->is_fpr = 0;
         info->is_vector = 0;
         info->reg = reg0;
@@ -523,40 +316,29 @@ void Registers_BindGPRPair(Object *obj, SInt16 reg0, SInt16 reg1)
 void Registers_BindFPR(Object *obj, SInt16 regnum)
 {
     if (gUsedPhysicalFPR[regnum] == 0) {
-        Registers_MarkFPRUsed(regnum);
+        SInt32 i;
+        SInt32 start;
+        SInt32 avail;
+
+        start = 0x20;
+        avail = 0;
+        gUsedPhysicalFPR[regnum] = 1;
+        i = 0x1f;
+        do {
+            if (gUsedPhysicalFPR[i] == 1) {
+                start = i;
+            }
+            if (i > 0x11 && gUsedPhysicalFPR[i] == 0) {
+                avail++;
+            }
+        } while (--i >= 0xe);
+        gFPRSaveSpan = 0x20 - start;
+        gAvailableSavedFPRs = avail;
     }
     if (obj != NULL) {
         VarInfo *info;
 
-        switch (obj->datatype) {
-            case DDATA:
-                if (obj->u.data.info == NULL) {
-                    VarInfo *p;
-                    p = galloc(sizeof(VarInfo));
-                    memclrw(p, sizeof(VarInfo));
-                    obj->u.data.info = p;
-                }
-                info = obj->u.data.info;
-                break;
-            case DLOCAL:
-                if (obj->u.var.info == NULL) {
-                    CError_FATAL(745);
-                }
-                info = obj->u.var.info;
-                break;
-            case DABSOLUTE:
-                if (obj->u.data.info == NULL) {
-                    VarInfo *p;
-                    p = galloc(sizeof(VarInfo));
-                    memclrw(p, sizeof(VarInfo));
-                    obj->u.data.info = p;
-                }
-                info = obj->u.data.info;
-                break;
-            default:
-                CError_FATAL(758);
-                info = NULL;
-        }
+        info = Registers_GetInfo(obj);
 
         info->is_fpr = 1;
         info->is_vector = 0;
@@ -586,32 +368,7 @@ void Registers_BindVR(Object *obj, short vr)
     if (obj != NULL) {
         VarInfo *regs;
 
-        switch (obj->datatype) {
-            case DDATA:
-                if (obj->u.data.info == NULL) {
-                    VarInfo *p = (VarInfo *)galloc(sizeof(VarInfo));
-                    memclrw(p, sizeof(VarInfo));
-                    obj->u.data.info = p;
-                }
-                regs = obj->u.data.info;
-                break;
-            case DLOCAL:
-                CError_ASSERT(745, obj->u.var.info != NULL);
-                regs = obj->u.var.info;
-                break;
-            case DABSOLUTE:
-                if (obj->u.data.info == NULL) {
-                    VarInfo *p = (VarInfo *)galloc(sizeof(VarInfo));
-                    memclrw(p, sizeof(VarInfo));
-                    obj->u.data.info = p;
-                }
-                regs = obj->u.data.info;
-                break;
-            default:
-                CError_FATAL(758);
-                regs = NULL;
-                break;
-        }
+        regs = Registers_GetInfo(obj);
 
         regs->is_fpr = 0;
         regs->is_vector = 1;
@@ -687,6 +444,7 @@ short Coloring_ClaimVRColor(void)
     return -1;
 }
 
+#if VERSION > VERSION_GC_1_0
 unsigned char Registers_AreNonvolatileVRUsed(void)
 {
     int reg;
@@ -698,6 +456,7 @@ unsigned char Registers_AreNonvolatileVRUsed(void)
     }
     return 0;
 }
+#endif
 
 void Registers_BeginCoalesceWindow(void)
 {
@@ -763,34 +522,50 @@ void Registers_CloseCoalesceWindow(void)
     }
 }
 
+static VarInfo *Registers_NewInfo(void)
+{
+    VarInfo *p = (VarInfo *)galloc(sizeof(VarInfo));
+    memclrw(p, sizeof(VarInfo));
+    return p;
+}
+
 VarInfo *Registers_GetInfo(Object *object)
 {
     VarInfo *info;
 
     switch (object->datatype) {
         case DDATA:
-            if (!object->u.data.info) {
-                info = (VarInfo *)galloc(44U);
-                memclrw(info, 44U);
-                object->u.data.info = info;
-            }
+            if (!object->u.data.info)
+                object->u.data.info = Registers_NewInfo();
             return object->u.data.info;
         case DLOCAL:
             if (!object->u.var.info)
-                CError_FATAL(745);
+                CError_FATAL(VERSION > VERSION_GC_1_0 ? 745 : 726);
             return object->u.var.info;
         case DABSOLUTE:
-            if (!object->u.data.info) {
-                info = (VarInfo *)galloc(44U);
-                memclrw(info, 44U);
-                object->u.data.info = info;
-            }
+            if (!object->u.data.info)
+                object->u.data.info = Registers_NewInfo();
             return object->u.data.info;
         default:
-            CError_FATAL(758);
+            CError_FATAL(VERSION > VERSION_GC_1_0 ? 758 : 739);
             return NULL;
     }
 }
+
+#if VERSION == VERSION_GC_1_0
+int Registers_CountUsedVRs(void)
+{
+    int count;
+    int reg;
+
+    count = 0;
+    for (reg = 0; reg < 32; reg++) {
+        if (gUsedPhysicalVR[reg] != 0)
+            count++;
+    }
+    return count;
+}
+#endif
 
 UInt32 Registers_GetOperandRegMask(PCodeBlock *list)
 {

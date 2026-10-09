@@ -22,8 +22,6 @@ static struct IROLinear *linear_range_start;
 static IROLinear *linear_range_end;
 static struct IRONode *move_expr_before_node;
 
-static inline Boolean is_one(CInt64 *val);
-
 Object *IroUtil_GetObjRef(IROLinear *linear)
 {
     if (linear->type == IROLinearOp1Arg && linear->nodetype == EINDIRECT &&
@@ -73,28 +71,6 @@ unsigned int IroUtil_IsType1NodeType50(IROLinear *linear)
     if (linear->type == IROLinearOperand && linear->u.node->type == 50U)
         return 1U;
     return 0U;
-}
-
-static inline int IRO_ConstsSame(ENode *a, ENode *b)
-{
-    if (a->type == b->type) {
-        switch (a->type) {
-            case EINTCONST:
-                return a->data.intval.lo == b->data.intval.lo && a->data.intval.hi == b->data.intval.hi;
-            case ESTRINGCONST:
-                return 0;
-            case EFLOATCONST:
-                return a->data.floatval.data.value == b->data.floatval.data.value;
-            case EVECTOR128CONST:
-                return a->data.vector128val.ul[0] == b->data.vector128val.ul[0] &&
-                       a->data.vector128val.ul[1] == b->data.vector128val.ul[1] &&
-                       a->data.vector128val.ul[2] == b->data.vector128val.ul[2] &&
-                       a->data.vector128val.ul[3] == b->data.vector128val.ul[3];
-            case EOBJREF:
-                return a->data.objref == b->data.objref;
-        }
-    }
-    return 0;
 }
 
 #pragma auto_inline off
@@ -168,7 +144,7 @@ int IroUtil_LinearConstantTreesSame(IROLinear *a, IROLinear *b)
     if (a->type == b->type && IroUtil_AreTypesEqual(a->rtype, b->rtype)) {
         switch (a->type) {
             case IROLinearOperand:
-                return IRO_ConstsSame(a->u.node, b->u.node);
+                return equal_enode_values(a->u.node, b->u.node);
             case IROLinearOp1Arg:
                 if (a->nodetype == b->nodetype)
                     return IroUtil_LinearConstantTreesSame(a->u.monadic, b->u.monadic);
@@ -205,7 +181,7 @@ int IroUtil_LinearsSame(IROLinear *a, IROLinear *b)
         int flag = 0;
         switch (a->type) {
             case IROLinearOperand:
-                return IRO_ConstsSame(a->u.node, b->u.node);
+                return equal_enode_values(a->u.node, b->u.node);
             case IROLinearOp1Arg:
                 if (a->nodetype == b->nodetype)
                     return IroUtil_LinearsSame(a->u.monadic, b->u.monadic);
@@ -238,6 +214,22 @@ int IroUtil_LinearsSame(IROLinear *a, IROLinear *b)
     return 0;
 }
 
+static IROLinear *find_previous_linear(IROLinear *object)
+{
+    IROLinear *current;
+    IROLinear *previous;
+
+    current = linear_head;
+    previous = current;
+    while (current != NULL && current != object) {
+        previous = current;
+        current = current->next;
+    }
+    if (current == NULL)
+        previous = current;
+    return previous;
+}
+
 IROLinear *IroUtil_GetFirstLinear(IROLinear *p)
 {
     switch (p->type) {
@@ -260,18 +252,10 @@ IROLinear *IroUtil_GetFirstLinear(IROLinear *p)
 
 void *IroUtil_MoveLinearRangeBeforeObject(IROLinear *object, IROLinear *first, IROLinear *last)
 {
-    IROLinear *current;
     IROLinear *previous;
     IROLinear *next;
 
-    current = linear_head;
-    previous = current;
-    while (current != NULL && current != object) {
-        previous = current;
-        current = current->next;
-    }
-    if (current == NULL)
-        previous = current;
+    previous = find_previous_linear(object);
     next = first->next;
     previous->next = next;
     next = last->next;
@@ -282,91 +266,31 @@ void *IroUtil_MoveLinearRangeBeforeObject(IROLinear *object, IROLinear *first, I
 
 short IroUtil_IsZeroConstant(IROLinear *node)
 {
-    int b;
-    Boolean zero;
-    short result;
-    CInt64 *v;
-    int bad;
-    ENode *expr;
-
-    if (node->type == IROLinearOperand && node->u.node->type == EINTCONST)
-        b = 1;
-    else
-        b = 0;
-    result = 1;
-    bad = 0;
-    if (b) {
-        expr = node->u.node;
-        v = &expr->data.intval;
-        zero = (v->hi == 0 && v->lo == 0);
-        if (zero)
-            bad = 1;
-    }
-    if (!bad) {
-        b = 0;
-        if (IroUtil_IsTypeOneNodeTypeFiftyOne(node)) {
-            if (CMach_FloatIsZero(node->u.node->data.floatval.data.value))
-                b = 1;
-        }
-        if (!b)
-            result = 0;
-    }
-    return result;
+    return (IroUtil_IsType1NodeType50(node) && CInt64_IsZero(&node->u.node->data.intval)) ||
+           (IroUtil_IsTypeOneNodeTypeFiftyOne(node) && CMach_FloatIsZero(node->u.node->data.floatval.data.value));
 }
 
 #ifndef TRUE
 #endif
 
+static inline Boolean is_one(CInt64 *val)
+{
+    return val->hi == 0 && val->lo == 1;
+}
+
 short fn_0044cad0(IROLinear *p)
 {
-    int b;
-    Boolean one;
-    int result;
-    CInt64 *v;
-    int bad;
-
-    if (p->type == IROLinearOperand && p->u.node->type == EINTCONST)
-        b = TRUE;
-    else
-        b = FALSE;
-    result = TRUE;
-    bad = FALSE;
-    if (b) {
-        v = &p->u.node->data.intval;
-        one = (v->hi == 0 && v->lo == 1);
-        if (one)
-            bad = TRUE;
-    }
-    if (!bad) {
-        b = FALSE;
-        if (IroUtil_IsTypeOneNodeTypeFiftyOne(p)) {
-            if (CMach_FloatIsOne(p->u.node->data.floatval.data.value))
-                b = TRUE;
-        }
-        if (!b)
-            result = FALSE;
-    }
-    return result;
+    return (IroUtil_IsType1NodeType50(p) && is_one(&p->u.node->data.intval)) ||
+           (IroUtil_IsTypeOneNodeTypeFiftyOne(p) && CMach_FloatIsOne(p->u.node->data.floatval.data.value));
 }
 
 short IroUtil_IsOne(IROLinear *node)
 {
     CInt64 value;
-    int isIntegerOne;
-    int result;
-    int isFloatOne;
 
     value = CInt64_Neg(node->u.node->data.intval);
-    isIntegerOne = IroUtil_IsType1NodeType50(node);
-    result = 1;
-    isIntegerOne = isIntegerOne && is_one(&value);
-    if (!isIntegerOne) {
-        isFloatOne =
-            IroUtil_IsTypeOneNodeTypeFiftyOne(node) && CMach_FloatIsNegOne(node->u.node->data.floatval.data.value);
-        if (!isFloatOne)
-            result = 0;
-    }
-    return result;
+    return (IroUtil_IsType1NodeType50(node) && is_one(&value)) ||
+           (IroUtil_IsTypeOneNodeTypeFiftyOne(node) && CMach_FloatIsNegOne(node->u.node->data.floatval.data.value));
 }
 
 void clear_operand_if_zero(Operand *operand, int value)
@@ -599,11 +523,6 @@ void IroUtil_RemoveLinearRange(IROExpr *record)
     remove_linear_range(linear_range_start, linear_range_end);
 }
 
-static inline Boolean is_one(CInt64 *val)
-{
-    return val->hi == 0 && val->lo == 1;
-}
-
 void set_expr_node_if_update_type(IROLinear *linear, unsigned int updateType)
 {
     if (updateType != 0U) {
@@ -727,13 +646,7 @@ IROLinear *IroUtil_CopyLinearToList(IROLinear *node, IROList *list)
             break;
     }
 
-    if (list->head != NULL)
-        list->tail->next = newnode;
-    else
-        list->head = newnode;
-    list->tail = newnode;
-    while (list->tail->next != NULL)
-        list->tail = list->tail->next;
+    IroUtil_AppendLinear(newnode, list);
 
     return newnode;
 }
@@ -750,13 +663,7 @@ IROLinear *IroUtil_AppendObjectRefAndUse(Object *obj, IROList *list)
     expressionNode->index = linear_index_counter;
     expressionNode->flags |= IROLF_Ind;
 
-    if (list->head != NULL)
-        list->tail->next = expressionNode;
-    else
-        list->head = expressionNode;
-    list->tail = expressionNode;
-    while (list->tail->next != NULL)
-        list->tail = list->tail->next;
+    IroUtil_AppendLinear(expressionNode, list);
 
     useNode = IrOptimizer_NewLinear(IROLinearOp1Arg);
     useNode->nodetype = EINDIRECT;
@@ -766,13 +673,7 @@ IROLinear *IroUtil_AppendObjectRefAndUse(Object *obj, IROList *list)
     useNode->index = linear_index_counter;
     useNode->next = NULL;
 
-    if (list->head != NULL)
-        list->tail->next = useNode;
-    else
-        list->head = useNode;
-    list->tail = useNode;
-    while (list->tail->next != NULL)
-        list->tail = list->tail->next;
+    IroUtil_AppendLinear(useNode, list);
 
     expressionNode->next = useNode;
     return useNode;
@@ -854,54 +755,53 @@ IROLinear *IroUtil_ReplaceFirstReference(IROLinear *node, IROLinear *newref)
             case IROLinearIf:
             case IROLinearIfNot:
                 if (p->u.branch.cond == node) {
-                    IroUtil_VisitLinearTree(p->u.branch.cond, (void (*)(IROLinear *, int))clear_operand_if_zero);
+                    IroUtil_ClearZeroOperands(p->u.branch.cond);
                     p->u.branch.cond = newref;
                     return p;
                 }
                 break;
             case IROLinearReturn:
                 if (p->u.monadic == node) {
-                    IroUtil_VisitLinearTree(p->u.monadic, (void (*)(IROLinear *, int))clear_operand_if_zero);
+                    IroUtil_ClearZeroOperands(p->u.monadic);
                     p->u.monadic = newref;
                     return p;
                 }
                 break;
             case IROLinearOp1Arg:
                 if (p->u.monadic == node) {
-                    IroUtil_VisitLinearTree(p->u.monadic, (void (*)(IROLinear *, int))clear_operand_if_zero);
+                    IroUtil_ClearZeroOperands(p->u.monadic);
                     p->u.monadic = newref;
                     return p;
                 }
                 break;
             case IROLinearSwitch:
                 if (p->u.swtch.cond == node) {
-                    IroUtil_VisitLinearTree(p->u.swtch.cond, (void (*)(IROLinear *, int))clear_operand_if_zero);
+                    IroUtil_ClearZeroOperands(p->u.swtch.cond);
                     p->u.swtch.cond = newref;
                     return p;
                 }
                 break;
             case IROLinearOp2Arg:
                 if (p->u.diadic.left == node) {
-                    IroUtil_VisitLinearTree(p->u.diadic.left, (void (*)(IROLinear *, int))clear_operand_if_zero);
+                    IroUtil_ClearZeroOperands(p->u.diadic.left);
                     p->u.diadic.left = newref;
                     return p;
                 }
                 if (p->u.diadic.right == node) {
-                    IroUtil_VisitLinearTree(p->u.diadic.right, (void (*)(IROLinear *, int))clear_operand_if_zero);
+                    IroUtil_ClearZeroOperands(p->u.diadic.right);
                     p->u.diadic.right = newref;
                     return p;
                 }
                 break;
             case IROLinearFunccall:
                 if (p->u.funccall.callee == node) {
-                    IroUtil_VisitLinearTree(p->u.funccall.callee, (void (*)(IROLinear *, int))clear_operand_if_zero);
+                    IroUtil_ClearZeroOperands(p->u.funccall.callee);
                     p->u.funccall.callee = newref;
                     return p;
                 }
                 for (i = 0; i < p->u.funccall.argCount; i++) {
                     if (p->u.funccall.args[i] == node) {
-                        IroUtil_VisitLinearTree(p->u.funccall.args[i],
-                                                (void (*)(IROLinear *, int))clear_operand_if_zero);
+                        IroUtil_ClearZeroOperands(p->u.funccall.args[i]);
                         p->u.funccall.args[i] = newref;
                         return p;
                     }

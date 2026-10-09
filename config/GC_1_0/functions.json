@@ -8505,7 +8505,7 @@
     "source": "src/optimizer/IroUtil.c"
   },
   {
-    "name": "fn_004410f0",
+    "name": "find_previous_linear",
     "address": "0x004410f0",
     "size": 36,
     "source": "src/optimizer/IroUtil.c"
@@ -12591,7 +12591,7 @@
     "source": "src/backend/Registers.c"
   },
   {
-    "name": "fn_004712c0",
+    "name": "Registers_CountUsedVRs",
     "address": "0x004712c0",
     "size": 21,
     "source": "src/backend/Registers.c"
@@ -15369,7 +15369,7 @@
     "source": "src/backend/Exceptions.c"
   },
   {
-    "name": "fn_00499fe0",
+    "name": "append_reference",
     "address": "0x00499fe0",
     "size": 65,
     "source": "src/backend/Exceptions.c"

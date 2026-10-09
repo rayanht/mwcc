@@ -1,5 +1,6 @@
 #ifndef COMPILER_REGISTERS_H
 #define COMPILER_REGISTERS_H
+#include "version.h"
 
 #include "compiler/common.h"
 #include "compiler/CPrep.h"
@@ -57,7 +58,11 @@ extern void Registers_AllocateVR(Object *obj);
 extern void Registers_AllocateFPR(Object *obj);
 extern void Registers_AllocateGPRPair(Object *obj);
 extern void Registers_AllocateGPR(Object *obj);
+#if VERSION > VERSION_GC_1_0
 extern unsigned char Registers_AreNonvolatileVRUsed(void);
+#else
+extern int Registers_CountUsedVRs(void);
+#endif
 extern void Registers_BindGPR(Object *obj, SInt16 reg);
 extern void Registers_SetupStackBaseReg(void);
 extern SInt32 fn_004c15f0(void);

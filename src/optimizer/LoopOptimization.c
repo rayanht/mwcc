@@ -1,5 +1,6 @@
 #define CERROR_FILE "LoopOptimization.c"
 #include "compiler/common.h"
+#include "version.h"
 #include "compiler/LoopOptimization.h"
 #include "compiler/enode.h"
 #include "compiler/objects.h"

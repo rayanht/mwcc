@@ -1,5 +1,6 @@
 #define CERROR_FILE "unknown.c"
 #include "compiler/common.h"
+#include "version.h"
 #include "compiler/VectorArraysToRegs.h"
 #include "compiler/enode.h"
 #include "compiler/objects.h"

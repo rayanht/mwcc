@@ -44,21 +44,6 @@ static inline int Exceptions_BoundObjectCount(Object **objectSlot)
     return 0;
 }
 
-static inline void append_reference(void *obj, SInt32 offset)
-{
-    ObjGenRelocationRequest *it;
-    it = (ObjGenRelocationRequest *)lalloc(16);
-    it->next = NULL;
-    it->object = obj;
-    it->offset = offset;
-    it->reserved0c[0] = 0;
-    if (exception_table_relocation_requests != NULL)
-        relocation_request_tail->next = it;
-    else
-        exception_table_relocation_requests = it;
-    relocation_request_tail = it;
-}
-
 static inline SInt32 ExceptionTypeValue(CLabel *typeInfo)
 {
     return typeInfo->pclabel->target.block->code_offset;
@@ -110,6 +95,21 @@ struct ObjectGroup *find_or_create_object_group(ExceptionAction *object)
     if (parent != NULL)
         parent->child_count++;
     return node;
+}
+
+static void append_reference(void *obj, SInt32 offset)
+{
+    ObjGenRelocationRequest *it;
+    it = (ObjGenRelocationRequest *)lalloc(16);
+    it->next = NULL;
+    it->object = obj;
+    it->offset = offset;
+    it->reserved0c[0] = 0;
+    if (exception_table_relocation_requests != NULL)
+        relocation_request_tail->next = it;
+    else
+        exception_table_relocation_requests = it;
+    relocation_request_tail = it;
 }
 
 void emit_exception_records(ObjectGroup *node)
@@ -454,6 +454,17 @@ void emit_exception_records(ObjectGroup *node)
     }
 }
 
+static unsigned int pc_offset(PCodeInstruction *instr)
+{
+    PCodeBlock *block;
+    unsigned int offset;
+
+    block = instr->block;
+    for (offset = block->code_offset, instr = instr->previous; instr != NULL; instr = instr->previous)
+        offset += 4;
+    return offset;
+}
+
 void Exceptions_Reset(void)
 
 {
@@ -643,6 +654,16 @@ void Exceptions_AppendScopeEntry(PCodeInstruction *context, ExceptionAction *ele
     }
 }
 
+static void RemoveEntry(ExceptionScopeEntry *e)
+{
+    if (e->previous)
+        e->previous->next = e->next;
+    else
+        exception_scope_entries = e->next;
+    if (e->next)
+        e->next->previous = e->previous;
+}
+
 int compact_exception_scope_entries(void)
 {
     ExceptionScopeEntry *e;
@@ -682,25 +703,6 @@ int compact_exception_scope_entries(void)
             count++;
     }
     return count;
-}
-
-static void RemoveEntry(ExceptionScopeEntry *e)
-{
-    if (e->previous)
-        e->previous->next = e->next;
-    else
-        exception_scope_entries = e->next;
-    if (e->next)
-        e->next->previous = e->previous;
-}
-
-static unsigned int pc_offset(PCodeInstruction *instr)
-{
-    unsigned int offset;
-
-    for (offset = instr->block->code_offset, instr = instr->previous; instr != NULL; instr = instr->previous)
-        offset += 4;
-    return offset;
 }
 
 void Exceptions_EmitExceptionTable(Object *object, int offset)
