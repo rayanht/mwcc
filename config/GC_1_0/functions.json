@@ -22881,19 +22881,19 @@
     "source": "src/optimizer/CIRTransform.c"
   },
   {
-    "name": "fn_004ec9a0",
+    "name": "setup_compound_target",
     "address": "0x004ec9a0",
     "size": 134,
     "source": "src/optimizer/CIRTransform.c"
   },
   {
-    "name": "fn_004eca30",
+    "name": "make_compound_target",
     "address": "0x004eca30",
     "size": 70,
     "source": "src/optimizer/CIRTransform.c"
   },
   {
-    "name": "fn_004eca80",
+    "name": "finish_compound",
     "address": "0x004eca80",
     "size": 37,
     "source": "src/optimizer/CIRTransform.c"
@@ -22905,7 +22905,7 @@
     "source": "src/optimizer/CIRTransform.c"
   },
   {
-    "name": "fn_004ecbe0",
+    "name": "simplify_unused_list",
     "address": "0x004ecbe0",
     "size": 43,
     "source": "src/optimizer/CIRTransform.c"
