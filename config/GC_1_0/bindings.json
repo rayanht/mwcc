@@ -1434,7 +1434,7 @@
   "_pop_option_stack": "0x0041c1f9",
   "_pragma_options": "0x00522574",
   "_prepend_base_method_copies": "0x004c60e0",
-  "_prepnextchar2": "0x004af6f0",
+  "_CPrepTokenizer_PeekChar": "0x004af6f0",
   "_print_string_line": "0x0042b243",
   "_promote": "0x00448380",
   "_propagate_inc_dec": "0x00460300",
@@ -2711,5 +2711,8 @@
   "_next_name_id": "0x00558644",
   "_data_005884ae": "0x00558ca6",
   "_data_005884b6": "0x00558cae",
-  "_data_005884ba": "0x00558cb2"
+  "_data_005884ba": "0x00558cb2",
+  "_data_0058851a": "0x00558d0e",
+  "_data_00586fd0": "0x005577d0",
+  "_data_0058852a": "0x00558d1e"
 }

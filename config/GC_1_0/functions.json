@@ -17019,25 +17019,25 @@
     "source": "src/frontend/CPrepTokenizer.c"
   },
   {
-    "name": "fn_004af580",
+    "name": "fn_00496610",
     "address": "0x004af580",
     "size": 363,
     "source": "src/frontend/CPrepTokenizer.c"
   },
   {
-    "name": "prepnextchar2",
+    "name": "CPrepTokenizer_PeekChar",
     "address": "0x004af6f0",
     "size": 32,
     "source": "src/frontend/CPrepTokenizer.c"
   },
   {
-    "name": "CPrepTokenizer_PeekChar",
+    "name": "peek_char_quietly",
     "address": "0x004af710",
     "size": 42,
     "source": "src/frontend/CPrepTokenizer.c"
   },
   {
-    "name": "fn_004af740",
+    "name": "accept_peeked_char",
     "address": "0x004af740",
     "size": 25,
     "source": "src/frontend/CPrepTokenizer.c"
@@ -17061,7 +17061,7 @@
     "source": "src/frontend/CPrepTokenizer.c"
   },
   {
-    "name": "fn_004afc20",
+    "name": "hex_digit_value",
     "address": "0x004afc20",
     "size": 58,
     "source": "src/frontend/CPrepTokenizer.c"
@@ -17097,7 +17097,7 @@
     "source": "src/frontend/CPrepTokenizer.c"
   },
   {
-    "name": "fn_004b0170",
+    "name": "CPrepTokenizer_SkipToEndOfLine",
     "address": "0x004b0170",
     "size": 654,
     "source": "src/frontend/CPrepTokenizer.c"

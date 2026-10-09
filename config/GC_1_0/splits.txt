@@ -781,7 +781,7 @@ src/backend/PPCError.c:
 
 src/frontend/CPrepTokenizer.c:
 	.text       start:0x004AEE40 end:0x004B3800
-	.data       start:0x00533E50 end:0x00534838
+	.data       start:0x00533E50 end:0x00534834
 	.bss        start:0x00552A10 end:0x00552A18
 
 src/backend/BE_elf.c:
