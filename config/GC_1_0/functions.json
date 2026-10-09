@@ -10821,7 +10821,7 @@
     "source": "src/optimizer/IroCSE.c"
   },
   {
-    "name": "fn_00457f00",
+    "name": "expression_is_eligible",
     "address": "0x00457f00",
     "size": 39,
     "source": "src/optimizer/IroCSE.c"
@@ -10911,7 +10911,7 @@
     "source": "src/optimizer/IroCSE.c"
   },
   {
-    "name": "fn_00458ba0",
+    "name": "find_common_sub",
     "address": "0x00458ba0",
     "size": 124,
     "source": "src/optimizer/IroCSE.c"
@@ -10923,7 +10923,7 @@
     "source": "src/optimizer/IroCSE.c"
   },
   {
-    "name": "fn_00458dc0",
+    "name": "replace_common_sub",
     "address": "0x00458dc0",
     "size": 96,
     "source": "src/optimizer/IroCSE.c"
