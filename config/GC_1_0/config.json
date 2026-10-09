@@ -103,6 +103,7 @@
     "src/frontend/CObjCModern.c",
     "src/frontend/CPreprocess.c",
     "src/frontend/CRTTI.c",
+    "src/frontend/CTemplateTools.c",
     "src/frontend/CompilerTools.c",
     "src/frontend/ParseDouble.c",
     "src/msl/ThreadLocalData.c",

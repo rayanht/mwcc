@@ -19857,7 +19857,7 @@
     "source": "src/frontend/CDecl.c"
   },
   {
-    "name": "fn_004c7970",
+    "name": "CDecl_CheckArrayIntegr",
     "address": "0x004c7970",
     "size": 89,
     "source": "src/frontend/CDecl.c"
@@ -21105,7 +21105,7 @@
     "source": "src/frontend/CTemplateTools.c"
   },
   {
-    "name": "fn_004d9da0",
+    "name": "deduce_expr_list",
     "address": "0x004d9da0",
     "size": 86,
     "source": "src/frontend/CTemplateTools.c"
@@ -21129,7 +21129,7 @@
     "source": "src/frontend/CTemplateTools.c"
   },
   {
-    "name": "fn_004da570",
+    "name": "find",
     "address": "0x004da570",
     "size": 74,
     "source": "src/frontend/CTemplateTools.c"
@@ -21141,7 +21141,7 @@
     "source": "src/frontend/CTemplateTools.c"
   },
   {
-    "name": "fn_004da660",
+    "name": "deduce_array_type",
     "address": "0x004da660",
     "size": 169,
     "source": "src/frontend/CTemplateTools.c"
