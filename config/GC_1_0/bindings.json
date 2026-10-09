@@ -2705,5 +2705,7 @@
   "_has_dlocal_initialization": "0x00558ab0",
   "_function_header_index": "0x00558ad6",
   "_data_005621b0": "0x00532698",
-  "_data_005621e0": "0x005326c8"
+  "_data_005621e0": "0x005326c8",
+  "_cint64_negone": "0x00524560",
+  "_cint64_max": "0x00524578"
 }

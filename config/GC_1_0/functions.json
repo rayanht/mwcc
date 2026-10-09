@@ -10977,7 +10977,7 @@
     "source": "src/optimizer/IroTransform.c"
   },
   {
-    "name": "fn_00459400",
+    "name": "hoist_left_monadic",
     "address": "0x00459400",
     "size": 61,
     "source": "src/optimizer/IroTransform.c"
@@ -11067,7 +11067,7 @@
     "source": "src/optimizer/IroTransform.c"
   },
   {
-    "name": "fn_0045ae80",
+    "name": "reverse_monmin_op",
     "address": "0x0045ae80",
     "size": 99,
     "source": "src/optimizer/IroTransform.c"

@@ -152,6 +152,7 @@
     "src/optimizer/IroFlowgraph.c",
     "src/optimizer/IroJump.c",
     "src/optimizer/IroSubable.c",
+    "src/optimizer/IroTransform.c",
     "src/optimizer/IroUtil.c",
     "src/optimizer/LoadDeletion.c",
     "src/optimizer/StrengthReduction.c",

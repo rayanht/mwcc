@@ -625,7 +625,7 @@ src/optimizer/IroCSE.c:
 
 src/optimizer/IroTransform.c:
 	.text       start:0x00458F50 end:0x0045B970
-	.data       start:0x00525630 end:0x00525FD8
+	.data       start:0x00525630 end:0x00525FD4
 
 src/optimizer/IroEval.c:
 	.text       start:0x0045B970 end:0x0045D0F0
