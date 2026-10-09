@@ -18501,7 +18501,7 @@
     "source": "src/frontend/CBrowse.c"
   },
   {
-    "name": "fn_004bcc60",
+    "name": "AppendGList",
     "address": "0x004bcc60",
     "size": 54,
     "source": "src/frontend/CBrowse.c"
@@ -18561,7 +18561,7 @@
     "source": "src/frontend/CBrowse.c"
   },
   {
-    "name": "fn_004bd6f0",
+    "name": "EmitStandardData",
     "address": "0x004bd6f0",
     "size": 197,
     "source": "src/frontend/CBrowse.c"
@@ -18585,7 +18585,7 @@
     "source": "src/frontend/CBrowse.c"
   },
   {
-    "name": "fn_004bd950",
+    "name": "GetLinkName",
     "address": "0x004bd950",
     "size": 12,
     "source": "src/frontend/CBrowse.c"
@@ -18615,7 +18615,7 @@
     "source": "src/frontend/CBrowse.c"
   },
   {
-    "name": "fn_004bde00",
+    "name": "CBrowse_RecordClassLocation",
     "address": "0x004bde00",
     "size": 121,
     "source": "src/frontend/CBrowse.c"
@@ -18627,7 +18627,7 @@
     "source": "src/frontend/CBrowse.c"
   },
   {
-    "name": "fn_004bdf00",
+    "name": "RecordUndefinedMemberFunctions",
     "address": "0x004bdf00",
     "size": 100,
     "source": "src/frontend/CBrowse.c"
