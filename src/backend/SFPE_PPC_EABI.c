@@ -156,6 +156,26 @@ static inline void LoadDoubleArg(int reg1, int reg2)
         PCodeUtilities_EmitInstruction(PC_MR, sfpe_right_operand_reg, reg1);
 }
 
+#if VERSION == VERSION_GC_1_0
+/* (1.0 loads the constant 1.0 straight into r5:r6, in the target's byte order) */
+static inline void LoadDoubleArgPair(void)
+{
+    union {
+        Float f;
+        CInt64 i;
+    } v;
+
+    v.f = float_one;
+    if (copts.littleendian) {
+        PCodeUtilities_EmitLoadImmediate(5, v.i.hi);
+        PCodeUtilities_EmitLoadImmediate(6, v.i.lo);
+    } else {
+        PCodeUtilities_EmitLoadImmediate(5, v.i.lo);
+        PCodeUtilities_EmitLoadImmediate(6, v.i.hi);
+    }
+}
+#endif
+
 void SFPE_PPC_EABI_GenerateDiadicArithmetic(ENode *node, SInt16 requestedReg, SInt16 requestedRegHi, Operand *result)
 {
     ENode *left;
@@ -173,12 +193,12 @@ void SFPE_PPC_EABI_GenerateDiadicArithmetic(ENode *node, SInt16 requestedReg, SI
         data_00560648[right->type](right, 0, 0, &rightOperand);
         if (rightOperand.kind)
             Operands_ForceGPR(&rightOperand, right->rtype, 0);
-        CError_ASSERT(129, rightOperand.kind == OpndType_GPR);
+        CError_ASSERT(VERSION > VERSION_GC_1_0 ? 129 : 187, rightOperand.kind == OpndType_GPR);
 
         data_00560648[left->type](left, 0, 0, &leftOperand);
         if (leftOperand.kind)
             Operands_ForceGPR(&leftOperand, left->rtype, 0);
-        CError_ASSERT(136, leftOperand.kind == OpndType_GPR);
+        CError_ASSERT(VERSION > VERSION_GC_1_0 ? 136 : 194, leftOperand.kind == OpndType_GPR);
 
 #if VERSION == VERSION_GC_1_0
         rightOperand.reg = move_register_pair(leftOperand.reg, 3, rightOperand.reg, 4);
@@ -204,7 +224,7 @@ void SFPE_PPC_EABI_GenerateDiadicArithmetic(ENode *node, SInt16 requestedReg, SI
         } else if (node->type == EDIV) {
             PCodeUtilities_EmitObjectInstructionWithPayload(data_005875e8, 0, 0x18, 0, 0);
         } else {
-            CError_FATAL(158);
+            CError_FATAL(VERSION > VERSION_GC_1_0 ? 158 : 213);
         }
 
         result->kind = OpndType_GPR;
@@ -213,16 +233,16 @@ void SFPE_PPC_EABI_GenerateDiadicArithmetic(ENode *node, SInt16 requestedReg, SI
     } else {
         data_00560648[right->type](right, 0, 0, &rightOperand);
         Operands_ForceGPRPair(&rightOperand, right->rtype, 0, 0);
-        CError_ASSERT(174, rightOperand.kind == OpndType_GPRPair);
+        CError_ASSERT(VERSION > VERSION_GC_1_0 ? 174 : 229, rightOperand.kind == OpndType_GPRPair);
 
         data_00560648[left->type](left, 0, 0, &leftOperand);
 #if VERSION == VERSION_GC_1_0
         Operands_ForceGPRPair(&leftOperand, left->rtype, 4, 3);
-        CError_ASSERT(181, leftOperand.kind == OpndType_GPRPair);
+        CError_ASSERT(VERSION > VERSION_GC_1_0 ? 181 : 236, leftOperand.kind == OpndType_GPRPair);
         load_argument_pairs(&leftOperand, &rightOperand);
 #else
         Operands_ForceGPRPair(&leftOperand, left->rtype, 0, 0);
-        CError_ASSERT(181, leftOperand.kind == OpndType_GPRPair);
+        CError_ASSERT(VERSION > VERSION_GC_1_0 ? 181 : 236, leftOperand.kind == OpndType_GPRPair);
 
         if (leftOperand.regHi != returnRegHi)
             PCodeUtilities_EmitInstruction(PC_MR, returnRegHi, leftOperand.regHi);
@@ -245,13 +265,13 @@ void SFPE_PPC_EABI_GenerateDiadicArithmetic(ENode *node, SInt16 requestedReg, SI
                  is_unsigned(left->rtype)) ||
                 ((right->rtype->type == TYPEINT || right->rtype->type == TYPEENUM) && right->rtype->size == 8 &&
                  is_unsigned(right->rtype))) {
-                PPCError_ReportError(0x82, CERROR_FILE, 0xce);
+                PPCError_ReportError(0x82, CERROR_FILE, VERSION > VERSION_GC_1_0 ? 206 : 254);
                 PCodeUtilities_EmitObjectInstructionWithPayload(data_0058761c, 0, 0x78, 0, 0);
             } else {
                 PCodeUtilities_EmitObjectInstructionWithPayload(data_0058761c, 0, 0x78, 0, 0);
             }
         } else {
-            CError_FATAL(214);
+            CError_FATAL(VERSION > VERSION_GC_1_0 ? 214 : 262);
         }
 
         result->kind = OpndType_GPRPair;
@@ -262,6 +282,20 @@ void SFPE_PPC_EABI_GenerateDiadicArithmetic(ENode *node, SInt16 requestedReg, SI
     }
 }
 
+#if VERSION == VERSION_GC_1_0
+void SFPE_PPC_EABI_MakeIntvalOperand(ENode *node, SInt16 reg1, SInt16 reg2, Operand *op)
+{
+    CError_FATAL(286);
+    reg1 = reg1 ? reg1 : gUsedVirtualRegistersGPR++;
+    reg2 = reg2 ? reg2 : gUsedVirtualRegistersGPR++;
+    PCodeUtilities_LoadImmediate(reg1, node->data.intval.lo);
+    PCodeUtilities_LoadImmediate(reg2, node->data.intval.hi);
+    op->kind = OpndType_GPRPair;
+    op->reg = reg1;
+    op->regHi = reg2;
+}
+#endif
+
 void SFPE_PPC_EABI_LoadFloatConstant(ENode *node, SInt16 regA, SInt16 regB, Operand *out)
 {
     if (node->rtype->size == 4) {
@@ -270,11 +304,16 @@ void SFPE_PPC_EABI_LoadFloatConstant(ENode *node, SInt16 regA, SInt16 regB, Oper
             SInt32 l;
         } u;
         SInt16 reg1;
+#if VERSION == VERSION_GC_1_0
+        u.f = node->data.floatval.data.value;
+#endif
         if (regA != 0)
             reg1 = regA;
         else
             reg1 = gUsedVirtualRegistersGPR++;
+#if VERSION > VERSION_GC_1_0
         u.f = node->data.floatval.data.value;
+#endif
         PCodeUtilities_EmitLoadImmediate(reg1, u.l);
         out->kind = OpndType_GPR;
         out->reg = reg1;
@@ -282,6 +321,9 @@ void SFPE_PPC_EABI_LoadFloatConstant(ENode *node, SInt16 regA, SInt16 regB, Oper
         SInt16 reg1;
         SInt16 reg2;
         CInt64 v;
+#if VERSION == VERSION_GC_1_0
+        v = node->data.intval;
+#endif
         if (regA != 0)
             reg1 = regA;
         else
@@ -290,7 +332,9 @@ void SFPE_PPC_EABI_LoadFloatConstant(ENode *node, SInt16 regA, SInt16 regB, Oper
             reg2 = regB;
         else
             reg2 = gUsedVirtualRegistersGPR++;
+#if VERSION > VERSION_GC_1_0
         v = node->data.intval;
+#endif
 #if VERSION == VERSION_GC_1_0
         if (copts.littleendian) {
             PCodeUtilities_EmitLoadImmediate(reg2, v.hi);
@@ -468,8 +512,12 @@ void SFPE_PPC_EABI_GenerateFloatPostIncDec(ENode *expr, SInt16 outputReg, SInt16
             PCodeUtilities_EmitInstruction(PC_MR, result->reg, sourceReg);
             if (sourceReg != 3)
                 PCodeUtilities_EmitInstruction(PC_MR, 3, sourceReg);
+#if VERSION == VERSION_GC_1_0
+            LoadFloatArg(4);
+#else
             argumentReg = gUsedVirtualRegistersGPR++;
             LoadFloatArg(argumentReg);
+#endif
             if (expr->type == EPOSTINC)
                 PCodeUtilities_EmitObjectInstructionWithPayload(data_005875bc, 0, 0x18, 0, 0);
             else
@@ -482,14 +530,18 @@ void SFPE_PPC_EABI_GenerateFloatPostIncDec(ENode *expr, SInt16 outputReg, SInt16
             Operands_MakeIndirect(&operand, inner);
             value = operand;
             if (value.kind != OpndType_GPR)
-                Operands_ForceGPR(&value, type, 0);
+                Operands_ForceGPR(&value, type, VERSION == VERSION_GC_1_0 ? 3 : 0);
             result->kind = OpndType_GPR;
             result->reg = gUsedVirtualRegistersGPR++;
             PCodeUtilities_EmitInstruction(PC_MR, result->reg, value.reg);
             if (value.reg != Register3)
                 PCodeUtilities_EmitInstruction(PC_MR, 3, value.reg);
+#if VERSION == VERSION_GC_1_0
+            LoadFloatArg(4);
+#else
             argumentReg = gUsedVirtualRegistersGPR++;
             LoadFloatArgGPR(argumentReg);
+#endif
             if (expr->type == EPOSTINC)
                 PCodeUtilities_EmitObjectInstructionWithPayload(data_005875bc, 0, 0x18, 0, 0);
             else
@@ -515,9 +567,13 @@ void SFPE_PPC_EABI_GenerateFloatPostIncDec(ENode *expr, SInt16 outputReg, SInt16
                 PCodeUtilities_EmitInstruction(PC_MR, returnRegHi, sourceReg2);
             if (sourceReg != return_gpr_first)
                 PCodeUtilities_EmitInstruction(PC_MR, return_gpr_first, sourceReg);
+#if VERSION == VERSION_GC_1_0
+            LoadDoubleArgPair();
+#else
             argumentReg = gUsedVirtualRegistersGPR++;
             argumentReg2 = gUsedVirtualRegistersGPR++;
             LoadDoubleArg(argumentReg, argumentReg2);
+#endif
             if (expr->type == EPOSTINC)
                 PCodeUtilities_EmitObjectInstructionWithPayload(data_005875f4, 0, 0x78, 0, 0);
             else
@@ -530,19 +586,31 @@ void SFPE_PPC_EABI_GenerateFloatPostIncDec(ENode *expr, SInt16 outputReg, SInt16
             data_00560648[inner->type](inner, 0, 0, &operand);
             Operands_MakeIndirect(&operand, inner);
             value = operand;
+#if VERSION == VERSION_GC_1_0
+            Operands_ForceGPRPair(&value, type, 4, 3);
+#else
             Operands_ForceGPRPair(&value, type, 0, 0);
+#endif
             result->kind = OpndType_GPRPair;
             result->reg = gUsedVirtualRegistersGPR++;
             result->regHi = gUsedVirtualRegistersGPR++;
             PCodeUtilities_EmitInstruction(PC_MR, result->reg, value.reg);
             PCodeUtilities_EmitInstruction(PC_MR, result->regHi, value.regHi);
+#if VERSION == VERSION_GC_1_0
+            value.reg = move_register_pair(value.regHi, 3, value.reg, 4);
+#else
             if (value.regHi != returnRegHi)
                 PCodeUtilities_EmitInstruction(PC_MR, returnRegHi, value.regHi);
             if (value.reg != return_gpr_first)
                 PCodeUtilities_EmitInstruction(PC_MR, return_gpr_first, value.reg);
+#endif
+#if VERSION == VERSION_GC_1_0
+            LoadDoubleArgPair();
+#else
             argumentReg = gUsedVirtualRegistersGPR++;
             argumentReg2 = gUsedVirtualRegistersGPR++;
             LoadDoubleArg(argumentReg, argumentReg2);
+#endif
             if (expr->type == EPOSTINC)
                 PCodeUtilities_EmitObjectInstructionWithPayload(data_005875f4, 0, 0x78, 0, 0);
             else
@@ -633,12 +701,12 @@ int SFPE_PPC_EABI_GenerateComparison(ENode *node, Operand *result, int branch)
     if (left->rtype->size > size)
         size = left->rtype->size;
     if (size < 4 || size > 8)
-        CError_FATAL(729);
+        CError_FATAL(VERSION > VERSION_GC_1_0 ? 729 : 919);
 
     if (right->hascall != 0) {
         (*data_00560648[right->type])(right, 0, 0, &rightOperand);
         if (right->rtype->size < 4) {
-            PPCError_ReportError(0x82, CERROR_FILE, 737);
+            PPCError_ReportError(0x82, CERROR_FILE, VERSION > VERSION_GC_1_0 ? 737 : 927);
             Operands_ExtendGPR(&rightOperand, right->rtype, 0);
         }
         if (rightOperand.kind != OpndType_GPR)
@@ -646,10 +714,10 @@ int SFPE_PPC_EABI_GenerateComparison(ENode *node, Operand *result, int branch)
         if (right->rtype->size < size) {
             reg = gUsedVirtualRegistersGPR++;
             if (is_unsigned(right->rtype)) {
-                PPCError_ReportError(0x82, CERROR_FILE, 744);
+                PPCError_ReportError(0x82, CERROR_FILE, VERSION > VERSION_GC_1_0 ? 744 : 934);
                 PCodeUtilities_LoadImmediate(reg, 0);
             } else {
-                PPCError_ReportError(0x82, CERROR_FILE, 747);
+                PPCError_ReportError(0x82, CERROR_FILE, VERSION > VERSION_GC_1_0 ? 747 : 937);
                 PCodeUtilities_EmitInstruction(PC_SRAWI, reg, rightOperand.reg, 0x1f);
             }
             rightOperand.kind = OpndType_GPRPair;
@@ -658,7 +726,7 @@ int SFPE_PPC_EABI_GenerateComparison(ENode *node, Operand *result, int branch)
 
         (*data_00560648[left->type])(left, 0, 0, &leftOperand);
         if (left->rtype->size < 4) {
-            PPCError_ReportError(0x82, CERROR_FILE, 755);
+            PPCError_ReportError(0x82, CERROR_FILE, VERSION > VERSION_GC_1_0 ? 755 : 945);
             Operands_ExtendGPR(&leftOperand, left->rtype, 0);
         }
         if (leftOperand.kind != OpndType_GPR)
@@ -666,10 +734,10 @@ int SFPE_PPC_EABI_GenerateComparison(ENode *node, Operand *result, int branch)
         if (left->rtype->size < size) {
             reg = gUsedVirtualRegistersGPR++;
             if (is_unsigned(right->rtype)) {
-                PPCError_ReportError(0x82, CERROR_FILE, 762);
+                PPCError_ReportError(0x82, CERROR_FILE, VERSION > VERSION_GC_1_0 ? 762 : 952);
                 PCodeUtilities_LoadImmediate(reg, 0);
             } else {
-                PPCError_ReportError(0x82, CERROR_FILE, 765);
+                PPCError_ReportError(0x82, CERROR_FILE, VERSION > VERSION_GC_1_0 ? 765 : 955);
                 PCodeUtilities_EmitInstruction(PC_SRAWI, reg, leftOperand.reg, 0x1f);
             }
             leftOperand.kind = OpndType_GPRPair;
@@ -680,16 +748,16 @@ int SFPE_PPC_EABI_GenerateComparison(ENode *node, Operand *result, int branch)
         if (leftOperand.kind != OpndType_GPR)
             Operands_ForceGPR(&leftOperand, left->rtype, 0);
         if (left->rtype->size < 4) {
-            PPCError_ReportError(0x82, CERROR_FILE, 777);
+            PPCError_ReportError(0x82, CERROR_FILE, VERSION > VERSION_GC_1_0 ? 777 : 967);
             Operands_ExtendGPR(&leftOperand, left->rtype, 0);
         }
         if (left->rtype->size < size) {
             reg = gUsedVirtualRegistersGPR++;
             if (is_unsigned(right->rtype)) {
-                PPCError_ReportError(0x82, CERROR_FILE, 783);
+                PPCError_ReportError(0x82, CERROR_FILE, VERSION > VERSION_GC_1_0 ? 783 : 973);
                 PCodeUtilities_LoadImmediate(reg, 0);
             } else {
-                PPCError_ReportError(0x82, CERROR_FILE, 786);
+                PPCError_ReportError(0x82, CERROR_FILE, VERSION > VERSION_GC_1_0 ? 786 : 976);
                 PCodeUtilities_EmitInstruction(PC_SRAWI, reg, leftOperand.reg, 0x1f);
             }
             leftOperand.kind = OpndType_GPRPair;
@@ -698,7 +766,7 @@ int SFPE_PPC_EABI_GenerateComparison(ENode *node, Operand *result, int branch)
 
         (*data_00560648[right->type])(right, 0, 0, &rightOperand);
         if (right->rtype->size < 4) {
-            PPCError_ReportError(0x82, CERROR_FILE, 794);
+            PPCError_ReportError(0x82, CERROR_FILE, VERSION > VERSION_GC_1_0 ? 794 : 984);
             Operands_ExtendGPR(&rightOperand, right->rtype, 0);
         }
         if (rightOperand.kind != OpndType_GPR)
@@ -706,10 +774,10 @@ int SFPE_PPC_EABI_GenerateComparison(ENode *node, Operand *result, int branch)
         if (right->rtype->size < size) {
             reg = gUsedVirtualRegistersGPR++;
             if (is_unsigned(right->rtype)) {
-                PPCError_ReportError(0x82, CERROR_FILE, 801);
+                PPCError_ReportError(0x82, CERROR_FILE, VERSION > VERSION_GC_1_0 ? 801 : 991);
                 PCodeUtilities_LoadImmediate(reg, 0);
             } else {
-                PPCError_ReportError(0x82, CERROR_FILE, 804);
+                PPCError_ReportError(0x82, CERROR_FILE, VERSION > VERSION_GC_1_0 ? 804 : 994);
                 PCodeUtilities_EmitInstruction(PC_SRAWI, reg, rightOperand.reg, 0x1f);
             }
             rightOperand.kind = OpndType_GPRPair;
@@ -718,12 +786,17 @@ int SFPE_PPC_EABI_GenerateComparison(ENode *node, Operand *result, int branch)
     }
 
     if (size == 8)
-        CError_ASSERT(813, leftOperand.kind == OpndType_GPRPair && rightOperand.kind == OpndType_GPRPair);
+        CError_ASSERT(VERSION > VERSION_GC_1_0 ? 813 : 1003,
+                      leftOperand.kind == OpndType_GPRPair && rightOperand.kind == OpndType_GPRPair);
     if (size == 4)
-        CError_ASSERT(815, leftOperand.kind == OpndType_GPR && rightOperand.kind == OpndType_GPR);
+        CError_ASSERT(VERSION > VERSION_GC_1_0 ? 815 : 1005,
+                      leftOperand.kind == OpndType_GPR && rightOperand.kind == OpndType_GPR);
 
     if (size == 8) {
         registerMask = 0x78;
+#if VERSION == VERSION_GC_1_0
+        load_argument_pairs(&leftOperand, &rightOperand);
+#else
         if (leftOperand.regHi != returnRegHi)
             PCodeUtilities_EmitInstruction(PC_MR, returnRegHi, leftOperand.regHi);
         if (leftOperand.reg != return_gpr_first)
@@ -732,12 +805,17 @@ int SFPE_PPC_EABI_GenerateComparison(ENode *node, Operand *result, int branch)
             PCodeUtilities_EmitInstruction(PC_MR, sfpe_right_operand_reg_hi, rightOperand.regHi);
         if (rightOperand.reg != sfpe_right_operand_reg)
             PCodeUtilities_EmitInstruction(PC_MR, sfpe_right_operand_reg, rightOperand.reg);
+#endif
     } else {
         registerMask = 0x18;
+#if VERSION == VERSION_GC_1_0
+        rightOperand.reg = move_register_pair(leftOperand.reg, 3, rightOperand.reg, 4);
+#else
         if ((SInt32)leftOperand.reg != 3)
             PCodeUtilities_EmitInstruction(PC_MR, 3, leftOperand.reg);
         if ((SInt32)rightOperand.reg != 4)
             PCodeUtilities_EmitInstruction(PC_MR, 4, rightOperand.reg);
+#endif
     }
 
     comparison = node->type;
@@ -779,7 +857,7 @@ int SFPE_PPC_EABI_GenerateComparison(ENode *node, Operand *result, int branch)
                 condition = 0x17;
                 flags = 1;
             } else {
-                CError_FATAL(881);
+                CError_FATAL(VERSION > VERSION_GC_1_0 ? 881 : 1063);
             }
 
             if (branch != 0) {
@@ -796,7 +874,7 @@ int SFPE_PPC_EABI_GenerateComparison(ENode *node, Operand *result, int branch)
             isWide = size == 8;
             break;
         default:
-            isWide = CError_FATAL(904);
+            isWide = CError_FATAL(VERSION > VERSION_GC_1_0 ? 904 : 1086);
             break;
     }
     return isWide;
@@ -824,6 +902,10 @@ void SFPE_PPC_EABI_GenerateConversion(ENode *expression, short requested_registe
             if ((copts.operandsDebug != 0) && (target_type->type == TYPEFLOAT) &&
                 ((kind == TYPEINT || kind == TYPEENUM) && type->size == 8)) {
                 data_00560648[node->type](node, 0, 0, result);
+#if VERSION == VERSION_GC_1_0
+                Operands_ForceGPRPair(result, (Type *)type, 4, 3);
+                result->reg = move_register_pair(result->regHi, 3, result->reg, 4);
+#else
                 Operands_ForceGPRPair(result, (Type *)type, 0, 0);
                 if (result->kind != OpndType_GPRPair) {
                     CError_FATAL(946);
@@ -834,6 +916,7 @@ void SFPE_PPC_EABI_GenerateConversion(ENode *expression, short requested_registe
                 if (result->reg != return_gpr_first) {
                     PCodeUtilities_EmitInstruction(PC_MR, return_gpr_first, result->reg);
                 }
+#endif
                 PCodeUtilities_EmitObjectInstructionWithPayload(
                     is_unsigned(type) ? (target_type->size == 4 ? data_00587f9c : data_00587f50)
                                       : (target_type->size == 4 ? data_00588210 : data_00588250),
@@ -871,6 +954,10 @@ void SFPE_PPC_EABI_GenerateConversion(ENode *expression, short requested_registe
         } else if ((copts.operandsDebug != 0) && (target_type->type == TYPEFLOAT)) {
             if ((target_type->size == 4) && (type->size != 4)) {
                 data_00560648[node->type](node, 0, 0, result);
+#if VERSION == VERSION_GC_1_0
+                Operands_ForceGPRPair(result, (Type *)type, 4, 3);
+                result->reg = move_register_pair(result->regHi, 3, result->reg, 4);
+#else
                 Operands_ForceGPRPair(result, (Type *)type, 0, 0);
                 if (result->kind != OpndType_GPRPair) {
                     CError_FATAL(1049);
@@ -881,6 +968,7 @@ void SFPE_PPC_EABI_GenerateConversion(ENode *expression, short requested_registe
                 if (result->reg != return_gpr_first) {
                     PCodeUtilities_EmitInstruction(PC_MR, return_gpr_first, result->reg);
                 }
+#endif
                 PCodeUtilities_EmitObjectInstructionWithPayload(data_00587e9c, 0, 0x18, 0, 0);
                 lift_result(result, 0);
             } else if ((type->size == 4) && (target_type->size != 4)) {
@@ -914,6 +1002,10 @@ void SFPE_PPC_EABI_GenerateConversion(ENode *expression, short requested_registe
             if ((((target_kind == TYPEINT) || (target_kind == TYPEENUM)) && (target_type->size == 8)) &&
                 (((copts.operandsDebug != 0) && (kind == TYPEFLOAT)) && (type->size != 4))) {
                 data_00560648[node->type](node, 0, 0, result);
+#if VERSION == VERSION_GC_1_0
+                Operands_ForceGPRPair(result, (Type *)type, 4, 3);
+                result->reg = move_register_pair(result->regHi, 3, result->reg, 4);
+#else
                 Operands_ForceGPRPair(result, (Type *)type, 0, 0);
                 if (result->kind != OpndType_GPRPair) {
                     CError_FATAL(1112);
@@ -924,6 +1016,7 @@ void SFPE_PPC_EABI_GenerateConversion(ENode *expression, short requested_registe
                 if (result->reg != return_gpr_first) {
                     PCodeUtilities_EmitInstruction(PC_MR, return_gpr_first, result->reg);
                 }
+#endif
                 if (is_unsigned(expression->rtype)) {
                     PCodeUtilities_EmitObjectInstructionWithPayload(data_00588068, 0, 0x18, 0, 0);
                 } else {
@@ -949,6 +1042,10 @@ void SFPE_PPC_EABI_GenerateConversion(ENode *expression, short requested_registe
             } else if ((((target_kind == TYPEINT) || (target_kind == TYPEENUM)) && (copts.operandsDebug != 0)) &&
                        ((kind == TYPEFLOAT) && (type->size != 4))) {
                 data_00560648[node->type](node, 0, 0, result);
+#if VERSION == VERSION_GC_1_0
+                Operands_ForceGPRPair(result, (Type *)type, 4, 3);
+                result->reg = move_register_pair(result->regHi, 3, result->reg, 4);
+#else
                 Operands_ForceGPRPair(result, (Type *)type, 0, 0);
                 if (result->kind != OpndType_GPRPair) {
                     CError_FATAL(1169);
@@ -959,6 +1056,7 @@ void SFPE_PPC_EABI_GenerateConversion(ENode *expression, short requested_registe
                 if (result->reg != return_gpr_first) {
                     PCodeUtilities_EmitInstruction(PC_MR, return_gpr_first, result->reg);
                 }
+#endif
                 if (is_unsigned(expression->rtype)) {
                     PCodeUtilities_EmitObjectInstructionWithPayload(data_00587e94, 0, 0x18, 0, 0);
                 } else {

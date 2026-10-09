@@ -13635,7 +13635,7 @@
     "source": "src/backend/SFPE_PPC_EABI.c"
   },
   {
-    "name": "fn_00480250",
+    "name": "SFPE_PPC_EABI_MakeIntvalOperand",
     "address": "0x00480250",
     "size": 119,
     "source": "src/backend/SFPE_PPC_EABI.c"

@@ -16,6 +16,9 @@ extern void SFPE_PPC_EABI_GenerateMonadicOperand(ENode *input, short firstRegist
 extern void SFPE_PPC_EABI_GenerateAssignment(ENode *g, SInt16 requestedRegister, SInt16 requestedRegisterPair,
                                              Operand *res);
 extern void SFPE_PPC_EABI_ToggleHighBit(ENode *expr, SInt16 regA, SInt16 regB, Operand *res);
+#if VERSION == VERSION_GC_1_0
+extern void SFPE_PPC_EABI_MakeIntvalOperand(ENode *node, SInt16 reg1, SInt16 reg2, Operand *op);
+#endif
 extern void SFPE_PPC_EABI_LoadFloatConstant(ENode *node, SInt16 regA, SInt16 regB, Operand *out);
 extern void SFPE_PPC_EABI_GenerateFloatPostIncDec(ENode *expr, SInt16 outputReg, SInt16 outputReg2, Operand *result);
 extern void SFPE_PPC_EABI_GenerateDiadicArithmetic(ENode *node, SInt16 arg2, SInt16 arg3, Operand *result);
