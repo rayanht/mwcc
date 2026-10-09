@@ -23754,24 +23754,28 @@
     "source": "src/backend/MachineSimulation604.c"
   },
   {
-    "name": "fn_004fe3f0",
+    "name": "advance_stage",
     "address": "0x004fe3f0",
-    "size": 70
+    "size": 70,
+    "source": "src/backend/MachineSimulation750.c"
   },
   {
-    "name": "fn_004fe440",
+    "name": "record_opt_arg",
     "address": "0x004fe440",
-    "size": 74
+    "size": 74,
+    "source": "src/backend/MachineSimulation750.c"
   },
   {
-    "name": "fn_004fe490",
+    "name": "complete_stage",
     "address": "0x004fe490",
-    "size": 82
+    "size": 82,
+    "source": "src/backend/MachineSimulation750.c"
   },
   {
-    "name": "fn_004fe4f0",
+    "name": "retire",
     "address": "0x004fe4f0",
-    "size": 57
+    "size": 57,
+    "source": "src/backend/MachineSimulation750.c"
   },
   {
     "name": "fn_0052f330",
@@ -23816,19 +23820,22 @@
     "source": "src/backend/MachineSimulation7400.c"
   },
   {
-    "name": "fn_004fea10",
+    "name": "enqueue",
     "address": "0x004fea10",
-    "size": 63
+    "size": 63,
+    "source": "src/backend/MachineSimulation7400.c"
   },
   {
-    "name": "fn_004fea50",
+    "name": "complete_stage",
     "address": "0x004fea50",
-    "size": 82
+    "size": 82,
+    "source": "src/backend/MachineSimulation7400.c"
   },
   {
-    "name": "fn_004feab0",
+    "name": "retire",
     "address": "0x004feab0",
-    "size": 45
+    "size": 45,
+    "source": "src/backend/MachineSimulation7400.c"
   },
   {
     "name": "get_adjusted_opcode_table_value",
