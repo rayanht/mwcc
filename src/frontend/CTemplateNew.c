@@ -61,79 +61,6 @@ static Boolean data_00582108;
         CScope_AddObject(cscope_current, (di).name, (ObjBase *)obj);                                                   \
     } while (0)
 
-static inline void *FindInst(TemplClass **p8c, TemplArg **p88);
-
-static inline char CTemplateNew_004ed8e0_inline1(TemplClassInst *a1, Object *v1, char a2)
-{
-    Object *v3;
-    TemplClass *t1;
-    TemplateMember *v5;
-    char v6;
-    t1 = a1->templ;
-    v3 = ((ObjectTemplated *)v1)->parent;
-    v5 = CTemplateClass_ResolveRelatedClass(t1)->members;
-    while ((int)v5 != 0) {
-        if (v5->object == v3) {
-            CTemplateNew_CompileObject(t1, a1, v5, v1, a2);
-            return (char)1;
-        }
-        v5 = v5->next;
-    }
-    if (a2 != 0) {
-        CError_Warning(ERR_CANNOT_INSTANTIATE, v1);
-    }
-    v6 = (char)0;
-    return v6;
-}
-
-static inline char CTemplateNew_004ed8e0_inline2(TemplClassInst *a1, Object *v1, char a2)
-{
-    TemplClass *t2;
-    Object *v7;
-    TemplateMember *v9;
-    char v10;
-    t2 = a1->templ;
-    v7 = ((ObjectTemplated *)v1)->parent;
-    v9 = CTemplateClass_ResolveRelatedClass(t2)->members;
-    while ((int)v9 != 0) {
-        if (v9->object == v7) {
-            CTemplateNew_CompileObject(t2, a1, v9, v1, a2);
-            return (char)1;
-        }
-        v9 = v9->next;
-    }
-    if (a2 != 0) {
-        CError_Warning(ERR_CANNOT_INSTANTIATE, v1);
-    }
-    v10 = (char)0;
-    return v10;
-}
-
-static inline HashNameNode *CTempl_FindConversion(TypeClass *tclass, Type *type, UInt32 qual)
-{
-    CScopeObjectIterator iter;
-    Object *obj;
-
-    qual &= Q_CV;
-    CScope_InitObjectIterator(&iter, tclass->nspace);
-    for (;;) {
-        if (!(obj = CScope_NextObjectIteratorObject(&iter)))
-            return NULL;
-        if (obj->type->type == TYPEFUNC && (TYPE_FUNC(obj->type)->flags & FUNC_CONVERSION) &&
-            (TYPE_FUNC(obj->type)->qual & Q_CV) == qual && iscpp_typeequal(TYPE_FUNC(obj->type)->functype, type))
-            return obj->name;
-    }
-}
-
-static inline void CTempl_PushScope(TemplateScopeState *stack, TypeClass *tclass)
-{
-    CError_ASSERT(734, !stack->linkedNamespace);
-    stack->scope->parent = tclass->nspace->parent;
-    tclass->nspace->parent = stack->scope;
-    stack->linkedNamespace = tclass->nspace;
-    cscope_current = tclass->nspace;
-}
-
 void CTemplateNew_Reset(void)
 {
     ctempl_curinstance = NULL;
@@ -149,6 +76,18 @@ void fn_004f0000(void)
     return;
 }
 
+static short read_template_argument_token(void)
+{
+    switch (tk = CPrepTokenizer_GetNextToken()) {
+        case ';':
+        case '=':
+        case '{':
+        case '}':
+            longjmp(template_declaration_jmpbuf, 1);
+    }
+    return tk;
+}
+
 void skip_balanced_angle_tokens(void)
 {
     struct {
@@ -161,16 +100,7 @@ void skip_balanced_angle_tokens(void)
     stack[0].flag = 1;
     i = 0;
     for (;;) {
-        tk = CPrepTokenizer_GetNextToken();
-        switch (tk) {
-            case ';':
-            case '=':
-            case '{':
-            case '}':
-                longjmp(template_declaration_jmpbuf, 1);
-                break;
-        }
-        switch (tk) {
+        switch (read_template_argument_token()) {
             case '<':
                 if (stack[i].flag != 0) {
                     if (i >= 0xff)
@@ -207,6 +137,24 @@ void skip_balanced_angle_tokens(void)
                 break;
         }
     }
+}
+
+static void parse_type_parameter_default(TemplParam *paramList, TemplParam *param)
+{
+    DeclInfo di;
+
+    tk = CPrepTokenizer_GetNextToken();
+    memclrw(&di, sizeof(di));
+    CParser_GetDeclSpecs(&di, 0);
+    if (di.missingTypeSpecifier)
+        CError_ReportError(ERR_DECLARATION_SYNTAX_ERROR);
+    if (di.storageclass)
+        CError_ReportError(ERR_ILLEGAL_STORAGE_CLASS);
+    CError_ReportIllegalFlags(di.qual & ~(Q_CV | Q_PASCAL | Q_REFERENCE | Q_ALIGNED_MASK));
+    scandeclarator(&di);
+    param->data.typeparam.type = di.thetype;
+    param->data.typeparam.qual = di.qual;
+    param->data.typeparam.isTypeDependent = CTemplTool_IsTemplateArgumentDependentType(di.thetype);
 }
 
 ENode *parse_non_type_template_argument(Type *targetType, unsigned int qualifiers)
@@ -250,11 +198,23 @@ ENode *parse_non_type_template_argument(Type *targetType, unsigned int qualifier
     return fn_00513040(expr, 1);
 }
 
+static UInt8 CTempl_GetTemplateNestIndex(NameSpace *nspace)
+{
+    UInt8 count;
+
+    count = 0;
+    while (nspace) {
+        if (nspace->theclass && (nspace->theclass->flags & CLASS_IS_TEMPL))
+            count++;
+        nspace = nspace->parent;
+    }
+    return count;
+}
+
 TemplParam *parse_template_parameter(NameSpace *owner, TemplParam *value, short memberValue, char memberByte)
 {
     TemplParam *declaration;
     DeclInfo parsed;
-    DeclInfo initializerState;
 
     declaration = (TemplParam *)galloc(sizeof(TemplParam));
     memclrw(declaration, sizeof(*declaration));
@@ -267,23 +227,8 @@ TemplParam *parse_template_parameter(NameSpace *owner, TemplParam *value, short 
                 declaration->name = data_00587fa0;
                 tk = CPrepTokenizer_GetNextToken();
             }
-            if (tk == '=') {
-                tk = CPrepTokenizer_GetNextToken();
-                memclrw(&initializerState, sizeof(initializerState));
-                CParser_GetDeclSpecs((DeclInfo *)&initializerState, '\0');
-                if (initializerState.missingTypeSpecifier != '\0') {
-                    CError_ReportError(ERR_DECLARATION_SYNTAX_ERROR);
-                }
-                if (initializerState.storageclass != 0) {
-                    CError_ReportError(ERR_ILLEGAL_STORAGE_CLASS);
-                }
-                CError_ReportIllegalFlags(initializerState.qual & ~(Q_CV | Q_PASCAL | Q_REFERENCE | Q_ALIGNED_MASK));
-                scandeclarator(&initializerState);
-                declaration->data.typeparam.type = initializerState.thetype;
-                declaration->data.typeparam.qual = initializerState.qual,
-                declaration->data.typeparam.isTypeDependent =
-                    CTemplTool_IsTemplateArgumentDependentType(initializerState.thetype);
-            }
+            if (tk == '=')
+                parse_type_parameter_default(value, declaration);
             declaration->pid.type = 1;
             break;
         case 0x14c:
@@ -571,10 +516,17 @@ Type *fn_004ef5d0(TemplClass *record)
     return (Type *)CTemplateClass_GetInstance(selected, key, lookupContext);
 }
 
+static void CTempl_PushScope(TemplateScopeState *stack, TypeClass *tclass)
+{
+    CError_ASSERT(734, !stack->linkedNamespace);
+    stack->scope->parent = tclass->nspace->parent;
+    tclass->nspace->parent = stack->scope;
+    stack->linkedNamespace = tclass->nspace;
+    cscope_current = tclass->nspace;
+}
+
 UInt8 CTemplateNew_LinkTemplateScope(DeclInfo *context, TypeTemplDep *request, NameSpace **destination)
 {
-    TemplateScopeState *entry;
-    TypeClass *slot;
     TemplClass *result;
 
     if (request->dtype == 1) {
@@ -584,15 +536,7 @@ UInt8 CTemplateNew_LinkTemplateScope(DeclInfo *context, TypeTemplDep *request, N
             if (context->templateScope == NULL || (*destination)->theclass == NULL) {
                 CError_FATAL(757);
             }
-            slot = (*destination)->theclass;
-            entry = context->templateScope;
-            if (entry->linkedNamespace != NULL) {
-                CError_FATAL(734);
-            }
-            entry->scope->parent = slot->nspace->parent;
-            slot->nspace->parent = entry->scope;
-            entry->linkedNamespace = slot->nspace;
-            cscope_current = (NameSpace *)slot->nspace;
+            CTempl_PushScope(context->templateScope, (*destination)->theclass);
             context->templateScope = NULL;
             return 1;
         }
@@ -686,6 +630,22 @@ void parse_template_member_definition(void *context, TypeClass *template_info, D
     }
 }
 
+static HashNameNode *CTempl_FindConversion(TypeClass *tclass, Type *type, UInt32 qual)
+{
+    CScopeObjectIterator iter;
+    Object *obj;
+
+    qual &= Q_CV;
+    CScope_InitObjectIterator(&iter, tclass->nspace);
+    for (;;) {
+        if (!(obj = CScope_NextObjectIteratorObject(&iter)))
+            return NULL;
+        if (obj->type->type == TYPEFUNC && (TYPE_FUNC(obj->type)->flags & FUNC_CONVERSION) &&
+            (TYPE_FUNC(obj->type)->qual & Q_CV) == qual && iscpp_typeequal(TYPE_FUNC(obj->type)->functype, type))
+            return obj->name;
+    }
+}
+
 void parse_function_template_declaration(TemplateScopeState *stack, TemplParam *params, TypeClass *tclass,
                                          SInt32 *startOffset)
 {
@@ -695,9 +655,9 @@ void parse_function_template_declaration(TemplateScopeState *stack, TemplParam *
     CPrepFileInfo *file;
     SInt32 offset;
     Boolean save;
-    TemplClass *templclass;
     NameSpaceObjectList *list;
     Object *obj;
+    TemplClass *templclass;
     TemplateFunction *templ;
     TypeMemberFunc *member;
     Type *conversionType;
@@ -924,8 +884,6 @@ void parse_explicit_template_instantiation(void)
     UInt8 declarationFlags;
     UInt8 hasQualifiedName;
     UInt8 instantiate;
-    TemplArg *instanceData;
-    TemplClass *templateData;
     TemplClassInst *instance;
     HashNameNode *name;
 
@@ -966,10 +924,7 @@ void parse_explicit_template_instantiation(void)
                     CError_ReportError(ERR_LESS_EXPECTED);
                     return;
                 }
-                templateData = (TemplClass *)(TypeClass *)templateClass;
-                if (templateData->pspec_owner)
-                    templateData = templateData->pspec_owner;
-                declaration.thetype = FindInst(&templateData, &instanceData);
+                declaration.thetype = fn_004ef5d0(templateClass);
                 tk = CPrepTokenizer_GetNextToken();
                 if (tk == ';') {
                     if (declaration.thetype->type == TYPECLASS) {
@@ -1068,22 +1023,6 @@ void parse_explicit_template_instantiation(void)
         CError_ReportError(ERR_ILLEGAL_EXPLICIT_TEMPLATE_INSTANTIATION);
 }
 
-static inline void *FindInst(TemplClass **p8c, TemplArg **p88)
-{
-    Type *p;
-    TemplArg *t2;
-
-    t2 = parse_template_arguments(p8c, p88);
-    if (t2 == NULL)
-        p = &stvoid;
-    else {
-        p = CTemplTool_IsDependentTemplate(*p8c, t2);
-        if (p == NULL)
-            p = (Type *)CTemplateClass_GetInstance(*p8c, t2, *p88);
-    }
-    return p;
-}
-
 void parse_explicit_template_specialization(void)
 {
     DeclInfo ctx;
@@ -1155,14 +1094,7 @@ void CTemplateNew_ParseTemplateDeclaration(TypeClass *templateClass)
     parameters = NULL;
     namespaceState.scope->is_templ = 1;
     cscope_current = namespaceState.scope;
-    scope = namespaceState.scope;
-    if (scope) {
-        do {
-            if (scope->theclass != NULL && (scope->theclass->flags & CLASS_IS_TEMPL) != 0)
-                ++templateDepth;
-            scope = scope->parent;
-        } while (scope);
-    }
+    templateDepth = CTempl_GetTemplateNestIndex(namespaceState.scope);
     (void)scope;
     for (;;) {
         if (tk == '>') {
@@ -1397,6 +1329,24 @@ void CTemplateNew_CompileObject(TemplClass *templateClass, TemplClassInst *conte
     template_recordbrowseinfo = savedTemplateState;
 }
 
+static Boolean instantiate_member_object(TemplClass *templ, TemplClassInst *inst, Object *object, Boolean flag)
+{
+    TemplateMember *member;
+    Object *parent;
+
+    templ = inst->templ;
+    parent = ((ObjectTemplated *)object)->parent;
+    for (member = CTemplateClass_ResolveRelatedClass(templ)->members; member; member = member->next) {
+        if (member->object == parent) {
+            CTemplateNew_CompileObject(templ, inst, member, object, flag);
+            return 1;
+        }
+    }
+    if (flag)
+        CError_Warning(ERR_CANNOT_INSTANTIATE, object);
+    return 0;
+}
+
 unsigned char instantiate_members(TemplClass *templ, TemplClassInst *state, char force)
 {
     Object *entry;
@@ -1413,13 +1363,13 @@ unsigned char instantiate_members(TemplClass *templ, TemplClassInst *state, char
         if (entry->type->type == TYPEFUNC) {
             if ((force != 0 || (entry->flags & 2) != 0) &&
                 (((TypeFunc *)entry->type)->flags & (FUNC_AUTO_GENERATED | FUNC_DEFINED)) == 0) {
-                functionResult = CTemplateNew_004ed8e0_inline1(state, entry, force);
+                functionResult = instantiate_member_object(templ, state, entry, force);
                 if (functionResult != 0 && (((TypeFunc *)entry->type)->flags & FUNC_DEFINED) != 0)
                     changed = 1;
             }
         } else if (state->static_instantiated == 0 && entry->datatype == DDATA && (entry->qual & Q_INLINE_DATA) == 0 &&
                    (entry->flags & 4) == 0) {
-            entryResult = CTemplateNew_004ed8e0_inline2(state, entry, force);
+            entryResult = instantiate_member_object(templ, state, entry, force);
             if (entryResult != 0)
                 changed = 1;
         }

@@ -22635,7 +22635,7 @@
     "source": "src/frontend/CTemplateNew.c"
   },
   {
-    "name": "fn_004e9520",
+    "name": "read_template_argument_token",
     "address": "0x004e9520",
     "size": 67,
     "source": "src/frontend/CTemplateNew.c"
@@ -22647,7 +22647,7 @@
     "source": "src/frontend/CTemplateNew.c"
   },
   {
-    "name": "fn_004e9680",
+    "name": "parse_type_parameter_default",
     "address": "0x004e9680",
     "size": 141,
     "source": "src/frontend/CTemplateNew.c"
@@ -22659,7 +22659,7 @@
     "source": "src/frontend/CTemplateNew.c"
   },
   {
-    "name": "fn_004e97f0",
+    "name": "CTempl_GetTemplateNestIndex",
     "address": "0x004e97f0",
     "size": 44,
     "source": "src/frontend/CTemplateNew.c"
@@ -22695,7 +22695,7 @@
     "source": "src/frontend/CTemplateNew.c"
   },
   {
-    "name": "fn_004e9f90",
+    "name": "CTempl_PushScope",
     "address": "0x004e9f90",
     "size": 66,
     "source": "src/frontend/CTemplateNew.c"
@@ -22713,7 +22713,7 @@
     "source": "src/frontend/CTemplateNew.c"
   },
   {
-    "name": "fn_004ea320",
+    "name": "CTempl_FindConversion",
     "address": "0x004ea320",
     "size": 121,
     "source": "src/frontend/CTemplateNew.c"
@@ -22761,7 +22761,7 @@
     "source": "src/frontend/CTemplateNew.c"
   },
   {
-    "name": "fn_004eba00",
+    "name": "instantiate_member_object",
     "address": "0x004eba00",
     "size": 100,
     "source": "src/frontend/CTemplateNew.c"
