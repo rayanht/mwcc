@@ -23862,14 +23862,16 @@
     "source": "src/backend/MachineSimulation7400.c"
   },
   {
-    "name": "fn_004ff1f0",
+    "name": "advance_stage",
     "address": "0x004ff1f0",
-    "size": 70
+    "size": 70,
+    "source": "src/backend/MachineSimulation601.c"
   },
   {
-    "name": "fn_004ff240",
+    "name": "complete_stage",
     "address": "0x004ff240",
-    "size": 16
+    "size": 16,
+    "source": "src/backend/MachineSimulation601.c"
   },
   {
     "name": "get_latency",
