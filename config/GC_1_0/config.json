@@ -8,6 +8,7 @@
     "src/backend/BE_symbol.c",
     "src/backend/BitVectors.c",
     "src/backend/Coloring.c",
+    "src/backend/DWARF.c",
     "src/backend/DumpIR.c",
     "src/backend/ELF_Endian.c",
     "src/backend/Exceptions.c",

@@ -165,7 +165,7 @@ extern struct DWInfo *find_or_create_dwinfo(struct Type *type);
 extern DwarfRef get_type_dwarf_ref(DWInfo *info, UInt16 a, Boolean b);
 extern int emit_location_attribute(DwarfLocationOperand *op, UInt16 attribute, unsigned char dereference);
 extern UInt16 get_integral_type_code(Type *type);
-extern unsigned int DWARF_RestoreFunctionState(void);
+extern void DWARF_RestoreFunctionState(void);
 extern void emit_class_dwarf(TypeClass *cls);
 extern void emit_enum_type(Type *type);
 extern void emit_variable_entry(struct DwarfSym *sym, Object *obj, DWInfo *arg);

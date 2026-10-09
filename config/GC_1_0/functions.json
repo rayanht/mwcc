@@ -14733,7 +14733,7 @@
     "source": "src/backend/DWARF.c"
   },
   {
-    "name": "fn_0048d7a0",
+    "name": "NextQual",
     "address": "0x0048d7a0",
     "size": 84,
     "source": "src/backend/DWARF.c"
@@ -14793,7 +14793,7 @@
     "source": "src/backend/DWARF.c"
   },
   {
-    "name": "fn_0048e2c0",
+    "name": "dwarfFileName",
     "address": "0x0048e2c0",
     "size": 63,
     "source": "src/backend/DWARF.c"
@@ -14847,7 +14847,7 @@
     "source": "src/backend/DWARF.c"
   },
   {
-    "name": "fn_0048ef30",
+    "name": "end_dwarf_scope",
     "address": "0x0048ef30",
     "size": 151,
     "source": "src/backend/DWARF.c"
@@ -14919,7 +14919,7 @@
     "source": "src/backend/DWARF.c"
   },
   {
-    "name": "fn_0048fe30",
+    "name": "InitDwarfNodes",
     "address": "0x0048fe30",
     "size": 47,
     "source": "src/backend/DWARF.c"
@@ -14931,7 +14931,7 @@
     "source": "src/backend/DWARF.c"
   },
   {
-    "name": "fn_0048feb0",
+    "name": "PushDwarfNodeHead",
     "address": "0x0048feb0",
     "size": 74,
     "source": "src/backend/DWARF.c"
@@ -14943,7 +14943,7 @@
     "source": "src/backend/DWARF.c"
   },
   {
-    "name": "fn_0048ff70",
+    "name": "insert_dwarf_node_before",
     "address": "0x0048ff70",
     "size": 99,
     "source": "src/backend/DWARF.c"
