@@ -64,9 +64,8 @@ extern void fn_004b4ce0(void *list);
 #endif
 extern void fn_0049c510(char *value1, UInt8 value2, SInt8 value3, SInt32 value4);
 extern ObjGenSection *fn_0049c540(ObjGenSection *input, SInt32 context);
-extern SectionRec *BE_elf_CreateSectionRec(char *nspace, char *name, unsigned int datatype, unsigned int unk03,
-                                           unsigned int access);
-extern ObjGenSection *BE_elf_FindSection(const char *name, SInt32 hashval);
+extern SectionRec *BE_elf_CreateSectionRec(char *nspace, char *name, UInt8 far_reloc, UInt8 near_reloc, UInt8 typebits);
+extern ObjGenSection *BE_elf_FindSection(char *name, SInt32 hashval);
 extern ObjGenSection *BE_elf_CreateSection(char *name, UInt8 kind, SInt8 attribute, SInt32 initialSize,
                                            SectionRec *flags, UInt8 alignment, struct ObjGenSymbolLink *symbolLink);
 extern ObjGenSection *BE_elf_CreateSectionWithRelocations(SectionRec *rawObject, short kind, char flags, int size,

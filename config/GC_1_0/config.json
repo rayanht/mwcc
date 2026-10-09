@@ -112,6 +112,7 @@
     "src/frontend/CPreprocess.c",
     "src/frontend/CRTTI.c",
     "src/frontend/CScope.c",
+    "src/frontend/CTemplateClass.c",
     "src/frontend/CTemplateTools.c",
     "src/frontend/CompilerTools.c",
     "src/frontend/ParseDouble.c",

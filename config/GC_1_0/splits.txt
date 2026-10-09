@@ -788,7 +788,7 @@ src/frontend/CPrepTokenizer.c:
 
 src/backend/BE_elf.c:
 	.text       start:0x004B3800 end:0x004B4CF0
-	.data       start:0x00534838 end:0x005348A0
+	.data       start:0x00534838 end:0x0053489C
 	.bss        start:0x00552A18 end:0x00552BA8
 
 src/backend/BE_symbol.c:

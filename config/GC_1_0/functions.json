@@ -17433,13 +17433,13 @@
     "source": "src/frontend/CPrepTokenizer.c"
   },
   {
-    "name": "fn_004b3800",
+    "name": "ElfOffset",
     "address": "0x004b3800",
     "size": 6,
     "source": "src/backend/BE_elf.c"
   },
   {
-    "name": "fn_004b3810",
+    "name": "ElfPad",
     "address": "0x004b3810",
     "size": 46,
     "source": "src/backend/BE_elf.c"
@@ -17451,7 +17451,7 @@
     "source": "src/backend/BE_elf.c"
   },
   {
-    "name": "ElfIndex",
+    "name": "AppendString",
     "address": "0x004b3870",
     "size": 43,
     "source": "src/backend/BE_elf.c"
@@ -17463,19 +17463,19 @@
     "source": "src/backend/BE_elf.c"
   },
   {
-    "name": "fn_004b3940",
+    "name": "AppendSection",
     "address": "0x004b3940",
     "size": 30,
     "source": "src/backend/BE_elf.c"
   },
   {
-    "name": "fn_004b3960",
+    "name": "AppendSectionSymbolAttributes",
     "address": "0x004b3960",
     "size": 30,
     "source": "src/backend/BE_elf.c"
   },
   {
-    "name": "fn_004b3980",
+    "name": "AppendSectionToGroup",
     "address": "0x004b3980",
     "size": 32,
     "source": "src/backend/BE_elf.c"
@@ -17553,31 +17553,31 @@
     "source": "src/backend/BE_elf.c"
   },
   {
-    "name": "build_symbol_string_table",
+    "name": "write_sym_nodes",
     "address": "0x004b44d0",
     "size": 155,
     "source": "src/backend/BE_elf.c"
   },
   {
-    "name": "ElfLinkSymbolTable",
+    "name": "build_symbol_string_table",
     "address": "0x004b4570",
     "size": 103,
     "source": "src/backend/BE_elf.c"
   },
   {
-    "name": "ElfLinkSection",
+    "name": "build_section_name_table",
     "address": "0x004b45e0",
     "size": 91,
     "source": "src/backend/BE_elf.c"
   },
   {
-    "name": "fn_004b4640",
+    "name": "write_section_headers",
     "address": "0x004b4640",
     "size": 148,
     "source": "src/backend/BE_elf.c"
   },
   {
-    "name": "fn_004b46e0",
+    "name": "out_of_memory",
     "address": "0x004b46e0",
     "size": 16,
     "source": "src/backend/BE_elf.c"
@@ -17589,7 +17589,7 @@
     "source": "src/backend/BE_elf.c"
   },
   {
-    "name": "fn_004b4750",
+    "name": "write_section_data",
     "address": "0x004b4750",
     "size": 83,
     "source": "src/backend/BE_elf.c"
@@ -17601,7 +17601,7 @@
     "source": "src/backend/BE_elf.c"
   },
   {
-    "name": "fn_004b48e0",
+    "name": "link_sections",
     "address": "0x004b48e0",
     "size": 111,
     "source": "src/backend/BE_elf.c"
@@ -17613,7 +17613,7 @@
     "source": "src/backend/BE_elf.c"
   },
   {
-    "name": "fn_004b4b90",
+    "name": "resolve_relocation_symbols",
     "address": "0x004b4b90",
     "size": 94,
     "source": "src/backend/BE_elf.c"
@@ -24705,31 +24705,31 @@
     "source": "src/frontend/CTemplateClass.c"
   },
   {
-    "name": "fn_00501520",
+    "name": "setup_action_error_ref",
     "address": "0x00501520",
     "size": 28,
     "source": "src/frontend/CTemplateClass.c"
   },
   {
-    "name": "fn_00501540",
+    "name": "restore_action_error_ref",
     "address": "0x00501540",
     "size": 17,
     "source": "src/frontend/CTemplateClass.c"
   },
   {
-    "name": "fn_00501560",
+    "name": "append_template_action",
     "address": "0x00501560",
     "size": 57,
     "source": "src/frontend/CTemplateClass.c"
   },
   {
-    "name": "fn_005015a0",
+    "name": "new_def_action",
     "address": "0x005015a0",
     "size": 30,
     "source": "src/frontend/CTemplateClass.c"
   },
   {
-    "name": "fn_005015c0",
+    "name": "prepend_template_action",
     "address": "0x005015c0",
     "size": 41,
     "source": "src/frontend/CTemplateClass.c"
@@ -24801,7 +24801,7 @@
     "source": "src/frontend/CTemplateClass.c"
   },
   {
-    "name": "fn_00501a50",
+    "name": "parse_template_class_body",
     "address": "0x00501a50",
     "size": 152,
     "source": "src/frontend/CTemplateClass.c"
@@ -24837,7 +24837,7 @@
     "source": "src/frontend/CTemplateClass.c"
   },
   {
-    "name": "fn_005024e0",
+    "name": "is_more_specialized",
     "address": "0x005024e0",
     "size": 63,
     "source": "src/frontend/CTemplateClass.c"
@@ -24885,7 +24885,7 @@
     "source": "src/frontend/CTemplateClass.c"
   },
   {
-    "name": "fn_00502c80",
+    "name": "instantiate_member_var_path",
     "address": "0x00502c80",
     "size": 97,
     "source": "src/frontend/CTemplateClass.c"
@@ -24909,7 +24909,7 @@
     "source": "src/frontend/CTemplateClass.c"
   },
   {
-    "name": "fn_005030c0",
+    "name": "instantiate_template_object",
     "address": "0x005030c0",
     "size": 775,
     "source": "src/frontend/CTemplateClass.c"
@@ -24921,7 +24921,7 @@
     "source": "src/frontend/CTemplateClass.c"
   },
   {
-    "name": "fn_00503610",
+    "name": "instantiate_object_initializer",
     "address": "0x00503610",
     "size": 103,
     "source": "src/frontend/CTemplateClass.c"
@@ -24933,7 +24933,7 @@
     "source": "src/frontend/CTemplateClass.c"
   },
   {
-    "name": "fn_00503740",
+    "name": "instantiate_using_declaration",
     "address": "0x00503740",
     "size": 139,
     "source": "src/frontend/CTemplateClass.c"
