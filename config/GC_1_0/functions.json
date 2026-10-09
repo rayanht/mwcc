@@ -22977,25 +22977,25 @@
     "source": "src/optimizer/FunctionCalls.c"
   },
   {
-    "name": "fn_004eed50",
+    "name": "load_remaining_argument_gprs",
     "address": "0x004eed50",
     "size": 63,
     "source": "src/optimizer/FunctionCalls.c"
   },
   {
-    "name": "fn_004eed90",
+    "name": "needs_toc_reload",
     "address": "0x004eed90",
     "size": 3,
     "source": "src/optimizer/FunctionCalls.c"
   },
   {
-    "name": "fn_004eeda0",
+    "name": "load_virtual_function",
     "address": "0x004eeda0",
     "size": 121,
     "source": "src/optimizer/FunctionCalls.c"
   },
   {
-    "name": "fn_004eee20",
+    "name": "emitobj12",
     "address": "0x004eee20",
     "size": 65,
     "source": "src/optimizer/FunctionCalls.c"
@@ -23013,7 +23013,7 @@
     "source": "src/optimizer/FunctionCalls.c"
   },
   {
-    "name": "fn_004ef400",
+    "name": "emit12",
     "address": "0x004ef400",
     "size": 58,
     "source": "src/optimizer/FunctionCalls.c"
