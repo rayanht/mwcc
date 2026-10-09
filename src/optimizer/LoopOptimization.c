@@ -1285,20 +1285,20 @@ void COpt_ArrayToRegister(void)
 {
     PCodeInstruction *newpc;
     LoopVar *head = NULL;
-    PCodeBlock *block;
-    PCodeInstruction *pc;
     long remaining;
-    LoopVar *a;
+    PCodeInstruction *pc;
+    PCodeBlock *block;
     LoopVar *best;
+    int min;
+    LoopVar *a;
     LoopVar **link;
+    int reg;
+    long src;
+    int minf;
+    int j;
     int n;
     int g;
     int f;
-    int min;
-    int reg;
-    int minf;
-    int j;
-    long src;
     PCodeOperand *op;
     head = build_array_loopvars();
     if (head) {
