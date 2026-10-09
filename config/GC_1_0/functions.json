@@ -4596,7 +4596,7 @@
     "source": "src/driver/Option.c"
   },
   {
-    "name": "fn_0041e130",
+    "name": "get_extension",
     "address": "0x0041e130",
     "size": 73,
     "source": "src/driver/cc-eabi-ppc.c"
@@ -4608,7 +4608,7 @@
     "source": "src/driver/cc-eabi-ppc.c"
   },
   {
-    "name": "fn_0041e3c0",
+    "name": "store_compiler_results",
     "address": "0x0041e3c0",
     "size": 160,
     "source": "src/driver/cc-eabi-ppc.c"
@@ -4620,13 +4620,13 @@
     "source": "src/driver/cc-eabi-ppc.c"
   },
   {
-    "name": "fn_0041e830",
+    "name": "acquire_plugin_registration",
     "address": "0x0041e830",
     "size": 47,
     "source": "src/driver/cc-eabi-ppc.c"
   },
   {
-    "name": "fn_0041e860",
+    "name": "release_plugin_registration",
     "address": "0x0041e860",
     "size": 54,
     "source": "src/driver/cc-eabi-ppc.c"
@@ -22029,10 +22029,10 @@
     "source": "src/backend/InlineAsm.c"
   },
   {
-    "name": "fn_004e3530",
+    "name": "init_type_deduce",
     "address": "0x004e3530",
     "size": 36,
-    "source": "src/backend/InlineAsm.c"
+    "source": "src/frontend/CTemplateFunc.c"
   },
   {
     "name": "CTemplateFunc_MatchTypeAndCheckBoundSlots",
@@ -22053,7 +22053,7 @@
     "source": "src/frontend/CTemplateFunc.c"
   },
   {
-    "name": "fn_004e3950",
+    "name": "instantiate_accessible_template_for_type",
     "address": "0x004e3950",
     "size": 29,
     "source": "src/frontend/CTemplateFunc.c"
@@ -22065,7 +22065,7 @@
     "source": "src/frontend/CTemplateFunc.c"
   },
   {
-    "name": "fn_004e3d10",
+    "name": "dominates",
     "address": "0x004e3d10",
     "size": 63,
     "source": "src/frontend/CTemplateFunc.c"
@@ -22083,7 +22083,7 @@
     "source": "src/frontend/CTemplateFunc.c"
   },
   {
-    "name": "fn_004e3e90",
+    "name": "deduce_argument_type",
     "address": "0x004e3e90",
     "size": 59,
     "source": "src/frontend/CTemplateFunc.c"
@@ -22095,7 +22095,7 @@
     "source": "src/frontend/CTemplateFunc.c"
   },
   {
-    "name": "fn_004e3fd0",
+    "name": "match_template_dep_args",
     "address": "0x004e3fd0",
     "size": 45,
     "source": "src/frontend/CTemplateFunc.c"

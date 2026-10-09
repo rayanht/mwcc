@@ -397,7 +397,7 @@ src/driver/Option.c:
 
 src/driver/cc-eabi-ppc.c:
 	.text       start:0x0041E130 end:0x0041E9A0
-	.data       start:0x0051E3A8 end:0x0051E468
+	.data       start:0x0051E3A8 end:0x0051E462
 	.bss        start:0x00550448 end:0x00550488
 
 src/driver/libimp-eabi-ppc.c:
@@ -862,12 +862,12 @@ src/frontend/CABI.c:
 	.bss        start:0x00552D58 end:0x00552D60
 
 src/backend/InlineAsm.c:
-	.text       start:0x004E2550 end:0x004E3560
+	.text       start:0x004E2550 end:0x004E3530
 	.data       start:0x00537CD0 end:0x00537DB8
 	.bss        start:0x00552D60 end:0x00553160
 
 src/frontend/CTemplateFunc.c:
-	.text       start:0x004E3560 end:0x004E4BF0
+	.text       start:0x004E3530 end:0x004E4BF0
 	.data       start:0x00537DB8 end:0x00537E60
 	.bss        start:0x00553160 end:0x00553168
 

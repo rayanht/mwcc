@@ -97,6 +97,7 @@
     "src/driver/Utils.c",
     "src/driver/WarningHelpers.c",
     "src/driver/cc-eabi-ppc-mw.c",
+    "src/driver/cc-eabi-ppc.c",
     "src/driver/libimp-eabi-ppc-mw.c",
     "src/driver/libimp-eabi-ppc.c",
     "src/frontend/CClass.c",
