@@ -320,13 +320,11 @@ static void CPrep_Fatal(void);
 static void CPrep_PopState(void);
 static void CPrep_ErrorBA(void);
 static void CPrep_Error_439930(int line);
-static Boolean CNameRef_IsNull(CNameRef *p);
 static void CPrep_Push(SInt16 type);
 static void CPrep_AddLine(SInt16 kind);
 static SInt32 calc_line(CPrepFileInfo *p);
 static void report_error(SInt16 code);
 static SInt32 check_time(void);
-static void CPrep_Error(SInt16 code);
 
 static inline void process_newline(void)
 {
@@ -1321,7 +1319,6 @@ void CPrep_GetTokenLocation(TStreamElement *token, CPrepFileInfo **file, SInt32 
     data_0057f9dc = 0;
 }
 
-#pragma auto_inline off
 NameSpaceList *CPrep_ReportError(short token)
 {
     Boolean savedState = data_005884fd;
@@ -1335,7 +1332,6 @@ NameSpaceList *CPrep_ReportError(short token)
     data_005884fd = savedState;
     return result;
 }
-#pragma auto_inline reset
 
 void fn_0043f3e0(unsigned int token, char *name)
 {
@@ -2814,7 +2810,7 @@ UInt8 *expand_macro(Macro *macro)
                                     data_00588523 = 1;
                                     continue;
                                 }
-                                CPrep_Error(0x66);
+                                CPrep_ReportError(0x66);
                                 goto argumentFinished;
                             case 0x22:
                             case 0x27:
@@ -2828,7 +2824,7 @@ UInt8 *expand_macro(Macro *macro)
                                     argument++;
                                     if (argument < argumentCount) {
                                         token_start = currentTextPosition;
-                                        CPrep_Error(0x74);
+                                        CPrep_ReportError(0x74);
                                         return (UInt8 *)"";
                                     }
                                     goto argumentFinished;
@@ -2841,7 +2837,7 @@ UInt8 *expand_macro(Macro *macro)
                                         variadicArgument = 1;
                                     } else if (argument >= argumentCount) {
                                         token_start = currentTextPosition;
-                                        CPrep_Error(0x73);
+                                        CPrep_ReportError(0x73);
                                         return (UInt8 *)"";
                                     }
                                     goto argumentFinished;
@@ -2869,7 +2865,7 @@ UInt8 *expand_macro(Macro *macro)
                         arguments[argument - 2] = aalloc(length);
                         memcpy(arguments[argument - 2], *macro_text.data, length);
                     } else {
-                        CPrep_Error(0x6f);
+                        CPrep_ReportError(0x6f);
                     }
                 }
             }
@@ -2877,7 +2873,7 @@ UInt8 *expand_macro(Macro *macro)
             skip_line_breaks_and_expand_macros();
             if (CPrepTokenizer_NextChar() != ')') {
                 token_start = currentTextPosition;
-                CPrep_Error(0x73);
+                CPrep_ReportError(0x73);
             }
         }
     }
@@ -2977,7 +2973,7 @@ UInt8 *expand_macro(Macro *macro)
     AppendGListByte(&macro_text, 0);
     length = macro_text.size;
     if (length > 0x20000) {
-        CPrep_Error(0x6f);
+        CPrep_ReportError(0x6f);
         return (UInt8 *)"";
     }
     result = aalloc(length);
@@ -4328,8 +4324,7 @@ struct CNameRef evaluate_binary_expression_value(struct CNameRef *initialOperand
     }
 }
 
-#pragma auto_inline off
-Boolean is_zero_name_ref(CNameRef *value)
+inline Boolean is_zero_name_ref(CNameRef *value)
 {
     int isZero;
 
@@ -4339,96 +4334,30 @@ Boolean is_zero_name_ref(CNameRef *value)
     }
     return isZero;
 }
-#pragma auto_inline reset
 
 CNameRef evaluate_conditional_expression_value(void)
 {
     CNameRef result, trueValue, falseValue;
-    CNameRef falseBranch, trueBranch, trueCondition;
-    CNameRef nestedFalseValue, nestedTrueValue, falseCondition;
-    SInt32 falseConditionTrue, conditionTrue;
-    UInt8 savedErrorState;
 
     result = evaluate_binary_expression_value(NULL, -1);
     if (data_0057fd6c == '?') {
-        trueCondition = evaluate_binary_expression_value(NULL, -1);
-        if (data_0057fd6c == '?') {
-            trueBranch = evaluate_conditional_expression_value();
-            if (CPrep_ScanMacroExpandedChar() == 0) {
-                CPrep_ReportError(ERR_UNEXPECTED_END_LINE);
-                trueValue = trueCondition;
-            } else if (data_0057fd6c != ':') {
-                CPrep_ReportError(ERR_COLON_EXPECTED);
-                trueValue = trueCondition;
-            } else if (CPrep_ScanMacroExpandedChar() == 0) {
-                CPrep_ReportError(ERR_UNEXPECTED_END_LINE);
-                trueValue = trueCondition;
-            } else {
-                falseBranch = evaluate_conditional_expression_value();
-                conditionTrue = !is_zero_name_ref(&trueCondition);
-                trueCondition = conditionTrue ? trueBranch : falseBranch;
-                trueValue = trueCondition;
-            }
-        } else {
-            trueValue = trueCondition;
-        }
-
+        trueValue = evaluate_conditional_expression_value();
         if (CPrep_ScanMacroExpandedChar() == 0) {
-            savedErrorState = data_005884fd;
-            data_005884fd = 0;
-            data_0057f9dc = 1;
-            CError_ReportError(ERR_UNEXPECTED_END_LINE);
-            data_005884fd = savedErrorState;
+            CPrep_ReportError(ERR_UNEXPECTED_END_LINE);
             return result;
         }
         if (data_0057fd6c != ':') {
-            savedErrorState = data_005884fd;
-            data_005884fd = 0;
-            data_0057f9dc = 1;
-            CError_ReportError(ERR_COLON_EXPECTED);
-            data_005884fd = savedErrorState;
+            CPrep_ReportError(ERR_COLON_EXPECTED);
             return result;
         }
         if (CPrep_ScanMacroExpandedChar() == 0) {
-            savedErrorState = data_005884fd;
-            data_005884fd = 0;
-            data_0057f9dc = 1;
-            CError_ReportError(ERR_UNEXPECTED_END_LINE);
-            data_005884fd = savedErrorState;
+            CPrep_ReportError(ERR_UNEXPECTED_END_LINE);
             return result;
         }
-
-        falseCondition = evaluate_binary_expression_value(NULL, -1);
-        if (data_0057fd6c == '?') {
-            nestedTrueValue = evaluate_conditional_expression_value();
-            if (CPrep_ScanMacroExpandedChar() == 0) {
-                CPrep_ReportError(ERR_UNEXPECTED_END_LINE);
-                falseValue = falseCondition;
-            } else if (data_0057fd6c != ':') {
-                CPrep_ReportError(ERR_COLON_EXPECTED);
-                falseValue = falseCondition;
-            } else if (CPrep_ScanMacroExpandedChar() == 0) {
-                CPrep_ReportError(ERR_UNEXPECTED_END_LINE);
-                falseValue = falseCondition;
-            } else {
-                nestedFalseValue = evaluate_conditional_expression_value();
-                falseConditionTrue = !is_zero_name_ref(&falseCondition);
-                falseCondition = falseConditionTrue ? nestedTrueValue : nestedFalseValue;
-                falseValue = falseCondition;
-            }
-        } else {
-            falseValue = falseCondition;
-        }
-
-        conditionTrue = !CNameRef_IsNull(&result);
-        result = conditionTrue ? trueValue : falseValue;
+        falseValue = evaluate_conditional_expression_value();
+        result = !is_zero_name_ref(&result) ? trueValue : falseValue;
     }
     return result;
-}
-
-static Boolean CNameRef_IsNull(CNameRef *p)
-{
-    return (p->a == 0 && p->b == 0);
 }
 
 void fn_004392e0(void)
@@ -4819,24 +4748,13 @@ static SInt32 calc_line(CPrepFileInfo *p)
 
 static void report_error(SInt16 code)
 {
-    CPrep_Error(code);
+    CPrep_ReportError(code);
 }
 
 static SInt32 check_time(void)
 {
     void **p = (void **)cprep_cu;
     return CWCompilerLinkerPrivate_CallCompilerCallback(*p, line_count);
-}
-
-static void CPrep_Error(SInt16 code)
-{
-    UInt8 save = data_005884fd;
-    data_005884fd = 0;
-    if (code == 0x66 && (macro_expansion_depth > 0 || currentTextPosition < textend))
-        code = 0x69;
-    data_0057f9dc = 1;
-    CError_ReportError(code);
-    data_005884fd = save;
 }
 
 void CPrep_ParseDirective(void)

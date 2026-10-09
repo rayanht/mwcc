@@ -92,8 +92,6 @@ static char data_005824c3;
 
 static ENode *adjust(ENode *f, ENode *e);
 static ENode *get_input(SInt32 index);
-static SInt32 MemoFirst(ENode *key);
-static SInt32 CInline_Memo(ENode *key);
 static ENode *gen_name(ENode *x);
 static ENode *CInline_CopyConst(ENode *e);
 static Object *NewInlineVar(Type *type, SInt16 offset, UInt8 info);
@@ -906,6 +904,8 @@ ENodeList *copy_enode_list(ENodeList *values)
     return head;
 }
 
+static SInt32 MemoFirst(ENode *key);
+
 ENode *fn_00513240(ENode *expr)
 {
     ENode *node;
@@ -1032,12 +1032,12 @@ ENode *fn_00513240(ENode *expr)
                 node->data.funccall.args = copy_enode_list(node->data.funccall.args);
                 break;
             case ENULLCHECK:
-                node->data.cond.expr2 = (ENode *)CInline_Memo(node->data.cond.expr2);
+                node->data.cond.expr2 = (ENode *)MemoFirst(node->data.cond.expr2);
                 node->data.diadic.left = fn_00513240(node->data.diadic.left);
                 node->data.diadic.right = fn_00513240(node->data.diadic.right);
                 break;
             case EPRECOMP:
-                node->data.monadic = (ENode *)CInline_Memo(node->data.monadic);
+                node->data.monadic = (ENode *)MemoFirst(node->data.monadic);
                 break;
             case EINDIRECT: {
                 MemoNode *saved_list;
@@ -2611,7 +2611,8 @@ ExceptionAction *fn_005102f0(Statement *indexMap, Statement *info)
             case EAT_CATCHBLOCK:
                 copy->data.operands[0].value = CInline_GetObjectIndex(src->data.operands[0].object);
                 copy->data.operands[1].value = CInline_GetObjectIndex(src->data.operands[1].object);
-                copy->data.operands[2].value = CInline_GetStatementIndex(indexMap->next, src->data.operands[2].label->stmt);
+                copy->data.operands[2].value =
+                    CInline_GetStatementIndex(indexMap->next, src->data.operands[2].label->stmt);
                 copy->data.operands[3].value = src->data.operands[3].value;
                 copy->data.operands[4].value = src->data.operands[4].value;
                 copy->data.operands[5].value = src->data.operands[5].value;
@@ -2623,7 +2624,8 @@ ExceptionAction *fn_005102f0(Statement *indexMap, Statement *info)
             case EAT_SPECIFICATION:
                 copy->data.operands[0].value = src->data.operands[0].value;
                 copy->data.operands[1].value = src->data.operands[1].value;
-                copy->data.operands[2].value = CInline_GetStatementIndex(indexMap->next, src->data.operands[2].label->stmt);
+                copy->data.operands[2].value =
+                    CInline_GetStatementIndex(indexMap->next, src->data.operands[2].label->stmt);
                 copy->data.operands[3].value = CInline_GetObjectIndex(src->data.operands[3].object);
                 break;
             case EAT_TERMINATE:
@@ -2713,7 +2715,8 @@ void CInline_SaveInfo(CInlineInfo *out, Statement *list, Object *function)
                 expression = CInline_GetName(statement->expr);
                 fn_005130b0(expression, 0);
                 savedStatement->data.operand = expression;
-                savedStatement->secondaryOperand.targetIndex = CInline_GetStatementIndex(list->next, statement->label->stmt);
+                savedStatement->secondaryOperand.targetIndex =
+                    CInline_GetStatementIndex(list->next, statement->label->stmt);
                 break;
             case ST_SWITCH:
                 savedStatement->data.switchInfo = create_inline_switch_data(list->next, statement);
@@ -3444,37 +3447,17 @@ static ENode *get_input(SInt32 index)
 
 static SInt32 MemoFirst(ENode *key)
 {
-    MemoNode *fresh;
     MemoNode *m;
-    ENode *k;
-    k = key, m = memo_list;
-    for (; m; m = m->next)
-        if (m->key == k)
-            return m->val;
-    fresh = (MemoNode *)lalloc(12);
-    fresh->next = memo_list;
-    memo_list = fresh;
-    fresh->key = key;
-    fresh->val = CParser_GetUniqueID();
-    return fresh->val;
-}
 
-static SInt32 CInline_Memo(ENode *key)
-{
-    ENode *k;
-    MemoNode *m;
-    k = key, m = memo_list;
-    for (; m != NULL; m = m->next)
-        if (m->key == k)
+    for (m = memo_list; m != NULL; m = m->next)
+        if (m->key == key)
             return m->val;
-    (m = (MemoNode *)lalloc(12))->next = memo_list;
+    m = (MemoNode *)lalloc(12);
+    m->next = memo_list;
     memo_list = m;
     m->key = key;
     m->val = CParser_GetUniqueID();
-    {
-        SInt32 result = m->val;
-        return result;
-    }
+    return m->val;
 }
 
 static ENode *gen_name(ENode *x)
@@ -3764,4 +3747,3 @@ SInt16 CInline_ReturnZero(Type *type)
 }
 
 #pragma auto_inline reset
-

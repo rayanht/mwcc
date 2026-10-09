@@ -48,7 +48,7 @@ extern void *galloc(SInt32 size);
 extern short CTool_EndianConvertInPlaceWord16Ptr(short *word);
 extern void CTool_EndianConvertWord64(CInt64 ci, char *result);
 extern UInt32 CTool_EndianConvertMem(void *buffer, short size);
-extern unsigned int CTool_EndianConvertWord32(unsigned int value);
+extern UInt32 CTool_EndianConvertWord32(UInt32 value);
 extern SInt16 getbit(UInt32 value);
 extern void memclrw(void *buffer, unsigned int size);
 extern void unlocklheap(void);

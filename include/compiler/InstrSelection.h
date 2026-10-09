@@ -81,7 +81,7 @@ extern unsigned char fn_004b4aa0(unsigned char kind);
 extern unsigned int generate_intrinsic_or_function_call(ENode *value, unsigned int operand, unsigned int unused,
                                                         Operand *target);
 extern void load_float_constant(ENode *node, unsigned int regA, unsigned int regB, Operand *out);
-extern void InstrSelection_EmitAddImmediate(SInt16 destReg, SInt16 sourceReg, int immediate);
+extern void InstrSelection_EmitAddImmediate(SInt16 destReg, SInt16 sourceReg, SInt32 immediate);
 extern int is_contiguous_mask(unsigned int mask, short *firstBit, short *lastBit);
 extern void emit_gpr_immediate_instruction(short opcode, ENode *expr, short value, short outputReg, Operand *output);
 extern void make_objref_operand(ENode *node, unsigned int unused1, unsigned int unused2, Operand *result);

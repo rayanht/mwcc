@@ -53,54 +53,11 @@ static unsigned int Swap32(unsigned int x)
     return out.w;
 }
 
-static UInt32 swap32(UInt32 x)
-{
-    UInt32ByteSwapStorage s, d;
-    if (copts.littleendian)
-        return x;
-    s.word = x;
-    d.bytes[0] = s.bytes[3];
-    d.bytes[1] = s.bytes[2];
-    d.bytes[2] = s.bytes[1];
-    d.bytes[3] = s.bytes[0];
-    return d.word;
-}
-
 static inline void reset_pool_block(HeapBlock *block)
 {
     block_pool.curblock = block;
     block_pool.curfreep = (char *)(block + 1);
     block_pool.curfree = block->blocksize - sizeof(HeapBlock);
-}
-
-static UInt16 SwapOutputWord(UInt16 x)
-{
-    union {
-        UInt16 w;
-        UInt8 b[2];
-    } t, r;
-    if (copts.littleendian)
-        return x;
-    t.w = x;
-    r.b[0] = t.b[1];
-    r.b[1] = t.b[0];
-    return r.w;
-}
-
-static UInt32 MaybeSwap32(UInt32 x)
-{
-    union {
-        UInt32 l;
-        UInt8 b[4];
-    } t, r;
-    if (copts.littleendian)
-        return x;
-    t.l = x;
-    r.b[0] = t.b[3];
-    r.b[1] = t.b[2];
-    r.b[2] = t.b[1];
-    r.b[3] = t.b[0];
-    return r.l;
 }
 
 static inline void CopyFourBytes(UInt8 *dest, const UInt8 *source)
@@ -244,7 +201,7 @@ void AppendGListTargetEndianWord(GList *buf, UInt16 word)
     }
     dest = *buf->data + buf->size;
     buf->size += 2;
-    word = SwapOutputWord(word);
+    word = CTool_EndianConvertWord16(word);
     bytes = (const U16Bytes *)&word;
     dest[0] = bytes->b[0];
     dest[1] = ((const U16Bytes *)&word)->b[1];
@@ -282,7 +239,7 @@ void AppendGListTargetEndianLong(GList *buf, UInt32 value)
     }
     dest = (UInt8 *)*buf->data + buf->size;
     buf->size += 4;
-    value = MaybeSwap32(value);
+    value = CTool_EndianConvertWord32(value);
     CopyFourBytes(dest, (const UInt8 *)&value);
 }
 
@@ -852,36 +809,31 @@ SInt16 getbit(UInt32 value)
 UInt16 CTool_EndianConvertWord16(UInt16 word)
 {
     union {
-        struct {
-            UInt16 value;
-            UInt16 swapped;
-        } words;
-        unsigned char bytes[4];
-    } result;
-    if (copts.littleendian != 0) {
+        UInt16 word;
+        unsigned char bytes[2];
+    } in, out;
+    if (copts.littleendian)
         return word;
-    }
-    result.words.value = word;
-    result.bytes[2] = result.bytes[1];
-    result.bytes[3] = result.bytes[0];
-    return result.words.swapped;
+    in.word = word;
+    out.bytes[0] = in.bytes[1];
+    out.bytes[1] = in.bytes[0];
+    return out.word;
 }
 
-unsigned int CTool_EndianConvertWord32(unsigned int value)
+UInt32 CTool_EndianConvertWord32(UInt32 value)
 {
     union {
-        unsigned int words[2];
-        unsigned char bytes[8];
-    } converted;
-    if (copts.littleendian != 0) {
+        unsigned int word;
+        unsigned char bytes[4];
+    } in, out;
+    if (copts.littleendian)
         return value;
-    }
-    converted.words[0] = value;
-    converted.bytes[4] = converted.bytes[3];
-    converted.bytes[5] = converted.bytes[2];
-    converted.bytes[6] = converted.bytes[1];
-    converted.bytes[7] = converted.bytes[0];
-    return converted.words[1];
+    in.word = value;
+    out.bytes[0] = in.bytes[3];
+    out.bytes[1] = in.bytes[2];
+    out.bytes[2] = in.bytes[1];
+    out.bytes[3] = in.bytes[0];
+    return out.word;
 }
 
 UInt32 CTool_EndianConvertMem(void *buffer, short size)
@@ -913,12 +865,12 @@ void CTool_EndianConvertWord64(CInt64 ci, char *result)
     UInt32 h;
     if (copts.littleendian == 0) {
         h = ci.hi;
-        buf[0] = swap32(h);
-        buf[1] = swap32(ci.lo);
+        buf[0] = CTool_EndianConvertWord32(h);
+        buf[1] = CTool_EndianConvertWord32(ci.lo);
     } else {
-        buf[0] = swap32(ci.lo);
+        buf[0] = CTool_EndianConvertWord32(ci.lo);
         h = ci.hi;
-        buf[1] = swap32(h);
+        buf[1] = CTool_EndianConvertWord32(h);
     }
     memcpy(result, buf, 8);
 }

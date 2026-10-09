@@ -228,17 +228,6 @@ static inline void InstrSelection_004b5ae0_inline1(ENode *p0, Operand *p1)
     data_00560648[t1](p0, 0, 0, p1);
 }
 
-static void EmitAddImm(SInt16 dst, SInt16 src, SInt32 imm)
-{
-    if (imm != (SInt16)imm) {
-        PCodeUtilities_EmitInstruction(PC_ADDIS, dst, src, 0, (SInt16)((imm >> 16) + ((imm >> 15) & 1)));
-        if ((SInt16)imm != 0)
-            PCodeUtilities_EmitInstruction(PC_ADDI, dst, dst, 0, (SInt16)imm);
-    } else {
-        PCodeUtilities_EmitInstruction(PC_ADDI, dst, src, 0, imm);
-    }
-}
-
 static void SelectOperand(ENode *n, Operand *op)
 {
     data_00560648[n->type](n, 0, 0, op);
@@ -1713,7 +1702,7 @@ void generate_assignment(ENode *node, SInt16 requestedRegister, SInt16 flags, Op
             if (InstrSelection_MatchPostIncDecRegister(left, &destination, &displacement) != 0) {
                 Operands_MakeIndirect(&destination, node);
                 Operands_EmitGPRMemoryInstruction(value.reg, &destination, type);
-                EmitAddImm(destination.reg, destination.reg, displacement);
+                InstrSelection_EmitAddImmediate(destination.reg, destination.reg, displacement);
             } else {
                 data_00560648[left->type](left, 0, 0, &destination);
                 Operands_MakeIndirect(&destination, node);
@@ -1734,7 +1723,7 @@ void generate_assignment(ENode *node, SInt16 requestedRegister, SInt16 flags, Op
             if (InstrSelection_MatchPostIncDecRegister(left, &destination, &displacement) != 0) {
                 Operands_MakeIndirect(&destination, node);
                 Operands_EmitSTVX(value.reg, &destination, type);
-                EmitAddImm(destination.reg, destination.reg, displacement);
+                InstrSelection_EmitAddImmediate(destination.reg, destination.reg, displacement);
             } else {
                 data_00560648[left->type](left, 0, 0, &destination);
                 Operands_MakeIndirect(&destination, node);
@@ -1764,7 +1753,7 @@ void generate_assignment(ENode *node, SInt16 requestedRegister, SInt16 flags, Op
                 if (InstrSelection_MatchPostIncDecRegister(left, &destination, &displacement) != 0) {
                     Operands_MakeIndirect(&destination, node);
                     Operands_EmitTypedGPRMemoryInstruction(value.reg, &destination, type);
-                    EmitAddImm(destination.reg, destination.reg, displacement);
+                    InstrSelection_EmitAddImmediate(destination.reg, destination.reg, displacement);
                 } else {
                     data_00560648[left->type](left, 0, 0, &destination);
                     Operands_MakeIndirect(&destination, node);
@@ -3299,7 +3288,7 @@ int InstrSelection_MatchPostIncDecRegister(ENode *node, Operand *info, SInt32 *s
     return 1;
 }
 
-void InstrSelection_EmitAddImmediate(SInt16 destReg, SInt16 sourceReg, int immediate)
+void InstrSelection_EmitAddImmediate(SInt16 destReg, SInt16 sourceReg, SInt32 immediate)
 {
     if (immediate != (SInt16)immediate) {
         SInt16 highImmediate = (immediate >> 16) + ((immediate >> 15) & 1);

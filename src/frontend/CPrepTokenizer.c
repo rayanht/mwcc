@@ -352,15 +352,6 @@ static int IsWide(void)
     return r;
 }
 
-static UInt16 peek(void)
-{
-    UInt8 *save = currentTextPosition;
-    UInt16 c = CPrepTokenizer_NextChar();
-    lookahead_position = (char *)currentTextPosition;
-    currentTextPosition = save;
-    return c;
-}
-
 static inline UInt8 *lookaheadState(void)
 {
     return (unsigned char *)lookahead_position;
@@ -1005,17 +996,13 @@ short fn_00496610(char report)
     }
 }
 
-SInt16 CPrepTokenizer_PeekChar(void)
+UInt16 CPrepTokenizer_PeekChar(void)
 {
-    UInt8 *lift_value_0;
-    SInt16 lift_call_1;
-    UInt8 *lift_value_2;
-    lift_value_0 = currentTextPosition;
-    lift_call_1 = CPrepTokenizer_NextChar();
-    lift_value_2 = currentTextPosition;
-    lookahead_position = (char *)lift_value_2;
-    currentTextPosition = lift_value_0;
-    return lift_call_1;
+    UInt8 *save = currentTextPosition;
+    UInt16 c = CPrepTokenizer_NextChar();
+    lookahead_position = (char *)currentTextPosition;
+    currentTextPosition = save;
+    return c;
 }
 
 UInt8 *CPrepTokenizer_ScanIdentifier(UInt8 *cursor)
@@ -1093,7 +1080,7 @@ short fn_004961c0(short suffix, int radix)
         case 'u':
             isUnsigned = 1;
             currentTextPosition = (UInt8 *)lookahead_position;
-            next = peek();
+            next = CPrepTokenizer_PeekChar();
             suffix = next;
             if (next != 'l' && next != 'L')
                 break;
@@ -1102,7 +1089,7 @@ short fn_004961c0(short suffix, int radix)
             if (copts.longlong == 0)
                 break;
             currentTextPosition = (UInt8 *)lookahead_position;
-            next = peek();
+            next = CPrepTokenizer_PeekChar();
             suffix = next;
             if (next != 'l' && next != 'L')
                 break;
@@ -1113,7 +1100,7 @@ short fn_004961c0(short suffix, int radix)
         case 'l':
             isLong = 1;
             currentTextPosition = (UInt8 *)lookahead_position;
-            next = peek();
+            next = CPrepTokenizer_PeekChar();
             suffix = next;
             if (next == 'u' || next == 'U') {
                 isUnsigned = 1;
@@ -1129,11 +1116,11 @@ short fn_004961c0(short suffix, int radix)
         case 'i':
             if (copts.cpp_extensions != 0 && copts.ANSIstrict == 0 && copts.longlong != 0) {
                 currentTextPosition = (UInt8 *)lookahead_position;
-                next = peek();
+                next = CPrepTokenizer_PeekChar();
                 suffix = next;
                 if (next == '6') {
                     currentTextPosition = (UInt8 *)lookahead_position;
-                    next = peek();
+                    next = CPrepTokenizer_PeekChar();
                     suffix = next;
                     if (next == '4') {
                         isLong = isLongLong = 1;
@@ -2164,12 +2151,12 @@ int scan_numeric_literal(void)
     data_00588524 = 0;
     start = (char *)(currentTextPosition - 1);
     currentTextPosition = (UInt8 *)CInt64_ScanDecString(&token_integer, start, &integerOverflow);
-    c = peek();
+    c = CPrepTokenizer_PeekChar();
     if (c == '.' || c == 'e' || c == 'E') {
         currentTextPosition = CMach_FloatScan(start, &token_float, &floatOverflow);
         if (floatOverflow)
             CPrep_ReportError(0x9a);
-        token = peek();
+        token = CPrepTokenizer_PeekChar();
         result = parse_float_suffix(token);
         token_value_kind_or_string_length = result;
         return -2;
@@ -2178,7 +2165,7 @@ int scan_numeric_literal(void)
             CPrep_ReportError(0x9a);
             token_integer = cint64_zero;
         }
-        token = peek();
+        token = CPrepTokenizer_PeekChar();
         token_value_kind_or_string_length = fn_004961c0(token, 0);
         return -1;
     }

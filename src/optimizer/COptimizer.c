@@ -50,10 +50,6 @@ static COptCSE *COpt_FloatConst(ENode *expr);
 static COptCSE *COpt_IntConst(ENode *expr);
 static COptCSE *COpt_AddOccurrence(ENode *expr, COptCSE *cse);
 static COptCSE *COpt_NewCSE(ENode *expr);
-static void SetBit(SInt16 *vec, SInt16 bit);
-static SInt16 TestBit(SInt16 *vec, SInt16 bit);
-static void SetBit_4bfa30(SInt16 *vec, SInt16 bit);
-static SInt16 TestBit_4bfa30(SInt16 *vec, SInt16 bit);
 static CLabel *COpt_Follow(Statement *self, CLabel *node);
 static void CheckStmts(Statement *p);
 
@@ -939,19 +935,15 @@ COptCSE *collect_expr_cse(ENode *expr)
     }
 }
 
-#pragma auto_inline off
 UInt16 test_bit(const SInt16 *words, short bit)
 {
     return bit_masks[bit & 15] & words[bit >> 4];
 }
-#pragma auto_inline reset
 
-#pragma auto_inline off
 void set_bit(SInt16 *p, SInt16 n)
 {
     p[n >> 4] |= bit_masks[n & 0xf];
 }
-#pragma auto_inline reset
 
 void mark_dlocal_reference_bits(ENode *node)
 {
@@ -961,7 +953,7 @@ void mark_dlocal_reference_bits(ENode *node)
                 if (node->data.monadic->type == EOBJREF) {
                     Object *obj = node->data.monadic->data.objref;
                     if (obj->datatype == DLOCAL)
-                        SetBit(current_opt_block->referenceBits, obj->u.var.info->varnumber);
+                        set_bit(current_opt_block->referenceBits, obj->u.var.info->varnumber);
                     return;
                 }
                 node = node->data.monadic;
@@ -971,8 +963,8 @@ void mark_dlocal_reference_bits(ENode *node)
                 Object *obj = node->data.objref;
                 if (obj->datatype == DLOCAL) {
                     VarInfo *info = obj->u.var.info;
-                    if (!TestBit(current_opt_block->referenceBits, info->varnumber))
-                        SetBit(current_opt_block->referenceBarrierBits, info->varnumber);
+                    if (!test_bit((const SInt16 *)current_opt_block->referenceBits, info->varnumber))
+                        set_bit(current_opt_block->referenceBarrierBits, info->varnumber);
                 }
                 return;
             }
@@ -1004,8 +996,8 @@ void mark_dlocal_reference_bits(ENode *node)
                     obj = node->data.diadic.left->data.monadic->data.objref;
                     if (obj->datatype == DLOCAL) {
                         info = obj->u.var.info;
-                        if (!TestBit(current_opt_block->referenceBits, info->varnumber))
-                            SetBit(current_opt_block->referenceBarrierBits, info->varnumber);
+                        if (!test_bit((const SInt16 *)current_opt_block->referenceBits, info->varnumber))
+                            set_bit(current_opt_block->referenceBarrierBits, info->varnumber);
                     }
                     return;
                 }
@@ -1087,59 +1079,24 @@ void mark_dlocal_reference_bits(ENode *node)
 
 void propagate_bit_to_preds(COptBlock *node, short bit)
 {
-    int word;
     COptBlockLink *edge;
-    COptBlock *child;
-    COptBlockLink *childEdge;
-    int mask;
-    word = (mask = bit) >> 4;
-    mask &= 15;
-    for (;;) {
-        node->flag = 1;
-        edge = node->pred;
-        if (edge == NULL)
-            break;
-    next_edge:;
+
+loop:
+    node->flag = 1;
+    for (edge = node->pred; edge != NULL; edge = edge->next) {
         if (edge->target.block->flag == 0) {
-            if (tbit(edge->target.block->referenceBarrierBits, word, mask) == 0) {
-                sbit(edge->target.block->referenceBits, word, mask);
+            if (test_bit(edge->target.block->referenceBarrierBits, bit) == 0) {
+                set_bit(edge->target.block->referenceBits, bit);
                 if (edge->next == NULL) {
                     node = edge->target.block;
-                    continue;
+                    goto loop;
                 }
-                child = edge->target.block;
-                for (;;) {
-                    child->flag = 1;
-                    childEdge = child->pred;
-                    if (childEdge == NULL)
-                        break;
-                next_child_edge:;
-                    if (childEdge->target.block->flag == 0) {
-                        if (test_bit(childEdge->target.block->referenceBarrierBits, bit) == 0) {
-                            set_bit(childEdge->target.block->referenceBits, bit);
-                            if (childEdge->next == NULL) {
-                                child = childEdge->target.block;
-                                continue;
-                            }
-                            propagate_bit_to_preds(childEdge->target.block, bit);
-                        } else {
-                            childEdge->target.block->flag = 1;
-                        }
-                    }
-                    if ((childEdge = childEdge->next) != NULL)
-                        goto next_child_edge;
-                    break;
-                }
-
+                propagate_bit_to_preds(edge->target.block, bit);
             } else {
                 edge->target.block->flag = 1;
             }
         }
-        if ((edge = edge->next) != NULL)
-            goto next_edge;
-        break;
     }
-    return;
 }
 
 void mark_and_propagate_dlocal_reference_bits(void)
@@ -1153,7 +1110,7 @@ void mark_and_propagate_dlocal_reference_bits(void)
         item = current_opt_block->items;
         if (current_opt_block->count > 0 && item->type == ST_LABEL && (item->flags & 1) != 0) {
             for (i = 0; i < next_varnumber; i++)
-                SetBit_4bfa30(current_opt_block->referenceBarrierBits, i);
+                set_bit(current_opt_block->referenceBarrierBits, i);
         }
         for (i = current_opt_block->count; i > 0; i--) {
             if (item->type >= 4 && item->type <= 0xf && item->expr != NULL)
@@ -1165,7 +1122,7 @@ void mark_and_propagate_dlocal_reference_bits(void)
 
     for (i = 0; i < next_varnumber; i++) {
         for (node = opt_blocks; node != NULL; node = node->next) {
-            if (node->flag == 0 && TestBit_4bfa30(node->referenceBits, i))
+            if (node->flag == 0 && test_bit((const SInt16 *)node->referenceBits, i))
                 propagate_bit_to_preds(node, i);
         }
         for (node = opt_blocks; node != NULL; node = node->next)
@@ -1832,26 +1789,6 @@ static COptCSE *COpt_NewCSE(ENode *expr)
     cse->right = NULL;
     cse->uses = 1;
     return cse;
-}
-
-static void SetBit(SInt16 *vec, SInt16 bit)
-{
-    vec[bit >> 4] |= bit_masks[bit & 0xf];
-}
-
-static SInt16 TestBit(SInt16 *vec, SInt16 bit)
-{
-    return vec[bit >> 4] & bit_masks[bit & 0xf];
-}
-
-static void SetBit_4bfa30(SInt16 *vec, SInt16 bit)
-{
-    vec[bit >> 4] |= bit_masks[bit & 0xf];
-}
-
-static SInt16 TestBit_4bfa30(SInt16 *vec, SInt16 bit)
-{
-    return vec[bit >> 4] & bit_masks[bit & 0xf];
 }
 
 #pragma auto_inline off
