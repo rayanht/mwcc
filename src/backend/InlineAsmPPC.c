@@ -41,10 +41,10 @@ UInt8 inlineAsmPPCEnabled;
 /* Copies an asm statement and the instruction its expr slot holds. */
 typedef enum RegClass { RC_GPR = 0, RC_FPR = 1, RC_SPR = 2, RC_CRFIELD = 3, RC_CRFIELDBIT = 8, RC_VR = 9 } RegClass;
 
-static int InlineAsm_Register(EncodedOperand *operand);
+static inline int InlineAsm_Register(EncodedOperand *operand);
 
-static int InlineAsm_RegisterHi(EncodedOperand *operand);
-static void ReplaceArg(EncodedOperand *e, Object *b, Object *q);
+static inline int InlineAsm_RegisterHi(EncodedOperand *operand);
+static inline void ReplaceArg(EncodedOperand *e, Object *b, Object *q);
 
 static inline int recovery_inline_eval(int arg)
 {
@@ -2910,12 +2910,12 @@ PCodeInstruction *create_pcode_asm_instruction(ParsedAsmInstruction *ia, SInt32 
     return instr;
 }
 
-static int InlineAsm_RegisterHi(EncodedOperand *operand)
+static inline int InlineAsm_RegisterHi(EncodedOperand *operand)
 {
     return Registers_GetInfo(operand->target.object) ? Registers_GetInfo(operand->target.object)->regHi : 0;
 }
 
-static int InlineAsm_Register(EncodedOperand *operand)
+static inline int InlineAsm_Register(EncodedOperand *operand)
 {
     return Registers_GetInfo(operand->target.object) ? Registers_GetInfo(operand->target.object)->reg : 0;
 }
@@ -3319,7 +3319,7 @@ void InlineAsmPPC_ReplaceObjectReferenceArguments(Statement *owner, Object *obje
     }
 }
 
-static void ReplaceArg(EncodedOperand *e, Object *b, Object *q)
+static inline void ReplaceArg(EncodedOperand *e, Object *b, Object *q)
 {
     if (e->target.object == b)
         e->target.object = q;

@@ -18,7 +18,7 @@
 GList data_00583548;
 struct HashNameNode *assignment_operator_name;
 
-static SInt32 ElemSize(TypePointer *t);
+static inline SInt32 ElemSize(TypePointer *t);
 
 static void MangleQualifiers(UInt32 q);
 
@@ -711,7 +711,7 @@ void CMangler_MangleType(Type *type, UInt32 flags)
     }
 }
 
-static SInt32 ElemSize(TypePointer *t)
+static inline SInt32 ElemSize(TypePointer *t)
 {
     return t->target->size;
 }

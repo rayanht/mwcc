@@ -50,7 +50,7 @@ static inline Boolean class_browse_enabled(const DeclInfo *ctx)
     (f)->functype = (t);                                                                                               \
     (f)->qual = (q)
 
-static void AddShortArg(TypeFunc *tfunc)
+static inline void AddShortArg(TypeFunc *tfunc)
 {
     FuncArg *arg;
 
@@ -107,7 +107,7 @@ static inline Boolean CheckMemberType(Type *type)
         TYPE_STRUCT(dst)->stype = (sp);                                                                                \
     } while (0)
 
-static void attach_node(Type *p, HashNameNode *name)
+static inline void attach_node(Type *p, HashNameNode *name)
 {
     SInt32 b;
     TYPE_STRUCT(p)->name = name;
@@ -115,7 +115,7 @@ static void attach_node(Type *p, HashNameNode *name)
     CScope_DefineTypeTag((b ? cscope_root : cscope_current), name, p);
 }
 
-static Boolean HighIsNegative(SInt32 hi)
+static inline Boolean HighIsNegative(SInt32 hi)
 {
     return (hi & 0x80000000) != 0;
 }
@@ -147,17 +147,17 @@ static Type *UnsignedIntType(SInt32 size)
     return (Type *)&stunsignedlong;
 }
 
-static Boolean IsNegative(SInt32 hi)
+static inline Boolean IsNegative(SInt32 hi)
 {
     return (hi & (SInt32)0x80000000) != 0;
 }
 
-static Boolean IsZero(CInt64 *v)
+static inline Boolean IsZero(CInt64 *v)
 {
     return v->hi == 0 && v->lo == 0;
 }
 
-static TypeIntegral *FindSignedType(SInt32 size)
+static inline TypeIntegral *FindSignedType(SInt32 size)
 {
     if (stsignedchar.size == size)
         return &stsignedchar;
@@ -172,7 +172,7 @@ static TypeIntegral *FindSignedType(SInt32 size)
     return &stsignedlong;
 }
 
-static TypeIntegral *FindUnsignedType(SInt32 size)
+static inline TypeIntegral *FindUnsignedType(SInt32 size)
 {
     if (stunsignedchar.size == size)
         return &stunsignedchar;
@@ -202,7 +202,7 @@ static inline UInt8 CDecl_UseIntEnums(void)
 }
 
 /* A constructor's hidden argument: a signed short added in front of the parameter list (a leading void list ends). */
-static void CDecl_AddArgument(TypeFunc *tfunc)
+static inline void CDecl_AddArgument(TypeFunc *tfunc)
 {
     FuncArg *arg;
 
@@ -252,17 +252,17 @@ static UInt8 IsClassEnumOrRef(Type *p)
     return p->type == TYPECLASS || p->type == TYPEENUM;
 }
 
-static int IsSingleArg(FuncArg *p)
+static inline int IsSingleArg(FuncArg *p)
 {
     return p != &elipsis && p->next == NULL;
 }
 
-static int IsMethod(DeclInfo *a, char f)
+static inline int IsMethod(DeclInfo *a, char f)
 {
     return f && (((TypeMemberFunc *)a->thetype)->flags & FUNC_METHOD);
 }
 
-static int IsNonStatic(DeclInfo *a)
+static inline int IsNonStatic(DeclInfo *a)
 {
     return !((TypeMemberFunc *)a->thetype)->is_static;
 }
@@ -307,7 +307,7 @@ inline Boolean CheckReturnType(Type *ctype)
     return 1;
 }
 
-static Boolean checkClass(Type *type, Boolean result)
+static inline Boolean checkClass(Type *type, Boolean result)
 {
     if (!result)
         return 0;

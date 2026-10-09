@@ -76,9 +76,9 @@ static void NopOutBlock(IRONode *node);
 static IROLinear *NewLabelLinear(IROList *list);
 static IROLinear *NewTypedLinear(UInt8 type, IROList *list);
 static IROLinear *NewCondLinear(UInt8 type, IROList *list);
-static IROLinear *constantref(Type *ty, long n);
-static ENode *newconstant(Type *ty, long n);
-static void visit(IROLinear *p, IROList *b);
+static inline IROLinear *constantref(Type *ty, long n);
+static inline ENode *newconstant(Type *ty, long n);
+static inline void visit(IROLinear *p, IROList *b);
 
 static inline IROLinear *MakeSequenceNode(IROLinear *left, IROLinear *right, IROList *context, int storeRight)
 {
@@ -3408,7 +3408,7 @@ IROLinear *create_loop_ind_temporary(IROLoopInd *loop, long value, IROList *chai
     return assignment->u.diadic.left;
 }
 
-static IROLinear *constantref(Type *ty, long n)
+static inline IROLinear *constantref(Type *ty, long n)
 {
     IROLinear *p;
     ENode *c;
@@ -3421,7 +3421,7 @@ static IROLinear *constantref(Type *ty, long n)
     return p;
 }
 
-static ENode *newconstant(Type *ty, long n)
+static inline ENode *newconstant(Type *ty, long n)
 {
     ENode *p;
     long hi;
@@ -3433,7 +3433,7 @@ static ENode *newconstant(Type *ty, long n)
     return p;
 }
 
-static void visit(IROLinear *p, IROList *b)
+static inline void visit(IROLinear *p, IROList *b)
 {
     if (p->type == IROLinearOp1Arg) {
         IroUtil_CopyLinearToList(p->u.monadic, b);

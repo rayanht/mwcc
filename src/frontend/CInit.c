@@ -105,7 +105,7 @@ static Boolean CInit_IsDtorTemp(ENode *e)
     return e->type == ETEMP && e->data.temp.needs_dtor;
 }
 
-static Object *CreateTempObject(Type *type)
+static inline Object *CreateTempObject(Type *type)
 {
     DeclInfo s;
     Object *obj;
@@ -123,7 +123,7 @@ static Object *CreateTempObject(Type *type)
     return obj;
 }
 
-static void InitBuffer(SInt32 size)
+static inline void InitBuffer(SInt32 size)
 {
     cinit_state->bufferSize = size;
     if (size == 0)
@@ -148,7 +148,7 @@ static Boolean IsZeroed(UInt8 *buf, SInt32 size)
     return 1;
 }
 
-static Object *CreateObject(Type *type, SInt32 qual)
+static inline Object *CreateObject(Type *type, SInt32 qual)
 {
     DeclInfo rec;
     Object *obj;

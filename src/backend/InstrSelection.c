@@ -166,7 +166,7 @@ static inline int fn_004b2500_inline1(ENode *v1)
     return v2;
 }
 
-static void genOperand(ENode *n, Operand *op)
+static inline void genOperand(ENode *n, Operand *op)
 {
     (*(data_00560648[n->type]))(n, 0, 0, op);
     if (op->kind >= 9)
@@ -198,7 +198,7 @@ static inline int SwapOp(int op)
     return r;
 }
 
-static int IS_NonVoid(Type *t)
+static inline int IS_NonVoid(Type *t)
 {
     int r = 0;
     if (t->type != TYPEVOID)
@@ -206,7 +206,7 @@ static int IS_NonVoid(Type *t)
     return r;
 }
 
-static int IS_NotIgnored(ENode *e)
+static inline int IS_NotIgnored(ENode *e)
 {
     int r = 0;
     if (!e->ignored)
@@ -214,7 +214,7 @@ static int IS_NotIgnored(ENode *e)
     return r;
 }
 
-static void GenOperand(ENode *node, Operand *res)
+static inline void GenOperand(ENode *node, Operand *res)
 {
     data_00560648[node->type](node, 0, 0, res);
     if (res->kind != OpndType_FPR)
@@ -228,14 +228,14 @@ static inline void InstrSelection_004b5ae0_inline1(ENode *p0, Operand *p1)
     data_00560648[t1](p0, 0, 0, p1);
 }
 
-static void SelectOperand(ENode *n, Operand *op)
+static inline void SelectOperand(ENode *n, Operand *op)
 {
     data_00560648[n->type](n, 0, 0, op);
     if (op->kind >= 9 && op->kind != OpndType_GPR)
         Operands_ForceGPR(op, n->rtype, 0);
 }
 
-static void InstrSelection_EmitMask(Operand *op, ENode *operand, SInt16 cnt, SInt16 lo, SInt16 hi, SInt16 arg2,
+static inline void InstrSelection_EmitMask(Operand *op, ENode *operand, SInt16 cnt, SInt16 lo, SInt16 hi, SInt16 arg2,
                                     Operand *out)
 {
     SInt32 reg;
@@ -250,7 +250,7 @@ static void InstrSelection_EmitMask(Operand *op, ENode *operand, SInt16 cnt, SIn
     out->reg = reg;
 }
 
-static void unsigned_mod_pow2(ENode *left, int sh, short reg, Operand *result)
+static inline void unsigned_mod_pow2(ENode *left, int sh, short reg, Operand *result)
 {
     Operand op;
     int r;
@@ -302,7 +302,7 @@ static void shift_right_imm(ENode *left, short sh, Type *type, short reg, Operan
     result->reg = r;
 }
 
-static void signed_div_pow2(ENode *left, int sh, short reg, Operand *result)
+static inline void signed_div_pow2(ENode *left, int sh, short reg, Operand *result)
 {
     Operand op;
     int r;
@@ -342,7 +342,7 @@ static inline void ClearOps(Operand *a, Operand *b, Operand *c)
     memclrw(c, 0x16);
 }
 
-static SInt32 InstrSelection_GetVR0(ENode *node)
+static inline SInt32 InstrSelection_GetVR0(ENode *node)
 {
     if (Registers_GetInfo(node->data.objref) != NULL)
         return Registers_GetInfo(node->data.objref)->reg;

@@ -37,7 +37,7 @@ static inline PCodeBlockLink *code_00522b40_inline1(PCodeBlock *p0)
     return t5;
 }
 
-static void AddCount(PCodeBlock *item, SInt32 *count)
+static inline void AddCount(PCodeBlock *item, SInt32 *count)
 {
     data_00582c64[*count] = item;
     (*count)++;

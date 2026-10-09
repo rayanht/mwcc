@@ -99,7 +99,7 @@ static short Registers_FindFree(unsigned char *used, int first, void (*bind)(Obj
     return -1;
 }
 
-static unsigned int Registers_BuildColorMask(const unsigned char *used, int last_register)
+static inline unsigned int Registers_BuildColorMask(const unsigned char *used, int last_register)
 {
     unsigned int mask;
     int reg;
@@ -113,7 +113,7 @@ static unsigned int Registers_BuildColorMask(const unsigned char *used, int last
     return mask;
 }
 
-static int Registers_CountFree(const unsigned char *used)
+static inline int Registers_CountFree(const unsigned char *used)
 {
     int count;
     int reg;
@@ -127,7 +127,7 @@ static int Registers_CountFree(const unsigned char *used)
     return count;
 }
 
-static void Registers_MarkFPRUsed(SInt16 regnum)
+static inline void Registers_MarkFPRUsed(SInt16 regnum)
 {
     SInt32 avail;
     SInt32 start;

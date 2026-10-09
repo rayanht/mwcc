@@ -66,10 +66,10 @@ static UInt8 data_0057f6b4;
 static UInt8 data_0057f6b5;
 static char lbl_0057f6b6[10];
 
-static Statement *NewIRStat(UInt8 type);
-static void MarkUsedInputs(IROLinear *insn);
+static inline Statement *NewIRStat(UInt8 type);
+static inline void MarkUsedInputs(IROLinear *insn);
 static Statement *NewIrNode(UInt8 type, IROLinear *src);
-static SInt32 IrSize(SInt32 cls);
+static inline SInt32 IrSize(SInt32 cls);
 
 static inline void IRO_MarkExpressionOperands(IROLinear *expression)
 {
@@ -889,7 +889,7 @@ void fn_004305e0(ENode *e, Object **pp, CLabel **lab)
     CError_ASSERT(1328, e->rtype->type != TYPEVOID);
 }
 
-static Statement *NewIRStat(UInt8 type)
+static inline Statement *NewIRStat(UInt8 type)
 {
     Statement *n = (Statement *)lalloc(0x1a);
     memset(n, 0, 0x1a);
@@ -1791,7 +1791,7 @@ void add_local_usage_and_set_noregister(IROLinear *node, int weightIndex)
 }
 #pragma auto_inline reset
 
-static void MarkUsedInputs(IROLinear *insn)
+static inline void MarkUsedInputs(IROLinear *insn)
 {
     SInt32 i;
     for (i = 0; i < insn->u.funccall.argCount; i++)
@@ -1912,7 +1912,7 @@ void record_object_usage(void)
     IroVars_CheckTimedLongjmp();
 }
 
-static SInt32 IrSize(SInt32 cls)
+static inline SInt32 IrSize(SInt32 cls)
 {
     SInt32 n = cls;
     if (cls > 3)

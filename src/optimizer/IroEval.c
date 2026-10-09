@@ -44,7 +44,7 @@ static UInt8 data_005536f0[75] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 1, 0, 1
                                   1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
                                   0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
 
-static int IsAdjacent(CInt64 d);
+static inline int IsAdjacent(CInt64 d);
 
 void IroEval_ConvertCInt64ToType(CInt64 *value, Type *type)
 {
@@ -684,7 +684,7 @@ SInt32 mark_adjacent_compare_cases(CompareCase *cases, CompareCase *candidate, C
     return mark_adjacent_compare_cases(cases, candidate->link, minimum);
 }
 
-static int IsAdjacent(CInt64 d)
+static inline int IsAdjacent(CInt64 d)
 {
     if (CInt64_Equal(d, cint64_one) || CInt64_Equal(d, CInt64_Neg(cint64_one)))
         return 1;

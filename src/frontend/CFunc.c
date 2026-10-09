@@ -60,8 +60,8 @@ static struct CleanNode *data_00580890;
 static FuncArg *FindNameLink(FuncArg *list, HashNameNode *name);
 static void CondJump(ENode *expr, CLabel *truelabel, char a, char b);
 static unsigned char IsLabel(void);
-static struct Statement *CFunc_NewAssignmentStatement(void);
-static void CFunc_InitVariableInfo(Object *obj);
+static inline struct Statement *CFunc_NewAssignmentStatement(void);
+static inline void CFunc_InitVariableInfo(Object *obj);
 
 inline void RestoreBlock(void *block)
 {
@@ -2438,7 +2438,7 @@ void create_local_object_copy(Object *func, TypeIntegral *type, Type *type2, Boo
     stmt->expr = makediadicnode(create_objectnode(newfunc), expr, EASS);
 }
 
-static struct Statement *CFunc_NewAssignmentStatement(void)
+static inline struct Statement *CFunc_NewAssignmentStatement(void)
 {
     struct Statement *stmt;
     stmt = (struct Statement *)lalloc(sizeof(struct Statement));
@@ -2453,7 +2453,7 @@ static struct Statement *CFunc_NewAssignmentStatement(void)
     return stmt;
 }
 
-static void CFunc_InitVariableInfo(Object *obj)
+static inline void CFunc_InitVariableInfo(Object *obj)
 {
     obj->u.var.info = CodeGen_AllocateVarInfo();
     obj->u.var.info->func = cscope_currentfunc;

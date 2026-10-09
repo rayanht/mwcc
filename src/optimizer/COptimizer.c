@@ -48,10 +48,10 @@ static void COpt_IncDecTarget(ENode *expr);
 static COptCSE *COpt_ObjectRef(ENode *expr, COptCSE *cse);
 static COptCSE *COpt_FloatConst(ENode *expr);
 static COptCSE *COpt_IntConst(ENode *expr);
-static COptCSE *COpt_AddOccurrence(ENode *expr, COptCSE *cse);
+static inline COptCSE *COpt_AddOccurrence(ENode *expr, COptCSE *cse);
 static COptCSE *COpt_NewCSE(ENode *expr);
-static CLabel *COpt_Follow(Statement *self, CLabel *node);
-static void CheckStmts(Statement *p);
+static inline CLabel *COpt_Follow(Statement *self, CLabel *node);
+static inline void CheckStmts(Statement *p);
 
 static inline void set_statement_location(Statement *statement)
 {
@@ -1766,7 +1766,7 @@ static COptCSE *COpt_IntConst(ENode *expr)
 }
 
 /* Records an occurrence of a common subexpression: the expression and the CSE it computes. */
-static COptCSE *COpt_AddOccurrence(ENode *expr, COptCSE *cse)
+static inline COptCSE *COpt_AddOccurrence(ENode *expr, COptCSE *cse)
 {
     OptimizerOccurrence *occ = (OptimizerOccurrence *)oalloc(12);
 
@@ -1819,7 +1819,7 @@ void COptimizer_OptimizeStatementList(Object *unused, Statement *list)
     }
 }
 
-static CLabel *COpt_Follow(Statement *self, CLabel *node)
+static inline CLabel *COpt_Follow(Statement *self, CLabel *node)
 {
     Statement *q;
 
@@ -1836,7 +1836,7 @@ static CLabel *COpt_Follow(Statement *self, CLabel *node)
     return node;
 }
 
-static void CheckStmts(Statement *p)
+static inline void CheckStmts(Statement *p)
 {
     if (p) {
         do {

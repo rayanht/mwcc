@@ -86,42 +86,42 @@ static SInt32 data_00581c2a;
 enum { CPrecSerializedEntryBytes = 10 };
 
 static CPrecWrittenEntry *CPrec_Find(SInt32 id);
-static SInt32 hash_cprec_bytes(SInt32 value);
+static inline SInt32 hash_cprec_bytes(SInt32 value);
 static void CPrec_AppendString(const char *s);
 static void CPrec_AppendWord16(SInt16 v);
 static void CPrec_AppendWord32(SInt32 v);
 static CPrecWrittenEntry *CPrec_FindRecord(const void *key);
-static UInt32 CPrec_HashPtr(const void *key);
-static void append_data_and_count_bytes(void *data, SInt32 len);
-static void *CPrec_AppendAlign_004de900(void);
-static void insert_written_entry_by_key(void *key, void *value);
-static SInt32 hash_value(SInt32 value);
-static void append_precompiled_data(TypeBitfield *data, SInt32 len);
-static void *pad_precompiled_buffer(void);
+static inline UInt32 CPrec_HashPtr(const void *key);
+static inline void append_data_and_count_bytes(void *data, SInt32 len);
+static inline void *CPrec_AppendAlign_004de900(void);
+static inline void insert_written_entry_by_key(void *key, void *value);
+static inline SInt32 hash_value(SInt32 value);
+static inline void append_precompiled_data(TypeBitfield *data, SInt32 len);
+static inline void *pad_precompiled_buffer(void);
 static void prepend_written_entry_to_hash_bucket(TypeBitfield *key, TypeBitfield *value);
-static SInt32 hash_value_bytes(SInt32 value);
-static CPrecWrittenEntry *findentry(void *key);
-static UInt32 align_counter_with_zero_padding(void);
-static UInt32 hashptr(void *p);
-static int CPrec_004dbc00_part1(int p);
-static void PrecompAppend(ENodeList *data, SInt32 size);
-static SInt32 PrecompBegin(void);
-static UInt32 CPrec_004daf90_Align(void);
-static void patch_name_reference(UInt32 off, HashNameNode *nm);
-static void append_data_and_count_size(void *d, SInt32 size);
-static SInt32 append_alignment_padding(void);
-static CPrecWrittenEntry *find_written_entry(Object *x);
-static UInt32 CPrec_HashNew(void *p);
-static UInt32 hash_pointer(void *pv);
-static int fn_004da6c0_part1(int p);
+static inline SInt32 hash_value_bytes(SInt32 value);
+static inline CPrecWrittenEntry *findentry(void *key);
+static inline UInt32 align_counter_with_zero_padding(void);
+static inline UInt32 hashptr(void *p);
+static inline int CPrec_004dbc00_part1(int p);
+static inline void PrecompAppend(ENodeList *data, SInt32 size);
+static inline SInt32 PrecompBegin(void);
+static inline UInt32 CPrec_004daf90_Align(void);
+static inline void patch_name_reference(UInt32 off, HashNameNode *nm);
+static inline void append_data_and_count_size(void *d, SInt32 size);
+static inline SInt32 append_alignment_padding(void);
+static inline CPrecWrittenEntry *find_written_entry(Object *x);
+static inline UInt32 CPrec_HashNew(void *p);
+static inline UInt32 hash_pointer(void *pv);
+static inline int fn_004da6c0_part1(int p);
 static ObjNameSpace *CPrec_GetObjNameSpacePatch(ObjNameSpace *obj);
 static NameSpaceList *CPrec_GetNSUsingPatch(NameSpaceList *u);
-static void putlong(SInt32 value);
+static inline void putlong(SInt32 value);
 static void put(UInt8 c);
-static SInt16 CPrec_Flush(void);
-static void read_precompiled_header_data(SInt32 offset, void *buffer, SInt32 size);
+static inline SInt16 CPrec_Flush(void);
+static inline void read_precompiled_header_data(SInt32 offset, void *buffer, SInt32 size);
 static void read_precompiled_header_data_at_offset(SInt32 offset, void *buffer, SInt32 size);
-static void CPrec_ReadData(SInt32 offset, void *buffer, SInt32 size);
+static inline void CPrec_ReadData(SInt32 offset, void *buffer, SInt32 size);
 
 static inline SInt16 align_output(SInt16 handle, SInt32 *position)
 {
@@ -1659,7 +1659,7 @@ static CPrecWrittenEntry *CPrec_Find(SInt32 id)
     return NULL;
 }
 
-static SInt32 hash_cprec_bytes(SInt32 value)
+static inline SInt32 hash_cprec_bytes(SInt32 value)
 {
     CPrecBytes b;
     b.value = value;
@@ -4659,7 +4659,7 @@ static CPrecWrittenEntry *CPrec_FindRecord(const void *key)
     return NULL;
 }
 
-static UInt32 CPrec_HashPtr(const void *key)
+static inline UInt32 CPrec_HashPtr(const void *key)
 {
     union {
         UInt8 b[4];
@@ -4669,14 +4669,14 @@ static UInt32 CPrec_HashPtr(const void *key)
     return ((UInt32)key + u.b[0] + u.b[1] + u.b[2] + u.b[3]) & 0x3fff;
 }
 
-static void append_data_and_count_bytes(void *data, SInt32 len)
+static inline void append_data_and_count_bytes(void *data, SInt32 len)
 {
     if (data_00581c28)
         AppendGListData(&precompiled_buffer, data, len);
     prec_position += len;
 }
 
-static void *CPrec_AppendAlign_004de900(void)
+static inline void *CPrec_AppendAlign_004de900(void)
 {
     if (data_00581c28) {
         while (prec_position & 3) {
@@ -4687,7 +4687,7 @@ static void *CPrec_AppendAlign_004de900(void)
     return (void *)prec_position;
 }
 
-static void insert_written_entry_by_key(void *key, void *value)
+static inline void insert_written_entry_by_key(void *key, void *value)
 {
     CPrecWrittenEntry **bucket;
     CPrecWrittenEntry *n;
@@ -4708,21 +4708,21 @@ static void insert_written_entry_by_key(void *key, void *value)
 /* append byte */
 /* append data */
 
-static SInt32 hash_value(SInt32 value)
+static inline SInt32 hash_value(SInt32 value)
 {
     CPrecBytes b;
     b.value = value;
     return (b.bytes[0] + value + b.bytes[1] + b.bytes[2] + b.bytes[3]) & 0x3fff;
 }
 
-static void append_precompiled_data(TypeBitfield *data, SInt32 len)
+static inline void append_precompiled_data(TypeBitfield *data, SInt32 len)
 {
     if (data_00581c28)
         AppendGListData(&precompiled_buffer, data, len);
     prec_position += len;
 }
 
-static void *pad_precompiled_buffer(void)
+static inline void *pad_precompiled_buffer(void)
 {
     if (data_00581c28) {
         while (prec_position & 3) {
@@ -4754,7 +4754,7 @@ static void prepend_written_entry_to_hash_bucket(TypeBitfield *key, TypeBitfield
 /* append byte */
 /* append data */
 
-static SInt32 hash_value_bytes(SInt32 value)
+static inline SInt32 hash_value_bytes(SInt32 value)
 {
     CPrecBytes b;
     b.value = value;
@@ -4769,7 +4769,7 @@ static void CPrec_MarkSlot(HashNameNode **dst, HashNameNode *src)
     }
 }
 
-static CPrecWrittenEntry *findentry(void *key)
+static inline CPrecWrittenEntry *findentry(void *key)
 {
     union {
         void *pp;
@@ -4790,7 +4790,7 @@ static CPrecWrittenEntry *findentry(void *key)
     return e;
 }
 
-static UInt32 align_counter_with_zero_padding(void)
+static inline UInt32 align_counter_with_zero_padding(void)
 {
     if (data_00581c28 != 0) {
         for (; (prec_position & 3) != 0; prec_position++)
@@ -4799,7 +4799,7 @@ static UInt32 align_counter_with_zero_padding(void)
     return prec_position;
 }
 
-static UInt32 hashptr(void *p)
+static inline UInt32 hashptr(void *p)
 {
     union {
         void *pp;
@@ -4809,7 +4809,7 @@ static UInt32 hashptr(void *p)
     return (u.b[0] + (UInt32)p + u.b[1] + u.b[2] + u.b[3]) & 0x3fff;
 }
 
-static int CPrec_004dbc00_part1(int p)
+static inline int CPrec_004dbc00_part1(int p)
 {
     union {
         int w;
@@ -4820,7 +4820,7 @@ static int CPrec_004dbc00_part1(int p)
 }
 
 /* Append raw bytes to the stream. */
-static void PrecompAppend(ENodeList *data, SInt32 size)
+static inline void PrecompAppend(ENodeList *data, SInt32 size)
 {
     if (data_00581c28)
         AppendGListData(&precompiled_buffer, data, size);
@@ -4828,7 +4828,7 @@ static void PrecompAppend(ENodeList *data, SInt32 size)
 }
 
 /* Align the stream to a 4-byte boundary and return the new position. */
-static SInt32 PrecompBegin(void)
+static inline SInt32 PrecompBegin(void)
 {
     if (data_00581c28) {
         while (prec_position & 3) {
@@ -4839,7 +4839,7 @@ static SInt32 PrecompBegin(void)
     return prec_position;
 }
 
-static UInt32 CPrec_004daf90_Align(void)
+static inline UInt32 CPrec_004daf90_Align(void)
 {
     if (data_00581c28 != 0) {
         while ((prec_position & 3) != 0) {
@@ -4850,20 +4850,20 @@ static UInt32 CPrec_004daf90_Align(void)
     return prec_position;
 }
 
-static void patch_name_reference(UInt32 off, HashNameNode *nm)
+static inline void patch_name_reference(UInt32 off, HashNameNode *nm)
 {
     nm->id = 1;
     patch_object_reference(off, nm);
 }
 
-static void append_data_and_count_size(void *d, SInt32 size)
+static inline void append_data_and_count_size(void *d, SInt32 size)
 {
     if (data_00581c28 != 0)
         AppendGListData(&precompiled_buffer, d, size);
     prec_position += size;
 }
 
-static SInt32 append_alignment_padding(void)
+static inline SInt32 append_alignment_padding(void)
 {
     SInt32 p;
     if (data_00581c28 != 0) {
@@ -4876,7 +4876,7 @@ static SInt32 append_alignment_padding(void)
     return p;
 }
 
-static CPrecWrittenEntry *find_written_entry(Object *x)
+static inline CPrecWrittenEntry *find_written_entry(Object *x)
 {
     CPrecWrittenEntry *e;
     for (e = written_entry_buckets[hash_pointer(x)]; e != NULL; e = e->next) {
@@ -4886,19 +4886,19 @@ static CPrecWrittenEntry *find_written_entry(Object *x)
     return NULL;
 }
 
-static UInt32 CPrec_HashNew(void *p)
+static inline UInt32 CPrec_HashNew(void *p)
 {
     return hash_pointer(p);
 }
 
-static UInt32 hash_pointer(void *pv)
+static inline UInt32 hash_pointer(void *pv)
 {
     CPrecKey u;
     u.v = (UInt32)pv;
     return ((UInt32)u.b[0] + (UInt32)pv + (UInt32)u.b[1] + (UInt32)u.b[2] + (UInt32)u.b[3]) & 0x3fff;
 }
 
-static int fn_004da6c0_part1(int p)
+static inline int fn_004da6c0_part1(int p)
 {
     union {
         int w;
@@ -5022,7 +5022,7 @@ SInt32 write_serialized_bucket_offsets(void)
     return count;
 }
 
-static void putlong(SInt32 value)
+static inline void putlong(SInt32 value)
 {
     BVWord u;
     u.l = value;
@@ -5232,7 +5232,7 @@ SInt16 serialize_precompiled_data(Boolean writePositions)
     return 0;
 }
 
-static SInt16 CPrec_Flush(void)
+static inline SInt16 CPrec_Flush(void)
 {
     if (data_00581c28 != 0) {
         SInt16 r;
@@ -5496,7 +5496,7 @@ void apply_relocations(void)
     }
 }
 
-static void read_precompiled_header_data(SInt32 offset, void *buffer, SInt32 size)
+static inline void read_precompiled_header_data(SInt32 offset, void *buffer, SInt32 size)
 {
     if (COS_FileSetPos(precompiled_file, offset) != 0 || COS_FileRead(precompiled_file, buffer, size) != 0)
         CError_FatalError(ERR_ILLEGAL_DATA_PRECOMPILED_HEADER);
@@ -5577,7 +5577,7 @@ void patch_buffered_token_locations(void)
     }
 }
 
-static void CPrec_ReadData(SInt32 offset, void *buffer, SInt32 size)
+static inline void CPrec_ReadData(SInt32 offset, void *buffer, SInt32 size)
 {
     if (COS_FileSetPos(precompiled_file, offset) != 0 || COS_FileRead(precompiled_file, buffer, size) != 0)
         CError_FatalError(ERR_ILLEGAL_DATA_PRECOMPILED_HEADER);

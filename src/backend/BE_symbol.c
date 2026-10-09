@@ -31,7 +31,7 @@ static inline void BE_symbol_FindFunction(HashNameNode *obj, SInt16 kind, BE_Sym
     *result = NULL;
 }
 
-static BE_SymNode *FindFuncNode(HashNameNode *func, int kind)
+static inline BE_SymNode *FindFuncNode(HashNameNode *func, int kind)
 {
     BE_SymNode *p;
     for (p = be_symbol_list; p != NULL; p = p->next) {
@@ -41,7 +41,7 @@ static BE_SymNode *FindFuncNode(HashNameNode *func, int kind)
     return NULL;
 }
 
-static BE_SymNode *FindSym(int obj, int kind)
+static inline BE_SymNode *FindSym(int obj, int kind)
 {
     BE_SymNode *p;
     for (p = be_symbol_list; p != NULL; p = p->next) {

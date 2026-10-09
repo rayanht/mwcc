@@ -27,7 +27,7 @@ static struct HeapMem heap_pool;
 static void (*data_0057fdd4)();
 static SInt16 data_0057fdd8;
 
-static unsigned short swap16(unsigned short x)
+static inline unsigned short swap16(unsigned short x)
 {
     union {
         unsigned short w;
@@ -39,7 +39,7 @@ static unsigned short swap16(unsigned short x)
     return out.w;
 }
 
-static unsigned int Swap32(unsigned int x)
+static inline unsigned int Swap32(unsigned int x)
 {
     union {
         unsigned int w;

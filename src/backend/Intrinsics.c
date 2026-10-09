@@ -2550,10 +2550,10 @@ static short intrinsic_opcodes[313] = {
 
 static TypePointer stchar_ptr = {TYPEPOINTER, 4, TYPE(&stchar)};
 
-static int OpIndex(UInt16 token);
+static inline int OpIndex(UInt16 token);
 static void *registration_find(const char *name);
 static void GenVR(UInt8 *node, Operand *op);
-static void GenFPR(UInt8 *node, Operand *op);
+static inline void GenFPR(UInt8 *node, Operand *op);
 static void GenGPR(UInt8 *node, Operand *op);
 
 static inline void Intrinsics_00486bb0_inline1(ENode *p0, Operand *p1)
@@ -2811,7 +2811,7 @@ Type *find_matching_op_result(UInt16 token, ENodeList *args, HashNameNode *name)
     return entry->result;
 }
 
-static int OpIndex(UInt16 token)
+static inline int OpIndex(UInt16 token)
 {
     return token - 0x2a;
 }
@@ -5905,7 +5905,7 @@ static void GenVR(UInt8 *node, Operand *op)
         Operands_ForceVR(op, ((ENode *)node)->rtype, 0);
 }
 
-static void GenFPR(UInt8 *node, Operand *op)
+static inline void GenFPR(UInt8 *node, Operand *op)
 {
     data_00560648[*node](node, 0, 0, op);
     if (op->kind != '\x05')

@@ -26,7 +26,7 @@ static int *load_index_entry_counts;
 static int *block_entry_start;
 static unsigned char data_00582c9c;
 
-static void ClearRec(struct AggregateRecord *r, long n);
+static inline void ClearRec(struct AggregateRecord *r, long n);
 static void CheckUses(long classIndex, VectorArrayUse *entries, PCodeInstruction *classType,
                       struct AggregateRecord *list);
 static struct AggregateRecord *FindCandidate(struct AggregateRecord *list, Object *object);
@@ -417,7 +417,7 @@ int fn_0052d1e0(int valueIndex, int entryIndex)
 }
 #pragma auto_inline reset
 
-static void ClearRec(struct AggregateRecord *r, long n)
+static inline void ClearRec(struct AggregateRecord *r, long n)
 {
     int i;
     ((char *)r)[8] = (char)(((char *)r)[8] & 254);

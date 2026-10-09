@@ -34,9 +34,9 @@ short gVRCoalesceFirst;
 static UInt32 *gInterferenceBits;
 static short *gCoalescedRegisters;
 
-static void SC_Interfere(unsigned int a, unsigned int b);
+static inline void SC_Interfere(unsigned int a, unsigned int b);
 
-static const char *SpillCode_RegisterFormat(int reg_class)
+static inline const char *SpillCode_RegisterFormat(int reg_class)
 {
     if (reg_class == 0) {
         return " r%ld";
@@ -47,27 +47,27 @@ static const char *SpillCode_RegisterFormat(int reg_class)
     return " vr%ld";
 }
 
-static void SpillCode_ClearLive(UInt32 *live, short reg)
+static inline void SpillCode_ClearLive(UInt32 *live, short reg)
 {
     live[reg >> 5] &= ~(1U << (reg & 31));
 }
 
-static int SpillCode_IsLive(UInt32 *live, short reg)
+static inline int SpillCode_IsLive(UInt32 *live, short reg)
 {
     return (live[reg >> 5] & (1U << (reg & 31))) != 0;
 }
 
-static void SpillCode_SetLive(UInt32 *live, short reg)
+static inline void SpillCode_SetLive(UInt32 *live, short reg)
 {
     live[reg >> 5] |= 1U << (reg & 31);
 }
 
-static int SpillCode_WordCount(int register_count)
+static inline int SpillCode_WordCount(int register_count)
 {
     return (register_count + 31) >> 5;
 }
 
-static void SpillCode_CopyBits(UInt32 *destination, const UInt32 *source, int bit_count)
+static inline void SpillCode_CopyBits(UInt32 *destination, const UInt32 *source, int bit_count)
 {
     int word;
 
@@ -76,7 +76,7 @@ static void SpillCode_CopyBits(UInt32 *destination, const UInt32 *source, int bi
     }
 }
 
-static void SpillCode_OrBits(UInt32 *destination, const UInt32 *source, int bit_count)
+static inline void SpillCode_OrBits(UInt32 *destination, const UInt32 *source, int bit_count)
 {
     int word;
 
@@ -97,20 +97,20 @@ static unsigned int *SpillCode_AllocateEmptyBits(int register_count)
     return bits;
 }
 
-static void SpillCode_AddBlockUse(PCodeBlock *block, short reg)
+static inline void SpillCode_AddBlockUse(PCodeBlock *block, short reg)
 {
     if (block != NULL) {
         SpillCode_SetLive(gPCodeBlockLiveness[block->index].use, reg);
     }
 }
 
-static int SpillCode_IsDirectGPRScalar(const Type *type)
+static inline int SpillCode_IsDirectGPRScalar(const Type *type)
 {
     return type->type == TYPEINT || type->type == TYPEENUM || type->type == TYPEPOINTER ||
            (type->type == TYPEMEMBERPOINTER && type->size == 4);
 }
 
-static void SpillCode_SeedGPRReturn(Type *type)
+static inline void SpillCode_SeedGPRReturn(Type *type)
 {
     if (SpillCode_IsDirectGPRScalar(type)) {
         SpillCode_AddBlockUse(gReturnBlock, 3);
@@ -159,7 +159,7 @@ static int SpillCode_DefinitionBlocksRemoval(PCodeOperand *operand, int reg_clas
     return operand->kind == PCOp_SPR || operand->kind == PCOp_CRFIELD;
 }
 
-static unsigned int SpillCode_MatrixIndex(int first, int second)
+static inline unsigned int SpillCode_MatrixIndex(int first, int second)
 {
     unsigned int index;
     int larger;
@@ -179,7 +179,7 @@ static unsigned int SpillCode_MatrixIndex(int first, int second)
     return index;
 }
 
-static int SpillCode_Interferes(int first, int second)
+static inline int SpillCode_Interferes(int first, int second)
 {
     unsigned int index;
 
@@ -190,7 +190,7 @@ static int SpillCode_Interferes(int first, int second)
     return (gInterferenceBits[index >> 5] & (1U << (index & 31))) != 0;
 }
 
-static void SpillCode_SetMatrixBit(int first, int second)
+static inline void SpillCode_SetMatrixBit(int first, int second)
 {
     unsigned int index;
 
@@ -198,7 +198,7 @@ static void SpillCode_SetMatrixBit(int first, int second)
     gInterferenceBits[index >> 5] |= 1U << (index & 31);
 }
 
-static void SpillCode_SetInterference(int first, int second)
+static inline void SpillCode_SetInterference(int first, int second)
 {
     if (first != second) {
         SpillCode_SetMatrixBit(first, second);
@@ -228,7 +228,7 @@ static void SpillCode_PrecolorPhysicalRegisters(void)
     }
 }
 
-static int SpillCode_CopySourceExcluded(PCodeInstruction *instruction, int reg)
+static inline int SpillCode_CopySourceExcluded(PCodeInstruction *instruction, int reg)
 {
     return (instruction->flags & PCodeInstruction_CopySourceExclusion) != 0 &&
            instruction->operandData.operands[1].value.reg == reg;
@@ -273,7 +273,7 @@ static void SpillCode_AddUses(PCodeInstruction *instruction, int reg_class, UInt
     }
 }
 
-static void SpillCode_MarkConstrainedRegister(short reg)
+static inline void SpillCode_MarkConstrainedRegister(short reg)
 {
     if (reg >= 32) {
         SpillCode_SetMatrixBit(reg, reg);
@@ -366,7 +366,7 @@ static short SpillCode_CopyOpcode(int reg_class)
     return 0x18e;
 }
 
-static int SpillCode_CoalesceEligible(int reg_class, short reg)
+static inline int SpillCode_CoalesceEligible(int reg_class, short reg)
 {
     if (reg_class == 0) {
         return reg >= gGPRCoalesceFirst && reg <= gGPRCoalesceLast;
@@ -451,7 +451,7 @@ static SInt16 Coalesce_Find(SInt16 r)
     return r;
 }
 
-static void Coalesce_FindNext(PCodeOperand *sig)
+static inline void Coalesce_FindNext(PCodeOperand *sig)
 {
     SInt16 r;
 
@@ -463,7 +463,7 @@ static void Coalesce_FindNext(PCodeOperand *sig)
     }
 }
 
-static int Coalesce_InRange(SInt16 r, SInt32 regclass)
+static inline int Coalesce_InRange(SInt16 r, SInt32 regclass)
 {
     if (regclass == 0)
         return r >= gGPRCoalesceFirst && r <= gGPRCoalesceLast;
@@ -474,18 +474,18 @@ static int Coalesce_InRange(SInt16 r, SInt32 regclass)
 
 #define SC_Clear(n, bits) ((bits)[(SInt16)(n) >> 5] &= ~(1 << ((UInt32)(SInt16)(n) & 31)))
 #define SC_Test(n, bits) ((bits)[(SInt16)(n) >> 5] & (1 << ((UInt32)(SInt16)(n) & 31)))
-static void SC_Add(SInt16 n, UInt32 *bits)
+static inline void SC_Add(SInt16 n, UInt32 *bits)
 {
     int v = n;
     bits[v >> 5] |= 1 << ((UInt32)v & 31);
 }
 
-static void SC_SetBit(UInt32 n)
+static inline void SC_SetBit(UInt32 n)
 {
     gInterferenceBits[n >> 5] |= 1 << (n & 0x1f);
 }
 
-static void SC_Interfere(unsigned int a, unsigned int b)
+static inline void SC_Interfere(unsigned int a, unsigned int b)
 {
     if (a < b)
         SC_SetBit(b * b / 2 + a);

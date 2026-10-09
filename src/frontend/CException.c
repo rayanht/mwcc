@@ -101,7 +101,7 @@ static inline Object *findTemporaryObject(SInt32 uniqueID, ENode *temporaryExpr)
     return cached->obj;
 }
 
-static TemporaryObject *CException_NewTypeNode(void)
+static inline TemporaryObject *CException_NewTypeNode(void)
 {
     TemporaryObject *t = lalloc(sizeof(TemporaryObject));
     t->next = temporary_object_list;
@@ -109,7 +109,7 @@ static TemporaryObject *CException_NewTypeNode(void)
     return t;
 }
 
-static ExceptionAction *CException_NewStmtNode(void)
+static inline ExceptionAction *CException_NewStmtNode(void)
 {
     ExceptionAction *s = lalloc(sizeof(ExceptionAction));
     s->next = currentDobjstack;
@@ -117,7 +117,7 @@ static ExceptionAction *CException_NewStmtNode(void)
     return s;
 }
 
-static ExceptionAction *CException_CopyStmtNode(void)
+static inline ExceptionAction *CException_CopyStmtNode(void)
 {
     ExceptionAction *s = lalloc(sizeof(ExceptionAction));
     *s = *currentDobjstack;

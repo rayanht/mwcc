@@ -96,7 +96,7 @@ static char *data_00560cb4[75] = {
     "EVECTOR128CONST",
 };
 
-static void PrintTypeLine(Type *type);
+static inline void PrintTypeLine(Type *type);
 static void PrintType(Type *type);
 static void WriteString(void *file, char *str);
 
@@ -330,7 +330,7 @@ void print_enode_tree(ENode *node, int depth)
     }
 }
 
-static void PrintTypeLine(Type *type)
+static inline void PrintTypeLine(Type *type)
 {
     char buf[256];
     format_type(type, buf);

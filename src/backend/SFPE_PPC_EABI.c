@@ -38,7 +38,7 @@ typedef enum ConversionTypeKind {
     ConversionTypeKind11 = TYPEPOINTER
 } ConversionTypeKind;
 
-static void lift_result(Operand *op, int kind)
+static inline void lift_result(Operand *op, int kind)
 {
     op->kind = kind;
     op->reg = gUsedVirtualRegistersGPR;
@@ -63,7 +63,7 @@ static PCodeInstruction *first_instr(struct PCodeLabel *q)
 
 enum { Register3 = 3, Register4 = 4 };
 
-static void LoadFloatArg(int reg)
+static inline void LoadFloatArg(int reg)
 {
     union {
         float f;
@@ -76,12 +76,12 @@ static void LoadFloatArg(int reg)
         PCodeUtilities_EmitInstruction(PC_MR, 4, reg);
 }
 
-static void LoadFloatArgGPR(int reg)
+static inline void LoadFloatArgGPR(int reg)
 {
     LoadFloatArg(reg);
 }
 
-static void LoadDoubleArg(int reg1, int reg2)
+static inline void LoadDoubleArg(int reg1, int reg2)
 {
     union {
         Float f;

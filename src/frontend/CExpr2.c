@@ -58,36 +58,36 @@ static Type *data_00580754;
 #define STDOUBLE ((Type *)&stdouble)
 #define MAX_COST 200
 
-static ENode *MakeMonadic(ENode *inner);
-static ENode *MakeDiadic(ENode *left, ENode *right);
-static ENode *mkTemp(Type *t);
-static ENode *mkInd(ENode *src);
-static ENode *make_intconst(Type *type, SInt32 value);
-static ENode *mkTemp_472ae0(Type *t);
-static ENode *create_objref(Object *obj);
-static ENode *make_null_pointer_const(void);
-static ENode *mkmono(ENode *inner, UInt8 ty);
-static ENode *mkobjref(Object *obj);
-static ENode *mkptrconst(void);
-static ENode *mknode0(Type *type);
-static ENode *wrap_call(ENode *p);
-static ENode *make_objref_node(Object *obj);
-static ENode *intconstnode_setlong(Type *type, SInt32 value);
-static ENode *NewIntConst(Type *type, SInt32 value);
-static ENode *mkconstnode(Type *type);
+static inline ENode *MakeMonadic(ENode *inner);
+static inline ENode *MakeDiadic(ENode *left, ENode *right);
+static inline ENode *mkTemp(Type *t);
+static inline ENode *mkInd(ENode *src);
+static inline ENode *make_intconst(Type *type, SInt32 value);
+static inline ENode *mkTemp_472ae0(Type *t);
+static inline ENode *create_objref(Object *obj);
+static inline ENode *make_null_pointer_const(void);
+static inline ENode *mkmono(ENode *inner, UInt8 ty);
+static inline ENode *mkobjref(Object *obj);
+static inline ENode *mkptrconst(void);
+static inline ENode *mknode0(Type *type);
+static inline ENode *wrap_call(ENode *p);
+static inline ENode *make_objref_node(Object *obj);
+static inline ENode *intconstnode_setlong(Type *type, SInt32 value);
+static inline ENode *NewIntConst(Type *type, SInt32 value);
+static inline ENode *mkconstnode(Type *type);
 static void InitLookup(ConversionIterator *lu, TypeClass *tclass);
-static ENode *make_objref_node_470460(Object *obj);
-static ENode *intconstnode_setlong_470460(Type *type, SInt32 value);
-static ENode *mkintconst(Type *ty);
-static ENode *CExpr2_0046fde0_inline1(ENode *expr);
-static ENode *make_monadic_46eb90(ENode *inner);
-static ENode *make_voidptr(void);
-static ENode *wrap_child(ENode *a);
-static ENode *mk_intconst_flat(Type *type, SInt32 value);
-static ENode *mk_zero(Type *type);
-static ENode *mk_intconst(Type *type, SInt32 value);
-static ENode *mk_intconst0(Type *type);
-static ENode *make_int_node(Type *type, SInt32 value);
+static inline ENode *make_objref_node_470460(Object *obj);
+static inline ENode *intconstnode_setlong_470460(Type *type, SInt32 value);
+static inline ENode *mkintconst(Type *ty);
+static inline ENode *CExpr2_0046fde0_inline1(ENode *expr);
+static inline ENode *make_monadic_46eb90(ENode *inner);
+static inline ENode *make_voidptr(void);
+static inline ENode *wrap_child(ENode *a);
+static inline ENode *mk_intconst_flat(Type *type, SInt32 value);
+static inline ENode *mk_zero(Type *type);
+static inline ENode *mk_intconst(Type *type, SInt32 value);
+static inline ENode *mk_intconst0(Type *type);
+static inline ENode *make_int_node(Type *type, SInt32 value);
 
 static inline int register_value(int flag)
 {
@@ -754,7 +754,7 @@ ENode *makecommaexpression(ENode *a, ENode *b)
     return n;
 }
 
-static ENode *MakeMonadic(ENode *inner)
+static inline ENode *MakeMonadic(ENode *inner)
 {
     ENode *n = (ENode *)lalloc(sizeof(ENode));
 
@@ -768,7 +768,7 @@ static ENode *MakeMonadic(ENode *inner)
     return n;
 }
 
-static ENode *MakeDiadic(ENode *left, ENode *right)
+static inline ENode *MakeDiadic(ENode *left, ENode *right)
 {
     ENode *n = (ENode *)lalloc(sizeof(ENode));
 
@@ -935,7 +935,7 @@ ENode *CExpr_GetETEMPCopy(ENode *expr)
     return result;
 }
 
-static ENode *mkTemp(Type *t)
+static inline ENode *mkTemp(Type *t)
 {
     ENode *n = (ENode *)lalloc(sizeof(ENode));
     n->type = ETEMP;
@@ -948,7 +948,7 @@ static ENode *mkTemp(Type *t)
     return n;
 }
 
-static ENode *mkInd(ENode *src)
+static inline ENode *mkInd(ENode *src)
 {
     ENode *n = (ENode *)lalloc(sizeof(ENode));
     n->type = EINDIRECT;
@@ -1172,7 +1172,7 @@ ENode *CExpr_TempModifyExpr(ENode *expr)
     return makediadicnode(sequence, resultRef, ECOMMA);
 }
 
-static ENode *make_intconst(Type *type, SInt32 value)
+static inline ENode *make_intconst(Type *type, SInt32 value)
 {
     ENode *n = (ENode *)lalloc(sizeof(ENode));
     memclrw(n, sizeof(ENode));
@@ -1359,7 +1359,7 @@ ENode *CExpr_LValue(ENode *expr, Boolean checkConst, Boolean reportError)
     return expr;
 }
 
-static ENode *mkTemp_472ae0(Type *t)
+static inline ENode *mkTemp_472ae0(Type *t)
 {
     ENode *n = (ENode *)lalloc(sizeof(ENode));
     n->type = ETEMP;
@@ -1415,7 +1415,7 @@ ENode *create_objectrefnode(Object *obj)
     return val;
 }
 
-static ENode *create_objref(Object *obj)
+static inline ENode *create_objref(Object *obj)
 {
     ENode *node;
     node = (ENode *)lalloc(sizeof(ENode));
@@ -1429,7 +1429,7 @@ static ENode *create_objref(Object *obj)
     return node;
 }
 
-static ENode *make_null_pointer_const(void)
+static inline ENode *make_null_pointer_const(void)
 {
     ENode *node;
     CInt64 *ip;
@@ -1459,7 +1459,7 @@ ENode *create_objectnode2(Object *obj)
     return mkmono(val, EINDIRECT);
 }
 
-static ENode *mkmono(ENode *inner, UInt8 ty)
+static inline ENode *mkmono(ENode *inner, UInt8 ty)
 {
     ENode *node;
     node = (ENode *)lalloc(sizeof(ENode));
@@ -1474,7 +1474,7 @@ static ENode *mkmono(ENode *inner, UInt8 ty)
     return node;
 }
 
-static ENode *mkobjref(Object *obj)
+static inline ENode *mkobjref(Object *obj)
 {
     ENode *node;
     node = (ENode *)lalloc(sizeof(ENode));
@@ -1488,7 +1488,7 @@ static ENode *mkobjref(Object *obj)
     return node;
 }
 
-static ENode *mkptrconst(void)
+static inline ENode *mkptrconst(void)
 {
     ENode *node;
     CInt64 *ip;
@@ -1502,7 +1502,7 @@ static ENode *mkptrconst(void)
     return node;
 }
 
-static ENode *mknode0(Type *type)
+static inline ENode *mknode0(Type *type)
 {
     ENode *node;
     node = (ENode *)lalloc(sizeof(ENode));
@@ -1584,7 +1584,7 @@ ENode *CExpr_AdjustFunctionCall(ENode *p)
     return p;
 }
 
-static ENode *wrap_call(ENode *p)
+static inline ENode *wrap_call(ENode *p)
 {
     ENode *node;
     node = (ENode *)lalloc(0x1a);
@@ -1734,7 +1734,7 @@ ENode *CExpr_FuncCallSix(Object *function, ENode *firstArgument, ENode *secondAr
     return CExpr_AdjustFunctionCall(call);
 }
 
-static ENode *make_objref_node(Object *obj)
+static inline ENode *make_objref_node(Object *obj)
 {
     ENode *n = (ENode *)lalloc(sizeof(ENode));
     memclrw(n, sizeof(ENode));
@@ -1749,7 +1749,7 @@ static ENode *make_objref_node(Object *obj)
 
 /* An integer constant node built the way CInt64_SetLong fills one: inlined where CExpr_FuncCallSix makes its null
    pointers, so it has no out-of-line copy of its own. */
-static ENode *intconstnode_setlong(Type *type, SInt32 value)
+static inline ENode *intconstnode_setlong(Type *type, SInt32 value)
 {
     CInt64 *iv;
     ENode *node;
@@ -1994,7 +1994,7 @@ ENode *CExpr_ClassPointerCast(BClassList *path, ENode *node, Boolean checkNull)
     return result;
 }
 
-static ENode *NewIntConst(Type *type, SInt32 value)
+static inline ENode *NewIntConst(Type *type, SInt32 value)
 {
     ENode *n = (ENode *)lalloc(0x1a);
     CInt64 *iv;
@@ -2196,7 +2196,7 @@ ENode *CExpr_ConvertToBool(ENode *node, Boolean flag)
     return node;
 }
 
-static ENode *mkconstnode(Type *type)
+static inline ENode *mkconstnode(Type *type)
 {
     ENode *node = (ENode *)lalloc(sizeof(ENode));
     memclrw(node, sizeof(ENode));
@@ -2741,7 +2741,7 @@ static void InitLookup(ConversionIterator *lu, TypeClass *tclass)
     }
 }
 
-static ENode *make_objref_node_470460(Object *obj)
+static inline ENode *make_objref_node_470460(Object *obj)
 {
     ENode *n = (ENode *)lalloc(0x1a);
     memclrw(n, 0x1a);
@@ -2754,7 +2754,7 @@ static ENode *make_objref_node_470460(Object *obj)
     return n;
 }
 
-static ENode *intconstnode_setlong_470460(Type *type, SInt32 value)
+static inline ENode *intconstnode_setlong_470460(Type *type, SInt32 value)
 {
     CInt64 *iv;
     ENode *node;
@@ -2832,7 +2832,7 @@ ENode *CExpr2_ConvertScalarOperand(ENode *result, Boolean integerOnly, Boolean p
     return result;
 }
 
-static ENode *mkintconst(Type *ty)
+static inline ENode *mkintconst(Type *ty)
 {
     ENode *n = (ENode *)lalloc(sizeof(ENode));
     memclrw(n, sizeof(ENode));
@@ -2987,7 +2987,7 @@ ENode *get_address_of_temp_copy(ENode *expr, char materialize)
     return result;
 }
 
-static ENode *CExpr2_0046fde0_inline1(ENode *expr)
+static inline ENode *CExpr2_0046fde0_inline1(ENode *expr)
 {
     ENode *node;
     Type *type;
@@ -3530,7 +3530,7 @@ ENode *CExpr_GenericFuncCall(BClassList *scope, ENode *instance, Boolean qualifi
 }
 
 /* makemonadicnode(inner, EINDIRECT) */
-static ENode *make_monadic_46eb90(ENode *inner)
+static inline ENode *make_monadic_46eb90(ENode *inner)
 {
     ENode *m = (ENode *)lalloc(0x1a);
     m->type = (UInt8)EINDIRECT;
@@ -3544,7 +3544,7 @@ static ENode *make_monadic_46eb90(ENode *inner)
 }
 
 /* intconstnode(&void_ptr, 0) */
-static ENode *make_voidptr(void)
+static inline ENode *make_voidptr(void)
 {
     ENode *n = (ENode *)lalloc(0x1a);
     CInt64 *iv;
@@ -4424,7 +4424,7 @@ ENode *CExpr_ConstructObject(Type *type, ENode *ptr, ENodeList *arguments, Boole
     return ptr;
 }
 
-static ENode *wrap_child(ENode *a)
+static inline ENode *wrap_child(ENode *a)
 {
     return makemonadicnode(a, EINDIRECT);
 }
@@ -4851,7 +4851,7 @@ ENode *scannew(char global)
     return result;
 }
 
-static ENode *mk_intconst_flat(Type *type, SInt32 value)
+static inline ENode *mk_intconst_flat(Type *type, SInt32 value)
 {
     ENode *node = (ENode *)lalloc(0x1a);
     memclrw(node, 0x1a);
@@ -4865,12 +4865,12 @@ static ENode *mk_intconst_flat(Type *type, SInt32 value)
     return node;
 }
 
-static ENode *mk_zero(Type *type)
+static inline ENode *mk_zero(Type *type)
 {
     return mk_intconst0(type);
 }
 
-static ENode *mk_intconst(Type *type, SInt32 value)
+static inline ENode *mk_intconst(Type *type, SInt32 value)
 {
     ENode *node = mk_intconst0(type);
     {
@@ -4881,7 +4881,7 @@ static ENode *mk_intconst(Type *type, SInt32 value)
     return node;
 }
 
-static ENode *mk_intconst0(Type *type)
+static inline ENode *mk_intconst0(Type *type)
 {
     ENode *node = (ENode *)lalloc(0x1a);
     memclrw(node, 0x1a);
@@ -4948,7 +4948,7 @@ ENode *make_call_with_optional_size_arg(Object *func, ENode *arg, Type *argtype)
     return call;
 }
 
-static ENode *make_int_node(Type *type, SInt32 value)
+static inline ENode *make_int_node(Type *type, SInt32 value)
 {
     ENode *n = (ENode *)lalloc(0x1a);
     CInt64 *iv;

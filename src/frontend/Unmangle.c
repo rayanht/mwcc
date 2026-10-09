@@ -42,7 +42,7 @@ static inline char *CopyTemplate(int *jb, MOutBuf *ob, char *q, unsigned int n)
     return q;
 }
 
-static void AppendText(MOutBuf *buf, const char *str, unsigned int len)
+static inline void AppendText(MOutBuf *buf, const char *str, unsigned int len)
 {
     if (buf != NULL) {
         unsigned int n = len;
@@ -54,7 +54,7 @@ static void AppendText(MOutBuf *buf, const char *str, unsigned int len)
     }
 }
 
-static void put_2(MOutBuf *s, const char *str)
+static inline void put_2(MOutBuf *s, const char *str)
 {
     unsigned int n;
     if (!s)

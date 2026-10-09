@@ -310,7 +310,7 @@ static inline Float *BufferedTokenFloat(struct TStreamElement *token)
     return &token->data.tkfloatconst;
 }
 
-static int cmpw(const void *a, const void *b, unsigned int n)
+static inline int cmpw(const void *a, const void *b, unsigned int n)
 {
     return memcmp(a, b, n);
 }
@@ -327,7 +327,7 @@ static inline void CPrepTokenizer_CheckCppExtension(void)
         fn_0043f3b0(0x153);
 }
 
-static UInt8 *nextcharposition(void)
+static inline UInt8 *nextcharposition(void)
 {
     return (UInt8 *)lookahead_position;
 }
@@ -344,7 +344,7 @@ static short prepnextchar2(void)
     return c;
 }
 
-static int IsWide(void)
+static inline int IsWide(void)
 {
     int r = 0;
     if (copts.wchar_type && copts.cplusplus)

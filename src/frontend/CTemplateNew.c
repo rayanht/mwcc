@@ -61,7 +61,7 @@ static Boolean data_00582108;
         CScope_AddObject(cscope_current, (di).name, (ObjBase *)obj);                                                   \
     } while (0)
 
-static void *FindInst(TemplClass **p8c, TemplArg **p88);
+static inline void *FindInst(TemplClass **p8c, TemplArg **p88);
 
 static inline char CTemplateNew_004ed8e0_inline1(TemplClassInst *a1, Object *v1, char a2)
 {
@@ -1068,7 +1068,7 @@ void parse_explicit_template_instantiation(void)
         CError_ReportError(ERR_ILLEGAL_EXPLICIT_TEMPLATE_INSTANTIATION);
 }
 
-static void *FindInst(TemplClass **p8c, TemplArg **p88)
+static inline void *FindInst(TemplClass **p8c, TemplArg **p88)
 {
     Type *p;
     TemplArg *t2;

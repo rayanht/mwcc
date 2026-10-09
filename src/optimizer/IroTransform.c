@@ -55,7 +55,7 @@ static UInt8 data_00552dd0[68] = {
 };
 typedef enum { MutEnumByte_one = 1 } MutEnumByte;
 
-static void fix26(IROLinear *a0)
+static inline void fix26(IROLinear *a0)
 {
     IROLinear *x = a0->u.diadic.left;
     IROLinear *y = a0->u.diadic.right;
@@ -74,7 +74,7 @@ static void fix26(IROLinear *a0)
     }
 }
 
-static void fix30(IROLinear *a0)
+static inline void fix30(IROLinear *a0)
 {
     IROLinear *y = a0->u.diadic.left;
     IROLinear *x = a0->u.diadic.right;
@@ -222,7 +222,7 @@ static inline void copyExpressionMetadata(IROLinear *dest, const IROLinear *src)
     dest->nodeflags = src->nodeflags;
 }
 
-static void CopyTypeInfo(IROLinear *dst, IROLinear *src)
+static inline void CopyTypeInfo(IROLinear *dst, IROLinear *src)
 {
     dst->rtype = src->rtype;
     dst->flags = src->flags;

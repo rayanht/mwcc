@@ -218,7 +218,7 @@ static inline HashNameNode *InternCodeGenName(char *text)
     return GetHashNameNode(text);
 }
 
-static UInt8 CodeGen_00435040_kind(Type *ftype)
+static inline UInt8 CodeGen_00435040_kind(Type *ftype)
 {
     if (Type_RequiresMemoryReturn(ftype))
         return 4;
@@ -248,7 +248,7 @@ static inline Boolean is_tail(Statement *node)
     return 1;
 }
 
-static int IsVolatile(Object *obj)
+static inline int IsVolatile(Object *obj)
 {
     if (obj->type->type == TYPEPOINTER)
         return ((TypePointer *)obj->type)->qual & Q_VOLATILE;

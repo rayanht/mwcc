@@ -76,10 +76,10 @@ typedef struct DwarfSym DwarfSym;
 
 static SInt32 DW_Word(SInt16 value);
 static SInt32 DW_String(char *s);
-static void WritePosition(long pos);
-static long ReadPosition(void);
+static inline void WritePosition(long pos);
+static inline long ReadPosition(void);
 static void WritePadding(int amount);
-static void InitOffsets(int offset);
+static inline void InitOffsets(int offset);
 static void SetScope(DwarfFunctionState *obj);
 
 static inline UInt8 DWARF_FullDebugEnabled(void)
@@ -1976,12 +1976,12 @@ void DWARF_CreateObjectDebugEntry(Object *object)
     entry->u.block.codeOffset = 0;
 }
 
-static void WritePosition(long pos)
+static inline void WritePosition(long pos)
 {
     *(long *)*dwarf_lines->data = pos;
 }
 
-static long ReadPosition(void)
+static inline long ReadPosition(void)
 {
     return *(long *)*dwarf_lines->data;
 }
@@ -1998,7 +1998,7 @@ static void WritePadding(int amount)
         AppendGListByte(dwarf_info_buffer, 0);
 }
 
-static void InitOffsets(int offset)
+static inline void InitOffsets(int offset)
 {
     currentDwarfFunctionState->offset = 0;
     currentDwarfFunctionState->lineSectionOffset = offset;

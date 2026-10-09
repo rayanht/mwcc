@@ -82,14 +82,14 @@ static struct ClassTypeLink *class_type_links;
 static struct CParseRec *class_parse_recs;
 static struct CParseCacheNode *single_expr_functions;
 
-static void restore(ParserTryBlock *s);
-static void save(ParserTryBlock *s, unsigned char *flag);
+static inline void restore(ParserTryBlock *s);
+static inline void save(ParserTryBlock *s, unsigned char *flag);
 static void CParser_RestoreState(ParserTryBlock *sv);
 static void CParser_SaveState(ParserTryBlock *sv);
-static Boolean IsAnonymousUnion(DeclInfo *context);
-static int IsUnionType(DeclInfo *context);
-static Boolean IsAnonymousName(HashNameNode *name);
-static int IsTempName(HashNameNode *name);
+static inline Boolean IsAnonymousUnion(DeclInfo *context);
+static inline int IsUnionType(DeclInfo *context);
+static inline Boolean IsAnonymousName(HashNameNode *name);
+static inline int IsTempName(HashNameNode *name);
 
 static inline Object *fn_0048be40_inline1(TypeFunc *functionType, NameSpaceObjectList *result)
 {
@@ -3130,7 +3130,7 @@ void CParser_CallBackAction(Object *key)
     CError_FATAL(3854);
 }
 
-static void restore(ParserTryBlock *s)
+static inline void restore(ParserTryBlock *s)
 {
     TypeClass *t3;
     t3 = s->cscope_currentclass;
@@ -3143,7 +3143,7 @@ static void restore(ParserTryBlock *s)
     trychain = s->next;
 }
 
-static void save(ParserTryBlock *s, unsigned char *flag)
+static inline void save(ParserTryBlock *s, unsigned char *flag)
 {
     NameSpace *x;
     x = cscope_current;
@@ -3474,22 +3474,22 @@ void cparser(void)
     CInit_DefineTentativeData();
 }
 
-static Boolean IsAnonymousUnion(DeclInfo *context)
+static inline Boolean IsAnonymousUnion(DeclInfo *context)
 {
     return IsUnionType(context) && IsAnonymousName(((TypeClass *)context->thetype)->classname);
 }
 
-static int IsUnionType(DeclInfo *context)
+static inline int IsUnionType(DeclInfo *context)
 {
     return context->thetype->type == TYPECLASS && ((TypeClass *)context->thetype)->mode == 1;
 }
 
-static Boolean IsAnonymousName(HashNameNode *name)
+static inline Boolean IsAnonymousName(HashNameNode *name)
 {
     return IsTempName(name) || name->name[0] == '$';
 }
 
-static int IsTempName(HashNameNode *name)
+static inline int IsTempName(HashNameNode *name)
 {
     return name == NULL || name->name[0] == '@';
 }

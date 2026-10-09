@@ -39,11 +39,11 @@ static SInt32 data_00580638;
      (((bv)->bits[(UInt32)((SInt32)(i) >> 5)] & ((UInt32)1 << ((i) & 31)))) != 0)
 
 static int has_side_effect(IROLinear *p);
-static int is_side_effect_node(IROLinear *p);
-static int is_volatile_object_ref(IROLinear *p);
-static int is_object_ref(IROLinear *p);
-static int has_volatile_type(IROLinear *p);
-static int is_call_or_assignment(IROLinear *p);
+static inline int is_side_effect_node(IROLinear *p);
+static inline int is_volatile_object_ref(IROLinear *p);
+static inline int is_object_ref(IROLinear *p);
+static inline int has_volatile_type(IROLinear *p);
+static inline int is_call_or_assignment(IROLinear *p);
 static Boolean IRO_NodeKind(IROLinear *n);
 
 static inline void PrintUseDefValue(char *format, BitVector *value)
@@ -97,27 +97,27 @@ static int has_side_effect(IROLinear *p)
     return is_side_effect_node(p) || is_volatile_object_ref(p);
 }
 
-static int is_side_effect_node(IROLinear *p)
+static inline int is_side_effect_node(IROLinear *p)
 {
     return is_call_or_assignment(p) || has_volatile_type(p);
 }
 
-static int is_volatile_object_ref(IROLinear *p)
+static inline int is_volatile_object_ref(IROLinear *p)
 {
     return is_object_ref(p) && is_volatile_object(p->u.node->data.objref);
 }
 
-static int is_object_ref(IROLinear *p)
+static inline int is_object_ref(IROLinear *p)
 {
     return p->type == IROLinearOperand && p->u.node->type == EOBJREF;
 }
 
-static int has_volatile_type(IROLinear *p)
+static inline int has_volatile_type(IROLinear *p)
 {
     return p->rtype && CParser_IsVolatile(p->rtype, p->nodeflags & 3);
 }
 
-static int is_call_or_assignment(IROLinear *p)
+static inline int is_call_or_assignment(IROLinear *p)
 {
     return p->type == IROLinearFunccall || fn_0044d460(p);
 }

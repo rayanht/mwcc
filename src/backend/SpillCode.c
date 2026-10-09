@@ -23,7 +23,7 @@
 
 short spill_address_register = 0;
 
-static void EmitSpill(PCodeInstruction *op, InterferenceNode *node, short reg, int opcode);
+static inline void EmitSpill(PCodeInstruction *op, InterferenceNode *node, short reg, int opcode);
 
 static inline void SC_InsertLoad(PCodeInstruction *instruction, InterferenceNode *node, short replacement_register)
 {
@@ -453,7 +453,7 @@ void SpillCode_EmitOperandSpills(PCodeBlock *unused, PCodeInstruction *op)
     PCode_UnlinkInstruction(op);
 }
 
-static void EmitSpill(PCodeInstruction *op, InterferenceNode *node, short reg, int opcode)
+static inline void EmitSpill(PCodeInstruction *op, InterferenceNode *node, short reg, int opcode)
 {
     PCodeInstruction *t1;
     PCodeInstruction *t2;

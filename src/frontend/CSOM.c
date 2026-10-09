@@ -125,7 +125,7 @@ static inline Object *MakeKinds(SOMClassBuildState *info)
     return CInit_DeclareString((char *)bits, size, 0, 0);
 }
 
-static Object *FlushData(void)
+static inline Object *FlushData(void)
 {
     Object *data;
     COS_LockHandle(data_00583548.data);
@@ -186,7 +186,7 @@ static inline void CSOM_SetNibble(UInt8 *bits, int i, int value)
         *p = (*p & 0x0f) | (value << 4);
 }
 
-static void setnumber(int raw, int n)
+static inline void setnumber(int raw, int n)
 {
     Object *item = (Object *)raw;
     if (n == 0 && copts.extended_errorcheck != 0)
@@ -194,7 +194,7 @@ static void setnumber(int raw, int n)
     ((TypeMemberFunc *)item->type)->vtbl_index = n;
 }
 
-static SOMInfoEntry *listhead(VClassList *v8)
+static inline SOMInfoEntry *listhead(VClassList *v8)
 {
     struct SOMInfo *p = ((TypeClass *)v8->base)->sominfo;
     SOMInfoEntry *h = p->methodNameList;

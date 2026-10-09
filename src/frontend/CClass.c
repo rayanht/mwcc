@@ -55,11 +55,11 @@ static void *data_00581cdc;
 
 static Boolean simple_base(TypeClass *a, TypeClass *b);
 static Boolean has_qual(UInt32 a, UInt32 b);
-static Object *CClass_FindFuncObject(NameSpace *nspace, HashNameNode *name);
-static SInt32 CClass_GetVBaseOffset(TypeClass *base);
-static SInt32 CL_FindVOffset(TypeClass *base);
-static SInt32 CL_FindOffset(TypeClass *base);
-static TypeMemberFunc *copyMemberFunction(TypeMemberFunc *type);
+static inline Object *CClass_FindFuncObject(NameSpace *nspace, HashNameNode *name);
+static inline SInt32 CClass_GetVBaseOffset(TypeClass *base);
+static inline SInt32 CL_FindVOffset(TypeClass *base);
+static inline SInt32 CL_FindOffset(TypeClass *base);
+static inline TypeMemberFunc *copyMemberFunction(TypeMemberFunc *type);
 
 static inline Boolean CClass_ShouldReplacePath(BClassList *current, BClassList *candidate)
 {
@@ -1204,7 +1204,7 @@ void select_layout_member_overrides(OverrideClass *node)
     return;
 }
 
-static Object *CClass_FindFuncObject(NameSpace *nspace, HashNameNode *name)
+static inline Object *CClass_FindFuncObject(NameSpace *nspace, HashNameNode *name)
 {
     NameSpaceObjectList *list;
 
@@ -1788,7 +1788,7 @@ void CClass_CheckEnumAccess(BClassList *bases, ObjBase *object)
     }
 }
 
-static SInt32 CClass_GetVBaseOffset(TypeClass *base)
+static inline SInt32 CClass_GetVBaseOffset(TypeClass *base)
 {
     VClassList *v;
 
@@ -1800,7 +1800,7 @@ static SInt32 CClass_GetVBaseOffset(TypeClass *base)
     return 0;
 }
 
-static SInt32 CL_FindVOffset(TypeClass *base)
+static inline SInt32 CL_FindVOffset(TypeClass *base)
 {
     VClassList *p;
     for (p = current_class->vbases; p != NULL; p = p->next)
@@ -1810,7 +1810,7 @@ static SInt32 CL_FindVOffset(TypeClass *base)
     return 0;
 }
 
-static SInt32 CL_FindOffset(TypeClass *base)
+static inline SInt32 CL_FindOffset(TypeClass *base)
 {
     VClassList *p;
     for (p = current_class->vbases; p != NULL; p = p->next)
@@ -1820,7 +1820,7 @@ static SInt32 CL_FindOffset(TypeClass *base)
     return 0;
 }
 
-static TypeMemberFunc *copyMemberFunction(TypeMemberFunc *type)
+static inline TypeMemberFunc *copyMemberFunction(TypeMemberFunc *type)
 {
     TypeMemberFunc *copy = (TypeMemberFunc *)galloc(sizeof(TypeMemberFunc));
     *copy = *type;

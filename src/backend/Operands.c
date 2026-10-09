@@ -94,7 +94,7 @@ static __inline SInt32 Operands_GetOpcode(Type *type, SInt32 base, SInt32 line)
 /* Operand record of the PPC code generator: byte kind, word register,
  * word low half of the constant, qual flags, 32-bit value, spare. */
 
-static void Operands_SetKind(Operand *op, UInt8 kind)
+static inline void Operands_SetKind(Operand *op, UInt8 kind)
 {
     op->kind = kind;
     CError_ASSERT(92, op != NULL);

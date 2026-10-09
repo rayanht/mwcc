@@ -56,7 +56,7 @@ static SInt32 value_index_threshold;
 static struct Object *data_00582c44;
 static unsigned int data_00582c48;
 
-static void ZeroArray(struct RegisterValueRecord **p, SInt32 n);
+static inline void ZeroArray(struct RegisterValueRecord **p, SInt32 n);
 static ObjectIndexEntry *VN_FindNode(Object *key);
 
 static inline int no_dup(PCodeInstruction *inst)
@@ -290,7 +290,7 @@ void initialize_value_states(void)
     value_index_threshold = 0x7fffffff;
 }
 
-static void ZeroArray(struct RegisterValueRecord **p, SInt32 n)
+static inline void ZeroArray(struct RegisterValueRecord **p, SInt32 n)
 {
     SInt32 i;
     for (i = 0; i < n; i++)

@@ -34,17 +34,17 @@ static const int kNumRegs = 32;
 static int PCode_LiveAfter(PCodeInstruction *instr);
 static int PCode_DefinedBetween(PCodeInstruction *instr, PCodeInstruction *def, PCodeOperand *arg);
 static int PCode_UsedBetween(PCodeInstruction *instr, PCodeInstruction *def, PCodeOperand *arg);
-static int PCode_InstUses(PCodeInstruction *inst, PCodeInstruction *stop, PCodeInstruction *p);
-static int HasDef(PCodeInstruction *r, PCodeInstruction *stop, PCodeOperand *target, UInt8 mask);
-static SInt32 FindOp(PCodeInstruction *first, PCodeInstruction *last, PCodeInstruction *inst, SInt32 bit);
-static int Contains(PCodeInstruction *start, PCodeInstruction *stop, PCodeOperand *ref, UInt32 flag);
-static int FindMember(PCodeInstruction *t, PCodeInstruction *stop, PCodeInstruction *target, SInt32 flag);
-static UInt32 PCode_RangeMask(SInt32 lo, SInt32 hi);
-static SInt32 PCode_FindOperand2(PCodeInstruction *from, PCodeInstruction *stop, PCodeOperand *ref, UInt8 flag);
-static SInt32 PCode_FindOperand(PCodeInstruction *from, PCodeInstruction *stop, PCodeOperand *ref, UInt8 flag);
-static int PCode_FindUse(PCodeInstruction *p, PCodeInstruction *end, PCodeOperand *arg, SInt32 flag);
-static int find_in_list(PCodeInstruction *list, PCodeInstruction *sent);
-static int fn_004c8010_find(PCodeInstruction *p, PCodeInstruction *limit, PCodeInstruction *ref);
+static inline int PCode_InstUses(PCodeInstruction *inst, PCodeInstruction *stop, PCodeInstruction *p);
+static inline int HasDef(PCodeInstruction *r, PCodeInstruction *stop, PCodeOperand *target, UInt8 mask);
+static inline SInt32 FindOp(PCodeInstruction *first, PCodeInstruction *last, PCodeInstruction *inst, SInt32 bit);
+static inline int Contains(PCodeInstruction *start, PCodeInstruction *stop, PCodeOperand *ref, UInt32 flag);
+static inline int FindMember(PCodeInstruction *t, PCodeInstruction *stop, PCodeInstruction *target, SInt32 flag);
+static inline UInt32 PCode_RangeMask(SInt32 lo, SInt32 hi);
+static inline SInt32 PCode_FindOperand2(PCodeInstruction *from, PCodeInstruction *stop, PCodeOperand *ref, UInt8 flag);
+static inline SInt32 PCode_FindOperand(PCodeInstruction *from, PCodeInstruction *stop, PCodeOperand *ref, UInt8 flag);
+static inline int PCode_FindUse(PCodeInstruction *p, PCodeInstruction *end, PCodeOperand *arg, SInt32 flag);
+static inline int find_in_list(PCodeInstruction *list, PCodeInstruction *sent);
+static inline int fn_004c8010_find(PCodeInstruction *p, PCodeInstruction *limit, PCodeInstruction *ref);
 static int masks_disjoint(PCodeInstruction *instr, PCodeInstruction *scan, SInt16 reg);
 static int canmergemasks(SInt32 b1, SInt32 e1, SInt32 shift, SInt32 b2, SInt32 e2, SInt16 *first, SInt16 *last);
 static struct PeepHandler *AddPeepholeRule(struct PeepHandler **list, void *handler);
@@ -1815,7 +1815,7 @@ int combine_mulli(struct PCodeInstruction *state, int register_mask)
     return 0;
 }
 
-static int PCode_InstUses(PCodeInstruction *inst, PCodeInstruction *stop, PCodeInstruction *p)
+static inline int PCode_InstUses(PCodeInstruction *inst, PCodeInstruction *stop, PCodeInstruction *p)
 {
     PCodeOperand *op;
     SInt16 reg;
@@ -1835,7 +1835,7 @@ static int PCode_InstUses(PCodeInstruction *inst, PCodeInstruction *stop, PCodeI
     return 0;
 }
 
-static int HasDef(PCodeInstruction *r, PCodeInstruction *stop, PCodeOperand *target, UInt8 mask)
+static inline int HasDef(PCodeInstruction *r, PCodeInstruction *stop, PCodeOperand *target, UInt8 mask)
 {
     PCodeOperand *e;
     int i;
@@ -1848,7 +1848,7 @@ static int HasDef(PCodeInstruction *r, PCodeInstruction *stop, PCodeOperand *tar
     return 0;
 }
 
-static SInt32 FindOp(PCodeInstruction *first, PCodeInstruction *last, PCodeInstruction *inst, SInt32 bit)
+static inline SInt32 FindOp(PCodeInstruction *first, PCodeInstruction *last, PCodeInstruction *inst, SInt32 bit)
 {
     PCodeOperand *op;
     SInt32 n;
@@ -1863,7 +1863,7 @@ static SInt32 FindOp(PCodeInstruction *first, PCodeInstruction *last, PCodeInstr
     return 0;
 }
 
-static int Contains(PCodeInstruction *start, PCodeInstruction *stop, PCodeOperand *ref, UInt32 flag)
+static inline int Contains(PCodeInstruction *start, PCodeInstruction *stop, PCodeOperand *ref, UInt32 flag)
 {
     PCodeInstruction *q;
     PCodeOperand *e;
@@ -1881,7 +1881,7 @@ static int Contains(PCodeInstruction *start, PCodeInstruction *stop, PCodeOperan
     return 0;
 }
 
-static int FindMember(PCodeInstruction *t, PCodeInstruction *stop, PCodeInstruction *target, SInt32 flag)
+static inline int FindMember(PCodeInstruction *t, PCodeInstruction *stop, PCodeInstruction *target, SInt32 flag)
 {
     PCodeOperand *m;
     SInt32 i;
@@ -1897,7 +1897,7 @@ static int FindMember(PCodeInstruction *t, PCodeInstruction *stop, PCodeInstruct
     return 0;
 }
 
-static UInt32 PCode_RangeMask(SInt32 lo, SInt32 hi)
+static inline UInt32 PCode_RangeMask(SInt32 lo, SInt32 hi)
 {
     UInt32 hiMask;
     UInt32 loMask;
@@ -1911,7 +1911,7 @@ static UInt32 PCode_RangeMask(SInt32 lo, SInt32 hi)
     return ~hiMask | loMask;
 }
 
-static SInt32 PCode_FindOperand2(PCodeInstruction *from, PCodeInstruction *stop, PCodeOperand *ref, UInt8 flag)
+static inline SInt32 PCode_FindOperand2(PCodeInstruction *from, PCodeInstruction *stop, PCodeOperand *ref, UInt8 flag)
 {
     PCodeInstruction *q;
     PCodeOperand *op;
@@ -1928,7 +1928,7 @@ static SInt32 PCode_FindOperand2(PCodeInstruction *from, PCodeInstruction *stop,
     return 0;
 }
 
-static SInt32 PCode_FindOperand(PCodeInstruction *from, PCodeInstruction *stop, PCodeOperand *ref, UInt8 flag)
+static inline SInt32 PCode_FindOperand(PCodeInstruction *from, PCodeInstruction *stop, PCodeOperand *ref, UInt8 flag)
 {
     PCodeOperand *op;
     UInt32 n;
@@ -2022,7 +2022,7 @@ unsigned int combine_srawi(PCodeInstruction *pc, UInt32 mask)
     return 0;
 }
 
-static int PCode_FindUse(PCodeInstruction *p, PCodeInstruction *end, PCodeOperand *arg, SInt32 flag)
+static inline int PCode_FindUse(PCodeInstruction *p, PCodeInstruction *end, PCodeOperand *arg, SInt32 flag)
 {
     PCodeOperand *e;
     UInt32 n;
@@ -2235,7 +2235,7 @@ unsigned int fold_to_rlwnm(unsigned int instruction, unsigned int liveRegisters)
     return 0;
 }
 
-static int find_in_list(PCodeInstruction *list, PCodeInstruction *sent)
+static inline int find_in_list(PCodeInstruction *list, PCodeInstruction *sent)
 {
     PCodeInstruction *p;
     PCodeOperand *e;
@@ -2362,7 +2362,7 @@ SInt32 fold_rlwimi_store_to_stwbrx(PCodeInstruction *node, UInt32 mask)
         return 0;
 }
 
-static int fn_004c8010_find(PCodeInstruction *p, PCodeInstruction *limit, PCodeInstruction *ref)
+static inline int fn_004c8010_find(PCodeInstruction *p, PCodeInstruction *limit, PCodeInstruction *ref)
 {
     PCodeOperand *r;
     SInt32 c;

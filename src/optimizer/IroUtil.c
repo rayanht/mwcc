@@ -22,7 +22,7 @@ static struct IROLinear *linear_range_start;
 static IROLinear *linear_range_end;
 static struct IRONode *move_expr_before_node;
 
-static Boolean is_one(CInt64 *val);
+static inline Boolean is_one(CInt64 *val);
 
 Object *IroUtil_GetObjRef(IROLinear *linear)
 {
@@ -599,7 +599,7 @@ void IroUtil_RemoveLinearRange(IROExpr *record)
     remove_linear_range(linear_range_start, linear_range_end);
 }
 
-static Boolean is_one(CInt64 *val)
+static inline Boolean is_one(CInt64 *val)
 {
     return val->hi == 0 && val->lo == 1;
 }

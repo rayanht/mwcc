@@ -66,7 +66,7 @@ static ObjectList *CScope_CopyList(ObjectList *list)
     return newlist;
 }
 
-static void CScope_NSIteratorInit(CScopeNSIterator *iterator, NameSpace *nspace, NameResult *result)
+static inline void CScope_NSIteratorInit(CScopeNSIterator *iterator, NameSpace *nspace, NameResult *result)
 {
     memclrw(result, 0x22);
     if (nspace->usings && !result->is_qualified) {
@@ -79,7 +79,7 @@ static void CScope_NSIteratorInit(CScopeNSIterator *iterator, NameSpace *nspace,
     iterator->result = result;
 }
 
-static Boolean CScope_NSIteratorNext(CScopeNSIterator *iterator)
+static inline Boolean CScope_NSIteratorNext(CScopeNSIterator *iterator)
 {
     if (iterator->lookup)
         return (iterator->lookup = iterator->lookup->next) != NULL;
@@ -113,7 +113,7 @@ static NameSpaceObjectList *CScope_NSIteratorFind(CScopeNSIterator *iterator, Ha
     return NULL;
 }
 
-static Boolean NextNameSpace(CScopeNSIterator *ctx)
+static inline Boolean NextNameSpace(CScopeNSIterator *ctx)
 {
     if (ctx->lookup != NULL) {
         ctx->lookup = ctx->lookup->next;
@@ -186,7 +186,7 @@ static Boolean IsFunc(Object *o)
     return p->otype == OT_OBJECT && p->type->type == TYPEFUNC;
 }
 
-static void AmbiguousError(NameSpace *scope, NameSpaceList *it, HashNameNode *name)
+static inline void AmbiguousError(NameSpace *scope, NameSpaceList *it, HashNameNode *name)
 {
     NameSpace *ns = it->nspace;
 
@@ -197,7 +197,7 @@ static void AmbiguousError(NameSpace *scope, NameSpaceList *it, HashNameNode *na
         CError_ReportError(ERR_AMBIGUOUS_ACCESS_CLASS_STRUCT_UNION_MEMBER);
 }
 
-static NameSpaceObjectList *CScope_FindMemberName(HashNameNode *name, NameSpace *nspace)
+static inline NameSpaceObjectList *CScope_FindMemberName(HashNameNode *name, NameSpace *nspace)
 {
     NameSpaceName *entry;
 
@@ -213,7 +213,7 @@ static NameSpaceObjectList *CScope_FindMemberName(HashNameNode *name, NameSpace 
     return NULL;
 }
 
-static BClassList *CScope_NewPath(TypeClass *tclass, BClassList *next)
+static inline BClassList *CScope_NewPath(TypeClass *tclass, BClassList *next)
 {
     BClassList *path = lalloc(8);
 
@@ -232,7 +232,7 @@ static void CScope_AmbigNameError(NameSpace *nspace1, NameSpace *nspace2, HashNa
 }
 
 /* CScope_AmbigNameError for found_class's namespace, which is also left in *NSPACE1 (a local of the caller). */
-static void CScope_AmbigFoundClassError(NameSpace **nspace1, NameSpace *nspace2, HashNameNode *name)
+static inline void CScope_AmbigFoundClassError(NameSpace **nspace1, NameSpace *nspace2, HashNameNode *name)
 {
     *nspace1 = found_class->nspace;
     if (name && *nspace1 != nspace2)
@@ -270,7 +270,7 @@ static Boolean ScSeen(NameSpaceLookupList *base, NameSpaceList *item)
     return 0;
 }
 
-static void ScAdd(NameSpaceLookupList *node, NameSpaceList *item)
+static inline void ScAdd(NameSpaceLookupList *node, NameSpaceList *item)
 {
     NameSpaceList *it;
 

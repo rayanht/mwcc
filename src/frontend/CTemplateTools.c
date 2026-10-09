@@ -20,11 +20,11 @@ SInt16 ctempl_instdepth;
 
 typedef struct TemplateComparisonEntry TemplateComparisonEntry;
 
-static void CTemplateTools_SetFirstArgName(TypeMemberFunc *f);
+static inline void CTemplateTools_SetFirstArgName(TypeMemberFunc *f);
 static FuncArg *CTemplateTools_FirstArg(TypeMemberFunc *f);
-static ENode *CloneRecNode(TemplArg *r);
-static ENode *CloneNode(ENode *src);
-static Boolean CTT_IsNeg(CInt64 *v);
+static inline ENode *CloneRecNode(TemplArg *r);
+static inline ENode *CloneNode(ENode *src);
+static inline Boolean CTT_IsNeg(CInt64 *v);
 
 static inline TemplArg *find(TemplArg *e, TemplParamID pid)
 {
@@ -1472,7 +1472,7 @@ Type *resolve_templ_dep_pointer_target(TypeDeduce *context, Type *typeArg, UInt3
     return resolvedType;
 }
 
-static void CTemplateTools_SetFirstArgName(TypeMemberFunc *f)
+static inline void CTemplateTools_SetFirstArgName(TypeMemberFunc *f)
 {
     FuncArg *a;
 
@@ -1498,14 +1498,14 @@ static FuncArg *CTemplateTools_FirstArg(TypeMemberFunc *f)
     return a;
 }
 
-static ENode *CloneRecNode(TemplArg *r)
+static inline ENode *CloneRecNode(TemplArg *r)
 {
     ENode *n = (ENode *)lalloc(sizeof(ENode));
     *n = *r->data.paramdecl.expr;
     return n;
 }
 
-static ENode *CloneNode(ENode *src)
+static inline ENode *CloneNode(ENode *src)
 {
     ENode *n = (ENode *)lalloc(sizeof(ENode));
     *n = *src;
@@ -1552,7 +1552,7 @@ FuncArg *CTemplTool_DeduceArgCopy(TypeDeduce *ctx, FuncArg *args)
     return newlist;
 }
 
-static Boolean CTT_IsNeg(CInt64 *v)
+static inline Boolean CTT_IsNeg(CInt64 *v)
 {
     return (v->hi & 0x80000000) != 0;
 }

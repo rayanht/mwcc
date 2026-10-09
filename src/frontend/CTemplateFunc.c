@@ -22,7 +22,7 @@ static char lbl_005824cf[9];
 #define CB_TRUE 1
 #define CB_FALSE 0
 
-static SInt32 CTF_GetIndex(TemplArg *a);
+static inline SInt32 CTF_GetIndex(TemplArg *a);
 static Boolean CTemplateFunc_MatchClassArgs(TemplClassInst *cur, TypeClass *target, TemplArg *a2, TemplArg *a4,
                                             Boolean a5);
 
@@ -457,7 +457,7 @@ Boolean match_state_elem_arguments(TemplArg *a, TemplArg *b, TemplArg *r, char f
     }
 }
 
-static SInt32 CTF_GetIndex(TemplArg *a)
+static inline SInt32 CTF_GetIndex(TemplArg *a)
 {
     if (a->data.paramdecl.expr->type == 'E' && a->data.paramdecl.expr->data.templdep.subtype == TDE_PARAM)
         return a->data.paramdecl.expr->data.templdep.u.pid.index;

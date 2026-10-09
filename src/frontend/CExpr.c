@@ -68,16 +68,16 @@ typedef struct _res res;
 #define STBOOL ((Type *)&stbool)
 enum { TYPECLASS_004f9ed0 = 5 };
 
-static SInt32 TypSize(TypeIntegral *t);
-static UInt32 applyqual(Type *t, SInt16 x);
+static inline SInt32 TypSize(TypeIntegral *t);
+static inline UInt32 applyqual(Type *t, SInt16 x);
 static Boolean CExpr_QualMismatch(SInt32 from, SInt32 to);
 static Boolean IsZeroCInt64(CInt64 *v);
-static Boolean IsZero_4f5aa0(ENode *e);
-static ENode *CExpr_WrapPrecomp(ENode *n, ENode *r);
-static Boolean IsZeroValue(ENode *e);
-static ENode *CExpr_intnode(ENode *e, SInt32 v);
+static inline Boolean IsZero_4f5aa0(ENode *e);
+static inline ENode *CExpr_WrapPrecomp(ENode *n, ENode *r);
+static inline Boolean IsZeroValue(ENode *e);
+static inline ENode *CExpr_intnode(ENode *e, SInt32 v);
 static ENode *AdjustBoolAssign(ENode *enode);
-static CInt64 Inner(void);
+static inline CInt64 Inner(void);
 
 static __inline CLabel *FindNode(HashNameNode *key)
 {
@@ -5581,7 +5581,7 @@ CInt64 CExpr_IntegralConstExprType(Type **ptype)
     return cint64_zero;
 }
 
-static SInt32 TypSize(TypeIntegral *t)
+static inline SInt32 TypSize(TypeIntegral *t)
 {
     return t->size;
 }
@@ -5615,7 +5615,7 @@ ENode *CExpr_IntegralConstOrDepExpr(void)
     return expr;
 }
 
-static UInt32 applyqual(Type *t, SInt16 x)
+static inline UInt32 applyqual(Type *t, SInt16 x)
 {
     return CParser_GetCVTypeQualifiers(TYPE_POINTER(t)->target, x);
 }
@@ -5627,7 +5627,7 @@ static Boolean CExpr_QualMismatch(SInt32 from, SInt32 to)
     return result;
 }
 
-static Boolean IsZero_4f5aa0(ENode *e)
+static inline Boolean IsZero_4f5aa0(ENode *e)
 {
     int result = 0;
     if (e->data.intval.hi == 0 && e->data.intval.lo == 0)
@@ -5635,7 +5635,7 @@ static Boolean IsZero_4f5aa0(ENode *e)
     return result;
 }
 
-static ENode *CExpr_WrapPrecomp(ENode *n, ENode *r)
+static inline ENode *CExpr_WrapPrecomp(ENode *n, ENode *r)
 {
     ENode *nw = lalloc(0x1a);
     *nw = *r;
@@ -5649,12 +5649,12 @@ static ENode *CExpr_WrapPrecomp(ENode *n, ENode *r)
     return nw;
 }
 
-static Boolean IsZeroValue(ENode *e)
+static inline Boolean IsZeroValue(ENode *e)
 {
     return e->data.intval.hi == 0 && e->data.intval.lo == 0;
 }
 
-static ENode *CExpr_intnode(ENode *e, SInt32 v)
+static inline ENode *CExpr_intnode(ENode *e, SInt32 v)
 {
     e->type = EINTCONST;
     e->rtype = CParser_GetBoolType();
@@ -5699,7 +5699,7 @@ CInt64 CExpr_IntegralConstExpr(void)
     return Inner();
 }
 
-static CInt64 Inner(void)
+static inline CInt64 Inner(void)
 {
     ENode *expr;
 

@@ -45,12 +45,12 @@ typedef struct CMOState CMOState;
 #define CM_SET(bv, n) ((bv)[(n) >> 5] |= 1 << (n))
 #define CM_CLR(bv, n) ((bv)[(n) >> 5] &= ~(1 << ((n) & 31)))
 #define CM_TEST(bv, n) ((1 << ((n) & 31)) & (bv)[(n) >> 5])
-static UInt32 *CodeMotion_NewBits(int bit_count)
+static inline UInt32 *CodeMotion_NewBits(int bit_count)
 {
     return oalloc(((bit_count + 31) >> 5) * sizeof(unsigned int));
 }
 
-static CodeMotionObjectNode *FindNode(CodeMotionObjectNode *p, Object *key)
+static inline CodeMotionObjectNode *FindNode(CodeMotionObjectNode *p, Object *key)
 {
     while (p != NULL) {
         if (key < p->object) {
@@ -115,7 +115,7 @@ static void CodeMotion_SetObjectEntry(CodeMotionEntry *entry, PCodeInstruction *
     entry->value.object = object;
 }
 
-static CodeMotionObjectNode *CodeMotion_FindObjectNode(Object *object)
+static inline CodeMotionObjectNode *CodeMotion_FindObjectNode(Object *object)
 {
     CodeMotionObjectNode *node = gCodeMotionObjectTree_005880ac;
 
@@ -131,12 +131,12 @@ static CodeMotionObjectNode *CodeMotion_FindObjectNode(Object *object)
     return NULL;
 }
 
-static Object *CMIdentity(Object *o)
+static inline Object *CMIdentity(Object *o)
 {
     return o;
 }
 
-static unsigned char CMKind(Object *p)
+static inline unsigned char CMKind(Object *p)
 {
     return p->datatype;
 }

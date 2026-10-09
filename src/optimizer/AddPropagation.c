@@ -24,7 +24,7 @@ SInt32 gAddPropagationChanged;
 SInt32 addPropagationChanged;
 int *add_propagation_block_bit_indices;
 
-static int COpt_AllLinked(SInt32 j, CodeMotionEntryLink *p)
+static inline int COpt_AllLinked(SInt32 j, CodeMotionEntryLink *p)
 {
     for (; p != NULL; p = p->next)
         if (!can_propagate_add(j, p->entry_index))

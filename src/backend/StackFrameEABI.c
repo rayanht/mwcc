@@ -163,7 +163,7 @@ void StackFrameEABI_AllocateObjectSlot(Object *object)
     gStackFrameSize += object->type->size;
 }
 
-static int r12_save_count(void)
+static inline int r12_save_count(void)
 {
     int count = 0;
 

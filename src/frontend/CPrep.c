@@ -313,18 +313,18 @@ typedef enum { CPrep_DidPush, CPrep_DidPop } CPrep_DidFlag;
     } while (0)
 
 static void LogName(const unsigned char *name);
-static void pop_macro_expansion_state(void);
-static void pop_macro_state(void);
+static inline void pop_macro_expansion_state(void);
+static inline void pop_macro_state(void);
 static void CPrep_PushState(void *obj);
-static void CPrep_Fatal(void);
-static void CPrep_PopState(void);
-static void CPrep_ErrorBA(void);
-static void CPrep_Error_439930(int line);
-static void CPrep_Push(SInt16 type);
-static void CPrep_AddLine(SInt16 kind);
-static SInt32 calc_line(CPrepFileInfo *p);
-static void report_error(SInt16 code);
-static SInt32 check_time(void);
+static inline void CPrep_Fatal(void);
+static inline void CPrep_PopState(void);
+static inline void CPrep_ErrorBA(void);
+static inline void CPrep_Error_439930(int line);
+static inline void CPrep_Push(SInt16 type);
+static inline void CPrep_AddLine(SInt16 kind);
+static inline SInt32 calc_line(CPrepFileInfo *p);
+static inline void report_error(SInt16 code);
+static inline SInt32 check_time(void);
 
 static inline void process_newline(void)
 {
@@ -1907,7 +1907,7 @@ void skip_line_breaks_and_expand_macros(void)
     }
 }
 
-static void pop_macro_expansion_state(void)
+static inline void pop_macro_expansion_state(void)
 {
     macro_expansion_depth--;
     if (macro_expansion_depth == 0 && data_0057fcee != 0)
@@ -2566,7 +2566,7 @@ allocateResult:
     return savedText;
 }
 
-static void pop_macro_state(void)
+static inline void pop_macro_state(void)
 {
     macro_expansion_depth--;
     if (macro_expansion_depth == 0 && data_0057fcee != 0)
@@ -2589,7 +2589,7 @@ static void CPrep_PushState(void *obj)
     macro_expansion_depth++;
 }
 
-static void CPrep_Fatal(void)
+static inline void CPrep_Fatal(void)
 {
     UInt8 save = data_005884fd;
     data_005884fd = 0;
@@ -2981,7 +2981,7 @@ UInt8 *expand_macro(Macro *macro)
     return (UInt8 *)expand_macros_in_text(macro, result);
 }
 
-static void CPrep_PopState(void)
+static inline void CPrep_PopState(void)
 {
     macro_expansion_depth--;
     if (macro_expansion_depth == 0 && data_0057fcee)
@@ -3692,7 +3692,7 @@ void concatenate_and_dispatch_string_tokens(void)
     }
 }
 
-static void CPrep_ErrorBA(void)
+static inline void CPrep_ErrorBA(void)
 {
     if (copts.warn_illpragma) {
         Boolean save = data_005884fd;
@@ -4241,7 +4241,7 @@ struct CNameRef evaluate_unary_expression_value(void)
 
 #pragma sym off
 
-static void CPrep_Error_439930(int line)
+static inline void CPrep_Error_439930(int line)
 {
     UInt8 save;
     save = data_005884fd;
@@ -4418,7 +4418,7 @@ void parse_if_directive(void)
     }
 }
 
-static void CPrep_Push(SInt16 type)
+static inline void CPrep_Push(SInt16 type)
 {
     Boolean save;
     if (if_depth >= 0x40) {
@@ -4513,7 +4513,7 @@ void parse_ifndef(void)
 
 /* Error reporting sequence emitted at each fatal site. */
 
-static void CPrep_AddLine(SInt16 kind)
+static inline void CPrep_AddLine(SInt16 kind)
 {
     if (if_depth >= 0x40) {
         CPrep_ERROR(0xd7);
@@ -4741,17 +4741,17 @@ void skip_inactive_if_blocks(void)
 
 #pragma sym off
 
-static SInt32 calc_line(CPrepFileInfo *p)
+static inline SInt32 calc_line(CPrepFileInfo *p)
 {
     return (char *)currentTextPosition - p->textbuffer;
 }
 
-static void report_error(SInt16 code)
+static inline void report_error(SInt16 code)
 {
     CPrep_ReportError(code);
 }
 
-static SInt32 check_time(void)
+static inline SInt32 check_time(void)
 {
     void **p = (void **)cprep_cu;
     return CWCompilerLinkerPrivate_CallCompilerCallback(*p, line_count);

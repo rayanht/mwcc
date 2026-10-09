@@ -74,7 +74,7 @@ static int data_005805ee;
 static void CError_BufferGrow(StrBuf *eb, UInt32 amount);
 
 /* The same buffer appended to without a null check, as some callers do for their own local buffers. */
-static void CErrBuf_Putc(StrBuf *b, int c)
+static inline void CErrBuf_Putc(StrBuf *b, int c)
 {
     if (b->avail == 0)
         CError_BufferGrow(b, 256);
@@ -82,7 +82,7 @@ static void CErrBuf_Putc(StrBuf *b, int c)
     b->avail--;
 }
 
-static void CErrBuf_Append(StrBuf *b, const char *s)
+static inline void CErrBuf_Append(StrBuf *b, const char *s)
 {
     UInt32 n = strlen(s);
     if (b->avail < n)

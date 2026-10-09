@@ -34,7 +34,7 @@ static int GetKind2(int index);
 static int GetKind(int index);
 static int GetSync(int index, short *out, short *typeout);
 static int GetConst(int index, short *out);
-static void SetType(PCodeInstruction *p, short t);
+static inline void SetType(PCodeInstruction *p, short t);
 
 void ConstantPropagation_FindUniqueDefinitions(struct PCodeBlock *state)
 {
@@ -519,7 +519,7 @@ static int GetConst(int index, short *out)
     return 0;
 }
 
-static void SetType(PCodeInstruction *p, short t)
+static inline void SetType(PCodeInstruction *p, short t)
 {
     p->flags = gPCodeOpcodeDescriptors[t].flags | (p->flags & ~gPCodeOpcodeDescriptors[p->opcode].flags);
     p->opcode = (short)t;

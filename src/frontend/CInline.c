@@ -90,15 +90,15 @@ static char data_005824c3;
 
 #pragma auto_inline reset
 
-static ENode *adjust(ENode *f, ENode *e);
-static ENode *get_input(SInt32 index);
-static ENode *gen_name(ENode *x);
+static inline ENode *adjust(ENode *f, ENode *e);
+static inline ENode *get_input(SInt32 index);
+static inline ENode *gen_name(ENode *x);
 static ENode *CInline_CopyConst(ENode *e);
 static Object *NewInlineVar(Type *type, SInt16 offset, UInt8 info);
-static void add_chain(ChainRec **head, Statement *node, IStmtRec *ent);
+static inline void add_chain(ChainRec **head, Statement *node, IStmtRec *ent);
 static ENode *gen_expr_save(void *x);
-static ENode *gen_expr(void *x);
-static Object *CInline_MakeTemp(Type *t);
+static inline ENode *gen_expr(void *x);
+static inline Object *CInline_MakeTemp(Type *t);
 
 static inline TemplClassInst *CInline_0050ebf0_inline1(Object *v1)
 {
@@ -3425,7 +3425,7 @@ void make_auto_generated_method(Object *func)
     CError_FATAL(4097);
 }
 
-static ENode *adjust(ENode *f, ENode *e)
+static inline ENode *adjust(ENode *f, ENode *e)
 {
     Type *et;
     Type *ft;
@@ -3440,7 +3440,7 @@ static ENode *adjust(ENode *f, ENode *e)
     return r;
 }
 
-static ENode *get_input(SInt32 index)
+static inline ENode *get_input(SInt32 index)
 {
     return data_0058245a[index].expr;
 }
@@ -3460,7 +3460,7 @@ static SInt32 MemoFirst(ENode *key)
     return m->val;
 }
 
-static ENode *gen_name(ENode *x)
+static inline ENode *gen_name(ENode *x)
 {
     evalMode = 2;
     memo_list = NULL;
@@ -3555,7 +3555,7 @@ static Object *NewInlineVar(Type *type, SInt16 offset, UInt8 info)
     return obj;
 }
 
-static void add_chain(ChainRec **head, Statement *node, IStmtRec *ent)
+static inline void add_chain(ChainRec **head, Statement *node, IStmtRec *ent)
 {
     ChainRec *r = (ChainRec *)lalloc(12);
     r->next = *head;
@@ -3583,7 +3583,7 @@ static ENode *gen_expr_save(void *x)
     return (ENode *)x;
 }
 
-static ENode *gen_expr(void *x)
+static inline ENode *gen_expr(void *x)
 {
     evalMode = 4;
     memo_list = NULL;
@@ -3593,7 +3593,7 @@ static ENode *gen_expr(void *x)
 
 #define CERROR_FILE ("CInline.c")
 
-static Object *CInline_MakeTemp(Type *t)
+static inline Object *CInline_MakeTemp(Type *t)
 {
     Object *o;
     o = CParser_NewLocalDataObject(NULL, 1);

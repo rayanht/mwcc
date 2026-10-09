@@ -54,16 +54,16 @@ static void *data_0055e528 = data_00580df6;
 static int max_padding_size = 128;
 #define ELF_SECTION(p) ((ObjGenSection *)(void *)(p))
 
-static SectionRec *MakeRecA(void *f6, UInt8 f2, UInt8 f3);
-static int ElfBigEndian(void);
-static void ElfLockSection(ObjGenSection *section);
+static inline SectionRec *MakeRecA(void *f6, UInt8 f2, UInt8 f3);
+static inline int ElfBigEndian(void);
+static inline void ElfLockSection(ObjGenSection *section);
 static void ElfLinkSection(ObjGenSection *section);
 static void ElfLinkSymbolTable(ObjGenSection *section);
 static SInt32 ElfIndex(ObjGenSection *section);
-static SInt32 ElfSectionIndex(ObjGenSection *section);
-static void ElfSwapSection(ObjGenSection *section, int words);
-static SInt32 ElfPad(SInt32 alignment);
-static void ElfAllocZero(SInt32 size);
+static inline SInt32 ElfSectionIndex(ObjGenSection *section);
+static inline void ElfSwapSection(ObjGenSection *section, int words);
+static inline SInt32 ElfPad(SInt32 alignment);
+static inline void ElfAllocZero(SInt32 size);
 
 static inline SInt32 ElfPadSize(SInt32 alignment, int size)
 {
@@ -504,7 +504,7 @@ ObjGenSection *fn_0049c540(ObjGenSection *input, SInt32 context)
     return record;
 }
 
-static SectionRec *MakeRecA(void *f6, UInt8 f2, UInt8 f3)
+static inline SectionRec *MakeRecA(void *f6, UInt8 f2, UInt8 f3)
 {
     SectionRec *a;
     a = (SectionRec *)galloc(0xe);
@@ -943,12 +943,12 @@ void fn_0049b920(void)
     ((ElfHeader *)*data_00583ae8.buffer.data)->shnum = elf_header.shnum;
 }
 
-static int ElfBigEndian(void)
+static inline int ElfBigEndian(void)
 {
     return !copts.littleendian;
 }
 
-static void ElfLockSection(ObjGenSection *section)
+static inline void ElfLockSection(ObjGenSection *section)
 {
     COS_LockHandle(section->buffer.data);
 }
@@ -980,12 +980,12 @@ static SInt32 ElfIndex(ObjGenSection *section)
     return ElfSectionIndex(section);
 }
 
-static SInt32 ElfSectionIndex(ObjGenSection *section)
+static inline SInt32 ElfSectionIndex(ObjGenSection *section)
 {
     return section->index;
 }
 
-static void ElfSwapSection(ObjGenSection *section, int words)
+static inline void ElfSwapSection(ObjGenSection *section, int words)
 {
     if (words)
         swap_conversion_blocks(*section->buffer.data, section->buffer.size, CError_Internal, 1);
@@ -994,7 +994,7 @@ static void ElfSwapSection(ObjGenSection *section, int words)
 }
 
 /* Pads the object file to ALIGNMENT and returns its new size. */
-static SInt32 ElfPad(SInt32 alignment)
+static inline SInt32 ElfPad(SInt32 alignment)
 {
     SInt32 n;
 
@@ -1006,7 +1006,7 @@ static SInt32 ElfPad(SInt32 alignment)
     return data_00583ae8.buffer.size;
 }
 
-static void ElfAllocZero(SInt32 size)
+static inline void ElfAllocZero(SInt32 size)
 {
     data_0055e528 = galloc(size);
     memset(data_0055e528, 0, size);
