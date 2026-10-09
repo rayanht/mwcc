@@ -44,14 +44,6 @@
 
 static int assembly_buffer_offset;
 typedef void (*ExpressionGenerator)(ENode *, short, short, Operand *);
-static PCodeInstruction *first_instr(struct PCodeLabel *q)
-{
-    PCodeBlock *n;
-    for (n = q->target.block; n->instruction_count == 0; n = n->next)
-        ;
-    return n->instructions;
-}
-
 static inline int PCodeAssembly_ShouldEmitExtraData(void)
 {
     return copts.emitExtraAssemblyData != 0;
@@ -1460,6 +1452,14 @@ UInt32 encode_assembly_instruction(PCodeInstruction *instr, UInt32 offset, Weird
     return CTool_EndianConvertWord32(bits);
 }
 
+static PCodeInstruction *first_instr(struct PCodeLabel *q)
+{
+    PCodeBlock *n;
+    for (n = q->target.block; n->instruction_count == 0; n = n->next)
+        ;
+    return n->instructions;
+}
+
 void expand_out_of_range_conditional_branches(void)
 {
     PCodeBlock *entry;
@@ -1605,25 +1605,33 @@ void expand_out_of_range_conditional_branches(void)
 
 int optimize_branches(int arg)
 {
-    long prev;
-    int removed, changed;
-    PCodeBlock *n;
-    struct PCodeLabel *q, *qq;
+    PCodeInstruction *p;
+    int removed;
+    struct PCodeLabel *q;
+    int changed;
     PCodeBlock *blk;
     PCodeInstruction **pp;
     PCodeInstruction *fd;
-    SInt16 k, op;
+    SInt16 k;
+    PCodeBlock *ref;
+    PCodeBlock *b;
+    PCodeBlockLink *r;
+    PCodeBlockLink *r1;
+    PCodeBlock *ref2;
+    UInt32 x;
+    PCodeBlock *b2;
+    PCodeBlockLink *r2;
+    PCodeBlockLink *r3;
 
     do {
         changed = removed = 0;
         for (blk = gPCodeBlocks; blk; blk = blk->next) {
-            PCodeInstruction *p;
             if (blk->instruction_count == 0)
                 continue;
             if (((p = blk->reverse_instructions)->flags & fIsBranch) == 0)
                 continue;
             pp = (PCodeInstruction **)blk->code_offset + (blk->instruction_count - 1);
-            if ((op = p->opcode) == 0 && p->operandData.operands[0].kind == PCOp_LABEL) {
+            if (p->opcode == 0 && p->operandData.operands[0].kind == PCOp_LABEL) {
                 fd = first_instr(q = p->operandData.operands[0].value.label);
                 if ((PCodeInstruction **)q->target.block->code_offset == pp + 1) {
                     PCode_UnlinkInstruction(p);
@@ -1640,44 +1648,39 @@ int optimize_branches(int arg)
                         changed = 1;
                     }
                 }
-            } else if ((op == 5 || op == 8) && p->operandData.operands[2].kind == PCOp_LABEL) {
-                PCodeBlock *n;
-                struct PCodeLabel *q;
-                PCodeBlock *ref = p->block;
-                fd = first_instr(qq = q = p->operandData.operands[2].value.label);
-                if ((PCodeInstruction **)qq->target.block->code_offset == (pp + 1)) {
+            } else if ((p->opcode == 5 || p->opcode == 8) && p->operandData.operands[2].kind == PCOp_LABEL) {
+                ref = p->block;
+                fd = first_instr(q = p->operandData.operands[2].value.label);
+                if ((PCodeInstruction **)q->target.block->code_offset == (pp + 1)) {
                     PCode_UnlinkInstruction(p);
                     changed = removed = 1;
                 } else {
                     if ((k = fd->opcode) == 0) {
                         if (fd->operandData.operands[0].kind == PCOp_LABEL &&
-                            fd->operandData.operands[0].value.label != q) {
+                            fd->operandData.operands[0].value.label != p->operandData.operands[2].value.label) {
                             p->operandData.operands[2].value.label = fd->operandData.operands[0].value.label;
                             changed = 1;
                         }
                     } else if (k == 0x11) {
-                        if (op == 5)
+                        if (p->opcode == 5)
                             p->opcode = PC_BTLR;
                         else
                             p->opcode = PC_BFLR;
                         p->operand_count = 2;
                         changed = 1;
                     } else if (k == 0x12) {
-                        if (op == 5)
+                        if (p->opcode == 5)
                             p->opcode = PC_BTCTR;
                         else
                             p->opcode = PC_BFCTR;
                         p->operand_count = 2;
                         changed = 1;
                     } else {
-                        PCodeBlockLink *r;
-                        PCodeBlock *b;
                         if ((b = ref->next) && (fd = b->instructions) != NULL && fd->opcode == PC_BLR &&
-                            (PCodeInstruction **)qq->target.block->code_offset == (pp + 2)) {
-                            PCodeBlockLink *r;
+                            (PCodeInstruction **)q->target.block->code_offset == (pp + 2)) {
                             r = b->predecessors;
                             if (r != NULL && r->payload.block == ref && r->next == NULL) {
-                                if (op == 5)
+                                if (p->opcode == 5)
                                     p->opcode = PC_BFLR;
                                 else
                                     p->opcode = PC_BTLR;
@@ -1686,11 +1689,10 @@ int optimize_branches(int arg)
                                 changed = removed = 1;
                             }
                         } else if (b && (fd = b->instructions) != NULL && fd->opcode == PC_BCTR &&
-                                   (PCodeInstruction **)qq->target.block->code_offset == (pp + 2)) {
-                            PCodeBlockLink *r;
-                            r = b->predecessors;
-                            if (r != NULL && r->payload.block == ref && r->next == NULL) {
-                                if (op == 5)
+                                   (PCodeInstruction **)q->target.block->code_offset == (pp + 2)) {
+                            r1 = b->predecessors;
+                            if (r1 != NULL && r1->payload.block == ref && r1->next == NULL) {
+                                if (p->opcode == 5)
                                     p->opcode = PC_BFCTR;
                                 else
                                     p->opcode = PC_BTCTR;
@@ -1701,19 +1703,17 @@ int optimize_branches(int arg)
                         }
                     }
                 }
-            } else if (op == 2 && p->operandData.operands[3].kind == PCOp_LABEL &&
+            } else if (p->opcode == 2 && p->operandData.operands[3].kind == PCOp_LABEL &&
                        (p->flags & (fSideEffects | fLink)) == 0) {
-                PCodeBlock *n;
-                struct PCodeLabel *q;
-                PCodeBlock *ref = p->block;
-                fd = first_instr(qq = q = p->operandData.operands[3].value.label);
-                if ((PCodeInstruction **)qq->target.block->code_offset == (pp + 1)) {
+                ref2 = p->block;
+                fd = first_instr(q = p->operandData.operands[3].value.label);
+                if ((PCodeInstruction **)q->target.block->code_offset == (pp + 1)) {
                     PCode_UnlinkInstruction(p);
                     changed = removed = 1;
                 } else {
                     if ((k = fd->opcode) == 0) {
                         if (fd->operandData.operands[0].kind == PCOp_LABEL &&
-                            fd->operandData.operands[0].value.label != q) {
+                            fd->operandData.operands[0].value.label != p->operandData.operands[3].value.label) {
                             p->operandData.operands[3].value.label = fd->operandData.operands[0].value.label;
                             changed = 1;
                         }
@@ -1726,37 +1726,32 @@ int optimize_branches(int arg)
                         p->operand_count = 3;
                         changed = 1;
                     } else {
-                        UInt32 x;
-                        PCodeBlock *b;
-                        PCodeBlockLink *r;
-                        if ((b = ref->next) && (fd = b->instructions) != NULL && fd->opcode == PC_BLR &&
-                            (PCodeInstruction **)qq->target.block->code_offset == (pp + 2)) {
-                            PCodeBlockLink *r;
+                        if ((b2 = ref2->next) && (fd = b2->instructions) != NULL && fd->opcode == PC_BLR &&
+                            (PCodeInstruction **)q->target.block->code_offset == (pp + 2)) {
                             x = p->operandData.operands[0].value.unsigned_value & 0x1e;
-                            r = b->predecessors;
-                            if (r != NULL && r->payload.block == ref && r->next == NULL) {
+                            r2 = b2->predecessors;
+                            if (r2 != NULL && r2->payload.block == ref2 && r2->next == NULL) {
                                 if ((x & 0x1e) == 4)
                                     p->operandData.operands[0].value.unsigned_value = x | 0xc;
                                 else if ((x & 0x1e) == 0xc)
                                     p->operandData.operands[0].value.unsigned_value = x & 0x17;
                                 p->opcode = PC_BCLR;
                                 p->operand_count = 3;
-                                PCode_UnlinkInstruction(ref->next->instructions);
+                                PCode_UnlinkInstruction(ref2->next->instructions);
                                 changed = removed = 1;
                             }
-                        } else if (b && (fd = b->instructions) != NULL && fd->opcode == PC_BCTR &&
-                                   (PCodeInstruction **)qq->target.block->code_offset == (pp + 2)) {
-                            PCodeBlockLink *r;
+                        } else if (b2 && (fd = b2->instructions) != NULL && fd->opcode == PC_BCTR &&
+                                   (PCodeInstruction **)q->target.block->code_offset == (pp + 2)) {
                             x = p->operandData.operands[0].value.unsigned_value & 0x1e;
-                            r = b->predecessors;
-                            if (r && r->payload.block == ref && r->next == NULL) {
+                            r3 = b2->predecessors;
+                            if (r3 && r3->payload.block == ref2 && r3->next == NULL) {
                                 if ((x & 0x1e) == 4)
                                     p->operandData.operands[0].value.unsigned_value = x | 0xc;
                                 else if ((x & 0x1e) == 0xc)
                                     p->operandData.operands[0].value.unsigned_value = x & 0x17;
                                 p->opcode = PC_BCCTR;
                                 p->operand_count = 3;
-                                PCode_UnlinkInstruction(ref->next->instructions);
+                                PCode_UnlinkInstruction(ref2->next->instructions);
                                 changed = removed = 1;
                             }
                         }

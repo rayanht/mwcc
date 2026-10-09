@@ -21,6 +21,8 @@
     "src/backend/MachineSimulation750.c",
     "src/backend/MachineSimulation821.c",
     "src/backend/PCode.c",
+    "src/backend/PCodeAssembly.c",
+    "src/backend/PCodeListing.c",
     "src/backend/PCodeUtilities.c",
     "src/backend/PPCError.c",
     "src/backend/Registers.c",
