@@ -14457,7 +14457,7 @@
     "source": "src/backend/ObjGen_PPC_EABI.c"
   },
   {
-    "name": "fn_0048a340",
+    "name": "find_section_attributes",
     "address": "0x0048a340",
     "size": 64,
     "source": "src/backend/ObjGen_PPC_EABI.c"
@@ -14535,7 +14535,7 @@
     "source": "src/backend/ObjGen_PPC_EABI.c"
   },
   {
-    "name": "fn_0048b1d0",
+    "name": "descriptor_section",
     "address": "0x0048b1d0",
     "size": 84,
     "source": "src/backend/ObjGen_PPC_EABI.c"
@@ -14673,7 +14673,7 @@
     "source": "src/backend/ObjGen_PPC_EABI.c"
   },
   {
-    "name": "fn_0048c690",
+    "name": "create_attribute_section",
     "address": "0x0048c690",
     "size": 141,
     "source": "src/backend/ObjGen_PPC_EABI.c"

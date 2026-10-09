@@ -59,94 +59,6 @@ static struct BufferUpdate *pending_buffer_updates;
 static struct BufferUpdate *pending_data_tail;
 #pragma options align = reset
 
-/* The object header as this translation unit sees it: the signed 16-bit
- * identifier field sits at +4 (the shared header types it unsigned). */
-
-static inline void fill_section_table(void)
-{
-    SInt16 count;
-    ObjGenSection *head;
-    ObjGenSection *lp;
-    int index;
-
-    if (section_table_dirty) {
-        section_table_dirty = 0;
-        count = sectionHeaderCount;
-        copts.sectionHeaderTableSize = count;
-        data_00580db4 = copts.sectionHeaderTable = galloc(count * 4);
-        memset(copts.sectionHeaderTable, 0, sectionHeaderCount * 4);
-        index = 0;
-        lp = head = section_list;
-        if (head != NULL) {
-            do {
-                copts.sectionHeaderTable[index] = (SInt32)lp->header;
-                lp = lp->next;
-                index++;
-            } while (lp != NULL);
-        }
-    }
-}
-
-static inline SectionSymbolAttributes *ObjGen_Lookup(Object *obj)
-{
-    SectionSymbolAttributes *p;
-    SectionSymbolAttributes *p_s;
-    SInt16 s;
-    SInt32 id;
-
-    (void)((int (*)(Object *, SInt32, Boolean))ObjGen_PPC_EABI_SetObjectSection)(obj, obj->type->size, 0);
-    s = obj->section;
-    if (s < 0)
-        s = CodeGen_FindInterruptGenerationRecord(s)->sectionIndex;
-    id = s;
-    if (section_table_dirty)
-        fill_section_table();
-    p = p_s = section_symbol_attributes;
-    if (p_s) {
-        do {
-            if ((SInt16)p->index == id)
-                break;
-            p = p->next;
-        } while (p);
-    }
-    return p;
-}
-
-static inline UInt16 section_code(Object *obj)
-{
-    SectionSymbolAttributes *p;
-    UInt16 code;
-
-    if (obj->datatype == DLOCAL) {
-        code = 9;
-    } else {
-        SectionSymbolAttributes *p_s;
-        SInt16 s;
-        SInt32 id;
-        (void)((int (*)(Object *, SInt32, Boolean))ObjGen_PPC_EABI_SetObjectSection)(obj, obj->type->size, 0);
-        s = obj->section;
-        if (s < 0)
-            s = CodeGen_FindInterruptGenerationRecord(s)->sectionIndex;
-        id = s;
-        if (section_table_dirty)
-            fill_section_table();
-        p = p_s = section_symbol_attributes;
-        if (p_s) {
-            do {
-                if ((SInt16)p->index == id)
-                    break;
-                p = p->next;
-            } while (p);
-        }
-        if (obj->datatype == DFUNC || (UInt8)(obj->datatype - 4) <= 1)
-            code = p->alignment;
-        else
-            code = p->kind;
-    }
-
-    return code;
-}
-
 static inline void initialize_section_table(void)
 {
     SInt16 count;
@@ -249,60 +161,6 @@ static inline SInt16 object_section_code(Object *obj)
     return code;
 }
 
-static inline SInt16 ObjGen_PPC_EABI_DefaultBSSSectionIndex(void)
-{
-    return copts.bssSection->header->index;
-}
-
-static inline SInt16 ObjGen_PPC_EABI_DefaultDataSectionIndex(void)
-{
-    return copts.dataSection->header->index;
-}
-
-static inline void fill_section_header_table(void)
-{
-    SInt16 count;
-    ObjGenSection *lp;
-    SInt32 index;
-    ObjGenSection *head;
-
-    section_table_dirty = 0;
-    count = sectionHeaderCount;
-    copts.sectionHeaderTableSize = count;
-    data_00580db4 = copts.sectionHeaderTable = galloc(count * 4);
-    memset(copts.sectionHeaderTable, 0, sectionHeaderCount * 4);
-    lp = head = section_list;
-    index = 0;
-    if (head != NULL) {
-        do {
-            copts.sectionHeaderTable[index] = (SInt32)lp->header;
-            index++;
-            lp = lp->next;
-        } while (lp != NULL);
-    }
-}
-
-static inline void build_section_table(UInt16 sectionCount)
-{
-    SInt16 count = sectionCount;
-    ObjGenSection *record;
-    ObjGenSection *head;
-    SInt32 index;
-
-    copts.sectionHeaderTableSize = count;
-    data_00580db4 = copts.sectionHeaderTable = galloc(count * 4);
-    memset(copts.sectionHeaderTable, 0, sectionHeaderCount * 4);
-    record = head = section_list;
-    index = 0;
-    if (head != NULL) {
-        do {
-            copts.sectionHeaderTable[index] = (SInt32)record->header;
-            index++;
-            record = record->next;
-        } while (record != NULL);
-    }
-}
-
 static inline void *galloc_clear(long size)
 {
     void *p = galloc(size);
@@ -325,31 +183,6 @@ static inline void SetDataSectionOptions(SectionRec *section, ObjGenSection *sym
 static inline void SetCodeSectionOption(ObjGenSection *symbol, Boolean useDefaults)
 {
     copts.textSection = useDefaults ? default_code_section : symbol;
-}
-
-static inline void rebuild_section_header_table(void)
-{
-    SInt16 count;
-    ObjGenSection *head;
-    ObjGenSection *lp;
-    SInt32 index;
-
-    if (section_table_dirty) {
-        section_table_dirty = 0;
-        count = sectionHeaderCount;
-        copts.sectionHeaderTableSize = count;
-        data_00580db4 = copts.sectionHeaderTable = galloc(count * 4);
-        memset(copts.sectionHeaderTable, 0, sectionHeaderCount * 4);
-        lp = head = section_list;
-        index = 0;
-        if (head != NULL) {
-            do {
-                copts.sectionHeaderTable[index] = (SInt32)lp->header;
-                index++;
-                lp = lp->next;
-            } while (lp != NULL);
-        }
-    }
 }
 
 static inline void ensure_section_table_ac10(void)
@@ -426,31 +259,6 @@ static inline SInt32 SectionKind(Object *obj)
     if (obj->datatype == DFUNC || (UInt8)(obj->datatype - 4) <= 1)
         return n->alignment;
     return n->kind;
-}
-
-static inline void build_section_header_table(void)
-{
-    SInt16 count;
-    ObjGenSection *head;
-    ObjGenSection *lp;
-    SInt32 index;
-
-    if (section_table_dirty) {
-        section_table_dirty = 0;
-        count = sectionHeaderCount;
-        copts.sectionHeaderTableSize = count;
-        data_00580db4 = copts.sectionHeaderTable = galloc(count * 4);
-        memset(copts.sectionHeaderTable, 0, sectionHeaderCount * 4);
-        lp = head = section_list;
-        index = 0;
-        if (head != NULL) {
-            do {
-                copts.sectionHeaderTable[index] = (SInt32)lp->header;
-                index++;
-                lp = lp->next;
-            } while (lp != NULL);
-        }
-    }
 }
 
 static inline void build_section_index(void)
@@ -802,6 +610,26 @@ unsigned int ObjGen_PPC_EABI_EmitObject(Object *object, const void *context, OLi
         allocate_object_storage(object, flags, 1);
 }
 
+static SectionSymbolAttributes *find_section_attributes(SInt16 section)
+{
+    SectionSymbolAttributes *attributes;
+    SInt32 index;
+    SectionSymbolAttributes *head;
+
+    index = (SInt16)ObjGen_PPC_EABI_GetSectionIndex(section);
+    if (section_table_dirty)
+        ObjGen_PPC_EABI_BuildSectionHeaderTable();
+    attributes = head = section_symbol_attributes;
+    if (head) {
+        do {
+            if ((SInt16)attributes->index == index)
+                break;
+            attributes = attributes->next;
+        } while (attributes);
+    }
+    return attributes;
+}
+
 char *ObjGen_PPC_EABI_GetSectionName(struct ObjGenSection *descriptor)
 {
     CNameNode *entry;
@@ -820,6 +648,20 @@ char *ObjGen_PPC_EABI_GetSectionName(struct ObjGenSection *descriptor)
     return NULL;
 }
 
+#if VERSION == VERSION_GC_1_0
+SInt32 ObjGen_PPC_EABI_GetSectionAlignmentOrKind(Object *obj)
+{
+    SectionSymbolAttributes *section;
+
+    if (obj->datatype == DLOCAL)
+        return 9;
+    ObjGen_PPC_EABI_SetObjectSection(obj, obj->type->size, 0);
+    section = find_section_attributes(obj->section);
+    if (obj->datatype == DFUNC || (UInt8)(obj->datatype - 4) <= 1)
+        return section->alignment;
+    return section->kind;
+}
+#else
 SInt32 ObjGen_PPC_EABI_GetSectionAlignmentOrKind(Object *obj)
 {
     SInt16 id;
@@ -852,7 +694,19 @@ SInt32 ObjGen_PPC_EABI_GetSectionAlignmentOrKind(Object *obj)
         return section->alignment;
     return section->kind;
 }
+#endif
 
+#if VERSION == VERSION_GC_1_0
+Boolean PCodeUtilities_Require(Object *obj)
+{
+    UInt8 kind;
+
+    kind = ObjGen_PPC_EABI_GetSectionAlignmentOrKind(obj);
+    if ((UInt8)(kind - 6) <= 2 || kind == 2)
+        return 1;
+    return 0;
+}
+#else
 Boolean PCodeUtilities_Require(Object *obj)
 {
     SInt32 result;
@@ -863,7 +717,19 @@ Boolean PCodeUtilities_Require(Object *obj)
         return 1;
     return 0;
 }
+#endif
 
+#if VERSION == VERSION_GC_1_0
+Boolean ObjGen_PPC_EABI_0048ac10(Object *obj)
+{
+    SInt32 kind;
+
+    kind = ObjGen_PPC_EABI_GetSectionAlignmentOrKind(obj);
+    if ((UInt8)(kind - SK_SDATA) <= SK_SDATA0 - SK_SDATA)
+        return 1;
+    return 0;
+}
+#else
 Boolean ObjGen_PPC_EABI_0048ac10(Object *obj)
 {
     SInt32 kind;
@@ -899,6 +765,7 @@ Boolean ObjGen_PPC_EABI_0048ac10(Object *obj)
         return 1;
     return 0;
 }
+#endif
 
 Boolean ObjGen_PPC_EABI_IsInvalidAbsName(char *name)
 {
@@ -989,9 +856,9 @@ unsigned char ObjGen_PPC_EABI_IsSpecialSectionName(char *name)
 
 void ObjGen_PPC_EABI_BuildSectionHeaderTable(void)
 {
-    ObjGenSection *p;
     SInt16 n;
     ObjGenSection *head;
+    ObjGenSection *p;
     SInt32 i;
 
     if (section_table_dirty) {
@@ -1003,7 +870,8 @@ void ObjGen_PPC_EABI_BuildSectionHeaderTable(void)
         i = 0;
         if (head)
             do {
-                copts.sectionHeaderTable[i++] = (SInt32)p->header;
+                copts.sectionHeaderTable[i] = (SInt32)p->header;
+                i++;
                 p = p->next;
             } while (p);
     }
@@ -1229,10 +1097,7 @@ void ObjGen_PPC_EABI_InitSections(void)
     fn_0049c510(".comment", 15, 1, 0x40);
     fn_0049c510("", 17, 1, 0);
 
-    if (section_table_dirty) {
-        section_table_dirty = 0;
-        build_section_table(sectionHeaderCount);
-    }
+    ObjGen_PPC_EABI_BuildSectionHeaderTable();
 }
 
 short ObjGen_PPC_EABI_GetHeaderIndex(short kind)
@@ -1284,35 +1149,76 @@ void ObjGen_PPC_EABI_SetObjectSection(Object *object, SInt32 size, Boolean isUni
         }
         if (isUninitialized) {
             if (size == 0) {
-                section = ObjGen_PPC_EABI_DefaultBSSSectionIndex();
+                section = ObjGen_PPC_EABI_GetHeaderIndex(0x20);
             } else {
                 smallDataLimit = copts.constsmalldatathreshold;
                 if (smallDataLimit != 0 && size <= smallDataLimit) {
-                    section = copts.smallBSSSection->header->index;
+                    section = ObjGen_PPC_EABI_GetHeaderIndex(0x22);
                 } else {
-                    section = ObjGen_PPC_EABI_DefaultBSSSectionIndex();
+                    section = ObjGen_PPC_EABI_GetHeaderIndex(0x20);
                 }
             }
         } else {
             if (size == 0) {
-                section = ObjGen_PPC_EABI_DefaultDataSectionIndex();
+                section = ObjGen_PPC_EABI_GetHeaderIndex(2);
             } else {
                 smallDataLimit = copts.nonconstsmalldatathreshold;
                 if (smallDataLimit != 0 && size <= smallDataLimit) {
-                    section = copts.smallDataSection->header->index;
+                    section = ObjGen_PPC_EABI_GetHeaderIndex(0x21);
                 } else {
-                    section = ObjGen_PPC_EABI_DefaultDataSectionIndex();
+                    section = ObjGen_PPC_EABI_GetHeaderIndex(2);
                 }
             }
         }
     } else if ((UInt8)(object->datatype - 3) <= 2) {
-        section = copts.textSection->header->index;
+        section = ObjGen_PPC_EABI_GetHeaderIndex(1);
     }
     if (interruptInfo != NULL)
         interruptInfo->sectionIndex = section;
     object->section = section;
 }
 
+static ObjGenSection *descriptor_section(Object *object, char kind)
+{
+    if (kind == 1) {
+        object->section = data_005884b6->header->index;
+        return data_005884b6;
+    }
+    if (kind == 2) {
+        object->section = data_005884ba->header->index;
+        return data_005884ba;
+    }
+    CError_FATAL(1220);
+    return NULL;
+}
+
+#if VERSION == VERSION_GC_1_0
+SInt16 ObjGen_PPC_EABI_MapObjectSectionCode(Object *obj)
+{
+    UInt16 sectionCode;
+    switch ((UInt8)(sectionCode = ObjGen_PPC_EABI_GetSectionAlignmentOrKind(obj))) {
+        case 1:
+        case 2:
+        case 8:
+        case 10:
+        case 11:
+        case 12:
+            return 0;
+        case 6:
+            return 13;
+        case 3:
+        case 4:
+        case 7:
+            return 2;
+        case 9:
+            return stack_base_reg;
+    }
+
+    ObjGen_PPC_EABI_GetSectionAlignmentOrKind(obj);
+    CError_FATAL(1252);
+    return 2;
+}
+#else
 SInt16 ObjGen_PPC_EABI_MapObjectSectionCode(Object *obj)
 {
     UInt16 sectionCode;
@@ -1339,7 +1245,46 @@ SInt16 ObjGen_PPC_EABI_MapObjectSectionCode(Object *obj)
     CError_FATAL(1252);
     return 2;
 }
+#endif
 
+#if VERSION == VERSION_GC_1_0
+ObjGenSection *select_object_section(Object *obj, SInt32 section, Boolean usePrimary, Boolean force, Boolean options)
+{
+    ObjGenSection *record;
+    SectionSymbolAttributes *entries;
+    int id;
+    SectionSymbolAttributes *entry;
+    ObjGenSection *alternate;
+    ObjGenSymbolLink *definition;
+    Boolean hasAlternate = 0;
+
+    ObjGen_PPC_EABI_SetObjectSection(obj, section, options);
+    entry = find_section_attributes(obj->section);
+    CError_ASSERT(1266, entry);
+
+    record = entry->target;
+    CError_ASSERT(1268, record);
+
+    if (!usePrimary) {
+        if (!(alternate = entry->linkedSymbol)) {
+            PPCError_ReportError(0x92, record->name, obj->name->name);
+            return (ObjGenSection *)record;
+        }
+        hasAlternate = entry->auxiliary != NULL;
+        record = alternate;
+    }
+
+    if (!PCodeUtilities_Require(obj) && !force && hasAlternate && !CParser_HasInternalLinkage(obj))
+        return data_005884de;
+
+    if ((definition = record->symbolLink) && record->buffer.size == 0 && definition->object == NULL &&
+        !(obj->qual & Q_IMPLICIT_WEAK) && !(obj->qual & Q_WEAK)) {
+        definition->object = obj;
+        record->symbolLink->symbol = (struct BE_SymNode *)BE_symbol_CreateSectionSymbol((ObjGenSection *)record);
+    }
+    return (ObjGenSection *)record;
+}
+#else
 ObjGenSection *select_object_section(Object *obj, SInt32 section, Boolean usePrimary, Boolean force, Boolean options)
 {
     ObjGenSection *record;
@@ -1389,6 +1334,7 @@ ObjGenSection *select_object_section(Object *obj, SInt32 section, Boolean usePri
     }
     return (ObjGenSection *)record;
 }
+#endif
 
 void report_section_permission_conflict(Object *function, ObjGenSection *qualInfo, void *name, UInt32 flags)
 {
@@ -1656,6 +1602,13 @@ void ObjGen_PPC_EABI_SetSymbolOffset(Object *object, int offset)
 /* Serialized relocation record. */
 /* Relocation output block and its owning context. */
 
+/* 1.0 writes big-endian objects only */
+#if VERSION == VERSION_GC_1_0
+#define BIG_ENDIAN_OFFSET(n) (n)
+#else
+#define BIG_ENDIAN_OFFSET(n) (copts.littleendian ? 0 : (n))
+#endif
+
 void emit_relocation(SInt32 op, SInt32 offset, Object *obj, ObjGenSection *ctx, SInt32 value)
 {
     EABIRelocationRecord record;
@@ -1682,10 +1635,10 @@ void emit_relocation(SInt32 op, SInt32 offset, Object *obj, ObjGenSection *ctx, 
     if (op == 3) {
         if (ObjGen_PPC_EABI_0048ac10(obj)) {
             node->kind = 0x6d;
-            offset += copts.littleendian ? 0 : copts.rel109_offset;
+            offset += BIG_ENDIAN_OFFSET(copts.rel109_offset);
         } else {
             node->kind = 3;
-            offset += copts.littleendian ? 0 : 2;
+            offset += BIG_ENDIAN_OFFSET(2);
         }
     } else if (op == 2) {
         node->kind = 10;
@@ -1697,30 +1650,30 @@ void emit_relocation(SInt32 op, SInt32 offset, Object *obj, ObjGenSection *ctx, 
         node->kind = 7;
     } else if (op == 4) {
         node->kind = 4;
-        offset += copts.littleendian ? 0 : 2;
+        offset += BIG_ENDIAN_OFFSET(2);
     } else if (op == 9) {
         node->kind = -3;
-        CError_FATAL(1824);
+        CError_FATAL(VERSION > VERSION_GC_1_0 ? 1824 : 1823);
     } else if (op == 11) {
         node->kind = -4;
-        CError_FATAL(1827);
+        CError_FATAL(VERSION > VERSION_GC_1_0 ? 1827 : 1826);
     } else if (op == 5) {
         node->kind = 4;
-        offset += copts.littleendian ? 0 : 2;
+        offset += BIG_ENDIAN_OFFSET(2);
     } else if (op == 6) {
         node->kind = 5;
-        offset += copts.littleendian ? 0 : 2;
+        offset += BIG_ENDIAN_OFFSET(2);
     } else if (op == 7) {
         node->kind = 6;
-        offset += copts.littleendian ? 0 : 2;
+        offset += BIG_ENDIAN_OFFSET(2);
     } else if (op == 15) {
         node->kind = 6;
-        offset += copts.littleendian ? 0 : 2;
+        offset += BIG_ENDIAN_OFFSET(2);
     } else if (op == 14) {
         node->kind = 4;
-        offset += copts.littleendian ? 0 : 2;
+        offset += BIG_ENDIAN_OFFSET(2);
     } else {
-        CError_FATAL(1844);
+        CError_FATAL(VERSION > VERSION_GC_1_0 ? 1844 : 1843);
     }
     node->section = block;
     node->index = block->relocationCount - 1;
@@ -1760,9 +1713,13 @@ SInt16 ObjGen_PPC_EABI_SetupFunctionSection(Object *param)
         buffer->maximumSize = alignment;
     BE_elf_AlignRecord(&buffer->buffer, copts.codeAlignment);
     data_00580dac = buffer->buffer.size;
+#if VERSION == VERSION_GC_1_0
+    return ObjGen_PPC_EABI_GetSectionIndex(param->section);
+#else
     if ((index = param->section) < 0)
         index = CodeGen_FindInterruptGenerationRecord(index)->sectionIndex;
     return index;
+#endif
 }
 
 void ObjGen_PPC_EABI_RestoreFunctionState(void)
@@ -1776,12 +1733,12 @@ void ObjGen_PPC_EABI_RestoreFunctionState(void)
 void ObjGen_PPC_EABI_EmitDescriptorWithRelocations(Object *obj, SInt32 value, void *data, UInt32 size,
                                                    ObjGenRelocationRequest *list)
 {
-    Object *object;
     ObjGenSection *section;
+    BE_SymNode *symbol;
+    ObjGenRelocation *relocation;
+    Object *object;
     ObjGenSection *recordSection;
     ObjGenSection *relocations;
-    ObjGenRelocation *relocation;
-    BE_SymNode *symbol;
     Object *target;
     SInt32 base;
     BE_SymNode *dataSymbol;
@@ -1801,8 +1758,7 @@ void ObjGen_PPC_EABI_EmitDescriptorWithRelocations(Object *obj, SInt32 value, vo
         object->name = CParser_GetUniqueName();
         COptimizer_GetFunctionObject(object);
         object->datatype = DDATA;
-        object->section = data_005884b6->header->index;
-        section = data_005884b6;
+        section = descriptor_section(object, 1);
         dataSymbol = BE_symbol_GetOrCreateFunctionObjectSymbol(object);
         dataSymbol->symbolKind = 1;
         dataSymbol->size = size;
@@ -1840,8 +1796,7 @@ void ObjGen_PPC_EABI_EmitDescriptorWithRelocations(Object *obj, SInt32 value, vo
     object->name = CParser_GetUniqueName();
     COptimizer_GetFunctionObject(object);
     object->datatype = DDATA;
-    object->section = data_005884ba->header->index;
-    recordSection = data_005884ba;
+    recordSection = descriptor_section(object, 2);
     symbol = BE_symbol_GetOrCreateFunctionObjectSymbol(object);
     symbol->symbolKind = 1;
     symbol->size = sizeof(descriptor);
@@ -1931,7 +1886,7 @@ void ObjGen_PPC_EABI_EmitObjectRelocation(Object *object)
     value = CTool_EndianConvertWord32(0);
     output = (ObjGenSection *)*(int *)&data_005884ae;
     if (output == NULL) {
-        CError_FATAL(2219);
+        CError_FATAL(VERSION > VERSION_GC_1_0 ? 2219 : 2218);
     }
     position = output->buffer.size;
     AppendGListData(&output->buffer, &value, 4);
@@ -1975,7 +1930,7 @@ InterruptGenerationRecord *fn_00488750(Object *object, BE_SymNode *linkage)
     InterruptGenerationRecord *previous;
 
     resolved = CodeGen_FindInterruptGenerationRecord(object->section);
-    CError_ASSERT(2299, resolved->sectionIndex != 0);
+    CError_ASSERT(VERSION > VERSION_GC_1_0 ? 2299 : 2298, resolved->sectionIndex != 0);
     if ((previous = linkage->interruptInfo) == NULL) {
         linkage->interruptInfo = resolved;
         object->section = resolved->sectionIndex;
@@ -1985,6 +1940,9 @@ InterruptGenerationRecord *fn_00488750(Object *object, BE_SymNode *linkage)
         object->section = previous->sectionIndex = resolved->sectionIndex;
     }
     if (((short *)previous)[2] != (short)resolved->sectionIndex) {
+#if VERSION == VERSION_GC_1_0
+        lookup = find_section_attributes(previous->sectionIndex);
+#else
         if ((index = previous->sectionIndex) < 0) {
             index = CodeGen_FindInterruptGenerationRecord(index)->sectionIndex;
         }
@@ -2013,8 +1971,9 @@ InterruptGenerationRecord *fn_00488750(Object *object, BE_SymNode *linkage)
                 lookup = lookup->next;
             } while (lookup != NULL);
         }
-        CError_ASSERT(2320, lookup != 0);
-        CError_ASSERT(2321, lookup->target != 0);
+#endif
+        CError_ASSERT(VERSION > VERSION_GC_1_0 ? 2320 : 2319, lookup != 0);
+        CError_ASSERT(VERSION > VERSION_GC_1_0 ? 2321 : 2320, lookup->target != 0);
         PPCError_ReportError(129, linkage->nameData.hashName->name, lookup->target->name);
     }
     object->section = previous->sectionIndex;
@@ -2031,7 +1990,6 @@ InterruptGenerationRecord *ObjGen_PPC_EABI_GetInterruptInfo(Object *obj)
 
 void create_main_file_object(void)
 {
-    SInt32 size;
     Boolean savedFileSymInfo;
     UInt8 sourceName[256];
     char objectName[256];
@@ -2068,41 +2026,38 @@ void create_main_file_object(void)
     ObjGen_PPC_EABI_SetObjectSection(obj, obj->type->size, 0);
     BE_symbol_GetOrCreateFunctionObjectSymbol(obj);
     copts.filesyminfo = 0;
-    size = obj->type->size;
-    if (copts.filesyminfo && obj->name->name[0] != '@') {
-        if (!data_0058849e) {
-            DWARF_SetSectionAndState(dwarf_info_section, dwarf_line_section);
-            DWARF_SetupSectionDebugState(BE_elf_FindSection(".text", 0));
-            data_0058849e = 1;
-        }
-        DWARF_CreateObjectDebugEntry(obj);
-    }
-    allocate_object_storage(obj, size, 0);
+    ObjGen_PPC_EABI_EmitObjectWithDebugEntry(obj, NULL, NULL, obj->type->size);
     copts.filesyminfo = savedFileSymInfo;
+}
+
+static void create_attribute_section(ObjGenSection *info)
+{
+    ObjGenSection *output;
+    CGList *list;
+    SectionRec *section;
+    char *name;
+
+    name = (char *)galloc(strlen(info->name) + 8);
+    strcpy(name, ".mwcats");
+    strcat(name, info->name);
+    section = BE_elf_CreateSectionRec(name, NULL, 0, 0, 0);
+    output = BE_elf_CreateSectionWithRelocations(section, 9, 4, 5000, 1000, 0, 0, 0);
+    info->output = output;
+    list = (CGList *)galloc(sizeof(CGList));
+    output->sectionData.attributes = list;
+    memset(list, 0, sizeof(CGList));
+    list->sourceSection = info;
 }
 
 void ObjGen_PPC_EABI_AddSectionAttribute(Object *object, UInt8 flags)
 {
     ObjGenSection *info;
-    ObjGenSection *output;
     CGList *list;
     SectionAttributeNode *node;
-    SectionRec *section;
-    char *name;
 
     info = select_object_section(object, 0, 1, 1, 0);
-    if (info->output == NULL) {
-        name = (char *)galloc(strlen(info->name) + 8);
-        strcpy(name, ".mwcats");
-        strcat(name, info->name);
-        section = BE_elf_CreateSectionRec(name, NULL, 0, 0, 0);
-        output = BE_elf_CreateSectionWithRelocations(section, 9, 4, 5000, 1000, 0, 0, 0);
-        info->output = output;
-        list = (CGList *)galloc(sizeof(CGList));
-        output->sectionData.attributes = list;
-        memset(list, 0, sizeof(CGList));
-        list->sourceSection = info;
-    }
+    if (info->output == NULL)
+        create_attribute_section(info);
     list = info->output->sectionData.attributes;
     if (list->tail == NULL) {
         list->tail = (SectionAttributeNode *)galloc(sizeof(SectionAttributeNode));
