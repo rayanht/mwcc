@@ -24,24 +24,6 @@ SInt32 gAddPropagationChanged;
 SInt32 addPropagationChanged;
 int *add_propagation_block_bit_indices;
 
-static inline int COpt_AllLinked(SInt32 j, CodeMotionEntryLink *p)
-{
-    for (; p != NULL; p = p->next)
-        if (!can_propagate_add(j, p->entry_index))
-            return 0;
-    return 1;
-}
-
-static int Contains(PCodeInstruction *list, PCodeInstruction *use)
-{
-    while (list != NULL) {
-        if (list == use)
-            return 1;
-        list = list->next;
-    }
-    return 0;
-}
-
 void fn_00521950(void)
 {
     PCodeBlock *b;
@@ -148,6 +130,22 @@ void build_add_propagation_entries(void)
                 }
             }
         }
+    }
+}
+
+static void AllocateBits(void)
+{
+    struct CodeBits *blockBits;
+    SInt32 blockIndex;
+
+    addPropagationBlockBits = oalloc(gPCodeBlockCount * sizeof(*addPropagationBlockBits));
+    blockBits = addPropagationBlockBits;
+    for (blockIndex = 0; gPCodeBlockCount > blockIndex; blockIndex++) {
+        blockBits->gen = oalloc((add_propagation_entry_count + 31) >> 5 << 2);
+        blockBits->kill = oalloc((add_propagation_entry_count + 31) >> 5 << 2);
+        blockBits->in = oalloc((add_propagation_entry_count + 31) >> 5 << 2);
+        blockBits->out = oalloc((add_propagation_entry_count + 31) >> 5 << 2);
+        blockBits++;
     }
 }
 
@@ -278,6 +276,15 @@ void compute_add_propagation_in_out(void)
     } while (changed);
 }
 
+static int Contains(PCodeInstruction *list, PCodeInstruction *use)
+{
+    for (list = list->next; list != NULL; list = list->next) {
+        if (list == use)
+            return 1;
+    }
+    return 0;
+}
+
 int can_propagate_add(int recordIndex, int useIndex)
 {
     PCodeInstruction *record = add_propagation_entries[recordIndex].instruction;
@@ -327,7 +334,7 @@ int can_propagate_add(int recordIndex, int useIndex)
         return 0;
     if (useEntry->instruction->operandData.operands[1].value.reg != resultValue)
         return 0;
-    if (record->block == useEntry->instruction->block && Contains(record->next, useEntry->instruction)) {
+    if (record->block == useEntry->instruction->block && Contains(record, useEntry->instruction)) {
         int remaining;
         if (record->opcode == PC_ADD) {
             for (node = record->next; node != NULL && node != useEntry->instruction; node = node->next) {
@@ -384,6 +391,19 @@ int can_propagate_add(int recordIndex, int useIndex)
     return 1;
 }
 
+static int CanPropagateAdd(SInt32 index)
+{
+    CodeMotionEntryLink *link;
+
+    if (add_propagation_entries[index].instruction->flags & fRecordBit | 0x400)
+        return 0;
+    for (link = add_propagation_entries[index].list; link != NULL; link = link->next) {
+        if (!can_propagate_add(index, link->entry_index))
+            return 0;
+    }
+    return 1;
+}
+
 void propagate_add_operands(SInt32 index)
 {
     CodeMotionEntryLink *node;
@@ -429,12 +449,19 @@ void propagate_add_operands(SInt32 index)
     gAddPropagationChanged = 1;
 }
 
+static void PropagateAdds(void)
+{
+    SInt32 index;
+
+    for (index = 0; index < add_propagation_entry_count; index++) {
+        if (CanPropagateAdd(index))
+            propagate_add_operands(index);
+    }
+}
+
 void COpt_AddPropagation(void)
 {
     SInt16 iteration;
-    SInt32 blockIndex;
-    SInt32 canPropagate;
-    struct CodeBits *blockBits;
 
     iteration = 0;
     gAddPropagationChanged = 0;
@@ -444,26 +471,11 @@ void COpt_AddPropagation(void)
         if (add_propagation_entry_count > 0) {
             COpt_SetLoopCodeMotionMode(0);
             build_add_propagation_entries();
-            addPropagationBlockBits = oalloc(gPCodeBlockCount * sizeof(*addPropagationBlockBits));
-            blockBits = addPropagationBlockBits;
-            for (blockIndex = 0; gPCodeBlockCount > blockIndex; blockIndex++) {
-                blockBits->gen = oalloc((add_propagation_entry_count + 31) >> 5 << 2);
-                blockBits->kill = oalloc((add_propagation_entry_count + 31) >> 5 << 2);
-                blockBits->in = oalloc((add_propagation_entry_count + 31) >> 5 << 2);
-                blockBits->out = oalloc((add_propagation_entry_count + 31) >> 5 << 2);
-                blockBits++;
-            }
+            AllocateBits();
             fn_00521480();
             SpillCode_BuildBlockOrder();
             compute_add_propagation_in_out();
-            for (blockIndex = 0; blockIndex < add_propagation_entry_count; blockIndex++) {
-                if (add_propagation_entries[blockIndex].instruction->flags & fRecordBit | 0x400)
-                    canPropagate = 0;
-                else
-                    canPropagate = COpt_AllLinked(blockIndex, add_propagation_entries[blockIndex].list);
-                if (canPropagate)
-                    propagate_add_operands(blockIndex);
-            }
+            PropagateAdds();
         }
         freeoheap();
         iteration++;

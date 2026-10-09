@@ -23277,7 +23277,7 @@
     "source": "src/optimizer/CopyPropagation.c"
   },
   {
-    "name": "fn_004f0d80",
+    "name": "AllocateBitSets",
     "address": "0x004f0d80",
     "size": 153,
     "source": "src/optimizer/CopyPropagation.c"
@@ -23307,7 +23307,7 @@
     "source": "src/optimizer/CopyPropagation.c"
   },
   {
-    "name": "fn_004f13c0",
+    "name": "CanPropagateCopy",
     "address": "0x004f13c0",
     "size": 83,
     "source": "src/optimizer/CopyPropagation.c"
@@ -23319,7 +23319,7 @@
     "source": "src/optimizer/CopyPropagation.c"
   },
   {
-    "name": "fn_004f1500",
+    "name": "PropagateCopies",
     "address": "0x004f1500",
     "size": 45,
     "source": "src/optimizer/CopyPropagation.c"
@@ -23343,7 +23343,7 @@
     "source": "src/optimizer/AddPropagation.c"
   },
   {
-    "name": "fn_004f1900",
+    "name": "AllocateBits",
     "address": "0x004f1900",
     "size": 153,
     "source": "src/optimizer/AddPropagation.c"
@@ -23373,7 +23373,7 @@
     "source": "src/optimizer/AddPropagation.c"
   },
   {
-    "name": "fn_004f2170",
+    "name": "CanPropagateAdd",
     "address": "0x004f2170",
     "size": 85,
     "source": "src/optimizer/AddPropagation.c"
@@ -23385,7 +23385,7 @@
     "source": "src/optimizer/AddPropagation.c"
   },
   {
-    "name": "fn_004f2300",
+    "name": "PropagateAdds",
     "address": "0x004f2300",
     "size": 45,
     "source": "src/optimizer/AddPropagation.c"
@@ -24009,7 +24009,7 @@
     "source": "src/optimizer/LoadDeletion.c"
   },
   {
-    "name": "fn_004fc480",
+    "name": "AllocateSets",
     "address": "0x004fc480",
     "size": 101,
     "source": "src/optimizer/LoadDeletion.c"
@@ -24021,13 +24021,13 @@
     "source": "src/optimizer/LoadDeletion.c"
   },
   {
-    "name": "fn_004fc6f0",
+    "name": "DeleteLoad",
     "address": "0x004fc6f0",
     "size": 58,
     "source": "src/optimizer/LoadDeletion.c"
   },
   {
-    "name": "fn_004fc730",
+    "name": "DeleteLoads",
     "address": "0x004fc730",
     "size": 34,
     "source": "src/optimizer/LoadDeletion.c"
