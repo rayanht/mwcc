@@ -949,11 +949,11 @@ src/optimizer/CodeMotion.c:
 	.data       start:0x00545B20 end:0x00545B60
 
 src/optimizer/StrengthReduction.c:
-	.text       start:0x004F71B0 end:0x004F8610
+	.text       start:0x004F71B0 end:0x004F85D0
 	.data       start:0x00545B60 end:0x00545B74
 
 src/optimizer/LoopOptimization.c:
-	.text       start:0x004F8610 end:0x004FAFE0
+	.text       start:0x004F85D0 end:0x004FAFE0
 	.data       start:0x00545B78 end:0x00545B8C
 	.bss        start:0x00553C68 end:0x00553C78
 

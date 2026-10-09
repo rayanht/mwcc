@@ -1824,7 +1824,7 @@
     "source": "src/driver/libimp-eabi-ppc-mw.c"
   },
   {
-    "name": "set_list_link_next",
+    "name": "fn_0040bfc0",
     "address": "0x0040bfc0",
     "size": 15,
     "source": "src/driver/libimp-eabi-ppc-mw.c"
@@ -1860,7 +1860,7 @@
     "source": "src/driver/libimp-eabi-ppc-mw.c"
   },
   {
-    "name": "fn_0040c040",
+    "name": "set_list_link_next",
     "address": "0x0040c040",
     "size": 15,
     "source": "src/driver/libimp-eabi-ppc-mw.c"
@@ -23787,7 +23787,7 @@
     "source": "src/optimizer/StrengthReduction.c"
   },
   {
-    "name": "fn_004f7ee0",
+    "name": "hoist_search_instructions",
     "address": "0x004f7ee0",
     "size": 77,
     "source": "src/optimizer/StrengthReduction.c"
@@ -23832,13 +23832,13 @@
     "name": "fn_004f85d0",
     "address": "0x004f85d0",
     "size": 35,
-    "source": "src/optimizer/StrengthReduction.c"
+    "source": "src/optimizer/LoopOptimization.c"
   },
   {
     "name": "fn_004f8600",
     "address": "0x004f8600",
     "size": 1,
-    "source": "src/optimizer/StrengthReduction.c"
+    "source": "src/optimizer/LoopOptimization.c"
   },
   {
     "name": "mark_registers_used_outside_loop",
@@ -23919,7 +23919,7 @@
     "source": "src/optimizer/LoopOptimization.c"
   },
   {
-    "name": "fn_004fa920",
+    "name": "findarray",
     "address": "0x004fa920",
     "size": 31,
     "source": "src/optimizer/LoopOptimization.c"
@@ -24063,7 +24063,7 @@
     "source": "src/optimizer/VectorArraysToRegs.c"
   },
   {
-    "name": "fn_004fcd10",
+    "name": "AllocateCodeMotionBits",
     "address": "0x004fcd10",
     "size": 153,
     "source": "src/optimizer/VectorArraysToRegs.c"

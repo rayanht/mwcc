@@ -809,7 +809,7 @@
   "_code_motion_entries": "0x005e65e4",
   "_code_motion_register_definition_heads": "0x005e69e8",
   "_code_motion_register_use_heads": "0x005e6a0c",
-  "_collect_code_motion_candidates": "0x00570240",
+  "_process_searches": "0x00570240",
   "_compiler_plugin_cu": "0x005e6fd2",
   "_constructor_name": "0x005e66c0",
   "_contains_dependency": "0x00429a80",

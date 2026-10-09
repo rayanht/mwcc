@@ -89,7 +89,6 @@ extern void fn_00527290(Loop *holder);
 extern int matches_redundancy_without_prior_reg_use(CodeMotionCandidate *entry, SInt32 stride, unsigned int reg,
                                                     unsigned int displacement, Loop *outerLoop, Loop *innerLoop);
 extern void initialize_candidate_register(CodeMotionCandidate *state);
-extern void collect_code_motion_candidates(Loop *context);
 extern int visit_loops_children_first(register Loop *node);
 extern void fn_005275a0(struct CMRegisterNode *input, ClassLookupResult *result);
 extern void fn_00527e80(Loop *node);

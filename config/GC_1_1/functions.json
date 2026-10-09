@@ -20721,7 +20721,7 @@
     "source": "src/optimizer/StrengthReduction.c"
   },
   {
-    "name": "collect_code_motion_candidates",
+    "name": "process_searches",
     "address": "0x005287b0",
     "size": 298,
     "source": "src/optimizer/StrengthReduction.c"

@@ -26,61 +26,15 @@ static int *load_index_entry_counts;
 static int *block_entry_start;
 static unsigned char data_00582c9c;
 
-static inline void ClearRec(struct AggregateRecord *r, long n);
-static void CheckUses(long classIndex, VectorArrayUse *entries, PCodeInstruction *classType,
-                      struct AggregateRecord *list);
-static struct AggregateRecord *FindCandidate(struct AggregateRecord *list, Object *object);
-
-static inline struct AggregateRecord *VectorArraysToRegs_0052d0a0_inline1(struct AggregateRecord *v1,
-                                                                          PCodeInstruction *v3)
+static inline void ClearRec(struct AggregateRecord *r, long n)
 {
-    Object *v2;
-    v2 = v3->operandData.operands[2].object;
-    while ((int)v1 != 0) {
-        if (v1->object == v2) {
-            return v1;
-        }
-        v1 = v1->next;
+    int i;
+    ((char *)r)[8] = (char)(((char *)r)[8] & 254);
+    i = 0;
+    while (i < n) {
+        r->slots[i] = 0;
+        i = i + 1;
     }
-    return NULL;
-}
-
-static inline struct AggregateRecord *fn_0052d8d0_inline1(PCodeOperand *operand, struct AggregateRecord *analysis)
-{
-    int object = (int)operand->object;
-    struct AggregateRecord *counts = analysis;
-    while (counts != NULL) {
-        if ((int)counts->object == object)
-            return counts;
-        counts = counts->next;
-    }
-    return NULL;
-}
-
-static inline struct AggregateRecord *fn_0052d650_inline1(PCodeOperand *v4, struct AggregateRecord *a0)
-{
-    int v6;
-    struct AggregateRecord *v7;
-    v6 = (int)v4->object;
-    v7 = a0;
-    while ((int)v7 != 0) {
-        if ((int)v7->object == v6)
-            return v7;
-        v7 = v7->next;
-    }
-    return NULL;
-}
-
-static inline struct AggregateRecord *fn_0052d460_inline1(struct AggregateRecord *v6, PCodeOperand *v5)
-{
-    int v7;
-    v7 = (int)v5->object;
-    while ((int)v6 != 0) {
-        if ((int)v6->object == v7)
-            return v6;
-        v6 = v6->next;
-    }
-    return NULL;
 }
 
 struct AggregateRecord *VectorArraysToRegs_BuildAggregateRecords(void)
@@ -123,6 +77,16 @@ struct AggregateRecord *VectorArraysToRegs_BuildAggregateRecords(void)
     return records;
 }
 
+static struct AggregateRecord *FindCandidate(struct AggregateRecord *list, Object *object)
+{
+    struct AggregateRecord *match;
+    for (match = list; match; match = match->next) {
+        if (match->object == object)
+            return match;
+    }
+    return NULL;
+}
+
 void fn_0052d8d0(struct AggregateRecord *analysis)
 {
     PCodeInstruction *instruction;
@@ -150,7 +114,7 @@ void fn_0052d8d0(struct AggregateRecord *analysis)
                     remaining = instruction->operand_count;
                     while (remaining--) {
                         if (operand->kind == PCOp_MEMORY && operand->flags == 1) {
-                            counts = fn_0052d8d0_inline1(operand, analysis);
+                            counts = FindCandidate(analysis, operand->object);
                             if (counts != NULL && counts->flag == 0) {
                                 if (instruction->opcode != PC_ADDI) {
                                     counts->flag = 1;
@@ -216,7 +180,7 @@ void VectorArraysToRegs_BuildLoadIndexEntries(struct AggregateRecord *argument)
                         operand = &instruction->operandData.operands[2];
                         registerIndex = instruction->operandData.operands[0].value.reg;
                         if (registerIndex >= 32 && operand->kind == PCOp_MEMORY && operand->flags == PCodeOperand_Use) {
-                            info = fn_0052d650_inline1(operand, argument);
+                            info = FindCandidate(argument, operand->object);
                             if (info != NULL && info->flag == 0) {
                                 entry->array = instruction;
                                 entry->uses = NULL;
@@ -262,6 +226,22 @@ void VectorArraysToRegs_BuildLoadIndexEntries(struct AggregateRecord *argument)
             }
         }
         block = block->next;
+    }
+}
+
+static void AllocateCodeMotionBits(void)
+{
+    CodeMotionBits *bitsets;
+    int index;
+
+    codeMotionBits = oalloc(gPCodeBlockCount * sizeof(CodeMotionBits));
+    bitsets = codeMotionBits;
+    for (index = 0; index < gPCodeBlockCount; ++index) {
+        bitsets->gen = oalloc(((load_index_count + 31) >> 5) * sizeof(*bitsets->gen));
+        bitsets->kill = oalloc(((load_index_count + 31) >> 5) * sizeof(*bitsets->kill));
+        bitsets->in = oalloc(((load_index_count + 31) >> 5) * sizeof(*bitsets->in));
+        bitsets->out = oalloc(((load_index_count + 31) >> 5) * sizeof(*bitsets->out));
+        bitsets++;
     }
 }
 
@@ -316,7 +296,7 @@ void VectorArraysToRegs_ComputeGenKill(struct AggregateRecord *entries)
                     object_operand = &instruction->operandData.operands[2];
                     if (instruction->operandData.operands[2].kind == PCOp_MEMORY &&
                         object_operand->flags == PCodeOperand_Use) {
-                        entry = fn_0052d460_inline1(entries, object_operand);
+                        entry = FindCandidate(entries, object_operand->object);
                         if (entry != NULL && entry->flag == 0) {
                             local_bits[object_index >> 5] |= 1 << object_index;
                             object_index = object_index + 1;
@@ -417,15 +397,23 @@ int fn_0052d1e0(int valueIndex, int entryIndex)
 }
 #pragma auto_inline reset
 
-static inline void ClearRec(struct AggregateRecord *r, long n)
+static int CheckUses(struct AggregateRecord *list, long classIndex)
 {
-    int i;
-    ((char *)r)[8] = (char)(((char *)r)[8] & 254);
-    i = 0;
-    while (i < n) {
-        r->slots[i] = 0;
-        i = i + 1;
+    VectorArrayUse *entry;
+    PCodeInstruction *array;
+
+    array = load_index_entries[classIndex].array;
+    entry = load_index_entries[classIndex].uses;
+    if (entry != NULL) {
+        do {
+            if (entry != NULL && fn_0052d1e0(classIndex, entry->instructionIndex) == 0) {
+                FindCandidate(list, array->operandData.operands[2].object)->flag = 1;
+                return 0;
+            }
+            entry = entry->next;
+        } while (entry != NULL);
     }
+    return 1;
 }
 
 void VectorArraysToRegs_ReplaceArrayUsesWithVMR(struct AggregateRecord *registerMap, int arrayIndex)
@@ -435,17 +423,26 @@ void VectorArraysToRegs_ReplaceArrayUsesWithVMR(struct AggregateRecord *register
     int vectorRegister;
     struct AggregateRecord *registers;
     VectorArrayEntry *entry;
+#if VERSION > VERSION_GC_1_0
     int slot;
+#endif
+
     entry = &load_index_entries[arrayIndex];
 
     if (entry->array == NULL)
         return;
     instruction = entry->array;
-    registers = VectorArraysToRegs_0052d0a0_inline1(registerMap, instruction);
+    registers = FindCandidate(registerMap, instruction->operandData.operands[2].object);
+#if VERSION > VERSION_GC_1_0
     slot = instruction->operandData.operands[2].value.signed_value / 16;
     if (registers == NULL || slot > registers->count)
         return;
     vectorRegister = registers->slots[slot];
+#else
+    if (instruction->operandData.operands[2].value.signed_value / 16 > registers->count)
+        return;
+    vectorRegister = registers->slots[instruction->operandData.operands[2].value.signed_value / 16];
+#endif
     use = entry->uses;
     if (use != NULL) {
         do {
@@ -477,22 +474,22 @@ void VectorArraysToRegs_ReplaceArrayUsesWithVMR(struct AggregateRecord *register
 
 void fn_0052cf10(struct AggregateRecord *candidates)
 {
+    long index;
     long classIndex;
     int candidateCount;
     int slotCount;
     struct AggregateRecord **head;
+    struct AggregateRecord *remaining;
     struct AggregateRecord *candidate;
     int slot;
     struct AggregateRecord *previous;
     struct AggregateRecord *smallest;
     long smallestTotal;
     struct AggregateRecord *scan;
-    struct AggregateRecord *remaining;
-    long index;
     struct AggregateRecord *next;
 
-    for (classIndex = 0; classIndex < load_index_count; classIndex++) {
-        CheckUses(classIndex, load_index_entries[classIndex].uses, load_index_entries[classIndex].array, candidates);
+    for (index = 0; index < load_index_count; index++) {
+        CheckUses(candidates, index);
     }
     candidateCount = 0;
     slotCount = 0;
@@ -550,53 +547,23 @@ void fn_0052cf10(struct AggregateRecord *candidates)
             return;
         }
         while (remaining != NULL) {
-            for (slot = 0; slot < remaining->count; slot++) {
-                remaining->slots[slot] = gUsedVirtualRegistersVR;
+            for (index = 0; index < remaining->count; index++) {
+                remaining->slots[index] = gUsedVirtualRegistersVR;
                 gUsedVirtualRegistersVR++;
             }
             remaining = remaining->next;
         }
         if (candidates != NULL) {
-            for (index = 0; index < load_index_count; index++) {
-                VectorArraysToRegs_ReplaceArrayUsesWithVMR(candidates, index);
+            for (classIndex = 0; classIndex < load_index_count; classIndex++) {
+                VectorArraysToRegs_ReplaceArrayUsesWithVMR(candidates, classIndex);
             }
         }
     }
 }
 
-static void CheckUses(long classIndex, VectorArrayUse *entries, PCodeInstruction *classType,
-                      struct AggregateRecord *list)
-{
-    VectorArrayUse *entry;
-    struct AggregateRecord *match;
-    entry = entries;
-    if (entries != NULL) {
-        do {
-            if (entry != NULL && fn_0052d1e0(classIndex, entry->instructionIndex) == 0) {
-                match = FindCandidate(list, classType->operandData.operands[2].object);
-                match->flag = 1;
-                break;
-            }
-            entry = entry->next;
-        } while (entry != NULL);
-    }
-}
-
-static struct AggregateRecord *FindCandidate(struct AggregateRecord *list, Object *object)
-{
-    struct AggregateRecord *match;
-    for (match = list; match; match = match->next) {
-        if (match->object == object)
-            return match;
-    }
-    return NULL;
-}
-
 int fn_0052ce10(void)
 {
     struct AggregateRecord *analysis;
-    CodeMotionBits *bitsets;
-    int index;
 
     data_00582c9c = 0;
     analysis = VectorArraysToRegs_BuildAggregateRecords();
@@ -605,15 +572,7 @@ int fn_0052ce10(void)
         if (load_index_count > 0) {
             COpt_SetLoopCodeMotionMode(0);
             VectorArraysToRegs_BuildLoadIndexEntries(analysis);
-            codeMotionBits = oalloc(gPCodeBlockCount * sizeof(CodeMotionBits));
-            bitsets = codeMotionBits;
-            for (index = 0; index < gPCodeBlockCount; ++index) {
-                bitsets->gen = oalloc(((load_index_count + 31) >> 5) * sizeof(*bitsets->gen));
-                bitsets->kill = oalloc(((load_index_count + 31) >> 5) * sizeof(*bitsets->kill));
-                bitsets->in = oalloc(((load_index_count + 31) >> 5) * sizeof(*bitsets->in));
-                bitsets->out = oalloc(((load_index_count + 31) >> 5) * sizeof(*bitsets->out));
-                bitsets++;
-            }
+            AllocateCodeMotionBits();
             VectorArraysToRegs_ComputeGenKill(analysis);
             SpillCode_BuildBlockOrder();
             VectorArraysToRegs_ComputeInOutBits();

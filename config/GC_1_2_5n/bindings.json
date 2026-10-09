@@ -4658,7 +4658,7 @@
   "_insert_scaled_increment": "0x00527bd0",
   "_initialize_candidate_register": "0x00527c90",
   "_fn_00527e80": "0x00527e80",
-  "_collect_code_motion_candidates": "0x005280a0",
+  "_process_searches": "0x005280a0",
   "_add_code_motion_candidate": "0x005281d0",
   "_check_strength_reduction_use": "0x00528240",
   "_visit_loops_children_first": "0x00528540",
