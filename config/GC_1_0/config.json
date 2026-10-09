@@ -108,6 +108,7 @@
     "src/frontend/CTemplateTools.c",
     "src/frontend/CompilerTools.c",
     "src/frontend/ParseDouble.c",
+    "src/frontend/Unmangle.c",
     "src/msl/ThreadLocalData.c",
     "src/msl/abort_exit.c",
     "src/msl/alloc.c",

@@ -19227,16 +19227,16 @@
     "source": "src/frontend/CSOM.c"
   },
   {
-    "name": "fn_004c3560",
+    "name": "unmangle_error",
     "address": "0x004c3560",
     "size": 15,
-    "source": "src/frontend/CSOM.c"
+    "source": "src/frontend/Unmangle.c"
   },
   {
-    "name": "fn_004c3570",
+    "name": "init_buffer",
     "address": "0x004c3570",
     "size": 19,
-    "source": "src/frontend/CSOM.c"
+    "source": "src/frontend/Unmangle.c"
   },
   {
     "name": "put_c",
@@ -19245,13 +19245,13 @@
     "source": "src/frontend/Unmangle.c"
   },
   {
-    "name": "fn_004c35b0",
+    "name": "put_s",
     "address": "0x004c35b0",
     "size": 62,
     "source": "src/frontend/Unmangle.c"
   },
   {
-    "name": "fn_004c35f0",
+    "name": "terminate",
     "address": "0x004c35f0",
     "size": 17,
     "source": "src/frontend/Unmangle.c"
@@ -19269,7 +19269,7 @@
     "source": "src/frontend/Unmangle.c"
   },
   {
-    "name": "fn_004c3d20",
+    "name": "copy_name",
     "address": "0x004c3d20",
     "size": 135,
     "source": "src/frontend/Unmangle.c"
