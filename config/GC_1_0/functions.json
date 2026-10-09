@@ -12309,7 +12309,7 @@
     "source": "src/backend/StackFrameEABI.c"
   },
   {
-    "name": "fn_0046f090",
+    "name": "emit_restore_fprs",
     "address": "0x0046f090",
     "size": 387,
     "source": "src/backend/StackFrameEABI.c"
@@ -12327,7 +12327,7 @@
     "source": "src/backend/StackFrameEABI.c"
   },
   {
-    "name": "fn_0046f5f0",
+    "name": "restore_gprs",
     "address": "0x0046f5f0",
     "size": 506,
     "source": "src/backend/StackFrameEABI.c"
@@ -12411,7 +12411,7 @@
     "source": "src/backend/StackFrameEABI.c"
   },
   {
-    "name": "fn_00470620",
+    "name": "emit_restore_special_registers",
     "address": "0x00470620",
     "size": 503,
     "source": "src/backend/StackFrameEABI.c"
@@ -16623,13 +16623,13 @@
     "source": "src/frontend/CScope.c"
   },
   {
-    "name": "fn_004ab060",
+    "name": "CScope_GetAssociatedNameSpaces",
     "address": "0x004ab060",
     "size": 39,
     "source": "src/frontend/CScope.c"
   },
   {
-    "name": "fn_004ab090",
+    "name": "CScope_IsSameObject",
     "address": "0x004ab090",
     "size": 81,
     "source": "src/frontend/CScope.c"
