@@ -742,7 +742,7 @@ src/frontend/CMangler.c:
 
 src/optimizer/GlobalOptimizer.c:
 	.text       start:0x0049FF20 end:0x004A0690
-	.data       start:0x00532478 end:0x00532628
+	.data       start:0x00532478 end:0x00532624
 
 src/backend/PCodeListing.c:
 	.text       start:0x004A0690 end:0x004A1BA0

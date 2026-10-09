@@ -4962,7 +4962,7 @@
     "source": "src/msl/wscanf.c"
   },
   {
-    "name": "wFileRead",
+    "name": "__wFileRead",
     "address": "0x00421990",
     "size": 71,
     "source": "src/msl/wscanf.c"
@@ -5022,7 +5022,7 @@
     "source": "src/msl/scanf.c"
   },
   {
-    "name": "FileRead",
+    "name": "__FileRead",
     "address": "0x00422800",
     "size": 71,
     "source": "src/msl/scanf.c"
@@ -10689,7 +10689,7 @@
     "source": "src/optimizer/IroFlowgraph.c"
   },
   {
-    "name": "fn_00456fc0",
+    "name": "AddPred",
     "address": "0x00456fc0",
     "size": 35,
     "source": "src/optimizer/IroFlowgraph.c"
@@ -12909,7 +12909,7 @@
     "source": "src/backend/PCodeUtilities.c"
   },
   {
-    "name": "fn_00474620",
+    "name": "fn_004a1cb0",
     "address": "0x00474620",
     "size": 216,
     "source": "src/backend/PCodeUtilities.c"
@@ -15903,7 +15903,7 @@
     "source": "src/frontend/CMangler.c"
   },
   {
-    "name": "fn_0049ff20",
+    "name": "COptimizer_Level2",
     "address": "0x0049ff20",
     "size": 157,
     "source": "src/optimizer/GlobalOptimizer.c"
@@ -24465,7 +24465,7 @@
     "source": "src/backend/MachineSimulation601.c"
   },
   {
-    "name": "fn_004ff470",
+    "name": "SpillCode_AllocateLiveness",
     "address": "0x004ff470",
     "size": 165,
     "source": "src/backend/LiveVariables.c"

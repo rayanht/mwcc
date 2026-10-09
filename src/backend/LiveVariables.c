@@ -19,6 +19,23 @@
 
 struct PCodeLiveness *gPCodeBlockLiveness;
 
+static void SpillCode_AllocateLiveness(UInt32 nbits)
+{
+    int blockIndex;
+    PCodeLiveness *liveness;
+
+    gPCodeBlockLiveness = (PCodeLiveness *)oalloc(gPCodeBlockCount * sizeof(PCodeLiveness));
+    liveness = gPCodeBlockLiveness;
+
+    for (blockIndex = 0; blockIndex < gPCodeBlockCount; blockIndex++) {
+        BitVectors_FillWords(liveness->use = oalloc(((nbits + 31) >> 5) << 2), nbits, 0);
+        BitVectors_FillWords(liveness->def = oalloc(((nbits + 31) >> 5) << 2), nbits, 0);
+        BitVectors_FillWords(liveness->livein = oalloc(((nbits + 31) >> 5) << 2), nbits, 0);
+        BitVectors_FillWords(liveness->liveout = oalloc(((nbits + 31) >> 5) << 2), nbits, 0);
+        liveness++;
+    }
+}
+
 void SpillCode_BuildLocalLiveness(int reg_class)
 {
     PCodeBlock *block;
@@ -115,22 +132,11 @@ void SpillCode_SolveLiveness(UInt32 nbits)
 void SpillCode_InitializeLiveness(Object *func, SInt32 mode, UInt32 nbits)
 {
     Type *returnType;
-    int blockIndex;
-    PCodeLiveness *liveness;
 
     returnType = ((TypeFunc *)func->type)->functype;
 
     SpillCode_BuildBlockOrder();
-    gPCodeBlockLiveness = (PCodeLiveness *)oalloc(gPCodeBlockCount * sizeof(PCodeLiveness));
-    liveness = gPCodeBlockLiveness;
-
-    for (blockIndex = 0; blockIndex < gPCodeBlockCount; blockIndex++) {
-        BitVectors_FillWords(liveness->use = oalloc(((nbits + 31) >> 5) << 2), nbits, 0);
-        BitVectors_FillWords(liveness->def = oalloc(((nbits + 31) >> 5) << 2), nbits, 0);
-        BitVectors_FillWords(liveness->livein = oalloc(((nbits + 31) >> 5) << 2), nbits, 0);
-        BitVectors_FillWords(liveness->liveout = oalloc(((nbits + 31) >> 5) << 2), nbits, 0);
-        liveness++;
-    }
+    SpillCode_AllocateLiveness(nbits);
 
     SpillCode_BuildLocalLiveness(mode);
 

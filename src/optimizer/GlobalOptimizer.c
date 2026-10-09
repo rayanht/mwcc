@@ -81,6 +81,14 @@ static inline void COptimizer_RunLoopPasses(Object *function)
     }
 }
 
+static void COptimizer_Level2(Object *function)
+{
+    ValueNumbering_PerformValueNumbering(1);
+    COptimizer_DumpIfChanged(function, gValueNumberingChanged, "AFTER CSE");
+    COptimizer_RunCopyPropagation(function, 1);
+    COptimizer_RunAddPropagation(function);
+}
+
 void COptimizer_Level3(Object *function)
 {
     ValueNumbering_PerformValueNumbering(0);
@@ -258,10 +266,7 @@ void COptimizer_Optimize(Object *function)
     }
 
     if ((level = copts.deleteDeadInstructions) == 2 || (gRunLevel2Pipeline && level > 2)) {
-        ValueNumbering_PerformValueNumbering(1);
-        COptimizer_DumpIfChanged(function, gValueNumberingChanged, "AFTER CSE");
-        COptimizer_RunCopyPropagation(function, 1);
-        COptimizer_RunAddPropagation(function);
+        COptimizer_Level2(function);
     } else if (level == 3) {
         COptimizer_Level3(function);
     } else if (level == 4) {
