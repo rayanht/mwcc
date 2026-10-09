@@ -772,7 +772,7 @@ src/backend/PCodeAssembly.c:
 
 src/frontend/CScope.c:
 	.text       start:0x004AAA60 end:0x004AEC70
-	.data       start:0x00533D98 end:0x00533E40
+	.data       start:0x00533D98 end:0x00533E3C
 	.bss        start:0x005529F8 end:0x00552A10
 
 src/backend/PPCError.c:

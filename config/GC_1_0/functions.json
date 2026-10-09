@@ -16737,7 +16737,7 @@
     "source": "src/frontend/CScope.c"
   },
   {
-    "name": "fn_004abe00",
+    "name": "CScope_GetBaseClassPath",
     "address": "0x004abe00",
     "size": 37,
     "source": "src/frontend/CScope.c"
@@ -16911,7 +16911,7 @@
     "source": "src/frontend/CScope.c"
   },
   {
-    "name": "fn_004ae180",
+    "name": "CScope_GetAccessPathStart",
     "address": "0x004ae180",
     "size": 58,
     "source": "src/frontend/CScope.c"
@@ -16923,7 +16923,7 @@
     "source": "src/frontend/CScope.c"
   },
   {
-    "name": "fn_004ae240",
+    "name": "CScope_FixMemberResult",
     "address": "0x004ae240",
     "size": 75,
     "source": "src/frontend/CScope.c"

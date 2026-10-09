@@ -27,25 +27,14 @@ static UInt32 class_path_offset;
 static UInt8 data_00580dec;
 static SInt8 data_00580ded;
 
+#if VERSION > VERSION_GC_1_0
 /* The scope separator. The linker stripped this function; its literal stays in the unit's .data, last, as the unit
    generates its functions in reverse order. */
 static char *CScope_ScopeSeparator(void)
 {
     return "::";
 }
-
-static inline Boolean CScope_ResolveLookupContext(NameResult *result, Object *def)
-{
-    result->basePath = (BClassList *)CScope_GetClassAccessPath(result->basePath, (TypeClass *)def);
-    if (result->basePath == NULL) {
-        if (result->name != NULL)
-            CError_ReportError(ERR_NOT_STRUCT_UNION_CLASS_MEMBER, result->name->name);
-        else
-            CError_ReportError(ERR_ILLEGAL_CLASS_MEMBER_ACCESS);
-        return 0;
-    }
-    return 1;
-}
+#endif
 
 static inline void CScope_NSIteratorInit(CScopeNSIterator *iterator, NameSpace *nspace, NameResult *result)
 {
@@ -74,26 +63,6 @@ static inline Boolean CScope_NSIteratorNext(CScopeNSIterator *iterator)
     return 0;
 }
 
-static NameSpaceObjectList *CScope_NSIteratorFind(CScopeNSIterator *iterator, HashNameNode *name)
-{
-    NameSpaceObjectList *list;
-
-    if (iterator->lookup) {
-        if (iterator->lookup->namespaces)
-            return fn_0049a000(iterator->lookup, name, NULL);
-        if (iterator->lookup->nspace->theclass)
-            return NULL;
-        if ((list = CScope_FindName(iterator->lookup->nspace, name)))
-            return list;
-    } else {
-        if (iterator->nspace->theclass)
-            return NULL;
-        if ((list = CScope_FindName(iterator->nspace, name)))
-            return list;
-    }
-    return NULL;
-}
-
 static inline Boolean NextNameSpace(CScopeNSIterator *ctx)
 {
     if (ctx->lookup != NULL) {
@@ -113,81 +82,6 @@ static inline Boolean NextNameSpace(CScopeNSIterator *ctx)
 
 #define OBJ(o) ((Object *)(o))
 
-static inline NameSpaceObjectList *LookupInScope(HashNameNode *name, NameSpace *ns, NameSpaceObjectList **q, long *h)
-{
-    NameSpaceName *entry;
-    if (!ns->is_hash)
-        entry = ns->data.list;
-    else {
-        *h = name->hashval;
-        *h &= 0x3ff;
-        *h = (long)ns->data.hash[*h];
-        entry = (NameSpaceName *)*h;
-    }
-    for (; entry; entry = entry->next)
-        if (entry->name == name) {
-            *q = &entry->first;
-            return *q;
-        }
-    *q = NULL;
-    return *q;
-}
-
-static inline NameSpaceObjectList *FindName(NameSpaceName **q, HashNameNode *name)
-{
-    goto test;
-loop:
-    if ((*q)->name == name)
-        return &(*q)->first;
-    *q = (*q)->next;
-test:
-    if (*q)
-        goto loop;
-    return NULL;
-}
-
-static inline NameSpaceObjectList *LookupInScope3(HashNameNode *name, NameSpace *ns)
-{
-    NameSpaceName *p;
-    if (!ns->is_hash)
-        p = ns->data.list;
-    else
-        p = ns->data.hash[name->hashval & 0x3ff];
-    return FindName(&p, name);
-}
-
-static inline NameSpaceObjectList *LookupWrap(HashNameNode *name, NameSpace *ns, NameSpaceObjectList **q, long *h)
-{
-    return LookupInScope(name, ns, q, h);
-}
-
-static inline void AmbiguousError(NameSpace *scope, NameSpaceList *it, HashNameNode *name)
-{
-    NameSpace *ns = it->nspace;
-
-    if (name != NULL && scope != ns)
-        CError_ReportError(ERR_AMBIGUOUS_ACCESS_NAME_FOUND, CError_GetQualifiedHashName(scope, name),
-                           CError_GetQualifiedHashName(ns, name));
-    else
-        CError_ReportError(ERR_AMBIGUOUS_ACCESS_CLASS_STRUCT_UNION_MEMBER);
-}
-
-static inline NameSpaceObjectList *CScope_FindMemberName(HashNameNode *name, NameSpace *nspace)
-{
-    NameSpaceName *entry;
-
-    if (!nspace->is_hash)
-        entry = nspace->data.list;
-    else
-        entry = nspace->data.hash[name->hashval & 1023];
-    while (entry) {
-        if (entry->name == name)
-            return &entry->first;
-        entry = entry->next;
-    }
-    return NULL;
-}
-
 static inline BClassList *CScope_NewPath(TypeClass *tclass, BClassList *next)
 {
     BClassList *path = lalloc(8);
@@ -195,17 +89,6 @@ static inline BClassList *CScope_NewPath(TypeClass *tclass, BClassList *next)
     path->next = next;
     path->type = (Type *)tclass;
     return path;
-}
-
-/* CScope_AmbigNameError for found_class's namespace, which is also left in *NSPACE1 (a local of the caller). */
-static inline void CScope_AmbigFoundClassError(NameSpace **nspace1, NameSpace *nspace2, HashNameNode *name)
-{
-    *nspace1 = found_class->nspace;
-    if (name && *nspace1 != nspace2)
-        CError_ReportError(ERR_AMBIGUOUS_ACCESS_NAME_FOUND, CError_GetQualifiedHashName(*nspace1, name),
-                           CError_GetQualifiedHashName(nspace2, name));
-    else
-        CError_ReportError(ERR_AMBIGUOUS_ACCESS_CLASS_STRUCT_UNION_MEMBER);
 }
 
 static inline NameSpaceLookupList *CScope_FindUsingScope(NameSpaceLookupList *scope, NameSpaceList *used)
@@ -378,13 +261,11 @@ static void CScope_AmbigNameError(NameSpace *nspace1, NameSpace *nspace2, HashNa
 NameSpaceObjectList *CScope_FindName(NameSpace *nspace, HashNameNode *name)
 {
     NameSpaceName *entry;
-    NameSpace *space;
 
-    space = nspace;
     if (nspace->is_hash == 0) {
-        entry = space->data.list;
+        entry = nspace->data.list;
     } else {
-        entry = space->data.hash[name->hashval & 0x3ff];
+        entry = nspace->data.hash[name->hashval & 0x3ff];
     }
 
     while (entry != NULL) {
@@ -464,6 +345,14 @@ NameSpaceObjectList *CScope_InsertName(NameSpace *scope, HashNameNode *name)
     target->names += 1U;
     return &entry->first;
 }
+
+#if VERSION == VERSION_GC_1_0
+/* The scope separator, which the linker stripped; 1.0 generates its functions in source order. */
+static char *CScope_ScopeSeparator(void)
+{
+    return "::";
+}
+#endif
 
 NameSpaceList *fn_0049b300(NameSpaceList *list, NameSpace *nspace)
 {
@@ -1052,20 +941,20 @@ NameSpace *get_object_list_nspace(ObjectList *objects, Boolean *flag)
 BClassList *find_class_member_path(NameResult *result, TypeClass *tclass, SInt32 offset)
 {
     Boolean fail;
-    NameSpace *nspace;
+    TypeClass *bestClass;
     NameSpaceObjectList *list;
     ClassList *base;
-    TypeClass *bestClass;
-    BClassList *bestBase, *n;
+    NameSpace *nspace;
+    BClassList *bestBase;
+    NameSpace *ns;
+    BClassList *n;
     BClassList *candidate;
     SInt32 thisoffset;
     HashNameNode *name;
-    NameSpace *left;
-    NameSpace *ns;
 
     ns = tclass->nspace;
     name = class_member_name;
-    if ((list = CScope_FindMemberName(name, ns))) {
+    if ((list = CScope_FindName(ns, name))) {
         if (found_class) {
             if (CClass_ClassDominates(found_class, tclass))
                 return NULL;
@@ -1078,7 +967,7 @@ BClassList *find_class_member_path(NameResult *result, TypeClass *tclass, SInt32
                 if ((nspace = get_object_list_nspace((ObjectList *)list, &fail))) {
                     if (found_class) {
                         if (found_class != tclass) {
-                            CScope_AmbigFoundClassError(&left, tclass->nspace, class_member_name);
+                            CScope_AmbigNameError(found_class->nspace, tclass->nspace, class_member_name);
                             return NULL;
                         }
                         if (class_path_offset != offset)
@@ -1229,34 +1118,35 @@ BClassList *find_base_class_path(TypeClass *theclass, TypeClass *target, unsigne
     return NULL;
 }
 
+static BClassList *CScope_GetBaseClassPath(TypeClass *tclass, TypeClass *target)
+{
+    class_path_base = tclass;
+    found_class = NULL;
+    return find_base_class_path(tclass, target, 0);
+}
+
 NameSpaceObjectList *fn_0049a000(NameSpaceLookupList *context, HashNameNode *name, NameSpace **outscope)
 {
     NameSpaceObjectList *matches;
     NameSpace *scope;
-    NameSpaceObjectList *candidate;
     Boolean copied;
     NameSpaceList *namespaceEntry;
     NameSpaceObjectList *result;
-    long index;
 
-    if ((scope = context->nspace) != NULL) {
-        if ((matches = LookupWrap(name, scope, &matches, &index)) != NULL) {
-            result = matches;
-        } else {
-            result = NULL;
-            scope = NULL;
-        }
+    if (context->nspace != NULL && (matches = CScope_FindName(context->nspace, name)) != NULL) {
+        result = matches;
+        scope = context->nspace;
     } else {
         result = NULL;
         scope = NULL;
     }
-    (void)index;
     copied = 0;
     for (namespaceEntry = context->namespaces; namespaceEntry != NULL; namespaceEntry = namespaceEntry->next) {
-        if ((matches = LookupInScope3(name, namespaceEntry->nspace)) == NULL)
+        if ((matches = CScope_FindName(namespaceEntry->nspace, name)) == NULL)
             continue;
         if (result != NULL) {
             NameSpaceObjectList *existing;
+            NameSpaceObjectList *candidate;
 
             for (candidate = matches; candidate != NULL; candidate = candidate->next) {
                 for (existing = result; existing != NULL; existing = existing->next) {
@@ -1307,42 +1197,21 @@ NameSpaceObjectList *fn_0049a000(NameSpaceLookupList *context, HashNameNode *nam
                     continue;
                 if (!copied) {
                     NameSpaceObjectList *entry;
-                    NameSpaceObjectList *tail;
-                    NameSpaceObjectList *head;
 
                     for (entry = result; entry != NULL; entry = entry->next) {
-                        Object *object = (Object *)entry->object;
-
-                        if (IsFunc(object))
-                            continue;
-                        AmbiguousError(scope, namespaceEntry, name);
+                        if (!IsFunc((Object *)entry->object))
+                            CScope_AmbigNameError(scope, namespaceEntry->nspace, name);
                     }
-                    tail = (NameSpaceObjectList *)lalloc(sizeof(NameSpaceObjectList));
-                    head = tail;
-                    for (;;) {
-                        tail->object = result->object;
-                        result = result->next;
-                        if (result == NULL) {
-                            tail->next = NULL;
-                            break;
-                        }
-                        tail->next = (NameSpaceObjectList *)lalloc(sizeof(NameSpaceObjectList));
-                        tail = tail->next;
-                    }
-                    result = head;
+                    result = (NameSpaceObjectList *)CScope_CopyList((ObjectList *)result);
                     copied = 1;
                 }
-                {
-                    Object *object = (Object *)candidate->object;
-
-                    if (IsFunc(object)) {
-                        NameSpaceObjectList *newEntry = (NameSpaceObjectList *)lalloc(sizeof(NameSpaceObjectList));
-                        newEntry->object = candidate->object;
-                        newEntry->next = result;
-                        result = newEntry;
-                    } else {
-                        AmbiguousError(scope, namespaceEntry, name);
-                    }
+                if (IsFunc((Object *)candidate->object)) {
+                    NameSpaceObjectList *newEntry = (NameSpaceObjectList *)lalloc(sizeof(NameSpaceObjectList));
+                    newEntry->object = candidate->object;
+                    newEntry->next = result;
+                    result = newEntry;
+                } else {
+                    CScope_AmbigNameError(scope, namespaceEntry->nspace, name);
                 }
             }
         } else {
@@ -1357,35 +1226,52 @@ NameSpaceObjectList *fn_0049a000(NameSpaceLookupList *context, HashNameNode *nam
 
 NameSpaceObjectList *find_scope_object_list(CScopeNSIterator *ctx, HashNameNode *key)
 {
-    NameSpaceObjectList *result;
-    NameSpace *scope;
-    NameSpaceLookupList *scopeRecord;
+    NameSpaceObjectList *list;
 
-    if ((scopeRecord = ctx->lookup) != NULL) {
-        NameSpace *namespace;
-        if (scopeRecord->namespaces != NULL)
-            return fn_0049a000(scopeRecord, key, NULL);
-        if ((namespace = scopeRecord->nspace)->theclass != NULL) {
-            if (find_and_append_class_member_path(ctx->result, namespace, key, 0) != 0) {
-                result = ctx->result->objects;
+    if (ctx->lookup) {
+        if (ctx->lookup->namespaces)
+            return fn_0049a000(ctx->lookup, key, NULL);
+        if (ctx->lookup->nspace->theclass) {
+            if (find_and_append_class_member_path(ctx->result, ctx->lookup->nspace, key, 0)) {
+                list = ctx->result->objects;
                 ctx->result->objects = NULL;
-                return result;
+                return list;
             }
             return NULL;
         }
-        if ((result = CScope_FindName(namespace, key)) != NULL)
-            return result;
+        if ((list = CScope_FindName(ctx->lookup->nspace, key)))
+            return list;
     } else {
-        if ((scope = ctx->nspace)->theclass != NULL) {
-            if (find_and_append_class_member_path(ctx->result, scope, key, 0) != 0) {
-                result = ctx->result->objects;
+        if (ctx->nspace->theclass) {
+            if (find_and_append_class_member_path(ctx->result, ctx->nspace, key, 0)) {
+                list = ctx->result->objects;
                 ctx->result->objects = NULL;
-                return result;
+                return list;
             }
             return NULL;
         }
-        if ((result = CScope_FindName(scope, key)) != NULL)
-            return result;
+        if ((list = CScope_FindName(ctx->nspace, key)))
+            return list;
+    }
+    return NULL;
+}
+
+static NameSpaceObjectList *CScope_NSIteratorFind(CScopeNSIterator *iterator, HashNameNode *name)
+{
+    NameSpaceObjectList *list;
+
+    if (iterator->lookup) {
+        if (iterator->lookup->namespaces)
+            return fn_0049a000(iterator->lookup, name, NULL);
+        if (iterator->lookup->nspace->theclass)
+            return NULL;
+        if ((list = CScope_FindName(iterator->lookup->nspace, name)))
+            return list;
+    } else {
+        if (iterator->nspace->theclass)
+            return NULL;
+        if ((list = CScope_FindName(iterator->nspace, name)))
+            return list;
     }
     return NULL;
 }
@@ -1472,7 +1358,7 @@ NameSpace *find_name_nspace(NameResult *result, NameSpace *nspace, HashNameNode 
                 if ((usingList = CScope_FindName(nspace, name)) != NULL &&
                     (nspace = get_object_list_nspace((ObjectList *)usingList, &local)) != NULL) {
                     if (found != NULL && nspace != found)
-                        CError_ReportError(ERR_AMBIGUOUS_ACCESS_CLASS_STRUCT_UNION_MEMBER);
+                        CScope_AmbigNameError(found, nspace, NULL);
                     found = nspace;
                 }
                 if (local != 0)
@@ -1488,33 +1374,26 @@ NameSpace *find_name_nspace(NameResult *result, NameSpace *nspace, HashNameNode 
 NameSpaceObjectList *find_namespace_object(NameResult *state, NameSpace *nspace, HashNameNode *name,
                                            NameSpace **foundSpace)
 {
-    NameSpaceObjectList *result;
-    NameSpaceObjectList *lookupResult;
-    NameSpaceLookupList *usingSpace;
-    NameSpaceObjectList *usingResult;
-    NameSpaceObjectList *classResult;
+    NameSpaceObjectList *list;
+    NameSpaceLookupList *lookup;
+
     if (nspace->theclass != NULL) {
         CDecl_CompleteType((Type *)nspace->theclass);
         if (find_and_append_class_member_path(state, nspace, name, 0) != 0) {
-            classResult = state->objects;
+            list = state->objects;
             state->objects = NULL;
-            return classResult;
+            return list;
         }
         return NULL;
     }
-    lookupResult = (result = (NameSpaceObjectList *)CScope_FindName(nspace, name));
-    if (lookupResult != NULL) {
+    if ((list = CScope_FindName(nspace, name)) != NULL) {
         *foundSpace = nspace;
-        return result;
+        return list;
     }
     if (nspace->usings != NULL) {
-        usingSpace = CScope_BuildNameSpaceLookupList(nspace);
-        while (usingSpace != NULL) {
-            usingResult = fn_0049a000(usingSpace, name, foundSpace);
-            if (usingResult != NULL) {
-                return usingResult;
-            }
-            usingSpace = usingSpace->next;
+        for (lookup = CScope_BuildNameSpaceLookupList(nspace); lookup != NULL; lookup = lookup->next) {
+            if ((list = fn_0049a000(lookup, name, foundSpace)) != NULL)
+                return list;
         }
     }
     return NULL;
@@ -1522,12 +1401,10 @@ NameSpaceObjectList *find_namespace_object(NameResult *state, NameSpace *nspace,
 
 Boolean find_type_name_in_scope(NameResult *out, NameSpace *scope, HashNameNode *name)
 {
-    NameSpaceObjectList *s;
     NameSpaceObjectList *p;
-    NameSpaceList *ol;
     NameSpaceLookupList *nl;
-    NameSpace *obj;
-    SInt32 offset;
+    Type *best;
+    NameSpaceList *ol;
     NameSpace *lastobj;
 
     if (scope->theclass != NULL) {
@@ -1548,29 +1425,21 @@ Boolean find_type_name_in_scope(NameResult *out, NameSpace *scope, HashNameNode 
     }
 
     if (scope->usings != NULL) {
-        offset = 0;
+        best = NULL;
         for (nl = CScope_BuildNameSpaceLookupList(scope); nl != NULL; nl = nl->next) {
             for (ol = nl->namespaces; ol != NULL; ol = ol->next) {
-                obj = ol->nspace;
-                for (p = CScope_FindName((NameSpace *)(void *)obj, name); p != NULL; p = p->next) {
+                for (p = CScope_FindName(ol->nspace, name); p != NULL; p = p->next) {
                     if (p->object->otype == OT_TYPETAG) {
-                        if (offset != 0 && offset != (SInt32)((ObjType *)p->object)->type) {
-                            if (!(name == NULL || obj == lastobj)) {
-                                CError_ReportError(ERR_AMBIGUOUS_ACCESS_NAME_FOUND,
-                                                   CError_GetQualifiedHashName(obj, name),
-                                                   CError_GetQualifiedHashName(lastobj, name));
-                            } else {
-                                CError_ReportError(ERR_AMBIGUOUS_ACCESS_CLASS_STRUCT_UNION_MEMBER);
-                            }
-                        }
-                        offset = (SInt32)((ObjType *)p->object)->type;
+                        if (best != NULL && best != ((ObjType *)p->object)->type)
+                            CScope_AmbigNameError(ol->nspace, lastobj, name);
+                        best = ((ObjType *)p->object)->type;
                         lastobj = ol->nspace;
                         break;
                     }
                 }
             }
-            if (offset != 0) {
-                out->type = (Type *)offset;
+            if (best != NULL) {
+                out->type = best;
                 return 1;
             }
         }
@@ -2018,26 +1887,14 @@ Boolean CScope_ParseDeclName(NameResult *CScope_FindName)
         CError_FATAL(2305);
     switch (tk) {
         case TK_OPERATOR: {
-            NameSpace *savedScope = cscope_current;
-            TypeClass *savedObject = cscope_currentclass;
-            Object *savedOffset = cscope_currentfunc;
-            UInt8 savedFlag = cscope_is_member_func;
+            CScopeSave save;
 
-            cscope_current = scope;
-            cscope_currentclass = scope->theclass;
-            cscope_currentfunc = NULL;
-            cscope_is_member_func = 0;
+            CScope_SetNameSpaceScope(scope, &save);
             if (!CParser_ParseOperatorName(NULL, 1)) {
-                cscope_current = savedScope;
-                cscope_currentclass = savedObject;
-                cscope_currentfunc = savedOffset;
-                cscope_is_member_func = savedFlag;
+                CScope_RestoreScope(&save);
                 return 0;
             }
-            cscope_current = savedScope;
-            cscope_currentclass = savedObject;
-            cscope_currentfunc = savedOffset;
-            cscope_is_member_func = savedFlag;
+            CScope_RestoreScope(&save);
             tk = TK_IDENTIFIER;
             name = data_00587fa0;
             CPrep_UngetToken();
@@ -2688,6 +2545,51 @@ ObjectList *CScope_GetLocalObject(NameSpace *nspace, HashNameNode *name)
     return NULL;
 }
 
+static BClassList *CScope_GetAccessPathStart(BClassList *list)
+{
+    BClassList *start;
+    ClassList *base;
+    BClassList *next;
+
+    start = list;
+    for (;;) {
+        if (!(next = list->next))
+            return start;
+        for (base = TYPE_CLASS(list->type)->bases; base; base = base->next) {
+            if (next->type == (Type *)base->base)
+                break;
+        }
+        if (!base)
+            start = next;
+        list = next;
+    }
+}
+
+#if VERSION == VERSION_GC_1_0
+BClassList *CScope_GetClassAccessPath(BClassList *list, TypeClass *tclass)
+{
+    BClassList *scan;
+    BClassList *list2;
+
+    if (!list)
+        return NULL;
+    list = CScope_GetAccessPathStart(list);
+    for (scan = list; scan; scan = scan->next) {
+        if (scan->type == (Type *)tclass)
+            return scan;
+    }
+    if ((list2 = CScope_GetBaseClassPath(tclass, TYPE_CLASS(list->type)))) {
+        for (scan = list2; scan; scan = scan->next) {
+            if (scan->type == list->type) {
+                scan->next = list->next;
+                return list2;
+            }
+        }
+        CError_FATAL(3053);
+    }
+    return NULL;
+}
+#else
 BClassList *CScope_GetClassAccessPath(BClassList *classes, TypeClass *base)
 {
     BClassList *current;
@@ -2740,6 +2642,19 @@ BClassList *CScope_GetClassAccessPath(BClassList *classes, TypeClass *base)
     }
     return NULL;
 }
+#endif
+
+static Boolean CScope_FixMemberResult(TypeClass *tclass, NameResult *result)
+{
+    if (!(result->basePath = CScope_GetClassAccessPath(result->basePath, tclass))) {
+        if (result->name)
+            CError_ReportError(ERR_NOT_STRUCT_UNION_CLASS_MEMBER, result->name->name);
+        else
+            CError_ReportError(ERR_ILLEGAL_CLASS_MEMBER_ACCESS);
+        return 0;
+    }
+    return 1;
+}
 
 Boolean CScope_ParseMemberName(TypeClass *ctx, NameResult *node, Boolean flag)
 {
@@ -2758,17 +2673,7 @@ Boolean CScope_ParseMemberName(TypeClass *ctx, NameResult *node, Boolean flag)
         }
         if (node->is_destructor)
             return 1;
-        node->basePath = CScope_GetClassAccessPath(node->basePath, ctx);
-        if (node->basePath == NULL) {
-            if (node->name != NULL)
-                CError_ReportError(ERR_NOT_STRUCT_UNION_CLASS_MEMBER, node->name->name);
-            else
-                CError_ReportError(ERR_ILLEGAL_CLASS_MEMBER_ACCESS);
-            result = 0;
-        } else {
-            result = 1;
-        }
-        return result;
+        return CScope_FixMemberResult(ctx, node);
     } else if (tk == TK_IDENTIFIER) {
         HashNameNode *savedName = data_00587fa0;
         SInt16 token = CPrepTokenizer_GetNextTokenAndRestorePosition();
@@ -2915,7 +2820,7 @@ void CScope_AddClassUsingDeclaration(TypeClass *def, TypeClass *tp, HashNameNode
 
     memclrw(&result, sizeof(result));
     found = find_and_append_class_member_path(&result, tp->nspace, name, 0);
-    if (!found || !CScope_ResolveLookupContext(&result, (Object *)def)) {
+    if (!found || !CScope_FixMemberResult(def, &result)) {
         CError_ReportError(ERR_ILLEGAL_USE_TEMPLATE_ARGUMENT_DEPENDENT_TYPE, name->name);
         return;
     }
@@ -3069,8 +2974,8 @@ NameSpace *parse_namespace_name(NameSpace *nameSpace)
 
 void CScope_ParseNameSpaceAlias(HashNameNode *name)
 {
-    NameSpaceObjectList *list;
     ObjNameSpace *objns;
+    NameSpaceObjectList *list;
 
     if (!(list = CScope_FindName(cscope_current, name))) {
         tk = CPrepTokenizer_GetNextToken();
