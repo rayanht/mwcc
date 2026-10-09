@@ -23574,14 +23574,16 @@
     "source": "src/optimizer/VectorArraysToRegs.c"
   },
   {
-    "name": "fn_004fd540",
+    "name": "advance_stage",
     "address": "0x004fd540",
-    "size": 70
+    "size": 70,
+    "source": "src/backend/MachineSimulation603.c"
   },
   {
-    "name": "fn_004fd590",
+    "name": "enqueue",
     "address": "0x004fd590",
-    "size": 74
+    "size": 74,
+    "source": "src/backend/MachineSimulation603.c"
   },
   {
     "name": "RemovePending",
@@ -23590,9 +23592,10 @@
     "source": "src/backend/MachineSimulation603.c"
   },
   {
-    "name": "fn_004fd620",
+    "name": "retire",
     "address": "0x004fd620",
-    "size": 57
+    "size": 57,
+    "source": "src/backend/MachineSimulation603.c"
   },
   {
     "name": "get_adjusted_latency",
@@ -23631,24 +23634,28 @@
     "source": "src/backend/MachineSimulation603.c"
   },
   {
-    "name": "fn_004fd9b0",
+    "name": "advance_stage",
     "address": "0x004fd9b0",
-    "size": 70
+    "size": 70,
+    "source": "src/backend/MachineSimulation603e.c"
   },
   {
-    "name": "fn_004fda00",
+    "name": "enqueue",
     "address": "0x004fda00",
-    "size": 74
+    "size": 74,
+    "source": "src/backend/MachineSimulation603e.c"
   },
   {
-    "name": "fn_004fda50",
+    "name": "complete_stage",
     "address": "0x004fda50",
-    "size": 54
+    "size": 54,
+    "source": "src/backend/MachineSimulation603e.c"
   },
   {
-    "name": "fn_004fda90",
+    "name": "retire",
     "address": "0x004fda90",
-    "size": 57
+    "size": 57,
+    "source": "src/backend/MachineSimulation603e.c"
   },
   {
     "name": "fn_0052e640",
@@ -23687,24 +23694,28 @@
     "source": "src/backend/MachineSimulation603e.c"
   },
   {
-    "name": "fn_004fde70",
+    "name": "advance_stage",
     "address": "0x004fde70",
-    "size": 70
+    "size": 70,
+    "source": "src/backend/MachineSimulation604.c"
   },
   {
-    "name": "fn_004fdec0",
+    "name": "enqueue",
     "address": "0x004fdec0",
-    "size": 62
+    "size": 62,
+    "source": "src/backend/MachineSimulation604.c"
   },
   {
-    "name": "fn_004fdf00",
+    "name": "complete_stage",
     "address": "0x004fdf00",
-    "size": 79
+    "size": 79,
+    "source": "src/backend/MachineSimulation604.c"
   },
   {
-    "name": "fn_004fdf50",
+    "name": "retire",
     "address": "0x004fdf50",
-    "size": 45
+    "size": 45,
+    "source": "src/backend/MachineSimulation604.c"
   },
   {
     "name": "get_size_rec_latency",
@@ -23939,24 +23950,28 @@
     "source": "src/backend/LiveVariables.c"
   },
   {
-    "name": "fn_004ffa60",
+    "name": "advance_stage",
     "address": "0x004ffa60",
-    "size": 70
+    "size": 70,
+    "source": "src/backend/MachineSimulation821.c"
   },
   {
-    "name": "fn_004ffab0",
+    "name": "enqueue",
     "address": "0x004ffab0",
-    "size": 74
+    "size": 74,
+    "source": "src/backend/MachineSimulation821.c"
   },
   {
-    "name": "fn_004ffb00",
+    "name": "complete_stage",
     "address": "0x004ffb00",
-    "size": 54
+    "size": 54,
+    "source": "src/backend/MachineSimulation821.c"
   },
   {
-    "name": "fn_004ffb40",
+    "name": "retire",
     "address": "0x004ffb40",
-    "size": 57
+    "size": 57,
+    "source": "src/backend/MachineSimulation821.c"
   },
   {
     "name": "get_instruction_cost",

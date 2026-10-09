@@ -504,6 +504,43 @@ static unsigned int data_00582d60;
 static unsigned int data_00582d64;
 static CompletionEntry instruction_completion_entries[5];
 
+static void advance_stage(int first, unsigned int from, int to)
+{
+    PCodeInstruction *instruction;
+    SInt32 v;
+    v = machineOpcodeInfo[(instruction = (&instruction_timing_slots)[from].instr)->opcode].stageCycles[to - first];
+    (&instruction_timing_slots)[to].instr = instruction;
+    (&instruction_timing_slots)[to].remaining = v;
+    (&instruction_timing_slots)[from].instr = NULL;
+}
+
+static void enqueue(PCodeInstruction *instr)
+{
+    data_00582d5c++;
+    data_00582d58--;
+    instruction_completion_entries[data_00582d64].instr = instr;
+    instruction_completion_entries[data_00582d64].completed = 0;
+    data_00582d64 = (data_00582d64 + 1) % 5;
+}
+
+static void complete_stage(unsigned int stage)
+{
+    PCodeInstruction *key = (&instruction_timing_slots)[stage].instr;
+    SInt32 i;
+    for (i = 0; i < 5 && instruction_completion_entries[i].instr != key; i++)
+        ;
+    instruction_completion_entries[i].completed = 1;
+    (&instruction_timing_slots)[stage].instr = NULL;
+}
+
+static void retire(void)
+{
+    instruction_completion_entries[data_00582d60].instr = NULL;
+    data_00582d5c -= 1;
+    data_00582d58 += 1;
+    data_00582d60 = (data_00582d60 + 1) % 5;
+}
+
 SInt32 fn_0052e640(PCodeInstruction *p)
 {
     SInt32 n = machineOpcodeInfo[p->opcode].latency;
@@ -577,45 +614,24 @@ int is_instruction_issuable(PCodeInstruction *instr)
 void fn_0052e450(struct PCodeInstruction *instruction)
 {
     unsigned int kind;
-    int opcodeIndex;
-    int opcodeValue;
+    int cycles;
 
-    opcodeIndex = instruction->opcode;
-    kind = machineOpcodeInfo[opcodeIndex].executionUnit;
-    opcodeValue = machineOpcodeInfo[opcodeIndex].stageCycles[0];
+    kind = machineOpcodeInfo[instruction->opcode].executionUnit;
+    cycles = machineOpcodeInfo[instruction->opcode].stageCycles[0];
     if ((kind == 1) && (data_00582d20.instr != NULL)) {
         kind = 7;
     }
-    data_00582d5c++;
-    data_00582d58--;
-    instruction_completion_entries[data_00582d64].instr = instruction,
-    instruction_completion_entries[data_00582d64].completed = 0;
-    data_00582d64 = (data_00582d64 + 1) % 5;
+    enqueue(instruction);
     (&instruction_timing_slots)[kind].instr = instruction;
-    (&instruction_timing_slots)[kind].remaining = opcodeValue;
+    (&instruction_timing_slots)[kind].remaining = cycles;
 }
 
 void fn_0052e110(void)
 {
     int slot;
-    int index20;
-    int index30;
-    int index48;
-    int index50;
-    int index18;
     struct PCodeInstruction *instruction;
-    int index38;
     short opcode;
-    struct PCodeInstruction *pending38;
-    int cycles28;
-    struct PCodeInstruction *pending48;
-    struct PCodeInstruction *pending20;
-    struct PCodeInstruction *pending50;
-    struct PCodeInstruction *pending30;
-    int cycles40;
-    int cycles38;
-    struct PCodeInstruction *queued;
-    struct PCodeInstruction *queued28;
+
     slot = 0;
     do {
         if ((&instruction_timing_slots)[slot].instr != NULL && (&instruction_timing_slots)[slot].remaining != 0)
@@ -623,90 +639,30 @@ void fn_0052e110(void)
         slot++;
     } while (slot < 8);
     if (data_00582d5c != 0 && instruction_completion_entries[data_00582d60].completed != 0) {
-        instruction_completion_entries[data_00582d60].instr = NULL;
-        data_00582d5c -= 1;
-        data_00582d58 += 1;
-        data_00582d60 = (data_00582d60 + 1) % 5;
-        if (data_00582d5c != 0 && instruction_completion_entries[data_00582d60].completed != 0) {
-            instruction_completion_entries[data_00582d60].instr = NULL;
-            data_00582d5c -= 1;
-            data_00582d58 += 1;
-            data_00582d60 = (data_00582d60 + 1) % 5;
-        }
+        retire();
+        if (data_00582d5c != 0 && instruction_completion_entries[data_00582d60].completed != 0)
+            retire();
     }
-    if (data_00582d20.instr != NULL && data_00582d20.remaining == 0) {
-        pending20 = data_00582d20.instr;
-        index20 = 0;
-        while (index20 < 5 && instruction_completion_entries[index20].instr != pending20) {
-            index20 = index20 + 1;
-        }
-        instruction_completion_entries[index20].completed = 1;
-        data_00582d20.instr = NULL;
-    }
-    if (data_00582d30.instr != NULL && data_00582d30.remaining == 0) {
-        pending30 = data_00582d30.instr;
-        index30 = 0;
-        while (index30 < 5 && instruction_completion_entries[index30].instr != pending30) {
-            index30 = index30 + 1;
-        }
-        instruction_completion_entries[index30].completed = 1;
-        data_00582d30.instr = NULL;
-    }
-    if (data_00582d48.instr != NULL && data_00582d48.remaining == 0) {
-        pending48 = data_00582d48.instr;
-        index48 = 0;
-        while (index48 < 5 && instruction_completion_entries[index48].instr != pending48) {
-            index48 = index48 + 1;
-        }
-        instruction_completion_entries[index48].completed = 1;
-        data_00582d48.instr = NULL;
-    }
-    if (data_00582d50.instr != NULL && data_00582d50.remaining == 0) {
-        pending50 = data_00582d50.instr;
-        index50 = 0;
-        while (index50 < 5 && instruction_completion_entries[index50].instr != pending50) {
-            index50 = index50 + 1;
-        }
-        instruction_completion_entries[index50].completed = 1;
-        data_00582d50.instr = NULL;
-    }
-    if (instruction_timing_slots.instr != NULL && instruction_timing_slots.remaining == 0) {
-        struct PCodeInstruction *pending18 = instruction_timing_slots.instr;
-        index18 = 0;
-        while (index18 < 5 && instruction_completion_entries[index18].instr != pending18)
-            index18++;
-        instruction_completion_entries[index18].completed = 1;
-        instruction_timing_slots.instr = NULL;
-    }
+    if (data_00582d20.instr != NULL && data_00582d20.remaining == 0)
+        complete_stage(1);
+    if (data_00582d30.instr != NULL && data_00582d30.remaining == 0)
+        complete_stage(3);
+    if (data_00582d48.instr != NULL && data_00582d48.remaining == 0)
+        complete_stage(6);
+    if (data_00582d50.instr != NULL && data_00582d50.remaining == 0)
+        complete_stage(7);
+    if (instruction_timing_slots.instr != NULL && instruction_timing_slots.remaining == 0)
+        complete_stage(0);
     instruction = data_00582d38.instr;
     if (instruction != NULL && data_00582d38.remaining == 0 &&
-        ((opcode = instruction->opcode) == 168 || opcode == 169)) {
-        pending38 = data_00582d38.instr;
-        index38 = 0;
-        while (index38 < 5 && instruction_completion_entries[index38].instr != pending38) {
-            index38 = index38 + 1;
-        }
-        instruction_completion_entries[index38].completed = 1;
-        data_00582d38.instr = NULL;
-    }
-    if (queuedInstruction.instr != NULL && queuedInstruction.remaining == 0 && data_00582d48.instr == NULL) {
-        cycles40 = machineOpcodeInfo[(queued = queuedInstruction.instr)->opcode].stageCycles[2];
-        data_00582d48.instr = queued;
-        data_00582d48.remaining = cycles40;
-        queuedInstruction.instr = NULL;
-    }
-    if (data_00582d38.instr != NULL && data_00582d38.remaining == 0 && queuedInstruction.instr == NULL) {
-        cycles38 = machineOpcodeInfo[(queued = data_00582d38.instr)->opcode].stageCycles[1];
-        queuedInstruction.instr = queued;
-        queuedInstruction.remaining = cycles38;
-        data_00582d38.instr = NULL;
-    }
-    if (data_00582d28.instr != NULL && data_00582d28.remaining == 0 && data_00582d30.instr == NULL) {
-        cycles28 = machineOpcodeInfo[(queued28 = data_00582d28.instr)->opcode].stageCycles[1];
-        data_00582d30.instr = queued28;
-        data_00582d30.remaining = cycles28;
-        data_00582d28.instr = NULL;
-    }
+        ((opcode = instruction->opcode) == 168 || opcode == 169))
+        complete_stage(4);
+    if (queuedInstruction.instr != NULL && queuedInstruction.remaining == 0 && data_00582d48.instr == NULL)
+        advance_stage(4, 5, 6);
+    if (data_00582d38.instr != NULL && data_00582d38.remaining == 0 && queuedInstruction.instr == NULL)
+        advance_stage(4, 4, 5);
+    if (data_00582d28.instr != NULL && data_00582d28.remaining == 0 && data_00582d30.instr == NULL)
+        advance_stage(2, 2, 3);
 }
 
 int get_instruction_opcode_table_value(PCodeInstruction *instruction)
