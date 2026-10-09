@@ -21273,10 +21273,10 @@
     "source": "src/backend/InterferenceGraph.c"
   },
   {
-    "name": "InterferenceGraph_SpillRegisters",
+    "name": "SpillCode_SpillRegisters",
     "address": "0x00531f10",
     "size": 676,
-    "source": "src/backend/InterferenceGraph.c"
+    "source": "src/backend/SpillCode.c"
   },
   {
     "name": "SpillCode_EmitOperandSpills",

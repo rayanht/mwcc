@@ -1264,7 +1264,7 @@
   "_macro_expansion_depth": "0x00588428",
   "_build_sched_dependencies": "0x004ccf10",
   "_Scheduler_Schedule": "0x004ccae0",
-  "_InterferenceGraph_SpillRegisters": "0x00531800",
+  "_SpillCode_SpillRegisters": "0x00531800",
   "_SpillCode_EmitOperandSpills": "0x00531ab0",
   "_SpillCode_ReplaceInstructionWithFPRSpillCode": "0x00531cb0",
   "_SpillCode_RewriteSpilledVR": "0x00532190",

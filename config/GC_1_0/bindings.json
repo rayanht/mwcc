@@ -1658,5 +1658,11 @@
   "_write_object": "0x004b88c0",
   "_write_objtype": "0x004b8630",
   "_write_type": "0x004b7b30",
-  "_zero_fill": "0x0051d75c"
+  "_zero_fill": "0x0051d75c",
+  "__imp__InitializeCriticalSection@4": "0x0054b160",
+  "__imp__DeleteCriticalSection@4": "0x0054b164",
+  "__imp__EnterCriticalSection@4": "0x0054b168",
+  "__imp__LeaveCriticalSection@4": "0x0054b16c",
+  "__imp__RemoveDirectoryA@4": "0x0054b184",
+  "__imp__GetTickCount@0": "0x0054b1a4"
 }

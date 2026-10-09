@@ -1005,12 +1005,12 @@ src/backend/MachineSimulation821.c:
 	.bss        start:0x00583018 end:0x00583088
 
 src/backend/InterferenceGraph.c:
-	.text       start:0x00530A00 end:0x00531AB0
+	.text       start:0x00530A00 end:0x00531800
 	.data       start:0x00579568 end:0x00579580
 	.bss        start:0x00583088 end:0x00583090
 
 src/backend/SpillCode.c:
-	.text       start:0x00531AB0 end:0x005328A0
+	.text       start:0x00531800 end:0x005328A0
 	.data       start:0x00579580 end:0x00579590
 
 src/frontend/CRTTI.c:

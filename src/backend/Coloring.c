@@ -79,7 +79,7 @@ void Coloring_SetupFPRs(void)
     unsigned int reg;
 
     if (copts.operandsDebug) {
-        CError_FATAL(132);
+        CError_FATAL(VERSION > VERSION_GC_1_0 ? 132 : 129);
     }
     for (reg = 0; reg < 32; reg++) {
         gInterferenceGraph[reg]->physical_register = (short)reg;
@@ -429,7 +429,7 @@ void Coloring_AllocateRegisters(Object *function)
         if (Coloring_SelectColors(9, Coloring_SimplifyGraph(9, Registers_AvailableVRs(), gUsedVirtualRegistersVR)) == 0)
             spill = 1;
         if (spill)
-            InterferenceGraph_SpillRegisters(9, gUsedVirtualRegistersVR);
+            SpillCode_SpillRegisters(9, gUsedVirtualRegistersVR);
         else
             Coloring_CommitAssignments(9, gUsedVirtualRegistersVR);
         freeoheap();
@@ -455,7 +455,7 @@ void Coloring_AllocateRegisters(Object *function)
             0)
             spill = 1;
         if (spill)
-            InterferenceGraph_SpillRegisters(0, gUsedVirtualRegistersGPR);
+            SpillCode_SpillRegisters(0, gUsedVirtualRegistersGPR);
         else
             Coloring_CommitAssignments(0, gUsedVirtualRegistersGPR);
         freeoheap();
@@ -463,7 +463,7 @@ void Coloring_AllocateRegisters(Object *function)
     Registers_SetupFPRs();
     gColoringRegisterCount = gUsedVirtualRegistersFPR;
     if (copts.operandsDebug && gUsedVirtualRegistersFPR > 0x20)
-        CError_FATAL(492);
+        CError_FATAL(VERSION > VERSION_GC_1_0 ? 492 : 484);
     if (gUsedVirtualRegistersFPR > 0x20 && Registers_AvailableFPRs() <= 0) {
         PPCError_ReportError(0x66, "FPR");
         return;
@@ -477,7 +477,7 @@ void Coloring_AllocateRegisters(Object *function)
             0)
             spill = 1;
         if (spill)
-            InterferenceGraph_SpillRegisters(1, gUsedVirtualRegistersFPR);
+            SpillCode_SpillRegisters(1, gUsedVirtualRegistersFPR);
         else
             Coloring_CommitAssignments(1, gUsedVirtualRegistersFPR);
         freeoheap();
@@ -579,7 +579,7 @@ static void Coloring_RunClass(Object *function, int reg_class, int register_coun
             retry = 1;
         }
         if (retry) {
-            InterferenceGraph_SpillRegisters(reg_class, register_count);
+            SpillCode_SpillRegisters(reg_class, register_count);
         } else {
             Coloring_CommitAssignments(reg_class, register_count);
         }

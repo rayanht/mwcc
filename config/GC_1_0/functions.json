@@ -24693,7 +24693,7 @@
     "source": "src/backend/SpillCode.c"
   },
   {
-    "name": "fn_00501300",
+    "name": "SpillCode_SpillRegisters",
     "address": "0x00501300",
     "size": 488,
     "source": "src/backend/SpillCode.c"
