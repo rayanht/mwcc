@@ -14,7 +14,6 @@
   "?data_0054d0fc@@3PAEA": "0x0054e0fc",
   "?terminate@std@@YAXXZ": "0x004025e0",
   "?unexpected@std@@YAXXZ": "0x004025f0",
-  "_@stringBase0": "0x005729cc",
   "_BE_symbol_AdvanceSymbolTail": "0x00491ed0",
   "_BE_symbol_GetSymbolOrderTail": "0x00491800",
   "_BE_symbol_ResetSymbolTail": "0x00491f00",
