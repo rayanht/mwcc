@@ -21,6 +21,7 @@
 #include "compiler/IroPropagate.h"
 #include "compiler/IroUtil.h"
 #include "compiler/Registers.h"
+#include "version.h"
 #include "driver/COSToolsCLT.h"
 #include "driver/CWPluginsPrivate.h"
 #include "driver/cc-eabi-ppc.h"
@@ -37,32 +38,13 @@ UInt8 data_00588510;
 
 static struct IROLinear *saved_node;
 
-/* Flags of each ENode type. */
-SInt8 monadic_addr_flags_by_nodetype[75] = {1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-                                            0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 0, 0,
-                                            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
-UInt8 data_00551d6c[75] = {1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-                           0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 0, 0,
-                           0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+extern SInt8 monadic_addr_flags_by_nodetype[];
+extern UInt8 data_00551d6c[];
 #define IRO_BV_TEST(bv, idx)                                                                                           \
     ((UInt32)((idx) >> 5) < (UInt32)(bv)->size && ((bv)->bits[(idx) >> 5] & ((UInt32)1 << ((idx) & 31))) != 0)
 
+static void mark_var_parts(IROVarPart *range);
 static int IRO_ListHasObject(Object *key);
-
-static inline int fn_0044a6f0_inline1(VarRecord *a1)
-{
-    int v11;
-    ObjectList *v12;
-    v11 = (int)a1->object;
-    v12 = arguments;
-    while ((int)v12 != 0) {
-        if ((int)v12->object == v11) {
-            return 1;
-        }
-        v12 = v12->next;
-    }
-    return 0;
-}
 
 IROAddrRecord *IroVars_CreateAddrRecord(struct IROLinear *linear)
 {
@@ -217,6 +199,14 @@ void IroVars_VisitExceptionOperands(ExceptionAction *node, void (*visitOperand)(
     }
 }
 
+/* Flags of each ENode type. */
+SInt8 monadic_addr_flags_by_nodetype[75] = {1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                                            0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 0, 0,
+                                            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+UInt8 data_00551d6c[75] = {1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                           0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 0, 0,
+                           0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+
 /* An integer-constant operand of TYPE. */
 IROLinear *IroVars_CreateIntConstant(CInt64 value, Type *type)
 {
@@ -288,6 +278,14 @@ VarRecord *fn_0044ba70(Object *object, unsigned int create, unsigned int mode)
         }
     }
     return entry;
+}
+
+static void clear_noregister_flags(void)
+{
+    VarRecord *p;
+
+    for (p = var_records; p != NULL; p = p->next)
+        p->noregister = 0;
 }
 
 /* The object's VarRecord, created (when CREATE is 1) at the end of the variable list; MODE 0 marks it as one that
@@ -399,8 +397,7 @@ void IroVars_BuildNoregisterBitVector(void)
     Object *obj;
     SInt32 flag;
 
-    for (p = var_records; p != NULL; p = p->next)
-        p->noregister = 0;
+    clear_noregister_flags();
 
     for (q = linear_head; q != NULL; q = q->next) {
         if (q->type == IROLinearOperand && q->u.node->type == EOBJREF) {
@@ -439,6 +436,35 @@ void IroVars_PrependElmList(IROLinear *node, IROElmList **head)
     *head = entry;
 }
 
+#if VERSION == VERSION_GC_1_0
+void IroVars_CollectAddrRecordElements(IROLinear *tree, IROAddrRecord *collection)
+{
+    if (tree->u.diadic.left->type == IROLinearOp2Arg && tree->u.diadic.left->nodetype == EADD) {
+        IroVars_CollectAddrRecordElements(tree->u.diadic.left, collection);
+    } else if (tree->u.diadic.left->type == EPOSTDEC && tree->u.diadic.left->u.node->type == EINTCONST) {
+        collection->numInts += 1;
+        IroVars_PrependElmList(tree->u.diadic.left, &collection->ints);
+    } else if (tree->u.diadic.left->type == EPOSTDEC && tree->u.diadic.left->u.node->type == EOBJREF) {
+        collection->numObjRefs += 1;
+        IroVars_PrependElmList(tree->u.diadic.left, &collection->objRefs);
+    } else {
+        collection->numMisc += 1;
+        IroVars_PrependElmList(tree->u.diadic.left, &collection->misc);
+    }
+    if (tree->u.diadic.right->type == IROLinearOp2Arg && tree->u.diadic.right->nodetype == EADD) {
+        IroVars_CollectAddrRecordElements(tree->u.diadic.right, collection);
+    } else if (tree->u.diadic.right->type == EPOSTDEC && tree->u.diadic.right->u.node->type == EINTCONST) {
+        collection->numInts += 1;
+        IroVars_PrependElmList(tree->u.diadic.right, &collection->ints);
+    } else if (tree->u.diadic.right->type == EPOSTDEC && tree->u.diadic.right->u.node->type == EOBJREF) {
+        collection->numObjRefs += 1;
+        IroVars_PrependElmList(tree->u.diadic.right, &collection->objRefs);
+    } else {
+        collection->numMisc += 1;
+        IroVars_PrependElmList(tree->u.diadic.right, &collection->misc);
+    }
+}
+#else
 void IroVars_CollectAddrRecordElements(IROLinear *tree, IROAddrRecord *collection)
 {
     IROElmList *leftInt;
@@ -529,6 +555,7 @@ void IroVars_CollectAddrRecordElements(IROLinear *tree, IROAddrRecord *collectio
         collection->misc = rightMisc;
     }
 }
+#endif
 
 /* IRO node record as used by IroVars.c: byte kind at 0x00, byte op at 0x01,
  * a long at 0x0a, and two child pointers at 0x1a / 0x1e. */
@@ -851,18 +878,6 @@ void IRO_ScalarizeClassDataMembers(void)
     IroVars_CheckTimedLongjmp();
 }
 
-static int IRO_ListHasObject(Object *key)
-{
-    ObjectList *a;
-
-    for (a = arguments; a != NULL; a = a->next) {
-        if (a->object == key) {
-            return 1;
-        }
-    }
-    return 0;
-}
-
 SInt32 record_monadic_var_part_use(IROLinear *obj)
 {
     IROLinear *n = obj->u.monadic;
@@ -906,7 +921,6 @@ int record_var_part_use(IROLinear *source, VarRecord *operand, int offset, Type 
 {
     IROVarPart *range;
     IROElmList *use;
-    IROVarPart *scan;
     IROVarPart *newRange;
     int overlap;
     IROLinear *value;
@@ -973,12 +987,7 @@ int record_var_part_use(IROLinear *source, VarRecord *operand, int offset, Type 
         range = range->next;
     }
     if (overlap != 0) {
-        scan = class_data_parts;
-        while (scan != NULL) {
-            if (range->var->index == scan->var->index)
-                scan->flags |= 1;
-            scan = scan->next;
-        }
+        mark_var_parts(range);
         if (offset >= 0)
             return 0;
     }
@@ -995,7 +1004,7 @@ int record_var_part_use(IROLinear *source, VarRecord *operand, int offset, Type 
     newRange->uses->next = NULL;
     if ((type->type == TYPEFLOAT || type->type == TYPEINT || type->type == TYPEPOINTER) && offset != -1) {
         if ((value->flags & 16384) != 0) {
-            if (fn_0044a6f0_inline1(operand) != 0)
+            if (IRO_ListHasObject(operand->object))
                 newRange->flags |= 1;
         }
     } else {
@@ -1008,3 +1017,53 @@ int record_var_part_use(IROLinear *source, VarRecord *operand, int offset, Type 
     var_part_use_tail = newRange;
     return 1;
 }
+static void mark_var_parts(IROVarPart *range)
+{
+    IROVarPart *scan;
+
+    for (scan = class_data_parts; scan != NULL; scan = scan->next) {
+        if (range->var->index == scan->var->index)
+            scan->flags |= 1;
+    }
+}
+
+static int IRO_ListHasObject(Object *key)
+{
+    ObjectList *a;
+
+    for (a = arguments; a != NULL; a = a->next) {
+        if (a->object == key) {
+            return 1;
+        }
+    }
+    return 0;
+}
+
+#if VERSION == VERSION_GC_1_0
+/* The statement weight of a loop body (curstmtvalue) going in and out of a loop. */
+void IroVars_IncreaseStatementValue(void)
+{
+    if (curstmtvalue >= 0x1000) {
+        if (curstmtvalue >= 0xf000)
+            curstmtvalue++;
+        else
+            curstmtvalue += 0x1000;
+    } else {
+        curstmtvalue <<= 3;
+    }
+}
+
+void IroVars_DecreaseStatementValue(void)
+{
+    if (curstmtvalue > 0x1000) {
+        if (curstmtvalue > 0xf000)
+            curstmtvalue--;
+        else
+            curstmtvalue -= 0x1000;
+    } else {
+        curstmtvalue >>= 3;
+    }
+    if (curstmtvalue < 1)
+        curstmtvalue = 1;
+}
+#endif

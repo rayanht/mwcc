@@ -163,6 +163,7 @@
     "src/optimizer/IroSubable.c",
     "src/optimizer/IroTransform.c",
     "src/optimizer/IroUtil.c",
+    "src/optimizer/IroVars.c",
     "src/optimizer/LoadDeletion.c",
     "src/optimizer/StrengthReduction.c",
     "src/optimizer/StructMoves.c",

@@ -8715,7 +8715,7 @@
     "source": "src/optimizer/IroVars.c"
   },
   {
-    "name": "fn_00442290",
+    "name": "clear_noregister_flags",
     "address": "0x00442290",
     "size": 28,
     "source": "src/optimizer/IroVars.c"
@@ -8805,7 +8805,7 @@
     "source": "src/optimizer/IroVars.c"
   },
   {
-    "name": "fn_00443530",
+    "name": "mark_var_parts",
     "address": "0x00443530",
     "size": 47,
     "source": "src/optimizer/IroVars.c"
@@ -8817,13 +8817,13 @@
     "source": "src/optimizer/IroVars.c"
   },
   {
-    "name": "fn_00443590",
+    "name": "IroVars_IncreaseStatementValue",
     "address": "0x00443590",
     "size": 56,
     "source": "src/optimizer/IroVars.c"
   },
   {
-    "name": "fn_004435d0",
+    "name": "IroVars_DecreaseStatementValue",
     "address": "0x004435d0",
     "size": 75,
     "source": "src/optimizer/IroVars.c"
