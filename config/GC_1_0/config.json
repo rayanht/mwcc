@@ -101,6 +101,7 @@
     "src/driver/libimp-eabi-ppc-mw.c",
     "src/driver/libimp-eabi-ppc.c",
     "src/frontend/CClass.c",
+    "src/frontend/CError.c",
     "src/frontend/CInt64.c",
     "src/frontend/CMangler.c",
     "src/frontend/CObjCModern.c",

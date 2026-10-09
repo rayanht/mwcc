@@ -9831,7 +9831,7 @@
     "source": "src/frontend/CError.c"
   },
   {
-    "name": "fn_0044e3a0",
+    "name": "CError_GetErrorMessage",
     "address": "0x0044e3a0",
     "size": 60,
     "source": "src/frontend/CError.c"
@@ -9861,7 +9861,7 @@
     "source": "src/frontend/CError.c"
   },
   {
-    "name": "fn_0044e4d0",
+    "name": "CError_BufferTerminate",
     "address": "0x0044e4d0",
     "size": 18,
     "source": "src/frontend/CError.c"
@@ -9993,7 +9993,7 @@
     "source": "src/frontend/CError.c"
   },
   {
-    "name": "fn_0044f970",
+    "name": "CError_VErrorMessage",
     "address": "0x0044f970",
     "size": 80,
     "source": "src/frontend/CError.c"
@@ -10041,7 +10041,7 @@
     "source": "src/frontend/CError.c"
   },
   {
-    "name": "fn_0044fe90",
+    "name": "CError_BreakPoint",
     "address": "0x0044fe90",
     "size": 32,
     "source": "src/frontend/CError.c"
