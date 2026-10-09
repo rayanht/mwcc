@@ -8319,13 +8319,13 @@
     "source": "src/backend/ELF_Endian.c"
   },
   {
-    "name": "fn_0043f010",
+    "name": "swap16",
     "address": "0x0043f010",
     "size": 47,
     "source": "src/backend/ELF_Endian.c"
   },
   {
-    "name": "fn_0043f040",
+    "name": "swap32",
     "address": "0x0043f040",
     "size": 38,
     "source": "src/backend/ELF_Endian.c"
@@ -8337,13 +8337,13 @@
     "source": "src/backend/ELF_Endian.c"
   },
   {
-    "name": "fn_0043f120",
+    "name": "swap_tagged_record_data",
     "address": "0x0043f120",
     "size": 843,
     "source": "src/backend/ELF_Endian.c"
   },
   {
-    "name": "fn_0043f470",
+    "name": "swap_tagged_records",
     "address": "0x0043f470",
     "size": 470,
     "source": "src/backend/ELF_Endian.c"

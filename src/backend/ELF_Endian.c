@@ -9,22 +9,6 @@
 #include "driver/libimp-eabi-ppc.h"
 
 static int (*data_005805e0)(const char *, int);
-static inline void readhdr(volatile int *out, unsigned int *p, char flag)
-{
-    if (flag) {
-        *out = *p;
-        CTool_EndianConvertInPlaceWord32Ptr(p);
-    } else {
-        CTool_EndianConvertInPlaceWord32Ptr(p);
-        *out = *p;
-    }
-}
-
-static inline void readheader(volatile int *out, unsigned int *p, char flag)
-{
-    readhdr(out, p, flag);
-}
-
 void ELF_Endian_SwapElf32Header(struct Elf32Header *header)
 {
     header->type = CTool_EndianConvertWord16(header->type);
@@ -121,6 +105,34 @@ void swap_conversion_blocks(char *data, int remainingSize, int (*conversionMode)
     }
 }
 
+static unsigned short swap16(void *address, char readBeforeSwap)
+{
+    unsigned short value;
+
+    if (readBeforeSwap != 0) {
+        value = *(unsigned short *)address;
+        CTool_EndianConvertInPlaceWord16Ptr(address);
+    } else {
+        CTool_EndianConvertInPlaceWord16Ptr(address);
+        value = *(unsigned short *)address;
+    }
+    return value;
+}
+
+static unsigned int swap32(void *address, char readBeforeSwap)
+{
+    unsigned int value;
+
+    if (readBeforeSwap != 0) {
+        value = *(unsigned int *)address;
+        CTool_EndianConvertInPlaceWord32Ptr(address);
+    } else {
+        CTool_EndianConvertInPlaceWord32Ptr(address);
+        value = *(unsigned int *)address;
+    }
+    return value;
+}
+
 long double read_double(UInt8 *bytes, char flag)
 {
     union {
@@ -152,67 +164,36 @@ long double read_double(UInt8 *bytes, char flag)
     return (long double)representation.value;
 }
 
-int swap_tagged_record_data(void *data, short kind, char readBeforeSwap)
+int swap_tagged_record_data(void *data, DwarfAttribute attribute, char readBeforeSwap)
 {
     char *bytes = data;
-    short *lengthAddress = data;
     int offset = 0;
-    unsigned int *valueAddress;
     short remaining;
-    unsigned char tag;
-    short length;
+    unsigned char op;
     int size;
-    int registerValue;
-    int extendedValue;
-    int constantValue;
-    int typeReference;
-    short shortValue;
-    short extraValue;
-    unsigned char flag = 0;
+    unsigned char inSubscript = 0;
 
-    if (readBeforeSwap != 0) {
-        length = *lengthAddress;
-        CTool_EndianConvertInPlaceWord16Ptr(lengthAddress);
-    } else {
-        CTool_EndianConvertInPlaceWord16Ptr(lengthAddress);
-        length = *lengthAddress;
-    }
-    remaining = length;
+    remaining = swap16(bytes, readBeforeSwap);
     offset += 2;
-    if (length > 0) {
+    if (remaining > 0) {
         do {
-            tag = *(unsigned char *)(bytes + offset);
+            op = *(unsigned char *)(bytes + offset);
             offset++;
             remaining--;
-            if (kind == 0x23 || kind == 0x2a3 || kind == 0x2013 || kind == 0x293 || kind == 0x303) {
-                switch (tag) {
+            if (attribute == AT_location || attribute == AT_return_addr || attribute == AT_MW_location ||
+                attribute == AT_pure_virtual || attribute == AT_virtual) {
+                switch (op) {
                     case 1:
                     case 2:
                     case 4:
                     case 0x80:
                     case 0x81:
-                        if (readBeforeSwap != 0) {
-                            (void)(size = *(int *)(bytes + offset));
-                            valueAddress = (unsigned int *)(bytes + offset);
-                            CTool_EndianConvertInPlaceWord32Ptr(valueAddress);
-                        } else {
-                            valueAddress = (unsigned int *)(bytes + offset);
-                            CTool_EndianConvertInPlaceWord32Ptr(valueAddress);
-                            (void)(size = *valueAddress);
-                        }
+                        (void)swap32(bytes + offset, readBeforeSwap);
                         offset += 4;
                         remaining -= 4;
                         break;
                     case 3:
-                        if (readBeforeSwap != 0) {
-                            valueAddress = (unsigned int *)(bytes + offset);
-                            (void)(registerValue = *valueAddress);
-                            CTool_EndianConvertInPlaceWord32Ptr(valueAddress);
-                        } else {
-                            valueAddress = (unsigned int *)(bytes + offset);
-                            CTool_EndianConvertInPlaceWord32Ptr(valueAddress);
-                            (void)(registerValue = *valueAddress);
-                        }
+                        (void)swap32(bytes + offset, readBeforeSwap);
                         offset += 4;
                         remaining -= 4;
                         break;
@@ -221,160 +202,81 @@ int swap_tagged_record_data(void *data, short kind, char readBeforeSwap)
                     case 7:
                         break;
                     case 0xe0:
-                        if (readBeforeSwap != 0) {
-                            valueAddress = (unsigned int *)(bytes + offset);
-                            (void)(extendedValue = *valueAddress);
-                            CTool_EndianConvertInPlaceWord32Ptr(valueAddress);
-                        } else {
-                            valueAddress = (unsigned int *)(bytes + offset);
-                            CTool_EndianConvertInPlaceWord32Ptr(valueAddress);
-                            (void)(extendedValue = *valueAddress);
-                        }
+                        (void)swap32(bytes + offset, readBeforeSwap);
                         offset += 4;
                         remaining -= 4;
                         break;
                 }
-            } else if (kind == 0x83) {
+            } else if (attribute == AT_mod_u_d_type) {
                 if (remaining < 4) {
-                    if (readBeforeSwap != 0) {
-                        valueAddress = (unsigned int *)(bytes + offset - 1);
-                        (void)(constantValue = *valueAddress);
-                        CTool_EndianConvertInPlaceWord32Ptr(valueAddress);
-                    } else {
-                        valueAddress = (unsigned int *)(bytes + offset - 1);
-                        CTool_EndianConvertInPlaceWord32Ptr(valueAddress);
-                        (void)(constantValue = *valueAddress);
-                    }
+                    (void)swap32(bytes + offset - 1, readBeforeSwap);
                     offset += 3;
                     remaining -= 3;
                 }
-            } else if (kind == 0x63) {
+            } else if (attribute == AT_mod_fund_type) {
                 if (remaining < 2) {
-                    if (readBeforeSwap != 0) {
-                        (void)(shortValue = *(short *)(bytes + offset - 1));
-                        CTool_EndianConvertInPlaceWord16Ptr((short *)(bytes + offset - 1));
-                    } else {
-                        CTool_EndianConvertInPlaceWord16Ptr((short *)(bytes + offset - 1));
-                        (void)(shortValue = *(short *)(bytes + offset - 1));
-                    }
+                    (void)swap16(bytes + offset - 1, readBeforeSwap);
                     offset += 1;
                     remaining -= 1;
                 }
-            } else if (kind == 0xa3) {
-                if (!flag)
-                    flag = 1;
-                switch (tag) {
+            } else if (attribute == AT_subscr_data) {
+                if (!inSubscript)
+                    inSubscript = 1;
+                switch (op) {
                     case 8:
-                        if (readBeforeSwap != 0) {
-                            kind = *(short *)(bytes + offset);
-                            CTool_EndianConvertInPlaceWord16Ptr((short *)(bytes + offset));
-                        } else {
-                            CTool_EndianConvertInPlaceWord16Ptr((short *)(bytes + offset));
-                            kind = *(short *)(bytes + offset);
-                        }
+                        attribute = swap16(bytes + offset, readBeforeSwap);
                         offset += 2;
                         remaining -= 2;
-                        if (kind == 0x55) {
-                            if (readBeforeSwap != 0) {
-                                (void)(extraValue = *(short *)(bytes + offset));
-                                CTool_EndianConvertInPlaceWord16Ptr((short *)(bytes + offset));
-                            } else {
-                                CTool_EndianConvertInPlaceWord16Ptr((short *)(bytes + offset));
-                                (void)(extraValue = *(short *)(bytes + offset));
-                            }
+                        if (attribute == AT_fund_type) {
+                            (void)swap16(bytes + offset, readBeforeSwap);
                             offset += 2;
                             remaining -= 2;
-                        } else if (kind == 0x63 || kind == 0x83) {
-                            size = swap_tagged_record_data(bytes + offset, kind, readBeforeSwap);
+                        } else if (attribute == AT_mod_fund_type || attribute == AT_mod_u_d_type) {
+                            size = swap_tagged_record_data(bytes + offset, attribute, readBeforeSwap);
                             offset += size;
                             remaining -= size;
-                        } else if (kind == 0x72) {
-                            if (readBeforeSwap != 0) {
-                                valueAddress = (unsigned int *)(bytes + offset);
-                                (void)(typeReference = *valueAddress);
-                                CTool_EndianConvertInPlaceWord32Ptr(valueAddress);
-                            } else {
-                                valueAddress = (unsigned int *)(bytes + offset);
-                                CTool_EndianConvertInPlaceWord32Ptr(valueAddress);
-                                (void)(typeReference = *valueAddress);
-                            }
+                        } else if (attribute == AT_user_def_type) {
+                            (void)swap32(bytes + offset, readBeforeSwap);
                             offset += 4;
                             remaining -= 4;
                         }
-                        flag = 0;
+                        inSubscript = 0;
                         break;
                     case 0:
-                        if (readBeforeSwap != 0) {
-                            CTool_EndianConvertInPlaceWord16Ptr((short *)(bytes + offset));
-                        } else {
-                            CTool_EndianConvertInPlaceWord16Ptr((short *)(bytes + offset));
-                        }
-                        if (readBeforeSwap != 0) {
-                            (void)(offset + 2 + bytes);
-                            CTool_EndianConvertInPlaceWord32Ptr((unsigned int *)(offset + 2 + bytes));
-                        } else {
-                            CTool_EndianConvertInPlaceWord32Ptr((unsigned int *)(offset + 2 + bytes));
-                        }
-                        if (readBeforeSwap != 0) {
-                            (void)(offset + 6 + bytes);
-                            CTool_EndianConvertInPlaceWord32Ptr((unsigned int *)(offset + 6 + bytes));
-                        } else {
-                            CTool_EndianConvertInPlaceWord32Ptr((unsigned int *)(offset + 6 + bytes));
-                        }
+                        swap16(bytes + offset, readBeforeSwap);
+                        size = swap32(offset + 2 + bytes, readBeforeSwap);
+                        size = swap32(offset + 6 + bytes, readBeforeSwap);
                         offset += 10;
                         remaining -= 10;
                         break;
                     case 1:
-                        if (readBeforeSwap != 0) {
-                            CTool_EndianConvertInPlaceWord16Ptr((short *)(bytes + offset));
-                        } else {
-                            CTool_EndianConvertInPlaceWord16Ptr((short *)(bytes + offset));
-                        }
-                        if (readBeforeSwap != 0) {
-                            (void)(offset + 2 + bytes);
-                            CTool_EndianConvertInPlaceWord32Ptr((unsigned int *)(offset + 2 + bytes));
-                        } else {
-                            CTool_EndianConvertInPlaceWord32Ptr((unsigned int *)(offset + 2 + bytes));
-                        }
+                        swap16(bytes + offset, readBeforeSwap);
+                        size = swap32(offset + 2 + bytes, readBeforeSwap);
                         offset += 6;
                         remaining -= 6;
-                        size = swap_tagged_record_data(bytes + offset, 0x23, readBeforeSwap);
+                        size = swap_tagged_record_data(bytes + offset, AT_location, readBeforeSwap);
                         offset += size;
                         remaining -= size;
                         break;
                     case 2:
-                        if (readBeforeSwap != 0) {
-                            CTool_EndianConvertInPlaceWord16Ptr((short *)(bytes + offset));
-                        } else {
-                            CTool_EndianConvertInPlaceWord16Ptr((short *)(bytes + offset));
-                        }
+                        swap16(bytes + offset, readBeforeSwap);
                         offset += 2;
                         remaining -= 2;
-                        size = swap_tagged_record_data(bytes + offset, 0x23, readBeforeSwap);
+                        size = swap_tagged_record_data(bytes + offset, AT_location, readBeforeSwap);
                         offset += size;
                         remaining -= size;
-                        if (readBeforeSwap != 0) {
-                            valueAddress = (unsigned int *)(bytes + offset);
-                            CTool_EndianConvertInPlaceWord32Ptr(valueAddress);
-                        } else {
-                            valueAddress = (unsigned int *)(bytes + offset);
-                            CTool_EndianConvertInPlaceWord32Ptr(valueAddress);
-                        }
+                        swap32(bytes + offset, readBeforeSwap);
                         offset += 4;
                         remaining -= 4;
                         break;
                     case 3:
-                        if (readBeforeSwap != 0) {
-                            CTool_EndianConvertInPlaceWord16Ptr((short *)(bytes + offset));
-                        } else {
-                            CTool_EndianConvertInPlaceWord16Ptr((short *)(bytes + offset));
-                        }
+                        swap16(bytes + offset, readBeforeSwap);
                         offset += 2;
                         remaining -= 2;
-                        size = swap_tagged_record_data(bytes + offset, 0x23, readBeforeSwap);
+                        size = swap_tagged_record_data(bytes + offset, AT_location, readBeforeSwap);
                         offset += size;
                         remaining -= size;
-                        size = swap_tagged_record_data(bytes + offset, 0x23, readBeforeSwap);
+                        size = swap_tagged_record_data(bytes + offset, AT_location, readBeforeSwap);
                         offset += size;
                         remaining -= size;
                         break;
@@ -382,8 +284,8 @@ int swap_tagged_record_data(void *data, short kind, char readBeforeSwap)
                     case 5:
                     case 6:
                     case 7:
-                        flag = 0;
-                        kind = 0;
+                        inSubscript = 0;
+                        attribute = 0;
                         break;
                 }
             }
@@ -396,37 +298,25 @@ void swap_tagged_records(unsigned char *data, unsigned int size, int (*errorHand
                          char swapBeforeRead)
 {
     int offset = 0;
-    volatile struct RecordBounds record;
+    struct RecordBounds record;
     int length;
-    short count;
-    unsigned short tag;
-    unsigned int *valueAddress;
-    int value;
-    int scalar;
+    DwarfTag tag;
+    DwarfAttribute attribute;
     unsigned char character;
-    unsigned int *wordAddress;
-    short *shortAddress;
 
     data_005805e0 = errorHandler;
     while (offset < size) {
         record.endOffset = offset;
-        readheader(&record.length, (unsigned int *)(data + offset), swapBeforeRead);
-        if (record.length < 8) {
-            if (record.length <= 0)
+        record.length = swap32(data + offset, swapBeforeRead);
+        if ((int)record.length < 8) {
+            if ((int)record.length <= 0)
                 (*data_005805e0)("ELF_Endian.c", 0x183);
             offset += record.length;
         } else {
-            if (swapBeforeRead) {
-                count = *(short *)((offset + 4) + data);
-                CTool_EndianConvertInPlaceWord16Ptr((short *)((offset + 4) + data));
-            } else {
-                shortAddress = (short *)((offset + 4) + data);
-                CTool_EndianConvertInPlaceWord16Ptr(shortAddress);
-                count = *shortAddress;
-            }
+            tag = swap16((offset + 4) + data, swapBeforeRead);
             offset += 6;
-            if (count == 0) {
-                record.length = record.length - 6;
+            if (tag == TAG_padding) {
+                record.length -= 6;
                 offset += record.length;
             } else {
                 goto recordSetup;
@@ -435,99 +325,44 @@ void swap_tagged_records(unsigned char *data, unsigned int size, int (*errorHand
         continue;
     recordTest:
         while (offset < record.endOffset) {
-            if (swapBeforeRead) {
-                shortAddress = (short *)(data + offset);
-                tag = *shortAddress;
-                CTool_EndianConvertInPlaceWord16Ptr(shortAddress);
-            } else {
-                shortAddress = (short *)(data + offset);
-                CTool_EndianConvertInPlaceWord16Ptr(shortAddress);
-                tag = *shortAddress;
-            }
+            attribute = swap16(data + offset, swapBeforeRead);
             offset += 2;
-            switch (tag & 0xf) {
+            /* the attribute's form */
+            switch (attribute & 0xf) {
                 case 1:
-                    if (swapBeforeRead) {
-                        value = *(int *)(data + offset);
-                        valueAddress = (unsigned int *)(data + offset);
-                        CTool_EndianConvertInPlaceWord32Ptr(valueAddress);
-                    } else {
-                        valueAddress = (unsigned int *)(data + offset);
-                        CTool_EndianConvertInPlaceWord32Ptr(valueAddress);
-                        value = *valueAddress;
-                    }
+                    (void)swap32(data + offset, swapBeforeRead);
                     offset += 4;
                     break;
                 case 2:
-                    if (swapBeforeRead) {
-                        value = *(int *)(data + offset);
-                        valueAddress = (unsigned int *)(data + offset);
-                        CTool_EndianConvertInPlaceWord32Ptr(valueAddress);
-                    } else {
-                        wordAddress = (unsigned int *)(data + offset);
-                        CTool_EndianConvertInPlaceWord32Ptr(wordAddress);
-                        value = *wordAddress;
-                    }
+                    (void)swap32(data + offset, swapBeforeRead);
                     offset += 4;
                     break;
                 case 3:
-                    offset += swap_tagged_record_data(data + offset, tag, swapBeforeRead);
+                    offset += swap_tagged_record_data(data + offset, attribute, swapBeforeRead);
                     break;
                 case 4:
-                    if (swapBeforeRead) {
-                        length = *(int *)(data + offset);
-                        valueAddress = (unsigned int *)(data + offset);
-                        CTool_EndianConvertInPlaceWord32Ptr(valueAddress);
-                    } else {
-                        valueAddress = (unsigned int *)(data + offset);
-                        CTool_EndianConvertInPlaceWord32Ptr(valueAddress);
-                        length = *(int *)(data + offset);
-                    }
+                    length = swap32(data + offset, swapBeforeRead);
                     offset += 4;
-                    if (tag == 0xf4) {
+                    if (attribute == AT_element_list) {
                         while (length != 0) {
-                            if (swapBeforeRead) {
-                                value = *(int *)(data + offset);
-                                valueAddress = (unsigned int *)(data + offset);
-                                CTool_EndianConvertInPlaceWord32Ptr(valueAddress);
-                            } else {
-                                valueAddress = (unsigned int *)(data + offset);
-                                CTool_EndianConvertInPlaceWord32Ptr(valueAddress);
-                                value = *(int *)(data + offset);
-                            }
+                            (void)swap32(data + offset, swapBeforeRead);
                             offset += 4;
                             length -= 4;
                             while (data[offset] != '\0') {
                                 offset++;
                                 length--;
                             }
-                            length--;
                             offset++;
+                            length--;
                         }
                     }
                     break;
                 case 5:
-                    if (swapBeforeRead) {
-                        shortAddress = (short *)(data + offset);
-                        scalar = *shortAddress;
-                        CTool_EndianConvertInPlaceWord16Ptr(shortAddress);
-                    } else {
-                        shortAddress = (short *)(data + offset);
-                        CTool_EndianConvertInPlaceWord16Ptr(shortAddress);
-                        scalar = *shortAddress;
-                    }
+                    swap16(data + offset, swapBeforeRead);
                     offset += 2;
                     break;
                 case 6:
-                    if (swapBeforeRead) {
-                        scalar = *(int *)(data + offset);
-                        valueAddress = (unsigned int *)(data + offset);
-                        CTool_EndianConvertInPlaceWord32Ptr(valueAddress);
-                    } else {
-                        valueAddress = (unsigned int *)(data + offset);
-                        CTool_EndianConvertInPlaceWord32Ptr(valueAddress);
-                        scalar = *(int *)(data + offset);
-                    }
+                    swap32(data + offset, swapBeforeRead);
                     offset += 4;
                     break;
                 case 7:
@@ -542,9 +377,8 @@ void swap_tagged_records(unsigned char *data, unsigned int size, int (*errorHand
             }
         }
     }
-    (void)value;
     return;
 recordSetup:
-    record.endOffset = record.endOffset + record.length;
+    record.endOffset += record.length;
     goto recordTest;
 }

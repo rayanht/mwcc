@@ -27,7 +27,7 @@ struct ElfSymbolRecord {
     unsigned short sectionIndex;
 };
 struct RecordBounds {
-    int length;
+    unsigned int length;
     int endOffset;
 };
 extern void swap_tagged_records(unsigned char *data, unsigned int size, int (*errorHandler)(const char *, int),
@@ -39,7 +39,23 @@ extern void ELF_Endian_ConvertThreeWords(unsigned int *words);
 extern unsigned short ELF_Endian_ConvertSymbolRecord(void *data);
 extern void ELF_Endian_SwapElf32Section(Elf32Section *values);
 extern void ELF_Endian_SwapElf32Header(struct Elf32Header *header);
-extern int swap_tagged_record_data(void *data, short kind, char readBeforeSwap);
+/* DWARF 1 debugging entries: a tag, then attributes whose low four bits are their form */
+typedef enum DwarfTag { TAG_padding = 0x0000, TAG_lo_user = 0x4080, TAG_hi_user = 0xffff } DwarfTag;
+typedef enum DwarfAttribute {
+    AT_location = 0x0023,
+    AT_fund_type = 0x0055,
+    AT_mod_fund_type = 0x0063,
+    AT_user_def_type = 0x0072,
+    AT_mod_u_d_type = 0x0083,
+    AT_subscr_data = 0x00a3,
+    AT_element_list = 0x00f4,
+    /* (the block forms MWCC gives a virtual function's vtable location) */
+    AT_pure_virtual = 0x0293,
+    AT_return_addr = 0x02a3,
+    AT_virtual = 0x0303,
+    AT_MW_location = 0x2013
+} DwarfAttribute;
+extern int swap_tagged_record_data(void *data, DwarfAttribute kind, char readBeforeSwap);
 
 #ifdef __cplusplus
 }
