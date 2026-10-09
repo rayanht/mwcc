@@ -11817,7 +11817,7 @@
     "source": "src/frontend/CParser.c"
   },
   {
-    "name": "fn_00469870",
+    "name": "CParser_PrintUniqueID",
     "address": "0x00469870",
     "size": 106,
     "source": "src/frontend/CParser.c"
@@ -12159,7 +12159,7 @@
     "source": "src/frontend/CParser.c"
   },
   {
-    "name": "fn_0046ca50",
+    "name": "CheckVectorKeyword",
     "address": "0x0046ca50",
     "size": 226,
     "source": "src/frontend/CParser.c"
@@ -12195,7 +12195,7 @@
     "source": "src/frontend/CParser.c"
   },
   {
-    "name": "fn_0046d9e0",
+    "name": "CParser_IsAnonymousUnion",
     "address": "0x0046d9e0",
     "size": 90,
     "source": "src/frontend/CParser.c"
@@ -12225,13 +12225,13 @@
     "source": "src/frontend/CParser.c"
   },
   {
-    "name": "fn_0046dc00",
+    "name": "CParser_FindOverloadFunc",
     "address": "0x0046dc00",
     "size": 75,
     "source": "src/frontend/CParser.c"
   },
   {
-    "name": "fn_0046dc50",
+    "name": "CParser_ParseObject",
     "address": "0x0046dc50",
     "size": 192,
     "source": "src/frontend/CParser.c"
