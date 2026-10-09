@@ -37,15 +37,6 @@ static inline PCodeBlockLink *code_00522b40_inline1(PCodeBlock *p0)
     return t5;
 }
 
-static void AddNode(Loop *w, PCodeBlock *item)
-{
-    PCodeBlockLink *nn = (PCodeBlockLink *)lalloc(8);
-    SETB(w->memberblocks, item->index);
-    nn->payload.block = item;
-    nn->next = w->blocks;
-    w->blocks = nn;
-}
-
 static void AddCount(PCodeBlock *item, SInt32 *count)
 {
     data_00582c64[*count] = item;
@@ -131,11 +122,11 @@ void compute_loop_block_sets(Loop *w)
     SInt32 n;
 
     n = 0;
-    AddNode(w, w->body);
+    LoopDetection_AddBlock(w, w->body);
 
     for (first = w->body->predecessors; first != NULL; first = first->next) {
         if (TESTB(dominators[first->payload.block->index], w->body->index) && first->payload.block != w->body) {
-            AddNode(w, first->payload.block);
+            LoopDetection_AddBlock(w, first->payload.block);
             AddCount(first->payload.block, &n);
         }
     }
@@ -144,7 +135,7 @@ void compute_loop_block_sets(Loop *w)
         n--;
         for (first = data_00582c64[n]->predecessors; first != NULL; first = first->next) {
             if (!TESTB(w->memberblocks, first->payload.block->index)) {
-                AddNode(w, first->payload.block);
+                LoopDetection_AddBlock(w, first->payload.block);
                 AddCount(first->payload.block, &n);
             }
         }

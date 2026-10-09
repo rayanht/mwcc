@@ -58,14 +58,8 @@ static struct CleanNode *data_00580890;
 #pragma options align = reset
 
 static FuncArg *FindNameLink(FuncArg *list, HashNameNode *name);
-static Statement *allocate_and_append_statement(UInt8 type);
-static Statement *NewStmt(UInt8 type);
 static void CondJump(ENode *expr, CLabel *truelabel, char a, char b);
-static Statement *AppendStmt(unsigned char kind);
-static CLabel *FindLabel(void);
 static unsigned char IsLabel(void);
-static CLabel *NewLabel(void);
-static void *NewScope(void);
 static struct Statement *CFunc_NewAssignmentStatement(void);
 static void CFunc_InitVariableInfo(Object *obj);
 
@@ -77,7 +71,7 @@ inline void RestoreBlock(void *block)
 
 inline void ScopedBody(StatementContext *ctx)
 {
-    void *s = NewScope();
+    void *s = CFunc_NewDeclBlock();
     if (tk == '{') {
         tk = (short)CPrepTokenizer_GetNextToken();
         if ((copts.cplusplus == '\0') && (isdeclaration(0, 0, 0, 0) != '\0')) {
@@ -1504,7 +1498,7 @@ void declare_local_object(DeclInfo *declaration, TStreamElement *declarationToke
                     curstmt = statement;
                     statement->expr = makediadicnode(create_objectnode(localstatic_init_guard),
                                                      intconstnode((Type *)&stsignedchar, 1), EASS);
-                    statement = allocate_and_append_statement(2);
+                    statement = CFunc_AppendStatement(2);
                     statement->label = data_0058087e;
                     data_0058087e->stmt = statement;
                 }
@@ -1565,20 +1559,6 @@ void declare_local_object(DeclInfo *declaration, TStreamElement *declarationToke
         default:
             CError_FATAL(1701);
     }
-}
-
-static Statement *allocate_and_append_statement(UInt8 type)
-{
-    Statement *stmt = (Statement *)lalloc(0x1a);
-    stmt->next = NULL;
-    stmt->type = type;
-    stmt->value = curstmtvalue;
-    stmt->flags = 0;
-    stmt->sourceoffset = sourceoffset;
-    stmt->dobjstack = cexcept_dobjstack;
-    curstmt->next = stmt;
-    curstmt = stmt;
-    return stmt;
 }
 
 ENode *parse_declarations(char mode, int singleDeclaration, char allowEmpty, char stopAfterDeclaration)
@@ -1661,7 +1641,7 @@ void generate_conditional_jump(ENode *expr, CLabel *dest, CLabel *other, Boolean
 
     if (expr == NULL) {
         if (sense) {
-            NewStmt(3)->label = dest;
+            CFunc_AppendStatement(3)->label = dest;
             return;
         }
         return;
@@ -1671,14 +1651,14 @@ void generate_conditional_jump(ENode *expr, CLabel *dest, CLabel *other, Boolean
         expr = expr->data.monadic;
     if (isnotzero(expr)) {
         if (sense) {
-            NewStmt(3)->label = dest;
+            CFunc_AppendStatement(3)->label = dest;
             return;
         }
         return;
     }
     if (iszero(expr)) {
         if (!sense) {
-            NewStmt(3)->label = dest;
+            CFunc_AppendStatement(3)->label = dest;
             return;
         }
         return;
@@ -1694,13 +1674,13 @@ void generate_conditional_jump(ENode *expr, CLabel *dest, CLabel *other, Boolean
         label->name = label->uniquename;
         if (sense) {
             generate_conditional_jump(expr->data.diadic.left, dest, label, 1, flag);
-            label->stmt = (Statement *)NewStmt(2);
+            label->stmt = (Statement *)CFunc_AppendStatement(2);
             label->stmt->label = label;
             generate_conditional_jump(expr->data.diadic.right, dest, other, 1, flag);
             return;
         }
         generate_conditional_jump(expr->data.diadic.left, other, label, 1, flag);
-        label->stmt = (Statement *)NewStmt(2);
+        label->stmt = (Statement *)CFunc_AppendStatement(2);
         label->stmt->label = label;
         generate_conditional_jump(expr->data.diadic.right, dest, other, 0, flag);
         return;
@@ -1712,39 +1692,24 @@ void generate_conditional_jump(ENode *expr, CLabel *dest, CLabel *other, Boolean
         label->name = label->uniquename;
         if (sense) {
             generate_conditional_jump(expr->data.diadic.left, other, label, 0, flag);
-            label->stmt = (Statement *)NewStmt(2);
+            label->stmt = (Statement *)CFunc_AppendStatement(2);
             label->stmt->label = label;
             generate_conditional_jump(expr->data.diadic.right, dest, other, 1, flag);
             return;
         }
         generate_conditional_jump(expr->data.diadic.left, dest, label, 0, flag);
-        label->stmt = (Statement *)NewStmt(2);
+        label->stmt = (Statement *)CFunc_AppendStatement(2);
         label->stmt->label = label;
         generate_conditional_jump(expr->data.diadic.right, dest, other, 0, flag);
         return;
     }
-    stmt = NewStmt(6);
+    stmt = CFunc_AppendStatement(6);
     stmt->label = dest;
     stmt->expr = expr;
     if (!sense)
         stmt->type = ST_IFNGOTO;
     if (flag)
         stmt->flags |= 4;
-}
-
-static Statement *NewStmt(UInt8 type)
-{
-    Statement *stmt = (Statement *)lalloc(sizeof(Statement));
-
-    stmt->next = NULL;
-    stmt->type = type;
-    stmt->value = curstmtvalue;
-    stmt->flags = 0;
-    stmt->sourceoffset = sourceoffset;
-    stmt->dobjstack = cexcept_dobjstack;
-    curstmt->next = stmt;
-    curstmt = stmt;
-    return stmt;
 }
 
 ENode *initialize_argument_object(ENode *initData, Type *type, UInt32 flags)
@@ -1838,7 +1803,7 @@ void parse_statement(StatementContext *context)
                     CError_ReportError(ERR_ILLEGAL_RETURN_VALUE_VOID_CONSTRUCTOR_DESTRUCTOR);
                     s_expression();
                 }
-                stmt = AppendStmt(8);
+                stmt = CFunc_AppendStatement(8);
                 stmt->expr = NULL;
                 fn_00449d60();
                 tk = CPrepTokenizer_GetNextToken();
@@ -1847,7 +1812,7 @@ void parse_statement(StatementContext *context)
             if (tk == ';') {
                 if (context->thetype != &stvoid && (warn_missing_return_value() || copts.cplusplus))
                     CError_Warning(ERR_RETURN_VALUE_EXPECTED);
-                stmt = AppendStmt(8);
+                stmt = CFunc_AppendStatement(8);
                 stmt->expr = NULL;
                 fn_00449d60();
                 tk = CPrepTokenizer_GetNextToken();
@@ -1857,16 +1822,16 @@ void parse_statement(StatementContext *context)
             if (context->thetype == &stvoid) {
                 if (expr->rtype != &stvoid)
                     CError_ReportError(ERR_ILLEGAL_RETURN_VALUE_VOID_CONSTRUCTOR_DESTRUCTOR);
-                stmt = AppendStmt(4);
+                stmt = CFunc_AppendStatement(4);
                 stmt->expr = expr;
-                stmt = AppendStmt(8);
+                stmt = CFunc_AppendStatement(8);
                 stmt->expr = NULL;
             } else {
                 if (CMach_GetFunctionResultClass((TypeFunc *)cscope_currentfunc->type) == 1)
                     expr = initialize_argument_object(expr, context->thetype, context->qual);
                 else
                     expr = oldassignmentpromotion(expr, context->thetype, context->qual, 1);
-                stmt = AppendStmt(8);
+                stmt = CFunc_AppendStatement(8);
                 stmt->expr = expr;
                 if (context->thetype->type == TYPEPOINTER)
                     check_function_result_automatic_variable(expr);
@@ -1886,8 +1851,8 @@ void parse_statement(StatementContext *context)
                 tk = CPrepTokenizer_GetNextToken();
             if (context->switchinfo->defaultlabel)
                 CError_ReportErrorAndUpdateToken(ERR_DEFAULT_LABEL_DEFINED_MORE_THAN_ONCE);
-            stmt = AppendStmt(2);
-            stmt->label = NewLabel();
+            stmt = CFunc_AppendStatement(2);
+            stmt->label = newlabel();
             stmt->label->stmt = stmt;
             context->switchinfo->defaultlabel = stmt->label;
             parse_statement(context);
@@ -1898,7 +1863,7 @@ void parse_statement(StatementContext *context)
             else
                 tk = CPrepTokenizer_GetNextToken();
             if (copts.cplusplus && !use_legacy_condition_scope() && isdeclaration(1, 0, 0, 0x3d)) {
-                newScope = NewScope();
+                newScope = CFunc_NewDeclBlock();
                 switchScope = newScope;
                 conditionExpr = parse_declarations(0, 1, 0, 0);
                 if (CScope_IsEmptyNameSpace(cscope_current)) {
@@ -1912,7 +1877,7 @@ void parse_statement(StatementContext *context)
             expr = CExpr2_ConvertScalarOperand(conditionExpr, 1, 0);
             if (expr->rtype->type != TYPEINT && expr->rtype->type != TYPEFLOAT && expr->rtype->type != TYPEPOINTER)
                 CError_ReportError(ERR_ILLEGAL_OPERAND);
-            stmt = AppendStmt(5);
+            stmt = CFunc_AppendStatement(5);
             stmt->expr = integralpromote(expr);
             if (tk != ')')
                 CError_ReportErrorAndUpdateToken(ERR_RPAREN_EXPECTED);
@@ -1922,7 +1887,7 @@ void parse_statement(StatementContext *context)
             ((SwitchInfo *)stmt->label)->defaultlabel = NULL;
             ((SwitchInfo *)stmt->label)->cases = NULL;
             ((SwitchInfo *)stmt->label)->sizetype = stmt->expr->rtype;
-            breakLabel = NewLabel();
+            breakLabel = newlabel();
             bodyContext = *context;
             bodyContext.switchinfo = (SwitchInfo *)stmt->label;
             bodyContext.loopBreak = breakLabel;
@@ -1938,7 +1903,7 @@ void parse_statement(StatementContext *context)
                 jumpStmt->label = bodyContext.switchinfo->defaultlabel;
                 jumpStmt->dobjstack = cexcept_dobjstack;
             }
-            stmt = AppendStmt(2);
+            stmt = CFunc_AppendStatement(2);
             stmt->label = breakLabel;
             breakLabel->stmt = stmt;
             if (switchScope)
@@ -1949,7 +1914,7 @@ void parse_statement(StatementContext *context)
             if (tk != TK_IDENTIFIER) {
                 if (tk == '*' && !copts.ANSIstrict) {
                     tk = CPrepTokenizer_GetNextToken();
-                    stmt = AppendStmt(0xf);
+                    stmt = CFunc_AppendStatement(0xf);
                     stmt->expr = s_expression();
                     if (stmt->expr->rtype->type != TYPEPOINTER) {
                         CError_ReportError(ERR_ILLEGAL_TYPE);
@@ -1961,10 +1926,10 @@ void parse_statement(StatementContext *context)
                 CError_ReportError(ERR_IDENTIFIER_EXPECTED);
                 return;
             }
-            stmt = AppendStmt(3);
-            stmt->label = FindLabel();
+            stmt = CFunc_AppendStatement(3);
+            stmt->label = findlabel();
             if (!stmt->label) {
-                stmt->label = NewLabel();
+                stmt->label = newlabel();
                 stmt->label->next = Labels;
                 Labels = stmt->label;
                 stmt->label->name = data_00587fa0;
@@ -1973,7 +1938,7 @@ void parse_statement(StatementContext *context)
             break;
         case TK_BREAK:
             if (context->loopBreak) {
-                stmt = AppendStmt(3);
+                stmt = CFunc_AppendStatement(3);
                 stmt->label = context->loopBreak;
             } else
                 CError_ReportError(ERR_ILLEGAL_USE_KEYWORD);
@@ -1981,7 +1946,7 @@ void parse_statement(StatementContext *context)
             break;
         case TK_CONTINUE:
             if (context->loopContinue) {
-                stmt = AppendStmt(3);
+                stmt = CFunc_AppendStatement(3);
                 stmt->label = context->loopContinue;
             } else
                 CError_ReportError(ERR_ILLEGAL_USE_KEYWORD);
@@ -1999,7 +1964,7 @@ void parse_statement(StatementContext *context)
                     CExpr_CheckUnusedExpression(expr);
                 } else {
                     if (!use_legacy_condition_scope())
-                        forScope = NewScope();
+                        forScope = CFunc_NewDeclBlock();
                     expr = parse_declarations(0, 1, 1, 0);
                     if (forScope && CScope_IsEmptyNameSpace(cscope_current)) {
                         RestoreBlock(forScope);
@@ -2007,7 +1972,7 @@ void parse_statement(StatementContext *context)
                     }
                 }
                 if (expr) {
-                    stmt = AppendStmt(4);
+                    stmt = CFunc_AppendStatement(4);
                     stmt->expr = expr;
                 }
                 if (tk != ';')
@@ -2020,7 +1985,7 @@ void parse_statement(StatementContext *context)
             if (tk != ';') {
                 if (copts.cplusplus && !use_legacy_condition_scope() && isdeclaration(1, 0, 0, 0x3d)) {
                     if (!forScope)
-                        forScope = NewScope();
+                        forScope = CFunc_NewDeclBlock();
                     conditionExpr = parse_declarations(0, 1, 0, 0);
                     if (CScope_IsEmptyNameSpace(cscope_current)) {
                         RestoreBlock(forScope);
@@ -2062,11 +2027,11 @@ void parse_statement(StatementContext *context)
             } else
                 tk = CPrepTokenizer_GetNextToken();
             if (testExpr) {
-                stmt = AppendStmt(3);
-                stmt->label = NewLabel();
+                stmt = CFunc_AppendStatement(3);
+                stmt->label = newlabel();
                 conditionLabel = stmt->label;
             } else
-                conditionLabel = NewLabel();
+                conditionLabel = newlabel();
             if (curstmtvalue >= 0x1000) {
                 if (curstmtvalue >= 0xf000)
                     curstmtvalue++;
@@ -2074,28 +2039,28 @@ void parse_statement(StatementContext *context)
                     curstmtvalue += 0x1000;
             } else
                 curstmtvalue <<= 3;
-            stmt = AppendStmt(2);
-            stmt->label = NewLabel();
+            stmt = CFunc_AppendStatement(2);
+            stmt->label = newlabel();
             (topLabel = stmt->label)->stmt = stmt;
-            breakLabel = NewLabel();
-            continueLabel = NewLabel();
+            breakLabel = newlabel();
+            continueLabel = newlabel();
             bodyContext = *context;
             bodyContext.loopContinue = continueLabel;
             bodyContext.loopBreak = breakLabel;
             if (tk != '{') {
-                bodyScope = NewScope();
+                bodyScope = CFunc_NewDeclBlock();
                 ScopedBody(&bodyContext);
                 RestoreBlock(bodyScope);
             } else
                 ScopedBody(&bodyContext);
-            stmt = AppendStmt(2);
+            stmt = CFunc_AppendStatement(2);
             stmt->label = continueLabel;
             continueLabel->stmt = stmt;
             if (stepExpr) {
-                stmt = AppendStmt(4);
+                stmt = CFunc_AppendStatement(4);
                 stmt->expr = stepExpr;
             }
-            stmt = AppendStmt(2);
+            stmt = CFunc_AppendStatement(2);
             stmt->label = conditionLabel;
             conditionLabel->stmt = stmt;
             CondJump(testExpr, topLabel, 1, 1);
@@ -2108,7 +2073,7 @@ void parse_statement(StatementContext *context)
                 curstmtvalue >>= 3;
             if (curstmtvalue < 1)
                 curstmtvalue = 1;
-            stmt = AppendStmt(2);
+            stmt = CFunc_AppendStatement(2);
             stmt->label = breakLabel;
             breakLabel->stmt = stmt;
             if (forScope)
@@ -2122,17 +2087,17 @@ void parse_statement(StatementContext *context)
                     curstmtvalue += 0x1000;
             } else
                 curstmtvalue <<= 3;
-            stmt = AppendStmt(2);
-            stmt->label = NewLabel();
+            stmt = CFunc_AppendStatement(2);
+            stmt->label = newlabel();
             (topLabel = stmt->label)->stmt = stmt;
-            continueLabel = NewLabel();
-            breakLabel = NewLabel();
+            continueLabel = newlabel();
+            breakLabel = newlabel();
             bodyContext = *context;
             bodyContext.loopContinue = continueLabel;
             bodyContext.loopBreak = breakLabel;
             tk = CPrepTokenizer_GetNextToken();
             ScopedBody(&bodyContext);
-            stmt = AppendStmt(2);
+            stmt = CFunc_AppendStatement(2);
             stmt->label = continueLabel;
             continueLabel->stmt = stmt;
             if (tk != TK_WHILE)
@@ -2159,7 +2124,7 @@ void parse_statement(StatementContext *context)
                 curstmtvalue >>= 3;
             if (curstmtvalue < 1)
                 curstmtvalue = 1;
-            stmt = AppendStmt(2);
+            stmt = CFunc_AppendStatement(2);
             stmt->label = breakLabel;
             breakLabel->stmt = stmt;
             break;
@@ -2170,7 +2135,7 @@ void parse_statement(StatementContext *context)
             else
                 tk = CPrepTokenizer_GetNextToken();
             if (copts.cplusplus && !use_legacy_condition_scope() && isdeclaration(1, 0, 0, 0x3d)) {
-                newScope = NewScope();
+                newScope = CFunc_NewDeclBlock();
                 whileScope = newScope;
                 conditionExpr = parse_declarations(0, 1, 0, 0);
                 if (CScope_IsEmptyNameSpace(cscope_current)) {
@@ -2196,8 +2161,8 @@ void parse_statement(StatementContext *context)
                 } else
                     tk = CPrepTokenizer_GetNextToken();
             }
-            stmt = AppendStmt(3);
-            stmt->label = NewLabel();
+            stmt = CFunc_AppendStatement(3);
+            stmt->label = newlabel();
             continueLabel = stmt->label;
             if (curstmtvalue >= 0x1000) {
                 if (curstmtvalue >= 0xf000)
@@ -2206,15 +2171,15 @@ void parse_statement(StatementContext *context)
                     curstmtvalue += 0x1000;
             } else
                 curstmtvalue <<= 3;
-            stmt = AppendStmt(2);
-            stmt->label = NewLabel();
+            stmt = CFunc_AppendStatement(2);
+            stmt->label = newlabel();
             (topLabel = stmt->label)->stmt = stmt;
-            breakLabel = NewLabel();
+            breakLabel = newlabel();
             bodyContext = *context;
             bodyContext.loopContinue = continueLabel;
             bodyContext.loopBreak = breakLabel;
             ScopedBody(&bodyContext);
-            stmt = AppendStmt(2);
+            stmt = CFunc_AppendStatement(2);
             stmt->label = continueLabel;
             continueLabel->stmt = stmt;
             CondJump(expr, topLabel, 1, 1);
@@ -2227,7 +2192,7 @@ void parse_statement(StatementContext *context)
                 curstmtvalue >>= 3;
             if (curstmtvalue < 1)
                 curstmtvalue = 1;
-            stmt = AppendStmt(2);
+            stmt = CFunc_AppendStatement(2);
             stmt->label = breakLabel;
             breakLabel->stmt = stmt;
             if (whileScope)
@@ -2240,7 +2205,7 @@ void parse_statement(StatementContext *context)
             else
                 tk = CPrepTokenizer_GetNextToken();
             if (copts.cplusplus && !use_legacy_condition_scope() && isdeclaration(1, 0, 0, 0x3d)) {
-                newScope = NewScope();
+                newScope = CFunc_NewDeclBlock();
                 ifScope = newScope;
                 conditionExpr = parse_declarations(0, 1, 0, 0);
                 if (CScope_IsEmptyNameSpace(cscope_current)) {
@@ -2255,7 +2220,7 @@ void parse_statement(StatementContext *context)
             expr = CExpr2_ConvertScalarOperand(conditionExpr, 0, 1);
             if (expr->rtype->type != TYPEINT && expr->rtype->type != TYPEFLOAT && expr->rtype->type != TYPEPOINTER)
                 CError_ReportError(ERR_ILLEGAL_OPERAND);
-            CondJump(expr, endLabel = continueLabel = NewLabel(), 0, 0);
+            CondJump(expr, endLabel = continueLabel = newlabel(), 0, 0);
             if (tk != ')')
                 CError_ReportErrorAndUpdateToken(ERR_RPAREN_EXPECTED);
             else {
@@ -2276,15 +2241,15 @@ void parse_statement(StatementContext *context)
                         CError_Warning(ERR_POSSIBLE_UNWANTED_SEMICOLON);
                 } else
                     tk = CPrepTokenizer_GetNextToken();
-                stmt = AppendStmt(3);
-                stmt->label = NewLabel();
+                stmt = CFunc_AppendStatement(3);
+                stmt->label = newlabel();
                 endLabel = stmt->label;
-                stmt = AppendStmt(2);
+                stmt = CFunc_AppendStatement(2);
                 stmt->label = continueLabel;
                 continueLabel->stmt = stmt;
                 ScopedBody(context);
             }
-            stmt = AppendStmt(2);
+            stmt = CFunc_AppendStatement(2);
             stmt->label = endLabel;
             endLabel->stmt = stmt;
             if (ifScope)
@@ -2353,12 +2318,12 @@ void parse_statement(StatementContext *context)
             break;
         case TK_IDENTIFIER:
             if (IsLabel()) {
-                stmt = AppendStmt(2);
-                if ((stmt->label = FindLabel()) != NULL) {
+                stmt = CFunc_AppendStatement(2);
+                if ((stmt->label = findlabel()) != NULL) {
                     if (stmt->label->stmt)
                         CError_ReportError(ERR_LABEL_REDEFINED, data_00587fa0->name);
                 } else {
-                    stmt->label = NewLabel();
+                    stmt->label = newlabel();
                     stmt->label->next = Labels;
                     Labels = stmt->label;
                     stmt->label->name = data_00587fa0;
@@ -2377,7 +2342,7 @@ void parse_statement(StatementContext *context)
                 tk = CPrepTokenizer_GetNextToken();
                 return;
             }
-            stmt = AppendStmt(4);
+            stmt = CFunc_AppendStatement(4);
             stmt->expr = s_expression();
             CExpr_CheckUnusedExpression(stmt->expr);
             break;
@@ -2392,33 +2357,10 @@ void parse_statement(StatementContext *context)
 
 static void CondJump(ENode *expr, CLabel *truelabel, char a, char b)
 {
-    CLabel *label = NewLabel();
+    CLabel *label = newlabel();
     generate_conditional_jump(expr, truelabel, label, a, b);
-    label->stmt = (Statement *)AppendStmt(2); /* AppendStmt statement view */
+    label->stmt = (Statement *)CFunc_AppendStatement(2); /* CFunc_AppendStatement statement view */
     ((Statement *)label->stmt)->label = label;
-}
-
-static Statement *AppendStmt(unsigned char kind)
-{
-    Statement *s = (Statement *)lalloc(0x1a);
-    s->next = NULL;
-    s->type = kind;
-    s->value = curstmtvalue;
-    s->flags = 0;
-    s->sourceoffset = sourceoffset;
-    s->dobjstack = cexcept_dobjstack;
-    curstmt->next = s;
-    curstmt = s;
-    return s;
-}
-
-static CLabel *FindLabel(void)
-{
-    CLabel *label;
-    for (label = Labels; label; label = label->next)
-        if ((HashNameNode *)data_00587fa0 == label->name)
-            return label;
-    return NULL;
 }
 
 static unsigned char IsLabel(void)
@@ -2434,18 +2376,9 @@ static unsigned char IsLabel(void)
     return t == 0x3a;
 }
 
-static CLabel *NewLabel(void)
-{
-    CLabel *label = (CLabel *)lalloc(0x14);
-    memclrw(label, 0x14);
-    label->uniquename = CParser_GetUniqueName();
-    label->name = label->uniquename;
-    return label;
-}
-
 void CFunc_CompoundStatement(struct StatementContext *context)
 {
-    struct NameSpaceLookupList *scope = NewScope();
+    struct DeclBlock *scope = CFunc_NewDeclBlock();
 
     if (tk == '{') {
         tk = CPrepTokenizer_GetNextToken();
@@ -2461,25 +2394,6 @@ void CFunc_CompoundStatement(struct StatementContext *context)
         parse_statement(context);
     }
     RestoreBlock(scope);
-}
-
-static void *NewScope(void)
-{
-    struct DeclBlock *s = lalloc(0xe);
-    NameSpace *ns;
-    if (data_00580870) {
-        saved_global_values_tail->next = s;
-        saved_global_values_tail = s;
-    } else {
-        saved_global_values_tail = data_00580870 = s;
-    }
-    s->index = data_00580878++;
-    s->parent_nspace = cscope_current;
-    s->dobjstack = cexcept_dobjstack;
-    ns = CScope_NewListNameSpace(NULL, 0);
-    ns->parent = (NameSpace *)cscope_current;
-    cscope_current = ns;
-    return s;
 }
 
 void create_local_object_copy(Object *func, TypeIntegral *type, Type *type2, Boolean flag)

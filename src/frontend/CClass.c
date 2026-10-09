@@ -56,7 +56,6 @@ static void *data_00581cdc;
 static Boolean simple_base(TypeClass *a, TypeClass *b);
 static Boolean has_qual(UInt32 a, UInt32 b);
 static Object *CClass_FindFuncObject(NameSpace *nspace, HashNameNode *name);
-static SInt32 vbase_offset(TypeClass *tclass, TypeClass *baseclass);
 static SInt32 CClass_GetVBaseOffset(TypeClass *base);
 static SInt32 CL_FindVOffset(TypeClass *base);
 static SInt32 CL_FindOffset(TypeClass *base);
@@ -470,7 +469,7 @@ Boolean find_base_path(TypeClass *cls, TypeClass *base, SInt32 offset, Boolean c
         SInt32 base_offset;
 
         if (base_entry->is_virtual)
-            base_offset = vbase_offset(base_path_class, base_entry->base);
+            base_offset = CClass_VirtualBaseOffset(base_path_class, base_entry->base);
         else
             base_offset = offset + base_entry->offset;
 
@@ -1214,18 +1213,6 @@ static Object *CClass_FindFuncObject(NameSpace *nspace, HashNameNode *name)
             return (Object *)list->object;
     }
     return NULL;
-}
-
-static SInt32 vbase_offset(TypeClass *tclass, TypeClass *baseclass)
-{
-    VClassList *vbase;
-
-    for (vbase = tclass->vbases; vbase != NULL; vbase = vbase->next) {
-        if (vbase->base == baseclass)
-            return vbase->offset;
-    }
-    CError_FATAL(1182);
-    return 0;
 }
 
 void build_virtual_function_entries(OverrideClass *ctx)

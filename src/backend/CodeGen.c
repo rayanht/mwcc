@@ -254,24 +254,6 @@ static int IsVolatile(Object *obj)
     return obj->qual & Q_VOLATILE;
 }
 
-static VarInfo *new_varinfo(void)
-{
-    VarInfo *info;
-
-    info = lalloc(0x2c);
-    memclrw(info, 0x2c);
-    info->usage = 0;
-    info->deftoken = *CPrep_GetLastBufferedToken();
-    info->varnumber = next_varnumber;
-    ++next_varnumber;
-    info->noregister = 0;
-    info->used = 0;
-    info->reg = 0;
-    info->regHi = 0;
-    info->in_param_area = 0;
-    return info;
-}
-
 static inline Boolean TooManyStructArgs(SInt16 n)
 {
     Boolean r;
@@ -383,7 +365,7 @@ void CodeGen_AllocateArgumentSlots(Object *function, Boolean isVariadic, Boolean
             }
             if (useStack) {
                 obj->datatype = DLOCAL;
-                info = new_varinfo();
+                info = CodeGen_AllocateVarInfo();
                 obj->u.var.info = info;
                 if (((type->type == TYPEINT || type->type == TYPEENUM) && type->size == 8) ||
                     (type->type == TYPEFLOAT && type->size != 4)) {
@@ -402,13 +384,13 @@ void CodeGen_AllocateArgumentSlots(Object *function, Boolean isVariadic, Boolean
                 offset += obj->type->size;
             } else {
                 obj->datatype = DLOCAL;
-                info = new_varinfo();
+                info = CodeGen_AllocateVarInfo();
                 obj->u.var.info = info;
                 obj->u.var.uid = 0;
                 StackFrameEABI_AllocateObjectSlot(obj);
             }
         } else {
-            info = new_varinfo();
+            info = CodeGen_AllocateVarInfo();
             obj->u.var.info = info;
             obj->u.var.uid = 0;
             Registers_GetInfo(obj)->in_param_area = 1;
@@ -419,7 +401,7 @@ void CodeGen_AllocateArgumentSlots(Object *function, Boolean isVariadic, Boolean
                 offset += 0x10;
             } else {
                 obj->datatype = DLOCAL;
-                info = new_varinfo();
+                info = CodeGen_AllocateVarInfo();
                 obj->u.var.info = info;
                 obj->u.var.uid = 0;
                 StackFrameEABI_AllocateObjectSlot(obj);

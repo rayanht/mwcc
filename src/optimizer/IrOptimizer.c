@@ -66,13 +66,8 @@ static UInt8 data_0057f6b4;
 static UInt8 data_0057f6b5;
 static char lbl_0057f6b6[10];
 
-static void *new_enode(UInt8 type);
-static void *IRO_NewNode(UInt8 type);
 static Statement *NewIRStat(UInt8 type);
-static ENode *NewENode(UInt8 type);
 static void MarkUsedInputs(IROLinear *insn);
-static IROLinear *NewInsn(UInt8 type);
-static ENode *NewNode(UInt8 type);
 static Statement *NewIrNode(UInt8 type, IROLinear *src);
 static SInt32 IrSize(SInt32 cls);
 
@@ -447,7 +442,7 @@ void extract_right_operand_to_statement(ENode *node, int force)
 
     if (node->rtype->type != TYPEVOID && force == 0) {
         obj = create_temp_object(node->rtype);
-        ind = new_enode(EINDIRECT);
+        ind = IrOptimizer_NewENode(EINDIRECT);
         ind->data.monadic = create_objectrefnode(obj);
         if (node->rtype->type != TYPEVOID) {
             ind->rtype = node->rtype;
@@ -457,7 +452,7 @@ void extract_right_operand_to_statement(ENode *node, int force)
         stmt = (Statement *)lalloc(sizeof(Statement));
         memset(stmt, 0, sizeof(Statement));
         stmt->type = ST_EXPRESSION;
-        stmt->expr = new_enode(EASS);
+        stmt->expr = IrOptimizer_NewENode(EASS);
         stmt->expr->data.diadic.left = ind;
         stmt->expr->data.diadic.right = node->data.diadic.right;
         stmt->expr->rtype = node->rtype;
@@ -488,14 +483,6 @@ void extract_right_operand_to_statement(ENode *node, int force)
     }
 }
 
-static void *new_enode(UInt8 type)
-{
-    ENode *n = (ENode *)lalloc(0x1a);
-    memset(n, 0, 0x1a);
-    n->type = type;
-    return n;
-}
-
 void create_zero_initialized_temp_object(ENode *expr, Object **out)
 {
     Statement *statement;
@@ -504,7 +491,7 @@ void create_zero_initialized_temp_object(ENode *expr, Object **out)
 
     *out = create_temp_object(expr->rtype);
 
-    indirect = IRO_NewNode(EINDIRECT);
+    indirect = IrOptimizer_NewENode(EINDIRECT);
     indirect->data.monadic = create_objectrefnode(*out);
     if (expr->rtype->type != TYPEVOID) {
         indirect->rtype = expr->rtype;
@@ -512,14 +499,14 @@ void create_zero_initialized_temp_object(ENode *expr, Object **out)
         CError_FATAL(645);
     }
 
-    zero = IRO_NewNode(EINTCONST);
+    zero = IrOptimizer_NewENode(EINTCONST);
     zero->data.intval = cint64_zero;
     zero->rtype = expr->rtype;
 
     statement = (Statement *)lalloc(sizeof(*statement));
     memset(statement, 0, sizeof(*statement));
     statement->type = ST_EXPRESSION;
-    statement->expr = IRO_NewNode(EASS);
+    statement->expr = IrOptimizer_NewENode(EASS);
     statement->expr->data.diadic.left = indirect;
     statement->expr->data.diadic.right = zero;
     statement->expr->rtype = expr->rtype;
@@ -542,7 +529,7 @@ void insert_intconst_assignment(ENode *expr, Object **out)
 
     *out = create_temp_object(expr->rtype);
 
-    indirect = IRO_NewNode(EINDIRECT);
+    indirect = IrOptimizer_NewENode(EINDIRECT);
     indirect->data.monadic = create_objectrefnode(*out);
     if (expr->rtype->type != TYPEVOID) {
         indirect->rtype = expr->rtype;
@@ -550,14 +537,14 @@ void insert_intconst_assignment(ENode *expr, Object **out)
         CError_FATAL(683);
     }
 
-    one = IRO_NewNode(EINTCONST);
+    one = IrOptimizer_NewENode(EINTCONST);
     one->data.intval = cint64_one;
     one->rtype = expr->rtype;
 
     statement = (Statement *)lalloc(sizeof(Statement));
     memset(statement, 0, sizeof(Statement));
     statement->type = ST_EXPRESSION;
-    statement->expr = IRO_NewNode(EASS);
+    statement->expr = IrOptimizer_NewENode(EASS);
     statement->expr->data.diadic.left = indirect;
     statement->expr->data.diadic.right = one;
     statement->expr->rtype = expr->rtype;
@@ -570,14 +557,6 @@ void insert_intconst_assignment(ENode *expr, Object **out)
     statement->next = statement_insertion_point->next;
     statement_insertion_point->next = statement;
     statement_insertion_point = statement;
-}
-
-static void *IRO_NewNode(UInt8 type)
-{
-    ENode *n = (ENode *)lalloc(0x1a);
-    memset(n, 0, 0x1a);
-    n->type = type;
-    return n;
 }
 
 void create_temp_object_assignment(ENode *expression, Object **tempObject)
@@ -604,7 +583,7 @@ void create_temp_object_assignment(ENode *expression, Object **tempObject)
         temporary_list = entry;
     }
 
-    reference = NewENode(EINDIRECT);
+    reference = IrOptimizer_NewENode(EINDIRECT);
     reference->data.monadic = create_objectrefnode(*tempObject);
     if (expression->rtype->type != TYPEVOID)
         reference->rtype = expression->rtype;
@@ -614,7 +593,7 @@ void create_temp_object_assignment(ENode *expression, Object **tempObject)
     statement = (Statement *)lalloc(sizeof(Statement));
     memset(statement, 0, sizeof(Statement));
     statement->type = ST_EXPRESSION;
-    statement->expr = NewENode(EASS);
+    statement->expr = IrOptimizer_NewENode(EASS);
     statement->expr->data.diadic.left = reference;
     statement->expr->data.diadic.right = expression->data.monadic;
     if (expression->rtype->type != TYPEVOID)
@@ -637,7 +616,7 @@ void fn_00430e60(ENode *e, Object **pp)
 
     if (e->rtype->type != TYPEVOID) {
         *pp = create_temp_object(e->rtype);
-        ref = NewENode(EINDIRECT);
+        ref = IrOptimizer_NewENode(EINDIRECT);
         ref->data.monadic = create_objectrefnode(*pp);
         ref->rtype = e->rtype;
         CError_ASSERT(877, e->rtype->type != TYPEVOID);
@@ -645,7 +624,7 @@ void fn_00430e60(ENode *e, Object **pp)
 
     n = NewIRStat(4);
     if (e->rtype->type != TYPEVOID) {
-        n->expr = NewENode(EASS);
+        n->expr = IrOptimizer_NewENode(EASS);
         n->expr->data.diadic.left = ref;
         n->expr->data.diadic.right = e->data.diadic.right;
         n->expr->rtype = e->rtype;
@@ -667,7 +646,7 @@ void append_cond_expr2_statement(ENode *e, Object **pp)
     Statement *n;
 
     if (e->rtype->type != TYPEVOID) {
-        ref = NewENode(EINDIRECT);
+        ref = IrOptimizer_NewENode(EINDIRECT);
         ref->data.monadic = create_objectrefnode(*pp);
         ref->rtype = e->rtype;
         CError_ASSERT(923, e->rtype->type != TYPEVOID);
@@ -675,7 +654,7 @@ void append_cond_expr2_statement(ENode *e, Object **pp)
 
     n = NewIRStat(4);
     if (e->rtype->type != TYPEVOID) {
-        n->expr = NewENode(EASS);
+        n->expr = IrOptimizer_NewENode(EASS);
         n->expr->data.diadic.left = ref;
         n->expr->data.diadic.right = e->data.cond.expr2;
         n->expr->rtype = e->rtype;
@@ -698,7 +677,7 @@ void lower_monadic_expression_to_statement(ENode *e, Object **pp)
 
     if (e->rtype->type != TYPEVOID) {
         *pp = create_temp_object(e->rtype);
-        ref = NewENode(EINDIRECT);
+        ref = IrOptimizer_NewENode(EINDIRECT);
         ref->data.monadic = create_objectrefnode(*pp);
         ref->rtype = e->rtype;
         CError_ASSERT(970, e->rtype->type != TYPEVOID);
@@ -706,7 +685,7 @@ void lower_monadic_expression_to_statement(ENode *e, Object **pp)
 
     n = NewIRStat(4);
     if (e->rtype->type != TYPEVOID) {
-        n->expr = NewENode(EASS);
+        n->expr = IrOptimizer_NewENode(EASS);
         n->expr->data.diadic.left = ref;
         n->expr->data.diadic.right = e->data.monadic;
         n->expr->rtype = e->rtype;
@@ -811,19 +790,19 @@ void fn_00430820(ENode *e, Object **pp, CLabel **lab)
     statement_insertion_point->next = s;
     statement_insertion_point = s;
 
-    ref = NewENode(EINDIRECT);
+    ref = IrOptimizer_NewENode(EINDIRECT);
     ref->data.monadic = create_objectrefnode(*pp);
     if (e->rtype->type != TYPEVOID)
         ref->rtype = e->rtype;
     else
         CError_FATAL(1170);
 
-    c = NewENode(EINTCONST);
+    c = IrOptimizer_NewENode(EINTCONST);
     c->data.intval = cint64_one;
     c->rtype = e->rtype;
 
     a = NewIRStat(4);
-    a->expr = NewENode(EASS);
+    a->expr = IrOptimizer_NewENode(EASS);
     a->expr->data.diadic.left = ref;
     a->expr->data.diadic.right = c;
     a->expr->rtype = e->rtype;
@@ -870,19 +849,19 @@ void fn_004305e0(ENode *e, Object **pp, CLabel **lab)
     statement_insertion_point->next = s;
     statement_insertion_point = s;
 
-    ref = NewENode(EINDIRECT);
+    ref = IrOptimizer_NewENode(EINDIRECT);
     ref->data.monadic = create_objectrefnode(*pp);
     if (e->rtype->type != TYPEVOID)
         ref->rtype = e->rtype;
     else
         CError_FATAL(1286);
 
-    c = NewENode(EINTCONST);
+    c = IrOptimizer_NewENode(EINTCONST);
     c->data.intval = cint64_zero;
     c->rtype = e->rtype;
 
     a = NewIRStat(4);
-    a->expr = NewENode(EASS);
+    a->expr = IrOptimizer_NewENode(EASS);
     a->expr->data.diadic.left = ref;
     a->expr->data.diadic.right = c;
     a->expr->rtype = e->rtype;
@@ -913,14 +892,6 @@ void fn_004305e0(ENode *e, Object **pp, CLabel **lab)
 static Statement *NewIRStat(UInt8 type)
 {
     Statement *n = (Statement *)lalloc(0x1a);
-    memset(n, 0, 0x1a);
-    n->type = type;
-    return n;
-}
-
-static ENode *NewENode(UInt8 type)
-{
-    ENode *n = (ENode *)lalloc(0x1a);
     memset(n, 0, 0x1a);
     n->type = type;
     return n;
@@ -1443,38 +1414,38 @@ void build_linear_from_statements(Statement *node)
         insn = NULL;
         switch (node->type) {
             case ST_NOP:
-                insn = NewInsn(IROLinearNop);
+                insn = IrOptimizer_NewLinear(IROLinearNop);
                 break;
             case ST_LABEL:
-                insn = NewInsn(IROLinearLabel);
+                insn = IrOptimizer_NewLinear(IROLinearLabel);
                 insn->u.label = node->label;
                 insn->flags |= 1;
                 break;
             case ST_GOTO:
-                insn = NewInsn(IROLinearGoto);
+                insn = IrOptimizer_NewLinear(IROLinearGoto);
                 insn->u.label = node->label;
                 break;
             case ST_EXPRESSION:
                 linearize_expression(node->expr);
                 break;
             case ST_SWITCH:
-                insn = NewInsn(IROLinearSwitch);
+                insn = IrOptimizer_NewLinear(IROLinearSwitch);
                 insn->u.swtch.cond = linearize_expression(node->expr);
                 insn->u.swtch.info = (SwitchInfo *)node->label;
                 break;
             case ST_IFGOTO:
-                insn = NewInsn(IROLinearIf);
+                insn = IrOptimizer_NewLinear(IROLinearIf);
                 insn->u.branch.cond = linearize_expression(node->expr);
                 insn->u.branch.label = node->label;
                 break;
             case ST_IFNGOTO:
-                insn = NewInsn(IROLinearIfNot);
+                insn = IrOptimizer_NewLinear(IROLinearIfNot);
                 insn->u.branch.cond = linearize_expression(node->expr);
                 insn->u.branch.label = node->label;
                 break;
             case ST_RETURN:
                 data_00588526 = 1;
-                insn = NewInsn(IROLinearReturn);
+                insn = IrOptimizer_NewLinear(IROLinearReturn);
                 if (node->expr != NULL)
                     insn->u.monadic = linearize_expression(node->expr);
                 else
@@ -1484,30 +1455,30 @@ void build_linear_from_statements(Statement *node)
                 CError_FATAL(2049);
                 break;
             case ST_EXIT:
-                insn = NewInsn(IROLinearExit);
+                insn = IrOptimizer_NewLinear(IROLinearExit);
                 insn->u.label = node->label;
                 break;
             case ST_ENTRY:
-                insn = NewInsn(IROLinearEntry);
+                insn = IrOptimizer_NewLinear(IROLinearEntry);
                 insn->u.label = node->label;
                 insn->flags |= 1;
                 break;
             case ST_BEGINCATCH:
-                insn = NewInsn(IROLinearBeginCatch);
+                insn = IrOptimizer_NewLinear(IROLinearBeginCatch);
                 insn->u.args3.a = linearize_expression(node->expr);
                 insn->u.args3.b = NULL;
                 insn->u.args3.c = NULL;
                 break;
             case ST_ENDCATCH:
-                insn = NewInsn(IROLinearEndCatch);
+                insn = IrOptimizer_NewLinear(IROLinearEndCatch);
                 insn->u.monadic = linearize_expression(node->expr);
                 break;
             case ST_ENDCATCHDTOR:
-                insn = NewInsn(IROLinearEndCatchDtor);
+                insn = IrOptimizer_NewLinear(IROLinearEndCatchDtor);
                 insn->u.monadic = linearize_expression(node->expr);
                 break;
             case ST_ASM:
-                insn = NewInsn(IROLinearAsm);
+                insn = IrOptimizer_NewLinear(IROLinearAsm);
                 insn->u.asm_stmt = node;
                 if (copts.fc3 > 0) {
                     fn_00462d70(node, &usageInfo);
@@ -1531,7 +1502,7 @@ void build_linear_from_statements(Statement *node)
         }
         node = node->next;
     }
-    insn = NewInsn(IROLinearEnd);
+    insn = IrOptimizer_NewLinear(IROLinearEnd);
     insn->flags |= 1;
     insn->index = linear_index_counter++;
     if (linear_head != NULL)
@@ -1613,12 +1584,12 @@ ENode *fn_0042eb40(IROLinear *e)
 
     switch (e->type) {
         case IROLinearOperand:
-            p = NewNode(e->u.node->type);
+            p = IrOptimizer_NewENode(e->u.node->type);
             p->flags = e->nodeflags;
             *p = *e->u.node;
             break;
         case IROLinearOp1Arg:
-            p = NewNode(e->nodetype);
+            p = IrOptimizer_NewENode(e->nodetype);
             p->flags = e->nodeflags;
             p->data.monadic = fn_0042eb40(e->u.monadic);
             p->rtype = e->rtype;
@@ -1627,7 +1598,7 @@ ENode *fn_0042eb40(IROLinear *e)
                 p->cost = 1;
             break;
         case IROLinearOp2Arg:
-            p = NewNode(e->nodetype);
+            p = IrOptimizer_NewENode(e->nodetype);
             p->flags = e->nodeflags;
             p->data.diadic.left = fn_0042eb40(e->u.diadic.left);
             p->data.diadic.right = fn_0042eb40(e->u.diadic.right);
@@ -1650,7 +1621,7 @@ ENode *fn_0042eb40(IROLinear *e)
                 ty = 0x37;
             else
                 ty = 0x36;
-            p = NewNode(ty);
+            p = IrOptimizer_NewENode(ty);
             p->flags = e->nodeflags;
             p->data.funccall.funcref = fn_0042eb40(e->u.funccall.callee);
             p->data.funccall.functype = e->u.funccall.functype;
@@ -1825,31 +1796,6 @@ static void MarkUsedInputs(IROLinear *insn)
     SInt32 i;
     for (i = 0; i < insn->u.funccall.argCount; i++)
         insn->u.funccall.args[i]->flags |= IROLF_Reffed;
-}
-
-static IROLinear *NewInsn(UInt8 type)
-{
-    IROLinear *p = (IROLinear *)oalloc(sizeof(IROLinear));
-    memset(p, 0, sizeof(IROLinear));
-    p->stmt = current_statement;
-    p->nodetype = EPOSTINC;
-    p->next = NULL;
-    p->type = type;
-    p->rtype = NULL;
-    p->flags = 0;
-    p->nodeflags = 0;
-    p->expr = NULL;
-    p->range = NULL;
-    return p;
-}
-
-static ENode *NewNode(UInt8 type)
-{
-    ENode *p;
-    p = (ENode *)lalloc(sizeof(ENode));
-    memset(p, 0, sizeof(ENode));
-    p->type = type;
-    return p;
 }
 
 static Statement *NewIrNode(UInt8 type, IROLinear *src)

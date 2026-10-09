@@ -149,19 +149,6 @@ static void Registers_MarkFPRUsed(SInt16 regnum)
     gAvailableSavedFPRs = avail;
 }
 
-static SInt16 Registers_FindFreeGPR(void)
-{
-    SInt32 i = 31;
-    do {
-        if (gUsedPhysicalGPR[i] == 0) {
-            Registers_BindGPR(NULL, i);
-            return (SInt16)i;
-        }
-        i--;
-    } while (i >= 14);
-    return -1;
-}
-
 static VarInfo *Registers_NewInfo(void)
 {
     VarInfo *p = (VarInfo *)galloc(sizeof(VarInfo));
@@ -303,8 +290,8 @@ void Registers_AllocateGPRPair(Object *obj)
         reg2 = gUsedVirtualRegistersGPR++;
     } else {
         CError_ASSERT(185, gAvailableSavedGPRs >= 2);
-        reg1 = Registers_FindFreeGPR();
-        reg2 = Registers_FindFreeGPR();
+        reg1 = Coloring_ClaimGPRColor();
+        reg2 = Coloring_ClaimGPRColor();
     }
 
     info->is_fpr = 0;

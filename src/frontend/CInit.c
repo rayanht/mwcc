@@ -100,17 +100,6 @@ static inline void CInit_SetupSave(InitInfo *save, Object *obj, void (*emit)(ENo
 #ifndef FALSE
 #endif
 
-static Boolean CInit_IsZero(UInt8 *p, SInt32 n)
-{
-    SInt32 i;
-    if (copts.explicit_zero_data)
-        return FALSE;
-    for (i = 0; i < n; i++)
-        if (p[i] != 0)
-            return FALSE;
-    return TRUE;
-}
-
 static Boolean CInit_IsDtorTemp(ENode *e)
 {
     return e->type == ETEMP && e->data.temp.needs_dtor;
@@ -132,11 +121,6 @@ static Object *CreateTempObject(Type *type)
     CodeGen_SetObjectSectionAndInterruptInfo(obj);
     emit_object(obj, NULL, NULL, obj->type->size, 0);
     return obj;
-}
-
-static Boolean IsComplexClass(Type *type)
-{
-    return CClass_Constructor((TypeClass *)type) || CClass_Destructor((TypeClass *)type);
 }
 
 static void InitBuffer(SInt32 size)
@@ -1959,7 +1943,7 @@ ENode *fn_004d0ae0(Object *obj, Type *type, UInt32 qual, void (*contextOffset)(T
                             for (elementType = type; elementType->type == TYPEARRAY;
                                  elementType = ((TypePointer *)elementType)->target)
                                 ;
-                            if (elementType->type == TYPECLASS && IsComplexClass(elementType)) {
+                            if (elementType->type == TYPECLASS && needs_init((TypeClass *)elementType)) {
                                 InitBuffer(type->size);
                                 cinit_state->obj = cinit_state->emitObject;
                                 initialize_data_by_type(type, cinit_state->obj->qual, 1);
@@ -2379,7 +2363,7 @@ Boolean initialize_from_assignment(Object *obj, Boolean flag)
             memclrw(cinit_state->buffer, bufferSize);
             init_int_or_relocation(obj->type, initializer);
             CError_ASSERT(3091, obj->type->size == cinit_state->bufferSize);
-            if (cinit_state->list != NULL || !CInit_IsZero(cinit_state->buffer, obj->type->size)) {
+            if (cinit_state->list != NULL || !IsZeroed(cinit_state->buffer, obj->type->size)) {
                 CanAllocObject(obj->type);
                 (void)obj->type->size;
                 emit_object(obj, cinit_state->buffer, cinit_state->list, obj->type->size, 0);

@@ -431,21 +431,6 @@ static int test_interference(UInt32 a, UInt32 b)
     return 0;
 }
 
-static int Coalesce_Interferes(UInt32 r1, UInt32 r2)
-{
-    UInt32 bit;
-
-    if (r1 < r2) {
-        bit = (r2 * r2 >> 1) + r1;
-        return (gInterferenceBits[bit >> 5] & (1 << bit)) != 0;
-    }
-    if (r1 > r2) {
-        bit = (r1 * r1 >> 1) + r2;
-        return (gInterferenceBits[bit >> 5] & (1 << bit)) != 0;
-    }
-    return 0;
-}
-
 static void Coalesce_AddInterference(UInt32 r1, UInt32 r2)
 {
     UInt32 bit;
@@ -711,7 +696,7 @@ void SpillCode_CoalesceCopies(SInt32 regclass, UInt32 numRegs)
                 PCode_UnlinkInstruction(instr);
                 continue;
             }
-            if (Coalesce_Interferes(destinationReg, sourceReg))
+            if (test_interference(destinationReg, sourceReg))
                 continue;
             if (destinationReg < 32 || sourceReg < 32 ||
                 (Coalesce_InRange(destinationReg, regclass) && Coalesce_InRange(sourceReg, regclass))) {
@@ -719,7 +704,7 @@ void SpillCode_CoalesceCopies(SInt32 regclass, UInt32 numRegs)
                 upperReg = (sourceReg > destinationReg) ? sourceReg : destinationReg;
                 gCoalescedRegisters[upperReg] = lowerReg;
                 for (i = 0; i < numRegs; i++)
-                    if (Coalesce_Interferes(upperReg, i))
+                    if (test_interference(upperReg, i))
                         Coalesce_AddInterference(lowerReg, i);
                 PCode_UnlinkInstruction(instr);
             }

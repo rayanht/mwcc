@@ -22,9 +22,7 @@ static struct IROLinear *linear_range_start;
 static IROLinear *linear_range_end;
 static struct IRONode *move_expr_before_node;
 
-static int IRO_TypesEqual(Type *a, Type *b);
 static Boolean is_one(CInt64 *val);
-static int is_int_const(IROLinear *node);
 
 Object *IroUtil_GetObjRef(IROLinear *linear)
 {
@@ -167,7 +165,7 @@ SInt16 IroUtil_IsTypeSame(Type *left, Type *right)
 
 int IroUtil_LinearConstantTreesSame(IROLinear *a, IROLinear *b)
 {
-    if (a->type == b->type && IRO_TypesEqual(a->rtype, b->rtype)) {
+    if (a->type == b->type && IroUtil_AreTypesEqual(a->rtype, b->rtype)) {
         switch (a->type) {
             case IROLinearOperand:
                 return IRO_ConstsSame(a->u.node, b->u.node);
@@ -203,7 +201,7 @@ CLabel *IroUtil_NewLabel(void)
 
 int IroUtil_LinearsSame(IROLinear *a, IROLinear *b)
 {
-    if (a->type == b->type && IRO_TypesEqual(a->rtype, b->rtype)) {
+    if (a->type == b->type && IroUtil_AreTypesEqual(a->rtype, b->rtype)) {
         int flag = 0;
         switch (a->type) {
             case IROLinearOperand:
@@ -238,25 +236,6 @@ int IroUtil_LinearsSame(IROLinear *a, IROLinear *b)
         }
     }
     return 0;
-}
-
-static int IRO_TypesEqual(Type *a, Type *b)
-{
-    TypeBitfield *ba;
-    TypeBitfield *bb;
-
-    if (IS_TYPE_BITFIELD(a)) {
-        if (IS_TYPE_BITFIELD(b)) {
-            ba = TYPE_BITFIELD(a);
-            bb = TYPE_BITFIELD(b);
-            if (ba->bitfieldtype == bb->bitfieldtype && ba->offset == bb->offset && ba->bitlength == bb->bitlength)
-                return 1;
-        }
-        return 0;
-    }
-    if (IS_TYPE_POINTER_ONLY(a) && IS_TYPE_POINTER_ONLY(b))
-        return 1;
-    return is_typesame(a, b);
 }
 
 IROLinear *IroUtil_GetFirstLinear(IROLinear *p)
@@ -378,7 +357,7 @@ short IroUtil_IsOne(IROLinear *node)
     int isFloatOne;
 
     value = CInt64_Neg(node->u.node->data.intval);
-    isIntegerOne = is_int_const(node);
+    isIntegerOne = IroUtil_IsType1NodeType50(node);
     result = 1;
     isIntegerOne = isIntegerOne && is_one(&value);
     if (!isIntegerOne) {
@@ -623,13 +602,6 @@ void IroUtil_RemoveLinearRange(IROExpr *record)
 static Boolean is_one(CInt64 *val)
 {
     return val->hi == 0 && val->lo == 1;
-}
-
-static int is_int_const(IROLinear *node)
-{
-    if (node->type == IROLinearOperand && node->u.node->type == EINTCONST)
-        return 1;
-    return 0;
 }
 
 void set_expr_node_if_update_type(IROLinear *linear, unsigned int updateType)

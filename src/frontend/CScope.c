@@ -46,39 +46,6 @@ static inline Boolean CScope_ResolveLookupContext(NameResult *result, Object *de
     return 1;
 }
 
-static NameSpaceObjectList *Scope_Find(NameSpace *scope, HashNameNode *name)
-{
-    NameSpaceName *nn;
-
-    if (!scope->is_hash)
-        nn = (NameSpaceName *)scope->data.hash;
-    else
-        nn = scope->data.hash[name->hashval & 0x3ff];
-
-    while (nn != NULL) {
-        if (nn->name == name)
-            return &nn->first;
-        nn = nn->next;
-    }
-    return NULL;
-}
-
-static NameSpaceObjectList *ScopeFindName(NameSpace *nspace, HashNameNode *name)
-{
-    NameSpaceName *np;
-
-    if (!nspace->is_hash)
-        np = nspace->data.list;
-    else
-        np = nspace->data.hash[name->hashval & 0x3FF];
-    while (np) {
-        if (np->name == name)
-            return &np->first;
-        np = np->next;
-    }
-    return NULL;
-}
-
 static ObjectList *CScope_CopyList(ObjectList *list)
 {
     ObjectList *newlist;
@@ -161,69 +128,6 @@ static Boolean NextNameSpace(CScopeNSIterator *ctx)
         return 1;
     }
     return 0;
-}
-
-static int lookup(struct NameSpace *a1, HashNameNode *a2)
-{
-    NameSpaceName *v5;
-    if (a1->is_hash == 0) {
-        v5 = a1->data.list;
-    } else {
-        v5 = (NameSpaceName *)((int *)a1->data.hash)[a2->hashval & 1023];
-    }
-    while ((int)v5 != 0) {
-        if (v5->name == a2) {
-            return (int)v5 + 8;
-        }
-        v5 = v5->next;
-    }
-    return 0;
-}
-
-static NameSpaceObjectList *FindInScope(NameSpace *scope, HashNameNode *name)
-{
-    NameSpaceName *e;
-    NameSpace *s;
-
-    s = scope;
-    if (scope->is_hash == 0)
-        e = s->data.list;
-    else
-        e = s->data.hash[name->hashval & 0x3ff];
-    for (; e != NULL; e = e->next) {
-        if (e->name == name)
-            return &e->first;
-    }
-    return NULL;
-}
-
-static ObjectList *Scope_FindList(NameSpace *sc, HashNameNode *nm)
-{
-    NameSpaceName *nn;
-    if (sc->is_hash == 0)
-        nn = sc->data.list;
-    else
-        nn = sc->data.hash[nm->hashval & 0x3ff];
-    while (nn != NULL) {
-        if (nn->name == nm)
-            return (ObjectList *)&nn->first;
-        nn = nn->next;
-    }
-    return NULL;
-}
-
-static NameSpaceObjectList *ListSearch(NameSpace *scope, HashNameNode *key)
-{
-    NameSpaceName *n;
-
-    if (scope->is_hash == 0)
-        n = (NameSpaceName *)scope->data.hash;
-    else
-        n = ((NameSpaceName **)scope->data.hash)[key->hashval & 0x3ff];
-    for (; n != NULL; n = n->next)
-        if (n->name == key)
-            return &n->first;
-    return NULL;
 }
 
 #define OBJ(o) ((Object *)(o))
@@ -524,11 +428,13 @@ UInt8 CScope_IsInLocalNameSpace(NameSpace *scope)
     return 0;
 }
 
-NameSpaceObjectList *CScope_FindName(NameSpace *space, HashNameNode *name)
+NameSpaceObjectList *CScope_FindName(NameSpace *nspace, HashNameNode *name)
 {
     NameSpaceName *entry;
+    NameSpace *space;
 
-    if (space->is_hash == 0) {
+    space = nspace;
+    if (nspace->is_hash == 0) {
         entry = space->data.list;
     } else {
         entry = space->data.hash[name->hashval & 0x3ff];
@@ -1411,7 +1317,7 @@ NameSpaceObjectList *find_scope_object_list(CScopeNSIterator *ctx, HashNameNode 
             }
             return NULL;
         }
-        if ((result = ListSearch(namespace, key)) != NULL)
+        if ((result = CScope_FindName(namespace, key)) != NULL)
             return result;
     } else {
         if ((scope = ctx->nspace)->theclass != NULL) {
@@ -1422,7 +1328,7 @@ NameSpaceObjectList *find_scope_object_list(CScopeNSIterator *ctx, HashNameNode 
             }
             return NULL;
         }
-        if ((result = ListSearch(scope, key)) != NULL)
+        if ((result = CScope_FindName(scope, key)) != NULL)
             return result;
     }
     return NULL;
@@ -1486,7 +1392,7 @@ NameSpace *find_name_nspace(NameResult *result, NameSpace *nspace, HashNameNode 
     NameSpace *found;
     NameSpaceList *using;
     NameSpaceLookupList *scope;
-    ObjectList *list;
+    NameSpaceObjectList *list;
 
     local = 0;
     if (nspace->theclass != NULL) {
@@ -1498,17 +1404,17 @@ NameSpace *find_name_nspace(NameResult *result, NameSpace *nspace, HashNameNode 
         return NULL;
     }
 
-    if ((list = Scope_FindList(nspace, name)) != NULL && get_object_list_nspace(list, &local) != NULL)
+    if ((list = CScope_FindName(nspace, name)) != NULL && get_object_list_nspace((ObjectList *)list, &local) != NULL)
         return nspace;
 
     if (local == 0 && nspace->usings != NULL) {
         found = NULL;
         for (scope = CScope_BuildNameSpaceLookupList(nspace); scope != NULL; scope = scope->next) {
             for (using = scope->namespaces; using != NULL; using = using->next) {
-                ObjectList *usingList;
+                NameSpaceObjectList *usingList;
                 nspace = using->nspace;
-                if ((usingList = Scope_FindList(nspace, name)) != NULL &&
-                    (nspace = get_object_list_nspace(usingList, &local)) != NULL) {
+                if ((usingList = CScope_FindName(nspace, name)) != NULL &&
+                    (nspace = get_object_list_nspace((ObjectList *)usingList, &local)) != NULL) {
                     if (found != NULL && nspace != found)
                         CError_ReportError(ERR_AMBIGUOUS_ACCESS_CLASS_STRUCT_UNION_MEMBER);
                     found = nspace;
@@ -1540,7 +1446,7 @@ NameSpaceObjectList *find_namespace_object(NameResult *state, NameSpace *nspace,
         }
         return NULL;
     }
-    lookupResult = (result = (NameSpaceObjectList *)lookup(nspace, name));
+    lookupResult = (result = (NameSpaceObjectList *)CScope_FindName(nspace, name));
     if (lookupResult != NULL) {
         *foundSpace = nspace;
         return result;
@@ -1575,7 +1481,7 @@ Boolean find_type_name_in_scope(NameResult *out, NameSpace *scope, HashNameNode 
         return 0;
     }
 
-    if ((p = FindInScope(scope, name)) != NULL) {
+    if ((p = CScope_FindName(scope, name)) != NULL) {
         while (p != NULL) {
             if (p->object->otype == OT_TYPETAG) {
                 out->type = ((ObjType *)p->object)->type;
@@ -1590,7 +1496,7 @@ Boolean find_type_name_in_scope(NameResult *out, NameSpace *scope, HashNameNode 
         for (nl = CScope_BuildNameSpaceLookupList(scope); nl != NULL; nl = nl->next) {
             for (ol = nl->namespaces; ol != NULL; ol = ol->next) {
                 obj = ol->nspace;
-                for (p = FindInScope((NameSpace *)(void *)obj, name); p != NULL; p = p->next) {
+                for (p = CScope_FindName((NameSpace *)(void *)obj, name); p != NULL; p = p->next) {
                     if (p->object->otype == OT_TYPETAG) {
                         if (offset != 0 && offset != (SInt32)((ObjType *)p->object)->type) {
                             if (!(name == NULL || obj == lastobj)) {
@@ -1990,7 +1896,7 @@ Boolean CScope_ParseExprName(NameResult *scope)
     return 1;
 }
 
-Boolean CScope_ParseDeclName(NameResult *lookup)
+Boolean CScope_ParseDeclName(NameResult *CScope_FindName)
 {
     HashNameNode *name;
     CScopeNSIterator iterator;
@@ -2006,22 +1912,22 @@ Boolean CScope_ParseDeclName(NameResult *lookup)
         {
             NameSpace *currentScope;
 
-            memclrw(lookup, sizeof(*lookup));
+            memclrw(CScope_FindName, sizeof(*CScope_FindName));
             name = data_00587fa0;
             currentScope = cscope_current;
-            if (currentScope->usings != NULL && lookup->is_qualified == 0) {
+            if (currentScope->usings != NULL && CScope_FindName->is_qualified == 0) {
                 iterator.nspace = NULL;
                 iterator.lookup = build_namespace_scope_rec(currentScope);
             } else {
                 iterator.nspace = currentScope;
                 iterator.lookup = NULL;
             }
-            iterator.result = lookup;
+            iterator.result = CScope_FindName;
             do {
                 result = find_scope_object_list(&iterator, name);
                 if (result != NULL && (copts.cplusplus != 0 || result->object->otype != OT_TYPETAG)) {
-                    lookup->nspace = iterator.lookup != NULL ? iterator.lookup->nspace : iterator.nspace;
-                    return set_parse_result_from_objects(lookup, result, name);
+                    CScope_FindName->nspace = iterator.lookup != NULL ? iterator.lookup->nspace : iterator.nspace;
+                    return set_parse_result_from_objects(CScope_FindName, result, name);
                 }
                 if (iterator.lookup != NULL) {
                     iterator.lookup = iterator.lookup->next;
@@ -2039,8 +1945,8 @@ Boolean CScope_ParseDeclName(NameResult *lookup)
                     }
                 }
             } while (more);
-            lookup->nspace = cscope_current;
-            lookup->name = name;
+            CScope_FindName->nspace = cscope_current;
+            CScope_FindName->name = name;
             return 0;
         }
     }
@@ -2048,11 +1954,11 @@ Boolean CScope_ParseDeclName(NameResult *lookup)
         CError_ReportError(ERR_IDENTIFIER_EXPECTED);
         return 0;
     }
-    if (!CScope_ParseQualifiedNameSpace(lookup, 0))
+    if (!CScope_ParseQualifiedNameSpace(CScope_FindName, 0))
         goto unqualified;
-    if (lookup->type != NULL)
+    if (CScope_FindName->type != NULL)
         return 1;
-    if ((scope = lookup->nspace) == NULL)
+    if ((scope = CScope_FindName->nspace) == NULL)
         CError_FATAL(2305);
     switch (tk) {
         case TK_OPERATOR: {
@@ -2104,27 +2010,27 @@ Boolean CScope_ParseDeclName(NameResult *lookup)
             CError_ReportError(ERR_IDENTIFIER_EXPECTED);
             return 0;
     }
-    if (lookup->is_qualified != 0) {
-        NameSpaceObjectList *objects = find_namespace_object(lookup, lookup->nspace, name, &lookup->nspace);
+    if (CScope_FindName->is_qualified != 0) {
+        NameSpaceObjectList *objects = find_namespace_object(CScope_FindName, CScope_FindName->nspace, name, &CScope_FindName->nspace);
         if (objects == NULL) {
             CError_ReportError(ERR_UNDEFINED_IDENTIFIER, name->name);
             return 0;
         }
-        return set_parse_result_from_objects(lookup, objects, name);
+        return set_parse_result_from_objects(CScope_FindName, objects, name);
     }
-    if (scope->usings != NULL && lookup->is_qualified == 0) {
+    if (scope->usings != NULL && CScope_FindName->is_qualified == 0) {
         iterator.nspace = NULL;
         iterator.lookup = build_namespace_scope_rec(scope);
     } else {
         iterator.nspace = scope;
         iterator.lookup = NULL;
     }
-    iterator.result = lookup;
+    iterator.result = CScope_FindName;
     do {
         result = find_scope_object_list(&iterator, name);
         if (result != NULL) {
-            lookup->nspace = iterator.lookup != NULL ? iterator.lookup->nspace : iterator.nspace;
-            return set_parse_result_from_objects(lookup, result, name);
+            CScope_FindName->nspace = iterator.lookup != NULL ? iterator.lookup->nspace : iterator.nspace;
+            return set_parse_result_from_objects(CScope_FindName, result, name);
         }
         if (iterator.lookup != NULL) {
             iterator.lookup = iterator.lookup->next;
@@ -2312,7 +2218,7 @@ Boolean CScope_ParseElaborateName(NameResult *result)
 {
     HashNameNode *name;
     NameSpaceObjectList *objects;
-    CScopeNSIterator lookup;
+    CScopeNSIterator CScope_FindName;
     Boolean more;
     NameSpace *currentScope;
     NameSpace *parsedScope;
@@ -2326,29 +2232,29 @@ Boolean CScope_ParseElaborateName(NameResult *result)
         currentScope = cscope_current;
         name = data_00587fa0;
         if (currentScope->usings != NULL && result->is_qualified == 0) {
-            lookup.nspace = NULL;
-            lookup.lookup = build_namespace_scope_rec(currentScope);
+            CScope_FindName.nspace = NULL;
+            CScope_FindName.lookup = build_namespace_scope_rec(currentScope);
         } else {
-            lookup.nspace = currentScope;
-            lookup.lookup = NULL;
+            CScope_FindName.nspace = currentScope;
+            CScope_FindName.lookup = NULL;
         }
-        lookup.result = result;
+        CScope_FindName.result = result;
         do {
-            for (objects = find_scope_object_list(&lookup, name); objects != NULL; objects = objects->next) {
+            for (objects = find_scope_object_list(&CScope_FindName, name); objects != NULL; objects = objects->next) {
                 if (objects->object->otype == OT_TYPETAG) {
-                    result->nspace = lookup.lookup != NULL ? lookup.lookup->nspace : lookup.nspace;
+                    result->nspace = CScope_FindName.lookup != NULL ? CScope_FindName.lookup->nspace : CScope_FindName.nspace;
                     return set_parse_result_from_objects(result, objects, name);
                 }
             }
-            if (lookup.lookup != NULL) {
-                lookup.lookup = lookup.lookup->next;
-                more = lookup.lookup != NULL;
+            if (CScope_FindName.lookup != NULL) {
+                CScope_FindName.lookup = CScope_FindName.lookup->next;
+                more = CScope_FindName.lookup != NULL;
             } else {
-                lookup.nspace = lookup.nspace->parent;
-                if (lookup.nspace != NULL) {
-                    if (lookup.nspace->usings != NULL && lookup.result->is_qualified == 0) {
-                        lookup.lookup = build_namespace_scope_rec(lookup.nspace);
-                        lookup.nspace = NULL;
+                CScope_FindName.nspace = CScope_FindName.nspace->parent;
+                if (CScope_FindName.nspace != NULL) {
+                    if (CScope_FindName.nspace->usings != NULL && CScope_FindName.result->is_qualified == 0) {
+                        CScope_FindName.lookup = build_namespace_scope_rec(CScope_FindName.nspace);
+                        CScope_FindName.nspace = NULL;
                     }
                     more = 1;
                 } else {
@@ -2391,29 +2297,29 @@ Boolean CScope_ParseElaborateName(NameResult *result)
     }
     parsedScope = result->nspace;
     if (parsedScope->usings != NULL && result->is_qualified == 0) {
-        lookup.nspace = NULL;
-        lookup.lookup = build_namespace_scope_rec(parsedScope);
+        CScope_FindName.nspace = NULL;
+        CScope_FindName.lookup = build_namespace_scope_rec(parsedScope);
     } else {
-        lookup.nspace = parsedScope;
-        lookup.lookup = NULL;
+        CScope_FindName.nspace = parsedScope;
+        CScope_FindName.lookup = NULL;
     }
-    lookup.result = result;
+    CScope_FindName.result = result;
     do {
-        for (objects = find_scope_object_list(&lookup, name); objects != NULL; objects = objects->next) {
+        for (objects = find_scope_object_list(&CScope_FindName, name); objects != NULL; objects = objects->next) {
             if (objects->object->otype == OT_TYPETAG || objects->object->otype == OT_TYPE) {
-                result->nspace = lookup.lookup != NULL ? lookup.lookup->nspace : lookup.nspace;
+                result->nspace = CScope_FindName.lookup != NULL ? CScope_FindName.lookup->nspace : CScope_FindName.nspace;
                 return set_parse_result_from_objects(result, objects, name);
             }
         }
-        if (lookup.lookup != NULL) {
-            lookup.lookup = lookup.lookup->next;
-            more = lookup.lookup != NULL;
+        if (CScope_FindName.lookup != NULL) {
+            CScope_FindName.lookup = CScope_FindName.lookup->next;
+            more = CScope_FindName.lookup != NULL;
         } else {
-            lookup.nspace = lookup.nspace->parent;
-            if (lookup.nspace != NULL) {
-                if (lookup.nspace->usings != NULL && lookup.result->is_qualified == 0) {
-                    lookup.lookup = build_namespace_scope_rec(lookup.nspace);
-                    lookup.nspace = NULL;
+            CScope_FindName.nspace = CScope_FindName.nspace->parent;
+            if (CScope_FindName.nspace != NULL) {
+                if (CScope_FindName.nspace->usings != NULL && CScope_FindName.result->is_qualified == 0) {
+                    CScope_FindName.lookup = build_namespace_scope_rec(CScope_FindName.nspace);
+                    CScope_FindName.nspace = NULL;
                 }
                 more = 1;
             } else {
@@ -2488,22 +2394,22 @@ NameSpaceObjectList *CScope_FindObjectList(NameResult *result, HashNameNode *nam
 Boolean CScope_PossibleTypeName(HashNameNode *name)
 {
     Boolean more;
-    CScopeNSIterator lookup;
+    CScopeNSIterator CScope_FindName;
     NameResult result;
     NameSpace *ns;
 
     memclrw(&result, sizeof(result));
     ns = cscope_current;
     if (ns->usings != NULL && result.is_qualified == 0) {
-        lookup.nspace = NULL;
-        lookup.lookup = build_namespace_scope_rec(ns);
+        CScope_FindName.nspace = NULL;
+        CScope_FindName.lookup = build_namespace_scope_rec(ns);
     } else {
-        lookup.nspace = ns;
-        lookup.lookup = NULL;
+        CScope_FindName.nspace = ns;
+        CScope_FindName.lookup = NULL;
     }
-    lookup.result = &result;
+    CScope_FindName.result = &result;
     do {
-        NameSpaceObjectList *objects = find_scope_object_list(&lookup, name);
+        NameSpaceObjectList *objects = find_scope_object_list(&CScope_FindName, name);
         if (objects != NULL) {
             switch (objects->object->otype) {
                 case OT_TYPE:
@@ -2517,15 +2423,15 @@ Boolean CScope_PossibleTypeName(HashNameNode *name)
                     return 0;
             }
         }
-        if (lookup.lookup != NULL) {
-            lookup.lookup = lookup.lookup->next;
-            more = (lookup.lookup != NULL);
+        if (CScope_FindName.lookup != NULL) {
+            CScope_FindName.lookup = CScope_FindName.lookup->next;
+            more = (CScope_FindName.lookup != NULL);
         } else {
-            lookup.nspace = lookup.nspace->parent;
-            if (lookup.nspace != NULL) {
-                if (lookup.nspace->usings != NULL && lookup.result->is_qualified == 0) {
-                    lookup.lookup = build_namespace_scope_rec(lookup.nspace);
-                    lookup.nspace = NULL;
+            CScope_FindName.nspace = CScope_FindName.nspace->parent;
+            if (CScope_FindName.nspace != NULL) {
+                if (CScope_FindName.nspace->usings != NULL && CScope_FindName.result->is_qualified == 0) {
+                    CScope_FindName.lookup = build_namespace_scope_rec(CScope_FindName.nspace);
+                    CScope_FindName.nspace = NULL;
                 }
                 more = 1;
             } else {
@@ -2708,7 +2614,7 @@ ObjectList *CScope_GetLocalObject(NameSpace *nspace, HashNameNode *name)
     NameSpaceObjectList *nol;
     Object *obj;
 
-    if ((nol = ScopeFindName(nspace, name)) != NULL) {
+    if ((nol = CScope_FindName(nspace, name)) != NULL) {
         obj = (Object *)nol->object;
         switch (obj->otype) {
             case OT_OBJECT:
@@ -2843,7 +2749,7 @@ void add_using_declaration(BClassList *bases, NameSpace *scope, ObjBase *def, Ha
 
     if (def->otype == OT_TYPE) {
         if (scope->theclass == NULL) {
-            if ((lst = Scope_Find(scope, name)) != NULL) {
+            if ((lst = CScope_FindName(scope, name)) != NULL) {
                 if (lst->object->otype == OT_TYPE && ((ObjType *)def)->type == ((ObjType *)lst->object)->type &&
                     ((ObjType *)def)->qual == ((ObjType *)lst->object)->qual)
                     return;
@@ -2860,7 +2766,7 @@ void add_using_declaration(BClassList *bases, NameSpace *scope, ObjBase *def, Ha
 
     if (def->otype == OT_TYPETAG) {
         if (scope->theclass == NULL) {
-            if ((lst = Scope_Find(scope, name)) != NULL) {
+            if ((lst = CScope_FindName(scope, name)) != NULL) {
                 if (lst->object->otype == OT_TYPETAG &&
                     ((ObjNameSpace *)def)->nspace == ((ObjNameSpace *)lst->object)->nspace)
                     return;
@@ -2905,7 +2811,7 @@ void add_using_declaration(BClassList *bases, NameSpace *scope, ObjBase *def, Ha
 
     if (def->otype == OT_OBJECT) {
         if (scope->theclass == NULL) {
-            for (lst = Scope_Find(scope, ((Object *)def)->name); lst != NULL; lst = lst->next) {
+            for (lst = CScope_FindName(scope, ((Object *)def)->name); lst != NULL; lst = lst->next) {
                 if (lst->object->otype == OT_OBJECT) {
                     Object *target = (Object *)lst->object;
                     while (target->datatype == DALIAS)

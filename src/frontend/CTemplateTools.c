@@ -24,7 +24,6 @@ static void CTemplateTools_SetFirstArgName(TypeMemberFunc *f);
 static FuncArg *CTemplateTools_FirstArg(TypeMemberFunc *f);
 static ENode *CloneRecNode(TemplArg *r);
 static ENode *CloneNode(ENode *src);
-static Boolean IsTemplDep(ENode *e);
 static Boolean CTT_IsNeg(CInt64 *v);
 
 static inline TemplArg *find(TemplArg *e, TemplParamID pid)
@@ -1196,7 +1195,7 @@ void fn_00516930(void *context, TemplClass *function, TemplArg *arguments)
                                                                       (UInt32 *)&tail->data.typeparam.qual);
             } else if (tail->data.paramdecl.expr == NULL) {
                 CError_FATAL(1566);
-            } else if (IsTemplDep(tail->data.paramdecl.expr)) {
+            } else if (CTemplTool_IsTemplateArgumentDependentExpression(tail->data.paramdecl.expr)) {
                 tail->data.paramdecl.expr =
                     CExpr_GeneratePointerAndRewriteConst(CTemplTool_DeduceExpr(context, tail->data.paramdecl.expr));
                 tail->data.paramdecl.expr = fn_00513040(tail->data.paramdecl.expr, 1);
@@ -1212,7 +1211,7 @@ void fn_00516930(void *context, TemplClass *function, TemplArg *arguments)
                 if (CTemplTool_IsTemplateArgumentDependentType(argument->data.typeparam.type))
                     break;
             } else {
-                if (IsTemplDep(argument->data.paramdecl.expr))
+                if (CTemplTool_IsTemplateArgumentDependentExpression(argument->data.paramdecl.expr))
                     break;
                 switch (argument->data.paramdecl.expr->type) {
                     case EOBJREF:
@@ -1511,13 +1510,6 @@ static ENode *CloneNode(ENode *src)
     ENode *n = (ENode *)lalloc(sizeof(ENode));
     *n = *src;
     return n;
-}
-
-static Boolean IsTemplDep(ENode *e)
-{
-    if (e == NULL)
-        return 0;
-    return e->rtype->type == TYPETEMPLDEPEXPR;
 }
 
 FuncArg *CTemplTool_DeduceArgCopy(TypeDeduce *ctx, FuncArg *args)

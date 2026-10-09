@@ -131,25 +131,17 @@ static inline char *scan_component(int *context, MOutBuf *output, char *cursor, 
     return p;
 }
 
-static void PutChar(MOutBuf *buf, char c)
-{
-    if (buf != NULL && buf->left != 0) {
-        *buf->ptr++ = c;
-        buf->left--;
-    }
-}
-
 char *unmangle_template_arguments(int *ctx, MOutBuf *buf, char *p)
 {
     char *q;
 
-    PutChar(buf, '<');
+    put_c(buf, '<');
     for (;;) {
         switch (*p) {
             case '&':
             case '=':
                 if (*p++ == '&')
-                    PutChar(buf, '&');
+                    put_c(buf, '&');
                 for (;;) {
                     switch (*p) {
                         case '\0':
@@ -159,7 +151,7 @@ char *unmangle_template_arguments(int *ctx, MOutBuf *buf, char *p)
                         case '>':
                             break;
                         default:
-                            PutChar(buf, *p++);
+                            put_c(buf, *p++);
                             continue;
                     }
                     break;
@@ -181,7 +173,7 @@ char *unmangle_template_arguments(int *ctx, MOutBuf *buf, char *p)
                         longjmp(ctx, 1);
                     if (*q == ',' || *q == '>') {
                         do {
-                            PutChar(buf, *p++);
+                            put_c(buf, *p++);
                         } while (*p != '>' && *p != ',');
                         break;
                     }
@@ -209,7 +201,7 @@ char *unmangle_template_arguments(int *ctx, MOutBuf *buf, char *p)
             buf->left -= n;
         }
     }
-    PutChar(buf, '>');
+    put_c(buf, '>');
     return p + 1;
 }
 

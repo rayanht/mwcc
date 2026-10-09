@@ -108,70 +108,35 @@ static inline void recordSimplification(IROLinear *node)
     IroDump_Print("ReplaceExprWithLeftChild: expr= %d\n", node->index);
 }
 
-static void ReplaceExprWithLeftChild(IROLinear *expr)
-{
-    IROLinear *left = expr->u.diadic.left;
-    IROLinear *right = expr->u.diadic.right;
-
-    if (left->rtype == expr->rtype) {
-        IroUtil_ReplaceNextReference(expr, left);
-        left->flags = expr->flags;
-        left->nodeflags = expr->nodeflags;
-        expr->type = IROLinearNop;
-        IroUtil_ClearZeroOperands(right);
-    } else {
-        expr->type = IROLinearOp1Arg;
-        expr->nodetype = ETYPCON;
-        expr->u.monadic = left;
-        IroUtil_ClearZeroOperands(right);
-    }
-    IroDump_Print("ReplaceExprWithLeftChild: expr= %d\n", expr->index);
-}
-
-static void ReplaceExprWithRightChild(IROLinear *expr)
-{
-    IROLinear *left = expr->u.diadic.left;
-    IROLinear *right = expr->u.diadic.right;
-
-    if (right->rtype == expr->rtype) {
-        IroUtil_ReplaceNextReference(expr, right);
-        right->flags = expr->flags;
-        right->nodeflags = expr->nodeflags;
-        expr->type = IROLinearNop;
-        IroUtil_ClearZeroOperands(left);
-    } else {
-        expr->type = IROLinearOp1Arg;
-        expr->nodetype = ETYPCON;
-        expr->u.monadic = right;
-        IroUtil_ClearZeroOperands(left);
-    }
-}
+static void replace_right(IROLinear *node);
 
 static void RemoveCommonOpLeftLeft(IROLinear *expr)
 {
     rotate_left_child(expr, 0);
-    ReplaceExprWithRightChild(expr->u.diadic.right);
+    replace_right(expr->u.diadic.right);
     IroDump_Print("remove common op(left-left) at: %d\n", expr->index);
 }
 
 static void RemoveCommonOpRightLeft(IROLinear *expr)
 {
     rotate_left_child(expr, 1);
-    ReplaceExprWithRightChild(expr->u.diadic.right);
+    replace_right(expr->u.diadic.right);
     IroDump_Print("remove common op(right-left) at: %d\n", expr->index);
 }
+
+static void replace_left(IROLinear *node);
 
 static void RemoveCommonOpLeftRight(IROLinear *expr)
 {
     rotate_left_child(expr, 0);
-    ReplaceExprWithLeftChild(expr->u.diadic.right);
+    replace_left(expr->u.diadic.right);
     IroDump_Print("remove common op(right-right) at: %d\n", expr->index);
 }
 
 static void RemoveCommonOpRightRight(IROLinear *expr)
 {
     rotate_left_child(expr, 1);
-    ReplaceExprWithLeftChild(expr->u.diadic.right);
+    replace_left(expr->u.diadic.right);
     IroDump_Print("remove common op(right-right) at: %d\n", expr->index);
 }
 
@@ -1125,15 +1090,15 @@ void remove_common_op(struct IROLinear *expr)
                     switch (left->nodetype) {
                         case EADD:
                             if (expr->nodetype == data_00552d8c[left->nodetype]) {
-                                ReplaceExprWithRightChild(left);
-                                ReplaceExprWithRightChild(right);
+                                replace_right(left);
+                                replace_right(right);
                                 flag = 1;
                             }
                             break;
                         case ESUB:
                             if (expr->nodetype == ESUB || expr->nodetype == ESUBV) {
-                                ReplaceExprWithRightChild(left);
-                                ReplaceExprWithRightChild(right);
+                                replace_right(left);
+                                replace_right(right);
                                 tmp = expr->u.diadic.left;
                                 expr->u.diadic.left = expr->u.diadic.right;
                                 expr->u.diadic.right = tmp;
@@ -1156,7 +1121,7 @@ void remove_common_op(struct IROLinear *expr)
                             }
                         case EOR:
                             if (expr->nodetype == left->nodetype) {
-                                ReplaceExprWithRightChild(left);
+                                replace_right(left);
                                 flag = 1;
                             } else if (expr->nodetype == data_00552d8c[left->nodetype]) {
                                 RemoveCommonOpLeftLeft(expr);
@@ -1171,13 +1136,13 @@ void remove_common_op(struct IROLinear *expr)
                             switch (left->nodetype) {
                                 case EADD:
                                     expr->nodetype = data_00552d8c[expr->nodetype];
-                                    ReplaceExprWithRightChild(left);
-                                    ReplaceExprWithRightChild(right);
+                                    replace_right(left);
+                                    replace_right(right);
                                     flag = 1;
                                     break;
                                 case ESUB:
                                     rewrite_diadic_as_monadic(left);
-                                    ReplaceExprWithRightChild(right);
+                                    replace_right(right);
                                     flag = 1;
                                     break;
                             }
@@ -1185,9 +1150,9 @@ void remove_common_op(struct IROLinear *expr)
                         case EAND:
                         case EOR:
                             if (left->nodetype == expr->nodetype)
-                                ReplaceExprWithLeftChild(expr);
+                                replace_left(expr);
                             else if (right->nodetype == expr->nodetype)
-                                ReplaceExprWithRightChild(expr);
+                                replace_right(expr);
                             break;
                     }
                 }
@@ -1196,8 +1161,8 @@ void remove_common_op(struct IROLinear *expr)
                     switch (left->nodetype) {
                         case EADD:
                             if (expr->nodetype == data_00552d8c[left->nodetype]) {
-                                ReplaceExprWithLeftChild(left);
-                                ReplaceExprWithRightChild(right);
+                                replace_left(left);
+                                replace_right(right);
                                 flag = 1;
                             }
                             break;
@@ -1217,7 +1182,7 @@ void remove_common_op(struct IROLinear *expr)
                             }
                         case EOR:
                             if (expr->nodetype == left->nodetype) {
-                                ReplaceExprWithLeftChild(left);
+                                replace_left(left);
                                 flag = 1;
                             } else if (expr->nodetype == data_00552d8c[left->nodetype]) {
                                 RemoveCommonOpRightLeft(expr);
@@ -1231,25 +1196,25 @@ void remove_common_op(struct IROLinear *expr)
                         case ESUB:
                             if (left->nodetype == EADD) {
                                 expr->nodetype = data_00552d8c[expr->nodetype];
-                                ReplaceExprWithLeftChild(left);
-                                ReplaceExprWithRightChild(right);
+                                replace_left(left);
+                                replace_right(right);
                                 flag = 1;
                             }
                             break;
                         case EADDV:
                         case EADD:
                             if (left->nodetype == ESUB) {
-                                ReplaceExprWithLeftChild(left);
-                                ReplaceExprWithRightChild(right);
+                                replace_left(left);
+                                replace_right(right);
                                 flag = 1;
                             }
                             break;
                         case EAND:
                         case EOR:
                             if (left->nodetype == expr->nodetype)
-                                ReplaceExprWithLeftChild(expr);
+                                replace_left(expr);
                             else if (right->nodetype == expr->nodetype)
-                                ReplaceExprWithRightChild(expr);
+                                replace_right(expr);
                             break;
                     }
                 }
@@ -1258,8 +1223,8 @@ void remove_common_op(struct IROLinear *expr)
                     switch (left->nodetype) {
                         case EADD:
                             if (expr->nodetype == data_00552d8c[left->nodetype]) {
-                                ReplaceExprWithRightChild(left);
-                                ReplaceExprWithLeftChild(right);
+                                replace_right(left);
+                                replace_left(right);
                                 flag = 1;
                             }
                             break;
@@ -1268,8 +1233,8 @@ void remove_common_op(struct IROLinear *expr)
                                 case EADDV:
                                 case EADD:
                                     expr->nodetype = data_00552d8c[expr->nodetype];
-                                    ReplaceExprWithRightChild(left);
-                                    ReplaceExprWithLeftChild(right);
+                                    replace_right(left);
+                                    replace_left(right);
                                     tmp = expr->u.diadic.left;
                                     expr->u.diadic.left = expr->u.diadic.right;
                                     expr->u.diadic.right = tmp;
@@ -1292,7 +1257,7 @@ void remove_common_op(struct IROLinear *expr)
                             }
                         case EOR:
                             if (expr->nodetype == left->nodetype) {
-                                ReplaceExprWithRightChild(left);
+                                replace_right(left);
                                 flag = 1;
                             } else if (expr->nodetype == data_00552d8c[left->nodetype]) {
                                 RemoveCommonOpLeftRight(expr);
@@ -1305,8 +1270,8 @@ void remove_common_op(struct IROLinear *expr)
                         case EADDV:
                         case EADD:
                             if (left->nodetype == EADD) {
-                                ReplaceExprWithRightChild(left);
-                                ReplaceExprWithLeftChild(right);
+                                replace_right(left);
+                                replace_left(right);
                                 flag = 1;
                             }
                             break;
@@ -1314,16 +1279,16 @@ void remove_common_op(struct IROLinear *expr)
                         case ESUB:
                             if (left->nodetype == ESUB) {
                                 rewrite_diadic_as_monadic(left);
-                                ReplaceExprWithRightChild(right);
+                                replace_right(right);
                                 flag = 1;
                             }
                             break;
                         case EAND:
                         case EOR:
                             if (left->nodetype == expr->nodetype)
-                                ReplaceExprWithLeftChild(expr);
+                                replace_left(expr);
                             else if (right->nodetype == expr->nodetype)
-                                ReplaceExprWithRightChild(expr);
+                                replace_right(expr);
                             break;
                     }
                 }
@@ -1334,8 +1299,8 @@ void remove_common_op(struct IROLinear *expr)
                             switch (left->nodetype) {
                                 case EADD:
                                 case ESUB:
-                                    ReplaceExprWithLeftChild(left);
-                                    ReplaceExprWithLeftChild(right);
+                                    replace_left(left);
+                                    replace_left(right);
                                     flag = 1;
                             }
                         case EADD:
@@ -1358,7 +1323,7 @@ void remove_common_op(struct IROLinear *expr)
                         case EAND:
                         case EOR:
                             if (left->nodetype == expr->nodetype) {
-                                ReplaceExprWithLeftChild(right);
+                                replace_left(right);
                                 flag = 1;
                             } else if (left->nodetype == data_00552d8c[expr->nodetype] || left->nodetype == ESHL ||
                                        left->nodetype == ESHR) {
@@ -1374,17 +1339,17 @@ void remove_common_op(struct IROLinear *expr)
                             switch (left->nodetype) {
                                 case EADD:
                                 case ESUB:
-                                    ReplaceExprWithLeftChild(left);
-                                    ReplaceExprWithLeftChild(right);
+                                    replace_left(left);
+                                    replace_left(right);
                                     flag = 1;
                             }
                             break;
                         case EAND:
                         case EOR:
                             if (left->nodetype == expr->nodetype)
-                                ReplaceExprWithLeftChild(expr);
+                                replace_left(expr);
                             else if (right->nodetype == expr->nodetype)
-                                ReplaceExprWithRightChild(expr);
+                                replace_right(expr);
                             break;
                     }
                 }
