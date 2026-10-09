@@ -20503,55 +20503,55 @@
     "name": "COpt_SetLoopCodeMotionMode",
     "address": "0x00523d60",
     "size": 407,
-    "source": "src/optimizer/CodeMotion.c"
+    "source": "src/optimizer/UseDefChains.c"
   },
   {
     "name": "propagate_use_sets",
     "address": "0x00523f00",
     "size": 299,
-    "source": "src/optimizer/CodeMotion.c"
+    "source": "src/optimizer/UseDefChains.c"
   },
   {
     "name": "solve_definition_sets",
     "address": "0x00524030",
     "size": 296,
-    "source": "src/optimizer/CodeMotion.c"
+    "source": "src/optimizer/UseDefChains.c"
   },
   {
     "name": "compute_block_definition_and_use_sets",
     "address": "0x00524160",
     "size": 1625,
-    "source": "src/optimizer/CodeMotion.c"
+    "source": "src/optimizer/UseDefChains.c"
   },
   {
     "name": "build_use_definition_entries",
     "address": "0x005247c0",
     "size": 1553,
-    "source": "src/optimizer/CodeMotion.c"
+    "source": "src/optimizer/UseDefChains.c"
   },
   {
     "name": "assign_definition_and_use_starts",
     "address": "0x00524de0",
     "size": 482,
-    "source": "src/optimizer/CodeMotion.c"
+    "source": "src/optimizer/UseDefChains.c"
   },
   {
     "name": "is_object_access_compatible",
     "address": "0x00524fd0",
     "size": 601,
-    "source": "src/optimizer/CodeMotion.c"
+    "source": "src/optimizer/UseDefChains.c"
   },
   {
     "name": "COpt_00524b20",
     "address": "0x00525230",
     "size": 112,
-    "source": "src/optimizer/CodeMotion.c"
+    "source": "src/optimizer/UseDefChains.c"
   },
   {
     "name": "find_object_node",
     "address": "0x005252a0",
     "size": 56,
-    "source": "src/optimizer/CodeMotion.c"
+    "source": "src/optimizer/UseDefChains.c"
   },
   {
     "name": "CodeMotion_VisitLoops",

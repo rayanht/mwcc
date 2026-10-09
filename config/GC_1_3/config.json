@@ -129,6 +129,7 @@
     "src/optimizer/IroVars.c",
     "src/optimizer/LoopDetection.c",
     "src/optimizer/StrengthReduction.c",
+    "src/optimizer/UseDefChains.c",
     "src/runtime/ExceptionX86.cpp",
     "src/runtime/LongLongx86.c",
     "src/runtime/NMWException.cpp",

@@ -20523,13 +20523,13 @@
     "name": "COpt_00524b20",
     "address": "0x0056d010",
     "size": 112,
-    "source": "src/optimizer/CodeMotion.c"
+    "source": "src/optimizer/UseDefChains.c"
   },
   {
     "name": "find_object_node",
     "address": "0x0056d080",
     "size": 56,
-    "source": "src/optimizer/CodeMotion.c"
+    "source": "src/optimizer/UseDefChains.c"
   },
   {
     "name": "fn_0056d0c0",

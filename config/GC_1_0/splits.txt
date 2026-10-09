@@ -944,8 +944,11 @@ src/optimizer/LoopDetection.c:
 	.data       start:0x00545B10 end:0x00545B20
 	.bss        start:0x00553C58 end:0x00553C68
 
+src/optimizer/UseDefChains.c:
+	.text       start:0x004F3B10 end:0x004F4FE0
+
 src/optimizer/CodeMotion.c:
-	.text       start:0x004F3B10 end:0x004F71B0
+	.text       start:0x004F4FE0 end:0x004F71B0
 	.data       start:0x00545B20 end:0x00545B60
 
 src/optimizer/StrengthReduction.c:

@@ -23514,67 +23514,67 @@
     "name": "find_object_node",
     "address": "0x004f3b10",
     "size": 56,
-    "source": "src/optimizer/CodeMotion.c"
+    "source": "src/optimizer/UseDefChains.c"
   },
   {
     "name": "COpt_00524b20",
     "address": "0x004f3b50",
     "size": 112,
-    "source": "src/optimizer/CodeMotion.c"
+    "source": "src/optimizer/UseDefChains.c"
   },
   {
-    "name": "fn_004f3bc0",
+    "name": "collect_memory_objects",
     "address": "0x004f3bc0",
     "size": 93,
-    "source": "src/optimizer/CodeMotion.c"
+    "source": "src/optimizer/UseDefChains.c"
   },
   {
     "name": "is_object_access_compatible",
     "address": "0x004f3c20",
     "size": 601,
-    "source": "src/optimizer/CodeMotion.c"
+    "source": "src/optimizer/UseDefChains.c"
   },
   {
     "name": "assign_definition_and_use_starts",
     "address": "0x004f3e80",
     "size": 482,
-    "source": "src/optimizer/CodeMotion.c"
+    "source": "src/optimizer/UseDefChains.c"
   },
   {
     "name": "build_use_definition_entries",
     "address": "0x004f4070",
     "size": 1473,
-    "source": "src/optimizer/CodeMotion.c"
+    "source": "src/optimizer/UseDefChains.c"
   },
   {
-    "name": "fn_004f4640",
+    "name": "allocate_dataflow_sets",
     "address": "0x004f4640",
     "size": 265,
-    "source": "src/optimizer/CodeMotion.c"
+    "source": "src/optimizer/UseDefChains.c"
   },
   {
     "name": "compute_block_definition_and_use_sets",
     "address": "0x004f4750",
     "size": 1505,
-    "source": "src/optimizer/CodeMotion.c"
+    "source": "src/optimizer/UseDefChains.c"
   },
   {
     "name": "solve_definition_sets",
     "address": "0x004f4d40",
     "size": 296,
-    "source": "src/optimizer/CodeMotion.c"
+    "source": "src/optimizer/UseDefChains.c"
   },
   {
     "name": "propagate_use_sets",
     "address": "0x004f4e70",
     "size": 299,
-    "source": "src/optimizer/CodeMotion.c"
+    "source": "src/optimizer/UseDefChains.c"
   },
   {
     "name": "COpt_SetLoopCodeMotionMode",
     "address": "0x004f4fa0",
     "size": 55,
-    "source": "src/optimizer/CodeMotion.c"
+    "source": "src/optimizer/UseDefChains.c"
   },
   {
     "name": "is_loop_invariant",

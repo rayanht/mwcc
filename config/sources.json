@@ -3116,6 +3116,21 @@
       "src/optimizer"
     ]
   },
+  "src/optimizer/UseDefChains.c": {
+    "compiler": "pro53",
+    "flags": [
+      "-O4,p",
+      "-inline",
+      "auto,deferred",
+      "-sym",
+      "on",
+      "-Cpp_exceptions",
+      "off"
+    ],
+    "include_dirs": [
+      "src/optimizer"
+    ]
+  },
   "src/optimizer/CodeMotion.c": {
     "compiler": "pro53",
     "flags": [
