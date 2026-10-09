@@ -814,12 +814,12 @@ src/frontend/CSOM.c:
 	.bss        start:0x00581C48 end:0x00581C58
 
 src/backend/FuncLevelAsmPPC.c:
-	.text       start:0x004E67A0 end:0x004E71A0
+	.text       start:0x004E67A0 end:0x004E7560
 	.data       start:0x005648F8 end:0x005649B8
 	.bss        start:0x00581C58 end:0x00581C60
 
 src/frontend/Unmangle.c:
-	.text       start:0x004E71A0 end:0x004E8FC0
+	.text       start:0x004E7560 end:0x004E8FC0
 	.data       start:0x005649B8 end:0x005651C0
 
 src/msl/locale.c:

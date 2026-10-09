@@ -16962,7 +16962,7 @@
     "name": "assign_object_register",
     "address": "0x004e78b0",
     "size": 957,
-    "source": "src/frontend/Unmangle.c"
+    "source": "src/backend/FuncLevelAsmPPC.c"
   },
   {
     "name": "Unmangle_UnmangleSymbolName",

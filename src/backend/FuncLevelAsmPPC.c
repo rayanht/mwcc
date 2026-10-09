@@ -37,15 +37,113 @@ UInt8 func_errors;
 static struct PCodeAssemblyEntry *data_00581c58;
 static struct PCodeAssemblyEntry **assembly_list_tail;
 
-static inline void append_assembly(ParsedAsmInstruction *q, PCodeBlock *block)
+void assign_object_register(Object *func, SInt16 register_number)
 {
-    PCodeAssemblyEntry *n = (PCodeAssemblyEntry *)lalloc(12);
-    memclrw(n, 12);
-    n->object = q->data.directive.object;
-    n->block = block;
-    *assembly_list_tail = n;
-    assembly_list_tail = &n->next;
-    block->flags |= 0x20;
+    VarInfo *regs;
+    Type *type;
+    SInt16 physical_register;
+    SInt32 kind;
+
+    regs = Registers_GetInfo(func);
+    type = func->type;
+    regs->used = 1;
+    if (data_00588521) {
+        if (func->sclass == TK_REGISTER) {
+            if (register_number == 0) {
+                CError_ReportError(ERR_COULD_NOT_ASSIGNED_REGISTER, func->name->name);
+            }
+            regs->is_vector = 0;
+            if (copts.operandsDebug && type->type == TYPEFLOAT) {
+                if (type->size == 4) {
+                    regs->is_fpr = 1;
+                    regs->reg = register_number;
+                    physical_register = regs->reg;
+                } else {
+                    regs->is_fpr = 1;
+                    if (copts.littleendian != 0) {
+                        regs->reg = register_number;
+                        physical_register = regs->reg;
+                        regs->regHi = register_number + 1;
+                    } else {
+                        regs->reg = register_number + 1;
+                        physical_register = regs->reg;
+                        regs->regHi = register_number;
+                    }
+                }
+                CTemplateNew_InsertRegisterBinding(func->name->name, 0, physical_register, func);
+            } else if ((type->type == TYPEINT || type->type == TYPEENUM) && type->size == 8) {
+                regs->is_fpr = 0;
+                if (copts.littleendian != 0) {
+                    regs->regHi = register_number + 1;
+                    physical_register = 0;
+                    if (register_number < 10) {
+                        regs->reg = register_number;
+                        physical_register = regs->reg;
+                    }
+                } else {
+                    regs->reg = register_number + 1;
+                    physical_register = regs->reg;
+                    if (register_number < 10) {
+                        regs->regHi = register_number;
+                    }
+                }
+                CTemplateNew_InsertRegisterBinding(func->name->name, 0, physical_register, func);
+            } else if (type->type == TYPEFLOAT) {
+                regs->is_fpr = 1;
+                regs->reg = register_number;
+                CTemplateNew_InsertRegisterBinding(func->name->name, 1, register_number, func);
+            } else if (type->type == TYPESTRUCT && (kind = ((TypeStruct *)type)->stype) >= 4 && kind <= 0xe) {
+                regs->is_vector = 1;
+                regs->is_fpr = 0;
+                regs->reg = register_number;
+                CTemplateNew_InsertRegisterBinding(func->name->name, 9, register_number, func);
+            } else {
+                regs->is_fpr = 0;
+                regs->reg = register_number;
+                CTemplateNew_InsertRegisterBinding(func->name->name, 0, register_number, func);
+            }
+        }
+    } else if (func->sclass == TK_REGISTER) {
+        UInt8 typecode;
+        UInt8 use_gpr;
+        if ((((typecode = type->type) == TYPEINT || typecode == TYPEENUM) && type->size == 8) ||
+            ((use_gpr = copts.operandsDebug) && typecode == TYPEFLOAT && type->size != 4)) {
+            if (gAvailableSavedGPRs < 2) {
+                CError_ReportError(ERR_COULD_NOT_ASSIGNED_REGISTER, func->name->name);
+            }
+            Registers_AllocateGPRPair(func);
+            if (Registers_GetInfo(func)) {
+                Registers_GetInfo(func);
+            }
+            physical_register = Registers_GetInfo(func) ? (Registers_GetInfo(func))->reg : 0;
+            CTemplateNew_InsertRegisterBinding(func->name->name, 0, physical_register, func);
+        } else if (typecode == TYPEINT || typecode == TYPEENUM || typecode == TYPEPOINTER ||
+                   (typecode == TYPEMEMBERPOINTER && type->size == 4) ||
+                   (use_gpr && typecode == TYPEFLOAT && type->size == 4)) {
+            if (gAvailableSavedGPRs == 0) {
+                CError_ReportError(ERR_COULD_NOT_ASSIGNED_REGISTER, func->name->name);
+            }
+            Registers_AllocateGPR(func);
+            physical_register = Registers_GetInfo(func) ? (Registers_GetInfo(func))->reg : 0;
+            CTemplateNew_InsertRegisterBinding(func->name->name, 0, physical_register, func);
+        } else if (typecode == TYPEFLOAT) {
+            if (gAvailableSavedFPRs == 0) {
+                CError_ReportError(ERR_COULD_NOT_ASSIGNED_REGISTER, func->name->name);
+            }
+            Registers_AllocateFPR(func);
+            physical_register = Registers_GetInfo(func) ? (Registers_GetInfo(func))->reg : 0;
+            CTemplateNew_InsertRegisterBinding(func->name->name, 1, physical_register, func);
+        } else if (typecode == TYPESTRUCT && (kind = ((TypeStruct *)type)->stype) >= 4 && kind <= 0xe) {
+            if (gAvailableSavedVRs == 0) {
+                CError_ReportError(ERR_COULD_NOT_ASSIGNED_REGISTER, func->name->name);
+            }
+            Registers_AllocateVR(func);
+            physical_register = Registers_GetInfo(func) ? (Registers_GetInfo(func))->reg : 0;
+            CTemplateNew_InsertRegisterBinding(func->name->name, 9, physical_register, func);
+        } else {
+            CError_ReportError(ERR_COULD_NOT_ASSIGNED_REGISTER, func->name->name);
+        }
+    }
 }
 
 void FuncLevelAsmPPC_AllocateLocals(void)
@@ -161,6 +259,17 @@ void fn_004e6e30(void)
     }
     data_005884fd = 0;
     data_0058850d = savedFlag;
+}
+
+static void append_assembly(ParsedAsmInstruction *q, PCodeBlock *block)
+{
+    PCodeAssemblyEntry *n = (PCodeAssemblyEntry *)lalloc(12);
+    memclrw(n, 12);
+    n->object = q->data.directive.object;
+    n->block = block;
+    *assembly_list_tail = n;
+    assembly_list_tail = &n->next;
+    block->flags |= 0x20;
 }
 
 void FuncLevelAsmPPC_GenerateFunction(Object *func)

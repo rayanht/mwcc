@@ -18441,7 +18441,7 @@
     "source": "src/frontend/CPreprocess.c"
   },
   {
-    "name": "fn_004bbd90",
+    "name": "assign_object_register",
     "address": "0x004bbd90",
     "size": 893,
     "source": "src/backend/FuncLevelAsmPPC.c"
@@ -18459,7 +18459,7 @@
     "source": "src/backend/FuncLevelAsmPPC.c"
   },
   {
-    "name": "fn_004bc480",
+    "name": "append_assembly",
     "address": "0x004bc480",
     "size": 66,
     "source": "src/backend/FuncLevelAsmPPC.c"
