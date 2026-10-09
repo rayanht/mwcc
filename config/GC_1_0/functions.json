@@ -10617,7 +10617,7 @@
     "source": "src/backend/InlineAsmPPC.c"
   },
   {
-    "name": "fn_004564b0",
+    "name": "DumpENode",
     "address": "0x004564b0",
     "size": 216,
     "source": "src/optimizer/IroDump.c"
@@ -10629,7 +10629,7 @@
     "source": "src/optimizer/IroDump.c"
   },
   {
-    "name": "fn_00456a40",
+    "name": "DumpIndexList",
     "address": "0x00456a40",
     "size": 83,
     "source": "src/optimizer/IroDump.c"
@@ -15825,7 +15825,7 @@
     "source": "src/frontend/CMangler.c"
   },
   {
-    "name": "fn_0049f360",
+    "name": "mangle_name_with_length",
     "address": "0x0049f360",
     "size": 82,
     "source": "src/frontend/CMangler.c"
@@ -15837,7 +15837,7 @@
     "source": "src/frontend/CMangler.c"
   },
   {
-    "name": "fn_0049f440",
+    "name": "mangle_class_name",
     "address": "0x0049f440",
     "size": 41,
     "source": "src/frontend/CMangler.c"
@@ -23433,13 +23433,13 @@
     "source": "src/optimizer/LoopDetection.c"
   },
   {
-    "name": "fn_004f2a90",
+    "name": "new_block",
     "address": "0x004f2a90",
     "size": 112,
     "source": "src/optimizer/LoopDetection.c"
   },
   {
-    "name": "fn_004f2b00",
+    "name": "insert_block_before",
     "address": "0x004f2b00",
     "size": 25,
     "source": "src/optimizer/LoopDetection.c"

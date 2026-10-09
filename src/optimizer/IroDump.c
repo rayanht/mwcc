@@ -137,14 +137,36 @@ static inline void printBitSetText(const void *text)
     fprintf(iro_dump_output, (const char *)text);
 }
 
+static void DumpENode(ENode *enode)
+{
+    char buffer[64];
+
+    if (INT_005882b8 == 0)
+        return;
+    switch (enode->type) {
+        case EOBJREF:
+            fprintf(iro_dump_output, "%s", enode->data.objref->name->name);
+            break;
+        case EINTCONST:
+            CInt64_PrintDec(buffer, enode->data.intval);
+            fprintf(iro_dump_output, "%s", buffer);
+            break;
+        case EFLOATCONST:
+            fprintf(iro_dump_output, "%g", enode->data.floatval.data.value);
+            break;
+        case EVECTOR128CONST:
+            fprintf(iro_dump_output, "%.8lX%.8lX%.8lX%.8lX", enode->data.vector128val.ul[0],
+                    enode->data.vector128val.ul[1], enode->data.vector128val.ul[2], enode->data.vector128val.ul[3]);
+            break;
+    }
+}
+
 void dump_linear_node(IROLinear *node)
 {
     int index;
     ENode *operand;
     Type *type;
     VarRecord *resolvedType;
-    char buffer[64];
-    ENode *integer;
     CLabel *label;
 
     if (INT_005882b8 == 0)
@@ -158,26 +180,7 @@ void dump_linear_node(IROLinear *node)
         case IROLinearOperand:
             fprintf(iro_dump_output, "Operand ");
             operand = node->u.node;
-            if (INT_005882b8 != 0) {
-                switch (operand->type) {
-                    case '8':
-                        fprintf(iro_dump_output, "%s", operand->data.objref->name->name);
-                        break;
-                    case '2':
-                        integer = operand;
-                        CInt64_PrintDec(buffer, integer->data.intval);
-                        fprintf(iro_dump_output, "%s", buffer);
-                        break;
-                    case '3':
-                        fprintf(iro_dump_output, "%g", operand->data.floatval.data.value);
-                        break;
-                    case 'J':
-                        fprintf(iro_dump_output, "%.8lX%.8lX%.8lX%.8lX", operand->data.vector128val.ul[0],
-                                operand->data.vector128val.ul[1], operand->data.vector128val.ul[2],
-                                operand->data.vector128val.ul[3]);
-                        break;
-                }
-            }
+            DumpENode(operand);
             break;
         case IROLinearOp1Arg:
             fprintf(iro_dump_output, "%s %d", enode_type_names[node->nodetype],
@@ -285,6 +288,17 @@ void dump_linear_node(IROLinear *node)
     fprintf(iro_dump_output, "\n");
 }
 
+static void DumpIndexList(int count, UInt16 *list)
+{
+    int i;
+
+    if (INT_005882b8 == 0)
+        return;
+    for (i = 0; i < count; i++)
+        fprintf(iro_dump_output, "%d ", list[i]);
+    fprintf(iro_dump_output, "\n");
+}
+
 void IroDump_PrintBitSet(char *prefix, BitVector *bitset)
 {
     Boolean inRange = 0;
@@ -355,21 +369,9 @@ void dump_flowgraph(void)
         fprintf(iro_dump_output, "Flowgraph node %d  First=%d, Last=%d\n", node->index, node->first->index,
                 node->last->index);
         fprintf(iro_dump_output, "Succ = ");
-        count = node->numsucc;
-        list = node->succ;
-        if (INT_005882b8) {
-            for (i = 0; i < count; i++)
-                fprintf(iro_dump_output, "%d ", list[i]);
-            fprintf(iro_dump_output, "\n");
-        }
+        DumpIndexList(node->numsucc, node->succ);
         fprintf(iro_dump_output, "Pred = ");
-        pred = node->pred;
-        npred = node->numpred;
-        if (INT_005882b8) {
-            for (j = 0; j < npred; j++)
-                fprintf(iro_dump_output, "%d ", pred[j]);
-            fprintf(iro_dump_output, "\n");
-        }
+        DumpIndexList(node->numpred, node->pred);
         fprintf(iro_dump_output, "MustReach = %d\n", node->mustreach);
         fprintf(iro_dump_output, "LoopDepth = %d\n", node->loopdepth);
         IroDump_PrintBitSet("Dom: ", node->dom);

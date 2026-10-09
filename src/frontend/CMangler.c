@@ -18,9 +18,8 @@
 GList data_00583548;
 struct HashNameNode *assignment_operator_name;
 
-static inline SInt32 ElemSize(TypePointer *t);
-
-static void MangleQualifiers(UInt32 q);
+static void mangle_class_name(TypeClass *tclass);
+HashNameNode *COptimizer_GetFunctionObject(Object *obj);
 
 static inline void appendObjectName(const void *name)
 {
@@ -35,33 +34,6 @@ static inline unsigned int mangledNameHandle(void)
 static inline void appendMangledName(const void *name)
 {
     AppendGListName(&data_00583548, name);
-}
-
-/* Compute (and cache) the link name of an object, following aliases. */
-static inline HashNameNode *CMangler_LinkName(Object *obj)
-{
-    while (obj->datatype == DALIAS)
-        obj = obj->u.alias.object;
-    switch (obj->datatype) {
-        case DFUNC:
-        case DVFUNC:
-            if (obj->u.func.linkname == NULL)
-                obj->u.func.linkname = CMangler_GetLinkName(obj);
-            return obj->u.func.linkname;
-        case DDATA:
-            if (obj->u.data.linkname == NULL)
-                obj->u.data.linkname = get_object_link_name(obj);
-            return obj->u.data.linkname;
-        case DINLINEFUNC:
-            return CMangler_GetLinkName(obj);
-        case DLOCAL:
-        case DABSOLUTE:
-        case DUNUSED:
-            return obj->name;
-        default:
-            CError_FATAL(1012);
-            return NULL;
-    }
 }
 
 void CMangler_Setup(void)
@@ -331,10 +303,7 @@ HashNameNode *CMangler_VTableName(TypeClass *entry)
     HashNameNode *name;
     data_00583548.size = 0;
     AppendGListName(&data_00583548, "__vt__");
-    if (entry->classname == NULL)
-        mangle_qualified_name(entry->nspace->parent, "class");
-    else
-        mangle_qualified_name(entry->nspace->parent, entry->nspace->name->name);
+    mangle_class_name(entry);
     AppendGListByte(&data_00583548, 0);
     buffer = data_00583548.data;
     COS_LockHandle(buffer);
@@ -363,39 +332,11 @@ HashNameNode *CMangler_RTTIObjectName(Type *type, unsigned int flags)
 
 HashNameNode *CMangler_ThunkName(Object *input, int offset, int adjustment, int index)
 {
-    Object *object = input;
     char buffer[64];
-    unsigned char type;
     char **nameBuffer;
     HashNameNode *result;
     HashNameNode *name;
-    while ((type = object->datatype) == 6)
-        object = object->u.alias.object;
-    switch (type) {
-        case 3:
-        case 4:
-            if (!object->u.func.linkname)
-                object->u.func.linkname = CMangler_GetLinkName(object);
-            name = object->u.func.linkname;
-            break;
-        case 0:
-            if (!object->u.data.linkname)
-                object->u.data.linkname = get_object_link_name(object);
-            name = object->u.data.linkname;
-            break;
-        case 5:
-            name = CMangler_GetLinkName(object);
-            break;
-        case 1:
-        case 2:
-        case 8:
-            name = object->name;
-            break;
-        default:
-            CError_FATAL(1012);
-            name = NULL;
-            break;
-    }
+    name = COptimizer_GetFunctionObject(input);
     data_00583548.size = 0;
     if (adjustment == 0) {
         if (index < 0)
@@ -432,7 +373,7 @@ HashNameNode *CMangler_TemplateInstanceName(HashNameNode *name, TemplArg *list)
                     case EINTCONST:
                         break;
                     case EOBJREF:
-                        (void)CMangler_LinkName(expression->data.objref);
+                        (void)COptimizer_GetFunctionObject(expression->data.objref);
                         break;
                     default:
                         CError_FATAL(374);
@@ -457,7 +398,7 @@ HashNameNode *CMangler_TemplateInstanceName(HashNameNode *name, TemplArg *list)
                         break;
                     case EOBJREF:
                         AppendGListByte(&data_00583548, '&');
-                        link = CMangler_LinkName(expression->data.objref);
+                        link = COptimizer_GetFunctionObject(expression->data.objref);
                         AppendGListName(&data_00583548, link->name);
                         break;
                     default:
@@ -480,6 +421,15 @@ HashNameNode *CMangler_TemplateInstanceName(HashNameNode *name, TemplArg *list)
     result = GetHashNameNode(*buffer);
     COS_UnlockHandle(data_00583548.data);
     return result;
+}
+
+static void mangle_name_with_length(const char *name)
+{
+    char buffer[16];
+
+    sprintf(buffer, "%d", strlen(name));
+    AppendGListName(&data_00583548, buffer);
+    AppendGListName(&data_00583548, name);
 }
 
 void mangle_qualified_name(NameSpace *nameSpace, const char *name)
@@ -510,12 +460,29 @@ void mangle_qualified_name(NameSpace *nameSpace, const char *name)
         AppendGListByte(&data_00583548, count + '0');
     }
     while (0 <= --count) {
-        part = parts[count];
-        length = strlen(part);
-        sprintf(lengthBuffer, "%d", length);
-        AppendGListName(&data_00583548, lengthBuffer);
-        AppendGListName(&data_00583548, part);
+        mangle_name_with_length(parts[count]);
     }
+}
+
+static void mangle_class_name(TypeClass *tclass)
+{
+    if (tclass->classname == NULL)
+        mangle_qualified_name(tclass->nspace->parent, "class");
+    else
+        mangle_qualified_name(tclass->nspace->parent, tclass->nspace->name->name);
+}
+
+static void MangleQualifiers(UInt32 q)
+{
+    if (q & Q_CONST)
+        AppendGListByte(&data_00583548, 'C');
+    if (q & Q_VOLATILE)
+        AppendGListByte(&data_00583548, 'V');
+}
+
+static inline SInt32 ElemSize(TypePointer *t)
+{
+    return t->target->size;
 }
 
 void CMangler_MangleType(Type *type, UInt32 flags)
@@ -610,10 +577,7 @@ void CMangler_MangleType(Type *type, UInt32 flags)
             MangleQualifiers(TYPE_MEMBER_POINTER(type)->qual);
             AppendGListByte(&data_00583548, 'M');
             memberClass = TYPE_CLASS(TYPE_MEMBER_POINTER(type)->ty2);
-            if (memberClass->classname == NULL)
-                mangle_qualified_name(memberClass->nspace->parent, "class");
-            else
-                mangle_qualified_name(memberClass->nspace->parent, memberClass->nspace->name->name);
+            mangle_class_name(memberClass);
             CMangler_MangleType(TYPE_MEMBER_POINTER(type)->ty1, flags);
             return;
         }
@@ -636,9 +600,8 @@ void CMangler_MangleType(Type *type, UInt32 flags)
             CMangler_MangleType(TYPE_FUNC(type)->functype, TYPE_FUNC(type)->qual);
             return;
         case TYPESTRUCT: {
-            TypeStruct *structType = TYPE_STRUCT(type);
             MangleQualifiers(flags);
-            switch (structType->stype) {
+            switch (TYPE_STRUCT(type)->stype) {
                 case STRUCT_VECTOR_UCHAR:
                     AppendGListName(&data_00583548, "XUc");
                     return;
@@ -673,13 +636,10 @@ void CMangler_MangleType(Type *type, UInt32 flags)
                     AppendGListName(&data_00583548, "Xp");
                     return;
             }
-            if (structType->name != NULL && !CParser_IsNullOrAtOrDollarPrefixedName(structType->name)) {
-                char *name = structType->name->name;
-                sprintf(nameLength, "%d", strlen(name));
-                AppendGListName(&data_00583548, nameLength);
-                AppendGListName(&data_00583548, name);
+            if (TYPE_STRUCT(type)->name != NULL && !CParser_IsNullOrAtOrDollarPrefixedName(TYPE_STRUCT(type)->name)) {
+                mangle_name_with_length(TYPE_STRUCT(type)->name->name);
             } else {
-                switch (structType->stype) {
+                switch (TYPE_STRUCT(type)->stype) {
                     case STRUCT_TYPE_STRUCT:
                         AppendGListName(&data_00583548, "struct");
                         return;
@@ -697,10 +657,7 @@ void CMangler_MangleType(Type *type, UInt32 flags)
         }
         case TYPECLASS:
             MangleQualifiers(flags);
-            if (TYPE_CLASS(type)->classname == NULL)
-                mangle_qualified_name(TYPE_CLASS(type)->nspace->parent, "class");
-            else
-                mangle_qualified_name(TYPE_CLASS(type)->nspace->parent, TYPE_CLASS(type)->nspace->name->name);
+            mangle_class_name(TYPE_CLASS(type));
             return;
         case TYPETEMPLATE:
             AppendGListName(&data_00583548, "1T");
@@ -709,19 +666,6 @@ void CMangler_MangleType(Type *type, UInt32 flags)
             CError_FATAL(641);
             return;
     }
-}
-
-static inline SInt32 ElemSize(TypePointer *t)
-{
-    return t->target->size;
-}
-
-static void MangleQualifiers(UInt32 q)
-{
-    if (q & Q_CONST)
-        AppendGListByte(&data_00583548, 'C');
-    if (q & Q_VOLATILE)
-        AppendGListByte(&data_00583548, 'V');
 }
 
 void fn_004c2ac0(Type *type, SInt32 flag)
@@ -784,11 +728,7 @@ void mangle_function_name(HashNameNode *name, NameSpace *chain, Type *func)
                     if (arg != NULL && (cls->flags & CLASS_HAS_VBASES) != 0)
                         arg = arg->next;
                 } else if ((TYPE_FUNC(func)->flags & FUNC_METHOD) != 0 && !TYPE_METHOD(func)->is_static) {
-                    qual = arg->qual;
-                    if (qual & Q_CONST)
-                        AppendGListByte(&data_00583548, 'C');
-                    if (qual & Q_VOLATILE)
-                        AppendGListByte(&data_00583548, 'V');
+                    MangleQualifiers(arg->qual);
                     arg = arg->next;
                 }
                 AppendGListByte(&data_00583548, 'F');
@@ -842,37 +782,9 @@ HashNameNode *CMangler_GetLinkName(Object *obj)
 
 HashNameNode *CMangler_GetCovariantFunctionName(Object *object, Type *type)
 {
-    Object *target = object;
-    unsigned char datatype;
     char **buffer;
     HashNameNode *result;
-    while ((datatype = target->datatype) == DALIAS)
-        target = target->u.alias.object;
-    switch (datatype) {
-        case DFUNC:
-        case DVFUNC:
-            if (target->u.func.linkname == NULL)
-                target->u.func.linkname = CMangler_GetLinkName(target);
-            result = target->u.func.linkname;
-            break;
-        case DDATA:
-            if (target->u.data.linkname == NULL)
-                target->u.data.linkname = get_object_link_name(target);
-            result = target->u.data.linkname;
-            break;
-        case DINLINEFUNC:
-            result = CMangler_GetLinkName(target);
-            break;
-        case DLOCAL:
-        case DABSOLUTE:
-        case DUNUSED:
-            result = target->name;
-            break;
-        default:
-            CError_FATAL(1012);
-            result = NULL;
-            break;
-    }
+    result = COptimizer_GetFunctionObject(object);
     data_00583548.size = 0;
     appendMangledName(result->name);
     appendMangledName((unsigned char *)"@@");
