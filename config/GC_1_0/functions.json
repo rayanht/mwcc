@@ -19599,13 +19599,13 @@
     "source": "src/frontend/CClass.c"
   },
   {
-    "name": "fn_004c6020",
+    "name": "make_covariant_method_type",
     "address": "0x004c6020",
     "size": 112,
     "source": "src/frontend/CClass.c"
   },
   {
-    "name": "fn_004c6090",
+    "name": "find_covariant_function",
     "address": "0x004c6090",
     "size": 77,
     "source": "src/frontend/CClass.c"
