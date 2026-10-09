@@ -476,15 +476,16 @@ void VectorArraysToRegs_ReplaceArrayUsesWithVMR(struct AggregateRecord *register
 void fn_0052cf10(struct AggregateRecord *candidates)
 {
     long index;
-    long classIndex;
     int candidateCount;
     int slotCount;
-    struct AggregateRecord **head;
+    struct AggregateRecord *smallest;
     struct AggregateRecord *remaining;
     struct AggregateRecord *candidate;
+    struct AggregateRecord **head;
+    long classIndex;
+    long vrIndex;
     int slot;
     struct AggregateRecord *previous;
-    struct AggregateRecord *smallest;
     long smallestTotal;
     struct AggregateRecord *scan;
     struct AggregateRecord *next;
@@ -548,8 +549,8 @@ void fn_0052cf10(struct AggregateRecord *candidates)
             return;
         }
         while (remaining != NULL) {
-            for (index = 0; index < remaining->count; index++) {
-                remaining->slots[index] = gUsedVirtualRegistersVR;
+            for (vrIndex = 0; vrIndex < remaining->count; vrIndex++) {
+                remaining->slots[vrIndex] = gUsedVirtualRegistersVR;
                 gUsedVirtualRegistersVR++;
             }
             remaining = remaining->next;

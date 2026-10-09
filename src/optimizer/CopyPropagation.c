@@ -271,7 +271,6 @@ static int follows(PCodeInstruction *instr, PCodeInstruction *end)
 
 int can_propagate_copy_to_use(int def, int use)
 {
-    PCodeInstruction *p;
     PCodeOperand *op;
     unsigned int n;
     PCodeInstruction *copy;
@@ -279,6 +278,9 @@ int can_propagate_copy_to_use(int def, int use)
     int dst;
     int reg;
     CodeMotionEntry *entry;
+    unsigned int n1;
+    PCodeInstruction *p;
+    PCodeOperand *op1;
 
     copy = code_motion_records[def].node;
     entry = &cm_entries[use];
@@ -292,11 +294,8 @@ int can_propagate_copy_to_use(int def, int use)
     if (copy->block == entry->instruction->block && follows(copy, entry->instruction)) {
         p = copy->next;
         while (p && p != entry->instruction) {
-            unsigned int n;
-            PCodeOperand *op;
-
-            for (op = p->operandData.operands, n = p->operand_count; n--; op++) {
-                if (op->kind == kind && (op->flags & 2) && op->value.reg == reg)
+            for (op1 = p->operandData.operands, n1 = p->operand_count; n1--; op1++) {
+                if (op1->kind == kind && (op1->flags & 2) && op1->value.reg == reg)
                     return 0;
             }
             p = p->next;
