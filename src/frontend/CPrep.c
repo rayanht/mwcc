@@ -283,26 +283,6 @@ static void LogName(const unsigned char *name, Boolean fatal);
 static void CPrep_PushState(void *obj);
 static void CPrep_ExpandMacroAndPush(Macro *macro);
 static inline void CPrep_ErrorBA(void);
-static inline SInt32 calc_line(CPrepFileInfo *p);
-static inline SInt32 check_time(void);
-
-static inline void process_newline(void)
-{
-    if (macro_expansion_depth == 0) {
-        if (data_0058850f != 0)
-            fn_004d6ed0();
-        data_00587ef0++;
-        line_count++;
-        if (current_file_index <= 0)
-            text_offset = calc_line(data_0057f94a[0]);
-    }
-    SETLINE();
-    if (COS_GetTicks() > next_scaled_ticks) {
-        if (check_time() != 0)
-            CError_Longjmp();
-        next_scaled_ticks = COS_GetTicks() + 5;
-    }
-}
 
 #pragma sym reset
 
@@ -2215,11 +2195,7 @@ void undefine_macro(void)
         link = &entry->next;
         entry = entry->next;
     }
-    token = CPrep_ScanMacroExpandedChar();
-    if (token != 0) {
-        CPrep_ReportError(ERR_END_LINE_EXPECTED);
-        CPrepTokenizer_SkipToEndOfLine();
-    }
+    CPrep_SkipToEndOfDirective();
 }
 
 Boolean evaluate_pragma_option(void)
@@ -2589,6 +2565,10 @@ char *expand_builtin_macro(Macro *macro)
             }
 
         case 2:
+#if VERSION == VERSION_GC_1_0
+            CPrep_GetFileName(buffer, 0, 1);
+            goto copy_ret;
+#else
             cursor = buffer;
             COS_FileGetFSSpecInfo(&data_0057f94a[current_file_index]->textfile, NULL, NULL, filename);
             length = filename[0];
@@ -2605,6 +2585,7 @@ char *expand_builtin_macro(Macro *macro)
             *text = '"';
             text[1] = 0;
             goto copy_ret;
+#endif
 
         case 3: {
             struct tm *time = localtime(&data_0057f9d4);
@@ -2728,14 +2709,7 @@ UInt8 *expand_macro(Macro *macro)
                         token = CPrepTokenizer_NextChar();
                         switch (token) {
                             case 13:
-                                if (macro_expansion_depth == 0) {
-                                    if (data_0058850f != 0)
-                                        fn_004d6ed0();
-                                    data_00587ef0++;
-                                    line_count++;
-                                    if (current_file_index <= 0)
-                                        text_offset = currentTextPosition - (UInt8 *)data_0057f94a[0]->textbuffer;
-                                }
+                                CPrep_IncrementCountersAndUpdateTextOffset();
                                 data_00588523 = 1;
                                 continue;
                             case 9:
@@ -3202,11 +3176,7 @@ void fn_0043be10(void)
         }
     }
     if (copts.warn_illpragma != 0U) {
-        saved = data_005884fd;
-        data_005884fd = 0U;
-        data_0057f9dc = 1U;
-        CError_Warning(186U);
-        data_005884fd = saved;
+        fn_0043f3b0(186U);
     }
 }
 
@@ -3283,20 +3253,11 @@ void read_pragma_token(void)
 
 void parse_align_pragma(void)
 {
-    IROOptNode *option;
-
     if (CPrep_ScanMacroExpandedChar() && CPrepTokenizer_ScanToken() == -3 &&
         memcmp(data_00587fa0->name, "align", 6) == 0 && CPrep_ScanMacroExpandedChar() &&
         CPrepTokenizer_ScanToken() == 0x3d && CPrep_ScanMacroExpandedChar() && CPrepTokenizer_ScanToken() == -3) {
         if (memcmp(data_00587fa0->name, "reset", 6) == 0) {
-            for (option = saved_options; option; option = option->next) {
-                if (option->flag && option->code == 0xad) {
-                    copts.structalignment = option->value;
-                    option->flag = 0;
-                    goto done;
-                }
-            }
-            copts.structalignment = data_0057fcea->structalignment;
+            CPrep_RestoreOption(0xad);
         } else if (memcmp(data_00587fa0->name, "native", 7) == 0) {
             CPrep_SaveAndSetOption(0xad, 2);
         } else if (memcmp(data_00587fa0->name, "mac68k", 7) == 0) {
@@ -3593,6 +3554,14 @@ static void CPrep_CommentKindLiterals(const char **literals)
     literals[4] = "lib";
 }
 
+static inline void CPrep_ErrorBA(void)
+{
+    if (copts.warn_illpragma)
+        fn_0043f3b0(ERR_ILLEGAL_PRAGMA);
+    CPrepTokenizer_SkipToEndOfLine();
+}
+
+
 void concatenate_and_dispatch_string_tokens(void)
 {
     char buffer[128];
@@ -3639,13 +3608,6 @@ void concatenate_and_dispatch_string_tokens(void)
         CPrep_ErrorBA();
         return;
     }
-}
-
-static inline void CPrep_ErrorBA(void)
-{
-    if (copts.warn_illpragma)
-        fn_0043f3b0(ERR_ILLEGAL_PRAGMA);
-    CPrepTokenizer_SkipToEndOfLine();
 }
 
 void parse_pragma(void)
@@ -3803,16 +3765,78 @@ void parse_pragma(void)
         return;
     }
 done:
-    if (CPrep_ScanMacroExpandedChar() != 0) {
-        CPrep_ReportError(ERR_END_LINE_EXPECTED);
-        CPrepTokenizer_SkipToEndOfLine();
-    }
+    CPrep_SkipToEndOfDirective();
     f87_enabled = copts.dollar_identifiers != 0;
     macrocheck = 1;
 }
 
 #pragma sym reset
 
+#if VERSION == VERSION_GC_1_0
+void fn_0043a0a0(char allowInclude)
+{
+    int notLocal;
+    char searchLocal;
+    unsigned char filename[256];
+    short terminator;
+    short ch;
+    short length;
+    short i;
+    unsigned char *name;
+
+    if (CPrep_ScanMacroExpandedChar() == 0) {
+        CPrep_ReportError(ERR_UNEXPECTED_END_LINE);
+        return;
+    }
+    terminator = CPrepTokenizer_NextChar();
+    if (terminator != '"' && terminator != '<') {
+        CPrep_ReportError(ERR_PREPROCESSOR_SYNTAX_ERROR);
+        CPrepTokenizer_SkipToEndOfLine();
+        return;
+    }
+    searchLocal = 1;
+    if (terminator == '<') {
+        terminator = '>';
+        if (copts.flat_include == 0)
+            searchLocal = 0;
+    }
+    length = 0;
+    ch = CPrepTokenizer_NextChar();
+    while (terminator != ch) {
+        if (length > 254) {
+            CPrep_ReportError(ERR_STRING_TOO_LONG);
+            CPrepTokenizer_SkipToEndOfLine();
+            return;
+        }
+        filename[++length] = ch;
+        ch = CPrepTokenizer_NextChar();
+    }
+    filename[0] = length;
+    name = filename;
+    CPrep_SkipToEndOfDirective();
+    notLocal = !searchLocal;
+    if (lookup_available_macro(CPrep_MakeOnceName(filename, notLocal)) == 0) {
+        if (allowInclude != 0 || copts.always_import != 0)
+            CPrep_DefineOnceMacro(filename, notLocal);
+        if (copts.flat_include != 0) {
+            for (i = length; i > 0; i--) {
+                switch (filename[i]) {
+                    case '/':
+                    case ':':
+                    case '\\':
+                        name = filename + i;
+                        filename[i] = length - i;
+                        break;
+                    default:
+                        continue;
+                }
+                break;
+            }
+        }
+        fn_004401b0(name, searchLocal, allowInclude);
+    }
+}
+#else
 void fn_0043a0a0(char allowInclude)
 {
     short length;
@@ -3877,10 +3901,7 @@ void fn_0043a0a0(char allowInclude)
     (void)countValue;
     filename[0] = countValue;
     pointer.filename = filename;
-    if (CPrep_ScanMacroExpandedChar() != 0) {
-        CPrep_ReportError(ERR_END_LINE_EXPECTED);
-        CPrepTokenizer_SkipToEndOfLine();
-    }
+    CPrep_SkipToEndOfDirective();
     length = *(unsigned char *)filename;
     if (length > 250)
         length = 250;
@@ -3951,6 +3972,7 @@ void fn_0043a0a0(char allowInclude)
                                                                                                      allowInclude);
     }
 }
+#endif
 
 void parse_line_directive(void)
 {
@@ -4001,10 +4023,7 @@ void parse_line_directive(void)
             fn_0048b090(oldFile, newFile);
         }
     }
-    if (CPrep_ScanMacroExpandedChar() != 0) {
-        CPrep_ReportError(ERR_END_LINE_EXPECTED);
-        CPrepTokenizer_SkipToEndOfLine();
-    }
+    CPrep_SkipToEndOfDirective();
 }
 
 static Type *CPrep_IntegerType(const CPrepValue *value)
@@ -4246,9 +4265,8 @@ void fn_004392e0(void)
     data_0057f9de = 0;
     if (data_00588470 != 0) {
         CPrep_ReportError(ERR_UNEXPECTED_END_LINE);
-    } else if ((short)CPrep_ScanMacroExpandedChar() != 0) {
-        CPrep_ReportError(ERR_END_LINE_EXPECTED);
-        CPrepTokenizer_SkipToEndOfLine();
+    } else {
+        CPrep_SkipToEndOfDirective();
     }
     token_integer.hi = savedState.a;
     intconst_lo = savedState.b;
@@ -4436,13 +4454,10 @@ void parse_else_directive(void)
         CPrepTokenizer_SkipToEndOfLine();
         return;
     }
-    if (copts.ANSIstrict != '\0') {
-        if (CPrep_ScanMacroExpandedChar() != 0) {
-            CPrep_ReportError(ERR_END_LINE_EXPECTED);
-            CPrepTokenizer_SkipToEndOfLine();
-        }
-    } else {
+    if (!copts.ANSIstrict) {
         CPrepTokenizer_SkipToEndOfLine();
+    } else {
+        CPrep_SkipToEndOfDirective();
     }
     switch (data_0057f6c8[if_depth - 1].state) {
         case 1:
@@ -4463,48 +4478,19 @@ void parse_else_directive(void)
 
 int parse_endif_directive(void)
 {
-    unsigned char savedFlag;
-    SInt16 result;
-
     if (if_depth <= 0) {
         CPrep_ReportError(ERR_PRECEDING_IF_MISSING);
         CPrepTokenizer_SkipToEndOfLine();
         return;
     }
     macrocheck = 0;
-    if (copts.ANSIstrict != '\0') {
-        result = CPrep_ScanMacroExpandedChar();
-        if (result != 0) {
-            CPrep_ReportError(ERR_END_LINE_EXPECTED);
-            CPrepTokenizer_SkipToEndOfLine();
-        }
-    } else {
+    if (!copts.ANSIstrict) {
         CPrepTokenizer_SkipToEndOfLine();
+    } else {
+        CPrep_SkipToEndOfDirective();
     }
     macrocheck = 1;
-    if (if_depth <= 0) {
-        CPrep_ReportError(ERR_PREPROCESSOR_SYNTAX_ERROR);
-    } else {
-        switch (data_0057f6c8[if_depth - 1].state) {
-            case 1:
-            case 3:
-            case 4:
-                if_depth--;
-                break;
-            default:
-                if_depth--;
-                if (0 < if_depth) {
-                    switch (data_0057f6c8[if_depth - 1].state) {
-                        case 1:
-                        case 3:
-                        case 4:
-                            skip_inactive_if_blocks();
-                            break;
-                    }
-                }
-                break;
-        }
-    }
+    CPrep_PopIfState();
 }
 
 #pragma sym reset
@@ -4549,7 +4535,7 @@ void skip_inactive_if_blocks(void)
                         continue;
                     }
                     case 0xd:
-                        process_newline();
+                        fn_0043e8f0();
                         continue;
                     case 0x22:
                         CPrepTokenizer_SkipQuotedLiteral(currentTextPosition, 0x22);
@@ -4584,17 +4570,6 @@ void skip_inactive_if_blocks(void)
 }
 
 #pragma sym off
-
-static inline SInt32 calc_line(CPrepFileInfo *p)
-{
-    return (char *)currentTextPosition - p->textbuffer;
-}
-
-static inline SInt32 check_time(void)
-{
-    void **p = (void **)cprep_cu;
-    return CWCompilerLinkerPrivate_CallCompilerCallback(*p, line_count);
-}
 
 void CPrep_ParseDirective(void)
 {
