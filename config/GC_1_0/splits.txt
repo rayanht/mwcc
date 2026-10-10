@@ -855,7 +855,7 @@ src/frontend/CTemplateTools.c:
 
 src/frontend/CInline.c:
 	.text       start:0x004DB340 end:0x004DF8B0
-	.data       start:0x005371B0 end:0x00537C98
+	.data       start:0x005371B0 end:0x00537C94
 	.bss        start:0x00552CE0 end:0x00552D58
 
 src/frontend/CABI.c:
