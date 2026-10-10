@@ -292,8 +292,8 @@ void FuncLevelAsmPPC_GenerateFunction(Object *func)
     } item;
     const char *functionName;
     UInt8 frameFinalized;
-    UInt8 savedOptionC2;
     PCodeBlock *frameBlock;
+    UInt8 savedOptionC2;
     UInt8 savedOptionC3;
 #if VERSION == VERSION_GC_1_0
     PCodeBlock *prologueBlock;
