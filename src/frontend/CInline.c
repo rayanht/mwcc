@@ -822,7 +822,16 @@ ENode *fn_00513240(ENode *expr)
                             if (data_0058245a[node->data.monadic->data.longval].expr == NULL)
                                 CError_FATAL(792);
                             copy = gen_expr_save(data_0058245a[node->data.monadic->data.longval].expr);
+#if VERSION == VERSION_GC_1_0
+                            if (copy->rtype != expr->rtype) {
+                                if (copy->rtype->type == TYPEINT && expr->rtype->type == TYPEINT)
+                                    copy = makemonadicnode(copy, ETYPCON);
+                                copy->rtype = expr->rtype;
+                            }
+                            return copy;
+#else
                             return adjust(copy, expr);
+#endif
                         }
                     }
                 }
@@ -844,9 +853,14 @@ ENode *fn_00513240(ENode *expr)
                         node->data.longval = index;
                         return node;
                     }
+#if VERSION == VERSION_GC_1_0
+                inline_local_index(node->data.objref, &index);
+                if (index >= 0) {
+#else
                 object = node->data.objref;
                 inline_local_index(object, &index);
                 if (index >= 0) {
+#endif
                     node->type = ELOCOBJ;
                     node->data.longval = index;
                     return node;
@@ -1391,12 +1405,16 @@ ENode *inline_call_expression(ENode *expr)
                 statementExpr = fn_00513240(source);
 #endif
                 if (memoryReturn != 0) {
+#if VERSION == VERSION_GC_1_0
+                    if (result != NULL)
+                        result = makecommaexpression(result, statementExpr);
+                    else
+                        result = statementExpr;
+                    result = makecommaexpression(result, inline_return_argument(object));
+#else
                     if (result != NULL) {
                         statementExpr = makecommaexpression(result, statementExpr);
                     }
-#if VERSION == VERSION_GC_1_0
-                    result = makecommaexpression(statementExpr, inline_return_argument(object));
-#else
                     argumentIndex = CInline_ReturnZero(object->type);
                     if (data_0058245a[argumentIndex].var == NULL)
                         argument = gen_expr_save(data_0058245a[argumentIndex].expr);
