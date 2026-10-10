@@ -119,6 +119,7 @@
     "src/frontend/CScope.c",
     "src/frontend/CTemplateClass.c",
     "src/frontend/CTemplateFunc.c",
+    "src/frontend/CTemplateNew.c",
     "src/frontend/CTemplateTools.c",
     "src/frontend/CompilerTools.c",
     "src/frontend/ParseDouble.c",

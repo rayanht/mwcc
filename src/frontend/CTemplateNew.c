@@ -211,6 +211,12 @@ static UInt8 CTempl_GetTemplateNestIndex(NameSpace *nspace)
     return count;
 }
 
+/* The linker stripped the function that used this literal; it stays in the unit's .data. */
+static void CTemplateNew_StrippedLiterals(const char **literals)
+{
+    literals[0] = CERROR_FILE;
+}
+
 TemplParam *parse_template_parameter(NameSpace *owner, TemplParam *value, short memberValue, char memberByte)
 {
     TemplParam *declaration;
