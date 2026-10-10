@@ -349,6 +349,9 @@ static inline CPrepCU *CPrep_CurrentCompilationUnit(void)
     return (CPrepCU *)cprep_cu;
 }
 
+#if VERSION == VERSION_GC_1_0
+#pragma sym on
+#endif
 static void LogName(const unsigned char *name, Boolean fatal)
 {
     short n;
@@ -366,7 +369,9 @@ static void LogName(const unsigned char *name, Boolean fatal)
     if (fatal)
         CError_DispatchAndLongJump();
 }
-
+#if VERSION == VERSION_GC_1_0
+#pragma sym reset
+#endif
 static void CPrep_InsertSpecialMacro(Macro *macro)
 {
     macro->next = macro_buckets[macro->name->hashval];
@@ -1014,6 +1019,7 @@ void CPrep_BufferTokensThroughSemicolon(TokenStream *buffer, void (*processToken
 }
 
 #if VERSION == VERSION_GC_1_0
+#pragma sym on
 void CPrep_InsertTokenBuffer(TokenStream *arg, SInt32 *result)
 {
     if (remainingBufferedTokenCount + (bufferedTokenPosition - buffered_tokens) + arg->tokens >= buffered_token_capacity)
@@ -1025,6 +1031,7 @@ void CPrep_InsertTokenBuffer(TokenStream *arg, SInt32 *result)
     remainingBufferedTokenCount += arg->tokens;
     CPrep_GetBufferedTokenPosition(result);
 }
+#pragma sym reset
 #else
 void CPrep_InsertTokenBuffer(TokenStream *arg, SInt32 *result)
 {
@@ -2499,6 +2506,9 @@ allocateResult:
     return savedText;
 }
 
+#if VERSION == VERSION_GC_1_0
+#pragma sym on
+#endif
 static void CPrep_PushState(void *obj)
 {
     if (macro_expansion_depth >= 0x80) {
@@ -2514,7 +2524,9 @@ static void CPrep_PushState(void *obj)
     macro_stack[macro_expansion_depth].macrocheck = macrocheck;
     macro_expansion_depth++;
 }
-
+#if VERSION == VERSION_GC_1_0
+#pragma sym reset
+#endif
 char *CPrep_GetFileName(char *param1, Boolean param2, Boolean param3)
 {
     UInt8 buf[256];
@@ -2895,6 +2907,9 @@ UInt8 *expand_macro(Macro *macro)
     return (UInt8 *)expand_macros_in_text(macro, result);
 }
 
+#if VERSION == VERSION_GC_1_0
+#pragma sym on
+#endif
 static void CPrep_ExpandMacroAndPush(Macro *macro)
 {
     UInt8 *text;
@@ -2910,7 +2925,9 @@ static void CPrep_ExpandMacroAndPush(Macro *macro)
     macrocheck = 0;
     data_00588523 = saved;
 }
-
+#if VERSION == VERSION_GC_1_0
+#pragma sym reset
+#endif
 UInt8 CPrep_ExpandMacro(void)
 {
     UInt8 *expandedText;
@@ -4280,6 +4297,9 @@ void fn_004392e0(void)
     intconst_lo = savedState.b;
 }
 
+#if VERSION == VERSION_GC_1_0
+#pragma sym on
+#endif
 static void CPrep_PushIfState(SInt16 state)
 {
     if (if_depth >= 0x40) {
@@ -4291,7 +4311,9 @@ static void CPrep_PushIfState(SInt16 state)
     data_0057f6c8[if_depth].pos = (char *)currentTextPosition - data_00587fb0;
     if_depth++;
 }
-
+#if VERSION == VERSION_GC_1_0
+#pragma sym reset
+#endif
 static void CPrep_PopIfState(void)
 {
     if (if_depth <= 0) {
