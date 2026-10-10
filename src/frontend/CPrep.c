@@ -1205,7 +1205,6 @@ TStreamElement *CPrep_GetLastBufferedToken(void)
 void CPrep_GetTokenLocation(TStreamElement *token, CPrepFileInfo **file, SInt32 *position, short *column, SInt32 *line,
                             char *text, short *textpos, short *textcol, char *context, short *contextpos)
 {
-    SInt32 lineno;
     SInt32 j;
     SInt32 n;
     TStreamElement *tok;
@@ -1277,7 +1276,7 @@ void CPrep_GetTokenLocation(TStreamElement *token, CPrepFileInfo **file, SInt32 
                 n++;
         *line = n;
     } else
-        *line = lineno = data_00587ef0;
+        *line = data_00587ef0;
     c = fn_0043f860(end = base + offset);
     *column = c;
     if (!token && macro_expansion_depth == 1) {

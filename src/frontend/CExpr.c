@@ -795,9 +795,10 @@ void check_implicit_pointer_qual_conversion(ENode *expr, Type *destType, SInt16 
 
     if (destType->type == TYPEPOINTER && sourceType->type == TYPEPOINTER) {
         sourceQual = expr->flags;
-        if ((destTarget = TYPE_POINTER(destType)->target) == &stvoid) {
+        if (TYPE_POINTER(destType)->target == &stvoid) {
             sourceQual = applyqual(sourceType, sourceQual);
         } else {
+            destTarget = TYPE_POINTER(destType)->target;
             sourceTarget = TYPE_POINTER(sourceType)->target;
             while (destTarget->type == TYPEPOINTER && sourceTarget->type == TYPEPOINTER) {
                 if (CExpr_QualMismatch(TYPE_POINTER(sourceTarget)->qual, TYPE_POINTER(destTarget)->qual)) {
@@ -2218,7 +2219,7 @@ ENode *parse_postfix_expression(Boolean allowSpecial)
                     }
                 }
 #endif
-                if ((allowSpecial = expr->rtype->type) == TYPECLASS) {
+                if (expr->rtype->type == TYPECLASS) {
                     CDecl_CompleteType(expr->rtype);
                     if (((TypeClass *)expr->rtype)->objcinfo != NULL && copts.cplusplus != 0) {
                         classType = (TypeClass *)expr->rtype;
@@ -2254,7 +2255,7 @@ ENode *parse_postfix_expression(Boolean allowSpecial)
                     }
                     continue;
                 }
-                if (allowSpecial != TYPESTRUCT || ((TypeStruct *)expr->rtype)->stype > STRUCT_TYPE_MAX) {
+                if (expr->rtype->type != TYPESTRUCT || ((TypeStruct *)expr->rtype)->stype > STRUCT_TYPE_MAX) {
                     if (copts.cplusplus != 0) {
                         result = scan_pseudo_destructor_call(expr);
                         if (result != NULL)
@@ -2332,6 +2333,21 @@ ENode *parse_postfix_expression(Boolean allowSpecial)
 
 #endif
             case TK_DECREMENT:
+#if VERSION == VERSION_GC_1_0
+                expr = CExpr_GeneratePointerAndRewriteConst(expr);
+                if (copts.cplusplus != 0 && CExpr_CheckOperator(TK_DECREMENT, expr, nullnode(), &overload)) {
+                    expr = overload.expression;
+                    if (expr == NULL)
+                        CError_FATAL(2753);
+                    tk = CPrepTokenizer_GetNextToken();
+                    continue;
+                }
+                right = CExpr_LValue(expr, 1, 1);
+                fn_004fb400(right);
+                expr = makemonadicnode(right, EPOSTDEC);
+                tk = CPrepTokenizer_GetNextToken();
+                continue;
+#else
                 left = CExpr_GeneratePointerAndRewriteConst(expr);
                 if (copts.cplusplus != 0 && CExpr_CheckOperator(TK_DECREMENT, left, nullnode(), &overload)) {
                     expr = overload.expression;
@@ -2345,6 +2361,7 @@ ENode *parse_postfix_expression(Boolean allowSpecial)
                 expr = makemonadicnode(operand.node, EPOSTDEC);
                 tk = CPrepTokenizer_GetNextToken();
                 continue;
+#endif
 
             default:
                 return expr;
@@ -2637,18 +2654,10 @@ ENode *CExpr_New_ELOGNOT_Node(ENode *expr)
     if (expr->rtype->type == TYPETEMPLDEPEXPR)
         return CTempl_MakeTemplDepExpr(NULL, ELOGNOT, expr);
 
-#if VERSION == VERSION_GC_1_0
-    node = expr = CExpr_GeneratePointerAndRewriteConst(expr);
+    node = CExpr_GeneratePointerAndRewriteConst(expr);
 
     if (copts.cplusplus != 0) {
         if (CExpr_CheckOperator(0x21, node, NULL, &result)) {
-#else
-    expr = CExpr_GeneratePointerAndRewriteConst(expr);
-    node = expr;
-
-    if (copts.cplusplus != 0) {
-        if (CExpr_CheckOperator(0x21, expr, NULL, &result)) {
-#endif
             expr = result.expression;
             if (expr != NULL)
                 return expr;
@@ -2658,10 +2667,10 @@ ENode *CExpr_New_ELOGNOT_Node(ENode *expr)
 
     switch ((SInt8)node->rtype->type) {
         case TYPEENUM:
-            expr = forceintegral(node);
+            node = forceintegral(node);
             break;
         case TYPEMEMBERPOINTER:
-            expr = CExpr2_ConvertScalarOperand(node, 0, 0);
+            node = CExpr2_ConvertScalarOperand(node, 0, 0);
             break;
         default:
             CError_ReportError(ERR_ILLEGAL_OPERAND);
@@ -2670,24 +2679,23 @@ ENode *CExpr_New_ELOGNOT_Node(ENode *expr)
         case TYPEFLOAT:
         case TYPEPOINTER:
         case TYPEARRAY:
-            expr = node;
             break;
     }
 
-    switch (expr->type) {
+    switch (node->type) {
         case EINTCONST:
-            expr->data.intval = CInt64_Not(expr->data.intval);
+            node->data.intval = CInt64_Not(node->data.intval);
             break;
         case EFLOATCONST:
-            expr->type = EINTCONST;
-            CInt64_SetLong(&expr->data.intval, CMach_FloatIsZero(expr->data.floatval.data.value));
+            node->type = EINTCONST;
+            CInt64_SetLong(&node->data.intval, CMach_FloatIsZero(node->data.floatval.data.value));
             break;
         default:
-            expr = makemonadicnode(expr, ELOGNOT);
+            node = makemonadicnode(node, ELOGNOT);
             break;
     }
 
-    return set_comparison_result_type(expr);
+    return set_comparison_result_type(node);
 }
 
 ENode *CExpr_New_EMONMIN_Node(ENode *ene)
@@ -4401,8 +4409,8 @@ ENode *CExpr_New_ELOR_Node(ENode *left, ENode *right)
 #endif
             if (nodes.expression != NULL)
                 return nodes.expression;
-            CError_ASSERT(5022, (left = nodes.left) != NULL);
-            CError_ASSERT(5023, (right = nodes.right) != NULL);
+            CError_ASSERT(VERSION > VERSION_GC_1_0 ? 5022 : 5023, (left = nodes.left) != NULL);
+            CError_ASSERT(VERSION > VERSION_GC_1_0 ? 5023 : 5024, (right = nodes.right) != NULL);
         }
     }
 
