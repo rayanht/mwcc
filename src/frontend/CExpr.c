@@ -4832,8 +4832,6 @@ ENode *CExpr_New_ECOND_Node(ENode *condition, ENode *trueExpr, ENode *falseExpr)
     SInt16 cost;
     ENode *node;
     BinaryOperatorResult conversion;
-    ENode *trueOperand;
-    ENode *falseOperand;
 
     condition = CExpr2_ConvertScalarOperand(CExpr_GeneratePointerAndRewriteConst(condition), 0, 1);
     trueExpr = CExpr_GeneratePointerAndRewriteConst(trueExpr);
@@ -4935,7 +4933,6 @@ ENode *CExpr_New_ECOND_Node(ENode *condition, ENode *trueExpr, ENode *falseExpr)
                 if (TPTR_TARGET(trueExpr->rtype)->type == TYPECLASS &&
                     TPTR_TARGET(falseExpr->rtype)->type == TYPECLASS) {
                     if (TPTR_TARGET(trueExpr->rtype) != TPTR_TARGET(falseExpr->rtype)) {
-#if VERSION == VERSION_GC_1_0
                         fn_004eb810();
                         if (CClass_FindBasePath(TYPE_CLASS(TPTR_TARGET(trueExpr->rtype)),
                                                 TYPE_CLASS(TPTR_TARGET(falseExpr->rtype)), 0, 1)) {
@@ -4951,68 +4948,6 @@ ENode *CExpr_New_ECOND_Node(ENode *condition, ENode *trueExpr, ENode *falseExpr)
                             CError_ReportError(ERR_TYPE_MISMATCH, trueExpr->rtype, trueExpr->flags & 3,
                                                falseExpr->rtype, falseExpr->flags & 3);
                         }
-#else
-                        ENode *convertedTrue;
-                        ENode *falseCopy;
-                        ENode *convertedFalse;
-                        fn_004eb810();
-                        if (CClass_FindBasePath(TYPE_CLASS(TPTR_TARGET(trueExpr->rtype)),
-                                                TYPE_CLASS(TPTR_TARGET(falseExpr->rtype)), 0, 1)) {
-                            TypeClass *targetClass;
-                            targetClass = TYPE_CLASS(TPTR_TARGET(falseExpr->rtype));
-                            convertedTrue = (ENode *)TPTR_TARGET(trueExpr->rtype);
-                            trueOperand = trueExpr;
-                            fn_004eb810();
-                            convertedTrue =
-                                CClass_ClassPointerCast(trueOperand, (TypeClass *)convertedTrue, targetClass, 0, 1);
-                            if (convertedTrue != trueOperand &&
-                                !(convertedTrue->type == ETYPCON && convertedTrue->data.monadic == trueOperand) &&
-                                !isnotzero(trueOperand)) {
-                                ENode *copy = lalloc(sizeof(ENode));
-                                *copy = *convertedTrue;
-                                copy->type = ENULLCHECK;
-                                copy->data.precomp.label = lalloc(sizeof(ENode));
-                                *copy->data.precomp.label = *trueOperand;
-                                copy->data.precomp.expression = convertedTrue;
-                                copy->data.precomp.labelId = CParser_GetUniqueID();
-                                trueOperand->type = EPRECOMP;
-                                trueOperand->data.longval = copy->data.precomp.labelId;
-                                convertedTrue = copy;
-                            }
-                            trueExpr = convertedTrue;
-                            convertedTrue->rtype = falseExpr->rtype;
-                        } else if (CClass_FindBasePath(TYPE_CLASS(TPTR_TARGET(falseExpr->rtype)),
-                                                       TYPE_CLASS(TPTR_TARGET(trueExpr->rtype)), 0, 1)) {
-                            TypeClass *sourceClass;
-                            convertedFalse = (ENode *)TPTR_TARGET(trueExpr->rtype);
-                            sourceClass = TYPE_CLASS(TPTR_TARGET(falseExpr->rtype));
-                            falseOperand = falseExpr;
-                            fn_004eb810();
-                            convertedFalse =
-                                CClass_ClassPointerCast(falseOperand, sourceClass, (TypeClass *)convertedFalse, 0, 1);
-                            if (convertedFalse != falseOperand &&
-                                !(convertedFalse->type == ETYPCON && convertedFalse->data.monadic == falseOperand) &&
-                                !isnotzero(falseOperand)) {
-                                falseCopy = lalloc(sizeof(ENode));
-                                *falseCopy = *convertedFalse;
-                                falseCopy->type = ENULLCHECK;
-                                falseCopy->data.precomp.label = lalloc(sizeof(ENode));
-                                *falseCopy->data.precomp.label = *falseOperand;
-                                falseCopy->data.precomp.expression = convertedFalse;
-                                falseCopy->data.precomp.labelId = CParser_GetUniqueID();
-                                falseOperand->type = EPRECOMP;
-                                falseOperand->data.longval = falseCopy->data.precomp.labelId;
-                                convertedFalse = falseCopy;
-                            }
-                            falseExpr = convertedFalse;
-                            convertedFalse->rtype = trueExpr->rtype;
-                        } else {
-                            CError_ReportError(ERR_TYPE_MISMATCH, trueExpr->rtype, trueExpr->flags & 3,
-                                               falseExpr->rtype, falseExpr->flags & 3);
-                        }
-                        (void)convertedTrue;
-                        (void)convertedFalse;
-#endif
                     }
                     node->rtype = trueExpr->rtype;
                     break;
