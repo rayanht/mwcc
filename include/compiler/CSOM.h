@@ -23,6 +23,7 @@ struct SOMInfo {
     UInt8 has_assign;
     UInt8 has_other;
 };
+#pragma options align = mac68k
 struct CSOMRefNode {
     struct CSOMRefNode *next;
     struct Object *object;
@@ -30,6 +31,7 @@ struct CSOMRefNode {
     SInt32 id;
     UInt8 kind;
 };
+#pragma options align = reset
 #pragma pack(push, 1)
 struct SOMClassBuildState {
     struct SOMEntry *members;

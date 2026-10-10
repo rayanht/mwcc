@@ -17751,13 +17751,13 @@
     "source": "src/frontend/CPrec.c"
   },
   {
-    "name": "fn_004b5480",
+    "name": "CPrec_SetupPtrHash",
     "address": "0x004b5480",
     "size": 30,
     "source": "src/frontend/CPrec.c"
   },
   {
-    "name": "fn_004b54a0",
+    "name": "CPrec_SetupSelectorHash",
     "address": "0x004b54a0",
     "size": 30,
     "source": "src/frontend/CPrec.c"
@@ -17769,13 +17769,13 @@
     "source": "src/frontend/CPrec.c"
   },
   {
-    "name": "CPrec_Find",
+    "name": "fn_004e0680",
     "address": "0x004b54f0",
     "size": 49,
     "source": "src/frontend/CPrec.c"
   },
   {
-    "name": "prepend_written_entry_to_hash_bucket",
+    "name": "add_written_type_entry",
     "address": "0x004b5530",
     "size": 51,
     "source": "src/frontend/CPrec.c"
@@ -17787,7 +17787,7 @@
     "source": "src/frontend/CPrec.c"
   },
   {
-    "name": "fn_004b5950",
+    "name": "CPrec_SetupBuiltIns",
     "address": "0x004b5950",
     "size": 135,
     "source": "src/frontend/CPrec.c"
@@ -17829,7 +17829,7 @@
     "source": "src/frontend/CPrec.c"
   },
   {
-    "name": "fn_004b5c00",
+    "name": "CPrec_AppendPointer",
     "address": "0x004b5c00",
     "size": 34,
     "source": "src/frontend/CPrec.c"
@@ -17841,13 +17841,13 @@
     "source": "src/frontend/CPrec.c"
   },
   {
-    "name": "fn_004b5c60",
+    "name": "CPrec_AppendPointerPatch",
     "address": "0x004b5c60",
     "size": 122,
     "source": "src/frontend/CPrec.c"
   },
   {
-    "name": "CPrec_FindRecord",
+    "name": "CPrec_AppendNamePatch",
     "address": "0x004b5ce0",
     "size": 25,
     "source": "src/frontend/CPrec.c"
@@ -17865,7 +17865,7 @@
     "source": "src/frontend/CPrec.c"
   },
   {
-    "name": "fn_004b5d70",
+    "name": "CPrec_RawMemPatch",
     "address": "0x004b5d70",
     "size": 40,
     "source": "src/frontend/CPrec.c"
@@ -17901,7 +17901,7 @@
     "source": "src/frontend/CPrec.c"
   },
   {
-    "name": "append_type_struct",
+    "name": "append_type_enum",
     "address": "0x004b6240",
     "size": 130,
     "source": "src/frontend/CPrec.c"
@@ -17913,25 +17913,25 @@
     "source": "src/frontend/CPrec.c"
   },
   {
-    "name": "fn_004b6310",
+    "name": "append_type_struct",
     "address": "0x004b6310",
     "size": 167,
     "source": "src/frontend/CPrec.c"
   },
   {
-    "name": "fn_004b63c0",
+    "name": "write_except_spec_list",
     "address": "0x004b63c0",
     "size": 93,
     "source": "src/frontend/CPrec.c"
   },
   {
-    "name": "fn_004b6420",
+    "name": "write_func_args",
     "address": "0x004b6420",
     "size": 238,
     "source": "src/frontend/CPrec.c"
   },
   {
-    "name": "fn_004b6510",
+    "name": "copy_type_func",
     "address": "0x004b6510",
     "size": 182,
     "source": "src/frontend/CPrec.c"
@@ -17967,7 +17967,7 @@
     "source": "src/frontend/CPrec.c"
   },
   {
-    "name": "fn_004b68d0",
+    "name": "write_prec_type_entries",
     "address": "0x004b68d0",
     "size": 87,
     "source": "src/frontend/CPrec.c"
@@ -17979,7 +17979,7 @@
     "source": "src/frontend/CPrec.c"
   },
   {
-    "name": "fn_004b6980",
+    "name": "write_som_method_names",
     "address": "0x004b6980",
     "size": 76,
     "source": "src/frontend/CPrec.c"
@@ -18057,7 +18057,7 @@
     "source": "src/frontend/CPrec.c"
   },
   {
-    "name": "fn_004b72c0",
+    "name": "write_templ_func_instances",
     "address": "0x004b72c0",
     "size": 105,
     "source": "src/frontend/CPrec.c"
@@ -18111,7 +18111,7 @@
     "source": "src/frontend/CPrec.c"
   },
   {
-    "name": "fn_004b7e30",
+    "name": "write_enode_list",
     "address": "0x004b7e30",
     "size": 87,
     "source": "src/frontend/CPrec.c"
@@ -18135,7 +18135,7 @@
     "source": "src/frontend/CPrec.c"
   },
   {
-    "name": "fn_004b82d0",
+    "name": "write_asm_objects",
     "address": "0x004b82d0",
     "size": 89,
     "source": "src/frontend/CPrec.c"
@@ -18189,13 +18189,13 @@
     "source": "src/frontend/CPrec.c"
   },
   {
-    "name": "fn_004b8810",
+    "name": "write_defarg_info",
     "address": "0x004b8810",
     "size": 68,
     "source": "src/frontend/CPrec.c"
   },
   {
-    "name": "fn_004b8860",
+    "name": "write_inline_xrefs",
     "address": "0x004b8860",
     "size": 95,
     "source": "src/frontend/CPrec.c"
@@ -18213,7 +18213,7 @@
     "source": "src/frontend/CPrec.c"
   },
   {
-    "name": "fn_004b8bb0",
+    "name": "write_namespace_object_list",
     "address": "0x004b8bb0",
     "size": 151,
     "source": "src/frontend/CPrec.c"
@@ -18237,49 +18237,49 @@
     "source": "src/frontend/CPrec.c"
   },
   {
-    "name": "fn_004b8ee0",
+    "name": "serialize_namespace_usings_and_hash",
     "address": "0x004b8ee0",
     "size": 175,
     "source": "src/frontend/CPrec.c"
   },
   {
-    "name": "serialize_pending_object_class_list",
+    "name": "write_csomrefnode_list",
     "address": "0x004b8f90",
     "size": 105,
     "source": "src/frontend/CPrec.c"
   },
   {
-    "name": "fn_004b9000",
+    "name": "write_olink_list",
     "address": "0x004b9000",
     "size": 87,
     "source": "src/frontend/CPrec.c"
   },
   {
-    "name": "fn_004b9060",
+    "name": "serialize_pending_buffers",
     "address": "0x004b9060",
     "size": 139,
     "source": "src/frontend/CPrec.c"
   },
   {
-    "name": "write_csomrefnode_list",
+    "name": "serialize_pending_object_class_list",
     "address": "0x004b90f0",
     "size": 105,
     "source": "src/frontend/CPrec.c"
   },
   {
-    "name": "fn_004b9160",
+    "name": "CPrec_WriteTable",
     "address": "0x004b9160",
     "size": 74,
     "source": "src/frontend/CPrec.c"
   },
   {
-    "name": "serialize_pending_buffers",
+    "name": "CPrec_WriteList",
     "address": "0x004b91b0",
     "size": 105,
     "source": "src/frontend/CPrec.c"
   },
   {
-    "name": "fn_004b9220",
+    "name": "serialize_cprec_nodes",
     "address": "0x004b9220",
     "size": 327,
     "source": "src/frontend/CPrec.c"
@@ -18291,7 +18291,7 @@
     "source": "src/frontend/CPrec.c"
   },
   {
-    "name": "fn_004b93f0",
+    "name": "write_saved_prep_token_patches",
     "address": "0x004b93f0",
     "size": 52,
     "source": "src/frontend/CPrec.c"
@@ -18303,13 +18303,13 @@
     "source": "src/frontend/CPrec.c"
   },
   {
-    "name": "fn_004b9500",
+    "name": "CPrec_Flush",
     "address": "0x004b9500",
     "size": 92,
     "source": "src/frontend/CPrec.c"
   },
   {
-    "name": "fn_004b9560",
+    "name": "checkflush",
     "address": "0x004b9560",
     "size": 58,
     "source": "src/frontend/CPrec.c"
@@ -18327,7 +18327,7 @@
     "source": "src/frontend/CPrec.c"
   },
   {
-    "name": "fn_004b9980",
+    "name": "align_output",
     "address": "0x004b9980",
     "size": 83,
     "source": "src/frontend/CPrec.c"
@@ -18381,25 +18381,25 @@
     "source": "src/frontend/CPrec.c"
   },
   {
-    "name": "fn_004ba2b0",
+    "name": "relocate_offset_table",
     "address": "0x004ba2b0",
     "size": 70,
     "source": "src/frontend/CPrec.c"
   },
   {
-    "name": "fn_004ba300",
+    "name": "restore_namespace_names",
     "address": "0x004ba300",
     "size": 81,
     "source": "src/frontend/CPrec.c"
   },
   {
-    "name": "fn_004ba360",
+    "name": "reset_hash_name_ids",
     "address": "0x004ba360",
     "size": 39,
     "source": "src/frontend/CPrec.c"
   },
   {
-    "name": "fn_004ba390",
+    "name": "declare_pending_buffers",
     "address": "0x004ba390",
     "size": 53,
     "source": "src/frontend/CPrec.c"

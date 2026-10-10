@@ -797,7 +797,7 @@ src/backend/BE_symbol.c:
 
 src/frontend/CPrec.c:
 	.text       start:0x004B5330 end:0x004BA780
-	.data       start:0x005348B8 end:0x00534BD8
+	.data       start:0x005348B8 end:0x00534BD4
 	.bss        start:0x00552BA8 end:0x00552BF8
 
 src/frontend/CPreprocess.c:
