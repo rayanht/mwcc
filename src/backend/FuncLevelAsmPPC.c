@@ -398,8 +398,7 @@ void FuncLevelAsmPPC_GenerateFunction(Object *func)
                     if ((item.assembly->specialFlags & 1) != 0) {
                         if (item.assembly->opcode == 1) {
                             PCodeUtilities_ResolveLabel(PCode_NewLabel());
-                            gCurrentBlock->line = node->sourceoffset;
-                            append_assembly(node, gCurrentBlock);
+                            gCurrentBlock->line = node->sourceoffset, append_assembly(node, gCurrentBlock);
                         } else if (item.assembly->opcode == 4) {
                             PCodeUtilities_ResolveLabel(PCode_NewLabel());
                             (gReturnBlock = gCurrentBlock)->flags |= 2;
