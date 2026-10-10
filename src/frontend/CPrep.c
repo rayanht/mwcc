@@ -333,48 +333,7 @@ static inline void warn_structalignment(void)
     }
 }
 
-static inline void restorePrepSetting(void)
-{
-    struct IROOptNode *node = saved_options;
-    while (node != NULL) {
-        if (node->flag != 0 && node->code == 0xd1) {
-            copts.fd1 = node->value;
-            node->flag = 0;
-            return;
-        }
-        node = node->next;
-    }
-    copts.fd1 = data_0057fcea->fd1;
-}
-
-static inline void ApplyUnrollOption(void)
-{
-    IROOptNode *option = saved_options;
-    while (option != NULL) {
-        if (option->flag != 0 && option->code == 0xd0) {
-            copts.unrollOption = option->value;
-            option->flag = 0;
-            return;
-        }
-        option = option->next;
-    }
-    copts.unrollOption = data_0057fcea->unrollOption;
-}
-
-static inline void CPrep_RestoreOptimizationLevel(void)
-{
-    IROOptNode *p = saved_options;
-    while (p != NULL) {
-        if (p->flag != 0 && p->code == 0xc1) {
-            copts.deleteDeadInstructions = p->value;
-            p->flag = 0;
-            return;
-        }
-        p = p->next;
-    }
-    copts.deleteDeadInstructions = data_0057fcea->deleteDeadInstructions;
-}
-
+#if VERSION > VERSION_GC_1_0
 static inline void CPrep_0043bf00_inline1(unsigned int v1)
 {
     IROOptNode *v14;
@@ -390,6 +349,7 @@ static inline void CPrep_0043bf00_inline1(unsigned int v1)
     ((UInt8 *)&copts)[(int)v1] = ((UInt8 *)data_0057fcea)[v1];
     return;
 }
+#endif
 
 static inline UInt8 *CPrep_OptionAddress(unsigned int index)
 {
@@ -3104,7 +3064,11 @@ void parse_pragma_option(int directive)
             return;
         }
         if (memcmp(data_00587fa0->name, "reset", 6) == 0) {
+#if VERSION == VERSION_GC_1_0
+            CPrep_RestoreOption(option);
+#else
             CPrep_0043bf00_inline1(option);
+#endif
             return;
         }
         if (allowSpecial && memcmp(data_00587fa0->name, "list", 5) == 0) {
@@ -3131,6 +3095,73 @@ void parse_pragma_option(int directive)
     if (copts.warn_illpragma != 0) {
         fn_0043f3b0(ERR_ILLEGAL_PRAGMA);
     }
+}
+
+static HashNameNode *CPrep_MakeOnceName(unsigned char *filename, Boolean isDefault)
+{
+    char key[256];
+    char *p;
+    short length;
+
+    length = filename[0];
+    if (length > 250)
+        length = 250;
+    p = key;
+    *p++ = (copts.syspath_once && isDefault) ? '$' : (char)0xa4;
+    filename++;
+    while (length-- > 0)
+        *p++ = tolower(*filename++);
+    *p = 0;
+    return GetHashNameNode(key);
+}
+
+#if VERSION == VERSION_GC_1_0
+static void CPrep_PragmaPrecompileTarget(void)
+{
+    if (!CPrep_ScanMacroExpandedChar()) {
+        CPrep_ReportError(ERR_UNEXPECTED_END_LINE);
+        return;
+    }
+    if (CPrepTokenizer_ScanToken() != -4) {
+        CPrep_ReportError(ERR_PREPROCESSOR_SYNTAX_ERROR);
+        CPrepTokenizer_SkipToEndOfLine();
+        return;
+    }
+    if (data_005882de != 0) {
+        CPrep_ReportError(ERR_ILLEGAL_STRING_CONSTANT);
+        CPrepTokenizer_SkipToEndOfLine();
+        return;
+    }
+    data_00587e84 = string_token_data;
+    CPrep_SkipToEndOfDirective();
+}
+#endif
+
+static void CPrep_DefineOnceMacro(unsigned char *filename, Boolean isDefault)
+{
+    HashNameNode *name;
+    Macro *macro;
+
+    name = CPrep_MakeOnceName(filename, isDefault);
+    if (lookup_available_macro(name) == 0) {
+        macro = galloc(sizeof(Macro));
+        memclrw(macro, sizeof(Macro));
+        macro->name = name;
+        macro->next = macro_buckets[name->hashval];
+        macro_buckets[name->hashval] = macro;
+    }
+}
+
+static void CPrep_PragmaOnce(void)
+{
+    unsigned char filename[256];
+
+    if (CPrep_ScanMacroExpandedChar() != 0) {
+        CPrep_ParseListingOption();
+        return;
+    }
+    COS_FileGetFSSpecInfo(&currentPFile->textfile, NULL, NULL, filename);
+    CPrep_DefineOnceMacro(filename, currentPFile->isDefault);
 }
 
 void fn_0043be10(void)
@@ -3295,6 +3326,29 @@ done:
     }
 }
 
+static void CPrep_PragmaPush(void)
+{
+    PragmaNode *pragma;
+
+    ObjGen_PPC_EABI_BuildSectionHeaderTable();
+    pragma = galloc(sizeof(PragmaNode));
+    pragma->next = pragma_list;
+    pragma_list = pragma;
+    pragma->rec = copts;
+}
+
+static void CPrep_PragmaPop(void)
+{
+    if (pragma_list != NULL) {
+        copts = pragma_list->rec;
+        pragma_list = pragma_list->next;
+        ObjGen_PPC_EABI_UpdateSectionHeaders();
+        fn_004a9c70();
+    } else {
+        CPrep_ReportError(ERR_PRECEDING_PRAGMA_PUSH_MISSING);
+    }
+}
+
 void fn_0043b790(void)
 {
     Object *obj;
@@ -3343,7 +3397,7 @@ void parse_optimization_level_pragma(void)
             return;
         }
         if (n == -3 && memcmp(data_00587fa0->name, "reset", 6) == 0) {
-            CPrep_RestoreOptimizationLevel();
+            CPrep_RestoreOption(0xc1);
             IrOptimizer_SetDeleteDeadInstructionsFlags();
             CodeGen_SetIROptimizationEnabled();
             return;
@@ -3378,7 +3432,7 @@ void parse_unroll_pragma(void)
             return;
         }
         if (token == -3 && memcmp(data_00587fa0->name, "reset", 6) == 0) {
-            ApplyUnrollOption();
+            CPrep_RestoreOption(0xd0);
             IrOptimizer_SetDeleteDeadInstructionsFlags();
             CodeGen_SetIROptimizationEnabled();
             return;
@@ -3414,7 +3468,7 @@ void parse_prep_setting(void)
         }
         if (token == -3) {
             if (memcmp(data_00587fa0->name, "reset", 6) == 0) {
-                restorePrepSetting();
+                CPrep_RestoreOption(0xd1);
                 IrOptimizer_SetDeleteDeadInstructionsFlags();
                 CodeGen_SetIROptimizationEnabled();
                 return;
@@ -3621,6 +3675,9 @@ void parse_pragma(void)
         } else if (memcmp(PN, "optimization_level", 19) == 0) {
             parse_optimization_level_pragma();
         } else if (memcmp(PN, "once", 5) == 0) {
+#if VERSION == VERSION_GC_1_0
+            CPrep_PragmaOnce();
+#else
             if (CPrep_ScanMacroExpandedChar() != 0) {
                 CPrep_ParseListingOption();
             } else {
@@ -3646,6 +3703,7 @@ void parse_pragma(void)
                     macro_buckets[name->hashval] = macro;
                 }
             }
+#endif
         } else if (memcmp(PN, "unused", 7) == 0) {
             fn_0043be10();
         } else if (memcmp(PN, "inline_depth", 13) == 0) {
@@ -3657,20 +3715,9 @@ void parse_pragma(void)
         } else if (memcmp(PN, "segment", 8) == 0) {
             read_pragma_token();
         } else if (memcmp(PN, "push", 5) == 0) {
-            ObjGen_PPC_EABI_BuildSectionHeaderTable();
-            pragma = galloc(sizeof(PragmaNode));
-            pragma->next = pragma_list;
-            pragma_list = pragma;
-            pragma->rec = copts;
+            CPrep_PragmaPush();
         } else if (memcmp(PN, "pop", 4) == 0) {
-            if (pragma_list != NULL) {
-                copts = pragma_list->rec;
-                pragma_list = pragma_list->next;
-                ObjGen_PPC_EABI_UpdateSectionHeaders();
-                fn_004a9c70();
-            } else {
-                CPrep_ReportError(ERR_PRECEDING_PRAGMA_PUSH_MISSING);
-            }
+            CPrep_PragmaPop();
         } else if (memcmp(PN, "parameter", 10) == 0) {
             macrocheck = 1;
             CMach_PragmaParams();
@@ -3682,6 +3729,9 @@ void parse_pragma(void)
             macrocheck = 1;
             return;
         } else if (memcmp(PN, "precompile_target", 18) == 0) {
+#if VERSION == VERSION_GC_1_0
+            CPrep_PragmaPrecompileTarget();
+#else
             if (CPrep_ScanMacroExpandedChar() == 0) {
                 CPrep_ReportError(ERR_UNEXPECTED_END_LINE);
             } else if (CPrepTokenizer_ScanToken() != -4) {
@@ -3697,6 +3747,7 @@ void parse_pragma(void)
                     CPrepTokenizer_SkipToEndOfLine();
                 }
             }
+#endif
         } else if (memcmp(PN, "message", 8) == 0) {
             concatenate_and_dispatch_string_tokens();
         } else if (memcmp(PN, "opt_unroll_count", 17) == 0) {

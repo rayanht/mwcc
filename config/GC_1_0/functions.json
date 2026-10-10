@@ -7875,25 +7875,25 @@
     "source": "src/frontend/CPrep.c"
   },
   {
-    "name": "fn_0043b810",
+    "name": "CPrep_MakeOnceName",
     "address": "0x0043b810",
     "size": 134,
     "source": "src/frontend/CPrep.c"
   },
   {
-    "name": "fn_0043b8a0",
+    "name": "CPrep_PragmaPrecompileTarget",
     "address": "0x0043b8a0",
     "size": 88,
     "source": "src/frontend/CPrep.c"
   },
   {
-    "name": "fn_0043b900",
+    "name": "CPrep_DefineOnceMacro",
     "address": "0x0043b900",
     "size": 85,
     "source": "src/frontend/CPrep.c"
   },
   {
-    "name": "fn_0043b960",
+    "name": "CPrep_PragmaOnce",
     "address": "0x0043b960",
     "size": 243,
     "source": "src/frontend/CPrep.c"
@@ -7911,7 +7911,7 @@
     "source": "src/frontend/CPrep.c"
   },
   {
-    "name": "fn_0043bc60",
+    "name": "read_pragma_token",
     "address": "0x0043bc60",
     "size": 158,
     "source": "src/frontend/CPrep.c"
@@ -7923,19 +7923,19 @@
     "source": "src/frontend/CPrep.c"
   },
   {
-    "name": "fn_0043bf50",
+    "name": "CPrep_PragmaPush",
     "address": "0x0043bf50",
     "size": 49,
     "source": "src/frontend/CPrep.c"
   },
   {
-    "name": "fn_0043bf90",
+    "name": "CPrep_PragmaPop",
     "address": "0x0043bf90",
     "size": 70,
     "source": "src/frontend/CPrep.c"
   },
   {
-    "name": "fn_0043bfe0",
+    "name": "fn_0043b790",
     "address": "0x0043bfe0",
     "size": 145,
     "source": "src/frontend/CPrep.c"
@@ -7947,13 +7947,13 @@
     "source": "src/frontend/CPrep.c"
   },
   {
-    "name": "parse_prep_setting",
+    "name": "parse_unroll_pragma",
     "address": "0x0043c160",
     "size": 212,
     "source": "src/frontend/CPrep.c"
   },
   {
-    "name": "fn_0043c240",
+    "name": "parse_prep_setting",
     "address": "0x0043c240",
     "size": 212,
     "source": "src/frontend/CPrep.c"
