@@ -2523,7 +2523,6 @@ Boolean match_message_arguments(register MethRec *info, MessageArgument *b, Bool
 ENode *CObjC_MakeMessageSend(ENode *receiver, TypeClass *obj, MessageArgument *arguments, ENodeList *extraArgs,
                              UInt8 mode, Boolean flag)
 {
-    ENodeList *extra;
     TypeClass *currentClass;
     CRec *entry;
     HashEntry *selector;
@@ -2681,8 +2680,7 @@ ENode *CObjC_MakeMessageSend(ENode *receiver, TypeClass *obj, MessageArgument *a
         tail->node = create_objectnode(CObjCModern_GetSelectorReference(selector));
         for (argument = arguments; argument != NULL; argument = argument->next) {
             if (argument->expression != NULL) {
-                ENodeList *nextArg = lalloc(sizeof(ENodeList));
-                tail->next = nextArg;
+                tail->next = lalloc(sizeof(ENodeList));
                 tail = tail->next;
                 tail->node = argument->expression;
             }
