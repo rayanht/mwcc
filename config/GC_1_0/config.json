@@ -204,6 +204,7 @@
     "src/optimizer/IroUtil.c",
     "src/optimizer/IroVars.c",
     "src/optimizer/LoadDeletion.c",
+    "src/optimizer/LoopOptimization.c",
     "src/optimizer/StrengthReduction.c",
     "src/optimizer/StructMoves.c",
     "src/optimizer/UseDefChains.c",
