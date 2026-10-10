@@ -6897,7 +6897,7 @@
     "source": "src/driver/TargetPanels-eabi-ppc.c"
   },
   {
-    "name": "fn_0042e130",
+    "name": "append_linear",
     "address": "0x0042e130",
     "size": 52,
     "source": "src/optimizer/IrOptimizer.c"
@@ -6933,13 +6933,13 @@
     "source": "src/optimizer/IrOptimizer.c"
   },
   {
-    "name": "fn_0042e430",
+    "name": "mark_address",
     "address": "0x0042e430",
     "size": 112,
     "source": "src/optimizer/IrOptimizer.c"
   },
   {
-    "name": "fn_0042e4a0",
+    "name": "append_comma_left_statement",
     "address": "0x0042e4a0",
     "size": 114,
     "source": "src/optimizer/IrOptimizer.c"
@@ -6963,25 +6963,25 @@
     "source": "src/optimizer/IrOptimizer.c"
   },
   {
-    "name": "fn_0042e8e0",
+    "name": "append_cond_test_statement",
     "address": "0x0042e8e0",
     "size": 132,
     "source": "src/optimizer/IrOptimizer.c"
   },
   {
-    "name": "fn_0042e970",
+    "name": "append_goto_statement",
     "address": "0x0042e970",
     "size": 120,
     "source": "src/optimizer/IrOptimizer.c"
   },
   {
-    "name": "fn_0042e9f0",
+    "name": "record_temporary",
     "address": "0x0042e9f0",
     "size": 57,
     "source": "src/optimizer/IrOptimizer.c"
   },
   {
-    "name": "fn_0042ea30",
+    "name": "LookupTemporary",
     "address": "0x0042ea30",
     "size": 58,
     "source": "src/optimizer/IrOptimizer.c"
@@ -7011,7 +7011,7 @@
     "source": "src/optimizer/IrOptimizer.c"
   },
   {
-    "name": "fn_0042ee60",
+    "name": "append_label_statement",
     "address": "0x0042ee60",
     "size": 119,
     "source": "src/optimizer/IrOptimizer.c"
@@ -7029,7 +7029,7 @@
     "source": "src/optimizer/IrOptimizer.c"
   },
   {
-    "name": "fn_0042f070",
+    "name": "append_land_test_statement",
     "address": "0x0042f070",
     "size": 132,
     "source": "src/optimizer/IrOptimizer.c"
@@ -7041,7 +7041,7 @@
     "source": "src/optimizer/IrOptimizer.c"
   },
   {
-    "name": "fn_0042f310",
+    "name": "append_lor_test_statement",
     "address": "0x0042f310",
     "size": 132,
     "source": "src/optimizer/IrOptimizer.c"
@@ -7107,43 +7107,43 @@
     "source": "src/optimizer/IrOptimizer.c"
   },
   {
-    "name": "fn_004308b0",
+    "name": "AddLocalUsage",
     "address": "0x004308b0",
     "size": 44,
     "source": "src/optimizer/IrOptimizer.c"
   },
   {
-    "name": "fn_004308e0",
+    "name": "add_local_usage_and_set_noregister",
     "address": "0x004308e0",
     "size": 113,
     "source": "src/optimizer/IrOptimizer.c"
   },
   {
-    "name": "fn_00430960",
+    "name": "fn_0042e200",
     "address": "0x00430960",
     "size": 110,
     "source": "src/optimizer/IrOptimizer.c"
   },
   {
-    "name": "fn_004309d0",
+    "name": "record_object_usage",
     "address": "0x004309d0",
     "size": 335,
     "source": "src/optimizer/IrOptimizer.c"
   },
   {
-    "name": "fn_00430b20",
+    "name": "renumber_linear_nodes",
     "address": "0x00430b20",
     "size": 56,
     "source": "src/optimizer/IrOptimizer.c"
   },
   {
-    "name": "fn_00430b60",
+    "name": "IR_Replace",
     "address": "0x00430b60",
     "size": 102,
     "source": "src/optimizer/IrOptimizer.c"
   },
   {
-    "name": "fn_00430bd0",
+    "name": "replace_pending_reference",
     "address": "0x00430bd0",
     "size": 674,
     "source": "src/optimizer/IrOptimizer.c"
