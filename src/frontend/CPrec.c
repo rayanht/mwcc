@@ -4291,6 +4291,7 @@ static CPREC_INLINE void read_precompiled_header_data_at_offset(SInt32 offset, v
         CError_FatalError(ERR_ILLEGAL_DATA_PRECOMPILED_HEADER);
 }
 
+#pragma opt_lifetimes off
 void decompress_precompiled_header(void)
 {
     UInt8 *end;
@@ -4298,23 +4299,15 @@ void decompress_precompiled_header(void)
     UInt8 *src;
     SInt32 n;
     UInt32 size;
-#if VERSION > VERSION_GC_1_0
     UInt32 csize;
-#endif
 
     if (data_00581c1e == NULL) {
-        size = prec_header->fileSize;
-        size = (size >> 7) + size + 0x40;
+        size = (prec_header->fileSize >> 7) + prec_header->fileSize + 0x40;
         dst = galloc(size);
         precompiled_header_base = dst;
-#if VERSION == VERSION_GC_1_0
-        read_precompiled_header_data_at_offset(prec_header->dataOffset, src = dst + size - prec_header->compressedSize,
-                                               prec_header->compressedSize);
-#else
         src = dst + size - prec_header->compressedSize;
         csize = prec_header->compressedSize;
         read_precompiled_header_data_at_offset(prec_header->dataOffset, src, csize);
-#endif
     } else {
         dst = galloc(prec_header->fileSize);
         precompiled_header_base = dst;
@@ -4337,6 +4330,7 @@ void decompress_precompiled_header(void)
     if (src != end || dst != precompiled_header_base + prec_header->fileSize)
         CError_FatalError(ERR_ILLEGAL_DATA_PRECOMPILED_HEADER);
 }
+#pragma opt_lifetimes reset
 
 void apply_relocations(void)
 {
