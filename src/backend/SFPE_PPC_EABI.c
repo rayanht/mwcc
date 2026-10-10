@@ -156,26 +156,6 @@ static inline void LoadDoubleArg(int reg1, int reg2)
         PCodeUtilities_EmitInstruction(PC_MR, sfpe_right_operand_reg, reg1);
 }
 
-#if VERSION == VERSION_GC_1_0
-/* (1.0 loads the constant 1.0 straight into r5:r6, in the target's byte order) */
-static inline void LoadDoubleArgPair(void)
-{
-    union {
-        Float f;
-        CInt64 i;
-    } v;
-
-    v.f = float_one;
-    if (copts.littleendian) {
-        PCodeUtilities_EmitLoadImmediate(5, v.i.hi);
-        PCodeUtilities_EmitLoadImmediate(6, v.i.lo);
-    } else {
-        PCodeUtilities_EmitLoadImmediate(5, v.i.lo);
-        PCodeUtilities_EmitLoadImmediate(6, v.i.hi);
-    }
-}
-#endif
-
 void SFPE_PPC_EABI_GenerateDiadicArithmetic(ENode *node, SInt16 requestedReg, SInt16 requestedRegHi, Operand *result)
 {
     ENode *left;
@@ -524,6 +504,14 @@ void SFPE_PPC_EABI_GenerateFloatPostIncDec(ENode *expr, SInt16 outputReg, SInt16
     int argumentReg2;
     Operand operand;
     Operand value;
+#if VERSION == VERSION_GC_1_0
+    union {
+        float f;
+        SInt32 l;
+        Float d;
+        CInt64 i;
+    } u;
+#endif
 
     inner = expr->data.monadic->data.monadic;
     type = expr->rtype;
@@ -533,7 +521,7 @@ void SFPE_PPC_EABI_GenerateFloatPostIncDec(ENode *expr, SInt16 outputReg, SInt16
     if (type->size == 4) {
         if (inner->type == EOBJREF &&
             (sourceReg = Registers_GetInfo(inner->data.objref) ? Registers_GetInfo(inner->data.objref)->reg : 0) != 0) {
-            Registers_GetInfo(inner->data.objref);
+            sourceReg2 = Registers_GetInfo(inner->data.objref)->regHi;
             result->kind = OpndType_GPR;
             result->reg = (outputReg != 0 && outputReg != sourceReg) ? outputReg : gUsedVirtualRegistersGPR++;
             CError_ASSERT(VERSION > VERSION_GC_1_0 ? 488 : 583, sourceReg != result->reg);
@@ -541,7 +529,8 @@ void SFPE_PPC_EABI_GenerateFloatPostIncDec(ENode *expr, SInt16 outputReg, SInt16
             if (sourceReg != 3)
                 PCodeUtilities_EmitInstruction(PC_MR, 3, sourceReg);
 #if VERSION == VERSION_GC_1_0
-            LoadFloatArg(4);
+            u.f = float_one.data.value;
+            PCodeUtilities_EmitLoadImmediate(4, u.l);
 #else
             argumentReg = gUsedVirtualRegistersGPR++;
             LoadFloatArg(argumentReg);
@@ -565,7 +554,8 @@ void SFPE_PPC_EABI_GenerateFloatPostIncDec(ENode *expr, SInt16 outputReg, SInt16
             if (value.reg != Register3)
                 PCodeUtilities_EmitInstruction(PC_MR, 3, value.reg);
 #if VERSION == VERSION_GC_1_0
-            LoadFloatArg(4);
+            u.f = float_one.data.value;
+            PCodeUtilities_EmitLoadImmediate(4, u.l);
 #else
             argumentReg = gUsedVirtualRegistersGPR++;
             LoadFloatArgGPR(argumentReg);
@@ -596,7 +586,14 @@ void SFPE_PPC_EABI_GenerateFloatPostIncDec(ENode *expr, SInt16 outputReg, SInt16
             if (sourceReg != return_gpr_first)
                 PCodeUtilities_EmitInstruction(PC_MR, return_gpr_first, sourceReg);
 #if VERSION == VERSION_GC_1_0
-            LoadDoubleArgPair();
+            u.d = float_one;
+            if (copts.littleendian) {
+                PCodeUtilities_EmitLoadImmediate(5, u.i.hi);
+                PCodeUtilities_EmitLoadImmediate(6, u.i.lo);
+            } else {
+                PCodeUtilities_EmitLoadImmediate(5, u.i.lo);
+                PCodeUtilities_EmitLoadImmediate(6, u.i.hi);
+            }
 #else
             argumentReg = gUsedVirtualRegistersGPR++;
             argumentReg2 = gUsedVirtualRegistersGPR++;
@@ -633,7 +630,14 @@ void SFPE_PPC_EABI_GenerateFloatPostIncDec(ENode *expr, SInt16 outputReg, SInt16
                 PCodeUtilities_EmitInstruction(PC_MR, return_gpr_first, value.reg);
 #endif
 #if VERSION == VERSION_GC_1_0
-            LoadDoubleArgPair();
+            u.d = float_one;
+            if (copts.littleendian) {
+                PCodeUtilities_EmitLoadImmediate(5, u.i.hi);
+                PCodeUtilities_EmitLoadImmediate(6, u.i.lo);
+            } else {
+                PCodeUtilities_EmitLoadImmediate(5, u.i.lo);
+                PCodeUtilities_EmitLoadImmediate(6, u.i.hi);
+            }
 #else
             argumentReg = gUsedVirtualRegistersGPR++;
             argumentReg2 = gUsedVirtualRegistersGPR++;
