@@ -2456,6 +2456,7 @@ static Boolean CheckVectorKeyword(void)
     return 0;
 }
 
+#pragma opt_lifetimes off
 void CParser_GetDeclSpecs(DeclInfo *state, Boolean allowObject)
 {
     NameResult scope;
@@ -2870,6 +2871,7 @@ void CParser_GetDeclSpecs(DeclInfo *state, Boolean allowObject)
         firstToken = 0;
     }
 }
+#pragma opt_lifetimes reset
 
 void CParser_RegisterNonGlobalClass(TypeClass *type)
 {
