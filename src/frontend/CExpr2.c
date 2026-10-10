@@ -4335,7 +4335,7 @@ static Boolean CExpr_NeedsDestructorCall(Type *type, Object **dtor)
     return 0;
 }
 
-void build_destructor_aware_call(ENode *expression, Type *type, Boolean skipLookup)
+ENode *build_destructor_aware_call(ENode *expression, Type *type, Boolean skipLookup)
 {
     Object *dtor;
     Object *node;
@@ -4347,15 +4347,13 @@ void build_destructor_aware_call(ENode *expression, Type *type, Boolean skipLook
         if (node != (Object *)operatorName->first.object) {
             expression = funccallexpr(destructor_aware_call_func, expression,
                                       dtor ? create_objectrefnode(dtor) : nullnode(), NULL, NULL);
-            funccallexpr(node, expression, NULL, NULL, NULL);
-            return;
+            return funccallexpr(node, expression, NULL, NULL, NULL);
         } else {
-            funccallexpr(destructor_aware_call_rtfunc, expression,
-                         dtor ? create_objectrefnode(dtor) : nullnode(), NULL, NULL);
-            return;
+            return funccallexpr(destructor_aware_call_rtfunc, expression,
+                                dtor ? create_objectrefnode(dtor) : nullnode(), NULL, NULL);
         }
     }
-    make_call_with_optional_size_arg(node, expression, type);
+    return make_call_with_optional_size_arg(node, expression, type);
 }
 
 struct ENode *scandelete(char mode)
@@ -4393,11 +4391,13 @@ struct ENode *scandelete(char mode)
     if (expr->rtype->type != TYPEPOINTER) {
         if (expr->rtype->type == TYPECLASS) {
             TypeClass *conversionClass;
-            conversionType = NULL;
-            conversionClass = TYPE_CLASS(target = expr->rtype);
 #if VERSION == VERSION_GC_1_0
+            conversionType = NULL;
+            conversionClass = TYPE_CLASS(expr->rtype);
             InitLookup(&frame, conversionClass);
 #else
+            conversionType = NULL;
+            conversionClass = TYPE_CLASS(target = expr->rtype);
             memclrw(&frame, sizeof(frame));
             if ((TYPE_CLASS(target)->flags & CLASS_IS_CONVERTIBLE) != 0) {
                 frame.myconiter.tclass = conversionClass;
@@ -4411,7 +4411,7 @@ struct ENode *scandelete(char mode)
                 Object *candidate;
                 while ((candidate = CExpr_ConversionIteratorNext(&frame)) != NULL) {
                     owner = TYPE_FUNC(candidate->type);
-                    if (TYPE_FUNC(candidate->type)->functype->type == TYPEPOINTER) {
+                    if (owner->functype->type == TYPEPOINTER) {
                         if (conversionType != NULL) {
                             CError_ReportError(ERR_AMBIGUOUS_ACCESS_OVERLOADED_FUNCTION);
                             break;
@@ -4426,12 +4426,11 @@ struct ENode *scandelete(char mode)
         }
         if (expr->rtype->type != TYPEPOINTER) {
             CError_ReportError(ERR_ILLEGAL_TYPE);
-            expr = nullnode();
-            return expr;
+            return nullnode();
         }
     }
     target = TYPE_POINTER(expr->rtype)->target;
-    if (TYPE_POINTER(expr->rtype)->target->size == 0) {
+    if (target->size == 0) {
         CDecl_CompleteType(target);
     }
     if ((target->type == TYPEARRAY) && !isArray) {
@@ -4441,8 +4440,7 @@ struct ENode *scandelete(char mode)
         while (target->type == TYPEARRAY) {
             target = TYPE_POINTER(target)->target;
         }
-        build_destructor_aware_call(expr, target, mode);
-        return;
+        return build_destructor_aware_call(expr, target, mode);
     }
     if (copts.objective_c != 0 && CObjC_IsIdOrSelType(expr->rtype) != 0) {
         return CObjCModern_MakeDeallocMessage(NULL, expr);
@@ -4491,14 +4489,14 @@ struct ENode *scandelete(char mode)
     } else {
         destructorCall = CABI_DestroyObject(constructor, expr, 2, 0, 0);
         destructorCall->rtype = (Type *)&void_ptr;
-        result = lalloc(sizeof(*result));
-        result->type = EFUNCCALL;
-        result->cost = 4;
-        result->flags = 0;
-        result->rtype = &stvoid;
-        result->data.funccall.args = lalloc(sizeof(*result->data.funccall.args));
-        result->data.funccall.args->next = NULL;
-        result->data.funccall.args->node = destructorCall;
+        call = lalloc(sizeof(*call));
+        call->type = EFUNCCALL;
+        call->cost = 4;
+        call->flags = 0;
+        call->rtype = &stvoid;
+        call->data.funccall.args = lalloc(sizeof(*call->data.funccall.args));
+        call->data.funccall.args->next = NULL;
+        call->data.funccall.args->node = destructorCall;
 #if VERSION == VERSION_GC_1_0
         objectExpr = create_objectrefnode(objectOrType);
 #else
@@ -4540,9 +4538,10 @@ struct ENode *scandelete(char mode)
             }
         }
 #endif
-        result->data.diadic.left = objectExpr;
-        result->data.funccall.functype = (TypeFunc *)objectOrType->type;
+        call->data.diadic.left = objectExpr;
+        call->data.funccall.functype = (TypeFunc *)objectOrType->type;
         objectOrType->flags |= 1;
+        result = call;
     }
     if (hasReference) {
         call = lalloc(sizeof(*call));
