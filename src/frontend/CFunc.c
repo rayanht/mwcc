@@ -1478,7 +1478,6 @@ void parse_statement(StatementContext *context)
 {
     DeclBlock *ifScope;
     CLabel *endLabel;
-    DeclBlock *whileScope;
     HashNameNode *namespaceName;
     Statement *jumpStmt;
     DeclBlock *forScope;
@@ -1492,7 +1491,6 @@ void parse_statement(StatementContext *context)
     ENode *stepExpr;
     ENode *testExpr;
     StatementContext bodyContext;
-    CLabel *breakLabel;
     CLabel *continueLabel;
 
     sourceoffset = CPrep_UpdateTokenLine(&function_fileinfo);
@@ -1587,13 +1585,13 @@ void parse_statement(StatementContext *context)
             ((SwitchInfo *)stmt->label)->defaultlabel = NULL;
             ((SwitchInfo *)stmt->label)->cases = NULL;
             ((SwitchInfo *)stmt->label)->sizetype = stmt->expr->rtype;
-            breakLabel = newlabel();
+            endLabel = newlabel();
             bodyContext = *context;
             bodyContext.switchinfo = (SwitchInfo *)stmt->label;
-            bodyContext.loopBreak = breakLabel;
+            bodyContext.loopBreak = endLabel;
             CFunc_CompoundStatement(&bodyContext);
             if (!bodyContext.switchinfo->defaultlabel)
-                bodyContext.switchinfo->defaultlabel = breakLabel;
+                bodyContext.switchinfo->defaultlabel = endLabel;
             if (!bodyContext.switchinfo->cases) {
                 stmt->type = ST_EXPRESSION;
                 jumpStmt = (Statement *)lalloc(sizeof(Statement));
@@ -1604,8 +1602,8 @@ void parse_statement(StatementContext *context)
                 jumpStmt->dobjstack = cexcept_dobjstack;
             }
             stmt = CFunc_AppendStatement(2);
-            stmt->label = breakLabel;
-            breakLabel->stmt = stmt;
+            stmt->label = endLabel;
+            endLabel->stmt = stmt;
             if (switchScope)
                 CFunc_RestoreBlock(switchScope);
             return;
@@ -1672,8 +1670,8 @@ void parse_statement(StatementContext *context)
                     }
                 }
                 if (expr) {
-                    stmt = CFunc_AppendStatement(4);
-                    stmt->expr = expr;
+                    jumpStmt = CFunc_AppendStatement(4);
+                    jumpStmt->expr = expr;
                 }
                 if (tk != ';')
                     CError_ReportError(ERR_SEMICOLON_EXPECTED);
@@ -1725,41 +1723,41 @@ void parse_statement(StatementContext *context)
             } else
                 tk = CPrepTokenizer_GetNextToken();
             if (testExpr) {
-                stmt = CFunc_AppendStatement(3);
-                stmt->label = newlabel();
-                conditionLabel = stmt->label;
+                jumpStmt = CFunc_AppendStatement(3);
+                jumpStmt->label = newlabel();
+                conditionLabel = jumpStmt->label;
             } else
                 conditionLabel = newlabel();
             IncreaseStatementValue();
-            stmt = CFunc_AppendStatement(2);
-            stmt->label = newlabel();
-            (topLabel = stmt->label)->stmt = stmt;
-            breakLabel = newlabel();
+            jumpStmt = CFunc_AppendStatement(2);
+            jumpStmt->label = newlabel();
+            (topLabel = jumpStmt->label)->stmt = jumpStmt;
+            endLabel = newlabel();
             continueLabel = newlabel();
             bodyContext = *context;
             bodyContext.loopContinue = continueLabel;
-            bodyContext.loopBreak = breakLabel;
+            bodyContext.loopBreak = endLabel;
             if (tk != '{') {
                 bodyScope = CFunc_NewDeclBlock();
                 CFunc_CompoundStatement(&bodyContext);
                 CFunc_RestoreBlock(bodyScope);
             } else
                 CFunc_CompoundStatement(&bodyContext);
-            stmt = CFunc_AppendStatement(2);
-            stmt->label = continueLabel;
-            continueLabel->stmt = stmt;
+            jumpStmt = CFunc_AppendStatement(2);
+            jumpStmt->label = continueLabel;
+            continueLabel->stmt = jumpStmt;
             if (stepExpr) {
-                stmt = CFunc_AppendStatement(4);
-                stmt->expr = stepExpr;
+                jumpStmt = CFunc_AppendStatement(4);
+                jumpStmt->expr = stepExpr;
             }
-            stmt = CFunc_AppendStatement(2);
-            stmt->label = conditionLabel;
-            conditionLabel->stmt = stmt;
+            jumpStmt = CFunc_AppendStatement(2);
+            jumpStmt->label = conditionLabel;
+            conditionLabel->stmt = jumpStmt;
             CondJump(1, testExpr, topLabel, 1);
             DecreaseStatementValue();
-            stmt = CFunc_AppendStatement(2);
-            stmt->label = breakLabel;
-            breakLabel->stmt = stmt;
+            jumpStmt = CFunc_AppendStatement(2);
+            jumpStmt->label = endLabel;
+            endLabel->stmt = jumpStmt;
             if (forScope)
                 CFunc_RestoreBlock(forScope);
             return;
@@ -1769,10 +1767,10 @@ void parse_statement(StatementContext *context)
             stmt->label = newlabel();
             (topLabel = stmt->label)->stmt = stmt;
             continueLabel = newlabel();
-            breakLabel = newlabel();
+            endLabel = newlabel();
             bodyContext = *context;
             bodyContext.loopContinue = continueLabel;
-            bodyContext.loopBreak = breakLabel;
+            bodyContext.loopBreak = endLabel;
             tk = CPrepTokenizer_GetNextToken();
             CFunc_CompoundStatement(&bodyContext);
             stmt = CFunc_AppendStatement(2);
@@ -1794,8 +1792,8 @@ void parse_statement(StatementContext *context)
             CondJump(1, expr, topLabel, 1);
             DecreaseStatementValue();
             stmt = CFunc_AppendStatement(2);
-            stmt->label = breakLabel;
-            breakLabel->stmt = stmt;
+            stmt->label = endLabel;
+            endLabel->stmt = stmt;
             break;
         case TK_WHILE:
             tk = CPrepTokenizer_GetNextToken();
@@ -1804,15 +1802,15 @@ void parse_statement(StatementContext *context)
             else
                 tk = CPrepTokenizer_GetNextToken();
             if (copts.cplusplus && !use_legacy_condition_scope() && isdeclaration(1, 0, 0, 0x3d)) {
-                whileScope = CFunc_NewDeclBlock();
+                switchScope = CFunc_NewDeclBlock();
                 conditionExpr = parse_declarations(0, 1, 0, 0);
                 if (CScope_IsEmptyNameSpace(cscope_current)) {
-                    CFunc_RestoreBlock(whileScope);
-                    whileScope = NULL;
+                    CFunc_RestoreBlock(switchScope);
+                    switchScope = NULL;
                 }
             } else {
                 conditionExpr = s_expression();
-                whileScope = NULL;
+                switchScope = NULL;
                 CExpr_CheckUnwantedAssignment(conditionExpr);
             }
             expr = CExpr2_ConvertScalarOperand(conditionExpr, 0, 1);
@@ -1835,10 +1833,10 @@ void parse_statement(StatementContext *context)
             stmt = CFunc_AppendStatement(2);
             stmt->label = newlabel();
             (topLabel = stmt->label)->stmt = stmt;
-            breakLabel = newlabel();
+            endLabel = newlabel();
             bodyContext = *context;
             bodyContext.loopContinue = continueLabel;
-            bodyContext.loopBreak = breakLabel;
+            bodyContext.loopBreak = endLabel;
             CFunc_CompoundStatement(&bodyContext);
             stmt = CFunc_AppendStatement(2);
             stmt->label = continueLabel;
@@ -1846,10 +1844,10 @@ void parse_statement(StatementContext *context)
             CondJump(1, expr, topLabel, 1);
             DecreaseStatementValue();
             stmt = CFunc_AppendStatement(2);
-            stmt->label = breakLabel;
-            breakLabel->stmt = stmt;
-            if (whileScope)
-                CFunc_RestoreBlock(whileScope);
+            stmt->label = endLabel;
+            endLabel->stmt = stmt;
+            if (switchScope)
+                CFunc_RestoreBlock(switchScope);
             return;
         case TK_IF: {
             tk = CPrepTokenizer_GetNextToken();

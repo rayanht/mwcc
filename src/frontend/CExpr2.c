@@ -4137,13 +4137,12 @@ ENode *scannew(char global)
     Object *deleteFunction;
     Object *pointerTemp;
     ENode *objectExpr;
-    ENode *thisExpr;
+    ENode *expr;
     ENode *constructedExpr;
     ENode *tempExpr;
     ENode *assignment;
     ENode *initAssign;
     ENode *indirect;
-    ENode *condition;
     ENode *comma;
     unsigned int tempid;
     tk = CPrepTokenizer_GetNextToken();
@@ -4205,9 +4204,9 @@ ENode *scannew(char global)
         initlist = NULL;
     if (type->type == TYPECLASS && CClass_Constructor(TYPE_CLASS(type))) {
         if (!placement && !global && CABI_ConstructorCallsNew(TYPE_CLASS(type))) {
-            thisExpr = nullnode();
-            thisExpr->rtype = CDecl_NewPointerType(type);
-            return CExpr_ConstructObject(type, thisExpr, initlist, 0, 1, 1, 1, 1);
+            expr = nullnode();
+            expr->rtype = CDecl_NewPointerType(type);
+            return CExpr_ConstructObject(type, expr, initlist, 0, 1, 1, 1, 1);
         }
         if (cscope_currentfunc && !placement && copts.delete_exception &&
             (deleteFunction = CParser_FindDeallocationObject(type, 0, global)) != NULL) {
@@ -4247,13 +4246,13 @@ ENode *scannew(char global)
         indirect->rtype = type;
         indirect->flags = initlist->node->flags & 3;
         initAssign = makediadicnode(indirect, oldassignmentpromotion(initlist->node, type, indirect->flags, 1), EASS);
-        condition = CExpr_NewENode(ECOND);
-        condition->cost = 4;
-        condition->rtype = &stvoid;
-        condition->data.cond.cond = result;
-        condition->data.cond.expr1 = initAssign;
-        condition->data.cond.expr2 = nullnode();
-        comma = makecommaexpression(condition, tempExpr);
+        expr = CExpr_NewENode(ECOND);
+        expr->cost = 4;
+        expr->rtype = &stvoid;
+        expr->data.cond.cond = result;
+        expr->data.cond.expr1 = initAssign;
+        expr->data.cond.expr2 = nullnode();
+        comma = makecommaexpression(expr, tempExpr);
         comma->rtype = tempExpr->rtype;
         comma->flags = tempExpr->flags;
         return comma;
