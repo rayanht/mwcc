@@ -1790,44 +1790,30 @@ Object *create_protocol_method_list(CRec *cls, char *nm, SInt16 val, UInt8 kind)
     return result;
 }
 
-#if VERSION == VERSION_GC_1_0
-static inline OLinkList *CObjC_NewReference(OLinkList **list)
-{
-    OLinkList *ref = (OLinkList *)lalloc(sizeof(OLinkList));
-    ref->next = *list;
-    *list = ref;
-    return ref;
-}
-#endif
-
 Object *CObjC_GetProtocolInfo(CRec *protocol)
 {
     TypeClass *protocolClass;
     OLinkList *refs;
     OLinkList *ref;
-    Object *list;
-    Object *info;
+    Object *obj;
     char *name;
     SInt32 data[5];
 
     if (protocol->info == NULL) {
         if ((protocolClass = CObjC_FindObjCClass(GetHashNameNode("Protocol"), 1)) != NULL) {
             data[0] = CTool_EndianConvertWord32(0);
+            refs = NULL;
             ref = (OLinkList *)lalloc(sizeof(OLinkList));
-            ref->next = NULL;
+            ref->next = refs;
             refs = ref;
             ref->obj = protocolClass->objcinfo->classobject;
             ref->offset = 0;
             ref->addend = 0;
 
             data[1] = CTool_EndianConvertWord32(0);
-#if VERSION == VERSION_GC_1_0
-            ref = CObjC_NewReference(&refs);
-#else
             ref = (OLinkList *)lalloc(sizeof(OLinkList));
             ref->next = refs;
             refs = ref;
-#endif
             ref->obj = fn_00509c40(protocol->name->name, 0x13);
             ref->offset = 4;
             ref->addend = 0;
@@ -1835,58 +1821,46 @@ Object *CObjC_GetProtocolInfo(CRec *protocol)
             data[2] = CTool_EndianConvertWord32(0);
             if (protocol->bases != NULL) {
                 name = CObjCModern_ConcatStrings(protocol->name->name, "_PROTOCOLS", NULL);
-#if VERSION == VERSION_GC_1_0
-                ref = CObjC_NewReference(&refs);
-#else
                 ref = (OLinkList *)lalloc(sizeof(OLinkList));
                 ref->next = refs;
                 refs = ref;
-#endif
                 ref->obj = create_protocol_list(protocol->bases, name);
                 ref->offset = 8;
                 ref->addend = 0;
             }
 
             data[3] = CTool_EndianConvertWord32(0);
-            if ((list = create_protocol_method_list(protocol, "L_OBJC_PROTOCOL_INSTANCE_METHODS_", 8, 0)) != NULL) {
-#if VERSION == VERSION_GC_1_0
-                ref = CObjC_NewReference(&refs);
-#else
+            if ((obj = create_protocol_method_list(protocol, "L_OBJC_PROTOCOL_INSTANCE_METHODS_", 8, 0)) != NULL) {
                 ref = (OLinkList *)lalloc(sizeof(OLinkList));
                 ref->next = refs;
                 refs = ref;
-#endif
-                ref->obj = list;
+                ref->obj = obj;
                 ref->offset = 12;
                 ref->addend = 0;
             }
 
             data[4] = CTool_EndianConvertWord32(0);
-            if ((list = create_protocol_method_list(protocol, "L_OBJC_PROTOCOL_CLASS_METHODS_", 7, 1)) != NULL) {
-#if VERSION == VERSION_GC_1_0
-                ref = CObjC_NewReference(&refs);
-#else
+            if ((obj = create_protocol_method_list(protocol, "L_OBJC_PROTOCOL_CLASS_METHODS_", 7, 1)) != NULL) {
                 ref = (OLinkList *)lalloc(sizeof(OLinkList));
                 ref->next = refs;
                 refs = ref;
-#endif
-                ref->obj = list;
+                ref->obj = obj;
                 ref->offset = 16;
                 ref->addend = 0;
             }
 
-            protocol->info = info = CObjC_MakeObject("L_OBJC_PROTOCOL_", protocol->name->name, 0x14);
-            info->type = (Type *)protocolClass;
-            info->sclass = TK_STATIC;
-            info->section = 0x12;
-            if (info->type->size != 0x14) {
-                if (!info->type->size)
-                    info->type = CDecl_NewStructType(0x14, 4);
+            protocol->info = obj = CObjC_MakeObject("L_OBJC_PROTOCOL_", protocol->name->name, 0x14);
+            obj->type = (Type *)protocolClass;
+            obj->sclass = TK_STATIC;
+            obj->section = 0x12;
+            if (obj->type->size != 0x14) {
+                if (!obj->type->size)
+                    obj->type = CDecl_NewStructType(0x14, 4);
                 else
                     CError_FATAL(2259);
             }
-            CInit_DeclareData(info, data, refs, info->type->size);
-            info->type = (Type *)protocolClass;
+            CInit_DeclareData(obj, data, refs, obj->type->size);
+            obj->type = (Type *)protocolClass;
         }
 
         if (protocol->info == NULL)
