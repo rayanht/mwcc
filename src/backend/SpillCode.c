@@ -126,7 +126,9 @@ static void spill_load_vr(PCodeInstruction *instruction, short reg, Interference
 {
     PCodeInstruction *address;
     PCodeInstruction *load;
+    Type *type;
 
+    type = node->object->type;
     CError_ASSERT(184, node->object->datatype == DLOCAL);
     address = PCodeUtilities_CreateInstruction(PC_ADDI, spill_address_register, stack_base_reg, node->object, 0);
     load = PCodeUtilities_CreateInstruction(PC_LVX, reg, 0, spill_address_register);
