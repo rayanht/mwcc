@@ -601,7 +601,7 @@ src/frontend/CInt64.c:
 
 src/backend/InlineAsmPPC.c:
 	.text       start:0x004515B0 end:0x004564B0
-	.data       start:0x00524640 end:0x00524BF0
+	.data       start:0x00524640 end:0x00524BEC
 
 auto_00551808_bss:
 	.bss        start:0x00551808 end:0x00551810

@@ -38,126 +38,13 @@ SInt32 asm_instruction_count;
 char inlineAsmMode;
 UInt8 inlineAsmPPCEnabled;
 
-/* Copies an asm statement and the instruction its expr slot holds. */
+#if VERSION == VERSION_GC_1_0
+#define LINE(line) ((line) <= 2665 ? (line) - 6 : (line) - 7)
+#else
+#define LINE(line) (line)
+#endif
+
 typedef enum RegClass { RC_GPR = 0, RC_FPR = 1, RC_SPR = 2, RC_CRFIELD = 3, RC_CRFIELDBIT = 8, RC_VR = 9 } RegClass;
-
-static inline int InlineAsm_Register(EncodedOperand *operand);
-
-static inline int InlineAsm_RegisterHi(EncodedOperand *operand);
-static inline void ReplaceArg(EncodedOperand *e, Object *b, Object *q);
-
-static inline int recovery_inline_eval(int arg)
-{
-    InlineAsmExpression s;
-    UInt32 isConst;
-    int result;
-    parse_expression(&s, arg);
-    isConst = (s.object == NULL && s.object_label == NULL) && (s.label == NULL);
-    if (!isConst) {
-        if (s.object)
-            PPCError_ReportError(0x7a, s.object->name->name);
-        else if (s.object_label)
-            PPCError_ReportError(0x7a, s.object_label->name->name);
-        else if (s.label)
-            PPCError_ReportError(0xa6, s.label->name->name);
-        result = 0;
-    } else {
-        switch (s.type) {
-            case 8:
-                result = (short)((s.value >> 16) + ((s.value >> 15) & 1));
-                break;
-            case 7:
-                result = (short)(s.value >> 16);
-                break;
-            case 6:
-                result = (short)s.value;
-                break;
-            default:
-                result = s.value;
-                break;
-        }
-    }
-    return result;
-}
-
-static inline int recovery_inline_ranged(int lo, int hi)
-{
-    int result;
-
-    result = recovery_inline_eval(0);
-    if (result < lo || result > hi)
-        CError_ReportError(ERR_NUMBER_OUT_RANGE);
-    return result;
-}
-
-static inline int recovery_inline_ranged2(int lo, int hi)
-{
-    int result;
-
-    result = recovery_inline_eval(0);
-    if (result < lo || result > hi) {
-        CError_ReportError(ERR_NUMBER_OUT_RANGE);
-        return result;
-    }
-    return result;
-}
-
-static inline int recovery_inline_eval1(int arg)
-{
-    return recovery_inline_eval(arg);
-}
-
-static inline int recovery_inline_crbit(void)
-{
-    int value;
-    int checked;
-    if ((checked = value = recovery_inline_eval(1)) < 0 || checked > 31)
-        CError_ReportError(ERR_NUMBER_OUT_RANGE);
-    return value;
-}
-
-static inline void RegisterClassError(const char *name, unsigned char kind)
-{
-    const char *p;
-    switch (kind) {
-        case 0:
-            p = "GPR";
-            break;
-        case 1:
-            p = "FPR";
-            break;
-        case 2:
-            p = "SPR";
-            break;
-        case 3:
-            p = "CRFIELD";
-            break;
-        case 8:
-            p = "CRFIELDBIT";
-            break;
-        case 9:
-            p = "VR";
-            break;
-    }
-    PPCError_ReportError(0xa7, name, p);
-}
-
-static inline int recovery_inline_isreg(int cls)
-{
-    int valid;
-    InlineAsmRegisterEntry *obj;
-    int cls_flag;
-
-    cls_flag = FALSE;
-    valid = FALSE;
-    if ((tk == TK_IDENTIFIER) && (obj = CTemplateNew_GetInlineAsmRegisterEntry(data_00587fa0), obj != NULL)) {
-        valid = TRUE;
-    }
-    if ((valid) && (obj->kind == cls)) {
-        cls_flag = TRUE;
-    }
-    return cls_flag;
-}
 
 static inline SInt32 expression_immediate(const InlineAsmExpression *expression)
 {
@@ -171,117 +58,6 @@ static inline SInt32 expression_immediate(const InlineAsmExpression *expression)
         default:
             return expression->value;
     }
-}
-
-static inline int BranchImmediateOperand(EncodedOperand *out, SInt32 lo, SInt32 hi)
-{
-    SInt32 b;
-    InlineAsmExpression r;
-    SInt32 value;
-    parse_expression(&r, 0);
-    b = (r.object == NULL) && (r.object_label == NULL) && (r.label == NULL);
-    if (!b) {
-        if (r.object != NULL)
-            PPCError_ReportError(0x7a, ((Object *)r.object)->name->name);
-        else if (r.object_label != NULL)
-            PPCError_ReportError(0x7a, ((Object *)r.object_label)->name->name);
-        else if (r.label != NULL)
-            PPCError_ReportError(0xa6, r.label->name->name);
-        value = 0;
-    } else {
-        switch (r.type) {
-            case 8:
-                value = (SInt16)((r.value >> 16) + ((r.value >> 15) & 1));
-                break;
-            case 7:
-                value = (SInt16)(r.value >> 16);
-                break;
-            case 6:
-                value = (SInt16)r.value;
-                break;
-            default:
-                value = r.value;
-                break;
-        }
-    }
-    if (value < lo || value > hi)
-        CError_ReportError(ERR_NUMBER_OUT_RANGE);
-    out->kind = 1;
-    out->data.value = value;
-    return value;
-}
-
-#pragma sym on
-
-static inline int register_value_zero(void)
-{
-    InlineAsmExpression s;
-    UInt32 isConst;
-    int result;
-    parse_expression(&s, 0);
-    isConst = (s.object == NULL && s.object_label == NULL) && (s.label == NULL);
-    if (!isConst) {
-        if (s.object)
-            PPCError_ReportError(0x7a, ((Object *)s.object)->name->name);
-        else if (s.object_label)
-            PPCError_ReportError(0x7a, ((Object *)s.object_label)->name->name);
-        else if (s.label)
-            PPCError_ReportError(0xa6, s.label->name->name);
-        result = 0;
-    } else {
-        switch (s.type) {
-            case 8:
-                result = (short)((s.value >> 16) + ((s.value >> 15) & 1));
-                break;
-            case 7:
-                result = (short)(s.value >> 16);
-                break;
-            case 6:
-                result = (short)s.value;
-                break;
-            default:
-                result = s.value;
-                break;
-        }
-    }
-    return result;
-}
-
-#pragma sym reset
-
-static inline int register_value(void)
-{
-    InlineAsmExpression s;
-    UInt32 isConst;
-    int value;
-
-    parse_expression(&s, 1);
-    isConst = (s.object == NULL && s.object_label == NULL) && (s.label == NULL);
-    if (!isConst) {
-        if (s.object)
-            PPCError_ReportError(0x7a, s.object->name->name);
-        else if (s.object_label)
-            PPCError_ReportError(0x7a, s.object_label->name->name);
-        else if (s.label)
-            PPCError_ReportError(0xa6, s.label->name->name);
-        value = 0;
-    } else {
-        switch (s.type) {
-            case 8:
-                value = (short)((s.value >> 16) + ((s.value >> 15) & 1));
-                break;
-            case 7:
-                value = (short)(s.value >> 16);
-                break;
-            case 6:
-                value = (short)s.value;
-                break;
-            default:
-                value = s.value;
-                break;
-        }
-    }
-    return value;
 }
 
 static inline void IAExpr_Const(InlineAsmExpression *expr, SInt32 value)
@@ -306,54 +82,6 @@ static inline int IAExpr_IsConst(InlineAsmExpression *expr)
     if (noobject && !expr->label)
         result = 1;
     return result;
-}
-
-static inline Object *IA_LookupVariable(void)
-{
-    struct AsmOperand pr;
-    Object *obj;
-
-    if (tk == TK_IDENTIFIER) {
-        InlineAsm_ResolveOperandNameDefault(data_00587fa0, &pr);
-        if ((obj = pr.object)) {
-            ObjGen_PPC_EABI_SetObjectSection(obj, obj->type->size, 0);
-            if (obj->datatype == DLOCAL) {
-                if (Registers_GetInfo(obj) ? Registers_GetInfo(obj)->reg : 0)
-                    obj = NULL;
-                else
-                    return obj;
-            } else if ((UInt8)(obj->datatype - 3) > 1) {
-                if (obj->datatype && !PCodeUtilities_Require(obj))
-                    return NULL;
-                BE_symbol_GetOrCreateFunctionObjectSymbol(obj);
-            }
-            return obj;
-        }
-    }
-    return NULL;
-}
-
-static inline int IA_IsRegisterClass(InlineAsmRegisterEntry **reg, SInt16 cls)
-{
-    int ok = 0;
-    int found = 0;
-    if (tk == TK_IDENTIFIER && (*reg = CTemplateNew_GetInlineAsmRegisterEntry(data_00587fa0)))
-        found = 1;
-    if (found && (*reg)->kind == cls)
-        ok = 1;
-    return ok;
-}
-
-static inline SInt32 IA_GetRegister(SInt16 cls)
-{
-    InlineAsmRegisterEntry *reg;
-    SInt32 num = 0;
-    if (tk == TK_IDENTIFIER && (reg = CTemplateNew_GetInlineAsmRegisterEntry(data_00587fa0)) && reg->kind == cls)
-        num = (SInt16)reg->number;
-    else
-        PPCError_ReportError(0xa7, data_00587fa0->name);
-    tk = CPrepTokenizer_GetNextToken();
-    return num;
 }
 
 void report_binary_expression_error(HashNameNode *name1, HashNameNode *name2, SInt16 kind)
@@ -427,7 +155,17 @@ void report_binary_expression_error(HashNameNode *name1, HashNameNode *name2, SI
     }
 }
 
-void report_register_error(unsigned int value, unsigned char kind)
+static void report_expression_error(InlineAsmExpression *expr)
+{
+    if (expr->object)
+        PPCError_ReportError(0x7a, expr->object->name->name);
+    else if (expr->object_label)
+        PPCError_ReportError(0x7a, expr->object_label->name->name);
+    else if (expr->label)
+        PPCError_ReportError(0xa6, expr->label->name->name);
+}
+
+void report_register_error(const char *name, unsigned char kind)
 {
     char *selectedData;
     switch (kind) {
@@ -450,53 +188,71 @@ void report_register_error(unsigned int value, unsigned char kind)
             selectedData = "VR";
             break;
     }
-    PPCError_ReportError(0xa7, value, selectedData);
+    PPCError_ReportError(0xa7, name, selectedData);
+}
+
+static inline Object *lookup_variable(void);
+
+static int is_register_class(int kind)
+{
+    InlineAsmRegisterEntry *entry;
+    int result;
+    int found;
+
+    result = FALSE;
+    found = FALSE;
+    if (tk == TK_IDENTIFIER && (entry = CTemplateNew_GetInlineAsmRegisterEntry(data_00587fa0)) != NULL)
+        found = TRUE;
+    if (found && entry->kind == kind)
+        result = TRUE;
+    return result;
+}
+
+#if VERSION == VERSION_GC_1_0
+#define is_operand_register_class is_register_class
+#else
+static int is_operand_register_class(int kind)
+{
+    int found;
+    InlineAsmRegisterEntry *entry;
+    int result;
+
+    result = FALSE;
+    found = FALSE;
+    if (tk == TK_IDENTIFIER && (entry = CTemplateNew_GetInlineAsmRegisterEntry(data_00587fa0)) != NULL)
+        found = TRUE;
+    if (found && entry->kind == kind)
+        result = TRUE;
+    return result;
+}
+#endif
+
+static int get_register(int kind)
+{
+    InlineAsmRegisterEntry *entry;
+    int reg;
+
+    reg = 0;
+    if (tk == TK_IDENTIFIER && (entry = CTemplateNew_GetInlineAsmRegisterEntry(data_00587fa0)) != NULL &&
+        entry->kind == kind)
+        reg = entry->number;
+    else
+#if VERSION == VERSION_GC_1_0
+        CError_ReportError(0xa7, data_00587fa0->name);
+#else
+        PPCError_ReportError(0xa7, data_00587fa0->name);
+#endif
+    tk = CPrepTokenizer_GetNextToken();
+    return reg;
 }
 
 int parse_constant_in_range(int lowerBound, int upperBound)
 {
-    InlineAsmExpression constant;
-    UInt32 isConstant;
     int result;
 
-    parse_expression(&constant, 0);
-
-    isConstant = (constant.object == NULL && constant.object_label == NULL) && (constant.label == NULL);
-
-    if (!isConstant) {
-        Object *symbol = constant.object;
-        if (symbol)
-            PPCError_ReportError(0x7a, symbol->name->name);
-        else if (constant.object_label) {
-            Object *secondarySymbol = constant.object_label;
-            PPCError_ReportError(0x7a, secondarySymbol->name->name);
-        } else if (constant.label) {
-            struct CLabel *parameter = constant.label;
-            PPCError_ReportError(0xa6, parameter->name->name);
-        }
-        result = 0;
-    } else {
-        switch (constant.type) {
-            case 8:
-                result = (short)((constant.value >> 16) + ((constant.value >> 15) & 1));
-                break;
-            case 7:
-                result = (short)(constant.value >> 16);
-                break;
-            case 6: {
-                SInt16 value = constant.value;
-                result = value;
-                break;
-            }
-            default:
-                result = constant.value;
-                break;
-        }
-    }
-
+    result = fn_00469d40(0);
     if (result < lowerBound || result > upperBound)
         CError_ReportError(ERR_NUMBER_OUT_RANGE);
-
     return result;
 }
 
@@ -505,13 +261,11 @@ void parse_unary_expression(InlineAsmExpression *expr, int flag)
     UInt8 mode = 0;
     SInt16 islocal = 0;
     Object *label;
-    Object *object;
-    InlineAsmRegisterEntry *reg;
     SInt32 base;
+    InlineAsmRegisterEntry *reg;
+    Object *object;
     SInt32 value;
     SInt16 halfword;
-    InlineAsmRegisterEntry *conditionRegister;
-    InlineAsmRegisterEntry *conditionBit;
     struct AsmOperand operand;
     InlineAsmExpression offset;
     char registerName[4];
@@ -524,7 +278,7 @@ void parse_unary_expression(InlineAsmExpression *expr, int flag)
                 expr->object_label = label;
                 return;
             }
-            if ((object = IA_LookupVariable())) {
+            if ((object = lookup_variable())) {
                 if (!object->datatype && (object->type->type == TYPEINT || object->type->type == TYPEENUM) &&
                     (object->qual & Q_INLINE_DATA)) {
                     IAExpr_Const(expr, object->u.data.u.intconst.lo);
@@ -588,13 +342,13 @@ void parse_unary_expression(InlineAsmExpression *expr, int flag)
                     return;
                 }
             } else if (flag) {
-                if (IA_IsRegisterClass(&conditionRegister, 3)) {
-                    value = IA_GetRegister(3);
+                if (is_register_class(3)) {
+                    value = get_register(3);
                     IAExpr_Const(expr, value);
                     return;
                 }
-                if (IA_IsRegisterClass(&conditionBit, 8)) {
-                    value = IA_GetRegister(8);
+                if (is_register_class(8)) {
+                    value = get_register(8);
                     IAExpr_Const(expr, value);
                     return;
                 }
@@ -838,49 +592,13 @@ void parse_binary_expression_tail(InlineAsmExpression *result, int parseMode)
     }
 }
 
-int parse_range_checked_expression(EncodedOperand *out, SInt32 lo, SInt32 hi)
+int parse_range_checked_expression(EncodedOperand *out, int lo, int hi)
 {
-    SInt32 hasNoReferences;
-    InlineAsmExpression expression;
-    SInt32 value;
-    SInt16 immediate;
+    int value;
 
-    parse_expression(&expression, 0);
-
-    hasNoReferences = (expression.object == NULL) && (expression.object_label == NULL) && (expression.label == NULL);
-    if (!hasNoReferences) {
-        if (expression.object != NULL) {
-            Object *object = expression.object;
-            PPCError_ReportError(0x7a, object->name->name);
-        } else if (expression.object_label != NULL) {
-            Object *object = expression.object_label;
-            PPCError_ReportError(0x7a, object->name->name);
-        } else if (expression.label != NULL)
-            PPCError_ReportError(0xa6, expression.label->name->name);
-        value = 0;
-    } else {
-        switch (expression.type) {
-            case 8:
-                immediate = (expression.value >> 16) + ((expression.value >> 15) & 1);
-                value = immediate;
-                break;
-            case 7:
-                immediate = expression.value >> 16;
-                value = immediate;
-                break;
-            case 6:
-                immediate = expression.value;
-                value = immediate;
-                break;
-            default:
-                value = expression.value;
-                break;
-        }
-    }
-
+    value = fn_00469d40(0);
     if (value < lo || value > hi)
         CError_ReportError(ERR_NUMBER_OUT_RANGE);
-
     out->kind = 1;
     out->data.value = value;
     return value;
@@ -909,33 +627,18 @@ void parse_expression(InlineAsmExpression *op, int x)
     }
 }
 
-int fn_00469d40(void *arg)
+int fn_00469d40(int mode)
 {
     InlineAsmExpression expression;
-    int is_constant;
-    int has_no_objects;
+    UInt32 isConst;
     int result;
 
-    parse_expression(&expression, (int)arg);
-
-    has_no_objects = 0;
-    is_constant = 0;
-    if (expression.object == NULL && expression.object_label == NULL)
-        has_no_objects = 1;
-    if (has_no_objects && expression.label == NULL)
-        is_constant = 1;
-
-    if (!is_constant) {
-        if (expression.object != NULL) {
-            PPCError_ReportError(0x7a, expression.object->name->name);
-        } else if (expression.object_label != NULL) {
-            PPCError_ReportError(0x7a, expression.object_label->name->name);
-        } else if (expression.label != NULL) {
-            PPCError_ReportError(0xa6, expression.label->name->name);
-        }
+    parse_expression(&expression, mode);
+    isConst = (expression.object == NULL && expression.object_label == NULL) && expression.label == NULL;
+    if (!isConst) {
+        report_expression_error(&expression);
         return 0;
     }
-
     switch (expression.type) {
         case 8:
             result = (SInt16)((expression.value >> 16) + ((expression.value >> 15) & 1));
@@ -956,10 +659,64 @@ int fn_00469d40(void *arg)
 int check_register_value_range(void)
 {
     int value;
-    int checked;
-    if ((checked = value = register_value()) < 0 || checked > 31)
+    long checked;
+
+    value = fn_00469d40(1);
+#if VERSION == VERSION_GC_1_0
+    if (value < 0 || value > 31)
+#else
+    checked = value;
+    if (checked < 0 || checked > 31)
+#endif
         CError_ReportError(ERR_NUMBER_OUT_RANGE);
     return value;
+}
+
+static void parse_float_operand(EncodedOperand *operand, struct ParsedAsmInstruction *instruction, Type *type)
+{
+    Object *object;
+
+    object = TOC_GetFloatObject(type, &token_float);
+    operand->kind = 2;
+    operand->modifier.reg.register_class = 0;
+    operand->target.object = NULL;
+    operand->modifier.reg.flags = PCodeOperand_Use;
+    operand->data.value = 0;
+    instruction->operand_count++;
+    operand[1].kind = 4;
+    operand[1].target.object = object;
+    operand[1].modifier.reg.flags = PCodeOperand_Definition;
+    operand[1].data.value = 0;
+    tk = CPrepTokenizer_GetNextToken();
+}
+
+static inline Object *lookup_variable(void)
+{
+    struct AsmOperand pr;
+    Object *obj;
+
+    if (tk == TK_IDENTIFIER) {
+        InlineAsm_ResolveOperandNameDefault(data_00587fa0, &pr);
+        if ((obj = pr.object)) {
+            ObjGen_PPC_EABI_SetObjectSection(obj, obj->type->size, 0);
+            if (obj->datatype == DLOCAL) {
+                if (Registers_GetInfo(obj) ? Registers_GetInfo(obj)->reg : 0)
+#if VERSION == VERSION_GC_1_0
+                    obj = NULL;
+#else
+                    return obj = NULL;
+#endif
+                return obj;
+            }
+            if ((UInt8)(obj->datatype - 3) <= 1)
+                return obj;
+            if (!obj->datatype || PCodeUtilities_Require(obj)) {
+                BE_symbol_GetOrCreateFunctionObjectSymbol(obj);
+                return obj;
+            }
+        }
+    }
+    return NULL;
 }
 
 Object *get_struct_or_class_pointer_object(void)
@@ -1131,48 +888,9 @@ void parse_expression_operand(EncodedOperand *dest, struct ParsedAsmInstruction 
 
 EncodedOperand *parse_displacement_operand(EncodedOperand *operand, struct ParsedAsmInstruction *instruction)
 {
-    InlineAsmExpression expression;
-    SInt32 displacement;
-    SInt16 immediate;
-    SInt32 is_constant;
-    SInt32 has_no_object;
+    int displacement;
 
-    parse_expression(&expression, 0);
-    has_no_object = 0;
-    is_constant = 0;
-    if (expression.object == NULL && expression.object_label == NULL)
-        has_no_object = 1;
-    if (has_no_object && expression.label == NULL)
-        is_constant = 1;
-    if (!is_constant) {
-        if (expression.object != NULL)
-            PPCError_ReportError(0x7a, expression.object->name->name);
-        else if (expression.object_label != NULL)
-            PPCError_ReportError(0x7a, expression.object_label->name->name);
-        else if (expression.label != NULL)
-            PPCError_ReportError(0xa6, expression.label->name->name);
-        displacement = 0;
-    } else {
-        switch (expression.type) {
-            case 8:
-                immediate = (expression.value >> 16) + ((expression.value >> 15) & 1);
-                displacement = immediate;
-                break;
-            case 7:
-                immediate = expression.value >> 16;
-                displacement = immediate;
-                break;
-            case 6:
-                immediate = expression.value;
-                displacement = immediate;
-                break;
-            default:
-                displacement = expression.value;
-                break;
-        }
-    }
-    if (displacement < -0x800 || displacement > 0xfff)
-        CError_ReportError(ERR_NUMBER_OUT_RANGE);
+    displacement = parse_constant_in_range(-0x800, 0xfff);
     if (tk == '(') {
         tk = CPrepTokenizer_GetNextToken();
         parse_register_operand(operand, 0, 0);
@@ -1218,36 +936,11 @@ void parse_register_operand(EncodedOperand *out, int regClass, Boolean isOutput)
             Registers_GetInfo(object)->usage = 100000;
         }
     } else if (regClass == RC_SPR) {
-        value = register_value_zero();
-        if (value < 0 || value > 0x3ff)
-            CError_ReportError(ERR_NUMBER_OUT_RANGE);
-        out->kind = 1;
-        out->data.value = value;
+        parse_range_checked_expression(out, 0, 0x3ff);
         return;
     } else {
         if (tk == TK_IDENTIFIER) {
-            name = data_00587fa0->name;
-            switch ((RegClass)regClass) {
-                case RC_GPR:
-                    registerName = "GPR";
-                    break;
-                case RC_FPR:
-                    registerName = "FPR";
-                    break;
-                case RC_SPR:
-                    registerName = "SPR";
-                    break;
-                case RC_CRFIELD:
-                    registerName = "CRFIELD";
-                    break;
-                case RC_CRFIELDBIT:
-                    registerName = "CRFIELDBIT";
-                    break;
-                case RC_VR:
-                    registerName = "VR";
-                    break;
-            }
-            PPCError_ReportError(0xa7, name, registerName);
+            report_register_error(data_00587fa0->name, regClass);
         } else {
             PPCError_ReportError(0xab);
         }
@@ -1260,7 +953,11 @@ void parse_register_operand(EncodedOperand *out, int regClass, Boolean isOutput)
     }
     if (memcmp(data_00587fa0->name, "@hiword", 8) == 0) {
         if (entry->object != NULL)
+#if VERSION == VERSION_GC_1_0
+            out->data.value = 1;
+#else
             out->modifier.reg.flags |= 4;
+#endif
         else
             PPCError_ReportError(0xa8);
         tk = CPrepTokenizer_GetNextToken();
@@ -1269,6 +966,40 @@ void parse_register_operand(EncodedOperand *out, int regClass, Boolean isOutput)
     if (regClass == RC_GPR && entry->object != NULL && entry->object->type->size == 8) {
         HashNameNode *objectName = entry->object->name;
         PPCError_ReportError(0x7f, objectName->name, objectName->name, objectName->name);
+    }
+}
+
+static void parse_cr0_operand(EncodedOperand *operand, Boolean isOutput)
+{
+    InlineAsmRegisterEntry *entry;
+
+    if ((entry = CTemplateNew_LookupInlineAsmRegister("cr0")) != NULL) {
+        operand->kind = 2;
+        operand->modifier.reg.register_class = 3;
+        operand->target.object = entry->object;
+        operand->data.value = entry->number;
+        if (isOutput)
+            operand->modifier.reg.flags = PCodeOperand_Definition;
+        else
+            operand->modifier.reg.flags = PCodeOperand_Use;
+    } else {
+        report_register_error("cr0", 3);
+    }
+}
+
+static void parse_r0_operand(EncodedOperand *operand)
+{
+    InlineAsmRegisterEntry *entry;
+
+    if ((entry = CTemplateNew_LookupInlineAsmRegister("r0")) != NULL) {
+        operand->kind = 2;
+        operand->modifier.reg.register_class = 0;
+        operand->target.object = entry->object;
+        operand->data.value = entry->number;
+        operand->modifier.reg.flags = PCodeOperand_Use;
+        tk = CPrepTokenizer_GetNextToken();
+    } else {
+        report_register_error("r0", 0);
     }
 }
 
@@ -1310,15 +1041,15 @@ void parse_branch_operand(struct ParsedAsmInstruction *stmt, EncodedOperand *out
             if (tk == '+') {
                 tk = CPrepTokenizer_GetNextToken();
                 if (wide)
-                    BranchImmediateOperand(out, -0x2000000, 0x1ffffff);
+                    parse_range_checked_expression(out, -0x2000000, 0x1ffffff);
                 else
-                    BranchImmediateOperand(out, -0x8000, 0xffff);
+                    parse_range_checked_expression(out, -0x8000, 0xffff);
             } else if (tk == '-') {
                 tk = CPrepTokenizer_GetNextToken();
                 if (wide)
-                    value = -BranchImmediateOperand(out, -0x1ffffff, 0x2000000);
+                    value = -parse_range_checked_expression(out, -0x1ffffff, 0x2000000);
                 else
-                    value = -BranchImmediateOperand(out, -0x7fff, 0x10000);
+                    value = -parse_range_checked_expression(out, -0x7fff, 0x10000);
                 out->data.value = value;
             } else {
                 CError_ReportError(ERR_ILLEGAL_OPERAND);
@@ -1328,9 +1059,9 @@ void parse_branch_operand(struct ParsedAsmInstruction *stmt, EncodedOperand *out
         }
     } else if (absolute) {
         if (wide)
-            BranchImmediateOperand(out, -0x2000000, 0x1ffffff);
+            parse_range_checked_expression(out, -0x2000000, 0x1ffffff);
         else
-            BranchImmediateOperand(out, -0x8000, 0xffff);
+            parse_range_checked_expression(out, -0x8000, 0xffff);
     } else {
         CError_ReportError(ERR_ILLEGAL_OPERAND);
     }
@@ -1389,6 +1120,14 @@ void encode_expression_operand(EncodedOperand *operand, int minimum, int maximum
     }
 }
 
+static void expect_comma(void)
+{
+    if (tk == ',')
+        tk = CPrepTokenizer_GetNextToken();
+    else
+        CError_ReportError(ERR_COMMA_EXPECTED);
+}
+
 struct ParsedAsmInstruction *parse_asm_instruction_operands(struct AsmOperandPattern *pattern)
 {
     PCodeOpcodeDescriptor *descriptor;
@@ -1396,14 +1135,12 @@ struct ParsedAsmInstruction *parse_asm_instruction_operands(struct AsmOperandPat
     int value;
     Object *object;
     unsigned int operand_count, allocation_size, pattern_index;
-    struct InlineAsmRegisterEntry *register_entry;
     InlineAsmRegisterEntry *name_rec;
     EncodedOperand *operand;
     long second_value;
     int first_value, last_value, comma_state;
     long cr_bit;
     long insert_position, extract_position, rotation, mask_shift;
-    int width;
 
     descriptor = &gPCodeOpcodeDescriptors[pattern->opcode];
     operand_count = descriptor->operand_count;
@@ -1421,31 +1158,16 @@ struct ParsedAsmInstruction *parse_asm_instruction_operands(struct AsmOperandPat
     operand = instruction->data.operands;
     pattern_index = 0;
     while (pattern_index < 6 && pattern->operands[pattern_index] != 0) {
-        if (comma_state != 0) {
-            if (tk == ',')
-                tk = CPrepTokenizer_GetNextToken();
-            else
-                CError_ReportError(ERR_COMMA_EXPECTED);
-        }
+        if (comma_state != 0)
+            expect_comma();
         switch (pattern->operands[pattern_index]) {
             case 0x51:
                 comma_state = -1;
             case 0x50:
-                if (!recovery_inline_isreg(0) && tk == TK_INTCONST && intconst_lo == 0) {
-                    register_entry = CTemplateNew_LookupInlineAsmRegister("r0");
-                    if (register_entry != NULL) {
-                        operand->kind = 2;
-                        operand->modifier.reg.register_class = 0;
-                        operand->target.object = register_entry->object;
-                        operand->data.value = register_entry->number;
-                        operand->modifier.reg.flags = PCodeOperand_Use;
-                        tk = CPrepTokenizer_GetNextToken();
-                    } else {
-                        RegisterClassError("r0", 0);
-                    }
-                } else {
+                if (!is_operand_register_class(0) && tk == TK_INTCONST && intconst_lo == 0)
+                    parse_r0_operand(operand);
+                else
                     parse_register_operand(operand, 0, 0);
-                }
                 break;
             case 4:
             case 6:
@@ -1466,11 +1188,8 @@ struct ParsedAsmInstruction *parse_asm_instruction_operands(struct AsmOperandPat
                 break;
             case 0x2d:
                 if (tk == TK_INTCONST && intconst_lo == 0) {
-                    value = recovery_inline_ranged(0, 0);
-                    if (tk == ',')
-                        tk = CPrepTokenizer_GetNextToken();
-                    else
-                        CError_ReportError(ERR_COMMA_EXPECTED);
+                    value = parse_constant_in_range(0, 0);
+                    expect_comma();
                 }
                 parse_register_operand(operand, 0, 0);
                 break;
@@ -1478,10 +1197,7 @@ struct ParsedAsmInstruction *parse_asm_instruction_operands(struct AsmOperandPat
                 comma_state = -1;
             case 0x7f:
                 parse_register_operand(&operand[1], 0, 0);
-                if (tk == ',')
-                    tk = CPrepTokenizer_GetNextToken();
-                else
-                    CError_ReportError(ERR_COMMA_EXPECTED);
+                expect_comma();
                 parse_register_operand(operand, 0, 0);
                 instruction->operand_count++;
                 operand++;
@@ -1545,9 +1261,7 @@ struct ParsedAsmInstruction *parse_asm_instruction_operands(struct AsmOperandPat
                 operand++;
                 if (tk == ',') {
                     tk = CPrepTokenizer_GetNextToken();
-                    value = recovery_inline_ranged(0x10c, 0x10d);
-                    operand->kind = 1;
-                    operand->data.value = value;
+                    value = parse_range_checked_expression(operand, 0x10c, 0x10d);
                 } else {
                     operand->kind = 1;
                     operand->data.value = 0x10c;
@@ -1569,38 +1283,20 @@ struct ParsedAsmInstruction *parse_asm_instruction_operands(struct AsmOperandPat
                 parse_register_operand(operand, 3, 1);
                 break;
             case 0x30:
-                if (recovery_inline_isreg(3)) {
+                if (is_operand_register_class(3)) {
                     parse_register_operand(operand, 3, 1);
                 } else {
-                    register_entry = CTemplateNew_LookupInlineAsmRegister("cr0");
-                    if (register_entry != NULL) {
-                        operand->kind = 2;
-                        operand->modifier.reg.register_class = 3;
-                        operand->target.object = register_entry->object;
-                        operand->data.value = register_entry->number;
-                        operand->modifier.reg.flags = PCodeOperand_Definition;
-                    } else {
-                        RegisterClassError("cr0", 3);
-                    }
+                    parse_cr0_operand(operand, 1);
                     comma_state = -1;
                 }
                 break;
             case 0x28:
                 comma_state = -1;
             case 0x29:
-                if (recovery_inline_isreg(3)) {
+                if (is_operand_register_class(3)) {
                     parse_register_operand(operand, 3, 0);
                 } else {
-                    register_entry = CTemplateNew_LookupInlineAsmRegister("cr0");
-                    if (register_entry != NULL) {
-                        operand->kind = 2;
-                        operand->modifier.reg.register_class = 3;
-                        operand->target.object = register_entry->object;
-                        operand->data.value = register_entry->number;
-                        operand->modifier.reg.flags = PCodeOperand_Use;
-                    } else {
-                        RegisterClassError("cr0", 3);
-                    }
+                    parse_cr0_operand(operand, 0);
                     comma_state = -1;
                 }
                 break;
@@ -1626,10 +1322,7 @@ struct ParsedAsmInstruction *parse_asm_instruction_operands(struct AsmOperandPat
                 break;
             case 0x34:
             case 0x35: {
-                int bit_value, checked_bit;
-                if ((checked_bit = bit_value = recovery_inline_eval1(1)) < 0 || checked_bit > 0x1f)
-                    CError_ReportError(ERR_NUMBER_OUT_RANGE);
-                cr_bit = bit_value;
+                cr_bit = check_register_value_range();
                 operand->kind = 2;
                 operand->data.value = cr_bit >> 2;
                 operand->modifier.reg.register_class = 3;
@@ -1643,10 +1336,7 @@ struct ParsedAsmInstruction *parse_asm_instruction_operands(struct AsmOperandPat
             case 0x33:
                 comma_state = -1;
             case 0x32: {
-                int bit_value, checked_bit;
-                if ((checked_bit = bit_value = recovery_inline_eval1(1)) < 0 || checked_bit > 0x1f)
-                    CError_ReportError(ERR_NUMBER_OUT_RANGE);
-                cr_bit = bit_value;
+                cr_bit = check_register_value_range();
                 operand->kind = 2;
                 operand->data.value = cr_bit >> 2;
                 operand->modifier.reg.register_class = 3;
@@ -1658,11 +1348,8 @@ struct ParsedAsmInstruction *parse_asm_instruction_operands(struct AsmOperandPat
                 break;
             }
             case 0x6b: {
-                int bit_value, checked_bit;
                 int bit_part;
-                if ((checked_bit = bit_value = recovery_inline_eval1(1)) < 0 || checked_bit > 0x1f)
-                    CError_ReportError(ERR_NUMBER_OUT_RANGE);
-                cr_bit = bit_value;
+                cr_bit = check_register_value_range();
                 operand->kind = 2;
                 operand->data.value = cr_bit >> 2;
                 operand->modifier.reg.register_class = 3;
@@ -1684,7 +1371,7 @@ struct ParsedAsmInstruction *parse_asm_instruction_operands(struct AsmOperandPat
             }
             case 0x6c: {
                 int bit_part;
-                cr_bit = recovery_inline_crbit();
+                cr_bit = check_register_value_range();
                 operand->kind = 2;
                 operand->data.value = cr_bit >> 2;
                 operand->modifier.reg.register_class = 3;
@@ -1717,36 +1404,14 @@ struct ParsedAsmInstruction *parse_asm_instruction_operands(struct AsmOperandPat
                 break;
             case 0x3f:
                 if (tk == TK_FLOATCONST) {
-                    object = TOC_GetFloatObject(TYPE(&stfloat), &token_float);
-                    operand->kind = 2;
-                    operand->modifier.reg.register_class = 0;
-                    operand->target.object = NULL;
-                    operand->modifier.reg.flags = PCodeOperand_Use;
-                    operand->data.value = 0;
-                    instruction->operand_count++;
-                    operand[1].kind = 4;
-                    operand[1].target.object = object;
-                    operand[1].modifier.reg.flags = PCodeOperand_Definition;
-                    operand[1].data.value = 0;
-                    tk = CPrepTokenizer_GetNextToken();
+                    parse_float_operand(operand, instruction, TYPE(&stfloat));
                 } else {
                     parse_expression_operand(operand, instruction, 1);
                 }
                 break;
             case 0x40:
                 if (tk == TK_FLOATCONST) {
-                    object = TOC_GetFloatObject(TYPE(&stdouble), &token_float);
-                    operand->kind = 2;
-                    operand->modifier.reg.register_class = 0;
-                    operand->target.object = NULL;
-                    operand->modifier.reg.flags = PCodeOperand_Use;
-                    operand->data.value = 0;
-                    instruction->operand_count++;
-                    operand[1].kind = 4;
-                    operand[1].target.object = object;
-                    operand[1].modifier.reg.flags = PCodeOperand_Definition;
-                    operand[1].data.value = 0;
-                    tk = CPrepTokenizer_GetNextToken();
+                    parse_float_operand(operand, instruction, TYPE(&stdouble));
                 } else {
                     parse_expression_operand(operand, instruction, 1);
                 }
@@ -1755,72 +1420,52 @@ struct ParsedAsmInstruction *parse_asm_instruction_operands(struct AsmOperandPat
                 operand = parse_displacement_operand(operand, instruction);
                 break;
             case 0x16:
-                value = recovery_inline_ranged(0, 3);
-                operand->kind = 1;
-                operand->data.value = value;
+                value = parse_range_checked_expression(operand, 0, 3);
                 break;
             case 0x17:
-                value = recovery_inline_ranged(0, 3);
-                operand->kind = 1;
-                operand->data.value = value;
+                value = parse_range_checked_expression(operand, 0, 3);
                 instruction->operand_count++;
                 operand++;
                 if ((first_value = tk) == ',') {
                     tk = CPrepTokenizer_GetNextToken();
-                    value = recovery_inline_ranged(0, 1);
-                    operand->kind = 1;
-                    operand->data.value = value;
+                    value = parse_range_checked_expression(operand, 0, 1);
                 } else {
                     operand->kind = 1;
                     operand->data.value = 0;
                 }
                 break;
             case 0xc:
-                value = recovery_inline_ranged(0, 1);
-                operand->kind = 1;
-                operand->data.value = value;
+                value = parse_range_checked_expression(operand, 0, 1);
                 break;
             case 0xd:
-                value = recovery_inline_ranged(0, 1);
-                operand->kind = 1;
-                operand->data.value = value;
+                value = parse_range_checked_expression(operand, 0, 1);
                 break;
             case 0x1c:
                 comma_state = -1;
             case 0x1b:
-                value = recovery_inline_ranged(-0x8000, 0xffff);
-                operand->kind = 1;
-                operand->data.value = value;
+                value = parse_range_checked_expression(operand, -0x8000, 0xffff);
                 break;
             case 0x1e:
                 comma_state = -1;
             case 0x1d:
-                value = recovery_inline_ranged(-0x10, 0xf);
-                operand->kind = 1;
-                operand->data.value = value;
+                value = parse_range_checked_expression(operand, -0x10, 0xf);
                 break;
             case 0x20:
                 comma_state = -1;
             case 0x1f:
-                value = recovery_inline_ranged(-0x7fff, 0x10000);
-                operand->kind = 1;
-                operand->data.value = value;
+                value = parse_range_checked_expression(operand, -0x7fff, 0x10000);
                 operand->data.value = -value;
                 break;
             case 0x22:
                 comma_state = -1;
             case 0x21:
-                value = recovery_inline_ranged(0, 0xffff);
-                operand->kind = 1;
-                operand->data.value = value;
+                value = parse_range_checked_expression(operand, 0, 0xffff);
                 break;
             case 0x2b:
                 parse_branch_operand(instruction, operand, 1, 1, pattern->instruction & 1);
                 break;
             case 0x42:
-                value = recovery_inline_ranged(1, 0x20);
-                operand->kind = 1;
-                operand->data.value = value;
+                value = parse_range_checked_expression(operand, 1, 0x20);
                 break;
             case 0x43:
                 parse_register_operand(operand, 2, 0);
@@ -1830,30 +1475,22 @@ struct ParsedAsmInstruction *parse_asm_instruction_operands(struct AsmOperandPat
                     operand->kind = 1;
                     operand->data.value = name_rec->number;
                 } else {
-                    value = recovery_inline_ranged(0, 0x3ff);
-                    operand->kind = 1;
-                    operand->data.value = value;
+                    value = parse_range_checked_expression(operand, 0, 0x3ff);
                 }
                 break;
             case 0x46:
             case 0x47:
-                value = recovery_inline_ranged(0, 0xff);
-                operand->kind = 1;
-                operand->data.value = value;
+                value = parse_range_checked_expression(operand, 0, 0xff);
                 break;
             case 0x49:
                 comma_state = -1;
             case 0x25:
             case 0x45:
             case 0x48:
-                value = recovery_inline_ranged(0, 0xf);
-                operand->kind = 1;
-                operand->data.value = value;
+                value = parse_range_checked_expression(operand, 0, 0xf);
                 break;
             case 0x8a:
-                value = recovery_inline_ranged(0, 7);
-                operand->kind = 1;
-                operand->data.value = value;
+                value = parse_range_checked_expression(operand, 0, 7);
                 break;
             case 0x24:
             case 0x4b:
@@ -1865,15 +1502,10 @@ struct ParsedAsmInstruction *parse_asm_instruction_operands(struct AsmOperandPat
             case 0x4c:
             case 0x4d:
             case 0x4f:
-                value = recovery_inline_ranged(0, 0x1f);
-                operand->kind = 1;
-                operand->data.value = value;
+                value = parse_range_checked_expression(operand, 0, 0x1f);
                 break;
             case 0x27: {
-                int bit_value, checked_bit;
-                if ((checked_bit = bit_value = recovery_inline_eval1(1)) < 0 || checked_bit > 0x1f)
-                    CError_ReportError(ERR_NUMBER_OUT_RANGE);
-                cr_bit = bit_value;
+                cr_bit = check_register_value_range();
                 operand->kind = 2;
                 operand->data.value = cr_bit >> 2;
                 operand->modifier.reg.register_class = 3;
@@ -1887,9 +1519,7 @@ struct ParsedAsmInstruction *parse_asm_instruction_operands(struct AsmOperandPat
             case 0x58:
                 comma_state = -1;
             case 0x57:
-                value = recovery_inline_ranged(0, 0x1f);
-                operand->kind = 1;
-                operand->data.value = value;
+                value = parse_range_checked_expression(operand, 0, 0x1f);
                 instruction->operand_count++;
                 operand[1].kind = 1;
                 operand[1].data.value = 0;
@@ -1901,9 +1531,7 @@ struct ParsedAsmInstruction *parse_asm_instruction_operands(struct AsmOperandPat
             case 0x5a:
                 comma_state = -1;
             case 0x59:
-                value = recovery_inline_ranged(1, 0x1f);
-                operand->kind = 1;
-                operand->data.value = value;
+                value = parse_range_checked_expression(operand, 1, 0x1f);
                 operand->data.value = 0x20 - value;
                 instruction->operand_count++;
                 operand[1].kind = 1;
@@ -1916,16 +1544,9 @@ struct ParsedAsmInstruction *parse_asm_instruction_operands(struct AsmOperandPat
             case 100:
                 comma_state = -1;
             case 99:
-                value = recovery_inline_ranged(0, 0x1f);
-                operand->kind = 1;
-                operand->data.value = value;
-                if (tk == ',')
-                    tk = CPrepTokenizer_GetNextToken();
-                else
-                    CError_ReportError(ERR_COMMA_EXPECTED);
-                last_value = recovery_inline_ranged2(0, value);
-                operand->kind = 1;
-                operand->data.value = last_value;
+                value = parse_range_checked_expression(operand, 0, 0x1f);
+                expect_comma();
+                last_value = parse_range_checked_expression(operand, 0, value);
                 mask_shift = last_value;
                 operand->data.value = mask_shift;
                 instruction->operand_count++;
@@ -1939,9 +1560,7 @@ struct ParsedAsmInstruction *parse_asm_instruction_operands(struct AsmOperandPat
             case 0x60:
                 comma_state = -1;
             case 0x5f:
-                value = recovery_inline_ranged(0, 0x1f);
-                operand->kind = 1;
-                operand->data.value = value;
+                value = parse_range_checked_expression(operand, 0, 0x1f);
                 operand->data.value = 0;
                 instruction->operand_count++;
                 operand[1].kind = 1;
@@ -1954,9 +1573,7 @@ struct ParsedAsmInstruction *parse_asm_instruction_operands(struct AsmOperandPat
             case 0x62:
                 comma_state = -1;
             case 0x61:
-                value = recovery_inline_ranged(0, 0x1f);
-                operand->kind = 1;
-                operand->data.value = value;
+                value = parse_range_checked_expression(operand, 0, 0x1f);
                 operand->data.value = 0;
                 instruction->operand_count++;
                 operand[1].kind = 1;
@@ -1969,16 +1586,9 @@ struct ParsedAsmInstruction *parse_asm_instruction_operands(struct AsmOperandPat
             case 0x54:
                 comma_state = -1;
             case 0x53:
-                value = recovery_inline_ranged(0, 0x1f);
-                operand->kind = 1;
-                operand->data.value = value;
-                if (tk == ',')
-                    tk = CPrepTokenizer_GetNextToken();
-                else
-                    CError_ReportError(ERR_COMMA_EXPECTED);
-                last_value = recovery_inline_ranged(0, 0x1f);
-                operand->kind = 1;
-                operand->data.value = last_value;
+                value = parse_range_checked_expression(operand, 0, 0x1f);
+                expect_comma();
+                last_value = parse_range_checked_expression(operand, 0, 0x1f);
                 instruction->operand_count++;
                 operand[1].kind = 1;
                 operand[1].data.value = 0;
@@ -1990,23 +1600,20 @@ struct ParsedAsmInstruction *parse_asm_instruction_operands(struct AsmOperandPat
             case 0x56:
                 comma_state = -1;
             case 0x55: {
-                int second_shift, parsed_shift;
-                first_value = recovery_inline_ranged(0, 0x1f);
-                operand->kind = 1;
-                operand->data.value = first_value;
-                rotation = first_value;
-                if (tk == ',')
-                    tk = CPrepTokenizer_GetNextToken();
-                else
-                    CError_ReportError(ERR_COMMA_EXPECTED);
-                parsed_shift = recovery_inline_ranged(0, 0x1f);
-                operand->kind = 1;
-                operand->data.value = parsed_shift;
-                second_shift = parsed_shift;
-                if (0x1f < second_shift + rotation)
+                long shift;
+                rotation = parse_range_checked_expression(operand, 0, 0x1f);
+                expect_comma();
+#if VERSION == VERSION_GC_1_0
+                shift = parse_range_checked_expression(operand, 0, 0x1f) + rotation;
+                if (shift > 0x1f)
                     CError_ReportError(ERR_ILLEGAL_OPERAND);
-                second_shift += rotation;
-                operand->data.value = second_shift;
+                operand->data.value = shift;
+#else
+                shift = parse_range_checked_expression(operand, 0, 0x1f);
+                if (shift + rotation > 0x1f)
+                    CError_ReportError(ERR_ILLEGAL_OPERAND);
+                operand->data.value = shift + rotation;
+#endif
                 instruction->operand_count++;
                 operand[1].kind = 1;
                 operand[1].data.value = 0x20 - rotation;
@@ -2019,9 +1626,7 @@ struct ParsedAsmInstruction *parse_asm_instruction_operands(struct AsmOperandPat
             case 0x5c:
                 comma_state = -1;
             case 0x5b:
-                value = recovery_inline_ranged(0, 0x1f);
-                operand->kind = 1;
-                operand->data.value = value;
+                value = parse_range_checked_expression(operand, 0, 0x1f);
                 instruction->operand_count++;
                 operand[1].kind = 1;
                 operand[1].data.value = 0;
@@ -2033,9 +1638,7 @@ struct ParsedAsmInstruction *parse_asm_instruction_operands(struct AsmOperandPat
             case 0x5e:
                 comma_state = -1;
             case 0x5d:
-                value = recovery_inline_ranged(1, 0x1f);
-                operand->kind = 1;
-                operand->data.value = value;
+                value = parse_range_checked_expression(operand, 1, 0x1f);
                 rotation = value;
                 operand->data.value = 0x20 - rotation;
                 instruction->operand_count++;
@@ -2060,20 +1663,20 @@ struct ParsedAsmInstruction *parse_asm_instruction_operands(struct AsmOperandPat
                 break;
             case 0x66:
                 comma_state = -1;
-            case 0x65:
-                first_value = recovery_inline_ranged(0, 0x1f);
-                operand->kind = 1;
-                operand->data.value = first_value;
-                extract_position = first_value;
-                if (tk == ',')
-                    tk = CPrepTokenizer_GetNextToken();
-                else
-                    CError_ReportError(ERR_COMMA_EXPECTED);
-                second_value = recovery_inline_ranged(0, 0x1f);
-                operand->kind = 1;
-                operand->data.value = second_value;
-                width = second_value;
-                if (0x20 < width + extract_position)
+            case 0x65: {
+                long width;
+#if VERSION == VERSION_GC_1_0
+                long end;
+#endif
+                extract_position = parse_range_checked_expression(operand, 0, 0x1f);
+                expect_comma();
+                width = parse_range_checked_expression(operand, 0, 0x1f);
+#if VERSION == VERSION_GC_1_0
+                end = width + extract_position;
+                if (end > 0x20)
+#else
+                if (width + extract_position > 0x20)
+#endif
                     CError_ReportError(ERR_ILLEGAL_OPERAND);
                 operand->data.value = 0x20 - width;
                 instruction->operand_count++;
@@ -2082,35 +1685,44 @@ struct ParsedAsmInstruction *parse_asm_instruction_operands(struct AsmOperandPat
                 instruction->operand_count++;
                 operand += 2;
                 operand->kind = 1;
-                width += extract_position;
-                operand->data.value = --width;
+#if VERSION == VERSION_GC_1_0
+                operand->data.value = end - 1;
+#else
+                operand->data.value = width + extract_position - 1;
+#endif
                 break;
+            }
             case 0x68:
                 comma_state = -1;
             case 0x67: {
                 long shift;
-                value = recovery_inline_ranged(0, 0x1f);
-                operand->kind = 1;
-                operand->data.value = value;
-                insert_position = value;
-                if (tk == ',')
-                    tk = CPrepTokenizer_GetNextToken();
-                else
-                    CError_ReportError(ERR_COMMA_EXPECTED);
-                last_value = recovery_inline_ranged(0, 0x1f);
-                operand->kind = 1;
-                operand->data.value = last_value;
-                shift = last_value;
+#if VERSION == VERSION_GC_1_0
+                long end;
+#endif
+                insert_position = parse_range_checked_expression(operand, 0, 0x1f);
+                expect_comma();
+                shift = parse_range_checked_expression(operand, 0, 0x1f);
+#if VERSION == VERSION_GC_1_0
+                end = shift + insert_position;
+                if (end > 0x20)
+                    CError_ReportError(ERR_ILLEGAL_OPERAND);
+                operand->data.value = 0x20 - end;
+#else
                 if (shift + insert_position > 0x20)
                     CError_ReportError(ERR_ILLEGAL_OPERAND);
                 operand->data.value = 0x20 - (shift + insert_position);
+#endif
                 instruction->operand_count++;
                 operand[1].kind = 1;
                 operand[1].data.value = shift;
                 instruction->operand_count++;
                 operand += 2;
                 operand->kind = 1;
+#if VERSION == VERSION_GC_1_0
+                operand->data.value = end - 1;
+#else
                 operand->data.value = shift + insert_position - 1;
+#endif
                 break;
             }
             case 0x76:
@@ -2130,9 +1742,8 @@ struct ParsedAsmInstruction *parse_asm_instruction_operands(struct AsmOperandPat
                 operand->modifier.reg.register_class = 2;
                 operand->target.object = NULL;
                 operand->data.value = (pattern->instruction >> 0x10 & 0x1f) + (pattern->instruction >> 6 & 0x3e0);
-                value = recovery_inline_ranged(0, 3);
                 operand->data.value =
-                    (pattern->instruction >> 0x10 & 0x1f) + (pattern->instruction >> 6 & 0x3e0) + value;
+                    (pattern->instruction >> 0x10 & 0x1f) + (pattern->instruction >> 6 & 0x3e0) + parse_constant_in_range(0, 3);
                 if ((pattern->instruction >> 1 & 0x3ff) == 0x1d3)
                     operand->modifier.reg.flags = PCodeOperand_Definition;
                 break;
@@ -2172,7 +1783,7 @@ struct ParsedAsmInstruction *parse_asm_instruction_operands(struct AsmOperandPat
                 break;
             case 0x6d:
                 operand->kind = 1;
-                value = recovery_inline_ranged(0, 3);
+                value = parse_constant_in_range(0, 3);
                 rotation = value * 2;
                 rotation += (pattern->instruction >> 0x10 & 0x1f) + (pattern->instruction >> 6 & 0x3e0);
                 operand->data.value = rotation;
@@ -2202,14 +1813,10 @@ struct ParsedAsmInstruction *parse_asm_instruction_operands(struct AsmOperandPat
                 comma_state = -1;
                 break;
             case 0x8b:
-                value = recovery_inline_ranged(0, 1);
-                operand->kind = 1;
-                operand->data.value = value;
+                value = parse_range_checked_expression(operand, 0, 1);
                 break;
             case 0x8c:
-                value = recovery_inline_ranged(0, 7);
-                operand->kind = 1;
-                operand->data.value = value;
+                value = parse_range_checked_expression(operand, 0, 7);
                 break;
             default:
                 CError_ReportError(ERR_ILLEGAL_OPERAND);
@@ -2231,6 +1838,22 @@ static void InlineAsmPPC_StrippedLiterals(const char **literals)
     literals[2] = "eieio";
     literals[3] = "vslo";
     literals[4] = "vsro";
+}
+
+static Boolean parse_dot_suffix(char *name)
+{
+    Boolean result = 0;
+
+    if (CPrepTokenizer_GetNextTokenAndRestorePosition() == '.') {
+        tk = CPrepTokenizer_GetNextToken();
+        result = 1;
+        strcat(name, ".");
+    }
+    return result;
+}
+
+static void fn_00454520(void)
+{
 }
 
 void InlineAsmPPC_Initialize(void)
@@ -2314,7 +1937,7 @@ void InlineAsmPPC_Initialize(void)
             data_00587128 = 0x000FFFFFU;
             break;
         default:
-            CError_FATAL(2665);
+            CError_FATAL(LINE(2665));
             break;
     }
     enabled = 0U;
@@ -2344,7 +1967,9 @@ void InlineAsmPPC_Init(char mode)
     CTemplateNew_InitAsmOperandPatternLookup();
     CTemplateNew_ClearGlobalArray();
     CTemplateNew_InitRegistrationHashTables();
-    if (inlineAsmMode != '\0') {
+    if (inlineAsmMode == '\0') {
+        fn_00454520();
+    } else {
         CodeGen_EnumerateArgumentRegisters(assign_object_register);
         FuncLevelAsmPPC_AllocateLocals();
     }
@@ -2372,6 +1997,17 @@ void *create_function_asm_directive(HashNameNode *name, Boolean isGlobal)
     } else {
         CError_ReportError(ERR_UNDEFINED_IDENTIFIER, name->name);
     }
+    return instruction;
+}
+
+static ParsedAsmInstruction *create_frfree_directive(void)
+{
+    ParsedAsmInstruction *instruction;
+
+    instruction = lalloc(offsetof(struct ParsedAsmInstruction, data));
+    memclrw(instruction, offsetof(struct ParsedAsmInstruction, data));
+    instruction->opcode = 4;
+    instruction->specialFlags = 1;
     return instruction;
 }
 
@@ -2428,12 +2064,6 @@ void InlineAsmPPC_ParseDirective(int directive)
             break;
         }
         case 2: {
-            InlineAsmExpression constant;
-            int absolute, noNodes;
-            Object *base;
-            Object *offset;
-            SInt32 value;
-            SInt16 halfword;
             if (asm_instruction_count != 0)
                 CError_ReportError(ERR_FUNCTION_NO_INITIALIZED_STACKFRAME);
             if (data_00588521 == 0)
@@ -2441,46 +2071,8 @@ void InlineAsmPPC_ParseDirective(int directive)
             if (data_005884f4 != 0)
                 CError_ReportError(ERR_FUNCTION_NO_INITIALIZED_STACKFRAME);
             tk = CPrepTokenizer_GetNextToken();
-            if (tk != TK_EOL && tk != ';') {
-                parse_expression(&constant, 0);
-                absolute = 0;
-                noNodes = 0;
-                if ((base = constant.object) == NULL && constant.object_label == NULL)
-                    noNodes = 1;
-                if (noNodes && constant.label == NULL)
-                    absolute = 1;
-                if (!absolute) {
-                    if (base != NULL) {
-                        PPCError_ReportError(0x7a, base->name->name);
-                    } else if ((offset = constant.object_label) != NULL) {
-                        PPCError_ReportError(0x7a, offset->name->name);
-                    } else if (constant.label) {
-                        PPCError_ReportError(0xa6, constant.label->name->name);
-                    }
-                    value = 0;
-                } else {
-                    switch (constant.type) {
-                        case 8:
-                            halfword = (constant.value >> 16) + ((constant.value >> 15) & 1);
-                            value = halfword;
-                            break;
-                        case 7:
-                            halfword = constant.value >> 16;
-                            value = halfword;
-                            break;
-                        case 6:
-                            halfword = constant.value;
-                            value = halfword;
-                            break;
-                        default:
-                            value = constant.value;
-                            break;
-                    }
-                }
-                if (value < 0x20 || value > 0x7ffe)
-                    CError_ReportError(ERR_NUMBER_OUT_RANGE);
-                data_005871a0 = value;
-            }
+            if (tk != TK_EOL && tk != ';')
+                data_005871a0 = parse_constant_in_range(0x20, 0x7ffe);
             data_00588521 = 0;
             break;
         }
@@ -2495,16 +2087,11 @@ void InlineAsmPPC_ParseDirective(int directive)
         }
         case 4: {
             Statement *node;
-            struct ParsedAsmInstruction *instruction;
             if (data_00588521 != 0)
                 CError_ReportError(ERR_FUNCTION_NO_INITIALIZED_STACKFRAME);
             node = CFunc_AppendStatement(0x10);
             node->expr = NULL;
-            instruction = lalloc(offsetof(struct ParsedAsmInstruction, data));
-            memclrw(instruction, offsetof(struct ParsedAsmInstruction, data));
-            instruction->opcode = 4;
-            instruction->specialFlags = 1;
-            node->expr = (ENode *)instruction;
+            node->expr = (ENode *)create_frfree_directive();
             if (copts.filesyminfo != 0)
                 node->sourceoffset = CPrep_UpdateTokenLine(&function_fileinfo);
             else
@@ -2637,7 +2224,7 @@ void InlineAsmPPC_ParseDirectiveIdentifier(void)
 
 void InlineAsmPPC_ParseInstruction(void)
 {
-    Boolean hasDot;
+    char hasDot;
     Statement *record;
     UInt32 flag0, flag1, flag2;
     Boolean hasPlus = 0;
@@ -2663,12 +2250,7 @@ void InlineAsmPPC_ParseInstruction(void)
         record->sourceoffset = -1;
     strncpy(name, data_00587fa0->name, 0xb);
     mnemonic = name;
-    hasDot = 0;
-    if (CPrepTokenizer_GetNextTokenAndRestorePosition() == 0x2e) {
-        tk = CPrepTokenizer_GetNextToken();
-        hasDot = 1;
-        strcat(mnemonic, ".");
-    }
+    hasDot = parse_dot_suffix(mnemonic);
     operand = CTemplateNew_FindAsmOperandPattern(mnemonic);
     if (operand == NULL)
         CError_ReportError(ERR_UNKNOWN_ASSEMBLER_INSTRUCTION_MNEMONIC);
@@ -2743,6 +2325,16 @@ void InlineAsmPPC_ParseInstruction(void)
 /* The PCode instruction for a parsed inline-assembler instruction: its operands converted (registers bound to the
    variables they name, labels created on first use), a load/store-multiple given its register list, and a call
    given its clobbers and the exception actions in force. */
+static inline int InlineAsm_Register(EncodedOperand *operand)
+{
+    return Registers_GetInfo(operand->target.object) ? Registers_GetInfo(operand->target.object)->reg : 0;
+}
+
+static inline int InlineAsm_RegisterHi(EncodedOperand *operand)
+{
+    return Registers_GetInfo(operand->target.object) ? Registers_GetInfo(operand->target.object)->regHi : 0;
+}
+
 PCodeInstruction *create_pcode_asm_instruction(ParsedAsmInstruction *ia, SInt32 argcount, UInt8 flag)
 {
     PCodeInstruction *instr;
@@ -2806,6 +2398,12 @@ PCodeInstruction *create_pcode_asm_instruction(ParsedAsmInstruction *ia, SInt32 
                     SInt16 registerFlags;
                     out->kind = operand->modifier.reg.register_class;
                     if (operand->target.object) {
+#if VERSION == VERSION_GC_1_0
+                        /* (1.0 marks @hiword in the operand's value) */
+                        if (operand->data.value == 1)
+                            out->data.reg.reg = InlineAsm_RegisterHi(operand);
+                        else
+#else
                         registerFlags = operand->modifier.reg.flags;
 #if VERSION >= VERSION_GC_1_2_5
                         if (registerFlags & 4) {
@@ -2815,6 +2413,7 @@ PCodeInstruction *create_pcode_asm_instruction(ParsedAsmInstruction *ia, SInt32 
                             out->data.reg.reg = InlineAsm_RegisterHi(operand);
                             operand->modifier.reg.flags &= ~4;
                         } else
+#endif
                             out->data.reg.reg = InlineAsm_Register(operand);
                         if (!InlineAsm_Register(operand)) {
                             if (Registers_GetInfo(operand->target.object)->usage >= 100000)
@@ -2887,7 +2486,7 @@ PCodeInstruction *create_pcode_asm_instruction(ParsedAsmInstruction *ia, SInt32 
                     out->data.labeldiff.offset = operand->modifier.kind;
                     break;
                 default:
-                    CError_FATAL(3514);
+                    CError_FATAL(LINE(3514));
                     break;
             }
     }
@@ -2908,16 +2507,6 @@ PCodeInstruction *create_pcode_asm_instruction(ParsedAsmInstruction *ia, SInt32 
             Exceptions_CollectRegisterOperands(gCurrentStatement->dobjstack, (PCodeOperand *)out);
     }
     return instr;
-}
-
-static inline int InlineAsm_RegisterHi(EncodedOperand *operand)
-{
-    return Registers_GetInfo(operand->target.object) ? Registers_GetInfo(operand->target.object)->regHi : 0;
-}
-
-static inline int InlineAsm_Register(EncodedOperand *operand)
-{
-    return Registers_GetInfo(operand->target.object) ? Registers_GetInfo(operand->target.object)->reg : 0;
 }
 
 void InlineAsmPPC_GenerateAsmInstruction(Statement *o)
@@ -2991,7 +2580,7 @@ void InlineAsmPPC_GenerateAsmInstruction(Statement *o)
                     found = instr->operandData.operands[0].value.label;
                 break;
             default:
-                CError_FATAL(VERSION > VERSION_GC_1_0 ? 3664 : 3657);
+                CError_FATAL(LINE(3664));
         }
         if (found != NULL) {
             PCode_AddSuccessor(gCurrentBlock, found);
@@ -3104,7 +2693,7 @@ SInt32 fn_004631f0(ParsedAsmInstruction *operand)
             case 0xfd:
                 return 0x10;
             default:
-                CError_FATAL(3843);
+                CError_FATAL(LINE(3843));
         }
     } else {
         if (descriptor->flags & 1)
@@ -3120,11 +2709,11 @@ SInt32 fn_004631f0(ParsedAsmInstruction *operand)
                 case 0xd5:
                     return 4;
                 default:
-                    CError_FATAL(3860);
+                    CError_FATAL(LINE(3860));
             }
         }
     }
-    CError_FATAL(3863);
+    CError_FATAL(LINE(3863));
     return 0;
 }
 
@@ -3203,11 +2792,11 @@ void fn_00462d70(Statement *stmt, AsmOut *out)
                                         out->operands[out->numoperands].size = 0x10;
                                         break;
                                     default:
-                                        CError_FATAL(3957);
+                                        CError_FATAL(LINE(3957));
                                 }
                                 break;
                             default:
-                                CError_FATAL(3961);
+                                CError_FATAL(LINE(3961));
                         }
                         out->numoperands++;
                     }
@@ -3242,11 +2831,11 @@ void fn_00462d70(Statement *stmt, AsmOut *out)
                                         out->operands[out->numoperands].size = 0x10;
                                         break;
                                     default:
-                                        CError_FATAL(3993);
+                                        CError_FATAL(LINE(3993));
                                 }
                                 break;
                             default:
-                                CError_FATAL(3997);
+                                CError_FATAL(LINE(3997));
                         }
                         out->numoperands++;
                     }
@@ -3288,11 +2877,17 @@ void fn_00462d70(Statement *stmt, AsmOut *out)
                 out->unmodeledControlFlow = 1;
                 break;
             default:
-                CError_FATAL(4039);
+                CError_FATAL(LINE(4039));
         }
     }
     if ((descriptor->flags & 0x24) && out->numlabels == 0)
         out->unmodeledControlFlow = 1;
+}
+
+static inline void ReplaceArg(EncodedOperand *e, Object *b, Object *q)
+{
+    if (e->target.object == b)
+        e->target.object = q;
 }
 
 void InlineAsmPPC_ReplaceObjectReferenceArguments(Statement *owner, Object *object, ENode *expr)
@@ -3317,12 +2912,6 @@ void InlineAsmPPC_ReplaceObjectReferenceArguments(Statement *owner, Object *obje
             }
         }
     }
-}
-
-static inline void ReplaceArg(EncodedOperand *e, Object *b, Object *q)
-{
-    if (e->target.object == b)
-        e->target.object = q;
 }
 
 Statement *InlineAsmPPC_CopyStatement(Statement *stmt)

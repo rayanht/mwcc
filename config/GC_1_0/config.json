@@ -16,6 +16,7 @@
     "src/backend/Exceptions.c",
     "src/backend/InlineAsm.c",
     "src/backend/InlineAsmMnemonicsPPC.c",
+    "src/backend/InlineAsmPPC.c",
     "src/backend/InlineAsmRegisters.c",
     "src/backend/InlineAsmRegistersPPC.c",
     "src/backend/LiveVariables.c",

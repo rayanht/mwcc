@@ -10371,7 +10371,7 @@
     "source": "src/backend/InlineAsmPPC.c"
   },
   {
-    "name": "fn_00451780",
+    "name": "report_expression_error",
     "address": "0x00451780",
     "size": 81,
     "source": "src/backend/InlineAsmPPC.c"
@@ -10383,19 +10383,19 @@
     "source": "src/backend/InlineAsmPPC.c"
   },
   {
-    "name": "fn_00451840",
+    "name": "is_register_class",
     "address": "0x00451840",
     "size": 61,
     "source": "src/backend/InlineAsmPPC.c"
   },
   {
-    "name": "fn_00451880",
+    "name": "get_register",
     "address": "0x00451880",
     "size": 86,
     "source": "src/backend/InlineAsmPPC.c"
   },
   {
-    "name": "fn_004518e0",
+    "name": "parse_constant_in_range",
     "address": "0x004518e0",
     "size": 38,
     "source": "src/backend/InlineAsmPPC.c"
@@ -10419,7 +10419,7 @@
     "source": "src/backend/InlineAsmPPC.c"
   },
   {
-    "name": "fn_00452800",
+    "name": "parse_range_checked_expression",
     "address": "0x00452800",
     "size": 50,
     "source": "src/backend/InlineAsmPPC.c"
@@ -10437,19 +10437,19 @@
     "source": "src/backend/InlineAsmPPC.c"
   },
   {
-    "name": "fn_004529f0",
+    "name": "check_register_value_range",
     "address": "0x004529f0",
     "size": 35,
     "source": "src/backend/InlineAsmPPC.c"
   },
   {
-    "name": "fn_00452a20",
+    "name": "parse_float_operand",
     "address": "0x00452a20",
     "size": 94,
     "source": "src/backend/InlineAsmPPC.c"
   },
   {
-    "name": "fn_00452a80",
+    "name": "lookup_variable",
     "address": "0x00452a80",
     "size": 167,
     "source": "src/backend/InlineAsmPPC.c"
@@ -10479,13 +10479,13 @@
     "source": "src/backend/InlineAsmPPC.c"
   },
   {
-    "name": "fn_00453120",
+    "name": "parse_cr0_operand",
     "address": "0x00453120",
     "size": 88,
     "source": "src/backend/InlineAsmPPC.c"
   },
   {
-    "name": "fn_00453180",
+    "name": "parse_r0_operand",
     "address": "0x00453180",
     "size": 80,
     "source": "src/backend/InlineAsmPPC.c"
@@ -10503,7 +10503,7 @@
     "source": "src/backend/InlineAsmPPC.c"
   },
   {
-    "name": "fn_00453540",
+    "name": "expect_comma",
     "address": "0x00453540",
     "size": 32,
     "source": "src/backend/InlineAsmPPC.c"
@@ -10515,7 +10515,7 @@
     "source": "src/backend/InlineAsmPPC.c"
   },
   {
-    "name": "fn_004544f0",
+    "name": "parse_dot_suffix",
     "address": "0x004544f0",
     "size": 48,
     "source": "src/backend/InlineAsmPPC.c"
@@ -10545,7 +10545,7 @@
     "source": "src/backend/InlineAsmPPC.c"
   },
   {
-    "name": "fn_00454840",
+    "name": "create_frfree_directive",
     "address": "0x00454840",
     "size": 35,
     "source": "src/backend/InlineAsmPPC.c"
