@@ -192,12 +192,6 @@ static inline int CExpr_StructKind(Type *type)
     return TYPE_STRUCT(type)->stype;
 }
 
-static inline char CExpr_IsMemberFunction(NameResult *candidates)
-{
-    Object *object = (Object *)candidates->object;
-    return OBJECT(candidates->object)->type->type == TYPEFUNC && (((TypeMemberFunc *)object->type)->flags & 1024) != 0;
-}
-
 ENode *CExpr_RewriteConst(ENode *enode)
 {
     Object *obj;
@@ -784,7 +778,7 @@ ENode *CExpr_PointerGeneration(ENode *node)
     return node;
 }
 
-static Boolean CExpr_QualMismatch(SInt32 from, SInt32 to)
+static Boolean CExpr_QualMismatch(int from, int to)
 {
     Boolean result =
         ((from & Q_CONST) != 0 && (to & Q_CONST) == 0) || ((from & Q_VOLATILE) != 0 && (to & Q_VOLATILE) == 0);
@@ -1076,7 +1070,6 @@ static Boolean CExpr_IsTemplateFunc(Object *obj)
     return obj->type->type == TYPEFUNC && (TYPE_FUNC(obj->type)->flags & 1024);
 }
 
-#if VERSION == VERSION_GC_1_0
 ENode *make_member_function_esetconst(NameResult *candidates)
 {
     NameSpaceObjectList *candidate;
@@ -1098,18 +1091,18 @@ ENode *make_member_function_esetconst(NameResult *candidates)
                     if (CExpr_IsTemplateFunc(OBJECT(candidate->object))) {
                         tail = (NameSpaceObjectList *)galloc(sizeof(NameSpaceObjectList));
                         first = tail;
-                        goto copy_candidate;
-                        do {
+                        *tail = *candidate;
+                        tail->next = NULL;
+                        while ((candidate = candidate->next) != NULL) {
                             if (candidate->object->otype == OT_OBJECT) {
                                 if (CExpr_IsTemplateFunc(OBJECT(candidate->object))) {
-                                    tail = tail->next = (NameSpaceObjectList *)galloc(sizeof(NameSpaceObjectList));
-                                copy_candidate:
+                                    tail->next = (NameSpaceObjectList *)galloc(sizeof(NameSpaceObjectList));
+                                    tail = tail->next;
                                     *tail = *candidate;
                                     tail->next = NULL;
                                 }
                             }
-                            candidate = candidate->next;
-                        } while (candidate != NULL);
+                        }
                         candidate = first;
                         break;
                     }
@@ -1129,71 +1122,6 @@ ENode *make_member_function_esetconst(NameResult *candidates)
     tk = (short)CPrepTokenizer_GetNextToken();
     return expr;
 }
-#else
-ENode *make_member_function_esetconst(NameResult *candidates)
-{
-    Type *functionType;
-    NameSpaceObjectList *candidate;
-    Object *listObject;
-    Boolean listMatches;
-    NameSpaceObjectList *first;
-    NameSpaceObjectList *tail;
-    Object *nextObject;
-    Boolean nextMatches;
-    ENode *expr;
-
-    if (candidates->object != NULL) {
-        if (candidates->object->otype != OT_OBJECT || !CExpr_IsMemberFunction(candidates))
-            return NULL;
-        candidate = (NameSpaceObjectList *)lalloc(sizeof(NameSpaceObjectList));
-        memclrw(candidate, sizeof(*candidate));
-        candidate->object = candidates->object;
-    } else {
-        if (candidates->objects != NULL) {
-            candidate = candidates->objects;
-            while (candidate != NULL) {
-                if (candidate->object->otype == OT_OBJECT) {
-                    listObject = OBJECT(candidate->object);
-                    listMatches = OBJECT(candidate->object)->type->type == TYPEFUNC &&
-                                  (((TypeMemberFunc *)listObject->type)->flags & 1024) != 0;
-                    if (listMatches) {
-                        tail = (NameSpaceObjectList *)galloc(sizeof(NameSpaceObjectList));
-                        first = tail;
-                        goto copy_candidate;
-                        do {
-                            if (candidate->object->otype == OT_OBJECT) {
-                                nextObject = OBJECT(candidate->object);
-                                nextMatches = (functionType = OBJECT(candidate->object)->type)->type == TYPEFUNC &&
-                                              (((TypeMemberFunc *)nextObject->type)->flags & 1024) != 0;
-                                if (nextMatches) {
-                                    tail = tail->next = (NameSpaceObjectList *)galloc(sizeof(NameSpaceObjectList));
-                                copy_candidate:
-                                    *tail = *candidate;
-                                    tail->next = NULL;
-                                }
-                            }
-                            candidate = candidate->next;
-                        } while (candidate != NULL);
-                        candidate = first;
-                        break;
-                    }
-                }
-                candidate = candidate->next;
-            }
-            if (candidate == NULL)
-                return NULL;
-        } else {
-            return NULL;
-        }
-    }
-    expr = CExpr_NewENode(EOBJLIST);
-    expr->rtype = OBJECT(candidate->object)->type;
-    expr->data.objlist.list = candidate;
-    expr->data.objlist.templargs = CTemplateNew_ParseTemplateArguments(NULL, 0);
-    tk = (short)CPrepTokenizer_GetNextToken();
-    return expr;
-}
-#endif
 
 ENode *CExpr_MakeNameLookupResultExpr(NameResult *p)
 {
@@ -2175,6 +2103,41 @@ ENode *parse_postfix_expression(Boolean allowSpecial)
                 continue;
 
             case '(':
+#if VERSION == VERSION_GC_1_0
+                left = CExpr_PointerGeneration(expr);
+                if (copts.cplusplus != 0) {
+                    if (CExpr_CheckOperator('(', left, NULL, &overload)) {
+                        expr = overload.expression;
+                        if (expr == NULL)
+                            CError_FATAL(2572);
+                        continue;
+                    }
+                    if (left->type == EMFPOINTER) {
+                        result = scan_member_function_pointer_call(left);
+                        expr = checkreference(result);
+                        continue;
+                    }
+                }
+                tk = CPrepTokenizer_GetNextToken();
+                operand.list = CExpr_ScanExpressionList(1);
+                if (tk != ')')
+                    CError_ReportError(ERR_RPAREN_EXPECTED);
+                if (left->type == ETEMPLDEP) {
+                    result = CExpr_NewENode(EFUNCCALL);
+                    result->rtype = &data_0055d5c0;
+                    result->data.funccall.funcref = left;
+                    result->data.funccall.args = operand.list;
+                    result->data.funccall.functype = &data_0055d5e8;
+                    tk = CPrepTokenizer_GetNextToken();
+                    expr = result;
+                } else {
+                    result = CExpr_MakeFunctionCall(left, operand.list);
+                    expr = checkreference(result);
+                    tk = CPrepTokenizer_GetNextToken();
+                }
+                continue;
+
+#else
                 expr = CExpr_PointerGeneration(expr);
                 if (copts.cplusplus != 0) {
                     if (CExpr_CheckOperator('(', expr, NULL, &overload)) {
@@ -2208,6 +2171,7 @@ ENode *parse_postfix_expression(Boolean allowSpecial)
                 }
                 continue;
 
+#endif
             case TK_ARROW:
                 expr = CExpr_GeneratePointerAndRewriteConst(expr);
                 if (copts.cplusplus != 0) {
@@ -2236,6 +2200,15 @@ ENode *parse_postfix_expression(Boolean allowSpecial)
                 /* fall through */
 
             case '.':
+#if VERSION == VERSION_GC_1_0
+                expr = CExpr_GeneratePointerAndRewriteConst(expr);
+                if (expr->type == EFUNCCALL) {
+                    if ((expr->rtype->type == TYPECLASS || expr->rtype->type == TYPESTRUCT) &&
+                        !Type_RequiresMemoryReturn(expr->rtype)) {
+                        expr = materialize_temporary(expr);
+                    }
+                }
+#else
                 left = CExpr_GeneratePointerAndRewriteConst(expr);
                 expr = left;
                 if (left->type == EFUNCCALL) {
@@ -2244,6 +2217,7 @@ ENode *parse_postfix_expression(Boolean allowSpecial)
                         expr = materialize_temporary(left);
                     }
                 }
+#endif
                 if ((allowSpecial = expr->rtype->type) == TYPECLASS) {
                     CDecl_CompleteType(expr->rtype);
                     if (((TypeClass *)expr->rtype)->objcinfo != NULL && copts.cplusplus != 0) {
@@ -2316,6 +2290,27 @@ ENode *parse_postfix_expression(Boolean allowSpecial)
                 continue;
 
             case TK_INCREMENT:
+#if VERSION == VERSION_GC_1_0
+                expr = CExpr_GeneratePointerAndRewriteConst(expr);
+                if (copts.cplusplus != 0 && CExpr_CheckOperator(TK_INCREMENT, expr, nullnode(), &overload)) {
+                    expr = overload.expression;
+                    if (expr == NULL)
+                        CError_FATAL(2737);
+                    tk = CPrepTokenizer_GetNextToken();
+                    continue;
+                }
+                result = CExpr_LValue(expr, 1, 1);
+                if (result->rtype == (Type *)&stbool) {
+                    expr = CExpr_TempModifyExpr(result);
+                    tk = CPrepTokenizer_GetNextToken();
+                } else {
+                    fn_004fb400(result);
+                    expr = makemonadicnode(result, EPOSTINC);
+                    tk = CPrepTokenizer_GetNextToken();
+                }
+                continue;
+
+#else
                 expr = CExpr_GeneratePointerAndRewriteConst(expr);
                 if (copts.cplusplus != 0 && CExpr_CheckOperator(TK_INCREMENT, expr, nullnode(), &overload)) {
                     expr = overload.expression;
@@ -2335,6 +2330,7 @@ ENode *parse_postfix_expression(Boolean allowSpecial)
                 }
                 continue;
 
+#endif
             case TK_DECREMENT:
                 left = CExpr_GeneratePointerAndRewriteConst(expr);
                 if (copts.cplusplus != 0 && CExpr_CheckOperator(TK_DECREMENT, left, nullnode(), &overload)) {
