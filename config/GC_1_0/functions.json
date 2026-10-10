@@ -20625,7 +20625,7 @@
     "source": "src/frontend/CExpr.c"
   },
   {
-    "name": "fn_004d3c80",
+    "name": "CExpr_ClassPtrCast",
     "address": "0x004d3c80",
     "size": 61,
     "source": "src/frontend/CExpr.c"
@@ -20643,7 +20643,7 @@
     "source": "src/frontend/CExpr.c"
   },
   {
-    "name": "fn_004d3f20",
+    "name": "CExpr_MemberPointerCast",
     "address": "0x004d3f20",
     "size": 82,
     "source": "src/frontend/CExpr.c"
@@ -20667,13 +20667,13 @@
     "source": "src/frontend/CExpr.c"
   },
   {
-    "name": "fn_004d49c0",
+    "name": "CExpr_MakeEMULNode",
     "address": "0x004d49c0",
     "size": 178,
     "source": "src/frontend/CExpr.c"
   },
   {
-    "name": "fn_004d4a80",
+    "name": "CExpr_MakeEDIVNode",
     "address": "0x004d4a80",
     "size": 184,
     "source": "src/frontend/CExpr.c"
@@ -20685,13 +20685,13 @@
     "source": "src/frontend/CExpr.c"
   },
   {
-    "name": "fn_004d4d30",
+    "name": "CExpr_MakeEADDNode",
     "address": "0x004d4d30",
     "size": 178,
     "source": "src/frontend/CExpr.c"
   },
   {
-    "name": "fn_004d4df0",
+    "name": "CExpr_MakeESUBNode",
     "address": "0x004d4df0",
     "size": 178,
     "source": "src/frontend/CExpr.c"
