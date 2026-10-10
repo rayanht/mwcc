@@ -16017,7 +16017,7 @@
     "source": "src/backend/Peephole.c"
   },
   {
-    "name": "fn_004a2730",
+    "name": "RotatedMask",
     "address": "0x004a2730",
     "size": 131,
     "source": "src/backend/Peephole.c"
@@ -16065,7 +16065,7 @@
     "source": "src/backend/Peephole.c"
   },
   {
-    "name": "fn_004a2b50",
+    "name": "unlink_instruction_for_unmatched_fmr",
     "address": "0x004a2b50",
     "size": 87,
     "source": "src/backend/Peephole.c"
@@ -16083,31 +16083,31 @@
     "source": "src/backend/Peephole.c"
   },
   {
-    "name": "fn_004a2d20",
+    "name": "make_record_form_and_unlink_instruction",
     "address": "0x004a2d20",
     "size": 184,
     "source": "src/backend/Peephole.c"
   },
   {
-    "name": "fn_004a2de0",
+    "name": "bypass_extsb_for_low_byte_rotated_mask",
     "address": "0x004a2de0",
     "size": 171,
     "source": "src/backend/Peephole.c"
   },
   {
-    "name": "fn_004a2e90",
+    "name": "bypass_extsh_for_rotated_mask",
     "address": "0x004a2e90",
     "size": 171,
     "source": "src/backend/Peephole.c"
   },
   {
-    "name": "fn_004a2f40",
+    "name": "fold_lbz_lbzx_mask",
     "address": "0x004a2f40",
     "size": 181,
     "source": "src/backend/Peephole.c"
   },
   {
-    "name": "fn_004a3000",
+    "name": "fold_lhz_lhzx_mask",
     "address": "0x004a3000",
     "size": 181,
     "source": "src/backend/Peephole.c"
@@ -16119,7 +16119,7 @@
     "source": "src/backend/Peephole.c"
   },
   {
-    "name": "fn_004a3200",
+    "name": "fold_li_operand",
     "address": "0x004a3200",
     "size": 184,
     "source": "src/backend/Peephole.c"
@@ -16131,7 +16131,7 @@
     "source": "src/backend/Peephole.c"
   },
   {
-    "name": "fn_004a3550",
+    "name": "fold_reaching_addi",
     "address": "0x004a3550",
     "size": 199,
     "source": "src/backend/Peephole.c"
@@ -16167,13 +16167,13 @@
     "source": "src/backend/Peephole.c"
   },
   {
-    "name": "fn_004a3ab0",
+    "name": "replace_with_reaching_li",
     "address": "0x004a3ab0",
     "size": 151,
     "source": "src/backend/Peephole.c"
   },
   {
-    "name": "fn_004a3b50",
+    "name": "merge_reaching_def_instruction",
     "address": "0x004a3b50",
     "size": 152,
     "source": "src/backend/Peephole.c"
@@ -16191,19 +16191,19 @@
     "source": "src/backend/Peephole.c"
   },
   {
-    "name": "fn_004a3d10",
+    "name": "eliminate_redundant_store",
     "address": "0x004a3d10",
     "size": 1309,
     "source": "src/backend/Peephole.c"
   },
   {
-    "name": "fn_004a4230",
+    "name": "fold_rlwinm_or_mr_reaching_def",
     "address": "0x004a4230",
     "size": 482,
     "source": "src/backend/Peephole.c"
   },
   {
-    "name": "fn_004a4420",
+    "name": "combine_mulli",
     "address": "0x004a4420",
     "size": 182,
     "source": "src/backend/Peephole.c"
@@ -16233,7 +16233,7 @@
     "source": "src/backend/Peephole.c"
   },
   {
-    "name": "fn_004a4810",
+    "name": "fold_to_rlwnm",
     "address": "0x004a4810",
     "size": 1307,
     "source": "src/backend/Peephole.c"
@@ -16245,7 +16245,7 @@
     "source": "src/backend/Peephole.c"
   },
   {
-    "name": "fn_004a5060",
+    "name": "fold_rlwimi_rlwinm_to_sthbrx",
     "address": "0x004a5060",
     "size": 706,
     "source": "src/backend/Peephole.c"
