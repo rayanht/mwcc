@@ -176,7 +176,7 @@ extern void fn_0050f240(Object *object);
 extern void CInline_SaveInfo(CInlineInfo *out, Statement *list, Object *function);
 struct CPrecNode;
 extern void parse_inline_definition(struct CPrecNode *inlineInfo);
-extern Object *create_local_object(Type *type, unsigned int qual, unsigned int storageClassFlags);
+extern Object *create_local_object(Type *type, SInt16 qual, UInt8 sclass, Boolean unused);
 extern void *create_inline_switch_data(Statement *base, Statement *classInfo);
 extern SInt16 CInline_ReturnZero(Type *type);
 extern void CInline_GeneratePendingFunctionBody(void);
