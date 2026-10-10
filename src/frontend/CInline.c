@@ -877,7 +877,9 @@ ENode *fn_00513240(ENode *expr)
                         node->data.objref = data_0058245a[node->data.longval].var;
                         return node;
                     case EM_ARG:
-                        for (objects = arguments, index = 0; objects != NULL; objects = objects->next, index++)
+                        objects = arguments;
+                        index = 0;
+                        for (; objects != NULL; objects = objects->next, index++)
                             if (index == node->data.longval) {
                                 node->type = EOBJREF;
                                 node->data.objref = objects->object;
