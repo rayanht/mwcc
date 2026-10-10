@@ -2513,43 +2513,6 @@ static union IntrinsicTableEntry intrinsic_tables[272] = {
     {NULL},
 };
 
-static short intrinsic_opcodes[313] = {
-    PC_EIEIO,   PC_SYNC,  PC_ISYNC,  0,          0,        PC_FABS,   PC_FNABS,  0,         0,         PC_CNTLZW,
-    PC_LHBRX,   PC_LWBRX, PC_STHBRX, PC_STWBRX,  PC_DCBF,  PC_DCBT,   PC_DCBST,  PC_DCBTST, PC_DCBZ,   PC_MULHW,
-    PC_MULHWU,  PC_DIVW,  PC_DIVWU,  PC_FMADD,   PC_FMSUB, PC_FNMADD, PC_FNMSUB, PC_FMADDS, PC_FMSUBS, PC_FNMADDS,
-    PC_FNMSUBS, PC_MFFS,  PC_FRES,   PC_FRSQRTE, PC_FSEL,  0,         0,         PC_RLWIMI, PC_RLWINM, PC_RLWNM,
-    PC_FABS,    PC_FNABS, 0,         0,          0,        0,         0,         0,         0,         0,
-    0,          0,        0,         0,          0,        0,         0,         0,         0,         0,
-    0,          0,        0,         0,          0,        0,         0,         0,         0,         0,
-    0,          0,        0,         0,          0,        0,         0,         0,         0,         0,
-    0,          0,        0,         0,          0,        0,         0,         0,         0,         0,
-    0,          0,        0,         0,          0,        0,         0,         0,         0,         0,
-    0,          0,        0,         0,          0,        0,         0,         0,         0,         0,
-    0,          0,        0,         0,          0,        0,         0,         0,         0,         0,
-    0,          0,        0,         0,          0,        0,         0,         0,         0,         0,
-    0,          0,        0,         0,          0,        0,         0,         0,         0,         0,
-    0,          0,        0,         0,          0,        0,         0,         0,         0,         0,
-    0,          0,        0,         0,          0,        0,         0,         0,         0,         0,
-    0,          0,        0,         0,          0,        0,         0,         0,         0,         0,
-    0,          0,        0,         0,          0,        0,         0,         0,         0,         0,
-    0,          0,        0,         0,          0,        0,         0,         0,         0,         0,
-    0,          0,        0,         0,          0,        0,         0,         0,         0,         0,
-    0,          0,        0,         0,          0,        0,         0,         0,         0,         0,
-    0,          0,        0,         0,          0,        0,         0,         0,         0,         0,
-    0,          0,        0,         0,          0,        0,         0,         0,         0,         0,
-    0,          0,        0,         0,          0,        0,         0,         0,         0,         0,
-    0,          0,        0,         0,          0,        0,         0,         0,         0,         0,
-    0,          0,        0,         0,          0,        0,         0,         0,         0,         0,
-    0,          0,        0,         0,          0,        0,         0,         0,         0,         0,
-    0,          0,        0,         0,          0,        0,         0,         0,         0,         0,
-    0,          0,        0,         0,          0,        0,         0,         0,         0,         0,
-    0,          0,        0,         0,          0,        0,         0,         0,         0,         0,
-    0,          0,        0,         0,          0,        0,         0,         0,         0,         0,
-    0,          0,        0,
-};
-
-static TypePointer stchar_ptr = {TYPEPOINTER, 4, TYPE(&stchar)};
-
 static inline void GenGPR(ENode *node, Operand *op)
 {
     data_00560648[node->type](node, 0, 0, op);
@@ -2839,10 +2802,14 @@ static void emit_rlwinm(ENode *expr, ENode *shift, ENode *maskBegin, ENode *mask
     if (shift->type != EINTCONST || maskBegin->type != EINTCONST || maskEnd->type != EINTCONST)
         CError_FatalError(ERR_ILLEGAL_OPERAND);
     GenGPR(expr, &operand);
-    selected = requestedReg ? requestedReg : gUsedVirtualRegistersGPR++;
+    if (requestedReg != 0)
+        selected = requestedReg;
+    else
+        selected = gUsedVirtualRegistersGPR++;
     PCodeUtilities_EmitInstruction(PC_RLWINM, selected, operand.reg, shift->data.intval.lo, maskBegin->data.intval.lo,
-                                   maskEnd->data.intval.lo),
-        result->kind = OpndType_GPR, result->reg = selected;
+                                   maskEnd->data.intval.lo);
+    result->kind = OpndType_GPR;
+    result->reg = selected;
 }
 
 void emit_rlwnm(ENode *value, ENode *shift, ENode *maskBegin, ENode *maskEnd, short targetReg, Operand *result)
@@ -2894,6 +2861,45 @@ unsigned char is_same_type_or_signedint_compatible(struct Type *firstType, struc
     return result;
 }
 
+static int check_arg_count(int expected, ENodeList *args, HashNameNode *name)
+{
+    int count;
+    ENodeList *argument;
+
+    count = 0;
+    argument = args;
+    while (argument != NULL) {
+        count++;
+        argument = argument->next;
+    }
+    if (count != expected) {
+        PPCError_ReportError(103, name->name, count, expected);
+        return 0;
+    }
+    return 1;
+}
+
+static ENode *make_intrinsic_call(Object *intrinsic, ENodeList *args, Type *operation)
+{
+    TypeFunc *functionType;
+    ENode *call;
+
+    functionType = (TypeFunc *)intrinsic->type;
+    if (functionType->type != TYPEFUNC) {
+        CError_FATAL(3718);
+    }
+    call = (ENode *)lalloc(sizeof(*call));
+    call->type = EFUNCCALL;
+    call->cost = 4;
+    call->rtype = operation;
+    call->ignored = 0;
+    call->flags = functionType->qual & Q_CV;
+    call->data.funccall.funcref = create_objectrefnode(intrinsic);
+    call->data.funccall.args = args;
+    call->data.funccall.functype = functionType;
+    return CExpr_AdjustFunctionCall(call);
+}
+
 static inline int OpIndex(UInt16 token)
 {
     return token - 0x2a;
@@ -2923,6 +2929,19 @@ Type *find_matching_op_result(UInt16 token, ENodeList *args, HashNameNode *name)
     }
     return entry->result;
 }
+
+#if VERSION == VERSION_GC_1_0
+static Type *find_table_result(UInt16 id, HashNameNode *name)
+{
+    return (Type *)intrinsic_tables[OpIndex(id)].operation->operation;
+}
+#else
+static Type *find_table_result(int index, HashNameNode *name)
+{
+    index -= 42;
+    return (Type *)intrinsic_tables[index].operation->operation;
+}
+#endif
 
 SInt32 select_altivec_mangle_result(UInt16 intrinsicCode, ENodeList *arguments, HashNameNode *name)
 {
@@ -3701,10 +3720,19 @@ ENode *Intrinsics_MakeAltivecCall(Object *descriptor, ENodeList *args)
 {
     Object *intrinsic = descriptor;
     ENode *result = NULL;
-    unsigned short intrinsicID;
-    int tableIndex;
+    unsigned short id;
+#if VERSION > VERSION_GC_1_0
+    int index;
+#endif
+    int valid;
+    Type *operation;
+
     if (copts.altivec_model != 0) {
-        switch (tableIndex = (intrinsicID = intrinsic->u.intrinsic)) {
+#if VERSION == VERSION_GC_1_0
+        switch (id = intrinsic->u.intrinsic) {
+#else
+        switch (index = (id = intrinsic->u.intrinsic)) {
+#endif
             case 60:
             case 61:
             case 62:
@@ -3740,50 +3768,15 @@ ENode *Intrinsics_MakeAltivecCall(Object *descriptor, ENodeList *args)
             case 281:
             case 282:
             case 283:
-            case 284: {
-                ENodeList *argument;
-                HashNameNode *name;
-                int count;
-                int valid;
-                TypeFunc *functionType;
-                ENode *call;
-                Type *operation;
-                count = 0;
-                argument = args;
-                name = intrinsic->name;
-                while (argument != NULL) {
-                    count++;
-                    argument = argument->next;
-                }
-                if (count != 3) {
-                    PPCError_ReportError(103, name->name, count, 3);
-                    valid = 0;
-                } else {
-                    valid = 1;
-                }
-                if (!valid) {
+            case 284:
+                valid = check_arg_count(3, args, intrinsic->name);
+                if (!valid)
                     break;
-                }
-                operation = match_intrinsic_triple(intrinsicID, args, intrinsic->name);
-                if (operation == NULL) {
+                operation = match_intrinsic_triple(id, args, intrinsic->name);
+                if (operation == NULL)
                     break;
-                }
-                functionType = (TypeFunc *)intrinsic->type;
-                if (functionType->type != TYPEFUNC) {
-                    CError_FATAL(3718);
-                }
-                call = (ENode *)lalloc(sizeof(*call));
-                call->type = EFUNCCALL;
-                call->cost = 4;
-                call->rtype = operation;
-                call->ignored = 0;
-                call->flags = functionType->qual & Q_CV;
-                call->data.funccall.funcref = create_objectrefnode(intrinsic);
-                call->data.funccall.args = args;
-                call->data.funccall.functype = functionType;
-                result = CExpr_AdjustFunctionCall(call);
+                result = make_intrinsic_call(intrinsic, args, operation);
                 break;
-            }
             case 42:
             case 43:
             case 44:
@@ -3973,50 +3966,15 @@ ENode *Intrinsics_MakeAltivecCall(Object *descriptor, ENodeList *args)
             case 298:
             case 299:
             case 300:
-            case 308: {
-                ENodeList *argument;
-                HashNameNode *name;
-                int count;
-                int valid;
-                TypeFunc *functionType;
-                ENode *call;
-                Type *operation;
-                count = 0;
-                argument = args;
-                name = intrinsic->name;
-                while (argument != NULL) {
-                    count++;
-                    argument = argument->next;
-                }
-                if (count != 2) {
-                    PPCError_ReportError(103, name->name, count, 2);
-                    valid = 0;
-                } else {
-                    valid = 1;
-                }
-                if (!valid) {
+            case 308:
+                valid = check_arg_count(2, args, intrinsic->name);
+                if (!valid)
                     break;
-                }
-                operation = check_binary_intrinsic_args(intrinsicID, args, intrinsic->name);
-                if (operation == NULL) {
+                operation = check_binary_intrinsic_args(id, args, intrinsic->name);
+                if (operation == NULL)
                     break;
-                }
-                functionType = (TypeFunc *)intrinsic->type;
-                if (functionType->type != TYPEFUNC) {
-                    CError_FATAL(3718);
-                }
-                call = (ENode *)lalloc(sizeof(*call));
-                call->type = EFUNCCALL;
-                call->cost = 4;
-                call->rtype = operation;
-                call->ignored = 0;
-                call->flags = functionType->qual & Q_CV;
-                call->data.funccall.funcref = create_objectrefnode(intrinsic);
-                call->data.funccall.args = args;
-                call->data.funccall.functype = functionType;
-                result = CExpr_AdjustFunctionCall(call);
+                result = make_intrinsic_call(intrinsic, args, operation);
                 break;
-            }
             case 48:
             case 58:
             case 64:
@@ -4055,145 +4013,78 @@ ENode *Intrinsics_MakeAltivecCall(Object *descriptor, ENodeList *args)
             case 304:
             case 305:
             case 306:
-            case 307: {
-                ENodeList *argument;
-                HashNameNode *name;
-                int count;
-                int valid;
-                TypeFunc *functionType;
-                ENode *call;
-                Type *operation;
-                count = 0;
-                argument = args;
-                name = intrinsic->name;
-                while (argument != NULL) {
-                    count++;
-                    argument = argument->next;
-                }
-                if (count != 1) {
-                    PPCError_ReportError(103, name->name, count, 1);
-                    valid = 0;
-                } else {
-                    valid = 1;
-                }
-                if (!valid) {
+            case 307:
+                valid = check_arg_count(1, args, intrinsic->name);
+                if (!valid)
                     break;
-                }
-                operation = (Type *)select_altivec_mangle_result(intrinsicID, args, intrinsic->name);
-                if (operation == NULL) {
+                operation = (Type *)select_altivec_mangle_result(id, args, intrinsic->name);
+                if (operation == NULL)
                     break;
-                }
-                functionType = (TypeFunc *)intrinsic->type;
-                if (functionType->type != TYPEFUNC) {
-                    CError_FATAL(3718);
-                }
-                call = (ENode *)lalloc(sizeof(*call));
-                call->type = EFUNCCALL;
-                call->cost = 4;
-                call->rtype = operation;
-                call->ignored = 0;
-                call->flags = functionType->qual & Q_CV;
-                call->data.funccall.funcref = create_objectrefnode(intrinsic);
-                call->data.funccall.args = args;
-                call->data.funccall.functype = functionType;
-                result = CExpr_AdjustFunctionCall(call);
+                result = make_intrinsic_call(intrinsic, args, operation);
                 break;
-            }
             case 59:
-            case 77: {
-                ENodeList *argument;
-                HashNameNode *name;
-                int count;
-                int valid;
-                TypeFunc *functionType;
-                ENode *call;
-                Type *operation;
-                count = 0;
-                argument = args;
-                name = intrinsic->name;
-                while (argument != NULL) {
-                    count++;
-                    argument = argument->next;
-                }
-                if (count != 0) {
-                    PPCError_ReportError(103, name->name, count, 0);
-                    valid = 0;
-                } else {
-                    valid = 1;
-                }
-                if (!valid) {
+            case 77:
+                valid = check_arg_count(0, args, intrinsic->name);
+                if (!valid)
                     break;
-                }
-                tableIndex -= 42;
-                operation = (Type *)intrinsic_tables[tableIndex].operation->operation;
-                if (operation == NULL) {
+#if VERSION == VERSION_GC_1_0
+                operation = find_table_result(id, intrinsic->name);
+#else
+                operation = find_table_result(index, intrinsic->name);
+#endif
+                if (operation == NULL)
                     break;
-                }
-                functionType = (TypeFunc *)intrinsic->type;
-                if (functionType->type != TYPEFUNC) {
-                    CError_FATAL(3718);
-                }
-                call = (ENode *)lalloc(sizeof(*call));
-                call->type = EFUNCCALL;
-                call->cost = 4;
-                call->rtype = operation;
-                call->ignored = 0;
-                call->flags = functionType->qual & Q_CV;
-                call->data.funccall.funcref = create_objectrefnode(intrinsic);
-                call->data.funccall.args = args;
-                call->data.funccall.functype = functionType;
-                result = CExpr_AdjustFunctionCall(call);
+                result = make_intrinsic_call(intrinsic, args, operation);
                 break;
-            }
             case 309:
-            case 310: {
-                ENodeList *argument;
-                HashNameNode *name;
-                int count;
-                int valid;
-                TypeFunc *functionType;
-                ENode *call;
-                Type *operation;
-                count = 0;
-                argument = args;
-                name = intrinsic->name;
-                while (argument != NULL) {
-                    count++;
-                    argument = argument->next;
-                }
-                if (count != 1) {
-                    PPCError_ReportError(103, name->name, count, 1);
-                    valid = 0;
-                } else {
-                    valid = 1;
-                }
-                if (!valid) {
+            case 310:
+                valid = check_arg_count(1, args, intrinsic->name);
+                if (!valid)
                     break;
-                }
-                operation = find_matching_op_result(intrinsicID, args, intrinsic->name);
-                if (operation == NULL) {
+                operation = find_matching_op_result(id, args, intrinsic->name);
+                if (operation == NULL)
                     break;
-                }
-                functionType = (TypeFunc *)intrinsic->type;
-                if (functionType->type != TYPEFUNC) {
-                    CError_FATAL(3718);
-                }
-                call = (ENode *)lalloc(sizeof(*call));
-                call->type = EFUNCCALL;
-                call->cost = 4;
-                call->rtype = operation;
-                call->ignored = 0;
-                call->flags = functionType->qual & Q_CV;
-                call->data.funccall.funcref = create_objectrefnode(intrinsic);
-                call->data.funccall.args = args;
-                call->data.funccall.functype = functionType;
-                result = CExpr_AdjustFunctionCall(call);
+                result = make_intrinsic_call(intrinsic, args, operation);
                 break;
-            }
         }
     }
     return result;
 }
+
+static short intrinsic_opcodes[313] = {
+    PC_EIEIO,   PC_SYNC,  PC_ISYNC,  0,          0,        PC_FABS,   PC_FNABS,  0,         0,         PC_CNTLZW,
+    PC_LHBRX,   PC_LWBRX, PC_STHBRX, PC_STWBRX,  PC_DCBF,  PC_DCBT,   PC_DCBST,  PC_DCBTST, PC_DCBZ,   PC_MULHW,
+    PC_MULHWU,  PC_DIVW,  PC_DIVWU,  PC_FMADD,   PC_FMSUB, PC_FNMADD, PC_FNMSUB, PC_FMADDS, PC_FMSUBS, PC_FNMADDS,
+    PC_FNMSUBS, PC_MFFS,  PC_FRES,   PC_FRSQRTE, PC_FSEL,  0,         0,         PC_RLWIMI, PC_RLWINM, PC_RLWNM,
+    PC_FABS,    PC_FNABS, 0,         0,          0,        0,         0,         0,         0,         0,
+    0,          0,        0,         0,          0,        0,         0,         0,         0,         0,
+    0,          0,        0,         0,          0,        0,         0,         0,         0,         0,
+    0,          0,        0,         0,          0,        0,         0,         0,         0,         0,
+    0,          0,        0,         0,          0,        0,         0,         0,         0,         0,
+    0,          0,        0,         0,          0,        0,         0,         0,         0,         0,
+    0,          0,        0,         0,          0,        0,         0,         0,         0,         0,
+    0,          0,        0,         0,          0,        0,         0,         0,         0,         0,
+    0,          0,        0,         0,          0,        0,         0,         0,         0,         0,
+    0,          0,        0,         0,          0,        0,         0,         0,         0,         0,
+    0,          0,        0,         0,          0,        0,         0,         0,         0,         0,
+    0,          0,        0,         0,          0,        0,         0,         0,         0,         0,
+    0,          0,        0,         0,          0,        0,         0,         0,         0,         0,
+    0,          0,        0,         0,          0,        0,         0,         0,         0,         0,
+    0,          0,        0,         0,          0,        0,         0,         0,         0,         0,
+    0,          0,        0,         0,          0,        0,         0,         0,         0,         0,
+    0,          0,        0,         0,          0,        0,         0,         0,         0,         0,
+    0,          0,        0,         0,          0,        0,         0,         0,         0,         0,
+    0,          0,        0,         0,          0,        0,         0,         0,         0,         0,
+    0,          0,        0,         0,          0,        0,         0,         0,         0,         0,
+    0,          0,        0,         0,          0,        0,         0,         0,         0,         0,
+    0,          0,        0,         0,          0,        0,         0,         0,         0,         0,
+    0,          0,        0,         0,          0,        0,         0,         0,         0,         0,
+    0,          0,        0,         0,          0,        0,         0,         0,         0,         0,
+    0,          0,        0,         0,          0,        0,         0,         0,         0,         0,
+    0,          0,        0,         0,          0,        0,         0,         0,         0,         0,
+    0,          0,        0,         0,          0,        0,         0,         0,         0,         0,
+    0,          0,        0,
+};
 
 void Intrinsics_GenerateIntrinsicCall(ENode *node, short requestedReg, Operand *result)
 {
@@ -4685,6 +4576,8 @@ void Intrinsics_GenerateIntrinsicCall(ENode *node, short requestedReg, Operand *
             CError_FATAL(6087);
     }
 }
+
+static TypePointer stchar_ptr = {TYPEPOINTER, 4, TYPE(&stchar)};
 
 void Intrinsics_RegisterIntrinsics(void)
 {
