@@ -269,8 +269,11 @@ void fn_004e6e30(void)
 
 static void append_assembly(Statement *stmt, PCodeBlock *block)
 {
-    ParsedAsmInstruction *q = (ParsedAsmInstruction *)stmt->expr;
-    PCodeAssemblyEntry *n = (PCodeAssemblyEntry *)lalloc(12);
+    ParsedAsmInstruction *q = NULL;
+    PCodeAssemblyEntry *n = NULL;
+
+    q = (ParsedAsmInstruction *)stmt->expr;
+    n = (PCodeAssemblyEntry *)lalloc(12);
     memclrw(n, 12);
     n->object = q->data.directive.object;
     n->block = block;
@@ -439,7 +442,7 @@ void FuncLevelAsmPPC_GenerateFunction(Object *func)
                 break;
 
             default:
-                CError_FATAL(597);
+                CError_FATAL(VERSION > VERSION_GC_1_0 ? 597 : 575);
         }
     }
 
