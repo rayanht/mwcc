@@ -7497,13 +7497,13 @@
     "source": "src/frontend/CPrep.c"
   },
   {
-    "name": "fn_00437600",
+    "name": "CPrep_InsertSpecialMacro",
     "address": "0x00437600",
     "size": 43,
     "source": "src/frontend/CPrep.c"
   },
   {
-    "name": "fn_00437630",
+    "name": "CPrep_InsertSpecialMacroName",
     "address": "0x00437630",
     "size": 28,
     "source": "src/frontend/CPrep.c"
@@ -7521,7 +7521,7 @@
     "source": "src/frontend/CPrep.c"
   },
   {
-    "name": "fn_00437830",
+    "name": "CPrep_SetDollarIdentifiers",
     "address": "0x00437830",
     "size": 21,
     "source": "src/frontend/CPrep.c"
@@ -7539,7 +7539,7 @@
     "source": "src/frontend/CPrep.c"
   },
   {
-    "name": "fn_00437b50",
+    "name": "CPrep_LoadFileText",
     "address": "0x00437b50",
     "size": 114,
     "source": "src/frontend/CPrep.c"
@@ -7581,7 +7581,7 @@
     "source": "src/frontend/CPrep.c"
   },
   {
-    "name": "fn_004382e0",
+    "name": "CPrep_ScanToFunctionBody",
     "address": "0x004382e0",
     "size": 137,
     "source": "src/frontend/CPrep.c"
@@ -7659,7 +7659,7 @@
     "source": "src/frontend/CPrep.c"
   },
   {
-    "name": "fn_00438d60",
+    "name": "CPrep_WarningName",
     "address": "0x00438d60",
     "size": 47,
     "source": "src/frontend/CPrep.c"
@@ -7773,13 +7773,13 @@
     "source": "src/frontend/CPrep.c"
   },
   {
-    "name": "fn_004399d0",
+    "name": "CPrep_MacroRedefError",
     "address": "0x004399d0",
     "size": 66,
     "source": "src/frontend/CPrep.c"
   },
   {
-    "name": "fn_00439a20",
+    "name": "CPrep_SkipToEndOfDirective",
     "address": "0x00439a20",
     "size": 24,
     "source": "src/frontend/CPrep.c"
@@ -7833,7 +7833,7 @@
     "source": "src/frontend/CPrep.c"
   },
   {
-    "name": "fn_0043b420",
+    "name": "CPrep_ExpandMacroAndPush",
     "address": "0x0043b420",
     "size": 97,
     "source": "src/frontend/CPrep.c"
@@ -7989,7 +7989,7 @@
     "source": "src/frontend/CPrep.c"
   },
   {
-    "name": "fn_0043d120",
+    "name": "CPrep_IntegerType",
     "address": "0x0043d120",
     "size": 58,
     "source": "src/frontend/CPrep.c"
@@ -8019,25 +8019,25 @@
     "source": "src/frontend/CPrep.c"
   },
   {
-    "name": "fn_0043d890",
+    "name": "CPrep_PushIfState",
     "address": "0x0043d890",
     "size": 81,
     "source": "src/frontend/CPrep.c"
   },
   {
-    "name": "fn_0043d8f0",
+    "name": "CPrep_PopIfState",
     "address": "0x0043d8f0",
     "size": 129,
     "source": "src/frontend/CPrep.c"
   },
   {
-    "name": "fn_0043d980",
+    "name": "CPrep_PushActiveIf",
     "address": "0x0043d980",
     "size": 9,
     "source": "src/frontend/CPrep.c"
   },
   {
-    "name": "fn_0043d990",
+    "name": "CPrep_PushInactiveIf",
     "address": "0x0043d990",
     "size": 31,
     "source": "src/frontend/CPrep.c"
