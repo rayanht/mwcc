@@ -9417,7 +9417,7 @@
     "source": "src/frontend/CExpr2.c"
   },
   {
-    "name": "fn_00448b70",
+    "name": "CExpr_MakeObjRefNode",
     "address": "0x00448b70",
     "size": 124,
     "source": "src/frontend/CExpr2.c"

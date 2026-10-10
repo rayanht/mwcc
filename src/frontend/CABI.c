@@ -895,8 +895,6 @@ void CABI_InsertConstructorInitialization(Object *obj, Statement *stmt, TypeClas
                                           Boolean has_try)
 {
     Object *function;
-    Object *constructor;
-    Object *destructor;
     Statement *current;
     CLabel *label;
     ENode *expr;
@@ -954,7 +952,7 @@ void CABI_InsertConstructorInitialization(Object *obj, Statement *stmt, TypeClas
                         current = CFunc_InsertAfterStatement(ST_EXPRESSION, current);
                         current->expr = initializer->objexpr;
                     } else if (CClass_Constructor(virtualBase->base)) {
-                        if ((function = (constructor = CClass_DefaultConstructor(virtualBase->base)))) {
+                        if ((function = CClass_DefaultConstructor(virtualBase->base))) {
                             args = NULL;
                             if (virtualBase->base->flags & CLASS_HAS_VBASES)
                                 args = intconstnode((Type *)&stsignedshort, 0);
@@ -987,7 +985,7 @@ void CABI_InsertConstructorInitialization(Object *obj, Statement *stmt, TypeClas
                         current = CFunc_InsertAfterStatement(ST_EXPRESSION, current);
                         current->expr = initializer->objexpr;
                     } else if (CClass_Constructor(base->base)) {
-                        if ((function = (constructor = CClass_DefaultConstructor(base->base)))) {
+                        if ((function = CClass_DefaultConstructor(base->base))) {
                             args = NULL;
                             if (base->base->flags & CLASS_HAS_VBASES)
                                 args = intconstnode((Type *)&stsignedshort, 0);
@@ -1001,7 +999,7 @@ void CABI_InsertConstructorInitialization(Object *obj, Statement *stmt, TypeClas
                 } else {
                     current = callback(current, tclass, base->base, base->offset, 1);
                 }
-                if ((function = (Object *)(destructor = CClass_Destructor((TypeClass *)base->base))))
+                if ((function = CClass_Destructor((TypeClass *)base->base)))
                     CExcept_RegisterMember(current, CABI_ThisArg(), base->offset, function, NULL, 0);
             }
         }
@@ -1031,14 +1029,14 @@ void CABI_InsertConstructorInitialization(Object *obj, Statement *stmt, TypeClas
                             type = ((TypePointer *)type)->target;
                         } while (type->type == TYPEARRAY);
                         if (type->type == TYPECLASS &&
-                            (function = (destructor = CClass_Destructor((TypeClass *)type)))) {
+                            (function = CClass_Destructor((TypeClass *)type))) {
                             CError_ASSERT(1529, type->size);
                             CExcept_RegisterMemberArray(current, CABI_ThisArg(), member->offset, function,
                                                         member->type->size / type->size, type->size);
                         }
                         break;
                     case TYPECLASS:
-                        if ((function = (Object *)(destructor = CClass_Destructor((TypeClass *)type))))
+                        if ((function = CClass_Destructor((TypeClass *)type)))
                             CExcept_RegisterMember(current, CABI_ThisArg(), member->offset, function, NULL, 1);
                         break;
                 }
@@ -1049,7 +1047,7 @@ void CABI_InsertConstructorInitialization(Object *obj, Statement *stmt, TypeClas
                             type = ((TypePointer *)type)->target;
                         } while (type->type == TYPEARRAY);
                         if (type->type == TYPECLASS && CClass_Constructor((TypeClass *)type)) {
-                            if ((function = (constructor = CClass_DefaultConstructor((TypeClass *)type)))) {
+                            if ((function = CClass_DefaultConstructor((TypeClass *)type))) {
                                 CError_ASSERT(1558, type->size);
                                 constructorRef = create_objectrefnode(function);
                                 if ((function = CClass_Destructor((TypeClass *)type)))
@@ -1071,7 +1069,7 @@ void CABI_InsertConstructorInitialization(Object *obj, Statement *stmt, TypeClas
                         break;
                     case TYPECLASS:
                         if (CClass_Constructor((TypeClass *)type)) {
-                            if ((function = (constructor = CClass_DefaultConstructor((TypeClass *)type)))) {
+                            if ((function = CClass_DefaultConstructor((TypeClass *)type))) {
                                 args = NULL;
                                 if (((TypeClass *)type)->flags & CLASS_HAS_VBASES)
                                     args = intconstnode((Type *)&stsignedshort, 1);
@@ -1081,7 +1079,7 @@ void CABI_InsertConstructorInitialization(Object *obj, Statement *stmt, TypeClas
                             } else {
                                 CError_ReportError(ERR_CANNOT_CONSTRUCT_DIRECT_MEMBER, member->name->name);
                             }
-                            if ((function = (Object *)(destructor = CClass_Destructor((TypeClass *)type))))
+                            if ((function = CClass_Destructor((TypeClass *)type)))
                                 CExcept_RegisterMember(current, CABI_ThisArg(), member->offset, function, NULL, 1);
                         }
                         break;
