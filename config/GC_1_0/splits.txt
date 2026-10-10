@@ -700,7 +700,7 @@ src/backend/CMachine.c:
 
 src/frontend/CInit.c:
 	.text       start:0x00484A00 end:0x00489BC0
-	.data       start:0x00528CC0 end:0x00528EF0
+	.data       start:0x00528CC0 end:0x00528EEC
 	.bss        start:0x00551958 end:0x00551970
 
 src/backend/ObjGen_PPC_EABI.c:

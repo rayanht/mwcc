@@ -13935,19 +13935,19 @@
     "source": "src/frontend/CInit.c"
   },
   {
-    "name": "fn_00484a40",
+    "name": "CInit_SetupInitInfo",
     "address": "0x00484a40",
     "size": 37,
     "source": "src/frontend/CInit.c"
   },
   {
-    "name": "fn_00484a70",
+    "name": "CInit_CleanupInitInfo",
     "address": "0x00484a70",
     "size": 13,
     "source": "src/frontend/CInit.c"
   },
   {
-    "name": "fn_00484a80",
+    "name": "CInit_SetupInitInfoBuffer",
     "address": "0x00484a80",
     "size": 86,
     "source": "src/frontend/CInit.c"
@@ -13971,7 +13971,7 @@
     "source": "src/frontend/CInit.c"
   },
   {
-    "name": "fn_00484eb0",
+    "name": "CInit_CloseInitList",
     "address": "0x00484eb0",
     "size": 65,
     "source": "src/frontend/CInit.c"
@@ -13989,37 +13989,37 @@
     "source": "src/frontend/CInit.c"
   },
   {
-    "name": "fn_00484f70",
+    "name": "fn_004d3ba0",
     "address": "0x00484f70",
     "size": 75,
     "source": "src/frontend/CInit.c"
   },
   {
-    "name": "fn_00484fc0",
+    "name": "fn_004d3b20",
     "address": "0x00484fc0",
     "size": 91,
     "source": "src/frontend/CInit.c"
   },
   {
-    "name": "fn_00485020",
+    "name": "CInit_GetObject",
     "address": "0x00485020",
     "size": 41,
     "source": "src/frontend/CInit.c"
   },
   {
-    "name": "fn_00485050",
+    "name": "CInit_CreateStaticDataObject",
     "address": "0x00485050",
     "size": 92,
     "source": "src/frontend/CInit.c"
   },
   {
-    "name": "fn_004850b0",
+    "name": "CInit_GetRegMemType",
     "address": "0x004850b0",
     "size": 29,
     "source": "src/frontend/CInit.c"
   },
   {
-    "name": "fn_004850d0",
+    "name": "CInit_CreateStaticData",
     "address": "0x004850d0",
     "size": 51,
     "source": "src/frontend/CInit.c"
@@ -14031,7 +14031,7 @@
     "source": "src/frontend/CInit.c"
   },
   {
-    "name": "fn_004851a0",
+    "name": "CInit_GrowBuffer",
     "address": "0x004851a0",
     "size": 77,
     "source": "src/frontend/CInit.c"
@@ -14055,19 +14055,19 @@
     "source": "src/frontend/CInit.c"
   },
   {
-    "name": "fn_00485580",
+    "name": "initialize_float",
     "address": "0x00485580",
     "size": 110,
     "source": "src/frontend/CInit.c"
   },
   {
-    "name": "fn_004855f0",
+    "name": "initialize_enum",
     "address": "0x004855f0",
     "size": 110,
     "source": "src/frontend/CInit.c"
   },
   {
-    "name": "fn_00485660",
+    "name": "initialize_memberpointer",
     "address": "0x00485660",
     "size": 84,
     "source": "src/frontend/CInit.c"
@@ -14079,7 +14079,7 @@
     "source": "src/frontend/CInit.c"
   },
   {
-    "name": "fn_00485780",
+    "name": "initialize_bitfield",
     "address": "0x00485780",
     "size": 114,
     "source": "src/frontend/CInit.c"
@@ -14097,7 +14097,7 @@
     "source": "src/frontend/CInit.c"
   },
   {
-    "name": "fn_00485f60",
+    "name": "CInit_FindNextMember",
     "address": "0x00485f60",
     "size": 76,
     "source": "src/frontend/CInit.c"
@@ -14157,19 +14157,19 @@
     "source": "src/frontend/CInit.c"
   },
   {
-    "name": "fn_00486ca0",
+    "name": "init_float",
     "address": "0x00486ca0",
     "size": 104,
     "source": "src/frontend/CInit.c"
   },
   {
-    "name": "CInit_DefaultInit",
+    "name": "init_enum",
     "address": "0x00486d10",
     "size": 107,
     "source": "src/frontend/CInit.c"
   },
   {
-    "name": "fn_00486d80",
+    "name": "init_memberpointer",
     "address": "0x00486d80",
     "size": 108,
     "source": "src/frontend/CInit.c"
@@ -14181,7 +14181,7 @@
     "source": "src/frontend/CInit.c"
   },
   {
-    "name": "fn_00486ec0",
+    "name": "init_bitfield",
     "address": "0x00486ec0",
     "size": 139,
     "source": "src/frontend/CInit.c"
@@ -14223,7 +14223,7 @@
     "source": "src/frontend/CInit.c"
   },
   {
-    "name": "fn_00487a20",
+    "name": "CInit_AdjustObjectDataSize",
     "address": "0x00487a20",
     "size": 29,
     "source": "src/frontend/CInit.c"
@@ -14253,7 +14253,7 @@
     "source": "src/frontend/CInit.c"
   },
   {
-    "name": "fn_004883a0",
+    "name": "create_temp_object_expr",
     "address": "0x004883a0",
     "size": 262,
     "source": "src/frontend/CInit.c"
@@ -14277,7 +14277,7 @@
     "source": "src/frontend/CInit.c"
   },
   {
-    "name": "fn_00488650",
+    "name": "CInit_InitReferenceTemp",
     "address": "0x00488650",
     "size": 173,
     "source": "src/frontend/CInit.c"
