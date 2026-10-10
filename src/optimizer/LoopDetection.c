@@ -116,6 +116,7 @@ void LoopDetection_AddBlock(Loop *loop, PCodeBlock *block)
 
 void compute_loop_block_sets(Loop *w)
 {
+    PCodeBlock *block;
     PCodeBlockLink *first;
     PCodeBlockLink *sub;
     PCodeBlockLink *node;
@@ -132,8 +133,8 @@ void compute_loop_block_sets(Loop *w)
     }
 
     while (n != 0) {
-        n--;
-        for (first = data_00582c64[n]->predecessors; first != NULL; first = first->next) {
+        block = data_00582c64[--n];
+        for (first = block->predecessors; first != NULL; first = first->next) {
             if (!TESTB(w->memberblocks, first->payload.block->index)) {
                 LoopDetection_AddBlock(w, first->payload.block);
                 AddCount(first->payload.block, &n);
