@@ -3090,7 +3090,7 @@ void parse_pragma_option(int directive)
 static HashNameNode *CPrep_MakeOnceName(unsigned char *filename, Boolean isDefault)
 {
     char key[256];
-    char *name = (char *)filename;
+    char *name;
     char *p;
     short length;
 
@@ -3099,7 +3099,7 @@ static HashNameNode *CPrep_MakeOnceName(unsigned char *filename, Boolean isDefau
         length = 250;
     p = key;
     *p++ = (copts.syspath_once && isDefault) ? '$' : (char)0xa4;
-    name++;
+    name = (char *)filename + 1;
     while (length-- > 0)
         *p++ = tolower(*name++);
     *p = 0;
@@ -3133,8 +3133,7 @@ static void CPrep_DefineOnceMacro(unsigned char *filename, Boolean isDefault)
     HashNameNode *name;
     Macro *macro;
 
-    name = CPrep_MakeOnceName(filename, isDefault);
-    if (lookup_available_macro(name) == 0) {
+    if (lookup_available_macro(name = CPrep_MakeOnceName(filename, isDefault)) == 0) {
         macro = galloc(sizeof(Macro));
         memclrw(macro, sizeof(Macro));
         macro->name = name;
@@ -3812,7 +3811,6 @@ done:
 
 #pragma sym reset
 
-#if VERSION == VERSION_GC_1_0
 void fn_0043a0a0(char allowInclude)
 {
     char searchLocal;
@@ -3820,7 +3818,6 @@ void fn_0043a0a0(char allowInclude)
     short terminator;
     short ch;
     short length;
-    short i;
     char *name;
 
     if (CPrep_ScanMacroExpandedChar() == 0) {
@@ -3857,13 +3854,13 @@ void fn_0043a0a0(char allowInclude)
         if (allowInclude != 0 || copts.always_import != 0)
             CPrep_DefineOnceMacro((unsigned char *)filename, !searchLocal);
         if (copts.flat_include != 0) {
-            for (i = length; i > 0; i--) {
-                switch (filename[i]) {
+            for (ch = length; ch > 0; ch--) {
+                switch (filename[ch]) {
                     case '/':
                     case ':':
                     case '\\':
-                        name = filename + i;
-                        filename[i] = length - i;
+                        name = filename + ch;
+                        filename[ch] = length - ch;
                         break;
                     default:
                         continue;
@@ -3874,143 +3871,6 @@ void fn_0043a0a0(char allowInclude)
         fn_004401b0((unsigned char *)name, searchLocal, allowInclude);
     }
 }
-#else
-void fn_0043a0a0(char allowInclude)
-{
-    short length;
-    short ch;
-    short remaining;
-    short alternateLength;
-    int prefix;
-    int alternatePrefix;
-    int usePrefix;
-    int useAlternatePrefix;
-    union {
-        int length;
-        char lowByte;
-    } count;
-    long countValue;
-    Macro *entry;
-    char *nameStart;
-    HashNameNode *name;
-    HashNameNode *alternateName;
-    char *output;
-    char savedDiagnostic1;
-    char savedDiagnostic2;
-    char savedDiagnostic3;
-    char savedDiagnostic4;
-    IncludeFilenamePointer pointer;
-    char *input;
-    IncludeSearchPolicy policy;
-    short terminator;
-    char filename[256];
-    char key[256];
-    char alternateKey[256];
-
-    if (CPrep_ScanMacroExpandedChar() == 0) {
-        CPrep_ReportError(ERR_UNEXPECTED_END_LINE);
-        return;
-    }
-    terminator = CPrepTokenizer_NextChar();
-    if (terminator != '"' && terminator != '<') {
-        CPrep_ReportError(ERR_PREPROCESSOR_SYNTAX_ERROR);
-        CPrepTokenizer_SkipToEndOfLine();
-        return;
-    }
-    policy.searchLocal = 1;
-    if (terminator == '<') {
-        terminator = '>';
-        if (copts.flat_include == 0)
-            policy.searchLocal = 0;
-    }
-    count.length = 0;
-    ch = CPrepTokenizer_NextChar();
-    while (terminator != ch) {
-        if ((short)count.length > 254) {
-            CPrep_ReportError(ERR_STRING_TOO_LONG);
-            CPrepTokenizer_SkipToEndOfLine();
-            return;
-        }
-        count.length++;
-        filename[(short)count.length] = (char)ch;
-        ch = CPrepTokenizer_NextChar();
-    }
-    countValue = count.length;
-    (void)countValue;
-    filename[0] = countValue;
-    pointer.filename = filename;
-    CPrep_SkipToEndOfDirective();
-    length = *(unsigned char *)filename;
-    if (length > 250)
-        length = 250;
-    output = key;
-    usePrefix = copts.syspath_once != 0 && (char)!policy.searchLocal;
-    if (usePrefix)
-        prefix = '$';
-    else
-        prefix = -92;
-    *output = prefix;
-    nameStart = filename;
-    nameStart = nameStart + 1;
-    output++;
-    input = nameStart;
-    while (length-- > 0) {
-        *output = (char)tolower(*input++);
-        output++;
-    }
-    *output = 0;
-    if (lookup_available_macro(GetHashNameNode(key)) == 0) {
-        if (allowInclude != 0 || copts.always_import != 0) {
-            alternateLength = *(unsigned char *)filename;
-            if (alternateLength > 250)
-                alternateLength = 250;
-            output = alternateKey;
-            useAlternatePrefix = copts.syspath_once != 0 && (char)!policy.searchLocal;
-            if (useAlternatePrefix)
-                alternatePrefix = '$';
-            else
-                alternatePrefix = -92;
-            *output = (char)alternatePrefix;
-            output++;
-            remaining = alternateLength;
-            while (remaining-- > 0) {
-                *output = (char)tolower(*nameStart++);
-                output++;
-            }
-            *output = 0;
-            name = alternateName = GetHashNameNode(alternateKey);
-            if (lookup_available_macro(alternateName) == 0) {
-                entry = (Macro *)galloc(sizeof(Macro));
-                memclrw(entry, sizeof(Macro));
-                entry->name = name;
-                entry->next = macro_buckets[name->hashval];
-                macro_buckets[name->hashval] = entry;
-            }
-        }
-        if (copts.flat_include != 0) {
-            for (length = count.length; length > 0; length--) {
-                switch (filename[length]) {
-                    case '/':
-                    case ':':
-                    case '\\':
-                        pointer.filename = filename;
-                        pointer.filename = pointer.filename + length;
-                        count.lowByte -= length;
-                        countValue = count.length;
-                        (void)countValue;
-                        filename[length] = countValue;
-                        break;
-                    default:
-                        continue;
-                }
-                break;
-            }
-        }
-        ((unsigned char (*)(IncludeFilenamePointer, IncludeSearchPolicy, unsigned char))fn_004401b0)(pointer, policy,
-                                                                                                     allowInclude);
-    }
-}
-#endif
 
 void parse_line_directive(void)
 {

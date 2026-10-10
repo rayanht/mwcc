@@ -278,17 +278,6 @@ struct ObjectCallbackContext {
     unsigned int(__stdcall *invoke)(struct CWPluginPrivateContext *, struct FileProcessingInfo *, const char *);
 };
 #pragma options align = mac68k
-struct IncludeFilenamePointer {
-    char *filename;
-};
-#pragma options align = reset
-#pragma options align = mac68k
-struct IncludeSearchPolicy {
-    char searchLocal;
-    char unusedBytes[3];
-};
-#pragma options align = reset
-#pragma options align = mac68k
 struct Macro {
     struct Macro *next;
     struct HashNameNode *name;

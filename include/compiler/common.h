@@ -342,8 +342,6 @@ typedef struct IROVarPart IROVarPart;
 typedef struct IStmtRec IStmtRec;
 typedef struct STRING_T STRING_T;
 typedef struct IdentifierListNode IdentifierListNode;
-typedef struct IncludeFilenamePointer IncludeFilenamePointer;
-typedef struct IncludeSearchPolicy IncludeSearchPolicy;
 typedef struct IndexedEntry IndexedEntry;
 typedef struct IndexedListLink IndexedListLink;
 typedef struct IndexedValueReference IndexedValueReference;
