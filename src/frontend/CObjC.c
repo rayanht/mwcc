@@ -2497,8 +2497,8 @@ Boolean match_message_arguments(register MethRec *info, MessageArgument *b, Bool
 ENode *CObjC_MakeMessageSend(ENode *receiver, TypeClass *obj, MessageArgument *arguments, ENodeList *extraArgs,
                              UInt8 mode, Boolean flag)
 {
-    TypeClass *currentClass;
     CRec *entry;
+    TypeClass *currentClass;
     HashEntry *selector;
     SelectorMethod *candidate;
     TypeFunc *functionType;
@@ -2508,8 +2508,7 @@ ENode *CObjC_MakeMessageSend(ENode *receiver, TypeClass *obj, MessageArgument *a
     ENode *expression;
     ENode *call;
     MessageArgument *argument;
-    ENodeList *firstArg;
-    ENodeList *tail;
+    ENodeList *list;
     MethRec *method;
     ObjectList *protocol;
 
@@ -2543,16 +2542,12 @@ ENode *CObjC_MakeMessageSend(ENode *receiver, TypeClass *obj, MessageArgument *a
             }
             if (method != NULL)
                 break;
-            method = ((ObjCInfo *)currentClass->objcinfo)->methods;
-            if (method != NULL) {
-                do {
-                    if (match_message_arguments(method, arguments, extraArgs != NULL)) {
-                        CObjC_PromoteMessageArgs(method, arguments, extraArgs);
-                        selector = CObjCModern_RegisterMethodSelector(method);
-                        break;
-                    }
-                    method = method->next;
-                } while (method != NULL);
+            for (method = ((ObjCInfo *)currentClass->objcinfo)->methods; method != NULL; method = method->next) {
+                if (match_message_arguments(method, arguments, extraArgs != NULL)) {
+                    CObjC_PromoteMessageArgs(method, arguments, extraArgs);
+                    selector = CObjCModern_RegisterMethodSelector(method);
+                    break;
+                }
             }
             if (method != NULL)
                 break;
@@ -2567,16 +2562,12 @@ ENode *CObjC_MakeMessageSend(ENode *receiver, TypeClass *obj, MessageArgument *a
         if (receiver->rtype->type == TYPEPOINTER && (((TypePointer *)receiver->rtype)->qual & Q_IS_OBJC_ID) != 0) {
             for (protocol = ((TypePointer *)receiver->rtype)->protocols[0]; protocol != NULL;
                  protocol = protocol->next) {
-                method = ((CRec *)protocol->object)->methods;
-                if (method != NULL) {
-                    do {
-                        if (match_message_arguments(method, arguments, extraArgs != NULL)) {
-                            CObjC_PromoteMessageArgs(method, arguments, extraArgs);
-                            selector = CObjCModern_RegisterMethodSelector(method);
-                            break;
-                        }
-                        method = method->next;
-                    } while (method != NULL);
+                for (method = ((CRec *)protocol->object)->methods; method != NULL; method = method->next) {
+                    if (match_message_arguments(method, arguments, extraArgs != NULL)) {
+                        CObjC_PromoteMessageArgs(method, arguments, extraArgs);
+                        selector = CObjCModern_RegisterMethodSelector(method);
+                        break;
+                    }
                 }
             }
             if (method == NULL)
@@ -2647,19 +2638,19 @@ ENode *CObjC_MakeMessageSend(ENode *receiver, TypeClass *obj, MessageArgument *a
         call->data.funccall.funcref = create_objectrefnode(callee);
         call->data.funccall.functype = functionType;
         CError_ASSERT(3280, call->data.funccall.functype->type == TYPEFUNC);
-        firstArg = lalloc(sizeof(ENodeList));
-        call->data.funccall.args = firstArg;
-        firstArg->node = receiver;
-        tail = firstArg->next = lalloc(sizeof(ENodeList));
-        tail->node = create_objectnode(CObjCModern_GetSelectorReference(selector));
+        list = lalloc(sizeof(ENodeList));
+        call->data.funccall.args = list;
+        list->node = receiver;
+        list = list->next = lalloc(sizeof(ENodeList));
+        list->node = create_objectnode(CObjCModern_GetSelectorReference(selector));
         for (argument = arguments; argument != NULL; argument = argument->next) {
             if (argument->expression != NULL) {
-                tail->next = lalloc(sizeof(ENodeList));
-                tail = tail->next;
-                tail->node = argument->expression;
+                list->next = lalloc(sizeof(ENodeList));
+                list = list->next;
+                list->node = argument->expression;
             }
         }
-        tail->next = extraArgs;
+        list->next = extraArgs;
         expression = CExpr_AdjustFunctionCall(call);
     } else {
         expression = nullnode();

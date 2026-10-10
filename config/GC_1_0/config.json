@@ -126,6 +126,7 @@
     "src/frontend/CInline.c",
     "src/frontend/CInt64.c",
     "src/frontend/CMangler.c",
+    "src/frontend/CObjC.c",
     "src/frontend/CObjCModern.c",
     "src/frontend/CParser.c",
     "src/frontend/CPrec.c",
