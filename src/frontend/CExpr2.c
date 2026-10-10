@@ -34,10 +34,6 @@ typedef enum { ENX_A = 1 } ENodeTypeX;
 
 typedef enum RegClass { RC_GPR = 0, RC_FPR = 1, RC_SPR = 2, RC_CRFIELD = 3, RC_CRFIELDBIT = 8, RC_VR = 9 } RegClass;
 
-static FuncArg data_00555090 = {0};
-static FuncArg right_operand_arg = {0};
-static FuncArg operator_operand_arg = {&right_operand_arg};
-
 static SInt32 conversion_score;
 static void *array_bound;
 static ComparisonValues bestComparison;
@@ -1844,6 +1840,15 @@ SInt32 check_standard_conversion(ENode *node, Type *ty, Boolean convert, Boolean
     return CodeGen_CheckAltivecStypeMatch(node, ty, convert, checkAccess);
 }
 
+static SInt16 CExpr_ConversionTypesEqual(Type *type, Type *other)
+{
+    if (type->type == TYPEPOINTER && (TYPE_POINTER(type)->qual & Q_REFERENCE))
+        type = TYPE_POINTER(type)->target;
+    if (other->type == TYPEPOINTER && (TYPE_POINTER(other)->qual & Q_REFERENCE))
+        other = TYPE_POINTER(other)->target;
+    return is_typeequal(other, type);
+}
+
 void build_convertible_bases_tree(ConIterator *self)
 {
     ClassList *base;
@@ -1866,16 +1871,18 @@ void build_convertible_bases_tree(ConIterator *self)
     }
 }
 
-#if VERSION == VERSION_GC_1_0
-static SInt16 CExpr_ConversionTypesEqual(Type *type, Type *other)
+static void InitLookup(ConversionIterator *lu, TypeClass *tclass)
 {
-    if (type->type == TYPEPOINTER && (TYPE_POINTER(type)->qual & Q_REFERENCE))
-        type = TYPE_POINTER(type)->target;
-    if (other->type == TYPEPOINTER && (TYPE_POINTER(other)->qual & Q_REFERENCE))
-        other = TYPE_POINTER(other)->target;
-    return is_typeequal(other, type);
+    memclrw(lu, 0x20);
+    if (tclass->flags & CLASS_IS_CONVERTIBLE) {
+        lu->coniter = &lu->myconiter;
+        lu->myconiter.tclass = tclass;
+        build_convertible_bases_tree(&lu->myconiter);
+        CScope_InitObjectIterator(&lu->objiter, tclass->nspace);
+    }
 }
 
+#if VERSION == VERSION_GC_1_0
 /* a conversion function that one of the iterator's bases already declares */
 static Boolean CExpr_IsConversionHidden(ConIterator *iter, Type *type)
 {
@@ -2216,17 +2223,6 @@ SInt16 user_assign_check(ENode *operand, Type *targetType, UInt32 targetQual, Bo
     if (diagnose)
         CError_ReportError(ERR_CANNOT_CONVERT, operand->rtype, operand->flags & Q_CV, targetType, targetQual);
     return 0;
-}
-
-static void InitLookup(ConversionIterator *lu, TypeClass *tclass)
-{
-    memclrw(lu, 0x20);
-    if (tclass->flags & CLASS_IS_CONVERTIBLE) {
-        lu->coniter = &lu->myconiter;
-        lu->myconiter.tclass = tclass;
-        build_convertible_bases_tree(&lu->myconiter);
-        CScope_InitObjectIterator(&lu->objiter, tclass->nspace);
-    }
 }
 
 ENode *CExpr2_ConvertScalarOperand(ENode *result, Boolean integerOnly, Boolean preferBool)
@@ -3116,6 +3112,10 @@ ENode *CExpr_MakeFunctionCall(ENode *expr, ENodeList *args)
     return CExpr_AdjustFunctionCall(call);
 }
 
+static FuncArg data_00555090 = {0};
+static FuncArg right_operand_arg = {0};
+static FuncArg operator_operand_arg = {&right_operand_arg};
+
 Boolean fn_0046e3e0(Type *type, SInt16 op)
 {
     switch (op) {
@@ -3131,6 +3131,16 @@ Boolean fn_0046e3e0(Type *type, SInt16 op)
             CError_FATAL(3728);
             return 0;
     }
+}
+
+static ENode *convert_operand(ENode *expr, Type *type, UInt32 qual)
+{
+    if (expr->rtype->type == TYPECLASS && type) {
+        if (user_assign_check(expr, type, qual, 1, 0, 1))
+            return converted_expr;
+        CError_ReportError(ERR_ILLEGAL_OPERAND);
+    }
+    return expr;
 }
 
 unsigned char convert_class_binary_operands(ENode *left, ENode *right, BinaryOperatorResult *result)
@@ -3221,16 +3231,6 @@ rightDone:
     result->left = convert_operand(left, leftType, 0);
     result->right = convert_operand(right, rightType, 0);
     return 1;
-}
-
-static ENode *convert_operand(ENode *expr, Type *type, UInt32 qual)
-{
-    if (expr->rtype->type == TYPECLASS && type) {
-        if (user_assign_check(expr, type, qual, 1, 0, 1))
-            return converted_expr;
-        CError_ReportError(ERR_ILLEGAL_OPERAND);
-    }
-    return expr;
 }
 
 char try_class_conversion_to_kind(ENode *expr, short kind, BinaryOperatorResult *result)
@@ -3727,6 +3727,21 @@ ENode *CExpr_ConstructObject(Type *type, ENode *ptr, ENodeList *arguments, Boole
         CError_ReportError(ERR_ILLEGAL_INITIALIZATION);
     }
     return ptr;
+}
+
+static Boolean CExpr_NeedsDestructorCall(Type *type, Object **dtor)
+{
+    if (type->type == TYPECLASS) {
+        if ((*dtor = CClass_Destructor(TYPE_CLASS(type))) != NULL) {
+            *dtor = CABI_GetDestructorObject(*dtor, 1);
+            (*dtor)->flags |= OBJECT_USED;
+            return 1;
+        }
+        if (CClass_Constructor(TYPE_CLASS(type)) != NULL)
+            return 1;
+    }
+    *dtor = NULL;
+    return 0;
 }
 
 static Type *scannew_type(void)
@@ -4318,21 +4333,6 @@ ENode *make_call_with_optional_size_arg(Object *func, ENode *arg, Type *argtype)
     }
 
     return call;
-}
-
-static Boolean CExpr_NeedsDestructorCall(Type *type, Object **dtor)
-{
-    if (type->type == TYPECLASS) {
-        if ((*dtor = CClass_Destructor(TYPE_CLASS(type))) != NULL) {
-            *dtor = CABI_GetDestructorObject(*dtor, 1);
-            (*dtor)->flags |= OBJECT_USED;
-            return 1;
-        }
-        if (CClass_Constructor(TYPE_CLASS(type)) != NULL)
-            return 1;
-    }
-    *dtor = NULL;
-    return 0;
 }
 
 ENode *build_destructor_aware_call(ENode *expression, Type *type, Boolean skipLookup)
