@@ -15009,19 +15009,19 @@
     "source": "src/backend/Intrinsics.c"
   },
   {
-    "name": "GenGPR",
+    "name": "emit_abs",
     "address": "0x004907d0",
     "size": 190,
     "source": "src/backend/Intrinsics.c"
   },
   {
-    "name": "fn_00490890",
+    "name": "emit_mtfsf",
     "address": "0x00490890",
     "size": 207,
     "source": "src/backend/Intrinsics.c"
   },
   {
-    "name": "fn_00490960",
+    "name": "emit_alloca",
     "address": "0x00490960",
     "size": 216,
     "source": "src/backend/Intrinsics.c"
@@ -15045,7 +15045,7 @@
     "source": "src/backend/Intrinsics.c"
   },
   {
-    "name": "fn_00490e80",
+    "name": "emit_memcpy",
     "address": "0x00490e80",
     "size": 197,
     "source": "src/backend/Intrinsics.c"
@@ -15057,7 +15057,7 @@
     "source": "src/backend/Intrinsics.c"
   },
   {
-    "name": "fn_00491050",
+    "name": "emit_rlwinm",
     "address": "0x00491050",
     "size": 201,
     "source": "src/backend/Intrinsics.c"
@@ -15075,13 +15075,13 @@
     "source": "src/backend/Intrinsics.c"
   },
   {
-    "name": "fn_00491290",
+    "name": "check_arg_count",
     "address": "0x00491290",
     "size": 61,
     "source": "src/backend/Intrinsics.c"
   },
   {
-    "name": "fn_004912d0",
+    "name": "make_intrinsic_call",
     "address": "0x004912d0",
     "size": 106,
     "source": "src/backend/Intrinsics.c"
@@ -15093,7 +15093,7 @@
     "source": "src/backend/Intrinsics.c"
   },
   {
-    "name": "fn_004913c0",
+    "name": "find_table_result",
     "address": "0x004913c0",
     "size": 18,
     "source": "src/backend/Intrinsics.c"
@@ -15117,7 +15117,7 @@
     "source": "src/backend/Intrinsics.c"
   },
   {
-    "name": "fn_004918c0",
+    "name": "find_simple_intrinsic_code",
     "address": "0x004918c0",
     "size": 20,
     "source": "src/backend/Intrinsics.c"
@@ -15141,61 +15141,61 @@
     "source": "src/backend/Intrinsics.c"
   },
   {
-    "name": "fn_00491ae0",
+    "name": "emit_simple_instruction",
     "address": "0x00491ae0",
     "size": 12,
     "source": "src/backend/Intrinsics.c"
   },
   {
-    "name": "GenVR",
+    "name": "emit_vr_result",
     "address": "0x00491af0",
     "size": 59,
     "source": "src/backend/Intrinsics.c"
   },
   {
-    "name": "fn_00491b30",
+    "name": "emit_unary_vr",
     "address": "0x00491b30",
     "size": 140,
     "source": "src/backend/Intrinsics.c"
   },
   {
-    "name": "fn_00491bc0",
+    "name": "emit_splat_signed",
     "address": "0x00491bc0",
     "size": 134,
     "source": "src/backend/Intrinsics.c"
   },
   {
-    "name": "fn_00491c50",
+    "name": "emit_splat_u8",
     "address": "0x00491c50",
     "size": 134,
     "source": "src/backend/Intrinsics.c"
   },
   {
-    "name": "fn_00491ce0",
+    "name": "emit_splat_u16",
     "address": "0x00491ce0",
     "size": 134,
     "source": "src/backend/Intrinsics.c"
   },
   {
-    "name": "fn_00491d70",
+    "name": "emit_splat_u32",
     "address": "0x00491d70",
     "size": 134,
     "source": "src/backend/Intrinsics.c"
   },
   {
-    "name": "fn_00491e00",
+    "name": "emit_dss",
     "address": "0x00491e00",
     "size": 90,
     "source": "src/backend/Intrinsics.c"
   },
   {
-    "name": "fn_00491e60",
+    "name": "emit_binary_vr",
     "address": "0x00491e60",
     "size": 218,
     "source": "src/backend/Intrinsics.c"
   },
   {
-    "name": "fn_00491f40",
+    "name": "emit_vr_immediate",
     "address": "0x00491f40",
     "size": 209,
     "source": "src/backend/Intrinsics.c"
@@ -15213,13 +15213,13 @@
     "source": "src/backend/Intrinsics.c"
   },
   {
-    "name": "fn_00492290",
+    "name": "emit_vr_vr_immediate",
     "address": "0x00492290",
     "size": 248,
     "source": "src/backend/Intrinsics.c"
   },
   {
-    "name": "fn_00492390",
+    "name": "emit_binary_gpr_vr",
     "address": "0x00492390",
     "size": 218,
     "source": "src/backend/Intrinsics.c"
@@ -15243,7 +15243,7 @@
     "source": "src/backend/Intrinsics.c"
   },
   {
-    "name": "fn_00492860",
+    "name": "emit_mtvscr",
     "address": "0x00492860",
     "size": 93,
     "source": "src/backend/Intrinsics.c"
