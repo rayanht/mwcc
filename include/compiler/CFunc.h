@@ -92,7 +92,7 @@ struct SwitchInfo {
     Type *sizetype;
 };
 #pragma options align = reset
-extern void CFunc_Gen(Statement *context, Object *object, unsigned int options);
+extern void CFunc_Gen(Statement *context, Object *object, Boolean options);
 extern void parse_ctor_initializers(void);
 extern void CFunc_CheckClassCtors(TypeClass *type);
 extern NameSpace *CFunc_FuncGenSetup(Statement *stmt, Object *func);

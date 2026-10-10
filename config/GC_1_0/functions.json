@@ -8859,13 +8859,13 @@
     "source": "src/frontend/CFunc.c"
   },
   {
-    "name": "fn_004437b0",
+    "name": "find_arg_object",
     "address": "0x004437b0",
     "size": 41,
     "source": "src/frontend/CFunc.c"
   },
   {
-    "name": "fn_004437e0",
+    "name": "append_func_arg",
     "address": "0x004437e0",
     "size": 35,
     "source": "src/frontend/CFunc.c"
@@ -8967,7 +8967,7 @@
     "source": "src/frontend/CFunc.c"
   },
   {
-    "name": "fn_00444040",
+    "name": "rewrite_temp_node",
     "address": "0x00444040",
     "size": 101,
     "source": "src/frontend/CFunc.c"
@@ -9015,25 +9015,25 @@
     "source": "src/frontend/CFunc.c"
   },
   {
-    "name": "fn_00444410",
+    "name": "CFunc_AnyCleanup",
     "address": "0x00444410",
     "size": 47,
     "source": "src/frontend/CFunc.c"
   },
   {
-    "name": "fn_00444440",
+    "name": "CFunc_EmitCleanups",
     "address": "0x00444440",
     "size": 40,
     "source": "src/frontend/CFunc.c"
   },
   {
-    "name": "fn_00444470",
+    "name": "CFunc_NeedsCleanup",
     "address": "0x00444470",
     "size": 79,
     "source": "src/frontend/CFunc.c"
   },
   {
-    "name": "fn_004444c0",
+    "name": "CFunc_CommonScope",
     "address": "0x004444c0",
     "size": 56,
     "source": "src/frontend/CFunc.c"
@@ -9051,13 +9051,13 @@
     "source": "src/frontend/CFunc.c"
   },
   {
-    "name": "fn_00444660",
+    "name": "CFunc_ScopeContains",
     "address": "0x00444660",
     "size": 32,
     "source": "src/frontend/CFunc.c"
   },
   {
-    "name": "fn_00444680",
+    "name": "CFunc_CheckJump",
     "address": "0x00444680",
     "size": 72,
     "source": "src/frontend/CFunc.c"
@@ -9075,19 +9075,19 @@
     "source": "src/frontend/CFunc.c"
   },
   {
-    "name": "fn_00444a20",
+    "name": "set_localstatic_name",
     "address": "0x00444a20",
     "size": 169,
     "source": "src/frontend/CFunc.c"
   },
   {
-    "name": "fn_00444ad0",
+    "name": "append_localstatic_init_expr",
     "address": "0x00444ad0",
     "size": 144,
     "source": "src/frontend/CFunc.c"
   },
   {
-    "name": "fn_00444b60",
+    "name": "append_or_defer_expression_statement",
     "address": "0x00444b60",
     "size": 61,
     "source": "src/frontend/CFunc.c"
@@ -9129,7 +9129,7 @@
     "source": "src/frontend/CFunc.c"
   },
   {
-    "name": "fn_00445540",
+    "name": "CheckScalarOperand",
     "address": "0x00445540",
     "size": 36,
     "source": "src/frontend/CFunc.c"
@@ -9159,13 +9159,13 @@
     "source": "src/frontend/CFunc.c"
   },
   {
-    "name": "fn_00446880",
+    "name": "create_local_object_copy",
     "address": "0x00446880",
     "size": 268,
     "source": "src/frontend/CFunc.c"
   },
   {
-    "name": "create_local_object_copy",
+    "name": "convert_old_style_arguments",
     "address": "0x00446990",
     "size": 114,
     "source": "src/frontend/CFunc.c"
@@ -9219,7 +9219,7 @@
     "source": "src/frontend/CFunc.c"
   },
   {
-    "name": "fn_00447450",
+    "name": "check_function_redefinition",
     "address": "0x00447450",
     "size": 75,
     "source": "src/frontend/CFunc.c"
@@ -9369,7 +9369,7 @@
     "source": "src/frontend/CExpr2.c"
   },
   {
-    "name": "fn_004482e0",
+    "name": "integralpromote",
     "address": "0x004482e0",
     "size": 55,
     "source": "src/frontend/CExpr2.c"
