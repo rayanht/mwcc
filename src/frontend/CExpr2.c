@@ -2957,7 +2957,6 @@ ENode *convert_memberfunc_to_setconst_or_objref(ENode *expr)
 
 ENode *CExpr_MakeFunctionCall(ENode *expr, ENodeList *args)
 {
-    ENode *result;
     ENode *call;
     UInt8 flag10;
     UInt8 flag12;
@@ -2966,6 +2965,7 @@ ENode *CExpr_MakeFunctionCall(ENode *expr, ENodeList *args)
     FuncArg *formal;
     Type *type;
     TypeFunc *functionType;
+    ENode *result;
     BClassList *candidateObject;
     EMemberInfo *candidate;
     Object *object;
@@ -3041,8 +3041,8 @@ ENode *CExpr_MakeFunctionCall(ENode *expr, ENodeList *args)
                                      flag12, 1);
     }
 
-    formal = functionType->args;
     arg = args;
+    formal = functionType->args;
     variadic = 0;
     if (args != NULL) {
         do {
