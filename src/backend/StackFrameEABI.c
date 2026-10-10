@@ -58,6 +58,20 @@ static Object *data_00580fa8;
 
 typedef enum { kMergeTag = 0x1f } MergeTag;
 
+/* (1.0 restores the saved FPRs and VRs relative to r1; later releases relative to the frame's base register) */
+static inline SInt16 save_area_base(void)
+{
+#if VERSION == VERSION_GC_1_0
+    return 1;
+#else
+    return stack_base_reg;
+#endif
+}
+
+#if VERSION == VERSION_GC_1_0
+static Boolean need_link_register_save(void);
+#endif
+
 static inline void StackFrame_EmitAltivecStackPointerSave(Boolean restore, SInt16 *savedStackReg)
 {
     if (data_00588521 == 0 || copts.altivec_vrsave == 0)
@@ -242,6 +256,114 @@ void StackFrameEABI_FinalizeLayout(struct PCodeBlock *function)
     eabi_stack_frame_size = stack_frame_size;
 }
 
+#if VERSION == VERSION_GC_1_0
+void StackFrameEABI_GeneratePrologueEpilogue(PCodeBlock *block, int prologueFlags, int epilogueFlags)
+{
+    PCodeBlock *savedBlock;
+    Boolean frameAllocated;
+    Boolean saveLinkRegister;
+    SInt32 parameterBaseRegister;
+    PCodeBlock *currentBlock;
+    PCodeInstruction *instruction;
+    SInt32 operandIndex;
+
+    savedBlock = gCurrentBlock;
+    frameAllocated = 0;
+    saveLinkRegister = need_link_register_save();
+    gCurrentBlock = block;
+    parameterBaseRegister = -1;
+    if (gHasAltivecFrame != 0) {
+        instruction = block->instructions;
+        if (instruction != NULL && instruction->opcode == PC_LWZ) {
+            parameterBaseRegister = instruction->operandData.operands[0].value.reg;
+            PCode_UnlinkInstruction(instruction);
+            instruction = block->instructions;
+            if (instruction != NULL && instruction->opcode == PC_LWZ)
+                PCode_UnlinkInstruction(instruction);
+        } else {
+            CError_FATAL(679);
+        }
+
+        if (eabi_stack_frame_size != 0) {
+            for (currentBlock = gPCodeBlocks; currentBlock != NULL; currentBlock = currentBlock->next) {
+                for (instruction = currentBlock->instructions; instruction != NULL; instruction = instruction->next) {
+                    for (operandIndex = 0; operandIndex < instruction->operand_count; operandIndex++) {
+                        if (instruction->operandData.operands[operandIndex].kind == PCOp_MEMORY &&
+                            instruction->operandData.operands[operandIndex].flags == 1 &&
+                            Registers_GetInfo(instruction->operandData.operands[operandIndex].object)->in_param_area !=
+                                0) {
+                            switch (instruction->opcode) {
+                                case PC_LBZ:
+                                case PC_LBZU:
+                                case PC_LHZ:
+                                case PC_LHZU:
+                                case PC_LHA:
+                                case PC_LHAU:
+                                case PC_LWZ:
+                                case PC_LWZU:
+                                case PC_LMW:
+                                case PC_STB:
+                                case PC_STBU:
+                                case PC_STH:
+                                case PC_STHU:
+                                case PC_STW:
+                                case PC_STWU:
+                                case PC_STMW:
+                                case PC_ADDI:
+                                case PC_ADDIC:
+                                case PC_ADDICR:
+                                case PC_LFS:
+                                case PC_LFSU:
+                                case PC_LFD:
+                                case PC_LFDU:
+                                case PC_STFS:
+                                case PC_STFSU:
+                                case PC_STFD:
+                                case PC_STFDU:
+                                    instruction->operandData.operands[1].value.reg = parameterBaseRegister;
+                                    instruction->flags |= fCallerSPRelative;
+                                    break;
+                            }
+                        }
+                    }
+                }
+            }
+        } else {
+            parameterBaseRegister = -1;
+        }
+    }
+    if (data_005882c0.record != NULL) {
+        saveLinkRegister = 0;
+        emit_stack_frame_allocation(0xc, -1);
+        frameAllocated = 1;
+        generate_interrupt_register_saves();
+    }
+    if (saveLinkRegister) {
+        PCodeUtilities_EmitInstruction(PC_MFLR, 0);
+        PCodeUtilities_EmitInstruction(PC_STW, 0, 1, 0, 4);
+    }
+    if (stack_frame_size != 0 && !frameAllocated) {
+        emit_stack_frame_allocation(0xc, -1);
+        frameAllocated = 1;
+    }
+    if (gFPRSaveSpan != 0)
+        emit_save_fprs(block, frameAllocated);
+    if (gGPRSaveSpan != 0)
+        save_gprs(block, copts.use_lmw_stmw != 0 && !copts.littleendian, frameAllocated);
+    if (parameterBaseRegister != -1)
+        PCodeUtilities_EmitInstruction(PC_MR, parameterBaseRegister, 0xc);
+    if (gVRSaveSpan != 0)
+        emit_vr_saves(block);
+    if (data_005883ee != 0 && data_005882c0.record == NULL) {
+        PCodeUtilities_EmitInstruction(PC_MFCR, 0xc);
+        PCodeUtilities_EmitInstruction(PC_STW, 0xc, 1, 0, r12_save_offset);
+    }
+    if (data_0058852d != 0)
+        PCodeUtilities_EmitInstruction(PC_MR, 0x1f, 1);
+    block->flags |= 1;
+    gCurrentBlock = savedBlock;
+}
+#else
 void StackFrameEABI_GeneratePrologueEpilogue(PCodeBlock *block, int prologueFlags, int epilogueFlags)
 {
     PCodeBlock *savedBlock;
@@ -373,7 +495,81 @@ void StackFrameEABI_GeneratePrologueEpilogue(PCodeBlock *block, int prologueFlag
     block->flags |= 1;
     gCurrentBlock = savedBlock;
 }
+#endif
 
+#if VERSION == VERSION_GC_1_0
+void StackFrameEABI_MergePrologueEpilogue(PCodeBlock *block, char emitReturn)
+{
+    PCodeBlock *savedBlock;
+    PCodeInstruction *instruction;
+    int largeFrame;
+    SInt32 savedFrameReg;
+    Boolean restoreLR;
+
+    largeFrame = stack_frame_size > 0x7fff;
+    savedFrameReg = -1;
+    savedBlock = gCurrentBlock;
+    restoreLR = need_link_register_save();
+    gCurrentBlock = block;
+    if (data_005882c0.record != NULL)
+        restoreLR = 0;
+    if (gHasAltivecFrame != 0) {
+        instruction = block->instructions;
+        if (instruction != NULL && instruction->opcode == PC_STW) {
+            PCode_UnlinkInstruction(instruction);
+            instruction = block->instructions;
+            if (instruction != NULL && instruction->opcode == PC_STW) {
+                savedFrameReg = instruction->operandData.operands[1].value.reg;
+                PCode_UnlinkInstruction(instruction);
+            }
+        } else {
+            CError_FATAL(895);
+        }
+    }
+    if (gVRSaveSpan != 0)
+        restore_vrs(block);
+    if (!largeFrame && gHasAltivecFrame == 0 && restoreLR)
+        emit_opcode_with_base_offset(PC_LWZ, 0, stack_base_reg, NULL, stack_frame_size + 4);
+    if (data_005883ee != 0 && data_005882c0.record == NULL) {
+        emit_opcode_with_base_offset(PC_LWZ, 0xc, stack_base_reg, NULL, r12_save_offset);
+        PCodeUtilities_EmitInstruction(PC_MTCRF, 0xff, 0xc);
+    }
+    if (gFPRSaveSpan != 0)
+        emit_restore_fprs(block, 0);
+    if (gGPRSaveSpan != 0)
+        restore_gprs(block, copts.use_lmw_stmw != 0 && !copts.littleendian, 0);
+    if (data_005882c0.record == NULL && stack_frame_size != 0) {
+        if (data_0058852d != 0 || largeFrame || gHasAltivecFrame != 0)
+            emit_opcode_with_base_offset(PC_LWZ, 1, 1, NULL, 0);
+        else
+            PCodeUtilities_EmitInstruction(PC_ADDI, 1, 1, 0, stack_frame_size);
+    }
+    if ((largeFrame || gHasAltivecFrame != 0) && restoreLR)
+        emit_opcode_with_base_offset(PC_LWZ, 0, 1, NULL, 4);
+    if (restoreLR)
+        PCodeUtilities_EmitInstruction(PC_MTLR, 0);
+    if (vrsave_mask != 0 && gHasAltivecFrame != 0 && copts.altivec_vrsave != 0 && savedFrameReg == -1)
+        PCodeUtilities_EmitInstruction(PC_MTSPR, 0x100, 0xb);
+    if (data_005882c0.record != NULL) {
+        emit_restore_special_registers();
+        if (stack_frame_size != 0) {
+            if (data_0058852d != 0 || largeFrame || gHasAltivecFrame != 0)
+                emit_opcode_with_base_offset(PC_LWZ, 1, 1, NULL, 0);
+            else
+                PCodeUtilities_EmitInstruction(PC_ADDI, 1, 1, 0, stack_frame_size);
+        }
+    }
+    if (emitReturn != 0) {
+        if (data_005882c0.record != NULL)
+            PCodeUtilities_EmitInstruction(PC_RFI);
+        else
+            PCodeUtilities_EmitInstruction(PC_BLR);
+        Operands_AllocateGPR(0x800000);
+    }
+    block->flags |= 2;
+    gCurrentBlock = savedBlock;
+}
+#else
 void StackFrameEABI_MergePrologueEpilogue(PCodeBlock *block, char emitReturn)
 {
     PCodeBlock *savedBlock;
@@ -493,6 +689,7 @@ void StackFrameEABI_MergePrologueEpilogue(PCodeBlock *block, char emitReturn)
     block->flags |= 2;
     gCurrentBlock = savedBlock;
 }
+#endif
 
 void emit_save_fprs(PCodeBlock *block, Boolean savefpr)
 {
@@ -611,14 +808,14 @@ void emit_restore_fprs(PCodeBlock *func, Boolean flag)
 
     if (copts.optimizesize == 0 || ((gFPRSaveSpan <= 3 && data_00588521 != 0) || gFPRSaveSpan <= 1)) {
         for (i = 1; i <= gFPRSaveSpan; i++) {
-            emit_opcode_with_base_offset(PC_LFD, 0x20 - i, stack_base_reg, NULL, base - i * 8);
+            emit_opcode_with_base_offset(PC_LFD, 0x20 - i, save_area_base(), NULL, base - i * 8);
             Operands_AllocateGPR(0x20000);
         }
     } else {
         if (base != 0) {
             if (base > 0x7fff)
                 CError_FatalError(ERR_LOCAL_DATA_32K);
-            PCodeUtilities_EmitInstruction(PC_ADDI, 0xb, stack_base_reg, 0, base);
+            PCodeUtilities_EmitInstruction(PC_ADDI, 0xb, save_area_base(), 0, base);
             Operands_AllocateGPR(0x400);
         }
         sprintf(name, "_restfpr_%d", 0x20 - gFPRSaveSpan);
@@ -666,15 +863,15 @@ void restore_vrs(PCodeBlock *block)
             if (size - (i - 1) * 16 != 0) {
                 PCodeUtilities_EmitInstruction(PC_LI, 0, offset);
                 Operands_AllocateGPR(PCodeInstruction_ObjectFlag2);
-                PCodeUtilities_EmitInstruction(PC_LVX, 0x20 - i, stack_base_reg, 0);
+                PCodeUtilities_EmitInstruction(PC_LVX, 0x20 - i, save_area_base(), 0);
                 Operands_AllocateGPR(PCodeInstruction_ObjectFlag2);
             } else {
-                PCodeUtilities_EmitInstruction(PC_LVX, 0x20 - i, 0, stack_base_reg);
+                PCodeUtilities_EmitInstruction(PC_LVX, 0x20 - i, 0, save_area_base());
                 Operands_AllocateGPR(PCodeInstruction_ObjectFlag2);
             }
         }
     } else {
-        PCodeUtilities_EmitInstruction(PC_ADDI, 0, stack_base_reg, 0, size + 16);
+        PCodeUtilities_EmitInstruction(PC_ADDI, 0, save_area_base(), 0, size + 16);
         sprintf(name, "_restvr%d", 0x20 - gVRSaveSpan);
         savedValue = cscope_current;
         cscope_current = cscope_root;
@@ -749,8 +946,15 @@ void save_gprs(PCodeBlock *func, Boolean a, Boolean b)
     }
 }
 
+#if VERSION == VERSION_GC_1_0
+void restore_gprs(PCodeBlock *func, Boolean a, Boolean b)
+#else
 void restore_gprs(PCodeBlock *func, Boolean a, Boolean b, SInt16 c)
+#endif
 {
+#if VERSION == VERSION_GC_1_0
+    SInt16 c = 1;
+#endif
     SInt32 i;
     Object *node;
     char *base;
@@ -977,6 +1181,41 @@ SInt32 StackFrameEABI_GetTypeAlignment(Type *type)
     }
 }
 
+static void emit_stw_register_saves(void)
+{
+    int registerIndex;
+    SInt32 offset;
+
+    offset = stack_frame_size - (data_0058764c + data_005880d8 + data_00588070 + data_00587638 + frame_alignment_padding +
+                                 data_00587634 + stack_frame_adjustment + stack_frame_padding + data_005876a8);
+    if (data_00588521 == 0) {
+        for (registerIndex = 0; registerIndex < 10; registerIndex++, offset += 4)
+            PCodeUtilities_EmitInstruction(PC_STW, registerIndex + 3, 1, 0, offset);
+    } else {
+        for (registerIndex = 0; registerIndex < 10; registerIndex++, offset += 4)
+            if ((1 << (registerIndex + 3)) & interrupt_register_save_mask)
+                PCodeUtilities_EmitInstruction(PC_STW, registerIndex + 3, 1, 0, offset);
+    }
+}
+
+#if VERSION == VERSION_GC_1_0
+void emit_lwz_register_restores(void)
+{
+    int registerIndex;
+    SInt32 offset;
+
+    offset = stack_frame_size - (data_0058764c + data_005880d8 + data_00588070 + data_00587638 + frame_alignment_padding +
+                                 data_00587634 + stack_frame_adjustment + stack_frame_padding + data_005876a8);
+    if (data_00588521 == 0) {
+        for (registerIndex = 0; registerIndex < 10; registerIndex++, offset += 4)
+            emit_opcode_with_base_offset(PC_LWZ, registerIndex + 3, 1, NULL, offset);
+    } else {
+        for (registerIndex = 0; registerIndex < 10; registerIndex++, offset += 4)
+            if ((1 << (registerIndex + 3)) & interrupt_register_save_mask)
+                emit_opcode_with_base_offset(PC_LWZ, registerIndex + 3, 1, NULL, offset);
+    }
+}
+#else
 int emit_lwz_register_restores(short base_register)
 {
     int register_index;
@@ -1013,6 +1252,7 @@ int emit_lwz_register_restores(short base_register)
     }
     return base_register_save_offset;
 }
+#endif
 
 void StackFrameEABI_ClearUnusedStackFrame(void)
 {
@@ -1060,9 +1300,11 @@ void fn_004aa7d0(void)
             }
         }
     }
+#if VERSION > VERSION_GC_1_0
     if (data_0058852d != 0) {
         interrupt_register_save_mask |= 0x1000;
     }
+#endif
     operandIndex = 3;
     do {
         if ((interrupt_register_save_mask & (1 << operandIndex)) != 0) {
@@ -1072,6 +1314,74 @@ void fn_004aa7d0(void)
     } while (operandIndex < 13);
 }
 
+#if VERSION == VERSION_GC_1_0
+void emit_stack_frame_allocation(int frame_register, int vrsave_register)
+{
+    SInt32 vrsave_offset;
+    UInt16 half;
+
+    if (gHasAltivecFrame) {
+        vrsave_offset = -(frame_alignment_padding + data_00587638 + stack_frame_adjustment + data_00587634 +
+                          data_00588070 + data_0058764c + data_005880d8);
+        if (vrsave_mask && copts.altivec_vrsave) {
+            if (vrsave_register == -1)
+                PCodeUtilities_EmitInstruction(PC_MFSPR, 0, 0x100);
+            else
+                PCodeUtilities_EmitInstruction(PC_MFSPR, vrsave_register, 0x100);
+        }
+        PCodeUtilities_EmitInstruction(PC_MR, frame_register, 1);
+        Operands_AllocateGPR(0x20000);
+        if (copts.altivec_vrsave && vrsave_mask && vrsave_register == -1)
+            PCodeUtilities_EmitInstruction(PC_STW, 0, 1, 0, vrsave_offset);
+        if (data_005884ff)
+            PCodeUtilities_EmitInstruction(PC_RLWINM, 1, 1, 0, 0, 27);
+        if (vrsave_mask && copts.altivec_vrsave) {
+            half = vrsave_mask >> 16;
+            if (half != 0) {
+                if (vrsave_register == -1)
+                    PCodeUtilities_EmitInstruction(PC_ORIS, 0, 0, half);
+                else
+                    PCodeUtilities_EmitInstruction(PC_ORIS, 0, vrsave_register, half);
+            } else if (vrsave_register != -1) {
+                PCodeUtilities_EmitInstruction(PC_MR, 0, vrsave_register);
+            }
+        }
+        if (stack_frame_size > 0x7fff) {
+            PCodeUtilities_EmitInstruction(PC_ADDIS, 1, 1, 0,
+                                           (SInt16)((-stack_frame_size >> 16) + ((-stack_frame_size >> 15) & 1)));
+            PCodeUtilities_EmitInstruction(PC_ADDI, 1, 1, 0, (SInt16)-stack_frame_size);
+            PCodeUtilities_EmitInstruction(PC_STWU, frame_register, 1, 0, 0);
+        } else {
+            PCodeUtilities_EmitInstruction(PC_STWU, frame_register, 1, 0, -stack_frame_size);
+        }
+        if (vrsave_mask && copts.altivec_vrsave) {
+            half = vrsave_mask;
+            if (half != 0)
+                PCodeUtilities_EmitInstruction(PC_ORI, 0, 0, half);
+            PCodeUtilities_EmitInstruction(PC_MTSPR, 0x100, 0);
+        }
+    } else if (stack_frame_size > 0x7fff) {
+        SInt16 low;
+        PCodeUtilities_EmitInstruction(PC_LIS, 0xc, 0, (SInt16)((-stack_frame_size >> 16) + ((-stack_frame_size >> 15) & 1)));
+        low = -stack_frame_size;
+        if (low != 0)
+            PCodeUtilities_EmitInstruction(PC_ADDI, 0xc, 0xc, 0, low);
+        PCodeUtilities_EmitInstruction(PC_STWUX, 1, 1, 0xc);
+    } else {
+        PCodeUtilities_EmitInstruction(PC_STWU, 1, 1, 0, -stack_frame_size);
+    }
+}
+
+static Boolean need_link_register_save(void)
+{
+    Boolean save;
+
+    save = !data_00588521 || (copts.optimizesize != 0 && (gFPRSaveSpan > 3 || gVRSaveSpan > 3));
+    if (!save && (copts.use_lmw_stmw == 0 || copts.littleendian != 0))
+        save = NeedGSave();
+    return save;
+}
+#else
 void save_and_update_vrsave(int a, int argb)
 {
     if (gHasAltivecFrame && vrsave_mask && copts.altivec_vrsave) {
@@ -1128,6 +1438,7 @@ void emit_stack_frame_allocation(int frame_register)
         PCodeUtilities_EmitInstruction(PC_STWU, 1, 1, 0, -stack_frame_size);
     }
 }
+#endif
 
 void fn_004aa580(void)
 {
@@ -1139,7 +1450,6 @@ void StackFrameEABI_SaveArgumentRegisters(PCodeBlock *entryBlock, PCodeBlock *fp
                                           PCodeLabel *operand)
 {
     PCodeInstruction *instruction;
-    short offsetBase;
     short offset;
     short fpRegister;
     short gpRegister;
@@ -1148,9 +1458,7 @@ void StackFrameEABI_SaveArgumentRegisters(PCodeBlock *entryBlock, PCodeBlock *fp
     if (fpSaveBlock != NULL) {
         instruction = PCodeUtilities_CreateInstruction(8, 1, 2, operand);
         PCode_AppendInstruction(entryBlock, instruction);
-        offsetBase = data_005880cc;
-        offsetBase += outgoing_argument_size;
-        offset = offsetBase + 32;
+        offset = fn_004a9f90() + 32;
         for (fpRegister = 1; fpRegister <= 8; fpRegister++) {
             instruction = PCodeUtilities_CreateInstruction(154, fpRegister, 1, 0, (fpRegister - 1) * 8 + offset);
             PCode_AppendInstruction(fpSaveBlock, instruction);
@@ -1158,8 +1466,7 @@ void StackFrameEABI_SaveArgumentRegisters(PCodeBlock *entryBlock, PCodeBlock *fp
         fpSaveBlock->flags |= 1;
     }
     for (gpRegister = 3; gpRegister <= 10; gpRegister++) {
-        instruction = PCodeUtilities_CreateInstruction(49, gpRegister, 1, 0,
-                                                       (gpRegister - 3) * 4 + (data_005880cc + outgoing_argument_size));
+        instruction = PCodeUtilities_CreateInstruction(49, gpRegister, 1, 0, fn_004a9f90() + (gpRegister - 3) * 4);
         PCode_AppendInstruction(gpSaveBlock, instruction);
     }
     gpSaveBlock->flags |= 1;
@@ -1187,14 +1494,9 @@ SInt32 StackFrameEABI_GetRecordSize(Object *object)
 
 void generate_interrupt_register_saves(void)
 {
-    unsigned int offset;
-    unsigned int frameOffset;
-    int registerIndex;
     InterruptGenerationRecord *flags;
 
-    offset = data_005880cc;
-    offset += outgoing_argument_size;
-    BeginSpecialRegisterSaves(offset);
+    BeginSpecialRegisterSaves(fn_004a9f90());
     PCodeUtilities_EmitInstruction(128U, 0U);
     SaveSpecialRegister();
     PCodeUtilities_EmitInstruction(127U, 0U);
@@ -1204,29 +1506,7 @@ void generate_interrupt_register_saves(void)
     PCodeUtilities_EmitInstruction(129U, 0U);
     SaveSpecialRegister();
 
-    offset = data_0058764c;
-    offset += data_005880d8;
-    frameOffset = stack_frame_size;
-    offset += data_00588070;
-    offset += data_00587638;
-    offset += frame_alignment_padding;
-    offset += data_00587634;
-    offset += stack_frame_adjustment;
-    offset += stack_frame_padding;
-    offset += data_005876a8;
-    frameOffset -= offset;
-    if (!data_00588521) {
-        for (registerIndex = 0; registerIndex < 10; ++registerIndex) {
-            PCodeUtilities_EmitInstruction(49U, registerIndex + 3, 1U, 0U, frameOffset);
-            frameOffset += 4U;
-        }
-    } else {
-        for (registerIndex = 0; registerIndex < 10; ++registerIndex) {
-            if ((1U << (registerIndex + 3)) & interrupt_register_save_mask)
-                PCodeUtilities_EmitInstruction(49U, registerIndex + 3, 1U, 0U, frameOffset);
-            frameOffset += 4U;
-        }
-    }
+    emit_stw_register_saves();
 
     flags = GetStackFrameFlags();
     if (flags->SRR) {
@@ -1253,6 +1533,49 @@ void generate_interrupt_register_saves(void)
     }
 }
 
+#if VERSION == VERSION_GC_1_0
+void emit_restore_special_registers(void)
+{
+    special_register_save_offset -= 4;
+    if (data_005882c0.record->enable) {
+        PCodeUtilities_EmitInstruction(PC_MFMSR, 0);
+        PCodeUtilities_EmitInstruction(PC_ANDI, 0, 0, 0x8002);
+        PCodeUtilities_EmitInstruction(PC_MTMSR, 0);
+    }
+    if (data_005882c0.record->DSISR) {
+        emit_opcode_with_base_offset(PC_LWZ, 0, stack_base_reg, NULL, special_register_save_offset);
+        PCodeUtilities_EmitInstruction(PC_MTSPR, 0x12, 0);
+        special_register_save_offset -= 4;
+    }
+    if (data_005882c0.record->DAR) {
+        emit_opcode_with_base_offset(PC_LWZ, 0, stack_base_reg, NULL, special_register_save_offset);
+        PCodeUtilities_EmitInstruction(PC_MTSPR, 0x13, 0);
+        special_register_save_offset -= 4;
+    }
+    if (data_005882c0.record->SRR) {
+        emit_opcode_with_base_offset(PC_LWZ, 0, stack_base_reg, NULL, special_register_save_offset);
+        PCodeUtilities_EmitInstruction(PC_MTSPR, 0x1b, 0);
+        special_register_save_offset -= 4;
+        emit_opcode_with_base_offset(PC_LWZ, 0, stack_base_reg, NULL, special_register_save_offset);
+        PCodeUtilities_EmitInstruction(PC_MTSPR, 0x1a, 0);
+        special_register_save_offset -= 4;
+    }
+    emit_lwz_register_restores();
+    emit_opcode_with_base_offset(PC_LWZ, 0, stack_base_reg, NULL, special_register_save_offset);
+    PCodeUtilities_EmitInstruction(PC_MTLR, 0);
+    special_register_save_offset -= 4;
+    emit_opcode_with_base_offset(PC_LWZ, 0, stack_base_reg, NULL, special_register_save_offset);
+    PCodeUtilities_EmitInstruction(PC_MTCRF, 0xff, 0);
+    special_register_save_offset -= 4;
+    emit_opcode_with_base_offset(PC_LWZ, 0, stack_base_reg, NULL, special_register_save_offset);
+    PCodeUtilities_EmitInstruction(PC_MTXER, 0);
+    special_register_save_offset -= 4;
+    emit_opcode_with_base_offset(PC_LWZ, 0, stack_base_reg, NULL, special_register_save_offset);
+    PCodeUtilities_EmitInstruction(PC_MTCTR, 0);
+    special_register_save_offset -= 4;
+    emit_opcode_with_base_offset(PC_LWZ, 0, stack_base_reg, NULL, special_register_save_offset);
+}
+#else
 void emit_restore_special_registers(SInt16 frameRegister)
 {
     int offset;
@@ -1301,6 +1624,7 @@ void emit_restore_special_registers(SInt16 frameRegister)
         emit_opcode_with_base_offset(PC_LWZ, frameRegister, frameRegister, NULL, offset);
     }
 }
+#endif
 
 unsigned int fn_004a9f90(void)
 {
@@ -1315,11 +1639,59 @@ int fn_004a9f70(int value)
     return stack_frame_size + 8;
 }
 
-#if VERSION > VERSION_GC_1_0
-void StackFrame_CheckAltivec(void)
-#else
+#if VERSION == VERSION_GC_1_0
 void StackFrame_CheckAltivec(PCodeBlock *prologueBlock)
-#endif
+{
+    PCodeBlock *savedBlock;
+    int frameReg;
+    SInt16 savedStackReg;
+    ObjectList *localEntry;
+    Object *object;
+
+    if (copts.altivec_model == 0)
+        return;
+    if (gUsedVirtualRegistersVR > 32 || Registers_CountUsedVRs())
+        gHasAltivecFrame = 1;
+    for (localEntry = locals; localEntry != NULL; localEntry = localEntry->next) {
+        object = localEntry->object;
+        if (StackFrameEABI_GetTypeAlignment(object->type) >= 16) {
+            gHasAltivecFrame = 1;
+            if (object->u.var.info->reg == 0)
+                data_005884ff = 1;
+            break;
+        }
+    }
+    if (gHasAltivecFrame) {
+        if (data_00588521 != 0)
+            frameReg = 11;
+        else
+            frameReg = Coloring_ClaimGPRColor();
+        if (frameReg == -1) {
+            frameReg = 11;
+            PPCError_ReportError(0x74);
+        }
+        Registers_BindGPR(NULL, frameReg);
+        savedBlock = gCurrentBlock;
+        gCurrentBlock = prologueBlock;
+        PCodeUtilities_EmitInstruction(PC_LWZ, frameReg, 1, 0, 0);
+        if (data_00588521 != 0) {
+            if (fn_004c15f0() == 0)
+                savedStackReg = 12;
+            else
+                savedStackReg = Coloring_ClaimGPRColor();
+            PCodeUtilities_EmitInstruction(PC_LWZ, savedStackReg, 1, 0, 0);
+        }
+        gCurrentBlock = gReturnBlock;
+        PCodeUtilities_EmitInstruction(PC_STW, 1, frameReg, 0, 0);
+        if (data_00588521 != 0) {
+            PCodeUtilities_EmitInstruction(PC_STW, 1, savedStackReg, 0, 0);
+            Registers_BindGPR(NULL, savedStackReg);
+        }
+        gCurrentBlock = savedBlock;
+    }
+}
+#else
+void StackFrame_CheckAltivec(void)
 {
     PCodeBlock *savedBlock;
     int frameReg;
@@ -1406,6 +1778,7 @@ void StackFrame_CheckAltivec(PCodeBlock *prologueBlock)
         gCurrentBlock = savedBlock;
     }
 }
+#endif
 
 static inline unsigned int ReadFrameWord(const unsigned char *storage)
 {

@@ -519,7 +519,7 @@ src/optimizer/IrOptimizer.c:
 
 src/backend/CodeGen.c:
 	.text       start:0x004318F0 end:0x00437590
-	.data       start:0x005213F8 end:0x00521B88
+	.data       start:0x005213F8 end:0x00521B84
 	.bss        start:0x00550730 end:0x00550738
 
 src/frontend/CPrep.c:

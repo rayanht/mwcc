@@ -17,7 +17,9 @@ static Boolean data_005824c8;
 static UInt8 template_argument_depth;
 static SInt32 data_005824ca;
 static UInt8 data_005824ce;
+#if VERSION > VERSION_GC_1_0
 static char lbl_005824cf[9];
+#endif
 #pragma options align = reset
 
 #define CB_TRUE 1
@@ -322,17 +324,8 @@ unsigned char match_candidate_to_template_args(Object *candidate, Object *templ)
 
 static Boolean dominates(Object *candidate, Object *other)
 {
-    int result;
-
-    result = 0;
-    if (match_candidate_to_template_args(candidate, other)) {
-        int reverseDoesNotMatch = 0;
-        if (!match_candidate_to_template_args(other, candidate))
-            reverseDoesNotMatch = 1;
-        if (reverseDoesNotMatch)
-            result = 1;
-    }
-    return result;
+    return match_candidate_to_template_args(candidate, other) &&
+           !match_candidate_to_template_args(other, candidate);
 }
 
 #if VERSION == VERSION_GC_1_0

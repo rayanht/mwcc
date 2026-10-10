@@ -117,6 +117,17 @@ UInt8 gVectorArrayConversion;
 
 static struct TemporaryObjectEntry *temporary_objects;
 
+#if VERSION == VERSION_GC_1_0
+#define LINE(line)                                                                                                     \
+    ((line) <= 448    ? (line) - 3                                                                                     \
+     : (line) <= 908  ? (line) - 8                                                                                     \
+     : (line) <= 1535 ? (line) - 31                                                                                    \
+     : (line) <= 1872 ? (line) - 47                                                                                    \
+                      : (line) - 43)
+#else
+#define LINE(line) (line)
+#endif
+
 typedef void (*XGenProc)(ENode *, UInt16, UInt16, Operand *);
 
 typedef void (*CGGenFunc)(ENode *enode, SInt32 a, SInt32 b, Operand *dest);
@@ -180,18 +191,6 @@ static inline void IrOptimizer_CheckVectorLongConstant(const CInt64 *value, Type
     }
 }
 
-static inline void CheckPragmaEnd(void)
-{
-    SInt16 t;
-
-    if (CPrepTokenizer_ScanToken() != -7) {
-        CPrep_ReportError(0x71);
-        do {
-            t = CPrepTokenizer_ScanToken();
-        } while (t != -7 && t);
-    }
-}
-
 static inline void SkipPragma(void)
 {
     SInt16 t;
@@ -201,13 +200,6 @@ static inline void SkipPragma(void)
             t = CPrepTokenizer_ScanToken();
         } while (t != -7 && t);
     }
-}
-
-static inline void CodeGen_SetProcessorOption(UInt8 processor)
-{
-    CPrep_SaveAndSetOption(4, processor);
-    if (!copts.instructionSchedulingMode)
-        CPrep_SaveAndSetOption(5, 2);
 }
 
 static inline void initialize_codegen_list(Object **list)
@@ -225,29 +217,6 @@ static inline UInt8 CodeGen_00435040_kind(Type *ftype)
     if (Type_RequiresMemoryReturn(ftype))
         return 4;
     return 3;
-}
-
-static inline void emit_block(CLabel *block)
-{
-    if (block->pclabel == NULL)
-        block->pclabel = PCode_NewLabel();
-    if (block->pclabel->resolved == 0)
-        PCodeUtilities_ResolveLabel(block->pclabel);
-}
-
-static inline void branch_block(CLabel *block)
-{
-    if (block->pclabel == NULL)
-        block->pclabel = PCode_NewLabel();
-    PCodeUtilities_EmitBranch(block->pclabel);
-}
-
-static inline Boolean is_tail(Statement *node)
-{
-    for (node = node->next; node; node = node->next)
-        if (node->type > 2)
-            return 0;
-    return 1;
 }
 
 static inline int IsVolatile(Object *obj)
@@ -276,7 +245,6 @@ static inline Boolean IsFloatArgument(Type *type)
 Object *CodeGen_AllocateTemporaryObject(Type *type)
 {
     Object *object;
-    VarInfo *info;
     struct TemporaryObjectEntry *entry;
     struct TemporaryObjectEntry *newEntry;
 
@@ -296,18 +264,7 @@ Object *CodeGen_AllocateTemporaryObject(Type *type)
     object->datatype = DLOCAL;
     object->type = type;
     object->name = (HashNameNode *)CParser_GetUniqueName();
-    info = (VarInfo *)lalloc(sizeof(*info));
-    memclrw(info, sizeof(*info));
-    info->usage = 0;
-    info->deftoken = *CPrep_GetLastBufferedToken();
-    info->varnumber = next_varnumber;
-    ++next_varnumber;
-    info->noregister = 0;
-    info->used = 0;
-    info->reg = 0;
-    info->regHi = 0;
-    info->in_param_area = 0;
-    object->u.var.info = info;
+    object->u.var.info = CodeGen_AllocateVarInfo();
     object->u.var.uid = 1;
     newEntry = (struct TemporaryObjectEntry *)lalloc(sizeof(*newEntry));
     memclrw(newEntry, sizeof(*newEntry));
@@ -315,6 +272,22 @@ Object *CodeGen_AllocateTemporaryObject(Type *type)
     newEntry->object = object;
     temporary_objects = newEntry;
     return object;
+}
+
+static void release_temporary_objects(void)
+{
+    TemporaryObjectEntry *entry;
+
+    for (entry = temporary_objects; entry != NULL; entry = entry->next)
+        entry->object->u.var.uid = 0;
+}
+
+static void allocate_temporary_object_slots(void)
+{
+    TemporaryObjectEntry *entry;
+
+    for (entry = temporary_objects; entry != NULL; entry = entry->next)
+        StackFrameEABI_AllocateObjectSlot(entry->object);
 }
 
 void CodeGen_AllocateArgumentSlots(Object *function, Boolean isVariadic, Boolean hasStructReturn)
@@ -451,7 +424,7 @@ void CodeGen_EnumerateArgumentRegisters(void (*callback)(Object *argument, SInt1
                 else
                     generalRegister += 2;
             } else {
-                CError_FATAL(448);
+                CError_FATAL(LINE(448));
                 generalRegister += argumentType->size >> 2;
                 if (argumentType->size & 3)
                     generalRegister++;
@@ -480,9 +453,12 @@ void bind_object_register(Object *object, SInt16 reg)
             if (type->size <= 4) {
                 Registers_BindGPR(object, reg);
             } else if (reg < 10) {
+#if VERSION > VERSION_GC_1_0
                 if (copts.littleendian != 0) {
                     Registers_BindGPRPair(object, reg, reg + 1);
-                } else {
+                } else
+#endif
+                {
                     Registers_BindGPRPair(object, reg + 1, reg);
                 }
             }
@@ -891,7 +867,7 @@ void emit_dlocal_initialization(Object *object, SInt16 reg)
 
     registers = Registers_GetInfo(object);
     type = object->type;
-    CError_ASSERT(908, object->datatype == DLOCAL);
+    CError_ASSERT(LINE(908), object->datatype == DLOCAL);
     if (registers->used == 0)
         return;
 
@@ -901,6 +877,7 @@ void emit_dlocal_initialization(Object *object, SInt16 reg)
             UInt8 use_gpr;
             if ((((typecode = type->type) == TYPEINT || typecode == TYPEENUM) && type->size == 8) ||
                 ((use_gpr = copts.operandsDebug) && typecode == TYPEFLOAT && type->size != 4)) {
+#if VERSION > VERSION_GC_1_0
                 if (copts.littleendian != 0) {
                     if (registers->reg != reg)
                         PCodeUtilities_EmitInstruction(PC_MR, registers->reg, reg);
@@ -914,15 +891,21 @@ void emit_dlocal_initialization(Object *object, SInt16 reg)
                         emit_opcode_with_base_offset(PC_LWZ, registers->regHi, stack_base_reg, object,
                                                      high_word_offset);
                     }
-                } else {
+                } else
+#endif
+                {
                     if (registers->regHi != reg)
                         PCodeUtilities_EmitInstruction(PC_MR, registers->regHi, reg);
                     if (reg < 10) {
+#if VERSION > VERSION_GC_1_0
                         CError_ASSERT(939, registers->reg != reg && registers->regHi != reg + 1);
+#endif
                         if (registers->reg != reg + 1)
                             PCodeUtilities_EmitInstruction(PC_MR, registers->reg, reg + 1);
                     } else {
+#if VERSION > VERSION_GC_1_0
                         CError_FATAL(945);
+#endif
                         has_dlocal_initialization = 1;
                         emit_opcode_with_base_offset(PC_LWZ, registers->reg, stack_base_reg, object, low_word_offset);
                     }
@@ -958,7 +941,7 @@ void emit_dlocal_initialization(Object *object, SInt16 reg)
                             emit_opcode_with_base_offset(PC_STW, reg + 1, stack_base_reg, object, 4);
                         break;
                     default:
-                        CError_FATAL(983);
+                        CError_FATAL(LINE(983));
                         break;
                 }
             } else if (copts.operandsDebug && type->type == TYPEFLOAT) {
@@ -1019,7 +1002,7 @@ void emit_dlocal_initialization(Object *object, SInt16 reg)
                     emit_opcode_with_base_offset(PC_LWZ, registers->reg, stack_base_reg, object, low_word_offset);
                     break;
                 default:
-                    CError_FATAL(1043);
+                    CError_FATAL(LINE(1043));
                     break;
             }
         }
@@ -1051,6 +1034,15 @@ void emit_trailing_object_reg_moves(void)
     }
 }
 
+static Boolean is_variadic(Object *func)
+{
+    FuncArg *arg;
+
+    for (arg = TYPE_FUNC(func->type)->args; arg != NULL && arg != &elipsis; arg = arg->next)
+        ;
+    return arg == &elipsis;
+}
+
 void CodeGen_AssignMissingEntryValues(Statement *entry)
 {
     Statement *previous;
@@ -1071,6 +1063,14 @@ void CodeGen_AssignMissingEntryValues(Statement *entry)
             entry = entry->next;
         } while (entry != NULL);
     }
+}
+
+static Boolean is_tail(Statement *node)
+{
+    for (node = node->next; node; node = node->next)
+        if (node->type > 2)
+            return 0;
+    return 1;
 }
 
 void set_block_line_and_execution_weight(SInt32 value, unsigned int initial_value, unsigned int set_flag)
@@ -1129,11 +1129,43 @@ void fn_00436390(ENode *expression)
     }
 }
 
+static void emit_block(CLabel *block)
+{
+    if (block->pclabel == NULL)
+        block->pclabel = PCode_NewLabel();
+    if (block->pclabel->resolved == 0)
+        PCodeUtilities_ResolveLabel(block->pclabel);
+    release_temporary_objects();
+}
+
+static void branch_block(CLabel *block)
+{
+    if (block->pclabel == NULL)
+        block->pclabel = PCode_NewLabel();
+    PCodeUtilities_EmitBranch(block->pclabel);
+    release_temporary_objects();
+}
+
+static void generate_computed_goto(ENode *expr)
+{
+    Operand operand;
+    struct TOCNameEntry *entry;
+
+    memclrw(&operand, sizeof(operand));
+    data_00560648[expr->type](expr, 0, 0, &operand);
+    if (operand.kind != OpndType_GPR)
+        Operands_ForceGPR(&operand, (Type *)&void_ptr, 0);
+    CError_ASSERT(LINE(1286), operand.kind == OpndType_GPR);
+    for (entry = toc_name_entries; entry != NULL; entry = entry->next)
+        PCode_AddSuccessor(gCurrentBlock, entry->label->pclabel);
+    PCodeUtilities_EmitInstruction(PC_MTCTR, operand.reg);
+    PCodeUtilities_EmitInstructionAndCreateBlock(NULL);
+}
+
 void generate_comparison_branch(ENode *enode, CLabel *context, SInt32 flag)
 {
     Operand operand;
     Operand discardedResult;
-    TemporaryObjectEntry *entry;
 
     memclrw(&operand, sizeof(operand));
     while (enode->type == EFORCELOAD || enode->type == ETYPCON || enode->type == ECOMMA) {
@@ -1166,8 +1198,7 @@ void generate_comparison_branch(ENode *enode, CLabel *context, SInt32 flag)
         }
     }
     PCodeUtilities_EmitConditionBranch(operand.reg, operand.secondary_reg, flag, context->pclabel);
-    for (entry = temporary_objects; entry != NULL; entry = entry->next)
-        entry->object->u.var.uid = 0;
+    release_temporary_objects();
 }
 
 void generate_return(ENode *enode, Boolean flag)
@@ -1236,12 +1267,30 @@ void generate_return(ENode *enode, Boolean flag)
         if (return_label->pclabel == NULL)
             return_label->pclabel = PCode_NewLabel();
         PCodeUtilities_EmitBranch(return_label->pclabel);
-        {
-            TemporaryObjectEntry *entry;
-            for (entry = temporary_objects; entry != NULL; entry = entry->next)
-                entry->object->u.var.uid = 0;
-        }
+        release_temporary_objects();
     }
+}
+
+static void begin_catch(Object *object)
+{
+    PCodeUtilities_ResolveLabel(PCode_NewLabel());
+    CError_ASSERT(LINE(1436), object->datatype == DLOCAL);
+    emit_opcode_with_base_offset(PC_STW, 1, stack_base_reg, object, 0x14);
+    PCodeUtilities_ResolveLabel(PCode_NewLabel());
+}
+
+static void end_catch(Object *object)
+{
+    PCodeInstruction *instruction;
+
+    CError_ASSERT(LINE(1463), object->datatype == DLOCAL);
+    PCodeUtilities_ResolveLabel(PCode_NewLabel());
+    emit_opcode_with_base_offset(PC_LWZ, 0, 1, NULL, 0);
+    instruction = PCodeUtilities_CreateInstruction(0x22, 1, stack_base_reg, object, 0x14);
+    instruction->flags |= fSideEffects;
+    PCode_AppendInstruction(gCurrentBlock, instruction);
+    emit_opcode_with_base_offset(PC_STW, 0, 1, NULL, 0);
+    PCodeUtilities_ResolveLabel(PCode_NewLabel());
 }
 
 void emit_name_string_address(const char *name)
@@ -1278,7 +1327,7 @@ void emit_name_string_address(const char *name)
         Operands_ForceGPR(&op, (Type *)&void_ptr, 3);
 
     if (op.kind > 0) {
-        CError_FATAL(VERSION > VERSION_GC_1_0 ? 1535 : 1504);
+        CError_FATAL(LINE(1535));
     } else {
         SInt32 reg = op.reg;
         if (reg != 3) {
@@ -1301,21 +1350,23 @@ void emit_name_string_address(const char *name)
     PCodeUtilities_EmitObjectInstructionWithPayload(data_00588054, 1, 8, 0, 0);
 }
 
+static void emit_profile_exit(void)
+{
+    PCodeUtilities_EmitObjectInstructionWithPayload(data_00587c8c, 1, 0, 0, 0);
+}
+
 void CodeGen_Generator(Statement *statements, Object *functionObject, Boolean context, Boolean zero)
 {
-    Statement *statementList;
     Statement *entry;
-    TemporaryObjectEntry *temporaryEntry;
     PCodeBlock *frameBlock;
     ParsedAsmInstruction *expression;
     FuncArg *argument;
     Boolean hasSentinelArgument;
-    PCodeLabel *entryLabel;
-    PCodeBlock *firstEntryBlock, *secondEntryBlock, *commonEntryBlock;
 #if VERSION == VERSION_GC_1_0
     PCodeBlock *prologueBlock;
 #endif
-    Operand operandBuffer;
+    PCodeLabel *entryLabel;
+    PCodeBlock *firstEntryBlock, *secondEntryBlock, *commonEntryBlock;
     Statement *statement;
     Statement *previousStatement;
     UInt16 initialValue;
@@ -1349,15 +1400,20 @@ void CodeGen_Generator(Statement *statements, Object *functionObject, Boolean co
         cc_eabi_ppc_ReportCompilingFunction(functionObject->name->name);
     }
     gStackFrameSize = 0;
-    argument = ((TypeFunc *)functionObject->type)->args;
-    while (argument != NULL && argument != &elipsis)
-        argument = argument->next;
-    hasSentinelArgument = (Boolean)(argument == &elipsis);
+    /* (1.0 calls is_variadic and CodeGen_AssignMissingEntryValues; later releases do their work here) */
+#if VERSION == VERSION_GC_1_0
+    hasSentinelArgument = is_variadic(functionObject);
+#else
+    for (argument = TYPE_FUNC(functionObject->type)->args; argument != NULL && argument != &elipsis;
+         argument = argument->next)
+        ;
+    hasSentinelArgument = argument == &elipsis;
+#endif
     data_005882c0.record = NULL;
     return_operand.kind = 0;
     gStackFrameSize += StackFrameEABI_GetRecordSize(functionObject);
     classTypeUpdates = NULL;
-    if ((Boolean)(argument == &elipsis))
+    if (hasSentinelArgument)
         fn_004aa580();
     CodeGen_AllocateArgumentSlots(functionObject, context, hasSentinelArgument);
     data_0058851f = 0;
@@ -1372,21 +1428,25 @@ void CodeGen_Generator(Statement *statements, Object *functionObject, Boolean co
     return_label = data_0058802c;
     if (copts.debug_listing)
         fn_004be830(statements, functionObject);
-    statementList = DumpIR_OptimizeStatements(functionObject, statements);
+    statements = DumpIR_OptimizeStatements(functionObject, statements);
     if (copts.debug_listing)
-        fn_004be830(statementList, functionObject);
+        fn_004be830(statements, functionObject);
     Operands_ClearTrailingObjectInfo();
     Registers_InitRegisterState();
-    fn_0049d420(statementList);
+    fn_0049d420(statements);
     if (copts.debug_listing)
-        fn_004be830(statementList, functionObject);
+        fn_004be830(statements, functionObject);
     if (copts.profile)
         data_00588521 = 0;
     PCode_ResetBlocks();
     PCode_ResolveLabel((prologueBlock = PCode_CreateBlock()), (PCode_NewLabel()));
     prologueBlock->flags |= 1;
     if (hasSentinelArgument) {
-        if (copts.operandsDebug != 0 || copts.debugEnabled == 0) {
+        if (copts.operandsDebug != 0
+#if VERSION > VERSION_GC_1_0
+            || copts.debugEnabled == 0
+#endif
+        ) {
             firstEntryBlock = NULL;
             secondEntryBlock = NULL;
             entryLabel = NULL;
@@ -1419,8 +1479,11 @@ void CodeGen_Generator(Statement *statements, Object *functionObject, Boolean co
     if (copts.profile)
         emit_name_string_address(COptimizer_GetFunctionObject(functionObject)->name);
     emit_trailing_object_reg_moves();
+#if VERSION == VERSION_GC_1_0
+    CodeGen_AssignMissingEntryValues(statements->next);
+#else
     previousStatement = NULL;
-    for (entry = statementList->next; entry != NULL; entry = entry->next) {
+    for (entry = statements->next; entry != NULL; entry = entry->next) {
         if (entry->type == ST_LABEL && entry->label->pclabel == NULL) {
             if (previousStatement != NULL && previousStatement->type == ST_LABEL)
                 entry->label->pclabel = previousStatement->label->pclabel;
@@ -1429,8 +1492,9 @@ void CodeGen_Generator(Statement *statements, Object *functionObject, Boolean co
         }
         previousStatement = entry;
     }
+#endif
     Registers_CheckpointCoalesceWindow();
-    for (statement = statementList->next; statement != NULL; statement = statement->next) {
+    for (statement = statements->next; statement != NULL; statement = statement->next) {
         gCurrentStatement = statement;
         switch (statement->type) {
             case ST_EXPRESSION:
@@ -1441,9 +1505,6 @@ void CodeGen_Generator(Statement *statements, Object *functionObject, Boolean co
                 break;
             case ST_LABEL:
                 emit_block(statement->label);
-                for (entry = (Statement *)temporary_objects; entry != NULL;
-                     entry = (Statement *)((TemporaryObjectEntry *)entry)->next)
-                    ((TemporaryObjectEntry *)entry)->object->u.var.uid = 0;
                 break;
             case ST_IFGOTO:
                 initialValue = statement->value;
@@ -1457,31 +1518,17 @@ void CodeGen_Generator(Statement *statements, Object *functionObject, Boolean co
                                                     (statement->flags & 0x10) != 0);
                 generate_comparison_branch(statement->expr, statement->label, 0);
                 break;
-            case ST_GOTOEXPR: {
-                struct TOCNameEntry *labelEntry;
-                ENode *operand;
+            case ST_GOTOEXPR:
                 initialValue = statement->value;
                 set_block_line_and_execution_weight(statement->sourceoffset, initialValue,
                                                     (statement->flags & 0x10) != 0);
-                operand = statement->expr;
-                memclrw(&operandBuffer, sizeof(operandBuffer));
-                data_00560648[operand->type](operand, 0, 0, &operandBuffer);
-                if (operandBuffer.kind != OpndType_GPR)
-                    Operands_ForceGPR(&operandBuffer, (Type *)&void_ptr, 0);
-                CError_ASSERT(1286, operandBuffer.kind == OpndType_GPR);
-                for (labelEntry = toc_name_entries; labelEntry != NULL; labelEntry = labelEntry->next)
-                    PCode_AddSuccessor(gCurrentBlock, labelEntry->label->pclabel);
-                PCodeUtilities_EmitInstruction(PC_MTCTR, operandBuffer.reg);
-                PCodeUtilities_EmitInstructionAndCreateBlock(NULL);
+                generate_computed_goto(statement->expr);
                 break;
-            }
             case ST_GOTO:
                 initialValue = statement->value;
                 set_block_line_and_execution_weight(statement->sourceoffset, initialValue,
                                                     (statement->flags & 0x10) != 0);
                 branch_block(statement->label);
-                for (temporaryEntry = temporary_objects; temporaryEntry != NULL; temporaryEntry = temporaryEntry->next)
-                    temporaryEntry->object->u.var.uid = 0;
                 break;
             case ST_RETURN:
                 initialValue = statement->value;
@@ -1495,39 +1542,24 @@ void CodeGen_Generator(Statement *statements, Object *functionObject, Boolean co
                                                     (statement->flags & 0x10) != 0);
                 Switch_GenerateSwitch(statement->expr, (SwitchInfo *)statement->label);
                 break;
-            case ST_BEGINCATCH: {
-                Object *object = statement->expr->data.objref;
-                PCodeUtilities_ResolveLabel(PCode_NewLabel());
-                CError_ASSERT(1436, object->datatype == DLOCAL);
-                emit_opcode_with_base_offset(PC_STW, 1, stack_base_reg, object, 0x14);
-                PCodeUtilities_ResolveLabel(PCode_NewLabel());
+            case ST_BEGINCATCH:
+                begin_catch(statement->expr->data.objref);
                 break;
-            }
             case ST_ENDCATCHDTOR: {
                 ENode *operand = statement->expr;
-                CError_ASSERT(1845, operand->data.objref->datatype == DLOCAL);
+                CError_ASSERT(LINE(1845), operand->data.objref->datatype == DLOCAL);
                 PCodeUtilities_EmitAddress(3, stack_base_reg, statement->expr->data.objref, 0);
                 PCodeUtilities_EmitObjectInstructionWithPayload(data_005875a0, 1, 8, 0, 0);
             }
                 /* fall through */
-            case ST_ENDCATCH: {
-                Object *object = statement->expr->data.objref;
-                PCodeInstruction *instruction;
-                CError_ASSERT(1463, object->datatype == DLOCAL);
-                PCodeUtilities_ResolveLabel(PCode_NewLabel());
-                emit_opcode_with_base_offset(PC_LWZ, 0, 1, NULL, 0);
-                instruction = PCodeUtilities_CreateInstruction(0x22, 1, stack_base_reg, object, 0x14);
-                instruction->flags |= fSideEffects;
-                PCode_AppendInstruction(gCurrentBlock, instruction);
-                emit_opcode_with_base_offset(PC_STW, 0, 1, NULL, 0);
-                PCodeUtilities_ResolveLabel(PCode_NewLabel());
+            case ST_ENDCATCH:
+                end_catch(statement->expr->data.objref);
                 break;
-            }
             case ST_ASM:
                 expression = (ParsedAsmInstruction *)statement->expr;
                 if (expression != NULL) {
                     if ((expression->specialFlags & 1) != 0) {
-                        CError_FATAL(1860);
+                        CError_FATAL(LINE(1860));
                     } else {
                         PCodeUtilities_ResolveLabel(PCode_NewLabel());
                         gCurrentBlock->line = statement->sourceoffset;
@@ -1538,18 +1570,13 @@ void CodeGen_Generator(Statement *statements, Object *functionObject, Boolean co
             case ST_NOP:
                 break;
             default:
-                CError_FATAL(1872);
+                CError_FATAL(LINE(1872));
                 break;
         }
         Registers_UpdateCoalesceWindow();
     }
     Registers_CloseCoalesceWindow();
     emit_block(return_label);
-    {
-        TemporaryObjectEntry *returnTemporary;
-        for (returnTemporary = temporary_objects; returnTemporary != NULL; returnTemporary = returnTemporary->next)
-            returnTemporary->object->u.var.uid = 0;
-    }
     gCurrentStatement = NULL;
     gReturnBlock = gCurrentBlock;
     gReturnBlock->flags |= 2;
@@ -1578,11 +1605,15 @@ void CodeGen_Generator(Statement *statements, Object *functionObject, Boolean co
         if (copts.debug_listing)
             fn_004c4bd0(COptimizer_GetFunctionObject(functionObject)->name, "AFTER PEEPHOLE FORWARD");
     }
+#if VERSION == VERSION_GC_1_0
+    StackFrame_CheckAltivec(prologueBlock);
+    if (copts.debug_listing && gHasAltivecFrame)
+        fn_004c4bd0(COptimizer_GetFunctionObject(functionObject)->name, "AFTER CHECKING FOR ALTIVEC FRAME");
+#endif
     Coloring_AllocateRegisters(functionObject);
     if (copts.debug_listing)
         fn_004c4bd0(COptimizer_GetFunctionObject(functionObject)->name, "AFTER REGISTER COLORING");
-    for (temporaryEntry = temporary_objects; temporaryEntry != NULL; temporaryEntry = temporaryEntry->next)
-        StackFrameEABI_AllocateObjectSlot(temporaryEntry->object);
+    allocate_temporary_object_slots();
     if (!hasSentinelArgument)
         StackFrameEABI_ClearUnusedStackFrame();
     StackFrameEABI_FinalizeLayout(frameBlock);
@@ -1591,7 +1622,7 @@ void CodeGen_Generator(Statement *statements, Object *functionObject, Boolean co
         StackFrameEABI_SaveArgumentRegisters(firstEntryBlock, secondEntryBlock, commonEntryBlock, entryLabel);
     }
     if (copts.profile)
-        PCodeUtilities_EmitObjectInstructionWithPayload(data_00587c8c, 1, 0, 0, 0);
+        emit_profile_exit();
     StackFrameEABI_MergePrologueEpilogue(gReturnBlock, 1);
     if (copts.debug_listing)
         fn_004c4bd0(COptimizer_GetFunctionObject(functionObject)->name, "AFTER GENERATING EPILOGUE, PROLOGUE");
@@ -1636,7 +1667,7 @@ void CodeGen_GenThunk(Object *stmt, Object *func, SInt32 a, SInt32 flag, SInt32 
     save_d7 = copts.peephole;
     save_27 = copts.emitExtraAssemblyData;
 
-    CError_ASSERT(2026, !flag);
+    CError_ASSERT(LINE(2026), !flag);
 
     PCode_ResetBlocks();
     PCode_CreateBlock();
@@ -1817,7 +1848,7 @@ void CodeGen_EmitLoadAndBranchFunction(Object *function, Object *branchTarget, O
     SInt32 reg;
 
     memclrw(&operand, sizeof(operand));
-    CError_ASSERT(VERSION > VERSION_GC_1_0 ? 2283 : 2240, offset <= 0x7fff);
+    CError_ASSERT(LINE(2283), offset <= 0x7fff);
     PCode_ResetBlocks();
     PCode_CreateBlock();
     table->section = ObjGen_PPC_EABI_GetHeaderIndex(2);
@@ -1833,7 +1864,7 @@ void CodeGen_EmitLoadAndBranchFunction(Object *function, Object *branchTarget, O
         Operands_ForceGPR(&operand, (Type *)&void_ptr, 12);
     }
     if (operand.kind != OpndType_GPR) {
-        CError_FATAL(VERSION > VERSION_GC_1_0 ? 2316 : 2273);
+        CError_FATAL(LINE(2316));
     } else {
         reg = operand.reg;
         if (reg != 12)
@@ -1869,21 +1900,21 @@ void CodeGen_ParseDeclspecSection(HashNameNode *node, DeclInfo *value)
     CError_ReportError(ERR_ILLEGAL_TYPE_QUALIFIERS);
 }
 
-#define ERRTAIL                                                                                                        \
-    if ((short)CPrepTokenizer_ScanToken() != -7) {                                                                     \
-        CPrep_ReportError(0x71);                                                                                       \
-        do {                                                                                                           \
-            u = (short)CPrepTokenizer_ScanToken();                                                                     \
-            if (u == -7)                                                                                               \
-                break;                                                                                                 \
-        } while (u != 0);                                                                                              \
-    }                                                                                                                  \
-    return;
+static void CheckPragmaEnd(void)
+{
+    SInt16 t;
+
+    if (CPrepTokenizer_ScanToken() != -7) {
+        CPrep_ReportError(0x71);
+        do {
+            t = CPrepTokenizer_ScanToken();
+        } while (t != -7 && t);
+    }
+}
 
 void parse_section_pragma(void)
 {
     short t;
-    short u;
     int tok;
     short ok;
     UInt8 mode;
@@ -1930,15 +1961,18 @@ void parse_section_pragma(void)
                 case 0x1f:
                     if ((rec->flags & 2) != 0) {
                         PPCError_ReportError(0x9f);
-                        ERRTAIL
+                        CheckPragmaEnd();
+                        return;
                     }
                     if (rec->flags > 1) {
                         PPCError_ReportError(0x95, name);
-                        ERRTAIL
+                        CheckPragmaEnd();
+                        return;
                     }
                     if (tok == -4) {
                         PPCError_ReportError(0x8a, name);
-                        ERRTAIL
+                        CheckPragmaEnd();
+                        return;
                     }
                     rec->flags = 1;
                     ok = TRUE;
@@ -1978,15 +2012,18 @@ void parse_section_pragma(void)
                     if (mode == 0x10 || mode == 0x20) {
                         if ((rec->flags & mode) != 0) {
                             PPCError_ReportError(0x96, name);
-                            ERRTAIL
+                            CheckPragmaEnd();
+                            return;
                         }
                         if (rec->flags > mode) {
                             PPCError_ReportError(0x95, name);
-                            ERRTAIL
+                            CheckPragmaEnd();
+                            return;
                         }
                         if (tok == -4) {
                             PPCError_ReportError(0x8b, name);
-                            ERRTAIL
+                            CheckPragmaEnd();
+                            return;
                         }
                         rec->flags |= mode;
                         if (CPrep_ScanMacroExpandedChar() != 0 && CPrepTokenizer_ScanToken() == '=') {
@@ -2000,10 +2037,12 @@ void parse_section_pragma(void)
                                         rec->far_reloc = 5;
                                     else if (memcmp(data_00587fa0->name, "pc_rel", sizeof("pc_rel")) == 0) {
                                         PPCError_ReportError(0x98, data_00587fa0->name, "code_mode");
-                                        ERRTAIL
+                                        CheckPragmaEnd();
+                                        return;
                                     } else {
                                         PPCError_ReportError(0x87, name);
-                                        ERRTAIL
+                                        CheckPragmaEnd();
+                                        return;
                                     }
                                 } else {
                                     if (memcmp(data_00587fa0->name, "near_abs", sizeof("near_abs")) == 0)
@@ -2014,32 +2053,39 @@ void parse_section_pragma(void)
                                         rec->near_reloc = 0xc;
                                     else if (memcmp(data_00587fa0->name, "sda_rel", sizeof("sda_rel")) == 0) {
                                         PPCError_ReportError(0x8e);
-                                        ERRTAIL
+                                        CheckPragmaEnd();
+                                        return;
                                     } else {
                                         PPCError_ReportError(0x87, "code");
-                                        ERRTAIL
+                                        CheckPragmaEnd();
+                                        return;
                                     }
                                 }
                             } else {
                                 PPCError_ReportError(0x88, name);
-                                ERRTAIL
+                                CheckPragmaEnd();
+                                return;
                             }
                         } else {
                             PPCError_ReportError(0x89, "'='");
-                            ERRTAIL
+                            CheckPragmaEnd();
+                            return;
                         }
                     } else if (mode == 2) {
                         if ((rec->flags & 1) != 0) {
                             PPCError_ReportError(0x9f);
-                            ERRTAIL
+                            CheckPragmaEnd();
+                            return;
                         }
                         if (rec->flags > mode) {
                             PPCError_ReportError(0x95, name);
-                            ERRTAIL
+                            CheckPragmaEnd();
+                            return;
                         }
                         if (tok == -4) {
                             PPCError_ReportError(0x9e, name);
-                            ERRTAIL
+                            CheckPragmaEnd();
+                            return;
                         }
                         rec->flags |= 2;
                     } else {
@@ -2050,14 +2096,16 @@ void parse_section_pragma(void)
                                 } else {
                                     PPCError_ReportError(0x94);
                                 }
-                                ERRTAIL
+                                CheckPragmaEnd();
+                                return;
                             }
                             rec->sectionName = name;
                             rec->flags |= 4;
                         } else if (rec->flags < 8) {
                             if (tok != -4) {
                                 PPCError_ReportError(0x9b);
-                                ERRTAIL
+                                CheckPragmaEnd();
+                                return;
                             }
                             rec->linkedSectionName = name;
                             rec->flags |= 8;
@@ -2065,20 +2113,24 @@ void parse_section_pragma(void)
                             if (tok == -4) {
                                 if ((rec->flags & 8) != 0) {
                                     PPCError_ReportError(0x97, name);
-                                    ERRTAIL
+                                    CheckPragmaEnd();
+                                    return;
                                 }
                                 PPCError_ReportError(0x9a, name);
-                                ERRTAIL
+                                CheckPragmaEnd();
+                                return;
                             }
                             PPCError_ReportError(0x97, name);
-                            ERRTAIL
+                            CheckPragmaEnd();
+                            return;
                         }
                     }
                     break;
             }
         } else {
             CError_ReportError(ERR_ILLEGAL_PRAGMA);
-            ERRTAIL
+            CheckPragmaEnd();
+            return;
         }
         t = CPrep_ScanMacroExpandedChar();
         if (t == 0)
@@ -2087,7 +2139,8 @@ void parse_section_pragma(void)
     }
     if (rec->sectionName == NULL && ok == 0) {
         PPCError_ReportError(0x99);
-        ERRTAIL
+        CheckPragmaEnd();
+        return;
     }
     if (rec->sectionName != NULL && ObjGen_PPC_EABI_IsSpecialSectionName(rec->sectionName) != 0) {
         PPCError_ReportError(0x8c, rec->sectionName);
@@ -2107,6 +2160,13 @@ void parse_section_pragma(void)
     }
     ObjGen_PPC_EABI_SetSectionOptions(rec);
     return;
+}
+
+static void CodeGen_SetProcessorOption(UInt8 processor)
+{
+    CPrep_SaveAndSetOption(4, processor);
+    if (!copts.instructionSchedulingMode)
+        CPrep_SaveAndSetOption(5, 2);
 }
 
 void fn_004332e0(void)
@@ -2245,6 +2305,7 @@ void CodeGen_ParsePragma(HashNameNode *name)
     InterruptGenerationRecord info;
     InterruptList *list;
     InterruptList *savedList;
+    InterruptGenerationRecord *current;
 
     if (!strcmp(name->name, "scheduling")) {
         fn_004332e0();
@@ -2430,7 +2491,6 @@ void CodeGen_ParsePragma(HashNameNode *name)
                 any = 1;
             } else {
                 if (!strcmp("on", data_00587fa0->name)) {
-                    InterruptGenerationRecord *current;
                     copts.interruptOptions = galloc(sizeof(InterruptGenerationRecord));
                     memclrw(copts.interruptOptions, sizeof(InterruptGenerationRecord));
                     *(current = copts.interruptOptions) = info;
@@ -2562,13 +2622,12 @@ unsigned int CodeGen_GetMethRecRTypeSize(MethRec *record)
 
     if (!record->rtype) {
         size = 4;
+    } else if (record->rtype->type == TYPEARRAY || record->rtype->type == TYPESTRUCT ||
+               record->rtype->type == TYPECLASS ||
+               (record->rtype->type == TYPEMEMBERPOINTER && record->rtype->size == 12)) {
+        size = 8;
     } else {
-        Type *type = record->rtype;
-        if (type->type == TYPEARRAY || (unsigned char)(type->type - TYPESTRUCT) <= TYPECLASS - TYPESTRUCT ||
-            (type->type == TYPEMEMBERPOINTER && type->size == 12))
-            size = 8;
-        else
-            size = type->size;
+        size = record->rtype->size;
     }
     if (!size)
         size = 1;
@@ -2577,18 +2636,7 @@ unsigned int CodeGen_GetMethRecRTypeSize(MethRec *record)
 
 int fn_00432480(MethRec *record)
 {
-    int size;
-    if (!record->rtype)
-        size = 4;
-    else if (record->rtype->type == TYPEARRAY || record->rtype->type == TYPESTRUCT ||
-             record->rtype->type == TYPECLASS ||
-             (record->rtype->type == TYPEMEMBERPOINTER && record->rtype->size == 12))
-        size = 8;
-    else
-        size = record->rtype->size;
-    if (size == 0)
-        size = 1;
-    return (((size + 3) & ~3) + 7) & ~3;
+    return (CodeGen_GetMethRecRTypeSize(record) + 7) & ~3;
 }
 
 unsigned int CodeGen_GetObjCParameterOffset(MethRec *function, ObjCParameterNode *argument)
@@ -2596,18 +2644,7 @@ unsigned int CodeGen_GetObjCParameterOffset(MethRec *function, ObjCParameterNode
     unsigned int offset;
     ObjCParameterNode *arg;
 
-    if (function->rtype == NULL)
-        offset = 4;
-    else if (function->rtype->type == TYPEARRAY || (unsigned char)(function->rtype->type - TYPESTRUCT) <= 1 ||
-             (function->rtype->type == TYPEMEMBERPOINTER && function->rtype->size == 12))
-        offset = 8;
-    else
-        offset = function->rtype->size;
-    if (offset == 0)
-        offset = 1;
-    offset = (offset + 3) & ~3U;
-    offset = (offset + 7) & ~3U;
-    offset += 4;
+    offset = fn_00432480(function) + 4;
     arg = function->args;
     while (arg != NULL) {
         if (arg == argument)
@@ -2627,17 +2664,7 @@ SInt32 CodeGen_GetMethRecRtypeAndArgsSize(MethRec *p)
     ObjCParameterNode *n;
     SInt32 size;
 
-    if (p->rtype == NULL)
-        size = 4;
-    else if (p->rtype->type == TYPEARRAY || p->rtype->type == TYPESTRUCT || p->rtype->type == TYPECLASS ||
-             (p->rtype->type == TYPEMEMBERPOINTER && p->rtype->size == 12))
-        size = 8;
-    else
-        size = p->rtype->size;
-    if (size == 0)
-        size = 1;
-    size = (size + 3) & ~3;
-
+    size = CodeGen_GetMethRecRTypeSize(p);
     n = p->args;
     while (n != NULL) {
         if (n->next == NULL && n->type == NULL)
@@ -2661,7 +2688,7 @@ InterruptGenerationRecord *CodeGen_FindInterruptGenerationRecord(SInt16 key)
         entry = entry->next;
     }
     if (!entry)
-        CError_FATAL(VERSION > VERSION_GC_1_0 ? 3429 : 3386);
+        CError_FATAL(LINE(3429));
     return entry;
 }
 
@@ -2740,8 +2767,6 @@ Boolean IrOptimizer_ConvertToVectorConstant(ENode *expr, union MWVector128 *dst,
     dst->ul[1] = 0;
     dst->ul[2] = 0;
     dst->ul[3] = 0;
-    value = 0.0;
-    firstValue = 0.0;
 
     if (expr->type == ECOMMA) {
         commaCount = 0;
@@ -2865,25 +2890,21 @@ Boolean IrOptimizer_ConvertToVectorConstant(ENode *expr, union MWVector128 *dst,
                         PPCError_ReportError(0x70);
                         break;
                     }
-                    {
-                        static const double float_bounds[6] = {0.0, 3.40282e+38,  1.17549e-38,
-                                                               0.0, -3.40282e+38, -1.17549e-38};
-                        if (value > float_bounds[0]) {
-                            if (value > float_bounds[1]) {
-                                PPCError_ReportError(0x70);
-                                break;
-                            } else if (value < float_bounds[2]) {
-                                PPCError_ReportError(0x70);
-                                break;
-                            }
-                        } else if (value < float_bounds[3]) {
-                            if (value < float_bounds[4]) {
-                                PPCError_ReportError(0x70);
-                                break;
-                            } else if (value > float_bounds[5]) {
-                                PPCError_ReportError(0x70);
-                                break;
-                            }
+                    if (value > 0.0) {
+                        if (value > 3.40282e+38) {
+                            PPCError_ReportError(0x70);
+                            break;
+                        } else if (value < 1.17549e-38) {
+                            PPCError_ReportError(0x70);
+                            break;
+                        }
+                    } else if (value < 0.0) {
+                        if (value < -3.40282e+38) {
+                            PPCError_ReportError(0x70);
+                            break;
+                        } else if (value > -1.17549e-38) {
+                            PPCError_ReportError(0x70);
+                            break;
                         }
                     }
                     dst->f[elementIndex] = value;
@@ -2897,25 +2918,21 @@ Boolean IrOptimizer_ConvertToVectorConstant(ENode *expr, union MWVector128 *dst,
                     PPCError_ReportError(0x70);
                     break;
                 }
-                {
-                    static const double float_bounds[6] = {0.0, 3.40282e+38,  1.17549e-38,
-                                                           0.0, -3.40282e+38, -1.17549e-38};
-                    if (firstValue > float_bounds[0]) {
-                        if (firstValue > float_bounds[1]) {
-                            PPCError_ReportError(0x70);
-                            break;
-                        } else if (firstValue < float_bounds[2]) {
-                            PPCError_ReportError(0x70);
-                            break;
-                        }
-                    } else if (firstValue < float_bounds[3]) {
-                        if (firstValue < float_bounds[4]) {
-                            PPCError_ReportError(0x70);
-                            break;
-                        } else if (firstValue > float_bounds[5]) {
-                            PPCError_ReportError(0x70);
-                            break;
-                        }
+                if (firstValue > 0.0) {
+                    if (firstValue > 3.40282e+38) {
+                        PPCError_ReportError(0x70);
+                        break;
+                    } else if (firstValue < 1.17549e-38) {
+                        PPCError_ReportError(0x70);
+                        break;
+                    }
+                } else if (firstValue < 0.0) {
+                    if (firstValue < -3.40282e+38) {
+                        PPCError_ReportError(0x70);
+                        break;
+                    } else if (firstValue > -1.17549e-38) {
+                        PPCError_ReportError(0x70);
+                        break;
                     }
                 }
                 dst->f[0] = firstValue;
@@ -2990,25 +3007,21 @@ Boolean IrOptimizer_ConvertToVectorConstant(ENode *expr, union MWVector128 *dst,
             case STRUCT_VECTOR_FLOAT:
                 splatIndex = 0;
                 splatValue = expr->data.floatval.data.value;
-                {
-                    static const double float_bounds[6] = {0.0, 3.40282e+38,  1.17549e-38,
-                                                           0.0, -3.40282e+38, -1.17549e-38};
-                    if (splatValue > float_bounds[0]) {
-                        if (splatValue > float_bounds[1]) {
-                            PPCError_ReportError(0x70);
-                            break;
-                        } else if (splatValue < float_bounds[2]) {
-                            PPCError_ReportError(0x70);
-                            break;
-                        }
-                    } else if (splatValue < float_bounds[3]) {
-                        if (splatValue < float_bounds[4]) {
-                            PPCError_ReportError(0x70);
-                            break;
-                        } else if (splatValue > float_bounds[5]) {
-                            PPCError_ReportError(0x70);
-                            break;
-                        }
+                if (splatValue > 0.0) {
+                    if (splatValue > 3.40282e+38) {
+                        PPCError_ReportError(0x70);
+                        break;
+                    } else if (splatValue < 1.17549e-38) {
+                        PPCError_ReportError(0x70);
+                        break;
+                    }
+                } else if (splatValue < 0.0) {
+                    if (splatValue < -3.40282e+38) {
+                        PPCError_ReportError(0x70);
+                        break;
+                    } else if (splatValue > -1.17549e-38) {
+                        PPCError_ReportError(0x70);
+                        break;
                     }
                 }
                 for (; splatIndex < 4; splatIndex++) {

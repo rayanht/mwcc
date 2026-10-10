@@ -7197,13 +7197,13 @@
     "source": "src/backend/CodeGen.c"
   },
   {
-    "name": "fn_004319e0",
+    "name": "release_temporary_objects",
     "address": "0x004319e0",
     "size": 33,
     "source": "src/backend/CodeGen.c"
   },
   {
-    "name": "fn_00431a10",
+    "name": "allocate_temporary_object_slots",
     "address": "0x00431a10",
     "size": 34,
     "source": "src/backend/CodeGen.c"
@@ -7257,7 +7257,7 @@
     "source": "src/backend/CodeGen.c"
   },
   {
-    "name": "fn_00432870",
+    "name": "emit_dlocal_initialization",
     "address": "0x00432870",
     "size": 1439,
     "source": "src/backend/CodeGen.c"
@@ -7269,7 +7269,7 @@
     "source": "src/backend/CodeGen.c"
   },
   {
-    "name": "fn_00432e90",
+    "name": "is_variadic",
     "address": "0x00432e90",
     "size": 43,
     "source": "src/backend/CodeGen.c"
@@ -7281,7 +7281,7 @@
     "source": "src/backend/CodeGen.c"
   },
   {
-    "name": "fn_00432f10",
+    "name": "is_tail",
     "address": "0x00432f10",
     "size": 41,
     "source": "src/backend/CodeGen.c"
@@ -7299,19 +7299,19 @@
     "source": "src/backend/CodeGen.c"
   },
   {
-    "name": "fn_004330b0",
+    "name": "emit_block",
     "address": "0x004330b0",
     "size": 43,
     "source": "src/backend/CodeGen.c"
   },
   {
-    "name": "fn_004330e0",
+    "name": "branch_block",
     "address": "0x004330e0",
     "size": 36,
     "source": "src/backend/CodeGen.c"
   },
   {
-    "name": "fn_00433110",
+    "name": "generate_computed_goto",
     "address": "0x00433110",
     "size": 156,
     "source": "src/backend/CodeGen.c"
@@ -7329,13 +7329,13 @@
     "source": "src/backend/CodeGen.c"
   },
   {
-    "name": "fn_004335a0",
+    "name": "begin_catch",
     "address": "0x004335a0",
     "size": 76,
     "source": "src/backend/CodeGen.c"
   },
   {
-    "name": "fn_004335f0",
+    "name": "end_catch",
     "address": "0x004335f0",
     "size": 134,
     "source": "src/backend/CodeGen.c"
@@ -7347,7 +7347,7 @@
     "source": "src/backend/CodeGen.c"
   },
   {
-    "name": "fn_004337e0",
+    "name": "emit_profile_exit",
     "address": "0x004337e0",
     "size": 23,
     "source": "src/backend/CodeGen.c"
@@ -7395,7 +7395,7 @@
     "source": "src/backend/CodeGen.c"
   },
   {
-    "name": "fn_00434eb0",
+    "name": "CheckPragmaEnd",
     "address": "0x00434eb0",
     "size": 36,
     "source": "src/backend/CodeGen.c"
@@ -7407,7 +7407,7 @@
     "source": "src/backend/CodeGen.c"
   },
   {
-    "name": "fn_004357d0",
+    "name": "CodeGen_SetProcessorOption",
     "address": "0x004357d0",
     "size": 35,
     "source": "src/backend/CodeGen.c"
@@ -12351,7 +12351,7 @@
     "source": "src/backend/StackFrameEABI.c"
   },
   {
-    "name": "fn_0046fd10",
+    "name": "emit_stw_register_saves",
     "address": "0x0046fd10",
     "size": 163,
     "source": "src/backend/StackFrameEABI.c"
@@ -12375,13 +12375,13 @@
     "source": "src/backend/StackFrameEABI.c"
   },
   {
-    "name": "save_and_update_vrsave",
+    "name": "emit_stack_frame_allocation",
     "address": "0x0046ffe0",
     "size": 652,
     "source": "src/backend/StackFrameEABI.c"
   },
   {
-    "name": "fn_00470270",
+    "name": "need_link_register_save",
     "address": "0x00470270",
     "size": 142,
     "source": "src/backend/StackFrameEABI.c"
@@ -21201,7 +21201,7 @@
     "source": "src/frontend/CInline.c"
   },
   {
-    "name": "fn_004db370",
+    "name": "make_not_not",
     "address": "0x004db370",
     "size": 85,
     "source": "src/frontend/CInline.c"
@@ -21219,7 +21219,7 @@
     "source": "src/frontend/CInline.c"
   },
   {
-    "name": "fn_004dba70",
+    "name": "InlineObjectModifiable",
     "address": "0x004dba70",
     "size": 67,
     "source": "src/frontend/CInline.c"
@@ -21243,7 +21243,7 @@
     "source": "src/frontend/CInline.c"
   },
   {
-    "name": "fn_004dbc50",
+    "name": "inline_member_index",
     "address": "0x004dbc50",
     "size": 61,
     "source": "src/frontend/CInline.c"
@@ -21255,7 +21255,7 @@
     "source": "src/frontend/CInline.c"
   },
   {
-    "name": "fn_004dbd00",
+    "name": "copy_member_info",
     "address": "0x004dbd00",
     "size": 98,
     "source": "src/frontend/CInline.c"
@@ -21279,7 +21279,7 @@
     "source": "src/frontend/CInline.c"
   },
   {
-    "name": "fn_004dc450",
+    "name": "get_storage_flags",
     "address": "0x004dc450",
     "size": 84,
     "source": "src/frontend/CInline.c"
@@ -21291,7 +21291,7 @@
     "source": "src/frontend/CInline.c"
   },
   {
-    "name": "NewInlineVar",
+    "name": "create_local_object",
     "address": "0x004dc510",
     "size": 61,
     "source": "src/frontend/CInline.c"
@@ -21321,13 +21321,13 @@
     "source": "src/frontend/CInline.c"
   },
   {
-    "name": "fn_004dc9f0",
+    "name": "InlineWrapResult",
     "address": "0x004dc9f0",
     "size": 94,
     "source": "src/frontend/CInline.c"
   },
   {
-    "name": "fn_004dca50",
+    "name": "inline_return_argument",
     "address": "0x004dca50",
     "size": 56,
     "source": "src/frontend/CInline.c"
@@ -21447,7 +21447,7 @@
     "source": "src/frontend/CInline.c"
   },
   {
-    "name": "fn_004dea00",
+    "name": "CInline_EnsurePending",
     "address": "0x004dea00",
     "size": 73,
     "source": "src/frontend/CInline.c"
@@ -21483,7 +21483,7 @@
     "source": "src/frontend/CInline.c"
   },
   {
-    "name": "fn_004ded20",
+    "name": "forward_expression_objrefs",
     "address": "0x004ded20",
     "size": 23,
     "source": "src/frontend/CInline.c"
@@ -21501,7 +21501,7 @@
     "source": "src/frontend/CInline.c"
   },
   {
-    "name": "fn_004def30",
+    "name": "CInline_MovePending",
     "address": "0x004def30",
     "size": 77,
     "source": "src/frontend/CInline.c"
@@ -21537,7 +21537,7 @@
     "source": "src/frontend/CInline.c"
   },
   {
-    "name": "fn_004df3d0",
+    "name": "find_template_class_inst",
     "address": "0x004df3d0",
     "size": 78,
     "source": "src/frontend/CInline.c"
@@ -24609,85 +24609,85 @@
     "source": "src/backend/SpillCode.c"
   },
   {
-    "name": "fn_00500a00",
+    "name": "make_spill_temporary",
     "address": "0x00500a00",
     "size": 66,
     "source": "src/backend/SpillCode.c"
   },
   {
-    "name": "fn_00500a50",
+    "name": "spill_load",
     "address": "0x00500a50",
     "size": 210,
     "source": "src/backend/SpillCode.c"
   },
   {
-    "name": "fn_00500b30",
+    "name": "spill_load_fpr",
     "address": "0x00500b30",
     "size": 104,
     "source": "src/backend/SpillCode.c"
   },
   {
-    "name": "fn_00500ba0",
+    "name": "spill_load_vr",
     "address": "0x00500ba0",
     "size": 122,
     "source": "src/backend/SpillCode.c"
   },
   {
-    "name": "fn_00500c20",
+    "name": "spill_store",
     "address": "0x00500c20",
     "size": 97,
     "source": "src/backend/SpillCode.c"
   },
   {
-    "name": "fn_00500c90",
+    "name": "spill_store_fpr",
     "address": "0x00500c90",
     "size": 55,
     "source": "src/backend/SpillCode.c"
   },
   {
-    "name": "fn_00500cd0",
+    "name": "spill_store_vr",
     "address": "0x00500cd0",
     "size": 118,
     "source": "src/backend/SpillCode.c"
   },
   {
-    "name": "fn_00500d50",
+    "name": "SpillCode_InsertGPRSpillCode",
     "address": "0x00500d50",
     "size": 289,
     "source": "src/backend/SpillCode.c"
   },
   {
-    "name": "fn_00500e80",
+    "name": "SpillCode_RewriteSpilledFPRs",
     "address": "0x00500e80",
     "size": 289,
     "source": "src/backend/SpillCode.c"
   },
   {
-    "name": "fn_00500fb0",
+    "name": "SpillCode_RewriteSpilledVR",
     "address": "0x00500fb0",
     "size": 277,
     "source": "src/backend/SpillCode.c"
   },
   {
-    "name": "fn_005010d0",
+    "name": "SpillCode_RewriteSpilledRegisterMove",
     "address": "0x005010d0",
     "size": 142,
     "source": "src/backend/SpillCode.c"
   },
   {
-    "name": "fn_00501160",
+    "name": "SpillCode_ReplaceInstructionWithFPRSpillCode",
     "address": "0x00501160",
     "size": 142,
     "source": "src/backend/SpillCode.c"
   },
   {
-    "name": "fn_005011f0",
+    "name": "SpillCode_EmitOperandSpills",
     "address": "0x005011f0",
     "size": 137,
     "source": "src/backend/SpillCode.c"
   },
   {
-    "name": "fn_00501280",
+    "name": "remove_spilled_fixed_operands",
     "address": "0x00501280",
     "size": 117,
     "source": "src/backend/SpillCode.c"
