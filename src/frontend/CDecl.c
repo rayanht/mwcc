@@ -46,11 +46,6 @@ static inline Boolean class_browse_enabled(const DeclInfo *ctx)
     return compilationUnit->browseOptions.browseOption != 0 && ctx->file->recordbrowseinfo != 0;
 }
 
-static inline Boolean HighIsNegative(SInt32 hi)
-{
-    return (hi & 0x80000000) != 0;
-}
-
 static TypeIntegral *SignedIntType(short size)
 {
     if (stsignedchar.size == size)
@@ -79,16 +74,6 @@ static TypeIntegral *UnsignedIntType(short size)
     if (copts.longlong && copts.longlong_enums && stunsignedlonglong.size == size)
         return &stunsignedlonglong;
     return &stunsignedlong;
-}
-
-static inline Boolean IsNegative(SInt32 hi)
-{
-    return (hi & (SInt32)0x80000000) != 0;
-}
-
-static inline Boolean IsZero(CInt64 *v)
-{
-    return v->hi == 0 && v->lo == 0;
 }
 
 static Type *CDecl_LargerType(Type *a, Type *b)
@@ -2129,7 +2114,7 @@ void *parse_enum_body(TypeEnum *enumType, HashNameNode *name)
             if (tk == '=') {
                 tk = CPrepTokenizer_GetNextToken();
                 currentValue = CExpr_IntegralConstExprType(&expressionType);
-                if (!IsNegative(currentValue.hi) || is_unsigned(expressionType) != 0) {
+                if (!CInt64_IsNegative(&currentValue) || is_unsigned(expressionType) != 0) {
                     if (CInt64_GreaterU(currentValue, maximumValue)) {
                         maximumValue = currentValue;
                         rangeChanged = 1;
@@ -2148,7 +2133,7 @@ void *parse_enum_body(TypeEnum *enumType, HashNameNode *name)
             } else {
                 if (overflow != 0)
                     CError_ReportError(ERR_NUMBER_OUT_RANGE);
-                if (isSigned == 0 || !IsNegative(currentValue.hi)) {
+                if (isSigned == 0 || !CInt64_IsNegative(&currentValue)) {
                     if (CInt64_GreaterU(currentValue, maximumValue)) {
                         maximumValue = currentValue;
                         rangeChanged = 1;
@@ -2207,7 +2192,7 @@ void *parse_enum_body(TypeEnum *enumType, HashNameNode *name)
                         /* fall through */
                     case 8:
                         if (CInt64_Equal(currentValue, maximumValue)) {
-                            if (IsNegative(currentValue.hi))
+                            if (CInt64_IsNegative(&currentValue))
                                 CError_ReportError(ERR_NUMBER_OUT_RANGE);
                         }
                         break;
@@ -2260,10 +2245,10 @@ void *parse_enum_body(TypeEnum *enumType, HashNameNode *name)
             }
             nextValue = CInt64_Add(currentValue, cint64_one);
             if (isSigned != 0) {
-                if (IsNegative(nextValue.hi) && !IsNegative(currentValue.hi))
+                if (CInt64_IsNegative(&nextValue) && !CInt64_IsNegative(&currentValue))
                     overflow = 1;
             } else {
-                if (IsZero(&nextValue))
+                if (CInt64_IsZero(&nextValue))
                     overflow = 1;
             }
             currentValue = nextValue;
@@ -2292,14 +2277,14 @@ void CDecl_ComputeUnderlyingEnumType(TypeEnum *res)
 
     if (copts.enumsalwaysint == 0) {
         for (n = res->enumlist; n != NULL; n = n->next) {
-            if (HighIsNegative(n->val.hi) && !is_unsigned(n->type))
+            if (CInt64_IsNegative(&n->val) && !is_unsigned(n->type))
                 break;
         }
         if (n != NULL) {
             CInt64 a, b;
             b = a = cint64_zero;
             for (m = res->enumlist; m != NULL; m = m->next) {
-                if (HighIsNegative(m->val.hi) && !is_unsigned(m->type)) {
+                if (CInt64_IsNegative(&m->val) && !is_unsigned(m->type)) {
                     if (CInt64_Less(m->val, a))
                         a = m->val;
                 } else {
@@ -2307,7 +2292,7 @@ void CDecl_ComputeUnderlyingEnumType(TypeEnum *res)
                         b = m->val;
                 }
             }
-            if (HighIsNegative(b.hi))
+            if (CInt64_IsNegative(&b))
                 CError_ReportError(ERR_NUMBER_OUT_RANGE);
             if (CInt64_IsInRange(b, 1) && CInt64_IsInRange(a, 1)) {
                 t = (Type *)SignedIntType(1);
@@ -2485,7 +2470,7 @@ TypeEnum *parse_enum_definition(TypeEnum *decl, HashNameNode *name)
             if (!dependent) {
                 nextValue = CInt64_Add(value, cint64_one);
                 if (is_unsigned(currentType)) {
-                    if (IsZero(&nextValue))
+                    if (CInt64_IsZero(&nextValue))
                         overflow = 1;
                     if (!CInt64_IsInURange(nextValue, currentType->size)) {
                         if (CInt64_IsInURange(nextValue, 2)) {
@@ -2499,7 +2484,7 @@ TypeEnum *parse_enum_definition(TypeEnum *decl, HashNameNode *name)
                         }
                     }
                 } else {
-                    if (IsNegative(nextValue.hi) && !IsNegative(value.hi))
+                    if (CInt64_IsNegative(&nextValue) && !CInt64_IsNegative(&value))
                         overflow = 1;
                     if (!CInt64_IsInRange(nextValue, currentType->size)) {
                         if (CInt64_IsInRange(nextValue, 2)) {

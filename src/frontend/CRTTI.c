@@ -11,6 +11,7 @@
 #include "compiler/CExpr.h"
 #include "compiler/CExpr2.h"
 #include "compiler/CInit.h"
+#include "compiler/CInt64.h"
 #include "compiler/CMangler.h"
 #include "compiler/CObjC.h"
 #include "compiler/CPrepTokenizer.h"
@@ -23,11 +24,6 @@
 
 static struct RTTIVTableOffsetNode *rtti_vtable_offset_list;
 static struct RData *rtti_offset_table_head;
-
-static inline Boolean IsZero(CInt64 *v)
-{
-    return v->hi == 0 && v->lo == 0;
-}
 
 struct VBasePath *build_vbase_path_list(TypeClass *from, TypeClass *cls, struct VBasePath *list, SInt32 offset,
                                         Boolean isPrivate)
@@ -594,7 +590,7 @@ ENode *explicit_typecast(register ENode *expr, register Type *type, UInt32 flags
                 if (expr->rtype->type == TYPEENUM)
                     expr->rtype = TYPE_ENUM(expr->rtype)->enumtype;
                 if (expr->rtype->type == TYPEINT) {
-                    if (expr->type == EINTCONST && IsZero(&expr->data.intval)) {
+                    if (expr->type == EINTCONST && CInt64_IsZero(&expr->data.intval)) {
                         set = 1;
                         break;
                     }

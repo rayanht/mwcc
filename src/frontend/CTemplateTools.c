@@ -1304,11 +1304,6 @@ TemplArg *find_template_argument(struct TypeDeduce *context, struct TemplParamID
     }
 }
 
-static inline Boolean CTT_IsNeg(CInt64 *v)
-{
-    return (v->hi & 0x80000000) != 0;
-}
-
 static Type *deduce_array_type(TypeDeduce *ctx, Type *base, ENode *size, UInt32 *qual)
 {
     if (CTemplTool_IsTemplateArgumentDependentType(base)) {
@@ -1317,7 +1312,7 @@ static Type *deduce_array_type(TypeDeduce *ctx, Type *base, ENode *size, UInt32 
     }
     size = CTemplTool_DeduceExpr(ctx, size);
     if (size->type == EINTCONST) {
-        if (CTT_IsNeg(&size->data.intval)) {
+        if (CInt64_IsNegative(&size->data.intval)) {
             CError_ReportError(ERR_ILLEGAL_CONSTANT_EXPRESSION);
             size->data.intval = cint64_one;
         }
@@ -1367,7 +1362,7 @@ Type *make_bitfield_type(TypeDeduce *ctx, Type *ty, ENode *node, UInt32 *out)
         }
     }
     width = node->data.intval.lo;
-    if ((SInt16)width > bits || CTT_IsNeg(&node->data.intval)) {
+    if ((SInt16)width > bits || CInt64_IsNegative(&node->data.intval)) {
         CError_ReportError(ERR_ILLEGAL_BITFIELD_DECLARATION);
         width = 1;
     }
