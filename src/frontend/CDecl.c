@@ -46,45 +46,6 @@ static inline Boolean class_browse_enabled(const DeclInfo *ctx)
     return compilationUnit->browseOptions.browseOption != 0 && ctx->file->recordbrowseinfo != 0;
 }
 
-static TypeIntegral *SignedIntType(short size)
-{
-    if (stsignedchar.size == size)
-        return &stsignedchar;
-    if (stsignedshort.size == size)
-        return &stsignedshort;
-    if (stsignedint.size == size)
-        return &stsignedint;
-    if (stsignedlong.size == size)
-        return &stsignedlong;
-    if (copts.longlong && copts.longlong_enums && stsignedlonglong.size == size)
-        return &stsignedlonglong;
-    return &stsignedlong;
-}
-
-static TypeIntegral *UnsignedIntType(short size)
-{
-    if (stunsignedchar.size == size)
-        return &stunsignedchar;
-    if (stunsignedshort.size == size)
-        return &stunsignedshort;
-    if (stunsignedint.size == size)
-        return &stunsignedint;
-    if (stunsignedlong.size == size)
-        return &stunsignedlong;
-    if (copts.longlong && copts.longlong_enums && stunsignedlonglong.size == size)
-        return &stunsignedlonglong;
-    return &stunsignedlong;
-}
-
-static Type *CDecl_LargerType(Type *a, Type *b)
-{
-    if (a->size > b->size)
-        return a;
-    if (b->size > a->size)
-        return b;
-    return a;
-}
-
 static inline UInt8 CDecl_UseIntEnums(void)
 {
     return copts.enumsalwaysint;
@@ -2036,6 +1997,36 @@ void CDecl_ScanDeclarator(DeclInfo *p)
         CError_ReportError(ERR_SEMICOLON_EXPECTED);
 }
 
+static TypeIntegral *SignedIntType(short size)
+{
+    if (stsignedchar.size == size)
+        return &stsignedchar;
+    if (stsignedshort.size == size)
+        return &stsignedshort;
+    if (stsignedint.size == size)
+        return &stsignedint;
+    if (stsignedlong.size == size)
+        return &stsignedlong;
+    if (copts.longlong && copts.longlong_enums && stsignedlonglong.size == size)
+        return &stsignedlonglong;
+    return &stsignedlong;
+}
+
+static TypeIntegral *UnsignedIntType(short size)
+{
+    if (stunsignedchar.size == size)
+        return &stunsignedchar;
+    if (stunsignedshort.size == size)
+        return &stunsignedshort;
+    if (stunsignedint.size == size)
+        return &stunsignedint;
+    if (stunsignedlong.size == size)
+        return &stunsignedlong;
+    if (copts.longlong && copts.longlong_enums && stunsignedlonglong.size == size)
+        return &stunsignedlonglong;
+    return &stunsignedlong;
+}
+
 void *parse_enum_body(TypeEnum *enumType, HashNameNode *name)
 {
     ObjEnumConst *enumerator;
@@ -2269,6 +2260,15 @@ void *parse_enum_body(TypeEnum *enumType, HashNameNode *name)
     return enumType;
 }
 
+static Type *CDecl_LargerType(Type *a, Type *b)
+{
+    if (a->size > b->size)
+        return a;
+    if (b->size > a->size)
+        return b;
+    return a;
+}
+
 void CDecl_ComputeUnderlyingEnumType(TypeEnum *res)
 {
     ObjEnumConst *n;
@@ -2380,10 +2380,8 @@ TypeEnum *parse_enum_definition(TypeEnum *decl, HashNameNode *name)
     else
         access = 0;
 
-    last = NULL;
-    value = cint64_zero;
-    overflow = 0;
-    dependent = 0;
+    last = NULL, value = cint64_zero;
+    overflow = 0, dependent = 0;
     if (CDecl_UseIntEnums())
         currentType = (Type *)&stsignedint;
     else

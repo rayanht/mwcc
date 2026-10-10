@@ -117,6 +117,7 @@
     "src/frontend/CABI.c",
     "src/frontend/CBrowse.c",
     "src/frontend/CClass.c",
+    "src/frontend/CDecl.c",
     "src/frontend/CError.c",
     "src/frontend/CException.c",
     "src/frontend/CInit.c",
