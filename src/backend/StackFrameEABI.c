@@ -270,16 +270,17 @@ void StackFrameEABI_GeneratePrologueEpilogue(PCodeBlock *block, int prologueFlag
     savedBlock = gCurrentBlock;
     frameAllocated = 0;
     saveLinkRegister = need_link_register_save();
-    gCurrentBlock = block;
     parameterBaseRegister = -1;
+    gCurrentBlock = block;
     if (gHasAltivecFrame != 0) {
-        instruction = block->instructions;
-        if (instruction != NULL && instruction->opcode == PC_LWZ) {
-            parameterBaseRegister = instruction->operandData.operands[0].value.reg;
-            PCode_UnlinkInstruction(instruction);
-            instruction = block->instructions;
-            if (instruction != NULL && instruction->opcode == PC_LWZ)
-                PCode_UnlinkInstruction(instruction);
+        PCodeInstruction *load;
+        load = block->instructions;
+        if (load != NULL && load->opcode == PC_LWZ) {
+            parameterBaseRegister = load->operandData.operands[0].value.reg;
+            PCode_UnlinkInstruction(load);
+            load = block->instructions;
+            if (load != NULL && load->opcode == PC_LWZ)
+                PCode_UnlinkInstruction(load);
         } else {
             CError_FATAL(679);
         }
@@ -506,9 +507,9 @@ void StackFrameEABI_MergePrologueEpilogue(PCodeBlock *block, char emitReturn)
     SInt32 savedFrameReg;
     Boolean restoreLR;
 
+    savedBlock = gCurrentBlock;
     largeFrame = stack_frame_size > 0x7fff;
     savedFrameReg = -1;
-    savedBlock = gCurrentBlock;
     restoreLR = need_link_register_save();
     gCurrentBlock = block;
     if (data_005882c0.record != NULL)
@@ -1317,6 +1318,7 @@ void fn_004aa7d0(void)
 #if VERSION == VERSION_GC_1_0
 void emit_stack_frame_allocation(int frame_register, int vrsave_register)
 {
+    int low;
     SInt32 vrsave_offset;
     UInt16 half;
 
@@ -1361,11 +1363,9 @@ void emit_stack_frame_allocation(int frame_register, int vrsave_register)
             PCodeUtilities_EmitInstruction(PC_MTSPR, 0x100, 0);
         }
     } else if (stack_frame_size > 0x7fff) {
-        SInt16 low;
         PCodeUtilities_EmitInstruction(PC_LIS, 0xc, 0, (SInt16)((-stack_frame_size >> 16) + ((-stack_frame_size >> 15) & 1)));
-        low = -stack_frame_size;
-        if (low != 0)
-            PCodeUtilities_EmitInstruction(PC_ADDI, 0xc, 0xc, 0, low);
+        if ((SInt16)(low = -stack_frame_size) != 0)
+            PCodeUtilities_EmitInstruction(PC_ADDI, 0xc, 0xc, 0, (SInt16)low);
         PCodeUtilities_EmitInstruction(PC_STWUX, 1, 1, 0xc);
     } else {
         PCodeUtilities_EmitInstruction(PC_STWU, 1, 1, 0, -stack_frame_size);
@@ -1451,22 +1451,21 @@ void StackFrameEABI_SaveArgumentRegisters(PCodeBlock *entryBlock, PCodeBlock *fp
 {
     PCodeInstruction *instruction;
     short offset;
-    short fpRegister;
-    short gpRegister;
+    short reg;
     if (classTypeUpdates != NULL)
         Intrinsics_UpdateClassTypeOperands();
     if (fpSaveBlock != NULL) {
         instruction = PCodeUtilities_CreateInstruction(8, 1, 2, operand);
         PCode_AppendInstruction(entryBlock, instruction);
         offset = fn_004a9f90() + 32;
-        for (fpRegister = 1; fpRegister <= 8; fpRegister++) {
-            instruction = PCodeUtilities_CreateInstruction(154, fpRegister, 1, 0, (fpRegister - 1) * 8 + offset);
+        for (reg = 1; reg <= 8; reg++) {
+            instruction = PCodeUtilities_CreateInstruction(154, reg, 1, 0, (reg - 1) * 8 + offset);
             PCode_AppendInstruction(fpSaveBlock, instruction);
         }
         fpSaveBlock->flags |= 1;
     }
-    for (gpRegister = 3; gpRegister <= 10; gpRegister++) {
-        instruction = PCodeUtilities_CreateInstruction(49, gpRegister, 1, 0, fn_004a9f90() + (gpRegister - 3) * 4);
+    for (reg = 3; reg <= 10; reg++) {
+        instruction = PCodeUtilities_CreateInstruction(49, reg, 1, 0, fn_004a9f90() + (reg - 3) * 4);
         PCode_AppendInstruction(gpSaveBlock, instruction);
     }
     gpSaveBlock->flags |= 1;

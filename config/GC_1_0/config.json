@@ -40,6 +40,7 @@
     "src/backend/Registers.c",
     "src/backend/Scheduler.c",
     "src/backend/SpillCode.c",
+    "src/backend/StackFrameEABI.c",
     "src/backend/Switch.c",
     "src/backend/TOC.c",
     "src/driver/Arguments.c",
