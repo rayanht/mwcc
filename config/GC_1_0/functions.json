@@ -19785,7 +19785,7 @@
     "source": "src/frontend/CDecl.c"
   },
   {
-    "name": "fn_004c7510",
+    "name": "CDecl_NewRefPointerType",
     "address": "0x004c7510",
     "size": 49,
     "source": "src/frontend/CDecl.c"
@@ -19797,7 +19797,7 @@
     "source": "src/frontend/CDecl.c"
   },
   {
-    "name": "fn_004c7580",
+    "name": "CDecl_SetResultReg",
     "address": "0x004c7580",
     "size": 1,
     "source": "src/frontend/CDecl.c"
@@ -19863,7 +19863,7 @@
     "source": "src/frontend/CDecl.c"
   },
   {
-    "name": "fn_004c79d0",
+    "name": "check_function_return_type",
     "address": "0x004c79d0",
     "size": 56,
     "source": "src/frontend/CDecl.c"
@@ -19887,7 +19887,7 @@
     "source": "src/frontend/CDecl.c"
   },
   {
-    "name": "fn_004c7d70",
+    "name": "replace_nested_type",
     "address": "0x004c7d70",
     "size": 268,
     "source": "src/frontend/CDecl.c"
@@ -19905,7 +19905,7 @@
     "source": "src/frontend/CDecl.c"
   },
   {
-    "name": "fn_004c8040",
+    "name": "CDecl_ParseOperatorDecl",
     "address": "0x004c8040",
     "size": 60,
     "source": "src/frontend/CDecl.c"
@@ -19941,7 +19941,7 @@
     "source": "src/frontend/CDecl.c"
   },
   {
-    "name": "fn_004c8a00",
+    "name": "CDecl_MakeTemplDepMemberPointer",
     "address": "0x004c8a00",
     "size": 79,
     "source": "src/frontend/CDecl.c"
@@ -19977,7 +19977,7 @@
     "source": "src/frontend/CDecl.c"
   },
   {
-    "name": "fn_004c91a0",
+    "name": "CDecl_UpdateFunctionObject",
     "address": "0x004c91a0",
     "size": 121,
     "source": "src/frontend/CDecl.c"
@@ -20031,7 +20031,7 @@
     "source": "src/frontend/CDecl.c"
   },
   {
-    "name": "fn_004ca310",
+    "name": "parse_enum_body",
     "address": "0x004ca310",
     "size": 1866,
     "source": "src/frontend/CDecl.c"
@@ -20079,7 +20079,7 @@
     "source": "src/frontend/CDecl.c"
   },
   {
-    "name": "fn_004cbd80",
+    "name": "CDecl_DefineStruct",
     "address": "0x004cbd80",
     "size": 117,
     "source": "src/frontend/CDecl.c"
@@ -20097,7 +20097,7 @@
     "source": "src/frontend/CDecl.c"
   },
   {
-    "name": "fn_004cc0f0",
+    "name": "CDecl_ExtractClassExportFlags",
     "address": "0x004cc0f0",
     "size": 51,
     "source": "src/frontend/CDecl.c"
@@ -20109,7 +20109,7 @@
     "source": "src/frontend/CDecl.c"
   },
   {
-    "name": "fn_004cc190",
+    "name": "CDecl_MakeFunctionVirtual",
     "address": "0x004cc190",
     "size": 58,
     "source": "src/frontend/CDecl.c"
@@ -20187,13 +20187,13 @@
     "source": "src/frontend/CDecl.c"
   },
   {
-    "name": "fn_004ce030",
+    "name": "getaccesstype",
     "address": "0x004ce030",
     "size": 39,
     "source": "src/frontend/CDecl.c"
   },
   {
-    "name": "fn_004ce060",
+    "name": "CDecl_MakeDefaultCtorType",
     "address": "0x004ce060",
     "size": 98,
     "source": "src/frontend/CDecl.c"
@@ -20205,7 +20205,7 @@
     "source": "src/frontend/CDecl.c"
   },
   {
-    "name": "fn_004ce1c0",
+    "name": "CDecl_AddCompilerFunction",
     "address": "0x004ce1c0",
     "size": 70,
     "source": "src/frontend/CDecl.c"
@@ -20229,7 +20229,7 @@
     "source": "src/frontend/CDecl.c"
   },
   {
-    "name": "fn_004ce550",
+    "name": "CDecl_MakeAssignmentOperatorType",
     "address": "0x004ce550",
     "size": 113,
     "source": "src/frontend/CDecl.c"
@@ -20241,7 +20241,7 @@
     "source": "src/frontend/CDecl.c"
   },
   {
-    "name": "fn_004ce740",
+    "name": "CDecl_MakeDefaultDtorFuncType",
     "address": "0x004ce740",
     "size": 94,
     "source": "src/frontend/CDecl.c"
