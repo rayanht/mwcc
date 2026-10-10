@@ -1486,7 +1486,6 @@ void parse_statement(StatementContext *context)
     ENode *expr;
     ENode *conditionExpr;
     DeclBlock *bodyScope;
-    DeclBlock *newScope;
     Statement *stmt;
     DeclBlock *switchScope;
     CLabel *topLabel;
@@ -1566,11 +1565,10 @@ void parse_statement(StatementContext *context)
             else
                 tk = CPrepTokenizer_GetNextToken();
             if (copts.cplusplus && !use_legacy_condition_scope() && isdeclaration(1, 0, 0, 0x3d)) {
-                newScope = CFunc_NewDeclBlock();
-                switchScope = newScope;
+                switchScope = CFunc_NewDeclBlock();
                 conditionExpr = parse_declarations(0, 1, 0, 0);
                 if (CScope_IsEmptyNameSpace(cscope_current)) {
-                    CFunc_RestoreBlock(newScope);
+                    CFunc_RestoreBlock(switchScope);
                     switchScope = NULL;
                 }
             } else {
@@ -1806,11 +1804,10 @@ void parse_statement(StatementContext *context)
             else
                 tk = CPrepTokenizer_GetNextToken();
             if (copts.cplusplus && !use_legacy_condition_scope() && isdeclaration(1, 0, 0, 0x3d)) {
-                newScope = CFunc_NewDeclBlock();
-                whileScope = newScope;
+                whileScope = CFunc_NewDeclBlock();
                 conditionExpr = parse_declarations(0, 1, 0, 0);
                 if (CScope_IsEmptyNameSpace(cscope_current)) {
-                    CFunc_RestoreBlock(newScope);
+                    CFunc_RestoreBlock(whileScope);
                     whileScope = NULL;
                 }
             } else {
@@ -1861,11 +1858,10 @@ void parse_statement(StatementContext *context)
             else
                 tk = CPrepTokenizer_GetNextToken();
             if (copts.cplusplus && !use_legacy_condition_scope() && isdeclaration(1, 0, 0, 0x3d)) {
-                newScope = CFunc_NewDeclBlock();
-                ifScope = newScope;
+                ifScope = CFunc_NewDeclBlock();
                 conditionExpr = parse_declarations(0, 1, 0, 0);
                 if (CScope_IsEmptyNameSpace(cscope_current)) {
-                    CFunc_RestoreBlock(newScope);
+                    CFunc_RestoreBlock(ifScope);
                     ifScope = NULL;
                 }
             } else {
