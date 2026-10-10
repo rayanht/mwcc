@@ -1335,12 +1335,15 @@ static ENode *InlineWrapResult(ENode *expr)
 #if VERSION == VERSION_GC_1_0
 static ENode *inline_return_argument(Object *object)
 {
-    SInt16 index;
+    SInt32 index;
+    ENode *argument;
 
     index = CInline_ReturnZero(object->type);
     if (data_0058245a[index].var == NULL)
-        return gen_expr_save(data_0058245a[index].expr);
-    return create_objectnode(data_0058245a[index].var);
+        argument = gen_expr_save(data_0058245a[index].expr);
+    else
+        argument = create_objectnode(data_0058245a[index].var);
+    return argument;
 }
 #endif
 
@@ -1968,8 +1971,8 @@ Statement *expand_inline_calls(Statement *stmt)
     CInlineInfo *expr;
     ENode *node;
     Object *tempobj;
-    ENode *x;
     Object *obj;
+    ENode *x;
 
     i = 0;
     if (inline_call_count > 0) {
@@ -3030,8 +3033,8 @@ void collect_undefined_function_objects(CInlineInfo *inlineData)
 
 static void CInline_MovePending(Object *obj)
 {
-    CPrecNode **prev = &pendingInlineWork;
     CPrecNode *node;
+    CPrecNode **prev = &pendingInlineWork;
     for (; (node = *prev) != NULL; prev = &node->next) {
         if (obj == node->obj) {
             *prev = node->next;
