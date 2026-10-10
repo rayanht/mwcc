@@ -2031,8 +2031,8 @@ SInt16 user_assign_check(ENode *operand, Type *targetType, UInt32 targetQual, Bo
     FuncArg *firstArg;
     FuncArg *argument;
     Type *argumentType;
-    ENodeList *args;
     ENode *node;
+    ENodeList *args;
     NameSpaceObjectList *constructors;
     ENode *expr;
     ENode *call;
@@ -2052,12 +2052,11 @@ SInt16 user_assign_check(ENode *operand, Type *targetType, UInt32 targetQual, Bo
         InitLookup(&lookup, (TypeClass *)operand->rtype);
         while ((candidate = CExpr_ConversionIteratorNext(&lookup)) != NULL) {
             ft = (TypeMemberFunc *)candidate->type;
-            call = CExpr_NewENode(ETEMP);
-            expr = call;
-            call->rtype = ft->functype;
-            if (call->rtype->type == TYPEPOINTER && (TYPE_POINTER(call->rtype)->qual & Q_REFERENCE)) {
-                call->rtype = TYPE_POINTER(call->rtype)->target;
-                if (!CParser_IsConst(call->rtype, ft->qual)) {
+            expr = CExpr_NewENode(ETEMP);
+            expr->rtype = ft->functype;
+            if (expr->rtype->type == TYPEPOINTER && (TYPE_POINTER(expr->rtype)->qual & Q_REFERENCE)) {
+                expr->rtype = TYPE_POINTER(expr->rtype)->target;
+                if (!CParser_IsConst(expr->rtype, ft->qual)) {
                     expr = makemonadicnode(expr, EINDIRECT);
                     expr->data.monadic->rtype = TYPE(&void_ptr);
                     expr = makemonadicnode(expr, EINDIRECT);
@@ -2764,8 +2763,8 @@ ENode *CExpr_GenericFuncCall(BClassList *scope, ENode *instance, Boolean qualifi
     ENode *result;
     ArgMatch resolution;
     ObjectList list;
-    FuncArg *formal;
     ENodeList *argument;
+    FuncArg *formal;
 
     memclrw(&resolution, sizeof(resolution));
 
@@ -2774,9 +2773,8 @@ ENode *CExpr_GenericFuncCall(BClassList *scope, ENode *instance, Boolean qualifi
             cscope_is_member_func != 0) {
             instance = CClass_CreateThisSelfExpr();
             if (instance != NULL) {
-                ENode *indirect = makemonadicnode(instance, EINDIRECT);
-                indirect->rtype = (Type *)cscope_currentclass;
-                instance = indirect;
+                instance = makemonadicnode(instance, EINDIRECT);
+                instance->rtype = (Type *)cscope_currentclass;
             }
         }
         if (function != NULL) {
