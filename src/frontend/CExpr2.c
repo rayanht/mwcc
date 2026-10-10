@@ -3115,7 +3115,24 @@ Boolean fn_0046e3e0(Type *type, SInt16 op)
 
 unsigned char convert_class_binary_operands(ENode *left, ENode *right, BinaryOperatorResult *result)
 {
-    ENode *converted;
+#if VERSION == VERSION_GC_1_0
+    Type *leftType;
+    Object *conversion;
+    Type *rightType;
+    Type *classType;
+    Boolean eligible;
+    Object *otherConversion;
+    Boolean otherEligible;
+    Type *secondClass;
+    Object *rightConversion;
+    Object *otherRightConversion;
+    Boolean otherRightEligible;
+    TypeClass *leftClass;
+    TypeClass *rightClass;
+    Type *otherType;
+    Type *otherRightType;
+    ConversionIterator search;
+#else
     Type *rightType;
     TypeClass *leftClass;
     TypeClass *rightClass;
@@ -3126,17 +3143,13 @@ unsigned char convert_class_binary_operands(ENode *left, ENode *right, BinaryOpe
     Object *otherConversion;
     Type *otherType;
     Boolean otherEligible;
-    int otherArithmetic;
-    int arithmetic;
     Type *secondClass;
     Object *rightConversion;
-    Boolean rightEligible;
     Object *otherRightConversion;
     Type *otherRightType;
     Boolean otherRightEligible;
-    int rightArithmetic;
-    int otherRightArithmetic;
     ConversionIterator search;
+#endif
     leftType = rightType = NULL;
 
     if ((classType = left->rtype)->type == TYPECLASS) {
@@ -3167,8 +3180,7 @@ leftDone:
         InitLookup(&search, rightClass);
         while ((rightConversion = CExpr_ConversionIteratorNext(&search)) != NULL) {
             rightType = ((TypeMemberFunc *)rightConversion->type)->functype;
-            rightEligible = fn_0046e3e0(rightType, 2);
-            if (!rightEligible)
+            if (!fn_0046e3e0(rightType, 2))
                 continue;
             otherRightConversion = CExpr_ConversionIteratorNext(&search);
             if (otherRightConversion != NULL) {
@@ -4125,10 +4137,14 @@ ENode *scannew(char global)
     Object *deleteFunction;
     Object *pointerTemp;
     ENode *objectExpr;
+    ENode *thisExpr;
     ENode *constructedExpr;
     ENode *tempExpr;
     ENode *assignment;
+    ENode *initAssign;
+    ENode *indirect;
     ENode *condition;
+    ENode *comma;
     unsigned int tempid;
     tk = CPrepTokenizer_GetNextToken();
     type = NULL;
@@ -4189,9 +4205,9 @@ ENode *scannew(char global)
         initlist = NULL;
     if (type->type == TYPECLASS && CClass_Constructor(TYPE_CLASS(type))) {
         if (!placement && !global && CABI_ConstructorCallsNew(TYPE_CLASS(type))) {
-            objectExpr = nullnode();
-            objectExpr->rtype = CDecl_NewPointerType(type);
-            return CExpr_ConstructObject(type, objectExpr, initlist, 0, 1, 1, 1, 1);
+            thisExpr = nullnode();
+            thisExpr->rtype = CDecl_NewPointerType(type);
+            return CExpr_ConstructObject(type, thisExpr, initlist, 0, 1, 1, 1, 1);
         }
         if (cscope_currentfunc && !placement && copts.delete_exception &&
             (deleteFunction = CParser_FindDeallocationObject(type, 0, global)) != NULL) {
@@ -4227,20 +4243,20 @@ ENode *scannew(char global)
             return nullnode();
         }
         tempExpr = CExpr_GetETEMPCopy(result);
-        objectExpr = makemonadicnode(tempExpr, EINDIRECT);
-        objectExpr->rtype = type;
-        objectExpr->flags = initlist->node->flags & 3;
-        assignment = makediadicnode(objectExpr, oldassignmentpromotion(initlist->node, type, objectExpr->flags, 1), EASS);
+        indirect = makemonadicnode(tempExpr, EINDIRECT);
+        indirect->rtype = type;
+        indirect->flags = initlist->node->flags & 3;
+        initAssign = makediadicnode(indirect, oldassignmentpromotion(initlist->node, type, indirect->flags, 1), EASS);
         condition = CExpr_NewENode(ECOND);
         condition->cost = 4;
         condition->rtype = &stvoid;
         condition->data.cond.cond = result;
-        condition->data.cond.expr1 = assignment;
+        condition->data.cond.expr1 = initAssign;
         condition->data.cond.expr2 = nullnode();
-        constructedExpr = makecommaexpression(condition, tempExpr);
-        constructedExpr->rtype = tempExpr->rtype;
-        constructedExpr->flags = tempExpr->flags;
-        return constructedExpr;
+        comma = makecommaexpression(condition, tempExpr);
+        comma->rtype = tempExpr->rtype;
+        comma->flags = tempExpr->flags;
+        return comma;
     }
     return result;
 }
