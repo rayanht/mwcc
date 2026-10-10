@@ -23037,7 +23037,7 @@
     "source": "src/optimizer/ValueNumbering.c"
   },
   {
-    "name": "fn_004ef630",
+    "name": "add_object_index",
     "address": "0x004ef630",
     "size": 99,
     "source": "src/optimizer/ValueNumbering.c"
@@ -23049,7 +23049,7 @@
     "source": "src/optimizer/ValueNumbering.c"
   },
   {
-    "name": "fn_004ef730",
+    "name": "allocate_value_states",
     "address": "0x004ef730",
     "size": 80,
     "source": "src/optimizer/ValueNumbering.c"
@@ -23061,25 +23061,25 @@
     "source": "src/optimizer/ValueNumbering.c"
   },
   {
-    "name": "fn_004ef900",
+    "name": "add_value_operand",
     "address": "0x004ef900",
     "size": 41,
     "source": "src/optimizer/ValueNumbering.c"
   },
   {
-    "name": "fn_004ef930",
+    "name": "remove_value_operand",
     "address": "0x004ef930",
     "size": 46,
     "source": "src/optimizer/ValueNumbering.c"
   },
   {
-    "name": "fn_004ef960",
+    "name": "save_register_value",
     "address": "0x004ef960",
     "size": 58,
     "source": "src/optimizer/ValueNumbering.c"
   },
   {
-    "name": "fn_004ef9a0",
+    "name": "save_object_value",
     "address": "0x004ef9a0",
     "size": 50,
     "source": "src/optimizer/ValueNumbering.c"
@@ -23097,13 +23097,13 @@
     "source": "src/optimizer/ValueNumbering.c"
   },
   {
-    "name": "fn_004efb20",
+    "name": "invalidate_register_value",
     "address": "0x004efb20",
     "size": 150,
     "source": "src/optimizer/ValueNumbering.c"
   },
   {
-    "name": "fn_004efbc0",
+    "name": "new_object_index",
     "address": "0x004efbc0",
     "size": 72,
     "source": "src/optimizer/ValueNumbering.c"
@@ -23115,7 +23115,7 @@
     "source": "src/optimizer/ValueNumbering.c"
   },
   {
-    "name": "fn_004efce0",
+    "name": "copy_register_value_state",
     "address": "0x004efce0",
     "size": 216,
     "source": "src/optimizer/ValueNumbering.c"
@@ -23127,7 +23127,7 @@
     "source": "src/optimizer/ValueNumbering.c"
   },
   {
-    "name": "fn_004effa0",
+    "name": "copy_value_signature",
     "address": "0x004effa0",
     "size": 70,
     "source": "src/optimizer/ValueNumbering.c"
@@ -23145,49 +23145,49 @@
     "source": "src/optimizer/ValueNumbering.c"
   },
   {
-    "name": "fn_004f02b0",
+    "name": "make_register_move",
     "address": "0x004f02b0",
     "size": 117,
     "source": "src/optimizer/ValueNumbering.c"
   },
   {
-    "name": "fn_004f0330",
+    "name": "is_aggregate_access",
     "address": "0x004f0330",
     "size": 73,
     "source": "src/optimizer/ValueNumbering.c"
   },
   {
-    "name": "fn_004f0380",
+    "name": "no_dup",
     "address": "0x004f0380",
     "size": 97,
     "source": "src/optimizer/ValueNumbering.c"
   },
   {
-    "name": "copy_register_value_state",
+    "name": "value_number_move",
     "address": "0x004f03f0",
     "size": 20,
     "source": "src/optimizer/ValueNumbering.c"
   },
   {
-    "name": "fn_004f0410",
+    "name": "value_number_instruction",
     "address": "0x004f0410",
     "size": 133,
     "source": "src/optimizer/ValueNumbering.c"
   },
   {
-    "name": "fn_004f04a0",
+    "name": "assign_object_value_index",
     "address": "0x004f04a0",
     "size": 116,
     "source": "src/optimizer/ValueNumbering.c"
   },
   {
-    "name": "fn_004f0520",
+    "name": "value_number_pcode_instruction",
     "address": "0x004f0520",
     "size": 12,
     "source": "src/optimizer/ValueNumbering.c"
   },
   {
-    "name": "value_number_pcode_instruction",
+    "name": "store_aggregate_value",
     "address": "0x004f0530",
     "size": 12,
     "source": "src/optimizer/ValueNumbering.c"
@@ -23199,7 +23199,7 @@
     "source": "src/optimizer/ValueNumbering.c"
   },
   {
-    "name": "fn_004f0550",
+    "name": "store_through_pointer",
     "address": "0x004f0550",
     "size": 12,
     "source": "src/optimizer/ValueNumbering.c"
@@ -23229,19 +23229,19 @@
     "source": "src/optimizer/ValueNumbering.c"
   },
   {
-    "name": "fn_004f0810",
+    "name": "save_value_state",
     "address": "0x004f0810",
     "size": 20,
     "source": "src/optimizer/ValueNumbering.c"
   },
   {
-    "name": "fn_004f0830",
+    "name": "restore_value_state",
     "address": "0x004f0830",
     "size": 20,
     "source": "src/optimizer/ValueNumbering.c"
   },
   {
-    "name": "fn_004f0850",
+    "name": "begin_value_state",
     "address": "0x004f0850",
     "size": 20,
     "source": "src/optimizer/ValueNumbering.c"

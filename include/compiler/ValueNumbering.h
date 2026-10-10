@@ -26,12 +26,6 @@ struct RegisterValueState {
     int index;
     struct RegisterValueRecord *value;
 };
-struct RegisterValueSnapshot {
-    struct RegisterValueSnapshot *next;
-    PCodeOperand operand;
-    int reserved;
-    RegisterValueState state;
-};
 struct ObjectIndexEntry {
     struct ObjectIndexEntry *next;
     struct ObjectIndexEntry *left;
@@ -39,20 +33,7 @@ struct ObjectIndexEntry {
     struct Object *object;
     struct RegisterValueState index;
 };
-struct SavedObjectIndex {
-    struct SavedObjectIndex *next;
-    char kind;
-    char reserved_05[11];
-    struct ObjectIndexEntry *entry;
-    struct RegisterValueState index;
-};
 
-#pragma options align = mac68k
-struct ValueDestination {
-    char reserved[16];
-    struct RegisterValueState value;
-};
-#pragma options align = reset
 struct ValueRegisterOperand {
     struct ValueRegisterOperand *next;
     PCodeOperand operand;
@@ -61,7 +42,7 @@ struct ValueRegisterOperand {
 struct ValueUpdate {
     struct ValueUpdate *next;
     PCodeOperand descriptor;
-    struct ValueDestination *destination;
+    struct ObjectIndexEntry *entry;
     struct RegisterValueState value;
 };
 #pragma options align = reset
@@ -75,7 +56,7 @@ extern void value_number_single_instruction(PCodeInstruction *argument);
 extern void value_number_pcode_instruction(PCodeInstruction *value);
 extern int find_matching_value_signature(PCodeInstruction *func, PCodeOperand *out);
 extern void copy_register_value_state(PCodeOperand *source, PCodeOperand *destination);
-extern Boolean compare_register_value_indices(IndexedValueReference *first, IndexedValueReference *second);
+extern int compare_register_value_indices(PCodeOperand *first, PCodeOperand *second);
 extern void initialize_value_states(void);
 extern void invalidate_instruction_register_values(PCodeInstruction *blk);
 extern void invalidate_register_values(PCodeInstruction *obj);

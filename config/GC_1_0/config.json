@@ -185,6 +185,7 @@
     "src/optimizer/LoadDeletion.c",
     "src/optimizer/StrengthReduction.c",
     "src/optimizer/StructMoves.c",
+    "src/optimizer/ValueNumbering.c",
     "src/optimizer/VectorArraysToRegs.c",
     "src/runtime/ExceptionX86.cpp",
     "src/runtime/LongLongx86.c",

@@ -51,31 +51,15 @@ static struct RegisterValueState *register_value_states;
 static struct ObjectIndexEntry *objectIndex;
 static struct ObjectIndexEntry *object_indices;
 static void *data_00582c38;
+typedef struct ValueNumberingState {
+    void *saved;
+    SInt32 threshold;
+} ValueNumberingState;
+
 static SInt32 next_value_index;
 static SInt32 value_index_threshold;
 static struct Object *data_00582c44;
 static unsigned int data_00582c48;
-
-static inline void ZeroArray(struct RegisterValueRecord **p, SInt32 n);
-static ObjectIndexEntry *VN_FindNode(Object *key);
-
-static inline int no_dup(PCodeInstruction *inst)
-{
-    if (inst->flags & (fRecordBit | fSetsCarry | fOverflow))
-        return 0;
-    {
-        PCodeOperand *arg;
-        PCodeOperand *args;
-        SInt32 i;
-        i = 1;
-        args = inst->operandData.operands;
-        for (arg = args + 1; i < inst->operand_count; i++, arg++) {
-            if (arg->kind == args[0].kind && arg->value.reg == args[0].value.reg)
-                return 0;
-        }
-        return 1;
-    }
-}
 
 static inline int arraystruct(Type *t)
 {
@@ -97,125 +81,45 @@ static inline int aggregate(Type *t)
     return classaggregate(t) || memberaggregate(t);
 }
 
-static inline RegisterValueState *getreg(PCodeOperand *arg)
-{
-    RegisterValueState *reg;
-    switch (arg->kind) {
-        case PCOp_GPR:
-            reg = &register_value_state_array[arg->value.reg];
-            break;
-        case PCOp_FPR:
-            reg = &fpr_value_states[arg->value.reg];
-            break;
-        case PCOp_VR:
-            reg = &gRegisterValueStates[arg->value.reg];
-            break;
-        case PCOp_CRFIELD:
-            reg = &register_value_states[arg->value.reg];
-            break;
-    }
-    return reg;
-}
-
-static inline void invalidate(PCodeInstruction *inst)
-{
-    ValueUpdate *rec;
-    ValueRegisterOperand *node;
-    ValueRegisterOperand **link;
-    RegisterValueState *reg;
-    reg = getreg(&inst->operandData.operands[1]);
-    if (reg->index < value_index_threshold && next_value_index >= value_index_threshold) {
-        rec = (ValueUpdate *)oalloc(0x1c);
-        rec->next = data_00582c38;
-        data_00582c38 = rec;
-        rec->descriptor = inst->operandData.operands[1];
-        rec->value = *reg;
-    }
-    if (reg->value != NULL) {
-        link = &reg->value->operands;
-        while ((node = *link) != NULL) {
-            if (node->operand.value.reg == inst->operandData.operands[1].value.reg) {
-                *link = node->next;
-            } else {
-                link = &node->next;
-            }
-        }
-    }
-    reg->value = NULL;
-    reg->index = next_value_index;
-    next_value_index++;
-}
-
 static inline ValueRegisterOperand *value_signature_list(RegisterValueRecord *node)
 {
     return node->operands;
 }
 
-static inline void copy_value_signature(RegisterValueRecord *node, PCodeOperand *out)
+static ObjectIndexEntry *VN_FindNode(Object *key)
 {
-    SInt32 id = node->instruction->operandData.operands[0].value.reg;
-    ValueRegisterOperand *item;
-    for (item = value_signature_list(node); item != NULL; item = item->next) {
-        if (item->operand.value.reg == id) {
-            *out = item->operand;
-            return;
-        }
-    }
-    *out = value_signature_list(node)->operand;
-}
+    ObjectIndexEntry *node;
 
-static inline ObjectIndexEntry *fn_0051efd0_inline1(PCodeOperand *operand)
-{
-    unsigned int value;
-    unsigned int key;
-    ObjectIndexEntry *record;
-    record = objectIndex;
-    key = (unsigned int)operand->object;
-    while ((int)record != 0) {
-        if (key < (unsigned int)(value = (unsigned int)record->object))
-            record = record->left;
-        else if (key > value)
-            record = record->right;
+    node = objectIndex;
+    while (node != NULL) {
+        if (key < node->object)
+            node = node->left;
+        else if (key > node->object)
+            node = node->right;
         else
-            return record;
+            return node;
     }
     return NULL;
 }
 
-static inline ObjectIndexEntry *fn_0051f320_inline1(Object *object)
-{
-    ObjectIndexEntry *entry = objectIndex;
-    while (entry != NULL) {
-        if (object < (Object *)entry->object)
-            entry = entry->left;
-        else if (object > (Object *)entry->object)
-            entry = entry->right;
-        else
-            return entry;
-    }
-    return NULL;
-}
-
-static inline void InsertObjectIndex(ObjectIndexEntry **root, Object *key)
+static void add_object_index(Object *key)
 {
     ObjectIndexEntry *n;
     ObjectIndexEntry **link;
-    link = root;
+
+    link = &objectIndex;
     while ((n = *link) != NULL) {
         if (key < n->object)
             link = &n->left;
-        else if (key <= n->object)
-            return;
-        else
+        else if (key > n->object)
             link = &n->right;
+        else
+            return;
     }
-    n = (ObjectIndexEntry *)oalloc(0x18);
-    n->right = NULL;
-    n->left = n->right;
+    (n = (ObjectIndexEntry *)oalloc(sizeof(ObjectIndexEntry)))->left = n->right = NULL;
     n->object = key;
     n->next = object_indices;
-    object_indices = n;
-    *link = n;
+    *link = object_indices = n;
 }
 
 void fn_0051ffc0(void)
@@ -227,14 +131,29 @@ void fn_0051ffc0(void)
     data_00582c44 = (Object *)galloc(sizeof(Object));
     memclrw(data_00582c44, sizeof(Object));
     data_00582c44->datatype = 9;
-    InsertObjectIndex(&objectIndex, data_00582c44);
+    add_object_index(data_00582c44);
     for (block = gPCodeBlocks; block != NULL; block = block->next) {
         for (instruction = block->instructions; instruction != NULL; instruction = instruction->next) {
             if ((instruction->flags & PCodeInstruction_GPRResultMask) != 0 &&
                 (instruction->flags & PCodeInstruction_NullObjectMemory) == 0)
-                InsertObjectIndex(&objectIndex, instruction->operandData.operands[2].object);
+                add_object_index(instruction->operandData.operands[2].object);
         }
     }
+}
+
+static void allocate_value_states(void)
+{
+    register_value_state_array = oalloc(gUsedVirtualRegistersGPR * sizeof(*register_value_state_array));
+    fpr_value_states = oalloc(gUsedVirtualRegistersFPR * sizeof(*fpr_value_states));
+    gRegisterValueStates = oalloc(gUsedVirtualRegistersVR * sizeof(*gRegisterValueStates));
+    register_value_states = oalloc(8 * sizeof(*register_value_states));
+}
+
+static inline void ZeroArray(struct RegisterValueRecord **p, SInt32 n)
+{
+    SInt32 i;
+    for (i = 0; i < n; i++)
+        p[i] = NULL;
 }
 
 void initialize_value_states(void)
@@ -290,25 +209,61 @@ void initialize_value_states(void)
     value_index_threshold = 0x7fffffff;
 }
 
-static inline void ZeroArray(struct RegisterValueRecord **p, SInt32 n)
+static void add_value_operand(RegisterValueRecord *record, PCodeOperand *operand)
 {
-    SInt32 i;
-    for (i = 0; i < n; i++)
-        p[i] = NULL;
+    ValueRegisterOperand *entry;
+
+    entry = (ValueRegisterOperand *)oalloc(sizeof(ValueRegisterOperand));
+    entry->operand = *operand;
+    entry->next = record->operands;
+    record->operands = entry;
+}
+
+static void remove_value_operand(RegisterValueRecord *record, PCodeOperand *operand)
+{
+    ValueRegisterOperand *entry;
+    ValueRegisterOperand **link;
+
+    link = &record->operands;
+    while ((entry = *link) != NULL) {
+        if (entry->operand.value.reg == operand->value.reg)
+            *link = entry->next;
+        else
+            link = &entry->next;
+    }
+}
+
+static void save_register_value(PCodeOperand *operand, RegisterValueState *state)
+{
+    ValueUpdate *saved;
+
+    saved = (ValueUpdate *)oalloc(sizeof(ValueUpdate));
+    saved->next = data_00582c38;
+    data_00582c38 = saved;
+    saved->descriptor = *operand;
+    saved->value = *state;
+}
+
+static void save_object_value(ObjectIndexEntry *entry, RegisterValueState *state)
+{
+    ValueUpdate *saved;
+
+    saved = (ValueUpdate *)oalloc(sizeof(ValueUpdate));
+    saved->next = data_00582c38;
+    data_00582c38 = saved;
+    saved->descriptor.kind = PCOp_MEMORY;
+    saved->entry = entry;
+    saved->value = *state;
 }
 
 void fn_0051fd70(ValueUpdate *update)
 {
-    RegisterValueState *slot;
     PCodeOperand *descriptor;
-    ValueRegisterOperand **link;
-    ValueDestination *destination;
-    ValueRegisterOperand *newLink;
-    RegisterValueRecord *chain;
+    RegisterValueState *slot;
+
     descriptor = &update->descriptor;
     if (update->descriptor.kind == PCOp_MEMORY) {
-        destination = update->destination;
-        destination->value = update->value;
+        update->entry->index = update->value;
         return;
     }
     switch (descriptor->kind) {
@@ -324,58 +279,40 @@ void fn_0051fd70(ValueUpdate *update)
         case PCOp_CRFIELD:
             slot = register_value_states + descriptor->value.reg;
     }
-    if (slot->value != NULL) {
-        link = &slot->value->operands;
-        while (*link != NULL) {
-            if ((*link)->operand.value.reg == descriptor->value.reg) {
-                *link = (*link)->next;
-            } else {
-                link = &(*link)->next;
-            }
-        }
-    }
+    if (slot->value != NULL)
+        remove_value_operand(slot->value, descriptor);
     slot->index = update->value.index;
-    if ((slot->value = update->value.value) != NULL) {
-        chain = slot->value;
-        newLink = (ValueRegisterOperand *)oalloc(sizeof(*newLink));
-        newLink->operand = *descriptor;
-        newLink->next = chain->operands;
-        chain->operands = newLink;
-    }
+    if ((slot->value = update->value.value) != NULL)
+        add_value_operand(slot->value, descriptor);
 }
-
-Boolean compare_register_value_indices(IndexedValueReference *first, IndexedValueReference *second)
+int compare_register_value_indices(PCodeOperand *first, PCodeOperand *second)
 {
     RegisterValueState *firstValue;
     RegisterValueState *secondValue;
     switch (first->kind) {
-        case 0:
-            firstValue = &register_value_state_array[first->index];
-            secondValue = &register_value_state_array[second->index];
+        case PCOp_GPR:
+            firstValue = &register_value_state_array[first->value.reg];
+            secondValue = &register_value_state_array[second->value.reg];
             break;
-        case 1:
-            firstValue = &fpr_value_states[first->index];
-            secondValue = &fpr_value_states[second->index];
+        case PCOp_FPR:
+            firstValue = &fpr_value_states[first->value.reg];
+            secondValue = &fpr_value_states[second->value.reg];
             break;
-        case 9:
-            firstValue = &gRegisterValueStates[first->index];
-            secondValue = &gRegisterValueStates[second->index];
+        case PCOp_VR:
+            firstValue = &gRegisterValueStates[first->value.reg];
+            secondValue = &gRegisterValueStates[second->value.reg];
             break;
-        case 3:
-            firstValue = &register_value_states[first->index];
-            secondValue = &register_value_states[second->index];
+        case PCOp_CRFIELD:
+            firstValue = &register_value_states[first->value.reg];
+            secondValue = &register_value_states[second->value.reg];
             break;
     }
     return firstValue->index == secondValue->index;
 }
-
 SInt32 invalidate_register_value(PCodeOperand *operand)
 {
     RegisterValueState *reg;
-    ValueUpdate *snapshot;
-    ValueRegisterOperand **link;
-    ValueRegisterOperand *entry;
-    SInt32 index;
+
     switch (operand->kind) {
         case PCOp_GPR:
             reg = &register_value_state_array[operand->value.reg];
@@ -388,36 +325,31 @@ SInt32 invalidate_register_value(PCodeOperand *operand)
             break;
         case PCOp_CRFIELD:
             reg = &register_value_states[operand->value.reg];
-            break;
     }
-    if (reg->index < value_index_threshold && next_value_index >= value_index_threshold) {
-        snapshot = (ValueUpdate *)oalloc(sizeof(ValueUpdate));
-        snapshot->next = data_00582c38;
-        data_00582c38 = snapshot;
-        snapshot->descriptor = *operand;
-        snapshot->value = *reg;
-    }
-    if (reg->value != NULL) {
-        link = &reg->value->operands;
-        while ((entry = *link) != NULL) {
-            if (entry->operand.value.reg == operand->value.reg)
-                *link = entry->next;
-            else
-                link = &entry->next;
-        }
-    }
+    if (reg->index < value_index_threshold && next_value_index >= value_index_threshold)
+        save_register_value(operand, reg);
+    if (reg->value != NULL)
+        remove_value_operand(reg->value, operand);
     reg->value = NULL;
-    index = next_value_index++;
-    reg->index = index;
-    return reg->index;
+    return reg->index = next_value_index++;
 }
+static void new_object_index(PCodeOperand *operand)
+{
+    ObjectIndexEntry *entry;
+    RegisterValueState *index;
 
+    entry = VN_FindNode(operand->object);
+    index = &entry->index;
+    if (entry->index.index < value_index_threshold && next_value_index >= value_index_threshold)
+        save_object_value(entry, index);
+    index->index = next_value_index++;
+    index->value = NULL;
+}
 void invalidate_object_indices(Type *unused, int mode)
 {
     struct ObjectIndexEntry *entry;
     int qualifiers;
     RegisterValueState *index;
-    struct SavedObjectIndex *saved;
     entry = object_indices;
     for (; entry != NULL; entry = entry->next) {
         if (entry->object->datatype != 9) {
@@ -437,16 +369,9 @@ void invalidate_object_indices(Type *unused, int mode)
             }
         }
         index = &entry->index;
-        if (entry->index.index < value_index_threshold && next_value_index >= value_index_threshold) {
-            saved = oalloc(28);
-            saved->next = data_00582c38;
-            data_00582c38 = saved;
-            saved->kind = 5;
-            saved->entry = entry;
-            saved->index = *index;
-        }
-        index->index = next_value_index;
-        next_value_index += 1;
+        if (entry->index.index < value_index_threshold && next_value_index >= value_index_threshold)
+            save_object_value(entry, index);
+        index->index = next_value_index++;
         index->value = NULL;
     }
     return;
@@ -456,8 +381,6 @@ void copy_register_value_state(PCodeOperand *source, PCodeOperand *destination)
 {
     RegisterValueState *sourceRecord;
     RegisterValueState *destinationRecord;
-    RegisterValueRecord *oldOwner;
-    RegisterValueRecord *newOwner;
 
     switch (source->kind) {
         case PCOp_GPR:
@@ -477,39 +400,14 @@ void copy_register_value_state(PCodeOperand *source, PCodeOperand *destination)
             destinationRecord = register_value_states + destination->value.reg;
             break;
     }
-
-    if (destinationRecord->index < value_index_threshold && next_value_index >= value_index_threshold) {
-        ValueUpdate *saved;
-        saved = (ValueUpdate *)oalloc(sizeof(ValueUpdate));
-        saved->next = data_00582c38;
-        data_00582c38 = saved;
-        saved->descriptor = *destination;
-        saved->value = *destinationRecord;
-    }
-
-    if ((oldOwner = destinationRecord->value) != NULL) {
-        ValueRegisterOperand **link = &oldOwner->operands;
-        ValueRegisterOperand *entry;
-        while ((entry = *link) != NULL) {
-            if (entry->operand.value.reg == destination->value.reg)
-                *link = entry->next;
-            else
-                link = &entry->next;
-        }
-    }
-
-    destinationRecord->value = sourceRecord->value;
-    if (destinationRecord->value != NULL) {
-        ValueRegisterOperand *entry;
-        newOwner = ((volatile RegisterValueState *)destinationRecord)->value;
-        entry = (ValueRegisterOperand *)oalloc(sizeof(ValueRegisterOperand));
-        entry->operand = *destination;
-        entry->next = newOwner->operands;
-        newOwner->operands = entry;
-    }
+    if (destinationRecord->index < value_index_threshold && next_value_index >= value_index_threshold)
+        save_register_value(destination, destinationRecord);
+    if (destinationRecord->value != NULL)
+        remove_value_operand(destinationRecord->value, destination);
+    if ((destinationRecord->value = sourceRecord->value) != NULL)
+        add_value_operand(destinationRecord->value, destination);
     destinationRecord->index = sourceRecord->index;
 }
-
 SInt32 fn_0051f790(RegisterValueRecord *record, PCodeInstruction *instruction)
 {
     SInt32 operandIndex;
@@ -577,22 +475,18 @@ SInt32 fn_0051f790(RegisterValueRecord *record, PCodeInstruction *instruction)
     return 1;
 }
 
-static ObjectIndexEntry *VN_FindNode(Object *key)
+static void copy_value_signature(RegisterValueRecord *node, PCodeOperand *out)
 {
-    ObjectIndexEntry *node;
-
-    node = objectIndex;
-    while (node != NULL) {
-        if (key < node->object)
-            node = node->left;
-        else if (key > node->object)
-            node = node->right;
-        else
-            return node;
+    SInt32 id = node->instruction->operandData.operands[0].value.reg;
+    ValueRegisterOperand *item;
+    for (item = value_signature_list(node); item != NULL; item = item->next) {
+        if (item->operand.value.reg == id) {
+            *out = item->operand;
+            return;
+        }
     }
-    return NULL;
+    *out = value_signature_list(node)->operand;
 }
-
 int find_matching_value_signature(PCodeInstruction *func, PCodeOperand *out)
 {
     PCodeOperand tmp;
@@ -688,13 +582,7 @@ void create_register_value_record(PCodeInstruction *instruction)
     int input_index;
     int flags;
     PCodeOperand *output;
-    ValueRegisterOperand **link;
     ObjectIndexEntry *related;
-    unsigned int old_index;
-    RegisterValueSnapshot *saved;
-    ValueRegisterOperand *operand;
-    int new_index;
-    RegisterValueState *state;
     value = (RegisterValueRecord *)oalloc((sizeof(*value) - sizeof(value->input_indices)) +
                                           (instruction->operand_count - 1) * sizeof(value->input_indices[0]));
     value->operands = NULL;
@@ -719,51 +607,14 @@ void create_register_value_record(PCodeInstruction *instruction)
         ++input;
     }
     if ((flags = instruction->flags) & PCodeInstruction_ImplicitUse) {
-        related = fn_0051f320_inline1((flags & PCodeInstruction_NullObjectMemory)
+        related = VN_FindNode((flags & PCodeInstruction_NullObjectMemory)
                                           ? data_00582c44
                                           : (Object *)instruction->operandData.operands[2].object);
         value->related_index = related->index.index;
     }
     output = &instruction->operandData.operands[0];
-    switch (instruction->operandData.operands[0].kind) {
-        case PCOp_GPR:
-            state = &register_value_state_array[output->value.reg];
-            break;
-        case PCOp_FPR:
-            state = &fpr_value_states[output->value.reg];
-            break;
-        case PCOp_VR:
-            state = &gRegisterValueStates[output->value.reg];
-            break;
-        case PCOp_CRFIELD:
-            state = &register_value_states[output->value.reg];
-    }
-    old_index = state->index;
-    if ((int)old_index < value_index_threshold && next_value_index >= value_index_threshold) {
-        saved = (RegisterValueSnapshot *)oalloc(sizeof(*saved));
-        saved->next = data_00582c38;
-        data_00582c38 = saved;
-        saved->operand = *output;
-        saved->state = *state;
-    }
-    if (state->value != NULL) {
-        link = &state->value->operands;
-        while (*link != NULL) {
-            if ((*link)->operand.value.reg == output->value.reg) {
-                *link = (*link)->next;
-            } else {
-                link = &(*link)->next;
-            }
-        }
-    }
-    state->value = NULL;
-    new_index = state->index = next_value_index;
-    ++next_value_index;
-    value->index = new_index;
-    operand = (ValueRegisterOperand *)oalloc(sizeof(*operand));
-    operand->operand = *output;
-    operand->next = value->operands;
-    value->operands = operand;
+    value->index = invalidate_register_value(output);
+    add_value_operand(value, output);
     switch (output->kind) {
         case PCOp_GPR:
             register_value_state_array[output->value.reg].value = value;
@@ -781,138 +632,97 @@ void create_register_value_record(PCodeInstruction *instruction)
     register_values_by_opcode[instruction->opcode] = value;
 }
 
+static PCodeInstruction *make_register_move(PCodeOperand *destination, PCodeOperand *source)
+{
+    if (source->kind == PCOp_GPR)
+        return PCodeUtilities_CreateInstruction(PC_MR, destination->value.reg, source->value.reg);
+    if (source->kind == PCOp_FPR)
+        return PCodeUtilities_CreateInstruction(PC_FMR, destination->value.reg, source->value.reg);
+    if (source->kind == PCOp_VR)
+        return PCodeUtilities_CreateInstruction(PC_VMR, destination->value.reg, source->value.reg);
+    return PCodeUtilities_CreateInstruction(PC_MCRF, destination->value.reg, source->value.reg);
+}
+
+static int is_aggregate_access(PCodeInstruction *instruction)
+{
+    Object *object;
+
+    object = instruction->operandData.operands[2].object;
+    return aggregate(object->type);
+}
+
+static int no_dup(PCodeInstruction *inst)
+{
+    UInt32 flags;
+
+    flags = inst->flags;
+    if (flags & (fRecordBit | fSetsCarry | fOverflow))
+        return 0;
+    {
+        PCodeOperand *arg;
+        PCodeOperand *args;
+        SInt32 i;
+        i = 1;
+        args = inst->operandData.operands;
+        for (arg = args + 1; i < inst->operand_count; i++, arg++) {
+            if (arg->kind == args[0].kind && arg->value.reg == args[0].value.reg)
+                return 0;
+        }
+        return 1;
+    }
+}
+
+static void value_number_move(PCodeInstruction *instruction)
+{
+    copy_register_value_state(&instruction->operandData.operands[1], &instruction->operandData.operands[0]);
+}
+
 void value_number_instruction(PCodeInstruction *instruction)
 {
-    PCodeOperand *destination = &instruction->operandData.operands[0];
+    PCodeOperand *destination;
+    PCodeOperand matchingOperand;
 
+    destination = &instruction->operandData.operands[0];
     if (instruction->flags & fIsVolatile) {
-        RegisterValueState *state;
-        RegisterValueRecord *value;
-        switch (destination->kind) {
-            case PCOp_GPR:
-                state = register_value_state_array + destination->value.reg;
-                break;
-            case PCOp_FPR:
-                state = fpr_value_states + destination->value.reg;
-                break;
-            case PCOp_VR:
-                state = gRegisterValueStates + destination->value.reg;
-                break;
-            case PCOp_CRFIELD:
-                state = register_value_states + destination->value.reg;
-                break;
+        invalidate_register_value(destination);
+    } else if (find_matching_value_signature(instruction, &matchingOperand)) {
+        if (!compare_register_value_indices(destination, &matchingOperand)) {
+            PCode_InsertInstructionBefore(instruction, make_register_move(destination, &matchingOperand));
+            copy_register_value_state(&matchingOperand, destination);
         }
-        if (state->index < value_index_threshold && next_value_index >= value_index_threshold) {
-            RegisterValueSnapshot *snapshot = (RegisterValueSnapshot *)oalloc(sizeof(RegisterValueSnapshot));
-            snapshot->next = data_00582c38;
-            data_00582c38 = snapshot;
-            snapshot->operand = *destination;
-            snapshot->state = *state;
-        }
-        if ((value = state->value) != NULL) {
-            ValueRegisterOperand **link = &value->operands;
-            ValueRegisterOperand *operand;
-            while ((operand = *link) != NULL) {
-                if (operand->operand.value.reg == destination->value.reg)
-                    *link = operand->next;
-                else
-                    link = &operand->next;
-            }
-        }
-        state->value = NULL;
-        state->index = next_value_index;
-        next_value_index = next_value_index + 1;
+        PCode_UnlinkInstruction(instruction);
+        gValueNumberingChanged = 1;
     } else {
-        PCodeOperand matchingOperand;
-        if (find_matching_value_signature(instruction, &matchingOperand) != 0) {
-            RegisterValueState *matchingState, *destinationState;
-            switch (destination->kind) {
-                case PCOp_GPR:
-                    destinationState = register_value_state_array + destination->value.reg;
-                    matchingState = register_value_state_array + matchingOperand.value.reg;
-                    break;
-                case PCOp_FPR:
-                    destinationState = fpr_value_states + destination->value.reg;
-                    matchingState = fpr_value_states + matchingOperand.value.reg;
-                    break;
-                case PCOp_VR:
-                    destinationState = gRegisterValueStates + destination->value.reg;
-                    matchingState = gRegisterValueStates + matchingOperand.value.reg;
-                    break;
-                case PCOp_CRFIELD:
-                    destinationState = register_value_states + destination->value.reg;
-                    matchingState = register_value_states + matchingOperand.value.reg;
-                    break;
-            }
-            if (destinationState->index != matchingState->index) {
-                PCodeInstruction *move;
-                if (matchingOperand.kind == PCOp_GPR)
-                    move = PCodeUtilities_CreateInstruction(PC_MR, destination->value.reg, matchingOperand.value.reg);
-                else if (matchingOperand.kind == PCOp_FPR)
-                    move = PCodeUtilities_CreateInstruction(PC_FMR, destination->value.reg, matchingOperand.value.reg);
-                else if (matchingOperand.kind == PCOp_VR)
-                    move = PCodeUtilities_CreateInstruction(PC_VMR, destination->value.reg, matchingOperand.value.reg);
-                else
-                    move = PCodeUtilities_CreateInstruction(PC_MCRF, destination->value.reg, matchingOperand.value.reg);
-                PCode_InsertInstructionBefore(instruction, move);
-                copy_register_value_state(&matchingOperand, destination);
-            }
-            PCode_UnlinkInstruction(instruction);
-            gValueNumberingChanged = 1;
-        } else {
-            create_register_value_record(instruction);
-        }
+        create_register_value_record(instruction);
     }
 }
-
-void assign_object_value_index(PCodeInstruction *entry)
+void assign_object_value_index(PCodeInstruction *instruction)
 {
-    PCodeInstruction *instruction = entry;
     PCodeOperand *operand;
-    RegisterValueState *record_index;
     Object *object;
-    ObjectIndexEntry *record;
-    int instruction_flags;
-    struct OperandIndexSnapshot {
-        struct OperandIndexSnapshot *next;
-        char kind;
-        char padding[11];
-        ObjectIndexEntry *record;
-        RegisterValueState previous_index;
-    } *snapshot;
-    instruction_flags = instruction->flags;
-    operand = &instruction->operandData.operands[2];
-    object = (Object *)instruction->operandData.operands[2].object;
-    if ((instruction_flags & PCodeInstruction_ObjectFlag2) != 0) {
-        return;
-    }
-    if (object->datatype == DDATA || PCodeUtilities_Require(object) != 0 ||
-        object->datatype == DLOCAL && (object->u.data.u.string[34] != 0 || object->type->type == TYPEARRAY ||
-                                       (object->type->type == TYPESTRUCT || object->type->type == TYPECLASS) ||
-                                       object->type->type == TYPEMEMBERPOINTER && object->type->size == 12)) {
-        invalidate_object_indices(object->type, 0);
-    }
-    record = fn_0051efd0_inline1(operand);
-    record_index = &record->index;
-    if (record->index.index < value_index_threshold && next_value_index >= value_index_threshold) {
-        snapshot = (struct OperandIndexSnapshot *)oalloc(28);
-        snapshot->next = data_00582c38;
-        data_00582c38 = snapshot;
-        snapshot->kind = 5;
-        snapshot->record = record;
-        snapshot->previous_index = *record_index;
-    }
-    record_index->index = next_value_index;
-    next_value_index += 1;
-    record_index->value = NULL;
-}
 
+    operand = &instruction->operandData.operands[2];
+    object = operand->object;
+    if (instruction->flags & PCodeInstruction_ObjectFlag2)
+        return;
+    if (object->datatype == DDATA || PCodeUtilities_Require(object) != 0 ||
+        object->datatype == DLOCAL && (object->u.var.info->noregister != 0 || object->type->type == TYPEARRAY ||
+                                       (object->type->type == TYPESTRUCT || object->type->type == TYPECLASS) ||
+                                       object->type->type == TYPEMEMBERPOINTER && object->type->size == 12))
+        invalidate_object_indices(object->type, 0);
+    new_object_index(operand);
+}
 #pragma auto_inline off
 void value_number_pcode_instruction(PCodeInstruction *value)
 {
     value_number_instruction(value);
 }
 #pragma auto_inline reset
+
+static void store_aggregate_value(PCodeInstruction *instruction)
+{
+    assign_object_value_index(instruction);
+}
 
 #pragma auto_inline off
 void value_number_single_instruction(PCodeInstruction *argument)
@@ -921,161 +731,53 @@ void value_number_single_instruction(PCodeInstruction *argument)
 }
 #pragma auto_inline reset
 
+static void store_through_pointer(PCodeInstruction *instruction)
+{
+    invalidate_object_indices(NULL, 1);
+}
+
 void fn_0051ee40(PCodeInstruction *instruction)
 {
+    PCodeOperand *destination;
     PCodeOperand matchingOperand;
-    PCodeOperand *destination = &instruction->operandData.operands[0];
 
+    destination = &instruction->operandData.operands[0];
     if (find_matching_value_signature(instruction, &matchingOperand)) {
-        RegisterValueState *matchingState;
-        RegisterValueState *destinationState;
-
-        switch (destination->kind) {
-            case PCOp_GPR:
-                destinationState = &register_value_state_array[destination->value.reg];
-                matchingState = &register_value_state_array[matchingOperand.value.reg];
-                break;
-            case PCOp_FPR:
-                destinationState = &fpr_value_states[destination->value.reg];
-                matchingState = &fpr_value_states[matchingOperand.value.reg];
-                break;
-            case PCOp_VR:
-                destinationState = &gRegisterValueStates[destination->value.reg];
-                matchingState = &gRegisterValueStates[matchingOperand.value.reg];
-                break;
-            case PCOp_CRFIELD:
-                destinationState = &register_value_states[destination->value.reg];
-                matchingState = &register_value_states[matchingOperand.value.reg];
-                break;
-        }
-
-        if (destinationState->index != matchingState->index) {
-            PCodeInstruction *copyInstruction;
-
-            if (matchingOperand.kind == PCOp_GPR)
-                copyInstruction =
-                    PCodeUtilities_CreateInstruction(0x8b, destination->value.reg, matchingOperand.value.reg);
-            else if (matchingOperand.kind == PCOp_FPR)
-                copyInstruction =
-                    PCodeUtilities_CreateInstruction(0x9e, destination->value.reg, matchingOperand.value.reg);
-            else if (matchingOperand.kind == PCOp_VR)
-                copyInstruction =
-                    PCodeUtilities_CreateInstruction(0x18e, destination->value.reg, matchingOperand.value.reg);
-            else
-                copyInstruction =
-                    PCodeUtilities_CreateInstruction(0x76, destination->value.reg, matchingOperand.value.reg);
-
-            PCode_InsertInstructionBefore(instruction, copyInstruction);
+        if (!compare_register_value_indices(destination, &matchingOperand)) {
+            PCode_InsertInstructionBefore(instruction, make_register_move(destination, &matchingOperand));
             copy_register_value_state(&matchingOperand, destination);
         }
-
         PCode_UnlinkInstruction(instruction);
         gValueNumberingChanged = 1;
     } else {
         create_register_value_record(instruction);
     }
 }
-
 void invalidate_register_values(PCodeInstruction *obj)
 {
     SInt32 i = 0;
     PCodeOperand *e = obj->operandData.operands;
     while (i < obj->operand_count) {
         if ((e->kind == PCOp_GPR || e->kind == PCOp_FPR || e->kind == PCOp_VR || e->kind == PCOp_CRFIELD) &&
-            ((SInt8)e->flags & 2) != 0) {
-            RegisterValueState *t;
-            switch (e->kind) {
-                case PCOp_GPR:
-                    t = &register_value_state_array[e->value.reg];
-                    break;
-                case PCOp_FPR:
-                    t = &fpr_value_states[e->value.reg];
-                    break;
-                case PCOp_VR:
-                    t = &gRegisterValueStates[e->value.reg];
-                    break;
-                case PCOp_CRFIELD:
-                    t = &register_value_states[e->value.reg];
-                    break;
-            }
-            if (t->index < value_index_threshold && next_value_index >= value_index_threshold) {
-                ValueUpdate *n = (ValueUpdate *)oalloc(0x1c);
-                n->next = data_00582c38;
-                data_00582c38 = n;
-                n->descriptor = *e;
-                n->value = *t;
-            }
-            if (t->value != NULL) {
-                ValueRegisterOperand **pp = &t->value->operands;
-                ValueRegisterOperand *n;
-                while ((n = *pp) != NULL) {
-                    if (n->operand.value.reg == e->value.reg)
-                        *pp = n->next;
-                    else
-                        pp = &n->next;
-                }
-            }
-            t->value = NULL;
-            t->index = next_value_index;
-            next_value_index++;
-        }
+            ((SInt8)e->flags & 2) != 0)
+            invalidate_register_value(e);
         i++;
         e++;
     }
     invalidate_object_indices(NULL, 1);
 }
-
 void invalidate_instruction_register_values(PCodeInstruction *instruction)
 {
     SInt32 operand_index = 0;
     PCodeOperand *operand = instruction->operandData.operands;
 
     for (; operand_index < instruction->operand_count; operand_index++, operand++) {
-        RegisterValueState *state;
-
         if ((operand->kind == PCOp_GPR || operand->kind == PCOp_FPR || operand->kind == PCOp_VR ||
              operand->kind == PCOp_CRFIELD) &&
-            (operand->flags & 2)) {
-            switch (operand->kind) {
-                case PCOp_GPR:
-                    state = &register_value_state_array[operand->value.reg];
-                    break;
-                case PCOp_FPR:
-                    state = &fpr_value_states[operand->value.reg];
-                    break;
-                case PCOp_VR:
-                    state = &gRegisterValueStates[operand->value.reg];
-                    break;
-                case PCOp_CRFIELD:
-                    state = &register_value_states[operand->value.reg];
-                    break;
-            }
-
-            if (state->index < value_index_threshold && next_value_index >= value_index_threshold) {
-                RegisterValueSnapshot *snapshot = (RegisterValueSnapshot *)oalloc(sizeof(RegisterValueSnapshot));
-                snapshot->next = data_00582c38;
-                data_00582c38 = snapshot;
-                snapshot->operand = *operand;
-                snapshot->state = *state;
-            }
-
-            if (state->value != NULL) {
-                ValueRegisterOperand **link = &state->value->operands;
-                while (*link != NULL) {
-                    if ((*link)->operand.value.reg == operand->value.reg)
-                        *link = (*link)->next;
-                    else
-                        link = &(*link)->next;
-                }
-            }
-
-            state->value = NULL;
-            state->index = next_value_index;
-            next_value_index++;
-        }
+            (operand->flags & 2))
+            invalidate_register_value(operand);
     }
 }
-
 void value_number_block(PCodeBlock *block)
 {
     PCodeInstruction *inst;
@@ -1084,6 +786,7 @@ void value_number_block(PCodeBlock *block)
         next = inst->next;
         switch (inst->opcode) {
             case PC_BL:
+#if VERSION > VERSION_GC_1_0
             case PC_BTLR:
             case PC_BTCTR:
             case PC_BFLR:
@@ -1095,12 +798,13 @@ void value_number_block(PCodeBlock *block)
             case PC_TW:
             case PC_TRAP:
             case PC_TWI:
+#endif
                 invalidate_register_values(inst);
                 break;
             case PC_MR:
             case PC_FMR:
             case PC_VMR:
-                copy_register_value_state(&inst->operandData.operands[1], &inst->operandData.operands[0]);
+                value_number_move(inst);
                 break;
             case PC_LBZ:
             case PC_LHZ:
@@ -1110,7 +814,7 @@ void value_number_block(PCodeBlock *block)
             case PC_LFD:
                 if (inst->flags & fIsPtrOp)
                     value_number_single_instruction(inst);
-                else if (aggregate(inst->operandData.operands[2].object->type))
+                else if (is_aggregate_access(inst))
                     value_number_pcode_instruction(inst);
                 else
                     value_number_instruction(inst);
@@ -1121,9 +825,9 @@ void value_number_block(PCodeBlock *block)
             case PC_STFS:
             case PC_STFD:
                 if (inst->flags & fIsPtrOp)
-                    invalidate_object_indices(NULL, 1);
-                else if (aggregate(inst->operandData.operands[2].object->type))
-                    assign_object_value_index(inst);
+                    store_through_pointer(inst);
+                else if (is_aggregate_access(inst))
+                    store_aggregate_value(inst);
                 else
                     assign_object_value_index(inst);
                 break;
@@ -1138,46 +842,8 @@ void value_number_block(PCodeBlock *block)
             case PC_LFSU:
             case PC_LFSUX:
             case PC_LFDU:
-            case PC_LFDUX: {
-                RegisterValueState *reg;
-                RegisterValueRecord *value;
-                ValueRegisterOperand **link;
-                ValueRegisterOperand *node;
-                ValueUpdate *spill;
-                switch (inst->operandData.operands[1].kind) {
-                    case PCOp_GPR:
-                        reg = &register_value_state_array[inst->operandData.operands[1].value.reg];
-                        break;
-                    case PCOp_FPR:
-                        reg = &fpr_value_states[inst->operandData.operands[1].value.reg];
-                        break;
-                    case PCOp_VR:
-                        reg = &gRegisterValueStates[inst->operandData.operands[1].value.reg];
-                        break;
-                    case PCOp_CRFIELD:
-                        reg = &register_value_states[inst->operandData.operands[1].value.reg];
-                        break;
-                }
-                if (reg->index < value_index_threshold && next_value_index >= value_index_threshold) {
-                    spill = (ValueUpdate *)oalloc(sizeof(ValueUpdate));
-                    spill->next = data_00582c38;
-                    data_00582c38 = spill;
-                    spill->descriptor = inst->operandData.operands[1];
-                    spill->value = *reg;
-                }
-                if ((value = reg->value) != NULL) {
-                    link = &value->operands;
-                    while ((node = *link) != NULL) {
-                        if (node->operand.value.reg == inst->operandData.operands[1].value.reg)
-                            *link = node->next;
-                        else
-                            link = &node->next;
-                    }
-                }
-                reg->value = NULL;
-                reg->index = next_value_index;
-                next_value_index++;
-            }
+            case PC_LFDUX:
+                invalidate_register_value(&inst->operandData.operands[1]);
             case PC_LBZX:
             case PC_LHZX:
             case PC_LHAX:
@@ -1208,7 +874,7 @@ void value_number_block(PCodeBlock *block)
             case PC_STVEWX:
             case PC_STVX:
             case PC_STVXL:
-                invalidate(inst);
+                invalidate_register_value(&inst->operandData.operands[1]);
             case PC_STBX:
             case PC_STHX:
             case PC_STHBRX:
@@ -1217,7 +883,7 @@ void value_number_block(PCodeBlock *block)
             case PC_STMW:
             case PC_STFSX:
             case PC_STFDX:
-                invalidate_object_indices(NULL, 1);
+                store_through_pointer(inst);
                 break;
             case PC_FNMSUBS:
             case PC_ADD:
@@ -1449,6 +1115,24 @@ void value_number_block(PCodeBlock *block)
     block->flags |= 4;
 }
 
+static void save_value_state(ValueNumberingState *state)
+{
+    state->saved = data_00582c38;
+    state->threshold = value_index_threshold;
+}
+
+static void restore_value_state(ValueNumberingState *state)
+{
+    data_00582c38 = state->saved;
+    value_index_threshold = state->threshold;
+}
+
+static void begin_value_state(SInt32 threshold)
+{
+    data_00582c38 = NULL;
+    value_index_threshold = threshold;
+}
+
 void fn_0051e720(void)
 {
     ValueUpdate *entry;
@@ -1478,8 +1162,7 @@ void fn_0051e720(void)
 
 void traverse_single_predecessor_successors(PCodeBlock *node)
 {
-    struct RegisterValueSnapshot *savedSnapshots;
-    SInt32 savedIndex;
+    ValueNumberingState saved;
     PCodeBlock *child;
     PCodeBlockLink *predecessors;
     SInt32 eligibleCount;
@@ -1502,10 +1185,8 @@ void traverse_single_predecessor_successors(PCodeBlock *node)
     if (eligibleCount == 0)
         return;
 
-    savedSnapshots = data_00582c38;
-    savedIndex = value_index_threshold;
-    data_00582c38 = NULL;
-    value_index_threshold = next_value_index;
+    save_value_state(&saved);
+    begin_value_state(next_value_index);
 
     for (entry = node->successors; entry != NULL; entry = entry->next) {
         if ((entry->payload.block->flags & 4) == 0 && entry->payload.block->predecessors != NULL &&
@@ -1515,8 +1196,7 @@ void traverse_single_predecessor_successors(PCodeBlock *node)
         }
     }
 
-    data_00582c38 = savedSnapshots;
-    value_index_threshold = savedIndex;
+    restore_value_state(&saved);
 }
 
 void ValueNumbering_PerformValueNumbering(int options)
@@ -1525,10 +1205,7 @@ void ValueNumbering_PerformValueNumbering(int options)
     gValueNumberingChanged = 0;
     data_00582c48 = options;
     fn_0051ffc0();
-    register_value_state_array = oalloc(gUsedVirtualRegistersGPR * sizeof(*register_value_state_array));
-    fpr_value_states = oalloc(gUsedVirtualRegistersFPR * sizeof(*fpr_value_states));
-    gRegisterValueStates = oalloc(gUsedVirtualRegistersVR * sizeof(*gRegisterValueStates));
-    register_value_states = oalloc(8 * sizeof(*register_value_states));
+    allocate_value_states();
     for (block = gPCodeBlocks; block != NULL; block = block->next)
         block->flags &= ~4;
     for (block = gPCodeBlocks; block != NULL; block = block->next)

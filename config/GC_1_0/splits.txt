@@ -930,7 +930,7 @@ auto_005534D0_bss:
 
 src/optimizer/ValueNumbering.c:
 	.text       start:0x004EF5F0 end:0x004F0A10
-	.data       start:0x00545390 end:0x00545AF8
+	.data       start:0x00545390 end:0x00545AF4
 	.bss        start:0x005534D8 end:0x00553C50
 
 src/optimizer/CopyPropagation.c:
