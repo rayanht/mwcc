@@ -9309,7 +9309,7 @@
     "source": "src/frontend/CExpr2.c"
   },
   {
-    "name": "fn_00447ed0",
+    "name": "forceintegral",
     "address": "0x00447ed0",
     "size": 41,
     "source": "src/frontend/CExpr2.c"
@@ -9399,7 +9399,7 @@
     "source": "src/frontend/CExpr2.c"
   },
   {
-    "name": "fn_00448660",
+    "name": "CExpr_TempModifyExpr",
     "address": "0x00448660",
     "size": 196,
     "source": "src/frontend/CExpr2.c"
@@ -20307,7 +20307,7 @@
     "source": "src/frontend/CExpr.c"
   },
   {
-    "name": "fn_004cf720",
+    "name": "CExpr_ConstResult",
     "address": "0x004cf720",
     "size": 119,
     "source": "src/frontend/CExpr.c"
@@ -20433,7 +20433,7 @@
     "source": "src/frontend/CExpr.c"
   },
   {
-    "name": "fn_004d0a10",
+    "name": "CExpr_MakeTemplDepCast",
     "address": "0x004d0a10",
     "size": 30,
     "source": "src/frontend/CExpr.c"
@@ -20445,13 +20445,13 @@
     "source": "src/frontend/CExpr.c"
   },
   {
-    "name": "fn_004d0b10",
+    "name": "CExpr_MemberVarAccess",
     "address": "0x004d0b10",
     "size": 137,
     "source": "src/frontend/CExpr.c"
   },
   {
-    "name": "fn_004d0ba0",
+    "name": "CExpr_IsTemplateFunc",
     "address": "0x004d0ba0",
     "size": 27,
     "source": "src/frontend/CExpr.c"
@@ -20529,7 +20529,7 @@
     "source": "src/frontend/CExpr.c"
   },
   {
-    "name": "fn_004d2140",
+    "name": "CExpr_ParseTypeConversion",
     "address": "0x004d2140",
     "size": 80,
     "source": "src/frontend/CExpr.c"
@@ -20553,7 +20553,7 @@
     "source": "src/frontend/CExpr.c"
   },
   {
-    "name": "fn_004d2d70",
+    "name": "CExpr_ParseSizeof",
     "address": "0x004d2d70",
     "size": 110,
     "source": "src/frontend/CExpr.c"
@@ -20565,7 +20565,7 @@
     "source": "src/frontend/CExpr.c"
   },
   {
-    "name": "fn_004d2e00",
+    "name": "set_comparison_result_type",
     "address": "0x004d2e00",
     "size": 40,
     "source": "src/frontend/CExpr.c"
@@ -20787,7 +20787,7 @@
     "source": "src/frontend/CExpr.c"
   },
   {
-    "name": "fn_004d69b0",
+    "name": "CExpr_New_ELOR_Node",
     "address": "0x004d69b0",
     "size": 606,
     "source": "src/frontend/CExpr.c"
@@ -20811,7 +20811,7 @@
     "source": "src/frontend/CExpr.c"
   },
   {
-    "name": "IsZeroCInt64",
+    "name": "IsAggregateType",
     "address": "0x004d70e0",
     "size": 54,
     "source": "src/frontend/CExpr.c"
