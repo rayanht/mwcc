@@ -21603,7 +21603,7 @@
     "source": "src/frontend/CABI.c"
   },
   {
-    "name": "fn_004df970",
+    "name": "CABI_GetBaseSize",
     "address": "0x004df970",
     "size": 33,
     "source": "src/frontend/CABI.c"
@@ -21615,13 +21615,13 @@
     "source": "src/frontend/CABI.c"
   },
   {
-    "name": "fn_004dfa30",
+    "name": "layout_vbase_pointers",
     "address": "0x004dfa30",
     "size": 68,
     "source": "src/frontend/CABI.c"
   },
   {
-    "name": "fn_004dfa80",
+    "name": "find_union_member_offset",
     "address": "0x004dfa80",
     "size": 59,
     "source": "src/frontend/CABI.c"
@@ -21633,13 +21633,13 @@
     "source": "src/frontend/CABI.c"
   },
   {
-    "name": "fn_004dfc90",
+    "name": "layout_virtual_bases",
     "address": "0x004dfc90",
     "size": 97,
     "source": "src/frontend/CABI.c"
   },
   {
-    "name": "fn_004dfd00",
+    "name": "inherit_vtable_member",
     "address": "0x004dfd00",
     "size": 59,
     "source": "src/frontend/CABI.c"
@@ -21669,7 +21669,7 @@
     "source": "src/frontend/CABI.c"
   },
   {
-    "name": "fn_004dfe70",
+    "name": "CABI_ApplyClassFlags",
     "address": "0x004dfe70",
     "size": 51,
     "source": "src/frontend/CABI.c"
@@ -21705,31 +21705,31 @@
     "source": "src/frontend/CABI.c"
   },
   {
-    "name": "fn_004e04e0",
+    "name": "CABI_FlagArg",
     "address": "0x004e04e0",
     "size": 60,
     "source": "src/frontend/CABI.c"
   },
   {
-    "name": "fn_004e0520",
+    "name": "CABI_FlagArgExpr",
     "address": "0x004e0520",
     "size": 13,
     "source": "src/frontend/CABI.c"
   },
   {
-    "name": "fn_004e0530",
+    "name": "CABI_SourceArg",
     "address": "0x004e0530",
     "size": 138,
     "source": "src/frontend/CABI.c"
   },
   {
-    "name": "fn_004e05c0",
+    "name": "build_vbase_ptr_initializers",
     "address": "0x004e05c0",
     "size": 205,
     "source": "src/frontend/CABI.c"
   },
   {
-    "name": "fn_004e0690",
+    "name": "CABI_InitVBasePtrs",
     "address": "0x004e0690",
     "size": 92,
     "source": "src/frontend/CABI.c"
@@ -21741,7 +21741,7 @@
     "source": "src/frontend/CABI.c"
   },
   {
-    "name": "fn_004e07b0",
+    "name": "CABI_MakeVBasePathExpr",
     "address": "0x004e07b0",
     "size": 121,
     "source": "src/frontend/CABI.c"
@@ -21771,13 +21771,13 @@
     "source": "src/frontend/CABI.c"
   },
   {
-    "name": "fn_004e0bf0",
+    "name": "CABI_IsArrayOperator",
     "address": "0x004e0bf0",
     "size": 98,
     "source": "src/frontend/CABI.c"
   },
   {
-    "name": "fn_004e0c60",
+    "name": "CABI_ConstructorCallsNew",
     "address": "0x004e0c60",
     "size": 141,
     "source": "src/frontend/CABI.c"
@@ -21795,7 +21795,7 @@
     "source": "src/frontend/CABI.c"
   },
   {
-    "name": "fn_004e1580",
+    "name": "CABI_MakeAssignment",
     "address": "0x004e1580",
     "size": 94,
     "source": "src/frontend/CABI.c"
