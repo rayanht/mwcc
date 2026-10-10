@@ -894,15 +894,15 @@ void CABI_InsertConstructorInitialization(Object *obj, Statement *stmt, TypeClas
                                                                  Boolean),
                                           Boolean has_try)
 {
-    Object *function;
     Statement *current;
     CLabel *label;
     ENode *expr;
     VClassList *virtualBase;
     ClassList *base;
-    ObjMemberVar *member;
     CtorChain *initializer;
     ENode *args;
+    Object *function;
+    ObjMemberVar *member;
     ENode *constructorRef;
     ENode *destructorRef;
     Type *type;

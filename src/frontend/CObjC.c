@@ -386,8 +386,8 @@ void CObjCModern_GenerateSymbolTableAndModule(void)
     int count1;
     int size;
     ObjCSymbolTable *symbols;
-    OLinkList *references;
     Object *object;
+    OLinkList *references;
     OLinkList *reference;
     struct PrecTypeEntry *definition;
     ObjCDefinition *categoryDefinition;

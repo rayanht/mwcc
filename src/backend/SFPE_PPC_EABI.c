@@ -296,34 +296,29 @@ void SFPE_PPC_EABI_MakeIntvalOperand(ENode *node, SInt16 reg1, SInt16 reg2, Oper
 }
 #endif
 
+#if VERSION == VERSION_GC_1_0
 void SFPE_PPC_EABI_LoadFloatConstant(ENode *node, SInt16 regA, SInt16 regB, Operand *out)
 {
+    union {
+        float f;
+        SInt32 l;
+        CInt64 v;
+    } u;
     if (node->rtype->size == 4) {
-        union {
-            float f;
-            SInt32 l;
-        } u;
         SInt16 reg1;
-#if VERSION == VERSION_GC_1_0
         u.f = node->data.floatval.data.value;
-#endif
         if (regA != 0)
             reg1 = regA;
         else
             reg1 = gUsedVirtualRegistersGPR++;
-#if VERSION > VERSION_GC_1_0
-        u.f = node->data.floatval.data.value;
-#endif
         PCodeUtilities_EmitLoadImmediate(reg1, u.l);
         out->kind = OpndType_GPR;
         out->reg = reg1;
     } else {
         SInt16 reg1;
         SInt16 reg2;
-        CInt64 v;
-#if VERSION == VERSION_GC_1_0
-        v = node->data.intval;
-#endif
+        SInt32 value;
+        u.v = node->data.intval;
         if (regA != 0)
             reg1 = regA;
         else
@@ -332,24 +327,57 @@ void SFPE_PPC_EABI_LoadFloatConstant(ENode *node, SInt16 regA, SInt16 regB, Oper
             reg2 = regB;
         else
             reg2 = gUsedVirtualRegistersGPR++;
-#if VERSION > VERSION_GC_1_0
-        v = node->data.intval;
-#endif
-#if VERSION == VERSION_GC_1_0
         if (copts.littleendian) {
-            PCodeUtilities_EmitLoadImmediate(reg2, v.hi);
-            PCodeUtilities_EmitLoadImmediate(reg1, v.lo);
-        } else
-#endif
-        {
-            PCodeUtilities_EmitLoadImmediate(reg2, v.lo);
-            PCodeUtilities_EmitLoadImmediate(reg1, v.hi);
+            PCodeUtilities_EmitLoadImmediate(reg2, u.v.hi);
+            value = u.v.lo;
+        } else {
+            PCodeUtilities_EmitLoadImmediate(reg2, u.v.lo);
+            value = u.v.hi;
         }
+        PCodeUtilities_EmitLoadImmediate(reg1, value);
         out->kind = OpndType_GPRPair;
         out->reg = reg1;
         out->regHi = reg2;
     }
 }
+#else
+void SFPE_PPC_EABI_LoadFloatConstant(ENode *node, SInt16 regA, SInt16 regB, Operand *out)
+{
+    if (node->rtype->size == 4) {
+        union {
+            float f;
+            SInt32 l;
+        } u;
+        SInt16 reg1;
+        if (regA != 0)
+            reg1 = regA;
+        else
+            reg1 = gUsedVirtualRegistersGPR++;
+        u.f = node->data.floatval.data.value;
+        PCodeUtilities_EmitLoadImmediate(reg1, u.l);
+        out->kind = OpndType_GPR;
+        out->reg = reg1;
+    } else {
+        SInt16 reg1;
+        SInt16 reg2;
+        CInt64 v;
+        if (regA != 0)
+            reg1 = regA;
+        else
+            reg1 = gUsedVirtualRegistersGPR++;
+        if (regB != 0)
+            reg2 = regB;
+        else
+            reg2 = gUsedVirtualRegistersGPR++;
+        v = node->data.intval;
+        PCodeUtilities_EmitLoadImmediate(reg2, v.lo);
+        PCodeUtilities_EmitLoadImmediate(reg1, v.hi);
+        out->kind = OpndType_GPRPair;
+        out->reg = reg1;
+        out->regHi = reg2;
+    }
+}
+#endif
 
 void SFPE_PPC_EABI_ToggleHighBit(ENode *expr, SInt16 lowReg, SInt16 highReg, Operand *result)
 {

@@ -1301,22 +1301,22 @@ void lower_newexception(ENode *node, Boolean useExpression)
 
 ENode *rewrite_funccall_temporaries(ENode *node, Boolean reverse)
 {
+    ENode *temporaryExpr;
     ENodeList **args;
-    ENodeList **reverseArgs;
-    ENodeList *temporaryArg = NULL;
     ENodeList *argument;
-    Type *resultType;
     ENode *result;
+    Type *resultType;
+    ENodeList *temporaryArg = NULL;
+    ENodeList **reverseArgs;
+    SInt32 count;
+    ExceptionAction *cleanupCopy;
+    ExceptionAction *cleanup;
     TemporaryObject *temporary;
+    Statement *statement;
 #if VERSION > VERSION_GC_1_0
     SInt32 uniqueID;
 #endif
     SInt32 index;
-    SInt32 count;
-    ExceptionAction *cleanupCopy;
-    ExceptionAction *cleanup;
-    Statement *statement;
-    ENode *temporaryExpr;
 
     temporaryArg = NULL;
     if (node->data.funccall.args != NULL) {
