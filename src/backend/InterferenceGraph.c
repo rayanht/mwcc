@@ -88,7 +88,9 @@ void SpillCode_ConstructInterference(SInt32 registerClass, UInt32 registerCount)
     for (block = gPCodeBlocks; block != NULL; block = block->next) {
         CodeMotion_AllocateBits(bits, gPCodeBlockLiveness[block->index].liveout, registerCount);
         for (instruction = block->reverse_instructions; instruction != NULL; instruction = instruction->previous) {
-            for (i = instruction->operand_count, operand = instruction->operandData.operands; i--; operand++) {
+            operand = instruction->operandData.operands;
+            i = instruction->operand_count;
+            while (i--) {
                 if (operand->kind == registerClass && (operand->flags & 2)) {
                     SC_Clear(reg = operand->value.reg, bits);
                     for (j = 0; j < registerCount; j++) {
@@ -100,13 +102,17 @@ void SpillCode_ConstructInterference(SInt32 registerClass, UInt32 registerCount)
                         }
                     }
                 }
+                operand++;
             }
-            for (j = instruction->operand_count, operand = instruction->operandData.operands; j--; operand++) {
+            operand = instruction->operandData.operands;
+            i = instruction->operand_count;
+            while (i--) {
                 if (operand->kind == registerClass && (operand->flags & 1)) {
                     if (!SC_Test(reg = operand->value.reg, bits))
                         operand->flags |= 4;
                     SC_Add(reg, bits);
                 }
+                operand++;
             }
             if (registerClass == 0) {
                 if (instruction->flags & (fIsRead | fIsWrite)) {

@@ -3013,9 +3013,9 @@ ENode *CExpr_MakeFunctionCall(ENode *expr, ENodeList *args)
         }
     } else {
         candidateObject = NULL;
+        candidateExpr = NULL;
         flag10 = 0;
         flag12 = 0;
-        candidateExpr = NULL;
     }
 
     if (expr->type == EOBJREF) {

@@ -881,14 +881,10 @@ int fold_addi_or_mr_reaching_def(PCodeInstruction *pc, UInt32 mask)
 int fold_reaching_addi(PCodeInstruction *current)
 {
     PCodeInstruction *previous;
-    unsigned char kind;
-    PCodeInstruction **table;
     unsigned long combined;
 
-    kind = current->operandData.operands[2].kind;
-    table = CodeGen_ReachingDefTable_00581af8;
-    previous = table[current->useStart + 1];
-    if (kind == PCOp_IMMEDIATE && previous->operandData.operands[2].kind == PCOp_IMMEDIATE &&
+    previous = CodeGen_ReachingDefTable_00581af8[current->useStart + 1];
+    if (current->operandData.operands[2].kind == PCOp_IMMEDIATE && previous->operandData.operands[2].kind == PCOp_IMMEDIATE &&
         previous->opcode == PC_ADDI &&
         previous->operandData.operands[0].value.reg == previous->operandData.operands[1].value.reg &&
         (current->operandData.operands[0].kind != current->operandData.operands[1].kind ||
@@ -909,8 +905,8 @@ int fold_reaching_addi(PCodeInstruction *current)
                     combined += previous->operandData.operands[2].value.signed_value;
                     current->operandData.operands[2].value.signed_value = combined;
                 }
-                table = CodeGen_ReachingDefTable_00581af8;
-                table[current->useStart + 1] = table[previous->useStart + 1];
+                CodeGen_ReachingDefTable_00581af8[current->useStart + 1] =
+                    CodeGen_ReachingDefTable_00581af8[previous->useStart + 1];
                 PCode_UnlinkInstruction(previous);
                 return 1;
             }
