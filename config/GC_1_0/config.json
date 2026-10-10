@@ -21,6 +21,7 @@
     "src/backend/InlineAsmPPC.c",
     "src/backend/InlineAsmRegisters.c",
     "src/backend/InlineAsmRegistersPPC.c",
+    "src/backend/InstrSelection.c",
     "src/backend/InterferenceGraph.c",
     "src/backend/Intrinsics.c",
     "src/backend/LiveVariables.c",

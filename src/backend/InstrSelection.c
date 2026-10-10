@@ -831,11 +831,19 @@ void generate_modulo(ENode *node, short outputReg, short outputRegHi, Operand *r
 {
     ENode *left;
     ENode *right;
+#if VERSION == VERSION_GC_1_0
+    SInt32 quotient, unsignedResult, unsignedDividend, signedDividend;
+    SInt32 signBit, correctedQuotient, signedProduct, unsignedProduct, divisor;
+    SInt32 difference, halfDifference, sum, resultReg, multiplier, signedQuotient;
+    SInt32 unsignedMultiplier, signedResult, shift, adjustment, subtraction;
+    SInt32 divisionReg, productReg, adjustedQuotient;
+#else
     SInt32 quotient, unsignedResult, signedDividend, unsignedDividend;
     SInt32 signBit, correctedQuotient, signedProduct, unsignedProduct, divisor;
     SInt32 shift, difference, halfDifference, sum, adjustedQuotient;
     SInt32 signedResult, multiplier, signedQuotient, unsignedMultiplier;
     SInt32 adjustment, subtraction, productReg, divisionReg, resultReg;
+#endif
     Operand leftOperand, rightOperand;
     DivisionParameters unsignedMagic;
     ConstInfo2 signedMagic;
