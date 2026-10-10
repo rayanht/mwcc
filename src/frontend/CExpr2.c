@@ -2957,6 +2957,25 @@ ENode *convert_memberfunc_to_setconst_or_objref(ENode *expr)
 
 ENode *CExpr_MakeFunctionCall(ENode *expr, ENodeList *args)
 {
+#if VERSION == VERSION_GC_1_0
+    ENode *call;
+    UInt8 flag10;
+    UInt8 flag12;
+    Boolean variadic;
+    ENodeList *arg;
+    FuncArg *formal;
+    Type *type;
+    ENode *result;
+    BClassList *candidateObject;
+    TypeFunc *builtinType;
+    HashNameNode *name;
+    Object *object;
+    EMemberInfo *candidate;
+    TypeFunc *functionType;
+    ENode *candidateExpr;
+    ENode *value;
+    ENodeList *defaultArg;
+#else
     ENode *call;
     UInt8 flag10;
     UInt8 flag12;
@@ -2972,11 +2991,12 @@ ENode *CExpr_MakeFunctionCall(ENode *expr, ENodeList *args)
     ENode *candidateExpr;
     ENode *value;
     TypeFunc *builtinType;
+    HashNameNode *name;
     ENodeList *defaultArg;
+#endif
 
-    if (expr->type == EOBJLIST && expr->data.funccall.functype != NULL) {
-        expr->data.objlist.list =
-            CScope_ArgumentDependentNameLookup(expr->data.objlist.list, expr->data.objlist.name, args, 0);
+    if (expr->type == EOBJLIST && (name = expr->data.objlist.name) != NULL) {
+        expr->data.objlist.list = CScope_ArgumentDependentNameLookup(expr->data.objlist.list, name, args, 0);
         if (expr->data.funccall.funcref == NULL) {
             CError_ReportError(ERR_UNDEFINED_IDENTIFIER, CError_GetQualifiedHashName(NULL, expr->data.objlist.name));
 #if VERSION == VERSION_GC_1_0
