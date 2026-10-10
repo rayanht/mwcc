@@ -3074,6 +3074,7 @@ void parse_pragma_option(int directive)
 static HashNameNode *CPrep_MakeOnceName(unsigned char *filename, Boolean isDefault)
 {
     char key[256];
+    char *name = (char *)filename;
     char *p;
     short length;
 
@@ -3082,9 +3083,9 @@ static HashNameNode *CPrep_MakeOnceName(unsigned char *filename, Boolean isDefau
         length = 250;
     p = key;
     *p++ = (copts.syspath_once && isDefault) ? '$' : (char)0xa4;
-    filename++;
+    name++;
     while (length-- > 0)
-        *p++ = tolower(*filename++);
+        *p++ = tolower(*name++);
     *p = 0;
     return GetHashNameNode(key);
 }
@@ -3784,12 +3785,12 @@ void fn_0043a0a0(char allowInclude)
 {
     int notLocal;
     char searchLocal;
-    unsigned char filename[256];
+    char filename[256];
     short terminator;
     short ch;
     short length;
     short i;
-    unsigned char *name;
+    char *name;
 
     if (CPrep_ScanMacroExpandedChar() == 0) {
         CPrep_ReportError(ERR_UNEXPECTED_END_LINE);
@@ -3822,9 +3823,9 @@ void fn_0043a0a0(char allowInclude)
     name = filename;
     CPrep_SkipToEndOfDirective();
     notLocal = !searchLocal;
-    if (lookup_available_macro(CPrep_MakeOnceName(filename, notLocal)) == 0) {
+    if (lookup_available_macro(CPrep_MakeOnceName((unsigned char *)filename, notLocal)) == 0) {
         if (allowInclude != 0 || copts.always_import != 0)
-            CPrep_DefineOnceMacro(filename, notLocal);
+            CPrep_DefineOnceMacro((unsigned char *)filename, notLocal);
         if (copts.flat_include != 0) {
             for (i = length; i > 0; i--) {
                 switch (filename[i]) {
@@ -3840,7 +3841,7 @@ void fn_0043a0a0(char allowInclude)
                 break;
             }
         }
-        fn_004401b0(name, searchLocal, allowInclude);
+        fn_004401b0((unsigned char *)name, searchLocal, allowInclude);
     }
 }
 #else

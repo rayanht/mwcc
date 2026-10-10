@@ -1790,6 +1790,16 @@ Object *create_protocol_method_list(CRec *cls, char *nm, SInt16 val, UInt8 kind)
     return result;
 }
 
+#if VERSION == VERSION_GC_1_0
+static inline OLinkList *CObjC_NewReference(OLinkList **list)
+{
+    OLinkList *ref = (OLinkList *)lalloc(sizeof(OLinkList));
+    ref->next = *list;
+    *list = ref;
+    return ref;
+}
+#endif
+
 Object *CObjC_GetProtocolInfo(CRec *protocol)
 {
     TypeClass *protocolClass;
@@ -1811,9 +1821,13 @@ Object *CObjC_GetProtocolInfo(CRec *protocol)
             ref->addend = 0;
 
             data[1] = CTool_EndianConvertWord32(0);
+#if VERSION == VERSION_GC_1_0
+            ref = CObjC_NewReference(&refs);
+#else
             ref = (OLinkList *)lalloc(sizeof(OLinkList));
             ref->next = refs;
             refs = ref;
+#endif
             ref->obj = fn_00509c40(protocol->name->name, 0x13);
             ref->offset = 4;
             ref->addend = 0;
@@ -1821,9 +1835,13 @@ Object *CObjC_GetProtocolInfo(CRec *protocol)
             data[2] = CTool_EndianConvertWord32(0);
             if (protocol->bases != NULL) {
                 name = CObjCModern_ConcatStrings(protocol->name->name, "_PROTOCOLS", NULL);
+#if VERSION == VERSION_GC_1_0
+                ref = CObjC_NewReference(&refs);
+#else
                 ref = (OLinkList *)lalloc(sizeof(OLinkList));
                 ref->next = refs;
                 refs = ref;
+#endif
                 ref->obj = create_protocol_list(protocol->bases, name);
                 ref->offset = 8;
                 ref->addend = 0;
@@ -1831,9 +1849,13 @@ Object *CObjC_GetProtocolInfo(CRec *protocol)
 
             data[3] = CTool_EndianConvertWord32(0);
             if ((list = create_protocol_method_list(protocol, "L_OBJC_PROTOCOL_INSTANCE_METHODS_", 8, 0)) != NULL) {
+#if VERSION == VERSION_GC_1_0
+                ref = CObjC_NewReference(&refs);
+#else
                 ref = (OLinkList *)lalloc(sizeof(OLinkList));
                 ref->next = refs;
                 refs = ref;
+#endif
                 ref->obj = list;
                 ref->offset = 12;
                 ref->addend = 0;
@@ -1841,9 +1863,13 @@ Object *CObjC_GetProtocolInfo(CRec *protocol)
 
             data[4] = CTool_EndianConvertWord32(0);
             if ((list = create_protocol_method_list(protocol, "L_OBJC_PROTOCOL_CLASS_METHODS_", 7, 1)) != NULL) {
+#if VERSION == VERSION_GC_1_0
+                ref = CObjC_NewReference(&refs);
+#else
                 ref = (OLinkList *)lalloc(sizeof(OLinkList));
                 ref->next = refs;
                 refs = ref;
+#endif
                 ref->obj = list;
                 ref->offset = 16;
                 ref->addend = 0;
