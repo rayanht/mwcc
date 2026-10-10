@@ -78,14 +78,6 @@ static inline Object *findTemporaryObject(SInt32 uniqueID, ENode *temporaryExpr)
 }
 #endif
 
-static Statement *InsertPrevStatement(int type)
-{
-    Statement *stmt = CFunc_InsertAfterStatement(type, data_00581c36);
-    stmt->sourceoffset = stmt->next->sourceoffset;
-    stmt->dobjstack = currentDobjstack;
-    return stmt;
-}
-
 static inline SInt32 object_statement(Object *o)
 {
     Statement *n = CFunc_AppendStatement(0xc);
@@ -98,34 +90,6 @@ static inline void finish_label(CLabel *p)
     Statement *n = CFunc_AppendStatement(2);
     n->label = p;
     p->stmt = (Statement *)n; /* exception statement view */
-}
-
-static Boolean CException_IsClassType(Type *ty)
-{
-    if (ty != NULL) {
-        if (ty->type == TYPECLASS) {
-            if (CClass_Destructor((TypeClass *)ty) == NULL)
-                return 0;
-        } else if (ty->type == TYPEPOINTER) {
-            if ((TYPE_POINTER(ty)->qual & Q_REFERENCE) == 0 || TPTR_TARGET(ty)->type != TYPECLASS)
-                return 0;
-        } else {
-            return 0;
-        }
-    }
-    return 1;
-}
-
-static Object *CException_StdType(void *name)
-{
-    NameResult lookup;
-    NameSpaceObjectList *obj;
-
-    obj = CScope_FindObjectList(&lookup, GetHashNameNode(name));
-    if (obj != NULL && obj->object->otype == 5 && ((Object *)obj->object)->datatype == DLOCAL)
-        return (Object *)obj->object;
-    CError_FATAL(502);
-    return NULL;
 }
 
 void CExcept_Setup(void)
@@ -436,6 +400,18 @@ void CExcept_Magic(void)
 {
     cexcept_magic = 1;
     return;
+}
+
+static Object *CException_StdType(void *name)
+{
+    NameResult lookup;
+    NameSpaceObjectList *obj;
+
+    obj = CScope_FindObjectList(&lookup, GetHashNameNode(name));
+    if (obj != NULL && obj->object->otype == 5 && ((Object *)obj->object)->datatype == DLOCAL)
+        return (Object *)obj->object;
+    CError_FATAL(502);
+    return NULL;
 }
 
 void CExcept_ArrayInit(void)
@@ -915,6 +891,22 @@ ENode *CExcept_ScanThrowExpression(void)
     return e;
 }
 
+static Boolean CException_IsClassType(Type *ty)
+{
+    if (ty != NULL) {
+        if (ty->type == TYPECLASS) {
+            if (CClass_Destructor((TypeClass *)ty) == NULL)
+                return 0;
+        } else if (ty->type == TYPEPOINTER) {
+            if ((TYPE_POINTER(ty)->qual & Q_REFERENCE) == 0 || TPTR_TARGET(ty)->type != TYPECLASS)
+                return 0;
+        } else {
+            return 0;
+        }
+    }
+    return 1;
+}
+
 void fn_004e1fb0(Statement *firstScope, Statement *insertionScope, Statement *lastScope,
                  ExceptionHandlerRecord *entries)
 {
@@ -1175,6 +1167,14 @@ void CExcept_ScanTryBlock(void *context, char rethrow)
         fn_004e1fb0(tryBody, handlerStart, end, handler);
     }
     finish_label(handlerLabel);
+}
+
+static Statement *InsertPrevStatement(int type)
+{
+    Statement *stmt = CFunc_InsertAfterStatement(type, data_00581c36);
+    stmt->sourceoffset = stmt->next->sourceoffset;
+    stmt->dobjstack = currentDobjstack;
+    return stmt;
 }
 
 Object *CException_GetTempObject(ENode *obj)

@@ -3765,8 +3765,15 @@ void parse_pragma(void)
         return;
     }
 done:
+#if VERSION == VERSION_GC_1_0
+    if (CPrep_ScanMacroExpandedChar()) {
+        CPrep_ReportError(ERR_END_LINE_EXPECTED);
+        CPrepTokenizer_SkipToEndOfLine();
+    }
+#else
     CPrep_SkipToEndOfDirective();
-    f87_enabled = copts.dollar_identifiers != 0;
+#endif
+    CPrep_SetDollarIdentifiers();
     macrocheck = 1;
 }
 

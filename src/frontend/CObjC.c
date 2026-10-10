@@ -1801,13 +1801,10 @@ Object *CObjC_GetProtocolInfo(CRec *protocol)
     SInt32 data[5];
 
     if (protocol->info == NULL) {
-        HashNameNode *protocolName = GetHashNameNode("Protocol");
-
-        if ((protocolClass = CObjC_FindObjCClass(protocolName, 1)) != NULL) {
+        if ((protocolClass = CObjC_FindObjCClass(GetHashNameNode("Protocol"), 1)) != NULL) {
             data[0] = CTool_EndianConvertWord32(0);
-            refs = NULL;
             ref = (OLinkList *)lalloc(sizeof(OLinkList));
-            ref->next = refs;
+            ref->next = NULL;
             refs = ref;
             ref->obj = protocolClass->objcinfo->classobject;
             ref->offset = 0;

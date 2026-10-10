@@ -116,6 +116,7 @@
     "src/frontend/CBrowse.c",
     "src/frontend/CClass.c",
     "src/frontend/CError.c",
+    "src/frontend/CException.c",
     "src/frontend/CInit.c",
     "src/frontend/CInt64.c",
     "src/frontend/CMangler.c",
