@@ -3149,7 +3149,23 @@ static void CPrep_PragmaOnce(void)
     unsigned char filename[256];
 
     if (CPrep_ScanMacroExpandedChar() != 0) {
+#if VERSION == VERSION_GC_1_0
+        if (CPrepTokenizer_ScanToken() == -3) {
+            if (memcmp(PN, "on", 3) == 0) {
+                data_0057f9d3 = 1;
+                return;
+            }
+            if (memcmp(PN, "off", 4) == 0) {
+                data_0057f9d3 = 0;
+                return;
+            }
+        }
+        if (copts.warn_illpragma) {
+            fn_0043f3b0(ERR_ILLEGAL_PRAGMA);
+        }
+#else
         CPrep_ParseListingOption();
+#endif
         return;
     }
     COS_FileGetFSSpecInfo(&currentPFile->textfile, NULL, NULL, filename);
@@ -4075,13 +4091,10 @@ struct CNameRef evaluate_unary_expression_value(void)
         result.value.isUnsigned = 0;
     } else {
         switch (CPrepTokenizer_ScanToken()) {
-            case '-': {
-                Type *type;
+            case '-':
                 result.ref = evaluate_unary_expression_value();
-                type = CPrep_IntegerType(&result.value);
-                result.value.value = CMach_CalcIntMonadic(type, '-', result.value.value);
+                result.value.value = CMach_CalcIntMonadic(CPrep_IntegerType(&result.value), '-', result.value.value);
                 return result.ref;
-            }
             case '+':
                 result.ref = evaluate_unary_expression_value();
                 return result.ref;
@@ -4093,13 +4106,10 @@ struct CNameRef evaluate_unary_expression_value(void)
                 result.value.value.hi = zeroValue < 0 ? -1 : 0;
                 return result.ref;
             }
-            case '~': {
-                Type *type;
+            case '~':
                 result.ref = evaluate_unary_expression_value();
-                type = CPrep_IntegerType(&result.value);
-                result.value.value = CMach_CalcIntMonadic(type, '~', result.value.value);
+                result.value.value = CMach_CalcIntMonadic(CPrep_IntegerType(&result.value), '~', result.value.value);
                 return result.ref;
-            }
             case '(':
                 result.ref = evaluate_conditional_expression_value();
                 if (data_0057fd6c != ')') {
@@ -4184,7 +4194,6 @@ struct CNameRef evaluate_binary_expression_value(struct CNameRef *initialOperand
     SInt16 operation;
     SInt16 rightPrecedence;
     Boolean savedErrorState;
-    Type *type;
 
     if (initialOperand == NULL) {
         leftOperand.nameRef = evaluate_unary_expression_value();
@@ -4209,9 +4218,9 @@ struct CNameRef evaluate_binary_expression_value(struct CNameRef *initialOperand
                 if (leftOperand.prepValue.isUnsigned) {
                     rightOperand.prepValue.isUnsigned = 1;
                 }
-                type = CPrep_IntegerType(&rightOperand.prepValue);
-                leftOperand.prepValue.value =
-                    CMach_CalcIntDiadic(type, leftOperand.prepValue.value, operation, rightOperand.prepValue.value);
+                leftOperand.prepValue.value = CMach_CalcIntDiadic(CPrep_IntegerType(&rightOperand.prepValue),
+                                                                  leftOperand.prepValue.value, operation,
+                                                                  rightOperand.prepValue.value);
                 return leftOperand.nameRef;
             }
 
@@ -4225,9 +4234,9 @@ struct CNameRef evaluate_binary_expression_value(struct CNameRef *initialOperand
                 if (leftOperand.prepValue.isUnsigned) {
                     rightOperand.prepValue.isUnsigned = 1;
                 }
-                type = CPrep_IntegerType(&rightOperand.prepValue);
-                leftOperand.prepValue.value =
-                    CMach_CalcIntDiadic(type, leftOperand.prepValue.value, operation, rightOperand.prepValue.value);
+                leftOperand.prepValue.value = CMach_CalcIntDiadic(CPrep_IntegerType(&rightOperand.prepValue),
+                                                                  leftOperand.prepValue.value, operation,
+                                                                  rightOperand.prepValue.value);
                 if (GetPrec(rightPrecedence) > precedenceLimit) {
                     break;
                 }
