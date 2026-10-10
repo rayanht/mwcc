@@ -3815,7 +3815,6 @@ done:
 #if VERSION == VERSION_GC_1_0
 void fn_0043a0a0(char allowInclude)
 {
-    int notLocal;
     char searchLocal;
     char filename[256];
     short terminator;
@@ -3854,10 +3853,9 @@ void fn_0043a0a0(char allowInclude)
     filename[0] = length;
     name = filename;
     CPrep_SkipToEndOfDirective();
-    notLocal = !searchLocal;
-    if (lookup_available_macro(CPrep_MakeOnceName((unsigned char *)filename, notLocal)) == 0) {
+    if (lookup_available_macro(CPrep_MakeOnceName((unsigned char *)filename, !searchLocal)) == 0) {
         if (allowInclude != 0 || copts.always_import != 0)
-            CPrep_DefineOnceMacro((unsigned char *)filename, notLocal);
+            CPrep_DefineOnceMacro((unsigned char *)filename, !searchLocal);
         if (copts.flat_include != 0) {
             for (i = length; i > 0; i--) {
                 switch (filename[i]) {
