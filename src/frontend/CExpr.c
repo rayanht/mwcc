@@ -4909,7 +4909,7 @@ ENode *CExpr_New_ECOND_Node(ENode *condition, ENode *trueExpr, ENode *falseExpr)
         arguments->next->next = NULL;
         if (CExpr_CheckOperatorConversion(ENULLCHECK, trueExpr, falseExpr, arguments, &conversion)) {
             if (conversion.expression != NULL)
-                CError_FATAL(5726);
+                CError_FATAL(VERSION > VERSION_GC_1_0 ? 5726 : 5727);
             trueExpr = conversion.left;
             falseExpr = conversion.right;
         }
