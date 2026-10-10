@@ -536,7 +536,7 @@ void SFPE_PPC_EABI_GenerateFloatPostIncDec(ENode *expr, SInt16 outputReg, SInt16
             Registers_GetInfo(inner->data.objref);
             result->kind = OpndType_GPR;
             result->reg = (outputReg != 0 && outputReg != sourceReg) ? outputReg : gUsedVirtualRegistersGPR++;
-            CError_ASSERT(488, sourceReg != result->reg);
+            CError_ASSERT(VERSION > VERSION_GC_1_0 ? 488 : 583, sourceReg != result->reg);
             PCodeUtilities_EmitInstruction(PC_MR, result->reg, sourceReg);
             if (sourceReg != 3)
                 PCodeUtilities_EmitInstruction(PC_MR, 3, sourceReg);
@@ -553,7 +553,7 @@ void SFPE_PPC_EABI_GenerateFloatPostIncDec(ENode *expr, SInt16 outputReg, SInt16
             PCodeUtilities_EmitInstruction(PC_MR, sourceReg, 3);
         } else {
             if (inner->type == EBITFIELD)
-                CError_FATAL(515);
+                CError_FATAL(VERSION > VERSION_GC_1_0 ? 515 : 612);
             data_00560648[inner->type](inner, 0, 0, &operand);
             Operands_MakeIndirect(&operand, inner);
             value = operand;
@@ -587,8 +587,8 @@ void SFPE_PPC_EABI_GenerateFloatPostIncDec(ENode *expr, SInt16 outputReg, SInt16
             result->reg = (outputReg != 0 && (outputReg != sourceReg && outputReg != sourceReg2))
                               ? outputReg
                               : gUsedVirtualRegistersGPR++;
-            CError_ASSERT(556, sourceReg != result->reg && sourceReg2 != result->reg);
-            CError_ASSERT(557, sourceReg != result->regHi && sourceReg2 != result->regHi);
+            CError_ASSERT(VERSION > VERSION_GC_1_0 ? 556 : 655, sourceReg != result->reg && sourceReg2 != result->reg);
+            CError_ASSERT(VERSION > VERSION_GC_1_0 ? 557 : 656, sourceReg != result->regHi && sourceReg2 != result->regHi);
             PCodeUtilities_EmitInstruction(PC_MR, result->regHi, sourceReg2);
             PCodeUtilities_EmitInstruction(PC_MR, result->reg, sourceReg);
             if (sourceReg2 != returnRegHi)
@@ -610,7 +610,7 @@ void SFPE_PPC_EABI_GenerateFloatPostIncDec(ENode *expr, SInt16 outputReg, SInt16
             PCodeUtilities_EmitInstruction(PC_MR, sourceReg, return_gpr_first);
         } else {
             if (inner->type == EBITFIELD)
-                CError_FATAL(591);
+                CError_FATAL(VERSION > VERSION_GC_1_0 ? 591 : 700);
             data_00560648[inner->type](inner, 0, 0, &operand);
             Operands_MakeIndirect(&operand, inner);
             value = operand;
@@ -908,6 +908,16 @@ int SFPE_PPC_EABI_GenerateComparison(ENode *node, Operand *result, int branch)
     return isWide;
 }
 
+static inline void SFPE_PPC_EABI_ResultToGPR3(Operand *result, Type *type)
+{
+    if (result->kind != OpndType_GPR) {
+        Operands_ForceGPR(result, type, VERSION > VERSION_GC_1_0 ? 0 : RESULT_GPR);
+    }
+    if (result->reg != RESULT_GPR) {
+        PCodeUtilities_EmitInstruction(PC_MR, 3, result->reg);
+    }
+}
+
 void SFPE_PPC_EABI_GenerateConversion(ENode *expression, short requested_register, short requested_pair_register,
                                       Operand *result)
 {
@@ -919,7 +929,7 @@ void SFPE_PPC_EABI_GenerateConversion(ENode *expression, short requested_registe
     type = node->rtype;
     target_type = expression->rtype;
     if (expression->rtype->type == TYPEVOID) {
-        PPCError_ReportError(0x82, "SFPE_PPC_EABI.c", 0x39f);
+        PPCError_ReportError(0x82, "SFPE_PPC_EABI.c", VERSION > VERSION_GC_1_0 ? 0x39f : 1122);
         data_00560648[node->type](node, 0, 0, result);
         result->kind = OpndType_Immediate;
         result->immediate = 0;
@@ -959,12 +969,7 @@ void SFPE_PPC_EABI_GenerateConversion(ENode *expression, short requested_registe
                 if (type->size < 4) {
                     Operands_ExtendGPR(result, type, 0);
                 }
-                if (result->kind != OpndType_GPR) {
-                    Operands_ForceGPR(result, type, 0);
-                }
-                if (result->reg != RESULT_GPR) {
-                    PCodeUtilities_EmitInstruction(PC_MR, 3, result->reg);
-                }
+                SFPE_PPC_EABI_ResultToGPR3(result, type);
                 PCodeUtilities_EmitObjectInstructionWithPayload(
                     is_unsigned(type) ? (target_type->size == 4 ? data_00587e34 : data_00587e5c)
                                       : (target_type->size == 4 ? data_00587ec0 : data_00587e90),
@@ -975,10 +980,10 @@ void SFPE_PPC_EABI_GenerateConversion(ENode *expression, short requested_registe
                     lift_result(result, 3);
                 }
             } else {
-                CError_FATAL(1021);
+                CError_FATAL(VERSION > VERSION_GC_1_0 ? 1021 : 1208);
             }
         } else if (kind == TYPEPOINTER) {
-            CError_FATAL(1030);
+            CError_FATAL(VERSION > VERSION_GC_1_0 ? 1030 : 1217);
         } else if ((copts.operandsDebug != 0) && (target_type->type == TYPEFLOAT)) {
             if ((target_type->size == 4) && (type->size != 4)) {
                 data_00560648[node->type](node, 0, 0, result);
@@ -1001,17 +1006,12 @@ void SFPE_PPC_EABI_GenerateConversion(ENode *expression, short requested_registe
                 lift_result(result, 0);
             } else if ((type->size == 4) && (target_type->size != 4)) {
                 data_00560648[node->type](node, 0, 0, result);
-                if (result->kind != OpndType_GPR) {
-                    Operands_ForceGPR(result, type, 0);
-                }
-                if (result->reg != RESULT_GPR) {
-                    PCodeUtilities_EmitInstruction(PC_MR, 3, result->reg);
-                }
+                SFPE_PPC_EABI_ResultToGPR3(result, type);
                 PCodeUtilities_EmitObjectInstructionWithPayload(data_00587e6c, 0, 8, 0, 0);
                 lift_result(result, 3);
             } else {
                 if (target_type->size != type->size) {
-                    CError_FATAL(1088);
+                    CError_FATAL(VERSION > VERSION_GC_1_0 ? 1088 : 1267);
                 }
                 data_00560648[node->type](node, requested_register, requested_pair_register, result);
                 if ((type->size == 4) && (result->kind != OpndType_GPR)) {
@@ -1055,12 +1055,7 @@ void SFPE_PPC_EABI_GenerateConversion(ENode *expression, short requested_registe
                        ((target_type->size == 8 &&
                          (((copts.operandsDebug != 0) && (kind == TYPEFLOAT)) && (type->size == 4))))) {
                 data_00560648[node->type](node, 0, 0, result);
-                if (result->kind != OpndType_GPR) {
-                    Operands_ForceGPR(result, type, 0);
-                }
-                if (result->reg != RESULT_GPR) {
-                    PCodeUtilities_EmitInstruction(PC_MR, 3, result->reg);
-                }
+                SFPE_PPC_EABI_ResultToGPR3(result, type);
                 if (is_unsigned(expression->rtype)) {
                     PCodeUtilities_EmitObjectInstructionWithPayload(data_00588020, 0, 8, 0, 0);
                 } else {
@@ -1094,12 +1089,7 @@ void SFPE_PPC_EABI_GenerateConversion(ENode *expression, short requested_registe
             } else if ((((target_kind == TYPEINT) || (target_kind == TYPEENUM)) && (copts.operandsDebug != 0)) &&
                        ((kind == TYPEFLOAT) && (type->size == 4))) {
                 data_00560648[node->type](node, 0, 0, result);
-                if (result->kind != OpndType_GPR) {
-                    Operands_ForceGPR(result, type, 0);
-                }
-                if (result->reg != RESULT_GPR) {
-                    PCodeUtilities_EmitInstruction(PC_MR, 3, result->reg);
-                }
+                SFPE_PPC_EABI_ResultToGPR3(result, type);
                 if (is_unsigned(expression->rtype)) {
                     PCodeUtilities_EmitObjectInstructionWithPayload(data_00587e80, 0, 8, 0, 0);
                 } else {
@@ -1107,7 +1097,7 @@ void SFPE_PPC_EABI_GenerateConversion(ENode *expression, short requested_registe
                 }
                 lift_result(result, 0);
             } else {
-                CError_FATAL(1209);
+                CError_FATAL(VERSION > VERSION_GC_1_0 ? 1209 : 1369);
             }
         }
     }
