@@ -555,8 +555,8 @@ void CBrowse_WriteObjectBrowseInfo(Object *object, CPrepFileInfo *metadata, CPre
     Boolean isFunction;
     SInt32 flags = 0;
     HashNameNode *linkname;
-#if VERSION > VERSION_GC_1_0
     SInt32 linkId;
+#if VERSION > VERSION_GC_1_0
     SInt32 nameId;
     char *name;
 #endif
@@ -570,11 +570,11 @@ void CBrowse_WriteObjectBrowseInfo(Object *object, CPrepFileInfo *metadata, CPre
         linkname = GetLinkName(object);
         if (object->name != linkname)
             alternateName = linkname->name;
+        linkId = linkname->id;
 #if VERSION == VERSION_GC_1_0
         EmitStandardData(isFunction ? BrowseType_Constant : BrowseType_Global, metadata->fileID, endMetadata->fileID,
-                         start, end, object->name->name, object->name->id, alternateName, linkname->id);
+                         start, end, object->name->name, object->name->id, alternateName, linkId);
 #else
-        linkId = linkname->id;
         nameId = object->name->id;
         name = object->name->name;
         EmitStandardData(isFunction ? BrowseType_Constant : BrowseType_Global, metadata->fileID, endMetadata->fileID,
