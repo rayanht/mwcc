@@ -68,10 +68,10 @@ static inline void SC_Add(SInt16 n, UInt32 *bits)
 
 void SpillCode_ConstructInterference(SInt32 registerClass, UInt32 registerCount)
 {
-    UInt32 *bits;
     PCodeBlock *block;
     PCodeInstruction *instruction;
     PCodeOperand *operand;
+    UInt32 *bits;
     SInt16 reg;
     UInt32 i;
     UInt32 j;
@@ -225,8 +225,8 @@ void SpillCode_CoalesceCopies(SInt32 regclass, UInt32 numRegs)
 
 void SpillCode_MaterializeGraph(UInt32 count)
 {
-    SInt16 *neighbors;
     InterferenceNode *node;
+    SInt16 *neighbors;
     UInt32 register_index;
     UInt32 neighbor_index;
     UInt32 neighbor_count;
@@ -261,10 +261,14 @@ void SpillCode_MaterializeGraph(UInt32 count)
             *destination++ = *source++;
         if (register_index != gCoalescedRegisters[register_index]) {
             node->flags |= 4;
+#if VERSION == VERSION_GC_1_0
+            root = Coalesce_Find(register_index);
+#else
             representative = register_index;
             while (representative != gCoalescedRegisters[representative])
                 representative = gCoalescedRegisters[representative];
             root = representative;
+#endif
             gInterferenceGraph[root]->flags |= 8;
             node->physical_register = root;
         }
