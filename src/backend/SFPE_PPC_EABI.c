@@ -282,7 +282,8 @@ void SFPE_PPC_EABI_LoadFloatConstant(ENode *node, SInt16 regA, SInt16 regB, Oper
     union {
         float f;
         SInt32 l;
-        CInt64 v;
+        double d;
+        CInt64 i;
     } u;
     if (node->rtype->size == 4) {
         SInt16 reg1;
@@ -297,7 +298,7 @@ void SFPE_PPC_EABI_LoadFloatConstant(ENode *node, SInt16 regA, SInt16 regB, Oper
     } else {
         SInt16 reg1;
         SInt16 reg2;
-        u.v = node->data.intval;
+        u.d = node->data.floatval.data.value;
         if (regA != 0)
             reg1 = regA;
         else
@@ -307,11 +308,11 @@ void SFPE_PPC_EABI_LoadFloatConstant(ENode *node, SInt16 regA, SInt16 regB, Oper
         else
             reg2 = gUsedVirtualRegistersGPR++;
         if (copts.littleendian) {
-            PCodeUtilities_EmitLoadImmediate(reg2, u.v.hi);
-            PCodeUtilities_EmitLoadImmediate(reg1, u.v.lo);
+            PCodeUtilities_EmitLoadImmediate(reg2, u.i.hi);
+            PCodeUtilities_EmitLoadImmediate(reg1, u.i.lo);
         } else {
-            PCodeUtilities_EmitLoadImmediate(reg2, u.v.lo);
-            PCodeUtilities_EmitLoadImmediate(reg1, u.v.hi);
+            PCodeUtilities_EmitLoadImmediate(reg2, u.i.lo);
+            PCodeUtilities_EmitLoadImmediate(reg1, u.i.hi);
         }
         out->kind = OpndType_GPRPair;
         out->reg = reg1;
