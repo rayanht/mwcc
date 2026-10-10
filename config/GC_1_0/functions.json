@@ -9525,7 +9525,7 @@
     "source": "src/frontend/CExpr2.c"
   },
   {
-    "name": "fn_0044a060",
+    "name": "CExpr_ConversionTypesEqual",
     "address": "0x0044a060",
     "size": 54,
     "source": "src/frontend/CExpr2.c"
@@ -9543,7 +9543,7 @@
     "source": "src/frontend/CExpr2.c"
   },
   {
-    "name": "fn_0044a160",
+    "name": "CExpr_IsConversionHidden",
     "address": "0x0044a160",
     "size": 170,
     "source": "src/frontend/CExpr2.c"
@@ -9603,7 +9603,7 @@
     "source": "src/frontend/CExpr2.c"
   },
   {
-    "name": "fn_0044b300",
+    "name": "CExpr_CopyObjectList",
     "address": "0x0044b300",
     "size": 59,
     "source": "src/frontend/CExpr2.c"
@@ -9615,7 +9615,7 @@
     "source": "src/frontend/CExpr2.c"
   },
   {
-    "name": "fn_0044b430",
+    "name": "CExpr_DefaultArgExpr",
     "address": "0x0044b430",
     "size": 71,
     "source": "src/frontend/CExpr2.c"
@@ -9675,13 +9675,13 @@
     "source": "src/frontend/CExpr2.c"
   },
   {
-    "name": "fn_0044c0b0",
+    "name": "convert_operand",
     "address": "0x0044c0b0",
     "size": 69,
     "source": "src/frontend/CExpr2.c"
   },
   {
-    "name": "fn_0044c100",
+    "name": "convert_class_binary_operands",
     "address": "0x0044c100",
     "size": 377,
     "source": "src/frontend/CExpr2.c"
@@ -9699,19 +9699,19 @@
     "source": "src/frontend/CExpr2.c"
   },
   {
-    "name": "fn_0044c5b0",
+    "name": "CExpr_MatchLeftClassConversions",
     "address": "0x0044c5b0",
     "size": 189,
     "source": "src/frontend/CExpr2.c"
   },
   {
-    "name": "fn_0044c670",
+    "name": "CExpr_MatchRightClassConversions",
     "address": "0x0044c670",
     "size": 189,
     "source": "src/frontend/CExpr2.c"
   },
   {
-    "name": "fn_0044c730",
+    "name": "CExpr_MatchClassConversions",
     "address": "0x0044c730",
     "size": 224,
     "source": "src/frontend/CExpr2.c"
@@ -9735,13 +9735,13 @@
     "source": "src/frontend/CExpr2.c"
   },
   {
-    "name": "fn_0044d030",
+    "name": "CExpr_NeedsDestructorCall",
     "address": "0x0044d030",
     "size": 81,
     "source": "src/frontend/CExpr2.c"
   },
   {
-    "name": "fn_0044d090",
+    "name": "scannew_type",
     "address": "0x0044d090",
     "size": 82,
     "source": "src/frontend/CExpr2.c"
@@ -9759,7 +9759,7 @@
     "source": "src/frontend/CExpr2.c"
   },
   {
-    "name": "fn_0044d370",
+    "name": "scannew_type_id",
     "address": "0x0044d370",
     "size": 58,
     "source": "src/frontend/CExpr2.c"
