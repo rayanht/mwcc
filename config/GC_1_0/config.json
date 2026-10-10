@@ -118,6 +118,7 @@
     "src/frontend/CError.c",
     "src/frontend/CException.c",
     "src/frontend/CInit.c",
+    "src/frontend/CInline.c",
     "src/frontend/CInt64.c",
     "src/frontend/CMangler.c",
     "src/frontend/CObjCModern.c",

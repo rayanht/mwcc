@@ -1267,9 +1267,7 @@ ENode *setup_inline_locals_and_arguments(Object *function, CInlineInfo *inlineIn
     }
 
     initializers = NULL;
-    i = 0;
-    argument = arguments;
-    while (argument != NULL) {
+    for (i = 0, argument = arguments; argument != NULL; argument = argument->next, i++) {
         if (i >= inlineInfo->nargs) {
             if (initializers == NULL)
                 initializers = argument->node;
@@ -1302,8 +1300,6 @@ ENode *setup_inline_locals_and_arguments(Object *function, CInlineInfo *inlineIn
             else
                 initializers = makecommaexpression(expression, initializers);
         }
-        argument = argument->next;
-        i++;
     }
     return initializers;
 }
