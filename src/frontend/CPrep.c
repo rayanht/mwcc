@@ -4574,21 +4574,13 @@ void skip_inactive_if_blocks(void)
 void CPrep_ParseDirective(void)
 {
     SInt16 ch;
-    Boolean save;
 
     data_0057fd0c = (char *)currentTextPosition - data_00587fb0;
     ch = CPrepTokenizer_ScanChar();
     currentTextPosition = (UInt8 *)lookahead_position;
     switch (ch) {
         case 0:
-            ch = 0x66;
-            save = data_005884fd;
-            data_005884fd = 0;
-            if (macro_expansion_depth > 0 || currentTextPosition < textend)
-                ch = 0x69;
-            data_0057f9dc = 1;
-            CError_ReportError(ch);
-            data_005884fd = save;
+            CPrep_ReportError(0x66);
         case 13:
             return;
     }
