@@ -875,7 +875,7 @@ src/frontend/CTemplateFunc.c:
 
 src/frontend/CObjC.c:
 	.text       start:0x004E4BF0 end:0x004E9100
-	.data       start:0x00537E60 end:0x00538180
+	.data       start:0x00537E60 end:0x0053817C
 	.bss        start:0x00553168 end:0x00553170
 
 src/frontend/CObjCModern.c:

@@ -22161,7 +22161,7 @@
     "source": "src/frontend/CObjC.c"
   },
   {
-    "name": "fn_004e4c80",
+    "name": "CObjC_GetSelfName",
     "address": "0x004e4c80",
     "size": 6,
     "source": "src/frontend/CObjC.c"
@@ -22179,19 +22179,19 @@
     "source": "src/frontend/CObjC.c"
   },
   {
-    "name": "fn_004e4e40",
+    "name": "CObjC_FindProtocol",
     "address": "0x004e4e40",
     "size": 28,
     "source": "src/frontend/CObjC.c"
   },
   {
-    "name": "fn_004e4e60",
+    "name": "CObjC_FindSelector",
     "address": "0x004e4e60",
     "size": 52,
     "source": "src/frontend/CObjC.c"
   },
   {
-    "name": "fn_004e4ea0",
+    "name": "CObjC_NewSelector",
     "address": "0x004e4ea0",
     "size": 95,
     "source": "src/frontend/CObjC.c"
@@ -22203,7 +22203,7 @@
     "source": "src/frontend/CObjC.c"
   },
   {
-    "name": "fn_004e4f90",
+    "name": "CObjC_IsSameType",
     "address": "0x004e4f90",
     "size": 49,
     "source": "src/frontend/CObjC.c"
@@ -22215,7 +22215,7 @@
     "source": "src/frontend/CObjC.c"
   },
   {
-    "name": "fn_004e5090",
+    "name": "CObjCModern_RegisterMethodSelector",
     "address": "0x004e5090",
     "size": 263,
     "source": "src/frontend/CObjC.c"
@@ -22239,7 +22239,7 @@
     "source": "src/frontend/CObjC.c"
   },
   {
-    "name": "fn_004e5390",
+    "name": "CObjC_GetMsgSendFunction",
     "address": "0x004e5390",
     "size": 98,
     "source": "src/frontend/CObjC.c"
@@ -22251,19 +22251,19 @@
     "source": "src/frontend/CObjC.c"
   },
   {
-    "name": "fn_004e5630",
+    "name": "CObjC_FindObjCClass",
     "address": "0x004e5630",
     "size": 84,
     "source": "src/frontend/CObjC.c"
   },
   {
-    "name": "fn_004e5690",
+    "name": "CObjC_FindTypeName",
     "address": "0x004e5690",
     "size": 80,
     "source": "src/frontend/CObjC.c"
   },
   {
-    "name": "fn_004e56e0",
+    "name": "CObjC_GetClassType",
     "address": "0x004e56e0",
     "size": 54,
     "source": "src/frontend/CObjC.c"
@@ -22275,7 +22275,7 @@
     "source": "src/frontend/CObjC.c"
   },
   {
-    "name": "fn_004e5760",
+    "name": "CObjC_IsIdOrSelType",
     "address": "0x004e5760",
     "size": 69,
     "source": "src/frontend/CObjC.c"
@@ -22287,13 +22287,13 @@
     "source": "src/frontend/CObjC.c"
   },
   {
-    "name": "fn_004e5820",
+    "name": "CObjC_GetSelType",
     "address": "0x004e5820",
     "size": 46,
     "source": "src/frontend/CObjC.c"
   },
   {
-    "name": "fn_004e5850",
+    "name": "CObjC_IsSelType",
     "address": "0x004e5850",
     "size": 62,
     "source": "src/frontend/CObjC.c"
@@ -22305,7 +22305,7 @@
     "source": "src/frontend/CObjC.c"
   },
   {
-    "name": "fn_004e5950",
+    "name": "CObjC_ParseTypeName",
     "address": "0x004e5950",
     "size": 146,
     "source": "src/frontend/CObjC.c"
@@ -22323,25 +22323,25 @@
     "source": "src/frontend/CObjC.c"
   },
   {
-    "name": "fn_004e5cb0",
+    "name": "fn_00508940",
     "address": "0x004e5cb0",
     "size": 328,
     "source": "src/frontend/CObjC.c"
   },
   {
-    "name": "fn_004e5e00",
+    "name": "CObjC_CopyMethRec",
     "address": "0x004e5e00",
     "size": 71,
     "source": "src/frontend/CObjC.c"
   },
   {
-    "name": "fn_004e5e50",
+    "name": "CObjC_AddProtocolMethods",
     "address": "0x004e5e50",
     "size": 93,
     "source": "src/frontend/CObjC.c"
   },
   {
-    "name": "fn_004e5eb0",
+    "name": "CObjC_AppendArg",
     "address": "0x004e5eb0",
     "size": 70,
     "source": "src/frontend/CObjC.c"
@@ -22359,19 +22359,19 @@
     "source": "src/frontend/CObjC.c"
   },
   {
-    "name": "fn_004e6100",
+    "name": "CObjC_MakeMethodFunction",
     "address": "0x004e6100",
     "size": 138,
     "source": "src/frontend/CObjC.c"
   },
   {
-    "name": "CObjCModern_RegisterMethodSelector",
+    "name": "CObjC_ParseClassMethod",
     "address": "0x004e6190",
     "size": 142,
     "source": "src/frontend/CObjC.c"
   },
   {
-    "name": "fn_004e6220",
+    "name": "CObjC_SameProtocolList",
     "address": "0x004e6220",
     "size": 56,
     "source": "src/frontend/CObjC.c"
@@ -22419,7 +22419,7 @@
     "source": "src/frontend/CObjC.c"
   },
   {
-    "name": "fn_004e6790",
+    "name": "encode_struct",
     "address": "0x004e6790",
     "size": 181,
     "source": "src/frontend/CObjC.c"
@@ -22443,13 +22443,13 @@
     "source": "src/frontend/CObjC.c"
   },
   {
-    "name": "fn_004e6e80",
+    "name": "CObjC_EncodeMethod",
     "address": "0x004e6e80",
     "size": 95,
     "source": "src/frontend/CObjC.c"
   },
   {
-    "name": "fn_004e6ee0",
+    "name": "CObjC_EncodeType",
     "address": "0x004e6ee0",
     "size": 87,
     "source": "src/frontend/CObjC.c"
@@ -22503,7 +22503,7 @@
     "source": "src/frontend/CObjC.c"
   },
   {
-    "name": "fn_004e7d70",
+    "name": "CObjC_SameIvarList",
     "address": "0x004e7d70",
     "size": 104,
     "source": "src/frontend/CObjC.c"
@@ -22545,7 +22545,7 @@
     "source": "src/frontend/CObjC.c"
   },
   {
-    "name": "fn_004e84c0",
+    "name": "CObjC_PromoteMessageArgs",
     "address": "0x004e84c0",
     "size": 122,
     "source": "src/frontend/CObjC.c"
