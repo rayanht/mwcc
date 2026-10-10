@@ -9237,7 +9237,7 @@
     "source": "src/frontend/CFunc.c"
   },
   {
-    "name": "fn_004479e0",
+    "name": "CFunc_GenerateDummyFunction",
     "address": "0x004479e0",
     "size": 99,
     "source": "src/frontend/CFunc.c"
@@ -18933,19 +18933,19 @@
     "source": "src/frontend/CSOM.c"
   },
   {
-    "name": "fn_004c08e0",
+    "name": "CSOM_NameTranslate",
     "address": "0x004c08e0",
     "size": 33,
     "source": "src/frontend/CSOM.c"
   },
   {
-    "name": "fn_004c0910",
+    "name": "CSOM_FindClassType",
     "address": "0x004c0910",
     "size": 50,
     "source": "src/frontend/CSOM.c"
   },
   {
-    "name": "fn_004c0950",
+    "name": "CSOM_GetTokenTableIndex",
     "address": "0x004c0950",
     "size": 57,
     "source": "src/frontend/CSOM.c"
@@ -18969,7 +18969,7 @@
     "source": "src/frontend/CSOM.c"
   },
   {
-    "name": "fn_004c0c70",
+    "name": "CSOM_MakeObject",
     "address": "0x004c0c70",
     "size": 66,
     "source": "src/frontend/CSOM.c"
@@ -18981,7 +18981,7 @@
     "source": "src/frontend/CSOM.c"
   },
   {
-    "name": "basehead",
+    "name": "CSOM_IsReleaseOrderMethod",
     "address": "0x004c0d30",
     "size": 51,
     "source": "src/frontend/CSOM.c"
@@ -19035,7 +19035,7 @@
     "source": "src/frontend/CSOM.c"
   },
   {
-    "name": "fn_004c1890",
+    "name": "MakeRegistrationFunction",
     "address": "0x004c1890",
     "size": 131,
     "source": "src/frontend/CSOM.c"
@@ -19047,19 +19047,19 @@
     "source": "src/frontend/CSOM.c"
   },
   {
-    "name": "fn_004c1a60",
+    "name": "MakeBases",
     "address": "0x004c1a60",
     "size": 129,
     "source": "src/frontend/CSOM.c"
   },
   {
-    "name": "fn_004c1af0",
+    "name": "CSOM_SetNibble",
     "address": "0x004c1af0",
     "size": 55,
     "source": "src/frontend/CSOM.c"
   },
   {
-    "name": "fn_004c1b30",
+    "name": "emit_som_kind_nibbles",
     "address": "0x004c1b30",
     "size": 147,
     "source": "src/frontend/CSOM.c"
@@ -19071,7 +19071,7 @@
     "source": "src/frontend/CSOM.c"
   },
   {
-    "name": "fn_004c1c40",
+    "name": "MakeNames",
     "address": "0x004c1c40",
     "size": 118,
     "source": "src/frontend/CSOM.c"
@@ -19143,7 +19143,7 @@
     "source": "src/frontend/CSOM.c"
   },
   {
-    "name": "fn_004c2820",
+    "name": "CSOM_MakeConditional",
     "address": "0x004c2820",
     "size": 121,
     "source": "src/frontend/CSOM.c"
@@ -19173,7 +19173,7 @@
     "source": "src/frontend/CSOM.c"
   },
   {
-    "name": "fn_004c2be0",
+    "name": "CSOM_CallClassDataMethod",
     "address": "0x004c2be0",
     "size": 178,
     "source": "src/frontend/CSOM.c"
@@ -19215,7 +19215,7 @@
     "source": "src/frontend/CSOM.c"
   },
   {
-    "name": "fn_004c3280",
+    "name": "CSOM_CreateMemberAccessExpr",
     "address": "0x004c3280",
     "size": 244,
     "source": "src/frontend/CSOM.c"
