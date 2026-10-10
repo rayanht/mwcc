@@ -3861,20 +3861,23 @@ ENode *make_class_member_or_global_call(Type *classType, ENodeList *arguments, c
 #if VERSION == VERSION_GC_1_0
 ENode *build_array_allocation_expression(Type *type, ENodeList *placement, char global)
 {
-    Type *element;
+    ENodeList *pair;
     Object *constructor;
-    Object *temporary;
+    ENode *count;
     TypePointer *pointerType;
     Object *layout;
-    ENodeList *pair;
-    ENode *count;
+    ENode *product;
+    Type *element;
     Object *destructor;
     Object *countObject;
     ENode *countAssignment;
-    ENode *allocationSize;
+    Object *temporary;
     SInt32 elementCount;
-    Boolean needsDestructor;
+    ENode *allocationSize;
     ENode *result;
+    ENode *allocation;
+    Boolean needsDestructor;
+    ENode *assignment;
 
     pointerType = galloc(0xe);
     *pointerType = *(TypePointer *)type;
@@ -3906,7 +3909,6 @@ ENode *build_array_allocation_expression(Type *type, ENodeList *placement, char 
     }
 
     if (needsDestructor) {
-        ENode *allocation;
         countAssignment = NULL;
         if (element->type != TYPECLASS)
             CError_FATAL(4706);
@@ -3920,13 +3922,12 @@ ENode *build_array_allocation_expression(Type *type, ENodeList *placement, char 
             countObject = create_temp_object((Type *)&stunsignedlong);
             count = promote(array_bound, countType);
             if ((elementCount = element->size ? type->size / element->size : 0) > 1) {
-                ENode *factor = intconstnode((Type *)&stunsignedlong, elementCount);
-                count = makediadicnode(count, factor, EMUL);
+                count = makediadicnode(count, intconstnode((Type *)&stunsignedlong, elementCount), EMUL);
                 optimizecomm(count);
             }
             countAssignment = makediadicnode(create_objectnode(countObject), count, EASS);
             {
-                ENode *product = makediadicnode(create_objectnode(countObject),
+                product = makediadicnode(create_objectnode(countObject),
                                            intconstnode((Type *)&stunsignedlong, element->size), EMUL);
                 optimizecomm(product);
                 allocationSize = makediadicnode(product, intconstnode((Type *)&stunsignedlong, 8), EADD);
@@ -3943,32 +3944,26 @@ ENode *build_array_allocation_expression(Type *type, ENodeList *placement, char 
         allocation->rtype = (Type *)pointerType;
         if (cscope_currentfunc != NULL && placement == NULL && copts.delete_exception != 0 &&
             (constructor = CParser_FindDeallocationObject(element, 1, global)) != NULL) {
-            ENode *sizeNode;
-            ENode *destructorNode;
-            ENode *layoutNode;
             /* ENEWEXCEPTIONARRAY's allocation and initialization payload. */
             result = lalloc(0x1a);
             *result = *(ENode *)allocation;
             temporary = create_temp_object((Type *)&void_ptr);
-            sizeNode = makediadicnode(create_objectnode(temporary), allocation, EASS);
+            assignment = makediadicnode(create_objectnode(temporary), allocation, EASS);
             result->type = ENEWEXCEPTIONARRAY;
-            result->data.argobj.allocationAssignment = sizeNode;
-            sizeNode = intconstnode((Type *)&stunsignedlong, element->size);
-            destructorNode = destructor ? create_objectrefnode(destructor) : nullnode();
-            layoutNode = layout ? create_objectrefnode(layout) : nullnode();
-            result->data.argobj.initialization =
-                CExpr_FuncCallSix(array_allocation_runtime_function, create_objectnode(temporary), layoutNode,
-                                  destructorNode, sizeNode, array_bound, NULL);
+            result->data.argobj.allocationAssignment = assignment;
+            result->data.argobj.initialization = CExpr_FuncCallSix(
+                array_allocation_runtime_function, create_objectnode(temporary),
+                layout ? create_objectrefnode(layout) : nullnode(), destructor ? create_objectrefnode(destructor) : nullnode(),
+                intconstnode((Type *)&stunsignedlong, element->size), array_bound, NULL);
             result->data.argobj.initialization =
                 makediadicnode(create_objectnode(temporary), result->data.argobj.initialization, EASS);
             result->data.argobj.temporary = temporary;
             result->data.argobj.constructor = constructor;
         } else {
-            ENode *sizeNode = intconstnode((Type *)&stunsignedlong, element->size);
-            ENode *destructorNode = destructor ? create_objectrefnode(destructor) : nullnode();
-            ENode *layoutNode = layout ? create_objectrefnode(layout) : nullnode();
-            result = CExpr_FuncCallSix(array_allocation_runtime_function, allocation, layoutNode, destructorNode,
-                                       sizeNode, array_bound, NULL);
+            result = CExpr_FuncCallSix(array_allocation_runtime_function, allocation,
+                                       layout ? create_objectrefnode(layout) : nullnode(),
+                                       destructor ? create_objectrefnode(destructor) : nullnode(),
+                                       intconstnode((Type *)&stunsignedlong, element->size), array_bound, NULL);
         }
         if (countAssignment != NULL)
             result = makecommaexpression(countAssignment, result);
@@ -3979,9 +3974,7 @@ ENode *build_array_allocation_expression(Type *type, ENodeList *placement, char 
         pair->next = placement;
         pair->node = intconstnode((Type *)&stunsignedlong, type->size);
         if (array_bound != NULL) {
-            Type *countType = (Type *)&stunsignedlong;
-            ENode *countNode = promote(array_bound, countType);
-            pair->node = makediadicnode(pair->node, countNode, EMUL);
+            pair->node = makediadicnode(pair->node, promote(array_bound, (Type *)&stunsignedlong), EMUL);
             optimizecomm(pair->node);
         }
         result = make_class_member_or_global_call(element, pair, global, 1);
