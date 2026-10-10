@@ -101,16 +101,6 @@ static inline ENode *CExpr_WrapPrecomp(ENode *n, ENode *r)
     return nw;
 }
 
-static inline Boolean IsZeroValue(ENode *e)
-{
-    return e->data.intval.hi == 0 && e->data.intval.lo == 0;
-}
-
-static inline Boolean IsZeroCInt64(CInt64 *v)
-{
-    return v->hi == 0 && v->lo == 0;
-}
-
 static inline ENode *CExpr_intnode(ENode *e, SInt32 v)
 {
     e->type = EINTCONST;
@@ -131,11 +121,6 @@ static inline ENode *promote_assignment_operand(ENode *target, ENode *operand, B
         operand = oldassignmentpromotion(operand, target->rtype, target->flags, 1);
     }
     return operand;
-}
-
-static inline Boolean CExpr_IsZeroValue(const CInt64 *value)
-{
-    return value->hi == 0 && value->lo == 0;
 }
 
 static inline ENode *materialize_temporary(ENode *base)
@@ -1269,7 +1254,7 @@ ENode *make_scope_parse_result_expr(NameResult *nameResult, ENode *expr, Boolean
 
             case OT_ENUMCONST:
                 CClass_CheckEnumAccess(nameResult->basePath, nameResult->object);
-                if (IsZeroCInt64(&OBJ_ENUM_CONST(nameResult->object)->val)) {
+                if (CInt64_IsZero(&OBJ_ENUM_CONST(nameResult->object)->val)) {
                     Type *type;
                     TypeEnum *enumType;
                     TypeClass *classType;
@@ -3140,14 +3125,13 @@ ENode *do_typecast(ENode *expr, Type *type, UInt32 qual)
         return expr;
     }
     if (type->type == TYPEPOINTER && (TYPE_POINTER(type)->qual & Q_REFERENCE)) {
-        TypePointer *targetPointer = TYPE_POINTER(type);
         ENode *operand = getnodeaddress(expr, 0);
         Type *pointerType = galloc(sizeof(TypePointer));
-        *TYPE_POINTER(pointerType) = *targetPointer;
+        *TYPE_POINTER(pointerType) = *TYPE_POINTER(type);
         TYPE_POINTER(pointerType)->qual &= ~Q_REFERENCE;
         result = do_typecast(operand, pointerType, qual);
         result = makemonadicnode(result, EINDIRECT);
-        result->rtype = targetPointer->target;
+        result->rtype = TYPE_POINTER(type)->target;
         result->flags = nodeQual;
         return result;
     }
@@ -3182,7 +3166,7 @@ ENode *do_typecast(ENode *expr, Type *type, UInt32 qual)
         result->flags = nodeQual;
         return result;
     }
-    if ((UInt8)(type->type - TYPEINT) <= 1) {
+    if (type->type == TYPEINT || type->type == TYPEFLOAT) {
         if (expr->type == ETYPCON && expr->rtype->type == type->type && expr->rtype->size == type->size &&
             is_unsigned(expr->rtype) == is_unsigned(type) && (expr->flags & ENODE_FLAG_QUALS) == qual) {
             expr->rtype = type;
@@ -3793,10 +3777,10 @@ ENode *simplify_unsigned_zero_comparison(ENode *node, Boolean lessThan, Boolean 
 
     operandType = node->data.diadic.left->rtype;
     if (is_unsigned(operandType)) {
-        if (node->data.diadic.left->type == EINTCONST && CExpr_IsZeroValue(&node->data.diadic.left->data.intval)) {
+        if (node->data.diadic.left->type == EINTCONST && CInt64_IsZero(&node->data.diadic.left->data.intval)) {
             lessThan = !lessThan;
         } else if (node->data.diadic.right->type != EINTCONST ||
-                   !CExpr_IsZeroValue(&node->data.diadic.right->data.intval)) {
+                   !CInt64_IsZero(&node->data.diadic.right->data.intval)) {
             return set_comparison_result_type(node);
         }
 
@@ -3991,12 +3975,12 @@ ENode *memberpointercompare(UInt8 op, ENode *left, ENode *right)
     ENode *node;
 
     if (left->rtype->type != TYPEMEMBERPOINTER) {
-        if (!(left->rtype->type == TYPEINT && left->type == EINTCONST && IsZeroValue(left))) {
+        if (!(left->rtype->type == TYPEINT && left->type == EINTCONST && CInt64_IsZero(&left->data.intval))) {
             CError_ReportError(ERR_ILLEGAL_OPERAND);
             return nullnode();
         }
     } else if (right->rtype->type != TYPEMEMBERPOINTER) {
-        if (!(right->rtype->type == TYPEINT && right->type == EINTCONST && IsZeroValue(right))) {
+        if (!(right->rtype->type == TYPEINT && right->type == EINTCONST && CInt64_IsZero(&right->data.intval))) {
             CError_ReportError(ERR_ILLEGAL_OPERAND);
             return nullnode();
         }
@@ -4931,7 +4915,7 @@ ENode *CExpr_New_ECOND_Node(ENode *condition, ENode *trueExpr, ENode *falseExpr)
             trueExpr = forceintegral(trueExpr);
         case TYPEINT:
             if (falseExpr->rtype->type == TYPEPOINTER && trueExpr->type == EINTCONST &&
-                IsZeroCInt64(&trueExpr->data.intval)) {
+                CInt64_IsZero(&trueExpr->data.intval)) {
                 trueExpr->rtype = (Type *)&stunsignedlong;
                 node->rtype = falseExpr->rtype;
                 break;
@@ -4943,7 +4927,7 @@ ENode *CExpr_New_ECOND_Node(ENode *condition, ENode *trueExpr, ENode *falseExpr)
             }
             break;
         case TYPEPOINTER:
-            if (falseExpr->type == EINTCONST && IsZeroCInt64(&falseExpr->data.intval)) {
+            if (falseExpr->type == EINTCONST && CInt64_IsZero(&falseExpr->data.intval)) {
                 falseExpr->rtype = (Type *)&stunsignedlong;
                 break;
             }
