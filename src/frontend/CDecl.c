@@ -4350,8 +4350,11 @@ void generate_copy_constructor(ClassLayout *type, TypeClass *cls)
 
     constructor = CClass_AssignmentOperator(cls);
     if (constructor == NULL) {
-        if ((cls->flags & CLASS_HAS_VBASES) || type->has_vtable != 0 ||
-            CClass_MemberObject(cls, assignment_operator_name) != NULL)
+        if ((cls->flags & CLASS_HAS_VBASES) != 0)
+            generate = 1;
+        else if (type->has_vtable != 0)
+            generate = 1;
+        else if (CClass_MemberObject(cls, assignment_operator_name) != NULL)
             generate = 1;
         for (base = cls->bases; base != NULL; base = base->next) {
             constructor = CClass_AssignmentOperator(base->base);
