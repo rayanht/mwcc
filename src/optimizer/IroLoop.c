@@ -1866,7 +1866,9 @@ void unroll_loop(int factor, struct IRONode *header)
     IROLinear *elin;
     IROLinear *econd;
     IROLinear *ecur;
+#if VERSION != VERSION_GC_1_0
     IROLinear *eend;
+#endif
     IRONode *labelnode;
     VarRecord *var;
     IRONode *node2;
@@ -2624,7 +2626,11 @@ void unroll_loop(int factor, struct IRONode *header)
                         elast = NULL;
                         for (fnode = prevsucc; fnode && fnode != header; fnode = fnode->nextnode) {
                             IroUtil_InitList(&list);
+#if VERSION == VERSION_GC_1_0
+                            last = fnode->last;
+#else
                             eend = fnode->last;
+#endif
                             ecur = fnode->first;
                             for (;;) {
                                 if (ecur->stmt)
@@ -2636,7 +2642,11 @@ void unroll_loop(int factor, struct IRONode *header)
                                         first = list.head;
                                     elast = list.tail;
                                 }
+#if VERSION == VERSION_GC_1_0
+                                if (ecur == last)
+#else
                                 if (ecur == eend)
+#endif
                                     break;
                                 ecur = ecur->next;
                             }
