@@ -1491,6 +1491,11 @@ ENode *scan_vec_step(void)
     return node;
 }
 
+static SInt32 builtin_align(Type *type)
+{
+    return CMachine_GetTypeAlignment(type);
+}
+
 unsigned int encode_kind(unsigned char kind)
 {
     switch (kind) {
@@ -1682,11 +1687,6 @@ Type *scan_type_or_expression_type(void)
     }
     CDecl_CompleteType(type);
     return type;
-}
-
-static SInt32 builtin_align(Type *type)
-{
-    return CMachine_GetTypeAlignment(type);
 }
 
 static ENode *scan_builtin(SInt32 (*builtin)(Type *))

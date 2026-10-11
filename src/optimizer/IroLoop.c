@@ -46,7 +46,11 @@ static char lbl_0058066B[9];
 static signed int data_00580674;
 static struct IRONode *loop_header;
 static struct IROLinear *loop_candidate_last;
+#if VERSION == VERSION_GC_1_0
+static char lbl_00580680[24];
+#else
 static char lbl_00580680[32];
+#endif
 
 #define GMARKED(id)                                                                                                    \
     (((id) >> 5) < IRO_LoopScratchVector_005880dc->size &&                                                             \

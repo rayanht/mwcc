@@ -172,6 +172,18 @@ void fn_0047ca70(Type **pt)
 }
 
 #if VERSION == VERSION_GC_1_0
+#if VERSION == VERSION_GC_1_0
+static FuncArg *FindNameLink(FuncArg *list, HashNameNode *name)
+{
+    while (list != NULL) {
+        if (name == list->name)
+            return list;
+        list = list->next;
+    }
+    return NULL;
+}
+#endif
+
 static Object *find_arg_object(ObjectList *list, HashNameNode *name)
 {
     while (list != NULL) {
@@ -518,6 +530,7 @@ ENode *create_temp_node2(Type *type)
     return result;
 }
 
+#if VERSION != VERSION_GC_1_0
 static FuncArg *FindNameLink(FuncArg *list, HashNameNode *name)
 {
     while (list != NULL) {
@@ -527,6 +540,7 @@ static FuncArg *FindNameLink(FuncArg *list, HashNameNode *name)
     }
     return NULL;
 }
+#endif
 
 ENode *append_cleannode_dtors(ENode *left, struct CleanNode *list)
 {
