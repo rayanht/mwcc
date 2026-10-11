@@ -2295,6 +2295,9 @@ UInt8 *find_identifier_end_after_optional_paren(UInt8 *text)
     return NULL;
 }
 
+#if VERSION == VERSION_GC_1_0
+#pragma sym on
+#endif
 char *expand_macros_in_text(Macro *state, char *text)
 {
     short character;
@@ -2531,6 +2534,9 @@ allocateResult:
     return text;
 #endif
 }
+#if VERSION == VERSION_GC_1_0
+#pragma sym reset
+#endif
 
 #if VERSION == VERSION_GC_1_0
 #pragma sym on
@@ -3114,6 +3120,9 @@ void parse_pragma_option(int directive)
     }
 }
 
+#if VERSION == VERSION_GC_1_0
+#pragma sym on
+#endif
 static HashNameNode *CPrep_MakeOnceName(unsigned char *filename, Boolean isDefault)
 {
     char key[256];
@@ -3121,17 +3130,10 @@ static HashNameNode *CPrep_MakeOnceName(unsigned char *filename, Boolean isDefau
     char *p;
     short length;
 
-#if VERSION == VERSION_GC_1_0
-    p = key;
-    length = filename[0];
-    if (length > 250)
-        length = 250;
-#else
     length = filename[0];
     if (length > 250)
         length = 250;
     p = key;
-#endif
     *p++ = (copts.syspath_once && isDefault) ? '$' : (char)0xa4;
     name = (char *)filename + 1;
     while (length-- > 0)
@@ -3139,6 +3141,9 @@ static HashNameNode *CPrep_MakeOnceName(unsigned char *filename, Boolean isDefau
     *p = 0;
     return GetHashNameNode(key);
 }
+#if VERSION == VERSION_GC_1_0
+#pragma sym reset
+#endif
 
 #if VERSION == VERSION_GC_1_0
 static void CPrep_PragmaPrecompileTarget(void)
