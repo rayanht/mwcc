@@ -1861,7 +1861,6 @@ void unroll_loop(int factor, struct IRONode *header)
     IRONode *node3;
     IRONode *node4;
     IRONode *node5;
-    IRONode *node6;
     IRONode *newnode;
     IROLinear *elast;
     IROLinear *elin;
@@ -1876,7 +1875,6 @@ void unroll_loop(int factor, struct IRONode *header)
     IROLinear *valueLinear;
     IROLinear *convertedValue;
     IROLinear *base;
-    IROLinear *addNd;
     IROLinear *mulNd;
     IROLinear *cmpNd;
     IROLinear *cmpLin;
@@ -1884,7 +1882,6 @@ void unroll_loop(int factor, struct IRONode *header)
     IROLinear *left2;
     IROLinear *limit;
     IROLinear *right1;
-    IROLinear *cond;
     IRONode *fnode2;
     IROLinear *last;
     IROLinear *first;
@@ -2104,7 +2101,7 @@ void unroll_loop(int factor, struct IRONode *header)
                                                         if (mulNd->type == IROLinearOp2Arg && mulNd->nodetype == ESHL &&
                                                             fn_0044d520(mulNd->u.diadic.right)) {
                                                             stride = mulNd->u.diadic.right->u.node->data.intval;
-                                                            addNd = mulNd->u.diadic.left;
+                                                            first = mulNd->u.diadic.left;
                                                         } else {
                                                             return;
                                                         }
@@ -2167,12 +2164,12 @@ void unroll_loop(int factor, struct IRONode *header)
                                             }
 
                                             if (limit->type == IROLinearOp2Arg && limit->nodetype == EAND &&
-                                                addNd->type == IROLinearOp2Arg && addNd->nodetype == ESHR) {
+                                                first->type == IROLinearOp2Arg && first->nodetype == ESHR) {
                                                 left2 = limit->u.diadic.left;
-                                                object = IroUtil_GetObjRef(addNd->u.diadic.left);
+                                                object = IroUtil_GetObjRef(first->u.diadic.left);
                                                 otherObject = IroUtil_GetObjRef(left2);
                                                 if (object == otherObject && object == ind->var->object) {
-                                                    right1 = addNd->u.diadic.right;
+                                                    right1 = first->u.diadic.right;
                                                     right2 = limit->u.diadic.right;
                                                     if (fn_0044d520(right1) && fn_0044d520(right2)) {
                                                         step = CInt64_Shl(cint64_one, right1->u.node->data.intval);
@@ -2232,16 +2229,16 @@ void unroll_loop(int factor, struct IRONode *header)
 #endif
 
                     IroUtil_InitList(&list);
-                    cond = NewCondLinear(loop_header->last->type, &list);
+                    elin = NewCondLinear(loop_header->last->type, &list);
                     label = IroUtil_NewLabel();
-                    cond->u.label = label;
+                    elin->u.label = label;
 #if VERSION == VERSION_GC_1_0
-                    cond->u.diadic.right = leftCopy;
+                    elin->u.diadic.right = leftCopy;
 #else
-                    cond->u.diadic.right = oldCondition;
+                    elin->u.diadic.right = oldCondition;
 #endif
-                    cond->u.diadic.right->flags |= IROLF_Reffed;
-                    cond->rtype = loop_header->last->rtype;
+                    elin->u.diadic.right->flags |= IROLF_Reffed;
+                    elin->rtype = loop_header->last->rtype;
                     IroUtil_InsertLinearBefore(list.head, list.tail, pred->last);
 
                     IroUtil_InitList(&list);
@@ -2514,7 +2511,7 @@ void unroll_loop(int factor, struct IRONode *header)
 
                     nextnode = pred->nextnode;
                     oldlast = pred->last;
-                    pred->last = cond;
+                    pred->last = elin;
                     node1 = IroFlowgraph_NewNode();
                     node1->first = preFirst;
                     node1->last = preLast;
@@ -2538,11 +2535,11 @@ void unroll_loop(int factor, struct IRONode *header)
                     node5->last = remLast;
                     ((CLabel *)lab2->u.label)->stmt = (Statement *)node5;
                     node4->nextnode = node5;
-                    node6 = IroFlowgraph_NewNode();
-                    node6->first = oldlast;
-                    node6->last = oldlast;
-                    node5->nextnode = node6;
-                    node6->nextnode = nextnode;
+                    labelnode = IroFlowgraph_NewNode();
+                    labelnode->first = oldlast;
+                    labelnode->last = oldlast;
+                    node5->nextnode = labelnode;
+                    labelnode->nextnode = nextnode;
 
                     newnode = (IRONode *)oalloc(sizeof(*newnode));
                     memset(newnode, 0, sizeof(*newnode));
@@ -2579,12 +2576,12 @@ void unroll_loop(int factor, struct IRONode *header)
                     econd = list.tail;
 
                     IroUtil_InitList(&list);
-                    cond = NewCondLinear(loop_header->last->type, &list);
+                    elin = NewCondLinear(loop_header->last->type, &list);
                     label = IroUtil_NewLabel();
-                    cond->u.label = label;
-                    cond->u.diadic.right = econd;
-                    cond->u.diadic.right->flags |= IROLF_Reffed;
-                    cond->rtype = loop_header->last->rtype;
+                    elin->u.label = label;
+                    elin->u.diadic.right = econd;
+                    elin->u.diadic.right->flags |= IROLF_Reffed;
+                    elin->rtype = loop_header->last->rtype;
                     IroUtil_InsertLinearBefore(list.head, list.tail, pred->last);
 
                     n = compute_loop_count(loop, &niters);
@@ -2694,7 +2691,7 @@ void unroll_loop(int factor, struct IRONode *header)
 
                     nextnode = pred->nextnode;
                     oldlast = pred->last;
-                    pred->last = cond;
+                    pred->last = elin;
                     node1 = IroFlowgraph_NewNode();
                     node1->first = preFirst;
                     node1->last = preLast;
@@ -2747,8 +2744,8 @@ void unroll_loop(int factor, struct IRONode *header)
                         node1->last->type = IROLinearNop;
                     }
                     if (!flag2) {
-                        IroUtil_ClearZeroOperands(cond->u.diadic.right);
-                        cond->type = IROLinearNop;
+                        IroUtil_ClearZeroOperands(elin->u.diadic.right);
+                        elin->type = IROLinearNop;
                         IroUtil_ClearZeroOperands(node4->last->u.diadic.right);
                         node4->last->type = IROLinearNop;
                         if (node2)
@@ -2768,8 +2765,8 @@ void unroll_loop(int factor, struct IRONode *header)
 
     if (result) {
         iroNodesByIndex = (IRONode **)oalloc(iro_node_count * sizeof(*iroNodesByIndex));
-        for (node6 = iro_flowgraph_head; node6; node6 = node6->nextnode)
-            iroNodesByIndex[node6->index] = node6;
+        for (labelnode = iro_flowgraph_head; labelnode; labelnode = labelnode->nextnode)
+            iroNodesByIndex[labelnode->index] = labelnode;
         IroFlowgraph_RebuildSuccPred();
         IroFlowgraph_ComputeDom();
     }
