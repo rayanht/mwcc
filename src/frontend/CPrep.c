@@ -1942,15 +1942,19 @@ static void CPrep_SkipToEndOfDirective(void)
 
 void define_macro(void)
 {
+#if VERSION == VERSION_GC_1_0
+    Macro *previous;
+    Macro *definition;
+#else
     Macro *definition;
     Macro *previous;
     Macro *cursor;
+#endif
     HashNameNode *name;
     HashNameNode **previousArgs;
     UInt8 *start;
     UInt8 *savedPosition;
     int rangeEnd;
-    SInt16 token;
     SInt16 ch;
     SInt16 argumentCount;
     SInt16 i;
@@ -1961,12 +1965,12 @@ void define_macro(void)
     HashNameNode *arguments[64];
 
     data_00588470 = macrocheck = 0;
-    token = CPrepTokenizer_GetToken();
+    i = CPrepTokenizer_GetToken();
     if (data_00588470) {
         CPrep_ReportError(0x70);
         CPrepTokenizer_SkipToEndOfLine();
     }
-    if (token != -3) {
+    if (i != -3) {
         CPrep_ReportError(0x6b);
         CPrepTokenizer_SkipToEndOfLine();
         return;
@@ -1982,8 +1986,8 @@ void define_macro(void)
         currentTextPosition = (UInt8 *)lookahead_position;
         previousArgs = previous ? previous->args : NULL;
         do {
-            token = CPrepTokenizer_GetToken();
-            if (token != -3)
+            i = CPrepTokenizer_GetToken();
+            if (i != -3)
                 break;
             if (data_00588470) {
                 CPrep_ReportError(0x70);
@@ -2007,28 +2011,28 @@ void define_macro(void)
                     CPrep_MacroRedefError(name->name, &warned);
             }
             argumentCount++;
-            token = CPrepTokenizer_ScanToken();
+            i = CPrepTokenizer_ScanToken();
             if (data_00588470) {
                 CPrep_ReportError(0x70);
                 return;
             }
-        } while (token == ',');
+        } while (i == ',');
 
         if (data_00588470) {
             CPrep_ReportError(0x70);
             return;
         }
-        if (token == 0x171) {
+        if (i == 0x171) {
             variadic = 1;
             arguments[argumentCount - 1] = GetHashNameNodeExport("__VA_ARGS__");
             argumentCount++;
-            token = CPrepTokenizer_ScanToken();
+            i = CPrepTokenizer_ScanToken();
             if (data_00588470) {
                 CPrep_ReportError(0x70);
                 return;
             }
         }
-        if (token != ')') {
+        if (i != ')') {
             CPrep_ReportError(0x6d);
             CPrepTokenizer_SkipToEndOfLine();
             return;
@@ -2155,6 +2159,16 @@ void define_macro(void)
             write_identifier_range_record(definition, currentPFile, data_0057fd0c, rangeEnd);
         }
         if (warned) {
+#if VERSION == VERSION_GC_1_0
+            definition = macro_buckets[definition->name->hashval];
+            for (;;) {
+                if (definition->next == previous) {
+                    definition->next = definition->next->next;
+                    break;
+                }
+                CError_ASSERT(2854, definition = definition->next);
+            }
+#else
             cursor = macro_buckets[definition->name->hashval];
             for (;;) {
                 if (cursor->next == previous) {
@@ -2163,6 +2177,7 @@ void define_macro(void)
                 }
                 CError_ASSERT(2854, cursor = cursor->next);
             }
+#endif
         }
     }
 }
