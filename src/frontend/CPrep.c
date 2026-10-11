@@ -2306,7 +2306,9 @@ char *expand_macros_in_text(Macro *state, char *text)
     UInt8 *next;
     char *savedText;
     int split;
+#if VERSION != VERSION_GC_1_0
     SInt32 size;
+#endif
 
     CPrep_PushState(state);
     macro_text_start = (char *)(token_start = (UInt8 *)text);
@@ -2509,6 +2511,16 @@ char *expand_macros_in_text(Macro *state, char *text)
 
     AppendGListByte(&macro_text, 0);
 allocateResult:
+#if VERSION == VERSION_GC_1_0
+    length = macro_text.size;
+    if (length > 0x20000) {
+        CPrep_ReportError(ERR_MACROS_TOO_COMPLEX);
+        return "";
+    }
+    remainingText = aalloc(length);
+    memcpy(remainingText, *macro_text.data, length);
+    return (char *)remainingText;
+#else
     size = macro_text.size;
     if (size > 0x20000) {
         CPrep_ReportError(ERR_MACROS_TOO_COMPLEX);
@@ -2517,6 +2529,7 @@ allocateResult:
     text = aalloc(size);
     memcpy(text, *macro_text.data, size);
     return text;
+#endif
 }
 
 #if VERSION == VERSION_GC_1_0
