@@ -1893,7 +1893,9 @@ void unroll_loop(int factor, struct IRONode *header)
     IROLinear *zeroOpnd;
     IROLinear *zeroCmp;
     IROLinear *oldlast;
+#if VERSION != VERSION_GC_1_0
     IROLinear *oldCondition;
+#endif
     IROLinear *copy;
     IROLinear *lab;
     IROLinear *incNd;
@@ -2223,13 +2225,21 @@ void unroll_loop(int factor, struct IRONode *header)
                     IroUtil_CopyLinearRangeToList(jumpNd->next, loop_header->last->u.diadic.right->u.monadic, &list);
                     IroUtil_CopyLinearToList(loop_header->last->u.diadic.right, &list);
                     IroUtil_InsertLinearBefore(list.head, list.tail, pred->last);
+#if VERSION == VERSION_GC_1_0
+                    leftCopy = list.tail;
+#else
                     oldCondition = list.tail;
+#endif
 
                     IroUtil_InitList(&list);
                     cond = NewCondLinear(loop_header->last->type, &list);
                     label = IroUtil_NewLabel();
                     cond->u.label = label;
+#if VERSION == VERSION_GC_1_0
+                    cond->u.diadic.right = leftCopy;
+#else
                     cond->u.diadic.right = oldCondition;
+#endif
                     cond->u.diadic.right->flags |= IROLF_Reffed;
                     cond->rtype = loop_header->last->rtype;
                     IroUtil_InsertLinearBefore(list.head, list.tail, pred->last);
