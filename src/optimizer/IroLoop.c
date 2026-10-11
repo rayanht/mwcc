@@ -2217,9 +2217,15 @@ void unroll_loop(int factor, struct IRONode *header)
                     if (count2 > 1 || count1 > 1)
                         return;
 
+#if VERSION == VERSION_GC_1_0
+                    plast = pred->last;
+                    gotoLabel = plast->u.label;
+                    jumpNd = IroUtil_FindLabel(plast->u.label, plast);
+#else
                     plast = pred->last;
                     gotoLabel = plast->u.label;
                     jumpNd = IroUtil_FindLabel(gotoLabel, plast);
+#endif
                     IroUtil_InitList(&list);
                     IroUtil_CopyLinearRangeToList(jumpNd->next, loop_header->last->u.diadic.right->u.monadic, &list);
                     IroUtil_CopyLinearToList(loop_header->last->u.diadic.right, &list);
