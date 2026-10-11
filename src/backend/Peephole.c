@@ -34,9 +34,7 @@ static const int kNumRegs = 32;
 static int PCode_LiveAfter(PCodeInstruction *instr);
 static int PCode_DefinedBetween(PCodeInstruction *instr, PCodeInstruction *def, PCodeOperand *arg);
 static int PCode_UsedBetween(PCodeInstruction *instr, PCodeInstruction *def, PCodeOperand *arg);
-static int masks_disjoint(PCodeInstruction *instr, PCodeInstruction *scan, SInt16 reg);
 static int canmergemasks(SInt32 b1, SInt32 e1, SInt32 shift, SInt32 b2, SInt32 e2, SInt16 *first, SInt16 *last);
-static void AddPeepholeRule(SInt16 opcode, void *handler);
 
 void initialize_register_block_liveness(void)
 {
@@ -881,7 +879,6 @@ int fold_addi_or_mr_reaching_def(PCodeInstruction *pc, UInt32 mask)
 int fold_reaching_addi(PCodeInstruction *current)
 {
     PCodeInstruction *previous;
-    unsigned long combined;
 
     previous = CodeGen_ReachingDefTable_00581af8[current->useStart + 1];
     if (current->operandData.operands[2].kind == PCOp_IMMEDIATE && previous->operandData.operands[2].kind == PCOp_IMMEDIATE &&
@@ -901,9 +898,9 @@ int fold_reaching_addi(PCodeInstruction *current)
                     current->operandData.operands[1].flags &= ~2;
                     current->operandData.operands[2].value.signed_value = 0;
                 } else {
-                    combined = current->operandData.operands[2].value.signed_value;
-                    combined += previous->operandData.operands[2].value.signed_value;
-                    current->operandData.operands[2].value.signed_value = combined;
+                    current->operandData.operands[2].value.signed_value =
+                        (long)current->operandData.operands[2].value.signed_value +
+                        previous->operandData.operands[2].value.signed_value;
                 }
                 CodeGen_ReachingDefTable_00581af8[current->useStart + 1] =
                     CodeGen_ReachingDefTable_00581af8[previous->useStart + 1];
@@ -2172,6 +2169,14 @@ unsigned int make_contiguous_mask(unsigned int value)
     return result;
 }
 
+static int masks_disjoint(PCodeInstruction *instr, PCodeInstruction *scan, SInt16 reg)
+{
+    UInt32 mask;
+
+    mask = make_contiguous_mask(compute_register_mask(instr, instr->operandData.operands[0].value.reg));
+    return (compute_register_mask(scan, reg) & mask) == 0;
+}
+
 void optimize_rlwinm_and_addi(PCodeBlock *block)
 {
     PCodeInstruction *instr;
@@ -2398,12 +2403,12 @@ void optimize_rlwinm_and_addi(PCodeBlock *block)
     }
 }
 
-static int masks_disjoint(PCodeInstruction *instr, PCodeInstruction *scan, SInt16 reg)
+static void AddPeepholeRule(SInt16 opcode, void *handler)
 {
-    UInt32 mask;
-
-    mask = make_contiguous_mask(compute_register_mask(instr, instr->operandData.operands[0].value.reg));
-    return (compute_register_mask(scan, reg) & mask) == 0;
+    struct PeepHandler *rule = (struct PeepHandler *)lalloc(8);
+    rule->func = handler;
+    rule->next = CodeGen_PeepholeHandlers_005813b0[opcode];
+    CodeGen_PeepholeHandlers_005813b0[opcode] = rule;
 }
 
 void register_peephole_rules(void)
@@ -2588,14 +2593,6 @@ void Peephole_MergeAdjacentBlocks(Object *object, Boolean mergePrologue)
                 nextIsPrologue = (nextBlock != NULL && (nextBlock->flags & 2) != 0);
         }
     }
-}
-
-static void AddPeepholeRule(SInt16 opcode, void *handler)
-{
-    struct PeepHandler *rule = (struct PeepHandler *)lalloc(8);
-    rule->func = handler;
-    rule->next = CodeGen_PeepholeHandlers_005813b0[opcode];
-    CodeGen_PeepholeHandlers_005813b0[opcode] = rule;
 }
 
 void Peephole_OptimizeBlocks(Object *object)

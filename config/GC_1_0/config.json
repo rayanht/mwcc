@@ -40,6 +40,7 @@
     "src/backend/PCodeListing.c",
     "src/backend/PCodeUtilities.c",
     "src/backend/PPCError.c",
+    "src/backend/Peephole.c",
     "src/backend/Registers.c",
     "src/backend/SFPE_PPC_EABI.c",
     "src/backend/Scheduler.c",
