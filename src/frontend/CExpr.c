@@ -4833,7 +4833,7 @@ ENode *CExpr_New_ECOND_Node(ENode *condition, ENode *trueExpr, ENode *falseExpr)
     ENode *node;
     BinaryOperatorResult conversion;
 
-    condition = CExpr2_ConvertScalarOperand(CExpr_GeneratePointerAndRewriteConst(condition), 0, 1);
+    condition = CExpr2_ConvertScalarOperand(node = CExpr_GeneratePointerAndRewriteConst(condition), 0, 1);
     trueExpr = CExpr_GeneratePointerAndRewriteConst(trueExpr);
     falseExpr = CExpr_GeneratePointerAndRewriteConst(falseExpr);
 
