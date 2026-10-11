@@ -1081,6 +1081,7 @@
   "_expr_list": "0x00558494",
   "_expr_tail": "0x00557ed8",
   "_expression_count": "0x005578e0",
+  "_f87_enabled": "0x005577f4",
   "_file_argument_sets": "0x00557ef8",
   "_file_input_jmpbuf": "0x00555310",
   "_file_map$85": "0x005134b0",

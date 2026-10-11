@@ -280,7 +280,6 @@ typedef enum { CPrep_DidPush, CPrep_DidPop } CPrep_DidFlag;
 #define PN ((char *)data_00587fa0->name)
 
 static void LogName(const unsigned char *name, Boolean fatal);
-static void CPrep_PushState(void *obj);
 static void CPrep_ExpandMacroAndPush(Macro *macro);
 static inline void CPrep_ErrorBA(void);
 
@@ -1616,6 +1615,28 @@ UInt8 CPrep_Compile(CPrepCU *cu)
     return result;
 }
 
+#if VERSION == VERSION_GC_1_0
+#pragma sym on
+#endif
+static void CPrep_PushState(void *obj)
+{
+    if (macro_expansion_depth >= 0x80) {
+        data_0057f9dc = 1;
+        CError_FatalError(ERR_MACROS_TOO_COMPLEX);
+        return;
+    }
+    macro_stack[macro_expansion_depth].pos = (char *)currentTextPosition;
+    macro_stack[macro_expansion_depth].macname = macro_text_start;
+    macro_stack[macro_expansion_depth].macro = obj;
+    if (obj != (void *)0)
+        *((char *)obj + 0xf) = 1;
+    macro_stack[macro_expansion_depth].macrocheck = macrocheck;
+    macro_expansion_depth++;
+}
+#if VERSION == VERSION_GC_1_0
+#pragma sym reset
+#endif
+
 void CPrep_PopMacro(void)
 {
     macro_expansion_depth--;
@@ -2309,9 +2330,6 @@ char *expand_macros_in_text(Macro *state, char *text)
     UInt8 *next;
     char *savedText;
     int split;
-#if VERSION != VERSION_GC_1_0
-    SInt32 size;
-#endif
 
     CPrep_PushState(state);
     macro_text_start = (char *)(token_start = (UInt8 *)text);
@@ -2425,11 +2443,11 @@ char *expand_macros_in_text(Macro *state, char *text)
                     }
                     savedText = aalloc(length);
                     memcpy(savedText, *macro_text.data, length);
-                    remainingText = expand_macro(expansion);
+                    text = (char *)expand_macro(expansion);
                     if (macro_expansion_depth == initialDepth) {
-                        split = (int)strlen((char *)remainingText) - 1;
+                        split = (int)strlen(text) - 1;
                         for (; split > 0; split--) {
-                            switch ((char)remainingText[split]) {
+                            switch (text[split]) {
                                 case ' ':
                                 case '"':
                                 case '\'':
@@ -2442,16 +2460,16 @@ char *expand_macros_in_text(Macro *state, char *text)
                         }
                         if (split > 0) {
                             macro_text.size = 0;
-                            AppendGListName(&macro_text, (char *)&remainingText[split + 1]);
+                            AppendGListName(&macro_text, &text[split + 1]);
                             AppendGListID(&macro_text, (char *)currentTextPosition);
                             currentTextPosition = aalloc(macro_text.size);
                             memcpy(currentTextPosition, *macro_text.data, macro_text.size);
                             macro_text.size = 0;
                             AppendGListData(&macro_text, savedText, length);
-                            AppendGListData(&macro_text, remainingText, split + 1);
+                            AppendGListData(&macro_text, text, split + 1);
                         } else {
                             macro_text.size = 0;
-                            AppendGListName(&macro_text, (char *)remainingText);
+                            AppendGListName(&macro_text, text);
                             AppendGListID(&macro_text, (char *)currentTextPosition);
                             remainingText = aalloc(macro_text.size);
                             memcpy(remainingText, *macro_text.data, macro_text.size);
@@ -2463,7 +2481,7 @@ char *expand_macros_in_text(Macro *state, char *text)
                     } else {
                         macro_text.size = 0;
                         AppendGListData(&macro_text, savedText, length);
-                        AppendGListID(&macro_text, (char *)remainingText);
+                        AppendGListID(&macro_text, text);
                         if (macro_expansion_depth < initialDepth)
                             goto allocateResult;
                         macro_text.size--;
@@ -2514,7 +2532,6 @@ char *expand_macros_in_text(Macro *state, char *text)
 
     AppendGListByte(&macro_text, 0);
 allocateResult:
-#if VERSION == VERSION_GC_1_0
     length = macro_text.size;
     if (length > 0x20000) {
         CPrep_ReportError(ERR_MACROS_TOO_COMPLEX);
@@ -2523,42 +2540,11 @@ allocateResult:
     remainingText = aalloc(length);
     memcpy(remainingText, *macro_text.data, length);
     return (char *)remainingText;
-#else
-    size = macro_text.size;
-    if (size > 0x20000) {
-        CPrep_ReportError(ERR_MACROS_TOO_COMPLEX);
-        return "";
-    }
-    text = aalloc(size);
-    memcpy(text, *macro_text.data, size);
-    return text;
-#endif
 }
 #if VERSION == VERSION_GC_1_0
 #pragma sym reset
 #endif
 
-#if VERSION == VERSION_GC_1_0
-#pragma sym on
-#endif
-static void CPrep_PushState(void *obj)
-{
-    if (macro_expansion_depth >= 0x80) {
-        data_0057f9dc = 1;
-        CError_FatalError(ERR_MACROS_TOO_COMPLEX);
-        return;
-    }
-    macro_stack[macro_expansion_depth].pos = (char *)currentTextPosition;
-    macro_stack[macro_expansion_depth].macname = macro_text_start;
-    macro_stack[macro_expansion_depth].macro = obj;
-    if (obj != (void *)0)
-        *((char *)obj + 0xf) = 1;
-    macro_stack[macro_expansion_depth].macrocheck = macrocheck;
-    macro_expansion_depth++;
-}
-#if VERSION == VERSION_GC_1_0
-#pragma sym reset
-#endif
 char *CPrep_GetFileName(char *param1, Boolean param2, Boolean param3)
 {
     UInt8 buf[256];
