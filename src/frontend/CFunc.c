@@ -1866,11 +1866,13 @@ void parse_statement(StatementContext *context)
                 conditionScope = NULL;
                 CExpr_CheckUnwantedAssignment(conditionExpr);
             }
+#if VERSION == VERSION_GC_1_0
+            conditionExpr = CExpr2_ConvertScalarOperand(conditionExpr, 0, 1);
+            CheckScalarOperand(conditionExpr);
+            CondJump(0, conditionExpr, endLabel = newlabel(), 0);
+#else
             expr = CExpr2_ConvertScalarOperand(conditionExpr, 0, 1);
             CheckScalarOperand(expr);
-#if VERSION == VERSION_GC_1_0
-            CondJump(0, expr, endLabel = newlabel(), 0);
-#else
             CondJump(0, expr, endLabel = continueLabel = newlabel(), 0);
 #endif
             if (tk != ')')
