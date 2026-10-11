@@ -1873,8 +1873,6 @@ void unroll_loop(int factor, struct IRONode *header)
     IRONode *node2;
     IROLinear *initialCountLinear;
     IROLoop *loop;
-    IROLinear *indirectLinear;
-    IROLinear *addressLinear;
     IROLinear *valueLinear;
     IROLinear *convertedValue;
     IROLinear *base;
@@ -1898,7 +1896,6 @@ void unroll_loop(int factor, struct IRONode *header)
     IROLinear *oldCondition;
     IROLinear *copy;
     IROLinear *lab;
-    IROLinear *ctrlNd;
     IROLinear *incNd;
     IROLinear *decNd;
     IROLinear *dupLast;
@@ -2092,16 +2089,16 @@ void unroll_loop(int factor, struct IRONode *header)
                                             (checkLinear->nodetype == EORASS || checkLinear->nodetype == EANDASS ||
                                              checkLinear->nodetype == EXORASS)) {
                                             count1++;
-                                            indirectLinear = checkLinear->u.diadic.left;
-                                            if (indirectLinear->type == IROLinearOp1Arg &&
-                                                indirectLinear->nodetype == EINDIRECT) {
-                                                addressLinear = indirectLinear->u.monadic;
-                                                if (addressLinear->type == IROLinearOp2Arg &&
-                                                    addressLinear->nodetype == EADD) {
-                                                    base = addressLinear->u.diadic.left;
-                                                    type = addressLinear->rtype;
+                                            eremLast = checkLinear->u.diadic.left;
+                                            if (eremLast->type == IROLinearOp1Arg &&
+                                                eremLast->nodetype == EINDIRECT) {
+                                                last = eremLast->u.monadic;
+                                                if (last->type == IROLinearOp2Arg &&
+                                                    last->nodetype == EADD) {
+                                                    base = last->u.diadic.left;
+                                                    type = last->rtype;
                                                     if (IroUtil_GetObjRef(base)) {
-                                                        mulNd = addressLinear->u.diadic.right;
+                                                        mulNd = last->u.diadic.right;
                                                         if (mulNd->type == IROLinearOp2Arg && mulNd->nodetype == ESHL &&
                                                             fn_0044d520(mulNd->u.diadic.right)) {
                                                             stride = mulNd->u.diadic.right->u.node->data.intval;
@@ -2303,11 +2300,11 @@ void unroll_loop(int factor, struct IRONode *header)
                     cmpLin->u.diadic.right = list.tail;
                     IroUtil_AppendLinear(cmpLin, &list);
                     cmpLin->flags |= IROLF_Reffed;
-                    ctrlNd = NewTypedLinear(loop_header->last->type, &list);
-                    ctrlNd->u.label = (CLabel *)limit;
-                    ctrlNd->u.diadic.right = cmpLin;
-                    ctrlNd->u.diadic.right->flags |= IROLF_Reffed;
-                    ctrlNd->rtype = loop_header->last->rtype;
+                    elast = NewTypedLinear(loop_header->last->type, &list);
+                    elast->u.label = (CLabel *)limit;
+                    elast->u.diadic.right = cmpLin;
+                    elast->u.diadic.right->flags |= IROLF_Reffed;
+                    elast->rtype = loop_header->last->rtype;
                     IroUtil_InsertLinearBefore(list.head, list.tail, pred->last);
                     bodyLast = list.tail;
 
@@ -2366,12 +2363,12 @@ void unroll_loop(int factor, struct IRONode *header)
                                     decNd->u.diadic.left = incNd;
                                     decNd->u.diadic.right = dupLast;
                                     IroUtil_AppendLinear(decNd, &list);
-                                    indirectLinear = IrOptimizer_NewLinear(IROLinearOp1Arg);
-                                    indirectLinear->index = ++linear_index_counter;
-                                    indirectLinear->nodetype = EINDIRECT;
-                                    indirectLinear->rtype = nd->rtype;
-                                    indirectLinear->u.monadic = decNd;
-                                    IroUtil_AppendLinear(indirectLinear, &list);
+                                    eremLast = IrOptimizer_NewLinear(IROLinearOp1Arg);
+                                    eremLast->index = ++linear_index_counter;
+                                    eremLast->nodetype = EINDIRECT;
+                                    eremLast->rtype = nd->rtype;
+                                    eremLast->u.monadic = decNd;
+                                    IroUtil_AppendLinear(eremLast, &list);
                                     copy = IrOptimizer_NewLinear(IROLinearOp2Arg);
                                     *copy = *nd;
                                     copy->index = ++linear_index_counter;
@@ -2453,11 +2450,11 @@ void unroll_loop(int factor, struct IRONode *header)
                     cmpLin->u.diadic.right = list.tail;
                     IroUtil_AppendLinear(cmpLin, &list);
                     cmpLin->flags |= IROLF_Reffed;
-                    ctrlNd = NewTypedLinear(loop_header->last->type, &list);
-                    ctrlNd->u.label = (CLabel *)object;
-                    ctrlNd->u.diadic.right = cmpLin;
-                    ctrlNd->u.diadic.right->flags |= IROLF_Reffed;
-                    ctrlNd->rtype = loop_header->last->rtype;
+                    elast = NewTypedLinear(loop_header->last->type, &list);
+                    elast->u.label = (CLabel *)object;
+                    elast->u.diadic.right = cmpLin;
+                    elast->u.diadic.right->flags |= IROLF_Reffed;
+                    elast->rtype = loop_header->last->rtype;
                     IroUtil_InsertLinearBefore(list.head, list.tail, pred->last);
                     remLast = list.tail;
 
@@ -2677,11 +2674,11 @@ void unroll_loop(int factor, struct IRONode *header)
                     finalLast = list.tail;
 
                     IroUtil_InitList(&list);
-                    ctrlNd = NewTypedLinear(loop_header->last->type, &list);
-                    ctrlNd->u.label = (CLabel *)right1;
-                    ctrlNd->u.diadic.right = finalLast;
-                    ctrlNd->u.diadic.right->flags |= IROLF_Reffed;
-                    ctrlNd->rtype = loop_header->last->rtype;
+                    elast = NewTypedLinear(loop_header->last->type, &list);
+                    elast->u.label = (CLabel *)right1;
+                    elast->u.diadic.right = finalLast;
+                    elast->u.diadic.right->flags |= IROLF_Reffed;
+                    elast->rtype = loop_header->last->rtype;
                     IroUtil_InsertLinearBefore(list.head, list.tail, pred->last);
                     eremLast = list.tail;
 
