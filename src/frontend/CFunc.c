@@ -1476,9 +1476,8 @@ void check_function_result_automatic_variable(ENode *e)
 
 void parse_statement(StatementContext *context)
 {
-    DeclBlock *ifScope;
-    CLabel *endLabel;
     HashNameNode *namespaceName;
+    CLabel *endLabel;
     Statement *jumpStmt;
     DeclBlock *forScope;
     CLabel *conditionLabel;
@@ -1486,7 +1485,7 @@ void parse_statement(StatementContext *context)
     ENode *conditionExpr;
     DeclBlock *bodyScope;
     Statement *stmt;
-    DeclBlock *switchScope;
+    DeclBlock *conditionScope;
     CLabel *topLabel;
     ENode *stepExpr;
     ENode *testExpr;
@@ -1563,15 +1562,15 @@ void parse_statement(StatementContext *context)
             else
                 tk = CPrepTokenizer_GetNextToken();
             if (copts.cplusplus && !use_legacy_condition_scope() && isdeclaration(1, 0, 0, 0x3d)) {
-                switchScope = CFunc_NewDeclBlock();
+                conditionScope = CFunc_NewDeclBlock();
                 conditionExpr = parse_declarations(0, 1, 0, 0);
                 if (CScope_IsEmptyNameSpace(cscope_current)) {
-                    CFunc_RestoreBlock(switchScope);
-                    switchScope = NULL;
+                    CFunc_RestoreBlock(conditionScope);
+                    conditionScope = NULL;
                 }
             } else {
                 conditionExpr = s_expression();
-                switchScope = NULL;
+                conditionScope = NULL;
             }
             expr = CExpr2_ConvertScalarOperand(conditionExpr, 1, 0);
             CheckScalarOperand(expr);
@@ -1604,8 +1603,8 @@ void parse_statement(StatementContext *context)
             stmt = CFunc_AppendStatement(2);
             stmt->label = endLabel;
             endLabel->stmt = stmt;
-            if (switchScope)
-                CFunc_RestoreBlock(switchScope);
+            if (conditionScope)
+                CFunc_RestoreBlock(conditionScope);
             return;
         case 0x13f:
             tk = CPrepTokenizer_GetNextToken();
@@ -1802,15 +1801,15 @@ void parse_statement(StatementContext *context)
             else
                 tk = CPrepTokenizer_GetNextToken();
             if (copts.cplusplus && !use_legacy_condition_scope() && isdeclaration(1, 0, 0, 0x3d)) {
-                switchScope = CFunc_NewDeclBlock();
+                conditionScope = CFunc_NewDeclBlock();
                 conditionExpr = parse_declarations(0, 1, 0, 0);
                 if (CScope_IsEmptyNameSpace(cscope_current)) {
-                    CFunc_RestoreBlock(switchScope);
-                    switchScope = NULL;
+                    CFunc_RestoreBlock(conditionScope);
+                    conditionScope = NULL;
                 }
             } else {
                 conditionExpr = s_expression();
-                switchScope = NULL;
+                conditionScope = NULL;
                 CExpr_CheckUnwantedAssignment(conditionExpr);
             }
             expr = CExpr2_ConvertScalarOperand(conditionExpr, 0, 1);
@@ -1846,8 +1845,8 @@ void parse_statement(StatementContext *context)
             stmt = CFunc_AppendStatement(2);
             stmt->label = endLabel;
             endLabel->stmt = stmt;
-            if (switchScope)
-                CFunc_RestoreBlock(switchScope);
+            if (conditionScope)
+                CFunc_RestoreBlock(conditionScope);
             return;
         case TK_IF: {
             tk = CPrepTokenizer_GetNextToken();
@@ -1856,20 +1855,24 @@ void parse_statement(StatementContext *context)
             else
                 tk = CPrepTokenizer_GetNextToken();
             if (copts.cplusplus && !use_legacy_condition_scope() && isdeclaration(1, 0, 0, 0x3d)) {
-                ifScope = CFunc_NewDeclBlock();
+                conditionScope = CFunc_NewDeclBlock();
                 conditionExpr = parse_declarations(0, 1, 0, 0);
                 if (CScope_IsEmptyNameSpace(cscope_current)) {
-                    CFunc_RestoreBlock(ifScope);
-                    ifScope = NULL;
+                    CFunc_RestoreBlock(conditionScope);
+                    conditionScope = NULL;
                 }
             } else {
                 conditionExpr = s_expression();
-                ifScope = NULL;
+                conditionScope = NULL;
                 CExpr_CheckUnwantedAssignment(conditionExpr);
             }
             expr = CExpr2_ConvertScalarOperand(conditionExpr, 0, 1);
             CheckScalarOperand(expr);
+#if VERSION == VERSION_GC_1_0
+            CondJump(0, expr, endLabel = newlabel(), 0);
+#else
             CondJump(0, expr, endLabel = continueLabel = newlabel(), 0);
+#endif
             if (tk != ')')
                 CError_ReportErrorAndUpdateToken(ERR_RPAREN_EXPECTED);
             else {
@@ -1892,17 +1895,26 @@ void parse_statement(StatementContext *context)
                     tk = CPrepTokenizer_GetNextToken();
                 stmt = CFunc_AppendStatement(3);
                 stmt->label = newlabel();
+#if VERSION == VERSION_GC_1_0
+                continueLabel = stmt->label;
+                stmt = CFunc_AppendStatement(2);
+                stmt->label = endLabel;
+                endLabel->stmt = stmt;
+                CFunc_CompoundStatement(context);
+                endLabel = continueLabel;
+#else
                 endLabel = stmt->label;
                 stmt = CFunc_AppendStatement(2);
                 stmt->label = continueLabel;
                 continueLabel->stmt = stmt;
                 CFunc_CompoundStatement(context);
+#endif
             }
             stmt = CFunc_AppendStatement(2);
             stmt->label = endLabel;
             endLabel->stmt = stmt;
-            if (ifScope)
-                CFunc_RestoreBlock(ifScope);
+            if (conditionScope)
+                CFunc_RestoreBlock(conditionScope);
             return;
         }
         case '{':
