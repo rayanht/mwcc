@@ -2270,7 +2270,7 @@ void unroll_loop(int factor, struct IRONode *header)
                     IroUtil_InsertLinearBefore(list.head, list.tail, pred->last);
                     testLast = list.head;
 
-                    first = NULL;
+                    copy = NULL;
                     for (fnode2 = prevsucc; fnode2 && fnode2 != header; fnode2 = fnode2->nextnode) {
                         IroUtil_InitList(&list);
                         last = fnode2->last;
@@ -2280,8 +2280,8 @@ void unroll_loop(int factor, struct IRONode *header)
                                 nd->stmt->flags |= 0x10;
                             if (nd->type != IROLinearLabel && !(nd->flags & IROLF_Reffed)) {
                                 IroUtil_CopyLinearToList(nd, &list);
-                                if (!first)
-                                    first = list.head;
+                                if (!copy)
+                                    copy = list.head;
                             }
                             if (nd == last)
                                 break;
