@@ -2299,7 +2299,6 @@ char *expand_macros_in_text(Macro *state, char *text)
 {
     short character;
     short initialDepth;
-    UInt8 *token;
     UInt8 *quotedText;
     UInt8 *remainingText;
     Macro *expansion;
@@ -2324,7 +2323,7 @@ char *expand_macros_in_text(Macro *state, char *text)
             case 4:
                 AppendGListByte(&macro_text, 4);
                 currentTextPosition++;
-                currentTextPosition = CPrepTokenizer_ScanIdentifier((token = currentTextPosition));
+                currentTextPosition = CPrepTokenizer_ScanIdentifier((remainingText = currentTextPosition));
                 if (data_0057f9de != 0) {
                     if (memcmp(data_00587fa0->name, "defined", 8) == 0) {
                         next = find_identifier_end_after_optional_paren(currentTextPosition);
@@ -2332,7 +2331,7 @@ char *expand_macros_in_text(Macro *state, char *text)
                             currentTextPosition = next;
                     }
                 }
-                AppendGListData(&macro_text, token, currentTextPosition - token);
+                AppendGListData(&macro_text, remainingText, currentTextPosition - remainingText);
                 continue;
 
             case '"':
@@ -2395,14 +2394,14 @@ char *expand_macros_in_text(Macro *state, char *text)
             case 'x':
             case 'y':
             case 'z':
-                currentTextPosition = CPrepTokenizer_ScanIdentifier((token = currentTextPosition));
+                currentTextPosition = CPrepTokenizer_ScanIdentifier((remainingText = currentTextPosition));
                 data_0057f9d2 = 0;
                 if (data_0057f9de != 0) {
                     if (memcmp(data_00587fa0->name, "defined", 8) == 0) {
                         next = find_identifier_end_after_optional_paren(currentTextPosition);
                         if (next != NULL) {
                             currentTextPosition = next;
-                            AppendGListData(&macro_text, token, next - token);
+                            AppendGListData(&macro_text, remainingText, next - remainingText);
                             continue;
                         }
                     }
@@ -2421,11 +2420,11 @@ char *expand_macros_in_text(Macro *state, char *text)
                     }
                     savedText = aalloc(length);
                     memcpy(savedText, *macro_text.data, length);
-                    token = expand_macro(expansion);
+                    remainingText = expand_macro(expansion);
                     if (macro_expansion_depth == initialDepth) {
-                        split = (int)strlen((char *)token) - 1;
+                        split = (int)strlen((char *)remainingText) - 1;
                         for (; split > 0; split--) {
-                            switch ((char)token[split]) {
+                            switch ((char)remainingText[split]) {
                                 case ' ':
                                 case '"':
                                 case '\'':
@@ -2438,16 +2437,16 @@ char *expand_macros_in_text(Macro *state, char *text)
                         }
                         if (split > 0) {
                             macro_text.size = 0;
-                            AppendGListName(&macro_text, (char *)&token[split + 1]);
+                            AppendGListName(&macro_text, (char *)&remainingText[split + 1]);
                             AppendGListID(&macro_text, (char *)currentTextPosition);
                             currentTextPosition = aalloc(macro_text.size);
                             memcpy(currentTextPosition, *macro_text.data, macro_text.size);
                             macro_text.size = 0;
                             AppendGListData(&macro_text, savedText, length);
-                            AppendGListData(&macro_text, token, split + 1);
+                            AppendGListData(&macro_text, remainingText, split + 1);
                         } else {
                             macro_text.size = 0;
-                            AppendGListName(&macro_text, (char *)token);
+                            AppendGListName(&macro_text, (char *)remainingText);
                             AppendGListID(&macro_text, (char *)currentTextPosition);
                             remainingText = aalloc(macro_text.size);
                             memcpy(remainingText, *macro_text.data, macro_text.size);
@@ -2459,7 +2458,7 @@ char *expand_macros_in_text(Macro *state, char *text)
                     } else {
                         macro_text.size = 0;
                         AppendGListData(&macro_text, savedText, length);
-                        AppendGListID(&macro_text, (char *)token);
+                        AppendGListID(&macro_text, (char *)remainingText);
                         if (macro_expansion_depth < initialDepth)
                             goto allocateResult;
                         macro_text.size--;
@@ -2468,7 +2467,7 @@ char *expand_macros_in_text(Macro *state, char *text)
                 } else {
                     if (data_0057f9d2 != 0)
                         AppendGListByte(&macro_text, 4);
-                    AppendGListData(&macro_text, token, currentTextPosition - token);
+                    AppendGListData(&macro_text, remainingText, currentTextPosition - remainingText);
                 }
                 continue;
 
@@ -2515,9 +2514,9 @@ allocateResult:
         CPrep_ReportError(ERR_MACROS_TOO_COMPLEX);
         return "";
     }
-    savedText = aalloc(size);
-    memcpy(savedText, *macro_text.data, size);
-    return savedText;
+    text = aalloc(size);
+    memcpy(text, *macro_text.data, size);
+    return text;
 }
 
 #if VERSION == VERSION_GC_1_0
