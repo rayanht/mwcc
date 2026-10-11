@@ -3121,10 +3121,17 @@ static HashNameNode *CPrep_MakeOnceName(unsigned char *filename, Boolean isDefau
     char *p;
     short length;
 
+#if VERSION == VERSION_GC_1_0
+    p = key;
+    length = filename[0];
+    if (length > 250)
+        length = 250;
+#else
     length = filename[0];
     if (length > 250)
         length = 250;
     p = key;
+#endif
     *p++ = (copts.syspath_once && isDefault) ? '$' : (char)0xa4;
     name = (char *)filename + 1;
     while (length-- > 0)
