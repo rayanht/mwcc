@@ -17,7 +17,10 @@ from split import read_splits
 def main():
     version, output, *inputs = sys.argv[1:]
     config = json.loads(Path(f"config/{version}/config.json").read_text())
-    subprocess.run(["build/tools/wibo", "build/compilers/pro53/mwld.exe", "-nostdlib", "-subsystem", "console",
+    # (wibo runs the linker, a Windows executable, elsewhere)
+    linker = str(Path("build/compilers/pro53/mwld.exe"))
+    wibo = [] if sys.platform == "win32" else ["build/tools/wibo"]
+    subprocess.run([*wibo, linker, "-nostdlib", "-subsystem", "console",
                     "-m", "_mainCRTStartup", *inputs, "-o", output, "-map", str(Path(output).with_suffix(".map"))],
                    check=True)
     original = PEFile(Path(config["original"]))
