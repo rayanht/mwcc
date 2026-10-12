@@ -204,6 +204,7 @@
     "src/optimizer/IroEval.c",
     "src/optimizer/IroFlowgraph.c",
     "src/optimizer/IroJump.c",
+    "src/optimizer/IroLoop.c",
     "src/optimizer/IroPropagate.c",
     "src/optimizer/IroRangePropagation.c",
     "src/optimizer/IroSubable.c",

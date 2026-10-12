@@ -1871,9 +1871,6 @@ void unroll_loop(int factor, struct IRONode *header)
     IROLinear *elast;
     IROLinear *econd;
     IROLinear *ecur;
-#if VERSION != VERSION_GC_1_0
-    IROLinear *eend;
-#endif
     IRONode *labelnode;
     VarRecord *var;
     IRONode *node2;
@@ -1884,6 +1881,7 @@ void unroll_loop(int factor, struct IRONode *header)
     IROLinear *base;
     IROLinear *mulNd;
     IROLinear *cmpNd;
+    IROLinear *boundCopy;
     IROLinear *cmpLin;
     IROLinear *right2;
     IROLinear *left2;
@@ -1896,9 +1894,6 @@ void unroll_loop(int factor, struct IRONode *header)
     IROLinear *zeroOpnd;
     IROLinear *zeroCmp;
     IROLinear *oldlast;
-#if VERSION != VERSION_GC_1_0
-    IROLinear *oldCondition;
-#endif
     IROLinear *copy;
     IROLinear *lab;
     IROLinear *incNd;
@@ -1925,9 +1920,11 @@ void unroll_loop(int factor, struct IRONode *header)
     IRONode *prevsucc;
     int result;
     IROLinear *secondBoundLinear;
+    CLabel *exitLabel1;
     CLabel *label;
     CLabel *gotoLabel;
     CLabel *label3;
+    CLabel *exitLabel0;
     IROLinear *gotoNd;
     IROLinear *boundLinear;
     IROLinear *testLast;
@@ -1936,10 +1933,10 @@ void unroll_loop(int factor, struct IRONode *header)
     IROLinear *remLast;
     IROLinear *eremLast;
     IROLinear *initialLinear;
+    IROLinear *elin;
     IROLinear *preFirst;
     IROLinear *preLast;
     IROLinear *exitFirst;
-    IROLinear *elin;
     IROLinear *exitLast;
     IROLinear *jumpNd;
     IROLinear *plast;
@@ -2367,7 +2364,11 @@ void unroll_loop(int factor, struct IRONode *header)
                     preLast = list.tail;
 
                     IroUtil_InitList(&list);
+#if VERSION == VERSION_GC_1_0
+                    exitLabel0 = NewLabelLinear(&list);
+#else
                     limit = (IROLinear *)NewLabelLinear(&list);
+#endif
                     IroUtil_InsertLinearBefore(list.head, list.tail, pred->last);
                     testLast = list.head;
 
@@ -2398,6 +2399,17 @@ void unroll_loop(int factor, struct IRONode *header)
                     else
                         IroUtil_CopyLinearToList(ind->nd->u.diadic.left, &list);
                     list.tail->flags &= ~IROLF_Assigned;
+#if VERSION == VERSION_GC_1_0
+                    boundCopy = list.tail;
+                    IroUtil_CopyLinearToList(boundLinear, &list);
+                    list.tail->flags &= ~IROLF_Assigned;
+                    cmpLin = IrOptimizer_NewLinear(IROLinearOp2Arg);
+                    cmpLin->nodetype = ELESS;
+                    cmpLin->rtype = (Type *)&stbool;
+                    cmpLin->index = ++linear_index_counter;
+                    cmpLin->next = NULL;
+                    cmpLin->u.diadic.left = boundCopy;
+#else
                     leftCopy = list.tail;
                     IroUtil_CopyLinearToList(boundLinear, &list);
                     list.tail->flags &= ~IROLF_Assigned;
@@ -2407,11 +2419,16 @@ void unroll_loop(int factor, struct IRONode *header)
                     cmpLin->index = ++linear_index_counter;
                     cmpLin->next = NULL;
                     cmpLin->u.diadic.left = leftCopy;
+#endif
                     cmpLin->u.diadic.right = list.tail;
                     IroUtil_AppendLinear(cmpLin, &list);
                     cmpLin->flags |= IROLF_Reffed;
                     elast = NewTypedLinear(loop_header->last->type, &list);
+#if VERSION == VERSION_GC_1_0
+                    elast->u.label = exitLabel0;
+#else
                     elast->u.label = (CLabel *)limit;
+#endif
                     elast->u.diadic.right = cmpLin;
                     elast->u.diadic.right->flags |= IROLF_Reffed;
                     elast->rtype = loop_header->last->rtype;
@@ -2428,7 +2445,11 @@ void unroll_loop(int factor, struct IRONode *header)
                     IroUtil_InsertLinearBefore(list.head, list.tail, pred->last);
 
                     IroUtil_InitList(&list);
+#if VERSION == VERSION_GC_1_0
+                    exitLabel1 = NewLabelLinear(&list);
+#else
                     object = (Object *)NewLabelLinear(&list);
+#endif
                     IroUtil_InsertLinearBefore(list.head, list.tail, pred->last);
                     exitFirst = list.head;
 
@@ -2561,7 +2582,11 @@ void unroll_loop(int factor, struct IRONode *header)
                     IroUtil_AppendLinear(cmpLin, &list);
                     cmpLin->flags |= IROLF_Reffed;
                     elast = NewTypedLinear(loop_header->last->type, &list);
+#if VERSION == VERSION_GC_1_0
+                    elast->u.label = exitLabel1;
+#else
                     elast->u.label = (CLabel *)object;
+#endif
                     elast->u.diadic.right = cmpLin;
                     elast->u.diadic.right->flags |= IROLF_Reffed;
                     elast->rtype = loop_header->last->rtype;
@@ -2680,10 +2705,10 @@ void unroll_loop(int factor, struct IRONode *header)
                     leftCopy = list.tail;
 
                     IroUtil_InitList(&list);
-                    elin = NewCondLinear(loop_header->last->type, &list);
+                    initialLinear = NewCondLinear(loop_header->last->type, &list);
                     label = IroUtil_NewLabel();
-                    elin->u.label = label;
-                    elin->u.diadic.right = leftCopy;
+                    initialLinear->u.label = label;
+                    initialLinear->u.diadic.right = leftCopy;
 #else
                     gotoLabel = pred->last->u.label;
                     elin = IroUtil_FindLabel(gotoLabel, pred->last);
@@ -2699,8 +2724,13 @@ void unroll_loop(int factor, struct IRONode *header)
                     elin->u.label = label;
                     elin->u.diadic.right = econd;
 #endif
+#if VERSION == VERSION_GC_1_0
+                    initialLinear->u.diadic.right->flags |= IROLF_Reffed;
+                    initialLinear->rtype = loop_header->last->rtype;
+#else
                     elin->u.diadic.right->flags |= IROLF_Reffed;
                     elin->rtype = loop_header->last->rtype;
+#endif
                     IroUtil_InsertLinearBefore(list.head, list.tail, pred->last);
 
                     n = compute_loop_count(loop, &niters);
@@ -2734,7 +2764,11 @@ void unroll_loop(int factor, struct IRONode *header)
                     IroUtil_InsertLinearBefore(list.head, list.tail, pred->last);
 
                     IroUtil_InitList(&list);
+#if VERSION == VERSION_GC_1_0
+                    exitLabel1 = NewLabelLinear(&list);
+#else
                     right1 = (IROLinear *)NewLabelLinear(&list);
+#endif
                     IroUtil_InsertLinearBefore(list.head, list.tail, pred->last);
                     exitFirst = list.head;
 
@@ -2849,7 +2883,11 @@ void unroll_loop(int factor, struct IRONode *header)
 
                     IroUtil_InitList(&list);
                     elast = NewTypedLinear(loop_header->last->type, &list);
+#if VERSION == VERSION_GC_1_0
+                    elast->u.label = exitLabel1;
+#else
                     elast->u.label = (CLabel *)right1;
+#endif
                     elast->u.diadic.right = finalLast;
                     elast->u.diadic.right->flags |= IROLF_Reffed;
                     elast->rtype = loop_header->last->rtype;
@@ -2858,7 +2896,11 @@ void unroll_loop(int factor, struct IRONode *header)
 
                     nextnode = pred->nextnode;
                     oldlast = pred->last;
+#if VERSION == VERSION_GC_1_0
+                    pred->last = initialLinear;
+#else
                     pred->last = elin;
+#endif
                     node1 = IroFlowgraph_NewNode();
                     node1->first = preFirst;
                     node1->last = preLast;
@@ -2911,8 +2953,13 @@ void unroll_loop(int factor, struct IRONode *header)
                         node1->last->type = IROLinearNop;
                     }
                     if (!flag2) {
+#if VERSION == VERSION_GC_1_0
+                        IroUtil_ClearZeroOperands(initialLinear->u.diadic.right);
+                        initialLinear->type = IROLinearNop;
+#else
                         IroUtil_ClearZeroOperands(elin->u.diadic.right);
                         elin->type = IROLinearNop;
+#endif
                         IroUtil_ClearZeroOperands(node4->last->u.diadic.right);
                         node4->last->type = IROLinearNop;
                         if (node2)
