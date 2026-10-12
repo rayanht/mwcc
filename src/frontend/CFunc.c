@@ -1488,6 +1488,538 @@ void check_function_result_automatic_variable(ENode *e)
     }
 }
 
+#if VERSION == VERSION_GC_1_0
+void parse_statement(StatementContext *context)
+{
+    CLabel *breakLabel;
+    HashNameNode *namespaceName;
+    CLabel *endLabel;
+    Statement *jumpStmt;
+    DeclBlock *scope;
+    CLabel *conditionLabel;
+    ENode *expr;
+    ENode *conditionExpr;
+    DeclBlock *bodyScope;
+    Statement *stmt;
+    DeclBlock *conditionScope;
+    CLabel *topLabel;
+    ENode *stepExpr;
+    ENode *testExpr;
+    StatementContext bodyContext;
+    CLabel *continueLabel;
+
+    sourceoffset = CPrep_UpdateTokenLine(&function_fileinfo);
+    switch (tk) {
+        case TK_RETURN:
+            tk = CPrepTokenizer_GetNextToken();
+            if (((context->thetype == &stvoid && !copts.cplusplus) || CClass_IsDestructor(cscope_currentfunc)) ||
+                CClass_HasTypeFuncFlag16384(cscope_currentfunc)) {
+                if (tk != ';') {
+                    CError_ReportError(ERR_ILLEGAL_RETURN_VALUE_VOID_CONSTRUCTOR_DESTRUCTOR);
+                    s_expression();
+                }
+                stmt = CFunc_AppendStatement(8);
+                stmt->expr = NULL;
+                fn_00449d60();
+                tk = CPrepTokenizer_GetNextToken();
+                return;
+            }
+            if (tk == ';') {
+                if (context->thetype != &stvoid && (warn_missing_return_value() || copts.cplusplus))
+                    CError_Warning(ERR_RETURN_VALUE_EXPECTED);
+                jumpStmt = CFunc_AppendStatement(8);
+                jumpStmt->expr = NULL;
+                fn_00449d60();
+                tk = CPrepTokenizer_GetNextToken();
+                return;
+            }
+            expr = s_expression();
+            if (context->thetype == &stvoid) {
+                if (expr->rtype != &stvoid)
+                    CError_ReportError(ERR_ILLEGAL_RETURN_VALUE_VOID_CONSTRUCTOR_DESTRUCTOR);
+                stmt = CFunc_AppendStatement(4);
+                stmt->expr = expr;
+                stmt = CFunc_AppendStatement(8);
+                stmt->expr = NULL;
+            } else {
+                if (CMach_GetFunctionResultClass((TypeFunc *)cscope_currentfunc->type) == 1)
+                    expr = initialize_argument_object(expr, context->thetype, context->qual);
+                else
+                    expr = oldassignmentpromotion(expr, context->thetype, context->qual, 1);
+                stmt = CFunc_AppendStatement(8);
+                stmt->expr = expr;
+                if (context->thetype->type == TYPEPOINTER)
+                    check_function_result_automatic_variable(expr);
+            }
+            break;
+        case TK_CASE:
+            parse_case_statement(context);
+            return;
+        case TK_DEFAULT:
+            if (!context->switchinfo) {
+                CError_ReportError(ERR_ILLEGAL_USE_KEYWORD);
+                return;
+            }
+            if (CPrepTokenizer_GetNextToken() != ':')
+                CError_ReportErrorAndUpdateToken(ERR_COLON_EXPECTED);
+            else
+                tk = CPrepTokenizer_GetNextToken();
+            if (context->switchinfo->defaultlabel)
+                CError_ReportErrorAndUpdateToken(ERR_DEFAULT_LABEL_DEFINED_MORE_THAN_ONCE);
+            stmt = CFunc_AppendStatement(2);
+            stmt->label = newlabel();
+            stmt->label->stmt = stmt;
+            context->switchinfo->defaultlabel = stmt->label;
+            parse_statement(context);
+            return;
+        case TK_SWITCH:
+            if (CPrepTokenizer_GetNextToken() != '(')
+                CError_ReportErrorAndUpdateToken(ERR_LPAREN_EXPECTED);
+            else
+                tk = CPrepTokenizer_GetNextToken();
+            if (copts.cplusplus && !use_legacy_condition_scope() && isdeclaration(1, 0, 0, 0x3d)) {
+                scope = CFunc_NewDeclBlock();
+                conditionExpr = parse_declarations(0, 1, 0, 0);
+                if (CScope_IsEmptyNameSpace(cscope_current)) {
+                    CFunc_RestoreBlock(scope);
+                    scope = NULL;
+                }
+            } else {
+                conditionExpr = s_expression();
+                scope = NULL;
+            }
+            testExpr = CExpr2_ConvertScalarOperand(conditionExpr, 1, 0);
+            CheckScalarOperand(testExpr);
+            stmt = CFunc_AppendStatement(5);
+            stmt->expr = integralpromote(testExpr);
+            if (tk != ')')
+                CError_ReportErrorAndUpdateToken(ERR_RPAREN_EXPECTED);
+            else
+                tk = CPrepTokenizer_GetNextToken();
+            stmt->label = (CLabel *)lalloc(sizeof(SwitchInfo));
+            ((SwitchInfo *)stmt->label)->defaultlabel = NULL;
+            ((SwitchInfo *)stmt->label)->cases = NULL;
+            ((SwitchInfo *)stmt->label)->sizetype = stmt->expr->rtype;
+            endLabel = newlabel();
+            bodyContext = *context;
+            bodyContext.switchinfo = (SwitchInfo *)stmt->label;
+            bodyContext.loopBreak = endLabel;
+            CFunc_CompoundStatement(&bodyContext);
+            if (!bodyContext.switchinfo->defaultlabel)
+                bodyContext.switchinfo->defaultlabel = endLabel;
+            if (!bodyContext.switchinfo->cases) {
+                stmt->type = ST_EXPRESSION;
+                jumpStmt = (Statement *)lalloc(sizeof(Statement));
+                *jumpStmt = *stmt;
+                stmt->next = jumpStmt;
+                jumpStmt->type = ST_GOTO;
+                jumpStmt->label = bodyContext.switchinfo->defaultlabel;
+                jumpStmt->dobjstack = cexcept_dobjstack;
+            }
+            stmt = CFunc_AppendStatement(2);
+            stmt->label = endLabel;
+            endLabel->stmt = stmt;
+            if (scope)
+                CFunc_RestoreBlock(scope);
+            return;
+        case 0x13f:
+            tk = CPrepTokenizer_GetNextToken();
+            if (tk != TK_IDENTIFIER) {
+                if (tk == '*' && !copts.ANSIstrict) {
+                    tk = CPrepTokenizer_GetNextToken();
+                    stmt = CFunc_AppendStatement(0xf);
+                    stmt->expr = s_expression();
+                    if (stmt->expr->rtype->type != TYPEPOINTER) {
+                        CError_ReportError(ERR_ILLEGAL_TYPE);
+                        stmt->expr = nullnode();
+                        stmt->expr->rtype = (Type *)&void_ptr;
+                    }
+                    break;
+                }
+                CError_ReportError(ERR_IDENTIFIER_EXPECTED);
+                return;
+            }
+            stmt = CFunc_AppendStatement(3);
+            stmt->label = findlabel();
+            if (!stmt->label) {
+                stmt->label = newlabel();
+                stmt->label->next = Labels;
+                Labels = stmt->label;
+                stmt->label->name = data_00587fa0;
+            }
+            tk = CPrepTokenizer_GetNextToken();
+            break;
+        case TK_BREAK:
+            if (context->loopBreak) {
+                stmt = CFunc_AppendStatement(3);
+                stmt->label = context->loopBreak;
+            } else
+                CError_ReportError(ERR_ILLEGAL_USE_KEYWORD);
+            tk = CPrepTokenizer_GetNextToken();
+            break;
+        case TK_CONTINUE:
+            if (context->loopContinue) {
+                stmt = CFunc_AppendStatement(3);
+                stmt->label = context->loopContinue;
+            } else
+                CError_ReportError(ERR_ILLEGAL_USE_KEYWORD);
+            tk = CPrepTokenizer_GetNextToken();
+            break;
+        case TK_FOR:
+            if (CPrepTokenizer_GetNextToken() != '(')
+                CError_ReportErrorAndUpdateToken(ERR_LPAREN_EXPECTED);
+            else
+                tk = CPrepTokenizer_GetNextToken();
+            scope = NULL;
+            if (tk != ';') {
+                if (!copts.cplusplus || !isdeclaration(1, 0, 0, 0)) {
+                    testExpr = s_expression();
+                    CExpr_CheckUnusedExpression(testExpr);
+                } else {
+                    if (!use_legacy_condition_scope())
+                        scope = CFunc_NewDeclBlock();
+                    testExpr = parse_declarations(0, 1, 1, 0);
+                    if (scope && CScope_IsEmptyNameSpace(cscope_current)) {
+                        CFunc_RestoreBlock(scope);
+                        scope = NULL;
+                    }
+                }
+                if (testExpr) {
+                    jumpStmt = CFunc_AppendStatement(4);
+                    jumpStmt->expr = testExpr;
+                }
+                if (tk != ';')
+                    CError_ReportError(ERR_SEMICOLON_EXPECTED);
+                else
+                    fn_00449d60();
+            } else
+                fn_00449d60();
+            tk = CPrepTokenizer_GetNextToken();
+            if (tk != ';') {
+                if (copts.cplusplus && !use_legacy_condition_scope() && isdeclaration(1, 0, 0, 0x3d)) {
+                    if (!scope)
+                        scope = CFunc_NewDeclBlock();
+                    conditionExpr = parse_declarations(0, 1, 0, 0);
+                    if (CScope_IsEmptyNameSpace(cscope_current)) {
+                        CFunc_RestoreBlock(scope);
+                        scope = NULL;
+                    }
+                } else {
+                    conditionExpr = s_expression();
+                    CExpr_CheckUnwantedAssignment(conditionExpr);
+                }
+                testExpr = CExpr2_ConvertScalarOperand(conditionExpr, 0, 1);
+                CheckScalarOperand(testExpr);
+                if (tk == ';')
+                    fn_00449d60();
+                else
+                    CError_ReportError(ERR_SEMICOLON_EXPECTED);
+            } else {
+                fn_00449d60();
+                testExpr = NULL;
+            }
+            tk = CPrepTokenizer_GetNextToken();
+            if (tk != ')') {
+                stepExpr = s_expression();
+                CExpr_CheckUnusedExpression(stepExpr);
+                if (tk == ')')
+                    fn_00449d60();
+                else
+                    CError_ReportError(ERR_RPAREN_EXPECTED);
+            } else {
+                fn_00449d60();
+                stepExpr = NULL;
+            }
+            if (warn_empty_control_statement()) {
+                data_00588523 = 0;
+                tk = CPrepTokenizer_GetNextToken();
+                if (tk == ';' && !data_00588523)
+                    CError_Warning(ERR_POSSIBLE_UNWANTED_SEMICOLON);
+            } else
+                tk = CPrepTokenizer_GetNextToken();
+            if (testExpr) {
+                jumpStmt = CFunc_AppendStatement(3);
+                jumpStmt->label = newlabel();
+                conditionLabel = jumpStmt->label;
+            } else
+                conditionLabel = newlabel();
+            IncreaseStatementValue();
+            jumpStmt = CFunc_AppendStatement(2);
+            jumpStmt->label = newlabel();
+            (topLabel = jumpStmt->label)->stmt = jumpStmt;
+            breakLabel = newlabel();
+            endLabel = newlabel();
+            bodyContext = *context;
+            bodyContext.loopContinue = endLabel;
+            bodyContext.loopBreak = breakLabel;
+            if (tk != '{') {
+                bodyScope = CFunc_NewDeclBlock();
+                CFunc_CompoundStatement(&bodyContext);
+                CFunc_RestoreBlock(bodyScope);
+            } else
+                CFunc_CompoundStatement(&bodyContext);
+            jumpStmt = CFunc_AppendStatement(2);
+            jumpStmt->label = endLabel;
+            endLabel->stmt = jumpStmt;
+            if (stepExpr) {
+                jumpStmt = CFunc_AppendStatement(4);
+                jumpStmt->expr = stepExpr;
+            }
+            jumpStmt = CFunc_AppendStatement(2);
+            jumpStmt->label = conditionLabel;
+            conditionLabel->stmt = jumpStmt;
+            CondJump(1, testExpr, topLabel, 1);
+            DecreaseStatementValue();
+            jumpStmt = CFunc_AppendStatement(2);
+            jumpStmt->label = breakLabel;
+            breakLabel->stmt = jumpStmt;
+            if (scope)
+                CFunc_RestoreBlock(scope);
+            return;
+        case 0x13d:
+            IncreaseStatementValue();
+            stmt = CFunc_AppendStatement(2);
+            stmt->label = newlabel();
+            (topLabel = stmt->label)->stmt = stmt;
+            continueLabel = newlabel();
+            endLabel = newlabel();
+            bodyContext = *context;
+            bodyContext.loopContinue = continueLabel;
+            bodyContext.loopBreak = endLabel;
+            tk = CPrepTokenizer_GetNextToken();
+            CFunc_CompoundStatement(&bodyContext);
+            stmt = CFunc_AppendStatement(2);
+            stmt->label = continueLabel;
+            continueLabel->stmt = stmt;
+            if (tk != TK_WHILE)
+                CError_ReportError(ERR_ILLEGAL_TOKEN);
+            if (CPrepTokenizer_GetNextToken() != '(')
+                CError_ReportErrorAndUpdateToken(ERR_LPAREN_EXPECTED);
+            else
+                tk = CPrepTokenizer_GetNextToken();
+            expr = CExpr2_ConvertScalarOperand(s_expression(), 0, 1);
+            CheckScalarOperand(expr);
+            CExpr_CheckUnwantedAssignment(expr);
+            if (tk != ')')
+                CError_ReportErrorAndUpdateToken(ERR_RPAREN_EXPECTED);
+            else
+                tk = CPrepTokenizer_GetNextToken();
+            CondJump(1, expr, topLabel, 1);
+            DecreaseStatementValue();
+            stmt = CFunc_AppendStatement(2);
+            stmt->label = endLabel;
+            endLabel->stmt = stmt;
+            break;
+        case TK_WHILE:
+            tk = CPrepTokenizer_GetNextToken();
+            if (tk != '(')
+                CError_ReportErrorAndUpdateToken(ERR_LPAREN_EXPECTED);
+            else
+                tk = CPrepTokenizer_GetNextToken();
+            if (copts.cplusplus && !use_legacy_condition_scope() && isdeclaration(1, 0, 0, 0x3d)) {
+                conditionScope = CFunc_NewDeclBlock();
+                conditionExpr = parse_declarations(0, 1, 0, 0);
+                if (CScope_IsEmptyNameSpace(cscope_current)) {
+                    CFunc_RestoreBlock(conditionScope);
+                    conditionScope = NULL;
+                }
+            } else {
+                conditionExpr = s_expression();
+                conditionScope = NULL;
+                CExpr_CheckUnwantedAssignment(conditionExpr);
+            }
+            expr = CExpr2_ConvertScalarOperand(conditionExpr, 0, 1);
+            CheckScalarOperand(expr);
+            if (tk != ')')
+                CError_ReportErrorAndUpdateToken(ERR_RPAREN_EXPECTED);
+            else {
+                if (warn_empty_control_statement()) {
+                    data_00588523 = 0;
+                    tk = CPrepTokenizer_GetNextToken();
+                    if (tk == ';' && !data_00588523)
+                        CError_Warning(ERR_POSSIBLE_UNWANTED_SEMICOLON);
+                } else
+                    tk = CPrepTokenizer_GetNextToken();
+            }
+            stmt = CFunc_AppendStatement(3);
+            stmt->label = newlabel();
+            continueLabel = stmt->label;
+            IncreaseStatementValue();
+            stmt = CFunc_AppendStatement(2);
+            stmt->label = newlabel();
+            (topLabel = stmt->label)->stmt = stmt;
+            endLabel = newlabel();
+            bodyContext = *context;
+            bodyContext.loopContinue = continueLabel;
+            bodyContext.loopBreak = endLabel;
+            CFunc_CompoundStatement(&bodyContext);
+            stmt = CFunc_AppendStatement(2);
+            stmt->label = continueLabel;
+            continueLabel->stmt = stmt;
+            CondJump(1, expr, topLabel, 1);
+            DecreaseStatementValue();
+            stmt = CFunc_AppendStatement(2);
+            stmt->label = endLabel;
+            endLabel->stmt = stmt;
+            if (conditionScope)
+                CFunc_RestoreBlock(conditionScope);
+            return;
+        case TK_IF: {
+            tk = CPrepTokenizer_GetNextToken();
+            if (tk != '(')
+                CError_ReportErrorAndUpdateToken(ERR_LPAREN_EXPECTED);
+            else
+                tk = CPrepTokenizer_GetNextToken();
+            if (copts.cplusplus && !use_legacy_condition_scope() && isdeclaration(1, 0, 0, 0x3d)) {
+                scope = CFunc_NewDeclBlock();
+                conditionExpr = parse_declarations(0, 1, 0, 0);
+                if (CScope_IsEmptyNameSpace(cscope_current)) {
+                    CFunc_RestoreBlock(scope);
+                    scope = NULL;
+                }
+            } else {
+                conditionExpr = s_expression();
+                scope = NULL;
+                CExpr_CheckUnwantedAssignment(conditionExpr);
+            }
+            conditionExpr = CExpr2_ConvertScalarOperand(conditionExpr, 0, 1);
+            CheckScalarOperand(conditionExpr);
+            CondJump(0, conditionExpr, endLabel = newlabel(), 0);
+            if (tk != ')')
+                CError_ReportErrorAndUpdateToken(ERR_RPAREN_EXPECTED);
+            else {
+                if (warn_empty_control_statement()) {
+                    data_00588523 = 0;
+                    tk = CPrepTokenizer_GetNextToken();
+                    if (tk == ';' && !data_00588523)
+                        CError_Warning(ERR_POSSIBLE_UNWANTED_SEMICOLON);
+                } else
+                    tk = CPrepTokenizer_GetNextToken();
+            }
+            CFunc_CompoundStatement(context);
+            if (tk == TK_ELSE) {
+                if (warn_empty_control_statement()) {
+                    data_00588523 = 0;
+                    tk = CPrepTokenizer_GetNextToken();
+                    if (tk == ';' && !data_00588523)
+                        CError_Warning(ERR_POSSIBLE_UNWANTED_SEMICOLON);
+                } else
+                    tk = CPrepTokenizer_GetNextToken();
+                stmt = CFunc_AppendStatement(3);
+                stmt->label = newlabel();
+                continueLabel = stmt->label;
+                stmt = CFunc_AppendStatement(2);
+                stmt->label = endLabel;
+                endLabel->stmt = stmt;
+                CFunc_CompoundStatement(context);
+                endLabel = continueLabel;
+            }
+            stmt = CFunc_AppendStatement(2);
+            stmt->label = endLabel;
+            endLabel->stmt = stmt;
+            if (scope)
+                CFunc_RestoreBlock(scope);
+            return;
+        }
+        case '{':
+            CFunc_CompoundStatement(context);
+            return;
+        case ';':
+            break;
+        case TK_ASM:
+            if (copts.cplusplus || !copts.ANSIstrict) {
+                tk = CPrepTokenizer_GetNextToken();
+                if (tk == '(') {
+                    InlineAsm_ParseAsmStatement();
+                    if (tk == ')') {
+                        tk = CPrepTokenizer_GetNextToken();
+                        break;
+                    }
+                    CError_ReportError(ERR_RPAREN_EXPECTED);
+                    return;
+                }
+                if (tk == '{') {
+                    InlineAsm_ParseAsmStatement();
+                    if (tk != '}') {
+                        CError_ReportError(ERR_RBRACE_EXPECTED);
+                        return;
+                    }
+                    tk = CPrepTokenizer_GetNextToken();
+                    if (tk == ';')
+                        tk = CPrepTokenizer_GetNextToken();
+                    fn_00449d60();
+                    return;
+                }
+                CError_ReportError(ERR_LPAREN_EXPECTED);
+                return;
+            }
+            CError_ReportError(ERR_DECLARATION_SYNTAX_ERROR);
+            return;
+        case TK_TRY:
+            tk = CPrepTokenizer_GetNextToken();
+            CExcept_ScanTryBlock(context, 0);
+            return;
+        case TK_USING:
+            tk = CPrepTokenizer_GetNextToken();
+            if (tk == TK_NAMESPACE) {
+                tk = CPrepTokenizer_GetNextToken();
+                CScope_ParseUsingDirective(cscope_current);
+            } else
+                CScope_ParseUsingDeclaration(cscope_current, ACCESSPUBLIC, 0);
+            return;
+        case TK_NAMESPACE:
+            tk = CPrepTokenizer_GetNextToken();
+            if (tk != TK_IDENTIFIER) {
+                CError_ReportError(ERR_IDENTIFIER_EXPECTED);
+                return;
+            }
+            namespaceName = data_00587fa0;
+            tk = CPrepTokenizer_GetNextToken();
+            if (tk != '=') {
+                CError_ReportError(ERR_DECLARATION_SYNTAX_ERROR);
+                return;
+            }
+            CScope_ParseNameSpaceAlias(namespaceName);
+            break;
+        case TK_IDENTIFIER:
+            if (IsLabel()) {
+                stmt = CFunc_AppendStatement(2);
+                if ((stmt->label = findlabel()) != NULL) {
+                    if (stmt->label->stmt)
+                        CError_ReportError(ERR_LABEL_REDEFINED, data_00587fa0->name);
+                } else {
+                    stmt->label = newlabel();
+                    stmt->label->next = Labels;
+                    Labels = stmt->label;
+                    stmt->label->name = data_00587fa0;
+                }
+                stmt->label->stmt = stmt;
+                tk = CPrepTokenizer_GetNextToken();
+                tk = CPrepTokenizer_GetNextToken();
+                parse_statement(context);
+                return;
+            }
+            tk = TK_IDENTIFIER;
+            /* fallthrough */
+        default:
+            if (copts.cplusplus && isdeclaration(1, 0, 0, 0)) {
+                parse_declarations(0, 0, 0, 1);
+                tk = CPrepTokenizer_GetNextToken();
+                return;
+            }
+            stmt = CFunc_AppendStatement(4);
+            stmt->expr = s_expression();
+            CExpr_CheckUnusedExpression(stmt->expr);
+            break;
+    }
+    if (tk == ';') {
+        CPrep_ResetBufferedTokenPosition();
+        tk = CPrepTokenizer_GetNextToken();
+        fn_00449d60();
+    } else
+        CError_ReportErrorAndUpdateToken(ERR_SEMICOLON_EXPECTED);
+}
+#else
 void parse_statement(StatementContext *context)
 {
     HashNameNode *namespaceName;
@@ -1880,15 +2412,9 @@ void parse_statement(StatementContext *context)
                 conditionScope = NULL;
                 CExpr_CheckUnwantedAssignment(conditionExpr);
             }
-#if VERSION == VERSION_GC_1_0
-            conditionExpr = CExpr2_ConvertScalarOperand(conditionExpr, 0, 1);
-            CheckScalarOperand(conditionExpr);
-            CondJump(0, conditionExpr, endLabel = newlabel(), 0);
-#else
             expr = CExpr2_ConvertScalarOperand(conditionExpr, 0, 1);
             CheckScalarOperand(expr);
             CondJump(0, expr, endLabel = continueLabel = newlabel(), 0);
-#endif
             if (tk != ')')
                 CError_ReportErrorAndUpdateToken(ERR_RPAREN_EXPECTED);
             else {
@@ -1911,20 +2437,11 @@ void parse_statement(StatementContext *context)
                     tk = CPrepTokenizer_GetNextToken();
                 stmt = CFunc_AppendStatement(3);
                 stmt->label = newlabel();
-#if VERSION == VERSION_GC_1_0
-                continueLabel = stmt->label;
-                stmt = CFunc_AppendStatement(2);
-                stmt->label = endLabel;
-                endLabel->stmt = stmt;
-                CFunc_CompoundStatement(context);
-                endLabel = continueLabel;
-#else
                 endLabel = stmt->label;
                 stmt = CFunc_AppendStatement(2);
                 stmt->label = continueLabel;
                 continueLabel->stmt = stmt;
                 CFunc_CompoundStatement(context);
-#endif
             }
             stmt = CFunc_AppendStatement(2);
             stmt->label = endLabel;
@@ -2031,6 +2548,7 @@ void parse_statement(StatementContext *context)
     } else
         CError_ReportErrorAndUpdateToken(ERR_SEMICOLON_EXPECTED);
 }
+#endif
 
 void CFunc_CompoundStatement(struct StatementContext *context)
 {
