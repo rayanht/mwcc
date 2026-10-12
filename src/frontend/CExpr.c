@@ -3102,14 +3102,13 @@ ENode *do_typecast(ENode *expr, Type *type, UInt32 qual)
             break;
     }
 
-#if VERSION == VERSION_GC_1_0
-    maskedQual = qual & ENODE_FLAG_QUALS;
-    nodeQual = maskedQual;
-#else
     nodeQual = maskedQual = qual & ENODE_FLAG_QUALS;
-#endif
     if (expr->type == EOBJLIST)
+#if VERSION == VERSION_GC_1_0
+        return oldassignmentpromotion(expr, type, maskedQual, 1);
+#else
         return ((ENode * (*)(ENode *, Type *, int, int)) oldassignmentpromotion)(expr, type, maskedQual, 1);
+#endif
     if (expr->type == EOBJREF) {
         TypeMemberFunc *func;
         if ((func = (TypeMemberFunc *)(object = expr->data.addr.objref)->type)->type == TYPEFUNC &&
