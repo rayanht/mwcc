@@ -1854,6 +1854,7 @@ int combine_nonoverlapping_shifts(CInt64 a, CInt64 b, CInt64 *out)
 
 void unroll_loop(int factor, struct IRONode *header)
 {
+    IRONode *fnode2;
     IROLinear *checkLinear;
     IRONode *adjacentNode;
     IRONode *prevpred;
@@ -1888,7 +1889,6 @@ void unroll_loop(int factor, struct IRONode *header)
     IROLinear *left2;
     IROLinear *limit;
     IROLinear *right1;
-    IRONode *fnode2;
     IROLinear *last;
     IROLinear *first;
     IROLinear *lab2;
@@ -2631,6 +2631,45 @@ void unroll_loop(int factor, struct IRONode *header)
                     IroUtil_InsertLinearBefore(list.head, list.tail, pred->last);
                     exitFirst = list.head;
 
+#if VERSION == VERSION_GC_1_0
+                    for (copies = 0; copies < factor; copies++) {
+                        elast = NULL;
+                        first = NULL;
+                        for (fnode = prevsucc; fnode && fnode != header; fnode = fnode->nextnode) {
+                            IroUtil_InitList(&list);
+#if VERSION == VERSION_GC_1_0
+                            last = fnode->last;
+#else
+                            eend = fnode->last;
+#endif
+                            ecur = fnode->first;
+                            for (;;) {
+                                if (ecur->stmt)
+                                    ecur->stmt->flags |= 0x10;
+                                if ((ecur->index < loop->lo || ecur->index > loop->hi) &&
+                                    ecur->type != IROLinearLabel && !(ecur->flags & IROLF_Reffed)) {
+                                    IroUtil_CopyLinearToList(ecur, &list);
+                                    if (!elast)
+                                        elast = list.head;
+                                    first = list.tail;
+                                }
+#if VERSION == VERSION_GC_1_0
+                                if (ecur == last)
+#else
+                                if (ecur == eend)
+#endif
+                                    break;
+                                ecur = ecur->next;
+                            }
+                            if (list.head && list.tail)
+                                IroUtil_InsertLinearBefore(list.head, list.tail, pred->last);
+                        }
+                        if (copies) {
+                            offset = n = offset += loop->induction->addConst;
+                            add_const_to_induction_var_references(elast, first, offset, loop);
+                        }
+                    }
+#else
                     for (copies = 0; copies < factor; copies++) {
                         first = NULL;
                         elast = NULL;
@@ -2668,6 +2707,7 @@ void unroll_loop(int factor, struct IRONode *header)
                             add_const_to_induction_var_references(first, elast, offset, loop);
                         }
                     }
+#endif
 
                     IroUtil_InitList(&list);
                     append_scaled_induction_update(loop, factor, &list);
