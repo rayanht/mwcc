@@ -1854,6 +1854,7 @@ int combine_nonoverlapping_shifts(CInt64 a, CInt64 b, CInt64 *out)
 
 void unroll_loop(int factor, struct IRONode *header)
 {
+#if VERSION == VERSION_GC_1_0
     IRONode *fnode2;
     IROLinear *checkLinear;
     IRONode *adjacentNode;
@@ -1868,7 +1869,6 @@ void unroll_loop(int factor, struct IRONode *header)
     IRONode *node5;
     IRONode *newnode;
     IROLinear *elast;
-    IROLinear *elin;
     IROLinear *econd;
     IROLinear *ecur;
 #if VERSION != VERSION_GC_1_0
@@ -1939,9 +1939,100 @@ void unroll_loop(int factor, struct IRONode *header)
     IROLinear *preFirst;
     IROLinear *preLast;
     IROLinear *exitFirst;
+    IROLinear *elin;
     IROLinear *exitLast;
     IROLinear *jumpNd;
     IROLinear *plast;
+#else
+    IROLinear *checkLinear;
+    IRONode *adjacentNode;
+    IRONode *prevpred;
+    IRONode *pred;
+    IRONode *fnode;
+    IRONode *nextnode;
+    IRONode *node1;
+    IROLinear *finalLast;
+    IRONode *node3;
+    IRONode *node4;
+    IRONode *node5;
+    IRONode *newnode;
+    IROLinear *elast;
+    IROLinear *elin;
+    IROLinear *econd;
+    IROLinear *ecur;
+#if VERSION != VERSION_GC_1_0
+    IROLinear *eend;
+#endif
+    IRONode *labelnode;
+    VarRecord *var;
+    IRONode *node2;
+    IROLinear *initialCountLinear;
+    IROLoop *loop;
+    IROLinear *valueLinear;
+    IROLinear *convertedValue;
+    IROLinear *base;
+    IROLinear *mulNd;
+    IROLinear *cmpNd;
+    IROLinear *cmpLin;
+    IROLinear *right2;
+    IROLinear *left2;
+    IROLinear *limit;
+    IROLinear *right1;
+    IRONode *fnode2;
+    IROLinear *last;
+    IROLinear *first;
+    IROLinear *lab2;
+    IROLinear *lastCond;
+    IROLinear *zeroOpnd;
+    IROLinear *zeroCmp;
+    IROLinear *oldlast;
+#if VERSION != VERSION_GC_1_0
+    IROLinear *oldCondition;
+#endif
+    IROLinear *copy;
+    IROLinear *lab;
+    IROLinear *incNd;
+    IROLinear *decNd;
+    IROLinear *dupLast;
+    IROLinear *leftCopy;
+    IROLinear *opnd;
+    Type *type;
+    ENode *enode;
+    Object *object;
+    Object *otherObject;
+    UInt16 i;
+    UInt16 j;
+    IROLoopInd *ind;
+    UInt16 k;
+    UInt16 copies;
+    UInt32 predcount;
+    int foundpred;
+    UInt8 count2;
+    UInt8 count1;
+    SInt32 offset;
+    SInt32 n;
+    IROLinear *nd;
+    IRONode *prevsucc;
+    int result;
+    IROLinear *secondBoundLinear;
+    CLabel *label;
+    CLabel *gotoLabel;
+    CLabel *label3;
+    IROLinear *gotoNd;
+    IROLinear *boundLinear;
+    IROLinear *testLast;
+    IROLinear *bodyLast;
+    IROLinear *thirdBoundLinear;
+    IROLinear *remLast;
+    IROLinear *eremLast;
+    IROLinear *initialLinear;
+    IROLinear *preFirst;
+    IROLinear *preLast;
+    IROLinear *exitFirst;
+    IROLinear *exitLast;
+    IROLinear *jumpNd;
+    IROLinear *plast;
+#endif
 
     IROList list;
     CInt64 niters;
@@ -2579,6 +2670,21 @@ void unroll_loop(int factor, struct IRONode *header)
                     labelnode->nextnode = newnode->nextnode;
                     newnode->nextnode = labelnode;
                 } else {
+#if VERSION == VERSION_GC_1_0
+                    gotoLabel = pred->last->u.label;
+                    econd = IroUtil_FindLabel(gotoLabel, pred->last);
+                    IroUtil_InitList(&list);
+                    IroUtil_CopyLinearRangeToList(econd->next, loop_header->last->u.diadic.right, &list);
+                    IroUtil_CopyLinearToList(loop_header->last->u.diadic.right, &list);
+                    IroUtil_InsertLinearBefore(list.head, list.tail, pred->last);
+                    leftCopy = list.tail;
+
+                    IroUtil_InitList(&list);
+                    elin = NewCondLinear(loop_header->last->type, &list);
+                    label = IroUtil_NewLabel();
+                    elin->u.label = label;
+                    elin->u.diadic.right = leftCopy;
+#else
                     gotoLabel = pred->last->u.label;
                     elin = IroUtil_FindLabel(gotoLabel, pred->last);
                     IroUtil_InitList(&list);
@@ -2592,6 +2698,7 @@ void unroll_loop(int factor, struct IRONode *header)
                     label = IroUtil_NewLabel();
                     elin->u.label = label;
                     elin->u.diadic.right = econd;
+#endif
                     elin->u.diadic.right->flags |= IROLF_Reffed;
                     elin->rtype = loop_header->last->rtype;
                     IroUtil_InsertLinearBefore(list.head, list.tail, pred->last);
