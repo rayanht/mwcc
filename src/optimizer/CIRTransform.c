@@ -16,6 +16,16 @@ static TypeFunc data_005741b0 = {TYPEFUNC, 0, NULL, NULL, TYPE(&stsignedshort), 
 static TypeFunc data_005741cc = {TYPEFUNC, 0, NULL, NULL, TYPE(&stunsignedlong), 0, 0};
 static TypeFunc data_005741e8 = {TYPEFUNC, 0, NULL, NULL, TYPE(&void_ptr), 0, 0};
 
+void fn_0051b810(void)
+{
+    return;
+}
+
+void fn_0051b800(void)
+{
+    return;
+}
+
 Object *get_or_create_type_name_object(CIRTypeName *entry, Type *ty)
 {
     Object *obj;
@@ -47,61 +57,80 @@ Object *get_or_create_type_name_object(CIRTypeName *entry, Type *ty)
     return obj;
 }
 
-ENode *expand_compound_assignment(ENode *expr)
+typedef struct CompoundAssignState {
+    ENode *direct;
+    Object *temporary;
+    ENode *setup;
+    Type *type;
+    Type *qualifiedType;
+} CompoundAssignState;
+
+static void setup_compound_target(CompoundAssignState *state, ENode *left)
 {
-    ENode *left;
-    ENode *target;
-    ENode *address;
-    ENode *value;
-    ENode *converted;
-    ENode *operation;
-    ENode *storeAddress;
-    ENode *storeTarget;
-    ENode *assignment;
-    ENode *result;
-    struct {
-        ENode *direct;
-        Object *temporary;
-        ENode *setup;
-        Type *type;
-        Type *qualifiedType;
-    } state;
-    left = expr->data.diadic.left;
-    memclrw(&state, sizeof(state));
-    state.type = left->rtype;
+    memclrw(state, sizeof(*state));
+    state->type = left->rtype;
     if (left->type != EINDIRECT) {
         CError_FATAL(518);
     }
-    target = left->data.diadic.left;
-    target->rtype = CDecl_NewPointerType(state.type);
-    if (target->type == EOBJREF) {
-        state.direct = target->data.diadic.left;
+    left = left->data.diadic.left;
+    left->rtype = CDecl_NewPointerType(state->type);
+    if (left->type == EOBJREF) {
+        state->direct = left->data.diadic.left;
     } else {
-        if (target->type == EBITFIELD) {
-            state.qualifiedType = target->rtype;
-            target = target->data.diadic.left;
+        if (left->type == EBITFIELD) {
+            state->qualifiedType = left->rtype;
+            left = left->data.diadic.left;
         }
-        state.temporary = create_temp_object(target->rtype);
-        state.setup = ((ENode * (*)(ENode *, ENode *, UInt8))
-                           makediadicnode)(((ENode * (*)(Object *)) create_objectnode)(state.temporary), target, 30);
+        state->temporary = create_temp_object(left->rtype);
+        state->setup = ((ENode * (*)(ENode *, ENode *, UInt8))
+                            makediadicnode)(((ENode * (*)(Object *)) create_objectnode)(state->temporary), left, 30);
     }
-    if (state.direct == NULL) {
-        address = ((ENode * (*)(Object *)) create_objectnode)(state.temporary);
-        if (state.qualifiedType != NULL) {
+}
+
+static ENode *make_compound_target(CompoundAssignState *state)
+{
+    ENode *address;
+    ENode *value;
+
+    if (state->direct == NULL) {
+        address = ((ENode * (*)(Object *)) create_objectnode)(state->temporary);
+        if (state->qualifiedType != NULL) {
             address = makemonadicnode(address, 49);
-            address->rtype = state.qualifiedType;
+            address->rtype = state->qualifiedType;
         }
         value = makemonadicnode(address, 4);
     } else {
-        value = ((ENode * (*)(ENode *)) create_objectnode)(state.direct);
+        value = ((ENode * (*)(ENode *)) create_objectnode)(state->direct);
     }
-    converted = value;
-    value->rtype = state.type;
+    value->rtype = state->type;
+    return value;
+}
+
+static ENode *finish_compound(CompoundAssignState *state, ENode *expr)
+{
+    ENode *result;
+
+    result = expr;
+    if (state->setup != NULL) {
+        result = ((ENode * (*)(ENode *, ENode *, UInt8)) makediadicnode)(state->setup, expr, 41);
+        result->rtype = result->data.diadic.right->rtype;
+    }
+    return result;
+}
+
+ENode *expand_compound_assignment(ENode *expr)
+{
+    ENode *value;
+    ENode *operation;
+    CompoundAssignState state;
+
+    setup_compound_target(&state, expr->data.diadic.left);
+    value = make_compound_target(&state);
     if (expr->data.diadic.left->rtype != expr->data.diadic.right->rtype) {
-        converted = makemonadicnode(value, 48);
-        converted->rtype = expr->data.diadic.right->rtype;
+        value = makemonadicnode(value, 48);
+        value->rtype = expr->data.diadic.right->rtype;
     }
-    operation = ((ENode * (*)(ENode *, ENode *, UInt8)) makediadicnode)(converted, expr->data.diadic.right, 41);
+    operation = ((ENode * (*)(ENode *, ENode *, UInt8)) makediadicnode)(value, expr->data.diadic.right, 41);
     switch (expr->type) {
         case EMULASS:
             operation->type = EMUL;
@@ -143,24 +172,17 @@ ENode *expand_compound_assignment(ENode *expr)
     if (operation->rtype->type == TYPEFLOAT) {
         operation = CExpr_BinaryFloatExpression(operation);
     }
-    if (state.direct == NULL) {
-        storeAddress = ((ENode * (*)(Object *)) create_objectnode)(state.temporary);
-        if (state.qualifiedType != NULL) {
-            storeAddress = ((ENode * (*)(ENode *, UInt8)) makemonadicnode)(storeAddress, 49);
-            storeAddress->rtype = state.qualifiedType;
-        }
-        storeTarget = ((ENode * (*)(ENode *, UInt8)) makemonadicnode)(storeAddress, 4);
-    } else {
-        storeTarget = ((ENode * (*)(ENode *)) create_objectnode)(state.direct);
-    }
-    storeTarget->rtype = state.type;
-    assignment = ((ENode * (*)(ENode *, ENode *, UInt8)) makediadicnode)(storeTarget, operation, 30);
-    result = assignment;
-    if (state.setup != NULL) {
-        result = ((ENode * (*)(ENode *, ENode *, UInt8)) makediadicnode)(state.setup, assignment, 41);
-        result->rtype = result->data.diadic.right->rtype;
-    }
-    return result;
+    return finish_compound(
+        &state, ((ENode * (*)(ENode *, ENode *, UInt8)) makediadicnode)(make_compound_target(&state), operation, 30));
+}
+
+static ENodeList *simplify_unused_list(ENodeList *list)
+{
+    ENodeList *p;
+
+    for (p = list; p != NULL; p = p->next)
+        p->node = simplify_unused_enode_values(p->node, 1);
+    return list;
 }
 
 ENode *simplify_unused_enode_values(ENode *e, UInt8 flag)
@@ -308,14 +330,8 @@ ENode *simplify_unused_enode_values(ENode *e, UInt8 flag)
             break;
         case EFUNCCALL:
         case EFUNCCALLP: {
-            ENodeList *p;
-            ENodeList *head;
-
             e->data.funccall.funcref = simplify_unused_enode_values(e->data.funccall.funcref, 1);
-            head = e->data.funccall.args;
-            for (p = head; p != NULL; p = p->next)
-                p->node = simplify_unused_enode_values(p->node, 1);
-            e->data.funccall.args = head;
+            e->data.funccall.args = simplify_unused_list(e->data.funccall.args);
             break;
         }
         case ENULLCHECK:

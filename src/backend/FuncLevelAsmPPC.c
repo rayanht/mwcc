@@ -1,5 +1,6 @@
 #define CERROR_FILE "FuncLevelAsmPPC.c"
 #include "compiler/common.h"
+#include "version.h"
 #include "compiler/FuncLevelAsmPPC.h"
 #include "compiler/enode.h"
 #include "compiler/objects.h"
@@ -36,15 +37,119 @@ UInt8 func_errors;
 static struct PCodeAssemblyEntry *data_00581c58;
 static struct PCodeAssemblyEntry **assembly_list_tail;
 
-static inline void append_assembly(ParsedAsmInstruction *q, PCodeBlock *block)
+void assign_object_register(Object *func, SInt16 register_number)
 {
-    PCodeAssemblyEntry *n = (PCodeAssemblyEntry *)lalloc(12);
-    memclrw(n, 12);
-    n->object = q->data.directive.object;
-    n->block = block;
-    *assembly_list_tail = n;
-    assembly_list_tail = &n->next;
-    block->flags |= 0x20;
+    VarInfo *regs;
+    Type *type;
+    SInt16 physical_register;
+    SInt32 kind;
+
+    regs = Registers_GetInfo(func);
+    type = func->type;
+    regs->used = 1;
+    if (data_00588521) {
+        if (func->sclass == TK_REGISTER) {
+            if (register_number == 0) {
+                CError_ReportError(ERR_COULD_NOT_ASSIGNED_REGISTER, func->name->name);
+            }
+            regs->is_vector = 0;
+            if (copts.operandsDebug && type->type == TYPEFLOAT) {
+                if (type->size == 4) {
+                    regs->is_fpr = 1;
+                    regs->reg = register_number;
+                    physical_register = regs->reg;
+                } else {
+                    regs->is_fpr = 1;
+#if VERSION > VERSION_GC_1_0
+                    if (copts.littleendian != 0) {
+                        regs->reg = register_number;
+                        physical_register = regs->reg;
+                        regs->regHi = register_number + 1;
+                    } else
+#endif
+                    {
+                        regs->reg = register_number + 1;
+                        physical_register = regs->reg;
+                        regs->regHi = register_number;
+                    }
+                }
+                CTemplateNew_InsertRegisterBinding(func->name->name, 0, physical_register, func);
+            } else if ((type->type == TYPEINT || type->type == TYPEENUM) && type->size == 8) {
+                regs->is_fpr = 0;
+#if VERSION > VERSION_GC_1_0
+                if (copts.littleendian != 0) {
+                    regs->regHi = register_number + 1;
+                    physical_register = 0;
+                    if (register_number < 10) {
+                        regs->reg = register_number;
+                        physical_register = regs->reg;
+                    }
+                } else
+#endif
+                {
+                    regs->reg = register_number + 1;
+                    physical_register = regs->reg;
+                    if (register_number < 10) {
+                        regs->regHi = register_number;
+                    }
+                }
+                CTemplateNew_InsertRegisterBinding(func->name->name, 0, physical_register, func);
+            } else if (type->type == TYPEFLOAT) {
+                regs->is_fpr = 1;
+                regs->reg = register_number;
+                CTemplateNew_InsertRegisterBinding(func->name->name, 1, register_number, func);
+            } else if (type->type == TYPESTRUCT && (kind = ((TypeStruct *)type)->stype) >= 4 && kind <= 0xe) {
+                regs->is_vector = 1;
+                regs->is_fpr = 0;
+                regs->reg = register_number;
+                CTemplateNew_InsertRegisterBinding(func->name->name, 9, register_number, func);
+            } else {
+                regs->is_fpr = 0;
+                regs->reg = register_number;
+                CTemplateNew_InsertRegisterBinding(func->name->name, 0, register_number, func);
+            }
+        }
+    } else if (func->sclass == TK_REGISTER) {
+        UInt8 typecode;
+        UInt8 use_gpr;
+        if ((((typecode = type->type) == TYPEINT || typecode == TYPEENUM) && type->size == 8) ||
+            ((use_gpr = copts.operandsDebug) && typecode == TYPEFLOAT && type->size != 4)) {
+            if (gAvailableSavedGPRs < 2) {
+                CError_ReportError(ERR_COULD_NOT_ASSIGNED_REGISTER, func->name->name);
+            }
+            Registers_AllocateGPRPair(func);
+            if (Registers_GetInfo(func)) {
+                Registers_GetInfo(func);
+            }
+            physical_register = Registers_GetInfo(func) ? (Registers_GetInfo(func))->reg : 0;
+            CTemplateNew_InsertRegisterBinding(func->name->name, 0, physical_register, func);
+        } else if (typecode == TYPEINT || typecode == TYPEENUM || typecode == TYPEPOINTER ||
+                   (typecode == TYPEMEMBERPOINTER && type->size == 4) ||
+                   (use_gpr && typecode == TYPEFLOAT && type->size == 4)) {
+            if (gAvailableSavedGPRs == 0) {
+                CError_ReportError(ERR_COULD_NOT_ASSIGNED_REGISTER, func->name->name);
+            }
+            Registers_AllocateGPR(func);
+            physical_register = Registers_GetInfo(func) ? (Registers_GetInfo(func))->reg : 0;
+            CTemplateNew_InsertRegisterBinding(func->name->name, 0, physical_register, func);
+        } else if (typecode == TYPEFLOAT) {
+            if (gAvailableSavedFPRs == 0) {
+                CError_ReportError(ERR_COULD_NOT_ASSIGNED_REGISTER, func->name->name);
+            }
+            Registers_AllocateFPR(func);
+            physical_register = Registers_GetInfo(func) ? (Registers_GetInfo(func))->reg : 0;
+            CTemplateNew_InsertRegisterBinding(func->name->name, 1, physical_register, func);
+        } else if (typecode == TYPESTRUCT && (kind = ((TypeStruct *)type)->stype) >= 4 && kind <= 0xe) {
+            if (gAvailableSavedVRs == 0) {
+                CError_ReportError(ERR_COULD_NOT_ASSIGNED_REGISTER, func->name->name);
+            }
+            Registers_AllocateVR(func);
+            physical_register = Registers_GetInfo(func) ? (Registers_GetInfo(func))->reg : 0;
+            CTemplateNew_InsertRegisterBinding(func->name->name, 9, physical_register, func);
+        } else {
+            CError_ReportError(ERR_COULD_NOT_ASSIGNED_REGISTER, func->name->name);
+        }
+    }
 }
 
 void FuncLevelAsmPPC_AllocateLocals(void)
@@ -56,7 +161,7 @@ void FuncLevelAsmPPC_AllocateLocals(void)
     VarInfo *info;
 
     for (local = locals; local != NULL; local = local->next) {
-        info = CPrep_AllocateVarInfo();
+        info = CodeGen_AllocateVarInfo();
         local->object->u.var.info = info;
         local->object->flags |= 1;
         info->used = 1;
@@ -162,6 +267,21 @@ void fn_004e6e30(void)
     data_0058850d = savedFlag;
 }
 
+static void append_assembly(Statement *stmt, PCodeBlock *block)
+{
+    ParsedAsmInstruction *q = NULL;
+    PCodeAssemblyEntry *n = NULL;
+
+    q = (ParsedAsmInstruction *)stmt->expr;
+    n = (PCodeAssemblyEntry *)lalloc(12);
+    memclrw(n, 12);
+    n->object = q->data.directive.object;
+    n->block = block;
+    *assembly_list_tail = n;
+    assembly_list_tail = &n->next;
+    block->flags |= 0x20;
+}
+
 void FuncLevelAsmPPC_GenerateFunction(Object *func)
 {
     Statement *list;
@@ -172,12 +292,16 @@ void FuncLevelAsmPPC_GenerateFunction(Object *func)
     } item;
     const char *functionName;
     UInt8 frameFinalized;
-    UInt8 savedOptionC2;
     PCodeBlock *frameBlock;
+    UInt8 savedOptionC2;
     UInt8 savedOptionC3;
+#if VERSION == VERSION_GC_1_0
+    PCodeBlock *prologueBlock;
+#endif
 
     frameFinalized = 0;
 
+#if VERSION > VERSION_GC_1_0
     if (copts.littleendian) {
         high_word_offset = 4;
         low_word_offset = 0;
@@ -193,6 +317,7 @@ void FuncLevelAsmPPC_GenerateFunction(Object *func)
         sfpe_right_operand_reg_hi = 5;
         sfpe_right_operand_reg = 6;
     }
+#endif
 
     gStackFrameSize = 0;
     data_005882c0.record = NULL;
@@ -276,8 +401,7 @@ void FuncLevelAsmPPC_GenerateFunction(Object *func)
                     if ((item.assembly->specialFlags & 1) != 0) {
                         if (item.assembly->opcode == 1) {
                             PCodeUtilities_ResolveLabel(PCode_NewLabel());
-                            gCurrentBlock->line = node->sourceoffset;
-                            append_assembly((ParsedAsmInstruction *)node->expr, gCurrentBlock);
+                            gCurrentBlock->line = node->sourceoffset, append_assembly(node, gCurrentBlock);
                         } else if (item.assembly->opcode == 4) {
                             PCodeUtilities_ResolveLabel(PCode_NewLabel());
                             (gReturnBlock = gCurrentBlock)->flags |= 2;
@@ -287,6 +411,11 @@ void FuncLevelAsmPPC_GenerateFunction(Object *func)
                             PCode_BuildPredecessors();
                             if (copts.debug_listing != 0)
                                 fn_004c4bd0(functionName, "[FUNCTION-LEVEL ASM] INITIAL CODE");
+#if VERSION == VERSION_GC_1_0
+                            StackFrame_CheckAltivec(prologueBlock);
+                            if (copts.debug_listing != 0)
+                                fn_004c4bd0(functionName, "[FUNCTION-LEVEL ASM] AFTER CHECKING FOR ALTIVEC FRAME");
+#endif
                             Coloring_AllocateRegisters(func);
                             if (copts.debug_listing != 0)
                                 fn_004c4bd0(functionName, "[FUNCTION-LEVEL ASM] AFTER REGISTER COLORING");
@@ -313,7 +442,7 @@ void FuncLevelAsmPPC_GenerateFunction(Object *func)
                 break;
 
             default:
-                CError_FATAL(597);
+                CError_FATAL(VERSION > VERSION_GC_1_0 ? 597 : 575);
         }
     }
 
@@ -331,6 +460,11 @@ void FuncLevelAsmPPC_GenerateFunction(Object *func)
         if (copts.debug_listing != 0)
             fn_004c4bd0(functionName, "[FUNCTION-LEVEL ASM] INITIAL CODE");
         if (data_005884f4 == 0) {
+#if VERSION == VERSION_GC_1_0
+            StackFrame_CheckAltivec(prologueBlock);
+            if (gHasAltivecFrame && copts.debug_listing != 0)
+                fn_004c4bd0(functionName, "[FUNCTION-LEVEL ASM] AFTER CHECKING FOR ALTIVEC FRAME");
+#endif
             Coloring_AllocateRegisters(func);
             if (func_errors != 0)
                 return;
@@ -362,4 +496,14 @@ void FuncLevelAsmPPC_GenerateFunction(Object *func)
     if (copts.debug_listing != 0)
         fn_004c4bd0(COptimizer_GetFunctionObject(func)->name, "[FUNCTION-LEVEL ASM] FINAL CODE");
     CFunc_WarnUnused();
+}
+
+void FuncLevelAsmPPC_NoOp(void)
+{
+    return;
+}
+
+void fn_004e67a0(void)
+{
+    return;
 }

@@ -2,6 +2,7 @@
 #define COMPILER_STACKFRAMEEABI_H
 
 #include "compiler/common.h"
+#include "version.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -28,17 +29,33 @@ extern void fn_004aa580(void);
 extern SInt32 StackFrameEABI_GetRecordSize(Object *object);
 extern void StackFrameEABI_SaveArgumentRegisters(PCodeBlock *entryBlock, PCodeBlock *fpSaveBlock,
                                                  PCodeBlock *gpSaveBlock, PCodeLabel *operand);
+#if VERSION == VERSION_GC_1_0
+extern void emit_stack_frame_allocation(int frame_register, int vrsave_register);
+#else
 extern void emit_stack_frame_allocation(int arg);
+#endif
 extern void StackFrameEABI_ClearUnusedStackFrame(void);
 extern void generate_interrupt_register_saves(void);
+#if VERSION == VERSION_GC_1_0
+extern void emit_restore_special_registers(void);
+#else
 extern void emit_restore_special_registers(SInt16 frameRegister);
 extern void save_and_update_vrsave(int a, int argb);
+#endif
 extern void fn_004aa7d0(void);
+#if VERSION == VERSION_GC_1_0
+extern void emit_lwz_register_restores(void);
+#else
 extern int emit_lwz_register_restores(short base_register);
+#endif
 extern SInt32 StackFrameEABI_GetTypeAlignment(Type *type);
 extern void *fn_004aabb0(UInt32 value, char *name, SInt32 *outSize, Object *func);
 extern void StackFrameEABI_EmitFrameAllocation(char allocateFrame, short scratchReg, int frameSize);
+#if VERSION == VERSION_GC_1_0
+extern void restore_gprs(PCodeBlock *func, Boolean a, Boolean b);
+#else
 extern void restore_gprs(PCodeBlock *func, Boolean a, Boolean b, SInt16 c);
+#endif
 extern void save_gprs(PCodeBlock *func, Boolean a, Boolean b);
 extern void restore_vrs(PCodeBlock *block);
 extern void emit_restore_fprs(PCodeBlock *func, Boolean flag);
@@ -79,8 +96,11 @@ extern int data_005876a8;
 extern SInt32 gStackFrameSize;
 extern unsigned int data_005880cc;
 extern unsigned long data_00587e40;
+#if VERSION > VERSION_GC_1_0
 extern void StackFrame_CheckAltivec(void);
-extern void fn_004a9c70(void);
+#else
+extern void StackFrame_CheckAltivec(PCodeBlock *prologueBlock);
+#endif
 extern int fn_004a9f70(int value);
 extern unsigned int fn_004a9f90(void);
 extern UInt8 data_005884ff;

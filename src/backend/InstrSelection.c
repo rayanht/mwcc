@@ -21,6 +21,7 @@
 #include "compiler/StructMoves.h"
 #include "compiler/TOC.h"
 #include <stdlib.h>
+#include "version.h"
 
 struct FunctionCallFrame *function_call_frames;
 struct ObjectList *switch_tables;
@@ -131,6 +132,17 @@ enum ETypeCode {
 
 enum { INTCONST_NODE = 49 };
 
+static void emit_shift_left_immediate(ENode *expr, SInt16 shift, SInt16 negate, SInt16 outputReg, Operand *result);
+static void shift_right_imm(ENode *left, Type *type, short sh, short reg, Operand *result);
+static void signed_div_pow2(ENode *left, int sh, int negate, short reg, Operand *result);
+static void signed_mod_pow2(ENode *left, int sh, int negate, short reg, Operand *result);
+static void emit_rotate_and_mask(ENode *expr, SInt16 shift, SInt16 maskBegin, SInt16 maskEnd, SInt16 outputReg,
+                                 Operand *result);
+static SInt32 power_of_two_shift(SInt32 value);
+static void emit_gpr_pair_not(ENode *node, SInt16 reg, SInt16 regHi, Operand *out);
+static void make_gpr_pair_intval_operand(ENode *node, SInt16 reg1, SInt16 reg2, Operand *op);
+static void emit_gpr_pair_negation(ENode *node, SInt16 reg, SInt16 regHi, Operand *out);
+
 static inline void EmitIntoReg(ENode *l, SInt16 r1, SInt16 r2, Operand *res)
 {
     SInt16 r;
@@ -166,7 +178,7 @@ static inline int fn_004b2500_inline1(ENode *v1)
     return v2;
 }
 
-static void genOperand(ENode *n, Operand *op)
+static inline void genOperand(ENode *n, Operand *op)
 {
     (*(data_00560648[n->type]))(n, 0, 0, op);
     if (op->kind >= 9)
@@ -178,27 +190,7 @@ static inline SInt16 low_word(SInt32 value)
     return value;
 }
 
-static inline int SwapOp(int op)
-{
-    int r = op;
-    switch (op) {
-        case ELESS:
-            r = EGREATER;
-            break;
-        case EGREATER:
-            r = ELESS;
-            break;
-        case ELESSEQU:
-            r = EGREATEREQU;
-            break;
-        case EGREATEREQU:
-            r = ELESSEQU;
-            break;
-    }
-    return r;
-}
-
-static int IS_NonVoid(Type *t)
+static inline int IS_NonVoid(Type *t)
 {
     int r = 0;
     if (t->type != TYPEVOID)
@@ -206,7 +198,7 @@ static int IS_NonVoid(Type *t)
     return r;
 }
 
-static int IS_NotIgnored(ENode *e)
+static inline int IS_NotIgnored(ENode *e)
 {
     int r = 0;
     if (!e->ignored)
@@ -214,7 +206,7 @@ static int IS_NotIgnored(ENode *e)
     return r;
 }
 
-static void GenOperand(ENode *node, Operand *res)
+static inline void GenOperand(ENode *node, Operand *res)
 {
     data_00560648[node->type](node, 0, 0, res);
     if (res->kind != OpndType_FPR)
@@ -228,122 +220,11 @@ static inline void InstrSelection_004b5ae0_inline1(ENode *p0, Operand *p1)
     data_00560648[t1](p0, 0, 0, p1);
 }
 
-static void EmitAddImm(SInt16 dst, SInt16 src, SInt32 imm)
-{
-    if (imm != (SInt16)imm) {
-        PCodeUtilities_EmitInstruction(PC_ADDIS, dst, src, 0, (SInt16)((imm >> 16) + ((imm >> 15) & 1)));
-        if ((SInt16)imm != 0)
-            PCodeUtilities_EmitInstruction(PC_ADDI, dst, dst, 0, (SInt16)imm);
-    } else {
-        PCodeUtilities_EmitInstruction(PC_ADDI, dst, src, 0, imm);
-    }
-}
-
-static void SelectOperand(ENode *n, Operand *op)
+static inline void SelectOperand(ENode *n, Operand *op)
 {
     data_00560648[n->type](n, 0, 0, op);
     if (op->kind >= 9 && op->kind != OpndType_GPR)
         Operands_ForceGPR(op, n->rtype, 0);
-}
-
-static void InstrSelection_EmitMask(Operand *op, ENode *operand, SInt16 cnt, SInt16 lo, SInt16 hi, SInt16 arg2,
-                                    Operand *out)
-{
-    SInt32 reg;
-
-    memclrw(op, sizeof(Operand));
-    (*data_00560648[operand->type])(operand, 0, 0, op);
-    if (op->kind)
-        Operands_ForceGPR((Operand *)op, operand->rtype, 0);
-    reg = (arg2 != 0) ? arg2 : gUsedVirtualRegistersGPR++;
-    PCodeUtilities_EmitInstruction(PC_RLWINM, reg, op->reg, cnt, lo, hi);
-    out->kind = OpndType_GPR;
-    out->reg = reg;
-}
-
-static void unsigned_mod_pow2(ENode *left, int sh, short reg, Operand *result)
-{
-    Operand op;
-    int r;
-
-    memclrw(&op, 0x16);
-    (*data_00560648[left->type])(left, 0, 0, &op);
-    if (op.kind)
-        Operands_ForceGPR(&op, left->rtype, 0);
-    r = reg != 0 ? reg : gUsedVirtualRegistersGPR++;
-    PCodeUtilities_EmitInstruction(PC_RLWINM, r, (SInt16)op.reg, 0, (SInt16)(0x20 - sh), 0x1f);
-    result->kind = OpndType_GPR;
-    result->reg = r;
-}
-
-static void signed_mod_pow2(ENode *left, int sh, short reg, Operand *result)
-{
-    Operand op;
-    int r;
-
-    memclrw(&op, 0x16);
-    (*data_00560648[left->type])(left, 0, 0, &op);
-    if (op.kind)
-        Operands_ForceGPR(&op, left->rtype, 0);
-    r = (reg != 0 && reg != (SInt16)op.reg) ? reg : gUsedVirtualRegistersGPR++;
-    PCodeUtilities_EmitInstruction(PC_SRAWI, r, (SInt16)op.reg, sh);
-    PCodeUtilities_EmitInstruction(PC_ADDZE, r, r);
-    PCodeUtilities_EmitInstruction(PC_RLWINM, r, r, sh, 0, 0x1f - sh);
-    PCodeUtilities_EmitInstruction(PC_SUBFC, r, r, (SInt16)op.reg);
-    result->kind = OpndType_GPR;
-    result->reg = r;
-}
-
-static void shift_right_imm(ENode *left, short sh, Type *type, short reg, Operand *result)
-{
-    Operand op;
-    int r;
-
-    memclrw(&op, 0x16);
-    (*data_00560648[left->type])(left, 0, 0, &op);
-    if (op.kind)
-        Operands_ForceGPR(&op, left->rtype, 0);
-    r = reg != 0 ? reg : gUsedVirtualRegistersGPR++;
-    sh &= 0x1f;
-    if (is_unsigned(type))
-        PCodeUtilities_EmitInstruction(PC_RLWINM, r, op.reg, 0x20 - sh, 0x20 - type->size * 8 + sh, 0x1f);
-    else
-        PCodeUtilities_EmitInstruction(PC_SRAWI, r, op.reg, sh);
-    result->kind = OpndType_GPR;
-    result->reg = r;
-}
-
-static void signed_div_pow2(ENode *left, int sh, short reg, Operand *result)
-{
-    Operand op;
-    int r;
-
-    memclrw(&op, 0x16);
-    (*data_00560648[left->type])(left, 0, 0, &op);
-    if (op.kind)
-        Operands_ForceGPR(&op, left->rtype, 0);
-    r = reg != 0 ? reg : gUsedVirtualRegistersGPR++;
-    PCodeUtilities_EmitInstruction(PC_SRAWI, r, op.reg, sh);
-    PCodeUtilities_EmitInstruction(PC_ADDZE, r, r);
-    result->kind = OpndType_GPR;
-    result->reg = r;
-}
-
-static void signed_div_negpow2(ENode *left, int sh, short reg, Operand *result)
-{
-    Operand op;
-    int r;
-
-    memclrw(&op, 0x16);
-    (*data_00560648[left->type])(left, 0, 0, &op);
-    if (op.kind)
-        Operands_ForceGPR(&op, left->rtype, 0);
-    r = reg != 0 ? reg : gUsedVirtualRegistersGPR++;
-    PCodeUtilities_EmitInstruction(PC_SRAWI, r, op.reg, sh);
-    PCodeUtilities_EmitInstruction(PC_ADDZE, r, r);
-    PCodeUtilities_EmitInstruction(PC_NEG, r, r);
-    result->kind = OpndType_GPR;
-    result->reg = r;
 }
 
 static inline void ClearOps(Operand *a, Operand *b, Operand *c)
@@ -353,7 +234,7 @@ static inline void ClearOps(Operand *a, Operand *b, Operand *c)
     memclrw(c, 0x16);
 }
 
-static SInt32 InstrSelection_GetVR0(ENode *node)
+static inline SInt32 InstrSelection_GetVR0(ENode *node)
 {
     if (Registers_GetInfo(node->data.objref) != NULL)
         return Registers_GetInfo(node->data.objref)->reg;
@@ -370,47 +251,6 @@ static inline void StoreOp(SInt16 r, Operand *o, Type *t)
     Operands_EmitTypedGPRMemoryInstruction(r, o, t);
 }
 
-static inline int AddOffset(SInt16 dest, SInt16 source, SInt32 size)
-{
-    if (size != (SInt16)size) {
-        SInt32 hi = size >> 16;
-        SInt32 carry = (size >> 15) & 1;
-        UInt32 high = hi + carry;
-        PCodeUtilities_EmitInstruction(PC_ADDIS, (SInt16)dest, source, 0, (SInt16)high);
-        if ((SInt16)size != 0)
-            PCodeUtilities_EmitInstruction(PC_ADDI, (SInt16)dest, (SInt16)dest, 0, (SInt16)size);
-    } else {
-        PCodeUtilities_EmitInstruction(PC_ADDI, (SInt16)dest, source, 0, size);
-    }
-    return 1;
-}
-
-static inline int AddOffset2(SInt32 d, Operand *s, SInt32 n)
-{
-    return AddOffset(d, s->reg, n);
-}
-
-void InstrSelection_EmitSwitchTables(Object *function)
-{
-    int remaining;
-    SInt32 *entry;
-    Object *table;
-    while (switch_tables != NULL) {
-        table = switch_tables->object;
-        entry = table->u.data.u.switchtable.data;
-        remaining = table->u.data.u.switchtable.size;
-        while (remaining != 0) {
-            PCodeLabel *label = (PCodeLabel *)*entry;
-            PCodeBlock *block = label->target.block;
-            *entry = CTool_EndianConvertWord32(block->code_offset);
-            remaining--;
-            entry++;
-        }
-        ObjGen_PPC_EABI_EmitSwitchTable(table, function);
-        switch_tables = switch_tables->next;
-    }
-}
-
 void get_dispatch_result(struct DeferredDispatch *dispatch, unsigned int argument2, unsigned int argument3,
                          struct DispatchResult *output)
 {
@@ -424,22 +264,16 @@ void get_dispatch_result(struct DeferredDispatch *dispatch, unsigned int argumen
     *output = *dispatch->result;
 }
 
-void get_objaccess_cached_value(ENode *node, UInt32 argument2, UInt32 argument3, Operand *result, UInt32 argument5)
+void get_objaccess_cached_value(ENode *node, UInt32 argument2, UInt32 argument3, struct DispatchResult *result,
+                                UInt32 argument5)
 {
     ENode *objectAccess;
-    Operand *cachedValue;
 
     objectAccess = node->data.monadic;
     if (objectAccess->type != EDEFINE) {
         CError_FATAL(231);
     }
-    if (objectAccess->data.objaccess.cachedValue == NULL) {
-        cachedValue = (Operand *)lalloc(0x16);
-        objectAccess->data.objaccess.cachedValue = cachedValue;
-        data_00560648[objectAccess->data.objaccess.expression->type](objectAccess->data.objaccess.expression, 0, 0,
-                                                                     cachedValue);
-    }
-    *result = *objectAccess->data.objaccess.cachedValue;
+    get_dispatch_result((struct DeferredDispatch *)objectAccess, argument2, argument3, result);
 }
 
 void generate_postinc_postdec(ENode *expr, SInt32 outputReg, SInt32 outputRegHi, Operand *result)
@@ -454,22 +288,17 @@ void generate_postinc_postdec(ENode *expr, SInt32 outputReg, SInt32 outputRegHi,
     Operand value;
     Operand bitfieldValue;
     Float one;
-    SInt32 secondReg;
 
-    bitfield = NULL;
     lvalue = expr->data.monadic->data.monadic;
     type = expr->rtype;
+    bitfield = NULL;
     ClearOps(&address, &value, &bitfieldValue);
-    secondReg = outputRegHi;
-    if (copts.operandsDebug) {
-        if (type->type == TYPEFLOAT) {
-            SInt16 returnReg = outputRegHi;
-            SFPE_PPC_EABI_GenerateFloatPostIncDec(expr, outputReg, returnReg, result);
-            return;
-        }
+    if (copts.operandsDebug && type->type == TYPEFLOAT) {
+        SFPE_PPC_EABI_GenerateFloatPostIncDec(expr, outputReg, outputRegHi, result);
+        return;
     }
     if ((type->type == TYPEINT || type->type == TYPEENUM) && type->size == 8) {
-        emit_postinc_postdec_gpr_pair(expr, outputReg, secondReg, result);
+        emit_postinc_postdec_gpr_pair(expr, outputReg, outputRegHi, result);
         return;
     }
     if (type->type == TYPEFLOAT) {
@@ -543,7 +372,7 @@ void generate_postinc_postdec(ENode *expr, SInt32 outputReg, SInt32 outputRegHi,
                 reg = gUsedVirtualRegistersGPR++;
             result->reg = reg;
             PCodeUtilities_EmitInstruction(PC_MR, result->reg, variableReg);
-            AddOffset(variableReg, variableReg, step);
+            InstrSelection_EmitAddImmediate(variableReg, variableReg, step);
         } else {
             if (lvalue->type == EBITFIELD) {
                 bitfield = TYPE_BITFIELD(lvalue->rtype);
@@ -562,7 +391,7 @@ void generate_postinc_postdec(ENode *expr, SInt32 outputReg, SInt32 outputRegHi,
             result->reg = gUsedVirtualRegistersGPR++;
             PCodeUtilities_EmitInstruction(PC_MR, result->reg, value.reg);
             updatedReg = gUsedVirtualRegistersGPR++;
-            AddOffset2(updatedReg, &value, step);
+            InstrSelection_EmitAddImmediate(updatedReg, value.reg, step);
             if (bitfield != NULL) {
                 Operands_InsertBitField(updatedReg, &bitfieldValue, bitfield);
                 updatedReg = bitfieldValue.reg;
@@ -576,13 +405,10 @@ void generate_postinc_postdec(ENode *expr, SInt32 outputReg, SInt32 outputRegHi,
 void select_indirect_operand(ENode *expression, int targetReg, int flags, Operand *result)
 {
     Type *type;
-    short sourceReg;
     int physicalReg;
     int structKind;
     VarInfo *registerInfo;
-    int highReg;
     ENode *value;
-    int offset;
     unsigned char kind;
     unsigned char valueKind;
     Operand operand;
@@ -640,17 +466,7 @@ void select_indirect_operand(ENode *expression, int targetReg, int flags, Operan
             } else if (result->kind != OpndType_VR) {
                 Operands_ForceVR(result, type, targetReg);
             }
-            offset = displacement;
-            sourceReg = operand.reg;
-            if (displacement != (short)displacement) {
-                PCodeUtilities_EmitInstruction(66, highReg = operand.reg, sourceReg, 0,
-                                               (short)((offset >> 16) + (offset >> 15 & 1)));
-                if ((short)offset != 0) {
-                    PCodeUtilities_EmitInstruction(63, highReg, highReg, 0, (short)offset);
-                }
-            } else {
-                PCodeUtilities_EmitInstruction(63, operand.reg, sourceReg, 0, offset);
-            }
+            InstrSelection_EmitAddImmediate(operand.reg, operand.reg, displacement);
         } else {
             valueKind = value->type;
             data_00560648[valueKind](value, 0, 0, result);
@@ -661,17 +477,10 @@ void select_indirect_operand(ENode *expression, int targetReg, int flags, Operan
 
 void emit_negation(ENode *node, SInt16 targetReg, SInt16 targetHighReg, Operand *out)
 {
-    Operand pairOperand;
-    Operand floatOperand;
-    Operand integerOperand;
-    SInt32 resultHighReg;
-    SInt32 resultReg;
-    Type *type;
-    ENode *pairExpr;
     ENode *expr;
+    Type *type;
 
     expr = node->data.diadic.left;
-    pairExpr = node->data.diadic.left;
     type = node->rtype;
 
     if (copts.operandsDebug != 0 && type->type == TYPEFLOAT) {
@@ -680,16 +489,7 @@ void emit_negation(ENode *node, SInt16 targetReg, SInt16 targetHighReg, Operand 
     }
 
     if ((type->type == TYPEINT || type->type == TYPEENUM) && type->size == 8) {
-        memclrw(&pairOperand, sizeof(pairOperand));
-        data_00560648[pairExpr->type](pairExpr, 0, 0, &pairOperand);
-        Operands_ForceGPRPair(&pairOperand, pairExpr->rtype, 0, 0);
-        resultReg = targetReg ? targetReg : gUsedVirtualRegistersGPR++;
-        resultHighReg = targetHighReg ? targetHighReg : gUsedVirtualRegistersGPR++;
-        PCodeUtilities_EmitInstruction(PC_SUBFIC, resultReg, pairOperand.reg, 0);
-        PCodeUtilities_EmitInstruction(PC_SUBFZE, resultHighReg, pairOperand.regHi);
-        out->kind = OpndType_GPRPair;
-        out->reg = resultReg;
-        out->regHi = resultHighReg;
+        emit_gpr_pair_negation(node, targetReg, targetHighReg, out);
         return;
     }
 
@@ -706,54 +506,23 @@ void emit_negation(ENode *node, SInt16 targetReg, SInt16 targetHighReg, Operand 
             InstrSelection_EmitThreeOperandFPRInstruction(
                 (type->size == 4) ? PC_FNMSUBS : PC_FNMSUB, expr->data.diadic.left->data.diadic.left,
                 expr->data.diadic.left->data.diadic.right, expr->data.diadic.right, targetReg, out);
-        else {
-            memclrw(&floatOperand, sizeof(floatOperand));
-            data_00560648[expr->type](expr, 0, 0, &floatOperand);
-            if (floatOperand.kind != OpndType_FPR) {
-                Operands_ForceFPR(&floatOperand, expr->rtype, 0);
-            }
-            resultReg = targetReg ? targetReg : gUsedVirtualRegistersFPR++;
-            PCodeUtilities_EmitInstruction(PC_FNEG, resultReg, floatOperand.reg);
-            out->kind = OpndType_FPR;
-            out->reg = resultReg;
-        }
+        else
+            InstrSelection_EmitUnaryFPRInstruction(PC_FNEG, expr, targetReg, out);
     } else {
-        memclrw(&integerOperand, sizeof(integerOperand));
-        data_00560648[expr->type](expr, 0, 0, &integerOperand);
-        if (integerOperand.kind != OpndType_GPR) {
-            Operands_ForceGPR(&integerOperand, expr->rtype, 0);
-        }
-        resultReg = targetReg ? targetReg : gUsedVirtualRegistersGPR++;
-        PCodeUtilities_EmitInstruction(PC_NEG, resultReg, integerOperand.reg);
-        out->kind = OpndType_GPR;
-        out->reg = resultReg;
+        InstrSelection_EmitUnaryGPRInstruction(PC_NEG, expr, targetReg, out);
     }
 }
 
 void emit_bitwise_not(ENode *node, SInt16 requestedReg, SInt16 requestedHighReg, Operand *dst)
 {
-    SInt32 resultHighReg;
-    SInt32 resultReg;
-    Operand wideOperand;
-    Operand operand;
     ENode *input = node->data.monadic;
-    ENode *wideInput = node->data.monadic;
 
     if (copts.operandsDebug && node->rtype->type == TYPEFLOAT) {
         CError_FATAL(531);
         return;
     }
     if ((node->rtype->type == TYPEINT || node->rtype->type == TYPEENUM) && node->rtype->size == 8) {
-        memclrw(&wideOperand, sizeof(wideOperand));
-        data_00560648[wideInput->type](wideInput, 0, 0, &wideOperand);
-        Operands_ForceGPRPair(&wideOperand, wideInput->rtype, 0, 0);
-        resultReg = requestedReg ? requestedReg : gUsedVirtualRegistersGPR++;
-        resultHighReg = requestedHighReg ? requestedHighReg : gUsedVirtualRegistersGPR++;
-        PCodeUtilities_EmitInstruction(PC_NOR, resultReg, wideOperand.reg, wideOperand.reg);
-        PCodeUtilities_EmitInstruction(PC_NOR, resultHighReg, wideOperand.regHi, wideOperand.regHi);
-        dst->kind = OpndType_GPRPair;
-        dst->reg = resultReg;
-        dst->regHi = resultHighReg;
+        emit_gpr_pair_not(node, requestedReg, requestedHighReg, dst);
         return;
     }
     if (input->type == EAND) {
@@ -766,14 +535,7 @@ void emit_bitwise_not(ENode *node, SInt16 requestedReg, SInt16 requestedHighReg,
         InstrSelection_EmitBinaryGPRInstruction(PC_EQV, input->data.diadic.left, input->data.diadic.right, requestedReg,
                                                 dst);
     } else {
-        memclrw(&operand, sizeof(operand));
-        data_00560648[input->type](input, 0, 0, &operand);
-        if (operand.kind != OpndType_GPR)
-            Operands_ForceGPR(&operand, input->rtype, 0);
-        resultReg = requestedReg ? requestedReg : gUsedVirtualRegistersGPR++;
-        PCodeUtilities_EmitInstruction(PC_NOT, resultReg, operand.reg);
-        dst->kind = OpndType_GPR;
-        dst->reg = resultReg;
+        InstrSelection_EmitUnaryGPRInstruction(PC_NOT, input, requestedReg, dst);
     }
 }
 
@@ -812,6 +574,7 @@ void emit_multiply(ENode *node, SInt16 dstreg, SInt16 src, Operand *result)
     Type *type;
     ENode *left;
     ENode *right;
+    SInt32 shift;
 
     left = node->data.diadic.left;
     right = node->data.diadic.right;
@@ -831,94 +594,21 @@ void emit_multiply(ENode *node, SInt16 dstreg, SInt16 src, Operand *result)
             break;
         }
 
-        if (right->type == EINTCONST) {
-            SInt32 shift = getbit(right->data.intval.lo);
-            SInt32 valid = shift > 0 && shift < 31;
-            if (!valid)
-                shift = 0;
-            if ((valid = shift) != 0) {
-                Operand operand;
-                int reg;
-                memclrw(&operand, sizeof(operand));
-                (*data_00560648[left->type])(left, 0, 0, &operand);
-                if (operand.kind)
-                    Operands_ForceGPR(&operand, left->rtype, 0);
-                reg = dstreg ? dstreg : gUsedVirtualRegistersGPR++;
-                shift &= 31;
-                PCodeUtilities_EmitInstruction(PC_RLWINM, reg, operand.reg, (SInt16)shift, 0, 31 - (SInt16)shift);
-
-                result->kind = OpndType_GPR;
-                result->reg = reg;
-                break;
-            }
+        if (right->type == EINTCONST && (shift = power_of_two_shift(right->data.intval.lo))) {
+            emit_shift_left_immediate(left, shift, 0, dstreg, result);
+            break;
         }
-
-        if (right->type == EINTCONST) {
-            SInt32 shift = getbit(-right->data.intval.lo);
-            SInt32 valid = shift > 0 && shift < 31;
-            if (!valid)
-                shift = 0;
-            if ((valid = shift) != 0) {
-                Operand operand;
-                int reg;
-                memclrw(&operand, sizeof(operand));
-                (*data_00560648[left->type])(left, 0, 0, &operand);
-                if (operand.kind)
-                    Operands_ForceGPR(&operand, left->rtype, 0);
-                reg = dstreg ? dstreg : gUsedVirtualRegistersGPR++;
-                shift &= 31;
-                PCodeUtilities_EmitInstruction(PC_RLWINM, reg, operand.reg, (SInt16)shift, 0, 31 - (SInt16)shift);
-                PCodeUtilities_EmitInstruction(PC_NEG, reg, reg);
-
-                result->kind = OpndType_GPR;
-                result->reg = reg;
-                break;
-            }
+        if (right->type == EINTCONST && (shift = power_of_two_shift(-right->data.intval.lo))) {
+            emit_shift_left_immediate(left, shift, 1, dstreg, result);
+            break;
         }
-
-        if (left->type == EINTCONST) {
-            SInt32 shift = getbit(left->data.intval.lo);
-            SInt32 valid = shift > 0 && shift < 31;
-            if (!valid)
-                shift = 0;
-            if ((valid = shift) != 0) {
-                Operand operand;
-                int reg;
-                memclrw(&operand, sizeof(operand));
-                (*data_00560648[right->type])(right, 0, 0, &operand);
-                if (operand.kind)
-                    Operands_ForceGPR(&operand, right->rtype, 0);
-                reg = dstreg ? dstreg : gUsedVirtualRegistersGPR++;
-                shift &= 31;
-                PCodeUtilities_EmitInstruction(PC_RLWINM, reg, operand.reg, (SInt16)shift, 0, 31 - (SInt16)shift);
-
-                result->kind = OpndType_GPR;
-                result->reg = reg;
-                break;
-            }
+        if (left->type == EINTCONST && (shift = power_of_two_shift(left->data.intval.lo))) {
+            emit_shift_left_immediate(right, shift, 0, dstreg, result);
+            break;
         }
-
-        if (left->type == EINTCONST) {
-            SInt32 shift = getbit(-left->data.intval.lo);
-            SInt32 valid = shift > 0 && shift < 31;
-            if (!valid)
-                shift = 0;
-            if ((valid = shift) != 0) {
-                Operand operand;
-                int reg;
-                memclrw(&operand, sizeof(operand));
-                (*data_00560648[right->type])(right, 0, 0, &operand);
-                if (operand.kind)
-                    Operands_ForceGPR(&operand, right->rtype, 0);
-                reg = dstreg ? dstreg : gUsedVirtualRegistersGPR++;
-                shift &= 31;
-                PCodeUtilities_EmitInstruction(PC_RLWINM, reg, operand.reg, (SInt16)shift, 0, 31 - (SInt16)shift);
-                PCodeUtilities_EmitInstruction(PC_NEG, reg, reg);
-
-                result->kind = OpndType_GPR;
-                result->reg = reg;
-                break;
-            }
+        if (left->type == EINTCONST && (shift = power_of_two_shift(-left->data.intval.lo))) {
+            emit_shift_left_immediate(right, shift, 1, dstreg, result);
+            break;
         }
 
         if (right->type == EINTCONST && right->data.intval.lo == (SInt16)right->data.intval.lo) {
@@ -1025,9 +715,9 @@ void generate_division(ENode *node, short reg, short flags, Operand *result)
     DivisionParameters unsignedMagic;
     Operand signedOperand;
     ConstInfo2 signedMagic;
-    SInt32 shift, divisor, unsignedSource, unsignedDivisor;
-    SInt32 product, multiplier, unsignedDest, difference, adjusted, half, addIndicator;
-    SInt32 dest, source, quotient, signedMultiplier, signBit, temp, negativeTemp;
+    SInt32 shift, unsignedSource, unsignedDivisor;
+    SInt32 product, multiplier, unsignedDest, difference, half, addIndicator;
+    SInt32 divisor, dest, adjusted, source, quotient, signedMultiplier, signBit, temp, negativeTemp;
 
     left = node->data.diadic.left;
     right = node->data.diadic.right;
@@ -1045,13 +735,9 @@ void generate_division(ENode *node, short reg, short flags, Operand *result)
         if (type->type == TYPEFLOAT) {
             emit_binary_fpr_instruction(type->size == 4 ? 0xa9 : 0xa8, left, right, reg, result);
         } else if (is_unsigned(type)) {
-            if (right->type == EINTCONST) {
-                shift = getbit(right->data.intval.lo);
-                shift = (shift > 0 && shift < 0x1f) ? shift : 0;
-                if (shift != 0) {
-                    shift_right_imm(left, shift, type, reg, result);
-                    break;
-                }
+            if (right->type == EINTCONST && (shift = power_of_two_shift(right->data.intval.lo))) {
+                shift_right_imm(left, type, shift, reg, result);
+                break;
             }
             if (copts.optimizesize == 0 && right->type == EINTCONST && right->data.intval.lo != 1) {
                 unsignedDivisor = right->data.intval.lo;
@@ -1094,21 +780,13 @@ void generate_division(ENode *node, short reg, short flags, Operand *result)
                 InstrSelection_EmitBinaryGPRInstruction(PC_DIVWU, left, right, reg, result);
             }
         } else {
-            if (right->type == EINTCONST) {
-                shift = getbit(right->data.intval.lo);
-                shift = (shift > 0 && shift < 0x1f) ? shift : 0;
-                if (shift != 0) {
-                    signed_div_pow2(left, shift, reg, result);
-                    break;
-                }
+            if (right->type == EINTCONST && (shift = power_of_two_shift(right->data.intval.lo))) {
+                signed_div_pow2(left, shift, 0, reg, result);
+                break;
             }
-            if (right->type == EINTCONST) {
-                shift = getbit(-right->data.intval.lo);
-                shift = (shift > 0 && shift < 0x1f) ? shift : 0;
-                if (shift != 0) {
-                    signed_div_negpow2(left, shift, reg, result);
-                    break;
-                }
+            if (right->type == EINTCONST && (shift = power_of_two_shift(-right->data.intval.lo))) {
+                signed_div_pow2(left, shift, 1, reg, result);
+                break;
             }
             if (copts.optimizesize == 0 && right->type == EINTCONST && right->data.intval.lo != 1 &&
                 (divisor = right->data.intval.lo) != -1) {
@@ -1153,11 +831,19 @@ void generate_modulo(ENode *node, short outputReg, short outputRegHi, Operand *r
 {
     ENode *left;
     ENode *right;
+#if VERSION == VERSION_GC_1_0
+    SInt32 quotient, unsignedResult, unsignedDividend, signedDividend;
+    SInt32 signBit, correctedQuotient, signedProduct, unsignedProduct, divisor;
+    SInt32 difference, halfDifference, sum, resultReg, multiplier, signedQuotient;
+    SInt32 unsignedMultiplier, signedResult, shift, adjustment, subtraction;
+    SInt32 divisionReg, productReg, adjustedQuotient;
+#else
     SInt32 quotient, unsignedResult, signedDividend, unsignedDividend;
     SInt32 signBit, correctedQuotient, signedProduct, unsignedProduct, divisor;
     SInt32 shift, difference, halfDifference, sum, adjustedQuotient;
     SInt32 signedResult, multiplier, signedQuotient, unsignedMultiplier;
     SInt32 adjustment, subtraction, productReg, divisionReg, resultReg;
+#endif
     Operand leftOperand, rightOperand;
     DivisionParameters unsignedMagic;
     ConstInfo2 signedMagic;
@@ -1176,16 +862,12 @@ void generate_modulo(ENode *node, short outputReg, short outputRegHi, Operand *r
         return;
     }
 
-    if (right->type == EINTCONST) {
-        shift = getbit(right->data.intval.lo);
-        shift = (shift > 0 && shift < 0x1f) ? shift : 0;
-        if (shift != 0) {
-            if (is_unsigned(node->rtype))
-                unsigned_mod_pow2(left, shift, outputReg, result);
-            else
-                signed_mod_pow2(left, shift, outputReg, result);
-            return;
-        }
+    if (right->type == EINTCONST && (shift = power_of_two_shift(right->data.intval.lo))) {
+        if (is_unsigned(node->rtype))
+            emit_rotate_and_mask(left, 0, 32 - shift, 31, outputReg, result);
+        else
+            signed_mod_pow2(left, shift, 0, outputReg, result);
+        return;
     }
 
     if (copts.optimizesize == 0 && right->type == EINTCONST && (divisor = (SInt32)right->data.intval.lo) != 1 &&
@@ -1422,9 +1104,6 @@ void generate_left_shift(ENode *expr, short outputReg, short outputRegHi, Operan
 {
     ENode *left = expr->data.diadic.left;
     ENode *right = expr->data.diadic.right;
-    Operand op;
-    short shift;
-    int reg;
 
     if (copts.operandsDebug && expr->rtype->type == TYPEFLOAT) {
         CError_FATAL(1363);
@@ -1434,20 +1113,10 @@ void generate_left_shift(ENode *expr, short outputReg, short outputRegHi, Operan
         generate_gpr_pair_shift(expr, outputReg, outputRegHi, output);
         return;
     }
-    if (right->type == EINTCONST) {
-        shift = right->data.intval.lo;
-        memclrw(&op, sizeof(op));
-        data_00560648[left->type](left, 0, 0, &op);
-        if (op.kind)
-            Operands_ForceGPR(&op, left->rtype, 0);
-        reg = outputReg ? outputReg : gUsedVirtualRegistersGPR++;
-        shift &= 31;
-        PCodeUtilities_EmitInstruction(PC_RLWINM, reg, op.reg, shift, 0, 31 - shift);
-        output->kind = OpndType_GPR;
-        output->reg = reg;
-    } else {
+    if (right->type == EINTCONST)
+        emit_shift_left_immediate(left, right->data.intval.lo, 0, outputReg, output);
+    else
         InstrSelection_EmitBinaryGPRInstruction(PC_SLW, left, right, outputReg, output);
-    }
 }
 
 void select_right_shift(ENode *expr, short outputReg, short outputRegHi, Operand *output)
@@ -1455,9 +1124,6 @@ void select_right_shift(ENode *expr, short outputReg, short outputRegHi, Operand
     Type *type;
     ENode *left;
     ENode *right;
-    Operand op;
-    short shift;
-    int reg;
 
     left = expr->data.diadic.left;
     right = expr->data.diadic.right;
@@ -1472,19 +1138,7 @@ void select_right_shift(ENode *expr, short outputReg, short outputRegHi, Operand
         return;
     }
     if (right->type == EINTCONST) {
-        shift = right->data.intval.lo;
-        memclrw(&op, sizeof(Operand));
-        data_00560648[left->type](left, 0, 0, &op);
-        if (op.kind)
-            Operands_ForceGPR(&op, (Type *)left->rtype, 0);
-        reg = outputReg ? outputReg : gUsedVirtualRegistersGPR++;
-        shift &= 31;
-        if (is_unsigned(type))
-            PCodeUtilities_EmitInstruction(PC_RLWINM, reg, op.reg, 32 - shift, 32 - type->size * 8 + shift, 31);
-        else
-            PCodeUtilities_EmitInstruction(PC_SRAWI, reg, op.reg, shift);
-        output->kind = OpndType_GPR;
-        output->reg = reg;
+        shift_right_imm(left, type, right->data.intval.lo, outputReg, output);
     } else {
         InstrSelection_EmitBinaryGPRInstruction(is_unsigned(type) ? 0x6b : 0x6d, left, right, outputReg, output);
     }
@@ -1509,42 +1163,21 @@ void emit_bitwise_and(ENode *node, SInt16 outputReg, SInt16 outputRegHi, Operand
     }
 
     do {
-        if (right->type == EINTCONST) {
-            SInt32 mask;
-            SInt32 validMask;
-            SInt16 complementEnd, complementBegin;
-
-            mask = right->data.intval.lo;
-            if (is_contiguous_mask(mask, &maskBegin, &maskEnd))
-                validMask = 1;
-            else if (mask != 0 && is_contiguous_mask(~mask, &complementBegin, &complementEnd))
-                maskBegin = complementEnd + 1, maskEnd = complementBegin - 1, validMask = 1;
-            else
-                validMask = 0;
-            if (validMask) {
-                Operand shiftedLeft, shiftedRight, masked;
-
-                if (left->type == ESHL && left->data.diadic.right->type == EINTCONST) {
-                    SInt32 shiftCount = left->data.diadic.right->data.intval.lo;
-                    if (maskEnd + shiftCount < 32) {
-                        InstrSelection_EmitMask(&shiftedLeft, left->data.diadic.left,
-                                                left->data.diadic.right->data.intval.lo, maskBegin, maskEnd, outputReg,
-                                                output);
-                        break;
-                    }
-                }
-                if (left->type == ESHR && left->data.diadic.right->type == EINTCONST) {
-                    SInt32 shiftCount = left->data.diadic.right->data.intval.lo;
-                    if (shiftCount <= maskBegin && maskEnd >= maskBegin) {
-                        InstrSelection_EmitMask(&shiftedRight, left->data.diadic.left,
-                                                32 - left->data.diadic.right->data.intval.lo, maskBegin, maskEnd,
-                                                outputReg, output);
-                        break;
-                    }
-                }
-                InstrSelection_EmitMask(&masked, left, 0, maskBegin, maskEnd, outputReg, output);
+        if (right->type == EINTCONST && InstrSelection_GetMaskRange(right->data.intval.lo, &maskBegin, &maskEnd)) {
+            if (left->type == ESHL && left->data.diadic.right->type == EINTCONST &&
+                maskEnd + (SInt32)left->data.diadic.right->data.intval.lo < 32) {
+                emit_rotate_and_mask(left->data.diadic.left, left->data.diadic.right->data.intval.lo, maskBegin,
+                                     maskEnd, outputReg, output);
                 break;
             }
+            if (left->type == ESHR && left->data.diadic.right->type == EINTCONST &&
+                (SInt32)left->data.diadic.right->data.intval.lo <= maskBegin && maskEnd >= maskBegin) {
+                emit_rotate_and_mask(left->data.diadic.left, 32 - left->data.diadic.right->data.intval.lo, maskBegin,
+                                     maskEnd, outputReg, output);
+                break;
+            }
+            emit_rotate_and_mask(left, 0, maskBegin, maskEnd, outputReg, output);
+            break;
         }
         if (right->type == EINTCONST && (right->data.intval.lo & 0xffff) == right->data.intval.lo) {
             emit_gpr_immediate_instruction(PC_ANDI, left, right->data.intval.lo, outputReg, output);
@@ -1555,42 +1188,21 @@ void emit_bitwise_and(ENode *node, SInt16 outputReg, SInt16 outputRegHi, Operand
             break;
         }
 
-        if (left->type == EINTCONST) {
-            SInt32 mask;
-            SInt32 validMask;
-            SInt16 complementEnd, complementBegin;
-
-            mask = left->data.intval.lo;
-            if (is_contiguous_mask(mask, &maskBegin, &maskEnd))
-                validMask = 1;
-            else if (mask != 0 && is_contiguous_mask(~mask, &complementBegin, &complementEnd))
-                maskBegin = complementEnd + 1, maskEnd = complementBegin - 1, validMask = 1;
-            else
-                validMask = 0;
-            if (validMask) {
-                Operand shiftedLeft, shiftedRight, masked;
-
-                if (right->type == ESHL && right->data.diadic.right->type == EINTCONST) {
-                    SInt32 shiftCount = right->data.diadic.right->data.intval.lo;
-                    if (maskEnd + shiftCount < 32) {
-                        InstrSelection_EmitMask(&shiftedLeft, right->data.diadic.left,
-                                                right->data.diadic.right->data.intval.lo, maskBegin, maskEnd, outputReg,
-                                                output);
-                        break;
-                    }
-                }
-                if (right->type == ESHR && right->data.diadic.right->type == EINTCONST) {
-                    SInt32 shiftCount = right->data.diadic.right->data.intval.lo;
-                    if (shiftCount <= maskBegin) {
-                        InstrSelection_EmitMask(&shiftedRight, right->data.diadic.left,
-                                                32 - right->data.diadic.right->data.intval.lo, maskBegin, maskEnd,
-                                                outputReg, output);
-                        break;
-                    }
-                }
-                InstrSelection_EmitMask(&masked, right, 0, maskBegin, maskEnd, outputReg, output);
+        if (left->type == EINTCONST && InstrSelection_GetMaskRange(left->data.intval.lo, &maskBegin, &maskEnd)) {
+            if (right->type == ESHL && right->data.diadic.right->type == EINTCONST &&
+                maskEnd + (SInt32)right->data.diadic.right->data.intval.lo < 32) {
+                emit_rotate_and_mask(right->data.diadic.left, right->data.diadic.right->data.intval.lo, maskBegin,
+                                     maskEnd, outputReg, output);
                 break;
             }
+            if (right->type == ESHR && right->data.diadic.right->type == EINTCONST &&
+                (SInt32)right->data.diadic.right->data.intval.lo <= maskBegin) {
+                emit_rotate_and_mask(right->data.diadic.left, 32 - right->data.diadic.right->data.intval.lo, maskBegin,
+                                     maskEnd, outputReg, output);
+                break;
+            }
+            emit_rotate_and_mask(right, 0, maskBegin, maskEnd, outputReg, output);
+            break;
         }
         if (left->type == EINTCONST && (left->data.intval.lo & 0xffff) == left->data.intval.lo) {
             emit_gpr_immediate_instruction(PC_ANDI, right, left->data.intval.lo, outputReg, output);
@@ -1734,7 +1346,7 @@ void generate_assignment(ENode *node, SInt16 requestedRegister, SInt16 flags, Op
             if (InstrSelection_MatchPostIncDecRegister(left, &destination, &displacement) != 0) {
                 Operands_MakeIndirect(&destination, node);
                 Operands_EmitGPRMemoryInstruction(value.reg, &destination, type);
-                EmitAddImm(destination.reg, destination.reg, displacement);
+                InstrSelection_EmitAddImmediate(destination.reg, destination.reg, displacement);
             } else {
                 data_00560648[left->type](left, 0, 0, &destination);
                 Operands_MakeIndirect(&destination, node);
@@ -1755,7 +1367,7 @@ void generate_assignment(ENode *node, SInt16 requestedRegister, SInt16 flags, Op
             if (InstrSelection_MatchPostIncDecRegister(left, &destination, &displacement) != 0) {
                 Operands_MakeIndirect(&destination, node);
                 Operands_EmitSTVX(value.reg, &destination, type);
-                EmitAddImm(destination.reg, destination.reg, displacement);
+                InstrSelection_EmitAddImmediate(destination.reg, destination.reg, displacement);
             } else {
                 data_00560648[left->type](left, 0, 0, &destination);
                 Operands_MakeIndirect(&destination, node);
@@ -1785,7 +1397,7 @@ void generate_assignment(ENode *node, SInt16 requestedRegister, SInt16 flags, Op
                 if (InstrSelection_MatchPostIncDecRegister(left, &destination, &displacement) != 0) {
                     Operands_MakeIndirect(&destination, node);
                     Operands_EmitTypedGPRMemoryInstruction(value.reg, &destination, type);
-                    EmitAddImm(destination.reg, destination.reg, displacement);
+                    InstrSelection_EmitAddImmediate(destination.reg, destination.reg, displacement);
                 } else {
                     data_00560648[left->type](left, 0, 0, &destination);
                     Operands_MakeIndirect(&destination, node);
@@ -1947,17 +1559,15 @@ void make_intval_operand(ENode *node, SInt16 reg1, SInt16 reg2, Operand *op)
 {
     Type *type = node->rtype;
     if (copts.operandsDebug && type->type == TYPEFLOAT) {
+#if VERSION == VERSION_GC_1_0
+        SFPE_PPC_EABI_MakeIntvalOperand(node, reg1, reg2, op);
+#else
         CError_FATAL(1951);
+#endif
         return;
     }
     if ((type->type == TYPEINT || type->type == TYPEENUM) && type->size == 8) {
-        reg1 = reg1 ? reg1 : gUsedVirtualRegistersGPR++;
-        reg2 = reg2 ? reg2 : gUsedVirtualRegistersGPR++;
-        PCodeUtilities_LoadImmediate(reg1, node->data.intval.lo);
-        PCodeUtilities_LoadImmediate(reg2, node->data.intval.hi);
-        op->kind = OpndType_GPRPair;
-        op->reg = reg1;
-        op->regHi = reg2;
+        make_gpr_pair_intval_operand(node, reg1, reg2, op);
         return;
     }
     op->kind = OpndType_Immediate;
@@ -2158,16 +1768,24 @@ unsigned int fn_004b5ce0(void)
     CError_FATAL(2298);
 }
 
+static int is_narrow_integer_cast(ENode *expr)
+{
+    Type *type = expr->rtype;
+
+    if (expr->type != ETYPCON)
+        return 0;
+    do {
+        expr = expr->data.monadic;
+        if (expr->type != ETYPCON)
+            break;
+    } while ((type = expr->rtype)->size == 4);
+    return (type->type == TYPEINT || type->type == TYPEENUM) &&
+           (type->size < 2 || (type->size == 2 && !is_unsigned(type)));
+}
+
 void InstrSelection_EmitBinaryGPRInstruction(short opcode, ENode *left, ENode *right, short outputReg, Operand *output)
 {
-    short reg;
     int emitReg;
-    int smallInteger;
-    Type *type;
-    int reverseOperands;
-    int integral;
-    ENode *expr;
-    int narrow;
     Operand leftOperand;
     Operand rightOperand;
     memclrw(&leftOperand, sizeof(leftOperand));
@@ -2187,45 +1805,11 @@ void InstrSelection_EmitBinaryGPRInstruction(short opcode, ENode *left, ENode *r
         if (rightOperand.kind != OpndType_GPR)
             Operands_ForceGPR(&rightOperand, right->rtype, 0);
     }
-    if (outputReg != 0)
-        reg = outputReg;
+    emitReg = outputReg ? outputReg : gUsedVirtualRegistersGPR++;
+    if (opcode == PC_MULLW && is_narrow_integer_cast(left))
+        PCodeUtilities_EmitInstruction(opcode, emitReg, rightOperand.reg, leftOperand.reg);
     else
-        reg = gUsedVirtualRegistersGPR++;
-    emitReg = reg;
-    do {
-        if (opcode == 74) {
-            expr = left;
-            type = left->rtype;
-            if (left->type != ETYPCON) {
-                reverseOperands = 0;
-            } else {
-                do {
-                    expr = expr->data.monadic;
-                    if (expr->type != ETYPCON)
-                        break;
-                } while ((type = expr->rtype)->size == 4);
-                reverseOperands = 0;
-                integral = 1;
-                if (type->type != TYPEINT && type->type != TYPEENUM)
-                    integral = 0;
-                if (integral != 0) {
-                    narrow = 1;
-                    if (type->size >= 2) {
-                        smallInteger = type->size == 2 && !is_unsigned(type);
-                        if (!smallInteger)
-                            narrow = 0;
-                    }
-                    if (narrow)
-                        reverseOperands = 1;
-                }
-            }
-            if (reverseOperands) {
-                PCodeUtilities_EmitInstruction(opcode, emitReg, rightOperand.reg, leftOperand.reg);
-                break;
-            }
-        }
         PCodeUtilities_EmitInstruction(opcode, emitReg, leftOperand.reg, rightOperand.reg);
-    } while (0);
     output->kind = OpndType_GPR;
     output->reg = emitReg;
 }
@@ -2299,6 +1883,79 @@ void emit_gpr_immediate_operation(SInt16 opcode, ENode *expr, SInt32 value, SInt
 
     output->kind = OpndType_GPR;
     output->reg = reg;
+}
+
+static void emit_shift_left_immediate(ENode *expr, SInt16 shift, SInt16 negate, SInt16 outputReg, Operand *result)
+{
+    Operand operand;
+    int reg;
+
+    memclrw(&operand, sizeof(operand));
+    data_00560648[expr->type](expr, 0, 0, &operand);
+    if (operand.kind)
+        Operands_ForceGPR(&operand, expr->rtype, 0);
+    reg = outputReg ? outputReg : gUsedVirtualRegistersGPR++;
+    shift &= 31;
+    PCodeUtilities_EmitInstruction(PC_RLWINM, reg, operand.reg, shift, 0, 31 - shift);
+    if (negate)
+        PCodeUtilities_EmitInstruction(PC_NEG, reg, reg);
+    result->kind = OpndType_GPR;
+    result->reg = reg;
+}
+
+static void shift_right_imm(ENode *left, Type *type, short sh, short reg, Operand *result)
+{
+    Operand op;
+    int r;
+
+    memclrw(&op, 0x16);
+    (*data_00560648[left->type])(left, 0, 0, &op);
+    if (op.kind)
+        Operands_ForceGPR(&op, left->rtype, 0);
+    r = reg != 0 ? reg : gUsedVirtualRegistersGPR++;
+    sh &= 0x1f;
+    if (is_unsigned(type))
+        PCodeUtilities_EmitInstruction(PC_RLWINM, r, op.reg, 0x20 - sh, 0x20 - type->size * 8 + sh, 0x1f);
+    else
+        PCodeUtilities_EmitInstruction(PC_SRAWI, r, op.reg, sh);
+    result->kind = OpndType_GPR;
+    result->reg = r;
+}
+
+static void signed_div_pow2(ENode *left, int sh, int negate, short reg, Operand *result)
+{
+    Operand op;
+    int r;
+
+    memclrw(&op, 0x16);
+    (*data_00560648[left->type])(left, 0, 0, &op);
+    if (op.kind)
+        Operands_ForceGPR(&op, left->rtype, 0);
+    r = reg != 0 ? reg : gUsedVirtualRegistersGPR++;
+    PCodeUtilities_EmitInstruction(PC_SRAWI, r, op.reg, sh);
+    PCodeUtilities_EmitInstruction(PC_ADDZE, r, r);
+    if (negate)
+        PCodeUtilities_EmitInstruction(PC_NEG, r, r);
+    result->kind = OpndType_GPR;
+    result->reg = r;
+}
+
+static void signed_mod_pow2(ENode *left, int sh, int negate, short reg, Operand *result)
+{
+    Operand op;
+    int r;
+
+    memclrw(&op, 0x16);
+    (*data_00560648[left->type])(left, 0, 0, &op);
+    if (op.kind)
+        Operands_ForceGPR(&op, left->rtype, 0);
+    r = (reg != 0 && reg != (SInt16)op.reg) ? reg : gUsedVirtualRegistersGPR++;
+    PCodeUtilities_EmitInstruction(PC_SRAWI, r, (SInt16)op.reg, sh);
+    PCodeUtilities_EmitInstruction(PC_ADDZE, r, r);
+    PCodeUtilities_EmitInstruction(PC_RLWINM, r, r, sh, 0, 0x1f - sh);
+    PCodeUtilities_EmitInstruction(PC_SUBFC, r, r, (SInt16)op.reg);
+    result->kind = OpndType_GPR;
+    result->reg = r;
 }
 
 void emit_binary_fpr_instruction(short opcode, ENode *left, ENode *right, SInt16 requestedReg, Operand *result)
@@ -2429,8 +2086,13 @@ void generate_boolean_expression(ENode *expression, int unused1, int unused2, Op
     int temporaryReg;
     PCodeLabel *trueLabel;
     int booleanReg;
+#if VERSION == VERSION_GC_1_0
+    char reversedKind;
+    char originalKind;
+#else
     UInt8 reversedKind;
     char originalKind, comparisonKind;
+#endif
     Operand scratch;
 
     node = expression->data.monadic;
@@ -2497,23 +2159,12 @@ void generate_boolean_expression(ENode *expression, int unused1, int unused2, Op
             result->kind = OpndType_GPR;
             result->reg = resultReg;
         } else {
-            switch ((UInt8)originalKind) {
-                case ELESS:
-                    reversedKind = EGREATEREQU;
-                    break;
-                case EGREATER:
-                    reversedKind = ELESSEQU;
-                    break;
-                case ELESSEQU:
-                    reversedKind = EGREATER;
-                    break;
-                case EGREATEREQU:
-                    reversedKind = ELESS;
-                    break;
-                default:
-                    reversedKind = originalKind;
-            }
+            reversedKind = fn_004b4aa0(originalKind);
+#if VERSION == VERSION_GC_1_0
+            if (originalKind != reversedKind &&
+#else
             if (originalKind != (comparisonKind = reversedKind) &&
+#endif
                 operand->data.diadic.left->rtype->type != TYPEFLOAT) {
                 operand->type = reversedKind;
                 generate_comparison(operand, 0, 0, result);
@@ -2768,11 +2419,11 @@ void InstrSelection_SelectComparison(ENode *node, void *p)
                 unsignedValue = left->data.intval.lo;
                 immediate = unsignedValue;
                 if (unsignedValue == immediate) {
-                    fn_004b37b0(SwapOp(node->type), right, unsignedValue, result);
+                    fn_004b37b0(swap_kind_pairs(node->type), right, unsignedValue, result);
                     return;
                 }
                 if (node->type == EEQU || node->type == ENOTEQU) {
-                    emit_cmpli_with_addis(SwapOp(node->type), right, unsignedValue, result);
+                    emit_cmpli_with_addis(swap_kind_pairs(node->type), right, unsignedValue, result);
                     return;
                 }
             } else {
@@ -2780,11 +2431,11 @@ void InstrSelection_SelectComparison(ENode *node, void *p)
                 value = left->data.intval.lo;
                 immediate = value;
                 if (value == immediate) {
-                    fn_004b37b0(SwapOp(node->type), right, value, result);
+                    fn_004b37b0(swap_kind_pairs(node->type), right, value, result);
                     return;
                 }
                 if (node->type == EEQU || node->type == ENOTEQU) {
-                    emit_cmpli_with_addis(SwapOp(node->type), right, value, result);
+                    emit_cmpli_with_addis(swap_kind_pairs(node->type), right, value, result);
                     return;
                 }
             }
@@ -3172,19 +2823,8 @@ void fn_004b37b0(short comparison, ENode *input, short sense, Operand *result)
     } else {
         PCodeUtilities_EmitInstruction(is_unsigned(input->rtype) ? PC_CMPLI : PC_CMPI, 0, selected.reg, sense);
     }
-    if (hasImmediate) {
-        short lowImmediate = immediate;
-        adjustment = immediate;
-        if (immediate != lowImmediate) {
-            short highImmediate = (adjustment >> 16) + ((adjustment >> 15) & 1);
-            PCodeUtilities_EmitInstruction(PC_ADDIS, savedRegister, savedRegister, 0, highImmediate);
-            if ((short)adjustment != 0) {
-                PCodeUtilities_EmitInstruction(PC_ADDI, savedRegister, savedRegister, 0, (short)adjustment);
-            }
-        } else {
-            PCodeUtilities_EmitInstruction(PC_ADDI, savedRegister, savedRegister, 0, adjustment);
-        }
-    }
+    if (hasImmediate)
+        InstrSelection_EmitAddImmediate(savedRegister, savedRegister, immediate);
     result->kind = OpndType_CRField;
     result->reg = 0;
     result->secondary_reg = comparison;
@@ -3212,18 +2852,8 @@ void emit_cmpli_with_addis(SInt16 condition, ENode *node, SInt32 immediate, Oper
     tempReg = gUsedVirtualRegistersGPR++;
     PCodeUtilities_EmitInstruction(PC_ADDIS, tempReg, operand.reg, 0, low_word(~(immediate >> 16) + 1));
     PCodeUtilities_EmitInstruction(PC_CMPLI, 0, tempReg, low_word(immediate));
-    if (postIncDec) {
-        SInt16 lowAdjustment = increment;
-        SInt32 adjustment = increment;
-        if (increment != lowAdjustment) {
-            PCodeUtilities_EmitInstruction(PC_ADDIS, updateReg, updateReg, 0,
-                                           low_word((adjustment >> 16) + ((adjustment >> 15) & 1)));
-            if (low_word(adjustment) != 0)
-                PCodeUtilities_EmitInstruction(PC_ADDI, updateReg, updateReg, 0, low_word(adjustment));
-        } else {
-            PCodeUtilities_EmitInstruction(PC_ADDI, updateReg, updateReg, 0, adjustment);
-        }
-    }
+    if (postIncDec)
+        InstrSelection_EmitAddImmediate(updateReg, updateReg, increment);
     result->kind = OpndType_CRField;
     result->reg = 0;
     result->secondary_reg = condition;
@@ -3283,6 +2913,22 @@ int InstrSelection_GetMaskRange(UInt32 mask, SInt16 *first, SInt16 *last)
     return 0;
 }
 
+static void emit_rotate_and_mask(ENode *expr, SInt16 shift, SInt16 maskBegin, SInt16 maskEnd, SInt16 outputReg,
+                                 Operand *result)
+{
+    Operand operand;
+    SInt32 reg;
+
+    memclrw(&operand, sizeof(operand));
+    data_00560648[expr->type](expr, 0, 0, &operand);
+    if (operand.kind)
+        Operands_ForceGPR(&operand, expr->rtype, 0);
+    reg = outputReg ? outputReg : gUsedVirtualRegistersGPR++;
+    PCodeUtilities_EmitInstruction(PC_RLWINM, reg, operand.reg, shift, maskBegin, maskEnd);
+    result->kind = OpndType_GPR;
+    result->reg = reg;
+}
+
 int InstrSelection_MatchPostIncDecRegister(ENode *node, Operand *info, SInt32 *size)
 {
     Type *rtype;
@@ -3320,7 +2966,7 @@ int InstrSelection_MatchPostIncDecRegister(ENode *node, Operand *info, SInt32 *s
     return 1;
 }
 
-void InstrSelection_EmitAddImmediate(SInt16 destReg, SInt16 sourceReg, int immediate)
+void InstrSelection_EmitAddImmediate(SInt16 destReg, SInt16 sourceReg, SInt32 immediate)
 {
     if (immediate != (SInt16)immediate) {
         SInt16 highImmediate = (immediate >> 16) + ((immediate >> 15) & 1);
@@ -3332,6 +2978,15 @@ void InstrSelection_EmitAddImmediate(SInt16 destReg, SInt16 sourceReg, int immed
     } else {
         PCodeUtilities_EmitInstruction(PC_ADDI, destReg, sourceReg, 0, immediate);
     }
+}
+
+static SInt32 power_of_two_shift(SInt32 value)
+{
+    SInt32 shift = getbit(value);
+    SInt32 valid = shift > 0 && shift < 31;
+    if (!valid)
+        shift = 0;
+    return shift;
 }
 
 void emit_gpr_pair_add(ENode *node, short targetReg, short targetRegHi, Operand *out)
@@ -3383,6 +3038,17 @@ void emit_gpr_pair_add(ENode *node, short targetReg, short targetRegHi, Operand 
     out->kind = OpndType_GPRPair;
     out->reg = resultReg;
     out->regHi = resultRegHi;
+}
+
+static void make_gpr_pair_intval_operand(ENode *node, SInt16 reg1, SInt16 reg2, Operand *op)
+{
+    reg1 = reg1 ? reg1 : gUsedVirtualRegistersGPR++;
+    reg2 = reg2 ? reg2 : gUsedVirtualRegistersGPR++;
+    PCodeUtilities_LoadImmediate(reg1, node->data.intval.lo);
+    PCodeUtilities_LoadImmediate(reg2, node->data.intval.hi);
+    op->kind = OpndType_GPRPair;
+    op->reg = reg1;
+    op->regHi = reg2;
 }
 
 void emit_gpr_pair_subtraction(ENode *node, SInt16 lowReg, SInt16 highReg, Operand *result)
@@ -3602,6 +3268,44 @@ void emit_gpr_pair_multiply(ENode *expr, SInt16 requestedLo, SInt16 requestedHi,
     out->kind = OpndType_GPRPair;
     out->reg = resultLo;
     out->regHi = resultHi;
+}
+
+static void emit_gpr_pair_not(ENode *node, SInt16 reg, SInt16 regHi, Operand *out)
+{
+    SInt32 resultReg;
+    SInt32 resultHighReg;
+    Operand operand;
+    ENode *input = node->data.monadic;
+
+    memclrw(&operand, sizeof(operand));
+    data_00560648[input->type](input, 0, 0, &operand);
+    Operands_ForceGPRPair(&operand, input->rtype, 0, 0);
+    resultReg = reg ? reg : gUsedVirtualRegistersGPR++;
+    resultHighReg = regHi ? regHi : gUsedVirtualRegistersGPR++;
+    PCodeUtilities_EmitInstruction(PC_NOR, resultReg, operand.reg, operand.reg);
+    PCodeUtilities_EmitInstruction(PC_NOR, resultHighReg, operand.regHi, operand.regHi);
+    out->kind = OpndType_GPRPair;
+    out->reg = resultReg;
+    out->regHi = resultHighReg;
+}
+
+static void emit_gpr_pair_negation(ENode *node, SInt16 reg, SInt16 regHi, Operand *out)
+{
+    SInt32 resultReg;
+    ENode *input = node->data.monadic;
+    SInt32 resultHighReg;
+    Operand operand;
+
+    memclrw(&operand, sizeof(operand));
+    data_00560648[input->type](input, 0, 0, &operand);
+    Operands_ForceGPRPair(&operand, input->rtype, 0, 0);
+    resultReg = reg ? reg : gUsedVirtualRegistersGPR++;
+    resultHighReg = regHi ? regHi : gUsedVirtualRegistersGPR++;
+    PCodeUtilities_EmitInstruction(PC_SUBFIC, resultReg, operand.reg, 0);
+    PCodeUtilities_EmitInstruction(PC_SUBFZE, resultHighReg, operand.regHi);
+    out->kind = OpndType_GPRPair;
+    out->reg = resultReg;
+    out->regHi = resultHighReg;
 }
 
 void generate_gpr_pair_assignment(ENode *node, SInt16 requestedReg, SInt16 requestedRegHi, Operand *out)
@@ -4001,7 +3705,7 @@ void generate_gpr_pair_division_or_modulo(ENode *node, SInt16 requestedReg, SInt
         PCodeUtilities_EmitInstruction(PC_MR, return_gpr_first, leftOperand.reg);
     if (rightOperand.regHi != sfpe_right_operand_reg_hi)
         PCodeUtilities_EmitInstruction(PC_MR, sfpe_right_operand_reg_hi, rightOperand.regHi);
-    if (rightOperand.reg != sfpe_right_operand_reg)
+    if (rightOperand.reg != (SInt16)sfpe_right_operand_reg)
         PCodeUtilities_EmitInstruction(PC_MR, sfpe_right_operand_reg, rightOperand.reg);
 
     if (node->type == EDIV) {

@@ -81,7 +81,7 @@ extern unsigned char fn_004b4aa0(unsigned char kind);
 extern unsigned int generate_intrinsic_or_function_call(ENode *value, unsigned int operand, unsigned int unused,
                                                         Operand *target);
 extern void load_float_constant(ENode *node, unsigned int regA, unsigned int regB, Operand *out);
-extern void InstrSelection_EmitAddImmediate(SInt16 destReg, SInt16 sourceReg, int immediate);
+extern void InstrSelection_EmitAddImmediate(SInt16 destReg, SInt16 sourceReg, SInt32 immediate);
 extern int is_contiguous_mask(unsigned int mask, short *firstBit, short *lastBit);
 extern void emit_gpr_immediate_instruction(short opcode, ENode *expr, short value, short outputReg, Operand *output);
 extern void make_objref_operand(ENode *node, unsigned int unused1, unsigned int unused2, Operand *result);
@@ -132,7 +132,7 @@ extern void select_indirect_operand(ENode *expression, int targetReg, int flags,
 extern void emit_vector128_constant(ENode *node, short requestedRegister, short unused, Operand *result);
 extern void get_function_type_operand(ENode *lookup, short unused1, short unused2, Operand *result);
 extern void generate_type_conversion(ENode *node, short outputReg, short outputRegHi, Operand *result);
-extern void get_objaccess_cached_value(ENode *node, UInt32 argument2, UInt32 argument3, Operand *result,
+extern void get_objaccess_cached_value(ENode *node, UInt32 argument2, UInt32 argument3, struct DispatchResult *result,
                                        UInt32 argument5);
 extern void (*data_00560648[])(void *, short, short, void *);
 extern struct FunctionCallFrame *function_call_frames;
@@ -140,7 +140,6 @@ extern short gUsedVirtualRegistersFPR;
 extern SInt16 gUsedVirtualRegistersGPR;
 extern void get_dispatch_result(struct DeferredDispatch *dispatch, unsigned int argument2, unsigned int argument3,
                                 struct DispatchResult *output);
-extern void InstrSelection_EmitSwitchTables(Object *function);
 extern struct ObjectList *switch_tables;
 struct PCodeLabel;
 extern TypeIntegral stunsignedlonglong;

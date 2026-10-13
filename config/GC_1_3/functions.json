@@ -6893,37 +6893,37 @@
     "name": "validate_context_signature",
     "address": "0x00440080",
     "size": 35,
-    "source": "src/frontend/CPrep.c"
+    "source": "src/driver/CWCompilerLinkerPrivate.c"
   },
   {
-    "name": "CPrep_GetEnabled",
+    "name": "CWCompilerLinkerPrivate_GetEnabled",
     "address": "0x004400b0",
     "size": 62,
-    "source": "src/frontend/CPrep.c"
+    "source": "src/driver/CWCompilerLinkerPrivate.c"
   },
   {
-    "name": "CPrep_GetActive",
+    "name": "CWCompilerLinkerPrivate_GetActive",
     "address": "0x004400f0",
     "size": 62,
-    "source": "src/frontend/CPrep.c"
+    "source": "src/driver/CWCompilerLinkerPrivate.c"
   },
   {
-    "name": "CPrep_GetOperation",
+    "name": "CWCompilerLinkerPrivate_GetOperation",
     "address": "0x00440130",
     "size": 62,
-    "source": "src/frontend/CPrep.c"
+    "source": "src/driver/CWCompilerLinkerPrivate.c"
   },
   {
-    "name": "CPrep_GetSetting",
+    "name": "CWCompilerLinkerPrivate_GetSetting",
     "address": "0x00440170",
     "size": 62,
-    "source": "src/frontend/CPrep.c"
+    "source": "src/driver/CWCompilerLinkerPrivate.c"
   },
   {
-    "name": "CPrep_GetReserved15d",
+    "name": "CWCompilerLinkerPrivate_GetReserved15d",
     "address": "0x004401b0",
     "size": 62,
-    "source": "src/frontend/CPrep.c"
+    "source": "src/driver/CWCompilerLinkerPrivate.c"
   },
   {
     "name": "fn_004401f0",
@@ -6946,16 +6946,16 @@
     "size": 173
   },
   {
-    "name": "CPrep_GetFileIndex",
+    "name": "CWCompilerLinkerPrivate_GetFileIndex",
     "address": "0x00440430",
     "size": 62,
-    "source": "src/frontend/CPrep.c"
+    "source": "src/driver/CWCompilerLinkerPrivate.c"
   },
   {
-    "name": "CPrep_GetDependencyOption",
+    "name": "CWCompilerLinkerPrivate_GetDependencyOption",
     "address": "0x00440470",
     "size": 64,
-    "source": "src/frontend/CPrep.c"
+    "source": "src/driver/CWCompilerLinkerPrivate.c"
   },
   {
     "name": "fn_004404b0",
@@ -6963,16 +6963,16 @@
     "size": 67
   },
   {
-    "name": "CPrep_GetResultValues",
+    "name": "CWCompilerLinkerPrivate_GetResultValues",
     "address": "0x00440500",
     "size": 87,
-    "source": "src/frontend/CPrep.c"
+    "source": "src/driver/CWCompilerLinkerPrivate.c"
   },
   {
-    "name": "CPrep_CallCompilerCallbackWithValue",
+    "name": "CWCompilerLinkerPrivate_CallCompilerCallbackWithValue",
     "address": "0x00440560",
     "size": 68,
-    "source": "src/frontend/CPrep.c"
+    "source": "src/driver/CWCompilerLinkerPrivate.c"
   },
   {
     "name": "fn_004405b0",
@@ -6983,13 +6983,13 @@
     "name": "call_compiler_callback",
     "address": "0x004405f0",
     "size": 80,
-    "source": "src/frontend/CPrep.c"
+    "source": "src/driver/CWCompilerLinkerPrivate.c"
   },
   {
-    "name": "CPrep_InvokeCompilerCallback",
+    "name": "CWCompilerLinkerPrivate_InvokeCompilerCallback",
     "address": "0x00440640",
     "size": 68,
-    "source": "src/frontend/CPrep.c"
+    "source": "src/driver/CWCompilerLinkerPrivate.c"
   },
   {
     "name": "fn_00440690",
@@ -8060,10 +8060,10 @@
     "size": 400
   },
   {
-    "name": "IroJump_ConvertCInt64ToType",
+    "name": "IroEval_ConvertCInt64ToType",
     "address": "0x00456790",
     "size": 109,
-    "source": "src/optimizer/IroJump.c"
+    "source": "src/optimizer/IroEval.c"
   },
   {
     "name": "fn_00456800",
@@ -8081,10 +8081,10 @@
     "size": 667
   },
   {
-    "name": "IroCSE_RewriteStatementExpressions",
+    "name": "IroTransform_RewriteStatementExpressions",
     "address": "0x00456e70",
     "size": 88,
-    "source": "src/optimizer/IroCSE.c"
+    "source": "src/optimizer/IroTransform.c"
   },
   {
     "name": "fn_00456ed0",
@@ -19311,10 +19311,10 @@
     "size": 346
   },
   {
-    "name": "CABI_SplitNameIntoMessageArguments",
+    "name": "CObjCModern_SplitNameIntoMessageArguments",
     "address": "0x00555020",
     "size": 232,
-    "source": "src/frontend/CABI.c"
+    "source": "src/frontend/CObjCModern.c"
   },
   {
     "name": "fn_00555110",
@@ -20523,13 +20523,13 @@
     "name": "COpt_00524b20",
     "address": "0x0056d010",
     "size": 112,
-    "source": "src/optimizer/CodeMotion.c"
+    "source": "src/optimizer/UseDefChains.c"
   },
   {
     "name": "find_object_node",
     "address": "0x0056d080",
     "size": 56,
-    "source": "src/optimizer/CodeMotion.c"
+    "source": "src/optimizer/UseDefChains.c"
   },
   {
     "name": "fn_0056d0c0",

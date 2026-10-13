@@ -278,17 +278,6 @@ struct ObjectCallbackContext {
     unsigned int(__stdcall *invoke)(struct CWPluginPrivateContext *, struct FileProcessingInfo *, const char *);
 };
 #pragma options align = mac68k
-struct IncludeFilenamePointer {
-    char *filename;
-};
-#pragma options align = reset
-#pragma options align = mac68k
-struct IncludeSearchPolicy {
-    char searchLocal;
-    char unusedBytes[3];
-};
-#pragma options align = reset
-#pragma options align = mac68k
 struct Macro {
     struct Macro *next;
     struct HashNameNode *name;
@@ -347,7 +336,6 @@ struct PrepNameCacheEntry {
     SInt32 auxiliaryValue;
 };
 #pragma options align = reset
-extern VarInfo *CPrep_AllocateVarInfo(void);
 extern CPrepFileInfo *CPrep_GetPFile(void);
 extern void parse_elif_directive(void);
 extern void parse_ifndef(void);
@@ -453,30 +441,8 @@ extern UInt8 data_00586fd0[256];
 extern UInt8 data_0058702f;
 extern struct TStreamElement *buffered_token_buffer_end;
 extern UInt8 data_0058852a;
-extern SInt32 __stdcall CPrep_GetTargetSettings(CWPluginPrivateContext *obj, TgtRec *dst);
-extern unsigned int __stdcall CPrep_CallCompilerCallbackWithValue(CWPluginPrivateContext *object_id,
-                                                                  unsigned int argument, long *value);
-extern SInt32 __stdcall CPrep_CallCompilerCallback(void *objectId, SInt32 argument);
-extern unsigned int __stdcall call_compiler_callback(CWPluginPrivateContext *object_id, void *argument,
-                                                     unsigned int result);
 extern unsigned int *CPrep_RemoveFlaggedMacros(void);
-extern CWPluginPrivateContext *validate_context_signature(CWPluginPrivateContext *record);
-extern int CPrep_AppendStringBounded(char *dst, char *src, int size);
 extern void __stdcall CPrep_RegisterPredefinedMacros(void);
-extern int __stdcall CPrep_GetEnabled(int key, unsigned char *value);
-extern unsigned int __stdcall CPrep_GetActive(int selector, unsigned char *value);
-extern unsigned int __stdcall CPrep_GetOperation(int key, unsigned char *value);
-extern unsigned int __stdcall CPrep_GetSetting(CWPluginPrivateContext *key, unsigned char *value);
-extern unsigned int __stdcall CPrep_GetReserved15d(int handle, unsigned char *value);
-extern unsigned int __stdcall CPrep_GetDependencyState(CWPluginPrivateContext *context, BrowseOptions *state);
-extern unsigned int __stdcall CPrep_GetFileIndex(CWPluginPrivateContext *key, unsigned int *value);
-extern unsigned int __stdcall CPrep_GetDependencyOption(int lookupKey, unsigned short *value);
-extern int __stdcall CPrep_GetContextPayload(CWPluginPrivateContext *handle, CWFileSpec *destination);
-extern unsigned int __stdcall CPrep_GetResultValues(CWPluginPrivateContext *handle, UInt32 *first_value,
-                                                    UInt32 *second_value);
-extern unsigned int __stdcall CPrep_InvokeCompilerCallback(CWPluginPrivateContext *instance_id,
-                                                           struct FileProcessingInfo *argument, const char *value);
-extern HashNameNode *fn_00441850(CPrepFileInfo *file, SInt32 *position);
 
 #ifdef __cplusplus
 }

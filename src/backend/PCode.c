@@ -172,6 +172,14 @@ void PCode_BuildPredecessors(void)
     }
 }
 
+static void unlink_block(PCodeBlock *block)
+{
+    block->prev->next = block->next;
+    if (block->next != NULL)
+        block->next->prev = block->prev;
+    block->flags |= 0x10;
+}
+
 void PCode_UnlinkBlocksWithoutFlag4(void)
 {
     PCodeBlock *p;
@@ -179,12 +187,8 @@ void PCode_UnlinkBlocksWithoutFlag4(void)
     SpillCode_BuildBlockOrder();
     p = gPCodeBlocks->next;
     while (p != NULL) {
-        if ((p->flags & 4) == 0) {
-            p->prev->next = p->next;
-            if (p->next != NULL)
-                p->next->prev = p->prev;
-            p->flags |= 0x10;
-        }
+        if ((p->flags & 4) == 0)
+            unlink_block(p);
         p = p->next;
     }
 }

@@ -43,8 +43,8 @@ extern void CTemplateClass_AppendEnumConstDeclaration(struct TemplClass *self, O
 extern void CTemplateClass_AppendEnumDeclaration(struct TemplClass *type, TypeEnum *value);
 extern void CTemplateClass_AppendFuncDeclaration(struct TemplClass *owner, TypeTemplDep *value, unsigned char kind);
 extern struct TemplClass *CTemplateClass_ResolveRelatedClass(struct TemplClass *record);
-extern unsigned int CTemplateClass_PrependTemplateRecordEntry(struct TemplClass *list, Type *value,
-                                                              unsigned char value24, unsigned char value25);
+extern void CTemplateClass_PrependTemplateRecordEntry(struct TemplClass *list, Type *value, unsigned char value24,
+                                                     unsigned char value25);
 extern void instantiate_friend_declaration(TypeDeduce *ctx, struct TemplateFriend *declaration);
 extern void instantiate_object_type(TypeDeduce *context, TemplateAction *function, ObjBase *object);
 extern void instantiate_template_object(TypeDeduce *ctx, Object *templ);
@@ -62,7 +62,6 @@ extern void CTemplateClass_AddDeferredFunctionDeclaration(struct TemplClass *p1,
 extern void fn_0051b800(void);
 extern void fn_0051b810(void);
 extern struct TemplClass *class_template_list;
-extern char *CTemplateClass_ParseDouble(char *value, double *result, char *error);
 struct TemplClass;
 
 #ifdef __cplusplus

@@ -2,6 +2,7 @@
 #define COMPILER_IROVARS_H
 
 #include "compiler/common.h"
+#include "version.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -97,6 +98,10 @@ extern unsigned int data_00588234;
 extern struct IROVarPart *class_data_parts;
 extern struct BitVector *noregister_bitvector;
 extern UInt8 data_00588510;
+#if VERSION == VERSION_GC_1_0
+extern void IroVars_IncreaseStatementValue(void);
+extern void IroVars_DecreaseStatementValue(void);
+#endif
 
 #ifdef __cplusplus
 }

@@ -9,11 +9,13 @@ extern "C" {
 
 extern void FuncLevelAsmPPC_GenerateFunction(Object *func);
 extern void fn_004e6e30(void);
+extern void assign_object_register(Object *func, SInt16 register_number);
 extern void FuncLevelAsmPPC_AllocateLocals(void);
 extern UInt8 data_005884f4;
 extern SInt32 data_005871a0;
 extern UInt16 function_header_index;
 extern UInt8 func_errors;
+extern void FuncLevelAsmPPC_NoOp(void);
 
 #ifdef __cplusplus
 }

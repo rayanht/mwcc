@@ -15,57 +15,18 @@
 
 #include <string.h>
 
-static char data_005649b8 = 0;
 #define false 0
 #define true 1
 
-static inline char *CopyTemplate(int *jb, MOutBuf *ob, char *q, unsigned int n)
+static void unmangle_error(int *jb)
 {
-    char c;
-    char *r;
-    MOutBuf *buf;
-
-    while (n-- != 0) {
-        if ((c = *q++) == 0)
-            longjmp(jb, 1);
-        if (c == '<') {
-            buf = ob;
-            r = unmangle_template_arguments(jb, buf, q);
-            n -= r - q;
-            if (n == 0)
-                return r;
-            longjmp(jb, 1);
-        } else if (ob->left != 0) {
-            *ob->ptr++ = c;
-            ob->left--;
-        }
-    }
-    return q;
+    longjmp(jb, 1);
 }
 
-static void AppendText(MOutBuf *buf, const char *str, unsigned int len)
+static void init_buffer(MOutBuf *buf, char *data, int size)
 {
-    if (buf != NULL) {
-        unsigned int n = len;
-        if (n > buf->left)
-            n = buf->left;
-        memcpy(buf->ptr, str, n);
-        buf->ptr += n;
-        buf->left -= n;
-    }
-}
-
-static void put_2(MOutBuf *s, const char *str)
-{
-    unsigned int n;
-    if (!s)
-        return;
-    n = 2;
-    if (s->left < n)
-        n = s->left;
-    memcpy(s->ptr, str, n);
-    s->ptr += n;
-    s->left -= n;
+    buf->ptr = data;
+    buf->left = size - 1;
 }
 
 static void put_c(MOutBuf *s, char c)
@@ -76,91 +37,47 @@ static void put_c(MOutBuf *s, char c)
     }
 }
 
-static inline void put(MOutBuf *b, char *s, unsigned int n)
+static void put_s(MOutBuf *s, const char *str)
 {
-    unsigned int c;
-    if (b == NULL)
-        return;
-    if ((unsigned int)b->left < (c = n))
-        c = (unsigned int)b->left;
-    memcpy(b->ptr, s, c);
-    b->ptr += c;
-    b->left -= c;
+    unsigned int n;
+
+    if (s) {
+        n = strlen(str);
+        if (s->left < n)
+            n = s->left;
+        memcpy(s->ptr, str, n);
+        s->ptr += n;
+        s->left -= n;
+    }
 }
 
-static inline char *scan(int *a0, MOutBuf *a1, char *arg, int n, MOutBuf *inner)
+static void terminate(MOutBuf *s)
 {
-    char *p;
-    char c;
-    char *r;
-    p = arg;
-    while (n-- != 0) {
-        if ((c = *p++) == 0)
-            longjmp(a0, 1);
-        if (c == 60) {
-            r = unmangle_template_arguments(a0, inner, p);
-            if ((n = n - ((int)r - (int)p)) == 0)
-                return r;
-            longjmp(a0, 1);
-        } else if (a1 != NULL && a1->left != 0) {
-            *a1->ptr++ = c;
-            a1->left -= 1;
-        }
-    }
-    return p;
-}
-
-static inline char *scan_component(int *context, MOutBuf *output, char *cursor, int length, MOutBuf *inner)
-{
-    char *p;
-    char c;
-    char *r;
-    p = cursor;
-    while (length-- != 0) {
-        if ((c = *p++) == 0)
-            longjmp(context, 1);
-        if (c == 60) {
-            r = unmangle_template_arguments(context, inner, p);
-            if ((length = length - ((int)r - (int)p)) == 0)
-                return r;
-            longjmp(context, 1);
-        } else if (output != NULL && output->left != 0) {
-            *output->ptr++ = c;
-            output->left -= 1;
-        }
-    }
-    return p;
-}
-
-static void PutChar(MOutBuf *buf, char c)
-{
-    if (buf != NULL && buf->left != 0) {
-        *buf->ptr++ = c;
-        buf->left--;
-    }
+    *s->ptr = 0;
+    s->left = 0;
 }
 
 char *unmangle_template_arguments(int *ctx, MOutBuf *buf, char *p)
 {
     char *q;
 
-    PutChar(buf, '<');
+    put_c(buf, '<');
     for (;;) {
         switch (*p) {
             case '&':
             case '=':
                 if (*p++ == '&')
-                    PutChar(buf, '&');
+                    put_c(buf, '&');
                 for (;;) {
                     switch (*p) {
                         case '\0':
-                            longjmp(ctx, 1);
+                            unmangle_error(ctx);
                             break;
                         case ',':
                         case '>':
                             break;
                         default:
-                            PutChar(buf, *p++);
+                            put_c(buf, *p++);
                             continue;
                     }
                     break;
@@ -179,10 +96,10 @@ char *unmangle_template_arguments(int *ctx, MOutBuf *buf, char *p)
                 q = p + 1;
                 for (;;) {
                     if (*q == '\0')
-                        longjmp(ctx, 1);
+                        unmangle_error(ctx);
                     if (*q == ',' || *q == '>') {
                         do {
-                            PutChar(buf, *p++);
+                            put_c(buf, *p++);
                         } while (*p != '>' && *p != ',');
                         break;
                     }
@@ -200,17 +117,10 @@ char *unmangle_template_arguments(int *ctx, MOutBuf *buf, char *p)
         if (*p == '>')
             break;
         if (*p++ != ',')
-            longjmp(ctx, 1);
-        if (buf != NULL) {
-            unsigned int n = 2;
-            if (buf->left < n)
-                n = buf->left;
-            memcpy(buf->ptr, ", ", n);
-            buf->ptr += n;
-            buf->left -= n;
-        }
+            unmangle_error(ctx);
+        put_s(buf, ", ");
     }
-    PutChar(buf, '>');
+    put_c(buf, '>');
     return p + 1;
 }
 
@@ -218,7 +128,6 @@ char *fn_004e8800(int *a, MOutBuf *out, char *p)
 {
     char *str;
     char flag = 0;
-    unsigned n;
 
     switch (*p++) {
         case 'a':
@@ -440,14 +349,7 @@ char *fn_004e8800(int *a, MOutBuf *out, char *p)
                     str = "operator ||";
                     break;
                 case 'p':
-                    if (out != NULL) {
-                        n = 9;
-                        if (out->left < 9)
-                            n = out->left;
-                        memcpy(out->ptr, "operator ", n);
-                        out->ptr += n;
-                        out->left -= n;
-                    }
+                    put_s(out, "operator ");
                     p = unmangle_type(a, out, p);
                     flag = 1;
                     break;
@@ -496,14 +398,7 @@ char *fn_004e8800(int *a, MOutBuf *out, char *p)
     }
     if (!flag) {
         if (*p != '\0') {
-            if (out != NULL) {
-                n = strlen(str);
-                if (out->left < n)
-                    n = out->left;
-                memcpy(out->ptr, str, n);
-                out->ptr += n;
-                out->left -= n;
-            }
+            put_s(out, str);
             if (*p == '<')
                 p = unmangle_template_arguments(a, out, p + 1);
             if (*p++ != '_' || *p++ != '_')
@@ -513,25 +408,45 @@ char *fn_004e8800(int *a, MOutBuf *out, char *p)
         if (*p++ != '_' || *p++ != '_')
             return NULL;
     }
-    *out->ptr = 0;
-    out->left = 0;
+    terminate(out);
+    return p;
+}
+
+static char *copy_name(int *jb, MOutBuf *buf, char *p, int n, char templates)
+{
+    char c;
+    char *r;
+
+    while (n-- != 0) {
+        if ((c = *p++) == 0)
+            unmangle_error(jb);
+        if (c == '<') {
+            r = unmangle_template_arguments(jb, templates ? buf : NULL, p);
+            n -= r - p;
+            if (n == 0)
+                return r;
+            unmangle_error(jb);
+        } else {
+            put_c(buf, c);
+        }
+    }
     return p;
 }
 
 char *unmangle_qualified_name(int *context, MOutBuf *output, char *cursor, char append, char alternate)
 {
-    int length;
     char *next;
-    int lastLength;
+    char *lastComponent;
+    int length;
     int component;
     int componentCount;
-    char *lastComponent;
+    int lastLength;
     if (*cursor == 'Q') {
         componentCount = (int)cursor[1];
         cursor += 2;
         componentCount = componentCount - '0';
         if (componentCount < 1 || componentCount > 9) {
-            longjmp(context, 1);
+            unmangle_error(context);
         }
     } else {
         componentCount = 1;
@@ -539,30 +454,29 @@ char *unmangle_qualified_name(int *context, MOutBuf *output, char *cursor, char 
     component = 0;
     while (component < componentCount) {
         if (component != 0 && output != NULL)
-            put(output, "::", 2);
+            put_s(output, "::");
         if (*cursor < '0' || *cursor > '9') {
-            longjmp(context, 1);
+            unmangle_error(context);
         }
         length = 0;
         for (; *cursor >= '0' && *cursor <= '9'; cursor = cursor + 1) {
             length = *cursor + length * 10 - '0';
         }
         if (length == 0) {
-            longjmp(context, 1);
+            unmangle_error(context);
         }
         lastComponent = cursor;
         lastLength = length;
-        next = scan_component(context, output, cursor, length, output);
+        next = copy_name(context, output, cursor, length, 1);
         component = component + 1;
         cursor = next;
     }
     if (append != 0 && output != NULL) {
-        if (alternate != 0) {
-            put(output, "::~", 3);
-        } else {
-            put(output, "::", 2);
-        }
-        (void)scan_component(context, output, lastComponent, lastLength, NULL);
+        if (alternate)
+            put_s(output, "::~");
+        else
+            put_s(output, "::");
+        (void)copy_name(context, output, lastComponent, lastLength, 0);
     }
     return cursor;
 }
@@ -571,9 +485,7 @@ char *unmangle_qualified_name(int *context, MOutBuf *output, char *cursor, char 
 char *write_qualifiers(MOutBuf *output, char *qualifiers)
 {
     char *keyword;
-    char *space;
     Boolean first;
-    unsigned int length;
 
     first = true;
     do {
@@ -593,21 +505,9 @@ char *write_qualifiers(MOutBuf *output, char *qualifiers)
             default:
                 return qualifiers;
         }
-        if (((!first) && (output != NULL)) && (output->left != 0)) {
-            space = output->ptr;
-            output->ptr++;
-            *space = ' ';
-            output->left--;
-        }
-        if (output != NULL) {
-            length = strlen(keyword);
-            if (output->left < length) {
-                length = output->left;
-            }
-            memcpy((unsigned int *)output->ptr, (unsigned int *)keyword, length);
-            output->ptr += length;
-            output->left -= length;
-        }
+        if (!first)
+            put_c(output, ' ');
+        put_s(output, keyword);
         first = false;
         qualifiers = qualifiers + 1;
     } while (true);
@@ -616,12 +516,6 @@ char *write_qualifiers(MOutBuf *output, char *qualifiers)
 char *unmangle_indirect_declarator(int *context, MOutBuf *output, char *name)
 {
     char *prefix;
-    char *referenceEnd;
-    char *pointerEnd;
-    unsigned int copyLength;
-    char *memberEnd;
-    char *pointerSlot;
-    char *referenceSlot;
     prefix = name;
     name = write_qualifiers(NULL, name);
     if (prefix == name)
@@ -629,48 +523,31 @@ char *unmangle_indirect_declarator(int *context, MOutBuf *output, char *name)
 
     switch (*name) {
         case 'P':
-            pointerEnd = unmangle_indirect_declarator(context, output, name + 1);
+            name = unmangle_indirect_declarator(context, output, name + 1);
             if (output != NULL) {
-                if (output != NULL && output->left != 0) {
-                    pointerSlot = output->ptr;
-                    output->ptr += 1;
-                    *pointerSlot = '*';
-                    output->left -= 1;
-                }
+                put_c(output, '*');
                 if (prefix != NULL)
                     write_qualifiers(output, prefix);
             }
-            return pointerEnd;
+            return name;
 
         case 'R':
-            referenceEnd = unmangle_indirect_declarator(context, output, name + 1);
+            name = unmangle_indirect_declarator(context, output, name + 1);
             if (output != NULL) {
-                if (output != NULL && output->left != 0) {
-                    referenceSlot = output->ptr;
-                    output->ptr += 1;
-                    *referenceSlot = '&';
-                    output->left -= 1;
-                }
+                put_c(output, '&');
                 if (prefix != NULL)
                     write_qualifiers(output, prefix);
             }
-            return referenceEnd;
+            return name;
 
         case 'M':
-            memberEnd = unmangle_qualified_name(context, output, name + 1, 0, 0);
+            name = unmangle_qualified_name(context, output, name + 1, 0, 0);
             if (output != NULL) {
-                if (output != NULL) {
-                    copyLength = 3;
-                    if (output->left < 3)
-                        copyLength = output->left;
-                    memcpy(output->ptr, "::*", copyLength);
-                    output->ptr += copyLength;
-                    output->left -= copyLength;
-                }
+                put_s(output, "::*");
                 if (prefix != NULL)
                     write_qualifiers(output, prefix);
             }
-            return memberEnd;
+            return name;
 
         default:
             return name;
@@ -702,7 +579,7 @@ char *unmangle_array(int *context, MOutBuf *stream, char *name, char *format)
                 name++;
                 continue;
             default:
-                longjmp(context, 1);
+                unmangle_error(context);
                 break;
         }
         break;
@@ -710,7 +587,7 @@ char *unmangle_array(int *context, MOutBuf *stream, char *name, char *format)
     name = unmangle_type(context, stream, name);
     if (stream != NULL) {
         if (format != NULL) {
-            put_2(stream, " (");
+            put_s(stream, " (");
             unmangle_indirect_declarator(context, stream, format);
             put_c(stream, ')');
         }
@@ -732,11 +609,11 @@ char *unmangle_array(int *context, MOutBuf *stream, char *name, char *format)
                 case '_':
                     if (dimensions[1] != 'A')
                         break;
-                    put_2(stream, "][");
+                    put_s(stream, "][");
                     dimensions += 2;
                     continue;
                 default:
-                    longjmp(context, 1);
+                    unmangle_error(context);
                     break;
             }
             break;
@@ -749,7 +626,6 @@ char *unmangle_array(int *context, MOutBuf *stream, char *name, char *format)
 char *unmangle_function_type(int *context, MOutBuf *output, char *cursor, char *suffix)
 {
     char *arguments;
-    unsigned int count;
 
     cursor = cursor + 1;
     arguments = cursor;
@@ -758,47 +634,20 @@ char *unmangle_function_type(int *context, MOutBuf *output, char *cursor, char *
     cursor = unmangle_type(context, output, cursor + 1);
     if (output != NULL) {
         if (suffix != NULL) {
-            if (output != NULL) {
-                count = 2;
-                if (output->left < count)
-                    count = output->left;
-                memcpy(output->ptr, " (", count);
-                output->ptr += count;
-                output->left -= count;
-            }
-            {
-                MOutBuf *formatOutput = output;
-                char *name = suffix;
-                unmangle_indirect_declarator(context, formatOutput, name);
-            }
-            if (output != NULL && output->left != 0) {
-                *output->ptr++ = ')';
-                output->left--;
-            }
+            put_s(output, " (");
+            unmangle_indirect_declarator(context, output, suffix);
+            put_c(output, ')');
         }
-        if (output != NULL && output->left != 0) {
-            *output->ptr++ = '(';
-            output->left--;
-        }
+        put_c(output, '(');
         if (*arguments != '_') {
             do {
                 arguments = unmangle_type(context, output, arguments);
                 if (*arguments == '_')
                     break;
-                if (output != NULL) {
-                    count = 2;
-                    if (output->left < count)
-                        count = output->left;
-                    memcpy(output->ptr, ", ", count);
-                    output->ptr += count;
-                    output->left -= count;
-                }
+                put_s(output, ", ");
             } while (1);
         }
-        if (output != NULL && output->left != 0) {
-            *output->ptr++ = ')';
-            output->left--;
-        }
+        put_c(output, ')');
     }
     return cursor;
 }
@@ -809,7 +658,6 @@ char *unmangle_indirect_type(int *context, MOutBuf *output, char *input, char *s
     char *argument = input;
     char *kind;
     char *result;
-    int count;
 
     kind = unmangle_indirect_declarator(context, NULL, input);
     switch (*kind) {
@@ -830,20 +678,9 @@ char *unmangle_indirect_type(int *context, MOutBuf *output, char *input, char *s
                 input = unmangle_qualified_name(context, NULL, (input + 1), 0, 0);
                 result = unmangle_type(context, output, input);
                 if (output != NULL) {
-                    if (output != NULL && output->left != 0) {
-                        *output->ptr++ = ' ';
-                        output->left -= 1;
-                    }
+                    put_c(output, ' ');
                     unmangle_qualified_name(context, output, (argument + 1), 0, 0);
-                    if (output != NULL) {
-                        count = 3;
-                        if (output->left < 3u) {
-                            count = output->left;
-                        }
-                        memcpy(output->ptr, "::*", count);
-                        output->ptr += count;
-                        output->left -= count;
-                    }
+                    put_s(output, "::*");
                     if (suffix != NULL) {
                         write_qualifiers(output, suffix);
                     }
@@ -851,10 +688,7 @@ char *unmangle_indirect_type(int *context, MOutBuf *output, char *input, char *s
             } else {
                 result = unmangle_type(context, output, (input + 1));
                 if (output != NULL) {
-                    if (output != NULL && output->left != 0) {
-                        *output->ptr++ = marker;
-                        output->left -= 1;
-                    }
+                    put_c(output, marker);
                     if (suffix != NULL) {
                         write_qualifiers(output, suffix);
                     }
@@ -873,41 +707,41 @@ char *unmangle_vector_type(int *unused, MOutBuf *buf, char *s, void *loc)
             switch (s[2]) {
                 case 'c':
                     p++;
-                    AppendText(buf, "vector unsigned char", 20);
+                    put_s(buf, "vector unsigned char");
                     break;
                 case 's':
                     p++;
-                    AppendText(buf, "vector unsigned short", 21);
+                    put_s(buf, "vector unsigned short");
                     break;
                 case 'i':
                     p++;
-                    AppendText(buf, "vector unsigned int", 19);
+                    put_s(buf, "vector unsigned int");
                     break;
             }
             break;
         case 'c':
-            AppendText(buf, "vector signed char", 18);
+            put_s(buf, "vector signed char");
             break;
         case 'C':
-            AppendText(buf, "vector bool char", 16);
+            put_s(buf, "vector bool char");
             break;
         case 's':
-            AppendText(buf, "vector signed short", 19);
+            put_s(buf, "vector signed short");
             break;
         case 'S':
-            AppendText(buf, "vector bool short", 17);
+            put_s(buf, "vector bool short");
             break;
         case 'i':
-            AppendText(buf, "vector signed int", 17);
+            put_s(buf, "vector signed int");
             break;
         case 'I':
-            AppendText(buf, "vector bool int ", 16);
+            put_s(buf, "vector bool int ");
             break;
         case 'f':
-            AppendText(buf, "vector float", 12);
+            put_s(buf, "vector float");
             break;
         case 'p':
-            AppendText(buf, "vector pixel", 12);
+            put_s(buf, "vector pixel");
             break;
         default:
             p = s;
@@ -919,9 +753,8 @@ char *unmangle_vector_type(int *unused, MOutBuf *buf, char *s, void *loc)
 
 char *unmangle_type(int *context, MOutBuf *output, char *type)
 {
-    char *qualifiers = type;
-    unsigned int length;
     const char *name;
+    char *qualifiers = type;
     type = write_qualifiers(NULL, type);
     if (qualifiers == type)
         qualifiers = NULL;
@@ -992,31 +825,18 @@ char *unmangle_type(int *context, MOutBuf *output, char *type)
         case 'Q':
             if (qualifiers) {
                 write_qualifiers(output, qualifiers);
-                if (output != NULL && output->left != 0) {
-                    *output->ptr++ = ' ';
-                    output->left--;
-                }
+                put_c(output, ' ');
             }
             return unmangle_qualified_name(context, output, type, 0, 0);
         default:
-            longjmp(context, 1);
+            unmangle_error(context);
             break;
     }
     if (qualifiers) {
         write_qualifiers(output, qualifiers);
-        if (output != NULL && output->left != 0) {
-            *output->ptr++ = ' ';
-            output->left--;
-        }
+        put_c(output, ' ');
     }
-    if (output) {
-        length = strlen(name);
-        if (output->left < length)
-            length = output->left;
-        memcpy(output->ptr, name, length);
-        output->ptr += length;
-        output->left -= length;
-    }
+    put_s(output, name);
     return type + 1;
 }
 
@@ -1036,66 +856,34 @@ void unmangle_function_parameters(int *context, MOutBuf *output, char *encoding)
         isVolatile = 1;
     }
     if (*encoding++ != 'F') {
-        longjmp(context, 1);
+        unmangle_error(context);
     }
 
-    if (output != NULL && output->left != 0) {
-        *output->ptr++ = '(';
-        output->left--;
-    }
+    put_c(output, '(');
 
     if (!(*encoding == 'v' && encoding[1] == '\0')) {
         for (;;) {
             if (*encoding == 'e') {
                 if (encoding[1] != '\0') {
-                    longjmp(context, 1);
+                    unmangle_error(context);
                 }
-                if (output != NULL) {
-                    unsigned int length = 3;
-                    if (output->left < length) {
-                        length = output->left;
-                    }
-                    memcpy(output->ptr, "...", length);
-                    output->ptr += length;
-                    output->left -= length;
-                }
+                put_s(output, "...");
                 break;
             }
             encoding = unmangle_type(context, output, encoding);
             if (*encoding == '\0') {
                 break;
             }
-            if (output != NULL && output->left != 0) {
-                *output->ptr++ = ',';
-                output->left--;
-            }
+            put_c(output, ',');
         }
     }
 
-    if (output != NULL && output->left != 0) {
-        *output->ptr++ = ')';
-        output->left--;
-    }
-    if (isConst && output != NULL) {
-        unsigned int length = 6;
-        if (output->left < length) {
-            length = output->left;
-        }
-        memcpy(output->ptr, " const", length);
-        output->ptr += length;
-        output->left -= length;
-    }
-    if (isVolatile && output != NULL) {
-        unsigned int length = 9;
-        if (output->left < length) {
-            length = output->left;
-        }
-        memcpy(output->ptr, " volatile", length);
-        output->ptr += length;
-        output->left -= length;
-    }
-    *output->ptr = '\0';
-    output->left = 0;
+    put_c(output, ')');
+    if (isConst)
+        put_s(output, " const");
+    if (isVolatile)
+        put_s(output, " volatile");
+    terminate(output);
 }
 
 void Unmangle_UnmangleName(char *name, char *out, UInt32 size)
@@ -1107,11 +895,9 @@ void Unmangle_UnmangleName(char *name, char *out, UInt32 size)
 
     if (name[0] == 'Q' && name[1] >= '1' && name[1] <= '9') {
         if (!_Setjmp(jb)) {
-            ob.ptr = out;
-            ob.left = size - 1;
+            init_buffer(&ob, out, size);
             unmangle_qualified_name(jb, &ob, name, 0, 0);
-            *ob.ptr = 0;
-            ob.left = 0;
+            terminate(&ob);
             return;
         }
     }
@@ -1128,27 +914,23 @@ void Unmangle_UnmangleName(char *name, char *out, UInt32 size)
         break;
     }
     if (templ && !_Setjmp(jb)) {
-        ob.ptr = out;
-        ob.left = size - 1;
-        (void)CopyTemplate(jb, &ob, name, p - name);
-        *ob.ptr = 0;
-        ob.left = 0;
+        init_buffer(&ob, out, size);
+        (void)copy_name(jb, &ob, name, p - name, 1);
+        terminate(&ob);
         return;
     }
     strncpy(out, name, size);
     out[size - 1] = 0;
 }
 
+static char data_005649b8 = 0;
+
 void Unmangle_UnmangleSymbolName(char *name, char *output, int outputSize)
 {
     char *suffix;
     char hasSuffix;
     char ch;
-    unsigned int length;
-    unsigned int functionLength;
     char *memberSuffix;
-    int separatorLength;
-    unsigned int memberLength;
     jmp_buf state;
     MOutBuf identifierBuffer;
     MOutBuf outputBuffer;
@@ -1169,50 +951,30 @@ void Unmangle_UnmangleSymbolName(char *name, char *output, int outputSize)
     }
 
     if (_Setjmp(state) == 0) {
-        identifierBuffer.left = sizeof(identifier) - 1;
-        identifierBuffer.ptr = identifier;
-        outputBuffer.ptr = output;
-        outputBuffer.left = outputSize - 1;
+        init_buffer(&identifierBuffer, identifier, sizeof(identifier));
+        init_buffer(&outputBuffer, output, outputSize);
         if (*name != '_' || name[1] != '_' || (suffix = fn_004e8800(state, &identifierBuffer, name + 2)) == NULL) {
             hasSuffix = 0;
-            identifierBuffer.ptr = identifier;
-            identifierBuffer.left = sizeof(identifier) - 1;
+            init_buffer(&identifierBuffer, identifier, sizeof(identifier));
             suffix = name;
-            for (; *suffix == '_'; ++suffix) {
-                if (identifierBuffer.left != 0) {
-                    *identifierBuffer.ptr++ = '_';
-                    --identifierBuffer.left;
-                }
-            }
+            for (; *suffix == '_'; ++suffix)
+                put_c(&identifierBuffer, '_');
             while ((ch = *suffix++) != 0) {
                 if (ch == '_' && *suffix == '_') {
                     ++suffix;
                     while (*suffix == '_') {
-                        if (identifierBuffer.left != 0) {
-                            *identifierBuffer.ptr++ = '_';
-                            --identifierBuffer.left;
-                        }
+                        put_c(&identifierBuffer, '_');
                         ++suffix;
                     }
                     hasSuffix = 1;
                     break;
                 }
-                if (identifierBuffer.left != 0) {
-                    *identifierBuffer.ptr++ = ch;
-                    --identifierBuffer.left;
-                }
+                put_c(&identifierBuffer, ch);
             }
-            *identifierBuffer.ptr = 0;
-            identifierBuffer.left = 0;
+            terminate(&identifierBuffer);
             if (!hasSuffix) {
-                length = strlen(identifier);
-                if (outputBuffer.left < length)
-                    length = outputBuffer.left;
-                memcpy(outputBuffer.ptr, identifier, length);
-                outputBuffer.ptr += length;
-                outputBuffer.left -= length;
-                *outputBuffer.ptr = 0;
-                outputBuffer.left = 0;
+                put_s(&outputBuffer, identifier);
+                terminate(&outputBuffer);
                 return;
             }
         }
@@ -1220,12 +982,7 @@ void Unmangle_UnmangleSymbolName(char *name, char *output, int outputSize)
             case 'F':
                 if (identifier[1] == 0 && (identifier[0] == '!' || identifier[0] == '~'))
                     break;
-                functionLength = strlen(identifier);
-                if (outputBuffer.left < functionLength)
-                    functionLength = outputBuffer.left;
-                memcpy(outputBuffer.ptr, identifier, functionLength);
-                outputBuffer.ptr += functionLength;
-                outputBuffer.left -= functionLength;
+                put_s(&outputBuffer, identifier);
                 unmangle_function_parameters(state, &outputBuffer, suffix);
                 return;
             case '0':
@@ -1243,21 +1000,10 @@ void Unmangle_UnmangleSymbolName(char *name, char *output, int outputSize)
                     memberSuffix = unmangle_qualified_name(state, &outputBuffer, suffix, 1, identifier[0] == '~');
                 } else {
                     memberSuffix = unmangle_qualified_name(state, &outputBuffer, suffix, 0, 0);
-                    separatorLength = 2;
-                    if (outputBuffer.left < 2U)
-                        separatorLength = outputBuffer.left;
-                    memcpy(outputBuffer.ptr, "::", separatorLength);
-                    outputBuffer.ptr += separatorLength;
-                    outputBuffer.left -= separatorLength;
-                    memberLength = strlen(identifier);
-                    if (outputBuffer.left < memberLength)
-                        memberLength = outputBuffer.left;
-                    memcpy(outputBuffer.ptr, identifier, memberLength);
-                    outputBuffer.ptr += memberLength;
-                    outputBuffer.left -= memberLength;
+                    put_s(&outputBuffer, "::");
+                    put_s(&outputBuffer, identifier);
                     if (*memberSuffix == 0) {
-                        *outputBuffer.ptr = 0;
-                        outputBuffer.left = 0;
+                        terminate(&outputBuffer);
                         return;
                     }
                 }
@@ -1267,113 +1013,4 @@ void Unmangle_UnmangleSymbolName(char *name, char *output, int outputSize)
     }
     strncpy(output, name, outputSize);
     output[outputSize - 1] = 0;
-}
-
-void assign_object_register(Object *func, SInt16 register_number)
-{
-    VarInfo *regs;
-    Type *type;
-    SInt16 physical_register;
-    SInt32 kind;
-
-    regs = Registers_GetInfo(func);
-    type = func->type;
-    regs->used = 1;
-    if (data_00588521) {
-        if (func->sclass == TK_REGISTER) {
-            if (register_number == 0) {
-                CError_ReportError(ERR_COULD_NOT_ASSIGNED_REGISTER, func->name->name);
-            }
-            regs->is_vector = 0;
-            if (copts.operandsDebug && type->type == TYPEFLOAT) {
-                if (type->size == 4) {
-                    regs->is_fpr = 1;
-                    regs->reg = register_number;
-                    physical_register = regs->reg;
-                } else {
-                    regs->is_fpr = 1;
-                    if (copts.littleendian != 0) {
-                        regs->reg = register_number;
-                        physical_register = regs->reg;
-                        regs->regHi = register_number + 1;
-                    } else {
-                        regs->reg = register_number + 1;
-                        physical_register = regs->reg;
-                        regs->regHi = register_number;
-                    }
-                }
-                CTemplateNew_InsertRegisterBinding(func->name->name, 0, physical_register, func);
-            } else if ((type->type == TYPEINT || type->type == TYPEENUM) && type->size == 8) {
-                regs->is_fpr = 0;
-                if (copts.littleendian != 0) {
-                    regs->regHi = register_number + 1;
-                    physical_register = 0;
-                    if (register_number < 10) {
-                        regs->reg = register_number;
-                        physical_register = regs->reg;
-                    }
-                } else {
-                    regs->reg = register_number + 1;
-                    physical_register = regs->reg;
-                    if (register_number < 10) {
-                        regs->regHi = register_number;
-                    }
-                }
-                CTemplateNew_InsertRegisterBinding(func->name->name, 0, physical_register, func);
-            } else if (type->type == TYPEFLOAT) {
-                regs->is_fpr = 1;
-                regs->reg = register_number;
-                CTemplateNew_InsertRegisterBinding(func->name->name, 1, register_number, func);
-            } else if (type->type == TYPESTRUCT && (kind = ((TypeStruct *)type)->stype) >= 4 && kind <= 0xe) {
-                regs->is_vector = 1;
-                regs->is_fpr = 0;
-                regs->reg = register_number;
-                CTemplateNew_InsertRegisterBinding(func->name->name, 9, register_number, func);
-            } else {
-                regs->is_fpr = 0;
-                regs->reg = register_number;
-                CTemplateNew_InsertRegisterBinding(func->name->name, 0, register_number, func);
-            }
-        }
-    } else if (func->sclass == TK_REGISTER) {
-        UInt8 typecode;
-        UInt8 use_gpr;
-        if ((((typecode = type->type) == TYPEINT || typecode == TYPEENUM) && type->size == 8) ||
-            ((use_gpr = copts.operandsDebug) && typecode == TYPEFLOAT && type->size != 4)) {
-            if (gAvailableSavedGPRs < 2) {
-                CError_ReportError(ERR_COULD_NOT_ASSIGNED_REGISTER, func->name->name);
-            }
-            Registers_AllocateGPRPair(func);
-            if (Registers_GetInfo(func)) {
-                Registers_GetInfo(func);
-            }
-            physical_register = Registers_GetInfo(func) ? (Registers_GetInfo(func))->reg : 0;
-            CTemplateNew_InsertRegisterBinding(func->name->name, 0, physical_register, func);
-        } else if (typecode == TYPEINT || typecode == TYPEENUM || typecode == TYPEPOINTER ||
-                   (typecode == TYPEMEMBERPOINTER && type->size == 4) ||
-                   (use_gpr && typecode == TYPEFLOAT && type->size == 4)) {
-            if (gAvailableSavedGPRs == 0) {
-                CError_ReportError(ERR_COULD_NOT_ASSIGNED_REGISTER, func->name->name);
-            }
-            Registers_AllocateGPR(func);
-            physical_register = Registers_GetInfo(func) ? (Registers_GetInfo(func))->reg : 0;
-            CTemplateNew_InsertRegisterBinding(func->name->name, 0, physical_register, func);
-        } else if (typecode == TYPEFLOAT) {
-            if (gAvailableSavedFPRs == 0) {
-                CError_ReportError(ERR_COULD_NOT_ASSIGNED_REGISTER, func->name->name);
-            }
-            Registers_AllocateFPR(func);
-            physical_register = Registers_GetInfo(func) ? (Registers_GetInfo(func))->reg : 0;
-            CTemplateNew_InsertRegisterBinding(func->name->name, 1, physical_register, func);
-        } else if (typecode == TYPESTRUCT && (kind = ((TypeStruct *)type)->stype) >= 4 && kind <= 0xe) {
-            if (gAvailableSavedVRs == 0) {
-                CError_ReportError(ERR_COULD_NOT_ASSIGNED_REGISTER, func->name->name);
-            }
-            Registers_AllocateVR(func);
-            physical_register = Registers_GetInfo(func) ? (Registers_GetInfo(func))->reg : 0;
-            CTemplateNew_InsertRegisterBinding(func->name->name, 9, physical_register, func);
-        } else {
-            CError_ReportError(ERR_COULD_NOT_ASSIGNED_REGISTER, func->name->name);
-        }
-    }
 }

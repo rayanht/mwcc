@@ -505,13 +505,41 @@ static UInt32 pending_instruction_retire_index;
 static unsigned int execution_unit_entry_index;
 static CompletionEntry data_00582cf0[5];
 
-static void RemovePending(PCodeInstruction *instr)
+static void advance_stage(int first, unsigned int from, int to)
 {
-    SInt32 i;
+    PCodeInstruction *instruction;
+    SInt32 v;
+    v = machine_opcode_info[(instruction = (&data_00582ca0)[from].instr)->opcode].stageCycles[to - first];
+    (&data_00582ca0)[to].instr = instruction;
+    (&data_00582ca0)[to].remaining = v;
+    (&data_00582ca0)[from].instr = NULL;
+}
 
-    for (i = 0; i < 5 && data_00582cf0[i].instr != instr; i++)
+static void enqueue(PCodeInstruction *instr)
+{
+    ++pending_instruction_count;
+    --data_00582ce0;
+    data_00582cf0[execution_unit_entry_index].instr = instr;
+    data_00582cf0[execution_unit_entry_index].completed = 0;
+    execution_unit_entry_index = (execution_unit_entry_index + 1) % 5;
+}
+
+static void RemovePending(unsigned int stage)
+{
+    PCodeInstruction *key = (&data_00582ca0)[stage].instr;
+    SInt32 i;
+    for (i = 0; i < 5 && data_00582cf0[i].instr != key; i++)
         ;
     data_00582cf0[i].completed = 1;
+    (&data_00582ca0)[stage].instr = NULL;
+}
+
+static void retire(void)
+{
+    data_00582cf0[pending_instruction_retire_index].instr = NULL;
+    pending_instruction_count = pending_instruction_count - 1;
+    ++data_00582ce0;
+    pending_instruction_retire_index = (pending_instruction_retire_index + 1U) % 5U;
 }
 
 SInt32 get_adjusted_latency(PCodeInstruction *p)
@@ -568,21 +596,17 @@ int fn_0052dfa0(PCodeInstruction *instruction)
 void assign_entry_to_execution_unit(PCodeInstruction *instr)
 {
     int category;
-    int tableIndex;
+    int cycles;
 
-    tableIndex = instr->opcode;
-    category = machine_opcode_info[tableIndex].executionUnit;
-    ++pending_instruction_count;
-    --data_00582ce0;
-    data_00582cf0[execution_unit_entry_index].completed = (data_00582cf0[execution_unit_entry_index].instr = instr, 0);
-    execution_unit_entry_index = (execution_unit_entry_index + 1) % 5;
+    category = machine_opcode_info[instr->opcode].executionUnit;
+    cycles = machine_opcode_info[instr->opcode].stageCycles[0];
+    enqueue(instr);
     (&data_00582ca0)[category].instr = instr;
-    (&data_00582ca0)[category].remaining = machine_opcode_info[tableIndex].stageCycles[0];
+    (&data_00582ca0)[category].remaining = cycles;
 }
 
 void retire_and_advance_pending_instructions(void)
 {
-    Object *obj0;
     SInt32 i;
     PCodeInstruction *o;
 
@@ -594,72 +618,31 @@ void retire_and_advance_pending_instructions(void)
     } while (i < 8);
 
     if (pending_instruction_count != 0 && data_00582cf0[pending_instruction_retire_index].completed != 0) {
-        data_00582cf0[pending_instruction_retire_index].instr = NULL;
-        pending_instruction_count = pending_instruction_count - 1;
-        ++data_00582ce0;
-        pending_instruction_retire_index = (pending_instruction_retire_index + 1U) % 5U;
-        if (pending_instruction_count != 0 && data_00582cf0[pending_instruction_retire_index].completed != 0) {
-            data_00582cf0[pending_instruction_retire_index].instr = NULL;
-            pending_instruction_count = pending_instruction_count - 1;
-            data_00582ce0 = data_00582ce0 + 1;
-            pending_instruction_retire_index = (pending_instruction_retire_index + 1U) % 5U;
-        }
+        retire();
+        if (pending_instruction_count != 0 && data_00582cf0[pending_instruction_retire_index].completed != 0)
+            retire();
     }
 
-    if (data_00582ca8.instr != NULL && data_00582ca8.remaining == 0) {
-        RemovePending(data_00582ca8.instr);
-        data_00582ca8.instr = NULL;
-    }
-
-    if (data_00582cb8.instr != NULL && data_00582cb8.remaining == 0) {
-        RemovePending(data_00582cb8.instr);
-        data_00582cb8.instr = NULL;
-    }
-
-    if (data_00582cd0.instr != NULL && data_00582cd0.remaining == 0) {
-        RemovePending(data_00582cd0.instr);
-        data_00582cd0.instr = NULL;
-    }
-
-    if (data_00582cd8.instr != NULL && data_00582cd8.remaining == 0) {
-        RemovePending(data_00582cd8.instr);
-        data_00582cd8.instr = NULL;
-    }
-
-    if (data_00582ca0.instr != NULL && data_00582ca0.remaining == 0) {
-        RemovePending(data_00582ca0.instr);
-        data_00582ca0.instr = NULL;
-    }
-
+    if (data_00582ca8.instr != NULL && data_00582ca8.remaining == 0)
+        RemovePending(1);
+    if (data_00582cb8.instr != NULL && data_00582cb8.remaining == 0)
+        RemovePending(3);
+    if (data_00582cd0.instr != NULL && data_00582cd0.remaining == 0)
+        RemovePending(6);
+    if (data_00582cd8.instr != NULL && data_00582cd8.remaining == 0)
+        RemovePending(7);
+    if (data_00582ca0.instr != NULL && data_00582ca0.remaining == 0)
+        RemovePending(0);
     if ((o = data_00582cc0.instr) != NULL && data_00582cc0.remaining == 0 &&
-        (o->opcode == PC_FDIV || o->opcode == PC_FDIVS)) {
-        RemovePending(data_00582cc0.instr);
-        data_00582cc0.instr = NULL;
-    }
+        (o->opcode == PC_FDIV || o->opcode == PC_FDIVS))
+        RemovePending(4);
 
-    if (data_00582cc8.instr != NULL && data_00582cc8.remaining == 0 && data_00582cd0.instr == NULL) {
-        SInt32 v = 0;
-        v = machine_opcode_info[(o = data_00582cc8.instr)->opcode].stageCycles[2];
-        data_00582cd0.instr = o;
-        data_00582cd0.remaining = v;
-        data_00582cc8.instr = NULL;
-    }
-
-    if (data_00582cc0.instr != NULL && data_00582cc0.remaining == 0 && data_00582cc8.instr == NULL) {
-        SInt32 v = 0;
-        v = machine_opcode_info[(o = data_00582cc0.instr)->opcode].stageCycles[1];
-        data_00582cc8.instr = o;
-        data_00582cc8.remaining = v;
-        data_00582cc0.instr = NULL;
-    }
-
-    if (data_00582cb0.instr != NULL && data_00582cb0.remaining == 0 && data_00582cb8.instr == NULL) {
-        SInt32 v = 0;
-        v = machine_opcode_info[(o = data_00582cb0.instr)->opcode].stageCycles[1];
-        data_00582cb8.instr = o;
-        data_00582cb8.remaining = v;
-        data_00582cb0.instr = NULL;
-    }
+    if (data_00582cc8.instr != NULL && data_00582cc8.remaining == 0 && data_00582cd0.instr == NULL)
+        advance_stage(4, 5, 6);
+    if (data_00582cc0.instr != NULL && data_00582cc0.remaining == 0 && data_00582cc8.instr == NULL)
+        advance_stage(4, 4, 5);
+    if (data_00582cb0.instr != NULL && data_00582cb0.remaining == 0 && data_00582cb8.instr == NULL)
+        advance_stage(2, 2, 3);
 }
 
 int get_opcode_table_entry(PCodeInstruction *instruction)

@@ -1,4 +1,5 @@
 #include "compiler/common.h"
+#include "version.h"
 #include "driver/cc-eabi-ppc-mw.h"
 #include "driver/CLPlugins.h"
 #include "driver/ClientGlue.h"
@@ -574,7 +575,9 @@ static char *data_00547a34[] = {
     "PCode cannot access the global variable %o, because it has been stored in the TOC.",
     "PCode cannot use long long.",
     "PCode function cannot take a variable argument list.",
+#if VERSION > VERSION_GC_1_0
     "Function '%u' contains no instructions.",
+#endif
     NULL,
 };
 

@@ -18,22 +18,11 @@
 #include "compiler/SFPE_PPC_EABI.h"
 #include "compiler/StackFrameEABI.h"
 #include "compiler/StructMoves.h"
+#include "version.h"
 
 static SInt32 lbl_00574168 = 8;
 
-static inline void emit12(Operand *o, unsigned int a, unsigned int b, unsigned int t)
-{
-    if ((int)o->reg != 0xc)
-        PCodeUtilities_EmitInstruction(PC_MR, 0xc, (int)o->reg);
-    fn_004a1cb0(a | 0x1000, b, t);
-}
-
-static inline void emitobj12(Object *obj, Operand *o, unsigned int a, unsigned int b, unsigned int t)
-{
-    if ((int)o->reg != 0xc)
-        PCodeUtilities_EmitInstruction(PC_MR, 0xc, (int)o->reg);
-    PCodeUtilities_EmitObjectInstructionWithPayload(obj, 1, a | 0x1000, b, t);
-}
+static void emit12(Operand *o, unsigned int a, unsigned int b, unsigned int t);
 
 static ArgumentContext *NewParm(ENode *e)
 {
@@ -72,8 +61,7 @@ ArgumentContext *assign_argument_locations(ENode *thisArg, ENodeList *args, Func
     *hasVectorArgs = 0;
 
     while (args != NULL) {
-        arg = args->node;
-        if (arg == thisArg) {
+        if ((arg = args->node) == thisArg) {
             args = args->next;
         } else {
             argType = (TypeStruct *)arg->rtype;
@@ -150,6 +138,10 @@ ArgumentContext *assign_argument_locations(ENode *thisArg, ENodeList *args, Func
                 } else {
                     if (nextGPR < 10) {
                         parm->flags |= 1;
+#if VERSION == VERSION_GC_1_0
+                        parm->gpr = nextGPR + 1;
+                        parm->second_gpr = nextGPR;
+#else
                         if (copts.littleendian != 0) {
                             parm->gpr = nextGPR;
                             parm->second_gpr = nextGPR + 1;
@@ -157,6 +149,7 @@ ArgumentContext *assign_argument_locations(ENode *thisArg, ENodeList *args, Func
                             parm->gpr = nextGPR + 1;
                             parm->second_gpr = nextGPR;
                         }
+#endif
                         *gprMask |= 1u << nextGPR;
                         *gprMask |= 1u << (nextGPR + 1);
                     } else {
@@ -217,6 +210,10 @@ ArgumentContext *assign_argument_locations(ENode *thisArg, ENodeList *args, Func
             } else if ((argType->type == TYPEINT || argType->type == TYPEENUM) && argType->size == 8) {
                 if (nextGPR <= 10) {
                     parm->flags |= 1;
+#if VERSION == VERSION_GC_1_0
+                    parm->gpr = nextGPR + 1;
+                    parm->second_gpr = nextGPR;
+#else
                     if (copts.littleendian != 0) {
                         parm->gpr = nextGPR;
                         parm->second_gpr = nextGPR + 1;
@@ -224,6 +221,7 @@ ArgumentContext *assign_argument_locations(ENode *thisArg, ENodeList *args, Func
                         parm->gpr = nextGPR + 1;
                         parm->second_gpr = nextGPR;
                     }
+#endif
                     *gprMask |= 1u << nextGPR;
                     if (nextGPR + 1 <= 10)
                         *gprMask |= 1u << (nextGPR + 1);
@@ -252,7 +250,7 @@ ArgumentContext *assign_argument_locations(ENode *thisArg, ENodeList *args, Func
                 if (onStack)
                     stackOffset += 4;
             } else {
-                CError_FATAL(413);
+                CError_FATAL(VERSION > VERSION_GC_1_0 ? 413 : 403);
                 wordCount = (argType->size >> 2) + ((argType->size & 3) != 0);
                 if (nextGPR <= 10) {
                     if (nextGPR + wordCount - 1 <= 10) {
@@ -388,6 +386,12 @@ void load_argument_registers(ArgumentContext *argument)
                                                         &argument->operand);
                 }
                 Operands_ForceGPRPair(&argument->operand, type, argument->gpr, argument->second_gpr);
+#if VERSION == VERSION_GC_1_0
+                if (argument->gpr > 10) {
+                    emit_opcode_with_base_offset(PC_STW, argument->operand.reg, 1, NULL,
+                                                 low_word_offset + argument->stack_offset + 8);
+                }
+#else
                 if (copts.littleendian != 0) {
                     if (argument->second_gpr > 10) {
                         emit_opcode_with_base_offset(PC_STW, argument->operand.regHi, 1, NULL,
@@ -399,6 +403,7 @@ void load_argument_registers(ArgumentContext *argument)
                                                      low_word_offset + argument->stack_offset + 8);
                     }
                 }
+#endif
             } else {
                 if (argument->evaluated == 0) {
                     data_00560648[argument->node->type](argument->node, argument->gpr, 0, &argument->operand);
@@ -502,42 +507,51 @@ void load_argument_registers(ArgumentContext *argument)
     }
 }
 
+static void load_remaining_argument_gprs(ArgumentContext *argument)
+{
+    int registerIndex;
+    int offset;
+
+    offset = 0;
+    for (registerIndex = argument->gpr; registerIndex <= 10; registerIndex++) {
+        emit_opcode_with_base_offset(PC_LWZ, registerIndex, 1, NULL, argument->stack_offset + 8 + offset);
+        offset += 4;
+    }
+}
+
+static Boolean needs_toc_reload(Object *func)
+{
+    return 0;
+}
+
+static void load_virtual_function(TypeClass *tclass, SInt32 offset, int reg, Operand *opnd)
+{
+    if (tclass->flags & CLASS_HANDLEOBJECT) {
+        emit_opcode_with_base_offset(PC_LWZ, 12, reg, NULL, 0);
+        emit_opcode_with_base_offset(PC_LWZ, 12, 12, NULL, tclass->vtable->offset);
+    } else
+        emit_opcode_with_base_offset(PC_LWZ, 12, reg, NULL, tclass->vtable->offset);
+    emit_opcode_with_base_offset(PC_LWZ, 12, 12, NULL, offset);
+    opnd->kind = OpndType_GPR;
+    opnd->reg = 12;
+}
+
+static void emitobj12(Object *obj, Operand *o, unsigned int a, unsigned int b, unsigned int t)
+{
+    if ((int)o->reg != 0xc)
+        PCodeUtilities_EmitInstruction(PC_MR, 0xc, (int)o->reg);
+    PCodeUtilities_EmitObjectInstructionWithPayload(obj, 1, a | 0x1000, b, t);
+}
+
 void evaluate_hascall_arguments_reverse(ArgumentContext *x)
 {
-    ArgumentContext *a, *b, *c, *d;
+    ArgumentContext *next;
 
-    a = x->next;
-    while (a != NULL && a->node->hascall == 0)
-        a = a->next;
-    if (a != NULL) {
-        b = a->next;
-        while (b != NULL && b->node->hascall == 0)
-            b = b->next;
-        if (b != NULL) {
-            c = b->next;
-            while (c != NULL && c->node->hascall == 0)
-                c = c->next;
-            if (c != NULL) {
-                d = c->next;
-                while (d != NULL && d->node->hascall == 0)
-                    d = d->next;
-                if (d != NULL)
-                    evaluate_hascall_arguments_reverse(d);
-                if (c->node->hascall != 0) {
-                    data_00560648[c->node->type](c->node, 0, 0, &c->operand);
-                    c->evaluated = 1;
-                }
-            }
-            if (b->node->hascall != 0) {
-                data_00560648[b->node->type](b->node, 0, 0, &b->operand);
-                b->evaluated = 1;
-            }
-        }
-        if (a->node->hascall != 0) {
-            data_00560648[a->node->type](a->node, 0, 0, &a->operand);
-            a->evaluated = 1;
-        }
-    }
+    next = x->next;
+    while (next != NULL && next->node->hascall == 0)
+        next = next->next;
+    if (next != NULL)
+        evaluate_hascall_arguments_reverse(next);
     if (x->node->hascall != 0) {
         data_00560648[x->node->type](x->node, 0, 0, &x->operand);
         x->evaluated = 1;
@@ -547,18 +561,13 @@ void evaluate_hascall_arguments_reverse(ArgumentContext *x)
 void FunctionCalls_GenerateCall(ENode *item, Operand *result)
 {
     ENode *expr;
+    Type *returnType;
     ENode *alternateExpr;
     ArgumentContext *arguments;
-    Type *returnType;
-    TypeClass *object;
     Boolean hasSpecialArgument;
     unsigned int argumentFlags;
     ArgumentContext *argument;
     FuncArg *formalArgument;
-    int offset;
-    int registerIndex;
-    unsigned char firstRegister;
-    int sourceRegister;
     SInt32 value;
     int structureType;
     Operand op;
@@ -606,15 +615,8 @@ void FunctionCalls_GenerateCall(ENode *item, Operand *result)
             store_argument_on_stack(argument);
     }
     for (argument = arguments; argument != NULL; argument = argument->next) {
-        if ((argument->flags & 0x27) == 5) {
-            registerIndex = argument->gpr;
-            offset = 0;
-            while (registerIndex <= 10) {
-                emit_opcode_with_base_offset(PC_LWZ, registerIndex, 1, NULL, argument->stack_offset + 8 + offset);
-                ++registerIndex;
-                offset += 4;
-            }
-        }
+        if ((argument->flags & 0x27) == 5)
+            load_remaining_argument_gprs(argument);
     }
     for (argument = arguments; argument != NULL; argument = argument->next) {
         argumentFlags = argument->flags & 0x27;
@@ -629,21 +631,8 @@ void FunctionCalls_GenerateCall(ENode *item, Operand *result)
     }
     if (expr->type == EOBJREF) {
         if (CParser_IsVirtualFunction(expr->data.objref, &resolvedObject, &resolvedOffset)) {
-            if (Type_RequiresMemoryReturn(returnType))
-                firstRegister = 4;
-            else
-                firstRegister = 3;
-            sourceRegister = firstRegister;
-            value = resolvedOffset;
-            object = resolvedObject;
-            if (object->flags & CLASS_HANDLEOBJECT) {
-                emit_opcode_with_base_offset(PC_LWZ, 12, sourceRegister, NULL, 0);
-                emit_opcode_with_base_offset(PC_LWZ, 12, 12, NULL, object->vtable->offset);
-            } else
-                emit_opcode_with_base_offset(PC_LWZ, 12, sourceRegister, NULL, object->vtable->offset);
-            emit_opcode_with_base_offset(PC_LWZ, 12, 12, NULL, value);
-            op.reg = 12;
-            op.kind = OpndType_GPR;
+            load_virtual_function(resolvedObject, resolvedOffset,
+                                  Type_RequiresMemoryReturn(returnType) ? (unsigned char)4 : (unsigned char)3, &op);
             emit12(&op, callArgument20, callArgument1c, callArgument18);
         } else if (alternateExpr != NULL) {
             if (alternateExpr->hascall == 0) {
@@ -661,8 +650,8 @@ void FunctionCalls_GenerateCall(ENode *item, Operand *result)
                     Operands_ForceGPR(&op, (Type *)&void_ptr, 12);
                 emit12(&op, callArgument20, callArgument1c, callArgument18);
             } else
-                PCodeUtilities_EmitObjectInstructionWithPayload(expr->data.objref, 0, callArgument20, callArgument1c,
-                                                                callArgument18);
+                PCodeUtilities_EmitObjectInstructionWithPayload(expr->data.objref, needs_toc_reload(expr->data.objref),
+                                                                callArgument20, callArgument1c, callArgument18);
         }
     } else {
         if (expr->hascall == 0)
@@ -693,8 +682,13 @@ void FunctionCalls_GenerateCall(ENode *item, Operand *result)
             gUsedVirtualRegistersGPR++;
             result->regHi = gUsedVirtualRegistersGPR;
             gUsedVirtualRegistersGPR++;
+#if VERSION == VERSION_GC_1_0
+            PCodeUtilities_EmitInstruction(PC_MR, result->reg, 4);
+            PCodeUtilities_EmitInstruction(PC_MR, result->regHi, 3);
+#else
             PCodeUtilities_EmitInstruction(PC_MR, result->reg, return_gpr_first);
             PCodeUtilities_EmitInstruction(PC_MR, result->regHi, returnRegHi);
+#endif
         } else {
             result->kind = OpndType_GPR;
             result->reg = gUsedVirtualRegistersGPR;
@@ -705,4 +699,11 @@ void FunctionCalls_GenerateCall(ENode *item, Operand *result)
         result->kind = OpndType_Immediate;
         result->immediate = 0;
     }
+}
+
+static void emit12(Operand *o, unsigned int a, unsigned int b, unsigned int t)
+{
+    if ((int)o->reg != 0xc)
+        PCodeUtilities_EmitInstruction(PC_MR, 0xc, (int)o->reg);
+    fn_004a1cb0(a | 0x1000, b, t);
 }

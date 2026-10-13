@@ -169,7 +169,7 @@
     "flags": [
       "-O4,p",
       "-inline",
-      "on,deferred",
+      "auto,deferred",
       "-sym",
       "on",
       "-Cpp_exceptions",
@@ -953,6 +953,19 @@
       "-O4,p",
       "-sym",
       "off",
+      "-Cpp_exceptions",
+      "off"
+    ],
+    "include_dirs": [
+      "src/driver"
+    ]
+  },
+  "src/driver/CWCompilerLinkerPrivate.c": {
+    "compiler": "pro53",
+    "flags": [
+      "-O4,p",
+      "-sym",
+      "on",
       "-Cpp_exceptions",
       "off"
     ],
@@ -2030,6 +2043,21 @@
       "src/driver"
     ]
   },
+  "src/frontend/ParseDouble.c": {
+    "compiler": "pro53",
+    "flags": [
+      "-O4,p",
+      "-inline",
+      "auto,deferred",
+      "-sym",
+      "on",
+      "-Cpp_exceptions",
+      "off"
+    ],
+    "include_dirs": [
+      "src/frontend"
+    ]
+  },
   "src/frontend/Unmangle.c": {
     "compiler": "pro53",
     "flags": [
@@ -3074,6 +3102,21 @@
     ]
   },
   "src/optimizer/COptimizer.c": {
+    "compiler": "pro53",
+    "flags": [
+      "-O4,p",
+      "-inline",
+      "auto,deferred",
+      "-sym",
+      "on",
+      "-Cpp_exceptions",
+      "off"
+    ],
+    "include_dirs": [
+      "src/optimizer"
+    ]
+  },
+  "src/optimizer/UseDefChains.c": {
     "compiler": "pro53",
     "flags": [
       "-O4,p",

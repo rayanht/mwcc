@@ -46,7 +46,6 @@ extern Boolean fn_0042d2c0(IROLinear *e);
 extern Boolean contains_linear_index(IROLinear *a, IROLinear *b);
 extern int replace_pending_reference(struct IROUse *ctx, ENode *obj, IROLinear *newval, Boolean doReplace);
 extern void build_linear_from_statements(Statement *node);
-extern void fn_0042c920(void);
 extern void IrOptimizer_SetDeleteDeadInstructionsFlags(void);
 extern void mark_node_and_operand_flags(IROLinear *node, int flag);
 extern void fn_004315b0(IROLinear *node);

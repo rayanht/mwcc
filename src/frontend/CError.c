@@ -71,84 +71,6 @@ static short data_005805ec;
 static int data_005805ee;
 #pragma options align = reset
 
-static void CError_BufferGrow(StrBuf *eb, UInt32 amount);
-
-/* The same buffer appended to without a null check, as some callers do for their own local buffers. */
-static void CErrBuf_Putc(StrBuf *b, int c)
-{
-    if (b->avail == 0)
-        CError_BufferGrow(b, 256);
-    *b->cursor++ = (char)c;
-    b->avail--;
-}
-
-static void CErrBuf_Append(StrBuf *b, const char *s)
-{
-    UInt32 n = strlen(s);
-    if (b->avail < n)
-        CError_BufferGrow(b, n);
-    memcpy(b->cursor, s, n);
-    b->cursor += n;
-    b->avail -= n;
-}
-
-static void CError_BufferAppendChar(StrBuf *eb, char ch)
-{
-    if (eb) {
-        if (!eb->avail)
-            CError_BufferGrow(eb, 256);
-        *eb->cursor++ = ch;
-        eb->avail--;
-    }
-}
-
-static void CError_BufferInit(StrBuf *eb, char *buf, SInt32 bufSize)
-{
-    eb->start = eb->cursor = buf;
-    eb->size = eb->avail = bufSize - 1;
-}
-
-static inline void CError_GetErrorMessage(char *message, short errorCode)
-{
-    char format[128];
-
-    if (errorCode < 100 || errorCode >= 372) {
-        CompilerGetCString(5, format);
-        sprintf(error_message_buffer, format, "CError.c", 138);
-        report_diagnostic(10001, error_message_buffer, 1, 0);
-        longjmp(error_jmp_buf, 1);
-        data_0058715c++;
-    }
-    COS_GetString(message, 10000, errorCode - 99);
-}
-
-static inline int CError_GetResourceIndex(SInt16 errorNumber)
-{
-    char internalErrorFormat[128];
-
-    if (errorNumber < 100 || errorNumber >= 372) {
-        CompilerGetCString(5, internalErrorFormat);
-        sprintf(error_message_buffer, internalErrorFormat, "CError.c", 138);
-        report_diagnostic(10001, error_message_buffer, 1, 0);
-        longjmp(error_jmp_buf, 1);
-        data_0058715c++;
-    }
-    return errorNumber - 99;
-}
-
-struct IRONode *CError_NewIRONode(void)
-{
-    IRONode *record;
-    UInt16 number;
-    record = (IRONode *)oalloc(60U);
-    memset(record, 0, 60U);
-    number = iro_node_count;
-    record->index = number;
-    iro_node_count += 1U;
-    record->nextnode = 0U;
-    return record;
-}
-
 void fn_00449dc0(void)
 {
     data_005805ec = 0;
@@ -186,6 +108,19 @@ void fn_00449d60(void)
     return;
 }
 
+static void CError_GetErrorMessage(char *message, short errorCode)
+{
+    if (+errorCode < 100 || +errorCode >= 372)
+        CError_FATAL(138);
+    COS_GetString(message, 10000, errorCode - 99);
+}
+
+static void CError_BufferInit(StrBuf *eb, char *buf, SInt32 bufSize)
+{
+    eb->start = eb->cursor = buf;
+    eb->size = eb->avail = bufSize - 1;
+}
+
 static void CError_BufferGrow(StrBuf *eb, UInt32 amount)
 {
     char *newBuf;
@@ -196,6 +131,16 @@ static void CError_BufferGrow(StrBuf *eb, UInt32 amount)
     eb->cursor = newBuf + eb->size - eb->avail;
     eb->size += amount;
     eb->avail += amount;
+}
+
+static void CError_BufferAppendChar(StrBuf *eb, char ch)
+{
+    if (eb) {
+        if (!eb->avail)
+            CError_BufferGrow(eb, 256);
+        *eb->cursor++ = ch;
+        eb->avail--;
+    }
 }
 
 void CError_BufferAppendString(StrBuf *eb, const char *str)
@@ -210,6 +155,12 @@ void CError_BufferAppendString(StrBuf *eb, const char *str)
         eb->cursor += len;
         eb->avail -= len;
     }
+}
+
+static void CError_BufferTerminate(StrBuf *eb)
+{
+    *eb->cursor = 0;
+    eb->avail = 0;
 }
 
 void append_qualifiers(StrBuf *buf, UInt32 qual)
@@ -309,7 +260,6 @@ void append_pointer_declarator(StrBuf *buf, Type *type)
 void append_templdep(StrBuf *buf, TypeTemplDep *node)
 {
     char tmp[64];
-    char msg[128];
 
     switch (node->dtype) {
         case 0:
@@ -346,11 +296,7 @@ void append_templdep(StrBuf *buf, TypeTemplDep *node)
             CError_BufferAppendChar(buf, ']');
             break;
         default:
-            CompilerGetCString(5, msg);
-            sprintf(error_message_buffer, msg, "CError.c", 0x1b5);
-            report_diagnostic(0x2711, error_message_buffer, 1, 0);
-            longjmp(error_jmp_buf, 1);
-            data_0058715c++;
+            CError_FATAL(0x1b5);
             break;
     }
 }
@@ -401,9 +347,6 @@ void append_type(StrBuf *buf, Type *type, UInt32 qualifiers)
     TypeMemberFunc *funcType;
     TypeTemplDep *dependentType;
     char countText[16];
-    char integralError[128];
-    char structError[128];
-    char typeError[128];
     SInt8 typeKind;
 
     switch ((signed char)type->type) {
@@ -467,11 +410,7 @@ void append_type(StrBuf *buf, Type *type, UInt32 qualifiers)
                     CError_BufferAppendString(buf, "long double");
                     return;
                 default:
-                    CompilerGetCString(5, integralError);
-                    sprintf(error_message_buffer, integralError, "CError.c", 0x22d);
-                    report_diagnostic(0x2711, error_message_buffer, 1, 0);
-                    longjmp(error_jmp_buf, 1);
-                    data_0058715c = data_0058715c + 1;
+                    CError_FATAL(0x22d);
             }
         case TYPEENUM:
             append_qualifiers(buf, qualifiers);
@@ -491,11 +430,7 @@ void append_type(StrBuf *buf, Type *type, UInt32 qualifiers)
                     CError_BufferAppendString(buf, "union ");
                     break;
                 default:
-                    CompilerGetCString(5, structError);
-                    sprintf(error_message_buffer, structError, "CError.c", 0x24f);
-                    report_diagnostic(0x2711, error_message_buffer, 1, 0);
-                    longjmp(error_jmp_buf, 1);
-                    data_0058715c = data_0058715c + 1;
+                    CError_FATAL(0x24f);
                     break;
                 case STRUCT_VECTOR_UCHAR:
                 case STRUCT_VECTOR_SCHAR:
@@ -615,11 +550,7 @@ void append_type(StrBuf *buf, Type *type, UInt32 qualifiers)
             CError_BufferAppendString(buf, countText);
             return;
         default:
-            CompilerGetCString(5, typeError);
-            sprintf(error_message_buffer, typeError, "CError.c", 0x2d0);
-            report_diagnostic(0x2711, error_message_buffer, 1, 0);
-            longjmp(error_jmp_buf, 1);
-            data_0058715c = data_0058715c + 1;
+            CError_FATAL(0x2d0);
             return;
     }
 }
@@ -630,13 +561,9 @@ char *CError_GetTypeString(Type *type, int qualifiers, char useAlternateAllocato
     char buffer[256];
     char *text;
 
-    ctx.cursor = buffer;
-    ctx.start = ctx.cursor;
-    ctx.avail = 0xff;
-    ctx.size = ctx.avail;
+    CError_BufferInit(&ctx, buffer, sizeof(buffer));
     append_type(&ctx, type, qualifiers);
-    *ctx.cursor = '\0';
-    ctx.avail = 0;
+    CError_BufferTerminate(&ctx);
     if (useAlternateAllocator) {
         text = galloc(ctx.size + 1);
     } else {
@@ -691,25 +618,8 @@ void append_qualified_function_signature(StrBuf *buf, NameSpace *ns, HashNameNod
 void append_object_name(StrBuf *sb, Object *obj)
 {
     if (TYPEFUNC != obj->type->type) {
-        char *s;
-        unsigned long n;
-        char *newbuf;
         append_namespace_qualification(sb, obj->nspace);
-        s = obj->name->name;
-        if (sb != NULL) {
-            n = strlen(s);
-            if (sb->avail < n) {
-                newbuf = lalloc(sb->size + n);
-                memcpy(newbuf, sb->start, sb->size);
-                sb->start = newbuf;
-                sb->cursor = newbuf + sb->size - sb->avail;
-                sb->size += n;
-                sb->avail += n;
-            }
-            memcpy(sb->cursor, s, n);
-            sb->cursor += n;
-            sb->avail -= n;
-        }
+        CError_BufferAppendString(sb, obj->name->name);
     } else {
         append_qualified_function_signature(sb, obj->nspace, obj->name, obj->type);
     }
@@ -739,27 +649,12 @@ char *CError_GetQualifiedName(NameSpace *nameSpace, HashNameNode *name)
 {
     StrBuf sb;
     char buf[256];
-    UInt32 len;
     char *newdata;
 
-    sb.start = sb.cursor = buf;
-    sb.avail = sizeof(buf) - 1;
-    sb.size = sb.avail;
+    CError_BufferInit(&sb, buf, sizeof(buf));
     append_namespace_qualification(&sb, nameSpace);
-    len = strlen(name->name);
-    if (sb.avail < len) {
-        newdata = (char *)lalloc(sb.size + len);
-        memcpy(newdata, sb.start, sb.size);
-        sb.start = newdata;
-        sb.cursor = newdata + sb.size - sb.avail;
-        sb.size += len;
-        sb.avail += len;
-    }
-    memcpy(sb.cursor, name->name, len);
-    sb.cursor += len;
-    sb.avail -= len;
-    *sb.cursor = 0;
-    sb.avail = 0;
+    CError_BufferAppendString(&sb, name->name);
+    CError_BufferTerminate(&sb);
     newdata = (char *)lalloc(sb.size + 1);
     return strcpy(newdata, sb.start);
 }
@@ -770,12 +665,9 @@ char *CError_BuildNameSpaceNameTypeString(NameSpace *nspace, HashNameNode *name,
     char buf[256];
     char *p;
 
-    s.start = s.cursor = buf;
-    s.avail = 255;
-    s.size = s.avail;
+    CError_BufferInit(&s, buf, sizeof(buf));
     append_qualified_function_signature(&s, nspace, name, x);
-    *s.cursor = 0;
-    s.avail = 0;
+    CError_BufferTerminate(&s);
     p = (char *)lalloc(s.size + 1);
     return strcpy(p, s.start);
 }
@@ -785,12 +677,10 @@ long CError_GetObjectString(Object *object)
     char *result;
     StrBuf buffer;
     char text[256];
-    buffer.start = buffer.cursor = text;
-    buffer.avail = 255;
-    buffer.size = buffer.avail;
+
+    CError_BufferInit(&buffer, text, sizeof(text));
     append_object_name(&buffer, object);
-    *buffer.cursor = 0;
-    buffer.avail = 0;
+    CError_BufferTerminate(&buffer);
     result = lalloc(buffer.size + 1);
     return (long)strcpy(result, buffer.start);
 }
@@ -799,27 +689,17 @@ char *CError_GetQualifiedHashName(NameSpace *nspace, HashNameNode *nameRef)
 {
     StrBuf str;
     char strbuf[256];
-    char msgbuf[128];
     char *name;
 
-    if (nameRef == NULL) {
-        CompilerGetCString(5, msgbuf);
-        sprintf(error_message_buffer, msgbuf, "CError.c", 0x39c);
-        report_diagnostic(0x2711, error_message_buffer, 1, 0);
-        longjmp(error_jmp_buf, 1);
-        data_0058715c++;
-    }
+    CError_ASSERT(0x39c, nameRef);
     name = CMangler_GetOperator(nameRef);
     if (name == NULL)
         name = nameRef->name;
     if (nspace != NULL && nspace->name != NULL) {
-        str.start = str.cursor = strbuf;
-        str.avail = sizeof(strbuf) - 1;
-        str.size = str.avail;
+        CError_BufferInit(&str, strbuf, sizeof(strbuf));
         append_namespace_qualification(&str, nspace);
-        CErrBuf_Append(&str, name);
-        *str.cursor = 0;
-        str.avail = 0;
+        CError_BufferAppendString(&str, name);
+        CError_BufferTerminate(&str);
         return (char *)strcpy((char *)lalloc(str.size + 1), str.start);
     }
     return name;
@@ -893,35 +773,31 @@ void report_diagnostic(int message, char *argument, char force, char mode)
 void append_instantiation_stack(StrBuf *buf)
 {
     SInt32 j;
+    struct TemplStack *p;
+    int i;
     SInt32 count;
     struct TemplStack *stack[64];
 
-    {
-        struct TemplStack *p = ctempl_curinstance;
-        count = 0;
-        while (p != NULL && count < 64) {
-            stack[count] = p;
-            count++;
-            p = p->next;
-        }
+    p = ctempl_curinstance;
+    count = 0;
+    while (p != NULL && count < 64) {
+        stack[count] = p;
+        count++;
+        p = p->next;
     }
 
-    {
-        int i;
-        for (i = count - 1; i >= 0; i--) {
-            CError_BufferAppendChar(buf, '\n');
-            for (j = i; j < count; j++)
-                CError_BufferAppendChar(buf, ' ');
-            CError_BufferAppendString(buf, "(instantiating: '");
-            if (stack[i]->is_func)
-                append_object_name(buf, stack[i]->u.func);
-            else
-                append_type(buf, TYPE(stack[i]->u.theclass), 0);
-            CError_BufferAppendString(buf, "')");
-        }
+    for (i = count - 1; i >= 0; i--) {
+        CError_BufferAppendChar(buf, '\n');
+        for (j = i; j < count; j++)
+            CError_BufferAppendChar(buf, ' ');
+        CError_BufferAppendString(buf, "(instantiating: '");
+        if (stack[i]->is_func)
+            append_object_name(buf, stack[i]->u.func);
+        else
+            append_type(buf, TYPE(stack[i]->u.theclass), 0);
+        CError_BufferAppendString(buf, "')");
     }
-    *buf->cursor = 0;
-    buf->avail = 0;
+    CError_BufferTerminate(buf);
 }
 
 /* Formats an error message and reports it: %n a mangled name, %u a string, %o an object, %m a function, %t a type
@@ -932,32 +808,25 @@ void CError_FormatAndReportDiagnostic(int errorCode, const char *format, char *a
     char buffer[256];
     char temp[256];
     SInt32 position;
-    char err[128];
-    char c;
     Type *type;
     UInt32 qualifiers;
-    char *name;
     HashNameNode *file;
     CPrepFileInfo *pfile;
     const char *fmt;
 
-    eb.cursor = buffer;
-    eb.avail = 255;
-    eb.start = eb.cursor;
-    eb.size = eb.avail;
+    CError_BufferInit(&eb, buffer, sizeof(buffer));
     fmt = format;
     for (;;) {
-        switch (c = *fmt) {
+        switch (*fmt) {
             case '%':
                 switch (fmt[1]) {
                     case 'n':
                         Unmangle_UnmangleSymbolName(va_arg(args, char *), temp, sizeof(temp));
-                        CErrBuf_Append(&eb, temp);
+                        CError_BufferAppendString(&eb, temp);
                         fmt += 2;
                         continue;
                     case 'u':
-                        name = va_arg(args, char *);
-                        CError_BufferAppendString(&eb, name);
+                        CError_BufferAppendString(&eb, va_arg(args, char *));
                         fmt += 2;
                         continue;
                     case 'o':
@@ -980,7 +849,7 @@ void CError_FormatAndReportDiagnostic(int errorCode, const char *format, char *a
                         continue;
                     case 'i':
                         sprintf(temp, "%ld", va_arg(args, SInt32));
-                        CErrBuf_Append(&eb, temp);
+                        CError_BufferAppendString(&eb, temp);
                         fmt += 2;
                         continue;
                     case 'f':
@@ -990,17 +859,12 @@ void CError_FormatAndReportDiagnostic(int errorCode, const char *format, char *a
                         fmt += 2;
                         continue;
                     default:
-                        CompilerGetCString(5, err);
-                        sprintf(error_message_buffer, err, "CError.c", 1110);
-                        report_diagnostic(10001, error_message_buffer, 1, 0);
-                        longjmp(error_jmp_buf, 1);
-                        data_0058715c++;
+                        CError_FATAL(1110);
                         break;
                 }
                 break;
             default:
-                fmt++;
-                CErrBuf_Putc(&eb, c);
+                CError_BufferAppendChar(&eb, *fmt++);
                 continue;
             case 0:
                 break;
@@ -1011,50 +875,41 @@ void CError_FormatAndReportDiagnostic(int errorCode, const char *format, char *a
     report_diagnostic(errorCode, eb.start, force, mode);
 }
 
+static void CError_VErrorMessage(int errorCode, va_list args, int force, int mode)
+{
+    char format[256];
+
+    CError_GetErrorMessage(format, errorCode);
+    CError_FormatAndReportDiagnostic(errorCode + 10000, format, args, force, mode);
+}
+
 NameSpaceList *CError_ReportError(int errorNumber, ...)
 {
-    int diagnosticCode;
-    char format[256];
     va_list args;
 
     if (trychain != NULL)
         longjmp(trychain->jmpbuf, 1);
     va_start(args, errorNumber);
-    diagnosticCode = errorNumber;
-    COS_GetString(format, 10000, CError_GetResourceIndex(diagnosticCode));
-    CError_FormatAndReportDiagnostic(diagnosticCode + 10000, format, args, 0, 0);
+    CError_VErrorMessage(errorNumber, args, 0, 0);
     if (data_005884fd != 0)
         InlineAsm_LongJump();
 }
 
 void CError_FatalError(short errorNumber)
 {
-    char message[128];
-
-    if (+errorNumber < 100 || +errorNumber >= 372) {
-        CompilerGetCString(5, message);
-        sprintf(error_message_buffer, (char *)message, "CError.c", 138);
-        report_diagnostic(10001, error_message_buffer, 1, 0);
-        longjmp(error_jmp_buf, 1);
-        ++data_0058715c;
-    }
-    COS_GetString(error_message_buffer, 10000, errorNumber - 99);
+    CError_GetErrorMessage(error_message_buffer, errorNumber);
     report_diagnostic(errorNumber + 10000, error_message_buffer, 0, 0);
     longjmp(error_jmp_buf, 1);
 }
 
 void CError_ReportErrorAndUpdateToken(int errorNumber, ...)
 {
-    char message[256];
     va_list args;
-    int errorCode;
 
     if (trychain != NULL)
         longjmp(trychain->jmpbuf, 1);
     va_start(args, errorNumber);
-    errorCode = errorNumber;
-    CError_GetErrorMessage(message, errorCode);
-    CError_FormatAndReportDiagnostic(errorCode + 10000, message, args, 0, 0);
+    CError_VErrorMessage(errorNumber, args, 0, 0);
     if (tk != ';' && tk != ')' && tk != '}' && tk != ',' && tk != ']')
         tk = CPrepTokenizer_GetNextToken();
 }
@@ -1063,22 +918,13 @@ void CError_FunctionCallError(short errorCode, ObjectList *objects, ENodeList *a
 {
     StrBuf message;
     char messageBuffer[256];
-    char resourceBuffer[128];
     char *cursor;
-    int diagnosticCode;
     ENodeList *argument;
 
     if (trychain != NULL)
         longjmp(trychain->jmpbuf, 1);
 
-    if ((diagnosticCode = errorCode) < 100 || diagnosticCode >= 0x174) {
-        CompilerGetCString(5, resourceBuffer);
-        sprintf(error_message_buffer, resourceBuffer, "CError.c", 0x8a);
-        report_diagnostic(0x2711, error_message_buffer, 1, 0);
-        longjmp(error_jmp_buf, 1);
-        data_0058715c++;
-    }
-    COS_GetString(error_message_buffer, 10000, diagnosticCode - 99);
+    CError_GetErrorMessage(error_message_buffer, errorCode);
 
     CError_BufferInit(&message, messageBuffer, sizeof(messageBuffer));
     cursor = error_message_buffer;
@@ -1124,8 +970,7 @@ void CError_FunctionCallError(short errorCode, ObjectList *objects, ENodeList *a
         }
     }
     append_instantiation_stack(&message);
-    diagnosticCode += 10000;
-    report_diagnostic(diagnosticCode, message.start, 0, 0);
+    report_diagnostic(errorCode + 10000, message.start, 0, 0);
 }
 
 void CError_OverloadedFunctionError(Object *name, struct ObjectList *names)
@@ -1135,69 +980,49 @@ void CError_OverloadedFunctionError(Object *name, struct ObjectList *names)
 
     if (trychain != NULL)
         longjmp(trychain->jmpbuf, 1);
-    COS_GetString(error_message_buffer, 10000, 100);
-    message.start = message.cursor = buffer;
-    message.avail = 255;
-    message.size = message.avail;
-    CErrBuf_Append(&message, error_message_buffer);
+    CError_GetErrorMessage(error_message_buffer, ERR_AMBIGUOUS_ACCESS_OVERLOADED_FUNCTION);
+    CError_BufferInit(&message, buffer, sizeof(buffer));
+    CError_BufferAppendString(&message, error_message_buffer);
     if (name != NULL) {
-        CErrBuf_Putc(&message, '\n');
-        CErrBuf_Putc(&message, '\'');
+        CError_BufferAppendChar(&message, '\n');
+        CError_BufferAppendChar(&message, '\'');
         append_object_name(&message, name);
-        CErrBuf_Putc(&message, '\'');
+        CError_BufferAppendChar(&message, '\'');
     }
     while (names != NULL) {
-        CErrBuf_Putc(&message, '\n');
-        CErrBuf_Putc(&message, '\'');
+        CError_BufferAppendChar(&message, '\n');
+        CError_BufferAppendChar(&message, '\'');
         append_object_name(&message, names->object);
-        CErrBuf_Putc(&message, '\'');
+        CError_BufferAppendChar(&message, '\'');
         names = names->next;
     }
     append_instantiation_stack(&message);
-    report_diagnostic(0x27d7, message.start, 0, 0);
+    report_diagnostic(ERR_AMBIGUOUS_ACCESS_OVERLOADED_FUNCTION + 10000, message.start, 0, 0);
 }
 
 void CError_IllegalUseAbstractClass(TypeClass *type)
 {
-    char buf[128];
     Object *result;
 
     result = CClass_CheckPures(type);
-    if (result == NULL) {
-        CompilerGetCString(5, buf);
-        sprintf(error_message_buffer, buf, "CError.c", 0x518);
-        report_diagnostic(0x2711, error_message_buffer, 1, 0);
-        longjmp(error_jmp_buf, 1);
-        data_0058715c++;
-    }
+    CError_ASSERT(0x518, result);
     CError_ReportError(ERR_ILLEGAL_USE_ABSTRACT_CLASS, result);
 }
 
 void CError_Warning(SInt32 diagnosticCode, ...)
 {
-    char format[256];
-    char message[128];
     va_list args;
-    SInt32 diagnosticID;
-    SInt16 errorCode;
 
     if (trychain)
         return;
-
     va_start(args, diagnosticCode);
-    diagnosticID = diagnosticCode;
+    CError_VErrorMessage(diagnosticCode, args, 0, 1);
+}
 
-    if ((SInt16)diagnosticID < 100 || (SInt16)diagnosticID >= 372) {
-        CompilerGetCString(5, message);
-        sprintf(error_message_buffer, message, "CError.c", 138);
-        report_diagnostic(0x2711, error_message_buffer, 1, 0);
-        longjmp(error_jmp_buf, 1);
+static void CError_BreakPoint(const char *a, const char *b)
+{
+    if (!a || !strcmp(a, b))
         data_0058715c++;
-    }
-
-    errorCode = diagnosticID;
-    COS_GetString(format, 10000, errorCode - 99);
-    CError_FormatAndReportDiagnostic(diagnosticID + 10000, format, args, 0, 1);
 }
 
 int CError_Internal(const char *file, int line)
@@ -1207,7 +1032,7 @@ int CError_Internal(const char *file, int line)
     sprintf(error_message_buffer, message, file, line);
     report_diagnostic(0x2711, error_message_buffer, 1, 0);
     longjmp(error_jmp_buf, 1);
-    ++data_0058715c;
+    CError_BreakPoint(0, 0);
 }
 
 void CError_LongJump(void)

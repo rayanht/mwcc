@@ -28,24 +28,11 @@ static inline void CPreprocess_FinishOutput(void)
     COS_ResizeHandle(data_00586da8.handle, data_00586da8.list.size);
 }
 
-// "unknown.c"
-
-static void outchar(char ch)
-{
-    AppendGListByte(&data_00586da8.list, ch);
-}
-
 // "CPrec.c"
 
 static inline char CPreprocess_ShouldEmitLineDirectives(void)
 {
     return copts.line_prepdump;
-}
-
-static inline void CPreprocess_AppendLineBreak(void)
-{
-    if (CPreprocess_ShouldEmitLineDirectives() && data_00586da8.handle != NULL && current_file_index >= 0)
-        AppendGListData(&data_00586da8.list, "\r\n", 2);
 }
 
 void fn_004d6ed0(void)
@@ -85,7 +72,7 @@ void CPreprocess_EmitLineDirective(void)
         AppendGListData(&data_00586da8.list, buffer, length);
 
         if (CPreprocess_ShouldEmitLineDirectives())
-            CPreprocess_AppendLineBreak();
+            fn_004d6ed0();
 
         data_00588470 = 1;
     }
@@ -98,45 +85,45 @@ void output_escaped_wide_chars(char *data, SInt16 count)
 
     while (count--) {
         if (*p < 0x20) {
-            outchar('\\');
+            AppendGListByte(&data_00586da8.list, '\\');
             switch (*p) {
                 case 7:
-                    outchar('a');
+                    AppendGListByte(&data_00586da8.list, 'a');
                     break;
                 case 8:
-                    outchar('b');
+                    AppendGListByte(&data_00586da8.list, 'b');
                     break;
                 case 27:
-                    outchar('e');
+                    AppendGListByte(&data_00586da8.list, 'e');
                     break;
                 case 12:
-                    outchar('f');
+                    AppendGListByte(&data_00586da8.list, 'f');
                     break;
                 case 10:
-                    outchar('n');
+                    AppendGListByte(&data_00586da8.list, 'n');
                     break;
                 case 13:
-                    outchar('r');
+                    AppendGListByte(&data_00586da8.list, 'r');
                     break;
                 case 9:
-                    outchar('t');
+                    AppendGListByte(&data_00586da8.list, 't');
                     break;
                 case 11:
-                    outchar('v');
+                    AppendGListByte(&data_00586da8.list, 'v');
                     break;
                 default:
                     if (*p >= 8)
-                        outchar(*p / 8 + '0');
-                    outchar(*p % 8 + '0');
+                        AppendGListByte(&data_00586da8.list, *p / 8 + '0');
+                    AppendGListByte(&data_00586da8.list, *p % 8 + '0');
                     break;
             }
         } else if (*p > 0xff) {
-            outchar('\\');
-            outchar('x');
+            AppendGListByte(&data_00586da8.list, '\\');
+            AppendGListByte(&data_00586da8.list, 'x');
             j = 0x1000;
             i = 0;
             do {
-                outchar("0123456789ABCDEF"[(*p / j) % 16]);
+                AppendGListByte(&data_00586da8.list, "0123456789ABCDEF"[(*p / j) % 16]);
                 i++;
                 j /= 16;
             } while (i < 4);
@@ -144,10 +131,10 @@ void output_escaped_wide_chars(char *data, SInt16 count)
             switch (*p) {
                 case '"':
                 case '\\':
-                    outchar('\\');
+                    AppendGListByte(&data_00586da8.list, '\\');
                     break;
             }
-            outchar((char)*p);
+            AppendGListByte(&data_00586da8.list, (char)*p);
         }
         p++;
     }

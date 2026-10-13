@@ -26,7 +26,6 @@ struct SpillInstruction {
     char first_operand;
 };
 #pragma options align = reset
-extern void InterferenceGraph_SpillRegisters(int reg_class, int register_count);
 extern void SpillCode_BuildInterference(Object *function, int reg_class, int register_count);
 extern void SpillCode_MarkLastUses(SInt32 var, UInt32 count);
 extern void SpillCode_MaterializeGraph(UInt32 count);

@@ -1,5 +1,6 @@
 #define CERROR_FILE "CMachine.c"
 #include "compiler/common.h"
+#include "version.h"
 #include "compiler/CMachine.h"
 #include "compiler/enode.h"
 #include "compiler/objects.h"
@@ -11,10 +12,17 @@
 #include "compiler/CInt64.h"
 #include "compiler/CParser.h"
 #include "compiler/CPrepTokenizer.h"
+#include "compiler/ParseDouble.h"
 #include "compiler/CodeGen.h"
 #include "compiler/CompilerTools.h"
 #include <string.h>
 #include <stdio.h>
+
+#if VERSION == VERSION_GC_1_0
+#define LINE(line) ((line) <= 560 ? (line) : (line) < 1000 ? (line) - 12 : (line) - 23)
+#else
+#define LINE(line) (line)
+#endif
 
 static int maximumAlignment;
 static int structLayoutOffset;
@@ -114,7 +122,13 @@ TypeStruct stvectorfloat = {TYPESTRUCT, 16, NULL, &stVF_float0, 13, 16};
 TypeStruct stvectorpixel = {TYPESTRUCT, 16, NULL, &stVUS_unsignedshort0, 14, 16};
 TypeStruct stvector = {TYPESTRUCT, 16, NULL, NULL, 10, 16};
 
+#if VERSION > VERSION_GC_1_0
 static SInt16 loadalign_table[5] = {1, 2, 4, 8, 16};
+
+static inline SInt32 cm_loadalign(UInt32 index)
+{
+    return loadalign_table[index];
+}
 
 static inline SInt16 cm_min(SInt32 index, SInt16 b)
 {
@@ -129,11 +143,6 @@ static inline SInt16 cm_min(SInt32 index, SInt16 b)
     if (a >= limit)
         return b;
     return r;
-}
-
-static inline SInt32 cm_loadalign(UInt32 index)
-{
-    return loadalign_table[index];
 }
 
 static inline UInt16 cm_classmin(SInt16 b, SInt32 index)
@@ -166,30 +175,22 @@ static inline SInt32 cm_sizealign(Type *type, SInt32 alignment)
     SInt32 limit = cm_loadalign(index);
     if (type->size >= limit)
         return limit;
-    return *(volatile SInt32 *)&type->size;
+    return TYPE_STRUCT(type)->size;
 }
+
+#define SIZE_ALIGN(type) cm_sizealign(type, cm_alignment())
+#define STRUCT_ALIGN(type) cm_structalign(cm_alignment(), (TypeStruct *)(type))
+#define CLASS_ALIGN(type) cm_classalign(cm_alignment(), ((TypeClass *)(type))->align)
+#endif
 
 static inline SInt32 cm_alignment(void)
 {
     return copts.structalignment;
 }
 
-static inline Float CMach_CalcFloatConvert(Type *type, Float value)
+void fn_004a9c70(void)
 {
-    switch (type->size) {
-        case 4:
-            value.data.value = (float)value.data.value;
-            break;
-        case 8:
-            value.data.value = (double)value.data.value;
-            break;
-        case 10:
-        case 12:
-            break;
-        default:
-            CError_FATAL(714);
-    }
-    return value;
+    return;
 }
 
 int CMach_GetQUALalign(int qualifiers)
@@ -226,7 +227,7 @@ int CMach_GetQUALalign(int qualifiers)
         } else if (qualifiers == Q_ALIGNED_MASK) {
             alignment = 8192;
         } else {
-            CError_Internal("CMachine.c", 202);
+            CError_Internal("CMachine.c", LINE(202));
         }
     }
     return alignment;
@@ -253,7 +254,7 @@ CInt64 CMach_CalcIntDiadic(Type *type, CInt64 a, SInt16 op, CInt64 b)
             case 8:
                 break;
             default:
-                CError_FATAL(243);
+                CError_FATAL(LINE(243));
         }
         switch (op) {
             case '*':
@@ -371,7 +372,7 @@ CInt64 CMach_CalcIntDiadic(Type *type, CInt64 a, SInt16 op, CInt64 b)
             case 8:
                 break;
             default:
-                CError_FATAL(305);
+                CError_FATAL(LINE(305));
         }
         switch (op) {
             case '*':
@@ -491,7 +492,7 @@ CInt64 CMach_CalcIntMonadic(Type *type, SInt16 op, CInt64 val)
             case 8:
                 break;
             default:
-                CError_Internal("CMachine.c", 364);
+                CError_Internal("CMachine.c", LINE(364));
         }
         switch (op) {
             case '-':
@@ -533,7 +534,7 @@ CInt64 CMach_CalcIntMonadic(Type *type, SInt16 op, CInt64 val)
             case 8:
                 break;
             default:
-                CError_Internal("CMachine.c", 394);
+                CError_Internal("CMachine.c", LINE(394));
         }
         switch (op) {
             case '-':
@@ -611,14 +612,68 @@ void CMach_InitIntMem(Type *type, CInt64 val, void *mem)
                     CTool_EndianConvertWord64(val, mem);
                     break;
                 default:
-                    CError_FATAL(482);
+                    CError_FATAL(LINE(482));
             }
             break;
         default:
-            CError_FATAL(486);
+            CError_FATAL(LINE(486));
     }
 }
 
+#if VERSION == VERSION_GC_1_0
+void CMach_InitVectorMem(Type *type, MWVector128 val, void *mem)
+{
+    MWVector128 uc;
+    MWVector128 us;
+    MWVector128 ul;
+    MWVector128 f;
+    int i;
+
+    switch ((char)type->type) {
+        case TYPESTRUCT:
+            switch (TYPE_STRUCT(type)->stype) {
+                case STRUCT_VECTOR_UCHAR:
+                case STRUCT_VECTOR_SCHAR:
+                case STRUCT_VECTOR_BCHAR:
+                    for (i = 0; i < 16; i++)
+                        uc.uc[i] = val.uc[i];
+                    CTool_EndianConvertVector128(&uc);
+                    memcpy(mem, &uc, 16);
+                    break;
+                case STRUCT_VECTOR_USHORT:
+                case STRUCT_VECTOR_SSHORT:
+                case STRUCT_VECTOR_BSHORT:
+                case STRUCT_VECTOR_PIXEL:
+                    for (i = 0; i < 8; i++)
+                        us.us[i] = CTool_EndianConvertWord16(val.us[i]);
+                    CTool_EndianConvertVector128(&us);
+                    memcpy(mem, &us, 16);
+                    break;
+                case STRUCT_VECTOR_UINT:
+                case STRUCT_VECTOR_SINT:
+                case STRUCT_VECTOR_BINT:
+                    for (i = 0; i < 4; i++)
+                        ul.ul[i] = CTool_EndianConvertWord32(val.ul[i]);
+                    CTool_EndianConvertVector128(&ul);
+                    memcpy(mem, &ul, 16);
+                    break;
+                case STRUCT_VECTOR_FLOAT:
+                    for (i = 0; i < 4; i++) {
+                        f.f[i] = val.f[i];
+                        CTool_EndianConvertMem(&f.f[i], 4);
+                    }
+                    CTool_EndianConvertVector128(&f);
+                    memcpy(mem, &f, 16);
+                    break;
+                default:
+                    CError_FATAL(LINE(556));
+            }
+            break;
+        default:
+            CError_FATAL(LINE(560));
+    }
+}
+#else
 void CMach_InitVectorMem(Type *type, MWVector128 val, void *mem)
 {
     UInt8 uc[16];
@@ -675,13 +730,14 @@ void CMach_InitVectorMem(Type *type, MWVector128 val, void *mem)
                     memcpy(mem, f, 16);
                     break;
                 default:
-                    CError_FATAL(568);
+                    CError_FATAL(LINE(568));
             }
             break;
         default:
-            CError_FATAL(572);
+            CError_FATAL(LINE(572));
     }
 }
+#endif
 
 Float CMach_CalcFloatDiadic(Type *type, Float left, short op, Float right)
 {
@@ -699,33 +755,17 @@ Float CMach_CalcFloatDiadic(Type *type, Float left, short op, Float right)
             left.data.value /= right.data.value;
             break;
         default:
-            CError_FATAL(592);
+            CError_FATAL(LINE(592));
     }
-    return CMach_CalcFloatConvert(type, left);
+    return CMachine_RoundFloatToType(type, left);
 }
 
-Float CMach_CalcFloatMonadic(Type *type, short op, double value)
+Float CMach_CalcFloatMonadic(Type *type, short op, Float value)
 {
-    Float result;
     if (op != 0x2d)
-        CError_FATAL(605);
-    value = -value;
-    result.data.value = value;
-    switch (type->size) {
-        case 4:
-            result.data.value = (float)result.data.value;
-            break;
-        case 8:
-            result.data.value = result.data.value;
-            break;
-        case 10:
-        case 12:
-            break;
-        default:
-            CError_FATAL(714);
-            break;
-    }
-    return result;
+        CError_FATAL(LINE(605));
+    value.data.value = -value.data.value;
+    return CMachine_RoundFloatToType(type, value);
 }
 
 Boolean CMach_CalcFloatDiadicBool(Type *self, volatile double a, SInt16 op, volatile double b)
@@ -746,7 +786,7 @@ Boolean CMach_CalcFloatDiadicBool(Type *self, volatile double a, SInt16 op, vola
         case 0x3c:
             return a < b;
         default:
-            CError_Internal("CMachine.c", 0x273);
+            CError_Internal("CMachine.c", LINE(627));
             return 0;
     }
 }
@@ -762,7 +802,7 @@ unsigned char CMach_CalcVectorDiadicBool(unsigned int context, const union MWVec
             return left->ul[0] != right->ul[0] && left->ul[1] != right->ul[1] && left->ul[2] != right->ul[2] &&
                    left->ul[3] != right->ul[3];
         default:
-            CError_Internal("CMachine.c", 653);
+            CError_Internal("CMachine.c", LINE(653));
             return 0;
     }
 }
@@ -772,7 +812,7 @@ void *CMach_FloatScan(char *text, Float *result, char *flag)
     double value;
     char *end;
 
-    if (!(end = CTemplateClass_ParseDouble(text, &value, flag)))
+    if (!(end = ParseDouble(text, &value, flag)))
         CError_FatalError(ERR_NUMBER_OUT_RANGE);
     if (*flag)
         result->data.value = 0.0;
@@ -812,7 +852,7 @@ Float CMachine_RoundFloatToType(Type *type, Float value)
         case 12:
             break;
         default:
-            CError_Internal("CMachine.c", 714);
+            CError_Internal("CMachine.c", LINE(714));
     }
     return value;
 }
@@ -850,9 +890,19 @@ void CMach_InitFloatMem(Type *type, Float value, unsigned char *dest)
             }
         }
     }
-    CError_FATAL(779);
+    CError_FATAL(LINE(779));
 }
 
+#if VERSION == VERSION_GC_1_0
+void CMach_PrintFloat(char *output, Float value)
+{
+    double buffer;
+
+    CMach_InitFloatMem((Type *)&stshortdouble, value, (unsigned char *)&buffer);
+    CTool_EndianConvertMem(&buffer, sizeof(buffer));
+    sprintf(output, "%g", (long double)buffer);
+}
+#else
 void CMach_PrintFloat(char *output, Float value)
 {
     FloatFormatBuffer buffer;
@@ -876,11 +926,12 @@ void CMach_PrintFloat(char *output, Float value)
                     break;
             }
         }
-        CError_Internal("CMachine.c", 779);
+        CError_Internal("CMachine.c", LINE(779));
     } while (0);
     CTool_EndianConvertMem(&buffer.value, sizeof(buffer.value));
     sprintf(output, "%g", (long double)buffer.value);
 }
+#endif
 
 void CMach_PragmaParams(void)
 {
@@ -900,6 +951,16 @@ UInt16 CMach_GetStructAlign(TypeStruct *str)
     return lift_value_0;
 }
 
+#if VERSION == VERSION_GC_1_0
+short CMach_GetClassAlign(TypeClass *list)
+{
+    int maximum;
+
+    maximum = maximumAlignment;
+    maximumAlignment = 0;
+    return maximum;
+}
+#else
 short CMach_GetClassAlign(TypeClass *list)
 {
     int maximum;
@@ -917,6 +978,36 @@ short CMach_GetClassAlign(TypeClass *list)
     }
     return maximum;
 }
+#endif
+
+#if VERSION == VERSION_GC_1_0
+static SInt16 loadalign_table[5] = {1, 2, 4, 8, 16};
+
+static inline SInt32 cm_loadalign(UInt32 index)
+{
+    return loadalign_table[index];
+}
+
+static SInt32 cm_sizealign(Type *type)
+{
+    SInt32 limit = cm_loadalign(copts.structalignment - 3);
+    if (type->size < limit)
+        limit = TYPE_STRUCT(type)->size;
+    return limit;
+}
+
+static SInt16 cm_alignmin(SInt16 b)
+{
+    SInt32 a = cm_loadalign(copts.structalignment - 3);
+    if (a < b)
+        b = a;
+    return b;
+}
+
+#define SIZE_ALIGN(type) cm_sizealign(type)
+#define STRUCT_ALIGN(type) cm_alignmin(((TypeStruct *)(type))->align)
+#define CLASS_ALIGN(type) cm_alignmin(((TypeClass *)(type))->align)
+#endif
 
 SInt16 CMachine_GetTypeAlignment(Type *type)
 {
@@ -957,7 +1048,7 @@ SInt16 CMachine_GetTypeAlignment(Type *type)
                 /* fall through */
             case TYPEINT:
                 if (isPowerAlignment) {
-                    return cm_sizealign(type, cm_alignment());
+                    return SIZE_ALIGN(type);
                 }
                 if (type->size == 1)
                     return 1;
@@ -968,7 +1059,7 @@ SInt16 CMachine_GetTypeAlignment(Type *type)
                 return 2;
             case TYPEFLOAT:
                 if (isPowerAlignment) {
-                    return cm_sizealign(type, cm_alignment());
+                    return SIZE_ALIGN(type);
                 }
                 switch (cm_alignment()) {
                     case 0:
@@ -980,13 +1071,13 @@ SInt16 CMachine_GetTypeAlignment(Type *type)
                             return 8;
                         return 4;
                     default:
-                        CError_FATAL(1173);
+                        CError_FATAL(LINE(1173));
                 }
                 /* fall through */
             case TYPEMEMBERPOINTER:
             case TYPEPOINTER:
                 if (isPowerAlignment) {
-                    return cm_sizealign(type, cm_alignment());
+                    return SIZE_ALIGN(type);
                 }
                 if (!copts.structalignment)
                     return 2;
@@ -994,7 +1085,7 @@ SInt16 CMachine_GetTypeAlignment(Type *type)
             case TYPEARRAY:
                 if (arrayAlignment != 0) {
                     if (isPowerAlignment) {
-                        return cm_sizealign(type, cm_alignment());
+                        return SIZE_ALIGN(type);
                     }
                     if (type->size == 1)
                         return 1;
@@ -1013,11 +1104,11 @@ SInt16 CMachine_GetTypeAlignment(Type *type)
                 continue;
             case TYPESTRUCT:
                 if (isPowerAlignment)
-                    return cm_structalign(cm_alignment(), (TypeStruct *)type);
+                    return STRUCT_ALIGN(type);
                 return ((TypeStruct *)type)->align;
             case TYPECLASS:
                 if (isPowerAlignment)
-                    return cm_classalign(cm_alignment(), ((TypeClass *)type)->align);
+                    return CLASS_ALIGN(type);
                 return ((TypeClass *)type)->align;
             case TYPEBITFIELD:
                 type = ((TypeBitfield *)type)->bitfieldtype;
@@ -1026,7 +1117,7 @@ SInt16 CMachine_GetTypeAlignment(Type *type)
                 return 1;
             case TYPELABEL:
             default:
-                CError_FATAL(1218);
+                CError_FATAL(LINE(1218));
                 return 0;
         }
     }
@@ -1070,6 +1161,19 @@ SInt16 CMach_MemberAlignValue(Type *type, SInt32 offset)
     if ((SInt32)alignment <= 1)
         return 0;
     return (alignment - (offset & (alignment - 1U))) & (alignment - 1U);
+}
+
+static short struct_layout_align(Type *type, int offset, int requiredAlignment)
+{
+    int alignment;
+    int mask;
+
+    alignment = CMach_GetTypeAlign(type);
+    if (requiredAlignment > alignment)
+        alignment = requiredAlignment;
+    maximumAlignment = maximumAlignment < alignment ? alignment : maximumAlignment;
+    mask = alignment - 1;
+    return mask & (alignment - (offset & mask));
 }
 
 void CMachine_ResetMaximumAlignment(void)
@@ -1117,10 +1221,6 @@ long CMach_StructLayoutGetOffset(Type *type, int flags)
 {
     int unusedBits;
     unsigned int typeCode;
-    int requiredAlignment;
-    int currentOffset;
-    int alignment;
-    int mask;
     int offset;
     if (data_00580fa0 != 0) {
         unusedBits = (bitfield_storage_size << 3) - data_00580fa0;
@@ -1130,15 +1230,7 @@ long CMach_StructLayoutGetOffset(Type *type, int flags)
     }
     typeCode = CParser_GetTypeQualifiers(type, flags);
     data_00580fa0 = 0;
-    requiredAlignment = CMach_GetQUALalign(typeCode);
-    currentOffset = structLayoutOffset;
-    alignment = CMach_GetTypeAlign(type);
-    if (requiredAlignment > alignment) {
-        alignment = requiredAlignment;
-    }
-    maximumAlignment = maximumAlignment < alignment ? alignment : maximumAlignment;
-    mask = alignment - 1;
-    offset = (short)(mask & (alignment - (currentOffset & mask))) + structLayoutOffset;
+    offset = struct_layout_align(type, structLayoutOffset, CMach_GetQUALalign(typeCode)) + structLayoutOffset;
     structLayoutOffset = offset + type->size;
     return offset;
 }
@@ -1180,7 +1272,7 @@ long CMach_StructLayoutBitfield(TypeBitfield *field, int alignmentKind)
             storageBits = 32;
             break;
         default:
-            CError_Internal("CMachine.c", 1437);
+            CError_Internal("CMachine.c", LINE(1437));
     }
     switch (copts.structalignment) {
         case 3:
@@ -1236,6 +1328,11 @@ long CMach_StructLayoutBitfield(TypeBitfield *field, int alignmentKind)
     return data_00580fa4;
 }
 
+static Boolean has_no_constructor(TypeClass *tclass)
+{
+    return CClass_Constructor(tclass) == NULL;
+}
+
 Boolean CMach_GetFunctionResultClass(TypeFunc *functype)
 {
     SInt8 type = functype->functype->type;
@@ -1270,8 +1367,7 @@ Boolean Type_RequiresMemoryReturn(Type *type)
             return 1;
         }
         case TYPECLASS:
-            if (type->size <= 8 && (Boolean)(CClass_Constructor(TYPE_CLASS(type)) == NULL) &&
-                !copts.incompatible_sfpe_double_params)
+            if (type->size <= 8 && has_no_constructor(TYPE_CLASS(type)) && !copts.incompatible_sfpe_double_params)
                 return 0;
             return 1;
         case TYPEMEMBERPOINTER:

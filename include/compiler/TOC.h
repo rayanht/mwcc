@@ -67,6 +67,7 @@ extern struct TOCNameEntry *toc_name_entries;
 extern Boolean data_00588500;
 extern struct ObjectList *gInitialObjectList_005882ac;
 extern void make_objectref_offset(Object *object, Object *lookupObject, ENode *expression, Boolean makeIndirect);
+extern int TOC_IsLogicalExpression(ENode *enode);
 
 #ifdef __cplusplus
 }

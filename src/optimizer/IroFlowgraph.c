@@ -16,32 +16,10 @@
 #include "compiler/IroLoop.h"
 #include "compiler/IroVars.h"
 #include "compiler/Switch.h"
+#include <string.h>
 
 struct IRONode *iroNodeTail;
 
-static void AddRef(IRONode *node, IRONode *t)
-{
-    if (t != NULL) {
-        node->succ[node->numsucc++] = t->index;
-        t->numpred++;
-        t->referenced = 1;
-    } else {
-        CError_FATAL(109);
-    }
-}
-
-static void AddNext(IRONode *node, IRONode *t)
-{
-    node->succ[node->numsucc++] = t->index;
-    t->numpred++;
-}
-
-static void AddList(IRONode *node, SwitchInfo *info)
-{
-    SwitchCase *it;
-    for (it = info->cases; it != NULL; it = it->next)
-        AddRef(node, (IRONode *)it->label->stmt);
-}
 
 void fn_0044a640(IROLinear *value)
 {
@@ -79,19 +57,55 @@ void fn_0044a640(IROLinear *value)
     iroNodeTail = node;
 }
 
+static void AddNext(IRONode *node, IRONode *t)
+{
+    node->succ[node->numsucc++] = t->index;
+    t->numpred++;
+}
+
+static void AddRef(IRONode *node, CLabel *label)
+{
+    IRONode *target = (IRONode *)label->stmt;
+
+    if (target != NULL) {
+        AddNext(node, target);
+        target->referenced = 1;
+        return;
+    }
+    CError_FATAL(109);
+}
+
+static void AddList(IRONode *node)
+{
+    SwitchInfo *info;
+    SwitchCase *branch;
+    SInt32 count;
+
+    info = node->last->u.swtch.info;
+    for (branch = info->cases, count = 1; branch != NULL; branch = branch->next)
+        count++;
+    node->succ = oalloc(count * sizeof(*node->succ));
+    for (branch = info->cases; branch != NULL; branch = branch->next)
+        AddRef(node, branch->label);
+    AddRef(node, info->defaultlabel);
+}
+
+static void AddPred(int index, int pred)
+{
+    IRONode *node = iroNodesByIndex[index];
+
+    node->pred[node->numpred++] = pred;
+}
+
 void IroFlowgraph_RebuildSuccPred(void)
 {
     IRONode *node;
     UInt16 successorIndex;
-    IRONode *successor;
     IROLinear *statement;
-    SwitchInfo *branchList;
-    SwitchCase *branch;
     ExceptionAction *entry;
     AsmOut references;
     SInt32 successorCount;
     SInt32 nodeIndex;
-    IRONode *scanNode;
     CLabel *list;
     CLabel *target;
     Statement *entryList;
@@ -99,17 +113,17 @@ void IroFlowgraph_RebuildSuccPred(void)
     for (list = Labels; list != NULL; list = list->next)
         list->stmt = NULL;
 
-    for (scanNode = iro_flowgraph_head; scanNode != NULL; scanNode = scanNode->nextnode) {
-        scanNode->referenced = 0;
-        scanNode->numsucc = 0;
-        scanNode->numpred = 0;
-        scanNode->reachable = 0;
-        scanNode->visited = 0;
+    for (node = iro_flowgraph_head; node != NULL; node = node->nextnode) {
+        node->referenced = 0;
+        node->numsucc = 0;
+        node->numpred = 0;
+        node->reachable = 0;
+        node->visited = 0;
         {
             IROLinear *labelStatement;
-            if ((labelStatement = scanNode->first) != NULL && labelStatement->type == IROLinearLabel) {
+            if ((labelStatement = node->first) != NULL && labelStatement->type == IROLinearLabel) {
                 CLabel *label = labelStatement->u.label;
-                label->stmt = (Statement *)scanNode;
+                label->stmt = (Statement *)node;
             }
         }
     }
@@ -127,23 +141,17 @@ void IroFlowgraph_RebuildSuccPred(void)
                     case IROLinearGoto:
                         node->succ = oalloc(sizeof(*node->succ));
                         target = statement->u.label;
-                        AddRef(node, (IRONode *)target->stmt);
+                        AddRef(node, target);
                         break;
                     case IROLinearIf:
                     case IROLinearIfNot:
                         node->succ = oalloc(2 * sizeof(*node->succ));
                         AddNext(node, node->nextnode);
                         target = statement->u.label;
-                        AddRef(node, (IRONode *)target->stmt);
+                        AddRef(node, target);
                         break;
                     case IROLinearSwitch:
-                        branchList = node->last->u.swtch.info;
-                        for (branch = branchList->cases, successorCount = 1; branch != NULL; branch = branch->next)
-                            successorCount++;
-                        node->succ = oalloc(successorCount * sizeof(*node->succ));
-                        AddList(node, branchList);
-                        target = branchList->defaultlabel;
-                        AddRef(node, (IRONode *)target->stmt);
+                        AddList(node);
                         break;
                     case IROLinearFunccall:
                         successorCount = 1;
@@ -157,10 +165,10 @@ void IroFlowgraph_RebuildSuccPred(void)
                         for (entry = entryList->dobjstack; entry != NULL; entry = entry->next) {
                             if (entry->kind == EAT_CATCHBLOCK) {
                                 target = entry->data.catch_block.label;
-                                AddRef(node, (IRONode *)target->stmt);
+                                AddRef(node, target);
                             } else if (entry->kind == EAT_SPECIFICATION) {
                                 target = entry->data.specification.label;
-                                AddRef(node, (IRONode *)target->stmt);
+                                AddRef(node, target);
                             }
                         }
                         break;
@@ -175,7 +183,7 @@ void IroFlowgraph_RebuildSuccPred(void)
                             AddNext(node, node->nextnode);
                         for (successorIndex = 0; successorIndex < references.numlabels; successorIndex++) {
                             target = references.labels[successorIndex];
-                            AddRef(node, (IRONode *)target->stmt);
+                            AddRef(node, target);
                         }
                         break;
                     case IROLinearReturn:
@@ -199,34 +207,32 @@ void IroFlowgraph_RebuildSuccPred(void)
         }
     }
 
-    for (scanNode = iro_flowgraph_head; scanNode != NULL; scanNode = scanNode->nextnode) {
-        if (scanNode->numpred != 0)
-            scanNode->pred = oalloc(scanNode->numpred * sizeof(*scanNode->pred));
+    for (node = iro_flowgraph_head; node != NULL; node = node->nextnode) {
+        if (node->numpred != 0)
+            node->pred = oalloc(node->numpred * sizeof(*node->pred));
         else
-            scanNode->pred = NULL;
-        scanNode->numpred = 0;
+            node->pred = NULL;
+        node->numpred = 0;
     }
 
     for (node = iro_flowgraph_head; node != NULL; node = node->nextnode) {
-        for (successorIndex = 0; successorIndex < node->numsucc; successorIndex++) {
-            nodeIndex = node->index;
-            successor = iroNodesByIndex[node->succ[successorIndex]];
-            successor->pred[successor->numpred++] = nodeIndex;
-        }
+        for (successorIndex = 0; successorIndex < node->numsucc; successorIndex++)
+            AddPred(node->succ[successorIndex], node->index);
     }
 
-    for (scanNode = iro_flowgraph_head; scanNode != NULL; scanNode = scanNode->nextnode) {
-        if ((statement = scanNode->first) != NULL && statement->type == IROLinearLabel) {
+    for (node = iro_flowgraph_head; node != NULL; node = node->nextnode) {
+        IROLinear *labelStatement;
+        if ((labelStatement = node->first) != NULL && labelStatement->type == IROLinearLabel) {
             for (;;) {
-                if (statement->type == IROLinearBeginCatch || statement->type == IROLinearEndCatch ||
-                    statement->type == IROLinearEndCatchDtor) {
-                    scanNode->referenced = 1;
+                if (labelStatement->type == IROLinearBeginCatch || labelStatement->type == IROLinearEndCatch ||
+                    labelStatement->type == IROLinearEndCatchDtor) {
+                    node->referenced = 1;
                     break;
                 }
-                if (statement == scanNode->last)
+                if (labelStatement == node->last)
                     break;
-                statement = statement->next;
-                if (statement == NULL)
+                labelStatement = labelStatement->next;
+                if (labelStatement == NULL)
                     break;
             }
         }
@@ -341,4 +347,17 @@ void IRO_BuildflowGraph(IROLinear *source)
     IroFlowgraph_RebuildSuccPred();
     IroFlowgraph_ComputeDom();
     IroVars_CheckTimedLongjmp();
+}
+
+struct IRONode *IroFlowgraph_NewNode(void)
+{
+    IRONode *record;
+    UInt16 number;
+    record = (IRONode *)oalloc(60U);
+    memset(record, 0, 60U);
+    number = iro_node_count;
+    record->index = number;
+    iro_node_count += 1U;
+    record->nextnode = 0U;
+    return record;
 }

@@ -15,7 +15,6 @@ struct ERangeVar {
 };
 #pragma options align = reset
 extern int IroRangePropagation_PropagateRangeInLinear(struct IROLinear *nd);
-extern int initialize_node_range(IROLinear *record);
 extern void check_range_for_type(ERange *p, Type *type);
 extern CInt64 signed_char_max;
 extern CInt64 type_range_minimum;

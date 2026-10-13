@@ -34,6 +34,7 @@ extern struct BitVector *availableExpressions;
 extern struct ReplacementCandidate *replacementCandidateTail;
 extern struct ReplacementCandidate *replacementCandidate;
 extern unsigned int IroPropagate_IsRegisterEligible(Object *object);
+extern int initialize_node_range(IROLinear *record);
 
 #ifdef __cplusplus
 }

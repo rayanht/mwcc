@@ -37,16 +37,7 @@ static inline PCodeBlockLink *code_00522b40_inline1(PCodeBlock *p0)
     return t5;
 }
 
-static void AddNode(Loop *w, PCodeBlock *item)
-{
-    PCodeBlockLink *nn = (PCodeBlockLink *)lalloc(8);
-    SETB(w->memberblocks, item->index);
-    nn->payload.block = item;
-    nn->next = w->blocks;
-    w->blocks = nn;
-}
-
-static void AddCount(PCodeBlock *item, SInt32 *count)
+static inline void AddCount(PCodeBlock *item, SInt32 *count)
 {
     data_00582c64[*count] = item;
     (*count)++;
@@ -68,10 +59,10 @@ void compute_dominators(void)
 
     bits = (UInt32 *)oalloc(((count + 0x1f) >> 5) << 2);
 
-    CRTTI_FillWords(dominators[gPCodeBlocks->index], count, 0);
+    BitVectors_FillWords(dominators[gPCodeBlocks->index], count, 0);
     dominators[gPCodeBlocks->index][0] |= 1;
     for (block = gPCodeBlocks->next; block != NULL; block = block->next)
-        CRTTI_FillWords(dominators[block->index], count, -1);
+        BitVectors_FillWords(dominators[block->index], count, -1);
 
     SpillCode_BuildBlockOrder();
 
@@ -81,7 +72,7 @@ void compute_dominators(void)
             if ((block = gPCodeBlockOrder[i]) != NULL && block->index != gPCodeBlocks->index) {
                 CodeMotion_AllocateBits(bits, dominators[block->predecessors->payload.block->index], count);
                 for (node = block->predecessors->next; node != NULL; node = node->next)
-                    CRTTI_IntersectBitVectors(bits, dominators[node->payload.block->index], count);
+                    BitVectors_IntersectBitVectors(bits, dominators[node->payload.block->index], count);
                 bits[block->index >> 5] |= 1 << block->index;
                 if (BitVectors_CopyAndCheckChanged(dominators[block->index], bits, count))
                     changed = 1;
@@ -125,26 +116,27 @@ void LoopDetection_AddBlock(Loop *loop, PCodeBlock *block)
 
 void compute_loop_block_sets(Loop *w)
 {
+    PCodeBlock *block;
     PCodeBlockLink *first;
     PCodeBlockLink *sub;
     PCodeBlockLink *node;
     SInt32 n;
 
     n = 0;
-    AddNode(w, w->body);
+    LoopDetection_AddBlock(w, w->body);
 
     for (first = w->body->predecessors; first != NULL; first = first->next) {
         if (TESTB(dominators[first->payload.block->index], w->body->index) && first->payload.block != w->body) {
-            AddNode(w, first->payload.block);
+            LoopDetection_AddBlock(w, first->payload.block);
             AddCount(first->payload.block, &n);
         }
     }
 
     while (n != 0) {
-        n--;
-        for (first = data_00582c64[n]->predecessors; first != NULL; first = first->next) {
+        block = data_00582c64[--n];
+        for (first = block->predecessors; first != NULL; first = first->next) {
             if (!TESTB(w->memberblocks, first->payload.block->index)) {
-                AddNode(w, first->payload.block);
+                LoopDetection_AddBlock(w, first->payload.block);
                 AddCount(first->payload.block, &n);
             }
         }
@@ -224,18 +216,49 @@ void create_loops(void)
         block->footer = NULL;
         block->inductionUpdate = NULL;
         block->execution_weight = block->body->execution_weight;
-        CRTTI_FillWords(block->memberblocks = lalloc(((data_005871a4 + 31) >> 5) << 2), data_005871a4, 0);
-        CRTTI_FillWords(block->exitblocks = lalloc(((data_005871a4 + 31) >> 5) << 2), data_005871a4, 0);
-        CRTTI_FillWords(block->block_membership = lalloc(((data_005871a4 + 31) >> 5) << 2), data_005871a4, 0);
-        CRTTI_FillWords(block->backedge_dominators = lalloc(((data_005871a4 + 31) >> 5) << 2), data_005871a4, 0);
+        BitVectors_FillWords(block->memberblocks = lalloc(((data_005871a4 + 31) >> 5) << 2), data_005871a4, 0);
+        BitVectors_FillWords(block->exitblocks = lalloc(((data_005871a4 + 31) >> 5) << 2), data_005871a4, 0);
+        BitVectors_FillWords(block->block_membership = lalloc(((data_005871a4 + 31) >> 5) << 2), data_005871a4, 0);
+        BitVectors_FillWords(block->backedge_dominators = lalloc(((data_005871a4 + 31) >> 5) << 2), data_005871a4, 0);
         compute_loop_block_sets(block);
         fn_00523000(block, &data_0058763c);
         selected_nodes = selected_nodes->next;
     }
 }
 
+static PCodeBlock *new_block(void)
+{
+    PCodeLabel *label;
+    PCodeBlock *block;
+
+    label = PCode_NewLabel();
+    block = (PCodeBlock *)lalloc(sizeof(PCodeBlock));
+    block->next = NULL;
+    block->prev = NULL;
+    block->labels = NULL;
+    block->predecessors = block->successors = NULL;
+    block->instructions = block->reverse_instructions = NULL;
+    block->line = -1;
+    block->instruction_count = 0;
+    block->flags = 0;
+    block->index = gPCodeBlockCount;
+    gPCodeBlockCount += 1;
+    PCode_ResolveLabel(block, label);
+    return block;
+}
+
+static void insert_block_before(PCodeBlock *block, PCodeBlock *before)
+{
+    block->next = before;
+    block->prev = before->prev;
+    before->prev->next = block;
+    before->prev = block;
+}
+
 void LoopDetection_CreatePreheader(Loop *region)
 {
+    PCodeBlock *newBlock;
+    PCodeBlock *oldBlock;
     int executionWeight;
     PCodeInstruction *instruction;
     Object *table;
@@ -244,33 +267,15 @@ void LoopDetection_CreatePreheader(Loop *region)
     struct TOCNameEntry *entry;
     PCodeBlockLink *successor;
     PCodeBlock *insertionBlock;
-    PCodeBlock *allocatedBlock;
-    PCodeLabel *label;
     int previousIndex;
     PCodeBlockLink *successorLink;
     PCodeBlockLink *predecessorLink;
-    PCodeBlockLink *memberLink;
     int oldBlockIndex;
     int exitBlockIndex;
     PCodeBlockLink **predecessorSlot;
-    PCodeBlock *newBlock;
-    PCodeBlock *oldBlock;
     PCodeBlockLink *predecessor;
 
-    label = PCode_NewLabel();
-    allocatedBlock = (PCodeBlock *)lalloc(sizeof(PCodeBlock));
-    allocatedBlock->next = NULL;
-    allocatedBlock->prev = NULL;
-    allocatedBlock->labels = NULL;
-    allocatedBlock->predecessors = allocatedBlock->successors = NULL;
-    allocatedBlock->instructions = allocatedBlock->reverse_instructions = NULL;
-    allocatedBlock->line = -1;
-    allocatedBlock->instruction_count = 0;
-    allocatedBlock->flags = 0;
-    allocatedBlock->index = gPCodeBlockCount;
-    gPCodeBlockCount += 1;
-    PCode_ResolveLabel(allocatedBlock, label);
-    region->preheader = allocatedBlock;
+    region->preheader = new_block();
     oldBlock = region->body;
     (newBlock = region->preheader)->line = oldBlock->line;
     if (oldBlock->labels == NULL) {
@@ -336,9 +341,7 @@ void LoopDetection_CreatePreheader(Loop *region)
     }
     previousIndex = oldBlock->prev->index;
     if ((1 << previousIndex & region->memberblocks[previousIndex >> 5]) == 0) {
-        newBlock->next = oldBlock;
-        newBlock->prev = oldBlock->prev, oldBlock->prev->next = newBlock;
-        oldBlock->prev = newBlock;
+        insert_block_before(newBlock, oldBlock);
     } else {
         insertionBlock = gPCodeBlocks;
         while (insertionBlock != NULL) {
@@ -347,10 +350,7 @@ void LoopDetection_CreatePreheader(Loop *region)
             }
             insertionBlock = insertionBlock->next;
         }
-        newBlock->next = insertionBlock;
-        newBlock->prev = insertionBlock->prev;
-        insertionBlock->prev->next = newBlock;
-        insertionBlock->prev = newBlock;
+        insert_block_before(newBlock, insertionBlock);
     }
     predecessorLink = code_00522b40_inline1(newBlock);
     predecessorLink->next = oldBlock->predecessors;
@@ -360,11 +360,7 @@ void LoopDetection_CreatePreheader(Loop *region)
     newBlock->successors = successorLink;
     region = region->parent;
     while (region != NULL) {
-        memberLink = (PCodeBlockLink *)lalloc(sizeof(PCodeBlockLink));
-        region->memberblocks[newBlock->index >> 5] |= 1 << newBlock->index;
-        memberLink->payload.block = newBlock;
-        memberLink->next = region->blocks;
-        region->blocks = memberLink;
+        LoopDetection_AddBlock(region, newBlock);
         oldBlockIndex = oldBlock->index;
         if ((1 << oldBlockIndex & region->block_membership[oldBlockIndex >> 5]) != 0) {
             region->block_membership[newBlock->index >> 5] |= 1 << newBlock->index;
@@ -379,62 +375,9 @@ void LoopDetection_CreatePreheader(Loop *region)
 
 void traverse_loops_postorder(register Loop *node)
 {
-    register Loop *child;
-    register Loop *grandchild;
-    register Loop *greatGrandchild;
-    register Loop *fourthLevelLoop;
-    register Loop *fifthLevelLoop;
-    register Loop *sixthLevelLoop;
-    register Loop *seventhLevelLoop;
-    for (; node != NULL; node = node->sibling) {
-        if (node->children != NULL) {
-            child = node->children;
-            for (; child != NULL; child = child->sibling) {
-                if (child->children != NULL) {
-                    grandchild = child->children;
-                    for (; grandchild != NULL; grandchild = grandchild->sibling) {
-                        if (grandchild->children != NULL) {
-                            greatGrandchild = grandchild->children;
-                            for (; greatGrandchild != NULL; greatGrandchild = greatGrandchild->sibling) {
-                                if (greatGrandchild->children != NULL) {
-                                    fourthLevelLoop = greatGrandchild->children;
-                                    for (; fourthLevelLoop != NULL; fourthLevelLoop = fourthLevelLoop->sibling) {
-                                        if (fourthLevelLoop->children != NULL) {
-                                            fifthLevelLoop = fourthLevelLoop->children;
-                                            for (; fifthLevelLoop != NULL; fifthLevelLoop = fifthLevelLoop->sibling) {
-                                                if (fifthLevelLoop->children != NULL) {
-                                                    sixthLevelLoop = fifthLevelLoop->children;
-                                                    for (; sixthLevelLoop != NULL;
-                                                         sixthLevelLoop = sixthLevelLoop->sibling) {
-                                                        if (sixthLevelLoop->children != NULL) {
-                                                            seventhLevelLoop = sixthLevelLoop->children;
-                                                            for (; seventhLevelLoop != NULL;
-                                                                 seventhLevelLoop = seventhLevelLoop->sibling) {
-                                                                if (seventhLevelLoop->children != NULL) {
-                                                                    traverse_loops_postorder(
-                                                                        seventhLevelLoop->children);
-                                                                }
-                                                                LoopDetection_CreatePreheader(seventhLevelLoop);
-                                                            }
-                                                        }
-                                                        LoopDetection_CreatePreheader(sixthLevelLoop);
-                                                    }
-                                                }
-                                                LoopDetection_CreatePreheader(fifthLevelLoop);
-                                            }
-                                        }
-                                        LoopDetection_CreatePreheader(fourthLevelLoop);
-                                    }
-                                }
-                                LoopDetection_CreatePreheader(greatGrandchild);
-                            }
-                        }
-                        LoopDetection_CreatePreheader(grandchild);
-                    }
-                }
-                LoopDetection_CreatePreheader(child);
-            }
-        }
+    for (; node; node = node->sibling) {
+        if (node->children)
+            traverse_loops_postorder(node->children);
         LoopDetection_CreatePreheader(node);
     }
 }
@@ -906,62 +849,9 @@ void LoopDetection_ComputeLoopProperties(Loop *node)
 
 void compute_loop_properties_recursive(register Loop *node)
 {
-    register Loop *child;
-    register Loop *grandchild;
-    register Loop *greatGrandchild;
-    register Loop *fourthLevelLoop;
-    register Loop *fifthLevelLoop;
-    register Loop *sixthLevelLoop;
-    register Loop *seventhLevelLoop;
-    for (; node != NULL; node = node->sibling) {
-        if (node->children != NULL) {
-            child = node->children;
-            for (; child != NULL; child = child->sibling) {
-                if (child->children != NULL) {
-                    grandchild = child->children;
-                    for (; grandchild != NULL; grandchild = grandchild->sibling) {
-                        if (grandchild->children != NULL) {
-                            greatGrandchild = grandchild->children;
-                            for (; greatGrandchild != NULL; greatGrandchild = greatGrandchild->sibling) {
-                                if (greatGrandchild->children != NULL) {
-                                    fourthLevelLoop = greatGrandchild->children;
-                                    for (; fourthLevelLoop != NULL; fourthLevelLoop = fourthLevelLoop->sibling) {
-                                        if (fourthLevelLoop->children != NULL) {
-                                            fifthLevelLoop = fourthLevelLoop->children;
-                                            for (; fifthLevelLoop != NULL; fifthLevelLoop = fifthLevelLoop->sibling) {
-                                                if (fifthLevelLoop->children != NULL) {
-                                                    sixthLevelLoop = fifthLevelLoop->children;
-                                                    for (; sixthLevelLoop != NULL;
-                                                         sixthLevelLoop = sixthLevelLoop->sibling) {
-                                                        if (sixthLevelLoop->children != NULL) {
-                                                            seventhLevelLoop = sixthLevelLoop->children;
-                                                            for (; seventhLevelLoop != NULL;
-                                                                 seventhLevelLoop = seventhLevelLoop->sibling) {
-                                                                if (seventhLevelLoop->children != NULL) {
-                                                                    compute_loop_properties_recursive(
-                                                                        seventhLevelLoop->children);
-                                                                }
-                                                                LoopDetection_ComputeLoopProperties(seventhLevelLoop);
-                                                            }
-                                                        }
-                                                        LoopDetection_ComputeLoopProperties(sixthLevelLoop);
-                                                    }
-                                                }
-                                                LoopDetection_ComputeLoopProperties(fifthLevelLoop);
-                                            }
-                                        }
-                                        LoopDetection_ComputeLoopProperties(fourthLevelLoop);
-                                    }
-                                }
-                                LoopDetection_ComputeLoopProperties(greatGrandchild);
-                            }
-                        }
-                        LoopDetection_ComputeLoopProperties(grandchild);
-                    }
-                }
-                LoopDetection_ComputeLoopProperties(child);
-            }
-        }
+    for (; node; node = node->sibling) {
+        if (node->children)
+            compute_loop_properties_recursive(node->children);
         LoopDetection_ComputeLoopProperties(node);
     }
 }

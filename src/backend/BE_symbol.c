@@ -1,5 +1,6 @@
 #define CERROR_FILE "BE_symbol.c"
 #include "compiler/common.h"
+#include "version.h"
 #include "compiler/BE_symbol.h"
 #include "compiler/enode.h"
 #include "compiler/objects.h"
@@ -20,100 +21,10 @@ struct BE_SymNode *be_symbol_list;
 struct BE_SymNode *symbol_tail;
 struct ObjGenSection *data_005884aa;
 
-static struct BE_SymNode *data_0055da80 = NULL;
-
-static inline void BE_symbol_FindFunction(HashNameNode *obj, SInt16 kind, BE_SymNode **result)
-{
-    for (*result = be_symbol_list; *result != NULL; *result = (*result)->next) {
-        if (obj == (*result)->nameData.hashName && (((SInt32)kind == 0x102) == ((*result)->kind == 0x102)))
-            return;
-    }
-    *result = NULL;
-}
-
-static BE_SymNode *FindFuncNode(HashNameNode *func, int kind)
-{
-    BE_SymNode *p;
-    for (p = be_symbol_list; p != NULL; p = p->next) {
-        if (func == (HashNameNode *)p->nameData.hashName && (kind == 0x102) == (p->kind == 0x102))
-            return (BE_SymNode *)p;
-    }
-    return NULL;
-}
-
-static BE_SymNode *FindSym(int obj, int kind)
-{
-    BE_SymNode *p;
-    for (p = be_symbol_list; p != NULL; p = p->next) {
-        if (obj == (int)p->nameData.hashName && (kind == 258) == (p->kind == 258)) {
-            return p;
-        }
-    }
-    return NULL;
-}
-
-static inline void FindBackendSymbol(BE_SymNode **result, int key, int symbolCategory)
-{
-    BE_SymNode *symbol;
-    int category;
-    if ((symbol = be_symbol_list) != NULL) {
-        category = (short)symbolCategory;
-        do {
-            if (key == (int)symbol->nameData.hashName && (category == 258) == (symbol->kind == 258)) {
-                *result = (BE_SymNode *)symbol;
-                return;
-            }
-            symbol = symbol->next;
-        } while (symbol != NULL);
-    }
-    *result = NULL;
-}
-
 enum { FuncType = 0x102 };
 static inline short output_type(BE_SymNode *p)
 {
     return p->kind;
-}
-
-static BE_SymNode *find_output(void *name, short type)
-{
-    BE_SymNode *p;
-    if ((p = be_symbol_list) != NULL)
-        do {
-            if (name == p->nameData.hashName && (output_type(p) == FuncType) == (type == FuncType))
-                return p;
-        } while ((p = p->next) != NULL);
-    return NULL;
-}
-
-static inline BE_SymNode *new_output(void *name, short type)
-{
-    BE_SymNode *p;
-    unsigned char flag;
-    if (type == 0x102)
-        flag = 0;
-    else
-        flag = 1;
-    p = galloc(50);
-    memset(p, 0, 50);
-    p->nameData.hashName = name;
-    if (be_symbol_list)
-        symbol_tail->next = p;
-    else
-        be_symbol_list = p;
-    symbol_tail = p;
-    p->symbolKind = flag << 4;
-    p->kind = type;
-    p->sectionData.section = data_005884aa;
-    return p;
-}
-
-static inline BE_SymNode *get_output(short type, void *name)
-{
-    BE_SymNode *p;
-    if (!(p = find_output(name, type)))
-        p = new_output(name, type);
-    return p;
 }
 
 BE_SymNode *BE_symbol_ResetSymbolTail(void)
@@ -133,12 +44,9 @@ BE_SymNode *BE_symbol_AdvanceSymbolTail(void)
 
 BE_SymNode *BE_symbol_DefineObjectSymbol(Object *object, int offset, ObjGenSection *value)
 {
-    char categoryBit;
     BE_SymNode *symbol;
-    int symbolCategory;
     int alignment;
     char kind;
-    HashNameNode *key;
     char linkageKind;
 
     linkageKind = 0;
@@ -156,32 +64,7 @@ BE_SymNode *BE_symbol_DefineObjectSymbol(Object *object, int offset, ObjGenSecti
     } else {
         kind = 1;
     }
-    key = COptimizer_GetFunctionObject(object);
-    if (CParser_HasInternalLinkage(object) != 0) {
-        symbolCategory = 258;
-    } else {
-        symbolCategory = 259;
-    }
-    FindBackendSymbol(&symbol, (int)key, symbolCategory);
-    if (symbol == NULL) {
-        if ((short)symbolCategory == 258) {
-            categoryBit = 0;
-        } else {
-            categoryBit = 1;
-        }
-        symbol = galloc(sizeof(*symbol));
-        memset(symbol, 0, sizeof(*symbol));
-        symbol->nameData.hashName = key;
-        if (be_symbol_list != NULL) {
-            symbol_tail->next = symbol;
-        } else {
-            be_symbol_list = symbol;
-        }
-        symbol_tail = symbol;
-        symbol->symbolKind = categoryBit << 4;
-        symbol->kind = symbolCategory;
-        symbol->sectionData.section = data_005884aa;
-    }
+    symbol = BE_symbol_GetOrCreateFunctionObjectSymbol(object);
     kind <<= 4;
     kind++;
     symbol->symbolKind = kind;
@@ -253,7 +136,9 @@ BE_SymNode *BE_symbol_SetupObjectSymbol(Object *object, int size, ObjGenSection 
     unsigned char linkageKind;
     unsigned char binding;
     BE_SymNode *symbol;
+#if VERSION > VERSION_GC_1_0
     long alignment;
+#endif
     linkageKind = 0;
     if (CParser_HasInternalLinkage(object))
         binding = 0;
@@ -266,11 +151,11 @@ BE_SymNode *BE_symbol_SetupObjectSymbol(Object *object, int size, ObjGenSection 
         binding = 2;
         linkageKind = 14;
     }
-    symbol = get_output(CParser_HasInternalLinkage(object) ? (short)0x102 : (short)0x103,
-                        COptimizer_GetFunctionObject(object));
+    symbol = BE_symbol_GetOrCreateFunctionObjectSymbol(object);
     symbol->size = size;
     symbol->attributes = 0;
     symbol->sectionData.section = section;
+#if VERSION > VERSION_GC_1_0
     if (object->qual & Q_ALIGNED_MASK) {
         alignment = object->qual & Q_ALIGNED_MASK;
         switch (alignment) {
@@ -321,6 +206,7 @@ BE_SymNode *BE_symbol_SetupObjectSymbol(Object *object, int size, ObjGenSection 
         }
         symbol->alignment = alignment;
     } else
+#endif
         symbol->alignment = copts.codeAlignment;
     symbol->linkageKind = linkageKind;
     symbol->linkageFlags = 0;
@@ -332,41 +218,15 @@ BE_SymNode *BE_symbol_SetupObjectSymbol(Object *object, int size, ObjGenSection 
     return symbol;
 }
 
-enum { BACKEND_SYMBOL_KIND_258 = 258, BACKEND_SYMBOL_KIND_259 = 259 };
-
 BE_SymNode *fn_004918f0(Object *symbol, struct ObjGenSection *value)
 {
     char flags;
-    HashNameNode *symbolKey;
-    short kind;
     BE_SymNode *record;
-    char kindFlag;
-    if (CParser_HasInternalLinkage(symbol) != 0) {
+    if (CParser_HasInternalLinkage(symbol))
         flags = 0;
-    } else {
+    else
         flags = 1;
-    }
-    symbolKey = COptimizer_GetFunctionObject(symbol);
-    kind = CParser_HasInternalLinkage(symbol) != 0 ? BACKEND_SYMBOL_KIND_258 : BACKEND_SYMBOL_KIND_259;
-    if ((record = FindSym((int)symbolKey, kind)) == NULL) {
-        if (kind == BACKEND_SYMBOL_KIND_258) {
-            kindFlag = 0;
-        } else {
-            kindFlag = 1;
-        }
-        record = galloc(50);
-        memset(record, 0, 50);
-        record->nameData.hashName = symbolKey;
-        if (be_symbol_list != NULL) {
-            symbol_tail->next = record;
-        } else {
-            be_symbol_list = record;
-        }
-        symbol_tail = record;
-        record->symbolKind = (char)(kindFlag << 4);
-        record->kind = kind;
-        record->sectionData.section = data_005884aa;
-    }
+    record = BE_symbol_GetOrCreateFunctionObjectSymbol(symbol);
     flags <<= 4;
     record->symbolKind = flags;
     record->size = 0;
@@ -396,9 +256,26 @@ BE_SymNode *BE_symbol_CreateSymNode(void *value)
     return record;
 }
 
+static BE_SymNode *find_output(void *name, short type)
+{
+    BE_SymNode *p;
+    if ((p = be_symbol_list) != NULL)
+        do {
+            if (name == p->nameData.hashName && (output_type(p) == FuncType) == (type == FuncType))
+                return p;
+        } while ((p = p->next) != NULL);
+    return NULL;
+}
+
+static struct BE_SymNode *data_0055da80 = NULL;
+
 void BE_symbol_Init(void)
 {
+#if VERSION == VERSION_GC_1_0
+    fn_004b4ce0(&be_symbol_list);
+#else
     memset(&be_symbol_list, 0, 12U);
+#endif
     data_0055da80 = NULL;
 }
 
@@ -407,21 +284,18 @@ struct BE_SymNode *BE_symbol_GetSymbolOrderTail(void)
     return symbol_order_tail;
 }
 
-BE_SymNode *BE_symbol_GetOrCreateFunctionObjectSymbol(Object *arg)
+BE_SymNode *BE_symbol_GetOrCreateFunctionObjectSymbol(Object *object)
 {
-    HashNameNode *func;
+    HashNameNode *name;
     SInt16 kind;
     UInt8 flag;
     BE_SymNode *found;
     BE_SymNode *node;
 
-    func = COptimizer_GetFunctionObject(arg);
-    if (CParser_HasInternalLinkage(arg))
-        kind = 0x102;
-    else
-        kind = 0x103;
+    name = COptimizer_GetFunctionObject(object);
+    kind = CParser_HasInternalLinkage(object) ? 0x102 : 0x103;
 
-    found = FindFuncNode(func, kind);
+    found = find_output(name, kind);
 
     if (found)
         return found;
@@ -430,14 +304,7 @@ BE_SymNode *BE_symbol_GetOrCreateFunctionObjectSymbol(Object *arg)
         flag = 0;
     else
         flag = 1;
-    node = galloc(sizeof(BE_SymNode));
-    memset(node, 0, sizeof(BE_SymNode));
-    node->nameData.hashName = func;
-    if (be_symbol_list != NULL)
-        symbol_tail->next = node;
-    else
-        be_symbol_list = node;
-    symbol_tail = node;
+    node = BE_symbol_CreateSymNode(name);
     node->symbolKind = flag << 4;
     node->kind = kind;
     node->sectionData.section = data_005884aa;
@@ -478,14 +345,7 @@ unsigned int BE_symbol_CreateSectionSymbol(ObjGenSection *input)
     strcat(buffer, input->name);
     strcat(buffer, ".0");
     name = GetHashNameNode(buffer);
-    symbol = galloc(50);
-    memset(symbol, 0, 50);
-    symbol->nameData.hashName = name;
-    if (be_symbol_list != NULL)
-        symbol_tail->next = symbol;
-    else
-        be_symbol_list = symbol;
-    symbol_tail = symbol;
+    symbol = BE_symbol_CreateSymNode(name);
     symbol->symbolKind = 0;
     symbol->attributes = 0;
     symbol->sectionData.section = input;
@@ -503,36 +363,9 @@ unsigned int BE_symbol_GetOffset(BE_SymNode *symbol)
 Object *BE_symbol_GetFunctionSymbolLinkData(Object *func)
 {
     BE_SymNode *node;
-    SInt16 kind;
-    HashNameNode *obj;
-    Boolean b;
     ObjGenSymbolLink *value;
 
-    obj = COptimizer_GetFunctionObject(func);
-    if (CParser_HasInternalLinkage(func))
-        kind = 0x102;
-    else
-        kind = 0x103;
-
-    BE_symbol_FindFunction(obj, kind, &node);
-
-    if (node == NULL) {
-        if (kind == 0x102)
-            b = 0;
-        else
-            b = 1;
-        node = galloc((SInt32)sizeof(BE_SymNode));
-        memset(node, 0, sizeof(BE_SymNode));
-        node->nameData.hashName = obj;
-        if (be_symbol_list != NULL)
-            symbol_tail->next = node;
-        else
-            be_symbol_list = node;
-        symbol_tail = node;
-        node->symbolKind = (UInt8)(b << 4);
-        node->kind = kind;
-        node->sectionData.section = data_005884aa;
-    }
+    node = BE_symbol_GetOrCreateFunctionObjectSymbol(func);
 
     if ((func->qual & Q_TENTATIVE) && node->size == 0)
         ObjGen_PPC_EABI_EmitObjectWithDebugEntry(func, NULL, NULL, func->type->size);
@@ -547,52 +380,12 @@ Object *BE_symbol_GetFunctionSymbolLinkData(Object *func)
 
 Boolean fn_004913b0(Object *obj)
 {
-    SInt16 kind;
-    HashNameNode *function;
     struct BE_SymNode *symbol;
     ObjGenSection *data;
-    Boolean flag;
 
-    function = COptimizer_GetFunctionObject(obj);
-    if (CParser_HasInternalLinkage(obj))
-        kind = 0x102;
-    else
-        kind = 0x103;
-
-    symbol = be_symbol_list;
-    if (symbol != NULL) {
-        for (;;) {
-            if (function == symbol->nameData.hashName && ((SInt32)kind == 0x102) == (symbol->kind == 0x102))
-                break;
-            symbol = symbol->next;
-            if (symbol == NULL) {
-                symbol = NULL;
-                break;
-            }
-        }
-    } else {
-        symbol = NULL;
-    }
-    if (symbol == NULL) {
-        if (kind == 0x102)
-            flag = 0;
-        else
-            flag = 1;
-        symbol = galloc(sizeof(*symbol));
-        memset(symbol, 0, sizeof(*symbol));
-        symbol->nameData.hashName = function;
-        if (be_symbol_list != NULL)
-            symbol_tail->next = symbol;
-        else
-            be_symbol_list = symbol;
-        symbol_tail = symbol;
-        symbol->symbolKind = flag << 4;
-        symbol->kind = kind;
-        symbol->sectionData.section = data_005884aa;
-    }
-
+    symbol = BE_symbol_GetOrCreateFunctionObjectSymbol(obj);
     data = symbol->sectionData.section;
-    CError_ASSERT(499, data != NULL);
+    CError_ASSERT(VERSION > VERSION_GC_1_0 ? 499 : 441, data != NULL);
 
     if (copts.usedatapool != 0 && data->symbolLink != NULL && data->symbolLink->symbol != NULL &&
         (obj->qual & Q_IMPLICIT_WEAK) == 0 && (obj->qual & Q_WEAK) == 0 && !PCodeUtilities_Require(obj) &&

@@ -26,17 +26,11 @@ struct IROExpr {
 };
 #pragma options align = reset
 extern UInt8 data_00551d6c[];
-extern void IroCSE_RewriteStatementExpressions(Statement *stmt);
 extern void rewrite_nested_bitwise_expressions(ENode *en);
 extern void traverse_expr_postorder(ENode *expr);
 extern ENode *walk_expr_postorder(ENode *expr);
 extern void fold_nested_diadic_intval(ENode *node);
-extern ENode *data_005881ec;
 extern int fn_0044fad0(ENode *expression);
-extern CInt64 data_005834f8;
-extern int data_005871b8;
-extern char nested_bitwise_expressions_rewritten;
-extern UInt8 nested_bitwise_type;
 extern void IRO_CommonSubs(void);
 extern void move_common_sub(IROExpr *group);
 extern void create_replacement_temp_assignment(IROExpr *replacement);

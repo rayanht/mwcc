@@ -371,7 +371,6 @@ extern void CError_SetWrittenEntry(TStreamElement **entry);
 extern void CError_SaveAndSetWrittenEntry(TStreamElement *entry, TStreamElement **savedEntry);
 extern void CError_SetBufferedToken(TStreamElement *entry);
 extern void fn_00449dc0(void);
-extern struct IRONode *CError_NewIRONode(void);
 extern TStreamElement *cerror_locktoken;
 struct DispatchObject_0041b830;
 

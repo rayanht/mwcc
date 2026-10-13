@@ -1,5 +1,6 @@
 #define CERROR_FILE "BE_elf.c"
 #include "compiler/common.h"
+#include "version.h"
 #include "compiler/BE_elf.h"
 #include "compiler/enode.h"
 #include "compiler/objects.h"
@@ -48,119 +49,49 @@ static char file_name[256];
 static struct ObjGenSection **ordered_section_index;
 #pragma options align = reset
 
+#if VERSION > VERSION_GC_1_0
 /* zeros ElfPad copies: the buffer grows when a padding is longer */
 static void *data_0055e528 = data_00580df6;
 static int max_padding_size = 128;
+#endif
+
 #define ELF_SECTION(p) ((ObjGenSection *)(void *)(p))
 
-static SectionRec *MakeRecA(void *f6, UInt8 f2, UInt8 f3);
-static int ElfBigEndian(void);
-static void ElfLockSection(ObjGenSection *section);
-static void ElfLinkSection(ObjGenSection *section);
-static void ElfLinkSymbolTable(ObjGenSection *section);
-static SInt32 ElfIndex(ObjGenSection *section);
-static SInt32 ElfSectionIndex(ObjGenSection *section);
-static void ElfSwapSection(ObjGenSection *section, int words);
-static SInt32 ElfPad(SInt32 alignment);
-static void ElfAllocZero(SInt32 size);
+#if VERSION == VERSION_GC_1_0
+#define LINE(line) ((line) - 12)
+#else
+#define LINE(line) (line)
+#endif
 
-static inline SInt32 ElfPadSize(SInt32 alignment, int size)
+static SInt32 AppendString(GList *list, char *string);
+static void link_sections(void);
+static void build_section_name_table(void);
+static void write_section_data(void);
+static void write_section_headers(void);
+static void resolve_relocation_symbols(void);
+
+static SInt32 ElfOffset(void)
 {
-    SInt32 n = size;
-
-    n = (int)(n + alignment - 1);
-    alignment--;
-    n &= ~alignment;
-    return n - data_00583ae8.buffer.size;
+    return data_00583ae8.buffer.size;
 }
 
-static inline void ElfPlaceSection(ObjGenSection *section)
+static void ElfPad(SInt32 alignment)
 {
-    section->offset = ElfPad(section->maximumSize);
-    section->size = section->buffer.size;
-}
+    SInt32 padding;
 
-static inline void ElfAppend(GList *list)
-{
-    GList *src = list;
-    SInt32 capacity;
-
-    if (data_00583ae8.buffer.size + src->size > data_00583ae8.buffer.hndlsize) {
-        data_00583ae8.buffer.hndlsize += src->size + data_00583ae8.buffer.growsize;
-        capacity = data_00583ae8.buffer.hndlsize;
-        if (!COS_ResizeHandle((struct StorageHandle *)data_00583ae8.buffer.data, capacity) && data_00587708)
-            data_00587708();
+    padding = data_00583ae8.buffer.size;
+    padding = (padding + alignment - 1) & ~(alignment - 1);
+    padding -= data_00583ae8.buffer.size;
+#if VERSION > VERSION_GC_1_0
+    if (padding > max_padding_size) {
+        data_0055e528 = galloc(padding);
+        memset(data_0055e528, 0, padding);
+        max_padding_size = padding;
     }
-    memcpy(*data_00583ae8.buffer.data + data_00583ae8.buffer.size, *src->data, src->size);
-    data_00583ae8.buffer.size += src->size;
-}
-
-static inline ObjGenSection *fn_0049c140_inline1(void)
-{
-    ObjGenSection *section;
-    if (".text"[0] != 0) {
-        section = section_list;
-        if (section != NULL) {
-            do {
-                if (section->context == NULL && memcmp(section->name, ".text", 6) == 0)
-                    return section;
-                section = section->next;
-            } while (section != NULL);
-        }
-    }
-    return NULL;
-}
-
-static inline ObjGenSection *findInitialSection(void)
-{
-    ObjGenSection *cursor;
-    ObjGenSection *section;
-    if (".text"[0] != 0) {
-        section = cursor = section_list;
-        if (cursor != NULL) {
-            do {
-                if (section->context == NULL) {
-                    if (memcmp(section->name, ".text", 6) == 0)
-                        return section;
-                }
-                section = section->next;
-            } while (section != NULL);
-        }
-    }
-    return NULL;
-}
-
-static inline ObjGenSection *BE_elf_0049c670_inline1(char *v4)
-{
-    ObjGenSection *v5;
-    ObjGenSection *v5s;
-    if (v4 == NULL || *v4 == 0) {
-        return NULL;
-    }
-    v5 = v5s = section_list;
-    if (v5s != NULL) {
-        do {
-            if (((SInt32 *)v5)[24] == 0 && strcmp((char *)v5->name, (char *)v4) == 0) {
-                return v5;
-            }
-            v5 = v5->next;
-        } while ((int)v5 != 0);
-    }
-    return NULL;
-}
-
-static inline void BE_elf_SetEABISections(ObjGenSection *node, SectionRec *flags)
-{
-    if (flags->typebits & 1)
-        copts.textSection = (ObjGenSection *)node;
-    if (flags->typebits & 2)
-        copts.dataSection = (ObjGenSection *)node;
-    if (flags->typebits & 4)
-        copts.bssSection = (ObjGenSection *)node;
-    if (flags->typebits & 8)
-        copts.smallDataSection = (ObjGenSection *)node;
-    if (flags->typebits & 16)
-        copts.smallBSSSection = (ObjGenSection *)node;
+    AppendGListData(&data_00583ae8.buffer, data_0055e528, padding);
+#else
+    AppendGListData(&data_00583ae8.buffer, data_00580df6, padding);
+#endif
 }
 
 void BE_elf_AlignRecord(GList *record, SInt32 alignment)
@@ -170,12 +101,23 @@ void BE_elf_AlignRecord(GList *record, SInt32 alignment)
     paddingSize = record->size;
     paddingSize = (paddingSize + alignment - 1) & ~(alignment - 1);
     paddingSize -= record->size;
+#if VERSION > VERSION_GC_1_0
     if (paddingSize > max_padding_size) {
         data_0055e528 = galloc(paddingSize);
         memset(data_0055e528, 0, paddingSize);
         max_padding_size = paddingSize;
     }
     AppendGListData(record, data_0055e528, paddingSize);
+#else
+    AppendGListData(record, data_00580df6, paddingSize);
+#endif
+}
+
+static SInt32 AppendString(GList *list, char *string)
+{
+    SInt32 length = strlen(string) + 1;
+    AppendGListData(list, string, length);
+    return length;
 }
 
 void assign_symbol_order(void)
@@ -208,6 +150,84 @@ void assign_symbol_order(void)
     }
 }
 
+static void AppendSection(ObjGenSection **list, ObjGenSection *section)
+{
+#if VERSION == VERSION_GC_1_0
+    ObjGenSection *tail;
+
+    if (*list == NULL) {
+        *list = section;
+        return;
+    }
+    for (tail = *list; tail->next != NULL; tail = tail->next)
+        ;
+    tail->next = section;
+#else
+    ObjGenSection *head;
+    ObjGenSection *tail;
+
+    if ((head = *list) == NULL) {
+        *list = section;
+    } else {
+        for (tail = head; tail->next != NULL; tail = tail->next)
+            ;
+        tail->next = section;
+    }
+#endif
+}
+
+static void AppendSectionSymbolAttributes(SectionSymbolAttributes **list, SectionSymbolAttributes *attributes)
+{
+#if VERSION == VERSION_GC_1_0
+    SectionSymbolAttributes *tail;
+
+    if (*list == NULL) {
+        *list = attributes;
+        return;
+    }
+    for (tail = *list; tail->next != NULL; tail = tail->next)
+        ;
+    tail->next = attributes;
+#else
+    SectionSymbolAttributes *head;
+    SectionSymbolAttributes *tail;
+
+    if ((head = *list) == NULL) {
+        *list = attributes;
+    } else {
+        for (tail = head; tail->next != NULL; tail = tail->next)
+            ;
+        tail->next = attributes;
+    }
+#endif
+}
+
+static void AppendSectionToGroup(ObjGenSection **list, ObjGenSection *section)
+{
+#if VERSION == VERSION_GC_1_0
+    ObjGenSection *tail;
+
+    if (*list == NULL) {
+        *list = section;
+        return;
+    }
+    for (tail = *list; tail->nextInGroup != NULL; tail = tail->nextInGroup)
+        ;
+    tail->nextInGroup = section;
+#else
+    ObjGenSection *head;
+    ObjGenSection *tail;
+
+    if ((head = *list) == NULL) {
+        *list = section;
+    } else {
+        for (tail = head; tail->nextInGroup != NULL; tail = tail->nextInGroup)
+            ;
+        tail->nextInGroup = section;
+    }
+#endif
+}
+
 #pragma auto_inline off
 SectionSymbolAttributes *find_section_symbol_attributes(ObjGenSection *key, UInt8 byte10, UInt8 byte11,
                                                         ObjGenSection *key12, ObjGenSection *key16)
@@ -232,7 +252,6 @@ SectionSymbolAttributes *BE_elf_GetOrCreateSectionSymbolAttributes(ObjGenSection
                                                                    ObjGenSection *size)
 {
     SectionSymbolAttributes *record;
-    SectionSymbolAttributes *tail;
 
     record = find_section_symbol_attributes(identifier, kind, attributes, value, size);
     if (record != NULL)
@@ -254,24 +273,29 @@ SectionSymbolAttributes *BE_elf_GetOrCreateSectionSymbolAttributes(ObjGenSection
     data_0058847a++;
     data_005884ee++;
 
-    tail = section_symbol_attributes;
-    if (tail == NULL) {
-        section_symbol_attributes = record;
-    } else {
-        SectionSymbolAttributes *last = tail;
-        while (last->next != NULL)
-            last = last->next;
-        last->next = record;
-    }
+    AppendSectionSymbolAttributes(&section_symbol_attributes, record);
     return record;
+}
+
+static inline void BE_elf_SetEABISections(ObjGenSection *node, SectionRec *flags)
+{
+    if (flags->typebits & 1)
+        copts.textSection = (ObjGenSection *)node;
+    if (flags->typebits & 2)
+        copts.dataSection = (ObjGenSection *)node;
+    if (flags->typebits & 4)
+        copts.bssSection = (ObjGenSection *)node;
+    if (flags->typebits & 8)
+        copts.smallDataSection = (ObjGenSection *)node;
+    if (flags->typebits & 16)
+        copts.smallBSSSection = (ObjGenSection *)node;
 }
 
 ObjGenSection *BE_elf_CreateSection(char *name, UInt8 kind, SInt8 attribute, SInt32 initialSize, SectionRec *flags,
                                     UInt8 alignment, struct ObjGenSymbolLink *symbolLink)
 {
-    ObjGenSection *head;
-    ObjGenSection **list;
     ObjGenSection *node;
+    ObjGenSection **list;
     SInt32 size;
 
     list = NULL;
@@ -294,7 +318,7 @@ ObjGenSection *BE_elf_CreateSection(char *name, UInt8 kind, SInt8 attribute, SIn
 
     switch (kind) {
         case 0:
-            CError_ASSERT(272, data_005884aa == NULL);
+            CError_ASSERT(LINE(272), data_005884aa == NULL);
             node->type = 0;
             node->link = 0;
             list = &data_005884aa;
@@ -302,30 +326,30 @@ ObjGenSection *BE_elf_CreateSection(char *name, UInt8 kind, SInt8 attribute, SIn
         case 1:
             break;
         case 2:
-            CError_ASSERT(281, data_005884ae == NULL);
+            CError_ASSERT(LINE(281), data_005884ae == NULL);
             list = &data_005884ae;
             break;
         case 3:
-            CError_ASSERT(285, data_005884b2 == NULL);
+            CError_ASSERT(LINE(285), data_005884b2 == NULL);
             list = &data_005884b2;
             break;
         case 4:
-            CError_ASSERT(289, data_005884b6 == NULL);
+            CError_ASSERT(LINE(289), data_005884b6 == NULL);
             list = &data_005884b6;
             break;
         case 5:
-            CError_ASSERT(293, data_005884ba == NULL);
+            CError_ASSERT(LINE(293), data_005884ba == NULL);
             list = &data_005884ba;
             break;
         case 6:
             break;
         case 7:
-            CError_ASSERT(297, dwarf_info_section == NULL);
+            CError_ASSERT(LINE(297), dwarf_info_section == NULL);
             list = &dwarf_info_section;
             node->entrySize = 1;
             break;
         case 8:
-            CError_ASSERT(302, dwarf_line_section == NULL);
+            CError_ASSERT(LINE(302), dwarf_line_section == NULL);
             list = &dwarf_line_section;
             node->entrySize = 1;
             break;
@@ -340,34 +364,34 @@ ObjGenSection *BE_elf_CreateSection(char *name, UInt8 kind, SInt8 attribute, SIn
             list = &data_005884ca;
             break;
         case 12:
-            CError_ASSERT(317, data_005884ce == NULL);
+            CError_ASSERT(LINE(317), data_005884ce == NULL);
             node->type = 2;
             node->entrySize = 0x10;
             list = &data_005884ce;
             break;
         case 13:
-            CError_ASSERT(323, symbol_string_table_section == NULL);
+            CError_ASSERT(LINE(323), symbol_string_table_section == NULL);
             node->type = 3;
             node->entrySize = 1;
             list = &symbol_string_table_section;
             break;
         case 14:
-            CError_ASSERT(329, shstrtab_section == NULL);
+            CError_ASSERT(LINE(329), shstrtab_section == NULL);
             node->type = 3;
             node->entrySize = 1;
             list = &shstrtab_section;
             break;
         case 15:
-            CError_ASSERT(335, data_005884da == NULL);
+            CError_ASSERT(LINE(335), data_005884da == NULL);
             node->entrySize = 1;
             list = &data_005884da;
             break;
         case 16:
-            CError_ASSERT(340, data_005884de == NULL);
+            CError_ASSERT(LINE(340), data_005884de == NULL);
             list = &data_005884de;
             break;
         case 17:
-            CError_ASSERT(344, data_005884e2 == NULL);
+            CError_ASSERT(LINE(344), data_005884e2 == NULL);
             list = &data_005884e2;
             break;
         case 9:
@@ -375,38 +399,21 @@ ObjGenSection *BE_elf_CreateSection(char *name, UInt8 kind, SInt8 attribute, SIn
             node->entrySize = 1;
             break;
         default:
-            CError_FATAL(355);
+            CError_FATAL(LINE(355));
     }
 
-    head = section_list;
-    if (head == NULL) {
-        section_list = node;
-    } else {
-        ObjGenSection *tail;
-        for (tail = head; tail->next; tail = tail->next)
-            ;
-        tail->next = node;
-    }
-    if (list != NULL) {
-        ObjGenSection *head;
-        if ((head = *list) == NULL) {
-            *list = node;
-        } else {
-            ObjGenSection *tail;
-            for (tail = head; tail->nextInGroup; tail = tail->nextInGroup)
-                ;
-            tail->nextInGroup = node;
-        }
-    }
+    AppendSection(&section_list, node);
+    if (list != NULL)
+        AppendSectionToGroup(list, node);
     return node;
 }
 
-ObjGenSection *BE_elf_FindSection(const char *name, SInt32 hashval)
+ObjGenSection *BE_elf_FindSection(char *name, SInt32 hashval)
 {
     ObjGenSection *entry;
     ObjGenSection *list;
 
-    if (name == NULL || *name == 0)
+    if (!name || !*name)
         return NULL;
     entry = list = section_list;
     if (list) {
@@ -443,7 +450,7 @@ ObjGenSection *BE_elf_CreateSectionWithRelocations(SectionRec *rawObject, short 
     section->relocations = relocationSection;
     relocationSection->relocations = section;
     if (rawObject->linkedSectionName) {
-        namedSection = BE_elf_0049c670_inline1(rawObject->linkedSectionName);
+        namedSection = BE_elf_FindSection(rawObject->linkedSectionName, 0);
         if (!namedSection) {
             if (allocateData) {
                 sectionData = galloc(10);
@@ -465,8 +472,7 @@ ObjGenSection *BE_elf_CreateSectionWithRelocations(SectionRec *rawObject, short 
     return section;
 }
 
-SectionRec *BE_elf_CreateSectionRec(char *nspace, char *name, unsigned int far_reloc, unsigned int near_reloc,
-                                    unsigned int typebits)
+SectionRec *BE_elf_CreateSectionRec(char *nspace, char *name, UInt8 far_reloc, UInt8 near_reloc, UInt8 typebits)
 {
     SectionRec *section;
     section = (SectionRec *)galloc(sizeof(SectionRec));
@@ -486,7 +492,7 @@ ObjGenSection *fn_0049c540(ObjGenSection *input, SInt32 context)
     ObjGenSection *record;
     struct ObjGenSymbolLink *symbolLink = NULL;
 
-    object = MakeRecA(input->name, input->header->kind, input->header->alignment);
+    object = BE_elf_CreateSectionRec(input->name, NULL, input->header->kind, input->header->alignment, 0);
     if (input->symbolLink != NULL) {
         symbolLink = galloc((sizeof(*symbolLink) + 1) & ~1);
         memset(symbolLink, 0, (sizeof(*symbolLink) + 1) & ~1);
@@ -503,19 +509,6 @@ ObjGenSection *fn_0049c540(ObjGenSection *input, SInt32 context)
     return record;
 }
 
-static SectionRec *MakeRecA(void *f6, UInt8 f2, UInt8 f3)
-{
-    SectionRec *a;
-    a = (SectionRec *)galloc(0xe);
-    memset(a, 0, 0xe);
-    a->sectionName = (char *)f6;
-    a->linkedSectionName = NULL;
-    a->far_reloc = f2;
-    a->near_reloc = f3;
-    a->typebits = 0;
-    return a;
-}
-
 void fn_0049c510(char *value1, UInt8 value2, SInt8 value3, SInt32 value4)
 {
     BE_elf_CreateSection(value1, value2, value3, value4, NULL, 0, NULL);
@@ -529,7 +522,7 @@ void BE_elf_SetDeclSection(char *name, DeclInfo *declaration)
     UInt16 targetIndex;
 
     if (declaration->section != 0) {
-        CError_FATAL(489);
+        CError_FATAL(LINE(489));
     } else {
         record = galloc(sizeof(*record));
         memclrw(record, sizeof(*record));
@@ -578,8 +571,10 @@ void BE_elf_InitSectionsAndFileSymbol(void)
     data_005884a0 = (long)record;
 
     relocation_list = NULL;
+#if VERSION > VERSION_GC_1_0
     data_0055e528 = data_00580df6;
     max_padding_size = 128;
+#endif
 }
 
 void BE_elf_FreeSectionBuffers(void)
@@ -595,87 +590,64 @@ void BE_elf_FreeSectionBuffers(void)
 void build_ordered_section_index(void)
 {
     int count;
-    BE_SymNode *binding;
-    ObjGenSection *middleHead;
-    BE_SymNode *initialBinding;
-    ObjGenSection *lastRecord;
-    ObjGenSection *middleRecord;
+    ObjGenSection *section;
+    UInt8 kind;
     ObjGenSection *head;
-    ObjGenSection *firstHead;
-    ObjGenSection *firstRecord;
-    ObjGenSection *lastHead;
-    ObjGenSection *record;
-    ObjGenSection *initialRecord;
+    BE_SymNode *sym;
 
     count = 1;
-    head = (ObjGenSection *)(unsigned long)section_list;
-    record = head;
-    if (head != NULL) {
+    section = head = section_list;
+    if (head) {
         do {
-            record->index = 0;
-            if (record->kind < 12 && record->buffer.size != 0)
+            section->index = 0;
+            if ((kind = section->kind) < 12 && section->buffer.size != 0)
                 ++count;
-            if (record->kind >= 12 && record->kind < 16)
+            if (kind >= 12 && kind < 16)
                 ++count;
-            record = record->next;
-        } while (record != NULL);
+            section = section->next;
+        } while (section);
     }
     ordered_section_index = (ObjGenSection **)galloc((count + 2) * sizeof(int));
     ordered_section_index[0] = data_005884aa;
     count = 1;
     if (data_0058849e != 0) {
-        initialRecord = findInitialSection();
-        initialBinding = BE_symbol_GetSectionSym(initialRecord);
-        if (initialRecord->buffer.size == 0) {
+        section = BE_elf_FindSection(".text", 0);
+        sym = BE_symbol_GetSectionSym(section);
+        if (section->buffer.size == 0) {
             ++count;
-            ordered_section_index[1] = initialRecord;
-            initialRecord->index = 1;
-            initialBinding->symbolKind = 3;
-            initialBinding->sectionData.section = initialRecord;
-            initialBinding->alignment = initialRecord->maximumSize;
-            initialBinding->kind = 258;
+            ordered_section_index[1] = section;
+            section->index = 1;
+            sym->symbolKind = 3;
+            sym->sectionData.section = section;
+            sym->alignment = section->maximumSize;
+            sym->kind = 258;
         }
     }
-    firstHead = section_list->next;
-    firstRecord = firstHead;
-    if (firstHead != NULL) {
-        do {
-            if (firstRecord->kind < 10 && firstRecord->buffer.size != 0) {
-                ordered_section_index[count] = firstRecord;
-                firstRecord->index = count;
-                ++count;
-                binding = BE_symbol_GetSectionSym(firstRecord);
-                binding->symbolKind = 3;
-                binding->sectionData.section = firstRecord;
-                binding->alignment = firstRecord->maximumSize;
-                binding->kind = 258;
-            }
-            firstRecord = firstRecord->next;
-        } while (firstRecord != NULL);
+    for (section = section_list->next; section != NULL; section = section->next) {
+        if (section->kind < 10 && section->buffer.size != 0) {
+            ordered_section_index[count] = section;
+            section->index = count;
+            ++count;
+            sym = BE_symbol_GetSectionSym(section);
+            sym->symbolKind = 3;
+            sym->sectionData.section = section;
+            sym->alignment = section->maximumSize;
+            sym->kind = 258;
+        }
     }
-    middleHead = section_list->next;
-    middleRecord = middleHead;
-    if (middleHead != NULL) {
-        do {
-            if (middleRecord->kind >= 10 && middleRecord->kind < 12 && middleRecord->buffer.size != 0) {
-                ordered_section_index[count] = middleRecord;
-                middleRecord->index = count;
-                ++count;
-            }
-            middleRecord = middleRecord->next;
-        } while (middleRecord != NULL);
+    for (section = section_list->next; section != NULL; section = section->next) {
+        if (section->kind >= 10 && section->kind < 12 && section->buffer.size != 0) {
+            ordered_section_index[count] = section;
+            section->index = count;
+            ++count;
+        }
     }
-    lastHead = section_list->next;
-    lastRecord = lastHead;
-    if (lastHead != NULL) {
-        do {
-            if (lastRecord->kind >= 12 && lastRecord->kind < 16) {
-                ordered_section_index[count] = lastRecord;
-                lastRecord->index = count;
-                ++count;
-            }
-            lastRecord = lastRecord->next;
-        } while (lastRecord != NULL);
+    for (section = section_list->next; section != NULL; section = section->next) {
+        if (section->kind >= 12 && section->kind < 16) {
+            ordered_section_index[count] = section;
+            section->index = count;
+            ++count;
+        }
     }
     ordered_section_index[count] = NULL;
     data_005884de->index = -14;
@@ -688,20 +660,8 @@ void build_ordered_section_index(void)
 
 void write_sym_nodes(void)
 {
-    long padding;
-    int position;
-    int alignment;
     BE_SymNode *record;
-    alignment = data_005884ce->maximumSize;
-    position = data_00583ae8.buffer.size;
-    padding = position;
-    padding = (~(alignment - 1) & padding + alignment - 1) - position;
-    if (padding > max_padding_size) {
-        data_0055e528 = galloc(padding);
-        memset(data_0055e528, 0, padding);
-        max_padding_size = padding;
-    }
-    AppendGListData(&data_00583ae8.buffer, data_0055e528, padding);
+    ElfPad(data_005884ce->maximumSize);
     record = BE_symbol_GetSymbolOrderTail();
     while (record != NULL) {
         if ((record->flags & 64) == 0) {
@@ -720,13 +680,11 @@ void write_sym_nodes(void)
     }
 }
 
+#pragma auto_inline off
 void build_symbol_string_table(void)
 {
-    BE_SymNode *entry;
     unsigned int offset;
-    unsigned int length;
-    const char *name;
-    GList *base;
+    BE_SymNode *entry;
 
     offset = 0;
     AppendGListByte(&symbol_string_table_section->buffer, offset);
@@ -737,24 +695,76 @@ void build_symbol_string_table(void)
             entry->stringOffset = 0U;
         } else {
             entry->stringOffset = offset;
-            base = &symbol_string_table_section->buffer;
-            name = (const char *)entry->nameData.hashName + 10U;
-            length = strlen(name) + 1U;
-            AppendGListData(base, name, length);
-            offset += length;
+            {
+                char *name = entry->nameData.hashName->name;
+                offset += AppendString(&symbol_string_table_section->buffer, name);
+            }
         }
     }
+}
+#pragma auto_inline reset
+
+static void build_section_name_table(void)
+{
+    SInt32 offset;
+    int i;
+    ObjGenSection *section;
+
+    offset = 0;
+    AppendGListByte(&shstrtab_section->buffer, offset);
+    offset++;
+    for (i = 1, section = ordered_section_index[1]; section != NULL; section = ordered_section_index[++i]) {
+        section->nameoff = offset;
+        offset += AppendString(&shstrtab_section->buffer, section->name);
+    }
+}
+
+static void write_section_headers(void)
+{
+    int index;
+    ObjGenSection *section;
+
+    ElfPad(8);
+    elf_header.shoff = ElfOffset();
+    ELF_Endian_SwapElf32Section((Elf32Section *)&section_list->nameoff);
+    AppendGListData(&data_00583ae8.buffer, &section_list->nameoff, 40);
+    elf_header.shnum++;
+    for (index = 1, section = ordered_section_index[1]; section != NULL; section = ordered_section_index[++index]) {
+        ELF_Endian_SwapElf32Section((Elf32Section *)&section->nameoff);
+        AppendGListData(&data_00583ae8.buffer, &section->nameoff, 40);
+        elf_header.shnum++;
+    }
+}
+
+static void out_of_memory(void)
+{
+    if (data_00587708)
+        data_00587708();
 }
 
 void BE_elf_AppendGList(GList *dst, GList *src)
 {
     if (dst->size + src->size > dst->hndlsize) {
         dst->hndlsize += src->size + dst->growsize;
-        if (!COS_ResizeHandle((struct StorageHandle *)dst->data, dst->hndlsize) && data_00587708)
-            data_00587708();
+        if (!COS_ResizeHandle((struct StorageHandle *)dst->data, dst->hndlsize))
+            out_of_memory();
     }
     memcpy(*dst->data + dst->size, *src->data, src->size);
     dst->size += src->size;
+}
+
+static void write_section_data(void)
+{
+    ObjGenSection *section;
+    SInt32 index;
+
+    for (index = 1, section = ordered_section_index[1]; section != NULL; section = ordered_section_index[++index]) {
+        ElfPad(section->maximumSize);
+        section->offset = ElfOffset();
+        section->size = section->buffer.size;
+        if (section->type != 8)
+            BE_elf_AppendGList(&data_00583ae8.buffer, &section->buffer);
+    }
 }
 
 void write_codewarrior_version_record(void)
@@ -831,17 +841,66 @@ void write_codewarrior_version_record(void)
     AppendGListData(&data_005884da->buffer, &record, sizeof(record));
 }
 
+static inline SInt32 ElfSectionIndex(ObjGenSection *section)
+{
+    return section->index;
+}
+
+static inline SInt32 ElfIndex(ObjGenSection *section)
+{
+    return ElfSectionIndex(section);
+}
+
+static inline void ElfLinkSection(ObjGenSection *section)
+{
+    SInt32 link, info;
+
+    if (section->kind < 10 && section->relocations) {
+        link = ElfIndex(ELF_SECTION(data_005884ce));
+        section->relocations->link = link;
+        info = ElfIndex(section);
+        section->relocations->info = info;
+    }
+    if (section->kind == 9)
+        section->link = ElfIndex(section->sectionData.attributes->sourceSection);
+}
+
+static void link_sections(void)
+{
+    ObjGenSection *s;
+
+    s = ELF_SECTION(data_005884ce);
+    s->link = ElfIndex(symbol_string_table_section);
+    s->info = symbol_order_count + 1;
+    s = section_list->next;
+    while (s) {
+        ElfLinkSection(s);
+        s = s->next;
+    }
+}
+
+static inline int ElfBigEndian(void)
+{
+    return !copts.littleendian;
+}
+
+static inline void ElfLockSection(ObjGenSection *section)
+{
+    COS_LockHandle(section->buffer.data);
+}
+
+static inline void ElfSwapSection(ObjGenSection *section, int words)
+{
+    if (words)
+        swap_conversion_blocks(*section->buffer.data, section->buffer.size, CError_Internal, 1);
+    else
+        swap_tagged_records((void *)*section->buffer.data, section->buffer.size, CError_Internal, 1);
+}
+
 /* Writes the ELF object file: the header, the relocations' symbol indices, the section links, the section-name table,
    each section's contents at its alignment and the section header table, in the target's byte order. */
 void fn_0049b920(void)
 {
-    ObjGenSection *s;
-    Elf32Rela *rela;
-    ObjGenRelocation *r;
-    int i;
-    SInt32 offset;
-    SInt32 len;
-
     elfBigEndian = ElfBigEndian() != 0;
     if (data_0058849e) {
         DWARF_WriteDebugInfo();
@@ -879,9 +938,28 @@ void fn_0049b920(void)
     elf_header.shstrndx = CTool_EndianConvertWord16(shstrtab_section->index);
     AppendGListData(&data_00583ae8.buffer, &elf_header, 52);
     assign_symbol_order();
+    resolve_relocation_symbols();
+    link_sections();
+    build_symbol_string_table();
+    build_section_name_table();
+    write_sym_nodes();
+    write_section_data();
+    write_section_headers();
+    elf_header.shoff = CTool_EndianConvertWord32(elf_header.shoff);
+    ((ElfHeader *)*data_00583ae8.buffer.data)->shoff = elf_header.shoff;
+    elf_header.shnum = CTool_EndianConvertWord16(elf_header.shnum),
+    ((ElfHeader *)*data_00583ae8.buffer.data)->shnum = elf_header.shnum;
+}
+
+static void resolve_relocation_symbols(void)
+{
+    ObjGenRelocation *r;
+    Elf32Rela *rela;
+
     if (relocation_list) {
         for (r = relocation_list; r; r = r->next) {
-            rela = (Elf32Rela *)*r->section->buffer.data, rela += r->index;
+            rela = (Elf32Rela *)*r->section->buffer.data;
+            rela += r->index;
             if (!r->symbol)
                 r->symbol = BE_symbol_GetSectionSym((ObjGenSection *)r->source);
             {
@@ -891,124 +969,6 @@ void fn_0049b920(void)
             ELF_Endian_ConvertThreeWords((unsigned int *)rela);
         }
     }
-    s = ELF_SECTION(data_005884ce);
-    ElfLinkSymbolTable(s);
-    s = section_list->next;
-    while (s) {
-        ElfLinkSection(s);
-        s = s->next;
-    }
-    build_symbol_string_table();
-    offset = 0;
-    AppendGListByte(&shstrtab_section->buffer, offset);
-    offset++;
-    for (i = 1, s = ordered_section_index[1]; s != NULL; s = ordered_section_index[++i]) {
-        s->nameoff = offset;
-        {
-            char *name;
-            GList *list;
-
-            list = &shstrtab_section->buffer, name = s->name;
-            AppendGListData(list, name, len = strlen(name) + 1);
-        }
-        offset += len;
-    }
-    write_sym_nodes();
-    {
-        SInt32 index;
-        ObjGenSection *section;
-
-        for (index = 1, section = ordered_section_index[1]; section; section = ordered_section_index[++index]) {
-            ElfPlaceSection(section);
-            if (section->type != 8)
-                ElfAppend(&section->buffer);
-        }
-    }
-    elf_header.shoff = ElfPad(8), ELF_Endian_SwapElf32Section((Elf32Section *)&section_list->nameoff);
-    AppendGListData(&data_00583ae8.buffer, &section_list->nameoff, 40);
-    elf_header.shnum++;
-    {
-        int index;
-
-        for (index = 1, s = ordered_section_index[1]; s; s = ordered_section_index[++index]) {
-            ELF_Endian_SwapElf32Section((Elf32Section *)&s->nameoff);
-            AppendGListData(&data_00583ae8.buffer, &s->nameoff, 40);
-            elf_header.shnum++;
-        }
-    }
-    elf_header.shoff = CTool_EndianConvertWord32(elf_header.shoff);
-    ((ElfHeader *)*data_00583ae8.buffer.data)->shoff = elf_header.shoff;
-    elf_header.shnum = CTool_EndianConvertWord16(elf_header.shnum),
-    ((ElfHeader *)*data_00583ae8.buffer.data)->shnum = elf_header.shnum;
-}
-
-static int ElfBigEndian(void)
-{
-    return !copts.littleendian;
-}
-
-static void ElfLockSection(ObjGenSection *section)
-{
-    COS_LockHandle(section->buffer.data);
-}
-
-static void ElfLinkSection(ObjGenSection *section)
-{
-    SInt32 link, info;
-
-    if (section->kind < 10 && section->relocations) {
-        link = ElfIndex(ELF_SECTION(data_005884ce));
-        section->relocations->link = link;
-        info = ElfIndex(section);
-        section->relocations->info = info;
-    }
-    if (section->kind == 9)
-        section->link = ElfIndex(section->sectionData.attributes->sourceSection);
-}
-
-static void ElfLinkSymbolTable(ObjGenSection *section)
-{
-    SInt32 index = ElfIndex(symbol_string_table_section);
-
-    section->link = index;
-    section->info = symbol_order_count + 1;
-}
-
-static SInt32 ElfIndex(ObjGenSection *section)
-{
-    return ElfSectionIndex(section);
-}
-
-static SInt32 ElfSectionIndex(ObjGenSection *section)
-{
-    return section->index;
-}
-
-static void ElfSwapSection(ObjGenSection *section, int words)
-{
-    if (words)
-        swap_conversion_blocks(*section->buffer.data, section->buffer.size, CError_Internal, 1);
-    else
-        swap_tagged_records((void *)*section->buffer.data, section->buffer.size, CError_Internal, 1);
-}
-
-/* Pads the object file to ALIGNMENT and returns its new size. */
-static SInt32 ElfPad(SInt32 alignment)
-{
-    SInt32 n;
-
-    if ((n = ElfPadSize(alignment, data_00583ae8.buffer.size)) > max_padding_size) {
-        ElfAllocZero(n);
-        max_padding_size = n;
-    }
-    AppendGListData(&data_00583ae8.buffer, data_0055e528, n);
-    return data_00583ae8.buffer.size;
-}
-
-static void ElfAllocZero(SInt32 size)
-{
-    data_0055e528 = galloc(size);
-    memset(data_0055e528, 0, size);
 }
 
 ObjGenRelocation *BE_elf_AddRelocation(ObjGenSection *context, int offset, Object *object, void *source, int value,
@@ -1059,3 +1019,10 @@ void BE_elf_SetRelocationValue(ObjGenRelocation *selection, unsigned int value)
     entry += current->index;
     entry->value = value;
 }
+
+#if VERSION == VERSION_GC_1_0
+void fn_004b4ce0(void *list)
+{
+    memset(list, 0, 12);
+}
+#endif

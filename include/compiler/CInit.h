@@ -137,7 +137,7 @@ extern Boolean fn_004d3ba0(Type *type);
 extern UInt8 advance_initializer_state(CInit *ci);
 extern void initialize_array_data(InitializerData *pool, CInit *iter, TypePointer *arg, UInt32 arg4, Boolean flag);
 extern void append_initializer_entry(InitializerData *ctx, Type *type, ENode *expr);
-extern void initialize_class_initializer_data(InitializerData *dst, CInit *op, Type *type, UInt32 qual, int flag);
+extern void initialize_class_initializer_data(InitializerData *dst, CInit *op, Type *type, UInt32 qual, Boolean flag);
 extern NameEntry *CInit_DeclarePooledString(const char *name, SInt32 len, SInt8 flag);
 extern void CInit_InitializeData(Object *obj);
 extern void CInit_DeclareReadOnlyData(Object *object, void *buffer, void *args, int size);

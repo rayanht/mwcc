@@ -11,7 +11,6 @@ struct MOutBuf {
     char *ptr;
     unsigned int left;
 };
-extern void assign_object_register(Object *func, SInt16 register_number);
 extern void Unmangle_UnmangleSymbolName(char *name, char *output, int outputSize);
 extern void Unmangle_UnmangleName(char *name, char *out, UInt32 size);
 extern void unmangle_function_parameters(int *context, MOutBuf *output, char *encoding);

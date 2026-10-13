@@ -25,26 +25,6 @@ short gInitialObjectGPRLast;
 
 static SInt32 copy_propagation_mode;
 
-static inline SInt32 CanPropagateCopy(SInt32 copyIndex, CodeMotionListNode *useNode)
-{
-    for (; useNode != NULL; useNode = useNode->next) {
-        if (can_propagate_copy_to_use(copyIndex, useNode->index) == 0)
-            return 0;
-    }
-    return 1;
-}
-
-/* Whether END comes at or after INSTR in its block. */
-static int follows(PCodeInstruction *instr, PCodeInstruction *end)
-{
-    while (instr) {
-        if (instr == end)
-            return 1;
-        instr = instr->next;
-    }
-    return 0;
-}
-
 static inline UInt32 *genptr(struct CopyPropagationBitSets *bv)
 {
     return bv->gen;
@@ -141,6 +121,22 @@ void CopyPropagation_BuildCodeMotionRecords(void)
     }
 }
 
+static void AllocateBitSets(void)
+{
+    struct CopyPropagationBitSets *block;
+    int blockIndex;
+
+    copyPropagationBitSets = oalloc(gPCodeBlockCount * sizeof *block);
+    block = copyPropagationBitSets;
+    for (blockIndex = 0; blockIndex < gPCodeBlockCount; blockIndex++) {
+        block->gen = oalloc(((copyCount + 31) >> 5) * sizeof *block->gen);
+        block->kill = oalloc(((copyCount + 31) >> 5) * sizeof *block->kill);
+        block->out = oalloc(((copyCount + 31) >> 5) * sizeof *block->out);
+        block->in = oalloc(((copyCount + 31) >> 5) * sizeof *block->in);
+        block++;
+    }
+}
+
 void CopyPropagation_ComputeGenKill(void)
 {
     PCodeBlock *block = gPCodeBlocks;
@@ -154,8 +150,8 @@ void CopyPropagation_ComputeGenKill(void)
         sets = copyPropagationBitSets + block->index;
         localBits = sets->gen;
         otherBits = sets->kill;
-        CRTTI_FillWords(localBits, copyCount, 0);
-        CRTTI_FillWords(otherBits, copyCount, 0);
+        BitVectors_FillWords(localBits, copyCount, 0);
+        BitVectors_FillWords(otherBits, copyCount, 0);
         bitIndex = blockCopyStartIndices[block->index];
         for (instruction = block->instructions; instruction != NULL; instruction = instruction->next) {
             if ((instruction->flags & PCodeInstruction_SkipCodeMotion) == 0 && instruction->operand_count != 0) {
@@ -214,7 +210,7 @@ void CopyPropagation_ComputeInOutSets(void)
     block = gPCodeBlocks;
     {
         struct CopyPropagationBitSets *entrySets = &copyPropagationBitSets[block->index];
-        CRTTI_FillWords(entrySets->out, wordIndex = copyCount, 0);
+        BitVectors_FillWords(entrySets->out, wordIndex = copyCount, 0);
         CodeMotion_AllocateBits(entrySets->in, entrySets->gen, copyCount);
     }
 
@@ -241,7 +237,7 @@ void CopyPropagation_ComputeInOutSets(void)
                     CodeMotion_AllocateBits(predecessorOut,
                                             copyPropagationBitSets[predecessor->payload.block->index].in, copyCount);
                     for (predecessor = predecessor->next; predecessor != NULL; predecessor = predecessor->next)
-                        CRTTI_IntersectBitVectors(
+                        BitVectors_IntersectBitVectors(
                             predecessorOut, copyPropagationBitSets[predecessor->payload.block->index].in, copyCount);
                 }
                 {
@@ -263,16 +259,28 @@ void CopyPropagation_ComputeInOutSets(void)
 }
 
 /* Whether the copy DEF still holds at the use USE: no instruction between them redefines the copy's source register. */
+/* Whether END comes after INSTR in its block. */
+static int follows(PCodeInstruction *instr, PCodeInstruction *end)
+{
+    for (instr = instr->next; instr; instr = instr->next) {
+        if (instr == end)
+            return 1;
+    }
+    return 0;
+}
+
 int can_propagate_copy_to_use(int def, int use)
 {
-    PCodeInstruction *copy;
-    PCodeInstruction *end;
-    PCodeInstruction *p;
     PCodeOperand *op;
     unsigned int n;
-    int kind, dst, reg;
+    PCodeInstruction *copy;
+    int kind;
+    int dst;
+    int reg;
     CodeMotionEntry *entry;
-    PCodeInstruction *stop;
+    unsigned int n1;
+    PCodeInstruction *p;
+    PCodeOperand *op1;
 
     copy = code_motion_records[def].node;
     entry = &cm_entries[use];
@@ -281,30 +289,41 @@ int can_propagate_copy_to_use(int def, int use)
     reg = copy->operandData.operands[1].value.reg;
     if (entry->instruction->flags & fIsMove)
         return 0;
-    if ((end = entry->instruction)->opcode == PC_RLWIMI && end->operandData.operands[0].value.reg == dst)
+    if (entry->instruction->opcode == PC_RLWIMI && entry->instruction->operandData.operands[0].value.reg == dst)
         return 0;
-    if (copy->block == end->block && follows(p = copy->next, stop = end)) {
-        while (p && p != end) {
-            unsigned int n;
-            PCodeOperand *op;
-
-            for (op = p->operandData.operands, n = p->operand_count; n--; op++) {
-                if (op->kind == kind && (op->flags & 2) && op->value.reg == reg)
+    if (copy->block == entry->instruction->block && follows(copy, entry->instruction)) {
+        p = copy->next;
+        while (p && p != entry->instruction) {
+            for (op1 = p->operandData.operands, n1 = p->operand_count; n1--; op1++) {
+                if (op1->kind == kind && (op1->flags & 2) && op1->value.reg == reg)
                     return 0;
             }
             p = p->next;
         }
     } else {
-        if (!(copyPropagationBitSets[end->block->index].out[def >> 5] & (1UL << (def & 31))))
+        if (!(copyPropagationBitSets[entry->instruction->block->index].out[def >> 5] & (1UL << (def & 31))))
             return 0;
-        for (p = end->block->instructions; p; p = p->next) {
+        for (p = entry->instruction->block->instructions; p; p = p->next) {
             for (op = p->operandData.operands, n = p->operand_count; n--; op++) {
                 if (op->kind == kind && (op->flags & 2) && op->value.reg == reg)
                     return 0;
             }
-            if (p == end)
+            if (p == entry->instruction)
                 break;
         }
+    }
+    return 1;
+}
+
+static int CanPropagateCopy(SInt32 copyIndex)
+{
+    CodeMotionListNode *useNode;
+
+    if (code_motion_records[copyIndex].node->flags & PCodeInstruction_CoalesceDisabled)
+        return 0;
+    for (useNode = code_motion_records[copyIndex].list; useNode != NULL; useNode = useNode->next) {
+        if (can_propagate_copy_to_use(copyIndex, useNode->index) == 0)
+            return 0;
     }
     return 1;
 }
@@ -345,40 +364,29 @@ void CopyPropagation_ReplaceRegisterUses(int index)
     gCopyPropagationChanged = 1;
 }
 
+static void PropagateCopies(void)
+{
+    SInt32 copyIndex;
+
+    for (copyIndex = 0; copyIndex < copyCount; copyIndex++) {
+        if (CanPropagateCopy(copyIndex))
+            CopyPropagation_ReplaceRegisterUses(copyIndex);
+    }
+}
+
 void COpt_CopyPropagation(SInt32 mode)
 {
-    int blockIndex;
-    struct CopyPropagationBitSets *block;
-    SInt32 copyIndex;
-    SInt32 propagate;
-
     gCopyPropagationChanged = 0;
     copy_propagation_mode = mode;
     CopyPropagation_CountBlockCopies();
     if (copyCount > 0) {
         COpt_SetLoopCodeMotionMode(0);
         CopyPropagation_BuildCodeMotionRecords();
-        copyPropagationBitSets = oalloc(gPCodeBlockCount * sizeof *block);
-        block = copyPropagationBitSets;
-        for (blockIndex = 0; blockIndex < gPCodeBlockCount; blockIndex++) {
-            block->gen = oalloc(((copyCount + 31) >> 5) * sizeof *block->gen);
-            block->kill = oalloc(((copyCount + 31) >> 5) * sizeof *block->kill);
-            block->out = oalloc(((copyCount + 31) >> 5) * sizeof *block->out);
-            block->in = oalloc(((copyCount + 31) >> 5) * sizeof *block->in);
-            block++;
-        }
+        AllocateBitSets();
         CopyPropagation_ComputeGenKill();
         SpillCode_BuildBlockOrder();
         CopyPropagation_ComputeInOutSets();
-        for (copyIndex = 0; copyIndex < copyCount; copyIndex++) {
-            if (code_motion_records[copyIndex].node->flags & PCodeInstruction_CoalesceDisabled) {
-                propagate = 0;
-            } else {
-                propagate = CanPropagateCopy(copyIndex, code_motion_records[copyIndex].list);
-            }
-            if (propagate)
-                CopyPropagation_ReplaceRegisterUses(copyIndex);
-        }
+        PropagateCopies();
     }
     freeoheap();
 }

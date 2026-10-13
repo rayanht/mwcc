@@ -23,6 +23,7 @@ struct SOMInfo {
     UInt8 has_assign;
     UInt8 has_other;
 };
+#pragma options align = mac68k
 struct CSOMRefNode {
     struct CSOMRefNode *next;
     struct Object *object;
@@ -30,6 +31,7 @@ struct CSOMRefNode {
     SInt32 id;
     UInt8 kind;
 };
+#pragma options align = reset
 #pragma pack(push, 1)
 struct SOMClassBuildState {
     struct SOMEntry *members;
@@ -163,10 +165,9 @@ extern struct SOMVTable *find_or_add_base(SOMClassBuildState *list, TypeClass *u
 extern Object *build_base_method_vtbl_index_object(SOMClassBuildState *groups);
 extern ENode *CSOM_MakeMethodReference(BClassList *node, Object *obj, Boolean flag);
 extern ENode *CSOM_CreateMemberAccessExpr(BClassList *classList, ObjMemberVar *request, ENode *expr);
-extern void emit_som_kind_nibbles(struct SOMClassBuildState *info);
+extern Object *emit_som_kind_nibbles(struct SOMClassBuildState *info);
 extern struct CSOMRefNode *somReferences;
 extern void fn_004e67a0(void);
-extern void CSOM_NoOp(void);
 
 #ifdef __cplusplus
 }

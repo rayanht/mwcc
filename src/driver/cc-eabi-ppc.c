@@ -7,6 +7,7 @@
 #include "compiler/IrOptimizer.h"
 #include "driver/CLPluginRequests.h"
 #include "driver/CWParserPluginsPrivate.h"
+#include "driver/CWCompilerLinkerPrivate.h"
 #include "driver/CWPluginsPrivate.h"
 #include "driver/DropInCompilerLinkerPrivate.h"
 #include "driver/TargetPanels-eabi-ppc.h"
@@ -20,15 +21,31 @@ struct CPrepCU compiler_plugin_cu;
 
 Boolean data_0054c3d0 = 1;
 
+#if VERSION > VERSION_GC_1_0
 #pragma options align = mac68k
 static struct {
     SInt16 version;
     const char *helpFile;
 } lbl_0054c3e4 = {1, "CCompiler.hlp"};
 #pragma options align = reset
+#endif
 
 static PFrontEndC frontEndPrefs;
 static char data_0057f486;
+
+static void get_extension(unsigned char *name, unsigned char *extension)
+{
+    int dotPosition, extensionLength;
+
+    extension[0] = 0;
+    for (dotPosition = name[0]; name[dotPosition] != '.'; dotPosition--)
+        ;
+    if (dotPosition >= 2) {
+        for (extensionLength = 0; extensionLength + dotPosition <= name[0]; extensionLength++)
+            extension[extensionLength] = tolower(name[extensionLength + dotPosition]);
+        extension[extensionLength] = 0;
+    }
+}
 
 signed char initialize_compiler_plugin_cu(unsigned int input)
 {
@@ -51,39 +68,69 @@ signed char initialize_compiler_plugin_cu(unsigned int input)
     if (CWPluginsPrivate_GetNumFiles(context, &compiler_plugin_cu.projectFileCount))
         return 0;
     context = (CWPluginPrivateContext *)input;
-    if (CPrep_GetFileIndex(context, (unsigned int *)&compiler_plugin_cu.mainFileNumber))
+    if (CWCompilerLinkerPrivate_GetFileIndex(context, (unsigned int *)&compiler_plugin_cu.mainFileNumber))
         return 0;
     context = (CWPluginPrivateContext *)input;
-    if (CPrep_GetContextPayload(context, &compiler_plugin_cu.mainFile))
+    if (CWCompilerLinkerPrivate_GetContextPayload(context, &compiler_plugin_cu.mainFile))
         return 0;
     context = (CWPluginPrivateContext *)input;
-    if (CPrep_GetResultValues(context, &compiler_plugin_cu.mainFileOffset, &compiler_plugin_cu.mainFileLength))
+    if (CWCompilerLinkerPrivate_GetResultValues(context, &compiler_plugin_cu.mainFileOffset,
+                                                &compiler_plugin_cu.mainFileLength))
         return 0;
-    if (CPrep_GetEnabled(input, &compiler_plugin_cu.precompiling))
+    if (CWCompilerLinkerPrivate_GetEnabled(input, &compiler_plugin_cu.precompiling))
         return 0;
-    if (CPrep_GetActive(input, &compiler_plugin_cu.active))
+    if (CWCompilerLinkerPrivate_GetActive(input, &compiler_plugin_cu.active))
         return 0;
-    if (CPrep_GetOperation(input, &compiler_plugin_cu.preprocessOnly))
-        return 0;
-    context = (CWPluginPrivateContext *)input;
-    if (CPrep_GetSetting(context, &compiler_plugin_cu.filesyminfo))
-        return 0;
-    if (CPrep_GetReserved15d(input, &compiler_plugin_cu.useMappedPrecompiledHeaders))
+    if (CWCompilerLinkerPrivate_GetOperation(input, &compiler_plugin_cu.preprocessOnly))
         return 0;
     context = (CWPluginPrivateContext *)input;
-    if (CPrep_GetDependencyState(context, &compiler_plugin_cu.browseOptions))
+    if (CWCompilerLinkerPrivate_GetSetting(context, &compiler_plugin_cu.filesyminfo))
+        return 0;
+    if (CWCompilerLinkerPrivate_GetReserved15d(input, &compiler_plugin_cu.useMappedPrecompiledHeaders))
+        return 0;
+    context = (CWPluginPrivateContext *)input;
+    if (CWCompilerLinkerPrivate_GetDependencyState(context, &compiler_plugin_cu.browseOptions))
         return 0;
 
     compiler_plugin_cu.compiling = !compiler_plugin_cu.preprocessOnly;
-    if (CPrep_GetDependencyOption(input, &compiler_plugin_cu.mainFileAttributes))
+    if (CWCompilerLinkerPrivate_GetDependencyOption(input, &compiler_plugin_cu.mainFileAttributes))
         return 0;
 
     context = (CWPluginPrivateContext *)input;
-    if (CPrep_GetTargetSettings(context, &readBuffer))
+    if (CWCompilerLinkerPrivate_GetTargetSettings(context, &readBuffer))
         return 0;
     compiler_plugin_cu.platformCode1 = readBuffer.head.platformCodes[1];
     compiler_plugin_cu.platformCode0 = readBuffer.head.platformCodes[0];
     return 1;
+}
+
+static short store_compiler_results(void)
+{
+    long firstValue;
+    long secondValue;
+    short result;
+    int value;
+    struct ValuePairState output;
+
+    if ((firstValue = compiler_plugin_cu.objectBuffer) != 0) {
+        fn_0041bcb0(compiler_plugin_cu.context, (struct StorageHandle *)firstValue, &compiler_plugin_cu.objectData);
+    }
+    if ((secondValue = compiler_plugin_cu.browseBuffer) != 0) {
+        fn_0041bcb0(compiler_plugin_cu.context, (struct StorageHandle *)secondValue, &compiler_plugin_cu.browseData);
+    }
+    if (compiler_plugin_cu.preprocessOnly != 0) {
+        if (compiler_plugin_cu.objectData != 0) {
+            memset(&output, 0, 10);
+            value = compiler_plugin_cu.objectData;
+            compiler_plugin_cu.objectData = 0;
+            output.secondValue = value;
+            result = CWPluginsPrivate_CallValuePairCallback(compiler_plugin_cu.context, &output);
+        }
+    } else {
+        result = CWCompilerLinkerPrivate_CallCompilerCallbackWithValue(
+            compiler_plugin_cu.context, compiler_plugin_cu.mainFileNumber, &compiler_plugin_cu.objectData);
+    }
+    return result;
 }
 
 void initialize_copts(CPrepCU *source)
@@ -96,7 +143,6 @@ void initialize_copts(CPrepCU *source)
     unsigned char extension[256];
     PWarningC warningPrefs;
     PGlobalOptimizer optimizerPrefs;
-    int dotPosition, extensionLength;
 
     memclrw(&copts, sizeof(copts));
     DropInCompilerLinkerPrivate_CallArgumentValue(compiler_plugin_cu.context, "C/C++ Compiler",
@@ -105,16 +151,8 @@ void initialize_copts(CPrepCU *source)
 
     copts.littleendian = 0;
     copts.cplusplus = 1;
-    extension[0] = 0;
     copts.objective_c = frontEndPrefs.objective_c;
-
-    for (dotPosition = source->mainFile.name[0]; source->mainFile.name[dotPosition] != '.'; dotPosition--)
-        ;
-    if (dotPosition >= 2) {
-        for (extensionLength = 0; extensionLength + dotPosition <= source->mainFile.name[0]; extensionLength++)
-            extension[extensionLength] = tolower(source->mainFile.name[extensionLength + dotPosition]);
-        extension[extensionLength] = 0;
-    }
+    get_extension(source->mainFile.name, extension);
 
     if (memcmp(extension, ".c", 3) == 0 || memcmp(extension, ".h", 3) == 0 || memcmp(extension, ".pch", 5) == 0) {
         copts.cplusplus = frontEndPrefs.cplusplus;
@@ -182,6 +220,70 @@ void initialize_copts(CPrepCU *source)
     copts.precompiledHeaderFileTypes[1] = 0x54455854;
 }
 
+static void acquire_plugin_registration(void)
+{
+    if (data_00588258 == 0) {
+        CWPluginsPrivate_InvokeCallback40(compiler_plugin_cu.context, "Win32_Plugins_PPC_Nintendo", "1", 0, 0,
+                                          &data_00588258);
+        data_0057f486 = 1;
+    }
+}
+
+static void release_plugin_registration(void)
+{
+    if (data_00588258 != 0 && data_0057f486 != 0) {
+        fn_0041bc50(compiler_plugin_cu.context, data_00588258);
+    }
+    data_0057f486 = 0;
+    data_00588258 = 0;
+}
+
+#if VERSION == VERSION_GC_1_0
+int __stdcall dispatch_compiler_plugin_request(CWPluginPrivateContext *input)
+{
+    int status;
+    UInt8 prepResult;
+    long classification;
+    status = 0;
+    CWPluginsPrivate_GetRequest(input, &classification);
+    switch (classification) {
+        case -2:
+#if VERSION >= VERSION_GC_1_2_5
+            compiler_plugin_cu.context = input;
+#endif
+            data_00588258 = 0;
+            fn_0042c920();
+            break;
+        case -1:
+#if VERSION >= VERSION_GC_1_2_5
+            compiler_plugin_cu.context = input;
+#endif
+            fn_0042c910();
+            release_plugin_registration();
+            break;
+        case 0:
+            initialize_compiler_plugin_cu((unsigned int)input);
+            acquire_plugin_registration();
+            if (data_00588258 != 0) {
+                initialize_copts(&compiler_plugin_cu);
+                IrOptimizer_SetDeleteDeadInstructionsFlags();
+                TargetPanels_eabi_ppc_LoadCompilerOptions();
+                IrOptimizer_SetDeleteDeadInstructionsFlags();
+                CodeGen_SetIROptimizationEnabled();
+                prepResult = CPrep_Compile(&compiler_plugin_cu);
+                status = prepResult;
+                if (status != 0) {
+                    status = store_compiler_results();
+                } else {
+                    status = 2;
+                }
+            } else {
+                status = 10;
+            }
+    }
+    return CWPluginsPrivate_ReturnArgument(input, status);
+}
+#else
 int __stdcall dispatch_compiler_plugin_request(CWPluginPrivateContext *input)
 {
     long firstValue;
@@ -246,9 +348,9 @@ int __stdcall dispatch_compiler_plugin_request(CWPluginPrivateContext *input)
                             result = CWPluginsPrivate_CallValuePairCallback(compiler_plugin_cu.context, &output);
                         }
                     } else {
-                        result = CPrep_CallCompilerCallbackWithValue(compiler_plugin_cu.context,
-                                                                     compiler_plugin_cu.mainFileNumber,
-                                                                     &compiler_plugin_cu.objectData);
+                        result = CWCompilerLinkerPrivate_CallCompilerCallbackWithValue(
+                            compiler_plugin_cu.context, compiler_plugin_cu.mainFileNumber,
+                            &compiler_plugin_cu.objectData);
                     }
                     status = result;
                 } else {
@@ -260,6 +362,7 @@ int __stdcall dispatch_compiler_plugin_request(CWPluginPrivateContext *input)
     }
     return CWPluginsPrivate_ReturnArgument(input, status);
 }
+#endif
 
 void cc_eabi_ppc_ReportCompilingFunction(char *name)
 {
@@ -267,3 +370,12 @@ void cc_eabi_ppc_ReportCompilingFunction(char *name)
     sprintf(buf, "Compiling function:\t%.64s", name);
     fn_0041b8d0(compiler_plugin_cu.context, buf, "");
 }
+
+#if VERSION == VERSION_GC_1_0
+#pragma options align = mac68k
+static struct {
+    SInt16 version;
+    const char *helpFile;
+} lbl_0054c3e4 = {1, "CCompiler.hlp"};
+#pragma options align = reset
+#endif

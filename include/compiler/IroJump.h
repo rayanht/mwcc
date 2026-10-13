@@ -19,7 +19,6 @@ extern SInt32 chain_label(CLabel **label);
 extern SInt32 IRO_RangePropagateInFNode(void);
 extern int initialize_linear_range(IROLinear *nd);
 extern int IRO_RemoveLabels(void);
-extern void IroJump_ConvertCInt64ToType(CInt64 *value, Type *type);
 extern int IRO_RemoveRedundantJumps(void);
 extern SInt32 IRO_RemoveUnreachable(void);
 extern void IroJump_MarkReachable(IRONode *param);

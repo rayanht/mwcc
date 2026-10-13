@@ -497,12 +497,7 @@ void PCodeUtilities_EmitObjectInstructionWithPayload(Object *operand, SInt16 emi
         Exceptions_CollectRegisterOperands(gCurrentStatement->dobjstack, payload);
 
     if (PCodeUtilities_ShouldSplitObjectInstructionBlock()) {
-        label = PCode_NewLabel();
-        if (gCurrentBlock->instruction_count != 0) {
-            PCode_AddSuccessor(gCurrentBlock, label);
-            PCode_CreateBlock();
-        }
-        PCode_ResolveLabel(gCurrentBlock, label);
+        PCodeUtilities_ResolveLabel(PCode_NewLabel());
     }
 
     PCode_AppendInstruction(gCurrentBlock, instruction);
@@ -510,12 +505,7 @@ void PCodeUtilities_EmitObjectInstructionWithPayload(Object *operand, SInt16 emi
     if (emitInstruction != 0)
         PCodeUtilities_EmitInstruction(PC_NOP);
 
-    label = PCode_NewLabel();
-    if (gCurrentBlock->instruction_count != 0) {
-        PCode_AddSuccessor(gCurrentBlock, label);
-        PCode_CreateBlock();
-    }
-    PCode_ResolveLabel(gCurrentBlock, label);
+    PCodeUtilities_ResolveLabel(PCode_NewLabel());
 
     if (PCodeUtilities_ExceptionScopesEnabled() && gCurrentStatement)
         Exceptions_AppendScopeEntry(instruction, gCurrentStatement->dobjstack);
@@ -654,21 +644,11 @@ void fn_004a1cb0(int integerRegisterMask, int floatingRegisterMask, int vectorRe
     if (exception_scopes_enabled() && gCurrentStatement)
         Exceptions_CollectRegisterOperands(gCurrentStatement->dobjstack, nextOperand);
     if (copts.instructionSchedulingMode) {
-        label = PCode_NewLabel();
-        if (gCurrentBlock->instruction_count != 0) {
-            PCode_AddSuccessor(gCurrentBlock, label);
-            PCode_CreateBlock();
-        }
-        PCode_ResolveLabel(gCurrentBlock, label);
+        PCodeUtilities_ResolveLabel(PCode_NewLabel());
     }
     PCodeUtilities_EmitInstruction(PC_MTLR, 12);
     PCode_AppendInstruction(gCurrentBlock, instruction);
-    label = PCode_NewLabel();
-    if (gCurrentBlock->instruction_count != 0) {
-        PCode_AddSuccessor(gCurrentBlock, label);
-        PCode_CreateBlock();
-    }
-    PCode_ResolveLabel(gCurrentBlock, label);
+    PCodeUtilities_ResolveLabel(PCode_NewLabel());
     if (exception_scopes_enabled() && gCurrentStatement)
         Exceptions_AppendScopeEntry(instruction, gCurrentStatement->dobjstack);
 }

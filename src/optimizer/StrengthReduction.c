@@ -34,63 +34,9 @@
 #include "compiler/Switch.h"
 /* 12-byte table entry: byte tag plus a 2-byte aligned payload. */
 
-static void ConvertToMove(CodeMotionCandidate *node)
-{
-    node->instruction->opcode -= 2;
-    node->instruction->operandData.operands[1].value.reg = node->destination_register;
-    node->instruction->operandData.operands[2].kind = PCOp_IMMEDIATE;
-    node->instruction->operandData.operands[2].value.signed_value = 0;
-    node->instruction->operandData.operands[2].object = NULL;
-}
-
 static inline SInt16 signed_immediate(SInt32 value)
 {
     return value;
-}
-
-static void process_searches(Loop *node)
-{
-    CMRegisterNode *item;
-    CodeMotionEntryLink *link;
-    int success;
-    SInt32 value;
-    short operandIndex;
-    short otherOperandIndex;
-    Loop *lastBlock;
-    for (item = node->codeMotionSearches; item != NULL; item = item->next) {
-        link = code_motion_register_use_heads[item->reg];
-        if (link != NULL) {
-            do {
-                if ((1 << cm_entries[link->entry_index].instruction->block->index &
-                     node->memberblocks[cm_entries[link->entry_index].instruction->block->index >> 5]) != 0) {
-                    success = check_strength_reduction_use(item, link->entry_index, &value, &operandIndex,
-                                                           &otherOperandIndex, &lastBlock);
-                    if (success != 0) {
-                        add_code_motion_candidate(item, cm_entries[link->entry_index].instruction, value, operandIndex,
-                                                  otherOperandIndex, lastBlock);
-                    }
-                }
-                link = link->next;
-            } while (link != NULL);
-        }
-    }
-}
-
-static int StrengthDefsValid(Loop *cm, SInt16 reg, SInt32 off)
-{
-    struct CodeMotionEntryLink *p;
-    for (p = code_motion_register_definition_heads[reg]; p != NULL; p = p->next) {
-        PCodeInstruction *d = code_motion_entries[p->entry_index].instruction;
-        if ((cm->memberblocks[d->block->index >> 5] & (1 << d->block->index)) != 0) {
-            if (d->opcode != PC_ADDI)
-                return 0;
-            if (d->operandData.operands[1].value.reg != reg)
-                return 0;
-            if (d->operandData.operands[2].value.signed_value != off)
-                return 0;
-        }
-    }
-    return 1;
 }
 
 PCodeInstruction *fn_005288e0(Loop *search, SInt16 reg)
@@ -118,6 +64,23 @@ PCodeInstruction *fn_005288e0(Loop *search, SInt16 reg)
             return found;
     }
     return NULL;
+}
+
+static int StrengthDefsValid(Loop *cm, SInt16 reg, SInt32 off)
+{
+    struct CodeMotionEntryLink *p;
+    for (p = code_motion_register_definition_heads[reg]; p != NULL; p = p->next) {
+        PCodeInstruction *d = code_motion_entries[p->entry_index].instruction;
+        if ((cm->memberblocks[d->block->index >> 5] & (1 << d->block->index)) != 0) {
+            if (d->opcode != PC_ADDI)
+                return 0;
+            if (d->operandData.operands[1].value.reg != reg)
+                return 0;
+            if (d->operandData.operands[2].value.signed_value != off)
+                return 0;
+        }
+    }
+    return 1;
 }
 
 void add_code_motion_search(Loop *block, SInt16 reg, SInt32 increment)
@@ -170,7 +133,7 @@ void find_addi_code_motion_candidates(Loop *cm)
             if (d->opcode == PC_ADDI) {
                 reg = d->operandData.operands[0].value.reg;
                 if (reg >= 0x20 && d->operandData.operands[1].value.reg == reg) {
-                    off = d->operandData.operands[2].value.reg;
+                    off = d->operandData.operands[2].value.signed_value;
                     if (StrengthDefsValid(cm, reg, off))
                         add_code_motion_search(cm, reg, off);
                 }
@@ -181,61 +144,9 @@ void find_addi_code_motion_candidates(Loop *cm)
 
 int visit_loops_children_first(register Loop *loop)
 {
-    register Loop *child;
-    register Loop *grandchild;
-    register Loop *greatGrandchild;
-    register Loop *fourthLevelLoop;
-    register Loop *fifthLevelLoop;
-    register Loop *sixthLevelLoop;
-    register Loop *seventhLevelLoop;
-
-    for (; loop != NULL; loop = loop->sibling) {
-        if (loop->children != NULL) {
-            for (child = loop->children; child != NULL; child = child->sibling) {
-                if (child->children != NULL) {
-                    for (grandchild = child->children; grandchild != NULL; grandchild = grandchild->sibling) {
-                        if (grandchild->children != NULL) {
-                            for (greatGrandchild = grandchild->children; greatGrandchild != NULL;
-                                 greatGrandchild = greatGrandchild->sibling) {
-                                if (greatGrandchild->children != NULL) {
-                                    for (fourthLevelLoop = greatGrandchild->children; fourthLevelLoop != NULL;
-                                         fourthLevelLoop = fourthLevelLoop->sibling) {
-                                        if (fourthLevelLoop->children != NULL) {
-                                            for (fifthLevelLoop = fourthLevelLoop->children; fifthLevelLoop != NULL;
-                                                 fifthLevelLoop = fifthLevelLoop->sibling) {
-                                                if (fifthLevelLoop->children != NULL) {
-                                                    for (sixthLevelLoop = fifthLevelLoop->children;
-                                                         sixthLevelLoop != NULL;
-                                                         sixthLevelLoop = sixthLevelLoop->sibling) {
-                                                        if (sixthLevelLoop->children != NULL) {
-                                                            for (seventhLevelLoop = sixthLevelLoop->children;
-                                                                 seventhLevelLoop != NULL;
-                                                                 seventhLevelLoop = seventhLevelLoop->sibling) {
-                                                                if (seventhLevelLoop->children != NULL) {
-                                                                    visit_loops_children_first(
-                                                                        seventhLevelLoop->children);
-                                                                }
-                                                                find_addi_code_motion_candidates(seventhLevelLoop);
-                                                            }
-                                                        }
-                                                        find_addi_code_motion_candidates(sixthLevelLoop);
-                                                    }
-                                                }
-                                                find_addi_code_motion_candidates(fifthLevelLoop);
-                                            }
-                                        }
-                                        find_addi_code_motion_candidates(fourthLevelLoop);
-                                    }
-                                }
-                                find_addi_code_motion_candidates(greatGrandchild);
-                            }
-                        }
-                        find_addi_code_motion_candidates(grandchild);
-                    }
-                }
-                find_addi_code_motion_candidates(child);
-            }
-        }
+    for (; loop; loop = loop->sibling) {
+        if (loop->children)
+            visit_loops_children_first(loop->children);
         find_addi_code_motion_candidates(loop);
     }
 }
@@ -344,8 +255,7 @@ void add_code_motion_candidate(CMRegisterNode *list, PCodeInstruction *attribute
                                short firstValue, short secondValue, Loop *thirdValue)
 {
     CodeMotionCandidate *record = (CodeMotionCandidate *)oalloc(0x20);
-    record->next = list->candidates;
-    list->candidates = record;
+    record->next = list->candidates, list->candidates = record;
     record->owner = list;
     record->instruction = attributes;
     record->replacement_instruction = NULL;
@@ -360,78 +270,34 @@ void add_code_motion_candidate(CMRegisterNode *list, PCodeInstruction *attribute
     record->destination_register = 0xffff;
 }
 
-void collect_code_motion_candidates(Loop *context)
+static void process_searches(Loop *context)
 {
     CMRegisterNode *entry;
-    PCodeInstruction *record;
     CodeMotionEntryLink *candidate;
-    CodeMotionCandidate *link;
-    int value14;
-    short value18;
-    short value1a;
-    int value10;
     SInt32 result14;
     short result18;
     short result1a;
     Loop *result10;
+
     for (entry = context->codeMotionSearches; entry != NULL; entry = entry->next) {
         for (candidate = code_motion_register_use_heads[entry->reg]; candidate != NULL; candidate = candidate->next) {
             if ((1 << cm_entries[candidate->entry_index].instruction->block->index &
                  context->memberblocks[cm_entries[candidate->entry_index].instruction->block->index >> 5]) != 0 &&
                 check_strength_reduction_use(entry, candidate->entry_index, &result14, &result18, &result1a,
-                                             &result10) != 0) {
-                value10 = (int)result10;
-                value1a = result1a;
-                value18 = result18;
-                value14 = result14;
-                record = cm_entries[candidate->entry_index].instruction;
-                link = (CodeMotionCandidate *)oalloc(32);
-                link->next = entry->candidates;
-                entry->candidates = link;
-                link->owner = entry;
-                link->instruction = record;
-                link->replacement_instruction = NULL;
-                link->scale = value14;
-                link->base_operand = value18;
-                link->source_operand = value1a;
-                link->lastLoop = (Loop *)value10;
-                if ((record->flags & (fIsRead | fIsWrite)) != 0) {
-                    link->source_register = 65535;
-                } else {
-                    link->source_register = record->operandData.operands[0].value.reg;
-                }
-                link->destination_register = 65535;
-            }
+                                             &result10) != 0)
+                add_code_motion_candidate(entry, cm_entries[candidate->entry_index].instruction, result14, result18,
+                                          result1a, result10);
         }
     }
-    return;
 }
 
 void fn_00527e80(Loop *node)
 {
-    Loop *subtree, *child;
-    while (node != NULL) {
-        if (node->children != NULL) {
-            subtree = node->children;
-            while (subtree != NULL) {
-                if (subtree->children != NULL) {
-                    child = subtree->children;
-                    while (child != NULL) {
-                        if (child->children != NULL)
-                            fn_00527e80(child->children);
-                        if (child->codeMotionSearches != NULL)
-                            collect_code_motion_candidates(child);
-                        child = child->sibling;
-                    }
-                }
-                if (subtree->codeMotionSearches != NULL)
-                    process_searches(subtree);
-                subtree = subtree->sibling;
-            }
-        }
-        if (node->codeMotionSearches != NULL)
+    for (; node; node = node->sibling) {
+        if (node->children)
+            fn_00527e80(node->children);
+        if (node->codeMotionSearches)
             process_searches(node);
-        node = node->sibling;
     }
 }
 
@@ -545,6 +411,21 @@ void insert_scaled_increment(CodeMotionCandidate *request)
     }
 }
 
+static void ConvertToMove(CodeMotionCandidate *node)
+{
+    if ((node->instruction->flags & (fIsRead | fIsWrite)) != 0) {
+        node->instruction->opcode -= 2;
+        node->instruction->operandData.operands[1].value.reg = node->destination_register;
+        node->instruction->operandData.operands[2].kind = PCOp_IMMEDIATE;
+        node->instruction->operandData.operands[2].value.signed_value = 0;
+        node->instruction->operandData.operands[2].object = NULL;
+    } else {
+        PCode_InsertInstructionAfter(node->instruction, PCodeUtilities_CreateInstruction(0x8b, node->source_register,
+                                                                                         node->destination_register));
+        PCode_UnlinkInstruction(node->instruction);
+    }
+}
+
 int matches_redundancy_without_prior_reg_use(CodeMotionCandidate *entry, SInt32 stride, unsigned int reg,
                                              unsigned int displacement, Loop *outerLoop, Loop *innerLoop)
 {
@@ -634,6 +515,18 @@ void hoist_child_code_motion_instructions(SInt16 operandIndex, int mode, void *d
     }
 }
 
+static void hoist_search_instructions(CMRegisterNode *node)
+{
+    CodeMotionCandidate *child;
+    Loop *evaluationContext;
+
+    evaluationContext = node->loop;
+    for (child = node->candidates; child != NULL; child = child->next)
+        hoist_child_code_motion_instructions(child->destination_register, child->scale * node->increment,
+                                             child->replacement_instruction, evaluationContext);
+    hoist_child_code_motion_instructions(node->reg, node->increment, node->reachingDefinition, evaluationContext);
+}
+
 void rewrite_code_motion_candidates(CMRegisterNode *func)
 {
     SInt32 unitScaleCount;
@@ -673,14 +566,7 @@ void rewrite_code_motion_candidates(CMRegisterNode *func)
                 }
             }
         }
-        if ((node->instruction->flags & (fIsRead | fIsWrite)) != 0) {
-            ConvertToMove(node);
-        } else {
-            PCode_InsertInstructionAfter(
-                node->instruction,
-                PCodeUtilities_CreateInstruction(0x8b, node->source_register, node->destination_register));
-            PCode_UnlinkInstruction(node->instruction);
-        }
+        ConvertToMove(node);
         gStrengthReductionChanged = 1;
     }
 }
@@ -846,44 +732,36 @@ void rewrite_and_relocate_addi_definition(Loop *obj, CMRegisterNode *firstId, CM
 void fn_00527290(Loop *holder)
 {
     CMRegisterNode *node;
-    CodeMotionCandidate *child;
-    CMRegisterNode *candidate, *other;
-    Loop *evaluationContext;
+    CMRegisterNode *other;
     ClassLookupResult candidateInfo, otherInfo;
 
     for (node = holder->codeMotionSearches; node != NULL; node = node->next) {
         if (node->candidates != NULL)
             rewrite_code_motion_candidates(node);
-        evaluationContext = node->loop;
-        for (child = node->candidates; child != NULL; child = child->next)
-            hoist_child_code_motion_instructions(child->destination_register, child->scale * node->increment,
-                                                 child->replacement_instruction, evaluationContext);
-        hoist_child_code_motion_instructions(node->reg, node->increment, node->reachingDefinition, evaluationContext);
+        hoist_search_instructions(node);
     }
 
-    for (candidate = holder->codeMotionSearches; candidate != NULL; candidate = candidate->next) {
-        if (candidate->reg == -1)
+    for (node = holder->codeMotionSearches; node != NULL; node = node->next) {
+        if (node->reg == -1)
             continue;
-        fn_005275a0(candidate, &candidateInfo);
+        fn_005275a0(node, &candidateInfo);
         if (candidateInfo.index == -1)
             continue;
         for (other = holder->codeMotionSearches; other != NULL; other = other->next) {
             if (other->reg == -1)
                 continue;
-            if (other == candidate)
+            if (other == node)
                 continue;
             fn_005275a0(other, &otherInfo);
             if (otherInfo.index == -1)
                 continue;
             if (candidateInfo.index == otherInfo.index && candidateInfo.kind60Value == otherInfo.kind60Value &&
                 candidateInfo.kind63Value == otherInfo.kind63Value &&
-                candidateInfo.extraValue == otherInfo.extraValue && candidate->increment == other->increment) {
+                candidateInfo.extraValue == otherInfo.extraValue && node->increment == other->increment) {
                 if (candidateInfo.value < otherInfo.value) {
-                    rewrite_and_relocate_addi_definition(holder, other, candidate,
-                                                         otherInfo.value - candidateInfo.value);
+                    rewrite_and_relocate_addi_definition(holder, other, node, otherInfo.value - candidateInfo.value);
                 } else {
-                    rewrite_and_relocate_addi_definition(holder, candidate, other,
-                                                         candidateInfo.value - otherInfo.value);
+                    rewrite_and_relocate_addi_definition(holder, node, other, candidateInfo.value - otherInfo.value);
                     break;
                 }
             }

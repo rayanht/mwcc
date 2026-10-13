@@ -488,14 +488,23 @@ static MachineOpcodeInfo data_00578340[466] = {
     {0, 0, {0, 0, 0, 0}},   /* PC_RRIB */
 };
 
-/* The instruction in each of the pipeline's six stages and the cycles it has left there: six statics in a row,
-   which the code also indexes from the first. */
-static PipelineStage data_00582fe8;
-static PipelineStage data_00582ff0;
-static PipelineStage data_00582ff8;
-static PipelineStage data_00583000;
-static PipelineStage data_00583008;
-static PipelineStage data_00583010;
+/* The instruction in each of the pipeline's six stages and the cycles it has left there. */
+static PipelineStage pipeline[6];
+
+static void advance_stage(int first, unsigned int from, int to)
+{
+    PCodeInstruction *instruction;
+    SInt32 v;
+    v = data_00578340[(instruction = pipeline[from].instr)->opcode].stageCycles[to - first];
+    pipeline[to].instr = instruction;
+    pipeline[to].remaining = v;
+    pipeline[from].instr = NULL;
+}
+
+static void complete_stage(int stage)
+{
+    pipeline[stage].instr = NULL;
+}
 
 SInt32 get_latency(PCodeInstruction *p)
 {
@@ -511,12 +520,12 @@ SInt32 get_latency(PCodeInstruction *p)
 
 void clear_instruction_and_globals(void)
 {
-    data_00582fe8.instr = NULL;
-    data_00582ff0.instr = NULL;
-    data_00582ff8.instr = NULL;
-    data_00583000.instr = NULL;
-    data_00583008.instr = NULL;
-    data_00583010.instr = NULL;
+    pipeline[0].instr = NULL;
+    pipeline[1].instr = NULL;
+    pipeline[2].instr = NULL;
+    pipeline[3].instr = NULL;
+    pipeline[4].instr = NULL;
+    pipeline[5].instr = NULL;
 }
 
 int is_execution_unit_available(PCodeInstruction *instruction)
@@ -527,7 +536,7 @@ int is_execution_unit_available(PCodeInstruction *instruction)
     kind = data_00578340[instruction->opcode].executionUnit;
     if (kind == 7)
         kind = 0;
-    counts = &data_00582fe8;
+    counts = pipeline;
     if (counts[kind].instr != NULL)
         return 0;
     else
@@ -546,8 +555,8 @@ void set_execution_unit_instruction(PCodeInstruction *instruction)
     if (entry == 7) {
         entry = 0;
     }
-    (&data_00582fe8)[entry].instr = instruction;
-    (&data_00582fe8)[entry].remaining = value;
+    pipeline[entry].instr = instruction;
+    pipeline[entry].remaining = value;
 }
 
 void advance_instruction_pipeline(void)
@@ -555,44 +564,23 @@ void advance_instruction_pipeline(void)
     int i;
 
     for (i = 0; i < 6; i++) {
-        if ((&data_00582fe8)[i].instr != NULL && (&data_00582fe8)[i].remaining != 0) {
-            (&data_00582fe8)[i].remaining--;
+        if (pipeline[i].instr != NULL && pipeline[i].remaining != 0) {
+            pipeline[i].remaining--;
         }
     }
 
-    if (data_00582fe8.instr != NULL && data_00582fe8.remaining == 0) {
-        data_00582fe8.instr = NULL;
-    }
-    if (data_00583008.instr != NULL && data_00583008.remaining == 0) {
-        data_00583008.instr = NULL;
-    }
-    if (data_00583010.instr != NULL && data_00583010.remaining == 0) {
-        data_00583010.instr = NULL;
-    }
-    if (data_00583000.instr != NULL && data_00583000.remaining == 0 && data_00583008.instr == NULL) {
-        SInt32 v;
-        PCodeInstruction *instruction;
-        v = data_00578340[(instruction = data_00583000.instr)->opcode].stageCycles[3];
-        data_00583008.instr = instruction;
-        data_00583008.remaining = v;
-        data_00583000.instr = NULL;
-    }
-    if (data_00582ff8.instr != NULL && data_00582ff8.remaining == 0 && data_00583000.instr == NULL) {
-        SInt32 v;
-        PCodeInstruction *instruction;
-        v = data_00578340[(instruction = data_00582ff8.instr)->opcode].stageCycles[2];
-        data_00583000.instr = instruction;
-        data_00583000.remaining = v;
-        data_00582ff8.instr = NULL;
-    }
-    if (data_00582ff0.instr != NULL && data_00582ff0.remaining == 0 && data_00582ff8.instr == NULL) {
-        SInt32 v;
-        PCodeInstruction *instruction;
-        v = data_00578340[(instruction = data_00582ff0.instr)->opcode].stageCycles[1];
-        data_00582ff8.instr = instruction;
-        data_00582ff8.remaining = v;
-        data_00582ff0.instr = NULL;
-    }
+    if (pipeline[0].instr != NULL && pipeline[0].remaining == 0)
+        complete_stage(0);
+    if (pipeline[4].instr != NULL && pipeline[4].remaining == 0)
+        complete_stage(4);
+    if (pipeline[5].instr != NULL && pipeline[5].remaining == 0)
+        complete_stage(5);
+    if (pipeline[3].instr != NULL && pipeline[3].remaining == 0 && pipeline[4].instr == NULL)
+        advance_stage(1, 3, 4);
+    if (pipeline[2].instr != NULL && pipeline[2].remaining == 0 && pipeline[3].instr == NULL)
+        advance_stage(1, 2, 3);
+    if (pipeline[1].instr != NULL && pipeline[1].remaining == 0 && pipeline[2].instr == NULL)
+        advance_stage(1, 1, 2);
 }
 
 Boolean is_execution_unit_seven(int instruction)

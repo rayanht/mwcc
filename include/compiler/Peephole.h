@@ -40,7 +40,7 @@ extern void Peephole_MergeAdjacentBlocks(Object *object, Boolean mergePrologue);
 extern void Peephole_OptimizeBlocks(Object *object);
 extern void peephole_optimize_block(PCodeBlock *scope);
 extern SInt32 fold_rlwimi_store_to_stwbrx(PCodeInstruction *node, UInt32 mask);
-extern unsigned int fold_to_rlwnm(unsigned int instruction, unsigned int liveRegisters);
+extern unsigned int fold_to_rlwnm(struct PCodeInstruction *instruction, unsigned int liveRegisters);
 extern int has_register_conflict(UInt32 mask, PCodeInstruction *group, PCodeInstruction *operand,
                                  PCodeInstruction *other, PCodeInstruction *target);
 extern unsigned int combine_srawi(PCodeInstruction *pc, UInt32 mask);

@@ -15,6 +15,7 @@ extern void SpillCode_RewriteSpilledFPRs(PCodeBlock *unused, PCodeInstruction *i
 extern void SpillCode_InsertGPRSpillCode(PCodeBlock *block, PCodeInstruction *instruction);
 extern short spill_address_register;
 extern void SpillCode_ComputeSpillCosts(int reg_class);
+extern void SpillCode_SpillRegisters(int reg_class, int register_count);
 
 #ifdef __cplusplus
 }

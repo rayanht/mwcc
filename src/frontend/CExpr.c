@@ -1,6 +1,14 @@
 #define CERROR_FILE "CExpr.c"
 #include "compiler/common.h"
+#include "version.h"
 #include "compiler/CExpr.h"
+
+/* 1.0 calls CExpr_GeneratePointerAndRewriteConst; later versions write the two calls out. */
+#if VERSION == VERSION_GC_1_0
+#define POINTER_GENERATION_CONST(expr) CExpr_GeneratePointerAndRewriteConst(expr)
+#else
+#define POINTER_GENERATION_CONST(expr) CExpr_RewriteConst(pointer_generation(expr))
+#endif
 #include "compiler/enode.h"
 #include "compiler/objects.h"
 #include "compiler/scopes.h"
@@ -67,60 +75,39 @@ typedef struct _res res;
 #define STBOOL ((Type *)&stbool)
 enum { TYPECLASS_004f9ed0 = 5 };
 
-static SInt32 TypSize(TypeIntegral *t);
-static UInt32 applyqual(Type *t, SInt16 x);
-static Boolean CExpr_QualMismatch(SInt32 from, SInt32 to);
-static Boolean IsZero(CInt64 *v);
-static ENode *generate_pointer_then_rewrite_const(ENode *value);
-static ENode *callable_expression(ENode *e);
-static Boolean IsZero_4f5aa0(ENode *e);
-static ENode *rewrite_const_pointer_generation(ENode *value);
-static ENode *CExpr_WrapPrecomp(ENode *n, ENode *r);
-static ENode *NormalizeOperand(ENode *e);
-static Boolean IsZeroValue(ENode *e);
-static ENode *rewrite_pointer_generation_const(ENode *value);
-static ENode *rewrite_const_after_pointer_generation(ENode *value);
-static ENode *pointer_generation_and_rewrite_const(ENode *value);
-static ENode *generate_pointer_and_rewrite_const(ENode *value);
-static ENode *recovered_normalize(ENode *value);
-static ENode *CExpr_intnode(ENode *e, SInt32 v);
-static Boolean IsZeroCInt64(CInt64 *v);
-static ENode *normalize(ENode *e);
 static ENode *AdjustBoolAssign(ENode *enode);
-static CInt64 Inner(void);
 
-static __inline CLabel *FindNode(HashNameNode *key)
+static inline SInt32 TypSize(TypeIntegral *t)
 {
-    CLabel *p = Labels;
-    while (p != NULL) {
-        if (key == p->name)
-            break;
-        p = p->next;
-    }
-    return p;
+    return t->size;
 }
 
-static __inline CLabel *AddNode(HashNameNode *key)
+static inline UInt32 applyqual(Type *t, SInt16 x)
 {
-    CLabel *p = newlabel();
-    p->name = key;
-    p->next = Labels;
-    Labels = p;
-    return p;
+    return CParser_GetCVTypeQualifiers(TYPE_POINTER(t)->target, x);
 }
 
-static __inline void FindOrAdd(HashNameNode *key)
+static inline ENode *CExpr_WrapPrecomp(ENode *n, ENode *r)
 {
-    CLabel *node;
-    if ((node = FindNode(key)) == NULL)
-        node = AddNode(key);
-    else if (node->stmt != NULL)
-        CError_ReportError(ERR_LABEL_REDEFINED, key->name);
-    {
-        Statement *entry = CFunc_AppendStatement(2);
-        entry->label = node;
-        node->stmt = entry;
-    }
+    ENode *nw = lalloc(0x1a);
+    *nw = *r;
+    nw->type = ENULLCHECK;
+    nw->data.diadic.left = lalloc(0x1a);
+    *nw->data.diadic.left = *n;
+    nw->data.diadic.right = r;
+    nw->data.precomp.labelId = CParser_GetUniqueID();
+    n->type = EPRECOMP;
+    n->data.longval = nw->data.precomp.labelId;
+    return nw;
+}
+
+static inline ENode *CExpr_intnode(ENode *e, SInt32 v)
+{
+    e->type = EINTCONST;
+    e->rtype = CParser_GetBoolType();
+    e->data.intval.lo = (UInt32)v;
+    e->data.intval.hi = 0;
+    return e;
 }
 
 static inline ENode *promote_assignment_operand(ENode *target, ENode *operand, Boolean *bitfieldPromotion)
@@ -134,77 +121,6 @@ static inline ENode *promote_assignment_operand(ENode *target, ENode *operand, B
         operand = oldassignmentpromotion(operand, target->rtype, target->flags, 1);
     }
     return operand;
-}
-
-static inline Boolean IsAggregateType(Type *type)
-{
-    switch ((SInt8)type->type) {
-        case TYPESTRUCT:
-        case TYPECLASS:
-            return 1;
-        case TYPEMEMBERPOINTER:
-            if (type->size != 4)
-                return 1;
-            return 0;
-        default:
-            return 0;
-    }
-}
-
-static inline void warn_unwanted_assignment(ENode *expression)
-{
-    if (copts.warn_possunwant != 0 && expression->type == EASS && (expression->flags & ENODE_FLAG_80) == 0)
-        CError_Warning(ERR_POSSIBLE_UNWANTED_ASSIGNMENT);
-}
-
-static inline Boolean CExpr_IsZeroValue(const CInt64 *value)
-{
-    return value->hi == 0 && value->lo == 0;
-}
-
-static inline ENode *set_comparison_result_type(ENode *node)
-{
-    if (copts.cplusplus && copts.booltruefalse)
-        node->rtype = (Type *)&stbool;
-    else
-        node->rtype = (Type *)&stsignedint;
-    return node;
-}
-
-static inline void RemoveRef(ENode *n)
-{
-    n->rtype = TYPE_POINTER(n->rtype)->target;
-}
-
-static inline void PutType(ENode *n, Type *t)
-{
-    n->rtype = t;
-}
-
-static inline ENode *recovery_construct_4059(ENodeList *arguments, Type *targetType, SInt32 qualifiers)
-{
-    ENode *node = CExpr_NewTemplDepENode(TDE_CAST);
-    node->data.templdep.u.cast.args = arguments;
-    node->data.templdep.u.cast.type = targetType;
-    node->data.templdep.u.cast.qual = qualifiers;
-    return node;
-}
-
-static inline UInt32 PreserveEvaluation(ENode *expr, ENode **res)
-{
-    if (isnotzero(expr) == 0) {
-        ENode *n1 = lalloc(0x1a);
-        *n1 = *(*res);
-        n1->type = ENULLCHECK;
-        n1->data.diadic.left = lalloc(0x1a);
-        *n1->data.diadic.left = *expr;
-        n1->data.diadic.right = (*res);
-        n1->data.precomp.labelId = CParser_GetUniqueID();
-        expr->type = EPRECOMP;
-        expr->data.longval = n1->data.precomp.labelId;
-        (*res) = n1;
-    }
-    return (UInt32)*res;
 }
 
 static inline ENode *materialize_temporary(ENode *base)
@@ -223,50 +139,16 @@ static inline ENode *materialize_temporary(ENode *base)
     return n;
 }
 
-static inline ENode *unwrap_reference(ENode *node)
-{
-    if (node->rtype->type != TYPEPOINTER || !(((TypePointer *)node->rtype)->qual & Q_REFERENCE))
-        return node;
-    node = makemonadicnode(node, EINDIRECT);
-    node->rtype = ((TypePointer *)node->rtype)->target;
-    return node;
-}
-
-static inline ENode *parse_comma_expression(void)
-{
-    ENode *l;
-    ENode *t;
-    BinaryOperatorResult oA;
-    l = assignment_expression();
-    if ((SInt16)tk == ',') {
-        do {
-            l = generate_pointer_then_rewrite_const(l);
-            tk = CPrepTokenizer_GetNextToken();
-            t = generate_pointer_then_rewrite_const(assignment_expression());
-            if (copts.cplusplus != 0 && CExpr_CheckOperator(0x2c, (ENode *)(l), (ENode *)(t), &oA)) {
-                l = oA.expression;
-                if (l == NULL)
-                    CError_FATAL(6531);
-            } else {
-                CExpr_CheckUnusedExpression(l);
-                l = makecommaexpression(l, t);
-                l->rtype = t->rtype;
-            }
-        } while ((SInt16)tk == ',');
-    }
-    l = generate_pointer_then_rewrite_const(l);
-    return l;
-}
-
+#if VERSION > VERSION_GC_1_0
 static inline ENode *parse_comma_operator_expression(void)
 {
     ENode *e, *a, *b;
     BinaryOperatorResult result;
     e = assignment_expression();
     while (tk == ',') {
-        a = CExpr_RewriteConst(pointer_generation(e));
+        a = POINTER_GENERATION_CONST(e);
         tk = (SInt16)CPrepTokenizer_GetNextToken();
-        b = CExpr_RewriteConst(pointer_generation(assignment_expression()));
+        b = POINTER_GENERATION_CONST(assignment_expression());
         if (copts.cplusplus != 0 && CExpr_CheckOperator(0x2c, a, b, &result)) {
             e = result.expression;
             if (e == NULL)
@@ -279,6 +161,7 @@ static inline ENode *parse_comma_operator_expression(void)
     }
     return e;
 }
+#endif
 
 static inline ENode *parse_4e9940(void)
 {
@@ -292,21 +175,6 @@ static inline ENode *parse_4e9940(void)
 static inline int CExpr_StructKind(Type *type)
 {
     return TYPE_STRUCT(type)->stype;
-}
-
-static inline ENode *dereference_reference_node(ENode *node)
-{
-    if (node->rtype->type != TYPEPOINTER || !(TYPE_POINTER(node->rtype)->qual & Q_REFERENCE))
-        return node;
-    node = makemonadicnode(node, EINDIRECT);
-    node->rtype = TYPE_POINTER(node->rtype)->target;
-    return node;
-}
-
-static inline char CExpr_IsMemberFunction(NameResult *candidates)
-{
-    Object *object = (Object *)candidates->object;
-    return OBJECT(candidates->object)->type->type == TYPEFUNC && (((TypeMemberFunc *)object->type)->flags & 1024) != 0;
 }
 
 ENode *CExpr_RewriteConst(ENode *enode)
@@ -487,34 +355,32 @@ void unify_arithmetic_rtypes(ENode **leftp, ENode **rightp, SInt32 unused)
     CExpr_ArithmeticConversion(leftp, rightp);
 }
 
+static ENode *CExpr_ConstResult(ENode *expr, SInt32 value)
+{
+    ENode *result;
+
+    if (expr->rtype->type == TYPEFLOAT) {
+        result = intconstnode((Type *)&stsignedint, value);
+        result->type = EFLOATCONST;
+        result->data.floatval = CMach_CalcFloatConvertFromInt((Type *)&stsignedint, result->data.intval);
+        result->rtype = expr->rtype;
+    } else {
+        result = intconstnode(expr->rtype, value);
+    }
+    if (fn_00513910(expr))
+        expr = makediadicnode(expr, result, ECOMMA);
+    else
+        expr = result;
+    return expr;
+}
+
 ENode *CExpr_New_EMUL_Node(ENode *lhs, ENode *rhs)
 {
-    ENode *x, *n;
     CExpr_ArithmeticConversion(&lhs, &rhs);
-    if (iszero(lhs)) {
-        x = rhs;
-        if (x->rtype->type == TYPEFLOAT) {
-            n = intconstnode((Type *)&stsignedint, 0);
-            n->type = EFLOATCONST;
-            n->data.floatval = CMach_CalcFloatConvertFromInt((Type *)&stsignedint, n->data.intval);
-            n->rtype = x->rtype;
-        } else {
-            n = intconstnode(x->rtype, 0);
-        }
-        return fn_00513910(x) ? makediadicnode(x, n, ECOMMA) : n;
-    }
-    if (iszero(rhs)) {
-        x = lhs;
-        if (x->rtype->type == TYPEFLOAT) {
-            n = intconstnode((Type *)&stsignedint, 0);
-            n->type = EFLOATCONST;
-            n->data.floatval = CMach_CalcFloatConvertFromInt((Type *)&stsignedint, n->data.intval);
-            n->rtype = x->rtype;
-        } else {
-            n = intconstnode(x->rtype, 0);
-        }
-        return fn_00513910(x) ? makediadicnode(x, n, ECOMMA) : n;
-    }
+    if (iszero(lhs))
+        return CExpr_ConstResult(rhs, 0);
+    if (iszero(rhs))
+        return CExpr_ConstResult(lhs, 0);
     if (CExpr_IsOne(rhs))
         return lhs;
     if (CExpr_IsOne(lhs))
@@ -541,8 +407,6 @@ ENode *CExpr_New_EMUL_Node(ENode *lhs, ENode *rhs)
 
 ENode *CExpr_New_EDIV_Node(ENode *left, ENode *right, Boolean flag)
 {
-    ENode *n;
-
     CExpr_ArithmeticConversion(&left, &right);
     if (iszero(right) && right->rtype->type == TYPEINT) {
         if (!flag)
@@ -551,18 +415,8 @@ ENode *CExpr_New_EDIV_Node(ENode *left, ENode *right, Boolean flag)
     }
     if (CExpr_IsOne(right))
         return left;
-    if (iszero(left) && left->rtype->type == TYPEINT) {
-        ENode *r = right;
-        if (r->rtype->type == TYPEFLOAT) {
-            n = intconstnode((Type *)&stsignedint, 0);
-            n->type = EFLOATCONST;
-            n->data.floatval = CMach_CalcFloatConvertFromInt((Type *)&stsignedint, n->data.intval);
-            n->rtype = r->rtype;
-        } else {
-            n = intconstnode(r->rtype, 0);
-        }
-        return fn_00513910(r) ? makediadicnode(r, n, ECOMMA) : n;
-    }
+    if (iszero(left) && left->rtype->type == TYPEINT)
+        return CExpr_ConstResult(right, 0);
     if (left->type == EINTCONST && right->type == EINTCONST) {
         left->data.intval = CMach_CalcIntDiadic(left->rtype, left->data.intval, 0x2f, right->data.intval);
         return left;
@@ -819,7 +673,7 @@ ENode *CExpr_New_ESUB_Node(ENode *left, ENode *right)
             return right;
         }
         if (right->type == EFLOATCONST) {
-            right->data.floatval = CMach_CalcFloatMonadic(right->rtype, '-', right->data.floatval.data.value);
+            right->data.floatval = CMach_CalcFloatMonadic(right->rtype, '-', right->data.floatval);
             return right;
         }
         return CExpr_UnaryFloatExpression(makemonadicnode(right, EMONMIN));
@@ -909,6 +763,45 @@ ENode *CExpr_PointerGeneration(ENode *node)
     return node;
 }
 
+static Boolean CExpr_QualMismatch(int from, int to)
+{
+    Boolean result =
+        ((from & Q_CONST) != 0 && (to & Q_CONST) == 0) || ((from & Q_VOLATILE) != 0 && (to & Q_VOLATILE) == 0);
+    return result;
+}
+
+#if VERSION == VERSION_GC_1_0
+void check_implicit_pointer_qual_conversion(ENode *expr, Type *destType, SInt16 destQual)
+{
+    Type *sourceType = expr->rtype;
+    SInt16 sourceQual;
+    Type *destTarget;
+    Type *sourceTarget;
+
+    if (destType->type == TYPEPOINTER && sourceType->type == TYPEPOINTER) {
+        sourceQual = expr->flags;
+        if (TYPE_POINTER(destType)->target == &stvoid) {
+            sourceQual = applyqual(sourceType, sourceQual);
+        } else {
+            destTarget = TYPE_POINTER(destType)->target;
+            sourceTarget = TYPE_POINTER(sourceType)->target;
+            while (destTarget->type == TYPEPOINTER && sourceTarget->type == TYPEPOINTER) {
+                if (CExpr_QualMismatch(TYPE_POINTER(sourceTarget)->qual, TYPE_POINTER(destTarget)->qual)) {
+                    CError_Warning(ERR_ILLEGAL_IMPLICIT_CONST_VOLATILE_POINTER_CONVERSION, expr->rtype,
+                                   expr->flags & 3, destType, destQual);
+                    return;
+                }
+                destTarget = TYPE_POINTER(destTarget)->target;
+                sourceTarget = TYPE_POINTER(sourceTarget)->target;
+            }
+        }
+        if (CExpr_QualMismatch(sourceQual, destQual)) {
+            CError_Warning(ERR_ILLEGAL_IMPLICIT_CONST_VOLATILE_POINTER_CONVERSION, expr->rtype, expr->flags & 3,
+                           destType, destQual);
+        }
+    }
+}
+#else
 void check_implicit_pointer_qual_conversion(ENode *expr, Type *destType, SInt16 destQual)
 {
     Type *sourceType = expr->rtype;
@@ -940,6 +833,7 @@ void check_implicit_pointer_qual_conversion(ENode *expr, Type *destType, SInt16 
         }
     }
 }
+#endif
 
 ENode *oldassignmentpromotion(ENode *e, Type *t, SInt16 sz, SInt32 flag)
 {
@@ -954,7 +848,7 @@ ENode *oldassignmentpromotion(ENode *e, Type *t, SInt16 sz, SInt32 flag)
             size = CParser_GetCVTypeQualifiers(e->rtype, e->flags);
             isRef = 1;
         } else {
-            e = CExpr_RewriteConst(pointer_generation(e));
+            e = POINTER_GENERATION_CONST(e);
         }
     }
 
@@ -1049,8 +943,7 @@ ENodeList *CExpr_ScanExpressionList(char parenthesized)
         expression = assignment_expression();
         current->node = expression;
         if (current->node->type != EMEMBER) {
-            converted = pointer_generation(current->node);
-            converted = CExpr_RewriteConst(converted);
+            converted = POINTER_GENERATION_CONST(current->node);
             current->node = converted;
         }
         if (parenthesized != '\0') {
@@ -1072,7 +965,9 @@ ENodeList *CExpr_ScanExpressionList(char parenthesized)
 
 ENode *CExpr_DoExplicitConversion(Type *classType, unsigned long qualifiers, ENodeList *arguments)
 {
+#if VERSION > VERSION_GC_1_0
     ENode *node;
+#endif
     if (classType->type != TYPECLASS) {
         if (arguments == NULL) {
             return do_typecast(nullnode(), classType, qualifiers);
@@ -1080,8 +975,12 @@ ENode *CExpr_DoExplicitConversion(Type *classType, unsigned long qualifiers, ENo
         if (arguments->next != NULL) {
             CError_ReportError(ERR_MORE_THAN_ONE_EXPRESSION_NON_CLASS);
         }
-        node = CExpr_RewriteConst((ENode *)pointer_generation(arguments->node));
+#if VERSION == VERSION_GC_1_0
+        return do_typecast(CExpr_GeneratePointerAndRewriteConst(arguments->node), classType, qualifiers);
+#else
+        node = CExpr_RewriteConst(pointer_generation(arguments->node));
         return do_typecast(node, classType, qualifiers);
+#endif
     }
     CDecl_CompleteType((Type *)classType);
     if ((((TypeClass *)classType)->flags & CLASS_COMPLETED) == 0) {
@@ -1091,11 +990,21 @@ ENode *CExpr_DoExplicitConversion(Type *classType, unsigned long qualifiers, ENo
     return CExpr_ConstructObject(classType, create_temp_node(classType), arguments, 1, 1, 1, 1, 1);
 }
 
+static ENode *CExpr_MakeTemplDepCast(Type *type, UInt32 qual, ENodeList *args)
+{
+    ENode *node;
+
+    node = CExpr_NewTemplDepENode(TDE_CAST);
+    node->data.templdep.u.cast.args = args;
+    node->data.templdep.u.cast.type = type;
+    node->data.templdep.u.cast.qual = qual;
+    return node;
+}
+
 ENode *scan_explicit_conversion(Type *type, SInt32 qualifiers)
 {
     ENodeList *arguments;
     ENodeList *argument;
-    ENode *result;
 
     if (type->type == TYPECLASS && (TYPE_CLASS(type)->flags & Q_VIRTUAL) != 0 &&
         CParser_CheckTemplateClassScope(type) == 0)
@@ -1114,60 +1023,48 @@ ENode *scan_explicit_conversion(Type *type, SInt32 qualifiers)
     }
     tk = (UInt16)CPrepTokenizer_GetNextToken();
 
-    if (CTemplTool_IsTemplateArgumentDependentType(type)) {
-        ENode *node = CExpr_NewTemplDepENode(TDE_CAST);
-        node->data.templdep.u.cast.args = arguments;
-        node->data.templdep.u.cast.type = type;
-        node->data.templdep.u.cast.qual = qualifiers;
-        return node;
+    if (CTemplTool_IsTemplateArgumentDependentType(type))
+        return CExpr_MakeTemplDepCast(type, qualifiers, arguments);
+
+    for (argument = arguments; argument != NULL; argument = argument->next) {
+        if (CTemplTool_IsTemplateArgumentDependentExpression(argument->node))
+            return CExpr_MakeTemplDepCast(type, qualifiers, arguments);
     }
 
-    argument = arguments;
-    while (argument != NULL) {
-        if (CTemplTool_IsTemplateArgumentDependentExpression(argument->node)) {
-            ENode *node = CExpr_NewTemplDepENode(TDE_CAST);
-            node->data.templdep.u.cast.args = arguments;
-            node->data.templdep.u.cast.type = type;
-            node->data.templdep.u.cast.qual = qualifiers;
-            return node;
-        }
-        argument = argument->next;
-    }
+    return CExpr_DoExplicitConversion(type, qualifiers, arguments);
+}
 
-    if (type->type != TYPECLASS) {
-        if (arguments == NULL) {
-            result = do_typecast(nullnode(), type, qualifiers);
-        } else {
-            ENode *node;
-            if (arguments->next != NULL)
-                CError_ReportError(ERR_MORE_THAN_ONE_EXPRESSION_NON_CLASS);
-            node = CExpr_RewriteConst(pointer_generation(arguments->node));
-            result = do_typecast(node, type, qualifiers);
-        }
-    } else {
-        CDecl_CompleteType(type);
-        if ((TYPE_CLASS(type)->flags & CLASS_COMPLETED) == 0)
-            CError_ReportError(ERR_ILLEGAL_USE_INCOMPLETE_STRUCT_UNION_CLASS, type, 0);
-        CDecl_CheckObjectType(type);
-        result = CExpr_ConstructObject(type, create_temp_node(type), arguments, 1, 1, 1, 1, 1);
-    }
-    return result;
+static ENode *CExpr_MemberVarAccess(BClassList *path, ObjMemberVar *var, ENode *foundexpr)
+{
+    BClassList *varpath;
+
+    if (!path)
+        CError_FATAL(1104);
+    if (TYPE_CLASS(path->type)->sominfo)
+        return CSOM_CreateMemberAccessExpr(path, var, foundexpr);
+    varpath = NULL;
+    if (var->has_path)
+        varpath = ((ObjMemberVarPath *)var)->path;
+    foundexpr = CExpr_GetClassAccessNode(path, varpath, foundexpr, var->access, 1);
+    if (!foundexpr)
+        return nullnode();
+    return CClass_AccessMember(foundexpr, var->type, var->qual, var->offset);
+}
+
+static Boolean CExpr_IsTemplateFunc(Object *obj)
+{
+    return obj->type->type == TYPEFUNC && (TYPE_FUNC(obj->type)->flags & 1024);
 }
 
 ENode *make_member_function_esetconst(NameResult *candidates)
 {
-    Type *functionType;
     NameSpaceObjectList *candidate;
-    Object *listObject;
-    Boolean listMatches;
     NameSpaceObjectList *first;
     NameSpaceObjectList *tail;
-    Object *nextObject;
-    Boolean nextMatches;
     ENode *expr;
 
     if (candidates->object != NULL) {
-        if (candidates->object->otype != OT_OBJECT || !CExpr_IsMemberFunction(candidates))
+        if (candidates->object->otype != OT_OBJECT || !CExpr_IsTemplateFunc(OBJECT(candidates->object)))
             return NULL;
         candidate = (NameSpaceObjectList *)lalloc(sizeof(NameSpaceObjectList));
         memclrw(candidate, sizeof(*candidate));
@@ -1177,27 +1074,21 @@ ENode *make_member_function_esetconst(NameResult *candidates)
             candidate = candidates->objects;
             while (candidate != NULL) {
                 if (candidate->object->otype == OT_OBJECT) {
-                    listObject = OBJECT(candidate->object);
-                    listMatches = OBJECT(candidate->object)->type->type == TYPEFUNC &&
-                                  (((TypeMemberFunc *)listObject->type)->flags & 1024) != 0;
-                    if (listMatches) {
+                    if (CExpr_IsTemplateFunc(OBJECT(candidate->object))) {
                         tail = (NameSpaceObjectList *)galloc(sizeof(NameSpaceObjectList));
                         first = tail;
-                        goto copy_candidate;
-                        do {
+                        *tail = *candidate;
+                        tail->next = NULL;
+                        while ((candidate = candidate->next) != NULL) {
                             if (candidate->object->otype == OT_OBJECT) {
-                                nextObject = OBJECT(candidate->object);
-                                nextMatches = (functionType = OBJECT(candidate->object)->type)->type == TYPEFUNC &&
-                                              (((TypeMemberFunc *)nextObject->type)->flags & 1024) != 0;
-                                if (nextMatches) {
-                                    tail = tail->next = (NameSpaceObjectList *)galloc(sizeof(NameSpaceObjectList));
-                                copy_candidate:
+                                if (CExpr_IsTemplateFunc(OBJECT(candidate->object))) {
+                                    tail->next = (NameSpaceObjectList *)galloc(sizeof(NameSpaceObjectList));
+                                    tail = tail->next;
                                     *tail = *candidate;
                                     tail->next = NULL;
                                 }
                             }
-                            candidate = candidate->next;
-                        } while (candidate != NULL);
+                        }
                         candidate = first;
                         break;
                     }
@@ -1363,7 +1254,7 @@ ENode *make_scope_parse_result_expr(NameResult *nameResult, ENode *expr, Boolean
 
             case OT_ENUMCONST:
                 CClass_CheckEnumAccess(nameResult->basePath, nameResult->object);
-                if (IsZero(&OBJ_ENUM_CONST(nameResult->object)->val)) {
+                if (CInt64_IsZero(&OBJ_ENUM_CONST(nameResult->object)->val)) {
                     Type *type;
                     TypeEnum *enumType;
                     TypeClass *classType;
@@ -1406,31 +1297,12 @@ ENode *make_scope_parse_result_expr(NameResult *nameResult, ENode *expr, Boolean
             case OT_MEMBERVAR:
                 if (allowMemberReference && !expr && nameResult->is_qualified)
                     break;
-                {
-                    BClassList *baseClass;
-                    ObjMemberVar *member;
-                    if (nameResult->isambig)
-                        CError_ReportError(ERR_AMBIGUOUS_ACCESS_CLASS_STRUCT_UNION_MEMBER);
-                    member = OBJ_MEMBER_VAR(nameResult->object);
-                    baseClass = nameResult->basePath;
-                    if (!baseClass)
-                        CError_FATAL(1104);
-                    if (TYPE_CLASS(baseClass->type)->sominfo) {
-                        result = CSOM_CreateMemberAccessExpr(baseClass, member, expr);
-                    } else {
-                        BClassList *path = NULL;
-                        if (member->has_path)
-                            path = ((ObjMemberVarPath *)member)->path;
-                        result = CExpr_GetClassAccessNode(baseClass, path, expr, member->access, 1);
-                        if (!result)
-                            result = nullnode();
-                        else
-                            result = CClass_AccessMember(result, member->type, member->qual, member->offset);
-                    }
-                    expr = dereference_reference_node(result);
-                    tk = CPrepTokenizer_GetNextToken();
-                    return expr;
-                }
+                if (nameResult->isambig)
+                    CError_ReportError(ERR_AMBIGUOUS_ACCESS_CLASS_STRUCT_UNION_MEMBER);
+                expr = checkreference(
+                    CExpr_MemberVarAccess(nameResult->basePath, OBJ_MEMBER_VAR(nameResult->object), expr));
+                tk = CPrepTokenizer_GetNextToken();
+                return expr;
 
             default:
                 CError_FATAL(1429);
@@ -1617,6 +1489,11 @@ ENode *scan_vec_step(void)
         CError_ReportError(ERR_LPAREN_EXPECTED);
     }
     return node;
+}
+
+static SInt32 builtin_align(Type *type)
+{
+    return CMachine_GetTypeAlignment(type);
 }
 
 unsigned int encode_kind(unsigned char kind)
@@ -1812,11 +1689,6 @@ Type *scan_type_or_expression_type(void)
     return type;
 }
 
-static SInt32 builtin_align(Type *type)
-{
-    return CMachine_GetTypeAlignment(type);
-}
-
 static ENode *scan_builtin(SInt32 (*builtin)(Type *))
 {
     ENode *expr = intconstnode((Type *)&stsignedint, 0);
@@ -1908,6 +1780,18 @@ ENode *parse_primary_expression(Boolean expressionMode)
                 return CObjC_ParseStringConstant();
             break;
         case '(': {
+#if VERSION == VERSION_GC_1_0
+            ENode *e;
+            tk = CPrepTokenizer_GetNextToken();
+            e = CExpr_ParseCommaExpression();
+            if (tk != ')')
+                CError_ReportErrorAndUpdateToken(ERR_RPAREN_EXPECTED);
+            else
+                tk = CPrepTokenizer_GetNextToken();
+            if (e->type == EASS)
+                e->flags |= ENODE_FLAG_80;
+            return e;
+#else
             tk = CPrepTokenizer_GetNextToken();
             expression = parse_comma_operator_expression();
             if (tk != ')')
@@ -1917,6 +1801,7 @@ ENode *parse_primary_expression(Boolean expressionMode)
             if (expression->type == EASS)
                 expression->flags |= ENODE_FLAG_80;
             return expression;
+#endif
         }
         case '[':
             if (copts.objective_c != 0)
@@ -1960,6 +1845,17 @@ ENode *parse_primary_expression(Boolean expressionMode)
     }
     CError_ReportErrorAndUpdateToken(ERR_EXPRESSION_SYNTAX_ERROR);
     return nullnode();
+}
+
+static ENode *CExpr_ParseTypeConversion(void)
+{
+    DeclInfo declinfo;
+
+    memclrw(&declinfo, sizeof(declinfo));
+    if (copts.cpp_extensions == 0 && CPrepTokenizer_GetNextTokenAndRestorePosition() != '(')
+        CError_ReportError(ERR_LPAREN_EXPECTED);
+    CParser_GetDeclSpecs(&declinfo, 0);
+    return scan_explicit_conversion(declinfo.thetype, declinfo.qual);
 }
 
 ENode *scan_member_function_pointer_call(ENode *expr)
@@ -2094,7 +1990,6 @@ ENode *parse_postfix_expression(Boolean allowSpecial)
     ENode *result;
     BinaryOperatorResult overload;
     NameResult info;
-    DeclInfo declaration;
     StructMember *member;
     TypeClass *classType;
 
@@ -2119,11 +2014,7 @@ ENode *parse_postfix_expression(Boolean allowSpecial)
             case 0x11a:
             case TK_BOOL:
             case TK_WCHAR_T:
-                memclrw(&declaration, sizeof(declaration));
-                if (copts.cpp_extensions == 0 && CPrepTokenizer_GetNextTokenAndRestorePosition() != '(')
-                    CError_ReportError(ERR_LPAREN_EXPECTED);
-                CParser_GetDeclSpecs(&declaration, 0);
-                return scan_explicit_conversion(declaration.thetype, declaration.qual);
+                return CExpr_ParseTypeConversion();
             default:
                 expr = parse_primary_expression(allowSpecial);
                 break;
@@ -2150,11 +2041,18 @@ ENode *parse_postfix_expression(Boolean allowSpecial)
     for (;;) {
         switch (tk) {
             case '[':
-                right = generate_pointer_then_rewrite_const(expr);
+#if VERSION == VERSION_GC_1_0
+                expr = CExpr_GeneratePointerAndRewriteConst(expr);
+                tk = CPrepTokenizer_GetNextToken();
+                left = s_expression();
+                if (copts.cplusplus != 0 && CExpr_CheckOperator('[', expr, left, &overload)) {
+#else
+                right = CExpr_GeneratePointerAndRewriteConst(expr);
                 expr = right;
                 tk = CPrepTokenizer_GetNextToken();
-                left = parse_comma_expression();
+                left = s_expression();
                 if (copts.cplusplus != 0 && CExpr_CheckOperator('[', right, left, &overload)) {
+#endif
                     expr = overload.expression;
                     if (expr != NULL) {
                         if (tk != ']')
@@ -2191,7 +2089,42 @@ ENode *parse_postfix_expression(Boolean allowSpecial)
                 continue;
 
             case '(':
-                expr = callable_expression(expr);
+#if VERSION == VERSION_GC_1_0
+                left = CExpr_PointerGeneration(expr);
+                if (copts.cplusplus != 0) {
+                    if (CExpr_CheckOperator('(', left, NULL, &overload)) {
+                        expr = overload.expression;
+                        if (expr == NULL)
+                            CError_FATAL(2572);
+                        continue;
+                    }
+                    if (left->type == EMFPOINTER) {
+                        result = scan_member_function_pointer_call(left);
+                        expr = checkreference(result);
+                        continue;
+                    }
+                }
+                tk = CPrepTokenizer_GetNextToken();
+                operand.list = CExpr_ScanExpressionList(1);
+                if (tk != ')')
+                    CError_ReportError(ERR_RPAREN_EXPECTED);
+                if (left->type == ETEMPLDEP) {
+                    result = CExpr_NewENode(EFUNCCALL);
+                    result->rtype = &data_0055d5c0;
+                    result->data.funccall.funcref = left;
+                    result->data.funccall.args = operand.list;
+                    result->data.funccall.functype = &data_0055d5e8;
+                    tk = CPrepTokenizer_GetNextToken();
+                    expr = result;
+                } else {
+                    result = CExpr_MakeFunctionCall(left, operand.list);
+                    expr = checkreference(result);
+                    tk = CPrepTokenizer_GetNextToken();
+                }
+                continue;
+
+#else
+                expr = CExpr_PointerGeneration(expr);
                 if (copts.cplusplus != 0) {
                     if (CExpr_CheckOperator('(', expr, NULL, &overload)) {
                         expr = overload.expression;
@@ -2201,7 +2134,7 @@ ENode *parse_postfix_expression(Boolean allowSpecial)
                     }
                     if (expr->type == EMFPOINTER) {
                         result = scan_member_function_pointer_call(expr);
-                        expr = unwrap_reference(result);
+                        expr = checkreference(result);
                         continue;
                     }
                 }
@@ -2219,19 +2152,20 @@ ENode *parse_postfix_expression(Boolean allowSpecial)
                     expr = result;
                 } else {
                     result = CExpr_MakeFunctionCall(expr, operand.list);
-                    expr = unwrap_reference(result);
+                    expr = checkreference(result);
                     tk = CPrepTokenizer_GetNextToken();
                 }
                 continue;
 
+#endif
             case TK_ARROW:
-                expr = generate_pointer_then_rewrite_const(expr);
+                expr = CExpr_GeneratePointerAndRewriteConst(expr);
                 if (copts.cplusplus != 0) {
                     while (expr->rtype->type == TYPECLASS && CExpr_CheckOperator(TK_ARROW, expr, NULL, &overload)) {
                         ENode *overloaded = overload.expression;
                         if (overloaded == NULL)
                             CError_FATAL(2607);
-                        expr = generate_pointer_then_rewrite_const(overloaded);
+                        expr = CExpr_GeneratePointerAndRewriteConst(overloaded);
                     }
                 }
                 typeKind = expr->rtype->type;
@@ -2252,7 +2186,16 @@ ENode *parse_postfix_expression(Boolean allowSpecial)
                 /* fall through */
 
             case '.':
-                left = generate_pointer_then_rewrite_const(expr);
+#if VERSION == VERSION_GC_1_0
+                expr = CExpr_GeneratePointerAndRewriteConst(expr);
+                if (expr->type == EFUNCCALL) {
+                    if ((expr->rtype->type == TYPECLASS || expr->rtype->type == TYPESTRUCT) &&
+                        !Type_RequiresMemoryReturn(expr->rtype)) {
+                        expr = materialize_temporary(expr);
+                    }
+                }
+#else
+                left = CExpr_GeneratePointerAndRewriteConst(expr);
                 expr = left;
                 if (left->type == EFUNCCALL) {
                     if ((left->rtype->type == TYPECLASS || left->rtype->type == TYPESTRUCT) &&
@@ -2260,7 +2203,8 @@ ENode *parse_postfix_expression(Boolean allowSpecial)
                         expr = materialize_temporary(left);
                     }
                 }
-                if ((allowSpecial = expr->rtype->type) == TYPECLASS) {
+#endif
+                if (expr->rtype->type == TYPECLASS) {
                     CDecl_CompleteType(expr->rtype);
                     if (((TypeClass *)expr->rtype)->objcinfo != NULL && copts.cplusplus != 0) {
                         classType = (TypeClass *)expr->rtype;
@@ -2290,13 +2234,13 @@ ENode *parse_postfix_expression(Boolean allowSpecial)
                             expr->rtype = &stvoid;
                         } else {
                             result = make_scope_parse_result_expr(&info, expr, 0, 0);
-                            result = unwrap_reference(result);
+                            result = checkreference(result);
                             expr = result;
                         }
                     }
                     continue;
                 }
-                if (allowSpecial != TYPESTRUCT || ((TypeStruct *)expr->rtype)->stype > STRUCT_TYPE_MAX) {
+                if (expr->rtype->type != TYPESTRUCT || ((TypeStruct *)expr->rtype)->stype > STRUCT_TYPE_MAX) {
                     if (copts.cplusplus != 0) {
                         result = scan_pseudo_destructor_call(expr);
                         if (result != NULL)
@@ -2326,13 +2270,34 @@ ENode *parse_postfix_expression(Boolean allowSpecial)
                     return expr;
                 }
                 result = CClass_AccessMember(expr, member->type, member->qual, member->offset);
-                result = unwrap_reference(result);
+                result = checkreference(result);
                 tk = CPrepTokenizer_GetNextToken();
                 expr = result;
                 continue;
 
             case TK_INCREMENT:
-                expr = generate_pointer_then_rewrite_const(expr);
+#if VERSION == VERSION_GC_1_0
+                expr = CExpr_GeneratePointerAndRewriteConst(expr);
+                if (copts.cplusplus != 0 && CExpr_CheckOperator(TK_INCREMENT, expr, nullnode(), &overload)) {
+                    expr = overload.expression;
+                    if (expr == NULL)
+                        CError_FATAL(2737);
+                    tk = CPrepTokenizer_GetNextToken();
+                    continue;
+                }
+                result = CExpr_LValue(expr, 1, 1);
+                if (result->rtype == (Type *)&stbool) {
+                    expr = CExpr_TempModifyExpr(result);
+                    tk = CPrepTokenizer_GetNextToken();
+                } else {
+                    fn_004fb400(result);
+                    expr = makemonadicnode(result, EPOSTINC);
+                    tk = CPrepTokenizer_GetNextToken();
+                }
+                continue;
+
+#else
+                expr = CExpr_GeneratePointerAndRewriteConst(expr);
                 if (copts.cplusplus != 0 && CExpr_CheckOperator(TK_INCREMENT, expr, nullnode(), &overload)) {
                     expr = overload.expression;
                     if (expr == NULL)
@@ -2351,8 +2316,24 @@ ENode *parse_postfix_expression(Boolean allowSpecial)
                 }
                 continue;
 
+#endif
             case TK_DECREMENT:
-                left = generate_pointer_then_rewrite_const(expr);
+#if VERSION == VERSION_GC_1_0
+                expr = CExpr_GeneratePointerAndRewriteConst(expr);
+                if (copts.cplusplus != 0 && CExpr_CheckOperator(TK_DECREMENT, expr, nullnode(), &overload)) {
+                    expr = overload.expression;
+                    if (expr == NULL)
+                        CError_FATAL(2753);
+                    tk = CPrepTokenizer_GetNextToken();
+                    continue;
+                }
+                right = CExpr_LValue(expr, 1, 1);
+                fn_004fb400(right);
+                expr = makemonadicnode(right, EPOSTDEC);
+                tk = CPrepTokenizer_GetNextToken();
+                continue;
+#else
+                left = CExpr_GeneratePointerAndRewriteConst(expr);
                 if (copts.cplusplus != 0 && CExpr_CheckOperator(TK_DECREMENT, left, nullnode(), &overload)) {
                     expr = overload.expression;
                     if (expr == NULL)
@@ -2365,6 +2346,7 @@ ENode *parse_postfix_expression(Boolean allowSpecial)
                 expr = makemonadicnode(operand.node, EPOSTDEC);
                 tk = CPrepTokenizer_GetNextToken();
                 continue;
+#endif
 
             default:
                 return expr;
@@ -2372,31 +2354,48 @@ ENode *parse_postfix_expression(Boolean allowSpecial)
     }
 }
 
+static ENode *CExpr_ParseSizeof(void)
+{
+    Type *type;
+    ENode *expr;
+
+    type = scan_type_or_expression_type();
+    if (type->type == TYPECLASS && TYPE_CLASS(type)->sominfo != NULL)
+        CError_ReportError(ERR_SIZEOF_NOT_SUPPORTED_SOM_CLASSES);
+    if (type->type == TYPETEMPLATE) {
+        expr = CExpr_NewTemplDepENode(1);
+        expr->data.objref = (Object *)type;
+        return expr;
+    }
+    if (type->size == 0) {
+        if (type->type == TYPESTRUCT || type->type == TYPECLASS)
+            CError_ReportError(ERR_ILLEGAL_USE_INCOMPLETE_STRUCT_UNION_CLASS, type, 0);
+        else
+            CError_ReportError(ERR_ILLEGAL_TYPE);
+    }
+    return intconstnode(CABI_GetSizeTType(), type->size);
+}
+
 SInt32 scansizeof(void)
 {
-    Type *ty;
-    ENode *node;
+    ENode *expr;
 
-    ty = scan_type_or_expression_type();
-    if (ty->type == TYPECLASS && TYPE_CLASS(ty)->sominfo != NULL)
-        CError_ReportError(ERR_SIZEOF_NOT_SUPPORTED_SOM_CLASSES);
-    if (ty->type == TYPETEMPLATE) {
-        node = CExpr_NewTemplDepENode(1);
-        node->data.monadic = (ENode *)ty;
-    } else {
-        if (ty->size == 0) {
-            if (ty->type == TYPESTRUCT || ty->type == TYPECLASS)
-                CError_ReportError(ERR_ILLEGAL_USE_INCOMPLETE_STRUCT_UNION_CLASS, ty, 0);
-            else
-                CError_ReportError(ERR_ILLEGAL_TYPE);
-        }
-        node = intconstnode(CABI_GetSizeTType(), ty->size);
-    }
-    if (node->type != EINTCONST) {
+    expr = CExpr_ParseSizeof();
+    if (expr->type != EINTCONST) {
         CError_ReportError(ERR_UNIMPLEMENTED_C_FEATURE);
         return 0;
     }
-    return node->data.intval.lo;
+    return expr->data.intval.lo;
+}
+
+static ENode *set_comparison_result_type(ENode *node)
+{
+    if (copts.cplusplus && copts.booltruefalse) {
+        node->rtype = (Type *)&stbool;
+        return node;
+    }
+    node->rtype = (Type *)&stsignedint;
+    return node;
 }
 
 ENode *getnodeaddress(ENode *node, Boolean flag)
@@ -2640,11 +2639,10 @@ ENode *CExpr_New_ELOGNOT_Node(ENode *expr)
     if (expr->rtype->type == TYPETEMPLDEPEXPR)
         return CTempl_MakeTemplDepExpr(NULL, ELOGNOT, expr);
 
-    expr = CExpr_GeneratePointerAndRewriteConst(expr);
-    node = expr;
+    node = CExpr_GeneratePointerAndRewriteConst(expr);
 
     if (copts.cplusplus != 0) {
-        if (CExpr_CheckOperator(0x21, expr, NULL, &result)) {
+        if (CExpr_CheckOperator(0x21, node, NULL, &result)) {
             expr = result.expression;
             if (expr != NULL)
                 return expr;
@@ -2654,10 +2652,10 @@ ENode *CExpr_New_ELOGNOT_Node(ENode *expr)
 
     switch ((SInt8)node->rtype->type) {
         case TYPEENUM:
-            expr = forceintegral(node);
+            node = forceintegral(node);
             break;
         case TYPEMEMBERPOINTER:
-            expr = CExpr2_ConvertScalarOperand(node, 0, 0);
+            node = CExpr2_ConvertScalarOperand(node, 0, 0);
             break;
         default:
             CError_ReportError(ERR_ILLEGAL_OPERAND);
@@ -2666,26 +2664,24 @@ ENode *CExpr_New_ELOGNOT_Node(ENode *expr)
         case TYPEFLOAT:
         case TYPEPOINTER:
         case TYPEARRAY:
-            expr = node;
             break;
     }
 
-    switch (expr->type) {
+    switch (node->type) {
         case EINTCONST:
-            expr->data.intval = CInt64_Not(expr->data.intval);
+            node->data.intval = CInt64_Not(node->data.intval);
             break;
         case EFLOATCONST:
-            expr->type = EINTCONST;
-            CInt64_SetLong(&expr->data.intval, CMach_FloatIsZero(expr->data.floatval.data.value));
+            node->type = EINTCONST;
+            CInt64_SetLong(&node->data.intval, CMach_FloatIsZero(node->data.floatval.data.value));
             break;
         default:
-            expr = makemonadicnode(expr, ELOGNOT);
+            node = makemonadicnode(node, ELOGNOT);
             break;
     }
 
-    return set_comparison_result_type(expr);
+    return set_comparison_result_type(node);
 }
-
 
 ENode *CExpr_New_EMONMIN_Node(ENode *ene)
 {
@@ -2695,11 +2691,17 @@ ENode *CExpr_New_EMONMIN_Node(ENode *ene)
 
     if (TYPE(ene->rtype)->type == TYPETEMPLDEPEXPR)
         return CTempl_MakeTemplDepExpr(NULL, EMONMIN, ene);
+#if VERSION == VERSION_GC_1_0
+    node = ene = CExpr_GeneratePointerAndRewriteConst(ene);
+    if (copts.cplusplus != 0) {
+        if (CExpr_CheckOperator(0x2d, node, NULL, &out)) {
+#else
     ene = pointer_generation(ene);
     ene = CExpr_RewriteConst(ene);
     node = ene;
     if (copts.cplusplus != 0) {
         if (CExpr_CheckOperator(0x2d, (ENode *)(ene), (ENode *)(NULL), (BinaryOperatorResult *)(&out))) {
+#endif
             res = out.expression;
             if (res != NULL)
                 return res;
@@ -2719,7 +2721,7 @@ ENode *CExpr_New_EMONMIN_Node(ENode *ene)
         case TYPEFLOAT:
             if (node->type == EFLOATCONST) {
                 ENode *floating = (ENode *)node;
-                floating->data.floatval = CMach_CalcFloatMonadic(node->rtype, 0x2d, floating->data.floatval.data.value);
+                floating->data.floatval = CMach_CalcFloatMonadic(node->rtype, 0x2d, floating->data.floatval);
                 return (ENode *)floating;
             }
             return CExpr_UnaryFloatExpression(makemonadicnode(node, 5));
@@ -2739,9 +2741,13 @@ ENode *CExpr_New_EBINNOT_Node(ENode *node)
         operand = CTempl_MakeTemplDepExpr(NULL, EBINNOT, node);
         return operand;
     }
-    operand = node = CExpr_RewriteConst(pointer_generation(node));
+    operand = node = POINTER_GENERATION_CONST(node);
     if (copts.cplusplus != 0) {
+#if VERSION == VERSION_GC_1_0
+        if (CExpr_CheckOperator(0x7e, operand, NULL, &result)) {
+#else
         if (CExpr_CheckOperator(0x7e, node, NULL, &result)) {
+#endif
             if ((expression = result.expression) != NULL)
                 return expression;
             CError_ASSERT(3283, operand = result.left);
@@ -2760,7 +2766,6 @@ ENode *unary_expression(void)
     BinaryOperatorResult overloadResult;
     ENode *converted;
     ENode *operand;
-    ENode *normalized;
     ENode *result;
     Type *type;
     CLabel *label;
@@ -2845,7 +2850,7 @@ ENode *unary_expression(void)
             }
             if (copts.mpwc_relax != 0 && copts.cplusplus == 0 && operand->rtype->type == TYPEARRAY &&
                 operand->type == EINDIRECT) {
-                return CExpr_RewriteConst(pointer_generation(operand));
+                return POINTER_GENERATION_CONST(operand);
             }
             if (operand->type == EOBJLIST)
                 return operand;
@@ -2854,9 +2859,9 @@ ENode *unary_expression(void)
 
         case '*': {
             tk = CPrepTokenizer_GetNextToken();
-            operand = normalized = CExpr_GeneratePointerAndRewriteConst(cast_expression());
+            operand = CExpr_GeneratePointerAndRewriteConst(cast_expression());
             if (copts.cplusplus != 0) {
-                if (CExpr_CheckOperator(0x2a, normalized, NULL, &overloadResult)) {
+                if (CExpr_CheckOperator(0x2a, operand, NULL, &overloadResult)) {
                     result = overloadResult.expression;
                     if (result != NULL)
                         return result;
@@ -2868,18 +2873,15 @@ ENode *unary_expression(void)
                 return operand;
             }
             operand = makemonadicnode(operand, EINDIRECT);
-            {
-                ENode *completed = operand;
-                completed->rtype = TPTR_TARGET(completed->rtype), CDecl_CompleteType(completed->rtype);
-                return completed;
-            }
+            operand->rtype = TPTR_TARGET(operand->rtype), CDecl_CompleteType(operand->rtype);
+            return operand;
         }
 
         case '+': {
             tk = CPrepTokenizer_GetNextToken();
-            operand = normalized = CExpr_GeneratePointerAndRewriteConst(cast_expression());
+            operand = CExpr_GeneratePointerAndRewriteConst(cast_expression());
             if (copts.cplusplus != 0) {
-                if (CExpr_CheckOperator(0x2b, normalized, NULL, &overloadResult)) {
+                if (CExpr_CheckOperator(0x2b, operand, NULL, &overloadResult)) {
                     result = overloadResult.expression;
                     if (result != NULL)
                         return result;
@@ -2912,25 +2914,8 @@ ENode *unary_expression(void)
             tk = CPrepTokenizer_GetNextToken();
             return CExpr_New_ELOGNOT_Node(cast_expression());
 
-        case TK_SIZEOF: {
-            type = scan_type_or_expression_type();
-            if (type->type == TYPECLASS && TYPE_CLASS(type)->sominfo != NULL)
-                CError_ReportError(ERR_SIZEOF_NOT_SUPPORTED_SOM_CLASSES);
-            if (type->type == TYPETEMPLATE) {
-                result = CExpr_NewTemplDepENode(1);
-                result->data.objref = (Object *)type;
-            } else {
-                if (type->size == 0) {
-                    UInt8 kindOffset = (UInt8)(type->type - TYPESTRUCT);
-                    if (kindOffset <= 1)
-                        CError_ReportError(ERR_ILLEGAL_USE_INCOMPLETE_STRUCT_UNION_CLASS, type, 0);
-                    else
-                        CError_ReportError(ERR_ILLEGAL_TYPE);
-                }
-                result = intconstnode(CABI_GetSizeTType(), type->size);
-            }
-            return result;
-        }
+        case TK_SIZEOF:
+            return CExpr_ParseSizeof();
 
         case TK_LOGICAL_AND: {
             if (copts.ANSIstrict == 0) {
@@ -2963,7 +2948,6 @@ ENode *unary_expression(void)
     }
 }
 
-
 ENode *do_castnullcheck(ENode *node, ENode *label)
 {
     ENode *result;
@@ -2979,6 +2963,17 @@ ENode *do_castnullcheck(ENode *node, ENode *label)
     ((ENode *)result)->data.precomp.labelId = CParser_GetUniqueID();
     label->type = EPRECOMP;
     ((ENode *)label)->data.longval = ((ENode *)result)->data.precomp.labelId;
+    return result;
+}
+
+static ENode *CExpr_ClassPtrCast(ENode *expr, TypeClass *from, TypeClass *to, Boolean typconflag)
+{
+    ENode *result;
+
+    fn_004eb810();
+    result = CClass_ClassPointerCast(expr, from, to, typconflag, 1);
+    if (result != expr && !(result->type == ETYPCON && result->data.monadic == expr))
+        result = do_castnullcheck(result, expr);
     return result;
 }
 
@@ -3069,6 +3064,19 @@ ENode *CExpr_MemberPointerConversion(ENode *enode, Type *type, Boolean flag)
     return enode;
 }
 
+static ENode *CExpr_MemberPointerCast(ENode *expr, TypeMemberPointer *type, UInt32 qual)
+{
+    if (expr->rtype->type != TYPEMEMBERPOINTER)
+        expr = CExpr_MemberPointerConversion(expr, TYPE(type), 1);
+    if (expr->rtype->type != TYPEMEMBERPOINTER) {
+        CError_ReportError(ERR_ILLEGAL_TYPE_CAST);
+        return nullnode();
+    }
+    expr = PointerToMemberCast(expr, TYPE_MEMBER_POINTER(expr->rtype), type);
+    expr->flags = qual & ENODE_FLAG_QUALS;
+    return expr;
+}
+
 ENode *do_typecast(ENode *expr, Type *type, UInt32 qual)
 {
     ENode *result;
@@ -3088,37 +3096,19 @@ ENode *do_typecast(ENode *expr, Type *type, UInt32 qual)
             CError_ReportError(ERR_ILLEGAL_EXPLICIT_CONVERSION_FROM, expr->rtype, expr->flags & ENODE_FLAG_QUALS, type,
                                qual);
             return expr;
-        case TYPEMEMBERPOINTER: {
-            ENode *memberExpr;
-            if (expr->rtype->type != TYPECLASS) {
-                memberExpr = expr;
-                if (expr->rtype->type != TYPEMEMBERPOINTER) {
-                    if (expr->type == EINTCONST && IsZero_4f5aa0(expr)) {
-                        if (TYPE_MEMBER_POINTER(type)->ty1->type == TYPEFUNC)
-                            memberExpr = create_objectnode(data_00587678);
-                        memberExpr->rtype = type;
-                    } else if (expr->type == EMEMBER)
-                        memberExpr = getpointertomemberfunc(expr, type, 1);
-                    else
-                        memberExpr = expr;
-                }
-                if (memberExpr->rtype->type != TYPEMEMBERPOINTER) {
-                    CError_ReportError(ERR_ILLEGAL_TYPE_CAST);
-                    result = nullnode();
-                } else {
-                    result = PointerToMemberCast(memberExpr, TYPE_MEMBER_POINTER(memberExpr->rtype),
-                                                 TYPE_MEMBER_POINTER(type));
-                    result->flags = qual & ENODE_FLAG_QUALS;
-                }
-                return result;
-            }
+        case TYPEMEMBERPOINTER:
+            if (expr->rtype->type != TYPECLASS)
+                return CExpr_MemberPointerCast(expr, TYPE_MEMBER_POINTER(type), qual);
             break;
-        }
     }
 
     nodeQual = maskedQual = qual & ENODE_FLAG_QUALS;
     if (expr->type == EOBJLIST)
+#if VERSION == VERSION_GC_1_0
+        return oldassignmentpromotion(expr, type, maskedQual, 1);
+#else
         return ((ENode * (*)(ENode *, Type *, int, int)) oldassignmentpromotion)(expr, type, maskedQual, 1);
+#endif
     if (expr->type == EOBJREF) {
         TypeMemberFunc *func;
         if ((func = (TypeMemberFunc *)(object = expr->data.addr.objref)->type)->type == TYPEFUNC &&
@@ -3134,14 +3124,13 @@ ENode *do_typecast(ENode *expr, Type *type, UInt32 qual)
         return expr;
     }
     if (type->type == TYPEPOINTER && (TYPE_POINTER(type)->qual & Q_REFERENCE)) {
-        TypePointer *targetPointer = TYPE_POINTER(type);
         ENode *operand = getnodeaddress(expr, 0);
         Type *pointerType = galloc(sizeof(TypePointer));
-        *TYPE_POINTER(pointerType) = *targetPointer;
+        *TYPE_POINTER(pointerType) = *TYPE_POINTER(type);
         TYPE_POINTER(pointerType)->qual &= ~Q_REFERENCE;
         result = do_typecast(operand, pointerType, qual);
         result = makemonadicnode(result, EINDIRECT);
-        result->rtype = targetPointer->target;
+        result->rtype = TYPE_POINTER(type)->target;
         result->flags = nodeQual;
         return result;
     }
@@ -3176,7 +3165,7 @@ ENode *do_typecast(ENode *expr, Type *type, UInt32 qual)
         result->flags = nodeQual;
         return result;
     }
-    if ((UInt8)(type->type - TYPEINT) <= 1) {
+    if (type->type == TYPEINT || type->type == TYPEFLOAT) {
         if (expr->type == ETYPCON && expr->rtype->type == type->type && expr->rtype->size == type->size &&
             is_unsigned(expr->rtype) == is_unsigned(type) && (expr->flags & ENODE_FLAG_QUALS) == qual) {
             expr->rtype = type;
@@ -3216,13 +3205,7 @@ ENode *do_typecast(ENode *expr, Type *type, UInt32 qual)
             TypeClass *from;
             if ((from = TYPE_CLASS(TYPE_POINTER(expr->rtype)->target))->type == TYPECLASS &&
                 (to = TYPE_CLASS(TYPE_POINTER(type)->target))->type == TYPECLASS) {
-                fn_004eb810();
-                result = CClass_ClassPointerCast(expr, from, to, 1, 1);
-                if (result != expr) {
-                    if (result->type != ETYPCON || result->data.monadic != expr)
-                        result = (ENode *)PreserveEvaluation(expr, &result);
-                }
-                expr = result;
+                expr = CExpr_ClassPtrCast(expr, from, to, 1);
             }
             if (expr->type != ETYPCON)
                 expr = makemonadicnode(expr, ETYPCON);
@@ -3289,11 +3272,14 @@ ENode *cast_expression(void)
         (structKind = TYPE_STRUCT(typeInfo.thetype)->stype) >= STRUCT_VECTOR_UCHAR &&
         structKind <= STRUCT_VECTOR_PIXEL) {
         tk = CPrepTokenizer_GetNextToken();
+#if VERSION == VERSION_GC_1_0
+        expr = CExpr_ParseCommaExpression();
+#else
         expr = assignment_expression();
         while (tk == ',') {
-            expr = CExpr_RewriteConst(pointer_generation(expr));
+            expr = POINTER_GENERATION_CONST(expr);
             tk = CPrepTokenizer_GetNextToken();
-            right = CExpr_RewriteConst(pointer_generation(assignment_expression()));
+            right = POINTER_GENERATION_CONST(assignment_expression());
             if (copts.cplusplus != 0 && (success = CExpr_CheckOperator(',', expr, right, &result)) != 0) {
                 expr = result.expression;
                 CError_ASSERT(6531, expr != 0);
@@ -3303,6 +3289,7 @@ ENode *cast_expression(void)
                 expr->rtype = right->rtype;
             }
         }
+#endif
         if (tk != ')')
             CError_ReportErrorAndUpdateToken(ERR_RPAREN_EXPECTED);
         else
@@ -3318,6 +3305,9 @@ ENode *cast_expression(void)
             node->rtype = typeInfo.thetype;
             node->data = value;
         } else {
+#if VERSION == VERSION_GC_1_0
+            expr->rtype = typeInfo.thetype;
+#endif
             node = makemonadicnode(expr, ETYPCON);
         }
         node->rtype = typeInfo.thetype;
@@ -3338,11 +3328,10 @@ ENode *cast_expression(void)
         link = lalloc(sizeof(*link));
         link->next = NULL;
         link->node = expr;
-        node = recovery_construct_4059(link, typeInfo.thetype, typeInfo.qual);
-        return node;
+        return CExpr_MakeTemplDepCast(typeInfo.thetype, typeInfo.qual, link);
     }
     if (typeInfo.thetype->type != TYPEPOINTER || ((TYPE_POINTER(typeInfo.thetype)->qual & Q_REFERENCE) == 0)) {
-        expr = CExpr_RewriteConst(pointer_generation(expr));
+        expr = POINTER_GENERATION_CONST(expr);
     }
     return do_typecast(expr, typeInfo.thetype, typeInfo.qual);
 }
@@ -3352,24 +3341,30 @@ ENode *member_pointer_expression(void)
     ENode *right, *left;
     Type *memberType;
     UInt16 flags;
-    ENode *wrapped, *resultNode, *expr;
+    ENode *resultNode, *expr;
     BinaryOperatorResult result;
-    CInt64 nullMemberOffset;
     ENode *arrowLeft;
     Type *type;
     expr = cast_expression();
     for (;;) {
         switch (tk) {
             case TK_ARROW_STAR: {
-                ENode *operand;
-                arrowLeft = CExpr_RewriteConst(pointer_generation(expr));
+#if VERSION == VERSION_GC_1_0
+                arrowLeft = POINTER_GENERATION_CONST(expr);
                 tk = CPrepTokenizer_GetNextToken();
-                operand = CExpr_RewriteConst(pointer_generation(cast_expression()));
+                right = POINTER_GENERATION_CONST(cast_expression());
+                if (CExpr_CheckOperator(371, arrowLeft, right, &result) != 0) {
+#else
+                ENode *operand;
+                arrowLeft = POINTER_GENERATION_CONST(expr);
+                tk = CPrepTokenizer_GetNextToken();
+                operand = POINTER_GENERATION_CONST(cast_expression());
                 right = operand;
                 if (CExpr_CheckOperator(371, arrowLeft, operand, &result) != 0) {
+#endif
                     expr = result.expression;
                     if (expr == NULL)
-                        CError_FATAL(4010);
+                        CError_FATAL(VERSION > VERSION_GC_1_0 ? 4010 : 4011);
                     continue;
                 }
                 if ((SInt8)arrowLeft->rtype->type < 11) {
@@ -3381,14 +3376,24 @@ ENode *member_pointer_expression(void)
                 break;
             }
             case TK_DOT_STAR:
-                left = CExpr_RewriteConst(pointer_generation(expr));
+#if VERSION == VERSION_GC_1_0
+                expr = POINTER_GENERATION_CONST(expr);
+                tk = CPrepTokenizer_GetNextToken();
+                right = POINTER_GENERATION_CONST(cast_expression());
+                if (expr->type != EINDIRECT) {
+                    CError_ReportError(ERR_NOT_LVALUE);
+                    return expr;
+                }
+#else
+                left = POINTER_GENERATION_CONST(expr);
                 expr = left;
                 tk = CPrepTokenizer_GetNextToken();
-                right = CExpr_RewriteConst(pointer_generation(cast_expression()));
+                right = POINTER_GENERATION_CONST(cast_expression());
                 if (left->type != EINDIRECT) {
                     CError_ReportError(ERR_NOT_LVALUE);
                     return left;
                 }
+#endif
                 break;
             default:
                 goto done;
@@ -3420,9 +3425,7 @@ ENode *member_pointer_expression(void)
             break;
         do {
             if (right->type != EINTCONST) {
-                nullMemberOffset.lo = -1;
-                nullMemberOffset.hi = -1;
-                if (add_to_expression_constant(expr->data.diadic.left, nullMemberOffset) == 0) {
+                if (canadd(expr->data.diadic.left, -1) == 0) {
                     expr->data.diadic.left = makediadicnode(expr->data.diadic.left, nullnode(), 15);
                     CInt64_SetLong(&expr->data.diadic.left->data.diadic.right->data.intval, -1);
                     optimizecomm(expr->data.diadic.left);
@@ -3443,15 +3446,9 @@ ENode *member_pointer_expression(void)
         } else
             expr->rtype = memberType;
         expr->flags = flags;
-        if ((SInt8)expr->rtype->type != TYPEPOINTER || !(TYPE_POINTER(expr->rtype)->qual & Q_REFERENCE)) {
-            (void)expr;
-            continue;
-        }
-        wrapped = makemonadicnode(expr, 4);
-        wrapped->rtype = TYPE_POINTER(wrapped->rtype)->target;
-        expr = wrapped;
+        expr = checkreference(expr);
     }
-    CError_ASSERT(4082, right->type == EINDIRECT);
+    CError_ASSERT(VERSION > VERSION_GC_1_0 ? 4082 : 4083, right->type == EINDIRECT);
     resultNode = lalloc(26);
     resultNode->type = EMFPOINTER;
     resultNode->cost = 4;
@@ -3464,6 +3461,65 @@ done:
     return expr;
 }
 
+#if VERSION == VERSION_GC_1_0
+static ENode *CExpr_MakeEMULNode(ENode *left, ENode *right)
+{
+    BinaryOperatorResult result;
+
+    if (left->rtype->type == TYPETEMPLDEPEXPR || right->rtype->type == TYPETEMPLDEPEXPR)
+        return CTempl_MakeTemplDepExpr(left, EMUL, right);
+    left = POINTER_GENERATION_CONST(left);
+    right = POINTER_GENERATION_CONST(right);
+    if (copts.cplusplus != 0 && CExpr_CheckOperator(0x2a, left, right, &result)) {
+        if (result.expression != NULL)
+            return result.expression;
+        if ((left = result.left) == NULL)
+            CError_FATAL(VERSION > VERSION_GC_1_0 ? 4113 : 4114);
+        if ((right = result.right) == NULL)
+            CError_FATAL(VERSION > VERSION_GC_1_0 ? 4114 : 4115);
+    }
+    return CExpr_New_EMUL_Node(left, right);
+}
+#endif
+
+static ENode *CExpr_MakeEDIVNode(ENode *left, ENode *right, Boolean suppressWarning)
+{
+    BinaryOperatorResult result;
+#if VERSION > VERSION_GC_1_0
+    ENode *leftValue;
+    ENode *rightValue;
+#endif
+
+    if (left->rtype->type == TYPETEMPLDEPEXPR || right->rtype->type == TYPETEMPLDEPEXPR)
+        return CTempl_MakeTemplDepExpr(left, EDIV, right);
+#if VERSION == VERSION_GC_1_0
+    left = POINTER_GENERATION_CONST(left);
+    right = POINTER_GENERATION_CONST(right);
+    if (copts.cplusplus != 0 && CExpr_CheckOperator(0x2f, left, right, &result)) {
+#else
+    left = POINTER_GENERATION_CONST(left);
+    leftValue = left;
+    right = rightValue = POINTER_GENERATION_CONST(right);
+    if (copts.cplusplus != 0 && CExpr_CheckOperator(0x2f, left, rightValue, &result)) {
+#endif
+        if (result.expression != NULL)
+            return result.expression;
+#if VERSION == VERSION_GC_1_0
+        if ((left = result.left) == NULL)
+#else
+        if ((leftValue = result.left) == NULL)
+#endif
+            CError_FATAL(VERSION > VERSION_GC_1_0 ? 4139 : 4140);
+        if ((right = result.right) == NULL)
+            CError_FATAL(VERSION > VERSION_GC_1_0 ? 4140 : 4141);
+    }
+#if VERSION == VERSION_GC_1_0
+    return CExpr_New_EDIV_Node(left, right, suppressWarning);
+#else
+    return CExpr_New_EDIV_Node(leftValue, right, suppressWarning);
+#endif
+}
+
 ENode *CExpr_New_EMODULO_Node(ENode *left, ENode *right, Boolean suppressWarning)
 {
     BinaryOperatorResult overloadResult;
@@ -3471,17 +3527,17 @@ ENode *CExpr_New_EMODULO_Node(ENode *left, ENode *right, Boolean suppressWarning
     if (left->rtype->type == TYPETEMPLDEPEXPR || right->rtype->type == TYPETEMPLDEPEXPR)
         return CTempl_MakeTemplDepExpr(left, EMODULO, right);
 
-    left = rewrite_const_pointer_generation(left);
-    right = rewrite_const_pointer_generation(right);
+    left = CExpr_GeneratePointerAndRewriteConst(left);
+    right = CExpr_GeneratePointerAndRewriteConst(right);
 
     if (copts.cplusplus != 0) {
         if (CExpr_CheckOperator('%', (ENode *)(left), (ENode *)(right), &overloadResult)) {
             if (overloadResult.expression != NULL)
                 return overloadResult.expression;
             left = overloadResult.left;
-            CError_ASSERT(4165, left != NULL);
+            CError_ASSERT(VERSION > VERSION_GC_1_0 ? 4165 : 4166, left != NULL);
             right = overloadResult.right;
-            CError_ASSERT(4166, right != NULL);
+            CError_ASSERT(VERSION > VERSION_GC_1_0 ? 4166 : 4167, right != NULL);
         }
     }
 
@@ -3512,6 +3568,48 @@ ENode *CExpr_New_EMODULO_Node(ENode *left, ENode *right, Boolean suppressWarning
     return makediadicnode(left, right, EMODULO);
 }
 
+#if VERSION == VERSION_GC_1_0
+static ENode *CExpr_MakeEADDNode(ENode *left, ENode *right)
+{
+    BinaryOperatorResult result;
+
+    if (left->rtype->type == TYPETEMPLDEPEXPR || right->rtype->type == TYPETEMPLDEPEXPR)
+        return CTempl_MakeTemplDepExpr(left, EADD, right);
+    left = POINTER_GENERATION_CONST(left);
+    right = POINTER_GENERATION_CONST(right);
+    if (copts.cplusplus != 0 && CExpr_CheckOperator(0x2b, left, right, &result)) {
+        if (result.expression != NULL)
+            return result.expression;
+        if ((left = result.left) == NULL)
+            CError_FATAL(VERSION > VERSION_GC_1_0 ? 4212 : 4213);
+        if ((right = result.right) == NULL)
+            CError_FATAL(VERSION > VERSION_GC_1_0 ? 4213 : 4214);
+    }
+    return CExpr_New_EADD_Node(left, right);
+}
+#endif
+
+#if VERSION == VERSION_GC_1_0
+static ENode *CExpr_MakeESUBNode(ENode *left, ENode *right)
+{
+    BinaryOperatorResult result;
+
+    if (left->rtype->type == TYPETEMPLDEPEXPR || right->rtype->type == TYPETEMPLDEPEXPR)
+        return CTempl_MakeTemplDepExpr(left, ESUB, right);
+    left = POINTER_GENERATION_CONST(left);
+    right = POINTER_GENERATION_CONST(right);
+    if (copts.cplusplus != 0 && CExpr_CheckOperator(0x2d, left, right, &result)) {
+        if (result.expression != NULL)
+            return result.expression;
+        if ((left = result.left) == NULL)
+            CError_FATAL(VERSION > VERSION_GC_1_0 ? 4237 : 4238);
+        if ((right = result.right) == NULL)
+            CError_FATAL(VERSION > VERSION_GC_1_0 ? 4238 : 4239);
+    }
+    return CExpr_New_ESUB_Node(left, right);
+}
+#endif
+
 ENode *CExpr_New_ESHL_Node(ENode *left, ENode *right)
 {
     BinaryOperatorResult overloadResult;
@@ -3524,18 +3622,23 @@ ENode *CExpr_New_ESHL_Node(ENode *left, ENode *right)
         return CTempl_MakeTemplDepExpr(left, ESHL, right);
     }
 
-    convertedLeft = CExpr_RewriteConst(pointer_generation(left));
+#if VERSION == VERSION_GC_1_0
+    left = POINTER_GENERATION_CONST(left);
+    right = POINTER_GENERATION_CONST(right);
+#else
+    convertedLeft = POINTER_GENERATION_CONST(left);
     left = convertedLeft;
-    convertedRight = CExpr_RewriteConst(pointer_generation(right));
+    convertedRight = POINTER_GENERATION_CONST(right);
     right = convertedRight;
+#endif
 
     if (copts.cplusplus != 0) {
         if (CExpr_CheckOperator(0x16c, (ENode *)(left), (ENode *)(right), &overloadResult)) {
             if (overloadResult.expression != NULL) {
                 return overloadResult.expression;
             }
-            CError_ASSERT(4262, left = overloadResult.left);
-            CError_ASSERT(4263, right = overloadResult.right);
+            CError_ASSERT(VERSION > VERSION_GC_1_0 ? 4262 : 4263, left = overloadResult.left);
+            CError_ASSERT(VERSION > VERSION_GC_1_0 ? 4263 : 4264, right = overloadResult.right);
         }
     }
 
@@ -3564,18 +3667,26 @@ ENode *CExpr_New_ESHR_Node(ENode *left, ENode *right)
     if (left->rtype->type == TYPETEMPLDEPEXPR || right->rtype->type == TYPETEMPLDEPEXPR)
         return CTempl_MakeTemplDepExpr(left, ESHR, right);
 
-    normalizedLeft = (ENode *)CExpr_RewriteConst(pointer_generation(left));
+#if VERSION == VERSION_GC_1_0
+    left = POINTER_GENERATION_CONST(left);
+    right = POINTER_GENERATION_CONST(right);
+
+    if (copts.cplusplus != 0) {
+        if (CExpr_CheckOperator(0x16d, left, right, &result) != 0) {
+#else
+    normalizedLeft = (ENode *)POINTER_GENERATION_CONST(left);
     left = normalizedLeft;
-    normalizedRight = (ENode *)CExpr_RewriteConst(pointer_generation(right));
+    normalizedRight = (ENode *)POINTER_GENERATION_CONST(right);
     right = normalizedRight;
 
     if (copts.cplusplus != 0) {
         if (CExpr_CheckOperator(0x16d, (ENode *)(normalizedLeft), (ENode *)(normalizedRight),
                                 (BinaryOperatorResult *)(&result)) != 0) {
+#endif
             if (result.expression != NULL)
                 return result.expression;
-            CError_ASSERT(4295, (left = result.left) != 0);
-            CError_ASSERT(4296, (right = result.right) != 0);
+            CError_ASSERT(VERSION > VERSION_GC_1_0 ? 4295 : 4296, (left = result.left) != 0);
+            CError_ASSERT(VERSION > VERSION_GC_1_0 ? 4296 : 4297, (right = result.right) != 0);
         }
     }
 
@@ -3596,11 +3707,10 @@ ENode *CExpr_New_ESHR_Node(ENode *left, ENode *right)
 ENode *make_pointer_comparison(UInt8 op, ENode *left, ENode *right)
 {
     Type *leftTarget;
+    Type *leftType;
     Type *rightType;
     Type *rightTarget;
-    Type *leftType;
     UInt8 rightKind;
-    ENode *converted;
 
     leftTarget = leftType = left->rtype;
     rightTarget = rightType = right->rtype;
@@ -3615,21 +3725,9 @@ ENode *make_pointer_comparison(UInt8 op, ENode *left, ENode *right)
                 if (leftTarget == TPTR_TARGET(leftType)) {
                     fn_004eb810();
                     if (CClass_FindBasePath((TypeClass *)leftTarget, (TypeClass *)rightTarget, 0, 1)) {
-                        fn_004eb810();
-                        converted =
-                            CClass_ClassPointerCast(left, TYPE_CLASS(leftTarget), TYPE_CLASS(rightTarget), 0, 1);
-                        if (converted != left && !(converted->type == ETYPCON && converted->data.diadic.left == left) &&
-                            !isnotzero(left))
-                            converted = CExpr_WrapPrecomp(left, converted);
-                        left = converted;
+                        left = CExpr_ClassPtrCast(left, TYPE_CLASS(leftTarget), TYPE_CLASS(rightTarget), 0);
                     } else if (CClass_FindBasePath((TypeClass *)rightTarget, (TypeClass *)leftTarget, 0, 1)) {
-                        fn_004eb810();
-                        converted =
-                            CClass_ClassPointerCast(right, TYPE_CLASS(rightTarget), TYPE_CLASS(leftTarget), 0, 1);
-                        if (converted != right &&
-                            !(converted->type == ETYPCON && converted->data.diadic.left == right) && !isnotzero(right))
-                            converted = CExpr_WrapPrecomp(right, converted);
-                        right = converted;
+                        right = CExpr_ClassPtrCast(right, TYPE_CLASS(rightTarget), TYPE_CLASS(leftTarget), 0);
                     } else {
                         CError_ReportError(ERR_TYPE_MISMATCH, left->rtype, left->flags & 3, right->rtype,
                                            right->flags & 3);
@@ -3678,10 +3776,10 @@ ENode *simplify_unsigned_zero_comparison(ENode *node, Boolean lessThan, Boolean 
 
     operandType = node->data.diadic.left->rtype;
     if (is_unsigned(operandType)) {
-        if (node->data.diadic.left->type == EINTCONST && CExpr_IsZeroValue(&node->data.diadic.left->data.intval)) {
+        if (node->data.diadic.left->type == EINTCONST && CInt64_IsZero(&node->data.diadic.left->data.intval)) {
             lessThan = !lessThan;
         } else if (node->data.diadic.right->type != EINTCONST ||
-                   !CExpr_IsZeroValue(&node->data.diadic.right->data.intval)) {
+                   !CInt64_IsZero(&node->data.diadic.right->data.intval)) {
             return set_comparison_result_type(node);
         }
 
@@ -3694,16 +3792,7 @@ ENode *simplify_unsigned_zero_comparison(ENode *node, Boolean lessThan, Boolean 
             return set_comparison_result_type(node);
         }
         node = set_comparison_result_type(node);
-
-        if (node->rtype->type == TYPEFLOAT) {
-            constant = intconstnode((Type *)&stsignedint, !lessThan);
-            constant->type = EFLOATCONST;
-            constant->data.floatval = CMach_CalcFloatConvertFromInt((Type *)&stsignedint, constant->data.intval);
-            constant->rtype = node->rtype;
-        } else {
-            constant = intconstnode(node->rtype, !lessThan);
-        }
-        return fn_00513910(node) ? makediadicnode(node, constant, ECOMMA) : constant;
+        return CExpr_ConstResult(node, !lessThan);
     }
     return set_comparison_result_type(node);
 }
@@ -3716,15 +3805,15 @@ ENode *CExpr_New_ELESS_Node(ENode *left, ENode *right)
     if (left->rtype->type == TYPETEMPLDEPEXPR || right->rtype->type == TYPETEMPLDEPEXPR)
         return CTempl_MakeTemplDepExpr(left, ELESS, right);
 
-    left = NormalizeOperand(left);
-    right = NormalizeOperand(right);
+    left = CExpr_GeneratePointerAndRewriteConst(left);
+    right = CExpr_GeneratePointerAndRewriteConst(right);
 
     if (copts.cplusplus != 0) {
         if (CExpr_CheckOperator(60, (ENode *)(left), (ENode *)(right), &fold)) {
             if (fold.expression != NULL)
                 return fold.expression;
-            CError_ASSERT(4452, (left = fold.left));
-            CError_ASSERT(4453, (right = fold.right));
+            CError_ASSERT(VERSION > VERSION_GC_1_0 ? 4452 : 4453, (left = fold.left));
+            CError_ASSERT(VERSION > VERSION_GC_1_0 ? 4453 : 4454, (right = fold.right));
         }
     }
 
@@ -3759,14 +3848,14 @@ ENode *CExpr_New_ELESSEQU_Node(ENode *left, ENode *right)
 
     if (left->rtype->type == TYPETEMPLDEPEXPR || right->rtype->type == TYPETEMPLDEPEXPR)
         return CTempl_MakeTemplDepExpr(left, ELESSEQU, right);
-    left = NormalizeOperand(left);
-    right = NormalizeOperand(right);
+    left = CExpr_GeneratePointerAndRewriteConst(left);
+    right = CExpr_GeneratePointerAndRewriteConst(right);
     if (copts.cplusplus != 0) {
         if (CExpr_CheckOperator(362, (ENode *)(left), (ENode *)(right), &fold)) {
             if (fold.expression != NULL)
                 return fold.expression;
-            CError_ASSERT(4496, (left = fold.left));
-            CError_ASSERT(4497, (right = fold.right));
+            CError_ASSERT(VERSION > VERSION_GC_1_0 ? 4496 : 4497, (left = fold.left));
+            CError_ASSERT(VERSION > VERSION_GC_1_0 ? 4497 : 4498, (right = fold.right));
         }
     }
     if ((SInt8)left->rtype->type >= TYPEPOINTER || (SInt8)right->rtype->type >= TYPEPOINTER) {
@@ -3798,15 +3887,15 @@ ENode *CExpr_New_EGREATER_Node(ENode *left, ENode *right)
     if (left->rtype->type == TYPETEMPLDEPEXPR || right->rtype->type == TYPETEMPLDEPEXPR)
         return CTempl_MakeTemplDepExpr(left, EGREATER, right);
 
-    left = NormalizeOperand(left);
-    right = NormalizeOperand(right);
+    left = CExpr_GeneratePointerAndRewriteConst(left);
+    right = CExpr_GeneratePointerAndRewriteConst(right);
 
     if (copts.cplusplus != 0) {
         if (CExpr_CheckOperator(62, (ENode *)(left), (ENode *)(right), &fold)) {
             if (fold.expression != NULL)
                 return fold.expression;
-            CError_ASSERT(4540, (left = fold.left));
-            CError_ASSERT(4541, (right = fold.right));
+            CError_ASSERT(VERSION > VERSION_GC_1_0 ? 4540 : 4541, (left = fold.left));
+            CError_ASSERT(VERSION > VERSION_GC_1_0 ? 4541 : 4542, (right = fold.right));
         }
     }
 
@@ -3842,15 +3931,15 @@ ENode *CExpr_New_EGREATEREQU_Node(ENode *left, ENode *right)
     if (left->rtype->type == TYPETEMPLDEPEXPR || right->rtype->type == TYPETEMPLDEPEXPR)
         return CTempl_MakeTemplDepExpr(left, EGREATEREQU, right);
 
-    left = NormalizeOperand(left);
-    right = NormalizeOperand(right);
+    left = CExpr_GeneratePointerAndRewriteConst(left);
+    right = CExpr_GeneratePointerAndRewriteConst(right);
 
     if (copts.cplusplus != 0) {
         if (CExpr_CheckOperator(0x16b, (ENode *)(left), (ENode *)(right), &fold)) {
             if (fold.expression != NULL)
                 return fold.expression;
-            CError_ASSERT(4584, (left = fold.left));
-            CError_ASSERT(4585, (right = fold.right));
+            CError_ASSERT(VERSION > VERSION_GC_1_0 ? 4584 : 4585, (left = fold.left));
+            CError_ASSERT(VERSION > VERSION_GC_1_0 ? 4585 : 4586, (right = fold.right));
         }
     }
 
@@ -3885,12 +3974,12 @@ ENode *memberpointercompare(UInt8 op, ENode *left, ENode *right)
     ENode *node;
 
     if (left->rtype->type != TYPEMEMBERPOINTER) {
-        if (!(left->rtype->type == TYPEINT && left->type == EINTCONST && IsZeroValue(left))) {
+        if (!(left->rtype->type == TYPEINT && left->type == EINTCONST && CInt64_IsZero(&left->data.intval))) {
             CError_ReportError(ERR_ILLEGAL_OPERAND);
             return nullnode();
         }
     } else if (right->rtype->type != TYPEMEMBERPOINTER) {
-        if (!(right->rtype->type == TYPEINT && right->type == EINTCONST && IsZeroValue(right))) {
+        if (!(right->rtype->type == TYPEINT && right->type == EINTCONST && CInt64_IsZero(&right->data.intval))) {
             CError_ReportError(ERR_ILLEGAL_OPERAND);
             return nullnode();
         }
@@ -3941,17 +4030,17 @@ ENode *CExpr_New_EEQU_Node(ENode *left, ENode *right)
     if (left->rtype->type == TYPETEMPLDEPEXPR || right->rtype->type == TYPETEMPLDEPEXPR)
         return CTempl_MakeTemplDepExpr(left, 0x17, right);
 
-    left = rewrite_pointer_generation_const(left);
-    right = rewrite_pointer_generation_const(right);
+    left = CExpr_GeneratePointerAndRewriteConst(left);
+    right = CExpr_GeneratePointerAndRewriteConst(right);
 
     if (copts.cplusplus != 0) {
         if (CExpr_CheckOperator(0x168, (ENode *)(left), (ENode *)(right), &out)) {
             if (out.expression != NULL)
                 return out.expression;
             left = out.left;
-            CError_ASSERT(4713, left != NULL);
+            CError_ASSERT(VERSION > VERSION_GC_1_0 ? 4713 : 4714, left != NULL);
             right = out.right;
-            CError_ASSERT(4714, right != NULL);
+            CError_ASSERT(VERSION > VERSION_GC_1_0 ? 4714 : 4715, right != NULL);
         }
     }
 
@@ -3992,18 +4081,18 @@ ENode *CExpr_New_ENOTEQU_Node(ENode *left, ENode *right)
     if (left->rtype->type == TYPETEMPLDEPEXPR || right->rtype->type == TYPETEMPLDEPEXPR)
         return CTempl_MakeTemplDepExpr(left, 0x18, right);
 
-    left = rewrite_const_after_pointer_generation(left);
-    right = rewrite_const_after_pointer_generation(right);
+    left = CExpr_GeneratePointerAndRewriteConst(left);
+    right = CExpr_GeneratePointerAndRewriteConst(right);
 
     if (copts.cplusplus && CExpr_CheckOperator(0x169, left, right, &result)) {
         if (result.expression != NULL)
             return result.expression;
         left = result.left;
         if (left == NULL)
-            CError_FATAL(4766);
+            CError_FATAL(VERSION > VERSION_GC_1_0 ? 4766 : 4767);
         right = result.right;
         if (right == NULL)
-            CError_FATAL(4767);
+            CError_FATAL(VERSION > VERSION_GC_1_0 ? 4767 : 4768);
     }
 
     if ((SInt8)left->rtype->type >= TYPEPOINTER || (SInt8)right->rtype->type >= TYPEPOINTER) {
@@ -4020,7 +4109,7 @@ ENode *CExpr_New_ENOTEQU_Node(ENode *left, ENode *right)
         left->rtype = CParser_GetBoolType();
     } else if (left->type == EFLOATCONST && right->type == EFLOATCONST) {
         CInt64_SetLong(&left->data.intval, CMach_CalcFloatDiadicBool(left->rtype, left->data.floatval.data.value, 0x169,
-                                                              right->data.floatval.data.value));
+                                                                     right->data.floatval.data.value));
         left->type = EINTCONST;
         left->rtype = CParser_GetBoolType();
     } else {
@@ -4038,8 +4127,8 @@ ENode *CExpr_New_EAND_Node(ENode *left, ENode *right)
     if (left->rtype->type == TYPETEMPLDEPEXPR || right->rtype->type == TYPETEMPLDEPEXPR)
         return CTempl_MakeTemplDepExpr(left, EAND, right);
 
-    left = pointer_generation_and_rewrite_const(left);
-    right = pointer_generation_and_rewrite_const(right);
+    left = CExpr_GeneratePointerAndRewriteConst(left);
+    right = CExpr_GeneratePointerAndRewriteConst(right);
 
     if (copts.cplusplus &&
         CExpr_CheckOperator(EANDASS, (ENode *)(left), (ENode *)(right), (BinaryOperatorResult *)(&comb))) {
@@ -4047,9 +4136,9 @@ ENode *CExpr_New_EAND_Node(ENode *left, ENode *right)
             if (comb.expression != NULL)
                 return comb.expression;
             left = comb.left;
-            CError_ASSERT(4818, left != NULL);
+            CError_ASSERT(VERSION > VERSION_GC_1_0 ? 4818 : 4819, left != NULL);
             right = comb.right;
-            CError_ASSERT(4819, right != NULL);
+            CError_ASSERT(VERSION > VERSION_GC_1_0 ? 4819 : 4820, right != NULL);
         }
     }
 
@@ -4079,16 +4168,16 @@ ENode *CExpr_New_EXOR_Node(ENode *left, ENode *right)
     if (left->rtype->type == TYPETEMPLDEPEXPR || right->rtype->type == TYPETEMPLDEPEXPR)
         return CTempl_MakeTemplDepExpr(left, EXOR, right);
 
-    left = generate_pointer_and_rewrite_const(left);
-    right = generate_pointer_and_rewrite_const(right);
+    left = CExpr_GeneratePointerAndRewriteConst(left);
+    right = CExpr_GeneratePointerAndRewriteConst(right);
     if (copts.cplusplus) {
         if (CExpr_CheckOperator('^', left, right, &operatorResult)) {
             if (operatorResult.expression)
                 return operatorResult.expression;
             left = operatorResult.left;
-            CError_ASSERT(4854, operatorResult.left != 0);
+            CError_ASSERT(VERSION > VERSION_GC_1_0 ? 4854 : 4855, operatorResult.left != 0);
             right = operatorResult.right;
-            CError_ASSERT(4855, operatorResult.right != 0);
+            CError_ASSERT(VERSION > VERSION_GC_1_0 ? 4855 : 4856, operatorResult.right != 0);
         }
     }
     left = integralpromote(left);
@@ -4114,16 +4203,16 @@ ENode *CExpr_New_EOR_Node(ENode *left, ENode *right)
     if (left->rtype->type == TYPETEMPLDEPEXPR || right->rtype->type == TYPETEMPLDEPEXPR)
         return CTempl_MakeTemplDepExpr(left, 0x1b, right);
 
-    left = recovered_normalize(left);
-    right = recovered_normalize(right);
+    left = CExpr_GeneratePointerAndRewriteConst(left);
+    right = CExpr_GeneratePointerAndRewriteConst(right);
 
     if (copts.cplusplus && CExpr_CheckOperator(0x7c, left, right, &out)) {
         if (out.expression)
             return out.expression;
         left = out.left;
-        CError_ASSERT(4890, left != NULL);
+        CError_ASSERT(VERSION > VERSION_GC_1_0 ? 4890 : 4891, left != NULL);
         right = out.right;
-        CError_ASSERT(4891, right != NULL);
+        CError_ASSERT(VERSION > VERSION_GC_1_0 ? 4891 : 4892, right != NULL);
     }
 
     left = integralpromote(left);
@@ -4154,16 +4243,23 @@ ENode *CExpr_New_ELAND_Node(ENode *left, ENode *right)
     if (left->rtype->type == TYPETEMPLDEPEXPR || right->rtype->type == TYPETEMPLDEPEXPR)
         return CTempl_MakeTemplDepExpr(left, ELAND, right);
 
-    convertedLeft = CExpr_RewriteConst(pointer_generation(left));
+#if VERSION == VERSION_GC_1_0
+    left = POINTER_GENERATION_CONST(left);
+    right = POINTER_GENERATION_CONST(right);
+
+    if (copts.cplusplus != 0 && CExpr_CheckOperator(0x167, left, right, &result) != 0) {
+#else
+    convertedLeft = POINTER_GENERATION_CONST(left);
     left = convertedLeft;
-    convertedRight = CExpr_RewriteConst(pointer_generation(right));
+    convertedRight = POINTER_GENERATION_CONST(right);
     right = convertedRight;
 
     if (copts.cplusplus != 0 && CExpr_CheckOperator(0x167, convertedLeft, convertedRight, &result) != 0) {
+#endif
         if (result.expression != NULL)
             return result.expression;
-        CError_ASSERT(4926, (left = result.left) != 0);
-        CError_ASSERT(4927, (right = result.right) != 0);
+        CError_ASSERT(VERSION > VERSION_GC_1_0 ? 4926 : 4927, (left = result.left) != 0);
+        CError_ASSERT(VERSION > VERSION_GC_1_0 ? 4927 : 4928, (right = result.right) != 0);
     }
 
     switch ((SInt8)left->rtype->type) {
@@ -4198,6 +4294,32 @@ ENode *CExpr_New_ELAND_Node(ENode *left, ENode *right)
             break;
     }
 
+#if VERSION == VERSION_GC_1_0
+    if (iszero(left))
+        return CExpr_intnode(left, 0);
+
+    if (isnotzero(left)) {
+        if (iszero(right))
+            return CExpr_intnode(left, 0);
+        if (isnotzero(right))
+            return CExpr_intnode(left, 1);
+        convertedLeft = makemonadicnode(right, ELOGNOT);
+        convertedLeft->rtype = CParser_GetBoolType();
+        return makemonadicnode(convertedLeft, ELOGNOT);
+    }
+
+    if (isnotzero(right)) {
+        convertedLeft = makemonadicnode(left, ELOGNOT);
+        convertedLeft->rtype = CParser_GetBoolType();
+        return makemonadicnode(convertedLeft, ELOGNOT);
+    }
+    if (iszero(right))
+        return makecommaexpression(left, CExpr_intnode(right, 0));
+
+    convertedLeft = makediadicnode(left, right, ELAND);
+    convertedLeft->rtype = CParser_GetBoolType();
+    return convertedLeft;
+#else
     if (iszero(left) != 0) {
         left->type = EINTCONST;
         left->rtype = CParser_GetBoolType();
@@ -4241,6 +4363,7 @@ ENode *CExpr_New_ELAND_Node(ENode *left, ENode *right)
         right->rtype = CParser_GetBoolType();
         return right;
     }
+#endif
 }
 
 ENode *CExpr_New_ELOR_Node(ENode *left, ENode *right)
@@ -4252,17 +4375,25 @@ ENode *CExpr_New_ELOR_Node(ENode *left, ENode *right)
     if (left->rtype->type == TYPETEMPLDEPEXPR || right->rtype->type == TYPETEMPLDEPEXPR)
         return CTempl_MakeTemplDepExpr(left, 0x1d, right);
 
-    result = CExpr_RewriteConst(pointer_generation(left));
+#if VERSION == VERSION_GC_1_0
+    left = POINTER_GENERATION_CONST(left);
+    right = POINTER_GENERATION_CONST(right);
+
+    if (copts.cplusplus != 0) {
+        if (CExpr_CheckOperator(0x166, left, right, &nodes)) {
+#else
+    result = POINTER_GENERATION_CONST(left);
     left = result;
-    convertedRight = CExpr_RewriteConst(pointer_generation(right));
+    convertedRight = POINTER_GENERATION_CONST(right);
     right = convertedRight;
 
     if (copts.cplusplus != 0) {
         if (CExpr_CheckOperator(0x166, left, convertedRight, &nodes)) {
+#endif
             if (nodes.expression != NULL)
                 return nodes.expression;
-            CError_ASSERT(5022, (left = nodes.left) != NULL);
-            CError_ASSERT(5023, (right = nodes.right) != NULL);
+            CError_ASSERT(VERSION > VERSION_GC_1_0 ? 5022 : 5023, (left = nodes.left) != NULL);
+            CError_ASSERT(VERSION > VERSION_GC_1_0 ? 5023 : 5024, (right = nodes.right) != NULL);
         }
     }
 
@@ -4322,6 +4453,56 @@ ENode *CExpr_New_ELOR_Node(ENode *left, ENode *right)
     return result;
 }
 
+#if VERSION == VERSION_GC_1_0
+ENode *CExpr_NewDyadicNode(ENode *left, UInt8 op, ENode *right)
+{
+    switch (op) {
+        default:
+            CError_FATAL(VERSION > VERSION_GC_1_0 ? 5112 : 5113);
+
+        case EADD:
+            return CExpr_MakeEADDNode(left, right);
+
+        case ESUB:
+            return CExpr_MakeESUBNode(left, right);
+
+        case EMUL:
+            return CExpr_MakeEMULNode(left, right);
+
+        case EDIV:
+            return CExpr_MakeEDIVNode(left, right, 1);
+        case EMODULO:
+            return CExpr_New_EMODULO_Node(left, right, 1);
+        case EAND:
+            return CExpr_New_EAND_Node(left, right);
+        case EXOR:
+            return CExpr_New_EXOR_Node(left, right);
+        case EOR:
+            return CExpr_New_EOR_Node(left, right);
+        case ESHL:
+            return CExpr_New_ESHL_Node(left, right);
+        case ESHR:
+            return CExpr_New_ESHR_Node(left, right);
+        case ELESS:
+            return CExpr_New_ELESS_Node(left, right);
+        case EGREATER:
+            return CExpr_New_EGREATER_Node(left, right);
+        case ELESSEQU:
+            return CExpr_New_ELESSEQU_Node(left, right);
+        case EGREATEREQU:
+            return CExpr_New_EGREATEREQU_Node(left, right);
+        case EEQU:
+            return CExpr_New_EEQU_Node(left, right);
+        case ENOTEQU:
+            return CExpr_New_ENOTEQU_Node(left, right);
+        case ELAND:
+            return CExpr_New_ELAND_Node(left, right);
+        case ELOR:
+            return CExpr_New_ELOR_Node(left, right);
+    }
+    return NULL;
+}
+#else
 ENode *CExpr_NewDyadicNode(ENode *left, UInt8 op, ENode *right)
 {
     switch (op) {
@@ -4337,9 +4518,9 @@ ENode *CExpr_NewDyadicNode(ENode *left, UInt8 op, ENode *right)
                 if (left->rtype->type == TYPETEMPLDEPEXPR || right->rtype->type == TYPETEMPLDEPEXPR) {
                     result = CTempl_MakeTemplDepExpr(left, EADD, right);
                 } else {
-                    lnode = CExpr_RewriteConst(pointer_generation(left));
+                    lnode = POINTER_GENERATION_CONST(left);
                     l = lnode;
-                    rnode = CExpr_RewriteConst(pointer_generation(right));
+                    rnode = POINTER_GENERATION_CONST(right);
                     r = rnode;
                     if (copts.cplusplus != 0 && CExpr_CheckOperator(0x2b, (ENode *)(lnode), (ENode *)(rnode),
                                                                     (BinaryOperatorResult *)(&fold))) {
@@ -4367,9 +4548,9 @@ ENode *CExpr_NewDyadicNode(ENode *left, UInt8 op, ENode *right)
                 if (left->rtype->type == TYPETEMPLDEPEXPR || right->rtype->type == TYPETEMPLDEPEXPR) {
                     result = CTempl_MakeTemplDepExpr(left, ESUB, right);
                 } else {
-                    lnode = CExpr_RewriteConst(pointer_generation(left));
+                    lnode = POINTER_GENERATION_CONST(left);
                     l = lnode;
-                    rnode = CExpr_RewriteConst(pointer_generation(right));
+                    rnode = POINTER_GENERATION_CONST(right);
                     r = rnode;
                     if (copts.cplusplus != 0 && CExpr_CheckOperator(0x2d, (ENode *)(lnode), (ENode *)(rnode),
                                                                     (BinaryOperatorResult *)(&fold))) {
@@ -4397,9 +4578,9 @@ ENode *CExpr_NewDyadicNode(ENode *left, UInt8 op, ENode *right)
                 if (left->rtype->type == TYPETEMPLDEPEXPR || right->rtype->type == TYPETEMPLDEPEXPR) {
                     result = CTempl_MakeTemplDepExpr(left, EMUL, right);
                 } else {
-                    lnode = CExpr_RewriteConst(pointer_generation(left));
+                    lnode = POINTER_GENERATION_CONST(left);
                     l = lnode;
-                    rnode = CExpr_RewriteConst(pointer_generation(right));
+                    rnode = POINTER_GENERATION_CONST(right);
                     r = rnode;
                     if (copts.cplusplus != 0 && CExpr_CheckOperator(0x2a, (ENode *)(lnode), (ENode *)(rnode),
                                                                     (BinaryOperatorResult *)(&fold))) {
@@ -4427,9 +4608,9 @@ ENode *CExpr_NewDyadicNode(ENode *left, UInt8 op, ENode *right)
                 if (left->rtype->type == TYPETEMPLDEPEXPR || right->rtype->type == TYPETEMPLDEPEXPR) {
                     result = CTempl_MakeTemplDepExpr(left, EDIV, right);
                 } else {
-                    lnode = CExpr_RewriteConst(pointer_generation(left));
+                    lnode = POINTER_GENERATION_CONST(left);
                     l = lnode;
-                    rnode = CExpr_RewriteConst(pointer_generation(right));
+                    rnode = POINTER_GENERATION_CONST(right);
                     r = rnode;
                     if (copts.cplusplus != 0 && CExpr_CheckOperator(0x2f, (ENode *)(lnode), (ENode *)(rnode),
                                                                     (BinaryOperatorResult *)(&fold))) {
@@ -4478,6 +4659,7 @@ ENode *CExpr_NewDyadicNode(ENode *left, UInt8 op, ENode *right)
     }
     return NULL;
 }
+#endif
 
 unsigned char get_binary_operator_info(short token, unsigned char *operatorInfo)
 {
@@ -4562,11 +4744,8 @@ unsigned char get_binary_operator_info(short token, unsigned char *operatorInfo)
 
 ENode *parse_binary_expression(ENode *left, unsigned char precedence, char conditional)
 {
-    ENode *leftValue;
     ENode *result;
-    ENode *rightValue;
     ENode *right;
-    ENode *convertedRight;
     char logical;
     char done;
     char savedTemplateArgumentMode;
@@ -4574,7 +4753,6 @@ ENode *parse_binary_expression(ENode *left, unsigned char precedence, char condi
         unsigned char kind;
         unsigned char precedence;
     } operatorInfo, lookaheadOperator;
-    BinaryOperatorResult conversion;
 
     savedTemplateArgumentMode = non_type_template_argument_mode;
     if (left == NULL) {
@@ -4587,13 +4765,13 @@ ENode *parse_binary_expression(ENode *left, unsigned char precedence, char condi
             return left;
         switch (operatorInfo.kind) {
             case ELAND:
-                warn_unwanted_assignment(left);
+                CExpr_CheckUnwantedAssignment(left);
                 if (iszero(left) != 0)
                     conditional = 1;
                 logical = 1;
                 break;
             case ELOR:
-                warn_unwanted_assignment(left);
+                CExpr_CheckUnwantedAssignment(left);
                 if (isnotzero(left) != 0)
                     conditional = 1;
                 logical = 1;
@@ -4618,36 +4796,34 @@ ENode *parse_binary_expression(ENode *left, unsigned char precedence, char condi
             }
         }
         if (logical != 0)
-            warn_unwanted_assignment(right);
+            CExpr_CheckUnwantedAssignment(right);
         switch (operatorInfo.kind) {
             case EDIV:
-                if (left->rtype->type == TYPETEMPLDEPEXPR || right->rtype->type == TYPETEMPLDEPEXPR) {
-                    left = CTempl_MakeTemplDepExpr(left, EDIV, right);
-                    continue;
-                }
-                leftValue = CExpr_RewriteConst(pointer_generation(left));
-                left = leftValue;
-                rightValue = CExpr_RewriteConst(pointer_generation(right));
-                convertedRight = rightValue;
-                if (copts.cplusplus != 0 && CExpr_CheckOperator('/', leftValue, rightValue, &conversion) != 0) {
-                    if (conversion.expression != NULL) {
-                        result = conversion.expression;
-                        break;
-                    }
-                    CError_ASSERT(4139, (left = conversion.left) != 0);
-                    CError_ASSERT(4140, (convertedRight = conversion.right) != 0);
-                }
-                result = CExpr_New_EDIV_Node(left, convertedRight, conditional);
+                left = CExpr_MakeEDIVNode(left, right, conditional);
                 break;
             case EMODULO:
-                result = CExpr_New_EMODULO_Node(left, right, conditional);
+                left = CExpr_New_EMODULO_Node(left, right, conditional);
                 break;
             default:
-                result = CExpr_NewDyadicNode(left, operatorInfo.kind, right);
+                left = CExpr_NewDyadicNode(left, operatorInfo.kind, right);
         }
-        left = result;
     } while (done == 0);
     return left;
+}
+
+static Boolean IsAggregateType(Type *type)
+{
+    switch ((SInt8)type->type) {
+        case TYPESTRUCT:
+        case TYPECLASS:
+            return 1;
+        case TYPEMEMBERPOINTER:
+            if (type->size == 4)
+                return 0;
+            return 1;
+        default:
+            return 0;
+    }
 }
 
 ENode *CExpr_New_ECOND_Node(ENode *condition, ENode *trueExpr, ENode *falseExpr)
@@ -4655,12 +4831,10 @@ ENode *CExpr_New_ECOND_Node(ENode *condition, ENode *trueExpr, ENode *falseExpr)
     SInt16 cost;
     ENode *node;
     BinaryOperatorResult conversion;
-    ENode *trueOperand;
-    ENode *falseOperand;
 
-    condition = CExpr2_ConvertScalarOperand(normalize(condition), 0, 1);
-    trueExpr = normalize(trueExpr);
-    falseExpr = normalize(falseExpr);
+    condition = CExpr2_ConvertScalarOperand(node = CExpr_GeneratePointerAndRewriteConst(condition), 0, 1);
+    trueExpr = CExpr_GeneratePointerAndRewriteConst(trueExpr);
+    falseExpr = CExpr_GeneratePointerAndRewriteConst(falseExpr);
 
     if (condition->rtype->type != TYPEINT && condition->rtype->type != TYPEFLOAT &&
         condition->rtype->type != TYPEPOINTER) {
@@ -4724,7 +4898,7 @@ ENode *CExpr_New_ECOND_Node(ENode *condition, ENode *trueExpr, ENode *falseExpr)
         arguments->next->next = NULL;
         if (CExpr_CheckOperatorConversion(ENULLCHECK, trueExpr, falseExpr, arguments, &conversion)) {
             if (conversion.expression != NULL)
-                CError_FATAL(5726);
+                CError_FATAL(VERSION > VERSION_GC_1_0 ? 5726 : 5727);
             trueExpr = conversion.left;
             falseExpr = conversion.right;
         }
@@ -4738,7 +4912,7 @@ ENode *CExpr_New_ECOND_Node(ENode *condition, ENode *trueExpr, ENode *falseExpr)
             trueExpr = forceintegral(trueExpr);
         case TYPEINT:
             if (falseExpr->rtype->type == TYPEPOINTER && trueExpr->type == EINTCONST &&
-                IsZeroCInt64(&trueExpr->data.intval)) {
+                CInt64_IsZero(&trueExpr->data.intval)) {
                 trueExpr->rtype = (Type *)&stunsignedlong;
                 node->rtype = falseExpr->rtype;
                 break;
@@ -4750,7 +4924,7 @@ ENode *CExpr_New_ECOND_Node(ENode *condition, ENode *trueExpr, ENode *falseExpr)
             }
             break;
         case TYPEPOINTER:
-            if (falseExpr->type == EINTCONST && IsZeroCInt64(&falseExpr->data.intval)) {
+            if (falseExpr->type == EINTCONST && CInt64_IsZero(&falseExpr->data.intval)) {
                 falseExpr->rtype = (Type *)&stunsignedlong;
                 break;
             }
@@ -4758,66 +4932,21 @@ ENode *CExpr_New_ECOND_Node(ENode *condition, ENode *trueExpr, ENode *falseExpr)
                 if (TPTR_TARGET(trueExpr->rtype)->type == TYPECLASS &&
                     TPTR_TARGET(falseExpr->rtype)->type == TYPECLASS) {
                     if (TPTR_TARGET(trueExpr->rtype) != TPTR_TARGET(falseExpr->rtype)) {
-                        ENode *convertedTrue;
-                        ENode *falseCopy;
-                        ENode *convertedFalse;
                         fn_004eb810();
                         if (CClass_FindBasePath(TYPE_CLASS(TPTR_TARGET(trueExpr->rtype)),
                                                 TYPE_CLASS(TPTR_TARGET(falseExpr->rtype)), 0, 1)) {
-                            TypeClass *targetClass;
-                            targetClass = TYPE_CLASS(TPTR_TARGET(falseExpr->rtype));
-                            convertedTrue = (ENode *)TPTR_TARGET(trueExpr->rtype);
-                            trueOperand = trueExpr;
-                            fn_004eb810();
-                            convertedTrue =
-                                CClass_ClassPointerCast(trueOperand, (TypeClass *)convertedTrue, targetClass, 0, 1);
-                            if (convertedTrue != trueOperand &&
-                                !(convertedTrue->type == ETYPCON && convertedTrue->data.monadic == trueOperand) &&
-                                !isnotzero(trueOperand)) {
-                                ENode *copy = lalloc(sizeof(ENode));
-                                *copy = *convertedTrue;
-                                copy->type = ENULLCHECK;
-                                copy->data.precomp.label = lalloc(sizeof(ENode));
-                                *copy->data.precomp.label = *trueOperand;
-                                copy->data.precomp.expression = convertedTrue;
-                                copy->data.precomp.labelId = CParser_GetUniqueID();
-                                trueOperand->type = EPRECOMP;
-                                trueOperand->data.longval = copy->data.precomp.labelId;
-                                convertedTrue = copy;
-                            }
-                            trueExpr = convertedTrue;
-                            convertedTrue->rtype = falseExpr->rtype;
+                            trueExpr = CExpr_ClassPtrCast(trueExpr, TYPE_CLASS(TPTR_TARGET(trueExpr->rtype)),
+                                                          TYPE_CLASS(TPTR_TARGET(falseExpr->rtype)), 0);
+                            trueExpr->rtype = falseExpr->rtype;
                         } else if (CClass_FindBasePath(TYPE_CLASS(TPTR_TARGET(falseExpr->rtype)),
                                                        TYPE_CLASS(TPTR_TARGET(trueExpr->rtype)), 0, 1)) {
-                            TypeClass *sourceClass;
-                            convertedFalse = (ENode *)TPTR_TARGET(trueExpr->rtype);
-                            sourceClass = TYPE_CLASS(TPTR_TARGET(falseExpr->rtype));
-                            falseOperand = falseExpr;
-                            fn_004eb810();
-                            convertedFalse =
-                                CClass_ClassPointerCast(falseOperand, sourceClass, (TypeClass *)convertedFalse, 0, 1);
-                            if (convertedFalse != falseOperand &&
-                                !(convertedFalse->type == ETYPCON && convertedFalse->data.monadic == falseOperand) &&
-                                !isnotzero(falseOperand)) {
-                                falseCopy = lalloc(sizeof(ENode));
-                                *falseCopy = *convertedFalse;
-                                falseCopy->type = ENULLCHECK;
-                                falseCopy->data.precomp.label = lalloc(sizeof(ENode));
-                                *falseCopy->data.precomp.label = *falseOperand;
-                                falseCopy->data.precomp.expression = convertedFalse;
-                                falseCopy->data.precomp.labelId = CParser_GetUniqueID();
-                                falseOperand->type = EPRECOMP;
-                                falseOperand->data.longval = falseCopy->data.precomp.labelId;
-                                convertedFalse = falseCopy;
-                            }
-                            falseExpr = convertedFalse;
-                            convertedFalse->rtype = trueExpr->rtype;
+                            falseExpr = CExpr_ClassPtrCast(falseExpr, TYPE_CLASS(TPTR_TARGET(falseExpr->rtype)),
+                                                           TYPE_CLASS(TPTR_TARGET(trueExpr->rtype)), 0);
+                            falseExpr->rtype = trueExpr->rtype;
                         } else {
                             CError_ReportError(ERR_TYPE_MISMATCH, trueExpr->rtype, trueExpr->flags & 3,
                                                falseExpr->rtype, falseExpr->flags & 3);
                         }
-                        (void)convertedTrue;
-                        (void)convertedFalse;
                     }
                     node->rtype = trueExpr->rtype;
                     break;
@@ -4878,10 +5007,6 @@ ENode *conditional_expression(void)
     SInt32 simple;
     ENode *cond;
     ENode *cv;
-    ENode *e;
-    ENode *left;
-    ENode *right;
-    BinaryOperatorResult tmp;
     ENode *then;
     ENode *els;
     ENode *p;
@@ -4891,10 +5016,16 @@ ENode *conditional_expression(void)
     if (tk != '?')
         return cond;
 
-    cv = CExpr_RewriteConst(pointer_generation(cond));
+#if VERSION == VERSION_GC_1_0
+    cond = POINTER_GENERATION_CONST(cond);
+    if (cond->rtype->type != TYPETEMPLDEPEXPR) {
+        cond = CExpr2_ConvertScalarOperand(cond, 0, 1);
+#else
+    cv = POINTER_GENERATION_CONST(cond);
     cond = cv;
     if (cv->rtype->type != TYPETEMPLDEPEXPR) {
         cond = CExpr2_ConvertScalarOperand(cv, 0, 1);
+#endif
         if (cond->rtype->type != TYPEINT && cond->rtype->type != TYPEFLOAT && cond->rtype->type != TYPEPOINTER) {
             CError_ReportError(ERR_ILLEGAL_OPERAND);
             return nullnode();
@@ -4904,21 +5035,11 @@ ENode *conditional_expression(void)
     }
 
     tk = CPrepTokenizer_GetNextToken();
-    e = assignment_expression();
-    while (tk == ',') {
-        left = CExpr_RewriteConst(pointer_generation(e));
-        tk = CPrepTokenizer_GetNextToken();
-        right = CExpr_RewriteConst(pointer_generation(assignment_expression()));
-        if (copts.cplusplus != 0 && CExpr_CheckOperator(0x2c, left, right, &tmp)) {
-            e = tmp.expression;
-            CError_ASSERT(6531, tmp.expression != 0);
-        } else {
-            CExpr_CheckUnusedExpression(left);
-            e = makecommaexpression(left, right);
-            e->rtype = right->rtype;
-        }
-    }
-    then = CExpr_RewriteConst(pointer_generation(e));
+#if VERSION == VERSION_GC_1_0
+    then = s_expression();
+#else
+    then = POINTER_GENERATION_CONST(CExpr_ParseCommaExpression());
+#endif
     if (tk != ':') {
         CError_ReportErrorAndUpdateToken(ERR_EXPRESSION_SYNTAX_ERROR);
     } else {
@@ -4970,6 +5091,7 @@ void convert_right_and_make_diadic_node(ENode *left, ENode *right, UInt8 type)
     makediadicnode(left, right, type);
 }
 
+#if VERSION == VERSION_GC_1_0
 ENode *parse_assignment_operator(ENode *expr, UInt8 assignmentKind, SInt16 overloadToken)
 {
     ENodeList *callArguments;
@@ -4982,12 +5104,109 @@ ENode *parse_assignment_operator(ENode *expr, UInt8 assignmentKind, SInt16 overl
     Boolean arrayTarget;
 
     arrayTarget = (expr->rtype->type == TYPEARRAY);
-    left = CExpr_RewriteConst(pointer_generation(expr));
+    expr = POINTER_GENERATION_CONST(expr);
     if (copts.cplusplus != 0 && overloadToken != 0) {
         tk = CPrepTokenizer_GetNextToken();
         right = assignment_expression();
         if (right->type != EMEMBER)
-            right = CExpr_RewriteConst(pointer_generation(right));
+            right = POINTER_GENERATION_CONST(right);
+        if (CExpr_CheckOperator(overloadToken, expr, right, &overloadResult) != 0) {
+            if (overloadResult.expression == NULL)
+                CError_FATAL(5960);
+            return overloadResult.expression;
+        }
+        if (expr->rtype->type == TYPECLASS) {
+            if (CClass_AssignmentOperator(TYPE_CLASS(expr->rtype)) != NULL)
+                CError_ReportError(ERR_ILLEGAL_OPERAND);
+        }
+        left = CExpr_LValue(expr, 1, 1);
+    } else {
+        left = CExpr_LValue(expr, 1, 1);
+        tk = CPrepTokenizer_GetNextToken();
+        right = assignment_expression();
+    }
+    if (arrayTarget)
+        CError_ReportError(ERR_ILLEGAL_OPERAND);
+    if (assignmentKind != EASS) {
+        if (right->rtype->type != TYPEINT) {
+            right = CExpr2_ConvertScalarOperand(right, 1, 0);
+            if (right->rtype->type != TYPEINT) {
+                CError_ReportError(ERR_ILLEGAL_OPERAND);
+                return left;
+            }
+        }
+        if (left->rtype->type != TYPEINT) {
+            if (copts.cplusplus != 0) {
+                CError_ReportError(ERR_ILLEGAL_OPERAND);
+                return left;
+            }
+            left = forceintegral(left);
+            if (left->rtype->type != TYPEINT) {
+                CError_ReportError(ERR_ILLEGAL_OPERAND);
+                return left;
+            }
+        }
+        convert_right_and_make_diadic_node(left, right, assignmentKind);
+        return;
+    }
+    if (left->rtype->type == TYPECLASS && TYPE_CLASS(left->rtype)->sominfo != NULL) {
+        CError_ReportError(ERR_ASSIGNMENT_NOT_SUPPORTED_SOM_CLASSES);
+        return left;
+    }
+    right = promote_assignment_operand(left, right, &copts.warn_implicitconv);
+    unwrappedRight = right;
+    if (right->rtype->type == TYPEFLOAT && right->type == ETYPCON &&
+        right->rtype->size == right->data.monadic->rtype->size) {
+        unwrappedRight = right->data.monadic;
+    }
+    if (left->type == EINDIRECT && left->data.monadic->type == EOBJREF && unwrappedRight->type == EINDIRECT) {
+        functionCall = right->data.monadic;
+        if ((functionCall->type == EFUNCCALL || functionCall->type == EFUNCCALLP) &&
+            left->rtype == functionCall->data.funccall.functype->functype &&
+            CMach_GetFunctionResultClass(functionCall->data.funccall.functype) == 1 &&
+            (callArguments = functionCall->data.funccall.args) != NULL) {
+            switch (CInline_ReturnZero((Type *)functionCall->data.funccall.functype)) {
+                case 0:
+                    break;
+                case 1:
+                    callArguments = callArguments->next;
+                    if (callArguments != NULL)
+                        break;
+                    CError_FATAL(6042);
+                default:
+                    CError_FATAL(6043);
+            }
+            if (callArguments->node->type == ETEMP &&
+                (left->rtype->type != TYPECLASS || (CClass_Destructor(TYPE_CLASS(left->rtype)) == NULL &&
+                                                    CClass_AssignmentOperator(TYPE_CLASS(left->rtype)) == NULL))) {
+                callArguments->node = getnodeaddress(left, 0);
+                return right;
+            }
+        }
+    }
+    assignment = makediadicnode(left, right, assignmentKind);
+    assignment->flags = left->flags;
+    return assignment;
+}
+#else
+ENode *parse_assignment_operator(ENode *expr, UInt8 assignmentKind, SInt16 overloadToken)
+{
+    ENodeList *callArguments;
+    ENode *functionCall;
+    ENode *assignment;
+    ENode *unwrappedRight;
+    BinaryOperatorResult overloadResult;
+    ENode *right;
+    ENode *left;
+    Boolean arrayTarget;
+
+    arrayTarget = (expr->rtype->type == TYPEARRAY);
+    left = POINTER_GENERATION_CONST(expr);
+    if (copts.cplusplus != 0 && overloadToken != 0) {
+        tk = CPrepTokenizer_GetNextToken();
+        right = assignment_expression();
+        if (right->type != EMEMBER)
+            right = POINTER_GENERATION_CONST(right);
         if (CExpr_CheckOperator(overloadToken, left, right, &overloadResult) != 0) {
             if (overloadResult.expression == NULL)
                 CError_FATAL(5959);
@@ -5066,6 +5285,7 @@ ENode *parse_assignment_operator(ENode *expr, UInt8 assignmentKind, SInt16 overl
     assignment->flags = expr->flags;
     return assignment;
 }
+#endif
 
 ENode *parse_arithmetic_compound_assignment(ENode *e, char operatorKind, SInt16 operation)
 {
@@ -5076,21 +5296,26 @@ ENode *parse_arithmetic_compound_assignment(ENode *e, char operatorKind, SInt16 
     ENode *pointerExpr;
 
     isArray = (e->rtype->type == TYPEARRAY);
-    e = CExpr_RewriteConst(pointer_generation(e));
+    e = POINTER_GENERATION_CONST(e);
 
     if (copts.cplusplus != 0) {
         tk = CPrepTokenizer_GetNextToken();
-        parsedRight = CExpr_RewriteConst(pointer_generation(assignment_expression()));
+#if VERSION == VERSION_GC_1_0
+        right = POINTER_GENERATION_CONST(assignment_expression());
+        if (CExpr_CheckOperator(operation, e, right, &result)) {
+#else
+        parsedRight = POINTER_GENERATION_CONST(assignment_expression());
         right = parsedRight;
         if (CExpr_CheckOperator(operation, (ENode *)(e), (ENode *)(parsedRight), &result)) {
-            CError_ASSERT(6082, result.expression != NULL);
+#endif
+            CError_ASSERT(VERSION > VERSION_GC_1_0 ? 6082 : 6083, result.expression != NULL);
             return result.expression;
         }
         e = CExpr_LValue(e, 1, 1);
     } else {
         e = CExpr_LValue(e, 1, 1);
         tk = CPrepTokenizer_GetNextToken();
-        right = CExpr_RewriteConst(pointer_generation(assignment_expression()));
+        right = POINTER_GENERATION_CONST(assignment_expression());
     }
 
     if (isArray) {
@@ -5141,6 +5366,51 @@ ENode *parse_arithmetic_compound_assignment(ENode *e, char operatorKind, SInt16 
     convert_right_and_make_diadic_node(e, right, operatorKind);
 }
 
+#if VERSION == VERSION_GC_1_0
+ENode *parse_arithmetic_binary_expression(ENode *left, char op, SInt16 token)
+{
+    Boolean wasArray;
+    ENode *right;
+    ENode *promotedLeft;
+    ENode *parsedRight;
+    BinaryOperatorResult result;
+
+    wasArray = left->rtype->type == TYPEARRAY;
+    left = POINTER_GENERATION_CONST(left);
+    if (copts.cplusplus != 0) {
+        tk = CPrepTokenizer_GetNextToken();
+        right = POINTER_GENERATION_CONST(assignment_expression());
+        if (CExpr_CheckOperator(token, left, right, &result)) {
+            CError_ASSERT(6167, result.expression != 0);
+            return result.expression;
+        }
+        if (left->rtype->type != TYPEINT && (left->rtype->type != TYPEFLOAT || op == 33)) {
+            CError_ReportError(ERR_ILLEGAL_OPERAND);
+            return nullnode();
+        }
+        promotedLeft = CExpr_LValue(left, 1, 1);
+    } else {
+        if (left->rtype->type == TYPEENUM)
+            left = forceintegral(left);
+        if (left->rtype->type != TYPEINT && (left->rtype->type != TYPEFLOAT || op == 33)) {
+            CError_ReportError(ERR_ILLEGAL_OPERAND);
+            return nullnode();
+        }
+        promotedLeft = CExpr_LValue(left, 1, 1);
+        tk = CPrepTokenizer_GetNextToken();
+        right = POINTER_GENERATION_CONST(assignment_expression());
+    }
+    if (wasArray != 0)
+        CError_ReportError(ERR_ILLEGAL_OPERAND);
+    if (right->rtype->type == TYPEENUM)
+        right = forceintegral(right);
+    if (promotedLeft->rtype->type == TYPEINT && right->rtype->type == TYPEFLOAT && op == 33) {
+        CError_ReportError(ERR_ILLEGAL_OPERAND);
+        return nullnode();
+    }
+    convert_right_and_make_diadic_node(promotedLeft, right, op);
+}
+#else
 ENode *parse_arithmetic_binary_expression(ENode *left, char op, SInt16 token)
 {
     Boolean wasArray;
@@ -5156,7 +5426,7 @@ ENode *parse_arithmetic_binary_expression(ENode *left, char op, SInt16 token)
     operand = promotedLeft;
     if (copts.cplusplus != 0) {
         tk = CPrepTokenizer_GetNextToken();
-        parsedRight = CExpr_RewriteConst(pointer_generation(assignment_expression()));
+        parsedRight = POINTER_GENERATION_CONST(assignment_expression());
         right = parsedRight;
         if (CExpr_CheckOperator(token, operand, parsedRight, &result)) {
             CError_ASSERT(6166, result.expression != 0);
@@ -5176,7 +5446,7 @@ ENode *parse_arithmetic_binary_expression(ENode *left, char op, SInt16 token)
         }
         promotedLeft = CExpr_LValue(operand, 1, 1);
         tk = CPrepTokenizer_GetNextToken();
-        right = CExpr_RewriteConst(pointer_generation(assignment_expression()));
+        right = POINTER_GENERATION_CONST(assignment_expression());
     }
     if (wasArray != 0)
         CError_ReportError(ERR_ILLEGAL_OPERAND);
@@ -5187,6 +5457,33 @@ ENode *parse_arithmetic_binary_expression(ENode *left, char op, SInt16 token)
         return nullnode();
     }
     convert_right_and_make_diadic_node(promotedLeft, right, op);
+}
+#endif
+
+static ENode *AdjustBoolAssign(ENode *enode)
+{
+    switch (enode->type) {
+        case EMULASS:
+        case EDIVASS:
+        case EMODASS:
+        case EADDASS:
+        case ESUBASS:
+        case ESHLASS:
+        case ESHRASS:
+        case EANDASS:
+        case EXORASS:
+        case EORASS:
+            if (enode->rtype == (Type *)&stbool) {
+                enode = expand_compound_assignment(enode);
+                if (enode->type == EASS) {
+                    enode->data.diadic.right = makemonadicnode(enode->data.diadic.right, 7);
+                    enode->data.diadic.right->rtype = (Type *)&stbool;
+                    enode->data.diadic.right = makemonadicnode(enode->data.diadic.right, 7);
+                }
+            }
+            break;
+    }
+    return enode;
 }
 
 ENode *assignment_expression(void)
@@ -5271,19 +5568,11 @@ ENode *assignment_expression(void)
 
 ENode *conv_assignment_expression(void)
 {
-    ENode *expr;
-    ENode *result;
-
-    expr = assignment_expression();
-    result = pointer_generation(expr);
-    return CExpr_RewriteConst(result);
+    return CExpr_GeneratePointerAndRewriteConst(assignment_expression());
 }
 
 Boolean fn_004f0f40(ENode *node)
 {
-    int result;
-    Boolean operandResult;
-
     switch (node->type) {
         case EMONMIN:
         case EBINNOT:
@@ -5332,12 +5621,7 @@ Boolean fn_004f0f40(ENode *node)
         case ECOMMA:
             return fn_00513910(node->data.cond.expr1);
         case ECOND:
-            result = 1;
-            operandResult = fn_00513910(node->data.cond.expr1);
-            if ((operandResult == 0) && (operandResult = fn_00513910(node->data.cond.expr2), operandResult == 0)) {
-                result = 0;
-            }
-            return result;
+            return fn_00513910(node->data.cond.expr1) || fn_00513910(node->data.cond.expr2);
         case EPOSTINC:
         case EPOSTDEC:
         case EPREINC:
@@ -5363,7 +5647,7 @@ Boolean fn_004f0f40(ENode *node)
         case EINSTRUCTION:
             return 1;
         default:
-            CError_FATAL(6466);
+            CError_FATAL(VERSION > VERSION_GC_1_0 ? 6466 : 6467);
             return 0;
     }
 }
@@ -5384,107 +5668,7 @@ void CExpr_CheckUnusedExpression(ENode *node)
     }
 
     if (copts.warn_no_side_effect) {
-        switch (node->type) {
-            case EMONMIN:
-            case EBINNOT:
-            case ELOGNOT:
-            case EMUL:
-            case EDIV:
-            case EMODULO:
-            case EADD:
-            case ESUB:
-            case ESHL:
-            case ESHR:
-            case ELESS:
-            case EGREATER:
-            case ELESSEQU:
-            case EGREATEREQU:
-            case EEQU:
-            case ENOTEQU:
-            case EAND:
-            case EXOR:
-            case EOR:
-            case ELAND:
-            case ELOR:
-            case EROTL:
-            case EROTR:
-            case EBITFIELD:
-            case EINTCONST:
-            case EFLOATCONST:
-            case ESTRINGCONST:
-            case EOBJREF:
-            case ETEMP:
-            case EARGOBJ:
-            case ELOCOBJ:
-            case EOBJLIST:
-            case EMEMBER:
-            case EVECTOR128CONST:
-                result = 0;
-                break;
-            case ETYPCON:
-                result = (node->rtype->type == TYPEVOID);
-                break;
-            case EINDIRECT:
-                switch (node->data.monadic->type) {
-                    case EFUNCCALL:
-                    case EFUNCCALLP:
-                        result = 1;
-                        break;
-                    default:
-                        result = 0;
-                        break;
-                }
-                break;
-            case ECOMMA:
-                result = fn_00513910(node->data.diadic.right);
-                break;
-            case ECOND:
-                result = fn_00513910(node->data.cond.expr1) || fn_00513910(node->data.cond.expr2);
-                break;
-            case EPOSTINC:
-            case EPOSTDEC:
-            case EPREINC:
-            case EPREDEC:
-            case EFORCELOAD:
-            case EASS:
-            case EMULASS:
-            case EDIVASS:
-            case EMODASS:
-            case EADDASS:
-            case ESUBASS:
-            case ESHLASS:
-            case ESHRASS:
-            case EANDASS:
-            case EXORASS:
-            case EORASS:
-            case EFUNCCALL:
-            case EFUNCCALLP:
-            case EMFPOINTER:
-            case ENULLCHECK:
-            case EPRECOMP:
-            case ELABEL:
-            case EINSTRUCTION:
-                result = 1;
-                break;
-            case EMULV:
-            case EADDV:
-            case ESUBV:
-            case EPMODULO:
-            case EBCLR:
-            case EBTST:
-            case EBSET:
-            case ESETCONST:
-            case ENEWEXCEPTION:
-            case ENEWEXCEPTIONARRAY:
-            case ETEMPLDEP:
-            case EDEFINE:
-            case EREUSE:
-            case EASSBLK:
-            default:
-                CError_FATAL(6466);
-                result = 0;
-                break;
-        }
+        result = fn_004f0f40(node);
         if (!result) {
             CError_Warning(ERR_EXPRESSION_NO_SIDE_EFFECT);
             return;
@@ -5492,11 +5676,11 @@ void CExpr_CheckUnusedExpression(ENode *node)
     }
 
     if (copts.warn_resultnotused) {
-        ENode *m = node;
+        n = node;
         if (node->rtype->type != TYPEVOID) {
             if (node->type == EINDIRECT)
-                m = node->data.monadic;
-            switch (m->type) {
+                n = node->data.monadic;
+            switch (n->type) {
                 case EFUNCCALL:
                 case EFUNCCALLP:
                     CError_Warning(ERR_RESULT_FUNCTION_CALL_NOT_USED);
@@ -5510,72 +5694,37 @@ void CExpr_CheckUnusedExpression(ENode *node)
 
 ENode *CExpr_ParseCommaExpression(void)
 {
-    ENode *node;
-    ENode *converted;
-    ENode *left;
+    ENode *expr;
     ENode *right;
     BinaryOperatorResult result;
 
-    node = assignment_expression();
+    expr = assignment_expression();
     while (tk == ',') {
-        converted = pointer_generation(node);
-        left = CExpr_RewriteConst(converted);
+        expr = CExpr_GeneratePointerAndRewriteConst(expr);
         tk = CPrepTokenizer_GetNextToken();
-        node = assignment_expression();
-        converted = pointer_generation(node);
-        right = CExpr_RewriteConst(converted);
-        if ((copts.cplusplus != 0) && (CExpr_CheckOperator(',', (ENode *)(left), (ENode *)(right), &result) != 0)) {
-            node = result.expression;
-            if (node == NULL) {
-                CError_FATAL(6531);
-            }
+        right = CExpr_GeneratePointerAndRewriteConst(assignment_expression());
+        if (copts.cplusplus != 0 && CExpr_CheckOperator(',', expr, right, &result)) {
+            if ((expr = result.expression) == NULL)
+                CError_FATAL(VERSION > VERSION_GC_1_0 ? 6531 : 6532);
         } else {
-            CExpr_CheckUnusedExpression(left);
-            node = makecommaexpression(left, right);
-            node->rtype = right->rtype;
+            CExpr_CheckUnusedExpression(expr);
+            expr = makecommaexpression(expr, right);
+            expr->rtype = right->rtype;
         }
     }
-    return node;
+    return expr;
 }
 
 ENode *s_expression(void)
 {
-    Boolean handled;
-    ENode *node;
-    ENode *converted;
-    ENode *left;
-    ENode *right;
-    BinaryOperatorResult result;
-
-    node = assignment_expression();
-    while (tk == ',') {
-        converted = pointer_generation(node);
-        left = CExpr_RewriteConst(converted);
-        tk = CPrepTokenizer_GetNextToken();
-        node = assignment_expression();
-        converted = pointer_generation(node);
-        right = CExpr_RewriteConst(converted);
-        if ((copts.cplusplus != 0) &&
-            (handled = CExpr_CheckOperator(0x2c, (ENode *)(left), (ENode *)(right), &result), handled != 0)) {
-            node = result.expression;
-            if (node == NULL) {
-                CError_FATAL(6531);
-            }
-        } else {
-            CExpr_CheckUnusedExpression(left);
-            node = makecommaexpression(left, right);
-            node->rtype = right->rtype;
-        }
-    }
-    converted = pointer_generation(node);
-    return CExpr_RewriteConst(converted);
+    return POINTER_GENERATION_CONST(CExpr_ParseCommaExpression());
 }
 
 CInt64 CExpr_IntegralConstExprType(Type **ptype)
 {
     ENode *node;
 
-    node = CExpr_RewriteConst(pointer_generation(conditional_expression()));
+    node = POINTER_GENERATION_CONST(conditional_expression());
     if (node->type == EINTCONST) {
         switch ((char)node->rtype->type) {
             case TYPEINT:
@@ -5591,16 +5740,11 @@ CInt64 CExpr_IntegralConstExprType(Type **ptype)
     return cint64_zero;
 }
 
-static SInt32 TypSize(TypeIntegral *t)
-{
-    return t->size;
-}
-
 ENode *CExpr_IntegralConstOrDepExpr(void)
 {
     ENode *expr;
 
-    expr = CExpr_RewriteConst((ENode *)pointer_generation(conditional_expression()));
+    expr = POINTER_GENERATION_CONST(conditional_expression());
 
     if (expr->type == EINTCONST) {
         switch ((signed char)expr->rtype->type) {
@@ -5610,7 +5754,7 @@ ENode *CExpr_IntegralConstOrDepExpr(void)
                 expr->rtype = ((TypeEnum *)expr->rtype)->enumtype;
                 return expr;
             default:
-                CError_FATAL(6597);
+                CError_FATAL(VERSION > VERSION_GC_1_0 ? 6597 : 6598);
                 break;
         }
     }
@@ -5625,205 +5769,17 @@ ENode *CExpr_IntegralConstOrDepExpr(void)
     return expr;
 }
 
-static UInt32 applyqual(Type *t, SInt16 x)
-{
-    return CParser_GetCVTypeQualifiers(TYPE_POINTER(t)->target, x);
-}
-
-static Boolean CExpr_QualMismatch(SInt32 from, SInt32 to)
-{
-    Boolean result =
-        ((from & Q_CONST) != 0 && (to & Q_CONST) == 0) || ((from & Q_VOLATILE) != 0 && (to & Q_VOLATILE) == 0);
-    return result;
-}
-
-/* The null test reads nspace through a cast, so its address differs from
- * et->nspace and IRO does not CSE the two: cmp [et+6],0 then a reload. */
-
-static Boolean IsZero(CInt64 *v)
-{
-    return v->hi == 0 && v->lo == 0;
-}
-
-static ENode *generate_pointer_then_rewrite_const(ENode *value)
-{
-    return CExpr_RewriteConst(pointer_generation(value));
-}
-
-static ENode *callable_expression(ENode *e)
-{
-    switch (*(UInt8 *)e) {
-        case 4: {
-            switch ((SInt8)e->rtype->type) {
-                case TYPEARRAY:
-                    ((ENode *)e->data.monadic)->rtype = (Type *)CDecl_NewPointerType(((TypePointer *)e->rtype)->target);
-                    return (ENode *)e->data.monadic;
-                case TYPEFUNC:
-                    return (ENode *)e->data.monadic;
-            }
-            break;
-        }
-    }
-    return e;
-}
-
-static Boolean IsZero_4f5aa0(ENode *e)
-{
-    int result = 0;
-    if (e->data.intval.hi == 0 && e->data.intval.lo == 0)
-        result = 1;
-    return result;
-}
-
-static ENode *rewrite_const_pointer_generation(ENode *value)
-{
-    return CExpr_RewriteConst(pointer_generation(value));
-}
-
-static ENode *CExpr_WrapPrecomp(ENode *n, ENode *r)
-{
-    ENode *nw = lalloc(0x1a);
-    *nw = *r;
-    nw->type = ENULLCHECK;
-    nw->data.diadic.left = lalloc(0x1a);
-    *nw->data.diadic.left = *n;
-    nw->data.diadic.right = r;
-    nw->data.precomp.labelId = CParser_GetUniqueID();
-    n->type = EPRECOMP;
-    n->data.longval = nw->data.precomp.labelId;
-    return nw;
-}
-
-static ENode *NormalizeOperand(ENode *e)
-{
-    return CExpr_RewriteConst(pointer_generation(e));
-}
-
-static Boolean IsZeroValue(ENode *e)
-{
-    return e->data.intval.hi == 0 && e->data.intval.lo == 0;
-}
-
-static ENode *rewrite_pointer_generation_const(ENode *value)
-{
-    return CExpr_RewriteConst(pointer_generation(value));
-}
-
-static ENode *rewrite_const_after_pointer_generation(ENode *value)
-{
-    return CExpr_RewriteConst((ENode *)pointer_generation(value));
-}
-
-static ENode *pointer_generation_and_rewrite_const(ENode *value)
-{
-    return CExpr_RewriteConst(pointer_generation(value));
-}
-
-static ENode *generate_pointer_and_rewrite_const(ENode *value)
-{
-    return CExpr_RewriteConst(pointer_generation(value));
-}
-
-static ENode *recovered_normalize(ENode *value)
-{
-    return CExpr_RewriteConst((ENode *)pointer_generation(value));
-}
-
-static ENode *CExpr_intnode(ENode *e, SInt32 v)
-{
-    e->type = EINTCONST;
-    e->rtype = CParser_GetBoolType();
-    e->data.intval.lo = (UInt32)v;
-    e->data.intval.hi = 0;
-    return e;
-}
-
-static Boolean IsZeroCInt64(CInt64 *v)
-{
-    return v->hi == 0 && v->lo == 0;
-}
-
-static ENode *normalize(ENode *e)
-{
-    return CExpr_RewriteConst(pointer_generation(e));
-}
-
-static ENode *AdjustBoolAssign(ENode *enode)
-{
-    switch (enode->type) {
-        case EMULASS:
-        case EDIVASS:
-        case EMODASS:
-        case EADDASS:
-        case ESUBASS:
-        case ESHLASS:
-        case ESHRASS:
-        case EANDASS:
-        case EXORASS:
-        case EORASS:
-            if (enode->rtype == (Type *)&stbool) {
-                enode = expand_compound_assignment(enode);
-                if (enode->type == EASS) {
-                    enode->data.diadic.right = makemonadicnode(enode->data.diadic.right, 7);
-                    enode->data.diadic.right->rtype = (Type *)&stbool;
-                    enode->data.diadic.right = makemonadicnode(enode->data.diadic.right, 7);
-                }
-            }
-            break;
-    }
-    return enode;
-}
-
 CInt64 CExpr_IntegralConstExpr(void)
 {
-    return Inner();
-}
+    Type *type;
 
-static CInt64 Inner(void)
-{
-    ENode *expr;
-
-    expr = CExpr_RewriteConst(pointer_generation(conditional_expression()));
-    if (expr->type == EINTCONST) {
-        switch ((char)expr->rtype->type) {
-            case TYPEINT:
-                return expr->data.intval;
-            case TYPEENUM:
-                return expr->data.intval;
-        }
-    }
-    CError_ReportError(ERR_ILLEGAL_CONSTANT_EXPRESSION);
-    return cint64_zero;
+    return CExpr_IntegralConstExprType(&type);
 }
 
 void CExpr_CheckUnwantedAssignment(ENode *node)
 {
     if (((copts.warn_possunwant != '\0') && (node->type == EASS)) && ((node->flags & ENODE_FLAG_80) == 0)) {
         CError_Warning(ERR_POSSIBLE_UNWANTED_ASSIGNMENT);
-    }
-}
-
-static void expectToken(SInt16 tok, SInt16 err)
-{
-    if (tk != tok) {
-        SInt16 e = err;
-        if (data_00587f18 != 0)
-            longjmp(data_00583a68, 1);
-        if (tk == TK_EOL || tk == ';')
-            e = 0x70;
-        CError_ReportError(e);
-    }
-}
-
-static void expect(SInt16 tok, SInt16 err)
-{
-    if (tk != tok) {
-        SInt16 e = err;
-        if (data_00587f18 != 0)
-            longjmp(data_00583a68, 1);
-        if (tk == TK_EOL || tk == ';')
-            e = 0x70;
-        CError_ReportError(e);
     }
 }
 

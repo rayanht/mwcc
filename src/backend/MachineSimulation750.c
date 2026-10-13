@@ -345,13 +345,45 @@ static UInt32 simulation_pipeline_index;
 static UInt32 opt_arg_index;
 static CompletionEntry data_00582ed0[6];
 
-static inline void record_opt_arg(PCodeInstruction *p)
+static void advance_stage(int first, unsigned int from, int to)
+{
+    PCodeInstruction *instruction;
+    SInt32 v;
+    v = data_00576f28[(instruction = (&data_00582e70)[from].instr)->opcode].stageCycles[to - first];
+    (&data_00582e70)[to].instr = instruction;
+    (&data_00582e70)[to].remaining = v;
+    (&data_00582e70)[from].instr = NULL;
+}
+
+static void record_opt_arg(PCodeInstruction *p)
 {
     pending_opt_args++;
     data_00582ec0--;
     data_00582ed0[opt_arg_index].instr = p;
     data_00582ed0[opt_arg_index].completed = 0;
     opt_arg_index = (opt_arg_index + 1) % 6;
+}
+
+static void complete_stage(unsigned int stage)
+{
+    PCodeInstruction *key = (&data_00582e70)[stage].instr;
+    SInt32 i;
+    for (i = 0; i < 6 && data_00582ed0[i].instr != key; i++)
+        ;
+    data_00582ed0[i].completed = 1;
+    (&data_00582e70)[stage].instr = NULL;
+    if (stage == 1)
+        data_00582eb8 = key;
+    else if (stage == 2)
+        data_00582ebc = key;
+}
+
+static void retire(void)
+{
+    data_00582ed0[simulation_pipeline_index].instr = NULL;
+    pending_opt_args--;
+    data_00582ec0++;
+    simulation_pipeline_index = (simulation_pipeline_index + 1) % 6;
 }
 
 int fn_0052f330(PCodeInstruction *instruction)
@@ -447,7 +479,7 @@ void record_instruction_kind(PCodeInstruction *p)
 void advance_simulation_pipeline(void)
 {
     SInt32 i;
-    SInt32 v;
+    PCodeInstruction *p;
 
     data_00582eb8 = NULL;
     data_00582ebc = NULL;
@@ -458,111 +490,30 @@ void advance_simulation_pipeline(void)
         i++;
     } while (i < 9);
     if (pending_opt_args != 0 && data_00582ed0[simulation_pipeline_index].completed != 0) {
-        data_00582ed0[simulation_pipeline_index].instr = NULL;
-        pending_opt_args--;
-        data_00582ec0++;
-        simulation_pipeline_index = (simulation_pipeline_index + 1) % 6;
-        if (pending_opt_args != 0 && data_00582ed0[simulation_pipeline_index].completed != 0) {
-            data_00582ed0[simulation_pipeline_index].instr = NULL;
-            pending_opt_args--;
-            data_00582ec0++;
-            simulation_pipeline_index = (simulation_pipeline_index + 1) % 6;
-        }
+        retire();
+        if (pending_opt_args != 0 && data_00582ed0[simulation_pipeline_index].completed != 0)
+            retire();
     }
-    if (data_00582e78.instr != NULL && data_00582e78.remaining == 0) {
-        SInt32 j;
-        PCodeInstruction *q;
-        q = data_00582e78.instr;
-        for (j = 0; j < 6 && data_00582ed0[j].instr != q; j++)
-            ;
-        data_00582ed0[j].completed = 1;
-        data_00582e78.instr = NULL;
-        data_00582eb8 = q;
-    }
-    if (data_00582e90.instr != NULL && data_00582e90.remaining == 0) {
-        SInt32 j;
-        PCodeInstruction *q;
-        q = data_00582e90.instr;
-        for (j = 0; j < 6 && data_00582ed0[j].instr != q; j++)
-            ;
-        data_00582ed0[j].completed = 1;
-        data_00582e90.instr = NULL;
-    }
-    if (data_00582ea8.instr != NULL && data_00582ea8.remaining == 0) {
-        SInt32 j;
-        PCodeInstruction *q;
-        q = data_00582ea8.instr;
-        for (j = 0; j < 6 && data_00582ed0[j].instr != q; j++)
-            ;
-        data_00582ed0[j].completed = 1;
-        data_00582ea8.instr = NULL;
-    }
-    if (data_00582eb0.instr != NULL && data_00582eb0.remaining == 0) {
-        SInt32 j;
-        PCodeInstruction *q;
-        q = data_00582eb0.instr;
-        for (j = 0; j < 6 && data_00582ed0[j].instr != q; j++)
-            ;
-        data_00582ed0[j].completed = 1;
-        data_00582eb0.instr = NULL;
-    }
-    if (data_00582e70.instr != NULL && data_00582e70.remaining == 0) {
-        SInt32 j;
-        PCodeInstruction *q;
-        q = data_00582e70.instr;
-        for (j = 0; j < 6 && data_00582ed0[j].instr != q; j++)
-            ;
-        data_00582ed0[j].completed = 1;
-        data_00582e70.instr = NULL;
-    }
-    if (data_00582e80.instr != NULL && data_00582e80.remaining == 0) {
-        SInt32 j;
-        PCodeInstruction *q;
-        q = data_00582e80.instr;
-        for (j = 0; j < 6 && data_00582ed0[j].instr != q; j++)
-            ;
-        data_00582ed0[j].completed = 1;
-        data_00582e80.instr = NULL;
-        data_00582ebc = q;
-    }
-    {
-        PCodeInstruction *p;
-        SInt32 j;
-        PCodeInstruction *q;
-        SInt16 tag;
-        if ((p = data_00582e98.instr) != NULL && data_00582e98.remaining == 0 &&
-            ((tag = p->opcode) == 0xa8 || tag == 0xa9)) {
-            q = data_00582e98.instr;
-            for (j = 0; j < 6 && data_00582ed0[j].instr != q; j++)
-                ;
-            data_00582ed0[j].completed = 1;
-            data_00582e98.instr = NULL;
-        }
-    }
-    if (data_00582ea0.instr != NULL && data_00582ea0.remaining == 0 && data_00582ea8.instr == NULL) {
-        SInt32 v;
-        PCodeInstruction *q;
-        v = data_00576f28[(q = data_00582ea0.instr)->opcode].stageCycles[2];
-        data_00582ea8.instr = q;
-        data_00582ea8.remaining = v;
-        data_00582ea0.instr = NULL;
-    }
-    if (data_00582e98.instr != NULL && data_00582e98.remaining == 0 && data_00582ea0.instr == NULL) {
-        SInt32 v;
-        PCodeInstruction *q;
-        v = data_00576f28[(q = data_00582e98.instr)->opcode].stageCycles[1];
-        data_00582ea0.instr = q;
-        data_00582ea0.remaining = v;
-        data_00582e98.instr = NULL;
-    }
-    if (data_00582e88.instr != NULL && data_00582e88.remaining == 0 && data_00582e90.instr == NULL) {
-        SInt32 v;
-        PCodeInstruction *q;
-        v = data_00576f28[(q = data_00582e88.instr)->opcode].stageCycles[1];
-        data_00582e90.instr = q;
-        data_00582e90.remaining = v;
-        data_00582e88.instr = NULL;
-    }
+    if (data_00582e78.instr != NULL && data_00582e78.remaining == 0)
+        complete_stage(1);
+    if (data_00582e90.instr != NULL && data_00582e90.remaining == 0)
+        complete_stage(4);
+    if (data_00582ea8.instr != NULL && data_00582ea8.remaining == 0)
+        complete_stage(7);
+    if (data_00582eb0.instr != NULL && data_00582eb0.remaining == 0)
+        complete_stage(8);
+    if (data_00582e70.instr != NULL && data_00582e70.remaining == 0)
+        complete_stage(0);
+    if (data_00582e80.instr != NULL && data_00582e80.remaining == 0)
+        complete_stage(2);
+    if ((p = data_00582e98.instr) != NULL && data_00582e98.remaining == 0 && (p->opcode == 0xa8 || p->opcode == 0xa9))
+        complete_stage(5);
+    if (data_00582ea0.instr != NULL && data_00582ea0.remaining == 0 && data_00582ea8.instr == NULL)
+        advance_stage(5, 6, 7);
+    if (data_00582e98.instr != NULL && data_00582e98.remaining == 0 && data_00582ea0.instr == NULL)
+        advance_stage(5, 5, 6);
+    if (data_00582e88.instr != NULL && data_00582e88.remaining == 0 && data_00582e90.instr == NULL)
+        advance_stage(3, 3, 4);
 }
 
 int get_opcode_table_first_entry(PCodeInstruction *instruction)

@@ -1,5 +1,6 @@
 #define CERROR_FILE "LoopOptimization.c"
 #include "compiler/common.h"
+#include "version.h"
 #include "compiler/LoopOptimization.h"
 #include "compiler/enode.h"
 #include "compiler/objects.h"
@@ -55,14 +56,6 @@ static UInt32 *self_addi_candidate_regs;
 static SInt32 data_00582c70;
 
 #define NULL 0
-
-static inline LoopVar *findarray(LoopVar *a, Object *o)
-{
-    for (; a; a = a->next)
-        if (a->object == o)
-            return a;
-    return NULL;
-}
 
 static inline int bit_set(UInt32 *bits, int bit)
 {
@@ -122,21 +115,38 @@ static inline int rem(int x, int y)
     return x % y;
 }
 
+/* (the shift that multiplies by VALUE, a power of two, or 0) */
+static int fn_004f85d0(UInt32 value)
+{
+    int n;
+    int ok;
+
+    n = getbit(value);
+    ok = 0;
+    if (n > 0 && n < 31)
+        ok = 1;
+    return ok ? n : 0;
+}
+
+static void fn_004f8600(Loop *loop)
+{
+}
+
 void mark_registers_used_outside_loop(Loop *state)
 {
     UInt32 *useMap;
     PCodeBlockLink *objectUse;
     SInt32 registerNumber;
 
-    CRTTI_FillWords(useMap = (UInt32 *)oalloc(((data_00587e38 + 31) >> 5) << 2), data_00587e38, 0);
+    BitVectors_FillWords(useMap = (UInt32 *)oalloc(((data_00587e38 + 31) >> 5) << 2), data_00587e38, 0);
 
     for (objectUse = state->blocks; objectUse != NULL; objectUse = objectUse->next) {
         SInt32 objectRegister = objectUse->payload.block->index;
         if (state->exitblocks[objectRegister >> 5] & (1 << objectRegister))
-            CRTTI_OrBitVector(useMap, data_00587fe4[objectRegister].use_sets[3], data_00587e38);
+            BitVectors_OrBitVector(useMap, data_00587fe4[objectRegister].use_sets[3], data_00587e38);
     }
 
-    CRTTI_FillWords(registers_used_outside_loop, data_00582c70, 0);
+    BitVectors_FillWords(registers_used_outside_loop, data_00582c70, 0);
 
     for (registerNumber = 32; registerNumber < data_00582c70; registerNumber++) {
         CodeMotionEntryLink *use;
@@ -171,7 +181,7 @@ void remove_unused_self_addi(Loop *loop)
     int candidateReg;
     PCodeBlockLink *scan;
 
-    CRTTI_FillWords(self_addi_candidate_regs, data_00582c70, -1);
+    BitVectors_FillWords(self_addi_candidate_regs, data_00582c70, -1);
     scan = loop->blocks;
     while (scan != NULL) {
         instruction = scan->payload.block->instructions;
@@ -571,7 +581,9 @@ void unroll_ctr_loop(Loop *loop)
     PCodeOperand *operand;
     SInt32 operandCount;
     SInt32 shift;
+#if VERSION > VERSION_GC_1_0
     SInt32 rotateShift;
+#endif
     SInt32 stepShift;
     PCodeBlock *block;
     PCodeInstruction *instruction;
@@ -666,11 +678,16 @@ void unroll_ctr_loop(Loop *loop)
         }
     }
     unrolledCounterReg = gUsedVirtualRegistersGPR++;
+#if VERSION > VERSION_GC_1_0
     shift = getbit(unrollFactor);
     shift = (shift > 0 && shift < 31) ? shift : 0;
     rotateShift = getbit(unrollFactor);
     rotateShift = (rotateShift > 0 && rotateShift < 31) ? rotateShift : 0;
     instruction = PCodeUtilities_CreateInstruction(0x67, unrolledCounterReg, counterReg, 32 - rotateShift, shift, 31);
+#else
+    instruction = PCodeUtilities_CreateInstruction(0x67, unrolledCounterReg, counterReg, 32 - fn_004f85d0(unrollFactor),
+                                                   fn_004f85d0(unrollFactor), 31);
+#endif
     PCode_AppendInstruction(setupBlock, instruction);
     instruction = PCodeUtilities_CreateInstruction(0x54, 0, unrolledCounterReg, 0);
     PCode_AppendInstruction(setupBlock, instruction);
@@ -681,8 +698,12 @@ void unroll_ctr_loop(Loop *loop)
         } else if (loop->step == -1) {
             instruction = PCodeUtilities_CreateInstruction(0x4b, scaledStepReg, counterReg);
         } else {
+#if VERSION > VERSION_GC_1_0
             stepShift = getbit(abs(loop->step));
             if ((stepShift = (stepShift > 0 && stepShift < 31) ? stepShift : 0) > 0) {
+#else
+            if ((stepShift = fn_004f85d0(abs(loop->step))) > 0) {
+#endif
                 instruction =
                     PCodeUtilities_CreateInstruction(0x67, scaledStepReg, counterReg, stepShift, 0, 31 - stepShift);
                 if (loop->step < 0) {
@@ -1055,11 +1076,7 @@ void convert_loop_to_count_register(struct Loop *loop)
     }
 
     if (unrollFactor > 1) {
-        n = getbit(unrollFactor);
-        ok = 0;
-        if (n > 0 && n < 31)
-            ok = 1;
-        if ((shift = ok ? n : 0)) {
+        if ((shift = fn_004f85d0(unrollFactor))) {
             PCode_InsertInstructionBefore(
                 loop->preheader->reverse_instructions,
                 PCodeUtilities_CreateInstruction(0x67, counterReg, counterReg, 32 - shift, shift, 31));
@@ -1166,9 +1183,8 @@ void dispatch_counting_loop_transforms(Loop *loop)
     SInt32 n;
 
     mark_registers_used_outside_loop(loop);
-    if (loop->has_indexed_load) {
-    } else if (loop->isKnownCountingLoop) {
-    }
+    if (loop->has_indexed_load || loop->has_indexed_store)
+        fn_004f8600(loop);
     if (loop->isKnownCountingLoop) {
         if (loop->iterationCount > 0) {
             fn_0052b1a0(loop);
@@ -1254,26 +1270,41 @@ LoopVar *build_array_loopvars(void)
     return head;
 }
 
+static LoopVar *findarray(LoopVar *list, Object *object)
+{
+    LoopVar *a;
+
+    for (a = list; a; a = a->next) {
+        if (a->object == object)
+            return a;
+    }
+    return NULL;
+}
+
 void COpt_ArrayToRegister(void)
 {
     PCodeInstruction *newpc;
     LoopVar *head = NULL;
-    PCodeBlock *block;
     PCodeInstruction *pc;
-    long remaining;
-    LoopVar *a, *best;
-    PCodeOperand *op;
+    PCodeBlock *block;
+    LoopVar *best;
+    int min;
+    LoopVar *a;
     LoopVar **link;
-    int n, g, f, min, reg;
+    int reg;
+    long src;
     int minf;
     int j;
-    long src;
+    int n;
+    int g;
+    int f;
+    PCodeOperand *op;
     head = build_array_loopvars();
     if (head) {
         for (block = gPCodeBlocks; block; block = block->next) {
             for (pc = block->instructions; pc; pc = pc->next) {
                 if (!(pc->flags & fIsBranch) && pc->operand_count) {
-                    for (op = pc->operandData.operands, remaining = pc->operand_count; remaining--; op++) {
+                    for (op = pc->operandData.operands, j = pc->operand_count; j--; op++) {
                         if (op->kind == PCOp_MEMORY && op->flags == 1) {
                             a = findarray(head, op->object);
                             if (a && !a->isvalid) {
@@ -1419,8 +1450,8 @@ void COpt_ArrayToRegister(void)
                         a = findarray(head, pc->operandData.operands[2].object);
                         if (a && !a->isvalid) {
                             reg = a->values[pc->operandData.operands[2].value.signed_value / a->elemSize];
-                            newpc = NULL;
                             src = pc->operandData.operands[0].value.reg;
+                            newpc = NULL;
                             switch (pc->opcode) {
                                 case PC_LBZ:
                                     if (a->isgpr)
@@ -1477,56 +1508,9 @@ void COpt_ArrayToRegister(void)
 
 void walk_loop_children_postorder(register Loop *loop)
 {
-    register Loop *childLoop, *grandchildLoop, *thirdLevelLoop, *fourthLevelLoop;
-    register Loop *fifthLevelLoop, *sixthLevelLoop, *seventhLevelLoop;
-
-    for (; loop != NULL; loop = loop->sibling) {
-        if (loop->children != NULL) {
-            for (childLoop = loop->children; childLoop != NULL; childLoop = childLoop->sibling) {
-                if (childLoop->children != NULL) {
-                    for (grandchildLoop = childLoop->children; grandchildLoop != NULL;
-                         grandchildLoop = grandchildLoop->sibling) {
-                        if (grandchildLoop->children != NULL) {
-                            for (thirdLevelLoop = grandchildLoop->children; thirdLevelLoop != NULL;
-                                 thirdLevelLoop = thirdLevelLoop->sibling) {
-                                if (thirdLevelLoop->children != NULL) {
-                                    for (fourthLevelLoop = thirdLevelLoop->children; fourthLevelLoop != NULL;
-                                         fourthLevelLoop = fourthLevelLoop->sibling) {
-                                        if (fourthLevelLoop->children != NULL) {
-                                            for (fifthLevelLoop = fourthLevelLoop->children; fifthLevelLoop != NULL;
-                                                 fifthLevelLoop = fifthLevelLoop->sibling) {
-                                                if (fifthLevelLoop->children != NULL) {
-                                                    for (sixthLevelLoop = fifthLevelLoop->children;
-                                                         sixthLevelLoop != NULL;
-                                                         sixthLevelLoop = sixthLevelLoop->sibling) {
-                                                        if (sixthLevelLoop->children != NULL) {
-                                                            for (seventhLevelLoop = sixthLevelLoop->children;
-                                                                 seventhLevelLoop != NULL;
-                                                                 seventhLevelLoop = seventhLevelLoop->sibling) {
-                                                                if (seventhLevelLoop->children != NULL)
-                                                                    walk_loop_children_postorder(
-                                                                        seventhLevelLoop->children);
-                                                                dispatch_counting_loop_transforms(seventhLevelLoop);
-                                                            }
-                                                        }
-                                                        dispatch_counting_loop_transforms(sixthLevelLoop);
-                                                    }
-                                                }
-                                                dispatch_counting_loop_transforms(fifthLevelLoop);
-                                            }
-                                        }
-                                        dispatch_counting_loop_transforms(fourthLevelLoop);
-                                    }
-                                }
-                                dispatch_counting_loop_transforms(thirdLevelLoop);
-                            }
-                        }
-                        dispatch_counting_loop_transforms(grandchildLoop);
-                    }
-                }
-                dispatch_counting_loop_transforms(childLoop);
-            }
-        }
+    for (; loop; loop = loop->sibling) {
+        if (loop->children)
+            walk_loop_children_postorder(loop->children);
         dispatch_counting_loop_transforms(loop);
     }
 }

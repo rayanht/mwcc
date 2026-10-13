@@ -6474,7 +6474,7 @@
     "name": "fn_0042c920",
     "address": "0x0042c910",
     "size": 1,
-    "source": "src/optimizer/IrOptimizer.c"
+    "source": "src/driver/TargetPanels-eabi-ppc.c"
   },
   {
     "name": "IrOptimizer_SetDeleteDeadInstructionsFlags",
@@ -6909,10 +6909,10 @@
     "source": "src/backend/CodeGen.c"
   },
   {
-    "name": "CPrep_AllocateVarInfo",
+    "name": "CodeGen_AllocateVarInfo",
     "address": "0x00437d80",
     "size": 93,
-    "source": "src/frontend/CPrep.c"
+    "source": "src/backend/CodeGen.c"
   },
   {
     "name": "CPrep_GetPFile",
@@ -7410,109 +7410,109 @@
     "name": "validate_context_signature",
     "address": "0x00441290",
     "size": 35,
-    "source": "src/frontend/CPrep.c"
+    "source": "src/driver/CWCompilerLinkerPrivate.c"
   },
   {
-    "name": "CPrep_GetEnabled",
+    "name": "CWCompilerLinkerPrivate_GetEnabled",
     "address": "0x004412c0",
     "size": 62,
-    "source": "src/frontend/CPrep.c"
+    "source": "src/driver/CWCompilerLinkerPrivate.c"
   },
   {
-    "name": "CPrep_GetActive",
+    "name": "CWCompilerLinkerPrivate_GetActive",
     "address": "0x00441300",
     "size": 62,
-    "source": "src/frontend/CPrep.c"
+    "source": "src/driver/CWCompilerLinkerPrivate.c"
   },
   {
-    "name": "CPrep_GetOperation",
+    "name": "CWCompilerLinkerPrivate_GetOperation",
     "address": "0x00441340",
     "size": 62,
-    "source": "src/frontend/CPrep.c"
+    "source": "src/driver/CWCompilerLinkerPrivate.c"
   },
   {
-    "name": "CPrep_GetSetting",
+    "name": "CWCompilerLinkerPrivate_GetSetting",
     "address": "0x00441380",
     "size": 62,
-    "source": "src/frontend/CPrep.c"
+    "source": "src/driver/CWCompilerLinkerPrivate.c"
   },
   {
-    "name": "CPrep_GetReserved15d",
+    "name": "CWCompilerLinkerPrivate_GetReserved15d",
     "address": "0x004413c0",
     "size": 62,
-    "source": "src/frontend/CPrep.c"
+    "source": "src/driver/CWCompilerLinkerPrivate.c"
   },
   {
-    "name": "CPrep_GetDependencyState",
+    "name": "CWCompilerLinkerPrivate_GetDependencyState",
     "address": "0x00441400",
     "size": 67,
-    "source": "src/frontend/CPrep.c"
+    "source": "src/driver/CWCompilerLinkerPrivate.c"
   },
   {
-    "name": "CPrep_GetTargetSettings",
+    "name": "CWCompilerLinkerPrivate_GetTargetSettings",
     "address": "0x00441450",
     "size": 276,
-    "source": "src/frontend/CPrep.c"
+    "source": "src/driver/CWCompilerLinkerPrivate.c"
   },
   {
-    "name": "CPrep_GetFileIndex",
+    "name": "CWCompilerLinkerPrivate_GetFileIndex",
     "address": "0x00441570",
     "size": 62,
-    "source": "src/frontend/CPrep.c"
+    "source": "src/driver/CWCompilerLinkerPrivate.c"
   },
   {
-    "name": "CPrep_GetDependencyOption",
+    "name": "CWCompilerLinkerPrivate_GetDependencyOption",
     "address": "0x004415b0",
     "size": 64,
-    "source": "src/frontend/CPrep.c"
+    "source": "src/driver/CWCompilerLinkerPrivate.c"
   },
   {
-    "name": "CPrep_GetContextPayload",
+    "name": "CWCompilerLinkerPrivate_GetContextPayload",
     "address": "0x004415f0",
     "size": 72,
-    "source": "src/frontend/CPrep.c"
+    "source": "src/driver/CWCompilerLinkerPrivate.c"
   },
   {
-    "name": "CPrep_GetResultValues",
+    "name": "CWCompilerLinkerPrivate_GetResultValues",
     "address": "0x00441640",
     "size": 87,
-    "source": "src/frontend/CPrep.c"
+    "source": "src/driver/CWCompilerLinkerPrivate.c"
   },
   {
-    "name": "CPrep_CallCompilerCallbackWithValue",
+    "name": "CWCompilerLinkerPrivate_CallCompilerCallbackWithValue",
     "address": "0x004416a0",
     "size": 68,
-    "source": "src/frontend/CPrep.c"
+    "source": "src/driver/CWCompilerLinkerPrivate.c"
   },
   {
-    "name": "CPrep_CallCompilerCallback",
+    "name": "CWCompilerLinkerPrivate_CallCompilerCallback",
     "address": "0x004416f0",
     "size": 51,
-    "source": "src/frontend/CPrep.c"
+    "source": "src/driver/CWCompilerLinkerPrivate.c"
   },
   {
     "name": "call_compiler_callback",
     "address": "0x00441730",
     "size": 80,
-    "source": "src/frontend/CPrep.c"
+    "source": "src/driver/CWCompilerLinkerPrivate.c"
   },
   {
-    "name": "CPrep_InvokeCompilerCallback",
+    "name": "CWCompilerLinkerPrivate_InvokeCompilerCallback",
     "address": "0x00441780",
     "size": 68,
-    "source": "src/frontend/CPrep.c"
+    "source": "src/driver/CWCompilerLinkerPrivate.c"
   },
   {
-    "name": "CPrep_AppendStringBounded",
+    "name": "CTool_AppendStringBounded",
     "address": "0x004417d0",
     "size": 102,
-    "source": "src/frontend/CPrep.c"
+    "source": "src/frontend/CompilerTools.c"
   },
   {
     "name": "fn_00441850",
     "address": "0x00441840",
     "size": 52,
-    "source": "src/frontend/CPrep.c"
+    "source": "src/frontend/CompilerTools.c"
   },
   {
     "name": "CTool_EndianConvertInPlaceWord32Ptr",
@@ -8331,10 +8331,10 @@
     "source": "src/frontend/CError.c"
   },
   {
-    "name": "CError_NewIRONode",
+    "name": "IroFlowgraph_NewNode",
     "address": "0x00449de0",
     "size": 49,
-    "source": "src/frontend/CError.c"
+    "source": "src/optimizer/IroFlowgraph.c"
   },
   {
     "name": "IRO_BuildflowGraph",
@@ -8697,28 +8697,28 @@
     "source": "src/optimizer/IroUtil.c"
   },
   {
-    "name": "IroDump_IsType1NodeType50",
+    "name": "IroUtil_IsType1NodeType50",
     "address": "0x0044d4a0",
     "size": 26,
-    "source": "src/optimizer/IroDump.c"
+    "source": "src/optimizer/IroUtil.c"
   },
   {
-    "name": "IroDump_IsPowerOfTwo",
+    "name": "IroUtil_IsPowerOfTwo",
     "address": "0x0044d4c0",
     "size": 76,
-    "source": "src/optimizer/IroDump.c"
+    "source": "src/optimizer/IroUtil.c"
   },
   {
     "name": "fn_0044d520",
     "address": "0x0044d510",
     "size": 38,
-    "source": "src/optimizer/IroDump.c"
+    "source": "src/optimizer/IroUtil.c"
   },
   {
-    "name": "IroDump_GetObjRef",
+    "name": "IroUtil_GetObjRef",
     "address": "0x0044d540",
     "size": 38,
-    "source": "src/optimizer/IroDump.c"
+    "source": "src/optimizer/IroUtil.c"
   },
   {
     "name": "IroDump_Print",
@@ -8877,28 +8877,28 @@
     "source": "src/optimizer/IroCSE.c"
   },
   {
-    "name": "IroCSE_RewriteStatementExpressions",
+    "name": "IroTransform_RewriteStatementExpressions",
     "address": "0x0044f940",
     "size": 85,
-    "source": "src/optimizer/IroCSE.c"
+    "source": "src/optimizer/IroTransform.c"
   },
   {
     "name": "rewrite_nested_bitwise_expressions",
     "address": "0x0044f9a0",
     "size": 276,
-    "source": "src/optimizer/IroCSE.c"
+    "source": "src/optimizer/IroTransform.c"
   },
   {
     "name": "fn_0044fad0",
     "address": "0x0044fac0",
     "size": 309,
-    "source": "src/optimizer/IroCSE.c"
+    "source": "src/optimizer/IroTransform.c"
   },
   {
     "name": "traverse_expr_postorder",
     "address": "0x0044fc00",
     "size": 206,
-    "source": "src/optimizer/IroCSE.c"
+    "source": "src/optimizer/IroTransform.c"
   },
   {
     "name": "fold_nested_diadic_intval",
@@ -9099,10 +9099,10 @@
     "source": "src/optimizer/IroEval.c"
   },
   {
-    "name": "IroJump_ConvertCInt64ToType",
+    "name": "IroEval_ConvertCInt64ToType",
     "address": "0x00456580",
     "size": 130,
-    "source": "src/optimizer/IroJump.c"
+    "source": "src/optimizer/IroEval.c"
   },
   {
     "name": "IRO_RemoveLabels",
@@ -10857,16 +10857,16 @@
     "source": "src/backend/PPCError.c"
   },
   {
-    "name": "PPCError_UpdateClassTypeOperands",
+    "name": "Intrinsics_UpdateClassTypeOperands",
     "address": "0x0047cdd0",
     "size": 55,
-    "source": "src/backend/PPCError.c"
+    "source": "src/backend/Intrinsics.c"
   },
   {
-    "name": "PPCError_EmitClassTypeUpdate",
+    "name": "Intrinsics_EmitClassTypeUpdate",
     "address": "0x0047ce10",
     "size": 369,
-    "source": "src/backend/PPCError.c"
+    "source": "src/backend/Intrinsics.c"
   },
   {
     "name": "Intrinsics_IsRegisteredObject",
@@ -13065,16 +13065,16 @@
     "source": "src/backend/TOC.c"
   },
   {
-    "name": "Operands_IsLogicalExpression",
+    "name": "TOC_IsLogicalExpression",
     "address": "0x0049f560",
     "size": 86,
-    "source": "src/backend/Operands.c"
+    "source": "src/backend/TOC.c"
   },
   {
     "name": "fn_0049f630",
     "address": "0x0049f5c0",
     "size": 89,
-    "source": "src/backend/Operands.c"
+    "source": "src/backend/TOC.c"
   },
   {
     "name": "Operands_EmitAddress",
@@ -13596,7 +13596,7 @@
     "name": "fn_004a9c70",
     "address": "0x004a9c00",
     "size": 1,
-    "source": "src/backend/StackFrameEABI.c"
+    "source": "src/backend/CMachine.c"
   },
   {
     "name": "StackFrame_CheckAltivec",
@@ -14391,10 +14391,10 @@
     "source": "src/backend/InstrSelection.c"
   },
   {
-    "name": "InstrSelection_EmitSwitchTables",
+    "name": "Switch_EmitSwitchTables",
     "address": "0x004bb2c0",
     "size": 93,
-    "source": "src/backend/InstrSelection.c"
+    "source": "src/backend/Switch.c"
   },
   {
     "name": "Switch_GenerateSwitch",
@@ -16932,13 +16932,13 @@
     "name": "fn_004e67a0",
     "address": "0x004e6eb0",
     "size": 1,
-    "source": "src/frontend/CSOM.c"
+    "source": "src/backend/FuncLevelAsmPPC.c"
   },
   {
-    "name": "CSOM_NoOp",
+    "name": "FuncLevelAsmPPC_NoOp",
     "address": "0x004e6ec0",
     "size": 1,
-    "source": "src/frontend/CSOM.c"
+    "source": "src/backend/FuncLevelAsmPPC.c"
   },
   {
     "name": "FuncLevelAsmPPC_GenerateFunction",
@@ -16962,7 +16962,7 @@
     "name": "assign_object_register",
     "address": "0x004e78b0",
     "size": 957,
-    "source": "src/frontend/Unmangle.c"
+    "source": "src/backend/FuncLevelAsmPPC.c"
   },
   {
     "name": "Unmangle_UnmangleSymbolName",
@@ -19029,10 +19029,10 @@
     "source": "src/frontend/CObjCModern.c"
   },
   {
-    "name": "CABI_SplitNameIntoMessageArguments",
+    "name": "CObjCModern_SplitNameIntoMessageArguments",
     "address": "0x0050a870",
     "size": 252,
-    "source": "src/frontend/CABI.c"
+    "source": "src/frontend/CObjCModern.c"
   },
   {
     "name": "CABI_DestroyObject",
@@ -19629,10 +19629,10 @@
     "source": "src/frontend/CTemplateFunc.c"
   },
   {
-    "name": "CTemplateTools_MatchTypeAndCheckBoundSlots",
+    "name": "CTemplateFunc_MatchTypeAndCheckBoundSlots",
     "address": "0x005160b0",
     "size": 154,
-    "source": "src/frontend/CTemplateTools.c"
+    "source": "src/frontend/CTemplateFunc.c"
   },
   {
     "name": "CTemplTool_IsSameTemplateType",
@@ -19974,13 +19974,13 @@
     "name": "fn_0051b800",
     "address": "0x0051bf10",
     "size": 1,
-    "source": "src/frontend/CTemplateClass.c"
+    "source": "src/optimizer/CIRTransform.c"
   },
   {
     "name": "fn_0051b810",
     "address": "0x0051bf20",
     "size": 1,
-    "source": "src/frontend/CTemplateClass.c"
+    "source": "src/optimizer/CIRTransform.c"
   },
   {
     "name": "CTemplateClass_InstantiateClass",
@@ -20169,10 +20169,10 @@
     "source": "src/frontend/CTemplateClass.c"
   },
   {
-    "name": "CTemplateClass_ParseDouble",
+    "name": "ParseDouble",
     "address": "0x0051eaf0",
     "size": 71,
-    "source": "src/frontend/CTemplateClass.c"
+    "source": "src/frontend/ParseDouble.c"
   },
   {
     "name": "qsort",
@@ -20496,55 +20496,55 @@
     "name": "COpt_SetLoopCodeMotionMode",
     "address": "0x00523d60",
     "size": 407,
-    "source": "src/optimizer/CodeMotion.c"
+    "source": "src/optimizer/UseDefChains.c"
   },
   {
     "name": "propagate_use_sets",
     "address": "0x00523f00",
     "size": 299,
-    "source": "src/optimizer/CodeMotion.c"
+    "source": "src/optimizer/UseDefChains.c"
   },
   {
     "name": "solve_definition_sets",
     "address": "0x00524030",
     "size": 296,
-    "source": "src/optimizer/CodeMotion.c"
+    "source": "src/optimizer/UseDefChains.c"
   },
   {
     "name": "compute_block_definition_and_use_sets",
     "address": "0x00524160",
     "size": 1625,
-    "source": "src/optimizer/CodeMotion.c"
+    "source": "src/optimizer/UseDefChains.c"
   },
   {
     "name": "build_use_definition_entries",
     "address": "0x005247c0",
     "size": 1553,
-    "source": "src/optimizer/CodeMotion.c"
+    "source": "src/optimizer/UseDefChains.c"
   },
   {
     "name": "assign_definition_and_use_starts",
     "address": "0x00524de0",
     "size": 482,
-    "source": "src/optimizer/CodeMotion.c"
+    "source": "src/optimizer/UseDefChains.c"
   },
   {
     "name": "is_object_access_compatible",
     "address": "0x00524fd0",
     "size": 601,
-    "source": "src/optimizer/CodeMotion.c"
+    "source": "src/optimizer/UseDefChains.c"
   },
   {
     "name": "COpt_00524b20",
     "address": "0x00525230",
     "size": 112,
-    "source": "src/optimizer/CodeMotion.c"
+    "source": "src/optimizer/UseDefChains.c"
   },
   {
     "name": "find_object_node",
     "address": "0x005252a0",
     "size": 56,
-    "source": "src/optimizer/CodeMotion.c"
+    "source": "src/optimizer/UseDefChains.c"
   },
   {
     "name": "CodeMotion_VisitLoops",
@@ -20721,7 +20721,7 @@
     "source": "src/optimizer/StrengthReduction.c"
   },
   {
-    "name": "collect_code_motion_candidates",
+    "name": "process_searches",
     "address": "0x005287b0",
     "size": 298,
     "source": "src/optimizer/StrengthReduction.c"
@@ -20886,7 +20886,7 @@
     "name": "COpt_LoadDeletion",
     "address": "0x0052ce90",
     "size": 229,
-    "source": "src/optimizer/ConstantPropagation.c"
+    "source": "src/optimizer/LoadDeletion.c"
   },
   {
     "name": "LoadDeletion_BuildLoadLivenessSets",
@@ -21273,10 +21273,10 @@
     "source": "src/backend/InterferenceGraph.c"
   },
   {
-    "name": "InterferenceGraph_SpillRegisters",
+    "name": "SpillCode_SpillRegisters",
     "address": "0x00531f10",
     "size": 676,
-    "source": "src/backend/InterferenceGraph.c"
+    "source": "src/backend/SpillCode.c"
   },
   {
     "name": "SpillCode_EmitOperandSpills",
@@ -21411,22 +21411,22 @@
     "source": "src/frontend/CRTTI.c"
   },
   {
-    "name": "CRTTI_OrBitVector",
+    "name": "BitVectors_OrBitVector",
     "address": "0x005344f0",
     "size": 49,
-    "source": "src/frontend/CRTTI.c"
+    "source": "src/backend/BitVectors.c"
   },
   {
-    "name": "CRTTI_IntersectBitVectors",
+    "name": "BitVectors_IntersectBitVectors",
     "address": "0x00534530",
     "size": 49,
-    "source": "src/frontend/CRTTI.c"
+    "source": "src/backend/BitVectors.c"
   },
   {
-    "name": "CRTTI_FillWords",
+    "name": "BitVectors_FillWords",
     "address": "0x00534570",
     "size": 44,
-    "source": "src/frontend/CRTTI.c"
+    "source": "src/backend/BitVectors.c"
   },
   {
     "name": "BitVectors_CopyAndCheckChanged",

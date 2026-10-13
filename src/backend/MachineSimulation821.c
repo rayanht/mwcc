@@ -326,8 +326,9 @@ static MachineOpcodeInfo data_00578e50[302] = {
     {0, 0, {0, 0, 0, 0}},   /* PC_VMINFP */
 };
 
-/* The instruction in each of the six execution stages and the cycles it has left there: six statics in a row,
-   which the code also indexes from the first. */
+/* The instruction in each of the six execution stages and the cycles it has left there (six statics in a row,
+   which the code also indexes from the first); the completion queue of the
+   instructions issued, in order, with its free slots, its length and its head and tail. */
 static PipelineStage data_00583018;
 static PipelineStage data_00583020;
 static PipelineStage data_00583028;
@@ -340,11 +341,41 @@ static UInt32 data_00583050;
 static unsigned int record_enqueue_index;
 static CompletionEntry queue_slots[6];
 
-static inline void EnqueueRecord(PCodeInstruction *instr)
+static void advance_stage(int first, unsigned int from, int to)
 {
+    PCodeInstruction *instruction;
+    SInt32 v;
+    v = data_00578e50[(instruction = (&data_00583018)[from].instr)->opcode].stageCycles[to - first];
+    (&data_00583018)[to].instr = instruction;
+    (&data_00583018)[to].remaining = v;
+    (&data_00583018)[from].instr = NULL;
+}
+
+static void enqueue(PCodeInstruction *instr)
+{
+    data_0058304c = data_0058304c + 1;
+    data_00583048 = data_00583048 - 1;
     queue_slots[record_enqueue_index].instr = instr;
     queue_slots[record_enqueue_index].completed = 0;
     record_enqueue_index = (record_enqueue_index + 1) % 6;
+}
+
+static void complete_stage(unsigned int stage)
+{
+    struct PCodeInstruction *key = (&data_00583018)[stage].instr;
+    SInt32 i;
+    for (i = 0; i < 6 && queue_slots[i].instr != key; i++)
+        ;
+    queue_slots[i].completed = 1;
+    (&data_00583018)[stage].instr = NULL;
+}
+
+static void retire(void)
+{
+    queue_slots[data_00583050].instr = NULL;
+    data_0058304c--;
+    data_00583048++;
+    data_00583050 = (data_00583050 + 1) % 6;
 }
 
 int get_instruction_cost(PCodeInstruction *instruction)
@@ -398,16 +429,13 @@ int fn_005308b0(struct PCodeInstruction *pcode)
 void fn_00530830(PCodeInstruction *instr)
 {
     int slot;
-    int tableOffset;
+    int cycles;
 
-    tableOffset = instr->opcode;
-    slot = data_00578e50[tableOffset].executionUnit;
-
-    data_0058304c = data_0058304c + 1;
-    data_00583048 = data_00583048 - 1;
-    EnqueueRecord(instr);
+    slot = data_00578e50[instr->opcode].executionUnit;
+    cycles = data_00578e50[instr->opcode].stageCycles[0];
+    enqueue(instr);
     (&data_00583018)[slot].instr = instr;
-    (&data_00583018)[slot].remaining = data_00578e50[tableOffset].stageCycles[0];
+    (&data_00583018)[slot].remaining = cycles;
 }
 
 void fn_00530660(void)
@@ -420,49 +448,18 @@ void fn_00530660(void)
         i++;
     } while (i < 6);
     if (data_0058304c > 0 && queue_slots[data_00583050].completed != 0) {
-        queue_slots[data_00583050].instr = NULL;
-        data_0058304c--;
-        data_00583048++;
-        data_00583050 = (data_00583050 + 1) % 6;
-        if (data_0058304c > 0 && queue_slots[data_00583050].completed != 0) {
-            queue_slots[data_00583050].instr = NULL;
-            data_0058304c--;
-            data_00583048++;
-            data_00583050 = (1 + data_00583050) % 6;
-        }
+        retire();
+        if (data_0058304c > 0 && queue_slots[data_00583050].completed != 0)
+            retire();
     }
-    if (data_00583020.instr != NULL && data_00583020.remaining == 0) {
-        SInt32 i;
-        struct PCodeInstruction *key = data_00583020.instr;
-        for (i = 0; i < 6 && queue_slots[i].instr != key; i++)
-            ;
-        queue_slots[i].completed = 1;
-        data_00583020.instr = NULL;
-    }
-    if (data_00583038.instr != NULL && data_00583038.remaining == 0) {
-        SInt32 i;
-        struct PCodeInstruction *key = data_00583038.instr;
-        for (i = 0; i < 6 && queue_slots[i].instr != key; i++)
-            ;
-        queue_slots[i].completed = 1;
-        data_00583038.instr = NULL;
-    }
-    if (data_00583018.instr != NULL && data_00583018.remaining == 0) {
-        SInt32 i;
-        struct PCodeInstruction *key = data_00583018.instr;
-        for (i = 0; i < 6 && queue_slots[i].instr != key; i++)
-            ;
-        queue_slots[i].completed = 1;
-        data_00583018.instr = NULL;
-    }
-    if (data_00583030.instr != NULL && data_00583030.remaining == 0 && data_00583038.instr == NULL) {
-        SInt32 count;
-        PCodeInstruction *object;
-        count = data_00578e50[(object = data_00583030.instr)->opcode].stageCycles[1];
-        data_00583038.instr = object;
-        data_00583038.remaining = count;
-        data_00583030.instr = NULL;
-    }
+    if (data_00583020.instr != NULL && data_00583020.remaining == 0)
+        complete_stage(1);
+    if (data_00583038.instr != NULL && data_00583038.remaining == 0)
+        complete_stage(4);
+    if (data_00583018.instr != NULL && data_00583018.remaining == 0)
+        complete_stage(0);
+    if (data_00583030.instr != NULL && data_00583030.remaining == 0 && data_00583038.instr == NULL)
+        advance_stage(3, 3, 4);
 }
 
 int get_instruction_opcode_table_entry(PCodeInstruction *instruction)

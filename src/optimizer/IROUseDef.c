@@ -38,14 +38,6 @@ static SInt32 data_00580638;
     (((UInt32)((SInt32)(i) >> 5) < (bv)->size) &&                                                                      \
      (((bv)->bits[(UInt32)((SInt32)(i) >> 5)] & ((UInt32)1 << ((i) & 31)))) != 0)
 
-static int has_side_effect(IROLinear *p);
-static int is_side_effect_node(IROLinear *p);
-static int is_volatile_object_ref(IROLinear *p);
-static int is_object_ref(IROLinear *p);
-static int has_volatile_type(IROLinear *p);
-static int is_call_or_assignment(IROLinear *p);
-static Boolean IRO_NodeKind(IROLinear *n);
-
 static inline void PrintUseDefValue(char *format, BitVector *value)
 {
     IroDump_PrintBitSet(format, value);
@@ -56,24 +48,34 @@ static inline int ReverseEqual(BitVector *out, BitVector *reaching)
     return IroBitVect_AreEqual(reaching, out);
 }
 
-/* Records a definition of VAR by LINEAR (null: on entry), at the end of the global list and the front of VAR's. */
-static inline void AddUse(IRONode *node, IROLinear *linear, VarRecord *var)
+static inline int is_object_ref(IROLinear *p)
 {
-    IROUse *use;
-    use = (IROUse *)oalloc(sizeof(IROUse));
-    use->index = data_00580624++;
-    use->node = node;
-    use->linear = linear;
-    use->var = var;
-    use->globalnext = NULL;
-    use->reachingDefCount = 0;
-    if (allocated_uses != NULL)
-        global_use_tail->globalnext = use;
-    else
-        allocated_uses = use;
-    global_use_tail = use;
-    use->varnext = var->uses;
-    var->uses = use;
+    return p->type == IROLinearOperand && p->u.node->type == EOBJREF;
+}
+
+static inline int has_volatile_type(IROLinear *p)
+{
+    return p->rtype && CParser_IsVolatile(p->rtype, p->nodeflags & 3);
+}
+
+static inline int is_call_or_assignment(IROLinear *p)
+{
+    return p->type == IROLinearFunccall || fn_0044d460(p);
+}
+
+static inline int is_side_effect_node(IROLinear *p)
+{
+    return is_call_or_assignment(p) || has_volatile_type(p);
+}
+
+static inline int is_volatile_object_ref(IROLinear *p)
+{
+    return is_object_ref(p) && is_volatile_object(p->u.node->data.objref);
+}
+
+static int has_side_effect(IROLinear *p)
+{
+    return is_side_effect_node(p) || is_volatile_object_ref(p);
 }
 
 void fn_0045ac60(IROLinear *p, int flag)
@@ -90,36 +92,6 @@ void fn_0045ac60(IROLinear *p, int flag)
         else if (data_00580638 == 0)
             p->type = IROLinearNop;
     }
-}
-
-static int has_side_effect(IROLinear *p)
-{
-    return is_side_effect_node(p) || is_volatile_object_ref(p);
-}
-
-static int is_side_effect_node(IROLinear *p)
-{
-    return is_call_or_assignment(p) || has_volatile_type(p);
-}
-
-static int is_volatile_object_ref(IROLinear *p)
-{
-    return is_object_ref(p) && is_volatile_object(p->u.node->data.objref);
-}
-
-static int is_object_ref(IROLinear *p)
-{
-    return p->type == IROLinearOperand && p->u.node->type == EOBJREF;
-}
-
-static int has_volatile_type(IROLinear *p)
-{
-    return p->rtype && CParser_IsVolatile(p->rtype, p->nodeflags & 3);
-}
-
-static int is_call_or_assignment(IROLinear *p)
-{
-    return p->type == IROLinearFunccall || fn_0044d460(p);
 }
 
 void create_def_record(VarRecord *var, struct IROLinear *linear, unsigned char definite)
@@ -144,6 +116,26 @@ void create_def_record(VarRecord *var, struct IROLinear *linear, unsigned char d
     global_def_tail = def;
     def->varnext = var->defs;
     var->defs = def;
+}
+
+/* Records a use of VAR by LINEAR in NODE, at the end of the global list and the front of VAR's. */
+static void AddUse(VarRecord *var, IROLinear *linear, IRONode *node)
+{
+    IROUse *use;
+    use = (IROUse *)oalloc(sizeof(IROUse));
+    use->index = data_00580624++;
+    use->node = node;
+    use->linear = linear;
+    use->var = var;
+    use->globalnext = NULL;
+    use->reachingDefCount = 0;
+    if (allocated_uses != NULL)
+        global_use_tail->globalnext = use;
+    else
+        allocated_uses = use;
+    global_use_tail = use;
+    use->varnext = var->uses;
+    var->uses = use;
 }
 
 void build_use_def_records(void)
@@ -175,7 +167,7 @@ void build_use_def_records(void)
                     ((member->flags & IROLF_Assigned) == 0 || (member->flags & IROLF_Used) != 0)) {
                     entry = fn_0044ba70(object, 0, 1);
                     if (entry)
-                        AddUse(owner, member, entry);
+                        AddUse(entry, member, owner);
                 }
             }
             if (fn_0044d460(member)) {
@@ -189,7 +181,7 @@ void build_use_def_records(void)
                     entry = fn_0044ba70(list.operands[index].object, 0, 1);
                     switch (list.operands[index].type) {
                         case 0:
-                            AddUse(owner, member, entry);
+                            AddUse(entry, member, owner);
                             break;
                         case 1:
                             create_def_record(entry, member,
@@ -226,6 +218,24 @@ void mark_var_used_at_call(Object *obj)
         }
         si->usedAtCall = 1;
     }
+}
+
+/* a definition worth propagating: an increment (0..2) or a constant add or subtract (0x22, 0x23) of a variable
+   that is not a bit field */
+static Boolean IRO_NodeKind(IROLinear *n)
+{
+    switch (n->type) {
+        case IROLinearOp1Arg:
+            if ((n->nodetype == EPOSTINC || n->nodetype <= 2) && !(n->u.monadic->flags & 0x80000))
+                return 1;
+            break;
+        case IROLinearOp2Arg:
+            if ((n->nodetype == EADDASS || n->nodetype == ESUBASS) && IroUtil_IsType1NodeType50(n->u.diadic.right) &&
+                !(n->u.diadic.left->flags & 0x80000))
+                return 1;
+            break;
+    }
+    return 0;
 }
 
 /* The amount a propagated definition adds: the step of an increment (scaled for a pointer) or the constant of
@@ -300,7 +310,7 @@ void add_constant_to_next_use(IROLinear *expression, CInt64 value, Type *type)
                 }
                 break;
             case IROLinearOp2Arg:
-                if (IroDump_IsType1NodeType50(node->u.diadic.right) != 0) {
+                if (IroUtil_IsType1NodeType50(node->u.diadic.right) != 0) {
                     switch (node->nodetype) {
                         case EADD:
                         case EADDASS: {
@@ -350,9 +360,9 @@ Boolean propagate_inc_dec(void)
     for (def = def_list; def != NULL; def = def->globalnext) {
         IROUse *use;
         IROUse *matchingUse;
-        IROLinear *parent;
         IROLinear *ancestor;
         UInt32 live;
+        IROLinear *parent;
 
         if (def->linear == NULL || def->definite == 0)
             continue;
@@ -365,12 +375,13 @@ Boolean propagate_inc_dec(void)
              def->linear->rtype->type == TYPEPOINTER) &&
             IroUtil_AreTypesEqual(def->linear->rtype, def->var->object->type) &&
             !is_volatile_object(def->var->object)) {
+            use = def->var->uses;
             live = 0;
-            for (use = def->var->uses; use != NULL; use = use->varnext) {
+            for (; use != NULL; use = use->varnext) {
                 if ((UInt32)(def->index >> 5) < use->reachingDefs->size &&
                     ((1u << (def->index & 31)) & use->reachingDefs->bits[def->index >> 5])) {
                     if (use->reachingDefCount != 1 || use->linear->type != IROLinearOperand ||
-                        (parent = IroUtil_FindNextUse(use->linear)) == NULL || !IroDump_GetObjRef(parent) ||
+                        (parent = IroUtil_FindNextUse(use->linear)) == NULL || !IroUtil_GetObjRef(parent) ||
                         !IroUtil_AreTypesEqual(def->linear->rtype, parent->rtype) ||
                         ((use->linear->flags & IROLF_Assigned) &&
                          ((ancestor = IroUtil_FindNextUse(parent)) == NULL || !IRO_NodeKind(ancestor) ||
@@ -411,26 +422,6 @@ Boolean propagate_inc_dec(void)
     skipDefinition:;
     }
     return removed;
-}
-
-/* a definition worth propagating: an increment (0..2) or a constant add or subtract (0x22, 0x23) of a variable
-   that is not a bit field */
-static Boolean IRO_NodeKind(IROLinear *n)
-{
-    switch (n->type) {
-        case IROLinearOp1Arg:
-            if (n->nodetype != EPOSTINC && n->nodetype > 2)
-                return 0;
-            if (n->u.monadic->flags & 0x80000)
-                return 0;
-            return 1;
-        case IROLinearOp2Arg:
-            if ((n->nodetype == EADDASS || n->nodetype == ESUBASS) && IroDump_IsType1NodeType50(n->u.diadic.right) &&
-                !(n->u.diadic.left->flags & 0x80000))
-                return 1;
-            return 0;
-    }
-    return 0;
 }
 
 SInt32 IRO_UseDef(UInt8 eliminateUnused, UInt8 simplifyUses)
@@ -533,7 +524,7 @@ SInt32 IRO_UseDef(UInt8 eliminateUnused, UInt8 simplifyUses)
             }
             if (currentNode->type == IROLinearFunccall ||
                 (currentNode->type == IROLinearOp1Arg && currentNode->nodetype == EINDIRECT &&
-                 IroDump_GetObjRef(currentNode) == NULL)) {
+                 IroUtil_GetObjRef(currentNode) == NULL)) {
                 IroBitVect_CopyBitVector(use_def_in, usedDefs);
                 IroBitVect_Intersect(callDefs, usedDefs);
                 IroBitVect_Or(usedDefs, used_defs_bitvector);
@@ -681,14 +672,28 @@ void visit_connected_defs_and_uses(IRODef *p)
     }
 }
 
+/* (the definition's object, the variable's, becomes the replacement) */
+static void replace_definition_object(IROLinear *node, Object *variable, Object *replacement)
+{
+    node = fn_00459940(node);
+    CError_ASSERT(1277, !(node == 0 || node->type != IROLinearOperand || node->u.node->type != EOBJREF ||
+                          node->u.node->data.objref != variable));
+    node->u.node->data.objref = replacement;
+}
+
+static void replace_use_object(IROLinear *node, Object *variable, Object *replacement)
+{
+    CError_ASSERT(1300, !(node->type != IROLinearOperand || node->u.node->type != EOBJREF));
+    if (node->u.node->data.objref == variable) {
+        node->u.node->data.objref = replacement;
+    } else
+        CError_ASSERT(1312, node->u.node->data.objref == replacement);
+}
+
 void split_variable_range(VarRecord *entry)
 {
-    IROLinear *definitionNode;
     IRODef *use;
     IROUse *definition;
-    IROLinear *useNode;
-    Object *useReference;
-    Object *definitionReference;
     Object *object;
     IroDump_Print("Splitting range for variable: %d\n", entry->index);
     PrintUseDefValue("Def set: ", data_00587f70);
@@ -699,27 +704,15 @@ void split_variable_range(VarRecord *entry)
     for (use = entry->defs; use != NULL; use = use->varnext) {
         UInt32 wordIndex = use->index >> 5;
         if (wordIndex < data_00587f70->size && (1 << use->index & data_00587f70->bits[use->index >> 5]) != 0 &&
-            use->linear != NULL) {
-            useReference = entry->object;
-            useNode = fn_00459940(use->linear);
-            CError_ASSERT(1277, !(useNode == 0 || useNode->type != IROLinearOperand ||
-                                  useNode->u.node->type != EOBJREF || useNode->u.node->data.objref != useReference));
-            useNode->u.node->data.objref = object;
-        }
+            use->linear != NULL)
+            replace_definition_object(use->linear, entry->object, object);
     }
     for (definition = entry->uses; definition != NULL; definition = definition->varnext) {
         unsigned int wordIndex = definition->index >> 5;
         unsigned int size = connected_defs_and_uses_bits->size;
         if (wordIndex < size &&
-            (1 << definition->index & connected_defs_and_uses_bits->bits[definition->index >> 5]) != 0) {
-            definitionReference = entry->object;
-            definitionNode = definition->linear;
-            CError_ASSERT(1300, !(definitionNode->type != IROLinearOperand || definitionNode->u.node->type != EOBJREF));
-            if (definitionNode->u.node->data.objref == definitionReference) {
-                definitionNode->u.node->data.objref = object;
-            } else
-                CError_ASSERT(1312, definitionNode->u.node->data.objref == object);
-        }
+            (1 << definition->index & connected_defs_and_uses_bits->bits[definition->index >> 5]) != 0)
+            replace_use_object(definition->linear, entry->object, object);
     }
 }
 

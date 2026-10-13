@@ -67,56 +67,33 @@ typedef struct DwarfSym DwarfSym;
 #define DWARF_PRODUCER "MW EABI PPC C-Compiler"
 #define S dwarf_info_buffer
 
-/* The source line an assertion reports: 1.1's file is a line shorter before find_or_create_dwinfo, ten after it. */
+/* The source line an assertion reports: 1.1's file is a line shorter before find_or_create_dwinfo, ten after it;
+   1.0's a line shorter up to get_integral_type_code, fifteen at find_or_create_dwinfo, then twenty-four and, after
+   create_type_node, twenty-five. */
 #if VERSION >= VERSION_GC_1_2_5
 #define LINE(line) (line)
-#else
+#elif VERSION > VERSION_GC_1_0
 #define LINE(line) ((line) <= 840 ? (line) - 1 : (line) - 10)
+#else
+#define LINE(line)                                                                                                     \
+    ((line) <= 629 ? (line) - 1 : (line) <= 840 ? (line) - 15 : (line) <= 2175 ? (line) - 24 : (line) - 25)
 #endif
 
 static SInt32 DW_Word(SInt16 value);
 static SInt32 DW_String(char *s);
-static void WritePosition(long pos);
-static long ReadPosition(void);
-static void WritePadding(int amount);
-static void InitOffsets(int offset);
 static void SetScope(DwarfFunctionState *obj);
+static DwarfNode *NewDwarfNode(void);
+static DwarfNode *PushDwarfNodeHead(void);
+static DwarfNode *InsertDwarfNode(void);
 
 static inline UInt8 DWARF_FullDebugEnabled(void)
 {
     return copts.f26;
 }
 
-static inline void DWARF_ActivateFunctionState(struct ObjGenSection *section)
-{
-    DwarfFunctionState *functionState = section->debugState;
-    currentDwarfFunctionState = functionState;
-    if (DWARF_FullDebugEnabled() != 0) {
-        dwarf_info_buffer = &functionState->info;
-        dwarf_depth_ptr = &functionState->depth;
-        dwarf_entry_offsets = functionState->offsets;
-        data_005604a4 = functionState->entries;
-        data_005604a8 = &functionState->pending;
-    }
-    dwarf_lines = &functionState->lines;
-    section_buffer = ObjGen_PPC_EABI_GetSectionBuffer(functionState->section);
-}
-
 static inline UInt8 dwarf_uses_zero_addends(void)
 {
     return copts.fd5;
-}
-
-static inline char *dwarfFileName(char *path, Boolean fullPath)
-{
-    SInt32 i;
-    if (fullPath == 0) {
-        for (i = (SInt32)strlen(path); i >= 0; i--) {
-            if (path[i] == '\\' || path[i] == '/')
-                return &path[i + 1];
-        }
-    }
-    return path;
 }
 
 static inline UInt8 dwarfZeroRelocationAddends(void)
@@ -132,26 +109,6 @@ static inline ObjGenSection *dwarfLineSection(void)
 static inline UInt8 dwarf_zero_addend_mode(void)
 {
     return copts.fd5;
-}
-
-static inline UInt8 NextQual(UInt16 *q)
-{
-    if (*q & Q_REFERENCE) {
-        *q -= Q_REFERENCE;
-        return 2;
-    }
-    if (*q & Q_CONST) {
-        *q -= Q_CONST;
-        return 3;
-    }
-    if (*q & Q_INLINE_DATA) {
-        return 3;
-    }
-    if (*q & Q_VOLATILE) {
-        *q -= Q_VOLATILE;
-        return 4;
-    }
-    return 0;
 }
 
 static inline void PatchDwarfLength(SInt32 offset, SInt32 length)
@@ -188,12 +145,13 @@ static DwarfFixup *ResolveFixups(DwarfFixup *fixup, SInt32 offset)
 
 void emit_enum_type(Type *type)
 {
-    SInt32 constantsSize;
-    SInt32 entrySize;
+    ObjEnumConst *constant;
     SInt32 startOffset;
+    SInt32 nameSize;
+    SInt32 entrySize;
     SInt32 constantsOffset;
     DWInfo *entry;
-    ObjEnumConst *constant;
+    SInt32 constantsSize;
 
     startOffset = dwarf_info_buffer->size;
     entry = find_or_create_dwinfo(type);
@@ -204,67 +162,24 @@ void emit_enum_type(Type *type)
         entrySize += DW_Word(0x38);
         entrySize += DW_String(TYPE_ENUM(type)->enumname->name);
     }
-    AppendGListWord(dwarf_info_buffer, 0xb6);
+    entrySize += DW_Word(0xb6);
     AppendGListLong(dwarf_info_buffer, type->size);
-    AppendGListWord(dwarf_info_buffer, 0xf4);
+    entrySize += 4;
+    entrySize += DW_Word(0xf4);
     constantsOffset = dwarf_info_buffer->size;
     constantsSize = 0;
     AppendGListLong(dwarf_info_buffer, 0);
-    entrySize += 0xc;
-    constant = TYPE_ENUM(type)->enumlist;
-    if (constant != NULL) {
-        do {
-            SInt32 nameSize;
-            AppendGListLong(dwarf_info_buffer, constant->val.lo);
-            constantsSize += 4;
-            entrySize += 4;
-            nameSize = DW_String(constant->name->name);
-            constantsSize += nameSize;
-            constant = constant->next;
-            entrySize += nameSize;
-        } while (constant != NULL);
+    entrySize += 4;
+    for (constant = TYPE_ENUM(type)->enumlist; constant != NULL; constant = constant->next) {
+        AppendGListLong(dwarf_info_buffer, constant->val.lo);
+        entrySize += 4;
+        constantsSize += 4;
+        nameSize = DW_String(constant->name->name);
+        entrySize += nameSize;
+        constantsSize += nameSize;
     }
     patch_dwarf_info_length(constantsOffset, constantsSize);
     patch_dwarf_info_length(startOffset, entrySize);
-}
-
-static DwarfNode *NewDwarfNode(void)
-{
-    currentDwarfNode->next = galloc(sizeof(DwarfNode));
-    memclrw(currentDwarfNode->next, sizeof(DwarfNode));
-    currentDwarfNode->next->prev = currentDwarfNode;
-    currentDwarfNode = currentDwarfNode->next;
-    currentDwarfNode->scope = currentDwarfFunctionState;
-    return currentDwarfNode;
-}
-
-static DwarfNode *InsertDwarfNode(void)
-{
-    DwarfNode *next = currentDwarfScope->next;
-    currentDwarfScope->next = galloc(sizeof(DwarfNode));
-    memclrw(currentDwarfScope->next, sizeof(DwarfNode));
-    currentDwarfScope->next->prev = currentDwarfScope;
-    currentDwarfScope = currentDwarfScope->next;
-    currentDwarfScope->scope = currentDwarfFunctionState;
-    currentDwarfScope->next = next;
-    if (next == NULL)
-        currentDwarfNode = currentDwarfScope;
-    return currentDwarfScope;
-}
-
-static SInt32 DW_Word(SInt16 value)
-{
-    AppendGListWord(dwarf_info_buffer, value);
-    return 2;
-}
-
-static SInt32 DW_String(char *s)
-{
-    SInt32 i = 0;
-    for (; s[i] != 0; i++)
-        AppendGListByte(dwarf_info_buffer, s[i]);
-    AppendGListByte(dwarf_info_buffer, 0);
-    return i + 1;
 }
 
 void fn_004b0a80(TypeStruct *type)
@@ -649,9 +564,31 @@ UInt16 get_integral_type_code(Type *type)
     }
 }
 
+static UInt8 NextQual(UInt16 *q)
+{
+    if (*q & Q_REFERENCE) {
+        *q -= Q_REFERENCE;
+        return 2;
+    }
+    if (*q & Q_CONST) {
+        *q -= Q_CONST;
+        return 3;
+    }
+    if (*q & Q_INLINE_DATA) {
+        return 3;
+    }
+    if (*q & Q_VOLATILE) {
+        *q -= Q_VOLATILE;
+        return 4;
+    }
+    return 0;
+}
+
 DwarfRef create_type_dwarf_ref(Type *type, UInt16 qual, Boolean isArgument)
 {
+#if VERSION > VERSION_GC_1_0
     UInt8 pointerKind;
+#endif
     UInt8 qualifierKind;
     UInt8 typeKind;
     DwarfRef result;
@@ -665,6 +602,21 @@ DwarfRef create_type_dwarf_ref(Type *type, UInt16 qual, Boolean isArgument)
     head->next = NULL;
     result.valid = 0;
 
+#if VERSION == VERSION_GC_1_0
+    while ((typeKind = type->type) == TYPEPOINTER) {
+        pointerQual = TYPE_POINTER(type)->qual;
+        while ((qualifierKind = NextQual(&pointerQual)) != 0) {
+            tail->type = qualifierKind;
+            tail->next = (QualNode *)galloc(6);
+            tail = tail->next;
+        }
+        tail->type = 1;
+        tail->next = NULL;
+        type = TYPE_POINTER(type)->target;
+    }
+
+    if (typeKind != TYPEENUM && (UInt8)(typeKind - TYPEINT) <= 2) {
+#else
     while (type->type == TYPEPOINTER) {
         pointerQual = TYPE_POINTER(type)->qual;
         if ((UInt16)TYPE_POINTER(type)->qual & Q_REFERENCE) {
@@ -688,6 +640,7 @@ DwarfRef create_type_dwarf_ref(Type *type, UInt16 qual, Boolean isArgument)
     tail->next = NULL;
 
     if ((typeKind = type->type) != TYPEENUM && (UInt8)(typeKind - TYPEINT) <= 2) {
+#endif
         result.tag = 0x63;
         while (qualifierKind = NextQual(&qual), qualifierKind != 0) {
             tail->next = (QualNode *)galloc(6);
@@ -871,10 +824,9 @@ int emit_location_attribute(DwarfLocationOperand *location, UInt16 attribute, un
     if (location->kind == 0)
         return 0;
 
-    AppendGListWord(dwarf_info_buffer, attribute);
-    attributeSize = 2;
+    attributeSize = DW_Word(attribute);
     expressionSizeOffset = dwarf_info_buffer->size;
-    AppendGListNoData(dwarf_info_buffer, attributeSize);
+    AppendGListNoData(dwarf_info_buffer, 2);
     attributeSize += 2;
     expressionSize = 0;
 
@@ -977,6 +929,7 @@ SInt32 emit_entry_header(SInt16 value)
     SInt32 entryIndex;
     ObjGenRelocation *reference;
     SInt32 patchOffset;
+    SInt32 size;
 
     *data_005604a8 = 1;
     entryIndex = *dwarf_depth_ptr;
@@ -990,8 +943,10 @@ SInt32 emit_entry_header(SInt16 value)
         }
     }
     AppendGListLong(dwarf_info_buffer, 0);
+    size = 4;
     AppendGListWord(dwarf_info_buffer, value);
-    AppendGListWord(dwarf_info_buffer, 0x12);
+    size += 2;
+    size += DW_Word(0x12);
     entryIndex = *dwarf_depth_ptr;
     if (entryIndex >= 0) {
         dwarf_entry_offsets[entryIndex] = dwarf_info_buffer->size;
@@ -1005,15 +960,30 @@ SInt32 emit_entry_header(SInt16 value)
         currentDwarfFunctionState->pendingPosition = dwarf_info_buffer->size;
     }
     AppendGListLong(dwarf_info_buffer, 0);
-    return 12;
+    size += 4;
+    return size;
+}
+
+static SInt32 DW_Word(SInt16 value)
+{
+    AppendGListWord(dwarf_info_buffer, value);
+    return 2;
+}
+
+static SInt32 DW_String(char *s)
+{
+    SInt32 i = 0;
+    for (; s[i] != 0; i++)
+        AppendGListByte(dwarf_info_buffer, s[i]);
+    AppendGListByte(dwarf_info_buffer, 0);
+    return i + 1;
 }
 
 void DWARF_SetupSectionDebugState(struct ObjGenSection *section)
 {
-    DwarfNode *record;
-    DwarfFunctionState *state;
     DwarfNode *entry;
     UInt8 language;
+
     if (section->debugState == NULL) {
         section->debugState = data_00587168;
         section->debugState->section = section;
@@ -1022,25 +992,8 @@ void DWARF_SetupSectionDebugState(struct ObjGenSection *section)
         if (InitGList(&section->debugState->info, 5000))
             CError_LongJump();
     }
-    state = section->debugState;
-    currentDwarfFunctionState = state;
-    if (copts.f26) {
-        dwarf_info_buffer = &state->info;
-        dwarf_depth_ptr = &state->depth;
-        dwarf_entry_offsets = state->offsets;
-        data_005604a4 = state->entries;
-        data_005604a8 = &state->pending;
-    }
-    dwarf_lines = &state->lines;
-    section_buffer = ObjGen_PPC_EABI_GetSectionBuffer(state->section);
-    record = galloc(sizeof(*record));
-    memclrw(record, sizeof(*record));
-    dwarf_node_head->prev = record;
-    record->next = dwarf_node_head;
-    dwarf_node_head = record;
-    record->kind = 0xffff;
-    dwarf_node_head->next->scope = currentDwarfFunctionState;
-    entry = dwarf_node_head->next;
+    SetScope(section->debugState);
+    entry = PushDwarfNodeHead();
     entry->kind = 0x11;
     if (copts.cplusplus)
         language = 4;
@@ -1055,6 +1008,19 @@ void DWARF_SetupSectionDebugState(struct ObjGenSection *section)
     }
 }
 
+static char *dwarfFileName(char *path)
+{
+    SInt32 i;
+
+    if (!copts.fd6) {
+        for (i = (SInt32)strlen(path); i >= 0; i--) {
+            if (path[i] == '\\' || path[i] == '/')
+                return &path[i + 1];
+        }
+    }
+    return path;
+}
+
 void emit_compile_unit(struct ObjGenSection *section, UInt8 language)
 {
     SInt32 recordOffset;
@@ -1062,38 +1028,33 @@ void emit_compile_unit(struct ObjGenSection *section, UInt8 language)
     char sourcePath[1024];
     SInt32 recordSize;
     char *sourceName;
-    SInt32 nameLength;
 
     languageValue = language;
     recordOffset = dwarf_info_buffer->size;
     recordSize = emit_entry_header(0x11);
     recordSize += DW_Word(600);
-    for (nameLength = 0; DWARF_PRODUCER[nameLength] != 0; nameLength++)
-        AppendGListByte(dwarf_info_buffer, DWARF_PRODUCER[nameLength]);
-    AppendGListByte(dwarf_info_buffer, 0);
-    recordSize += nameLength + 1;
+    recordSize += DW_String(DWARF_PRODUCER);
     recordSize += DW_Word(0x38);
     sourceName = ObjGen_PPC_EABI_GetSectionName(section);
     strncpy(sourcePath, sourceName, sizeof(sourcePath));
-    sourceName = dwarfFileName(sourcePath, copts.fd6);
-    for (nameLength = 0; sourceName[nameLength] != 0; nameLength++)
-        AppendGListByte(dwarf_info_buffer, sourceName[nameLength]);
-    AppendGListByte(dwarf_info_buffer, 0);
-    recordSize += nameLength + 1;
-    AppendGListWord(dwarf_info_buffer, 0x136);
+    recordSize += DW_String(dwarfFileName(sourcePath));
+    recordSize += DW_Word(0x136);
     AppendGListData(dwarf_info_buffer, &languageValue, sizeof(languageValue));
-    AppendGListWord(dwarf_info_buffer, 0x111);
+    recordSize += 4;
+    recordSize += DW_Word(0x111);
     BE_elf_AddRelocation(dwarf_section, dwarf_info_buffer->size, NULL, section, 0, currentDwarfFunctionState->offset);
     AppendGListLong(dwarf_info_buffer, 0);
-    AppendGListWord(dwarf_info_buffer, 0x121);
+    recordSize += 4;
+    recordSize += DW_Word(0x121);
     BE_elf_AddRelocation(dwarf_section, dwarf_info_buffer->size, NULL, section, section_buffer->size,
                          currentDwarfFunctionState->offset);
     AppendGListLong(dwarf_info_buffer, dwarfZeroRelocationAddends() ? 0 : section_buffer->size);
-    AppendGListWord(dwarf_info_buffer, 0x106);
+    recordSize += 4;
+    recordSize += DW_Word(0x106);
     BE_elf_AddRelocation(dwarf_section, dwarf_info_buffer->size, NULL, dwarfLineSection(),
                          currentDwarfFunctionState->lineSectionOffset, currentDwarfFunctionState->offset);
     AppendGListLong(dwarf_info_buffer, dwarfZeroRelocationAddends() ? 0 : currentDwarfFunctionState->lineSectionOffset);
-    recordSize += 0x18;
+    recordSize += 4;
     *(SInt32 *)(*dwarf_info_buffer->data + recordOffset) = recordSize;
     BE_elf_AddRelocation(dwarfLineSection(), 4, NULL, section, 0, currentDwarfFunctionState->lineSectionOffset);
     if (copts.f26 == 0)
@@ -1121,20 +1082,16 @@ void DWARF_ReplaceTrailingLongWordLong(unsigned int firstValue, unsigned int sec
     savedCount = *(int *)*dwarf_lines->data;
     dwarf_lines->size -= 10;
     *(int *)*dwarf_lines->data = savedCount - 10;
-    savedCount = *(int *)*dwarf_lines->data;
-    AppendGListLong(dwarf_lines, firstValue);
-    AppendGListWord(dwarf_lines, 0xffffffff);
-    AppendGListLong(dwarf_lines, secondValue);
-    *(int *)*dwarf_lines->data = savedCount + 10;
+    DWARF_AppendLongWordLong(firstValue, secondValue);
 }
 
 void emit_function_type(DwarfFixup **fixups, DWInfo *function)
 {
+    SInt32 size;
     SInt32 offset;
     TypeFunc *type;
-    FuncArg *argument;
     DWInfo *typeRecord;
-    SInt32 size;
+    FuncArg *argument;
 
     type = TYPE_FUNC(function->type);
     offset = dwarf_info_buffer->size;
@@ -1184,11 +1141,11 @@ void emit_function_type(DwarfFixup **fixups, DWInfo *function)
 
 void emit_member_pointer_type(DwarfFixup **references, DWInfo *type)
 {
-    TypeMemberPointer *entry;
     SInt32 offset;
     DwarfRef saved;
     DWInfo *record;
     SInt32 size;
+    TypeMemberPointer *entry;
 
     entry = (TypeMemberPointer *)type->type;
     offset = dwarf_info_buffer->size;
@@ -1238,7 +1195,7 @@ SInt32 emit_function_entry(Object *func, SInt32 code_size, SInt32 code_offset,
         DwarfFixup *fixup;
         ObjGenRelocation *reference;
         DWInfo *symbol;
-        AppendGListWord(dwarf_info_buffer, 0x142);
+        entry_size += DW_Word(0x142);
         symbol = find_or_create_dwinfo((Type *)TYPE_METHOD(func->type)->theclass);
         class_reference = get_type_dwarf_ref(symbol, 0, 1);
         reference = BE_elf_AddRelocation(dwarf_section, dwarf_info_buffer->size, NULL, dwarf_section,
@@ -1252,7 +1209,7 @@ SInt32 emit_function_entry(Object *func, SInt32 code_size, SInt32 code_offset,
             symbol->typeNode->u.fixups = fixup;
         }
         AppendGListLong(dwarf_info_buffer, dwarf_uses_zero_addends() ? 0 : class_reference.num);
-        entry_size += 6;
+        entry_size += 4;
     }
 
     if (return_type_location->kind != 0) {
@@ -1264,24 +1221,25 @@ SInt32 emit_function_entry(Object *func, SInt32 code_size, SInt32 code_offset,
         entry_size += emit_dwarf_ref(symbol);
     }
 
-    AppendGListWord(dwarf_info_buffer, 0x111);
+    entry_size += DW_Word(0x111);
     BE_elf_AddRelocation(dwarf_section, dwarf_info_buffer->size, func, NULL, 0, currentDwarfFunctionState->offset);
     AppendGListLong(dwarf_info_buffer, dwarf_uses_zero_addends() ? 0 : code_offset);
+    entry_size += 4;
 
-    AppendGListWord(dwarf_info_buffer, 0x121);
+    entry_size += DW_Word(0x121);
     BE_elf_AddRelocation(dwarf_section, dwarf_info_buffer->size, NULL, currentDwarfFunctionState->section,
                          code_offset + code_size, currentDwarfFunctionState->offset);
     AppendGListLong(dwarf_info_buffer, dwarf_uses_zero_addends() ? 0 : code_offset + code_size);
-    entry_size += 0xc;
+    entry_size += 4;
 
     if (copts.f26 == 0) {
         if (currentDwarfFunctionState != data_00587168) {
-            AppendGListWord(dwarf_info_buffer, 0x106);
+            entry_size += DW_Word(0x106);
             BE_elf_AddRelocation(dwarf_section, dwarf_info_buffer->size, NULL, data_00587698,
                                  currentDwarfFunctionState->lineSectionOffset, currentDwarfFunctionState->offset);
             AppendGListLong(dwarf_info_buffer,
                             dwarf_uses_zero_addends() ? 0 : currentDwarfFunctionState->lineSectionOffset);
-            entry_size += 6;
+            entry_size += 4;
         }
         if (currentDwarfFunctionState->lineBaseRelocated == 0) {
             currentDwarfFunctionState->lineBaseRelocated = 1;
@@ -1298,7 +1256,7 @@ SInt32 emit_function_entry(Object *func, SInt32 code_size, SInt32 code_offset,
                 DwarfSymbol *symbol;
                 ObjGenRelocation *reference;
                 DwarfFixup *fixup;
-                AppendGListWord(dwarf_info_buffer, 0x2022);
+                entry_size += DW_Word(0x2022);
                 variable_object = variable->object;
                 symbol = variable_object->debugInfo.symbol;
                 reference = BE_elf_AddRelocation(dwarf_section, dwarf_info_buffer->size, NULL, dwarf_section,
@@ -1311,7 +1269,7 @@ SInt32 emit_function_entry(Object *func, SInt32 code_size, SInt32 code_offset,
                     symbol->references = fixup;
                 }
                 AppendGListLong(dwarf_info_buffer, dwarf_uses_zero_addends() ? 0 : symbol->u.offset);
-                entry_size += 6;
+                entry_size += 4;
             } else {
                 CError_FATAL(LINE(1394));
                 entry_size += DW_Word(0x2038);
@@ -1348,11 +1306,11 @@ void DWARF_SetupFunctionState(struct ObjGenSection *functionSection)
         if (DWARF_FullDebugEnabled() != 0) {
             DWARF_SetupSectionDebugState(functionSection);
         } else {
-            DWARF_ActivateFunctionState(functionSection);
+            SetScope(functionSection->debugState);
             data_0058114e = 1;
         }
     } else {
-        DWARF_ActivateFunctionState(functionSection);
+        SetScope(functionSection->debugState);
     }
 }
 
@@ -1395,31 +1353,67 @@ int DWARF_CreateBlockNode(Object *object, SInt32 codeSize, SInt32 codeOffset, Ob
     return 1;
 }
 
-unsigned int DWARF_RestoreFunctionState(void)
+static void end_dwarf_scope(void)
 {
-    DwarfFunctionState *A;
-    GList *r;
-
-    NewDwarfNode()->kind = 0x4080U;
-    currentDwarfScope = 0U;
-    A = data_00587168;
-    currentDwarfFunctionState = A;
-    if (copts.f26 != 0U) {
-        dwarf_info_buffer = &A->info;
-        dwarf_depth_ptr = &A->depth;
-        dwarf_entry_offsets = A->offsets;
-        data_005604a4 = A->entries;
-        data_005604a8 = &A->pending;
+    if (copts.fd4 && *data_005604a8) {
+        if (copts.fd5)
+            BE_elf_SetRelocationValue(data_005604a4[*dwarf_depth_ptr],
+                                      dwarf_info_buffer->size + currentDwarfFunctionState->offset);
+        else
+            *(int *)(*dwarf_info_buffer->data + dwarf_entry_offsets[*dwarf_depth_ptr]) =
+                dwarf_info_buffer->size + currentDwarfFunctionState->offset;
+        AppendGListLong(dwarf_info_buffer, 4);
     }
-    dwarf_lines = &A->lines;
-    r = ObjGen_PPC_EABI_GetSectionBuffer(A->section);
-    section_buffer = r;
+    --*dwarf_depth_ptr;
+}
+
+void DWARF_RestoreFunctionState(void)
+{
+    NewDwarfNode()->kind = 0x4080;
+    currentDwarfScope = NULL;
+    SetScope(data_00587168);
     if (--data_005604ac == -1)
-        current_block_node = 0U;
-    return (unsigned int)r;
+        current_block_node = NULL;
 }
 
 #pragma sym reset
+
+static inline void WritePaddingBytes(int amount)
+{
+    AppendGListLong(dwarf_info_buffer, amount);
+    amount -= 4;
+    if (amount >= 2) {
+        AppendGListWord(dwarf_info_buffer, 0);
+        amount -= 2;
+    }
+    if (amount == 1)
+        AppendGListByte(dwarf_info_buffer, 0);
+}
+
+static void WritePadding(void)
+{
+    int padding;
+
+    padding = 4 - (dwarf_info_buffer->size % 4);
+    if (padding < 4)
+        WritePaddingBytes(padding + 4);
+}
+
+static inline void InitOffsets(int offset)
+{
+    currentDwarfFunctionState->offset = 0;
+    currentDwarfFunctionState->lineSectionOffset = offset;
+}
+
+static inline long ReadPosition(void)
+{
+    return *(long *)*dwarf_lines->data;
+}
+
+static inline void WritePosition(long pos)
+{
+    *(long *)*dwarf_lines->data = pos;
+}
 
 void DWARF_WriteDebugInfo(void)
 {
@@ -1430,7 +1424,6 @@ void DWARF_WriteDebugInfo(void)
     DwarfNode *entry;
     SInt32 offset;
     SInt32 length;
-    int padding;
     unsigned short tag;
 
     for (currentDwarfNode = dwarf_node_head; (entry = currentDwarfNode->next) != NULL;
@@ -1474,18 +1467,7 @@ void DWARF_WriteDebugInfo(void)
                             emit_compile_unit(currentDwarfFunctionState->section, node->u.regByte);
                             break;
                         case 0x4080:
-                            if (copts.fd4 != 0 && *data_005604a8 != 0) {
-                                if (copts.fd5 != 0) {
-                                    BE_elf_SetRelocationValue(data_005604a4[*dwarf_depth_ptr],
-                                                              dwarf_info_buffer->size +
-                                                                  currentDwarfFunctionState->offset);
-                                } else {
-                                    *(int *)(*dwarf_info_buffer->data + dwarf_entry_offsets[*dwarf_depth_ptr]) =
-                                        dwarf_info_buffer->size + currentDwarfFunctionState->offset;
-                                }
-                                AppendGListLong(dwarf_info_buffer, 4);
-                            }
-                            *dwarf_depth_ptr -= 1;
+                            end_dwarf_scope();
                             if (copts.f26 == 0) {
                                 SetScope(data_00587168);
                             }
@@ -1541,10 +1523,7 @@ void DWARF_WriteDebugInfo(void)
                 }
                 AppendGListLong(dwarf_info_buffer, 4);
             }
-            *dwarf_depth_ptr -= 1, padding = 4 - (dwarf_info_buffer->size % 4);
-            if (padding < 4) {
-                WritePadding(padding + 4);
-            }
+            *dwarf_depth_ptr -= 1, WritePadding();
             if (copts.fd5 != 0) {
                 BE_elf_SetRelocationValue(currentDwarfFunctionState->pendingReference,
                                           dwarf_info_buffer->size + currentDwarfFunctionState->offset);
@@ -1588,8 +1567,7 @@ SInt32 emit_dwarf_ref(DWInfo *info)
     qualifier = ref->qualifiers;
     switch (ref->tag) {
         case 0x55:
-            AppendGListWord(dwarf_info_buffer, tagRef->tag);
-            size = 2;
+            size = DW_Word(tagRef->tag);
             AppendGListWord(dwarf_info_buffer, ref->num);
             size += 2;
             break;
@@ -1599,11 +1577,11 @@ SInt32 emit_dwarf_ref(DWInfo *info)
             SInt32 qualifierCount;
             ObjGenRelocation *relocation;
 
-            AppendGListWord(dwarf_info_buffer, tagRef->tag);
-            size = 2;
+            size = DW_Word(tagRef->tag);
             lengthOffset = dwarf_info_buffer->size;
             qualifierCount = 0;
-            size += DW_Word(0);
+            AppendGListWord(dwarf_info_buffer, 0);
+            size += 2;
             while (qualifier != NULL) {
                 AppendGListByte(dwarf_info_buffer, qualifier->type);
                 qualifier = qualifier->next;
@@ -1631,11 +1609,11 @@ SInt32 emit_dwarf_ref(DWInfo *info)
             SInt32 lengthOffset;
             SInt32 qualifierCount;
 
-            AppendGListWord(dwarf_info_buffer, tagRef->tag);
-            size = 2;
+            size = DW_Word(tagRef->tag);
             lengthOffset = dwarf_info_buffer->size;
             qualifierCount = 0;
-            size += DW_Word(0);
+            AppendGListWord(dwarf_info_buffer, 0);
+            size += 2;
             while (qualifier != NULL) {
                 AppendGListByte(dwarf_info_buffer, qualifier->type);
                 qualifier = qualifier->next;
@@ -1652,8 +1630,7 @@ SInt32 emit_dwarf_ref(DWInfo *info)
             ObjGenRelocation *relocation;
             DWInfo *typeInfo = info;
 
-            AppendGListWord(dwarf_info_buffer, tagRef->tag);
-            size = 2;
+            size = DW_Word(tagRef->tag);
             relocation = BE_elf_AddRelocation(dwarf_section, dwarf_info_buffer->size, NULL, dwarf_section, ref->num,
                                               currentDwarfFunctionState->offset);
             if (!ref->valid) {
@@ -1685,7 +1662,6 @@ void fn_004ad570(DWInfo *ptype, union DwarfNodePayload *info)
     SInt32 entryOffset;
     SInt32 variableOffset;
     HashNameNode *name;
-    SInt32 nameLength;
     DwarfLocationOperand location;
     DwarfLocationOperand registerPair;
 
@@ -1698,11 +1674,7 @@ void fn_004ad570(DWInfo *ptype, union DwarfNodePayload *info)
     get_type_dwarf_ref(ptype, info->var.flags, 1);
     len = emit_entry_header(12);
     len += DW_Word(0x38);
-    for (nameLength = 0; name->name[nameLength] != 0; nameLength++)
-        AppendGListByte(dwarf_info_buffer, name->name[nameLength]);
-    AppendGListByte(dwarf_info_buffer, 0);
-    nameLength++;
-    len += nameLength;
+    len += DW_String(name->name);
     registerPair.kind = 0;
 
     if (reg != 0) {
@@ -1714,9 +1686,9 @@ void fn_004ad570(DWInfo *ptype, union DwarfNodePayload *info)
                 if (useGpr && typecode == TYPEFLOAT && type->size != 4) {
                     location.kind = 1;
                     location.operand.registers.first = secondReg;
-                    registerPair.operand.registers.first = reg;
                     location.operand.registers.offset = 0;
                     registerPair.kind = 8;
+                    registerPair.operand.registers.first = reg;
                     registerPair.operand.registers.second = secondReg;
                 } else {
                     location.kind = 1;
@@ -1734,9 +1706,9 @@ void fn_004ad570(DWInfo *ptype, union DwarfNodePayload *info)
         } else if ((typecode == TYPEINT || typecode == TYPEENUM) && type->size == 8) {
             location.kind = 1;
             location.operand.registers.first = secondReg;
-            registerPair.operand.registers.first = reg;
             location.operand.registers.offset = 0;
             registerPair.kind = 8;
+            registerPair.operand.registers.first = reg;
             registerPair.operand.registers.second = secondReg;
         } else {
             location.kind = 1;
@@ -1769,7 +1741,7 @@ void DWARF_AddLocalVariable(Object *parameter, int offset)
     if (type->typeNode == NULL)
         create_type_node(type);
     location = NewDwarfNode();
-    currentDwarfNode->kind = 0xc;
+    location->kind = 0xc;
     location->type = type;
     location->u.var.offset = parameter->u.var.uid + offset;
     location->u.var.flags = parameter->qual;
@@ -1791,7 +1763,6 @@ void fn_004ad260(DWInfo *ptype, union DwarfNodePayload *info)
     SInt32 entryOffset;
     SInt32 stackOffset;
     HashNameNode *name;
-    SInt32 nameLength;
     DwarfLocationOperand location;
     DwarfLocationOperand registerPair;
 
@@ -1804,11 +1775,7 @@ void fn_004ad260(DWInfo *ptype, union DwarfNodePayload *info)
     get_type_dwarf_ref(ptype, info->var.flags, 1);
     length = emit_entry_header(5);
     length += DW_Word(0x38);
-    for (nameLength = 0; name->name[nameLength] != 0; nameLength++)
-        AppendGListByte(dwarf_info_buffer, name->name[nameLength]);
-    AppendGListByte(dwarf_info_buffer, 0);
-    nameLength++;
-    length += nameLength;
+    length += DW_String(name->name);
     registerPair.kind = 0;
 
     if (reg != 0) {
@@ -1820,9 +1787,9 @@ void fn_004ad260(DWInfo *ptype, union DwarfNodePayload *info)
                 if (useGPR && typeCode == TYPEFLOAT && type->size != 4) {
                     location.kind = 1;
                     location.operand.registers.first = secondReg;
-                    registerPair.operand.registers.first = reg;
                     location.operand.registers.offset = 0;
                     registerPair.kind = 8;
+                    registerPair.operand.registers.first = reg;
                     registerPair.operand.registers.second = secondReg;
                 } else {
                     location.kind = 1;
@@ -1840,9 +1807,9 @@ void fn_004ad260(DWInfo *ptype, union DwarfNodePayload *info)
         } else if ((typeCode == TYPEINT || typeCode == TYPEENUM) && type->size == 8) {
             location.kind = 1;
             location.operand.registers.first = secondReg;
-            registerPair.operand.registers.first = reg;
             location.operand.registers.offset = 0;
             registerPair.kind = 8;
+            registerPair.operand.registers.first = reg;
             registerPair.operand.registers.second = secondReg;
         } else {
             location.kind = 1;
@@ -1892,50 +1859,22 @@ void DWARF_AddVar(Object *record, SInt32 offset)
 
 void emit_variable_entry(struct DwarfSym *sym, Object *obj, DWInfo *arg)
 {
-    SInt32 size;
     SInt32 offset;
+    SInt32 size;
     DwarfLocationOperand local;
-    DwarfFixup *fixup;
-    SInt32 length;
-    char *name;
 
     offset = dwarf_info_buffer->size;
-    fixup = sym->fixups;
-    while (fixup != NULL) {
-        if (copts.fd5 != 0) {
-            BE_elf_SetRelocationValue(fixup->reference, offset);
-        } else {
-            *(SInt32 *)(*dwarf_info_buffer->data + fixup->offset) = offset;
-        }
-        fixup = fixup->next;
-    }
-    sym->fixups = fixup;
+    sym->fixups = ResolveFixups(sym->fixups, offset);
     sym->offset = offset;
 
     get_type_dwarf_ref(arg, obj->qual, 1);
     size = emit_entry_header(CParser_HasInternalLinkage(obj) ? 12 : 7);
     size += DW_Word(0x38);
-    name = obj->name->name;
-    length = 0;
-    while (name[length] != 0) {
-        AppendGListByte(dwarf_info_buffer, name[length]);
-        length++;
-    }
-    AppendGListByte(dwarf_info_buffer, 0);
-    length++;
-    size += length;
+    size += DW_String(obj->name->name);
     if (copts.cplusplus != 0) {
         if (obj->name->name != COptimizer_GetFunctionObject(obj)->name) {
             size += DW_Word(0x2008);
-            name = COptimizer_GetFunctionObject(obj)->name;
-            length = 0;
-            while (name[length] != 0) {
-                AppendGListByte(dwarf_info_buffer, name[length]);
-                length++;
-            }
-            AppendGListByte(dwarf_info_buffer, 0);
-            length++;
-            size += length;
+            size += DW_String(COptimizer_GetFunctionObject(obj)->name);
         }
     }
     local.kind = 7;
@@ -1948,8 +1887,8 @@ void emit_variable_entry(struct DwarfSym *sym, Object *obj, DWInfo *arg)
 
 void DWARF_CreateObjectDebugEntry(Object *object)
 {
-    DWInfo *typeEntry;
     DwarfNode *entry;
+    DWInfo *typeEntry;
 
     if (copts.filesyminfo == 0)
         return;
@@ -1976,46 +1915,66 @@ void DWARF_CreateObjectDebugEntry(Object *object)
     entry->u.block.codeOffset = 0;
 }
 
-static void WritePosition(long pos)
+static void InitDwarfNodes(void)
 {
-    *(long *)*dwarf_lines->data = pos;
+    dwarf_node_head = galloc(sizeof(DwarfNode));
+    memclrw(dwarf_node_head, sizeof(DwarfNode));
+    currentDwarfNode = dwarf_node_head;
+    dwarf_node_head->kind = 0xffff;
 }
 
-static long ReadPosition(void)
+static DwarfNode *NewDwarfNode(void)
 {
-    return *(long *)*dwarf_lines->data;
+    currentDwarfNode->next = galloc(sizeof(DwarfNode));
+    memclrw(currentDwarfNode->next, sizeof(DwarfNode));
+    currentDwarfNode->next->prev = currentDwarfNode;
+    currentDwarfNode = currentDwarfNode->next;
+    currentDwarfNode->scope = currentDwarfFunctionState;
+    return currentDwarfNode;
 }
 
-static void WritePadding(int amount)
+static DwarfNode *PushDwarfNodeHead(void)
 {
-    AppendGListLong(dwarf_info_buffer, amount);
-    amount -= 4;
-    if (amount >= 2) {
-        AppendGListWord(dwarf_info_buffer, 0);
-        amount -= 2;
-    }
-    if (amount == 1)
-        AppendGListByte(dwarf_info_buffer, 0);
+    DwarfNode *node;
+
+    node = galloc(sizeof(DwarfNode));
+    memclrw(node, sizeof(DwarfNode));
+    dwarf_node_head->prev = node;
+    node->next = dwarf_node_head;
+    dwarf_node_head = node;
+    node->kind = 0xffff;
+    dwarf_node_head->next->scope = currentDwarfFunctionState;
+    return dwarf_node_head->next;
 }
 
-static void InitOffsets(int offset)
+static DwarfNode *InsertDwarfNode(void)
 {
-    currentDwarfFunctionState->offset = 0;
-    currentDwarfFunctionState->lineSectionOffset = offset;
+    DwarfNode *next = currentDwarfScope->next;
+    currentDwarfScope->next = galloc(sizeof(DwarfNode));
+    memclrw(currentDwarfScope->next, sizeof(DwarfNode));
+    currentDwarfScope->next->prev = currentDwarfScope;
+    currentDwarfScope = currentDwarfScope->next;
+    currentDwarfScope->scope = currentDwarfFunctionState;
+    currentDwarfScope->next = next;
+    if (next == NULL)
+        currentDwarfNode = currentDwarfScope;
+    return currentDwarfScope;
 }
 
-static void SetScope(DwarfFunctionState *obj)
+static DwarfNode *insert_dwarf_node_before(DwarfNode *next)
 {
-    currentDwarfFunctionState = obj;
-    if (copts.f26 != 0) {
-        dwarf_info_buffer = &obj->info;
-        dwarf_depth_ptr = &obj->depth;
-        dwarf_entry_offsets = obj->offsets;
-        data_005604a4 = obj->entries;
-        data_005604a8 = &obj->pending;
-    }
-    dwarf_lines = &obj->lines;
-    section_buffer = ObjGen_PPC_EABI_GetSectionBuffer(obj->section);
+    DwarfNode *node;
+
+    CError_ASSERT(LINE(2106), next != NULL);
+    node = galloc(sizeof(DwarfNode));
+    memclrw(node, sizeof(DwarfNode));
+    node->next = next;
+    node->prev = next->prev;
+    CError_ASSERT(LINE(2110), node->prev != NULL);
+    next->prev = node;
+    node->prev->next = node;
+    node->scope = data_00587168;
+    return node;
 }
 
 void insert_type_node_before(DWInfo *before, DWInfo *info)
@@ -2023,7 +1982,6 @@ void insert_type_node_before(DWInfo *before, DWInfo *info)
     DwarfNode *node;
     UInt16 kind;
     Type *type;
-    DwarfNode *list;
     DWInfo *owner;
 
     type = info->type;
@@ -2049,18 +2007,7 @@ void insert_type_node_before(DWInfo *before, DWInfo *info)
         default:
             return;
     }
-    list = before->typeNode;
-    if (list == NULL)
-        CError_FATAL(LINE(2106));
-    node = galloc(sizeof(*node));
-    memclrw(node, sizeof(*node));
-    node->next = list;
-    node->prev = list->prev;
-    if (node->prev == NULL)
-        CError_FATAL(LINE(2110));
-    list->prev = node;
-    node->prev->next = node;
-    node->scope = data_00587168;
+    node = insert_dwarf_node_before(before->typeNode);
     node->kind = kind;
     node->type = info;
     owner = (DWInfo *)node->type;
@@ -2071,8 +2018,6 @@ void create_type_node(DWInfo *typeLink)
 {
     DwarfNode *node;
     UInt16 kind;
-    DwarfNode *current;
-    DwarfNode *newNode;
 
     kind = 0;
     switch ((SInt8)typeLink->type->type) {
@@ -2099,17 +2044,7 @@ void create_type_node(DWInfo *typeLink)
         node = NewDwarfNode();
         node->scope = data_00587168;
     } else {
-        current = current_block_node;
-        CError_ASSERT(LINE(2106), current != NULL);
-        newNode = (DwarfNode *)galloc(sizeof(DwarfNode));
-        memclrw(newNode, sizeof(DwarfNode));
-        newNode->next = current;
-        newNode->prev = current->prev;
-        CError_ASSERT(LINE(2110), newNode->prev != NULL);
-        current->prev = newNode;
-        newNode->prev->next = newNode;
-        newNode->scope = data_00587168;
-        node = newNode;
+        node = insert_dwarf_node_before(current_block_node);
     }
     node->kind = kind;
     node->type = typeLink;
@@ -2131,6 +2066,7 @@ void insert_type_nodes_recursive(DWInfo *a, DWInfo *b)
             CError_FATAL(LINE(2211));
             break;
 
+#if VERSION > VERSION_GC_1_0
         case TYPEBITFIELD: {
             if (b->typeNode == NULL)
                 insert_type_node_before(a, b);
@@ -2139,6 +2075,7 @@ void insert_type_nodes_recursive(DWInfo *a, DWInfo *b)
                 insert_type_nodes_recursive(a, e);
             break;
         }
+#endif
 
         case TYPEENUM:
             if (b->typeNode == NULL)
@@ -2308,18 +2245,26 @@ void init_dwarf_state(void)
     current_block_node = NULL;
 }
 
+static void SetScope(DwarfFunctionState *obj)
+{
+    currentDwarfFunctionState = obj;
+    if (copts.f26 != 0) {
+        dwarf_info_buffer = &obj->info;
+        dwarf_depth_ptr = &obj->depth;
+        dwarf_entry_offsets = obj->offsets;
+        data_005604a4 = obj->entries;
+        data_005604a8 = &obj->pending;
+    }
+    dwarf_lines = &obj->lines;
+    section_buffer = ObjGen_PPC_EABI_GetSectionBuffer(obj->section);
+}
+
 void DWARF_Init(void)
 {
-    DwarfNode *node;
     copts.f26 = 1;
     data_0058114e = 0;
     init_dwarf_state();
-    node = (DwarfNode *)galloc(38);
-    dwarf_node_head = node;
-    memclrw(node, 38);
-    currentDwarfNode = dwarf_node_head;
-    node = dwarf_node_head;
-    node->kind = 0xffff;
+    InitDwarfNodes();
 }
 
 void DWARF_SetSectionAndState(ObjGenSection *section, ObjGenSection *state)
@@ -2351,13 +2296,12 @@ void setup_return_operand(Object *func)
             return_operand.metadata.type = rtype;
         }
     } else if (rtype->type == TYPEFLOAT) {
-        Boolean gpr;
-        if ((gpr = copts.operandsDebug) && rtype->type == TYPEFLOAT && rtype->size == 4) {
+        if (copts.operandsDebug && rtype->type == TYPEFLOAT && rtype->size == 4) {
             return_operand.kind = 1;
             return_operand.operand.registers.offset = 0;
             return_operand.operand.registers.first = 3;
             return_operand.metadata.type = rtype;
-        } else if (gpr && rtype->type == TYPEFLOAT && rtype->size != 4) {
+        } else if (copts.operandsDebug && rtype->type == TYPEFLOAT && rtype->size != 4) {
             return_operand.kind = 8;
             return_operand.metadata.type = rtype;
             return_operand.operand.registers.first = return_gpr_first;

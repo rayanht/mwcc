@@ -42,6 +42,9 @@ extern struct IROLinear *IroUtil_GetLinearRangeStart(struct IROLinear *node);
 extern int IroUtil_LinearsSame(IROLinear *a, IROLinear *b);
 extern int IroUtil_LinearConstantTreesSame(IROLinear *a, IROLinear *b);
 extern SInt16 IroUtil_IsTypeSame(Type *left, Type *right);
+extern Object *IroUtil_GetObjRef(IROLinear *linear);
+extern SInt32 IroUtil_IsPowerOfTwo(IROLinear *node, SInt32 *bit);
+extern unsigned int IroUtil_IsType1NodeType50(IROLinear *linear);
 
 #ifdef __cplusplus
 }

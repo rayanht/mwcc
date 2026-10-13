@@ -53,6 +53,7 @@ extern HashEntry *CObjCModern_FindMessageArgumentHashEntry(struct MessageArgumen
 extern struct HashEntry **selector_hash;
 extern struct PrecTypeEntry *class_type_entries;
 extern SInt32 selector_reference_count;
+extern MessageArgument *CObjCModern_SplitNameIntoMessageArguments(HashNameNode *hname, char *flag);
 
 #ifdef __cplusplus
 }

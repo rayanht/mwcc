@@ -46,173 +46,12 @@ static inline Boolean class_browse_enabled(const DeclInfo *ctx)
     return compilationUnit->browseOptions.browseOption != 0 && ctx->file->recordbrowseinfo != 0;
 }
 
-#define SETFUNC(f, t, q)                                                                                               \
-    (f)->functype = (t);                                                                                               \
-    (f)->qual = (q)
-
-static void AddShortArg(TypeFunc *tfunc)
-{
-    FuncArg *arg;
-
-    arg = CParser_NewFuncArg();
-    arg->type = (Type *)&stsignedshort;
-    arg->next = tfunc->args;
-    tfunc->args = arg;
-    if (arg->next && arg->next->type == &stvoid)
-        arg->next = NULL;
-}
-
-static inline Boolean CheckMemberType1(Type *type)
-{
-    switch ((SInt8)type->type) {
-        case TYPEVOID:
-            CError_ReportError(ERR_ILLEGAL_USE_VOID);
-            return 0;
-        case TYPEFUNC:
-            CError_ReportError(ERR_ILLEGAL_TYPE);
-            return 0;
-        case TYPECLASS:
-            if (((TypeClass *)type)->flags & CLASS_ABSTRACT) {
-                CError_IllegalUseAbstractClass(TYPE_CLASS(type));
-                return 0;
-            }
-            break;
-    }
-    return 1;
-}
-
-static inline Boolean CheckMemberType(Type *type)
-{
-    if (!CheckMemberType1(type))
-        return 0;
-    if (type->type == TYPECLASS) {
-        if (((TypeClass *)type)->flags & CLASS_HANDLEOBJECT) {
-            CError_ReportError(ERR_ILLEGAL_USE_HANDLEOBJECT);
-            return 0;
-        }
-        if (((TypeClass *)type)->objcinfo) {
-            CError_ReportError(ERR_ILLEGAL_USE_OBJECTIVE_C_OBJECT);
-            return 0;
-        }
-    }
-    return 1;
-}
-
-#define MAKE_NODE(dst, sp)                                                                                             \
-    do {                                                                                                               \
-        (dst) = galloc(0x12);                                                                                          \
-        memclrw((dst), 0x12);                                                                                          \
-        (dst)->type = TYPESTRUCT;                                                                                      \
-        TYPE_STRUCT(dst)->align = 1;                                                                                   \
-        TYPE_STRUCT(dst)->stype = (sp);                                                                                \
-    } while (0)
-
-static void attach_node(Type *p, HashNameNode *name)
-{
-    SInt32 b;
-    TYPE_STRUCT(p)->name = name;
-    b = (in_parameter_type_list != 0 && !copts.cplusplus);
-    CScope_DefineTypeTag((b ? cscope_root : cscope_current), name, p);
-}
-
-static Boolean HighIsNegative(SInt32 hi)
-{
-    return (hi & 0x80000000) != 0;
-}
-
-static TypeIntegral *SignedIntType(SInt32 size)
-{
-    if (stsignedchar.size == size)
-        return &stsignedchar;
-    if (stsignedshort.size == size)
-        return &stsignedshort;
-    if (stsignedint.size == size)
-        return &stsignedint;
-    if (stsignedlong.size != size && copts.longlong != 0 && copts.longlong_enums != 0 && stsignedlonglong.size == size)
-        return &stsignedlonglong;
-    return &stsignedlong;
-}
-
-static Type *UnsignedIntType(SInt32 size)
-{
-    if (stunsignedchar.size == size)
-        return (Type *)&stunsignedchar;
-    if (stunsignedshort.size == size)
-        return (Type *)&stunsignedshort;
-    if (stunsignedint.size == size)
-        return (Type *)&stunsignedint;
-    if (stunsignedlong.size != size && copts.longlong != 0 && copts.longlong_enums != 0 &&
-        stunsignedlonglong.size == size)
-        return (Type *)&stunsignedlonglong;
-    return (Type *)&stunsignedlong;
-}
-
-static Boolean IsNegative(SInt32 hi)
-{
-    return (hi & (SInt32)0x80000000) != 0;
-}
-
-static Boolean IsZero(CInt64 *v)
-{
-    return v->hi == 0 && v->lo == 0;
-}
-
-static TypeIntegral *FindSignedType(SInt32 size)
-{
-    if (stsignedchar.size == size)
-        return &stsignedchar;
-    if (stsignedshort.size == size)
-        return &stsignedshort;
-    if (stsignedint.size == size)
-        return &stsignedint;
-    if (stsignedlong.size == size)
-        return &stsignedlong;
-    if (copts.longlong != 0 && copts.longlong_enums != 0 && stsignedlonglong.size == size)
-        return &stsignedlonglong;
-    return &stsignedlong;
-}
-
-static TypeIntegral *FindUnsignedType(SInt32 size)
-{
-    if (stunsignedchar.size == size)
-        return &stunsignedchar;
-    if (stunsignedshort.size == size)
-        return &stunsignedshort;
-    if (stunsignedint.size == size)
-        return &stunsignedint;
-    if (stunsignedlong.size == size)
-        return &stunsignedlong;
-    if (copts.longlong != 0 && copts.longlong_enums != 0 && stunsignedlonglong.size == size)
-        return &stunsignedlonglong;
-    return &stunsignedlong;
-}
-
-static Type *CDecl_LargerType(Type *a, Type *b)
-{
-    if (a->size > b->size)
-        return a;
-    if (b->size > a->size)
-        return b;
-    return a;
-}
-
 static inline UInt8 CDecl_UseIntEnums(void)
 {
     return copts.enumsalwaysint;
 }
 
 /* A constructor's hidden argument: a signed short added in front of the parameter list (a leading void list ends). */
-static void CDecl_AddArgument(TypeFunc *tfunc)
-{
-    FuncArg *arg;
-
-    arg = CParser_NewFuncArg();
-    arg->type = (Type *)&stsignedshort;
-    arg->next = tfunc->args;
-    tfunc->args = arg;
-    if (arg->next && arg->next->type == (Type *)&stvoid)
-        arg->next = NULL;
-}
 
 static inline int parsePointerQualifiers(void)
 {
@@ -242,27 +81,17 @@ static inline int parsePointerQualifiers(void)
     }
 }
 
-static UInt8 IsClassEnumOrRef(Type *p)
-{
-    if (p->type == TYPECLASS || p->type == TYPEENUM)
-        return 1;
-    if (!(p->type == TYPEPOINTER && (((TypePointer *)p)->qual & Q_REFERENCE)))
-        return 0;
-    p = ((TypePointer *)p)->target;
-    return p->type == TYPECLASS || p->type == TYPEENUM;
-}
-
-static int IsSingleArg(FuncArg *p)
+static inline int IsSingleArg(FuncArg *p)
 {
     return p != &elipsis && p->next == NULL;
 }
 
-static int IsMethod(DeclInfo *a, char f)
+static inline int IsMethod(DeclInfo *a, char f)
 {
     return f && (((TypeMemberFunc *)a->thetype)->flags & FUNC_METHOD);
 }
 
-static int IsNonStatic(DeclInfo *a)
+static inline int IsNonStatic(DeclInfo *a)
 {
     return !((TypeMemberFunc *)a->thetype)->is_static;
 }
@@ -303,42 +132,6 @@ inline Boolean CheckReturnType(Type *ctype)
             CError_ReportError(ERR_ILLEGAL_USE_OBJECTIVE_C_OBJECT);
             return 0;
         }
-    }
-    return 1;
-}
-
-static Boolean checkClass(Type *type, Boolean result)
-{
-    if (!result)
-        return 0;
-    if (type->type != TYPECLASS)
-        return 1;
-    if (TYPE_CLASS(type)->flags & CLASS_HANDLEOBJECT) {
-        CError_ReportError(ERR_ILLEGAL_USE_HANDLEOBJECT);
-        return 0;
-    }
-    if (TYPE_CLASS(type)->objcinfo != NULL) {
-        CError_ReportError(ERR_ILLEGAL_USE_OBJECTIVE_C_OBJECT);
-        return 0;
-    }
-    return 1;
-}
-
-static inline unsigned char checkObjectType(TypeClass *type)
-{
-    switch ((signed char)type->type) {
-        case TYPEVOID:
-            CError_ReportError(126U);
-            return 0;
-        case TYPEFUNC:
-            CError_ReportError(146U);
-            return 0;
-        case TYPECLASS:
-            if (type->flags & CLASS_ABSTRACT) {
-                CError_IllegalUseAbstractClass(TYPE_CLASS(type));
-                return 0;
-            }
-            break;
     }
     return 1;
 }
@@ -406,6 +199,19 @@ Type *CDecl_NewPointerType(Type *targetType)
     return (Type *)pointerType;
 }
 
+static Type *CDecl_NewRefPointerType(Type *targetType)
+{
+    TypePointer *pointerType;
+
+    pointerType = (TypePointer *)galloc(14);
+    memclrw(pointerType, 14);
+    pointerType->type = TYPEPOINTER;
+    pointerType->size = 4;
+    pointerType->target = targetType;
+    pointerType->qual = Q_REFERENCE;
+    return (Type *)pointerType;
+}
+
 TypeTemplDep *CDecl_NewTemplDepType(UInt8 templateKind)
 {
     TypeTemplDep *templateType;
@@ -418,28 +224,24 @@ TypeTemplDep *CDecl_NewTemplDepType(UInt8 templateKind)
     return templateType;
 }
 
+static void CDecl_SetResultReg(TypeFunc *tfunc)
+{
+}
+
 void CDecl_NewConvFuncType(DeclInfo *state)
 {
     TypeFunc *functionType;
-    Type *originalType;
-    unsigned int qualifiers;
-    HashNameNode *name;
-    Type *returnType;
-    unsigned int returnQualifiers;
-    functionType = (TypeFunc *)galloc(26U);
-    memclrw(functionType, 26U);
-    originalType = state->thetype;
-    qualifiers = state->qual;
-    name = CMangler_ConversionFuncName(originalType, qualifiers);
-    state->name = name;
+
+    functionType = (TypeFunc *)galloc(sizeof(TypeFunc));
+    memclrw(functionType, sizeof(TypeFunc));
+    state->name = CMangler_ConversionFuncName(state->thetype, state->qual);
     functionType->type = TYPEFUNC;
-    returnType = state->thetype;
-    functionType->functype = returnType;
-    returnQualifiers = state->qual;
-    functionType->qual = (returnQualifiers & Q_CV);
-    state->isType = 0U;
+    functionType->functype = state->thetype;
+    functionType->qual = state->qual & Q_CV;
+    state->isType = 0;
+    CDecl_SetResultReg(functionType);
     state->thetype = (Type *)functionType;
-    state->storageclass = 0U;
+    state->storageclass = 0;
 }
 
 int CDecl_CompleteType(Type *type)
@@ -528,7 +330,7 @@ Boolean CanCreateObject(Type *tc)
 
 unsigned char CDecl_CheckObjectType(Type *type)
 {
-    if (!checkObjectType((TypeClass *)type))
+    if (!CanCreateObject(type))
         return 0;
     if (type->type == TYPECLASS) {
         if (TYPE_CLASS(type)->flags & CLASS_HANDLEOBJECT) {
@@ -543,49 +345,12 @@ unsigned char CDecl_CheckObjectType(Type *type)
     return 1;
 }
 
+#if VERSION > VERSION_GC_1_0
 Boolean check_object_creation_type(Type *type)
 {
-    Boolean result;
-
     while (IS_TYPE_ARRAY(type))
         type = TPTR_TARGET(type);
-    switch ((SInt8)type->type) {
-        case TYPEVOID:
-            CError_ReportError(ERR_ILLEGAL_USE_VOID);
-            result = FALSE;
-            break;
-        case TYPEFUNC:
-            CError_ReportError(ERR_ILLEGAL_TYPE);
-            result = FALSE;
-            break;
-        case TYPECLASS:
-            if (TYPE_CLASS(type)->flags & CLASS_ABSTRACT) {
-                CError_IllegalUseAbstractClass(TYPE_CLASS(type));
-                result = FALSE;
-                break;
-            }
-            result = TRUE;
-            break;
-        default:
-            result = TRUE;
-            break;
-    }
-    if (!result)
-        result = FALSE;
-    else {
-        if (type->type == TYPECLASS) {
-            if (TYPE_CLASS(type)->flags & CLASS_HANDLEOBJECT) {
-                CError_ReportError(ERR_ILLEGAL_USE_HANDLEOBJECT);
-                result = FALSE;
-            } else if (TYPE_CLASS(type)->objcinfo != NULL) {
-                CError_ReportError(ERR_ILLEGAL_USE_OBJECTIVE_C_OBJECT);
-                result = FALSE;
-            } else
-                result = TRUE;
-        } else
-            result = TRUE;
-    }
-    if (!result)
+    if (!CDecl_CheckObjectType(type))
         return FALSE;
     if (type->type == TYPECLASS && (CClass_Destructor(TYPE_CLASS(type)) || CClass_Constructor(TYPE_CLASS(type)))) {
         CError_ReportError(ERR_ILLEGAL_USE_HANDLEOBJECT);
@@ -593,21 +358,12 @@ Boolean check_object_creation_type(Type *type)
     }
     return TRUE;
 }
+#endif
 
 void makethetypepointer(Type **type, unsigned int flags)
 {
-    Type *wrappedType;
-    TypePointer *pointerType;
-    TypePointer *result;
-    wrappedType = *type;
-    pointerType = (TypePointer *)galloc(14U);
-    memclrw(pointerType, 14U);
-    pointerType->type = TYPEPOINTER;
-    pointerType->size = 4U;
-    pointerType->target = wrappedType;
-    *type = (Type *)pointerType;
-    result = (TypePointer *)*type;
-    result->qual = flags;
+    *type = CDecl_NewPointerType(*type);
+    TYPE_POINTER(*type)->qual = flags;
 }
 
 void CDecl_AddThisPointerArgument(TypeFunc *owner, TypeClass *classType, char parseModifiers)
@@ -703,95 +459,28 @@ void CDecl_PrependFuncArg(TypeFunc *type, TypeIntegral *argtype)
 
 Boolean CDecl_CheckArrayIntegr(Type *type)
 {
-    Boolean ok;
-    Boolean result;
-    Type *theclass = type;
-
-    if (!CanAllocObject(theclass))
+    if (!CanAllocObject(type))
         return 0;
-
     if (type->type == TYPECLASS && TYPE_CLASS(type)->sominfo != NULL) {
         CError_ReportError(ERR_SOM_CLASS_ARRAYS_NOT_SUPPORTED);
         return 0;
     }
-
     if (type->type == TYPEPOINTER && (TYPE_POINTER(type)->qual & Q_REFERENCE)) {
         CError_ReportError(ERR_ILLEGAL_AMPERSAND_REFERENCE);
         return 0;
     }
-
-    switch ((SInt8)type->type) {
-        case TYPEVOID:
-            CError_ReportError(ERR_ILLEGAL_USE_VOID);
-            ok = 0;
-            break;
-        case TYPEFUNC:
-            CError_ReportError(ERR_ILLEGAL_TYPE);
-            ok = 0;
-            break;
-        case TYPECLASS:
-            if (TYPE_CLASS(type)->flags & CLASS_ABSTRACT) {
-                CError_IllegalUseAbstractClass(TYPE_CLASS(type));
-                ok = 0;
-            } else {
-                ok = 1;
-            }
-            break;
-        default:
-            ok = 1;
-            break;
-    }
-
-    if (!ok) {
-        result = 0;
-    } else if (type->type == TYPECLASS) {
-        if (TYPE_CLASS(type)->flags & CLASS_HANDLEOBJECT) {
-            CError_ReportError(ERR_ILLEGAL_USE_HANDLEOBJECT);
-            result = 0;
-        } else if (TYPE_CLASS(type)->objcinfo != NULL) {
-            CError_ReportError(ERR_ILLEGAL_USE_OBJECTIVE_C_OBJECT);
-            result = 0;
-        } else {
-            result = 1;
-        }
-    } else {
-        result = 1;
-    }
-
-    return result;
+    return CDecl_CheckObjectType(type);
 }
 
 Boolean check_function_return_type(Type *type)
 {
-    Boolean result;
-
     if (type->type == TYPEVOID)
         return 1;
     if (type->type == TYPECLASS && TYPE_CLASS(type)->sominfo != NULL) {
         CError_ReportError(ERR_FUNCTIONS_CANNOT_RETURN_SOM_CLASSES);
         return 0;
     }
-    switch ((SInt8)type->type) {
-        case TYPEVOID:
-            CError_ReportError(ERR_ILLEGAL_USE_VOID);
-            result = 0;
-            break;
-        case TYPEFUNC:
-            CError_ReportError(ERR_ILLEGAL_TYPE);
-            result = 0;
-            break;
-        case TYPECLASS:
-            if (TYPE_CLASS(type)->flags & CLASS_ABSTRACT) {
-                CError_IllegalUseAbstractClass(TYPE_CLASS(type));
-                result = 0;
-                break;
-            }
-            /* fall through */
-        default:
-            result = 1;
-            break;
-    }
-    return checkClass(type, result);
+    return CDecl_CheckObjectType(type);
 }
 
 void fn_00504240(TypeFunc *type)
@@ -802,9 +491,7 @@ void fn_00504240(TypeFunc *type)
 void CDecl_ParseDirectFuncDecl(DeclInfo *d)
 {
     TypeFunc *ft;
-    Type *t;
     FuncArg *args;
-    Boolean ok;
 
     if (copts.cplusplus != 0 && d->name != NULL && d->thetype->type != TYPEVOID &&
         !CParser_TryParamList(d->thetype->type != TYPECLASS))
@@ -845,12 +532,7 @@ void CDecl_ParseDirectFuncDecl(DeclInfo *d)
 
     scandirectdecl1(d);
 
-    t = d->thetype;
-    if (t->type == TYPEVOID)
-        ok = 1;
-    else
-        ok = CheckReturnType(t);
-    if (!ok)
+    if (!check_function_return_type(d->thetype))
         d->thetype = &stvoid;
     ft->functype = d->thetype;
     ft->qual = d->qual & Q_CV;
@@ -885,14 +567,10 @@ void scandirectdecl1(DeclInfo *decl)
                         tk = CPrepTokenizer_GetNextToken();
                     decl->hasArrayDimension = 1;
                     scandirectdecl1(decl);
-                    if (!checkType(decl->thetype))
+                    if (!CDecl_CheckArrayIntegr(decl->thetype))
                         decl->thetype = (Type *)&stsignedchar;
                     {
-                        TypeTemplDep *boundType = (TypeTemplDep *)galloc(sizeof(TypeTemplDep));
-                        memclrw(boundType, sizeof(TypeTemplDep));
-                        boundType->type = TYPETEMPLATE;
-                        boundType->size = 1;
-                        boundType->dtype = 3;
+                        TypeTemplDep *boundType = CDecl_NewTemplDepType(3);
                         boundType->u.array.type = decl->thetype;
                         boundType->u.array.index = fn_00513040(bound, 1);
                         decl->thetype = (Type *)boundType;
@@ -930,17 +608,9 @@ void scandirectdecl1(DeclInfo *decl)
         }
         decl->hasArrayDimension = 1;
         scandirectdecl1(decl);
-        if (!unsized && !checkType(decl->thetype))
+        if (!unsized && !CDecl_CheckArrayIntegr(decl->thetype))
             decl->thetype = (Type *)&stsignedchar;
-        elementType = decl->thetype;
-        size = elementType->size * count.lo;
-        array = (Type *)galloc(sizeof(TypePointer));
-        memclrw(array, sizeof(TypePointer));
-        array->type = TYPEARRAY;
-        array->size = size;
-        TPTR_TARGET(array) = elementType;
-        TYPE_POINTER(array)->qual = 0;
-        decl->thetype = array;
+        decl->thetype = CDecl_NewArrayType(decl->thetype, decl->thetype->size * count.lo);
     } else if (tk == '(') {
         CDecl_ParseDirectFuncDecl(decl);
     }
@@ -949,7 +619,6 @@ void scandirectdecl1(DeclInfo *decl)
 void replace_nested_type(Type *oldtype, Type *ty, Type *newtype)
 {
     SInt32 oldsize;
-    Boolean ok;
 
     for (;;) {
         switch ((SInt8)ty->type) {
@@ -978,57 +647,7 @@ void replace_nested_type(Type *oldtype, Type *ty, Type *newtype)
             case TYPEARRAY:
                 oldsize = TYPE_POINTER(ty)->target->size;
                 if (TYPE_POINTER(ty)->target == oldtype) {
-                    if (!CanAllocObject(newtype)) {
-                        ok = 0;
-                    } else {
-                        if (newtype->type == TYPECLASS && TYPE_CLASS(newtype)->sominfo != NULL) {
-                            CError_ReportError(ERR_SOM_CLASS_ARRAYS_NOT_SUPPORTED);
-                            ok = 0;
-                        } else if (newtype->type == TYPEPOINTER && (TYPE_POINTER(newtype)->qual & Q_REFERENCE)) {
-                            CError_ReportError(ERR_ILLEGAL_AMPERSAND_REFERENCE);
-                            ok = 0;
-                        } else {
-                            switch ((SInt8)newtype->type) {
-                                case TYPEVOID:
-                                    CError_ReportError(ERR_ILLEGAL_USE_VOID);
-                                    ok = 0;
-                                    break;
-                                case TYPEFUNC:
-                                    CError_ReportError(ERR_ILLEGAL_TYPE);
-                                    ok = 0;
-                                    break;
-                                case TYPECLASS:
-                                    if (TYPE_CLASS(newtype)->flags & CLASS_ABSTRACT) {
-                                        CError_IllegalUseAbstractClass(TYPE_CLASS(newtype));
-                                        ok = 0;
-                                    } else {
-                                        ok = 1;
-                                    }
-                                    break;
-                                default:
-                                    ok = 1;
-                                    break;
-                            }
-                            if (!ok) {
-                                ok = 0;
-                            } else {
-                                if (newtype->type == TYPECLASS) {
-                                    if (TYPE_CLASS(newtype)->flags & CLASS_HANDLEOBJECT) {
-                                        CError_ReportError(ERR_ILLEGAL_USE_HANDLEOBJECT);
-                                        ok = 0;
-                                    } else if (TYPE_CLASS(newtype)->objcinfo != NULL) {
-                                        CError_ReportError(ERR_ILLEGAL_USE_OBJECTIVE_C_OBJECT);
-                                        ok = 0;
-                                    } else {
-                                        ok = 1;
-                                    }
-                                } else {
-                                    ok = 1;
-                                }
-                            }
-                        }
-                    }
-                    if (!ok)
+                    if (!CDecl_CheckArrayIntegr(newtype))
                         newtype = (Type *)&stsignedchar;
                     if (oldsize != 0)
                         ty->size = (ty->size / oldsize) * newtype->size;
@@ -1042,13 +661,10 @@ void replace_nested_type(Type *oldtype, Type *ty, Type *newtype)
 
             case TYPEFUNC:
                 if (TYPE_FUNC(ty)->functype == oldtype) {
-                    if (newtype->type == TYPEVOID)
-                        ok = 1;
-                    else
-                        ok = CheckReturnType(newtype);
-                    if (!ok)
+                    if (!check_function_return_type(newtype))
                         newtype = &stvoid;
                     TYPE_FUNC(ty)->functype = newtype;
+                    CDecl_SetResultReg(TYPE_FUNC(ty));
                     return;
                 }
                 ty = TYPE_FUNC(ty)->functype;
@@ -1063,184 +679,63 @@ void replace_nested_type(Type *oldtype, Type *ty, Type *newtype)
 
 void replace_type_placeholder(Type *type, Type *ctype)
 {
+    SInt32 oldsize;
+
     for (;;) {
-        SInt8 kind = type->type;
-        switch (kind) {
+        switch ((SInt8)type->type) {
             case TYPEPOINTER:
                 if (TYPE_POINTER(type)->target == &type_placeholder) {
                     TYPE_POINTER(type)->target = ctype;
                     return;
                 }
                 type = TYPE_POINTER(type)->target;
-                continue;
+                break;
             case TYPEMEMBERPOINTER:
                 if (TYPE_MEMBER_POINTER(type)->ty1 == &type_placeholder) {
                     TYPE_MEMBER_POINTER(type)->ty1 = ctype;
                     if (ctype->type == TYPEFUNC) {
                         CDecl_MakePTMFuncType(TYPE_FUNC(ctype));
                         type->size = 12;
-                    } else
+                    } else {
                         type->size = 4;
+                    }
                     return;
                 }
                 type = TYPE_MEMBER_POINTER(type)->ty1;
-                continue;
+                break;
             case TYPEARRAY:
                 if (TYPE_POINTER(type)->target == &type_placeholder) {
-                    Boolean ok;
-                    do {
-                        ok = CanAllocObject(ctype);
-                        if (!ok) {
-                            ok = FALSE;
-                            break;
-                        }
-                        if (ctype->type == TYPECLASS && TYPE_CLASS(ctype)->sominfo != NULL) {
-                            CError_ReportError(ERR_SOM_CLASS_ARRAYS_NOT_SUPPORTED);
-                            ok = FALSE;
-                            break;
-                        }
-                        if (ctype->type == TYPEPOINTER && (TYPE_POINTER(ctype)->qual & Q_REFERENCE) != 0) {
-                            CError_ReportError(ERR_ILLEGAL_AMPERSAND_REFERENCE);
-                            ok = FALSE;
-                            break;
-                        }
-                        {
-                            SInt8 elementKind = ctype->type;
-                            switch (elementKind) {
-                                case TYPEVOID:
-                                    CError_ReportError(ERR_ILLEGAL_USE_VOID);
-                                    ok = FALSE;
-                                    break;
-                                case TYPEFUNC:
-                                    CError_ReportError(ERR_ILLEGAL_TYPE);
-                                    ok = FALSE;
-                                    break;
-                                case TYPECLASS:
-                                    if (TYPE_CLASS(ctype)->flags & CLASS_ABSTRACT) {
-                                        CError_IllegalUseAbstractClass(TYPE_CLASS(ctype));
-                                        ok = FALSE;
-                                    } else {
-                                        ok = TRUE;
-                                    }
-                                    break;
-                                default:
-                                    ok = TRUE;
-                                    break;
-                            }
-                        }
-                        if (!ok) {
-                            ok = FALSE;
-                            break;
-                        }
-                        if (ctype->type == TYPECLASS) {
-                            if (TYPE_CLASS(ctype)->flags & CLASS_HANDLEOBJECT) {
-                                CError_ReportError(ERR_ILLEGAL_USE_HANDLEOBJECT);
-                                ok = FALSE;
-                                break;
-                            }
-                            if (TYPE_CLASS(ctype)->objcinfo != NULL) {
-                                CError_ReportError(ERR_ILLEGAL_USE_OBJECTIVE_C_OBJECT);
-                                ok = FALSE;
-                                break;
-                            }
-                        }
-                        ok = TRUE;
-                    } while (FALSE);
-                    if (!ok)
+                    if (!CDecl_CheckArrayIntegr(ctype))
                         ctype = (Type *)&stsignedchar;
                     type->size = type->size * ctype->size;
                     TYPE_POINTER(type)->target = ctype;
                     return;
-                } else {
-                    SInt32 oldSize = TYPE_POINTER(type)->target->size;
-                    replace_type_placeholder(TYPE_POINTER(type)->target, ctype);
-                    if (oldSize != TYPE_POINTER(type)->target->size && oldSize != 0)
-                        type->size = type->size / oldSize * TYPE_POINTER(type)->target->size;
-                    return;
                 }
+                oldsize = TYPE_POINTER(type)->target->size;
+                replace_type_placeholder(TYPE_POINTER(type)->target, ctype);
+                if (oldsize != TYPE_POINTER(type)->target->size && oldsize != 0)
+                    type->size = type->size / oldsize * TYPE_POINTER(type)->target->size;
+                return;
             case TYPEFUNC:
                 if (TYPE_FUNC(type)->functype == &type_placeholder) {
-                    Boolean ok;
-                    if (ctype->type == TYPEVOID)
-                        ok = TRUE;
-                    else
-                        ok = CheckReturnType(ctype);
-                    if (!ok)
+                    if (!check_function_return_type(ctype))
                         ctype = &stvoid;
                     TYPE_FUNC(type)->functype = ctype;
+                    CDecl_SetResultReg(TYPE_FUNC(type));
                     return;
                 }
                 type = TYPE_FUNC(type)->functype;
-                continue;
+                break;
             case TYPETEMPLATE:
                 if (((TypeTemplDep *)type)->dtype == 3) {
                     if (((TypeTemplDep *)type)->u.array.type == &type_placeholder) {
-                        Boolean ok;
-                        do {
-                            ok = CanAllocObject(ctype);
-                            if (!ok) {
-                                ok = FALSE;
-                                break;
-                            }
-                            if (ctype->type == TYPECLASS && TYPE_CLASS(ctype)->sominfo != NULL) {
-                                CError_ReportError(ERR_SOM_CLASS_ARRAYS_NOT_SUPPORTED);
-                                ok = FALSE;
-                                break;
-                            }
-                            if (ctype->type == TYPEPOINTER && (TYPE_POINTER(ctype)->qual & Q_REFERENCE) != 0) {
-                                CError_ReportError(ERR_ILLEGAL_AMPERSAND_REFERENCE);
-                                ok = FALSE;
-                                break;
-                            }
-                            {
-                                SInt8 elementKind = ctype->type;
-                                switch (elementKind) {
-                                    case TYPEVOID:
-                                        CError_ReportError(ERR_ILLEGAL_USE_VOID);
-                                        ok = FALSE;
-                                        break;
-                                    case TYPEFUNC:
-                                        CError_ReportError(ERR_ILLEGAL_TYPE);
-                                        ok = FALSE;
-                                        break;
-                                    case TYPECLASS:
-                                        if (TYPE_CLASS(ctype)->flags & CLASS_ABSTRACT) {
-                                            CError_IllegalUseAbstractClass(TYPE_CLASS(ctype));
-                                            ok = FALSE;
-                                        } else {
-                                            ok = TRUE;
-                                        }
-                                        break;
-                                    default:
-                                        ok = TRUE;
-                                        break;
-                                }
-                            }
-                            if (!ok) {
-                                ok = FALSE;
-                                break;
-                            }
-                            if (ctype->type == TYPECLASS) {
-                                if (TYPE_CLASS(ctype)->flags & CLASS_HANDLEOBJECT) {
-                                    CError_ReportError(ERR_ILLEGAL_USE_HANDLEOBJECT);
-                                    ok = FALSE;
-                                    break;
-                                }
-                                if (TYPE_CLASS(ctype)->objcinfo != NULL) {
-                                    CError_ReportError(ERR_ILLEGAL_USE_OBJECTIVE_C_OBJECT);
-                                    ok = FALSE;
-                                    break;
-                                }
-                            }
-                            ok = TRUE;
-                        } while (FALSE);
-                        if (!ok)
+                        if (!CDecl_CheckArrayIntegr(ctype))
                             ctype = (Type *)&stsignedchar;
                         ((TypeTemplDep *)type)->u.array.type = ctype;
                         return;
                     }
                     type = ((TypeTemplDep *)type)->u.array.type;
-                    continue;
+                    break;
                 }
                 CError_ReportError(ERR_ILLEGAL_TYPE);
                 return;
@@ -1272,6 +767,26 @@ unsigned int parse_parenthesized_declarator(DeclInfo *args)
     scandirectdecl1(args);
     replace_type_placeholder(newNext, args->thetype);
     args->thetype = newNext;
+}
+
+static Boolean CDecl_ParseOperatorDecl(DeclInfo *declinfo)
+{
+    if (declinfo->operator_token) {
+        CError_ReportError(ERR_DECLARATION_SYNTAX_ERROR);
+        return 0;
+    }
+    declinfo->operator_token = 0;
+    return CParser_ParseOperatorName(&declinfo->operator_token, declinfo->parserOption && cscope_current->theclass);
+}
+
+static UInt8 IsClassEnumOrRef(Type *p)
+{
+    if (p->type == TYPECLASS || p->type == TYPEENUM)
+        return 1;
+    if (!(p->type == TYPEPOINTER && (((TypePointer *)p)->qual & Q_REFERENCE)))
+        return 0;
+    p = ((TypePointer *)p)->target;
+    return p->type == TYPECLASS || p->type == TYPEENUM;
 }
 
 Boolean check_operator_declaration(DeclInfo *declaration, Boolean isMember)
@@ -1454,8 +969,6 @@ void parse_direct_declarator(DeclInfo *state, NameSpace *function)
 {
     CScopeSave save;
     Boolean hasParserSlot;
-    Boolean parsed;
-    SInt32 parserOption;
 
     if (function != NULL) {
         CScope_SetNameSpaceScope(function, &save);
@@ -1484,18 +997,7 @@ void parse_direct_declarator(DeclInfo *state, NameSpace *function)
     }
     if (function != NULL) {
         if (tk == TK_OPERATOR) {
-            if (state->operator_token != 0) {
-                CError_ReportError(ERR_DECLARATION_SYNTAX_ERROR);
-                parsed = 0;
-            } else {
-                state->operator_token = 0;
-                parserOption = 0;
-                if (state->parserOption != 0 && cscope_current->theclass != NULL) {
-                    parserOption = 1;
-                }
-                parsed = CParser_ParseOperatorName(&state->operator_token, parserOption);
-            }
-            if (parsed == 0) {
+            if (!CDecl_ParseOperatorDecl(state)) {
                 CScope_RestoreScope(&save);
                 return;
             }
@@ -1526,20 +1028,8 @@ void parse_direct_declarator(DeclInfo *state, NameSpace *function)
             state->name = data_00587fa0;
             tk = CPrepTokenizer_GetNextToken();
         } else if (tk == TK_OPERATOR) {
-            if (state->operator_token != 0) {
-                CError_ReportError(ERR_DECLARATION_SYNTAX_ERROR);
-                parsed = 0;
-            } else {
-                state->operator_token = 0;
-                parserOption = 0;
-                if (state->parserOption != 0 && cscope_current->theclass != NULL) {
-                    parserOption = 1;
-                }
-                parsed = CParser_ParseOperatorName(&state->operator_token, parserOption);
-            }
-            if (parsed == 0) {
+            if (!CDecl_ParseOperatorDecl(state))
                 return;
-            }
             state->name = data_00587fa0;
         }
     }
@@ -1586,16 +1076,12 @@ void makememberpointertype(Type **result, TypeClass *owner, unsigned int value)
 void CDecl_ScanPointer(DeclInfo *declarator, NameSpace *nspace, char finish)
 {
     int qualifiers;
-    TypePointer *type;
-    char kind;
     NameSpace *foundNamespace;
-    TypePointer *pointerType;
     NameResult lookup;
     for (;;) {
         qualifiers = parsePointerQualifiers();
-        if ((kind = (type = (TypePointer *)declarator->thetype)->type) == TYPEPOINTER &&
-                (type->qual & Q_REFERENCE) != 0 ||
-            (qualifiers & Q_REFERENCE) != 0 && kind == TYPEVOID) {
+        if ((declarator->thetype->type == TYPEPOINTER && (TYPE_POINTER(declarator->thetype)->qual & Q_REFERENCE)) ||
+            ((qualifiers & Q_REFERENCE) && declarator->thetype->type == TYPEVOID)) {
             CError_ReportError(ERR_ILLEGAL_AMPERSAND_REFERENCE);
             return;
         }
@@ -1603,13 +1089,7 @@ void CDecl_ScanPointer(DeclInfo *declarator, NameSpace *nspace, char finish)
             makememberpointertype(&declarator->thetype, nspace->theclass, qualifiers);
             nspace = NULL;
         } else {
-            pointerType = (TypePointer *)galloc(14);
-            memclrw(pointerType, 14);
-            pointerType->type = TYPEPOINTER;
-            pointerType->size = 4;
-            pointerType->target = (Type *)type;
-            declarator->thetype = (Type *)pointerType;
-            ((TypePointer *)declarator->thetype)->qual = qualifiers;
+            makethetypepointer(&declarator->thetype, qualifiers);
         }
         switch (tk) {
             case TK_BITAND:
@@ -1660,6 +1140,24 @@ void CDecl_ScanPointer(DeclInfo *declarator, NameSpace *nspace, char finish)
         parse_direct_declarator(declarator, nspace);
 }
 
+static void CDecl_MakeTemplDepMemberPointer(Type **type, Type *owner)
+{
+    TypeMemberPointer *memberPointer;
+
+    memberPointer = (TypeMemberPointer *)galloc(sizeof(TypeMemberPointer));
+    memberPointer->type = TYPEMEMBERPOINTER;
+    if ((*type)->type == TYPEFUNC) {
+        CDecl_MakePTMFuncType(TYPE_FUNC(*type));
+        memberPointer->size = 0xc;
+    } else {
+        memberPointer->size = 4;
+    }
+    memberPointer->ty1 = *type;
+    memberPointer->ty2 = owner;
+    memberPointer->qual = 0;
+    *type = (Type *)memberPointer;
+}
+
 void scandeclarator(DeclInfo *decl)
 {
     NameResult info;
@@ -1702,19 +1200,7 @@ void scandeclarator(DeclInfo *decl)
                     }
                     tk = CPrepTokenizer_GetNextToken();
                     if (tk == TK_COLON_COLON && (tk = CPrepTokenizer_GetNextToken()) == 0x2a) {
-                        Type *ownerType = info.type;
-                        TypeMemberPointer *memberPointer = (TypeMemberPointer *)galloc(sizeof(TypeMemberPointer));
-                        memberPointer->type = TYPEMEMBERPOINTER;
-                        if (decl->thetype->type == TYPEFUNC) {
-                            CDecl_MakePTMFuncType(TYPE_FUNC(decl->thetype));
-                            memberPointer->size = 0xc;
-                        } else {
-                            memberPointer->size = 4;
-                        }
-                        memberPointer->ty1 = decl->thetype;
-                        memberPointer->ty2 = ownerType;
-                        memberPointer->qual = 0;
-                        decl->thetype = (Type *)memberPointer;
+                        CDecl_MakeTemplDepMemberPointer(&decl->thetype, info.type);
                         tk = CPrepTokenizer_GetNextToken();
                         break;
                     }
@@ -1973,6 +1459,23 @@ void CheckDefaultArgs(FuncArg *args)
     }
 }
 
+static void CDecl_UpdateFunctionObject(Object *object, DeclInfo *decl, Boolean created)
+{
+    if (decl->storageclass == TK_STATIC && object->sclass != TK_STATIC) {
+        if (copts.cplusplus)
+            CError_ReportError(ERR_INCONSISTENT_LINKAGE_EXTERN_OBJECT_REDECLARED_AS);
+        else
+            object->sclass = TK_STATIC;
+    }
+    object->qual |= decl->qual;
+    if (created)
+        CheckDefaultArgs(TYPE_FUNC(object->type)->args);
+    else
+        MergeDefaultArgs(TYPE_FUNC(object->type)->args, TYPE_FUNC(decl->thetype)->args);
+    if (!decl->oldStyleParameters)
+        TYPE_FUNC(object->type)->args = TYPE_FUNC(decl->thetype)->args;
+}
+
 Object *CDecl_GetFunctionObject(DeclInfo *decl, NameSpace *target_scope, Boolean *is_new_object, char lookup_mode)
 {
     ObjectList *lookup;
@@ -1981,7 +1484,6 @@ Object *CDecl_GetFunctionObject(DeclInfo *decl, NameSpace *target_scope, Boolean
     Boolean mismatch;
     FunctionTypeBuffer diagnostic_type;
     Boolean overload_created;
-    Boolean object_created;
     SInt8 return_kind;
     TypeMemberFunc *member_type;
 
@@ -2059,16 +1561,7 @@ Object *CDecl_GetFunctionObject(DeclInfo *decl, NameSpace *target_scope, Boolean
                                    object->type, object->qual, &diagnostic_type, decl->qual);
             }
         }
-        if (decl->storageclass == TK_STATIC && object->sclass != TK_STATIC) {
-            if (copts.cplusplus)
-                CError_ReportError(ERR_INCONSISTENT_LINKAGE_EXTERN_OBJECT_REDECLARED_AS);
-            else
-                object->sclass = TK_STATIC;
-        }
-        object->qual |= decl->qual;
-        MergeDefaultArgs(TYPE_FUNC(object->type)->args, TYPE_FUNC(decl->thetype)->args);
-        if (!decl->oldStyleParameters)
-            TYPE_FUNC(object->type)->args = TYPE_FUNC(decl->thetype)->args;
+        CDecl_UpdateFunctionObject(object, decl, 0);
         if (decl->requireTemplateClassMember && object->nspace->theclass &&
             (object->nspace->theclass->flags & CLASS_IS_TEMPL_INST))
             decl->requireTemplateClassMember = 0;
@@ -2096,22 +1589,8 @@ Object *CDecl_GetFunctionObject(DeclInfo *decl, NameSpace *target_scope, Boolean
                         return NULL;
                 }
             }
-            if (!mismatch && is_new_object) {
-                object_created = *is_new_object;
-                if (decl->storageclass == TK_STATIC && object->sclass != TK_STATIC) {
-                    if (copts.cplusplus)
-                        CError_ReportError(ERR_INCONSISTENT_LINKAGE_EXTERN_OBJECT_REDECLARED_AS);
-                    else
-                        object->sclass = TK_STATIC;
-                }
-                object->qual |= decl->qual;
-                if (object_created) {
-                    CheckDefaultArgs(TYPE_FUNC(object->type)->args);
-                } else
-                    MergeDefaultArgs(TYPE_FUNC(object->type)->args, TYPE_FUNC(decl->thetype)->args);
-                if (!decl->oldStyleParameters)
-                    TYPE_FUNC(object->type)->args = TYPE_FUNC(decl->thetype)->args;
-            }
+            if (!mismatch && is_new_object)
+                CDecl_UpdateFunctionObject(object, decl, *is_new_object);
         } else {
             if (decl->nspace)
                 CError_ReportError(ERR_NAME_NOT_BEEN_DECLARED_NAMESPACE_CLASS);
@@ -2221,10 +1700,8 @@ void declare_object(DeclInfo *d, UInt8 b, Boolean c)
 {
     Object *found;
     NameSpace *nspace;
-    Type *type;
     TemplClass *templateClass;
     NameSpaceObjectList *res;
-    Boolean ok;
     ENode *p;
     Boolean r;
     CScopeSave save;
@@ -2310,40 +1787,7 @@ void declare_object(DeclInfo *d, UInt8 b, Boolean c)
             CError_ReportError(ERR_NAME_NOT_BEEN_DECLARED_NAMESPACE_CLASS);
         if (d->thetype->type == TYPECLASS && TYPE_CLASS(d->thetype)->sominfo != NULL)
             CError_ReportError(ERR_GLOBAL_SOM_CLASS_OBJECTS_NOT_SUPPORTED);
-        type = d->thetype;
-        switch ((SInt8)type->type) {
-            case TYPEVOID:
-                CError_ReportError(ERR_ILLEGAL_USE_VOID);
-                ok = 0;
-                break;
-            case TYPEFUNC:
-                CError_ReportError(ERR_ILLEGAL_TYPE);
-                ok = 0;
-                break;
-            case TYPECLASS:
-                if (TYPE_CLASS(type)->flags & CLASS_ABSTRACT) {
-                    CError_IllegalUseAbstractClass(TYPE_CLASS(type));
-                    ok = 0;
-                    break;
-                }
-            default:
-                ok = 1;
-                break;
-        }
-        if (!ok) {
-            ok = 0;
-        } else if (type->type != TYPECLASS) {
-            ok = 1;
-        } else if (TYPE_CLASS(type)->flags & CLASS_HANDLEOBJECT) {
-            CError_ReportError(ERR_ILLEGAL_USE_HANDLEOBJECT);
-            ok = 0;
-        } else if (TYPE_CLASS(type)->objcinfo != NULL) {
-            CError_ReportError(ERR_ILLEGAL_USE_OBJECTIVE_C_OBJECT);
-            ok = 0;
-        } else {
-            ok = 1;
-        }
-        if (!ok)
+        if (!CDecl_CheckObjectType(d->thetype))
             d->thetype = (Type *)&stsignedint;
         found = CParser_NewGlobalDataObject(d);
         found->access = b;
@@ -2458,10 +1902,10 @@ void parse_resolved_member_function_decl(DeclInfo *di, Boolean define)
             if (di->thetype->type == TYPEFUNC) {
                 if (TYPE_FUNC(obj->type)->flags & FUNC_IS_DTOR) {
                     if (((tclass = obj->nspace->theclass)->flags & CLASS_HAS_VBASES) && !tclass->sominfo)
-                        CDecl_AddArgument(tfunc = TYPE_FUNC(di->thetype));
+                        CDecl_PrependFuncArg(TYPE_FUNC(di->thetype), &stsignedshort);
                 } else {
                     if (!obj->nspace->theclass->sominfo)
-                        CDecl_AddArgument(tfunc = TYPE_FUNC(di->thetype));
+                        CDecl_PrependFuncArg(TYPE_FUNC(di->thetype), &stsignedshort);
                 }
                 if (define)
                     CDecl_FunctionDeclarator(di, NULL, 1, 1);
@@ -2553,6 +1997,36 @@ void CDecl_ScanDeclarator(DeclInfo *p)
         CError_ReportError(ERR_SEMICOLON_EXPECTED);
 }
 
+static TypeIntegral *SignedIntType(short size)
+{
+    if (stsignedchar.size == size)
+        return &stsignedchar;
+    if (stsignedshort.size == size)
+        return &stsignedshort;
+    if (stsignedint.size == size)
+        return &stsignedint;
+    if (stsignedlong.size == size)
+        return &stsignedlong;
+    if (copts.longlong && copts.longlong_enums && stsignedlonglong.size == size)
+        return &stsignedlonglong;
+    return &stsignedlong;
+}
+
+static TypeIntegral *UnsignedIntType(short size)
+{
+    if (stunsignedchar.size == size)
+        return &stunsignedchar;
+    if (stunsignedshort.size == size)
+        return &stunsignedshort;
+    if (stunsignedint.size == size)
+        return &stunsignedint;
+    if (stunsignedlong.size == size)
+        return &stunsignedlong;
+    if (copts.longlong && copts.longlong_enums && stunsignedlonglong.size == size)
+        return &stunsignedlonglong;
+    return &stunsignedlong;
+}
+
 void *parse_enum_body(TypeEnum *enumType, HashNameNode *name)
 {
     ObjEnumConst *enumerator;
@@ -2631,7 +2105,7 @@ void *parse_enum_body(TypeEnum *enumType, HashNameNode *name)
             if (tk == '=') {
                 tk = CPrepTokenizer_GetNextToken();
                 currentValue = CExpr_IntegralConstExprType(&expressionType);
-                if (!IsNegative(currentValue.hi) || is_unsigned(expressionType) != 0) {
+                if (!CInt64_IsNegative(&currentValue) || is_unsigned(expressionType) != 0) {
                     if (CInt64_GreaterU(currentValue, maximumValue)) {
                         maximumValue = currentValue;
                         rangeChanged = 1;
@@ -2650,7 +2124,7 @@ void *parse_enum_body(TypeEnum *enumType, HashNameNode *name)
             } else {
                 if (overflow != 0)
                     CError_ReportError(ERR_NUMBER_OUT_RANGE);
-                if (isSigned == 0 || !IsNegative(currentValue.hi)) {
+                if (isSigned == 0 || !CInt64_IsNegative(&currentValue)) {
                     if (CInt64_GreaterU(currentValue, maximumValue)) {
                         maximumValue = currentValue;
                         rangeChanged = 1;
@@ -2680,21 +2154,21 @@ void *parse_enum_body(TypeEnum *enumType, HashNameNode *name)
                             if (CInt64_IsInRange(minimumValue, 1))
                                 break;
                         }
-                        underlyingType = FindSignedType(2);
+                        underlyingType = SignedIntType(2);
                         /* fall through */
                     case 2:
                         if (CInt64_IsInRange(maximumValue, 2)) {
                             if (CInt64_IsInRange(minimumValue, 2))
                                 break;
                         }
-                        underlyingType = FindSignedType(4);
+                        underlyingType = SignedIntType(4);
                         /* fall through */
                     case 4:
                         if (CInt64_IsInRange(maximumValue, 4)) {
                             if (CInt64_IsInRange(minimumValue, 4))
                                 break;
                         }
-                        underlyingType = FindSignedType(8);
+                        underlyingType = SignedIntType(8);
                         if (underlyingType->size != 8) {
                             if (copts.ANSIstrict == 0) {
                                 if (CInt64_IsInRange(minimumValue, 4)) {
@@ -2709,7 +2183,7 @@ void *parse_enum_body(TypeEnum *enumType, HashNameNode *name)
                         /* fall through */
                     case 8:
                         if (CInt64_Equal(currentValue, maximumValue)) {
-                            if (IsNegative(currentValue.hi))
+                            if (CInt64_IsNegative(&currentValue))
                                 CError_ReportError(ERR_NUMBER_OUT_RANGE);
                         }
                         break;
@@ -2721,17 +2195,17 @@ void *parse_enum_body(TypeEnum *enumType, HashNameNode *name)
                     case 1:
                         if (CInt64_IsInURange(maximumValue, 1))
                             break;
-                        underlyingType = FindUnsignedType(2);
+                        underlyingType = UnsignedIntType(2);
                         /* fall through */
                     case 2:
                         if (CInt64_IsInURange(maximumValue, 2))
                             break;
-                        underlyingType = FindUnsignedType(4);
+                        underlyingType = UnsignedIntType(4);
                         /* fall through */
                     case 4:
                         if (CInt64_IsInURange(maximumValue, 4))
                             break;
-                        underlyingType = FindUnsignedType(8);
+                        underlyingType = UnsignedIntType(8);
                         if (underlyingType->size != 8) {
                             if (rangeChanged != 0)
                                 CError_ReportError(ERR_NUMBER_OUT_RANGE);
@@ -2762,10 +2236,10 @@ void *parse_enum_body(TypeEnum *enumType, HashNameNode *name)
             }
             nextValue = CInt64_Add(currentValue, cint64_one);
             if (isSigned != 0) {
-                if (IsNegative(nextValue.hi) && !IsNegative(currentValue.hi))
+                if (CInt64_IsNegative(&nextValue) && !CInt64_IsNegative(&currentValue))
                     overflow = 1;
             } else {
-                if (IsZero(&nextValue))
+                if (CInt64_IsZero(&nextValue))
                     overflow = 1;
             }
             currentValue = nextValue;
@@ -2786,6 +2260,15 @@ void *parse_enum_body(TypeEnum *enumType, HashNameNode *name)
     return enumType;
 }
 
+static Type *CDecl_LargerType(Type *a, Type *b)
+{
+    if (a->size > b->size)
+        return a;
+    if (b->size > a->size)
+        return b;
+    return a;
+}
+
 void CDecl_ComputeUnderlyingEnumType(TypeEnum *res)
 {
     ObjEnumConst *n;
@@ -2794,14 +2277,14 @@ void CDecl_ComputeUnderlyingEnumType(TypeEnum *res)
 
     if (copts.enumsalwaysint == 0) {
         for (n = res->enumlist; n != NULL; n = n->next) {
-            if (HighIsNegative(n->val.hi) && !is_unsigned(n->type))
+            if (CInt64_IsNegative(&n->val) && !is_unsigned(n->type))
                 break;
         }
         if (n != NULL) {
             CInt64 a, b;
             b = a = cint64_zero;
             for (m = res->enumlist; m != NULL; m = m->next) {
-                if (HighIsNegative(m->val.hi) && !is_unsigned(m->type)) {
+                if (CInt64_IsNegative(&m->val) && !is_unsigned(m->type)) {
                     if (CInt64_Less(m->val, a))
                         a = m->val;
                 } else {
@@ -2809,7 +2292,7 @@ void CDecl_ComputeUnderlyingEnumType(TypeEnum *res)
                         b = m->val;
                 }
             }
-            if (HighIsNegative(b.hi))
+            if (CInt64_IsNegative(&b))
                 CError_ReportError(ERR_NUMBER_OUT_RANGE);
             if (CInt64_IsInRange(b, 1) && CInt64_IsInRange(a, 1)) {
                 t = (Type *)SignedIntType(1);
@@ -2832,13 +2315,13 @@ void CDecl_ComputeUnderlyingEnumType(TypeEnum *res)
                     c = m->val;
             }
             if (CInt64_IsInURange(c, 1)) {
-                t = UnsignedIntType(1);
+                t = (Type *)UnsignedIntType(1);
             } else if (CInt64_IsInURange(c, 2)) {
-                t = UnsignedIntType(2);
+                t = (Type *)UnsignedIntType(2);
             } else if (CInt64_IsInURange(c, 4)) {
-                t = UnsignedIntType(4);
+                t = (Type *)UnsignedIntType(4);
             } else {
-                t = UnsignedIntType(8);
+                t = (Type *)UnsignedIntType(8);
                 if (t->size != 8)
                     CError_ReportError(ERR_NUMBER_OUT_RANGE);
             }
@@ -2857,8 +2340,8 @@ TypeEnum *parse_enum_definition(TypeEnum *decl, HashNameNode *name)
     CPrepFileInfo *context;
     UInt8 overflow;
     UInt8 dependent;
-    AccessType access;
     TemplClass *templateClass;
+    AccessType access;
     Type *expressionType;
     CInt64 value;
     CInt64 nextValue;
@@ -2897,10 +2380,8 @@ TypeEnum *parse_enum_definition(TypeEnum *decl, HashNameNode *name)
     else
         access = 0;
 
-    last = NULL;
-    value = cint64_zero;
-    overflow = 0;
-    dependent = 0;
+    last = NULL, value = cint64_zero;
+    overflow = 0, dependent = 0;
     if (CDecl_UseIntEnums())
         currentType = (Type *)&stsignedint;
     else
@@ -2987,29 +2468,29 @@ TypeEnum *parse_enum_definition(TypeEnum *decl, HashNameNode *name)
             if (!dependent) {
                 nextValue = CInt64_Add(value, cint64_one);
                 if (is_unsigned(currentType)) {
-                    if (IsZero(&nextValue))
+                    if (CInt64_IsZero(&nextValue))
                         overflow = 1;
                     if (!CInt64_IsInURange(nextValue, currentType->size)) {
                         if (CInt64_IsInURange(nextValue, 2)) {
-                            currentType = (Type *)FindUnsignedType(2);
+                            currentType = (Type *)UnsignedIntType(2);
                         } else if (CInt64_IsInURange(nextValue, 4)) {
-                            currentType = (Type *)FindUnsignedType(4);
+                            currentType = (Type *)UnsignedIntType(4);
                         } else {
-                            currentType = (Type *)FindUnsignedType(8);
+                            currentType = (Type *)UnsignedIntType(8);
                             if (currentType->size != 8)
                                 overflow = 1;
                         }
                     }
                 } else {
-                    if (IsNegative(nextValue.hi) && !IsNegative(value.hi))
+                    if (CInt64_IsNegative(&nextValue) && !CInt64_IsNegative(&value))
                         overflow = 1;
                     if (!CInt64_IsInRange(nextValue, currentType->size)) {
                         if (CInt64_IsInRange(nextValue, 2)) {
-                            currentType = (Type *)FindSignedType(2);
+                            currentType = (Type *)SignedIntType(2);
                         } else if (CInt64_IsInRange(nextValue, 4)) {
-                            currentType = (Type *)FindSignedType(4);
+                            currentType = (Type *)SignedIntType(4);
                         } else {
-                            currentType = (Type *)FindSignedType(8);
+                            currentType = (Type *)SignedIntType(8);
                             if (currentType->size != 8)
                                 overflow = 1;
                         }
@@ -3183,11 +2664,7 @@ void CDecl_ScanStructDeclarator(BigDeclInfo *member)
         tk = CPrepTokenizer_GetNextToken();
         node = CExpr_IntegralConstOrDepExpr();
         if (node->type != EINTCONST) {
-            dependentType = galloc(sizeof(*dependentType));
-            memclrw(dependentType, sizeof(*dependentType));
-            dependentType->type = TYPETEMPLATE;
-            dependentType->size = 1;
-            dependentType->dtype = 5;
+            dependentType = CDecl_NewTemplDepType(5);
             dependentType->u.bitfield.type = member->declinfo2.thetype;
             dependentType->u.bitfield.size = fn_00513040(node, 1);
             member->declinfo2.thetype = (Type *)dependentType;
@@ -3329,10 +2806,8 @@ int parse_struct_members(TypeStruct *obj, Boolean block)
 {
     BigDeclInfo memberDecl;
     StructMember *member;
-    Type *type;
     SInt32 result;
     SInt32 textOffset;
-    Boolean validType;
 
     result = -1;
     memclrw(&memberDecl, sizeof(memberDecl));
@@ -3356,45 +2831,7 @@ int parse_struct_members(TypeStruct *obj, Boolean block)
             if (tk != ';') {
                 for (;;) {
                     CDecl_ScanStructDeclarator(&memberDecl);
-                    type = memberDecl.declinfo2.thetype;
-                    switch ((SInt8)type->type) {
-                        case TYPEVOID:
-                            CError_ReportError(ERR_ILLEGAL_USE_VOID);
-                            validType = 0;
-                            break;
-                        case TYPEFUNC:
-                            CError_ReportError(ERR_ILLEGAL_TYPE);
-                            validType = 0;
-                            break;
-                        case TYPECLASS:
-                            if (TYPE_CLASS(type)->flags & CLASS_ABSTRACT) {
-                                CError_IllegalUseAbstractClass(TYPE_CLASS(type));
-                                validType = 0;
-                                break;
-                            }
-                            /* fall through */
-                        default:
-                            validType = 1;
-                            break;
-                    }
-                    if (!validType) {
-                        validType = 0;
-                    } else {
-                        if (type->type == TYPECLASS) {
-                            if (TYPE_CLASS(type)->flags & CLASS_HANDLEOBJECT) {
-                                CError_ReportError(ERR_ILLEGAL_USE_HANDLEOBJECT);
-                                validType = 0;
-                            } else if (TYPE_CLASS(type)->objcinfo != NULL) {
-                                CError_ReportError(ERR_ILLEGAL_USE_OBJECTIVE_C_OBJECT);
-                                validType = 0;
-                            } else {
-                                validType = 1;
-                            }
-                        } else {
-                            validType = 1;
-                        }
-                    }
-                    if (!validType) {
+                    if (!CDecl_CheckObjectType(memberDecl.declinfo2.thetype)) {
                         CError_ReportError(ERR_ILLEGAL_STRUCT_UNION_ENUM_CLASS_DEFINITION);
                         memberDecl.valid = 0;
                     }
@@ -3451,6 +2888,23 @@ int parse_struct_members(TypeStruct *obj, Boolean block)
     return result;
 }
 
+static TypeStruct *CDecl_DefineStruct(HashNameNode *name, short stype)
+{
+    TypeStruct *tstruct;
+
+    tstruct = galloc(sizeof(TypeStruct));
+    memclrw(tstruct, sizeof(TypeStruct));
+    tstruct->type = TYPESTRUCT;
+    tstruct->align = 1;
+    tstruct->stype = stype;
+    if (name) {
+        tstruct->name = name;
+        CScope_DefineTypeTag((in_parameter_type_list && !copts.cplusplus) ? cscope_root : cscope_current, name,
+                             (Type *)tstruct);
+    }
+    return tstruct;
+}
+
 void scanstruct(DeclInfo *state, SInt16 spec)
 {
     Boolean saved;
@@ -3475,9 +2929,7 @@ void scanstruct(DeclInfo *state, SInt16 spec)
             }
             tk = CPrepTokenizer_GetNextToken();
             if (CScope_GetLocalTagType(cscope_current, name) == NULL && (tk == ';' || tk == '{')) {
-                MAKE_NODE(node, spec);
-                if (name != NULL)
-                    attach_node(node, name);
+                node = (Type *)CDecl_DefineStruct(name, spec);
             }
             if (node->type != TYPESTRUCT || TYPE_STRUCT(node)->stype != spec) {
                 CError_ReportError(ERR_STRUCT_UNION_ENUM_CLASS_TAG_REDEFINED, name->name);
@@ -3490,12 +2942,10 @@ void scanstruct(DeclInfo *state, SInt16 spec)
             }
             if (node->size != 0) {
                 CError_ReportError(ERR_STRUCT_UNION_ENUM_CLASS_TAG_REDEFINED, name->name);
-                MAKE_NODE(node, spec);
+                node = (Type *)CDecl_DefineStruct(NULL, spec);
             }
         } else {
-            MAKE_NODE(node, spec);
-            if (name != NULL)
-                attach_node(node, name);
+            node = (Type *)CDecl_DefineStruct(name, spec);
             tk = CPrepTokenizer_GetNextToken();
             if (tk != '{') {
                 context->thetype = node;
@@ -3508,7 +2958,7 @@ void scanstruct(DeclInfo *state, SInt16 spec)
             context->thetype = (Type *)&stsignedint;
             return;
         }
-        MAKE_NODE(node, spec);
+        node = (Type *)CDecl_DefineStruct(NULL, spec);
     }
     saved = (cprep_cu[0xe6] != 0 && context->file->recordbrowseinfo != 0);
     if (saved)
@@ -3555,6 +3005,16 @@ void scan_inline_definition(Object *object, TypeClass *classType)
     }
 }
 
+static void CDecl_ExtractClassExportFlags(DeclInfo *declinfo, UInt8 flags)
+{
+    if (flags & CLASS_EFLAGS_INTERNAL)
+        declinfo->exportflags |= 0x10;
+    if (flags & CLASS_EFLAGS_IMPORT)
+        declinfo->exportflags |= 0x20;
+    if (flags & CLASS_EFLAGS_EXPORT)
+        declinfo->exportflags |= 0x40;
+}
+
 TypeMemberFunc *CDecl_MakeTypeMemberFunc(TypeFunc *type, TypeClass *theclass, Boolean is_static, Boolean arg)
 {
     TypeMemberFunc *member;
@@ -3569,13 +3029,22 @@ TypeMemberFunc *CDecl_MakeTypeMemberFunc(TypeFunc *type, TypeClass *theclass, Bo
     return member;
 }
 
+static void CDecl_MakeFunctionVirtual(TypeClass *tclass, Object *func)
+{
+    if (is_pascal_object(func))
+        CError_ReportError(ERR_VIRTUAL_FUNCTIONS_CANNOT_PASCAL_FUNCTIONS);
+    if (tclass->mode == 1)
+        CError_ReportError(ERR_ILLEGAL_VIRTUAL_FUNCTION_UNION, func);
+    func->datatype = DVFUNC;
+}
+
 void declare_member_function(ClassLayout *layout, TypeClass *cls, struct DeclInfo *info, UInt8 access, UInt8 allowPure,
                              UInt8 specialMember, UInt8 parseBody, UInt8 declarationOnly)
 {
     Boolean isNew;
-    TypeMemberFunc *memberType;
-    NameSpaceObjectList *found;
     Object *member;
+    NameSpaceObjectList *found;
+    TypeMemberFunc *memberType;
     Boolean wasVirtual;
     TypeMemberFunc *func;
     UInt8 returnKind;
@@ -3611,33 +3080,13 @@ void declare_member_function(ClassLayout *layout, TypeClass *cls, struct DeclInf
     }
 
     if (!((memberType = (TypeMemberFunc *)info->thetype)->flags & FUNC_METHOD)) {
-        TypeMemberFunc *newType = (TypeMemberFunc *)galloc(sizeof(TypeMemberFunc));
-        memclrw(newType, sizeof(TypeMemberFunc));
-        {
-            TypeFunc *dest = (TypeFunc *)newType;
-            TypeFunc *source = (TypeFunc *)memberType;
-            *dest = *source;
-        }
-        newType->theclass = cls;
-        newType->is_static = declarationOnly;
-        newType->flags |= FUNC_METHOD;
-        if (declarationOnly == 0)
-            CDecl_AddThisPointerArgument(TYPE_FUNC(newType), cls, parseBody);
-        memberType = newType;
-        info->thetype = (Type *)newType;
+        memberType = CDecl_MakeTypeMemberFunc(TYPE_FUNC(memberType), cls, declarationOnly, parseBody);
+        info->thetype = (Type *)memberType;
     } else {
         CError_ASSERT(3992, cls->sominfo == 0);
     }
 
-    {
-        UInt8 classFlags = cls->eflags;
-        if (classFlags & CLASS_EFLAGS_INTERNAL)
-            info->exportflags |= 0x10;
-        if (classFlags & CLASS_EFLAGS_IMPORT)
-            info->exportflags |= 0x20;
-        if (classFlags & CLASS_EFLAGS_EXPORT)
-            info->exportflags |= 0x40;
-    }
+    CDecl_ExtractClassExportFlags(info, cls->eflags);
 
     CError_ASSERT(4010, cscope_current == cls->nspace);
 
@@ -3673,11 +3122,7 @@ void declare_member_function(ClassLayout *layout, TypeClass *cls, struct DeclInf
         cls->flags |= CLASS_IS_CONVERTIBLE;
     }
     if (wasVirtual) {
-        if (is_pascal_object(member))
-            CError_ReportError(ERR_VIRTUAL_FUNCTIONS_CANNOT_PASCAL_FUNCTIONS);
-        if (cls->mode == 1)
-            CError_ReportError(ERR_ILLEGAL_VIRTUAL_FUNCTION_UNION, member);
-        member->datatype = DVFUNC;
+        CDecl_MakeFunctionVirtual(cls, member);
         layout->has_vtable = 1;
     }
     if (allowPure != 0 || wasVirtual) {
@@ -4015,7 +3460,6 @@ void parse_class_members(ClassLayout *decle, TypeClass *tclass, SInt16 mode)
     TypeBitfield *copy, *source;
     ObjMemberVar *unionMember;
     ObjMemberVar *memberVar;
-    UInt8 eflags;
 
     member = (tclass->flags & CLASS_IS_TEMPL) && ((TemplClass *)tclass)->pspec_owner;
     memclrw(&md, sizeof(BigDeclInfo));
@@ -4139,7 +3583,7 @@ void parse_class_members(ClassLayout *decle, TypeClass *tclass, SInt16 mode)
                                     ((TypeFunc *)md.declinfo2.thetype)->args = NULL;
                                 }
                                 if (tclass->flags & CLASS_HAS_VBASES)
-                                    AddShortArg((TypeFunc *)md.declinfo2.thetype);
+                                    CDecl_PrependFuncArg((TypeFunc *)md.declinfo2.thetype, &stsignedshort);
                                 md.declinfo2.qual &= ~Q_VIRTUAL;
                             }
                             ((TypeFunc *)md.declinfo2.thetype)->flags |= FUNC_IS_DTOR;
@@ -4203,7 +3647,7 @@ void parse_class_members(ClassLayout *decle, TypeClass *tclass, SInt16 mode)
                         if (tclass->sominfo) {
                             md.declinfo2.qual |= Q_VIRTUAL;
                         } else {
-                            AddShortArg((TypeFunc *)md.declinfo2.thetype);
+                            CDecl_PrependFuncArg((TypeFunc *)md.declinfo2.thetype, &stsignedshort);
                         }
                         md.declinfo2.name = destructor_name;
                         ((TypeFunc *)md.declinfo2.thetype)->flags |= 0x4000;
@@ -4247,14 +3691,7 @@ void parse_class_members(ClassLayout *decle, TypeClass *tclass, SInt16 mode)
                     tk = CPrepTokenizer_GetNextToken();
                 md.declinfo2.qual |= dsqual;
                 type = md.declinfo2.thetype;
-                tfunc = galloc(sizeof(TypeFunc));
-                memclrw(tfunc, sizeof(TypeFunc));
-                md.declinfo2.name = CMangler_ConversionFuncName(md.declinfo2.thetype, md.declinfo2.qual);
-                tfunc->type = TYPEFUNC;
-                SETFUNC(tfunc, md.declinfo2.thetype, md.declinfo2.qual & Q_CV);
-                md.declinfo2.isType = 0;
-                md.declinfo2.thetype = (Type *)tfunc;
-                md.declinfo2.storageclass = 0;
+                CDecl_NewConvFuncType(&md.declinfo2);
                 if ((tclass->flags & CLASS_IS_TEMPL) && CTemplTool_IsTemplateArgumentDependentType(type))
                     md.declinfo2.name = CParser_GetUniqueName();
                 declare_member_function(decle, tclass, &md.declinfo2, access, 1, 1, 1, 0);
@@ -4358,13 +3795,7 @@ void parse_class_members(ClassLayout *decle, TypeClass *tclass, SInt16 mode)
                                     CError_ReportError(ERR_ILLEGAL_CONSTRUCTOR_DESTRUCTOR_DECLARATION);
                                 declare_member_function(decle, tclass, &md.declinfo2, access, 0, 0, 1, 1);
                             } else {
-                                eflags = tclass->eflags;
-                                if (eflags & CLASS_EFLAGS_INTERNAL)
-                                    md.declinfo2.exportflags |= 0x10;
-                                if (eflags & CLASS_EFLAGS_IMPORT)
-                                    md.declinfo2.exportflags |= 0x20;
-                                if (eflags & CLASS_EFLAGS_EXPORT)
-                                    md.declinfo2.exportflags |= 0x40;
+                                CDecl_ExtractClassExportFlags(&md.declinfo2, tclass->eflags);
                                 md.declinfo2.storageclass = 0;
                                 declare_object(&md.declinfo2, access, 1);
                             }
@@ -4380,7 +3811,7 @@ void parse_class_members(ClassLayout *decle, TypeClass *tclass, SInt16 mode)
                                 declare_member_function(decle, tclass, &md.declinfo2, access, 1, 0, 1, 0);
                             } else {
                                 CDecl_CompleteType(md.declinfo2.thetype);
-                                (void)CheckMemberType(md.declinfo2.thetype);
+                                (void)CDecl_CheckObjectType(md.declinfo2.thetype);
                                 CError_ReportIllegalFlags(md.declinfo2.qual & (Q_INLINE | Q_VIRTUAL));
                                 if (md.declinfo2.storageclass == 0x12b)
                                     md.declinfo2.qual |= Q_MUTABLE;
@@ -4660,15 +4091,40 @@ void parse_class_bases(TemplClass *classType, short mode, char allowDependent)
     return;
 }
 
+static AccessType getaccesstype(AccessType a, AccessType b, Boolean isbase)
+{
+    if (a == ACCESSNONE || b == ACCESSNONE || b == ACCESSPRIVATE)
+        return ACCESSNONE;
+    if (!isbase && b != ACCESSPUBLIC)
+        return ACCESSNONE;
+    return ACCESSPUBLIC;
+}
+
+static TypeMemberFunc *CDecl_MakeDefaultCtorType(TypeClass *tclass)
+{
+    TypeFunc *tfunc;
+
+    tfunc = galloc(sizeof(TypeMemberFunc));
+    memclrw(tfunc, sizeof(TypeMemberFunc));
+    tfunc->type = TYPEFUNC;
+    tfunc->functype = (Type *)&void_ptr;
+    tfunc->flags = FUNC_METHOD | FUNC_AUTO_GENERATED | FUNC_IS_DTOR;
+    TYPE_METHOD(tfunc)->theclass = tclass;
+    TYPE_METHOD(tfunc)->is_static = 0;
+    fn_00504240(tfunc);
+    if (tclass->flags & CLASS_HAS_VBASES)
+        CDecl_PrependFuncArg(tfunc, &stsignedshort);
+    CDecl_AddThisPointerArgument(tfunc, tclass, 0);
+    return TYPE_METHOD(tfunc);
+}
+
 void make_defarg_function(TypeClass *cls)
 {
     Object *function;
     NameSpaceObjectList *member;
     Object *memberObject;
     FuncArg *defaultArg;
-    TypeMemberFunc *functionType;
     TypeMemberFunc *memberType;
-    FuncArg *virtualBaseArg;
     DefArgCtorInfo *defaultArgData;
 
     member = CClass_Constructor(cls);
@@ -4683,23 +4139,7 @@ void make_defarg_function(TypeClass *cls)
             if (defaultArg != NULL && defaultArg->dexpr != NULL) {
                 cls->flags |= 0x80;
                 function = CParser_NewFunctionObject(NULL);
-                functionType = (TypeMemberFunc *)galloc(sizeof(TypeMemberFunc));
-                memclrw(functionType, sizeof(*functionType));
-                functionType->type = TYPEFUNC;
-                functionType->functype = (Type *)&void_ptr;
-                functionType->flags = (FUNC_METHOD | FUNC_AUTO_GENERATED | FUNC_IS_DTOR);
-                functionType->theclass = cls;
-                functionType->is_static = 0;
-                if (cls->flags & CLASS_HAS_VBASES) {
-                    virtualBaseArg = CParser_NewFuncArg();
-                    virtualBaseArg->type = (Type *)&stsignedshort;
-                    virtualBaseArg->next = functionType->args;
-                    functionType->args = virtualBaseArg;
-                    if (virtualBaseArg->next != NULL && virtualBaseArg->next->type == &stvoid)
-                        virtualBaseArg->next = NULL;
-                }
-                CDecl_AddThisPointerArgument(TYPE_FUNC(functionType), cls, 0);
-                function->type = (Type *)functionType;
+                function->type = (Type *)CDecl_MakeDefaultCtorType(cls);
                 function->qual = Q_MANGLE_NAME;
                 function->name = constructor_name;
                 function->access = memberObject->access;
@@ -4719,15 +4159,26 @@ void make_defarg_function(TypeClass *cls)
     }
 }
 
+static void CDecl_AddCompilerFunction(TypeClass *tclass, HashNameNode *name, TypeMemberFunc *type, AccessType access)
+{
+    Object *obj;
+
+    obj = CParser_NewCompilerDefFunctionObject();
+    obj->name = name;
+    obj->type = (Type *)type;
+    obj->qual = Q_MANGLE_NAME;
+    obj->access = access;
+    obj->nspace = tclass->nspace;
+    obj->qual |= Q_INLINE;
+    CScope_AddObject(tclass->nspace, obj->name, (ObjBase *)obj);
+}
+
 void make_auto_generated_dtor(ClassLayout *context, TypeClass *cls)
 {
     ClassList *base;
     ObjMemberVar *member;
     Type *type;
     Object *info;
-    HashNameNode *name;
-    TypeMemberFunc *func;
-    Object *obj;
     Boolean found;
     UInt8 access;
 
@@ -4750,11 +4201,7 @@ void make_auto_generated_dtor(ClassLayout *context, TypeClass *cls)
             if (info == NULL) {
                 CError_ReportError(ERR_CANNOT_CONSTRUCT_BASE_CLASS, base->base->classname->name);
             } else {
-                UInt8 baseAccess = info->access;
-                if (access == ACCESSNONE || baseAccess == ACCESSNONE || baseAccess == ACCESSPRIVATE)
-                    access = ACCESSNONE;
-                else
-                    access = ACCESSPUBLIC;
+                access = getaccesstype(access, info->access, 1);
             }
             found = 1;
         }
@@ -4769,82 +4216,36 @@ void make_auto_generated_dtor(ClassLayout *context, TypeClass *cls)
             if (info == NULL) {
                 CError_ReportError(ERR_CANNOT_CONSTRUCT_DIRECT_MEMBER, member->name->name);
             } else {
-                UInt8 memberAccess = info->access;
-                if (access == ACCESSNONE || memberAccess == ACCESSNONE || memberAccess == ACCESSPRIVATE)
-                    access = ACCESSNONE;
-                else if (memberAccess != ACCESSPUBLIC)
-                    access = ACCESSNONE;
-                else
-                    access = ACCESSPUBLIC;
+                access = getaccesstype(access, info->access, 0);
             }
             found = 1;
         }
     }
 
-    if (found) {
-        func = galloc(sizeof(*func));
-        memclrw(func, sizeof(*func));
-        func->type = TYPEFUNC;
-        func->functype = (Type *)&void_ptr;
-        func->flags = FUNC_IS_DTOR | FUNC_AUTO_GENERATED | FUNC_METHOD;
-        func->theclass = cls;
-        func->is_static = 0;
-        if (cls->flags & CLASS_HAS_VBASES) {
-            FuncArg *arg = CParser_NewFuncArg();
-            arg->type = (Type *)&stsignedshort;
-            arg->next = func->args;
-            func->args = arg;
-            if (arg->next != NULL && arg->next->type == &stvoid)
-                arg->next = NULL;
-        }
-        CDecl_AddThisPointerArgument(TYPE_FUNC(func), cls, 0);
-        name = constructor_name;
-        obj = CParser_NewCompilerDefFunctionObject();
-        obj->name = name;
-        obj->type = (Type *)func;
-        obj->qual = Q_MANGLE_NAME;
-        obj->access = access;
-        obj->nspace = cls->nspace;
-        obj->qual |= Q_INLINE;
-        CScope_AddObject(cls->nspace, obj->name, (ObjBase *)obj);
-    }
+    if (found)
+        CDecl_AddCompilerFunction(cls, constructor_name, CDecl_MakeDefaultCtorType(cls), access);
 }
 
 TypeMemberFunc *CDecl_MakeDefaultDtorType(TypeClass *theclass, char is_const)
 {
     TypeMemberFunc *func;
     FuncArg *arg;
-    TypePointer *class_pointer;
-    FuncArg *extra_arg;
 
     func = (TypeMemberFunc *)galloc(sizeof(TypeMemberFunc));
     memclrw(func, sizeof(TypeMemberFunc));
     func->type = TYPEFUNC;
-    func->functype = (Type *)((char *)&stvoid + 8);
+    func->functype = (Type *)&void_ptr;
     func->flags = FUNC_METHOD | FUNC_AUTO_GENERATED | FUNC_IS_DTOR;
     func->theclass = theclass;
     func->is_static = 0;
+    fn_00504240(TYPE_FUNC(func));
     arg = CParser_NewFuncArg();
-    if (is_const) {
+    if (is_const)
         arg->qual = Q_CONST;
-    }
-    class_pointer = (TypePointer *)galloc(sizeof(TypePointer));
-    memclrw(class_pointer, sizeof(TypePointer));
-    class_pointer->type = TYPEPOINTER;
-    class_pointer->size = 4;
-    class_pointer->target = (Type *)theclass;
-    class_pointer->qual = Q_REFERENCE;
-    arg->type = (Type *)class_pointer;
+    arg->type = CDecl_NewRefPointerType(TYPE(theclass));
     func->args = arg;
-    if (theclass->flags & CLASS_HAS_VBASES) {
-        extra_arg = CParser_NewFuncArg();
-        extra_arg->type = (Type *)&stsignedshort;
-        extra_arg->next = func->args;
-        func->args = extra_arg;
-        if (extra_arg->next && extra_arg->next->type == &stvoid) {
-            extra_arg->next = NULL;
-        }
-    }
+    if (theclass->flags & CLASS_HAS_VBASES)
+        CDecl_PrependFuncArg(TYPE_FUNC(func), &stsignedshort);
     CDecl_AddThisPointerArgument(TYPE_FUNC(func), theclass, 0);
     return func;
 }
@@ -4854,18 +4255,13 @@ void declare_default_copy_constructor(ClassLayout *decl, TypeClass *type)
     UInt8 access;
     ClassList *base;
     Object *baseCtor;
-    UInt8 baseAccess;
     FuncArg *baseArg;
     ObjMemberVar *member;
     Type *memberType;
     Object *memberCtor;
-    UInt8 memberAccess;
     FuncArg *memberArg;
-    Object *ctor;
-    HashNameNode *name;
     Boolean needed;
     Boolean constArg;
-    TypeMemberFunc *ctorType;
 
     if (CClass_CopyConstructor(type) != NULL) {
         return;
@@ -4883,12 +4279,7 @@ void declare_default_copy_constructor(ClassLayout *decl, TypeClass *type)
         baseCtor = CClass_CopyConstructor(base->base);
         if (baseCtor != NULL) {
             needed = 1;
-            baseAccess = baseCtor->access;
-            if (access == ACCESSNONE || baseAccess == ACCESSNONE || baseAccess == ACCESSPRIVATE) {
-                access = ACCESSNONE;
-            } else {
-                access = ACCESSPUBLIC;
-            }
+            access = getaccesstype(access, baseCtor->access, 1);
             baseArg = TYPE_METHOD(baseCtor->type)->args->next;
             if ((base->base->flags & CLASS_HAS_VBASES) != 0) {
                 baseArg = baseArg->next;
@@ -4907,14 +4298,7 @@ void declare_default_copy_constructor(ClassLayout *decl, TypeClass *type)
             memberCtor = CClass_CopyConstructor(TYPE_CLASS(memberType));
             if (memberCtor != NULL) {
                 needed = 1;
-                memberAccess = memberCtor->access;
-                if (access == ACCESSNONE || memberAccess == ACCESSNONE || memberAccess == ACCESSPRIVATE) {
-                    access = ACCESSNONE;
-                } else if (memberAccess != ACCESSPUBLIC) {
-                    access = ACCESSNONE;
-                } else {
-                    access = ACCESSPUBLIC;
-                }
+                access = getaccesstype(access, memberCtor->access, 0);
                 memberArg = TYPE_METHOD(memberCtor->type)->args->next;
                 if ((TYPE_CLASS(memberType)->flags & CLASS_HAS_VBASES) != 0) {
                     memberArg = memberArg->next;
@@ -4925,18 +4309,30 @@ void declare_default_copy_constructor(ClassLayout *decl, TypeClass *type)
             }
         }
     }
-    if (needed != 0) {
-        ctorType = CDecl_MakeDefaultDtorType(type, constArg);
-        name = constructor_name;
-        ctor = CParser_NewCompilerDefFunctionObject();
-        ctor->name = name;
-        ctor->type = (Type *)ctorType;
-        ctor->qual = Q_MANGLE_NAME;
-        ctor->access = access;
-        ctor->nspace = type->nspace;
-        ctor->qual |= Q_INLINE;
-        CScope_AddObject(type->nspace, ctor->name, (ObjBase *)ctor);
-    }
+    if (needed != 0)
+        CDecl_AddCompilerFunction(type, constructor_name, CDecl_MakeDefaultDtorType(type, constArg), access);
+}
+
+static TypeMemberFunc *CDecl_MakeAssignmentOperatorType(TypeClass *tclass, Boolean is_const)
+{
+    TypeMemberFunc *func;
+    FuncArg *arg;
+
+    func = galloc(sizeof(TypeMemberFunc));
+    memclrw(func, sizeof(TypeMemberFunc));
+    func->type = TYPEFUNC;
+    func->functype = CDecl_NewRefPointerType(TYPE(tclass));
+    func->flags = FUNC_METHOD | FUNC_AUTO_GENERATED;
+    func->theclass = tclass;
+    func->is_static = 0;
+    fn_00504240(TYPE_FUNC(func));
+    arg = CParser_NewFuncArg();
+    if (is_const)
+        arg->qual = Q_CONST;
+    arg->type = CDecl_NewRefPointerType(TYPE(tclass));
+    func->args = arg;
+    CDecl_AddThisPointerArgument(TYPE_FUNC(func), tclass, 0);
+    return func;
 }
 
 void generate_copy_constructor(ClassLayout *type, TypeClass *cls)
@@ -4949,26 +4345,20 @@ void generate_copy_constructor(ClassLayout *type, TypeClass *cls)
     ClassList *base;
     ObjMemberVar *member;
     Type *membertype;
-    UInt8 baseaccess;
-    TypePointer *resultptr;
-    TypeMemberFunc *func;
-    FuncArg *arg;
-    TypePointer *argptr;
 
     constructor = CClass_AssignmentOperator(cls);
     if (constructor == NULL) {
-        if ((cls->flags & CLASS_HAS_VBASES) || type->has_vtable != 0 ||
-            CClass_MemberObject(cls, assignment_operator_name) != NULL)
+        if ((cls->flags & CLASS_HAS_VBASES) != 0)
+            generate = 1;
+        else if (type->has_vtable != 0)
+            generate = 1;
+        else if (CClass_MemberObject(cls, assignment_operator_name) != NULL)
             generate = 1;
         for (base = cls->bases; base != NULL; base = base->next) {
             constructor = CClass_AssignmentOperator(base->base);
             if (constructor != NULL) {
                 generate = 1;
-                baseaccess = constructor->access;
-                if (access == 3 || baseaccess == 3 || baseaccess == 1)
-                    access = 3;
-                else
-                    access = 0;
+                access = getaccesstype(access, constructor->access, 1);
                 if ((TYPE_FUNC(constructor->type)->args->next->qual & Q_CONST) == 0)
                     keepconst = 0;
             }
@@ -4981,13 +4371,7 @@ void generate_copy_constructor(ClassLayout *type, TypeClass *cls)
                 constructor = CClass_AssignmentOperator(TYPE_CLASS(membertype));
                 if (constructor != NULL) {
                     generate = 1;
-                    baseaccess = constructor->access;
-                    if (access == 3 || baseaccess == 3 || baseaccess == 1)
-                        access = 3;
-                    else if (baseaccess != 0)
-                        access = 3;
-                    else
-                        access = 0;
+                    access = getaccesstype(access, constructor->access, 0);
                     if ((TYPE_FUNC(constructor->type)->args->next->qual & Q_CONST) == 0)
                         keepconst = 0;
                 }
@@ -4997,35 +4381,28 @@ void generate_copy_constructor(ClassLayout *type, TypeClass *cls)
     if (generate) {
         memclrw(&decl, sizeof(decl));
         decl.qual |= Q_INLINE;
-        func = galloc(sizeof(*func));
-        memclrw(func, sizeof(*func));
-        func->type = TYPEFUNC;
-        resultptr = galloc(sizeof(*resultptr));
-        memclrw(resultptr, sizeof(*resultptr));
-        resultptr->type = TYPEPOINTER;
-        resultptr->size = sizeof(Type *);
-        resultptr->target = TYPE(cls);
-        resultptr->qual = Q_REFERENCE;
-        func->functype = TYPE(resultptr);
-        func->flags = FUNC_METHOD | FUNC_AUTO_GENERATED;
-        func->theclass = cls;
-        func->is_static = 0;
-        arg = CParser_NewFuncArg();
-        if (keepconst)
-            arg->qual = Q_CONST;
-        argptr = galloc(sizeof(*argptr));
-        memclrw(argptr, sizeof(*argptr));
-        argptr->type = TYPEPOINTER;
-        argptr->size = sizeof(Type *);
-        argptr->target = TYPE(cls);
-        argptr->qual = Q_REFERENCE;
-        arg->type = TYPE(argptr);
-        func->args = arg;
-        CDecl_AddThisPointerArgument(TYPE_FUNC(func), cls, 0);
-        decl.thetype = TYPE(func);
+        decl.thetype = TYPE(CDecl_MakeAssignmentOperatorType(cls, keepconst));
         decl.name = assignment_operator_name;
         declare_member_function(type, cls, &decl, access, 1, 0, 0, 0);
     }
+}
+
+static TypeMemberFunc *CDecl_MakeDefaultDtorFuncType(TypeClass *tclass, Boolean vbases)
+{
+    TypeFunc *tfunc;
+
+    tfunc = galloc(sizeof(TypeMemberFunc));
+    memclrw(tfunc, sizeof(TypeMemberFunc));
+    tfunc->type = TYPEFUNC;
+    tfunc->functype = (Type *)&void_ptr;
+    tfunc->flags = FUNC_METHOD | FUNC_AUTO_GENERATED | 0x4000;
+    TYPE_METHOD(tfunc)->theclass = tclass;
+    TYPE_METHOD(tfunc)->is_static = 0;
+    fn_00504240(tfunc);
+    if (vbases)
+        CDecl_PrependFuncArg(tfunc, &stsignedshort);
+    CDecl_AddThisPointerArgument(tfunc, tclass, 0);
+    return TYPE_METHOD(tfunc);
 }
 
 void declare_auto_generated_destructor(ClassLayout *type, TypeClass *cls)
@@ -5037,10 +4414,7 @@ void declare_auto_generated_destructor(ClassLayout *type, TypeClass *cls)
     Boolean isVirtual;
     Boolean hasFunction;
     AccessType access;
-    AccessType inheritedAccess;
     DeclInfo spec;
-    TypeMemberFunc *func;
-    FuncArg *arg;
 
     if (CClass_Destructor(cls) != NULL)
         return;
@@ -5055,11 +4429,7 @@ void declare_auto_generated_destructor(ClassLayout *type, TypeClass *cls)
             hasFunction = 1;
             if (object->datatype == DVFUNC)
                 isVirtual = 1;
-            inheritedAccess = object->access;
-            if (access == ACCESSNONE || inheritedAccess == ACCESSNONE || inheritedAccess == ACCESSPRIVATE)
-                access = ACCESSNONE;
-            else
-                access = ACCESSPUBLIC;
+            access = getaccesstype(access, object->access, 1);
         }
     }
 
@@ -5071,11 +4441,7 @@ void declare_auto_generated_destructor(ClassLayout *type, TypeClass *cls)
             object = CClass_Destructor((TypeClass *)memberType);
             if (object != NULL) {
                 hasFunction = 1;
-                inheritedAccess = object->access;
-                if (access == ACCESSNONE || inheritedAccess == ACCESSNONE || inheritedAccess == ACCESSPRIVATE)
-                    access = ACCESSNONE;
-                else
-                    access = inheritedAccess ? ACCESSNONE : ACCESSPUBLIC;
+                access = getaccesstype(access, object->access, 0);
             }
         }
     }
@@ -5085,21 +4451,7 @@ void declare_auto_generated_destructor(ClassLayout *type, TypeClass *cls)
         spec.qual |= Q_INLINE;
         if (isVirtual)
             spec.qual |= Q_VIRTUAL;
-        func = galloc(sizeof(TypeMemberFunc));
-        memclrw(func, sizeof(TypeMemberFunc));
-        func->type = TYPEFUNC;
-        func->functype = (Type *)&void_ptr;
-        func->flags = FUNC_METHOD | FUNC_AUTO_GENERATED | 0x4000;
-        func->theclass = cls;
-        func->is_static = 0;
-        arg = CParser_NewFuncArg();
-        arg->type = (Type *)&stsignedshort;
-        arg->next = func->args;
-        func->args = arg;
-        if (arg->next != NULL && arg->next->type == &stvoid)
-            arg->next = NULL;
-        CDecl_AddThisPointerArgument(TYPE_FUNC(func), cls, 0);
-        spec.thetype = (Type *)func;
+        spec.thetype = (Type *)CDecl_MakeDefaultDtorFuncType(cls, 1);
         spec.name = destructor_name;
         declare_member_function(type, cls, &spec, access, 1, 0, 0, 0);
     }
@@ -5139,13 +4491,8 @@ void fill_class_layout_entries(ClassLayout *table, TypeClass *type, ObjBase **en
                 entries[slot] = OBJ_BASE(obj);
                 ++filled;
                 if (obj->datatype != DVFUNC && !((TypeMemberFunc *)obj->type)->is_static) {
-                    if (CClass_OverridesBaseMember(type, obj->name, obj)) {
-                        if (is_pascal_object(obj))
-                            CError_ReportError(ERR_VIRTUAL_FUNCTIONS_CANNOT_PASCAL_FUNCTIONS);
-                        if (type->mode == 1)
-                            CError_ReportError(ERR_ILLEGAL_VIRTUAL_FUNCTION_UNION, obj);
-                        obj->datatype = DVFUNC;
-                    }
+                    if (CClass_OverridesBaseMember(type, obj->name, obj))
+                        CDecl_MakeFunctionVirtual(type, obj);
                 }
                 if (obj->datatype == DVFUNC) {
                     table->has_vtable = 1;

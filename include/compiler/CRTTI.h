@@ -66,12 +66,9 @@ extern void collect_public_bases(TypeClass *object, VBasePath *baseList, TypeCla
                                  Boolean recurse);
 extern struct VBasePath *build_vbase_path_list(TypeClass *from, TypeClass *cls, struct VBasePath *list, SInt32 off,
                                                Boolean flag);
-extern void CRTTI_OrBitVector(UInt32 *destination, const UInt32 *source, unsigned int bitCount);
-extern void CRTTI_FillWords(UInt32 *words, int bitCount, unsigned int value);
 extern ENode *CRTTI_ParseDynamicCast(void);
 extern ENode *parse_cast_type_and_expression(DeclInfo *typeSpec);
 extern void *create_rtti_base_records(TypeClass *param);
-extern void CRTTI_IntersectBitVectors(UInt32 *dst, UInt32 *src, SInt32 nbits);
 
 #ifdef __cplusplus
 }

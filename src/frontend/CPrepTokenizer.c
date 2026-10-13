@@ -11,6 +11,7 @@
 #include "compiler/CMachine.h"
 #include "compiler/CodeGen.h"
 #include "compiler/CompilerTools.h"
+#include "version.h"
 #include "driver/COSToolsCLT.h"
 #include "driver/Memory.h"
 /* Buffered lexical item and its associated value. */
@@ -39,265 +40,6 @@ static UInt8 data_00580dd0;
 
 typedef int (*TokenScanner)(short);
 
-/* The scanner of each character a token starts with. */
-static TokenScanner data_0055da98[256] = {
-    (TokenScanner)mark_previous_text_character,
-    (TokenScanner)return_unsigned_minus_six,
-    (TokenScanner)return_unsigned_minus_six,
-    (TokenScanner)return_unsigned_minus_six,
-    (TokenScanner)check_illegal_token,
-    (TokenScanner)check_illegal_token,
-    (TokenScanner)return_unsigned_minus_six,
-    (TokenScanner)return_unsigned_minus_six,
-    (TokenScanner)return_unsigned_minus_six,
-    (TokenScanner)return_unsigned_minus_six,
-    (TokenScanner)return_unsigned_minus_six,
-    (TokenScanner)return_unsigned_minus_six,
-    (TokenScanner)return_unsigned_minus_six,
-    (TokenScanner)fn_00495640,
-    (TokenScanner)return_unsigned_minus_six,
-    (TokenScanner)return_unsigned_minus_six,
-    (TokenScanner)return_unsigned_minus_six,
-    (TokenScanner)return_unsigned_minus_six,
-    (TokenScanner)return_unsigned_minus_six,
-    (TokenScanner)return_unsigned_minus_six,
-    (TokenScanner)return_unsigned_minus_six,
-    (TokenScanner)return_unsigned_minus_six,
-    (TokenScanner)return_unsigned_minus_six,
-    (TokenScanner)return_unsigned_minus_six,
-    (TokenScanner)return_unsigned_minus_six,
-    (TokenScanner)return_unsigned_minus_six,
-    (TokenScanner)check_null_terminator,
-    (TokenScanner)return_unsigned_minus_six,
-    (TokenScanner)return_unsigned_minus_six,
-    (TokenScanner)return_unsigned_minus_six,
-    (TokenScanner)return_unsigned_minus_six,
-    (TokenScanner)return_unsigned_minus_six,
-    (TokenScanner)return_unsigned_minus_six,
-    (TokenScanner)scan_not_or_logical_ne,
-    (TokenScanner)scan_string_literal,
-    (TokenScanner)parse_directive_or_return_hash,
-    (TokenScanner)clear_global_and_return_argument,
-    (TokenScanner)tokenize_percent,
-    (TokenScanner)tokenize_and,
-    (TokenScanner)scan_character_constant,
-    (TokenScanner)clear_global_and_return_argument,
-    (TokenScanner)clear_global_and_return_argument,
-    (TokenScanner)scan_star_or_mult_assign,
-    (TokenScanner)scan_plus_token,
-    (TokenScanner)clear_global_and_return_argument,
-    (TokenScanner)scan_minus_token,
-    (TokenScanner)scan_dot_token,
-    (TokenScanner)scan_div_assign,
-    (TokenScanner)parse_zero_prefixed_number,
-    (TokenScanner)scan_numeric_literal,
-    (TokenScanner)scan_numeric_literal,
-    (TokenScanner)scan_numeric_literal,
-    (TokenScanner)scan_numeric_literal,
-    (TokenScanner)scan_numeric_literal,
-    (TokenScanner)scan_numeric_literal,
-    (TokenScanner)scan_numeric_literal,
-    (TokenScanner)scan_numeric_literal,
-    (TokenScanner)scan_numeric_literal,
-    (TokenScanner)tokenize_colon,
-    (TokenScanner)clear_global_and_return_argument,
-    (TokenScanner)scan_less_token,
-    (TokenScanner)tokenize_equals,
-    (TokenScanner)scan_greater_token,
-    (TokenScanner)clear_global_and_return_argument,
-    (TokenScanner)scan_at_token,
-    (TokenScanner)scan_identifier_and_expand_macro,
-    (TokenScanner)scan_identifier_and_expand_macro,
-    (TokenScanner)scan_identifier_and_expand_macro,
-    (TokenScanner)scan_identifier_and_expand_macro,
-    (TokenScanner)scan_identifier_and_expand_macro,
-    (TokenScanner)scan_identifier_and_expand_macro,
-    (TokenScanner)scan_identifier_and_expand_macro,
-    (TokenScanner)scan_identifier_and_expand_macro,
-    (TokenScanner)scan_identifier_and_expand_macro,
-    (TokenScanner)scan_identifier_and_expand_macro,
-    (TokenScanner)scan_identifier_and_expand_macro,
-    (TokenScanner)scan_quoted_literal,
-    (TokenScanner)scan_identifier_and_expand_macro,
-    (TokenScanner)scan_identifier_and_expand_macro,
-    (TokenScanner)scan_identifier_and_expand_macro,
-    (TokenScanner)scan_identifier_and_expand_macro,
-    (TokenScanner)scan_identifier_and_expand_macro,
-    (TokenScanner)scan_identifier_and_expand_macro,
-    (TokenScanner)scan_identifier_and_expand_macro,
-    (TokenScanner)scan_identifier_and_expand_macro,
-    (TokenScanner)scan_identifier_and_expand_macro,
-    (TokenScanner)scan_identifier_and_expand_macro,
-    (TokenScanner)scan_identifier_and_expand_macro,
-    (TokenScanner)scan_identifier_and_expand_macro,
-    (TokenScanner)scan_identifier_and_expand_macro,
-    (TokenScanner)scan_identifier_and_expand_macro,
-    (TokenScanner)clear_global_and_return_argument,
-    (TokenScanner)clear_global_and_return_argument,
-    (TokenScanner)clear_global_and_return_argument,
-    (TokenScanner)scan_xor_operator,
-    (TokenScanner)classify_identifier_token,
-    (TokenScanner)clear_global_and_return_argument,
-    (TokenScanner)scan_identifier_or_keyword_a,
-    (TokenScanner)scan_b_keyword,
-    (TokenScanner)fn_00493ea0,
-    (TokenScanner)scan_d_keyword,
-    (TokenScanner)recognize_e_keyword,
-    (TokenScanner)classify_f_keyword,
-    (TokenScanner)expand_macro_or_classify_identifier,
-    (TokenScanner)scan_identifier_and_expand_macro,
-    (TokenScanner)scan_i_keyword,
-    (TokenScanner)scan_identifier_and_expand_macro,
-    (TokenScanner)scan_identifier_and_expand_macro,
-    (TokenScanner)classify_identifier_name_token,
-    (TokenScanner)classify_mutable_or_identifier,
-    (TokenScanner)scan_n_keyword,
-    (TokenScanner)scan_o_keyword,
-    (TokenScanner)scan_identifier,
-    (TokenScanner)scan_identifier_and_expand_macro,
-    (TokenScanner)scan_r_keyword,
-    (TokenScanner)tokenize_s_keyword,
-    (TokenScanner)scan_t_keyword,
-    (TokenScanner)classify_u_keyword,
-    (TokenScanner)tokenize_v_keyword,
-    (TokenScanner)classify_w_keyword,
-    (TokenScanner)classify_identifier_or_xor_token,
-    (TokenScanner)scan_identifier_and_expand_macro,
-    (TokenScanner)scan_identifier_and_expand_macro,
-    (TokenScanner)clear_global_and_return_argument,
-    (TokenScanner)scan_bitor,
-    (TokenScanner)clear_global_and_return_argument,
-    (TokenScanner)clear_global_and_return_argument,
-    (TokenScanner)return_unsigned_minus_six,
-    (TokenScanner)return_unsigned_minus_six,
-    (TokenScanner)return_unsigned_minus_six,
-    (TokenScanner)return_unsigned_minus_six,
-    (TokenScanner)return_unsigned_minus_six,
-    (TokenScanner)return_unsigned_minus_six,
-    (TokenScanner)return_unsigned_minus_six,
-    (TokenScanner)return_unsigned_minus_six,
-    (TokenScanner)return_unsigned_minus_six,
-    (TokenScanner)return_unsigned_minus_six,
-    (TokenScanner)return_unsigned_minus_six,
-    (TokenScanner)return_unsigned_minus_six,
-    (TokenScanner)return_unsigned_minus_six,
-    (TokenScanner)return_unsigned_minus_six,
-    (TokenScanner)return_unsigned_minus_six,
-    (TokenScanner)return_unsigned_minus_six,
-    (TokenScanner)return_unsigned_minus_six,
-    (TokenScanner)return_unsigned_minus_six,
-    (TokenScanner)return_unsigned_minus_six,
-    (TokenScanner)return_unsigned_minus_six,
-    (TokenScanner)return_unsigned_minus_six,
-    (TokenScanner)return_unsigned_minus_six,
-    (TokenScanner)return_unsigned_minus_six,
-    (TokenScanner)return_unsigned_minus_six,
-    (TokenScanner)return_unsigned_minus_six,
-    (TokenScanner)return_unsigned_minus_six,
-    (TokenScanner)return_unsigned_minus_six,
-    (TokenScanner)return_unsigned_minus_six,
-    (TokenScanner)return_unsigned_minus_six,
-    (TokenScanner)return_unsigned_minus_six,
-    (TokenScanner)return_unsigned_minus_six,
-    (TokenScanner)return_unsigned_minus_six,
-    (TokenScanner)return_unsigned_minus_six,
-    (TokenScanner)return_unsigned_minus_six,
-    (TokenScanner)return_unsigned_minus_six,
-    (TokenScanner)return_unsigned_minus_six,
-    (TokenScanner)return_unsigned_minus_six,
-    (TokenScanner)return_unsigned_minus_six,
-    (TokenScanner)return_unsigned_minus_six,
-    (TokenScanner)return_unsigned_minus_six,
-    (TokenScanner)return_unsigned_minus_six,
-    (TokenScanner)return_unsigned_minus_six,
-    (TokenScanner)return_unsigned_minus_six,
-    (TokenScanner)return_unsigned_minus_six,
-    (TokenScanner)return_unsigned_minus_six,
-    (TokenScanner)return_unsigned_minus_six,
-    (TokenScanner)return_unsigned_minus_six,
-    (TokenScanner)return_unsigned_minus_six,
-    (TokenScanner)return_unsigned_minus_six,
-    (TokenScanner)return_unsigned_minus_six,
-    (TokenScanner)return_unsigned_minus_six,
-    (TokenScanner)return_unsigned_minus_six,
-    (TokenScanner)return_unsigned_minus_six,
-    (TokenScanner)return_unsigned_minus_six,
-    (TokenScanner)return_unsigned_minus_six,
-    (TokenScanner)return_unsigned_minus_six,
-    (TokenScanner)return_unsigned_minus_six,
-    (TokenScanner)return_unsigned_minus_six,
-    (TokenScanner)return_unsigned_minus_six,
-    (TokenScanner)return_unsigned_minus_six,
-    (TokenScanner)return_unsigned_minus_six,
-    (TokenScanner)return_unsigned_minus_six,
-    (TokenScanner)return_unsigned_minus_six,
-    (TokenScanner)return_unsigned_minus_six,
-    (TokenScanner)return_unsigned_minus_six,
-    (TokenScanner)return_unsigned_minus_six,
-    (TokenScanner)return_unsigned_minus_six,
-    (TokenScanner)return_unsigned_minus_six,
-    (TokenScanner)return_unsigned_minus_six,
-    (TokenScanner)return_unsigned_minus_six,
-    (TokenScanner)return_unsigned_minus_six,
-    (TokenScanner)return_unsigned_minus_six,
-    (TokenScanner)return_unsigned_minus_six,
-    (TokenScanner)return_unsigned_minus_six,
-    (TokenScanner)return_unsigned_minus_six,
-    (TokenScanner)return_unsigned_minus_six,
-    (TokenScanner)return_unsigned_minus_six,
-    (TokenScanner)return_unsigned_minus_six,
-    (TokenScanner)return_unsigned_minus_six,
-    (TokenScanner)return_unsigned_minus_six,
-    (TokenScanner)return_unsigned_minus_six,
-    (TokenScanner)return_unsigned_minus_six,
-    (TokenScanner)return_unsigned_minus_six,
-    (TokenScanner)return_unsigned_minus_six,
-    (TokenScanner)return_unsigned_minus_six,
-    (TokenScanner)return_unsigned_minus_six,
-    (TokenScanner)return_unsigned_minus_six,
-    (TokenScanner)return_unsigned_minus_six,
-    (TokenScanner)return_unsigned_minus_six,
-    (TokenScanner)return_unsigned_minus_six,
-    (TokenScanner)return_unsigned_minus_six,
-    (TokenScanner)return_unsigned_minus_six,
-    (TokenScanner)return_unsigned_minus_six,
-    (TokenScanner)return_unsigned_minus_six,
-    (TokenScanner)return_unsigned_minus_six,
-    (TokenScanner)return_unsigned_minus_six,
-    (TokenScanner)return_unsigned_minus_six,
-    (TokenScanner)return_unsigned_minus_six,
-    (TokenScanner)return_unsigned_minus_six,
-    (TokenScanner)return_unsigned_minus_six,
-    (TokenScanner)return_unsigned_minus_six,
-    (TokenScanner)return_unsigned_minus_six,
-    (TokenScanner)return_unsigned_minus_six,
-    (TokenScanner)return_unsigned_minus_six,
-    (TokenScanner)return_unsigned_minus_six,
-    (TokenScanner)return_unsigned_minus_six,
-    (TokenScanner)return_unsigned_minus_six,
-    (TokenScanner)return_unsigned_minus_six,
-    (TokenScanner)return_unsigned_minus_six,
-    (TokenScanner)return_unsigned_minus_six,
-    (TokenScanner)return_unsigned_minus_six,
-    (TokenScanner)return_unsigned_minus_six,
-    (TokenScanner)return_unsigned_minus_six,
-    (TokenScanner)return_unsigned_minus_six,
-    (TokenScanner)return_unsigned_minus_six,
-    (TokenScanner)return_unsigned_minus_six,
-    (TokenScanner)return_unsigned_minus_six,
-    (TokenScanner)return_unsigned_minus_six,
-    (TokenScanner)return_unsigned_minus_six,
-    (TokenScanner)return_unsigned_minus_six,
-    (TokenScanner)return_unsigned_minus_six,
-    (TokenScanner)return_unsigned_minus_six,
-    (TokenScanner)return_unsigned_minus_six,
-    (TokenScanner)return_unsigned_minus_six,
-    (TokenScanner)return_unsigned_minus_six,
-    (TokenScanner)return_unsigned_minus_six,
-    (TokenScanner)return_unsigned_minus_six,
-    (TokenScanner)return_unsigned_minus_six,
-    (TokenScanner)return_unsigned_minus_six,
-};
 #define KW(s, n) (memcmp(s, (char *)(data_00587fa0->name), n) == 0)
 
 static inline struct TStreamElement *CurrentBufferedToken(void)
@@ -310,7 +52,7 @@ static inline Float *BufferedTokenFloat(struct TStreamElement *token)
     return &token->data.tkfloatconst;
 }
 
-static int cmpw(const void *a, const void *b, unsigned int n)
+static inline int cmpw(const void *a, const void *b, unsigned int n)
 {
     return memcmp(a, b, n);
 }
@@ -327,38 +69,17 @@ static inline void CPrepTokenizer_CheckCppExtension(void)
         fn_0043f3b0(0x153);
 }
 
-static UInt8 *nextcharposition(void)
+static inline UInt8 *nextcharposition(void)
 {
     return (UInt8 *)lookahead_position;
 }
 
-static short prepnextchar2(void)
-{
-    UInt8 *start;
-    short c;
-
-    start = currentTextPosition;
-    c = CPrepTokenizer_NextChar();
-    lookahead_position = (char *)currentTextPosition;
-    currentTextPosition = start;
-    return c;
-}
-
-static int IsWide(void)
+static inline int IsWide(void)
 {
     int r = 0;
     if (copts.wchar_type && copts.cplusplus)
         r = 1;
     return r;
-}
-
-static UInt16 peek(void)
-{
-    UInt8 *save = currentTextPosition;
-    UInt16 c = CPrepTokenizer_NextChar();
-    lookahead_position = (char *)currentTextPosition;
-    currentTextPosition = save;
-    return c;
 }
 
 static inline UInt8 *lookaheadState(void)
@@ -401,16 +122,17 @@ static inline unsigned char *ReadParserState(char *state)
     return (unsigned char *)state;
 }
 
-static inline unsigned char *findSpliceLineStart(char *lineStart)
+static unsigned char find_start(unsigned char *s)
 {
+    char *lineStart = (char *)s;
     if (macro_expansion_depth == 0) {
-        while (*lineStart != 13 && lineStart > data_00587fb0)
-            --lineStart;
+        while (*lineStart != '\r' && lineStart > data_00587fb0)
+            lineStart--;
     } else {
-        while (*lineStart != 13 && lineStart > macro_text_start)
-            --lineStart;
+        while (*lineStart != '\r' && lineStart > macro_text_start)
+            lineStart--;
     }
-    return (unsigned char *)lineStart;
+    return COS_IsMultiByte((unsigned char *)lineStart, s);
 }
 
 static inline UInt8 CPrepTokenizer_ObjectiveCEnabled(void)
@@ -421,8 +143,7 @@ static inline UInt8 CPrepTokenizer_ObjectiveCEnabled(void)
 static inline void CPrepTokenizer_SkipLineSplices(unsigned char **position)
 {
     if (copts.multibyteaware != 0) {
-        while (**position == '\\' && COS_IsMultiByte(findSpliceLineStart((char *)*position), *position) == 0 &&
-               (*position)[1] == '\r') {
+        while (**position == '\\' && find_start(*position) == 0 && (*position)[1] == '\r') {
             CPrep_IncrementCountersAndUpdateTextOffset();
             if ((*position)[2] == '\n')
                 *position += 3;
@@ -438,80 +159,6 @@ static inline void CPrepTokenizer_SkipLineSplices(unsigned char **position)
                 *position += 2;
         }
     }
-}
-
-static inline short hex(short input)
-{
-    short c = input;
-    if (input >= 48 && c <= 57)
-        c = c - 48;
-    else if (c >= 97 && c <= 102)
-        c = c - 87;
-    else if (c >= 65 && c <= 70)
-        c = c - 55;
-    else
-        c = -1;
-    return c;
-}
-
-static inline short hex2(short c)
-{
-    if (c >= 48 && c <= 57)
-        return c - 48;
-    if (c >= 97 && c <= 102)
-        return c - 87;
-    if (c >= 65 && c <= 70)
-        return c - 55;
-    return -1;
-}
-
-static inline short hexlook(int input)
-{
-    short c;
-    if ((c = input) >= 48 && c <= 57)
-        c = c - 48;
-    else if (c >= 97 && c <= 102)
-        c = c - 87;
-    else if (c >= 65 && c <= 70)
-        c = c - 55;
-    else
-        c = -1;
-    return c;
-}
-
-static inline int complement(int value)
-{
-    int mask = ~value;
-    return mask;
-}
-
-static inline unsigned char *cursor_start(void)
-{
-    return currentTextPosition - 1;
-}
-
-static inline char verify(unsigned char *saved)
-{
-    char *v1 = (char *)saved;
-    if (macro_expansion_depth == 0) {
-        for (; *v1 != 13 && v1 > data_00587fb0; --v1)
-            ;
-    } else {
-        for (; *v1 != 13 && v1 > macro_text_start; --v1)
-            ;
-    }
-    return COS_IsMultiByte((unsigned char *)v1, saved);
-}
-
-static inline short signedpeek(void)
-{
-    short c;
-    unsigned char *saved = currentTextPosition;
-    data_00580dd0 = 0;
-    c = fn_00496610(0);
-    lookahead_position = (char *)currentTextPosition;
-    currentTextPosition = saved;
-    return c;
 }
 
 static inline int needs_unsigned(unsigned int n, char u)
@@ -530,79 +177,9 @@ static inline short CPrep_ReadLookaheadCharacter(void)
     return character;
 }
 
-static inline unsigned char CheckEscapedNewline(UInt8 *cursor)
-{
-    unsigned char *slash;
-    unsigned char *lineStart;
-    lineStart = slash = cursor - 1;
-    if (macro_expansion_depth == 0) {
-        while (*lineStart != '\r' && lineStart > (unsigned char *)data_00587fb0)
-            --lineStart;
-    } else {
-        while (*lineStart != '\r' && (char *)lineStart > macro_text_start)
-            --lineStart;
-    }
-    return COS_IsMultiByte(lineStart, slash);
-}
-
-static unsigned char *find_start(unsigned char *s)
-{
-    char *lineStart = (char *)s;
-    if (macro_expansion_depth == 0) {
-        while (*lineStart != '\r' && lineStart > data_00587fb0)
-            lineStart--;
-    } else {
-        while (*lineStart != '\r' && lineStart > macro_text_start)
-            lineStart--;
-    }
-    return (unsigned char *)lineStart;
-}
-
-static inline unsigned char is_multibyte_trail_before(unsigned char *p)
-{
-    unsigned char *s;
-    unsigned char *q;
-    q = (s = p - 1);
-    if (macro_expansion_depth == 0) {
-        while (*q != '\r' && q > (unsigned char *)data_00587fb0)
-            q--;
-    } else {
-        while (*q != '\r' && (char *)q > macro_text_start)
-            q--;
-    }
-    return COS_IsMultiByte(q, s);
-}
-
 static inline char multibyte_characters_enabled(void)
 {
     return copts.multibyteaware;
-}
-
-static inline unsigned char CPrepTokenizer_CheckSplice(unsigned char *cursor)
-{
-    char *lineStart = (char *)cursor;
-    if (macro_expansion_depth == 0) {
-        while (*lineStart != '\r' && lineStart > data_00587fb0)
-            lineStart--;
-    } else {
-        while (*lineStart != '\r' && lineStart > macro_text_start)
-            lineStart--;
-    }
-    return COS_IsMultiByte((unsigned char *)lineStart, cursor);
-}
-
-static inline unsigned char CPrepTokenizer_IsDBCSTrail(unsigned char *cursor)
-{
-    unsigned char *backslash = cursor;
-    char *lineStart = (char *)--backslash;
-    if (macro_expansion_depth == 0) {
-        while (*lineStart != '\r' && lineStart > data_00587fb0)
-            lineStart--;
-    } else {
-        while (*lineStart != '\r' && lineStart > macro_text_start)
-            lineStart--;
-    }
-    return COS_IsMultiByte((unsigned char *)lineStart, backslash);
 }
 
 short CPrepTokenizer_ScanChar(void)
@@ -640,7 +217,7 @@ short CPrepTokenizer_ScanChar(void)
                 currentTextPosition = cursor;
                 cursor++;
                 if (copts.multibyteaware != 0) {
-                    while (*cursor == '\\' && CPrepTokenizer_CheckSplice(cursor) == 0 && cursor[1] == '\r') {
+                    while (*cursor == '\\' && find_start(cursor) == 0 && cursor[1] == '\r') {
                         CPrep_IncrementCountersAndUpdateTextOffset();
                         if (cursor[2] == '\n')
                             cursor += 3;
@@ -679,8 +256,7 @@ short CPrepTokenizer_ScanChar(void)
                             }
                             if (ch == '*') {
                                 if (copts.multibyteaware != 0) {
-                                    while (*cursor == '\\' && CPrepTokenizer_CheckSplice(cursor) == 0 &&
-                                           cursor[1] == '\r') {
+                                    while (*cursor == '\\' && find_start(cursor) == 0 && cursor[1] == '\r') {
                                         CPrep_IncrementCountersAndUpdateTextOffset();
                                         if (cursor[2] == '\n')
                                             cursor += 3;
@@ -723,7 +299,7 @@ short CPrepTokenizer_ScanChar(void)
                 cursor++;
             splice:
                 if (*cursor == '\r') {
-                    if (!copts.multibyteaware || !CPrepTokenizer_IsDBCSTrail(cursor)) {
+                    if (!copts.multibyteaware || !find_start((unsigned char *)((char *)cursor - 1))) {
                         CPrep_IncrementCountersAndUpdateTextOffset();
                         if (cursor[1] == '\n')
                             cursor += 2;
@@ -805,7 +381,7 @@ short CPrepTokenizer_NextChar(void)
 
             case '/':
                 if (multibyte_characters_enabled()) {
-                    while (*cursor == '\\' && COS_IsMultiByte(find_start(cursor), cursor) == 0 && cursor[1] == '\r') {
+                    while (*cursor == '\\' && find_start(cursor) == 0 && cursor[1] == '\r') {
                         CPrep_IncrementCountersAndUpdateTextOffset();
                         if (cursor[2] == '\n')
                             cursor += 3;
@@ -842,8 +418,7 @@ short CPrepTokenizer_NextChar(void)
                         }
                         if (character == '*') {
                             if (multibyte_characters_enabled()) {
-                                while (*cursor == '\\' && COS_IsMultiByte(find_start(cursor), cursor) == 0 &&
-                                       cursor[1] == '\r') {
+                                while (*cursor == '\\' && find_start(cursor) == 0 && cursor[1] == '\r') {
                                     CPrep_IncrementCountersAndUpdateTextOffset();
                                     if (cursor[2] == '\n')
                                         cursor += 3;
@@ -873,7 +448,8 @@ short CPrepTokenizer_NextChar(void)
 
             case '\\':
                 do {
-                    if (*cursor == '\r' && (!multibyte_characters_enabled() || !is_multibyte_trail_before(cursor))) {
+                    if (*cursor == '\r' &&
+                        (!multibyte_characters_enabled() || !find_start((unsigned char *)((char *)cursor - 1)))) {
                         CPrep_IncrementCountersAndUpdateTextOffset();
                         if (cursor[1] == '\n')
                             cursor += 2;
@@ -949,7 +525,8 @@ short fn_00496610(char report)
                 return ch;
             case '\\':
             processBackslash:
-                if (*cursor == '\r' && (copts.multibyteaware == 0 || CheckEscapedNewline(cursor) == 0)) {
+                if (*cursor == '\r' &&
+                    (copts.multibyteaware == 0 || find_start((unsigned char *)((char *)cursor - 1)) == 0)) {
                     if (report != 0)
                         CPrep_IncrementCountersAndUpdateTextOffset();
                     else
@@ -1005,24 +582,37 @@ short fn_00496610(char report)
     }
 }
 
-SInt16 CPrepTokenizer_PeekChar(void)
+short CPrepTokenizer_PeekChar(void)
 {
-    UInt8 *lift_value_0;
-    SInt16 lift_call_1;
-    UInt8 *lift_value_2;
-    lift_value_0 = currentTextPosition;
-    lift_call_1 = CPrepTokenizer_NextChar();
-    lift_value_2 = currentTextPosition;
-    lookahead_position = (char *)lift_value_2;
-    currentTextPosition = lift_value_0;
-    return lift_call_1;
+    UInt8 *save = currentTextPosition;
+    short c = CPrepTokenizer_NextChar();
+    lookahead_position = (char *)currentTextPosition;
+    currentTextPosition = save;
+    return c;
+}
+
+static short peek_char_quietly(void)
+{
+    UInt8 *save = currentTextPosition;
+    short c;
+    data_00580dd0 = 0;
+    c = fn_00496610(0);
+    lookahead_position = (char *)currentTextPosition;
+    currentTextPosition = save;
+    return c;
+}
+
+static void accept_peeked_char(void)
+{
+    currentTextPosition = (UInt8 *)lookahead_position;
+    if (data_00580dd0)
+        CPrep_IncrementCountersAndUpdateTextOffset();
 }
 
 UInt8 *CPrepTokenizer_ScanIdentifier(UInt8 *cursor)
 {
     UInt8 character;
     UInt8 lineStatus;
-    UInt8 *lineStart;
     int length;
     char identifier[256];
 
@@ -1041,17 +631,7 @@ UInt8 *CPrepTokenizer_ScanIdentifier(UInt8 *cursor)
         if (copts.multibyteaware != '\0') {
             if (character != '\\')
                 break;
-            lineStart = cursor;
-            if (macro_expansion_depth == 0) {
-                while ((*lineStart != '\r') && ((char *)lineStart > data_00587fb0)) {
-                    lineStart = lineStart - 1;
-                }
-            } else {
-                while ((*lineStart != '\r') && ((char *)lineStart > macro_text_start)) {
-                    lineStart = lineStart - 1;
-                }
-            }
-            lineStatus = COS_IsMultiByte(lineStart, cursor);
+            lineStatus = find_start(cursor);
             if ((lineStatus != '\0') || (cursor[1] != '\r'))
                 break;
             if (cursor[2] == '\n') {
@@ -1079,7 +659,6 @@ UInt8 *CPrepTokenizer_ScanIdentifier(UInt8 *cursor)
 short fn_004961c0(short suffix, int radix)
 {
     Boolean isLong;
-    short next;
     SInt32 high;
     UInt32 low;
     int unsignedLongLong;
@@ -1093,18 +672,16 @@ short fn_004961c0(short suffix, int radix)
         case 'u':
             isUnsigned = 1;
             currentTextPosition = (UInt8 *)lookahead_position;
-            next = peek();
-            suffix = next;
-            if (next != 'l' && next != 'L')
+            suffix = CPrepTokenizer_PeekChar();
+            if (suffix != 'l' && suffix != 'L')
                 break;
             isLong = 1;
             suffix = CPrep_ReadLookaheadCharacter();
             if (copts.longlong == 0)
                 break;
             currentTextPosition = (UInt8 *)lookahead_position;
-            next = peek();
-            suffix = next;
-            if (next != 'l' && next != 'L')
+            suffix = CPrepTokenizer_PeekChar();
+            if (suffix != 'l' && suffix != 'L')
                 break;
             isLongLong = 1;
             suffix = CPrep_ReadLookaheadCharacter();
@@ -1113,14 +690,13 @@ short fn_004961c0(short suffix, int radix)
         case 'l':
             isLong = 1;
             currentTextPosition = (UInt8 *)lookahead_position;
-            next = peek();
-            suffix = next;
-            if (next == 'u' || next == 'U') {
+            suffix = CPrepTokenizer_PeekChar();
+            if (suffix == 'u' || suffix == 'U') {
                 isUnsigned = 1;
                 suffix = CPrep_ReadLookaheadCharacter();
                 break;
             }
-            if (copts.longlong == 0 || (next != 'l' && next != 'L'))
+            if (copts.longlong == 0 || (suffix != 'l' && suffix != 'L'))
                 break;
             isLongLong = 1;
             suffix = CPrep_ReadLookaheadCharacter();
@@ -1129,13 +705,11 @@ short fn_004961c0(short suffix, int radix)
         case 'i':
             if (copts.cpp_extensions != 0 && copts.ANSIstrict == 0 && copts.longlong != 0) {
                 currentTextPosition = (UInt8 *)lookahead_position;
-                next = peek();
-                suffix = next;
-                if (next == '6') {
+                suffix = CPrepTokenizer_PeekChar();
+                if (suffix == '6') {
                     currentTextPosition = (UInt8 *)lookahead_position;
-                    next = peek();
-                    suffix = next;
-                    if (next == '4') {
+                    suffix = CPrepTokenizer_PeekChar();
+                    if (suffix == '4') {
                         isLong = isLongLong = 1;
                         suffix = CPrep_ReadLookaheadCharacter();
                     }
@@ -1238,6 +812,17 @@ SInt16 parse_float_suffix(short suffix)
     return floatType;
 }
 
+static short hex_digit_value(short c)
+{
+    if (c >= '0' && c <= '9')
+        return c - '0';
+    if (c >= 'a' && c <= 'f')
+        return c - 'a' + 10;
+    if (c >= 'A' && c <= 'F')
+        return c - 'A' + 10;
+    return -1;
+}
+
 unsigned int read_escaped_character(void)
 {
     short count;
@@ -1245,83 +830,74 @@ unsigned int read_escaped_character(void)
     int mask;
     short ch;
     short escape;
-    int overflowMask;
+    char overflow;
+    short digit;
+
     mask = 255;
     if (data_00588515 != 0)
         mask = 65535;
     data_005884fc = 0;
     ch = fn_00496610(1);
-    if (ch == 92 && (copts.multibyteaware == 0 || !verify(cursor_start()))) {
+    if (ch == '\\' && (copts.multibyteaware == 0 || !find_start(currentTextPosition - 1))) {
         data_005884fc = 1;
         switch (escape = fn_00496610(1)) {
-            case 97:
+            case 'a':
                 return 7;
-            case 98:
+            case 'b':
                 return 8;
-            case 116:
+            case 't':
                 return 9;
-            case 118:
+            case 'v':
                 return 11;
-            case 102:
+            case 'f':
                 return 12;
-            case 110:
+            case 'n':
                 if (copts.mpwc_newline != 0)
                     return 13;
                 return 10;
-            case 114:
+            case 'r':
                 if (copts.mpwc_newline != 0)
                     return 10;
                 return 13;
-            case 101:
+            case 'e':
                 return 27;
-            case 120: {
-                char overflow;
-                short digit;
-                value = hex(fn_00496610(1));
+            case 'x':
+                value = hex_digit_value(fn_00496610(1));
                 if (value == -1) {
                     CPrep_ReportError(100);
-                    return 32;
+                    return ' ';
                 }
                 overflow = 0;
-                overflowMask = complement(mask);
-                while (digit = signedpeek(), hexlook((unsigned short)digit) != -1) {
-                    value = hex2(digit) + (value << 4), currentTextPosition = (unsigned char *)lookahead_position;
-                    if (data_00580dd0 != 0)
-                        CPrep_IncrementCountersAndUpdateTextOffset();
-                    if (value & overflowMask)
+                while (hex_digit_value(digit = peek_char_quietly()) != -1) {
+                    value = (value << 4) + hex_digit_value(digit);
+                    accept_peeked_char();
+                    if (value & ~mask)
                         overflow = 1;
                 }
                 if (overflow)
                     CError_ReportError(ERR_ILLEGAL_CHARACTER_CONSTANT);
                 break;
-            }
-            default: {
-                char overflow;
-                short raw;
-                short digit;
-                if (escape >= 48 && escape <= 55) {
+            default:
+                if (escape >= '0' && escape <= '7') {
                     overflow = 0;
-                    overflowMask = mask;
                     count = 1;
-                    value = escape - 48;
-                    overflowMask = ~overflowMask;
-                    while (count < 3 && (digit = raw = signedpeek()) >= 48 && raw <= 55) {
-                        value = (value << 3) + raw - 48;
-                        currentTextPosition = (unsigned char *)lookahead_position;
-                        if (data_00580dd0 != 0)
-                            CPrep_IncrementCountersAndUpdateTextOffset();
-                        if (value & overflowMask)
+                    value = escape - '0';
+                    while (count < 3 && (digit = peek_char_quietly()) >= '0' && digit <= '7') {
+                        value = (value << 3) + digit - '0';
+                        accept_peeked_char();
+                        if (value & ~mask)
                             overflow = 1;
-                        ++count;
+                        count++;
                     }
                     if (overflow)
                         CError_ReportError(ERR_ILLEGAL_CHARACTER_CONSTANT);
-                } else
+                } else {
                     value = escape;
-            }
+                }
         }
-    } else
+    } else {
         value = ch;
+    }
     if (mask == 255)
         return (signed char)(value & mask);
     return value & mask;
@@ -1379,10 +955,6 @@ void CPrepTokenizer_SkipToDelimiter(SInt16 delimiter)
 
 unsigned char *skip_line(unsigned char *p)
 {
-    unsigned char *q;
-    unsigned char *start;
-    unsigned char *back;
-
     for (;;) {
         switch (*p++) {
             case 0:
@@ -1397,18 +969,7 @@ unsigned char *skip_line(unsigned char *p)
                 return p;
             case '\\':
                 if (copts.multibyteaware != 0) {
-                    start = p;
-                    back = start;
-                    q = --back;
-                    start = back;
-                    if (macro_expansion_depth == 0) {
-                        while (*q != '\r' && q > (unsigned char *)data_00587fb0)
-                            q--;
-                    } else {
-                        while (*q != '\r' && (char *)q > macro_text_start)
-                            q--;
-                    }
-                    if (COS_IsMultiByte(q, start))
+                    if (find_start((unsigned char *)((char *)p - 1)))
                         break;
                 }
                 if (*p == '\r')
@@ -1424,7 +985,9 @@ Boolean CPrepTokenizer_SkipQuotedLiteral(UInt8 *p, SInt16 quote)
 {
     UInt8 c;
     UInt8 *q;
+#if VERSION > VERSION_GC_1_0
     UInt8 *f;
+#endif
 
     currentTextPosition = (p - 1);
     for (;;) {
@@ -1449,6 +1012,10 @@ Boolean CPrepTokenizer_SkipQuotedLiteral(UInt8 *p, SInt16 quote)
                 break;
             case '\\':
                 if (copts.multibyteaware != 0) {
+#if VERSION == VERSION_GC_1_0
+                    if (find_start((unsigned char *)((char *)p - 1)))
+                        break;
+#else
                     f = q = p - 1;
                     if (macro_expansion_depth == 0) {
                         while (*f != '\r' && f > (UInt8 *)data_00587fb0)
@@ -1459,6 +1026,7 @@ Boolean CPrepTokenizer_SkipQuotedLiteral(UInt8 *p, SInt16 quote)
                     }
                     if (COS_IsMultiByte(f, q))
                         break;
+#endif
                 }
                 q = p++;
                 c = *q;
@@ -1487,7 +1055,9 @@ void CPrepTokenizer_SkipToEndOfLine(void)
 {
     unsigned short ch;
     unsigned char *cursor;
-    unsigned char *spliceLineStart;
+#if VERSION > VERSION_GC_1_0
+    char *spliceLineStart;
+#endif
 
     cursor = currentTextPosition;
     for (;;) {
@@ -1543,9 +1113,21 @@ void CPrepTokenizer_SkipToEndOfLine(void)
                 break;
             case '\\':
                 if (copts.multibyteaware != 0) {
-                    spliceLineStart = findSpliceLineStart((char *)cursor - 1);
-                    if (COS_IsMultiByte(spliceLineStart, (unsigned char *)((char *)cursor - 1)) != 0)
+#if VERSION == VERSION_GC_1_0
+                    if (find_start((unsigned char *)((char *)cursor - 1)))
                         break;
+#else
+                    spliceLineStart = (char *)cursor - 1;
+                    if (macro_expansion_depth == 0) {
+                        while (*spliceLineStart != '\r' && spliceLineStart > data_00587fb0)
+                            --spliceLineStart;
+                    } else {
+                        while (*spliceLineStart != '\r' && spliceLineStart > macro_text_start)
+                            --spliceLineStart;
+                    }
+                    if (COS_IsMultiByte((unsigned char *)spliceLineStart, (unsigned char *)((char *)cursor - 1)) != 0)
+                        break;
+#endif
                 }
                 if (*cursor != '\r')
                     break;
@@ -1671,22 +1253,11 @@ SInt32 scan_string_literal(short ch)
     output = string_literal_storage->data;
     data_005882de = 0;
     length = 0;
-    savedPosition = currentTextPosition;
-    data_00580dd0 = 0;
-    nextChar = fn_00496610(0);
-    lookahead_position = (char *)currentTextPosition;
-    currentTextPosition = savedPosition;
-    if (nextChar == '\\') {
-        currentTextPosition = (UInt8 *)lookahead_position;
-        if (data_00580dd0 != 0)
-            CPrep_IncrementCountersAndUpdateTextOffset();
-        data_00580dd0 = 0;
-        nextChar = fn_00496610(0);
-        lookahead_position = (char *)currentTextPosition;
-        if (nextChar == 'p') {
-            currentTextPosition = (UInt8 *)lookahead_position;
-            if (data_00580dd0 != 0)
-                CPrep_IncrementCountersAndUpdateTextOffset();
+    if (peek_char_quietly() == '\\') {
+        savedPosition = currentTextPosition;
+        accept_peeked_char();
+        if (peek_char_quietly() == 'p') {
+            accept_peeked_char();
             data_005882de = 1;
             output++;
         } else {
@@ -1761,23 +1332,34 @@ unsigned int parse_directive_or_return_hash(void)
 
 unsigned int scan_star_or_mult_assign(void)
 {
-    short token;
-    unsigned char *nextState;
-    unsigned char *savedState;
-
     data_00588524 = 0;
-    savedState = currentTextPosition;
-    token = CPrepTokenizer_NextChar();
-    nextState = currentTextPosition;
-    lookahead_position = (char *)nextState;
-    currentTextPosition = savedState;
-    if (token == 61) {
+    if (CPrepTokenizer_PeekChar() == '=') {
         currentTextPosition = (unsigned char *)lookahead_position;
         return TK_MULT_ASSIGN;
     }
     return '*';
 }
 
+#if VERSION == VERSION_GC_1_0
+unsigned int tokenize_colon(void)
+{
+    unsigned char token;
+
+    data_00588524 = 0;
+    if (copts.cplusplus != 0) {
+        token = CPrepTokenizer_PeekChar();
+        if (token == ':') {
+            currentTextPosition = (unsigned char *)lookahead_position;
+            return TK_COLON_COLON;
+        }
+        if (token == '>' && data_0058850f == 0) {
+            currentTextPosition = (unsigned char *)lookahead_position;
+            return ']';
+        }
+    }
+    return ':';
+}
+#else
 unsigned int tokenize_colon(void)
 {
     unsigned char token;
@@ -1800,17 +1382,18 @@ unsigned int tokenize_colon(void)
     }
     return ':';
 }
+#endif
 
 short scan_less_token(short ch)
 {
     data_00588524 = 0;
-    if ((ch = prepnextchar2()) == '=') {
+    if ((ch = CPrepTokenizer_PeekChar()) == '=') {
         currentTextPosition = (UInt8 *const)lookahead_position;
         return TK_LESS_EQUAL;
     }
     if (ch == '<') {
         currentTextPosition = (UInt8 *const)lookahead_position;
-        if (prepnextchar2() == '=') {
+        if (CPrepTokenizer_PeekChar() == '=') {
             currentTextPosition = (UInt8 *const)lookahead_position;
             return TK_SHL_ASSIGN;
         }
@@ -1829,15 +1412,8 @@ short scan_less_token(short ch)
 
 unsigned int tokenize_equals(void)
 {
-    UInt8 *savedState;
-    short token;
-
     data_00588524 = 0;
-    savedState = currentTextPosition;
-    token = CPrepTokenizer_NextChar();
-    lookahead_position = (char *)currentTextPosition;
-    currentTextPosition = savedState;
-    if (token == 61) {
+    if (CPrepTokenizer_PeekChar() == '=') {
         currentTextPosition = (unsigned char *)lookahead_position;
         return TK_LOGICAL_EQ;
     }
@@ -1847,13 +1423,13 @@ unsigned int tokenize_equals(void)
 short scan_greater_token(short ch)
 {
     data_00588524 = 0;
-    if ((ch = prepnextchar2()) == '=') {
+    if ((ch = CPrepTokenizer_PeekChar()) == '=') {
         currentTextPosition = (UInt8 *)lookahead_position;
         return TK_GREATER_EQUAL;
     }
     if (ch == '>') {
         currentTextPosition = (UInt8 *)lookahead_position;
-        if (prepnextchar2() == '=') {
+        if (CPrepTokenizer_PeekChar() == '=') {
             currentTextPosition = (UInt8 *)lookahead_position;
             return TK_SHR_ASSIGN;
         }
@@ -1903,6 +1479,24 @@ SInt32 scan_at_token(void)
     return '@';
 }
 
+#if VERSION == VERSION_GC_1_0
+unsigned int tokenize_percent(void)
+{
+    unsigned char token;
+
+    data_00588524 = 0;
+    token = CPrepTokenizer_PeekChar();
+    if (token == '=') {
+        currentTextPosition = ReadParserState(lookahead_position);
+        return TK_MOD_ASSIGN;
+    }
+    if (token == '>' && copts.cplusplus != 0 && data_0058850f == 0) {
+        currentTextPosition = ReadParserState(lookahead_position);
+        return '}';
+    }
+    return '%';
+}
+#else
 unsigned int tokenize_percent(void)
 {
     unsigned char token;
@@ -1922,24 +1516,33 @@ unsigned int tokenize_percent(void)
     }
     return '%';
 }
+#endif
 
 unsigned int scan_not_or_logical_ne(void)
 {
-    short token;
-    UInt8 *savedPosition;
-
     data_00588524 = 0;
-    savedPosition = currentTextPosition;
-    token = CPrepTokenizer_NextChar();
-    lookahead_position = (char *)currentTextPosition;
-    currentTextPosition = savedPosition;
-    if (token == '=') {
+    if (CPrepTokenizer_PeekChar() == '=') {
         currentTextPosition = (UInt8 *)lookahead_position;
         return TK_LOGICAL_NE;
     }
     return TK_NOT;
 }
 
+#if VERSION == VERSION_GC_1_0
+unsigned int scan_plus_token(unsigned short token)
+{
+    data_00588524 = 0;
+    if ((token = CPrepTokenizer_PeekChar()) == '=') {
+        currentTextPosition = (UInt8 *)lookahead_position;
+        return TK_ADD_ASSIGN;
+    }
+    if (token == '+') {
+        currentTextPosition = (UInt8 *)lookahead_position;
+        return TK_INCREMENT;
+    }
+    return '+';
+}
+#else
 unsigned int scan_plus_token(unsigned short token)
 {
     unsigned short nextToken;
@@ -1960,7 +1563,31 @@ unsigned int scan_plus_token(unsigned short token)
     }
     return '+';
 }
+#endif
 
+#if VERSION == VERSION_GC_1_0
+unsigned int scan_minus_token(unsigned short token)
+{
+    data_00588524 = 0;
+    if ((token = CPrepTokenizer_PeekChar()) == '=') {
+        currentTextPosition = (UInt8 *)lookahead_position;
+        return TK_SUB_ASSIGN;
+    }
+    if (token == '-') {
+        currentTextPosition = (UInt8 *)lookahead_position;
+        return TK_DECREMENT;
+    }
+    if (token == '>') {
+        currentTextPosition = (UInt8 *)lookahead_position;
+        if (copts.cplusplus != 0 && CPrepTokenizer_PeekChar() == '*') {
+            currentTextPosition = (UInt8 *)lookahead_position;
+            return TK_ARROW_STAR;
+        }
+        return TK_ARROW;
+    }
+    return '-';
+}
+#else
 unsigned int scan_minus_token(volatile unsigned short token)
 {
     unsigned short lookahead;
@@ -1995,7 +1622,23 @@ unsigned int scan_minus_token(volatile unsigned short token)
     }
     return '-';
 }
+#endif
 
+#if VERSION == VERSION_GC_1_0
+unsigned int scan_bitor(unsigned short token)
+{
+    data_00588524 = 0;
+    if ((token = CPrepTokenizer_PeekChar()) == '=') {
+        currentTextPosition = (UInt8 *)lookahead_position;
+        return TK_OR_ASSIGN;
+    }
+    if (token == '|') {
+        currentTextPosition = (UInt8 *)lookahead_position;
+        return TK_LOGICAL_OR;
+    }
+    return TK_BITOR;
+}
+#else
 unsigned int scan_bitor(volatile unsigned short token)
 {
     short nextToken;
@@ -2017,7 +1660,23 @@ unsigned int scan_bitor(volatile unsigned short token)
     }
     return TK_BITOR;
 }
+#endif
 
+#if VERSION == VERSION_GC_1_0
+unsigned int tokenize_and(unsigned short token)
+{
+    data_00588524 = 0;
+    if ((token = CPrepTokenizer_PeekChar()) == '=') {
+        currentTextPosition = (unsigned char *)lookahead_position;
+        return TK_AND_ASSIGN;
+    }
+    if (token == '&') {
+        currentTextPosition = (unsigned char *)lookahead_position;
+        return TK_LOGICAL_AND;
+    }
+    return TK_BITAND;
+}
+#else
 unsigned int tokenize_and(volatile unsigned short token)
 {
     short nextToken;
@@ -2039,11 +1698,12 @@ unsigned int tokenize_and(volatile unsigned short token)
     }
     return TK_BITAND;
 }
+#endif
 
 short scan_xor_operator(short ch)
 {
     data_00588524 = 0;
-    if ((ch = prepnextchar2()) == '=') {
+    if ((ch = CPrepTokenizer_PeekChar()) == '=') {
         currentTextPosition = (UInt8 *)lookahead_position;
         return TK_XOR_ASSIGN;
     }
@@ -2053,7 +1713,7 @@ short scan_xor_operator(short ch)
 short scan_div_assign(short ch)
 {
     data_00588524 = 0;
-    if ((ch = prepnextchar2()) == '=') {
+    if ((ch = CPrepTokenizer_PeekChar()) == '=') {
         currentTextPosition = (unsigned char *)lookahead_position;
         return TK_DIV_ASSIGN;
     }
@@ -2063,22 +1723,16 @@ short scan_div_assign(short ch)
 unsigned int parse_zero_prefixed_number(SInt16 c)
 {
     char *p;
-    void *cursor;
     Boolean flag;
     char fflag;
 
     data_00588524 = 0;
-    cursor = currentTextPosition;
-    p = (char *)cursor - 1;
+    p = (char *)currentTextPosition - 1;
     c = CPrepTokenizer_NextChar();
     if (c == 'x' || c == 'X') {
-        cursor = currentTextPosition;
-        cursor = CInt64_ScanHexString(&token_integer, cursor, &flag);
-        currentTextPosition = cursor;
+        currentTextPosition = (UInt8 *)CInt64_ScanHexString(&token_integer, (char *)currentTextPosition, &flag);
     } else if (copts.ANSIstrict == 0 && (c == 'b' || c == 'B')) {
-        cursor = currentTextPosition;
-        cursor = CInt64_ScanBinString(&token_integer, cursor, &flag);
-        currentTextPosition = cursor;
+        currentTextPosition = (UInt8 *)CInt64_ScanBinString(&token_integer, (char *)currentTextPosition, &flag);
     } else {
         while (c >= '0' && c <= '9')
             c = CPrepTokenizer_NextChar();
@@ -2089,32 +1743,16 @@ unsigned int parse_zero_prefixed_number(SInt16 c)
                 currentTextPosition = CMach_FloatScan(p, &token_float, &fflag);
                 if (fflag)
                     CPrep_ReportError(0x9a);
-                cursor = currentTextPosition;
-                p = cursor;
-                c = CPrepTokenizer_NextChar();
-                cursor = currentTextPosition;
-                lookahead_position = cursor;
-                cursor = p;
-                currentTextPosition = cursor;
-                token_value_kind_or_string_length = parse_float_suffix(c);
+                token_value_kind_or_string_length = parse_float_suffix(CPrepTokenizer_PeekChar());
                 return -2;
-            default:
-                break;
         }
-        cursor = CInt64_ScanOctString(&token_integer, p, &flag);
-        currentTextPosition = cursor;
+        currentTextPosition = (UInt8 *)CInt64_ScanOctString(&token_integer, p, &flag);
     }
     if (flag) {
         CPrep_ReportError(0x9a);
         token_integer = cint64_zero;
     }
-    cursor = currentTextPosition;
-    p = cursor;
-    c = CPrepTokenizer_NextChar();
-    lookahead_position = (char *)currentTextPosition;
-    cursor = p;
-    currentTextPosition = cursor;
-    token_value_kind_or_string_length = fn_004961c0(c, 1);
+    token_value_kind_or_string_length = fn_004961c0(CPrepTokenizer_PeekChar(), 1);
     return -1;
 }
 
@@ -2122,8 +1760,6 @@ int scan_dot_token(SInt16 c)
 {
     char flag;
     UInt8 *numberStart;
-    short token;
-    char *tokenEnd;
 
     data_00588524 = 0;
     numberStart = currentTextPosition - 1;
@@ -2132,13 +1768,7 @@ int scan_dot_token(SInt16 c)
         currentTextPosition = CMach_FloatScan((char *)numberStart, &token_float, &flag);
         if (flag != 0)
             CPrep_ReportError(0x9a);
-        numberStart = currentTextPosition;
-        c = CPrepTokenizer_NextChar();
-        tokenEnd = (char *)currentTextPosition;
-        lookahead_position = tokenEnd;
-        currentTextPosition = numberStart;
-        token = parse_float_suffix(c);
-        token_value_kind_or_string_length = token;
+        token_value_kind_or_string_length = parse_float_suffix(CPrepTokenizer_PeekChar());
         return TK_FLOATCONST;
     }
     if (copts.cplusplus != 0 && c == '*')
@@ -2152,11 +1782,8 @@ int scan_dot_token(SInt16 c)
     return '.';
 }
 
-int scan_numeric_literal(void)
+int scan_numeric_literal(short c)
 {
-    UInt16 c;
-    short token;
-    short result;
     char *start;
     Boolean integerOverflow;
     char floatOverflow;
@@ -2164,22 +1791,19 @@ int scan_numeric_literal(void)
     data_00588524 = 0;
     start = (char *)(currentTextPosition - 1);
     currentTextPosition = (UInt8 *)CInt64_ScanDecString(&token_integer, start, &integerOverflow);
-    c = peek();
+    c = CPrepTokenizer_PeekChar();
     if (c == '.' || c == 'e' || c == 'E') {
         currentTextPosition = CMach_FloatScan(start, &token_float, &floatOverflow);
         if (floatOverflow)
             CPrep_ReportError(0x9a);
-        token = peek();
-        result = parse_float_suffix(token);
-        token_value_kind_or_string_length = result;
+        token_value_kind_or_string_length = parse_float_suffix(CPrepTokenizer_PeekChar());
         return -2;
     } else {
         if (integerOverflow) {
             CPrep_ReportError(0x9a);
             token_integer = cint64_zero;
         }
-        token = peek();
-        token_value_kind_or_string_length = fn_004961c0(token, 0);
+        token_value_kind_or_string_length = fn_004961c0(CPrepTokenizer_PeekChar(), 0);
         return -1;
     }
 }
@@ -2199,7 +1823,7 @@ short scan_quoted_literal(short ch)
     SInt32 r;
 
     data_00588524 = 0;
-    if ((ch = prepnextchar2()) == '\'') {
+    if ((ch = CPrepTokenizer_PeekChar()) == '\'') {
         data_00588515 = 1;
         currentTextPosition = nextcharposition();
         r = scan_character_constant(ch);
@@ -2822,8 +2446,8 @@ short CPrepTokenizer_PeekNextToken(void)
 
 void concatenate_string_tokens(char strip_terminator)
 {
-    SInt16 token;
     NamePiece *pieces;
+    SInt16 token;
     NamePiece *piece;
     NamePiece *cursor;
     struct TStreamElement *record;
@@ -2831,7 +2455,6 @@ void concatenate_string_tokens(char strip_terminator)
     char *original_buffer;
     SInt32 original_length;
     UInt8 original_flag;
-    SInt32 lexer_state;
     SInt32 combined_length;
 
     original_buffer = string_token_data;
@@ -2842,11 +2465,7 @@ void concatenate_string_tokens(char strip_terminator)
     combined_length = token_value_kind_or_string_length;
 
     for (;;) {
-        CPrep_GetBufferedTokenPosition(&lexer_state);
-        do {
-            token = CPrepTokenizer_GetNextToken();
-        } while (token == -7);
-        CPrep_SetBufferedTokenPosition(&lexer_state);
+        token = CPrepTokenizer_PeekNextToken();
 
         if (token != -4 && token != -5) {
             data_005882de = original_flag;
@@ -2910,6 +2529,266 @@ void concatenate_string_tokens(char strip_terminator)
         combined_length += piece->len;
     }
 }
+
+/* The scanner of each character a token starts with. */
+static TokenScanner data_0055da98[256] = {
+    (TokenScanner)mark_previous_text_character,
+    (TokenScanner)return_unsigned_minus_six,
+    (TokenScanner)return_unsigned_minus_six,
+    (TokenScanner)return_unsigned_minus_six,
+    (TokenScanner)check_illegal_token,
+    (TokenScanner)check_illegal_token,
+    (TokenScanner)return_unsigned_minus_six,
+    (TokenScanner)return_unsigned_minus_six,
+    (TokenScanner)return_unsigned_minus_six,
+    (TokenScanner)return_unsigned_minus_six,
+    (TokenScanner)return_unsigned_minus_six,
+    (TokenScanner)return_unsigned_minus_six,
+    (TokenScanner)return_unsigned_minus_six,
+    (TokenScanner)fn_00495640,
+    (TokenScanner)return_unsigned_minus_six,
+    (TokenScanner)return_unsigned_minus_six,
+    (TokenScanner)return_unsigned_minus_six,
+    (TokenScanner)return_unsigned_minus_six,
+    (TokenScanner)return_unsigned_minus_six,
+    (TokenScanner)return_unsigned_minus_six,
+    (TokenScanner)return_unsigned_minus_six,
+    (TokenScanner)return_unsigned_minus_six,
+    (TokenScanner)return_unsigned_minus_six,
+    (TokenScanner)return_unsigned_minus_six,
+    (TokenScanner)return_unsigned_minus_six,
+    (TokenScanner)return_unsigned_minus_six,
+    (TokenScanner)check_null_terminator,
+    (TokenScanner)return_unsigned_minus_six,
+    (TokenScanner)return_unsigned_minus_six,
+    (TokenScanner)return_unsigned_minus_six,
+    (TokenScanner)return_unsigned_minus_six,
+    (TokenScanner)return_unsigned_minus_six,
+    (TokenScanner)return_unsigned_minus_six,
+    (TokenScanner)scan_not_or_logical_ne,
+    (TokenScanner)scan_string_literal,
+    (TokenScanner)parse_directive_or_return_hash,
+    (TokenScanner)clear_global_and_return_argument,
+    (TokenScanner)tokenize_percent,
+    (TokenScanner)tokenize_and,
+    (TokenScanner)scan_character_constant,
+    (TokenScanner)clear_global_and_return_argument,
+    (TokenScanner)clear_global_and_return_argument,
+    (TokenScanner)scan_star_or_mult_assign,
+    (TokenScanner)scan_plus_token,
+    (TokenScanner)clear_global_and_return_argument,
+    (TokenScanner)scan_minus_token,
+    (TokenScanner)scan_dot_token,
+    (TokenScanner)scan_div_assign,
+    (TokenScanner)parse_zero_prefixed_number,
+    (TokenScanner)scan_numeric_literal,
+    (TokenScanner)scan_numeric_literal,
+    (TokenScanner)scan_numeric_literal,
+    (TokenScanner)scan_numeric_literal,
+    (TokenScanner)scan_numeric_literal,
+    (TokenScanner)scan_numeric_literal,
+    (TokenScanner)scan_numeric_literal,
+    (TokenScanner)scan_numeric_literal,
+    (TokenScanner)scan_numeric_literal,
+    (TokenScanner)tokenize_colon,
+    (TokenScanner)clear_global_and_return_argument,
+    (TokenScanner)scan_less_token,
+    (TokenScanner)tokenize_equals,
+    (TokenScanner)scan_greater_token,
+    (TokenScanner)clear_global_and_return_argument,
+    (TokenScanner)scan_at_token,
+    (TokenScanner)scan_identifier_and_expand_macro,
+    (TokenScanner)scan_identifier_and_expand_macro,
+    (TokenScanner)scan_identifier_and_expand_macro,
+    (TokenScanner)scan_identifier_and_expand_macro,
+    (TokenScanner)scan_identifier_and_expand_macro,
+    (TokenScanner)scan_identifier_and_expand_macro,
+    (TokenScanner)scan_identifier_and_expand_macro,
+    (TokenScanner)scan_identifier_and_expand_macro,
+    (TokenScanner)scan_identifier_and_expand_macro,
+    (TokenScanner)scan_identifier_and_expand_macro,
+    (TokenScanner)scan_identifier_and_expand_macro,
+    (TokenScanner)scan_quoted_literal,
+    (TokenScanner)scan_identifier_and_expand_macro,
+    (TokenScanner)scan_identifier_and_expand_macro,
+    (TokenScanner)scan_identifier_and_expand_macro,
+    (TokenScanner)scan_identifier_and_expand_macro,
+    (TokenScanner)scan_identifier_and_expand_macro,
+    (TokenScanner)scan_identifier_and_expand_macro,
+    (TokenScanner)scan_identifier_and_expand_macro,
+    (TokenScanner)scan_identifier_and_expand_macro,
+    (TokenScanner)scan_identifier_and_expand_macro,
+    (TokenScanner)scan_identifier_and_expand_macro,
+    (TokenScanner)scan_identifier_and_expand_macro,
+    (TokenScanner)scan_identifier_and_expand_macro,
+    (TokenScanner)scan_identifier_and_expand_macro,
+    (TokenScanner)scan_identifier_and_expand_macro,
+    (TokenScanner)clear_global_and_return_argument,
+    (TokenScanner)clear_global_and_return_argument,
+    (TokenScanner)clear_global_and_return_argument,
+    (TokenScanner)scan_xor_operator,
+    (TokenScanner)classify_identifier_token,
+    (TokenScanner)clear_global_and_return_argument,
+    (TokenScanner)scan_identifier_or_keyword_a,
+    (TokenScanner)scan_b_keyword,
+    (TokenScanner)fn_00493ea0,
+    (TokenScanner)scan_d_keyword,
+    (TokenScanner)recognize_e_keyword,
+    (TokenScanner)classify_f_keyword,
+    (TokenScanner)expand_macro_or_classify_identifier,
+    (TokenScanner)scan_identifier_and_expand_macro,
+    (TokenScanner)scan_i_keyword,
+    (TokenScanner)scan_identifier_and_expand_macro,
+    (TokenScanner)scan_identifier_and_expand_macro,
+    (TokenScanner)classify_identifier_name_token,
+    (TokenScanner)classify_mutable_or_identifier,
+    (TokenScanner)scan_n_keyword,
+    (TokenScanner)scan_o_keyword,
+    (TokenScanner)scan_identifier,
+    (TokenScanner)scan_identifier_and_expand_macro,
+    (TokenScanner)scan_r_keyword,
+    (TokenScanner)tokenize_s_keyword,
+    (TokenScanner)scan_t_keyword,
+    (TokenScanner)classify_u_keyword,
+    (TokenScanner)tokenize_v_keyword,
+    (TokenScanner)classify_w_keyword,
+    (TokenScanner)classify_identifier_or_xor_token,
+    (TokenScanner)scan_identifier_and_expand_macro,
+    (TokenScanner)scan_identifier_and_expand_macro,
+    (TokenScanner)clear_global_and_return_argument,
+    (TokenScanner)scan_bitor,
+    (TokenScanner)clear_global_and_return_argument,
+    (TokenScanner)clear_global_and_return_argument,
+    (TokenScanner)return_unsigned_minus_six,
+    (TokenScanner)return_unsigned_minus_six,
+    (TokenScanner)return_unsigned_minus_six,
+    (TokenScanner)return_unsigned_minus_six,
+    (TokenScanner)return_unsigned_minus_six,
+    (TokenScanner)return_unsigned_minus_six,
+    (TokenScanner)return_unsigned_minus_six,
+    (TokenScanner)return_unsigned_minus_six,
+    (TokenScanner)return_unsigned_minus_six,
+    (TokenScanner)return_unsigned_minus_six,
+    (TokenScanner)return_unsigned_minus_six,
+    (TokenScanner)return_unsigned_minus_six,
+    (TokenScanner)return_unsigned_minus_six,
+    (TokenScanner)return_unsigned_minus_six,
+    (TokenScanner)return_unsigned_minus_six,
+    (TokenScanner)return_unsigned_minus_six,
+    (TokenScanner)return_unsigned_minus_six,
+    (TokenScanner)return_unsigned_minus_six,
+    (TokenScanner)return_unsigned_minus_six,
+    (TokenScanner)return_unsigned_minus_six,
+    (TokenScanner)return_unsigned_minus_six,
+    (TokenScanner)return_unsigned_minus_six,
+    (TokenScanner)return_unsigned_minus_six,
+    (TokenScanner)return_unsigned_minus_six,
+    (TokenScanner)return_unsigned_minus_six,
+    (TokenScanner)return_unsigned_minus_six,
+    (TokenScanner)return_unsigned_minus_six,
+    (TokenScanner)return_unsigned_minus_six,
+    (TokenScanner)return_unsigned_minus_six,
+    (TokenScanner)return_unsigned_minus_six,
+    (TokenScanner)return_unsigned_minus_six,
+    (TokenScanner)return_unsigned_minus_six,
+    (TokenScanner)return_unsigned_minus_six,
+    (TokenScanner)return_unsigned_minus_six,
+    (TokenScanner)return_unsigned_minus_six,
+    (TokenScanner)return_unsigned_minus_six,
+    (TokenScanner)return_unsigned_minus_six,
+    (TokenScanner)return_unsigned_minus_six,
+    (TokenScanner)return_unsigned_minus_six,
+    (TokenScanner)return_unsigned_minus_six,
+    (TokenScanner)return_unsigned_minus_six,
+    (TokenScanner)return_unsigned_minus_six,
+    (TokenScanner)return_unsigned_minus_six,
+    (TokenScanner)return_unsigned_minus_six,
+    (TokenScanner)return_unsigned_minus_six,
+    (TokenScanner)return_unsigned_minus_six,
+    (TokenScanner)return_unsigned_minus_six,
+    (TokenScanner)return_unsigned_minus_six,
+    (TokenScanner)return_unsigned_minus_six,
+    (TokenScanner)return_unsigned_minus_six,
+    (TokenScanner)return_unsigned_minus_six,
+    (TokenScanner)return_unsigned_minus_six,
+    (TokenScanner)return_unsigned_minus_six,
+    (TokenScanner)return_unsigned_minus_six,
+    (TokenScanner)return_unsigned_minus_six,
+    (TokenScanner)return_unsigned_minus_six,
+    (TokenScanner)return_unsigned_minus_six,
+    (TokenScanner)return_unsigned_minus_six,
+    (TokenScanner)return_unsigned_minus_six,
+    (TokenScanner)return_unsigned_minus_six,
+    (TokenScanner)return_unsigned_minus_six,
+    (TokenScanner)return_unsigned_minus_six,
+    (TokenScanner)return_unsigned_minus_six,
+    (TokenScanner)return_unsigned_minus_six,
+    (TokenScanner)return_unsigned_minus_six,
+    (TokenScanner)return_unsigned_minus_six,
+    (TokenScanner)return_unsigned_minus_six,
+    (TokenScanner)return_unsigned_minus_six,
+    (TokenScanner)return_unsigned_minus_six,
+    (TokenScanner)return_unsigned_minus_six,
+    (TokenScanner)return_unsigned_minus_six,
+    (TokenScanner)return_unsigned_minus_six,
+    (TokenScanner)return_unsigned_minus_six,
+    (TokenScanner)return_unsigned_minus_six,
+    (TokenScanner)return_unsigned_minus_six,
+    (TokenScanner)return_unsigned_minus_six,
+    (TokenScanner)return_unsigned_minus_six,
+    (TokenScanner)return_unsigned_minus_six,
+    (TokenScanner)return_unsigned_minus_six,
+    (TokenScanner)return_unsigned_minus_six,
+    (TokenScanner)return_unsigned_minus_six,
+    (TokenScanner)return_unsigned_minus_six,
+    (TokenScanner)return_unsigned_minus_six,
+    (TokenScanner)return_unsigned_minus_six,
+    (TokenScanner)return_unsigned_minus_six,
+    (TokenScanner)return_unsigned_minus_six,
+    (TokenScanner)return_unsigned_minus_six,
+    (TokenScanner)return_unsigned_minus_six,
+    (TokenScanner)return_unsigned_minus_six,
+    (TokenScanner)return_unsigned_minus_six,
+    (TokenScanner)return_unsigned_minus_six,
+    (TokenScanner)return_unsigned_minus_six,
+    (TokenScanner)return_unsigned_minus_six,
+    (TokenScanner)return_unsigned_minus_six,
+    (TokenScanner)return_unsigned_minus_six,
+    (TokenScanner)return_unsigned_minus_six,
+    (TokenScanner)return_unsigned_minus_six,
+    (TokenScanner)return_unsigned_minus_six,
+    (TokenScanner)return_unsigned_minus_six,
+    (TokenScanner)return_unsigned_minus_six,
+    (TokenScanner)return_unsigned_minus_six,
+    (TokenScanner)return_unsigned_minus_six,
+    (TokenScanner)return_unsigned_minus_six,
+    (TokenScanner)return_unsigned_minus_six,
+    (TokenScanner)return_unsigned_minus_six,
+    (TokenScanner)return_unsigned_minus_six,
+    (TokenScanner)return_unsigned_minus_six,
+    (TokenScanner)return_unsigned_minus_six,
+    (TokenScanner)return_unsigned_minus_six,
+    (TokenScanner)return_unsigned_minus_six,
+    (TokenScanner)return_unsigned_minus_six,
+    (TokenScanner)return_unsigned_minus_six,
+    (TokenScanner)return_unsigned_minus_six,
+    (TokenScanner)return_unsigned_minus_six,
+    (TokenScanner)return_unsigned_minus_six,
+    (TokenScanner)return_unsigned_minus_six,
+    (TokenScanner)return_unsigned_minus_six,
+    (TokenScanner)return_unsigned_minus_six,
+    (TokenScanner)return_unsigned_minus_six,
+    (TokenScanner)return_unsigned_minus_six,
+    (TokenScanner)return_unsigned_minus_six,
+    (TokenScanner)return_unsigned_minus_six,
+    (TokenScanner)return_unsigned_minus_six,
+    (TokenScanner)return_unsigned_minus_six,
+    (TokenScanner)return_unsigned_minus_six,
+    (TokenScanner)return_unsigned_minus_six,
+    (TokenScanner)return_unsigned_minus_six,
+    (TokenScanner)return_unsigned_minus_six,
+    (TokenScanner)return_unsigned_minus_six,
+};
 
 short CPrepTokenizer_GetNextToken(void)
 {

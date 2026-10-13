@@ -59,6 +59,11 @@ static inline void SetVRSave(Boolean enabled)
         copts.altivec_vrsave = 0;
 }
 
+void fn_0042c920(void)
+{
+    return;
+}
+
 void fn_0042c910(void)
 {
     return;

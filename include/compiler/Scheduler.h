@@ -69,13 +69,6 @@ struct ReferenceFlags {
     UInt32 flags;
 };
 #pragma pack(pop)
-#pragma options align = mac68k
-struct SchedEntry {
-    struct SchedEntry *next;
-    struct CColoringNode *blk;
-    SInt32 zero;
-};
-#pragma options align = reset
 extern void schedule_block(PCodeBlock *function);
 extern struct CColoringNode *select_ready_coloring_node(struct CColoringNode *list, UInt16 id);
 extern void build_sched_dependencies(CColoringNode *list, CColoringNode *blk);

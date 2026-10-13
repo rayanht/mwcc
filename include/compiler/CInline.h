@@ -135,6 +135,7 @@ extern void fn_0050ee60(Statement *stmt, Object *func, Boolean flag);
 extern Boolean check_statement_count_and_locals_size(Object *func, Statement *stmt);
 extern Boolean fn_0050f120(struct InlineObjectEntry *list);
 extern void collect_undefined_function_objects(struct CInlineInfo *c);
+extern void forward_expression_objrefs(ENode *expr);
 extern void forward_statement_objrefs(Statement *stmt);
 extern void CInline_AddSpecialization(Object *func, void *a, void *b);
 extern void CInline_AddFunctionPrecNode(Object *func, TypeClass *value, FileOffsetInfo *key, TokenStream *pair,
@@ -176,7 +177,7 @@ extern void fn_0050f240(Object *object);
 extern void CInline_SaveInfo(CInlineInfo *out, Statement *list, Object *function);
 struct CPrecNode;
 extern void parse_inline_definition(struct CPrecNode *inlineInfo);
-extern Object *create_local_object(Type *type, unsigned int qual, unsigned int storageClassFlags);
+extern Object *create_local_object(Type *type, SInt16 qual, UInt8 sclass, Boolean unused);
 extern void *create_inline_switch_data(Statement *base, Statement *classInfo);
 extern SInt16 CInline_ReturnZero(Type *type);
 extern void CInline_GeneratePendingFunctionBody(void);

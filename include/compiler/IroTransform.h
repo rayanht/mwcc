@@ -28,6 +28,12 @@ extern void simplify_diadic_constants(IROLinear *node);
 extern ENodeList *eadd_terms_tail;
 extern struct ENodeList *eadd_terms;
 extern void simplify_diadic_with_monadic_operand(IROLinear *expr);
+extern char nested_bitwise_expressions_rewritten;
+extern UInt8 nested_bitwise_type;
+extern CInt64 data_005834f8;
+extern int data_005871b8;
+extern ENode *data_005881ec;
+extern void IroTransform_RewriteStatementExpressions(Statement *stmt);
 
 #ifdef __cplusplus
 }

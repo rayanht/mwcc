@@ -408,6 +408,38 @@ static char data_00582410[24];
 static InlineAsmRegisterEntry inlineAsmRegisterEntry;
 static InlineAsmRegisterEntry data_00582434;
 
+static void register_hash_entry(const char *name, short value, int id)
+{
+    struct RegistrationHashEntry **bucket;
+    struct RegistrationHashEntry *entry;
+
+    bucket = &inlineAsmRegisterHashTable[CHash(name) & 63];
+    entry = (struct RegistrationHashEntry *)lalloc(sizeof(*entry));
+    entry->id = id;
+    entry->name = name;
+    entry->kind = 2;
+    entry->value = value;
+    entry->extra = 0;
+    entry->next = *bucket;
+    *bucket = entry;
+}
+
+static void register_secondary_hash_entry(const char *name, int id, short value)
+{
+    struct RegistrationHashEntry **bucket;
+    struct RegistrationHashEntry *entry;
+
+    bucket = &secondary_registration_hash[CHash(name) & 63];
+    entry = (struct RegistrationHashEntry *)lalloc(sizeof(*entry));
+    entry->id = id;
+    entry->name = name;
+    entry->kind = 2;
+    entry->value = value;
+    entry->extra = 0;
+    entry->next = *bucket;
+    *bucket = entry;
+}
+
 static inline Boolean CTemplateNew_ShouldWarnUnsupportedInlineAsmRegister(void)
 {
     return copts.warn_possunwant;
@@ -563,19 +595,11 @@ void CTemplateNew_InitRegistrationHashTables(void)
     ObjectList *secondaryList;
     const char *secondaryFormat;
     HashNameNode *name;
-    struct RegistrationHashEntry *entry;
     int id;
-    struct RegistrationHashEntry *secondaryEntry;
-    struct RegistrationHashEntry **secondaryBucket;
     struct RegistrationTableEntry *table;
     struct SecondaryRegistrationEntry *secondaryTable;
-    struct RegistrationHashEntry **bucket;
     struct RegistrationEntry *registration;
-    int secondaryId;
-    const char *secondaryName;
-    const char *entryName;
     short value;
-    short secondaryValue;
     char message[20];
 
     for (index = 0; index < 64; index++)
@@ -638,34 +662,8 @@ void CTemplateNew_InitRegistrationHashTables(void)
         }
         CTemplateNew_InsertRegisterBinding(registration->name, registration->kind, registration->value, NULL);
     }
-    table = registration_table;
-    while ((entryName = table->name) != NULL) {
-        id = table->id;
-        value = table->value;
-        bucket = &inlineAsmRegisterHashTable[CHash(entryName) & 63];
-        entry = (struct RegistrationHashEntry *)lalloc(sizeof(*entry));
-        entry->id = id;
-        entry->name = entryName;
-        entry->kind = 2;
-        table++;
-        entry->value = value;
-        entry->extra = 0;
-        entry->next = *bucket;
-        *bucket = entry;
-    }
-    secondaryTable = secondary_registration_table;
-    while ((secondaryName = secondaryTable->name) != NULL) {
-        secondaryValue = secondaryTable->value;
-        secondaryId = secondaryTable->id;
-        secondaryBucket = &secondary_registration_hash[CHash(secondaryName) & 63];
-        secondaryEntry = (struct RegistrationHashEntry *)lalloc(sizeof(*secondaryEntry));
-        secondaryEntry->id = secondaryId;
-        secondaryEntry->name = secondaryName;
-        secondaryEntry->kind = 2;
-        secondaryTable++;
-        secondaryEntry->value = secondaryValue;
-        secondaryEntry->extra = 0;
-        secondaryEntry->next = *secondaryBucket;
-        *secondaryBucket = secondaryEntry;
-    }
+    for (table = registration_table; table->name != NULL; table++)
+        register_hash_entry(table->name, table->value, table->id);
+    for (secondaryTable = secondary_registration_table; secondaryTable->name != NULL; secondaryTable++)
+        register_secondary_hash_entry(secondaryTable->name, secondaryTable->id, secondaryTable->value);
 }

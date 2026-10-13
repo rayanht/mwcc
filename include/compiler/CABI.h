@@ -67,7 +67,6 @@ extern void CABI_InsertConstructorInitialization(Object *obj, Statement *stmt, T
                                                  Statement *(*callback)(Statement *, TypeClass *, TypeClass *, SInt32,
                                                                         Boolean),
                                                  Boolean has_try);
-extern MessageArgument *CABI_SplitNameIntoMessageArguments(HashNameNode *hname, char *flag);
 extern struct HashNameNode *vtable_name;
 extern TypeIntegral stunsignedlong;
 extern SInt16 CABI_ComputeAlignmentPadding(Type *data, SInt32 mask);

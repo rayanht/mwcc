@@ -146,7 +146,7 @@ extern ENode *CExpr_GenericFuncCall(BClassList *scope, ENode *instance, Boolean 
 extern SInt16 user_assign_check(ENode *operand, Type *targetType, UInt32 targetQual, Boolean diagnose,
                                 Boolean allowExplicit, Boolean conversionMode);
 extern ENode *CExpr_LValue(ENode *expr, Boolean checkConst, Boolean reportError);
-extern void build_destructor_aware_call(ENode *expression, Type *type, Boolean skipLookup);
+extern ENode *build_destructor_aware_call(ENode *expression, Type *type, Boolean skipLookup);
 extern ENode *make_call_with_optional_size_arg(Object *func, ENode *arg, Type *argtype);
 extern ENode *scannew(char global);
 extern struct Object *array_allocation_runtime_function;

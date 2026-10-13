@@ -4,6 +4,7 @@
 #include <setjmp.h>
 #include "compiler/common.h"
 #include "compiler/win32.h"
+#include "version.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -48,7 +49,7 @@ extern void *galloc(SInt32 size);
 extern short CTool_EndianConvertInPlaceWord16Ptr(short *word);
 extern void CTool_EndianConvertWord64(CInt64 ci, char *result);
 extern UInt32 CTool_EndianConvertMem(void *buffer, short size);
-extern unsigned int CTool_EndianConvertWord32(unsigned int value);
+extern UInt32 CTool_EndianConvertWord32(UInt32 value);
 extern SInt16 getbit(UInt32 value);
 extern void memclrw(void *buffer, unsigned int size);
 extern void unlocklheap(void);
@@ -57,6 +58,9 @@ extern int CTool_TotalHeapSize(void);
 extern short CHash(const char *str);
 extern void CTool_CtoPstr(unsigned char *text);
 extern unsigned int CTool_EndianConvertInPlaceWord32Ptr(unsigned int *p);
+#if VERSION == VERSION_GC_1_0
+extern void CTool_EndianConvertVector128(MWVector128 *vector);
+#endif
 extern UInt16 CTool_EndianConvertWord16(UInt16 word);
 extern void CToLowercase(char *src, char *dst);
 extern char *ScanDec(char *src, SInt32 *value, Boolean *flag);
@@ -88,6 +92,8 @@ extern void CompilerGetCString(short value, char *destination);
 extern void (*data_00587708)(void);
 extern int next_name_id;
 extern struct HashNameNode **data_00587f88;
+extern HashNameNode *fn_00441850(CPrepFileInfo *file, SInt32 *position);
+extern int CTool_AppendStringBounded(char *dst, char *src, int size);
 
 #ifdef __cplusplus
 }

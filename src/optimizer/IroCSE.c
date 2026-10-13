@@ -21,279 +21,16 @@
 #include "compiler/IroUtil.h"
 #include "compiler/IroVars.h"
 
-CInt64 data_005834f8;
 unsigned int expression_count;
 unsigned int data_005870f8;
-int data_005871b8;
 unsigned int data_00587630;
 struct IROExpr *expr_tail;
 struct IROExpr *expr_list;
 int data_00587e58;
 SInt32 data_005880a4;
-ENode *data_005881ec;
 BitVector *killed_exprs;
-char nested_bitwise_expressions_rewritten;
-UInt8 nested_bitwise_type;
 
 struct BitVector *data_00552b88 = NULL;
-
-static IROLinear *MakeRef(Object *obj, IROLinear *arg3)
-{
-    IROLinear *n1;
-    IROLinear *n2;
-
-    n1 = IrOptimizer_NewLinear(IROLinearOperand);
-    n1->u.node = create_objectrefnode(obj);
-    n1->rtype = n1->u.node->data.objref->type;
-    n1->index = (UInt16)++linear_index_counter;
-    n1->flags |= (IROLF_Reffed | IROLF_Ind);
-    n2 = IrOptimizer_NewLinear(IROLinearOp1Arg);
-    n2->nodetype = EINDIRECT;
-    n2->rtype = obj->type;
-    n2->u.monadic = n1;
-    n2->index = (UInt16)++linear_index_counter;
-    n2->flags |= IROLF_Reffed;
-    n1->next = n2;
-    IroUtil_InsertLinearRangeAfter(n1, n2, arg3);
-    return n2;
-}
-
-void traverse_expr_postorder(ENode *expr)
-{
-    switch (expr->type) {
-        case EPOSTINC:
-        case EPOSTDEC:
-        case EPREINC:
-        case EPREDEC:
-        case EINDIRECT:
-        case EMONMIN:
-        case EBINNOT:
-        case ELOGNOT:
-        case EFORCELOAD:
-        case ETYPCON:
-        case EBITFIELD:
-            traverse_expr_postorder(expr->data.monadic);
-            break;
-        case EMUL:
-        case EMULV:
-        case EDIV:
-        case EMODULO:
-        case EADDV:
-        case ESUBV:
-        case EADD:
-        case ESUB:
-        case ESHL:
-        case ESHR:
-        case ELESS:
-        case EGREATER:
-        case ELESSEQU:
-        case EGREATEREQU:
-        case EEQU:
-        case ENOTEQU:
-        case EAND:
-        case EXOR:
-        case EOR:
-        case ELAND:
-        case ELOR:
-        case EASS:
-        case EMULASS:
-        case EDIVASS:
-        case EMODASS:
-        case EADDASS:
-        case ESUBASS:
-        case ESHLASS:
-        case ESHRASS:
-        case EANDASS:
-        case EXORASS:
-        case EORASS:
-        case ECOMMA:
-        case EPMODULO:
-        case EROTL:
-        case EROTR:
-        case EBCLR:
-        case EBTST:
-        case EBSET:
-            traverse_expr_postorder(expr->data.diadic.left);
-            traverse_expr_postorder(expr->data.diadic.right);
-            break;
-        case EFUNCCALL:
-        case EFUNCCALLP: {
-            ENodeList *arg;
-            traverse_expr_postorder(expr->data.funccall.funcref);
-            arg = expr->data.funccall.args;
-            while (arg) {
-                traverse_expr_postorder(arg->node);
-                arg = arg->next;
-            }
-            break;
-        }
-        case ECOND:
-            traverse_expr_postorder(expr->data.cond.cond);
-            traverse_expr_postorder(expr->data.cond.expr1);
-            traverse_expr_postorder(expr->data.cond.expr2);
-            break;
-        case ENULLCHECK:
-            traverse_expr_postorder(expr->data.diadic.left);
-            traverse_expr_postorder(expr->data.diadic.right);
-            break;
-    }
-    fold_nested_diadic_intval(expr);
-}
-
-int fn_0044fad0(ENode *node)
-{
-    ENode *expression = node;
-    if (expression->type == nested_bitwise_type) {
-        unsigned char left;
-        unsigned char right;
-        left = fn_0044fad0(expression->data.diadic.left);
-        right = fn_0044fad0(expression->data.diadic.right);
-        return left & right;
-    } else if (expression->type == EINDIRECT) {
-        if (expression->data.monadic->type == EOBJREF) {
-            ENode *operand = expression->data.monadic;
-            if (data_005871b8 == 0) {
-                data_005871b8 = (int)operand->data.objref;
-                data_005881ec = expression;
-                return 1;
-            }
-            if (operand->data.objref != (Object *)data_005871b8) {
-                return 0;
-            }
-            return 1;
-        }
-        return 0;
-    } else if (expression->type == EINTCONST) {
-        if (nested_bitwise_expressions_rewritten != 0) {
-            data_005834f8 = expression->data.intval;
-            nested_bitwise_expressions_rewritten = 0;
-        } else if (nested_bitwise_type == EAND) {
-            data_005834f8 = CInt64_And(expression->data.intval, data_005834f8);
-        } else if (nested_bitwise_type == EOR) {
-            data_005834f8 = CInt64_Or(expression->data.intval, data_005834f8);
-        } else if (nested_bitwise_type == EXOR) {
-            data_005834f8 = CInt64_Xor(expression->data.intval, data_005834f8);
-        }
-        return 1;
-    }
-    return 0;
-}
-
-void rewrite_nested_bitwise_expressions(ENode *en)
-{
-    ENodeList *arg;
-
-    switch ((SInt32)en->type) {
-        case EPOSTINC:
-        case EPOSTDEC:
-        case EPREINC:
-        case EPREDEC:
-        case EINDIRECT:
-        case EMONMIN:
-        case EBINNOT:
-        case ELOGNOT:
-        case EFORCELOAD:
-        case ETYPCON:
-        case EBITFIELD:
-            rewrite_nested_bitwise_expressions(en->data.diadic.left);
-            break;
-        case EMUL:
-        case EMULV:
-        case EDIV:
-        case EMODULO:
-        case EADDV:
-        case ESUBV:
-        case EADD:
-        case ESUB:
-        case ESHL:
-        case ESHR:
-        case ELESS:
-        case EGREATER:
-        case ELESSEQU:
-        case EGREATEREQU:
-        case EEQU:
-        case ENOTEQU:
-        case EAND:
-        case EXOR:
-        case EOR:
-        case ELAND:
-        case ELOR:
-        case EASS:
-        case EMULASS:
-        case EDIVASS:
-        case EMODASS:
-        case EADDASS:
-        case ESUBASS:
-        case ESHLASS:
-        case ESHRASS:
-        case EANDASS:
-        case EXORASS:
-        case EORASS:
-        case ECOMMA:
-        case EPMODULO:
-        case EROTL:
-        case EROTR:
-        case EBCLR:
-        case EBTST:
-        case EBSET:
-            rewrite_nested_bitwise_expressions(en->data.diadic.left);
-            rewrite_nested_bitwise_expressions(en->data.diadic.right);
-            break;
-        case EFUNCCALL:
-        case EFUNCCALLP:
-            rewrite_nested_bitwise_expressions(en->data.funccall.funcref);
-            for (arg = en->data.funccall.args; arg != NULL; arg = arg->next)
-                rewrite_nested_bitwise_expressions(arg->node);
-            break;
-        case ECOND:
-            rewrite_nested_bitwise_expressions(en->data.cond.cond);
-            rewrite_nested_bitwise_expressions(en->data.cond.expr1);
-            rewrite_nested_bitwise_expressions(en->data.cond.expr2);
-            break;
-        case ENULLCHECK:
-            rewrite_nested_bitwise_expressions(en->data.diadic.left);
-            rewrite_nested_bitwise_expressions(en->data.diadic.right);
-            break;
-    }
-
-    if ((en->type == EAND || en->type == EXOR || en->type == EOR) &&
-        (en->type == en->data.diadic.left->type || en->type == en->data.diadic.right->type)) {
-        data_005871b8 = 0;
-        nested_bitwise_type = en->type;
-        nested_bitwise_expressions_rewritten = 1;
-        data_005881ec = NULL;
-        if (fn_0044fad0(en)) {
-            en->data.diadic.left = data_005881ec;
-            en->data.diadic.right->type = EINTCONST;
-            en->data.diadic.right->data.intval = data_005834f8;
-        }
-    }
-}
-
-void IroCSE_RewriteStatementExpressions(Statement *stmt)
-{
-    Statement *s = stmt;
-    Statement *next;
-
-    while (s != NULL) {
-        next = s->next;
-        switch (s->type) {
-            case ST_EXPRESSION:
-            case ST_SWITCH:
-            case ST_IFGOTO:
-            case ST_IFNGOTO:
-            case ST_RETURN:
-                if (s->expr != NULL) {
-                    s->expr = walk_expr_postorder(s->expr);
-                    rewrite_nested_bitwise_expressions(s->expr);
-                    traverse_expr_postorder(s->expr);
-                }
-                break;
-        }
-        s = next;
-    }
-    IroVars_CheckTimedLongjmp();
-}
 
 /* As collect_expression_var_refs_and_flags, for a candidate common subexpression (stopping at the first side effect). */
 void fn_0044f6a0(IROLinear *e, SInt32 flag)
@@ -362,7 +99,7 @@ void fn_0044f6a0(IROLinear *e, SInt32 flag)
                 return;
             }
             if ((UInt8)(e->nodetype - 0x0B) <= 1) {
-                if (IroDump_IsType1NodeType50(e->u.diadic.right) == 0 ||
+                if (IroUtil_IsType1NodeType50(e->u.diadic.right) == 0 ||
                     CInt64_Equal(e->u.diadic.right->u.node->data.intval, cint64_zero) != 0) {
                     data_00587e58 = 1;
                 }
@@ -444,7 +181,7 @@ void collect_expression_var_refs_and_flags(IROLinear *e, SInt32 flag)
             if (data_00551d6c[e->nodetype] != 0)
                 data_00587630 = 1;
             if (e->nodetype == EDIV || e->nodetype == EMODULO) {
-                if (IroDump_IsType1NodeType50(e->u.diadic.right) == 0 ||
+                if (IroUtil_IsType1NodeType50(e->u.diadic.right) == 0 ||
                     CInt64_Equal(e->u.diadic.right->u.node->data.intval, cint64_zero) != 0) {
                     data_00587e58 = 1;
                 }
@@ -492,19 +229,26 @@ void set_global_if_zero_value_and_flag(IROLinear *type, int value)
 }
 
 /* Records EXPRESSION (in block VALUE) as a candidate common subexpression when it is one. */
+/* (none of the expression's operands sets data_005870f8) */
+static int expression_is_eligible(IROLinear *expression)
+{
+    int eligible;
+
+    data_005870f8 = 0;
+    IroUtil_VisitLinearTree(expression, set_global_if_zero_value_and_flag);
+    eligible = 0;
+    if (data_005870f8 == 0)
+        eligible = 1;
+    return eligible;
+}
+
 void fn_0044f230(IROLinear *expression, IRONode *value)
 {
     IROExpr *entry;
-    int eligible;
 
     if (expression->flags & IROLF_Reffed) {
         if (fn_004f0040(expression)) {
-            data_005870f8 = 0;
-            IroUtil_VisitLinearTree(expression, set_global_if_zero_value_and_flag);
-            eligible = 0;
-            if (data_005870f8 == 0)
-                eligible = 1;
-            if (eligible) {
+            if (expression_is_eligible(expression)) {
                 entry = oalloc(sizeof(*entry));
                 expression_count++;
                 entry->index = expression_count;
@@ -512,10 +256,7 @@ void fn_0044f230(IROLinear *expression, IRONode *value)
                 entry->temp = NULL;
                 entry->node = value;
                 entry->state = 0;
-                IroBitVect_AllocateBitVector(&data_00552b88, iroVarCount + 1);
-                data_00587e58 = 0;
-                data_00587630 = 0;
-                fn_0044f6a0(expression, 0);
+                fn_0044f350(expression);
                 entry->depends = data_00552b88;
                 entry->hasSideEffects = data_00587630;
                 entry->mayTrap = data_00587e58;
@@ -718,6 +459,27 @@ void IroCSE_ComputeAvailableExpressions(void)
 }
 
 /* Replaces the operand TARGET with a load of OBJECT (inserted before REFERENCE). */
+static IROLinear *MakeRef(IROLinear *arg3, Object *obj)
+{
+    IROLinear *n1;
+    IROLinear *n2;
+
+    n1 = IrOptimizer_NewLinear(IROLinearOperand);
+    n1->u.node = create_objectrefnode(obj);
+    n1->rtype = n1->u.node->data.objref->type;
+    n1->index = (UInt16)++linear_index_counter;
+    n1->flags |= (IROLF_Reffed | IROLF_Ind);
+    n2 = IrOptimizer_NewLinear(IROLinearOp1Arg);
+    n2->nodetype = EINDIRECT;
+    n2->rtype = obj->type;
+    n2->u.monadic = n1;
+    n2->index = (UInt16)++linear_index_counter;
+    n2->flags |= IROLF_Reffed;
+    n1->next = n2;
+    IroUtil_InsertLinearRangeAfter(n1, n2, arg3);
+    return n2;
+}
+
 void IroCSE_ReplaceReference(IROLinear *target, Object *object, IROLinear *reference)
 {
     IROLinear *node;
@@ -731,7 +493,7 @@ void IroCSE_ReplaceReference(IROLinear *target, Object *object, IROLinear *refer
                 case IROLinearIf:
                 case IROLinearIfNot:
                     if (node->u.branch.cond == target) {
-                        node->u.branch.cond = MakeRef(object, reference);
+                        node->u.branch.cond = MakeRef(reference, object);
                         if (target->flags & IROLF_LoopInvariant)
                             node->u.branch.cond->flags |= IROLF_LoopInvariant;
                         return;
@@ -739,7 +501,7 @@ void IroCSE_ReplaceReference(IROLinear *target, Object *object, IROLinear *refer
                     break;
                 case IROLinearReturn:
                     if (node->u.monadic == target) {
-                        node->u.monadic = MakeRef(object, reference);
+                        node->u.monadic = MakeRef(reference, object);
                         if (target->flags & IROLF_LoopInvariant)
                             node->u.monadic->flags |= IROLF_LoopInvariant;
                         return;
@@ -747,7 +509,7 @@ void IroCSE_ReplaceReference(IROLinear *target, Object *object, IROLinear *refer
                     break;
                 case IROLinearOp1Arg:
                     if (node->u.monadic == target) {
-                        node->u.monadic = MakeRef(object, reference);
+                        node->u.monadic = MakeRef(reference, object);
                         if (target->flags & IROLF_LoopInvariant)
                             node->u.monadic->flags |= IROLF_LoopInvariant;
                         return;
@@ -755,7 +517,7 @@ void IroCSE_ReplaceReference(IROLinear *target, Object *object, IROLinear *refer
                     break;
                 case IROLinearSwitch:
                     if (node->u.swtch.cond == target) {
-                        node->u.swtch.cond = MakeRef(object, reference);
+                        node->u.swtch.cond = MakeRef(reference, object);
                         if (target->flags & IROLF_LoopInvariant)
                             node->u.swtch.cond->flags |= IROLF_LoopInvariant;
                         return;
@@ -763,13 +525,13 @@ void IroCSE_ReplaceReference(IROLinear *target, Object *object, IROLinear *refer
                     break;
                 case IROLinearOp2Arg:
                     if (node->u.diadic.left == target) {
-                        node->u.diadic.left = MakeRef(object, reference);
+                        node->u.diadic.left = MakeRef(reference, object);
                         if (target->flags & IROLF_LoopInvariant)
                             node->u.diadic.left->flags |= IROLF_LoopInvariant;
                         return;
                     }
                     if (node->u.diadic.right == target) {
-                        node->u.diadic.right = MakeRef(object, reference);
+                        node->u.diadic.right = MakeRef(reference, object);
                         if (target->flags & IROLF_LoopInvariant)
                             node->u.diadic.right->flags |= IROLF_LoopInvariant;
                         return;
@@ -777,14 +539,14 @@ void IroCSE_ReplaceReference(IROLinear *target, Object *object, IROLinear *refer
                     break;
                 case IROLinearFunccall:
                     if (node->u.funccall.callee == target) {
-                        node->u.funccall.callee = MakeRef(object, reference);
+                        node->u.funccall.callee = MakeRef(reference, object);
                         if (target->flags & IROLF_LoopInvariant)
                             node->u.funccall.callee->flags |= IROLF_LoopInvariant;
                         return;
                     }
                     for (index = 0; index < node->u.funccall.argCount; index++) {
                         if (node->u.funccall.args[index] == target) {
-                            node->u.funccall.args[index] = MakeRef(object, reference);
+                            node->u.funccall.args[index] = MakeRef(reference, object);
                             if (target->flags & IROLF_LoopInvariant)
                                 node->u.funccall.args[index]->flags |= IROLF_LoopInvariant;
                             return;
@@ -1001,6 +763,23 @@ IROLinear *fn_0044e340(IROLinear *node, unsigned int clearBit)
 
 /* Makes GROUP's temporary: assigned where the expressions repeating it are evaluated in common (an enclosing
    expression they all share), or at the expression itself (create_replacement_temp_assignment). */
+/* (the first available expression the statement repeats becomes its common subexpression) */
+static void find_common_sub(IROLinear *stmt)
+{
+    IROExpr *cse;
+
+    for (cse = expr_list; cse != NULL; cse = cse->next) {
+        if (cse->linear != stmt && cse->use == NULL && (cse->index >> 5) < availableExpressions->size &&
+            (availableExpressions->bits[cse->index >> 5] & (1 << cse->index)) != 0 &&
+            IroUtil_LinearConstantTreesSame(stmt, cse->linear) != 0) {
+            IroUtil_VisitLinearTree(stmt, (void (*)(IROLinear *, int))fn_0044e360);
+            stmt->flags |= 8;
+            stmt->expr->use = cse;
+            return;
+        }
+    }
+}
+
 void move_common_sub(IROExpr *group)
 {
     IROExpr *child;
@@ -1056,8 +835,7 @@ void move_common_sub(IROExpr *group)
     } else {
         IroDump_Print("Moving common sub from node %d to %d\n", group->linear->index, nodes[splitIndex]->index);
         splitNode = IroUtil_GetLinearRangeStart(nodes[splitIndex]);
-        group->temp = create_temp_object(group->linear->rtype);
-        fn_0044ba70(group->temp, 1, 1);
+        IroCSE_CreateTemp(group);
         IroCSE_ReplaceReference(group->linear, group->temp, group->linear);
         IroUtil_MoveExprBefore(group, splitNode);
         node = IrOptimizer_NewLinear(IROLinearOp2Arg);
@@ -1071,14 +849,27 @@ void move_common_sub(IROExpr *group)
     }
 }
 
+static void replace_common_sub(IROLinear *stmt)
+{
+    IROExpr *cse;
+
+    cse = stmt->expr->use;
+    if (cse->temp == NULL) {
+        move_common_sub(cse);
+        if (cse->temp == NULL)
+            return;
+    }
+    IroDump_Print("Replacing common sub at %d with %d\n", stmt->index, cse->linear->index);
+    IroCSE_ReplaceReference(stmt, cse->temp, stmt);
+    IroCSE_RemoveExpr(stmt->expr);
+    IroUtil_ClearZeroOperands(stmt);
+}
+
 void IRO_CommonSubs(void)
 {
-    IROExpr *def;
     IRONode *proc;
-    IROExpr *prev;
-    SInt32 count;
     IROLinear *stmt;
-    IROExpr *cse;
+    SInt32 count;
 
     count = 0;
     for (proc = iro_flowgraph_head; proc != NULL; proc = proc->nextnode) {
@@ -1087,18 +878,8 @@ void IRO_CommonSubs(void)
         while (1) {
             if (stmt == NULL)
                 break;
-            if (stmt->expr != NULL && stmt->expr->hasSideEffects == 0) {
-                for (cse = expr_list; cse != NULL; cse = cse->next) {
-                    if (cse->linear != stmt && cse->use == NULL && (cse->index >> 5) < availableExpressions->size &&
-                        (availableExpressions->bits[cse->index >> 5] & (1 << cse->index)) != 0 &&
-                        IroUtil_LinearConstantTreesSame(stmt, cse->linear) != 0) {
-                        IroUtil_VisitLinearTree(stmt, (void (*)(IROLinear *, int))fn_0044e360);
-                        stmt->flags |= 8;
-                        stmt->expr->use = cse;
-                        break;
-                    }
-                }
-            }
+            if (stmt->expr != NULL && stmt->expr->hasSideEffects == 0)
+                find_common_sub(stmt);
             if (stmt->expr != NULL)
                 IroBitVect_SetBit(stmt->expr->index, availableExpressions);
             mark_dependent_exprs(stmt);
@@ -1117,28 +898,8 @@ void IRO_CommonSubs(void)
 
     for (proc = iro_flowgraph_head; proc != NULL; proc = proc->nextnode) {
         for (stmt = proc->first; stmt != NULL; stmt = stmt->next) {
-            if (stmt->expr != NULL && (stmt->flags & 8) != 0) {
-                cse = stmt->expr->use;
-                if (cse->temp != NULL || (move_common_sub(cse), cse->temp != NULL)) {
-                    IroDump_Print("Replacing common sub at %d with %d\n", stmt->index, cse->linear->index);
-                    IroCSE_ReplaceReference(stmt, cse->temp, stmt);
-                    def = stmt->expr;
-                    prev = NULL;
-                    cse = expr_list;
-                    while (cse != def) {
-                        prev = cse;
-                        cse = cse->next;
-                        if (cse == NULL)
-                            CError_FATAL(470);
-                    }
-                    def->linear->expr = NULL;
-                    if (prev != NULL)
-                        prev->next = def->next;
-                    else
-                        expr_list = def->next;
-                    IroUtil_ClearZeroOperands(stmt);
-                }
-            }
+            if (stmt->expr != NULL && (stmt->flags & 8) != 0)
+                replace_common_sub(stmt);
             if (stmt == proc->last)
                 break;
             if (count > 0xfa) {

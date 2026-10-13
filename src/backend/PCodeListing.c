@@ -1,5 +1,6 @@
 #define CERROR_FILE "PCodeListing.c"
 #include "compiler/common.h"
+#include "version.h"
 #include "compiler/PCodeListing.h"
 #include "compiler/enode.h"
 #include "compiler/objects.h"
@@ -11,24 +12,6 @@
 #include "compiler/PCode.h"
 #include <string.h>
 #include <stdio.h>
-
-/* The condition register bits, and the condition each BO field value tests. */
-static char *data_005621b0[4] = {"lt", "gt", "eq", "un"};
-static char *data_005621e0[31] = {"",   "lgt", "llt", "", "eq", "lge", "lle", "", "gt", "", "", "", "ge", "", "", "",
-                                  "lt", "",    "",    "", "le", "",    "",    "", "ne", "", "", "", "",   "", ""};
-
-static inline void formatdataflowset(char *name, UInt32 *vec, UInt32 size)
-{
-    UInt32 i;
-
-    fprintf(stdout, "%s = {", name);
-    for (i = 0; i < size; i++) {
-        if (i && !(i & 7))
-            fprintf(stdout, "\n\t\t");
-        fprintf(stdout, "B%ld ", vec[i]);
-    }
-    fprintf(stdout, " }\n");
-}
 
 /* Instruction data consumed by the PowerPC instruction formatter. */
 static inline void FormatFirstOperand(PCodeInstruction *instruction, char *out)
@@ -59,35 +42,40 @@ void format_operand(PCodeOperand *n, char *ctx)
 
     if (n->kind == 7) {
         if (((struct PCodeLabelDifference *)n)->negate == 1)
-            CPrep_AppendStringBounded(ctx, "-", 300);
-        CPrep_AppendStringBounded(ctx, "(B", 300);
+            CTool_AppendStringBounded(ctx, "-", 300);
+        CTool_AppendStringBounded(ctx, "(B", 300);
         if (((struct PCodeLabelDifference *)n)->subtractLabel->target.block == NULL)
-            CPrep_AppendStringBounded(ctx, "<unknown>-B", 300);
+            CTool_AppendStringBounded(ctx, "<unknown>-B", 300);
         else {
             sprintf(buf, "%ld-B", ((struct PCodeLabelDifference *)n)->subtractLabel->target.block->index);
-            CPrep_AppendStringBounded(ctx, buf, 300);
+            CTool_AppendStringBounded(ctx, buf, 300);
         }
         if (((struct PCodeLabelDifference *)n)->addLabel->target.block == NULL)
-            CPrep_AppendStringBounded(ctx, "<unknown>+", 300);
+            CTool_AppendStringBounded(ctx, "<unknown>+", 300);
         else {
             sprintf(buf, "%ld+", ((struct PCodeLabelDifference *)n)->addLabel->target.block->index);
-            CPrep_AppendStringBounded(ctx, buf, 300);
+            CTool_AppendStringBounded(ctx, buf, 300);
         }
         sprintf(buf, "%ld)", ((struct PCodeLabelDifference *)n)->addend);
-        CPrep_AppendStringBounded(ctx, buf, 300);
+        CTool_AppendStringBounded(ctx, buf, 300);
     } else if (n->kind == 4) {
         sprintf(buf, "%ld", n->value.immediate_value);
-        CPrep_AppendStringBounded(ctx, buf, 300);
+        CTool_AppendStringBounded(ctx, buf, 300);
         if (n->object != NULL) {
-            CPrep_AppendStringBounded(ctx, "{", 300);
-            CPrep_AppendStringBounded(ctx, COptimizer_GetFunctionObject(n->object)->name, 300);
-            CPrep_AppendStringBounded(ctx, "}", 300);
+            CTool_AppendStringBounded(ctx, "{", 300);
+            CTool_AppendStringBounded(ctx, COptimizer_GetFunctionObject(n->object)->name, 300);
+            CTool_AppendStringBounded(ctx, "}", 300);
         }
     } else {
         sprintf(buf, "?unknown operand kind=%d", n->kind);
-        CPrep_AppendStringBounded(ctx, buf, 300);
+        CTool_AppendStringBounded(ctx, buf, 300);
     }
 }
+
+/* The condition register bits, and the condition each BO field value tests. */
+static char *data_005621b0[4] = {"lt", "gt", "eq", "un"};
+static char *data_005621e0[31] = {"",   "lgt", "llt", "", "eq", "lge", "lle", "", "gt", "", "", "", "ge", "", "", "",
+                                  "lt", "",    "",    "", "le", "",    "",    "", "ne", "", "", "", "",   "", ""};
 
 void fn_004c4bf0(PCodeInstruction *instruction, char *out)
 {
@@ -271,7 +259,7 @@ void fn_004c4bf0(PCodeInstruction *instruction, char *out)
                     case PC_PSQ_STUX:
                         sprintf(extraOperands, ",%d,%d", instruction->operandData.operands[3].value.unsigned_value,
                                 instruction->operandData.operands[4].value.unsigned_value);
-                        CPrep_AppendStringBounded(out, extraOperands, 300);
+                        CTool_AppendStringBounded(out, extraOperands, 300);
                         break;
                     default:
                         break;
@@ -280,7 +268,7 @@ void fn_004c4bf0(PCodeInstruction *instruction, char *out)
                 sprintf(out, "r%d,", instruction->operandData.operands[0].value.reg);
                 format_operand((PCodeOperand *)&instruction->operandData.operands[2], out);
                 sprintf(operandSuffix, "(r%d)", instruction->operandData.operands[1].value.reg);
-                CPrep_AppendStringBounded(out, operandSuffix, 300);
+                CTool_AppendStringBounded(out, operandSuffix, 300);
             }
             break;
         case PC_LBZX:
@@ -636,7 +624,7 @@ void fn_004c4bf0(PCodeInstruction *instruction, char *out)
                 sprintf(out, "f%d,", instruction->operandData.operands[0].value.reg);
                 format_operand((PCodeOperand *)&instruction->operandData.operands[2], out);
                 sprintf(addressSuffix, "(r%d)", instruction->operandData.operands[1].value.reg);
-                CPrep_AppendStringBounded(out, addressSuffix, 300);
+                CTool_AppendStringBounded(out, addressSuffix, 300);
             }
             break;
         case PC_LFSX:
@@ -685,8 +673,10 @@ void fn_004c4bf0(PCodeInstruction *instruction, char *out)
         case PC_PS_MERGE01:
         case PC_PS_MERGE10:
         case PC_PS_MERGE11:
+#if VERSION > VERSION_GC_1_0
         case PC_PS_MULS0:
         case PC_PS_MULS1:
+#endif
             sprintf(out, "f%d,f%d,f%d", instruction->operandData.operands[0].value.reg,
                     instruction->operandData.operands[1].value.reg, instruction->operandData.operands[2].value.reg);
             break;
@@ -708,6 +698,11 @@ void fn_004c4bf0(PCodeInstruction *instruction, char *out)
         case PC_PS_SUM1:
         case PC_PS_MADDS0:
         case PC_PS_MADDS1:
+#if VERSION == VERSION_GC_1_0
+        /* (1.0 lists ps_muls0 and ps_muls1 with four operands) */
+        case PC_PS_MULS0:
+        case PC_PS_MULS1:
+#endif
             sprintf(out, "f%d,f%d,f%d,f%d", instruction->operandData.operands[0].value.reg,
                     instruction->operandData.operands[1].value.reg, instruction->operandData.operands[2].value.reg,
                     instruction->operandData.operands[3].value.reg);
@@ -1074,7 +1069,7 @@ void fn_004c4bf0(PCodeInstruction *instruction, char *out)
         case PC_WRTEE:
         case PC_WRTEEI:
         default:
-            CError_FATAL(1107);
+            CError_FATAL(VERSION > VERSION_GC_1_0 ? 1107 : 1106);
             break;
     }
     if (instruction->flags & fIsConst)
@@ -1095,25 +1090,6 @@ void fn_004c4bf0(PCodeInstruction *instruction, char *out)
         strcat(out, "; fIsLive");
     if (instruction->flags & fIsPtrOp)
         strcat(out, "; fIsPtrOp");
-}
-
-static void PrintOp0(PCodeInstruction *p, char *out)
-{
-    unsigned char t = p->operandData.operands[0].kind;
-    const char *sign;
-    int *q;
-    if (t == 5) {
-        sprintf(out, "%.200s", COptimizer_GetFunctionObject(p->operandData.operands[0].object)->name);
-    } else if (t != 6) {
-        sign = p->operandData.operands[0].value.signed_value >= 0 ? "+" : "";
-        sprintf(out, "*%s%ld", sign, p->operandData.operands[0].value.signed_value);
-    } else {
-        q = (int *)((int *)p->operandData.operands[0].value.signed_value)[1];
-        if (q == NULL)
-            sprintf(out, "B<unknown>");
-        else
-            sprintf(out, "B%ld", q[7]);
-    }
 }
 
 void fn_004c4be0(void)
@@ -1140,13 +1116,28 @@ void fn_004c4ba0(void)
     return;
 }
 
+static void formatdataflowset(char *name, UInt32 *vec, UInt32 size, char *format)
+{
+    UInt32 i;
+
+    fprintf(stdout, "%s = {", name);
+    for (i = 0; i < size; i++) {
+        if (i && !(i & 7))
+            fprintf(stdout, "\n\t\t");
+        fprintf(stdout, format, vec[i]);
+    }
+    fprintf(stdout, " }\n");
+}
+
+#if VERSION > VERSION_GC_1_0
 void pclistdataflowanalysis(UInt32 *use, UInt32 *def, UInt32 *in, UInt32 *out, UInt32 size)
 {
-    formatdataflowset("use", use, size);
-    formatdataflowset("def", def, size);
-    formatdataflowset("in ", in, size);
-    formatdataflowset("out", out, size);
+    formatdataflowset("use", use, size, "B%ld ");
+    formatdataflowset("def", def, size, "B%ld ");
+    formatdataflowset("in ", in, size, "B%ld ");
+    formatdataflowset("out", out, size, "B%ld ");
 }
+#endif
 
 static void pclistblock(PCodeBlock *block)
 {
@@ -1170,6 +1161,17 @@ static void pclistblock(PCodeBlock *block)
         fprintf(stdout, "    %.8lX  %.8lX %4ld    %-7s%c %s\n", instr, block, block->line, "", ' ', "");
     fprintf(stdout, "............................................................\n");
 }
+
+/* (1.0 defines it after pclistblock) */
+#if VERSION == VERSION_GC_1_0
+void pclistdataflowanalysis(UInt32 *use, UInt32 *def, UInt32 *in, UInt32 *out, UInt32 size)
+{
+    formatdataflowset("use", use, size, "B%ld ");
+    formatdataflowset("def", def, size, "B%ld ");
+    formatdataflowset("in ", in, size, "B%ld ");
+    formatdataflowset("out", out, size, "B%ld ");
+}
+#endif
 
 static void pclistonoff(int flag)
 {
